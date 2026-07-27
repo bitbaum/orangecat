@@ -17,6 +17,7 @@ import type { EntityType } from '@/config/entity-registry';
 import { cn } from '@/lib/utils';
 import { useProfileActions } from './useProfileActions';
 import { ProfileBannerSection } from './ProfileBannerSection';
+import { MAKER_STATUS_METADATA, isMakerStatus } from '@/config/maker-status';
 
 // Entity types displayed as generic ProfileEntityTab tabs, in order.
 const PROFILE_ENTITY_TABS: EntityType[] = [
@@ -196,6 +197,11 @@ export default function ProfileLayout({
             <p className="mb-3 break-all text-sm font-medium text-fg-secondary sm:mb-4 sm:text-base md:text-lg">
               @{profile.username}
             </p>
+            {isMakerStatus(profile.current_status) && (
+              <span className="mb-3 inline-flex items-center rounded-full bg-surface-raised border border-default px-2.5 py-1 text-xs font-medium text-fg-primary sm:mb-4">
+                {MAKER_STATUS_METADATA[profile.current_status].label}
+              </span>
+            )}
             {profile.bio && (
               // Surface the bio in the header card so the "who is this" answer
               // is immediate, reinforcing the Overview-first default below.

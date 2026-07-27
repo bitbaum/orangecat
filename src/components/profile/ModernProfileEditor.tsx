@@ -6,6 +6,7 @@ import ProfileWizard from './ProfileWizard';
 import { useProfileEditor } from './hooks/useProfileEditor';
 import { ProfileImagesSection } from './ProfileImagesSection';
 import { ProfileBasicSection } from './sections/ProfileBasicSection';
+import { ProfileStatusSection } from './sections/ProfileStatusSection';
 import { OnlinePresenceSection } from './sections/OnlinePresenceSection';
 import { ContactSection } from './sections/ContactSection';
 import { PreferencesSection } from './sections/PreferencesSection';
@@ -97,6 +98,9 @@ export default function ModernProfileEditor({
                 form={form}
               />
 
+              {/* Status & How to Help Section */}
+              <ProfileStatusSection control={form.control} />
+
               {/* Online Presence Section */}
               <OnlinePresenceSection
                 control={form.control}
@@ -162,6 +166,9 @@ export default function ModernProfileEditor({
                 setLocationGroupLabel={setLocationGroupLabel}
                 form={form}
               />
+
+              {/* Status & How to Help Section */}
+              <ProfileStatusSection control={form.control} />
 
               {/* Online Presence Section */}
               <OnlinePresenceSection

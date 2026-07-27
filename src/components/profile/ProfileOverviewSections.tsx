@@ -4,11 +4,17 @@
  * fetching; the parent owns visibility conditions.
  */
 import Link from 'next/link';
-import { User, ArrowRight } from 'lucide-react';
+import { User, ArrowRight, Activity, HandHeart } from 'lucide-react';
 import { Card, CardHeader, CardContent } from '@/components/ui/Card';
 import ProfileProjectCard from './ProfileProjectCard';
 import { ROUTES } from '@/config/routes';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
+import {
+  MAKER_STATUS_METADATA,
+  HELP_WANTED_METADATA,
+  isMakerStatus,
+  isHelpWantedOption,
+} from '@/config/maker-status';
 
 /** Loose project shape — the page passes server-fetched rows; we read defensively. */
 export interface OverviewProject {
@@ -64,6 +70,95 @@ export function ProfileAboutCard({
         ) : (
           <p className="text-sm sm:text-base text-fg-tertiary italic">No bio yet.</p>
         )}
+      </CardContent>
+    </Card>
+  );
+}
+
+/**
+ * "Status & How to Help" card — the concrete answer to "what stage are they
+ * at" and "what do they actually need". Hidden for visitors when the owner
+ * hasn't set either field (an empty ask is worse than no ask); the owner
+ * always sees it so the gap stays visible and fixable.
+ */
+export function ProfileStatusCard({
+  currentStatus,
+  helpWanted,
+  isOwnProfile,
+  isDashboardView,
+}: {
+  currentStatus?: string | null;
+  helpWanted?: string[] | null;
+  isOwnProfile: boolean;
+  isDashboardView: boolean;
+}) {
+  const statusMeta = isMakerStatus(currentStatus) ? MAKER_STATUS_METADATA[currentStatus] : null;
+  const helpTags = (helpWanted || []).filter(isHelpWantedOption);
+
+  if (!statusMeta && helpTags.length === 0 && !(isOwnProfile && isDashboardView)) {
+    return null;
+  }
+
+  return (
+    <Card>
+      <CardContent className="p-4 sm:p-6 space-y-4">
+        <div className="flex items-start gap-3">
+          <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-fg-secondary mt-0.5 flex-shrink-0" />
+          <div className="flex-1">
+            <div className="text-sm text-fg-secondary mb-1">Status</div>
+            {statusMeta ? (
+              <div>
+                <span className="inline-flex items-center rounded-full bg-surface-raised border border-default px-2.5 py-1 text-xs font-medium text-fg-primary">
+                  {statusMeta.label}
+                </span>
+                <p className="mt-1 text-sm text-fg-secondary">{statusMeta.description}</p>
+              </div>
+            ) : isOwnProfile && isDashboardView ? (
+              <a
+                href={`${ROUTES.DASHBOARD.INFO_EDIT}#currentStatus`}
+                className="inline-flex items-center gap-2 text-fg-primary hover:text-fg-primary underline-offset-4 hover:underline text-sm sm:text-base"
+              >
+                <span className="text-fg-tertiary italic">Share the status of your work</span>
+                <span className="text-xs uppercase tracking-wide">Add status</span>
+              </a>
+            ) : (
+              <span className="text-sm sm:text-base text-fg-tertiary italic">
+                No status set yet.
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-start gap-3 pt-3 border-t border-default">
+          <HandHeart className="w-4 h-4 sm:w-5 sm:h-5 text-fg-secondary mt-0.5 flex-shrink-0" />
+          <div className="flex-1">
+            <div className="text-sm text-fg-secondary mb-2">How you can help</div>
+            {helpTags.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {helpTags.map(tag => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center rounded-full bg-surface-raised border border-default px-2.5 py-1 text-xs font-medium text-fg-primary"
+                  >
+                    {HELP_WANTED_METADATA[tag].label}
+                  </span>
+                ))}
+              </div>
+            ) : isOwnProfile && isDashboardView ? (
+              <a
+                href={`${ROUTES.DASHBOARD.INFO_EDIT}#helpWanted`}
+                className="inline-flex items-center gap-2 text-fg-primary hover:text-fg-primary underline-offset-4 hover:underline text-sm sm:text-base"
+              >
+                <span className="text-fg-tertiary italic">Tell people how they can help</span>
+                <span className="text-xs uppercase tracking-wide">Add ways to help</span>
+              </a>
+            ) : (
+              <span className="text-sm sm:text-base text-fg-tertiary italic">
+                No specific asks yet.
+              </span>
+            )}
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

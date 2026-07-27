@@ -18,6 +18,7 @@ export interface SearchProfile {
   bio: string | null;
   avatar_url: string | null;
   created_at: string;
+  current_status?: string | null;
 }
 
 export interface SearchFundingPage {
@@ -80,6 +81,7 @@ export interface RawSearchProfile {
   location_zip?: string | null;
   latitude?: number | null;
   longitude?: number | null;
+  current_status?: string | null;
 }
 
 // Raw project from database queries

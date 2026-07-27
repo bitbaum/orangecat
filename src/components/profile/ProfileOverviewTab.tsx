@@ -7,6 +7,7 @@ import { SocialLinksDisplay } from './SocialLinksDisplay';
 import { ProfileSupportSection } from './ProfileSupportSection';
 import {
   ProfileAboutCard,
+  ProfileStatusCard,
   ProfileProjectsSection,
   type OverviewProject,
 } from './ProfileOverviewSections';
@@ -85,6 +86,14 @@ export default function ProfileOverviewTab({
           isDashboardView={isDashboardView}
         />
       )}
+
+      {/* Status & how to help — the concrete "where things stand" / "what's needed" answer. */}
+      <ProfileStatusCard
+        currentStatus={profile.current_status}
+        helpWanted={profile.help_wanted}
+        isOwnProfile={isOwnProfile}
+        isDashboardView={isDashboardView}
+      />
 
       {/* Projects — explore the owner's work and back any of it without leaving. */}
       {visibleProjects.length > 0 && (

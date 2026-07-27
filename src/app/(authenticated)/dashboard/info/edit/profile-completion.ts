@@ -17,6 +17,16 @@ export const PROFILE_COMPLETION_FIELDS = [
     isComplete: (profile: Profile) => !!profile.bio?.trim(),
   },
   {
+    label: 'Current status',
+    weight: 10,
+    isComplete: (profile: Profile) => !!profile.current_status?.trim(),
+  },
+  {
+    label: 'Ways others can help',
+    weight: 10,
+    isComplete: (profile: Profile) => !!profile.help_wanted?.length,
+  },
+  {
     label: 'Profile picture',
     weight: 10,
     isComplete: (profile: Profile) => !!profile.avatar_url?.trim(),

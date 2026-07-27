@@ -39,6 +39,8 @@ const PROFILE_ALLOWED_FIELDS = [
   'phone',
   'bitcoin_address',
   'lightning_address',
+  'current_status',
+  'help_wanted',
 ];
 
 async function respondWithProfile(

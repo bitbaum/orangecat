@@ -10,6 +10,7 @@ import Button from '@/components/ui/Button';
 import DefaultAvatar from '@/components/ui/DefaultAvatar';
 import { SearchProfile } from '@/services/search';
 import { ROUTES } from '@/config/routes';
+import { MAKER_STATUS_METADATA, isMakerStatus } from '@/config/maker-status';
 
 interface ProfileCardProps {
   profile: SearchProfile;
@@ -25,6 +26,13 @@ export default function ProfileCard({ profile, viewMode = 'grid' }: ProfileCardP
       Person
     </div>
   );
+
+  const StatusBadge = () =>
+    isMakerStatus(profile.current_status) ? (
+      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-surface-raised text-fg-primary border border-default">
+        {MAKER_STATUS_METADATA[profile.current_status].label}
+      </span>
+    ) : null;
 
   if (viewMode === 'list') {
     return (
@@ -59,6 +67,11 @@ export default function ProfileCard({ profile, viewMode = 'grid' }: ProfileCardP
             </div>
             {profile.username && (
               <p className="text-sm text-fg-secondary truncate">@{profile.username}</p>
+            )}
+            {isMakerStatus(profile.current_status) && (
+              <div className="mt-1">
+                <StatusBadge />
+              </div>
             )}
             {profile.bio && (
               <p className="text-sm text-fg-secondary mt-1 line-clamp-2">{profile.bio}</p>
@@ -108,6 +121,12 @@ export default function ProfileCard({ profile, viewMode = 'grid' }: ProfileCardP
         </div>
 
         {profile.username && <p className="text-sm text-fg-secondary mb-3">@{profile.username}</p>}
+
+        {isMakerStatus(profile.current_status) && (
+          <div className="-mt-2 mb-3">
+            <StatusBadge />
+          </div>
+        )}
 
         {profile.bio && (
           <p className="text-sm text-fg-secondary mb-4 line-clamp-3">{profile.bio}</p>

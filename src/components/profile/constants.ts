@@ -12,6 +12,7 @@ export const MAX_SOCIAL_LINKS = 15;
 
 export const PROFILE_SECTIONS = {
   PROFILE: 'Profile',
+  STATUS: 'Status & How to Help',
   ONLINE_PRESENCE: 'Online Presence',
   CONTACT: 'Contact Information',
   PREFERENCES: 'Preferences',
@@ -19,6 +20,7 @@ export const PROFILE_SECTIONS = {
 
 export const PROFILE_SECTION_DESCRIPTIONS = {
   PROFILE: 'Your basic profile information – username, name, bio and location.',
+  STATUS: 'What stage your work is at, and concrete ways others can help.',
   ONLINE_PRESENCE: 'Your website and social media – where people can find you online.',
   CONTACT: 'How people can reach you directly.',
   PREFERENCES: 'Your display preferences – currency and other settings.',

@@ -24,7 +24,7 @@ export async function searchProfiles(
   let profileQuery = supabase
     .from(DATABASE_TABLES.PROFILES)
     .select(
-      'id, username, name, bio, avatar_url, created_at, location_country, location_city, location_zip, latitude, longitude'
+      'id, username, name, bio, avatar_url, created_at, location_country, location_city, location_zip, latitude, longitude, current_status'
     );
 
   // Priority 1: If radius is specified, use PostGIS RPC (handles both query and radius)

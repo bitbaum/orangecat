@@ -26,6 +26,10 @@ export interface Profile {
   // Wallet fields (kept for backward compatibility, but wallets managed separately)
   bitcoin_address?: string | null;
   lightning_address?: string | null;
+  // Maker profile hardening: what stage their work is at + concrete ways
+  // others can help. Value lists: @/config/maker-status.
+  current_status?: string | null;
+  help_wanted?: string[] | null;
   // User preferences
   currency?: string | null; // User's preferred display currency (from CURRENCY_CODES)
   preferences?: Record<string, unknown> | null; // Generic preference bag (theme, notifications, etc.)

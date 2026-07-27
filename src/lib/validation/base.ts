@@ -2,6 +2,11 @@ import { z } from 'zod';
 import DOMPurify from 'dompurify';
 import { validatePhoneNumber, normalizePhoneNumber } from '../phone-validation';
 import { CURRENCY_CODES } from '@/config/currencies';
+import {
+  MAKER_STATUS_VALUES,
+  HELP_WANTED_VALUES,
+  MAX_HELP_WANTED_SELECTIONS,
+} from '@/config/maker-status';
 
 /**
  * Lightning Address Validation
@@ -234,6 +239,14 @@ export const profileSchema = z.object({
   lightning_address: optionalText(200),
   // Currency preference for displaying prices
   currency: z.enum(CURRENCY_CODES).optional().nullable(),
+  // Maker profile hardening: current status of their work + concrete ways
+  // others can help. Value lists are the SSOT in @/config/maker-status.
+  current_status: z.enum(MAKER_STATUS_VALUES).optional().nullable().or(z.literal('')),
+  help_wanted: z
+    .array(z.enum(HELP_WANTED_VALUES))
+    .max(MAX_HELP_WANTED_SELECTIONS, `Select up to ${MAX_HELP_WANTED_SELECTIONS} options`)
+    .optional()
+    .nullable(),
 });
 
 // HTML sanitization for rich text content
