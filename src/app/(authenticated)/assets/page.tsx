@@ -1,7 +1,7 @@
 /**
- * Assets Page - Redirect to Dashboard
+ * Assets Page - Redirect to public discovery
  *
- * Redirects to /dashboard/assets for consistency with other entity pages.
+ * Public base paths browse listings; owner management lives under /dashboard.
  *
  * Created: 2025-01-27
  * Last Modified: 2025-01-30
@@ -12,5 +12,5 @@ import { redirect } from 'next/navigation';
 import { ROUTES } from '@/config/routes';
 
 export default function AssetsPage() {
-  redirect(ROUTES.DASHBOARD.ASSETS);
+  redirect(ROUTES.DISCOVER_TYPE('assets'));
 }

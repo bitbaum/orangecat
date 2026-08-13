@@ -4,6 +4,7 @@ import { getUserActorId } from '@/domain/actors';
 import { getArticleBySlug } from '@/services/articles/get-article';
 import { ROUTES } from '@/config/routes';
 import ArticleComposer from '../../new/ArticleComposer';
+import { authLoginPath } from '@/lib/navigation/safe-return-path';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,7 +20,7 @@ export default async function EditArticlePage({ params }: PageProps) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    redirect(`${ROUTES.AUTH}?mode=login&from=${encodeURIComponent(`/articles/${slug}/edit`)}`);
+    redirect(authLoginPath(`/articles/${slug}/edit`));
   }
 
   const [article, actorId] = await Promise.all([

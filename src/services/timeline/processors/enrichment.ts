@@ -14,6 +14,7 @@ import { fromTable } from '@/lib/supabase/untyped';
 import supabase from '@/lib/supabase/browser';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { getTableName, ENTITY_REGISTRY } from '@/config/entity-registry';
+import { optionalPublicProfilePath } from '@/config/public-profile-path';
 import type {
   TimelineDisplayEvent,
   TimelineActorType,
@@ -118,7 +119,7 @@ function profileRowToSubject(id: string, profile: ProfileRow | null): SubjectInf
     id,
     name: profile?.name || profile?.username || 'Unknown User',
     type: 'profile',
-    url: `/profiles/${profile?.username || id}`,
+    url: optionalPublicProfilePath(profile?.username) ?? undefined,
   };
 }
 

@@ -15,7 +15,14 @@ interface DiscoverLoadingStateProps {
 
 export function DiscoverLoadingState({ viewMode, activeTab }: DiscoverLoadingStateProps) {
   return (
-    <div className="space-y-8">
+    <div
+      className="space-y-8"
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+      data-loading="true"
+      aria-label="Loading discovery results"
+    >
       <div className="flex items-center justify-between mb-6">
         <div className="h-8 w-48 bg-surface-raised rounded animate-pulse" />
       </div>

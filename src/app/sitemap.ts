@@ -4,6 +4,7 @@ import { looseClient } from '@/lib/supabase/untyped';
 import { ENTITY_REGISTRY, type EntityType } from '@/config/entity-registry';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { ENTITY_STATUS } from '@/config/database-constants';
+import { publicProfilePath } from '@/config/public-profile-path';
 
 const BASE_URL = 'https://orangecat.ch';
 
@@ -109,7 +110,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           // literal webdev@example.com profiles live) produce invalid
           // <loc> entries in some sitemap consumers and broken
           // crawl URLs. Same fix shape as the profile page canonical.
-          url: `${BASE_URL}/profiles/${encodeURIComponent(profile.username)}`,
+          url: `${BASE_URL}${publicProfilePath(profile.username)}`,
           lastModified: profile.updated_at ? new Date(profile.updated_at) : new Date(),
           changeFrequency: 'weekly' as const,
           priority: 0.6,

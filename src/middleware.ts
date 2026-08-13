@@ -1,27 +1,14 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
-import { getRouteSurface, ROUTES } from '@/config/routes';
+import { ROUTES } from '@/config/routes';
+import { requiresAuthentication } from '@/config/route-access';
+import { safeReturnPath } from '@/lib/navigation/safe-return-path';
 
-// Edge middleware route classification reads from the SAME SSOT used by
-// AppShell / MobileBottomNav / Footer / Header (src/config/routes.ts).
-// Never keep a parallel list here — they will drift.
-//
-// Routes whose surface is 'app' AND which are not also accessible
-// signed-out (i.e. require a logged-in user to make any sense) get the
-// token validation pass below. Hybrid in-app surfaces like /discover,
-// /products, /services, /events stay open to anonymous users and the
-// per-page auth gate handles redirect when needed.
-const REQUIRES_AUTH_PREFIXES = [
-  '/dashboard',
-  '/settings',
-  '/timeline',
-  '/messages',
-  '/post',
-  '/ai-chat',
-  '/profile/', // own profile (note trailing slash — public is at /profiles)
-];
-
+// Authentication policy lives in src/config/route-access.ts and is shared
+// with the exhaustive route inventory. Shell placement is intentionally not
+// used as an access rule: public discovery pages can use the app shell, while
+// personal and mutation routes must be protected wherever their source lives.
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const url = request.nextUrl;
@@ -77,14 +64,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(resetUrl);
   }
 
-  // Skip token validation on 'public' and 'auth' surfaces — those are
-  // intentionally open. Hybrid in-app surfaces (discover, products, …)
-  // resolve as 'app' but aren't in REQUIRES_AUTH_PREFIXES, so they also
-  // pass through. Only routes that require a logged-in user to make any
-  // sense get the cookie-token validation pass.
-  const isAppSurface = getRouteSurface(pathname) === 'app';
-  const isProtectedRoute =
-    isAppSurface && REQUIRES_AUTH_PREFIXES.some(route => pathname.startsWith(route));
+  // Shell placement and access are separate. Most marketing/public routes
+  // skip validation, while explicit personal/mutation surfaces are protected
+  // even if their source page lives outside the app-shell route group.
+  const isProtectedRoute = requiresAuthentication(pathname);
 
   if (isProtectedRoute) {
     // Validate session with @supabase/ssr — same pattern as
@@ -103,7 +86,7 @@ export async function middleware(request: NextRequest) {
       // Misconfigured deployment — bounce to auth rather than crash.
       const redirectUrl = new URL('/auth', request.url);
       redirectUrl.searchParams.set('mode', 'login');
-      redirectUrl.searchParams.set('from', pathname);
+      redirectUrl.searchParams.set('from', safeReturnPath(`${pathname}${url.search}`));
       return NextResponse.redirect(redirectUrl);
     }
 
@@ -131,7 +114,7 @@ export async function middleware(request: NextRequest) {
     if (!user) {
       const redirectUrl = new URL('/auth', request.url);
       redirectUrl.searchParams.set('mode', 'login');
-      redirectUrl.searchParams.set('from', pathname);
+      redirectUrl.searchParams.set('from', safeReturnPath(`${pathname}${url.search}`));
       return NextResponse.redirect(redirectUrl);
     }
   }

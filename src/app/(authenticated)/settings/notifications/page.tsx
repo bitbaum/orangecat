@@ -28,6 +28,7 @@ import Loading from '@/components/Loading';
 import Button from '@/components/ui/Button';
 import { logger } from '@/utils/logger';
 import type { DigestFrequency, NotificationPreferences } from '@/types/notification-preferences';
+import { authLoginPath } from '@/lib/navigation/safe-return-path';
 
 const CATEGORIES: Array<{
   key: keyof Pick<
@@ -168,7 +169,7 @@ export default function NotificationSettingsPage() {
   }
 
   if (!user) {
-    const returnTo = `${ROUTES.AUTH}?mode=login&from=${encodeURIComponent(ROUTES.SETTINGS_NOTIFICATIONS)}`;
+    const returnTo = authLoginPath(ROUTES.SETTINGS_NOTIFICATIONS);
     return (
       <div className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center p-6 text-center">
         <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full border border-subtle bg-surface-raised/30">

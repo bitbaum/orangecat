@@ -6,6 +6,7 @@ import { UserPlus, UserMinus, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { GRADIENTS } from '@/config/gradients';
 import type { Profile } from '@/types/profile';
+import { ROUTES } from '@/config/routes';
 
 interface PersonCardProps {
   profile: Profile;
@@ -25,36 +26,44 @@ export default function PersonCard({
   onUnfollow,
 }: PersonCardProps) {
   const displayName = profile.name || profile.username || 'Anonymous';
+  const profileHref = profile.username
+    ? ROUTES.PROFILES.VIEW(profile.username)
+    : null;
+  const avatar = (
+    <div
+      className={cn(
+        GRADIENTS.brandOrangeLightBr,
+        'relative w-16 h-16 rounded-full overflow-hidden flex-shrink-0'
+      )}
+    >
+      {profile.avatar_url ? (
+        <Image src={profile.avatar_url} alt={displayName} fill className="object-cover" />
+      ) : (
+        <div className="w-full h-full flex items-center justify-center text-fg-primary font-semibold text-xl">
+          {displayName.charAt(0).toUpperCase()}
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <Card className="oc-card-link">
       <CardContent className="p-6">
         <div className="flex items-start gap-4">
           {/* Avatar */}
-          <Link href={`/profiles/${profile.username || profile.id}`}>
-            <div
-              className={cn(
-                GRADIENTS.brandOrangeLightBr,
-                'relative w-16 h-16 rounded-full overflow-hidden flex-shrink-0'
-              )}
-            >
-              {profile.avatar_url ? (
-                <Image src={profile.avatar_url} alt={displayName} fill className="object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-fg-primary font-semibold text-xl">
-                  {displayName.charAt(0).toUpperCase()}
-                </div>
-              )}
-            </div>
-          </Link>
+          {profileHref ? <Link href={profileHref}>{avatar}</Link> : avatar}
 
           {/* Info */}
           <div className="flex-1 min-w-0">
-            <Link href={`/profiles/${profile.username || profile.id}`}>
-              <h3 className="font-semibold text-fg-primary hover:hover:underline underline-offset-4 truncate">
-                {displayName}
-              </h3>
-            </Link>
+            {profileHref ? (
+              <Link href={profileHref}>
+                <h3 className="font-semibold text-fg-primary hover:underline underline-offset-4 truncate">
+                  {displayName}
+                </h3>
+              </Link>
+            ) : (
+              <h3 className="font-semibold text-fg-primary truncate">{displayName}</h3>
+            )}
             {profile.username && (
               <p className="text-sm text-fg-secondary truncate">@{profile.username}</p>
             )}
@@ -91,8 +100,8 @@ export default function PersonCard({
                   Unfollow
                 </Button>
               )}
-              {(profile.bitcoin_address || profile.lightning_address) && (
-                <Link href={`/profiles/${profile.username || profile.id}`}>
+              {(profile.bitcoin_address || profile.lightning_address) && profileHref && (
+                <Link href={profileHref}>
                   <Button size="sm" variant="outline">
                     <ExternalLink className="w-3 h-3 mr-1" />
                     Send BTC

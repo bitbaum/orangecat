@@ -1,9 +1,10 @@
 'use client';
 
 import { useAuthStore } from '@/stores/auth';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { isAuthenticatedRoute, getRouteContext, ROUTES } from '@/config/routes';
+import { authLoginPath } from '@/lib/navigation/safe-return-path';
 
 /**
  * Hydration ceiling. If the auth store hasn't resolved after this long,
@@ -48,6 +49,7 @@ export function useRequireAuth() {
   const [_isConsistent, setIsConsistent] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [checkedAuth, setCheckedAuth] = useState(false);
 
   // Start the hydration ceiling timer the moment we mount. If hydration
@@ -83,15 +85,17 @@ export function useRequireAuth() {
       // Preserve the original destination so post-login we send the user
       // back where they were trying to go. Without this, signing in from
       // /dashboard/projects lands on /dashboard regardless.
-      const from = pathname && pathname !== '/' ? pathname : null;
-      const redirectUrl = from
-        ? `${ROUTES.AUTH}?mode=login&from=${encodeURIComponent(from)}`
-        : `${ROUTES.AUTH}?mode=login`;
+      const serializedSearch = searchParams?.toString();
+      const from =
+        pathname && pathname !== '/'
+          ? `${pathname}${serializedSearch ? `?${serializedSearch}` : ''}`
+          : undefined;
+      const redirectUrl = authLoginPath(from);
       router.push(redirectUrl);
     }
 
     setCheckedAuth(true);
-  }, [user, isLoading, hydrated, router, pathname, hydrationTimedOut]);
+  }, [user, isLoading, hydrated, router, pathname, searchParams, hydrationTimedOut]);
 
   // isLoading stays true while hydration is in flight AND the ceiling
   // hasn't fired yet. Once timed out, isLoading flips false so pages

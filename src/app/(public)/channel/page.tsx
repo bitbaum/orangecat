@@ -14,9 +14,11 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { waitlistSchema, type WaitlistFormData } from '@/lib/validation/social';
 import { toast } from 'sonner';
+import { authLoginPath } from '@/lib/navigation/safe-return-path';
 
 export default function ChannelComingSoonPage() {
   const { user, profile } = useAuth();
+  const profileUsername = profile?.username?.trim();
   const [showShare, setShowShare] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const {
@@ -149,27 +151,46 @@ export default function ChannelComingSoonPage() {
                   </div>
                 </form>
               </div>
-              <div className="flex flex-col-reverse sm:flex-row items-center gap-2 relative">
-                <Link href={ROUTES.DASHBOARD.PEOPLE}>
-                  <Button variant="outline">
+              <div className="relative flex w-full flex-col-reverse items-stretch gap-2 sm:w-auto sm:flex-row sm:items-center">
+                <Link href={ROUTES.DISCOVER_TYPE('profiles')} className="w-full sm:w-auto">
+                  <Button variant="outline" className="w-full sm:w-auto">
                     <Users className="w-4 h-4 mr-2" /> Discover People
                   </Button>
                 </Link>
-                <div className="relative">
-                  <Button variant="accent" onClick={() => setShowShare(!showShare)}>
-                    <Share2 className="w-4 h-4 mr-2" /> Share My Profile
-                  </Button>
-                  {showShare && (
-                    <div className="absolute right-0 mt-2 z-50">
-                      <ProfileShare
-                        username={profile?.username || user?.id || ''}
-                        profileName={profile?.name || profile?.username || 'My Profile'}
-                        profileBio={profile?.bio || undefined}
-                        onClose={() => setShowShare(false)}
-                      />
-                    </div>
-                  )}
-                </div>
+                {profileUsername ? (
+                  <div className="relative w-full sm:w-auto">
+                    <Button
+                      variant="accent"
+                      className="w-full sm:w-auto"
+                      onClick={() => setShowShare(!showShare)}
+                    >
+                      <Share2 className="w-4 h-4 mr-2" /> Share My Profile
+                    </Button>
+                    {showShare && (
+                      <div className="absolute right-0 z-50 mt-2 max-w-[calc(100vw-2rem)]">
+                        <ProfileShare
+                          username={profileUsername}
+                          profileName={profile?.name || profileUsername}
+                          profileBio={profile?.bio || undefined}
+                          onClose={() => setShowShare(false)}
+                        />
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <Link
+                    href={
+                      user
+                        ? ROUTES.DASHBOARD.INFO_EDIT
+                        : authLoginPath(ROUTES.CHANNEL)
+                    }
+                    className="w-full sm:w-auto"
+                  >
+                    <Button variant="accent" className="w-full sm:w-auto">
+                      {user ? 'Set up my profile' : 'Create my profile'}
+                    </Button>
+                  </Link>
+                )}
               </div>
             </div>
           </CardContent>

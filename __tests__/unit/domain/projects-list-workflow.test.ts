@@ -4,8 +4,8 @@ jest.mock('@/lib/supabase/server', () => ({
   createServerClient: jest.fn(),
 }));
 
-jest.mock('@/services/actors/getOrCreateUserActor', () => ({
-  getOrCreateUserActor: jest.fn().mockResolvedValue({ id: 'a1' }),
+jest.mock('@/domain/actors', () => ({
+  getUserActorId: jest.fn().mockResolvedValue('a1'),
 }));
 
 // Funding enrichment converts settled BTC totals via the currency service —

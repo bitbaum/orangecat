@@ -35,7 +35,7 @@ export function DashboardQuickActions() {
               Manage Projects
             </Button>
           </Link>
-          <Link href={ROUTES.PROFILE.SELF}>
+          <Link href={ROUTES.DASHBOARD.INFO_EDIT}>
             <Button variant="outline" className="min-h-11 w-full justify-start">
               <Star className="w-4 h-4 mr-2" />
               Update Profile

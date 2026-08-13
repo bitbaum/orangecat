@@ -125,12 +125,12 @@ export default function UserProfileDropdown({
   const handlePublicProfileClick = () => {
     const username = profile?.username;
     if (username) {
-      handleNavigation(ROUTES.PROFILE.SELF);
+      handleNavigation(ROUTES.PROFILES.VIEW(username));
     } else {
       if (variant === 'advanced') {
         toast.error('Please set up your username first');
       }
-      handleNavigation('/profile');
+      handleNavigation(ROUTES.DASHBOARD.INFO_EDIT);
     }
   };
 

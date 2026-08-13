@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { ENTITY_REGISTRY } from '@/config/entity-registry';
+import { ROUTES } from '@/config/routes';
 
 /**
  * Redirect from old /project/[id] route to new /projects/[id] route
@@ -13,5 +13,5 @@ import { ENTITY_REGISTRY } from '@/config/entity-registry';
  */
 export default async function ProjectRedirectPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  redirect(`${ENTITY_REGISTRY['project'].publicBasePath}/${id}`);
+  redirect(ROUTES.PROJECTS.VIEW(id));
 }

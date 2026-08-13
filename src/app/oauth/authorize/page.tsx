@@ -22,6 +22,7 @@ import {
   createAuthCode,
 } from '@/services/auth/oauthProvider';
 import { ConsentForm } from './ConsentForm';
+import { authLoginPath } from '@/lib/navigation/safe-return-path';
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -96,7 +97,7 @@ export default async function AuthorizePage({
         nonce,
       }).filter(([, v]) => v) as [string, string][]
     ).toString()}`;
-    redirect(`/auth?from=${encodeURIComponent(returnTo)}`);
+    redirect(authLoginPath(returnTo));
   }
 
   // 4) Trusted client + remembered grant → skip the screen, mint + redirect.

@@ -84,7 +84,7 @@ export default function SocialTimeline({
     invalidateTimelineCache,
   } = useSocialTimeline({ mode, defaultSort, onOptimisticUpdate });
 
-  if (hydrated && authCheckComplete && !isLoading && !user) {
+  if (mode !== 'community' && hydrated && authCheckComplete && !isLoading && !user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-surface-page">
         <div className="text-center">

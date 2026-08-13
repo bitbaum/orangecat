@@ -79,13 +79,13 @@ export default function AuthPage() {
         </Link>
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
-            <h2 className="text-2xl font-semibold mb-2 text-fg-primary">
+            <h1 className="text-2xl font-semibold mb-2 text-fg-primary">
               {mode === 'login'
                 ? 'Welcome back'
                 : mode === 'register'
                   ? 'Get started'
                   : 'Reset password'}
-            </h2>
+            </h1>
             <p className="text-fg-secondary">
               {mode === 'login'
                 ? `Sign in to your ${APP_NAME} account`

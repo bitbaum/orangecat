@@ -51,7 +51,12 @@ export function hrefForHit(hit: GlobalSearchHit): string {
     case 'event':
       return ROUTES.EVENTS.VIEW(hit.id);
     case 'profile':
-      return ROUTES.PROFILES.VIEW((hit.subtitle ?? '').replace(/^@/, '') || hit.id);
+      {
+        const username = (hit.subtitle ?? '').replace(/^@/, '').trim();
+        return username
+          ? ROUTES.PROFILES.VIEW(username)
+          : ROUTES.DISCOVER_TYPE('profiles');
+      }
     default:
       return ROUTES.DISCOVER;
   }

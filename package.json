@@ -36,6 +36,7 @@
     "verify": "npm run ci:docs && npm run type-check && npm run check:sizes && npm run audit:routes && npm run lint && npm run check:duplication && npm run test:unit -- --watchAll=false",
     "audit:schema": "node scripts/db/audit-schema-drift.mjs",
     "audit:routes": "node scripts/audit-routes.mjs",
+    "type-check:route-audit": "tsc -p tsconfig.route-audit.json --pretty false",
     "gen:types": "bash scripts/db/gen-types.sh",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -97,6 +98,8 @@
     "test:smoke": "BASE_URL=http://localhost:3000 playwright test tests/e2e/smoke.spec.ts --reporter=list",
     "test:e2e:matrix": "playwright test tests/e2e/workflow-matrix.spec.ts --project=chromium --reporter=line",
     "test:e2e:matrix:p0": "playwright test tests/e2e/workflow-matrix.spec.ts --project=chromium --grep @p0 --reporter=line",
+    "test:e2e:route-audit": "playwright test tests/e2e/responsive-route-inventory.spec.ts tests/e2e/canonical-route-aliases.spec.ts tests/e2e/key-user-journeys.spec.ts --project=chromium --project=mobile-375 --project=mobile-390 --workers=1 --reporter=line",
+    "test:e2e:route-audit:strict": "ROUTE_AUDIT_STRICT=1 npm run test:e2e:route-audit",
     "db:audit": "node scripts/db-audit.mjs"
   },
   "dependencies": {
@@ -188,6 +191,7 @@
     "@types/react-dom": "^19.2.4",
     "@typescript-eslint/eslint-plugin": "^8.61.0",
     "@typescript-eslint/parser": "^8.46.0",
+    "axe-core": "^4.11.2",
     "chalk": "^5.4.1",
     "concurrently": "^9.1.2",
     "dotenv": "^16.5.0",

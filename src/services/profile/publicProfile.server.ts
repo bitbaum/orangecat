@@ -11,7 +11,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { getTableName } from '@/config/entity-registry';
 import { ENTITY_STATUS } from '@/config/database-constants';
-import { getOrCreateUserActor } from '@/services/actors/getOrCreateUserActor';
+import { getUserActorId } from '@/domain/actors';
 import { applyProfilePrivacy } from '@/config/profile-privacy';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 
@@ -169,13 +169,15 @@ export async function getPublicProfileByIdentifier(
   const resolvedUserId = userId || profile.id;
   let projectCount = 0;
   try {
-    const actor = await getOrCreateUserActor(resolvedUserId);
-    const { count } = await supabase
-      .from(getTableName('project'))
-      .select('*', { count: 'exact', head: true })
-      .eq('actor_id', actor.id)
-      .neq('status', ENTITY_STATUS.DRAFT); // Exclude drafts from public view
-    projectCount = count || 0;
+    const actorId = await getUserActorId(supabase, resolvedUserId);
+    if (actorId) {
+      const { count } = await supabase
+        .from(getTableName('project'))
+        .select('*', { count: 'exact', head: true })
+        .eq('actor_id', actorId)
+        .neq('status', ENTITY_STATUS.DRAFT); // Exclude drafts from public view
+      projectCount = count || 0;
+    }
   } catch {
     // Non-fatal: profile still returned without count
   }

@@ -12,7 +12,7 @@ import { createServerClient } from '@/lib/supabase/server';
 import { logger } from '@/utils/logger';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { createEntity } from '@/domain/base/entityService';
-import { getOrCreateUserActor } from '@/services/actors/getOrCreateUserActor';
+import { getUserActorId } from '@/domain/actors';
 import type { WishlistFormData } from '@/lib/validation';
 
 export async function listWishlistsPage(
@@ -32,8 +32,13 @@ export async function listWishlistsPage(
   let query = supabase.from(DATABASE_TABLES.WISHLIST_WITH_STATS).select('*', { count: 'exact' });
 
   if (userId) {
-    const actor = await getOrCreateUserActor(userId);
-    query = query.eq('actor_id', actor.id);
+    // A list request must not provision an actor. If the profile has no actor,
+    // it cannot own wishlist rows yet, so the honest result is an empty page.
+    const actorId = await getUserActorId(supabase, userId);
+    if (!actorId) {
+      return { items: [], total: 0 };
+    }
+    query = query.eq('actor_id', actorId);
   }
 
   // Only the owner can see private/inactive wishlists. Anonymous or

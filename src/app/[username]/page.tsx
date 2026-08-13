@@ -44,5 +44,5 @@ export default async function UsernameShortlinkPage({
     notFound();
   }
 
-  redirect(ROUTES.PROFILES.VIEW(encodeURIComponent(match.username)));
+  redirect(ROUTES.PROFILES.VIEW(match.username));
 }

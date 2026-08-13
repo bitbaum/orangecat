@@ -16,6 +16,7 @@ import { GRADIENTS } from '@/config/gradients';
 import Button from '@/components/ui/Button';
 import AvatarLink from '@/components/ui/AvatarLink';
 import type { Conversation, Participant } from '@/features/messaging/types';
+import { optionalPublicProfilePath } from '@/config/public-profile-path';
 
 interface MessageHeaderProps {
   conversation: Conversation;
@@ -70,6 +71,7 @@ function getPrimaryParticipant(
 export default function MessageHeader({ conversation, currentUserId, onBack }: MessageHeaderProps) {
   const displayName = getDisplayName(conversation, currentUserId);
   const primaryParticipant = getPrimaryParticipant(conversation, currentUserId);
+  const profileHref = optionalPublicProfilePath(primaryParticipant?.username);
 
   const subtitle = conversation.is_group
     ? `${conversation.participants?.length || 0} members`
@@ -109,17 +111,8 @@ export default function MessageHeader({ conversation, currentUserId, onBack }: M
         ) : null}
 
         <div className="min-w-0 flex-1">
-          {primaryParticipant && !conversation.is_group ? (
-            <Link
-              href={
-                primaryParticipant.username
-                  ? `/profiles/${encodeURIComponent(primaryParticipant.username)}`
-                  : primaryParticipant.user_id
-                    ? `/profiles/${encodeURIComponent(primaryParticipant.user_id)}`
-                    : '#'
-              }
-              className="hover:underline"
-            >
+          {profileHref ? (
+            <Link href={profileHref} className="hover:underline">
               <h2 className="truncate font-semibold text-fg-primary">{displayName}</h2>
             </Link>
           ) : (

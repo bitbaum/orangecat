@@ -14,6 +14,7 @@ import PeopleTabBar from './components/PeopleTabBar';
 import PersonCard from './components/PersonCard';
 import { usePeopleConnections } from './components/usePeopleConnections';
 import { ROUTES } from '@/config/routes';
+import { authLoginPath } from '@/lib/navigation/safe-return-path';
 
 export default function PeoplePage() {
   const { user, profile: currentProfile, isLoading: authLoading, hydrated, session } = useAuth();
@@ -36,7 +37,7 @@ export default function PeoplePage() {
   // Redirect if not authenticated
   useEffect(() => {
     if (hydrated && !authLoading && (!user || !session)) {
-      router.push(`${ROUTES.AUTH}?from=${ROUTES.DASHBOARD.PEOPLE}`);
+      router.push(authLoginPath(ROUTES.DASHBOARD.PEOPLE));
     }
   }, [user, session, hydrated, authLoading, router]);
 
@@ -73,13 +74,14 @@ export default function PeoplePage() {
         : 'No users found yet.';
 
   const discoverButton = (
-    <Link href={`${ROUTES.DISCOVER}?section=people`}>
+    <Link href={ROUTES.DISCOVER_TYPE('profiles')}>
       <Button>
         <Search className="w-4 h-4 mr-2" />
         Discover People
       </Button>
     </Link>
   );
+  const profileUsername = currentProfile?.username?.trim();
 
   return (
     <EntityListShell
@@ -87,15 +89,31 @@ export default function PeoplePage() {
       description="Connect with Bitcoin enthusiasts and easily access their profiles to send Bitcoin"
       headerActions={discoverButton}
     >
-      <InviteBanner
-        showShare={showShare}
-        onToggleShare={() => setShowShare(!showShare)}
-        onCloseShare={() => setShowShare(false)}
-        profileUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}/profiles/${currentProfile?.username || user.id}`}
-        profileUsername={currentProfile?.username || user.id}
-        profileName={currentProfile?.name || currentProfile?.username || 'My Profile'}
-        profileBio={currentProfile?.bio || undefined}
-      />
+      {profileUsername ? (
+        <InviteBanner
+          showShare={showShare}
+          onToggleShare={() => setShowShare(!showShare)}
+          onCloseShare={() => setShowShare(false)}
+          profileUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}${ROUTES.PROFILES.VIEW(profileUsername)}`}
+          profileUsername={profileUsername}
+          profileName={currentProfile?.name || profileUsername}
+          profileBio={currentProfile?.bio || undefined}
+        />
+      ) : (
+        <div className="mb-6 rounded-lg border border-default bg-surface-raised p-4 sm:p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="font-semibold text-fg-primary">Make your profile shareable</h2>
+              <p className="text-sm text-fg-secondary">
+                Choose a username before inviting people so your link always works.
+              </p>
+            </div>
+            <Link href={ROUTES.DASHBOARD.INFO_EDIT}>
+              <Button>Choose a username</Button>
+            </Link>
+          </div>
+        </div>
+      )}
 
       <PeopleTabBar
         activeTab={activeTab}

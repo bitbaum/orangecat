@@ -10,6 +10,7 @@
  */
 
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
+import { publicProfilePath } from '@/config/public-profile-path';
 
 /**
  * Route contexts categorize routes by their accessibility and purpose
@@ -284,6 +285,7 @@ export const ROUTES = {
     INTELLIGENT: '/onboarding/intelligent',
   },
   COMMUNITY: '/community',
+  CHANNEL: '/channel',
   ABOUT: '/about',
   HOW_IT_WORKS: '/how-it-works',
   BLOG: '/blog',
@@ -402,18 +404,9 @@ export const ROUTES = {
     // ROUTES.SETTINGS; AI settings at ROUTES.SETTINGS_AI.
   },
 
-  // Profile routes (authenticated - own profile)
-  PROFILE: {
-    SELF: '/profile',
-    VIEW: (username: string) => `/profile/${username}`,
-    EDIT: '/dashboard/info',
-    // Note: there is no /profile/settings page; account settings live at
-    // ROUTES.SETTINGS.
-  },
-
   // Public profile routes (shareable)
   PROFILES: {
-    VIEW: (username: string) => `/profiles/${username}`,
+    VIEW: publicProfilePath,
     ME: '/profiles/me',
   },
 

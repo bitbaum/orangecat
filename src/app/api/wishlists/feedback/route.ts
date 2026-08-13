@@ -19,6 +19,7 @@ import {
   apiRateLimited,
 } from '@/lib/api/standardResponse';
 import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
+import { getUserActorId } from '@/domain/actors';
 
 export const POST = withAuth(async (request: AuthenticatedRequest) => {
   try {
@@ -49,7 +50,8 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
     const wishlist = Array.isArray(wishlistItem.wishlists)
       ? wishlistItem.wishlists[0]
       : wishlistItem.wishlists;
-    if (wishlist?.actor_id === user.id) {
+    const actorId = await getUserActorId(supabase, user.id);
+    if (actorId && wishlist?.actor_id === actorId) {
       return apiForbidden('You cannot provide feedback on your own wishlist items');
     }
 

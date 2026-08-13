@@ -18,7 +18,7 @@ import {
   EntityType,
   getEntityMetadata,
 } from '@/config/entity-registry';
-import { getOrCreateUserActor } from '@/services/actors/getOrCreateUserActor';
+import { getUserActorId } from '@/domain/actors';
 import { ENTITY_STATUS } from '@/config/database-constants';
 import { enrichProjectsWithSettledFunding } from '@/services/wallets/project-funding';
 
@@ -85,8 +85,25 @@ export const GET = withOptionalAuth(async (request, context: RouteContext) => {
     // Resolve user_id to actor_id for entities that use actor-based ownership
     let filterValue = userId;
     if (userIdField === 'actor_id') {
-      const actor = await getOrCreateUserActor(userId);
-      filterValue = actor.id;
+      const actorId = await getUserActorId(supabase, userId);
+      if (!actorId) {
+        const metadata = getEntityMetadata(entityType as EntityType);
+        return apiSuccess(
+          {
+            data: [],
+            entityType,
+            metadata: {
+              name: metadata.name,
+              namePlural: metadata.namePlural,
+              icon: metadata.icon.name,
+              colorTheme: metadata.colorTheme,
+            },
+            counts: { total: 0 },
+          },
+          { cache: 'SHORT' }
+        );
+      }
+      filterValue = actorId;
     }
 
     // Build query

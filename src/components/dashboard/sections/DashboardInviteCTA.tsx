@@ -4,6 +4,8 @@ import { useState } from 'react';
 import Button from '@/components/ui/Button';
 import ProfileShare from '@/components/sharing/ProfileShare';
 import { Share2 } from 'lucide-react';
+import { ROUTES } from '@/config/routes';
+import { optionalPublicProfilePath } from '@/config/public-profile-path';
 
 interface DashboardInviteCTAProps {
   profile: {
@@ -11,14 +13,15 @@ interface DashboardInviteCTAProps {
     name?: string | null;
     bio?: string | null;
   } | null;
-  userId: string;
 }
 
 /**
  * DashboardInviteCTA - Invite friends and share profile section
  */
-export function DashboardInviteCTA({ profile, userId }: DashboardInviteCTAProps) {
+export function DashboardInviteCTA({ profile }: DashboardInviteCTAProps) {
   const [showShare, setShowShare] = useState(false);
+  const username = profile?.username?.trim() || null;
+  const hasPublicProfile = optionalPublicProfilePath(username) !== null;
 
   // Single CTA per card: Share. Copy-link lives inside ProfileShare;
   // Discover lives in the main nav. Three competing buttons were dilution.
@@ -33,20 +36,30 @@ export function DashboardInviteCTA({ profile, userId }: DashboardInviteCTAProps)
             Share your profile and start building your network
           </p>
         </div>
-        <Button
-          onClick={() => setShowShare(!showShare)}
-          size="sm"
-          className="min-h-11 bg-fg-primary text-fg-inverted hover:bg-fg-primary/90 shrink-0"
-        >
-          <Share2 className="w-4 h-4 mr-2" />
-          Share
-        </Button>
+        {hasPublicProfile ? (
+          <Button
+            onClick={() => setShowShare(!showShare)}
+            size="sm"
+            className="min-h-11 bg-fg-primary text-fg-inverted hover:bg-fg-primary/90 shrink-0"
+          >
+            <Share2 className="w-4 h-4 mr-2" />
+            Share
+          </Button>
+        ) : (
+          <Button
+            href={ROUTES.DASHBOARD.INFO_EDIT}
+            size="sm"
+            className="min-h-11 shrink-0"
+          >
+            Choose username
+          </Button>
+        )}
       </div>
-      {showShare && (
-        <div className="absolute right-4 top-full mt-2 z-50">
+      {showShare && hasPublicProfile && username && (
+        <div className="absolute right-4 top-full z-50 mt-2 max-w-[calc(100vw-2rem)]">
           <ProfileShare
-            username={profile?.username || userId}
-            profileName={profile?.name || profile?.username || 'My Profile'}
+            username={username}
+            profileName={profile?.name || username}
             profileBio={profile?.bio || undefined}
             onClose={() => setShowShare(false)}
           />

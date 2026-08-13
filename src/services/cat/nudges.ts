@@ -22,6 +22,7 @@
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { ROUTES } from '@/config/routes';
+import { publicProfilePath } from '@/config/public-profile-path';
 import { DEFAULT_FREE_MODEL_ID } from '@/config/ai-models';
 import { createOpenRouterService } from '@/services/ai';
 import { searchPlatform } from './platform-search';
@@ -527,7 +528,7 @@ or {"type":"connection","username":"<one of the provided usernames>","reason":"<
         title: c.title,
         body: String(p.reason || '').slice(0, 240),
         cta_label: c.cta,
-        cta_url: `/profiles/${p.username}`,
+        cta_url: publicProfilePath(p.username),
         dedupe_key: `connection:${p.username}`,
         score: 0.8,
       });

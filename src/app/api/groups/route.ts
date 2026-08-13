@@ -6,12 +6,12 @@
  *
  * Created: 2025-01-30
  * Last Modified: 2026-01-28
- * Last Modified Summary: Refactored to use withAuth middleware
+ * Last Modified Summary: Public reads with optional auth; writes remain authenticated
  */
 
 import { createGroupSchema } from '@/services/groups/validation';
 import { logger } from '@/utils/logger';
-import { withAuth, type AuthenticatedRequest } from '@/lib/api/withAuth';
+import { withAuth, withOptionalAuth, type AuthenticatedRequest } from '@/lib/api/withAuth';
 import type { CreateGroupInput } from '@/types/group';
 import {
   apiSuccess,
@@ -21,14 +21,16 @@ import {
   apiRateLimited,
 } from '@/lib/api/standardResponse';
 import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
+import { getAvailableGroups, getUserGroups } from '@/services/groups/queries/groups';
 
-export const GET = withAuth(async (request: AuthenticatedRequest) => {
+export const GET = withOptionalAuth(async request => {
   try {
-    const { supabase } = request;
+    const { user, supabase } = request;
 
     const searchParams = request.nextUrl.searchParams;
     const type = searchParams.get('type'); // 'circle', 'organization', etc.
     const category = searchParams.get('category');
+    const publicScope = searchParams.get('scope') === 'public';
     const page = parseInt(searchParams.get('page') || '1');
     // Accept both 'pageSize' and 'limit' for backward compatibility
     const pageSize = parseInt(searchParams.get('pageSize') || searchParams.get('limit') || '20');
@@ -40,8 +42,16 @@ export const GET = withAuth(async (request: AuthenticatedRequest) => {
     };
 
     // Pass the server-side supabase client so auth works in API route context
-    const { getUserGroups } = await import('@/services/groups/queries/groups');
-    const userGroupsResult = await getUserGroups(query, { page, pageSize }, supabase);
+    // Discovery is public, while a signed-in dashboard needs the member list.
+    // Keep both consumers on one endpoint and never make fixture discovery run
+    // a client page just to recover a public group slug.
+    const userGroupsResult = user && !publicScope
+      ? await getUserGroups(query, { page, pageSize }, supabase)
+      : await getAvailableGroups(
+          { ...query, is_public: true },
+          { page, pageSize },
+          supabase
+        );
 
     if (!userGroupsResult.success) {
       return apiInternalError(userGroupsResult.error || 'Failed to fetch groups');

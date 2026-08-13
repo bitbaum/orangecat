@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { formatRelativeTime } from '@/utils/dates';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { TIMELINE_CONTENT_LIMITS, TIMELINE_SURFACE } from '@/config/timeline';
+import { optionalPublicProfilePath } from '@/config/public-profile-path';
 
 const QUOTE_MAX_LENGTH = TIMELINE_CONTENT_LIMITS.quote;
 
@@ -58,14 +59,11 @@ export function RepostModal({
   const metadata = event.metadata as RepostMetadata | undefined;
   const originalAuthor = {
     name: metadata?.original_actor_name || event.actor.name || 'User',
-    username:
-      metadata?.original_actor_username ||
-      event.actor.username ||
-      metadata?.original_actor_id ||
-      '',
+    username: metadata?.original_actor_username || event.actor.username || '',
     id: metadata?.original_actor_id || event.actor.id,
     avatar: metadata?.original_actor_avatar || event.actor.avatar || null,
   };
+  const originalAuthorHref = optionalPublicProfilePath(originalAuthor.username);
 
   // Extract original body, stripping legacy separators
   const originalBody = (() => {
@@ -223,16 +221,18 @@ export function RepostModal({
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-                    <Link
-                      href={
-                        originalAuthor.username
-                          ? `/profiles/${originalAuthor.username}`
-                          : `/profiles/${originalAuthor.id}`
-                      }
-                      className="font-semibold text-sm text-fg-primary hover:underline"
-                    >
-                      {originalAuthor.name}
-                    </Link>
+                    {originalAuthorHref ? (
+                      <Link
+                        href={originalAuthorHref}
+                        className="font-semibold text-sm text-fg-primary hover:underline"
+                      >
+                        {originalAuthor.name}
+                      </Link>
+                    ) : (
+                      <span className="font-semibold text-sm text-fg-primary">
+                        {originalAuthor.name}
+                      </span>
+                    )}
                     {originalAuthor.username && (
                       <>
                         <span className="text-fg-secondary text-sm">

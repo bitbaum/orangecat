@@ -15,12 +15,12 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { getInitial } from '@/utils/string';
+import { ROUTES } from '@/config/routes';
 
 interface AvatarLinkProps {
   /**
-   * Username or user ID for the profile link
-   * If username is provided, uses /profiles/{username}
-   * Otherwise falls back to /profiles/{userId} or /profiles/me for current user
+   * Canonical username for the profile link. `userId` remains accepted for
+   * call-site compatibility but is never emitted as a public profile path.
    */
   username?: string | null;
   userId?: string | null;
@@ -64,7 +64,7 @@ interface AvatarLinkProps {
  */
 export default function AvatarLink({
   username,
-  userId,
+  userId: _userId,
   avatarUrl,
   name,
   size = 48,
@@ -72,35 +72,20 @@ export default function AvatarLink({
   showOnlineStatus = false,
   isCurrentUser = false,
 }: AvatarLinkProps) {
-  // Determine profile URL - prefer username, fallback to userId or /profiles/me
-  // Ensure username is a valid non-empty string before using it in URL
+  // Public profiles resolve by username only. An actor/user ID in this URL
+  // looks valid but always lands on not-found.
   const validUsername = username && typeof username === 'string' && username.trim().length > 0;
-  const validUserId = userId && typeof userId === 'string' && userId.trim().length > 0;
-
   const profileUrl = validUsername
-    ? `/profiles/${encodeURIComponent(username.trim())}`
-    : validUserId
-      ? `/profiles/${encodeURIComponent(userId.trim())}`
-      : isCurrentUser
-        ? '/profiles/me'
-        : '#';
+    ? ROUTES.PROFILES.VIEW(username.trim())
+    : isCurrentUser
+      ? ROUTES.PROFILES.ME
+      : null;
 
   const displayName = name || username || 'User';
   const initial = getInitial(displayName);
 
-  // Ensure href is always a valid string
-  const safeHref = typeof profileUrl === 'string' ? profileUrl : '#';
-
-  return (
-    <Link
-      href={safeHref}
-      className={cn(
-        'relative flex-shrink-0 inline-block transition-all duration-200',
-        'hover:ring-2 hover:ring-border-strong rounded-full',
-        className
-      )}
-      title={`View ${displayName}'s profile`}
-    >
+  const avatar = (
+    <>
       {avatarUrl ? (
         <Image
           src={avatarUrl}
@@ -126,6 +111,25 @@ export default function AvatarLink({
       {showOnlineStatus && (
         <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-status-positive border-2 border-card rounded-full" />
       )}
+    </>
+  );
+
+  const baseClassName = cn(
+    'relative flex-shrink-0 inline-block rounded-full transition-all duration-200',
+    className
+  );
+
+  return profileUrl ? (
+    <Link
+      href={profileUrl}
+      className={cn(baseClassName, 'hover:ring-2 hover:ring-border-strong')}
+      title={`View ${displayName}'s profile`}
+    >
+      {avatar}
     </Link>
+  ) : (
+    <span className={baseClassName} title={displayName}>
+      {avatar}
+    </span>
   );
 }

@@ -8,9 +8,50 @@ import { renderMarkdownToReact } from '@/utils/markdown';
 import { TIMELINE_SURFACE } from '@/config/timeline';
 import { getExternalAttribution } from '@/config/external-publish';
 import { ROUTES } from '@/config/routes';
+import { optionalPublicProfilePath } from '@/config/public-profile-path';
 
 interface PostContentProps {
   event: TimelineDisplayEvent;
+}
+
+interface RepostAuthorProps {
+  author: {
+    name: string;
+    username: string;
+    avatar: string;
+  };
+}
+
+function RepostAuthor({ author }: RepostAuthorProps) {
+  const profileHref = optionalPublicProfilePath(author.username);
+  const avatar = (
+    // eslint-disable-next-line @next/next/no-img-element -- avatar_url is a free-form user URL (any host); next/image would throw for hosts outside images.remotePatterns
+    <img src={author.avatar} alt={author.name} className="w-9 h-9 rounded-full" />
+  );
+
+  return (
+    <div className="flex items-start gap-3">
+      {profileHref ? (
+        <Link href={profileHref} className="flex-shrink-0">
+          {avatar}
+        </Link>
+      ) : (
+        <span className="flex-shrink-0">{avatar}</span>
+      )}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1 flex-wrap">
+          {profileHref ? (
+            <Link href={profileHref} className="font-semibold text-fg-primary hover:underline">
+              {author.name}
+            </Link>
+          ) : (
+            <span className="font-semibold text-fg-primary">{author.name}</span>
+          )}
+          {author.username && <span className="text-fg-secondary text-sm">@{author.username}</span>}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function PostContent({ event }: PostContentProps) {
@@ -163,29 +204,7 @@ export function PostContent({ event }: PostContentProps) {
       {isQuoteRepost && originalEventId && (
         <div className={`mt-3 overflow-hidden ${TIMELINE_SURFACE.panel}`}>
           <div className="p-3 sm:p-4 space-y-2">
-            <div className="flex items-start gap-3">
-              <Link href={`/profiles/${originalAuthor.username}`} className="flex-shrink-0">
-                {/* eslint-disable-next-line @next/next/no-img-element -- avatar_url is a free-form user URL (any host); next/image would throw for hosts outside images.remotePatterns */}
-                <img
-                  src={originalAuthor.avatar}
-                  alt={originalAuthor.name}
-                  className="w-9 h-9 rounded-full"
-                />
-              </Link>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1 flex-wrap">
-                  <Link
-                    href={`/profiles/${originalAuthor.username}`}
-                    className="font-semibold text-fg-primary hover:underline"
-                  >
-                    {originalAuthor.name}
-                  </Link>
-                  {originalAuthor.username && (
-                    <span className="text-fg-secondary text-sm">@{originalAuthor.username}</span>
-                  )}
-                </div>
-              </div>
-            </div>
+            <RepostAuthor author={originalAuthor} />
             {originalDescription ? (
               <div className="text-fg-primary text-sm leading-relaxed whitespace-pre-line break-words">
                 {renderMarkdownToReact(originalDescription)}
@@ -209,29 +228,7 @@ export function PostContent({ event }: PostContentProps) {
       {isRepost && !isQuoteRepost && event.metadata?.original_event_id && (
         <div className={`mt-2 overflow-hidden ${TIMELINE_SURFACE.panel}`}>
           <div className="p-3 sm:p-4 space-y-2">
-            <div className="flex items-start gap-3">
-              <Link href={`/profiles/${originalAuthor.username}`} className="flex-shrink-0">
-                {/* eslint-disable-next-line @next/next/no-img-element -- avatar_url is a free-form user URL (any host); next/image would throw for hosts outside images.remotePatterns */}
-                <img
-                  src={originalAuthor.avatar}
-                  alt={originalAuthor.name}
-                  className="w-9 h-9 rounded-full"
-                />
-              </Link>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1 flex-wrap">
-                  <Link
-                    href={`/profiles/${originalAuthor.username}`}
-                    className="font-semibold text-fg-primary hover:underline"
-                  >
-                    {originalAuthor.name}
-                  </Link>
-                  {originalAuthor.username && (
-                    <span className="text-fg-secondary text-sm">@{originalAuthor.username}</span>
-                  )}
-                </div>
-              </div>
-            </div>
+            <RepostAuthor author={originalAuthor} />
             {originalDescription && (
               <div className="text-fg-primary text-sm leading-relaxed whitespace-pre-line break-words">
                 {renderMarkdownToReact(originalDescription)}

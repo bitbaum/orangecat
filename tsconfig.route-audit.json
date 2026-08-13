@@ -1,0 +1,35 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "incremental": false,
+    "plugins": []
+  },
+  "include": [
+    "tests/e2e/route-inventory.ts",
+    "tests/e2e/runtime-route-fixture-helpers.ts",
+    "tests/e2e/runtime-route-fixtures.ts",
+    "tests/e2e/responsive-route-inventory.spec.ts",
+    "src/app/(authenticated)/dashboard/wishlists/items/[itemId]/page.tsx",
+    "src/app/api/groups/route.ts",
+    "src/app/api/groups/[slug]/events/route.ts",
+    "src/app/api/groups/[slug]/proposals/route.ts",
+    "src/app/api/profiles/[userId]/entities/[entityType]/route.ts",
+    "src/app/api/profiles/[userId]/projects/route.ts",
+    "src/app/api/profiles/[userId]/wishlist-tiers/route.ts",
+    "src/app/api/research/route.ts",
+    "src/app/api/users/me/stats/route.ts",
+    "src/app/api/wishlists/feedback/route.ts",
+    "src/app/api/wishlists/items/[itemId]/proofs/route.ts",
+    "src/app/api/wishlists/proofs/route.ts",
+    "src/config/route-access.ts",
+    "src/config/route-redirects.ts",
+    "src/domain/base/entityService.ts",
+    "src/domain/commerce/service.ts",
+    "src/domain/groups/helpers.server.ts",
+    "src/domain/wishlists/service.ts",
+    "src/lib/api/entityListHandler.ts",
+    "src/services/ai/assistant-service.ts",
+    "src/services/profile/publicProfile.server.ts"
+  ],
+  "exclude": ["node_modules", ".next", "dist", "build", "coverage"]
+}

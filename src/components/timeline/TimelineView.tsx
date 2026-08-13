@@ -7,6 +7,7 @@ import Button from '@/components/ui/Button';
 import { useTimelineView } from './useTimelineView';
 import type { TimelineDisplayEvent } from '@/types/timeline';
 import { TIMELINE_COPY, TIMELINE_SURFACE } from '@/config/timeline';
+import { authLoginPath } from '@/lib/navigation/safe-return-path';
 
 export interface TimelineViewProps {
   feedType: 'journey' | 'community' | 'profile' | 'project';
@@ -152,7 +153,7 @@ export default function TimelineView({
                     typeof window !== 'undefined'
                       ? window.location.pathname + window.location.search
                       : '/profiles/me';
-                  window.location.href = `/auth?redirect=${encodeURIComponent(redirect)}`;
+                  window.location.href = authLoginPath(redirect);
                 }}
                 className={TIMELINE_SURFACE.buttonPrimary}
               >

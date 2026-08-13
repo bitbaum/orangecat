@@ -23,6 +23,7 @@ import {
   apiRateLimited,
 } from '@/lib/api/standardResponse';
 import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
+import { getUserActorId } from '@/domain/actors';
 
 // POST /api/wishlists/proofs - Create proof of purchase/wishlist fulfillment
 export const POST = withAuth(async (request: AuthenticatedRequest) => {
@@ -58,7 +59,8 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
     const wishlist = Array.isArray(wishlistItem.wishlists)
       ? wishlistItem.wishlists[0]
       : wishlistItem.wishlists;
-    if (!wishlist || wishlist.actor_id !== user.id) {
+    const actorId = await getUserActorId(supabase, user.id);
+    if (!actorId || !wishlist || wishlist.actor_id !== actorId) {
       return apiForbidden('You can only add proofs to your own wishlists');
     }
 

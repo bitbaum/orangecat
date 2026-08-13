@@ -1,3 +1,5 @@
+import { publicProfilePath } from '@/config/public-profile-path';
+
 const DEFAULT_ORANGECAT_ORIGIN = 'https://www.orangecat.ch';
 
 function publicUrl(name: string, fallback: string): URL {
@@ -10,10 +12,7 @@ function publicUrl(name: string, fallback: string): URL {
 }
 
 const orangeCatOrigin = publicUrl('NEXT_PUBLIC_ORANGECAT_URL', DEFAULT_ORANGECAT_ORIGIN);
-const fleetCrownOrigin = publicUrl(
-  'NEXT_PUBLIC_FLEETCROWN_URL',
-  'https://fleetcrown.orangecat.ch'
-);
+const fleetCrownOrigin = publicUrl('NEXT_PUBLIC_FLEETCROWN_URL', 'https://fleetcrown.orangecat.ch');
 
 function orangeCatPage(path: string): string {
   return new URL(path, orangeCatOrigin).toString();
@@ -25,10 +24,11 @@ export const ECOSYSTEM = {
   orangeCat: {
     title: 'OrangeCat',
     projectId:
-      process.env.NEXT_PUBLIC_ORANGECAT_PROJECT_ID ??
-      'cb093f00-8745-4579-98df-050ebfb37181',
+      process.env.NEXT_PUBLIC_ORANGECAT_PROJECT_ID ?? 'cb093f00-8745-4579-98df-050ebfb37181',
     siteUrl: orangeCatOrigin.toString(),
-    profileUrl: orangeCatPage('/profile/mao-nakamoto'),
+    // Keep this bootstrap identity path local: importing the route registry
+    // here creates a routes → entity-registry → ecosystem cycle at runtime.
+    profileUrl: orangeCatPage(publicProfilePath('mao-nakamoto')),
   },
   fleetCrown: {
     title: 'FleetCrown',

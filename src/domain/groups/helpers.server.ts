@@ -9,21 +9,21 @@ import { DATABASE_TABLES } from '@/config/database-tables';
 type AnyClient = any;
 
 /**
- * Resolve a group by slug. Returns { id, name } or null if not found.
+ * Resolve the group fields shared by server routes, or null if not found.
  */
 export async function resolveGroupBySlug(
   supabase: AnyClient,
   slug: string
-): Promise<{ id: string; name?: string } | null> {
+): Promise<{ id: string; name?: string; is_public: boolean } | null> {
   const { data, error } = await supabase
     .from(DATABASE_TABLES.GROUPS)
-    .select('id, name')
+    .select('id, name, is_public')
     .eq('slug', slug)
     .single();
   if (error || !data) {
     return null;
   }
-  return data as { id: string; name?: string };
+  return data as { id: string; name?: string; is_public: boolean };
 }
 
 /**

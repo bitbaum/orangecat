@@ -3,7 +3,7 @@ import { apiSuccess, apiInternalError } from '@/lib/api/standardResponse';
 import { validateUUID, getValidationError } from '@/lib/api/validation';
 import { withOptionalAuth } from '@/lib/api/withAuth';
 import { getTableName } from '@/config/entity-registry';
-import { getOrCreateUserActor } from '@/services/actors/getOrCreateUserActor';
+import { getUserActorId } from '@/domain/actors';
 import { STORAGE_BUCKETS } from '@/config/database-tables';
 import { ENTITY_STATUS } from '@/config/database-constants';
 import { enrichProjectsWithSettledFunding } from '@/services/wallets/project-funding';
@@ -26,7 +26,10 @@ export const GET = withOptionalAuth(async (request, context: RouteContext) => {
 
     // Get user's projects (simplified MVP - no organizations)
     // Exclude draft projects from public profiles - drafts should only show in dashboards
-    const actor = await getOrCreateUserActor(userId);
+    const actorId = await getUserActorId(supabase, userId);
+    if (!actorId) {
+      return apiSuccess({ data: [], counts: { total: 0 } }, { cache: 'SHORT' });
+    }
     const { data: projects, error: projectsError } = await supabase
       .from(getTableName('project'))
       .select(
@@ -47,7 +50,7 @@ export const GET = withOptionalAuth(async (request, context: RouteContext) => {
         project_media(id, storage_path, position)
       `
       )
-      .eq('actor_id', actor.id)
+      .eq('actor_id', actorId)
       .neq('status', ENTITY_STATUS.DRAFT) // Exclude drafts from public profile view
       .order('created_at', { ascending: false });
 

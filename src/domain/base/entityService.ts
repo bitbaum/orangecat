@@ -5,7 +5,7 @@
  * standard CRUD operations that work with any entity type from the registry.
  *
  * Every entity service shares the same core pattern:
- * 1. Resolve userId -> actorId via getOrCreateUserActor
+ * 1. Resolve userId -> actorId without writes for reads; create it for mutations
  * 2. Use getTableName from entity-registry for table access
  * 3. Insert/update/delete with actor_id ownership checks
  *
@@ -18,6 +18,7 @@
 import { createServerClient } from '@/lib/supabase/server';
 import { type EntityType, getTableName } from '@/config/entity-registry';
 import { getOrCreateUserActor } from '@/services/actors/getOrCreateUserActor';
+import { getUserActorId } from '@/domain/actors';
 import { logger } from '@/utils/logger';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { looseClient } from '@/lib/supabase/untyped';
@@ -81,8 +82,12 @@ export async function listEntityPage<T = Record<string, unknown>>(
   // Resolve actor if userId provided
   let actorId: string | null = null;
   if (userId) {
-    const actor = await getOrCreateUserActor(userId);
-    actorId = actor.id;
+    // Listing must stay read-only. A user without an actor owns no rows yet;
+    // actor creation belongs to createEntity and other explicit mutations.
+    actorId = await getUserActorId(supabase, userId);
+    if (!actorId) {
+      return { items: [], total: 0 };
+    }
   }
 
   // Build data query

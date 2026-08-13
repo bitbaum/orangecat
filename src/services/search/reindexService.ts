@@ -17,6 +17,7 @@ import { getEntityMetadata, type EntityType } from '@/config/entity-registry';
 import { logger } from '@/utils/logger';
 import { introduceMatches } from '@/services/match/reverseMatch';
 import { clamp01, recency, isVerified, profileQuality, causeQuality } from './reindex-scoring';
+import { publicProfilePath } from '@/config/public-profile-path';
 import {
   buildCorpus,
   buildWishlistText,
@@ -82,7 +83,7 @@ export async function reconcileOne(
           entity_type: 'profile',
           entity_id: data.id,
           title: data.name || data.username,
-          url: `/profiles/${data.username}`,
+          url: publicProfilePath(data.username),
           text,
           updated_at: data.updated_at ?? null,
           quality: profileQuality({

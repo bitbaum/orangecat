@@ -58,18 +58,22 @@ export function LearningPathCard({ path }: LearningPathCardProps) {
           </div>
         </div>
 
-        <Link
-          href={path.status === 'available' ? path.href : '#'}
-          className={`inline-flex items-center justify-center w-full px-4 py-2 rounded-lg font-medium transition-colors ${
-            path.status === 'available'
-              ? 'bg-bitcoinOrange hover:bg-bitcoinOrange/90 text-white'
-              : 'bg-surface-raised text-fg-secondary cursor-not-allowed'
-          }`}
-          {...(path.status === 'coming-soon' ? { 'aria-disabled': true } : {})}
-        >
-          {path.status === 'available' ? 'Start Learning' : 'Learn More'}
-          {path.status === 'available' && <ChevronRight className="w-4 h-4 ml-2" />}
-        </Link>
+        {path.status === 'available' ? (
+          <Link
+            href={path.href}
+            className="inline-flex w-full items-center justify-center rounded-lg bg-bitcoinOrange px-4 py-2 font-medium text-white transition-colors hover:bg-bitcoinOrange/90"
+          >
+            Start Learning
+            <ChevronRight className="w-4 h-4 ml-2" />
+          </Link>
+        ) : (
+          <span
+            className="inline-flex w-full cursor-not-allowed items-center justify-center rounded-lg bg-surface-raised px-4 py-2 font-medium text-fg-secondary"
+            aria-disabled="true"
+          >
+            Coming soon
+          </span>
+        )}
       </CardContent>
     </Card>
   );

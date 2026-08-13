@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 
 const path = require('path');
+const routeAliases = require('./src/config/route-aliases.json');
 const withMDX = require('@next/mdx')({
   extension: /\.mdx?$/,
   options: {
@@ -27,6 +28,11 @@ const nextConfig = {
 
   // Fix workspace root detection to prevent watching entire home directory
   outputFileTracingRoot: __dirname,
+
+  // The route audit deliberately addresses the local server over IPv4. Allow
+  // that development origin so Next.js does not turn its own HMR requests into
+  // misleading browser-console failures during the strict console pass.
+  allowedDevOrigins: ['127.0.0.1'],
 
   // Support MDX files
   pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'md', 'mdx'],
@@ -89,76 +95,11 @@ const nextConfig = {
   // Generate ETags for better caching (disabled in dev to prevent stale content)
   generateEtags: process.env.NODE_ENV === 'production',
 
-  // Redirects for common auth URLs
+  // Legacy / guessable aliases have one SSOT. Browser tests import the same
+  // JSON, so adding a compatibility URL without testing its canonical outcome
+  // is not possible by accident.
   async redirects() {
-    return [
-      // Auth redirects - common patterns to canonical /auth page
-      {
-        source: '/login',
-        destination: '/auth?mode=login',
-        permanent: true,
-      },
-      {
-        source: '/signin',
-        destination: '/auth?mode=login',
-        permanent: true,
-      },
-      {
-        source: '/register',
-        destination: '/auth?mode=register',
-        permanent: true,
-      },
-      {
-        source: '/signup',
-        destination: '/auth?mode=register',
-        permanent: true,
-      },
-      {
-        source: '/auth/signin',
-        destination: '/auth?mode=login',
-        permanent: true,
-      },
-      {
-        source: '/auth/signup',
-        destination: '/auth?mode=register',
-        permanent: true,
-      },
-      {
-        source: '/auth/login',
-        destination: '/auth?mode=login',
-        permanent: true,
-      },
-      {
-        source: '/auth/register',
-        destination: '/auth?mode=register',
-        permanent: true,
-      },
-      // Legacy per-assistant chat routes — superseded by /dashboard/cat.
-      // No inbound links from the app; preserved here in case bookmarks exist.
-      {
-        source: '/ai-chat/:path*',
-        destination: '/dashboard/cat',
-        permanent: true,
-      },
-      // Guessable aliases for the flagship Cat surface. "The Cat is the
-      // interface" — someone typing orangecat.ch/cat must land on the Cat,
-      // never on a 404. Same alias policy as the /login → /auth block above.
-      {
-        source: '/cat',
-        destination: '/dashboard/cat',
-        permanent: true,
-      },
-      {
-        source: '/chat',
-        destination: '/dashboard/cat',
-        permanent: true,
-      },
-      {
-        source: '/ai',
-        destination: '/dashboard/cat',
-        permanent: true,
-      },
-    ];
+    return routeAliases;
   },
 
   // Enhanced headers for performance

@@ -13,6 +13,7 @@ import { applyRateLimitHeaders, rateLimitSocialAsync, retryAfterSeconds } from '
 import { auditSuccess, AUDIT_ACTIONS } from '@/lib/api/auditLog';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { NotificationDispatcher } from '@/services/notifications/dispatcher';
+import { publicProfilePath } from '@/config/public-profile-path';
 
 const followBodySchema = z.object({
   following_id: z
@@ -104,7 +105,7 @@ async function handleFollow(request: AuthenticatedRequest) {
         message: `${followerName} started following you on OrangeCat.`,
         sourceEntityType: 'profile',
         sourceEntityId: user.id,
-        actionUrl: followerUsername ? `/profiles/${followerUsername}` : undefined,
+        actionUrl: followerUsername ? publicProfilePath(followerUsername) : undefined,
       });
     } catch (notificationError) {
       logger.error('Failed to dispatch follow notification', {

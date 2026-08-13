@@ -20,6 +20,7 @@ import { getInitial } from '@/utils/string';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { authLoginPath } from '@/lib/navigation/safe-return-path';
 
 interface ProjectHeaderProps {
   project: {
@@ -51,17 +52,17 @@ export default function ProjectHeader({
   const { user } = useAuth();
   const router = useRouter();
   const statusInfo = getStatusInfo(project.status);
+  // Public profiles are addressed by username, never by actor/user id. An id
+  // fallback looks plausible but resolves to a guaranteed 404.
   const creatorProfileUrl = project.profiles?.username
-    ? ROUTES.PROFILE.VIEW(project.profiles.username)
-    : project.profiles?.id
-      ? ROUTES.PROFILE.VIEW(project.profiles.id)
-      : ROUTES.PROFILE.VIEW(project.user_id);
+    ? ROUTES.PROFILES.VIEW(project.profiles.username)
+    : null;
 
   // Handle contact/message the project creator
   const handleContact = async () => {
     if (!user) {
       toast.info('Please sign in to send a message');
-      router.push(`${ROUTES.AUTH_LOGIN}&from=${ROUTES.PROJECTS.VIEW(project.id)}`);
+      router.push(authLoginPath(ROUTES.PROJECTS.VIEW(project.id)));
       return;
     }
 
@@ -115,35 +116,53 @@ export default function ProjectHeader({
           {project.profiles ? (
             <div className="flex items-center gap-3 mb-3">
               <div className="flex items-center gap-2">
-                <Link
-                  href={creatorProfileUrl}
-                  className="hover:opacity-80 transition-opacity"
-                  aria-label={`View ${project.profiles.name || project.profiles.username || 'creator'}'s profile`}
-                >
-                  {project.profiles.avatar_url ? (
-                    <Image
-                      src={project.profiles.avatar_url}
-                      alt={project.profiles.name || project.profiles.username || 'Creator'}
-                      width={32}
-                      height={32}
-                      className="rounded-full cursor-pointer"
-                    />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center bg-surface-raised text-fg-secondary font-semibold text-sm cursor-pointer hover:opacity-80 transition-opacity">
-                      {getInitial(project.profiles.name || project.profiles.username, 'A')}
-                    </div>
-                  )}
-                </Link>
-                <div>
-                  <p className="text-sm text-fg-secondary">Created by</p>
+                {creatorProfileUrl ? (
                   <Link
                     href={creatorProfileUrl}
-                    className="text-sm font-semibold text-fg-primary hover:underline underline-offset-4"
+                    className="hover:opacity-80 transition-opacity"
+                    aria-label={`View ${project.profiles.name || project.profiles.username || 'creator'}'s profile`}
                   >
-                    {project.profiles.name ||
-                      project.profiles.username ||
-                      `User ${project.profiles.id?.substring(0, 8) || 'Unknown'}`}
+                    {project.profiles.avatar_url ? (
+                      <Image
+                        src={project.profiles.avatar_url}
+                        alt={project.profiles.name || project.profiles.username || 'Creator'}
+                        width={32}
+                        height={32}
+                        className="rounded-full cursor-pointer"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center bg-surface-raised text-fg-secondary font-semibold text-sm cursor-pointer hover:opacity-80 transition-opacity">
+                        {getInitial(project.profiles.name || project.profiles.username, 'A')}
+                      </div>
+                    )}
                   </Link>
+                ) : project.profiles.avatar_url ? (
+                  <Image
+                    src={project.profiles.avatar_url}
+                    alt={project.profiles.name || 'Creator'}
+                    width={32}
+                    height={32}
+                    className="rounded-full"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center bg-surface-raised text-fg-secondary font-semibold text-sm">
+                    {getInitial(project.profiles.name, 'A')}
+                  </div>
+                )}
+                <div>
+                  <p className="text-sm text-fg-secondary">Created by</p>
+                  {creatorProfileUrl ? (
+                    <Link
+                      href={creatorProfileUrl}
+                      className="text-sm font-semibold text-fg-primary hover:underline underline-offset-4"
+                    >
+                      {project.profiles.name || project.profiles.username}
+                    </Link>
+                  ) : (
+                    <span className="text-sm font-semibold text-fg-primary">
+                      {project.profiles.name || 'Creator'}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -155,12 +174,9 @@ export default function ProjectHeader({
               </div>
               <div>
                 <p className="text-sm text-fg-secondary">Created by</p>
-                <Link
-                  href={`/profiles/${project.user_id}`}
-                  className="text-sm font-semibold text-fg-primary hover:underline underline-offset-4"
-                >
+                <span className="text-sm font-semibold text-fg-primary">
                   User {project.user_id.substring(0, 8)}
-                </Link>
+                </span>
               </div>
             </div>
           ) : (

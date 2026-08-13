@@ -25,6 +25,7 @@ import {
 } from '@/config/entities/documents';
 import type { DocumentType, DocumentVisibility } from '@/lib/validation';
 import { DeleteDocumentButton } from './DeleteDocumentButton';
+import { authLoginPath } from '@/lib/navigation/safe-return-path';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -84,7 +85,7 @@ export default async function DocumentDetailPage({ params }: PageProps) {
   const user = auth?.user;
 
   if (!user) {
-    redirect('/auth?mode=login&from=/dashboard/cat?tab=context');
+    redirect(authLoginPath('/dashboard/cat?tab=context'));
   }
 
   // Get user's actor

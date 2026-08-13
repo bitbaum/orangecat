@@ -25,8 +25,9 @@ export default function PublicEntityOwnerCard({
   label,
   activeListingCount,
 }: PublicEntityOwnerCardProps) {
-  const profileHref = owner.username ? ROUTES.PROFILES.VIEW(owner.username) : '#';
-  const isClickable = !!owner.username;
+  const profileHref = owner.username
+    ? ROUTES.PROFILES.VIEW(owner.username)
+    : null;
   const memberSince = owner.created_at
     ? new Date(owner.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
     : null;
@@ -38,29 +39,18 @@ export default function PublicEntityOwnerCard({
         <CardTitle className="text-lg">{label}</CardTitle>
       </CardHeader>
       <CardContent>
-        <Link
-          href={profileHref}
-          className={`flex items-center gap-3 -m-2 p-2 rounded-lg transition-colors ${isClickable ? 'hover:bg-surface-raised' : 'cursor-default'}`}
-        >
-          {owner.avatar_url ? (
-            // eslint-disable-next-line @next/next/no-img-element -- avatar_url is a free-form user URL (any host); next/image would throw for hosts outside images.remotePatterns
-            <img
-              src={owner.avatar_url}
-              alt={owner.name || owner.username || label}
-              className="w-12 h-12 rounded-full object-cover"
-            />
-          ) : (
-            <div className="w-12 h-12 bg-surface-raised rounded-full flex items-center justify-center">
-              <User className="w-6 h-6 text-fg-secondary" />
-            </div>
-          )}
-          <div>
-            <div className="font-medium text-fg-primary">
-              {owner.name || owner.username || 'Anonymous'}
-            </div>
-            {owner.username && <div className="text-sm text-fg-secondary">@{owner.username}</div>}
+        {profileHref ? (
+          <Link
+            href={profileHref}
+            className="-m-2 flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-surface-raised"
+          >
+            <OwnerIdentity owner={owner} label={label} />
+          </Link>
+        ) : (
+          <div className="-m-2 flex items-center gap-3 rounded-lg p-2">
+            <OwnerIdentity owner={owner} label={label} />
           </div>
-        </Link>
+        )}
 
         {(memberSince || showListings) && (
           <div className="mt-3 space-y-1.5 border-t border-default pt-3">
@@ -84,5 +74,30 @@ export default function PublicEntityOwnerCard({
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function OwnerIdentity({ owner, label }: Pick<PublicEntityOwnerCardProps, 'owner' | 'label'>) {
+  return (
+    <>
+      {owner.avatar_url ? (
+        // eslint-disable-next-line @next/next/no-img-element -- avatar_url is a free-form user URL (any host); next/image would throw for hosts outside images.remotePatterns
+        <img
+          src={owner.avatar_url}
+          alt={owner.name || owner.username || label}
+          className="w-12 h-12 rounded-full object-cover"
+        />
+      ) : (
+        <div className="w-12 h-12 bg-surface-raised rounded-full flex items-center justify-center">
+          <User className="w-6 h-6 text-fg-secondary" />
+        </div>
+      )}
+      <div>
+        <div className="font-medium text-fg-primary">
+          {owner.name || owner.username || 'Anonymous'}
+        </div>
+        {owner.username && <div className="text-sm text-fg-secondary">@{owner.username}</div>}
+      </div>
+    </>
   );
 }

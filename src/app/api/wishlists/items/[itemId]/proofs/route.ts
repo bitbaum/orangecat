@@ -9,6 +9,7 @@ import { logger } from '@/utils/logger';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { apiSuccess, apiNotFound, apiInternalError } from '@/lib/api/standardResponse';
 import { validateUUID, getValidationError } from '@/lib/api/validation';
+import { getUserActorId } from '@/domain/actors';
 
 interface RouteParams {
   params: Promise<{ itemId: string }>;
@@ -108,10 +109,11 @@ export const GET = withOptionalAuth(async (request, { params }: RouteParams) => 
 
     const wishlists = wishlistItem.wishlists as Row | Row[];
     const wishlist = Array.isArray(wishlists) ? wishlists[0] : wishlists;
+    const actorId = user ? await getUserActorId(supabase, user.id) : null;
 
     return apiSuccess({
       proofs: proofs.map(proof => enrichProof(proof, feedbackMap, user?.id)),
-      can_add_proof: !!(user && wishlist?.actor_id === user.id),
+      can_add_proof: Boolean(actorId && wishlist?.actor_id === actorId),
     });
   } catch (error) {
     logger.error('Error in GET /api/wishlists/items/[itemId]/proofs:', error);

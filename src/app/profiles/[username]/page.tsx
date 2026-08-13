@@ -15,6 +15,8 @@ import { enrichProjectsWithSettledFunding } from '@/services/wallets/project-fun
 import { ROUTES } from '@/config/routes';
 import { APP_NAME, APP_KICKER, SITE_URL } from '@/config/brand';
 import { applyProfilePrivacy } from '@/config/profile-privacy';
+import { authLoginPath } from '@/lib/navigation/safe-return-path';
+import { publicProfilePath } from '@/config/public-profile-path';
 
 interface PageProps {
   params: Promise<{ username: string }>;
@@ -46,7 +48,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         .single();
       const userProfile = userProfileData as { username: string | null } | null;
 
-      targetUsername = userProfile?.username || user.id;
+      if (!userProfile?.username) {
+        return {
+          title: 'Complete Your Profile',
+          description: `Choose a username before sharing your ${APP_NAME} profile.`,
+        };
+      }
+      targetUsername = userProfile.username;
     } else {
       // Not authenticated - return generic metadata
       return {
@@ -81,16 +89,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     `View ${displayName}'s profile on ${APP_NAME}. Explore their projects, services, and economic activity.`;
   // Dynamic share card with avatar + name + bio. See
   // src/app/api/og/profile/[username]/route.tsx.
-  // encodeURIComponent: usernames containing '@' (we observed literal
-  // webdev@example.com profiles live) need to be URL-escaped to produce
-  // valid OG image / canonical URLs that crawlers and link unfurlers
-  // accept. Without this the canonical URL contained a literal `@` and
-  // some sitemap/canonical consumers tripped on it. AvatarLink and
-  // messaging surfaces already use encodeURIComponent on the same field.
-  const safeUsername = encodeURIComponent(profile.username || targetUsername);
+  // The OG API segment is encoded here; canonical public profile paths go
+  // through publicProfilePath, which owns its own single encoding pass.
+  const canonicalUsername = profile.username || targetUsername;
+  const safeUsername = encodeURIComponent(canonicalUsername);
   const ogImage = `${SITE_URL}/api/og/profile/${safeUsername}`;
   // Use actual username in URL, not "me" for better SEO
-  const url = `${SITE_URL}/profiles/${safeUsername}`;
+  const url = `${SITE_URL}${publicProfilePath(canonicalUsername)}`;
 
   return {
     title: displayName,
@@ -136,7 +141,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
     } = await supabase.auth.getUser();
     if (!user) {
       // Not authenticated, redirect to login
-      redirect(`${ROUTES.AUTH}?redirect=${ROUTES.PROFILES.ME}`);
+      redirect(authLoginPath(ROUTES.PROFILES.ME));
     }
 
     // Get username for current user
@@ -147,7 +152,10 @@ export default async function PublicProfilePage({ params }: PageProps) {
       .single();
     const userProfile = userProfileData as { username: string | null } | null;
 
-    targetUsername = userProfile?.username || user.id;
+    if (!userProfile?.username) {
+      redirect(ROUTES.DASHBOARD.INFO_EDIT);
+    }
+    targetUsername = userProfile.username;
   }
 
   // Fetch profile data server-side
@@ -281,7 +289,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
     alternateName: safeProfile.username || undefined,
     description: safeProfile.bio || undefined,
     image: safeProfile.avatar_url || undefined,
-    url: `${SITE_URL}/profiles/${canonicalUsername}`,
+    url: `${SITE_URL}${ROUTES.PROFILES.VIEW(canonicalUsername)}`,
     sameAs: safeProfile.website ? [safeProfile.website] : undefined,
     ...(safeProfile.bitcoin_address && {
       paymentAccepted: 'Bitcoin',

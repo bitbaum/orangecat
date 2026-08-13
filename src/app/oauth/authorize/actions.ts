@@ -19,6 +19,7 @@ import {
   recordGrant,
 } from '@/services/auth/oauthProvider';
 import { logger } from '@/utils/logger';
+import { authLoginPath } from '@/lib/navigation/safe-return-path';
 
 function withParams(base: string, params: Record<string, string | undefined>): string {
   const url = new URL(base);
@@ -54,7 +55,7 @@ export async function approveAuthorization(formData: FormData): Promise<void> {
     data: { user },
   } = await (await createServerClient()).auth.getUser();
   if (!user) {
-    redirect(`/auth?from=${encodeURIComponent('/oauth/authorize')}`);
+    redirect(authLoginPath('/oauth/authorize'));
   }
 
   const scopes = effectiveScopes(client!, scopeStr.split(/\s+/).filter(Boolean));

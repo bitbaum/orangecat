@@ -47,7 +47,7 @@ export const GET = withOptionalAuth(async (request, context: RouteContext) => {
     );
     const offset = Math.max(0, parseInt(searchParams.get('offset') || '0', 10));
 
-    const groupResult = await getGroup(slug, true);
+    const groupResult = await getGroup(slug, true, request.supabase);
     if (!groupResult.success || !groupResult.group) {
       return apiNotFound('Group not found');
     }
@@ -57,12 +57,16 @@ export const GET = withOptionalAuth(async (request, context: RouteContext) => {
       return apiUnauthorized();
     }
 
-    const result = await getGroupProposals(groupResult.group.id, {
-      status,
-      proposal_type: proposalType,
-      limit,
-      offset,
-    });
+    const result = await getGroupProposals(
+      groupResult.group.id,
+      {
+        status,
+        proposal_type: proposalType,
+        limit,
+        offset,
+      },
+      request.supabase
+    );
 
     if (!result.success) {
       return apiInternalError(result.error);

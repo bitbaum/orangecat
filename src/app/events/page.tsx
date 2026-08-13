@@ -25,6 +25,7 @@ import {
 import { BADGE_COLORS } from '@/config/badge-colors';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { FEE_CLAIMS } from '@/config/landing-page';
+import { authLoginPath } from '@/lib/navigation/safe-return-path';
 
 export default function EventsPage() {
   const _router = useRouter();
@@ -119,7 +120,7 @@ export default function EventsPage() {
     if (session) {
       _router.push(`${ENTITY_REGISTRY['event'].publicBasePath}/create`);
     } else {
-      _router.push(`${ROUTES.AUTH_LOGIN}&redirect=${ENTITY_REGISTRY['event'].publicBasePath}/create`);
+      _router.push(authLoginPath(`${ENTITY_REGISTRY['event'].publicBasePath}/create`));
     }
   };
 

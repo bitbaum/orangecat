@@ -59,6 +59,11 @@ export const GET = withAuth(async (request: AuthenticatedRequest) => {
 
     return apiSuccess(
       {
+        // Stable authenticated identity for read-only clients that need to
+        // scope follow-up GETs to the current user. This endpoint already owns
+        // the profile lookup, so exposing the user's own UUID avoids clients
+        // calling bootstrap-capable profile routes just to recover it.
+        profile: { id: profile.id, username: profile.username },
         profileCompletion: userContext.profileCompletion,
         entityCounts,
         hasWallet,

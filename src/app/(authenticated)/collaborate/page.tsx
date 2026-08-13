@@ -17,6 +17,8 @@ import { API_ROUTES } from '@/config/api-routes';
 import { ROUTES } from '@/config/routes';
 import { ENGAGEMENT_TYPES, ENGAGEMENT_LABELS, type EngagementType } from '@/config/project-roles';
 import { logger } from '@/utils/logger';
+import { toast } from 'sonner';
+import { authLoginPath } from '@/lib/navigation/safe-return-path';
 
 interface Role {
   id: string;
@@ -125,6 +127,12 @@ export default function CollaboratePage() {
   };
 
   const expressInterest = async (role: Role) => {
+    if (!user) {
+      toast.info('Sign in to contact this project');
+      router.push(authLoginPath(ROUTES.COLLABORATE));
+      return;
+    }
+
     const ownerId = role.projects?.user_id;
     if (!ownerId) {
       return;

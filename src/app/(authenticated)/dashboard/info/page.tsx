@@ -12,6 +12,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useRequireAuth } from '@/hooks/useAuth';
 import Loading from '@/components/Loading';
+import { ROUTES } from '@/config/routes';
 
 export default function DashboardInfoPage() {
   const { profile, isLoading } = useRequireAuth();
@@ -19,8 +20,11 @@ export default function DashboardInfoPage() {
 
   useEffect(() => {
     if (!isLoading && profile) {
-      const username = profile.username || profile.id;
-      router.replace(`/profiles/${username}`);
+      router.replace(
+        profile.username
+          ? ROUTES.PROFILES.VIEW(profile.username)
+          : ROUTES.DASHBOARD.INFO_EDIT
+      );
     }
   }, [isLoading, profile, router]);
 

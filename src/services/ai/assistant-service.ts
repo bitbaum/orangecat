@@ -11,6 +11,7 @@ import { z } from 'zod';
 import { aiAssistantSchema } from '@/lib/validation';
 import { STATUS } from '@/config/database-constants';
 import { getTableName } from '@/config/entity-registry';
+import { getUserActorId } from '@/domain/actors';
 import { getOrCreateUserActor } from '@/services/actors/getOrCreateUserActor';
 import { logger } from '@/utils/logger';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
@@ -67,7 +68,9 @@ export async function listAssistants(
 
   let actorId: string | null = null;
   if (userId) {
-    actorId = (await getOrCreateUserActor(userId)).id;
+    // Listing is a read path: an account without an actor simply owns no
+    // assistants yet. Actor creation belongs to createAssistant, never GET.
+    actorId = await getUserActorId(supabase, userId);
   }
 
   if (userId && includeOwnDrafts && actorId) {

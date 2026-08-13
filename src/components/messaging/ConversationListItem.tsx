@@ -6,26 +6,10 @@ import { Users, MessageSquare, Trash2 } from 'lucide-react';
 import AvatarLink from '@/components/ui/AvatarLink';
 import { cn } from '@/lib/utils';
 import type { Conversation } from '@/features/messaging/types';
+import { optionalPublicProfilePath } from '@/config/public-profile-path';
 
 function buildProfileHref(participant?: Conversation['participants'][number]): string | null {
-  if (!participant) {
-    return null;
-  }
-  if (
-    participant.username &&
-    typeof participant.username === 'string' &&
-    participant.username.trim()
-  ) {
-    return `/profiles/${encodeURIComponent(participant.username.trim())}`;
-  }
-  if (
-    participant.user_id &&
-    typeof participant.user_id === 'string' &&
-    participant.user_id.trim()
-  ) {
-    return `/profiles/${encodeURIComponent(participant.user_id.trim())}`;
-  }
-  return null;
+  return optionalPublicProfilePath(participant?.username);
 }
 
 function getOtherParticipants(

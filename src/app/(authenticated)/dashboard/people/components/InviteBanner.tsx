@@ -37,43 +37,42 @@ export default function InviteBanner({
               Share your profile link and start building your network
             </p>
           </div>
-          <div className="flex items-center gap-2 relative">
-            <Link href={`${ROUTES.DISCOVER}?section=people`}>
-              <Button variant="outline">
+          <div className="relative flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
+            <Link href={ROUTES.DISCOVER_TYPE('profiles')} className="w-full sm:w-auto">
+              <Button variant="outline" className="w-full sm:w-auto">
                 <Search className="w-4 h-4 mr-2" /> Discover People
               </Button>
             </Link>
-            <div className="flex items-center gap-2 relative">
-              <Button
-                onClick={onToggleShare}
-                className="bg-fg-primary hover:bg-muted-strong text-fg-inverted"
-              >
-                <Share2 className="w-4 h-4 mr-2" /> Share My Profile
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  navigator.clipboard
-                    .writeText(profileUrl)
-                    .then(() => {
-                      toast.success('Invite link copied');
-                    })
-                    .catch(() => toast.error('Failed to copy link'));
-                }}
-              >
-                <Copy className="w-4 h-4 mr-2" /> Copy Link
-              </Button>
-              {showShare && (
-                <div className="absolute right-0 mt-2 z-50">
-                  <ProfileShare
-                    username={profileUsername}
-                    profileName={profileName}
-                    profileBio={profileBio}
-                    onClose={onCloseShare}
-                  />
-                </div>
-              )}
-            </div>
+            <Button
+              onClick={onToggleShare}
+              className="w-full bg-fg-primary text-fg-inverted hover:bg-muted-strong sm:w-auto"
+            >
+              <Share2 className="w-4 h-4 mr-2" /> Share My Profile
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full sm:w-auto"
+              onClick={() => {
+                navigator.clipboard
+                  .writeText(profileUrl)
+                  .then(() => {
+                    toast.success('Invite link copied');
+                  })
+                  .catch(() => toast.error('Failed to copy link'));
+              }}
+            >
+              <Copy className="w-4 h-4 mr-2" /> Copy Link
+            </Button>
+            {showShare && (
+              <div className="absolute right-0 top-full z-50 mt-2 max-w-[calc(100vw-2rem)]">
+                <ProfileShare
+                  username={profileUsername}
+                  profileName={profileName}
+                  profileBio={profileBio}
+                  onClose={onCloseShare}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>

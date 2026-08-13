@@ -28,6 +28,7 @@ import { logger } from '@/utils/logger';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { findPeopleByInterest } from './interests';
 import type { DiscoveryHit, DiscoveryPerson, DiscoveryResult } from './discovery-types';
+import { ROUTES } from '@/config/routes';
 
 export type { DiscoveryHit, DiscoveryPerson, DiscoveryResult };
 
@@ -117,7 +118,7 @@ async function resolveOwner(
       userId,
       displayName: p?.name || displayName || username || 'Someone',
       username,
-      profileUrl: username ? `/profiles/${username}` : null,
+      profileUrl: username ? ROUTES.PROFILES.VIEW(username) : null,
       via: [],
     };
   } catch {

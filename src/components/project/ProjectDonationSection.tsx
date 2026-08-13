@@ -11,6 +11,7 @@ import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { useProjectDonation } from './useProjectDonation';
 import { ROUTES } from '@/config/routes';
 import { LABELED_SUPPORT_AMOUNTS_BTC } from '@/config/payment-presets';
+import { authLoginPath } from '@/lib/navigation/safe-return-path';
 
 interface ProjectDonationSectionProps {
   projectId: string;
@@ -86,7 +87,7 @@ export function ProjectDonationSection({
             </Button>
           ) : (
             <Button
-              href={`${ROUTES.AUTH}?from=favorite`}
+              href={authLoginPath(`${ROUTES.PROJECTS.VIEW(projectId)}?intent=favorite`)}
               variant="outline"
               className="flex-1 flex items-center justify-center gap-2 border-strong hover:border-status-negative/40 hover:text-status-negative"
               aria-label="Sign in to favorite this project"

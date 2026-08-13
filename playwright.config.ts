@@ -1,13 +1,20 @@
-import { defineConfig, devices } from '@playwright/test'
-import fs from 'fs'
-import path from 'path'
+import { defineConfig, devices } from '@playwright/test';
+import fs from 'fs';
+import path from 'path';
 
 /**
  * Playwright Configuration for OrangeCat
  * Optimized for real-time development with MCP integration
  * Supports Brave browser and automated testing workflows
  */
-const authFile = path.resolve(__dirname, 'tests/.auth/user.json')
+const authFile = path.resolve(__dirname, 'tests/.auth/user.json');
+
+// Local development machines may provide a system browser instead of the
+// Playwright-managed binary (for example, Ubuntu versions that Playwright does
+// not publish browser bundles for yet). CI keeps the managed Chromium default;
+// set PLAYWRIGHT_CHANNEL=chrome locally to use the installed Chrome channel.
+const browserChannel = process.env.PLAYWRIGHT_CHANNEL as 'chrome' | 'msedge' | undefined;
+const channelOverride = browserChannel ? { channel: browserChannel } : {};
 
 export default defineConfig({
   testDir: process.env.E2E_TEST_DIR || 'tests/e2e',
@@ -41,7 +48,11 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1440, height: 1000 },
+        ...channelOverride,
+      },
     },
     {
       name: 'firefox',
@@ -51,15 +62,26 @@ export default defineConfig({
       name: 'webkit',
       use: { ...devices['Desktop Safari'] },
     },
-    /* Test against mobile viewports. */
-    // {
-    //   name: 'Mobile Chrome',
-    //   use: { ...devices['Pixel 5'] },
-    // },
-    // {
-    //   name: 'Mobile Safari',
-    //   use: { ...devices['iPhone 12'] },
-    // },
+    /* Mobile-first release viewports. Keep both common narrow widths explicit:
+       a regression at 375px can be hidden by the extra 15px available at 390px. */
+    {
+      name: 'mobile-375',
+      use: {
+        ...devices['Pixel 5'],
+        browserName: 'chromium',
+        viewport: { width: 375, height: 812 },
+        ...channelOverride,
+      },
+    },
+    {
+      name: 'mobile-390',
+      use: {
+        ...devices['Pixel 5'],
+        browserName: 'chromium',
+        viewport: { width: 390, height: 844 },
+        ...channelOverride,
+      },
+    },
 
     /* Test against branded browsers. */
     // {
@@ -77,4 +99,4 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   // No webServer; this config targets existing environments via baseURL
-}) 
+});

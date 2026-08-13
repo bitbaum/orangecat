@@ -25,6 +25,7 @@ import { SharedWalletNotice } from './SharedWalletNotice';
 import type { SharedWalletUsage } from '@/domain/wallets/walletUsage';
 import { getEntityMetadata, type EntityType } from '@/config/entity-registry';
 import { ROUTES } from '@/config/routes';
+import { authLoginPath } from '@/lib/navigation/safe-return-path';
 
 interface PublicEntityPaymentSectionProps {
   entityType: EntityType;
@@ -121,7 +122,7 @@ export function PublicEntityPaymentSection({
             amountBtc={priceAmountBtc}
             method={sellerReceive.method}
             address={sellerReceive.address}
-            signInHref={`${ROUTES.AUTH}?mode=login&from=${signInRedirect}`}
+            signInHref={authLoginPath(signInRedirect)}
           />
           <SharedWalletNotice usage={sharedWalletUsage} />
           {meta.canReceiveSupport && meta.paymentPattern === 'fixed_price' && (
@@ -144,7 +145,7 @@ export function PublicEntityPaymentSection({
             </p>
           ) : (
             <>
-              <Link href={`${ROUTES.AUTH}?mode=login&from=${signInRedirect}`} className="block">
+              <Link href={authLoginPath(signInRedirect)} className="block">
                 <Button className="w-full gap-2 min-h-11">
                   <LogIn className="w-4 h-4" />
                   Sign in to purchase

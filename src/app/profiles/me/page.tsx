@@ -25,6 +25,9 @@ export default async function MyProfilePage() {
     .maybeSingle();
   const profile = profileData as { username: string | null } | null;
 
-  const username = profile?.username || user.id;
-  redirect(`/profiles/${username}`);
+  if (!profile?.username) {
+    redirect(ROUTES.DASHBOARD.INFO_EDIT);
+  }
+
+  redirect(ROUTES.PROFILES.VIEW(profile.username));
 }

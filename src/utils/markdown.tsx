@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import { publicProfilePath } from '@/config/public-profile-path';
 
 type TokenType = 'text' | 'bold' | 'italic' | 'mention' | 'url' | 'mdlink';
 
@@ -66,7 +67,7 @@ function tokenToReact(token: Token, index: number): React.ReactNode {
       return (
         <Link
           key={key}
-          href={`/profiles/${token.username}`}
+          href={publicProfilePath(token.username!)}
           className="text-fg-primary hover:text-fg-primary hover:underline font-medium"
           onClick={e => e.stopPropagation()}
         >

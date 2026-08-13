@@ -6,6 +6,7 @@ import { MoreHorizontal, Lock, Users, Pencil, Trash2 } from 'lucide-react';
 import { TimelineDisplayEvent } from '@/types/timeline';
 import { formatRelativeTime } from '@/utils/dates';
 import { TIMELINE_SURFACE } from '@/config/timeline';
+import { optionalPublicProfilePath } from '@/config/public-profile-path';
 
 interface PostHeaderProps {
   event: TimelineDisplayEvent;
@@ -61,11 +62,11 @@ export function PostHeader({
       }
     : event.actor;
   const displayAuthor = {
-    id: rawAuthor?.id ?? '',
     name: rawAuthor?.name ?? 'Unknown',
-    username: rawAuthor?.username ?? rawAuthor?.id ?? '',
+    username: rawAuthor?.username?.trim() || null,
     avatar: rawAuthor?.avatar,
   };
+  const authorHref = optionalPublicProfilePath(displayAuthor.username);
 
   // TimelineDisplayEvent extends TimelineEvent which has eventTimestamp, createdAt, updatedAt
   // Use eventTimestamp as primary, fallback to createdAt for backward compatibility
@@ -76,21 +77,27 @@ export function PostHeader({
   return (
     <div className="flex items-center gap-1 flex-wrap">
       {/* User Info - X-style inline */}
-      <Link
-        href={`/profiles/${displayAuthor.username}`}
-        className="font-bold text-sm text-fg-primary hover:underline"
-        onClick={e => e.stopPropagation()}
-      >
-        {displayAuthor.name}
-      </Link>
+      {authorHref ? (
+        <Link
+          href={authorHref}
+          className="font-bold text-sm text-fg-primary hover:underline"
+          onClick={e => e.stopPropagation()}
+        >
+          {displayAuthor.name}
+        </Link>
+      ) : (
+        <span className="font-bold text-sm text-fg-primary">{displayAuthor.name}</span>
+      )}
 
-      <Link
-        href={`/profiles/${displayAuthor.username}`}
-        className="text-fg-secondary text-sm"
-        onClick={e => e.stopPropagation()}
-      >
-        @{displayAuthor.username}
-      </Link>
+      {authorHref && displayAuthor.username && (
+        <Link
+          href={authorHref}
+          className="text-fg-secondary text-sm"
+          onClick={e => e.stopPropagation()}
+        >
+          @{displayAuthor.username}
+        </Link>
+      )}
 
       <span className="text-fg-secondary">·</span>
 

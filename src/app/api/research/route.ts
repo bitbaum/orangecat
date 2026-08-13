@@ -21,7 +21,7 @@ import { getPagination, getString } from '@/lib/api/query';
 import { applyRateLimitHeaders, rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
 import { getCacheControl, calculatePage } from '@/lib/api/helpers';
 import { getTableName } from '@/config/entity-registry';
-import { getOrCreateUserActor } from '@/services/actors/getOrCreateUserActor';
+import { getUserActorId } from '@/domain/actors';
 import type { ResearchEntityCreate } from '@/types/research';
 import { NextRequest } from 'next/server';
 import { createResearch } from '@/domain/research/createResearch';
@@ -43,8 +43,15 @@ export const GET = compose(
     // Resolve userId → actorId so we query by actor_id (the canonical ownership column)
     let actorId: string | null = null;
     if (userId) {
-      const actor = await getOrCreateUserActor(userId);
-      actorId = actor.id;
+      actorId = await getUserActorId(supabase, userId);
+      if (!actorId) {
+        return apiSuccess([], {
+          page: calculatePage(offset, limit),
+          limit,
+          total: 0,
+          headers: { 'Cache-Control': getCacheControl(true) },
+        });
+      }
     }
 
     const tableName = getTableName('research');

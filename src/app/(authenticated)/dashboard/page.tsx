@@ -160,7 +160,7 @@ export default function DashboardPage() {
         </div>
 
         <div className={hasProjects ? 'grid grid-cols-1 md:grid-cols-2 gap-6' : ''}>
-          <DashboardInviteCTA profile={profile} userId={user.id} />
+          <DashboardInviteCTA profile={profile} />
           {hasProjects && <DashboardQuickActions />}
         </div>
       </div>

@@ -12,6 +12,7 @@ import ReadingProgress from './ReadingProgress';
 import ShareButton from './ShareButton';
 import TipButton from '@/components/tips/TipButton';
 import ArticleOwnerActions from './ArticleOwnerActions';
+import { optionalPublicProfilePath } from '@/config/public-profile-path';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -25,8 +26,43 @@ function formatDate(iso: string): string {
   });
 }
 
-function profileHref(username: string | undefined, id: string): string {
-  return `/profiles/${username ?? id}`;
+function ArticleAuthorIdentity({
+  name,
+  avatarUrl,
+  context = 'header',
+}: {
+  name: string;
+  avatarUrl?: string | null;
+  context?: 'header' | 'footer';
+}) {
+  const isFooter = context === 'footer';
+  const size = isFooter ? 'h-11 w-11' : 'h-9 w-9';
+  return (
+    <>
+      {avatarUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element -- avatar_url is a free-form user URL (any host); next/image would throw for hosts outside images.remotePatterns
+        <img
+          src={avatarUrl}
+          alt=""
+          className={`${size} rounded-full border border-subtle object-cover`}
+        />
+      ) : (
+        <span
+          className={`flex ${size} items-center justify-center rounded-full border border-subtle bg-surface-raised text-xs font-semibold text-fg-secondary`}
+        >
+          {name.slice(0, 1).toUpperCase()}
+        </span>
+      )}
+      {isFooter ? (
+        <span>
+          <span className="block text-xs text-fg-tertiary">Written by</span>
+          <span className="block font-semibold text-fg-primary">{name}</span>
+        </span>
+      ) : (
+        <span className="font-medium">{name}</span>
+      )}
+    </>
+  );
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -88,7 +124,7 @@ export default async function ArticlePage({ params }: PageProps) {
     ...(article.coverImage ? { image: article.coverImage } : {}),
   };
 
-  const authorHref = profileHref(article.author.username, article.author.id);
+  const authorHref = optionalPublicProfilePath(article.author.username);
   const shareUrl = `${SITE_URL}/articles/${article.slug}`;
 
   return (
@@ -123,24 +159,24 @@ export default async function ArticlePage({ params }: PageProps) {
             )}
 
             <div className="mt-7 flex flex-wrap items-center gap-x-4 gap-y-3 border-y border-subtle py-4 text-sm text-fg-secondary">
-              <Link
-                href={authorHref}
-                className="flex items-center gap-2.5 text-fg-primary transition-opacity hover:opacity-80"
-              >
-                {article.author.avatarUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element -- avatar_url is a free-form user URL (any host); next/image would throw for hosts outside images.remotePatterns
-                  <img
-                    src={article.author.avatarUrl}
-                    alt=""
-                    className="h-9 w-9 rounded-full border border-subtle object-cover"
+              {authorHref ? (
+                <Link
+                  href={authorHref}
+                  className="flex items-center gap-2.5 text-fg-primary transition-opacity hover:opacity-80"
+                >
+                  <ArticleAuthorIdentity
+                    name={article.author.name}
+                    avatarUrl={article.author.avatarUrl}
                   />
-                ) : (
-                  <span className="flex h-9 w-9 items-center justify-center rounded-full border border-subtle bg-surface-raised text-xs font-semibold text-fg-secondary">
-                    {article.author.name.slice(0, 1).toUpperCase()}
-                  </span>
-                )}
-                <span className="font-medium">{article.author.name}</span>
-              </Link>
+                </Link>
+              ) : (
+                <span className="flex items-center gap-2.5 text-fg-primary">
+                  <ArticleAuthorIdentity
+                    name={article.author.name}
+                    avatarUrl={article.author.avatarUrl}
+                  />
+                </span>
+              )}
               <span aria-hidden className="text-fg-tertiary">
                 ·
               </span>
@@ -171,27 +207,26 @@ export default async function ArticlePage({ params }: PageProps) {
           {/* Footer: author card + share + write-your-own CTA */}
           <footer className="mt-14 border-t border-subtle pt-8">
             <div className="flex flex-wrap items-center justify-between gap-4">
-              <Link
-                href={authorHref}
-                className="flex items-center gap-3 transition-opacity hover:opacity-80"
-              >
-                {article.author.avatarUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element -- avatar_url is a free-form user URL (any host); next/image would throw for hosts outside images.remotePatterns
-                  <img
-                    src={article.author.avatarUrl}
-                    alt=""
-                    className="h-11 w-11 rounded-full border border-subtle object-cover"
+              {authorHref ? (
+                <Link
+                  href={authorHref}
+                  className="flex items-center gap-3 transition-opacity hover:opacity-80"
+                >
+                  <ArticleAuthorIdentity
+                    name={article.author.name}
+                    avatarUrl={article.author.avatarUrl}
+                    context="footer"
                   />
-                ) : (
-                  <span className="flex h-11 w-11 items-center justify-center rounded-full border border-subtle bg-surface-raised text-sm font-semibold text-fg-secondary">
-                    {article.author.name.slice(0, 1).toUpperCase()}
-                  </span>
-                )}
-                <span>
-                  <span className="block text-xs text-fg-tertiary">Written by</span>
-                  <span className="block font-semibold text-fg-primary">{article.author.name}</span>
-                </span>
-              </Link>
+                </Link>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <ArticleAuthorIdentity
+                    name={article.author.name}
+                    avatarUrl={article.author.avatarUrl}
+                    context="footer"
+                  />
+                </div>
+              )}
               <div className="flex flex-wrap items-center gap-2">
                 {article.author.username && (
                   <TipButton

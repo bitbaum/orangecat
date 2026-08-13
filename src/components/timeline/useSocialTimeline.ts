@@ -58,7 +58,10 @@ export function useSocialTimeline({
 
   const loadTimelineFeed = useCallback(
     async (sort: string = defaultSort, page: number = 1) => {
-      if (!user?.id) {
+      // The community feed is public. Personal/following feeds still require
+      // an actor id, but signed-out visitors can evaluate the community before
+      // creating an account.
+      if (!user?.id && mode !== 'community') {
         return;
       }
 
@@ -71,15 +74,18 @@ export function useSocialTimeline({
         setError(null);
 
         let feed: TimelineFeedResponse;
-        if (mode === 'timeline') {
-          feed = await timelineService.getEnrichedUserFeed(user.id, {}, { page, limit: 20 });
-        } else if (mode === 'following') {
-          feed = await timelineService.getEnrichedFollowingFeed(user.id, {}, { page, limit: 20 });
-        } else {
+        if (mode === 'community') {
           feed = await timelineService.getCommunityFeed(
             { sortBy: sort as 'recent' | 'trending' | 'popular' },
             { page, limit: 20 }
           );
+        } else {
+          // The guard above guarantees an actor for both private feed modes.
+          const userId = user!.id;
+          feed =
+            mode === 'timeline'
+              ? await timelineService.getEnrichedUserFeed(userId, {}, { page, limit: 20 })
+              : await timelineService.getEnrichedFollowingFeed(userId, {}, { page, limit: 20 });
         }
 
         if (page === 1) {
@@ -146,10 +152,10 @@ export function useSocialTimeline({
   }, [timelineFeed, sortBy, loadTimelineFeed, search.searchResults]);
 
   useEffect(() => {
-    if (hydrated && user?.id) {
+    if (hydrated && (user?.id || mode === 'community')) {
       loadTimelineFeed();
     }
-  }, [hydrated, user?.id, loadTimelineFeed]);
+  }, [hydrated, user?.id, mode, loadTimelineFeed]);
 
   return {
     user,

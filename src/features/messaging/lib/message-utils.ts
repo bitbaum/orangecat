@@ -12,6 +12,7 @@ import type { Message, Participant } from '../types';
 import { MESSAGE_STATUS, type MessageStatus } from './constants';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { logger } from '@/utils/logger';
+import { optionalPublicProfilePath } from '@/config/public-profile-path';
 
 // =============================================================================
 // MESSAGE STATUS CALCULATION
@@ -318,16 +319,7 @@ export function getPrimaryParticipant(
  * Build a profile link for a participant
  */
 export function getParticipantProfileHref(participant: Participant | undefined): string | null {
-  if (!participant) {
-    return null;
-  }
-  if (participant.username?.trim()) {
-    return `/profiles/${encodeURIComponent(participant.username.trim())}`;
-  }
-  if (participant.user_id?.trim()) {
-    return `/profiles/${encodeURIComponent(participant.user_id.trim())}`;
-  }
-  return null;
+  return optionalPublicProfilePath(participant?.username);
 }
 
 // =============================================================================

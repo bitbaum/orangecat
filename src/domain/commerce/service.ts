@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { looseClient } from '@/lib/supabase/untyped';
 import type { UserProduct, UserService, UserCause } from '@/types/database';
 import { STATUS } from '@/config/database-constants';
-import { getOrCreateUserActor } from '@/services/actors/getOrCreateUserActor';
+import { getUserActorId } from '@/domain/actors';
 import { createEntity } from '@/domain/base/entityService';
 import { PLATFORM_DEFAULT_CURRENCY } from '@/config/currencies';
 
@@ -51,8 +51,12 @@ export async function listEntitiesPage(
   // Resolve user_id to actor_id for ownership filtering (if userId provided)
   let actorId: string | null = null;
   if (userId) {
-    const actor = await getOrCreateUserActor(userId);
-    actorId = actor.id;
+    // GET/list paths do not provision actors. No actor means this owner has no
+    // commerce rows yet; creation flows still provision through createEntity.
+    actorId = await getUserActorId(supabase, userId);
+    if (!actorId) {
+      return { items: [], total: 0, limit, offset };
+    }
   }
 
   if (userId && includeOwnDrafts && actorId) {

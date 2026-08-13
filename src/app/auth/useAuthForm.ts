@@ -1,13 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
-import { useAuth, useRedirectIfAuthenticated } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth';
 import { signInAnonymously } from '@/services/supabase/auth';
 import { getReadableError } from '@/utils/getReadableError';
 import supabase from '@/lib/supabase/browser';
 import { useAuthSubmission } from './useAuthSubmission';
 import type { Provider } from '@supabase/supabase-js';
 import { OAUTH_TO_SUPABASE, type OAuthProvider } from './oauth-provider-map';
+import { safeReturnPath } from '@/lib/navigation/safe-return-path';
 
 export type { OAuthProvider };
 
@@ -23,7 +24,6 @@ export function useAuthForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { signIn, signUp, isLoading: authLoading, hydrated, session, profile, clear } = useAuth();
-  const { isLoading: redirectLoading } = useRedirectIfAuthenticated();
 
   const [mode, setMode] = useState<AuthMode>(() => {
     const modeParam = searchParams?.get('mode');
@@ -113,7 +113,10 @@ export function useAuthForm() {
   });
 
   const loading = localLoading || authLoading;
-  const _isCurrentlyLoading = loading || redirectLoading;
+  // This hook owns the post-auth redirect below because it must preserve the
+  // exact validated `from` path. The generic redirect hook always targets the
+  // dashboard and would race this effect, intermittently discarding intent.
+  const _isCurrentlyLoading = loading;
 
   // Wrap submission's retry/clear so the URL-error layer clears too —
   // otherwise hitting Retry on a callback-surfaced error leaves it
@@ -129,7 +132,7 @@ export function useAuthForm() {
 
   useEffect(() => {
     if (session?.user && hydrated) {
-      const redirectUrl = searchParams?.get('from') || '/dashboard';
+      const redirectUrl = safeReturnPath(searchParams?.get('from'));
       router.replace(redirectUrl);
     }
   }, [session, hydrated, router, searchParams]);
@@ -150,7 +153,11 @@ export function useAuthForm() {
         // `linkedin_oidc`). Cast to supabase-js's own Provider union derived
         // from the map (SSOT) rather than a hardcoded list.
         provider: OAUTH_TO_SUPABASE[provider] as Provider,
-        options: { redirectTo: `${window.location.origin}/auth/callback` },
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(
+            safeReturnPath(searchParams?.get('from'), '/dashboard/cat')
+          )}`,
+        },
       });
       if (error) {
         throw error;
@@ -170,7 +177,7 @@ export function useAuthForm() {
       if (result.error) {
         throw new Error(getReadableError(result.error, 'Anonymous sign-in failed'));
       }
-      const redirectUrl = searchParams?.get('from') || '/dashboard';
+      const redirectUrl = safeReturnPath(searchParams?.get('from'));
       router.replace(redirectUrl);
     } catch (err) {
       // Surface the failure: anonymous sign-in can fail for environment

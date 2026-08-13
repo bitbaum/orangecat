@@ -13,6 +13,7 @@ import DefaultAvatar from '@/components/ui/DefaultAvatar';
 import supabase from '@/lib/supabase/browser';
 import { useAuth } from '@/hooks/useAuth';
 import { DATABASE_TABLES } from '@/config/database-tables';
+import { publicProfilePath } from '@/config/public-profile-path';
 
 interface ProfilePeopleTabProps {
   profile: ScalableProfile;
@@ -232,7 +233,7 @@ export default function ProfilePeopleTab({ profile, isOwnProfile }: ProfilePeopl
             return (
               <Link
                 key={person.id}
-                href={`/profiles/${person.username}`}
+                href={publicProfilePath(person.username)}
                 className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg border border-default hover:border-strong oc-card-link"
               >
                 {person.avatar_url ? (

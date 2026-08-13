@@ -217,11 +217,13 @@ export default async function PublicProjectPage({ params }: PageProps) {
     '@type': 'CreativeWork',
     name: project.title,
     description: project.description || `Support ${project.title} on ${APP_NAME}`,
-    url: `${SITE_URL}/projects/${id}`,
+    url: `${SITE_URL}${ROUTES.PROJECTS.VIEW(id)}`,
     creator: {
       '@type': 'Person',
       name: creatorName,
-      ...(profile?.username && { url: `${SITE_URL}/profiles/${profile.username}` }),
+      ...(profile?.username && {
+        url: `${SITE_URL}${ROUTES.PROFILES.VIEW(profile.username)}`,
+      }),
     },
     ...(project.goal_amount && {
       funding: {

@@ -50,6 +50,10 @@ export default function Loading({
           className
         )}
         suppressHydrationWarning
+        role="status"
+        aria-live="polite"
+        aria-busy="true"
+        data-loading="true"
       >
         <ContextualLoader />
       </div>
@@ -57,7 +61,14 @@ export default function Loading({
   }
 
   const content = (
-    <div className="flex flex-col items-center space-y-3" suppressHydrationWarning>
+    <div
+      className="flex flex-col items-center space-y-3"
+      suppressHydrationWarning
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+      data-loading="true"
+    >
       <Loader2 className={`${sizeClasses[size]} animate-spin text-fg-primary`} />
       {message && <p className="text-sm text-fg-secondary font-sans">{message}</p>}
     </div>

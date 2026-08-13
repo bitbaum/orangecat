@@ -35,7 +35,7 @@ import { type EntityType, getEntityMetadata, ENTITY_REGISTRY } from '@/config/en
 import { listEntitiesPage } from '@/domain/commerce/service';
 import { getCacheControl, calculatePage } from './helpers';
 import { shouldIncludeDrafts } from './authHelpers';
-import { getOrCreateUserActor } from '@/services/actors/getOrCreateUserActor';
+import { getUserActorId } from '@/domain/actors';
 import { resolveRequestAuth, hasScope } from '@/lib/api/resolveRequestAuth';
 import { PUBLIC_API_ENTITY_TYPES } from '@/config/public-api';
 
@@ -216,8 +216,16 @@ export function createEntityListHandler(config: EntityListHandlerConfig) {
         // that needs to be resolved to an actor UUID first
         let filterValue = userId;
         if (userIdField === 'actor_id') {
-          const actor = await getOrCreateUserActor(userId);
-          filterValue = actor.id;
+          const actorId = await getUserActorId(supabase, userId);
+          if (!actorId) {
+            return apiSuccess([], {
+              page: calculatePage(offset, limit),
+              limit,
+              total: 0,
+              headers: { 'Cache-Control': getCacheControl(true) },
+            });
+          }
+          filterValue = actorId;
         }
         query = query.eq(userIdField, filterValue);
         // For own items, only filter by status if includeOwnDrafts is false
@@ -228,8 +236,16 @@ export function createEntityListHandler(config: EntityListHandlerConfig) {
         // For auth-required routes without user_id filter, show current user's items
         let filterValue = authenticatedUserId;
         if (userIdField === 'actor_id') {
-          const actor = await getOrCreateUserActor(authenticatedUserId);
-          filterValue = actor.id;
+          const actorId = await getUserActorId(supabase, authenticatedUserId);
+          if (!actorId) {
+            return apiSuccess([], {
+              page: calculatePage(offset, limit),
+              limit,
+              total: 0,
+              headers: { 'Cache-Control': 'private, no-cache' },
+            });
+          }
+          filterValue = actorId;
         }
         query = query.eq(userIdField, filterValue);
       } else {

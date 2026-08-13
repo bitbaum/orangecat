@@ -26,6 +26,7 @@ import Loading from '@/components/Loading';
 import Button from '@/components/ui/Button';
 import IntegrationKeysCard from '@/components/settings/IntegrationKeysCard';
 import WebhookEndpointsCard from '@/components/settings/WebhookEndpointsCard';
+import { authLoginPath } from '@/lib/navigation/safe-return-path';
 
 export default function IntegrationsPage() {
   const { user, isLoading: authLoading } = useRequireAuth();
@@ -36,7 +37,7 @@ export default function IntegrationsPage() {
   }
 
   if (!user) {
-    const returnTo = `${ROUTES.AUTH}?mode=login&from=${encodeURIComponent(ROUTES.SETTINGS_INTEGRATIONS)}`;
+    const returnTo = authLoginPath(ROUTES.SETTINGS_INTEGRATIONS);
     return (
       <div className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center p-6 text-center">
         <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full border border-subtle bg-surface-raised/30">

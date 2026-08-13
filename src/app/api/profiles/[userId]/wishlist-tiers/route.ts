@@ -13,6 +13,7 @@ import { validateUUID, getValidationError } from '@/lib/api/validation';
 import { withOptionalAuth } from '@/lib/api/withAuth';
 import { logger } from '@/utils/logger';
 import { DATABASE_TABLES } from '@/config/database-tables';
+import { getUserActorId } from '@/domain/actors';
 
 interface RouteContext {
   params: Promise<{ userId: string }>;
@@ -26,6 +27,10 @@ export const GET = withOptionalAuth(async (request, context: RouteContext) => {
   }
   try {
     const { supabase } = request;
+    const actorId = await getUserActorId(supabase, userId);
+    if (!actorId) {
+      return apiSuccess({ items: [] });
+    }
 
     // Fetch active wishlists for this user
     // We filter items that are not fully funded and not fulfilled
@@ -40,7 +45,7 @@ export const GET = withOptionalAuth(async (request, context: RouteContext) => {
         wishlists!inner(actor_id)
       `
       )
-      .eq('wishlists.actor_id', userId)
+      .eq('wishlists.actor_id', actorId)
       .eq('is_fulfilled', false)
       .order('priority', { ascending: false })
       .order('created_at', { ascending: false })

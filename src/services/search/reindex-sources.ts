@@ -11,6 +11,7 @@ import { DATABASE_TABLES } from '@/config/database-tables';
 import { ENTITY_STATUS } from '@/config/database-constants';
 import { getEntityMetadata, type EntityType } from '@/config/entity-registry';
 import { clamp01, recency, isVerified, profileQuality, causeQuality } from './reindex-scoring';
+import { publicProfilePath } from '@/config/public-profile-path';
 
 export interface IndexItem {
   entity_type: string;
@@ -108,7 +109,7 @@ export async function buildCorpus(supabase: any): Promise<IndexItem[]> {
       entity_type: 'profile',
       entity_id: p.id,
       title: p.name || p.username,
-      url: `/profiles/${p.username}`,
+      url: publicProfilePath(p.username),
       text,
       updated_at: p.updated_at ?? null,
       quality: profileQuality({

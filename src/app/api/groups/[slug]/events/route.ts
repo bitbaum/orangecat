@@ -5,7 +5,7 @@
  * POST /api/groups/[slug]/events - Create event (member only)
  */
 
-import { withAuth, type AuthenticatedRequest } from '@/lib/api/withAuth';
+import { withAuth, withOptionalAuth, type AuthenticatedRequest } from '@/lib/api/withAuth';
 import {
   apiSuccess,
   apiCreated,
@@ -43,8 +43,8 @@ const createEventSchema = z.object({
   requires_rsvp: z.boolean().optional(),
 });
 
-export const GET = withAuth(
-  async (req: AuthenticatedRequest, { params }: { params: Promise<{ slug: string }> }) => {
+export const GET = withOptionalAuth(
+  async (req, { params }: { params: Promise<{ slug: string }> }) => {
     const { slug } = await params;
     try {
       const { supabase } = req;
@@ -70,6 +70,17 @@ export const GET = withAuth(
         .eq('group_id', group.id)
         .order('starts_at', { ascending: true })
         .range(offset, offset + limit - 1);
+
+      // The group detail page is visitor-accessible and renders this Events
+      // tab. Anonymous visitors may list only explicitly public events; signed-
+      // in viewers keep the existing RLS/member view (including private events
+      // where their membership permits it).
+      if (!req.user) {
+        if (!group.is_public) {
+          return apiNotFound('Group not found');
+        }
+        query = query.eq('is_public', true);
+      }
 
       if (status === 'upcoming') {
         query = query.gte('starts_at', new Date().toISOString());

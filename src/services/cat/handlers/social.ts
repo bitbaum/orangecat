@@ -12,6 +12,7 @@ import { NotificationService } from '@/lib/services/notifications';
 import { logger } from '@/utils/logger';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import type { ActionHandler } from './types';
+import { publicProfilePath } from '@/config/public-profile-path';
 
 /** Resolve "@alice" / "alice" to a profile id + display bits. */
 async function resolveProfileByUsername(
@@ -75,7 +76,7 @@ export const socialHandlers: Record<string, ActionHandler> = {
         message: `${followerName} started following you on OrangeCat.`,
         sourceEntityType: 'profile',
         sourceEntityId: userId,
-        actionUrl: me?.username ? `/profiles/${me.username}` : undefined,
+        actionUrl: me?.username ? publicProfilePath(me.username) : undefined,
       });
     } catch (err) {
       logger.warn('follow notification failed', { err }, 'CatSocial');

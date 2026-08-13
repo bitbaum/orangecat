@@ -53,7 +53,9 @@ export default function ProfileOverviewTab({
   const isDashboardView = context === 'dashboard';
   const PROJECTS_PREVIEW = 3;
   const visibleProjects = (projects ?? []).slice(0, PROJECTS_PREVIEW);
-  const projectsTabHref = `${ROUTES.PROFILES.VIEW(profile.username || profile.id)}?tab=projects`;
+  const projectsTabHref = profile.username
+    ? `${ROUTES.PROFILES.VIEW(profile.username)}?tab=projects`
+    : ROUTES.DISCOVER_TYPE('projects');
   // Public contact email is ONLY the opt-in contact_email field — never the
   // private account login email (profile.email). See profile email-leak fix.
   const publicContactEmail = profile.contact_email;

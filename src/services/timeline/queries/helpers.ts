@@ -13,6 +13,7 @@ import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { logger } from '@/utils/logger';
 import type { TimelineDisplayEvent, TimelineEventDb, TimelineActorType } from '@/types/timeline';
 import type { Database } from '@/types/database';
+import { ROUTES } from '@/config/routes';
 import {
   mapDbEventToTimelineEvent,
   getEventIcon,
@@ -107,7 +108,9 @@ export function transformEnrichedEventToDisplay(
           type: event.subject_data.type as import('@/types/timeline').TimelineSubjectType,
           url:
             event.subject_data.type === 'profile'
-              ? `/profiles/${event.subject_data.username || event.subject_data.id}`
+              ? event.subject_data.username
+                ? ROUTES.PROFILES.VIEW(event.subject_data.username)
+                : undefined
               : `${ENTITY_REGISTRY['project'].publicBasePath}/${event.subject_data.id}`,
         }
       : undefined,
@@ -121,7 +124,9 @@ export function transformEnrichedEventToDisplay(
           type: event.target_data.type as import('@/types/timeline').TimelineSubjectType,
           url:
             event.target_data.type === 'profile'
-              ? `/profiles/${event.target_data.username || event.target_data.id}`
+              ? event.target_data.username
+                ? ROUTES.PROFILES.VIEW(event.target_data.username)
+                : undefined
               : `${ENTITY_REGISTRY['project'].publicBasePath}/${event.target_data.id}`,
         }
       : undefined,

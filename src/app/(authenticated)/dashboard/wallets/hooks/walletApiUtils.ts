@@ -6,8 +6,9 @@ import { logger } from '@/utils/logger';
 import { parseErrorResponse } from '@/lib/wallets/errorHandling';
 import { toast } from 'sonner';
 import { API_ROUTES } from '@/config/api-routes';
+import { authLoginPath } from '@/lib/navigation/safe-return-path';
 
-const WALLET_AUTH_REDIRECT = '/auth?mode=login&from=/dashboard/wallets';
+const WALLET_AUTH_REDIRECT = authLoginPath('/dashboard/wallets');
 
 export interface DuplicateDialogState {
   isOpen: boolean;

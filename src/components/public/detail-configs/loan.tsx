@@ -9,6 +9,7 @@ import PublicEntityCTA from '@/components/public/PublicEntityCTA';
 import { ROUTES } from '@/config/routes';
 import type { EntityDetailConfig, EntityData } from '@/components/public/PublicEntityDetailPage';
 import { calculateProgress } from '@/lib/loans/progress';
+import { authLoginPath } from '@/lib/navigation/safe-return-path';
 
 /**
  * Loan detail config (SSOT) — shared by the public route (/loans/[id]) and the
@@ -23,7 +24,7 @@ export const loanDetailConfig: EntityDetailConfig = {
   showPaymentSection: false,
   mobileStickyCTA: (entity: EntityData) => ({
     label: 'Contact lister',
-    href: `${ROUTES.AUTH}?mode=login&from=${ROUTES.LOANS.VIEW(entity.id)}`,
+    href: authLoginPath(ROUTES.LOANS.VIEW(entity.id)),
   }),
   getJsonLdExtra: (entity: EntityData) => ({
     amount: {
@@ -159,7 +160,7 @@ export const loanDetailConfig: EntityDetailConfig = {
       </Card>
 
       <PublicEntityCTA
-        href={`${ROUTES.AUTH}?mode=login&from=${ROUTES.LOANS.VIEW(entity.id)}`}
+        href={authLoginPath(ROUTES.LOANS.VIEW(entity.id))}
         icon={MessageSquare}
         label="Contact Lister"
         description="Sign in to contact the loan lister or make an offer"

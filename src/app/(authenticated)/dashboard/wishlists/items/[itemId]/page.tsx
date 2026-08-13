@@ -15,6 +15,8 @@ import { FormattedAmount } from '@/components/ui/FormattedAmount';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
+import { authLoginPath } from '@/lib/navigation/safe-return-path';
+import { getUserActorId } from '@/domain/actors';
 
 interface PageProps {
   params: Promise<{ itemId: string }>;
@@ -45,8 +47,10 @@ export default async function WishlistItemDetailPage({ params }: PageProps) {
   } = await supabase.auth.getUser();
 
   if (authError || !user) {
-    redirect('/auth?mode=login&from=/dashboard/wishlists');
+    redirect(authLoginPath('/dashboard/wishlists'));
   }
+
+  const actorId = await getUserActorId(supabase, user.id);
 
   // Fetch wishlist item — cast result because DATABASE_TABLES.WISHLIST_ITEMS loses Supabase
   // type inference (same root cause as other DATABASE_TABLES.X usages in this codebase)
@@ -80,7 +84,7 @@ export default async function WishlistItemDetailPage({ params }: PageProps) {
   }
 
   const wishlist = Array.isArray(item.wishlists) ? item.wishlists[0] : item.wishlists;
-  const isOwner = wishlist && wishlist.actor_id === user.id;
+  const isOwner = Boolean(actorId && wishlist?.actor_id === actorId);
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">

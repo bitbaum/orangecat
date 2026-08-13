@@ -1,0 +1,24 @@
+[
+  { "source": "/login", "destination": "/auth?mode=login", "permanent": true },
+  { "source": "/signin", "destination": "/auth?mode=login", "permanent": true },
+  { "source": "/register", "destination": "/auth?mode=register", "permanent": true },
+  { "source": "/signup", "destination": "/auth?mode=register", "permanent": true },
+  { "source": "/auth/signin", "destination": "/auth?mode=login", "permanent": true },
+  { "source": "/auth/signup", "destination": "/auth?mode=register", "permanent": true },
+  { "source": "/auth/login", "destination": "/auth?mode=login", "permanent": true },
+  { "source": "/auth/register", "destination": "/auth?mode=register", "permanent": true },
+  { "source": "/browse", "destination": "/discover", "permanent": true },
+  { "source": "/donate", "destination": "/discover", "permanent": true },
+  { "source": "/fundraising", "destination": "/how-it-works", "permanent": true },
+  { "source": "/fund-us", "destination": "/how-it-works", "permanent": true },
+  {
+    "source": "/fund-us/:id/edit",
+    "destination": "/dashboard/projects/create?edit=:id",
+    "permanent": true
+  },
+  { "source": "/fund-us/:id", "destination": "/projects/:id", "permanent": true },
+  { "source": "/ai-chat/:path*", "destination": "/dashboard/cat", "permanent": true },
+  { "source": "/cat", "destination": "/dashboard/cat", "permanent": true },
+  { "source": "/chat", "destination": "/dashboard/cat", "permanent": true },
+  { "source": "/ai", "destination": "/dashboard/cat", "permanent": true }
+]

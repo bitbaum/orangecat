@@ -15,6 +15,7 @@ import { DATABASE_TABLES } from '@/config/database-tables';
 import { ENTITY_STATUS } from '@/config/database-constants';
 import { embeddingsEnabled, embedText } from '@/services/ai/embeddings';
 import { logger } from '@/utils/logger';
+import { publicProfilePath } from '@/config/public-profile-path';
 
 export type SearchType =
   | 'all'
@@ -276,7 +277,7 @@ async function searchProfiles(
       type: 'people',
       title: row.name || row.username,
       description: row.bio?.slice(0, 200) || `@${row.username} on OrangeCat`,
-      url: `/profiles/${row.username}`,
+      url: publicProfilePath(row.username),
     });
   }
 }

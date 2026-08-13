@@ -19,6 +19,7 @@ import { embeddingsEnabled, embedText } from '@/services/ai/embeddings';
 import { logger } from '@/utils/logger';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import type { DiscoveryPerson } from './discovery-types';
+import { ROUTES } from '@/config/routes';
 
 const LOG_SOURCE = 'CatInterests';
 
@@ -230,7 +231,7 @@ export async function findPeopleByInterest(
         userId: r.user_id,
         displayName: p.name || p.username || 'Someone',
         username: p.username,
-        profileUrl: p.username ? `/profiles/${p.username}` : null,
+        profileUrl: p.username ? ROUTES.PROFILES.VIEW(p.username) : null,
         via: [`Interested in ${r.topic}`],
       });
     }
