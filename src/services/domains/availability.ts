@@ -4,8 +4,14 @@
  * The contract this module keeps: it never reports `unregistered` unless the
  * TLD appears in IANA's RDAP bootstrap AND the registry answered 404. Any
  * other outcome — TLD with no RDAP service, timeout, transport failure,
- * unexpected status — is `unknown`. See `src/config/domain-search.ts` for the
- * false positive (orangecat.ch) that this rule exists to prevent.
+ * blocked redirect, unexpected status — is `unknown`. See
+ * `src/config/domain-search.ts` for the false positive (orangecat.ch) that this
+ * rule exists to prevent.
+ *
+ * Every request goes through `guardedFetch`, which validates each redirect hop
+ * against the same SSRF policy this codebase applies to webhook URLs. The name
+ * being looked up comes from a public query string, and rdap.org exists to
+ * redirect — so the hosts actually contacted are chosen by a third party.
  *
  * Created: 2026-08-26
  */
@@ -20,6 +26,7 @@ import {
   type DomainStatus,
 } from '@/config/domain-search';
 import { logger } from '@/utils/logger';
+import { guardedFetch, type UrlGuard } from './guardedFetch';
 
 export interface DomainResult {
   /** Full domain, lowercased: 'substrataintel.com'. */
@@ -47,15 +54,22 @@ let bootstrapCache: { tlds: Set<string>; fetchedAt: number } | null = null;
  * be indistinguishable from "no TLD supports RDAP" and would silently turn
  * every lookup into `unknown` without saying why.
  */
-export async function loadRdapTlds(now: number = Date.now()): Promise<Set<string> | null> {
+export async function loadRdapTlds(
+  now: number = Date.now(),
+  guard?: UrlGuard
+): Promise<Set<string> | null> {
   if (bootstrapCache && now - bootstrapCache.fetchedAt < RDAP_BOOTSTRAP_TTL_MS) {
     return bootstrapCache.tlds;
   }
   try {
-    const response = await fetch(RDAP_BOOTSTRAP_URL, {
-      signal: AbortSignal.timeout(RDAP_TIMEOUT_MS),
-      headers: { accept: 'application/json' },
-    });
+    const response = await guardedFetch(
+      RDAP_BOOTSTRAP_URL,
+      {
+        signal: AbortSignal.timeout(RDAP_TIMEOUT_MS),
+        headers: { accept: 'application/json' },
+      },
+      guard
+    );
     if (!response.ok) {
       logger.warn('RDAP bootstrap fetch failed', { status: response.status }, 'DomainSearch');
       return bootstrapCache?.tlds ?? null;
@@ -122,7 +136,8 @@ function unknown(name: string, tld: string, reason: string, rdapSupported: boole
 export async function checkDomain(
   input: string,
   rdapTlds: Set<string> | null,
-  now: number = Date.now()
+  now: number = Date.now(),
+  guard?: UrlGuard
 ): Promise<DomainResult> {
   const parsed = parseDomain(input);
   if (!parsed) {
@@ -152,11 +167,17 @@ export async function checkDomain(
 
   let result: DomainResult;
   try {
-    const response = await fetch(`${RDAP_QUERY_BASE}/${encodeURIComponent(domain)}`, {
-      signal: AbortSignal.timeout(RDAP_TIMEOUT_MS),
-      headers: { accept: 'application/rdap+json, application/json' },
-      redirect: 'follow',
-    });
+    // `domain` matched a strict label/TLD regex above, so the path segment
+    // cannot carry a scheme or a host; the base is a module constant. The
+    // hosts that follow come from the redirector, and guardedFetch checks them.
+    const response = await guardedFetch(
+      `${RDAP_QUERY_BASE}/${encodeURIComponent(domain)}`,
+      {
+        signal: AbortSignal.timeout(RDAP_TIMEOUT_MS),
+        headers: { accept: 'application/rdap+json, application/json' },
+      },
+      guard
+    );
 
     if (response.status === 404) {
       result = {
@@ -185,7 +206,15 @@ export async function checkDomain(
       );
     }
   } catch (error) {
-    result = unknown(name, tld, 'The registry did not answer in time.', true);
+    const blocked = error instanceof Error && error.name === 'BlockedRequestError';
+    result = unknown(
+      name,
+      tld,
+      blocked
+        ? 'The registry redirected somewhere this server will not follow.'
+        : 'The registry did not answer in time.',
+      true
+    );
     logger.warn('RDAP lookup failed', { domain, error: String(error) }, 'DomainSearch');
   }
 
@@ -194,13 +223,15 @@ export async function checkDomain(
 }
 
 /** Look several domains up, a few at a time so no registry is hammered. */
-export async function checkDomains(domains: string[]): Promise<DomainResult[]> {
-  const rdapTlds = await loadRdapTlds();
+export async function checkDomains(domains: string[], guard?: UrlGuard): Promise<DomainResult[]> {
+  const rdapTlds = await loadRdapTlds(Date.now(), guard);
   const results: DomainResult[] = [];
 
   for (let index = 0; index < domains.length; index += RDAP_CONCURRENCY) {
     const batch = domains.slice(index, index + RDAP_CONCURRENCY);
-    results.push(...(await Promise.all(batch.map(domain => checkDomain(domain, rdapTlds)))));
+    results.push(
+      ...(await Promise.all(batch.map(domain => checkDomain(domain, rdapTlds, Date.now(), guard))))
+    );
   }
   return results;
 }
