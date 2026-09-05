@@ -1,6 +1,6 @@
 # Pre-Incorporation IP Assignment Memorandum
 
-**Author:** Mao Nakamoto
+**Author:** Cato
 **Date of memo:** 2026-06-02
 **Subject:** Intent to assign all intellectual property created on the Cockpit and OrangeCat projects to a to-be-formed corporate entity.
 
@@ -8,7 +8,7 @@
 
 ## 1. Declaration
 
-I, Mao Nakamoto (the "Founder"), residing in Switzerland, sole author and copyright holder of the software, designs, documentation, content, brand assets, and other materials (collectively, the "Work Product") created in connection with the projects currently known as:
+I, Cato (the "Founder"), residing in Switzerland, sole author and copyright holder of the software, designs, documentation, content, brand assets, and other materials (collectively, the "Work Product") created in connection with the projects currently known as:
 
 - **Cockpit** — repository at `github.com/g-but/cockpit` (private), placeholder name pending rebrand
 - **OrangeCat** — repository at `github.com/g-but/orangecat`
@@ -60,7 +60,7 @@ This memorandum shall be construed under the laws of the Canton of Zurich, Switz
 ---
 
 **Signed:** **************\_\_**************
-Mao Nakamoto
+Cato
 
 **Date:** 2026-06-02
 

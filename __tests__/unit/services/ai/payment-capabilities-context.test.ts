@@ -11,7 +11,7 @@
 import { renderPaymentCapabilities } from '@/services/ai/context-sections';
 import { LIGHTNING_ADDRESS_PROVIDERS, WALLET_PROVIDERS } from '@/config/wallet-providers';
 
-const withAddress = { hasNwcWallet: true, lightningAddress: 'mao@orangecat.ch' };
+const withAddress = { hasNwcWallet: true, lightningAddress: 'hello@orangecat.ch' };
 const withoutAddress = { hasNwcWallet: false, lightningAddress: null };
 
 describe('payment capabilities context', () => {
@@ -50,7 +50,7 @@ describe('payment capabilities context', () => {
   it('spends nothing on setup instructions for a user who is already payable', () => {
     const rendered = renderPaymentCapabilities(withAddress as never);
 
-    expect(rendered).toContain('mao@orangecat.ch');
+    expect(rendered).toContain('hello@orangecat.ch');
     expect(rendered).not.toContain(WALLET_PROVIDERS.primal.website);
     expect(rendered).not.toContain('CANNOT BE PAID');
   });

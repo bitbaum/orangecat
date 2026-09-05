@@ -13,7 +13,7 @@ import { PROJECT_STATUS } from '@/config/project-statuses';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 
 // OrangeCat + FleetCrown: FleetCrown is the "customer" of OrangeCat via stakeholder graph.
-// Both are projects on this platform for Mao Nakamoto, with shared wallet.
+// Both are projects on this platform for Cato, with shared wallet.
 // Makes the stack work for FleetCrown as customer. See stakeholder_relationships and /api/stakeholders.
 
 // Extended project list item for profile display

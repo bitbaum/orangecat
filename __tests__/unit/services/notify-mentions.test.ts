@@ -25,7 +25,7 @@ const admin = {
     select: () => ({
       eq: () => ({
         maybeSingle: () =>
-          Promise.resolve({ data: { name: 'Georgy', username: 'g' }, error: null }),
+          Promise.resolve({ data: { name: 'Cato', username: 'g' }, error: null }),
       }),
     }),
   }),
@@ -50,7 +50,7 @@ describe('notifyMentionedPeople', () => {
       expect.objectContaining({
         userId: 'u-alice',
         type: 'mention',
-        title: 'Georgy mentioned you',
+        title: 'Cato mentioned you',
         actionUrl: '/posts/e1',
       })
     );

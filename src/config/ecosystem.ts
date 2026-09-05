@@ -24,7 +24,7 @@ function orangeCatPage(path: string): string {
 
 /** Canonical public identities used by support and sibling-product surfaces. */
 export const ECOSYSTEM = {
-  owner: 'Mao Nakamoto',
+  owner: 'Cato',
   orangeCat: {
     title: 'OrangeCat',
     projectId:

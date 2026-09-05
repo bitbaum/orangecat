@@ -84,7 +84,7 @@ describe('update_profile — changing the @handle', () => {
     // rename and still leave the user believing they had broken something.
     const message = String((result.data as { displayMessage: string }).displayMessage);
     expect(message).toContain('@catomean');
-    expect(message).toContain('mao@orangecat.ch');
+    expect(message).toContain('hello@orangecat.ch');
     expect(message.toLowerCase()).toContain('redirect');
   });
 

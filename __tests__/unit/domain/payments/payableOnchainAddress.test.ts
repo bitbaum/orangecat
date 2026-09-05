@@ -78,7 +78,7 @@ describe('on-chain resolution', () => {
     const resolved = await resolveUserWallet(
       clientReturning([
         { id: 'w1', address_or_xpub: ZPUB, wallet_type: 'xpub', is_primary: true },
-        { id: 'w2', lightning_address: 'mao@orangecat.ch', wallet_type: 'lightning' },
+        { id: 'w2', lightning_address: 'hello@orangecat.ch', wallet_type: 'lightning' },
       ]),
       'user-1'
     );

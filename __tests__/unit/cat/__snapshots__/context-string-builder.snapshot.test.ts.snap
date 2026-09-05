@@ -19,7 +19,7 @@ These are durable facts you've learned about them across past conversations. Tre
 Today is Monday, June 29, 2026, 12:00 UTC.
 
 ## User Profile
-**Name**: Mao Nakamoto
+**Name**: Cato
 **Username**: @mao
 **Bio**: Building OrangeCat.
 **Location**: Zurich, CH
@@ -94,7 +94,7 @@ Use the conversation id with reply_to_message to reply on the user's behalf.
 
 ## Payment Capabilities
 ⚡ **NWC wallet connected** — can use send_payment and fund_project exec_action blocks to send Bitcoin automatically
-📬 **Lightning address**: mao@orangecat.ch (others can pay the user here)
+📬 **Lightning address**: hello@orangecat.ch (others can pay the user here)
 
 ## Activity Summary
 The user has: 1 product, 2 services, 1 project, 1 cause, 1 event, 1 asset, 1 loan, 1 research entity, 1 wishlist, 2 active tasks (1 urgent), 1 wallet.

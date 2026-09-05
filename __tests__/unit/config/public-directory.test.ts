@@ -79,6 +79,6 @@ describe('public-directory', () => {
 
   it('is false with nothing to compare', () => {
     expect(isEmailDerivedHandle({ username: 'mao', email: null })).toBe(false);
-    expect(isEmailDerivedHandle({ username: null, email: 'mao@orangecat.ch' })).toBe(false);
+    expect(isEmailDerivedHandle({ username: null, email: 'hello@orangecat.ch' })).toBe(false);
   });
 });

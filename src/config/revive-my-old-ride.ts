@@ -11,7 +11,7 @@
  * reused by the seed today and any /projects rendering or Cat context later.
  *
  * On-platform ownership: there is no separate "revamp-it" actor — the founder's
- * platform identity is the `mao` actor (Mao Nakamoto), which already owns the
+ * platform identity is the `mao` actor (Cato), which already owns the
  * "FleetCrown" and "OrangeCat" projects. Revive My Old Ride is owned the same
  * way, with revamp-it represented as an external stakeholder link. Swap to a
  * dedicated revamp-it actor/group later by changing OWNER_ACTOR_SLUG.

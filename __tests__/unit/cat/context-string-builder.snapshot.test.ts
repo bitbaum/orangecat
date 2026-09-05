@@ -10,7 +10,7 @@ import type { FullUserContext } from '@/services/ai/document-context-types';
 // A fixture that exercises every render branch.
 const FULL_CTX = {
   profile: {
-    name: 'Mao Nakamoto',
+    name: 'Cato',
     username: 'mao',
     bio: 'Building OrangeCat.',
     location_city: 'Zurich',
@@ -139,7 +139,7 @@ const FULL_CTX = {
       pushedAt: '2026-06-28T00:00:00Z',
     },
   ],
-  paymentCapabilities: { hasNwcWallet: true, lightningAddress: 'mao@orangecat.ch' },
+  paymentCapabilities: { hasNwcWallet: true, lightningAddress: 'hello@orangecat.ch' },
   runtime: {
     preferredCurrency: 'CHF',
     locale: 'en-US',

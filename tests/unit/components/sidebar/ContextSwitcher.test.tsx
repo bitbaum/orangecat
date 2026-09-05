@@ -44,7 +44,7 @@ const mockUseNavigationContext = useNavigationContext as Mock;
 const profile = {
   id: 'user-1',
   username: 'mao',
-  name: 'Mao Nakamoto',
+  name: 'Cato',
   avatar_url: 'https://example.test/avatar.png',
 } as unknown as Profile;
 
@@ -63,7 +63,7 @@ describe('ContextSwitcher avatar is clickable', () => {
   it('wraps the collapsed avatar in a control', () => {
     render(<ContextSwitcher profile={profile} isExpanded={false} />);
 
-    const avatar = screen.getByAltText('Mao Nakamoto');
+    const avatar = screen.getByAltText('Cato');
     expect(avatar.closest('button')).toBeInTheDocument();
   });
 
@@ -71,7 +71,7 @@ describe('ContextSwitcher avatar is clickable', () => {
     const onExpand = vi.fn();
     render(<ContextSwitcher profile={profile} isExpanded={false} onExpand={onExpand} />);
 
-    fireEvent.click(screen.getByAltText('Mao Nakamoto').closest('button')!);
+    fireEvent.click(screen.getByAltText('Cato').closest('button')!);
 
     // Collapsed mode returns before the dropdown renders, so opening the
     // switcher is only visible to the user if the sidebar expands too.
@@ -81,14 +81,14 @@ describe('ContextSwitcher avatar is clickable', () => {
   it('names the collapsed control for screen readers and hover', () => {
     render(<ContextSwitcher profile={profile} isExpanded={false} />);
 
-    const button = screen.getByAltText('Mao Nakamoto').closest('button')!;
-    expect(button).toHaveAccessibleName(/Mao Nakamoto/);
+    const button = screen.getByAltText('Cato').closest('button')!;
+    expect(button).toHaveAccessibleName(/Cato/);
   });
 
   it('wraps the expanded avatar in the switcher trigger', () => {
     render(<ContextSwitcher profile={profile} isExpanded />);
 
-    const avatar = screen.getByAltText('Mao Nakamoto');
+    const avatar = screen.getByAltText('Cato');
     expect(avatar.closest('button')).toBeInTheDocument();
   });
 
@@ -96,7 +96,7 @@ describe('ContextSwitcher avatar is clickable', () => {
     render(<ContextSwitcher profile={profile} isExpanded />);
 
     expect(screen.queryByText('Personal')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByAltText('Mao Nakamoto').closest('button')!);
+    fireEvent.click(screen.getByAltText('Cato').closest('button')!);
 
     expect(screen.getByText('Personal')).toBeInTheDocument();
   });
