@@ -19,6 +19,25 @@ EnvironmentFile=/opt/orangecat/app/.env
 ExecStart=/opt/orangecat/app/launch.sh
 Restart=on-failure
 RestartSec=3
+# A deploy stops this unit with SIGTERM, and Next exits 143. Without this,
+# systemd records every ordinary deploy as
+#   orangecat-app.service: Failed with result 'exit-code'
+# and fires OnFailure= (the notify-failure@ drop-in on the box).
+#
+# That is not a paging bug — notify-failure.sh is recovery-aware: it waits 8s,
+# sees the unit active again, and logs "failed but recovered (restart/transient)
+# — not paging". 38 such suppressions in the last 7 days across the box.
+#
+# It IS a diagnosis bug. Reading this unit's journal, a routine deploy is
+# indistinguishable from a crash: three "Failed with result 'exit-code'" lines
+# in one afternoon read as a crash loop, and cost real time to rule out
+# (2026-09-07, while chasing an unrelated report). Telling systemd that a
+# requested stop is a success makes the journal mean what it says, and stops
+# spawning a notifier per deploy to conclude nothing happened.
+#
+# Safe because SIGTERM here is always a requested stop: OOM kills with SIGKILL
+# (9), which still counts as a failure and still pages.
+SuccessExitStatus=143 SIGTERM
 StandardOutput=journal
 StandardError=journal
 
