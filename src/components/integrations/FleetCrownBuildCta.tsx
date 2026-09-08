@@ -47,8 +47,26 @@ export default function FleetCrownBuildCta({
   const [error, setError] = useState('');
 
   const openFleetCrown = async () => {
+    // Open the tab NOW, inside the click. A window.open() after an await has
+    // lost the user gesture and every popup blocker eats it — so the tab is
+    // claimed synchronously and pointed at the handoff once it is minted.
+    // `noopener` is set by clearing `opener` rather than passing the feature,
+    // because that feature makes window.open return null and we need the handle.
+    const tab = window.open('', '_blank');
+    if (tab) {
+      tab.opener = null;
+    }
+    const go = (url: string) => {
+      // A blocked popup must not become a dead end: fall back to this tab.
+      if (tab) {
+        tab.location.replace(url);
+      } else {
+        window.location.assign(url);
+      }
+    };
+
     if (!entityType || !entityId) {
-      window.location.assign(FLEETCROWN_BUILD_URL);
+      go(FLEETCROWN_BUILD_URL);
       return;
     }
     setLoading(true);
@@ -67,7 +85,7 @@ export default function FleetCrownBuildCta({
       // failure the user should see — fall back to the plain FleetCrown link,
       // exactly as the banner (no entity id) variant already does.
       if (response.status === 503) {
-        window.location.assign(FLEETCROWN_BUILD_URL);
+        go(FLEETCROWN_BUILD_URL);
         return;
       }
       const body = (await response.json()) as {
@@ -77,8 +95,12 @@ export default function FleetCrownBuildCta({
       if (!response.ok || !body.data?.url) {
         throw new Error(body.error?.message || 'Could not create the FleetCrown handoff.');
       }
-      window.location.assign(body.data.url);
+      go(body.data.url);
+      setLoading(false);
     } catch (cause) {
+      // The handoff never arrived, so close the tab we speculatively opened
+      // rather than stranding the reader on a blank page with no explanation.
+      tab?.close();
       setError(cause instanceof Error ? cause.message : 'Could not open FleetCrown.');
       setLoading(false);
     }
