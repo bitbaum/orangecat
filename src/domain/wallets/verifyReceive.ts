@@ -31,13 +31,54 @@ export type ReceiveVerdict =
   /** We could not reach it. NOT the same as broken — say so honestly. */
   | { status: 'unknown'; detail: string };
 
+/**
+ * Refuse anything that is not a public HTTPS endpoint.
+ *
+ * This module takes a DOMAIN FROM USER INPUT and fetches it, then follows a
+ * callback URL chosen by that remote server. Without this guard both are a
+ * server-side request forgery: `someone@169.254.169.254` makes the server read
+ * cloud metadata, `someone@127.0.0.1` reaches anything bound to loopback, and
+ * the provider's own words — which this feature deliberately surfaces to the
+ * user — would carry the response back out.
+ *
+ * IP literals are rejected outright rather than range-checked: a real Lightning
+ * provider always has a DNS name, so there is no legitimate case to preserve
+ * and no parsing edge case (octal, decimal, IPv6-mapped) left to get wrong.
+ */
+function assertPublicHttpsUrl(raw: string): URL {
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    throw new Error('BAD_TARGET');
+  }
+  if (url.protocol !== 'https:') {
+    throw new Error('BAD_TARGET');
+  }
+  const host = url.hostname.toLowerCase();
+  const isIpLiteral = host.startsWith('[') || /^[0-9.]+$/.test(host);
+  const isLocal =
+    host === 'localhost' ||
+    host.endsWith('.localhost') ||
+    host.endsWith('.local') ||
+    host.endsWith('.internal') ||
+    !host.includes('.');
+  if (isIpLiteral || isLocal) {
+    throw new Error('BAD_TARGET');
+  }
+  return url;
+}
+
 async function getJson(url: string): Promise<{ ok: boolean; status: number; body: unknown }> {
+  const target = assertPublicHttpsUrl(url);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), BITCOIN_FETCH_TIMEOUT_MS);
   try {
-    const res = await fetch(url, {
+    const res = await fetch(target, {
       headers: { Accept: 'application/json' },
       signal: controller.signal,
+      // A permitted host must not be able to bounce us somewhere private.
+      redirect: 'error',
     });
     const body = await res.json().catch(() => null);
     return { ok: res.ok, status: res.status, body };
@@ -62,7 +103,13 @@ async function verifyLightningAddress(address: string): Promise<ReceiveVerdict> 
   let meta: { ok: boolean; status: number; body: unknown };
   try {
     meta = await getJson(`https://${domain}/.well-known/lnurlp/${user}`);
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message === 'BAD_TARGET') {
+      return {
+        status: 'unusable',
+        detail: 'A Lightning address must point at a public domain name.',
+      };
+    }
     return {
       status: 'unknown',
       detail: `Could not reach ${domain}. Saved anyway — try verifying again in a moment.`,
@@ -83,8 +130,16 @@ async function verifyLightningAddress(address: string): Promise<ReceiveVerdict> 
   let invoice: { ok: boolean; status: number; body: unknown };
   try {
     const sep = metaBody.callback.includes('?') ? '&' : '?';
+    // The callback is chosen by the REMOTE server, so it is guarded too — a
+    // hostile provider must not be able to aim us at an internal address.
     invoice = await getJson(`${metaBody.callback}${sep}amount=${PROBE_MSATS}`);
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message === 'BAD_TARGET') {
+      return {
+        status: 'unusable',
+        detail: `${domain} pointed the payment somewhere we will not follow.`,
+      };
+    }
     return {
       status: 'unknown',
       detail: `Could not reach ${domain}. Saved anyway — try verifying again in a moment.`,
