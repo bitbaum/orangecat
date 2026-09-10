@@ -4,11 +4,7 @@
  * from tool-use.ts (SoC). Side-effects (onToolCall lifecycle, onPrefillProposal) fire here.
  */
 
-import { logger } from '@/utils/logger';
-import { CAT_ACTIONS } from '@/config/cat-actions';
-import { PLATFORM_TOOL_DEFINITION } from './tool-use-detection';
-import { CatActionExecutor } from './action-executor';
-import { summariseForModel } from './action-loop';
+import { isActionToolName, runActionAsTool } from './action-tool';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { searchPlatform, type SearchType } from './platform-search';
 import { generateFormPrefill } from '@/lib/ai/form-prefill-service';
@@ -38,61 +34,6 @@ import type {
  * model able to tell the user about it, which is strictly better than a dead
  * stream.
  */
-/** Names the read-tool handlers in this file already own. */
-const PLATFORM_TOOL_NAMES = new Set(
-  PLATFORM_TOOL_DEFINITION.map(t => (t as { function: { name: string } }).function.name)
-);
-
-async function runActionAsTool(
-  supabase: AnySupabaseClient,
-  userId: string,
-  actorId: string | null,
-  toolCall: RawToolCall,
-  onToolCall?: OnToolCall
-): Promise<string> {
-  const actionId = toolCall.function?.name as string;
-  onToolCall?.({ id: toolCall.id, name: actionId, status: 'running' });
-
-  if (!actorId) {
-    return summariseForModel(actionId, {
-      status: 'failed',
-      error: 'No actor record for this user, so nothing can be created yet.',
-    });
-  }
-
-  let parameters: Record<string, unknown> = {};
-  try {
-    parameters = JSON.parse(toolCall.function?.arguments ?? '{}') as Record<string, unknown>;
-  } catch {
-    // Malformed JSON from the model is a correctable mistake, not a crash.
-    return summariseForModel(actionId, {
-      status: 'failed',
-      error: 'Arguments were not valid JSON. Send them again as a JSON object.',
-    });
-  }
-
-  try {
-    const executor = new CatActionExecutor(supabase);
-    const result = await executor.executeAction(userId, actorId, { actionId, parameters });
-    // The client renders these live. A denial or a pending confirmation is
-    // NOT a completion — surfacing it as one would show a green tick for
-    // something the user still has to approve.
-    onToolCall?.(
-      result.status === 'completed'
-        ? { id: toolCall.id, name: actionId, status: 'completed', resultCount: 1, results: [] }
-        : { id: toolCall.id, name: actionId, status: 'failed', error: result.error }
-    );
-    return summariseForModel(actionId, result);
-  } catch (error) {
-    logger.error('Action tool call threw', { error, actionId }, 'CatToolExecutor');
-    onToolCall?.({ id: toolCall.id, name: actionId, status: 'failed' });
-    return summariseForModel(actionId, {
-      status: 'failed',
-      error: error instanceof Error ? error.message : 'unknown error',
-    });
-  }
-}
-
 export async function executeToolCall(
   supabase: AnySupabaseClient,
   userId: string,
@@ -125,7 +66,7 @@ export async function executeToolCall(
   // action does less. Checking actions first silently rerouted it to the
   // weaker one, which three existing tests caught. The read tools win; only
   // names they do not claim fall through to the registry.
-  if (toolName && !PLATFORM_TOOL_NAMES.has(toolName) && CAT_ACTIONS[toolName]) {
+  if (isActionToolName(toolName)) {
     const summary = await runActionAsTool(supabase, userId, actorId ?? null, toolCall, onToolCall);
     return { role: 'tool', tool_call_id: toolCall.id, content: summary };
   }
