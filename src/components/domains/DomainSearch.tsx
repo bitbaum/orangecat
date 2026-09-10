@@ -11,9 +11,17 @@
  */
 
 import React, { useCallback, useState } from 'react';
-import { Loader2, Search } from 'lucide-react';
+import Link from 'next/link';
+import { ArrowUpRight, Loader2, Search } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { DOMAIN_STATUS_COPY, type DomainStatus } from '@/config/domain-search';
+import {
+  canOfferPurchase,
+  primaryRegistrar,
+  purchaseUrl,
+  REGISTRARS,
+} from '@/config/domain-purchase';
+import { freeSubdomainHost, WEBSITE_BUILD_SERVICE_URL } from '@/config/domains-offer';
 
 interface DomainResult {
   domain: string;
@@ -34,6 +42,11 @@ const STATUS_ORDER: Record<DomainStatus, number> = { unregistered: 0, unknown: 1
 export function DomainSearch() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<DomainResult[] | null>(null);
+  // The label the free address is built from. Comes from the SERVER (see the
+  // `seed` field in /api/v1/domains) rather than being re-derived here — the
+  // reducer reaches server-only code, and two copies of a normalisation rule
+  // is how `Causius Legal` becomes one host in the search and another at setup.
+  const [seed, setSeed] = useState('');
   const [disclaimer, setDisclaimer] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -63,6 +76,7 @@ export function DomainSearch() {
             (a: DomainResult, b: DomainResult) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status]
           )
         );
+        setSeed(payload.seed ?? '');
         setDisclaimer(payload.disclaimer ?? '');
       } catch {
         setError('Could not reach the registry lookup. Try again in a moment.');
@@ -125,11 +139,59 @@ export function DomainSearch() {
                   >
                     {DOMAIN_STATUS_COPY[result.status].label}
                   </span>
+                  {/* Only on `unregistered`. An `unknown` result concluded
+                      nothing, and a Register button there would turn a
+                      non-answer into an invitation. */}
+                  {canOfferPurchase(result.status) && (
+                    <a
+                      href={purchaseUrl(primaryRegistrar(), result.domain)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-lg border border-interactive px-3 text-xs font-medium text-fg-primary hover:bg-surface-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-interactive"
+                    >
+                      Register
+                      <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
+                      <span className="sr-only">
+                        {result.domain} at {primaryRegistrar().name} (opens in a new tab)
+                      </span>
+                    </a>
+                  )}
                 </span>
               </li>
             ))}
           </ul>
           {disclaimer && <p className="mt-3 text-xs leading-relaxed text-fg-muted">{disclaimer}</p>}
+          <p className="mt-2 text-xs leading-relaxed text-fg-muted">
+            Registration happens at {REGISTRARS.map(r => r.name).join(' or ')} — they become your
+            registrar and your counterparty for the domain. OrangeCat is not a registrar, takes no
+            commission on this, and never sees your payment.
+          </p>
+
+          {/* The default, and deliberately AFTER the results: someone who just
+              learned their name is free should see how to take it first. This is
+              the answer for everyone else — the reason "I have not bought a
+              domain yet" stops being a reason not to start. */}
+          {freeSubdomainHost(seed) && (
+            <div className="mt-6 rounded-xl border border-interactive bg-surface-raised p-5">
+              <h3 className="text-base font-semibold text-fg-primary">
+                Or start today without buying anything
+              </h3>
+              <p className="mt-2 text-sm text-fg-secondary">
+                Your site can go live at{' '}
+                <span className="font-mono text-fg-primary">{freeSubdomainHost(seed)}</span> — a
+                real, working address, free, with certificates and monitoring. Buy a domain whenever
+                you are ready and it moves across; the old address keeps redirecting, so nothing you
+                have shared breaks.
+              </p>
+              <div className="mt-4">
+                <Link href={WEBSITE_BUILD_SERVICE_URL}>
+                  <Button variant="accent" className="min-h-11">
+                    Start at {freeSubdomainHost(seed)}
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
