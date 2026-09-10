@@ -23,6 +23,7 @@ import {
 } from '@/types/wallet';
 import type { WalletFormProps } from '../types';
 import { apiErrorMessage } from '@/lib/api/errorMessage';
+import { ReceiveVerdict } from './ReceiveVerdict';
 
 /** Friendly label + hint for whatever the user pasted. */
 const DETECTED: Record<Exclude<WalletInputKind, 'unknown'>, string> = {
@@ -178,7 +179,7 @@ export function WalletForm({
         {detected !== 'unknown' ? (
           <p className="mt-1.5 flex items-center gap-1 text-xs font-medium text-status-positive">
             <Check className="h-3.5 w-3.5" />
-            {DETECTED[detected]} — looks good
+            {DETECTED[detected]} detected
           </p>
         ) : (
           <p className="mt-1.5 text-xs text-fg-secondary">
@@ -186,6 +187,8 @@ export function WalletForm({
             a Bitcoin address, or a connection link. We&apos;ll sort out the rest.
           </p>
         )}
+
+        <ReceiveVerdict detected={detected} value={walletInput} />
 
         <button
           type="button"
