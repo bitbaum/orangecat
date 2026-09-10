@@ -1,3 +1,4 @@
+import { PRIVILEGED_ROLES } from '@/services/actors/resolveCreationActor';
 import { callRpc, fromTable } from '@/lib/supabase/untyped';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { writeMessage } from './write-message';
@@ -59,7 +60,7 @@ export async function sendMessage(
           .select('role')
           .eq('group_id', actor.group_id)
           .eq('user_id', user.id)
-          .in('role', ['founder', 'admin', 'moderator'])
+          .in('role', [...PRIVILEGED_ROLES])
           .maybeSingle();
 
         if (memberError || !membership) {

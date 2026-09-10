@@ -5,6 +5,7 @@
  * Extracted to keep the route thin (HTTP layer only).
  */
 
+import { PRIVILEGED_ROLES } from '@/services/actors/resolveCreationActor';
 import { fromTable } from '@/lib/supabase/untyped';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { noteCatMention } from '@/services/mentions/note-mention';
@@ -334,7 +335,7 @@ export async function fetchMessagingActors(userId: string): Promise<MessagingAct
     `
     )
     .eq('user_id', userId)
-    .in('role', ['founder', 'admin', 'moderator']);
+    .in('role', [...PRIVILEGED_ROLES]);
 
   if (groupError) {
     logger.error(
