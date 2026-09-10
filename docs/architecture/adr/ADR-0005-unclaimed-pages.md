@@ -252,9 +252,18 @@ project notes and profile (`owner`, `url`, `customers`, `status`, `next_step`)
 and the steward may hand an unclaimed page over. Only the owner could before —
 and for a placeholder the owner is nobody, so the button 403'd.
 
+**Walked in prod 2026-09-10/11 (#958, #960).** The walk found and fixed: the
+API rail's project was owned by the steward (five domain services dropped
+`_resolved_actor_id`); unclaimed actors were invisible under the `actors`
+SELECT policy (no band, no slug page, handoff naming the steward as client); a
+claim kept a minted `user_<hex>` handle instead of the slug; a pending
+confirmation rendered as "Action failed"; the share link never reached the
+chat after confirming.
+
 **Still not built:** services, products and groups for someone else
 (`CLAIMABLE_ENTITY_TYPES` is `['project']`); a co-editor model so a steward can
-keep helping after the claim.
+keep helping after the claim. The free model invents a funding goal unless the
+parameter text forbids it (it does now); a frontier model would not.
 
 ## Related
 

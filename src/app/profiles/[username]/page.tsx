@@ -16,6 +16,8 @@ import { ROUTES } from '@/config/routes';
 import { APP_NAME, APP_KICKER, SITE_URL } from '@/config/brand';
 import { applyProfilePrivacy } from '@/config/profile-privacy';
 import { resolveHistoricalUsername } from '@/domain/lightning-address/username-history';
+import { getOrCreateUserActor } from '@/services/actors/getOrCreateUserActor';
+import { ownedProjectsFilter } from '@/domain/projects/service';
 import { getUnclaimedOwnerBySlug } from '@/domain/profileClaims/unclaimed';
 import { UnclaimedProfileView } from '@/components/claim/UnclaimedProfileView';
 import { looseClient } from '@/lib/supabase/untyped';
@@ -227,7 +229,10 @@ export default async function PublicProfilePage({ params }: PageProps) {
     notFound();
   }
 
-  // Fetch user's projects (exclude drafts, respect show_on_profile setting)
+  // Fetch the projects this profile OWNS (by actor — a claimed page is owned
+  // by its owner, created by the steward), excluding drafts and respecting
+  // the show_on_profile setting.
+  const ownerActor = await getOrCreateUserActor(profile.id);
   const { data: projectsData } = await supabase
     .from(getTableName('project'))
     .select(
@@ -248,7 +253,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
       updated_at
     `
     )
-    .eq('user_id', profile.id)
+    .or(ownedProjectsFilter(ownerActor.id, profile.id))
     .neq('status', 'draft') // Exclude drafts from public profile
     .neq('show_on_profile', false) // Respect user's visibility preference (null = true by default)
     .order('created_at', { ascending: false });
