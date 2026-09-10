@@ -162,9 +162,8 @@ export default async function PublicProjectPage({ params }: PageProps) {
   // nothing; the band says whose it is instead of the page rendering ownerless.
   const unclaimedOwner = await getUnclaimedOwner(supabase, project.actor_id);
 
-  // Whose page this is: the OWNING actor's account, falling back to the
-  // creating account for legacy rows with no actor. `user_id` is who created
-  // the row; after a claim (ADR-0005) that is the steward, not the owner.
+  // Whose page this is: the OWNING actor's account (legacy rows: the creator).
+  // After a claim (ADR-0005) `user_id` is the steward, not the owner.
   const ownerUserId = (await resolveActorUserId(supabase, project.actor_id)) ?? project.user_id;
 
   // Fetch profile separately (more reliable than JOIN)
@@ -181,8 +180,7 @@ export default async function PublicProjectPage({ params }: PageProps) {
     }
   }
 
-  // Set up on someone's behalf and since taken over: the creator is not the
-  // owner any more, but that it was set up for her stays visible.
+  // Set up for someone and since taken over: attribution stays visible.
   const setUpByUsername =
     !unclaimedOwner && project.user_id && ownerUserId && project.user_id !== ownerUserId
       ? await usernameOf(supabase, project.user_id)
