@@ -24,7 +24,20 @@ export class ActorNotPermittedError extends Error {
   }
 }
 
-const PRIVILEGED_ROLES = ['founder', 'admin', 'moderator'] as const;
+/**
+ * Roles that may act for a group.
+ *
+ * 'moderator' used to be in this list and could never match: the
+ * `group_members_role_check` constraint permits only founder | admin | member,
+ * so a moderator row cannot exist. (`membership_role_enum` does contain
+ * 'moderator', but no table uses that type — it is an orphan.) Filtering on an
+ * impossible value is not harmless: it reads as "moderators can create for
+ * their group", which is a capability nobody has.
+ *
+ * Kept as the one list, asserted against the constraint by
+ * __tests__/unit/config/privileged-roles-exist.test.ts.
+ */
+export const PRIVILEGED_ROLES = ['founder', 'admin'] as const;
 
 /**
  * @param userId - The authenticated user.
