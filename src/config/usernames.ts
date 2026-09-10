@@ -66,7 +66,10 @@ const RESERVED_SET: ReadonlySet<string> = new Set(
  * dropped for the same reason.
  */
 export function normalizeUsername(username: string): string {
-  return username.trim().toLowerCase().replace(/[_\-.]/g, '');
+  return username
+    .trim()
+    .toLowerCase()
+    .replace(/[_\-.]/g, '');
 }
 
 /** @returns the reason a handle is reserved, or null if it is free to take. */
@@ -85,4 +88,16 @@ export function isValidUsername(username: string): boolean {
     return false;
   }
   return USERNAME_PATTERN.test(username.trim());
+}
+
+/**
+ * A handle the platform minted, not one the person chose: `user_<hex>`. Two
+ * places already special-cased it (the display-name nudge and the public
+ * directory); a claim adopts the placeholder's slug over one of these, so the
+ * URL her friends were sent keeps working — a minted handle is not a choice.
+ */
+export const MINTED_HANDLE_RE = /^user_[0-9a-f]{8,}$/i;
+
+export function isMintedHandle(username: string | null | undefined): boolean {
+  return !!username && MINTED_HANDLE_RE.test(username);
 }

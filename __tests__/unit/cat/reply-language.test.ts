@@ -50,3 +50,17 @@ describe('buildReplyLanguageDirective', () => {
     expect(d.toLowerCase()).toContain('same language');
   });
 });
+
+describe('scripts the stopword lists cannot see', () => {
+  it('names Cyrillic for a Russian message instead of falling through to "unknown"', () => {
+    const d = buildReplyLanguageDirective('Да, кстати, этот проект не для меня');
+    expect(d).toContain('Cyrillic');
+    expect(d).not.toContain('reply in English');
+  });
+
+  it('never tells the model to default to English when the language is unknown', () => {
+    const d = buildReplyLanguageDirective('DJ 2026');
+    expect(d.toLowerCase()).not.toContain('reply in english');
+    expect(d).toContain('quick_replies');
+  });
+});

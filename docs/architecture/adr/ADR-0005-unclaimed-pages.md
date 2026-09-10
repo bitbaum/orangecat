@@ -1,7 +1,7 @@
 # ADR-0005: Unclaimed Pages — Set It Up, Show It, Hand It Over
 
 Date: 2026-09-07
-Status: Proposed
+Status: Accepted — implemented (#920 schema/domain/surfaces/share screen; Cat's verb and the access model below shipped 2026-09-10)
 Supersedes: ADR-0004 D2 (materialise at claim) and D5 (not public until claimed)
 Keeps: ADR-0004 D1, D3, D4, D6, D7, D8 and everything ADR-0003 protects
 
@@ -211,6 +211,50 @@ regulatory question, all for a person who may click _Decline_.
 3. **Surfaces**: the band, disabled Fund, profile-slug fallback, `noindex`.
 4. **The share screen** (D8) — the one that makes the rest matter.
 5. Cat's verb.
+
+## Addendum 2026-09-10 — Cat's verb, and who has access when
+
+Built after watching the first real attempt: George sat with Annushka (no
+account, Russian-speaking, non-technical) and described her idea to Cat. Cat
+re-offered the same three drafts three times, attributed George's own skills
+to her, leaked a raw tool-call object into the reply, and never recognised
+"this is for another person who isn't registered" as the cue. Nothing was
+created. What changed:
+
+- **`create_project_for_person`** — one registry action does what the create
+  form's "This is for: someone else" does: placeholder actor, project owned by
+  it, and the share link back to the steward. Confirmation card states whose
+  it is and that no money moves until she accepts. `send_to_fleetcrown`
+  mints the same signed handoff as the entity page's card, so "can she have it
+  built?" is answered with a link.
+- **Denied is now asked.** A category the user never granted (entities is off
+  by default — it was off for George, which is why Cat could only ever draft)
+  produces the confirmation card with one extra sentence and an "Allow and
+  confirm" button, instead of a dead end plus a settings link. Payments and
+  high-risk actions are excluded from that shortcut.
+- **Reply language.** Cyrillic is detected as a script; the "unknown" branch no
+  longer ends with "if the user wrote English, reply in English"; and a
+  non-Latin sentence now reaches the tool phase at all.
+
+**Access, decided.** While the claim is pending the steward manages the page
+(D5) — the band says so: "Until then, @george keeps it up to date." On claim,
+the owner has full access and the steward's ends; a co-editor model does not
+exist for projects and is not invented here. What stays is attribution:
+`projects.user_id` is the creating account and differs from the owner exactly
+when the page was set up on someone's behalf, so the page renders "Set up by
+@george, now run by its owner" for as long as it exists. Ownership on the page
+resolves through the actor, not `user_id` — which had shown the steward as
+owner after a claim and hidden the controls from the person it belonged to.
+
+**FleetCrown gets the client.** The handoff token now carries `owner`
+(kind/displayName/pageUrl/stewardUsername); FleetCrown writes it into the
+project notes and profile (`owner`, `url`, `customers`, `status`, `next_step`)
+and the steward may hand an unclaimed page over. Only the owner could before —
+and for a placeholder the owner is nobody, so the button 403'd.
+
+**Still not built:** services, products and groups for someone else
+(`CLAIMABLE_ENTITY_TYPES` is `['project']`); a co-editor model so a steward can
+keep helping after the claim.
 
 ## Related
 

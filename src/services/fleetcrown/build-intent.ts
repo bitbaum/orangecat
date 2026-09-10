@@ -15,6 +15,17 @@ export interface FleetCrownBuildIntent {
     description: string | null;
     publicUrl: string;
   };
+  /**
+   * Who the builder is building FOR. Additive (older FleetCrown deploys ignore
+   * it). `unclaimed` means a page set up on someone's behalf that she has not
+   * taken over yet — the steward speaks for her until she does.
+   */
+  owner?: {
+    kind: 'user' | 'group' | 'unclaimed';
+    displayName: string;
+    pageUrl: string | null;
+    stewardUsername: string | null;
+  };
   suggestedHandoff: string[];
 }
 
@@ -41,13 +52,31 @@ export function signFleetCrownBuildIntent(
   };
   const header = encode({ alg: 'HS256', typ: 'JWT' });
   const body = encode(payload);
-  const signature = createHmac('sha256', secret)
-    .update(`${header}.${body}`)
-    .digest('base64url');
+  const signature = createHmac('sha256', secret).update(`${header}.${body}`).digest('base64url');
   return `${header}.${body}.${signature}`;
 }
 
-export function suggestedHandoffFor(type: EntityType, title: string): string[] {
+export function suggestedHandoffFor(
+  type: EntityType,
+  title: string,
+  owner?: FleetCrownBuildIntent['owner']
+): string[] {
+  // A page set up for someone else: the builder's first fact is who the client
+  // is and who answers for her until she has claimed it.
+  const client =
+    owner?.kind === 'unclaimed'
+      ? [
+          `Client: ${owner.displayName} — she has not claimed her OrangeCat page yet` +
+            (owner.stewardUsername
+              ? `; @${owner.stewardUsername} answers for her until she does.`
+              : '.'),
+          'Once a site exists, the client steers it herself through the feedback widget on the page — no account needed.',
+        ]
+      : [];
+  return [...client, ...handoffStepsFor(type, title)];
+}
+
+function handoffStepsFor(type: EntityType, title: string): string[] {
   if (type === 'group' || type === 'circle') {
     return [
       `Clarify the mission, membership model, and launch criteria for ${title}.`,

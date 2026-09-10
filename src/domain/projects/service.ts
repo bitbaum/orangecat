@@ -1,4 +1,4 @@
-import { listEntityPage, createEntity } from '@/domain/base/entityService';
+import { listEntityPage, createEntity, withResolvedActor } from '@/domain/base/entityService';
 import { PROJECT_STATUS } from '@/config/project-statuses';
 import { STATUS } from '@/config/database-constants';
 import type { ProjectData } from '@/lib/validation';
@@ -55,7 +55,7 @@ export async function createProject(
   return createEntity(
     'project',
     userId,
-    {
+    withResolvedActor(payload, {
       user_id: userId,
       title: payload.title,
       description: payload.description,
@@ -72,7 +72,7 @@ export async function createProject(
       // Respect the form's profile-visibility toggle; DB default (true) would
       // otherwise always win and ignore an unchecked box.
       show_on_profile: payload.show_on_profile ?? true,
-    },
+    }),
     client ? { client } : undefined
   );
 }

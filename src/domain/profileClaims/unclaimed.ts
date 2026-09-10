@@ -48,6 +48,38 @@ export async function getUnclaimedOwner(
   };
 }
 
+/**
+ * The account behind an actor — a person's own actor has one, a group's actor
+ * resolves to nothing here (groups are not accounts), a placeholder has none.
+ */
+export async function resolveActorUserId(
+  supabase: AnySupabaseClient,
+  actorId: string | null | undefined
+): Promise<string | null> {
+  if (!actorId) {
+    return null;
+  }
+  const { data } = await looseClient(supabase)
+    .from(DATABASE_TABLES.ACTORS)
+    .select('user_id')
+    .eq('id', actorId)
+    .maybeSingle();
+  return (data?.user_id as string | null | undefined) ?? null;
+}
+
+/** A handle for attribution ("Set up by @x"), or null when the account has none. */
+export async function usernameOf(
+  supabase: AnySupabaseClient,
+  userId: string
+): Promise<string | null> {
+  const { data } = await looseClient(supabase)
+    .from(DATABASE_TABLES.PROFILES)
+    .select('username')
+    .eq('id', userId)
+    .maybeSingle();
+  return (data?.username as string | null | undefined) ?? null;
+}
+
 /** The placeholder addressed by `/profiles/<slug>`, or null. */
 export async function getUnclaimedOwnerBySlug(
   supabase: AnySupabaseClient,

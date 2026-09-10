@@ -154,12 +154,29 @@ export function hasMoneyNeedIntent(message: string): boolean {
   return MONEY_NEED_PATTERNS.some(re => re.test(message));
 }
 
+/**
+ * Every trigger above is an English (or German) word. A message in Cyrillic,
+ * Greek, Arabic, Hebrew, Devanagari, CJK or Hangul matched nothing, so the
+ * tool phase never ran for it — no prefill cards, no search, no action tools —
+ * and the user got prose about the product instead of the product. A message
+ * with enough non-Latin letters to be a sentence goes to the (cheap) routing
+ * step, which decides whether a tool is actually needed.
+ */
+const NON_LATIN_LETTERS =
+  /[\u0370-\u03FF\u0400-\u04FF\u0590-\u08FF\u0900-\u0DFF\u3040-\u30FF\u4E00-\u9FFF\uAC00-\uD7AF]/g;
+const NON_LATIN_SENTENCE_MIN_LETTERS = 12;
+
+export function hasNonLatinSentence(message: string): boolean {
+  return (message.match(NON_LATIN_LETTERS) ?? []).length >= NON_LATIN_SENTENCE_MIN_LETTERS;
+}
+
 export function messageMightNeedTools(message: string): boolean {
   const lower = message.toLowerCase();
   return (
     TOOL_TRIGGER_KEYWORDS.some(kw => lower.includes(kw)) ||
     hasMoneyNeedIntent(message) ||
-    hasWebsiteAnalysisIntent(message)
+    hasWebsiteAnalysisIntent(message) ||
+    hasNonLatinSentence(message)
   );
 }
 

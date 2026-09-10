@@ -14,6 +14,7 @@
  * Last Modified: 2026-01-07
  */
 
+import { isMintedHandle } from '@/config/usernames';
 import {
   Star,
   Wallet,
@@ -108,8 +109,7 @@ export const TASK_DEFINITIONS: TaskDefinition[] = [
     // Conditioned on the MINTED handle, not merely on a missing name: someone who
     // chose a readable username and simply has not filled in a display name is
     // not broken and does not need a high-priority nag.
-    condition: ctx =>
-      !ctx.profile.display_name?.trim() && /^user_[0-9a-f]{8,}$/.test(ctx.profile.username ?? ''),
+    condition: ctx => !ctx.profile.display_name?.trim() && isMintedHandle(ctx.profile.username),
   },
   {
     id: 'add-wallet',

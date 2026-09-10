@@ -24,6 +24,8 @@ interface PendingAction {
   parameters: Record<string, unknown>;
   description: string;
   expiresAt: string;
+  /** Confirming also allows this category from now on (still confirm-each-time). */
+  grantOnConfirm?: boolean;
 }
 
 interface PendingActionsCardProps {
@@ -142,6 +144,16 @@ export function PendingActionsCard({ action, onConfirm, onReject }: PendingActio
         <div className="flex-1">
           <h4 className="font-medium text-fg-primary">Action requires confirmation</h4>
           <p className="mt-1 text-base text-fg-secondary">{action.description}</p>
+          {action.grantOnConfirm && (
+            <p className="mt-2 text-sm text-fg-secondary">
+              Cat isn’t allowed to handle{' '}
+              {ACTION_CATEGORIES[
+                action.category as keyof typeof ACTION_CATEGORIES
+              ]?.name.toLowerCase() ?? action.category}{' '}
+              actions yet. Confirming allows it from now on — you’ll still confirm each one — and
+              runs this action.
+            </p>
+          )}
         </div>
       </div>
 
@@ -194,7 +206,7 @@ export function PendingActionsCard({ action, onConfirm, onReject }: PendingActio
           ) : (
             <CheckCircle className="h-4 w-4 mr-2" />
           )}
-          Confirm
+          {action.grantOnConfirm ? 'Allow and confirm' : 'Confirm'}
         </Button>
         <Button
           onClick={handleReject}

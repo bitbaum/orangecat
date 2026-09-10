@@ -151,10 +151,32 @@ const LANG_NAME: Record<Exclude<ReplyLanguage, 'unknown'>, string> = {
  * turn. Returns a confident, named instruction when the message is clearly en/de;
  * otherwise a generic recency reminder that still forbids defaulting to the locale.
  */
+/**
+ * Scripts the stopword lists cannot see. A Russian or Ukrainian message has
+ * ZERO English and ZERO German stopwords, so it used to fall through to the
+ * "unknown" branch — whose last sentence was "If the user wrote English,
+ * reply in English", the strongest recency signal a weak model reads. That
+ * is how a Russian conversation got English words and English chips.
+ */
+export function detectScript(message: string): 'cyrillic' | 'latin' | 'other' {
+  if (/[\u0400-\u04FF]/.test(message)) {
+    return 'cyrillic';
+  }
+  if (/[a-z]/i.test(message)) {
+    return 'latin';
+  }
+  return 'other';
+}
+
+const EVERY_PART = 'every sentence, every quick_replies chip, every button label';
+
 export function buildReplyLanguageDirective(message: string): string {
   const lang = detectReplyLanguage(message);
-  if (lang === 'unknown') {
-    return `\n\n## Reply language (this turn — obey exactly)\nWrite your ENTIRE reply in the SAME language as the user's latest message above. Do NOT switch to the browser locale's language. If the user wrote English, reply in English.`;
+  if (lang !== 'unknown') {
+    return `\n\n## Reply language (this turn — obey exactly)\nThe user's latest message is in ${LANG_NAME[lang]}. Write your ENTIRE reply in ${LANG_NAME[lang]} — ${EVERY_PART}. Ignore the browser locale for language choice; it only sets number/date/currency formatting.`;
   }
-  return `\n\n## Reply language (this turn — obey exactly)\nThe user's latest message is in ${LANG_NAME[lang]}. Write your ENTIRE reply in ${LANG_NAME[lang]} — every sentence. Ignore the browser locale for language choice; it only sets number/date/currency formatting.`;
+  if (detectScript(message) === 'cyrillic') {
+    return `\n\n## Reply language (this turn — obey exactly)\nThe user's latest message is written in Cyrillic (Russian or Ukrainian — match which). Write your ENTIRE reply in that same language — ${EVERY_PART}. Do not mix in English words where the language has its own; only product names (OrangeCat, FleetCrown, Bitcoin) stay as they are.`;
+  }
+  return `\n\n## Reply language (this turn — obey exactly)\nWrite your ENTIRE reply in the SAME language as the user's latest message above — ${EVERY_PART}. Do NOT switch to the browser locale's language and do NOT default to English.`;
 }

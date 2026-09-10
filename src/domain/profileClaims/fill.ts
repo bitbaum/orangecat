@@ -12,6 +12,7 @@
  * than only reachable through a compare-and-swap and two Supabase clients.
  */
 
+import { isMintedHandle } from '@/config/usernames';
 import type { ProfileClaimDraft } from './types';
 
 /**
@@ -53,6 +54,18 @@ export interface ExistingProfileFields {
  * outcome — an established user may have nothing left to fill — and callers
  * must treat it as success rather than issuing an empty UPDATE.
  */
+/**
+ * Should the claim try to give the account this handle? Only when the account
+ * has none, or has one the platform minted (`user_<hex>`) — never over a
+ * handle a person chose (ADR-0005 D7: the shared URL keeps working).
+ */
+export function wantsHandle(
+  currentUsername: string | null | undefined,
+  desired: string | null | undefined
+): boolean {
+  return !!desired && (!currentUsername || isMintedHandle(currentUsername));
+}
+
 export function buildProfileFill(
   draft: ProfileClaimDraft,
   existing: ExistingProfileFields | null | undefined,

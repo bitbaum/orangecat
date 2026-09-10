@@ -186,6 +186,32 @@ export async function getEntity<T = Record<string, unknown>>(
  * Resolves userId -> actorId and injects it into the payload as `actor_id`.
  * Returns the created row.
  */
+/**
+ * Carry the API layer's side-channels into a payload a domain service rebuilt.
+ *
+ * entityPostHandler resolves the owning actor (a group the caller may act for,
+ * or the placeholder of a page set up for someone else — ADR-0005) and passes
+ * it as `_resolved_actor_id`. A service that builds its insert from named
+ * fields drops it, and createEntity then falls back to the caller's own actor:
+ * exactly what happened in prod on 2026-09-10, where a project "for
+ * Walkthrough Testperson" was owned by the steward. Every service that
+ * rebuilds its payload wraps it in this; a unit test greps for the wrapper.
+ */
+export function withResolvedActor<T extends Record<string, unknown>>(
+  source: unknown,
+  fields: T
+): T & { _resolved_actor_id?: string; _resolved_is_test?: boolean } {
+  const src = (source ?? {}) as Record<string, unknown>;
+  const out: Record<string, unknown> = { ...fields };
+  if (typeof src._resolved_actor_id === 'string') {
+    out._resolved_actor_id = src._resolved_actor_id;
+  }
+  if (src._resolved_is_test === true) {
+    out._resolved_is_test = true;
+  }
+  return out as T & { _resolved_actor_id?: string; _resolved_is_test?: boolean };
+}
+
 export async function createEntity<T = Record<string, unknown>>(
   entityType: EntityType,
   userId: string,
@@ -201,8 +227,7 @@ export async function createEntity<T = Record<string, unknown>>(
   // piggybacked on `data` so domain-service signatures don't have to change.
   // Same pattern as `_wallet_id` in the entity POST handler.
   const preResolvedActorId = (data as Record<string, unknown>)._resolved_actor_id as
-    | string
-    | undefined;
+    string | undefined;
   const actorId = preResolvedActorId ?? (await getOrCreateUserActor(userId)).id;
 
   // Sandbox flag side-channel — same pattern as _resolved_actor_id.

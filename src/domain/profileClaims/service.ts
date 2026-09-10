@@ -26,7 +26,7 @@ import { getAdminClient } from '@/lib/supabase/admin';
 import { looseClient, callRpc } from '@/lib/supabase/untyped';
 import { logger } from '@/utils/logger';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
-import { buildProfileFill, type ExistingProfileFields } from './fill';
+import { wantsHandle, buildProfileFill, type ExistingProfileFields } from './fill';
 import { normalizeClaimDraft, type ClaimDraft } from './draft';
 import { slugify } from '@/utils/string';
 import type { ProfileClaimPreview, ProfileClaimResult, ProfileClaimRow } from './types';
@@ -431,11 +431,13 @@ export async function claimProfileClaim(params: {
 
   // The handle: the suggested one if any, else the placeholder's slug — so the
   // URL her friends already shared keeps working after she signs up (D7).
-  // Only when she has none; never reassigned.
+  // Only when she has none or a minted `user_<hex>` one (a "Start instantly"
+  // account has that from minute one and it is nobody's choice); never over a
+  // handle she picked.
   let username: string | null = null;
   const desiredHandle = row.suggested_username ?? placeholderSlug;
-  if (desiredHandle && !current?.username) {
-    username = await findAvailableUsername(userSupabase, desiredHandle, userId);
+  if (wantsHandle(current?.username as string | null | undefined, desiredHandle)) {
+    username = await findAvailableUsername(userSupabase, desiredHandle as string, userId);
   }
 
   const profileUpdate = buildProfileFill(draft.profile, current as ExistingProfileFields, username);
