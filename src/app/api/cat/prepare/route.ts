@@ -38,10 +38,21 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
     }
     const { message, conversationId, ...hints } = parsed.data;
 
+    // actionsVia: 'none' — ADR-0006 D8, and it is a statement of fact, not a
+    // policy choice. This route hands the prompt to a model running in the
+    // user's OWN browser (Ollama / LM Studio), and the only thing that comes
+    // back is POST /api/cat/local-complete, which saves messages. There is no
+    // executor on this path: an exec_action block reaches the transcript as
+    // literal text and is stored verbatim, so the user reads "Creating that
+    // now…" for something nothing will ever create.
+    //
+    // Until a local model's output is routed through CatActionExecutor, the
+    // honest prompt is the one that says Cat cannot act here.
     const prepared = await prepareCatChat(supabase, user.id, {
       message,
       requestedConversationId: conversationId,
       ...hints,
+      actionsVia: 'none',
     });
 
     return apiSuccess({

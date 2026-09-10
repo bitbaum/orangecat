@@ -19,17 +19,18 @@ import { applyRateLimitHeaders, type RateLimitResult } from '@/lib/rate-limit';
 import { prepareCatChat } from '@/services/cat/chat-prepare';
 import { enforceGrounding } from '@/services/cat/grounding';
 import { parseActionsFromResponse } from '@/services/cat/response-parser';
+import { messageMightNeedTools } from '@/services/cat/tool-use-detection';
 import { saveMessages } from '@/services/cat/conversation-history';
 import { buildFailedTurnMessages } from '@/services/cat/failed-turn';
 import { alertCatChatFailure } from '@/services/cat/failure-alert';
 import { resolveProvider, type FallbackProvider } from '@/services/cat/provider-resolver';
+import { providerSupportsNativeTools } from '@/config/ai-provider-runtime';
 import { meterCreditUsage } from '@/services/cat/credit-metering';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { extractAndStoreMemories } from '@/services/cat/memory';
 import { extractAndStoreEconomicProfile } from '@/services/cat/economic-profile';
 import {
   maybeEnrichWithSearchResults,
-  messageMightNeedTools,
   type ToolAugmentedMessage,
   type ToolCallEvent,
   type PrefillProposal,
@@ -267,6 +268,19 @@ export async function orchestrateCatChat(
   // Prompt assembly (context + memories + custom instructions + history)
   // lives in chat-prepare — shared with /api/cat/prepare so LOCAL models
   // (Ollama / LM Studio in the user's browser) get the identical brain.
+  // Does this provider get native tool definitions? If so the prose catalog is
+  // 18k chars of duplicate (ADR-0006 D7); if not, the exec_action text path is
+  // Cat's only way to act and the prose has to stay. Same predicate the tool
+  // layer branches on, so the prompt cannot promise what the call won't send.
+  //
+  // Decided from the PRIMARY provider and not rebuilt when the chain falls back
+  // mid-stream, which is safe in both directions: a 'tools' prompt reaching a
+  // provider with no tools leaves Cat without a catalog, so it does not claim
+  // to act; a 'prose' prompt reaching a tool-capable one just describes the
+  // envelope twice, and the exec_action text path still executes it. Neither
+  // ends with the user being told something happened that did not.
+  const actionsVia = providerSupportsNativeTools(provider) ? 'tools' : 'prose';
+
   const prepared = await prepareCatChat(supabase, user.id, {
     message,
     requestedConversationId,
@@ -276,6 +290,7 @@ export async function orchestrateCatChat(
     currentPath,
     currentEntity,
     pageExcerpt,
+    actionsVia,
   });
   const conversationId = prepared.conversationId;
 
@@ -283,6 +298,9 @@ export async function orchestrateCatChat(
   // If so AND the answering model isn't agentic (frontier), we flag the
   // response so the UI can gently suggest upgrading to a more powerful model.
   // Uses the same signal that gates tool use — one source of truth.
+  // Advisory ONLY: drives the `suggestUpgrade` hint in the done event. This
+  // is no longer a gate on tools (ADR-0006 D3) — it just guesses whether the
+  // user would benefit from an agentic model, and a wrong guess costs a hint.
   const wantsAgentic = messageMightNeedTools(message);
 
   const baseMessages: ToolAugmentedMessage[] = prepared.messages;

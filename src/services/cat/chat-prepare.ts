@@ -10,7 +10,7 @@
  *     awareness — just different inference hardware.
  */
 
-import { buildCatSystemPrompt } from '@/services/cat/system-prompt';
+import { buildCatSystemPrompt, type ActionsVia } from '@/services/cat/system-prompt';
 import { getCustomInstructions } from '@/services/cat/custom-instructions';
 import { buildReplyLanguageDirective } from '@/services/cat/reply-language';
 import { getCatFewShotExamplesText } from '@/services/cat/few-shot-examples';
@@ -32,6 +32,12 @@ export interface CatChatPrepareOpts {
   currentPath?: string;
   currentEntity?: { type: string; ref: string };
   pageExcerpt?: string;
+  /**
+   * Whether the model that will answer can actually act, and how. Passed
+   * straight to buildCatSystemPrompt. Omitted = 'prose', the behaviour every
+   * caller had before this existed.
+   */
+  actionsVia?: ActionsVia;
 }
 
 export interface PreparedCatChat {
@@ -131,7 +137,7 @@ export async function prepareCatChat(
   // user. The per-turn reply-language directive goes DEAD LAST: weak models
   // weight the prompt tail most, and burying the language rule mid-prompt
   // let them default to the browser locale's language.
-  const systemPrompt = `${buildCatSystemPrompt({ userContext: contextString || undefined, customInstructions })}${groundingRules}\n\n${getCatFewShotExamplesText()}${buildReplyLanguageDirective(message)}`;
+  const systemPrompt = `${buildCatSystemPrompt({ userContext: contextString || undefined, customInstructions, actionsVia: opts.actionsVia })}${groundingRules}\n\n${getCatFewShotExamplesText()}${buildReplyLanguageDirective(message)}`;
 
   let conversationId: string | null = null;
   let historyMessages: Array<{ role: 'user' | 'assistant'; content: string }> = [];
