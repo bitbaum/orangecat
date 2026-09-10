@@ -608,7 +608,12 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
         required: false,
         description: 'What it is, in their voice',
       },
-      { name: 'goal_btc', type: 'btc', required: false, description: 'Funding goal in BTC' },
+      {
+        name: 'goal_btc',
+        type: 'btc',
+        required: false,
+        description: 'Funding goal in BTC — ONLY if the user named an amount; never invent one',
+      },
       { name: 'category', type: 'string', required: false, description: 'Project category' },
       {
         name: 'person_bio',

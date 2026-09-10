@@ -12,6 +12,7 @@ import type { Database } from '@/types/database';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { getTableName } from '@/config/entity-registry';
 import { getOrCreateUserActor } from '@/services/actors/getOrCreateUserActor';
+import { ownedProjectsFilter } from '@/domain/projects/service';
 import { STATUS } from '@/config/database-constants';
 import { neutralUsernameFor } from '@/lib/profile/neutral-username';
 import { resolveHistoricalUsername } from '@/domain/lightning-address/username-history';
@@ -82,10 +83,7 @@ export class ProfileServerService {
         return false;
       }
 
-      let query = supabase
-        .from(DATABASE_TABLES.PROFILES)
-        .select('id')
-        .eq('username', trimmed);
+      let query = supabase.from(DATABASE_TABLES.PROFILES).select('id').eq('username', trimmed);
 
       if (excludeUserId) {
         query = query.neq('id', excludeUserId);
@@ -212,10 +210,12 @@ export class ProfileServerService {
    */
   static async getProjectCount(supabase: AnySupabaseClient, userId: string): Promise<number> {
     try {
+      // By owning actor, not creating account — see ownedProjectsFilter.
+      const actor = await getOrCreateUserActor(userId);
       const { count, error } = await supabase
         .from(getTableName('project'))
         .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId);
+        .or(ownedProjectsFilter(actor.id, userId));
 
       if (error) {
         logger.error('ProfileServerService.getProjectCount error', error, 'ProfileServer');

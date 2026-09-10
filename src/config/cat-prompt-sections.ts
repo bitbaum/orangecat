@@ -8,7 +8,8 @@
  * "never pigeonhole") is there because Cat got something wrong without it.
  *
  * The waste is not in the words, it is in sending ALL of them EVERY time. A
- * message about pricing a mug currently pays for crisis handling, proxy mode,
+ * message about pricing a mug currently pays for crisis handling, setting up
+ * for someone else,
  * notification triage and multi-entity strategy. So sections are classified:
  *
  *   CORE        — always sent. Capability, safety, and output contracts:
