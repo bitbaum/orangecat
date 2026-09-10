@@ -7,6 +7,17 @@
 import { useCallback } from 'react';
 import { API_ROUTES } from '@/config/api-routes';
 
+export interface PendingAction {
+  id: string;
+  actionId: string;
+  category: string;
+  parameters: Record<string, unknown>;
+  description: string;
+  expiresAt: string;
+  /** Confirming also allows this category from now on (still confirm-each-time). */
+  grantOnConfirm?: boolean;
+}
+
 /**
  * Hook to manage pending actions state.
  *

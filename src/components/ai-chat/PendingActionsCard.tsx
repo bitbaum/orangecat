@@ -15,17 +15,7 @@ import { useState } from 'react';
 import { CheckCircle, XCircle, Clock, AlertTriangle, FileText, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import CAT_ACTIONS, { ACTION_CATEGORIES } from '@/config/cat-actions';
-
-interface PendingAction {
-  id: string;
-  actionId: string;
-  category: string;
-  parameters: Record<string, unknown>;
-  description: string;
-  expiresAt: string;
-  /** Confirming also allows this category from now on (still confirm-each-time). */
-  grantOnConfirm?: boolean;
-}
+import type { PendingAction } from './usePendingActions';
 
 interface PendingActionsCardProps {
   action: PendingAction;
@@ -239,5 +229,6 @@ export function PendingActionsCard({ action, onConfirm, onReject }: PendingActio
 // The fetch hook moved to ./usePendingActions.ts (component size gate); kept
 // reachable from here so existing imports do not break.
 export { usePendingActions } from './usePendingActions';
+export type { PendingAction } from './usePendingActions';
 
 export default PendingActionsCard;
