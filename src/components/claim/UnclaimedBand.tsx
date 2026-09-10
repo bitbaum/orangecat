@@ -58,6 +58,7 @@ export function UnclaimedBand({
               </>
             )}
             {ownerName} hasn’t taken it over yet, so it can’t receive funds.
+            {stewardUsername ? ` Until then, @${stewardUsername} keeps it up to date.` : ''}
           </span>
         </span>
 

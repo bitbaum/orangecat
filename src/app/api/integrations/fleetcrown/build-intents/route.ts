@@ -7,16 +7,15 @@ import {
   apiSuccess,
 } from '@/lib/api/standardResponse';
 import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
-import { getEntityMetadata, isValidEntityType } from '@/config/entity-registry';
-import { getAdminClient } from '@/lib/supabase/admin';
-import { getSellerUserId } from '@/domain/payments';
-import { getOrCreateUserActor } from '@/services/actors/getOrCreateUserActor';
-import { signFleetCrownBuildIntent, suggestedHandoffFor } from '@/services/fleetcrown/build-intent';
-import { ECOSYSTEM } from '@/config/ecosystem';
-import type { AnySupabaseClient } from '@/lib/supabase/types';
+import { createFleetCrownHandoff } from '@/services/fleetcrown/handoff';
 
-const NON_ACTIONABLE = new Set(['wallet', 'document']);
-
+/**
+ * POST /api/integrations/fleetcrown/build-intents
+ *
+ * A thin HTTP skin over createFleetCrownHandoff — the same service Cat's
+ * `send_to_fleetcrown` action uses, so the two cannot disagree about who may
+ * hand an entity over.
+ */
 export const POST = withAuth(async (request: AuthenticatedRequest) => {
   const rl = await rateLimitWriteAsync(request.user.id);
   if (!rl.success) {
@@ -28,61 +27,28 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
     entity_id?: string;
     source_path?: string;
   };
-  if (
-    !body.entity_type ||
-    !isValidEntityType(body.entity_type) ||
-    !body.entity_id ||
-    !/^[0-9a-f-]{36}$/i.test(body.entity_id) ||
-    !body.source_path?.startsWith('/') ||
-    body.source_path.startsWith('//') ||
-    NON_ACTIONABLE.has(body.entity_type)
-  ) {
-    return apiBadRequest('Invalid build handoff');
+
+  const result = await createFleetCrownHandoff({
+    supabase: request.supabase,
+    userId: request.user.id,
+    entityType: String(body.entity_type ?? ''),
+    entityId: String(body.entity_id ?? ''),
+    sourcePath: String(body.source_path ?? ''),
+  });
+
+  if (!result.ok) {
+    switch (result.code) {
+      case 'forbidden':
+        return apiForbidden(result.message);
+      case 'unconfigured':
+        // FLEETCROWN_BUILD_INTENT_SECRET not set on this deploy — the handoff is
+        // unavailable, not a server fault. 503 so the CTA can fall back to the
+        // plain FleetCrown link instead of surfacing a generic 500.
+        return apiServiceUnavailable(result.message);
+      default:
+        return apiBadRequest(result.message);
+    }
   }
 
-  const entityType = body.entity_type;
-  const ownerId = await getSellerUserId(request.supabase, entityType, body.entity_id);
-  if (ownerId !== request.user.id) {
-    return apiForbidden('Only the entity owner can send it to FleetCrown');
-  }
-
-  const meta = getEntityMetadata(entityType);
-  const titleColumn = meta.titleColumn ?? 'title';
-  const admin = getAdminClient() as unknown as AnySupabaseClient;
-  const { data: entity } = await admin
-    .from(meta.tableName)
-    .select(`id, ${titleColumn}, description`)
-    .eq('id', body.entity_id)
-    .maybeSingle();
-  if (!entity) {
-    return apiBadRequest('Entity not found');
-  }
-
-  const row = entity as unknown as Record<string, unknown>;
-  const title = String(row[titleColumn] || meta.name);
-  const description = typeof row.description === 'string' ? row.description.slice(0, 1200) : null;
-  const actor = await getOrCreateUserActor(request.user.id);
-  let token: string;
-  try {
-    token = signFleetCrownBuildIntent({
-      sub: actor.id,
-      entity: {
-        type: entityType,
-        id: body.entity_id,
-        title,
-        description,
-        publicUrl: new URL(body.source_path, ECOSYSTEM.orangeCat.siteUrl).toString(),
-      },
-      suggestedHandoff: suggestedHandoffFor(entityType, title),
-    });
-  } catch {
-    // FLEETCROWN_BUILD_INTENT_SECRET not set on this deploy — the handoff is
-    // unavailable, not a server fault. Return 503 so the CTA can fall back to
-    // the plain FleetCrown link instead of surfacing a generic 500.
-    return apiServiceUnavailable('FleetCrown build handoff is not configured');
-  }
-
-  const url = new URL('/integrations/orangecat/build', ECOSYSTEM.fleetCrown.siteUrl);
-  url.searchParams.set('intent', token);
-  return apiSuccess({ url: url.toString(), expires_in_seconds: 600 });
+  return apiSuccess({ url: result.url, expires_in_seconds: result.expiresInSeconds });
 });

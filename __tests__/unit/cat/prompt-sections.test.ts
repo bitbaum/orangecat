@@ -107,7 +107,10 @@ describe('selection preserves what Cat needs to function', () => {
 describe('selection is worth doing', () => {
   it('pulls in the relevant situational section when the turn calls for it', () => {
     expect(selectPromptSections('what should I charge for this?')).toContain('Pricing Guidance');
-    expect(selectPromptSections('my friend needs help')).toContain('Proxy Mode');
+    expect(selectPromptSections('my friend needs help')).toContain('Setting Up for Someone Else');
+    expect(selectPromptSections('это не для меня, это для другого пользователя')).toContain(
+      'Setting Up for Someone Else'
+    );
     expect(selectPromptSections('hi')).not.toContain('Pricing Guidance');
   });
 

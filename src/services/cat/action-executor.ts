@@ -1,58 +1,29 @@
 /**
- * My Cat Action Executor
- *
- * Executes actions on behalf of users after permission verification.
- * This is the core engine that makes My Cat autonomous.
- *
- * Handler implementations live in ./handlers/ organised by category
- * (entities, communication, organization, context, productivity, payments).
+ * My Cat Action Executor — runs actions after permission verification.
+ * Handlers live in ./handlers/ by category; shared types in ./action-types.
  */
 
 import { validateActionParameters } from './action-schemas';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
-import { CAT_ACTIONS, type CatAction, type ActionCategory } from '@/config/cat-actions';
+import { CAT_ACTIONS, type CatAction } from '@/config/cat-actions';
 import { CatPermissionService } from './permission-service';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { STATUS } from '@/config/database-constants';
 import { logger } from '@/utils/logger';
 import { ACTION_HANDLERS } from './handlers';
 import { generateActionDescription } from './action-descriptions';
-import type { AiErrorCode } from '@/config/ai-errors';
 import { extractBtcAmount, logDeniedAction, updateActionLog } from './action-log';
 
 // Re-export parseReminderDate for back-compat (legacy tests import from here).
 export { parseReminderDate } from './handlers/date-utils';
 
-// ==================== TYPES ====================
-
-interface ActionRequest {
-  actionId: string;
-  parameters: Record<string, unknown>;
-  conversationId?: string;
-  messageId?: string;
-}
-
-interface ActionResult {
-  success: boolean;
-  actionId: string;
-  status: 'completed' | 'failed' | 'pending_confirmation' | 'denied';
-  data?: unknown;
-  /** Why it failed, as a code the UI resolves into copy + a fix link. */
-  code?: AiErrorCode;
-  error?: string;
-  pendingActionId?: string;
-  logId?: string;
-}
-
-export interface PendingAction {
-  id: string;
-  actionId: string;
-  category: ActionCategory;
-  parameters: Record<string, unknown>;
-  description: string;
-  conversationId?: string;
-  expiresAt: string;
-}
+import {
+  canGrantOnConfirm,
+  type PendingAction,
+  type ActionRequest,
+  type ActionResult,
+} from './action-types';
+export { canGrantOnConfirm, type PendingAction, type ActionRequest, type ActionResult };
 
 // ==================== EXECUTOR SERVICE ====================
 
@@ -119,6 +90,27 @@ export class CatActionExecutor {
 
     // 2. Check permission
     const permission = await this.permissionService.checkPermission(userId, actionId);
+
+    if (!permission.allowed && canGrantOnConfirm(action, permission.code)) {
+      const pendingAction = await this.createPendingAction(
+        userId,
+        action,
+        validatedParameters,
+        conversationId,
+        messageId,
+        { grantOnConfirm: true }
+      );
+      return {
+        success: true,
+        actionId,
+        status: 'pending_confirmation',
+        pendingActionId: pendingAction.id,
+        data: {
+          description: generateActionDescription(action, validatedParameters),
+          pendingAction,
+        },
+      };
+    }
 
     if (!permission.allowed) {
       const reason = permission.reason || 'Permission denied';
@@ -259,6 +251,16 @@ export class CatActionExecutor {
       };
     }
 
+    // The card said "confirming also allows this from now on". Honour it
+    // before running, and only for the category the card named. Confirmation
+    // stays required — the grant widens what Cat may propose, not what it may
+    // do unasked.
+    if (pending.grant_on_confirm && canGrantOnConfirm(action, 'permission_denied')) {
+      await this.permissionService.grantCategory(userId, action.category, {
+        requiresConfirmation: true,
+      });
+    }
+
     return this.performAction(
       userId,
       actorId,
@@ -308,6 +310,7 @@ export class CatActionExecutor {
       description: p.description,
       conversationId: p.conversation_id,
       expiresAt: p.expires_at,
+      grantOnConfirm: p.grant_on_confirm === true,
     }));
   }
 
@@ -454,7 +457,8 @@ export class CatActionExecutor {
     action: CatAction,
     parameters: Record<string, unknown>,
     conversationId?: string,
-    messageId?: string
+    messageId?: string,
+    options: { grantOnConfirm?: boolean } = {}
   ): Promise<PendingAction> {
     const description = generateActionDescription(action, parameters);
 
@@ -468,6 +472,7 @@ export class CatActionExecutor {
         description,
         conversation_id: conversationId || null,
         message_id: messageId || null,
+        grant_on_confirm: options.grantOnConfirm === true,
       })
       .select()
       .single();
@@ -484,6 +489,7 @@ export class CatActionExecutor {
       description: data.description,
       conversationId: data.conversation_id,
       expiresAt: data.expires_at,
+      grantOnConfirm: data.grant_on_confirm === true,
     };
   }
 }

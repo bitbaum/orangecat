@@ -4,7 +4,13 @@ import { createServerClient } from '@/lib/supabase/server';
 import dynamic from 'next/dynamic';
 import { notFound } from 'next/navigation';
 import { UnclaimedBand } from '@/components/claim/UnclaimedBand';
-import { getUnclaimedOwner } from '@/domain/profileClaims/unclaimed';
+import {
+  getUnclaimedOwner,
+  resolveActorUserId,
+  usernameOf,
+} from '@/domain/profileClaims/unclaimed';
+import { getEntityStewardUserId } from '@/domain/profileClaims/stewardship';
+import { SetUpBy } from '@/components/claim/SetUpBy';
 import { ROUTES } from '@/config/routes';
 import { PublicEntityOwnerBar } from '@/components/public/PublicEntityOwnerBar';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
@@ -156,19 +162,31 @@ export default async function PublicProjectPage({ params }: PageProps) {
   // nothing; the band says whose it is instead of the page rendering ownerless.
   const unclaimedOwner = await getUnclaimedOwner(supabase, project.actor_id);
 
+  // Whose page this is: the OWNING actor's account, falling back to the
+  // creating account for legacy rows with no actor. `user_id` is who created
+  // the row; after a claim (ADR-0005) that is the steward, not the owner.
+  const ownerUserId = (await resolveActorUserId(supabase, project.actor_id)) ?? project.user_id;
+
   // Fetch profile separately (more reliable than JOIN)
   let profile: (ProfileSnippet & { id: string }) | null = null;
-  if (project.user_id) {
+  if (ownerUserId) {
     const { data: profileData } = await supabase
       .from(DATABASE_TABLES.PROFILES)
       .select('id, username, name, avatar_url')
-      .eq('id', project.user_id)
+      .eq('id', ownerUserId)
       .maybeSingle();
 
     if (profileData) {
       profile = profileData as ProfileSnippet & { id: string };
     }
   }
+
+  // Set up on someone's behalf and since taken over: the creator is not the
+  // owner any more, but that it was set up for her stays visible.
+  const setUpByUsername =
+    !unclaimedOwner && project.user_id && ownerUserId && project.user_id !== ownerUserId
+      ? await usernameOf(supabase, project.user_id)
+      : null;
 
   // Honest funding total: the settled `contributions` ledger via
   // get_entity_funding_stats — NOT the `raised_amount` column, which no code
@@ -200,7 +218,11 @@ export default async function PublicProjectPage({ params }: PageProps) {
   const {
     data: { user: viewer },
   } = await supabase.auth.getUser();
-  const isOwner = !!viewer && !!project.user_id && viewer.id === project.user_id;
+  const isOwner = !!viewer && !!ownerUserId && viewer.id === ownerUserId;
+  // The steward of an unclaimed page manages it until the claim (ADR-0005 D5).
+  const isSteward =
+    !!viewer && !!unclaimedOwner && (await getEntityStewardUserId('project', id)) === viewer.id;
+  const canManage = isOwner || isSteward;
   const isOwnerPreview = !isProjectPubliclyVisible(project.status);
 
   // Generate JSON-LD structured data for SEO
@@ -258,7 +280,8 @@ export default async function PublicProjectPage({ params }: PageProps) {
           stewardUsername={unclaimedOwner.stewardUsername}
         />
       )}
-      {isOwner && (
+      {setUpByUsername && <SetUpBy stewardUsername={setUpByUsername} />}
+      {canManage && (
         <PublicEntityOwnerBar
           isOwnerPreview={isOwnerPreview}
           entityName={ENTITY_REGISTRY.project.name}
@@ -269,7 +292,11 @@ export default async function PublicProjectPage({ params }: PageProps) {
           entityId={id}
         />
       )}
-      <ProjectPageClient project={projectWithProfile} sellerReceive={sellerReceive} />
+      <ProjectPageClient
+        project={projectWithProfile}
+        sellerReceive={sellerReceive}
+        canManage={canManage}
+      />
     </>
   );
 }

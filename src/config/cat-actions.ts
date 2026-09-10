@@ -34,6 +34,7 @@ import {
   ShieldAlert,
   Zap,
   type LucideIcon,
+  Hammer,
 } from 'lucide-react';
 import { API_ROUTES } from '@/config/api-routes';
 import { getApiEndpoint } from '@/config/entity-registry';
@@ -581,6 +582,94 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
       'Set up an interest circle for ceramics',
     ],
     apiEndpoint: getApiEndpoint('circle'),
+    enabled: true,
+  },
+
+  create_project_for_person: {
+    id: 'create_project_for_person',
+    name: 'Set Up a Project for Someone Else',
+    description:
+      'Page for a person with no account + a project owned by THEM; returns the link they take it over with. No money until they accept.',
+    category: 'entities',
+    icon: Gift,
+    riskLevel: 'medium',
+    requiresConfirmation: true,
+    parameters: [
+      {
+        name: 'person_name',
+        type: 'string',
+        required: true,
+        description: 'Who it is for, e.g. "Annushka"',
+      },
+      { name: 'title', type: 'string', required: true, description: 'Project title' },
+      {
+        name: 'description',
+        type: 'string',
+        required: false,
+        description: 'What it is, in their voice',
+      },
+      { name: 'goal_btc', type: 'btc', required: false, description: 'Funding goal in BTC' },
+      { name: 'category', type: 'string', required: false, description: 'Project category' },
+      {
+        name: 'person_bio',
+        type: 'string',
+        required: false,
+        description: 'A line about them, for their page',
+      },
+      {
+        name: 'person_website',
+        type: 'string',
+        required: false,
+        description: 'Their website, if any',
+      },
+      {
+        name: 'publish',
+        type: 'boolean',
+        required: false,
+        description: 'false keeps it a draft only you see',
+        default: true,
+      },
+    ],
+    examples: [
+      'My friend Maria wants to open an art studio — set it up for her',
+      'This project is for Annushka, she is not registered yet',
+      "Create a page for my mother's bakery, she does not use computers",
+    ],
+    apiEndpoint: API_ROUTES.PROFILE_CLAIMS.BASE,
+    enabled: true,
+  },
+
+  send_to_fleetcrown: {
+    id: 'send_to_fleetcrown',
+    name: 'Send to FleetCrown',
+    description:
+      'Hand an entity to FleetCrown, where AI agents build it (site, app, launch). Returns a 10-minute link. Works for pages set up for someone else.',
+    category: 'entities',
+    icon: Hammer,
+    riskLevel: 'low',
+    requiresConfirmation: true,
+    parameters: [
+      {
+        name: 'title',
+        type: 'string',
+        required: false,
+        description: 'Title of the entity (id preferred when known)',
+      },
+      { name: 'entity_id', type: 'entity_id', required: false, description: 'Entity id' },
+      {
+        name: 'entity_type',
+        type: 'string',
+        required: false,
+        description: 'project (default), product, service…',
+        default: 'project',
+      },
+    ],
+    examples: [
+      'Can she build this with FleetCrown?',
+      'Send the networking platform to FleetCrown',
+      'Build the website for this project',
+    ],
+    apiEndpoint: API_ROUTES.INTEGRATIONS.FLEETCROWN_BUILD_INTENTS,
     enabled: true,
   },
 

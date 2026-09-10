@@ -1,4 +1,4 @@
-import { createEntity } from '@/domain/base/entityService';
+import { createEntity, withResolvedActor } from '@/domain/base/entityService';
 import type { AssetFormData } from './schema';
 import { PLATFORM_DEFAULT_CURRENCY } from '@/config/currencies';
 import { STATUS } from '@/config/database-constants';
@@ -10,7 +10,7 @@ export async function createAsset(userId: string, input: AssetFormData) {
   return createEntity(
     'asset',
     userId,
-    {
+    withResolvedActor(input, {
       owner_id: userId,
       type: input.type,
       title: input.title,
@@ -37,7 +37,7 @@ export async function createAsset(userId: string, input: AssetFormData) {
       // Respect the form's profile-visibility toggle; the schema already carries
       // it but this insert omitted it → DB default true always won.
       show_on_profile: input.show_on_profile ?? true,
-    },
+    }),
     {
       select: ASSET_SELECT,
     }
