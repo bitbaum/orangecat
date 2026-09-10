@@ -10,6 +10,7 @@
 
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { looseClient } from '@/lib/supabase/untyped';
+import { getAdminClient } from '@/lib/supabase/admin';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 
 export interface UnclaimedOwner {
@@ -113,12 +114,17 @@ export async function getUnclaimedOwnerBySlug(
  * carry the thing that lets any visitor take the page over.
  */
 async function stewardOf(
-  supabase: AnySupabaseClient,
+  _supabase: AnySupabaseClient,
   claimId: string | null
 ): Promise<string | null> {
   if (!claimId) {
     return null;
   }
+  // profile_claims has NO RLS policies (service-role only, ADR-0004), so a
+  // session or anonymous client reads nothing here — which rendered every band
+  // as "This belongs to Maria" with no steward, and every handoff with
+  // stewardUsername null. The handle is a public fact; the token never leaves.
+  const supabase = looseClient(getAdminClient()) as unknown as AnySupabaseClient;
   const { data: claim } = await looseClient(supabase)
     .from(DATABASE_TABLES.PROFILE_CLAIMS)
     .select('created_by')

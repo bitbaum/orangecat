@@ -142,9 +142,10 @@ describe('an action called as a tool', () => {
     expect(msg.content).toContain('database on fire');
   });
 
-  it('emits a failed tool event for a pending confirmation, not a completed one', async () => {
+  it('emits a pending_confirmation tool event for a pending confirmation — not completed, not failed', async () => {
     // The client renders these live. A green tick on something the user still
-    // has to approve is the UI version of the same lie.
+    // has to approve is one lie; "Action failed" above a card waiting for a tap
+    // (what shipped first, seen live 2026-09-10) is the other.
     executeAction.mockResolvedValue({ status: 'pending_confirmation' });
     const events: { status: string }[] = [];
 
@@ -158,7 +159,7 @@ describe('an action called as a tool', () => {
       'actor-1'
     );
 
-    expect(events.map(e => e.status)).toEqual(['running', 'failed']);
+    expect(events.map(e => e.status)).toEqual(['running', 'pending_confirmation']);
   });
 });
 

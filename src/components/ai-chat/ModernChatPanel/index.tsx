@@ -135,8 +135,13 @@ export function ModernChatPanel({
 
   const { pendingActions, handleConfirmAction, handleRejectAction, refreshPendingActions } =
     usePendingActionsManager({
-      onActionConfirmed: action => {
-        addSystemMessage(`✅ Action completed: ${action.description}`);
+      onActionConfirmed: (action, outcome) => {
+        // The handler's own words first ("set up for Annushka — send her the
+        // link"), and the link itself: a completed handoff or claim used to
+        // end in the card's description, with the one URL the user needed next
+        // nowhere on screen (seen live 2026-09-10).
+        const line = `✅ ${outcome.message ?? `Action completed: ${action.description}`}`;
+        addSystemMessage(outcome.url ? `${line}\n\n[Open](${outcome.url})` : line);
       },
     });
 

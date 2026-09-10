@@ -62,13 +62,15 @@ export async function runActionAsTool(
   try {
     const executor = new CatActionExecutor(supabase);
     const result = await executor.executeAction(userId, actorId, { actionId, parameters });
-    // The client renders these live. A denial or a pending confirmation is
-    // NOT a completion — surfacing it as one would show a green tick for
-    // something the user still has to approve.
+    // The client renders these live. A denial is a failure; a pending
+    // confirmation is neither — it used to be sent as 'failed' and the chat
+    // read "Action failed" above a card that was waiting for a tap.
     onToolCall?.(
       result.status === 'completed'
         ? { id: toolCall.id, name: actionId, status: 'completed', resultCount: 1, results: [] }
-        : { id: toolCall.id, name: actionId, status: 'failed', error: result.error }
+        : result.status === 'pending_confirmation'
+          ? { id: toolCall.id, name: actionId, status: 'pending_confirmation' }
+          : { id: toolCall.id, name: actionId, status: 'failed', error: result.error }
     );
     return summariseForModel(actionId, result);
   } catch (error) {
