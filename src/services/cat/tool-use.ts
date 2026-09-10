@@ -17,6 +17,7 @@
  * these into the SSE stream so the user sees what the Cat is actually doing.
  */
 
+import { actionToolDefinitions } from './action-schemas';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { PROVIDER_BASE_URLS } from '@/config/ai-provider-runtime';
 import {
@@ -106,7 +107,7 @@ export async function maybeEnrichWithSearchResults(
   modelToUse: string,
   onToolCall?: OnToolCall,
   onPrefillProposal?: OnPrefillProposal,
-  opts?: { timeoutMs?: number }
+  opts?: { timeoutMs?: number; actorId?: string | null }
 ): Promise<ToolAugmentedMessage[]> {
   // Tool detection uses OpenAI-compatible function-calling. Enabled on the two
   // providers that actually serve OrangeCat: Groq (BYOK, paid TPM) and
@@ -170,6 +171,7 @@ export async function maybeEnrichWithSearchResults(
         timeoutMs,
         onToolCall: guardedOnToolCall,
         onPrefillProposal: guardedOnPrefillProposal,
+        actorId: opts?.actorId ?? null,
       }),
       new Promise<'timeout'>(resolve => {
         timer = setTimeout(() => resolve('timeout'), timeoutMs);
@@ -215,6 +217,8 @@ async function runToolLoop(args: {
   timeoutMs: number;
   onToolCall?: OnToolCall;
   onPrefillProposal?: OnPrefillProposal;
+  /** Present ⇒ the model may CALL actions, not just read tools (ADR-0006 D2). */
+  actorId?: string | null;
 }): Promise<ToolAugmentedMessage[]> {
   const {
     supabase,
@@ -227,7 +231,23 @@ async function runToolLoop(args: {
     timeoutMs,
     onToolCall,
     onPrefillProposal,
+    actorId,
   } = args;
+
+  // ADR-0006 D1/D2 — actions are offered as tools alongside the read tools, so
+  // the model can DO something and see the outcome before it writes.
+  //
+  // Deliberately unfiltered by permission: the executor is the authority and
+  // already denies + audits, and a denial comes back as a sentence the model
+  // relays honestly ("not permitted — tell the user what to grant"). Filtering
+  // here would need a second copy of the permission-resolution rules, and two
+  // copies of that is worse than a rare wasted proposal.
+  //
+  // Only when we have an actor: without one nothing can be created, and
+  // offering tools that must fail teaches the model to propose them.
+  const availableTools = actorId
+    ? [...PLATFORM_TOOL_DEFINITION, ...actionToolDefinitions()]
+    : PLATFORM_TOOL_DEFINITION;
 
   // Tool detection runs on a SLIM, routing-only prompt — NOT the full
   // conversational system prompt. The big "be a warm helpful agent" prompt
@@ -247,6 +267,7 @@ async function runToolLoop(args: {
         '- explore_topic: when the user expresses an INTEREST or curiosity rather than naming a specific thing to find ("I\'m interested in longevity", "anyone working on Bitcoin education?", "introduce me to people doing X"). Pass the topic in their own words. Use this, NOT search_platform, for interests — it also finds the people behind the work so an introduction is possible.\n' +
         '- query_my_data: when the user asks about their OWN stuff or numbers — earnings/sales ("how much did I earn?"), their listings ("what am I selling?"), bookings, wallet balances/goals, unread notifications, open tasks, or a general catch-up ("how am I doing?", "catch me up"). Read-only. Pick the closest topic (listings, earnings, bookings, wallets, notifications, tasks) or "overview" for a broad question.\n' +
         '- check_cat_health: ONLY when the user asks why the Cat/AI is failing, slow, or not answering, or asks about a system notification mentioning provider failures, eval/harness errors, or Cat health (e.g. "why is my Cat not answering?", "what does this eval error notification mean?"). Takes no arguments.\n' +
+        'You may also call any ACTION tool (create_project, update_entity, …) when the user clearly asks you to DO that thing — not to explore it. An action WRITES, so call it only on a clear instruction; its result comes back to you before you reply, so never claim something is done until you have seen that result.\n' +
         'NEVER call search_platform for a create/sell/offer intent — describing your own thing to list is prefill_entity_form, not a search. If neither clearly applies, call no tool. Only decide and call tools — do not write a chat reply.',
     },
     { role: 'user' as const, content: userMessage },
@@ -289,7 +310,8 @@ async function runToolLoop(args: {
         syntheticCall,
         userMessage,
         onToolCall,
-        onPrefillProposal
+        onPrefillProposal,
+        actorId
       );
       loopMessages.push(assistantMsg, resultMsg);
       enriched.push(assistantMsg, resultMsg);
@@ -306,7 +328,7 @@ async function runToolLoop(args: {
       body: JSON.stringify({
         model: modelToUse,
         messages: loopMessages,
-        tools: PLATFORM_TOOL_DEFINITION,
+        tools: availableTools,
         tool_choice: 'auto',
         stream: false,
         // Enough headroom for the analyze_website → prefill chain, where one
@@ -359,7 +381,8 @@ async function runToolLoop(args: {
         toolCall,
         userMessage,
         onToolCall,
-        onPrefillProposal
+        onPrefillProposal,
+        actorId
       );
       loopMessages.push(resultMessage);
       enriched.push(resultMessage);

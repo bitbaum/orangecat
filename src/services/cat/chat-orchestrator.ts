@@ -339,7 +339,12 @@ export async function orchestrateCatChat(
               controller.enqueue(
                 encoder.encode(`data: ${JSON.stringify({ prefill_proposal: proposal })}\n\n`)
               );
-            }
+            },
+            // ADR-0006 D2 — with an actor, the tool phase may also EXECUTE
+            // actions, so their outcome is in the messages the model writes
+            // from. Without one nothing can be created, and the phase stays
+            // read-only.
+            { actorId }
           );
 
           // After any content has streamed it's too late to swap providers
@@ -672,7 +677,9 @@ export async function orchestrateCatChat(
     },
     (proposal: PrefillProposal) => {
       collectedPrefillProposals.push(proposal);
-    }
+    },
+    // Same as the streaming path: an actor is what makes actions callable.
+    { actorId }
   );
   // Try primary; on ANY failure (rate-limit, retired model id, upstream
   // 5xx), walk the fallback chain. Non-streaming is even safer than

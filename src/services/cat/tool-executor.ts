@@ -5,6 +5,7 @@
  */
 
 import type { AnySupabaseClient } from '@/lib/supabase/types';
+import { isCatActionTool, runActionAsTool } from './action-as-tool';
 import { searchPlatform, type SearchType } from './platform-search';
 import { generateFormPrefill } from '@/lib/ai/form-prefill-service';
 import { generateOffers } from './offer-engine';
@@ -26,15 +27,36 @@ import type {
  * Execute a single tool call and return the `tool` result message to feed back
  * to the model. Side-effects (onToolCall lifecycle, onPrefillProposal) fire here.
  */
+
 export async function executeToolCall(
   supabase: AnySupabaseClient,
   userId: string,
   toolCall: RawToolCall,
   userMessage: string,
   onToolCall?: OnToolCall,
-  onPrefillProposal?: OnPrefillProposal
+  onPrefillProposal?: OnPrefillProposal,
+  /**
+   * The caller's actor. Required to EXECUTE an action (ADR-0006 D2); absent
+   * for read-only tool phases, in which case actions are refused rather than
+   * silently skipped.
+   */
+  actorId?: string | null
 ): Promise<ToolResultMessage> {
   const toolName = toolCall.function?.name;
+
+  // ── a Cat action, called as a tool ──────────────────────────────────────
+  // ADR-0006 D2. Actions used to be scraped out of the model's FINISHED text
+  // and fired afterwards, so the model could never see what happened and the
+  // prompt had to forbid it from saying "done". Here the action runs first and
+  // its outcome goes back as this tool result, so the reply is written knowing.
+  //
+  // Every gate still lives in CatActionExecutor: permissions, spend caps,
+  // confirmation, the cat_action_log row. This changes WHEN the model learns
+  // the outcome, not who may cause it.
+  if (isCatActionTool(toolName)) {
+    const summary = await runActionAsTool(supabase, userId, actorId ?? null, toolCall, onToolCall);
+    return { role: 'tool', tool_call_id: toolCall.id, content: summary };
+  }
 
   // ── analyze_website ─────────────────────────────────────────────────────
   // Fetches a site the user pasted (SSRF-guarded) and returns its readable
