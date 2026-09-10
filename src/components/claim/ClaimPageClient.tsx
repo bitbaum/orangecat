@@ -73,7 +73,9 @@ export default function ClaimPageClient({ preview }: ClaimPageClientProps) {
         return;
       }
       setHasDeclined(true);
-      toast.success('Declined. Nothing was created, and nobody can use this link now.');
+      toast.success(
+        'Declined. The page and everything on it were removed, and nobody can use this link now.'
+      );
     } catch {
       toast.error('Could not decline this. Check your connection and try again.');
     } finally {
@@ -141,7 +143,8 @@ export default function ClaimPageClient({ preview }: ClaimPageClientProps) {
 
             {hasDeclined ? (
               <div className="mt-6 rounded-lg border border-border-subtle bg-surface-page p-4 text-sm text-fg-secondary">
-                You declined this. Nothing was created, and the link can’t be used any more.
+                You declined this. The page and everything on it were removed, and the link can’t be
+                used any more.
               </div>
             ) : isExpired ? (
               <div className="mt-6 rounded-lg border border-status-warning/40 bg-status-warning-subtle p-4 text-sm text-fg-primary">

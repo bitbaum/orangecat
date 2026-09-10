@@ -31,7 +31,7 @@ interface PendingAction {
 interface PendingActionsCardProps {
   action: PendingAction;
   /** Returns the handler's displayMessage if the action produced one */
-  onConfirm: (actionId: string) => Promise<string | undefined>;
+  onConfirm: (actionId: string) => Promise<{ message?: string; url?: string }>;
   onReject: (actionId: string) => Promise<void>;
 }
 
@@ -60,6 +60,7 @@ export function PendingActionsCard({ action, onConfirm, onReject }: PendingActio
   const [rejecting, setRejecting] = useState(false);
   const [completed, setCompleted] = useState<'confirmed' | 'rejected' | null>(null);
   const [confirmMessage, setConfirmMessage] = useState<string | undefined>(undefined);
+  const [confirmUrl, setConfirmUrl] = useState<string | undefined>(undefined);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const Icon =
@@ -73,8 +74,9 @@ export function PendingActionsCard({ action, onConfirm, onReject }: PendingActio
     setConfirming(true);
     setActionError(null);
     try {
-      const msg = await onConfirm(action.id);
-      setConfirmMessage(msg);
+      const outcome = await onConfirm(action.id);
+      setConfirmMessage(outcome.message);
+      setConfirmUrl(outcome.url);
       setCompleted('confirmed');
     } catch (e) {
       setActionError(e instanceof Error ? e.message : 'Failed to confirm action');
@@ -112,6 +114,14 @@ export function PendingActionsCard({ action, onConfirm, onReject }: PendingActio
               <span className="text-sm font-medium text-fg-primary">
                 {confirmMessage ?? 'Action confirmed and executed'}
               </span>
+              {confirmUrl && (
+                <a
+                  href={confirmUrl}
+                  className="ml-auto shrink-0 text-sm font-medium text-fg-primary underline underline-offset-2"
+                >
+                  Open
+                </a>
+              )}
             </>
           ) : (
             <>
@@ -239,17 +249,32 @@ export function PendingActionsCard({ action, onConfirm, onReject }: PendingActio
  * hundreds of polls per second against /api/cat/actions.
  */
 export function usePendingActions() {
-  const confirmAction = useCallback(async (actionId: string): Promise<string | undefined> => {
-    const res = await fetch(`${API_ROUTES.CAT.ACTIONS}/${actionId}`, {
-      method: 'POST',
-    });
-    const json = await res.json();
-    if (!res.ok) {
-      throw new Error(json?.error ?? `Failed to confirm action (${res.status})`);
-    }
-    const data = json?.data as Record<string, unknown> | undefined;
-    return typeof data?.displayMessage === 'string' ? data.displayMessage : undefined;
-  }, []);
+  const confirmAction = useCallback(
+    async (actionId: string): Promise<{ message?: string; url?: string }> => {
+      const res = await fetch(`${API_ROUTES.CAT.ACTIONS}/${actionId}`, {
+        method: 'POST',
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(json?.error ?? `Failed to confirm action (${res.status})`);
+      }
+      // The route returns the executor's ActionResult; a handler's message and
+      // link live one level down, on `result.data`. Reading the top level only
+      // showed "Action confirmed and executed" for a handler that had returned
+      // the share link the user needed next (seen live 2026-09-10).
+      const result = json?.data as Record<string, unknown> | undefined;
+      const inner = (result?.data ?? {}) as Record<string, unknown>;
+      const message =
+        typeof inner.displayMessage === 'string'
+          ? inner.displayMessage
+          : typeof result?.displayMessage === 'string'
+            ? result.displayMessage
+            : undefined;
+      const url = typeof inner.url === 'string' ? inner.url : undefined;
+      return { message, url };
+    },
+    []
+  );
 
   const rejectAction = useCallback(
     async (actionId: string, reason?: string): Promise<{ success: boolean }> => {

@@ -63,6 +63,12 @@ export type ToolCallEvent =
       name: string;
       status: 'failed';
       error?: string;
+    }
+  | {
+      /** An action that now waits on the confirmation card — not done, not failed. */
+      id: string;
+      name: string;
+      status: 'pending_confirmation';
     };
 
 export type OnToolCall = (event: ToolCallEvent) => void;

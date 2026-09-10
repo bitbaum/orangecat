@@ -84,7 +84,13 @@ export function buildProfileFill(
     ...fill('website', draft.website),
     ...fill('social_links', draft.socialLinks?.length ? { links: draft.socialLinks } : undefined),
     // A handle is a Lightning address and the target of every @mention, so it
-    // is the last thing a gift may quietly reassign.
-    ...fill('username', allocatedUsername),
+    // is the last thing a gift may quietly reassign — but a minted `user_<hex>`
+    // is nobody's choice, and wantsHandle() already decided the allocation
+    // under exactly that rule. Seen live 2026-09-10: the slug was allocated and
+    // then dropped here, because a minted handle is not blank.
+    ...(allocatedUsername &&
+    (isBlank(current.username) || isMintedHandle(current.username as string | null | undefined))
+      ? { username: allocatedUsername }
+      : {}),
   };
 }

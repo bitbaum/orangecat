@@ -12,7 +12,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Search, Check, AlertCircle, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, Check, AlertCircle, Loader2, ChevronDown, ChevronUp, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ToolCallEvent } from '../types';
 
@@ -21,6 +21,8 @@ interface ToolLabel {
   completed: (n: number) => string;
   noResults: string;
   failed: string;
+  /** The action now waits on the confirmation card below the thread. */
+  pending?: string;
 }
 
 // Tool-aware labels. The chip is shared across tools, so a prefill that drafts 6
@@ -58,6 +60,7 @@ const DEFAULT_LABEL: ToolLabel = {
   completed: n => `Done (${n})`,
   noResults: 'Nothing found',
   failed: 'Action failed',
+  pending: 'Needs your confirmation — see below',
 };
 
 interface ToolCallChipProps {
@@ -98,6 +101,13 @@ export function ToolCallChip({ event }: ToolCallChipProps) {
       icon = <AlertCircle className="h-3 w-3 flex-shrink-0" />;
       badgeClass = 'border-status-negative/20 bg-status-negative/10 text-status-negative';
       text = label.failed;
+      break;
+    case 'pending_confirmation':
+      // Seen live 2026-09-10: this state was sent as 'failed', so the chat
+      // read "Action failed" above a card that was waiting for one tap.
+      icon = <Clock className="h-3 w-3 flex-shrink-0" />;
+      badgeClass = 'border-status-warning/20 bg-status-warning/10 text-status-warning';
+      text = label.pending ?? DEFAULT_LABEL.pending!;
       break;
   }
 

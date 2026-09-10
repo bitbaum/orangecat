@@ -6,7 +6,7 @@
  */
 
 import { isMintedHandle } from '@/config/usernames';
-import { wantsHandle } from '@/domain/profileClaims/fill';
+import { wantsHandle, buildProfileFill } from '@/domain/profileClaims/fill';
 
 describe('isMintedHandle', () => {
   it('recognises the platform-minted shape and nothing else', () => {
@@ -24,5 +24,22 @@ describe('wantsHandle', () => {
     expect(wantsHandle('user_c445d449d3dc', 'walkthrough-testperson')).toBe(true);
     expect(wantsHandle('annushka', 'walkthrough-testperson')).toBe(false);
     expect(wantsHandle(null, null)).toBe(false);
+  });
+});
+
+describe('buildProfileFill writes the allocated handle', () => {
+  const draft = { name: 'Annushka' };
+  it('over a minted handle and over none, never over a chosen one', () => {
+    expect(
+      buildProfileFill(draft, { username: 'user_75f36cfc02a1', name: 'Annushka' }, 'annushka')
+    ).toMatchObject({
+      username: 'annushka',
+    });
+    expect(buildProfileFill(draft, { username: null, name: null }, 'annushka')).toMatchObject({
+      username: 'annushka',
+    });
+    expect(
+      buildProfileFill(draft, { username: 'maria', name: 'Maria' }, 'annushka')
+    ).not.toHaveProperty('username');
   });
 });
