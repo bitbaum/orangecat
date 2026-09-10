@@ -67,6 +67,8 @@ export const API_ROUTES = {
     TRANSFER: '/api/wallets/transfer',
     ENTITY_VISIBILITY: '/api/wallets/entity-visibility',
     RECEIVE_STATUS: '/api/wallets/receive-status',
+    /** "Can this actually be paid?" — a real probe, not a shape check. */
+    VERIFY: '/api/wallets/verify',
     /** Owner-only on-chain history. Server-side: mempool.space must not be
      *  called from a browser — that leaks the viewer's IP and the owner's
      *  addresses to a third party. */
