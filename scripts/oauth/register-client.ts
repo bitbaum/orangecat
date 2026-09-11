@@ -106,6 +106,20 @@ const CLIENT_SPECS: Record<string, ClientSpec> = {
     is_confidential: true,
     is_trusted: true,
   },
+  // Heidi needs IDENTITY and nothing else, for the same reason Solon does.
+  // Heidi teaches Swiss German; its portal has learners, tutors who can be
+  // paid, and study groups — and each of those is something OrangeCat already
+  // owns (identity, economy, public presence). So Heidi keeps NO users table
+  // and acts on nobody's behalf: it reads who you are and stops there.
+  // Widen this ceiling deliberately, here, if tutor payouts later need a
+  // wallet scope — never by letting the client ask for more at request time.
+  heidi: {
+    name: 'Heidi',
+    origins: ['https://heidi.orangecat.ch'],
+    scopes: 'openid profile email',
+    is_confidential: true, // has a server (Auth.js v5) — keeps a secret
+    is_trusted: true, // first-party — skips the consent screen after first grant
+  },
 };
 
 const spec = CLIENT_SPECS[clientId];
