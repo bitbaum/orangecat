@@ -46,8 +46,12 @@ export type ActionCategory =
   | 'communication' // Timeline posts, messages
   | 'payments' // Bitcoin transactions
   | 'organization' // Group/org management
-  | 'settings' // User settings
   | 'context'; // Managing My Cat's context
+// 'settings' was a category with ZERO actions in it — a switch in the
+// permissions UI that governed nothing. Removed from the app (ADR-0006 D5).
+// The Postgres enum public.cat_action_category still carries the value; an
+// enum value cannot be dropped in place and no row references it, so it is
+// left orphaned rather than migrated. Do not add it back without an action.
 
 export type ActionRiskLevel = 'low' | 'medium' | 'high';
 
@@ -1751,10 +1755,16 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
     name: 'Update Profile',
     description:
       "Update the user's public profile — handle, name, bio, background, location, or website. Changing the @handle IS supported: the old one keeps redirecting and still receives payments. To make someone findable for a TOPIC use publish_interest instead, which adds a searchable interest rather than rewriting their bio.",
-    category: 'context',
+    // ADR-0006 D5. This sat in 'context' (granted by default) with no
+    // confirmation, so a brand-new user's Cat could rewrite their public
+    // @handle and bio on the strength of a stray sentence. A public profile is
+    // an entity of the user's, not Cat's context: default-off, confirm each
+    // time. First use goes through grant-on-confirm like any other entity
+    // action — one tap allows it, still confirmed every time.
+    category: 'entities',
     icon: Settings,
     riskLevel: 'medium',
-    requiresConfirmation: false,
+    requiresConfirmation: true,
     parameters: [
       {
         name: 'username',
@@ -1824,11 +1834,6 @@ export const ACTION_CATEGORIES: Record<
     name: 'Organizations',
     description: 'Create and manage organizations',
     icon: Users,
-  },
-  settings: {
-    name: 'Settings',
-    description: 'Manage your account settings',
-    icon: Settings,
   },
   context: {
     name: 'Context',

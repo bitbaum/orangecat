@@ -136,26 +136,51 @@ before the handler. A missing required field becomes a typed rejection the model
 can _see and correct_ on the next loop step — which only becomes useful once D2
 exists, and which is what makes a larger registry safe.
 
-### D5 — A first run that can do something.
+### D5 — A first run that can do something. BUILT.
 
 A new user's Cat has `context` only: it cannot create, message, or pay. It looks
 broken, and the fix is buried in settings. Replace with an **inline grant** — the
 first time Cat wants a capability it does not have, it asks in the conversation,
 with the specific action named, and the grant applies from that turn on.
 
-Two corrections while in here, both measured: `update_profile` sits in the
-default-on `context` category with `requiresConfirmation: false`, so a brand-new
-user's Cat can rewrite their handle and bio with no grant and no confirmation —
-it moves to `entities` and requires confirmation. And the `settings` permission
-category has zero actions referencing it: a dead row in the permissions UI.
+Most of this shipped as *grant-on-confirm* (`20260910203000_confirming_can_also_allow.sql`,
+`canGrantOnConfirm` in `action-types.ts`): a denial for a non-payment,
+non-high-risk action becomes a pending action with `grant_on_confirm`, the card
+reads "Allow and confirm", and confirming grants the category (still
+confirm-each-time). What was missing was the other half of the conversation:
+`summariseForModel` told the model a plain "waiting for confirmation", so the
+reply announced a done deal while the card asked for a permission the reply
+never mentioned. It now says NOT YET ALLOWED, names the category, and says one
+tap allows it. A hard denial names the category to allow instead of "tell the
+user what to grant" with nothing to say.
 
-### D6 — Cat can check its own work.
+Two corrections while in here, both measured: `update_profile` sat in the
+default-on `context` category with `requiresConfirmation: false`, so a brand-new
+user's Cat could rewrite their handle and bio with no grant and no confirmation —
+it is now `entities` and requires confirmation, and reaches a new user through
+the consent card. And the `settings` permission category had zero actions
+referencing it: a dead switch in the permissions UI. Removed from the app; the
+Postgres enum value is left orphaned (an enum value cannot be dropped in place,
+and no row references it). The class is closed by a test: every category listed
+must govern at least one enabled action.
+
+Not built: the loop does not RESUME after confirmation — the card confirms, the
+action runs, and a system message reports it; Cat does not get a follow-up turn
+with the result. That is the remaining gap between D2's "resumes" and today.
+
+### D6 — Cat can check its own work. BUILT.
 
 `track-record.ts` already joins `cat_action_log` against current entity status
 and settled payments to derive proposed → published → funded, plus setbacks.
-Today it is context only. Make it a read tool so Cat can answer "what did you do
-for me?" and, more usefully, notice its own pattern: _"the last three projects I
-drafted for you never got published — want me to finish one?"_
+It was context only. It is now also the read tool `check_my_track_record`
+(zero arguments, no permission gate — it reads Cat's own log), answered as
+prose by `formatTrackRecordForModel`, which names the pattern as a fact the
+model must act on: _"3 things drafted, none published — offer to finish ONE of
+them before creating anything new"_, _"2 published but nothing funded yet — the
+gap is reach or pricing, not more listings"_, _"2 proposals the user never
+confirmed — ask what held them back"_. The routing prompt scopes it to Cat's own
+actions; the user's own numbers stay with `query_my_data`. A null record says
+"could not be read — do not reconstruct it from memory", never "nothing yet".
 
 ### D7 — The prompt diet is a separate lever — and it is 3x bigger than estimated. BUILT.
 
@@ -244,8 +269,19 @@ inside a parse-and-fire loop still cannot see its own results.
    prose first would have removed Cat's verb. They ship together.
 4. **D5** — the first run.
 5. **D6** — self-knowledge.
-6. **Section selection** — validate and enable `SECTION_SELECTION_ENABLED`
-   against the eval. This, not D7, is what closes the Groq gap.
+6. **Section selection** — MECHANISM BUILT, flag off pending the eval.
+   Two things were found by trying to enable it. First, nothing anywhere
+   produced a `turnDescriptor`, so the env flag was a double gate that changed
+   nothing when set; `services/cat/turn-descriptor.ts` now builds one in
+   chat-prepare from facts the caller has (the message, whether history is
+   empty, the page and entity). Second, selection ran BEFORE the capability
+   strip, so flag-on + `actionsVia: 'none'` + a greeting threw — selection had
+   already removed an instruction section the strip then demanded. Strip now
+   runs first. Measured 2026-09-11 on the tools path (base prompt, before
+   few-shot text): unselected 32,019; a first-message greeting 23,097; a
+   pricing question 18,824. To enable: `CAT_PROMPT_SECTION_SELECTION=1` in the
+   box's runtime `.env`; the nightly `orangecat-cat-eval.timer` (04:30 UTC) is
+   the gate, failing under 7/8 on either axis.
 
 ## Related
 

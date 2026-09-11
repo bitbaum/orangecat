@@ -81,7 +81,6 @@ export const DEFAULT_PERMISSIONS: Partial<Record<ActionCategory, boolean>> = {
   communication: false,
   payments: false, // High risk - never default
   organization: false,
-  settings: false,
 };
 
 /**
