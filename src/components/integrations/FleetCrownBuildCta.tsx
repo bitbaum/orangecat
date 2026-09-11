@@ -26,7 +26,7 @@ const FLEETCROWN_BUILD_URL = `${ORANGECAT_FLEETCROWN_INTEGRATION.fleetCrown.site
 
 const COPY = {
   title: `Build it with ${ORANGECAT_FLEETCROWN_INTEGRATION.fleetCrown.title}`,
-  body: 'Run AI agents on this project. One login: your OrangeCat account.',
+  body: 'One click: FleetCrown creates the project and puts an AI agent on it. One login: your OrangeCat account.',
   action: `Open ${ORANGECAT_FLEETCROWN_INTEGRATION.fleetCrown.title}`,
 } as const;
 

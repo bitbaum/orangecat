@@ -27,9 +27,14 @@ human-approved.
    - the public funding total changes only after confirmed settlement.
 6. As the project owner, choose **Build it with FleetCrown**.
 7. Sign in to FleetCrown with the same OrangeCat identity.
-8. Review the entity context and Loki's proposed plan. Confirm that no agent has
-   been dispatched.
-9. Create a new FleetCrown project or link an existing one.
+8. Land on the new FleetCrown project with the kickoff already running: profile,
+   milestones, repository, then an agent. That is the default since 2026-09-11.
+   To choose where the entity lands first, open the handoff link with
+   `&review=1`; FleetCrown also shows the picker on its own when a project with
+   the same name exists, and simply opens the project when the entity is
+   already connected. Linking an existing project never starts an agent.
+9. Confirm the kickoff steps complete (a failed repository step stops before
+   dispatch and offers "Try again").
 10. Confirm the FleetCrown project links back to OrangeCat and shows the
     read-only confirmed BTC summary.
 11. Fund the OrangeCat entity again and confirm a deduplicated funding event
