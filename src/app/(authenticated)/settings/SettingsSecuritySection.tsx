@@ -13,14 +13,12 @@ import { logger } from '@/utils/logger';
 interface Props {
   mfaStatusKey: number;
   onEnableMFA: () => void;
-  onViewRecoveryCodes: () => void;
   onMFADisableComplete: () => void;
 }
 
 export function SettingsSecuritySection({
   mfaStatusKey,
   onEnableMFA,
-  onViewRecoveryCodes,
   onMFADisableComplete,
 }: Props) {
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -64,15 +62,13 @@ export function SettingsSecuritySection({
             }}
           />
           <div className="mt-4 pt-4 border-t border-default">
-            <button
-              type="button"
-              onClick={onViewRecoveryCodes}
-              className="text-sm text-fg-primary hover:text-fg-primary font-medium underline-offset-4 hover:underline"
-            >
-              View Recovery Codes
-            </button>
-            <p className="text-xs text-fg-secondary mt-1">
-              Backup codes for when you lose access to your authenticator
+            <p className="text-xs text-fg-secondary">
+              <strong className="font-medium text-fg-primary">
+                Keep your authenticator backed up.
+              </strong>{' '}
+              OrangeCat has no recovery codes: if you lose the device and its backup, only support
+              can restore access. Most authenticator apps offer an encrypted cloud backup — turn it
+              on before you enable two-factor.
             </p>
           </div>
         </div>
@@ -81,7 +77,7 @@ export function SettingsSecuritySection({
       <div className="border-t border-subtle pt-10">
         <h3 className="text-lg font-semibold text-fg-primary mb-4 flex items-center">
           <MonitorSmartphone className="w-6 h-6 mr-2 text-fg-secondary" />
-          Active Sessions
+          Sign out everywhere
         </h3>
         <p className="text-fg-secondary mb-6">
           Lost a device, or signed in somewhere you don&apos;t trust? Sign out of your account on

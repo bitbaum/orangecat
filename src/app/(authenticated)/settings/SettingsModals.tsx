@@ -2,15 +2,11 @@
 
 import { toast } from 'sonner';
 import { MFASetup } from '@/components/auth/MFASetup';
-import { RecoveryCodes } from '@/components/auth/RecoveryCodes';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 interface Props {
   showMFASetup: boolean;
   setShowMFASetup: (v: boolean) => void;
-  showRecoveryCodes: boolean;
-  setShowRecoveryCodes: (v: boolean) => void;
   deleteAccountConfirm: boolean;
   setDeleteAccountConfirm: (v: boolean) => void;
   onMFASetupComplete: () => void;
@@ -20,8 +16,6 @@ interface Props {
 export function SettingsModals({
   showMFASetup,
   setShowMFASetup,
-  showRecoveryCodes,
-  setShowRecoveryCodes,
   deleteAccountConfirm,
   setDeleteAccountConfirm,
   onMFASetupComplete,
@@ -42,12 +36,6 @@ export function SettingsModals({
           </div>
         </div>
       )}
-
-      <Dialog open={showRecoveryCodes} onOpenChange={setShowRecoveryCodes}>
-        <DialogContent className="max-w-md p-0 border-0 bg-transparent shadow-none">
-          <RecoveryCodes onClose={() => setShowRecoveryCodes(false)} />
-        </DialogContent>
-      </Dialog>
 
       <ConfirmDialog
         isOpen={deleteAccountConfirm}

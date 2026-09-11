@@ -32,7 +32,12 @@ async function getUserIdsForDigest(admin: SupabaseClient): Promise<string[]> {
     admin
       .from(DATABASE_TABLES.NOTIFICATION_PREFERENCES)
       .select('user_id')
-      .eq('digest_frequency', 'weekly')
+      // 'daily' is included deliberately. The UI offered Daily for months
+      // while no daily job existed, and this query's `= 'weekly'` then
+      // excluded those people from the only digest that ships — the more
+      // engaged answer produced strictly less email. Until a daily job
+      // exists, they get the weekly one. See settings/notifications.
+      .in('digest_frequency', ['weekly', 'daily'])
       .eq('progress_emails', true),
     admin.from(DATABASE_TABLES.NOTIFICATION_PREFERENCES).select('user_id'),
     admin.from(DATABASE_TABLES.PROFILES).select('id'),
