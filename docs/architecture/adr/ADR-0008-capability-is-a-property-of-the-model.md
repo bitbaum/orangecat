@@ -72,6 +72,46 @@ The win is immediate and needs no new capability: every BYOK user on a
 function-calling model gets web search and the 49 actions they are already
 paying a frontier provider for.
 
+**The engine half is built**: `@bitbaum/ai-kit/capability` (bitbaum/ai-kit#48)
+ships the classification, the plan, the TTLs and the credential scoping, with
+the asymmetry that a positive is cheap and a negative is sticky. Storage and
+wiring stay here.
+
+#### Two findings from starting the wiring, because D1 is not the one-line change it reads as
+
+**Absence from a hand-maintained list must mean `unobserved`, never `none`.**
+`config/ai-models.ts` flags `function_calling` per model. The tempting
+implementation reads "no flag" as "no tools" — and that reproduces this ADR's
+own bug one layer down, because the registry is incomplete by construction and
+a model it has never heard of would be permanently denied tools without ever
+being asked. Only an observation may produce `none`. A registry says where to
+start, never where to stop.
+
+**The tool loop cannot currently reach a BYOK credential at all.** Three facts
+together, and any one of them alone would be fixable:
+
+- `tool-use.ts` does its own raw `fetch` and knows how to build exactly two
+  endpoints, Groq and OpenRouter.
+- `provider-resolver.ts` bakes the user's key into a constructed `aiService`
+  and returns no endpoint or key, so the loop has nothing to call with.
+- `AiService.chatCompletion` returns `{ content, … }` and **drops `tool_calls`
+  entirely**, so routing the loop through the existing abstraction cannot work
+  either — the tool call would be thrown away at the seam.
+
+So D1 needs one of two changes before the capability decision means anything
+for a BYOK user. Either the resolver exposes `{ toolEndpoint, toolKey }` for
+the active step, which is smaller and keeps the loop's raw fetch; or
+`AiService` widens to carry tool calls, which is more correct long-term and
+touches every implementation. **The resolver route is recommended** for the
+first pass: it is contained, and it does not put a refactor through a path that
+also carries spend caps and metering.
+
+Until then the capability decision is only reachable on the two providers the
+loop already builds, which is most of the free tier and none of the BYOK users
+this decision exists for. Sequencing it that way is deliberate: shipping the
+decision without the reach would look like the fix while changing nothing for
+the people it was written for.
+
 ### D2 — The local path gets a real loop.
 
 Run the same in-turn loop against a local model: the browser holds the model,
