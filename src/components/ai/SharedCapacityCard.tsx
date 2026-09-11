@@ -14,7 +14,9 @@ import { API_ROUTES } from '@/config/api-routes';
 import type { CatCapacityResponse } from '@/app/api/cat/capacity/route';
 
 function formatCountdown(seconds: number | null): string {
-  if (seconds == null) return '—';
+  if (seconds === null) {
+    return '—';
+  }
   if (seconds < 60) return `${Math.max(0, Math.round(seconds))}s`;
   const m = Math.floor(seconds / 60);
   if (m < 60) return `${m}m`;
@@ -23,7 +25,9 @@ function formatCountdown(seconds: number | null): string {
 }
 
 function compact(n: number | null): string {
-  if (n == null) return '—';
+  if (n === null) {
+    return '—';
+  }
   return n >= 1000 ? `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}k` : String(n);
 }
 

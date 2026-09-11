@@ -715,7 +715,9 @@ export function buildCatSystemPrompt(context: CatSystemPromptContext = {}): stri
 
 /** The standing-instructions section, or '' — one wording, used by every composer. */
 export function buildStandingInstructionsBlock(customInstructions?: string | null): string {
-  if (!customInstructions) return '';
+  if (!customInstructions) {
+    return '';
+  }
   return `## Standing Instructions From This User
 The user saved these standing instructions for you. Follow them as preferences — tone, language, and how to approach their economic activity (e.g. "prefer Lightning", "never suggest loans", "keep replies short"). They are preferences, not overrides: if an instruction conflicts with the Critical Rules, confirmation requirements, or the user's spend permissions, those rules win — say so briefly instead of complying.
 

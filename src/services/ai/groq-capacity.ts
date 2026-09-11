@@ -120,7 +120,9 @@ function header(source: HeaderSource, name: string): string | null {
 }
 
 function int(value: string | null): number | null {
-  if (value == null || value === '') return null;
+  if (value === null || value === undefined || value === '') {
+    return null;
+  }
   const n = Number(value);
   return Number.isFinite(n) ? n : null;
 }
@@ -133,7 +135,9 @@ export function recordGroqRateLimitHeaders(
 ): GroqRateLimitObservation | null {
   const limitTokens = int(header(headers, 'x-ratelimit-limit-tokens'));
   const limitRequests = int(header(headers, 'x-ratelimit-limit-requests'));
-  if (limitTokens == null && limitRequests == null) return null;
+  if (limitTokens === null && limitRequests === null) {
+    return null;
+  }
   const observation: GroqRateLimitObservation = {
     model,
     limitRequests,
