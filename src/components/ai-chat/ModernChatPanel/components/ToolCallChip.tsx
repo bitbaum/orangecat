@@ -41,6 +41,21 @@ const TOOL_LABELS: Record<string, ToolLabel> = {
     noResults: 'Nothing to draft',
     failed: "Couldn't draft",
   },
+  web_search: {
+    running: 'Searching the web',
+    completed: n => `Found ${n} ${n === 1 ? 'source' : 'sources'}`,
+    // A backend answered and had nothing. Distinct from `failed`, which is
+    // "we never got to look" — the reader needs to know which, because only
+    // one of them is evidence about the world.
+    noResults: 'Nothing on the web for that',
+    failed: "Couldn't search the web",
+  },
+  read_page: {
+    running: 'Reading',
+    completed: () => 'Read the page',
+    noResults: 'Nothing readable on that page',
+    failed: "Couldn't read that page",
+  },
   explore_topic: {
     running: 'Exploring',
     completed: n => `Found ${n} related ${n === 1 ? 'result' : 'results'}`,

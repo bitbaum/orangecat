@@ -3,6 +3,7 @@
  * Displays a single chat message with avatar and actions
  */
 
+import { useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { Cat, User, Copy, Check, Clock } from 'lucide-react';
@@ -10,6 +11,7 @@ import { getModelDisplayName } from '@/config/ai-models';
 import { getModelCapability } from '@/config/model-capability';
 import { renderChatMarkdown } from '@/utils/markdown';
 import { ActionButton } from './ActionButton';
+import { linkifyCitations, citationsFromToolCalls } from '@/lib/chat/citations';
 import { ToolCallChip } from './ToolCallChip';
 import { PrefilledFormCard } from './PrefilledFormCard';
 import { UpgradeNudge } from './UpgradeNudge';
@@ -129,7 +131,18 @@ export function MessageBubble({
     .replace(/```(?:action|exec_action|quick_replies)[\s\S]*?```/g, '')
     .trim();
 
-  const handleCopy = () => void copy(displayContent);
+  // Cat cites its web sources as [F1], and the verifier checks those handles
+  // mechanically. A reader who cannot reach the page is being shown the
+  // APPEARANCE of a citation, which borrows the credibility of a source nobody
+  // can inspect. This closes that loop; an unknown handle is deliberately left
+  // as written rather than pointed at a plausible source.
+  const citations = useMemo(() => citationsFromToolCalls(message.toolCalls), [message.toolCalls]);
+  const linkedContent = useMemo(
+    () => linkifyCitations(displayContent, citations),
+    [displayContent, citations]
+  );
+
+  const handleCopy = () => void copy(linkedContent);
 
   return (
     <div
@@ -176,7 +189,7 @@ export function MessageBubble({
           )}
         >
           <div className={cn('break-words', isUser && 'whitespace-pre-wrap')}>
-            {isUser ? displayContent : renderChatMarkdown(displayContent)}
+            {isUser ? displayContent : renderChatMarkdown(linkedContent)}
             {isLast && !isUser && !displayContent && (
               <span className="inline-flex items-center gap-1">
                 <span
