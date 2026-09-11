@@ -130,7 +130,11 @@ it('hands the grounding check what Cat actually read', async () => {
   expect(evidence).toHaveLength(1);
   expect(evidence[0]).toMatch(/^\[F1\]/);
   expect(evidence[0]).toMatch(/240 CHF/);
-  expect(evidence[0]).toMatch(/https:\/\/example\.com\/prices/);
+  // A literal, not a regex. An unanchored URL pattern matches a host anywhere
+  // in the string, so `https://evil.example/?u=https://example.com/prices`
+  // would satisfy it — which is why CodeQL flags the shape wherever it appears,
+  // and it is the wrong assertion here regardless of who is reading it.
+  expect(evidence[0]).toContain('https://example.com/prices');
 });
 
 it('hands over nothing when the tool phase died before the model saw anything', async () => {
