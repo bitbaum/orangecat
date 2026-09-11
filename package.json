@@ -144,7 +144,7 @@
     "@types/lodash": "^4.17.25",
     "autoprefixer": "^10.5.4",
     "bech32": "^2.0.0",
-    "bip-kit": "^0.2.6",
+    "bip-kit": "^0.2.7",
     "bip32": "^5.0.0",
     "bitcoinjs-lib": "^6.1.0",
     "bs58check": "^4.0.0",
