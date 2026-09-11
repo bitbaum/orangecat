@@ -422,6 +422,49 @@ export const PLATFORM_TOOL_DEFINITION = [
   {
     type: 'function',
     function: {
+      name: 'web_search',
+      description:
+        "Search the open web. Use for anything that is not stored on OrangeCat: what a thing costs elsewhere, whether a grant or programme is real and still open, who works in a field, what a tool does, current rules, prices, dates and events. Also use it before advising on something you are not certain is still true — your training has a cutoff and the user's question usually does not. This searches the WORLD; search_platform and explore_topic search OrangeCat's own members and listings, so use those for finding people and projects on the platform itself. Results come back as citable sources you must cite by handle.",
+      parameters: {
+        type: 'object',
+        properties: {
+          query: {
+            type: 'string',
+            description:
+              'What to search for, phrased as a search query rather than a question. Include the specifics that matter (place, currency, year) — "coworking desk price Zurich 2026" beats "how much is a desk".',
+          },
+          site: {
+            type: 'string',
+            description:
+              'Optional: restrict to one domain, e.g. "admin.ch" or "github.com". Use when the user named a source, or when only an official page will settle the question.',
+          },
+        },
+        required: ['query'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'read_page',
+      description:
+        "Open one web page and read its text. Call this after web_search whenever the answer needs a real figure, date, term or name — a search snippet is one line an engine chose and is where a confidently wrong number comes from. You may ONLY pass a url that the user wrote in their message or that appeared in a search result in this conversation; any other url is refused, so search first and read from the results. Returns the page's readable text as a citable source.",
+      parameters: {
+        type: 'object',
+        properties: {
+          url: {
+            type: 'string',
+            description:
+              "The exact url, copied from the search result or the user's message. Never a url you composed yourself.",
+          },
+        },
+        required: ['url'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
       name: 'check_cat_health',
       description:
         "Live health check of the AI providers powering the Cat. Call when the user asks why the Cat/AI is failing, slow, or not answering, or asks about a system notification that mentions provider failures, eval/harness errors, or Cat health. Returns per-provider status (ok / rate-limited / auth failure / down) that explains what's wrong in actionable terms. Takes no arguments.",

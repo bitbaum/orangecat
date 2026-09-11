@@ -14,17 +14,12 @@
 import { PROVIDER_BASE_URLS } from '@/config/ai-provider-runtime';
 import { DEFAULT_FREE_MODEL_ID, getFreeModels } from '@/config/ai-models';
 import { CONFIGURED_GROQ_MODEL_IDS, promptFitsGroqOnDemand } from '@/services/ai/groq';
+import { webSearch, describeAttempts } from '@bitbaum/ai-kit/web';
 import { buildCatSystemPrompt } from './system-prompt';
 import { getCatFewShotExamplesText } from './few-shot-examples';
 
 export type ProbeClass =
-  | 'ok'
-  | 'rate_limit'
-  | 'auth'
-  | 'no_key'
-  | 'invalid_key'
-  | 'upstream_err'
-  | 'no_response';
+  'ok' | 'rate_limit' | 'auth' | 'no_key' | 'invalid_key' | 'upstream_err' | 'no_response';
 
 export interface ProbeResult {
   provider: 'groq' | 'openrouter';
@@ -56,7 +51,24 @@ export interface CatHealthReport {
    */
   groqCanServeCatPrompt: boolean;
   catCanAnswer: boolean;
+  /**
+   * Can Cat look anything up right now?
+   *
+   * Its own probe because losing the web is SILENT in a way losing a model is
+   * not: a dead provider produces an error a user complains about, whereas a
+   * dead search backend produces a fluent answer written from memory. Nobody
+   * files a bug about that, which is exactly why it needs a sensor.
+   */
+  web: WebProbeResult;
   summary: string;
+}
+
+export interface WebProbeResult {
+  configured: boolean;
+  /** A backend answered — whether or not it had results for the probe query. */
+  reachable: boolean;
+  /** Which backend answered, or the chain that was tried and failed. */
+  detail: string;
 }
 
 function sanitizeApiKey(key: string): { clean: string; hadJunk: boolean } {
@@ -237,13 +249,60 @@ export function groqCanServeCatPrompt(): boolean {
   ]);
 }
 
+/**
+ * Can Cat see the web?
+ *
+ * Deliberately treats "a backend answered and had nothing" as HEALTHY. The
+ * question here is whether the chain is reachable, not whether one probe query
+ * happens to have results — conflating those would page an operator every time
+ * an engine had an off day, and a sensor that cries wolf gets muted.
+ */
+async function probeWeb(): Promise<WebProbeResult> {
+  const configured = Boolean(
+    process.env.SEARXNG_URL || process.env.BRAVE_SEARCH_API_KEY || process.env.TAVILY_API_KEY
+  );
+  if (!configured) {
+    return {
+      configured: false,
+      reachable: false,
+      detail:
+        'No search backend is configured, so Cat cannot look anything up. Set SEARXNG_URL (self-hosted), BRAVE_SEARCH_API_KEY or TAVILY_API_KEY.',
+    };
+  }
+  try {
+    const outcome = await webSearch('orangecat', { limit: 1, timeoutMs: 6_000 });
+    if (outcome.status === 'could_not_look') {
+      return {
+        configured: true,
+        reachable: false,
+        detail: `No search backend answered — ${describeAttempts(outcome.attempts)}.`,
+      };
+    }
+    return {
+      configured: true,
+      reachable: true,
+      detail:
+        outcome.status === 'found'
+          ? `Search is working (${outcome.provider}).`
+          : `Search is reachable but the probe query returned nothing — ${describeAttempts(outcome.attempts)}.`,
+    };
+  } catch (err) {
+    return {
+      configured: true,
+      reachable: false,
+      detail: `The search chain threw: ${err instanceof Error ? err.message : 'unknown error'}.`,
+    };
+  }
+}
+
 /** Probe both providers and summarize. */
 export async function runCatHealthProbes(): Promise<CatHealthReport> {
-  const [groq, openrouter, missingFreeModels, missingGroqModels] = await Promise.all([
+  const [groq, openrouter, missingFreeModels, missingGroqModels, web] = await Promise.all([
     probeGroq(),
     probeOpenRouter(),
     probeFreeModelCatalog(),
     probeGroqModelCatalog(),
+    probeWeb(),
   ]);
   // Groq being up is not the same as Groq being usable for Cat.
   const groqUsable = groq.class === 'ok' && groqCanServeCatPrompt();
@@ -259,12 +318,18 @@ export async function runCatHealthProbes(): Promise<CatHealthReport> {
       ? ` ⚠️ ${groq.provider} is up but cannot serve Cat: the prompt exceeds its per-minute token limit, so every real message falls through to ${openrouter.provider}.`
       : '';
 
+  // Named separately from the model summary because it is a different
+  // question with a different fix: a user reads "Cat is healthy" and assumes
+  // it covers everything Cat does.
+  const webNote = web.reachable ? '' : ` ⚠️ ${web.detail}`;
+
   return {
     probes: { groq, openrouter },
     missingFreeModels,
     missingGroqModels,
     groqCanServeCatPrompt: groqUsable,
     catCanAnswer: groqUsable || openrouter.class === 'ok',
+    web,
     summary:
       (groqUsable
         ? `Cat is healthy: ${groq.provider} probe returned OK.`
@@ -272,6 +337,7 @@ export async function runCatHealthProbes(): Promise<CatHealthReport> {
           ? `Primary (${groq.provider}) cannot serve Cat (${groq.class === 'ok' ? 'prompt too large' : groq.class}); fallback (${openrouter.provider}) is healthy.`
           : `Cat cannot answer: groq=${groq.class === 'ok' ? 'prompt too large' : groq.class}, openrouter=${openrouter.class}.`) +
       oversized +
-      drift,
+      drift +
+      webNote,
   };
 }

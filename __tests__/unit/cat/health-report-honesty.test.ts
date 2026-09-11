@@ -76,4 +76,40 @@ describe('Cat health report honesty', () => {
     expect(typeof report.groqCanServeCatPrompt).toBe('boolean');
     expect(report.groqCanServeCatPrompt).toBe(groqCanServeCatPrompt());
   });
+
+  /**
+   * Losing the web is silent in a way losing a model is not. A dead provider
+   * produces an error someone complains about; a dead search backend produces
+   * a fluent answer written from memory, which nobody files a bug about. So it
+   * gets its own sensor, and the sensor has to be legible in the summary —
+   * a user reading "Cat is healthy" assumes it covers everything Cat does.
+   */
+  describe('the web is a separate organ with a separate failure', () => {
+    it('says so plainly when no search backend is configured at all', async () => {
+      delete process.env.SEARXNG_URL;
+      delete process.env.BRAVE_SEARCH_API_KEY;
+      delete process.env.TAVILY_API_KEY;
+
+      const report = await runCatHealthProbes();
+
+      expect(report.web.configured).toBe(false);
+      expect(report.web.reachable).toBe(false);
+      // Name the fix, not just the fault.
+      expect(report.web.detail).toMatch(/SEARXNG_URL/);
+      expect(report.summary).toMatch(/cannot look anything up/i);
+    });
+
+    it('does not let a healthy model layer imply a healthy web', async () => {
+      delete process.env.SEARXNG_URL;
+      delete process.env.BRAVE_SEARCH_API_KEY;
+      delete process.env.TAVILY_API_KEY;
+
+      const report = await runCatHealthProbes();
+
+      // Whatever the model verdict is, the summary must carry the web warning
+      // too — the bug class this whole file exists for is one green light
+      // standing in for a question it never asked.
+      expect(report.summary).toMatch(/⚠️/);
+    });
+  });
 });

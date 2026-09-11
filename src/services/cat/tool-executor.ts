@@ -12,9 +12,15 @@ import { generateOffers } from './offer-engine';
 import { resolveAiAssistTarget } from '@/lib/ai/assist-target';
 import { isValidEntityType, type EntityType } from '@/config/entity-registry';
 import { PREFILLABLE_ENTITY_TYPES } from './tool-use-detection';
-import { handleExploreTopic, handleQueryMyData, handleCheckMyTrackRecord } from './tool-handlers-lookup';
+import {
+  handleExploreTopic,
+  handleQueryMyData,
+  handleCheckMyTrackRecord,
+} from './tool-handlers-lookup';
 import { fetchWebsiteText, resolveRequestedUrl } from './website-analysis';
 import { runCatHealthProbes } from './health-probes';
+import { isWebTool, executeWebTool } from './tool-handlers-web';
+import type { WebTurnContext } from './web-research';
 import type {
   ToolResultMessage,
   ToolCallResultRef,
@@ -40,9 +46,18 @@ export async function executeToolCall(
    * for read-only tool phases, in which case actions are refused rather than
    * silently skipped.
    */
-  actorId?: string | null
+  actorId?: string | null,
+  /** The turn's web state. Absent ⇒ the web tools refuse rather than run
+   *  without their allow-list. */
+  web?: WebTurnContext
 ): Promise<ToolResultMessage> {
   const toolName = toolCall.function?.name;
+
+  // ── the open web ─── bounded by the turn's URL allow-list, not by the
+  // permission service; see tool-handlers-web.ts.
+  if (isWebTool(toolName)) {
+    return executeWebTool(toolCall, web, onToolCall);
+  }
 
   // ── a Cat action, called as a tool ──────────────────────────────────────
   // ADR-0006 D2. Actions used to be scraped out of the model's FINISHED text
