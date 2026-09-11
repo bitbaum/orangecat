@@ -43,6 +43,7 @@ const ibmPlexMono = localFont({
 import './globals.css';
 import Script from 'next/script';
 import { AuthProvider } from '@/components/providers/AuthProvider';
+import { ClientErrorReporter } from '@/components/providers/ClientErrorReporter';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { CurrencyRatesProvider } from '@/components/providers/CurrencyRatesProvider';
@@ -156,6 +157,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           Skip to main content
         </a>
+        <ClientErrorReporter />
         <ThemeProvider>
           <CurrencyRatesProvider initialSnapshot={rateSnapshot}>
             <QueryProvider>
