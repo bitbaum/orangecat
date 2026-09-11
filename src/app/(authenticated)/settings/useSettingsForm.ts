@@ -31,7 +31,6 @@ export function useSettingsForm(user: User | null) {
   const [deleteAccountConfirm, setDeleteAccountConfirm] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showMFASetup, setShowMFASetup] = useState(false);
-  const [showRecoveryCodes, setShowRecoveryCodes] = useState(false);
   const [mfaStatusKey, setMfaStatusKey] = useState(0);
 
   useEffect(() => {
@@ -127,8 +126,6 @@ export function useSettingsForm(user: User | null) {
     setShowPassword,
     showMFASetup,
     setShowMFASetup,
-    showRecoveryCodes,
-    setShowRecoveryCodes,
     mfaStatusKey,
     refreshMFAStatus,
     handleInputChange,

@@ -65,8 +65,20 @@ const CATEGORIES: Array<{
   },
 ];
 
+/**
+ * "Daily" is not offered, because nothing sends a daily digest: the only job
+ * that reads this column is the weekly one, and it selected `= 'weekly'` — so
+ * choosing Daily, the more engaged answer, silently meant NO digest at all.
+ * Rows that already say 'daily' are now included by the weekly job (see
+ * api/cron/weekly-digest) rather than being ignored, and this control shows
+ * them as Weekly, which is what they will actually receive.
+ */
+/** A legacy 'daily' row receives the weekly digest, so show it as Weekly. */
+function displayedDigest(value: DigestFrequency): DigestFrequency {
+  return value === 'daily' ? 'weekly' : value;
+}
+
 const DIGEST_OPTIONS: Array<{ value: DigestFrequency; label: string }> = [
-  { value: 'daily', label: 'Daily' },
   { value: 'weekly', label: 'Weekly' },
   { value: 'never', label: 'Never' },
 ];
@@ -245,7 +257,7 @@ export default function NotificationSettingsPage() {
                 <label
                   key={opt.value}
                   className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs ${
-                    prefs.digest_frequency === opt.value
+                    displayedDigest(prefs.digest_frequency) === opt.value
                       ? 'border-interactive/60 bg-surface-raised/40 text-fg-primary'
                       : 'border-subtle text-fg-secondary hover:bg-surface-raised/20'
                   }`}
@@ -254,7 +266,7 @@ export default function NotificationSettingsPage() {
                     type="radio"
                     name="digest"
                     value={opt.value}
-                    checked={prefs.digest_frequency === opt.value}
+                    checked={displayedDigest(prefs.digest_frequency) === opt.value}
                     onChange={() => setDigest(opt.value)}
                     className="sr-only"
                   />
