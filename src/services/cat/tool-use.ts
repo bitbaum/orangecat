@@ -19,16 +19,14 @@
 
 import { actionToolDefinitions } from './action-schemas';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
-import {
-  PROVIDER_BASE_URLS,
-  providerSupportsNativeTools,
-} from '@/config/ai-provider-runtime';
+import { PROVIDER_BASE_URLS, providerSupportsNativeTools } from '@/config/ai-provider-runtime';
 import {
   hasCreateIntent,
   hasWebsiteAnalysisIntent,
   PLATFORM_TOOL_DEFINITION,
 } from './tool-use-detection';
 import { executeToolCall } from './tool-executor';
+import { WebTurnContext } from './web-research';
 import { extractHttpUrls, isUrlOnlyMessage } from './website-analysis';
 import type {
   ToolAugmentedMessage,
@@ -50,9 +48,25 @@ export type {
   OnPrefillProposal,
 } from './tool-use-types';
 
-/** Max model⇄tool round-trips per user turn. Bounds cost + latency; most
- *  requests need 1, some 2 (search → refine, or search → prefill). */
-const MAX_TOOL_STEPS = 3;
+/**
+ * Max model⇄tool round-trips per user turn. Bounds cost and latency; most
+ * requests still need 1, some 2 (search → refine, or search → prefill).
+ *
+ * Raised 3 → 5 when the web tools landed, because at 3 the web was unusable
+ * rather than merely limited: the one sequence that makes web research honest
+ * — search, then OPEN the most promising result, then answer from the page
+ * rather than from a snippet — is itself two steps, leaving nothing for the
+ * refinement that a weak first query almost always needs. A ceiling that
+ * forces the model to answer from search snippets is a ceiling that
+ * manufactures confident wrong numbers.
+ *
+ * 5 is not the frontier figure and is not meant to be: agents doing real work
+ * run to dozens of steps. It is what fits inside a tool phase that blocks the
+ * user's stream. Going further means moving the loop off the critical path so
+ * it can run long without the user watching typing dots — a bigger change,
+ * recorded in ADR-0007 rather than smuggled in here.
+ */
+const MAX_TOOL_STEPS = 5;
 
 /**
  * Hard ceiling for the ENTIRE tool phase (routing round-trips + tool
@@ -75,13 +89,29 @@ const WEBSITE_FETCH_FAILED_NOTE =
   'the site right now and ask them to check the URL or try again — do NOT guess, ' +
   "describe, or invent the site's content.";
 
+/**
+ * When the tool phase dies mid-research, the main model is holding a question
+ * it was about to look up. Told nothing, it answers from its weights and the
+ * user cannot tell that from a researched answer — which is the worst of the
+ * three possible outcomes, because it is the only one that looks fine.
+ */
+const WEB_RESEARCH_FAILED_NOTE =
+  'NOTE: A web lookup was started for this message and did not finish (the tool step failed ' +
+  'or timed out). You have NOT seen any web content. Answer from what you already know, say ' +
+  'plainly that you could not check the web just now, and do NOT state current prices, dates, ' +
+  'availability or any other fact that would have needed that lookup.';
+
 /** What the tool phase falls back to when it fails or times out. */
 function degradedMessages(
   messages: ToolAugmentedMessage[],
-  userMessage: string
+  userMessage: string,
+  usedWeb = false
 ): ToolAugmentedMessage[] {
   if (hasWebsiteAnalysisIntent(userMessage)) {
     return [...messages, { role: 'system', content: WEBSITE_FETCH_FAILED_NOTE }];
+  }
+  if (usedWeb) {
+    return [...messages, { role: 'system', content: WEB_RESEARCH_FAILED_NOTE }];
   }
   return messages;
 }
@@ -108,7 +138,21 @@ export async function maybeEnrichWithSearchResults(
   modelToUse: string,
   onToolCall?: OnToolCall,
   onPrefillProposal?: OnPrefillProposal,
-  opts?: { timeoutMs?: number; actorId?: string | null }
+  opts?: {
+    timeoutMs?: number;
+    actorId?: string | null;
+    /**
+     * Receives the evidence blocks for everything Cat actually read from the
+     * web this turn, so the caller's grounding check can verify the reply
+     * against them.
+     *
+     * Fired ONLY on the path where the tool results reach the model. On the
+     * degrade path the model is never shown the web content, so licensing
+     * claims against it would let an invented sentence pass because a page we
+     * did not show happened to contain the words.
+     */
+    onWebEvidence?: (evidence: string[]) => void;
+  }
 ): Promise<ToolAugmentedMessage[]> {
   // Which providers get native function-calling is TOOL_CAPABLE_PROVIDERS in
   // config/ai-provider-runtime — the same fact that decides whether the system
@@ -179,6 +223,11 @@ export async function maybeEnrichWithSearchResults(
       }
     : undefined;
 
+  // Created HERE rather than inside the loop so the degrade path can still ask
+  // whether a lookup was in flight when the deadline fired. The loop owns what
+  // goes into it; this scope only needs to read `attempted` afterwards.
+  const web = new WebTurnContext(userMessage);
+
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     const raced = await Promise.race([
@@ -194,17 +243,21 @@ export async function maybeEnrichWithSearchResults(
         onToolCall: guardedOnToolCall,
         onPrefillProposal: guardedOnPrefillProposal,
         actorId: opts?.actorId ?? null,
+        web,
       }),
       new Promise<'timeout'>(resolve => {
         timer = setTimeout(() => resolve('timeout'), timeoutMs);
       }),
     ]);
     if (raced === 'timeout') {
-      return degradedMessages(messages, userMessage);
+      return degradedMessages(messages, userMessage, web.attempted);
+    }
+    if (web.evidence.length > 0) {
+      opts?.onWebEvidence?.(web.evidence);
     }
     return raced;
   } catch {
-    return degradedMessages(messages, userMessage);
+    return degradedMessages(messages, userMessage, web.attempted);
   } finally {
     expired = true;
     if (timer) {
@@ -241,6 +294,8 @@ async function runToolLoop(args: {
   onPrefillProposal?: OnPrefillProposal;
   /** Present ⇒ the model may CALL actions, not just read tools (ADR-0006 D2). */
   actorId?: string | null;
+  /** The turn's web state — owned by the caller so it outlives the deadline. */
+  web: WebTurnContext;
 }): Promise<ToolAugmentedMessage[]> {
   const {
     supabase,
@@ -254,6 +309,7 @@ async function runToolLoop(args: {
     onToolCall,
     onPrefillProposal,
     actorId,
+    web,
   } = args;
 
   // ADR-0006 D1/D2 — actions are offered as tools alongside the read tools, so
@@ -289,6 +345,8 @@ async function runToolLoop(args: {
         '- analyze_website: when the user pastes a website URL or bare domain and wants it read, analyzed, or used to set them up (e.g. "here\'s my site: https://… — set me up on OrangeCat", or a message that is nothing but a domain). Pass the EXACT URL from their message. After you see the extracted site text, follow its instructions: chain prefill_entity_form calls (at most 3, all in one message) for entities the site directly evidences — never for anything the site does not say.\n' +
         '- explore_topic: when the user expresses an INTEREST or curiosity rather than naming a specific thing to find ("I\'m interested in longevity", "anyone working on Bitcoin education?", "introduce me to people doing X"). Pass the topic in their own words. Use this, NOT search_platform, for interests — it also finds the people behind the work so an introduction is possible.\n' +
         '- query_my_data: when the user asks about their OWN stuff or numbers — earnings/sales ("how much did I earn?"), their listings ("what am I selling?"), bookings, wallet balances/goals, unread notifications, open tasks, or a general catch-up ("how am I doing?", "catch me up"). Read-only. Pick the closest topic (listings, earnings, bookings, wallets, notifications, tasks) or "overview" for a broad question.\n' +
+        "- web_search: when the answer is not on OrangeCat and not certainly still true — what something costs elsewhere, whether a grant/programme/tool is real and still open, how a thing works, current rules, dates, events, who is active in a field. Prefer it over answering from memory whenever being out of date would matter. Pass a search QUERY, not the user's sentence. This searches the WORLD; search_platform and explore_topic search OrangeCat itself.\n" +
+        "- read_page: after web_search, to open the most promising result when the answer needs a real figure, date, name or term rather than a one-line snippet. The url must come from a search result or from the user's own message — one you compose yourself is refused.\n" +
         '- check_cat_health: ONLY when the user asks why the Cat/AI is failing, slow, or not answering, or asks about a system notification mentioning provider failures, eval/harness errors, or Cat health (e.g. "why is my Cat not answering?", "what does this eval error notification mean?"). Takes no arguments.\n' +
         '- check_my_track_record: when the user asks what YOU did for them or how it went (e.g. "what have you done for me?", "did any of your ideas work?", "why should I trust you?"), or before you propose another thing of a kind you may already have proposed. It is about YOUR actions and their outcomes, not the user\'s own numbers (that is query_my_data). Takes no arguments.\n' +
         'You may also call any ACTION tool (create_project, update_entity, …) when the user clearly asks you to DO that thing — not to explore it. An action WRITES, so call it only on a clear instruction; its result comes back to you before you reply, so never claim something is done until you have seen that result.\n' +
@@ -335,7 +393,8 @@ async function runToolLoop(args: {
         userMessage,
         onToolCall,
         onPrefillProposal,
-        actorId
+        actorId,
+        web
       );
       loopMessages.push(assistantMsg, resultMsg);
       enriched.push(assistantMsg, resultMsg);
@@ -406,7 +465,8 @@ async function runToolLoop(args: {
         userMessage,
         onToolCall,
         onPrefillProposal,
-        actorId
+        actorId,
+        web
       );
       loopMessages.push(resultMessage);
       enriched.push(resultMessage);

@@ -340,6 +340,12 @@ export async function orchestrateCatChat(
           // proposals (the prefill_entity_form tool) emit a second event
           // type carrying the structured draft so the UI can render a
           // PrefilledFormCard instead of narrating field values as prose.
+          // Everything Cat read from the web this turn, as evidence blocks
+          // labelled with the citation handle that licenses each one. Fed to
+          // the grounding check below so a figure Cat correctly quoted from a
+          // page is recognised as quoted rather than flagged as invented.
+          const webEvidence: string[] = [];
+
           const messages = await maybeEnrichWithSearchResults(
             supabase,
             user.id,
@@ -362,7 +368,12 @@ export async function orchestrateCatChat(
             // actions, so their outcome is in the messages the model writes
             // from. Without one nothing can be created, and the phase stays
             // read-only.
-            { actorId }
+            {
+              actorId,
+              onWebEvidence: evidence => {
+                webEvidence.push(...evidence);
+              },
+            }
           );
 
           // After any content has streamed it's too late to swap providers
@@ -397,7 +408,15 @@ export async function orchestrateCatChat(
             const groundingCheck = await enforceGrounding({
               content: fullContent,
               message,
-              grounding: prepared.grounding,
+              grounding: {
+                ...prepared.grounding,
+                // Pages and results Cat actually read this turn count as
+                // evidence. Without this the citation handles would be
+                // decorative: the verifier would flag every real figure Cat
+                // correctly quoted from a source as a novel number, and the
+                // repair pass would delete the researched half of the answer.
+                evidence: [...prepared.grounding.evidence, ...webEvidence],
+              },
               service: activeService,
               model: activeModel,
               userId: user.id,
@@ -699,6 +718,10 @@ export async function orchestrateCatChat(
     // Same as the streaming path: an actor is what makes actions callable.
     { actorId }
   );
+  // The non-streaming path runs no grounding check (see below), so there is
+  // nothing here to feed web evidence into. Stated rather than left as an
+  // unexplained asymmetry between two call sites of the same function.
+
   // Try primary; on ANY failure (rate-limit, retired model id, upstream
   // 5xx), walk the fallback chain. Non-streaming is even safer than
   // streaming because each attempt is atomic — no partial-content
