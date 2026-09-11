@@ -144,6 +144,14 @@ export async function maybeEnrichWithSearchResults(
   // out not to need a tool. That call carries the short routing prompt and
   // max_tokens 1200, not the ~52k-char system prompt, so it is a small fraction
   // of the main call — and D7 removes more from the main call than this adds.
+  //
+  // One thing the gate had been doing by accident: thin input ("we're a
+  // bakery") never reached the router, so the main prompt's ask-one-question
+  // posture always applied. With the gate gone the router saw it and drafted
+  // three entities from one noun (eval probe g-bakery, 2026-09-11). The
+  // routing prompt now carries the thin-input rule itself — the router is
+  // the one making that call now, so the rule has to live where the call is
+  // made.
 
   if (!toolKey) {
     return messages;
@@ -274,6 +282,7 @@ async function runToolLoop(args: {
       content:
         'You gather what an OrangeCat chat request needs by calling platform tools. Call ONE tool at a time; after you see its result you may call another tool to refine or follow up, or stop when you have enough.\n' +
         '- prefill_entity_form: when the user describes something THEY want to create / sell / offer / launch / fundraise (e.g. "I make mugs and want to sell them", "I want to start a project"). This is about THEIR own new thing — if it is for ANOTHER person who is not on OrangeCat ("for my friend Maria", "not for me", "she isn\'t registered"), call the ACTION create_project_for_person instead, never prefill_entity_form (a draft would be the user\'s, not hers). Pick entityType by what the thing IS: selling time/skill/labor (even at a fixed price, "haircuts, 40 CHF") = service; a tangible/digital item = product; fundraising a defined outcome = project; open-ended no-strings support = cause; the user NEEDS money and will repay = loan; a dated gathering = event; renting out something owned = asset; a community organizing itself = circle. Call it ONCE per distinct entity — never twice for the same thing.\n' +
+        '- THIN INPUT: if the message only says who they are or what they do with nothing specific to put on OrangeCat ("we\'re a bakery", "I\'m a designer", a job title, a bio), call NO tool at all — do not guess three drafts from one noun. The reply will ask ONE focused question. Draft only when they name a concrete thing to sell, offer, fund, lend, rent or host.\n' +
         '- search_platform: ONLY when the user wants to FIND, discover, or connect with things that already exist on the platform and belong to OTHERS (e.g. "find a designer", "who else is building X"). You may search again with a refined query if the first results are weak.\n' +
         '- suggest_offers: when the user asks what THEY could offer/sell/create, how they could make money or participate, or wants ideas grounded in who they are (e.g. "what can I offer?", "help me make money", "any ideas for me?"). It reads their stored profile/documents/memories — pass no message text, just an optional focus.\n' +
         '- forget_memories: when the user says something you know about them is WRONG or asks you to forget/remove/correct it (e.g. "I don\'t speak French", "that\'s not true, remove it", "forget the weekend thing"). Pass each wrong fact as a short phrase. Stored memories change ONLY through this tool — if the user asks for a correction and you skip it, nothing is saved.\n' +
