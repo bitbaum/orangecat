@@ -1,6 +1,7 @@
 /**
  * Lookup tool handlers — the READ side of Cat's tool surface: explore a topic
- * (discovery) and read the user's own data. Neither mutates anything.
+ * (discovery), read the user's own data, and read Cat's own track record. None
+ * of them mutates anything.
  *
  * Split from tool-executor.ts (500-line service limit) along the natural seam:
  * lookups here; generative/mutating tools (prefill, website analysis, offers,
@@ -157,4 +158,50 @@ export async function handleQueryMyData(
           'Reading the data failed — tell the user honestly that you could not read their live data right now, and that their dashboard shows the authoritative numbers.',
       };
     }
+}
+
+export async function handleCheckMyTrackRecord(
+  supabase: AnySupabaseClient,
+  userId: string,
+  toolCall: RawToolCall,
+  onToolCall?: OnToolCall
+): Promise<ToolResultMessage> {
+  const toolName = 'check_my_track_record';
+  // ── check_my_track_record ────────────────────────────────────────────────
+  // ADR-0006 D6: Cat can check its OWN work. The same derivation that feeds
+  // the ambient "Track Record" context section, but on demand — so "what did
+  // you do for me?" is answered from the action log and entity tables, and
+  // Cat can notice its own pattern (drafted, never published) before
+  // proposing more of the same. Read-only; no permission gate; no arguments.
+  onToolCall?.({ id: toolCall.id, name: toolName, status: 'running' });
+  try {
+    const { getCatTrackRecord, formatTrackRecordForModel } = await import('./track-record');
+    const record = await getCatTrackRecord(supabase, userId);
+    const proposed = record?.proposed ?? 0;
+    onToolCall?.({
+      id: toolCall.id,
+      name: toolName,
+      status: 'completed',
+      resultCount: proposed,
+      results: [],
+    });
+    return {
+      role: 'tool',
+      tool_call_id: toolCall.id,
+      content: formatTrackRecordForModel(record),
+    };
+  } catch (err) {
+    onToolCall?.({
+      id: toolCall.id,
+      name: toolName,
+      status: 'failed',
+      error: err instanceof Error ? err.message : 'unknown',
+    });
+    return {
+      role: 'tool',
+      tool_call_id: toolCall.id,
+      content:
+        'Reading your own track record failed — tell the user honestly that you cannot see your history right now, and do not reconstruct it from memory.',
+    };
+  }
 }

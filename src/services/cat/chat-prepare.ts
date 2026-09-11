@@ -11,6 +11,7 @@
  */
 
 import { buildCatSystemPrompt, type ActionsVia } from '@/services/cat/system-prompt';
+import { buildTurnDescriptor } from '@/services/cat/turn-descriptor';
 import { getCustomInstructions } from '@/services/cat/custom-instructions';
 import { buildReplyLanguageDirective } from '@/services/cat/reply-language';
 import { getCatFewShotExamplesText } from '@/services/cat/few-shot-examples';
@@ -137,8 +138,10 @@ export async function prepareCatChat(
   // user. The per-turn reply-language directive goes DEAD LAST: weak models
   // weight the prompt tail most, and burying the language rule mid-prompt
   // let them default to the browser locale's language.
-  const systemPrompt = `${buildCatSystemPrompt({ userContext: contextString || undefined, customInstructions, actionsVia: opts.actionsVia })}${groundingRules}\n\n${getCatFewShotExamplesText()}${buildReplyLanguageDirective(message)}`;
-
+  // History is resolved BEFORE the brief is built: whether this is the first
+  // message of the conversation is an input to section selection (the
+  // orientation sections fire on `first-message`), and it must be a fact read
+  // from the conversation, not inferred from the wording.
   let conversationId: string | null = null;
   let historyMessages: Array<{ role: 'user' | 'assistant'; content: string }> = [];
   try {
@@ -151,6 +154,15 @@ export async function prepareCatChat(
   } catch {
     /* Non-fatal — continue without history */
   }
+
+  const turnDescriptor = buildTurnDescriptor({
+    message,
+    historyLength: historyMessages.length,
+    currentPath: hints.currentPath,
+    currentEntity: hints.currentEntity,
+  });
+
+  const systemPrompt = `${buildCatSystemPrompt({ userContext: contextString || undefined, customInstructions, actionsVia: opts.actionsVia, turnDescriptor })}${groundingRules}\n\n${getCatFewShotExamplesText()}${buildReplyLanguageDirective(message)}`;
 
   return {
     systemPrompt,

@@ -48,10 +48,16 @@ interface CatSystemPromptContext {
 export type ActionsVia = 'tools' | 'prose' | 'none';
 
 /**
- * Section selection is off until it can be validated against the 8-probe eval,
- * which needs free-model capacity the platform does not currently have. The
- * machinery, the classification and the invariants all ship now; flipping this
- * on is then a one-line change made with a safety net rather than a guess.
+ * Per-turn section selection. Off by default; `CAT_PROMPT_SECTION_SELECTION=1`
+ * in the box's runtime .env turns it on, and the nightly eval
+ * (scripts/eval-cat.mjs via orangecat-cat-eval.timer, 04:30 UTC) is the gate:
+ * it scores 8 probes against production and exits non-zero under 7/8 on
+ * either axis, so a regression from a section the regexes missed shows up the
+ * next morning and the flip is one line to revert.
+ *
+ * Until 2026-09-11 this flag was a double gate: nothing anywhere produced a
+ * turnDescriptor, so setting the env var changed nothing. chat-prepare now
+ * builds one (services/cat/turn-descriptor.ts).
  */
 export const SECTION_SELECTION_ENABLED = process.env.CAT_PROMPT_SECTION_SELECTION === '1';
 
@@ -661,29 +667,35 @@ If you call prefill_entity_form or suggest_offers, your reply should be SHORT an
 export const BASE_SYSTEM_PROMPT_FOR_TEST = BASE_SYSTEM_PROMPT;
 
 export function buildCatSystemPrompt(context: CatSystemPromptContext = {}): string {
-  const selected =
-    SECTION_SELECTION_ENABLED && context.turnDescriptor
-      ? selectSectionsFromPrompt(BASE_SYSTEM_PROMPT, context.turnDescriptor)
-      : BASE_SYSTEM_PROMPT;
-
   // Default 'prose' so a caller that says nothing gets exactly the prompt it
   // got before this existed. Omitting the catalog is the change; keeping it is
   // the status quo, and an un-migrated caller should not silently lose Cat's
   // only way of acting.
   const actionsVia: ActionsVia = context.actionsVia ?? 'prose';
-  const base =
+
+  // Order matters and is load-bearing: strip by CAPABILITY first (which always
+  // sees the whole prompt, so its hard-fail on a missing heading stays
+  // meaningful), then select by TURN (which may only ever drop what is still
+  // present). The reverse order threw on flag-on + 'none' + a greeting, because
+  // selection had already removed an instruction section the strip then
+  // demanded. The cannot-act notice is appended after both, so it is last —
+  // recency on the side of the truth — and never subject to selection.
+  const byCapability =
     actionsVia === 'prose'
-      ? selected
+      ? BASE_SYSTEM_PROMPT
       : actionsVia === 'tools'
-        ? stripActionProseSections(selected)
-        : [
-            stripSections(selected, [
-              ...ACTION_PROSE_SECTION_HEADINGS,
-              ...ACTION_INSTRUCTION_SECTION_HEADINGS,
-            ]),
-            // Last, so recency is on the side of the truth.
-            CANNOT_ACT_NOTICE,
-          ].join('\n\n');
+        ? stripActionProseSections(BASE_SYSTEM_PROMPT)
+        : stripSections(BASE_SYSTEM_PROMPT, [
+            ...ACTION_PROSE_SECTION_HEADINGS,
+            ...ACTION_INSTRUCTION_SECTION_HEADINGS,
+          ]);
+
+  const byTurn =
+    SECTION_SELECTION_ENABLED && context.turnDescriptor
+      ? selectSectionsFromPrompt(byCapability, context.turnDescriptor)
+      : byCapability;
+
+  const base = actionsVia === 'none' ? [byTurn, CANNOT_ACT_NOTICE].join('\n\n') : byTurn;
 
   const parts = [base];
   if (context.customInstructions) {

@@ -22,7 +22,7 @@
  * the outcome, not WHO is allowed to cause it.
  */
 
-import { CAT_ACTIONS } from '@/config/cat-actions';
+import { CAT_ACTIONS, ACTION_CATEGORIES } from '@/config/cat-actions';
 import { logger } from '@/utils/logger';
 import { actionToolDefinitions, type ActionToolDefinition } from './action-schemas';
 
@@ -99,12 +99,27 @@ export function summariseForModel(
         .filter(Boolean)
         .join(' ');
     }
-    case 'pending_confirmation':
+    case 'pending_confirmation': {
       // The user has not agreed yet. If the model reads this as success it
       // will tell them something happened that is still waiting on a tap.
+      const pending = data?.pendingAction as { grantOnConfirm?: boolean } | undefined;
+      if (pending?.grantOnConfirm) {
+        // ADR-0006 D5: the first time Cat wants a capability it does not
+        // have, it asks in the conversation, with the action named. The card
+        // already carries "Allow and confirm"; this is what lets the reply
+        // match the card instead of announcing a done deal.
+        const categoryName = action ? ACTION_CATEGORIES[action.category].name : 'this kind of';
+        return `${label}: NOT YET ALLOWED — you do not have permission for ${categoryName} actions, so a card is asking the user to allow them and confirm this one. Nothing has been created or changed. Tell them plainly what you want to do and that one tap allows it; they will still confirm each action. Do not say it is done, and do not retry.`;
+      }
       return `${label}: WAITING FOR THE USER TO CONFIRM. Nothing has been created or changed yet. Tell them it is ready and needs their confirmation — do not say it is done.`;
-    case 'denied':
-      return `${label}: NOT PERMITTED — ${result.error ?? 'permission denied'}. Do not retry it; tell the user what to grant.`;
+    }
+    case 'denied': {
+      const categoryName = action ? ACTION_CATEGORIES[action.category].name : null;
+      const grant = categoryName
+        ? `tell the user to allow ${categoryName} actions in their Cat settings if they want this`
+        : 'tell the user what to grant';
+      return `${label}: NOT PERMITTED — ${result.error ?? 'permission denied'}. Do not retry it; ${grant}.`;
+    }
     case 'failed':
     default:
       return `${label}: FAILED — ${result.error ?? 'unknown error'}. If this was a bad parameter you may correct it and try once more; otherwise tell the user plainly.`;

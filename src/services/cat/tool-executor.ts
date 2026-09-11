@@ -12,7 +12,7 @@ import { generateOffers } from './offer-engine';
 import { resolveAiAssistTarget } from '@/lib/ai/assist-target';
 import { isValidEntityType, type EntityType } from '@/config/entity-registry';
 import { PREFILLABLE_ENTITY_TYPES } from './tool-use-detection';
-import { handleExploreTopic, handleQueryMyData } from './tool-handlers-lookup';
+import { handleExploreTopic, handleQueryMyData, handleCheckMyTrackRecord } from './tool-handlers-lookup';
 import { fetchWebsiteText, resolveRequestedUrl } from './website-analysis';
 import { runCatHealthProbes } from './health-probes';
 import type {
@@ -241,6 +241,9 @@ Explain this to the user in plain language: which provider is healthy, degraded,
   }
   if (toolName === 'query_my_data') {
     return handleQueryMyData(supabase, userId, toolCall, onToolCall);
+  }
+  if (toolName === 'check_my_track_record') {
+    return handleCheckMyTrackRecord(supabase, userId, toolCall, onToolCall);
   }
 
   // ── search_platform ──────────────────────────────────────────────────────

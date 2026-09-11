@@ -58,6 +58,7 @@
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { signInWithPassword, buildAuthCookie } from './eval-auth.mjs';
+import { readRateLimitHeaders } from './eval-rate-limit.mjs';
 
 // ---------------------------------------------------------------------------
 // Env
@@ -545,12 +546,10 @@ const FREE_TIER_RESERVE = Number(process.env.CAT_EVAL_FREE_RESERVE || 20);
 async function freeModelBudget() {
   const key = process.env.OPENROUTER_API_KEY;
   if (!key) {return null;}
-  const read = h => {
-    const limit = Number(h.get('x-ratelimit-limit'));
-    const remaining = Number(h.get('x-ratelimit-remaining'));
-    const reset = Number(h.get('x-ratelimit-reset'));
-    return Number.isFinite(remaining) ? { limit, remaining, reset } : null;
-  };
+  // Header parsing lives in eval-rate-limit.mjs, and is tested there: the
+  // inline version read a MISSING header as 0 remaining and skipped the eval
+  // every night from 2026-09-10 while the free model was answering fine.
+  const read = readRateLimitHeaders;
   try {
     const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
@@ -574,9 +573,12 @@ async function main() {
     `eval-cat: target=${BASE_URL} user=${EVAL_EMAIL} provider=${EVAL_PROVIDER} model=${EVAL_MODEL}`
   );
   const budget = await freeModelBudget();
+  if (!budget) {
+    console.error('eval-cat: free-model budget unknown (no rate-limit headers) — proceeding');
+  }
   if (budget) {
     console.error(
-      `eval-cat: free-model budget ${budget.remaining}/${budget.limit} remaining (reserve ${FREE_TIER_RESERVE})`
+      `eval-cat: free-model budget ${budget.remaining}/${budget.limit ?? '?'} remaining (reserve ${FREE_TIER_RESERVE})`
     );
     if (budget.remaining < FREE_TIER_RESERVE + PROBES.length) {
       console.error(

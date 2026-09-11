@@ -53,6 +53,12 @@ const TOOL_LABELS: Record<string, ToolLabel> = {
     noResults: 'Nothing on file',
     failed: "Couldn't read your data",
   },
+  check_my_track_record: {
+    running: 'Checking my own track record',
+    completed: n => (n === 0 ? 'Nothing on my record yet' : `Checked my record (${n} created)`),
+    noResults: 'Nothing on my record yet',
+    failed: "Couldn't read my record",
+  },
 };
 
 const DEFAULT_LABEL: ToolLabel = {
