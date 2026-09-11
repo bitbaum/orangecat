@@ -64,10 +64,13 @@ export const forSomeoneHandlers: Record<string, ActionHandler> = {
 
     const goalAmount =
       typeof params.goal_btc === 'number' && params.goal_btc > 0 ? params.goal_btc : null;
-    // Visible by default: the whole point of setting a page up for someone is
-    // that it exists and says whose it is (ADR-0005 D4). `publish: false`
-    // keeps it a draft only the steward can see.
-    const status = params.publish === false ? STATUS.PROJECTS.DRAFT : STATUS.PROJECTS.ACTIVE;
+    // Always visible: the whole point of setting a page up for someone is that
+    // it exists and says whose it is (ADR-0005 D4). There used to be a
+    // `publish` parameter defaulting to true; the free model passed false
+    // unprompted, the page was a draft nobody could see, and her profile read
+    // "Projects 0" after she claimed it (walked live 2026-09-11). The steward
+    // can still unpublish from the page.
+    const status = STATUS.PROJECTS.ACTIVE;
 
     const { data, error } = await supabase
       .from(ENTITY_REGISTRY.project.tableName)

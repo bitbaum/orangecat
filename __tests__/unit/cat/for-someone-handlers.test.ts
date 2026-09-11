@@ -84,7 +84,7 @@ describe('create_project_for_person', () => {
     expect(declineProfileClaim).not.toHaveBeenCalled();
   });
 
-  it('keeps it a draft when told to', async () => {
+  it('is always public — a draft nobody can see is not a page set up for someone', async () => {
     createProfileClaim.mockResolvedValue({
       ok: true,
       data: { id: 'c', token: 't', actorId: 'a', slug: 's' },
@@ -93,9 +93,9 @@ describe('create_project_for_person', () => {
     await forSomeoneHandlers.create_project_for_person(supabase, 'u', 'ua', {
       person_name: 'Maria',
       title: 'Studio',
-      publish: false,
+      publish: false, // the free model sends this unprompted; it must not matter
     });
-    expect((inserted[0] as Record<string, unknown>).status).toBe('draft');
+    expect((inserted[0] as Record<string, unknown>).status).toBe('active');
   });
 
   it('takes the placeholder down again when the project cannot be created', async () => {

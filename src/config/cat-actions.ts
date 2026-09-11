@@ -627,13 +627,6 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
         required: false,
         description: 'Their website, if any',
       },
-      {
-        name: 'publish',
-        type: 'boolean',
-        required: false,
-        description: 'false keeps it a draft only you see',
-        default: true,
-      },
     ],
     examples: [
       'My friend Maria wants to open an art studio — set it up for her',

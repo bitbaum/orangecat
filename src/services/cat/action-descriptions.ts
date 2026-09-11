@@ -22,9 +22,7 @@ export function generateActionDescription(
       return `Create cause "${parameters.title}"`;
     case 'create_project_for_person': {
       const who = String(parameters.person_name ?? 'them');
-      const visibility =
-        parameters.publish === false ? 'as a draft only you can see' : 'as a public page';
-      return `Set up "${parameters.title}" for ${who} ${visibility}, owned by ${who} — you get a link to send; ${who} takes it over by signing up, and nothing can receive money until then`;
+      return `Set up "${parameters.title}" for ${who} as a public page, owned by ${who} — you get a link to send; ${who} takes it over by signing up, and nothing can receive money until then`;
     }
     case 'send_to_fleetcrown':
       return `Create a FleetCrown handoff link for "${parameters.title ?? parameters.entity_id}" (valid 10 minutes) so AI agents can build it`;

@@ -28,7 +28,7 @@ import { logger } from '@/utils/logger';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { wantsHandle, buildProfileFill, type ExistingProfileFields } from './fill';
 import { normalizeClaimDraft, type ClaimDraft } from './draft';
-import { slugify } from '@/utils/string';
+import { claimSlugFor } from './slug';
 import type { ProfileClaimPreview, ProfileClaimResult, ProfileClaimRow } from './types';
 
 const MAX_USERNAME_SUFFIX_ATTEMPTS = 6;
@@ -75,8 +75,7 @@ export async function createProfileClaim(input: {
   // profile ⇒ no Lightning address; the wallet guard refuses the rest). The
   // slug is the public address until a username exists, so it is allocated
   // unique among placeholders; a clash just gets a numeric suffix.
-  const base =
-    slugify(input.draft.profile.name, { maxLength: 40, randomSuffix: false }) || 'someone';
+  const base = claimSlugFor(input.draft.profile.name);
   let actorId: string | null = null;
   let slug = base;
   for (let attempt = 0; attempt < 6 && !actorId; attempt++) {

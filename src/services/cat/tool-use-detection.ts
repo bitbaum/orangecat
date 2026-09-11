@@ -293,7 +293,7 @@ export const PLATFORM_TOOL_DEFINITION = [
     function: {
       name: 'prefill_entity_form',
       description:
-        'Draft an entity (product, service, project, etc.) from a natural-language description. Use this INSTEAD of a create_* exec_action when the user has described what they want to create with enough detail (title-ish hint + at least one specific attribute like price, location, category, audience). Returns structured fields the user can review in a form before publishing — never auto-creates.',
+        'Draft an entity (product, service, project, etc.) from a natural-language description. Use this INSTEAD of a create_* exec_action when the user has described what they want to create with enough detail (title-ish hint + at least one specific attribute like price, location, category, audience). Returns structured fields the user can review in a form before publishing — never auto-creates. NOT for something that belongs to another person who is not on OrangeCat yet: that is create_project_for_person.',
       parameters: {
         type: 'object',
         properties: {
