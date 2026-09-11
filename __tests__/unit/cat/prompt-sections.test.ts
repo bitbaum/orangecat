@@ -150,9 +150,25 @@ describe('selection is worth doing', () => {
     expect(remaining).toBeLessThanOrEqual(3_650);
   });
 
-  it('leaves the prompt unchanged when the flag is off (default)', () => {
-    // Every existing caller must be untouched until this is validated.
-    expect(buildCatSystemPrompt({ turnDescriptor: 'hi' })).toContain('## Pricing Guidance');
+  it('selects by default now, and still sends everything when told to', async () => {
+    // The default flipped on 2026-09-11 and the reason is arithmetic, not
+    // taste: the free Groq pool refuses any request over 8 000 tokens per
+    // minute, and the unselected prompt is ~9 100 in tool mode — so with
+    // selection off, that pool could not answer a single message. A greeting
+    // does not need the pricing section; the escape hatch stays for anyone
+    // who wants the whole brief.
+    expect(buildCatSystemPrompt({ turnDescriptor: 'hi' })).not.toContain('## Pricing Guidance');
+    expect(buildCatSystemPrompt({ turnDescriptor: 'what should I charge?' })).toContain(
+      '## Pricing Guidance'
+    );
+
+    vi.resetModules();
+    vi.stubEnv('CAT_PROMPT_SECTION_SELECTION', '0');
+    const off = await import('@/services/cat/system-prompt');
+    expect(off.SECTION_SELECTION_ENABLED).toBe(false);
+    expect(off.buildCatSystemPrompt({ turnDescriptor: 'hi' })).toContain('## Pricing Guidance');
+    vi.unstubAllEnvs();
+    vi.resetModules();
   });
 
   it('every situational section can actually be reached by some turn', () => {
