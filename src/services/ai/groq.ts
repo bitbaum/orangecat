@@ -11,6 +11,12 @@
  */
 
 import { PROVIDER_BASE_URLS } from '@/config/ai-provider-runtime';
+import {
+  estimateMessagesTokens,
+  getGroqTpmLimit,
+  recordGroqRateLimitHeaders,
+  recordGroqTooLarge,
+} from '@/services/ai/groq-capacity';
 
 // ==================== TYPES ====================
 
@@ -197,13 +203,13 @@ export const GROQ_ON_DEMAND_TPM_LIMIT = 12_000;
  * part of the estimate.
  */
 export function promptFitsGroqOnDemand(
-  messages: Array<{ content: string | null | undefined }>
+  messages: Array<{ content: string | null | undefined }>,
+  model: string = DEFAULT_GROQ_MODEL,
+  maxTokens: number = GROQ_CHAT_MAX_TOKENS
 ): boolean {
-  const chars = messages.reduce(
-    (n, m) => n + (typeof m.content === 'string' ? m.content.length : 0),
-    0
-  );
-  return chars / 4 + GROQ_CHAT_MAX_TOKENS <= GROQ_ON_DEMAND_TPM_LIMIT;
+  // The cap is per model and learned live (a 413 body names it); the estimate
+  // errs high on purpose — under-estimating is how the 413 got through.
+  return estimateMessagesTokens(messages) + maxTokens <= getGroqTpmLimit(model);
 }
 
 // ==================== SERVICE CLASS ====================
@@ -324,11 +330,28 @@ export class GroqService {
       }),
     });
 
+    // Groq reports its remaining requests-per-day and tokens-per-minute on
+    // every response; nothing read them until 2026-09-11, so "free capacity is
+    // maxed out" could never say how much was left or when it returns. Only
+    // the PLATFORM key's numbers are recorded — a user's own key is their
+    // business and its headroom is not the pool's.
+    if (!this.isByok) {
+      recordGroqRateLimitHeaders(model, response.headers);
+    }
+
     if (!response.ok) {
       const errorBody = await response.json().catch(() => ({}));
+      const message = (errorBody as GroqError).error?.message || `API error: ${response.status}`;
+      // A 413 body names the real per-minute cap ("Limit 8000, Requested
+      // 8391"). Learning it beats the pinned constant that was measured once
+      // in August and was 4 000 tokens too generous for the models Groq
+      // actually serves this key.
+      if (response.status === 413 && !this.isByok) {
+        recordGroqTooLarge(model, message);
+      }
       throw new GroqAPIError(
-        (errorBody as GroqError).error?.message || `API error: ${response.status}`,
-        'api_error',
+        message,
+        response.status === 413 ? 'request_too_large' : 'api_error',
         response.status
       );
     }
@@ -401,11 +424,19 @@ export class GroqService {
   }
 
   private async makeRequest<T>(endpoint: string, body: unknown): Promise<T> {
+    const model =
+      typeof (body as { model?: unknown })?.model === 'string'
+        ? (body as { model: string }).model
+        : DEFAULT_GROQ_MODEL;
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(body),
     });
+
+    if (!this.isByok) {
+      recordGroqRateLimitHeaders(model, response.headers);
+    }
 
     if (!response.ok) {
       const errorBody = await response.json().catch(() => ({}));
@@ -417,6 +448,13 @@ export class GroqService {
       }
       if (response.status === 429) {
         throw new GroqAPIError('Rate limit exceeded', 'rate_limit', 429);
+      }
+      // Size, not speed: the request is bigger than one minute's budget. It
+      // is never fixed by waiting, so it must not read as a rate limit.
+      if (response.status === 413) {
+        const message = error.error?.message || 'Request too large';
+        if (!this.isByok) recordGroqTooLarge(model, message);
+        throw new GroqAPIError(message, 'request_too_large', 413);
       }
 
       throw new GroqAPIError(

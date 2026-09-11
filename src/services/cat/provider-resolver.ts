@@ -269,7 +269,7 @@ export async function resolveProvider(
         error: 'AI chat not configured',
         code: 'NO_API_KEY',
         message:
-          'To use My Cat AI chat, you need to add your own API key in Settings → API Keys. Get a free Groq key at console.groq.com/keys',
+          'To use My Cat AI chat, you need to add your own API key in Settings → AI. Get a free Groq key at console.groq.com/keys',
         hasByok: false,
         helpUrl: ROUTES.SETTINGS_AI,
       },

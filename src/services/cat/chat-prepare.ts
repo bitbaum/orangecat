@@ -10,7 +10,17 @@
  *     awareness — just different inference hardware.
  */
 
-import { buildCatSystemPrompt, type ActionsVia } from '@/services/cat/system-prompt';
+import {
+  buildCatSystemPrompt,
+  buildStandingInstructionsBlock,
+  type ActionsVia,
+} from '@/services/cat/system-prompt';
+import {
+  composeCatMessages,
+  fitCatPromptToBudget,
+  type BudgetReport,
+  type CatPromptParts,
+} from '@/services/cat/prompt-budget';
 import { buildTurnDescriptor } from '@/services/cat/turn-descriptor';
 import { getCustomInstructions } from '@/services/cat/custom-instructions';
 import { buildReplyLanguageDirective } from '@/services/cat/reply-language';
@@ -39,6 +49,13 @@ export interface CatChatPrepareOpts {
    * caller had before this existed.
    */
   actionsVia?: ActionsVia;
+  /**
+   * When the answering link has a per-request token cap (the free Groq pool:
+   * 8 000 tokens per minute, reply reserve included), the prompt is shrunk to
+   * fit it — see prompt-budget.ts for what is given up, in which order.
+   * Omitted = the whole prompt, for links without such a cap.
+   */
+  tokenBudget?: number;
 }
 
 export interface PreparedCatChat {
@@ -46,6 +63,8 @@ export interface PreparedCatChat {
   /** system + history + the user's message — ready for any chat-completions API. */
   messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>;
   conversationId: string | null;
+  /** What the token budget cost this turn; null when no budget applied. */
+  budget: BudgetReport | null;
   /**
    * Everything Cat was legitimately shown this turn, for the groundedness check
    * on the way back out. Prompting alone is not a control — a weak model under
@@ -162,15 +181,29 @@ export async function prepareCatChat(
     currentEntity: hints.currentEntity,
   });
 
-  const systemPrompt = `${buildCatSystemPrompt({ userContext: contextString || undefined, customInstructions, actionsVia: opts.actionsVia, turnDescriptor })}${groundingRules}\n\n${getCatFewShotExamplesText()}${buildReplyLanguageDirective(message)}`;
+  const parts: CatPromptParts = {
+    base: buildCatSystemPrompt({ actionsVia: opts.actionsVia, turnDescriptor }),
+    standingInstructions: buildStandingInstructionsBlock(customInstructions),
+    userContext: contextString,
+    groundingRules,
+    fewShot: getCatFewShotExamplesText(),
+    languageDirective: buildReplyLanguageDirective(message),
+    history: historyMessages,
+    message,
+  };
+  const fitted =
+    opts.tokenBudget !== undefined
+      ? fitCatPromptToBudget(parts, opts.tokenBudget)
+      : {
+          messages: composeCatMessages(parts, { history: historyMessages, includeFewShot: true }),
+          report: null,
+        };
+  const systemPrompt = fitted.messages[0]?.content ?? '';
 
   return {
     systemPrompt,
-    messages: [
-      { role: 'system', content: systemPrompt },
-      ...historyMessages,
-      { role: 'user', content: message },
-    ],
+    messages: fitted.messages,
+    budget: fitted.report,
     conversationId,
     grounding: {
       // History counts as evidence: a name Cat established two turns ago is
