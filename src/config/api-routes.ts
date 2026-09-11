@@ -6,6 +6,8 @@
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 
 export const API_ROUTES = {
+  /** Browser-side crash reports (see lib/errors/report-client-error). */
+  CLIENT_ERRORS: '/api/client-errors',
   CAT: {
     CHAT: '/api/cat/chat',
     PREPARE: '/api/cat/prepare',
