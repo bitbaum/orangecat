@@ -47,19 +47,14 @@ export async function executeToolCall(
    * silently skipped.
    */
   actorId?: string | null,
-  /**
-   * The turn's web state: which URLs may be opened, and the facts gathered so
-   * far. Absent on any path that has not opened the web, in which case the web
-   * tools refuse rather than running without their allow-list.
-   */
+  /** The turn's web state. Absent ⇒ the web tools refuse rather than run
+   *  without their allow-list. */
   web?: WebTurnContext
 ): Promise<ToolResultMessage> {
   const toolName = toolCall.function?.name;
 
-  // ── the open web ────────────────────────────────────────────────────────
-  // First, because these two are the only tools whose reach is bounded by
-  // per-turn state rather than by the permission service, and that bound is
-  // easiest to keep true when it is not buried among fifteen other branches.
+  // ── the open web ─── bounded by the turn's URL allow-list, not by the
+  // permission service; see tool-handlers-web.ts.
   if (isWebTool(toolName)) {
     return executeWebTool(toolCall, web, onToolCall);
   }
