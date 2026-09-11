@@ -26,7 +26,26 @@ interface CatSystemPromptContext {
    * is the behaviour every caller had before section selection existed.
    */
   turnDescriptor?: string;
+  /**
+   * How (or whether) this turn can actually perform actions. Decided by the
+   * answering provider, not by preference — see ActionsVia.
+   */
+  actionsVia?: ActionsVia;
 }
+
+/**
+ * Whether Cat can act on this turn, and by what mechanism.
+ *
+ * - `tools`  — native tool definitions are sent, so the catalog reaches the
+ *              model as machine-readable schemas. The prose catalog is DROPPED:
+ *              it would be every enabled action a second time, in English.
+ * - `prose`  — no native tools (provider has no adapter), but the text path
+ *              `parseActionsFromResponse` is live, so the exec_action envelope
+ *              must be described in the prompt for anything to happen.
+ * - `none`   — nothing downstream executes anything. Cat must not describe
+ *              actions it cannot take, and is told so explicitly.
+ */
+export type ActionsVia = 'tools' | 'prose' | 'none';
 
 /**
  * Section selection is off until it can be validated against the 8-probe eval,
@@ -130,6 +149,88 @@ export function buildActionCatalogAppendix(): string {
   return `### Other available actions
 Same envelope as above; required parameters are the ones without "?". To create an entity PREFER prefill_entity_form once the user has given details (they get a reviewable draft card) — use a create_* action only when they want it created immediately.
 ${lines.join('\n')}`;
+}
+
+/**
+ * The two sections whose entire content is ALSO shipped as native tool
+ * definitions (src/services/cat/action-schemas.ts builds them from CAT_ACTIONS,
+ * the same registry these sections describe in English). Both `##` chunks carry
+ * their `###` sub-sections with them, including the generated
+ * buildActionCatalogAppendix() listing of every action without prose.
+ *
+ * Measured 2026-09-10: dropping them takes the assembled static prompt from
+ * 54,253 to 35,382 chars — 18,871 saved, 34.8% — all of it a catalog the model
+ * already receives as JSON Schema.
+ *
+ * Dropping them is only safe where the definitions are actually sent, which is
+ * exactly what ActionsVia distinguishes.
+ */
+export const ACTION_PROSE_SECTION_HEADINGS = [
+  'Actions You Can Execute Directly',
+  'Tools You Can Call',
+] as const;
+
+/**
+ * Sections that do not list the catalog but TELL Cat to act — "use the
+ * publish_entity exec_action", "`create_project_for_person` makes a public
+ * page". Dropped only where nothing executes ('none').
+ *
+ * They stay on the tools path, where they are simply true: the action loop can
+ * do all of this. They come out on the local path because a worked example is a
+ * far stronger instruction than a prohibition 30k chars earlier — leaving them
+ * in means the notice says "you cannot act" while two sections demonstrate how.
+ * Found by the D8 test failing on a `"actionId"` example that survived the
+ * catalog cut, which is exactly what that assertion was for.
+ */
+export const ACTION_INSTRUCTION_SECTION_HEADINGS = [
+  'Setting Up for Someone Else',
+  'Managing Existing Entities',
+] as const;
+
+/**
+ * What replaces the catalog when nothing downstream can run an action. Stating
+ * the limit is the whole point: without it the model cheerfully emits
+ * exec_action blocks that persist as literal text in the transcript, which
+ * reads to the user as "Cat did it".
+ */
+const CANNOT_ACT_NOTICE = `## You Cannot Execute Actions On This Turn
+The model answering right now has no action or tool channel, so NOTHING you write can change anything on OrangeCat. Do not emit exec_action blocks or claim a tool ran — the text would be stored as-is and the user would believe a change happened that did not.
+
+If any rule above still mentions exec_action, it does not apply on this turn — there is nothing to emit it to.
+
+Help the way a knowledgeable person without access would: answer the question, and when something must actually be done, name the exact page to do it on (e.g. "Dashboard → Store → Create") or offer to do it when they next chat with a model that can act.`;
+
+/**
+ * Remove the prose catalog, preserving the prompt's own order and spacing for
+ * every section that stays. Same chunking as selectSectionsFromPrompt — this
+ * file has one way of addressing its own sections.
+ *
+ * Hard-fails on a heading it cannot find: these strings must track the prompt
+ * text, and a silent miss would quietly ship the 25% it was added to remove.
+ */
+export function stripSections(prompt: string, headings: readonly string[]): string {
+  const drop = new Set<string>(headings);
+  const seen = new Set<string>();
+  const kept = prompt.split(/\n(?=## )/).filter(chunk => {
+    const heading = chunk.startsWith('## ') ? chunk.slice(3).split('\n')[0].trim() : null;
+    if (heading && drop.has(heading)) {
+      seen.add(heading);
+      return false;
+    }
+    return true;
+  });
+  const missing = headings.filter(h => !seen.has(h));
+  if (missing.length > 0) {
+    throw new Error(
+      `stripSections: section(s) not found in prompt: ${missing.join(', ')}. ` +
+        'The heading lists must match the headings in BASE_SYSTEM_PROMPT.'
+    );
+  }
+  return kept.join('\n');
+}
+
+export function stripActionProseSections(prompt: string): string {
+  return stripSections(prompt, ACTION_PROSE_SECTION_HEADINGS);
 }
 
 /**
@@ -560,10 +661,30 @@ If you call prefill_entity_form or suggest_offers, your reply should be SHORT an
 export const BASE_SYSTEM_PROMPT_FOR_TEST = BASE_SYSTEM_PROMPT;
 
 export function buildCatSystemPrompt(context: CatSystemPromptContext = {}): string {
-  const base =
+  const selected =
     SECTION_SELECTION_ENABLED && context.turnDescriptor
       ? selectSectionsFromPrompt(BASE_SYSTEM_PROMPT, context.turnDescriptor)
       : BASE_SYSTEM_PROMPT;
+
+  // Default 'prose' so a caller that says nothing gets exactly the prompt it
+  // got before this existed. Omitting the catalog is the change; keeping it is
+  // the status quo, and an un-migrated caller should not silently lose Cat's
+  // only way of acting.
+  const actionsVia: ActionsVia = context.actionsVia ?? 'prose';
+  const base =
+    actionsVia === 'prose'
+      ? selected
+      : actionsVia === 'tools'
+        ? stripActionProseSections(selected)
+        : [
+            stripSections(selected, [
+              ...ACTION_PROSE_SECTION_HEADINGS,
+              ...ACTION_INSTRUCTION_SECTION_HEADINGS,
+            ]),
+            // Last, so recency is on the side of the truth.
+            CANNOT_ACT_NOTICE,
+          ].join('\n\n');
+
   const parts = [base];
   if (context.customInstructions) {
     parts.push(`## Standing Instructions From This User

@@ -19,9 +19,11 @@
 
 import { actionToolDefinitions } from './action-schemas';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
-import { PROVIDER_BASE_URLS } from '@/config/ai-provider-runtime';
 import {
-  messageMightNeedTools,
+  PROVIDER_BASE_URLS,
+  providerSupportsNativeTools,
+} from '@/config/ai-provider-runtime';
+import {
   hasCreateIntent,
   hasWebsiteAnalysisIntent,
   PLATFORM_TOOL_DEFINITION,
@@ -38,7 +40,6 @@ import type {
 } from './tool-use-types';
 
 // Public surface — unchanged for consumers (chat-orchestrator imports from here).
-export { messageMightNeedTools } from './tool-use-detection';
 export type {
   ChatMessage,
   ToolAugmentedMessage,
@@ -109,27 +110,40 @@ export async function maybeEnrichWithSearchResults(
   onPrefillProposal?: OnPrefillProposal,
   opts?: { timeoutMs?: number; actorId?: string | null }
 ): Promise<ToolAugmentedMessage[]> {
-  // Tool detection uses OpenAI-compatible function-calling. Enabled on the two
-  // providers that actually serve OrangeCat: Groq (BYOK, paid TPM) and
-  // OpenRouter (the platform path + many BYOK models — gpt-oss-120b returns
-  // proper tool_calls). Without this, platform-tier discovery/matchmaking was
-  // dead (Groq 429s, so the platform runs on OpenRouter). Other providers fall
-  // back to no tools until they get an adapter.
+  // Which providers get native function-calling is TOOL_CAPABLE_PROVIDERS in
+  // config/ai-provider-runtime — the same fact that decides whether the system
+  // prompt claims Cat can act. Asserting it here keeps the branch below from
+  // drifting away from the prompt: if they disagree, the user is told an action
+  // ran on a provider that was never given the tools to run it.
+  if (!providerSupportsNativeTools(provider)) {
+    return messages;
+  }
+
   let toolEndpoint: string;
   let toolKey: string | undefined;
   if (provider === 'groq') {
     toolEndpoint = `${PROVIDER_BASE_URLS.groq}/chat/completions`;
     toolKey = groqKey ?? process.env.GROQ_API_KEY;
-  } else if (provider === 'openrouter') {
+  } else {
     toolEndpoint = `${PROVIDER_BASE_URLS.openrouter}/chat/completions`;
     toolKey = process.env.OPENROUTER_API_KEY;
-  } else {
-    return messages;
   }
 
-  if (!messageMightNeedTools(userMessage)) {
-    return messages;
-  }
+  // The keyword prefilter is GONE as a gate (ADR-0006 D3), and removing it is
+  // what makes the in-turn action loop actually fire.
+  //
+  // It was ~100 English substrings. Measured against five ordinary requests:
+  // "create a project called X" passed (via "create a"), while "publish my
+  // project", "sell my ebook", "list my mugs for sale" and "make me a service
+  // for haircuts" were ALL blocked — so four of five real action phrasings
+  // never reached the tools at all, and non-English phrasing fared worse.
+  // Deciding whether a tool is needed is the model's job; that is what
+  // tool_choice: 'auto' is for.
+  //
+  // The cost it was buying is one slim routing round-trip on messages that turn
+  // out not to need a tool. That call carries the short routing prompt and
+  // max_tokens 1200, not the ~52k-char system prompt, so it is a small fraction
+  // of the main call — and D7 removes more from the main call than this adds.
 
   if (!toolKey) {
     return messages;

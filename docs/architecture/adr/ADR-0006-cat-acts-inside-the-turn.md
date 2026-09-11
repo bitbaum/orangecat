@@ -104,16 +104,30 @@ This is what "smarter" actually means here. It buys, with no new actions:
 - Truthful past tense. The prompt's "never say done" rule can be deleted,
   because Cat will know.
 
-### D3 — Capability decides tools, not keywords.
+### D3 — Capability decides tools, not keywords. BUILT.
 
-Delete `messageMightNeedTools`. The model decides whether it needs a tool; that
-is what tool-calling is for, and a 90-word English list is both a capability
-cliff and a non-English cliff.
+Delete `messageMightNeedTools` **as a gate**. The model decides whether it needs
+a tool; that is what tool-calling is for, and a 90-word English list is both a
+capability cliff and a non-English cliff.
 
-Providers that genuinely cannot call tools are handled by **telling the truth**:
-`model-capability.ts` already tiers models, and the prompt's tool section is
-rendered only when the resolved provider supports them. A Cat that says it can
-search should be able to search.
+Measured before removing it, against five ordinary requests: only "create a
+project called X" got through (via the substring `create a`). "publish my
+project", "sell my ebook", "list my mugs for sale" and "make me a service for
+haircuts" were all blocked — four of five real phrasings never reached the tools
+at all. Which also means the in-turn loop built in D2 was largely dormant: it
+could only fire on messages the keyword list happened to like.
+
+The function survives, demoted to **advisory**: it still drives the
+`suggestUpgrade` hint in the done event, where a wrong guess costs a hint rather
+than Cat's ability to act. The cost of removing the gate is one slim routing
+round-trip on messages that turn out not to need a tool — the routing call
+carries its own short prompt and `max_tokens: 1200`, not the main system prompt,
+so D7 removes far more than this adds.
+
+Providers that genuinely cannot call tools are handled by **telling the truth**,
+which is now `actionsVia` (see D7): the prompt's action and tool sections are
+rendered only where the resolved provider actually receives the definitions. A
+Cat that says it can search should be able to search.
 
 ### D4 — Validate parameters at the boundary, from the registry.
 
@@ -143,23 +157,69 @@ Today it is context only. Make it a read tool so Cat can answer "what did you do
 for me?" and, more usefully, notice its own pattern: _"the last three projects I
 drafted for you never got published — want me to finish one?"_
 
-### D7 — The prompt diet is a separate lever, and it is the one that unlocks speed.
+### D7 — The prompt diet is a separate lever — and it is 3x bigger than estimated. BUILT.
 
-Worth stating plainly so it is not conflated with the above: moving the action
-catalog into tool definitions saves **5,303 of 54,600 chars**. It does not fix
-the fact that Cat overflows platform Groq's ceiling and therefore runs on
-OpenRouter's shared free pool.
+This decision was written with an estimate of **5,303 chars saved**, which made it
+look like a rounding error worth deferring. Measured on 2026-09-10, the real
+figure is **18,871 of 54,253 chars — 34.8% of everything sent on every
+message**, or 3.6x the estimate. The estimate counted only the action catalog; it
+missed that both `##` sections carry their `###` sub-sections with them,
+including the generated `buildActionCatalogAppendix()` listing of every action
+that has no prose section of its own.
 
-`SECTION_SELECTION_ENABLED` — per-turn prompt trimming — is already built and
-switched off, explicitly because there was no free-model capacity to validate it
-against the eval. That is the actual speed fix, it is 90% written, and it should
-be validated and enabled as its own piece of work.
+The two sections are `Actions You Can Execute Directly` and `Tools You Can Call`.
+Since D1/D4, `action-schemas.ts` ships exactly that registry as JSON Schema tool
+definitions — so on any provider that receives them, the prose is every enabled
+action a second time, in English.
 
-### D8 — Stop the local path from lying.
+Built as `actionsVia: 'tools' | 'prose' | 'none'` on `buildCatSystemPrompt`:
 
-Either run the same tool loop against the local model, or serve the local path a
-prompt without the tool and action sections. Shipping the full catalog to a path
-that executes nothing is the one thing here that is unambiguously a bug.
+- `tools` — definitions are sent, prose dropped. 54,253 → 35,382 chars.
+- `prose` — no native tools, so the `parseActionsFromResponse` text path is
+  Cat's only verb and the envelope must be described. **The default**, so a
+  caller that says nothing gets byte-for-byte what it got before.
+- `none` — nothing downstream executes anything. This is D8.
+
+One fact decides it: `TOOL_CAPABLE_PROVIDERS` in `config/ai-provider-runtime`,
+which the tool layer now branches on too. It used to be spelled out separately in
+each place, and when they disagreed the prompt won the argument — the user was
+told an action had run on a path that was never given the tools to run it.
+
+**This does not fix the Groq ceiling.** 35,382 chars now fits the ~39,808-char
+budget with ~4,400 to spare — but user context, memories, history and the page
+excerpt are all appended on top of that, and they routinely exceed it, so Cat
+still overflows platform Groq in practice and still runs on OpenRouter's shared
+free pool. It buys a third of the way there and makes the rest reachable. `SECTION_SELECTION_ENABLED` — per-turn trimming, already built and
+switched off for want of free-model eval capacity — remains the lever that
+closes it, as its own piece of work.
+
+A consequence worth stating, since a later reader will trip on it: on the `tools`
+path the main call receives no tool definitions at all (they go on the action
+loop's own slim prompt), so stripping the catalog means the main model no longer
+emits `exec_action` — every action goes through the loop. That is D2 working as
+designed, and the loop offers every enabled action. It also means `Critical Rules` still tells
+the model to announce actions as in-progress ("the result appears below"), which
+is true on the `prose` path and stale on the `tools` path, where the result is
+already known before the reply is written. Left alone deliberately: it errs
+toward under-claiming, and rewriting a shared rule per-path is its own change.
+
+### D8 — Stop the local path from lying. BUILT.
+
+`/api/cat/prepare` builds the prompt for a model running in the user's own
+browser (Ollama / LM Studio), and the only thing that comes back is
+`POST /api/cat/local-complete`, which calls `saveMessages`. There is no executor
+on that path, so an `exec_action` block is stored verbatim and the user reads
+"Creating that now…" for something nothing will ever create.
+
+Of the two options, the second: the route passes `actionsVia: 'none'`, which
+drops the catalog **and** replaces it with a section stating plainly that nothing
+written can change anything, with instructions to name the exact page instead.
+Removing the catalog without saying why would have been half the fix — a model
+with no catalog still improvises an envelope.
+
+Running the real loop against a local model stays the better end state and is not
+blocked by this; it is just a larger piece of work, and until it exists the honest
+prompt is the one that admits the limit.
 
 ## What this is not
 
@@ -175,10 +235,17 @@ inside a parse-and-fire loop still cannot see its own results.
 1. **D4 + D1** — registry-generated schemas and one surface. Safe, mechanical,
    and the precondition for everything else.
 2. **D2** — the loop. The step that changes what Cat is.
-3. **D3 + D8** — stop lying about tools, on every path.
+3. **D3 + D7 + D8** — stop lying about tools, on every path. ✅ DONE.
+   D7 turned out to *depend* on D3 rather than being independent of it: the
+   keyword gate blocked four of five ordinary action phrasings ("publish my
+   project", "sell my ebook", "list my mugs for sale", "make me a service for
+   haircuts" — only "create a project called X" got through), so the tool
+   definitions the diet relies on were rarely being sent at all. Cutting the
+   prose first would have removed Cat's verb. They ship together.
 4. **D5** — the first run.
 5. **D6** — self-knowledge.
-6. **D7** — the prompt diet, separately, with the eval.
+6. **Section selection** — validate and enable `SECTION_SELECTION_ENABLED`
+   against the eval. This, not D7, is what closes the Groq gap.
 
 ## Related
 
