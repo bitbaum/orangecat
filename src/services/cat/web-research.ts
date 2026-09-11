@@ -144,8 +144,11 @@ function normalize(raw: string): string {
 export type WebToolOutcome = {
   /** Content handed back to the model as the tool result. */
   content: string;
-  /** Sources to surface in the UI, or none when the lookup produced nothing. */
-  results: Array<{ url: string; title: string }>;
+  /**
+   * Sources to surface in the UI, each with the citation handle it was given
+   * this turn, so the reader can follow `[F1]` to the page it stands for.
+   */
+  results: Array<{ url: string; title: string; handle?: string }>;
   /** False when the lookup failed or was refused — drives the tool-call chip. */
   ok: boolean;
   /**
@@ -210,7 +213,13 @@ export async function searchTheWeb(
 
   return {
     ok: true,
-    results: outcome.results.map(r => ({ url: r.url, title: r.title })),
+    // Zipped by index: `stamped` was built from `outcome.results` in order, so
+    // position is the only thing that relates a handle to its source.
+    results: outcome.results.map((r, i) => ({
+      url: r.url,
+      title: r.title,
+      ...(stamped[i]?.id ? { handle: stamped[i]!.id } : {}),
+    })),
     content: [
       `WEB SEARCH RESULTS for "${query}" (via ${outcome.provider}):`,
       '',
@@ -285,7 +294,7 @@ export async function readTheWeb(
 
   return {
     ok: true,
-    results: [{ url: page.url, title: page.title || page.url }],
+    results: [{ url: page.url, title: page.title || page.url, handle: fact.id }],
     content: [
       renderFacts([fact]),
       '',

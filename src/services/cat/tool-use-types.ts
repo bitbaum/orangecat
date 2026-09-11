@@ -33,6 +33,14 @@ export interface ToolCallResultRef {
   url: string;
   type: string;
   title: string;
+  /**
+   * The citation handle this source was given for the turn ("F1"), when it has
+   * one. Carried explicitly rather than inferred client-side from the order of
+   * results: the turn de-duplicates repeated urls while handles do not, so an
+   * order-based guess links the wrong source — the exact failure the citation
+   * machinery exists to prevent.
+   */
+  handle?: string;
 }
 
 /**

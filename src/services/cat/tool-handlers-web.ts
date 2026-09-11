@@ -76,7 +76,12 @@ export async function executeWebTool(
         name,
         status: 'completed',
         resultCount: outcome.results.length,
-        results: outcome.results.map(r => ({ url: r.url, type: 'web', title: r.title })),
+        results: outcome.results.map(r => ({
+          url: r.url,
+          type: 'web',
+          title: r.title,
+          ...(r.handle ? { handle: r.handle } : {}),
+        })),
       });
     }
     return { role: 'tool', tool_call_id: toolCall.id, content: outcome.content };
@@ -95,7 +100,12 @@ export async function executeWebTool(
       name,
       status: 'completed',
       resultCount: 1,
-      results: outcome.results.map(r => ({ url: r.url, type: 'web', title: r.title })),
+      results: outcome.results.map(r => ({
+        url: r.url,
+        type: 'web',
+        title: r.title,
+        ...(r.handle ? { handle: r.handle } : {}),
+      })),
     });
   }
   return { role: 'tool', tool_call_id: toolCall.id, content: outcome.content };
