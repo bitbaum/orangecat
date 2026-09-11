@@ -10,8 +10,20 @@ on:
 # Cancel superseded runs on the same ref — a newer push makes the older build
 # obsolete. On main this means only the latest commit's CI (and thus its CD)
 # proceeds, which is what we want: deploy the newest, not a stale in-flight one.
+# On a branch the newest push is the only one that matters, so cancel the rest.
+#
+# On main the group is keyed per COMMIT. A commit cancelling a DIFFERENT
+# commit's run breaks deployment, because every deploy path keys off that run:
+# one that waits for CI to pass on the commit finds a cancelled run and stops,
+# and one chained on `workflow_run` sees conclusion=cancelled and skips.
+# auto-merge also re-arms CI with a dispatch, which under a single
+# group-per-branch cancels the push run for the SAME commit.
+#
+# Measured 2026-09-11 across the fleet: 28 of 39 ci.yml files had this shape.
+# fleetcrown stranded four merges silently (main green, nothing red, the box
+# serving the previous build); hirnli failed its deploy loudly at the wait step.
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.ref }}-${{ github.ref == 'refs/heads/main' && github.sha || 'branch' }}
   cancel-in-progress: true
 
 jobs:
