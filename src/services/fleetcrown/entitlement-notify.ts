@@ -14,7 +14,7 @@
  *
  * Inert until ORANGECAT_WEBHOOK_SECRET is set (shared with FleetCrown).
  */
-import { createHmac } from 'crypto';
+import { postSignedToFleetCrown } from './signed-post';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { getEntityMetadata, type EntityType } from '@/config/entity-registry';
@@ -52,7 +52,7 @@ export async function notifyFleetCrownProjectFunding(pi: PaymentIntent): Promise
   }
 
   try {
-    const body = JSON.stringify({
+    const result = await postSignedToFleetCrown(FLEETCROWN_EVENTS_URL, {
       type: 'payment.settled',
       entityType: pi.entity_type,
       entityId: pi.entity_id,
@@ -60,15 +60,11 @@ export async function notifyFleetCrownProjectFunding(pi: PaymentIntent): Promise
       amountBtc: String(pi.amount_btc ?? ''),
       externalId: pi.id,
     });
-    const signature = 'sha256=' + createHmac('sha256', secret).update(body).digest('hex');
-    const res = await fetch(FLEETCROWN_EVENTS_URL, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-orangecat-signature': signature },
-      body,
-      signal: AbortSignal.timeout(12_000),
-    });
-    if (!res.ok) {
-      logger.warn('[fc-funding] FleetCrown rejected event', { piId: pi.id, status: res.status });
+    if (!result.ok) {
+      logger.warn('[fc-funding] FleetCrown rejected event', {
+        piId: pi.id,
+        status: result.status,
+      });
     }
   } catch (err) {
     logger.error('[fc-funding] notify failed (non-fatal)', {
@@ -117,25 +113,17 @@ export async function notifyFleetCrownEntitlement(pi: PaymentIntent): Promise<vo
       return;
     }
 
-    const body = JSON.stringify({
+    const result = await postSignedToFleetCrown(FLEETCROWN_URL, {
       actorId: actor.id,
       plan: pass.plan,
       externalId: pi.id,
       periodDays: pass.periodDays,
       amountBtc: String(pi.amount_btc ?? ''),
     });
-    const signature = 'sha256=' + createHmac('sha256', secret).update(body).digest('hex');
-
-    const res = await fetch(FLEETCROWN_URL, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-orangecat-signature': signature },
-      body,
-      signal: AbortSignal.timeout(12_000),
-    });
-    if (!res.ok) {
+    if (!result.ok) {
       logger.warn('[fc-entitlement] FleetCrown rejected grant', {
         piId: pi.id,
-        status: res.status,
+        status: result.status,
       });
     } else {
       logger.info('[fc-entitlement] granted', {

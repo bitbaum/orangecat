@@ -589,6 +589,50 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
     enabled: true,
   },
 
+  /**
+   * Commission a real, deployed website from FleetCrown's site factory.
+   *
+   * `high` risk and always confirmed, and the reason is not that it spends
+   * money — it does not. It creates a repository, a public subdomain and a TLS
+   * certificate, in the open, under the studio's name. Those are externally
+   * visible and cannot be un-spent against the rate limits they consume, which
+   * is precisely the shape of thing a user should see named before it happens.
+   * The autonomy ladder refuses `auto` for high risk, so this can never become
+   * a thing Cat does unattended.
+   */
+  build_site: {
+    id: 'build_site',
+    name: 'Build a Website',
+    description:
+      'Commission FleetCrown to build and deploy a real website on its own subdomain. Queued, not instant: the reply must say a build was STARTED, never that a site is ready.',
+    category: 'entities',
+    icon: Hammer,
+    riskLevel: 'high',
+    requiresConfirmation: true,
+    parameters: [
+      {
+        name: 'slug',
+        type: 'string',
+        required: true,
+        description: 'Subdomain to build on, lowercase letters/digits/hyphens (e.g. "kraftwerk")',
+      },
+      { name: 'title', type: 'string', required: true, description: 'What the site is called' },
+      {
+        name: 'kind',
+        type: 'string',
+        required: false,
+        description: 'demo | product | client-site (default: product)',
+        default: 'product',
+      },
+    ],
+    examples: [
+      'Build me a website for my bakery',
+      'Can you make a real site for this project?',
+      'Set up a landing page on its own domain',
+    ],
+    enabled: true,
+  },
+
   create_project_for_person: {
     id: 'create_project_for_person',
     name: 'Set Up a Project for Someone Else',
