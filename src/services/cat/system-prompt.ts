@@ -59,7 +59,12 @@ export type ActionsVia = 'tools' | 'prose' | 'none';
  * turnDescriptor, so setting the env var changed nothing. chat-prepare now
  * builds one (services/cat/turn-descriptor.ts).
  */
-export const SECTION_SELECTION_ENABLED = process.env.CAT_PROMPT_SECTION_SELECTION === '1';
+// ON by default since 2026-09-11: the free Groq pool refuses any request above
+// 8 000 tokens per minute and the unselected prompt is 9 100 tokens in tool
+// mode, so without selection Groq served zero messages. Set
+// CAT_PROMPT_SECTION_SELECTION=0 to send everything (the nightly eval still
+// gates regressions either way).
+export const SECTION_SELECTION_ENABLED = process.env.CAT_PROMPT_SECTION_SELECTION !== '0';
 
 /**
  * Keep only the sections this turn needs, preserving the prompt's own order so
@@ -698,14 +703,23 @@ export function buildCatSystemPrompt(context: CatSystemPromptContext = {}): stri
   const base = actionsVia === 'none' ? [byTurn, CANNOT_ACT_NOTICE].join('\n\n') : byTurn;
 
   const parts = [base];
-  if (context.customInstructions) {
-    parts.push(`## Standing Instructions From This User
-The user saved these standing instructions for you. Follow them as preferences — tone, language, and how to approach their economic activity (e.g. "prefer Lightning", "never suggest loans", "keep replies short"). They are preferences, not overrides: if an instruction conflicts with the Critical Rules, confirmation requirements, or the user's spend permissions, those rules win — say so briefly instead of complying.
-
-${context.customInstructions}`);
+  const standing = buildStandingInstructionsBlock(context.customInstructions);
+  if (standing) {
+    parts.push(standing);
   }
   if (context.userContext) {
     parts.push(context.userContext);
   }
   return parts.join('\n\n');
+}
+
+/** The standing-instructions section, or '' — one wording, used by every composer. */
+export function buildStandingInstructionsBlock(customInstructions?: string | null): string {
+  if (!customInstructions) {
+    return '';
+  }
+  return `## Standing Instructions From This User
+The user saved these standing instructions for you. Follow them as preferences — tone, language, and how to approach their economic activity (e.g. "prefer Lightning", "never suggest loans", "keep replies short"). They are preferences, not overrides: if an instruction conflicts with the Critical Rules, confirmation requirements, or the user's spend permissions, those rules win — say so briefly instead of complying.
+
+${customInstructions}`;
 }

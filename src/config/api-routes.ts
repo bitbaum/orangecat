@@ -24,6 +24,7 @@ export const API_ROUTES = {
     MEMORIES_IMPORT: '/api/cat/memories/import',
     INTERESTS: '/api/cat/interests',
     DIAGNOSE: '/api/cat/diagnose',
+    CAPACITY: '/api/cat/capacity',
     NUDGES: '/api/cat/nudges',
     CONVERSATIONS: '/api/cat/conversations',
     CONVERSATION: (id: string) => `/api/cat/conversations/${id}`,

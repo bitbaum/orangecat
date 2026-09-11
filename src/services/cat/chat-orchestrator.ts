@@ -42,7 +42,8 @@ import type { ExecAction, CatAction, ExecActionResult } from '@/types/cat';
 import { AI_MESSAGE_MAX_CHARS } from '@/lib/validation/ai';
 import { PAGE_EXCERPT_MAX_CHARS } from '@/config/cat-page-context';
 import { markLinkDown } from '@/services/ai/link-health';
-import { promptFitsGroqOnDemand } from '@/services/ai/groq';
+import { promptFitsGroqOnDemand, GROQ_CHAT_MAX_TOKENS } from '@/services/ai/groq';
+import { getGroqTpmLimit, recordOpenRouterRateLimit } from '@/services/ai/groq-capacity';
 
 export const catChatBodySchema = z.object({
   message: z.string().min(1).max(AI_MESSAGE_MAX_CHARS),
@@ -101,9 +102,30 @@ class GroqPreflightSkip extends Error {
 function overflowsPlatformGroq(
   provider: string,
   hasByok: boolean,
+  model: string,
   messages: ToolAugmentedMessage[]
 ): boolean {
-  return provider === 'groq' && !hasByok && !promptFitsGroqOnDemand(messages);
+  return provider === 'groq' && !hasByok && !promptFitsGroqOnDemand(messages, model);
+}
+
+/**
+ * Headroom left under the per-minute cap after the reply reserve: slack for
+ * the estimate itself, which counts characters rather than tokenising. The
+ * estimate errs high, but a tokeniser disagreeing by a few percent on an 8 000
+ * budget is the difference between a reply and a 413.
+ */
+const PROMPT_BUDGET_MARGIN_TOKENS = 150;
+
+/**
+ * A 429 from OpenRouter's free pool names the day it ran out
+ * (`free-models-per-day`). Remembering that is what lets the capacity meter
+ * say "resets at 00:00 UTC" instead of the app's old guess, "try again in a
+ * minute" — which was a lie for the one refusal a wait never fixes.
+ */
+function noteRateLimit(provider: string, err: unknown): void {
+  if (provider === 'openrouter' && err instanceof Error) {
+    recordOpenRouterRateLimit(err.message);
+  }
 }
 
 /**
@@ -281,6 +303,31 @@ export async function orchestrateCatChat(
   // ends with the user being told something happened that did not.
   const actionsVia = providerSupportsNativeTools(provider) ? 'tools' : 'prose';
 
+  // Build the prompt to FIT the link that will answer, rather than discovering
+  // it does not. The free Groq pool refuses any single request over its
+  // per-minute cap (8 000 tokens for the models this key serves, reply reserve
+  // included) — and Cat's system prompt alone measured 9 100 tokens in tool
+  // mode on 2026-09-11, so platform Groq could not serve one message. Every
+  // turn paid a guaranteed 413, fell through to OpenRouter's free pool, and
+  // exhausted THAT by mid-morning; the user then read "Free AI capacity is
+  // maxed out right now" for the rest of the day.
+  //
+  // The budget is the smallest cap among the platform-Groq links in this
+  // user's chain. A BYOK chain, or one with no Groq link, gets the whole
+  // prompt: their limits are their own and usually far higher.
+  const platformGroqModels = [
+    { provider, hasByok, model: modelToUse },
+    ...fallbacks.map(f => ({ provider: f.provider, hasByok: f.hasByok, model: f.modelToUse })),
+  ]
+    .filter(link => link.provider === 'groq' && !link.hasByok)
+    .map(link => link.model);
+  const tokenBudget =
+    platformGroqModels.length > 0
+      ? Math.min(...platformGroqModels.map(m => getGroqTpmLimit(m))) -
+        GROQ_CHAT_MAX_TOKENS -
+        PROMPT_BUDGET_MARGIN_TOKENS
+      : undefined;
+
   const prepared = await prepareCatChat(supabase, user.id, {
     message,
     requestedConversationId,
@@ -291,8 +338,27 @@ export async function orchestrateCatChat(
     currentEntity,
     pageExcerpt,
     actionsVia,
+    tokenBudget,
   });
   const conversationId = prepared.conversationId;
+  // What fitting the budget cost, when it cost anything. Logged rather than
+  // silent: a prompt that reaches the model without the user's context is a
+  // different answer, and the reason has to be findable.
+  if (
+    prepared.budget &&
+    (!prepared.budget.fits ||
+      prepared.budget.historyDropped > 0 ||
+      prepared.budget.contextTruncated ||
+      prepared.budget.contextDropped ||
+      prepared.budget.fewShotDropped ||
+      prepared.budget.sectionsDropped.length > 0)
+  ) {
+    logger.info(
+      'Cat chat: prompt fitted to the free-tier budget',
+      { ...prepared.budget },
+      'cat/chat'
+    );
+  }
 
   // Does this message want more than chat (discovery, creation, multi-step)?
   // If so AND the answering model isn't agentic (frontier), we flag the
@@ -461,7 +527,10 @@ export async function orchestrateCatChat(
           // the prompt outgrows the on-demand TPM limit — skip the guaranteed
           // failure when another link can serve. BYOK Groq (possibly a higher
           // tier) and a chain with no other links still get the real attempt.
-          if (fallbacks.length > 0 && overflowsPlatformGroq(provider, hasByok, messages)) {
+          if (
+            fallbacks.length > 0 &&
+            overflowsPlatformGroq(provider, hasByok, modelToUse, messages)
+          ) {
             lastErr = new GroqPreflightSkip();
           } else {
             try {
@@ -481,12 +550,13 @@ export async function orchestrateCatChat(
             // pre-flight skip is never marked either: this user's prompt is
             // too big for the link, other users' prompts may fit it fine.
             if (activeIsPlatform && !(lastErr instanceof GroqPreflightSkip)) {
+              noteRateLimit(activeProvider, lastErr);
               markLinkDown(activeProvider, activeModel);
             }
             const next = fallbacks[fallbackIndex++];
             if (
               fallbackIndex < fallbacks.length &&
-              overflowsPlatformGroq(next.provider, next.hasByok, messages)
+              overflowsPlatformGroq(next.provider, next.hasByok, next.modelToUse, messages)
             ) {
               lastErr = new GroqPreflightSkip();
               continue;
@@ -525,6 +595,7 @@ export async function orchestrateCatChat(
           }
           if (lastErr) {
             if (activeIsPlatform && !(lastErr instanceof GroqPreflightSkip)) {
+              noteRateLimit(activeProvider, lastErr);
               markLinkDown(activeProvider, activeModel);
             }
             throw lastErr;
@@ -597,7 +668,7 @@ export async function orchestrateCatChat(
             errPayload = {
               error: hasByok
                 ? 'Your provider returned a rate-limit. Try again in a moment.'
-                : 'Free AI capacity is maxed out right now. Try again in a minute — or add your own free Groq key in Settings → API Keys for capacity that’s all yours.',
+                : 'Free AI capacity is maxed out right now. Try again in a minute — or add your own free Groq key in Settings → AI for capacity that’s all yours.',
               code: 'AI_RATE_LIMITED',
             };
           } else if (attemptedFallback) {
@@ -606,14 +677,14 @@ export async function orchestrateCatChat(
             // the same; the details are in the server log either way.
             errPayload = {
               error: hasByok
-                ? 'None of your providers could answer just now. Check your keys in Settings → API Keys, then try again.'
-                : 'Cat couldn’t reach an AI model just now — this is usually momentary. Try again; if it keeps happening, add your own free Groq key in Settings → API Keys.',
+                ? 'None of your providers could answer just now. Check your keys in Settings → AI, then try again.'
+                : 'Cat couldn’t reach an AI model just now — this is usually momentary. Try again; if it keeps happening, add your own free Groq key in Settings → AI.',
               code: 'ALL_PROVIDERS_DOWN',
             };
           } else {
             errPayload = {
               error:
-                'Cat couldn’t generate a response. Try again, or add your own key in Settings → API Keys.',
+                'Cat couldn’t generate a response. Try again, or add your own key in Settings → AI.',
               code: 'STREAM_ERROR',
             };
           }
@@ -709,7 +780,7 @@ export async function orchestrateCatChat(
   let lastErr: unknown = null;
   // Same pre-flight as the streaming path: never pay a guaranteed 413 on a
   // platform-Groq link when another link can serve this prompt.
-  if (fallbacks.length > 0 && overflowsPlatformGroq(provider, hasByok, messages)) {
+  if (fallbacks.length > 0 && overflowsPlatformGroq(provider, hasByok, modelToUse, messages)) {
     lastErr = new GroqPreflightSkip();
   } else {
     try {
@@ -726,13 +797,14 @@ export async function orchestrateCatChat(
   let lastTried = { provider: provider as string, model: modelToUse, platform: !hasByok };
   while (!result && lastErr && fallbackIndex < fallbacks.length) {
     if (lastTried.platform && !(lastErr instanceof GroqPreflightSkip)) {
+      noteRateLimit(lastTried.provider, lastErr);
       markLinkDown(lastTried.provider, lastTried.model);
     }
     const next = fallbacks[fallbackIndex++];
     lastTried = { provider: next.provider, model: next.modelToUse, platform: !next.hasByok };
     if (
       fallbackIndex < fallbacks.length &&
-      overflowsPlatformGroq(next.provider, next.hasByok, messages)
+      overflowsPlatformGroq(next.provider, next.hasByok, next.modelToUse, messages)
     ) {
       lastErr = new GroqPreflightSkip();
       continue;
@@ -764,6 +836,7 @@ export async function orchestrateCatChat(
   }
   if (!result) {
     if (lastTried.platform && !(lastErr instanceof GroqPreflightSkip)) {
+      noteRateLimit(lastTried.provider, lastErr);
       markLinkDown(lastTried.provider, lastTried.model);
     }
     throw lastErr ?? new Error('Cat chat: no AI provider produced a response');
