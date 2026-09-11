@@ -170,6 +170,46 @@ The invariant from ADR-0003 is untouched and must stay so: **money is never
 routable to an entity whose subject has not accepted it.** Commissioning a build
 creates a site and a claim, never a wallet.
 
+**Status: the FleetCrown half is DONE and live** —
+`POST /api/orangecat/site` (bitbaum/fleetcrown#646, moved to that path by
+#653). It verifies the shared HMAC, maps the OrangeCat actor to a FleetCrown
+user, refuses an unlinked actor with a 409 naming the next step, narrows the
+register's six site kinds to three, forces `status: unverified`, and caps a
+single account at three sites a day. Its gate is mutation-proved.
+
+**The OrangeCat half is affordable. This paragraph first said it was blocked,
+and measuring showed that was wrong** — recorded rather than quietly edited,
+because the wrong version is the one a reader is likely to arrive at too.
+
+Measured 2026-09-11, immediately after D1:
+
+| path                             | assembled static prompt | ratchet | headroom | cost of one more action |
+| -------------------------------- | ----------------------- | ------- | -------- | ----------------------- |
+| default (`prose`)                | 54,243                  | 54,600  | 357      | **+142** → 215 left     |
+| `tools` — what production serves | 35,382                  | 35,600  | 218      | **0** → 218 left        |
+
+One action costs 142 chars in the generated catalog, and **the `tools` path does
+not carry the catalog at all** — ADR-0006 D7's strip works, verified by checking
+that an appendix line is absent from the tools prompt and present in the default
+one. So a single registered action fits on both paths with room left, and D4's
+Cat half needs no prompt diet first.
+
+Two notes for whoever takes the next measurement here, because the first attempt
+at this one was wrong in a way that read as a finding:
+
+- Mutating `CAT_ACTIONS` after import and re-rendering the prompt reports **+0
+  on both paths**. That is the instrument, not the system: `BASE_SYSTEM_PROMPT`
+  is a module-level template literal, so `${buildActionCatalogAppendix()}` is
+  evaluated ONCE at import and a later mutation is invisible to it. Measure the
+  generator, which does read the registry at call time.
+- A delta of zero from a mutation that should have changed something is a
+  broken probe until proven otherwise. Same family as a gate that indexes its
+  own baseline.
+
+Still true, and still the lever that makes the budget question disappear
+entirely: section selection is built, measured at 32,019 → 18,824 chars on a
+pricing question, and flagged off pending an eval baseline.
+
 ### D5 — Be transactable by other agents, on the rail we already have.
 
 OrangeCat's thesis is that any identity, including an AI, is a full economic
