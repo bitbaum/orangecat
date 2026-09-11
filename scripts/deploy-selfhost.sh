@@ -293,11 +293,15 @@ echo "=== ship ops scripts + nightly Cat-eval timer ==="
 # must never roll back a good app deploy.
 {
   ssh "${SSH_OPTS[@]}" "$OC_BOX" "mkdir -p $OC_APP_BASE/scripts"
-  scp "${SSH_OPTS[@]}" -q scripts/eval-cat.mjs "$OC_BOX:$OC_APP_BASE/scripts/eval-cat.mjs"
-  # eval-cat.mjs imports this next to itself — ship them together or the timer breaks.
-  scp "${SSH_OPTS[@]}" -q scripts/eval-auth.mjs "$OC_BOX:$OC_APP_BASE/scripts/eval-auth.mjs"
-  scp "${SSH_OPTS[@]}" -q scripts/eval-cat-outcomes.mjs \
-    "$OC_BOX:$OC_APP_BASE/scripts/eval-cat-outcomes.mjs"
+  # Every eval-*.mjs ships together. This used to be a hand-written list of
+  # three files with a comment warning that eval-cat.mjs imports a sibling
+  # "next to itself — ship them together or the timer breaks". On 2026-09-11
+  # a fourth sibling (eval-rate-limit.mjs) was added, the list was not, and the
+  # deployed eval-cat.mjs pointed at a file that was not there: the nightly
+  # timer would have crashed on import. A glob cannot forget a file, and
+  # __tests__/unit/scripts/eval-siblings-shipped.test.ts proves every relative
+  # import of the eval scripts is covered by it.
+  scp "${SSH_OPTS[@]}" -q scripts/eval-*.mjs "$OC_BOX:$OC_APP_BASE/scripts/"
   scp "${SSH_OPTS[@]}" -q scripts/check-data-invariants.mjs \
     "$OC_BOX:$OC_APP_BASE/scripts/check-data-invariants.mjs"
   # ONE list. It used to be written three times — the scp arguments, the
