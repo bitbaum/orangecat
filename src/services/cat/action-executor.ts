@@ -12,7 +12,8 @@ import { STATUS } from '@/config/database-constants';
 import { logger } from '@/utils/logger';
 import { ACTION_HANDLERS } from './handlers';
 import { generateActionDescription } from './action-descriptions';
-import { extractBtcAmount, logDeniedAction, updateActionLog } from './action-log';
+import { findIdenticalPending } from './pending-dedupe';
+import { extractBtcAmount, getActionHistory, logDeniedAction, updateActionLog } from './action-log';
 
 // Re-export parseReminderDate for back-compat (legacy tests import from here).
 export { parseReminderDate } from './handlers/date-utils';
@@ -314,30 +315,12 @@ export class CatActionExecutor {
     }));
   }
 
-  /**
-   * Get action history for a user
-   */
-  async getActionHistory(
+  /** Recent cat_action_log rows for a user — lives with the log code. */
+  getActionHistory(
     userId: string,
     options: { limit?: number; actionId?: string; status?: string } = {}
   ) {
-    let query = this.supabase
-      .from(DATABASE_TABLES.CAT_ACTION_LOG)
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(options.limit || 50);
-
-    if (options.actionId) {
-      query = query.eq('action_id', options.actionId);
-    }
-
-    if (options.status) {
-      query = query.eq('status', options.status);
-    }
-
-    const { data } = await query;
-    return data || [];
+    return getActionHistory(this.supabase, userId, options);
   }
 
   // ==================== PRIVATE METHODS ====================
@@ -461,6 +444,12 @@ export class CatActionExecutor {
     options: { grantOnConfirm?: boolean } = {}
   ): Promise<PendingAction> {
     const description = generateActionDescription(action, parameters);
+
+    // One consent card per identical request — see findIdenticalPending.
+    const same = await findIdenticalPending(this.supabase, userId, action.id, parameters);
+    if (same) {
+      return same;
+    }
 
     const { data, error } = await this.supabase
       .from(DATABASE_TABLES.CAT_PENDING_ACTIONS)

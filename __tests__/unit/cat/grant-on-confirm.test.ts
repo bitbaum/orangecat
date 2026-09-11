@@ -52,6 +52,9 @@ function mockSupabase(pendingRow?: Record<string, unknown>) {
       return { data: { id: 'row-1', expires_at: '2999-01-01', ...last }, error: null };
     });
     chain.maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+    chain.gt = vi.fn().mockReturnThis();
+    chain.order = vi.fn().mockReturnThis();
+    chain.limit = vi.fn().mockResolvedValue({ data: [], error: null });
     return chain;
   });
   return { supabase: { from } as never, inserts };

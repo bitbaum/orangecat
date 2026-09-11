@@ -87,3 +87,28 @@ export async function updateActionLog(
     })
     .eq('id', logId);
 }
+
+/** Recent action-log rows for a user, newest first. */
+export async function getActionHistory(
+  supabase: AnySupabaseClient,
+  userId: string,
+  options: { limit?: number; actionId?: string; status?: string } = {}
+) {
+  let query = supabase
+    .from(DATABASE_TABLES.CAT_ACTION_LOG)
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(options.limit || 50);
+
+  if (options.actionId) {
+    query = query.eq('action_id', options.actionId);
+  }
+
+  if (options.status) {
+    query = query.eq('status', options.status);
+  }
+
+  const { data } = await query;
+  return data || [];
+}
