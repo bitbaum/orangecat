@@ -112,22 +112,52 @@ describe('tool capability is one fact, asked of the model', () => {
   });
 });
 
-describe('the local-model route admits it cannot act', () => {
-  // /api/cat/prepare builds a prompt for a model in the user's own browser.
-  // The only thing that comes back is /api/cat/local-complete, which saves
-  // messages — there is no executor, so an exec_action block is stored as
-  // literal text and the user reads it as work that happened.
-  const src = sourceWithoutComments('src/app/api/cat/prepare/route.ts');
+describe('the local-model route claims exactly what it can do', () => {
+  // /api/cat/prepare builds a prompt for a model in the user's OWN browser;
+  // what comes back is /api/cat/local-complete. These two must agree, and the
+  // history of this pair is why the gate exists at all:
+  //
+  //   ADR-0006 D8 — local-complete only saved messages, so the prompt was made
+  //   to say Cat could not act. True, and a dead end.
+  //   ADR-0008 D2 — local-complete now parses the envelope and runs it through
+  //   the same executor as the hosted path, so the prompt may say it can.
+  //
+  // The invariant survived both and is the only thing worth pinning: the
+  // PROMPT'S CLAIM and the ROUTE'S CAPABILITY are one fact. When they drifted
+  // apart, the user was told work had happened that nothing would ever do.
+  const prepare = sourceWithoutComments('src/app/api/cat/prepare/route.ts');
+  const localComplete = sourceWithoutComments('src/app/api/cat/local-complete/route.ts');
 
-  it("passes actionsVia: 'none' to prepareCatChat", () => {
-    expect(src).toContain("actionsVia: 'none'");
+  it('has an executor on the return leg', () => {
+    // Call syntax, comments stripped: a mention cannot satisfy this.
+    expect(localComplete).toContain('runExecActions(supabase, user.id, actorId, actions)');
+    expect(localComplete).toContain('parseActionsFromResponse(reply)');
   });
 
-  it('still has no executor to justify anything else', () => {
-    // If this route ever grows one, this test should fail and be rewritten —
-    // that is the point. Silence here would leave the prompt lying again.
-    const localComplete = sourceWithoutComments('src/app/api/cat/local-complete/route.ts');
-    expect(localComplete).not.toContain('CatActionExecutor');
-    expect(localComplete).not.toContain('parseActionsFromResponse');
+  it("claims 'prose' — and only because the executor above is real", () => {
+    expect(prepare).toContain("actionsVia: 'prose'");
+    // The linkage, which is the whole gate: if the executor is ever removed
+    // from local-complete, claiming anything but 'none' is a lie. This fails
+    // on the NEXT edit that guts the route while leaving the claim behind.
+    const canAct = localComplete.includes('runExecActions(');
+    expect(
+      canAct,
+      "prepare claims Cat can act, but local-complete no longer runs anything — set actionsVia back to 'none' or restore the executor"
+    ).toBe(true);
+  });
+
+  it("never claims 'tools' on a path that cannot send tool definitions", () => {
+    // The model runs in the browser; the server makes no inference call, so
+    // there is no round trip to put definitions in. 'tools' means the prose
+    // catalogue was DROPPED because definitions replace it — claim it here and
+    // Cat is left with no verb at all.
+    expect(prepare).not.toContain("actionsVia: 'tools'");
+  });
+
+  it('stores the cleaned message, not the envelope', () => {
+    // The block itself was the false announcement: saved verbatim, the user
+    // read "Creating that now…" as a thing that had happened.
+    expect(localComplete).toContain('content: cleanedMessage');
+    expect(localComplete).not.toContain('content: reply');
   });
 });

@@ -38,21 +38,25 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
     }
     const { message, conversationId, ...hints } = parsed.data;
 
-    // actionsVia: 'none' — ADR-0006 D8, and it is a statement of fact, not a
-    // policy choice. This route hands the prompt to a model running in the
-    // user's OWN browser (Ollama / LM Studio), and the only thing that comes
-    // back is POST /api/cat/local-complete, which saves messages. There is no
-    // executor on this path: an exec_action block reaches the transcript as
-    // literal text and is stored verbatim, so the user reads "Creating that
-    // now…" for something nothing will ever create.
+    // actionsVia: 'prose' — ADR-0008 D2. This was 'none' for as long as the
+    // claim was true: /api/cat/local-complete only saved messages, so an
+    // exec_action block reached the transcript as literal text and the user
+    // read "Creating that now…" for something nothing would ever create.
+    // ADR-0006 D8 made the prompt honest about that. D2 made it false instead,
+    // which is the better fix — local-complete now parses the envelope and
+    // runs it through CatActionExecutor, with every permission check, spend
+    // cap, confirmation and audit row the hosted path has.
     //
-    // Until a local model's output is routed through CatActionExecutor, the
-    // honest prompt is the one that says Cat cannot act here.
+    // 'prose' and not 'tools' because this model is in the user's browser. The
+    // server never makes the inference call, so there is no round trip in
+    // which to send tool definitions; the text envelope IS the protocol here,
+    // and dropping the catalogue for definitions nobody can send would leave
+    // Cat with no verb at all (see actionsViaForModel).
     const prepared = await prepareCatChat(supabase, user.id, {
       message,
       requestedConversationId: conversationId,
       ...hints,
-      actionsVia: 'none',
+      actionsVia: 'prose',
     });
 
     return apiSuccess({

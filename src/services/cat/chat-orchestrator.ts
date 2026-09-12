@@ -36,9 +36,8 @@ import {
   type PrefillProposal,
 } from '@/services/cat/tool-use';
 import { isAgenticModel } from '@/config/model-capability';
-import { createActionExecutor } from '@/services/cat';
+import { runExecActions } from '@/services/cat/exec-actions';
 import { getUserActorId } from '@/domain/actors';
-import type { ExecAction, CatAction, ExecActionResult } from '@/types/cat';
 import { AI_MESSAGE_MAX_CHARS } from '@/lib/validation/ai';
 import { PAGE_EXCERPT_MAX_CHARS } from '@/config/cat-page-context';
 import { markLinkDown } from '@/services/ai/link-health';
@@ -165,71 +164,6 @@ export function isAiRateLimitError(error: unknown): boolean {
     }
   }
   return false;
-}
-
-/**
- * Execute all exec_action blocks parsed from an AI response.
- * Actions with requiresConfirmation=true create pending actions in the DB.
- * Actions without confirmation run immediately.
- * Results are returned alongside the chat response for the client.
- */
-async function runExecActions(
-  supabase: AuthenticatedRequest['supabase'],
-  userId: string,
-  actorId: string | null,
-  actions: CatAction[]
-): Promise<ExecActionResult[]> {
-  const execActions = actions.filter((a): a is ExecAction => a.type === 'exec_action');
-  if (execActions.length === 0) {
-    return [];
-  }
-  if (!actorId) {
-    return execActions.map(a => ({
-      actionId: a.actionId,
-      status: 'failed' as const,
-      code: 'unknown' as const,
-      error: 'User has no actor record',
-    }));
-  }
-
-  const executor = createActionExecutor(supabase);
-  const results: ExecActionResult[] = [];
-
-  for (const action of execActions) {
-    try {
-      const result = await executor.executeAction(userId, actorId, {
-        actionId: action.actionId,
-        parameters: action.parameters,
-      });
-      // Extract displayMessage from handler data (handlers attach it as data.displayMessage)
-      const handlerData = result.data as Record<string, unknown> | undefined;
-      const displayMessage =
-        typeof handlerData?.displayMessage === 'string' ? handlerData.displayMessage : undefined;
-      results.push({
-        actionId: action.actionId,
-        status:
-          result.status === 'completed'
-            ? 'completed'
-            : result.status === 'pending_confirmation'
-              ? 'pending_confirmation'
-              : 'failed',
-        data: result.data,
-        displayMessage,
-        code: result.code,
-        error: result.error,
-        pendingActionId: result.pendingActionId,
-      });
-    } catch (err) {
-      results.push({
-        actionId: action.actionId,
-        status: 'failed',
-        code: 'unknown',
-        error: err instanceof Error ? err.message : 'Execution error',
-      });
-    }
-  }
-
-  return results;
 }
 
 /**
