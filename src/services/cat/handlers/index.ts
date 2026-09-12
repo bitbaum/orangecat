@@ -8,6 +8,7 @@ import { governanceHandlers } from './governance';
 import { socialHandlers } from './social';
 import { interestHandlers } from './interests';
 import { siteBuildHandlers } from './site-build';
+import { promotionHandlers } from './promotion';
 import type { ActionHandler } from './types';
 
 export const ACTION_HANDLERS: Partial<Record<string, ActionHandler>> = {
@@ -21,6 +22,7 @@ export const ACTION_HANDLERS: Partial<Record<string, ActionHandler>> = {
   ...paymentHandlers,
   ...governanceHandlers,
   ...siteBuildHandlers,
+  ...promotionHandlers,
 };
 
 export type { ActionHandler };
