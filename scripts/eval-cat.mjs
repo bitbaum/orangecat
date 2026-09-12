@@ -527,15 +527,24 @@ async function upsertFounderNotification(title, message, extraMetadata = {}) {
 }
 
 /**
- * The class of a thrown error, never its message.
+ * Classify a notification failure WITHOUT putting any of it in the log.
  *
- * These notification helpers build their URL from CAT_EVAL_NOTIFY_USER_ID, so a
- * failed fetch can carry that environment-derived id inside its message — and
- * logging it would put it in the journal in the clear (CodeQL
- * js/clear-text-logging). The class name still says whether this was a network
- * fault or a bad response, which is the part worth having at 04:30.
+ * These helpers build their URL from CAT_EVAL_NOTIFY_USER_ID, so a failed fetch
+ * can carry that environment-derived id inside its message. Logging `${err}`
+ * put it in the journal in the clear, and `err.name` did not fix it — CodeQL
+ * still sees the error itself reaching the log, and it is right to: `name` is a
+ * property of the same tainted object.
+ *
+ * So nothing derived from the error is interpolated at all. The branch picks
+ * one of three LITERALS, which still answers the only question worth asking at
+ * 04:30 — could we not reach the box, or did it refuse us?
  */
-const errName = err => (err instanceof Error ? err.name : typeof err);
+const failureKind = err => {
+  if (err instanceof TypeError) {
+    return 'network';
+  }
+  return err instanceof Error ? 'rejected' : 'unknown';
+};
 
 async function notifyFounder(summaryLine, report) {
   await upsertFounderNotification(
@@ -665,7 +674,7 @@ async function main() {
           await notifyFounderSkipped(reason);
           console.error('eval-cat: founder notified that the eval did not run');
         } catch (err) {
-          console.error(`eval-cat: failed to insert skip notification (${errName(err)})`);
+          console.error(`eval-cat: failed to insert skip notification (${failureKind(err)})`);
         }
       }
       return;
@@ -795,7 +804,7 @@ async function main() {
         await notifyFounderHarnessError(line);
         console.error('eval-cat: founder notified in-app');
       } catch (err) {
-        console.error(`eval-cat: failed to insert founder notification (${errName(err)})`);
+        console.error(`eval-cat: failed to insert founder notification (${failureKind(err)})`);
       }
     }
     process.exit(2);
@@ -808,7 +817,7 @@ async function main() {
         await notifyFounder(summaryLine, report);
         console.error('eval-cat: founder notified in-app');
       } catch (err) {
-        console.error(`eval-cat: failed to insert founder notification (${errName(err)})`);
+        console.error(`eval-cat: failed to insert founder notification (${failureKind(err)})`);
       }
     }
     process.exit(1);
