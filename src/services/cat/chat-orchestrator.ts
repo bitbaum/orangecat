@@ -356,6 +356,7 @@ export async function orchestrateCatChat(
           // page is recognised as quoted rather than flagged as invented.
           const webEvidence: string[] = [];
 
+          const streamedToolCalls: ToolCallEvent[] = [];
           const messages = await maybeEnrichWithSearchResults(
             supabase,
             user.id,
@@ -364,6 +365,10 @@ export async function orchestrateCatChat(
             provider,
             modelToUse,
             (event: ToolCallEvent) => {
+              // Kept as well as sent. The SSE frame reaches the live tab and
+              // nothing else; without this copy the chips exist only in that
+              // tab's React state and a reload erases what Cat did.
+              streamedToolCalls.push(event);
               controller.enqueue(
                 encoder.encode(`data: ${JSON.stringify({ tool_call: event })}\n\n`)
               );
@@ -576,6 +581,10 @@ export async function orchestrateCatChat(
                 model_used: activeModel,
                 provider: activeProvider,
                 token_count: usage?.totalTokens,
+                // What Cat DID, stored with what it said. Held only in React
+                // state before, so a reload erased the chips — and with them
+                // the sources behind the citations in this very sentence.
+                tool_calls: streamedToolCalls,
               },
             ]).catch((err: unknown) => {
               logger.error('Failed to persist streaming messages', { err }, 'cat/chat');
@@ -841,6 +850,7 @@ export async function orchestrateCatChat(
         model_used: result.model,
         provider: activeProvider,
         token_count: result.totalTokens,
+        tool_calls: collectedToolCalls,
       },
     ]).catch((err: unknown) => {
       logger.error('Failed to persist messages', { err }, 'cat/chat');
