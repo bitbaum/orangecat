@@ -37,7 +37,7 @@ overrides:
 # should be deleted. Add lines only for versions we published ourselves —
 # never to hurry along a third-party package.
 minimumReleaseAgeExclude:
-  - '@bitbaum/ai-kit@0.15.0 || 0.16.0'
+  - '@bitbaum/ai-kit'
   - '@bitbaum/mail-kit'
   - 'limitkit'
   # Ours, and recent enough to still be inside the window. Its absence failed
