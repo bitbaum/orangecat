@@ -39,6 +39,67 @@ import { DEFAULT_FREE_MODEL_ID } from '@/config/ai-models';
 const GROQ_MODEL = 'openai/gpt-oss-120b';
 const OPENROUTER_MODEL = DEFAULT_FREE_MODEL_ID;
 
+/**
+ * Models that reject `response_format: { type: 'json_object' }` outright.
+ *
+ * Groq's `openai/gpt-oss-120b` answers 400 `json_validate_failed` with an EMPTY
+ * `failed_generation` for EVERY request carrying the flag — verified against
+ * the live API on 2026-09-12 with a prompt as small as `Return JSON: {"ok":true}`.
+ * The same model, same prompt, without the flag returns valid JSON. So the flag
+ * is not a stricter mode here, it is an outage: in 24h of production traffic
+ * every single Groq attempt died on it and every structured Cat feature was
+ * served by OpenRouter instead, one wasted round-trip later.
+ *
+ * Seeded with what is proven, and added to at runtime, so the next model that
+ * starts rejecting the flag costs one failure rather than every call until
+ * somebody reads the logs.
+ */
+const JSON_MODE_UNSUPPORTED = new Set<string>([`groq:${GROQ_MODEL}`]);
+
+function linkKey(link: Link): string {
+  return `${link.provider.id}:${link.model}`;
+}
+
+function rejectsJsonMode(link: Link): boolean {
+  return JSON_MODE_UNSUPPORTED.has(linkKey(link));
+}
+
+/** Groq says `json_validate_failed`; other vendors name the flag they refused. */
+function isJsonModeRejection(message: string): boolean {
+  return /json_validate_failed|response_format/i.test(message);
+}
+
+/** Consecutive links that agree on whether the JSON flag can be sent at all. */
+function jsonModeRuns(chain: Link[]): Array<{ jsonMode: boolean; links: Link[] }> {
+  const runs: Array<{ jsonMode: boolean; links: Link[] }> = [];
+  for (const link of chain) {
+    const jsonMode = !rejectsJsonMode(link);
+    const last = runs[runs.length - 1];
+    if (last && last.jsonMode === jsonMode) {
+      last.links.push(link);
+    } else {
+      runs.push({ jsonMode, links: [link] });
+    }
+  }
+  return runs;
+}
+
+/** Did this chain failure include a model refusing `response_format` itself? */
+function mentionsJsonModeRejection(err: unknown): boolean {
+  if (err instanceof ChainExhaustedError) {
+    return err.failures.some(f => isJsonModeRejection(f.message));
+  }
+  return isJsonModeRejection(String(err));
+}
+
+/**
+ * Every link's own failure, not just the last status: "lastStatus 429" cannot
+ * tell a rotted id at one vendor from a spent day at the other.
+ */
+function describeFailure(err: unknown): string[] | string {
+  return err instanceof ChainExhaustedError ? err.failures.map(f => f.message) : String(err);
+}
+
 export interface PlatformJsonOpts {
   temperature?: number;
   maxTokens?: number;
@@ -166,9 +227,9 @@ export async function callPlatformJson(
   const maxTokens = opts.maxTokens ?? (opts.longform ? 3000 : 1400);
   const temperature = opts.temperature ?? 0.6;
 
-  const attempt = (jsonMode: boolean) =>
+  const attempt = (jsonMode: boolean, links: Link[] = chain) =>
     complete({
-      chain,
+      chain: links,
       env,
       messages,
       temperature,
@@ -192,6 +253,11 @@ export async function callPlatformJson(
             'PlatformLLM'
           );
         } else {
+          // A model that refuses the JSON flag refuses it every time. Record it
+          // so the next call does not spend a round-trip proving it again.
+          if (isJsonModeRejection(error.message)) {
+            JSON_MODE_UNSUPPORTED.add(linkKey(link));
+          }
           logger.warn(
             'platform-llm: model call failed',
             { link: linkId(link), error: error.message },
@@ -201,41 +267,39 @@ export async function callPlatformJson(
       },
     });
 
-  try {
-    return (await attempt(true)).text;
-  } catch (first) {
-    // Some free models 400 on `response_format` — retry once without it and
-    // lean on parseJsonLoose (the system prompt already demands JSON-only
-    // output).
-    //
-    // The retry now covers the WHOLE chain rather than one provider, because
-    // the flag is rejected per MODEL and both links may reject it. The cost is
-    // one extra pass in the worst case; the benefit is that a chain where only
-    // the second model dislikes the flag still answers.
+  // The flag is a PER-MODEL capability, not a chain-wide one. Sending it to a
+  // model that refuses it is a guaranteed 400 in front of a user-facing
+  // feature; withholding it from a model that supports it throws away the
+  // strictness that makes the answer parseable. So the chain is walked in runs
+  // that agree on the flag: Groq answers without it, and if Groq is out, the
+  // OpenRouter fallback still gets it.
+  const runs = jsonModeRuns(chain);
+  const failures: unknown[] = [];
+
+  for (const run of runs) {
     try {
-      return (await attempt(false)).text;
-    } catch (second) {
-      logger.error(
-        'platform-llm: every provider failed',
-        {
-          links: chain.length,
-          // Every link's own failure, not just the last status. "lastStatus
-          // 429" cannot tell a rotted id at one vendor from a spent day at the
-          // other.
-          withJsonMode:
-            first instanceof ChainExhaustedError
-              ? first.failures.map(f => f.message)
-              : String(first),
-          withoutJsonMode:
-            second instanceof ChainExhaustedError
-              ? second.failures.map(f => f.message)
-              : String(second),
-        },
-        'PlatformLLM'
-      );
-      return null;
+      return (await attempt(run.jsonMode, run.links)).text;
+    } catch (err) {
+      failures.push(err);
+      // A rejection we had not recorded yet: the hook above has just learned
+      // it, so every LATER call is already correct. Rescue this one too, once,
+      // rather than making the user pay for the discovery.
+      if (run.jsonMode && mentionsJsonModeRejection(err)) {
+        try {
+          return (await attempt(false, run.links)).text;
+        } catch (retryErr) {
+          failures.push(retryErr);
+        }
+      }
     }
   }
+
+  logger.error(
+    'platform-llm: every provider failed',
+    { links: chain.length, failures: failures.map(describeFailure) },
+    'PlatformLLM'
+  );
+  return null;
 }
 
 /**

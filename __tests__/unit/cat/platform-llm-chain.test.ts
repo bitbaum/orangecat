@@ -159,3 +159,83 @@ describe('callPlatformJson', () => {
     expect(hasPlatformProviders()).toBe(true);
   });
 });
+
+describe('callPlatformJson and JSON mode as a per-model capability', () => {
+  /** The body ai-kit actually sent, per call. */
+  function bodies(): Array<Record<string, unknown>> {
+    return fetchMock.mock.calls.map(([, init]) => JSON.parse(String((init as RequestInit).body)));
+  }
+
+  it('never sends response_format to a model that rejects it', async () => {
+    // Groq's openai/gpt-oss-120b answers 400 json_validate_failed for EVERY
+    // request carrying the flag, so sending it is a guaranteed wasted
+    // round-trip in front of every structured Cat feature.
+    const { callPlatformJson } = await import('@/services/cat/platform-llm');
+
+    await expect(callPlatformJson('sys', 'user')).resolves.toBe('{"ok":true}');
+
+    expect(vendors()).toEqual(['groq']);
+    expect(bodies()[0].response_format).toBeUndefined();
+  });
+
+  it('still answers on the leader rather than spending the OpenRouter pool', async () => {
+    // Dropping the flag, not the model: Groq has the larger daily budget, so a
+    // fix that reordered the chain would trade one wasted call for a quota.
+    const { callPlatformJson } = await import('@/services/cat/platform-llm');
+
+    await callPlatformJson('sys', 'user');
+
+    expect(vendors()).not.toContain('openrouter');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not repeat an identical call when the first pass carried no flag', async () => {
+    // The retry-without-the-flag only differs from the first pass if the first
+    // pass had the flag. Without this, a Groq-led chain called every provider
+    // twice with byte-identical bodies.
+    fetchMock.mockImplementation(async () => new Response('nope', { status: 500 }));
+    const { callPlatformJson } = await import('@/services/cat/platform-llm');
+
+    await expect(callPlatformJson('sys', 'user')).resolves.toBeNull();
+
+    // One pass over both links, not two.
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('learns a rejection it has not seen before, and stops paying for it', async () => {
+    // A model that starts refusing the flag should cost one failure, not one
+    // per call until somebody reads the logs.
+    vi.resetModules();
+    let seen = 0;
+    fetchMock.mockImplementation(async (url: unknown) => {
+      if (String(url).includes('openrouter')) {
+        seen += 1;
+        if (seen === 1) {
+          return new Response(
+            JSON.stringify({
+              error: { code: 'json_validate_failed', message: 'Failed to validate JSON.' },
+            }),
+            { status: 400, headers: { 'content-type': 'application/json' } }
+          );
+        }
+      }
+      return completion('{"ok":true}');
+    });
+
+    const { callPlatformJson } = await import('@/services/cat/platform-llm');
+    // Groq answers first and never carries the flag, so reach OpenRouter by
+    // making Groq unavailable for this pair of calls.
+    delete process.env.GROQ_API_KEY;
+
+    await callPlatformJson('sys', 'user');
+    const first = fetchMock.mock.calls.length;
+    fetchMock.mockClear();
+    await callPlatformJson('sys', 'user');
+
+    expect(first).toBeGreaterThan(1); // the rejection cost a retry, once
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(
+      JSON.parse(String((fetchMock.mock.calls[0][1] as RequestInit).body)).response_format
+    ).toBeUndefined();
+  });
+});

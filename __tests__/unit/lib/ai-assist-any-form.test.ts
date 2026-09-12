@@ -244,8 +244,12 @@ describe('generateFormPrefill — survives one provider failing (the 2026-08-25 
       description: 'A cleaning service for offices in Zurich',
     });
 
-    // Two providers x (json mode + no-response_format retry) = 4 attempts.
-    expect(fetchMock).toHaveBeenCalledTimes(4);
+    // One attempt per provider. It used to be four — every provider was asked
+    // twice, once with response_format and once without — because the retry
+    // was chain-wide. JSON mode is a per-model capability now, so each link is
+    // asked once, with the flag only if that model accepts it. A second pass
+    // happens only when a model rejects the flag for the first time.
+    expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(result.success).toBe(false);
     expect(result.code).toBe('provider_unavailable');
     expect(result.error).toBe('AI service temporarily unavailable. Please try again.');

@@ -124,6 +124,11 @@ describe('routeVoiceIntent', () => {
 
     const body = JSON.parse((fetchMock.mock.calls[0][1] as { body: string }).body);
     expect(body.temperature).toBeLessThanOrEqual(0.2);
-    expect(body.response_format).toEqual({ type: 'json_object' });
+    // This used to assert response_format: json_object on every call. Groq's
+    // gpt-oss-120b — the leader here — answers 400 json_validate_failed for
+    // EVERY request carrying that flag, so pinning it pinned an outage. JSON
+    // mode is now sent only to models that accept it; the prompt demands
+    // JSON-only output and parseJsonLoose reads the rest.
+    expect(body.response_format).toBeUndefined();
   });
 });
