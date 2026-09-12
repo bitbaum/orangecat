@@ -19,11 +19,13 @@
  * and technically legitimate and the user holds their own key, so no operator
  * can delete them for it.
  */
+import { CAT_ACTIONS } from '@/config/cat-actions';
 import {
   PROMOTION_CHANNELS,
   catMayPostTo,
   autonomousChannels,
   permittedButUnbuilt,
+  postingImplemented,
   channelConstraints,
   type PromotionChannelId,
 } from '@/config/promotion-channels';
@@ -49,7 +51,7 @@ describe('the refusal holds', () => {
     // facts into one boolean is how an agent ends up announcing a post that
     // never happened.
     expect(PROMOTION_CHANNELS.nostr.policyAllowsPosting).toBe(true);
-    expect(PROMOTION_CHANNELS.nostr.postingImplemented).toBe(false);
+    expect(postingImplemented('nostr')).toBe(false);
     expect(catMayPostTo('nostr')).toBe(false);
     expect(permittedButUnbuilt()).toEqual(['nostr']);
   });
@@ -178,6 +180,43 @@ describe('every channel is fully specified', () => {
     for (const id of ALL.filter(c => !PROMOTION_CHANNELS[c].policyAllowsPosting)) {
       const joined = PROMOTION_CHANNELS[id].prohibitions.join(' ');
       expect(joined, id).toMatch(/[Nn]ever (post|send)/);
+    }
+  });
+});
+
+describe('"we have a way to do it" cannot be claimed by hand', () => {
+  // The mechanism, not another note. This started as one boolean that told the
+  // model Cat could post to Nostr when nothing publishes a note; splitting it
+  // into a second boolean fixed that instance and kept the SHAPE — a hand-set
+  // flag asserting an implementation exists. Naming the ACTION makes the claim
+  // a lookup, and this gate makes the lookup honest.
+  it('names a real, enabled action wherever it claims an implementation', () => {
+    const broken = (Object.keys(PROMOTION_CHANNELS) as PromotionChannelId[])
+      .map(id => ({ id, action: PROMOTION_CHANNELS[id].implementedBy }))
+      .filter(({ action }) => action && !CAT_ACTIONS[action]?.enabled);
+
+    expect(
+      broken,
+      `these channels point at an action that does not exist or is disabled: ${JSON.stringify(broken)}`
+    ).toEqual([]);
+  });
+
+  it('derives the answer, so a deleted action turns it false on its own', () => {
+    // The property a boolean could never have: the config follows the registry
+    // rather than asserting something about it.
+    expect(PROMOTION_CHANNELS.orangecat.implementedBy).toBe('post_to_timeline');
+    expect(CAT_ACTIONS.post_to_timeline?.enabled).toBe(true);
+    expect(postingImplemented('orangecat')).toBe(true);
+  });
+
+  it('treats a channel with no named action as unimplemented', () => {
+    expect(PROMOTION_CHANNELS.nostr.implementedBy).toBeUndefined();
+    expect(postingImplemented('nostr')).toBe(false);
+    // And every draft-only channel likewise names nothing.
+    for (const id of (Object.keys(PROMOTION_CHANNELS) as PromotionChannelId[]).filter(
+      c => !catMayPostTo(c)
+    )) {
+      expect(postingImplemented(id), id).toBe(false);
     }
   });
 });

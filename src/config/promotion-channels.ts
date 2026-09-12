@@ -20,6 +20,8 @@
  * the model as a constraint rather than a hope.
  */
 
+import { CAT_ACTIONS } from './cat-actions';
+
 export type PromotionChannelId =
   'orangecat' | 'nostr' | 'x' | 'linkedin' | 'reddit' | 'hackernews' | 'email';
 
@@ -36,16 +38,22 @@ export interface PromotionChannel {
    */
   policyAllowsPosting: boolean;
   /**
-   * Do WE have a way to do it?
+   * WHICH Cat action publishes here — and therefore whether anything does.
    *
-   * Kept separate on purpose. Nostr is permitted and not yet implemented —
-   * there is no Cat action that publishes a note, only NWC wallet traffic. If
-   * one field carried both facts, the model would be told it may post to Nostr,
-   * find nothing that can, and either apologise or claim it posted. Announcing
-   * work that nothing performed is the failure this whole action exists to
-   * prevent, and it would have arrived through the config that prevents it.
+   * A pointer rather than a boolean, and that is the whole point. This started
+   * as `catMayPost: boolean`, which told the model Cat could post to Nostr when
+   * nothing publishes a note (#995). Splitting it into a second boolean fixed
+   * that instance and left the SHAPE intact: a hand-set flag claiming an
+   * implementation exists.
+   *
+   * Naming the action makes the claim underivable by hand. `postingImplemented`
+   * is now a lookup in CAT_ACTIONS, so it cannot be true for a channel nothing
+   * implements, and a gate asserts every id here is a real, enabled action.
+   *
+   * Omitted means nothing publishes here yet — which is Nostr's situation:
+   * permitted by policy, unbuilt in this repo.
    */
-  postingImplemented: boolean;
+  implementedBy?: string;
   /** Hard length limit, where the platform has one worth respecting. */
   maxChars?: number;
   /** What gets the user banned, sued, or billed. */
@@ -63,7 +71,7 @@ export const PROMOTION_CHANNELS: Record<PromotionChannelId, PromotionChannel> = 
     // Our own surface, already gated by the permission ladder, and reachable:
     // post_to_timeline exists.
     policyAllowsPosting: true,
-    postingImplemented: true,
+    implementedBy: 'post_to_timeline',
     prohibitions: [],
     guidance:
       'Say what the project is for and what the money does. The audience already ' +
@@ -78,7 +86,8 @@ export const PROMOTION_CHANNELS: Record<PromotionChannelId, PromotionChannel> = 
     // account for it — but nothing in this repo publishes a note yet, so Cat
     // must not claim it can.
     policyAllowsPosting: true,
-    postingImplemented: false,
+    // No `implementedBy`: nothing in this repo publishes a Nostr note.
+    // src/lib/nostr exists, but it carries NWC wallet traffic.
     prohibitions: [],
     guidance:
       'A zap goal (NIP-75) or classified listing (NIP-99) carries the ask better ' +
@@ -90,7 +99,6 @@ export const PROMOTION_CHANNELS: Record<PromotionChannelId, PromotionChannel> = 
     id: 'x',
     name: 'X',
     policyAllowsPosting: false,
-    postingImplemented: false,
     maxChars: 280,
     prohibitions: [
       "Never post on the user's behalf — drafts only.",
@@ -106,7 +114,6 @@ export const PROMOTION_CHANNELS: Record<PromotionChannelId, PromotionChannel> = 
     id: 'linkedin',
     name: 'LinkedIn',
     policyAllowsPosting: false,
-    postingImplemented: false,
     prohibitions: [
       "Never post, comment, like or share on the user's behalf. The user " +
         'agreement (§8.2) prohibits bots doing any of those, and LinkedIn ' +
@@ -121,7 +128,6 @@ export const PROMOTION_CHANNELS: Record<PromotionChannelId, PromotionChannel> = 
     id: 'reddit',
     name: 'Reddit',
     policyAllowsPosting: false,
-    postingImplemented: false,
     prohibitions: [
       "Never post on the user's behalf — drafts only.",
       'Rules are PER SUBREDDIT, and self-promotion is banned outright in many. ' +
@@ -139,7 +145,6 @@ export const PROMOTION_CHANNELS: Record<PromotionChannelId, PromotionChannel> = 
     id: 'hackernews',
     name: 'Hacker News',
     policyAllowsPosting: false,
-    postingImplemented: false,
     prohibitions: [
       "Never post on the user's behalf — drafts only.",
       'The guidelines forbid GENERATED TEXT outright. Do not hand the user a ' +
@@ -154,7 +159,6 @@ export const PROMOTION_CHANNELS: Record<PromotionChannelId, PromotionChannel> = 
     id: 'email',
     name: 'Email to someone specific',
     policyAllowsPosting: false,
-    postingImplemented: false,
     prohibitions: [
       "Never send on the user's behalf — drafts only.",
       'One named recipient at a time. A list is a mailing, and a mailing without ' +
@@ -173,9 +177,21 @@ export const PROMOTION_CHANNELS: Record<PromotionChannelId, PromotionChannel> = 
  * anything unrecognised, which is the answer that cannot get an account
  * deleted.
  */
+/**
+ * Does anything actually publish here?
+ *
+ * Derived from the action registry, so it cannot be claimed. An action that is
+ * renamed, disabled or deleted turns this false on its own — which is the
+ * behaviour a hand-set boolean could never have.
+ */
+export function postingImplemented(channel: PromotionChannelId): boolean {
+  const id = PROMOTION_CHANNELS[channel]?.implementedBy;
+  return Boolean(id && CAT_ACTIONS[id]?.enabled);
+}
+
 export function catMayPostTo(channel: string): boolean {
   const c = PROMOTION_CHANNELS[channel as PromotionChannelId];
-  return c?.policyAllowsPosting === true && c.postingImplemented === true;
+  return c?.policyAllowsPosting === true && postingImplemented(c.id);
 }
 
 /**
@@ -186,7 +202,7 @@ export function catMayPostTo(channel: string): boolean {
  */
 export function permittedButUnbuilt(): PromotionChannelId[] {
   return (Object.keys(PROMOTION_CHANNELS) as PromotionChannelId[]).filter(
-    id => PROMOTION_CHANNELS[id].policyAllowsPosting && !PROMOTION_CHANNELS[id].postingImplemented
+    id => PROMOTION_CHANNELS[id].policyAllowsPosting && !postingImplemented(id)
   );
 }
 
