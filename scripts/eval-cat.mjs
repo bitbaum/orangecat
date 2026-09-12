@@ -526,6 +526,17 @@ async function upsertFounderNotification(title, message, extraMetadata = {}) {
   });
 }
 
+/**
+ * The class of a thrown error, never its message.
+ *
+ * These notification helpers build their URL from CAT_EVAL_NOTIFY_USER_ID, so a
+ * failed fetch can carry that environment-derived id inside its message — and
+ * logging it would put it in the journal in the clear (CodeQL
+ * js/clear-text-logging). The class name still says whether this was a network
+ * fault or a bad response, which is the part worth having at 04:30.
+ */
+const errName = err => (err instanceof Error ? err.name : typeof err);
+
 async function notifyFounder(summaryLine, report) {
   await upsertFounderNotification(
     'Cat eval regression',
@@ -654,7 +665,7 @@ async function main() {
           await notifyFounderSkipped(reason);
           console.error('eval-cat: founder notified that the eval did not run');
         } catch (err) {
-          console.error(`eval-cat: failed to insert skip notification: ${err}`);
+          console.error(`eval-cat: failed to insert skip notification (${errName(err)})`);
         }
       }
       return;
@@ -784,7 +795,7 @@ async function main() {
         await notifyFounderHarnessError(line);
         console.error('eval-cat: founder notified in-app');
       } catch (err) {
-        console.error(`eval-cat: failed to insert founder notification: ${err}`);
+        console.error(`eval-cat: failed to insert founder notification (${errName(err)})`);
       }
     }
     process.exit(2);
@@ -797,7 +808,7 @@ async function main() {
         await notifyFounder(summaryLine, report);
         console.error('eval-cat: founder notified in-app');
       } catch (err) {
-        console.error(`eval-cat: failed to insert founder notification: ${err}`);
+        console.error(`eval-cat: failed to insert founder notification (${errName(err)})`);
       }
     }
     process.exit(1);
