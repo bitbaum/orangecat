@@ -1,88 +1,27 @@
 /**
  * TOOL CALL CHIP
  *
- * Visible chip showing what tool Cat used to answer — search_platform,
- * prefill_entity_form, etc. Chronology: chip appears as the tool runs,
- * then settles into completed/no_results/failed state. Click to expand
- * any results so the user can navigate straight to the cited entities.
+ * Visible chip showing what Cat is doing — searching, reading a page, funding
+ * a project. Chronology: the chip appears as the tool runs, then settles into
+ * completed / no_results / failed / pending_confirmation. Click to expand any
+ * results so the user can navigate straight to the cited entities.
  *
- * Without this, Cat's tool work is silent and looks like magic — users
- * cannot tell what data informed any given answer.
+ * Without this, Cat's work is silent and looks like magic — users cannot tell
+ * what data informed an answer, or what was done on their behalf.
+ *
+ * The WORDS come from `@/lib/chat/tool-labels`, which derives them from the
+ * action registry rather than from a map kept here. This file used to hold
+ * seven labels while sixty-two tool names could arrive, so fifty-five of them
+ * — every action Cat can take, including sending a payment — rendered as
+ * "Working…" and then "Done (1)". The registry already knew each one's name.
  */
 
 import { useState } from 'react';
 import Link from 'next/link';
 import { Search, Check, AlertCircle, Loader2, ChevronDown, ChevronUp, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { labelForTool } from '@/lib/chat/tool-labels';
 import type { ToolCallEvent } from '../types';
-
-interface ToolLabel {
-  running: string;
-  completed: (n: number) => string;
-  noResults: string;
-  failed: string;
-  /** The action now waits on the confirmation card below the thread. */
-  pending?: string;
-}
-
-// Tool-aware labels. The chip is shared across tools, so a prefill that drafts 6
-// fields must NOT read "Found 6 results" (search language) — and a prefill error
-// must not say "Search failed".
-const TOOL_LABELS: Record<string, ToolLabel> = {
-  search_platform: {
-    running: 'Searching',
-    completed: n => `Found ${n} ${n === 1 ? 'result' : 'results'}`,
-    noResults: 'No results',
-    failed: 'Search failed',
-  },
-  prefill_entity_form: {
-    running: 'Drafting',
-    completed: n => (n > 0 ? `Drafted ${n} field${n === 1 ? '' : 's'}` : 'Draft ready'),
-    noResults: 'Nothing to draft',
-    failed: "Couldn't draft",
-  },
-  web_search: {
-    running: 'Searching the web',
-    completed: n => `Found ${n} ${n === 1 ? 'source' : 'sources'}`,
-    // A backend answered and had nothing. Distinct from `failed`, which is
-    // "we never got to look" — the reader needs to know which, because only
-    // one of them is evidence about the world.
-    noResults: 'Nothing on the web for that',
-    failed: "Couldn't search the web",
-  },
-  read_page: {
-    running: 'Reading',
-    completed: () => 'Read the page',
-    noResults: 'Nothing readable on that page',
-    failed: "Couldn't read that page",
-  },
-  explore_topic: {
-    running: 'Exploring',
-    completed: n => `Found ${n} related ${n === 1 ? 'result' : 'results'}`,
-    noResults: 'Nothing on this topic yet',
-    failed: "Couldn't explore that topic",
-  },
-  query_my_data: {
-    running: 'Reading your data',
-    completed: () => 'Read your live data',
-    noResults: 'Nothing on file',
-    failed: "Couldn't read your data",
-  },
-  check_my_track_record: {
-    running: 'Checking my own track record',
-    completed: n => (n === 0 ? 'Nothing on my record yet' : `Checked my record (${n} created)`),
-    noResults: 'Nothing on my record yet',
-    failed: "Couldn't read my record",
-  },
-};
-
-const DEFAULT_LABEL: ToolLabel = {
-  running: 'Working',
-  completed: n => `Done (${n})`,
-  noResults: 'Nothing found',
-  failed: 'Action failed',
-  pending: 'Needs your confirmation — see below',
-};
 
 interface ToolCallChipProps {
   event: ToolCallEvent;
@@ -90,7 +29,7 @@ interface ToolCallChipProps {
 
 export function ToolCallChip({ event }: ToolCallChipProps) {
   const [expanded, setExpanded] = useState(false);
-  const label = TOOL_LABELS[event.name] ?? DEFAULT_LABEL;
+  const label = labelForTool(event.name);
 
   const query = event.status === 'running' ? (event.args?.query as string | undefined) : undefined;
 
@@ -128,7 +67,7 @@ export function ToolCallChip({ event }: ToolCallChipProps) {
       // read "Action failed" above a card that was waiting for one tap.
       icon = <Clock className="h-3 w-3 flex-shrink-0" />;
       badgeClass = 'border-status-warning/20 bg-status-warning/10 text-status-warning';
-      text = label.pending ?? DEFAULT_LABEL.pending!;
+      text = label.pending ?? 'Needs your confirmation — see below';
       break;
   }
 
