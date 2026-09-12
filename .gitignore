@@ -155,3 +155,15 @@ post-*.png
 
 # Env backups (contain secrets — never commit)
 .env-backups/
+
+# Data dumps under .claude/ — never commit.
+#
+# .claude/ is a TRACKED directory (CLAUDE.md, rules/, commands/ all live there),
+# so anything dropped inside it is one `git add -A` away from a commit — and
+# this repository is public. Two account backups from the 2026-08 identity
+# migration sat here untracked-and-unignored for two weeks:
+#   .claude/econ-backup-catomean-2026-08-29.json
+#   .claude/nudges-backup-catomean-2026-08-29.json
+# The existing `*.backup` rule does not match `*-backup-*.json`.
+.claude/*backup*.json
+.claude/*dump*.json
