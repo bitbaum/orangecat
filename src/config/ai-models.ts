@@ -17,7 +17,7 @@ import { BADGE_COLORS } from '@/config/badge-colors';
 export const MODEL_TIERS = ['free', 'economy', 'standard', 'premium'] as const;
 export type ModelTier = (typeof MODEL_TIERS)[number];
 
-type ModelCapability = 'text' | 'vision' | 'function_calling' | 'json_mode' | 'streaming';
+export type ModelCapability = 'text' | 'vision' | 'function_calling' | 'json_mode' | 'streaming';
 
 export interface AIModelMetadata {
   /** OpenRouter model ID (e.g., 'anthropic/claude-3-opus') */

@@ -285,7 +285,7 @@ Seven mutants, all caught: executor removed, raw reply stored, mid-loop step
 written to history, ceiling lifted, missing actor papered over, `'tools'`
 claimed, and a pending action reported as completed.
 
-### D3 — Capability is gated by what the model and the payer support, never by a global flag.
+### D3 — Capability is gated by what the model and the payer support, never by a global flag. BUILT.
 
 Build advanced capability now and ship it **off**, switched on per user by a
 rule rather than by someone remembering a flag. The rule has two terms:
@@ -298,6 +298,53 @@ rule rather than by someone remembering a flag. The rule has two terms:
 
 A capability is then a row, not a branch. "On for BYOK and paying users, off on
 the free tier" stops being a policy someone has to implement per feature.
+
+#### What the survey found, and why the gate is a module rather than an extension
+
+There is **no server-side entitlement tier**. Three separate notions of "tier"
+exist and none of them gates anything: `resolveTier` (display only, and with no
+`credits` value at all), `getUsableModels` (the model picker), and
+`cat-plans.ts` (marketing copy). The only function taking both a user and a
+model is `resolveProvider`, and it returns an HTTP `Response`, so it cannot be
+reused as a decision.
+
+So `capability-gate.ts` is new — but it invents no vocabulary.
+`ModelAccessSource` (`free | byok | credits`) already names the three ways a
+user reaches a model and is already derived from real state. Adding a fourth
+notion of tier to the three that exist would be this ADR's own bug.
+
+A capability is a row with three terms — can the MODEL do it, may this USER
+have it, can we SERVE it at all — plus a fourth, an explicit GRANT, for things
+built but deliberately off.
+
+**A denial names the term that refused.** "Your model cannot see images" and
+"this costs money" are different sentences, and the user can act on exactly one
+of them. Today both are silence. This is the three-answer shape again: the
+failure mode being avoided is the same one as `nothing found` versus `could not
+look`.
+
+**`tools` delegates rather than re-deciding.** The rule calls
+`toolPlanForModel`, so a model observed refusing tools is refused here too. A
+rule that read the registry instead would allow what the loop refuses — two
+answers to one question, which is what D1 exists to end.
+
+**The default is the restrictive one.** An omitted `access` reads as `free`, an
+omitted model as incapable. A call site that forgets to pass the user must not
+thereby hand out the paid capability.
+
+#### The first thing it fixes was already stated in the code
+
+`tool-use.ts` withholds action tools without an actor, because "offering tools
+that must fail teaches the model to propose them". The WEB tools were exempt
+from that rule: with no search backend configured they were offered on every
+turn, and every lookup came back "could not look" — which a user reads as Cat
+being useless rather than as a deployment missing a key. They are now offered
+only when something can serve them, decided by the gate rather than by reading
+an env var at the call site.
+
+Eight mutants, all caught, including the two that matter most: a denial
+collapsing to one indistinguishable reason, and an omitted access source
+defaulting to the permissive case.
 
 ### D4 — Computer use: build it gated, and the gate is not money.
 
@@ -352,7 +399,7 @@ evidence, and none of it is checkable by the person reading the answer.
 1. **D1** — ask the model. ✅ BUILT. Smallest change, largest immediate effect.
 2. **D5** — show the work. Small, and it makes D1's effect visible.
 3. **D2** — the local loop. ✅ BUILT.
-4. **D3** — the gate, once there are two capabilities to gate.
+4. **D3** — the gate, once there are two capabilities to gate. ✅ BUILT.
 5. **D4** — computer use, behind all of the above.
 
 ## Related
