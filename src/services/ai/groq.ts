@@ -17,6 +17,7 @@ import { recordGroqRateLimitHeaders, recordGroqTooLarge } from '@/services/ai/gr
 export {
   CONFIGURED_GROQ_MODEL_IDS,
   DEFAULT_GROQ_MODEL,
+  PLATFORM_GROQ_MODEL,
   GROQ_CHAT_MAX_TOKENS,
   GROQ_ON_DEMAND_TPM_LIMIT,
   getGroqModel,
@@ -347,7 +348,9 @@ export class GroqService {
       // is never fixed by waiting, so it must not read as a rate limit.
       if (response.status === 413) {
         const message = error.error?.message || 'Request too large';
-        if (!this.isByok) recordGroqTooLarge(model, message);
+        if (!this.isByok) {
+          recordGroqTooLarge(model, message);
+        }
         throw new GroqAPIError(message, 'request_too_large', 413);
       }
 
