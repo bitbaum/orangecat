@@ -19,7 +19,7 @@
 
 import { actionToolDefinitions } from './action-schemas';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
-import { toolPlanForModel } from './tool-capability';
+import { toolPlanForModel, observedToolVerdict, recordToolAttempt } from './tool-capability';
 import {
   hasCreateIntent,
   hasWebsiteAnalysisIntent,
@@ -147,9 +147,8 @@ export async function maybeEnrichWithSearchResults(
      * `AiService.chatCompletion` drops `tool_calls`, so the loop cannot go
      * through that abstraction either.
      *
-     * When absent, the two platform vendors are still derivable from the
-     * environment (unchanged behaviour); any other provider gets no tools,
-     * exactly as before. That is the fallback, not the intent.
+     * When absent, NO tools are sent. There is deliberately no env fallback:
+     * a guessed endpoint sends a user.s model id to the wrong vendor.
      */
     toolEndpoint?: string | null;
     toolKey?: string | null;
@@ -166,16 +165,6 @@ export async function maybeEnrichWithSearchResults(
     onWebEvidence?: (evidence: string[]) => void;
   }
 ): Promise<ToolAugmentedMessage[]> {
-  // Can THIS MODEL drive a tool loop? Asked of the model, not of a two-name
-  // provider list — that list denied tools to every user on their own OpenAI /
-  // Together / xAI key, so whoever paid most got the least capable Cat. An
-  // uncatalogued model is ASKED: a registry says where to start, not where to
-  // stop. See tool-capability.ts and ADR-0008 D1.
-  const plan = toolPlanForModel(modelToUse);
-  if (!plan.sendTools) {
-    return messages;
-  }
-
   // WHERE to call is the resolver's answer, never a guess. It builds the step,
   // so it holds the only raw BYOK credential, and it supplies platform steps
   // too. NO provider-name fallback: a wrong guess sends a user's own model id
@@ -184,6 +173,14 @@ export async function maybeEnrichWithSearchResults(
   const toolEndpoint = opts?.toolEndpoint ?? null;
   const toolKey = opts?.toolKey ?? null;
   if (!toolEndpoint || !toolKey) {
+    return messages;
+  }
+
+  // Can THIS MODEL drive a tool loop? Asked of the model, not of a two-name
+  // provider list, and what it answers is remembered — so an uncatalogued
+  // model is asked once, not every turn. See tool-capability.ts, ADR-0008 D1.
+  const plan = toolPlanForModel(modelToUse, observedToolVerdict(modelToUse, toolKey));
+  if (!plan.sendTools) {
     return messages;
   }
 
@@ -435,10 +432,16 @@ async function runToolLoop(args: {
       }),
     });
     if (!res.ok) {
+      // Evidence only when the vendor SAYS it is about tools (classifyToolAttempt).
+      recordToolAttempt(modelToUse, toolKey, {
+        status: res.status,
+        bodyText: await res.text().catch(() => ''),
+      });
       break;
     }
 
     const data = await res.json();
+    recordToolAttempt(modelToUse, toolKey, { status: res.status, parsed: data });
     const choice = data.choices?.[0];
     // Model stopped calling tools → it has what it needs; the main chat call
     // produces the final answer from the gathered context.

@@ -7,18 +7,18 @@ Status: Proposed
 
 OrangeCat's thesis is that any identity is a full economic participant, and its
 Cat is meant to be the best agent we can build. A user who brings a frontier API
-key, or runs a capable model on their own hardware, should get the *most*
+key, or runs a capable model on their own hardware, should get the _most_
 capable Cat we can offer them. They are the users who have already paid for the
 capability; the platform's own free tier is the constrained case, not theirs.
 
 Measured today, the opposite is true. **The stronger your model, the weaker your
 Cat.**
 
-| What the user brings | What Cat can do |
-| --- | --- |
-| platform free tier (Groq / OpenRouter) | web search, read a page, 49 actions |
-| **their own OpenAI / Together / DeepSeek / xAI key** | **chat only — no tools, no actions** |
-| **a strong local model (Ollama, LM Studio)** | **chat only — nothing is even parsed** |
+| What the user brings                                 | What Cat can do                        |
+| ---------------------------------------------------- | -------------------------------------- |
+| platform free tier (Groq / OpenRouter)               | web search, read a page, 49 actions    |
+| **their own OpenAI / Together / DeepSeek / xAI key** | **chat only — no tools, no actions**   |
+| **a strong local model (Ollama, LM Studio)**         | **chat only — nothing is even parsed** |
 
 Two lines cause it.
 
@@ -32,7 +32,7 @@ anything up for.
 
 **`/api/cat/local-complete` is 52 lines and calls only `saveMessages`.** There
 is no parser and no executor on the local path, so a local model's Cat executes
-nothing. ADR-0006 D8 made this *honest* — the prompt now tells a local model it
+nothing. ADR-0006 D8 made this _honest_ — the prompt now tells a local model it
 cannot change anything — which was the right immediate fix and is not the end
 state.
 
@@ -155,6 +155,68 @@ now-dead `groqKey` parameter left six call sites passing a key where
 happy and the tests were quietly wrong. Found by reading the call sites, not by
 running the typechecker. **A green typecheck is not evidence that the right
 argument reached the right slot.**
+
+#### Optimism without memory is a permanent outage, not a probe
+
+D1 says an uncatalogued model is ASKED, and that a wrong negative is worse than
+a wasted request. Both still hold. What was missing is that the ask has to be
+remembered, and the reason is sharper than "it would be nice to learn".
+
+`actionsVia: 'tools'` does not mean "tools are available". It means **the prose
+action catalogue was DROPPED because definitions replace it** (ADR-0006 D7). So
+for a model that cannot do tools, the optimistic path is not merely wasteful —
+each turn sends definitions the vendor rejects AND removes the only other way
+Cat is told how to act. Cat ends the turn with no verb at all. With nothing
+recorded, the next turn is identical. A model in this state is not slow to
+learn; it never learns, and a user watching sees an agent that cannot do
+anything and cannot say why.
+
+One observation ends it. `tool-capability.ts` keeps what real traffic proved,
+keyed by **model AND credential** — capability differs per key, and a negative
+learned on one user's key must not silence Cat for everyone else on that model.
+The loop asks the plan with that verdict, writes down what the response proved,
+and `actionsViaForModel` reads the same verdict, so the wire and the prompt
+cannot diverge. The asymmetry from `@bitbaum/ai-kit/capability` is unchanged: a
+positive is cheap and immediate, a negative requires the vendor to NAME tools.
+
+**In-process, deliberately.** A `Map`, bounded at 500 entries, oldest evicted.
+It resets on deploy and is not shared between instances, which costs at most one
+re-learning turn per model per process. That cost is real and far smaller than a
+table and a migration for a fact this cheap to re-derive; the stored shape is
+`ai-kit`'s `CapabilityRecord`, so promoting it to a table later is a change of
+storage, not of rules.
+
+#### The engine's own bar was set by a cost estimate that was wrong
+
+`saysToolsUnsupported` carried eleven patterns and a note saying a false
+negative "costs one request". Every pattern assumed a singular subject with
+`is`, so `tools are not supported by this model` — the form vendors actually
+send — matched nothing at all.
+
+The gap and the note are the same mistake. Once the caller drops its prose
+catalogue whenever definitions go out, an unrecognised refusal is not one
+wasted request; it is the permanent outage above. The bar is unchanged and
+still conservative — NAME tools or functions, NEGATE support, both halves
+explicitly — but the grammatical variants now clear it, and both directions are
+pinned: seventeen real refusals must match, thirteen unrelated 400s must not,
+including the near misses `streaming is not supported for this model` and
+`vision is not supported by this model` (bitbaum/ai-kit#51).
+
+#### A gate that pinned formatting instead of wiring
+
+`actions-via-wiring.test.ts` pinned the orchestrator's call as one exact line,
+so wrapping the call across lines failed it while changing nothing — the kind
+of failure that teaches whoever hits it to weaken the assertion. It now matches
+against whitespace-collapsed source, which keeps the assertion about ARGUMENTS.
+
+Proving it by mutation then caught a real hole. Asserting the shared prefix
+`recordToolAttempt(modelToUse, toolKey` looked sufficient and was not: deleting
+the SUCCESS call left the REFUSAL call satisfying it, and the mutant walked
+through green. The two sites answer different questions — the refusal is the
+only thing that can stop the loop re-sending; the success is what makes
+`native` stick so a later 429 cannot demote a model we have seen use tools —
+so both are now pinned by their own shape. **A gate is green until a mutant
+proves otherwise.**
 
 ### D2 — The local path gets a real loop.
 

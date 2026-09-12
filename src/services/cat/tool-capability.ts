@@ -25,7 +25,18 @@
  * never where to stop. Only a real answer from a real model may produce a
  * negative, and that lives in the observation layer.
  */
-import { planToolAttempt, type ToolPlan, type ToolVerdict } from '@bitbaum/ai-kit/capability';
+import {
+  planToolAttempt,
+  classifyToolAttempt,
+  currentVerdict,
+  makeRecord,
+  scopeKey,
+  shouldReplace,
+  type CapabilityRecord,
+  type ToolAttempt,
+  type ToolPlan,
+  type ToolVerdict,
+} from '@bitbaum/ai-kit/capability';
 import { getModelMetadata } from '@/config/ai-models';
 
 /**
@@ -86,4 +97,89 @@ export function actionsViaForModel(
   observed: ToolVerdict = 'unobserved'
 ): 'tools' | 'prose' {
   return toolPlanForModel(modelId, observed).sendTools && hasToolCredentials ? 'tools' : 'prose';
+}
+
+// ── remembering what we learned ───────────────────────────────────────────
+//
+// Without this, the capability decision has no memory: every turn asks a model
+// that has already refused, the prompt drops the prose catalogue because
+// definitions are "being sent", and the definitions are rejected again. A
+// tool-incapable model would be permanently verbless — unable to act through
+// the loop and no longer told how to act in prose.
+//
+// One observation fixes that for every later turn: the model is recorded as
+// `none`, so the loop stops sending and `actionsViaForModel` returns 'prose'.
+//
+// IN-PROCESS, and deliberately so for now. It resets on deploy and is not
+// shared between instances, which costs at most one re-learning turn per model
+// per process — a real cost, and far smaller than the schema this would
+// otherwise need. The shape is `ai-kit`'s `CapabilityRecord`, so swapping this
+// Map for a table is a change of storage, not of rules.
+const observations = new Map<string, CapabilityRecord>();
+
+/**
+ * Bounded by construction. An unbounded Map keyed by model id is a slow leak
+ * on a process that sees many BYOK model names; evicting the oldest entry
+ * costs one extra learning turn and cannot grow without limit.
+ */
+const MAX_OBSERVATIONS = 500;
+
+/** Key by model AND credential: capability genuinely differs per key. */
+function observationKey(modelId: string, toolKey: string | null | undefined): string {
+  return `${scopeKey(toolKey)}:${modelId}`;
+}
+
+/** What we have actually seen this model do, or `unobserved`. */
+export function observedToolVerdict(
+  modelId: string | null | undefined,
+  toolKey: string | null | undefined
+): ToolVerdict {
+  if (!modelId) {
+    return 'unobserved';
+  }
+  return currentVerdict(observations.get(observationKey(modelId, toolKey)));
+}
+
+/**
+ * Read one real response for what it proves, and write it down if it proves
+ * anything. Most failures prove nothing — see `classifyToolAttempt`, which
+ * only records a negative when the vendor SAYS it is about tools.
+ */
+export function recordToolAttempt(
+  modelId: string | null | undefined,
+  toolKey: string | null | undefined,
+  attempt: ToolAttempt
+): void {
+  if (!modelId) {
+    return;
+  }
+  const seen = classifyToolAttempt(attempt);
+  if (!seen.record) {
+    return;
+  }
+  const k = observationKey(modelId, toolKey);
+  const incoming = makeRecord({
+    provider: '',
+    model: modelId,
+    scope: scopeKey(toolKey),
+    capability: 'tools',
+    verdict: seen.verdict,
+    via: 'live',
+    evidence: seen.evidence,
+  });
+  if (!shouldReplace(observations.get(k), incoming)) {
+    return;
+  }
+  if (!observations.has(k) && observations.size >= MAX_OBSERVATIONS) {
+    const oldest = observations.keys().next().value;
+    if (oldest) {
+      observations.delete(oldest);
+    }
+  }
+  observations.set(k, incoming);
+}
+
+/** Test seam — production never clears what it learned. */
+export function __resetObservationsForTest(): void {
+  observations.clear();
 }
