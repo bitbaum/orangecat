@@ -322,6 +322,77 @@ async function runProbe(probe, cookie, conversationId) {
 // Scoring
 // ---------------------------------------------------------------------------
 
+/** Cheap and adequate: this is a one-word YES/NO about one property. */
+const JUDGE_MODEL = process.env.CAT_EVAL_JUDGE_MODEL || 'openai/gpt-5.2-mini';
+
+// ---------------------------------------------------------------------------
+// Judging the "why" axis by meaning
+// ---------------------------------------------------------------------------
+
+/**
+ * Ask a model whether a reply actually explains itself.
+ *
+ * The regex above asks "did Cat use one of fifteen English connectives", which
+ * is not the same question. A reply can reason perfectly in words the list does
+ * not contain — one did, on 2026-09-12, and paged the founder as a REGRESSION.
+ *
+ * Returns true/false when it judged, and **null when it could not judge at
+ * all** — no key, a refusal, an unparseable answer. Null is the important one:
+ * it is NOT a failure of the probe, and a run where judging did not happen must
+ * not gate on the regex it was meant to replace. See `computePass`.
+ */
+export async function judgeWhy(reply, { apiKey, model = JUDGE_MODEL, fetchImpl = fetch } = {}) {
+  if (!apiKey || !reply?.trim()) {
+    return null;
+  }
+  let res;
+  try {
+    res = await fetchImpl('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model,
+        temperature: 0,
+        max_tokens: 4,
+        messages: [
+          {
+            role: 'system',
+            content:
+              'You judge one property of an assistant reply: does it give the user a REASON ' +
+              'for what it recommends — why that thing suits their situation — rather than ' +
+              'only listing options? Any wording counts; the word "because" is not required. ' +
+              'Answer with exactly one word: YES or NO.',
+          },
+          { role: 'user', content: reply.slice(0, 4000) },
+        ],
+      }),
+    });
+  } catch {
+    return null;
+  }
+  if (!res?.ok) {
+    return null;
+  }
+  let body;
+  try {
+    body = await res.json();
+  } catch {
+    return null;
+  }
+  const answer = String(body?.choices?.[0]?.message?.content ?? '')
+    .trim()
+    .toUpperCase();
+  if (answer.startsWith('YES')) {
+    return true;
+  }
+  if (answer.startsWith('NO')) {
+    return false;
+  }
+  // Anything else is the judge failing to answer the question, not the reply
+  // failing to explain itself.
+  return null;
+}
+
 /**
  * Does this run pass?
  *
@@ -335,11 +406,18 @@ async function runProbe(probe, cookie, conversationId) {
  * fine. A gate that cries wolf is worse than no gate. Switch on the semantic
  * judge (CAT_EVAL_JUDGE=1) and `why` becomes a real gate again.
  */
-export function computePass(scores, { judgeWhy = false, threshold = 7 } = {}) {
+export function computePass(scores, { judgeWhy = false, threshold = 7, judged = 0 } = {}) {
   if (scores.type < threshold) {
     return false;
   }
-  return judgeWhy ? scores.why >= threshold : true;
+  // `why` may only gate when a JUDGE produced the number. Gating on the regex
+  // is what paged the founder for a good answer, and switching on a flag must
+  // never quietly re-enable it — so a run where judging did not happen for
+  // every probe falls back to advisory rather than to the phrase list.
+  if (!judgeWhy || judged < scores.max) {
+    return true;
+  }
+  return scores.why >= threshold;
 }
 
 function scoreProbe(probe, result) {
@@ -622,6 +700,7 @@ const FREE_TIER_RESERVE = Number(process.env.CAT_EVAL_FREE_RESERVE || 20);
  */
 const JUDGE_WHY = process.env.CAT_EVAL_JUDGE === '1';
 
+
 async function freeModelBudget() {
   const key = process.env.OPENROUTER_API_KEY;
   if (!key) {return null;}
@@ -701,6 +780,9 @@ async function main() {
     baseUrl: BASE_URL,
     probes: [],
     scores: { type: 0, why: 0, duplicates: 0, max: PROBES.length },
+    // How many probes a JUDGE actually answered for. `why` may only gate
+    // when this reaches max — see computePass.
+    judged: 0,
   };
   const conversationIds = [];
 
@@ -736,6 +818,19 @@ async function main() {
       }
 
       const score = scoreProbe(probe, result);
+
+      // When the judge is on, its verdict REPLACES the phrase list for this
+      // probe. A null means it could not judge — not that the reply failed —
+      // so the probe stays on the regex answer and `judged` does not count it,
+      // which keeps `why` advisory for the run (see computePass).
+      if (JUDGE_WHY) {
+        const verdict = await judgeWhy(result.content, { apiKey: OPENROUTER_API_KEY });
+        if (verdict !== null) {
+          score.whyOk = verdict;
+          report.judged += 1;
+        }
+      }
+
       report.probes.push({
         id: probe.id,
         label: probe.label,
@@ -767,7 +862,11 @@ async function main() {
   // ---- report ------------------------------------------------------------
   const { scores } = report;
   const providerErrorCount = report.probes.filter(p => Boolean(p.error)).length;
-  const pass = computePass(scores, { judgeWhy: JUDGE_WHY, threshold: PASS_THRESHOLD });
+  const pass = computePass(scores, {
+    judgeWhy: JUDGE_WHY,
+    threshold: PASS_THRESHOLD,
+    judged: report.judged,
+  });
   const summaryLine = `type ${scores.type}/${scores.max} · why ${scores.why}/${scores.max} · duplicate-draft probes ${scores.duplicates}`;
 
   console.log('');
@@ -791,6 +890,12 @@ async function main() {
       `  → note: "why" is ADVISORY (${scores.why}/${scores.max}). It matches a fixed list of ` +
         'English connectives, so a reply that reasons in other words scores zero. ' +
         'Set CAT_EVAL_JUDGE=1 (needs OPENROUTER_API_KEY) to judge it semantically and gate on it.'
+    );
+  } else if (report.judged < scores.max) {
+    console.log(
+      `  → note: "why" is ADVISORY despite CAT_EVAL_JUDGE=1 — the judge answered for ` +
+        `${report.judged}/${scores.max} probes. Gating on a partly-judged score would fall ` +
+        'back to the phrase list for the rest, which is what this replaces.'
     );
   }
   console.log(JSON.stringify(report, null, 2));
