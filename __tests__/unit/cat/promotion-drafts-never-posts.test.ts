@@ -23,6 +23,7 @@ import {
   PROMOTION_CHANNELS,
   catMayPostTo,
   autonomousChannels,
+  permittedButUnbuilt,
   channelConstraints,
   type PromotionChannelId,
 } from '@/config/promotion-channels';
@@ -35,10 +36,26 @@ const draft = (params: Record<string, unknown>) =>
 const ALL = Object.keys(PROMOTION_CHANNELS) as PromotionChannelId[];
 
 describe('the refusal holds', () => {
-  it('lets Cat post to exactly two places, and names them', () => {
-    // If this list ever grows, someone is about to get banned. It should be
-    // read as a claim about the OUTSIDE world, not a preference.
-    expect(autonomousChannels().sort()).toEqual(['nostr', 'orangecat']);
+  it('lets Cat post to exactly ONE place today', () => {
+    // Two are permitted; only one is built. If this list grows without an
+    // implementation behind it, Cat will claim work nothing performed.
+    expect(autonomousChannels()).toEqual(['orangecat']);
+  });
+
+  it('keeps "permitted out there" separate from "possible in here"', () => {
+    // Nostr is the off-platform exception in POLICY — agent publishing is
+    // legitimate and the user holds their own key. But nothing in this repo
+    // publishes a note, so Cat must not be told it may. Collapsing these two
+    // facts into one boolean is how an agent ends up announcing a post that
+    // never happened.
+    expect(PROMOTION_CHANNELS.nostr.policyAllowsPosting).toBe(true);
+    expect(PROMOTION_CHANNELS.nostr.postingImplemented).toBe(false);
+    expect(catMayPostTo('nostr')).toBe(false);
+    expect(permittedButUnbuilt()).toEqual(['nostr']);
+  });
+
+  it('tells the model Nostr is a draft too, while it stays unbuilt', () => {
+    expect(channelConstraints('nostr')).toContain('You cannot post it');
   });
 
   it('refuses every channel that bans or sues over automated posting', () => {
@@ -97,7 +114,7 @@ describe('the constraints are handed over, not hoped for', () => {
     expect(text.indexOf('MUST NOT')).toBeLessThan(text.indexOf(PROMOTION_CHANNELS.reddit.guidance));
   });
 
-  it('never tells an autonomous channel it is draft-only', () => {
+  it('never tells a channel it CAN post to that it is draft-only', () => {
     for (const id of autonomousChannels()) {
       expect(channelConstraints(id), id).not.toContain('DRAFT for the user');
     }
@@ -153,10 +170,12 @@ describe('every channel is fully specified', () => {
     }
   });
 
-  it('gives every draft-only channel an explicit never-post prohibition', () => {
+  it('gives every policy-forbidden channel an explicit never-post prohibition', () => {
     // The rule must be stated per channel, not inferred from a boolean, because
-    // the prohibitions are what reaches the model.
-    for (const id of ALL.filter(c => !catMayPostTo(c))) {
+    // the prohibitions are what reaches the model. Scoped to the channels the
+    // POLICY forbids: Nostr is draft-only for want of an implementation, not
+    // because posting there would be wrong, so it carries no prohibition.
+    for (const id of ALL.filter(c => !PROMOTION_CHANNELS[c].policyAllowsPosting)) {
       const joined = PROMOTION_CHANNELS[id].prohibitions.join(' ');
       expect(joined, id).toMatch(/[Nn]ever (post|send)/);
     }

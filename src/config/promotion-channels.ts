@@ -27,13 +27,25 @@ export interface PromotionChannel {
   id: PromotionChannelId;
   name: string;
   /**
-   * May Cat publish here WITHOUT the user pressing send?
+   * Does the OUTSIDE WORLD permit an agent to publish here unattended?
    *
-   * True for exactly two: the user's own OrangeCat timeline, which is this
-   * platform's own surface and already behind the permission ladder, and
-   * Nostr. Everywhere else this is false and must stay false.
+   * A claim about someone else's rules, and true for exactly two: the user's
+   * own OrangeCat timeline, which is this platform's own surface and already
+   * behind the permission ladder, and Nostr. Everywhere else this is false and
+   * must stay false.
    */
-  catMayPost: boolean;
+  policyAllowsPosting: boolean;
+  /**
+   * Do WE have a way to do it?
+   *
+   * Kept separate on purpose. Nostr is permitted and not yet implemented —
+   * there is no Cat action that publishes a note, only NWC wallet traffic. If
+   * one field carried both facts, the model would be told it may post to Nostr,
+   * find nothing that can, and either apologise or claim it posted. Announcing
+   * work that nothing performed is the failure this whole action exists to
+   * prevent, and it would have arrived through the config that prevents it.
+   */
+  postingImplemented: boolean;
   /** Hard length limit, where the platform has one worth respecting. */
   maxChars?: number;
   /** What gets the user banned, sued, or billed. */
@@ -48,9 +60,10 @@ export const PROMOTION_CHANNELS: Record<PromotionChannelId, PromotionChannel> = 
   orangecat: {
     id: 'orangecat',
     name: 'Your OrangeCat timeline',
-    // Our own surface, and already gated by the permission ladder and the
-    // confirmation flow like any other action.
-    catMayPost: true,
+    // Our own surface, already gated by the permission ladder, and reachable:
+    // post_to_timeline exists.
+    policyAllowsPosting: true,
+    postingImplemented: true,
     prohibitions: [],
     guidance:
       'Say what the project is for and what the money does. The audience already ' +
@@ -60,9 +73,12 @@ export const PROMOTION_CHANNELS: Record<PromotionChannelId, PromotionChannel> = 
   nostr: {
     id: 'nostr',
     name: 'Nostr',
-    // The one off-platform exception. Agents publishing is normal here, the
-    // user holds their own key, and no operator can delete the account for it.
-    catMayPost: true,
+    // The one off-platform exception in POLICY. Agents publishing is normal
+    // here, the user holds their own key, and no operator can delete the
+    // account for it — but nothing in this repo publishes a note yet, so Cat
+    // must not claim it can.
+    policyAllowsPosting: true,
+    postingImplemented: false,
     prohibitions: [],
     guidance:
       'A zap goal (NIP-75) or classified listing (NIP-99) carries the ask better ' +
@@ -73,7 +89,8 @@ export const PROMOTION_CHANNELS: Record<PromotionChannelId, PromotionChannel> = 
   x: {
     id: 'x',
     name: 'X',
-    catMayPost: false,
+    policyAllowsPosting: false,
+    postingImplemented: false,
     maxChars: 280,
     prohibitions: [
       "Never post on the user's behalf — drafts only.",
@@ -88,7 +105,8 @@ export const PROMOTION_CHANNELS: Record<PromotionChannelId, PromotionChannel> = 
   linkedin: {
     id: 'linkedin',
     name: 'LinkedIn',
-    catMayPost: false,
+    policyAllowsPosting: false,
+    postingImplemented: false,
     prohibitions: [
       "Never post, comment, like or share on the user's behalf. The user " +
         'agreement (§8.2) prohibits bots doing any of those, and LinkedIn ' +
@@ -102,7 +120,8 @@ export const PROMOTION_CHANNELS: Record<PromotionChannelId, PromotionChannel> = 
   reddit: {
     id: 'reddit',
     name: 'Reddit',
-    catMayPost: false,
+    policyAllowsPosting: false,
+    postingImplemented: false,
     prohibitions: [
       "Never post on the user's behalf — drafts only.",
       'Rules are PER SUBREDDIT, and self-promotion is banned outright in many. ' +
@@ -119,7 +138,8 @@ export const PROMOTION_CHANNELS: Record<PromotionChannelId, PromotionChannel> = 
   hackernews: {
     id: 'hackernews',
     name: 'Hacker News',
-    catMayPost: false,
+    policyAllowsPosting: false,
+    postingImplemented: false,
     prohibitions: [
       "Never post on the user's behalf — drafts only.",
       'The guidelines forbid GENERATED TEXT outright. Do not hand the user a ' +
@@ -133,7 +153,8 @@ export const PROMOTION_CHANNELS: Record<PromotionChannelId, PromotionChannel> = 
   email: {
     id: 'email',
     name: 'Email to someone specific',
-    catMayPost: false,
+    policyAllowsPosting: false,
+    postingImplemented: false,
     prohibitions: [
       "Never send on the user's behalf — drafts only.",
       'One named recipient at a time. A list is a mailing, and a mailing without ' +
@@ -146,13 +167,27 @@ export const PROMOTION_CHANNELS: Record<PromotionChannelId, PromotionChannel> = 
 };
 
 /**
- * May Cat publish here on its own?
+ * May Cat publish here on its own, right now?
  *
- * The default is NO for anything unrecognised, which is the answer that cannot
- * get an account deleted.
+ * BOTH terms: permitted out there, and possible in here. The default is NO for
+ * anything unrecognised, which is the answer that cannot get an account
+ * deleted.
  */
 export function catMayPostTo(channel: string): boolean {
-  return PROMOTION_CHANNELS[channel as PromotionChannelId]?.catMayPost === true;
+  const c = PROMOTION_CHANNELS[channel as PromotionChannelId];
+  return c?.policyAllowsPosting === true && c.postingImplemented === true;
+}
+
+/**
+ * Permitted out there, but not built in here yet.
+ *
+ * Worth naming rather than hiding: it is the list of things that become
+ * possible with an implementation and no policy argument.
+ */
+export function permittedButUnbuilt(): PromotionChannelId[] {
+  return (Object.keys(PROMOTION_CHANNELS) as PromotionChannelId[]).filter(
+    id => PROMOTION_CHANNELS[id].policyAllowsPosting && !PROMOTION_CHANNELS[id].postingImplemented
+  );
 }
 
 /** Channels Cat may publish to autonomously. Deliberately short. */
@@ -179,7 +214,7 @@ export function channelConstraints(channel: PromotionChannelId): string {
     lines.push(`- Disclosure: ${c.disclosure}`);
   }
   lines.push(`- ${c.guidance}`);
-  if (!c.catMayPost) {
+  if (!catMayPostTo(c.id)) {
     lines.push('- This is a DRAFT for the user to post themselves. You cannot post it.');
   }
   return lines.join('\n');
