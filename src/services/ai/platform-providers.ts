@@ -28,13 +28,14 @@ import {
 } from '@/services/ai';
 import { getFreeModels, getModelMetadata, DEFAULT_FREE_MODEL_ID } from '@/config/ai-models';
 import { PROVIDER_BASE_URLS } from '@/config/ai-provider-runtime';
+import { configuredFreeVendors, vendorModel } from '@/config/free-vendors';
 import { createAutoRouter } from '@/services/ai/auto-router';
 import { pruneDownLinks } from '@/services/ai/link-health';
 
 import type { AiService } from './types';
 
 export interface PlatformProvider {
-  providerId: 'groq' | 'openrouter' | 'together' | 'ollama';
+  providerId: 'groq' | 'openrouter' | 'together' | 'ollama' | 'cerebras' | 'google' | 'github';
   /**
    * Where a raw tool-loop call should go for this provider, and with what.
    *
@@ -111,6 +112,25 @@ export function buildPlatformProviders(message: string): PlatformProvider[] {
       defaultModel: process.env.TOGETHER_DEFAULT_MODEL || TOGETHER_DEFAULT_MODEL,
       toolEndpoint: `${PROVIDER_BASE_URLS.together}/chat/completions`,
       toolKey: togetherKey,
+    });
+  }
+
+  // One link per free vendor whose key exists. Independent daily buckets are
+  // what makes this chain survive a vendor having a bad day — see
+  // config/free-vendors.ts. A vendor with no key is skipped, not an error, so
+  // these are safe to carry before the accounts exist.
+  for (const vendor of configuredFreeVendors()) {
+    const key = process.env[vendor.keyEnv] as string;
+    out.push({
+      providerId: vendor.id as PlatformProvider['providerId'],
+      aiService: createOpenAICompatibleServiceWithByok({
+        apiKey: key,
+        baseUrl: vendor.baseUrl,
+        providerId: vendor.id,
+      }),
+      defaultModel: vendorModel(vendor),
+      toolEndpoint: `${vendor.baseUrl}/chat/completions`,
+      toolKey: key,
     });
   }
 

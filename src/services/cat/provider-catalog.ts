@@ -29,6 +29,7 @@ import {
 import { PROVIDER_BASE_URLS } from '@/config/ai-provider-runtime';
 import { getFreeModels } from '@/config/ai-models';
 import { CONFIGURED_GROQ_MODEL_IDS } from '@/services/ai/groq-models';
+import { FREE_VENDORS, vendorModel } from '@/config/free-vendors';
 
 /**
  * `dailyTokens` is only used by ai-kit's fair-share rationing, which OrangeCat
@@ -38,6 +39,8 @@ import { CONFIGURED_GROQ_MODEL_IDS } from '@/services/ai/groq-models';
  */
 const GROQ_DAILY_TOKENS = 100_000;
 const OPENROUTER_DAILY_TOKENS = 50_000;
+/** Stated low on purpose: an invented allowance produces the wall it was meant to prevent. */
+const FREE_VENDOR_DAILY_TOKENS = 50_000;
 
 /** OrangeCat's platform chain, in the vocabulary the shared checker speaks. */
 export function orangecatChain(): Provider[] {
@@ -56,6 +59,16 @@ export function orangecatChain(): Provider[] {
       models: getFreeModels().map(m => m.id),
       dailyTokens: OPENROUTER_DAILY_TOKENS,
     },
+    // Every free vendor, watched from the first run with a key. Their model ids
+    // are best-known rather than verified, which is exactly why they belong in
+    // a rot check instead of being trusted.
+    ...FREE_VENDORS.map(v => ({
+      id: v.id,
+      baseUrl: v.baseUrl,
+      keyEnv: v.keyEnv,
+      models: [vendorModel(v)],
+      dailyTokens: FREE_VENDOR_DAILY_TOKENS,
+    })),
   ];
 }
 
