@@ -74,11 +74,19 @@ describe('what the run is allowed to fail on', () => {
     expect(computePass({ ...full, why: 0 })).toBe(true);
   });
 
-  it('DOES fail on "why" once a semantic judge is switched on', () => {
-    // Built now, off until the free-tier ceiling is raised — flipping one env
-    // var must restore a real gate rather than require new code.
-    expect(computePass({ ...full, why: 6 }, { judgeWhy: true })).toBe(false);
-    expect(computePass({ ...full, why: 7 }, { judgeWhy: true })).toBe(true);
+  it('DOES fail on "why" once a judge has actually judged every probe', () => {
+    // This test used to assert that the FLAG alone gates. That was the wrong
+    // contract and it hid a real defect: when it was written there was no
+    // judge, so setting CAT_EVAL_JUDGE=1 would have gated on the phrase list
+    // this very file calls unfit for gating. The flag is a claim; the judged
+    // count is the evidence. See eval-cat-judge.test.ts.
+    expect(computePass({ ...full, why: 6 }, { judgeWhy: true, judged: full.max })).toBe(false);
+    expect(computePass({ ...full, why: 7 }, { judgeWhy: true, judged: full.max })).toBe(true);
+  });
+
+  it('never gates on "why" when the judge did not answer for every probe', () => {
+    expect(computePass({ ...full, why: 0 }, { judgeWhy: true, judged: 0 })).toBe(true);
+    expect(computePass({ ...full, why: 0 }, { judgeWhy: true, judged: full.max - 1 })).toBe(true);
   });
 
   it('never lets a bad type score through on either setting', () => {
