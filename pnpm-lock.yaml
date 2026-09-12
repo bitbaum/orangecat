@@ -45,8 +45,8 @@ importers:
         specifier: ^2.3.0
         version: 2.3.0
       '@noble/secp256k1':
-        specifier: ^2.3.0
-        version: 2.3.0
+        specifier: ^3.2.0
+        version: 3.2.0
       '@octokit/rest':
         specifier: ^22.0.0
         version: 22.0.1
@@ -1095,8 +1095,8 @@ packages:
     resolution: {integrity: sha512-oN+QwyX7VSHotibwubG3kpzbwKrfnyR6OOO+3Nk/53ADL7FmgHHz4TgrbaYKvvOw09u6QTx0oiH1cNCIOuN0CQ==}
     engines: {node: '>= 20.19.0'}
 
-  '@noble/secp256k1@2.3.0':
-    resolution: {integrity: sha512-0TQed2gcBbIrh7Ccyw+y/uZQvbJwm7Ao4scBUxqpBCcsOlZG0O4KGfjtNAy/li4W8n1xt3dxrwJ0beZ2h2G6Kw==}
+  '@noble/secp256k1@3.2.0':
+    resolution: {integrity: sha512-Z3ZAWOTxJ0EuTuZTi7Y69iK7GgrLHh8sgm45lVDhg/b3Nk1TpAiKhick2KkZisHuupeepSkyIydN/J459SdX1w==}
 
   '@nodelib/fs.scandir@2.1.5':
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
@@ -6784,7 +6784,7 @@ snapshots:
 
   '@noble/hashes@2.3.0': {}
 
-  '@noble/secp256k1@2.3.0': {}
+  '@noble/secp256k1@3.2.0': {}
 
   '@nodelib/fs.scandir@2.1.5':
     dependencies:
