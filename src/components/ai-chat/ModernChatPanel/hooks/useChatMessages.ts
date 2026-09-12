@@ -7,7 +7,7 @@ import { useUserCurrency } from '@/hooks/useUserCurrency';
 import { STORAGE_KEYS } from '@/config/storage-keys';
 import { readPageExcerptForCat, type CatPageDescriptor } from '@/config/cat-page-context';
 import { getLocalRuntime, parseLocalModelId } from '@/config/local-ai';
-import { streamLocalChat } from '@/services/ai/local-runtime';
+import { runLocalTurn } from '@/services/ai/local-turn';
 import type {
   Message,
   CatAction,
@@ -268,11 +268,21 @@ export function useChatMessages({
             );
           }
 
-          let reply = '';
+          // The loop, not a single shot. `runLocalTurn` streams a pass into
+          // the bubble, posts it to the server (which parses the envelope and
+          // RUNS the action), feeds the outcome back, and lets the model write
+          // its reply last — knowing what happened rather than guessing.
+          //
+          // The reply is no longer posted fire-and-forget. That discarded the
+          // results, so the server executed into a void and the user watched a
+          // raw exec_action block scroll past as JSON.
+          let turn;
           try {
-            reply = await streamLocalChat({
+            turn = await runLocalTurn({
               runtimeId: local.runtimeId,
               model: local.model,
+              conversationId: prepared.conversationId ?? null,
+              userMessage: content,
               messages: prepared.messages,
               signal: abortController.signal,
               onChunk: chunk =>
@@ -280,6 +290,29 @@ export function useChatMessages({
                   prev.map(m =>
                     m.id === assistantId ? { ...m, content: (m.content || '') + chunk } : m
                   )
+                ),
+              // Each pass settles the bubble to the parsed text, so the
+              // envelope never stays on screen.
+              onReplaceContent: text =>
+                setMessages(prev =>
+                  prev.map(m => (m.id === assistantId ? { ...m, content: text } : m))
+                ),
+              onToolCall: event =>
+                setMessages(prev =>
+                  prev.map(m => {
+                    if (m.id !== assistantId) {
+                      return m;
+                    }
+                    const existing = m.toolCalls ?? [];
+                    const idx = existing.findIndex(t => t.id === event.id);
+                    return {
+                      ...m,
+                      toolCalls:
+                        idx >= 0
+                          ? existing.map((t, i) => (i === idx ? event : t))
+                          : [...existing, event],
+                    };
+                  })
                 ),
             });
           } catch (localErr) {
@@ -293,32 +326,24 @@ export function useChatMessages({
             );
           }
 
-          if (!reply.trim()) {
-            reply =
+          if (!turn.message.trim()) {
+            const fallback =
               "I couldn't put together a reply to that. Could you rephrase or add a bit more detail?";
             setMessages(prev =>
-              prev.map(m => (m.id === assistantId ? { ...m, content: reply } : m))
+              prev.map(m => (m.id === assistantId ? { ...m, content: fallback } : m))
             );
-          }
-
-          // Persist so local chats appear in history like any other — fire
-          // and forget; a failed save must not disturb the finished reply.
-          if (prepared.conversationId) {
-            void fetch(API_ROUTES.CAT.LOCAL_COMPLETE, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                conversationId: prepared.conversationId,
-                message: content,
-                reply,
-                model: selectedModel,
-              }),
-            }).catch(() => {});
           }
 
           setMessages(prev =>
             prev.map(m =>
-              m.id === assistantId ? { ...m, modelUsed: selectedModel, provider: 'local' } : m
+              m.id === assistantId
+                ? {
+                    ...m,
+                    modelUsed: selectedModel,
+                    provider: 'local',
+                    quickReplies: turn.quickReplies,
+                  }
+                : m
             )
           );
           return;

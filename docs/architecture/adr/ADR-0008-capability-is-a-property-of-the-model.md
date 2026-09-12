@@ -218,17 +218,72 @@ only thing that can stop the loop re-sending; the success is what makes
 so both are now pinned by their own shape. **A gate is green until a mutant
 proves otherwise.**
 
-### D2 — The local path gets a real loop.
+### D2 — The local path gets a real loop. BUILT.
 
 Run the same in-turn loop against a local model: the browser holds the model,
 the server holds the permissions, spend caps and audit log. The seam already
-exists — `/api/cat/prepare` builds the identical prompt — so what is missing is
-the return leg: `local-complete` should parse and execute exactly like the
+existed — `/api/cat/prepare` builds the identical prompt — so what was missing
+was the return leg: `local-complete` now parses and executes exactly like the
 hosted path rather than only storing text.
 
 This is the decision that makes "bring your own strong model" a first-class
 path instead of a degraded one, and it is worth more than any new tool, because
 it multiplies every tool that already exists.
+
+#### The capability was one file away, behind no decision at all
+
+`runExecActions` was module-private inside `chat-orchestrator`. That is the
+entire reason `local-complete` had no executor: not a policy, not a risk
+assessment, just a function that nobody had moved. It is now
+`services/cat/exec-actions.ts` and both paths call the one copy — so the gates
+cannot diverge, because there is nothing to diverge from.
+
+`actionsVia` goes `'none'` → `'prose'`, and **not** `'tools'`. The model runs in
+the user's browser, so the server makes no inference call and there is no round
+trip in which to send tool definitions. `'tools'` means the prose catalogue was
+DROPPED because definitions replace it; claiming it on a path that can send
+none would leave Cat with no verb at all — the same failure the observation
+cache exists to prevent, arrived at from the opposite direction.
+
+#### Why a client-driven loop is not a new privilege
+
+The browser runs the model, posts the reply, gets the outcomes back, and runs
+the model again so it can write its final answer knowing what happened. The
+client therefore drives the loop, and could post any text it likes.
+
+That grants nothing. Every action executes for the **authenticated user's own
+actor**, through `CatActionExecutor`, so a forged `exec_action` block can do
+only what that user could already do by calling the API directly — under the
+same permission checks, spend caps, confirmation flow and `cat_action_log` row.
+What the client controls is the _text_, never the _authority_.
+
+Two bounds are worth naming because they differ from the hosted path. The
+hosted loop is bounded by `MAX_ACTION_STEPS` because the server runs it; here
+the browser does, so `MAX_ACTIONS_PER_REPLY` (6, matching) bounds one reply and
+the existing write rate limit bounds the sequence. And a mid-loop step is
+executed but NOT written to history: the transcript should carry the final
+answer, not the model thinking out loud.
+
+#### The bug that shipped with the old honesty
+
+`local-complete` stored the RAW reply. Once a local model is told how to ask for
+an action, the envelope itself lands in the transcript — which is precisely the
+"Creating that now…" for work nothing would do that ADR-0006 D8 described. The
+route now stores the cleaned message, and a gate pins `content: cleanedMessage`
+against `content: reply`.
+
+#### The gate that was written to fail, and did
+
+`actions-via-wiring.test.ts` said: _"If this route ever grows [an executor],
+this test should fail and be rewritten — that is the point."_ It did, on both
+assertions, at the first edit. The rewrite keeps the invariant that survived
+both decisions — **the prompt's claim and the route's capability are one
+fact** — and now asserts the linkage directly: if `runExecActions` ever leaves
+`local-complete`, claiming anything but `'none'` fails.
+
+Seven mutants, all caught: executor removed, raw reply stored, mid-loop step
+written to history, ceiling lifted, missing actor papered over, `'tools'`
+claimed, and a pending action reported as completed.
 
 ### D3 — Capability is gated by what the model and the payer support, never by a global flag.
 
@@ -296,7 +351,7 @@ evidence, and none of it is checkable by the person reading the answer.
 
 1. **D1** — ask the model. ✅ BUILT. Smallest change, largest immediate effect.
 2. **D5** — show the work. Small, and it makes D1's effect visible.
-3. **D2** — the local loop.
+3. **D2** — the local loop. ✅ BUILT.
 4. **D3** — the gate, once there are two capabilities to gate.
 5. **D4** — computer use, behind all of the above.
 
