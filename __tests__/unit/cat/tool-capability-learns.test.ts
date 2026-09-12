@@ -71,6 +71,32 @@ describe('what must NOT be learned', () => {
     }
   });
 
+  it('recognises the plural form vendors actually send', () => {
+    // This exact string matched NOTHING until ai-kit 1.4.1: all eleven refusal
+    // patterns assumed a singular subject with `is`. Cat kept re-sending
+    // definitions to a model that had already refused, every turn, forever —
+    // the outage this whole cache exists to end. Pinned here, not only in
+    // ai-kit, because OrangeCat is what breaks if the engine regresses.
+    recordToolAttempt(MODEL, KEY, {
+      status: 400,
+      bodyText: '{"error":{"message":"tools are not supported by this model"}}',
+    });
+    expect(observedToolVerdict(MODEL, KEY)).toBe('none');
+    expect(actionsViaForModel(MODEL, true, observedToolVerdict(MODEL, KEY))).toBe('prose');
+  });
+
+  it('still ignores a refusal about a DIFFERENT capability', () => {
+    // The near misses that made widening the patterns risky. Recording either
+    // as "no tools" would cripple a model that merely cannot stream or see.
+    for (const msg of [
+      'streaming is not supported for this model',
+      'vision is not supported by this model',
+    ]) {
+      recordToolAttempt(MODEL, KEY, { status: 400, bodyText: `{"error":{"message":"${msg}"}}` });
+      expect(observedToolVerdict(MODEL, KEY), msg).toBe('unobserved');
+    }
+  });
+
   it('does not let one user key answer for another', () => {
     // Capability genuinely differs per credential — a key without tool access,
     // a different tier, a proxy in front. A negative learned on one key must
