@@ -12,7 +12,7 @@
 
 **Symptoms**:
 
-- MCP tools fail
+- `db-check.sh` cannot read the credentials
 - Supabase connection errors
 - "Cannot find module" errors for env vars
 
@@ -404,4 +404,4 @@ ssh ubuntu@167.233.22.31 'docker ps | grep supabase'
 
 ---
 
-**Remember**: Most errors have simple fixes. Check environment first, then code, then database. Use MCP tools to diagnose database issues. Post-hooks catch many errors automatically.
+**Remember**: Most errors have simple fixes. Check environment first, then code, then database. Diagnose the database with `.claude/commands/db-check.sh` — PostgREST for reads, `ssh … docker exec supabase-db psql` for anything it cannot express. (This line used to say "use MCP tools"; the Supabase MCP was retired in 2026-06 and talks to nothing that backs production.) Post-hooks catch many errors automatically.
