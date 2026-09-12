@@ -69,7 +69,14 @@ export async function runActionAsTool(
       result.status === 'completed'
         ? { id: toolCall.id, name: actionId, status: 'completed', resultCount: 1, results: [] }
         : result.status === 'pending_confirmation'
-          ? { id: toolCall.id, name: actionId, status: 'pending_confirmation' }
+          ? {
+              id: toolCall.id,
+              name: actionId,
+              status: 'pending_confirmation',
+              // The executor knew which row was created and this dropped it,
+              // which is why a confirmed chip could never be found again.
+              pendingActionId: result.pendingActionId,
+            }
           : { id: toolCall.id, name: actionId, status: 'failed', error: result.error }
     );
     return summariseForModel(actionId, result);

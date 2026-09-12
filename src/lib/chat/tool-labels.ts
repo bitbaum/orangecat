@@ -32,6 +32,8 @@ export interface ToolLabel {
   failed: string;
   /** The action now waits on the confirmation card below the thread. */
   pending?: string;
+  /** The user was asked and said no. Not a failure — see the event type. */
+  declined?: string;
 }
 
 /**
@@ -194,6 +196,7 @@ export const DEFAULT_LABEL: ToolLabel = {
   noResults: 'Nothing found',
   failed: 'Action failed',
   pending: 'Needs your confirmation — see below',
+  declined: 'You declined this',
 };
 
 /**
@@ -217,5 +220,6 @@ export function labelForTool(toolName: string): ToolLabel {
     noResults: 'Nothing to do',
     failed: `Couldn't ${forms.lower}`,
     pending: `${forms.plain} — needs your confirmation`,
+    declined: `${forms.plain} — declined`,
   };
 }
