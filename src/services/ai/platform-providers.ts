@@ -35,6 +35,17 @@ import type { AiService } from './types';
 
 export interface PlatformProvider {
   providerId: 'groq' | 'openrouter' | 'together' | 'ollama';
+  /**
+   * Where a raw tool-loop call should go for this provider, and with what.
+   *
+   * Published HERE because this is the function that already knows: it picks
+   * the base url and the key to build `aiService`. A caller re-deriving the
+   * pairing would be a second copy of it, and the first thing such a copy does
+   * is miss a provider — send a Together model id to OpenRouter, or a LOCAL
+   * Ollama model to a paid vendor, each with the wrong key.
+   */
+  toolEndpoint: string;
+  toolKey: string;
   aiService: AiService;
   /** Model to use when the user hasn't requested a specific one. */
   defaultModel: string;
@@ -63,6 +74,8 @@ export function buildPlatformProviders(message: string): PlatformProvider[] {
       providerId: 'groq',
       aiService: createGroqService(),
       defaultModel: DEFAULT_GROQ_MODEL,
+      toolEndpoint: `${PROVIDER_BASE_URLS.groq}/chat/completions`,
+      toolKey: process.env.GROQ_API_KEY ?? '',
     });
   }
 
@@ -78,6 +91,8 @@ export function buildPlatformProviders(message: string): PlatformProvider[] {
         providerId: 'openrouter',
         aiService: openrouterService,
         defaultModel: modelId,
+        toolEndpoint: `${PROVIDER_BASE_URLS.openrouter}/chat/completions`,
+        toolKey: process.env.OPENROUTER_API_KEY ?? '',
       });
     }
   }
@@ -92,6 +107,8 @@ export function buildPlatformProviders(message: string): PlatformProvider[] {
         providerId: 'together',
       }),
       defaultModel: process.env.TOGETHER_DEFAULT_MODEL || TOGETHER_DEFAULT_MODEL,
+      toolEndpoint: `${PROVIDER_BASE_URLS.together}/chat/completions`,
+      toolKey: togetherKey,
     });
   }
 
@@ -107,6 +124,8 @@ export function buildPlatformProviders(message: string): PlatformProvider[] {
         providerId: 'ollama',
       }),
       defaultModel: process.env.PLATFORM_OLLAMA_MODEL || PLATFORM_OLLAMA_DEFAULT_MODEL,
+      toolEndpoint: `${ollamaUrl}/chat/completions`,
+      toolKey: process.env.PLATFORM_OLLAMA_API_KEY || 'ollama-no-auth-required',
     });
   }
 

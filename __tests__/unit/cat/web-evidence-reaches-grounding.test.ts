@@ -117,11 +117,17 @@ it('hands the grounding check what Cat actually read', async () => {
     baseMessages,
     'what does a coworking desk cost in Zurich?',
     'openrouter',
-    null,
     'some-model',
     undefined,
     undefined,
-    { onWebEvidence: e => evidence.push(...e) }
+    {
+      // Production always supplies these — the resolver owns the active
+      // step's endpoint and key. A caller without them now gets no tools,
+      // which is the point: the loop never guesses a vendor.
+      toolEndpoint: 'https://openrouter.ai/api/v1/chat/completions',
+      toolKey: 'test-key',
+      onWebEvidence: e => evidence.push(...e),
+    }
   );
 
   // The tool result really did reach the model...
@@ -150,11 +156,15 @@ it('hands over nothing when the tool phase died before the model saw anything', 
     baseMessages,
     'what does a coworking desk cost in Zurich?',
     'openrouter',
-    null,
     'some-model',
     undefined,
     undefined,
-    { timeoutMs: 60, onWebEvidence: e => evidence.push(...e) }
+    {
+      timeoutMs: 60,
+      toolEndpoint: 'https://openrouter.ai/api/v1/chat/completions',
+      toolKey: 'test-key',
+      onWebEvidence: e => evidence.push(...e),
+    }
   );
 
   expect(evidence).toEqual([]);

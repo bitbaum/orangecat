@@ -19,7 +19,11 @@ import {
 import { getAdminClient } from '@/lib/supabase/admin';
 import { isPlatformMeteredModel, checkFrontierAccess } from '@/services/cat/credit-metering';
 import { getModelMetadata, DEFAULT_FREE_MODEL_ID } from '@/config/ai-models';
-import { getProviderRuntime, isOpenAICompatibleProvider } from '@/config/ai-provider-runtime';
+import {
+  getProviderRuntime,
+  isOpenAICompatibleProvider,
+  PROVIDER_BASE_URLS,
+} from '@/config/ai-provider-runtime';
 import { createAutoRouter } from '@/services/ai/auto-router';
 import { buildPlatformProviders } from '@/services/ai/platform-providers';
 import { GROQ_KEY_HEADER, OPENROUTER_KEY_HEADER } from '@/config/http-headers';
@@ -55,7 +59,17 @@ interface ResolvedProvider {
   aiService: AiService;
   platformUsage: { daily_limit: number; requests_remaining: number } | null;
   keyService: ReturnType<typeof createApiKeyService>;
-  userGroqKey: string | null;
+  /**
+   * Where the tool loop should POST for the ACTIVE model, and with what key.
+   *
+   * Null when the resolved step cannot drive a tool loop (no key for that
+   * vendor). A caller that gets null must answer without tools AND say so —
+   * see ADR-0006 D7's `actionsVia`, because a prompt that claims Cat can act
+   * on a path that was never given the definitions is the failure this
+   * plumbing exists to end.
+   */
+  toolEndpoint: string | null;
+  toolKey: string | null;
   /**
    * True when this request is a platform-served PAID model billed against the
    * user's Cat Credits (frontier access). Metered requests bypass the free
@@ -107,7 +121,22 @@ export async function resolveProvider(
     modelToUse: string;
     aiService: AiService;
     hasByok: boolean;
+    /**
+     * Where the tool loop should POST, and with what. Carried on the step
+     * because this is the only place the raw key exists — `aiService` bakes it
+     * in and exposes nothing, so a loop that does its own fetch (which the tool
+     * loop must, since AiService drops `tool_calls`) has no other way to reach
+     * a BYOK credential.
+     *
+     * Absent means the step cannot drive a tool loop at all, and the caller
+     * must then say so rather than silently answering without tools.
+     */
+    toolEndpoint?: string;
+    toolKey?: string;
   };
+
+  /** Every wired provider speaks the OpenAI-compatible chat-completions path. */
+  const completionsUrl = (baseUrl: string): string => `${baseUrl}/chat/completions`;
 
   const groqModelFor = (m?: string): string =>
     m?.startsWith('llama') || m?.startsWith('mixtral') || m?.startsWith('gemma')
@@ -123,6 +152,8 @@ export async function resolveProvider(
         modelToUse: groqModelFor(requestedModel),
         aiService: createGroqServiceWithByok(key),
         hasByok: true,
+        toolEndpoint: completionsUrl(PROVIDER_BASE_URLS.groq),
+        toolKey: key,
       };
     }
     if (prov === 'openrouter') {
@@ -145,6 +176,8 @@ export async function resolveProvider(
         modelToUse: model,
         aiService: createOpenRouterServiceWithByok(key),
         hasByok: true,
+        toolEndpoint: completionsUrl(PROVIDER_BASE_URLS.openrouter),
+        toolKey: key,
       };
     }
     if (isOpenAICompatibleProvider(prov)) {
@@ -165,6 +198,11 @@ export async function resolveProvider(
           providerId: prov,
         }),
         hasByok: true,
+        // THE line this change exists for: a user's own OpenAI / Together /
+        // DeepSeek / xAI key now reaches the tool loop, so the person paying
+        // for the strongest model stops getting the weakest Cat.
+        toolEndpoint: completionsUrl(rt.baseUrl),
+        toolKey: key,
       };
     }
     return null;
@@ -254,6 +292,14 @@ export async function resolveProvider(
           modelToUse: p.defaultModel,
           aiService: p.aiService,
           hasByok: false,
+          // Copied, never re-derived. buildPlatformProviders already chose the
+          // base url and key to construct `aiService`, and the platform chain
+          // includes Together and a LOCAL Ollama as well as the two obvious
+          // vendors. Mapping provider names to urls a second time here is how a
+          // Together model id ends up posted to OpenRouter, or a local model to
+          // a paid vendor — each with the wrong key.
+          toolEndpoint: p.toolEndpoint,
+          toolKey: p.toolKey,
         })),
     });
   }
@@ -310,6 +356,12 @@ export async function resolveProvider(
       modelToUse: requestedModel!,
       aiService: createOpenRouterService(),
       hasByok: false,
+      // This step REPLACES chain[0], so it must carry its own tool credentials.
+      // Reading them off the chain here would point the tool loop at whatever
+      // the user's first configured vendor happens to be, with that vendor's
+      // key, while the answer itself came from platform OpenRouter.
+      toolEndpoint: completionsUrl(PROVIDER_BASE_URLS.openrouter),
+      toolKey: process.env.OPENROUTER_API_KEY,
     };
     metered = true;
   }
@@ -347,14 +399,6 @@ export async function resolveProvider(
     };
   }
 
-  // Surfaced for the chat route's Groq tool-calling enrichment — the primary
-  // Groq BYOK key if that's what's leading the chain, else null (platform
-  // Groq carries its own env key inside the service).
-  const userGroqKey =
-    provider === 'groq' && hasByok
-      ? (clientGroqKey ?? storedKeys.find(k => k.provider === 'groq')?.key ?? null)
-      : null;
-
   // Everything after the primary becomes the fallback chain, tried in order
   // on rate-limit/error. The Cat keeps chatting as long as one link is alive.
   // A metered frontier primary sits ABOVE the regular chain, so the whole
@@ -369,14 +413,20 @@ export async function resolveProvider(
     hasByok: s.hasByok,
   }));
 
+  // Read off `primary`, NOT `chain[0]`. They are usually the same object and
+  // are NOT the same thing: a metered frontier request replaces `primary`
+  // wholesale and leaves the chain as its fallbacks, so `chain[0]` would name
+  // a vendor that is not serving this turn — and the tool loop would call it
+  // with that vendor's key while the answer came from somewhere else.
   return {
     provider,
     hasByok,
     modelToUse,
+    toolEndpoint: primary?.toolEndpoint ?? null,
+    toolKey: primary?.toolKey ?? null,
     aiService,
     platformUsage,
     keyService,
-    userGroqKey,
     metered,
     fallbacks,
   };
