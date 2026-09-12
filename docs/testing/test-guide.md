@@ -7,36 +7,40 @@ This guide provides detailed instructions for using OrangeCat's comprehensive te
 ## Quick Start
 
 ### Run All Tests
+
 ```bash
-npm run test:comprehensive
+pnpm run test:all
 ```
 
 ### Run Specific Test Types
+
 ```bash
 # Unit tests only
-npm run test:comprehensive:unit
+pnpm run test:unit
 
 # Integration tests only
-npm run test:comprehensive:integration
+pnpm run test:integration
 
 # End-to-end tests only
-npm run test:comprehensive:e2e
+pnpm run test:e2e
 
 # Performance tests only
-npm run test:comprehensive:performance
+pnpm run test:performance
 
 # Security tests only
-npm run test:comprehensive:security
+pnpm run test:security
 ```
 
 ### Run with Coverage
+
 ```bash
-npm run test:comprehensive:coverage
+pnpm run test:coverage
 ```
 
 ### Watch Mode
+
 ```bash
-npm run test:comprehensive:watch
+pnpm run test:watch
 ```
 
 ## Test Types
@@ -47,7 +51,7 @@ npm run test:comprehensive:watch
 
 **Location**: `src/__tests__/` and `src/*/tests/`
 
-**Framework**: Jest with Testing Library
+**Framework**: Vitest with Testing Library
 
 **Coverage Target**: 85%+
 
@@ -66,7 +70,7 @@ describe('Button Component', () => {
   });
 
   test('should handle click events', () => {
-    const handleClick = jest.fn();
+    const handleClick = vi.fn();
     render(<Button onClick={handleClick}>Click me</Button>);
 
     screen.getByRole('button').click();
@@ -82,7 +86,7 @@ describe('Button Component', () => {
 
 **Location**: `tests/integration/`
 
-**Framework**: Jest
+**Framework**: Vitest
 
 #### Writing Integration Tests
 
@@ -184,12 +188,12 @@ describe('XSS Prevention', () => {
 
 ## Test Configuration
 
-### Jest Configuration
+### Vitest Configuration
 
-OrangeCat uses advanced Jest configuration for comprehensive testing:
+OrangeCat uses Vitest for comprehensive testing:
 
-- **Main Config**: `jest.config.advanced.js`
-- **Setup File**: `jest.setup.advanced.ts`
+- **Main Config**: `vitest.config.ts`
+- **Setup File**: `vitest.setup.ts`
 - **Coverage Thresholds**: 85-85% across different modules
 
 ### Playwright Configuration
@@ -212,7 +216,7 @@ import { testUtils } from '@/tests/utils';
 // Create test data
 const user = testUtils.createTestUser({
   username: 'testuser',
-  email: 'test@example.com'
+  email: 'test@example.com',
 });
 
 // Mock API responses
@@ -278,7 +282,7 @@ Coverage reports are generated in the `coverage/` directory:
 
 ```bash
 # Generate coverage report
-npm run test:comprehensive:coverage
+pnpm run test:coverage
 
 # View coverage report
 open coverage/lcov-report/index.html
@@ -298,10 +302,10 @@ Playwright generates comprehensive reports:
 
 ```bash
 # View Playwright report
-npx playwright show-report
+pnpm exec playwright show-report
 
 # View with specific configuration
-npx playwright show-report playwright-report/
+pnpm exec playwright show-report playwright-report/
 ```
 
 ## CI/CD Integration
@@ -322,7 +326,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
       - name: Run comprehensive tests
-        run: npm run test:comprehensive
+        run: pnpm run test:all
 ```
 
 ### Pre-commit Hooks
@@ -331,7 +335,7 @@ Tests run automatically before commits:
 
 ```bash
 # Pre-commit hook runs unit tests
-npm run test:unit
+pnpm run test:unit
 ```
 
 ## Best Practices
@@ -347,7 +351,7 @@ npm run test:unit
 ### Test Organization
 
 ```
-__tests__/                    # Jest unit tests
+__tests__/                    # Vitest unit tests
   /components/                # Component tests
   /services/                  # Service tests
   /utils/                     # Utility tests
@@ -357,7 +361,7 @@ tests/                        # Integration and E2E tests
     /auth/                    # Authentication flows
     /donations/               # Donation flows
     /projects/               # Campaign management
-  /integration/               # Jest integration tests
+  /integration/               # Vitest integration tests
   /performance/               # Performance tests
   /security/                  # Security tests
 ```
@@ -378,40 +382,40 @@ tests/                        # Integration and E2E tests
 
 ## Debugging Tests
 
-### Debug Jest Tests
+### Debug Vitest Tests
 
 ```bash
 # Debug specific test
-npm run test:comprehensive:unit -- --testNamePattern="should do something"
+pnpm run test:unit -t "should do something"
 
 # Debug with verbose output
-npm run test:comprehensive:verbose
+pnpm test --reporter=verbose
 
 # Run tests in watch mode
-npm run test:comprehensive:watch
+pnpm run test:watch
 ```
 
 ### Debug Playwright Tests
 
 ```bash
 # Debug E2E tests
-npx playwright test --debug
+pnpm exec playwright test --debug
 
 # Run specific test
-npx playwright test user-journey.spec.ts
+pnpm exec playwright test user-journey.spec.ts
 
 # Run with UI mode
-npx playwright test --ui
+pnpm exec playwright test --ui
 ```
 
 ### Debug Performance Tests
 
 ```bash
 # Run performance tests with tracing
-npx playwright test --trace on
+pnpm exec playwright test --trace on
 
 # View performance traces
-npx playwright show-trace test-results/trace.zip
+pnpm exec playwright show-trace test-results/trace.zip
 ```
 
 ## Troubleshooting
@@ -420,12 +424,12 @@ npx playwright show-trace test-results/trace.zip
 
 1. **Tests timing out**: Increase timeout in test configuration
 2. **Mock not working**: Ensure proper mocking setup in test files
-3. **Coverage not generating**: Check Jest configuration and file patterns
-4. **Playwright browser not found**: Run `npx playwright install`
+3. **Coverage not generating**: Check Vitest configuration and file patterns
+4. **Playwright browser not found**: Run `pnpm exec playwright install`
 
 ### Getting Help
 
-- Check the [Jest documentation](https://jestjs.io/docs/getting-started)
+- Check the [Vitest documentation](https://vitest.dev/guide/)
 - Check the [Playwright documentation](https://playwright.dev/docs/intro)
 - Review existing tests for patterns and examples
 - Ask in the development team chat
@@ -439,9 +443,3 @@ This comprehensive testing infrastructure ensures OrangeCat maintains high quali
 **Created**: 2025-09-24
 **Last Modified**: 2025-09-24
 **Last Modified Summary**: Comprehensive testing guide for OrangeCat
-
-
-
-
-
-

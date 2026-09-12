@@ -20,9 +20,9 @@ step has the exact command, a verification, and a rollback if it fails.
 [ ] 3. Set customer-side env vars
        (ORANGECAT_API_KEY + ORANGECAT_API_BASE + WEBHOOK_SECRET)
 [ ] 4. Run customer-side DB migrations
-       (e.g. cd ~/dev/fleetcrown && npm run migrate)
+       (e.g. cd ~/dev/fleetcrown && pnpm run migrate)
 [ ] 5. Repack the SDK tarball into the customer's vendor/ folder
-[ ] 6. (Optional) npm publish --access public on @orangecat/sdk
+[ ] 6. (Optional) pnpm publish --access public on @orangecat/sdk
 [ ] 7. Set CRON_SECRET in OrangeCat prod env (/opt/orangecat/app/.env)
 [ ] 8. Set UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN
        in OrangeCat prod env (/opt/orangecat/app/.env)
@@ -108,7 +108,7 @@ For FleetCrown specifically:
 
 ```bash
 cd ~/dev/fleetcrown
-npm run migrate
+pnpm run migrate
 # Applies drizzle/0021_subscriptions_orangecat_service_id.sql which
 # adds subscriptions.orangecat_service_id (nullable uuid) so the
 # "OC ✓" badge has somewhere to persist its link.
@@ -133,8 +133,8 @@ If consuming `@orangecat/sdk` via `file:vendor/orangecat-sdk-X.Y.Z.tgz`
 ```bash
 # Inside OrangeCat repo:
 cd ~/dev/orangecat/packages/sdk
-npm run build
-npm pack
+pnpm run build
+pnpm pack
 # Produces orangecat-sdk-<version>.tgz in the cwd.
 
 # Then copy into the customer's vendor folder:
@@ -144,27 +144,27 @@ mv orangecat-sdk-*.tgz ~/dev/fleetcrown/vendor/
 # Customer-side: update the version pin in package.json if needed,
 # then:
 cd ~/dev/fleetcrown
-npm install
+pnpm install
 ```
 
-**Verify**: `npm ls @orangecat/sdk` from the customer repo reports the
+**Verify**: `pnpm ls @orangecat/sdk` from the customer repo reports the
 new version.
 
-**Rollback**: restore the previous tarball + `npm install`.
+**Rollback**: restore the previous tarball + `pnpm install`.
 
 ---
 
-## Step 6 — (Optional) npm publish
+## Step 6 — (Optional) publish to the npm registry
 
 Only when ready for public distribution:
 
 ```bash
 cd ~/dev/orangecat/packages/sdk
-npm publish --access public
+pnpm publish --access public
 ```
 
 This makes step 5's vendor-tarball flow obsolete for future customers —
-they can `npm install @orangecat/sdk` directly.
+they can `pnpm install @orangecat/sdk` directly.
 
 **Verify**: `npm view @orangecat/sdk version` reports the published
 version.

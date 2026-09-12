@@ -9,9 +9,11 @@
 ## Why Type Safety Errors Happen
 
 ### 1. **Rapid Development & Prototyping**
+
 When building features quickly, developers often use `as any` to bypass type checking temporarily, intending to fix it later. However, "later" often never comes.
 
 **Example:**
+
 ```typescript
 // Quick prototype - "I'll fix this later"
 const data = (response as any).data;
@@ -20,9 +22,11 @@ const data = (response as any).data;
 **Why it happens:** Time pressure, feature deadlines, "make it work first" mentality.
 
 ### 2. **Missing or Incomplete Type Definitions**
+
 Third-party libraries, browser APIs, or database schemas may not have complete TypeScript types.
 
 **Example:**
+
 ```typescript
 // Browser API not in TypeScript's standard types
 const memory = (navigator as any).deviceMemory;
@@ -31,9 +35,11 @@ const memory = (navigator as any).deviceMemory;
 **Why it happens:** Type definitions lag behind implementations, experimental APIs, custom database schemas.
 
 ### 3. **Evolving Codebases**
+
 As code evolves, types change but old code isn't updated, leading to type mismatches.
 
 **Example:**
+
 ```typescript
 // Old code assumes field is always present
 const name = user.name.toUpperCase(); // ❌ name might be undefined now
@@ -42,9 +48,11 @@ const name = user.name.toUpperCase(); // ❌ name might be undefined now
 **Why it happens:** Refactoring without updating all usages, schema migrations, API changes.
 
 ### 4. **Complex Data Transformations**
+
 Converting between different data shapes (API → Database → UI) can be difficult to type precisely.
 
 **Example:**
+
 ```typescript
 // Database row → UI component props
 const project = (dbRow as any).project; // Complex transformation
@@ -53,9 +61,11 @@ const project = (dbRow as any).project; // Complex transformation
 **Why it happens:** Multiple data layers, dynamic structures, legacy code integration.
 
 ### 5. **Time Pressure & Quick Fixes**
+
 When bugs need immediate fixes, developers may use `@ts-ignore` to silence errors quickly.
 
 **Example:**
+
 ```typescript
 // @ts-ignore - Fix this later
 const result = complexFunction(data);
@@ -76,19 +86,20 @@ const result = complexFunction(data);
 ```json
 {
   "compilerOptions": {
-    "strict": true,                    // Enable all strict checks
-    "noImplicitAny": true,            // Already enabled ✅
-    "strictNullChecks": true,         // Already enabled ✅
-    "strictFunctionTypes": true,      // Already enabled ✅
-    "noUnusedLocals": true,          // Warn about unused variables
-    "noUnusedParameters": true,      // Warn about unused parameters
-    "noImplicitReturns": true,       // Already enabled ✅
+    "strict": true, // Enable all strict checks
+    "noImplicitAny": true, // Already enabled ✅
+    "strictNullChecks": true, // Already enabled ✅
+    "strictFunctionTypes": true, // Already enabled ✅
+    "noUnusedLocals": true, // Warn about unused variables
+    "noUnusedParameters": true, // Warn about unused parameters
+    "noImplicitReturns": true, // Already enabled ✅
     "noFallthroughCasesInSwitch": true // Already enabled ✅
   }
 }
 ```
 
 **Action Plan:**
+
 1. Enable `strict: true` in a feature branch
 2. Fix errors incrementally
 3. Merge when all errors resolved
@@ -96,16 +107,19 @@ const result = complexFunction(data);
 ### 2. **Use Type Generation Tools**
 
 **For Database Types:**
+
 ```bash
 # Generate types from Supabase schema
 npx supabase gen types typescript --project-id YOUR_PROJECT_ID > src/types/database.ts
 ```
 
 **For API Types:**
+
 - Use OpenAPI/Swagger to generate TypeScript types
 - Use tools like `openapi-typescript` or `swagger-typescript-api`
 
 **For GraphQL:**
+
 ```bash
 # Generate types from GraphQL schema
 graphql-codegen --config codegen.yml
@@ -114,8 +128,10 @@ graphql-codegen --config codegen.yml
 ### 3. **Code Review Practices**
 
 **Add to PR Template:**
+
 ```markdown
 ## Type Safety Checklist
+
 - [ ] No `as any` casts (unless absolutely necessary with explanation)
 - [ ] No `@ts-ignore` or `@ts-expect-error` (unless justified)
 - [ ] All functions have proper return types
@@ -124,6 +140,7 @@ graphql-codegen --config codegen.yml
 ```
 
 **Review Rules:**
+
 - **Reject PRs** with `as any` unless:
   - It's a known limitation (e.g., dynamic imports)
   - There's a clear migration path
@@ -134,6 +151,7 @@ graphql-codegen --config codegen.yml
 ### 4. **ESLint Rules**
 
 **Add to `.eslintrc.js`:**
+
 ```javascript
 {
   "rules": {
@@ -157,6 +175,7 @@ graphql-codegen --config codegen.yml
 ### 5. **Type-First Development**
 
 **Bad (Implementation First):**
+
 ```typescript
 // Write code first
 function processUser(data) {
@@ -170,6 +189,7 @@ function processUser(data: any) {
 ```
 
 **Good (Types First):**
+
 ```typescript
 // Define types first
 interface User {
@@ -215,6 +235,7 @@ function process(data: unknown) {
 ### 7. **Database Type Integration**
 
 **Current Pattern (Good):**
+
 ```typescript
 import type { Database } from '@/types/database';
 
@@ -223,6 +244,7 @@ type ConversationsInsert = Database['public']['Tables']['conversations']['Insert
 ```
 
 **Best Practice:**
+
 - Always use generated database types
 - Create type aliases for reusability
 - Never use `as any` for database queries
@@ -230,6 +252,7 @@ type ConversationsInsert = Database['public']['Tables']['conversations']['Insert
 ### 8. **API Response Types**
 
 **Create Standard Response Types:**
+
 ```typescript
 // src/types/api.ts
 export interface ApiResponse<T> {
@@ -247,23 +270,22 @@ export async function getProjects(): Promise<ApiResponse<Project[]>> {
 ### 9. **Pre-commit Hooks**
 
 **Add to `.husky/pre-commit`:**
+
 ```bash
 #!/bin/sh
 # Check for type safety issues
-npm run type-check
+pnpm run type-check
 
 # Check for linting issues
-npm run lint
+pnpm run lint
 ```
 
 **Or use lint-staged:**
+
 ```json
 {
   "lint-staged": {
-    "*.{ts,tsx}": [
-      "eslint --fix",
-      "tsc --noEmit"
-    ]
+    "*.{ts,tsx}": ["eslint --fix", "tsc --noEmit"]
   }
 }
 ```
@@ -271,12 +293,14 @@ npm run lint
 ### 10. **Documentation & Training**
 
 **Create Developer Guidelines:**
+
 - Type safety best practices
 - Common patterns and anti-patterns
 - How to handle edge cases
 - When `as any` is acceptable (rarely)
 
 **Regular Code Reviews:**
+
 - Review type safety in team meetings
 - Share examples of good vs. bad patterns
 - Celebrate improvements
@@ -289,16 +313,17 @@ npm run lint
 
 ```json
 {
-  "strict": false,              // ❌ Should be true
-  "noImplicitAny": true,        // ✅ Good
-  "strictNullChecks": true,     // ✅ Good
-  "strictFunctionTypes": true,  // ✅ Good
-  "noImplicitReturns": true,   // ✅ Good
+  "strict": false, // ❌ Should be true
+  "noImplicitAny": true, // ✅ Good
+  "strictNullChecks": true, // ✅ Good
+  "strictFunctionTypes": true, // ✅ Good
+  "noImplicitReturns": true, // ✅ Good
   "noFallthroughCasesInSwitch": true // ✅ Good
 }
 ```
 
 **Recommendation:** Enable `strict: true` gradually by:
+
 1. Creating a migration branch
 2. Fixing errors file by file
 3. Enabling strict mode per directory
@@ -309,6 +334,7 @@ npm run lint
 ## Monitoring & Metrics
 
 **Track Type Safety:**
+
 ```bash
 # Count type safety issues
 grep -r "as any\|@ts-ignore\|@ts-expect-error" src --include="*.ts" --include="*.tsx" | wc -l
@@ -318,6 +344,7 @@ grep -r "as any\|@ts-ignore\|@ts-expect-error" src --include="*.ts" --include="*
 ```
 
 **Add to CI/CD:**
+
 ```yaml
 # .github/workflows/type-check.yml
 - name: Type Safety Check
@@ -351,9 +378,7 @@ type ProjectRow = Database['public']['Tables']['projects']['Row'];
 
 // Proper error handling
 const errorObj = error as Record<string, unknown>;
-const message = typeof errorObj.message === 'string' 
-  ? errorObj.message 
-  : 'Unknown error';
+const message = typeof errorObj.message === 'string' ? errorObj.message : 'Unknown error';
 ```
 
 ### ❌ Bad Patterns
@@ -398,11 +423,13 @@ const value = (obj as any).property;
 ## Success Metrics
 
 **Current:**
+
 - 70 remaining type safety issues (down from 192)
 - 64% reduction achieved
 - `strict: false` (should be `true`)
 
 **Target:**
+
 - < 20 type safety issues
 - `strict: true` enabled
 - Zero new `as any` in PRs
@@ -410,7 +437,4 @@ const value = (obj as any).property;
 
 ---
 
-*This guide should be reviewed and updated quarterly as the codebase evolves.*
-
-
-
+_This guide should be reviewed and updated quarterly as the codebase evolves._

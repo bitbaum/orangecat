@@ -16,7 +16,7 @@ they are accents, not the page background language.
 Do not create a second local design system inside a page or feature folder.
 Extend these files when a reusable visual decision is missing.
 
-Run `npm run design:check` before shipping UI changes. The check blocks the
+Run `pnpm run design:check` before shipping UI changes. The check blocks the
 legacy classes that caused the system to drift: page gradients, oversized
 radii, heavy shadows, hard-coded white/gray colors, and non-semantic focus
 colors.

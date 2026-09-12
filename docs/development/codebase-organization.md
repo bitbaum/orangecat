@@ -27,7 +27,7 @@ orangecat/
 ├── 📁 docs/                  # Comprehensive documentation
 ├── 📁 public/                # Static assets
 ├── 📁 supabase/              # Supabase configuration
-├── 📁 __mocks__/             # Jest mocks for testing
+├── 📁 __mocks__/             # Test mocks (Vitest)
 ├── 📁 coverage/              # Test coverage reports
 └── 📄 Standard config files  # package.json, tsconfig.json, etc.
 ```
@@ -85,29 +85,34 @@ src/
 The scripts directory is organized by purpose for easy maintenance:
 
 ### Database Scripts (scripts/db/)
+
 - Schema management and migrations
 - Profile creation and management
 - Data validation and cleanup
 - Supabase configuration
 
 ### Deployment Scripts (scripts/deployment/)
+
 - Production deployment utilities
 - Environment setup
 - Deployment verification
 - Monitoring and validation
 
 ### Development Scripts (scripts/dev/)
+
 - Development server management
 - API key management
 - Environment synchronization
 - Development utilities
 
 ### Testing Scripts (scripts/test/)
+
 - Test execution utilities
 - Test data generation
 - Test environment setup
 
 ### Maintenance Scripts (scripts/maintenance/)
+
 - Bundle analysis and optimization
 - Console log cleanup
 - Performance monitoring
@@ -131,6 +136,7 @@ tests/
 ```
 
 ### Test Categories
+
 - **Unit Tests**: Located in `__tests__/` subdirectories within each feature
 - **Integration Tests**: Located alongside the code they test
 - **E2E Tests**: In `tests/e2e/` directory
@@ -161,13 +167,15 @@ docs/
 ## 📁 Configuration Files
 
 ### Consolidated Configuration
-- **jest.config.js**: Advanced Jest configuration with coverage thresholds
-- **jest.setup.ts**: Comprehensive test environment setup
+
+- **vitest.config.ts**: Vitest configuration
+- **vitest.setup.ts**: Comprehensive test environment setup
 - **tsconfig.json**: TypeScript configuration with path mapping
 - **next.config.js**: Next.js configuration
 - **tailwind.config.ts**: Tailwind CSS configuration
 
 ### Configuration Principles
+
 1. **Single Source of Truth**: No duplicate configuration files
 2. **Environment-Specific**: Proper separation of dev/prod configs
 3. **Type Safety**: Full TypeScript support for configuration
@@ -178,18 +186,21 @@ docs/
 ## 🧹 Code Quality Standards
 
 ### Import Strategy
+
 - Use path aliases (`@/`) for all internal imports
 - Avoid relative imports (`../../../`) when possible
 - Group imports by type (external, internal, relative)
 - Use index files for clean public APIs
 
 ### File Organization
+
 - One component per file (except for tightly coupled components)
 - Single responsibility principle for all modules
 - Consistent naming conventions (kebab-case for files, PascalCase for components)
 - Proper TypeScript typing throughout
 
 ### Code Style
+
 - ESLint + Prettier for consistent formatting
 - TypeScript strict mode enabled
 - No `any` types (except in rare, well-documented cases)
@@ -200,12 +211,14 @@ docs/
 ## 🚀 Development Workflow
 
 ### Getting Started
+
 1. **Setup**: Follow the [Development Setup](../../SETUP.md) guide
 2. **Environment**: Copy `config/production.env.template` to `.env.local`
-3. **Dependencies**: Run `npm install`
-4. **Development**: Use `npm run dev` for development server
+3. **Dependencies**: Run `pnpm install`
+4. **Development**: Use `pnpm run dev` for development server
 
 ### Code Organization Guidelines
+
 1. **New Features**: Create feature branch with descriptive name
 2. **File Placement**: Follow the established directory structure
 3. **Tests**: Write tests alongside new code
@@ -213,6 +226,7 @@ docs/
 5. **Reviews**: Follow the contributing guidelines
 
 ### Best Practices
+
 - Keep files under 400 lines when possible
 - Use feature flags for experimental features
 - Implement proper error boundaries
@@ -224,6 +238,7 @@ docs/
 ## 🔍 Finding Files
 
 ### Quick Navigation
+
 - **Components**: `src/components/[feature]/`
 - **Services**: `src/services/[domain]/`
 - **Types**: `src/types/[domain].ts`
@@ -231,6 +246,7 @@ docs/
 - **Documentation**: `docs/[category]/[topic].md`
 
 ### Search Strategy
+
 1. Use IDE search for exact file names
 2. Check feature directories for related functionality
 3. Look in `docs/` for documentation
@@ -241,12 +257,14 @@ docs/
 ## 📝 Maintenance Guidelines
 
 ### Keeping Organized
+
 1. **Regular Cleanup**: Remove unused files and dependencies
 2. **Update Documentation**: Keep docs in sync with code changes
 3. **Review Structure**: Periodically review and optimize organization
 4. **Archive Old Files**: Move deprecated code to appropriate locations
 
 ### Adding New Code
+
 1. Follow the established directory structure
 2. Add tests for new functionality
 3. Update relevant documentation
@@ -258,18 +276,21 @@ docs/
 ## 🎯 Benefits of This Structure
 
 ### For Developers
+
 - **Easy Navigation**: Clear, logical file organization
 - **Fast Onboarding**: Well-documented structure and guidelines
 - **Consistent Patterns**: Standardized approach across the codebase
 - **Quality Assurance**: Comprehensive testing and documentation
 
 ### For Maintenance
+
 - **Scalability**: Structure supports growth and new features
 - **Debugging**: Easy to locate and fix issues
 - **Refactoring**: Clear boundaries for code changes
 - **Team Collaboration**: Consistent structure across team members
 
 ### For Production
+
 - **Reliability**: Comprehensive testing and validation
 - **Performance**: Optimized build and runtime configuration
 - **Security**: Security-first approach with proper isolation
@@ -278,9 +299,3 @@ docs/
 ---
 
 **📚 Next Steps**: Review the [Contributing Guide](../../../CONTRIBUTING.md) for detailed development workflows and the [Architecture Overview](architecture/ARCHITECTURE.md) for system design details.
-
-
-
-
-
-

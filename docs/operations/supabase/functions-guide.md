@@ -20,7 +20,7 @@ Some Supabase endpoints may respond with a wildcard, causing CORS errors.
 1. Make sure you have the Supabase CLI installed:
 
    ```
-   npm install -g supabase
+   pnpm add -g supabase
    ```
 
 2. Log in to Supabase CLI:

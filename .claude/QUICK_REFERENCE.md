@@ -11,7 +11,7 @@
 ```bash
 1. Update src/config/entity-registry.ts
 2. Create validation schema in src/lib/validation.ts
-3. mcp_supabase_apply_migration({ name: "create_user_newtype", query: "CREATE TABLE..." })
+3. Add supabase/migrations/YYYYMMDDHHMMSS_create_user_newtype.sql (applies on deploy)
 4. Test with browser automation
 ```
 
@@ -22,21 +22,18 @@
 2. Locate file and line number
 3. Check schema definitions
 4. Update types or add to schema
-5. Verify with npm run type-check
+5. Verify with pnpm run type-check
 ```
 
 ### Create Migration
 
-```typescript
-mcp_supabase_apply_migration({
-  name: 'add_field_name',
-  query: `
-    ALTER TABLE user_products 
-    ADD COLUMN new_field TEXT;
-    CREATE INDEX idx_user_products_new_field 
-    ON user_products(new_field);
-  `,
-});
+```sql
+-- supabase/migrations/YYYYMMDDHHMMSS_add_field_name.sql
+-- (applied automatically on deploy by scripts/apply-migrations.sh)
+ALTER TABLE user_products
+ADD COLUMN new_field TEXT;
+CREATE INDEX idx_user_products_new_field
+ON user_products(new_field);
 ```
 
 ### Test UI Change
@@ -77,10 +74,10 @@ Is it HTTP-related?
 
 ```
 Need to query database?
-├─ Use mcp_supabase_execute_sql()
+├─ Use PostgREST (curl with keys from .env.local)
 
 Need to create table/migration?
-├─ Use mcp_supabase_apply_migration()
+├─ Add a file in supabase/migrations/ (applies on deploy)
 
 Need to test UI?
 ├─ Use mcp_cursor-ide-browser_*
@@ -113,28 +110,22 @@ Database constraint?
 
 ## 🔧 Tool Quick Reference
 
-### Supabase MCP
+### Self-Hosted Supabase (MCP retired)
 
-```typescript
-// List tables
-mcp_supabase_list_tables({ schemas: ['public'] });
+```bash
+# Read any table via PostgREST (service-role bypasses RLS — treat results as privileged)
+curl -s -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+     -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+     "$NEXT_PUBLIC_SUPABASE_URL/rest/v1/user_products?select=id,title&limit=10"
 
-// Run query
-mcp_supabase_execute_sql({
-  query: 'SELECT * FROM user_products WHERE actor_id = $1 LIMIT 10',
-});
+# Does a column exist? (200 = yes, 400/42703 = no; works on empty tables)
+# .../rest/v1/<table>?select=<column>&limit=0
 
-// Create migration
-mcp_supabase_apply_migration({
-  name: 'migration_name',
-  query: 'SQL here',
-});
+# Migration: a new file in supabase/migrations/ — applied automatically on deploy
 
-// Security check
-mcp_supabase_get_advisors({ type: 'security' });
-
-// Performance check
-mcp_supabase_get_advisors({ type: 'performance' });
+# DDL / anything PostgREST cannot express: via the box
+ssh ubuntu@167.233.22.31 \
+  'docker exec supabase-db psql -U postgres -d postgres -c "\d+ user_products"'
 ```
 
 ### Browser Automation MCP
@@ -300,7 +291,7 @@ const { data, error } = await supabase
 1. Read error message carefully
 2. Check schema definition
 3. Verify types match schema
-4. Run `npm run type-check` to verify
+4. Run `pnpm run type-check` to verify
 
 ### API Not Working
 
@@ -318,8 +309,8 @@ const { data, error } = await supabase
 
 ### Build Failing
 
-1. Run `npm run type-check`
-2. Run `npm run lint`
+1. Run `pnpm run type-check`
+2. Run `pnpm run lint`
 3. Check for missing dependencies
 4. Clear `.next/` and rebuild
 
@@ -331,16 +322,15 @@ const { data, error } = await supabase
 
 ```bash
 # Fix: Update tsconfig.json paths or install missing package
-npm install <package-name>
+pnpm add <package-name>
 ```
 
 ### "PGRST116 - Row not found"
 
 ```
 # Fix: Check RLS policies - user likely doesn't have access
-mcp_supabase_execute_sql({
-  query: "SELECT * FROM pg_policies WHERE tablename = 'table_name'"
-})
+ssh ubuntu@167.233.22.31 'docker exec supabase-db psql -U postgres -d postgres \
+  -c "SELECT * FROM pg_policies WHERE tablename = '"'"'table_name'"'"'"'
 ```
 
 ### "Type 'X' is not assignable to type 'Y'"
@@ -450,11 +440,8 @@ edit src/config/entity-registry.ts
 # 2. Create validation schema
 edit src/lib/validation.ts
 
-# 3. Apply migration
-mcp_supabase_apply_migration({
-  name: "create_user_newentity",
-  query: "CREATE TABLE user_newentity ..."
-})
+# 3. Add migration file supabase/migrations/YYYYMMDDHHMMSS_create_user_newentity.sql
+#    (applied automatically on deploy)
 
 # 4. Everything else is automatic!
 ```

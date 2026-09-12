@@ -2,7 +2,7 @@
 
 **Purpose**: Project-specific patterns, terminology, and integration requirements
 
-**Last Updated**: 2026-01-06
+**Last Updated**: 2026-09-04
 
 ---
 
@@ -304,7 +304,7 @@ SUPABASE_SERVICE_ROLE_KEY=...
 # ❌ Don't use the retired managed cloud or its MCP
 mcp_supabase_*            # talks to managed-cloud Management API — retired
 # ❌ Don't spin up a throwaway local stack for normal work
-npx supabase start
+pnpm exec supabase start
 ```
 
 **Use Instead**:
@@ -420,7 +420,7 @@ main branch → deployed to bitbaum via .github/workflows/cd.yml
 
 - [ ] All tests pass
 - [ ] Type check passes
-- [ ] Build succeeds locally (`SELF_HOST=1 npm run build`)
+- [ ] Build succeeds locally (`SELF_HOST=1 pnpm run build`)
 - [ ] No console.logs remaining
 - [ ] Production env set in `/opt/orangecat/app/.env`
 - [ ] Database migrations applied
@@ -450,20 +450,15 @@ git push origin feature/add-warranty
 
 ### Creating Migrations
 
-**Use MCP Supabase tool**:
+**Write a migration file and merge it — it applies itself on deploy** (`scripts/apply-migrations.sh`, run by `scripts/deploy-selfhost.sh`):
 
-```typescript
-// Apply migration
-await mcp_supabase_apply_migration({
-  name: 'add_warranty_field',
-  query: `
-    ALTER TABLE user_products 
-    ADD COLUMN warranty_period INTEGER;
-    
-    CREATE INDEX idx_user_products_warranty 
-    ON user_products(warranty_period);
-  `,
-});
+```sql
+-- supabase/migrations/YYYYMMDDHHMMSS_add_warranty_field.sql
+ALTER TABLE user_products
+ADD COLUMN warranty_period INTEGER;
+
+CREATE INDEX idx_user_products_warranty
+ON user_products(warranty_period);
 ```
 
 **Migration Naming**:

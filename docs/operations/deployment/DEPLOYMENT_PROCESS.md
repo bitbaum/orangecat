@@ -9,7 +9,7 @@ migration (see git history of this file for the old process).
 - Deploys happen **on the box**, not from CI. Runbook:
   `fleetcrown/docs/infrastructure/hetzner-migration.md` (FleetCrown repo — same box).
 - The app runs as the `orangecat-app` systemd unit (Next.js standalone build,
-  `SELF_HOST=1 npm run build`, port 4003) behind Caddy serving
+  `SELF_HOST=1 pnpm run build`, port 4003) behind Caddy serving
   `orangecat.ch` + `www.orangecat.ch`.
 - Cron routes are driven by systemd timers on the box
   (`orangecat-webhook-worker.timer`, `orangecat-cron@*.timer`), authenticated
@@ -24,7 +24,7 @@ migration (see git history of this file for the old process).
 ## Post-deploy verification
 
 - Health: `https://orangecat.ch/api/health`
-- Browser smoke: `npm run deploy:verify` (runs `scripts/deployment/browser-verify.js`
+- Browser smoke: `pnpm run deploy:verify` (runs `scripts/deployment/browser-verify.js`
   against production).
 
 See also: `docs/devops/infrastructure.md`, `docs/devops/ci-cd.md`.

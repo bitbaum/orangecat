@@ -45,7 +45,7 @@
 
 **Acceptance Criteria:**
 
-- [ ] All tests pass (`npm run test`)
+- [ ] All tests pass (`pnpm run test`)
 - [ ] No failing test suites
 - [ ] CI/CD pipeline runs clean
 
@@ -496,7 +496,7 @@
 
 ## Decisions Made
 
-- Using Jest + React Testing Library for unit tests
+- Using Vitest + React Testing Library for unit tests
 - Adding Playwright for E2E testing
 - Implementing Redis for caching
 

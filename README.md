@@ -81,7 +81,7 @@ Functional composition replaces inheritance. Each middleware does one thing.
 
 ### Prerequisites
 
-- Node.js 20+
+- Node.js 24 (see `.nvmrc`)
 - A Supabase project (remote — no local Docker needed)
 
 ### Setup
@@ -89,10 +89,10 @@ Functional composition replaces inheritance. Each middleware does one thing.
 ```bash
 git clone https://github.com/bitbaum/orangecat.git
 cd orangecat
-npm install
+pnpm install
 cp .env.example .env.local
 # Fill in Supabase credentials
-npm run dev
+pnpm run dev
 ```
 
 Dev server starts at `http://localhost:3000`.

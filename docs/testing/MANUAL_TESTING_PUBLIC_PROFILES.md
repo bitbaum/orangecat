@@ -14,7 +14,7 @@ This guide helps you manually test the public profiles and sharing functionality
 
 Before starting, ensure:
 
-- [ ] Development server is running (`npm run dev`)
+- [ ] Development server is running (`pnpm run dev`)
 - [ ] You have at least one user with a username in the database
 - [ ] You have at least one public project (status != 'draft')
 - [ ] Browser dev tools are open (F12)

@@ -2,7 +2,7 @@
 
 **Purpose**: API design, database patterns, and backend architecture for OrangeCat
 
-**Last Updated**: 2026-01-06
+**Last Updated**: 2026-09-04
 
 ---
 
@@ -133,28 +133,24 @@ export async function GET() {
 import { createClient } from '@supabase/supabase-js'; // Wrong!
 ```
 
-### MCP Supabase Tools (Prefer When Available)
+### Direct DB Access (Self-Hosted Supabase)
 
-```typescript
-// ✅ Use MCP tools for database operations
-// List tables
-await mcp_supabase_list_tables({ schemas: ['public'] });
+The Supabase MCP is retired (it only spoke to the retired managed-cloud project).
+Talk to the self-host directly:
 
-// Execute query
-await mcp_supabase_execute_sql({
-  query: 'SELECT * FROM user_products WHERE actor_id = $1',
-  params: [actorId],
-});
+```bash
+# Read any table via PostgREST (keys in .env.local; service-role bypasses RLS)
+curl -s -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+     -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+     "$NEXT_PUBLIC_SUPABASE_URL/rest/v1/user_products?select=id,title&limit=5"
 
-// Create migration
-await mcp_supabase_apply_migration({
-  name: 'add_warranty_field',
-  query: 'ALTER TABLE user_products ADD COLUMN warranty_period INTEGER;',
-});
+# Schema changes: write a migration file and merge it — it applies on deploy
+# supabase/migrations/YYYYMMDDHHMMSS_add_warranty_field.sql:
+#   ALTER TABLE user_products ADD COLUMN warranty_period INTEGER;
 
-// Check for issues
-await mcp_supabase_get_advisors({ type: 'security' });
-await mcp_supabase_get_advisors({ type: 'performance' });
+# DDL inspection / anything PostgREST cannot express: via the box
+ssh ubuntu@167.233.22.31 \
+  'docker exec supabase-db psql -U postgres -d postgres -c "\d+ user_products"'
 ```
 
 ---
@@ -561,8 +557,6 @@ CREATE INDEX idx_user_products_created_at ON user_products(created_at DESC);
 CREATE INDEX idx_user_products_actor_status
   ON user_products(actor_id, status);
 
--- Check with Supabase MCP
-await mcp_supabase_get_advisors({ type: 'performance' });
 ```
 
 ### Query Optimization
@@ -804,13 +798,11 @@ formatAmount(0.001); // "0.001 BTC" or "CHF 86.00" depending on user pref
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-// ✅ Use MCP tools for database operations
-await mcp_supabase_list_tables();
-await mcp_supabase_execute_sql({ query: '...' });
-await mcp_supabase_apply_migration({ name: '...', query: '...' });
+// ✅ Reads go through PostgREST at supabase.orangecat.ch;
+// ✅ schema changes are files in supabase/migrations/ applied on deploy
 
 // ❌ Don't try to use local Supabase
-// npx supabase start  // Won't work!
+// pnpm exec supabase start  // Won't work!
 ```
 
 ---

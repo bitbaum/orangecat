@@ -27,9 +27,9 @@ Status: Ready for use
 
 ## 3) Build & Test
 
-- Run: `npm run type-check` (non‑blocking TS warnings may exist outside scope).
-- Run: `npm run test:unit` (verify SSE/JSONL stream helper).
-- Build: `npm run build` (Next.js production build).
+- Run: `pnpm run type-check` (non‑blocking TS warnings may exist outside scope).
+- Run: `pnpm run test:unit` (verify SSE/JSONL stream helper).
+- Build: `pnpm run build` (Next.js production build).
 
 ## 4) Rate Limiting
 
@@ -45,7 +45,7 @@ Status: Ready for use
 
 ## 6) Self-Hosted Deployment (Hetzner)
 
-- Node 20; `next build` / `next start` on the box (bitbaum), behind Caddy.
+- Node 24; `next build` / `next start` on the box (bitbaum), behind Caddy.
 - Production env lives in `/opt/orangecat/app/.env` (no cloud dashboard).
 - See docs/operations/deployment/DEPLOYMENT_PROCESS.md for the on-box flow.
 

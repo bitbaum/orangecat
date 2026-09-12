@@ -2,7 +2,7 @@
 
 **Purpose**: Common errors and step-by-step fixes - minimize downtime, maximize recovery speed
 
-**Last Updated**: 2026-01-06
+**Last Updated**: 2026-09-04
 
 ---
 
@@ -41,7 +41,7 @@ node scripts/utils/env-manager.js restore
 **Symptoms**:
 
 - Post-hook shows type errors
-- `npm run type-check` fails
+- `pnpm run type-check` fails
 - Red squiggles in IDE
 
 **Fix**:
@@ -69,7 +69,7 @@ export const productSchema = baseEntitySchema.extend({
 });
 
 # 4. Verify fix
-npm run type-check
+pnpm run type-check
 ```
 
 **Prevention**:
@@ -83,7 +83,7 @@ npm run type-check
 
 **Symptoms**:
 
-- `mcp_supabase_apply_migration()` returns error
+- The deploy aborts while `scripts/apply-migrations.sh` runs a new `supabase/migrations/*.sql` file
 - Database operation fails
 - SQL syntax error
 
@@ -93,10 +93,10 @@ npm run type-check
 # 1. Check error message
 # Example: "column 'warranty_period' already exists"
 
-# 2. Check current schema
-mcp_supabase_execute_sql({
-  query: "SELECT column_name FROM information_schema.columns WHERE table_name = 'user_products'"
-})
+# 2. Check current schema (200 = column exists, 400/42703 = missing — works on empty tables)
+curl -s -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+     -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+     "$NEXT_PUBLIC_SUPABASE_URL/rest/v1/user_products?select=warranty_period&limit=0"
 
 # 3. Fix migration
 # If column exists, use IF NOT EXISTS:
@@ -109,11 +109,8 @@ DROP CONSTRAINT IF EXISTS check_price_positive;
 ALTER TABLE user_products
 ADD CONSTRAINT check_price_positive CHECK (price_btc > 0);
 
-# 4. Apply corrected migration
-mcp_supabase_apply_migration({
-  name: 'fix_warranty_field',
-  query: '...'
-})
+# 4. Fix the migration file (if it never applied) or add a new corrective
+#    migration in supabase/migrations/ — merged migrations apply on deploy
 ```
 
 **Prevention**:
@@ -167,15 +164,13 @@ const endpoint = meta.apiEndpoint;
 
 ```bash
 # 1. Check RLS policies
-mcp_supabase_execute_sql({
-  query: "SELECT * FROM pg_policies WHERE tablename = 'user_products'"
-})
+ssh ubuntu@167.233.22.31 'docker exec supabase-db psql -U postgres -d postgres \
+  -c "SELECT * FROM pg_policies WHERE tablename = ''user_products''"'
 
 # 2. Verify user context
 # Check if actor_id is correct
-mcp_supabase_execute_sql({
-  query: "SELECT id, user_id FROM actors WHERE user_id = '<user_uuid>'"
-})
+ssh ubuntu@167.233.22.31 'docker exec supabase-db psql -U postgres -d postgres \
+  -c "SELECT id, user_id FROM actors WHERE user_id = ''<user_uuid>''"'
 
 # 3. Fix options:
 # Option A: Fix policy if wrong
@@ -211,7 +206,7 @@ const { data } = await supabase
 // Check: lsof -i :3001
 
 // 2. Start dev server if needed
-// npm run dev
+// pnpm run dev
 
 // 3. Increase timeouts
 (await mcp_cursor) -
@@ -246,7 +241,7 @@ const snapshot = (await mcp_cursor) - ide - browser_browser_snapshot();
 
 **Symptoms**:
 
-- `npm run build` fails
+- `pnpm run build` fails
 - Type errors in production build
 - Module not found errors
 
@@ -257,16 +252,16 @@ const snapshot = (await mcp_cursor) - ide - browser_browser_snapshot();
 rm -rf .next
 
 # 2. Reinstall dependencies (if package.json changed)
-npm install
+pnpm install
 
 # 3. Check type errors
-npm run type-check
+pnpm run type-check
 
 # 4. Check lint errors
-npm run lint
+pnpm run lint
 
 # 5. Fix errors and rebuild
-npm run build
+pnpm run build
 
 # 6. If still failing, check specific error
 # Common: Missing environment variables in build
@@ -275,7 +270,7 @@ npm run build
 
 **Prevention**:
 
-- Always run `npm run type-check` before committing
+- Always run `pnpm run type-check` before committing
 - Use `/deploy-check` command before deployment
 - Keep dependencies updated
 
@@ -298,18 +293,18 @@ git reset --hard HEAD  # Discard changes
 rm -rf .next node_modules
 
 # 4. Fresh install
-npm install
+pnpm install
 
 # 5. Verify environment
 ls -la .env.local  # Should exist
 
 # 6. Test basic operations
-npm run type-check
-npm run lint
-npm run build
+pnpm run type-check
+pnpm run lint
+pnpm run build
 
 # 7. If all pass, start dev server
-npm run dev
+pnpm run dev
 ```
 
 ---
@@ -317,48 +312,37 @@ npm run dev
 ### Database Recovery (If Schema Broken)
 
 ```bash
-# 1. Check current migrations
-mcp_supabase_list_migrations()
+# 1. Check applied migrations
+ssh ubuntu@167.233.22.31 'docker exec supabase-db psql -U postgres -d postgres \
+  -c "SELECT version FROM public.schema_migrations ORDER BY version DESC LIMIT 10"'
 
-# 2. If last migration is bad, create rollback migration
-mcp_supabase_apply_migration({
-  name: 'rollback_bad_change',
-  query: 'ALTER TABLE ... DROP COLUMN ...'
-})
+# 2. If the last migration is bad, add a rollback migration file
+# supabase/migrations/YYYYMMDDHHMMSS_rollback_bad_change.sql:
+#   ALTER TABLE ... DROP COLUMN ...;
 
 # 3. Verify schema
-mcp_supabase_execute_sql({
-  query: "\\d user_products"
-})
+ssh ubuntu@167.233.22.31 'docker exec supabase-db psql -U postgres -d postgres -c "\\d+ user_products"'
 
-# 4. Re-apply correct migration
-mcp_supabase_apply_migration({
-  name: 'correct_change',
-  query: '...'
-})
+# 4. Merge the corrective migration — it applies on the next deploy
 ```
 
 ---
 
-### Tool Access Recovery
+### Database Access Recovery
 
-**If MCP tools stop working**:
+**If DB access stops working**:
 
 ```bash
-# 1. Check .mcp.json exists
-ls -la .mcp.json
+# 1. Check the keys are present
+grep -c 'SUPABASE' .env.local
 
-# 2. Check .claude/settings.local.json
-ls -la .claude/settings.local.json
+# 2. Test a trivial PostgREST read
+curl -s -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+     -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+     "$NEXT_PUBLIC_SUPABASE_URL/rest/v1/profiles?select=id&limit=1"
 
-# 3. Verify permissions in settings
-# Should have entries for mcp_supabase_*, mcp_cursor-ide-browser_*, etc.
-
-# 4. Test simple operation
-mcp_supabase_execute_sql({ query: 'SELECT NOW()' })
-
-# 5. If fails, restart Cursor
-# File → Quit → Reopen
+# 3. If PostgREST is down, check the box
+ssh ubuntu@167.233.22.31 'docker ps | grep supabase'
 ```
 
 ---
@@ -375,8 +359,8 @@ mcp_supabase_execute_sql({ query: 'SELECT NOW()' })
    - [ ] Correct Node version (check `.nvmrc`)
 
 2. **Code Quality**:
-   - [ ] Type check passes (`npm run type-check`)
-   - [ ] Lint passes (`npm run lint`)
+   - [ ] Type check passes (`pnpm run type-check`)
+   - [ ] Lint passes (`pnpm run lint`)
    - [ ] No console.logs in production code
 
 3. **Database**:
@@ -400,7 +384,7 @@ mcp_supabase_execute_sql({ query: 'SELECT NOW()' })
 
 | Error Message                          | Likely Cause                              | Quick Fix                                     |
 | -------------------------------------- | ----------------------------------------- | --------------------------------------------- |
-| "Cannot find module '@/...'"           | Missing dependency or tsconfig path issue | `npm install` or check tsconfig.json          |
+| "Cannot find module '@/...'"           | Missing dependency or tsconfig path issue | `pnpm install` or check tsconfig.json         |
 | "PGRST116"                             | RLS policy blocking                       | Check RLS policies, verify actor_id           |
 | "Type '...' is not assignable"         | Type mismatch                             | Update schema or add type assertion           |
 | "ECONNREFUSED"                         | Service not running                       | Start dev server or check Supabase connection |

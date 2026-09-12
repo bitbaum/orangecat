@@ -11,7 +11,7 @@ FleetCrown (rebranded from Cockpit) is a live customer project (see "FleetCrown"
 
 | Layer      | Technology                                                                          |
 | ---------- | ----------------------------------------------------------------------------------- |
-| Framework  | Next.js 16, React 19, TypeScript 5.x                                                |
+| Framework  | Next.js 16, React 19, TypeScript 6.x                                                |
 | Styling    | Tailwind CSS 4                                                                      |
 | Database   | Self-hosted Supabase (PostgreSQL + Auth + RLS) — `supabase.orangecat.ch` on Hetzner |
 | Bitcoin    | Lightning Network, BTCPay, NWC                                                      |
@@ -103,7 +103,7 @@ exist because `GITHUB_TOKEN` is deliberately inert:
    shipped by the next sweep rather than stranded.
 2. **The `post-main` job** in `ci.yml`. GitHub also suppresses the `workflow_run`
    event for a run that was itself created with `GITHUB_TOKEN` — so the CI run
-   the re-arm just started chains to *nothing*. CD and Main Red Alert both hang
+   the re-arm just started chains to _nothing_. CD and Main Red Alert both hang
    off `workflow_run`, and both are therefore dead on the automated path unless
    the dispatched run hands off itself. It does: file/close the red-main issue,
    then dispatch CD, and fail if no CD run appears.

@@ -64,10 +64,10 @@ The following is defined in `docs/guides/ai/COMMON.md` and applies to all agents
 
 ```bash
 # Run all checks before suggesting a push
-npm run lint && npm run type-check && npm run test
+pnpm run lint && pnpm run type-check && pnpm run test
 
 # Run tests for a specific file
-npm test -- src/path/to/your/file.test.ts
+pnpm test src/path/to/your/file.test.ts
 ```
 
 ### Browser Automation:
@@ -90,7 +90,7 @@ node scripts/test/browser-automation-helper.mjs test-messages --slow --screensho
 
 ```bash
 # Reset the local Supabase DB to a clean state
-npx supabase db reset
+pnpm exec supabase db reset
 
 # Connect to the local Supabase DB
 PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres

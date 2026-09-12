@@ -2,7 +2,7 @@
 
 **Purpose**: System design patterns and architectural decisions for OrangeCat
 
-**Last Updated**: 2026-01-06
+**Last Updated**: 2026-09-04
 
 ---
 
@@ -144,23 +144,20 @@ export const eventSchema = baseEntitySchema.extend({
   location: z.string(),
 });
 
-# 4. Create database migration
-mcp_supabase_apply_migration({
-  name: "create_user_events_table",
-  query: `
-    CREATE TABLE user_events (
-      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-      actor_id UUID NOT NULL REFERENCES actors(id),
-      title TEXT NOT NULL,
-      description TEXT,
-      start_date TIMESTAMP NOT NULL,
-      end_date TIMESTAMP NOT NULL,
-      location TEXT NOT NULL,
-      status TEXT DEFAULT 'draft',
-      created_at TIMESTAMP DEFAULT NOW()
-    );
-  `
-});
+# 4. Create database migration (a new file in supabase/migrations/,
+#    applied automatically on deploy by scripts/apply-migrations.sh)
+# supabase/migrations/YYYYMMDDHHMMSS_create_user_events_table.sql:
+#   CREATE TABLE user_events (
+#     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+#     actor_id UUID NOT NULL REFERENCES actors(id),
+#     title TEXT NOT NULL,
+#     description TEXT,
+#     start_date TIMESTAMP NOT NULL,
+#     end_date TIMESTAMP NOT NULL,
+#     location TEXT NOT NULL,
+#     status TEXT DEFAULT 'draft',
+#     created_at TIMESTAMP DEFAULT NOW()
+#   );
 
 # 5. Done! Everything else works automatically:
 # - Navigation shows new entity
@@ -588,7 +585,7 @@ export const baseEntitySchema = z.object({
   description: z.string().max(1000).optional().nullable(),
   status: z.enum(['draft', 'active', 'paused', 'archived']).default('draft'),
   tags: z.array(z.string()).optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 // Entity-specific extensions

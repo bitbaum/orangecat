@@ -11,13 +11,13 @@
 
 ## Technology Stack
 
-- **Frontend**: Next.js 15, React, TypeScript
+- **Frontend**: Next.js 16, React 19, TypeScript
 - **Styling**: Tailwind CSS with centralized theme system
 - **Database**: Supabase (PostgreSQL)
 - **Authentication**: Supabase Auth (security hardened)
 - **Bitcoin Integration**: Mempool API
 - **State Management**: Zustand (auth & projects)
-- **Testing**: Jest, React Testing Library
+- **Testing**: Vitest, React Testing Library
 - **Security**: Multi-layer validation, celebrity impersonation prevention
 - **Logging**: Structured logging system (production-safe)
 
@@ -120,7 +120,7 @@ src/
 
 ### Testing Infrastructure (⚠️ CRITICAL GAP)
 
-- Jest for unit testing
+- Vitest for unit testing
 - React Testing Library for component testing
 - **Current Coverage**: 4.9% (Need 85% for production)
 - **Security Tests**: Excellent (77 tests)
@@ -223,7 +223,7 @@ create table funding_pages (
 2. Install dependencies:
 
    ```bash
-   npm install
+   pnpm install
    ```
 
 3. Set up environment variables:
@@ -235,33 +235,33 @@ create table funding_pages (
 4. Start development server (recommended):
 
    ```bash
-   npm run fresh:start
+   pnpm run fresh:start
    ```
 
 5. Run tests to verify setup:
    ```bash
-   npm test
+   pnpm test
    ```
 
 ## Testing
 
-The project uses Jest and React Testing Library for testing:
+The project uses Vitest and React Testing Library for testing:
 
 ```bash
 # Run all tests
-npm test
+pnpm test
 
 # Run tests with coverage
-npm test -- --coverage
+pnpm run test:coverage
 
 # Run tests in watch mode
-npm test -- --watch
+pnpm run test:watch
 
 # Run specific test file
-npm test -- path/to/test/file
+pnpm test path/to/test/file
 
 # Run only security tests
-npm test -- --testPathPatterns "security|verification|validation"
+pnpm test "security|verification|validation"
 ```
 
 ### Test Coverage Goals

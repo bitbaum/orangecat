@@ -54,7 +54,7 @@
 
 ```bash
 cd /home/g/dev/orangecat
-npm run dev -- -p 3020  # Port 3020 to avoid conflicts
+pnpm run dev -p 3020  # Port 3020 to avoid conflicts
 ```
 
 ---
@@ -64,7 +64,7 @@ npm run dev -- -p 3020  # Port 3020 to avoid conflicts
 | Layer      | Technology                                       |
 | ---------- | ------------------------------------------------ |
 | Framework  | Next.js 16 (App Router), React 19                |
-| Language   | TypeScript 5.x                                   |
+| Language   | TypeScript 6.x                                   |
 | Styling    | Tailwind CSS 4                                   |
 | Database   | Self-hosted Supabase (PostgreSQL + Auth + RLS)   |
 | Bitcoin    | Lightning Network, BTCPay, NWC                   |
@@ -185,7 +185,7 @@ reachable at `https://supabase.orangecat.ch`**. This is the single source of tru
 > RETIRED (2026-06).** Do NOT use it, and do NOT use the Supabase **MCP**
 > (`mcp_supabase_*` / `mcp__claude_ai_Supabase__*`) — it only talks to the
 > managed-cloud Management API, which no longer backs production. Any
-> `mcp_supabase_*` examples elsewhere in `.claude/` are legacy and being retired.
+> `mcp_supabase_*` examples elsewhere in `.claude/` have been replaced with the current mechanisms.
 
 ```bash
 # Credentials live in .env.local (points at supabase.orangecat.ch).
@@ -194,7 +194,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 SUPABASE_SERVICE_ROLE_KEY=...
 
 # Do NOT spin up a separate local stack for normal work:
-npx supabase start   # not the workflow
+pnpm exec supabase start   # not the workflow
 ```
 
 **To READ the DB**, go through PostgREST with the keys already in `.env.local`.
@@ -309,4 +309,4 @@ export async function POST(request: Request) {
 
 ---
 
-**Last Updated**: 2026-04-23
+**Last Updated**: 2026-09-04

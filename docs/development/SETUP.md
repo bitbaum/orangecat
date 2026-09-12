@@ -10,7 +10,7 @@ Before you begin, ensure you have:
 
 - **Node.js** 18+ LTS - [Download](https://nodejs.org/)
 - **Git** - Version control system
-- **npm** or **yarn** - Package manager (npm recommended)
+- **pnpm 11** - Package manager (`packageManager` field pins the version; Corepack activates it)
 
 ### Optional but Recommended
 
@@ -30,7 +30,7 @@ cd orangecat
 ### 2. Install Dependencies
 
 ```bash
-npm install
+pnpm install
 ```
 
 ### 3. Set Up Environment Variables
@@ -54,10 +54,10 @@ OrangeCat uses a **self-hosted Supabase instance at `https://supabase.orangecat.
 
 ```bash
 # Use the clean start command (recommended)
-npm run fresh:start
+pnpm run fresh:start
 
 # Alternative (if ports conflict)
-npm run dev:clean
+pnpm run dev:clean
 ```
 
 ## 🔧 Development Environment Details
@@ -65,7 +65,7 @@ npm run dev:clean
 ### Node.js Setup
 
 - **Version**: 18.17.0+ (LTS)
-- **Package Manager**: npm (yarn also supported)
+- **Package Manager**: pnpm 11 (`pnpm-lock.yaml` is the only lockfile)
 - **Environment**: Development uses `.env.local`
 
 ### Supabase Configuration
@@ -98,20 +98,20 @@ npm run dev:clean
 cp .env.example .env.test.local
 
 # Run tests
-npm test
+pnpm test
 
 # Run with coverage
-npm run test:coverage
+pnpm run test:coverage
 ```
 
 ### Browser Testing
 
 ```bash
 # Install Playwright browsers
-npx playwright install
+pnpm exec playwright install
 
 # Run E2E tests
-npm run test:e2e
+pnpm run test:e2e
 ```
 
 ## 🔒 Security Setup
@@ -168,10 +168,10 @@ SUPABASE_ACCESS_TOKEN=your_access_token
 
 ```bash
 # Start monitoring dashboard
-npm run monitor:metrics
+pnpm run monitor:metrics
 
 # Check application health
-npm run health:check
+pnpm run health:check
 ```
 
 ### Error Tracking
@@ -189,7 +189,7 @@ npm run health:check
 docker-compose up --build
 
 # Run tests in Docker
-docker-compose run --rm app npm test
+docker-compose run --rm app pnpm test
 ```
 
 ### Multiple Environment Setup
@@ -211,13 +211,13 @@ cp config/production.env.template .env.staging
 
 ```bash
 # Kill existing Node processes
-npm run kill:node
+pnpm run kill:node
 
 # Clear Next.js cache
-npm run clear:cache
+pnpm run clear:cache
 
 # Start fresh
-npm run fresh:start
+pnpm run fresh:start
 ```
 
 ### Database Issues

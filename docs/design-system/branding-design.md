@@ -48,7 +48,7 @@ FleetCrown uses OKLCH throughout; OrangeCat still uses HSL in `:root` but primar
 - [x] `brand.ts` + `BrandMark` + static SVGs
 - [x] Logo/header uses monochrome wordmark
 - [x] Cat toolbar uses `BrandMarkIcon`
-- [ ] `npm run check:design` equivalent (lint script for raw colors in TSX)
+- [ ] `pnpm run check:design` equivalent (lint script for raw colors in TSX)
 - [ ] Public/marketing pages: dark bands + `ui-public-*` parity with FleetCrown
 - [ ] Space Grotesk (optional) — Inter remains default until font pass
 - [ ] Deprecate heavy `GRADIENTS.brandTiffany` on marketing CTAs

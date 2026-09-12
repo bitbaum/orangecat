@@ -196,8 +196,7 @@ git checkout -b feat/add-user-roles main
 # Add new migration file
 # supabase/migrations/YYYYMMDDHHMMSS_add_user_roles.sql
 
-# Test migration on fresh DB
-npm run test:migration
+# Migration replay against a fresh DB runs in CI (.github/workflows/migration-replay.yml)
 
 # Create PR with "database" label
 # Requires review from database owner (CODEOWNERS)

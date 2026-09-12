@@ -8,7 +8,7 @@ Welcome to the OrangeCat codebase! This guide will help you understand the proje
 
 1. **Read this guide** - Understand the project structure
 2. **Set up your environment** - See [Environment Setup](#environment-setup)
-3. **Run the project** - Use `npm run dev`
+3. **Run the project** - Use `pnpm run dev`
 4. **Explore the codebase** - Start with the sections below
 
 ### For Contributors
@@ -83,14 +83,14 @@ git clone <repository-url>
 cd orangecat
 
 # Install dependencies
-npm install
+pnpm install
 
 # Set up environment variables
 cp config/production.env.template .env.local
 # Edit .env.local with your Supabase credentials
 
 # Start development server
-npm run dev
+pnpm run dev
 ```
 
 ### Environment Variables
@@ -111,11 +111,11 @@ npm run dev
 
 ### Core Technologies
 
-- **Frontend**: Next.js 15, React 18, TypeScript
+- **Frontend**: Next.js 16, React 19, TypeScript
 - **Backend**: Supabase (PostgreSQL + Auth + Storage)
 - **Styling**: Tailwind CSS
 - **State Management**: Zustand
-- **Testing**: Jest, Playwright
+- **Testing**: Vitest, Playwright
 - **Deployment**: Self-hosted on Hetzner (bitbaum, behind Caddy)
 
 ### Key Features
@@ -195,7 +195,7 @@ npm run dev
 
 4. **Write Tests**
    ```bash
-   npm run test -- --testPathPatterns new-feature
+   pnpm test new-feature
    ```
 
 ### Database Changes
@@ -216,7 +216,7 @@ npm run dev
 
 3. **Test Locally**
    ```bash
-   npm run dev
+   pnpm run dev
    # Test the changes
    ```
 
@@ -281,7 +281,7 @@ tests/
 │   ├── auth/              # Authentication flows
 │   ├── profile/           # Profile management
 │   └── funding/           # Campaign creation
-└── unit/                  # Jest unit tests
+└── unit/                  # Vitest unit tests
     ├── components/        # Component tests
     ├── utils/             # Utility tests
     └── services/          # Service tests
@@ -291,15 +291,15 @@ tests/
 
 ```bash
 # Run all tests
-npm test
+pnpm test
 
 # Run specific test suites
-npm run test:unit          # Full fast Jest suite (unit + smoke + env — what CI gates)
-npm run test:auth          # Auth tests
-npm run test:security      # Security tests
+pnpm run test:unit          # Full fast Vitest suite (unit + smoke + env — what CI gates)
+pnpm run test:auth          # Auth tests
+pnpm run test:security      # Security tests
 
 # Run with coverage
-npm run test:ci           # CI mode with coverage
+pnpm run test:ci           # CI mode with coverage
 ```
 
 ### Writing Tests
@@ -323,7 +323,7 @@ test('renders correctly', () => {
 
 ```bash
 # Build for production
-npm run build:production
+pnpm run build:production
 
 # Deploy: self-hosted on Hetzner (bitbaum, behind Caddy).
 # See docs/operations/deployment/DEPLOYMENT_PROCESS.md for the on-box flow.
@@ -337,11 +337,10 @@ npm run build:production
 ### Database Migrations
 
 ```bash
-# Apply migrations
-npm run db:migrate
+# Migrations apply automatically on deploy (scripts/apply-migrations.sh)
 
 # Generate new migration
-supabase migration new feature_name
+pnpm exec supabase migration new feature_name
 ```
 
 ---
@@ -511,7 +510,7 @@ supabase migration new feature_name
 - **Lazy Loading** - Use `React.lazy()` for large components
 - **Code Splitting** - Dynamic imports for routes
 - **Memoization** - Use `useMemo` and `useCallback` appropriately
-- **Bundle Analysis** - Run `npm run analyze` regularly
+- **Bundle Analysis** - Run `pnpm run analyze` regularly
 
 ### Security
 
@@ -533,7 +532,7 @@ supabase migration new feature_name
 
 ### **Common Issues**
 
-- **Build Errors**: Check TypeScript compilation with `npm run type-check`
+- **Build Errors**: Check TypeScript compilation with `pnpm run type-check`
 - **Runtime Errors**: Check browser console and server logs
 - **Database Issues**: Verify Supabase connection and migrations
 - **Authentication**: Check auth configuration and RLS policies

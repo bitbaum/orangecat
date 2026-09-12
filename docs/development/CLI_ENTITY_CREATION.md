@@ -12,19 +12,19 @@ OrangeCat supports creating entities (products, services, organizations, etc.) f
 
 ```bash
 # Create an organization (company)
-npm run create-entity -- --type organization --name "BitBaum AG" --description "Swiss Bitcoin company" --type company
+pnpm run create-entity --type organization --name "BitBaum AG" --description "Swiss Bitcoin company" --type company
 
 # Create a product
-npm run create-entity -- --type product --title "Coffee Mug" --price_sats 25000 --currency SATS
+pnpm run create-entity --type product --title "Coffee Mug" --price_sats 25000 --currency SATS
 
 # Create a service
-npm run create-entity -- --type service --title "Bitcoin Consulting" --category Consulting --hourly_rate_sats 50000
+pnpm run create-entity --type service --title "Bitcoin Consulting" --category Consulting --hourly_rate_sats 50000
 ```
 
 ## Usage
 
 ```bash
-npm run create-entity -- --type <entity_type> [--field value]...
+pnpm run create-entity --type <entity_type> [--field value]...
 ```
 
 ### Entity Types
@@ -46,7 +46,7 @@ npm run create-entity -- --type <entity_type> [--field value]...
 When you say "create a profile of a company", this is how it works:
 
 ```bash
-npm run create-entity -- \
+pnpm run create-entity \
   --type organization \
   --name "My Company AG" \
   --description "A Bitcoin-focused company" \
@@ -57,11 +57,13 @@ npm run create-entity -- \
 ```
 
 **Required fields for organizations:**
+
 - `name` - Organization name
 - `type` - One of: dao, company, nonprofit, community, cooperative, foundation, collective, guild, syndicate, circle
 - `governance_model` - One of: hierarchical, flat, democratic, consensus, liquid_democracy, quadratic_voting, stake_weighted, reputation_based
 
 **Optional fields:**
+
 - `description` - Organization description
 - `slug` - URL slug (auto-generated from name if not provided)
 - `website_url` - Company website
@@ -75,7 +77,7 @@ npm run create-entity -- \
 ### Creating a Product
 
 ```bash
-npm run create-entity -- \
+pnpm run create-entity \
   --type product \
   --title "Handmade Coffee Mug" \
   --description "Beautiful ceramic mug" \
@@ -88,7 +90,7 @@ npm run create-entity -- \
 ### Creating a Service
 
 ```bash
-npm run create-entity -- \
+pnpm run create-entity \
   --type service \
   --title "Bitcoin Consulting" \
   --description "Expert Bitcoin consulting services" \
@@ -100,7 +102,7 @@ npm run create-entity -- \
 ### Creating a Cause
 
 ```bash
-npm run create-entity -- \
+pnpm run create-entity \
   --type cause \
   --title "Education Scholarship Fund" \
   --description "Supporting students in need" \
@@ -113,9 +115,10 @@ npm run create-entity -- \
 By default, the CLI uses the API endpoint which requires authentication. You can:
 
 1. **Set auth token** (if using service account):
+
    ```bash
    export ORANGECAT_AUTH_TOKEN="your-token"
-   npm run create-entity -- --type organization --name "Test"
+   pnpm run create-entity --type organization --name "Test"
    ```
 
 2. **Use the API directly** with your session cookie (for browser-based auth)
@@ -148,6 +151,7 @@ When an AI assistant (like Claude) is asked to "create a profile of a company", 
 4. Return the created organization URL
 
 Example AI interaction:
+
 ```
 User: "Create a profile of a company called BitBaum AG, a Swiss Bitcoin company"
 
@@ -167,6 +171,3 @@ AI: "✅ Created BitBaum AG! View at: https://orangecat.ch/organizations/bitbaum
 - Organizations automatically add the creator as a founder stakeholder
 - The CLI uses the same API endpoints as the web interface
 - Entity types and fields match the OrangeCat entity registry
-
-
-
