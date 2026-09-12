@@ -131,6 +131,34 @@ export const CAPABILITY_RULES: Record<CatCapability, CapabilityRule> = {
 };
 
 /**
+ * Rows that exist before anything asks the gate about them.
+ *
+ * A row nothing consults is a claim that the gate governs something it does
+ * not — someone reading `CAPABILITY_RULES.vision` reasonably assumes vision is
+ * gated, and today nothing checks it. That is the same shape as a flag
+ * asserting an implementation exists, which this codebase shipped twice in one
+ * day before making the claim a lookup instead.
+ *
+ * So an unconsumed row must SAY SO, with a reason, and a gate enforces both
+ * directions: a new row needs either a caller or an entry here, and an entry
+ * here that has since acquired a caller is stale and must go.
+ *
+ * Read it as the difference between "not gated yet" and "gated", stated where
+ * a reader will see it rather than left to be inferred from call sites.
+ */
+export const AWAITING_CONSUMER: Partial<Record<CatCapability, string>> = {
+  // The loop asks `toolPlanForModel` directly, which is the SSOT. This row
+  // delegates to that same function so the two answers cannot diverge when a
+  // caller does arrive — it is deliberately redundant, not unwired.
+  tools: 'the tool loop asks toolPlanForModel directly; this row delegates to it',
+  // Nothing sends an image to a model yet.
+  vision: 'no caller sends images',
+  // ADR-0008 D4: the gate term is built, the executor is not — it needs a
+  // sandboxed browser and an enumerated origin list.
+  computer_use: 'no executor; see ADR-0008 D4',
+};
+
+/**
  * Ask the one question.
  *
  * Terms are checked cheapest-first and the FIRST failure is reported, so the
