@@ -12,8 +12,9 @@
  */
 
 import { PROVIDER_BASE_URLS } from '@/config/ai-provider-runtime';
-import { DEFAULT_FREE_MODEL_ID, getFreeModels } from '@/config/ai-models';
-import { CONFIGURED_GROQ_MODEL_IDS, promptFitsGroqOnDemand } from '@/services/ai/groq';
+import { DEFAULT_FREE_MODEL_ID } from '@/config/ai-models';
+import { promptFitsGroqOnDemand } from '@/services/ai/groq';
+import { checkModelRot } from './provider-catalog';
 import { webSearch, describeAttempts } from '@bitbaum/ai-kit/web';
 import { buildCatSystemPrompt } from './system-prompt';
 import { getCatFewShotExamplesText } from './few-shot-examples';
@@ -170,65 +171,7 @@ export function probeOpenRouter(): Promise<ProbeResult> {
   );
 }
 
-/**
- * Registry-vs-catalog drift check. OpenRouter retires free models without
- * notice; a registry entry pointing at a retired id makes chat 404 mid-chain.
- * This has bitten prod three times (gpt-oss-120b:free, llama-4-maverick:free,
- * then llama-3.3-70b-instruct:free + llama-4-scout:free on 2026-08-02) —
- * hence a standing probe instead of a fourth manual fix. Uses the public
- * /models endpoint (no key needed). Returns the registry free-model ids that
- * no longer exist upstream; empty array = no drift; null = catalog fetch
- * failed (unknown, not necessarily broken).
- */
-export async function probeFreeModelCatalog(): Promise<string[] | null> {
-  try {
-    const res = await fetch(`${PROVIDER_BASE_URLS.openrouter}/models`);
-    if (!res.ok) {
-      return null;
-    }
-    const body = (await res.json()) as { data?: Array<{ id?: string }> };
-    const live = new Set((body.data ?? []).map(m => m.id));
-    if (live.size === 0) {
-      return null;
-    }
-    return getFreeModels()
-      .map(m => m.id)
-      .filter(id => !live.has(id));
-  } catch {
-    return null;
-  }
-}
 
-/**
- * The same drift check for Groq. Groq decommissions models exactly as
- * OpenRouter retires free ones, but only OpenRouter was ever watched — so
- * `mixtral-8x7b-32768` and `gemma2-9b-it` stayed in the config long after Groq
- * had removed them, and selecting either was a guaranteed 400. Groq's /models
- * endpoint needs the key; with no key we cannot tell drift from absence, so we
- * return null (unknown) rather than claiming everything is fine.
- */
-export async function probeGroqModelCatalog(): Promise<string[] | null> {
-  const key = process.env.GROQ_API_KEY;
-  if (!key) {
-    return null;
-  }
-  try {
-    const res = await fetch(`${PROVIDER_BASE_URLS.groq}/models`, {
-      headers: { Authorization: `Bearer ${key}` },
-    });
-    if (!res.ok) {
-      return null;
-    }
-    const body = (await res.json()) as { data?: Array<{ id?: string }> };
-    const live = new Set((body.data ?? []).map(m => m.id));
-    if (live.size === 0) {
-      return null;
-    }
-    return CONFIGURED_GROQ_MODEL_IDS.filter(id => !live.has(id));
-  } catch {
-    return null;
-  }
-}
 
 /**
  * Does Groq's on-demand tier actually admit a REAL Cat request?
@@ -297,13 +240,25 @@ async function probeWeb(): Promise<WebProbeResult> {
 
 /** Probe both providers and summarize. */
 export async function runCatHealthProbes(): Promise<CatHealthReport> {
-  const [groq, openrouter, missingFreeModels, missingGroqModels, web] = await Promise.all([
+  // One catalogue check for the whole chain, from @bitbaum/ai-kit — replacing
+  // a per-provider probe each with its own copy of the three-state null
+  // handling. A provider added to orangecatChain() is checked without new code.
+  const [groq, openrouter, rot, web] = await Promise.all([
     probeGroq(),
     probeOpenRouter(),
-    probeFreeModelCatalog(),
-    probeGroqModelCatalog(),
+    checkModelRot(),
     probeWeb(),
   ]);
+
+  // Split back out per provider so the report's shape — and everything reading
+  // it — is unchanged. `null` still means "could not look", never "nothing is
+  // missing": an unreadable catalogue keeps its own provider's ids unchecked.
+  const byProvider = (id: string): string[] | null => {
+    const v = rot.verdicts.find(x => x.provider === id);
+    return !v || v.live === null ? null : v.missing;
+  };
+  const missingFreeModels = byProvider('openrouter');
+  const missingGroqModels = byProvider('groq');
   // Groq being up is not the same as Groq being usable for Cat.
   const groqUsable = groq.class === 'ok' && groqCanServeCatPrompt();
   const drift =
