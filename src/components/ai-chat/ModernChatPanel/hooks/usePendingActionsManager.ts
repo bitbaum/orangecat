@@ -10,10 +10,13 @@ import type { PendingAction } from '../types';
 
 interface UsePendingActionsManagerOptions {
   onActionConfirmed?: (action: PendingAction, outcome: { message?: string; url?: string }) => void;
+  /** The user said no. Without this the chip kept claiming it was waiting. */
+  onActionRejected?: (actionId: string) => void;
 }
 
 export function usePendingActionsManager({
   onActionConfirmed,
+  onActionRejected,
 }: UsePendingActionsManagerOptions = {}) {
   const [pendingActions, setPendingActions] = useState<PendingAction[]>([]);
   const { confirmAction, rejectAction, getPendingActions } = usePendingActions();
@@ -65,11 +68,12 @@ export function usePendingActionsManager({
         await rejectAction(actionId);
         // Remove from local state
         setPendingActions(prev => prev.filter(a => a.id !== actionId));
+        onActionRejected?.(actionId);
       } catch (e) {
         logger.error('Failed to reject action', { error: e, actionId }, 'usePendingActionsManager');
       }
     },
-    [rejectAction]
+    [rejectAction, onActionRejected]
   );
 
   return {

@@ -567,6 +567,62 @@ export function useChatMessages({
     setErrorCode(null);
   }, []);
 
+  /**
+   * Settle the chip for a pending action the user has now answered.
+   *
+   * The chip was terminal: `action-as-tool` emits `pending_confirmation` during
+   * the streaming turn, that stream closes, and the confirm request goes to a
+   * plain JSON route that emits no tool_call event. So the chat kept saying
+   * "needs your confirmation" after the action had run — the one state the user
+   * most needs to be true, left stale.
+   *
+   * Matched on `pendingActionId`, never on the action NAME: two of the same
+   * action can be waiting at once, and settling the wrong one would tell the
+   * user a payment succeeded when a different payment did.
+   */
+  const resolvePendingChip = useCallback(
+    (
+      pendingActionId: string,
+      outcome: { status: 'completed' | 'declined' | 'failed'; error?: string }
+    ) => {
+      // Narrowed on status, because `pendingActionId` exists only on the
+      // variant that has something to wait for.
+      const waitingFor = (t: ToolCallEvent) =>
+        t.status === 'pending_confirmation' && t.pendingActionId === pendingActionId;
+
+      setMessages(prev =>
+        prev.map(m => {
+          if (!m.toolCalls?.some(waitingFor)) {
+            return m;
+          }
+          return {
+            ...m,
+            toolCalls: m.toolCalls.map(t => {
+              if (!waitingFor(t)) {
+                return t;
+              }
+              if (outcome.status === 'completed') {
+                return {
+                  id: t.id,
+                  name: t.name,
+                  status: 'completed' as const,
+                  resultCount: 1,
+                  results: [],
+                };
+              }
+              // A decline is not a failure. Rendering it red would tell the
+              // user something went wrong with the thing they chose to stop.
+              return outcome.status === 'declined'
+                ? { id: t.id, name: t.name, status: 'declined' as const }
+                : { id: t.id, name: t.name, status: 'failed' as const, error: outcome.error };
+            }),
+          };
+        })
+      );
+    },
+    []
+  );
+
   const addSystemMessage = useCallback((content: string) => {
     setMessages(prev => [
       ...prev,
@@ -586,5 +642,6 @@ export function useChatMessages({
     setError: setErrorState,
     errorCode,
     addSystemMessage,
+    resolvePendingChip,
   };
 }

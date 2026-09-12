@@ -18,7 +18,16 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Search, Check, AlertCircle, Loader2, ChevronDown, ChevronUp, Clock } from 'lucide-react';
+import {
+  Search,
+  Check,
+  AlertCircle,
+  Loader2,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  X,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { labelForTool } from '@/lib/chat/tool-labels';
 import type { ToolCallEvent } from '../types';
@@ -61,6 +70,13 @@ export function ToolCallChip({ event }: ToolCallChipProps) {
       icon = <AlertCircle className="h-3 w-3 flex-shrink-0" />;
       badgeClass = 'border-status-negative/20 bg-status-negative/10 text-status-negative';
       text = label.failed;
+      break;
+    case 'declined':
+      // Muted, not red: the user made a choice and it was carried out. Red
+      // would read as "something went wrong with the thing you declined".
+      icon = <X className="h-3 w-3 flex-shrink-0" />;
+      badgeClass = 'border-subtle bg-surface-raised text-fg-tertiary';
+      text = label.declined ?? 'You declined this';
       break;
     case 'pending_confirmation':
       // Seen live 2026-09-10: this state was sent as 'failed', so the chat

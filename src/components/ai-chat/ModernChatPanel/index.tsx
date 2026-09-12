@@ -115,6 +115,7 @@ export function ModernChatPanel({
     clearChat,
     setError,
     addSystemMessage,
+    resolvePendingChip,
   } = useChatMessages({
     selectedModel,
     conversationId,
@@ -142,7 +143,12 @@ export function ModernChatPanel({
         // nowhere on screen (seen live 2026-09-10).
         const line = `✅ ${outcome.message ?? `Action completed: ${action.description}`}`;
         addSystemMessage(outcome.url ? `${line}\n\n[Open](${outcome.url})` : line);
+        // The chip above the card was still saying "needs your confirmation".
+        // The tool_call stream closed when the turn ended and the confirm route
+        // emits no events, so nothing ever told it the answer had arrived.
+        resolvePendingChip(action.id, { status: 'completed' });
       },
+      onActionRejected: actionId => resolvePendingChip(actionId, { status: 'declined' }),
     });
 
   refreshPendingActionsRef.current = refreshPendingActions;

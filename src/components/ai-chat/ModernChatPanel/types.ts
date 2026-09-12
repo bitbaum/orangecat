@@ -55,10 +55,32 @@ export type ToolCallEvent =
       error?: string;
     }
   | {
-      /** An action that now waits on the confirmation card — not done, not failed. */
+      /**
+       * An action that now waits on the confirmation card — not done, not
+       * failed. `pendingActionId` is the row the card will confirm, and it is
+       * the ONLY thing joining this chip to that card: the chip's own `id` is
+       * the provider's tool-call id, which the confirm route has never heard
+       * of. Without it the chip could only be matched by action NAME plus
+       * recency, which is ambiguous the moment two of the same action are
+       * waiting — so it said "needs your confirmation" forever, including
+       * after the user had confirmed it.
+       */
       id: string;
       name: string;
       status: 'pending_confirmation';
+      pendingActionId?: string;
+    }
+  | {
+      /**
+       * The user was asked and said no. NOT a failure: nothing broke and
+       * nothing is worth retrying. `pending_confirmation` exists because
+       * sending a waiting action as 'failed' made the chat read "Action
+       * failed" above a card waiting for a tap; collapsing a DECLINE into
+       * 'failed' is the same mistake one step later.
+       */
+      id: string;
+      name: string;
+      status: 'declined';
     };
 
 /**
