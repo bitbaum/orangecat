@@ -322,6 +322,26 @@ async function runProbe(probe, cookie, conversationId) {
 // Scoring
 // ---------------------------------------------------------------------------
 
+/**
+ * Does this run pass?
+ *
+ * `type` always gates: it checks STRUCTURE — which draft card was attached,
+ * whether a clarifying question was asked — and a regex can check structure
+ * honestly.
+ *
+ * `why` gates only when something can actually judge MEANING. Its detector is
+ * a list of fifteen English connectives, so a reply that reasons in other
+ * words scores zero, and gating on it pages the founder for answers that are
+ * fine. A gate that cries wolf is worse than no gate. Switch on the semantic
+ * judge (CAT_EVAL_JUDGE=1) and `why` becomes a real gate again.
+ */
+export function computePass(scores, { judgeWhy = false, threshold = 7 } = {}) {
+  if (scores.type < threshold) {
+    return false;
+  }
+  return judgeWhy ? scores.why >= threshold : true;
+}
+
 function scoreProbe(probe, result) {
   const { expect } = probe;
   const proposalTypes = result.proposals.map(p => p.entityType);
@@ -353,8 +373,16 @@ function scoreProbe(probe, result) {
   }
 
   // --- why-explanation present -------------------------------------------
-  // Any explicit reasoning connective counts: the gate is "did Cat explain
-  // itself", not "did it use the word because".
+  // A PHRASE LIST, and it must be read as one. This asks "did Cat use one of
+  // fifteen English connectives", which is not the same question as "did Cat
+  // explain itself" — and the difference is not hypothetical. On 2026-09-12
+  // the g-bakery probe answered "As a bakery, you already have the asset and
+  // the skill to turn your craft into income", which IS a reason, matched
+  // nothing here, and paged the founder as a REGRESSION.
+  //
+  // A gate that cries wolf is worse than no gate: it teaches everyone to
+  // ignore the one alarm that might be real. So this score is advisory unless
+  // a semantic judge is switched on (CAT_EVAL_JUDGE=1) — see PASS below.
   const whyOk =
     /\bbecause\b|\bwhy (a|an|this|it)\b|\bfits\b|\bmatches\b|rather than|instead of|that way|perfect (for|if)|ideal (for|if)|best way|simple way|great way|lets (you|people)|so (you|people|supporters|members) can/i.test(
       content
@@ -518,6 +546,26 @@ async function notifyFounderHarnessError(summaryLine) {
   );
 }
 
+/**
+ * A SKIP is a third state, and it used to reach nobody.
+ *
+ * Standing down to protect the user-facing free pool is correct behaviour, so
+ * it must not page like a regression. But it returned with exit 0, systemd
+ * recorded success, and the night looked identical to a night where Cat was
+ * verified and healthy. It skipped silently on 2026-09-10 and 2026-09-11; the
+ * only reason anyone found out was reading the journal by hand.
+ *
+ * Silence is the failure. An unread day gets said out loud, once — the
+ * notification is UPSERTED on its title like every other, so a run of skipped
+ * nights bumps one row rather than stacking a pile nobody reads either.
+ */
+async function notifyFounderSkipped(reason) {
+  await upsertFounderNotification(
+    'Cat eval did not run',
+    `Nightly Cat eval stood down — ${reason} Cat is UNVERIFIED for this night, which is not the same as healthy.`
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
@@ -542,6 +590,17 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
  * which is cheaper than discovering it eight failures in.
  */
 const FREE_TIER_RESERVE = Number(process.env.CAT_EVAL_FREE_RESERVE || 20);
+
+/**
+ * Judge the "why" axis by MEANING rather than by phrasing.
+ *
+ * Off by default, and the reason is budget rather than doubt: the eval already
+ * stands down on most nights because eight probes plus a 20-request reserve
+ * does not fit in 50 free requests a day, and judging adds calls to exactly
+ * the pool that is already short. Built now, switched on with one env var the
+ * day the ceiling is raised — at which point `why` becomes a real gate again.
+ */
+const JUDGE_WHY = process.env.CAT_EVAL_JUDGE === '1';
 
 async function freeModelBudget() {
   const key = process.env.OPENROUTER_API_KEY;
@@ -581,11 +640,23 @@ async function main() {
       `eval-cat: free-model budget ${budget.remaining}/${budget.limit ?? '?'} remaining (reserve ${FREE_TIER_RESERVE})`
     );
     if (budget.remaining < FREE_TIER_RESERVE + PROBES.length) {
-      console.error(
-        `eval-cat: SKIPPED — running ${PROBES.length} probes would leave real users under the ${FREE_TIER_RESERVE}-request reserve. ` +
-          `Resets at ${budget.reset ? new Date(budget.reset).toISOString() : 'unknown'}. ` +
-          'Raise the ceiling permanently with 10 OpenRouter credits (50/day -> 1000/day).'
-      );
+      const reason =
+        `running ${PROBES.length} probes would have left real users under the ` +
+        `${FREE_TIER_RESERVE}-request reserve (budget was ${budget.remaining}/${budget.limit ?? '?'}). ` +
+        `Resets at ${budget.reset ? new Date(budget.reset).toISOString() : 'unknown'}. ` +
+        'Raise the ceiling permanently with 10 OpenRouter credits (50/day -> 1000/day).';
+      console.error(`eval-cat: SKIPPED — ${reason}`);
+      // Exit 0 on purpose: standing down is correct, not a failure, and
+      // paging nightly for a budget ceiling would train everyone to ignore
+      // this unit. But it must not be SILENT — see notifyFounderSkipped.
+      if (NOTIFY) {
+        try {
+          await notifyFounderSkipped(reason);
+          console.error(`eval-cat: founder notified that the eval did not run (${NOTIFY_USER_ID})`);
+        } catch (err) {
+          console.error(`eval-cat: failed to insert skip notification: ${err}`);
+        }
+      }
       return;
     }
   }
@@ -676,8 +747,7 @@ async function main() {
   // ---- report ------------------------------------------------------------
   const { scores } = report;
   const providerErrorCount = report.probes.filter(p => Boolean(p.error)).length;
-  const pass =
-    scores.type >= PASS_THRESHOLD && scores.why >= PASS_THRESHOLD;
+  const pass = computePass(scores, { judgeWhy: JUDGE_WHY, threshold: PASS_THRESHOLD });
   const summaryLine = `type ${scores.type}/${scores.max} · why ${scores.why}/${scores.max} · duplicate-draft probes ${scores.duplicates}`;
 
   console.log('');
@@ -696,6 +766,13 @@ async function main() {
     );
   }
   console.log(`  → ${summaryLine} — ${pass ? 'PASS' : 'FAIL'}`);
+  if (!JUDGE_WHY) {
+    console.log(
+      `  → note: "why" is ADVISORY (${scores.why}/${scores.max}). It matches a fixed list of ` +
+        'English connectives, so a reply that reasons in other words scores zero. ' +
+        'Set CAT_EVAL_JUDGE=1 (needs OPENROUTER_API_KEY) to judge it semantically and gate on it.'
+    );
+  }
   console.log(JSON.stringify(report, null, 2));
   if (JSON_OUT) {writeFileSync(JSON_OUT, JSON.stringify(report, null, 2));}
 
@@ -730,7 +807,7 @@ async function main() {
 // Exported so the retry contract can be tested (see
 // __tests__/unit/scripts/eval-cat-retry.test.ts). Importing this module must
 // therefore NOT start a run — hence the direct-invocation guard below.
-export { rest };
+export { rest, scoreProbe };
 
 const invokedDirectly =
   process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
