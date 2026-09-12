@@ -1794,6 +1794,40 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
 
   // ---------- PROFILE ACTIONS ----------
 
+  draft_promotion: {
+    id: 'draft_promotion',
+    name: 'Draft Promotion',
+    description:
+      "Get the real posting rules for one or more channels before writing promotional copy, so the draft cannot get the user banned. Returns each channel's hard limits, prohibitions and required disclosures, and says which channels Cat may post to on its own (only Nostr and the user's own OrangeCat timeline). Use it whenever the user wants to promote, announce or share a project anywhere off-platform.",
+    category: 'communication',
+    icon: Megaphone,
+    riskLevel: 'low',
+    // Nothing is published and nothing leaves the account, so there is nothing
+    // to confirm. The refusal is the point: the user still does the posting.
+    requiresConfirmation: false,
+    parameters: [
+      {
+        name: 'subject',
+        type: 'string',
+        required: true,
+        description: 'What is being promoted — a project title, or its id.',
+      },
+      {
+        name: 'channels',
+        type: 'array',
+        required: true,
+        description:
+          'Where the user wants to promote it: orangecat, nostr, x, linkedin, reddit, hackernews, email.',
+      },
+    ],
+    examples: [
+      'help me promote my roof repair project on X and Reddit',
+      'write a Show HN for this',
+      'how should I announce this on LinkedIn',
+    ],
+    enabled: true,
+  },
+
   update_profile: {
     id: 'update_profile',
     name: 'Update Profile',
