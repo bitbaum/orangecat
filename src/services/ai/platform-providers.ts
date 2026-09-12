@@ -24,7 +24,7 @@ import {
   createGroqService,
   createOpenRouterService,
   createOpenAICompatibleServiceWithByok,
-  DEFAULT_GROQ_MODEL,
+  PLATFORM_GROQ_MODEL,
 } from '@/services/ai';
 import { getFreeModels, getModelMetadata, DEFAULT_FREE_MODEL_ID } from '@/config/ai-models';
 import { PROVIDER_BASE_URLS } from '@/config/ai-provider-runtime';
@@ -73,7 +73,9 @@ export function buildPlatformProviders(message: string): PlatformProvider[] {
     out.push({
       providerId: 'groq',
       aiService: createGroqService(),
-      defaultModel: DEFAULT_GROQ_MODEL,
+      // The FREE model, not the capable one: a metered default here is a step
+      // that can only 402, and this chain exists for users without a key.
+      defaultModel: PLATFORM_GROQ_MODEL,
       toolEndpoint: `${PROVIDER_BASE_URLS.groq}/chat/completions`,
       toolKey: process.env.GROQ_API_KEY ?? '',
     });

@@ -10,6 +10,7 @@ export {
   createGroqServiceWithByok,
   isGroqAvailable,
   DEFAULT_GROQ_MODEL,
+  PLATFORM_GROQ_MODEL,
 } from './groq';
 
 export {

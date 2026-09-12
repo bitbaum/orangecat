@@ -55,6 +55,29 @@ export const CONFIGURED_GROQ_MODEL_IDS = Object.keys(GROQ_MODELS);
  *
  * To dial back to the smaller model without a deploy, set GROQ_DEFAULT_MODEL.
  */
+/**
+ * The Groq model the PLATFORM chain offers a user with no key of their own.
+ *
+ * MUST be a model the registry marks free, and that is the whole point. This
+ * used to be `DEFAULT_GROQ_MODEL` — `openai/gpt-oss-120b` — which the registry
+ * tiers as `economy`, so `isPlatformMeteredModel()` bills it. The first link of
+ * the free chain therefore answered 402 INSUFFICIENT_CREDITS for every free
+ * user and the chain always fell through to OpenRouter. Measured on production
+ * over 30 days: 49 of 55 assistant messages came from OpenRouter, ONE from
+ * Groq.
+ *
+ * The cost was not just a dead link. OrangeCat holds its OWN Groq key, while
+ * its OpenRouter key is shared by seven apps on this box — so the chain skipped
+ * dedicated capacity to crowd onto a 50-requests-a-day pool split seven ways,
+ * which is why the nightly eval kept finding it empty four hours after the
+ * midnight reset.
+ *
+ * `DEFAULT_GROQ_MODEL` stays as it is for BYOK users: they face no paywall, so
+ * they should keep the capable model. Two defaults, deliberately.
+ */
+export const PLATFORM_GROQ_MODEL: keyof typeof GROQ_MODELS =
+  (process.env.PLATFORM_GROQ_MODEL as keyof typeof GROQ_MODELS | undefined) ?? 'openai/gpt-oss-20b';
+
 export const DEFAULT_GROQ_MODEL: keyof typeof GROQ_MODELS =
   (process.env.GROQ_DEFAULT_MODEL as keyof typeof GROQ_MODELS | undefined) ?? 'openai/gpt-oss-120b';
 
