@@ -24,7 +24,7 @@ import { saveMessages } from '@/services/cat/conversation-history';
 import { buildFailedTurnMessages } from '@/services/cat/failed-turn';
 import { alertCatChatFailure } from '@/services/cat/failure-alert';
 import { resolveProvider, type FallbackProvider } from '@/services/cat/provider-resolver';
-import { providerSupportsNativeTools } from '@/config/ai-provider-runtime';
+import { actionsViaForModel } from '@/services/cat/tool-capability';
 import { meterCreditUsage } from '@/services/cat/credit-metering';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { extractAndStoreMemories } from '@/services/cat/memory';
@@ -275,9 +275,10 @@ export async function orchestrateCatChat(
     aiService,
     platformUsage,
     keyService,
-    userGroqKey,
     metered,
     fallbacks,
+    toolEndpoint,
+    toolKey,
   } = resolved;
 
   // One stable id per request — the ledger idempotency ref for a metered
@@ -301,7 +302,12 @@ export async function orchestrateCatChat(
   // to act; a 'prose' prompt reaching a tool-capable one just describes the
   // envelope twice, and the exec_action text path still executes it. Neither
   // ends with the user being told something happened that did not.
-  const actionsVia = providerSupportsNativeTools(provider) ? 'tools' : 'prose';
+  // The prompt's claim must track what will ACTUALLY be sent. `'tools'` drops
+  // the prose action catalogue because definitions replace it, so claiming it
+  // when no definitions go out leaves Cat with no verb at all — neither the
+  // loop nor the prose envelope. That is why the credentials are part of the
+  // question, not just the model's capability.
+  const actionsVia = actionsViaForModel(modelToUse, Boolean(toolEndpoint && toolKey));
 
   // Build the prompt to FIT the link that will answer, rather than discovering
   // it does not. The free Groq pool refuses any single request over its
@@ -418,7 +424,6 @@ export async function orchestrateCatChat(
             baseMessages,
             message,
             provider,
-            userGroqKey,
             modelToUse,
             (event: ToolCallEvent) => {
               controller.enqueue(
@@ -436,6 +441,10 @@ export async function orchestrateCatChat(
             // read-only.
             {
               actorId,
+              // The active step's own endpoint and key, so a BYOK user's tools
+              // reach THEIR vendor rather than being silently dropped.
+              toolEndpoint,
+              toolKey,
               onWebEvidence: evidence => {
                 webEvidence.push(...evidence);
               },
@@ -778,7 +787,6 @@ export async function orchestrateCatChat(
     baseMessages,
     message,
     provider,
-    userGroqKey,
     modelToUse,
     (event: ToolCallEvent) => {
       collectedToolCalls.push(event);
@@ -787,7 +795,7 @@ export async function orchestrateCatChat(
       collectedPrefillProposals.push(proposal);
     },
     // Same as the streaming path: an actor is what makes actions callable.
-    { actorId }
+    { actorId, toolEndpoint, toolKey }
   );
   // The non-streaming path runs no grounding check (see below), so there is
   // nothing here to feed web evidence into. Stated rather than left as an

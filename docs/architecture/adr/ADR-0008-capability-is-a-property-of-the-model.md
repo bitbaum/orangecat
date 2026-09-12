@@ -55,7 +55,7 @@ The data exists **on both sides already**:
 
 ## Decision
 
-### D1 — Ask the model, not the provider.
+### D1 — Ask the model, not the provider. BUILT.
 
 Replace `providerSupportsNativeTools(providerId)` with a model-level capability
 lookup. A model may drive the tool loop when its registry row says
@@ -87,30 +87,74 @@ a model it has never heard of would be permanently denied tools without ever
 being asked. Only an observation may produce `none`. A registry says where to
 start, never where to stop.
 
-**The tool loop cannot currently reach a BYOK credential at all.** Three facts
-together, and any one of them alone would be fixable:
+**The tool loop could not reach a BYOK credential at all.** Three facts
+together, any one of which alone would have been fixable:
 
-- `tool-use.ts` does its own raw `fetch` and knows how to build exactly two
+- `tool-use.ts` does its own raw `fetch` and knew how to build exactly two
   endpoints, Groq and OpenRouter.
 - `provider-resolver.ts` bakes the user's key into a constructed `aiService`
-  and returns no endpoint or key, so the loop has nothing to call with.
+  and returned no endpoint or key, so the loop had nothing to call with.
 - `AiService.chatCompletion` returns `{ content, … }` and **drops `tool_calls`
   entirely**, so routing the loop through the existing abstraction cannot work
-  either — the tool call would be thrown away at the seam.
+  either — the tool call is thrown away at the seam.
 
-So D1 needs one of two changes before the capability decision means anything
-for a BYOK user. Either the resolver exposes `{ toolEndpoint, toolKey }` for
-the active step, which is smaller and keeps the loop's raw fetch; or
-`AiService` widens to carry tool calls, which is more correct long-term and
-touches every implementation. **The resolver route is recommended** for the
-first pass: it is contained, and it does not put a refactor through a path that
-also carries spend caps and metering.
+**Taken via the resolver route (recommended over widening `AiService`, which
+touches every implementation and runs a refactor through a path that also
+carries spend caps and metering).** `ChainStep` now carries
+`{ toolEndpoint, toolKey }` — the only place a BYOK key exists in the raw —
+and `ResolvedProvider` surfaces the active step's pair. `userGroqKey` is
+deprecated in place: it could only ever carry a Groq key, which is exactly why
+a user's own OpenAI key bought them nothing.
 
-Until then the capability decision is only reachable on the two providers the
-loop already builds, which is most of the free tier and none of the BYOK users
-this decision exists for. Sequencing it that way is deliberate: shipping the
-decision without the reach would look like the fix while changing nothing for
-the people it was written for.
+#### Two things the existing gate caught, both worth more than the feature
+
+`actions-via-wiring.test.ts` pinned capability to the provider list. Updating it
+was not a formality; it surfaced the more serious half of the bug.
+
+**`actionsVia` and the tool loop must be the same question.** The loop was
+changed to ask the model while `actionsVia` — which decides what the SYSTEM
+PROMPT claims Cat can do — still asked the provider. Two answers to one
+question is the original failure wearing new clothes: a user gets told an action
+ran on a path that was never handed the definitions. Both now call
+`toolPlanForModel`, and the gate asserts neither reverts.
+
+**No endpoint fallback, ever.** The first cut kept a provider-name fallback for
+callers that passed no credentials. It reads as harmless and is not: it
+recreates the second, drifting list this decision deletes, and a wrong guess
+sends a user's own model id to somebody else's vendor with somebody else's key
+— a more expensive failure than sending no tools. The endpoint now comes only
+from the resolver, and the gate forbids a `PROVIDER_BASE_URLS` guess returning.
+
+Nine tests then failed because they called the loop without credentials. That is
+the correct new behaviour, so they supply them — which also makes them mirror
+production instead of leaning on ambient environment variables.
+
+#### Three bugs this change introduced and then fixed, all the same shape
+
+Recorded because the shape is the point: every one was a second derivation of a
+fact that already existed somewhere, which is the thing this ADR exists to stop.
+
+**`chain[0]` is not the active step.** A metered frontier request REPLACES the
+primary wholesale and leaves the chain behind as its fallbacks. Reading the
+credentials off `chain[0]` meant that on exactly the paid path, the tool loop
+would call whichever vendor the user had configured first, with that vendor's
+key, while the answer came from platform OpenRouter. It reads `primary` now, and
+the replacement step carries its own pair.
+
+**The platform chain is four vendors, not two.** `buildPlatformProviders` can
+return Together and a **local Ollama** as well as Groq and OpenRouter. A
+provider-name mapping that handled the two obvious ones would post a Together
+model id to OpenRouter — and a LOCAL model to a paid vendor. The fix was not a
+better mapping: `PlatformProvider` now publishes the `{toolEndpoint, toolKey}`
+it already computed to build `aiService`, and the resolver copies it. One
+derivation, no second list.
+
+**A removed positional argument that TypeScript could not see.** Deleting the
+now-dead `groqKey` parameter left six call sites passing a key where
+`modelToUse` now sits. Every parameter is a string, so `tsc` was perfectly
+happy and the tests were quietly wrong. Found by reading the call sites, not by
+running the typechecker. **A green typecheck is not evidence that the right
+argument reached the right slot.**
 
 ### D2 — The local path gets a real loop.
 
@@ -188,7 +232,7 @@ evidence, and none of it is checkable by the person reading the answer.
 
 ## Order
 
-1. **D1** — ask the model. Smallest change, largest immediate effect.
+1. **D1** — ask the model. ✅ BUILT. Smallest change, largest immediate effect.
 2. **D5** — show the work. Small, and it makes D1's effect visible.
 3. **D2** — the local loop.
 4. **D3** — the gate, once there are two capabilities to gate.

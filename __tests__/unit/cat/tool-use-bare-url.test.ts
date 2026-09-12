@@ -58,11 +58,17 @@ function enrich(
     ],
     message,
     'groq',
-    'test-groq-key',
     'test-model',
     overrides?.onToolCall as never,
     undefined,
-    overrides?.timeoutMs !== undefined ? { timeoutMs: overrides.timeoutMs } : undefined
+    {
+      // Production always supplies these — the resolver owns the active
+      // step's endpoint and key. A caller without them now gets no tools,
+      // which is the point: the loop never guesses a vendor.
+      toolEndpoint: 'https://openrouter.ai/api/v1/chat/completions',
+      toolKey: 'test-key',
+      ...(overrides?.timeoutMs !== undefined ? { timeoutMs: overrides.timeoutMs } : {}),
+    }
   );
 }
 

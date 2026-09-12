@@ -19,7 +19,7 @@
 
 import { actionToolDefinitions } from './action-schemas';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
-import { PROVIDER_BASE_URLS, providerSupportsNativeTools } from '@/config/ai-provider-runtime';
+import { toolPlanForModel } from './tool-capability';
 import {
   hasCreateIntent,
   hasWebsiteAnalysisIntent,
@@ -134,13 +134,25 @@ export async function maybeEnrichWithSearchResults(
   messages: ToolAugmentedMessage[],
   userMessage: string,
   provider: string,
-  groqKey: string | null,
   modelToUse: string,
   onToolCall?: OnToolCall,
   onPrefillProposal?: OnPrefillProposal,
   opts?: {
     timeoutMs?: number;
     actorId?: string | null;
+    /**
+     * Where to POST the tool loop, and with what, for the ACTIVE model.
+     * Supplied by the provider resolver, which is the only place a BYOK key
+     * exists in the raw — `aiService` bakes it in and exposes nothing, and
+     * `AiService.chatCompletion` drops `tool_calls`, so the loop cannot go
+     * through that abstraction either.
+     *
+     * When absent, the two platform vendors are still derivable from the
+     * environment (unchanged behaviour); any other provider gets no tools,
+     * exactly as before. That is the fallback, not the intent.
+     */
+    toolEndpoint?: string | null;
+    toolKey?: string | null;
     /**
      * Receives the evidence blocks for everything Cat actually read from the
      * web this turn, so the caller's grounding check can verify the reply
@@ -154,23 +166,25 @@ export async function maybeEnrichWithSearchResults(
     onWebEvidence?: (evidence: string[]) => void;
   }
 ): Promise<ToolAugmentedMessage[]> {
-  // Which providers get native function-calling is TOOL_CAPABLE_PROVIDERS in
-  // config/ai-provider-runtime — the same fact that decides whether the system
-  // prompt claims Cat can act. Asserting it here keeps the branch below from
-  // drifting away from the prompt: if they disagree, the user is told an action
-  // ran on a provider that was never given the tools to run it.
-  if (!providerSupportsNativeTools(provider)) {
+  // Can THIS MODEL drive a tool loop? Asked of the model, not of a two-name
+  // provider list — that list denied tools to every user on their own OpenAI /
+  // Together / xAI key, so whoever paid most got the least capable Cat. An
+  // uncatalogued model is ASKED: a registry says where to start, not where to
+  // stop. See tool-capability.ts and ADR-0008 D1.
+  const plan = toolPlanForModel(modelToUse);
+  if (!plan.sendTools) {
     return messages;
   }
 
-  let toolEndpoint: string;
-  let toolKey: string | undefined;
-  if (provider === 'groq') {
-    toolEndpoint = `${PROVIDER_BASE_URLS.groq}/chat/completions`;
-    toolKey = groqKey ?? process.env.GROQ_API_KEY;
-  } else {
-    toolEndpoint = `${PROVIDER_BASE_URLS.openrouter}/chat/completions`;
-    toolKey = process.env.OPENROUTER_API_KEY;
+  // WHERE to call is the resolver's answer, never a guess. It builds the step,
+  // so it holds the only raw BYOK credential, and it supplies platform steps
+  // too. NO provider-name fallback: a wrong guess sends a user's own model id
+  // to somebody else's vendor with somebody else's key, which is worse than
+  // sending no tools.
+  const toolEndpoint = opts?.toolEndpoint ?? null;
+  const toolKey = opts?.toolKey ?? null;
+  if (!toolEndpoint || !toolKey) {
+    return messages;
   }
 
   // The keyword prefilter is GONE as a gate (ADR-0006 D3), and removing it is

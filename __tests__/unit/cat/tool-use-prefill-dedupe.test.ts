@@ -69,8 +69,16 @@ function enrich() {
     ],
     MESSAGE,
     'groq',
-    'test-groq-key',
-    'test-model'
+    'test-model',
+    undefined,
+    undefined,
+    {
+      // Production always supplies these — the resolver owns the active
+      // step's endpoint and key. A caller without them now gets no tools,
+      // which is the point: the loop never guesses a vendor.
+      toolEndpoint: 'https://api.groq.com/openai/v1/chat/completions',
+      toolKey: 'test-groq-key',
+    }
   );
 }
 
