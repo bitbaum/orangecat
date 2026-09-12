@@ -125,7 +125,9 @@ const path = meta.basePath; // NOT '/dashboard/store'
 
 1. Add to `src/config/entity-registry.ts`
 2. Create schema in `src/lib/validation.ts`
-3. Create database migration via MCP
+3. Add a migration file under `supabase/migrations/` — the deploy applies it
+   (see "Self-Hosted Supabase" below). Never apply it by hand, and never via the
+   retired Supabase MCP.
 
 ---
 
@@ -185,7 +187,10 @@ reachable at `https://supabase.orangecat.ch`**. This is the single source of tru
 > RETIRED (2026-06).** Do NOT use it, and do NOT use the Supabase **MCP**
 > (`mcp_supabase_*` / `mcp__claude_ai_Supabase__*`) — it only talks to the
 > managed-cloud Management API, which no longer backs production. Any
-> `mcp_supabase_*` examples elsewhere in `.claude/` have been replaced with the current mechanisms.
+> `mcp_supabase_*` example elsewhere in `.claude/` is a bug, and
+> `__tests__/unit/ci/agent-instructions.test.ts` fails on one. That sentence used
+> to read "have been replaced with the current mechanisms" — a claim, made while
+> three command scripts still printed ten of them. A gate says it; prose cannot.
 
 ```bash
 # Credentials live in .env.local (points at supabase.orangecat.ch).

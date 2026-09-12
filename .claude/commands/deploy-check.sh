@@ -30,10 +30,10 @@ run_check() {
 }
 
 # Run checks
-run_check "Type check" "npm run type-check"
-run_check "Lint check" "npm run lint -- --max-warnings 0"
-run_check "Build" "npm run build"
-run_check "Tests" "npm test -- --passWithNoTests"
+run_check "Type check" "pnpm run type-check"
+run_check "Lint check" "pnpm run lint -- --max-warnings 0"
+run_check "Build" "pnpm run build"
+run_check "Tests" "pnpm test -- --passWithNoTests"
 
 # Environment variables check
 echo ""

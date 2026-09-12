@@ -31,10 +31,22 @@ if [[ "$EDITING_FILE" == *"entity-registry"* ]]; then
   echo "   This affects the entire system. Proceed with caution." >&2
 fi
 
-# 4. Block package-lock.json direct edits
+# 4. Block direct lockfile edits.
+#
+# This guarded `package-lock.json` in a repo whose lockfile is
+# `pnpm-lock.yaml` (packageManager: pnpm@11), so it never fired on the file it
+# exists to protect — and the advice it gave when it did fire, `npm install`,
+# is what WRITES the npm lockfile a pnpm repo must not have. One worktree was
+# found carrying exactly that stray package-lock.json.
+if [[ "$EDITING_FILE" == pnpm-lock.yaml ]]; then
+  echo "❌ Cannot directly edit pnpm-lock.yaml" >&2
+  echo "   Use 'pnpm install' or 'pnpm update' instead" >&2
+  exit 1
+fi
+
 if [[ "$EDITING_FILE" == package-lock.json ]]; then
-  echo "❌ Cannot directly edit package-lock.json" >&2
-  echo "   Use 'npm install' or 'npm update' instead" >&2
+  echo "❌ This repo is pnpm — package-lock.json should not exist here" >&2
+  echo "   Delete it and run 'pnpm install'" >&2
   exit 1
 fi
 
