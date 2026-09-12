@@ -28,6 +28,19 @@ function sourceWithoutComments(relPath: string): string {
 }
 
 /**
+ * Same, with every run of whitespace collapsed to one space.
+ *
+ * A gate that pins an exact single-line call fails the moment the formatter
+ * wraps that call across lines — which says nothing about whether the wiring
+ * is right, and trains whoever hits it to weaken the assertion. Collapsing
+ * whitespace keeps the assertion about ARGUMENTS, which is the wiring, while
+ * letting prettier put them wherever they fit.
+ */
+function normalizedSource(relPath: string): string {
+  return sourceWithoutComments(relPath).replace(/\s+/g, ' ');
+}
+
+/**
  * Tool capability is ONE fact, and it is a fact about the MODEL.
  *
  * This gate used to pin the answer to `TOOL_CAPABLE_PROVIDERS`, a list of two
@@ -48,9 +61,25 @@ describe('tool capability is one fact, asked of the model', () => {
   });
 
   it('is what the tool layer branches on, not a hardcoded provider list', () => {
-    const src = sourceWithoutComments('src/services/cat/tool-use.ts');
+    const src = normalizedSource('src/services/cat/tool-use.ts');
     // Call syntax, not a bare identifier: a mention cannot satisfy this.
-    expect(src).toContain('toolPlanForModel(modelToUse)');
+    // The plan is asked WITH what we have already observed for this credential
+    // — a plan that ignores the observation can never stop re-asking a model
+    // that has already refused.
+    expect(src).toContain('toolPlanForModel(modelToUse, observedToolVerdict(modelToUse, toolKey))');
+    // And BOTH observations have to be written down. Asserting the shared
+    // prefix was not enough: deleting the success call left the refusal call
+    // satisfying it, and a mutant walked straight through this gate. The two
+    // sites answer different questions and neither substitutes for the other.
+    //
+    //   the refusal — the ONLY thing that can ever stop the loop re-sending
+    //   definitions to a model that has already said no.
+    expect(src).toContain('recordToolAttempt(modelToUse, toolKey, { status: res.status, bodyText:');
+    //   the success — what makes `native` stick, so a later 429 or context
+    //   overflow cannot demote a model we have SEEN call a tool.
+    expect(src).toContain(
+      'recordToolAttempt(modelToUse, toolKey, { status: res.status, parsed: data });'
+    );
     // No provider-name comparison may come back — that is the second,
     // drifting list this change removed.
     expect(src).not.toContain("provider === 'openrouter'");
@@ -59,8 +88,14 @@ describe('tool capability is one fact, asked of the model', () => {
   });
 
   it('is the SAME fact the orchestrator derives actionsVia from', () => {
-    const src = sourceWithoutComments('src/services/cat/chat-orchestrator.ts');
-    expect(src).toContain('actionsViaForModel(modelToUse, Boolean(toolEndpoint && toolKey))');
+    const src = normalizedSource('src/services/cat/chat-orchestrator.ts');
+    // Same three terms as the loop, in the same order: the model, whether we
+    // hold credentials, and what that credential has been observed to do. If
+    // the prompt's claim were derived from fewer terms than the wire, the two
+    // could disagree — which is the whole reason this gate exists.
+    expect(src).toContain(
+      'actionsViaForModel( modelToUse, Boolean(toolEndpoint && toolKey), observedToolVerdict(modelToUse, toolKey) )'
+    );
     expect(src).toContain('actionsVia,');
     // If this one still asked the provider while the loop asked the model,
     // the prompt and the wire could disagree — which is the whole point.
@@ -68,7 +103,7 @@ describe('tool capability is one fact, asked of the model', () => {
   });
 
   it('never guesses an endpoint: the resolver supplies it or there are no tools', () => {
-    const src = sourceWithoutComments('src/services/cat/tool-use.ts');
+    const src = normalizedSource('src/services/cat/tool-use.ts');
     expect(src).toContain('opts?.toolEndpoint');
     // A guessed endpoint would send a user's own model id to somebody else's
     // vendor with somebody else's key — worse than sending nothing.

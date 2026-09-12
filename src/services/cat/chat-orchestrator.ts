@@ -24,7 +24,7 @@ import { saveMessages } from '@/services/cat/conversation-history';
 import { buildFailedTurnMessages } from '@/services/cat/failed-turn';
 import { alertCatChatFailure } from '@/services/cat/failure-alert';
 import { resolveProvider, type FallbackProvider } from '@/services/cat/provider-resolver';
-import { actionsViaForModel } from '@/services/cat/tool-capability';
+import { actionsViaForModel, observedToolVerdict } from '@/services/cat/tool-capability';
 import { meterCreditUsage } from '@/services/cat/credit-metering';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { extractAndStoreMemories } from '@/services/cat/memory';
@@ -307,7 +307,11 @@ export async function orchestrateCatChat(
   // when no definitions go out leaves Cat with no verb at all — neither the
   // loop nor the prose envelope. That is why the credentials are part of the
   // question, not just the model's capability.
-  const actionsVia = actionsViaForModel(modelToUse, Boolean(toolEndpoint && toolKey));
+  const actionsVia = actionsViaForModel(
+    modelToUse,
+    Boolean(toolEndpoint && toolKey),
+    observedToolVerdict(modelToUse, toolKey)
+  );
 
   // Build the prompt to FIT the link that will answer, rather than discovering
   // it does not. The free Groq pool refuses any single request over its
