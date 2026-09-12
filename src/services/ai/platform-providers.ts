@@ -35,7 +35,7 @@ import { pruneDownLinks } from '@/services/ai/link-health';
 import type { AiService } from './types';
 
 export interface PlatformProvider {
-  providerId: 'groq' | 'openrouter' | 'together' | 'ollama' | 'cerebras' | 'google' | 'github';
+  providerId: 'groq' | 'openrouter' | 'together' | 'ollama' | 'cerebras';
   /**
    * Where a raw tool-loop call should go for this provider, and with what.
    *

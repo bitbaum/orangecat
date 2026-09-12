@@ -18,7 +18,12 @@
  * rather than trusted, which is the whole design.
  */
 import { beforeEach, afterEach } from 'vitest';
-import { FREE_VENDORS, configuredFreeVendors, vendorModel } from '@/config/free-vendors';
+import {
+  FREE_VENDORS,
+  REJECTED_VENDORS,
+  configuredFreeVendors,
+  vendorModel,
+} from '@/config/free-vendors';
 
 const realEnv = { ...process.env };
 beforeEach(() => {
@@ -44,7 +49,7 @@ describe('a vendor with no key does not exist', () => {
   it('treats whitespace as absent, not as configured', () => {
     // A key env set to "" or " " by a half-finished deploy would otherwise
     // build a link that 401s on every request.
-    process.env.GOOGLE_AI_API_KEY = '   ';
+    process.env.CEREBRAS_API_KEY = '   ';
     expect(configuredFreeVendors()).toEqual([]);
   });
 
@@ -55,8 +60,6 @@ describe('a vendor with no key does not exist', () => {
 
     const ids = buildPlatformProviders('hello').map(p => p.providerId);
     expect(ids).toContain('cerebras');
-    expect(ids).not.toContain('google');
-    expect(ids).not.toContain('github');
   });
 });
 
@@ -71,11 +74,11 @@ describe('a retired model needs an env var, not a release', () => {
 
   it('reads the override live, not at import', () => {
     // A value frozen at module load would need the redeploy it exists to avoid.
-    const google = FREE_VENDORS.find(v => v.id === 'google')!;
-    process.env[google.modelEnv] = 'first';
-    expect(vendorModel(google)).toBe('first');
-    process.env[google.modelEnv] = 'second';
-    expect(vendorModel(google)).toBe('second');
+    const v = FREE_VENDORS[0]!;
+    process.env[v.modelEnv] = 'first';
+    expect(vendorModel(v)).toBe('first');
+    process.env[v.modelEnv] = 'second';
+    expect(vendorModel(v)).toBe('second');
   });
 });
 
@@ -91,11 +94,11 @@ describe('every vendor is watched from its first run', () => {
   });
 
   it('watches the id it would actually ask for, including the override', async () => {
-    const github = FREE_VENDORS.find(v => v.id === 'github')!;
-    process.env[github.modelEnv] = 'openai/some-other-model';
+    const v = FREE_VENDORS[0]!;
+    process.env[v.modelEnv] = 'some-other-model';
     const { orangecatChain } = await import('@/services/cat/provider-catalog');
-    const entry = orangecatChain().find(p => p.id === 'github')!;
-    expect(entry.models).toEqual(['openai/some-other-model']);
+    const entry = orangecatChain().find(p => p.id === v.id)!;
+    expect(entry.models).toEqual(['some-other-model']);
   });
 
   it('names the key env each vendor actually reads', () => {
@@ -106,6 +109,26 @@ describe('every vendor is watched from its first run', () => {
       expect(v.baseUrl, v.id).toMatch(/^https:\/\//);
       expect(v.baseUrl.endsWith('/'), `${v.id} baseUrl must not end in /`).toBe(false);
       expect(v.defaultModel.length, v.id).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe('a vendor that does not answer is not carried', () => {
+  it('lists only endpoints probed as reachable', () => {
+    // The first draft of this file had three vendors written from memory. Two
+    // were wrong and one of those, GitHub Models, is a product being retired —
+    // `models.github.ai` answers 410 with `github_models_retirement_brownout`.
+    // Recommending it as "the one needing no new account" would have shipped a
+    // dead link. A file about model rot is not exempt from model rot.
+    expect(FREE_VENDORS.map(v => v.id)).toEqual(['cerebras']);
+  });
+
+  it('records why the rejected ones are absent, so nobody re-adds them', () => {
+    // Absence carries no reason. Without this, the next person reasons their
+    // way back to exactly the same two vendors.
+    expect([...REJECTED_VENDORS]).toEqual(['github', 'google']);
+    for (const id of REJECTED_VENDORS) {
+      expect(FREE_VENDORS.some(v => v.id === id), id).toBe(false);
     }
   });
 });
