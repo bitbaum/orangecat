@@ -18,11 +18,13 @@
  *     code that does not exist
  */
 import { beforeEach, afterEach } from 'vitest';
+import { execSync } from 'node:child_process';
 import {
   mayUseCapability,
   canUseCapability,
   offerablePlatformTools,
   CAPABILITY_RULES,
+  AWAITING_CONSUMER,
   type CatCapability,
 } from '@/services/cat/capability-gate';
 import { recordToolAttempt, __resetObservationsForTest } from '@/services/cat/tool-capability';
@@ -199,5 +201,50 @@ describe('every capability is a row, and the rows are the vocabulary', () => {
     // tier would ration honesty, so this row has no access term — deliberately.
     expect(CAPABILITY_RULES.web.access).toBeUndefined();
     expect(canUseCapability('web', { modelId: 'gpt-5.2', access: 'free' })).toBe(true);
+  });
+});
+
+describe('a row with no consumer says so', () => {
+  // A row nothing consults is a claim that the gate governs something it does
+  // not. Enforced in BOTH directions, because each is a real drift: a new row
+  // with no caller and no declaration would look gated and not be, and a stale
+  // declaration would hide that a capability IS now gated.
+  const consumed = (cap: string): boolean => {
+    // Whether anything actually asks the gate about this capability.
+    const out = execSync(`grep -rEo "(may|can)UseCapability\\('${cap}'" src/ || true`, {
+      encoding: 'utf8',
+    });
+    return out.trim().length > 0;
+  };
+
+  const all = Object.keys(CAPABILITY_RULES) as CatCapability[];
+
+  it('declares every capability nothing asks about', () => {
+    const undeclared = all.filter(c => !consumed(c) && !AWAITING_CONSUMER[c]);
+    expect(
+      undeclared,
+      `these rows look gated but nothing consults them — add a caller, or an AWAITING_CONSUMER reason: ${undeclared.join(', ')}`
+    ).toEqual([]);
+  });
+
+  it('carries no stale declaration for a capability that is now consulted', () => {
+    const stale = (Object.keys(AWAITING_CONSUMER) as CatCapability[]).filter(c => consumed(c));
+    expect(
+      stale,
+      `these are consulted now, so remove them from AWAITING_CONSUMER: ${stale.join(', ')}`
+    ).toEqual([]);
+  });
+
+  it('gives a reason, not an empty placeholder', () => {
+    for (const [cap, reason] of Object.entries(AWAITING_CONSUMER)) {
+      expect(reason, cap).toBeTruthy();
+      expect(reason!.length, cap).toBeGreaterThan(15);
+    }
+  });
+
+  it('is web that is actually wired, and it still answers', () => {
+    // The one live consumer, so the gate is not decoration.
+    expect(AWAITING_CONSUMER.web).toBeUndefined();
+    expect(canUseCapability('web', { modelId: 'gpt-5.2' })).toBe(true);
   });
 });
