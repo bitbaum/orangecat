@@ -24,7 +24,7 @@ import { saveMessages } from '@/services/cat/conversation-history';
 import { buildFailedTurnMessages } from '@/services/cat/failed-turn';
 import { alertCatChatFailure } from '@/services/cat/failure-alert';
 import { resolveProvider, type FallbackProvider } from '@/services/cat/provider-resolver';
-import { toolPlanForModel } from '@/services/cat/tool-capability';
+import { actionsViaForModel } from '@/services/cat/tool-capability';
 import { meterCreditUsage } from '@/services/cat/credit-metering';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { extractAndStoreMemories } from '@/services/cat/memory';
@@ -302,11 +302,12 @@ export async function orchestrateCatChat(
   // to act; a 'prose' prompt reaching a tool-capable one just describes the
   // envelope twice, and the exec_action text path still executes it. Neither
   // ends with the user being told something happened that did not.
-  // The prompt's claim about what Cat can do must come from the SAME fact the
-  // tool loop branches on. When these were two different questions — the loop
-  // asking the model, the prompt asking the provider — a user could be told an
-  // action ran on a path that was never given the definitions to run it.
-  const actionsVia = toolPlanForModel(modelToUse).sendTools ? 'tools' : 'prose';
+  // The prompt's claim must track what will ACTUALLY be sent. `'tools'` drops
+  // the prose action catalogue because definitions replace it, so claiming it
+  // when no definitions go out leaves Cat with no verb at all — neither the
+  // loop nor the prose envelope. That is why the credentials are part of the
+  // question, not just the model's capability.
+  const actionsVia = actionsViaForModel(modelToUse, Boolean(toolEndpoint && toolKey));
 
   // Build the prompt to FIT the link that will answer, rather than discovering
   // it does not. The free Groq pool refuses any single request over its

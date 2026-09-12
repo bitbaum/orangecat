@@ -69,6 +69,21 @@ describe('what the registry is allowed to say', () => {
   });
 });
 
+describe('the prompt only claims what is actually sent', () => {
+  it('never drops the prose catalogue when no definitions will go out', async () => {
+    // `actionsVia: 'tools'` means "the prose action catalogue was DROPPED
+    // because definitions replace it". Claim it with no definitions on the
+    // wire and Cat has NO verb at all — not the loop, not the prose envelope.
+    // A local model, or any provider we hold no key for, would silently lose
+    // the ability to do anything, which is the exact group this work serves.
+    const { actionsViaForModel } = await import('@/services/cat/tool-capability');
+
+    expect(actionsViaForModel('some/uncatalogued-model', false)).toBe('prose');
+    expect(actionsViaForModel('some/uncatalogued-model', true)).toBe('tools');
+    expect(actionsViaForModel(null, false)).toBe('prose');
+  });
+});
+
 describe('a BYOK user gets the tool loop', () => {
   it('calls THEIR vendor with THEIR key, not the platform fallback', async () => {
     const calls: Array<{ url: string; auth: string }> = [];

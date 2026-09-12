@@ -60,3 +60,30 @@ export function toolPlanForModel(
 ): ToolPlan {
   return planToolAttempt({ observed, declared: declaredToolVerdict(modelId) });
 }
+
+/**
+ * What the PROMPT may claim, which is a different question from what to send.
+ *
+ * `actionsVia: 'tools'` does not mean "this model probably supports tools". It
+ * means "the prose action catalogue has been DROPPED because tool definitions
+ * are being sent instead" (ADR-0006 D7). So it must track whether definitions
+ * will actually go on the wire — not whether we are hopeful about the model.
+ *
+ * Getting this wrong is expensive in one specific direction. If the catalogue
+ * is dropped and no definitions are sent, Cat is left with NO verb at all: it
+ * cannot act through the tool loop, and the prompt no longer tells it how to
+ * act in prose. A user on a local model or a provider we hold no key for would
+ * lose the ability to do anything — which is the exact group the capability
+ * work exists to serve.
+ *
+ * Hence the AND. Optimism belongs on the wire, where asking is how we learn;
+ * the claim stays conservative, because an unearned claim costs a working
+ * feature rather than a round-trip.
+ */
+export function actionsViaForModel(
+  modelId: string | null | undefined,
+  hasToolCredentials: boolean,
+  observed: ToolVerdict = 'unobserved'
+): 'tools' | 'prose' {
+  return toolPlanForModel(modelId, observed).sendTools && hasToolCredentials ? 'tools' : 'prose';
+}

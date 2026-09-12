@@ -60,7 +60,7 @@ describe('tool capability is one fact, asked of the model', () => {
 
   it('is the SAME fact the orchestrator derives actionsVia from', () => {
     const src = sourceWithoutComments('src/services/cat/chat-orchestrator.ts');
-    expect(src).toContain("toolPlanForModel(modelToUse).sendTools ? 'tools' : 'prose'");
+    expect(src).toContain('actionsViaForModel(modelToUse, Boolean(toolEndpoint && toolKey))');
     expect(src).toContain('actionsVia,');
     // If this one still asked the provider while the loop asked the model,
     // the prompt and the wire could disagree — which is the whole point.
