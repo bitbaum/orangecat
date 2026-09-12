@@ -652,7 +652,7 @@ async function main() {
       if (NOTIFY) {
         try {
           await notifyFounderSkipped(reason);
-          console.error(`eval-cat: founder notified that the eval did not run (${NOTIFY_USER_ID})`);
+          console.error('eval-cat: founder notified that the eval did not run');
         } catch (err) {
           console.error(`eval-cat: failed to insert skip notification: ${err}`);
         }
@@ -782,7 +782,7 @@ async function main() {
     if (NOTIFY) {
       try {
         await notifyFounderHarnessError(line);
-        console.error(`eval-cat: founder notified in-app (${NOTIFY_USER_ID})`);
+        console.error('eval-cat: founder notified in-app');
       } catch (err) {
         console.error(`eval-cat: failed to insert founder notification: ${err}`);
       }
@@ -795,7 +795,7 @@ async function main() {
     if (NOTIFY) {
       try {
         await notifyFounder(summaryLine, report);
-        console.error(`eval-cat: founder notified in-app (${NOTIFY_USER_ID})`);
+        console.error('eval-cat: founder notified in-app');
       } catch (err) {
         console.error(`eval-cat: failed to insert founder notification: ${err}`);
       }
