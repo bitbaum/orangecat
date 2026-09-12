@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { labelForTool } from '@/lib/chat/tool-labels';
 import { join } from 'node:path';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { PLATFORM_TOOL_DEFINITION } from '@/services/cat/tool-use-detection';
@@ -49,19 +50,24 @@ describe('check_my_track_record is wired as a read tool', () => {
 
   it('is dispatched by the executor and described to the router', () => {
     // Call syntax, comment-stripped: a mention in a comment cannot satisfy this.
-    const executor = stripComments(readFileSync(join(ROOT, 'src/services/cat/tool-executor.ts'), 'utf8'));
+    const executor = stripComments(
+      readFileSync(join(ROOT, 'src/services/cat/tool-executor.ts'), 'utf8')
+    );
     expect(executor).toContain(`if (toolName === '${TOOL}') {`);
     expect(executor).toContain('handleCheckMyTrackRecord(supabase, userId, toolCall, onToolCall)');
 
     const router = stripComments(readFileSync(join(ROOT, 'src/services/cat/tool-use.ts'), 'utf8'));
     expect(router).toContain(`'- ${TOOL}: `);
 
-    // Without a label the chip would read "Done (3)" for a self-audit.
-    const chip = readFileSync(
-      join(ROOT, 'src/components/ai-chat/ModernChatPanel/components/ToolCallChip.tsx'),
-      'utf8'
-    );
-    expect(chip).toContain(`${TOOL}: {`);
+    // Without a label the chip would read "Done (3)" for a self-audit. Asserted
+    // against the LABEL MODULE, not the component: the wording moved out of the
+    // chip when it started deriving action labels from the registry, and a scan
+    // pointed at the old file would pass or fail for reasons that have nothing
+    // to do with whether the label exists.
+    const labels = stripComments(readFileSync(join(ROOT, 'src/lib/chat/tool-labels.ts'), 'utf8'));
+    expect(labels).toContain(`${TOOL}: {`);
+    // Behaviour, not just text: a self-audit must not borrow search wording.
+    expect(labelForTool(TOOL).completed(3)).toContain('record');
   });
 });
 
