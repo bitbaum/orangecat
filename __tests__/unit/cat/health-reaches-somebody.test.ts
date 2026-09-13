@@ -137,3 +137,72 @@ describe('the check is actually scheduled', () => {
     expect(route).toContain('alerted: verdict.alert');
   });
 });
+
+/**
+ * Redundancy is a separate question from availability.
+ *
+ * On 2026-09-13 every OpenRouter free model answered "Rate limit exceeded:
+ * free-models-per-day" — the allowance is 50/day without credits — leaving Groq
+ * as the only vendor that could serve. Cat still answered, so nothing alerted,
+ * and the product was one Groq outage away from total failure with no signal
+ * saying so. It was found by probing by hand.
+ *
+ * ACROSS VENDORS is the property: a second model at the same vendor draws on
+ * the SAME daily meter, so it stops being a fallback the moment that meter is
+ * spent.
+ */
+const vendors = (
+  groq: { configured?: boolean; class: string },
+  openrouter: { configured?: boolean; class: string }
+) =>
+  healthy({
+    probes: {
+      groq: { provider: 'groq', configured: true, ...groq },
+      openrouter: { provider: 'openrouter', configured: true, ...openrouter },
+    },
+  } as Partial<CatHealthReport>);
+
+describe('losing the last fallback is worth saying out loud', () => {
+  it('alerts when one vendor is spent and only one is left serving', () => {
+    const v = classifyHealth(vendors({ class: 'ok' }, { class: 'rate_limit' }));
+    expect(v.alert).toBe(true);
+    expect(v.alert && v.code).toBe('CAT_NO_VENDOR_REDUNDANCY');
+    expect(v.detail).toContain('openrouter');
+  });
+
+  it('stays quiet while two vendors are still serving', () => {
+    const v = classifyHealth(vendors({ class: 'ok' }, { class: 'ok' }));
+    expect(v.alert).toBe(false);
+  });
+
+  it('does not blame quota for a broken key or a bad upstream', () => {
+    // "Top up your allowance" is the wrong instruction for a revoked key, and
+    // sending it would waste the one action the operator takes.
+    for (const cls of ['auth', 'invalid_key', 'upstream_err', 'no_response']) {
+      const v = classifyHealth(vendors({ class: 'ok' }, { class: cls }));
+      expect(v.alert && v.code, cls).not.toBe('CAT_NO_VENDOR_REDUNDANCY');
+    }
+  });
+
+  it('does not count a vendor that was never configured as exhausted', () => {
+    // No key means it was never in the chain — that is not a loss of
+    // redundancy, it is a chain that never had it.
+    const v = classifyHealth(
+      vendors({ class: 'ok' }, { configured: false, class: 'rate_limit' })
+    );
+    expect(v.alert && v.code).not.toBe('CAT_NO_VENDOR_REDUNDANCY');
+  });
+
+  it('still ranks a total outage above a lost fallback', () => {
+    // Users being turned away now outranks users who might be turned away next.
+    const report = vendors({ class: 'rate_limit' }, { class: 'rate_limit' });
+    const v = classifyHealth({ ...report, catCanAnswer: false });
+    expect(v.alert && v.code).toBe('CAT_CANNOT_ANSWER');
+  });
+
+  it('still ranks model rot above a lost fallback', () => {
+    const report = vendors({ class: 'ok' }, { class: 'rate_limit' });
+    const v = classifyHealth({ ...report, missingFreeModels: ['gone:free'] });
+    expect(v.alert && v.code).toBe('CAT_MODEL_ROT');
+  });
+});
