@@ -28,7 +28,7 @@ export async function GET(request: Request) {
   try {
     const admin = createAdminClient();
     const result = await runDailyBrief(admin, CRON.BATCH_SIZE);
-    logger.info('cat daily brief run', { ...result }, 'CronCatBrief');
+    logger.warn('cat daily brief run', { ...result }, 'CronCatBrief');
     return apiSuccess(result);
   } catch (error) {
     logger.error('cat daily brief crashed', { error }, 'CronCatBrief');

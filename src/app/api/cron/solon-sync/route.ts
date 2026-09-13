@@ -54,7 +54,7 @@ export async function GET(request: Request) {
       applied: results.filter(r => r.applied && r.reason !== 'already applied').length,
       results,
     };
-    logger.info('solon-sync run', summary, 'CronSolonSync');
+    logger.warn('solon-sync run', summary, 'CronSolonSync');
     return apiSuccess(summary);
   } catch (error) {
     logger.error('solon-sync crashed', { error }, 'CronSolonSync');
