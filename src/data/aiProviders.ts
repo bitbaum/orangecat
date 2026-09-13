@@ -10,6 +10,9 @@
  *   - 'direct'     → vendor-owned API (Anthropic, OpenAI, Google, Groq, ...)
  *   - 'aggregator' → single key fronts many upstream models (OpenRouter, Together)
  *   - 'local'      → runs on the user's own machine (Ollama, LM Studio)
+ *   - 'media'      → generates video / music rather than text (Replicate).
+ *                    A media key is NOT a chat key: it never appears in the
+ *                    Cat's fallback chain, and Cat cannot answer with it.
  *
  * Runtime support is layered separately. Today the chat route only routes
  * Groq + OpenRouter natively; other providers get their keys stored and will
@@ -19,7 +22,7 @@
  * Last Modified: 2026-06-10 (strip fake metadata, add Ollama + LM Studio)
  */
 
-export type AIProviderCategory = 'direct' | 'aggregator' | 'local';
+export type AIProviderCategory = 'direct' | 'aggregator' | 'local' | 'media';
 
 /**
  * Providers Cat's chat route can route through today (server-reachable).
@@ -35,6 +38,20 @@ export const WIRED_PROVIDER_IDS = [
 ] as const;
 
 export type WiredProviderId = (typeof WIRED_PROVIDER_IDS)[number];
+
+/**
+ * Providers whose keys drive the STUDIO (video + music), not chat.
+ *
+ * Kept separate from WIRED_PROVIDER_IDS on purpose: that list means "the chat
+ * route can answer with this", and a Replicate key cannot. Both lists are
+ * storable, which is what KEYABLE_PROVIDER_IDS below is for.
+ */
+export const MEDIA_PROVIDER_IDS = ['replicate'] as const;
+
+export type MediaProviderId = (typeof MEDIA_PROVIDER_IDS)[number];
+
+/** Every provider a user may save a key for. SSOT for the api-keys route. */
+export const KEYABLE_PROVIDER_IDS = [...WIRED_PROVIDER_IDS, ...MEDIA_PROVIDER_IDS] as const;
 
 export interface AIProvider {
   id: string;
@@ -151,6 +168,20 @@ export const aiProviders: AIProvider[] = [
     apiKeyExample: 'sk-xxxxxxxxxxxxxxxxxxxxxxxx',
   },
 
+  // ── Media (video + music generation, not chat) ────────────────────────
+  {
+    id: 'replicate',
+    name: 'Replicate',
+    type: 'media',
+    description: 'Video and music models (Veo, MusicGen, and more) behind one key.',
+    websiteUrl: 'https://replicate.com',
+    apiKeyUrl: 'https://replicate.com/account/api-tokens',
+    billingUrl: 'https://replicate.com/account/billing',
+    docsUrl: 'https://replicate.com/docs',
+    apiKeyPrefix: 'r8_',
+    apiKeyExample: 'r8_xxxxxxxxxxxxxxxxxxxxxxxx',
+  },
+
   // ── Local ─────────────────────────────────────────────────────────────
   {
     id: 'ollama',
@@ -181,6 +212,14 @@ export const wiredProviders = aiProviders.filter(p => wiredIdSet.has(p.id));
 
 /** Display names for marketing copy — derived from the provider registry. */
 export const WIRED_PROVIDER_DISPLAY_NAMES = wiredProviders.map(p => p.name);
+
+const mediaIdSet = new Set<string>(MEDIA_PROVIDER_IDS);
+
+/** Subset of aiProviders whose keys the Studio can render video / music with. */
+export const mediaProviders = aiProviders.filter(p => mediaIdSet.has(p.id));
+
+/** Everything a user may save a key for, in the order the key form shows them. */
+export const keyableProviders = [...wiredProviders, ...mediaProviders];
 
 // ==================== UTILITY FUNCTIONS ====================
 

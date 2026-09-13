@@ -73,7 +73,7 @@ export const metadata: Metadata = {
   },
   description: APP_DESCRIPTION,
   keywords:
-    'AI economic agent, bitcoin, finance, community, fund, invest, lend, products, services, lightning network, peer-to-peer, pseudonymous, non-custodial',
+    'AI economic agent, bitcoin, AI video generation, AI music generation, creative funding, finance, community, fund, invest, lend, products, services, lightning network, peer-to-peer, pseudonymous, non-custodial',
   metadataBase: new URL(SITE_URL),
   // Feed autodiscovery — browsers/readers find /rss.xml from any page.
   alternates: {
@@ -89,8 +89,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'OrangeCat - Your AI Economic Agent',
-    description: 'Fund, lend, invest, trade, and govern with any identity, settled in Bitcoin.',
+    title: `${APP_NAME} — ${APP_TAGLINE}`,
+    description: APP_DESCRIPTION,
   },
   manifest: '/manifest.json',
   icons: {
@@ -130,8 +130,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   name: APP_NAME,
                   url: SITE_URL,
                   logo: `${SITE_URL}/images/orange-cat-logo.svg`,
-                  description:
-                    'Fund, lend, invest, trade, and govern with any identity, settled in Bitcoin.',
+                  description: APP_DESCRIPTION,
                   sameAs: [],
                 },
                 {

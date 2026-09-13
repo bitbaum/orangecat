@@ -82,11 +82,7 @@ export default function HeroSectionStatic() {
               <div className="p-4 sm:p-6 space-y-3 sm:space-y-4">
                 {/* Platform capabilities */}
                 <div className="space-y-2">
-                  {[
-                    'Interviews you, sets up your offerings',
-                    'Suggests ways to earn from what you have',
-                    'Funded in Bitcoin, non-custodial',
-                  ].map(feature => (
+                  {HERO_COPY.demoFeatures.map(feature => (
                     <div
                       key={feature}
                       className="flex items-center gap-2 text-sm text-fg-secondary"
@@ -126,15 +122,14 @@ export default function HeroSectionStatic() {
                 </Link>
 
                 <div className="flex flex-wrap gap-2 text-xs font-medium">
-                  <span className="rounded-full border border-default bg-surface-raised/40 px-2.5 py-1 text-fg-primary">
-                    Proactive agent
-                  </span>
-                  <span className="rounded-full border border-default bg-surface-raised/40 px-2.5 py-1 text-fg-primary">
-                    Non-custodial
-                  </span>
-                  <span className="rounded-full border border-default bg-surface-raised/40 px-2.5 py-1 text-fg-primary">
-                    Builds on FleetCrown
-                  </span>
+                  {HERO_COPY.demoTags.map(tag => (
+                    <span
+                      key={tag}
+                      className="rounded-full border border-default bg-surface-raised/40 px-2.5 py-1 text-fg-primary"
+                    >
+                      {tag}
+                    </span>
+                  ))}
                 </div>
               </div>
             </div>

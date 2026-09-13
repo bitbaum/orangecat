@@ -123,9 +123,9 @@ export const ECOSYSTEM_PILLARS: readonly EcosystemPillar[] = [
     key: 'orangecat',
     title: ECOSYSTEM.orangeCat.title,
     role: 'Economy',
-    tagline: 'Fund, offer, and get paid in Bitcoin',
+    tagline: 'Make it, fund it, and get paid in Bitcoin',
     summary:
-      'The public economic layer: where a person, project, group, product, or service is explained, shared, supported, offered, or joined — and paid in Bitcoin.',
+      'The public economic layer: where a person, project, group, product, or service is made, explained, shared, supported, offered, or joined — and paid in Bitcoin. The Studio makes the work itself; the rest of the layer finances and sells it.',
     boundary:
       'Public by design. Everything here is a page someone can read, share, and settle against without an account.',
     siteUrl: ECOSYSTEM.orangeCat.siteUrl,

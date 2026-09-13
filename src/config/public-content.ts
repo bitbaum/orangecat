@@ -13,6 +13,7 @@ export const PRO_DESTINATION_COPY = {
 } as const;
 
 export const CURRENT_CAPABILITIES = [
+  'A Studio that makes video, music, longform writing, and artwork — and revises it from plain-language notes.',
   'Public pages for people, projects, groups, products, services, events, and other entities.',
   'Non-custodial Bitcoin payments through Lightning, Lightning Address, NWC, and on-chain addresses.',
   'Public project funding records based on confirmed Bitcoin settlement.',

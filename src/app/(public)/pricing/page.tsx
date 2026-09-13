@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { Check, Sparkles, Cat as CatIcon } from 'lucide-react';
+import { Check, Sparkles, Cat as CatIcon, Clapperboard } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { PageHeading } from '@/components/layout/PageHeading';
 import {
@@ -12,14 +12,26 @@ import {
   type CatPlan,
 } from '@/config/cat-plans';
 import { PRO_DESTINATION_COPY } from '@/config/public-content';
+import { getAIProvider } from '@/data/aiProviders';
+import { AUDIO_PROVIDER_RUNTIME, VIDEO_PROVIDER_RUNTIME } from '@/config/ai-provider-runtime';
 import { ROUTES } from '@/config/routes';
 import { cn } from '@/lib/utils';
 
 export const metadata = {
   title: 'Cat plans',
   description:
-    'OrangeCat Cat is free for everyone — 10 messages a day, no card. Go further with your own API key, Cat Credits, or a Supporter pass in Bitcoin.',
+    'OrangeCat Cat is free for everyone — 10 messages a day, no card. Go further with your own API key, Cat Credits, or a Supporter pass in Bitcoin. Studio renders run on your own key at cost.',
 };
+
+/**
+ * Derived from the Studio runtime SSOT, so a provider added there shows up in
+ * this copy instead of the page naming a stale one.
+ */
+const STUDIO_RENDER_PROVIDERS = [
+  ...new Set([...Object.keys(VIDEO_PROVIDER_RUNTIME), ...Object.keys(AUDIO_PROVIDER_RUNTIME)]),
+]
+  .map(id => getAIProvider(id)?.name ?? id)
+  .join(' or ');
 
 /**
  * /pricing — honest tier card layout, rendered 1:1 from the CAT_PLANS SSOT
@@ -86,6 +98,37 @@ export default function PricingPage() {
                 cap, funding the platform AI budget — and first access the day Pro ships.
               </li>
             </ul>
+          </div>
+        </section>
+
+        {/* What the Studio costs — the one place a render can spend money. */}
+        <section className="mb-16 rounded-lg border border-default bg-surface-base p-8">
+          <h2 className="mb-4 flex items-center gap-3 font-heading text-2xl font-bold tracking-display text-fg-primary">
+            <Clapperboard className="h-6 w-6" aria-hidden="true" />
+            What the Studio costs
+          </h2>
+          <div className="space-y-4 text-fg-primary">
+            <p>
+              Writing in the Studio runs on the same free OrangeCat models as Cat — nothing to add,
+              nothing to pay.
+            </p>
+            <p>
+              Video, music and artwork are different: a render costs real money at a real provider.
+              So they run on <strong>your own key</strong> ({STUDIO_RENDER_PROVIDERS}), you pay that
+              provider directly at their prices, and OrangeCat adds nothing on top. The free pool is
+              text-only and never pays for someone else&apos;s render — which is also why it is
+              still free.
+            </p>
+            <p className="text-fg-secondary">
+              Selling or funding what you make is unaffected: OrangeCat takes no cut of a Bitcoin
+              payment, whatever made the thing being paid for.
+            </p>
+            <Link
+              href={ROUTES.STUDIO}
+              className="inline-flex text-sm font-semibold text-fg-primary underline"
+            >
+              How the Studio works
+            </Link>
           </div>
         </section>
 

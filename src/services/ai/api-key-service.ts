@@ -17,7 +17,7 @@ import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from 'crypt
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { logger } from '@/utils/logger';
 import { PROVIDER_BASE_URLS } from '@/config/ai-provider-runtime';
-import { WIRED_PROVIDER_IDS } from '@/data/aiProviders';
+import { MEDIA_PROVIDER_IDS, WIRED_PROVIDER_IDS } from '@/data/aiProviders';
 import { PLATFORM_CHAIN_ID } from '@/services/ai/key-chain';
 import { apiErrorMessage } from '@/lib/api/errorMessage';
 
@@ -138,16 +138,19 @@ function generateKeyHint(apiKey: string): string {
  * OpenRouter's `/auth/key` is special because it also returns the user's
  * remaining rate-limit budget, which we forward to the UI.
  */
-const PROVIDER_AUTH_ENDPOINTS: Record<string, string> = Object.fromEntries(
-  WIRED_PROVIDER_IDS.map(id => [
+const PROVIDER_AUTH_ENDPOINTS: Record<string, string> = Object.fromEntries([
+  ...WIRED_PROVIDER_IDS.map(id => [
     id,
     // OpenRouter's /auth/key also returns rate-limit budget; everyone else
     // gets the cheapest authenticated endpoint, /models.
     id === 'openrouter'
       ? `${PROVIDER_BASE_URLS.openrouter}/auth/key`
       : `${PROVIDER_BASE_URLS[id]}/models`,
-  ])
-);
+  ]),
+  // Media providers (Studio). Replicate has no /models auth probe worth
+  // paying for; /account is the cheapest authenticated call it serves.
+  ...MEDIA_PROVIDER_IDS.map(id => [id, `${PROVIDER_BASE_URLS[id]}/account`]),
+]);
 
 // ==================== SERVICE CLASS ====================
 

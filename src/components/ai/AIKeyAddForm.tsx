@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils';
 import {
   aiProviders,
   getAIProvider,
+  keyableProviders,
   validateApiKeyFormat,
   wiredProviders,
 } from '@/data/aiProviders';
@@ -147,7 +148,7 @@ export function AIKeyAddForm({ onAdd, onCancel, onFieldFocus }: AIKeyAddFormProp
             onFocus={() => onFieldFocus?.('provider')}
             onBlur={() => onFieldFocus?.(null)}
           >
-            {wiredProviders.map(p => (
+            {keyableProviders.map(p => (
               <button
                 key={p.id}
                 type="button"
@@ -167,7 +168,8 @@ export function AIKeyAddForm({ onAdd, onCancel, onFieldFocus }: AIKeyAddFormProp
           <p className="mt-2 text-xs text-fg-secondary">
             Want Claude or Gemini? Add an <strong className="text-fg-primary">OpenRouter</strong>{' '}
             key — one key fronts all 200+ models. Direct {unwiredDirectNames} support is on the
-            roadmap.
+            roadmap. A <strong className="text-fg-primary">Replicate</strong> key is different: it
+            renders video and music in the Studio, and never answers chat.
           </p>
         </div>
 

@@ -33,6 +33,7 @@ import {
   HelpCircle,
   Search,
   Cat,
+  Clapperboard,
   ClipboardList,
   BarChart3,
   Handshake,
@@ -93,6 +94,11 @@ const headerNavigationConfig = {
     {
       name: 'Product',
       children: [
+        {
+          name: 'Studio',
+          href: ROUTES.STUDIO,
+          description: 'Make video, music, writing and artwork',
+        },
         { name: 'About & mission', href: ROUTES.ABOUT, description: 'Why OrangeCat exists' },
         {
           name: 'Roadmap',
@@ -240,6 +246,13 @@ const simplifiedSections: NavSection[] = [
         href: ROUTES.RECEIVE,
         icon: QrCode,
         description: 'Get paid or send Bitcoin',
+        requiresAuth: true,
+      },
+      {
+        name: 'Studio',
+        href: ROUTES.DASHBOARD.STUDIO,
+        icon: Clapperboard,
+        description: 'Make video, music, writing, artwork',
         requiresAuth: true,
       },
       {
@@ -404,6 +417,7 @@ export const bottomNavItems: NavItem[] = [];
  */
 export const footerNavigation = {
   product: [
+    { name: 'Studio', href: ROUTES.STUDIO },
     { name: 'Discover', href: ROUTES.DISCOVER },
     { name: 'Pay links', href: ROUTES.PAY_LANDING },
     { name: 'How it works', href: ROUTES.HOW_IT_WORKS },

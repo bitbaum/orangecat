@@ -34,6 +34,7 @@ export const PROVIDER_BASE_URLS = {
   xai: 'https://api.x.ai/v1',
   groq: 'https://api.groq.com/openai/v1',
   openrouter: 'https://openrouter.ai/api/v1',
+  replicate: 'https://api.replicate.com/v1',
 } as const;
 
 export const PROVIDER_RUNTIME: Record<string, ProviderRuntimeConfig> = {
@@ -132,4 +133,81 @@ export function getImageProviderRuntime(
   }
   const baseUrl = image.baseUrl ?? PROVIDER_RUNTIME[providerId]?.baseUrl;
   return baseUrl ? { ...image, baseUrl } : null;
+}
+
+// ---------------------------------------------------------------------------
+// Studio: video + music generation (BYOK-only)
+// ---------------------------------------------------------------------------
+
+/**
+ * How a provider exposes long-running media generation.
+ *
+ * Both shapes are JOB-based, and deliberately so: a video takes minutes, which
+ * is longer than any HTTP request between the browser and this app should be
+ * held open. The route starts the job and hands back the provider's own job id;
+ * the browser polls. Nothing about a job is stored here — the poll re-asks the
+ * provider with the same user's key, so there is no job table to migrate, and
+ * a user can only ever see jobs their own key created.
+ *
+ * - `openai-videos` — POST {baseUrl}/videos → {id}; GET /videos/{id} for status;
+ *                     GET /videos/{id}/content for the bytes.
+ * - `replicate`     — POST {baseUrl}/models/{model}/predictions → {id};
+ *                     GET /predictions/{id} until succeeded, output is a URL.
+ */
+export type MediaJobApi = 'openai-videos' | 'replicate';
+
+export interface MediaProviderRuntimeConfig {
+  /** Model used when the user hasn't picked one. */
+  defaultModel: string;
+  api: MediaJobApi;
+  /** Only needed when the provider isn't in PROVIDER_RUNTIME. */
+  baseUrl?: string;
+}
+
+/**
+ * Providers whose keys can generate VIDEO. BYOK-only, exactly like images:
+ * the platform free pool is text-only and must never pay for a render.
+ */
+export const VIDEO_PROVIDER_RUNTIME: Record<string, MediaProviderRuntimeConfig> = {
+  openai: { defaultModel: 'sora-2', api: 'openai-videos' },
+  replicate: {
+    defaultModel: 'google/veo-3-fast',
+    api: 'replicate',
+    baseUrl: PROVIDER_BASE_URLS.replicate,
+  },
+};
+
+/**
+ * Providers whose keys can generate MUSIC / audio.
+ *
+ * Only Replicate today. None of the six chat providers serves a music model,
+ * and claiming otherwise in a dropdown is how a feature ends up "supported"
+ * everywhere and working nowhere.
+ */
+export const AUDIO_PROVIDER_RUNTIME: Record<string, MediaProviderRuntimeConfig> = {
+  replicate: {
+    defaultModel: 'meta/musicgen',
+    api: 'replicate',
+    baseUrl: PROVIDER_BASE_URLS.replicate,
+  },
+};
+
+function resolveMediaRuntime(
+  table: Record<string, MediaProviderRuntimeConfig>,
+  providerId: string
+): (MediaProviderRuntimeConfig & { baseUrl: string }) | null {
+  const entry = table[providerId];
+  if (!entry) {
+    return null;
+  }
+  const baseUrl = entry.baseUrl ?? PROVIDER_RUNTIME[providerId]?.baseUrl;
+  return baseUrl ? { ...entry, baseUrl } : null;
+}
+
+export function getVideoProviderRuntime(providerId: string) {
+  return resolveMediaRuntime(VIDEO_PROVIDER_RUNTIME, providerId);
+}
+
+export function getAudioProviderRuntime(providerId: string) {
+  return resolveMediaRuntime(AUDIO_PROVIDER_RUNTIME, providerId);
 }

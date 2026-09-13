@@ -11,7 +11,7 @@
 import { createApiKeyService, hasActiveByok } from '@/services/ai/api-key-service';
 import { withAuth, type AuthenticatedRequest } from '@/lib/api/withAuth';
 import { z } from 'zod';
-import { WIRED_PROVIDER_IDS } from '@/data/aiProviders';
+import { KEYABLE_PROVIDER_IDS } from '@/data/aiProviders';
 import { PLATFORM_CHAIN_ID } from '@/services/ai/key-chain';
 import { logger } from '@/utils/logger';
 import {
@@ -25,10 +25,11 @@ import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
 import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 const addKeySchema = z.object({
-  // WIRED_PROVIDER_IDS is the SSOT for providers the chat pipeline can
-  // actually route — a previously hardcoded list here accepted providers
-  // (anthropic, google) that skipped validation and sat dead in the chain.
-  provider: z.enum(WIRED_PROVIDER_IDS).default('openrouter'),
+  // KEYABLE_PROVIDER_IDS is the SSOT for providers a key can be SAVED for:
+  // the chat-wired ones plus the Studio's media providers. A previously
+  // hardcoded list here accepted providers (anthropic, google) that skipped
+  // validation and sat dead in the chain.
+  provider: z.enum(KEYABLE_PROVIDER_IDS).default('openrouter'),
   keyName: z.string().min(1).max(50).default('Default'),
   apiKey: z.string().min(10).max(500),
   isPrimary: z.boolean().default(true),

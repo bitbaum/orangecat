@@ -8,7 +8,7 @@
  */
 
 import React from 'react';
-import { Sprout, Heart, Palette, Lightbulb } from 'lucide-react';
+import { Sprout, Heart, Palette, Lightbulb, Music, BookOpen, Film } from 'lucide-react';
 import type { EntityTemplate } from '../types';
 import { PLATFORM_DEFAULT_CURRENCY } from '@/config/currencies';
 
@@ -67,6 +67,58 @@ export const PROJECT_TEMPLATES: EntityTemplate<ProjectDefaults>[] = [
       currency: 'EUR',
       funding_purpose:
         'Venue rental and setup ($1200), Artist compensation and materials ($800), Marketing and promotional materials ($500), Exhibition catalog printing ($300), Opening reception events ($200)',
+      category: 'Creative',
+    },
+  },
+  // ── Creative work being MADE ────────────────────────────────────────────
+  // A film, an album or a novel is financed the same way a garden is: money up
+  // front, accountability as it goes. These exist so the funding side of the
+  // Studio has somewhere obvious to land — see src/config/studio.ts.
+  {
+    id: 'record-an-album',
+    name: 'Record an Album',
+    icon: React.createElement(Music, { className: 'w-4 h-4' }),
+    tagline: 'Fund the studio time, keep the masters',
+    defaults: {
+      title: 'Debut Album',
+      description:
+        'Recording and releasing a full-length album. Backers fund the studio time, the mixing and the pressing, and hear every version along the way — including the ones that do not make it.\n\nThe record is written. What is left is the part that costs money: studio days, a mixing engineer, mastering, and a first physical run. Backers get the tracks as they are finished, not a year later, and the masters stay with the artist.',
+      goal_amount: 6000,
+      currency: PLATFORM_DEFAULT_CURRENCY,
+      funding_purpose:
+        'Studio time and engineer (40%), Mixing and mastering (25%), Session musicians (15%), Physical pressing and artwork (15%), Distribution (5%)',
+      category: 'Creative',
+    },
+  },
+  {
+    id: 'write-a-novel',
+    name: 'Write a Novel',
+    icon: React.createElement(BookOpen, { className: 'w-4 h-4' }),
+    tagline: 'Buy the writing time, chapter by chapter',
+    defaults: {
+      title: 'Novel in Progress',
+      description:
+        'Writing a novel in the open. Backers fund the months of writing it actually takes, and read each chapter as it is finished rather than waiting for a publisher to decide.\n\nThe outline is done and the first chapters exist. Funding covers the writing time, a structural edit and a copy-edit, and a cover. No advance to earn out, no rights signed away.',
+      goal_amount: 4000,
+      currency: PLATFORM_DEFAULT_CURRENCY,
+      funding_purpose:
+        'Writing time (60%), Structural edit (15%), Copy-edit and proofread (10%), Cover and typesetting (10%), Print run (5%)',
+      category: 'Creative',
+    },
+  },
+  {
+    id: 'make-a-short-film',
+    name: 'Make a Short Film',
+    icon: React.createElement(Film, { className: 'w-4 h-4' }),
+    tagline: 'Shoot it without asking a commissioner first',
+    defaults: {
+      title: 'Short Film',
+      description:
+        'Producing a short film, from shoot to festival print. Backers fund the days that cost money — crew, locations, kit — and see the cut as it comes together.\n\nThe script is locked and the cast is attached. Funding covers a four-day shoot, post-production and festival submissions. No commissioner, no notes from anyone who is not paying for it.',
+      goal_amount: 8000,
+      currency: PLATFORM_DEFAULT_CURRENCY,
+      funding_purpose:
+        'Crew and cast (35%), Locations and permits (15%), Camera and lighting hire (20%), Post-production and sound (20%), Festival submissions (10%)',
       category: 'Creative',
     },
   },

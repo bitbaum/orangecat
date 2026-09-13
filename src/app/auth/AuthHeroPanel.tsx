@@ -13,12 +13,16 @@
  */
 
 import Link from 'next/link';
-import { ArrowLeft, Globe, Shield, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Clapperboard, Globe, Shield, TrendingUp } from 'lucide-react';
 import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
 import { APP_NAME, APP_KICKER, APP_TAGLINE } from '@/config/brand';
 import { ROUTES } from '@/config/routes';
 
 const HIGHLIGHTS = [
+  {
+    icon: Clapperboard,
+    label: 'Studio — make video, music, writing and artwork, then sell or finance it',
+  },
   { icon: TrendingUp, label: 'Full economic spectrum — exchange, fund, lend, invest, govern' },
   { icon: Globe, label: 'Bitcoin & Lightning native — instant, near-zero-fee, non-custodial' },
   { icon: Shield, label: 'Pseudonymous by default — real identity opt-in, never required' },
@@ -53,8 +57,8 @@ export function AuthHeroPanel() {
         </h1>
 
         <p className="mb-10 text-lg leading-relaxed text-fg-secondary">
-          Fund, lend, invest, trade, and govern — with any identity, any counterparty, settled in
-          Bitcoin. No gatekeepers.
+          Make it, fund it, sell it — and lend, invest and govern from the same place, with any
+          identity, any counterparty, settled in Bitcoin. No gatekeepers.
         </p>
 
         <ul className="space-y-3">

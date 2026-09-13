@@ -288,6 +288,8 @@ export const ROUTES = {
   WALLETS: '/wallets',
   CREATE: '/create',
   STUDY_BITCOIN: '/study-bitcoin',
+  /** Public marketing page for the Studio (the signed-in surface is DASHBOARD.STUDIO). */
+  STUDIO: '/studio',
   BITCOIN_WALLET_GUIDE: '/bitcoin-wallet-guide',
   ONBOARDING: {
     // /onboarding is a redirect-only entry point (legacy bookmarks).
@@ -409,6 +411,9 @@ export const ROUTES = {
     BOOKINGS: '/dashboard/bookings',
     BOOKINGS_VIEW: (id: string) => `/dashboard/bookings/${id}`,
     CAT: '/dashboard/cat',
+    // Where a creation is MADE, before it becomes a project to finance or a
+    // product to sell.
+    STUDIO: '/dashboard/studio',
     CAT_PERMISSIONS: '/dashboard/cat/permissions',
     /** Deep link straight to one category's card (see catPermissionAnchorId). */
     CAT_PERMISSIONS_CATEGORY: (category: string) =>

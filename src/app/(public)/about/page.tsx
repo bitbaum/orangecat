@@ -1,14 +1,14 @@
 import React from 'react';
 import Link from 'next/link';
 import { Metadata } from 'next';
-import { Zap, TreePine, Cat } from 'lucide-react';
+import { Zap, TreePine, Cat, Clapperboard } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { ROUTES } from '@/config/routes';
 
 export const metadata: Metadata = {
   title: 'About',
   description:
-    'OrangeCat is your AI economic agent — buy, sell, fund, lend, invest, and govern with any identity. Bitcoin is the first live payment rail.',
+    'OrangeCat is your AI economic agent — make the work, fund it, sell it, lend, invest, and govern with any identity. Bitcoin is the first live payment rail.',
 };
 
 export default function AboutPage() {
@@ -35,14 +35,25 @@ export default function AboutPage() {
             <h2 className="text-2xl font-semibold text-fg-primary mb-4">Our Mission</h2>
             <p className="text-lg text-fg-secondary max-w-3xl mx-auto">
               Enable anyone — any person, pseudonym, or organization — to participate in the full
-              spectrum of economic and governance activity: exchanging, funding, lending, investing,
-              and governing, without gatekeepers. We are starting with Bitcoin so settlement can be
-              independently verified.
+              spectrum of economic and governance activity: making, exchanging, funding, lending,
+              investing, and governing, without gatekeepers. We are starting with Bitcoin so
+              settlement can be independently verified.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
             {/* Mission cards — monochrome neutral tiles per migration 6/N */}
+            <div className="text-center">
+              <div className="w-16 h-16 bg-surface-raised border border-subtle rounded-full flex items-center justify-center mx-auto mb-4">
+                <Clapperboard className="w-8 h-8 text-fg-secondary" />
+              </div>
+              <h3 className="text-lg font-semibold text-fg-primary mb-2">Making Counts as Work</h3>
+              <p className="text-fg-secondary">
+                A film, a record, a novel — the Studio makes them here, and the same platform
+                finances them and sells them. Creation is not a hobby the economy tolerates.
+              </p>
+            </div>
+
             <div className="text-center">
               <div className="w-16 h-16 bg-surface-raised border border-subtle rounded-full flex items-center justify-center mx-auto mb-4">
                 <TreePine className="w-8 h-8 text-fg-secondary" />
@@ -91,8 +102,8 @@ export default function AboutPage() {
               Join the Open Economy
             </h2>
             <p className="text-xl text-fg-inverted/70 mb-8">
-              Exchange, fund, lend, invest, and govern — with your AI agent, under any identity, in
-              Bitcoin.
+              Make it, fund it, sell it — and lend, invest and govern from the same place, with your
+              AI agent, under any identity, in Bitcoin.
             </p>
             <Link href={`${ROUTES.AUTH}?mode=register`}>
               <Button variant="accent" size="lg">

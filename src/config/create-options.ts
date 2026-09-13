@@ -1,12 +1,19 @@
-import { MessageSquare, type LucideIcon } from 'lucide-react';
+import { Clapperboard, MessageSquare, type LucideIcon } from 'lucide-react';
 import {
   COLOR_CLASSES,
   getEntitiesForCreateMenu,
   type EntityCategory,
   type EntityMetadata,
 } from '@/config/entity-registry';
+import { ROUTES } from '@/config/routes';
 
-export type CreateOptionCategory = EntityCategory | 'content';
+/**
+ * 'studio' is not an entity category: nothing is created in the database when
+ * you open the Studio. It leads the list anyway because making the thing comes
+ * before listing it, and a chooser that only offers listings quietly tells
+ * people the platform is not for makers.
+ */
+export type CreateOptionCategory = EntityCategory | 'content' | 'studio';
 
 export interface CreateOption {
   name: string;
@@ -24,6 +31,7 @@ export const CREATE_PAGE = {
 } as const;
 
 export const CREATE_CATEGORY_LABELS: Record<CreateOptionCategory, string> = {
+  studio: 'Make it',
   content: 'Share',
   gateway: 'Get paid',
   business: 'Sell or fund',
@@ -46,6 +54,15 @@ function optionFromEntity(entity: EntityMetadata): CreateOption {
 }
 
 export function buildCreateOptions(): CreateOption[] {
+  const studio: CreateOption = {
+    name: 'Studio',
+    description: 'Video, music, writing, artwork',
+    href: ROUTES.DASHBOARD.STUDIO,
+    icon: Clapperboard,
+    color: 'text-fg-primary',
+    bgColor: 'bg-surface-raised',
+    category: 'studio',
+  };
   const post: CreateOption = {
     name: 'Post',
     description: 'Share an update on your timeline',
@@ -55,7 +72,7 @@ export function buildCreateOptions(): CreateOption[] {
     bgColor: 'bg-surface-raised',
     category: 'content',
   };
-  return [post, ...getEntitiesForCreateMenu().map(optionFromEntity)];
+  return [studio, post, ...getEntitiesForCreateMenu().map(optionFromEntity)];
 }
 
 export const CREATE_OPTIONS = buildCreateOptions();

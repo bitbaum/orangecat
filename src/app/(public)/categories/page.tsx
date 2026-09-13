@@ -36,7 +36,8 @@ export default function CategoriesPage() {
           <PageHeading className="mb-4">Find Your Community</PageHeading>
           <p className="text-xl text-fg-secondary max-w-2xl mx-auto">
             Whether you&apos;re a creator, builder, educator, or organization, OrangeCat helps you
-            exchange, fund, lend, invest, and govern—without gatekeepers.
+            make the work and then exchange, fund, lend, invest, and govern around it—without
+            gatekeepers.
           </p>
         </div>
 

@@ -5,9 +5,20 @@ const siteName = process.env.NEXT_PUBLIC_SITE_NAME || APP_NAME;
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: `${APP_NAME} - Bitcoin Funding Made Simple`,
-  description: 'Your AI economic agent — exchange, fund, lend, invest, and govern with Bitcoin.',
-  keywords: ['bitcoin', 'ai', 'economic agent', 'funding', 'lightning', 'blockchain'],
+  title: `${APP_NAME} - Make It, Finance It, Get Paid`,
+  description:
+    'Make video, music, writing and artwork with AI — then finance it, sell it, and settle in Bitcoin. Your AI economic agent does the setup.',
+  keywords: [
+    'bitcoin',
+    'ai',
+    'economic agent',
+    'ai video generation',
+    'ai music generation',
+    'creative funding',
+    'funding',
+    'lightning',
+    'blockchain',
+  ],
   authors: [{ name: APP_NAME }],
   icons: {
     icon: [
@@ -27,8 +38,9 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: `${siteName} - Your AI Economic Agent`,
-    description: 'Exchange, fund, lend, invest, and govern — with any identity, settled in Bitcoin.',
+    title: `${siteName} - Make It, Finance It, Get Paid`,
+    description:
+      'Make the work — video, music, writing, artwork — then fund it, sell it, lend, invest and govern. Any identity, settled in Bitcoin.',
     type: 'website',
     locale: 'en_US',
     siteName: siteName,
@@ -36,8 +48,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: `${siteName} - Your AI Economic Agent`,
-    description: 'Exchange, fund, lend, invest, and govern — with any identity, settled in Bitcoin.',
+    title: `${siteName} - Make It, Finance It, Get Paid`,
+    description:
+      'Make the work — video, music, writing, artwork — then fund it, sell it, lend, invest and govern. Any identity, settled in Bitcoin.',
   },
   robots: {
     index: true,

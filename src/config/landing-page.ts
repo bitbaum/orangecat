@@ -11,7 +11,11 @@
  * - Follows SSOT principle from CLAUDE.md
  *
  * Created: 2026-01-28
- * Last updated: 2026-03-01 — Aligned with vision: Cat-centric, universal payments, pseudonymous-by-default
+ * Last updated: 2026-09-13 — Creation is now a first-class verb. The platform
+ * did not only start LISTING work, it started MAKING it (the Studio: video,
+ * music, writing, artwork), and the copy said nothing about that. Every surface
+ * below now carries the same three moves in the same order: make it, finance
+ * it, get paid.
  */
 
 import {
@@ -25,6 +29,7 @@ import {
   Cat,
   TrendingUp,
   Bot,
+  Clapperboard,
 } from 'lucide-react';
 import { GRADIENTS } from '@/config/gradients';
 
@@ -32,7 +37,8 @@ import { GRADIENTS } from '@/config/gradients';
 
 /**
  * Main categories shown on landing page
- * Reflects the full economic spectrum: exchange, funding, coordination, AI agent
+ * Reflects the full economic spectrum: creation, exchange, funding,
+ * coordination, AI agent
  */
 interface SuperAppCategory {
   id: string;
@@ -48,6 +54,26 @@ interface SuperAppCategory {
 }
 
 export const SUPER_APP_CATEGORIES: SuperAppCategory[] = [
+  {
+    id: 'create',
+    title: 'Make the Work',
+    description: 'The thing itself, not just the listing',
+    icon: Clapperboard,
+    iconGradient: GRADIENTS.iconOrange,
+    bgColor: 'bg-surface-raised',
+    features: [
+      {
+        title: 'Studio',
+        description:
+          'Video, music, writing and artwork — describe it, then change it by saying what is wrong with it. No craft vocabulary required.',
+      },
+      {
+        title: 'Then finance or sell it',
+        description:
+          'Unfinished work becomes a project people fund. Finished work becomes a product people buy.',
+      },
+    ],
+  },
   {
     id: 'exchange',
     title: 'Exchange',
@@ -119,7 +145,9 @@ export const SUPER_APP_CATEGORIES: SuperAppCategory[] = [
 // ==================== HOW IT WORKS STEPS ====================
 
 /**
- * Unified 4-step process — Cat-centric flow
+ * Unified 5-step process — Cat-centric flow, with making the work as its own
+ * step. The how-it-works page derives its heading from this array's length, so
+ * adding a step here cannot leave a page claiming "4 simple steps".
  */
 interface HowItWorksStep {
   number: string;
@@ -150,6 +178,15 @@ export const HOW_IT_WORKS_STEPS: HowItWorksStep[] = [
   },
   {
     number: '3',
+    icon: Clapperboard,
+    title: 'Make It',
+    description:
+      'Use the Studio for video, music, writing or artwork, or bring work you already have. Change it by saying what to change — plain words, no craft vocabulary.',
+    iconGradient: GRADIENTS.iconOrange,
+    bgColor: 'bg-surface-raised',
+  },
+  {
+    number: '4',
     icon: Wallet,
     title: 'Pick Your Currency',
     description:
@@ -158,11 +195,11 @@ export const HOW_IT_WORKS_STEPS: HowItWorksStep[] = [
     bgColor: 'bg-surface-raised',
   },
   {
-    number: '4',
+    number: '5',
     icon: TrendingUp,
-    title: 'Economic Activity Begins',
+    title: 'Finance It, Get Paid',
     description:
-      'Buy, sell, fund, lend, invest, or coordinate. Your Cat keeps track, surfaces insights, and acts on your behalf.',
+      'Unfinished work raises money as a project. Finished work sells as a product. Lend, invest and coordinate from the same place. Your Cat keeps track and acts on your behalf.',
     iconGradient: GRADIENTS.iconGreen,
     bgColor: 'bg-surface-raised',
   },
@@ -213,6 +250,12 @@ export const PLATFORM_COMPARISON: ComparisonRow[] = [
     orangecat: 'Bitcoin and Lightning settlement',
     highlight: true,
   },
+  {
+    feature: 'Making the work',
+    traditional: 'Bring a finished file',
+    orangecat: 'Studio: video, music, writing, artwork',
+    highlight: true,
+  },
   { feature: 'Platform fees', traditional: '5–10%', orangecat: '0%' },
   { feature: 'AI agent', traditional: 'None', orangecat: 'Your Cat acts on your behalf' },
   { feature: 'Account freezing', traditional: 'Can happen anytime', orangecat: 'Impossible' },
@@ -236,6 +279,12 @@ interface PlatformBenefit {
 }
 
 export const PLATFORM_BENEFITS: PlatformBenefit[] = [
+  {
+    icon: Clapperboard,
+    title: 'Make It Here',
+    description:
+      'The Studio renders video, music, writing and artwork. You change it by saying what is wrong with it — not by learning the craft first.',
+  },
   {
     icon: Cat,
     title: 'Your AI Cat',
@@ -278,13 +327,23 @@ interface ExampleUseCase {
 
 export const EXAMPLE_USE_CASES: ExampleUseCase[] = [
   {
-    emoji: '🎨',
+    emoji: '🎬',
     category: 'Creator',
-    title: 'Fund Your Work',
+    title: 'Make It, Then Fund It',
     description:
-      'Artists, writers, and makers can raise funds, sell work, and accept Bitcoin support from anywhere, under any identity.',
+      'Write the novel, cut the film, record the record — in the Studio or your own tools. Raise the money to finish it as a project, sell it as a product when it is done.',
     transparencyExample:
-      'Share receipts and progress updates publicly, or keep it private. Your choice.',
+      'Backers can see every version as it changes. Share receipts and progress publicly, or keep it private. Your choice.',
+    gradient: 'bg-surface-base',
+  },
+  {
+    emoji: '🎧',
+    category: 'Musician',
+    title: 'You Do Not Have to Read Music',
+    description:
+      'Describe how it should feel, listen, and say what to change — "the middle drags", "warmer". Everyone is a listener even when they are not a musician.',
+    transparencyExample:
+      'Sell the finished record directly. Bitcoin settles to your wallet; nobody holds your masters.',
     gradient: 'bg-surface-base',
   },
   {
@@ -324,6 +383,7 @@ export const EXAMPLE_USE_CASES: ExampleUseCase[] = [
  * Trust indicators shown at bottom of sections
  */
 export const TRUST_SIGNALS = [
+  'Make video, music and writing here',
   'Zero platform fees',
   'Bitcoin and Lightning payments',
   'No account freezing',
@@ -350,16 +410,39 @@ export const CTA_LABELS = {
 export const HERO_COPY = {
   badgeLead: 'Your AI economic agent',
   badgeIdentity: 'Any identity',
-  headline: 'Turn who you are into income.',
-  lede: 'Your Cat sets up ways to earn. Bitcoin settles. You stay in charge.',
+  headline: 'Make it. Finance it. Get paid.',
+  lede: 'A film, a record, a novel, a product, a service — make it here, raise the money to finish it, and sell it. Your Cat does the setup. Bitcoin settles. Any name you like.',
+  /**
+   * The three lines inside the hero's demo card. Here rather than in the
+   * component because they are the shortest statement of what the platform
+   * does, and they were drifting from the headline above them.
+   */
+  demoFeatures: [
+    'Makes the work with you — video, music, writing, artwork',
+    'Sets up the funding and the listing',
+    'Paid in Bitcoin, non-custodial',
+  ],
+  /** Chips under the demo card's CTA. */
+  demoTags: ['Studio built in', 'Proactive agent', 'Non-custodial'],
 } as const;
 
 /**
- * The three first moves a visitor can take. Everything else on the old
- * homepage (category grid, example personas, four-step explainer, comparison
- * table) lives on /how-it-works or /discover.
+ * The first moves a visitor can take. Everything else on the old homepage
+ * (category grid, example personas, step-by-step explainer, comparison table)
+ * lives on /how-it-works, /studio or /discover.
+ *
+ * "Make something" leads because it is the move nobody expects a funding
+ * platform to offer, and because it is the one that needs no account, no
+ * audience and no idea of what to sell yet.
  */
 export const FIRST_MOVES = [
+  {
+    id: 'studio',
+    title: 'Make something',
+    body: 'Video, music, writing, artwork. Describe it, then change it by saying what is wrong.',
+    href: '/studio',
+    cta: 'See the Studio',
+  },
   {
     id: 'cat',
     title: 'Meet your Cat',
@@ -377,7 +460,7 @@ export const FIRST_MOVES = [
   {
     id: 'learn',
     title: 'How it works',
-    body: 'Four short steps if you want the picture before you start.',
+    body: 'Five short steps if you want the picture before you start.',
     href: '/how-it-works',
     cta: 'Read',
   },
@@ -392,17 +475,17 @@ export const SECTION_HEADERS = {
   whatCanYouDo: {
     title: 'Everyone Can Make Things',
     subtitle:
-      'Products, services, projects, causes, events, loans, investments — anyone can create any of these under any identity and settle in Bitcoin.',
+      'Films, records, novels, artwork — and products, services, projects, causes, events, loans and investments. Make the work here, finance it here, get paid here, under any identity, settled in Bitcoin.',
   },
   howItWorks: {
     title: 'Meet Your Cat',
     subtitle:
-      'Your AI economic agent finds you ways to earn and sets them up. You decide what to pursue.',
+      'Your AI economic agent helps you make the work, finds the money for it, and sets everything up. You decide what to pursue.',
   },
   exampleUseCases: {
     title: 'Built for Makers',
     subtitle:
-      'Any person, pseudonym, or organization can create and participate fully. Here are some examples.',
+      'Any person, pseudonym, or organization can make something and be paid for it. Here are some examples.',
   },
   transparency: {
     title: 'Private Where It Matters, Transparent Where You Choose',

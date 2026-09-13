@@ -136,6 +136,13 @@ export const API_ROUTES = {
       REVISE: '/api/ai/writing/revise',
     },
   },
+  STUDIO: {
+    CAPABILITY: '/api/studio/capability',
+    GENERATE: '/api/studio/generate',
+    REVISE: '/api/studio/revise',
+    JOB: (jobId: string, medium: string) =>
+      `/api/studio/jobs/${encodeURIComponent(jobId)}?medium=${encodeURIComponent(medium)}`,
+  },
   AUTH: {
     CALLBACK: '/api/auth/callback',
     SYNC: '/api/auth/sync',

@@ -2,7 +2,16 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ChevronDown, Bot, Coins, Users, Shield, Zap, HelpCircle } from 'lucide-react';
+import {
+  ChevronDown,
+  Bot,
+  Coins,
+  Users,
+  Shield,
+  Zap,
+  HelpCircle,
+  Clapperboard,
+} from 'lucide-react';
 import { PageHeading } from '@/components/layout/PageHeading';
 import { ROUTES } from '@/config/routes';
 import { cn } from '@/lib/utils';
@@ -28,12 +37,12 @@ const FAQ_SECTIONS: FaqSection[] = [
       {
         question: 'What is OrangeCat?',
         answer:
-          'OrangeCat is your AI economic agent — a platform that lets any person, pseudonym, or organization participate in the full spectrum of economic activity: exchange goods and services, fund projects, lend money, invest, and coordinate together. Bitcoin and Lightning Network are the live settlement rails.',
+          'OrangeCat is your AI economic agent — a platform where any person, pseudonym, or organization can make the work and be paid for it. Make video, music, writing and artwork in the Studio, finance unfinished work as a project, sell finished work as a product, and lend, invest and coordinate from the same place. Bitcoin and Lightning Network are the live settlement rails.',
       },
       {
         question: 'Who is OrangeCat for?',
         answer:
-          'Anyone who wants to participate in economic activity without gatekeepers. Creators selling their work, researchers seeking funding, communities pooling resources, borrowers and lenders connecting directly, organizations making collective decisions — if you want to exchange value with anyone in the world, OrangeCat is for you.',
+          'Anyone who wants to participate in economic activity without gatekeepers. Film-makers, musicians and writers making the work and funding it, creators selling what they have made, researchers seeking funding, communities pooling resources, borrowers and lenders connecting directly, organizations making collective decisions — if you want to make something or exchange value with anyone in the world, OrangeCat is for you.',
       },
       {
         question: 'Is OrangeCat free to use?',
@@ -44,6 +53,38 @@ const FAQ_SECTIONS: FaqSection[] = [
         question: 'Do I need to use my real name?',
         answer:
           'No. OrangeCat is pseudonymous by default. You can participate fully — sell, fund, lend, invest — under any identity you choose. Real-name verification is opt-in only, never required.',
+      },
+    ],
+  },
+  {
+    title: 'The Studio (making things)',
+    icon: Clapperboard,
+    color: 'text-fg-primary',
+    items: [
+      {
+        question: 'Can I actually make video and music here?',
+        answer:
+          'Yes. The Studio generates video, music, longform writing and artwork. You describe what you want, watch or listen to it, and then say what should be different in ordinary words — "the middle drags", "colder light", "start in the middle of the argument". That becomes the next version.',
+      },
+      {
+        question: 'I am not a musician. Is this for me?',
+        answer:
+          'That is exactly who it is for. You do not need to name a tempo or a key to know that a track drags, and you do not need to know a lens to know the light is wrong. Saying what is wrong is enough to change it — the Studio translates your words into what the model needs.',
+      },
+      {
+        question: 'What does the Studio cost?',
+        answer:
+          'Writing runs on OrangeCat’s own free models, so it costs nothing. Video, music and artwork run on your own AI provider key (Settings → AI) — you pay your provider directly at their prices, and OrangeCat adds nothing on top. The free pool is text-only and never pays for a render.',
+      },
+      {
+        question: 'Who owns what I make?',
+        answer:
+          'You do. OrangeCat stores your renders so the link does not expire, and claims no rights over them. What your AI provider permits is set by that provider’s own terms, which you accept directly with them when you add your key.',
+      },
+      {
+        question: 'How do I get paid for it?',
+        answer:
+          'Two ways, and most creators use both in order. While the work is unfinished, publish it as a project so people can fund it as you go. When it is finished, list it as a product with a price. Payment settles in Bitcoin straight to your wallet — OrangeCat takes no cut.',
       },
     ],
   },

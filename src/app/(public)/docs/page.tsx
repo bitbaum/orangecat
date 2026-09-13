@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import {
   Bot,
+  Clapperboard,
   Coins,
   Shield,
   Zap,
@@ -13,6 +14,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { ENTITY_REGISTRY, ENTITY_TYPES as ENTITY_TYPE_KEYS } from '@/config/entity-registry';
+import { STUDIO_MEDIA, STUDIO_MEDIUMS } from '@/config/studio';
 import Button from '@/components/ui/Button';
 import { PageHeading } from '@/components/layout/PageHeading';
 import { ROUTES } from '@/config/routes';
@@ -20,7 +22,7 @@ import { ROUTES } from '@/config/routes';
 export const metadata: Metadata = {
   title: 'Documentation',
   description:
-    'Platform documentation for OrangeCat — how the AI economic agent works, entity types, payments, and security.',
+    'Platform documentation for OrangeCat — how the AI economic agent works, how the Studio makes video, music and writing, entity types, payments, and security.',
 };
 
 const ENTITY_TYPES = ENTITY_TYPE_KEYS.filter(t => t !== 'wallet') // wallet is infrastructure, not a user-listable entity type
@@ -40,7 +42,8 @@ export default function DocsPage() {
         <div className="text-center mb-14">
           <PageHeading className="mb-4">Platform Documentation</PageHeading>
           <p className="text-xl text-fg-secondary max-w-2xl mx-auto">
-            How OrangeCat works — the AI agent, entity system, payments, and security.
+            How OrangeCat works — the AI agent, the Studio, the entity system, payments, and
+            security.
           </p>
         </div>
 
@@ -78,6 +81,49 @@ export default function DocsPage() {
           </div>
         </section>
 
+        {/* The Studio */}
+        <section className="mb-10">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="p-2 rounded-lg bg-surface-raised border border-subtle">
+              <Clapperboard className="h-5 w-5 text-fg-secondary" />
+            </div>
+            <h2 className="text-2xl font-semibold text-fg-primary">The Studio — making the work</h2>
+          </div>
+          <div className="bg-surface-base rounded-lg border border-default p-6 space-y-4">
+            <p className="text-fg-secondary leading-relaxed">
+              OrangeCat does not only list work that already exists. The <strong>Studio</strong>{' '}
+              makes it:
+            </p>
+            <ul className="space-y-2">
+              {STUDIO_MEDIUMS.map(medium => (
+                <li key={medium} className="flex items-start gap-3">
+                  <div className="w-2 h-2 rounded-full bg-fg-primary mt-2 flex-shrink-0" />
+                  <p className="text-sm text-fg-secondary">
+                    <span className="font-medium text-fg-primary">{STUDIO_MEDIA[medium].name}</span>{' '}
+                    — {STUDIO_MEDIA[medium].tagline}
+                  </p>
+                </li>
+              ))}
+            </ul>
+            <p className="text-fg-secondary leading-relaxed">
+              The loop that matters is revision. You describe what you want, look at or listen to
+              it, and then say what should be different in ordinary words — &ldquo;the middle
+              drags&rdquo;, &ldquo;colder light&rdquo;. That note is translated into the craft
+              vocabulary the model responds to and becomes the next version, so the work is
+              changeable by anyone who can judge it, not only by someone trained to make it.
+            </p>
+            <p className="text-fg-secondary leading-relaxed">
+              Writing runs on OrangeCat&apos;s own free models. Video, music and artwork run on your
+              own provider key (Settings → AI): you pay that provider directly and OrangeCat adds no
+              markup. Finished work becomes a product; unfinished work becomes a project people can
+              fund.
+            </p>
+            <Link href={ROUTES.STUDIO} className="inline-flex text-sm font-medium text-fg-primary">
+              More about the Studio →
+            </Link>
+          </div>
+        </section>
+
         {/* Entity System */}
         <section className="mb-10">
           <div className="flex items-center gap-3 mb-5">
@@ -90,7 +136,7 @@ export default function DocsPage() {
             <p className="text-fg-secondary leading-relaxed mb-5">
               Everything on OrangeCat is an <strong>entity</strong> — a structured unit of economic
               or governance activity. Entities give the Cat a rich world model to read and operate
-              on. There are 14 entity types covering the full economic spectrum:
+              on. There are {ENTITY_TYPES.length} entity types covering the full economic spectrum:
             </p>
             <div className="grid sm:grid-cols-2 gap-3">
               {ENTITY_TYPES.map(entity => (

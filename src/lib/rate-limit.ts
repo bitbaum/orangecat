@@ -68,6 +68,11 @@ const tipRecipientLimiter = slidingWindow({ limit: 20, windowMs: 5 * 60_000 });
 // Generous on purpose: a paying client polls, and refusing a real payer is
 // worse than the outbound traffic this bounds.
 const l402VerifyLimiter = slidingWindow({ limit: 60, windowMs: 60_000 });
+// Same reasoning, different client: the Studio polls a render that can take
+// minutes. Each poll is one cheap GET at a provider the USER is paying, so the
+// budget protects against a runaway loop, not against cost. Refusing a poll
+// strands a render the user already paid for.
+const studioPollLimiter = slidingWindow({ limit: 120, windowMs: 5 * 60_000 });
 const paymentClaimLimiter = slidingWindow({ limit: 10, windowMs: 60 * 60_000 });
 // Public Ask-Cat / feedback endpoint: each submission costs a platform LLM
 // call, and the caller may be anonymous — so a tight per-IP budget on top of
@@ -94,6 +99,14 @@ const domainSearchLimiter = slidingWindow({ limit: 10, windowMs: 5 * 60_000 });
  */
 export async function rateLimit(request: RequestLike): Promise<RateLimitResult> {
   return toRateLimitResult(generalLimiter.check(`api:${clientIpKey(request)}`));
+}
+
+/**
+ * Rate limit for Studio render polling — 120 per 5 minutes per user.
+ * See studioPollLimiter above for why this is deliberately generous.
+ */
+export async function rateLimitStudioPoll(userId: string): Promise<RateLimitResult> {
+  return toRateLimitResult(studioPollLimiter.check(`studio-poll:${userId}`));
 }
 
 /**

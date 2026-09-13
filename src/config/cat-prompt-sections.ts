@@ -87,6 +87,14 @@ export const SITUATIONAL_SECTIONS: ReadonlyArray<{ heading: string; when: RegExp
     when: /sell|offer|create|list|start|fund|raise|loan|borrow|invest|rent|asset|wishlist|research|event|cause|project|product|service|earn|money/,
   },
   {
+    heading: 'Making Things (the Studio)',
+    // Generous on purpose (see the header): someone describing a creative
+    // ambition rarely uses the word "studio", and the cost of missing this
+    // section is Cat treating "I want to make a film" as an idea to talk
+    // about rather than a thing to build and fund.
+    when: /studio|make|create|record|film|movie|video|music|song|album|track|beat|novel|book|write|writing|chapter|story|script|screenplay|poem|art|artwork|cover|poster|illustration|design|podcast|game|animate|animation|render|generate|creative|artist|musician|author|director|producer/,
+  },
+  {
     heading: 'Multi-Entity Strategies',
     when: /strategy|combine|both|multiple|also|as well|scale|grow|expand|next step|what else/,
   },

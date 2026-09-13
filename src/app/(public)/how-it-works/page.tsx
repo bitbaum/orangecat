@@ -15,8 +15,9 @@ import { ROUTES } from '@/config/routes';
 /**
  * How It Works Page - Detailed walkthrough
  *
- * Uses the same 4-step process as the home page for consistency.
- * Provides more detail and explanation for users who want to learn more.
+ * Uses the same steps as the home page for consistency; the count comes from
+ * HOW_IT_WORKS_STEPS, so adding a step cannot leave the heading lying about
+ * how many there are.
  */
 
 const whyBitcoin = [
@@ -61,12 +62,12 @@ export default function HowItWorksPage() {
             {howItWorks.title}
           </h1>
           <p className="text-xl text-fg-secondary max-w-3xl mx-auto leading-relaxed">
-            One platform. Endless possibilities. Here's how to get started with anything on
-            OrangeCat.
+            Make the work, raise the money to finish it, and get paid for it — in one place, under
+            whatever name you choose.
           </p>
         </div>
 
-        {/* Steps Section - Matches home page (4 steps) */}
+        {/* Steps Section - Matches home page; count derived from the SSOT */}
         <div className="max-w-5xl mx-auto mb-20">
           <h2 className="text-3xl font-bold text-center mb-12">
             Get Started in {HOW_IT_WORKS_STEPS.length} Simple Steps
@@ -191,8 +192,8 @@ export default function HowItWorksPage() {
           <Card className="p-12 bg-surface-raised/30 border-default">
             <h2 className="text-2xl font-semibold mb-4">Ready to Get Started?</h2>
             <p className="text-xl text-fg-secondary mb-8 max-w-2xl mx-auto">
-              Publish, fund, and coordinate work with your AI agent. Bitcoin is the settlement rail
-              available today.
+              Make it in the Studio, publish it, fund it, and coordinate it — with your AI agent
+              doing the setup. Bitcoin is the settlement rail available today.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Button
@@ -218,6 +219,9 @@ export default function HowItWorksPage() {
         <div className="mt-12 text-center">
           <p className="text-fg-secondary mb-4">Need more help?</p>
           <div className="flex flex-wrap gap-4 justify-center">
+            <Button href={ROUTES.STUDIO} variant="ghost">
+              See the Studio
+            </Button>
             <Button href={ROUTES.DISCOVER} variant="ghost">
               See What Others Are Doing
             </Button>

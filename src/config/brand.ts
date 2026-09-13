@@ -15,8 +15,12 @@ export const APP_SLUG = 'orangecat';
 export const APP_DOMAIN = 'orangecat.ch';
 export const APP_KICKER = 'AI economic agent';
 export const APP_TAGLINE = 'Your AI economic agent';
+// The verbs, in the order a maker meets them. "Make" leads because the Studio
+// is the part nobody expects a funding platform to have, and because a
+// description that starts at "fund" quietly tells a film-maker this is not
+// their site.
 export const APP_DESCRIPTION =
-  'Fund, lend, invest, and coordinate with any identity. Cat is your private AI agent for practical economic next steps.';
+  'Make video, music and writing, then fund, sell, lend, invest, and coordinate with any identity. Cat is your private AI agent for practical economic next steps.';
 
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || `https://${APP_DOMAIN}`;
 

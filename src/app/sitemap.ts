@@ -37,6 +37,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.9,
     },
     {
+      url: `${BASE_URL}/studio`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
       url: `${BASE_URL}/about`,
       lastModified: new Date(),
       changeFrequency: 'monthly',
@@ -175,7 +181,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     if (profiles) {
       const profilePages: MetadataRoute.Sitemap = profiles
         .filter((p): p is SitemapProfile & { username: string } => p.username !== null)
-        .filter((p) => !isFixtureUsername(p.username))
+        .filter(p => !isFixtureUsername(p.username))
         .map(profile => ({
           // encodeURIComponent: usernames containing '@' (we observed
           // literal webdev@example.com profiles live) produce invalid

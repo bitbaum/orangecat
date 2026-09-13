@@ -8,7 +8,7 @@
  */
 
 import React from 'react';
-import { FileDigit, ShoppingBag, Music, Ticket } from 'lucide-react';
+import { FileDigit, ShoppingBag, Music, Ticket, BookOpen, Film } from 'lucide-react';
 import type { EntityTemplate } from '../types';
 import { ENTITY_STATUS } from '@/config/database-constants';
 import type { UserProductFormData } from '@/lib/validation';
@@ -61,6 +61,63 @@ export const PRODUCT_TEMPLATES: EntityTemplate<UserProductFormData>[] = [
       price: 25,
       currency: 'CHF',
       inventory_count: 50,
+      fulfillment_type: 'digital',
+      status: ENTITY_STATUS.DRAFT,
+    },
+  },
+  // ── Finished creative work, for sale ────────────────────────────────────
+  // The other end of the Studio: once the thing exists, it is a product like
+  // any other, and Bitcoin settles straight to the maker's wallet.
+  {
+    id: 'novel-ebook',
+    icon: React.createElement(BookOpen, { className: 'w-4 h-4' }),
+    name: 'Novel or Ebook',
+    tagline: 'A finished book, delivered on purchase.',
+    defaults: {
+      title: 'Novel (ebook)',
+      description:
+        'A complete novel, delivered as EPUB and PDF the moment you buy it. No store account, no reader lock-in, no rights held by anyone but the author.',
+      category: 'Writing',
+      product_type: 'digital',
+      price: 12,
+      currency: 'CHF',
+      inventory_count: -1,
+      fulfillment_type: 'digital',
+      status: ENTITY_STATUS.DRAFT,
+    },
+  },
+  {
+    id: 'album-download',
+    icon: React.createElement(Music, { className: 'w-4 h-4' }),
+    name: 'Album',
+    tagline: 'A full record, yours to keep.',
+    defaults: {
+      title: 'Album (digital)',
+      description:
+        'The full record as lossless files, plus artwork and liner notes. A purchase, not a licence that expires when a service does.',
+      category: 'Music',
+      product_type: 'digital',
+      price: 18,
+      currency: 'CHF',
+      inventory_count: -1,
+      fulfillment_type: 'digital',
+      status: ENTITY_STATUS.DRAFT,
+    },
+  },
+  {
+    id: 'short-film',
+    icon: React.createElement(Film, { className: 'w-4 h-4' }),
+    name: 'Film or Video',
+    tagline: 'A finished piece, sold directly.',
+    defaults: {
+      title: 'Short Film',
+      description:
+        'The finished film in full quality, bought directly from the people who made it. No platform between the audience and the work.',
+      category: 'Film',
+      product_type: 'digital',
+      price: 9,
+      currency: 'CHF',
+      inventory_count: -1,
       fulfillment_type: 'digital',
       status: ENTITY_STATUS.DRAFT,
     },
