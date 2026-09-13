@@ -16,7 +16,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { orangecatChain } from '@/services/cat/provider-catalog';
-import { getFreeModels } from '@/config/ai-models';
+import { getFreeModels, getModelMetadata } from '@/config/ai-models';
 import { CONFIGURED_GROQ_MODEL_IDS } from '@/services/ai/groq-models';
 
 describe('the chain description is read, not written', () => {
@@ -104,5 +104,35 @@ describe('the health probe asks for a model the chain serves', () => {
     expect(probes).toContain('DEFAULT_FREE_MODEL_ID');
     // No quoted model-looking literal passed as the 4th probeProvider argument.
     expect(probes).not.toMatch(/,\s*'[a-z0-9][a-z0-9._\/-]{4,}'\s*\n\s*\)/);
+  });
+});
+
+describe('a model the vendor no longer lists is not offered', () => {
+  // Found by the health check on its FIRST run, then confirmed against
+  // OpenRouter's live catalogue (445 ids) on 2026-09-13:
+  // `openai/gpt-oss-20b:free` and `nvidia/nemotron-nano-9b-v2:free` are gone.
+  // Until then the picker offered both, and choosing either answered 404.
+  it('keeps unavailable models out of the free list', () => {
+    const offered = getFreeModels().map(m => m.id);
+    for (const retired of ['openai/gpt-oss-20b:free', 'nvidia/nemotron-nano-9b-v2:free']) {
+      expect(offered, retired).not.toContain(retired);
+    }
+    expect(offered.length, 'something must still be offered').toBeGreaterThan(0);
+  });
+
+  it('keeps the metadata the Groq link depends on', () => {
+    // Retired from OpenRouter, NOT deleted: Groq still serves the unsuffixed id
+    // and PLATFORM_GROQ_MODEL resolves here for its tier. Deleting it would make
+    // the platform's Groq model unknown to the registry — and an unknown model
+    // is un-metered by accident rather than by decision.
+    const meta = getModelMetadata('openai/gpt-oss-20b');
+    expect(meta?.isFree).toBe(true);
+    expect(meta?.isAvailable).toBe(false);
+  });
+
+  it('still offers the model production actually runs on', () => {
+    // nvidia/nemotron-3-super-120b-a12b:free served 49 of 55 assistant messages
+    // in 30 days. Confirmed LIVE in the same catalogue read.
+    expect(getFreeModels().map(m => m.id)).toContain('nvidia/nemotron-3-super-120b-a12b:free');
   });
 });
