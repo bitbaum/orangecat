@@ -37,14 +37,13 @@ export default function StudioResult({
 
   return (
     <section className="oc-surface overflow-hidden">
+      {/* No <track>: generated footage has no transcript to caption, and
+          inventing one would be worse than offering none. */}
       {medium === 'video' && (
-        // footage has no transcript to caption; the prompt above is the
-        // description, and inventing captions would be worse than none.
         <video src={version.url} controls playsInline className="w-full bg-surface-page" />
       )}
       {medium === 'music' && (
         <div className="p-5 sm:p-6">
-          {}
           <audio src={version.url} controls className="w-full" />
         </div>
       )}
