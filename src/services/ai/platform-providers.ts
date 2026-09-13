@@ -27,6 +27,7 @@ import {
   PLATFORM_GROQ_MODEL,
 } from '@/services/ai';
 import { getFreeModels, getModelMetadata, DEFAULT_FREE_MODEL_ID } from '@/config/ai-models';
+import { resolveFreePool } from './free-model-pool';
 import { PROVIDER_BASE_URLS } from '@/config/ai-provider-runtime';
 import { configuredFreeVendors, vendorModel } from '@/config/free-vendors';
 import { createAutoRouter } from '@/services/ai/auto-router';
@@ -180,5 +181,10 @@ function orderedOpenRouterFreeModels(message: string): string[] {
 
   const head = getModelMetadata(top) ? top : freeIds[0];
   const rest = freeIds.filter(id => id !== head);
-  return [head, ...rest];
+
+  // Last step, and the only one that reads the vendor rather than the repo:
+  // drop ids OpenRouter has retired, and append live free ones the registry
+  // never knew about. The order above is preserved exactly — a healthy request
+  // still gets the model the auto-router chose. See free-model-pool.ts.
+  return resolveFreePool([head, ...rest]);
 }
