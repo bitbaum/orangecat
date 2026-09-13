@@ -96,7 +96,18 @@ export const AI_MODEL_REGISTRY: Record<string, AIModelMetadata> = {
     capabilities: ['text', 'function_calling', 'json_mode', 'streaming'],
     tier: 'free',
     recommendedFor: ['fast responses', 'simple tasks', 'tool-friendly chat'],
-    isAvailable: true,
+    // OpenRouter stopped listing this id — confirmed 2026-09-13 against its live
+    // catalogue (445 models), and found by the health check on its first run.
+    // Offering it meant the picker handed users a model that answers 404.
+    //
+    // The ENTRY stays rather than being deleted, because GROQ still serves the
+    // unsuffixed `openai/gpt-oss-20b` and PLATFORM_GROQ_MODEL resolves here for
+    // its metadata (tier free ⇒ unmetered ⇒ the platform's Groq link is not
+    // refused by our own paywall). `isAvailable` in this registry means "an
+    // OpenRouter free model we may offer", which is a different question from
+    // "any vendor serves it" — a conflation worth separating when something
+    // depends on it.
+    isAvailable: false,
     isFree: true,
     rateLimit: '50-1000/day',
   },
@@ -113,7 +124,9 @@ export const AI_MODEL_REGISTRY: Record<string, AIModelMetadata> = {
     capabilities: ['text', 'streaming'],
     tier: 'free',
     recommendedFor: ['fast responses', 'simple tasks', 'high volume'],
-    isAvailable: true,
+    // Also gone from OpenRouter's catalogue, confirmed 2026-09-13. No other
+    // vendor here serves it, so this is simply retired.
+    isAvailable: false,
     isFree: true,
     rateLimit: '50-1000/day',
   },
