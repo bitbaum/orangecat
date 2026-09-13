@@ -25,6 +25,25 @@ const GROQ_MODELS = {
   'openai/gpt-oss-120b': { name: 'GPT OSS 120B', contextWindow: 131072, maxOutputTokens: 65536 },
   // Same context, smaller and faster — more headroom under Groq's daily cap.
   'openai/gpt-oss-20b': { name: 'GPT OSS 20B', contextWindow: 131072, maxOutputTokens: 65536 },
+  // A SECOND meter, which is the whole point of this entry.
+  //
+  // Groq rations per model, not per account — measured from the response
+  // headers on 2026-09-13, within the same minute, on one key:
+  //
+  //   openai/gpt-oss-20b   591/1000 requests remaining   (what the platform runs)
+  //   openai/gpt-oss-120b  999/1000
+  //   qwen/qwen3.8-27b     999/1000
+  //
+  // So a second Groq model is not the usual same-vendor non-fallback: it has
+  // its own daily request budget and its own 8000 TPM window. That is real
+  // headroom rather than a longer queue for the same allowance.
+  //
+  // Chosen by probe, not by spec sheet. `groq/compound-mini` looked better on
+  // paper — 70000 TPM, nearly nine times the others — and is USELESS here: it
+  // answers `tool calling is not supported with this model`, and Cat drives a
+  // tool loop. This one returned a native tool_call for a real function
+  // definition. Figures from GET /models the same day.
+  'qwen/qwen3.8-27b': { name: 'Qwen3.8 27B', contextWindow: 131042, maxOutputTokens: 16384 },
 } as const;
 
 /**
@@ -77,6 +96,21 @@ export const CONFIGURED_GROQ_MODEL_IDS = Object.keys(GROQ_MODELS);
  */
 export const PLATFORM_GROQ_MODEL: keyof typeof GROQ_MODELS =
   (process.env.PLATFORM_GROQ_MODEL as keyof typeof GROQ_MODELS | undefined) ?? 'openai/gpt-oss-20b';
+
+/**
+ * A second Groq link, on its own meter.
+ *
+ * Not a nicer model — a SEPARATE budget. When the primary has spent its 1000
+ * requests or is inside its 8000-token minute, this one has not, because Groq
+ * counts them apart (see the headers quoted above GROQ_MODELS). Without it the
+ * chain leaves Groq entirely at that point, and today the next vendor is
+ * OpenRouter's free tier, which is 50 requests a day.
+ *
+ * Set to the primary's id to disable the second link without a deploy.
+ */
+export const PLATFORM_GROQ_FALLBACK_MODEL: keyof typeof GROQ_MODELS =
+  (process.env.PLATFORM_GROQ_FALLBACK_MODEL as keyof typeof GROQ_MODELS | undefined) ??
+  'qwen/qwen3.8-27b';
 
 export const DEFAULT_GROQ_MODEL: keyof typeof GROQ_MODELS =
   (process.env.GROQ_DEFAULT_MODEL as keyof typeof GROQ_MODELS | undefined) ?? 'openai/gpt-oss-120b';

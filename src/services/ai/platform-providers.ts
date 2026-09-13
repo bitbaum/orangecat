@@ -24,6 +24,7 @@ import {
   createGroqService,
   createOpenRouterService,
   createOpenAICompatibleServiceWithByok,
+  PLATFORM_GROQ_FALLBACK_MODEL,
   PLATFORM_GROQ_MODEL,
 } from '@/services/ai';
 import { getFreeModels, getModelMetadata, DEFAULT_FREE_MODEL_ID } from '@/config/ai-models';
@@ -72,15 +73,29 @@ export function buildPlatformProviders(message: string): PlatformProvider[] {
   const out: PlatformProvider[] = [];
 
   if (isGroqAvailable()) {
-    out.push({
-      providerId: 'groq',
-      aiService: createGroqService(),
-      // The FREE model, not the capable one: a metered default here is a step
-      // that can only 402, and this chain exists for users without a key.
-      defaultModel: PLATFORM_GROQ_MODEL,
-      toolEndpoint: `${PROVIDER_BASE_URLS.groq}/chat/completions`,
-      toolKey: process.env.GROQ_API_KEY ?? '',
-    });
+    // Two Groq links, because Groq rations PER MODEL. Measured from response
+    // headers on one key within the same minute: gpt-oss-20b had 591 of its
+    // 1000 daily requests left while qwen3.8-27b had 999 of its own. So the
+    // second entry is a genuine fallback rather than the usual same-vendor
+    // illusion — it draws on a budget the first one cannot spend.
+    //
+    // It matters most exactly when it is reached: the vendor after Groq is
+    // OpenRouter's free tier, which allows 50 requests a day.
+    const groqService = createGroqService();
+    const groqModels = [PLATFORM_GROQ_MODEL, PLATFORM_GROQ_FALLBACK_MODEL].filter(
+      (m, i, all) => all.indexOf(m) === i
+    );
+    for (const model of groqModels) {
+      out.push({
+        providerId: 'groq',
+        aiService: groqService,
+        // The FREE model, not the capable one: a metered default here is a step
+        // that can only 402, and this chain exists for users without a key.
+        defaultModel: model,
+        toolEndpoint: `${PROVIDER_BASE_URLS.groq}/chat/completions`,
+        toolKey: process.env.GROQ_API_KEY ?? '',
+      });
+    }
   }
 
   if (process.env.OPENROUTER_API_KEY) {
