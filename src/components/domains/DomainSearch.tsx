@@ -3,7 +3,7 @@
 /**
  * Domain availability search for /domains.
  *
- * A thin client over /api/v1/domains — deliberately thin, because FleetCrown
+ * A thin client over /api/v1/domains — deliberately thin, because Loki
  * calls that same endpoint and any rule implemented here instead of there
  * would apply to one of the two products and not the other. In particular the
  * "a .ch not-found proves nothing" rule is server-side; this component only

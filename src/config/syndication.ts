@@ -26,8 +26,8 @@ export interface SyndicationFeed {
 
 export const SYNDICATION_FEEDS: readonly SyndicationFeed[] = [
   {
-    source: 'fleetcrown',
-    feedUrl: 'https://fleetcrown.orangecat.ch/rss.xml',
+    source: 'loki',
+    feedUrl: 'https://loki.orangecat.ch/rss.xml',
     subjectProjectId: '8130c927-114a-45b7-8cc2-99efd5224025',
     eventType: 'project_updated',
   },

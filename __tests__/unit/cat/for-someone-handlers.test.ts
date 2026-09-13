@@ -1,6 +1,6 @@
 /**
  * Cat's verb for ADR-0005: `create_project_for_person` makes the placeholder
- * AND the project she owns in one go, and `send_to_fleetcrown` mints the same
+ * AND the project she owns in one go, and `send_to_loki` mints the same
  * handoff the entity page's card mints. These pin the two invariants that
  * matter: the project is owned by the placeholder (never by the caller), and a
  * failed project takes the placeholder down with it.
@@ -18,9 +18,9 @@ vi.mock('@/domain/profileClaims/service', () => ({
   declineProfileClaim: (...args: unknown[]) => declineProfileClaim(...args),
 }));
 
-const createFleetCrownHandoff = vi.fn();
-vi.mock('@/services/fleetcrown/handoff', () => ({
-  createFleetCrownHandoff: (...args: unknown[]) => createFleetCrownHandoff(...args),
+const createLokiHandoff = vi.fn();
+vi.mock('@/services/loki/handoff', () => ({
+  createLokiHandoff: (...args: unknown[]) => createLokiHandoff(...args),
 }));
 
 function mockSupabase(opts: { insertResult?: unknown; rows?: unknown[] } = {}) {
@@ -46,7 +46,7 @@ function mockSupabase(opts: { insertResult?: unknown; rows?: unknown[] } = {}) {
 beforeEach(() => {
   createProfileClaim.mockReset();
   declineProfileClaim.mockReset();
-  createFleetCrownHandoff.mockReset();
+  createLokiHandoff.mockReset();
 });
 
 describe('create_project_for_person', () => {
@@ -139,21 +139,21 @@ describe('create_project_for_person', () => {
   });
 });
 
-describe('send_to_fleetcrown', () => {
+describe('send_to_loki', () => {
   it('resolves a title among the caller’s own rows and returns the handoff link', async () => {
     const { supabase } = mockSupabase({ rows: [{ id: 'p-1', title: 'Network' }] });
-    createFleetCrownHandoff.mockResolvedValue({
+    createLokiHandoff.mockResolvedValue({
       ok: true,
-      url: 'https://fleetcrown.orangecat.ch/integrations/orangecat/build?intent=x',
+      url: 'https://loki.orangecat.ch/integrations/orangecat/build?intent=x',
       expiresInSeconds: 600,
       title: 'Network',
       role: 'steward',
     });
-    const result = await forSomeoneHandlers.send_to_fleetcrown(supabase, 'u', 'ua', {
+    const result = await forSomeoneHandlers.send_to_loki(supabase, 'u', 'ua', {
       title: 'Network',
     });
     expect(result.success).toBe(true);
-    expect(createFleetCrownHandoff).toHaveBeenCalledWith(
+    expect(createLokiHandoff).toHaveBeenCalledWith(
       expect.objectContaining({
         entityType: 'project',
         entityId: 'p-1',
@@ -165,17 +165,17 @@ describe('send_to_fleetcrown', () => {
 
   it('refuses an ambiguous title rather than guessing', async () => {
     const { supabase } = mockSupabase({ rows: [{ id: 'a' }, { id: 'b' }] });
-    const result = await forSomeoneHandlers.send_to_fleetcrown(supabase, 'u', 'ua', {
+    const result = await forSomeoneHandlers.send_to_loki(supabase, 'u', 'ua', {
       title: 'Net',
     });
     expect(result.success).toBe(false);
-    expect(createFleetCrownHandoff).not.toHaveBeenCalled();
+    expect(createLokiHandoff).not.toHaveBeenCalled();
   });
 
   it('passes the service’s refusal through untouched', async () => {
     const { supabase } = mockSupabase();
-    createFleetCrownHandoff.mockResolvedValue({ ok: false, code: 'forbidden', message: 'nope' });
-    const result = await forSomeoneHandlers.send_to_fleetcrown(supabase, 'u', 'ua', {
+    createLokiHandoff.mockResolvedValue({ ok: false, code: 'forbidden', message: 'nope' });
+    const result = await forSomeoneHandlers.send_to_loki(supabase, 'u', 'ua', {
       entity_id: '11111111-1111-1111-1111-111111111111',
     });
     expect(result).toEqual({ success: false, error: 'nope' });

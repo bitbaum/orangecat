@@ -19,7 +19,7 @@ import { SOLON_BASE_URL_DEFAULT } from '@/config/solon';
 export const metadata: Metadata = {
   title: 'The stack',
   description:
-    'OrangeCat, FleetCrown, and Solon are one stack and three products: the economy, the engineering that builds it, and the governance that keeps both honest.',
+    'OrangeCat, Loki, and Solon are one stack and three products: the economy, the engineering that builds it, and the governance that keeps both honest.',
   openGraph: {
     title: 'One stack, three pillars',
     description:
@@ -38,9 +38,9 @@ const solonBase = process.env.SOLON_BASE_URL || SOLON_BASE_URL_DEFAULT;
 const SEAMS = [
   {
     icon: FileSignature,
-    title: 'OrangeCat → FleetCrown',
+    title: 'OrangeCat → Loki',
     label: 'Signed build handoff',
-    body: 'An owner can send a public OrangeCat entity to FleetCrown as a short-lived, signed build intent. The signature binds the handoff to the owner who approved it. Funding never dispatches an agent on its own — settlement, planning, and execution stay separate events.',
+    body: 'An owner can send a public OrangeCat entity to Loki as a short-lived, signed build intent. The signature binds the handoff to the owner who approved it. Funding never dispatches an agent on its own — settlement, planning, and execution stay separate events.',
   },
   {
     icon: ShieldCheck,

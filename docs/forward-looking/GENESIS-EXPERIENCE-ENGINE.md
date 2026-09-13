@@ -3,7 +3,7 @@
 **Status**: Concept / vision capture
 **Captured**: 2026-06-13
 **Working name**: "Genesis" (provisional — also considered: Muse, Conjure, Oracle)
-**Relationship to OrangeCat**: candidate flagship experience layer on top of the OrangeCat economic layer; built/operated via FleetRunner (local) + FleetCrown (web portal).
+**Relationship to OrangeCat**: candidate flagship experience layer on top of the OrangeCat economic layer; built/operated via FleetRunner (local) + Loki (web portal).
 
 ---
 
@@ -53,13 +53,13 @@ The variant/distribution mechanic only works on content the platform has the rig
 
 **Design implication:** the multiverse mechanic is a first-class feature for _original IP_ — worlds, characters, and stories created in (or brought into) the platform with clear provenance. Provenance and rights tracking is therefore part of the data model, not an afterthought. (This also dovetails with OrangeCat's identity/economic layer: rights, attribution, and payout all hang off the same provenance graph.)
 
-## 4. Why this fits OrangeCat + FleetCrown + FleetRunner
+## 4. Why this fits OrangeCat + Loki + FleetRunner
 
 The three existing pieces map cleanly onto the product:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  FleetCrown (web portal)        the experience + audience     │
+│  Loki (web portal)        the experience + audience     │
 │  · single-input "wish" UI                                     │
 │  · browse / fork / refine experiences                         │
 │  · audience-facing distribution (who sees which variant)      │
@@ -79,13 +79,13 @@ The three existing pieces map cleanly onto the product:
 └─────────────────────────────────────────────────────────────┘
 ```
 
-- **FleetCrown** already does "users sign in, register projects, launch/monitor agents from one dashboard." A _wish_ is just a new kind of job; an _experience_ is its output. The audience/variant-distribution surface is new.
+- **Loki** already does "users sign in, register projects, launch/monitor agents from one dashboard." A _wish_ is just a new kind of job; an _experience_ is its output. The audience/variant-distribution surface is new.
 - **FleetRunner** is already an Electron agent runner — natural home for the generation orchestration (route a wish to the right model agents, compose, render). Local app = heavy compute, model keys, long renders without a server timeout.
 - **OrangeCat** supplies identity, the rights/provenance graph, and money (generation costs, experience access, creator payouts) — the things that turn "a cool generator" into a participatory economy.
 
 ## 5. The core loop (MVP shape)
 
-1. **Wish** — user types one sentence in FleetCrown.
+1. **Wish** — user types one sentence in Loki.
 2. **Route** — classifier infers modality(ies) + a generation plan.
 3. **Generate** — FleetRunner runs the plan (one or more model agents), returns a finished artifact.
 4. **Experience** — artifact rendered back in the portal (view/listen/read/play).
@@ -103,11 +103,11 @@ The products shouldn't just share a logo family — **each should be a real user
 
 Every product is simultaneously a **service** and a **customer**:
 
-- FleetCrown pays for compute/identity via **OrangeCat**; OrangeCat runs its own agent fleet on **FleetCrown**.
-- **Genesis** generates on **FleetRunner**, settles rights/payouts on **OrangeCat**, and is experienced through **FleetCrown**.
+- Loki pays for compute/identity via **OrangeCat**; OrangeCat runs its own agent fleet on **Loki**.
+- **Genesis** generates on **FleetRunner**, settles rights/payouts on **OrangeCat**, and is experienced through **Loki**.
 - **Flecoin** is the medium of exchange that flows between all of them.
 
-OrangeCat already models this for real: FleetCrown is a typed "customer" with a stakeholder relationship and shared BTC wallet. Generalize that one relationship into the **default architecture** — every product holds an account, a wallet, and a reputation in every other product.
+OrangeCat already models this for real: Loki is a typed "customer" with a stakeholder relationship and shared BTC wallet. Generalize that one relationship into the **default architecture** — every product holds an account, a wallet, and a reputation in every other product.
 
 ### (b) Synthetic economy (simulated usage)
 
@@ -157,7 +157,7 @@ This closes the loop: **Genesis generates (supply) → following + marketplace c
 
 ## 8. Open questions (need answers before building)
 
-1. **Is Genesis a new product, or a feature inside OrangeCat / FleetCrown?** Affects repo layout, branding, auth.
+1. **Is Genesis a new product, or a feature inside OrangeCat / Loki?** Affects repo layout, branding, auth.
 2. **Which modalities for v1?** Recommend the cheapest-to-delight pair first (image + text) before video/3D/VR (orders of magnitude more cost/latency).
 3. **Which model providers?** Per-modality routing means several. Need a provider matrix + budget per wish.
 4. **Where does generation run?** FleetRunner local (own keys/compute) vs. cloud workers. Local is the stated intent; confirm.
@@ -174,7 +174,7 @@ This closes the loop: **Genesis generates (supply) → following + marketplace c
 
 Don't build across three repos at once. Prove the magic in one place first:
 
-- A thin **"wish → image + caption" vertical slice** in FleetCrown (web), calling out to one image model and one text model, returning a finished card.
+- A thin **"wish → image + caption" vertical slice** in Loki (web), calling out to one image model and one text model, returning a finished card.
 - If that loop feels like magic, lift the orchestration into **FleetRunner** and add a second modality.
 - Add **variants** (same wish, N deliberate deltas) on original outputs.
 - Wire **OrangeCat** for cost/payout last.

@@ -1,4 +1,4 @@
-# OrangeCat ↔ FleetCrown founder dogfood
+# OrangeCat ↔ Loki founder dogfood
 
 This is the first complete release slice. It is intentionally Bitcoin-only and
 human-approved.
@@ -6,10 +6,10 @@ human-approved.
 ## Production prerequisites
 
 1. Apply `20260723000000_public_bitcoin_support.sql` to OrangeCat.
-2. Apply FleetCrown migration `075_orangecat_entity_links.sql`.
-3. Set the same 32+ character `FLEETCROWN_BUILD_INTENT_SECRET` on both apps.
+2. Apply Loki migration `075_orangecat_entity_links.sql`.
+3. Set the same 32+ character `LOKI_BUILD_INTENT_SECRET` on both apps.
 4. Set the same `ORANGECAT_WEBHOOK_SECRET` on both apps.
-5. Confirm FleetCrown's OrangeCat OIDC client and callback are configured.
+5. Confirm Loki's OrangeCat OIDC client and callback are configured.
 6. Confirm the canonical OrangeCat project IDs in each app's environment.
 
 ## Acceptance flow
@@ -25,25 +25,25 @@ human-approved.
    - a Lightning Address without LUD-21 waits for payer acknowledgement and
      then appears in the owner's **Confirm received payments** list;
    - the public funding total changes only after confirmed settlement.
-6. As the project owner, choose **Build it with FleetCrown**.
-7. Sign in to FleetCrown with the same OrangeCat identity.
-8. Land on the new FleetCrown project with the kickoff already running: profile,
+6. As the project owner, choose **Build it with Loki**.
+7. Sign in to Loki with the same OrangeCat identity.
+8. Land on the new Loki project with the kickoff already running: profile,
    milestones, repository, then an agent. That is the default since 2026-09-11.
    To choose where the entity lands first, open the handoff link with
-   `&review=1`; FleetCrown also shows the picker on its own when a project with
+   `&review=1`; Loki also shows the picker on its own when a project with
    the same name exists, and simply opens the project when the entity is
    already connected. Linking an existing project never starts an agent.
 9. Confirm the kickoff steps complete (a failed repository step stops before
    dispatch and offers "Try again").
-10. Confirm the FleetCrown project links back to OrangeCat and shows the
+10. Confirm the Loki project links back to OrangeCat and shows the
     read-only confirmed BTC summary.
 11. Fund the OrangeCat entity again and confirm a deduplicated funding event
-    reaches the linked FleetCrown project's activity stream.
+    reaches the linked Loki project's activity stream.
 
 ## Club example
 
 Create a normal OrangeCat **Group** for the club. Do not add a special Club
-entity. The signed FleetCrown handoff should suggest:
+entity. The signed Loki handoff should suggest:
 
 - mission and membership model;
 - business plan and conservative financials;
@@ -61,4 +61,4 @@ approval.
 - Monero, Zcash, Pirate Chain, or other privacy-coin settlement;
 - smart-contract escrow or milestone release;
 - automatic agent dispatch after funding;
-- a merged OrangeCat/FleetCrown frontend or a special club workflow.
+- a merged OrangeCat/Loki frontend or a special club workflow.

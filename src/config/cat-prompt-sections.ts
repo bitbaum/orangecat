@@ -76,7 +76,7 @@ export const SITUATIONAL_SECTIONS: ReadonlyArray<{ heading: string; when: RegExp
     heading: 'Setting Up for Someone Else',
     // Cyrillic on purpose: the two conversations that motivated this section
     // were in Russian ("не для меня", "для другого пользователя", "не зарегистрирован").
-    when: /my friend|my mother|my father|my sister|my brother|someone i know|on behalf|for a friend|helping someone|for another|another user|not for me|isn't registered|not registered|for her|for him|друг|подруг|для (него|неё|нее|другого|другой)|не для меня|не зарегистрирован|fleetcrown|fleet crown/,
+    when: /my friend|my mother|my father|my sister|my brother|someone i know|on behalf|for a friend|helping someone|for another|another user|not for me|isn't registered|not registered|for her|for him|друг|подруг|для (него|неё|нее|другого|другой)|не для меня|не зарегистрирован|loki|fleet crown/,
   },
   {
     heading: 'Choosing the Entity Type (decision rubric — apply before EVERY proposal)',

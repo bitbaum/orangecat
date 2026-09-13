@@ -107,9 +107,9 @@ OrangeCat is building the infrastructure for personal economies and voluntary so
 ### Phase 2: AI-assisted builders (primary ICP — updated 2026-07-02)
 
 - **Target:** Solo builders and micro-studios shipping with AI agents —
-  FleetCrown's exact audience; people who need a public economic presence
+  Loki's exact audience; people who need a public economic presence
   without a company, a Stripe account, or a real name
-- **Channels:** FleetCrown cross-sell (identity bridge, live since
+- **Channels:** Loki cross-sell (identity bridge, live since
   2026-07-02), founder's build-in-public loop, Swiss Bitcoin community
 - **Goals:** Closed loops — published offers, completed payments, credit
   spend. (The earlier lawyers/doctors persona set is retired; it was

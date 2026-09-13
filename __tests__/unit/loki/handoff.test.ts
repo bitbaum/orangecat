@@ -1,11 +1,11 @@
 /**
- * The OrangeCat → FleetCrown handoff as a service. The steward of a page set
+ * The OrangeCat → Loki handoff as a service. The steward of a page set
  * up for someone else may hand it over while the claim is pending; nobody
  * else but the owner may; and the payload names who the client is.
  */
 
 import { vi } from 'vitest';
-import { createFleetCrownHandoff } from '@/services/fleetcrown/handoff';
+import { createLokiHandoff } from '@/services/loki/handoff';
 
 const resolveManagementRole = vi.fn();
 vi.mock('@/domain/profileClaims/stewardship', () => ({
@@ -45,15 +45,15 @@ function decodePayload(url: string): Record<string, unknown> {
 }
 
 beforeEach(() => {
-  process.env.FLEETCROWN_BUILD_INTENT_SECRET = 'x'.repeat(48);
+  process.env.LOKI_BUILD_INTENT_SECRET = 'x'.repeat(48);
   resolveManagementRole.mockReset();
   getUnclaimedOwner.mockReset();
 });
 
-describe('createFleetCrownHandoff', () => {
+describe('createLokiHandoff', () => {
   it('refuses anyone who is neither owner nor steward', async () => {
     resolveManagementRole.mockResolvedValue(null);
-    const result = await createFleetCrownHandoff({
+    const result = await createLokiHandoff({
       supabase: {} as never,
       userId: 'stranger',
       entityType: 'project',
@@ -72,7 +72,7 @@ describe('createFleetCrownHandoff', () => {
       slug: 'annushka',
       stewardUsername: 'catomean',
     });
-    const result = await createFleetCrownHandoff({
+    const result = await createLokiHandoff({
       supabase: {} as never,
       userId: 'steward',
       entityType: 'project',
@@ -95,7 +95,7 @@ describe('createFleetCrownHandoff', () => {
   });
 
   it('rejects unsafe inputs before touching anything', async () => {
-    const bad = await createFleetCrownHandoff({
+    const bad = await createLokiHandoff({
       supabase: {} as never,
       userId: 'u',
       entityType: 'project',
@@ -107,10 +107,10 @@ describe('createFleetCrownHandoff', () => {
   });
 
   it('reports an unconfigured deploy as such, not as a fault', async () => {
-    delete process.env.FLEETCROWN_BUILD_INTENT_SECRET;
+    delete process.env.LOKI_BUILD_INTENT_SECRET;
     resolveManagementRole.mockResolvedValue('owner');
     getUnclaimedOwner.mockResolvedValue(null);
-    const result = await createFleetCrownHandoff({
+    const result = await createLokiHandoff({
       supabase: {} as never,
       userId: 'u',
       entityType: 'project',

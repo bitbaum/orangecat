@@ -17,7 +17,7 @@ const TASK_ICON_MAP: Record<string, LucideIcon> = Object.fromEntries(
 );
 
 export function getPriorityColor(priority: TaskPriority): string {
-  // FleetCrown semantic tier (migration 6/N): critical + high get
+  // Loki semantic tier (migration 6/N): critical + high get
   // chromatic status tokens; medium + low fade into neutral so the eye
   // is drawn to actual urgency.
   switch (priority) {

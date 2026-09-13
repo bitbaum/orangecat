@@ -1,32 +1,32 @@
 // @vitest-environment jsdom
 import { createHmac } from 'node:crypto';
 import {
-  signFleetCrownBuildIntent,
+  signLokiBuildIntent,
   suggestedHandoffFor,
-  type FleetCrownBuildIntent,
-} from '@/services/fleetcrown/build-intent';
+  type LokiBuildIntent,
+} from '@/services/loki/build-intent';
 import { publicSupportCreateSchema } from '@/lib/validation/finance';
 import { projectSchema } from '@/lib/validation/projects';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 
-describe('OrangeCat → FleetCrown build handoff', () => {
-  const originalSecret = process.env.FLEETCROWN_BUILD_INTENT_SECRET;
+describe('OrangeCat → Loki build handoff', () => {
+  const originalSecret = process.env.LOKI_BUILD_INTENT_SECRET;
 
   beforeEach(() => {
-    process.env.FLEETCROWN_BUILD_INTENT_SECRET =
+    process.env.LOKI_BUILD_INTENT_SECRET =
       'test-secret-that-is-at-least-thirty-two-characters';
   });
 
   afterAll(() => {
     if (originalSecret === undefined) {
-      delete process.env.FLEETCROWN_BUILD_INTENT_SECRET;
+      delete process.env.LOKI_BUILD_INTENT_SECRET;
     } else {
-      process.env.FLEETCROWN_BUILD_INTENT_SECRET = originalSecret;
+      process.env.LOKI_BUILD_INTENT_SECRET = originalSecret;
     }
   });
 
   it('signs a ten-minute HS256 intent bound to the OrangeCat actor', () => {
-    const token = signFleetCrownBuildIntent({
+    const token = signLokiBuildIntent({
       sub: '8be1ca55-58f7-420c-8dfa-1c9f19d6232e',
       entity: {
         type: 'group',
@@ -39,16 +39,16 @@ describe('OrangeCat → FleetCrown build handoff', () => {
     });
 
     const [header, body, signature] = token.split('.');
-    const expected = createHmac('sha256', process.env.FLEETCROWN_BUILD_INTENT_SECRET as string)
+    const expected = createHmac('sha256', process.env.LOKI_BUILD_INTENT_SECRET as string)
       .update(`${header}.${body}`)
       .digest('base64url');
     const payload = JSON.parse(
       Buffer.from(body, 'base64url').toString('utf8')
-    ) as FleetCrownBuildIntent;
+    ) as LokiBuildIntent;
 
     expect(signature).toBe(expected);
     expect(payload.iss).toBe('orangecat');
-    expect(payload.aud).toBe('fleetcrown');
+    expect(payload.aud).toBe('loki');
     expect(payload.sub).toBe('8be1ca55-58f7-420c-8dfa-1c9f19d6232e');
     expect(payload.exp - payload.iat).toBe(600);
     expect(payload.suggestedHandoff).toEqual(
@@ -82,7 +82,7 @@ describe('OrangeCat → FleetCrown build handoff', () => {
     ).toBe(false);
     expect(
       projectSchema.safeParse({
-        title: 'FleetCrown',
+        title: 'Loki',
         description: 'Public projection',
         status: 'active',
       }).success

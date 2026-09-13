@@ -24,8 +24,8 @@ export function generateActionDescription(
       const who = String(parameters.person_name ?? 'them');
       return `Set up "${parameters.title}" for ${who} as a public page, owned by ${who} — you get a link to send; ${who} takes it over by signing up, and nothing can receive money until then`;
     }
-    case 'send_to_fleetcrown':
-      return `Create a FleetCrown handoff link for "${parameters.title ?? parameters.entity_id}" (valid 10 minutes) so AI agents can build it`;
+    case 'send_to_loki':
+      return `Create a Loki handoff link for "${parameters.title ?? parameters.entity_id}" (valid 10 minutes) so AI agents can build it`;
     case 'create_investment': {
       const target = parameters.target_amount_btc ?? parameters.target_amount ?? 'open-ended';
       const type = parameters.investment_type || 'revenue_share';

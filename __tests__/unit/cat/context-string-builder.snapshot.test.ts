@@ -123,7 +123,7 @@ const FULL_CTX = {
   projectActivity: [
     {
       title: 'Zurich Space',
-      source: 'fleetcrown',
+      source: 'loki',
       at: '2026-06-10T00:00:00Z',
       description: 'Milestone reached.',
     },

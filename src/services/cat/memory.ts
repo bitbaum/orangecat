@@ -2,7 +2,7 @@
  * Cat Memory Service
  *
  * Persistent, semantic memory for My Cat. Durable facts about a user
- * ("Prefers Lightning over on-chain", "Building FleetCrown") are extracted
+ * ("Prefers Lightning over on-chain", "Building Loki") are extracted
  * from chat, embedded, and recalled by MEANING on later turns — so Cat keeps
  * context across sessions instead of re-deriving everything each time.
  *
@@ -719,7 +719,7 @@ const SELF_DISCLOSURE_SIGNALS = [
 const EXTRACTION_SYSTEM = `You extract durable, user-specific facts worth remembering long-term about a person, from one chat exchange.
 
 Return ONLY a JSON array of short factual statements written in the third person, e.g.:
-["Prefers Lightning over on-chain payments", "Building FleetCrown, a life-OS for builders", "Based in Zürich"]
+["Prefers Lightning over on-chain payments", "Building Loki, a life-OS for builders", "Based in Zürich"]
 
 Include ONLY stable facts: preferences, identity, goals, skills, relationships, or constraints that will still be true next week.
 EXCLUDE: one-off requests, questions, the assistant's suggestions, transient state, and anything trivial or already obvious.

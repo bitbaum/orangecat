@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 /**
  * /company/careers — monochrome surfaces, single warm-accent CTA on the
- * Apply / View Open Positions buttons per FleetCrown contract. Value
+ * Apply / View Open Positions buttons per Loki contract. Value
  * cards, position tiles, and perk pills all unified neutral. Migration 6/N.
  */
 export default function CareersPage() {

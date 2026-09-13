@@ -85,11 +85,11 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     date: '2026-07-19',
     tag: 'platform',
-    title: 'Wired to FleetCrown',
-    summary: 'OrangeCat is the economic layer for FleetCrown — and now the wiring runs both ways.',
+    title: 'Wired to Loki',
+    summary: 'OrangeCat is the economic layer for Loki — and now the wiring runs both ways.',
     items: [
-      'Settled funding on a project or cause signals the FleetCrown fleet automatically.',
-      'Embedded the FleetCrown feedback widget — OrangeCat runs as its own second customer.',
+      'Settled funding on a project or cause signals the Loki fleet automatically.',
+      'Embedded the Loki feedback widget — OrangeCat runs as its own second customer.',
     ],
   },
   {

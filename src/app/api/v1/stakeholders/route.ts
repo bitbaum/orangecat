@@ -1,7 +1,7 @@
 /**
  * GET/POST /api/v1/stakeholders — stakeholder graph for integration clients.
  *
- * FleetCrown reads typed project→stakeholder edges from OrangeCat. Authenticated
+ * Loki reads typed project→stakeholder edges from OrangeCat. Authenticated
  * via the v1 auth path (OIDC bearer or `ock_` integration key) and gated to
  * `stakeholders.read` / `stakeholders.write`. Uses admin client + app-layer
  * authz (same non-session pattern as timeline publish).

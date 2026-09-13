@@ -1,7 +1,7 @@
 /**
  * GET /api/v1/search?q=...&type=all — public semantic search over the economy.
  *
- * The bridge that lets FleetCrown (or any client) query OrangeCat's economy by
+ * The bridge that lets Loki (or any client) query OrangeCat's economy by
  * MEANING without sharing its vector space: send plain query text, OrangeCat
  * embeds it server-side with its own model, runs the same match_content the Cat
  * uses, and returns meaning-ranked matches (needs, supply, projects, people).

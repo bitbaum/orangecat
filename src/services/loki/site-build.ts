@@ -3,11 +3,11 @@
  *
  * OrangeCat's promise is that anyone can build any project. Until now the
  * "build" half terminated in a button that handed the user a signed token and
- * asked them to go and sign in to a second product. FleetCrown's site factory
+ * asked them to go and sign in to a second product. Loki's site factory
  * — which creates a repository, a subdomain, a certificate and a deploy in
  * about 35 seconds — has been live for weeks with no caller.
  *
- * This is the caller. It is deliberately thin: FleetCrown owns what a valid
+ * This is the caller. It is deliberately thin: Loki owns what a valid
  * slug is, which labels are reserved, how many sites an account may have, and
  * what status a machine-made site is allowed to claim. Re-deciding any of that
  * here would be a second copy of a policy that already exists, and the two
@@ -19,11 +19,11 @@
  * this product has already paid for is an agent reporting a side effect it
  * never saw land.
  */
-import { postSignedToFleetCrown, fleetCrownRailConfigured } from './signed-post';
+import { postSignedToLoki, lokiRailConfigured } from './signed-post';
 import { logger } from '@/utils/logger';
 
 const SITE_URL =
-  process.env.FLEETCROWN_SITE_URL || 'https://fleetcrown.orangecat.ch/api/orangecat/site';
+  process.env.LOKI_SITE_URL || 'https://loki.orangecat.ch/api/orangecat/site';
 
 /**
  * What a remote caller may ask for. A strict subset of the register's
@@ -36,7 +36,7 @@ export type CatSiteKind = (typeof CAT_SITE_KINDS)[number];
 
 /**
  * Subdomain grammar, checked here only so an obviously bad slug fails in the
- * conversation instead of a minute later in a queue. FleetCrown validates
+ * conversation instead of a minute later in a queue. Loki validates
  * again and its answer wins; this is UX, not a boundary.
  *
  * Deliberately the SAME expression as the authority's, because a client-side
@@ -73,8 +73,8 @@ export function slugFromTitle(title: string): string {
     .replace(/-+$/g, '');
 }
 
-export async function requestFleetCrownSite(input: SiteBuildInput): Promise<SiteBuildOutcome> {
-  if (!fleetCrownRailConfigured()) {
+export async function requestLokiSite(input: SiteBuildInput): Promise<SiteBuildOutcome> {
+  if (!lokiRailConfigured()) {
     return {
       ok: false,
       reason:
@@ -94,7 +94,7 @@ export async function requestFleetCrownSite(input: SiteBuildInput): Promise<Site
     return { ok: false, reason: 'A site needs a title. Ask the user what it should be called.' };
   }
 
-  const result = await postSignedToFleetCrown(SITE_URL, {
+  const result = await postSignedToLoki(SITE_URL, {
     actorId: input.actorId,
     slug,
     title: title.slice(0, 120),
@@ -105,7 +105,7 @@ export async function requestFleetCrownSite(input: SiteBuildInput): Promise<Site
   if (!result.ok) {
     // The receiver's own sentence is worth more than our paraphrase: it is
     // written for a person and names the next step (409 → "sign in to
-    // FleetCrown once"; 429 → the daily ceiling and why it exists).
+    // Loki once"; 429 → the daily ceiling and why it exists).
     const detail = readDetail(result.body);
     logger.warn('[fc-site] build request refused', {
       actorId: input.actorId,
@@ -128,7 +128,7 @@ export async function requestFleetCrownSite(input: SiteBuildInput): Promise<Site
     return {
       ok: false,
       reason:
-        'FleetCrown accepted the request but its answer could not be read, so it is unclear whether a build started. Tell the user to check FleetCrown rather than assuming either way.',
+        'Loki accepted the request but its answer could not be read, so it is unclear whether a build started. Tell the user to check Loki rather than assuming either way.',
     };
   }
   return { ok: true, ...parsed };

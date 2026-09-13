@@ -1,7 +1,7 @@
 /**
  * Integration-hardening contract tests.
  *
- * Locks the behaviour added when closing the FleetCrown ↔ OrangeCat gaps:
+ * Locks the behaviour added when closing the Loki ↔ OrangeCat gaps:
  *   1. `payment.settled` is a real, advertised webhook event and its payload
  *      shape matches what the fan-out emits.
  *   2. The public v1 `search` + `demand` endpoints are discoverable.

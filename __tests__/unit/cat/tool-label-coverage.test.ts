@@ -75,10 +75,10 @@ describe("the English is the registry's, conjugated", () => {
   });
 
   it('leaves a proper noun alone while lowering an ordinary word', () => {
-    // "Send to FleetCrown" must not become "send to fleetcrown", and
+    // "Send to Loki" must not become "send to loki", and
     // "Create AI Assistant" must not become "Create ai assistant".
-    expect(labelForTool('send_to_fleetcrown').completed(1)).toBe('Sent to FleetCrown');
-    expect(labelForTool('send_to_fleetcrown').failed).toBe("Couldn't send to FleetCrown");
+    expect(labelForTool('send_to_loki').completed(1)).toBe('Sent to Loki');
+    expect(labelForTool('send_to_loki').failed).toBe("Couldn't send to Loki");
     expect(labelForTool('create_ai_assistant').completed(1)).toBe('Created AI assistant');
   });
 

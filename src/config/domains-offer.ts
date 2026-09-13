@@ -27,7 +27,7 @@ export const CUSTOM_DOMAIN_PRICE_CHF_PER_MONTH: number | null = null;
  * The base every free hosted site sits on: `<name>.orangecat.ch`.
  *
  * Matches `SITES_BASE_DOMAIN` in the fleet's own provisioning
- * (fleetcrown scripts/hetzner/_box-env.sh), which is what actually creates the
+ * (loki scripts/hetzner/_box-env.sh), which is what actually creates the
  * vhost. Two constants that must agree and cannot see each other — if the fleet
  * ever moves off orangecat.ch, this line moves with it or the page starts
  * promising a host nobody serves.

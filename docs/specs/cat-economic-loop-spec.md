@@ -25,7 +25,7 @@ The loop works; it just isn't what users land on. Two options:
 
 ### C-2 — Close the wallet-at-publish dead-end ⭐ demo-critical
 
-Today an owner can publish a cause/project/product with **no wallet connected** → it's born **unpayable** and they're never told. "Published" and "payable" silently diverge. For the FleetCrown demo (Workstream D) this looks broken.
+Today an owner can publish a cause/project/product with **no wallet connected** → it's born **unpayable** and they're never told. "Published" and "payable" silently diverge. For the Loki demo (Workstream D) this looks broken.
 
 - Gate/strongly-nudge a payment method at publish in `PrefilledFormCard` publish flow (and the create form). Minimum: after publish, if no wallet, show a prominent "Connect a wallet to get paid" step instead of a plain success link.
 - Wallet field exists at create (`wallet-field-group.ts`, present on all three configs incl. `product-config.ts:127`) — it's just **optional**. This is a nudge/gate, not new UI.
@@ -56,7 +56,7 @@ On the (now-default) Cat surface: "Start a fundraiser", "Sell something I make",
 ## Sequencing (fits the one-week plan, Days 3–5)
 
 1. **C-1 Option A** (Cat default surface) — ship first, instant Cat-first feel.
-2. **C-2** (wallet-at-publish nudge) — before the FleetCrown demo.
+2. **C-2** (wallet-at-publish nudge) — before the Loki demo.
 3. **C-3** (starter prompts) + **C-4** (payable success card).
 4. C-5 + legacy cleanup if time permits.
 

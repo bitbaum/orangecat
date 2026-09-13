@@ -20,7 +20,7 @@ on:
 # group-per-branch cancels the push run for the SAME commit.
 #
 # Measured 2026-09-11 across the fleet: 28 of 39 ci.yml files had this shape.
-# fleetcrown stranded four merges silently (main green, nothing red, the box
+# loki stranded four merges silently (main green, nothing red, the box
 # serving the previous build); hirnli failed its deploy loudly at the wait step.
 concurrency:
   group: ci-${{ github.ref }}-${{ github.ref == 'refs/heads/main' && github.sha || 'branch' }}
@@ -134,12 +134,12 @@ jobs:
           # code and in nobody's build env, so FEATURES.voiceInput compiled to
           # false in every production bundle it ever shipped in.
           NEXT_PUBLIC_FEATURE_VOICE_INPUT: ${{ vars.NEXT_PUBLIC_FEATURE_VOICE_INPUT }}
-          # FleetCrown feedback widget token. Statically prerendered routes
+          # Loki feedback widget token. Statically prerendered routes
           # (e.g. /dashboard/*) evaluate the root layout's env gate at BUILD
           # time — without this the widget bakes out of every static page and
           # only runtime-rendered routes get it. Public by design (it ships in
           # page source), hence a repo variable, not a secret.
-          FLEETCROWN_FEEDBACK_TOKEN: ${{ vars.FLEETCROWN_FEEDBACK_TOKEN }}
+          LOKI_FEEDBACK_TOKEN: ${{ vars.LOKI_FEEDBACK_TOKEN }}
         run: pnpm run build
 
       - name: Assemble standalone (static + public + content)

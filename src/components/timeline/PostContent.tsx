@@ -47,7 +47,7 @@ export function PostContent({ event }: PostContentProps) {
       ? (event.metadata.article.slug as string)
       : null;
 
-  // Read-only surfacing of an externally-published build event (e.g. FleetCrown):
+  // Read-only surfacing of an externally-published build event (e.g. Loki):
   // a status pill + a "via <source>" deep-link back to the originating surface.
   const attribution = getExternalAttribution(event.metadata);
 

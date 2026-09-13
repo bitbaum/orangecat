@@ -590,7 +590,7 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
   },
 
   /**
-   * Commission a real, deployed website from FleetCrown's site factory.
+   * Commission a real, deployed website from Loki's site factory.
    *
    * `high` risk and always confirmed, and the reason is not that it spends
    * money — it does not. It creates a repository, a public subdomain and a TLS
@@ -604,7 +604,7 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
     id: 'build_site',
     name: 'Build a Website',
     description:
-      'Commission FleetCrown to build and deploy a real website on its own subdomain. Queued, not instant: the reply must say a build was STARTED, never that a site is ready.',
+      'Commission Loki to build and deploy a real website on its own subdomain. Queued, not instant: the reply must say a build was STARTED, never that a site is ready.',
     category: 'entities',
     icon: Hammer,
     riskLevel: 'high',
@@ -685,11 +685,11 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
     enabled: true,
   },
 
-  send_to_fleetcrown: {
-    id: 'send_to_fleetcrown',
-    name: 'Send to FleetCrown',
+  send_to_loki: {
+    id: 'send_to_loki',
+    name: 'Send to Loki',
     description:
-      'Hand an entity to FleetCrown, where AI agents build it (site, app, launch). Returns a 10-minute link. Works for pages set up for someone else.',
+      'Hand an entity to Loki, where AI agents build it (site, app, launch). Returns a 10-minute link. Works for pages set up for someone else.',
     category: 'entities',
     icon: Hammer,
     riskLevel: 'low',
@@ -711,11 +711,11 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
       },
     ],
     examples: [
-      'Can she build this with FleetCrown?',
-      'Send the networking platform to FleetCrown',
+      'Can she build this with Loki?',
+      'Send the networking platform to Loki',
       'Build the website for this project',
     ],
-    apiEndpoint: API_ROUTES.INTEGRATIONS.FLEETCROWN_BUILD_INTENTS,
+    apiEndpoint: API_ROUTES.INTEGRATIONS.LOKI_BUILD_INTENTS,
     enabled: true,
   },
 

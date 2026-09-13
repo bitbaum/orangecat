@@ -14,7 +14,7 @@ const config: Config = {
   ],
   theme: {
     extend: {
-      // Semantic border tier (FleetCrown). `border-default`/`-interactive` are
+      // Semantic border tier (Loki). `border-default`/`-interactive` are
       // the migration targets for legacy `border-border`; subtle/strong carry
       // the existing neutral border vars forward under semantic names.
       borderColor: {
@@ -75,7 +75,7 @@ const config: Config = {
         'app-sm': '375px', // iPhone SE width
         'app-lg': '430px', // iPhone 15 Pro Max
         tablet: '768px', // iPad Mini
-        // FleetCrown-aligned layout primitive
+        // Loki-aligned layout primitive
         shell: 'var(--shell-max)',
       },
       colors: {
@@ -162,7 +162,7 @@ const config: Config = {
           '4': 'hsl(var(--chart-4))',
           '5': 'hsl(var(--chart-5))',
         },
-        // ── FleetCrown-aligned semantic tier (commit 2/N of migration) ────
+        // ── Loki-aligned semantic tier (commit 2/N of migration) ────
         // Utility-class surface for the --text-/--surface-/--accent-/--status-
         // CSS vars introduced in eff99bad. Components migrate to these from
         // bg-card / text-foreground / bg-primary as they're refactored.
@@ -209,7 +209,7 @@ const config: Config = {
       },
       fontFamily: {
         sans: ['var(--font-inter)'],
-        // FleetCrown-aligned display stack (migration 7/N)
+        // Loki-aligned display stack (migration 7/N)
         heading: [
           'var(--font-heading)',
           'var(--font-inter)',

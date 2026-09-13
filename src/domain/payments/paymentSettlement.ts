@@ -16,9 +16,9 @@ import { logger } from '@/utils/logger';
 import { sendSellerPaymentNotification } from '@/lib/email/send-seller-notification';
 import { NotificationDispatcher } from '@/services/notifications/dispatcher';
 import {
-  notifyFleetCrownEntitlement,
-  notifyFleetCrownProjectFunding,
-} from '@/services/fleetcrown/entitlement-notify';
+  notifyLokiEntitlement,
+  notifyLokiProjectFunding,
+} from '@/services/loki/entitlement-notify';
 import { grantSupporterPlan } from '@/services/supporter/grant';
 import { enqueuePaymentSettledWebhook } from '@/services/webhooks/paymentSettledWebhook';
 
@@ -209,18 +209,18 @@ export async function handlePaymentConfirmed(paymentIntent: PaymentIntent): Prom
     logger.warn('Seller payment notification failed', { err }, 'paymentFlowService')
   );
 
-  // Grant a FleetCrown pass if this payment was for one — fire-and-forget,
+  // Grant a Loki pass if this payment was for one — fire-and-forget,
   // never blocks settlement. No-op for normal sales / when unconfigured.
   if (paymentIntent.intent_kind === 'purchase') {
-    void notifyFleetCrownEntitlement(paymentIntent).catch(err =>
-      logger.warn('FleetCrown entitlement notify failed', { err }, 'paymentFlowService')
+    void notifyLokiEntitlement(paymentIntent).catch(err =>
+      logger.warn('Loki entitlement notify failed', { err }, 'paymentFlowService')
     );
   }
 
-  // Funding on a FleetCrown-linked project → activity signal for the fleet.
+  // Funding on a Loki-linked project → activity signal for the fleet.
   // Fire-and-forget; the receiver drops events for unlinked entities.
-  void notifyFleetCrownProjectFunding(paymentIntent).catch(err =>
-    logger.warn('FleetCrown funding notify failed', { err }, 'paymentFlowService')
+  void notifyLokiProjectFunding(paymentIntent).catch(err =>
+    logger.warn('Loki funding notify failed', { err }, 'paymentFlowService')
   );
 
   // Fan `payment.settled` out to the seller's own webhook endpoints — the

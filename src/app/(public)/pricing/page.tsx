@@ -27,7 +27,7 @@ export const metadata = {
  * this file owns layout only. "Pro" in the prose below refers to the FUTURE
  * managed-frontier tier — distinct from the Supporter pass, which is a plan
  * card. One warm-accent CTA on the recommended (BYOK) tier; everything else
- * is monochrome surfaces per the FleetCrown-aligned design tier.
+ * is monochrome surfaces per the Loki-aligned design tier.
  */
 export default function PricingPage() {
   return (

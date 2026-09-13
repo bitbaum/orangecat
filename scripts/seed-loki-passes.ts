@@ -1,19 +1,19 @@
 /**
- * Seed the three FleetCrown passes as Bitcoin-payable OrangeCat products.
+ * Seed the three Loki passes as Bitcoin-payable OrangeCat products.
  *
- * FleetCrown sells its paid plans (personal/pro/team) as OrangeCat `products`
+ * Loki sells its paid plans (personal/pro/team) as OrangeCat `products`
  * tagged for the entitlement rail. When a buyer pays one in BTC and the payment
- * settles, notifyFleetCrownEntitlement() signals FleetCrown to grant the plan
- * (src/services/fleetcrown/entitlement-notify.ts). The catalogue + tag format
- * are the SSOT in src/config/fleetcrown-passes.ts — this script only writes it
+ * settles, notifyLokiEntitlement() signals Loki to grant the plan
+ * (src/services/loki/entitlement-notify.ts). The catalogue + tag format
+ * are the SSOT in src/config/loki-passes.ts — this script only writes it
  * to the DB.
  *
  * Idempotent: upsert by (actor_id, title); never truncates. Owner-gated so it
  * can't fire by accident. Prints the three checkout URLs to configure on the
- * FleetCrown box (ORANGECAT_PAY_URL_*).
+ * Loki box (ORANGECAT_PAY_URL_*).
  *
  * Run against the LIVE self-hosted DB (supabase.orangecat.ch) from the box:
- *   ORANGECAT_OWNER_SEED=1 npx tsx scripts/seed-fleetcrown-passes.ts
+ *   ORANGECAT_OWNER_SEED=1 npx tsx scripts/seed-loki-passes.ts
  *
  * Requires in the environment (already in .env.local on the box):
  *   NEXT_PUBLIC_SUPABASE_URL   — self-hosted Supabase URL
@@ -26,10 +26,10 @@
 import { config as loadEnv } from 'dotenv';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import {
-  FLEETCROWN_PASSES,
+  LOKI_PASSES,
   OWNER_ACTOR_SLUG,
-  type FleetCrownPass,
-} from '../src/config/fleetcrown-passes';
+  type LokiPass,
+} from '../src/config/loki-passes';
 
 loadEnv({ path: '.env.local' });
 
@@ -109,7 +109,7 @@ async function findProduct(actorId: string, title: string): Promise<string | nul
 }
 
 /** Upsert one pass product by (actor_id, title). Returns its id. */
-async function upsertPass(actor: ActorRow, pass: FleetCrownPass): Promise<string> {
+async function upsertPass(actor: ActorRow, pass: LokiPass): Promise<string> {
   const row = {
     user_id: actor.user_id,
     actor_id: actor.id,
@@ -122,7 +122,7 @@ async function upsertPass(actor: ActorRow, pass: FleetCrownPass): Promise<string
     currency: pass.currency,
     product_type: 'digital',
     status: pass.price === null ? 'paused' : 'active',
-    show_on_profile: false, // reached from FleetCrown's /pricing, not browsed on OC
+    show_on_profile: false, // reached from Loki's /pricing, not browsed on OC
     tags: pass.tags,
     is_test: false,
   };
@@ -142,25 +142,25 @@ async function upsertPass(actor: ActorRow, pass: FleetCrownPass): Promise<string
 }
 
 async function main(): Promise<void> {
-  console.log(`Seeding FleetCrown passes against ${SUPABASE_URL} …`);
+  console.log(`Seeding Loki passes against ${SUPABASE_URL} …`);
   const actor = await resolveOwnerActor();
   console.log(`owner actor '${OWNER_ACTOR_SLUG}' = ${actor.id}`);
   await checkSellerWallet(actor);
 
   const envLines: string[] = [];
-  for (const pass of FLEETCROWN_PASSES) {
+  for (const pass of LOKI_PASSES) {
     const id = await upsertPass(actor, pass);
     envLines.push(`ORANGECAT_PAY_URL_${pass.plan.toUpperCase()}=${SITE_URL}/products/${id}`);
   }
 
   console.log('\n✓ done.\n');
-  console.log('Set these on the FleetCrown box (.env) so /pricing lights up "Pay in Bitcoin":\n');
+  console.log('Set these on the Loki box (.env) so /pricing lights up "Pay in Bitcoin":\n');
   for (const line of envLines) {
     console.log(`  ${line}`);
   }
   console.log(
     '\nAlso set ORANGECAT_WEBHOOK_SECRET to the SAME value on BOTH the OrangeCat and\n' +
-      'FleetCrown boxes — until then the settlement → grant webhook stays inert\n' +
+      'Loki boxes — until then the settlement → grant webhook stays inert\n' +
       '(both ends fail closed by design).'
   );
 }

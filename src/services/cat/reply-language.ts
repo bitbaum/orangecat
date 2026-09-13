@@ -176,7 +176,7 @@ export function buildReplyLanguageDirective(message: string): string {
     return `\n\n## Reply language (this turn — obey exactly)\nThe user's latest message is in ${LANG_NAME[lang]}. Write your ENTIRE reply in ${LANG_NAME[lang]} — ${EVERY_PART}. Ignore the browser locale for language choice; it only sets number/date/currency formatting.`;
   }
   if (detectScript(message) === 'cyrillic') {
-    return `\n\n## Reply language (this turn — obey exactly)\nThe user's latest message is written in Cyrillic (Russian or Ukrainian — match which). Write your ENTIRE reply in that same language — ${EVERY_PART}. Do not mix in English words where the language has its own; only product names (OrangeCat, FleetCrown, Bitcoin) stay as they are.`;
+    return `\n\n## Reply language (this turn — obey exactly)\nThe user's latest message is written in Cyrillic (Russian or Ukrainian — match which). Write your ENTIRE reply in that same language — ${EVERY_PART}. Do not mix in English words where the language has its own; only product names (OrangeCat, Loki, Bitcoin) stay as they are.`;
   }
   return `\n\n## Reply language (this turn — obey exactly)\nWrite your ENTIRE reply in the SAME language as the user's latest message above — ${EVERY_PART}. Do NOT switch to the browser locale's language and do NOT default to English.`;
 }

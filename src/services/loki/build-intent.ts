@@ -1,9 +1,9 @@
 import { createHmac, randomUUID } from 'node:crypto';
 import type { EntityType } from '@/config/entity-registry';
 
-export interface FleetCrownBuildIntent {
+export interface LokiBuildIntent {
   iss: 'orangecat';
-  aud: 'fleetcrown';
+  aud: 'loki';
   sub: string;
   jti: string;
   iat: number;
@@ -16,7 +16,7 @@ export interface FleetCrownBuildIntent {
     publicUrl: string;
   };
   /**
-   * Who the builder is building FOR. Additive (older FleetCrown deploys ignore
+   * Who the builder is building FOR. Additive (older Loki deploys ignore
    * it). `unclaimed` means a page set up on someone's behalf that she has not
    * taken over yet — the steward speaks for her until she does.
    */
@@ -33,19 +33,19 @@ function encode(value: unknown): string {
   return Buffer.from(JSON.stringify(value)).toString('base64url');
 }
 
-export function signFleetCrownBuildIntent(
-  input: Omit<FleetCrownBuildIntent, 'iss' | 'aud' | 'jti' | 'iat' | 'exp'>
+export function signLokiBuildIntent(
+  input: Omit<LokiBuildIntent, 'iss' | 'aud' | 'jti' | 'iat' | 'exp'>
 ): string {
-  const secret = process.env.FLEETCROWN_BUILD_INTENT_SECRET;
+  const secret = process.env.LOKI_BUILD_INTENT_SECRET;
   if (!secret || secret.length < 32) {
-    throw new Error('FleetCrown build handoff is not configured');
+    throw new Error('Loki build handoff is not configured');
   }
 
   const now = Math.floor(Date.now() / 1000);
-  const payload: FleetCrownBuildIntent = {
+  const payload: LokiBuildIntent = {
     ...input,
     iss: 'orangecat',
-    aud: 'fleetcrown',
+    aud: 'loki',
     jti: randomUUID(),
     iat: now,
     exp: now + 10 * 60,
@@ -59,7 +59,7 @@ export function signFleetCrownBuildIntent(
 export function suggestedHandoffFor(
   type: EntityType,
   title: string,
-  owner?: FleetCrownBuildIntent['owner']
+  owner?: LokiBuildIntent['owner']
 ): string[] {
   // A page set up for someone else: the builder's first fact is who the client
   // is and who answers for her until she has claimed it.

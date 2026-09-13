@@ -1,7 +1,7 @@
 -- Index projects into the search corpus (Phase 4 of build↔find).
 --
 -- Projects are the "what's being built" side of the market — including work
--- published from FleetCrown. They fit the generic indexable branch (title +
+-- published from Loki. They fit the generic indexable branch (title +
 -- description, gated on status='active'); this just reconciles their writes
 -- into content_embeddings via the same webhook the supply tables use, so a
 -- project becomes discoverable by MEANING, not only exact keyword. Idempotent.

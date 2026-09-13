@@ -153,7 +153,7 @@ describe('declining is not failing', () => {
 
   it('gives every action its own declined wording, derived like the rest', () => {
     expect(labelForTool('create_project').declined).toBe('Create project — declined');
-    expect(labelForTool('send_to_fleetcrown').declined).toBe('Send to FleetCrown — declined');
+    expect(labelForTool('send_to_loki').declined).toBe('Send to Loki — declined');
   });
 
   it('still reports a genuine failure as a failure', () => {

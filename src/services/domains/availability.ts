@@ -248,7 +248,7 @@ export async function checkDomain(
   // Join here rather than via `new URL(relative, base)`, which resolves against
   // the last path SEGMENT: a base that lost its trailing slash would silently
   // drop `/v1` and query a path that does not exist. `loadRdapRegistries`
-  // normalises, but a caller passing its own map (FleetCrown, tests) does not,
+  // normalises, but a caller passing its own map (Loki, tests) does not,
   // and an invariant enforced only at the far end is not enforced.
   const target = `${base.endsWith('/') ? base : `${base}/`}domain/${encodeURIComponent(domain)}`;
 

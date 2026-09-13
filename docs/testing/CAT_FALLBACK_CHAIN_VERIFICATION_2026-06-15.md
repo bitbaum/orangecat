@@ -35,7 +35,7 @@ Related code: `src/services/cat/provider-resolver.ts` (merged chain),
 | Test Groq              | Primary, Valid; Move-up/down enabled; deletable            |
 | Test OpenRouter        | last; Valid; Move-down disabled; deletable                 |
 
-Styling is on the FleetCrown semantic tier (monochrome surfaces, grip handle,
+Styling is on the Loki semantic tier (monochrome surfaces, grip handle,
 green status badges) — no chromatic/legacy tokens.
 
 **Reorder** — clicked Move-down on the platform default. UI optimistically

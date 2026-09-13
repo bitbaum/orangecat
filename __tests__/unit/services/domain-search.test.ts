@@ -263,7 +263,7 @@ describe('suggestions', () => {
     expect(candidates.slice(0, bare.length)).toEqual(bare);
   });
 
-  it('honours a caller-supplied TLD list, which is how FleetCrown narrows it', () => {
+  it('honours a caller-supplied TLD list, which is how Loki narrows it', () => {
     const candidates = suggestDomains({ query: 'substrate', tlds: ['.ch', 'COM'] });
     expect(candidates.slice(0, 2)).toEqual(['substrate.ch', 'substrate.com']);
   });

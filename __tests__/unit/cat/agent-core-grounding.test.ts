@@ -2,7 +2,7 @@
  * Cat groundedness rules, served from the package.
  *
  * This file used to have a second job: asserting the src/services/agent-core
- * mirror was byte-identical to FleetCrown's canonical copy. That mirror is
+ * mirror was byte-identical to Loki's canonical copy. That mirror is
  * deleted — both apps import `@bitbaum/ai-kit/grounding` now, so there are no longer
  * two copies of "what counts as grounded" to diverge. (The mirror check also
  * self-skipped in CI, which clones one repo at a time; it only ever ran on a

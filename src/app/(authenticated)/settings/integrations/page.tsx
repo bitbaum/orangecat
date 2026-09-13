@@ -3,7 +3,7 @@
 /**
  * Integrations settings — two panels:
  *
- *   1. Integration keys (outbound API auth — FleetCrown, hirn.li, …)
+ *   1. Integration keys (outbound API auth — Loki, hirn.li, …)
  *   2. Webhook endpoints (inbound signed events to your URL)
  *
  * Both panels share the actor selector (personal + group actors), so

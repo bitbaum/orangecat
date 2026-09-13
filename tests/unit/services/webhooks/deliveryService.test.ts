@@ -1,7 +1,7 @@
 /**
  * Webhook delivery service — contract tests.
  *
- * The deliveryService shipped to customers (FleetCrown) across the
+ * The deliveryService shipped to customers (Loki) across the
  * 211188a3 → bfd39b6d webhook thread. truncateResponseBody +
  * computeNextAttempt are pure functions; the rest poke the admin DB
  * client via a controllable mock. None of them had direct tests until

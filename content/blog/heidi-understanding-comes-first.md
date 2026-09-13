@@ -26,6 +26,6 @@ There is no purchasable Swiss German text-to-speech, the best open speech models
 
 ## What is live today
 
-A first page at [heidi.orangecat.ch](https://heidi.orangecat.ch), built through FleetCrown and deployed to our own box. The product will be measured rather than gamified: the number we want to show you is your comprehension of unfamiliar Zurich speakers, before and after, not a streak.
+A first page at [heidi.orangecat.ch](https://heidi.orangecat.ch), built through Loki and deployed to our own box. The product will be measured rather than gamified: the number we want to show you is your comprehension of unfamiliar Zurich speakers, before and after, not a streak.
 
 If you live in Zurich and would let us record you saying ordinary things in your own dialect, we would like to hear from you.

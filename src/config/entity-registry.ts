@@ -601,5 +601,5 @@ export function getEntitiesByCategory(): Record<EntityCategory, EntityMetadata[]
 
 export default ENTITY_REGISTRY;
 
-// Backwards-compatible export for the existing FleetCrown CTA.
-export { ORANGECAT_FLEETCROWN_INTEGRATION } from './ecosystem';
+// Backwards-compatible export for the existing Loki CTA.
+export { ORANGECAT_LOKI_INTEGRATION } from './ecosystem';

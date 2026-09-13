@@ -2,7 +2,7 @@
  * Seed "Revive My Old Ride" as an OrangeCat project + stakeholder edges.
  *
  * OrangeCat is the SSOT for economic entities (projects) and the cross-product
- * stakeholder graph. This registers the revamp-it initiative the FleetCrown
+ * stakeholder graph. This registers the revamp-it initiative the Loki
  * session built — but on the correct (economic) layer.
  *
  * Idempotent: resolves the owner actor and sibling projects by stable

@@ -1,7 +1,7 @@
 # @orangecat/sdk
 
 Official TypeScript SDK for the **OrangeCat platform API (v1)**. Built for
-sibling products (FleetCrown, hirn.li), third-party integrations, and
+sibling products (Loki, hirn.li), third-party integrations, and
 internal automation that lives outside the OrangeCat Next.js app.
 
 > Authoritative machine-readable contract: **https://orangecat.ch/api/v1/openapi.json**
@@ -35,7 +35,7 @@ if (discovery.version !== 'v1') {
 // Create a service on behalf of the actor bound to your key.
 const service = await orangecat.services.create({
   title: 'Claude Max',
-  description: 'FleetCrown user subscription',
+  description: 'Loki user subscription',
   category: 'subscription',
   fixed_price: 0.001,
   currency: 'BTC',
@@ -118,7 +118,7 @@ Error codes mirror `docs/api/CONVENTIONS.md` §3:
 
 | Feature             | Behaviour                                                                                                                                                                                                                                               |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Timeout**         | 20 s per request (matches FleetCrown's `useFetch`). Override per call with `{ timeoutMs }`.                                                                                                                                                             |
+| **Timeout**         | 20 s per request (matches Loki's `useFetch`). Override per call with `{ timeoutMs }`.                                                                                                                                                             |
 | **Retries**         | Up to 3 retries on transient failures (network, 5xx, 429). Exponential backoff with jitter, honours `Retry-After`. Override with `{ maxRetries }`.                                                                                                      |
 | **Idempotency-Key** | Auto-generated on every mutating request (`ock_idem_<32-hex>`). Override with `{ idempotencyKey }` if you have your own dedup key. Server-side dedup is planned — the SDK ships the header today so retries are forward-compatible the moment it lands. |
 | **Authorization**   | Sends both `X-OrangeCat-Key` and `Authorization: Bearer` headers so it works against any gateway.                                                                                                                                                       |
@@ -157,4 +157,4 @@ UNLICENSED (proprietary). Contact integrations@orangecat.ch for terms.
 ## Status
 
 **Pre-1.0 — interfaces may shift.** First stable: 1.0.0 ships alongside
-FleetCrown's first production use of the SDK.
+Loki's first production use of the SDK.

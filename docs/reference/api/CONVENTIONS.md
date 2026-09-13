@@ -1,6 +1,6 @@
 # OrangeCat Public API Conventions
 
-This document is the rulebook for `/api/v1/*` and everything we ship under it. Anyone touching the public API surface — adding a route, changing a schema, building an SDK, integrating from FleetCrown — should read this first. The internal `/api/<entity>/*` routes are out of scope; conventions there are looser because they only serve the OrangeCat web app.
+This document is the rulebook for `/api/v1/*` and everything we ship under it. Anyone touching the public API surface — adding a route, changing a schema, building an SDK, integrating from Loki — should read this first. The internal `/api/<entity>/*` routes are out of scope; conventions there are looser because they only serve the OrangeCat web app.
 
 **Last reviewed**: 2026-06-03
 
@@ -127,7 +127,7 @@ Endpoints are minted via `POST /api/webhook-endpoints` (session auth only) and d
 
 - **Always send `User-Agent`** identifying the SDK and version (`@orangecat/sdk@0.1.0 node/20`).
 - **Always send `Idempotency-Key`** on mutating requests, even if today's server ignores it.
-- **Default timeout: 20 seconds** — matches FleetCrown's existing `useFetch` convention and gives the server enough headroom for cold starts.
+- **Default timeout: 20 seconds** — matches Loki's existing `useFetch` convention and gives the server enough headroom for cold starts.
 - **Retry transient failures** (network errors, 5xx, 429) with exponential backoff. Honour `Retry-After`.
 - **Tree-shake.** Ship ESM-only with `"type": "module"` and a clean `"exports"` map.
 

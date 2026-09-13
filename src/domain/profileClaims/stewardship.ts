@@ -63,7 +63,7 @@ export async function getEntityStewardUserId(
 }
 
 /**
- * May `userId` manage this entity — edit it, hand it to FleetCrown, publish
+ * May `userId` manage this entity — edit it, hand it to Loki, publish
  * it? Owner always; steward only while the claim is pending. Returns the role
  * so a caller can say which one applied.
  */

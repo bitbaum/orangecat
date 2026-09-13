@@ -1,5 +1,5 @@
 /**
- * The OrangeCat → FleetCrown signed rail, in one place.
+ * The OrangeCat → Loki signed rail, in one place.
  *
  * Three callers now sign a JSON body with `ORANGECAT_WEBHOOK_SECRET` and POST
  * it under `x-orangecat-signature`: the entitlement grant, the settled-payment
@@ -40,7 +40,7 @@ export interface SignedPostOptions {
 const DEFAULT_TIMEOUT_MS = 12_000;
 
 /** True when the shared rail is armed. Both ends stay inert without it. */
-export function fleetCrownRailConfigured(secret = process.env.ORANGECAT_WEBHOOK_SECRET): boolean {
+export function lokiRailConfigured(secret = process.env.ORANGECAT_WEBHOOK_SECRET): boolean {
   return Boolean(secret && secret.length >= 32);
 }
 
@@ -48,18 +48,18 @@ export function fleetCrownRailConfigured(secret = process.env.ORANGECAT_WEBHOOK_
  * Sign `payload` and POST it to `url`.
  *
  * Returns the response body as text so a caller can surface the receiver's own
- * message. That matters more than it looks: FleetCrown answers a 409 with a
- * sentence written for a person ("sign in to FleetCrown once, then try
+ * message. That matters more than it looks: Loki answers a 409 with a
+ * sentence written for a person ("sign in to Loki once, then try
  * again"), and a caller that discarded the body could only say "it failed".
  */
-export async function postSignedToFleetCrown(
+export async function postSignedToLoki(
   url: string,
   payload: unknown,
   opts: SignedPostOptions = {}
 ): Promise<SignedPostResult> {
   const secret = opts.secret ?? process.env.ORANGECAT_WEBHOOK_SECRET;
-  if (!fleetCrownRailConfigured(secret)) {
-    return { ok: false, status: null, error: 'The FleetCrown rail is not configured here.' };
+  if (!lokiRailConfigured(secret)) {
+    return { ok: false, status: null, error: 'The Loki rail is not configured here.' };
   }
 
   // Serialised once; signed and sent as the same bytes. See the header.
@@ -83,7 +83,7 @@ export async function postSignedToFleetCrown(
       return {
         ok: false,
         status: res.status,
-        error: `FleetCrown answered ${res.status}`,
+        error: `Loki answered ${res.status}`,
         body: text,
       };
     }
@@ -96,8 +96,8 @@ export async function postSignedToFleetCrown(
       status: null,
       error:
         name === 'TimeoutError' || name === 'AbortError'
-          ? 'FleetCrown did not answer in time.'
-          : `FleetCrown could not be reached (${message}).`,
+          ? 'Loki did not answer in time.'
+          : `Loki could not be reached (${message}).`,
     };
   }
 }

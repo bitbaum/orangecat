@@ -19,10 +19,10 @@
  *     `--rotate` is passed (which mints a new secret and prints it).
  *
  * Run against the LIVE self-hosted DB (supabase.orangecat.ch) from the box:
- *   ORANGECAT_OWNER_SEED=1 npx tsx scripts/oauth/register-client.ts --client fleetcrown
+ *   ORANGECAT_OWNER_SEED=1 npx tsx scripts/oauth/register-client.ts --client loki
  *   ORANGECAT_OWNER_SEED=1 npx tsx scripts/oauth/register-client.ts --client solon
  *   ORANGECAT_OWNER_SEED=1 npx tsx scripts/oauth/register-client.ts --client solon --rotate
- * (no --client defaults to fleetcrown, preserving the original invocation)
+ * (no --client defaults to loki, preserving the original invocation)
  *
  * Requires in the environment (already in .env.local on the box):
  *   NEXT_PUBLIC_SUPABASE_URL   — self-hosted Supabase URL
@@ -58,7 +58,7 @@ if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
 
 const rotate = process.argv.includes('--rotate');
 const clientArgIdx = process.argv.indexOf('--client');
-const clientId = (clientArgIdx !== -1 && process.argv[clientArgIdx + 1]) || 'fleetcrown';
+const clientId = (clientArgIdx !== -1 && process.argv[clientArgIdx + 1]) || 'loki';
 const sha256 = (s: string): string => createHash('sha256').update(s).digest('hex');
 
 /** Auth.js v5 callback path — identical for every relying party we register. */
@@ -87,10 +87,10 @@ interface ClientSpec {
  */
 const CLIENT_SPECS: Record<string, ClientSpec> = {
   // Mirrors the row first registered + go-live-verified on 2026-06-17; the
-  // secret already lives in FleetCrown's env.
-  fleetcrown: {
-    name: 'FleetCrown',
-    origins: ['https://fleetcrown.orangecat.ch'], // production origin (PLATFORM_AND_COLLABORATION.md)
+  // secret already lives in Loki's env.
+  loki: {
+    name: 'Loki',
+    origins: ['https://loki.orangecat.ch'], // production origin (PLATFORM_AND_COLLABORATION.md)
     scopes: 'openid profile email project.read project.write timeline.write wallet.read',
     is_confidential: true, // has a server (Auth.js v5) — keeps a secret
     is_trusted: true, // first-party — skips the consent screen after first grant

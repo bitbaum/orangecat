@@ -14,7 +14,7 @@ byte-for-byte data parity with prod. Two pipeline gaps found and fixed the same 
 ## What is being proven
 
 The backup pipeline is `/opt/backups/pg-backup.sh` on the box (installed by the
-fleetcrown Hetzner toolkit, scheduled by systemd `pg-backup.timer` at **02:30 UTC**):
+loki Hetzner toolkit, scheduled by systemd `pg-backup.timer` at **02:30 UTC**):
 
 1. Dumps every box-system Postgres DB (custom format) + system globals.
 2. Dumps the **supabase-db container** DBs `postgres` (= OrangeCat) and `_supabase`,
@@ -181,7 +181,7 @@ orangecat systemd units, `launch.sh` — the from-scratch prerequisites.
 
 Both fixed in `/opt/backups/pg-backup.sh` on the box on 2026-07-03 (pre-patch copy at
 `/opt/backups/pg-backup.sh.bak-20260703`). ⚠️ The canonical script lives in the
-**fleetcrown** Hetzner toolkit (`fleetcrown/scripts/hetzner/install-backups.sh`) —
+**loki** Hetzner toolkit (`loki/scripts/hetzner/install-backups.sh`) —
 sync these fixes there so a toolkit re-install doesn't revert them.
 
 1. **Container cluster globals were never dumped.** `pg_dump` omits roles; the old

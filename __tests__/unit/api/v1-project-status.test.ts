@@ -4,7 +4,7 @@
  * Publishing from another product was one-way: POST /api/v1/projects created a
  * public page, and the only way to change its status lived behind session auth,
  * which a bearer-token integration cannot use. So a project published from
- * FleetCrown stayed publicly visible for good.
+ * Loki stayed publicly visible for good.
  *
  * These tests pin the parts that make a write surface safe to expose: a scope
  * is required, someone else's project cannot be touched, transitions are the

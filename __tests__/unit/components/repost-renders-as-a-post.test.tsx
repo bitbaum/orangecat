@@ -76,7 +76,7 @@ function ordinaryPost(): TimelineDisplayEvent {
     ...base,
     description: 'Shipped a new feature today.',
     metadata: {},
-    subject: { id: 'proj-1', name: 'FleetCrown', url: '/projects/fleetcrown', type: 'project' },
+    subject: { id: 'proj-1', name: 'Loki', url: '/projects/loki', type: 'project' },
   } as unknown as TimelineDisplayEvent;
 }
 
@@ -110,8 +110,8 @@ describe('an ordinary (non-repost) post', () => {
     render(<PostContent event={ordinaryPost()} />);
 
     // The suppression is specific to reposts. A real post's subject — e.g.
-    // "posted about FleetCrown" — must keep rendering.
-    expect(screen.getByRole('link', { name: 'FleetCrown' })).toBeInTheDocument();
+    // "posted about Loki" — must keep rendering.
+    expect(screen.getByRole('link', { name: 'Loki' })).toBeInTheDocument();
   });
 });
 

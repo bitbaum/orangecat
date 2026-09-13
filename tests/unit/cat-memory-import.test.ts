@@ -18,7 +18,7 @@ describe('parseImportedMemories', () => {
       '- [2026-01-01] - Based in Zürich',
       '* Speaks English and Russian',
       '## Projects',
-      '1. [unknown] - Building FleetCrown, a life-OS for builders',
+      '1. [unknown] - Building Loki, a life-OS for builders',
       '**Preferences**',
       'Prefers Lightning over on-chain payments',
     ].join('\n');
@@ -28,7 +28,7 @@ describe('parseImportedMemories', () => {
     expect(facts).toEqual([
       'Based in Zürich',
       'Speaks English and Russian',
-      'Building FleetCrown, a life-OS for builders',
+      'Building Loki, a life-OS for builders',
       'Prefers Lightning over on-chain payments',
     ]);
     // Category headings never become memories.

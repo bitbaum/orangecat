@@ -353,12 +353,12 @@ export function renderProjectActivity(
     return null;
   }
   const lines = projectActivity.map(e => {
-    const tag = e.source === 'fleetcrown' ? ' [via FleetCrown]' : '';
+    const tag = e.source === 'loki' ? ' [via Loki]' : '';
     const when = e.at ? ` (${e.at.slice(0, 10)})` : '';
     const desc = e.description ? ` — ${e.description.slice(0, 140)}` : '';
     return `- **${e.title}**${tag}${when}${desc}`;
   });
-  return `## Recent Project Activity\nUpdates on the user's projects (FleetCrown build updates are tagged):\n${lines.join('\n')}`;
+  return `## Recent Project Activity\nUpdates on the user's projects (Loki build updates are tagged):\n${lines.join('\n')}`;
 }
 
 export function renderStakeholders(stakeholders: FullUserContext['stakeholders']): string | null {

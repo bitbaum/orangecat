@@ -1,7 +1,7 @@
 /**
  * `build_site` — Cat commissions a real, deployed website.
  *
- * The whole handler is about saying the true thing. FleetCrown answers 202:
+ * The whole handler is about saying the true thing. Loki answers 202:
  * the request is QUEUED, and the repository, box sync and deploy take minutes.
  * So there is no moment during this turn at which a site exists, and every
  * sentence handed back says a build was started rather than that a site is
@@ -14,11 +14,11 @@
  * expensive bug, and a queued build is the easiest possible place to make it.
  */
 import {
-  requestFleetCrownSite,
+  requestLokiSite,
   slugFromTitle,
   CAT_SITE_KINDS,
-} from '@/services/fleetcrown/site-build';
-import type { CatSiteKind } from '@/services/fleetcrown/site-build';
+} from '@/services/loki/site-build';
+import type { CatSiteKind } from '@/services/loki/site-build';
 import type { ActionHandler } from './types';
 
 export const siteBuildHandlers: Record<string, ActionHandler> = {
@@ -41,7 +41,7 @@ export const siteBuildHandlers: Record<string, ActionHandler> = {
       ? (requestedKind as CatSiteKind)
       : 'product';
 
-    const outcome = await requestFleetCrownSite({ actorId, slug, title, kind });
+    const outcome = await requestLokiSite({ actorId, slug, title, kind });
     if (!outcome.ok) {
       return { success: false, error: outcome.reason };
     }

@@ -13,7 +13,7 @@ import type { ContentBlock } from 'bip-kit';
  * import that Next's file tracer cannot see, so a `output: "standalone"`
  * build would silently ship without shiki and prod would render code blocks
  * as the un-highlighted mono fallback while dev shows them highlighted
- * (FleetCrown shipped that exact hole twice, PRs #510–#513). The literal
+ * (Loki shipped that exact hole twice, PRs #510–#513). The literal
  * `() => import('shiki')` lives HERE, in our code, where the bundler
  * resolves it into the server chunk. Do not "clean up" this call.
  */

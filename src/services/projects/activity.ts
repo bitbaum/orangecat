@@ -7,7 +7,7 @@
  * every project rendered "No recent activity yet" no matter how much had
  * happened. Real project activity lives in `timeline_events`, keyed by
  * subject_type/subject_id, which is also where the external publish bus lands
- * updates from sibling products (FleetCrown). One store, one reader.
+ * updates from sibling products (Loki). One store, one reader.
  *
  * Created: 2026-08-24
  */

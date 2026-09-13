@@ -79,7 +79,7 @@ export default function AuthPage() {
         </Link>
         <div className="w-full max-w-md">
           {/* max-[359px] trims below: on the narrowest phones this form's last
-              row (OAuth buttons) lands under the FleetCrown feedback FAB
+              row (OAuth buttons) lands under the Loki feedback FAB
               (fixed bottom-right). Compacting non-essential vertical rhythm
               here — never touch-target sizes — clears it without a layout
               rewrite. */}

@@ -3,7 +3,7 @@
 # OrangeCat self-host deploy — atomic swap + boot-test + rollback.
 #
 # OrangeCat is one of the four hand-rolled "snowflake" services on bitbaum
-# (not managed by fleetcrown/scripts/hetzner/sync-infra.sh, not in apps.conf):
+# (not managed by loki/scripts/hetzner/sync-infra.sh, not in apps.conf):
 # it keeps its own systemd unit + Caddy block and uses this safer deploy than
 # the fleet's in-place `deploy.sh` (which rsyncs over the live tree with no
 # rollback). The flow, proven in the runbook:
@@ -69,7 +69,7 @@ echo "=== assemble standalone (static + public) ==="
 # top-level node_modules/shiki symlink, so on the box (no outer node_modules to
 # leak from) the import finds nothing and long-form code blocks silently render
 # as the un-highlighted mono fallback while dev shows them highlighted.
-# Same trap and same fix as FleetCrown #513: what the tracer can't see, the
+# Same trap and same fix as Loki #513: what the tracer can't see, the
 # assemble step must supply. Version-agnostic; no-op when already present.
 SHIKI_STORE_ENTRY="$(ls "$ST/node_modules/.pnpm" 2>/dev/null | grep -E '^shiki@' | head -1 || true)"
 if [ -n "$SHIKI_STORE_ENTRY" ] && [ ! -e "$ST/node_modules/shiki" ]; then

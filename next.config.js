@@ -203,7 +203,7 @@ const nextConfig = {
             //   document.featurePolicy.allowsFeature('microphone') -> false
             //   navigator.permissions.query({name:'microphone'})   -> "denied"
             //
-            // That silently disabled speak-to-report in the embedded FleetCrown
+            // That silently disabled speak-to-report in the embedded Loki
             // feedback widget, and no visitor could fix it — there was nothing
             // to allow. `(self)` permits only this origin, so the browser asks
             // the person, which is the decision that should be theirs.

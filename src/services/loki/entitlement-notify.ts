@@ -1,47 +1,47 @@
 /**
- * FleetCrown entitlement notifier — the OrangeCat→FleetCrown settlement signal.
+ * Loki entitlement notifier — the OrangeCat→Loki settlement signal.
  *
- * When a Bitcoin payment for a FleetCrown "pass" product settles, we tell
- * FleetCrown to grant the plan. FleetCrown's /api/orangecat/entitlement verifies
+ * When a Bitcoin payment for a Loki "pass" product settles, we tell
+ * Loki to grant the plan. Loki's /api/orangecat/entitlement verifies
  * the HMAC, maps the OC actor → its user, and flips the plan (time-boxed, since
- * BTC has no native recurring). Idempotent on FleetCrown's side via externalId
+ * BTC has no native recurring). Idempotent on Loki's side via externalId
  * (the payment-intent id), so a retried settlement check is safe.
  *
- * A pass product is marked with two tags: `fleetcrown-plan:<personal|pro|team>`
- * and `fleetcrown-days:<n>`. Non-pass payments are ignored. Fire-and-forget:
+ * A pass product is marked with two tags: `loki-plan:<personal|pro|team>`
+ * and `loki-days:<n>`. Non-pass payments are ignored. Fire-and-forget:
  * never throws, never blocks settlement — a dropped notify is recoverable (re-send
- * is idempotent, and FleetCrown can reconcile).
+ * is idempotent, and Loki can reconcile).
  *
- * Inert until ORANGECAT_WEBHOOK_SECRET is set (shared with FleetCrown).
+ * Inert until ORANGECAT_WEBHOOK_SECRET is set (shared with Loki).
  */
-import { postSignedToFleetCrown } from './signed-post';
+import { postSignedToLoki } from './signed-post';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { getEntityMetadata, type EntityType } from '@/config/entity-registry';
 import { logger } from '@/utils/logger';
 import type { PaymentIntent } from '@/domain/payments/types';
-import { parseFleetCrownPass } from '@/config/fleetcrown-passes';
+import { parseLokiPass } from '@/config/loki-passes';
 
-const FLEETCROWN_URL =
-  process.env.FLEETCROWN_ENTITLEMENT_URL ||
-  'https://fleetcrown.orangecat.ch/api/orangecat/entitlement';
+const LOKI_URL =
+  process.env.LOKI_ENTITLEMENT_URL ||
+  'https://loki.orangecat.ch/api/orangecat/entitlement';
 
-// parseFleetCrownPass + the plan set live in the config SSOT (the seed writes
+// parseLokiPass + the plan set live in the config SSOT (the seed writes
 // the very tags this reads), re-exported here for existing importers.
-export { parseFleetCrownPass };
+export { parseLokiPass };
 
-const FLEETCROWN_EVENTS_URL =
-  process.env.FLEETCROWN_EVENTS_URL || 'https://fleetcrown.orangecat.ch/api/orangecat/events';
+const LOKI_EVENTS_URL =
+  process.env.LOKI_EVENTS_URL || 'https://loki.orangecat.ch/api/orangecat/events';
 
 /**
- * Settled-payment signal for FleetCrown-linked projects: when money lands on
- * an OC project that a FleetCrown project published itself as, tell the fleet —
+ * Settled-payment signal for Loki-linked projects: when money lands on
+ * an OC project that a Loki project published itself as, tell the fleet —
  * settled funding is the ground-truth signal the capability layer can't derive
- * on its own. FleetCrown drops events for unlinked entities, so we send for
+ * on its own. Loki drops events for unlinked entities, so we send for
  * every settled project payment and let the receiver filter. Same shared
  * secret, fire-and-forget, inert until ORANGECAT_WEBHOOK_SECRET is set.
  */
-export async function notifyFleetCrownProjectFunding(pi: PaymentIntent): Promise<void> {
+export async function notifyLokiProjectFunding(pi: PaymentIntent): Promise<void> {
   const secret = process.env.ORANGECAT_WEBHOOK_SECRET;
   if (!secret) {
     return;
@@ -52,7 +52,7 @@ export async function notifyFleetCrownProjectFunding(pi: PaymentIntent): Promise
   }
 
   try {
-    const result = await postSignedToFleetCrown(FLEETCROWN_EVENTS_URL, {
+    const result = await postSignedToLoki(LOKI_EVENTS_URL, {
       type: 'payment.settled',
       entityType: pi.entity_type,
       entityId: pi.entity_id,
@@ -61,7 +61,7 @@ export async function notifyFleetCrownProjectFunding(pi: PaymentIntent): Promise
       externalId: pi.id,
     });
     if (!result.ok) {
-      logger.warn('[fc-funding] FleetCrown rejected event', {
+      logger.warn('[fc-funding] Loki rejected event', {
         piId: pi.id,
         status: result.status,
       });
@@ -74,11 +74,11 @@ export async function notifyFleetCrownProjectFunding(pi: PaymentIntent): Promise
   }
 }
 
-export async function notifyFleetCrownEntitlement(pi: PaymentIntent): Promise<void> {
+export async function notifyLokiEntitlement(pi: PaymentIntent): Promise<void> {
   const secret = process.env.ORANGECAT_WEBHOOK_SECRET;
   if (!secret) {
     return;
-  } // not wired to FleetCrown yet — inert
+  } // not wired to Loki yet — inert
   if (pi.entity_type !== 'product') {
     return;
   } // only product passes carry a plan
@@ -92,12 +92,12 @@ export async function notifyFleetCrownEntitlement(pi: PaymentIntent): Promise<vo
       .select('tags')
       .eq('id', pi.entity_id)
       .single();
-    const pass = parseFleetCrownPass(product?.tags);
+    const pass = parseLokiPass(product?.tags);
     if (!pass) {
       return;
-    } // a normal product sale, not a FleetCrown pass
+    } // a normal product sale, not a Loki pass
 
-    // The buyer's PERSONAL actor id is what FleetCrown stored as orangecatActorId
+    // The buyer's PERSONAL actor id is what Loki stored as orangecatActorId
     // (= the OIDC id_token.sub). buyer_id is the user id — resolve via admin
     // (headless: no session), never create here.
     const { data: actor } = await admin
@@ -107,13 +107,13 @@ export async function notifyFleetCrownEntitlement(pi: PaymentIntent): Promise<vo
       .eq('actor_type', 'user')
       .maybeSingle();
     if (!actor?.id) {
-      logger.warn('[fc-entitlement] no personal actor for buyer — cannot map to FleetCrown', {
+      logger.warn('[fc-entitlement] no personal actor for buyer — cannot map to Loki', {
         buyerId: pi.buyer_id,
       });
       return;
     }
 
-    const result = await postSignedToFleetCrown(FLEETCROWN_URL, {
+    const result = await postSignedToLoki(LOKI_URL, {
       actorId: actor.id,
       plan: pass.plan,
       externalId: pi.id,
@@ -121,7 +121,7 @@ export async function notifyFleetCrownEntitlement(pi: PaymentIntent): Promise<vo
       amountBtc: String(pi.amount_btc ?? ''),
     });
     if (!result.ok) {
-      logger.warn('[fc-entitlement] FleetCrown rejected grant', {
+      logger.warn('[fc-entitlement] Loki rejected grant', {
         piId: pi.id,
         status: result.status,
       });

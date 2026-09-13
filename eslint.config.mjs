@@ -68,7 +68,7 @@ const restrictedSyntaxSelectors = [
     // Close the keystroke-hijack class (2026-07 dogfood): a global keyboard
     // shortcut's "is the user typing?" guard must inspect the COMPOSED path
     // leaf, not e.target. When a keystroke crosses a shadow-DOM boundary
-    // (e.g. the embedded FleetCrown feedback widget), e.target is retargeted
+    // (e.g. the embedded Loki feedback widget), e.target is retargeted
     // to the shadow host, so the guard misreads a text field as "not typing"
     // and the shortcut fires and eats the keystroke. Pass e.composedPath()[0].
     selector:
@@ -98,10 +98,10 @@ const eslintConfig = [
   {
     // Translated from the former .eslintignore (flat config ignores it).
     ignores: [
-      // Vendored: byte-for-byte mirror of fleetcrown/src/lib/agent/core.
+      // Vendored: byte-for-byte mirror of loki/src/lib/agent/core.
       // `eslint --fix` here would rewrite quotes and break the SHA-256 drift
       // gate that keeps the two copies from silently disagreeing about what
-      // "grounded" means. Edit the canonical copy in FleetCrown and re-run
+      // "grounded" means. Edit the canonical copy in Loki and re-run
       // its `npm run sync:agent-core`. See src/services/agent-core/README.md.
       'src/services/agent-core/**',
       '.next/**',

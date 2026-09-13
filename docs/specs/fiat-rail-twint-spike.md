@@ -6,7 +6,7 @@
 
 ## Why
 
-The mission says **any currency** — "meet users where they are." Today that's aspirational: OC settles **Bitcoin only** (`walletResolutionService` resolves NWC > Lightning Address > on-chain; there's a `profiles.payment_preferences` JSON field and a `loan_payments.payment_method` enum, but **no fiat rail** and no first-class `payment_methods` concept). For a Swiss-first launch (FleetCrown), the single highest-impact fiat rail is **TWINT** — Switzerland's dominant mobile-payment method (6M+ users). A funder who has Twint but not a Bitcoin wallet currently **cannot pay at all**.
+The mission says **any currency** — "meet users where they are." Today that's aspirational: OC settles **Bitcoin only** (`walletResolutionService` resolves NWC > Lightning Address > on-chain; there's a `profiles.payment_preferences` JSON field and a `loan_payments.payment_method` enum, but **no fiat rail** and no first-class `payment_methods` concept). For a Swiss-first launch (Loki), the single highest-impact fiat rail is **TWINT** — Switzerland's dominant mobile-payment method (6M+ users). A funder who has Twint but not a Bitcoin wallet currently **cannot pay at all**.
 
 ## The unavoidable tension (read this first)
 
@@ -32,11 +32,11 @@ Twint economics (Payrexx Standard): **1.25% + CHF 0.18** per transaction.
 
 ## Two integration models
 
-**Model A — PSP marketplace (fiat-native for fiat payers).** Buyer pays Twint → **Payrexx** receives, splits, and pays the **seller out in fiat** (to their bank). Seller is a Payrexx sub-merchant (KYC'd via Payrexx's automated onboarding). OC touches **no funds** — Payrexx is merchant-of-record. Simplest, fastest to the Swiss market, and it's exactly what a real business (FleetCrown) wants. Cost: seller KYC + a bank account; fiat end-to-end (no BTC).
+**Model A — PSP marketplace (fiat-native for fiat payers).** Buyer pays Twint → **Payrexx** receives, splits, and pays the **seller out in fiat** (to their bank). Seller is a Payrexx sub-merchant (KYC'd via Payrexx's automated onboarding). OC touches **no funds** — Payrexx is merchant-of-record. Simplest, fastest to the Swiss market, and it's exactly what a real business (Loki) wants. Cost: seller KYC + a bank account; fiat end-to-end (no BTC).
 
 **Model B — Fiat-in → BTC-out bridge.** Buyer pays Twint → converted to BTC → seller receives BTC to their **existing** OC wallet. Preserves Bitcoin-native settlement _and_ seller pseudonymity (no bank/KYC for the seller). But: the conversion is a custodial moment, needs an on-ramp/OTC step, and the fiat-in leg likely still triggers KYC on the **payer** or OC. More complex; Payrexx's crypto product runs the _opposite_ direction (crypto-in → fiat-out), so this needs a different piece. **Defer** — it's the "have your cake" option but it's a bigger build and a heavier regulatory footprint.
 
-**Recommendation: Model A, FleetCrown-first.** FleetCrown is a real Swiss business with a bank account, motivated to accept Twint, and willing to KYC. Pilot there. Bitcoin remains the default for everyone else. Revisit Model B once there's demand for pseudonymous fiat.
+**Recommendation: Model A, Loki-first.** Loki is a real Swiss business with a bank account, motivated to accept Twint, and willing to KYC. Pilot there. Bitcoin remains the default for everyone else. Revisit Model B once there's demand for pseudonymous fiat.
 
 ## How it plugs into OC (architecture)
 
@@ -53,19 +53,19 @@ Blast radius is bounded: one new resolver branch, one new provider adapter, one 
 
 - **Payrexx account** for OC (platform) — evaluate Standard vs white-label; confirm marketplace/split + sub-merchant KYC on the plan tier.
 - **Legal/regulatory:** OC facilitating fiat marketplace payments in CH — confirm OC is _not_ the merchant-of-record (Payrexx is) so OC avoids money-transmitter/holding obligations. Get this checked before shipping.
-- **Seller side:** bank account + KYC (Payrexx automated). Acceptable for FleetCrown; a barrier for pseudonymous sellers (hence opt-in).
+- **Seller side:** bank account + KYC (Payrexx automated). Acceptable for Loki; a barrier for pseudonymous sellers (hence opt-in).
 - **Fees + display:** show the payer the Twint total; decide who eats the 1.25%+0.18 (seller, usually).
 
 ## Phased plan
 
-- **P0 (this spike — done):** pick TWINT + Payrexx (Model A), FleetCrown-first, Bitcoin stays default. This doc.
-- **P1 — FleetCrown pilot (lowest code):** a Payrexx-hosted Twint pay-link for one FleetCrown offering, surfaced on its OC entity page. Proves fiat-in end-to-end with near-zero platform code.
+- **P0 (this spike — done):** pick TWINT + Payrexx (Model A), Loki-first, Bitcoin stays default. This doc.
+- **P1 — Loki pilot (lowest code):** a Payrexx-hosted Twint pay-link for one Loki offering, surfaced on its OC entity page. Proves fiat-in end-to-end with near-zero platform code.
 - **P2 — In-app checkout + split:** Payrexx API integration — `method: 'fiat_psp'` in the resolver, seller onboarding, `payment_intents` provider adapter, "Pay with TWINT" button. Generalize to any KYC'd seller who opts in.
 - **P3 (later) — Model B bridge:** fiat-in → BTC-out for pseudonymous sellers, if demand appears.
 
 ## The decision (founder)
 
-1. **Do we cross the fiat line at all now**, or stay Bitcoin-only until after the first BTC payment (Workstream A) proves the core loop? (Recommend: **land the first BTC payment first**, then pilot Twint with FleetCrown — don't split focus.)
+1. **Do we cross the fiat line at all now**, or stay Bitcoin-only until after the first BTC payment (Workstream A) proves the core loop? (Recommend: **land the first BTC payment first**, then pilot Twint with Loki — don't split focus.)
 2. **Model A vs B** — recommend A (fiat track, Payrexx, opt-in, KYC'd sellers), Bitcoin stays default.
 3. **Provider** — recommend **Payrexx** (Swiss-first, marketplace-native); Stripe as the international fallback later.
 

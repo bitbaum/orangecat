@@ -20,7 +20,7 @@ const ProjectSummaryRail = dynamic(() => import('@/components/project/ProjectSum
 const ProjectHeader = dynamic(() => import('@/components/project/ProjectHeader'));
 const ProjectContent = dynamic(() => import('@/components/project/ProjectContent'));
 const ProjectTimeline = dynamic(() => import('@/components/project/ProjectTimeline'));
-const FleetCrownBuildCta = dynamic(() => import('@/components/integrations/FleetCrownBuildCta'));
+const LokiBuildCta = dynamic(() => import('@/components/integrations/LokiBuildCta'));
 
 interface Project {
   id: string;
@@ -210,9 +210,9 @@ export default function ProjectPageClient({
             />
 
             {/* Cross-sell: owners can run AI agents on this project in
-                FleetCrown (sibling product, shared OrangeCat login). */}
+                Loki (sibling product, shared OrangeCat login). */}
             {isOwner && (
-              <FleetCrownBuildCta
+              <LokiBuildCta
                 variant="card"
                 entityType="project"
                 entityId={project.id}

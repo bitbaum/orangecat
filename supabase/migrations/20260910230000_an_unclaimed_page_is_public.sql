@@ -3,7 +3,7 @@
 -- policy predates placeholders and admits only 'user' and 'group' rows, so
 -- every reader that goes through RLS — the visitor's project page, the
 -- /profiles/<slug> fallback, the steward's own session — saw NOTHING: no band,
--- no slug page, and the FleetCrown handoff named the steward as the client.
+-- no slug page, and the Loki handoff named the steward as the client.
 -- Found 2026-09-10 by walking the first placeholder-owned page in prod; the
 -- form path had never produced one before that day (its project was owned by
 -- the steward), so no surface had ever rendered a real placeholder.

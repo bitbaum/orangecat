@@ -4,13 +4,13 @@ import { useState } from 'react';
 import { ArrowUpRight, Bot } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { API_ROUTES } from '@/config/api-routes';
-import { ORANGECAT_FLEETCROWN_INTEGRATION } from '@/config/entity-registry';
+import { ORANGECAT_LOKI_INTEGRATION } from '@/config/entity-registry';
 import type { EntityType } from '@/config/entity-registry';
 
 /**
- * FleetCrown cross-sell — "build this with an AI fleet".
+ * Loki cross-sell — "build this with an AI fleet".
  *
- * FleetCrown is the sibling execution product (OC = economic layer, FC =
+ * Loki is the sibling execution product (OC = economic layer, FC =
  * production layer; one shared login via "Login with OrangeCat"). This CTA is
  * the single bridge component; the target URL derives from the integration
  * SSOT in the entity registry.
@@ -19,34 +19,34 @@ import type { EntityType } from '@/config/entity-registry';
  * - `card`: compact block for the project detail sidebar rail.
  */
 
-// Deep link straight into FleetCrown's create-project dialog (?new=1 opens it,
+// Deep link straight into Loki's create-project dialog (?new=1 opens it,
 // params survive the sign-in redirect — FC PR #56). Unauthenticated users pass
 // through "Continue with OrangeCat" and land in the open dialog.
-const FLEETCROWN_BUILD_URL = `${ORANGECAT_FLEETCROWN_INTEGRATION.fleetCrown.site}/projects?new=1`;
+const LOKI_BUILD_URL = `${ORANGECAT_LOKI_INTEGRATION.loki.site}/projects?new=1`;
 
 const COPY = {
-  title: `Build it with ${ORANGECAT_FLEETCROWN_INTEGRATION.fleetCrown.title}`,
-  body: 'One click: FleetCrown creates the project and puts an AI agent on it. One login: your OrangeCat account.',
-  action: `Open ${ORANGECAT_FLEETCROWN_INTEGRATION.fleetCrown.title}`,
+  title: `Build it with ${ORANGECAT_LOKI_INTEGRATION.loki.title}`,
+  body: 'One click: Loki creates the project and puts an AI agent on it. One login: your OrangeCat account.',
+  action: `Open ${ORANGECAT_LOKI_INTEGRATION.loki.title}`,
 } as const;
 
-interface FleetCrownBuildCtaProps {
+interface LokiBuildCtaProps {
   variant: 'banner' | 'card';
   entityType?: EntityType;
   entityId?: string;
   sourcePath?: string;
 }
 
-export default function FleetCrownBuildCta({
+export default function LokiBuildCta({
   variant,
   entityType,
   entityId,
   sourcePath,
-}: FleetCrownBuildCtaProps) {
+}: LokiBuildCtaProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const openFleetCrown = async () => {
+  const openLoki = async () => {
     // Open the tab NOW, inside the click. A window.open() after an await has
     // lost the user gesture and every popup blocker eats it — so the tab is
     // claimed synchronously and pointed at the handoff once it is minted.
@@ -66,13 +66,13 @@ export default function FleetCrownBuildCta({
     };
 
     if (!entityType || !entityId) {
-      go(FLEETCROWN_BUILD_URL);
+      go(LOKI_BUILD_URL);
       return;
     }
     setLoading(true);
     setError('');
     try {
-      const response = await fetch(API_ROUTES.INTEGRATIONS.FLEETCROWN_BUILD_INTENTS, {
+      const response = await fetch(API_ROUTES.INTEGRATIONS.LOKI_BUILD_INTENTS, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
@@ -82,10 +82,10 @@ export default function FleetCrownBuildCta({
         }),
       });
       // 503 = the signed handoff isn't configured on this deploy. That's not a
-      // failure the user should see — fall back to the plain FleetCrown link,
+      // failure the user should see — fall back to the plain Loki link,
       // exactly as the banner (no entity id) variant already does.
       if (response.status === 503) {
-        go(FLEETCROWN_BUILD_URL);
+        go(LOKI_BUILD_URL);
         return;
       }
       const body = (await response.json()) as {
@@ -93,7 +93,7 @@ export default function FleetCrownBuildCta({
         error?: { message?: string };
       };
       if (!response.ok || !body.data?.url) {
-        throw new Error(body.error?.message || 'Could not create the FleetCrown handoff.');
+        throw new Error(body.error?.message || 'Could not create the Loki handoff.');
       }
       go(body.data.url);
       setLoading(false);
@@ -101,7 +101,7 @@ export default function FleetCrownBuildCta({
       // The handoff never arrived, so close the tab we speculatively opened
       // rather than stranding the reader on a blank page with no explanation.
       tab?.close();
-      setError(cause instanceof Error ? cause.message : 'Could not open FleetCrown.');
+      setError(cause instanceof Error ? cause.message : 'Could not open Loki.');
       setLoading(false);
     }
   };
@@ -120,7 +120,7 @@ export default function FleetCrownBuildCta({
             </div>
           </div>
           <Button
-            onClick={openFleetCrown}
+            onClick={openLoki}
             isLoading={loading}
             variant="outline"
             size="sm"
@@ -147,7 +147,7 @@ export default function FleetCrownBuildCta({
         </div>
       </div>
       <Button
-        onClick={openFleetCrown}
+        onClick={openLoki}
         isLoading={loading}
         variant="outline"
         size="sm"

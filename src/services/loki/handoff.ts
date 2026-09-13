@@ -1,8 +1,8 @@
 /**
- * The OrangeCat → FleetCrown build handoff, as one service.
+ * The OrangeCat → Loki build handoff, as one service.
  *
- * Two callers need exactly the same thing — the "Build it with FleetCrown"
- * card on an entity page, and Cat's `send_to_fleetcrown` action — so the
+ * Two callers need exactly the same thing — the "Build it with Loki"
+ * card on an entity page, and Cat's `send_to_loki` action — so the
  * authorization, the entity read and the signing live here once. The route is
  * an HTTP skin over this; the Cat handler is a chat skin over it.
  */
@@ -18,9 +18,9 @@ import { getOrCreateUserActor } from '@/services/actors/getOrCreateUserActor';
 import { getUnclaimedOwner } from '@/domain/profileClaims/unclaimed';
 import { resolveManagementRole, type ManagementRole } from '@/domain/profileClaims/stewardship';
 import {
-  signFleetCrownBuildIntent,
+  signLokiBuildIntent,
   suggestedHandoffFor,
-  type FleetCrownBuildIntent,
+  type LokiBuildIntent,
 } from './build-intent';
 
 /** Entity types that have nothing for a builder to build. */
@@ -54,7 +54,7 @@ export function isSafeSourcePath(sourcePath: unknown): sourcePath is string {
  * `sourcePath` is the OrangeCat page the builder should treat as the origin —
  * always a same-origin path, never a URL the caller controls.
  */
-export async function createFleetCrownHandoff(input: {
+export async function createLokiHandoff(input: {
   supabase: AnySupabaseClient;
   userId: string;
   entityType: string;
@@ -80,7 +80,7 @@ export async function createFleetCrownHandoff(input: {
       ok: false,
       code: 'forbidden',
       message:
-        'Only the owner (or the person who set it up, until it is claimed) can send it to FleetCrown',
+        'Only the owner (or the person who set it up, until it is claimed) can send it to Loki',
     };
   }
 
@@ -110,7 +110,7 @@ export async function createFleetCrownHandoff(input: {
 
   let token: string;
   try {
-    token = signFleetCrownBuildIntent({
+    token = signLokiBuildIntent({
       sub: actor.id,
       entity: {
         type: entityType,
@@ -126,11 +126,11 @@ export async function createFleetCrownHandoff(input: {
     return {
       ok: false,
       code: 'unconfigured',
-      message: 'FleetCrown build handoff is not configured',
+      message: 'Loki build handoff is not configured',
     };
   }
 
-  const url = new URL('/integrations/orangecat/build', ECOSYSTEM.fleetCrown.siteUrl);
+  const url = new URL('/integrations/orangecat/build', ECOSYSTEM.loki.siteUrl);
   url.searchParams.set('intent', token);
   return { ok: true, url: url.toString(), expiresInSeconds: HANDOFF_TTL_SECONDS, title, role };
 }
@@ -146,7 +146,7 @@ async function describeOwner(
   ownerValue: unknown,
   callerUserId: string,
   role: ManagementRole
-): Promise<FleetCrownBuildIntent['owner']> {
+): Promise<LokiBuildIntent['owner']> {
   if (ownerField === 'actor_id' && typeof ownerValue === 'string') {
     const unclaimed = await getUnclaimedOwner(supabase, ownerValue);
     if (unclaimed) {

@@ -155,8 +155,8 @@ describe('GET /api/webhook-endpoints', () => {
 // =============================================================================
 
 const validBody = {
-  name: 'FleetCrown subs',
-  url: 'https://fleetcrown.app/webhooks/orangecat',
+  name: 'Loki subs',
+  url: 'https://loki.app/webhooks/orangecat',
   actor_id: '00000000-0000-0000-0000-000000000001',
 };
 

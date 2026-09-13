@@ -3,7 +3,7 @@
  *
  * Typed edges between a project and competitors, collaborators, investors,
  * customers, employees, acquirers, acquisition targets, or in-house dev
- * projects. OrangeCat stores the graph; FleetCrown and other clients read it
+ * projects. OrangeCat stores the graph; Loki and other clients read it
  * via /api/v1/stakeholders or the internal /api/stakeholders session route.
  *
  * Created: 2026-07-09

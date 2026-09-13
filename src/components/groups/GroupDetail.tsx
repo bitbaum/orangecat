@@ -10,7 +10,7 @@ import { GroupDetailSidebar } from './GroupDetailSidebar';
 import { GroupDetailTabs } from './GroupDetailTabs';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { ROUTES } from '@/config/routes';
-import FleetCrownBuildCta from '@/components/integrations/FleetCrownBuildCta';
+import LokiBuildCta from '@/components/integrations/LokiBuildCta';
 import EntityShare from '@/components/sharing/EntityShare';
 import { PublicSupportPanel } from '@/components/payment/PublicSupportPanel';
 
@@ -109,7 +109,7 @@ export function GroupDetail({ groupSlug }: GroupDetailProps) {
           />
           <PublicSupportPanel entityType="group" entityId={group.id} entityTitle={group.name} />
           {isOwner && (
-            <FleetCrownBuildCta
+            <LokiBuildCta
               variant="card"
               entityType="group"
               entityId={group.id}

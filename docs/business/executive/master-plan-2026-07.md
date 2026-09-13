@@ -1,4 +1,4 @@
-# OrangeCat × FleetCrown — Master Plan (July 2026)
+# OrangeCat × Loki — Master Plan (July 2026)
 
 **Status:** Proposed — supersedes `strategic-plan.md` (Dec 2025) where they conflict
 **Basis:** Full-codebase inspection (OC + FC repos), docs/blog audit, live-site outsider audit, and production DB ground truth, all conducted 2026-07-02.
@@ -44,14 +44,14 @@
 | **Completed payments, ever**     | **0** (1 expired intent, 1 stuck at `invoice_ready`, both a single April test) |
 | Cat conversations / messages     | 12 / 36                                                                        |
 | DMs                              | 176 across 110 conversations                                                   |
-| OAuth clients                    | 1 (FleetCrown)                                                                 |
-| Stakeholder edges                | 1 (FleetCrown = customer)                                                      |
+| OAuth clients                    | 1 (Loki)                                                                 |
+| Stakeholder edges                | 1 (Loki = customer)                                                      |
 
 ### Technology (what actually works)
 
 The plumbing is unusually far along. Working end-to-end **in code**:
 create+view for all 15 entity types (registry-driven generic CRUD), a production-grade
-**OIDC identity provider** (PKCE, refresh rotation, JWKS, hashed secrets — live, FleetCrown
+**OIDC identity provider** (PKCE, refresh rotation, JWKS, hashed secrets — live, Loki
 registered), a real payment orchestration (`paymentFlowService`: NWC and on-chain
 auto-verify; LNURL falls back to buyer-confirm), governance that tallies votes and
 **auto-executes** passed proposals, full messaging/timeline/notifications, and a Cat with
@@ -62,11 +62,11 @@ Loops that are ~80% wired but **do not close**:
 1. **Cat Credits** — ledger + Lightning top-up built; the chat path **never spends credits**
    (`'usage'` ledger kind defined, never written). Top-up itself gated on unset
    `PLATFORM_NWC_URI`.
-2. **Identity bridge** — OC side (OIDC provider) shipped; **FleetCrown side unbuilt**
+2. **Identity bridge** — OC side (OIDC provider) shipped; **Loki side unbuilt**
    (no OrangeCat provider in FC's Auth.js, no `orangecatActorId` column). FC docs still
    call the whole thing "not yet built" — stale.
 3. **Publish bus** — OC ingest endpoint (`POST /api/v1/timeline/publish`, idempotent,
-   scoped) is live; the **FleetCrown emit half is unbuilt**. Today's only live integration
+   scoped) is live; the **Loki emit half is unbuilt**. Today's only live integration
    is a one-way subscription→service mirror over a single shared service key.
 4. **Edit UX** — only 3 of 15 entity types have a human edit form.
 5. **Payments in production** — code paths exist; nothing has ever settled.
@@ -89,15 +89,15 @@ box disk at 91%.
 - ICP is split-brained: Dec 2025 personas (doctors, lawyers, artists — fictional,
   AI-generated) vs the June 2026 blog thesis (AI-assisted solo builders). Never reconciled.
 - BitBaum AG is claimed publicly as owner but listed internally as an unstarted TODO.
-- FleetCrown's business is conventional and coherent: tiered SaaS (Stripe today),
+- Loki's business is conventional and coherent: tiered SaaS (Stripe today),
   ICP = builders running agent fleets, raising money.
 
 ### Outside view (live sites)
 
 Message is clear and credible; the social-proof layer says "pre-launch": ~16 public
-items on Discover, two of three flagship projects are OrangeCat and FleetCrown
+items on Discover, two of three flagship projects are OrangeCat and Loki
 themselves, "Test Organization" debris in public listings, Discover ships zero HTML
-(client-rendered → invisible to search engines and AI crawlers), FleetCrown shows no
+(client-rendered → invisible to search engines and AI crawlers), Loki shows no
 pricing and doesn't surface "Login with OrangeCat".
 
 ---
@@ -120,7 +120,7 @@ Three problems, in causal order:
 3. **No distribution, and the marketplace cold-start is being fought head-on.**
    44 users cannot make a marketplace liquid. But OrangeCat doesn't need liquidity to
    be useful: a profile + wallet + Cat + published offers is valuable to **one person
-   alone**. The distribution engine that exists and is being ignored is FleetCrown —
+   alone**. The distribution engine that exists and is being ignored is Loki —
    its audience is exactly OC's ICP, and the founder's own build-in-public loop is the
    demo. "FC emits, OC distributes" is the right thesis; it just isn't wired.
 
@@ -136,11 +136,11 @@ you, packages what you can offer, publishes it, and handles the money — pseudo
 in Bitcoin or anything else, with 0% platform fees. Network effects (discovery,
 matchmaking, funding) compound later; the product must be worth signing up for at N=1.
 
-### 3.2 The division of labor with FleetCrown
+### 3.2 The division of labor with Loki
 
-- **FleetCrown = the revenue engine.** Conventional SaaS, clear ICP, Stripe now,
+- **Loki = the revenue engine.** Conventional SaaS, clear ICP, Stripe now,
   per-seat later. It pays the bills and acquires the users.
-- **OrangeCat = the moat and the upside.** It is what makes FleetCrown different from
+- **OrangeCat = the moat and the upside.** It is what makes Loki different from
   every other agent-orchestration tool (your fleet's output gets a public face, a
   wallet, funding, and customers), and it owns the long-term "economic layer for
   AI-assisted individuals" position.
@@ -149,7 +149,7 @@ matchmaking, funding) compound later; the product must be worth signing up for a
   more building) is the story no competitor tells.
 
 Consequence: **do not burden OrangeCat with near-term revenue targets.** Burden it
-with _closed loops and activation_. FleetCrown carries revenue; OrangeCat carries proof.
+with _closed loops and activation_. Loki carries revenue; OrangeCat carries proof.
 
 ### 3.3 The business model (resolves the contradiction)
 
@@ -166,7 +166,7 @@ Adopt "**sell intelligence, not rails**" as the codified model:
    Keep it to exactly two tiers: Free and Supporter.
 4. **Paid AI assistants:** 95/5 creator split (already built) — the only take-rate,
    and it's on platform-mediated AI services, not P2P money.
-5. **FleetCrown as first customer:** its value is _proof and distribution_, not
+5. **Loki as first customer:** its value is _proof and distribution_, not
    revenue. Long-term: FC settles its own billing over OC rails ("Lightning rails,
    no Stripe in the path") — that's the roadmap demonstration, not a 2026 revenue line.
 
@@ -186,7 +186,7 @@ Channels, in order of leverage:
 1. **The founder's own machine as the demo.** Every FC-built project auto-publishes
    to OC; weekly build-in-public posts; the OC timeline becomes living proof. This is
    free and differentiated — do it before any paid channel.
-2. **FleetCrown cross-sell** (per the bridge spec's detect-and-suggest): after FC
+2. **Loki cross-sell** (per the bridge spec's detect-and-suggest): after FC
    onboarding → "Claim your public profile + wallet on OrangeCat" — one click via the
    identity bridge.
 3. **Seed real supply from the real portfolio.** The founder's orbit (RevampIT and
@@ -226,29 +226,29 @@ The whole thesis is unproven until one payment settles.
 
 ### Phase 1 — Wire the machine: FC ⇄ OC (2–3 weeks) 🟠
 
-The bridge spec (`fleetcrown/docs/architecture/cross-product-identity-bridge.md`) is
+The bridge spec (`loki/docs/architecture/cross-product-identity-bridge.md`) is
 correct and its build order stands — except step 1 is already half-done (OC's OIDC
 provider is live). Remaining work is mostly FC-side:
 
-> **Status update 2026-07-02 (from the FleetCrown tab):** 1.1, 1.3, and 1.4
+> **Status update 2026-07-02 (from the Loki tab):** 1.1, 1.3, and 1.4
 > SHIPPED same day this plan was written (FC PR #55, commits `6e96bce` +
 > `b879625`; token-auth-method fix `7bdf0c9`). 1.2 is effectively satisfied via
 > per-user OIDC bearer tokens with refresh rotation (`orangecat-identity.ts`)
 > instead of `ock_` keys. 1.6 done. Still open: 1.5 (FC-side wallet/funding
 > read surface), plus FC-side backfill job and settings-connect (tracked in
-> `fleetcrown/docs/master-plan-2026-07.md`, the FC counterpart to this plan).
+> `loki/docs/master-plan-2026-07.md`, the FC counterpart to this plan).
 
 | #   | Item                                                                                                                                                                                                           | Where   |
 | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| 1.1 | "Login with OrangeCat" in FleetCrown: custom Auth.js OIDC provider against orangecat.ch, `users.orangecatActorId` column, account-linking UI; surface the button on FC's sign-in                               | FC      |
+| 1.1 | "Login with OrangeCat" in Loki: custom Auth.js OIDC provider against orangecat.ch, `users.orangecatActorId` column, account-linking UI; surface the button on FC's sign-in                               | FC      |
 | 1.2 | One-consent capability grant: authorize flow mints actor-bound `ock_` key, replacing the shared service-account key                                                                                            | FC + OC |
 | 1.3 | "Publish to OrangeCat" per FC project → creates/links OC project entity (`user_projects.orangecatProjectId`)                                                                                                   | FC      |
 | 1.4 | FC emit half of the publish bus: config-driven promote step → `POST /api/v1/timeline/publish` (OC ingest already live; async, idempotent `dedupe_key`)                                                         | FC      |
 | 1.5 | Surface both directions: OC timeline/home feed shows FC build events; FC project page shows OC wallet/funding state (read via API — defer iframe embeds until pain is real, per PLATFORM_AND_COLLABORATION.md) | Both    |
 | 1.6 | Update FC's stale integration docs to reflect OC OIDC reality                                                                                                                                                  | FC      |
 
-**Proof:** the FleetCrown project page on orangecat.ch shows a live stream of real
-build events, and a FleetCrown user signs in with OrangeCat.
+**Proof:** the Loki project page on orangecat.ch shows a live stream of real
+build events, and a Loki user signs in with OrangeCat.
 
 ### Phase 2 — Monetization coherence (2 weeks) 🟠
 
@@ -256,7 +256,7 @@ build events, and a FleetCrown user signs in with OrangeCat.
 | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 2.1 | Wire Cat Credit **`'usage'` metering** into `chat-orchestrator.ts`: frontier-tier requests debit the ledger; free tier stays on platform quota. The pay-Bitcoin-for-AI loop closes                                                      |
 | 2.2 | First live top-up test (founder, real sats) — Cat Credits Phase 2 exit criterion                                                                                                                                                        |
-| 2.3 | Define Free/Supporter in `user_plans` + pricing page on orangecat.ch; FleetCrown publishes its pricing page (currently none — a trust gap)                                                                                              |
+| 2.3 | Define Free/Supporter in `user_plans` + pricing page on orangecat.ch; Loki publishes its pricing page (currently none — a trust gap)                                                                                              |
 | 2.4 | Rewrite `strategic-plan.md` §Business Model to this document's §3.3; delete the transaction-fee claim; align legal doc (credits = prepaid service, not payment processing)                                                              |
 | 2.5 | Founder decision: engage a Swiss attorney on (a) credits/prepaid model, (b) the **loans** feature vs Consumer Credit Act — consider unlisting P2P loans publicly until reviewed, (c) BitBaum AG — register it or scrub the public claim |
 
@@ -305,7 +305,7 @@ build events, and a FleetCrown user signs in with OrangeCat.
 Technology "perfect" = every advertised loop closes and is tested; deploys apply
 migrations automatically; no drift; no dead payment code. Business "perfect" = one
 coherent, legal, built model (0% rails, paid intelligence) with public pricing and a
-narrowed ICP, distributed through FleetCrown and the founder's own loop.
+narrowed ICP, distributed through Loki and the founder's own loop.
 
 ---
 

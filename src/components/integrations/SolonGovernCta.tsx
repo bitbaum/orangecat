@@ -7,13 +7,13 @@ import type { EntityType } from '@/config/entity-registry';
 /**
  * Solon cross-sell — "govern the strings" for investment entities.
  *
- * Mirrors FleetCrownBuildCta as the economy→governance bridge. v1 is a deep
+ * Mirrors LokiBuildCta as the economy→governance bridge. v1 is a deep
  * link into Solon with entity context in the query string. Solon already
  * governs platform allocation via verified decisions; entity-scoped proposal
  * ingest can grow behind this same CTA without changing the owner-facing seam.
  *
  * No signed handoff until Solon has a receive path — a working discoverability
- * bridge beats a half-broken protocol. Do not delete FleetCrownBuildCta.
+ * bridge beats a half-broken protocol. Do not delete LokiBuildCta.
  */
 
 interface SolonGovernCtaProps {
