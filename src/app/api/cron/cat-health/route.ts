@@ -8,8 +8,11 @@
  * all. Its only callers were the diagnose route and a Cat action, so the answer
  * existed only when a human thought to ask for it. This puts it on a clock.
  *
- * Costs no tokens: the catalogue checks are GET /models, and the probes are the
- * same ones the diagnose route already runs. That is what makes it schedulable.
+ * Cost, stated correctly after getting it wrong once: the catalogue checks are
+ * GET /models and cost nothing, but probeGroq and probeOpenRouter send REAL
+ * chat completions — a few tokens each, from the same free pools the check
+ * exists to protect. Cheap, not free. That is why this runs daily rather than
+ * hourly, and why the alert coalesces instead of stacking a row per run.
  */
 
 import { runCatHealthProbes } from '@/services/cat/health-probes';
