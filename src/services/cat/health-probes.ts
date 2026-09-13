@@ -17,7 +17,6 @@ import { promptFitsGroqOnDemand, PLATFORM_GROQ_MODEL } from '@/services/ai/groq'
 import { checkModelRot } from './provider-catalog';
 import { webSearch, describeAttempts } from '@bitbaum/ai-kit/web';
 import { buildCatSystemPrompt } from './system-prompt';
-import { getCatFewShotExamplesText } from './few-shot-examples';
 
 export type ProbeClass =
   'ok' | 'rate_limit' | 'auth' | 'no_key' | 'invalid_key' | 'upstream_err' | 'no_response';
@@ -185,17 +184,47 @@ export function probeOpenRouter(): Promise<ProbeResult> {
  *
  * The provider probe pings with a few tokens, so it returns 200 whenever the
  * key and the service are fine — which is not the question a user is asking
- * when they say "why isn't Cat answering?". Cat's static prompt alone exceeds
- * the on-demand TPM limit, so every real message 413s while the probe stays
- * green. That combination reported "Cat is healthy" on a day when OpenRouter's
- * daily cap was exhausted and Cat could not answer a single person.
+ * when they say "why isn't Cat answering?". A health check has to exercise the
+ * payload, not just the endpoint.
  *
- * A health check has to exercise the payload, not just the endpoint.
+ * ── It has to exercise the payload PRODUCTION SENDS ──────────────────────────
+ * The first version of this called `buildCatSystemPrompt({})` and added the
+ * few-shot block. Both defaults are wrong for Groq, and together they made the
+ * check fail every single run. Measured 2026-09-13 against a 6 826 budget
+ * (8 000 TPM − 1 024 reply reserve − 150 margin, exactly what
+ * chat-orchestrator computes):
+ *
+ *     buildCatSystemPrompt({})                 14 729   <- what was measured
+ *     tools + turnDescriptor                    6 115   <- what is SENT, fits
+ *     tools + first-message                     6 600   fits
+ *     few-shot examples                           961   trimmed when tight
+ *
+ * `buildCatSystemPrompt({})` defaults to `actionsVia: 'prose'` and, with no
+ * turnDescriptor, skips section selection entirely — so it measures the whole
+ * prose prompt. Production sends TOOLS mode (Groq's gpt-oss models answer with
+ * native tool_calls) with a turn descriptor, and then trims what is left
+ * through `fitCatPromptToBudget`, which drops the few-shot block and history
+ * before it drops the base.
+ *
+ * So the honest question is whether the BASE fits, because everything after it
+ * is optional and actively trimmed. It does, with 711 tokens to spare.
+ *
+ * Why this matters more than a wrong number: the check drove
+ * `catCanAnswer`, so it raised CAT_CANNOT_ANSWER on a day when Cat could answer
+ * perfectly well on Groq. An alarm that fires every night is one nobody reads —
+ * the precise failure `classifyHealth` refuses to commit elsewhere.
  */
 export function groqCanServeCatPrompt(): boolean {
   return promptFitsGroqOnDemand([
-    { content: buildCatSystemPrompt({}) },
-    { content: getCatFewShotExamplesText() },
+    {
+      content: buildCatSystemPrompt({
+        actionsVia: 'tools',
+        // Any non-empty descriptor turns section selection on, which is what
+        // every real turn does. Kept deliberately ordinary: a first-message
+        // turn is the largest real case at 6 600 and still fits.
+        turnDescriptor: 'health probe: can Groq serve a real Cat turn?',
+      }),
+    },
   ]);
 }
 
