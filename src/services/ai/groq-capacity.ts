@@ -21,6 +21,8 @@
  * that matters, and the first response after boot fills them again.
  */
 
+import { readingFromRefusalBody, type QuotaReading } from '@bitbaum/ai-kit';
+
 /** Per-model TPM caps measured against the platform key on 2026-09-11. */
 export const GROQ_TPM_LIMIT_BY_MODEL: Readonly<Record<string, number>> = {
   'openai/gpt-oss-120b': 8000,
@@ -128,6 +130,103 @@ function int(value: string | null): number | null {
 }
 
 /** Read Groq's rate-limit headers off a response for the PLATFORM key. */
+/**
+ * The daily pool Groq enforces and never puts in a header.
+ *
+ * Groq meters THREE limits and publishes TWO. Tokens-per-minute and
+ * requests-per-day arrive as `x-ratelimit-*`; a tokens-per-DAY pool is stated
+ * once, in prose, inside the body of the 429 that enforces it:
+ *
+ *   Rate limit reached for model `openai/gpt-oss-20b` in organization `org_…`
+ *   service tier `on_demand` on tokens per day (TPD): Limit 200000,
+ *   Used 199773, Requested 571. Please try again in 2m28.608s.
+ *
+ * So every header can read healthy through a total outage — measured on
+ * FleetCrown production 2026-09-13, where the headers said 999 of 1000 requests
+ * remained while every call was refused and users got 503s.
+ *
+ * Keyed by MODEL even though the pool is org-wide, because that is the only id
+ * the refusal gives us and the skip below is applied per link. The effect is
+ * the same: each model that sees the refusal stops being dialled.
+ */
+const dailyPoolSpentUntil = new Map<string, number>();
+
+/** How long to stand down when the refusal names no retry time. */
+const DEFAULT_DAILY_STAND_DOWN_MS = 15 * 60 * 1000;
+
+/**
+ * Learn from a Groq refusal.
+ *
+ * Returns the reading when the body named a DAILY pool — and stands the model
+ * down until the reset the refusal names. Returns null for anything else,
+ * including an ordinary per-minute limit, which must not sideline a model for
+ * the rest of the day.
+ */
+export function recordGroqRefusal(
+  model: string,
+  body: string | null | undefined,
+  retryAfterSeconds: number | null = null,
+  now: number = Date.now()
+): QuotaReading | null {
+  if (!body) {
+    return null;
+  }
+  const reading = readingFromRefusalBody(
+    {
+      provider: {
+        id: 'groq',
+        baseUrl: 'https://api.groq.com/openai/v1',
+        keyEnv: 'GROQ_API_KEY',
+        models: [model],
+        dailyTokens: 0,
+      },
+      model,
+    },
+    body,
+    retryAfterSeconds,
+    now
+  );
+  // Only a DAY window stands a model down. A per-minute refusal is transient
+  // and the chain's ordinary retry handles it; treating it as daily would
+  // sideline a healthy model for a quarter of an hour on one busy second.
+  //
+  // NOTE the absence of a `remaining > 0` guard, which the first draft had and
+  // production disproves. FleetCrown's refusal on 2026-09-13 read "Limit
+  // 200000, Used 199773" — 227 tokens left, and every call refused, because no
+  // real request fits in 227 tokens. The vendor has just declined a live
+  // request on this basis, so the day IS spent; `remaining` is a detail for the
+  // report, not a reason to keep dialling.
+  if (!reading || reading.window !== 'day') {
+    return null;
+  }
+  dailyPoolSpentUntil.set(model, reading.resetAt ?? now + DEFAULT_DAILY_STAND_DOWN_MS);
+  return reading;
+}
+
+/**
+ * Is this model's daily pool known to be spent right now?
+ *
+ * False when we have never seen a refusal — never asked is not the same as
+ * fine, and guessing "spent" would take a working model out of the chain on no
+ * evidence at all.
+ */
+export function isGroqDailyPoolSpent(model: string, now: number = Date.now()): boolean {
+  const until = dailyPoolSpentUntil.get(model);
+  if (until === undefined) {
+    return false;
+  }
+  if (now >= until) {
+    dailyPoolSpentUntil.delete(model);
+    return false;
+  }
+  return true;
+}
+
+/** Test seam: forget every observed refusal. */
+export function resetGroqDailyPool(): void {
+  dailyPoolSpentUntil.clear();
+}
+
 export function recordGroqRateLimitHeaders(
   model: string,
   headers: HeaderSource,
