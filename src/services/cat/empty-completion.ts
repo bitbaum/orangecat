@@ -18,13 +18,33 @@
  * So the decision lives here, once, where it can be tested and reused rather
  * than re-derived a fourth time.
  *
- * ── Why it matters more than it sounds ───────────────────────────────────────
- * An empty 200 is not a rare edge. Probed live on 2026-09-13 against
- * OpenRouter's free tier, of six catalogued, zero-priced, tool-declaring models
- * exactly ONE produced text: two answered "Provider returned error" and THREE
- * returned a 200 with empty content. On a free tier this is the majority shape
- * of a model failing, and it is the only one that a naive client scores as a
- * success.
+ * ── What actually produces one ───────────────────────────────────────────────
+ * Not necessarily a broken model. A REASONING model spends its budget on
+ * `reasoning` before it emits any `content`, so too small a `max_tokens` yields
+ * a 200 with nothing in it. Demonstrated on Groq `openai/gpt-oss-120b`,
+ * 2026-09-13, same prompt, only the budget varied:
+ *
+ *     max_tokens=16    content=''        finish_reason='length'
+ *     max_tokens=24    content=''        finish_reason='length'
+ *     max_tokens=64    content='ready'   finish_reason='stop'
+ *     max_tokens=256   content='Ready.'  finish_reason='stop'
+ *
+ * Worth stating plainly because it corrects this module's own first draft: an
+ * earlier probe at `max_tokens: 16` reported three OpenRouter free models as
+ * returning empty content, and that was the PROBE's fault, not theirs. The
+ * genuine vendor faults found the same day were different in kind —
+ * `google/gemma-4-31b-it:free` and `google/gemma-4-26b-a4b-it:free` both
+ * answered "Provider returned error", which no token budget explains.
+ *
+ * The handling is what matters, and the cause does not change it. However the
+ * emptiness arises — truncation, an upstream hiccup, a model answering only
+ * with a tool call it was not offered — a blank reply is not an answer, and
+ * scoring it as one ends the turn while working links wait.
+ *
+ * Production is not currently exposed to the truncation case:
+ * GROQ_CHAT_MAX_TOKENS is 1024, far above the threshold above. Falling through
+ * on empty is still right, because the user gets nothing either way and the
+ * next link might serve.
  */
 
 /**

@@ -9,11 +9,15 @@
  * non-streaming path's `while (!result && ...)` accepted any object as an
  * answer. Both ended the chat with working links untried.
  *
- * Why it is worth this much test: probed live on 2026-09-13 against
- * OpenRouter's free tier, of six catalogued, zero-priced, tool-declaring models
- * exactly ONE produced text. Two answered "Provider returned error" and THREE
- * returned a 200 with empty content. On a free tier this is the majority shape
- * of a model failing — and the only one a naive client scores as success.
+ * Why it is worth this much test: an empty 200 comes from ordinary causes, not
+ * only from broken vendors. A reasoning model truncated by `max_tokens` returns
+ * one — shown on Groq gpt-oss-120b, which answered '' at max_tokens 16 and 24
+ * (finish_reason 'length') and 'ready' at 64 and 256. An earlier draft of these
+ * tests cited three OpenRouter models as empty on the strength of a
+ * `max_tokens: 16` probe; that was the probe's fault and the claim is withdrawn.
+ *
+ * What survives is the part that matters: whatever causes it, a blank reply is
+ * not an answer, and scoring it as one ended the turn.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
