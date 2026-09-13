@@ -51,7 +51,7 @@ export async function GET(request: Request) {
 
     const deleted = count ?? 0;
 
-    logger.info(
+    logger.warn(
       'Email log cleanup completed',
       { deleted, cutoffDate: cutoffDate.toISOString() },
       LOG_SOURCE

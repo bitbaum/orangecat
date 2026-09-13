@@ -39,7 +39,7 @@ export async function GET(request: Request) {
   try {
     const admin = createAdminClient();
     const result = await reconcileCorpus(admin, { full: false });
-    logger.info('search index reconciled', { ...result }, 'CronReindex');
+    logger.warn('search index reconciled', { ...result }, 'CronReindex');
     return apiSuccess(result);
   } catch (error) {
     logger.error('search index reconcile crashed', { error }, 'CronReindex');

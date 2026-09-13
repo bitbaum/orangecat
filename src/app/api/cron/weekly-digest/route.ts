@@ -64,7 +64,7 @@ export async function GET(request: Request) {
 
   try {
     const userIdsToProcess = await getUserIdsForDigest(admin);
-    logger.info(
+    logger.warn(
       `Weekly digest: ${userIdsToProcess.length} users to process`,
       { total: userIdsToProcess.length },
       LOG_SOURCE
@@ -112,7 +112,7 @@ export async function GET(request: Request) {
     }
 
     const durationMs = Date.now() - startTime;
-    logger.info(
+    logger.warn(
       'Weekly digest cron completed',
       { processed, sent, skipped, failed, durationMs },
       LOG_SOURCE

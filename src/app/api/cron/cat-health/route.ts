@@ -32,10 +32,20 @@ export async function GET(request: Request) {
     const report = await runCatHealthProbes();
     const verdict = await alertOnCatHealth(report);
 
-    // Logged either way, including when it decided NOT to alert: a run that
-    // quietly did nothing is indistinguishable from a run that never happened,
-    // which is how the nightly eval managed to skip for two nights unnoticed.
-    logger.info(
+    // WARN, not info, and that is the whole point of this line.
+    //
+    // The claim here used to be "logged either way, including when it decided
+    // NOT to alert: a run that quietly did nothing is indistinguishable from a
+    // run that never happened". It was written with logger.info, and in
+    // production the logger's active level is `warn` — so every healthy run was
+    // discarded and the guarantee was false exactly where it mattered. Checked
+    // on the box 2026-09-13: a successful run (curl exit 0) left NO trace in
+    // the journal at all.
+    //
+    // One line a day is a fair price for being able to prove the check ran. A
+    // level chosen for tidiness that silently deletes the evidence is the same
+    // mistake as an alert nobody receives.
+    logger.warn(
       'cat provider health check',
       {
         alerted: verdict.alert,

@@ -123,17 +123,24 @@ describe('the check is actually scheduled', () => {
     expect(route).toContain('verifyCronSecret(request)');
   });
 
-  it('logs the run even when it decides not to alert', () => {
+  it('logs the run even when it decides not to alert, at a level PRODUCTION keeps', () => {
     // A run that quietly did nothing is indistinguishable from a run that never
     // happened — which is exactly how the nightly eval skipped two nights
     // without anyone noticing.
+    //
+    // This assertion used to require logger.INFO, and so it passed while the
+    // guarantee was false: the logger's active level in production is `warn`,
+    // so every healthy run was discarded before it reached the journal.
+    // Confirmed on the box 2026-09-13 — a successful run (curl exit 0, HTTP
+    // 2xx) left no journal entry at all. A test can pin the wrong level as
+    // confidently as the right one.
     const fs = require('node:fs') as typeof import('node:fs');
     const path = require('node:path') as typeof import('node:path');
     const route = fs.readFileSync(
       path.join(__dirname, '../../../src/app/api/cron/cat-health/route.ts'),
       'utf8'
     );
-    expect(route).toContain("logger.info(\n      'cat provider health check'");
+    expect(route).toContain("logger.warn(\n      'cat provider health check'");
     expect(route).toContain('alerted: verdict.alert');
   });
 });
