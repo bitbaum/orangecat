@@ -480,7 +480,7 @@ export function registerV1Routes(): void {
   });
 
   // Publish bus — not an entity create, so registered explicitly. External
-  // clients (FleetCrown) land a build event on a project's wall; idempotent +
+  // clients (Loki) land a build event on a project's wall; idempotent +
   // reconcilable by (source, external_id).
   const publishResponseSchema = z
     .object({
@@ -496,7 +496,7 @@ export function registerV1Routes(): void {
     path: `${PUBLIC_API_BASE}/timeline/publish`,
     summary: 'Publish an external build event to a project wall',
     description:
-      "Async publish bus: an external client (e.g. FleetCrown) lands a publish-worthy build event onto a project's OrangeCat wall. Requires the `timeline.write` scope and ownership of the subject project. Idempotent + reconcilable — keyed by (source, external_id), so a retry or an edit updates the same event rather than duplicating it.",
+      "Async publish bus: an external client (e.g. Loki) lands a publish-worthy build event onto a project's OrangeCat wall. Requires the `timeline.write` scope and ownership of the subject project. Idempotent + reconcilable — keyed by (source, external_id), so a retry or an edit updates the same event rather than duplicating it.",
     tags: ['Timeline'],
     security: [{ IntegrationKey: [] }],
     request: {

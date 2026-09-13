@@ -56,7 +56,7 @@ export const INDEXABLE_ENTITY_TYPES = [
   'service',
   'cause',
   // Projects are the "what's being built" side — including work published from
-  // FleetCrown. Same generic branch (title + description, gated on status=active,
+  // Loki. Same generic branch (title + description, gated on status=active,
   // url /projects/:id), so a buyer searching by meaning ("someone building a
   // Bitcoin invoicing tool") hits the project, not just an exact keyword.
   'project',

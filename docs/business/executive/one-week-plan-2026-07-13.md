@@ -6,7 +6,7 @@
 
 ## North-Star metric for the week
 
-**Payments processed: 0 → ≥ 1**, _and_ **≥ 1 real economic action by a real (FleetCrown) user that the Cat helped create.** Not features shipped. One real loop.
+**Payments processed: 0 → ≥ 1**, _and_ **≥ 1 real economic action by a real (Loki) user that the Cat helped create.** Not features shipped. One real loop.
 
 Everything below serves that. If we hit the North Star and nothing else, the week is a success — because it converts the whole platform from "untested demo" to "load-bearing."
 
@@ -46,14 +46,14 @@ The Cat is capable but "lives alongside nav." This week, make **one full path** 
 
 **Why:** the moat is intelligence, not rails. This is the smallest visible proof that OrangeCat is an _AI economic agent_, not a form-based marketplace.
 
-## Workstream D — Prove it with a real community (FleetCrown)
+## Workstream D — Prove it with a real community (Loki)
 
 | #   | Action                                                                                                                                    | Owner               |
 | --- | ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
-| D1  | Pick 1–3 FleetCrown stakeholders; have each do **one** economic action on OC (top-up, or list something + get funded) with the Cat's help | **Founder** + Agent |
+| D1  | Pick 1–3 Loki stakeholders; have each do **one** economic action on OC (top-up, or list something + get funded) with the Cat's help | **Founder** + Agent |
 | D2  | Capture what broke / felt wrong — that becomes next week's list                                                                           | Agent               |
 
-**Why:** 44 dormant accounts and 0 payments is the real starting state. One real user completing one real loop is worth more than any feature. FleetCrown is the obvious first community because it already exists and is economically motivated.
+**Why:** 44 dormant accounts and 0 payments is the real starting state. One real user completing one real loop is worth more than any feature. Loki is the obvious first community because it already exists and is economically motivated.
 
 ---
 
@@ -68,14 +68,14 @@ The Cat is capable but "lives alongside nav." This week, make **one full path** 
 - **Day 1:** A1 + A2 (founder) ∥ B1–B3 (agent). Unblock + harden.
 - **Day 2:** A3 + A4. Ship "Live". Payments observably ≥ 1.
 - **Days 3–4:** C1 (Cat drives the loop) ∥ Twint spike.
-- **Day 4–5:** C2 + D1 (real FleetCrown user does a real action).
+- **Day 4–5:** C2 + D1 (real Loki user does a real action).
 - **Day 5:** D2 review → next-week plan.
 
 ## Definition of done (the week)
 
 1. A real Lightning payment has settled on OrangeCat.
 2. The Cat can take a person from spoken intent to a published, payable economic object in 2–3 entity types.
-3. At least one real FleetCrown user completed one real economic action.
+3. At least one real Loki user completed one real economic action.
 4. No known PII leak, no silent-unpublish, `npm test` green.
 
 If 1 + 3 are true, we're on the path. Everything after is compounding.

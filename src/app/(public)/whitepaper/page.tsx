@@ -7,7 +7,7 @@ import { WHITEPAPER_SECTIONS } from '@/config/public-content';
 
 export const metadata: Metadata = {
   title: 'Whitepaper',
-  description: 'The OrangeCat and FleetCrown thesis: fund what people build, and build what people fund.',
+  description: 'The OrangeCat and Loki thesis: fund what people build, and build what people fund.',
 };
 
 export default function WhitepaperPage() {
@@ -23,7 +23,7 @@ export default function WhitepaperPage() {
           <PageHeading className="mt-6">Fund what people build. Build what people fund.</PageHeading>
           <p className="mt-5 text-lg leading-relaxed text-fg-secondary">
             A focused architecture for connecting public economic coordination on OrangeCat with
-            supervised agent execution on FleetCrown.
+            supervised agent execution on Loki.
           </p>
         </header>
 

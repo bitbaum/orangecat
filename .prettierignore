@@ -39,8 +39,8 @@ yarn.lock
 playwright-report/
 test-results/
 
-# Vendored: byte-for-byte mirror of fleetcrown/src/lib/agent/core.
+# Vendored: byte-for-byte mirror of loki/src/lib/agent/core.
 # Formatting it here would break the SHA-256 drift gate that keeps the two
 # copies honest (see src/services/agent-core/README.md). Edit the canonical
-# copy in FleetCrown and re-run its `npm run sync:agent-core`.
+# copy in Loki and re-run its `npm run sync:agent-core`.
 src/services/agent-core/

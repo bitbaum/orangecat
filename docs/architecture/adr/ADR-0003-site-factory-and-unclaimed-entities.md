@@ -21,7 +21,7 @@ Three things about the existing code decide most of this:
    exist before its subject has an account. The claims table is the holding area:
    the row id is the claim token, there are no RLS policies at all, and every
    read goes through a server route on the service-role client.
-3. `integration_keys` / `webhook_endpoints` already carry FleetCrown's calls.
+3. `integration_keys` / `webhook_endpoints` already carry Loki's calls.
 
 ## Problem Statement
 
@@ -52,8 +52,8 @@ fixing the `cards` renderer improves every site ever generated. It ships no
 design tokens: each site keeps its own `globals.css`, because the system is
 uniform and the aesthetics are not.
 
-**2. FleetCrown — the prospect pipeline.** Scrape, assess, generate, pitch,
-hand over. FleetCrown already models exactly this shape (projects, crew
+**2. Loki — the prospect pipeline.** Scrape, assess, generate, pitch,
+hand over. Loki already models exactly this shape (projects, crew
 assignments, agent runs, activity). A prospect is a project that has not said
 yes yet. It calls OrangeCat; it does not own the entity.
 
@@ -65,7 +65,7 @@ yes yet. It calls OrangeCat; it does not own the entity.
   under it, not only a person.
 - **Add an ingest door**: `POST /api/claims/ingest` taking `{ url }` or
   `{ text }`, extracting via Cat, and writing **one pending claim**. The same
-  endpoint serves FleetCrown's pipeline and a human typing a sentence to Cat —
+  endpoint serves Loki's pipeline and a human typing a sentence to Cat —
   deliberately, so the pipeline gets no privileged path a person cannot use.
 
 ## Rationale
@@ -77,7 +77,7 @@ yes yet. It calls OrangeCat; it does not own the entity.
   this repo's. A second one inside a CRM would be a second source of truth about
   money.
 - **The 2-files test.** A new section kind touches `sitekit` only. A new
-  prospect state touches FleetCrown only. A new claimable kind touches this repo
+  prospect state touches Loki only. A new claimable kind touches this repo
   only.
 
 ## The invariant this exists to protect
@@ -127,7 +127,7 @@ competitor's copy:
    union is wrong, and it is cheaper to learn that on a site we own.
 2. Ingest endpoint here, person drafts only — the existing shape, a new door.
 3. Walk **one** real prospect through the whole chain by hand, with no pipeline.
-4. Only then give FleetCrown a prospect table, and only the states step 3 proved
+4. Only then give Loki a prospect table, and only the states step 3 proved
    exist.
 
 Steps 1 and 2 are independent. Step 4 is the one to resist starting early: a
@@ -136,12 +136,12 @@ will contradict.
 
 ## Alternatives Considered
 
-**All of it in FleetCrown.** Rejected: it puts a second definition of a fundable
+**All of it in Loki.** Rejected: it puts a second definition of a fundable
 entity next to a CRM, and moves the pre-claim funding invariant from a
 structural guarantee to a rule someone has to keep remembering.
 
 **All of it here.** Rejected: prospect tracking is not an economic primitive, and
-FleetCrown already has the pipeline shape. This repo would grow a CRM.
+Loki already has the pipeline shape. This repo would grow a CRM.
 
 **Skip `sitekit`; let the generator write components.** Rejected: it makes output
 quality unverifiable per site and unimprovable across sites, which is the whole

@@ -8,7 +8,7 @@
  * Nothing owned by a placeholder can receive money until she does — that is
  * enforced by the database, not by this handler.
  *
- * `send_to_fleetcrown` mints the signed handoff that the entity page's card
+ * `send_to_loki` mints the signed handoff that the entity page's card
  * mints, so "can she have it built?" is answered with a link instead of a
  * tour of the project page.
  */
@@ -18,7 +18,7 @@ import { STATUS } from '@/config/database-constants';
 import { ROUTES } from '@/config/routes';
 import { SITE_URL } from '@/config/brand';
 import { createProfileClaim, declineProfileClaim } from '@/domain/profileClaims/service';
-import { createFleetCrownHandoff } from '@/services/fleetcrown/handoff';
+import { createLokiHandoff } from '@/services/loki/handoff';
 import { getTableName } from '@/config/entity-registry';
 import { looseClient } from '@/lib/supabase/untyped';
 import type { ActionHandler } from './types';
@@ -115,7 +115,7 @@ export const forSomeoneHandlers: Record<string, ActionHandler> = {
     };
   },
 
-  send_to_fleetcrown: async (supabase, userId, actorId, params) => {
+  send_to_loki: async (supabase, userId, actorId, params) => {
     const entityType = text(params.entity_type) || 'project';
     let entityId = text(params.entity_id);
     const title = text(params.title);
@@ -156,11 +156,11 @@ export const forSomeoneHandlers: Record<string, ActionHandler> = {
     if (!view) {
       return {
         success: false,
-        error: `From chat, only ${Object.keys(CHAT_HANDOFF_VIEW).join('/')} can be handed to FleetCrown`,
+        error: `From chat, only ${Object.keys(CHAT_HANDOFF_VIEW).join('/')} can be handed to Loki`,
       };
     }
     const viewPath = view(entityId);
-    const result = await createFleetCrownHandoff({
+    const result = await createLokiHandoff({
       supabase,
       userId,
       entityType,
@@ -177,7 +177,7 @@ export const forSomeoneHandlers: Record<string, ActionHandler> = {
         expiresInSeconds: result.expiresInSeconds,
         title: result.title,
         role: result.role,
-        displayMessage: `🛠 FleetCrown handoff for "${result.title}" is ready — open it within 10 minutes`,
+        displayMessage: `🛠 Loki handoff for "${result.title}" is ready — open it within 10 minutes`,
       },
     };
   },

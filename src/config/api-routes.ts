@@ -176,7 +176,7 @@ export const API_ROUTES = {
     STATUS: '/api/tips/status',
   },
   INTEGRATIONS: {
-    FLEETCROWN_BUILD_INTENTS: '/api/integrations/fleetcrown/build-intents',
+    LOKI_BUILD_INTENTS: '/api/integrations/loki/build-intents',
   },
   LNURLP: {
     CALLBACK: (username: string) => `/api/lnurlp/${encodeURIComponent(username)}/callback`,

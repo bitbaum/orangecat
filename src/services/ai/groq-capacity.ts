@@ -142,7 +142,7 @@ function int(value: string | null): number | null {
  *   Used 199773, Requested 571. Please try again in 2m28.608s.
  *
  * So every header can read healthy through a total outage — measured on
- * FleetCrown production 2026-09-13, where the headers said 999 of 1000 requests
+ * Loki production 2026-09-13, where the headers said 999 of 1000 requests
  * remained while every call was refused and users got 503s.
  *
  * Keyed by MODEL even though the pool is org-wide, because that is the only id
@@ -191,7 +191,7 @@ export function recordGroqRefusal(
   // sideline a healthy model for a quarter of an hour on one busy second.
   //
   // NOTE the absence of a `remaining > 0` guard, which the first draft had and
-  // production disproves. FleetCrown's refusal on 2026-09-13 read "Limit
+  // production disproves. Loki's refusal on 2026-09-13 read "Limit
   // 200000, Used 199773" — 227 tokens left, and every call refused, because no
   // real request fits in 227 tokens. The vendor has just declined a live
   // request on this basis, so the day IS spent; `remaining` is a detail for the

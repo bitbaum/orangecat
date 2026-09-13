@@ -15,7 +15,7 @@
  * added — no second edit at the call site.
  *
  * Invariant: every failure ends somewhere the user can act. `fix` when we know
- * the cure; a report to FleetCrown always (see src/lib/feedback/report.ts).
+ * the cure; a report to Loki always (see src/lib/feedback/report.ts).
  */
 
 import { ROUTES } from '@/config/routes';

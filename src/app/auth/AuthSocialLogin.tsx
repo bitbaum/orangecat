@@ -38,7 +38,7 @@ export function AuthSocialLogin({ mode, setMode, loading, onOAuthSignIn }: AuthS
           email form (anonymous-first onboarding), so there's no secondary
           anonymous link here. */}
       {/* max-[359px]:mt-3 — on the narrowest phones this is the row that
-          lands under the fixed FleetCrown feedback FAB (bottom-right); a
+          lands under the fixed Loki feedback FAB (bottom-right); a
           tighter top margin here is the last of a few narrow-viewport-only
           trims (see page.tsx) that lift it clear. */}
       <div className="mt-6 max-[359px]:mt-3">

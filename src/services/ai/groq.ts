@@ -365,7 +365,7 @@ export class GroqService {
       if (response.status === 429) {
         // The body is the ONLY place Groq states its tokens-per-DAY pool, and
         // this line used to discard it for a fixed string. Headers cannot
-        // replace it: on FleetCrown production 2026-09-13 every header read
+        // replace it: on Loki production 2026-09-13 every header read
         // healthy (999 of 1000 requests left) while every call was refused.
         // Recording it lets the pre-flight stop dialling a model whose day is
         // gone, instead of paying a guaranteed 429 on every message.

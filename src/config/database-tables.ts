@@ -102,7 +102,7 @@ export const DATABASE_TABLES = {
   USER_API_KEYS: 'user_api_keys',
   USER_AI_PREFERENCES: 'user_ai_preferences',
 
-  // Platform integration (outbound API keys for FleetCrown, hirn.li, ...)
+  // Platform integration (outbound API keys for Loki, hirn.li, ...)
   INTEGRATION_KEYS: 'integration_keys',
   IDEMPOTENCY_RESULTS: 'idempotency_results',
   WEBHOOK_ENDPOINTS: 'webhook_endpoints',

@@ -31,7 +31,7 @@ function titleHash(title: string): number {
 }
 
 /**
- * Curated gradient palettes built from the FleetCrown-semantic design tokens
+ * Curated gradient palettes built from the Loki-semantic design tokens
  * so the placeholders re-theme with the rest of the app and never clash with
  * the active palette. Each entry is a Tailwind className that mounts on the
  * absolute-positioned gradient layer.

@@ -3,7 +3,7 @@
  *
  * Visitor report (2026-08-24): a project with 23 agent runs behind it rendered
  * "No recent activity yet". The link was never broken — `timeline_events` held
- * 17 published FleetCrown updates for that project while the page read
+ * 17 published Loki updates for that project while the page read
  * `project_updates`, a table with zero rows platform-wide and no writer. These
  * tests pin the reader to timeline_events and pin the mapping the card needs.
  */
@@ -42,15 +42,15 @@ function stubDb(rows: unknown[], capture: Capture) {
 const row = {
   id: 'evt-1',
   event_type: 'project_updated',
-  title: 'fleetcrown: shipped the seam',
+  title: 'loki: shipped the seam',
   description: 'Deploy green.',
   amount_btc: null,
   event_timestamp: '2026-08-03T09:00:01.777Z',
   created_at: '2026-08-03T09:05:00.000Z',
   metadata: {
     is_external_publish: true,
-    source: 'fleetcrown',
-    source_url: 'https://fleetcrown.orangecat.ch/changelog/1',
+    source: 'loki',
+    source_url: 'https://loki.orangecat.ch/changelog/1',
   },
 };
 
@@ -96,10 +96,10 @@ describe('listProjectActivity', () => {
       id: 'evt-1',
       project_id: 'p-1',
       type: 'update',
-      title: 'fleetcrown: shipped the seam',
+      title: 'loki: shipped the seam',
       content: 'Deploy green.',
       created_at: row.event_timestamp,
-      source: { label: 'FleetCrown', url: 'https://fleetcrown.orangecat.ch/changelog/1' },
+      source: { label: 'Loki', url: 'https://loki.orangecat.ch/changelog/1' },
     });
   });
 

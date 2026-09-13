@@ -6,7 +6,7 @@ Primary: self-hosted on Hetzner ("bitbaum", since 2026-06-12; Vercel team was bl
 - Reverse proxy: Caddy serves `orangecat.ch` + `www.orangecat.ch`.
 - Supabase: self-hosted at `supabase.orangecat.ch` (replaces the hosted project).
 - Env: gitignored `.env.selfhost.local` on the box (originally a filtered `vercel env pull`).
-- Runbook: `fleetcrown/docs/infrastructure/hetzner-migration.md` (FleetCrown repo — same box).
+- Runbook: `loki/docs/infrastructure/hetzner-migration.md` (Loki repo — same box).
 - Deploys are automated: pushes to `main` run CI (`ci.yml`); on success, CD (`cd.yml`) builds the standalone bundle off-box and ships it via `scripts/deploy-selfhost.sh` (atomic swap + rollback). A prod login E2E (`e2e-auth.yml`) also runs.
 
 Historical (pre-2026-06-12): Vercel (Next.js app + serverless API), config in `vercel.json` + `next.config.js`.

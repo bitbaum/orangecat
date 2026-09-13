@@ -273,7 +273,7 @@ export default function DocsPage() {
           </div>
         </section>
 
-        {/* Getting Started — public-surface near-black band per FleetCrown pattern */}
+        {/* Getting Started — public-surface near-black band per Loki pattern */}
         <section className="mb-10">
           <div className="bg-surface-public border border-subtle rounded-lg p-8 text-center">
             <h2 className="font-heading tracking-display text-2xl font-bold text-fg-inverted mb-3">

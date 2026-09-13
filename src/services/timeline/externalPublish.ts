@@ -1,7 +1,7 @@
 /**
  * External publish bus — server-side ingest.
  *
- * Lands an external client's (FleetCrown) build event onto a project's OrangeCat
+ * Lands an external client's (Loki) build event onto a project's OrangeCat
  * wall (timeline_events). Called only from POST /api/v1/timeline/publish after
  * the caller is authenticated (OIDC bearer / integration key) and scope-gated to
  * `timeline.write`.

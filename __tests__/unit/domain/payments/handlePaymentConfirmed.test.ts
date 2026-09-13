@@ -30,9 +30,9 @@ vi.mock('@/lib/supabase/admin', () => ({ getAdminClient: vi.fn() }));
 vi.mock('@/services/webhooks/paymentSettledWebhook', () => ({
   enqueuePaymentSettledWebhook: vi.fn().mockResolvedValue(undefined),
 }));
-vi.mock('@/services/fleetcrown/entitlement-notify', () => ({
-  notifyFleetCrownEntitlement: vi.fn().mockResolvedValue(undefined),
-  notifyFleetCrownProjectFunding: vi.fn().mockResolvedValue(undefined),
+vi.mock('@/services/loki/entitlement-notify', () => ({
+  notifyLokiEntitlement: vi.fn().mockResolvedValue(undefined),
+  notifyLokiProjectFunding: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock('@/services/supporter/grant', () => ({
   grantSupporterPlan: vi.fn().mockResolvedValue(undefined),

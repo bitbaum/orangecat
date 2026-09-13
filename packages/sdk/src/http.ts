@@ -2,7 +2,7 @@
  * Internal HTTP transport for @orangecat/sdk.
  *
  * - Bearer + `X-OrangeCat-Key` auth headers (either or both accepted server-side)
- * - Default timeout 20s — matches FleetCrown's useFetch convention
+ * - Default timeout 20s — matches Loki's useFetch convention
  * - Idempotency-Key auto-generated when not supplied (planned server support;
  *   the SDK ships the header today so retries are forward-compatible the moment
  *   it lands)
@@ -25,7 +25,7 @@ export interface ClientOptions {
   apiKey: string;
   /** Base URL. Default: https://orangecat.ch */
   baseUrl?: string;
-  /** Default per-request timeout in ms. Default: 20_000 (matches FleetCrown). */
+  /** Default per-request timeout in ms. Default: 20_000 (matches Loki). */
   timeoutMs?: number;
   /** Max retries for transient failures. Default: 3 (4 attempts total). */
   maxRetries?: number;

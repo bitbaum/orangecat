@@ -7,7 +7,7 @@ migration (see git history of this file for the old process).
 ## How production deploys work
 
 - Deploys happen **on the box**, not from CI. Runbook:
-  `fleetcrown/docs/infrastructure/hetzner-migration.md` (FleetCrown repo — same box).
+  `loki/docs/infrastructure/hetzner-migration.md` (Loki repo — same box).
 - The app runs as the `orangecat-app` systemd unit (Next.js standalone build,
   `SELF_HOST=1 pnpm run build`, port 4003) behind Caddy serving
   `orangecat.ch` + `www.orangecat.ch`.

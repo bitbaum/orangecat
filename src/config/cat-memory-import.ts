@@ -6,7 +6,7 @@
  * result back into OrangeCat, which distils it into durable Cat memories.
  *
  * Kept here (not inline in the component) so the prompt is defined once and can
- * be reused by docs, onboarding, or a future FleetCrown import without drift.
+ * be reused by docs, onboarding, or a future Loki import without drift.
  * The reciprocal direction (export FROM OrangeCat in this same shape) is the
  * "right of exit" half — portable, user-owned memory, not a walled garden.
  */

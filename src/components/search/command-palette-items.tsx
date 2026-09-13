@@ -209,7 +209,7 @@ export function buildPages(navigateTo: (href: string) => void): PaletteItem[] {
     {
       id: 'go-integrations',
       label: 'Integration keys',
-      hint: 'API keys for FleetCrown, hirn.li, …',
+      hint: 'API keys for Loki, hirn.li, …',
       icon: Mail,
       keywords: 'api token settings developers',
       run: () => navigateTo(ROUTES.SETTINGS_INTEGRATIONS),

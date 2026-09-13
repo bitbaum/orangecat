@@ -1,7 +1,7 @@
 # OrangeCat Public API — `/api/v1/`
 
 **This tree is the stable contract** that external integrations
-(FleetCrown, hirn.li, third-party tools) consume. The non-versioned
+(Loki, hirn.li, third-party tools) consume. The non-versioned
 `/api/<entity>/route.ts` files remain the internal handlers that the
 OrangeCat web app calls from the user's session.
 
@@ -92,7 +92,7 @@ curl examples lives in [`docs/api/AGENTS.md`](../../../docs/api/AGENTS.md).
 | `/api/v1/stakeholders`     | POST   | Create a stakeholder relationship                     |
 
 `/api/v1/timeline/publish` is the async publish bus: an external client
-(FleetCrown) lands a publish-worthy build event onto a project's OrangeCat
+(Loki) lands a publish-worthy build event onto a project's OrangeCat
 wall (`timeline_events`). Requires the `timeline.write` scope and ownership of
 the subject project. Idempotent + reconcilable — keyed by
 `(source, external_id)`, so a retry or an edit updates the same row rather than
@@ -101,7 +101,7 @@ duplicating it. Inbound contract SSOT: `src/config/external-publish.ts`. See
 surfacing").
 
 `/api/v1/stakeholders` exposes the typed project→stakeholder graph for
-integration clients (FleetCrown). Requires `stakeholders.read` / `stakeholders.write`
+integration clients (Loki). Requires `stakeholders.read` / `stakeholders.write`
 and ownership of the source project. Contract SSOT: `src/config/stakeholders.ts`.
 
 ## Out of scope for v1 (until further notice)

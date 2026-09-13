@@ -2,9 +2,9 @@
  * OIDC provider — single source of truth for issuer, endpoints, and scopes.
  *
  * OrangeCat acts as the platform's OAuth2/OIDC authorization server ("Login with
- * OrangeCat"): the front door through which FleetCrown and future clients adopt
+ * OrangeCat"): the front door through which Loki and future clients adopt
  * one identity (`sub` = `actor_id`) and one economy. See
- * docs/architecture/PLATFORM_AND_COLLABORATION.md and the FleetCrown-repo
+ * docs/architecture/PLATFORM_AND_COLLABORATION.md and the Loki-repo
  * cross-product-identity-bridge.md.
  *
  * Everything downstream (discovery doc, JWKS, /authorize, /token, /userinfo)

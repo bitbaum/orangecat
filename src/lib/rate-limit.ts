@@ -227,7 +227,7 @@ export async function rateLimitWriteAsync(userId: string): Promise<RateLimitResu
  * Per-integration-key quotas.
  *
  * Per-user quotas (rateLimitWriteAsync) lump every key minted by the same
- * user into one bucket, so one buggy FleetCrown instance can DOS hirn.li
+ * user into one bucket, so one buggy Loki instance can DOS hirn.li
  * even though they're different keys. These give each integration key its
  * own bucket, keyed on integration_key_id — a leak/bug on one key stays
  * scoped to that key.

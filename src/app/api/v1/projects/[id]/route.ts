@@ -3,7 +3,7 @@
  *
  * See /api/v1/README.md for the v1 contract.
  *
- * PATCH exists because publishing was one-way. FleetCrown could create a
+ * PATCH exists because publishing was one-way. Loki could create a
  * project here (POST /api/v1/projects) and had no way to take it back down:
  * the status primitive lived only behind session auth at
  * /api/projects/[id]/status, which an integration holding an OAuth token or an

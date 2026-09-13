@@ -5,14 +5,14 @@
  * active webhook endpoint bound to the seller's actor. This closes the gap
  * where the mint UI advertised subscription/payment delivery but only
  * `<entity>.created` ever fired: settlement signals previously reached
- * FleetCrown only via the out-of-band HMAC POST in entitlement-notify. Now any
- * integrator (FleetCrown included) can subscribe through the generic,
+ * Loki only via the out-of-band HMAC POST in entitlement-notify. Now any
+ * integrator (Loki included) can subscribe through the generic,
  * retried, per-actor webhook machinery.
  *
  * Fire-and-forget: never throws, never blocks settlement. The seller's PERSONAL
  * actor is the fan-out target (the actor an individual seller mints endpoints
  * against) — group-owned entities that route settlement through a group actor
- * are not covered here and remain served by the direct FleetCrown rail.
+ * are not covered here and remain served by the direct Loki rail.
  */
 import { getAdminClient } from '@/lib/supabase/admin';
 import { DATABASE_TABLES } from '@/config/database-tables';

@@ -20,7 +20,7 @@
 #   OC_BOX (default root@167.233.22.31)
 #
 # Note: OrangeCat's build does not require live-DB access (no blocking SSG DB
-# queries), so unlike fleetcrown/scripts/hetzner/deploy.sh this needs no tunnel.
+# queries), so unlike loki/scripts/hetzner/deploy.sh this needs no tunnel.
 
 name: CD
 
@@ -66,10 +66,10 @@ jobs:
       # box's runtime .env does nothing. The mic on every create form was
       # unreachable dead code — off by omission, not by decision.
       NEXT_PUBLIC_FEATURE_VOICE_INPUT: ${{ vars.NEXT_PUBLIC_FEATURE_VOICE_INPUT }}
-      # FleetCrown feedback widget token — must match ci.yml's build env so a
+      # Loki feedback widget token — must match ci.yml's build env so a
       # cd-side rebuild bakes the same embed into prerendered pages. Public by
       # design (ships in page source): repo variable, not a secret.
-      FLEETCROWN_FEEDBACK_TOKEN: ${{ vars.FLEETCROWN_FEEDBACK_TOKEN }}
+      LOKI_FEEDBACK_TOKEN: ${{ vars.LOKI_FEEDBACK_TOKEN }}
       OC_BOX: ${{ vars.OC_BOX || 'root@167.233.22.31' }}
     steps:
       - name: Guard — is the deploy key configured?

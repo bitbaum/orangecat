@@ -126,7 +126,7 @@ above 5 steps.
 The change: the interactive reply keeps its ~20-second budget, and work that
 needs more becomes a **resumable background run** the user can watch — the same
 shape `cat_watches` and the daily brief already use, and the same shape
-FleetCrown's `pending_commands` uses. "I'm looking into this, I'll have it in a
+Loki's `pending_commands` uses. "I'm looking into this, I'll have it in a
 minute" is a better product than four seconds of typing dots followed by a
 guess, and it is the only way a 12–20 step budget is affordable.
 
@@ -152,7 +152,7 @@ the work"_ (`anthropic.com/engineering/harness-design-long-running-apps`,
 "Anyone can build any project" currently terminates in a button that hands the
 user a signed token and asks them to sign in to a second product.
 
-FleetCrown's site factory is **live** on the box and provisions a real repo,
+Loki's site factory is **live** on the box and provisions a real repo,
 domain and deploy in about 35 seconds. Its SSOT entry point, `requestNewSite()`,
 validates a closed four-field input and executes an argument vector — never a
 shell string, never a prompt. It has **no HTTP door**: the only callers are a CLI
@@ -170,9 +170,9 @@ The invariant from ADR-0003 is untouched and must stay so: **money is never
 routable to an entity whose subject has not accepted it.** Commissioning a build
 creates a site and a claim, never a wallet.
 
-**Status: the FleetCrown half is DONE and live** —
-`POST /api/orangecat/site` (bitbaum/fleetcrown#646, moved to that path by
-#653). It verifies the shared HMAC, maps the OrangeCat actor to a FleetCrown
+**Status: the Loki half is DONE and live** —
+`POST /api/orangecat/site` (bitbaum/loki#646, moved to that path by
+#653). It verifies the shared HMAC, maps the OrangeCat actor to a Loki
 user, refuses an unlinked actor with a 409 naming the next step, narrows the
 register's six site kinds to three, forces `status: unverified`, and caps a
 single account at three sites a day. Its gate is mutation-proved.

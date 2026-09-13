@@ -24,7 +24,7 @@ That entire flywheel has historically required a corporation around it to functi
 
 The interesting question now is: **what happens if you build the same flywheel sized for one person?**
 
-That is what OrangeCat and [FleetCrown](https://fleetcrown.orangecat.ch) are, together.
+That is what OrangeCat and [Loki](https://loki.orangecat.ch) are, together.
 
 ## The Production Half — Cockpit
 

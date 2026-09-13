@@ -224,7 +224,7 @@ created. What changed:
 - **`create_project_for_person`** — one registry action does what the create
   form's "This is for: someone else" does: placeholder actor, project owned by
   it, and the share link back to the steward. Confirmation card states whose
-  it is and that no money moves until she accepts. `send_to_fleetcrown`
+  it is and that no money moves until she accepts. `send_to_loki`
   mints the same signed handoff as the entity page's card, so "can she have it
   built?" is answered with a link.
 - **Denied is now asked.** A category the user never granted (entities is off
@@ -246,8 +246,8 @@ when the page was set up on someone's behalf, so the page renders "Set up by
 resolves through the actor, not `user_id` — which had shown the steward as
 owner after a claim and hidden the controls from the person it belonged to.
 
-**FleetCrown gets the client.** The handoff token now carries `owner`
-(kind/displayName/pageUrl/stewardUsername); FleetCrown writes it into the
+**Loki gets the client.** The handoff token now carries `owner`
+(kind/displayName/pageUrl/stewardUsername); Loki writes it into the
 project notes and profile (`owner`, `url`, `customers`, `status`, `next_step`)
 and the steward may hand an unclaimed page over. Only the owner could before —
 and for a placeholder the owner is nobody, so the button 403'd.

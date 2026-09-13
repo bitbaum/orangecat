@@ -4,7 +4,7 @@
  * Tokens-per-minute and requests-per-day arrive as `x-ratelimit-*`. A third
  * limit — tokens per DAY — is stated once, in prose, inside the body of the 429
  * that enforces it. So every header can read healthy through a total outage:
- * measured on FleetCrown production 2026-09-13, the headers said 999 of 1000
+ * measured on Loki production 2026-09-13, the headers said 999 of 1000
  * requests remained while every call was refused and users got 503s.
  *
  * OrangeCat threw that body away — `new GroqAPIError('Rate limit exceeded')`
@@ -47,7 +47,7 @@ describe('the limit only the refusal admits to', () => {
 
   it('stands the model down on a day-window refusal even with tokens "left"', () => {
     // The case that disproved the first draft, which required remaining === 0.
-    // FleetCrown's real refusal said "Limit 200000, Used 199773" — 227 tokens
+    // Loki's real refusal said "Limit 200000, Used 199773" — 227 tokens
     // left, and every call refused, because no real request fits in 227 tokens.
     // The vendor has just declined a live request, so the day IS spent.
     recordGroqRefusal(MODEL, TPD_REFUSAL, 149);

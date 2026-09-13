@@ -1,7 +1,7 @@
 /**
  * OIDC discovery document.
  *
- * GET /.well-known/openid-configuration — lets relying parties (FleetCrown's
+ * GET /.well-known/openid-configuration — lets relying parties (Loki's
  * Auth.js generic OIDC provider, etc.) auto-configure. All URLs + the scope list
  * derive from the OAuth config SSOT.
  */

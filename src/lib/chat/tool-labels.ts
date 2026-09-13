@@ -76,15 +76,25 @@ export const VERB_FORMS: Record<string, { gerund: string; past: string }> = {
 };
 
 /**
+ * Product names that look like ordinary capitalised words. Anything with
+ * internal capitals or all-caps (AI, OrangeCat) is already left alone by the
+ * shape test below; a one-word name needs naming here.
+ */
+const PROPER_NOUNS = new Set(['Loki']);
+
+/**
  * Lower-case the rest of a Title Case name WITHOUT damaging a proper noun.
  *
- * "Create Project" → "project", but "Send to FleetCrown" keeps FleetCrown and
+ * "Create Project" → "project", but "Send to Loki" keeps Loki and
  * "Create AI Assistant" keeps AI. A word is only lowered when it looks like an
- * ordinary capitalised word: one leading capital, then lower case. Anything
- * with internal capitals or all-caps is a name and is left exactly as written.
+ * ordinary capitalised word: one leading capital, then lower case — and is not
+ * a listed product name. Anything with internal capitals or all-caps is a name
+ * and is left exactly as written.
  */
 function softLower(words: string[]): string {
-  return words.map(w => (/^[A-Z][a-z]+$/.test(w) ? w.toLowerCase() : w)).join(' ');
+  return words
+    .map(w => (/^[A-Z][a-z]+$/.test(w) && !PROPER_NOUNS.has(w) ? w.toLowerCase() : w))
+    .join(' ');
 }
 
 /** The forms of one registry action's name, or null if it is not one. */
@@ -97,7 +107,7 @@ export function conjugateAction(toolName: string): {
   plain: string;
   /**
    * "create project" — for use after "Couldn't". Only the VERB is lowered:
-   * lowercasing the whole phrase would print "couldn't send to fleetcrown".
+   * lowercasing the whole phrase would print "couldn't send to loki".
    */
   lower: string;
 } | null {

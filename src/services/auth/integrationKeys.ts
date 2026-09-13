@@ -1,7 +1,7 @@
 /**
  * Integration keys — outbound platform API key service.
  *
- * Sibling products (FleetCrown, hirn.li) and third-party integrations
+ * Sibling products (Loki, hirn.li) and third-party integrations
  * authenticate to OrangeCat's platform API with one of these keys. A key
  * is bound to a single actor at mint time; every request the key
  * authenticates acts as that actor.

@@ -174,7 +174,7 @@
        the accent itself is theme-independent: a label that flipped with the
        theme would be unreadable in one of them.
        Mirrors --on-accent in @fleet/design-tokens v1.1.0, which is the SSOT
-       for Solon and FleetCrown. OrangeCat still declares its ramp locally
+       for Solon and Loki. OrangeCat still declares its ramp locally
        rather than consuming that package; until it does, this value has to be
        kept in step by hand. */
     --on-accent: 0 0% 8%;
@@ -207,7 +207,7 @@
     --radius-surface: 0.5rem;
     --surface-hover: 0 0% 94%;
 
-    /* ─── FleetCrown-aligned semantic tier (light) ─────────────────────────
+    /* ─── Loki-aligned semantic tier (light) ─────────────────────────
        Migration target: x.ai-style discipline — monochromatic surfaces,
        single warm accent. Existing tokens above stay live; components
        adopt this tier incrementally. See docs/architecture/CAT_AND_DESIGN_SSOT.
@@ -274,7 +274,7 @@
        the accent itself is theme-independent: a label that flipped with the
        theme would be unreadable in one of them.
        Mirrors --on-accent in @fleet/design-tokens v1.1.0, which is the SSOT
-       for Solon and FleetCrown. OrangeCat still declares its ramp locally
+       for Solon and Loki. OrangeCat still declares its ramp locally
        rather than consuming that package; until it does, this value has to be
        kept in step by hand. */
     --on-accent: 0 0% 8%;
@@ -306,7 +306,7 @@
     --chart-5: 340 75% 55%;
     --surface-hover: 0 0% 13%;
 
-    /* ─── FleetCrown-aligned semantic tier (dark) ────────────────────────── */
+    /* ─── Loki-aligned semantic tier (dark) ────────────────────────── */
     --text-primary: 0 0% 92%;
     --text-secondary: 0 0% 65%;
     --text-tertiary: 0 0% 48%;
@@ -482,7 +482,7 @@
     @apply flex h-full flex-col items-center justify-center px-4 py-8 text-center;
   }
 
-  /* Brand mark — same contract as FleetCrown ui-brand-mark */
+  /* Brand mark — same contract as Loki ui-brand-mark */
   .ui-brand-mark {
     @apply flex items-center justify-center rounded-xl border border-border-subtle bg-surface-raised/40 transition-all;
     box-shadow: inset 0 1px 0 hsl(var(--foreground) / 0.04);

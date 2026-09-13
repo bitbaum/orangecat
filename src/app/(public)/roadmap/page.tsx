@@ -19,7 +19,7 @@ export default function RoadmapPage() {
           <PageHeading className="mt-4">Roadmap</PageHeading>
           <p className="mt-5 text-lg text-fg-secondary sm:text-xl">
             First make public entities effortless to share, fund in Bitcoin, and turn into
-            supervised FleetCrown projects. Broaden the rails only after that loop is dependable.
+            supervised Loki projects. Broaden the rails only after that loop is dependable.
           </p>
         </div>
 

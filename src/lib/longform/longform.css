@@ -4,7 +4,7 @@
  * imported by those routes, not by globals.css).
  *
  * Every value is a reference into the design-token SSOT (src/app/globals.css,
- * FleetCrown-aligned semantic tier). OC tokens are HSL channel triples, so
+ * Loki-aligned semantic tier). OC tokens are HSL channel triples, so
  * each mapping wraps them in hsl(); --accent-primary is already a complete
  * color. Both themes are covered by ONE mapping — the underlying tokens flip
  * with next-themes' .dark/.light class.

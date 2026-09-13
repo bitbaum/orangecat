@@ -23,7 +23,7 @@ OrangeCat is **not** a standalone DB. The box runs **two separate Postgres**:
 
 | Instance                                                   | Access                                     | Holds                                                        |
 | ---------------------------------------------------------- | ------------------------------------------ | ------------------------------------------------------------ |
-| **Box-system Postgres**                                    | `sudo -u postgres psql`                    | fleetcrown, revampit, datacat, … (each own DB)               |
+| **Box-system Postgres**                                    | `sudo -u postgres psql`                    | loki, revampit, datacat, … (each own DB)               |
 | **Supabase container** (`supabase-db`, host port **5433**) | `docker exec supabase-db psql -U postgres` | **OrangeCat** — in the `postgres` DB (~25 MB), + `_supabase` |
 
 There is **no DB named `orangecat`** — OrangeCat lives in the Supabase container's
@@ -124,8 +124,8 @@ Smoke-test: load a profile, discover, log in.
      timeline*events 1359, user_products 6). Only benign noise (Supabase Vault `secrets` +
      `log_min_messages` need the superuser role → restore globals first, as step 3 already does).
      Not yet drilled onto a \_fresh box* (needs a throwaway Hetzner box).
-3. ⏳ **Versioned source (still open)** — `pg-backup.sh` lives in fleetcrown's `scripts/hetzner/`;
-   BOTH the container-dump fix AND this config-backup block are box-local edits that a fleetcrown
+3. ⏳ **Versioned source (still open)** — `pg-backup.sh` lives in loki's `scripts/hetzner/`;
+   BOTH the container-dump fix AND this config-backup block are box-local edits that a loki
    `install-backups.sh` reinstall would revert. Mirror them into that installer (cross-project).
 
 ## Quick reference

@@ -38,7 +38,7 @@ import {
   type EntityDetailConfig,
 } from './public-entity-detail-config';
 import { MobileStickyCTA } from './PublicEntityStickyCTA';
-import FleetCrownBuildCta from '@/components/integrations/FleetCrownBuildCta';
+import LokiBuildCta from '@/components/integrations/LokiBuildCta';
 import SolonGovernCta from '@/components/integrations/SolonGovernCta';
 
 // Re-export config types + metadata helper for back-compat with the many
@@ -275,7 +275,7 @@ export default async function PublicEntityDetailPage({
               />
 
               {isOwner && config.entityType !== 'wallet' && config.entityType !== 'document' && (
-                <FleetCrownBuildCta
+                <LokiBuildCta
                   variant="card"
                   entityType={config.entityType}
                   entityId={id}

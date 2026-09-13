@@ -8,7 +8,7 @@
  * secret is right — a whole afternoon of suspecting the one thing that was
  * fine.
  *
- * And nothing may report a site that does not exist. FleetCrown answers 202:
+ * And nothing may report a site that does not exist. Loki answers 202:
  * QUEUED. There is no moment in the turn when a site is up, so every sentence
  * that reaches the model has to say a build was started. This repo has already
  * paid for the opposite — an action that logged `completed` while one of two
@@ -16,10 +16,10 @@
  */
 import { createHmac } from 'crypto';
 import {
-  postSignedToFleetCrown,
-  fleetCrownRailConfigured,
-} from '@/services/fleetcrown/signed-post';
-import { requestFleetCrownSite, slugFromTitle } from '@/services/fleetcrown/site-build';
+  postSignedToLoki,
+  lokiRailConfigured,
+} from '@/services/loki/signed-post';
+import { requestLokiSite, slugFromTitle } from '@/services/loki/site-build';
 import { siteBuildHandlers } from '@/services/cat/handlers/site-build';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 
@@ -53,7 +53,7 @@ describe('the signed rail', () => {
       return jsonResponse(200, { ok: true });
     }) as unknown as typeof fetch;
 
-    await postSignedToFleetCrown(
+    await postSignedToLoki(
       'https://fc.example/x',
       { b: 2, a: 1 },
       { fetchImpl, secret: SECRET }
@@ -68,10 +68,10 @@ describe('the signed rail', () => {
 
   it('is inert, and honest, when the rail is not configured', async () => {
     delete process.env.ORANGECAT_WEBHOOK_SECRET;
-    expect(fleetCrownRailConfigured(undefined)).toBe(false);
+    expect(lokiRailConfigured(undefined)).toBe(false);
 
     const fetchImpl = vi.fn() as unknown as typeof fetch;
-    const result = await postSignedToFleetCrown('https://fc.example/x', {}, { fetchImpl });
+    const result = await postSignedToLoki('https://fc.example/x', {}, { fetchImpl });
 
     expect(result.ok).toBe(false);
     expect(fetchImpl).not.toHaveBeenCalled();
@@ -80,12 +80,12 @@ describe('the signed rail', () => {
   it('hands back the receiver’s own body, not a paraphrase', async () => {
     const fetchImpl = vi.fn(async () =>
       jsonResponse(409, {
-        error: 'no linked FleetCrown account',
+        error: 'no linked Loki account',
         detail: 'Sign in once, then retry.',
       })
     ) as unknown as typeof fetch;
 
-    const result = await postSignedToFleetCrown(
+    const result = await postSignedToLoki(
       'https://fc.example/x',
       {},
       { fetchImpl, secret: SECRET }
@@ -103,7 +103,7 @@ describe('the signed rail', () => {
       throw new Error('socket exploded');
     }) as unknown as typeof fetch;
 
-    const result = await postSignedToFleetCrown(
+    const result = await postSignedToLoki(
       'https://fc.example/x',
       {},
       { fetchImpl, secret: SECRET }
@@ -116,7 +116,7 @@ describe('requesting a site', () => {
   it('refuses an impossible subdomain before calling anything', async () => {
     const spy = vi.spyOn(globalThis, 'fetch');
     for (const slug of ['Not A Slug', '-leading', 'trailing-', '', 'under_score', 'a'.repeat(64)]) {
-      const outcome = await requestFleetCrownSite({ actorId: ACTOR, slug, title: 'X' });
+      const outcome = await requestLokiSite({ actorId: ACTOR, slug, title: 'X' });
       expect(outcome.ok).toBe(false);
     }
     expect(spy).not.toHaveBeenCalled();
@@ -124,7 +124,7 @@ describe('requesting a site', () => {
 
   it('accepts everything the factory accepts, and no less', async () => {
     // The local check is UX, so being stricter than the authority is a bug:
-    // it refuses slugs FleetCrown would take and the capability looks broken.
+    // it refuses slugs Loki would take and the capability looks broken.
     // A single character and a 63-character label are both legal there.
     // mockImplementation, not mockResolvedValue: a Response body can be read
     // exactly ONCE, so a single shared Response makes every call after the
@@ -138,7 +138,7 @@ describe('requesting a site', () => {
       })
     );
     for (const slug of ['a', 'a1', 'a-b-c', 'a'.repeat(63)]) {
-      const outcome = await requestFleetCrownSite({ actorId: ACTOR, slug, title: 'X' });
+      const outcome = await requestLokiSite({ actorId: ACTOR, slug, title: 'X' });
       expect(outcome.ok).toBe(true);
     }
   });
@@ -146,13 +146,13 @@ describe('requesting a site', () => {
   it('surfaces the receiver’s sentence verbatim, because it names the next step', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       jsonResponse(409, {
-        error: 'no linked FleetCrown account',
+        error: 'no linked Loki account',
         detail:
-          'This OrangeCat identity is not linked to a FleetCrown account yet. Sign in to FleetCrown with the same OrangeCat identity once, then try again.',
+          'This OrangeCat identity is not linked to a Loki account yet. Sign in to Loki with the same OrangeCat identity once, then try again.',
       })
     );
 
-    const outcome = await requestFleetCrownSite({
+    const outcome = await requestLokiSite({
       actorId: ACTOR,
       slug: 'kraftwerk',
       title: 'Kraftwerk',
@@ -161,7 +161,7 @@ describe('requesting a site', () => {
     expect(outcome.ok).toBe(false);
     if (!outcome.ok) {
       expect(outcome.reason).toMatch(/NOT started/);
-      expect(outcome.reason).toMatch(/Sign in to FleetCrown/);
+      expect(outcome.reason).toMatch(/Sign in to Loki/);
     }
   });
 
@@ -175,7 +175,7 @@ describe('requesting a site', () => {
       })
     );
 
-    const outcome = await requestFleetCrownSite({
+    const outcome = await requestLokiSite({
       actorId: ACTOR,
       slug: 'kraftwerk',
       title: 'Kraftwerk',
@@ -198,7 +198,7 @@ describe('requesting a site', () => {
       })
     );
 
-    const outcome = await requestFleetCrownSite({
+    const outcome = await requestLokiSite({
       actorId: ACTOR,
       slug: 'kraftwerk',
       title: 'Kraftwerk',

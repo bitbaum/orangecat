@@ -161,7 +161,7 @@ export default function SecurityPage() {
           ))}
         </div>
 
-        {/* Contact Section — public-surface band per FleetCrown pattern */}
+        {/* Contact Section — public-surface band per Loki pattern */}
         <div className="mt-12 bg-surface-public text-fg-inverted rounded-lg p-6">
           <div className="text-center">
             <h3 className="font-heading tracking-display text-2xl font-bold mb-4">

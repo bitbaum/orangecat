@@ -94,7 +94,7 @@ describe('service portfolio_links', () => {
     expect(
       userServiceSchema.safeParse({
         ...base,
-        portfolio_links: ['https://orangecat.ch', 'https://fleetcrown.orangecat.ch'],
+        portfolio_links: ['https://orangecat.ch', 'https://loki.orangecat.ch'],
       }).success
     ).toBe(true);
   });

@@ -34,7 +34,7 @@ Today, a single operator can already direct a fleet of AI agents across many pro
 
 The bottleneck has shifted. It is no longer raw model capability. It is the coordination layer — how do you keep eight agents on track across five projects without losing coherence?
 
-That is the problem [FleetCrown](https://fleetcrown.orangecat.ch) exists to solve. Local execution where the work happens. Remote command from anywhere. Per-project autonomy levels — manual, queue, beacon, continuous, mission — so the operator dials in how much initiative the system takes per surface. Truthful status, legible handoffs, a real audit log.
+That is the problem [Loki](https://loki.orangecat.ch) exists to solve. Local execution where the work happens. Remote command from anywhere. Per-project autonomy levels — manual, queue, beacon, continuous, mission — so the operator dials in how much initiative the system takes per surface. Truthful status, legible handoffs, a real audit log.
 
 The production half is real and works today.
 

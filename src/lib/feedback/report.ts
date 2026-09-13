@@ -1,8 +1,8 @@
 /**
  * One way to file a bug from inside the product.
  *
- * OrangeCat embeds FleetCrown's feedback widget (see src/app/layout.tsx), which
- * publishes `window.FleetCrown.report()` — it opens the feedback panel with the
+ * OrangeCat embeds Loki's feedback widget (see src/app/layout.tsx), which
+ * publishes `window.Loki.report()` — it opens the feedback panel with the
  * failure already described and machine-readable context attached, so reporting
  * a bug is one click instead of "notice the floating button, open it, re-type
  * what the product already knew".
@@ -16,7 +16,7 @@
 /** Flat context; rendered as `key: value` lines into the report body. */
 export type ReportDiagnostics = Record<string, string | number | boolean | null | undefined>;
 
-interface FleetCrownApi {
+interface LokiApi {
   /**
    * False until the widget's boot gate has said active AND its panel exists.
    *
@@ -31,7 +31,7 @@ interface FleetCrownApi {
 
 declare global {
   interface Window {
-    FleetCrown?: FleetCrownApi;
+    Loki?: LokiApi;
   }
 }
 
@@ -44,14 +44,14 @@ declare global {
  * capable of doing nothing. That shape also covers the cases a readiness check
  * alone cannot: no JavaScript, and widget.js not yet executed (it loads async).
  */
-export function reportToFleetCrown(input: {
+export function reportToLoki(input: {
   message: string;
   diagnostics?: ReportDiagnostics;
 }): boolean {
   if (typeof window === 'undefined') {
     return false;
   }
-  const api = window.FleetCrown;
+  const api = window.Loki;
   if (!api?.ready || typeof api.report !== 'function') {
     return false;
   }

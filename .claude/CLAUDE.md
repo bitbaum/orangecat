@@ -240,7 +240,7 @@ is the same as for code: merge → CI → CD → applied.
 
 > Corrected 2026-08-25. This section previously said the sandbox "generally cannot
 > reach supabase.orangecat.ch" and that box-side DB work "goes through the founder
-> / FleetCrown agent". Both were wrong and cost real time: reads work fine over
+> / Loki agent". Both were wrong and cost real time: reads work fine over
 > PostgREST, and migrations apply themselves on deploy. Acting on the old text, an
 > agent shipped a migration announcing it needed manual application — it had
 > already been applied automatically eight minutes after merge.

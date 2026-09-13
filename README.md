@@ -25,7 +25,7 @@ OrangeCat is an AI-native platform for universal economic participation. The liv
 - **Pay link (the wedge)**: every user gets `orangecat.ch/pay/<username>` for Bitcoin Lightning payments.
 - **Live site**: [orangecat.ch](https://orangecat.ch)
 - **Shipped surfaces**: product/service listings, groups, events, documents, and related entity types exist on the live site. Funding, lending, and investing sit on the roadmap.
-- **FleetCrown dogfood**: FleetCrown (live at [fleetcrown.orangecat.ch](https://fleetcrown.orangecat.ch)) uses OrangeCat as a sibling product — typed stakeholder edges, shared BTC wallet, profiles as projects. Sibling-product integration: typed stakeholder edges, shared BTC wallet, profiles as projects.
+- **Loki dogfood**: Loki (live at [loki.orangecat.ch](https://loki.orangecat.ch)) uses OrangeCat as a sibling product — typed stakeholder edges, shared BTC wallet, profiles as projects. Sibling-product integration: typed stakeholder edges, shared BTC wallet, profiles as projects.
 
 ## Roadmap
 

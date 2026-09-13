@@ -5,7 +5,7 @@
  * (competitor / collaborator / investor / customer / employee /
  * acquirer / acquisition_target / in_house_dev) — the cross-product
  * stakeholder graph documented in the Thoughts essay "Where
- * Stakeholders Live". OrangeCat stores the graph, FleetCrown reads it.
+ * Stakeholders Live". OrangeCat stores the graph, Loki reads it.
  *
  * GET    /api/stakeholders?fromProjectId=<uuid>&kind=<kind>
  *        — list relationships for a project (and optionally filter by kind).

@@ -4,7 +4,7 @@
  * Finding a name is the rung BEFORE the two services /domains already sells
  * (build me a site, host it at yourname.orangecat.ch). Somebody who does not
  * yet have a domain cannot buy hosting for one, so this closes the front of
- * that funnel — and it is the same capability FleetCrown needs when it stands
+ * that funnel — and it is the same capability Loki needs when it stands
  * up a customer, which is why the check lives behind a public v1 endpoint
  * rather than inside a React component.
  *

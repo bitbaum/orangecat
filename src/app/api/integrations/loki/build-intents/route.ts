@@ -7,13 +7,13 @@ import {
   apiSuccess,
 } from '@/lib/api/standardResponse';
 import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
-import { createFleetCrownHandoff } from '@/services/fleetcrown/handoff';
+import { createLokiHandoff } from '@/services/loki/handoff';
 
 /**
- * POST /api/integrations/fleetcrown/build-intents
+ * POST /api/integrations/loki/build-intents
  *
- * A thin HTTP skin over createFleetCrownHandoff — the same service Cat's
- * `send_to_fleetcrown` action uses, so the two cannot disagree about who may
+ * A thin HTTP skin over createLokiHandoff — the same service Cat's
+ * `send_to_loki` action uses, so the two cannot disagree about who may
  * hand an entity over.
  */
 export const POST = withAuth(async (request: AuthenticatedRequest) => {
@@ -28,7 +28,7 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
     source_path?: string;
   };
 
-  const result = await createFleetCrownHandoff({
+  const result = await createLokiHandoff({
     supabase: request.supabase,
     userId: request.user.id,
     entityType: String(body.entity_type ?? ''),
@@ -41,9 +41,9 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
       case 'forbidden':
         return apiForbidden(result.message);
       case 'unconfigured':
-        // FLEETCROWN_BUILD_INTENT_SECRET not set on this deploy — the handoff is
+        // LOKI_BUILD_INTENT_SECRET not set on this deploy — the handoff is
         // unavailable, not a server fault. 503 so the CTA can fall back to the
-        // plain FleetCrown link instead of surfacing a generic 500.
+        // plain Loki link instead of surfacing a generic 500.
         return apiServiceUnavailable(result.message);
       default:
         return apiBadRequest(result.message);

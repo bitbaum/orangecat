@@ -16,7 +16,7 @@ import { parseDomain } from './availability';
 export interface SuggestionInput {
   /** Whatever the user typed — a word, a phrase, or a full domain. */
   query: string;
-  /** Override the offered TLDs (FleetCrown passes its customer's preference). */
+  /** Override the offered TLDs (Loki passes its customer's preference). */
   tlds?: readonly string[];
 }
 

@@ -7,7 +7,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 /**
  * EntityListShell — canonical page-header wrapper for every in-app surface.
  *
- * Despite the legacy "Entity" name, this is the x.ai / FleetCrown-style page shell:
+ * Despite the legacy "Entity" name, this is the x.ai / Loki-style page shell:
  * <h1> + subtitle + right-slot actions + optional breadcrumb, with the
  * spacing/typography rules every internal page should share. Use it for
  * dashboard, settings, profile, and any other signed-in destination so the

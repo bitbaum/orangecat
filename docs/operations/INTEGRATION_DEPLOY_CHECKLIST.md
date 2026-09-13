@@ -4,7 +4,7 @@
 **Created**: 2026-06-04
 **Companion to**: `docs/operations/DEPLOYMENT_CHECKLIST.md` (the general OrangeCat
 deployment guide). This file covers the _additional_ steps to exercise an
-integration-key + webhook customer (FleetCrown, hirn.li, third-party).
+integration-key + webhook customer (Loki, hirn.li, third-party).
 
 This checklist is what an operator pulls up when running through the
 9-step deploy that shipped across the 211188a3 → 6da6b8cd thread. Each
@@ -20,7 +20,7 @@ step has the exact command, a verification, and a rollback if it fails.
 [ ] 3. Set customer-side env vars
        (ORANGECAT_API_KEY + ORANGECAT_API_BASE + WEBHOOK_SECRET)
 [ ] 4. Run customer-side DB migrations
-       (e.g. cd ~/dev/fleetcrown && pnpm run migrate)
+       (e.g. cd ~/dev/loki && pnpm run migrate)
 [ ] 5. Repack the SDK tarball into the customer's vendor/ folder
 [ ] 6. (Optional) pnpm publish --access public on @orangecat/sdk
 [ ] 7. Set CRON_SECRET in OrangeCat prod env (/opt/orangecat/app/.env)
@@ -40,7 +40,7 @@ step has the exact command, a verification, and a rollback if it fails.
 2. Navigate to **Settings → Integrations**.
 3. Click **Create a new key** in the _Integration keys_ section.
 4. Fill out:
-   - **Name**: e.g. `FleetCrown production`
+   - **Name**: e.g. `Loki production`
    - **Acts as**: the actor the key acts as (personal or group).
    - **Environment**: leave **Sandbox** unchecked for production.
    - **Permissions**: leave **Full access (wildcard)** unless customer
@@ -60,7 +60,7 @@ the `Acts as` actor matches. `Scopes:` matches what was picked.
 1. On the same page, scroll to _Webhook endpoints_.
 2. Click **Create a new endpoint**.
 3. Fill out:
-   - **Name**: e.g. `FleetCrown subscriptions`
+   - **Name**: e.g. `Loki subscriptions`
    - **Acts as**: same actor as the integration key (the firing fan-out
      is per actor).
    - **Target URL**: the customer's inbound HTTPS URL. Production URLs
@@ -80,8 +80,8 @@ either `all` or the selected list.
 
 ## Step 3 — Set customer-side env vars
 
-In the customer's environment (e.g. FleetCrown — self-hosted on the same
-Hetzner box; edit `/opt/fleetcrown/app/.env`), set:
+In the customer's environment (e.g. Loki — self-hosted on the same
+Hetzner box; edit `/opt/loki/app/.env`), set:
 
 | Var                  | Value                                  |
 | -------------------- | -------------------------------------- |
@@ -91,7 +91,7 @@ Hetzner box; edit `/opt/fleetcrown/app/.env`), set:
 
 Apply to all environments the integration should run in (Production
 typically). Restart the customer app (e.g. `systemctl restart
-fleetcrown-app`) so the new env is loaded.
+loki-app`) so the new env is loaded.
 
 **Verify**: the customer's logs show the SDK initialised with the new
 key on first call.
@@ -103,10 +103,10 @@ call (401 from OrangeCat).
 
 ## Step 4 — Run customer-side DB migrations
 
-For FleetCrown specifically:
+For Loki specifically:
 
 ```bash
-cd ~/dev/fleetcrown
+cd ~/dev/loki
 pnpm run migrate
 # Applies drizzle/0021_subscriptions_orangecat_service_id.sql which
 # adds subscriptions.orangecat_service_id (nullable uuid) so the
@@ -137,12 +137,12 @@ pnpm pack
 # Produces orangecat-sdk-<version>.tgz in the cwd.
 
 # Then copy into the customer's vendor folder:
-mv orangecat-sdk-*.tgz ~/dev/fleetcrown/vendor/
+mv orangecat-sdk-*.tgz ~/dev/loki/vendor/
 # Delete any older tarball there to keep one version on disk.
 
 # Customer-side: update the version pin in package.json if needed,
 # then:
-cd ~/dev/fleetcrown
+cd ~/dev/loki
 pnpm install
 ```
 
@@ -265,7 +265,7 @@ as a high-value secret with restricted access to the box env file.
 After all 9 steps land:
 
 1. **From customer side**, trigger whatever flow creates an OrangeCat
-   entity (for FleetCrown: create a subscription).
+   entity (for Loki: create a subscription).
 2. The SDK call should return `201 Created` with the entity payload.
 3. Within ~60 seconds, the webhook worker picks up the enqueued
    delivery and POSTs to the customer's endpoint.

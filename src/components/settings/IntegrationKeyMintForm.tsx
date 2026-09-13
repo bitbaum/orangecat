@@ -105,7 +105,7 @@ export default function IntegrationKeyMintForm({
             maxLength={120}
             value={name}
             onChange={e => onNameChange(e.target.value)}
-            placeholder='e.g. "FleetCrown production"'
+            placeholder='e.g. "Loki production"'
             className="mt-1 w-full rounded-md border border-subtle bg-surface-page px-3 py-2 text-sm text-fg-primary placeholder:text-fg-secondary focus:border-interactive/50 focus:outline-none"
           />
         </label>
