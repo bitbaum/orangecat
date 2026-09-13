@@ -41,6 +41,7 @@ import { getUserActorId } from '@/domain/actors';
 import { AI_MESSAGE_MAX_CHARS } from '@/lib/validation/ai';
 import { PAGE_EXCERPT_MAX_CHARS } from '@/config/cat-page-context';
 import { markLinkDown } from '@/services/ai/link-health';
+import { EmptyCompletion, hasUsableContent } from '@/services/cat/empty-completion';
 import { promptFitsGroqOnDemand, GROQ_CHAT_MAX_TOKENS } from '@/services/ai/groq';
 import { getGroqTpmLimit, recordOpenRouterRateLimit } from '@/services/ai/groq-capacity';
 
@@ -475,14 +476,21 @@ export async function orchestrateCatChat(
                 );
               }
               if (chunk.done) {
+                if (!streamStarted) {
+                  throw new EmptyCompletion(activeProvider, activeModel);
+                }
                 await emitDone();
                 doneEmitted = true;
                 break;
               }
             }
-            // Provider stream ended without a done chunk — still finalize so
-            // the client never waits on a reply that will never come.
+            // Provider stream ended without a done chunk. Same rule: nothing
+            // streamed is a failed link, not a finished answer. Finalising here
+            // is what made an empty 200 look like a completed reply.
             if (!doneEmitted) {
+              if (!streamStarted) {
+                throw new EmptyCompletion(activeProvider, activeModel);
+              }
               await emitDone();
             }
           };
@@ -569,7 +577,16 @@ export async function orchestrateCatChat(
               noteRateLimit(activeProvider, lastErr);
               markLinkDown(activeProvider, activeModel);
             }
-            throw lastErr;
+            // Every link came back empty. NOW the honest sentence is right —
+            // it is the chain's verdict rather than the first link's. Throwing
+            // instead would replace today's polite ending with an error page,
+            // which would be a regression for the one case where the apology
+            // was always the correct answer.
+            if (lastErr instanceof EmptyCompletion && !streamStarted) {
+              await emitDone();
+            } else {
+              throw lastErr;
+            }
           }
 
           if (conversationId && fullContent) {
@@ -767,6 +784,12 @@ export async function orchestrateCatChat(
         messages,
         temperature: 0.7,
       });
+      // `while (!result && ...)` below treats any object as an answer, so an
+      // empty 200 stopped the walk before a working link was ever tried.
+      if (!hasUsableContent(result?.content)) {
+        result = undefined;
+        lastErr = new EmptyCompletion(provider as string, modelToUse);
+      }
     } catch (err) {
       lastErr = err;
     }
@@ -805,6 +828,11 @@ export async function orchestrateCatChat(
         messages,
         temperature: 0.7,
       });
+      if (!hasUsableContent(result?.content)) {
+        result = undefined;
+        lastErr = new EmptyCompletion(next.provider, next.modelToUse);
+        continue;
+      }
       fellBackTo = next;
       activeProvider = next.provider;
       lastErr = null;
