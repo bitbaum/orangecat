@@ -41,6 +41,7 @@ import { getUserActorId } from '@/domain/actors';
 import { AI_MESSAGE_MAX_CHARS } from '@/lib/validation/ai';
 import { PAGE_EXCERPT_MAX_CHARS } from '@/config/cat-page-context';
 import { markLinkDown } from '@/services/ai/link-health';
+import { isGroqDailyPoolSpent } from '@/services/ai/groq-capacity';
 import { EmptyCompletion, hasUsableContent } from '@/services/cat/empty-completion';
 import { promptFitsGroqOnDemand, GROQ_CHAT_MAX_TOKENS } from '@/services/ai/groq';
 import { getGroqTpmLimit, recordOpenRouterRateLimit } from '@/services/ai/groq-capacity';
@@ -105,7 +106,21 @@ function overflowsPlatformGroq(
   model: string,
   messages: ToolAugmentedMessage[]
 ): boolean {
-  return provider === 'groq' && !hasByok && !promptFitsGroqOnDemand(messages, model);
+  if (provider !== 'groq' || hasByok) {
+    return false;
+  }
+  // A day that is already spent is as certain a failure as a prompt that does
+  // not fit, and it is learned the same way — from the refusal itself. Without
+  // this, every message pays a guaranteed 429 round-trip to Groq before the
+  // chain moves on, for however many hours remain until the pool resets.
+  //
+  // It stands down only what the vendor actually refused, and only until the
+  // reset time the refusal names. A model never refused is never skipped:
+  // "not asked" is not "spent".
+  if (isGroqDailyPoolSpent(model)) {
+    return true;
+  }
+  return !promptFitsGroqOnDemand(messages, model);
 }
 
 /**

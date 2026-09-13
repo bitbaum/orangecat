@@ -11,7 +11,21 @@
  */
 
 import { PROVIDER_BASE_URLS } from '@/config/ai-provider-runtime';
-import { recordGroqRateLimitHeaders, recordGroqTooLarge } from '@/services/ai/groq-capacity';
+import {
+  recordGroqRateLimitHeaders,
+  recordGroqTooLarge,
+  recordGroqRefusal,
+} from '@/services/ai/groq-capacity';
+
+/** `retry-after` in seconds, when the vendor sends one. */
+function retryAfterSeconds(response: Response): number | null {
+  const raw = response.headers.get('retry-after');
+  if (!raw) {
+    return null;
+  }
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : null;
+}
 // Re-exported so every existing importer of '@/services/ai/groq' keeps working:
 // the split is about file size, not about moving the public surface.
 export {
@@ -245,6 +259,12 @@ export class GroqService {
       if (response.status === 413 && !this.isByok) {
         recordGroqTooLarge(model, message);
       }
+      // Streaming refusals carry the same tokens-per-day prose, and this is the
+      // path Cat's chat actually takes — recording only on the non-streaming
+      // path would have left the main route blind to a spent day.
+      if (response.status === 429 && !this.isByok) {
+        recordGroqRefusal(model, message, retryAfterSeconds(response));
+      }
       throw new GroqAPIError(
         message,
         response.status === 413 ? 'request_too_large' : 'api_error',
@@ -343,7 +363,23 @@ export class GroqService {
         throw new GroqAPIError('Invalid API key', 'invalid_api_key', 401);
       }
       if (response.status === 429) {
-        throw new GroqAPIError('Rate limit exceeded', 'rate_limit', 429);
+        // The body is the ONLY place Groq states its tokens-per-DAY pool, and
+        // this line used to discard it for a fixed string. Headers cannot
+        // replace it: on FleetCrown production 2026-09-13 every header read
+        // healthy (999 of 1000 requests left) while every call was refused.
+        // Recording it lets the pre-flight stop dialling a model whose day is
+        // gone, instead of paying a guaranteed 429 on every message.
+        // PLATFORM key only. A BYOK user exhausting their OWN allowance must
+        // never sideline the platform's identical provider+model for everyone
+        // else — the same rule markLinkDown follows in the orchestrator.
+        if (!this.isByok) {
+          recordGroqRefusal(model, error.error?.message ?? null, retryAfterSeconds(response));
+        }
+        throw new GroqAPIError(
+          error.error?.message || 'Rate limit exceeded',
+          'rate_limit',
+          429
+        );
       }
       // Size, not speed: the request is bigger than one minute's budget. It
       // is never fixed by waiting, so it must not read as a rate limit.
