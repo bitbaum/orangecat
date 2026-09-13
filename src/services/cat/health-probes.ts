@@ -13,7 +13,7 @@
 
 import { PROVIDER_BASE_URLS } from '@/config/ai-provider-runtime';
 import { DEFAULT_FREE_MODEL_ID } from '@/config/ai-models';
-import { promptFitsGroqOnDemand } from '@/services/ai/groq';
+import { promptFitsGroqOnDemand, PLATFORM_GROQ_MODEL } from '@/services/ai/groq';
 import { checkModelRot } from './provider-catalog';
 import { webSearch, describeAttempts } from '@bitbaum/ai-kit/web';
 import { buildCatSystemPrompt } from './system-prompt';
@@ -151,11 +151,18 @@ async function probeProvider(
 }
 
 export function probeGroq(): Promise<ProbeResult> {
+  // The model the PLATFORM actually serves, for the same reason the OpenRouter
+  // probe below stopped hardcoding one. This asked for `llama-3.1-8b-instant`
+  // long after Groq withdrew the whole llama-3.x family — groq-models.ts names
+  // that retirement in its own comments — so the health probe had been asking
+  // for a decommissioned model, and `catCanAnswer` is derived from its answer.
+  // A probe pinned to something the chain does not serve tests nothing a user
+  // depends on.
   return probeProvider(
     'groq',
     'GROQ_API_KEY',
     `${PROVIDER_BASE_URLS.groq}/chat/completions`,
-    'llama-3.1-8b-instant'
+    PLATFORM_GROQ_MODEL
   );
 }
 
