@@ -34,10 +34,13 @@ const POLL_MAX_ATTEMPTS = 120;
  * The revision loop lives here because it is two calls that must look like
  * one action to the user: the note becomes a new prompt, and the new prompt
  * immediately becomes the next version.
+ *
+ * `initialPrompt` seeds a brief Cat wrote. It is only ever a starting value —
+ * nothing runs until the person presses the button.
  */
-export function useStudio(medium: StudioMedium) {
+export function useStudio(medium: StudioMedium, initialPrompt = '') {
   const [capability, setCapability] = useState<StudioMediumAccess[] | null>(null);
-  const [prompt, setPrompt] = useState('');
+  const [prompt, setPrompt] = useState(initialPrompt);
   const [status, setStatus] = useState<StudioStatus>('idle');
   const [error, setError] = useState<string | null>(null);
   const [versions, setVersions] = useState<StudioVersion[]>([]);
@@ -50,7 +53,15 @@ export function useStudio(medium: StudioMedium) {
 
   // Switching medium starts a new piece of work; carrying a half-finished
   // video's prompt into the music tab would be nothing but confusing.
+  //
+  // Skipped on the FIRST run, which is not a switch: the reset would wipe a
+  // brief Cat just handed over before the person ever saw it.
+  const mounted = useRef(false);
   useEffect(() => {
+    if (!mounted.current) {
+      mounted.current = true;
+      return;
+    }
     setPrompt('');
     setVersions([]);
     setStatus('idle');

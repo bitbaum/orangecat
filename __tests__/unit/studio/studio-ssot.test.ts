@@ -18,6 +18,7 @@ import {
 } from '@/config/studio';
 import { ENTITY_TYPES } from '@/config/entity-registry';
 import { SITUATIONAL_SECTIONS } from '@/config/cat-prompt-sections';
+import { ROUTES } from '@/config/routes';
 
 describe('Studio SSOT invariants', () => {
   it('every medium has metadata under its own id', () => {
@@ -58,6 +59,27 @@ describe('Studio SSOT invariants', () => {
     // A revision note longer than the brief it revises means the fallback
     // (prompt + note appended) would blow the prompt ceiling.
     expect(STUDIO_REVISION_LIMITS.max).toBeLessThan(STUDIO_PROMPT_LIMITS.max);
+  });
+
+  it('a Cat brief survives the round trip into the Studio', () => {
+    // The handoff is a URL, so the brief passes through encoding on the way.
+    // A prompt with an ampersand or a quote in it — which any real brief has —
+    // would otherwise arrive truncated, and the person would press the button
+    // on half of what Cat wrote.
+    const brief = 'A slow instrumental: upright bass & brushed drums, "late-night", unhurried';
+    const href = ROUTES.DASHBOARD.STUDIO_BRIEF('music', brief);
+    const params = new URLSearchParams(href.slice(href.indexOf('?') + 1));
+    expect(params.get('medium')).toBe('music');
+    expect(params.get('prompt')).toBe(brief);
+  });
+
+  it('the handoff can only name a medium the Studio has', () => {
+    for (const medium of STUDIO_MEDIUMS) {
+      const href = ROUTES.DASHBOARD.STUDIO_BRIEF(medium, 'x');
+      const named = new URLSearchParams(href.slice(href.indexOf('?') + 1)).get('medium');
+      expect(named).not.toBeNull();
+      expect(isStudioMedium(named as string)).toBe(true);
+    }
   });
 
   it("Cat's Studio section fires on the words people actually use", () => {

@@ -16,11 +16,23 @@ import StudioReviseBar from './StudioReviseBar';
  *
  * Presentational glue only — the loop itself lives in useStudio, because it is
  * two API calls that have to look like one action.
+ *
+ * A brief arriving from Cat is PREFILLED, never auto-run. Watching a render
+ * you did not ask for start on page load is the opposite of participating in
+ * it: the person reads what Cat wrote, changes what they want, and presses go.
  */
-export default function StudioWorkspace() {
-  const [medium, setMedium] = useState<StudioMedium>(STUDIO_MEDIUMS[0]);
+export default function StudioWorkspace({
+  initialMedium = STUDIO_MEDIUMS[0],
+  initialPrompt = '',
+}: {
+  /** Medium Cat chose, when the person arrived from a Cat handoff. */
+  initialMedium?: StudioMedium;
+  /** The brief Cat wrote. Shown, never auto-run — the person presses the button. */
+  initialPrompt?: string;
+}) {
+  const [medium, setMedium] = useState<StudioMedium>(initialMedium);
   const { capability, access, prompt, setPrompt, status, error, current, generate, revise } =
-    useStudio(medium);
+    useStudio(medium, initialPrompt);
 
   const busy = status === 'working';
 
@@ -46,6 +58,7 @@ export default function StudioWorkspace() {
         onGenerate={generate}
         busy={busy}
         hasVersions={Boolean(current)}
+        fromCat={Boolean(initialPrompt) && !current}
       />
 
       {busy && (

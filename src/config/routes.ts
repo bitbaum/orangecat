@@ -414,6 +414,16 @@ export const ROUTES = {
     // Where a creation is MADE, before it becomes a project to finance or a
     // product to sell.
     STUDIO: '/dashboard/studio',
+    /**
+     * The Studio opened with a brief the Cat wrote.
+     *
+     * This is the handoff, and the shape of it is the point: Cat does not
+     * render anything and does not press the button. It prepares the brief,
+     * the portal shows the person what it prepared, and they edit it or run it.
+     * The agent works; the human stays in the loop by seeing and deciding.
+     */
+    STUDIO_BRIEF: (medium: string, prompt: string) =>
+      `/dashboard/studio?medium=${encodeURIComponent(medium)}&prompt=${encodeURIComponent(prompt)}`,
     CAT_PERMISSIONS: '/dashboard/cat/permissions',
     /** Deep link straight to one category's card (see catPermissionAnchorId). */
     CAT_PERMISSIONS_CATEGORY: (category: string) =>

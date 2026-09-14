@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Loader2, Sparkles } from 'lucide-react';
+import { Cat, Loader2, Sparkles } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { ROUTES } from '@/config/routes';
 import { getAIProvider } from '@/data/aiProviders';
@@ -11,6 +11,11 @@ import type { StudioMediumAccess } from '@/services/studio/client';
 /**
  * The brief. One box, one button — the first thing a person sees in the Studio
  * should be somewhere to say what they want, not a rack of settings.
+ *
+ * When Cat wrote the brief, the box arrives full and says so. An explanation
+ * is the difference between "the agent prepared this for you to check" and
+ * "why is there text in my box" — and the whole arrangement only works if the
+ * person can see what was done on their behalf before it happens.
  */
 export default function StudioComposer({
   medium,
@@ -20,6 +25,7 @@ export default function StudioComposer({
   onGenerate,
   busy,
   hasVersions,
+  fromCat = false,
 }: {
   medium: StudioMedium;
   access: StudioMediumAccess | null;
@@ -28,6 +34,8 @@ export default function StudioComposer({
   onGenerate: () => void;
   busy: boolean;
   hasVersions: boolean;
+  /** Cat wrote this brief and nothing has been made from it yet. */
+  fromCat?: boolean;
 }) {
   const meta = STUDIO_MEDIA[medium];
   const locked = access !== null && !access.available;
@@ -56,6 +64,16 @@ export default function StudioComposer({
         </div>
       ) : (
         <>
+          {fromCat && (
+            <p className="mt-4 flex items-start gap-2 rounded-lg border border-default bg-surface-raised/30 p-3 text-sm text-fg-secondary">
+              <Cat className="mt-0.5 h-4 w-4 flex-shrink-0 text-fg-tertiary" aria-hidden />
+              <span>
+                Your Cat wrote this brief from what you told it. Change anything you like — nothing
+                runs until you press the button.
+              </span>
+            </p>
+          )}
+
           <label htmlFor="studio-prompt" className="sr-only">
             Describe what you want to make
           </label>
