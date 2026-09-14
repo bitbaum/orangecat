@@ -61,13 +61,13 @@ export async function notifyLokiProjectFunding(pi: PaymentIntent): Promise<void>
       externalId: pi.id,
     });
     if (!result.ok) {
-      logger.warn('[fc-funding] Loki rejected event', {
+      logger.warn('[loki-funding] Loki rejected event', {
         piId: pi.id,
         status: result.status,
       });
     }
   } catch (err) {
-    logger.error('[fc-funding] notify failed (non-fatal)', {
+    logger.error('[loki-funding] notify failed (non-fatal)', {
       piId: pi.id,
       error: (err as Error).message,
     });
@@ -107,7 +107,7 @@ export async function notifyLokiEntitlement(pi: PaymentIntent): Promise<void> {
       .eq('actor_type', 'user')
       .maybeSingle();
     if (!actor?.id) {
-      logger.warn('[fc-entitlement] no personal actor for buyer — cannot map to Loki', {
+      logger.warn('[loki-entitlement] no personal actor for buyer — cannot map to Loki', {
         buyerId: pi.buyer_id,
       });
       return;
@@ -121,19 +121,19 @@ export async function notifyLokiEntitlement(pi: PaymentIntent): Promise<void> {
       amountBtc: String(pi.amount_btc ?? ''),
     });
     if (!result.ok) {
-      logger.warn('[fc-entitlement] Loki rejected grant', {
+      logger.warn('[loki-entitlement] Loki rejected grant', {
         piId: pi.id,
         status: result.status,
       });
     } else {
-      logger.info('[fc-entitlement] granted', {
+      logger.info('[loki-entitlement] granted', {
         piId: pi.id,
         plan: pass.plan,
         periodDays: pass.periodDays,
       });
     }
   } catch (err) {
-    logger.error('[fc-entitlement] notify failed (non-fatal)', {
+    logger.error('[loki-entitlement] notify failed (non-fatal)', {
       piId: pi.id,
       error: (err as Error).message,
     });

@@ -10,7 +10,7 @@ import type { EntityType } from '@/config/entity-registry';
 /**
  * Loki cross-sell — "build this with an AI fleet".
  *
- * Loki is the sibling execution product (OC = economic layer, FC =
+ * Loki is the sibling execution product (OC = economic layer, Loki =
  * production layer; one shared login via "Login with OrangeCat"). This CTA is
  * the single bridge component; the target URL derives from the integration
  * SSOT in the entity registry.
@@ -20,7 +20,7 @@ import type { EntityType } from '@/config/entity-registry';
  */
 
 // Deep link straight into Loki's create-project dialog (?new=1 opens it,
-// params survive the sign-in redirect — FC PR #56). Unauthenticated users pass
+// params survive the sign-in redirect — Loki PR #56). Unauthenticated users pass
 // through "Continue with OrangeCat" and land in the open dialog.
 const LOKI_BUILD_URL = `${ORANGECAT_LOKI_INTEGRATION.loki.site}/projects?new=1`;
 
