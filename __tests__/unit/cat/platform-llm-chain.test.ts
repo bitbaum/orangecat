@@ -239,3 +239,50 @@ describe('callPlatformJson and JSON mode as a per-model capability', () => {
     ).toBeUndefined();
   });
 });
+
+describe('callPlatformJson records which link answered', () => {
+  it('logs the served link, so a rate has a denominator', async () => {
+    // Failures were logged and wins were not, so nothing could tell a provider
+    // that answers every time from one that has answered nothing in days.
+    const { logger } = await import('@/utils/logger');
+    const { callPlatformJson } = await import('@/services/cat/platform-llm');
+
+    await callPlatformJson('sys', 'user');
+
+    const served = (logger.info as ReturnType<typeof vi.fn>).mock.calls.find(([msg]) =>
+      String(msg).includes('model call served')
+    );
+    expect(served).toBeDefined();
+    expect(served?.[1]).toMatchObject({ link: expect.stringContaining('groq/') });
+  });
+
+  it('logs nothing when every provider failed', async () => {
+    // A win that is logged on the way out of a failure would inflate the
+    // denominator and make a dead chain look healthy.
+    const { logger } = await import('@/utils/logger');
+    fetchMock.mockImplementation(async () => new Response('down', { status: 503 }));
+    const { callPlatformJson } = await import('@/services/cat/platform-llm');
+
+    await callPlatformJson('sys', 'user');
+
+    const served = (logger.info as ReturnType<typeof vi.fn>).mock.calls.filter(([msg]) =>
+      String(msg).includes('model call served')
+    );
+    expect(served).toHaveLength(0);
+  });
+
+  it('never logs the prompt or the answer, only the link', async () => {
+    const { logger } = await import('@/utils/logger');
+    const { callPlatformJson } = await import('@/services/cat/platform-llm');
+
+    await callPlatformJson('SECRET-SYSTEM', 'SECRET-USER');
+
+    const payloads = JSON.stringify(
+      (logger.info as ReturnType<typeof vi.fn>).mock.calls.filter(([msg]) =>
+        String(msg).includes('model call served')
+      )
+    );
+    expect(payloads).not.toContain('SECRET');
+    expect(payloads).not.toContain('ok');
+  });
+});
