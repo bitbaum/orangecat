@@ -107,7 +107,7 @@ export async function requestLokiSite(input: SiteBuildInput): Promise<SiteBuildO
     // written for a person and names the next step (409 → "sign in to
     // Loki once"; 429 → the daily ceiling and why it exists).
     const detail = readDetail(result.body);
-    logger.warn('[fc-site] build request refused', {
+    logger.warn('[loki-site] build request refused', {
       actorId: input.actorId,
       slug,
       status: result.status,
