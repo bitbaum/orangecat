@@ -22,8 +22,7 @@
 import { postSignedToLoki, lokiRailConfigured } from './signed-post';
 import { logger } from '@/utils/logger';
 
-const SITE_URL =
-  process.env.LOKI_SITE_URL || 'https://loki.orangecat.ch/api/orangecat/site';
+const SITE_URL = process.env.LOKI_SITE_URL || 'https://loki.orangecat.ch/api/orangecat/site';
 
 /**
  * What a remote caller may ask for. A strict subset of the register's
@@ -107,7 +106,7 @@ export async function requestLokiSite(input: SiteBuildInput): Promise<SiteBuildO
     // written for a person and names the next step (409 → "sign in to
     // Loki once"; 429 → the daily ceiling and why it exists).
     const detail = readDetail(result.body);
-    logger.warn('[fc-site] build request refused', {
+    logger.warn('[loki-site] build request refused', {
       actorId: input.actorId,
       slug,
       status: result.status,
