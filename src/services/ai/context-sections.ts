@@ -400,6 +400,45 @@ export function renderGithubRepos(githubRepos: FullUserContext['githubRepos']): 
   return `## GitHub Repositories\nThe user's public GitHub projects (most recently pushed first):\n${lines.join('\n')}`;
 }
 
+export function renderStudioMap(map: FullUserContext['studioMap']): string | null {
+  if (!map || !map.projects || map.projects.length === 0) {
+    return null;
+  }
+  const pillars = (map.pillars ?? []).map(p => `- **${p.slug}** (${p.layer} layer): ${p.role}`);
+  const lines = map.projects.map(p => {
+    const bits: string[] = [];
+    bits.push(
+      `${p.layer}, ${p.status}${p.owner && p.owner !== 'bitbaum' ? `, for ${p.owner}` : ''}`
+    );
+    if (p.urls?.live) bits.push(p.urls.live);
+    if (p.urls?.orangecat) bits.push(`on OrangeCat ${p.urls.orangecat}`);
+    if (p.now?.openRuns)
+      bits.push(`${p.now.openRuns} run${p.now.openRuns === 1 ? '' : 's'} in flight`);
+    if (p.now?.lastLog)
+      bits.push(`last: ${p.now.lastLog.date} ${p.now.lastLog.done.slice(0, 100)}`);
+    if (p.next) bits.push(`next: ${p.next.slice(0, 100)}`);
+    const what = p.what ? ` — ${p.what.slice(0, 120)}` : '';
+    return `- **${p.name}** (${p.slug})${what} [${bits.join('; ')}]`;
+  });
+  const s = map.summary;
+  const head = s
+    ? `${s.projects} projects, ${s.live} live, ${s.clients} for clients, ${s.inFlight} run${s.inFlight === 1 ? '' : 's'} in flight.`
+    : '';
+  return `## The studio (bitbaum)
+The products and client systems this studio builds, from Loki's live map (${map.generatedAt.slice(0, 10)}). ${head}
+${
+  map.thesis
+    ? `Thesis: ${map.thesis}
+`
+    : ''
+}${
+    pillars.length
+      ? `${pillars.join('\n')}
+`
+      : ''
+  }${lines.join('\n')}`;
+}
+
 export function renderTasks(tasks: FullUserContext['tasks'], locale: string): string | null {
   if (tasks.length === 0) {
     return null;

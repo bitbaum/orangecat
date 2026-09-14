@@ -136,6 +136,8 @@ export interface StakeholderSummary {
 }
 
 /** One of the user's public GitHub repositories (cached). */
+import type { StudioMapSummary } from './studio-map-fetcher';
+
 export interface GitHubRepoSummary {
   name: string;
   description: string | null;
@@ -260,6 +262,9 @@ export interface FullUserContext {
   projectActivity: ProjectActivityEvent[];
   stakeholders: StakeholderSummary[];
   githubRepos: GitHubRepoSummary[];
+  /** The studio map from Loki (every bitbaum project: purpose, state,
+   *  doors, last movement). Optional: absent or null when Loki is unreachable. */
+  studioMap?: StudioMapSummary | null;
   paymentCapabilities: PaymentCapabilities;
   /**
    * Outcome feedback loop: what actually happened to the entities Cat created

@@ -10,6 +10,7 @@
  */
 
 import type { AnySupabaseClient } from '@/lib/supabase/types';
+import { fetchStudioMapForCat } from './studio-map-fetcher';
 import { logger } from '@/utils/logger';
 import { getAdminClient } from '@/lib/supabase/admin';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -407,6 +408,7 @@ export async function fetchFullContextForCat(
     githubRepos,
     economicProfile,
     trackRecord,
+    studioMap,
   ] = await Promise.all([
     fetchProfileForCat(supabase, userId),
     fetchDocumentsForCat(supabase, userId),
@@ -423,6 +425,7 @@ export async function fetchFullContextForCat(
     fetchGitHubReposForCat(supabase, userId),
     getEconomicProfile(supabase, userId),
     getCatTrackRecord(supabase, userId),
+    fetchStudioMapForCat(),
   ]);
 
   const runtime = await fetchRuntimeContextForCat(supabase, userId, runtimeHints, profile);
@@ -452,6 +455,7 @@ export async function fetchFullContextForCat(
     projectActivity,
     stakeholders,
     githubRepos,
+    studioMap,
     paymentCapabilities,
     runtime,
     stats: {
