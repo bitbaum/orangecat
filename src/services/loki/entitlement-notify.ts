@@ -23,8 +23,7 @@ import type { PaymentIntent } from '@/domain/payments/types';
 import { parseLokiPass } from '@/config/loki-passes';
 
 const LOKI_URL =
-  process.env.LOKI_ENTITLEMENT_URL ||
-  'https://loki.orangecat.ch/api/orangecat/entitlement';
+  process.env.LOKI_ENTITLEMENT_URL || 'https://loki.orangecat.ch/api/orangecat/entitlement';
 
 // parseLokiPass + the plan set live in the config SSOT (the seed writes
 // the very tags this reads), re-exported here for existing importers.

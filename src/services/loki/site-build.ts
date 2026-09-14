@@ -22,8 +22,7 @@
 import { postSignedToLoki, lokiRailConfigured } from './signed-post';
 import { logger } from '@/utils/logger';
 
-const SITE_URL =
-  process.env.LOKI_SITE_URL || 'https://loki.orangecat.ch/api/orangecat/site';
+const SITE_URL = process.env.LOKI_SITE_URL || 'https://loki.orangecat.ch/api/orangecat/site';
 
 /**
  * What a remote caller may ask for. A strict subset of the register's
