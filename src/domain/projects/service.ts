@@ -62,6 +62,7 @@ export async function createProject(
       goal_amount: payload.goal_amount ?? null,
       currency: payload.currency ?? PLATFORM_DEFAULT_CURRENCY,
       funding_purpose: payload.funding_purpose ?? null,
+      vision: payload.vision ?? null,
       work_status: payload.work_status ?? null,
       bitcoin_address: payload.bitcoin_address ?? null,
       lightning_address: payload.lightning_address ?? null,

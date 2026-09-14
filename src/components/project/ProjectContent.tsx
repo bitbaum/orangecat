@@ -22,6 +22,7 @@ interface ProjectContentProps {
     title?: string;
     description: string;
     funding_purpose: string | null;
+    vision?: string | null;
     work_status?: string | null;
     website_url: string | null;
     category: string | null;
@@ -52,6 +53,18 @@ export default function ProjectContent({ project }: ProjectContentProps) {
             </h3>
             <p className="text-fg-primary whitespace-pre-wrap">{project.description}</p>
           </section>
+
+          {/* Where this is going — the end state. Sits between About (what it
+              is) and Current status (what is happening), because that is the
+              order a reader deciding whether to back it actually asks in. */}
+          {project.vision && (
+            <section aria-labelledby="vision-heading">
+              <h3 id="vision-heading" className="text-lg font-semibold mb-2">
+                Where this is going
+              </h3>
+              <p className="text-fg-primary whitespace-pre-wrap">{project.vision}</p>
+            </section>
+          )}
 
           {/* Where the work stands — the "what is happening now" the About text
               cannot answer, written by the owner. */}

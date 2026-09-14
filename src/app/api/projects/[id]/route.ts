@@ -117,6 +117,7 @@ const buildProjectUpdatePayload = createUpdatePayloadBuilder([
   // Currency is for display/input only - all transactions are in BTC
   { from: 'currency' },
   { from: 'funding_purpose', transform: entityTransforms.emptyStringToNull },
+  { from: 'vision', transform: entityTransforms.emptyStringToNull },
   { from: 'work_status', transform: entityTransforms.emptyStringToNull },
   { from: 'bitcoin_address', transform: entityTransforms.emptyStringToNull },
   { from: 'lightning_address', transform: entityTransforms.emptyStringToNull },

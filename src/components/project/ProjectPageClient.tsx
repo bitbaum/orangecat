@@ -30,6 +30,7 @@ interface Project {
   goal_amount: number | null;
   currency: string;
   funding_purpose: string | null;
+  vision?: string | null;
   work_status?: string | null;
   bitcoin_address: string | null;
   lightning_address: string | null;

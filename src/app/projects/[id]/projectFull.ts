@@ -30,6 +30,8 @@ type ProjectFull = {
   bitcoin_address: string | null;
   lightning_address: string | null;
   funding_purpose: string | null;
+  vision?: string | null;
+  work_status?: string | null;
   website_url: string | null;
   tags: string[] | null;
   created_at: string;

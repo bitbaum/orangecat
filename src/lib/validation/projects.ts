@@ -13,6 +13,10 @@ export const projectSchema = z.object({
     .string()
     .min(1, 'Project description is required')
     .max(2000, 'Description must be 2000 characters or less'),
+  // Where the project is GOING — the end state, as distinct from what it is
+  // (description) and where it stands (work_status). Capped tighter than the
+  // description on purpose: a vision that needs 2000 characters is a plan.
+  vision: z.string().max(1000, 'Vision must be 1000 characters or less').optional().nullable(),
   goal_amount: z
     .number({
       error: issue =>
