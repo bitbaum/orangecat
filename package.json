@@ -188,7 +188,7 @@
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^16.3.2",
-    "@playwright/mcp": "^0.0.79",
+    "@playwright/mcp": "^0.0.80",
     "@playwright/test": "^1.62.1",
     "@swc/core": "^1.16.1",
     "@tailwindcss/postcss": "^4.3.3",
