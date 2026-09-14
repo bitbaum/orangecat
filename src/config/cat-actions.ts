@@ -35,6 +35,7 @@ import {
   Zap,
   type LucideIcon,
   Hammer,
+  Globe,
 } from 'lucide-react';
 import { API_ROUTES } from '@/config/api-routes';
 import { getApiEndpoint } from '@/config/entity-registry';
@@ -600,6 +601,44 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
    * The autonomy ladder refuses `auto` for high risk, so this can never become
    * a thing Cat does unattended.
    */
+  /**
+   * Ask the registries whether a name is free. Read-only and low risk: an
+   * outbound RDAP query per candidate, nothing created, nothing spent. It is
+   * the rung before build_site — a person choosing a name for a site should
+   * not have to leave the conversation to find out it is taken.
+   */
+  check_domain_availability: {
+    id: 'check_domain_availability',
+    name: 'Check Domain Availability',
+    description:
+      'Check whether a domain name (or a word across common endings) is registered, straight from the registries. Report "no registration found" as free and "unknown" as unverified — never as free.',
+    category: 'entities',
+    icon: Globe,
+    riskLevel: 'low',
+    requiresConfirmation: false,
+    parameters: [
+      {
+        name: 'query',
+        type: 'string',
+        required: true,
+        description: 'A word, phrase, or full domain (e.g. "orangecatcoin" or "synctattoo.com")',
+      },
+      {
+        name: 'tlds',
+        type: 'string',
+        required: false,
+        description:
+          'Comma-separated endings to check (e.g. "com, ch"); defaults to the common set',
+      },
+    ],
+    examples: [
+      'Is orangecatcoin.com available?',
+      'Check if synctattoo is free as .com or .ch',
+      'Find me a domain for my bakery',
+    ],
+    enabled: true,
+  },
+
   build_site: {
     id: 'build_site',
     name: 'Build a Website',

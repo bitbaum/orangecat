@@ -7,7 +7,7 @@ import { DomainSearch } from '@/components/domains/DomainSearch';
 import {
   DOMAINS_SERVICE_URL,
   WEBSITE_BUILD_SERVICE_URL,
-  CUSTOM_DOMAIN_PRICE_CHF_PER_MONTH,
+  CUSTOM_DOMAIN_PRICE_CHF_PER_YEAR,
 } from '@/config/domains-offer';
 
 export const metadata: Metadata = {
@@ -110,15 +110,15 @@ export default function DomainsPage() {
             </div>
             <div className="rounded-xl border border-interactive bg-surface-raised p-8">
               <h3 className="text-lg font-semibold text-fg-primary">Custom domain</h3>
-              {CUSTOM_DOMAIN_PRICE_CHF_PER_MONTH === null ? (
+              {CUSTOM_DOMAIN_PRICE_CHF_PER_YEAR === null ? (
                 <>
                   <p className="mt-1 text-3xl font-bold text-fg-primary">Free for now</p>
                   <p className="mt-1 text-sm text-fg-secondary">Pricing to be announced</p>
                 </>
               ) : (
                 <p className="mt-1 text-3xl font-bold text-fg-primary">
-                  CHF {CUSTOM_DOMAIN_PRICE_CHF_PER_MONTH}
-                  <span className="text-base font-normal text-fg-secondary">/month</span>
+                  CHF {CUSTOM_DOMAIN_PRICE_CHF_PER_YEAR}
+                  <span className="text-base font-normal text-fg-secondary">/year</span>
                 </p>
               )}
               <ul className="mt-4 space-y-2 text-fg-secondary">
@@ -137,7 +137,7 @@ export default function DomainsPage() {
             </div>
           </div>
           <p className="mt-6 text-center text-sm text-fg-tertiary">
-            {CUSTOM_DOMAIN_PRICE_CHF_PER_MONTH === null
+            {CUSTOM_DOMAIN_PRICE_CHF_PER_YEAR === null
               ? 'Nothing is charged while pricing is being worked out — early sites keep whatever terms they start on. Questions?'
               : 'Paid in Bitcoin over Lightning — the invoice takes a minute. Questions first?'}{' '}
             <Link href="/profiles/mao" className="underline">

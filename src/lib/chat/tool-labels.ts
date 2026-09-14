@@ -47,6 +47,7 @@ export const VERB_FORMS: Record<string, { gerund: string; past: string }> = {
   book: { gerund: 'Booking', past: 'Booked' },
   build: { gerund: 'Building', past: 'Built' },
   cancel: { gerund: 'Cancelling', past: 'Cancelled' },
+  check: { gerund: 'Checking', past: 'Checked' },
   comment: { gerund: 'Commenting', past: 'Commented' },
   complete: { gerund: 'Completing', past: 'Completed' },
   connect: { gerund: 'Connecting', past: 'Connected' },

@@ -105,6 +105,9 @@ export const DATABASE_TABLES = {
   // Platform integration (outbound API keys for Loki, hirn.li, ...)
   INTEGRATION_KEYS: 'integration_keys',
   IDEMPOTENCY_RESULTS: 'idempotency_results',
+  // Domain research — every RDAP availability check, remembered
+  DOMAIN_LOOKUPS: 'domain_lookups',
+
   WEBHOOK_ENDPOINTS: 'webhook_endpoints',
   WEBHOOK_DELIVERIES: 'webhook_deliveries',
 

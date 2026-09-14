@@ -18,6 +18,7 @@ import {
 } from '@/lib/rate-limit';
 import { CANDIDATE_TLDS, DOMAIN_SEARCH_DISCLAIMER } from '@/config/domain-search';
 import { checkDomains } from '@/services/domains/availability';
+import { recordDomainLookups } from '@/services/domains/record';
 import { suggestDomains, toSeed } from '@/services/domains/suggest';
 import { logger } from '@/utils/logger';
 
@@ -54,6 +55,8 @@ export async function GET(request: NextRequest) {
     }
 
     const results = await checkDomains(candidates);
+    // History, never on the critical path: the answer goes out regardless.
+    void recordDomainLookups(results, { source: 'web' });
 
     const response = apiSuccess({
       query: q,
