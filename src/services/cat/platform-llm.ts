@@ -97,7 +97,11 @@ function jsonModeRuns(chain: Link[]): Array<{ jsonMode: boolean; links: Link[] }
  * Nothing about the prompt or the answer is logged — only which link served.
  */
 function served(result: { text: string; id: string }): string {
-  logger.info('platform-llm: model call served', { link: result.id }, 'PlatformLLM');
+  // always: production logs at warn, and the box sweep that divides wins by
+  // losses must be able to see the wins.
+  logger.info('platform-llm: model call served', { link: result.id }, 'PlatformLLM', {
+    always: true,
+  });
   return result.text;
 }
 

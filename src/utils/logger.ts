@@ -141,8 +141,23 @@ class Logger {
     this.output(this.formatLogEntry('debug', message, data, source));
   }
 
-  info(message: string, data?: unknown, source?: string): void {
-    if (!this.shouldLog('info')) {
+  /**
+   * `{ always: true }` is for an operational fact a MONITOR reads — a counter
+   * or an outcome — and emits it whatever the level.
+   *
+   * The level exists to suppress chatty development output, not to suppress
+   * numbers something outside the process depends on. Production sits at
+   * `warn`, so platform-llm's "model call served" line shipped, passed CI, and
+   * was INERT in production until a live journal read caught it: the sweep that
+   * divides wins by losses could only ever see losses.
+   *
+   * An option rather than a new method on purpose — two dozen test files mock
+   * this module by hand, and a method they do not know about is undefined at
+   * the call site. Never use it for anything a user typed: this line is
+   * guaranteed to be written down.
+   */
+  info(message: string, data?: unknown, source?: string, opts?: { always?: boolean }): void {
+    if (!opts?.always && !this.shouldLog('info')) {
       return;
     }
     this.output(this.formatLogEntry('info', message, data, source));
