@@ -84,6 +84,23 @@ function jsonModeRuns(chain: Link[]): Array<{ jsonMode: boolean; links: Link[] }
   return runs;
 }
 
+/**
+ * Record which link actually answered.
+ *
+ * Failures were logged and wins were not, so nothing could tell a provider
+ * that answers every time from one that has answered nothing in days — the
+ * fallback chain served both cases identically. Groq spent days answering 400
+ * to every structured call with no symptom beyond a slightly slower reply.
+ * `CompleteResult.id` already carries `provider/model`, so the win costs one
+ * line, and the box sweep (fleetcrown: ai-provider-check.sh) divides the two.
+ *
+ * Nothing about the prompt or the answer is logged — only which link served.
+ */
+function served(result: { text: string; id: string }): string {
+  logger.info('platform-llm: model call served', { link: result.id }, 'PlatformLLM');
+  return result.text;
+}
+
 /** Did this chain failure include a model refusing `response_format` itself? */
 function mentionsJsonModeRejection(err: unknown): boolean {
   if (err instanceof ChainExhaustedError) {
@@ -278,7 +295,7 @@ export async function callPlatformJson(
 
   for (const run of runs) {
     try {
-      return (await attempt(run.jsonMode, run.links)).text;
+      return served(await attempt(run.jsonMode, run.links));
     } catch (err) {
       failures.push(err);
       // A rejection we had not recorded yet: the hook above has just learned
@@ -286,7 +303,7 @@ export async function callPlatformJson(
       // rather than making the user pay for the discovery.
       if (run.jsonMode && mentionsJsonModeRejection(err)) {
         try {
-          return (await attempt(false, run.links)).text;
+          return served(await attempt(false, run.links));
         } catch (retryErr) {
           failures.push(retryErr);
         }
