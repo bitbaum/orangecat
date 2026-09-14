@@ -27,8 +27,8 @@ importers:
         specifier: ^1.6.0
         version: 1.6.0(react@19.2.8)
       '@bitbaum/mail-kit':
-        specifier: ^0.1.0
-        version: 0.1.0
+        specifier: ^0.1.1
+        version: 0.1.1
       '@hono/node-server':
         specifier: ^2.1.1
         version: 2.1.1(hono@4.13.5)
@@ -522,8 +522,8 @@ packages:
       react:
         optional: true
 
-  '@bitbaum/mail-kit@0.1.0':
-    resolution: {integrity: sha512-RbFBDANTUEb2/O2duSXIp+lb8y9ycrdbSTPnvoQ8iZOZsfxQZLseKzgCZumN31q7jRbVNHjQRao0envGWsFJ5Q==}
+  '@bitbaum/mail-kit@0.1.1':
+    resolution: {integrity: sha512-3JfaeuwkI+8TVGeSDrr8/esaWkv2d7UAcNg1Xu5HHu6k3cBzuSaLGhuzHp0KlAJgGa2QEQIqtE7W1+PosKFOjw==}
     engines: {node: '>=20'}
 
   '@braintree/sanitize-url@7.1.2':
@@ -6327,7 +6327,7 @@ snapshots:
     optionalDependencies:
       react: 19.2.8
 
-  '@bitbaum/mail-kit@0.1.0': {}
+  '@bitbaum/mail-kit@0.1.1': {}
 
   '@braintree/sanitize-url@7.1.2': {}
 
