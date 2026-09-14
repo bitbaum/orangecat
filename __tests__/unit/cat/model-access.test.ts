@@ -72,6 +72,14 @@ describe('getUsableModels — access derivation', () => {
     expect(access.models.every(m => m.source === 'free')).toBe(true);
   });
 
+  it("the user's own endpoint opens the custom-model door — no registry can name its models", async () => {
+    const access = await getUsableModels(fakeSupabase({ providers: ['custom'] }), 'u1');
+    expect(access.allowsCustomModel).toBe(true);
+    expect(access.byokProviders).toContain('custom');
+    // But it unlocks no PAID registry model: those are served by vendors, not by that box.
+    expect(access.locked).toHaveLength(PAID_COUNT);
+  });
+
   it('a non-aggregator key (e.g. xai) does not open the custom-model door', async () => {
     const access = await getUsableModels(fakeSupabase({ providers: ['xai'] }), 'u1');
     expect(access.allowsCustomModel).toBe(false);

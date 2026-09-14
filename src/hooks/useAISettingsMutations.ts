@@ -7,6 +7,7 @@ import { DATABASE_TABLES } from '@/config/database-tables';
 import { API_ROUTES } from '@/config/api-routes';
 import { unwrapApiResponse } from '@/lib/api/client-response';
 import type { AISettingsState, UserAIPreferences } from './useAISettings';
+import type { AddKeyInput } from '@/data/aiProviders';
 import type { Dispatch, SetStateAction } from 'react';
 
 interface MutationsProps {
@@ -17,7 +18,7 @@ interface MutationsProps {
 
 interface UseAISettingsMutationsReturn {
   updatePreferences: (updates: Partial<UserAIPreferences>) => Promise<UserAIPreferences>;
-  addKey: (params: { provider: string; apiKey: string; keyName: string }) => Promise<void>;
+  addKey: (params: AddKeyInput) => Promise<void>;
   deleteKey: (keyId: string) => Promise<void>;
   setPrimaryKey: (keyId: string) => Promise<void>;
   completeOnboarding: () => Promise<UserAIPreferences>;
@@ -69,7 +70,7 @@ export function useAISettingsMutations({
   );
 
   const addKey = useCallback(
-    async (params: { provider: string; apiKey: string; keyName: string }) => {
+    async (params: AddKeyInput) => {
       const response = await fetch(API_ROUTES.USER.API_KEYS, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

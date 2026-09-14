@@ -6,7 +6,9 @@
 import { Lightbulb } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { cn } from '@/lib/utils';
-import { wiredProviders } from '@/data/aiProviders';
+// Vendors only: this wizard collects a key and nothing else, and the user's
+// own endpoint needs a URL too — that lives in Settings → AI.
+import { wiredVendorProviders } from '@/data/aiProviders';
 import { aiOnboardingContent } from '@/lib/ai-guidance';
 
 interface ProviderStepProps {
@@ -24,7 +26,7 @@ export function ProviderStep({ selectedProvider, onSelectProvider }: ProviderSte
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {wiredProviders.map(p => (
+        {wiredVendorProviders.map(p => (
           <Card
             key={p.id}
             className={cn(

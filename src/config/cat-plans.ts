@@ -186,10 +186,11 @@ export const CAT_PLANS: CatPlan[] = [
   {
     id: 'byok',
     name: 'Bring your own key',
-    tagline: 'Any provider. Your bill. No markup.',
+    tagline: 'Any provider. Any model. Your bill. No markup.',
     priceCopy: 'CHF 0 / mo to OrangeCat',
     bullets: [
-      `Six providers wired direct: ${CAT_WIRED_PROVIDERS.join(', ')}`,
+      `${CAT_WIRED_PROVIDERS.length} providers wired direct: ${CAT_WIRED_PROVIDERS.join(', ')}`,
+      'Or any OpenAI-compatible server you run — vLLM, llama.cpp, Ollama, LiteLLM, a model you trained yourself',
       'Want Claude / GPT / Gemini? OpenRouter fronts 200+ models with one key',
       'Cat routes through your key — OrangeCat never sees your bill, never marks it up',
       'Keys encrypted at rest, scrubbed from logs, never echoed back to the client',

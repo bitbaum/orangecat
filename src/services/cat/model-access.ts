@@ -14,6 +14,7 @@ import { getAvailableModels, getFreeModels, type AIModelMetadata } from '@/confi
 import { getCreditBalance } from '@/services/cat/credits';
 import { MIN_FRONTIER_BALANCE_BTC } from '@/services/cat/credit-metering';
 import { DATABASE_TABLES } from '@/config/database-tables';
+import { CUSTOM_PROVIDER_ID } from '@/data/aiProviders';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 
 /** How a model is served for this specific user. */
@@ -48,9 +49,10 @@ export interface ModelAccess {
   /** Verified BYOK provider ids the user holds (lowercased). */
   byokProviders: string[];
   /**
-   * True only when the user has a verified OpenRouter key — the one provider
-   * whose single key routes arbitrary model ids. Gates the custom-model input:
-   * no free-text entry of models you cannot reach.
+   * True when the user holds a verified OpenRouter key (one key routes
+   * arbitrary model ids) or their own endpoint (whose models no registry can
+   * name). Gates the custom-model input: no free-text entry of models you
+   * cannot reach.
    */
   allowsCustomModel: boolean;
   creditBalanceBtc: number;
@@ -109,6 +111,7 @@ export async function getUsableModels(
   ]);
 
   const hasAggregatorKey = byokProviders.includes(AGGREGATOR_PROVIDER);
+  const hasOwnEndpoint = byokProviders.includes(CUSTOM_PROVIDER_ID);
   const hasCredits = creditBalanceBtc >= MIN_FRONTIER_BALANCE_BTC;
 
   const models: UsableModel[] = [];
@@ -141,7 +144,7 @@ export async function getUsableModels(
     models,
     locked,
     byokProviders,
-    allowsCustomModel: hasAggregatorKey,
+    allowsCustomModel: hasAggregatorKey || hasOwnEndpoint,
     creditBalanceBtc,
   };
 }

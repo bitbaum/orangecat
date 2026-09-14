@@ -1,9 +1,10 @@
 /**
  * Cat Provider Resolver
  *
- * Determines which AI provider (Groq / OpenRouter) and model to use,
- * resolves BYOK keys, enforces platform usage limits, and returns a
- * ready-to-use AI service pair with all metadata the route needs.
+ * Determines which AI provider and model to use — a wired vendor, the
+ * platform chain, or the user's own OpenAI-compatible endpoint — resolves
+ * BYOK keys, enforces platform usage limits, and returns a ready-to-use AI
+ * service pair with all metadata the route needs.
  */
 
 import { createApiKeyService } from '@/services/ai/api-key-service';
@@ -29,7 +30,7 @@ import { buildPlatformProviders } from '@/services/ai/platform-providers';
 import { GROQ_KEY_HEADER, OPENROUTER_KEY_HEADER } from '@/config/http-headers';
 import { ROUTES } from '@/config/routes';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
-import type { WiredProviderId } from '@/data/aiProviders';
+import { CUSTOM_PROVIDER_ID, type WiredProviderId } from '@/data/aiProviders';
 
 // The routable-provider union IS the wired list — hand-typing it twice let
 // the two drift.
@@ -143,9 +144,38 @@ export async function resolveProvider(
       ? m
       : DEFAULT_GROQ_MODEL;
 
+  const explicitModel =
+    requestedModel && requestedModel !== 'auto' && requestedModel !== 'any' ? requestedModel : null;
+
   // A concrete step for one BYOK key. Returns null for unknown/unconfigured
   // providers, which are then skipped from the chain.
-  const buildKeyStep = (prov: string, key: string): ChainStep | null => {
+  const buildKeyStep = (
+    prov: string,
+    key: string,
+    endpoint?: { baseUrl: string | null; defaultModel: string | null }
+  ): ChainStep | null => {
+    if (prov === CUSTOM_PROVIDER_ID) {
+      // The user's own server. Nothing here comes from a registry: the URL
+      // and the model are both the row's, because only the person running
+      // the box knows what it serves. A row without them cannot be a step.
+      const baseUrl = endpoint?.baseUrl;
+      const model = explicitModel ?? endpoint?.defaultModel;
+      if (!baseUrl || !model) {
+        return null;
+      }
+      return {
+        provider: CUSTOM_PROVIDER_ID,
+        modelToUse: model,
+        aiService: createOpenAICompatibleServiceWithByok({
+          apiKey: key,
+          baseUrl,
+          providerId: CUSTOM_PROVIDER_ID,
+        }),
+        hasByok: true,
+        toolEndpoint: completionsUrl(baseUrl),
+        toolKey: key,
+      };
+    }
     if (prov === 'groq') {
       return {
         provider: 'groq',
@@ -157,14 +187,13 @@ export async function resolveProvider(
       };
     }
     if (prov === 'openrouter') {
-      const explicit = requestedModel && requestedModel !== 'auto' && requestedModel !== 'any';
       let model: string;
-      if (explicit) {
+      if (explicitModel) {
         // BYOK: the user pays for their own OpenRouter key, so trust whatever
         // model id they chose — including any of OpenRouter's 200+ models that
         // aren't in our curated registry. (Platform/non-BYOK usage goes through
         // buildPlatformProviders, which stays registry-constrained.)
-        model = requestedModel;
+        model = explicitModel;
       } else {
         model = createAutoRouter().selectModel({ message, conversationHistory: [] }).model;
         if (!getModelMetadata(model)) {
@@ -185,10 +214,7 @@ export async function resolveProvider(
       if (!rt) {
         return null;
       }
-      const model =
-        requestedModel && requestedModel !== 'auto' && requestedModel !== 'any'
-          ? requestedModel
-          : (rt.defaultModel ?? DEFAULT_FREE_MODEL_ID);
+      const model = explicitModel ?? rt.defaultModel ?? DEFAULT_FREE_MODEL_ID;
       return {
         provider: prov as AIProvider,
         modelToUse: model,
@@ -266,14 +292,21 @@ export async function resolveProvider(
   const storedKeys = evalLock ? [] : await keyService.listDecryptedKeysOrdered(userId);
   if (!evalLock) {
     for (const k of storedKeys) {
-      if (seenKeys.has(k.key)) {
+      // Dedup on the credential. For the user's own endpoint the credential
+      // is (url, key) — two no-auth servers share an empty key and must
+      // both stay in the chain.
+      const identity = k.provider === CUSTOM_PROVIDER_ID ? `${k.baseUrl}\n${k.key}` : k.key;
+      if (seenKeys.has(identity)) {
         continue; // a header already supplied this exact key
       }
-      seenKeys.add(k.key);
+      seenKeys.add(identity);
       entries.push({
         order: k.sortOrder,
         build: () => {
-          const s = buildKeyStep(k.provider, k.key);
+          const s = buildKeyStep(k.provider, k.key, {
+            baseUrl: k.baseUrl,
+            defaultModel: k.defaultModel,
+          });
           return s ? [s] : [];
         },
       });

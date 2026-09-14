@@ -17,9 +17,11 @@ import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from 'crypt
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { logger } from '@/utils/logger';
 import { PROVIDER_BASE_URLS } from '@/config/ai-provider-runtime';
-import { WIRED_PROVIDER_IDS } from '@/data/aiProviders';
+import { WIRED_VENDOR_IDS, isCustomProvider } from '@/data/aiProviders';
 import { PLATFORM_CHAIN_ID } from '@/services/ai/key-chain';
 import { apiErrorMessage } from '@/lib/api/errorMessage';
+import { checkPublicUrl } from '@/lib/security/ssrfGuard';
+import { bearerHeaders } from '@/services/ai/bearer';
 
 // ==================== TYPES ====================
 
@@ -32,6 +34,10 @@ export interface UserApiKey {
   is_valid: boolean;
   is_primary: boolean;
   sort_order: number;
+  /** OpenAI-compatible base URL — set only for the user's own endpoint (provider 'custom'). */
+  base_url: string | null;
+  /** Model sent to that endpoint when the user hasn't picked one for the turn. */
+  default_model: string | null;
   last_validated_at: string | null;
   last_used_at: string | null;
   total_requests: number;
@@ -54,6 +60,18 @@ interface KeyValidationResult {
     requestsRemaining: number;
     requestsLimit: number;
   };
+  /** Model ids the endpoint lists — only read for the user's own endpoint. */
+  models?: string[];
+}
+
+/** A stored key with everything the resolver needs to build a chain step. */
+export interface DecryptedKeyRow {
+  id: string;
+  provider: string;
+  key: string;
+  sortOrder: number;
+  baseUrl: string | null;
+  defaultModel: string | null;
 }
 
 // ==================== ENCRYPTION ====================
@@ -102,7 +120,9 @@ function decryptApiKey(encryptedKey: string): string {
   const key = getEncryptionKey();
   const [ivHex, authTagHex, encrypted] = encryptedKey.split(':');
 
-  if (!ivHex || !authTagHex || !encrypted) {
+  // `encrypted` may legitimately be '' — a self-hosted endpoint with no auth
+  // stores an empty key, and AES-GCM authenticates an empty plaintext fine.
+  if (!ivHex || !authTagHex || encrypted === undefined) {
     throw new Error('Invalid encrypted key format');
   }
 
@@ -122,11 +142,22 @@ function decryptApiKey(encryptedKey: string): string {
  * Generate key hint (last 4 characters)
  */
 function generateKeyHint(apiKey: string): string {
+  if (apiKey.length === 0) {
+    return 'no key';
+  }
   if (apiKey.length < 8) {
     return '****';
   }
   return `...${apiKey.slice(-4)}`;
 }
+
+/** Trailing slashes off, so `${baseUrl}/chat/completions` never doubles one. */
+export function normalizeBaseUrl(url: string): string {
+  return url.trim().replace(/\/+$/, '');
+}
+
+/** A self-hosted box on a slow uplink still has to answer /models in this. */
+const VALIDATION_TIMEOUT_MS = 10_000;
 
 /**
  * Per-provider auth-check endpoint. All return 200 on a valid key, 401/403
@@ -139,7 +170,7 @@ function generateKeyHint(apiKey: string): string {
  * remaining rate-limit budget, which we forward to the UI.
  */
 const PROVIDER_AUTH_ENDPOINTS: Record<string, string> = Object.fromEntries(
-  WIRED_PROVIDER_IDS.map(id => [
+  WIRED_VENDOR_IDS.map(id => [
     id,
     // OpenRouter's /auth/key also returns rate-limit budget; everyone else
     // gets the cheapest authenticated endpoint, /models.
@@ -163,8 +194,32 @@ export class ApiKeyService {
     keyName: string;
     apiKey: string;
     isPrimary?: boolean;
+    /** Required for the user's own endpoint; ignored for vendors. */
+    baseUrl?: string;
+    /** For the user's own endpoint; falls back to the first model it lists. */
+    defaultModel?: string;
   }): Promise<{ success: boolean; key?: UserApiKey; error?: string }> {
     const { userId, provider, keyName, apiKey, isPrimary = false } = params;
+    const custom = isCustomProvider(provider);
+
+    // The user's own endpoint is fetched from OUR server, so the URL gets the
+    // same SSRF policy as webhook targets: public http(s) only, never
+    // localhost, RFC1918, link-local or cloud metadata. A LAN box is reached
+    // the other way round — from the browser, via "Run locally".
+    let baseUrl: string | null = null;
+    if (custom) {
+      if (!params.baseUrl) {
+        return { success: false, error: 'Base URL is required for your own endpoint' };
+      }
+      baseUrl = normalizeBaseUrl(params.baseUrl);
+      const reach = await checkPublicUrl(baseUrl);
+      if (!reach.ok) {
+        return {
+          success: false,
+          error: `That URL cannot be used from OrangeCat's server (${reach.reason}). A machine on your own network is reached from the browser instead — see "Run locally".`,
+        };
+      }
+    }
 
     // Server-side validation hits each provider's own auth/models endpoint
     // (see PROVIDER_AUTH_ENDPOINTS). The user gets immediate, accurate
@@ -172,9 +227,24 @@ export class ApiKeyService {
     // caught here instead of silently saving and failing later in the chat
     // route. Unknown providers (not in the endpoint map) skip the network
     // check and trust the format-level validation done client-side.
-    const validation = await this.validateKeyWithProvider(apiKey, provider);
+    const validation = await this.validateKeyWithProvider(apiKey, provider, baseUrl ?? undefined);
     if (!validation.isValid) {
       return { success: false, error: apiErrorMessage(validation, 'Invalid API key') };
+    }
+
+    // A self-hosted server serves whatever its owner loaded; the registry
+    // cannot name it, so the row must. Take the user's word, else the first
+    // model the server lists, else refuse — a step with no model id is a
+    // step that fails on every turn.
+    let defaultModel: string | null = null;
+    if (custom) {
+      defaultModel = params.defaultModel?.trim() || validation.models?.[0] || null;
+      if (!defaultModel) {
+        return {
+          success: false,
+          error: 'Your endpoint lists no models — enter the model id it should serve',
+        };
+      }
     }
 
     // Encrypt the key
@@ -202,6 +272,8 @@ export class ApiKeyService {
         key_hint: keyHint,
         is_valid: true,
         is_primary: isPrimary,
+        base_url: baseUrl,
+        default_model: defaultModel,
         last_validated_at: new Date().toISOString(),
       })
       .select()
@@ -226,7 +298,7 @@ export class ApiKeyService {
     const { data, error } = await this.supabase
       .from(DATABASE_TABLES.USER_API_KEYS)
       .select(
-        'id, user_id, provider, key_name, key_hint, is_valid, is_primary, sort_order, last_validated_at, last_used_at, total_requests, total_tokens_used, created_at, updated_at'
+        'id, user_id, provider, key_name, key_hint, is_valid, is_primary, sort_order, base_url, default_model, last_validated_at, last_used_at, total_requests, total_tokens_used, created_at, updated_at'
       )
       .eq('user_id', userId)
       .order('sort_order', { ascending: true })
@@ -270,12 +342,10 @@ export class ApiKeyService {
    * Powers the Cat's multi-key fallback chain — the resolver walks these in
    * order, trying the next on rate-limit/error.
    */
-  async listDecryptedKeysOrdered(
-    userId: string
-  ): Promise<Array<{ id: string; provider: string; key: string; sortOrder: number }>> {
+  async listDecryptedKeysOrdered(userId: string): Promise<DecryptedKeyRow[]> {
     const { data, error } = await this.supabase
       .from(DATABASE_TABLES.USER_API_KEYS)
-      .select('id, provider, encrypted_key, sort_order')
+      .select('id, provider, encrypted_key, sort_order, base_url, default_model')
       .eq('user_id', userId)
       .eq('is_valid', true)
       .order('sort_order', { ascending: true })
@@ -285,12 +355,14 @@ export class ApiKeyService {
       return [];
     }
 
-    const out: Array<{ id: string; provider: string; key: string; sortOrder: number }> = [];
+    const out: DecryptedKeyRow[] = [];
     for (const row of data as Array<{
       id: string;
       provider: string;
       encrypted_key: string;
       sort_order: number;
+      base_url: string | null;
+      default_model: string | null;
     }>) {
       try {
         out.push({
@@ -298,6 +370,8 @@ export class ApiKeyService {
           provider: row.provider,
           key: decryptApiKey(row.encrypted_key),
           sortOrder: row.sort_order,
+          baseUrl: row.base_url ?? null,
+          defaultModel: row.default_model ?? null,
         });
       } catch {
         logger.error(
@@ -403,32 +477,55 @@ export class ApiKeyService {
    *
    * For OpenRouter specifically the endpoint returns rate-limit info, which
    * we pass through unchanged so the UI can show how much budget is left.
-   * Unknown providers skip validation and trust the format check + chat-route
-   * surface for errors.
+   * The user's own endpoint is checked at `${baseUrl}/models` — the one
+   * route every OpenAI-compatible server (vLLM, llama.cpp, Ollama, LiteLLM)
+   * answers — and its model list is returned so a missing default can be
+   * filled from it. Unknown providers skip validation and trust the format
+   * check + chat-route surface for errors.
    */
   async validateKeyWithProvider(
     apiKey: string,
-    providerId: string = 'openrouter'
+    providerId: string = 'openrouter',
+    baseUrl?: string
   ): Promise<KeyValidationResult> {
     const cleanKey = apiKey.replace(/[\s\x00-\x1f\x7f]+/g, '');
-    const endpoint = PROVIDER_AUTH_ENDPOINTS[providerId];
+    const custom = isCustomProvider(providerId);
+    const endpoint = custom
+      ? baseUrl
+        ? `${normalizeBaseUrl(baseUrl)}/models`
+        : undefined
+      : PROVIDER_AUTH_ENDPOINTS[providerId];
     if (!endpoint) {
-      return { isValid: true };
+      return custom ? { isValid: false, error: 'Base URL is required' } : { isValid: true };
     }
 
     try {
       const response = await fetch(endpoint, {
-        headers: {
-          Authorization: `Bearer ${cleanKey}`,
-          'Content-Type': 'application/json',
-        },
+        headers: bearerHeaders(cleanKey),
+        signal: AbortSignal.timeout(VALIDATION_TIMEOUT_MS),
       });
 
       if (response.status === 401 || response.status === 403) {
         return { isValid: false, error: 'Invalid API key' };
       }
+      if (custom && response.status === 404) {
+        return {
+          isValid: false,
+          error: 'No /models at that URL — the base URL usually ends in /v1',
+        };
+      }
       if (!response.ok) {
         return { isValid: false, error: `Validation failed: ${response.status}` };
+      }
+
+      if (custom) {
+        const data = (await response.json().catch(() => null)) as {
+          data?: Array<{ id?: unknown }>;
+        } | null;
+        const models = (data?.data ?? [])
+          .map(m => (typeof m?.id === 'string' ? m.id : null))
+          .filter((id): id is string => !!id);
+        return { isValid: true, models };
       }
 
       if (providerId === 'openrouter') {
@@ -444,7 +541,10 @@ export class ApiKeyService {
 
       return { isValid: true };
     } catch {
-      return { isValid: false, error: 'Failed to validate key' };
+      return {
+        isValid: false,
+        error: custom ? 'Could not reach that URL from OrangeCat' : 'Failed to validate key',
+      };
     }
   }
 

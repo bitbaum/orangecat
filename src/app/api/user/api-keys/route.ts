@@ -4,14 +4,14 @@
  * GET - List user's API keys
  * POST - Add a new API key
  *
- * Last Modified: 2026-01-28
- * Last Modified Summary: Refactored to use withAuth middleware
+ * Last Modified: 2026-09-14
+ * Last Modified Summary: A key may name its own endpoint (schema moved to lib/validation/byok)
  */
 
 import { createApiKeyService, hasActiveByok } from '@/services/ai/api-key-service';
 import { withAuth, type AuthenticatedRequest } from '@/lib/api/withAuth';
 import { z } from 'zod';
-import { WIRED_PROVIDER_IDS } from '@/data/aiProviders';
+import { addKeySchema } from '@/lib/validation/byok';
 import { PLATFORM_CHAIN_ID } from '@/services/ai/key-chain';
 import { logger } from '@/utils/logger';
 import {
@@ -23,16 +23,6 @@ import {
 } from '@/lib/api/standardResponse';
 import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
 import { apiErrorMessage } from '@/lib/api/errorMessage';
-
-const addKeySchema = z.object({
-  // WIRED_PROVIDER_IDS is the SSOT for providers the chat pipeline can
-  // actually route — a previously hardcoded list here accepted providers
-  // (anthropic, google) that skipped validation and sat dead in the chain.
-  provider: z.enum(WIRED_PROVIDER_IDS).default('openrouter'),
-  keyName: z.string().min(1).max(50).default('Default'),
-  apiKey: z.string().min(10).max(500),
-  isPrimary: z.boolean().default(true),
-});
 
 const reorderSchema = z.object({
   // Each entry is a key id (uuid) or the literal 'platform' sentinel for the
@@ -89,7 +79,7 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
       return apiBadRequest('Validation failed', result.error.flatten());
     }
 
-    const { provider, keyName, apiKey, isPrimary } = result.data;
+    const { provider, keyName, apiKey, isPrimary, baseUrl, defaultModel } = result.data;
 
     const keyService = createApiKeyService(supabase);
     const addResult = await keyService.addKey({
@@ -98,6 +88,8 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
       keyName,
       apiKey,
       isPrimary,
+      baseUrl,
+      defaultModel,
     });
 
     if (!addResult.success) {

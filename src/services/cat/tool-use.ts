@@ -26,6 +26,7 @@ import { degradedMessages } from './tool-use-degrade';
 import { executeToolCall } from './tool-executor';
 import { WebTurnContext } from './web-research';
 import { extractHttpUrls, isUrlOnlyMessage } from './website-analysis';
+import { bearerHeaders } from '@/services/ai/bearer';
 import type {
   ToolAugmentedMessage,
   ToolCallAssistantMessage,
@@ -130,9 +131,11 @@ export async function maybeEnrichWithSearchResults(
   // too. NO provider-name fallback: a wrong guess sends a user's own model id
   // to somebody else's vendor with somebody else's key, which is worse than
   // sending no tools.
+  // `toolKey` may be '' — the user's own endpoint with no auth configured.
+  // That is a credential ("send nothing"), not a missing one; only null is.
   const toolEndpoint = opts?.toolEndpoint ?? null;
   const toolKey = opts?.toolKey ?? null;
-  if (!toolEndpoint || !toolKey) {
+  if (!toolEndpoint || toolKey === null) {
     return messages;
   }
 
@@ -168,7 +171,7 @@ export async function maybeEnrichWithSearchResults(
   // the one making that call now, so the rule has to live where the call is
   // made.
 
-  if (!toolKey) {
+  if (toolKey === null) {
     return messages;
   }
 
@@ -377,7 +380,7 @@ async function runToolLoop(args: {
   for (let step = 0; step < MAX_TOOL_STEPS; step++) {
     const res = await fetch(toolEndpoint, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${toolKey}`, 'Content-Type': 'application/json' },
+      headers: bearerHeaders(toolKey),
       // Belt & braces with the outer race: the provider socket itself is
       // aborted at the same deadline so no orphaned request lingers.
       signal: AbortSignal.timeout(timeoutMs),

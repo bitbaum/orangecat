@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { AIKeyCard } from './AIKeyCard';
 import { AIKeyAddForm } from './AIKeyAddForm';
+import type { AddKeyInput } from '@/data/aiProviders';
 
 // Single definition lives with the service that owns the table.
 export type { UserApiKey } from '@/services/ai/api-key-service';
@@ -26,7 +27,7 @@ import { buildChain, chainItemId, moveChainItem } from '@/services/ai/key-chain'
 
 interface AIKeyManagerProps {
   keys: UserApiKey[];
-  onAdd?: (data: { provider: string; apiKey: string; keyName: string }) => Promise<void>;
+  onAdd?: (data: AddKeyInput) => Promise<void>;
   onDelete?: (keyId: string) => Promise<void>;
   onSetPrimary?: (keyId: string) => Promise<void>;
   /** Persist a new fallback order — ids (first = tried earliest), incl. 'platform'. */
@@ -65,7 +66,7 @@ export function AIKeyManager({
     }
   };
 
-  const handleAddSuccess = async (data: { provider: string; apiKey: string; keyName: string }) => {
+  const handleAddSuccess = async (data: AddKeyInput) => {
     await onAdd?.(data);
     // The form owns its own success state — show the "Connected to X"
     // confirmation card instead of silently closing. The user dismisses

@@ -136,9 +136,10 @@ export default function AISettingsPage() {
                 )}
               </div>
               <p className="mt-1 text-sm text-fg-secondary">
-                Use any provider — direct or aggregator. You pay them, OrangeCat never sees your
-                bill. Want {CAT_FRONTIER_MODELS_OR}? Add an OpenRouter key — one key fronts all 200+
-                models.
+                Use any provider — direct, aggregator, or a server you run yourself. You pay them,
+                OrangeCat never sees your bill. Want {CAT_FRONTIER_MODELS_OR}? Add an OpenRouter key
+                — one key fronts all 200+ models. Want no vendor at all? Add your own endpoint —
+                vLLM, llama.cpp, Ollama, or a model you trained.
               </p>
               <p className="mt-2 text-xs text-fg-tertiary">
                 Seeing Groq or OpenRouter in chat but nothing listed here? That&apos;s the free pool

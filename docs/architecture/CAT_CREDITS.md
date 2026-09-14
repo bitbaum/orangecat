@@ -29,12 +29,13 @@ Cat Credits closes that gap: the user pays **OrangeCat in Bitcoin/Lightning**, O
 
 **It does not replace BYOK or Local.** It's a new rung on the ladder, the one most users will actually take:
 
-| Rung                      | Pays              | Pseudonymous? | OC liability           | For                          |
-| ------------------------- | ----------------- | ------------- | ---------------------- | ---------------------------- |
-| Free (managed, capped)    | nobody            | yes           | inference (capped)     | everyone, baseline           |
-| **OC Credits (this doc)** | **OC, in sats**   | **yes**       | **prepaid float only** | **most upgraders**           |
-| BYOK                      | provider directly | no (card)     | none                   | power users, max sovereignty |
-| Local                     | nobody            | yes           | none                   | run-it-yourself              |
+| Rung                      | Pays              | Pseudonymous? | OC liability           | For                        |
+| ------------------------- | ----------------- | ------------- | ---------------------- | -------------------------- |
+| Free (managed, capped)    | nobody            | yes           | inference (capped)     | everyone, baseline         |
+| **OC Credits (this doc)** | **OC, in sats**   | **yes**       | **prepaid float only** | **most upgraders**         |
+| BYOK                      | provider directly | no (card)     | none                   | power users                |
+| Your own endpoint         | you (your server) | yes           | none                   | max sovereignty (ADR-0009) |
+| Local                     | nobody            | yes           | none                   | run-it-yourself            |
 
 ---
 

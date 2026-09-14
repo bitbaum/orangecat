@@ -20,6 +20,7 @@
 4. **Full economic spectrum** — from gift (no strings) to loan (some strings) to investment (more strings). All forms of value coordination belong on this platform.
 5. **Private where needed, transparent where chosen** — the privacy goal (E2E-encrypted messaging and Nostr as the censorship-resistant layer) is on the roadmap, **not yet shipped**: direct messages are currently stored as plaintext (realtime, but server-readable). Bitcoin's on-chain transparency is available when appropriate. Do not describe messaging as encrypted until it actually is.
 6. **Entities are the Cat's world model** — every entity type represents a form of economic or governance activity. The richer the entity structure, the smarter the Cat can be.
+7. **Any model, no content layer** — the Cat runs on whatever model the user chooses: the platform pool, their own vendor key, any OpenAI-compatible server they run (provider `custom`, a URL in the row), or a model in their browser's reach. OrangeCat filters neither prompts nor replies; the model's rules and the user's are the only rules in a turn. Never add platform-side moderation, and never wire a feature to one vendor. What OrangeCat guarantees is the route to a model nobody else controls — not what a hosted vendor's model will say. See `docs/architecture/adr/ADR-0009-the-model-is-yours.md`.
 
 ### Entity Economic Taxonomy
 
@@ -314,4 +315,4 @@ export async function POST(request: Request) {
 
 ---
 
-**Last Updated**: 2026-09-04
+**Last Updated**: 2026-09-14

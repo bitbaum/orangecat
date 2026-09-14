@@ -9,6 +9,15 @@ import { getAIProvider } from '@/data/aiProviders';
 import { BADGE_COLORS } from '@/config/badge-colors';
 import { UserApiKey } from './AIKeyManager';
 
+/** The host is the part a person recognises; the path is noise on a card. */
+function hostOf(url: string): string {
+  try {
+    return new URL(url).host;
+  } catch {
+    return url;
+  }
+}
+
 interface AIKeyCardProps {
   apiKey: UserApiKey;
   isLoading: boolean;
@@ -57,10 +66,24 @@ export function AIKeyCard({ apiKey: key, isLoading, onSetPrimary, onDelete }: AI
                 </Badge>
               )}
             </div>
-            <div className="text-sm text-fg-secondary flex items-center gap-2">
+            <div className="text-sm text-fg-secondary flex flex-wrap items-center gap-2">
               <span>{keyProvider?.name || key.provider}</span>
+              {key.base_url && (
+                <>
+                  <span>•</span>
+                  <span className="font-mono">{hostOf(key.base_url)}</span>
+                </>
+              )}
+              {key.default_model && (
+                <>
+                  <span>•</span>
+                  <span className="font-mono">{key.default_model}</span>
+                </>
+              )}
               <span>•</span>
-              <span className="font-mono">****{key.key_hint}</span>
+              <span className="font-mono">
+                {key.key_hint.startsWith('...') ? `****${key.key_hint}` : key.key_hint}
+              </span>
             </div>
           </div>
         </div>

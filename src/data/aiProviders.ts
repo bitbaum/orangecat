@@ -7,25 +7,35 @@
  * their site.
  *
  * `type` tells the UI which group to render the provider in:
- *   - 'direct'     → vendor-owned API (Anthropic, OpenAI, Google, Groq, ...)
- *   - 'aggregator' → single key fronts many upstream models (OpenRouter, Together)
- *   - 'local'      → runs on the user's own machine (Ollama, LM Studio)
+ *   - 'direct'      → vendor-owned API (Anthropic, OpenAI, Google, Groq, ...)
+ *   - 'aggregator'  → single key fronts many upstream models (OpenRouter, Together)
+ *   - 'local'       → runs on the user's own machine, reached from the browser
+ *   - 'self-hosted' → any OpenAI-compatible server the user names by URL,
+ *                     reached from OUR server (vLLM, llama.cpp, a remote
+ *                     Ollama, LiteLLM, a model they trained themselves)
  *
- * Runtime support is layered separately. Today the chat route only routes
- * Groq + OpenRouter natively; other providers get their keys stored and will
- * route once the generic OpenAI-compatible client lands in a follow-up.
+ * Runtime support is layered separately: every id in WIRED_PROVIDER_IDS is
+ * one the chat route can route through today.
  *
  * Created: 2026-01-20
- * Last Modified: 2026-06-10 (strip fake metadata, add Ollama + LM Studio)
+ * Last Modified: 2026-09-14 (the user's own endpoint is a provider)
  */
 
-export type AIProviderCategory = 'direct' | 'aggregator' | 'local';
+export type AIProviderCategory = 'direct' | 'aggregator' | 'local' | 'self-hosted';
 
 /**
- * Providers Cat's chat route can route through today (server-reachable).
- * SSOT for AIKeyAddForm filter and CAT_WIRED_PROVIDERS on /pricing.
+ * The one provider with no fixed host: the user supplies the base URL (and
+ * the model) when they add the key. This is what makes "any model" literally
+ * true — the platform can name six vendors, but it cannot name a server you
+ * run, so the row has to.
  */
-export const WIRED_PROVIDER_IDS = [
+export const CUSTOM_PROVIDER_ID = 'custom';
+
+/**
+ * Vendors with a fixed base URL in PROVIDER_BASE_URLS (src/config/ai-provider-runtime).
+ * SSOT for the per-vendor auth-check endpoints and the names on /pricing.
+ */
+export const WIRED_VENDOR_IDS = [
   'groq',
   'openrouter',
   'openai',
@@ -34,7 +44,27 @@ export const WIRED_PROVIDER_IDS = [
   'xai',
 ] as const;
 
+/**
+ * Providers Cat's chat route can route through today (server-reachable):
+ * the fixed vendors plus the user's own endpoint. SSOT for the API key
+ * schema, the AIKeyAddForm filter, and the resolver's provider union.
+ */
+export const WIRED_PROVIDER_IDS = [...WIRED_VENDOR_IDS, CUSTOM_PROVIDER_ID] as const;
+
 export type WiredProviderId = (typeof WIRED_PROVIDER_IDS)[number];
+
+/**
+ * What the settings form sends to POST /api/user/api-keys. `baseUrl` and
+ * `defaultModel` are only meaningful for CUSTOM_PROVIDER_ID; the server
+ * refuses a custom entry without a URL and ignores both for vendors.
+ */
+export interface AddKeyInput {
+  provider: string;
+  apiKey: string;
+  keyName: string;
+  baseUrl?: string;
+  defaultModel?: string;
+}
 
 export interface AIProvider {
   id: string;
@@ -172,15 +202,39 @@ export const aiProviders: AIProvider[] = [
     docsUrl: 'https://lmstudio.ai/docs',
     apiKeyExample: 'http://localhost:1234/v1',
   },
+
+  // ── Self-hosted (reached from our server) ─────────────────────────────
+  {
+    id: CUSTOM_PROVIDER_ID,
+    name: 'Your own endpoint',
+    type: 'self-hosted',
+    description:
+      'Any OpenAI-compatible server you run — vLLM, llama.cpp, Ollama, LiteLLM, or a model you trained yourself. No vendor in the loop.',
+    websiteUrl: 'https://orangecat.ch/docs',
+    apiKeyUrl: 'https://orangecat.ch/docs',
+    docsUrl: 'https://platform.openai.com/docs/api-reference/chat',
+    apiKeyExample: 'leave empty if your server needs no key',
+  },
 ];
 
 const wiredIdSet = new Set<string>(WIRED_PROVIDER_IDS);
+const wiredVendorIdSet = new Set<string>(WIRED_VENDOR_IDS);
 
 /** Subset of aiProviders that Cat routes through on the platform key path. */
 export const wiredProviders = aiProviders.filter(p => wiredIdSet.has(p.id));
 
-/** Display names for marketing copy — derived from the provider registry. */
-export const WIRED_PROVIDER_DISPLAY_NAMES = wiredProviders.map(p => p.name);
+/**
+ * Wired vendors only — for surfaces that collect just a key (the onboarding
+ * wizard has no URL field) and for the vendor names in marketing copy.
+ */
+export const wiredVendorProviders = aiProviders.filter(p => wiredVendorIdSet.has(p.id));
+
+/** Vendor display names for marketing copy — derived from the provider registry. */
+export const WIRED_PROVIDER_DISPLAY_NAMES = wiredVendorProviders.map(p => p.name);
+
+export function isCustomProvider(providerId: string): boolean {
+  return providerId === CUSTOM_PROVIDER_ID;
+}
 
 // ==================== UTILITY FUNCTIONS ====================
 
@@ -215,6 +269,12 @@ export function validateApiKeyFormat(
   const provider = getAIProvider(providerId);
   if (!provider) {
     return { valid: false, message: 'Unknown provider' };
+  }
+
+  // A self-hosted server may need no key at all (vLLM and llama.cpp ship
+  // without auth). Empty is a valid answer here; the URL is checked server-side.
+  if (provider.type === 'self-hosted') {
+    return { valid: true };
   }
 
   if (!apiKey || apiKey.trim().length === 0) {

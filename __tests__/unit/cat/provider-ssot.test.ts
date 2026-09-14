@@ -8,7 +8,13 @@
  */
 
 import { AI_MODEL_REGISTRY, DEFAULT_MODEL_ID, DEFAULT_FREE_MODEL_ID } from '@/config/ai-models';
-import { WIRED_PROVIDER_IDS, aiProviders, wiredProviders } from '@/data/aiProviders';
+import {
+  CUSTOM_PROVIDER_ID,
+  WIRED_PROVIDER_IDS,
+  WIRED_VENDOR_IDS,
+  aiProviders,
+  wiredProviders,
+} from '@/data/aiProviders';
 import {
   IMAGE_PROVIDER_RUNTIME,
   PROVIDER_BASE_URLS,
@@ -16,8 +22,19 @@ import {
 } from '@/config/ai-provider-runtime';
 
 describe('provider SSOT invariants', () => {
-  it('PROVIDER_BASE_URLS covers exactly the wired providers', () => {
-    expect(Object.keys(PROVIDER_BASE_URLS).sort()).toEqual([...WIRED_PROVIDER_IDS].sort());
+  it('PROVIDER_BASE_URLS covers exactly the wired vendors', () => {
+    expect(Object.keys(PROVIDER_BASE_URLS).sort()).toEqual([...WIRED_VENDOR_IDS].sort());
+  });
+
+  it('the wired list is the vendors plus the one provider with no fixed host', () => {
+    // The user's own endpoint has no base URL in code by construction — it
+    // is the row's. It must still be WIRED, or the key schema rejects it and
+    // "any model" is back to "six vendors".
+    expect([...WIRED_PROVIDER_IDS].sort()).toEqual(
+      [...WIRED_VENDOR_IDS, CUSTOM_PROVIDER_ID].sort()
+    );
+    expect(CUSTOM_PROVIDER_ID in PROVIDER_BASE_URLS).toBe(false);
+    expect(aiProviders.find(p => p.id === CUSTOM_PROVIDER_ID)?.type).toBe('self-hosted');
   });
 
   it('every wired provider exists in the aiProviders display SSOT', () => {

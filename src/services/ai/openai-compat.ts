@@ -18,6 +18,8 @@
  * Created: 2026-06-10
  */
 
+import { bearerHeaders } from '@/services/ai/bearer';
+
 export interface OpenAICompatMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
@@ -268,10 +270,7 @@ export class OpenAICompatibleService {
   }
 
   private getHeaders(): Record<string, string> {
-    return {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${this.apiKey}`,
-    };
+    return bearerHeaders(this.apiKey);
   }
 
   private async toApiError(response: Response): Promise<OpenAICompatibleAPIError> {

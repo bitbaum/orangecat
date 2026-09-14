@@ -1,7 +1,7 @@
 ---
 created_date: 2026-01-18
-last_modified_date: 2026-07-08
-last_modified_summary: Rewrote to match the real architecture (ai-models.ts SSOT + provider-resolver chain + Cat Credits metering) and the refreshed 2026 model roster; removed references to the retired UnifiedAIClient/ModelStatusBadge and /api/chat.
+last_modified_date: 2026-09-14
+last_modified_summary: Added the "your own endpoint" rung — any OpenAI-compatible server the user names (ADR-0009); corrected the BYOK provider list to what the code actually wires.
 ---
 
 # AI Model System - Complete Guide
@@ -18,14 +18,18 @@ OrangeCat's AI model system is **effortless for beginners** and **powerful for a
 
 The system runs on a **sovereignty ladder**:
 
-| Rung           | Pays              | Pseudonymous? | For                          |
-| -------------- | ----------------- | ------------- | ---------------------------- |
-| Free (managed) | nobody            | yes           | everyone, baseline           |
-| Cat Credits    | OC, in Bitcoin    | yes           | most upgraders               |
-| BYOK           | provider directly | no (card)     | power users, max sovereignty |
-| Local (Ollama) | nobody            | yes           | run-it-yourself              |
+| Rung              | Pays              | Pseudonymous? | Whose rules? | For                              |
+| ----------------- | ----------------- | ------------- | ------------ | -------------------------------- |
+| Free (managed)    | nobody            | yes           | the vendor's | everyone, baseline               |
+| Cat Credits       | OC, in Bitcoin    | yes           | the vendor's | most upgraders                   |
+| BYOK              | provider directly | no (card)     | the vendor's | power users                      |
+| Your own endpoint | you (your server) | yes           | yours        | vLLM, llama.cpp, a trained model |
+| Local (browser)   | nobody            | yes           | yours        | Ollama / LM Studio on the laptop |
 
-See `docs/architecture/CAT_CREDITS.md` for the Bitcoin-paid frontier rung.
+See `docs/architecture/CAT_CREDITS.md` for the Bitcoin-paid frontier rung and
+`docs/architecture/adr/ADR-0009-the-model-is-yours.md` for why the last two
+rungs exist: OrangeCat adds no content layer of its own, so the model you
+choose — and where it runs — is the only policy in the turn.
 
 ---
 
@@ -51,9 +55,15 @@ The platform provider chain (see below) can also answer on Groq's
 1. **Cat Credits** — pay OrangeCat in Bitcoin/Lightning, spend on frontier
    models. No card, no per-provider account. (`docs/architecture/CAT_CREDITS.md`)
 2. **BYOK (Bring Your Own Key)** — an OpenRouter key unlocks 200+ models; or add
-   individual provider keys (OpenAI, Anthropic, Google, DeepSeek, xAI, Together).
-3. **Local (Ollama)** — point the platform at a self-hosted model for full
-   sovereignty.
+   a direct key for Groq, OpenAI, Together, DeepSeek or xAI
+   (`WIRED_VENDOR_IDS`). Anthropic and Google keys are not wired direct —
+   OpenRouter fronts both.
+3. **Your own endpoint** — any OpenAI-compatible server you run, reached from
+   OrangeCat's server: vLLM, llama.cpp, a remote Ollama, LiteLLM, or a model
+   you trained yourself. Provider id `custom`; the row carries `base_url` and
+   `default_model`; the key is optional. Same chain, same tool loop.
+4. **Local (browser)** — Ollama or LM Studio on the laptop, called from the
+   browser. Nothing leaves the machine.
 
 ---
 
@@ -127,7 +137,8 @@ Each is enabled by the presence of its env var, so the chain shrinks gracefully.
 **Location:** `src/services/cat/provider-resolver.ts`.
 
 `resolveProvider(...)` builds the merged, fully-ordered chain: per-request header
-keys → stored BYOK keys (user order) → the platform chain. It also decides
+keys → stored BYOK keys (user order, including `custom` rows aimed at the
+user's own URL) → the platform chain. It also decides
 whether a request is a **credit-metered frontier** call and returns the primary
 service plus an ordered `fallbacks[]`.
 

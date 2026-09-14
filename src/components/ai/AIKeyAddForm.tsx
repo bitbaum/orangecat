@@ -19,13 +19,16 @@ import { cn } from '@/lib/utils';
 import {
   aiProviders,
   getAIProvider,
+  isCustomProvider,
   validateApiKeyFormat,
   wiredProviders,
+  type AddKeyInput,
 } from '@/data/aiProviders';
 import { ROUTES } from '@/config/routes';
+import { OwnEndpointFields } from './OwnEndpointFields';
 
 interface AIKeyAddFormProps {
-  onAdd: (data: { provider: string; apiKey: string; keyName: string }) => Promise<void>;
+  onAdd: (data: AddKeyInput) => Promise<void>;
   onCancel: () => void;
   onFieldFocus?: (field: string | null) => void;
 }
@@ -43,6 +46,8 @@ export function AIKeyAddForm({ onAdd, onCancel, onFieldFocus }: AIKeyAddFormProp
   const [selectedProvider, setSelectedProvider] = useState<string>('openrouter');
   const [apiKey, setApiKey] = useState('');
   const [keyName, setKeyName] = useState('');
+  const [baseUrl, setBaseUrl] = useState('');
+  const [defaultModel, setDefaultModel] = useState('');
   const [showKey, setShowKey] = useState(false);
   const [formState, setFormState] = useState<FormState>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -50,10 +55,15 @@ export function AIKeyAddForm({ onAdd, onCancel, onFieldFocus }: AIKeyAddFormProp
 
   const provider = getAIProvider(selectedProvider);
   const successProvider = successProviderId ? getAIProvider(successProviderId) : null;
+  const ownEndpoint = isCustomProvider(selectedProvider);
+  // A vendor needs a key; your own server needs a URL (the key is optional).
+  const canSubmit = ownEndpoint ? baseUrl.trim().length > 0 : apiKey.length > 0;
 
   const resetForm = (keepProvider = true) => {
     setApiKey('');
     setKeyName('');
+    setBaseUrl('');
+    setDefaultModel('');
     setError(null);
     setShowKey(false);
     setFormState('idle');
@@ -64,7 +74,7 @@ export function AIKeyAddForm({ onAdd, onCancel, onFieldFocus }: AIKeyAddFormProp
   };
 
   const handleSubmit = async () => {
-    if (!apiKey || !provider) {
+    if (!canSubmit || !provider) {
       return;
     }
 
@@ -82,10 +92,15 @@ export function AIKeyAddForm({ onAdd, onCancel, onFieldFocus }: AIKeyAddFormProp
         provider: selectedProvider,
         apiKey,
         keyName: keyName || `${provider.name} Key`,
+        ...(ownEndpoint
+          ? { baseUrl: baseUrl.trim(), defaultModel: defaultModel.trim() || undefined }
+          : {}),
       });
       setSuccessProviderId(selectedProvider);
       setApiKey('');
       setKeyName('');
+      setBaseUrl('');
+      setDefaultModel('');
       setFormState('success');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add key');
@@ -106,8 +121,9 @@ export function AIKeyAddForm({ onAdd, onCancel, onFieldFocus }: AIKeyAddFormProp
                 Connected to {successProvider.name}
               </h3>
               <p className="mt-1 text-sm text-fg-primary">
-                Cat is now routing every message through your {successProvider.name} key. You pay{' '}
-                {successProvider.name} directly — OrangeCat never sees your bill, never marks it up.
+                {isCustomProvider(successProvider.id)
+                  ? 'Cat now routes every message to the server you named. No vendor is in the loop — the model, its rules, and its bill are yours.'
+                  : `Cat is now routing every message through your ${successProvider.name} key. You pay ${successProvider.name} directly — OrangeCat never sees your bill, never marks it up.`}
               </p>
               <p className="mt-2 text-xs text-fg-secondary">
                 <Sparkles className="mr-1 inline h-3 w-3" aria-hidden="true" />
@@ -182,8 +198,23 @@ export function AIKeyAddForm({ onAdd, onCancel, onFieldFocus }: AIKeyAddFormProp
           />
         </div>
 
+        {ownEndpoint && (
+          <OwnEndpointFields
+            baseUrl={baseUrl}
+            defaultModel={defaultModel}
+            onBaseUrlChange={v => {
+              setBaseUrl(v);
+              setError(null);
+            }}
+            onDefaultModelChange={setDefaultModel}
+            onFieldFocus={onFieldFocus}
+          />
+        )}
+
         <div>
-          <label className="block text-sm font-medium text-fg-primary mb-1">API Key</label>
+          <label className="block text-sm font-medium text-fg-primary mb-1">
+            {ownEndpoint ? 'API Key (optional)' : 'API Key'}
+          </label>
           <div className="relative">
             <Input
               type={showKey ? 'text' : 'password'}
@@ -205,7 +236,12 @@ export function AIKeyAddForm({ onAdd, onCancel, onFieldFocus }: AIKeyAddFormProp
               {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
-          {provider && (
+          {provider && ownEndpoint && (
+            <p className="mt-1 text-xs text-fg-secondary">
+              Sent as a bearer token. Leave it empty if your server needs none.
+            </p>
+          )}
+          {provider && !ownEndpoint && (
             <p className="mt-1 text-xs text-fg-secondary">
               Get your key at{' '}
               <a
@@ -236,7 +272,7 @@ export function AIKeyAddForm({ onAdd, onCancel, onFieldFocus }: AIKeyAddFormProp
             variant="primary"
             size="sm"
             onClick={handleSubmit}
-            disabled={!apiKey || isSubmitting}
+            disabled={!canSubmit || isSubmitting}
           >
             {isSubmitting ? (
               <>
