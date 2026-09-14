@@ -12,6 +12,8 @@
 
 **What OrangeCat is (one sentence)**: Your AI economic agent — and the platform where it operates.
 
+**Philosophy (SSOT for all three products)**: `docs/philosophy/README.md`. The principles below are its summary; when they disagree, the philosophy doc wins and this summary gets fixed.
+
 ### Core Principles (derive every product and engineering decision from these)
 
 1. **The Cat is the interface** — "My Cat" is the primary AI agent for every user and group. Entities provide structured context the Cat reads and operates on. Build for the Cat first.
