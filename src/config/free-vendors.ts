@@ -44,19 +44,16 @@ export interface FreeVendor {
   note: string;
 }
 
-export const FREE_VENDORS: readonly FreeVendor[] = [
-  {
-    id: 'cerebras',
-    // Probed 2026-09-12: GET /v1/models answers 403 without a key — the host
-    // and path exist and want auth, which is the most an unkeyed check can
-    // establish. That is the bar each entry here has to clear.
-    baseUrl: 'https://api.cerebras.ai/v1',
-    keyEnv: 'CEREBRAS_API_KEY',
-    defaultModel: 'llama-3.3-70b',
-    modelEnv: 'CEREBRAS_MODEL',
-    note: 'Free tier with per-minute budgets larger than Groq, so it can carry a whole conversation rather than only its opening.',
-  },
-];
+/**
+ * EMPTY, and that is the honest state rather than a gap.
+ *
+ * No third vendor has yet cleared the bar this file sets: a free tier that a
+ * real key can actually serve from. Cerebras was listed here and did not — see
+ * REJECTED_VENDORS. An empty list costs nothing (every consumer already skips
+ * a vendor with no key) and is far cheaper than a entry that turns every
+ * fallback attempt into a guaranteed refusal.
+ */
+export const FREE_VENDORS: readonly FreeVendor[] = [];
 
 /**
  * Vendors deliberately NOT listed, so nobody adds them back on a hunch.
@@ -75,7 +72,33 @@ export const FREE_VENDORS: readonly FreeVendor[] = [
  * to carry. Worth adding once someone with a key confirms the chat path and
  * how to list its models — a genuinely generous free tier, but not on a guess.
  */
-export const REJECTED_VENDORS = ['github', 'google'] as const;
+/**
+ * **Cerebras — NOT FREE.** Listed here as a free vendor on the strength of an
+ * unkeyed 403 and a note that claimed "free tier with per-minute budgets larger
+ * than Groq". Both were wrong, and a real key settled it on 2026-09-14:
+ *
+ *   cerebras.ai/pricing, Developer tier:
+ *     "Self-serve pay-as-you-go with free $5 credit to start"
+ *     gpt-oss-120b  $0.35/M in, $0.75/M out
+ *     qwen-3.8-27b  $0.99/M in, $1.49/M out
+ *
+ *   GET  /v1/models            -> 200, lists gemma-4-31b, gpt-oss-120b, qwen-3.8-27b
+ *   POST /v1/chat/completions  -> 402 {"code":"payment_required",
+ *                                      "message":"Payment required to access this
+ *                                      resource. Visit your billing tab."}
+ *
+ * So the catalogue answers while every completion is refused — the exact shape
+ * that makes an unkeyed probe look like a pass. 403-without-a-key established
+ * only that the host exists; it never established that anyone can be served.
+ *
+ * The pinned id was wrong too: `llama-3.3-70b` is not in the live catalogue
+ * above, so even a funded account would have 404'd on the first call.
+ *
+ * Add it back only as a PAID vendor with metering, never to this list. This
+ * chain exists for users with no key and no credits, and a link that bills is a
+ * link that can only 402 — the same failure #1000 fixed for Groq.
+ */
+export const REJECTED_VENDORS = ['github', 'google', 'cerebras'] as const;
 
 /** The model this vendor should be asked for right now. */
 export function vendorModel(v: FreeVendor): string {
