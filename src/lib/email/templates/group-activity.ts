@@ -5,7 +5,7 @@
  * Pure functions — no imports from outside templates.
  */
 
-import { emailLayout, emailPlainText, EMAIL_COLORS } from './layout';
+import { emailLayout, emailPlainText, escapeHtml, EMAIL_COLORS } from './layout';
 
 export type GroupActivityType = 'invite' | 'proposal' | 'vote_reminder' | 'proposal_resolved';
 
@@ -209,12 +209,4 @@ export function groupActivityTemplate(data: GroupActivityEmailData): {
   });
 
   return { subject: config.subject, html, text };
-}
-
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
 }

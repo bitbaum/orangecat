@@ -19,6 +19,7 @@ import {
   isModelFree,
   DEFAULT_BTC_PRICE_USD,
 } from '@/config/ai-models';
+import { sanitizeApiKey } from '@/lib/api-key';
 
 // ==================== TYPES ====================
 
@@ -495,19 +496,6 @@ class OpenRouterAPIError extends Error {
 }
 
 // ==================== FACTORY FUNCTIONS ====================
-
-/**
- * Strip stray whitespace / newlines / control chars from an API key before
- * it goes into an Authorization header. Env vars set via `gh secret set` or
- * pasted into a `.env` sometimes carry a trailing newline (or worse, a
- * copy-paste trailing character) that the Fetch API rejects with "invalid
- * header value".
- * Trim defensively at every entry point so the failure stays in the env var,
- * not in the runtime.
- */
-function sanitizeApiKey(key: string): string {
-  return key.replace(/[\s\x00-\x1f\x7f]+/g, '');
-}
 
 /**
  * Create an OpenRouter service instance using platform API key
