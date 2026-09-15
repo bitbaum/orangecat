@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase/browser';
 import { toast } from 'sonner';
 import { API_ROUTES } from '@/config/api-routes';
 import { ROUTES } from '@/config/routes';
-import { getErrorMessage } from '@/types/common';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 import type { User } from '@supabase/supabase-js';
 
 export interface SettingsFormData {
@@ -58,7 +58,7 @@ export function useSettingsForm(user: User | null) {
       }
       toast.success('Confirmation email sent! Please check your inbox.');
     } catch (error: unknown) {
-      toast.error(getErrorMessage(error) || 'Failed to update email.');
+      toast.error(apiErrorMessage(error, 'Failed to update email.'));
     } finally {
       setIsSubmittingEmail(false);
     }
@@ -84,7 +84,7 @@ export function useSettingsForm(user: User | null) {
         setFormData(prev => ({ ...prev, newPassword: '', confirmPassword: '' }));
       }
     } catch (error: unknown) {
-      toast.error(getErrorMessage(error) || 'An unexpected error occurred.');
+      toast.error(apiErrorMessage(error, 'An unexpected error occurred.'));
     } finally {
       setIsSubmittingPassword(false);
     }
@@ -107,7 +107,7 @@ export function useSettingsForm(user: User | null) {
       await signOut();
       router.push(ROUTES.HOME);
     } catch (error: unknown) {
-      toast.error(getErrorMessage(error) || 'Failed to delete account.');
+      toast.error(apiErrorMessage(error, 'Failed to delete account.'));
     } finally {
       setIsDeleting(false);
     }
