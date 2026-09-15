@@ -6,7 +6,7 @@ import {
   type MempoolTransaction,
   type BlockstreamTransaction,
 } from '@/types/bitcoin';
-import { getErrorMessage } from '@/types/common';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 import { logger } from '@/utils/logger';
 import { satsToBitcoin } from '@/services/currency';
 import { BITCOIN_FETCH_TIMEOUT_MS } from '@/lib/wallets/constants';
@@ -290,7 +290,7 @@ class BitcoinService {
         confirmed: 0,
         unconfirmed: 0,
         total: 0,
-        error: getErrorMessage(error),
+        error: apiErrorMessage(error, 'Unknown error'),
       };
     }
   }
@@ -301,7 +301,11 @@ class BitcoinService {
       const walletData = await this.fetchBitcoinWalletData(address);
       return walletData.transactions;
     } catch (error: unknown) {
-      logger.error('Error fetching transactions:', getErrorMessage(error), 'Bitcoin');
+      logger.error(
+        'Error fetching transactions:',
+        apiErrorMessage(error, 'Unknown error'),
+        'Bitcoin'
+      );
       return [];
     }
   }
@@ -371,7 +375,7 @@ class BitcoinService {
           lastUpdated: new Date().toISOString(),
         };
       } catch (error: unknown) {
-        const errorMessage = getErrorMessage(error);
+        const errorMessage = apiErrorMessage(error, 'Unknown error');
         logger.error(`Error with provider ${provider.name}:`, errorMessage, 'Bitcoin');
         lastError = error instanceof Error ? error : new Error(errorMessage);
         // Continue to next provider
@@ -380,7 +384,7 @@ class BitcoinService {
 
     logger.error(
       `Failed to fetch wallet data for ${cleanAddress} from all providers`,
-      { error: getErrorMessage(lastError) },
+      { error: apiErrorMessage(lastError, 'Unknown error') },
       'Bitcoin'
     );
     throw (

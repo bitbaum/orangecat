@@ -3,7 +3,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { useAuth, useRedirectIfAuthenticated } from '@/hooks/useAuth';
 import { signInAnonymously } from '@/services/supabase/auth';
-import { getReadableError } from '@/utils/getReadableError';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 import supabase from '@/lib/supabase/browser';
 import { useAuthSubmission } from './useAuthSubmission';
 import type { Provider } from '@supabase/supabase-js';
@@ -179,7 +179,7 @@ export function useAuthForm() {
       // OAuth can fail when the provider is misconfigured, the user
       // cancels the popup, or the redirect URL is wrong. Same silent
       // swallow pattern as anonymous sign-in — surface to the user.
-      const message = getReadableError(err, `Failed to sign in with ${provider}`);
+      const message = apiErrorMessage(err, `Failed to sign in with ${provider}`);
       toast.error(message);
     }
   };
@@ -188,7 +188,7 @@ export function useAuthForm() {
     try {
       const result = await signInAnonymously();
       if (result.error) {
-        throw new Error(getReadableError(result.error, 'Anonymous sign-in failed'));
+        throw new Error(apiErrorMessage(result.error, 'Anonymous sign-in failed'));
       }
       // Same-origin paths only — `from` is attacker-suppliable via the URL.
       // The session branch above already guards this; without the same check
@@ -202,7 +202,7 @@ export function useAuthForm() {
       // reasons (provider disabled in Supabase, captcha required, rate
       // limit). The previous handler swallowed the error to the console
       // only, leaving the user staring at a spinner that silently reset.
-      const message = getReadableError(err, 'Anonymous sign-in failed');
+      const message = apiErrorMessage(err, 'Anonymous sign-in failed');
       toast.error(message);
     }
   };
