@@ -13,6 +13,7 @@ import Link from 'next/link';
 import { APP_CONTENT_HEIGHT_CLASS } from '@/config/layout-chrome';
 import { COMPANION_COPY } from '@/config/companions';
 import { ROUTES } from '@/config/routes';
+import { APP_LOCALE } from '@/utils/locale';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import Button from '@/components/ui/Button';
 import { TalkThread } from './TalkThread';
@@ -29,7 +30,7 @@ export interface TalkRoomProps {
 
 function threadLabel(t: TalkThreadSummary): string {
   const when = new Date(t.last_message_at ?? t.created_at);
-  const date = when.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+  const date = when.toLocaleDateString(APP_LOCALE, { day: 'numeric', month: 'short' });
   return t.title ? `${date} · ${t.title}` : date;
 }
 
