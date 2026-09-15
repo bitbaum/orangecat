@@ -387,31 +387,3 @@ export async function fetchMessagingActors(userId: string): Promise<MessagingAct
 
   return actors;
 }
-
-// Actor row shape from database (joined with profiles)
-interface ActorRow {
-  id: string;
-  actor_type: string;
-  user_id: string | null;
-  profiles: { name: string | null; avatar_url: string | null } | null;
-}
-
-// Group membership row with nested group (no actor_id on groups — actors
-// table has the inverse FK via actors.group_id).
-interface GroupMembershipRow {
-  group_id: string;
-  role: string;
-  groups: {
-    id: string;
-    name: string | null;
-    avatar_url: string | null;
-  } | null;
-}
-
-// Actor row joined back from the actors table by group_id.
-interface GroupActorRow {
-  id: string;
-  group_id: string;
-  display_name: string | null;
-  avatar_url: string | null;
-}

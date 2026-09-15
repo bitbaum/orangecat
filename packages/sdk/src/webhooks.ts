@@ -28,6 +28,13 @@
  *
  * Never branch user-facing behaviour on `result.reason` — it's for
  * logging and debugging only.
+ *
+ * TWO COPIES, ONE BEHAVIOUR:
+ *   src/services/webhooks/signing.ts carries the same verification for the
+ *   app itself. This package must stay standalone (customers install it), so
+ *   the copy is held in step by the app's
+ *   __tests__/unit/services/webhook-signature-parity.test.ts, which drives
+ *   BOTH through the same vectors and fails if they ever disagree.
  */
 
 import { createHmac, timingSafeEqual } from 'node:crypto';

@@ -6,7 +6,7 @@
  * Pure functions — no imports from outside templates.
  */
 
-import { emailLayout, emailPlainText, escapeHtml, EMAIL_COLORS } from './layout';
+import { renderEmail, escapeHtml, EMAIL_COLORS } from './layout';
 
 export type ReengagementStage = '14d' | '30d' | '60d' | '90d';
 
@@ -175,22 +175,5 @@ export function reengagementTemplate(data: ReengagementEmailData): {
 } {
   const config = getReengagementConfig(data);
 
-  const html = emailLayout({
-    preheader: config.preheader,
-    heading: config.heading,
-    body: config.bodyHtml,
-    ctaText: config.ctaText,
-    ctaUrl: config.ctaUrl,
-    unsubscribeUrl: data.unsubscribeUrl,
-  });
-
-  const text = emailPlainText({
-    heading: config.heading,
-    body: config.bodyText,
-    ctaText: config.ctaText,
-    ctaUrl: config.ctaUrl,
-    unsubscribeUrl: data.unsubscribeUrl,
-  });
-
-  return { subject: config.subject, html, text };
+  return renderEmail(config, data.unsubscribeUrl);
 }
