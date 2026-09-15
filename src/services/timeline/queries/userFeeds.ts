@@ -21,9 +21,9 @@ import type {
   TimelineFilters,
   TimelinePagination,
 } from '@/types/timeline';
-import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from './constants';
+import { pageWindow, feedResponse, emptyFeed } from './feed-shape';
 import { getCurrentUserId, transformEnrichedEventToDisplay } from './helpers';
-import { getDateRangeFilter, buildDefaultFilters } from '@/services/timeline/formatters/filters';
+import { getDateRangeFilter } from '@/services/timeline/formatters/filters';
 import { enrichEventsForDisplay } from '@/services/timeline/processors/enrichment';
 import { attachReactionState } from '@/services/timeline/processors/reaction-state';
 
@@ -36,9 +36,7 @@ export async function getUserFeed(
   pagination?: Partial<TimelinePagination>
 ): Promise<TimelineFeedResponse> {
   try {
-    const page = pagination?.page || 1;
-    const limit = Math.min(pagination?.limit || DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE);
-    const offset = (page - 1) * limit;
+    const { page, limit, offset } = pageWindow(pagination);
 
     // Build filter conditions
 
@@ -97,41 +95,11 @@ export async function getUserFeed(
 
     const totalEvents = count || displayEvents.length;
 
-    return {
-      events: displayEvents,
-      pagination: {
-        page,
-        limit,
-        total: totalEvents,
-        hasNext: offset + limit < totalEvents,
-        hasPrev: page > 1,
-      },
-      filters: buildDefaultFilters(filters),
-      metadata: {
-        totalEvents,
-        featuredEvents: displayEvents.filter(e => e.isFeatured).length,
-        lastUpdated: new Date().toISOString(),
-      },
-    };
+    return feedResponse(displayEvents, { page, limit }, totalEvents, filters);
   } catch (error) {
     logger.error('Error fetching user timeline feed', error, 'Timeline');
     // Return empty feed instead of throwing - error is logged for debugging
-    return {
-      events: [],
-      pagination: {
-        page: pagination?.page || 1,
-        limit: pagination?.limit || DEFAULT_PAGE_SIZE,
-        total: 0,
-        hasNext: false,
-        hasPrev: false,
-      },
-      filters: buildDefaultFilters(filters),
-      metadata: {
-        totalEvents: 0,
-        featuredEvents: 0,
-        lastUpdated: new Date().toISOString(),
-      },
-    };
+    return emptyFeed(filters, pagination);
   }
 }
 
@@ -145,27 +113,10 @@ export async function getFollowedUsersFeed(
   try {
     const currentUserId = await getCurrentUserId();
     if (!currentUserId) {
-      return {
-        events: [],
-        pagination: {
-          page: 1,
-          limit: DEFAULT_PAGE_SIZE,
-          total: 0,
-          hasNext: false,
-          hasPrev: false,
-        },
-        filters: buildDefaultFilters(filters),
-        metadata: {
-          totalEvents: 0,
-          featuredEvents: 0,
-          lastUpdated: new Date().toISOString(),
-        },
-      };
+      return emptyFeed(filters);
     }
 
-    const page = pagination?.page || 1;
-    const limit = Math.min(pagination?.limit || DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE);
-    const offset = (page - 1) * limit;
+    const { page, limit, offset } = pageWindow(pagination);
 
     // Get list of followed user IDs. The follows table's canonical columns are
     // follower_id / following_id — there is no followed_user_id or is_active
@@ -184,22 +135,7 @@ export async function getFollowedUsersFeed(
       (follows as { following_id: string }[] | null)?.map(f => f.following_id) || [];
 
     if (followedUserIds.length === 0) {
-      return {
-        events: [],
-        pagination: {
-          page: 1,
-          limit: DEFAULT_PAGE_SIZE,
-          total: 0,
-          hasNext: false,
-          hasPrev: false,
-        },
-        filters: buildDefaultFilters(filters),
-        metadata: {
-          totalEvents: 0,
-          featuredEvents: 0,
-          lastUpdated: new Date().toISOString(),
-        },
-      };
+      return emptyFeed(filters);
     }
 
     // Build query for events from followed users
@@ -242,41 +178,11 @@ export async function getFollowedUsersFeed(
       (events || []).map(transformEnrichedEventToDisplay)
     );
 
-    return {
-      events: displayEvents,
-      pagination: {
-        page,
-        limit,
-        total: count || 0,
-        hasNext: offset + limit < (count || 0),
-        hasPrev: page > 1,
-      },
-      filters: buildDefaultFilters(filters),
-      metadata: {
-        totalEvents: count || 0,
-        featuredEvents: displayEvents.filter(e => e.isFeatured).length,
-        lastUpdated: new Date().toISOString(),
-      },
-    };
+    return feedResponse(displayEvents, { page, limit }, count || 0, filters);
   } catch (error) {
     logger.error('Error fetching followed users feed', error, 'Timeline');
     // Return empty feed instead of throwing - error is logged for debugging
-    return {
-      events: [],
-      pagination: {
-        page: pagination?.page || 1,
-        limit: pagination?.limit || DEFAULT_PAGE_SIZE,
-        total: 0,
-        hasNext: false,
-        hasPrev: false,
-      },
-      filters: buildDefaultFilters(filters),
-      metadata: {
-        totalEvents: 0,
-        featuredEvents: 0,
-        lastUpdated: new Date().toISOString(),
-      },
-    };
+    return emptyFeed(filters, pagination);
   }
 }
 
@@ -293,9 +199,7 @@ export async function getEnrichedUserFeed(
   rpcName: 'get_user_timeline_feed' | 'get_following_feed' = 'get_user_timeline_feed'
 ): Promise<TimelineFeedResponse> {
   try {
-    const page = pagination?.page || 1;
-    const limit = Math.min(pagination?.limit || DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE);
-    const offset = (page - 1) * limit;
+    const { page, limit, offset } = pageWindow(pagination);
 
     let events: Record<string, unknown>[] = [];
     let totalEvents = 0;
@@ -355,41 +259,11 @@ export async function getEnrichedUserFeed(
       events || []
     )) as TimelineDisplayEvent[];
 
-    return {
-      events: displayEvents,
-      pagination: {
-        page,
-        limit,
-        total: totalEvents,
-        hasNext: offset + limit < totalEvents,
-        hasPrev: page > 1,
-      },
-      filters: buildDefaultFilters(filters),
-      metadata: {
-        totalEvents,
-        featuredEvents: displayEvents.filter(e => e.isFeatured).length,
-        lastUpdated: new Date().toISOString(),
-      },
-    };
+    return feedResponse(displayEvents, { page, limit }, totalEvents, filters);
   } catch (error) {
     logger.error('Error fetching enriched user timeline feed', error, 'Timeline');
     // Return empty feed instead of throwing - error is logged for debugging
-    return {
-      events: [],
-      pagination: {
-        page: pagination?.page || 1,
-        limit: pagination?.limit || DEFAULT_PAGE_SIZE,
-        total: 0,
-        hasNext: false,
-        hasPrev: false,
-      },
-      filters: buildDefaultFilters(filters),
-      metadata: {
-        totalEvents: 0,
-        featuredEvents: 0,
-        lastUpdated: new Date().toISOString(),
-      },
-    };
+    return emptyFeed(filters, pagination);
   }
 }
 
