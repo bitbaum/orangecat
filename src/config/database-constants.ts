@@ -34,6 +34,11 @@
  * Generic entity status values shared across multiple entity types.
  * Use domain-specific STATUS.ENTITY_TYPE when available.
  */
+// The lifecycle every entity table shares. `completed` and `cancelled` are
+// PROJECT-specific and live in config/project-statuses.ts — a second
+// ENTITY_STATUS carrying them used to sit in status-config.ts, unimported,
+// so autocomplete offered two constants of the same name with different
+// members and picking the wrong one compiled.
 export const ENTITY_STATUS = {
   DRAFT: 'draft',
   ACTIVE: 'active',
