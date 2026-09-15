@@ -11,6 +11,7 @@
 
 import type { LucideIcon } from 'lucide-react';
 import { formatCurrency } from '@/services/currency';
+import { APP_LOCALE } from '@/utils/locale';
 import {
   Heart,
   MessageCircle,
@@ -64,8 +65,7 @@ export function mapDbEventToTimelineEvent(dbEvent: TimelineEventDb): TimelineEve
       'profile',
     subjectId: getField<string>(dbEvent, 'subject_id', 'subjectId'),
     targetType: getField<string>(dbEvent, 'target_type', 'targetType') as
-      | TimelineSubjectType
-      | undefined,
+      TimelineSubjectType | undefined,
     targetId: getField<string>(dbEvent, 'target_id', 'targetId'),
     title: dbEvent.title,
     description: dbEvent.description || undefined,
@@ -221,7 +221,7 @@ export function getTimeAgo(timestamp: string): string {
   // translations; when it does, this should follow the app's locale, not the
   // browser's, for exactly the same reason.
   const sameYear = eventTime.getFullYear() === now.getFullYear();
-  return eventTime.toLocaleDateString('en-US', {
+  return eventTime.toLocaleDateString(APP_LOCALE, {
     month: 'short',
     day: 'numeric',
     ...(sameYear ? {} : { year: 'numeric' }),

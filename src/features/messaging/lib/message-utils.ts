@@ -191,7 +191,7 @@ export function formatMessageTime(dateStr: string, options: { short?: boolean } 
   const diffMs = now.getTime() - date.getTime();
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-  const timeStr = date.toLocaleTimeString('en-US', {
+  const timeStr = date.toLocaleTimeString(APP_LOCALE, {
     hour: 'numeric',
     minute: '2-digit',
   });
@@ -205,9 +205,9 @@ export function formatMessageTime(dateStr: string, options: { short?: boolean } 
       return 'Yesterday';
     }
     if (diffDays < 7) {
-      return date.toLocaleDateString('en-US', { weekday: 'short' });
+      return date.toLocaleDateString(APP_LOCALE, { weekday: 'short' });
     }
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return date.toLocaleDateString(APP_LOCALE, { month: 'short', day: 'numeric' });
   }
 
   // Full display
@@ -218,17 +218,17 @@ export function formatMessageTime(dateStr: string, options: { short?: boolean } 
     return `Yesterday ${timeStr}`;
   }
   if (diffDays < 7) {
-    return `${date.toLocaleDateString('en-US', { weekday: 'long' })} ${timeStr}`;
+    return `${date.toLocaleDateString(APP_LOCALE, { weekday: 'long' })} ${timeStr}`;
   }
   if (date.getFullYear() === now.getFullYear()) {
     return (
-      date.toLocaleDateString('en-US', {
+      date.toLocaleDateString(APP_LOCALE, {
         month: 'short',
         day: 'numeric',
       }) + ` at ${timeStr}`
     );
   }
-  return date.toLocaleDateString('en-US', {
+  return date.toLocaleDateString(APP_LOCALE, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -263,7 +263,7 @@ export function formatRelativeTime(dateStr: string): string {
   if (weeks < 4) {
     return `${weeks}w`;
   }
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return date.toLocaleDateString(APP_LOCALE, { month: 'short', day: 'numeric' });
 }
 
 /**
@@ -282,12 +282,12 @@ export function getDateDividerText(dateStr: string): string {
     return 'Yesterday';
   }
   if (diffDays < 7) {
-    return date.toLocaleDateString('en-US', { weekday: 'long' });
+    return date.toLocaleDateString(APP_LOCALE, { weekday: 'long' });
   }
   if (date.getFullYear() === now.getFullYear()) {
-    return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+    return date.toLocaleDateString(APP_LOCALE, { month: 'long', day: 'numeric' });
   }
-  return date.toLocaleDateString('en-US', {
+  return date.toLocaleDateString(APP_LOCALE, {
     month: 'long',
     day: 'numeric',
     year: 'numeric',
@@ -381,6 +381,7 @@ export function getParticipantProfileHref(participant: Participant | undefined):
 // =============================================================================
 
 import { VALIDATION } from './constants';
+import { APP_LOCALE } from '@/utils/locale';
 
 /**
  * Validate message content

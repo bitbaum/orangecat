@@ -7,6 +7,7 @@ import {
 } from '@/config/tasks';
 import { AlertTriangle, Bell, CheckCircle, Clock } from 'lucide-react';
 import type { Task } from '@/lib/schemas/tasks';
+import { APP_LOCALE } from '@/utils/locale';
 
 interface TaskWithRelations extends Task {
   creator?: {
@@ -46,7 +47,7 @@ function formatDueDate(dueDate: string): string {
   if (diffHours < 48) {
     return 'Tomorrow';
   }
-  return date.toLocaleDateString('en-CH', { month: 'short', day: 'numeric' });
+  return date.toLocaleDateString(APP_LOCALE, { month: 'short', day: 'numeric' });
 }
 
 export default function TaskCard({ task, onComplete, onFlagAttention, onClick }: TaskCardProps) {

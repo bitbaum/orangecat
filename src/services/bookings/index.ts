@@ -15,18 +15,13 @@ import { ROUTES } from '@/config/routes';
 import { NotificationDispatcher } from '@/services/notifications/dispatcher';
 import { convertToBtcOrNull } from '@/services/currency/rates.server';
 import type { CurrencyCode } from '@/config/currencies';
+import { APP_LOCALE } from '@/utils/locale';
 
 // Types
 type BookableType = 'service' | 'asset';
 
 export type BookingStatus =
-  | 'pending'
-  | 'confirmed'
-  | 'in_progress'
-  | 'completed'
-  | 'cancelled'
-  | 'rejected'
-  | 'no_show';
+  'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled' | 'rejected' | 'no_show';
 
 export interface Booking {
   id: string;
@@ -72,7 +67,7 @@ export interface CreateBookingInput {
 }
 
 function formatBookingStart(startsAt: string): string {
-  return new Date(startsAt).toLocaleString('en-US', {
+  return new Date(startsAt).toLocaleString(APP_LOCALE, {
     dateStyle: 'medium',
     timeStyle: 'short',
   });

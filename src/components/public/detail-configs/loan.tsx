@@ -10,6 +10,7 @@ import { ROUTES } from '@/config/routes';
 import type { EntityDetailConfig, EntityData } from '@/components/public/PublicEntityDetailPage';
 import { calculateProgress } from '@/lib/loans/progress';
 import { LOAN_TYPES, LOAN_CATEGORIES } from '@/config/loans';
+import { DAY_FIRST_LOCALE } from '@/utils/locale';
 
 const labelFor = (
   options: ReadonlyArray<{ value: string; label: string }>,
@@ -37,7 +38,7 @@ const formatLoanDate = (value: unknown): string | null => {
   if (Number.isNaN(parsed.getTime())) {
     return value.trim();
   }
-  return parsed.toLocaleDateString('en-GB', {
+  return parsed.toLocaleDateString(DAY_FIRST_LOCALE, {
     day: 'numeric',
     month: 'long',
     year: 'numeric',

@@ -25,6 +25,7 @@ import {
 } from '@/config/entities/documents';
 import type { DocumentType, DocumentVisibility } from '@/lib/validation';
 import { DeleteDocumentButton } from './DeleteDocumentButton';
+import { APP_LOCALE } from '@/utils/locale';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -197,7 +198,7 @@ export default async function DocumentDetailPage({ params }: PageProps) {
             <div>
               <dt className="text-fg-secondary">Created</dt>
               <dd className="font-medium mt-1">
-                {new Date(doc.created_at).toLocaleDateString('en-US', {
+                {new Date(doc.created_at).toLocaleDateString(APP_LOCALE, {
                   year: 'numeric',
                   month: 'long',
                   day: 'numeric',
@@ -209,7 +210,7 @@ export default async function DocumentDetailPage({ params }: PageProps) {
             <div>
               <dt className="text-fg-secondary">Last Updated</dt>
               <dd className="font-medium mt-1">
-                {new Date(doc.updated_at).toLocaleDateString('en-US', {
+                {new Date(doc.updated_at).toLocaleDateString(APP_LOCALE, {
                   year: 'numeric',
                   month: 'long',
                   day: 'numeric',

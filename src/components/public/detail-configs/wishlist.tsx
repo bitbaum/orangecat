@@ -22,6 +22,7 @@ import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { WISHLIST_TYPE_LABELS } from '@/config/wishlists';
 import { displayBTC } from '@/services/currency/formatting';
 import type { EntityDetailConfig } from '@/components/public/public-entity-detail-config';
+import { APP_LOCALE } from '@/utils/locale';
 
 /** The item shape both routes fetch (owner-only fields are optional). */
 export interface WishlistDetailItem {
@@ -177,7 +178,7 @@ export function buildWishlistDetailConfig(items: WishlistDetailItem[]): EntityDe
         </Badge>
         {entity.event_date && (
           <span className="text-sm text-fg-secondary">
-            {new Date(entity.event_date as string).toLocaleDateString('en-US', {
+            {new Date(entity.event_date as string).toLocaleDateString(APP_LOCALE, {
               month: 'long',
               day: 'numeric',
               year: 'numeric',

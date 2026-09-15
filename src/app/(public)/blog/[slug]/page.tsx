@@ -18,6 +18,7 @@ import { APP_NAME, SITE_URL } from '@/config/brand';
 import BlogShareButton from './BlogShareButton';
 import { GRADIENTS } from '@/config/gradients';
 import { ROUTES } from '@/config/routes';
+import { APP_LOCALE } from '@/utils/locale';
 
 interface PageProps {
   params: Promise<{
@@ -132,7 +133,7 @@ export default async function BlogPost({ params }: PageProps) {
               {/* Post Meta */}
               <div className="flex items-center text-sm text-fg-secondary border-t border-b border-default py-4">
                 <Calendar className="w-4 h-4 mr-2" />
-                {new Date(post.date).toLocaleDateString('en-US', {
+                {new Date(post.date).toLocaleDateString(APP_LOCALE, {
                   year: 'numeric',
                   month: 'long',
                   day: 'numeric',
