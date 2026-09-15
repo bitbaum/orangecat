@@ -182,6 +182,8 @@ export function getRouteSurface(pathname: string): RouteSurface {
 export interface RouteChrome {
   hideMobileBottomNav: boolean;
   preferCollapsedSidebar: boolean;
+  /** The floating Cat launcher. Hidden where a conversation IS the page. */
+  hideGlobalCat: boolean;
 }
 
 /** True when the pathname is the Cat hub (or a sub-route of it). SSOT — do
@@ -190,15 +192,21 @@ export function isCatHubPath(pathname: string): boolean {
   return pathname === '/dashboard/cat' || pathname.startsWith('/dashboard/cat/');
 }
 
+/** True in a companion's room (/companions/<id>/talk): the conversation is the page. */
+export function isCompanionTalkPath(pathname: string): boolean {
+  return /^\/companions\/[^/]+\/talk\/?$/.test(pathname);
+}
+
 /**
  * Per-route shell chrome. Sidebar collapse, mobile nav, and similar decisions
  * must derive from this — do not branch on pathname in layout components.
  */
 export function getRouteChrome(pathname: string): RouteChrome {
-  const catFocus = isCatHubPath(pathname);
+  const focus = isCatHubPath(pathname) || isCompanionTalkPath(pathname);
   return {
-    hideMobileBottomNav: catFocus,
-    preferCollapsedSidebar: catFocus,
+    hideMobileBottomNav: focus,
+    preferCollapsedSidebar: focus,
+    hideGlobalCat: focus,
   };
 }
 

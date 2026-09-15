@@ -61,7 +61,7 @@ export const aiAssistantEntityConfig: EntityConfig<AIAssistant> = {
     };
 
     // Build metadata parts
-    const metadataParts: string[] = [];
+    const metadataParts: string[] = [assistant.is_public ? 'Public' : 'Private'];
     if (assistant.category) {
       metadataParts.push(assistant.category);
     }
