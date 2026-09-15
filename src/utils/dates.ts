@@ -41,6 +41,35 @@ export function formatDurationMinutes(minutes: number | null | undefined): strin
   return mins === 0 ? `${hours} h` : `${hours} h ${mins} min`;
 }
 
+/**
+ * Relative time at MINUTE granularity: "just now", "45m ago", "3h ago".
+ *
+ * Distinct from formatRelativeTimeCompact, which starts at "Today" and so
+ * cannot say how long ago something happened within a day. A feed needs the
+ * fine answer; a profile's "joined" line does not. The group activity feed
+ * carried a private copy of this because the coarse one was all we exported,
+ * so two "x ago" dialects rendered on adjacent screens.
+ */
+export function formatRelativeTimeFine(date: string | Date): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  const minutes = Math.floor((Date.now() - d.getTime()) / 60000);
+  if (minutes < 1) {
+    return 'just now';
+  }
+  if (minutes < 60) {
+    return `${minutes}m ago`;
+  }
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) {
+    return `${hours}h ago`;
+  }
+  const days = Math.floor(hours / 24);
+  if (days < 30) {
+    return `${days}d ago`;
+  }
+  return formatDate(d);
+}
+
 export function formatRelativeTimeCompact(date: string | Date): string {
   const d = typeof date === 'string' ? new Date(date) : date;
   const days = Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));

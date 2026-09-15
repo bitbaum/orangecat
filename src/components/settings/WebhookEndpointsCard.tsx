@@ -24,7 +24,7 @@ import WebhookEndpointMintForm from '@/components/settings/WebhookEndpointMintFo
 import WebhookEndpointRow, { type WebhookEndpoint } from '@/components/settings/WebhookEndpointRow';
 import PlaintextRevealCard from '@/components/settings/PlaintextRevealCard';
 import { API_ROUTES } from '@/config/api-routes';
-import { formatDateTime } from '@/utils/locale';
+import { formatOptionalDateTime } from '@/utils/locale';
 
 interface MintResponse {
   data: { endpoint: WebhookEndpoint; secret: string };
@@ -38,13 +38,6 @@ interface ActorOption {
 interface Props {
   actors: ActorOption[];
   defaultActorId: string | null;
-}
-
-function formatTimestamp(value: string | null): string {
-  if (!value) {
-    return '—';
-  }
-  return formatDateTime(value);
 }
 
 export default function WebhookEndpointsCard({ actors, defaultActorId }: Props) {
@@ -226,7 +219,7 @@ export default function WebhookEndpointsCard({ actors, defaultActorId }: Props) 
                   setExpandedEndpointId(prev => (prev === endpoint.id ? null : endpoint.id))
                 }
                 onRevoke={handleRevoke}
-                formatTimestamp={formatTimestamp}
+                formatTimestamp={formatOptionalDateTime}
               />
             ))}
           </ul>

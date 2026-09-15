@@ -8,7 +8,7 @@ import { UserPlus, FileText, Vote, CalendarPlus, Activity } from 'lucide-react';
 import { API_ROUTES } from '@/config/api-routes';
 import { logger } from '@/utils/logger';
 import type { ActivityType } from '@/services/groups/types';
-import { formatDate } from '@/utils/dates';
+import { formatRelativeTimeFine } from '@/utils/dates';
 
 interface ActivityUser {
   id: string;
@@ -51,26 +51,6 @@ const ACTIVITY_CONFIG: Record<
     color: 'text-fg-secondary',
   },
 };
-
-function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) {
-    return 'just now';
-  }
-  if (minutes < 60) {
-    return `${minutes}m ago`;
-  }
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) {
-    return `${hours}h ago`;
-  }
-  const days = Math.floor(hours / 24);
-  if (days < 30) {
-    return `${days}d ago`;
-  }
-  return formatDate(dateStr);
-}
 
 function displayName(user: ActivityUser | null): string {
   if (!user) {
@@ -218,7 +198,7 @@ export function GroupActivityFeed({ groupSlug }: Props) {
                   </p>
                   <p className="text-xs text-fg-secondary mt-0.5 flex items-center gap-1">
                     <Icon className={`h-3 w-3 ${iconColor}`} />
-                    {timeAgo(activity.created_at)}
+                    {formatRelativeTimeFine(activity.created_at)}
                   </p>
                 </div>
               </li>
