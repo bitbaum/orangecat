@@ -46,9 +46,9 @@ function makeRequest(url, options = {}) {
       },
     };
 
-    const req = client.request(requestOptions, (res) => {
+    const req = client.request(requestOptions, res => {
       let data = '';
-      res.on('data', (chunk) => (data += chunk));
+      res.on('data', chunk => (data += chunk));
       res.on('end', () => {
         try {
           const parsed = JSON.parse(data);
@@ -142,7 +142,7 @@ function getEntityUrl(entityType, id) {
     loan: `/loans/${id}`,
     project: `/projects/${id}`,
     asset: `/assets/${id}`,
-    ai_assistant: `/ai-assistants/${id}`,
+    ai_assistant: `/companions/${id}`,
     circle: `/circles/${id}`,
   };
   return `${API_BASE_URL}${paths[entityType] || `/${entityType}/${id}`}`;
@@ -169,7 +169,10 @@ function parseArgs() {
       else if (!isNaN(Number(value)) && value !== '') data[key] = Number(value);
       else if (value.startsWith('[') && value.endsWith(']')) {
         // Array format: [item1,item2]
-        data[key] = value.slice(1, -1).split(',').map((v) => v.trim());
+        data[key] = value
+          .slice(1, -1)
+          .split(',')
+          .map(v => v.trim());
       } else data[key] = value;
     }
   }
@@ -191,7 +194,9 @@ async function main() {
     if (Object.keys(data).length === 0) {
       console.error('❌ No data provided. Use --field value format.');
       console.error('\nExample:');
-      console.error('  node scripts/cli/create-entity.js --type organization --name "My Company" --type company');
+      console.error(
+        '  node scripts/cli/create-entity.js --type organization --name "My Company" --type company'
+      );
       process.exit(1);
     }
 
@@ -208,6 +213,3 @@ if (require.main === module) {
 }
 
 module.exports = { createEntity, generateSlug };
-
-
-

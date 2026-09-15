@@ -15,7 +15,7 @@
  * Tab ids kept visible up front, in the order they naturally appear. Everything
  * else falls into the overflow "More" menu. Ids match those built in
  * ProfileLayout (`overview`, `info`, `timeline`, `projects`, and entity plurals
- * kebab-cased, e.g. `products`, `ai-assistants`).
+ * kebab-cased, e.g. `products`, `companions`).
  */
 export const PRIMARY_PROFILE_TAB_IDS: readonly string[] = [
   'timeline',

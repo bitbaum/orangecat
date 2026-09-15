@@ -20,7 +20,12 @@ describe('partitionTabs', () => {
 
   it('ignores primary ids with no matching tab (already-filtered visitor tabs)', () => {
     const tabs = ['timeline', 'overview'].map(tab);
-    const { primary, overflow } = partitionTabs(tabs, ['timeline', 'overview', 'projects', 'people']);
+    const { primary, overflow } = partitionTabs(tabs, [
+      'timeline',
+      'overview',
+      'projects',
+      'people',
+    ]);
     expect(primary.map(t => t.id)).toEqual(['timeline', 'overview']);
     expect(overflow).toEqual([]);
   });
@@ -33,14 +38,23 @@ describe('partitionTabs', () => {
   });
 
   it('defaults to PRIMARY_PROFILE_TAB_IDS', () => {
-    const tabs = ['timeline', 'assets', 'ai-assistants'].map(tab);
+    const tabs = ['timeline', 'assets', 'companions'].map(tab);
     const { primary, overflow } = partitionTabs(tabs);
     expect(primary.map(t => t.id)).toEqual(['timeline']);
-    expect(overflow.map(t => t.id)).toEqual(['assets', 'ai-assistants']);
+    expect(overflow.map(t => t.id)).toEqual(['assets', 'companions']);
   });
 
   it('never loses or duplicates a tab', () => {
-    const tabs = ['timeline', 'overview', 'projects', 'products', 'services', 'people', 'info', 'wallets'].map(tab);
+    const tabs = [
+      'timeline',
+      'overview',
+      'projects',
+      'products',
+      'services',
+      'people',
+      'info',
+      'wallets',
+    ].map(tab);
     const { primary, overflow } = partitionTabs(tabs);
     expect(primary.length + overflow.length).toBe(tabs.length);
     const seen = new Set([...primary, ...overflow].map(t => t.id));
@@ -55,6 +69,6 @@ describe('PRIMARY_PROFILE_TAB_IDS', () => {
     expect(PRIMARY_PROFILE_TAB_IDS).toContain('projects');
     // Long-tail entity + meta tabs live in the overflow menu.
     expect(PRIMARY_PROFILE_TAB_IDS).not.toContain('wallets');
-    expect(PRIMARY_PROFILE_TAB_IDS).not.toContain('ai-assistants');
+    expect(PRIMARY_PROFILE_TAB_IDS).not.toContain('companions');
   });
 });

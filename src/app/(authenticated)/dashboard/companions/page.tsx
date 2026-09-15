@@ -8,9 +8,9 @@ export default function AIAssistantsDashboardPage() {
   return (
     <EntityDashboardPage<AIAssistant>
       config={aiAssistantEntityConfig}
-      title="My AI Assistants"
+      title="My companions"
       description="Build and monetize autonomous AI services powered by your expertise"
-      createButtonLabel="Create AI Assistant"
+      createButtonLabel="Create a companion"
     />
   );
 }
