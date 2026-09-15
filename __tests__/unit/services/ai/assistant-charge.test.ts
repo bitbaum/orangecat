@@ -123,7 +123,7 @@ describe('settleAssistantCharge', () => {
     totalTokens: 1234,
   };
 
-  it('debits the payer and grants the creator 95%, keeping 5% for the platform', async () => {
+  it('debits the payer and grants the creator the whole price; the platform keeps nothing', async () => {
     appendCreditEntry.mockResolvedValue(0.5); // non-null → debit landed
     await settleAssistantCharge(admin, baseArgs);
 
@@ -137,11 +137,11 @@ describe('settleAssistantCharge', () => {
     // balance (closes the concurrent-message TOCTOU free-ride).
     expect(debit[2].allowOverdraw).toBe(true);
 
-    // Grant: creator gets exactly 95% of the gross, tagged as assistant revenue.
+    // Grant: the creator gets the whole gross, tagged as assistant revenue.
     const grant = appendCreditEntry.mock.calls[1] as [unknown, string, any];
     expect(grant[1]).toBe('creator');
     expect(grant[2].kind).toBe('grant');
-    expect(grant[2].amountBtc).toBeCloseTo(0.00095, 10); // 0.001 * 0.95
+    expect(grant[2].amountBtc).toBeCloseTo(0.001, 10); // 100% of 0.001
     // A credit (creator payout) must NEVER overdraw — only served debits do.
     expect(grant[2].allowOverdraw).toBeFalsy();
     expect(grant[2].ref).toBe('msg-1:creator');
