@@ -183,6 +183,23 @@ export function isAiRateLimitError(error: unknown): boolean {
 }
 
 /**
+ * Record which link actually answered the turn.
+ *
+ * Losses were logged here and wins were not, so the box sweep that divides one
+ * by the other could only ever see losses — a provider failing every call and
+ * one answering every call produced the same silence, because the fallback
+ * chain served both identically. `{ always: true }` because production logs at
+ * `warn`, and a counter a monitor reads must outlive the log level.
+ *
+ * Only the link is recorded. Never the message, never the answer.
+ */
+function logServed(provider: string, model: string): void {
+  logger.info('Cat chat: model call served', { link: `${provider}/${model}` }, 'cat/chat', {
+    always: true,
+  });
+}
+
+/**
  * Orchestrate a single Cat chat exchange and return the HTTP Response.
  *
  * The caller (route) has already authenticated, applied the rate limit, and
@@ -496,6 +513,7 @@ export async function orchestrateCatChat(
                 }
                 await emitDone();
                 doneEmitted = true;
+                logServed(activeProvider, activeModel);
                 break;
               }
             }
@@ -862,6 +880,7 @@ export async function orchestrateCatChat(
     }
     throw lastErr ?? new Error('Cat chat: no AI provider produced a response');
   }
+  logServed(lastTried.provider, lastTried.model);
 
   if (metered && meterRef && !fellBackTo) {
     // Credit-paid frontier exchange (non-streaming): debit only when the
