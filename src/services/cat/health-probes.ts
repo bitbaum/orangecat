@@ -12,6 +12,7 @@
  */
 
 import { PROVIDER_BASE_URLS } from '@/config/ai-provider-runtime';
+import { configuredFreeVendors, vendorModel } from '@/config/free-vendors';
 import { DEFAULT_FREE_MODEL_ID } from '@/config/ai-models';
 import { promptFitsGroqOnDemand, PLATFORM_GROQ_MODEL } from '@/services/ai/groq';
 import { checkModelRot } from './provider-catalog';
@@ -22,7 +23,13 @@ export type ProbeClass =
   'ok' | 'rate_limit' | 'auth' | 'no_key' | 'invalid_key' | 'upstream_err' | 'no_response';
 
 export interface ProbeResult {
-  provider: 'groq' | 'openrouter';
+  /**
+   * Vendor id. Deliberately a string rather than the old
+   * `'groq' | 'openrouter'` union: FREE_VENDORS is configuration, so the set
+   * of vendors is not knowable at compile time. The union silently excluded
+   * every vendor added after it was written.
+   */
+  provider: string;
   configured: boolean;
   status: number | null;
   class: ProbeClass;
@@ -33,7 +40,19 @@ export interface ProbeResult {
 }
 
 export interface CatHealthReport {
-  probes: { groq: ProbeResult; openrouter: ProbeResult };
+  /**
+   * One probe per vendor that is actually configured.
+   *
+   * `groq` and `openrouter` stay named because callers read them directly and
+   * they are wired separately from FREE_VENDORS. The index signature is what
+   * makes the rest visible: `classifyHealth` reads Object.values(probes), so a
+   * vendor absent here is a vendor no alert can ever mention.
+   *
+   * Before this, `probes` was exactly `{ groq, openrouter }` while the chain
+   * had three vendors — so Gemini could fail completely and every check would
+   * still report the truth about the other two.
+   */
+  probes: { groq: ProbeResult; openrouter: ProbeResult } & Record<string, ProbeResult>;
   /**
    * Registry free-model ids missing from the live OpenRouter catalog
    * (model rot). Empty = no drift; null = catalog check unavailable.
@@ -77,7 +96,7 @@ function sanitizeApiKey(key: string): { clean: string; hadJunk: boolean } {
 }
 
 async function probeProvider(
-  provider: 'groq' | 'openrouter',
+  provider: string,
   envVar: string,
   endpoint: string,
   model: string
@@ -274,17 +293,47 @@ async function probeWeb(): Promise<WebProbeResult> {
   }
 }
 
-/** Probe both providers and summarize. */
+/**
+ * One probe per CONFIGURED free vendor.
+ *
+ * Derived from `configuredFreeVendors()` rather than listed, so a vendor added
+ * to that config is watched without touching this file — the same property
+ * `checkModelRot()` already has for the catalogue check. A vendor the health
+ * report cannot see is a vendor no alert can ever mention, which is how a third
+ * link would have failed completely while the check reported everything fine.
+ *
+ * Costs one small completion per configured vendor per run. The route's own
+ * header already accounts for probes spending real tokens; this adds one call a
+ * day per vendor, which is the price of the vendor being visible at all.
+ */
+function probeFreeVendors(): Promise<ProbeResult[]> {
+  return Promise.all(
+    configuredFreeVendors().map(v =>
+      probeProvider(v.id, v.keyEnv, `${v.baseUrl}/chat/completions`, vendorModel(v))
+    )
+  );
+}
+
+/** Probe every configured provider and summarize. */
 export async function runCatHealthProbes(): Promise<CatHealthReport> {
   // One catalogue check for the whole chain, from @bitbaum/ai-kit — replacing
   // a per-provider probe each with its own copy of the three-state null
   // handling. A provider added to orangecatChain() is checked without new code.
-  const [groq, openrouter, rot, web] = await Promise.all([
+  const [groq, openrouter, freeVendors, rot, web] = await Promise.all([
     probeGroq(),
     probeOpenRouter(),
+    probeFreeVendors(),
     checkModelRot(),
     probeWeb(),
   ]);
+
+  // Keyed by vendor id so `Object.values(probes)` in classifyHealth sees them —
+  // that is what makes CAT_NO_VENDOR_REDUNDANCY count them as vendors at all.
+  const vendorProbes: Record<string, ProbeResult> = Object.fromEntries(
+    freeVendors.map(p => [p.provider, p])
+  );
+  /** Any configured free vendor answering a real request right now. */
+  const aFreeVendorServes = freeVendors.some(p => p.class === 'ok');
 
   // Split back out per provider so the report's shape — and everything reading
   // it — is unchanged. `null` still means "could not look", never "nothing is
@@ -315,11 +364,15 @@ export async function runCatHealthProbes(): Promise<CatHealthReport> {
   const webNote = web.reachable ? '' : ` ⚠️ ${web.detail}`;
 
   return {
-    probes: { groq, openrouter },
+    probes: { ...vendorProbes, groq, openrouter },
     missingFreeModels,
     missingGroqModels,
     groqCanServeCatPrompt: groqUsable,
-    catCanAnswer: groqUsable || openrouter.class === 'ok',
+    // A third vendor answering means Cat CAN answer, and this line used to
+    // say otherwise. With Gemini configured, the first day OpenRouter's 50
+    // requests ran out would have produced CAT_CANNOT_ANSWER — the loudest
+    // alert there is — while Gemini served every turn perfectly.
+    catCanAnswer: groqUsable || openrouter.class === 'ok' || aFreeVendorServes,
     web,
     summary:
       (groqUsable
