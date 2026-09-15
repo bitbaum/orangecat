@@ -192,8 +192,14 @@ export function emailPlainText(props: {
   return lines.join('\n');
 }
 
-/** Minimal HTML entity escaping for user-provided strings */
-function escapeHtml(str: string): string {
+/**
+ * Minimal HTML entity escaping for user-provided strings.
+ *
+ * SSOT for every email template — it was copied into four of them, which is
+ * four chances for one copy to drift and let a display name carry markup into
+ * an inbox. Pinned by `__tests__/unit/lib/email-escape-html.test.ts`.
+ */
+export function escapeHtml(str: string): string {
   return str
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')

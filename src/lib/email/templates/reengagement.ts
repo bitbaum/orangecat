@@ -6,7 +6,7 @@
  * Pure functions — no imports from outside templates.
  */
 
-import { emailLayout, emailPlainText, EMAIL_COLORS } from './layout';
+import { emailLayout, emailPlainText, escapeHtml, EMAIL_COLORS } from './layout';
 
 export type ReengagementStage = '14d' | '30d' | '60d' | '90d';
 
@@ -193,12 +193,4 @@ export function reengagementTemplate(data: ReengagementEmailData): {
   });
 
   return { subject: config.subject, html, text };
-}
-
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
 }

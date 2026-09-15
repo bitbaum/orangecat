@@ -39,6 +39,7 @@ export {
   promptFitsGroqOnDemand,
 } from '@/services/ai/groq-models';
 import { DEFAULT_GROQ_MODEL, GROQ_CHAT_MAX_TOKENS, getGroqModel } from '@/services/ai/groq-models';
+import { sanitizeApiKey } from '@/lib/api-key';
 
 // ==================== TYPES ====================
 
@@ -424,17 +425,6 @@ export class GroqAPIError extends Error {
 }
 
 // ==================== FACTORY FUNCTIONS ====================
-
-/**
- * Strip stray whitespace / newlines / control chars from an API key before
- * it goes into an Authorization header. Env vars set via secret-set commands
- * sometimes carry a trailing newline (or worse, a paste-artifact character)
- * that the Fetch API rejects with "invalid header value". Trim defensively at
- * every entry point.
- */
-function sanitizeApiKey(key: string): string {
-  return key.replace(/[\s\x00-\x1f\x7f]+/g, '');
-}
 
 /**
  * Create a Groq service instance using platform API key

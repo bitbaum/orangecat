@@ -18,6 +18,8 @@
  * Created: 2026-06-10
  */
 
+import { sanitizeApiKey } from '@/lib/api-key';
+
 export interface OpenAICompatMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
@@ -91,16 +93,6 @@ interface ApiErrorBody {
     type?: string;
     code?: string;
   };
-}
-
-/**
- * Strip stray whitespace / newlines / control chars from an API key before
- * it goes into an Authorization header. Same defensive sanitize as Groq +
- * OpenRouter — paste artifacts otherwise leak past `Headers.append` as
- * "invalid header value" errors that take API key contents along with them.
- */
-function sanitizeApiKey(key: string): string {
-  return key.replace(/[\s\x00-\x1f\x7f]+/g, '');
 }
 
 export class OpenAICompatibleAPIError extends Error {
