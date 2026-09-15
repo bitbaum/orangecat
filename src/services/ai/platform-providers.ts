@@ -1,43 +1,47 @@
 /**
- * Platform-tier provider chain.
+ * Platform-tier provider chain — the ADAPTER, not the definition.
  *
- * Builds the ordered list of providers that can serve a Cat chat request
- * when the user hasn't BYOK'd. Each entry is a ready-to-call AI service —
- * the resolver and the chat route don't need to know which env vars are
- * set; they just take the chain and walk it.
+ * This file used to answer two questions: which vendors and models make up the
+ * chain, and how to turn one into a callable service. The first answer was ALSO
+ * written in services/cat/provider-catalog.ts for the rot check, and the two
+ * drifted — different order, and Together present here but watched nowhere.
  *
- * Priority (first available wins, the rest become the fallback chain):
- *   1. Groq           — fastest inference, generous free tier
- *   2. OpenRouter     — broadest catalog via the free model pool
- *   3. Together AI    — backup free pool, OpenAI-compatible
- *   4. Platform Ollama — Hetzner-hosted small model, sovereignty backstop
+ * So the chain now has ONE definition (`servingChain()`), and this file does
+ * only the second job: map each link ai-kit hands back onto a ready-to-call
+ * `AiService`. A vendor added to the chain is dialled AND rot-checked without
+ * touching this file.
  *
- * Each provider is enabled by the presence of its env var. The chain
- * gracefully shrinks if some aren't configured — Cat works as long as
- * any one of them is alive. That's the "Cat survives anything" story.
+ * What stays here is what is genuinely OrangeCat's and has no place in a shared
+ * chain: how each vendor's client is constructed, the local Ollama backstop
+ * (no key, no catalogue, so not a chain vendor at all), and the circuit breaker
+ * over recently-failed links.
  *
  * Created: 2026-06-10
  */
 
+import { usableChain, type Link } from '@bitbaum/ai-kit';
+
 import {
-  isGroqAvailable,
   createGroqService,
   createOpenRouterService,
   createOpenAICompatibleServiceWithByok,
-  PLATFORM_GROQ_FALLBACK_MODEL,
-  PLATFORM_GROQ_MODEL,
 } from '@/services/ai';
-import { getFreeModels, getModelMetadata, DEFAULT_FREE_MODEL_ID } from '@/config/ai-models';
-import { resolveFreePool } from './free-model-pool';
-import { PROVIDER_BASE_URLS } from '@/config/ai-provider-runtime';
-import { configuredFreeVendors, vendorModel } from '@/config/free-vendors';
-import { createAutoRouter } from '@/services/ai/auto-router';
+import { servingChain } from '@/services/cat/provider-catalog';
 import { pruneDownLinks } from '@/services/ai/link-health';
 
 import type { AiService } from './types';
 
 export interface PlatformProvider {
-  providerId: 'groq' | 'openrouter' | 'together' | 'ollama' | 'cerebras';
+  /**
+   * Vendor id, as a STRING rather than a union of the vendors that existed when
+   * this was written. The union here read
+   * `'groq' | 'openrouter' | 'together' | 'ollama' | 'cerebras'` while the code
+   * cast `vendor.id as PlatformProvider['providerId']` — so it still named
+   * cerebras, which had been rejected, and omitted google, which was live. The
+   * cast hid both. Vendors come from config; config is not knowable at compile
+   * time.
+   */
+  providerId: string;
   /**
    * Where a raw tool-loop call should go for this provider, and with what.
    *
@@ -54,8 +58,6 @@ export interface PlatformProvider {
   defaultModel: string;
 }
 
-const TOGETHER_DEFAULT_MODEL = 'meta-llama/Llama-3.3-70B-Instruct-Turbo-Free';
-
 /**
  * Default model name for the Hetzner-hosted Ollama, overridable by env.
  * Llama 3.2 3B is the sweet spot for CPU-only Hetzner boxes (CCX23-class):
@@ -64,106 +66,53 @@ const TOGETHER_DEFAULT_MODEL = 'meta-llama/Llama-3.3-70B-Instruct-Turbo-Free';
 const PLATFORM_OLLAMA_DEFAULT_MODEL = 'llama3.2';
 
 /**
+ * The client for one vendor.
+ *
+ * Groq and OpenRouter have hand-written services because they carry
+ * vendor-specific behaviour the generic client does not model — Groq's TPM
+ * pre-flight and refusal-body parsing, OpenRouter's routed `:free` ids.
+ * Everything else speaks plain OpenAI-compatible HTTP, so it gets the generic
+ * client rather than a new file per vendor.
+ */
+function serviceFor(link: Link, key: string): AiService {
+  if (link.provider.id === 'groq') {
+    return createGroqService();
+  }
+  if (link.provider.id === 'openrouter') {
+    return createOpenRouterService();
+  }
+  return createOpenAICompatibleServiceWithByok({
+    apiKey: key,
+    baseUrl: link.provider.baseUrl,
+    providerId: link.provider.id,
+  });
+}
+
+/**
  * Compose the platform chain for a single chat request.
  *
- * @param message  the user's message — needed so the OpenRouter free-pool
- *                 auto-router can pick a model whose context fits.
+ * @param message  the user's message — the chain orders OpenRouter's free pool
+ *                 by what fits this turn.
  */
 export function buildPlatformProviders(message: string): PlatformProvider[] {
-  const out: PlatformProvider[] = [];
-
-  if (isGroqAvailable()) {
-    // Two Groq links, because Groq rations PER MODEL. Measured from response
-    // headers on one key within the same minute: gpt-oss-20b had 591 of its
-    // 1000 daily requests left while qwen3.8-27b had 999 of its own. So the
-    // second entry is a genuine fallback rather than the usual same-vendor
-    // illusion — it draws on a budget the first one cannot spend.
-    //
-    // It matters most exactly when it is reached: the vendor after Groq is
-    // OpenRouter's free tier, which allows 50 requests a day.
-    const groqService = createGroqService();
-    const groqModels = [PLATFORM_GROQ_MODEL, PLATFORM_GROQ_FALLBACK_MODEL].filter(
-      (m, i, all) => all.indexOf(m) === i
-    );
-    for (const model of groqModels) {
-      out.push({
-        providerId: 'groq',
-        aiService: groqService,
-        // The FREE model, not the capable one: a metered default here is a step
-        // that can only 402, and this chain exists for users without a key.
-        defaultModel: model,
-        toolEndpoint: `${PROVIDER_BASE_URLS.groq}/chat/completions`,
-        toolKey: process.env.GROQ_API_KEY ?? '',
-      });
-    }
-  }
-
-  // Free vendors come BEFORE OpenRouter, and the order is capacity rather than
-  // preference.
-  //
-  // OpenRouter's unpaid tier is 50 REQUESTS a day for the whole ACCOUNT, and on
-  // this box one OpenRouter key serves ten apps — so OrangeCat's realistic share
-  // is a handful of requests, spent early by whichever app asks first. Measured
-  // 2026-09-15, this chain put two OpenRouter links ahead of Gemini, so once
-  // Groq was spent every message paid two near-certain 429s before reaching a
-  // vendor that could actually answer.
-  //
-  // Gemini's quota is per PROJECT, so it is the one pool this app does not
-  // share with anything. Draining the scarcest, most-contended vendor first is
-  // backwards; it goes last. ai-kit's freeChain() already orders it this way
-  // (groq -> google -> openrouter) and Loki inherited that — this brings
-  // OrangeCat's hand-rolled chain in line with the package.
-  //
-  // A vendor with no key is skipped, not an error, so these stay safe to carry
-  // before the accounts exist. See config/free-vendors.ts.
-  for (const vendor of configuredFreeVendors()) {
-    const key = process.env[vendor.keyEnv] as string;
-    out.push({
-      providerId: vendor.id as PlatformProvider['providerId'],
-      aiService: createOpenAICompatibleServiceWithByok({
-        apiKey: key,
-        baseUrl: vendor.baseUrl,
-        providerId: vendor.id,
-      }),
-      defaultModel: vendorModel(vendor),
-      toolEndpoint: `${vendor.baseUrl}/chat/completions`,
+  // usableChain drops any vendor whose key is absent and expands the rest into
+  // one link per model, in chain order — the loop this file used to write out
+  // by hand, once per vendor.
+  const out: PlatformProvider[] = usableChain(servingChain(message)).map(link => {
+    const key = process.env[link.provider.keyEnv]?.trim() ?? '';
+    return {
+      providerId: link.provider.id,
+      aiService: serviceFor(link, key),
+      defaultModel: link.model,
+      toolEndpoint: `${link.provider.baseUrl}/chat/completions`,
       toolKey: key,
-    });
-  }
+    };
+  });
 
-  if (process.env.OPENROUTER_API_KEY) {
-    // OpenRouter exposes ~6 free models from different upstream providers
-    // (Venice, Lambda, Chutes, etc.). Each has its own rate limit. When one
-    // is congested (happens routinely on the popular Llama 3.3 70B), we want
-    // to roll to the next one rather than declare defeat. Contribute one
-    // entry per free model — the chat route walks them as separate fallbacks.
-    const openrouterService = createOpenRouterService();
-    for (const modelId of orderedOpenRouterFreeModels(message)) {
-      out.push({
-        providerId: 'openrouter',
-        aiService: openrouterService,
-        defaultModel: modelId,
-        toolEndpoint: `${PROVIDER_BASE_URLS.openrouter}/chat/completions`,
-        toolKey: process.env.OPENROUTER_API_KEY ?? '',
-      });
-    }
-  }
-
-  const togetherKey = process.env.TOGETHER_API_KEY;
-  if (togetherKey) {
-    out.push({
-      providerId: 'together',
-      aiService: createOpenAICompatibleServiceWithByok({
-        apiKey: togetherKey,
-        baseUrl: PROVIDER_BASE_URLS.together,
-        providerId: 'together',
-      }),
-      defaultModel: process.env.TOGETHER_DEFAULT_MODEL || TOGETHER_DEFAULT_MODEL,
-      toolEndpoint: `${PROVIDER_BASE_URLS.together}/chat/completions`,
-      toolKey: togetherKey,
-    });
-  }
-
+  // Ollama last, and separately: it has no API key and no catalogue, so it is
+  // neither gated by usableChain nor meaningful to rot-check. It is the
+  // sovereignty backstop — a local process that answers when every vendor is
+  // spent — which is exactly why it belongs after all of them.
   const ollamaUrl = process.env.PLATFORM_OLLAMA_URL;
   if (ollamaUrl) {
     out.push({
@@ -184,36 +133,4 @@ export function buildPlatformProviders(message: string): PlatformProvider[] {
   // Skip links that failed in the last minute (circuit breaker) — but never
   // prune to an empty chain; retrying dead links beats refusing to try.
   return pruneDownLinks(out, p => ({ provider: p.providerId, model: p.defaultModel }));
-}
-
-/**
- * Returns every OpenRouter free model the runtime knows about, ordered by
- * the auto-router's preference for THIS message (best fit first, others as
- * fallbacks). The first entry is what the auto-router would have picked
- * standalone; the rest let the chat route roll through the pool when an
- * upstream provider (Venice, Lambda, Chutes, ...) is congested.
- */
-function orderedOpenRouterFreeModels(message: string): string[] {
-  const freeIds = getFreeModels()
-    .map(m => m.id)
-    .filter(id => !!getModelMetadata(id));
-  if (freeIds.length === 0) {
-    return [DEFAULT_FREE_MODEL_ID];
-  }
-
-  const auto = createAutoRouter();
-  const top = auto.selectModel({
-    message,
-    conversationHistory: [],
-    allowedModels: freeIds,
-  }).model;
-
-  const head = getModelMetadata(top) ? top : freeIds[0];
-  const rest = freeIds.filter(id => id !== head);
-
-  // Last step, and the only one that reads the vendor rather than the repo:
-  // drop ids OpenRouter has retired, and append live free ones the registry
-  // never knew about. The order above is preserved exactly — a healthy request
-  // still gets the model the auto-router chose. See free-model-pool.ts.
-  return resolveFreePool([head, ...rest]);
 }
