@@ -24,7 +24,14 @@ tests/.auth/
 report/
 jscpd-report.json
 
-# Manual verify-run screenshots (Playwright / browser MCP exports)
+# Manual verify-run screenshots (Playwright / browser MCP exports).
+#
+# The prefix list below grew one entry per incident, which means the next
+# screenshot under a NEW name lands in a commit anyway — 469KB of them reached
+# main on 2026-09-15 inside an unrelated one-line fix. Ignore the DIRECTORIES a
+# verification run writes to instead, and put keepers outside the repo.
+shots/
+screenshots/
 verify-*.jpeg
 verify-*.png
 tab-*.png
