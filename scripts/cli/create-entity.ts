@@ -43,7 +43,7 @@ const ENTITY_ENDPOINTS: Record<string, string> = {
   loan: '/api/loans',
   project: '/api/projects',
   asset: '/api/assets',
-  'ai_assistant': '/api/ai-assistants',
+  ai_assistant: '/api/ai-assistants',
   organization: '/api/organizations',
   circle: '/api/circles',
 };
@@ -241,7 +241,7 @@ function getEntityUrl(entityType: string, id: string): string {
     loan: `/loans/${id}`,
     project: `/projects/${id}`,
     asset: `/assets/${id}`,
-    ai_assistant: `/ai-assistants/${id}`,
+    ai_assistant: `/companions/${id}`,
   };
   return `${baseUrl}${paths[entityType] || `/${entityType}/${id}`}`;
 }
@@ -252,6 +252,3 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 }
 
 export { createEntity, createOrganization };
-
-
-

@@ -169,6 +169,23 @@ const nextConfig = {
         destination: '/dashboard/cat',
         permanent: true,
       },
+      // AI assistants became Companions (2026-09-15). Bookmarks and search
+      // results still carry the old paths; the API path did not move.
+      {
+        source: '/ai-assistants',
+        destination: '/companions',
+        permanent: true,
+      },
+      {
+        source: '/ai-assistants/:id',
+        destination: '/companions/:id',
+        permanent: true,
+      },
+      {
+        source: '/dashboard/ai-assistants/:path*',
+        destination: '/dashboard/companions/:path*',
+        permanent: true,
+      },
     ];
   },
 
