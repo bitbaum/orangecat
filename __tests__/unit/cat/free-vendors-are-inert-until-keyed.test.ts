@@ -148,6 +148,37 @@ describe('every vendor is watched from its first run', () => {
   });
 });
 
+describe('the configured id must be the one the CATALOGUE lists', () => {
+  /**
+   * The trap this exists for, found before it shipped.
+   *
+   * Google's compat catalogue lists every id with a `models/` prefix — all 56,
+   * with no bare form anywhere — while /chat/completions accepts BOTH
+   * `gemini-flash-latest` and `models/gemini-flash-latest` (verified across
+   * max_tokens 64/256/1024, identical answers).
+   *
+   * So the bare id works perfectly in production AND is reported MISSING by the
+   * catalogue check on every run: a nightly CAT_MODEL_ROT alarm about a model
+   * that serves fine. A config that is callable but not findable is worse than
+   * one that is neither, because it trains someone to ignore the alarm.
+   */
+  it('uses the prefixed form Google actually lists', () => {
+    const google = FREE_VENDORS.find(v => v.id === 'google');
+    if (!google) return; // covered by the list pin below
+    expect(google.defaultModel).toMatch(/^models\//);
+  });
+
+  it('prefers an ALIAS over a version, so the id cannot rot', () => {
+    // `gemini-2.5-flash` — the id an assistant reaches for from memory — is
+    // already refused for new accounts: "no longer available to new users".
+    // `-latest` is an alias Google repoints, the same property that makes
+    // `openrouter/free` the most rot-resistant entry in that chain.
+    const google = FREE_VENDORS.find(v => v.id === 'google');
+    if (!google) return;
+    expect(google.defaultModel).toContain('-latest');
+  });
+});
+
 describe('a vendor that does not answer is not carried', () => {
   it('lists only endpoints probed as reachable', () => {
     // The first draft of this file had three vendors written from memory. Two
@@ -155,14 +186,17 @@ describe('a vendor that does not answer is not carried', () => {
     // `models.github.ai` answers 410 with `github_models_retirement_brownout`.
     // Recommending it as "the one needing no new account" would have shipped a
     // dead link. A file about model rot is not exempt from model rot.
-    // Empty is the honest state: nothing has yet cleared the bar.
-    expect(FREE_VENDORS.map(v => v.id)).toEqual([]);
+    // Google cleared the bar on 2026-09-15 with a real key: the compat
+    // /models answered 200 (it 404s unkeyed), five ids returned native
+    // tool_calls, and a plain completion came back non-empty with finish=stop.
+    expect(FREE_VENDORS.map(v => v.id)).toEqual(['google']);
   });
 
   it('records why the rejected ones are absent, so nobody re-adds them', () => {
     // Absence carries no reason. Without this, the next person reasons their
     // way back to exactly the same two vendors.
-    expect([...REJECTED_VENDORS]).toEqual(['github', 'google', 'cerebras']);
+    // Google left this list when a key disproved the 404 inference.
+    expect([...REJECTED_VENDORS]).toEqual(['github', 'cerebras']);
     for (const id of REJECTED_VENDORS) {
       expect(FREE_VENDORS.some(v => v.id === id), id).toBe(false);
     }
