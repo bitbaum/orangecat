@@ -98,6 +98,39 @@ export function buildPlatformProviders(message: string): PlatformProvider[] {
     }
   }
 
+  // Free vendors come BEFORE OpenRouter, and the order is capacity rather than
+  // preference.
+  //
+  // OpenRouter's unpaid tier is 50 REQUESTS a day for the whole ACCOUNT, and on
+  // this box one OpenRouter key serves ten apps — so OrangeCat's realistic share
+  // is a handful of requests, spent early by whichever app asks first. Measured
+  // 2026-09-15, this chain put two OpenRouter links ahead of Gemini, so once
+  // Groq was spent every message paid two near-certain 429s before reaching a
+  // vendor that could actually answer.
+  //
+  // Gemini's quota is per PROJECT, so it is the one pool this app does not
+  // share with anything. Draining the scarcest, most-contended vendor first is
+  // backwards; it goes last. ai-kit's freeChain() already orders it this way
+  // (groq -> google -> openrouter) and Loki inherited that — this brings
+  // OrangeCat's hand-rolled chain in line with the package.
+  //
+  // A vendor with no key is skipped, not an error, so these stay safe to carry
+  // before the accounts exist. See config/free-vendors.ts.
+  for (const vendor of configuredFreeVendors()) {
+    const key = process.env[vendor.keyEnv] as string;
+    out.push({
+      providerId: vendor.id as PlatformProvider['providerId'],
+      aiService: createOpenAICompatibleServiceWithByok({
+        apiKey: key,
+        baseUrl: vendor.baseUrl,
+        providerId: vendor.id,
+      }),
+      defaultModel: vendorModel(vendor),
+      toolEndpoint: `${vendor.baseUrl}/chat/completions`,
+      toolKey: key,
+    });
+  }
+
   if (process.env.OPENROUTER_API_KEY) {
     // OpenRouter exposes ~6 free models from different upstream providers
     // (Venice, Lambda, Chutes, etc.). Each has its own rate limit. When one
@@ -128,25 +161,6 @@ export function buildPlatformProviders(message: string): PlatformProvider[] {
       defaultModel: process.env.TOGETHER_DEFAULT_MODEL || TOGETHER_DEFAULT_MODEL,
       toolEndpoint: `${PROVIDER_BASE_URLS.together}/chat/completions`,
       toolKey: togetherKey,
-    });
-  }
-
-  // One link per free vendor whose key exists. Independent daily buckets are
-  // what makes this chain survive a vendor having a bad day — see
-  // config/free-vendors.ts. A vendor with no key is skipped, not an error, so
-  // these are safe to carry before the accounts exist.
-  for (const vendor of configuredFreeVendors()) {
-    const key = process.env[vendor.keyEnv] as string;
-    out.push({
-      providerId: vendor.id as PlatformProvider['providerId'],
-      aiService: createOpenAICompatibleServiceWithByok({
-        apiKey: key,
-        baseUrl: vendor.baseUrl,
-        providerId: vendor.id,
-      }),
-      defaultModel: vendorModel(vendor),
-      toolEndpoint: `${vendor.baseUrl}/chat/completions`,
-      toolKey: key,
     });
   }
 
