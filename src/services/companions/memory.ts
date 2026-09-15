@@ -54,12 +54,16 @@ export interface CompanionMemoryKey {
   userId: string;
 }
 
-/** Minimal AI service shape used for distillation (matches the chat provider). */
+/**
+ * Minimal AI service shape used for distillation. The roles are the narrow
+ * union the chat clients accept, not `string`: a wider type here compiles
+ * where it is declared and fails where the real client is passed in.
+ */
 export interface CompanionMemoryAiService {
   chatCompletion(opts: {
     model: string;
-    messages: Array<{ role: string; content: string }>;
-    temperature: number;
+    messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>;
+    temperature?: number;
   }): Promise<{ content: string }>;
 }
 
