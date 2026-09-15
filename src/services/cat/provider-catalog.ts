@@ -30,6 +30,10 @@ import { PROVIDER_BASE_URLS } from '@/config/ai-provider-runtime';
 import { getFreeModels } from '@/config/ai-models';
 import { CONFIGURED_GROQ_MODEL_IDS } from '@/services/ai/groq-models';
 import { FREE_VENDORS, vendorModel } from '@/config/free-vendors';
+import { PLATFORM_GROQ_FALLBACK_MODEL, PLATFORM_GROQ_MODEL } from '@/services/ai/groq-models';
+import { getModelMetadata, DEFAULT_FREE_MODEL_ID } from '@/config/ai-models';
+import { resolveFreePool } from '@/services/ai/free-model-pool';
+import { createAutoRouter } from '@/services/ai/auto-router';
 
 /**
  * `dailyTokens` is only used by ai-kit's fair-share rationing, which OrangeCat
@@ -42,26 +46,83 @@ const OPENROUTER_DAILY_TOKENS = 50_000;
 /** Stated low on purpose: an invented allowance produces the wall it was meant to prevent. */
 const FREE_VENDOR_DAILY_TOKENS = 50_000;
 
-/** OrangeCat's platform chain, in the vocabulary the shared checker speaks. */
-export function orangecatChain(): Provider[] {
+/** Together's pinned free model. Watched like every other id, not trusted. */
+const TOGETHER_DEFAULT_MODEL = 'meta-llama/Llama-3.3-70B-Instruct-Turbo-Free';
+const TOGETHER_DAILY_TOKENS = 50_000;
+
+/**
+ * Every OpenRouter free model, ordered by the auto-router's preference for THIS
+ * message — best fit first, the rest as fallbacks.
+ *
+ * Lives here rather than in the provider builder because "which models, in what
+ * order" is the CHAIN's business; the builder's job is turning a link into a
+ * callable service. Keeping the two apart is what stopped them describing
+ * different chains, which is exactly what had happened.
+ */
+function orderedOpenRouterFreeModels(message: string): string[] {
+  const freeIds = getFreeModels()
+    .map(m => m.id)
+    .filter(id => !!getModelMetadata(id));
+  if (freeIds.length === 0) {
+    return resolveFreePool([DEFAULT_FREE_MODEL_ID]);
+  }
+
+  const auto = createAutoRouter();
+  const top = auto.selectModel({
+    message,
+    conversationHistory: [],
+    allowedModels: freeIds,
+  }).model;
+
+  const head = getModelMetadata(top) ? top : freeIds[0]!;
+  const rest = freeIds.filter(id => id !== head);
+
+  // Last step, and the only one that reads the vendor rather than the repo:
+  // drop ids OpenRouter has retired, and append live free ones the registry
+  // never knew about. See services/ai/free-model-pool.ts.
+  return resolveFreePool([head, ...rest]);
+}
+
+/**
+ * THE CHAIN OrangeCat ACTUALLY CALLS, in order. One definition, one order.
+ *
+ * This used to be two. `orangecatChain()` described a chain for the rot check
+ * while `buildPlatformProviders()` built a different one for real requests, and
+ * they drifted in all three ways a duplicated list can:
+ *
+ *   - ORDER. The rot list read groq -> openrouter -> vendors; the serving chain
+ *     read groq -> vendors -> openrouter (#1036). Nothing reconciled them.
+ *   - MEMBERSHIP. Together was in the serving chain and in NO rot check, so its
+ *     pinned `meta-llama/Llama-3.3-70B-Instruct-Turbo-Free` — the llama-3.3
+ *     family retired across other vendors — was never once checked.
+ *   - MODELS. Each re-derived its own ids from config, separately.
+ *
+ * Ordering is CAPACITY, not preference, and the scarcest pool goes last:
+ * OpenRouter's unpaid tier is 50 requests a DAY for an account ten apps share,
+ * while Groq rations per model and Gemini's quota is per project.
+ *
+ * `message` orders the OpenRouter models for this turn. Omit it and they keep
+ * registry order, which is all a rot check needs.
+ */
+export function servingChain(message?: string): Provider[] {
+  const openRouterModels = message
+    ? orderedOpenRouterFreeModels(message)
+    : getFreeModels().map(m => m.id);
+
   return [
     {
       id: 'groq',
       baseUrl: PROVIDER_BASE_URLS.groq,
       keyEnv: 'GROQ_API_KEY',
-      models: [...CONFIGURED_GROQ_MODEL_IDS],
+      // The two the PLATFORM serves, in order, deduped — not every configured
+      // id. A metered id here can only 402 for a user with no credits, which is
+      // the bug #1000 fixed. BYOK-selectable ids are watched by
+      // `orangecatChain()` below instead of being dialled here.
+      models: [...new Set([PLATFORM_GROQ_MODEL, PLATFORM_GROQ_FALLBACK_MODEL])],
       dailyTokens: GROQ_DAILY_TOKENS,
     },
-    {
-      id: 'openrouter',
-      baseUrl: PROVIDER_BASE_URLS.openrouter,
-      keyEnv: 'OPENROUTER_API_KEY',
-      models: getFreeModels().map(m => m.id),
-      dailyTokens: OPENROUTER_DAILY_TOKENS,
-    },
-    // Every free vendor, watched from the first run with a key. Their model ids
-    // are best-known rather than verified, which is exactly why they belong in
-    // a rot check instead of being trusted.
+    // Free vendors before OpenRouter: their quotas are per project/account of
+    // our own, OpenRouter's is shared and nearly always spent.
     ...FREE_VENDORS.map(v => ({
       id: v.id,
       baseUrl: v.baseUrl,
@@ -69,7 +130,41 @@ export function orangecatChain(): Provider[] {
       models: [vendorModel(v)],
       dailyTokens: FREE_VENDOR_DAILY_TOKENS,
     })),
+    {
+      id: 'openrouter',
+      baseUrl: PROVIDER_BASE_URLS.openrouter,
+      keyEnv: 'OPENROUTER_API_KEY',
+      models: openRouterModels,
+      dailyTokens: OPENROUTER_DAILY_TOKENS,
+    },
+    {
+      id: 'together',
+      baseUrl: PROVIDER_BASE_URLS.together,
+      keyEnv: 'TOGETHER_API_KEY',
+      models: [process.env.TOGETHER_DEFAULT_MODEL?.trim() || TOGETHER_DEFAULT_MODEL],
+      dailyTokens: TOGETHER_DAILY_TOKENS,
+    },
   ];
+}
+
+/**
+ * What the rot check watches: the serving chain, widened where a BYOK user can
+ * select an id the platform itself never dials.
+ *
+ * A SUPERSET by construction rather than a second list, so the two cannot
+ * disagree about the part that matters — what we actually call. Groq is the
+ * only vendor with the distinction: `CONFIGURED_GROQ_MODEL_IDS` is what a
+ * BYOK user may pick, and a retirement there breaks them just as completely.
+ *
+ * Ollama is deliberately absent: it is a local process with no catalogue to
+ * read, so there is nothing for a rot check to ask it.
+ */
+export function orangecatChain(): Provider[] {
+  return servingChain().map(p =>
+    p.id === 'groq'
+      ? { ...p, models: [...new Set([...p.models, ...CONFIGURED_GROQ_MODEL_IDS])] }
+      : p
+  );
 }
 
 export type ModelRotReport = {

@@ -18,16 +18,44 @@ import { join } from 'node:path';
 import { orangecatChain } from '@/services/cat/provider-catalog';
 import { getFreeModels, getModelMetadata } from '@/config/ai-models';
 import { CONFIGURED_GROQ_MODEL_IDS } from '@/services/ai/groq-models';
+import { servingChain } from '@/services/cat/provider-catalog';
 
 describe('the chain description is read, not written', () => {
   const chain = orangecatChain();
   const byId = (id: string) => chain.find(p => p.id === id)!;
 
-  it('takes its Groq ids from the Groq config', () => {
-    expect(byId('groq').models).toEqual([...CONFIGURED_GROQ_MODEL_IDS]);
+  it('watches every Groq id the config offers', () => {
+    // Order is not the property — a rot check asks "does the vendor still list
+    // this", which is membership. It changed when the chain gained a single
+    // definition: the watched list now LEADS with the ids the platform actually
+    // serves, then adds the ones only a BYOK user can select.
+    expect(new Set(byId('groq').models)).toEqual(new Set(CONFIGURED_GROQ_MODEL_IDS));
+  });
+
+  it('watches a SUPERSET of what it serves, for every vendor', () => {
+    // The invariant that replaced two hand-kept lists. `orangecatChain()` is
+    // built FROM `servingChain()`, so an id that gets dialled cannot go
+    // unwatched — which is exactly how Together's pinned llama-3.3 id sat in
+    // the serving chain and in no rot check at all.
+    const watched = orangecatChain();
+    for (const serving of servingChain()) {
+      const row = watched.find(p => p.id === serving.id);
+      expect(row, `${serving.id} is served but not watched`).toBeDefined();
+      for (const model of serving.models) {
+        expect(row!.models, `${serving.id}/${model} is dialled but unwatched`).toContain(model);
+      }
+    }
+  });
+
+  it('watches Together, which no rot check covered before', () => {
+    const together = orangecatChain().find(p => p.id === 'together');
+    expect(together, 'together missing from the watched chain').toBeDefined();
+    expect(together!.models.length).toBeGreaterThan(0);
   });
 
   it('takes its OpenRouter ids from the free models in the registry', () => {
+    // No message passed, so the pool keeps registry order — all a rot check
+    // needs. A real turn reorders it by what fits; see servingChain(message).
     expect(byId('openrouter').models).toEqual(getFreeModels().map(m => m.id));
     // And there is at least one, or the check would pass by checking nothing.
     expect(byId('openrouter').models.length).toBeGreaterThan(0);
