@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { Bitcoin, Copy, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { truncateAddress } from '@/utils/string';
@@ -12,6 +13,7 @@ import BitcoinDonationCard from '@/components/bitcoin/BitcoinDonationCard';
 import BitcoinWalletStatsCompact from '@/components/bitcoin/BitcoinWalletStatsCompact';
 import { WalletsSkeleton } from '@/components/profile/ProfileSkeleton';
 import { getWalletReceiveHandle } from '@/lib/wallet-receive-handle';
+import { ROUTES } from '@/config/routes';
 import { computeWalletGoalProgress } from '@/lib/wallet-goal';
 import { useCurrencyConversion } from '@/hooks/useCurrencyConversion';
 
@@ -85,7 +87,16 @@ export default function ProfileWalletSection({
                     <span className="text-3xl">{wallet.category_icon || categoryInfo.icon}</span>
                     <div className="flex-1">
                       <h4 className="font-semibold flex items-center gap-2">
-                        {wallet.label}
+                        {/* The wallet's own page. A wallet is the thing a
+                            supporter is actually asked to fund, and until this
+                            route existed there was nothing to send them —
+                            only a card inside somebody's profile tab. */}
+                        <Link
+                          href={ROUTES.WALLETS.VIEW(wallet.id)}
+                          className="hover:text-bitcoinOrange transition-colors"
+                        >
+                          {wallet.label}
+                        </Link>
                         {wallet.is_primary && (
                           <span className="text-xs bg-bitcoinOrange/10 text-bitcoinOrange border border-bitcoinOrange/30 px-2 py-0.5 rounded">
                             Primary
