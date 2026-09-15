@@ -13,6 +13,12 @@ export { currencyConverter } from './rates';
 
 export { satsToBitcoin, bitcoinToSats, convertBtcTo, convertToBtc, convert } from './conversion';
 
-export { formatCurrency, displayBTC, formatSats, formatBTC } from './formatting';
+export {
+  formatCurrency,
+  formatAmountSuffixed,
+  displayBTC,
+  formatSats,
+  formatBTC,
+} from './formatting';
 
 export { parseAmount, parseBTCAmount, validateBTCAmount } from './validation';
