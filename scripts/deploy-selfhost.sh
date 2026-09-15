@@ -77,6 +77,37 @@ if [ -n "$SHIKI_STORE_ENTRY" ] && [ ! -e "$ST/node_modules/shiki" ]; then
   echo "→ deploy: linked standalone node_modules/shiki -> .pnpm/$SHIKI_STORE_ENTRY"
 fi
 
+# ── .release: which commit is actually serving ────────────────────────────────
+# Written INTO the staging tree, so it rsyncs with the release and swaps
+# atomically with it. Two consequences, both wanted:
+#
+#   - A rollback restores the right marker for free. `app-old` carries its own
+#     .release from when IT was deployed, so `mv app-old app` moves the truth
+#     back with the code. A marker written after the swap, or kept outside the
+#     release dir, would survive a rollback and then lie.
+#   - There is no window where the directory and the marker disagree.
+#
+# The gap this closes, from 2026-09-15: every CD run for a merge reported
+# `cancelled` while the box had in fact swapped in a new release — so CI status
+# and box state disagreed in BOTH directions, and answering "which commit is
+# live?" meant grepping the bundle for a string the change happened to
+# introduce. That works by luck: a refactor that adds no new literal (as this
+# one did) is unverifiable, and a string that already existed elsewhere gives a
+# false positive. A commit sha in a known path is the answer instead of an
+# inference.
+#
+# GITHUB_SHA in CI; the working tree's HEAD for a local deploy. `unknown` rather
+# than an empty file when neither is available — absent data should read as
+# absent, not as a blank truth.
+DEPLOY_SHA="${GITHUB_SHA:-$(git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null || echo unknown)}"
+DEPLOY_REF="${GITHUB_REF_NAME:-$(git -C "$REPO_ROOT" rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)}"
+{
+  echo "sha=$DEPLOY_SHA"
+  echo "ref=$DEPLOY_REF"
+  echo "deployed_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+} > "$ST/.release"
+echo "→ deploy: .release sha=$DEPLOY_SHA ref=$DEPLOY_REF"
+
 echo "=== rsync → $OC_BOX:$OC_APP_BASE/app-next ==="
 for attempt in 1 2 3; do
   rsync -a --delete --no-perms --no-owner --no-group --omit-dir-times \
