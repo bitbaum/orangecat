@@ -13,87 +13,19 @@ import type {
 export type { SuggestedAction, SuggestedWalletAction, CatAction, ExecActionResult };
 
 /**
- * One entity surfaced by a Cat tool call (search_platform, etc.).
- * Carries the route URL + type so the UI can link directly to the entity page.
+ * The Cat's tool-call vocabulary is defined once, by the pipeline that emits
+ * it: @/services/cat/tool-use-types. These were a second, hand-kept copy of
+ * ToolCallResultRef, ToolCallEvent and PrefillProposal — 55 lines of
+ * discriminated union that the chat route relays over SSE and this panel
+ * renders, so the two had to agree and nothing made them. Type-only
+ * re-export: erased at compile, no server code enters the bundle.
  */
-export interface ToolCallResultRef {
-  url: string;
-  type: string;
-  title: string;
-}
-
-/**
- * A tool the Cat invoked during this response. Shown to the user as a chip
- * above the message so the work the Cat did is never invisible.
- *
- * Discriminated by `status` so consumers get proper narrowing — `results` only
- * exists on the 'completed' variant, not on every state.
- */
-export type ToolCallEvent =
-  | {
-      id: string;
-      name: string;
-      status: 'running';
-      args?: Record<string, unknown>;
-    }
-  | {
-      id: string;
-      name: string;
-      status: 'completed';
-      resultCount: number;
-      results: ToolCallResultRef[];
-    }
-  | {
-      id: string;
-      name: string;
-      status: 'no_results';
-    }
-  | {
-      id: string;
-      name: string;
-      status: 'failed';
-      error?: string;
-    }
-  | {
-      /**
-       * An action that now waits on the confirmation card — not done, not
-       * failed. `pendingActionId` is the row the card will confirm, and it is
-       * the ONLY thing joining this chip to that card: the chip's own `id` is
-       * the provider's tool-call id, which the confirm route has never heard
-       * of. Without it the chip could only be matched by action NAME plus
-       * recency, which is ambiguous the moment two of the same action are
-       * waiting — so it said "needs your confirmation" forever, including
-       * after the user had confirmed it.
-       */
-      id: string;
-      name: string;
-      status: 'pending_confirmation';
-      pendingActionId?: string;
-    }
-  | {
-      /**
-       * The user was asked and said no. NOT a failure: nothing broke and
-       * nothing is worth retrying. `pending_confirmation` exists because
-       * sending a waiting action as 'failed' made the chat read "Action
-       * failed" above a card waiting for a tap; collapsing a DECLINE into
-       * 'failed' is the same mistake one step later.
-       */
-      id: string;
-      name: string;
-      status: 'declined';
-    };
-
-/**
- * A structured entity draft produced by the prefill_entity_form tool.
- * Rendered as a PrefilledFormCard so the user can review/edit before opening
- * the actual entity create form.
- */
-export interface PrefillProposal {
-  entityType: string;
-  sourceDescription: string;
-  data: Record<string, unknown>;
-  confidence: Record<string, number>;
-}
+import type {
+  ToolCallResultRef,
+  ToolCallEvent,
+  PrefillProposal,
+} from '@/services/cat/tool-use-types';
+export type { ToolCallResultRef, ToolCallEvent, PrefillProposal };
 
 /**
  * If the primary provider rate-limited and the route quietly switched to the
