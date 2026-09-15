@@ -307,7 +307,13 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
     category: 'business',
     createPriority: 5,
     paymentPattern: 'fixed_price',
-    canReceiveSupport: true,
+    // You do not donate to a companion, you talk to one — and per-message
+    // pricing already pays the creator 100% through Cat Credits. Marking this
+    // supportable put a five-button "Support with Bitcoin" form on the page,
+    // which then ran taller than everything else on it: the one thing a
+    // visitor should do (Talk) read as smaller than a donation nobody has
+    // ever made (zero payment_intents for this type, checked on the box).
+    canReceiveSupport: false,
   },
 
   // ==================== COMMUNITY (Network building) ====================
