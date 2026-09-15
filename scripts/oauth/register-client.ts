@@ -34,27 +34,12 @@
  * Created: 2026-06-17
  */
 
-import { config as loadEnv } from 'dotenv';
+import { die, requireOwnerAdminClient } from '../lib/owner-gate';
 import { createHash, randomBytes } from 'node:crypto';
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { parseAndValidateScopes } from '../../src/lib/oauth/config';
 
-loadEnv({ path: '.env.local' });
-
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-function die(message: string): never {
-  console.error(`✗ ${message}`);
-  process.exit(1);
-}
-
-if (process.env.ORANGECAT_OWNER_SEED !== '1') {
-  die('Refusing to run without ORANGECAT_OWNER_SEED=1 (owner-gated).');
-}
-if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
-  die('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in the environment.');
-}
+const admin = requireOwnerAdminClient();
 
 const rotate = process.argv.includes('--rotate');
 const clientArgIdx = process.argv.indexOf('--client');
@@ -152,10 +137,6 @@ const CLIENT = {
   is_confidential: spec.is_confidential,
   is_trusted: spec.is_trusted,
 } as const;
-
-const admin: SupabaseClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
-  auth: { persistSession: false, autoRefreshToken: false },
-});
 
 interface ClientRow {
   id: string;

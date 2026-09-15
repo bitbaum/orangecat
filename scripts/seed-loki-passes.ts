@@ -23,35 +23,17 @@
  * Created: 2026-07-22
  */
 
-import { config as loadEnv } from 'dotenv';
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { die, requireOwnerAdminClient } from './lib/owner-gate';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   LOKI_PASSES,
   OWNER_ACTOR_SLUG,
   type LokiPass,
 } from '../src/config/loki-passes';
 
-loadEnv({ path: '.env.local' });
+const admin = requireOwnerAdminClient();
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://orangecat.ch').replace(/\/+$/, '');
-
-function die(message: string): never {
-  console.error(`✗ ${message}`);
-  process.exit(1);
-}
-
-if (process.env.ORANGECAT_OWNER_SEED !== '1') {
-  die('Refusing to run without ORANGECAT_OWNER_SEED=1 (owner-gated).');
-}
-if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
-  die('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in the environment.');
-}
-
-const admin: SupabaseClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
-  auth: { persistSession: false, autoRefreshToken: false },
-});
 
 interface ActorRow {
   id: string;
@@ -142,7 +124,7 @@ async function upsertPass(actor: ActorRow, pass: LokiPass): Promise<string> {
 }
 
 async function main(): Promise<void> {
-  console.log(`Seeding Loki passes against ${SUPABASE_URL} …`);
+  console.log(`Seeding Loki passes against ${admin.supabaseUrl} …`);
   const actor = await resolveOwnerActor();
   console.log(`owner actor '${OWNER_ACTOR_SLUG}' = ${actor.id}`);
   await checkSellerWallet(actor);

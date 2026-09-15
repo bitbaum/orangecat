@@ -206,3 +206,47 @@ export function escapeHtml(str: string): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 }
+
+/**
+ * The content of a transactional email, independent of how it is rendered.
+ * Each template decides what to say; this is the shape it says it in.
+ */
+export interface EmailContent {
+  subject: string;
+  preheader: string;
+  heading: string;
+  bodyHtml: string;
+  bodyText: string;
+  ctaText: string;
+  ctaUrl: string;
+}
+
+/**
+ * Render one piece of content into the branded HTML and its plain-text
+ * fallback. The group-activity and re-engagement templates each wrote this
+ * out — the same fourteen lines of wiring, which is fourteen lines in which
+ * one of them could quietly stop passing `unsubscribeUrl` to the text part.
+ */
+export function renderEmail(
+  content: EmailContent,
+  unsubscribeUrl: string
+): { subject: string; html: string; text: string } {
+  const html = emailLayout({
+    preheader: content.preheader,
+    heading: content.heading,
+    body: content.bodyHtml,
+    ctaText: content.ctaText,
+    ctaUrl: content.ctaUrl,
+    unsubscribeUrl,
+  });
+
+  const text = emailPlainText({
+    heading: content.heading,
+    body: content.bodyText,
+    ctaText: content.ctaText,
+    ctaUrl: content.ctaUrl,
+    unsubscribeUrl,
+  });
+
+  return { subject: content.subject, html, text };
+}
