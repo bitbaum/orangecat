@@ -31,7 +31,7 @@ export function WalletEmptyState({ isOwner, onAddClick }: WalletEmptyStateProps)
       {isOwner && (
         <div className="text-center">
           <Link
-            href={ROUTES.WALLETS}
+            href={ROUTES.WALLETS.LIST}
             className="text-sm text-fg-secondary hover:text-bitcoinOrange dark:hover:text-fg-primary transition-colors inline-flex items-center gap-1"
           >
             I don't have a wallet yet
