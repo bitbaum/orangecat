@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
-import AiAssistantChat from '@/components/ai-assistants/AiAssistantChat';
+import { CompanionActions } from '@/components/companions/CompanionActions';
 import { AssistantPriceChip } from '@/components/ai-assistants/AssistantPriceChip';
 import type { EntityDetailConfig } from '@/components/public/PublicEntityDetailPage';
 import { ROUTES } from '@/config/routes';
@@ -29,17 +29,20 @@ const getAiPricing = (entity: Record<string, unknown>) => {
 };
 
 /**
- * SSOT for the AI-assistant detail page — shared by the public + owner
- * dashboard routes. Design: the assistant's page IS the conversation
- * (docs/specs/ai-assistant-surface.md). Header carries identity + price;
- * the chat is the main event; metadata is one compact strip below it —
- * no stacked leftover cards.
+ * SSOT for a companion's profile — shared by the public + owner dashboard
+ * routes. The conversation is its own page (/companions/[id]/talk); this
+ * page is who they are and what you can do: Talk, Clone, and Edit for the
+ * owner. Private companions pass the visibility filter only for their owner
+ * (PublicEntityDetailPage's owner preview).
  */
 export const aiAssistantDetailConfig: EntityDetailConfig = {
   entityType: 'ai_assistant',
-  ownerLabel: 'Created by',
-  descriptionTitle: 'About this AI Assistant',
+  ownerLabel: 'Made by',
+  descriptionTitle: 'About',
   metadataSelect: 'title, description, avatar_url',
+  // A private companion is the owner's alone. RLS already hides it from
+  // strangers; this keeps the page honest even for a signed-in non-owner.
+  visibilityFilter: { column: 'is_public', value: true },
   // No pay-the-seller-direct section: you don't pay an assistant up front — you
   // chat, and it charges per its pricing model (free / per-message via Cat
   // Credits) inside the chat widget. This also suppresses the default mobile
@@ -51,7 +54,7 @@ export const aiAssistantDetailConfig: EntityDetailConfig = {
     entity.avatar_url ? (
       <Image
         src={entity.avatar_url as string}
-        alt={(entity.title as string) || 'AI assistant'}
+        alt={(entity.title as string) || 'Companion'}
         width={64}
         height={64}
         className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
@@ -74,30 +77,25 @@ export const aiAssistantDetailConfig: EntityDetailConfig = {
           amountBtc={pricing.amount}
           suffix={pricing.suffix}
         />
-        {showFreeAllowance && (
-          <Badge variant="secondary">
-            First {freePerDay} free each day
-          </Badge>
-        )}
+        {showFreeAllowance && <Badge variant="secondary">First {freePerDay} free each day</Badge>}
       </div>
     );
   },
-  renderDetails: entity => {
+  renderDetails: (entity, _payable, isOwner, isSignedIn) => {
     const tags: string[] = Array.isArray(entity.tags) ? entity.tags : [];
     const traits: string[] = Array.isArray(entity.personality_traits)
       ? entity.personality_traits
       : [];
-    const welcome = entity.welcome_message as string | null | undefined;
-    const pricing = getAiPricing(entity);
 
     return (
       <>
-        <AiAssistantChat
-          assistantId={entity.id as string}
-          assistantName={(entity.title as string) || 'this assistant'}
-          assistantAvatar={entity.avatar_url as string | null | undefined}
-          welcomeMessage={welcome}
-          pricing={pricing}
+        <CompanionActions
+          id={entity.id as string}
+          isOwner={isOwner}
+          isSignedIn={isSignedIn}
+          isPublic={entity.is_public === true}
+          conversations={Number(entity.total_conversations ?? 0)}
+          clonedFrom={entity.cloned_from as string | null | undefined}
         />
 
         {(tags.length > 0 || traits.length > 0) && (

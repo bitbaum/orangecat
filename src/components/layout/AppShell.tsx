@@ -3,7 +3,7 @@
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { getRouteChrome, getRouteSurface, isCatHubPath } from '@/config/routes';
+import { getRouteChrome, getRouteSurface } from '@/config/routes';
 import GlobalCatLauncher from '@/components/ai-chat/GlobalCatLauncher';
 import { STORAGE_KEYS } from '@/config/storage-keys';
 import { Header } from './Header';
@@ -179,10 +179,8 @@ export function AppShell({ children }: AppShellProps) {
       <MobileBottomNav />
 
       {/* Global Cat — reachable from any authenticated app page, page-context-aware.
-          Hidden on the Cat hub itself (it IS Cat there). */}
-      {isAppSurface && isAuthReady && user && !isCatHubPath(pathname ?? '/') && (
-        <GlobalCatLauncher />
-      )}
+          Hidden where a conversation IS the page (the Cat hub, a companion's room). */}
+      {isAppSurface && isAuthReady && user && !routeChrome.hideGlobalCat && <GlobalCatLauncher />}
     </div>
   );
 }
