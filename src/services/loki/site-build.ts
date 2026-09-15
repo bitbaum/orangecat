@@ -21,6 +21,7 @@
  */
 import { postSignedToLoki, lokiRailConfigured } from './signed-post';
 import { logger } from '@/utils/logger';
+import { slugify } from '@/utils/string';
 
 const SITE_URL = process.env.LOKI_SITE_URL || 'https://loki.orangecat.ch/api/orangecat/site';
 
@@ -62,14 +63,8 @@ export interface SiteBuildInput {
 
 /** Turn a title into a plausible subdomain, so the model rarely has to guess. */
 export function slugFromTitle(title: string): string {
-  return title
-    .toLowerCase()
-    .normalize('NFKD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 42)
-    .replace(/-+$/g, '');
+  // Trailing dash re-trimmed: truncation can land on one.
+  return slugify(title, { maxLength: 42 }).replace(/-+$/g, '');
 }
 
 export async function requestLokiSite(input: SiteBuildInput): Promise<SiteBuildOutcome> {

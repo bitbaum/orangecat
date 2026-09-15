@@ -38,6 +38,17 @@ export function truncateAddress(
 
 // SSOT slug generator. `maxLength` truncates before random suffix is appended.
 // Set `randomSuffix: true` to append a 5-char base36 suffix for ad-hoc uniqueness.
+//
+// NFKD first, then drop the combining marks: an accented letter becomes its
+// base letter instead of vanishing. Without it `[^a-z0-9…]` deleted the letter
+// outright and Zürich slugged as "zrich", Café Genève as "caf-genve" — on a
+// platform whose users are mostly in Switzerland. It also cost a real person a
+// handle: a Cyrillic name emptied the slug entirely and the page shipped as
+// /profiles/someone (see domain/profileClaims/slug.ts, which transliterates
+// before calling this because of it).
+//
+// NFKD does not help scripts with no Latin decomposition — Cyrillic, Greek,
+// Han — so a caller that must handle those still transliterates first.
 export function slugify(
   input: string,
   options: { maxLength?: number; randomSuffix?: boolean } = {}
@@ -45,6 +56,8 @@ export function slugify(
   const base = input
     .toLowerCase()
     .trim()
+    .normalize('NFKD')
+    .replace(/[̀-ͯ]/g, '')
     .replace(/[^a-z0-9\s_-]/g, '')
     .replace(/[\s_-]+/g, '-')
     .replace(/^-+|-+$/g, '');
