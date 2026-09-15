@@ -68,7 +68,22 @@ describe('PRIMARY_PROFILE_TAB_IDS', () => {
     expect(PRIMARY_PROFILE_TAB_IDS).toContain('overview');
     expect(PRIMARY_PROFILE_TAB_IDS).toContain('projects');
     // Long-tail entity + meta tabs live in the overflow menu.
-    expect(PRIMARY_PROFILE_TAB_IDS).not.toContain('wallets');
     expect(PRIMARY_PROFILE_TAB_IDS).not.toContain('companions');
+  });
+
+  it('keeps wallets up front — the payment surface is never overflow', () => {
+    // This assertion was previously inverted, and the inversion was the bug:
+    // a profile with two live wallets read as a profile with no way to be paid.
+    // GET /api/wallets returned both, countPublicWallets saw both, so the tab
+    // was built and shown — inside the "More" menu, where its own owner did not
+    // find it. On a platform whose premise is "get paid by anyone", the tab
+    // answering "how do I pay this person?" is the one that cannot be tucked
+    // away. If this ever flips back, the payment surface has gone missing again.
+    expect(PRIMARY_PROFILE_TAB_IDS).toContain('wallets');
+
+    const tabs = ['timeline', 'overview', 'wallets', 'companions'].map(tab);
+    const { primary, overflow } = partitionTabs(tabs);
+    expect(primary.map(t => t.id)).toContain('wallets');
+    expect(overflow.map(t => t.id)).not.toContain('wallets');
   });
 });

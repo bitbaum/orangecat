@@ -190,10 +190,14 @@ export async function enforceSinglePrimary(
     ? { profile_id: wallet.profile_id }
     : { project_id: wallet.project_id };
 
+  // Deliberately NOT scoped to active rows. Restricting the sweep to
+  // `is_active = true` was how stranded flags survived: a wallet deactivated
+  // while primary could never be reached again by any later promotion, so the
+  // "one primary" invariant silently accumulated exceptions. Clearing every
+  // sibling — live or soft-deleted — is what makes this function's name true.
   await supabase
     .from(DATABASE_TABLES.WALLETS)
     .update({ is_primary: false })
-    .eq('is_active', true)
     .neq('id', walletId)
     .match(entityFilter);
 }
