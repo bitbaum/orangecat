@@ -34,6 +34,17 @@ export const APP_LOCALE = 'en-US';
  */
 export const DAY_FIRST_LOCALE = 'en-GB';
 
+/**
+ * A timestamp that may not exist yet — "last used", "last delivered".
+ *
+ * Three settings cards each carried a byte-identical private copy of this,
+ * six lines apart in the same directory, and jscpd never saw them because
+ * three exact clones of fifteen tokens are below its window.
+ */
+export function formatOptionalDateTime(value: string | null | undefined): string {
+  return value ? formatDateTime(value) : '—';
+}
+
 /** A number with grouping separators: 5000 → "5,000". */
 export function formatNumber(value: number): string {
   return value.toLocaleString(APP_LOCALE);
