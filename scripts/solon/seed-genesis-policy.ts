@@ -10,31 +10,12 @@
  * Run:
  *   ORANGECAT_OWNER_SEED=1 npx tsx scripts/solon/seed-genesis-policy.ts
  */
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import { config as loadEnv } from 'dotenv';
+import { die, requireOwnerAdminClient } from '../lib/owner-gate';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { ALLOCATION_POLICY_KEY, GENESIS_ALLOCATION_POLICY } from '../../src/config/solon';
 import { contentHashOf } from '../../src/services/solon/canonical';
 
-loadEnv({ path: '.env.local' });
-
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-function die(message: string): never {
-  console.error(`✗ ${message}`);
-  process.exit(1);
-}
-
-if (process.env.ORANGECAT_OWNER_SEED !== '1') {
-  die('Refusing to run without ORANGECAT_OWNER_SEED=1 (owner-gated).');
-}
-if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
-  die('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in the environment.');
-}
-
-const admin: SupabaseClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
-  auth: { persistSession: false, autoRefreshToken: false },
-});
+const admin = requireOwnerAdminClient();
 
 async function main() {
   const contentHash = contentHashOf(GENESIS_ALLOCATION_POLICY);
