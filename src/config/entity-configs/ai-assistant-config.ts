@@ -156,7 +156,7 @@ const fieldGroups: FieldGroup[] = [
     id: 'payment',
     title: 'Bitcoin & Payments',
     description:
-      'Wallet for receiving donations. Per-message pricing is charged from the chatter’s Cat Credits — you keep 95% as spendable credits.',
+      'Wallet for receiving donations. Per-message pricing is charged from the chatter’s Cat Credits — you keep all of it as spendable credits.',
     customComponent: WalletSelectorField,
     fields: [
       { name: 'bitcoin_address', label: 'Bitcoin Address', type: 'bitcoin_address' },

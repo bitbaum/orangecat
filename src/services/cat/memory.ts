@@ -22,6 +22,7 @@ import { DATABASE_TABLES } from '@/config/database-tables';
 import { MEMORY_IMPORT_CATEGORIES } from '@/config/cat-memory-import';
 import { embeddingsEnabled, embedText, embedTexts } from '@/services/ai/embeddings';
 import { logger } from '@/utils/logger';
+import { looksLikeSelfDisclosure } from '@/services/ai/self-disclosure';
 
 export interface CatMemory {
   id: string;
@@ -212,7 +213,7 @@ export function containsWholeWords(haystack: string, needle: string): boolean {
   if (!needle || !haystack) {
     return false;
   }
-  for (let from = 0; from <= haystack.length - needle.length; ) {
+  for (let from = 0; from <= haystack.length - needle.length;) {
     const at = haystack.indexOf(needle, from);
     if (at === -1) {
       return false;
@@ -673,48 +674,10 @@ export async function editMemoryMatching(
 
 // ─── Extraction ─────────────────────────────────────────────────────────────
 
-/**
- * Cheap gate: only spend an LLM call on extraction when the user's message
- * plausibly discloses something durable about them (preference, identity, goal,
- * relationship). Mirrors the tool-use keyword pre-filter — most utility queries
- * ("convert 0.1 BTC", "what's my balance") skip extraction entirely.
- */
-export function looksLikeSelfDisclosure(message: string): boolean {
-  const m = message.toLowerCase();
-  if (m.trim().length < 12) {
-    return false;
-  }
-  return SELF_DISCLOSURE_SIGNALS.some(s => m.includes(s));
-}
-
-const SELF_DISCLOSURE_SIGNALS = [
-  'i ',
-  "i'm",
-  'i am',
-  'i prefer',
-  'i like',
-  'i love',
-  'i hate',
-  'i use',
-  'i have',
-  'i live',
-  'i work',
-  'i build',
-  'i run',
-  'my ',
-  'me ',
-  'we ',
-  'our ',
-  "we're",
-  'remember',
-  'prefer',
-  'always',
-  'never',
-  'usually',
-  'call me',
-  'working on',
-  'focused on',
-];
+// The self-disclosure gate is shared with companion memory —
+// src/services/ai/self-disclosure.ts. Re-exported so existing callers and
+// tests keep importing it from here.
+export { looksLikeSelfDisclosure };
 
 const EXTRACTION_SYSTEM = `You extract durable, user-specific facts worth remembering long-term about a person, from one chat exchange.
 

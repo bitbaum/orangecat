@@ -45,6 +45,7 @@ export async function getConversationDetail(
       .from(DATABASE_TABLES.AI_MESSAGES)
       .select('*')
       .eq('conversation_id', convId)
+      .neq('role', 'system')
       .order('created_at', { ascending: true }),
     supabase
       .from(DATABASE_TABLES.AI_ASSISTANTS)

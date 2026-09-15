@@ -21,6 +21,8 @@ import type { AnySupabaseClient } from '@/lib/supabase/types';
 export const PROFILE_LISTING_COUNT_CONFIG: ReadonlyArray<{
   type: EntityType;
   userField: string;
+  /** A boolean column that must be true for the row to count as a listing. */
+  publicField?: string;
 }> = [
   { type: 'project', userField: 'user_id' },
   { type: 'product', userField: 'user_id' },
@@ -29,7 +31,8 @@ export const PROFILE_LISTING_COUNT_CONFIG: ReadonlyArray<{
   { type: 'event', userField: 'user_id' },
   { type: 'loan', userField: 'user_id' },
   { type: 'asset', userField: 'owner_id' },
-  { type: 'ai_assistant', userField: 'user_id' },
+  // A private companion is the owner's alone, not a listing.
+  { type: 'ai_assistant', userField: 'user_id', publicField: 'is_public' },
 ];
 
 export interface ProfileListingCounts {
@@ -48,14 +51,15 @@ export async function fetchProfileListingCounts(
   profileId: string
 ): Promise<ProfileListingCounts> {
   const results = await Promise.all(
-    PROFILE_LISTING_COUNT_CONFIG.map(({ type, userField }) =>
-      supabase
+    PROFILE_LISTING_COUNT_CONFIG.map(({ type, userField, publicField }) => {
+      const query = supabase
         .from(getTableName(type))
         .select('*', { count: 'exact', head: true })
         .eq(userField, profileId)
         .neq('status', 'draft')
-        .neq('show_on_profile', false)
-    )
+        .neq('show_on_profile', false);
+      return publicField ? query.eq(publicField, true) : query;
+    })
   );
 
   const counts = Object.fromEntries(

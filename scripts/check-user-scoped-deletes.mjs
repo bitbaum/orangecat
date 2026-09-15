@@ -29,7 +29,11 @@
 
 import { readFileSync } from 'node:fs';
 
-const FILES = ['src/services/cat/memory.ts', 'src/services/cat/economic-profile.ts'];
+const FILES = [
+  'src/services/cat/memory.ts',
+  'src/services/cat/economic-profile.ts',
+  'src/services/companions/memory.ts',
+];
 
 /**
  * A delete and the statement that follows it, up to the terminating `;`.

@@ -160,6 +160,23 @@ export function buildMessageHistory(history: { role: string; content: string }[]
   ];
 }
 
+/**
+ * The chat service for a resolved provider. Shared by the turn itself and by
+ * the post-turn memory distillation, so both talk to the same vendor.
+ */
+export function createChatService(
+  provider: AIProvider,
+  hasByok: boolean,
+  userKey: string | null
+): { chatCompletion: ReturnType<typeof createOpenRouterService>['chatCompletion'] } {
+  if (provider === 'groq') {
+    return createGroqService() as unknown as {
+      chatCompletion: ReturnType<typeof createOpenRouterService>['chatCompletion'];
+    };
+  }
+  return hasByok ? createOpenRouterServiceWithByok(userKey!) : createOpenRouterService();
+}
+
 export async function callAi(
   provider: AIProvider,
   hasByok: boolean,

@@ -109,11 +109,17 @@ export async function listAssistants(
   return { ok: true, data: { items: items || [], count: count || 0 } };
 }
 
-/** Create a draft AI assistant owned by the user. */
+/**
+ * Create a companion owned by the user. It is ACTIVE from the first save —
+ * the owner can talk to it at once — and private unless the form said
+ * otherwise. (Creating as draft made every new one unusable: chat required
+ * active, and no screen could flip it.)
+ */
 export async function createAssistant(
   supabase: AnySupabaseClient,
   userId: string,
-  d: AiAssistantInput
+  d: AiAssistantInput,
+  origin: { clonedFrom?: string } = {}
 ): Promise<AssistantResult<Record<string, unknown>>> {
   const actor = await getOrCreateUserActor(userId);
 
@@ -141,9 +147,10 @@ export async function createAssistant(
       price_per_1k_tokens: d.price_per_1k_tokens || 0,
       subscription_price: d.subscription_price || 0,
       free_messages_per_day: d.free_messages_per_day || 0,
-      status: STATUS.AI_ASSISTANTS.DRAFT,
-      is_public: false,
+      status: STATUS.AI_ASSISTANTS.ACTIVE,
+      is_public: d.is_public ?? false,
       is_featured: false,
+      cloned_from: origin.clonedFrom ?? null,
       lightning_address: d.lightning_address,
       bitcoin_address: d.bitcoin_address,
     })

@@ -108,6 +108,11 @@ export const GET = withOptionalAuth(async (request, context: RouteContext) => {
     // Add show_on_profile filter (exclude false, keep true and null)
     query = query.neq('show_on_profile', false);
 
+    // A private companion is the owner's alone; it is not a listing.
+    if (entityType === 'ai_assistant') {
+      query = query.eq('is_public', true);
+    }
+
     const { data, error } = await query;
 
     if (error) {

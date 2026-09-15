@@ -47,7 +47,8 @@ const buildAIAssistantUpdatePayload = createUpdatePayloadBuilder([
   // Visibility & Status
   // No default — see products/[id] note: a status default unpublishes on partial PUT.
   { from: 'status' },
-  { from: 'is_public', default: false },
+  // Same rule for visibility: a title-only PUT must not turn a public companion private.
+  { from: 'is_public' },
   { from: 'is_featured', default: false },
   // Bitcoin Payment Info
   { from: 'lightning_address', transform: entityTransforms.emptyStringToNull },

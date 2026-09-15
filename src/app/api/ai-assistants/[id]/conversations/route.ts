@@ -12,6 +12,7 @@ import { withAuth, type AuthenticatedRequest } from '@/lib/api/withAuth';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { STATUS } from '@/config/database-constants';
 import { logger } from '@/utils/logger';
+import { decideConversationAccess } from '@/services/companions/access';
 import {
   apiSuccess,
   apiCreated,
@@ -85,7 +86,7 @@ export const POST = withAuth(async (request: AuthenticatedRequest, context: Rout
     // Verify assistant exists and is active
     const { data: assistant, error: assistantError } = await supabase
       .from(DATABASE_TABLES.AI_ASSISTANTS)
-      .select('id, title, status, system_prompt, welcome_message')
+      .select('id, title, status, is_public, user_id, welcome_message')
       .eq('id', assistantId)
       .single();
 
@@ -93,8 +94,11 @@ export const POST = withAuth(async (request: AuthenticatedRequest, context: Rout
       return apiNotFound('Assistant not found');
     }
 
-    if (assistant.status !== STATUS.AI_ASSISTANTS.ACTIVE) {
-      return apiBadRequest('Assistant is not active');
+    const access = decideConversationAccess(assistant, user.id);
+    if (!access.allowed) {
+      return access.reason === 'not_found'
+        ? apiNotFound('Companion not found')
+        : apiBadRequest('This companion is not active');
     }
 
     // Create new conversation
@@ -113,14 +117,7 @@ export const POST = withAuth(async (request: AuthenticatedRequest, context: Rout
       return apiInternalError('Failed to create conversation');
     }
 
-    // Add system prompt as first message if exists
-    if (assistant.system_prompt) {
-      await supabase.from(DATABASE_TABLES.AI_MESSAGES).insert({
-        conversation_id: conversation.id,
-        role: 'system',
-        content: assistant.system_prompt,
-      });
-    }
+    // The prompt is composed per turn (definition + memory), never stored as a row.
 
     // Add welcome message if exists
     if (assistant.welcome_message) {

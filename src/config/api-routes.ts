@@ -238,6 +238,8 @@ export const API_ROUTES = {
       `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/${assistantId}/conversations/${conversationId}`,
     CONVERSATION_MESSAGES: (assistantId: string, conversationId: string) =>
       `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/${assistantId}/conversations/${conversationId}/messages`,
+    CLONE: (id: string) => `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/${id}/clone`,
+    MEMORIES: (id: string) => `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/${id}/memories`,
   },
   TRANSACTIONS: '/api/transactions',
   BOOKINGS: {
