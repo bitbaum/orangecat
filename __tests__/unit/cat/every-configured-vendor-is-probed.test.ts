@@ -38,15 +38,23 @@ const realFetch = global.fetch;
  * `429` stands in for an exhausted daily allowance.
  */
 function serve(outcome: Record<string, 'ok' | 429 | 500>) {
+  // Routed by exact HOSTNAME, not by substring.
+  //
+  // The first version used `url.includes('groq.com')`, which CodeQL failed as a
+  // high-severity "incomplete URL substring sanitization" — and it was right on
+  // the merits, not just by the rule: a URL like
+  // `https://evil.test/?x=api.groq.com` matches that check, so the mock would
+  // have routed on a path or query string. Harmless in a fixture, wrong
+  // everywhere, and not worth teaching by example.
+  const VENDOR_BY_HOST: Record<string, string> = {
+    'api.groq.com': 'groq',
+    'openrouter.ai': 'openrouter',
+    'generativelanguage.googleapis.com': 'google',
+  };
+
   return vi.fn(async (input: RequestInfo | URL) => {
     const url = String(input);
-    const host = url.includes('groq.com')
-      ? 'groq'
-      : url.includes('openrouter.ai')
-        ? 'openrouter'
-        : url.includes('generativelanguage.googleapis.com')
-          ? 'google'
-          : 'other';
+    const host = VENDOR_BY_HOST[new URL(url).hostname] ?? 'other';
 
     // Catalogue reads (GET /models) answer UNREADABLE on purpose.
     //
