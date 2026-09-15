@@ -12,17 +12,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Gauge, RefreshCw } from 'lucide-react';
 import { API_ROUTES } from '@/config/api-routes';
 import type { CatCapacityResponse } from '@/app/api/cat/capacity/route';
-
-function formatCountdown(seconds: number | null): string {
-  if (seconds === null) {
-    return '—';
-  }
-  if (seconds < 60) return `${Math.max(0, Math.round(seconds))}s`;
-  const m = Math.floor(seconds / 60);
-  if (m < 60) return `${m}m`;
-  const h = Math.floor(m / 60);
-  return `${h}h ${m % 60}m`;
-}
+import { formatCountdownShort } from '@/utils/countdown';
 
 function compact(n: number | null): string {
   if (n === null) {
@@ -105,7 +95,7 @@ export function SharedCapacityCard() {
             </dd>
             <dd className="text-xs text-fg-tertiary">
               {obs
-                ? `requests left · resets in ${formatCountdown(obs.resetRequestsSeconds)}`
+                ? `requests left · resets in ${formatCountdownShort(obs.resetRequestsSeconds)}`
                 : data.groq.configured
                   ? 'no request seen since the last restart'
                   : 'not configured'}
@@ -148,7 +138,7 @@ export function SharedCapacityCard() {
       {data && (
         <p className="mt-4 text-xs text-fg-tertiary">
           You: {data.quota.requestsRemaining} of {data.quota.dailyLimit} messages left today ·
-          resets in {formatCountdown(data.quota.resetInSeconds)}.
+          resets in {formatCountdownShort(data.quota.resetInSeconds)}.
         </p>
       )}
     </section>

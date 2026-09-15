@@ -5,6 +5,7 @@
  */
 
 import { API_ROUTES } from '@/config/api-routes';
+import { unwrapApiResponse } from '@/lib/api/client-response';
 
 export { fetchTipStatus as fetchReceiveStatus } from '@/services/tips/tip-client';
 
@@ -32,35 +33,16 @@ export interface ReceiveWalletOption {
   is_primary: boolean;
 }
 
-async function readJson(
-  res: Response
-): Promise<{ success?: boolean; data?: unknown; error?: unknown }> {
-  return (await res.json().catch(() => null)) ?? {};
-}
-
-function errorMessage(json: { error?: unknown }, fallback: string): string {
-  const err = json.error;
-  return (typeof err === 'string' ? err : (err as { message?: string })?.message) || fallback;
-}
-
 /** Can I be paid right now, and what is my @orangecat.ch address? */
 export async function fetchReceiveOverview(): Promise<OwnerReceiveOverview> {
   const res = await fetch(API_ROUTES.WALLETS.RECEIVE_STATUS);
-  const json = await readJson(res);
-  if (!res.ok || !json.success) {
-    throw new Error(errorMessage(json, 'Could not load your receiving setup.'));
-  }
-  return json.data as OwnerReceiveOverview;
+  return unwrapApiResponse<OwnerReceiveOverview>(res, 'Could not load your receiving setup.');
 }
 
 /** The owner's active wallets, for the receive-with switcher. */
 export async function fetchReceiveWallets(profileId: string): Promise<ReceiveWalletOption[]> {
   const res = await fetch(`${API_ROUTES.WALLETS.BASE}?profile_id=${encodeURIComponent(profileId)}`);
-  const json = await readJson(res);
-  if (!res.ok || !json.success) {
-    throw new Error(errorMessage(json, 'Could not load your wallets.'));
-  }
-  const rows = (json.data as Array<Record<string, unknown>>) ?? [];
+  const rows = (await unwrapApiResponse<Array<Record<string, unknown>> | null>(res, 'Could not load your wallets.')) ?? [];
   return rows.map(w => ({
     id: String(w.id),
     label: String(w.label ?? 'Wallet'),
@@ -79,9 +61,5 @@ export async function createReceiveRequest(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ amount_btc: amountBtc, ...(walletId ? { wallet_id: walletId } : {}) }),
   });
-  const json = await readJson(res);
-  if (!res.ok || !json.success) {
-    throw new Error(errorMessage(json, 'Could not create a payment request.'));
-  }
-  return json.data as ReceiveRequest;
+  return unwrapApiResponse<ReceiveRequest>(res, 'Could not create a payment request.');
 }

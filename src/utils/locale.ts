@@ -41,3 +41,16 @@ export function formatClockTime(value: string | number | Date): string {
   }
   return date.toLocaleTimeString(APP_LOCALE);
 }
+
+/**
+ * A timestamp column that may be empty: the full date and time, or an em dash.
+ * Three settings cards each declared this as `formatTimestamp`; the dash is a
+ * table convention, so it belongs next to the formatter rather than beside
+ * every table.
+ */
+export function formatDateTimeOrDash(value: string | null | undefined): string {
+  if (!value) {
+    return '—';
+  }
+  return formatDateTime(value);
+}

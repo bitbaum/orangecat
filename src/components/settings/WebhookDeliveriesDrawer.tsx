@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import { API_ROUTES } from '@/config/api-routes';
 import { logger } from '@/utils/logger';
-import { formatDateTime } from '@/utils/locale';
+import { formatDateTimeOrDash } from '@/utils/locale';
 
 interface DeliveryRow {
   id: string;
@@ -43,13 +43,6 @@ interface DeliveryRow {
 
 interface Props {
   endpointId: string;
-}
-
-function formatTimestamp(value: string | null): string {
-  if (!value) {
-    return '—';
-  }
-  return formatDateTime(value);
 }
 
 function StatusBadge({ status }: { status: DeliveryRow['status'] }) {
@@ -211,10 +204,10 @@ export default function WebhookDeliveriesDrawer({ endpointId }: Props) {
                       )}
                     </div>
                     <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-2xs text-fg-secondary">
-                      <span>Enqueued {formatTimestamp(d.created_at)}</span>
-                      <span>Last attempt {formatTimestamp(d.last_attempt_at)}</span>
+                      <span>Enqueued {formatDateTimeOrDash(d.created_at)}</span>
+                      <span>Last attempt {formatDateTimeOrDash(d.last_attempt_at)}</span>
                       {d.status === 'pending' && d.next_attempt_at && (
-                        <span>Next retry {formatTimestamp(d.next_attempt_at)}</span>
+                        <span>Next retry {formatDateTimeOrDash(d.next_attempt_at)}</span>
                       )}
                     </div>
                   </div>

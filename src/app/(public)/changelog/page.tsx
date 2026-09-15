@@ -1,20 +1,13 @@
 import React from 'react';
 import { PageHeading } from '@/components/layout/PageHeading';
 import { CHANGELOG, CHANGELOG_TAGS, type ChangelogTag } from '@/config/changelog';
+import { formatIsoDay } from '@/utils/dates';
 
 export const metadata = {
   title: 'Changelog',
   description:
     'What’s new on OrangeCat — every update that shipped, newest first. Bitcoin-native funding, discovery, and the sovereign personal economy, in the open.',
 };
-
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-/** Format 'YYYY-MM-DD' → 'Jul 22, 2026' deterministically (no TZ / hydration drift). */
-function formatDate(iso: string): string {
-  const [y, m, d] = iso.split('-').map(Number);
-  return `${MONTHS[(m ?? 1) - 1]} ${d}, ${y}`;
-}
 
 // Warm accent for the notable tags (new features, platform), monochrome for the rest.
 const TAG_CHIP: Record<ChangelogTag, string> = {
@@ -61,7 +54,7 @@ export default function ChangelogPage() {
 
               <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1">
                 <time dateTime={entry.date} className="font-mono text-xs text-fg-tertiary">
-                  {formatDate(entry.date)}
+                  {formatIsoDay(entry.date)}
                 </time>
                 <span
                   className={`inline-flex items-center rounded-full border px-2 py-0.5 text-2xs font-medium uppercase tracking-wide ${TAG_CHIP[entry.tag]}`}

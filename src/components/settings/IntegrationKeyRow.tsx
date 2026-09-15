@@ -11,11 +11,11 @@
 
 import { RotateCcw, Trash2 } from 'lucide-react';
 import type { IntegrationKey } from '@/components/settings/IntegrationKeysCard';
+import { formatDateTimeOrDash } from '@/utils/locale';
 
 interface Props {
   integrationKey: IntegrationKey;
   actorLabel: string;
-  formatTimestamp: (value: string | null) => string;
   onRotate: (key: IntegrationKey) => void;
   onRevoke: (key: IntegrationKey) => void;
 }
@@ -23,7 +23,6 @@ interface Props {
 export default function IntegrationKeyRow({
   integrationKey: key,
   actorLabel,
-  formatTimestamp,
   onRotate,
   onRevoke,
 }: Props) {
@@ -56,8 +55,8 @@ export default function IntegrationKeyRow({
               {(key.scopes ?? ['*']).join(', ')}
             </code>
           </span>
-          <span>Created {formatTimestamp(key.created_at)}</span>
-          <span>Last used {formatTimestamp(key.last_used_at)}</span>
+          <span>Created {formatDateTimeOrDash(key.created_at)}</span>
+          <span>Last used {formatDateTimeOrDash(key.last_used_at)}</span>
         </div>
       </div>
       {!isRevoked && (

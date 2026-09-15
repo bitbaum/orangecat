@@ -2,17 +2,10 @@ import Link from 'next/link';
 import { Clock } from 'lucide-react';
 import { ROUTES } from '@/config/routes';
 import type { Article } from '@/services/articles/types';
+import { formatDate } from '@/utils/dates';
 
 /** Shared presentational list of article cards — used by the /articles index and
  *  the profile Articles tab so the card markup lives in exactly one place. */
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-}
 
 export default function ArticleList({
   articles,

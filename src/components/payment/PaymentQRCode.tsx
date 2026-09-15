@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/Button';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { QR_RENDER } from '@/config/payment-qr';
+import { formatCountdownClock } from '@/utils/countdown';
 
 interface PaymentQRCodeProps {
   /** QR data string (bolt11 uppercased or bitcoin: URI) */
@@ -69,12 +70,6 @@ export function PaymentQRCode({
   // Deep link to open in a Lightning wallet
   const walletLink = isLightning ? `lightning:${qrData.toLowerCase()}` : qrData;
 
-  const formatCountdown = (secs: number) => {
-    const m = Math.floor(secs / 60);
-    const s = secs % 60;
-    return `${m}:${s.toString().padStart(2, '0')}`;
-  };
-
   return (
     <div className="flex flex-col items-center gap-4">
       <p className="text-sm text-fg-secondary">{methodLabel}</p>
@@ -107,7 +102,7 @@ export function PaymentQRCode({
           }`}
         >
           <Timer className="h-3 w-3" />
-          {secondsLeft <= 0 ? 'Invoice expired' : `Expires in ${formatCountdown(secondsLeft)}`}
+          {secondsLeft <= 0 ? 'Invoice expired' : `Expires in ${formatCountdownClock(secondsLeft)}`}
         </p>
       )}
 
