@@ -4,6 +4,8 @@
  * Provides a class-based interface for groups operations.
  * Internally uses the modular functions.
  */
+import type { AnySupabaseClient } from '@/lib/supabase/types';
+
 class GroupsService {
   // Group management
   async createGroup(input: Parameters<typeof import('./mutations/groups').createGroup>[0]) {
@@ -256,17 +258,27 @@ class GroupsService {
     return import('./queries/proposals').then(m => m.getProposalVotes(proposalId));
   }
 
-  // Permissions
+  // Permissions.
+  //
+  // `client` is not optional in practice on the server: without it the
+  // permission layer falls back to the BROWSER supabase client, which carries
+  // no session outside the browser. The check then runs as anon, finds no
+  // membership, and denies — so a member was told they could not vote, could
+  // not create a proposal, and could not manage settings. Pass the
+  // request-scoped client from every server caller.
   async checkGroupPermission(
     groupId: string,
     userId: string,
-    permission: Parameters<typeof import('./permissions').checkGroupPermission>[2]
+    permission: Parameters<typeof import('./permissions').checkGroupPermission>[2],
+    client?: AnySupabaseClient
   ) {
-    return import('./permissions').then(m => m.checkGroupPermission(groupId, userId, permission));
+    return import('./permissions').then(m =>
+      m.checkGroupPermission(groupId, userId, permission, client)
+    );
   }
 
-  async getGroupPermissions(groupId: string, userId: string) {
-    return import('./permissions').then(m => m.getGroupPermissions(groupId, userId));
+  async getGroupPermissions(groupId: string, userId: string, client?: AnySupabaseClient) {
+    return import('./permissions').then(m => m.getGroupPermissions(groupId, userId, client));
   }
 }
 

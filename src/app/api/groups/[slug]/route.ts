@@ -93,7 +93,8 @@ export const PUT = withAuth(async (request: AuthenticatedRequest, context: Route
     const canUpdate = await groupsService.checkGroupPermission(
       groupResult.group.id,
       user.id,
-      'canManageSettings'
+      'canManageSettings',
+      request.supabase
     );
 
     if (!canUpdate) {
