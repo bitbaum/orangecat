@@ -4,6 +4,7 @@ import { checkHealth } from '@/lib/health';
 import { PageHeading } from '@/components/layout/PageHeading';
 import { ROUTES } from '@/config/routes';
 import type { ServiceStatus } from '@/lib/health';
+import { APP_LOCALE } from '@/utils/locale';
 
 export const metadata = {
   title: 'System Status',
@@ -72,7 +73,7 @@ function overallMessage(status: ServiceStatus) {
 export default async function StatusPage() {
   const report = await checkHealth();
   const { title, body } = overallMessage(report.overall);
-  const checkedAt = new Date(report.timestamp).toLocaleTimeString('en-CH', {
+  const checkedAt = new Date(report.timestamp).toLocaleTimeString(APP_LOCALE, {
     hour: '2-digit',
     minute: '2-digit',
     timeZoneName: 'short',

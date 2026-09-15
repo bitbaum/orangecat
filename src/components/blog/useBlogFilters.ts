@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { BlogPost } from '@/lib/blog';
+import { APP_LOCALE } from '@/utils/locale';
 
 type TimeFilter = 'all' | 'thisyear' | 'last6months' | 'thismonth' | string;
 
@@ -52,10 +53,13 @@ export function useBlogFilters(posts: BlogPost[]) {
 
     yearMonths.forEach(yearMonth => {
       const [year, month] = yearMonth.split('-');
-      const monthName = new Date(parseInt(year), parseInt(month) - 1).toLocaleDateString('en-US', {
-        month: 'long',
-        year: 'numeric',
-      });
+      const monthName = new Date(parseInt(year), parseInt(month) - 1).toLocaleDateString(
+        APP_LOCALE,
+        {
+          month: 'long',
+          year: 'numeric',
+        }
+      );
       const monthPosts = posts.filter(post => {
         const postDate = new Date(post.date);
         return (

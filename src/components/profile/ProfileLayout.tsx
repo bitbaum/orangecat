@@ -33,8 +33,12 @@ import { cn } from '@/lib/utils';
 import { useProfileActions } from './useProfileActions';
 import { ProfileBannerSection } from './ProfileBannerSection';
 import { MAKER_STATUS_METADATA, isMakerStatus } from '@/config/maker-status';
+import { APP_LOCALE } from '@/utils/locale';
 
-const JOINED_DATE_FORMATTER = new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric' });
+const JOINED_DATE_FORMATTER = new Intl.DateTimeFormat(APP_LOCALE, {
+  month: 'short',
+  year: 'numeric',
+});
 
 /** "Joined Aug 2026" — quiet identity metadata, not a headline stat. */
 function formatJoinedDate(createdAt: string): string | null {

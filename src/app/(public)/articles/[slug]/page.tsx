@@ -15,13 +15,14 @@ import LongformBody from '@/lib/longform/LongformBody';
 import ShareButton from './ShareButton';
 import TipButton from '@/components/tips/TipButton';
 import ArticleOwnerActions from './ArticleOwnerActions';
+import { APP_LOCALE } from '@/utils/locale';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-US', {
+  return new Date(iso).toLocaleDateString(APP_LOCALE, {
     year: 'numeric',
     month: 'long',
     day: 'numeric',

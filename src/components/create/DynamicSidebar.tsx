@@ -23,6 +23,7 @@ import {
 import type { FieldGuidanceContent, DefaultContent } from '@/lib/project-guidance';
 import { formatCurrency } from '@/services/currency';
 import { useCurrencyConversion } from '@/hooks/useCurrencyConversion';
+import { APP_LOCALE } from '@/utils/locale';
 
 export type FieldType = string | null;
 
@@ -61,7 +62,7 @@ function CurrencyBreakdown({ amount, currency }: { amount: number; currency: str
     if (num === 0) {
       return '0';
     }
-    return num.toLocaleString('en-US', {
+    return num.toLocaleString(APP_LOCALE, {
       minimumFractionDigits: decimals,
       maximumFractionDigits: decimals,
     });

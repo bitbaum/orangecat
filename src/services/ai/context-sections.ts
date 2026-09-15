@@ -9,6 +9,7 @@ import type { DocumentContext, EntitySummary, FullUserContext } from './document
 import { ENTITY_STATUS } from '@/config/database-constants';
 import { renderLightningAddressProviders } from '@/config/wallet-providers';
 import { economicProfileGaps, economicCompleteness } from '@/services/cat/economic-profile';
+import { APP_LOCALE } from '@/utils/locale';
 
 const DOCUMENT_TYPE_LABELS: Record<string, string> = {
   goals: 'Goals & Aspirations',
@@ -81,7 +82,7 @@ export function renderCurrentSession(r: FullUserContext['runtime']): string | nu
   );
   if (r.btcRate) {
     lines.push(
-      `**Live BTC price**: 1 BTC ≈ ${Math.round(r.btcRate.rate).toLocaleString('en-US')} ${r.btcRate.currency} right now — use THIS rate for every BTC⇄fiat conversion. Never recall or guess a rate.`
+      `**Live BTC price**: 1 BTC ≈ ${Math.round(r.btcRate.rate).toLocaleString(APP_LOCALE)} ${r.btcRate.currency} right now — use THIS rate for every BTC⇄fiat conversion. Never recall or guess a rate.`
     );
   } else {
     lines.push(
@@ -410,13 +411,21 @@ export function renderStudioMap(map: FullUserContext['studioMap']): string | nul
     bits.push(
       `${p.layer}, ${p.status}${p.owner && p.owner !== 'bitbaum' ? `, for ${p.owner}` : ''}`
     );
-    if (p.urls?.live) bits.push(p.urls.live);
-    if (p.urls?.orangecat) bits.push(`on OrangeCat ${p.urls.orangecat}`);
-    if (p.now?.openRuns)
+    if (p.urls?.live) {
+      bits.push(p.urls.live);
+    }
+    if (p.urls?.orangecat) {
+      bits.push(`on OrangeCat ${p.urls.orangecat}`);
+    }
+    if (p.now?.openRuns) {
       bits.push(`${p.now.openRuns} run${p.now.openRuns === 1 ? '' : 's'} in flight`);
-    if (p.now?.lastLog)
+    }
+    if (p.now?.lastLog) {
       bits.push(`last: ${p.now.lastLog.date} ${p.now.lastLog.done.slice(0, 100)}`);
-    if (p.next) bits.push(`next: ${p.next.slice(0, 100)}`);
+    }
+    if (p.next) {
+      bits.push(`next: ${p.next.slice(0, 100)}`);
+    }
     const what = p.what ? ` — ${p.what.slice(0, 120)}` : '';
     return `- **${p.name}** (${p.slug})${what} [${bits.join('; ')}]`;
   });

@@ -13,6 +13,7 @@
  * so weekday labels have one owner.
  */
 import { WEEKDAYS } from '@/lib/availability';
+import { APP_LOCALE } from '@/utils/locale';
 
 /** Ordinal suffix for a day of the month: 1st, 2nd, 3rd, 4th… */
 function ordinal(n: number): string {
@@ -108,7 +109,7 @@ export function formatRecurrence(isRecurring: unknown, pattern: unknown): string
   if (typeof p.end_date === 'string' && p.end_date.trim()) {
     const d = new Date(p.end_date);
     if (!Number.isNaN(d.getTime())) {
-      sentence += ` · until ${d.toLocaleDateString('en-GB', {
+      sentence += ` · until ${d.toLocaleDateString(APP_LOCALE, {
         day: 'numeric',
         month: 'long',
         year: 'numeric',

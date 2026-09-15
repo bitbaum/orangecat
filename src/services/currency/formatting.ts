@@ -5,6 +5,7 @@
  */
 
 import { CURRENCY_METADATA } from '@/config/currencies';
+import { APP_LOCALE } from '@/utils/locale';
 
 // ==================== GENERAL FORMATTING ====================
 
@@ -68,7 +69,7 @@ export function formatBitcoinDisplay(amount: number): string {
 
 export function formatBTC(amount: number): string {
   const value = typeof amount === 'number' && isFinite(amount) ? amount : 0;
-  return `${value.toLocaleString('en-US', {
+  return `${value.toLocaleString(APP_LOCALE, {
     minimumFractionDigits: 8,
     maximumFractionDigits: 8,
   })} BTC`;
@@ -76,7 +77,7 @@ export function formatBTC(amount: number): string {
 
 export function formatSats(amount: number): string {
   const value = typeof amount === 'number' && isFinite(amount) ? Math.round(amount) : 0;
-  return `${value.toLocaleString('en-US')} sat`;
+  return `${value.toLocaleString(APP_LOCALE)} sat`;
 }
 
 /**

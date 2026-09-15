@@ -32,7 +32,17 @@ const files = execSync('git ls-files "src/**/*.ts" "src/**/*.tsx"', { encoding: 
 
 // toLocaleString() / toLocaleDateString(undefined, …) and friends — an empty
 // first argument, or an explicit `undefined` one, both mean "ask the browser".
-const OFFENDING = /\.toLocale(?:String|DateString|TimeString)\s*\(\s*(?:\)|undefined\b)/;
+const BROWSER_LOCALE = /\.toLocale(?:String|DateString|TimeString)\s*\(\s*(?:\)|undefined\b)/;
+
+// A hardcoded tag is the other half of the same rule, and this check used to
+// miss it entirely: 25 files pinned their own locale, in TWO dialects, so a
+// date read "15 September 2026" on the loan page and "September 15, 2026"
+// everywhere else. Passing 'en-US' also silently ignores APP_LOCALE, so the
+// day it changes those files keep the old one.
+const PINNED_LOCALE =
+  /(?:\.toLocale(?:String|DateString|TimeString)|Intl\.(?:NumberFormat|DateTimeFormat|RelativeTimeFormat|ListFormat))\s*\(\s*'[a-z]{2}(?:-[A-Za-z0-9]+)*'/;
+
+const OFFENDING = new RegExp(`${BROWSER_LOCALE.source}|${PINNED_LOCALE.source}`);
 
 const hits = [];
 for (const file of files) {

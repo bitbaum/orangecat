@@ -9,6 +9,7 @@
 
 import { CheckCircle, History } from 'lucide-react';
 import type { TaskCompletion } from '@/lib/schemas/tasks';
+import { APP_LOCALE } from '@/utils/locale';
 
 export interface CompletionWithUser extends TaskCompletion {
   completer?: {
@@ -50,7 +51,7 @@ export default function CompletionHistory({ completions }: CompletionHistoryProp
                       'Unknown'}
                   </span>
                   <span className="text-fg-secondary">
-                    {new Date(completion.completed_at).toLocaleDateString('en-US', {
+                    {new Date(completion.completed_at).toLocaleDateString(APP_LOCALE, {
                       day: '2-digit',
                       month: '2-digit',
                       year: 'numeric',

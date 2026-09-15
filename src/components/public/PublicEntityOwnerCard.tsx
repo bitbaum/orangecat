@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { ROUTES } from '@/config/routes';
 import { APP_NAME } from '@/config/brand';
 import type { EntityOwner } from '@/lib/entities/fetchEntityOwner';
+import { APP_LOCALE } from '@/utils/locale';
 
 interface PublicEntityOwnerCardProps {
   owner: EntityOwner;
@@ -28,7 +29,7 @@ export default function PublicEntityOwnerCard({
   const profileHref = owner.username ? ROUTES.PROFILES.VIEW(owner.username) : '#';
   const isClickable = !!owner.username;
   const memberSince = owner.created_at
-    ? new Date(owner.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    ? new Date(owner.created_at).toLocaleDateString(APP_LOCALE, { month: 'long', year: 'numeric' })
     : null;
   const showListings = typeof activeListingCount === 'number' && activeListingCount > 0;
 

@@ -19,6 +19,21 @@
  */
 export const APP_LOCALE = 'en-US';
 
+/**
+ * Day-first dates: "15 March 2027" rather than "March 15, 2027".
+ *
+ * Two surfaces — a project's target completion and a loan's origination and
+ * maturity — deliberately read day-first, and each had 'en-GB' typed inline to
+ * get it, which read as an accident and hid the intent. It is a FORMAT choice,
+ * so it is named here next to the locale it deviates from.
+ *
+ * Open question for the product, not for a refactor: OrangeCat's audience is
+ * largely Swiss and day-first is the local convention, so APP_LOCALE itself may
+ * be the thing that is wrong. Changing that is one edit here and a sweep of the
+ * date assertions — deliberately not done as part of a de-duplication pass.
+ */
+export const DAY_FIRST_LOCALE = 'en-GB';
+
 /** A number with grouping separators: 5000 → "5,000". */
 export function formatNumber(value: number): string {
   return value.toLocaleString(APP_LOCALE);

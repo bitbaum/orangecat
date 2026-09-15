@@ -11,6 +11,7 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { APP_LOCALE } from '@/utils/locale';
 
 interface CurrencyDisplayProps {
   amount: number | string;
@@ -52,7 +53,7 @@ export const CurrencyDisplay: React.FC<CurrencyDisplayProps> = ({
         return showSymbol ? `${btcFormatted} BTC` : btcFormatted;
       case 'USD':
         // Fiat currencies: 2 decimal places
-        const usdFormatted = numAmount.toLocaleString('en-US', {
+        const usdFormatted = numAmount.toLocaleString(APP_LOCALE, {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
         });
@@ -67,15 +68,15 @@ export const CurrencyDisplay: React.FC<CurrencyDisplayProps> = ({
         // Fiat currencies: 2 decimal places (except JPY which is typically 0)
         const fiatFormatted =
           currency === 'JPY'
-            ? Math.round(numAmount).toLocaleString('en-US')
-            : numAmount.toLocaleString('en-US', {
+            ? Math.round(numAmount).toLocaleString(APP_LOCALE)
+            : numAmount.toLocaleString(APP_LOCALE, {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
               });
         return showSymbol ? `${fiatFormatted} ${currency}` : fiatFormatted;
       default:
         // Unknown currencies: try to format as fiat (2 decimals)
-        const defaultFormatted = numAmount.toLocaleString('en-US', {
+        const defaultFormatted = numAmount.toLocaleString(APP_LOCALE, {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
         });

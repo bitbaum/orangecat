@@ -12,6 +12,7 @@ import { formatRelativeTime } from '@/utils/dates';
 import { PLATFORM_DEFAULT_CURRENCY } from '@/config/currencies';
 import { formatCurrency } from '@/services/currency';
 import { API_ROUTES } from '@/config/api-routes';
+import { DAY_FIRST_LOCALE } from '@/utils/locale';
 
 /**
  * `target_completion` is `optionalText` in the schema, so the stored value is
@@ -28,7 +29,7 @@ function formatTargetCompletion(value: unknown): string | null {
   if (Number.isNaN(parsed.getTime())) {
     return value.trim();
   }
-  return parsed.toLocaleDateString('en-GB', {
+  return parsed.toLocaleDateString(DAY_FIRST_LOCALE, {
     day: 'numeric',
     month: 'long',
     year: 'numeric',

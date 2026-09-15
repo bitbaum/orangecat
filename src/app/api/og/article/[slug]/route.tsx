@@ -9,6 +9,7 @@
 
 import { getArticleBySlug } from '@/services/articles/get-article';
 import { contentCardResponse } from '@/lib/og/content-card';
+import { APP_LOCALE } from '@/utils/locale';
 
 export const contentType = 'image/png';
 
@@ -24,7 +25,7 @@ export async function GET(_req: Request, { params }: RouteContext) {
     return new Response('Not found', { status: 404 });
   }
 
-  const date = new Date(article.publishedAt).toLocaleDateString('en-US', {
+  const date = new Date(article.publishedAt).toLocaleDateString(APP_LOCALE, {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
