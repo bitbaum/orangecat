@@ -18,6 +18,7 @@ import { promptFitsGroqOnDemand, PLATFORM_GROQ_MODEL } from '@/services/ai/groq'
 import { checkModelRot } from './provider-catalog';
 import { webSearch, describeAttempts } from '@bitbaum/ai-kit/web';
 import { buildCatSystemPrompt } from './system-prompt';
+import { sanitizeApiKeyChecked } from '@/lib/api-key';
 
 export type ProbeClass =
   'ok' | 'rate_limit' | 'auth' | 'no_key' | 'invalid_key' | 'upstream_err' | 'no_response';
@@ -90,11 +91,6 @@ export interface WebProbeResult {
   detail: string;
 }
 
-function sanitizeApiKey(key: string): { clean: string; hadJunk: boolean } {
-  const clean = key.replace(/[\s\x00-\x1f\x7f]+/g, '');
-  return { clean, hadJunk: clean !== key };
-}
-
 async function probeProvider(
   provider: string,
   envVar: string,
@@ -112,7 +108,7 @@ async function probeProvider(
       keyHadJunkChars: false,
     };
   }
-  const { clean, hadJunk } = sanitizeApiKey(raw);
+  const { clean, hadJunk } = sanitizeApiKeyChecked(raw);
   try {
     const res = await fetch(endpoint, {
       method: 'POST',

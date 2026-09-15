@@ -18,7 +18,8 @@ import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { useCatQuota } from '@/components/ai-chat/ModernChatPanel/hooks/useCatQuota';
 import { ROUTES } from '@/config/routes';
 import { CAT_PLANS, PLAN_ID_BY_QUOTA_TIER, type CatPlanId } from '@/config/cat-plans';
-import { formatCountdown, useCreditBalance } from './useCreditBalance';
+import { formatCountdownCoarse } from '@/utils/countdown';
+import { useCreditBalance } from './useCreditBalance';
 import { APP_LOCALE } from '@/utils/locale';
 
 export default function UsageSettingsPage() {
@@ -111,7 +112,7 @@ export default function UsageSettingsPage() {
                 <p className="text-sm text-fg-tertiary">
                   Used {used} today · resets in{' '}
                   <span className="font-medium text-fg-secondary">
-                    {formatCountdown(quota.resetInSeconds)}
+                    {formatCountdownCoarse(quota.resetInSeconds)}
                   </span>{' '}
                   (midnight UTC)
                   {quota.tier === 'pro' && quota.expiresAt && (

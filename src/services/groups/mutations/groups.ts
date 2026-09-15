@@ -15,7 +15,8 @@ import type { Group, CreateGroupInput, UpdateGroupInput } from '@/types/group';
 import type { GroupResponse } from '../types';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { getDefaultsForLabel } from '../constants';
-import { getCurrentUserId, generateSlug, ensureUniqueSlug } from '../utils/helpers';
+import { getCurrentUserId, ensureUniqueSlug } from '../utils/helpers';
+import { slugify } from '@/utils/string';
 import { logGroupActivity } from '../utils/activity';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import type { ServiceResult } from '@/types/common';
@@ -41,7 +42,7 @@ export async function createGroup(
 
     // Generate slug if not provided
     const slug =
-      input.slug || (await ensureUniqueSlug(generateSlug(input.name), undefined, supabaseClient));
+      input.slug || (await ensureUniqueSlug(slugify(input.name) || 'group', undefined, supabaseClient));
 
     // Get config-based defaults for this label
     const label = input.label || 'circle';

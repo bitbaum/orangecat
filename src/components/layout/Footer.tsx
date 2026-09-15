@@ -14,6 +14,49 @@ const footerLinkClass =
   'group flex items-center text-sm text-fg-secondary hover:text-fg-primary transition-colors py-1.5 rounded-md min-h-9';
 const footerHeadingClass = 'text-xs font-medium text-fg-secondary uppercase tracking-normal';
 
+/**
+ * One column of footer links. Five of these were written out by hand — the
+ * same seventeen lines five times, and only two of the five carried the
+ * anchor-vs-Link branch, so which columns could hold an external link was an
+ * accident of which ones had been copied last. One column, one rule: an item
+ * marked external is an <a target="_blank">, everything else is a <Link>.
+ */
+function FooterColumn({
+  title,
+  items,
+  className,
+}: {
+  title: string;
+  items: ReadonlyArray<{ name: string; href: string; external?: boolean }>;
+  className?: string;
+}) {
+  return (
+    <div className={className ? `space-y-6 ${className}` : 'space-y-6'}>
+      <h3 className={footerHeadingClass}>{title}</h3>
+      <ul className="space-y-3">
+        {items.map(item => (
+          <li key={item.name}>
+            {'external' in item && item.external ? (
+              <a
+                href={item.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={footerLinkClass}
+              >
+                <span>{item.name}</span>
+              </a>
+            ) : (
+              <Link href={item.href} className={footerLinkClass}>
+                <span>{item.name}</span>
+              </Link>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 const Footer = React.memo(function Footer() {
   const pathname = usePathname();
   const { user, hydrated } = useAuth();
@@ -78,97 +121,19 @@ const Footer = React.memo(function Footer() {
             </div>
           </div>
 
-          {/* Navigation Links */}
-          <div className="space-y-6">
-            <h3 className={footerHeadingClass}>Product</h3>
-            <ul className="space-y-3">
-              {footerNavigation.product.map(item => (
-                <li key={item.name}>
-                  <Link href={item.href} className={footerLinkClass}>
-                    <span>{item.name}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <FooterColumn title="Product" items={footerNavigation.product} />
 
-          {/* Learn Links */}
-          <div className="space-y-6">
-            <h3 className={footerHeadingClass}>Learn</h3>
-            <ul className="space-y-3">
-              {footerNavigation.learn.map(item => (
-                <li key={item.name}>
-                  {'external' in item && item.external ? (
-                    <a
-                      href={item.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={footerLinkClass}
-                    >
-                      <span>{item.name}</span>
-                    </a>
-                  ) : (
-                    <Link href={item.href} className={footerLinkClass}>
-                      <span>{item.name}</span>
-                    </Link>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
+          <FooterColumn title="Learn" items={footerNavigation.learn} />
 
-          {/* Support Links */}
-          <div className="space-y-6">
-            <h3 className={footerHeadingClass}>Support</h3>
-            <ul className="space-y-3">
-              {footerNavigation.support.map(item => (
-                <li key={item.name}>
-                  <Link href={item.href} className={footerLinkClass}>
-                    <span>{item.name}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <FooterColumn title="Support" items={footerNavigation.support} />
 
-          {/* Ecosystem Links */}
-          <div className="space-y-6">
-            <h3 className={footerHeadingClass}>Ecosystem</h3>
-            <ul className="space-y-3">
-              {footerNavigation.ecosystem.map(item => (
-                <li key={item.name}>
-                  {'external' in item && item.external ? (
-                    <a
-                      href={item.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={footerLinkClass}
-                    >
-                      <span>{item.name}</span>
-                    </a>
-                  ) : (
-                    <Link href={item.href} className={footerLinkClass}>
-                      <span>{item.name}</span>
-                    </Link>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
+          <FooterColumn title="Ecosystem" items={footerNavigation.ecosystem} />
 
-          {/* Legal Links */}
-          <div className="space-y-6 sm:col-span-2 lg:col-span-1">
-            <h3 className={footerHeadingClass}>Legal</h3>
-            <ul className="space-y-3">
-              {footerNavigation.legal.map(item => (
-                <li key={item.name}>
-                  <Link href={item.href} className={footerLinkClass}>
-                    <span>{item.name}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <FooterColumn
+            title="Legal"
+            items={footerNavigation.legal}
+            className="sm:col-span-2 lg:col-span-1"
+          />
         </div>
 
         {/* Bottom Section */}

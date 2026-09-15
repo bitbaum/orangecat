@@ -5,7 +5,7 @@
  * Pure functions — no imports from outside templates.
  */
 
-import { emailLayout, emailPlainText, EMAIL_COLORS } from './layout';
+import { emailLayout, emailPlainText, escapeHtml, EMAIL_COLORS } from './layout';
 
 export interface WeeklyDigestStats {
   views?: number;
@@ -184,12 +184,4 @@ function statCell(label: string, value: string): string {
       <div style="font-size:20px;font-weight:700;color:${EMAIL_COLORS.TEXT_PRIMARY};">${escapeHtml(value)}</div>
       <div style="font-size:12px;color:${EMAIL_COLORS.TEXT_MUTED};margin-top:4px;">${escapeHtml(label)}</div>
     </td>`;
-}
-
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
 }

@@ -12,27 +12,12 @@
  *   ORANGECAT_OWNER_SEED=1 npx tsx scripts/solon/pin-trusted-keys.ts --addresses <a1>,<a2>
  *   ORANGECAT_OWNER_SEED=1 npx tsx scripts/solon/pin-trusted-keys.ts --revoke <address>
  */
+import { die, requireOwnerAdminClient } from '../lib/owner-gate';
 import { parseArgs } from 'node:util';
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import { config as loadEnv } from 'dotenv';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { SOLON_BASE_URL_DEFAULT, SOLON_ORG_ID, SOLON_ORG_SLUG } from '../../src/config/solon';
 
-loadEnv({ path: '.env.local' });
-
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-function die(message: string): never {
-  console.error(`✗ ${message}`);
-  process.exit(1);
-}
-
-if (process.env.ORANGECAT_OWNER_SEED !== '1') {
-  die('Refusing to run without ORANGECAT_OWNER_SEED=1 (owner-gated).');
-}
-if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
-  die('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in the environment.');
-}
+const admin = requireOwnerAdminClient();
 
 const { values } = parseArgs({
   options: {
@@ -40,10 +25,6 @@ const { values } = parseArgs({
     addresses: { type: 'string' },
     revoke: { type: 'string' },
   },
-});
-
-const admin: SupabaseClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
-  auth: { persistSession: false, autoRefreshToken: false },
 });
 
 interface SolonMember {

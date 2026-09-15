@@ -11,7 +11,6 @@
 import supabase from '@/lib/supabase/browser';
 import { logger } from '@/utils/logger';
 import { DATABASE_TABLES } from '@/config/database-tables';
-import { slugify } from '@/utils/string';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { getCurrentUserId as getSharedCurrentUserId } from '@/services/supabase/auth/session';
 import { fromTable } from '../db-helpers';
@@ -38,8 +37,6 @@ export async function getCurrentUserId(client?: AnySupabaseClient): Promise<stri
     return null;
   }
 }
-
-export const generateSlug = (name: string) => slugify(name);
 
 /**
  * Ensure slug is unique by appending number if needed

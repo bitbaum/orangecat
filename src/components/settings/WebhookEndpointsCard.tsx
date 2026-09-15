@@ -24,7 +24,6 @@ import WebhookEndpointMintForm from '@/components/settings/WebhookEndpointMintFo
 import WebhookEndpointRow, { type WebhookEndpoint } from '@/components/settings/WebhookEndpointRow';
 import PlaintextRevealCard from '@/components/settings/PlaintextRevealCard';
 import { API_ROUTES } from '@/config/api-routes';
-import { formatOptionalDateTime } from '@/utils/locale';
 
 interface MintResponse {
   data: { endpoint: WebhookEndpoint; secret: string };
@@ -219,7 +218,6 @@ export default function WebhookEndpointsCard({ actors, defaultActorId }: Props) 
                   setExpandedEndpointId(prev => (prev === endpoint.id ? null : endpoint.id))
                 }
                 onRevoke={handleRevoke}
-                formatTimestamp={formatOptionalDateTime}
               />
             ))}
           </ul>

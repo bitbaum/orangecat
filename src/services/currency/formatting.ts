@@ -54,6 +54,73 @@ export function formatCurrency(
   }
 }
 
+/**
+ * The suffixed rendering used by <CurrencyDisplay>: "0.001 BTC", "$1,234.00",
+ * "1,234.00 CHF".
+ *
+ * Deliberately NOT formatCurrency() above. That one prefixes Bitcoin with the
+ * ₿ sign and Swiss francs with "CHF "; this one suffixes the ticker, and is
+ * what every amount on a project, profile or dashboard card has rendered as.
+ * It also tolerates a string amount and a NaN, because it sits directly on
+ * values coming out of the database as numerics.
+ *
+ * It lived inside the component. It is currency-formatting knowledge, so it
+ * lives here with the rest of it — same output, one module.
+ */
+export function formatAmountSuffixed(
+  amount: number | string,
+  currency: string,
+  options: { showSymbol?: boolean } = {}
+): string {
+  const { showSymbol = true } = options;
+  const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+
+  if (isNaN(numAmount) || !isFinite(numAmount)) {
+    return showSymbol ? `0 ${currency}` : '0';
+  }
+
+  switch (currency) {
+    case 'BTC': {
+      // BTC: up to 8 decimal places, remove trailing zeros
+      const btcFormatted = numAmount.toFixed(8).replace(/\.?0+$/, '');
+      return showSymbol ? `${btcFormatted} BTC` : btcFormatted;
+    }
+    case 'USD': {
+      // Fiat currencies: 2 decimal places
+      const usdFormatted = numAmount.toLocaleString(APP_LOCALE, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+      return showSymbol ? `$${usdFormatted}` : usdFormatted;
+    }
+    case 'CHF':
+    case 'EUR':
+    case 'GBP':
+    case 'JPY':
+    case 'CAD':
+    case 'AUD':
+    case 'NZD': {
+      // Fiat currencies: 2 decimal places (except JPY which is typically 0)
+      const fiatFormatted =
+        currency === 'JPY'
+          ? Math.round(numAmount).toLocaleString(APP_LOCALE)
+          : numAmount.toLocaleString(APP_LOCALE, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            });
+      return showSymbol ? `${fiatFormatted} ${currency}` : fiatFormatted;
+    }
+    default: {
+      // Unknown currencies: try to format as fiat (2 decimals)
+      const defaultFormatted = numAmount.toLocaleString(APP_LOCALE, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+      return showSymbol ? `${defaultFormatted} ${currency}` : defaultFormatted;
+    }
+  }
+}
+
 // ==================== BITCOIN DISPLAY ====================
 
 export function formatBitcoinDisplay(amount: number): string {
