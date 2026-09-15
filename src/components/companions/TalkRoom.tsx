@@ -3,9 +3,11 @@
 /**
  * The room: a companion's conversation as the page.
  *
- * One column, full height, no chrome beyond a one-line header. Resumes the
- * latest thread; "Past conversations" opens a quiet list; the disclosure
- * line shows once, on an empty thread, and then gets out of the way.
+ * A conversation looks the same everywhere in this app. The turns and the
+ * composer are Cat's own components — every Cat-specific control in them
+ * (actions, quick replies, model picker, clear, stop) is an optional prop, so
+ * a companion simply passes none of them. This file is only the ROOM: full
+ * height, a one-line header, past conversations, and the credits notice.
  */
 
 import { useState } from 'react';
@@ -16,15 +18,29 @@ import { ROUTES } from '@/config/routes';
 import { APP_LOCALE } from '@/utils/locale';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import Button from '@/components/ui/Button';
-import { TalkThread } from './TalkThread';
-import { TalkComposer } from './TalkComposer';
-import { useCompanionTalk, type TalkThreadSummary } from './useCompanionTalk';
+import { MessageBubble } from '@/components/ai-chat/ModernChatPanel/components/MessageBubble';
+import { ChatInput } from '@/components/ai-chat/ModernChatPanel/components/ChatInput';
+import type { Message } from '@/components/ai-chat/ModernChatPanel/types';
+import { useCompanionTalk, type TalkThreadSummary, type TalkMessage } from './useCompanionTalk';
 
 export interface TalkRoomProps {
   companion: {
     id: string;
     title: string;
     welcome_message: string | null;
+  };
+}
+
+/**
+ * A companion turn as the shared chat surface wants it. Everything beyond
+ * these four fields on `Message` is Cat machinery and stays undefined.
+ */
+function asMessage(m: TalkMessage): Message {
+  return {
+    id: m.id,
+    role: m.role,
+    content: m.content,
+    timestamp: new Date(m.created_at),
   };
 }
 
@@ -39,6 +55,7 @@ export function TalkRoom({ companion }: TalkRoomProps) {
   const talk = useCompanionTalk(companion.id);
   const { formatAmountBtc } = useDisplayCurrency();
   const [showThreads, setShowThreads] = useState(false);
+  const [draft, setDraft] = useState('');
   const room = COMPANION_COPY.room;
 
   return (
@@ -106,12 +123,32 @@ export function TalkRoom({ companion }: TalkRoomProps) {
             <p className="pt-2 text-xs text-fg-muted">{COMPANION_COPY.disclosure(name)}</p>
           )}
           {!talk.loading && (
-            <TalkThread
-              name={name}
-              messages={talk.messages}
-              opening={companion.welcome_message}
-              thinking={talk.sending}
-            />
+            <>
+              {talk.messages.length === 0 && companion.welcome_message && (
+                <MessageBubble
+                  message={asMessage({
+                    id: 'opening',
+                    role: 'assistant',
+                    content: companion.welcome_message,
+                    created_at: new Date().toISOString(),
+                  })}
+                  isLast
+                />
+              )}
+              {talk.messages.map((m, i) => (
+                <MessageBubble
+                  key={m.id}
+                  message={asMessage(m)}
+                  isLast={i === talk.messages.length - 1}
+                />
+              ))}
+              {talk.sending && (
+                <div className="flex items-center gap-2 py-3" role="status">
+                  <span className="h-2 w-2 animate-pulse rounded-full bg-fg-secondary" />
+                  <span className="sr-only">{room.thinking(name)}</span>
+                </div>
+              )}
+            </>
           )}
           {talk.creditsNeeded && (
             <div className="mb-4 rounded-md border border-subtle bg-surface-raised p-3 text-sm">
@@ -130,9 +167,20 @@ export function TalkRoom({ companion }: TalkRoomProps) {
         </div>
       </div>
 
-      <div className="mx-auto w-full max-w-2xl">
-        <TalkComposer name={name} disabled={talk.sending || talk.loading} onSend={talk.send} />
-      </div>
+      <ChatInput
+        value={draft}
+        onChange={setDraft}
+        onSend={() => {
+          const content = draft.trim();
+          if (!content) {
+            return;
+          }
+          setDraft('');
+          void talk.send(content);
+        }}
+        isLoading={talk.sending || talk.loading}
+        placeholder={room.composerPlaceholder(name)}
+      />
     </div>
   );
 }
