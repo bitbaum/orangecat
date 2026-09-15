@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { Cat, User, Copy, Check, Clock } from 'lucide-react';
 import { getModelDisplayName } from '@/config/ai-models';
-import { getModelCapability } from '@/config/model-capability';
+import { getModelCapabilities } from '@/config/model-capability';
 import { renderChatMarkdown } from '@/utils/markdown';
 import { ActionButton } from './ActionButton';
 import { linkifyCitations, citationsFromToolCalls } from '@/lib/chat/citations';
@@ -281,7 +281,7 @@ export function MessageBubble({
               )}
               <span title={message.modelUsed}>{getModelDisplayName(message.modelUsed)}</span>
               {(() => {
-                const cap = getModelCapability(message.modelUsed);
+                const cap = getModelCapabilities(message.modelUsed);
                 return (
                   <>
                     <span aria-hidden> · </span>
