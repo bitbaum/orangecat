@@ -15,18 +15,10 @@ import LongformBody from '@/lib/longform/LongformBody';
 import ShareButton from './ShareButton';
 import TipButton from '@/components/tips/TipButton';
 import ArticleOwnerActions from './ArticleOwnerActions';
-import { APP_LOCALE } from '@/utils/locale';
+import { formatDateLong } from '@/utils/dates';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
-}
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString(APP_LOCALE, {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
 }
 
 function profileHref(username: string | undefined, id: string): string {
@@ -163,7 +155,7 @@ export default async function ArticlePage({ params }: PageProps) {
               <span aria-hidden className="text-fg-tertiary">
                 ·
               </span>
-              <time dateTime={article.publishedAt}>{formatDate(article.publishedAt)}</time>
+              <time dateTime={article.publishedAt}>{formatDateLong(article.publishedAt)}</time>
               <span className="inline-flex items-center gap-1.5">
                 <Clock className="h-4 w-4" />
                 {article.readingTime} min read

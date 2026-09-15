@@ -12,6 +12,7 @@
 
 import { ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
 import WebhookDeliveriesDrawer from '@/components/settings/WebhookDeliveriesDrawer';
+import { formatOptionalDateTime } from '@/utils/locale';
 
 export interface WebhookEndpoint {
   id: string;
@@ -31,7 +32,6 @@ interface Props {
   isExpanded: boolean;
   onToggleExpand: () => void;
   onRevoke: (endpoint: WebhookEndpoint) => void;
-  formatTimestamp: (value: string | null) => string;
 }
 
 export default function WebhookEndpointRow({
@@ -40,7 +40,6 @@ export default function WebhookEndpointRow({
   isExpanded,
   onToggleExpand,
   onRevoke,
-  formatTimestamp,
 }: Props) {
   const isRevoked = !!endpoint.revoked_at;
 
@@ -69,8 +68,8 @@ export default function WebhookEndpointRow({
                   : 'all'}
               </code>
             </span>
-            <span>Created {formatTimestamp(endpoint.created_at)}</span>
-            <span>Last delivery {formatTimestamp(endpoint.last_delivery_at)}</span>
+            <span>Created {formatOptionalDateTime(endpoint.created_at)}</span>
+            <span>Last delivery {formatOptionalDateTime(endpoint.last_delivery_at)}</span>
           </div>
         </div>
         <div className="flex items-center gap-2">

@@ -11,13 +11,6 @@ import { useEffect, useState } from 'react';
 import { API_ROUTES } from '@/config/api-routes';
 import { logger } from '@/utils/logger';
 
-/** "3h 24m" / "45m" from seconds — for the daily-reset countdown. */
-export function formatCountdown(totalSeconds: number): string {
-  const h = Math.floor(totalSeconds / 3600);
-  const m = Math.max(1, Math.floor((totalSeconds % 3600) / 60));
-  return h > 0 ? `${h}h ${m}m` : `${m}m`;
-}
-
 export function useCreditBalance(): {
   balanceBtc: number | null;
   isLoading: boolean;

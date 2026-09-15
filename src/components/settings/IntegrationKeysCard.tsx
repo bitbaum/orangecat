@@ -18,7 +18,6 @@ import IntegrationKeyMintForm from '@/components/settings/IntegrationKeyMintForm
 import IntegrationKeyRow from '@/components/settings/IntegrationKeyRow';
 import PlaintextRevealCard from '@/components/settings/PlaintextRevealCard';
 import { API_ROUTES } from '@/config/api-routes';
-import { formatOptionalDateTime } from '@/utils/locale';
 
 export interface IntegrationKey {
   id: string;
@@ -263,7 +262,6 @@ export default function IntegrationKeysCard({ actors, defaultActorId }: Props) {
                 key={key.id}
                 integrationKey={key}
                 actorLabel={actors.find(a => a.actor_id === key.actor_id)?.label ?? key.actor_id}
-                formatTimestamp={formatOptionalDateTime}
                 onRotate={handleRotate}
                 onRevoke={handleRevoke}
               />

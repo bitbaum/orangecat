@@ -3,29 +3,20 @@
  */
 
 import { API_ROUTES } from '@/config/api-routes';
+import { unwrapApiResponse } from '@/lib/api/client-response';
 import type { PaymentRequestRow } from '@/domain/payments/paymentRequestService';
 
 export type { PaymentRequestRow };
-
-async function readJson(res: Response): Promise<{ success?: boolean; data?: unknown; error?: unknown }> {
-  return (await res.json().catch(() => null)) ?? {};
-}
-
-function errorMessage(json: { error?: unknown }, fallback: string): string {
-  const err = json.error;
-  return (typeof err === 'string' ? err : (err as { message?: string })?.message) || fallback;
-}
 
 export async function fetchPaymentRequests(): Promise<{
   incoming: PaymentRequestRow[];
   outgoing: PaymentRequestRow[];
 }> {
   const res = await fetch(API_ROUTES.PAYMENT_REQUESTS.BASE);
-  const json = await readJson(res);
-  if (!res.ok || !json.success) {
-    throw new Error(errorMessage(json, 'Could not load your requests.'));
-  }
-  return json.data as { incoming: PaymentRequestRow[]; outgoing: PaymentRequestRow[] };
+  return unwrapApiResponse<{ incoming: PaymentRequestRow[]; outgoing: PaymentRequestRow[] }>(
+    res,
+    'Could not load your requests.'
+  );
 }
 
 export async function createRequest(
@@ -42,11 +33,11 @@ export async function createRequest(
       ...(note ? { note } : {}),
     }),
   });
-  const json = await readJson(res);
-  if (!res.ok || !json.success) {
-    throw new Error(errorMessage(json, 'Could not create that request.'));
-  }
-  return (json.data as { request: PaymentRequestRow }).request;
+  const { request } = await unwrapApiResponse<{ request: PaymentRequestRow }>(
+    res,
+    'Could not create that request.'
+  );
+  return request;
 }
 
 export async function closeRequest(id: string, status: 'cancelled' | 'declined'): Promise<void> {
@@ -55,8 +46,5 @@ export async function closeRequest(id: string, status: 'cancelled' | 'declined')
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ status }),
   });
-  const json = await readJson(res);
-  if (!res.ok || !json.success) {
-    throw new Error(errorMessage(json, 'Could not update that request.'));
-  }
+  await unwrapApiResponse<unknown>(res, 'Could not update that request.');
 }
