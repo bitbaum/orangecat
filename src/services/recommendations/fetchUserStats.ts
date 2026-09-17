@@ -13,7 +13,7 @@ import {
   type EntityType,
 } from '@/config/entity-registry';
 import { STATUS } from '@/config/database-constants';
-import { DATABASE_TABLES } from '@/config/database-tables';
+import { DATABASE_TABLES, OWN_PROFILE_VIEW } from '@/config/database-tables';
 
 type UntypedTable = any;
 
@@ -45,7 +45,11 @@ export async function fetchUserStats(
   userId: string
 ): Promise<UserStatsData | null> {
   const [profileResult, actorResult] = await Promise.all([
-    (supabase.from(DATABASE_TABLES.PROFILES) as UntypedTable).select('*').eq('id', userId).single(),
+    // The owner-scoped view: this runs as `authenticated` via /api/users/me/stats
+    // and `select('*')` on the table would now hit the revoked private columns
+    // (20260917163100). `userId` is always the session user here, and the view
+    // is confined to auth.uid() anyway, so the filter is redundant but harmless.
+    (supabase.from(OWN_PROFILE_VIEW) as UntypedTable).select('*').eq('id', userId).single(),
     (supabase.from(DATABASE_TABLES.ACTORS) as UntypedTable)
       .select('id')
       .eq('user_id', userId)

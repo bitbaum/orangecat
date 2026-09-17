@@ -11,7 +11,7 @@ import supabase from '@/lib/supabase/browser';
 import { logger } from '@/utils/logger';
 import { ProfileMapper } from './mapper';
 import type { ScalableProfile, ScalableProfileFormData, ProfileServiceResponse } from './types';
-import { DATABASE_TABLES } from '@/config/database-tables';
+import { DATABASE_TABLES, OWN_PROFILE_VIEW } from '@/config/database-tables';
 import { STATUS } from '@/config/database-constants';
 
 // =====================================================================
@@ -77,11 +77,19 @@ export class ProfileWriter {
 
       // Update in database
 
-      const { data, error } = await fromTable(supabase, DATABASE_TABLES.PROFILES)
+      // Persist to the TABLE (RLS `profiles_update_own` confines this to the
+      // caller's own row), but do not ask for the row back in the same
+      // statement: `.select('*')` is `RETURNING *`, which needs SELECT on every
+      // column returned, and `authenticated` holds none on email / phone /
+      // contact_email (20260917163100). The read-back goes through the
+      // owner-scoped view, so the returned profile is unchanged.
+      const { error } = await fromTable(supabase, DATABASE_TABLES.PROFILES)
         .update(updateData)
-        .eq('id', userId)
-        .select('*')
-        .single();
+        .eq('id', userId);
+
+      const { data } = error
+        ? { data: null }
+        : await fromTable(supabase, OWN_PROFILE_VIEW).select('*').single();
 
       if (error) {
         logger.error('ProfileWriter.updateProfile database error:', error);
@@ -140,12 +148,16 @@ export class ProfileWriter {
       const insertData = ProfileMapper.mapProfileToDatabase(profileData);
       insertData.id = userId; // Ensure ID is set
 
-      const { data, error } = await supabase
+      // Insert without RETURNING, then read the row back through the
+      // owner-scoped view — see updateProfile above for why.
+      const { error } = await supabase
         .from(DATABASE_TABLES.PROFILES)
 
-        .insert(insertData as any)
-        .select('*')
-        .single();
+        .insert(insertData as any);
+
+      const { data } = error
+        ? { data: null }
+        : await fromTable(supabase, OWN_PROFILE_VIEW).select('*').single();
 
       if (error) {
         logger.error('ProfileWriter.createProfile database error:', error);
@@ -229,10 +241,15 @@ export class ProfileWriter {
     }
 
     try {
-      const { data, error } = await fromTable(supabase, DATABASE_TABLES.PROFILES)
+      // Update without RETURNING, then read the row back through the
+      // owner-scoped view — see updateProfile above for why.
+      const { error } = await fromTable(supabase, DATABASE_TABLES.PROFILES)
         .update({ ...updates, updated_at: new Date().toISOString() })
-        .eq('id', userId)
-        .select('*');
+        .eq('id', userId);
+
+      const { data } = error
+        ? { data: null }
+        : await fromTable(supabase, OWN_PROFILE_VIEW).select('*').single();
 
       if (error) {
         logger.error('ProfileWriter.fallbackUpdate error:', error);

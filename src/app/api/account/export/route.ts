@@ -20,7 +20,7 @@ import { apiRateLimited, handleApiError } from '@/lib/api/standardResponse';
 import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
 import { NextResponse } from 'next/server';
 import { withAuth, type AuthenticatedRequest } from '@/lib/api/withAuth';
-import { DATABASE_TABLES } from '@/config/database-tables';
+import { DATABASE_TABLES, OWN_PROFILE_VIEW } from '@/config/database-tables';
 import { ACCOUNT_EXPORT_FILENAME } from '@/config/api-routes';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 
@@ -60,7 +60,11 @@ export const GET = withAuth(async (request: AuthenticatedRequest) => {
       creditTopups,
       sentMessages,
     ] = await Promise.all([
-      rows(supabase, DATABASE_TABLES.PROFILES, 'id', user.id),
+      // The owner-scoped view, not the table: a data export must contain the
+      // person's email, phone and contact email, and `authenticated` can no
+      // longer read those columns off `profiles` (20260917163100). The view is
+      // already confined to auth.uid(), so the `id` filter is belt-and-braces.
+      rows(supabase, OWN_PROFILE_VIEW, 'id', user.id),
       rows(supabase, DATABASE_TABLES.USER_AI_PREFERENCES, 'user_id', user.id),
       rows(supabase, DATABASE_TABLES.NOTIFICATION_PREFERENCES, 'user_id', user.id),
       rows(supabase, DATABASE_TABLES.CAT_CONVERSATIONS, 'user_id', user.id),

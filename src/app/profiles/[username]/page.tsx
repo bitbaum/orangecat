@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import { createServerClient } from '@/lib/supabase/server';
 import { notFound, redirect, permanentRedirect } from 'next/navigation';
 import ProfilePageClient from '@/components/profile/ProfilePageClient';
-import { DATABASE_TABLES, PUBLIC_PROFILES_VIEW } from '@/config/database-tables';
+import { DATABASE_TABLES, PUBLIC_PROFILES_VIEW, OWN_PROFILE_VIEW } from '@/config/database-tables';
 import { getTableName } from '@/config/entity-registry';
 import { fetchProfileListingCounts } from '@/services/profile/listingCounts';
 import { getPublicEconomicProfile } from '@/services/cat/economic-profile-public';
@@ -249,13 +249,16 @@ export default async function PublicProfilePage({ params }: PageProps) {
   // The owner sees their own private columns — the registration email on the
   // Info tab, and the phone / contact email / privacy toggles that seed the
   // in-page editor. public_profiles deliberately withholds all of those, so
-  // re-read the real row. This runs as `authenticated`, which still holds the
-  // table grant, and RLS ("Public profiles are viewable by everyone") allows it.
+  // re-read the owner's row from own_profile. That view is scoped to
+  // auth.uid() in SQL, so it returns this row and no other; the `.eq('id', …)`
+  // the table read needed is now redundant. It used to read the table
+  // directly, which no longer works: `authenticated` holds no SELECT on the
+  // private columns (20260917163100), because a column grant covers every
+  // signed-in user at once and so can never mean "your own row".
   if (isOwnProfile) {
-    const { data: ownRow } = await supabase
-      .from(DATABASE_TABLES.PROFILES)
+    const { data: ownRow } = await looseClient(supabase)
+      .from(OWN_PROFILE_VIEW)
       .select('*')
-      .eq('id', profile.id)
       .single();
     if (ownRow) {
       profile = ownRow as unknown as ScalableProfile;

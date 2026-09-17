@@ -39,10 +39,8 @@ async function respondWithProfile(
 export const GET = withAuth(async (request: AuthenticatedRequest) => {
   try {
     const { user, supabase } = request;
-    const { data: profile, error: profileError } = await ProfileServerService.getProfile(
-      supabase,
-      user.id
-    );
+    const { data: profile, error: profileError } =
+      await ProfileServerService.getOwnProfile(supabase);
 
     if (profileError || !profile) {
       const { data: bootstrapped, error: ensureError } = await ProfileServerService.ensureProfile(
@@ -98,12 +96,16 @@ export const PUT = withAuth(async (request: AuthenticatedRequest) => {
       )
     );
 
-    const { data: profile, error } = await supabase
+    // Write to the TABLE — RLS `profiles_update_own` is what confines this to
+    // the caller's own row — but do not ask for the row back in the same
+    // statement. A bare `.select()` is `RETURNING *`, which needs SELECT on
+    // every column returned, and `authenticated` holds none on email / phone /
+    // contact_email (20260917163100). Read the saved row back through the
+    // owner-scoped view instead, so the response body is unchanged.
+    const { error } = await supabase
       .from(DATABASE_TABLES.PROFILES)
       .update({ ...dataToSave, updated_at: new Date().toISOString() })
-      .eq('id', user.id)
-      .select()
-      .single();
+      .eq('id', user.id);
 
     if (error) {
       logger.error('Profile update failed', {
@@ -112,6 +114,18 @@ export const PUT = withAuth(async (request: AuthenticatedRequest) => {
         code: error.code,
       });
       return apiValidationError('Failed to update profile');
+    }
+
+    const { data: profile, error: readBackError } =
+      await ProfileServerService.getOwnProfile(supabase);
+    if (readBackError || !profile) {
+      // The save itself succeeded; only the read-back failed. Say so rather
+      // than reporting a validation error the user could act on.
+      logger.error('Profile saved but could not be read back', {
+        userId: user.id,
+        error: readBackError?.message,
+      });
+      return handleApiError(readBackError ?? new Error('Profile read-back failed'));
     }
 
     logger.info('Profile updated successfully', { userId: user.id });

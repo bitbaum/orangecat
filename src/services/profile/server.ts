@@ -7,9 +7,10 @@
  */
 
 import type { AnySupabaseClient } from '@/lib/supabase/types';
+import { looseClient } from '@/lib/supabase/untyped';
 import { logger } from '@/utils/logger';
 import type { Database } from '@/types/database';
-import { DATABASE_TABLES } from '@/config/database-tables';
+import { DATABASE_TABLES, OWN_PROFILE_VIEW } from '@/config/database-tables';
 import { getTableName } from '@/config/entity-registry';
 import { getOrCreateUserActor } from '@/services/actors/getOrCreateUserActor';
 import { ownedProjectsFilter } from '@/domain/projects/service';
@@ -27,30 +28,38 @@ type _ProfileUpdate = Database['public']['Tables']['profiles']['Update'];
  */
 export class ProfileServerService {
   /**
-   * Get profile by user ID
+   * The signed-in caller's OWN full profile row, private columns included.
+   *
+   * Takes no user id on purpose. It reads OWN_PROFILE_VIEW, which is scoped to
+   * `auth.uid()` in SQL, so the row it returns is decided by the caller's JWT
+   * and not by an argument. The previous signature took a `userId` and selected
+   * it from the table; keeping that shape here would have been a trap, because
+   * the view ignores any id you filter on and would have returned the caller's
+   * own row while looking like it fetched somebody else's.
+   *
+   * For another user's profile use the public view (publicProfile.server.ts) —
+   * no client role can read another row's email, phone or contact_email.
    */
-  static async getProfile(
-    supabase: AnySupabaseClient,
-    userId: string
+  static async getOwnProfile(
+    supabase: AnySupabaseClient
   ): Promise<{ data: ProfileRow | null; error: Error | null }> {
     try {
-      const { data, error } = await supabase
-        .from(DATABASE_TABLES.PROFILES)
+      const { data, error } = await looseClient(supabase)
+        .from(OWN_PROFILE_VIEW)
         .select('*')
-        .eq('id', userId)
         .single();
 
       if (error) {
         if (error.code === 'PGRST116') {
           return { data: null, error: null }; // Not found
         }
-        logger.error('ProfileServerService.getProfile error', error, 'ProfileServer');
+        logger.error('ProfileServerService.getOwnProfile error', error, 'ProfileServer');
         return { data: null, error: error as Error };
       }
 
-      return { data, error: null };
+      return { data: data as ProfileRow, error: null };
     } catch (err) {
-      logger.error('ProfileServerService.getProfile unexpected error', err, 'ProfileServer');
+      logger.error('ProfileServerService.getOwnProfile unexpected error', err, 'ProfileServer');
       return { data: null, error: err as Error };
     }
   }
@@ -110,18 +119,19 @@ export class ProfileServerService {
     profileData: ProfileInsert
   ): Promise<{ data: ProfileRow | null; error: Error | null }> {
     try {
-      const { data, error } = await supabase
-        .from(DATABASE_TABLES.PROFILES)
-        .insert(profileData)
-        .select()
-        .single();
+      // Insert without RETURNING. A bare `.select()` is `RETURNING *`, which
+      // needs SELECT on every column returned, and `authenticated` holds none
+      // on email / phone / contact_email (20260917163100) — so asking for the
+      // row back here would fail the whole insert. Persist, then read the row
+      // through the owner-scoped view.
+      const { error } = await supabase.from(DATABASE_TABLES.PROFILES).insert(profileData);
 
       if (error) {
         logger.error('ProfileServerService.createProfile error', error, 'ProfileServer');
         return { data: null, error: error as Error };
       }
 
-      return { data, error: null };
+      return this.getOwnProfile(supabase);
     } catch (err) {
       logger.error('ProfileServerService.createProfile unexpected error', err, 'ProfileServer');
       return { data: null, error: err as Error };
@@ -152,7 +162,7 @@ export class ProfileServerService {
 
       if (existing) {
         // Profile exists, fetch full profile
-        return this.getProfile(supabase, userId);
+        return this.getOwnProfile(supabase);
       }
 
       // Profile doesn't exist, create it

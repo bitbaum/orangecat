@@ -1,11 +1,28 @@
 import { apiSuccessPaginated, handleApiError } from '@/lib/api/standardResponse';
 import { withAuth, type AuthenticatedRequest } from '@/lib/api/withAuth';
+import { getAdminClient } from '@/lib/supabase/admin';
 import { DATABASE_TABLES } from '@/config/database-tables';
 
 // GET /api/profiles - List profiles (basic fields)
 export const GET = withAuth(async (request: AuthenticatedRequest) => {
   try {
-    const { supabase } = request;
+    // Deliberately the SERVICE-ROLE client, not the caller's.
+    //
+    // The query below selects `email` for EVERY profile, not just the caller's,
+    // because isEmailDerivedHandle() needs it to decide whether a handle gives
+    // away its owner's email local part. `authenticated` no longer holds SELECT
+    // on that column (20260917163100) and must not get it back: a column grant
+    // covers every signed-in user at once, so granting it to run this one
+    // heuristic would reopen exactly the hole that migration closed.
+    //
+    // What the role change does NOT widen: the only SELECT policy on profiles
+    // is "Public profiles are viewable by everyone" (USING (true)), so there is
+    // no row filtering to lose. The projection is fixed, the email is read for
+    // the filter and stripped before the response is built (see below), and the
+    // route is still behind withAuth. The alternative — reimplementing the
+    // heuristic in SQL inside the view — would put a second, untested copy of a
+    // rule that already has one tested definition in @/config/public-directory.
+    const supabase = getAdminClient();
 
     const search = request.nextUrl.searchParams.get('search')?.trim() || '';
     const limit = Math.min(Number(request.nextUrl.searchParams.get('limit') || 50), 200);
