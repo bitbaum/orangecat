@@ -154,7 +154,7 @@ export const wishlistConfig = createEntityConfig<WishlistFormData>({
   infoBanner: {
     title: 'Transparent Funding',
     content:
-      'When you receive funds and make purchases, post proof (receipts, photos) to build trust with your supporters. Your transparency score increases with positive feedback!',
+      'When you receive funds and make purchases, post proof (receipts, photos) to build trust with your supporters. Turning on open accounting for the wallet, and noting what each transaction was for, is what a transparency score measures.',
     variant: 'info',
   },
   successMessage: 'Wishlist created! Now add some items.',

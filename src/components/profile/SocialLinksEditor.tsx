@@ -115,7 +115,7 @@ export function SocialLinksEditor({ links, onChange, maxLinks = 15 }: SocialLink
 
       {links.length > 0 && (
         <p className="text-xs sm:text-sm text-fg-secondary mt-2">
-          💡 More complete profiles build higher transparency scores
+          💡 Links let supporters verify who you are
         </p>
       )}
     </div>

@@ -22,6 +22,7 @@ import { getTableName } from '@/config/entity-registry';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { fetchWalletTransactions, type OnchainTransaction } from '@/domain/wallets/onchainTransactions';
 import { logger } from '@/utils/logger';
+import { scoreLedger, type TransparencyScore } from '@/services/wallets/transparency';
 
 export interface PublicLedgerEntry extends OnchainTransaction {
   /** The owner's explanation of this transaction, when they wrote one. */
@@ -35,6 +36,11 @@ export interface PublicLedger {
   entries: PublicLedgerEntry[];
   /** True when the chain lookup failed, so an empty list is not "no activity". */
   couldNotRead: boolean;
+  /**
+   * How well this ledger explains itself — measured from the entries above, not
+   * declared by anyone. Rendered WITH its components, never as a bare grade.
+   */
+  transparency: TransparencyScore;
 }
 
 interface LedgerRow {
@@ -105,12 +111,21 @@ export async function readPublicLedger(walletId: string): Promise<PublicLedger |
     ((noteRows as Array<{ txid: string; note: string }> | null) ?? []).map(n => [n.txid, n.note])
   );
 
+  const entries = transactions.map(tx => ({ ...tx, note: notes.get(tx.txid) ?? null }));
+  const balanceUpdatedAt = readable ? wallet.balance_updated_at : null;
+
   return {
     // Only meaningful for a wallet whose balance is read from the chain, and
     // only when it has actually been read.
     balanceBtc: readable && wallet.balance_updated_at ? wallet.balance_btc : null,
-    balanceUpdatedAt: readable ? wallet.balance_updated_at : null,
-    entries: transactions.map(tx => ({ ...tx, note: notes.get(tx.txid) ?? null })),
+    balanceUpdatedAt,
+    entries,
     couldNotRead,
+    // Scored from what is on screen. A failed chain read leaves `entries` empty,
+    // and scoring that would invent a verdict out of a lookup failure — so the
+    // score is withheld exactly when the evidence is.
+    transparency: couldNotRead
+      ? { score: null, explained: 0, total: 0, explainedShare: null, balanceFresh: null }
+      : scoreLedger(entries, balanceUpdatedAt),
   };
 }
