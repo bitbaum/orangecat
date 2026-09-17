@@ -21,20 +21,34 @@
 5. **Private where needed, transparent where chosen** — the privacy goal (E2E-encrypted messaging and Nostr as the censorship-resistant layer) is on the roadmap, **not yet shipped**: direct messages are currently stored as plaintext (realtime, but server-readable). Bitcoin's on-chain transparency is available when appropriate. Do not describe messaging as encrypted until it actually is.
 6. **Entities are the Cat's world model** — every entity type represents a form of economic or governance activity. The richer the entity structure, the smarter the Cat can be.
 
-### Entity Economic Taxonomy
+### What an entity IS
 
-| Category               | Entities                  | Finance Type               |
-| ---------------------- | ------------------------- | -------------------------- |
-| Exchange               | product, service          | Market transaction         |
-| Funding (no strings)   | cause, wishlist, research | Donation/gift              |
-| Funding (soft strings) | project                   | Milestone accountability   |
-| Lending                | loan                      | Repayment expected         |
-| Investing              | investment                | Return/equity expected     |
-| Assets                 | asset                     | Collateral, rental         |
-| Governance             | group                     | Collective decisions       |
-| AI services            | ai_assistant              | Automated economic actor   |
-| Events                 | event                     | Time-bound coordination    |
-| Cat context            | document                  | Structured context for Cat |
+**An entity is anything that can hold a wallet and is better for holding one.**
+
+That is the whole definition, and it is deliberately a TEST rather than a list.
+The list is open in principle: a new type earns its place by answering the
+test, not by taste and not by resembling the types already there.
+
+Each entity sits on three planes, and the wallet is only the first:
+
+| Plane       | Product       | What it means for the entity              |
+| ----------- | ------------- | ----------------------------------------- |
+| Economy     | **OrangeCat** | it can hold, receive and send value       |
+| Governance  | **Solon**     | its decisions can be put to a signed vote |
+| Engineering | **Loki**      | it can be built and shipped by agents     |
+
+**The list itself has exactly one producer: `src/config/entity-registry.ts`.**
+Every type there carries `wallet: { holds, why }` — the admission test answered
+in the owner's terms, naming the money that actually moves — and
+`__tests__/unit/config/entity-admission.test.ts` enforces it. Do not restate
+the list in any doc; point here instead. The copy that used to sit in
+`.claude/rules/domain-specific.md` named `organization`, which has never been a
+type, and omitted six that are.
+
+Two types are deliberate exceptions, pinned by that test as a ratchet that may
+shrink and may never grow: `wallet` (it IS the primitive the test is written
+against) and `document` (context the Cat reads — it receives nothing and owes
+nothing).
 
 ### What This Means for Development
 
@@ -104,22 +118,13 @@ const table = meta.tableName; // NOT 'user_products'
 const path = meta.basePath; // NOT '/dashboard/store'
 ```
 
-**Supported Entities** (see Entity Economic Taxonomy in Mission section above):
+**Supported Entities**: read `ENTITY_TYPES` in `src/config/entity-registry.ts`.
 
-- `product` - Physical/digital goods (exchange)
-- `service` - Professional services (exchange)
-- `project` - Fundraising with accountability (soft-strings funding)
-- `cause` - Charitable/no-strings funding
-- `research` - Decentralized science funding
-- `wishlist` - Gift registries
-- `event` - Time-bound coordination
-- `loan` - Peer-to-peer lending
-- `asset` - Real estate, collateral, rentable assets
-- `ai_assistant` - Autonomous AI economic actors
-- `group` - Organizations with shared wallets and governance
-- `circle` - Lighter community structures
-- `document` - Structured context for the Cat
-- `investment` - Equity/revenue-share investing
+This was the THIRD copy of that list in the agent-read docs, and like the other
+two it had drifted — it omitted `wallet`. Each entry in the registry carries
+its own one-line `wallet.why`, which is a better description than any of these
+copies were, and it cannot go stale because it sits next to the thing it
+describes. See "What an entity IS" above for the test a new type must pass.
 
 **Adding New Entity**:
 

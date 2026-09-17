@@ -129,23 +129,22 @@ const { amount_btc, description } = decoded;
 
 ## Entity System
 
-### Supported Entities
+### What an entity IS
 
-**All entities follow same patterns**:
+The definition and the three planes live in `.claude/CLAUDE.md` — one statement,
+not two. Read it there.
 
-```typescript
-type EntityType =
-  | 'product' // Physical/digital goods
-  | 'service' // Professional services
-  | 'project' // Fundraising projects
-  | 'cause' // Charitable causes
-  | 'event' // Events/meetups
-  | 'loan' // Peer-to-peer lending
-  | 'asset' // Real estate, assets
-  | 'ai_assistant' // AI chatbots
-  | 'organization' // Groups/companies
-  | 'circle'; // Communities
-```
+### The list lives in one place
+
+`src/config/entity-registry.ts` — `ENTITY_TYPES`, and the `wallet: { holds, why }`
+field on every entry, which is the admission test answered per type.
+`__tests__/unit/config/entity-admission.test.ts` enforces it.
+
+**Do not copy the list into this file.** The block that used to sit here was a
+copy, and it had rotted exactly as a copy does: it named `organization`, which
+has never been an entity type, and omitted six that are — `document`, `group`,
+`investment`, `research`, `wallet`, `wishlist`. An agent reading it was being
+told a list that was wrong in both directions.
 
 **Entity Lifecycle**:
 
