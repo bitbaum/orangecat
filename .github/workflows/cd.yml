@@ -39,12 +39,21 @@ concurrency:
   group: cd-selfhost
   cancel-in-progress: false # never interrupt a deploy mid-swap
 
+permissions:
+  contents: read
+  # Needed by the "was this commit verified?" guard, which asks the Actions API
+  # whether a sibling CI run for the same commit passed.
+  actions: read
+
 jobs:
   deploy:
-    # Only on green CI (or a manual dispatch).
+    # Green CI, a manual dispatch — or a CANCELLED CI run, which is not a
+    # verdict. `cancelled` used to be excluded here, and that is how a green,
+    # merged commit silently failed to ship: see the guard step below.
     if: >-
       github.event_name == 'workflow_dispatch' ||
-      github.event.workflow_run.conclusion == 'success'
+      github.event.workflow_run.conclusion == 'success' ||
+      github.event.workflow_run.conclusion == 'cancelled'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
@@ -78,16 +87,64 @@ jobs:
       # why there is no literal fallback.
       OC_BOX: ${{ vars.OC_BOX || (vars.HETZNER_IP && format('root@{0}', vars.HETZNER_IP)) }}
     steps:
+      # A CANCELLED CI run is not a failed one, and treating it as one strands
+      # verified work. When several PRs merge inside a couple of minutes, CI's
+      # concurrency group cancels the earlier runs on main; `cancelled` is not
+      # `success`, so this job used to be SKIPPED. A skip turns nothing red —
+      # the PR shows every check green, the merge looks complete, and the box
+      # keeps serving the previous release while /api/health answers 200.
+      # Observed 2026-09-17: four skipped runs in a row, two merged PRs
+      # stranded on a green main.
+      #
+      # So a cancelled run is a question, not an answer: ask the Actions API
+      # whether ANY CI run for this same commit concluded success.
+      - name: Guard — was this commit actually verified?
+        id: ci
+        if: github.event_name != 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+          CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+        run: |
+          if [ "$CONCLUSION" = "success" ]; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # Gate on EXIT STATUS, never on the printed body: `gh api --jq` writes
+          # the error payload to stdout on a 403, which reads like a value.
+          if passed=$(gh api \
+              "repos/$REPO/actions/workflows/ci.yml/runs?head_sha=$SHA&status=success&per_page=1" \
+              --jq '.total_count // 0' 2>/dev/null); then
+            :
+          else
+            echo "::warning::Could not read CI runs for $SHA — refusing to deploy on a $CONCLUSION run."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ "${passed:-0}" -gt 0 ]; then
+            echo "::notice::CI for $SHA was $CONCLUSION here, but a sibling CI run passed — deploying."
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::No successful CI run for $SHA — not deploying. The auto-merge sweep's reconcile will dispatch CD once one lands."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Guard — is the deploy key configured?
         id: guard
         env:
           KEY: ${{ secrets.SELFHOST_SSH_KEY }}
+          # Empty when the step above was skipped, which only happens on a
+          # manual dispatch — a deliberate act that carries its own verdict.
+          CI_OK: ${{ github.event_name == 'workflow_dispatch' && 'true' || steps.ci.outputs.ok }}
         run: |
-          if [ -n "$KEY" ]; then
-            echo "ok=true" >> "$GITHUB_OUTPUT"
-          else
+          if [ -z "$KEY" ]; then
             echo "ok=false" >> "$GITHUB_OUTPUT"
             echo "::notice::SELFHOST_SSH_KEY not set — CD is dormant. Add it to enable deploys."
+          elif [ "$CI_OK" != "true" ]; then
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Guard — is the deploy target configured?
