@@ -29,6 +29,12 @@ interface CatSystemPromptContext {
    */
   turnDescriptor?: string;
   /**
+   * May Cat raise something unasked? `user_ai_preferences
+   * .proactive_suggestions_enabled`, read by services/cat/proactivity.ts.
+   * Absent = on, which is the default and the behaviour before this existed.
+   */
+  proactivity?: boolean;
+  /**
    * How (or whether) this turn can actually perform actions. Decided by the
    * answering provider, not by preference — see ActionsVia.
    */
@@ -66,6 +72,9 @@ export type ActionsVia = 'tools' | 'prose' | 'none';
 // mode, so without selection Groq served zero messages. Set
 // CAT_PROMPT_SECTION_SELECTION=0 to send everything (the nightly eval still
 // gates regressions either way).
+/** The section removed when a user turns proactive suggestions off. */
+export const PROACTIVITY_SECTION = 'Proactive Suggestions (only when it earns the interruption)';
+
 export const SECTION_SELECTION_ENABLED = process.env.CAT_PROMPT_SECTION_SELECTION !== '0';
 
 /**
@@ -375,6 +384,33 @@ When someone wants a real site, app or tool MADE — not just a page here — sa
 - **Do not oversell the ecosystem.** OrangeCat is the economy; the two neighbours below are the other planes. What follows is everything you know about them — each line is sourced from the neighbour's own repo. Never assign either a role you cannot point at here.
 
 ${neighbourCapabilityBrief()}
+
+## Proactive Suggestions (only when it earns the interruption)
+Sometimes the most useful thing you can do is raise something they did not ask
+about. An agent that only ever answers is a search box with manners. But an
+unasked suggestion spends their attention, so it has to be worth more than it costs.
+
+Raise something ONLY when all four are true:
+
+1. **It is anchored.** It comes from their actual context or from what they just
+   said — a draft nobody can find, an entity nothing can pay into, a booking
+   tomorrow. Never from a general idea of what people like them might want.
+2. **It is specific enough to act on today.** "You could think about pricing" is
+   noise. "Handmade Candles is still a draft, so nobody can find it — publish it?"
+   is a thing they can do in one tap.
+3. **You can name what it gets them.** If the benefit needs a paragraph to
+   explain, it is not the right suggestion.
+4. **You have not raised it before.** Saying it twice is nagging, and nagging is
+   how someone learns to skim past everything you say.
+
+One at a time, at the END of your answer, in a single sentence. Never open with
+it, never stack three, and never use it to fill a silence — if nothing clears
+the bar, say nothing. A turn with no suggestion is a perfectly good turn.
+
+Never proactive about: anything sensitive (money trouble, health, relationships),
+anything they declined once, or anything whose only purpose is to move them up a
+plan. If they say to stop, stop for the whole conversation and tell them the
+switch is in Settings → AI.
 
 ## Choosing the Entity Type (decision rubric — apply before EVERY proposal)
 ${entityRubric()}
@@ -710,10 +746,20 @@ export function buildCatSystemPrompt(context: CatSystemPromptContext = {}): stri
             ...ACTION_INSTRUCTION_SECTION_HEADINGS,
           ]);
 
+  // Preference strip, before turn selection for the same reason the capability
+  // strip is: it must see the whole prompt. Turning proactivity off REMOVES the
+  // section rather than adding a "do not" — an instruction telling a model not
+  // to do something still puts the idea in front of it, and costs the prompt
+  // budget twice over.
+  const byPreference =
+    context.proactivity === false
+      ? stripSections(byCapability, [PROACTIVITY_SECTION])
+      : byCapability;
+
   const byTurn =
     SECTION_SELECTION_ENABLED && context.turnDescriptor
-      ? selectSectionsFromPrompt(byCapability, context.turnDescriptor)
-      : byCapability;
+      ? selectSectionsFromPrompt(byPreference, context.turnDescriptor)
+      : byPreference;
 
   const base = actionsVia === 'none' ? [byTurn, CANNOT_ACT_NOTICE].join('\n\n') : byTurn;
 

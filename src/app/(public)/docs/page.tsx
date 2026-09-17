@@ -13,6 +13,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { ENTITY_REGISTRY, ENTITY_TYPES as ENTITY_TYPE_KEYS } from '@/config/entity-registry';
+import { STACK } from '@/config/stack-versions';
 import Button from '@/components/ui/Button';
 import { PageHeading } from '@/components/layout/PageHeading';
 import { ROUTES } from '@/config/routes';
@@ -240,15 +241,15 @@ export default function DocsPage() {
                 <ul className="space-y-2 text-sm text-fg-secondary">
                   <li className="flex items-center gap-2">
                     <Code2 className="h-4 w-4 text-fg-tertiary" />
-                    Next.js 15 (App Router)
+                    {STACK.next} (App Router)
                   </li>
                   <li className="flex items-center gap-2">
                     <Code2 className="h-4 w-4 text-fg-tertiary" />
-                    TypeScript 5.8
+                    {STACK.typescript}
                   </li>
                   <li className="flex items-center gap-2">
                     <Code2 className="h-4 w-4 text-fg-tertiary" />
-                    Tailwind CSS 3
+                    {STACK.tailwind}
                   </li>
                 </ul>
               </div>

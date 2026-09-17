@@ -79,6 +79,15 @@ export const SITUATIONAL_SECTIONS: ReadonlyArray<{ heading: string; when: RegExp
     when: /my friend|my mother|my father|my sister|my brother|someone i know|on behalf|for a friend|helping someone|for another|another user|not for me|isn't registered|not registered|for her|for him|друг|подруг|для (него|неё|нее|другого|другой)|не для меня|не зарегистрирован/,
   },
   {
+    // Situational rather than core, on purpose. A regex miss costs ONE turn of
+    // proactivity, which is a degradation nobody notices; carrying it on every
+    // turn costs prompt budget the free tier does not have. It fires on turns
+    // where volunteering something is welcome — an opener, or a turn already
+    // about their own things.
+    heading: 'Proactive Suggestions (only when it earns the interruption)',
+    when: /first-message|no-specific-request|what should i|anything new|what else|next step|my (product|service|project|cause|draft|entities)|draft|publish|catch me up|how am i doing|what can i/,
+  },
+  {
     // The turn where the ask is judgement, not an object. Without this the
     // brief had no mode for "what do you think" and every path through it
     // ended at a proposal, so a question came back as a Project to create.

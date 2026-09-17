@@ -28,6 +28,7 @@ import { CatCreditsPanel } from '@/components/ai/CatCreditsPanel';
 import { CatCustomInstructions } from '@/components/ai/CatCustomInstructions';
 import { CatMemoryManager } from '@/components/ai/CatMemoryManager';
 import { CatMemoryImport } from '@/components/ai/CatMemoryImport';
+import { CatProactivityToggle } from '@/components/ai/CatProactivityToggle';
 import { CatInterestsManager } from '@/components/ai/CatInterestsManager';
 import { LocalRuntimePanel } from '@/components/ai/LocalRuntimePanel';
 import { AiUsageStrip } from '@/components/ai/AiUsageStrip';
@@ -210,6 +211,14 @@ export default function AISettingsPage() {
           memoryEnabled={preferences?.memory_enabled !== false}
           onToggleMemory={async enabled => {
             await updatePreferences({ memory_enabled: enabled });
+          }}
+        />
+
+        <CatProactivityToggle
+          enabled={preferences?.proactive_suggestions_enabled !== false}
+          isLoading={settingsLoading}
+          onToggle={async enabled => {
+            await updatePreferences({ proactive_suggestions_enabled: enabled });
           }}
         />
 
