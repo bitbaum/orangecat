@@ -121,6 +121,9 @@ describe('readPublicLedger', () => {
     const ledger = await readPublicLedger('w1');
     expect(ledger?.couldNotRead).toBe(true);
     expect(ledger?.entries).toEqual([]);
+    // And no transparency score either: scoring an empty list produced by a
+    // FAILED lookup would turn a network error into a verdict about a person.
+    expect(ledger?.transparency.score).toBeNull();
   });
 
   it('does not invent a chain balance for a Lightning wallet', async () => {

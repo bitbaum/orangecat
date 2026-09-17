@@ -28,6 +28,25 @@ export default function WalletLedger({ ledger }: { ledger: PublicLedger }) {
         )}
       </div>
 
+      {/* The score and the facts it is made of, together. A number on its own is
+          a badge — which is precisely what the deleted 2026 score was, scoring
+          booleans its own caller passed in. Showing the terms means a reader can
+          disagree with the weighting and still check the arithmetic. */}
+      <div className="mb-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        {ledger.transparency.score !== null && (
+          <span className="text-sm font-semibold text-fg-primary">
+            Transparency {ledger.transparency.score}/100
+          </span>
+        )}
+        <span className="text-xs text-fg-secondary">
+          {ledger.transparency.total > 0
+            ? `${ledger.transparency.explained} of ${ledger.transparency.total} transactions explained`
+            : 'no transactions to explain yet'}
+          {ledger.transparency.balanceFresh === true && ' · balance current'}
+          {ledger.transparency.balanceFresh === false && ' · balance not checked recently'}
+        </span>
+      </div>
+
       <div className="rounded-xl border border-border-default bg-surface-raised p-5">
         <div className="text-xs uppercase tracking-caps text-fg-secondary mb-1">Balance</div>
         <div
