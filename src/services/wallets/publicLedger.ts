@@ -16,6 +16,7 @@
  *     read 0.
  */
 
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { getTableName } from '@/config/entity-registry';
 import { DATABASE_TABLES } from '@/config/database-tables';
@@ -91,7 +92,11 @@ export async function readPublicLedger(walletId: string): Promise<PublicLedger |
     }
   }
 
-  const { data: noteRows } = await db
+  // wallet_transaction_notes is created by this PR's migration, so it is not in
+  // database.generated.ts yet — those types are regenerated from the LIVE box,
+  // in their own chore PR, and cannot describe a table that does not exist there
+  // until this deploys. Narrowed explicitly rather than held up by that ordering.
+  const { data: noteRows } = await (db as unknown as SupabaseClient)
     .from(DATABASE_TABLES.WALLET_TRANSACTION_NOTES)
     .select('txid, note')
     .eq('wallet_id', walletId);
