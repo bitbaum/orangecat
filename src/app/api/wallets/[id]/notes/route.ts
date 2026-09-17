@@ -16,7 +16,8 @@
  */
 
 import { withAuth, type AuthenticatedRequest } from '@/lib/api/withAuth';
-import { apiSuccess, apiBadRequest } from '@/lib/api/standardResponse';
+import { apiSuccess, apiBadRequest, apiRateLimited } from '@/lib/api/standardResponse';
+import { applyRateLimitHeaders, rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
 import { handleSupabaseError } from '@/lib/wallets/errorHandling';
 import { fetchWalletAndVerifyOwner } from '@/domain/wallets/updateWallet';
 import { DATABASE_TABLES } from '@/config/database-tables';
@@ -57,6 +58,17 @@ export const PUT = withAuth(
     const { user, supabase } = request;
     const walletId = await walletIdFrom(context.params);
 
+    // A note is a write, and writes carry a quota — the same one wallet
+    // creation uses. Without it, one account could hammer this endpoint into
+    // the wallets table; api-route-guards fails any mutating route that omits it.
+    const rateLimitResult = await rateLimitWriteAsync(user.id);
+    if (!rateLimitResult.success) {
+      return apiRateLimited(
+        'Too many note updates. Please slow down.',
+        retryAfterSeconds(rateLimitResult)
+      );
+    }
+
     const body = await request.json().catch(() => null);
     const txid = typeof body?.txid === 'string' ? body.txid.trim().toLowerCase() : '';
     const note = typeof body?.note === 'string' ? body.note.trim() : '';
@@ -91,7 +103,7 @@ export const PUT = withAuth(
       logger.error('Failed to save wallet transaction note', { walletId, error: error.message });
       return handleSupabaseError('save wallet note', error, { walletId });
     }
-    return apiSuccess({ note: data });
+    return applyRateLimitHeaders(apiSuccess({ note: data }), rateLimitResult);
   }
 );
 
@@ -99,6 +111,14 @@ export const DELETE = withAuth(
   async (request: AuthenticatedRequest, context: { params: Promise<{ id: string }> }) => {
     const { user, supabase } = request;
     const walletId = await walletIdFrom(context.params);
+
+    const rateLimitResult = await rateLimitWriteAsync(user.id);
+    if (!rateLimitResult.success) {
+      return apiRateLimited(
+        'Too many note updates. Please slow down.',
+        retryAfterSeconds(rateLimitResult)
+      );
+    }
 
     const body = await request.json().catch(() => null);
     const txid = typeof body?.txid === 'string' ? body.txid.trim().toLowerCase() : '';
@@ -120,6 +140,6 @@ export const DELETE = withAuth(
     if (error) {
       return handleSupabaseError('delete wallet note', error, { walletId });
     }
-    return apiSuccess({ deleted: true });
+    return applyRateLimitHeaders(apiSuccess({ deleted: true }), rateLimitResult);
   }
 );
