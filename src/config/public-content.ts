@@ -29,6 +29,8 @@ export const ROADMAP_PHASES = [
       'One clear “Support with Bitcoin” action alongside buying, booking, or joining.',
       'Tracked public payment requests with confirmed amounts attributed to the correct entity.',
       'Consistent share controls and link previews across public entity pages.',
+      'Open accounting: a wallet can publish its balance, its transactions, and the owner\u2019s note on each one \u2014 for owners who turn it on.',
+      'A transparency score computed from what is observable in that ledger, never from what anyone claims about themselves.',
       'No fiat, privacy-coin, or smart-contract controls presented as if they work today.',
     ],
   },
