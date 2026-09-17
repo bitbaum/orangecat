@@ -109,6 +109,9 @@ export function buildWalletUpdates(
   if (body.is_primary !== undefined) {
     updates.is_primary = body.is_primary;
   }
+  if (body.open_accounting !== undefined) {
+    updates.open_accounting = body.open_accounting;
+  }
 
   if (body.address_or_xpub !== undefined) {
     const address = body.address_or_xpub?.trim() ?? '';

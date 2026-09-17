@@ -76,6 +76,8 @@ export const API_ROUTES = {
      *  called from a browser — that leaks the viewer's IP and the owner's
      *  addresses to a third party. */
     TRANSACTIONS: (id: string) => `/api/wallets/${id}/transactions`,
+    /** The owner's note on a transaction — what the number was for. */
+    NOTES: (id: string) => `/api/wallets/${id}/notes`,
   },
   ENTITY_WALLETS: '/api/entity-wallets',
   /** What Bitcoin costs — our own origin, so no third-party call from a browser. */

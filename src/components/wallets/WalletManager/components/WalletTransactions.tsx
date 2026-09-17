@@ -29,6 +29,7 @@ import { apiErrorMessage } from '@/lib/api/errorMessage';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { formatDateTime } from '@/utils/locale';
 import { logger } from '@/utils/logger';
+import { TransactionNote } from './TransactionNote';
 
 interface OnchainTransaction {
   txid: string;
@@ -43,7 +44,7 @@ type State =
   | { kind: 'idle' }
   | { kind: 'loading' }
   | { kind: 'error'; message: string }
-  | { kind: 'loaded'; transactions: OnchainTransaction[] };
+  | { kind: 'loaded'; transactions: OnchainTransaction[]; notes: Record<string, string> };
 
 export function WalletTransactions({ walletId }: { walletId: string }) {
   const [state, setState] = useState<State>({ kind: 'idle' });
@@ -59,7 +60,24 @@ export function WalletTransactions({ walletId }: { walletId: string }) {
       if (!res.ok || !body?.success) {
         throw new Error(apiErrorMessage(body, 'Could not read transactions from the blockchain'));
       }
-      setState({ kind: 'loaded', transactions: body.data?.transactions ?? [] });
+      // The owner's own notes, loaded with the history rather than after it:
+      // a row that pops a note in a moment later reads as a glitch.
+      let notes: Record<string, string> = {};
+      try {
+        const noteRes = await fetch(API_ROUTES.WALLETS.NOTES(walletId), {
+          credentials: 'same-origin',
+        });
+        const noteBody = await noteRes.json();
+        if (noteRes.ok && noteBody?.success) {
+          for (const n of noteBody.data?.notes ?? []) {
+            notes[n.txid] = n.note;
+          }
+        }
+      } catch {
+        // A note that failed to load is not worth failing the history for.
+        notes = {};
+      }
+      setState({ kind: 'loaded', transactions: body.data?.transactions ?? [], notes });
     } catch (error) {
       logger.error('Failed to load wallet transactions', { walletId, error });
       setState({
@@ -167,6 +185,25 @@ export function WalletTransactions({ walletId }: { walletId: string }) {
                   />
                 </span>
               </a>
+              <TransactionNote
+                walletId={walletId}
+                txid={tx.txid}
+                note={state.notes[tx.txid] ?? null}
+                onSaved={next =>
+                  setState(prev =>
+                    prev.kind === 'loaded'
+                      ? {
+                          ...prev,
+                          notes: next
+                            ? { ...prev.notes, [tx.txid]: next }
+                            : Object.fromEntries(
+                                Object.entries(prev.notes).filter(([id]) => id !== tx.txid)
+                              ),
+                        }
+                      : prev
+                  )
+                }
+              />
             </li>
           );
         })}

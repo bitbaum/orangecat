@@ -53,6 +53,7 @@ export const DATABASE_TABLES = {
   // Wallets & Transactions
   WALLETS: 'wallets',
   ENTITY_WALLETS: 'entity_wallets',
+  WALLET_TRANSACTION_NOTES: 'wallet_transaction_notes',
   TRANSACTIONS: 'transactions',
 
   // Payments & Orders
@@ -236,4 +237,4 @@ export const WALLET_CLIENT_COLUMNS =
   'wallet_type, category, category_icon, behavior_type, budget_amount, ' +
   'budget_period, goal_amount, goal_currency, goal_deadline, balance_btc, ' +
   'balance_updated_at, is_active, display_order, is_primary, created_at, ' +
-  'updated_at, lightning_address, next_derivation_index';
+  'updated_at, lightning_address, next_derivation_index, open_accounting';

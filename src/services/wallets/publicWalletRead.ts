@@ -37,7 +37,7 @@ import { redactExtendedKeys } from '@/lib/wallets/publicWallet';
  * is a new public disclosure of financial data and should be treated as one.
  */
 export const PUBLIC_WALLET_FIELDS =
-  'id, address_or_xpub, wallet_type, label, category, category_icon, lightning_address, is_primary, display_order, profile_id, project_id';
+  'id, address_or_xpub, wallet_type, label, category, category_icon, lightning_address, is_primary, display_order, profile_id, project_id, open_accounting';
 
 /** Exactly the shape the public field list produces, after redaction. */
 export interface PublicWallet {
@@ -52,6 +52,12 @@ export interface PublicWallet {
   display_order: number | null;
   profile_id: string | null;
   project_id: string | null;
+  /**
+   * Whether this wallet publishes its ledger. The FLAG is public; the balance
+   * and transactions it governs are not in this list and are read separately
+   * by services/wallets/publicLedger, which re-checks the flag itself.
+   */
+  open_accounting: boolean | null;
 }
 
 type Scope = { profileId: string } | { projectId: string } | { walletId: string };

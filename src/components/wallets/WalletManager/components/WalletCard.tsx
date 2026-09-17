@@ -50,6 +50,7 @@ export function WalletCard({
           goal_amount: wallet.goal_amount || undefined,
           goal_currency: wallet.goal_currency || undefined,
           is_primary: wallet.is_primary,
+          open_accounting: wallet.open_accounting,
         }}
         onFieldFocus={onFieldFocus}
         onSubmit={onUpdate}

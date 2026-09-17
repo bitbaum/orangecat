@@ -7,6 +7,15 @@ import { readPublicWallet } from '@/services/wallets/publicWalletRead';
 import { WALLET_CATEGORIES, type WalletCategory } from '@/types/wallet';
 import { ROUTES } from '@/config/routes';
 import WalletPayPanel from '@/components/wallets/WalletPayPanel';
+import WalletLedger from '@/components/wallets/WalletLedger';
+import { readPublicLedger } from '@/services/wallets/publicLedger';
+
+/**
+ * The ledger reads the chain, so the page is regenerated at most every five
+ * minutes rather than on every visit: a shared public page must not turn each
+ * viewer into a mempool.space request (and, for an xpub, into forty of them).
+ */
+export const revalidate = 300;
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -90,6 +99,8 @@ export default async function WalletPage({ params }: PageProps) {
 
   const owner = await ownerOf(wallet.profile_id);
   const { label: categoryLabel, icon } = categoryOf(wallet);
+  // Null unless this wallet's owner opted in — the check lives in the read.
+  const ledger = await readPublicLedger(wallet.id);
 
   return (
     <main className="mx-auto max-w-2xl px-4 sm:px-6 py-10">
@@ -131,6 +142,8 @@ export default async function WalletPage({ params }: PageProps) {
       </header>
 
       <WalletPayPanel wallet={wallet} />
+
+      {ledger && <WalletLedger ledger={ledger} />}
 
       <p className="text-xs text-fg-tertiary mt-6 text-center">
         Payments go straight to this person’s own wallet. OrangeCat never holds funds.
