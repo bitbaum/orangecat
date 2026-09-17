@@ -92,7 +92,7 @@ function jsonModeRuns(chain: Link[]): Array<{ jsonMode: boolean; links: Link[] }
  * fallback chain served both cases identically. Groq spent days answering 400
  * to every structured call with no symptom beyond a slightly slower reply.
  * `CompleteResult.id` already carries `provider/model`, so the win costs one
- * line, and the box sweep (fleetcrown: ai-provider-check.sh) divides the two.
+ * line, and the box sweep (loki: ai-provider-check.sh) divides the two.
  *
  * Nothing about the prompt or the answer is logged — only which link served.
  */
