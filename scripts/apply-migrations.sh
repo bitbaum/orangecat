@@ -33,7 +33,7 @@
 #                                            # the schema). Idempotent.
 #
 # Config (env, with proven defaults):
-#   OC_BOX             SSH target                    (default root@167.233.22.31)
+#   OC_BOX             SSH target, user@host         (REQUIRED — no default)
 #   OC_DB_CONTAINER    supabase-db container name    (default supabase-db)
 #   OC_MIGRATIONS_DIR  migrations dir                (default supabase/migrations)
 #
@@ -41,7 +41,7 @@
 # box-system Postgres. All DB access goes through `docker exec supabase-db psql`.
 set -euo pipefail
 
-OC_BOX="${OC_BOX:-root@167.233.22.31}"
+OC_BOX="${OC_BOX:?set OC_BOX to the box SSH target, e.g. OC_BOX=root@<box-host>}"
 OC_DB_CONTAINER="${OC_DB_CONTAINER:-supabase-db}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OC_MIGRATIONS_DIR="${OC_MIGRATIONS_DIR:-$REPO_ROOT/supabase/migrations}"

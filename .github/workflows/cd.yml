@@ -13,11 +13,15 @@
 #   SELFHOST_SSH_KEY   private SSH key whose public half is in the box's
 #                      authorized_keys for the OC_BOX user (default root). Treat
 #                      as a deploy credential; rotate if leaked.
-#   SELFHOST_KNOWN_HOSTS  output of `ssh-keyscan 167.233.22.31` (pins the host).
+#   SELFHOST_KNOWN_HOSTS  output of `ssh-keyscan <box host>` (pins the host).
 #   NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY /
 #   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY   real self-host values, baked at build.
-# Optional repo variables (vars.*):
-#   OC_BOX (default root@167.233.22.31)
+# Required variables (vars.*) — the deploy target, configuration not source:
+#   OC_BOX      full `user@host` SSH target; or
+#   HETZNER_IP  the box address, used as `root@<HETZNER_IP>` when OC_BOX is unset.
+# There is deliberately NO literal fallback here. A baked-in address means the
+# variable is never exercised, so nobody notices when it is missing or wrong —
+# the "deploy target configured?" guard below fails the run instead.
 #
 # Note: OrangeCat's build does not require live-DB access (no blocking SSG DB
 # queries), so unlike loki/scripts/hetzner/deploy.sh this needs no tunnel.
@@ -70,7 +74,9 @@ jobs:
       # cd-side rebuild bakes the same embed into prerendered pages. Public by
       # design (ships in page source): repo variable, not a secret.
       LOKI_FEEDBACK_TOKEN: ${{ vars.LOKI_FEEDBACK_TOKEN }}
-      OC_BOX: ${{ vars.OC_BOX || 'root@167.233.22.31' }}
+      # The SSH target comes from configuration only — see the header note on
+      # why there is no literal fallback.
+      OC_BOX: ${{ vars.OC_BOX || (vars.HETZNER_IP && format('root@{0}', vars.HETZNER_IP)) }}
     steps:
       - name: Guard — is the deploy key configured?
         id: guard
@@ -83,6 +89,17 @@ jobs:
             echo "ok=false" >> "$GITHUB_OUTPUT"
             echo "::notice::SELFHOST_SSH_KEY not set — CD is dormant. Add it to enable deploys."
           fi
+
+      - name: Guard — is the deploy target configured?
+        # Fail loudly rather than deploying to a guessed address. This runs only
+        # once the key guard passed, so a dormant CD stays a no-op.
+        if: steps.guard.outputs.ok == 'true'
+        run: |
+          if [ -z "$OC_BOX" ]; then
+            echo "::error::OC_BOX is empty — set the OC_BOX (user@host) or HETZNER_IP variable."
+            exit 1
+          fi
+          echo "deploy target: $OC_BOX"
 
       - name: Checkout
         if: steps.guard.outputs.ok == 'true'
@@ -161,17 +178,21 @@ jobs:
       - name: Configure SSH
         if: steps.guard.outputs.ok == 'true'
         run: |
+          # One source for the box address: the host half of OC_BOX. Repeating
+          # the literal here is how the ssh config and the deploy target drift
+          # apart without anything failing.
+          BOX_HOST="${OC_BOX##*@}"
           mkdir -p ~/.ssh
           echo "${{ secrets.SELFHOST_SSH_KEY }}" > ~/.ssh/id_deploy
           chmod 600 ~/.ssh/id_deploy
           if [ -n "${{ secrets.SELFHOST_KNOWN_HOSTS }}" ]; then
             echo "${{ secrets.SELFHOST_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
           else
-            ssh-keyscan -H 167.233.22.31 >> ~/.ssh/known_hosts 2>/dev/null
+            ssh-keyscan -H "$BOX_HOST" >> ~/.ssh/known_hosts 2>/dev/null
           fi
-          cat > ~/.ssh/config <<'EOF'
+          cat > ~/.ssh/config <<EOF
           Host bitbaum
-            HostName 167.233.22.31
+            HostName $BOX_HOST
             IdentityFile ~/.ssh/id_deploy
             IdentitiesOnly yes
           EOF

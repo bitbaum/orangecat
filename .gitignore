@@ -104,7 +104,11 @@ lerna-debug.log*
 ehthumbs.db
 Thumbs.db
 
-# Logs
+# Logs — nothing under here belongs in a public repo.
+# This rule (2025-10-18) postdates an audit log already committed inside logs/
+# (2025-10-13), so it never applied to it: the file stayed in main, carrying 14
+# absolute paths from a developer's machine, until it was untracked in
+# 2026-09. Ignoring a directory does not untrack what is already in it.
 logs/
 *.log
 deployment.log

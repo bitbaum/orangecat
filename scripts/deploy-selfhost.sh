@@ -19,7 +19,7 @@
 #   scripts/deploy-selfhost.sh --no-build   # deploy an already-built .next/standalone (CI)
 #
 # Config (env, with proven defaults):
-#   OC_BOX        SSH target              (default root@167.233.22.31)
+#   OC_BOX        SSH target, user@host   (REQUIRED — no default)
 #   OC_APP_BASE   app dir on box          (default /opt/orangecat)
 #   OC_SERVICE    systemd unit            (default orangecat-app)
 #   OC_PORT       live port               (default 4003)
@@ -28,7 +28,7 @@
 #   OC_PUBLIC     public health URL       (default https://orangecat.ch/api/health)
 set -euo pipefail
 
-OC_BOX="${OC_BOX:-root@167.233.22.31}"
+OC_BOX="${OC_BOX:?set OC_BOX to the box SSH target, e.g. OC_BOX=root@<box-host>}"
 OC_APP_BASE="${OC_APP_BASE:-/opt/orangecat}"
 OC_SERVICE="${OC_SERVICE:-orangecat-app}"
 OC_PORT="${OC_PORT:-4003}"

@@ -6,10 +6,10 @@
 # 2.67.x (it ignores the URL and tries the local stack). postgres-meta produces
 # byte-identical output and is already running, connected to the live DB.
 #
-# Requires SSH access to the box (root@<box> by default; override with OC_BOX).
+# Requires SSH access to the box: set OC_BOX to the SSH target (user@host).
 set -euo pipefail
 
-BOX="${OC_BOX:-root@167.233.22.31}"
+BOX="${OC_BOX:?set OC_BOX to the box SSH target, e.g. OC_BOX=root@<box-host>}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OUT="$SCRIPT_DIR/../../src/types/database.generated.ts"
 
