@@ -20,6 +20,10 @@ import {
   DEFAULT_MODEL_ID,
   DEFAULT_BTC_PRICE_USD,
 } from '@/config/ai-models';
+import {
+  analyzeComplexity as analyzeMessageComplexity,
+  type ComplexityAnalysis,
+} from '@/services/ai/message-complexity';
 
 // ==================== TYPES ====================
 
@@ -53,86 +57,22 @@ interface RoutingResult {
   complexityScore: number;
 }
 
-interface ComplexityAnalysis {
-  /** Complexity score from 0 (simple) to 1 (complex) */
-  score: number;
-  /** Human-readable reason */
-  reason: string;
-  /** Estimated total tokens (input + output) */
-  estimatedTokens: number;
-  /** Detected task type */
-  taskType: TaskType;
+/** `recommendedFor` tags that mark a model as meant for hard work. */
+const REASONING_TAGS = ['complex reasoning', 'reasoning', 'research', 'coding', 'agents'];
+/** `recommendedFor` tags that mark a model as meant for cheap, easy volume. */
+const LIGHTWEIGHT_TAGS = ['simple', 'high volume', 'fast responses'];
+
+/**
+ * How suited a model is to a hard turn, derived from the registry's own
+ * `recommendedFor`. Higher is better. This exists so the free pool — where
+ * every candidate costs exactly 0 — is ordered by what the models are FOR
+ * rather than by the order someone typed them into the registry.
+ */
+export function qualityRank(model: AIModelMetadata): number {
+  const tags = model.recommendedFor.map(t => t.toLowerCase());
+  const has = (list: string[]) => list.filter(t => tags.some(tag => tag.includes(t))).length;
+  return has(REASONING_TAGS) * 2 - has(LIGHTWEIGHT_TAGS);
 }
-
-type TaskType =
-  | 'simple_question'
-  | 'coding'
-  | 'analysis'
-  | 'creative'
-  | 'research'
-  | 'conversation'
-  | 'translation'
-  | 'summarization'
-  | 'complex_reasoning';
-
-// ==================== COMPLEXITY KEYWORDS ====================
-
-const COMPLEXITY_KEYWORDS: Record<string, { weight: number; taskType: TaskType }> = {
-  // Coding keywords
-  code: { weight: 0.2, taskType: 'coding' },
-  programming: { weight: 0.2, taskType: 'coding' },
-  debug: { weight: 0.25, taskType: 'coding' },
-  algorithm: { weight: 0.3, taskType: 'coding' },
-  refactor: { weight: 0.25, taskType: 'coding' },
-  typescript: { weight: 0.2, taskType: 'coding' },
-  javascript: { weight: 0.2, taskType: 'coding' },
-  python: { weight: 0.2, taskType: 'coding' },
-  function: { weight: 0.15, taskType: 'coding' },
-  class: { weight: 0.15, taskType: 'coding' },
-
-  // Analysis keywords
-  analyze: { weight: 0.25, taskType: 'analysis' },
-  compare: { weight: 0.2, taskType: 'analysis' },
-  evaluate: { weight: 0.25, taskType: 'analysis' },
-  assess: { weight: 0.2, taskType: 'analysis' },
-  examine: { weight: 0.2, taskType: 'analysis' },
-
-  // Research keywords
-  research: { weight: 0.3, taskType: 'research' },
-  thesis: { weight: 0.35, taskType: 'research' },
-  academic: { weight: 0.3, taskType: 'research' },
-  scientific: { weight: 0.3, taskType: 'research' },
-  study: { weight: 0.2, taskType: 'research' },
-
-  // Complex reasoning
-  'step by step': { weight: 0.25, taskType: 'complex_reasoning' },
-  'in detail': { weight: 0.2, taskType: 'complex_reasoning' },
-  comprehensive: { weight: 0.25, taskType: 'complex_reasoning' },
-  thorough: { weight: 0.2, taskType: 'complex_reasoning' },
-  explain: { weight: 0.15, taskType: 'complex_reasoning' },
-
-  // Creative keywords
-  write: { weight: 0.15, taskType: 'creative' },
-  story: { weight: 0.2, taskType: 'creative' },
-  creative: { weight: 0.2, taskType: 'creative' },
-  poem: { weight: 0.2, taskType: 'creative' },
-  essay: { weight: 0.2, taskType: 'creative' },
-
-  // Professional domains (higher complexity)
-  legal: { weight: 0.35, taskType: 'complex_reasoning' },
-  medical: { weight: 0.35, taskType: 'complex_reasoning' },
-  financial: { weight: 0.3, taskType: 'analysis' },
-  contract: { weight: 0.3, taskType: 'complex_reasoning' },
-
-  // Translation
-  translate: { weight: 0.15, taskType: 'translation' },
-  translation: { weight: 0.15, taskType: 'translation' },
-
-  // Summarization
-  summarize: { weight: 0.1, taskType: 'summarization' },
-  summary: { weight: 0.1, taskType: 'summarization' },
-  tldr: { weight: 0.1, taskType: 'summarization' },
-};
 
 // ==================== AUTO ROUTER CLASS ====================
 
@@ -208,8 +148,15 @@ class AIAutoRouter {
       };
     }
 
-    // Select best candidate (prefer lower cost within tier)
-    candidates.sort((a, b) => a.inputCostPer1M - b.inputCostPer1M);
+    // Cost first, then QUALITY — not cost alone. Every free model costs 0, so
+    // a pure cost sort left the winner to be whichever the registry happened
+    // to list first, and the registry lists a model recommended for 'simple
+    // tasks' above one recommended for 'complex reasoning'. That is how a
+    // strategy question got the 20B. `recommendedFor` already encodes the
+    // answer; the router simply never read it.
+    candidates.sort(
+      (a, b) => a.inputCostPer1M - b.inputCostPer1M || qualityRank(b) - qualityRank(a)
+    );
     const selected = candidates[0];
 
     return {
@@ -224,106 +171,13 @@ class AIAutoRouter {
   /**
    * Analyze message complexity using heuristics
    */
+
+  /** Kept on the class so existing callers keep working; the logic moved out. */
   analyzeComplexity(
     message: string,
     history: Array<{ role: string; content: string }>
   ): ComplexityAnalysis {
-    let score = 0;
-    const reasons: string[] = [];
-    let detectedTaskType: TaskType = 'conversation';
-    const taskTypeCounts: Record<TaskType, number> = {
-      simple_question: 0,
-      coding: 0,
-      analysis: 0,
-      creative: 0,
-      research: 0,
-      conversation: 0,
-      translation: 0,
-      summarization: 0,
-      complex_reasoning: 0,
-    };
-
-    const lowerMessage = message.toLowerCase();
-
-    // Length-based complexity
-    const messageLength = message.length;
-    if (messageLength > 2000) {
-      score += 0.3;
-      reasons.push('Long input');
-    } else if (messageLength > 500) {
-      score += 0.15;
-      reasons.push('Medium length input');
-    }
-
-    // Keyword-based complexity detection
-    for (const [keyword, config] of Object.entries(COMPLEXITY_KEYWORDS)) {
-      if (lowerMessage.includes(keyword)) {
-        score += config.weight;
-        taskTypeCounts[config.taskType]++;
-      }
-    }
-
-    // Find dominant task type
-    let maxCount = 0;
-    for (const [taskType, count] of Object.entries(taskTypeCounts)) {
-      if (count > maxCount) {
-        maxCount = count;
-        detectedTaskType = taskType as TaskType;
-      }
-    }
-
-    if (maxCount > 0) {
-      reasons.push(`${detectedTaskType.replace('_', ' ')} detected`);
-    }
-
-    // Conversation length complexity
-    const historyTokens = history.reduce((acc, m) => acc + m.content.length / 4, 0);
-    if (historyTokens > 4000) {
-      score += 0.2;
-      reasons.push('Long conversation context');
-    } else if (historyTokens > 1000) {
-      score += 0.1;
-    }
-
-    // Question complexity (multiple questions)
-    const questionMarks = (message.match(/\?/g) || []).length;
-    if (questionMarks > 3) {
-      score += 0.2;
-      reasons.push('Multiple questions');
-    } else if (questionMarks > 1) {
-      score += 0.1;
-    }
-
-    // Code block detection
-    const codeBlocks = (message.match(/```/g) || []).length / 2;
-    if (codeBlocks > 0) {
-      score += 0.15 * Math.min(codeBlocks, 3);
-      if (codeBlocks > 0) {
-        detectedTaskType = 'coding';
-        reasons.push('Contains code');
-      }
-    }
-
-    // Numbered list detection (often indicates multi-step tasks)
-    const numberedItems = (message.match(/^\d+\./gm) || []).length;
-    if (numberedItems > 3) {
-      score += 0.15;
-      reasons.push('Multi-step task');
-    }
-
-    // Clamp score between 0 and 1
-    score = Math.min(1, Math.max(0, score));
-
-    // Estimate total tokens (rough: 4 chars per token)
-    const estimatedInputTokens = Math.ceil((message.length + historyTokens * 4) / 4);
-    const estimatedOutputTokens = this.estimateOutputTokens(detectedTaskType, estimatedInputTokens);
-
-    return {
-      score,
-      reason: reasons.length > 0 ? reasons.join(', ') : 'Simple task',
-      estimatedTokens: estimatedInputTokens + estimatedOutputTokens,
-      taskType: detectedTaskType,
-    };
+    return analyzeMessageComplexity(message, history);
   }
 
   /**
@@ -392,27 +246,6 @@ class AIAutoRouter {
 
     const satsPerUsd = 100_000_000 / this.btcPriceUsd;
     return Math.ceil(totalCostUsd * satsPerUsd);
-  }
-
-  private estimateOutputTokens(taskType: TaskType, inputTokens: number): number {
-    // Different task types have different output patterns
-    const multipliers: Record<TaskType, number> = {
-      simple_question: 0.5,
-      coding: 2.0,
-      analysis: 1.5,
-      creative: 2.0,
-      research: 2.5,
-      conversation: 0.8,
-      translation: 1.0,
-      summarization: 0.3,
-      complex_reasoning: 1.5,
-    };
-
-    const multiplier = multipliers[taskType] || 1.0;
-    const estimated = Math.ceil(inputTokens * multiplier);
-
-    // Clamp to reasonable range
-    return Math.min(Math.max(estimated, 100), 4000);
   }
 
   private buildReason(complexity: ComplexityAnalysis, model: AIModelMetadata): string {

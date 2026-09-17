@@ -147,7 +147,15 @@ describe('selection is worth doing', () => {
     // file Solon governance proposals about its own spending leash — a new
     // capability worth its prompt cost. Its description and parameters were
     // already cut to the bone to keep the hard 54.6k static budget green.
-    expect(remaining).toBeLessThanOrEqual(3_650);
+    // Raised 3,650 -> 3,800 for the CORE line "Not every turn is a proposal".
+    // It is 375 characters on EVERY turn, and it buys the thing this whole
+    // selection machinery cannot: a turn that asks for judgement rather than
+    // an object. The situational section that coaches it can be missed by the
+    // regexes — a miss there costs sharpness — but the guardrail itself must
+    // never be missed, because without it every path through this brief ends
+    // at a proposal and a question comes back as an entity to create. That is
+    // capability, not coaching, so it is CORE and it is paid for here.
+    expect(remaining).toBeLessThanOrEqual(3_800);
   });
 
   it('selects by default now, and still sends everything when told to', async () => {
