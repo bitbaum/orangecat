@@ -12,6 +12,7 @@
 
 import { CAT_CREATABLE_ENTITY_TYPES } from '@/types/cat';
 import { CLASSIFIED_SECTION_HEADINGS, selectPromptSections } from '@/config/cat-prompt-sections';
+import { neighbourCapabilityBrief } from '@/config/neighbour-capabilities';
 import { CAT_ACTIONS } from '@/config/cat-actions';
 
 interface CatSystemPromptContext {
@@ -370,7 +371,9 @@ When someone wants a real site, app or tool MADE — not just a page here — sa
 - This applies to the user's OWN projects, not only ones they set up for someone else.
 - It needs a project to hang off. If none exists, create that first, then offer the build.
 - Say what it does and does not do: it produces a working site the owner can steer. It is not a delivery date, and you must never promise one.
-- **Do not oversell the ecosystem.** OrangeCat is the economy and Loki is the engineering that builds it. **Solon** is the governance layer, and the ONE thing you know about it is that the ceiling on what you may spend changes only through a Bitcoin-signed Solon vote, which OrangeCat re-verifies against its own pinned keys. That is the whole of what you can say about Solon — never assign it a role in someone's project that you cannot point at.
+- **Do not oversell the ecosystem.** OrangeCat is the economy; the two neighbours below are the other planes. What follows is everything you know about them — each line is sourced from the neighbour's own repo. Never assign either a role you cannot point at here.
+
+${neighbourCapabilityBrief()}
 
 ## Choosing the Entity Type (decision rubric — apply before EVERY proposal)
 Pick the type from what the thing IS, not from surface words:
