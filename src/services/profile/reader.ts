@@ -13,6 +13,14 @@ import { ProfileMapper } from './mapper';
 import type { ScalableProfile } from './types';
 import { DATABASE_TABLES, PUBLIC_PROFILES_VIEW } from '@/config/database-tables';
 
+/**
+ * The row shape ProfileMapper accepts, derived from the mapper itself so the
+ * two cannot drift. Needed explicitly because these reads go through
+ * `fromTable()`, whose builder is deliberately untyped — without it the map
+ * callbacks below are implicitly `any` and tsc rejects them under noImplicitAny.
+ */
+type MappableProfileRow = Parameters<typeof ProfileMapper.mapDatabaseToProfile>[0];
+
 // =====================================================================
 // 📖 PROFILE RETRIEVAL OPERATIONS
 // =====================================================================
@@ -100,9 +108,10 @@ export class ProfileReader {
         return [];
       }
 
-      return (data?.map(profile => ProfileMapper.mapDatabaseToProfile(profile)) || []).filter(
-        (p): p is ScalableProfile => p !== null
-      );
+      return (
+        data?.map((profile: MappableProfileRow) => ProfileMapper.mapDatabaseToProfile(profile)) ||
+        []
+      ).filter((p: ScalableProfile | null): p is ScalableProfile => p !== null);
     } catch (err) {
       logger.error('ProfileReader.getProfiles unexpected error:', err);
       return [];
@@ -134,9 +143,10 @@ export class ProfileReader {
         return [];
       }
 
-      return (data?.map(profile => ProfileMapper.mapDatabaseToProfile(profile)) || []).filter(
-        (p): p is ScalableProfile => p !== null
-      );
+      return (
+        data?.map((profile: MappableProfileRow) => ProfileMapper.mapDatabaseToProfile(profile)) ||
+        []
+      ).filter((p: ScalableProfile | null): p is ScalableProfile => p !== null);
     } catch (err) {
       logger.error('ProfileReader.searchProfiles unexpected error:', err);
       return [];
@@ -157,9 +167,10 @@ export class ProfileReader {
         return [];
       }
 
-      return (data?.map(profile => ProfileMapper.mapDatabaseToProfile(profile)) || []).filter(
-        (p): p is ScalableProfile => p !== null
-      );
+      return (
+        data?.map((profile: MappableProfileRow) => ProfileMapper.mapDatabaseToProfile(profile)) ||
+        []
+      ).filter((p: ScalableProfile | null): p is ScalableProfile => p !== null);
     } catch (err) {
       logger.error('ProfileReader.getAllProfiles unexpected error:', err);
       return [];
