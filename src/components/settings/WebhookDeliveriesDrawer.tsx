@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import { API_ROUTES } from '@/config/api-routes';
 import { logger } from '@/utils/logger';
-import { formatOptionalDateTime } from '@/utils/locale';
+import { FormattedDate } from '@/components/ui/FormattedDate';
 
 interface DeliveryRow {
   id: string;
@@ -204,10 +204,16 @@ export default function WebhookDeliveriesDrawer({ endpointId }: Props) {
                       )}
                     </div>
                     <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-2xs text-fg-secondary">
-                      <span>Enqueued {formatOptionalDateTime(d.created_at)}</span>
-                      <span>Last attempt {formatOptionalDateTime(d.last_attempt_at)}</span>
+                      <span>
+                        Enqueued <FormattedDate value={d.created_at} mode="datetime" />
+                      </span>
+                      <span>
+                        Last attempt <FormattedDate value={d.last_attempt_at} mode="datetime" />
+                      </span>
                       {d.status === 'pending' && d.next_attempt_at && (
-                        <span>Next retry {formatOptionalDateTime(d.next_attempt_at)}</span>
+                        <span>
+                          Next retry <FormattedDate value={d.next_attempt_at} mode="datetime" />
+                        </span>
                       )}
                     </div>
                   </div>

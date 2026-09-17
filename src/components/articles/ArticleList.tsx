@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { Clock } from 'lucide-react';
 import { ROUTES } from '@/config/routes';
 import type { Article } from '@/services/articles/types';
-import { formatDate } from '@/utils/dates';
+import { FormattedDate } from '@/components/ui/FormattedDate';
 
 /** Shared presentational list of article cards — used by the /articles index and
  *  the profile Articles tab so the card markup lives in exactly one place. */
@@ -38,7 +38,9 @@ export default function ArticleList({
                     <span aria-hidden>·</span>
                   </>
                 )}
-                <time dateTime={article.publishedAt}>{formatDate(article.publishedAt)}</time>
+                <time dateTime={article.publishedAt}>
+                  <FormattedDate value={article.publishedAt} />
+                </time>
                 <span className="inline-flex items-center gap-1">
                   <Clock className="h-3.5 w-3.5" />
                   {article.readingTime} min

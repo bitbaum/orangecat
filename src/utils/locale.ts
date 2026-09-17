@@ -12,10 +12,14 @@
  * with eighteen instances, which is why this file exists rather than eighteen
  * patches. `scripts/check-app-locale.mjs` fails the build on a nineteenth.
  *
- * When the app does ship translations, this constant becomes the user's chosen
- * locale — one place to change, and still never the browser's, because the
- * language of the interface and the language of the operating system are
- * different questions.
+ * It remains the answer for surfaces with NO viewer to ask — OG images, text
+ * assembled for the Cat, anything rendered before a profile is known.
+ *
+ * It is no longer the answer for a date shown TO someone. How a person reads a
+ * date is a different question from what language the interface speaks: an
+ * English interface in Zurich should still write 15 Mar 2027. That preference
+ * lives in `src/config/date-formats.ts` and reaches these functions as the
+ * optional `locale` argument below, via `useDisplayDate`.
  */
 export const APP_LOCALE = 'en-US';
 
@@ -41,29 +45,35 @@ export const DAY_FIRST_LOCALE = 'en-GB';
  * six lines apart in the same directory, and jscpd never saw them because
  * three exact clones of fifteen tokens are below its window.
  */
-export function formatOptionalDateTime(value: string | null | undefined): string {
-  return value ? formatDateTime(value) : '—';
+export function formatOptionalDateTime(
+  value: string | null | undefined,
+  locale: string = APP_LOCALE
+): string {
+  return value ? formatDateTime(value, locale) : '—';
 }
 
 /** A number with grouping separators: 5000 → "5,000". */
-export function formatNumber(value: number): string {
-  return value.toLocaleString(APP_LOCALE);
+export function formatNumber(value: number, locale: string = APP_LOCALE): string {
+  return value.toLocaleString(locale);
 }
 
 /** Date and time together, for timestamps shown in full. */
-export function formatDateTime(value: string | number | Date): string {
+export function formatDateTime(value: string | number | Date, locale: string = APP_LOCALE): string {
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) {
     return '';
   }
-  return date.toLocaleString(APP_LOCALE);
+  return date.toLocaleString(locale);
 }
 
 /** Just the clock time, for "saved at" style feedback. */
-export function formatClockTime(value: string | number | Date): string {
+export function formatClockTime(
+  value: string | number | Date,
+  locale: string = APP_LOCALE
+): string {
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) {
     return '';
   }
-  return date.toLocaleTimeString(APP_LOCALE);
+  return date.toLocaleTimeString(locale);
 }

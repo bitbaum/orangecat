@@ -12,11 +12,11 @@ import { API_ROUTES } from '@/config/api-routes';
 import { ROUTES } from '@/config/routes';
 import { BADGE_COLORS } from '@/config/badge-colors';
 import { STATUS } from '@/config/database-constants';
-import { formatDate, formatTime } from '@/utils/dates';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { logger } from '@/utils/logger';
 import { PublicPayPanel } from '@/components/payment/PublicPayPanel';
 import type { Booking } from '@/services/bookings';
+import { FormattedDate } from '@/components/ui/FormattedDate';
 
 interface ReceiveInfo {
   hasWallet: boolean;
@@ -213,12 +213,15 @@ export default function BookingDetailPage() {
         <CardContent className="space-y-3">
           <div className="flex items-center gap-2 text-sm">
             <Calendar className="h-4 w-4 text-fg-secondary" />
-            <span>{formatDate(booking.starts_at)}</span>
+            <span>
+              <FormattedDate value={booking.starts_at} />
+            </span>
           </div>
           <div className="flex items-center gap-2 text-sm">
             <Clock className="h-4 w-4 text-fg-secondary" />
             <span>
-              {formatTime(booking.starts_at)} – {formatTime(booking.ends_at)}
+              <FormattedDate value={booking.starts_at} mode="time" /> –{' '}
+              <FormattedDate value={booking.ends_at} mode="time" />
               {booking.duration_minutes ? ` (${booking.duration_minutes} min)` : ''}
             </span>
           </div>

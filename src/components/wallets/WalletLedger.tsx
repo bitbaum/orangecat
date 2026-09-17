@@ -1,7 +1,7 @@
 import { ArrowDownLeft, ArrowUpRight, ExternalLink } from 'lucide-react';
 import { displayBTC } from '@/services/currency/formatting';
-import { formatDateTime } from '@/utils/locale';
 import type { PublicLedger } from '@/services/wallets/publicLedger';
+import { FormattedDate } from '@/components/ui/FormattedDate';
 
 /**
  * The published half of a wallet: what it holds, what moved, and why.
@@ -18,12 +18,15 @@ export default function WalletLedger({ ledger }: { ledger: PublicLedger }) {
   return (
     <section className="mt-8" aria-labelledby="ledger-heading">
       <div className="flex items-baseline justify-between gap-3 mb-4">
-        <h2 id="ledger-heading" className="text-sm font-medium uppercase tracking-caps text-fg-secondary">
+        <h2
+          id="ledger-heading"
+          className="text-sm font-medium uppercase tracking-caps text-fg-secondary"
+        >
           Open accounting
         </h2>
         {ledger.balanceUpdatedAt && (
           <span className="text-xs text-fg-tertiary">
-            checked {formatDateTime(ledger.balanceUpdatedAt)}
+            checked <FormattedDate value={ledger.balanceUpdatedAt} mode="datetime" />
           </span>
         )}
       </div>
@@ -96,9 +99,14 @@ export default function WalletLedger({ ledger }: { ledger: PublicLedger }) {
                     </span>
                   </div>
                   <div className="text-xs text-fg-tertiary text-right shrink-0">
-                    {entry.confirmed && entry.blockTime
-                      ? formatDateTime(new Date(entry.blockTime * 1000).toISOString())
-                      : 'Unconfirmed'}
+                    {entry.confirmed && entry.blockTime ? (
+                      <FormattedDate
+                        value={new Date(entry.blockTime * 1000).toISOString()}
+                        mode="datetime"
+                      />
+                    ) : (
+                      'Unconfirmed'
+                    )}
                   </div>
                 </div>
 

@@ -12,7 +12,7 @@
 
 import { ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
 import WebhookDeliveriesDrawer from '@/components/settings/WebhookDeliveriesDrawer';
-import { formatOptionalDateTime } from '@/utils/locale';
+import { FormattedDate } from '@/components/ui/FormattedDate';
 
 export interface WebhookEndpoint {
   id: string;
@@ -68,8 +68,12 @@ export default function WebhookEndpointRow({
                   : 'all'}
               </code>
             </span>
-            <span>Created {formatOptionalDateTime(endpoint.created_at)}</span>
-            <span>Last delivery {formatOptionalDateTime(endpoint.last_delivery_at)}</span>
+            <span>
+              Created <FormattedDate value={endpoint.created_at} mode="datetime" />
+            </span>
+            <span>
+              Last delivery <FormattedDate value={endpoint.last_delivery_at} mode="datetime" />
+            </span>
           </div>
         </div>
         <div className="flex items-center gap-2">

@@ -5,7 +5,6 @@ import { Calendar, Clock, User, CheckCircle, XCircle, AlertCircle, Loader2 } fro
 import Button from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
 import { STATUS } from '@/config/database-constants';
-import { formatDate, formatTime } from '@/utils/dates';
 import {
   Dialog,
   DialogContent,
@@ -15,6 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import { BADGE_COLORS } from '@/config/badge-colors';
 import type { Booking as BookingBase } from '@/services/bookings';
+import { FormattedDate } from '@/components/ui/FormattedDate';
 
 type Booking = BookingBase & {
   customer?: {
@@ -97,12 +97,15 @@ export default function BookingCard({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div className="flex items-center gap-2 text-sm">
               <Calendar className="h-4 w-4 text-fg-tertiary" />
-              <span className="text-fg-secondary">{formatDate(booking.starts_at)}</span>
+              <span className="text-fg-secondary">
+                <FormattedDate value={booking.starts_at} />
+              </span>
             </div>
             <div className="flex items-center gap-2 text-sm">
               <Clock className="h-4 w-4 text-fg-tertiary" />
               <span className="text-fg-secondary">
-                {formatTime(booking.starts_at)} - {formatTime(booking.ends_at)}
+                <FormattedDate value={booking.starts_at} mode="time" /> -{' '}
+                <FormattedDate value={booking.ends_at} mode="time" />
               </span>
             </div>
             <div className="text-sm font-medium text-fg-primary">

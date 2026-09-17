@@ -2,6 +2,7 @@ import { z } from 'zod';
 import DOMPurify from 'dompurify';
 import { validatePhoneNumber, normalizePhoneNumber } from '../phone-validation';
 import { CURRENCY_CODES } from '@/config/currencies';
+import { DATE_FORMAT_PREFERENCES } from '@/config/date-formats';
 import { profilePrivacySettingsSchema } from '@/config/profile-privacy';
 import {
   MAKER_STATUS_VALUES,
@@ -276,6 +277,11 @@ export const profileSchema = z.object({
   lightning_address: optionalText(200),
   // Currency preference for displaying prices
   currency: z.enum(CURRENCY_CODES).optional().nullable(),
+  // How this person reads a date. Null or 'auto' means keep inferring from
+  // location_country, then currency, then language — so someone who moves
+  // country gets the local convention without touching settings. Values are
+  // the SSOT in @/config/date-formats and are mirrored by a CHECK constraint.
+  date_format: z.enum(DATE_FORMAT_PREFERENCES).optional().nullable(),
   // Per-field visibility (which public fields the owner hides from visitors).
   // Stored in the profiles.privacy_settings jsonb column. Included here so it
   // survives both the client zodResolver and this server-side parse — a field

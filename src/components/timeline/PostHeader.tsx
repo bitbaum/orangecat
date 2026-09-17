@@ -11,7 +11,7 @@ import { getTimeAgo } from '@/services/timeline/formatters';
 import { TIMELINE_SURFACE } from '@/config/timeline';
 import { CAT_USERNAME } from '@/config/cat-identity';
 import { normalizeUsername } from '@/config/usernames';
-import { formatDateTime } from '@/utils/locale';
+import { useDisplayDate } from '@/hooks/useDisplayDate';
 
 interface PostHeaderProps {
   event: TimelineDisplayEvent;
@@ -33,6 +33,8 @@ export function PostHeader({
   isSimpleRepost,
 }: PostHeaderProps) {
   const menuRef = useRef<HTMLDivElement>(null);
+  // The tooltip is a string on an attribute, so it cannot be <FormattedDate />.
+  const { formatDateTime } = useDisplayDate();
 
   // Close menu when clicking outside
   useEffect(() => {

@@ -20,8 +20,9 @@ import { STATUS } from '@/config/database-constants';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/badge';
 import { Breadcrumb } from '@/components/ui/Breadcrumb';
-import { formatDate, formatShortTime } from '@/utils/dates';
+import { formatShortTime } from '@/utils/dates';
 import type { GroupEvent } from '@/services/groups/types';
+import { FormattedDate } from '@/components/ui/FormattedDate';
 
 interface PageProps {
   params: Promise<{ slug: string; eventId: string }>;
@@ -90,7 +91,10 @@ export default async function GroupEventDetailPage({ params }: PageProps) {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         <Breadcrumb
           items={[
-            { label: ENTITY_REGISTRY['group'].namePlural, href: ENTITY_REGISTRY['group'].publicBasePath },
+            {
+              label: ENTITY_REGISTRY['group'].namePlural,
+              href: ENTITY_REGISTRY['group'].publicBasePath,
+            },
             { label: group.name || slug, href: groupHref },
             { label: event.title },
           ]}
@@ -158,14 +162,14 @@ export default async function GroupEventDetailPage({ params }: PageProps) {
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
                   <span>
-                    {formatDate(startDate)} {formatShortTime(startDate)}
+                    <FormattedDate value={startDate} /> {formatShortTime(startDate)}
                   </span>
                 </div>
                 {endDate && (
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4" />
                     <span>
-                      Ends: {formatDate(endDate)} {formatShortTime(endDate)}
+                      Ends: <FormattedDate value={endDate} /> {formatShortTime(endDate)}
                     </span>
                   </div>
                 )}

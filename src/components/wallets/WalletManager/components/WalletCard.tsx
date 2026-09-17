@@ -15,7 +15,7 @@ import { getWalletReceiveHandle } from '@/lib/wallet-receive-handle';
 import { computeWalletGoalProgress } from '@/lib/wallet-goal';
 import { useCurrencyConversion } from '@/hooks/useCurrencyConversion';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
-import { formatDateTime } from '@/utils/locale';
+import { FormattedDate } from '@/components/ui/FormattedDate';
 
 export function WalletCard({
   wallet,
@@ -212,9 +212,13 @@ export function WalletCard({
             {wallet.balance_updated_at ? displayBTC(wallet.balance_btc) : '—'}
           </div>
           <div className="text-xs text-fg-secondary mt-2">
-            {wallet.balance_updated_at
-              ? `Updated ${formatDateTime(wallet.balance_updated_at)}`
-              : 'Not checked yet — refresh to read it from the blockchain'}
+            {wallet.balance_updated_at ? (
+              <>
+                Updated <FormattedDate value={wallet.balance_updated_at} mode="datetime" />
+              </>
+            ) : (
+              'Not checked yet — refresh to read it from the blockchain'
+            )}
           </div>
         </div>
       )}

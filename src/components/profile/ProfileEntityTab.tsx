@@ -8,7 +8,7 @@ import Button from '@/components/ui/Button';
 import { EntityType } from '@/config/entity-registry';
 import { getStatusInfo, NORMAL_VISIBLE_STATUSES } from '@/config/status-config';
 import { useProfileEntityTab, getRelativeTime } from './useProfileEntityTab';
-import { formatDate } from '@/utils/dates';
+import { FormattedDate } from '@/components/ui/FormattedDate';
 
 interface ProfileEntityTabProps {
   profile: ScalableProfile;
@@ -144,7 +144,7 @@ export default function ProfileEntityTab({
                     {entityType === 'event' && entity.start_date && (
                       <span className="flex items-center gap-1">
                         <Calendar className="w-4 h-4" />
-                        {formatDate(entity.start_date)}
+                        <FormattedDate value={entity.start_date} />
                       </span>
                     )}
                     {entityType === 'event' && (entity.venue_city || entity.is_online) && (
