@@ -26,6 +26,7 @@ export interface UserAIPreferences {
   onboarding_step: number;
   /** Consent: may Cat extract + store memories from conversations? Gates extractAndStoreMemories. */
   memory_enabled: boolean;
+  proactive_suggestions_enabled: boolean;
   /** Standing instructions injected into the Cat system prompt (null = none). */
   custom_instructions: string | null;
   /** The free platform default's position in the Cat fallback chain (0 = first). */
@@ -58,6 +59,13 @@ function normalizePreferences(
     cached_total_requests: row.cached_total_requests ?? 0,
     cached_total_tokens: row.cached_total_tokens ?? 0,
     cached_total_cost_btc: row.cached_total_cost_btc ?? 0,
+    // The column landed in 20260917150000; `database.generated.ts` is
+    // regenerated as its own chore PR and does not know about it yet, so read
+    // it structurally. `?? true` is the same default the migration declares —
+    // a row written before the column existed must not read as "opted out".
+    proactive_suggestions_enabled:
+      (row as { proactive_suggestions_enabled?: boolean | null }).proactive_suggestions_enabled ??
+      true,
     created_at: row.created_at ?? '',
     updated_at: row.updated_at ?? '',
   };

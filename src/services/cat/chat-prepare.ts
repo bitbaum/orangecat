@@ -23,6 +23,7 @@ import {
 } from '@/services/cat/prompt-budget';
 import { buildTurnDescriptor } from '@/services/cat/turn-descriptor';
 import { getCustomInstructions } from '@/services/cat/custom-instructions';
+import { proactivityEnabled } from '@/services/cat/proactivity';
 import { buildReplyLanguageDirective } from '@/services/cat/reply-language';
 import { getCatFewShotExamplesText } from '@/services/cat/few-shot-examples';
 import {
@@ -126,10 +127,13 @@ export async function prepareCatChat(
   // of the context fetch, so run all three concurrently — recall just has to
   // beat the (already parallel) context fetchers. Recall is best-effort: []
   // if memory is unavailable.
-  const [userContext, memories, customInstructions] = await Promise.all([
+  const [userContext, memories, customInstructions, proactivity] = await Promise.all([
     fetchFullContextForCat(supabase, userId, hints),
     recallMemories(supabase, userId, message),
     getCustomInstructions(supabase, userId),
+    // One indexed lookup on a row we are already reading for this user. It
+    // rides the same Promise.all rather than adding a round-trip to the turn.
+    proactivityEnabled(supabase, userId),
   ]);
   userContext.memories = memories;
   const contextString = buildFullContextString(userContext);
@@ -182,7 +186,7 @@ export async function prepareCatChat(
   });
 
   const parts: CatPromptParts = {
-    base: buildCatSystemPrompt({ actionsVia: opts.actionsVia, turnDescriptor }),
+    base: buildCatSystemPrompt({ actionsVia: opts.actionsVia, turnDescriptor, proactivity }),
     standingInstructions: buildStandingInstructionsBlock(customInstructions),
     userContext: contextString,
     groundingRules,

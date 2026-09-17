@@ -90,7 +90,12 @@ describe('the matcher matches words, not letters inside words', () => {
     // on the conjunction "also". Now 7 of 13, two of them the new sections
     // that make the turn answerable at all.
     const fired = SITUATIONAL_SECTIONS.filter(s => s.when.test(`${HARD_ASK} | first-message`));
-    expect(fired.length).toBeLessThanOrEqual(7);
+    // Raised 7 -> 8 when `Proactive Suggestions` landed. It fires here on the
+    // `first-message` marker, which is correct: an opener is exactly the turn
+    // where volunteering something is welcome. The ratio is what this test is
+    // really about, and 8 of 14 is still selection — it was 7 of 11 before any
+    // of this work, when three of those seven fired on nothing at all.
+    expect(fired.length).toBeLessThanOrEqual(8);
   });
 });
 
