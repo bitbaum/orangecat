@@ -21,13 +21,14 @@ import {
 } from '@/app/auth/oauth-provider-map';
 import { apiSuccess } from '@/lib/api/standardResponse';
 import { logger } from '@/utils/logger';
+import { CACHE_PRESETS } from '@/lib/api/cache-policy';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const ANON_KEY =
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 const CACHE_TTL_MS = 5 * 60 * 1000; // provider config changes rarely; keep probes cheap
-const CACHE_CONTROL = 's-maxage=300, stale-while-revalidate=1800';
+const CACHE_CONTROL = CACHE_PRESETS.MEDIUM;
 
 let cache: { at: number; providers: OAuthProvider[] } | null = null;
 

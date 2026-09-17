@@ -9,6 +9,7 @@
 
 import { NextResponse } from 'next/server';
 import { logger } from '@/utils/logger';
+import { CACHE_PRESETS } from './cache-policy';
 
 // =====================================================================
 // TYPES
@@ -41,25 +42,6 @@ export interface ApiErrorResponse {
 // SUCCESS RESPONSES
 // =====================================================================
 
-/**
- * Cache configuration presets
- */
-const CACHE_PRESETS = {
-  // No caching - always fresh
-  NONE: 'no-store, must-revalidate',
-
-  // Short cache - 1 minute CDN, 5 minutes stale-while-revalidate
-  SHORT: 's-maxage=60, stale-while-revalidate=300',
-
-  // Medium cache - 5 minutes CDN, 30 minutes stale-while-revalidate
-  MEDIUM: 's-maxage=300, stale-while-revalidate=1800',
-
-  // Long cache - 1 hour CDN, 24 hours stale-while-revalidate
-  LONG: 's-maxage=3600, stale-while-revalidate=86400',
-
-  // Static - 1 day CDN, 1 week stale-while-revalidate
-  STATIC: 's-maxage=86400, stale-while-revalidate=604800',
-} as const;
 
 /**
  * Create a successful API response with standard format

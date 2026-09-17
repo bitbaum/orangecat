@@ -13,11 +13,12 @@ import { getAdminClient } from '@/lib/supabase/admin';
 import { fetchDiscoverCounts, type DiscoverCounts } from '@/services/search/discoverCounts';
 import { apiSuccess, apiError } from '@/lib/api/standardResponse';
 import { logger } from '@/utils/logger';
+import { CACHE_PRESETS } from '@/lib/api/cache-policy';
 
 export const dynamic = 'force-dynamic';
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
-const CACHE_CONTROL = 's-maxage=300, stale-while-revalidate=1800';
+const CACHE_CONTROL = CACHE_PRESETS.MEDIUM;
 
 let cache: { at: number; counts: DiscoverCounts } | null = null;
 
