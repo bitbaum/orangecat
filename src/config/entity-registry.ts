@@ -438,7 +438,7 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
     type: 'asset',
     wallet: {
       holds: true,
-      why: 'Rent and deposits are paid to whoever holds it.',
+      why: 'Rent, deposits and sale prices are owed to whoever holds it. The columns exist (sale_price_btc, rental_price_btc, deposit_amount_btc) and no asset has yet been listed for either, so nothing pays in through OrangeCat.',
     },
     name: 'Asset',
     namePlural: 'Assets',
@@ -462,7 +462,7 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
     type: 'loan',
     wallet: {
       holds: true,
-      why: 'Principal moves out and repayments move back.',
+      why: "A lender and a borrower agree terms against it. Settlement is peer-to-peer and off-platform today — every live loan is fulfillment_type manual — so the wallet is the counterparty's, not ours to move.",
     },
     name: 'Loan',
     namePlural: 'Loans',
