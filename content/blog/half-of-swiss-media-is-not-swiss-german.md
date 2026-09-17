@@ -26,9 +26,9 @@ So Heidi now publishes that fact. `/listen` is a register of about fifty Swiss s
 
 Two things in it that surprised us enough to put on the page:
 
-**The famous Swiss films are Bernese.** _Der Bestatter_, _Der Goalie bin ig_, _Mein Name ist Eugen_, _Neumatt_ — Swiss cinema and television drama come largely out of Bern. A learner in Zurich who works through the canonical list is training their ear on a dialect from two hours away. That is genuinely useful preparation for Switzerland and it is not what they think they are doing.
+**Swiss film is not one accent, and the register says which is which.** _Der Bestatter_, _Der Goalie bin ig_, _Mein Name ist Eugen_ and _Neumatt_ are Bernese — Bern is where most Swiss drama gets made. _Tschugger_ is Wallis German, which other Swiss people watch with subtitles. _Die göttliche Ordnung_ is Appenzell in 1971, women campaigning for the federal vote, and carries a fact worth knowing before somebody asks you about it: Appenzell Innerrhoden did not admit women to its Landsgemeinde until 1990, nineteen years after the film ends. None of that is a hazard to be warned about. It is the subject, and each entry names its dialect area so you can pick the one spoken around you or deliberately pick one that is not.
 
-**Zurich material specifically is scarce.** Against a dozen pan-Swiss sources there are perhaps four that are recognisably Zurich: the city's own television station, two Zurich radio stations, and a 1978 film about becoming Swiss. That scarcity is a fact about the market, and it is why the software treats a dialect-area preference as a preference and never as a filter — filtering on it would hand a Zurich learner a nearly empty page and call it personalisation.
+**Zurich material is scarcer than you would expect**, and finding it was work. The city's own television station and two Zurich radio stations were easy; the features took looking — _Die Schweizermacher_ from 1978, and then _Zwingli_, _Wolkenbruch_ and _Platzspitzbaby_, all set and spoken in the city. Against a dozen pan-Swiss sources that is still a thin shelf, which is why the software treats a dialect-area preference as a preference and never as a filter: filtering on it would hand a Zurich learner a nearly empty page and call it personalisation.
 
 ### What the register does not claim
 
