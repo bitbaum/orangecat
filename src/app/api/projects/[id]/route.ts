@@ -43,12 +43,9 @@ async function postProcessProjectGet(
   if (profileUserId) {
     const { data: profileData, error: profileError } = await supabase
       .from(DATABASE_TABLES.PROFILES)
-      // No `email`. This GET is unauthenticated and publicly cacheable
-      // (see getCacheControl below), so selecting the creator's account login
-      // email put it into a shared cache for anyone who asked for the project —
-      // and no consumer of this response ever read the field. `anon` no longer
-      // holds SELECT on profiles.email in any case (migration 20260917120100),
-      // so asking for it here would now fail the whole request.
+      // No `email`: this GET is unauthenticated and publicly cacheable, so it
+      // put the creator's login email in a shared cache, and no consumer read
+      // it. anon has no SELECT on it either now (migration 20260917120100).
       .select('id, username, name, avatar_url')
       .eq('id', profileUserId)
       .maybeSingle();
