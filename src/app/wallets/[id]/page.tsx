@@ -26,12 +26,16 @@ async function ownerOf(profileId: string | null) {
     return null;
   }
   const supabase = await createServerClient();
+  // `name`, not `display_name`. profiles has no display_name column and never
+  // has — CD's schema-drift gate (which diffs deployed code against the LIVE
+  // box schema) refused the deploy over exactly this, while CI passed because
+  // check:schema-columns reads a committed snapshot instead.
   const { data } = await supabase
     .from('profiles')
-    .select('username, display_name, avatar_url')
+    .select('username, name, avatar_url')
     .eq('id', profileId)
     .maybeSingle();
-  return data as { username: string; display_name: string | null; avatar_url: string | null } | null;
+  return data as { username: string; name: string | null; avatar_url: string | null } | null;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -41,7 +45,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return { title: 'Wallet Not Found' };
   }
   const owner = await ownerOf(wallet.profile_id);
-  const who = owner?.display_name || owner?.username;
+  const who = owner?.name || owner?.username;
   const title = wallet.label || categoryOf(wallet).label;
 
   return {
@@ -95,7 +99,7 @@ export default async function WalletPage({ params }: PageProps) {
           className="inline-flex items-center gap-1.5 text-sm text-fg-secondary hover:text-fg-primary transition-colors mb-6"
         >
           <ArrowLeft className="w-4 h-4" />
-          {owner.display_name || owner.username}
+          {owner.name || owner.username}
         </Link>
       )}
 
@@ -117,7 +121,7 @@ export default async function WalletPage({ params }: PageProps) {
                     href={ROUTES.PROFILES.VIEW(owner.username)}
                     className="hover:text-fg-primary transition-colors"
                   >
-                    {owner.display_name || owner.username}
+                    {owner.name || owner.username}
                   </Link>
                 </>
               )}
