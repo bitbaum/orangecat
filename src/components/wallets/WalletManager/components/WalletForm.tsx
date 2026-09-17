@@ -185,21 +185,30 @@ export function WalletForm({
         </label>
         {/* Paste or scan. The scanner is lazy — its decoder is only fetched if
             someone actually taps it, so the button costs nothing to offer. */}
-        <div className="flex gap-2">
-          <Input
-            value={walletInput}
-            onChange={e => handleWalletInput(e.target.value)}
-            onFocus={() => onFieldFocus?.('lightningAddress')}
-            placeholder="you@wallet.com  ·  bc1q…  ·  nostr+walletconnect://…"
-            autoComplete="off"
-            className="flex-1"
-          />
+        <div className="flex items-start gap-2">
+          {/* Input renders its own wrapper div, so `flex-1` must go on a wrapper
+              here — passed to Input it lands on the inner <input> and the
+              wrapper collapses to content width, squeezing the field to half
+              the card and clipping its placeholder. `min-w-0` lets it shrink
+              inside the flex row instead of overflowing on a phone. */}
+          <div className="min-w-0 flex-1">
+            <Input
+              value={walletInput}
+              onChange={e => handleWalletInput(e.target.value)}
+              onFocus={() => onFieldFocus?.('lightningAddress')}
+              placeholder="you@wallet.com  ·  bc1q…  ·  nostr+walletconnect://…"
+              autoComplete="off"
+              className="h-11"
+            />
+          </div>
+          {/* h-11 on both, so the button matches the field rather than standing
+              4px taller — and 44px is the touch-target floor these rules set. */}
           <button
             type="button"
             onClick={() => setScanning(true)}
             aria-label="Scan your wallet's QR code"
             title="Scan a QR code"
-            className="flex min-h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg border border-default text-fg-secondary transition-colors hover:border-strong hover:text-fg-primary"
+            className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg border border-default text-fg-secondary transition-colors hover:border-strong hover:text-fg-primary"
           >
             <Camera className="h-5 w-5" aria-hidden="true" />
           </button>
