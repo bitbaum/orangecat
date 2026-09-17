@@ -293,7 +293,6 @@ export const ROUTES = {
   AUTH_CALLBACK: '/auth/callback',
   AUTH_SIGNOUT: '/auth/signout',
   DISCOVER: '/discover',
-  WALLETS: '/wallets',
   CREATE: '/create',
   STUDY_BITCOIN: '/study-bitcoin',
   BITCOIN_WALLET_GUIDE: '/bitcoin-wallet-guide',
@@ -371,6 +370,13 @@ export const ROUTES = {
   },
   ASSETS: {
     VIEW: (id: string) => `${ENTITY_REGISTRY['asset'].publicBasePath}/${id}`,
+  },
+  // `/wallets` is the "get a Bitcoin wallet" education page; `/wallets/<id>` is
+  // one wallet's own page. The registry has declared publicBasePath for the
+  // wallet entity all along — only the detail route was missing.
+  WALLETS: {
+    LIST: ENTITY_REGISTRY['wallet'].publicBasePath,
+    VIEW: (id: string) => `${ENTITY_REGISTRY['wallet'].publicBasePath}/${id}`,
   },
   GROUPS: {
     LIST: ENTITY_REGISTRY['group'].publicBasePath,
