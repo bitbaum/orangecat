@@ -82,7 +82,9 @@ export async function getPublicProfileByIdentifier(
 ): Promise<PublicProfileResult> {
   const isEmail = identifier.includes('@');
 
-  let profile = null;
+  // The row comes from a view read through looseClient, so it arrives untyped
+  // (`{}`) — name the one field this function actually reaches into.
+  let profile: (Record<string, unknown> & { id: string }) | null = null;
   let error = null;
   let userId: string | null = null;
 
@@ -127,7 +129,7 @@ export async function getPublicProfileByIdentifier(
     .eq('username', identifier)
     .single();
 
-  profile = profileByUsername;
+  profile = profileByUsername as (Record<string, unknown> & { id: string }) | null;
   error = usernameError;
   if (profile) {
     userId = profile.id;
