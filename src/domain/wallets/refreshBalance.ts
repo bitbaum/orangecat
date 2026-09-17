@@ -11,7 +11,7 @@ import { auditSuccess, AUDIT_ACTIONS } from '@/lib/api/auditLog';
 import { logger } from '@/utils/logger';
 import { BITCOIN_FETCH_TIMEOUT_MS } from '@/lib/wallets/constants';
 import { satsToBitcoin } from '@/services/currency';
-import { deriveOnchainAddress } from '@/domain/payments/addressDerivation';
+import { scanUsedAddresses } from '@/domain/wallets/xpubScan';
 
 const COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
 const API_TIMEOUT_MS = BITCOIN_FETCH_TIMEOUT_MS;
@@ -38,14 +38,6 @@ async function fetchWithTimeout(
   }
 }
 
-/**
- * Stop scanning after this many consecutive unused addresses (BIP44 gap limit).
- * 20 is the wallet-industry default; going lower risks missing funds that a
- * normal wallet would find.
- */
-const GAP_LIMIT = 20;
-/** Hard ceiling so a pathological key cannot issue unbounded requests. */
-const MAX_SCAN = 60;
 
 /** Chain stats for one address, in sats. */
 async function fetchAddressStats(
@@ -74,7 +66,7 @@ async function fetchAddressStats(
 }
 
 /**
- * Sum an extended key's receive chain by deriving addresses locally.
+ * Sum an extended key's balance across BOTH chains by deriving addresses locally.
  *
  * This used to call `mempool.space/api/v1/xpub/<key>` — an endpoint that DOES
  * NOT EXIST. Every variant of it 404s (verified 2026-09-07), and the 404 was
@@ -89,20 +81,14 @@ async function fetchAddressStats(
  * standard gap-limit scan. An error now propagates instead of becoming a zero.
  */
 async function fetchXpubBalance(xpub: string): Promise<number> {
-  let totalSats = 0;
-  let consecutiveEmpty = 0;
-
-  for (let index = 0; index < MAX_SCAN && consecutiveEmpty < GAP_LIMIT; index += 1) {
-    const address = deriveOnchainAddress(xpub, index);
+  // Change addresses are where a wallet's own coins come home after it spends.
+  // Scanning the receive chain alone left every such coin out of the total, so
+  // any wallet that had ever sent a payment reported less than it held.
+  const used = await scanUsedAddresses(xpub, async address => {
     const { balanceSats, txCount } = await fetchAddressStats(address);
-    if (txCount === 0) {
-      consecutiveEmpty += 1;
-    } else {
-      consecutiveEmpty = 0;
-      totalSats += balanceSats;
-    }
-  }
-
+    return { used: txCount > 0, value: balanceSats };
+  });
+  const totalSats = used.reduce((sum, a) => sum + a.value, 0);
   return satsToBitcoin(totalSats);
 }
 

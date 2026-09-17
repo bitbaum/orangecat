@@ -12,16 +12,12 @@
  * lesson is already written into services/currency/rateSource.server.ts.
  */
 
-import { deriveOnchainAddress } from '@/domain/payments/addressDerivation';
+import { scanUsedAddresses } from '@/domain/wallets/xpubScan';
 import { satsToBitcoin } from '@/services/currency';
 import { BITCOIN_FETCH_TIMEOUT_MS } from '@/lib/wallets/constants';
 import { logger } from '@/utils/logger';
 
 const MEMPOOL_API = 'https://mempool.space/api';
-/** BIP44 gap limit — stop after this many consecutive unused addresses. */
-const GAP_LIMIT = 20;
-/** Hard ceiling so a pathological key cannot issue unbounded requests. */
-const MAX_SCAN = 60;
 /** Most recent transactions returned to the caller. */
 const MAX_TRANSACTIONS = 25;
 
@@ -83,21 +79,20 @@ async function walletAddresses(walletType: string, addressOrXpub: string): Promi
     return [addressOrXpub];
   }
 
-  const used: string[] = [];
-  let consecutiveEmpty = 0;
-  for (let index = 0; index < MAX_SCAN && consecutiveEmpty < GAP_LIMIT; index += 1) {
-    const address = deriveOnchainAddress(addressOrXpub, index);
-    const stats = await getJson<{ chain_stats?: { tx_count?: number } }>(
-      `${MEMPOOL_API}/address/${address}`
-    );
-    if ((stats.chain_stats?.tx_count ?? 0) === 0) {
-      consecutiveEmpty += 1;
-    } else {
-      consecutiveEmpty = 0;
-      used.push(address);
-    }
-  }
-  return used;
+  // Both chains: a spend's change lands on the internal chain, and without it
+  // the change output is not "ours", so the spend nets as its whole input sent.
+  // Unconfirmed activity counts as use too — a payment still in the mempool is
+  // exactly the one an owner is waiting to see, and the list below already
+  // sorts unconfirmed transactions first.
+  const used = await scanUsedAddresses(addressOrXpub, async address => {
+    const stats = await getJson<{
+      chain_stats?: { tx_count?: number };
+      mempool_stats?: { tx_count?: number };
+    }>(`${MEMPOOL_API}/address/${address}`);
+    const txCount = (stats.chain_stats?.tx_count ?? 0) + (stats.mempool_stats?.tx_count ?? 0);
+    return { used: txCount > 0, value: txCount };
+  });
+  return used.map(a => a.address);
 }
 
 /** Net sats this transaction moved for the given address set. */

@@ -6,7 +6,13 @@
  * counts as proof.
  */
 
-import { deriveOnchainAddress } from '@/domain/payments/addressDerivation';
+import {
+  deriveOnchainAddress,
+  deriveChainAddress,
+  RECEIVE_CHAIN,
+  CHANGE_CHAIN,
+  SCANNED_CHAINS,
+} from '@/domain/payments/addressDerivation';
 
 const XPUB =
   'xpub6BosfCnifzxcFwrSzQiqu2DBVTshkCXacvNsWGYJVVhhawA7d4R5WSWGFNbi8Aw6ZRc1brxMyWMzG3DSSSSoekkudhUd9yLb6qx39T9nMdj';
@@ -45,5 +51,47 @@ describe('deriveOnchainAddress', () => {
     expect(() => deriveOnchainAddress(ZPUB, -1)).toThrow(/out of range/);
     expect(() => deriveOnchainAddress(ZPUB, 1.5)).toThrow(/out of range/);
     expect(() => deriveOnchainAddress(ZPUB, 0x80000000)).toThrow(/out of range/);
+  });
+});
+
+describe('deriveChainAddress', () => {
+  it('derives the BIP84 change address from the spec vector', () => {
+    // BIP-0084's own test vector for m/84'/0'/0'/1/0 on the "abandon … about"
+    // mnemonic. Checked against the spec rather than against this library's
+    // output, so the two have to agree for the test to pass.
+    expect(deriveChainAddress(ZPUB, CHANGE_CHAIN, 0)).toBe(
+      'bc1q8c6fshw2dlwun7ekn9qwf37cu2rn755upcp6el'
+    );
+  });
+
+  it('is the same function the receiving path uses, pinned to chain 0', () => {
+    for (const index of [0, 1, 7]) {
+      expect(deriveChainAddress(ZPUB, RECEIVE_CHAIN, index)).toBe(
+        deriveOnchainAddress(ZPUB, index)
+      );
+    }
+  });
+
+  it('never returns a change address where a receiving address was asked for', () => {
+    // Handing a payer a change address puts their money where the recipient's
+    // wallet does not watch for incoming funds — the one failure worse than
+    // showing nothing.
+    const receiving = new Set(Array.from({ length: 20 }, (_, i) => deriveOnchainAddress(ZPUB, i)));
+    for (let i = 0; i < 20; i += 1) {
+      expect(receiving.has(deriveChainAddress(ZPUB, CHANGE_CHAIN, i))).toBe(false);
+    }
+  });
+
+  it('scans exactly the two BIP44 chains', () => {
+    expect([...SCANNED_CHAINS]).toEqual([RECEIVE_CHAIN, CHANGE_CHAIN]);
+  });
+
+  it('rejects a chain that is neither receive nor change', () => {
+    expect(() => deriveChainAddress(ZPUB, 2 as never, 0)).toThrow(/chain must be 0/);
+  });
+
+  it('validates the index on the change chain too', () => {
+    expect(() => deriveChainAddress(ZPUB, CHANGE_CHAIN, -1)).toThrow(/out of range/);
+    expect(() => deriveChainAddress(ZPUB, CHANGE_CHAIN, 1.5)).toThrow(/out of range/);
   });
 });
