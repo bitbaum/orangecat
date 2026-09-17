@@ -123,6 +123,16 @@ export interface EntityMetadata {
    * type nobody can justify is a type nobody should have added.
    */
   wallet: WalletRelation;
+  /**
+   * WHEN TO PICK THIS ONE, as a situation rather than a label. Read verbatim
+   * into Cat's decision rubric, so the rubric cannot cover fewer types than
+   * exist — its hand-written predecessor covered 8 of 15, which is how a
+   * research grant got proposed as a project and a wishlist never at all.
+   *
+   * Phrase it as the thing that is TRUE of the user's situation, not as a
+   * description of the type: Cat matches it against what someone just said.
+   */
+  choose: string;
   /** Display name (singular) */
   name: string;
   /** Display name (plural) */
@@ -219,6 +229,7 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
   // ==================== GATEWAY (Foundational) ====================
   wallet: {
     type: 'wallet',
+    choose: 'never proposed — it is the account every other type settles into',
     wallet: {
       holds: false,
       why: 'The wallet itself — the primitive every other type is measured against, not a thing that holds one.',
@@ -245,6 +256,7 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
   // ==================== BUSINESS (Core value creation) ====================
   project: {
     type: 'project',
+    choose: 'money is raised for a defined outcome, and milestones make the spending accountable',
     wallet: {
       holds: true,
       why: 'Backers fund a defined outcome, and the money is held against milestones.',
@@ -269,6 +281,7 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
   },
   product: {
     type: 'product',
+    choose: 'a tangible or digital ITEM changes hands — mugs, bread, an ebook, software',
     wallet: {
       holds: true,
       why: 'A buyer pays a price and a thing changes hands.',
@@ -294,6 +307,8 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
   },
   service: {
     type: 'service',
+    choose:
+      "someone's time, skill or labour is sold, even at a fixed price. A price attached to work does NOT make it a product",
     wallet: {
       holds: true,
       why: "Someone pays for the maker's time, and the fee has to land somewhere.",
@@ -319,6 +334,7 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
   },
   cause: {
     type: 'cause',
+    choose: 'support is open-ended and carries no strings, for ongoing work or need',
     wallet: {
       holds: true,
       why: 'People give with no strings, and the giving needs an address.',
@@ -343,6 +359,8 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
   },
   ai_assistant: {
     type: 'ai_assistant',
+    choose:
+      "an agent should work and earn on its owner's behalf, with its own purse and its own cap",
     wallet: {
       holds: true,
       why: "It earns and spends on its owner's behalf, so it needs its own purse and its own cap.",
@@ -385,6 +403,7 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
   // to define the worse one.
   group: {
     type: 'group',
+    choose: 'people organise together, with shared funds and a say in how they are spent',
     wallet: {
       holds: true,
       why: 'Members pool funds and decide together how they are spent.',
@@ -410,6 +429,7 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
   },
   circle: {
     type: 'circle',
+    choose: 'the same people, informally — trust instead of governance ceremony',
     wallet: {
       holds: true,
       why: 'The same shared purse as a group, with less ceremony around the deciding.',
@@ -436,6 +456,7 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
   // ==================== FINANCE (P2P financial tools) ====================
   asset: {
     type: 'asset',
+    choose: 'something already OWNED could be rented, used or bought by others',
     wallet: {
       holds: true,
       why: 'Rent, deposits and sale prices are owed to whoever holds it. The columns exist (sale_price_btc, rental_price_btc, deposit_amount_btc) and no asset has yet been listed for either, so nothing pays in through OrangeCat.',
@@ -460,6 +481,7 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
   },
   loan: {
     type: 'loan',
+    choose: 'the user NEEDS money and intends to REPAY it — never a product, never a cause',
     wallet: {
       holds: true,
       why: "A lender and a borrower agree terms against it. Settlement is peer-to-peer and off-platform today — every live loan is fulfillment_type manual — so the wallet is the counterparty's, not ours to move.",
@@ -484,6 +506,7 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
   },
   investment: {
     type: 'investment',
+    choose: 'capital is taken in exchange for a return or a share, not a repayment schedule',
     wallet: {
       holds: true,
       why: 'Capital goes in and a return is owed.',
@@ -508,6 +531,7 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
   },
   event: {
     type: 'event',
+    choose: 'a gathering is bound to a date and a place',
     wallet: {
       holds: true,
       why: 'Tickets are sold and costs are settled against a date.',
@@ -534,6 +558,7 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
   // ==================== RESEARCH (DeSci ecosystem) ====================
   research: {
     type: 'research',
+    choose: 'independent enquiry is funded transparently by the people who want it done',
     wallet: {
       holds: true,
       why: 'Independent work, funded transparently by the people who want it done.',
@@ -561,6 +586,7 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
   // ==================== PERSONAL (Wishlists & Registries) ====================
   wishlist: {
     type: 'wishlist',
+    choose: 'specific items are wanted and someone may simply buy them — lighter than a cause',
     wallet: {
       holds: true,
       why: 'Specific items are paid for by whoever wants to give them.',
@@ -587,6 +613,7 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
   // ==================== PERSONAL (My Cat Context) ====================
   document: {
     type: 'document',
+    choose: 'structured context for you to read; it receives nothing and owes nothing',
     wallet: {
       holds: false,
       why: 'Context the Cat reads. It receives nothing and owes nothing — the entity is whatever the document is ABOUT.',

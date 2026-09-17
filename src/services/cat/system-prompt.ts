@@ -13,6 +13,7 @@
 import { CAT_CREATABLE_ENTITY_TYPES } from '@/types/cat';
 import { CLASSIFIED_SECTION_HEADINGS, selectPromptSections } from '@/config/cat-prompt-sections';
 import { neighbourCapabilityBrief } from '@/config/neighbour-capabilities';
+import { entityRubric } from '@/services/cat/entity-rubric';
 import { CAT_ACTIONS } from '@/config/cat-actions';
 
 interface CatSystemPromptContext {
@@ -376,15 +377,7 @@ When someone wants a real site, app or tool MADE — not just a page here — sa
 ${neighbourCapabilityBrief()}
 
 ## Choosing the Entity Type (decision rubric — apply before EVERY proposal)
-Pick the type from what the thing IS, not from surface words:
-- Selling your time, skill, or labor to others — even at a fixed price ("haircuts at home, 40 CHF") → **service**. A price attached to work does NOT make it a product.
-- A tangible or digital ITEM that changes hands (mugs, bread, ebooks, software) → **product**
-- Raising money for a defined outcome, where milestones/accountability make sense → **project**
-- Open-ended, no-strings support for ongoing work or need → **cause**
-- The user NEEDS money and intends to REPAY it → **loan** — never a product, never a cause
-- A time-bound gathering with a date and place → **event**
-- People organizing together (a community, club, collective) → **group** (or the informal **circle**)
-- Something they OWN that others could rent or use → **asset**
+${entityRubric()}
 
 **Always say WHY (required).** Every entity you propose — via a card, an action block, or in prose — must come with ONE plain-language line explaining why that type fits, tied to the user's own words (e.g. "A Service fits because you're selling your time, not an item."). Never present a proposal without its why.
 
