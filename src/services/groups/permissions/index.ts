@@ -1,31 +1,35 @@
 /**
  * Groups Service Permissions
  *
- * Unified permission checking for groups.
- * Uses only the new groups tables and config-based resolver.
+ * ONE resolver — `canPerformAction` — and a thin adapter over it.
  *
- * Created: 2025-01-30
- * Last Modified: 2025-12-29
- * Last Modified Summary: Simplified to use only new groups tables
+ * There were three implementations of "may this person do this here", with
+ * three argument orders: `canPerformAction(userId, groupId, …)`,
+ * `checkGroupPermission(groupId, userId, …)` and `getGroupPermissions`. All
+ * three read the same two tables and the same presets, and all three disagreed
+ * about the third permission state: for it the first granted, the second fell
+ * through to the preset, and the third denied. Both ids are plain strings, so a
+ * swapped call compiled silently.
+ *
+ * `checkGroupPermission` now translates its own vocabulary into the resolver's
+ * and asks it. It keeps only what the resolver cannot express: `canView` and
+ * `canJoin`, which are about visibility rather than authority and have no entry
+ * in RolePermissions. `getGroupPermissions` is gone — nothing called it.
  */
 
 // Export the config-based resolver (primary permission system)
-export {
-  canPerformAction,
-  canPerformActions,
-  getMemberPermissions,
-  resolvePermission,
-} from './resolver';
+export { canPerformAction, resolvePermission } from './resolver';
 
 import supabase from '@/lib/supabase/browser';
 import { logger } from '@/utils/logger';
 import { DATABASE_TABLES } from '@/config/database-tables';
-import { GOVERNANCE_PRESETS } from '@/config/governance-presets';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { fromTable } from '../db-helpers';
+import { canPerformAction } from './resolver';
+import type { RolePermissions } from '@/config/governance-presets';
 
 // Permission keys that map to governance preset actions
-type GroupPermissionKey =
+export type GroupPermissionKey =
   | 'canView'
   | 'canJoin'
   | 'canInvite'
@@ -37,23 +41,19 @@ type GroupPermissionKey =
   | 'canCreateProposals'
   | 'canVote';
 
-interface GroupPermissions {
-  canView: boolean;
-  canJoin: boolean;
-  canInvite: boolean;
-  canManageMembers: boolean;
-  canManageWallets: boolean;
-  canCreateProjects: boolean;
-  canManageSettings: boolean;
-  canDelete: boolean;
-  canCreateProposals: boolean;
-  canVote: boolean;
-}
-
-// Map permission keys to governance preset action keys
-const PERMISSION_TO_ACTION: Record<GroupPermissionKey, string> = {
-  canView: 'view', // Always allowed for members
-  canJoin: 'join', // Always allowed for public groups
+/**
+ * Maps this module's vocabulary onto the resolver's.
+ *
+ * `canView` and `canJoin` are deliberately absent: they are visibility, not
+ * authority, and have no cell in RolePermissions. They used to sit here mapped
+ * to 'view' and 'join' — two strings no preset defines — which is why the
+ * lookup needed a cast to compile. Excluding them types the map against
+ * RolePermissions instead, so a typo in an action name is a build error.
+ */
+const PERMISSION_TO_ACTION: Record<
+  Exclude<GroupPermissionKey, 'canView' | 'canJoin'>,
+  keyof RolePermissions
+> = {
   canInvite: 'invite_members',
   canManageMembers: 'manage_members',
   canManageWallets: 'spend_funds',
@@ -65,7 +65,11 @@ const PERMISSION_TO_ACTION: Record<GroupPermissionKey, string> = {
 };
 
 /**
- * Check if user has specific permission in group
+ * Does this person have this permission in this group?
+ *
+ * Note the argument order is (groupId, userId) while the resolver takes
+ * (userId, groupId). Both are plain strings, so nothing catches a swap — the
+ * order is kept because the existing call sites pass it this way.
  */
 export async function checkGroupPermission(
   groupId: string,
@@ -73,176 +77,54 @@ export async function checkGroupPermission(
   permission: GroupPermissionKey,
   client?: AnySupabaseClient
 ): Promise<boolean> {
-  if (!userId) {
+  if (!userId || !groupId) {
     return false;
   }
 
-  try {
-    const sb = client || supabase;
-    // Get group and membership
-
-    const { data: group } = await fromTable(sb, DATABASE_TABLES.GROUPS)
-      .select('is_public, governance_preset')
-      .eq('id', groupId)
-      .single();
-
-    if (!group) {
-      return false;
-    }
-
-    // Get membership
-
-    const { data: membership } = await fromTable(sb, DATABASE_TABLES.GROUP_MEMBERS)
-      .select('role, permission_overrides')
-      .eq('group_id', groupId)
-      .eq('user_id', userId)
-      .maybeSingle();
-
-    // Non-members can only view public groups
-    if (!membership) {
-      if (group.is_public && permission === 'canView') {
-        return true;
-      }
-      if (group.is_public && permission === 'canJoin') {
-        return true;
-      }
-      return false;
-    }
-
-    // Members can always view
-    if (permission === 'canView') {
-      return true;
-    }
-
-    // Check permission override first
-    if (membership.permission_overrides) {
-      const actionKey = PERMISSION_TO_ACTION[permission];
-      const override = membership.permission_overrides[actionKey];
-      if (override === 'allow') {
-        return true;
-      }
-      if (override === 'deny') {
+  // Visibility, not authority: neither `view` nor `join` exists in
+  // RolePermissions, so no preset can express them and the resolver cannot be
+  // asked. A public group is viewable and joinable by anyone; a member can
+  // always view their own group.
+  if (permission === 'canView' || permission === 'canJoin') {
+    try {
+      const sb = client || supabase;
+      const { data: group } = await fromTable(sb, DATABASE_TABLES.GROUPS)
+        .select('is_public')
+        .eq('id', groupId)
+        .maybeSingle();
+      if (!group) {
         return false;
       }
-    }
 
-    // Fall back to governance preset role defaults
-    const preset = GOVERNANCE_PRESETS[group.governance_preset as keyof typeof GOVERNANCE_PRESETS];
-    if (!preset) {
-      logger.warn('Unknown governance preset', { preset: group.governance_preset }, 'Groups');
+      // Anyone may read a public group, so this needs no membership lookup.
+      if (permission === 'canView' && group.is_public) {
+        return true;
+      }
+
+      const { data: membership } = await fromTable(sb, DATABASE_TABLES.GROUP_MEMBERS)
+        .select('role')
+        .eq('group_id', groupId)
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      // You cannot join what you are already in. The old code reached this
+      // answer by accident rather than on purpose: it looked `canJoin` up in
+      // RolePermissions under the key 'join', which no preset defines, so the
+      // lookup returned undefined and the comparison to 'allow' was false.
+      // Same answer, now for a stated reason.
+      if (permission === 'canJoin') {
+        return group.is_public && !membership;
+      }
+
+      // A private group is readable only by its members.
+      return !!membership;
+    } catch (error) {
+      logger.error('Error checking group visibility', error, 'Groups');
       return false;
     }
-
-    const role = membership.role as 'founder' | 'admin' | 'member';
-    const rolePermissions = preset.roles[role];
-    if (!rolePermissions) {
-      return false;
-    }
-
-    const actionKey = PERMISSION_TO_ACTION[permission];
-    const actionPermission = rolePermissions[actionKey as keyof typeof rolePermissions];
-
-    return actionPermission === 'allow';
-  } catch (error) {
-    logger.error('Error checking group permission', error, 'Groups');
-    return false;
-  }
-}
-
-/**
- * Get all permissions for a user in a group
- */
-export async function getGroupPermissions(
-  groupId: string,
-  userId: string,
-  client?: AnySupabaseClient
-): Promise<GroupPermissions | null> {
-  if (!userId) {
-    return null;
   }
 
-  try {
-    const sb = client || supabase;
-    // Get group and membership
-
-    const { data: group2 } = await fromTable(sb, DATABASE_TABLES.GROUPS)
-      .select('is_public, governance_preset')
-      .eq('id', groupId)
-      .single();
-
-    if (!group2) {
-      return null;
-    }
-
-    // Get membership
-
-    const { data: membership2 } = await fromTable(sb, DATABASE_TABLES.GROUP_MEMBERS)
-      .select('role, permission_overrides')
-      .eq('group_id', groupId)
-      .eq('user_id', userId)
-      .maybeSingle();
-
-    // Non-members get view-only permissions for public groups
-    if (!membership2) {
-      if (group2.is_public) {
-        return {
-          canView: true,
-          canJoin: true,
-          canInvite: false,
-          canManageMembers: false,
-          canManageWallets: false,
-          canCreateProjects: false,
-          canManageSettings: false,
-          canDelete: false,
-          canCreateProposals: false,
-          canVote: false,
-        };
-      }
-      return null;
-    }
-
-    // Get role permissions from governance preset
-    const preset = GOVERNANCE_PRESETS[group2.governance_preset as keyof typeof GOVERNANCE_PRESETS];
-    if (!preset) {
-      return null;
-    }
-
-    const role = membership2.role as 'founder' | 'admin' | 'member';
-    const rolePermissions = preset.roles[role];
-    if (!rolePermissions) {
-      return null;
-    }
-
-    // Build permissions object
-    const permissions: GroupPermissions = {
-      canView: true, // Members can always view
-      canJoin: false, // Already a member
-      canInvite: rolePermissions.invite_members === 'allow',
-      canManageMembers: rolePermissions.manage_members === 'allow',
-      canManageWallets: rolePermissions.spend_funds === 'allow',
-      canCreateProjects: rolePermissions.create_project === 'allow',
-      canManageSettings: rolePermissions.manage_settings === 'allow',
-      canDelete: rolePermissions.delete_group === 'allow',
-      canCreateProposals: rolePermissions.create_proposal === 'allow',
-      canVote: rolePermissions.vote === 'allow',
-    };
-
-    // Apply permission overrides
-    if (membership2.permission_overrides) {
-      for (const [key, value] of Object.entries(membership2.permission_overrides)) {
-        // Find the permission key for this action
-        const permKey = Object.entries(PERMISSION_TO_ACTION).find(([_k, v]) => v === key)?.[0] as
-          | GroupPermissionKey
-          | undefined;
-        if (permKey && permKey in permissions) {
-          permissions[permKey] = value === 'allow';
-        }
-      }
-    }
-
-    return permissions;
-  } catch (error) {
-    logger.error('Error getting group permissions', error, 'Groups');
-    return null;
-  }
+  const action = PERMISSION_TO_ACTION[permission];
+  const result = await canPerformAction(userId, groupId, action, client);
+  return result.allowed;
 }

@@ -7,7 +7,21 @@
  * Adding a new governance model = adding an entry here. No code changes needed.
  */
 
-export type ActionPermission = 'allow' | 'deny' | 'vote_required';
+/**
+ * Two states, because two is all the database can honour.
+ *
+ * There was a third, `vote_required`, on 15 cells. Nothing ever raised a vote:
+ * `canPerformAction` returned allowed with a `requiresVote` flag that no caller
+ * in the codebase read, and `checkGroupPermission` returned denied for the same
+ * cell — so one door opened and the other did not. The only thing enforcing it
+ * was the settings page hiding its delete button, which the API did not check.
+ *
+ * Collapsed to what RLS will actually accept: founders and admins keep every
+ * ability they already effectively had, and members stop being told yes for a
+ * write the database rejects. Real deliberation — proposals, quorum, a record
+ * of why — is Solon's job, not a string in this file.
+ */
+export type ActionPermission = 'allow' | 'deny';
 
 export interface RolePermissions {
   manage_settings: ActionPermission;
@@ -44,30 +58,30 @@ export const GOVERNANCE_PRESETS = {
         manage_settings: 'allow',
         manage_members: 'allow',
         invite_members: 'allow',
-        remove_members: 'vote_required',
-        spend_funds: 'vote_required',
+        remove_members: 'allow',
+        spend_funds: 'allow',
         create_project: 'allow',
         create_proposal: 'allow',
         vote: 'allow',
-        delete_group: 'vote_required',
+        delete_group: 'allow',
       },
       admin: {
-        manage_settings: 'vote_required',
-        manage_members: 'vote_required',
+        manage_settings: 'allow',
+        manage_members: 'allow',
         invite_members: 'allow',
-        remove_members: 'vote_required',
-        spend_funds: 'vote_required',
+        remove_members: 'allow',
+        spend_funds: 'allow',
         create_project: 'allow',
         create_proposal: 'allow',
         vote: 'allow',
         delete_group: 'deny',
       },
       member: {
-        manage_settings: 'vote_required',
+        manage_settings: 'deny',
         manage_members: 'deny',
         invite_members: 'allow',
         remove_members: 'deny',
-        spend_funds: 'vote_required',
+        spend_funds: 'deny',
         create_project: 'allow',
         create_proposal: 'allow',
         vote: 'allow',
@@ -91,14 +105,14 @@ export const GOVERNANCE_PRESETS = {
         create_project: 'allow',
         create_proposal: 'allow',
         vote: 'allow',
-        delete_group: 'vote_required',
+        delete_group: 'allow',
       },
       admin: {
-        manage_settings: 'vote_required',
+        manage_settings: 'allow',
         manage_members: 'allow',
         invite_members: 'allow',
-        remove_members: 'vote_required',
-        spend_funds: 'vote_required',
+        remove_members: 'allow',
+        spend_funds: 'allow',
         create_project: 'allow',
         create_proposal: 'allow',
         vote: 'allow',
@@ -107,10 +121,10 @@ export const GOVERNANCE_PRESETS = {
       member: {
         manage_settings: 'deny',
         manage_members: 'deny',
-        invite_members: 'vote_required',
+        invite_members: 'deny',
         remove_members: 'deny',
         spend_funds: 'deny',
-        create_project: 'vote_required',
+        create_project: 'allow',
         create_proposal: 'allow',
         vote: 'allow',
         delete_group: 'deny',
