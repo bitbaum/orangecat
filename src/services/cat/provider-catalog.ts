@@ -34,6 +34,7 @@ import { PLATFORM_GROQ_FALLBACK_MODEL, PLATFORM_GROQ_MODEL } from '@/services/ai
 import { getModelMetadata, DEFAULT_FREE_MODEL_ID } from '@/config/ai-models';
 import { resolveFreePool } from '@/services/ai/free-model-pool';
 import { createAutoRouter } from '@/services/ai/auto-router';
+import { analyzeComplexity } from '@/services/ai/message-complexity';
 
 /**
  * `dailyTokens` is only used by ai-kit's fair-share rationing, which OrangeCat
@@ -84,6 +85,24 @@ function orderedOpenRouterFreeModels(message: string): string[] {
 }
 
 /**
+ * Complexity at or above which a turn leads with a stronger free vendor.
+ *
+ * 0.5 rather than the router's own 0.3 'standard' line, on purpose: this
+ * spends a scarcer bucket, so it should fire on the genuinely hard turn and
+ * not on every message with the word "idea" in it. `CAT_COMPLEXITY_ESCALATION=0`
+ * turns it off without a deploy.
+ */
+const COMPLEXITY_ESCALATION_AT = 0.5;
+
+/** Is this turn hard enough to be worth a better free model? */
+export function shouldEscalateForComplexity(message?: string): boolean {
+  if (!message || process.env.CAT_COMPLEXITY_ESCALATION === '0') {
+    return false;
+  }
+  return analyzeComplexity(message, []).score >= COMPLEXITY_ESCALATION_AT;
+}
+
+/**
  * THE CHAIN OrangeCat ACTUALLY CALLS, in order. One definition, one order.
  *
  * This used to be two. `orangecatChain()` described a chain for the rot check
@@ -109,27 +128,47 @@ export function servingChain(message?: string): Provider[] {
     ? orderedOpenRouterFreeModels(message)
     : getFreeModels().map(m => m.id);
 
+  const groq = {
+    id: 'groq',
+    baseUrl: PROVIDER_BASE_URLS.groq,
+    keyEnv: 'GROQ_API_KEY',
+    // The two the PLATFORM serves, in order, deduped — not every configured
+    // id. A metered id here can only 402 for a user with no credits, which is
+    // the bug #1000 fixed. BYOK-selectable ids are watched by
+    // `orangecatChain()` below instead of being dialled here.
+    models: [...new Set([PLATFORM_GROQ_MODEL, PLATFORM_GROQ_FALLBACK_MODEL])],
+    dailyTokens: GROQ_DAILY_TOKENS,
+  };
+  // Free vendors before OpenRouter: their quotas are per project/account of
+  // our own, OpenRouter's is shared and nearly always spent.
+  const freeVendors = FREE_VENDORS.map(v => ({
+    id: v.id,
+    baseUrl: v.baseUrl,
+    keyEnv: v.keyEnv,
+    models: [vendorModel(v)],
+    dailyTokens: FREE_VENDOR_DAILY_TOKENS,
+  }));
+
+  // ── Escalation, and why it is ordered THIS way ────────────────────────────
+  // The platform's Groq link is deliberately the FAST model (gpt-oss-20b), not
+  // the capable one: gpt-oss-120b is tiered `economy`, so serving it here
+  // would 402 every user with no credits (#1000). That trade is right for the
+  // ordinary turn and wrong for the rare hard one, which until now got the 20B
+  // like everything else and then a banner suggesting the user upgrade.
+  //
+  // So on a genuinely complex turn the chain leads with a free VENDOR instead.
+  // Deliberately not OpenRouter, capable though its pool is: that key is
+  // shared across every app on this box and is nearly always spent, and the
+  // rule earned the hard way is to drain the scarcest bucket LAST. The free
+  // vendors hold our own per-project quota, so this spends the right budget.
+  // Groq stays immediately behind, so a drained or broken vendor costs one
+  // round-trip rather than the answer.
+  const leaders = shouldEscalateForComplexity(message)
+    ? [...freeVendors, groq]
+    : [groq, ...freeVendors];
+
   return [
-    {
-      id: 'groq',
-      baseUrl: PROVIDER_BASE_URLS.groq,
-      keyEnv: 'GROQ_API_KEY',
-      // The two the PLATFORM serves, in order, deduped — not every configured
-      // id. A metered id here can only 402 for a user with no credits, which is
-      // the bug #1000 fixed. BYOK-selectable ids are watched by
-      // `orangecatChain()` below instead of being dialled here.
-      models: [...new Set([PLATFORM_GROQ_MODEL, PLATFORM_GROQ_FALLBACK_MODEL])],
-      dailyTokens: GROQ_DAILY_TOKENS,
-    },
-    // Free vendors before OpenRouter: their quotas are per project/account of
-    // our own, OpenRouter's is shared and nearly always spent.
-    ...FREE_VENDORS.map(v => ({
-      id: v.id,
-      baseUrl: v.baseUrl,
-      keyEnv: v.keyEnv,
-      models: [vendorModel(v)],
-      dailyTokens: FREE_VENDOR_DAILY_TOKENS,
-    })),
+    ...leaders,
     {
       id: 'openrouter',
       baseUrl: PROVIDER_BASE_URLS.openrouter,

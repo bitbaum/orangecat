@@ -76,7 +76,21 @@ export const SITUATIONAL_SECTIONS: ReadonlyArray<{ heading: string; when: RegExp
     heading: 'Setting Up for Someone Else',
     // Cyrillic on purpose: the two conversations that motivated this section
     // were in Russian ("не для меня", "для другого пользователя", "не зарегистрирован").
-    when: /my friend|my mother|my father|my sister|my brother|someone i know|on behalf|for a friend|helping someone|for another|another user|not for me|isn't registered|not registered|for her|for him|друг|подруг|для (него|неё|нее|другого|другой)|не для меня|не зарегистрирован|loki|fleet crown/,
+    when: /my friend|my mother|my father|my sister|my brother|someone i know|on behalf|for a friend|helping someone|for another|another user|not for me|isn't registered|not registered|for her|for him|друг|подруг|для (него|неё|нее|другого|другой)|не для меня|не зарегистрирован/,
+  },
+  {
+    // The turn where the ask is judgement, not an object. Without this the
+    // brief had no mode for "what do you think" and every path through it
+    // ended at a proposal, so a question came back as a Project to create.
+    heading: 'Answering a Question (evaluation, opinion, design)',
+    when: /what do you think|what would you|how would you|would you do|your (opinion|take|view)|good idea|bad idea|worth (it|doing|building)|should i|should we|what'?s missing|am i missing|pros and cons|trade-?offs?|critique|evaluate|compare|advice|advise|what'?s wrong|why not|make (it|this) better|rate (it|this)/,
+  },
+  {
+    // Lifted out of 'Setting Up for Someone Else', where it was reachable only
+    // by a turn about a THIRD PARTY. Someone asking for their OWN site to be
+    // built never saw the one action that does it.
+    heading: 'Getting Something Built (Loki)',
+    when: /\bloki\b|fleet ?crown|\bbuild\b|\bbuilt\b|building|\bsite\b|website|\bapp\b|prototype|\bmvp\b|make it real|ship it|\bdevelop/,
   },
   {
     heading: 'Choosing the Entity Type (decision rubric — apply before EVERY proposal)',
@@ -88,7 +102,7 @@ export const SITUATIONAL_SECTIONS: ReadonlyArray<{ heading: string; when: RegExp
   },
   {
     heading: 'Multi-Entity Strategies',
-    when: /strategy|combine|both|multiple|also|as well|scale|grow|expand|next step|what else/,
+    when: /strategy|combine|multiple|as well as|scale|grow|expand|next step|what else|alongside/,
   },
   {
     heading: 'Managing Existing Entities',
@@ -100,11 +114,11 @@ export const SITUATIONAL_SECTIONS: ReadonlyArray<{ heading: string; when: RegExp
   },
   {
     heading: 'Helping With Notifications (assistance scope)',
-    when: /notification|alert|message|unread|inbox|why did i get|what does this mean|health|error|failing|not working|slow/,
+    when: /notification|alert|(?<!first-)message|unread|inbox|why did i get|what does this mean|health|error|failing|not working|slow/,
   },
   {
     heading: 'Opening a Conversation',
-    when: /first-message|no-specific-request|hi|hello|hey|what's up|catch me up|what should i|anything new/,
+    when: /first-message|no-specific-request|\bhi\b|\bhello\b|\bhey\b|what's up|catch me up|what should i|anything new/,
   },
 ];
 
