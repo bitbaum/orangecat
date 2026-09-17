@@ -282,6 +282,9 @@ export const walletUpdateSchema = z
     goal_currency: z.enum(CURRENCY_CODES).optional().nullable(),
     goal_deadline: z.string().optional().nullable(),
     is_primary: z.boolean().optional(),
+    // Open accounting: publish this wallet's balance and recent transactions on
+    // its public page. Off unless the owner turns it on.
+    open_accounting: z.boolean().optional(),
   })
   .refine(data => Object.keys(data).length > 0, {
     message: 'At least one field must be provided for update',

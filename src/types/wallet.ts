@@ -195,6 +195,8 @@ export interface Wallet {
   is_active: boolean;
   display_order: number;
   is_primary: boolean;
+  /** Owner opt-in: publish this wallet's balance and transactions publicly. */
+  open_accounting: boolean;
 
   created_at: string;
   updated_at: string;
@@ -225,6 +227,7 @@ export interface WalletFormData {
   allow_contributions?: boolean;
 
   is_primary?: boolean;
+  open_accounting?: boolean;
 }
 
 interface ValidationResult {

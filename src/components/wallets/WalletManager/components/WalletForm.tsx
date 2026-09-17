@@ -53,6 +53,7 @@ export function WalletForm({
     goal_amount: initialData?.goal_amount,
     goal_currency: initialData?.goal_currency || 'USD',
     is_primary: initialData?.is_primary || false,
+    open_accounting: initialData?.open_accounting || false,
   });
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -384,6 +385,23 @@ export function WalletForm({
               </p>
             </div>
           )}
+
+          <div>
+            <label className="flex cursor-pointer items-center gap-2">
+              <input
+                type="checkbox"
+                checked={formData.open_accounting || false}
+                onChange={e => setFormData({ ...formData, open_accounting: e.target.checked })}
+                className="h-4 w-4 rounded border-strong text-bitcoinOrange focus:ring-ring"
+              />
+              <span className="text-sm font-medium">Publish this wallet&apos;s ledger</span>
+            </label>
+            <p className="ml-6 mt-1 text-xs text-fg-secondary">
+              Open accounting: anyone visiting this wallet&apos;s page sees its balance, its recent
+              transactions and your note on each one. Your extended public key is never published.
+              Off by default, and turning it off hides everything again.
+            </p>
+          </div>
         </div>
       )}
 

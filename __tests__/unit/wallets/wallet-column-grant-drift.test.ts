@@ -76,9 +76,26 @@ export function addedColumns(sql: string): string[] {
 const migrationFiles = readdirSync(MIGRATIONS_DIR).filter((f) => f.endsWith('.sql'));
 const readMigration = (f: string) => readFileSync(join(MIGRATIONS_DIR, f), 'utf8');
 
+/**
+ * Every column granted to client roles, across ALL migrations.
+ *
+ * The lockdown file alone is not the answer to "what may a client read": its
+ * own instructions tell you to grant a NEW column in a NEW forward migration,
+ * never by editing the baseline. Reading only the lockdown therefore failed the
+ * first wallets column added after it — the drift was in this test, not in the
+ * code it guards.
+ */
+function grantedAcrossMigrations(): Set<string> {
+  const all = new Set<string>();
+  for (const file of migrationFiles.sort()) {
+    for (const c of grantedColumns(readMigration(file))) all.add(c);
+  }
+  return all;
+}
+
 describe('wallet column grants', () => {
   it('the SQL GRANT and WALLET_CLIENT_COLUMNS list the same columns', () => {
-    const granted = grantedColumns(readMigration(LOCKDOWN));
+    const granted = grantedAcrossMigrations();
     const inCode = toColumnSet(WALLET_CLIENT_COLUMNS);
 
     // Non-empty guards the regex itself: a parser that silently matches nothing
@@ -92,7 +109,9 @@ describe('wallet column grants', () => {
   });
 
   it('never grants a column the database is meant to keep secret', () => {
-    const granted = grantedColumns(readMigration(LOCKDOWN));
+    // Across every migration: a later file granting the secret would undo the
+    // lockdown just as effectively as editing it.
+    const granted = grantedAcrossMigrations();
     for (const secret of SECRET_COLUMNS) {
       expect([...granted]).not.toContain(secret);
     }
@@ -115,9 +134,9 @@ describe('wallet column grants', () => {
       ({ column }) => !allGranted.has(column) && !SECRET_COLUMNS.includes(column)
     );
 
-    // Say the coverage out loud. Today no migration adds a wallets column, so
-    // this passes with nothing to check — and a silent pass over an empty set
-    // reads exactly like a pass over a checked one.
+    // Say the coverage out loud: a silent pass over an empty set reads exactly
+    // like a pass over a checked one. This stopped being vacuous when
+    // open_accounting became the first wallets column added after the lockdown.
     // eslint-disable-next-line no-console
     console.log(
       `[wallet-grants] ${migrationFiles.length} migration(s) scanned, ` +
