@@ -82,10 +82,10 @@ export default function GroupSettingsPage() {
     currentRole === STATUS.GROUP_MEMBERS.FOUNDER || currentRole === STATUS.GROUP_MEMBERS.ADMIN;
   const backHref = `${groupsBase}/${group.slug}`;
 
-  // Permissions are governance-driven (SSOT: GOVERNANCE_PRESETS). Editing /
-  // deleting may be directly allowed, require a member vote, or be denied
-  // depending on the group's governance + the user's role. We reflect that
-  // honestly instead of showing actions the server will reject.
+  // Permissions are governance-driven (SSOT: GOVERNANCE_PRESETS). Editing and
+  // deleting are each allowed or denied outright, decided by the group's
+  // governance preset and the user's role. We reflect that honestly instead of
+  // showing actions the server will reject.
   const groupGovernance = (group.governance_preset as GovernancePreset) ?? 'consensus';
   const rolePerms =
     currentRole === STATUS.GROUP_MEMBERS.FOUNDER ||
@@ -94,7 +94,7 @@ export default function GroupSettingsPage() {
       ? GOVERNANCE_PRESETS[groupGovernance]?.roles?.[currentRole]
       : undefined;
   const canSaveDirectly = rolePerms?.manage_settings === 'allow';
-  const deletePerm = rolePerms?.delete_group; // 'allow' | 'vote_required' | 'deny' | undefined
+  const deletePerm = rolePerms?.delete_group; // 'allow' | 'deny' | undefined
   const governanceName = GOVERNANCE_PRESETS[groupGovernance]?.name ?? groupGovernance;
 
   if (!canManage) {
@@ -255,8 +255,8 @@ export default function GroupSettingsPage() {
 
           {!canSaveDirectly && (
             <p className="rounded-md border border-subtle bg-surface-raised/30 px-3 py-2 text-xs text-fg-secondary">
-              Under {governanceName} governance, changing settings in your role requires a member
-              vote — direct edits aren’t available here.
+              Under {governanceName} governance, your role cannot change these settings. An admin or
+              the founder can.
             </p>
           )}
 
@@ -279,20 +279,6 @@ export default function GroupSettingsPage() {
       </Card>
 
       {/* Danger zone — gated by the group's governance (delete_group permission). */}
-      {deletePerm === 'vote_required' && (
-        <Card className="border-status-negative/30">
-          <CardHeader>
-            <CardTitle className="text-base text-status-negative">Danger zone</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-fg-secondary">
-              Under {governanceName} governance, deleting this group requires a member vote rather
-              than a single decision.
-            </p>
-          </CardContent>
-        </Card>
-      )}
-
       {deletePerm === 'allow' && (
         <Card className="border-status-negative/30">
           <CardHeader>

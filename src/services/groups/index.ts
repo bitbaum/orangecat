@@ -276,10 +276,6 @@ class GroupsService {
       m.checkGroupPermission(groupId, userId, permission, client)
     );
   }
-
-  async getGroupPermissions(groupId: string, userId: string, client?: AnySupabaseClient) {
-    return import('./permissions').then(m => m.getGroupPermissions(groupId, userId, client));
-  }
 }
 
 // Export singleton instance
