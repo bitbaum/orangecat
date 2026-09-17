@@ -11,15 +11,31 @@ import supabase from '@/lib/supabase/browser';
 import { logger } from '@/utils/logger';
 import { ProfileMapper } from './mapper';
 import type { ScalableProfile } from './types';
-import { DATABASE_TABLES } from '@/config/database-tables';
+import { DATABASE_TABLES, PUBLIC_PROFILES_VIEW } from '@/config/database-tables';
 
 // =====================================================================
 // 📖 PROFILE RETRIEVAL OPERATIONS
 // =====================================================================
 
+/**
+ * Reads here go through PUBLIC_PROFILES_VIEW, not the `profiles` table.
+ *
+ * Every method below uses the BROWSER client, which runs as `anon` when logged
+ * out and `authenticated` when logged in — and neither role can read
+ * profiles.email / .phone / .contact_email any more (20260917120100 and
+ * 20260917163100). `select('*')` on the table therefore fails outright for both,
+ * so these had to move whoever is calling.
+ *
+ * The view is also the right answer on the merits: these are "look somebody up"
+ * operations over an arbitrary id or search term, and nobody is entitled to
+ * another person's private columns. A signed-in user reading their OWN row uses
+ * ProfileServerService.getOwnProfile (GET /api/profile), which reads the
+ * owner-scoped view and does return them.
+ */
 export class ProfileReader {
   /**
-   * Get a complete profile with all scalable fields
+   * Get a profile's public fields. NOT the caller's private columns, even when
+   * `userId` is the caller — see the class note above.
    */
   static async getProfile(userId: string): Promise<ScalableProfile | null> {
     if (!userId?.trim()) {
@@ -30,7 +46,7 @@ export class ProfileReader {
     try {
       logger.info('[Profile] getProfile', { userId });
 
-      const { data, error } = await fromTable(supabase, DATABASE_TABLES.PROFILES)
+      const { data, error } = await fromTable(supabase, PUBLIC_PROFILES_VIEW)
         .select('*')
         .eq('id', userId)
         .single();
@@ -71,8 +87,7 @@ export class ProfileReader {
     try {
       const { limit = 20, offset = 0, orderBy = 'created_at', orderDirection = 'desc' } = options;
 
-      const { data, error } = await supabase
-        .from(DATABASE_TABLES.PROFILES)
+      const { data, error } = await fromTable(supabase, PUBLIC_PROFILES_VIEW)
         .select('*')
         .order(orderBy, { ascending: orderDirection === 'asc' })
         .range(offset, offset + limit - 1);
@@ -108,8 +123,7 @@ export class ProfileReader {
 
     try {
       const escapedTerm = searchTerm.replace(/[%_]/g, '\\$&');
-      const { data, error } = await supabase
-        .from(DATABASE_TABLES.PROFILES)
+      const { data, error } = await fromTable(supabase, PUBLIC_PROFILES_VIEW)
         .select('*')
         .or(`username.ilike.%${escapedTerm}%,name.ilike.%${escapedTerm}%`)
         .order('created_at', { ascending: false })
@@ -134,8 +148,7 @@ export class ProfileReader {
    */
   static async getAllProfiles(): Promise<ScalableProfile[]> {
     try {
-      const { data, error } = await supabase
-        .from(DATABASE_TABLES.PROFILES)
+      const { data, error } = await fromTable(supabase, PUBLIC_PROFILES_VIEW)
         .select('*')
         .order('created_at', { ascending: false });
 

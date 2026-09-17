@@ -234,11 +234,49 @@ export const STORAGE_BUCKETS = {
  * and with phone / contact_email / website / social_links already nulled when
  * the owner listed them in privacy_settings.hidden_fields.
  *
- * Read this from any path an unauthenticated visitor can reach. Read the table
- * only where the caller is known to be authenticated — and, for the private
- * columns, to be the owner.
+ * Read this from any path an unauthenticated visitor can reach, and from any
+ * path that reads SOMEBODY ELSE'S profile — no client role can read the private
+ * columns of another user's row any more. For the caller's own row, read
+ * OWN_PROFILE_VIEW.
  */
 export const PUBLIC_PROFILES_VIEW = 'public_profiles';
+
+/**
+ * The caller's OWN profile row, private columns included.
+ *
+ * Neither client role holds SELECT on profiles.email / .phone / .contact_email
+ * (migration 20260917120100 for `anon`, 20260917163100 for `authenticated`), so
+ * `select('*')` on the profiles TABLE fails for a signed-in user too. Column
+ * privileges are granted to a ROLE and every signed-in user is the same role,
+ * `authenticated`, so no grant can mean "your own row" — this view is that,
+ * scoped in SQL by `auth.uid()`.
+ *
+ * It returns at most one row, always the caller's, and nothing at all when
+ * there is no session. Read it wherever a signed-in user needs their own
+ * private fields — the Info tab, the profile editor, the account export.
+ *
+ * Writes still go to the TABLE, where RLS `profiles_update_own` enforces the
+ * same ownership rule. What a write may no longer do is RETURN the private
+ * columns (`.select()` after an update is `RETURNING *`, which needs SELECT on
+ * every column returned), so persist to the table and read the result back
+ * from here.
+ */
+export const OWN_PROFILE_VIEW = 'own_profile';
+
+/**
+ * The `profiles` columns no client role may read off the TABLE.
+ *
+ * SSOT for the code side of two grant migrations — 20260917120100 (`anon`) and
+ * 20260917163100 (`authenticated`) — each of which revokes table-level SELECT
+ * and grants back every column except these. `__tests__/unit/profiles/
+ * profile-column-grant-drift.test.ts` fails if this list and the SQL disagree.
+ *
+ * Reading any of these from `profiles` with a browser or cookie client fails
+ * with 42501. Read them from OWN_PROFILE_VIEW (your own row) or, where the
+ * owner published them, from PUBLIC_PROFILES_VIEW, which applies their hide
+ * list. Server code holding the service-role client is unaffected.
+ */
+export const PRIVATE_PROFILE_COLUMNS = ['email', 'phone', 'contact_email'] as const;
 
 /**
  * Every wallets column EXCEPT the write-only secret `nwc_connection_uri`.
