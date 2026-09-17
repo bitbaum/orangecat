@@ -8,7 +8,8 @@
  */
 
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, Check, Wallet, ExternalLink } from 'lucide-react';
+import { ChevronDown, ChevronRight, Check, Wallet, ExternalLink, Camera } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
@@ -23,6 +24,12 @@ import {
 } from '@/types/wallet';
 import type { WalletFormProps } from '../types';
 import { apiErrorMessage } from '@/lib/api/errorMessage';
+import { normalizePastedHandle } from '@/lib/wallets/pastedHandle';
+
+/** Loaded on tap, never at page load — the decoder is the heavy part. */
+const WalletQrScanner = dynamic(() => import('@/components/wallets/WalletQrScanner'), {
+  ssr: false,
+});
 import { ReceiveVerdict } from './ReceiveVerdict';
 
 /** Friendly label + hint for whatever the user pasted. */
@@ -64,6 +71,7 @@ export function WalletForm({
   );
   const [showDetails, setShowDetails] = useState(false);
   const [showGetWallet, setShowGetWallet] = useState(false);
+  const [scanning, setScanning] = useState(false);
 
   // The whole point: paste ANYTHING your wallet gives you — a Lightning address,
   // a Bitcoin address, an xpub, or a wallet-connect link — and we route it to
@@ -79,13 +87,18 @@ export function WalletForm({
   const handleWalletInput = (value: string) => {
     setWalletInput(value);
     const kind = classifyWalletInput(value);
+    // What gets SAVED is the normalised handle, while the box keeps showing what
+    // the person actually pasted — correcting the field under someone's cursor
+    // mid-paste reads like a bug, and the detected-type line already confirms
+    // we understood it.
+    const handle = normalizePastedHandle(value);
     // Route to the matching receive field; clear the others so exactly one is set.
     // 'unknown' (still typing / unrecognized) clears all — submit then guides them.
     setFormData(fd => ({
       ...fd,
-      lightning_address: kind === 'lightning' ? value.trim() : '',
-      address_or_xpub: kind === 'onchain' || kind === 'xpub' ? value.trim() : '',
-      nwc_connection_uri: kind === 'nwc' ? value.trim() : '',
+      lightning_address: kind === 'lightning' ? handle : '',
+      address_or_xpub: kind === 'onchain' || kind === 'xpub' ? handle : '',
+      nwc_connection_uri: kind === 'nwc' ? handle : '',
     }));
   };
 
@@ -170,13 +183,27 @@ export function WalletForm({
           <Wallet className="h-4 w-4 text-bitcoinOrange" />
           Your wallet
         </label>
-        <Input
-          value={walletInput}
-          onChange={e => handleWalletInput(e.target.value)}
-          onFocus={() => onFieldFocus?.('lightningAddress')}
-          placeholder="you@wallet.com  ·  bc1q…  ·  nostr+walletconnect://…"
-          autoComplete="off"
-        />
+        {/* Paste or scan. The scanner is lazy — its decoder is only fetched if
+            someone actually taps it, so the button costs nothing to offer. */}
+        <div className="flex gap-2">
+          <Input
+            value={walletInput}
+            onChange={e => handleWalletInput(e.target.value)}
+            onFocus={() => onFieldFocus?.('lightningAddress')}
+            placeholder="you@wallet.com  ·  bc1q…  ·  nostr+walletconnect://…"
+            autoComplete="off"
+            className="flex-1"
+          />
+          <button
+            type="button"
+            onClick={() => setScanning(true)}
+            aria-label="Scan your wallet's QR code"
+            title="Scan a QR code"
+            className="flex min-h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg border border-default text-fg-secondary transition-colors hover:border-strong hover:text-fg-primary"
+          >
+            <Camera className="h-5 w-5" aria-hidden="true" />
+          </button>
+        </div>
         {detected !== 'unknown' ? (
           <p className="mt-1.5 flex items-center gap-1 text-xs font-medium text-status-positive">
             <Check className="h-3.5 w-3.5" />
@@ -190,6 +217,16 @@ export function WalletForm({
         )}
 
         <ReceiveVerdict detected={detected} value={walletInput} />
+
+        {scanning && (
+          <WalletQrScanner
+            onClose={() => setScanning(false)}
+            onScanned={handle => {
+              setScanning(false);
+              handleWalletInput(handle);
+            }}
+          />
+        )}
 
         <button
           type="button"
