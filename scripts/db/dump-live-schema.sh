@@ -12,10 +12,10 @@
 #   scripts/db/dump-live-schema.sh > /tmp/live-schema.json
 #   OC_BOX=root@host scripts/db/dump-live-schema.sh > out.json
 #
-# Config: OC_BOX (default root@167.233.22.31), OC_DB_CONTAINER (default supabase-db).
+# Config: OC_BOX (required, user@host), OC_DB_CONTAINER (default supabase-db).
 set -euo pipefail
 
-OC_BOX="${OC_BOX:-root@167.233.22.31}"
+OC_BOX="${OC_BOX:?set OC_BOX to the box SSH target, e.g. OC_BOX=root@<box-host>}"
 OC_DB_CONTAINER="${OC_DB_CONTAINER:-supabase-db}"
 SSH_OPTS=(-o StrictHostKeyChecking=no -o BatchMode=yes -o ConnectTimeout=12)
 
