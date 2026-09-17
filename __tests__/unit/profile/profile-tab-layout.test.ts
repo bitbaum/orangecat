@@ -20,7 +20,12 @@ describe('partitionTabs', () => {
 
   it('ignores primary ids with no matching tab (already-filtered visitor tabs)', () => {
     const tabs = ['timeline', 'overview'].map(tab);
-    const { primary, overflow } = partitionTabs(tabs, ['timeline', 'overview', 'projects', 'people']);
+    const { primary, overflow } = partitionTabs(tabs, [
+      'timeline',
+      'overview',
+      'projects',
+      'people',
+    ]);
     expect(primary.map(t => t.id)).toEqual(['timeline', 'overview']);
     expect(overflow).toEqual([]);
   });
@@ -33,14 +38,23 @@ describe('partitionTabs', () => {
   });
 
   it('defaults to PRIMARY_PROFILE_TAB_IDS', () => {
-    const tabs = ['timeline', 'assets', 'ai-assistants'].map(tab);
+    const tabs = ['timeline', 'assets', 'companions'].map(tab);
     const { primary, overflow } = partitionTabs(tabs);
     expect(primary.map(t => t.id)).toEqual(['timeline']);
-    expect(overflow.map(t => t.id)).toEqual(['assets', 'ai-assistants']);
+    expect(overflow.map(t => t.id)).toEqual(['assets', 'companions']);
   });
 
   it('never loses or duplicates a tab', () => {
-    const tabs = ['timeline', 'overview', 'projects', 'products', 'services', 'people', 'info', 'wallets'].map(tab);
+    const tabs = [
+      'timeline',
+      'overview',
+      'projects',
+      'products',
+      'services',
+      'people',
+      'info',
+      'wallets',
+    ].map(tab);
     const { primary, overflow } = partitionTabs(tabs);
     expect(primary.length + overflow.length).toBe(tabs.length);
     const seen = new Set([...primary, ...overflow].map(t => t.id));
@@ -54,7 +68,22 @@ describe('PRIMARY_PROFILE_TAB_IDS', () => {
     expect(PRIMARY_PROFILE_TAB_IDS).toContain('overview');
     expect(PRIMARY_PROFILE_TAB_IDS).toContain('projects');
     // Long-tail entity + meta tabs live in the overflow menu.
-    expect(PRIMARY_PROFILE_TAB_IDS).not.toContain('wallets');
-    expect(PRIMARY_PROFILE_TAB_IDS).not.toContain('ai-assistants');
+    expect(PRIMARY_PROFILE_TAB_IDS).not.toContain('companions');
+  });
+
+  it('keeps wallets up front — the payment surface is never overflow', () => {
+    // This assertion was previously inverted, and the inversion was the bug:
+    // a profile with two live wallets read as a profile with no way to be paid.
+    // GET /api/wallets returned both, countPublicWallets saw both, so the tab
+    // was built and shown — inside the "More" menu, where its own owner did not
+    // find it. On a platform whose premise is "get paid by anyone", the tab
+    // answering "how do I pay this person?" is the one that cannot be tucked
+    // away. If this ever flips back, the payment surface has gone missing again.
+    expect(PRIMARY_PROFILE_TAB_IDS).toContain('wallets');
+
+    const tabs = ['timeline', 'overview', 'wallets', 'companions'].map(tab);
+    const { primary, overflow } = partitionTabs(tabs);
+    expect(primary.map(t => t.id)).toContain('wallets');
+    expect(overflow.map(t => t.id)).not.toContain('wallets');
   });
 });

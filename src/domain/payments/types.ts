@@ -161,7 +161,17 @@ export interface ResolvedWallet {
   wallet_id: string;
   /** NWC URI (decrypted) — only present for method=nwc */
   nwc_uri?: string;
-  /** Lightning address — only present for method=lightning_address */
+  /**
+   * Lightning address. Present for method=lightning_address, and ALSO carried
+   * on a method=nwc wallet as a receive fallback.
+   *
+   * Why: an NWC connection can be authorised for one direction only. Coinos
+   * issues send-only connections (budget + max-fee, `pay_invoice` without
+   * `make_invoice`), and NWC outranks every other rail in resolution — so
+   * connecting one to enable payouts made `make_invoice` fail and took the
+   * owner's whole receiving path down with it. A connection that is good for
+   * one direction must not disable the other.
+   */
   lightning_address?: string;
   /** On-chain BTC address — only present for method=onchain */
   onchain_address?: string;
@@ -172,4 +182,24 @@ export interface ResolvedWallet {
    * never-reused address from it.
    */
   onchain_xpub?: string;
+}
+
+/**
+ * Build an NWC resolution, carrying its receive fallback.
+ *
+ * Both resolution paths (a single wallet, and a user's whole wallet set)
+ * produce this same shape; defining it once keeps the fallback from being
+ * remembered in one place and forgotten in the other.
+ */
+export function nwcResolved(
+  walletId: string,
+  uri: string,
+  fallback?: string | null
+): ResolvedWallet {
+  return {
+    method: 'nwc',
+    wallet_id: walletId,
+    nwc_uri: uri,
+    lightning_address: fallback ?? undefined,
+  };
 }

@@ -1,21 +1,13 @@
-import {
-  apiBadRequest,
-  apiNotFound,
-  apiRateLimited,
-  apiSuccess,
-} from '@/lib/api/standardResponse';
-import {
-  acknowledgePublicPayment,
-  checkPublicPaymentStatus,
-} from '@/domain/payments';
+import { apiBadRequest, apiNotFound, apiRateLimited, apiSuccess } from '@/lib/api/standardResponse';
+import { acknowledgePublicPayment, checkPublicPaymentStatus } from '@/domain/payments';
 import { publicPaymentActionSchema } from '@/lib/validation/finance';
 import { validateUUID, getValidationError } from '@/lib/api/validation';
-import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
+import { rateLimitPaymentClaim, rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
+import { clientIpKey } from '@/lib/client-ip';
 
 // Same per-IP keying as ../route.ts — anonymous callers, so IP is the only handle.
 function requestKey(request: Request): string {
-  const forwarded = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim();
-  return `public-payment-action:${forwarded || request.headers.get('x-real-ip') || 'anonymous'}`;
+  return `public-payment-action:${clientIpKey(request)}`;
 }
 
 function readToken(request: Request): string | null {
@@ -23,10 +15,7 @@ function readToken(request: Request): string | null {
   return token && token.length >= 32 && token.length <= 128 ? token : null;
 }
 
-export async function GET(
-  request: Request,
-  context: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
   const { id } = await context.params;
   const idError = getValidationError(validateUUID(id, 'payment ID'));
   if (idError) {
@@ -44,10 +33,7 @@ export async function GET(
   }
 }
 
-export async function POST(
-  request: Request,
-  context: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
   const limit = await rateLimitWriteAsync(requestKey(request));
   if (!limit.success) {
     return apiRateLimited(
@@ -68,11 +54,17 @@ export async function POST(
 
   const parsed = publicPaymentActionSchema.safeParse(await request.json());
   if (!parsed.success) {
-    return apiBadRequest('Invalid payment action', parsed.error.errors);
+    return apiBadRequest('Invalid payment action', parsed.error.issues);
   }
 
   try {
-    return apiSuccess(await acknowledgePublicPayment(id, token), { cache: 'NONE' });
+    // The recipient-side budget lives here, in the HTTP layer that owns
+    // policy; the domain decides only WHEN to ask (once, on the real
+    // transition). See ClaimGuard in paymentStatusFlow.
+    const claimGuard = async (entityType: string, entityId: string) =>
+      (await rateLimitPaymentClaim(entityType, entityId)).success;
+
+    return apiSuccess(await acknowledgePublicPayment(id, token, claimGuard), { cache: 'NONE' });
   } catch (error) {
     const message = error instanceof Error ? error.message : '';
     if (message.includes('automatically')) {
@@ -80,6 +72,11 @@ export async function POST(
     }
     if (message.includes('expired')) {
       return apiBadRequest('This payment request has expired.');
+    }
+    if (message.includes('Too many payment claims')) {
+      return apiRateLimited(
+        'This recipient has received too many payment claims right now. Try again shortly.'
+      );
     }
     return apiNotFound('Payment not found');
   }

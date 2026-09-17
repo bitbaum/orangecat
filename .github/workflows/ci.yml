@@ -10,8 +10,20 @@ on:
 # Cancel superseded runs on the same ref — a newer push makes the older build
 # obsolete. On main this means only the latest commit's CI (and thus its CD)
 # proceeds, which is what we want: deploy the newest, not a stale in-flight one.
+# On a branch the newest push is the only one that matters, so cancel the rest.
+#
+# On main the group is keyed per COMMIT. A commit cancelling a DIFFERENT
+# commit's run breaks deployment, because every deploy path keys off that run:
+# one that waits for CI to pass on the commit finds a cancelled run and stops,
+# and one chained on `workflow_run` sees conclusion=cancelled and skips.
+# auto-merge also re-arms CI with a dispatch, which under a single
+# group-per-branch cancels the push run for the SAME commit.
+#
+# Measured 2026-09-11 across the fleet: 28 of 39 ci.yml files had this shape.
+# loki stranded four merges silently (main green, nothing red, the box
+# serving the previous build); hirnli failed its deploy loudly at the wait step.
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.ref }}-${{ github.ref == 'refs/heads/main' && github.sha || 'branch' }}
   cancel-in-progress: true
 
 jobs:
@@ -32,14 +44,44 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      # setup-pnpm's default store nests inside its own bin dir, which breaks
+      # any prepare-building dep (portable-type TS2742) — pin it outside.
+      - name: Pin pnpm store location
+        run: pnpm config set store-dir ~/.pnpm-store --global
+
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: 20
-          cache: 'npm'
+          node-version: 24
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
+
+      - name: Every external `uses:` names a canonical owner, not a redirect
+        # Twice in two days an owner rename stopped every merge and every deploy
+        # in this repo: `maonakamoto` → `catomean` (2026-08-26), then the move to
+        # the `bitbaum` org (2026-08-28, #800). Both times nothing looked wrong.
+        # REST and git follow a rename redirect, so every normal way of checking
+        # says the reference is fine; the Actions resolver is the one consumer
+        # that does not follow it, and dies before any step exists with no
+        # readable log. Pull requests stay green, clean and mergeable — the red
+        # run is on main, under a workflow nobody opens.
+        #
+        # #800 fixed the second instance. This is the check, so there is no
+        # third: it asks the API what each referenced repo is really called and
+        # fails when that disagrees with the workflow. A static allowlist cannot
+        # do it — after a rename the workflow and the allowlist hold the same
+        # stale name and agree with each other.
+        #
+        # Deliberately NOT in `npm run verify`: verify is the offline SSOT
+        # bundle. This needs the API, so it lives here and skips without a token.
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/ci/check-workflow-refs.mjs
 
       - name: Verify (docs + type-check + routes + lint + unit — same as local)
         # SSOT for "green": the pre-build gate is defined ONCE as the `verify`
@@ -54,13 +96,13 @@ jobs:
         #                    → 404 class of bug. Static, fast.
         #   - lint         : eslint — catches the undefined-identifier class (e.g.
         #                    the `IntegrationNote` bug that once landed on main).
-        #   - test:unit    : Jest unit suite (--watchAll=false).
+        #   - test:unit    : Vitest unit suite.
         # (Playwright/E2E stays a separate post-build gate below — it needs a
         # running server + secrets, so it isn't part of the static verify bundle.)
-        run: npm run verify
+        run: pnpm run verify
 
       - name: Install Playwright Browsers
-        run: npx playwright install --with-deps
+        run: pnpm exec playwright install --with-deps
 
       - name: Cache Next.js build cache
         uses: actions/cache@v6
@@ -68,9 +110,9 @@ jobs:
           path: ${{ github.workspace }}/.next/cache
           # Re-key when deps or source change; restore the newest same-deps cache
           # otherwise so incremental compilation is reused across runs.
-          key: nextjs-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('src/**/*.[jt]s', 'src/**/*.[jt]sx') }}
+          key: nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}-${{ hashFiles('src/**/*.[jt]s', 'src/**/*.[jt]sx') }}
           restore-keys: |
-            nextjs-${{ hashFiles('**/package-lock.json') }}-
+            nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}-
 
       - name: Build (standalone — the exact bundle CD ships)
         env:
@@ -92,13 +134,13 @@ jobs:
           # code and in nobody's build env, so FEATURES.voiceInput compiled to
           # false in every production bundle it ever shipped in.
           NEXT_PUBLIC_FEATURE_VOICE_INPUT: ${{ vars.NEXT_PUBLIC_FEATURE_VOICE_INPUT }}
-          # FleetCrown feedback widget token. Statically prerendered routes
+          # Loki feedback widget token. Statically prerendered routes
           # (e.g. /dashboard/*) evaluate the root layout's env gate at BUILD
           # time — without this the widget bakes out of every static page and
           # only runtime-rendered routes get it. Public by design (it ships in
           # page source), hence a repo variable, not a secret.
-          FLEETCROWN_FEEDBACK_TOKEN: ${{ vars.FLEETCROWN_FEEDBACK_TOKEN }}
-        run: npm run build
+          LOKI_FEEDBACK_TOKEN: ${{ vars.LOKI_FEEDBACK_TOKEN }}
+        run: pnpm run build
 
       - name: Assemble standalone (static + public + content)
         # Copy the assets into the standalone tree so both the E2E run below and
@@ -111,19 +153,30 @@ jobs:
           [ -d public ] && cp -r public .next/standalone/public || true
           [ -d content ] && cp -r content .next/standalone/content || true
 
+      - name: Package standalone (tar — upload-artifact dereferences symlinks)
+        # Next's standalone output under pnpm is a SYMLINK FARM: node_modules/next
+        # is a link into node_modules/.pnpm/next@…/node_modules/next, and next's
+        # peers (@swc/helpers) are linked in as its SIBLINGS there. upload-artifact
+        # follows symlinks and uploads their targets as real files — which lifts
+        # `next` out of the directory where its peers resolve. The store entry for
+        # @swc/helpers still ships; nothing can reach it. Boot dies on
+        # `Cannot find module '@swc/helpers/_/_interop_require_default'`.
+        # tar records links as links, so the tree arrives byte-identical.
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: tar -czf standalone.tar.gz -C .next/standalone .
+
       - name: Upload standalone artifact (main → shipped by CD)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
         with:
           name: standalone-${{ github.sha }}
-          path: .next/standalone
-          include-hidden-files: true # .next/* is hidden; excluded by default
+          path: standalone.tar.gz
           retention-days: 3
 
       - name: Start server (standalone — the shipped entrypoint)
         run: |
           PORT=3000 node .next/standalone/server.js &
-          npx wait-on http://localhost:3000
+          pnpm exec wait-on http://localhost:3000
 
       - name: Validate required P0 E2E env
         id: check-secrets
@@ -184,7 +237,7 @@ jobs:
           # Legacy aliases for global-setup and older specs
           E2E_TEST_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
           E2E_TEST_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
-        run: npm run test:e2e:matrix:p0
+        run: pnpm run test:e2e:matrix:p0
 
   # Runs `verify` a SECOND time, from a git worktree, because a worktree is the
   # shape every agent in this fleet actually works in (`_claude_autoworktree_enter`)
@@ -235,16 +288,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      # setup-pnpm's default store nests inside its own bin dir, which breaks
+      # any prepare-building dep (portable-type TS2742) — pin it outside.
+      - name: Pin pnpm store location
+        run: pnpm config set store-dir ~/.pnpm-store --global
+
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: 20
-          cache: 'npm'
+          node-version: 24
+          cache: 'pnpm'
 
       - name: Install dependencies
         # Installs into <checkout>/node_modules and NOWHERE ELSE. The worktree
         # below deliberately gets none of its own — that asymmetry is the test.
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Create a git worktree (the shape agents work in)
         # --detach avoids inventing a branch name that could collide on re-runs.
@@ -256,7 +317,7 @@ jobs:
 
       - name: Verify from the worktree (same script, no local node_modules)
         working-directory: .claude/worktrees/ci-verify
-        run: npm run verify
+        run: pnpm run verify
 
   # Supply-chain gate: catch committed secrets and known-vuln dependencies before
   # they ship. Runs in parallel with build-and-smoke (independent). The
@@ -273,32 +334,66 @@ jobs:
           fetch-depth: 0
 
       - name: Secret scan (gitleaks)
-        # Free for public repos; no license needed. Fails the job on any finding.
+        # The gitleaks CLI, not gitleaks-action. The action is free only for
+        # PERSONAL accounts; under an organization it refuses to scan at all and
+        # exits with "missing gitleaks license". Moving this repo into the
+        # bitbaum org therefore switched secret scanning off while leaving the
+        # job, its name, and its place in the checks list exactly as they were.
+        # It happened to fail loudly here — but only because the licence check
+        # errors; a wrapper that had instead skipped would have reported green
+        # while scanning nothing. The CLI itself is MIT and unaffected.
         #
-        # Skipped on workflow_dispatch, and only there. On push and pull_request
-        # the action scans the incoming commits; a dispatched run has no such
-        # range, so it falls back to scanning all ~2.6k commits of history and
-        # fails on ~173 pre-existing findings (2025-era .env commits) that only
-        # a history rewrite can clear — see the security audit, not CI's job.
+        # Scope is the incoming commit range, which is what the action scanned.
+        # Scanning all of history instead would fail on ~173 pre-existing
+        # findings (2025-era .env commits) that only a history rewrite can clear
+        # — see the security audit, not CI's job. Coverage is unchanged: every
+        # commit is still scanned in its PR run before it can merge.
         #
-        # This costs nothing in coverage: every commit still gets scanned in its
-        # PR run before it can merge. The alternative — baselining those 173
-        # findings in .gitleaksignore — would mean allowlisting real historical
-        # credentials, which that file explicitly forbids.
-        #
-        # Auto-merge dispatches CI on main after each merge (a GITHUB_TOKEN push
-        # triggers nothing), so without this every automated merge left main red
-        # and CD, which chains off green CI, never deployed.
+        # Skipped on workflow_dispatch, and only there: a dispatched run has no
+        # incoming range. Auto-merge dispatches CI on main after each merge (a
+        # GITHUB_TOKEN push triggers nothing), so without that skip every
+        # automated merge would leave main red and CD would never deploy.
         if: github.event_name != 'workflow_dispatch'
-        uses: gitleaks/gitleaks-action@v3
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_VERSION: '8.30.1'
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            | tar -xz gitleaks
+          base="$BASE_SHA"
+          # A branch's first push reports an all-zero "before", and a force-push
+          # can report a sha this clone no longer has. Both would otherwise make
+          # the range unresolvable.
+          if [ "$base" = "0000000000000000000000000000000000000000" ] \
+             || ! git cat-file -e "${base}^{commit}" 2>/dev/null; then
+            base="${HEAD_SHA}~1"
+          fi
+          range="${base}..${HEAD_SHA}"
+          # gitleaks exits 0 on an empty range — it scans nothing and reports
+          # success, which is indistinguishable from a clean scan. Verified
+          # against 8.30.1 before writing this. Count the commits ourselves and
+          # refuse to call zero a pass.
+          n=$(git rev-list --count "$range")
+          echo "gitleaks: scanning $n commit(s) in $range"
+          if [ "$n" -eq 0 ]; then
+            echo "::error::empty scan range $range — refusing to report a pass"
+            exit 1
+          fi
+          ./gitleaks git . --log-opts="$range" --redact --no-banner --exit-code 1
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      # No cache here on purpose: this job never installs, so the pnpm store
+      # is never created — setup-node's post-step then FAILS the job trying to
+      # save a cache path that does not exist (`pnpm audit` needs only the
+      # lockfile, not node_modules).
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: 20
-          cache: 'npm'
+          node-version: 24
 
       - name: Dependency audit
         # ESCALATED 2026-08-25. The staged rollout this replaces blocked only on
@@ -318,14 +413,19 @@ jobs:
         # weakens it. (js-yaml above was dev-only; it was patched anyway because
         # the range already allowed it.)
         #
-        # Tied to `node-version: 20` (npm 10) above, and that coupling is load-
-        # bearing. On npm 11, `npm audit --audit-level=critical` was observed to
-        # exit 1 against a tree whose own --json output reported
-        # {moderate:2, high:1, critical:0} — i.e. the level stops gating the exit
-        # code. Bump this runner to node 22 and the line below silently becomes
-        # "block on ANY advisory, including low", which will wedge every merge on
-        # something unfixable and get this gate weakened rather than debugged.
+        # Tied to the `node-version` (npm major) above, and that coupling is
+        # load-bearing. On npm 11, `npm audit --audit-level=critical` was
+        # observed to exit 1 against a tree whose own --json output reported
+        # {moderate:2, high:1, critical:0} — i.e. the level stops gating the
+        # exit code: the line below silently becomes "block on ANY advisory,
+        # including low", which will wedge every merge on something unfixable
+        # and get this gate weakened rather than debugged.
         # If you bump Node here, re-check this step's exit code first.
+        # Re-checked 2026-08-31 for the 20->24 bump (npm 11.x): the tree is
+        # clean at every level (npm audit --omit=dev --json -> total 0), so
+        # the command below exits 0. The npm 11 caveat still stands the day
+        # an advisory lands: low/moderate will block too — fix or override
+        # the advisory per the ladder below; do not lower the level.
         #
         # WHEN THIS BLOCKS YOU and no patched version exists upstream, do NOT
         # lower the level — that silently re-opens the whole class. In order of
@@ -333,7 +433,7 @@ jobs:
         # package.json pinning a patched transitive; or, if genuinely unfixable,
         # land the exception as its own commit naming the advisory and why, so
         # the decision is reviewable instead of inherited.
-        run: npm audit --audit-level=high --omit=dev
+        run: pnpm audit --audit-level=high --prod
 
   # Everything GitHub would have chained off this run, had it emitted the event.
   #

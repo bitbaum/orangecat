@@ -1,15 +1,6 @@
 /** @type {import('next').NextConfig} */
 
 const path = require('path');
-const withMDX = require('@next/mdx')({
-  extension: /\.mdx?$/,
-  options: {
-    remarkPlugins: [],
-    rehypePlugins: [],
-    // Remove providerImportSource to avoid client component issues
-  },
-});
-
 let withBundleAnalyzer = config => config;
 try {
   withBundleAnalyzer = require('@next/bundle-analyzer')({
@@ -28,17 +19,21 @@ const nextConfig = {
   // Fix workspace root detection to prevent watching entire home directory
   outputFileTracingRoot: __dirname,
 
+  // Next 16 builds with Turbopack. A `webpack` key without a `turbopack` key
+  // is a FATAL build error ("This may be a mistake") — @next/mdx used to
+  // supply the turbopack key implicitly; with MDX gone, acknowledge Turbopack
+  // explicitly. The webpack section below still applies to `next dev --webpack`
+  // style runs and is otherwise ignored by Turbopack.
+  turbopack: {},
+
   // Blog posts are read from content/blog at request time (src/lib/blog.ts).
   // File tracing only follows require/import graphs, so the standalone build
-  // shipped WITHOUT the mdx files — every post rendered as a frontmatter-less
+  // shipped WITHOUT the markdown files — every post rendered as a frontmatter-less
   // stub in prod. Explicitly include them for every route that reads them.
   outputFileTracingIncludes: {
     '/blog': ['./content/blog/**'],
     '/blog/[slug]': ['./content/blog/**'],
   },
-
-  // Support MDX files
-  pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'md', 'mdx'],
 
   // Externalize Supabase packages for server-side rendering
   // 'standalone' output is what the Hetzner self-host needs — opt in via
@@ -174,6 +169,23 @@ const nextConfig = {
         destination: '/dashboard/cat',
         permanent: true,
       },
+      // AI assistants became Companions (2026-09-15). Bookmarks and search
+      // results still carry the old paths; the API path did not move.
+      {
+        source: '/ai-assistants',
+        destination: '/companions',
+        permanent: true,
+      },
+      {
+        source: '/ai-assistants/:id',
+        destination: '/companions/:id',
+        permanent: true,
+      },
+      {
+        source: '/dashboard/ai-assistants/:path*',
+        destination: '/dashboard/companions/:path*',
+        permanent: true,
+      },
     ];
   },
 
@@ -195,11 +207,40 @@ const nextConfig = {
           },
           {
             key: 'Referrer-Policy',
-            value: 'origin-when-cross-origin',
+            // strict-origin-when-cross-origin — the fleet baseline (see
+            // aoz-begleitung/next.config.js), and the only one of the five
+            // baseline headers orangecat.ch was not already sending in its
+            // agreed form. It differs from the previous `origin-when-cross-
+            // origin` in one respect: on an HTTPS -> HTTP downgrade it sends NO
+            // referrer at all instead of the bare origin. Same-origin requests
+            // still carry the full URL and cross-origin ones still carry the
+            // origin, so nothing that reads document.referrer or server-side
+            // Referer sees a change in practice — and no rendering depends on
+            // it. The other four (X-Content-Type-Options, X-Frame-Options:
+            // DENY — stricter than the SAMEORIGIN baseline, HSTS, and
+            // Permissions-Policy with its deliberate microphone=(self)) are
+            // already correct and are left exactly as they are.
+            value: 'strict-origin-when-cross-origin',
           },
           {
             key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=()',
+            // microphone=(self) — NOT the empty `microphone=()` this used to
+            // send. An empty allowlist denies the feature to every origin
+            // INCLUDING this one, so the browser never even shows a permission
+            // prompt: getUserMedia rejects immediately with NotAllowedError.
+            //
+            // Measured on orangecat.ch before this change:
+            //   document.featurePolicy.allowsFeature('microphone') -> false
+            //   navigator.permissions.query({name:'microphone'})   -> "denied"
+            //
+            // That silently disabled speak-to-report in the embedded Loki
+            // feedback widget, and no visitor could fix it — there was nothing
+            // to allow. `(self)` permits only this origin, so the browser asks
+            // the person, which is the decision that should be theirs.
+            //
+            // camera and geolocation stay fully denied: nothing here uses them,
+            // and an unused capability should not be reachable.
+            value: 'camera=(), microphone=(self), geolocation=()',
           },
           // HSTS: tell browsers to always use HTTPS (production only)
           ...(!isDevelopment
@@ -374,7 +415,7 @@ const nextConfig = {
   },
 };
 
-module.exports = withBundleAnalyzer(withMDX(nextConfig));
+module.exports = withBundleAnalyzer(nextConfig);
 
 // Performance monitoring
 if (process.env.NODE_ENV === 'production') {

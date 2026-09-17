@@ -8,11 +8,11 @@
 
 import { executeWalletTransfer } from '@/domain/wallets/transferService';
 
-jest.mock('@/utils/logger', () => ({
-  logger: { warn: jest.fn(), error: jest.fn(), info: jest.fn(), debug: jest.fn() },
+vi.mock('@/utils/logger', () => ({
+  logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
-jest.mock('@/lib/api/auditLog', () => ({
-  auditSuccess: jest.fn().mockResolvedValue(undefined),
+vi.mock('@/lib/api/auditLog', () => ({
+  auditSuccess: vi.fn().mockResolvedValue(undefined),
   AUDIT_ACTIONS: { WALLET_BALANCE_REFRESHED: 'wallet.balance_refreshed' },
 }));
 
@@ -30,15 +30,15 @@ function makeSupabase(responses: Array<{ data?: unknown; error?: unknown }>) {
 
   const builder: Record<string, unknown> = {};
   for (const m of ['select', 'in', 'eq', 'insert', 'update']) {
-    builder[m] = jest.fn(() => builder);
+    builder[m] = vi.fn(() => builder);
   }
-  builder.single = jest.fn(() => Promise.resolve(next()));
+  builder.single = vi.fn(() => Promise.resolve(next()));
   // Make the builder thenable so `await from().select().in().eq()` resolves.
   builder.then = (resolve: (v: unknown) => unknown, reject: (e: unknown) => unknown) =>
     Promise.resolve(next()).then(resolve, reject);
 
-  const rpc = jest.fn(() => Promise.resolve(next()));
-  return { client: { from: jest.fn(() => builder), rpc }, rpc };
+  const rpc = vi.fn(() => Promise.resolve(next()));
+  return { client: { from: vi.fn(() => builder), rpc }, rpc };
 }
 
 const twoWallets = () => [

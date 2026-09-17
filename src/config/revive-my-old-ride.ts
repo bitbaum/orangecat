@@ -3,7 +3,7 @@
  *
  * The economic/outward half of a revamp-it initiative. OrangeCat is the layer
  * that *markets* it (public project, Supporters, the Cat's outward voice);
- * FleetCrown is the layer that *executes* it (agent-fleet dispatch, ops).
+ * Loki is the layer that *executes* it (agent-fleet dispatch, ops).
  *
  * This file is the single source of truth for the project's canonical content
  * and for the seed that registers it on-platform
@@ -11,8 +11,8 @@
  * reused by the seed today and any /projects rendering or Cat context later.
  *
  * On-platform ownership: there is no separate "revamp-it" actor — the founder's
- * platform identity is the `mao` actor (Mao Nakamoto), which already owns the
- * "FleetCrown" and "OrangeCat" projects. Revive My Old Ride is owned the same
+ * platform identity is the `mao` actor (Cato), which already owns the
+ * "Loki" and "OrangeCat" projects. Revive My Old Ride is owned the same
  * way, with revamp-it represented as an external stakeholder link. Swap to a
  * dedicated revamp-it actor/group later by changing OWNER_ACTOR_SLUG.
  *
@@ -82,7 +82,7 @@ export const ANCHOR_PILOT = {
 } as const;
 
 // =====================================================================
-// PUBLIC LISTING COPY (the "marketing" the FleetCrown session deferred to OC)
+// PUBLIC LISTING COPY (the "marketing" the Loki session deferred to OC)
 // =====================================================================
 
 export const LISTING_COPY = {
@@ -96,7 +96,7 @@ export const LISTING_COPY = {
       'without subsidy? If yes, we restore it and find it a new owner. If no, ' +
       'we recover every reusable part, recycle the materials, and dispose of ' +
       'nothing that still has value. You get a clear answer either way.',
-    'OrangeCat is where the work is shown and supported; FleetCrown is the ' +
+    'OrangeCat is where the work is shown and supported; Loki is the ' +
       'engine room where an agent fleet plans, sources, and runs each job.',
   ],
   cta: 'Bring us your old ride',
@@ -134,7 +134,7 @@ export const PROJECT_PAYLOAD: ReviveProjectPayload = {
 // STAKEHOLDER EDGES (from the Revive project → counterparties)
 //   kind ∈ competitor | collaborator | investor | customer | employee |
 //          acquirer | acquisition_target | in_house_dev
-//   The Revive project lives on OrangeCat and is executed by FleetCrown.
+//   The Revive project lives on OrangeCat and is executed by Loki.
 // =====================================================================
 
 export interface StakeholderEdgeSpec {
@@ -156,9 +156,9 @@ export interface StakeholderEdgeSpec {
 
 export const STAKEHOLDER_EDGES: StakeholderEdgeSpec[] = [
   {
-    toProjectTitle: 'FleetCrown',
+    toProjectTitle: 'Loki',
     kind: 'in_house_dev',
-    notes: 'FleetCrown is the engineering/execution layer — the agent fleet that runs each job.',
+    notes: 'Loki is the engineering/execution layer — the agent fleet that runs each job.',
   },
   {
     toProjectTitle: 'OrangeCat',

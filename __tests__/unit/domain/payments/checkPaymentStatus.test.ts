@@ -11,37 +11,39 @@
 import { checkPaymentStatus } from '@/domain/payments/paymentFlowService';
 import { STATUS } from '@/config/database-constants';
 import { getAdminClient } from '@/lib/supabase/admin';
-const getAdminClientMock = getAdminClient as jest.Mock;
+import type { Mock } from 'vitest';
 
-jest.mock('@/utils/logger', () => ({
-  logger: { warn: jest.fn(), error: jest.fn(), info: jest.fn(), debug: jest.fn() },
+const getAdminClientMock = getAdminClient as Mock;
+
+vi.mock('@/utils/logger', () => ({
+  logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
-jest.mock('@/lib/email/send-seller-notification', () => ({
-  sendSellerPaymentNotification: jest.fn().mockResolvedValue(undefined),
+vi.mock('@/lib/email/send-seller-notification', () => ({
+  sendSellerPaymentNotification: vi.fn().mockResolvedValue(undefined),
 }));
-jest.mock('@/services/notifications/dispatcher', () => ({
-  NotificationDispatcher: { dispatch: jest.fn().mockResolvedValue(undefined) },
+vi.mock('@/services/notifications/dispatcher', () => ({
+  NotificationDispatcher: { dispatch: vi.fn().mockResolvedValue(undefined) },
 }));
-jest.mock('@/lib/supabase/admin', () => ({ getAdminClient: jest.fn() }));
+vi.mock('@/lib/supabase/admin', () => ({ getAdminClient: vi.fn() }));
 
 const PI_ID = 'pi-1';
 const BUYER = 'buyer-1';
 const SELLER = 'seller-1';
 
 function makeSupabase(intent: Record<string, unknown> | null) {
-  const update = jest.fn();
+  const update = vi.fn();
   const builder: Record<string, unknown> = {};
   for (const m of ['select', 'update', 'eq', 'in']) {
-    builder[m] = jest.fn((...args: unknown[]) => {
+    builder[m] = vi.fn((...args: unknown[]) => {
       if (m === 'update') update(...args);
       return builder;
     });
   }
-  builder.single = jest.fn(() => Promise.resolve({ data: intent, error: null }));
+  builder.single = vi.fn(() => Promise.resolve({ data: intent, error: null }));
   // Awaited update chains resolve cleanly.
   builder.then = (resolve: (v: unknown) => unknown, reject: (e: unknown) => unknown) =>
     Promise.resolve({ error: null }).then(resolve, reject);
-  const client = { from: jest.fn(() => builder) } as never;
+  const client = { from: vi.fn(() => builder) } as never;
   getAdminClientMock.mockReturnValue(client);
   return { client, update };
 }

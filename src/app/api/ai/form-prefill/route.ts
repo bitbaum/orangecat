@@ -24,6 +24,7 @@ import { resolveAiAssistTarget } from '@/lib/ai/assist-target';
 import { logger } from '@/utils/logger';
 import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
 import { AI_ASSIST_MIN_INPUT_LENGTH } from '@/config/ai-form-assist';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 /**
  * Request validation schema
@@ -35,7 +36,7 @@ const requestSchema = z
     /** Legacy name for formType — kept so in-flight clients keep working */
     entityType: z.string().min(1).optional(),
     description: z.string().min(1, 'Description is required'),
-    existingData: z.record(z.unknown()).optional(),
+    existingData: z.record(z.string(), z.unknown()).optional(),
     /**
      * `fill` protects what the user already typed; `refine` lets the AI rewrite
      * it. A refine request that arrives as `fill` can never change anything.
@@ -127,7 +128,7 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
       // The code, not the prose, is what the client renders from — apiError
       // puts it on error.code, where unwrapApiResponse picks it up.
       return apiError(
-        result.error || 'Failed to generate form data',
+        apiErrorMessage(result, 'Failed to generate form data'),
         result.code ?? 'unknown',
         400
       );

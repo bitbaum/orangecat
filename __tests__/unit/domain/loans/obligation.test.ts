@@ -5,8 +5,8 @@
 import { createObligationLoanSchema } from '@/config/loan-obligation';
 import { createObligationLoan } from '@/domain/loans/obligation';
 
-jest.mock('@/domain/base/entityService', () => ({
-  createEntity: jest.fn().mockResolvedValue({ id: 'new-loan-id', status: 'active' }),
+vi.mock('@/domain/base/entityService', () => ({
+  createEntity: vi.fn().mockResolvedValue({ id: 'new-loan-id', status: 'active' }),
 }));
 
 describe('createObligationLoanSchema', () => {
@@ -42,10 +42,10 @@ describe('createObligationLoan domain', () => {
 
   function mockSupabase(sourceUserId: string | null) {
     return {
-      from: jest.fn().mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            maybeSingle: jest.fn().mockResolvedValue({
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            maybeSingle: vi.fn().mockResolvedValue({
               data: sourceUserId ? { id: sourceLoanId, user_id: sourceUserId } : null,
               error: null,
             }),

@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { API_ROUTES } from '@/config/api-routes';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { BADGE_COLORS } from '@/config/badge-colors';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 export function GroupWalletCard({
   wallet,
@@ -36,7 +37,7 @@ export function GroupWalletCard({
       });
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to refresh balance');
+        throw new Error(apiErrorMessage(error, 'Failed to refresh balance'));
       }
       const data = await response.json();
       toast.success(`Balance updated: ${formatAmountBtc(data.data?.balance || 0)}`);

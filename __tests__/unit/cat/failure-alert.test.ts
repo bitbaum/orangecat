@@ -4,7 +4,9 @@ import { join } from 'path';
 import { alertCatChatFailure } from '@/services/cat/failure-alert';
 import { getAdminClient } from '@/lib/supabase/admin';
 
-jest.mock('@/lib/supabase/admin', () => ({ getAdminClient: jest.fn() }));
+import type { Mock } from 'vitest';
+
+vi.mock('@/lib/supabase/admin', () => ({ getAdminClient: vi.fn() }));
 
 /**
  * Alerting a Cat chat failure must never make the failure worse.
@@ -14,10 +16,10 @@ jest.mock('@/lib/supabase/admin', () => ({ getAdminClient: jest.fn() }));
  * so "cannot write the alert" has to degrade to silence plus a log line.
  */
 describe('Cat failure alerting', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => vi.clearAllMocks());
 
   it('never throws when the alert cannot be written', async () => {
-    (getAdminClient as jest.Mock).mockImplementation(() => {
+    (getAdminClient as Mock).mockImplementation(() => {
       throw new Error('no service key in this environment');
     });
     await expect(
@@ -39,28 +41,28 @@ describe('Cat failure alerting', () => {
       maybeSingle: () => Promise.resolve({ data: null }),
       insert: () => Promise.reject(new Error('RLS denied')),
     };
-    (getAdminClient as jest.Mock).mockReturnValue({ from: () => rejecting });
+    (getAdminClient as Mock).mockReturnValue({ from: () => rejecting });
     await expect(
       alertCatChatFailure({ userId: 'u1', code: 'STREAM_ERROR' })
     ).resolves.toBeUndefined();
   });
 
   it('coalesces onto an existing unread alert for the same code instead of stacking rows', async () => {
-    const update = jest.fn().mockReturnValue({ eq: jest.fn().mockResolvedValue({}) });
-    const insert = jest.fn().mockResolvedValue({});
+    const update = vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({}) });
+    const insert = vi.fn().mockResolvedValue({});
     const chain = {
       select: () => chain,
       eq: () => chain,
       order: () => chain,
       limit: () => chain,
-      maybeSingle: jest
+      maybeSingle: vi
         .fn()
         .mockResolvedValueOnce({ data: { username: 'mao' } })
         .mockResolvedValue({ data: { id: 'n1', metadata: { occurrences: 3 } } }),
       update,
       insert,
     };
-    (getAdminClient as jest.Mock).mockReturnValue({ from: () => chain });
+    (getAdminClient as Mock).mockReturnValue({ from: () => chain });
 
     await alertCatChatFailure({ userId: 'u1', code: 'AI_RATE_LIMITED', provider: 'openrouter' });
 
@@ -72,20 +74,20 @@ describe('Cat failure alerting', () => {
   });
 
   it('inserts a first alert when none is open', async () => {
-    const insert = jest.fn().mockResolvedValue({});
+    const insert = vi.fn().mockResolvedValue({});
     const chain = {
       select: () => chain,
       eq: () => chain,
       order: () => chain,
       limit: () => chain,
-      maybeSingle: jest
+      maybeSingle: vi
         .fn()
         .mockResolvedValueOnce({ data: { username: 'user_2dd6f19e' } })
         .mockResolvedValue({ data: null }),
-      update: jest.fn(),
+      update: vi.fn(),
       insert,
     };
-    (getAdminClient as jest.Mock).mockReturnValue({ from: () => chain });
+    (getAdminClient as Mock).mockReturnValue({ from: () => chain });
 
     await alertCatChatFailure({
       userId: 'u1',
@@ -108,17 +110,17 @@ describe('Cat failure alerting', () => {
   });
 
   it('still alerts when the account cannot be named', async () => {
-    const insert = jest.fn().mockResolvedValue({});
+    const insert = vi.fn().mockResolvedValue({});
     const chain = {
       select: () => chain,
       eq: () => chain,
       order: () => chain,
       limit: () => chain,
-      maybeSingle: jest.fn().mockResolvedValue({ data: null }),
-      update: jest.fn(),
+      maybeSingle: vi.fn().mockResolvedValue({ data: null }),
+      update: vi.fn(),
       insert,
     };
-    (getAdminClient as jest.Mock).mockReturnValue({ from: () => chain });
+    (getAdminClient as Mock).mockReturnValue({ from: () => chain });
 
     await alertCatChatFailure({ userId: 'u9', code: 'STREAM_ERROR' });
 

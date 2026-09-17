@@ -21,6 +21,7 @@ import DraftsPanel from './DraftsPanel';
 import ArticlePreview from './ArticlePreview';
 import ComposerEditor from './ComposerEditor';
 import PublishBar from './PublishBar';
+import { formatNumber } from '@/utils/locale';
 
 /** Existing article passed when the composer is opened in edit mode. */
 export interface ArticleInitial {
@@ -64,13 +65,31 @@ export default function ArticleComposer({
 
   // Grow the body textarea with its content so the page scrolls, never an inner
   // box — long-form writing shouldn't happen inside a fixed scroll trap.
+  //
+  // Coalesced into an animation frame, and this is not a micro-optimisation.
+  // Writing `height = 'auto'` invalidates layout and reading `scrollHeight`
+  // immediately forces it to be recomputed — a forced synchronous reflow, twice,
+  // on EVERY keystroke, over an element whose height is the whole document by
+  // construction (`overflow-hidden` + auto-grow). Cost therefore scales with
+  // article length: imperceptible at 200 words, and at ~1,400 words it made the
+  // tab unresponsive for tens of seconds at a time while writing.
+  //
+  // One frame collapses a burst of typing into a single measurement, and
+  // skipping an unchanged write avoids invalidating layout for no reason —
+  // assigning the same px value still dirties it.
   useEffect(() => {
     const el = bodyRef.current;
     if (!el) {
       return;
     }
-    el.style.height = 'auto';
-    el.style.height = `${el.scrollHeight}px`;
+    const frame = requestAnimationFrame(() => {
+      el.style.height = 'auto';
+      const next = `${el.scrollHeight}px`;
+      if (el.style.height !== next) {
+        el.style.height = next;
+      }
+    });
+    return () => cancelAnimationFrame(frame);
   }, [body, tab]);
 
   const wordCount = body.trim() ? body.trim().split(/\s+/).length : 0;
@@ -211,7 +230,7 @@ export default function ArticleComposer({
           </button>
           {wordCount > 0 && (
             <span className="ml-auto text-xs text-fg-tertiary">
-              {wordCount.toLocaleString()} {wordCount === 1 ? 'word' : 'words'} · {readingTime} min
+              {formatNumber(wordCount)} {wordCount === 1 ? 'word' : 'words'} · {readingTime} min
               read
             </span>
           )}

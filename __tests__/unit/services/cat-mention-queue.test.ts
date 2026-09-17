@@ -13,9 +13,9 @@ import { enqueueMention, failMention, MAX_ATTEMPTS } from '@/services/mentions/q
 import { noteCatMention } from '@/services/mentions/note-mention';
 
 function adminSpy(opts: { insertError?: { code?: string; message: string } } = {}) {
-  const insert = jest.fn().mockResolvedValue({ error: opts.insertError ?? null });
-  const eq = jest.fn().mockResolvedValue({ error: null });
-  const update = jest.fn(() => ({ eq }));
+  const insert = vi.fn().mockResolvedValue({ error: opts.insertError ?? null });
+  const eq = vi.fn().mockResolvedValue({ error: null });
+  const update = vi.fn(() => ({ eq }));
   const admin = { from: () => ({ insert, update }) };
   return { admin: admin as never, insert, update };
 }
@@ -23,9 +23,14 @@ function adminSpy(opts: { insertError?: { code?: string; message: string } } = {
 describe('enqueueMention', () => {
   it('records the debt', async () => {
     const { admin, insert } = adminSpy();
-    await expect(enqueueMention(admin, {
-      sourceType: 'message', sourceId: 'm1', requesterId: 'u1', conversationId: 'c1',
-    })).resolves.toBe(true);
+    await expect(
+      enqueueMention(admin, {
+        sourceType: 'message',
+        sourceId: 'm1',
+        requesterId: 'u1',
+        conversationId: 'c1',
+      })
+    ).resolves.toBe(true);
     expect(insert).toHaveBeenCalledWith(expect.objectContaining({ source_id: 'm1' }));
   });
 
@@ -33,16 +38,26 @@ describe('enqueueMention', () => {
     // 23505 = unique violation. An at-least-once producer firing twice must not
     // look like a failure, or the caller retries forever.
     const { admin } = adminSpy({ insertError: { code: '23505', message: 'duplicate key' } });
-    await expect(enqueueMention(admin, {
-      sourceType: 'message', sourceId: 'm1', requesterId: 'u1', conversationId: 'c1',
-    })).resolves.toBe(true);
+    await expect(
+      enqueueMention(admin, {
+        sourceType: 'message',
+        sourceId: 'm1',
+        requesterId: 'u1',
+        conversationId: 'c1',
+      })
+    ).resolves.toBe(true);
   });
 
   it('reports a real failure as a failure', async () => {
     const { admin } = adminSpy({ insertError: { code: '42P01', message: 'no such table' } });
-    await expect(enqueueMention(admin, {
-      sourceType: 'message', sourceId: 'm1', requesterId: 'u1', conversationId: 'c1',
-    })).resolves.toBe(false);
+    await expect(
+      enqueueMention(admin, {
+        sourceType: 'message',
+        sourceId: 'm1',
+        requesterId: 'u1',
+        conversationId: 'c1',
+      })
+    ).resolves.toBe(false);
   });
 });
 
@@ -65,7 +80,7 @@ describe('failMention', () => {
 describe('noteCatMention', () => {
   /** Resolver + profile lookup + insert, in the shape the service chains them. */
   function admin({ username = 'alice', mentionsCat = true } = {}) {
-    const insert = jest.fn().mockResolvedValue({ error: null });
+    const insert = vi.fn().mockResolvedValue({ error: null });
     return {
       insert,
       client: {
@@ -82,7 +97,9 @@ describe('noteCatMention', () => {
                     error: null,
                   }),
               }),
-              eq: () => ({ maybeSingle: () => Promise.resolve({ data: { username }, error: null }) }),
+              eq: () => ({
+                maybeSingle: () => Promise.resolve({ data: { username }, error: null }),
+              }),
             }),
           };
         },
@@ -93,7 +110,10 @@ describe('noteCatMention', () => {
   it('queues a reply keyed on the MESSAGE, so a second question is also answered', async () => {
     const { client, insert } = admin();
     await noteCatMention(client, {
-      conversationId: 'c1', messageId: 'm2', senderId: 'u1', content: '@cat and this?',
+      conversationId: 'c1',
+      messageId: 'm2',
+      senderId: 'u1',
+      content: '@cat and this?',
     });
     // Keyed on the conversation, this row would collide with the first question
     // ever asked in c1 and be silently dropped.
@@ -103,7 +123,10 @@ describe('noteCatMention', () => {
   it('skips messages with no @ at all without touching the database', async () => {
     const { client, insert } = admin();
     const noted = await noteCatMention(client, {
-      conversationId: 'c1', messageId: 'm1', senderId: 'u1', content: 'just talking',
+      conversationId: 'c1',
+      messageId: 'm1',
+      senderId: 'u1',
+      content: 'just talking',
     });
     expect(noted).toBe(false);
     expect(insert).not.toHaveBeenCalled();
@@ -114,7 +137,10 @@ describe('noteCatMention', () => {
     // another reply, forever.
     const { client, insert } = admin({ username: 'cat' });
     const noted = await noteCatMention(client, {
-      conversationId: 'c1', messageId: 'm1', senderId: 'cat-id', content: 'as @cat I think',
+      conversationId: 'c1',
+      messageId: 'm1',
+      senderId: 'cat-id',
+      content: 'as @cat I think',
     });
     expect(noted).toBe(false);
     expect(insert).not.toHaveBeenCalled();
@@ -123,17 +149,27 @@ describe('noteCatMention', () => {
   it('ignores a message that mentions someone else', async () => {
     const { client, insert } = admin({ mentionsCat: false });
     const noted = await noteCatMention(client, {
-      conversationId: 'c1', messageId: 'm1', senderId: 'u1', content: 'hey @alice',
+      conversationId: 'c1',
+      messageId: 'm1',
+      senderId: 'u1',
+      content: 'hey @alice',
     });
     expect(noted).toBe(false);
     expect(insert).not.toHaveBeenCalled();
   });
 
   it('never throws — a person’s message must be stored whatever the Cat does', async () => {
-    const exploding = { from: () => { throw new Error('db down'); } } as never;
+    const exploding = {
+      from: () => {
+        throw new Error('db down');
+      },
+    } as never;
     await expect(
       noteCatMention(exploding, {
-        conversationId: 'c1', messageId: 'm1', senderId: 'u1', content: '@cat hi',
+        conversationId: 'c1',
+        messageId: 'm1',
+        senderId: 'u1',
+        content: '@cat hi',
       })
     ).resolves.toBe(false);
   });

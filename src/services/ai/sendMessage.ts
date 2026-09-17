@@ -21,6 +21,8 @@ import {
   settleAssistantCharge,
 } from '@/services/ai/assistant-charge';
 import type { SendMessageResult, SendMessageError } from './sendMessage-types';
+import { recallCompanionMemories, extractCompanionMemories } from '@/services/companions/memory';
+import { buildCompanionSystemPrompt } from '@/services/companions/system-prompt';
 import {
   verifyConversation,
   fetchAssistant,
@@ -29,6 +31,7 @@ import {
   checkFreeMessageUsage,
   buildMessageHistory,
   callAi,
+  createChatService,
   storeUserMessage,
   storeAssistantMessage,
 } from './sendMessage-internals';
@@ -82,6 +85,9 @@ export async function sendAiMessage(
     .from(DATABASE_TABLES.AI_MESSAGES)
     .select('role, content')
     .eq('conversation_id', convId)
+    // Legacy threads stored the prompt as a system row; the prompt is composed
+    // per turn now (with memory), so a stored copy would only go stale.
+    .neq('role', 'system')
     .order('created_at', { ascending: true })
     .limit(20);
   const history = (historyData || []) as { role: string; content: string }[];
@@ -123,16 +129,19 @@ export async function sendAiMessage(
   }
   const userMessage = userMsgResult.message;
 
-  // 10. Generate AI response
+  // 10. Generate AI response. The prompt is the creator's definition plus what
+  //     this companion remembers about THIS person — nothing else.
+  const memoryKey = { assistantId, userId };
+  const recalled = await recallCompanionMemories(supabase, memoryKey, content);
+  const systemPrompt = buildCompanionSystemPrompt({
+    definition: assistant.system_prompt,
+    memories: recalled.map(m => m.content),
+  });
   const messages = buildMessageHistory(history, content);
-  const aiResult = await callAi(
-    provider,
-    hasByok,
-    userOpenRouterKey,
-    modelToUse,
-    messages,
-    assistant
-  );
+  const aiResult = await callAi(provider, hasByok, userOpenRouterKey, modelToUse, messages, {
+    ...assistant,
+    system_prompt: systemPrompt ?? null,
+  });
   if ('error' in aiResult) {
     // Clean up user message on AI failure
     await supabase
@@ -165,7 +174,7 @@ export async function sendAiMessage(
     await keyService.incrementPlatformUsage(userId, 1, aiResponse.totalTokens);
   }
 
-  // 12b. Settle the charge: debit the payer's Cat Credits, credit the creator's 95% share.
+  // 12b. Settle the charge: debit the payer's Cat Credits, credit the creator's share.
   //      Pre-authorized in step 8; idempotent on the assistant message id.
   if (admin && creatorCharge > 0) {
     await settleAssistantCharge(admin, {
@@ -178,6 +187,16 @@ export async function sendAiMessage(
       totalTokens: aiResponse.totalTokens,
     });
   }
+
+  // 12c. Remember. Detached: a memory failure must never fail a served turn.
+  void extractCompanionMemories(supabase, {
+    ...memoryKey,
+    conversationId: convId,
+    userMessage: content,
+    assistantMessage: aiResponse.content,
+    aiService: createChatService(provider, hasByok, userOpenRouterKey),
+    model: modelToUse,
+  });
 
   await fromTable(supabase, DATABASE_TABLES.AI_CONVERSATIONS)
     .update({ last_message_at: new Date().toISOString() })

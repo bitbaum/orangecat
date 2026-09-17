@@ -11,6 +11,7 @@ import {
   signOut as authSignOut,
 } from '@/services/supabase/auth';
 import { API_ROUTES } from '@/config/api-routes';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 interface AuthState {
   // data
@@ -165,7 +166,7 @@ export const useAuthStore = create<AuthState>()(
             const result = await response.json();
 
             if (!response.ok) {
-              return { error: result.error || 'Failed to fetch profile' };
+              return { error: apiErrorMessage(result, 'Failed to fetch profile') };
             }
 
             if (result.success && result.data) {
@@ -333,7 +334,7 @@ export const useAuthStore = create<AuthState>()(
 
           if (!response.ok) {
             set({ isLoading: false });
-            return { error: result.error || 'Failed to update profile' };
+            return { error: apiErrorMessage(result, 'Failed to update profile') };
           }
 
           // Refetch profile to get updated data

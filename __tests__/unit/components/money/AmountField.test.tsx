@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * AmountField — the field where a wrong number costs real money.
  *
@@ -19,10 +20,10 @@ const RATE_CHF_PER_BTC = 100_000;
 let mockCurrency = 'CHF';
 let ratesLoaded = true;
 
-jest.mock('@/hooks/useUserCurrency', () => ({
+vi.mock('@/hooks/useUserCurrency', () => ({
   useUserCurrency: () => mockCurrency,
 }));
-jest.mock('@/hooks/useCurrencyConversion', () => ({
+vi.mock('@/hooks/useCurrencyConversion', () => ({
   useCurrencyConversion: () => ({
     isLoading: false,
     convertToBTC: (amount: number, from: string) =>
@@ -31,7 +32,7 @@ jest.mock('@/hooks/useCurrencyConversion', () => ({
       to === 'BTC' ? btc : ratesLoaded ? btc * RATE_CHF_PER_BTC : 0,
   }),
 }));
-jest.mock('@/hooks/useDisplayCurrency', () => ({
+vi.mock('@/hooks/useDisplayCurrency', () => ({
   useDisplayCurrency: () => ({
     formatAmountBtc: (btc: number) => `CHF ${(btc * RATE_CHF_PER_BTC).toFixed(2)}`,
   }),
@@ -45,7 +46,7 @@ const BOUNDS = { minBtc: 0.000001, maxBtc: 0.1 };
  * harness that never updates would report no errors and prove nothing.
  */
 function setup(over: Partial<React.ComponentProps<typeof AmountField>> = {}) {
-  const onChange = jest.fn();
+  const onChange = vi.fn();
 
   function Harness() {
     const [btc, setBtc] = useState(over.value ?? 0);
@@ -71,7 +72,7 @@ function setup(over: Partial<React.ComponentProps<typeof AmountField>> = {}) {
 beforeEach(() => {
   mockCurrency = 'CHF';
   ratesLoaded = true;
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe('entering an amount in the currency you think in', () => {

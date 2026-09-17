@@ -32,7 +32,7 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
     const body = await request.json();
     const v = wishlistFeedbackSchema.safeParse(body);
     if (!v.success) {
-      return apiBadRequest('Invalid request', v.error.errors);
+      return apiBadRequest('Invalid request', v.error.issues);
     }
     const d = v.data;
 

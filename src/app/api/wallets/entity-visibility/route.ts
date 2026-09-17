@@ -34,7 +34,7 @@ export const PATCH = withAuth(async (request: AuthenticatedRequest) => {
 
     const parsed = walletVisibilitySchema.safeParse(await request.json());
     if (!parsed.success) {
-      return apiBadRequest('Invalid input', parsed.error.errors);
+      return apiBadRequest('Invalid input', parsed.error.issues);
     }
     const { wallet_id, entity_type, entity_id, visibility } = parsed.data;
 

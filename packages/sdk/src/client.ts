@@ -8,7 +8,7 @@
  *   v0.4: `.get(id)` — added here, matches the server's GET-by-id
  *         shipped in 94e99909.
  *
- * Usage (FleetCrown, hirn.li, third parties):
+ * Usage (Loki, hirn.li, third parties):
  *
  *   import { OrangeCatClient } from '@orangecat/sdk';
  *

@@ -12,8 +12,8 @@ import { walletUpdateSchema } from '@/lib/validation/finance';
 import { buildWalletUpdates } from '@/domain/wallets/updateWallet';
 import { encrypt } from '@/domain/payments/encryptionService';
 
-jest.mock('@/domain/payments/encryptionService', () => ({
-  encrypt: jest.fn((plaintext: string) => `encrypted:${plaintext}`),
+vi.mock('@/domain/payments/encryptionService', () => ({
+  encrypt: vi.fn((plaintext: string) => `encrypted:${plaintext}`),
 }));
 
 type Parsed = ReturnType<typeof walletUpdateSchema.parse>;
@@ -65,13 +65,17 @@ describe('buildWalletUpdates', () => {
   });
 
   it('rejects a connection string that is not an NWC URI', () => {
-    const { updates, error } = buildWalletUpdates(parse({ nwc_connection_uri: 'https://evil.example' }));
+    const { updates, error } = buildWalletUpdates(
+      parse({ nwc_connection_uri: 'https://evil.example' })
+    );
     expect(updates).toBeNull();
     expect(error).not.toBeNull();
   });
 
   it('clears a handle when the form sends an empty value', () => {
-    const { updates, error } = buildWalletUpdates(parse({ lightning_address: '', address_or_xpub: '' }));
+    const { updates, error } = buildWalletUpdates(
+      parse({ lightning_address: '', address_or_xpub: '' })
+    );
     expect(error).toBeNull();
     expect(updates).toMatchObject({ lightning_address: null, address_or_xpub: null });
   });

@@ -19,36 +19,39 @@ import { applyRateLimitHeaders, type RateLimitResult } from '@/lib/rate-limit';
 import { prepareCatChat } from '@/services/cat/chat-prepare';
 import { enforceGrounding } from '@/services/cat/grounding';
 import { parseActionsFromResponse } from '@/services/cat/response-parser';
+import { messageMightNeedTools } from '@/services/cat/tool-use-detection';
 import { saveMessages } from '@/services/cat/conversation-history';
 import { buildFailedTurnMessages } from '@/services/cat/failed-turn';
 import { alertCatChatFailure } from '@/services/cat/failure-alert';
 import { resolveProvider, type FallbackProvider } from '@/services/cat/provider-resolver';
+import { actionsViaForModel, observedToolVerdict } from '@/services/cat/tool-capability';
 import { meterCreditUsage } from '@/services/cat/credit-metering';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { extractAndStoreMemories } from '@/services/cat/memory';
 import { extractAndStoreEconomicProfile } from '@/services/cat/economic-profile';
 import {
   maybeEnrichWithSearchResults,
-  messageMightNeedTools,
   type ToolAugmentedMessage,
   type ToolCallEvent,
   type PrefillProposal,
 } from '@/services/cat/tool-use';
 import { isAgenticModel } from '@/config/model-capability';
-import { createActionExecutor } from '@/services/cat';
+import { runExecActions } from '@/services/cat/exec-actions';
 import { getUserActorId } from '@/domain/actors';
-import type { ExecAction, CatAction, ExecActionResult } from '@/types/cat';
 import { AI_MESSAGE_MAX_CHARS } from '@/lib/validation/ai';
 import { PAGE_EXCERPT_MAX_CHARS } from '@/config/cat-page-context';
 import { markLinkDown } from '@/services/ai/link-health';
-import { promptFitsGroqOnDemand } from '@/services/ai/groq';
+import { isGroqDailyPoolSpent } from '@/services/ai/groq-capacity';
+import { EmptyCompletion, hasUsableContent } from '@/services/cat/empty-completion';
+import { promptFitsGroqOnDemand, GROQ_CHAT_MAX_TOKENS } from '@/services/ai/groq';
+import { getGroqTpmLimit, recordOpenRouterRateLimit } from '@/services/ai/groq-capacity';
 
 export const catChatBodySchema = z.object({
   message: z.string().min(1).max(AI_MESSAGE_MAX_CHARS),
   model: z.string().optional(),
   stream: z.boolean().optional(),
   /** Target conversation. Omitted → the user's default conversation. */
-  conversationId: z.string().uuid().optional(),
+  conversationId: z.string().guid().optional(),
   /**
    * Runtime session hints from the client. Optional and untrusted — the server
    * validates each field. Drive Cat's locale, price quoting, and recent-page
@@ -100,9 +103,44 @@ class GroqPreflightSkip extends Error {
 function overflowsPlatformGroq(
   provider: string,
   hasByok: boolean,
+  model: string,
   messages: ToolAugmentedMessage[]
 ): boolean {
-  return provider === 'groq' && !hasByok && !promptFitsGroqOnDemand(messages);
+  if (provider !== 'groq' || hasByok) {
+    return false;
+  }
+  // A day that is already spent is as certain a failure as a prompt that does
+  // not fit, and it is learned the same way — from the refusal itself. Without
+  // this, every message pays a guaranteed 429 round-trip to Groq before the
+  // chain moves on, for however many hours remain until the pool resets.
+  //
+  // It stands down only what the vendor actually refused, and only until the
+  // reset time the refusal names. A model never refused is never skipped:
+  // "not asked" is not "spent".
+  if (isGroqDailyPoolSpent(model)) {
+    return true;
+  }
+  return !promptFitsGroqOnDemand(messages, model);
+}
+
+/**
+ * Headroom left under the per-minute cap after the reply reserve: slack for
+ * the estimate itself, which counts characters rather than tokenising. The
+ * estimate errs high, but a tokeniser disagreeing by a few percent on an 8 000
+ * budget is the difference between a reply and a 413.
+ */
+const PROMPT_BUDGET_MARGIN_TOKENS = 150;
+
+/**
+ * A 429 from OpenRouter's free pool names the day it ran out
+ * (`free-models-per-day`). Remembering that is what lets the capacity meter
+ * say "resets at 00:00 UTC" instead of the app's old guess, "try again in a
+ * minute" — which was a lie for the one refusal a wait never fixes.
+ */
+function noteRateLimit(provider: string, err: unknown): void {
+  if (provider === 'openrouter' && err instanceof Error) {
+    recordOpenRouterRateLimit(err.message);
+  }
 }
 
 /**
@@ -145,68 +183,20 @@ export function isAiRateLimitError(error: unknown): boolean {
 }
 
 /**
- * Execute all exec_action blocks parsed from an AI response.
- * Actions with requiresConfirmation=true create pending actions in the DB.
- * Actions without confirmation run immediately.
- * Results are returned alongside the chat response for the client.
+ * Record which link actually answered the turn.
+ *
+ * Losses were logged here and wins were not, so the box sweep that divides one
+ * by the other could only ever see losses — a provider failing every call and
+ * one answering every call produced the same silence, because the fallback
+ * chain served both identically. `{ always: true }` because production logs at
+ * `warn`, and a counter a monitor reads must outlive the log level.
+ *
+ * Only the link is recorded. Never the message, never the answer.
  */
-async function runExecActions(
-  supabase: AuthenticatedRequest['supabase'],
-  userId: string,
-  actorId: string | null,
-  actions: CatAction[]
-): Promise<ExecActionResult[]> {
-  const execActions = actions.filter((a): a is ExecAction => a.type === 'exec_action');
-  if (execActions.length === 0) {
-    return [];
-  }
-  if (!actorId) {
-    return execActions.map(a => ({
-      actionId: a.actionId,
-      status: 'failed' as const,
-      code: 'unknown' as const,
-      error: 'User has no actor record',
-    }));
-  }
-
-  const executor = createActionExecutor(supabase);
-  const results: ExecActionResult[] = [];
-
-  for (const action of execActions) {
-    try {
-      const result = await executor.executeAction(userId, actorId, {
-        actionId: action.actionId,
-        parameters: action.parameters,
-      });
-      // Extract displayMessage from handler data (handlers attach it as data.displayMessage)
-      const handlerData = result.data as Record<string, unknown> | undefined;
-      const displayMessage =
-        typeof handlerData?.displayMessage === 'string' ? handlerData.displayMessage : undefined;
-      results.push({
-        actionId: action.actionId,
-        status:
-          result.status === 'completed'
-            ? 'completed'
-            : result.status === 'pending_confirmation'
-              ? 'pending_confirmation'
-              : 'failed',
-        data: result.data,
-        displayMessage,
-        code: result.code,
-        error: result.error,
-        pendingActionId: result.pendingActionId,
-      });
-    } catch (err) {
-      results.push({
-        actionId: action.actionId,
-        status: 'failed',
-        code: 'unknown',
-        error: err instanceof Error ? err.message : 'Execution error',
-      });
-    }
-  }
-
-  return results;
+function logServed(provider: string, model: string): void {
+  logger.info('Cat chat: model call served', { link: `${provider}/${model}` }, 'cat/chat', {
+    always: true,
+  });
 }
 
 /**
@@ -252,9 +242,10 @@ export async function orchestrateCatChat(
     aiService,
     platformUsage,
     keyService,
-    userGroqKey,
     metered,
     fallbacks,
+    toolEndpoint,
+    toolKey,
   } = resolved;
 
   // One stable id per request — the ledger idempotency ref for a metered
@@ -267,6 +258,53 @@ export async function orchestrateCatChat(
   // Prompt assembly (context + memories + custom instructions + history)
   // lives in chat-prepare — shared with /api/cat/prepare so LOCAL models
   // (Ollama / LM Studio in the user's browser) get the identical brain.
+  // Does this provider get native tool definitions? If so the prose catalog is
+  // 18k chars of duplicate (ADR-0006 D7); if not, the exec_action text path is
+  // Cat's only way to act and the prose has to stay. Same predicate the tool
+  // layer branches on, so the prompt cannot promise what the call won't send.
+  //
+  // Decided from the PRIMARY provider and not rebuilt when the chain falls back
+  // mid-stream, which is safe in both directions: a 'tools' prompt reaching a
+  // provider with no tools leaves Cat without a catalog, so it does not claim
+  // to act; a 'prose' prompt reaching a tool-capable one just describes the
+  // envelope twice, and the exec_action text path still executes it. Neither
+  // ends with the user being told something happened that did not.
+  // The prompt's claim must track what will ACTUALLY be sent. `'tools'` drops
+  // the prose action catalogue because definitions replace it, so claiming it
+  // when no definitions go out leaves Cat with no verb at all — neither the
+  // loop nor the prose envelope. That is why the credentials are part of the
+  // question, not just the model's capability.
+  const actionsVia = actionsViaForModel(
+    modelToUse,
+    Boolean(toolEndpoint && toolKey),
+    observedToolVerdict(modelToUse, toolKey)
+  );
+
+  // Build the prompt to FIT the link that will answer, rather than discovering
+  // it does not. The free Groq pool refuses any single request over its
+  // per-minute cap (8 000 tokens for the models this key serves, reply reserve
+  // included) — and Cat's system prompt alone measured 9 100 tokens in tool
+  // mode on 2026-09-11, so platform Groq could not serve one message. Every
+  // turn paid a guaranteed 413, fell through to OpenRouter's free pool, and
+  // exhausted THAT by mid-morning; the user then read "Free AI capacity is
+  // maxed out right now" for the rest of the day.
+  //
+  // The budget is the smallest cap among the platform-Groq links in this
+  // user's chain. A BYOK chain, or one with no Groq link, gets the whole
+  // prompt: their limits are their own and usually far higher.
+  const platformGroqModels = [
+    { provider, hasByok, model: modelToUse },
+    ...fallbacks.map(f => ({ provider: f.provider, hasByok: f.hasByok, model: f.modelToUse })),
+  ]
+    .filter(link => link.provider === 'groq' && !link.hasByok)
+    .map(link => link.model);
+  const tokenBudget =
+    platformGroqModels.length > 0
+      ? Math.min(...platformGroqModels.map(m => getGroqTpmLimit(m))) -
+        GROQ_CHAT_MAX_TOKENS -
+        PROMPT_BUDGET_MARGIN_TOKENS
+      : undefined;
+
   const prepared = await prepareCatChat(supabase, user.id, {
     message,
     requestedConversationId,
@@ -276,13 +314,36 @@ export async function orchestrateCatChat(
     currentPath,
     currentEntity,
     pageExcerpt,
+    actionsVia,
+    tokenBudget,
   });
   const conversationId = prepared.conversationId;
+  // What fitting the budget cost, when it cost anything. Logged rather than
+  // silent: a prompt that reaches the model without the user's context is a
+  // different answer, and the reason has to be findable.
+  if (
+    prepared.budget &&
+    (!prepared.budget.fits ||
+      prepared.budget.historyDropped > 0 ||
+      prepared.budget.contextTruncated ||
+      prepared.budget.contextDropped ||
+      prepared.budget.fewShotDropped ||
+      prepared.budget.sectionsDropped.length > 0)
+  ) {
+    logger.info(
+      'Cat chat: prompt fitted to the free-tier budget',
+      { ...prepared.budget },
+      'cat/chat'
+    );
+  }
 
   // Does this message want more than chat (discovery, creation, multi-step)?
   // If so AND the answering model isn't agentic (frontier), we flag the
   // response so the UI can gently suggest upgrading to a more powerful model.
   // Uses the same signal that gates tool use — one source of truth.
+  // Advisory ONLY: drives the `suggestUpgrade` hint in the done event. This
+  // is no longer a gate on tools (ADR-0006 D3) — it just guesses whether the
+  // user would benefit from an agentic model, and a wrong guess costs a hint.
   const wantsAgentic = messageMightNeedTools(message);
 
   const baseMessages: ToolAugmentedMessage[] = prepared.messages;
@@ -322,15 +383,25 @@ export async function orchestrateCatChat(
           // proposals (the prefill_entity_form tool) emit a second event
           // type carrying the structured draft so the UI can render a
           // PrefilledFormCard instead of narrating field values as prose.
+          // Everything Cat read from the web this turn, as evidence blocks
+          // labelled with the citation handle that licenses each one. Fed to
+          // the grounding check below so a figure Cat correctly quoted from a
+          // page is recognised as quoted rather than flagged as invented.
+          const webEvidence: string[] = [];
+
+          const streamedToolCalls: ToolCallEvent[] = [];
           const messages = await maybeEnrichWithSearchResults(
             supabase,
             user.id,
             baseMessages,
             message,
             provider,
-            userGroqKey,
             modelToUse,
             (event: ToolCallEvent) => {
+              // Kept as well as sent. The SSE frame reaches the live tab and
+              // nothing else; without this copy the chips exist only in that
+              // tab's React state and a reload erases what Cat did.
+              streamedToolCalls.push(event);
               controller.enqueue(
                 encoder.encode(`data: ${JSON.stringify({ tool_call: event })}\n\n`)
               );
@@ -339,6 +410,20 @@ export async function orchestrateCatChat(
               controller.enqueue(
                 encoder.encode(`data: ${JSON.stringify({ prefill_proposal: proposal })}\n\n`)
               );
+            },
+            // ADR-0006 D2 — with an actor, the tool phase may also EXECUTE
+            // actions, so their outcome is in the messages the model writes
+            // from. Without one nothing can be created, and the phase stays
+            // read-only.
+            {
+              actorId,
+              // The active step's own endpoint and key, so a BYOK user's tools
+              // reach THEIR vendor rather than being silently dropped.
+              toolEndpoint,
+              toolKey,
+              onWebEvidence: evidence => {
+                webEvidence.push(...evidence);
+              },
             }
           );
 
@@ -370,11 +455,19 @@ export async function orchestrateCatChat(
             // own invention back as history next turn.
             //
             // Scoped to entity-attribution: Cat must stay free to name Lightning,
-            // Twint or PayPal in general advice. See agent-core/verify.ts.
+            // Twint or PayPal in general advice. See @bitbaum/ai-kit/grounding verify.
             const groundingCheck = await enforceGrounding({
               content: fullContent,
               message,
-              grounding: prepared.grounding,
+              grounding: {
+                ...prepared.grounding,
+                // Pages and results Cat actually read this turn count as
+                // evidence. Without this the citation handles would be
+                // decorative: the verifier would flag every real figure Cat
+                // correctly quoted from a source as a novel number, and the
+                // repair pass would delete the researched half of the answer.
+                evidence: [...prepared.grounding.evidence, ...webEvidence],
+              },
               service: activeService,
               model: activeModel,
               userId: user.id,
@@ -415,14 +508,22 @@ export async function orchestrateCatChat(
                 );
               }
               if (chunk.done) {
+                if (!streamStarted) {
+                  throw new EmptyCompletion(activeProvider, activeModel);
+                }
                 await emitDone();
                 doneEmitted = true;
+                logServed(activeProvider, activeModel);
                 break;
               }
             }
-            // Provider stream ended without a done chunk — still finalize so
-            // the client never waits on a reply that will never come.
+            // Provider stream ended without a done chunk. Same rule: nothing
+            // streamed is a failed link, not a finished answer. Finalising here
+            // is what made an empty 200 look like a completed reply.
             if (!doneEmitted) {
+              if (!streamStarted) {
+                throw new EmptyCompletion(activeProvider, activeModel);
+              }
               await emitDone();
             }
           };
@@ -438,7 +539,10 @@ export async function orchestrateCatChat(
           // the prompt outgrows the on-demand TPM limit — skip the guaranteed
           // failure when another link can serve. BYOK Groq (possibly a higher
           // tier) and a chain with no other links still get the real attempt.
-          if (fallbacks.length > 0 && overflowsPlatformGroq(provider, hasByok, messages)) {
+          if (
+            fallbacks.length > 0 &&
+            overflowsPlatformGroq(provider, hasByok, modelToUse, messages)
+          ) {
             lastErr = new GroqPreflightSkip();
           } else {
             try {
@@ -458,12 +562,13 @@ export async function orchestrateCatChat(
             // pre-flight skip is never marked either: this user's prompt is
             // too big for the link, other users' prompts may fit it fine.
             if (activeIsPlatform && !(lastErr instanceof GroqPreflightSkip)) {
+              noteRateLimit(activeProvider, lastErr);
               markLinkDown(activeProvider, activeModel);
             }
             const next = fallbacks[fallbackIndex++];
             if (
               fallbackIndex < fallbacks.length &&
-              overflowsPlatformGroq(next.provider, next.hasByok, messages)
+              overflowsPlatformGroq(next.provider, next.hasByok, next.modelToUse, messages)
             ) {
               lastErr = new GroqPreflightSkip();
               continue;
@@ -502,9 +607,19 @@ export async function orchestrateCatChat(
           }
           if (lastErr) {
             if (activeIsPlatform && !(lastErr instanceof GroqPreflightSkip)) {
+              noteRateLimit(activeProvider, lastErr);
               markLinkDown(activeProvider, activeModel);
             }
-            throw lastErr;
+            // Every link came back empty. NOW the honest sentence is right —
+            // it is the chain's verdict rather than the first link's. Throwing
+            // instead would replace today's polite ending with an error page,
+            // which would be a regression for the one case where the apology
+            // was always the correct answer.
+            if (lastErr instanceof EmptyCompletion && !streamStarted) {
+              await emitDone();
+            } else {
+              throw lastErr;
+            }
           }
 
           if (conversationId && fullContent) {
@@ -516,6 +631,10 @@ export async function orchestrateCatChat(
                 model_used: activeModel,
                 provider: activeProvider,
                 token_count: usage?.totalTokens,
+                // What Cat DID, stored with what it said. Held only in React
+                // state before, so a reload erased the chips — and with them
+                // the sources behind the citations in this very sentence.
+                tool_calls: streamedToolCalls,
               },
             ]).catch((err: unknown) => {
               logger.error('Failed to persist streaming messages', { err }, 'cat/chat');
@@ -574,7 +693,7 @@ export async function orchestrateCatChat(
             errPayload = {
               error: hasByok
                 ? 'Your provider returned a rate-limit. Try again in a moment.'
-                : 'Free AI capacity is maxed out right now. Try again in a minute — or add your own free Groq key in Settings → API Keys for capacity that’s all yours.',
+                : 'Free AI capacity is maxed out right now. Try again in a minute — or add your own free Groq key in Settings → AI for capacity that’s all yours.',
               code: 'AI_RATE_LIMITED',
             };
           } else if (attemptedFallback) {
@@ -583,14 +702,14 @@ export async function orchestrateCatChat(
             // the same; the details are in the server log either way.
             errPayload = {
               error: hasByok
-                ? 'None of your providers could answer just now. Check your keys in Settings → API Keys, then try again.'
-                : 'Cat couldn’t reach an AI model just now — this is usually momentary. Try again; if it keeps happening, add your own free Groq key in Settings → API Keys.',
+                ? 'None of your providers could answer just now. Check your keys in Settings → AI, then try again.'
+                : 'Cat couldn’t reach an AI model just now — this is usually momentary. Try again; if it keeps happening, add your own free Groq key in Settings → AI.',
               code: 'ALL_PROVIDERS_DOWN',
             };
           } else {
             errPayload = {
               error:
-                'Cat couldn’t generate a response. Try again, or add your own key in Settings → API Keys.',
+                'Cat couldn’t generate a response. Try again, or add your own key in Settings → AI.',
               code: 'STREAM_ERROR',
             };
           }
@@ -665,15 +784,20 @@ export async function orchestrateCatChat(
     baseMessages,
     message,
     provider,
-    userGroqKey,
     modelToUse,
     (event: ToolCallEvent) => {
       collectedToolCalls.push(event);
     },
     (proposal: PrefillProposal) => {
       collectedPrefillProposals.push(proposal);
-    }
+    },
+    // Same as the streaming path: an actor is what makes actions callable.
+    { actorId, toolEndpoint, toolKey }
   );
+  // The non-streaming path runs no grounding check (see below), so there is
+  // nothing here to feed web evidence into. Stated rather than left as an
+  // unexplained asymmetry between two call sites of the same function.
+
   // Try primary; on ANY failure (rate-limit, retired model id, upstream
   // 5xx), walk the fallback chain. Non-streaming is even safer than
   // streaming because each attempt is atomic — no partial-content
@@ -684,7 +808,7 @@ export async function orchestrateCatChat(
   let lastErr: unknown = null;
   // Same pre-flight as the streaming path: never pay a guaranteed 413 on a
   // platform-Groq link when another link can serve this prompt.
-  if (fallbacks.length > 0 && overflowsPlatformGroq(provider, hasByok, messages)) {
+  if (fallbacks.length > 0 && overflowsPlatformGroq(provider, hasByok, modelToUse, messages)) {
     lastErr = new GroqPreflightSkip();
   } else {
     try {
@@ -693,6 +817,12 @@ export async function orchestrateCatChat(
         messages,
         temperature: 0.7,
       });
+      // `while (!result && ...)` below treats any object as an answer, so an
+      // empty 200 stopped the walk before a working link was ever tried.
+      if (!hasUsableContent(result?.content)) {
+        result = undefined;
+        lastErr = new EmptyCompletion(provider as string, modelToUse);
+      }
     } catch (err) {
       lastErr = err;
     }
@@ -701,13 +831,14 @@ export async function orchestrateCatChat(
   let lastTried = { provider: provider as string, model: modelToUse, platform: !hasByok };
   while (!result && lastErr && fallbackIndex < fallbacks.length) {
     if (lastTried.platform && !(lastErr instanceof GroqPreflightSkip)) {
+      noteRateLimit(lastTried.provider, lastErr);
       markLinkDown(lastTried.provider, lastTried.model);
     }
     const next = fallbacks[fallbackIndex++];
     lastTried = { provider: next.provider, model: next.modelToUse, platform: !next.hasByok };
     if (
       fallbackIndex < fallbacks.length &&
-      overflowsPlatformGroq(next.provider, next.hasByok, messages)
+      overflowsPlatformGroq(next.provider, next.hasByok, next.modelToUse, messages)
     ) {
       lastErr = new GroqPreflightSkip();
       continue;
@@ -730,6 +861,11 @@ export async function orchestrateCatChat(
         messages,
         temperature: 0.7,
       });
+      if (!hasUsableContent(result?.content)) {
+        result = undefined;
+        lastErr = new EmptyCompletion(next.provider, next.modelToUse);
+        continue;
+      }
       fellBackTo = next;
       activeProvider = next.provider;
       lastErr = null;
@@ -739,10 +875,12 @@ export async function orchestrateCatChat(
   }
   if (!result) {
     if (lastTried.platform && !(lastErr instanceof GroqPreflightSkip)) {
+      noteRateLimit(lastTried.provider, lastErr);
       markLinkDown(lastTried.provider, lastTried.model);
     }
     throw lastErr ?? new Error('Cat chat: no AI provider produced a response');
   }
+  logServed(lastTried.provider, lastTried.model);
 
   if (metered && meterRef && !fellBackTo) {
     // Credit-paid frontier exchange (non-streaming): debit only when the
@@ -774,6 +912,7 @@ export async function orchestrateCatChat(
         model_used: result.model,
         provider: activeProvider,
         token_count: result.totalTokens,
+        tool_calls: collectedToolCalls,
       },
     ]).catch((err: unknown) => {
       logger.error('Failed to persist messages', { err }, 'cat/chat');

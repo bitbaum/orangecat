@@ -18,25 +18,27 @@ import { STATUS } from '@/config/database-constants';
 import { checkOnchainPaymentStatus } from '@/domain/payments/paymentStatusService';
 import { NotificationDispatcher } from '@/services/notifications/dispatcher';
 import { getAdminClient } from '@/lib/supabase/admin';
-const getAdminClientMock = getAdminClient as jest.Mock;
+import type { Mock } from 'vitest';
 
-jest.mock('@/utils/logger', () => ({
-  logger: { warn: jest.fn(), error: jest.fn(), info: jest.fn(), debug: jest.fn() },
-}));
-jest.mock('@/lib/email/send-seller-notification', () => ({
-  sendSellerPaymentNotification: jest.fn().mockResolvedValue(undefined),
-}));
-jest.mock('@/services/notifications/dispatcher', () => ({
-  NotificationDispatcher: { dispatch: jest.fn().mockResolvedValue(undefined) },
-}));
-jest.mock('@/domain/payments/paymentStatusService', () => ({
-  checkNWCPaymentStatus: jest.fn(),
-  checkOnchainPaymentStatus: jest.fn(),
-}));
-jest.mock('@/lib/supabase/admin', () => ({ getAdminClient: jest.fn() }));
+const getAdminClientMock = getAdminClient as Mock;
 
-const onchainMock = checkOnchainPaymentStatus as jest.Mock;
-const dispatchMock = NotificationDispatcher.dispatch as jest.Mock;
+vi.mock('@/utils/logger', () => ({
+  logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() },
+}));
+vi.mock('@/lib/email/send-seller-notification', () => ({
+  sendSellerPaymentNotification: vi.fn().mockResolvedValue(undefined),
+}));
+vi.mock('@/services/notifications/dispatcher', () => ({
+  NotificationDispatcher: { dispatch: vi.fn().mockResolvedValue(undefined) },
+}));
+vi.mock('@/domain/payments/paymentStatusService', () => ({
+  checkNWCPaymentStatus: vi.fn(),
+  checkOnchainPaymentStatus: vi.fn(),
+}));
+vi.mock('@/lib/supabase/admin', () => ({ getAdminClient: vi.fn() }));
+
+const onchainMock = checkOnchainPaymentStatus as Mock;
+const dispatchMock = NotificationDispatcher.dispatch as Mock;
 
 const PI_ID = 'pi-race';
 const SELLER = 'seller-1';
@@ -63,21 +65,21 @@ const intent = {
  *        PostgREST returns an empty array, no error.
  */
 function makeSupabase(claimWon: boolean) {
-  const rpc = jest.fn(() => Promise.resolve({ error: null }));
+  const rpc = vi.fn(() => Promise.resolve({ error: null }));
   const builder: Record<string, unknown> = {};
   for (const m of ['select', 'update', 'eq', 'neq', 'in']) {
-    builder[m] = jest.fn(() => builder);
+    builder[m] = vi.fn(() => builder);
   }
-  builder.single = jest.fn(() => Promise.resolve({ data: intent, error: null }));
+  builder.single = vi.fn(() => Promise.resolve({ data: intent, error: null }));
   builder.then = (resolve: (v: unknown) => unknown, reject: (e: unknown) => unknown) =>
     Promise.resolve({ data: claimWon ? [{ id: PI_ID }] : [], error: null }).then(resolve, reject);
-  const client = { from: jest.fn(() => builder), rpc } as never;
+  const client = { from: vi.fn(() => builder), rpc } as never;
   getAdminClientMock.mockReturnValue(client);
   return client;
 }
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   onchainMock.mockResolvedValue('confirmed');
 });
 
@@ -99,18 +101,18 @@ describe('exactly-once settlement', () => {
     // ...but nothing may fire a second time.
     expect(dispatchMock).not.toHaveBeenCalled();
     // Above all: no second inventory decrement (that would oversell).
-    expect((supabase as unknown as { rpc: jest.Mock }).rpc).not.toHaveBeenCalled();
+    expect((supabase as unknown as { rpc: Mock }).rpc).not.toHaveBeenCalled();
   });
 
   it('notifies once when two observers report the same payment concurrently', async () => {
     // First caller claims the row; the second finds it already paid.
     let claimed = false;
-    const rpc = jest.fn(() => Promise.resolve({ error: null }));
+    const rpc = vi.fn(() => Promise.resolve({ error: null }));
     const builder: Record<string, unknown> = {};
     for (const m of ['select', 'update', 'eq', 'neq', 'in']) {
-      builder[m] = jest.fn(() => builder);
+      builder[m] = vi.fn(() => builder);
     }
-    builder.single = jest.fn(() => Promise.resolve({ data: intent, error: null }));
+    builder.single = vi.fn(() => Promise.resolve({ data: intent, error: null }));
     builder.then = (resolve: (v: unknown) => unknown, reject: (e: unknown) => unknown) => {
       const won = !claimed;
       claimed = true;
@@ -119,7 +121,7 @@ describe('exactly-once settlement', () => {
         reject
       );
     };
-    const supabase = { from: jest.fn(() => builder), rpc } as never;
+    const supabase = { from: vi.fn(() => builder), rpc } as never;
     getAdminClientMock.mockReturnValue(supabase);
 
     await Promise.all([

@@ -30,7 +30,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Loader2, Target, DollarSign, Percent, Calendar } from 'lucide-react';
 import { Loan } from '@/types/loans';
 import { useMakeOfferForm } from './useMakeOfferForm';
-import { LOAN_OFFER_TYPES } from '@/config/loans';
+import { LOAN_OFFER_TYPE_OPTIONS } from '@/config/loans';
 
 interface MakeOfferDialogProps {
   loan: Loan;
@@ -100,7 +100,7 @@ export function MakeOfferDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {LOAN_OFFER_TYPES.map(opt => (
+                      {LOAN_OFFER_TYPE_OPTIONS.map(opt => (
                         <SelectItem key={opt.value} value={opt.value}>
                           {opt.label}
                         </SelectItem>

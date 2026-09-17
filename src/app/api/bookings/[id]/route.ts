@@ -22,6 +22,7 @@ import {
 } from '@/lib/api/standardResponse';
 import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
 import { validateUUID, getValidationError } from '@/lib/api/validation';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -146,7 +147,7 @@ export const DELETE = withAuth(async (request: AuthenticatedRequest, context: Ro
       new URL(request.url).searchParams.get('reason') || undefined
     );
     if (!result.success) {
-      return apiBadRequest(result.error || 'Cancel failed');
+      return apiBadRequest(apiErrorMessage(result, 'Cancel failed'));
     }
     return apiSuccess({ success: true });
   } catch (error) {

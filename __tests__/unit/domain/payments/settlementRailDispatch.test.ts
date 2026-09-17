@@ -22,27 +22,29 @@ import { DATABASE_TABLES } from '@/config/database-tables';
 import type { PaymentIntent } from '@/domain/payments/types';
 import { createFakeSupabase, type Row } from '../../../../test-utils/fakeSupabase';
 
-jest.mock('@/utils/logger', () => ({
-  logger: { warn: jest.fn(), error: jest.fn(), info: jest.fn(), debug: jest.fn() },
+vi.mock('@/utils/logger', () => ({
+  logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
-jest.mock('@/lib/email/send-seller-notification', () => ({
-  sendSellerPaymentNotification: jest.fn().mockResolvedValue(undefined),
+vi.mock('@/lib/email/send-seller-notification', () => ({
+  sendSellerPaymentNotification: vi.fn().mockResolvedValue(undefined),
 }));
-jest.mock('@/services/notifications/dispatcher', () => ({
-  NotificationDispatcher: { dispatch: jest.fn().mockResolvedValue(undefined) },
+vi.mock('@/services/notifications/dispatcher', () => ({
+  NotificationDispatcher: { dispatch: vi.fn().mockResolvedValue(undefined) },
 }));
-jest.mock('@/domain/payments/paymentStatusService', () => ({
-  checkNWCPaymentStatus: jest.fn(),
-  checkOnchainPaymentStatus: jest.fn(),
-  checkLnurlVerifyPaymentStatus: jest.fn(),
+vi.mock('@/domain/payments/paymentStatusService', () => ({
+  checkNWCPaymentStatus: vi.fn(),
+  checkOnchainPaymentStatus: vi.fn(),
+  checkLnurlVerifyPaymentStatus: vi.fn(),
 }));
-jest.mock('@/lib/supabase/admin', () => ({ getAdminClient: jest.fn() }));
+vi.mock('@/lib/supabase/admin', () => ({ getAdminClient: vi.fn() }));
 
 import { getAdminClient } from '@/lib/supabase/admin';
-const getAdminClientMock = getAdminClient as jest.Mock;
-const nwcMock = checkNWCPaymentStatus as jest.Mock;
-const onchainMock = checkOnchainPaymentStatus as jest.Mock;
-const lnurlMock = checkLnurlVerifyPaymentStatus as jest.Mock;
+import type { Mock } from 'vitest';
+
+const getAdminClientMock = getAdminClient as Mock;
+const nwcMock = checkNWCPaymentStatus as Mock;
+const onchainMock = checkOnchainPaymentStatus as Mock;
+const lnurlMock = checkLnurlVerifyPaymentStatus as Mock;
 
 const ALIVE = new Date(Date.now() + 60 * 60 * 1000).toISOString();
 const DEAD = new Date(Date.now() - 60 * 60 * 1000).toISOString();
@@ -82,7 +84,7 @@ function world(pi: PaymentIntent) {
 }
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   nwcMock.mockResolvedValue(false);
   lnurlMock.mockResolvedValue(false);
   onchainMock.mockResolvedValue('none');
@@ -91,7 +93,8 @@ beforeEach(() => {
 describe('each method asks its own authority and no other', () => {
   it('asks the NWC relay for an NWC payment', async () => {
     const pi = intent();
-    await reconcilePaymentIntent(world(pi).client, pi);
+    world(pi);
+    await reconcilePaymentIntent(pi);
 
     expect(nwcMock).toHaveBeenCalledTimes(1);
     expect(lnurlMock).not.toHaveBeenCalled();
@@ -104,7 +107,8 @@ describe('each method asks its own authority and no other', () => {
       payment_hash: null,
       lnurl_verify_url: 'https://ln.example/verify/1',
     });
-    await reconcilePaymentIntent(world(pi).client, pi);
+    world(pi);
+    await reconcilePaymentIntent(pi);
 
     expect(lnurlMock).toHaveBeenCalledTimes(1);
     expect(nwcMock).not.toHaveBeenCalled();
@@ -117,7 +121,8 @@ describe('each method asks its own authority and no other', () => {
       payment_hash: null,
       onchain_address: 'bc1qexample',
     });
-    await reconcilePaymentIntent(world(pi).client, pi);
+    world(pi);
+    await reconcilePaymentIntent(pi);
 
     expect(onchainMock).toHaveBeenCalledTimes(1);
     expect(nwcMock).not.toHaveBeenCalled();
@@ -128,21 +133,24 @@ describe('each method asks its own authority and no other', () => {
 describe('a rail is never asked without what it needs to answer', () => {
   it('does not query the relay for an NWC intent with no payment hash', async () => {
     const pi = intent({ payment_hash: null });
-    await reconcilePaymentIntent(world(pi).client, pi);
+    world(pi);
+    await reconcilePaymentIntent(pi);
 
     expect(nwcMock).not.toHaveBeenCalled();
   });
 
   it('does not query the mempool for an on-chain intent with no address', async () => {
     const pi = intent({ payment_method: 'onchain', payment_hash: null, onchain_address: null });
-    await reconcilePaymentIntent(world(pi).client, pi);
+    world(pi);
+    await reconcilePaymentIntent(pi);
 
     expect(onchainMock).not.toHaveBeenCalled();
   });
 
   it('does not query a verify URL a bare Lightning address does not have', async () => {
     const pi = intent({ payment_method: 'lightning_address', payment_hash: null });
-    await reconcilePaymentIntent(world(pi).client, pi);
+    world(pi);
+    await reconcilePaymentIntent(pi);
 
     expect(lnurlMock).not.toHaveBeenCalled();
   });
@@ -153,7 +161,9 @@ describe('only the authority can settle a payment', () => {
     nwcMock.mockResolvedValue(true);
     const pi = intent();
 
-    const result = await reconcilePaymentIntent(world(pi).client, pi);
+    world(pi);
+
+    const result = await reconcilePaymentIntent(pi);
 
     expect(result.status).toBe(STATUS.PAYMENT_INTENTS.PAID);
     expect(result.paid_at).not.toBeNull();
@@ -167,7 +177,9 @@ describe('only the authority can settle a payment', () => {
       lnurl_verify_url: 'https://ln.example/verify/1',
     });
 
-    const result = await reconcilePaymentIntent(world(pi).client, pi);
+    world(pi);
+
+    const result = await reconcilePaymentIntent(pi);
 
     expect(result.status).toBe(STATUS.PAYMENT_INTENTS.PAID);
   });
@@ -180,7 +192,9 @@ describe('only the authority can settle a payment', () => {
       onchain_address: 'bc1qexample',
     });
 
-    const result = await reconcilePaymentIntent(world(pi).client, pi);
+    world(pi);
+
+    const result = await reconcilePaymentIntent(pi);
 
     expect(result.status).toBe(STATUS.PAYMENT_INTENTS.PAID);
   });
@@ -194,7 +208,7 @@ describe('only the authority can settle a payment', () => {
     });
     const fake = world(pi);
 
-    const result = await reconcilePaymentIntent(fake.client, pi);
+    const result = await reconcilePaymentIntent(pi);
 
     expect(result.status).toBe(STATUS.PAYMENT_INTENTS.PENDING_CONFIRMATION);
     expect(result.paid_at).toBeNull();
@@ -213,7 +227,7 @@ describe('only the authority can settle a payment', () => {
     });
     const fake = world(pi);
 
-    await reconcilePaymentIntent(fake.client, pi);
+    await reconcilePaymentIntent(pi);
 
     expect(fake.updates).toEqual([]);
   });
@@ -222,7 +236,7 @@ describe('only the authority can settle a payment', () => {
     const pi = intent();
     const fake = world(pi);
 
-    const result = await reconcilePaymentIntent(fake.client, pi);
+    const result = await reconcilePaymentIntent(pi);
 
     expect(result.status).toBe(STATUS.PAYMENT_INTENTS.INVOICE_READY);
     expect(fake.updates).toEqual([]);
@@ -236,7 +250,9 @@ describe('expiry is only the truth after the rail has said no', () => {
     nwcMock.mockResolvedValue(true);
     const pi = intent({ expires_at: DEAD });
 
-    const result = await reconcilePaymentIntent(world(pi).client, pi);
+    world(pi);
+
+    const result = await reconcilePaymentIntent(pi);
 
     expect(result.status).toBe(STATUS.PAYMENT_INTENTS.PAID);
   });
@@ -245,7 +261,7 @@ describe('expiry is only the truth after the rail has said no', () => {
     const pi = intent({ expires_at: DEAD });
     const fake = world(pi);
 
-    const result = await reconcilePaymentIntent(fake.client, pi);
+    const result = await reconcilePaymentIntent(pi);
 
     expect(nwcMock).toHaveBeenCalled();
     expect(result.status).toBe(STATUS.PAYMENT_INTENTS.EXPIRED);
@@ -262,7 +278,7 @@ describe('expiry is only the truth after the rail has said no', () => {
     });
     const fake = world(pi);
 
-    const result = await reconcilePaymentIntent(fake.client, pi);
+    const result = await reconcilePaymentIntent(pi);
 
     expect(result.status).toBe(STATUS.PAYMENT_INTENTS.INVOICE_READY);
     expect(fake.updates).toEqual([]);
@@ -271,7 +287,9 @@ describe('expiry is only the truth after the rail has said no', () => {
   it('returns a terminal status without asking any rail', async () => {
     const pi = intent({ status: STATUS.PAYMENT_INTENTS.PAID, paid_at: '2026-08-01T10:00:00Z' });
 
-    const result = await reconcilePaymentIntent(world(pi).client, pi);
+    world(pi);
+
+    const result = await reconcilePaymentIntent(pi);
 
     expect(result).toEqual({
       status: STATUS.PAYMENT_INTENTS.PAID,

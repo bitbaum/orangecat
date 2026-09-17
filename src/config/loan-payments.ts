@@ -33,13 +33,13 @@ export const LOAN_PAYMENT_METHOD_LABELS: Record<LoanPaymentMethod, string> = {
 };
 
 export const createLoanPaymentSchema = z.object({
-  loan_id: z.string().uuid('loan_id must be a UUID'),
-  offer_id: z.string().uuid().optional(),
+  loan_id: z.string().guid('loan_id must be a UUID'),
+  offer_id: z.string().guid().optional(),
   amount: z.number().positive('amount must be greater than 0'),
   currency: z.enum(CURRENCY_CODES),
   payment_type: z.enum(LOAN_PAYMENT_TYPES),
-  payer_id: z.string().uuid().optional(),
-  recipient_id: z.string().uuid('recipient_id must be a UUID'),
+  payer_id: z.string().guid().optional(),
+  recipient_id: z.string().guid('recipient_id must be a UUID'),
   transaction_id: z.string().max(200).optional(),
   payment_method: z.enum(LOAN_PAYMENT_METHODS).optional(),
   notes: z.string().max(500).optional(),

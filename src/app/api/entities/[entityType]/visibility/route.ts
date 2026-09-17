@@ -26,7 +26,7 @@ import { z } from 'zod';
 
 // Request body schema
 const visibilityUpdateSchema = z.object({
-  ids: z.array(z.string().uuid()).min(1, 'At least one ID required'),
+  ids: z.array(z.string().guid()).min(1, 'At least one ID required'),
   show_on_profile: z.boolean(),
 });
 
@@ -56,7 +56,7 @@ export const PATCH = withAuth(async (request: AuthenticatedRequest, context: Rou
     const parseResult = visibilityUpdateSchema.safeParse(body);
 
     if (!parseResult.success) {
-      return apiBadRequest(parseResult.error.errors[0].message);
+      return apiBadRequest(parseResult.error.issues[0].message);
     }
 
     const { ids, show_on_profile } = parseResult.data;

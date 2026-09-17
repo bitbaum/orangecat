@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * A project is the platform's milestone-accountability entity: people fund it on
  * the promise of work getting done by a date. The create form has collected
@@ -14,14 +15,14 @@
 
 import { render, screen } from '@testing-library/react';
 
-jest.mock('@/hooks/useDisplayCurrency', () => ({
+vi.mock('@/hooks/useDisplayCurrency', () => ({
   useDisplayCurrency: () => ({
     formatAmountBtc: (n: number) => `${n} BTC`,
     formatAmount: (n: number) => `${n}`,
   }),
 }));
 
-jest.mock('@/lib/projectGoal', () => ({
+vi.mock('@/lib/projectGoal', () => ({
   computeAmountRaised: async (btc: number) => btc,
 }));
 

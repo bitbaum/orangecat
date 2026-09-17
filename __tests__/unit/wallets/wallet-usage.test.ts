@@ -6,12 +6,12 @@
  * resolution failure degrades to null instead of breaking the page.
  */
 
-jest.mock('@/utils/logger', () => ({
-  logger: { error: jest.fn(), warn: jest.fn(), info: jest.fn(), debug: jest.fn() },
+vi.mock('@/utils/logger', () => ({
+  logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 
-const mockResolve = jest.fn();
-jest.mock('@/domain/payments', () => ({
+const mockResolve = vi.fn();
+vi.mock('@/domain/payments', () => ({
   resolveSellerWallet: (...args: unknown[]) => mockResolve(...args),
 }));
 
@@ -22,7 +22,7 @@ let addressTwins: Array<{ id: string }> = [];
 let linkRows: Array<{ entity_type: string; entity_id: string }> = [];
 let visibleByTable: Record<string, string[]> = {};
 
-jest.mock('@/lib/supabase/admin', () => ({
+vi.mock('@/lib/supabase/admin', () => ({
   getAdminClient: () => ({
     from: (table: string) => {
       if (table === 'wallets') {
@@ -115,7 +115,7 @@ describe('getSharedWalletUsage — defects found by verifying against prod data'
   it('counts reuse across DIFFERENT wallet rows holding the SAME address', async () => {
     // Prod really holds orangecat@coinos.io in two wallet rows (and one xpub in
     // eleven). Per-wallet_id counting reported "not shared" for the platform's
-    // most visible reuse — the FleetCrown/OrangeCat case.
+    // most visible reuse — the Loki/OrangeCat case.
     mockResolve.mockResolvedValue({ method: 'lightning_address', wallet_id: 'w1' });
     walletRow = {
       id: 'w1',
@@ -160,7 +160,7 @@ describe('getSharedWalletUsage — defects found by verifying against prod data'
 
 describe('getSharedWalletUsage — owner-default detection', () => {
   it('flags the owner-default fallback when the entity has NO explicit link', async () => {
-    // The FleetCrown case: two passes both resolve to orangecat@coinos.io via
+    // The Loki case: two passes both resolve to orangecat@coinos.io via
     // the fallback chain, with zero entity_wallets rows and a wallet row that
     // is not flagged primary. Keying on is_primary alone disclosed nothing.
     mockResolve.mockResolvedValue({ method: 'lightning_address', wallet_id: 'w1' });

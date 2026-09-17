@@ -1,8 +1,8 @@
 module.exports = {
   NextRequest: class NextRequest {},
   NextResponse: {
-    json: jest.fn(),
-    redirect: jest.fn(),
-    next: jest.fn(),
+    json: vi.fn(),
+    redirect: vi.fn(),
+    next: vi.fn(),
   },
 };

@@ -37,7 +37,11 @@ export function AuthSocialLogin({ mode, setMode, loading, onOAuthSignIn }: AuthS
       {/* OAuth providers only. Anonymous sign-in is now the lead CTA above the
           email form (anonymous-first onboarding), so there's no secondary
           anonymous link here. */}
-      <div className="mt-6">
+      {/* max-[359px]:mt-3 — on the narrowest phones this is the row that
+          lands under the fixed Loki feedback FAB (bottom-right); a
+          tighter top margin here is the last of a few narrow-viewport-only
+          trims (see page.tsx) that lift it clear. */}
+      <div className="mt-6 max-[359px]:mt-3">
         {/* Social providers — only rendered for providers the server has
             enabled (see useEnabledOAuthProviders). When none are enabled the
             whole "Or continue with" block is omitted so users only ever see

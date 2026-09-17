@@ -72,6 +72,15 @@ const AUTH_ALLOWLIST: Record<string, string> = {
   // insert goes through the service-role client into a policy-less RLS table,
   // and the response never reveals whether an address was already subscribed.
   'newsletter/subscribe/route.ts': 'anonymous newsletter capture by design',
+  // Refusing a profile someone drafted FOR you must not require creating an
+  // account with the platform that drafted it — that would make "no" more
+  // expensive than "yes", and a consent mechanism that costs more than
+  // acceptance is not one. The claim token is the capability: it is the same
+  // credential that would have let the holder accept instead, it only ever
+  // moves a single row from pending to declined, and the route is per-IP rate
+  // limited like any other anonymous write.
+  'profile-claims/token/[token]/decline/route.ts':
+    'anonymous decline by design — the token is the capability, and requiring a signup to say no is not consent',
 };
 
 /**

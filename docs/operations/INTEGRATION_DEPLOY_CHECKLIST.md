@@ -4,7 +4,7 @@
 **Created**: 2026-06-04
 **Companion to**: `docs/operations/DEPLOYMENT_CHECKLIST.md` (the general OrangeCat
 deployment guide). This file covers the _additional_ steps to exercise an
-integration-key + webhook customer (FleetCrown, hirn.li, third-party).
+integration-key + webhook customer (Loki, hirn.li, third-party).
 
 This checklist is what an operator pulls up when running through the
 9-step deploy that shipped across the 211188a3 → 6da6b8cd thread. Each
@@ -20,12 +20,11 @@ step has the exact command, a verification, and a rollback if it fails.
 [ ] 3. Set customer-side env vars
        (ORANGECAT_API_KEY + ORANGECAT_API_BASE + WEBHOOK_SECRET)
 [ ] 4. Run customer-side DB migrations
-       (e.g. cd ~/dev/fleetcrown && npm run migrate)
+       (e.g. cd ~/dev/loki && pnpm run migrate)
 [ ] 5. Repack the SDK tarball into the customer's vendor/ folder
-[ ] 6. (Optional) npm publish --access public on @orangecat/sdk
+[ ] 6. (Optional) pnpm publish --access public on @orangecat/sdk
 [ ] 7. Set CRON_SECRET in OrangeCat prod env (/opt/orangecat/app/.env)
-[ ] 8. Set UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN
-       in OrangeCat prod env (/opt/orangecat/app/.env)
+[ ] 8. Rate limiting: nothing to set (in-process via limitkit — see Step 8)
 [ ] 9. Set WEBHOOK_SECRET_KEY in OrangeCat prod env (/opt/orangecat/app/.env)
        (master key encrypting webhook_endpoints.secret_encrypted at rest)
 
@@ -41,7 +40,7 @@ step has the exact command, a verification, and a rollback if it fails.
 2. Navigate to **Settings → Integrations**.
 3. Click **Create a new key** in the _Integration keys_ section.
 4. Fill out:
-   - **Name**: e.g. `FleetCrown production`
+   - **Name**: e.g. `Loki production`
    - **Acts as**: the actor the key acts as (personal or group).
    - **Environment**: leave **Sandbox** unchecked for production.
    - **Permissions**: leave **Full access (wildcard)** unless customer
@@ -61,7 +60,7 @@ the `Acts as` actor matches. `Scopes:` matches what was picked.
 1. On the same page, scroll to _Webhook endpoints_.
 2. Click **Create a new endpoint**.
 3. Fill out:
-   - **Name**: e.g. `FleetCrown subscriptions`
+   - **Name**: e.g. `Loki subscriptions`
    - **Acts as**: same actor as the integration key (the firing fan-out
      is per actor).
    - **Target URL**: the customer's inbound HTTPS URL. Production URLs
@@ -81,8 +80,8 @@ either `all` or the selected list.
 
 ## Step 3 — Set customer-side env vars
 
-In the customer's environment (e.g. FleetCrown — self-hosted on the same
-Hetzner box; edit `/opt/fleetcrown/app/.env`), set:
+In the customer's environment (e.g. Loki — self-hosted on the same
+Hetzner box; edit `/opt/loki/app/.env`), set:
 
 | Var                  | Value                                  |
 | -------------------- | -------------------------------------- |
@@ -92,7 +91,7 @@ Hetzner box; edit `/opt/fleetcrown/app/.env`), set:
 
 Apply to all environments the integration should run in (Production
 typically). Restart the customer app (e.g. `systemctl restart
-fleetcrown-app`) so the new env is loaded.
+loki-app`) so the new env is loaded.
 
 **Verify**: the customer's logs show the SDK initialised with the new
 key on first call.
@@ -104,11 +103,11 @@ call (401 from OrangeCat).
 
 ## Step 4 — Run customer-side DB migrations
 
-For FleetCrown specifically:
+For Loki specifically:
 
 ```bash
-cd ~/dev/fleetcrown
-npm run migrate
+cd ~/dev/loki
+pnpm run migrate
 # Applies drizzle/0021_subscriptions_orangecat_service_id.sql which
 # adds subscriptions.orangecat_service_id (nullable uuid) so the
 # "OC ✓" badge has somewhere to persist its link.
@@ -133,38 +132,38 @@ If consuming `@orangecat/sdk` via `file:vendor/orangecat-sdk-X.Y.Z.tgz`
 ```bash
 # Inside OrangeCat repo:
 cd ~/dev/orangecat/packages/sdk
-npm run build
-npm pack
+pnpm run build
+pnpm pack
 # Produces orangecat-sdk-<version>.tgz in the cwd.
 
 # Then copy into the customer's vendor folder:
-mv orangecat-sdk-*.tgz ~/dev/fleetcrown/vendor/
+mv orangecat-sdk-*.tgz ~/dev/loki/vendor/
 # Delete any older tarball there to keep one version on disk.
 
 # Customer-side: update the version pin in package.json if needed,
 # then:
-cd ~/dev/fleetcrown
-npm install
+cd ~/dev/loki
+pnpm install
 ```
 
-**Verify**: `npm ls @orangecat/sdk` from the customer repo reports the
+**Verify**: `pnpm ls @orangecat/sdk` from the customer repo reports the
 new version.
 
-**Rollback**: restore the previous tarball + `npm install`.
+**Rollback**: restore the previous tarball + `pnpm install`.
 
 ---
 
-## Step 6 — (Optional) npm publish
+## Step 6 — (Optional) publish to the npm registry
 
 Only when ready for public distribution:
 
 ```bash
 cd ~/dev/orangecat/packages/sdk
-npm publish --access public
+pnpm publish --access public
 ```
 
 This makes step 5's vendor-tarball flow obsolete for future customers —
-they can `npm install @orangecat/sdk` directly.
+they can `pnpm install @orangecat/sdk` directly.
 
 **Verify**: `npm view @orangecat/sdk version` reports the published
 version.
@@ -206,25 +205,14 @@ soft (the app logs the 401 every minute but no data is harmed).
 
 ---
 
-## Step 8 — Set Upstash Redis env vars
+## Step 8 — Rate limiting: no env vars needed
 
-Without these, per-key rate limits silently degrade to an in-memory
-single-instance bucket (only effective within one app process).
-Production multi-instance traffic will not be properly throttled.
-
-In `/opt/orangecat/app/.env` on the box (Production):
-
-| Var                        | Value                       |
-| -------------------------- | --------------------------- |
-| `UPSTASH_REDIS_REST_URL`   | From the Upstash dashboard. |
-| `UPSTASH_REDIS_REST_TOKEN` | From the Upstash dashboard. |
-
-**Verify**: in the Upstash dashboard, the analytics chart starts
-showing per-second activity once the first authenticated /api/v1
-request hits production.
-
-**Rollback**: remove the env vars; rate limiting falls back to
-in-memory. Not data-harmful, just less correct under load.
+Historical step; the Upstash Redis path was removed 2026-09-05 when the
+canonical limiter moved onto `limitkit`. Counts are in-process (bounded
+MemoryStore), which is correct for the single self-hosted instance
+(ADR-0002). If a second app instance ever exists, implement limitkit's
+two-method `Store` over shared infrastructure — do not reintroduce env-var
+switched backends.
 
 ---
 
@@ -277,7 +265,7 @@ as a high-value secret with restricted access to the box env file.
 After all 9 steps land:
 
 1. **From customer side**, trigger whatever flow creates an OrangeCat
-   entity (for FleetCrown: create a subscription).
+   entity (for Loki: create a subscription).
 2. The SDK call should return `201 Created` with the entity payload.
 3. Within ~60 seconds, the webhook worker picks up the enqueued
    delivery and POSTs to the customer's endpoint.

@@ -7,18 +7,20 @@
  * someone's money built on rows that outlived their subject.
  */
 
-const mockLinkDelete = jest.fn();
-const mockAdminFrom = jest.fn();
+const mockLinkDelete = vi.fn();
+const mockAdminFrom = vi.fn();
 
-jest.mock('@/utils/logger', () => ({
-  logger: { error: jest.fn(), warn: jest.fn(), info: jest.fn(), debug: jest.fn() },
+vi.mock('@/utils/logger', () => ({
+  logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 
-jest.mock('@/lib/supabase/admin', () => ({
+vi.mock('@/lib/supabase/admin', () => ({
   getAdminClient: () => ({ from: (t: string) => mockAdminFrom(t) }),
 }));
 
 import { DATABASE_TABLES } from '@/config/database-tables';
+
+import type { Mock } from 'vitest';
 
 /**
  * The handler is a thick closure over Next request plumbing; this exercises the
@@ -37,11 +39,11 @@ beforeEach(() => {
   mockLinkDelete.mockReset();
   mockAdminFrom.mockReset();
   const eqChain = {
-    eq: jest.fn(function (this: unknown) {
+    eq: vi.fn(function (this: unknown) {
       return eqChain;
     }),
     then: undefined,
-  } as never as { eq: jest.Mock };
+  } as never as { eq: Mock };
   mockLinkDelete.mockReturnValue(eqChain);
   mockAdminFrom.mockReturnValue({ delete: mockLinkDelete });
 });
@@ -50,7 +52,7 @@ describe('entity delete → entity_wallets cleanup', () => {
   it('targets the entity_wallets table scoped to BOTH type and id', async () => {
     const eqCalls: Array<[string, string]> = [];
     const chain: Record<string, unknown> = {};
-    chain.eq = jest.fn((col: string, val: string) => {
+    chain.eq = vi.fn((col: string, val: string) => {
       eqCalls.push([col, val]);
       return chain;
     });

@@ -6,7 +6,7 @@ import {
   type MempoolTransaction,
   type BlockstreamTransaction,
 } from '@/types/bitcoin';
-import { getErrorMessage } from '@/types/common';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 import { logger } from '@/utils/logger';
 import { satsToBitcoin } from '@/services/currency';
 import { BITCOIN_FETCH_TIMEOUT_MS } from '@/lib/wallets/constants';
@@ -64,6 +64,83 @@ interface FetchInterface {
   (url: string, options?: RequestInit): Promise<Response>;
 }
 
+/**
+ * mempool.space and blockstream.info both serve the Esplora API, so a balance
+ * and a transaction list are read the same way from either. These two readers
+ * were written out once per provider — 60 identical lines — which is one place
+ * for the satoshi arithmetic to be fixed and another for it to stay wrong.
+ */
+function processEsploraBalance(data: MempoolAddressInfo | BlockstreamAddressInfo): number {
+  if (!data || !data.chain_stats) {
+    return 0;
+  }
+  const funded = Number(data.chain_stats.funded_txo_sum) || 0;
+  const spent = Number(data.chain_stats.spent_txo_sum) || 0;
+
+  // Sanitize numbers to prevent Infinity/NaN
+  const sanitizedFunded = isFinite(funded) ? funded : 0;
+  const sanitizedSpent = isFinite(spent) ? spent : 0;
+
+  return Math.max(0, sanitizedFunded - sanitizedSpent);
+}
+
+function processEsploraTransactions(
+  data: MempoolTransaction[] | BlockstreamTransaction[],
+  address: string
+): BitcoinTransaction[] {
+  if (!Array.isArray(data)) {
+    return [];
+  }
+  return data.slice(0, 10).map((rawTx): BitcoinTransaction => {
+    const tx = rawTx as unknown as RawTransaction;
+    let txType: 'incoming' | 'outgoing' = 'incoming';
+    let valueInSatoshis = 0;
+
+    const inputsFromAddress =
+      tx.vin?.filter(
+        (input: TransactionInput) =>
+          input.prevout && input.prevout.scriptpubkey_address === address
+      ) || [];
+    const outputsToAddress =
+      tx.vout?.filter((output: TransactionOutput) => output.scriptpubkey_address === address) || [];
+
+    if (inputsFromAddress.length > 0) {
+      txType = 'outgoing';
+      let amountSentToOthers = 0;
+      for (const output of tx.vout || []) {
+        if (output.scriptpubkey_address !== address) {
+          amountSentToOthers += Number(output.value) || 0;
+        }
+      }
+      if (amountSentToOthers > 0) {
+        valueInSatoshis = amountSentToOthers;
+      } else {
+        const totalValueFromInputs = inputsFromAddress.reduce(
+          (sum: number, input: TransactionInput) => sum + (Number(input.prevout?.value) || 0),
+          0
+        );
+        valueInSatoshis = totalValueFromInputs;
+      }
+    } else if (outputsToAddress.length > 0) {
+      txType = 'incoming';
+      valueInSatoshis = outputsToAddress.reduce(
+        (sum: number, output: TransactionOutput) => sum + (Number(output.value) || 0),
+        0
+      );
+    } else {
+      valueInSatoshis = 0;
+    }
+
+    return {
+      txid: tx.txid || 'unknown',
+      value: satsToBitcoin(valueInSatoshis),
+      status: tx.status?.confirmed ? 'confirmed' : 'pending',
+      timestamp: tx.status?.block_time ? tx.status.block_time * 1000 : Date.now(),
+      type: txType,
+    };
+  });
+}
+
 class BitcoinService {
   private static instance: BitcoinService;
   private fetchFn: FetchInterface;
@@ -95,156 +172,16 @@ class BitcoinService {
         baseUrl: 'https://mempool.space/api',
         addressEndpoint: (address: string) => `/address/${address}`,
         txsEndpoint: (address: string) => `/address/${address}/txs`,
-        processBalance: (data: MempoolAddressInfo) => {
-          if (!data || !data.chain_stats) {
-            return 0;
-          }
-          const funded = Number(data.chain_stats.funded_txo_sum) || 0;
-          const spent = Number(data.chain_stats.spent_txo_sum) || 0;
-
-          // Sanitize numbers to prevent Infinity/NaN
-          const sanitizedFunded = isFinite(funded) ? funded : 0;
-          const sanitizedSpent = isFinite(spent) ? spent : 0;
-
-          return Math.max(0, sanitizedFunded - sanitizedSpent);
-        },
-        processTransactions: (
-          data: MempoolTransaction[],
-          address: string
-        ): BitcoinTransaction[] => {
-          if (!Array.isArray(data)) {
-            return [];
-          }
-          return data.slice(0, 10).map((rawTx): BitcoinTransaction => {
-            const tx = rawTx as unknown as RawTransaction;
-            let txType: 'incoming' | 'outgoing' = 'incoming';
-            let valueInSatoshis = 0;
-
-            const inputsFromAddress =
-              tx.vin?.filter(
-                (input: TransactionInput) =>
-                  input.prevout && input.prevout.scriptpubkey_address === address
-              ) || [];
-            const outputsToAddress =
-              tx.vout?.filter(
-                (output: TransactionOutput) => output.scriptpubkey_address === address
-              ) || [];
-
-            if (inputsFromAddress.length > 0) {
-              txType = 'outgoing';
-              let amountSentToOthers = 0;
-              for (const output of tx.vout || []) {
-                if (output.scriptpubkey_address !== address) {
-                  amountSentToOthers += Number(output.value) || 0;
-                }
-              }
-              if (amountSentToOthers > 0) {
-                valueInSatoshis = amountSentToOthers;
-              } else {
-                const totalValueFromInputs = inputsFromAddress.reduce(
-                  (sum: number, input: TransactionInput) =>
-                    sum + (Number(input.prevout?.value) || 0),
-                  0
-                );
-                valueInSatoshis = totalValueFromInputs;
-              }
-            } else if (outputsToAddress.length > 0) {
-              txType = 'incoming';
-              valueInSatoshis = outputsToAddress.reduce(
-                (sum: number, output: TransactionOutput) => sum + (Number(output.value) || 0),
-                0
-              );
-            } else {
-              valueInSatoshis = 0;
-            }
-
-            return {
-              txid: tx.txid || 'unknown',
-              value: satsToBitcoin(valueInSatoshis),
-              status: tx.status?.confirmed ? 'confirmed' : 'pending',
-              timestamp: tx.status?.block_time ? tx.status.block_time * 1000 : Date.now(),
-              type: txType,
-            };
-          });
-        },
+        processBalance: processEsploraBalance,
+        processTransactions: processEsploraTransactions,
       },
       {
         name: 'blockstream.info',
         baseUrl: 'https://blockstream.info/api',
         addressEndpoint: (address: string) => `/address/${address}`,
         txsEndpoint: (address: string) => `/address/${address}/txs`,
-        processBalance: (data: BlockstreamAddressInfo) => {
-          if (!data || !data.chain_stats) {
-            return 0;
-          }
-          const funded = Number(data.chain_stats.funded_txo_sum) || 0;
-          const spent = Number(data.chain_stats.spent_txo_sum) || 0;
-
-          // Sanitize numbers to prevent Infinity/NaN
-          const sanitizedFunded = isFinite(funded) ? funded : 0;
-          const sanitizedSpent = isFinite(spent) ? spent : 0;
-
-          return Math.max(0, sanitizedFunded - sanitizedSpent);
-        },
-        processTransactions: (
-          data: BlockstreamTransaction[],
-          address: string
-        ): BitcoinTransaction[] => {
-          if (!Array.isArray(data)) {
-            return [];
-          }
-          return data.slice(0, 10).map((rawTx): BitcoinTransaction => {
-            const tx = rawTx as unknown as RawTransaction;
-            let txType: 'incoming' | 'outgoing' = 'incoming';
-            let valueInSatoshis = 0;
-
-            const inputsFromAddress =
-              tx.vin?.filter(
-                (input: TransactionInput) =>
-                  input.prevout && input.prevout.scriptpubkey_address === address
-              ) || [];
-            const outputsToAddress =
-              tx.vout?.filter(
-                (output: TransactionOutput) => output.scriptpubkey_address === address
-              ) || [];
-
-            if (inputsFromAddress.length > 0) {
-              txType = 'outgoing';
-              let amountSentToOthers = 0;
-              for (const output of tx.vout || []) {
-                if (output.scriptpubkey_address !== address) {
-                  amountSentToOthers += Number(output.value) || 0;
-                }
-              }
-              if (amountSentToOthers > 0) {
-                valueInSatoshis = amountSentToOthers;
-              } else {
-                const totalValueFromInputs = inputsFromAddress.reduce(
-                  (sum: number, input: TransactionInput) =>
-                    sum + (Number(input.prevout?.value) || 0),
-                  0
-                );
-                valueInSatoshis = totalValueFromInputs;
-              }
-            } else if (outputsToAddress.length > 0) {
-              txType = 'incoming';
-              valueInSatoshis = outputsToAddress.reduce(
-                (sum: number, output: TransactionOutput) => sum + (Number(output.value) || 0),
-                0
-              );
-            } else {
-              valueInSatoshis = 0;
-            }
-
-            return {
-              txid: tx.txid || 'unknown',
-              value: satsToBitcoin(valueInSatoshis),
-              status: tx.status?.confirmed ? 'confirmed' : 'pending',
-              timestamp: tx.status?.block_time ? tx.status.block_time * 1000 : Date.now(),
-              type: txType,
-            };
-          });
-        },
+        processBalance: processEsploraBalance,
+        processTransactions: processEsploraTransactions,
       },
     ];
   }
@@ -290,7 +227,7 @@ class BitcoinService {
         confirmed: 0,
         unconfirmed: 0,
         total: 0,
-        error: getErrorMessage(error),
+        error: apiErrorMessage(error, 'Unknown error'),
       };
     }
   }
@@ -301,7 +238,11 @@ class BitcoinService {
       const walletData = await this.fetchBitcoinWalletData(address);
       return walletData.transactions;
     } catch (error: unknown) {
-      logger.error('Error fetching transactions:', getErrorMessage(error), 'Bitcoin');
+      logger.error(
+        'Error fetching transactions:',
+        apiErrorMessage(error, 'Unknown error'),
+        'Bitcoin'
+      );
       return [];
     }
   }
@@ -371,7 +312,7 @@ class BitcoinService {
           lastUpdated: new Date().toISOString(),
         };
       } catch (error: unknown) {
-        const errorMessage = getErrorMessage(error);
+        const errorMessage = apiErrorMessage(error, 'Unknown error');
         logger.error(`Error with provider ${provider.name}:`, errorMessage, 'Bitcoin');
         lastError = error instanceof Error ? error : new Error(errorMessage);
         // Continue to next provider
@@ -380,7 +321,7 @@ class BitcoinService {
 
     logger.error(
       `Failed to fetch wallet data for ${cleanAddress} from all providers`,
-      { error: getErrorMessage(lastError) },
+      { error: apiErrorMessage(lastError, 'Unknown error') },
       'Bitcoin'
     );
     throw (

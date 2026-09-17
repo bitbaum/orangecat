@@ -13,8 +13,8 @@ import { DATABASE_TABLES } from '@/config/database-tables';
 
 const unfollowBodySchema = z.object({
   following_id: z
-    .string({ required_error: 'following_id is required' })
-    .uuid('Invalid following_id format'),
+    .string({ error: issue => issue.input === undefined ? 'following_id is required' : undefined })
+    .guid('Invalid following_id format'),
 });
 
 async function handleUnfollow(request: AuthenticatedRequest) {
@@ -32,7 +32,7 @@ async function handleUnfollow(request: AuthenticatedRequest) {
 
     const parsed = unfollowBodySchema.safeParse(await request.json().catch(() => ({})));
     if (!parsed.success) {
-      return apiBadRequest(parsed.error.errors[0]?.message ?? 'Invalid following_id');
+      return apiBadRequest(parsed.error.issues[0]?.message ?? 'Invalid following_id');
     }
     const { following_id } = parsed.data;
 

@@ -47,7 +47,9 @@ async function handleGetFavorites(request: AuthenticatedRequest) {
     }
 
     if (!favorites || favorites.length === 0) {
-      return apiSuccess({ data: [], count: 0 }, { cache: 'SHORT' });
+      // The array goes in `data` directly — see the note on the success return
+      // below for why this must not be `{ data: [...] }`.
+      return apiSuccess([], { total: 0, cache: 'SHORT' });
     }
 
     // Get full project data for favorited projects
@@ -126,10 +128,16 @@ async function handleGetFavorites(request: AuthenticatedRequest) {
       count: projectsWithFavorite.length,
     });
 
-    return apiSuccess(
-      { data: projectsWithFavorite, count: projectsWithFavorite.length },
-      { cache: 'SHORT' }
-    );
+    // The array is the payload; the count goes in `metadata.total`. This was
+    // `apiSuccess({ data, count })`, nesting the rows two levels deep — so
+    // useEntityList (which reads `data.data` and `data.metadata.total`, with
+    // no transformResponse from useEntityDashboard) set `items` to the wrapper
+    // object and `total` to 0, and the Favorites tab was dead. Same class as
+    // the follow-list envelope behind #902.
+    return apiSuccess(projectsWithFavorite, {
+      total: projectsWithFavorite.length,
+      cache: 'SHORT',
+    });
   } catch (error) {
     logger.error('Unexpected error fetching favorites', { error });
     return apiInternalError('Internal server error');

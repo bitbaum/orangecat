@@ -19,10 +19,10 @@ const CHAIN = [
 describe('link-health', () => {
   beforeEach(() => {
     resetLinkHealth();
-    jest.useFakeTimers();
+    vi.useFakeTimers();
   });
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('marks a link down and prunes it from the chain', () => {
@@ -34,7 +34,7 @@ describe('link-health', () => {
 
   it('expires the down-mark after the TTL', () => {
     markLinkDown('groq', 'llama-3.3-70b-versatile', 1000);
-    jest.advanceTimersByTime(1001);
+    vi.advanceTimersByTime(1001);
     expect(isLinkDown('groq', 'llama-3.3-70b-versatile')).toBe(false);
     expect(pruneDownLinks(CHAIN, l => l)).toHaveLength(3);
   });

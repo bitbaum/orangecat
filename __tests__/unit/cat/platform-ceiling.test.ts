@@ -11,13 +11,13 @@
 import type { CatPermissionService } from '@/services/cat/permission-service';
 import { DATABASE_TABLES } from '@/config/database-tables';
 
-jest.mock('@/utils/logger', () => ({
-  logger: { error: jest.fn(), warn: jest.fn(), info: jest.fn(), debug: jest.fn() },
+vi.mock('@/utils/logger', () => ({
+  logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 
-const { CatPermissionService: RealPermissionService } = jest.requireActual(
+const { CatPermissionService: RealPermissionService } = (await vi.importActual(
   '@/services/cat/permission-service'
-) as { CatPermissionService: typeof CatPermissionService };
+)) as { CatPermissionService: typeof CatPermissionService };
 
 const USER_ID = 'user-1';
 
@@ -36,15 +36,13 @@ function buildSupabase(config: {
     const eqFilters: Record<string, unknown> = {};
     const chain: Record<string, unknown> = {};
     for (const method of ['select', 'in', 'gte', 'neq', 'order', 'limit']) {
-      chain[method] = jest.fn().mockReturnValue(chain);
+      chain[method] = vi.fn().mockReturnValue(chain);
     }
-    chain.eq = jest.fn((column: string, value: unknown) => {
+    chain.eq = vi.fn((column: string, value: unknown) => {
       eqFilters[column] = value;
       return chain;
     });
-    chain.maybeSingle = jest
-      .fn()
-      .mockResolvedValue({ data: config.policyRow ?? null, error: null });
+    chain.maybeSingle = vi.fn().mockResolvedValue({ data: config.policyRow ?? null, error: null });
     chain.then = (resolve: (value: { data: unknown }) => unknown) => {
       let rows: unknown;
       if (table === DATABASE_TABLES.CAT_PERMISSIONS) {
@@ -57,7 +55,7 @@ function buildSupabase(config: {
     };
     return chain;
   };
-  return { from: jest.fn((table: string) => makeChain(table)) };
+  return { from: vi.fn((table: string) => makeChain(table)) };
 }
 
 const POLICY = {

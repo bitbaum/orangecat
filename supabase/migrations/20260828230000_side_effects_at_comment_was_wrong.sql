@@ -1,0 +1,37 @@
+-- Correct what the previous migration says about who can read side_effects_at.
+--
+-- 20260828220000 added `side_effects_at` and its COMMENT asserted "Server-side
+-- only: no client SELECT grant". That is FALSE, and production proves it: anon
+-- holds SELECT on the column.
+--
+-- The mistake was reading `payment_intents` as having the same grant shape as
+-- `wallets`. It does not, and the difference is the whole point:
+--
+--   * `wallets` carries an explicit COLUMN-LIST grant (migration
+--     20260802120000), rebuilt that way so `nwc_connection_uri` could be
+--     excluded. Postgres cannot subtract a column from a table-level grant, so
+--     the list is the mechanism — and a column added later is unreadable until
+--     someone grants it. That asymmetry is what the drift guard in
+--     __tests__/unit/wallets/wallet-column-grant-drift.test.ts exists to catch.
+--
+--   * `payment_intents` holds TABLE-level SELECT/INSERT/UPDATE grants for anon
+--     and authenticated. A table-level grant automatically covers every column
+--     added afterwards, so ADD COLUMN made it immediately readable.
+--
+-- Reading 21 rows in information_schema.column_privileges is what misled me:
+-- that view expands a table-level grant per column, so it looks identical to an
+-- explicit column list. `has_table_privilege` does not distinguish them either.
+-- The honest test is whether the grant was written as `GRANT SELECT (cols)`.
+--
+-- The exposure itself is acceptable, and now says so deliberately rather than
+-- by accident: this is a settlement-completion timestamp, not a secret, and RLS
+-- still decides which intents a caller may see at all. Withholding it would
+-- mean rebuilding the entire table's grants as a column list — the surgery the
+-- wallets lockdown performed for a reason that does not apply to a timestamp.
+--
+-- A new forward migration rather than an edit to 20260828220000: that one has
+-- already run, so its COMMENT would never be re-issued and production would
+-- keep the false text.
+
+COMMENT ON COLUMN public.payment_intents.side_effects_at IS
+  'When settlement side-effects finished (order, inventory, notifications, webhooks). NULL on a paid intent means they did not complete — the reconcile sweep reports these. Readable by clients subject to RLS: payment_intents uses table-level grants, so this column was covered automatically. Not a secret; a completion timestamp.';

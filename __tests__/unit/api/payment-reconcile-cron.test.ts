@@ -12,47 +12,72 @@ import { GET } from '@/app/api/cron/payment-reconcile/route';
 import { reconcilePaymentIntent } from '@/domain/payments/paymentFlowService';
 import { STATUS } from '@/config/database-constants';
 
-jest.mock('@/utils/logger', () => ({
-  logger: { warn: jest.fn(), error: jest.fn(), info: jest.fn(), debug: jest.fn() },
+import type { MockedFunction } from 'vitest';
+
+vi.mock('@/utils/logger', () => ({
+  logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 // The response helpers wrap NextResponse, which needs the Next runtime; the
 // established convention in route tests is to stub them (see projects-id-api).
-jest.mock('@/lib/api/standardResponse', () => ({
-  apiSuccess: jest.fn((data: unknown) => ({
+vi.mock('@/lib/api/standardResponse', () => ({
+  apiSuccess: vi.fn((data: unknown) => ({
     status: 200,
     json: async () => ({ success: true, data }),
   })),
-  apiUnauthorized: jest.fn(() => ({
+  apiUnauthorized: vi.fn(() => ({
     status: 401,
     json: async () => ({ success: false }),
   })),
-  apiInternalError: jest.fn(() => ({
+  apiInternalError: vi.fn(() => ({
     status: 500,
     json: async () => ({ success: false }),
   })),
 }));
-jest.mock('@/domain/payments/paymentFlowService', () => ({
-  reconcilePaymentIntent: jest.fn(),
+vi.mock('@/domain/payments/paymentFlowService', () => ({
+  reconcilePaymentIntent: vi.fn(),
 }));
 
 const candidates: Array<Record<string, unknown>> = [];
 const polled: string[] = [];
 const orFilters: string[] = [];
 
-jest.mock('@/lib/supabase/admin', () => ({
+vi.mock('@/lib/supabase/admin', () => ({
   getAdminClient: () => ({
     from: () => {
       const builder: Record<string, unknown> = {};
+      // The sweep now runs TWO queries against payment_intents, and they use
+      // `eq` for opposite purposes: the stamp is `update().eq(id)` and RESOLVES,
+      // the incomplete-settlement check is `select().eq().is().lt()` and must
+      // keep CHAINING. One `eq` that always resolved made the second query blow
+      // up mid-chain and push 'paid' into `polled`, so this fixture tracks
+      // which shape it is in.
+      let isUpdate = false;
+      let isIncompleteCheck = false;
       for (const m of ['select', 'in', 'order']) {
-        builder[m] = jest.fn(() => builder);
+        builder[m] = vi.fn(() => builder);
       }
-      builder.or = jest.fn((filter: string) => {
+      builder.or = vi.fn((filter: string) => {
         orFilters.push(filter);
         return builder;
       });
-      builder.limit = jest.fn(() => Promise.resolve({ data: candidates, error: null }));
-      builder.update = jest.fn(() => builder);
-      builder.eq = jest.fn((_col: string, id: string) => {
+      builder.is = vi.fn(() => {
+        isIncompleteCheck = true;
+        return builder;
+      });
+      builder.lt = vi.fn(() => builder);
+      // Nothing half-settled in these fixtures: the incomplete check finds none,
+      // so the assertions below stay about reconciliation.
+      builder.limit = vi.fn(() =>
+        Promise.resolve({ data: isIncompleteCheck ? [] : candidates, error: null })
+      );
+      builder.update = vi.fn(() => {
+        isUpdate = true;
+        return builder;
+      });
+      builder.eq = vi.fn((_col: string, id: string) => {
+        if (!isUpdate) {
+          return builder;
+        }
         polled.push(id);
         return Promise.resolve({ error: null });
       });
@@ -61,7 +86,7 @@ jest.mock('@/lib/supabase/admin', () => ({
   }),
 }));
 
-const reconcileMock = reconcilePaymentIntent as jest.MockedFunction<typeof reconcilePaymentIntent>;
+const reconcileMock = reconcilePaymentIntent as MockedFunction<typeof reconcilePaymentIntent>;
 
 /**
  * The jest env has no global web Request; the route only reads the
@@ -78,11 +103,11 @@ function request(secret: string | null = 'right-secret'): Request {
 }
 
 async function body(res: unknown) {
-  return (await (res as { json: () => Promise<{ data?: Record<string, number> }> }).json());
+  return await (res as { json: () => Promise<{ data?: Record<string, number> }> }).json();
 }
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   candidates.length = 0;
   polled.length = 0;
   orFilters.length = 0;
@@ -173,13 +198,14 @@ describe('payment reconciliation sweep', () => {
   });
 
   it('keeps sweeping when one rail throws', async () => {
-    candidates.push({ id: 'pi-bad', payment_method: 'nwc' }, { id: 'pi-good', payment_method: 'nwc' });
-    reconcileMock
-      .mockRejectedValueOnce(new Error('provider down'))
-      .mockResolvedValueOnce({
-        status: STATUS.PAYMENT_INTENTS.PAID,
-        paid_at: new Date().toISOString(),
-      });
+    candidates.push(
+      { id: 'pi-bad', payment_method: 'nwc' },
+      { id: 'pi-good', payment_method: 'nwc' }
+    );
+    reconcileMock.mockRejectedValueOnce(new Error('provider down')).mockResolvedValueOnce({
+      status: STATUS.PAYMENT_INTENTS.PAID,
+      paid_at: new Date().toISOString(),
+    });
 
     const res = await GET(request());
 

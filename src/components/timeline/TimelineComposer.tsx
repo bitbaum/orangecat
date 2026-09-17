@@ -13,6 +13,7 @@ import {
   TIMELINE_COPY,
   TIMELINE_SURFACE,
   TIMELINE_VISIBILITY_OPTIONS,
+  TIMELINE_AVATAR_SIZE,
 } from '@/config/timeline';
 import {
   TextFormatToolbar,
@@ -39,7 +40,7 @@ export interface TimelineComposerProps {
   targetOwnerType?: 'profile' | 'project';
   targetOwnerName?: string;
   allowProjectSelection?: boolean;
-  onPostCreated?: () => void;
+  onPostCreated?: (event?: import('@/types/timeline').TimelineDisplayEvent) => void;
   onOptimisticUpdate?: (event: import('@/types/timeline').TimelineDisplayEvent) => void;
   onCancel?: () => void;
   placeholder?: string;
@@ -90,8 +91,11 @@ const TimelineComposer = React.memo(function TimelineComposer({
     subjectType: targetOwnerType,
     subjectId: targetOwnerId,
     allowProjectSelection,
-    onSuccess: () => {
-      onPostCreated?.();
+    onSuccess: created => {
+      // Hand the created post on. A caller that only needs "something was
+      // posted" ignores it; the thread view needs the row itself, to know
+      // whether it tagged the Cat and what the Cat's answer will hang from.
+      onPostCreated?.(created);
       setShowProjects(false);
     },
     onOptimisticUpdate,
@@ -160,16 +164,57 @@ const TimelineComposer = React.memo(function TimelineComposer({
     [postComposer.content, postComposer.isPosting]
   );
 
+  /**
+   * The composer's tools appear when you start composing.
+   *
+   * At rest it used to show six controls around an empty box — an AI drafter,
+   * an image picker, a formatting toolbar, a project selector and three
+   * visibility chips — which is more chrome than content and buries the first
+   * post further down the feed. Every one of them is for a post you have not
+   * written yet.
+   *
+   * Expanded means: focused, or there is something to act on (text, an image,
+   * an open panel). It deliberately does NOT collapse the moment focus leaves
+   * the editor — `onBlur` is checked against `relatedTarget` so moving focus
+   * from the editor to a toolbar button keeps the toolbar mounted. Without
+   * that check the button unmounts between mousedown and click and the press
+   * silently does nothing, which is the standard way this pattern breaks.
+   *
+   * The submit button stays visible at all times, disabled until there is
+   * something to post, so the primary action is never hidden behind a focus.
+   */
+  const [focused, setFocused] = useState(false);
+  const toolsExpanded =
+    focused ||
+    Boolean(postComposer.content.trim()) ||
+    Boolean(postComposer.image) ||
+    showProjects ||
+    composerImage.showPicker;
+
   return (
-    <div className={cn('mx-auto max-w-2xl transition-colors', TIMELINE_SURFACE.composer)}>
+    <div
+      className={cn('mx-auto max-w-2xl transition-colors', TIMELINE_SURFACE.composer)}
+      onFocus={() => setFocused(true)}
+      onBlur={event => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+          setFocused(false);
+        }
+      }}
+    >
       <div className="flex gap-3">
         <div className="pt-0.5 sm:pt-1 flex-shrink-0">
           <AvatarLink
             username={profile?.username || null}
             userId={user?.id || null}
-            avatarUrl={profile?.avatar_url || user?.user_metadata?.avatar_url || null}
-            name={profile?.name || user?.user_metadata?.name || user?.email || 'User'}
-            size={44}
+            avatarUrl={profile?.avatar_url || null}
+            name={profile?.name || profile?.username || 'User'}
+            /*
+              The avatar sets the feed's text column, so this number must be
+              the SAME one the posts below use — it was 44 here and 40 there,
+              which started the composer's text 4px right of every post body.
+              Shared constant now, so they cannot drift apart again.
+            */
+            size={TIMELINE_AVATAR_SIZE}
             className="flex-shrink-0"
             isCurrentUser={true}
           />
@@ -227,10 +272,10 @@ const TimelineComposer = React.memo(function TimelineComposer({
 
           <div className="mt-4 flex items-center justify-between border-t border-subtle pt-3">
             <div className="flex flex-wrap items-center gap-2">
-              {!parentEventId && (
+              {toolsExpanded && !parentEventId && (
                 <PostAiButton onDraft={postComposer.setContent} disabled={postComposer.isPosting} />
               )}
-              {parentEventId && parentPostText && (
+              {toolsExpanded && parentEventId && parentPostText && (
                 <ReplyAiButton
                   parentText={parentPostText}
                   parentAuthor={parentAuthorName}
@@ -238,77 +283,83 @@ const TimelineComposer = React.memo(function TimelineComposer({
                   disabled={postComposer.isPosting}
                 />
               )}
-              {postComposer.content.trim() && (
+              {toolsExpanded && postComposer.content.trim() && (
                 <PostAiEditMenu
                   text={postComposer.content}
                   onRevised={postComposer.setContent}
                   disabled={postComposer.isPosting}
                 />
               )}
-              <ComposerImageChip
-                active={composerImage.showPicker || Boolean(postComposer.image)}
-                disabled={postComposer.isPosting}
-                onToggle={composerImage.togglePicker}
-              />
-              {!simpleMode && <TextFormatToolbar onFormat={handleFormat} />}
-
-              {!simpleMode && allowProjectSelection && postComposer.userProjects.length > 0 && (
-                <ProjectToggleButton
-                  showProjects={showProjects}
-                  selectedCount={postComposer.selectedProjects.length}
-                  onToggle={showProjects ? handleCloseProjects : handleOpenProjects}
+              {toolsExpanded && (
+                <ComposerImageChip
+                  active={composerImage.showPicker || Boolean(postComposer.image)}
+                  disabled={postComposer.isPosting}
+                  onToggle={composerImage.togglePicker}
                 />
               )}
+              {toolsExpanded && !simpleMode && <TextFormatToolbar onFormat={handleFormat} />}
 
-              {simpleMode ? (
-                <div className="flex items-center gap-2">
-                  {TIMELINE_VISIBILITY_OPTIONS.map(preset => {
-                    const Icon = preset.Icon;
-                    const isActive = postComposer.visibility === preset.key;
-                    return (
-                      <button
-                        key={preset.key}
-                        type="button"
-                        onClick={() => postComposer.setVisibility(preset.key)}
-                        disabled={postComposer.isPosting}
-                        className={cn(
-                          TIMELINE_SURFACE.chip,
-                          isActive && TIMELINE_SURFACE.chipActive
-                        )}
-                        title={preset.description}
-                      >
-                        <span className="inline-flex items-center gap-1">
-                          <Icon className="w-4 h-4" />
-                          {preset.label}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() =>
-                    postComposer.setVisibility(
-                      postComposer.visibility === 'public' ? 'private' : 'public'
-                    )
-                  }
-                  disabled={postComposer.isPosting}
-                  className={TIMELINE_SURFACE.iconButton}
-                  title={
-                    postComposer.visibility === 'public'
-                      ? 'Public - Everyone can see'
-                      : 'Private - Only you can see'
-                  }
-                  aria-label={`Post visibility: ${postComposer.visibility}`}
-                >
-                  {postComposer.visibility === 'public' ? (
-                    <Globe className="w-4 h-4" />
-                  ) : (
-                    <Lock className="w-4 h-4" />
-                  )}
-                </button>
-              )}
+              {toolsExpanded &&
+                !simpleMode &&
+                allowProjectSelection &&
+                postComposer.userProjects.length > 0 && (
+                  <ProjectToggleButton
+                    showProjects={showProjects}
+                    selectedCount={postComposer.selectedProjects.length}
+                    onToggle={showProjects ? handleCloseProjects : handleOpenProjects}
+                  />
+                )}
+
+              {toolsExpanded &&
+                (simpleMode ? (
+                  <div className="flex items-center gap-2">
+                    {TIMELINE_VISIBILITY_OPTIONS.map(preset => {
+                      const Icon = preset.Icon;
+                      const isActive = postComposer.visibility === preset.key;
+                      return (
+                        <button
+                          key={preset.key}
+                          type="button"
+                          onClick={() => postComposer.setVisibility(preset.key)}
+                          disabled={postComposer.isPosting}
+                          className={cn(
+                            TIMELINE_SURFACE.chip,
+                            isActive && TIMELINE_SURFACE.chipActive
+                          )}
+                          title={preset.description}
+                        >
+                          <span className="inline-flex items-center gap-1">
+                            <Icon className="w-4 h-4" />
+                            {preset.label}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      postComposer.setVisibility(
+                        postComposer.visibility === 'public' ? 'private' : 'public'
+                      )
+                    }
+                    disabled={postComposer.isPosting}
+                    className={TIMELINE_SURFACE.iconButton}
+                    title={
+                      postComposer.visibility === 'public'
+                        ? 'Public - Everyone can see'
+                        : 'Private - Only you can see'
+                    }
+                    aria-label={`Post visibility: ${postComposer.visibility}`}
+                  >
+                    {postComposer.visibility === 'public' ? (
+                      <Globe className="w-4 h-4" />
+                    ) : (
+                      <Lock className="w-4 h-4" />
+                    )}
+                  </button>
+                ))}
             </div>
 
             <div className="flex items-center gap-3">

@@ -14,9 +14,8 @@ import { logger } from '@/utils/logger';
 import { withApiRetry } from '@/utils/retry';
 import { TIMELINE_TABLES } from '@/config/database-tables';
 import type { TimelineFeedResponse, TimelineFilters, TimelinePagination } from '@/types/timeline';
-import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from './constants';
+import { pageWindow, feedResponse, emptyFeed } from './feed-shape';
 import { transformEnrichedEventToDisplay } from './helpers';
-import { buildDefaultFilters } from '@/services/timeline/formatters/filters';
 
 /**
  * Get public community timeline (posts from all users and projects)
@@ -29,9 +28,7 @@ export async function getCommunityFeed(
   try {
     return await withApiRetry(
       async () => {
-        const page = pagination?.page || 1;
-        const limit = Math.min(pagination?.limit || DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE);
-        const offset = (page - 1) * limit;
+        const { page, limit, offset } = pageWindow(pagination);
 
         // Query community timeline view (NO DUPLICATES!)
         const {
@@ -52,43 +49,13 @@ export async function getCommunityFeed(
         // Transform enriched VIEW data to display events (no N+1 queries needed!)
         const displayEvents = (enrichedEvents || []).map(transformEnrichedEventToDisplay);
 
-        return {
-          events: displayEvents,
-          pagination: {
-            page,
-            limit,
-            total: count || 0,
-            hasNext: offset + limit < (count || 0),
-            hasPrev: page > 1,
-          },
-          filters: buildDefaultFilters(filters),
-          metadata: {
-            totalEvents: count || 0,
-            featuredEvents: displayEvents.filter(e => e.isFeatured).length,
-            lastUpdated: new Date().toISOString(),
-          },
-        };
+        return feedResponse(displayEvents, { page, limit }, count || 0, filters);
       },
       { maxAttempts: 2, baseDelay: 500 }
     ); // Quick retry for feed loading
   } catch (error) {
     logger.error('Error fetching community timeline feed', error, 'Timeline');
     // Return empty feed instead of throwing
-    return {
-      events: [],
-      pagination: {
-        page: 1,
-        limit: DEFAULT_PAGE_SIZE,
-        total: 0,
-        hasNext: false,
-        hasPrev: false,
-      },
-      filters: buildDefaultFilters(filters),
-      metadata: {
-        totalEvents: 0,
-        featuredEvents: 0,
-        lastUpdated: new Date().toISOString(),
-      },
-    };
+    return emptyFeed(filters);
   }
 }

@@ -54,7 +54,7 @@ export function SidebarNavigation({
       >
         {visibleSections.map(section => {
           const isCollapsed = collapsedSections.has(section.id);
-          const hasActiveItem = section.items.some(item => item.href && isItemActive(item.href));
+          const sectionItemsId = `sidebar-section-${section.id}`;
 
           return (
             <div key={section.id} className="space-y-1">
@@ -63,31 +63,54 @@ export function SidebarNavigation({
                 <div className="mx-2 my-2 border-t border-default" />
               )}
 
-              {/* Section Header - Hidden on desktop (icons only), visible on mobile (expanded) */}
-              {isExpanded && (
-                <div className="flex items-center justify-between px-3 mb-1">
-                  <h3 className="text-xs font-semibold uppercase text-fg-secondary">
-                    {section.title}
-                  </h3>
-                  {section.collapsible && (
-                    <button
-                      onClick={() => toggleSection(section.id)}
-                      className="flex min-h-11 min-w-11 items-center justify-center rounded-md p-2 transition-colors hover:bg-surface-raised active:bg-surface-raised touch-manipulation"
-                      aria-label={`${navigationLabels.SECTION_TOGGLE} ${section.title}`}
-                    >
-                      {isCollapsed ? (
-                        <ChevronRight className="w-4 h-4 text-fg-tertiary" />
-                      ) : (
-                        <ChevronDown className="w-4 h-4 text-fg-tertiary" />
-                      )}
-                    </button>
-                  )}
-                </div>
-              )}
+              {/* Section Header - Hidden on desktop (icons only), visible on mobile (expanded).
+                  The WHOLE row toggles, not just the chevron: a label that looks
+                  like a control but isn't reads as a dead click, and the arrow
+                  alone is a 44px target inside a full-width row of affordance. */}
+              {isExpanded &&
+                (section.collapsible ? (
+                  <button
+                    type="button"
+                    onClick={() => toggleSection(section.id)}
+                    aria-expanded={!isCollapsed}
+                    // Only reference the panel while it exists — aria-controls
+                    // pointing at an unrendered id is an invalid-value violation.
+                    aria-controls={isCollapsed ? undefined : sectionItemsId}
+                    className="flex w-full min-h-11 items-center justify-between gap-2 rounded-md px-3 mb-1 text-left transition-colors hover:bg-surface-raised active:bg-surface-raised touch-manipulation"
+                    aria-label={`${navigationLabels.SECTION_TOGGLE} ${section.title}`}
+                  >
+                    <h3 className="text-xs font-semibold uppercase text-fg-secondary">
+                      {section.title}
+                    </h3>
+                    {isCollapsed ? (
+                      <ChevronRight
+                        className="w-4 h-4 shrink-0 text-fg-tertiary"
+                        aria-hidden="true"
+                      />
+                    ) : (
+                      <ChevronDown
+                        className="w-4 h-4 shrink-0 text-fg-tertiary"
+                        aria-hidden="true"
+                      />
+                    )}
+                  </button>
+                ) : (
+                  section.title && (
+                    <div className="flex items-center px-3 mb-1">
+                      <h3 className="text-xs font-semibold uppercase text-fg-secondary">
+                        {section.title}
+                      </h3>
+                    </div>
+                  )
+                ))}
 
-              {/* Section Items - always show on desktop, respect collapse on mobile */}
-              {(!isExpanded || !section.collapsible || !isCollapsed || hasActiveItem) && (
-                <div className={`space-y-1 ${isExpanded ? 'px-2' : ''}`}>
+              {/* Section Items - always show on desktop, respect collapse on mobile.
+                  An explicit toggle always wins: keeping a section open because it
+                  happens to hold the active page made the chevron lie and the
+                  click look dead. Landing on a page inside a collapsed section is
+                  handled at load time, not by overriding the user here. */}
+              {(!isExpanded || !section.collapsible || !isCollapsed) && (
+                <div id={sectionItemsId} className={`space-y-1 ${isExpanded ? 'px-2' : ''}`}>
                   {section.items.map(item => (
                     <SidebarNavItem
                       key={item.name}

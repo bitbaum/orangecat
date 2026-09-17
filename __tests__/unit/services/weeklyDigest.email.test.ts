@@ -13,9 +13,12 @@
  * using data shaped exactly like the builder's output.
  */
 
-// emailService transitively imports the Resend client, which doesn't load in
-// the jest env (postal-mime); the pure mapper under test never touches it.
-jest.mock('@/lib/email/client', () => ({ getEmailClient: jest.fn() }));
+// Keep the transport mocked so the pure mapper under test stays hermetic —
+// it never sends anything.
+vi.mock('@/lib/email/client', () => ({
+  sendEmail: vi.fn(),
+  isEmailConfigured: vi.fn(() => false),
+}));
 
 import { buildWeeklyDigestEmail } from '@/services/notifications/emailService';
 

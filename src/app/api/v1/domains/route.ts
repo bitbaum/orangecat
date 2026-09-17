@@ -5,7 +5,7 @@
  * cannot buy hosting for one. Public and keyless because registry RDAP records
  * are public — the same reasoning as /api/v1/demand and /api/v1/search.
  *
- * Shared surface by design. OrangeCat's /domains page and FleetCrown both call
+ * Shared surface by design. OrangeCat's /domains page and Loki both call
  * this, so the honesty rules (a .ch "not found" is never reported as available)
  * are enforced once, server-side, instead of being re-implemented per client.
  */
@@ -18,7 +18,7 @@ import {
 } from '@/lib/rate-limit';
 import { CANDIDATE_TLDS, DOMAIN_SEARCH_DISCLAIMER } from '@/config/domain-search';
 import { checkDomains } from '@/services/domains/availability';
-import { suggestDomains } from '@/services/domains/suggest';
+import { suggestDomains, toSeed } from '@/services/domains/suggest';
 import { logger } from '@/utils/logger';
 
 /** Registry lookups are slow and cached; let a CDN hold the answer briefly. */
@@ -57,6 +57,12 @@ export async function GET(request: NextRequest) {
 
     const response = apiSuccess({
       query: q,
+      // The query reduced to a usable label ('Causius Legal' -> 'causiuslegal').
+      // Returned rather than re-derived by callers: `toSeed` reaches
+      // `parseDomain`, which pulls the server logger, so a browser deriving it
+      // would drag server-only code into the client bundle. One field here
+      // keeps that rule in one place for this app AND for Loki.
+      seed: toSeed(q),
       tlds: tlds ?? CANDIDATE_TLDS,
       // Callers that want only the confident answers can filter on this
       // without re-deriving the rule.

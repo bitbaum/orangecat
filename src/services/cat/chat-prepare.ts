@@ -10,7 +10,18 @@
  *     awareness — just different inference hardware.
  */
 
-import { buildCatSystemPrompt } from '@/services/cat/system-prompt';
+import {
+  buildCatSystemPrompt,
+  buildStandingInstructionsBlock,
+  type ActionsVia,
+} from '@/services/cat/system-prompt';
+import {
+  composeCatMessages,
+  fitCatPromptToBudget,
+  type BudgetReport,
+  type CatPromptParts,
+} from '@/services/cat/prompt-budget';
+import { buildTurnDescriptor } from '@/services/cat/turn-descriptor';
 import { getCustomInstructions } from '@/services/cat/custom-instructions';
 import { buildReplyLanguageDirective } from '@/services/cat/reply-language';
 import { getCatFewShotExamplesText } from '@/services/cat/few-shot-examples';
@@ -20,7 +31,7 @@ import {
 } from '@/services/cat/conversation-history';
 import { recallMemories } from '@/services/cat/memory';
 import { fetchFullContextForCat, buildFullContextString } from '@/services/ai/document-context';
-import { buildAssistantRules } from '@/services/agent-core/contract';
+import { buildAssistantRules } from '@bitbaum/ai-kit/grounding';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 
 export interface CatChatPrepareOpts {
@@ -32,6 +43,19 @@ export interface CatChatPrepareOpts {
   currentPath?: string;
   currentEntity?: { type: string; ref: string };
   pageExcerpt?: string;
+  /**
+   * Whether the model that will answer can actually act, and how. Passed
+   * straight to buildCatSystemPrompt. Omitted = 'prose', the behaviour every
+   * caller had before this existed.
+   */
+  actionsVia?: ActionsVia;
+  /**
+   * When the answering link has a per-request token cap (the free Groq pool:
+   * 8 000 tokens per minute, reply reserve included), the prompt is shrunk to
+   * fit it — see prompt-budget.ts for what is given up, in which order.
+   * Omitted = the whole prompt, for links without such a cap.
+   */
+  tokenBudget?: number;
 }
 
 export interface PreparedCatChat {
@@ -39,6 +63,8 @@ export interface PreparedCatChat {
   /** system + history + the user's message — ready for any chat-completions API. */
   messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>;
   conversationId: string | null;
+  /** What the token budget cost this turn; null when no budget applied. */
+  budget: BudgetReport | null;
   /**
    * Everything Cat was legitimately shown this turn, for the groundedness check
    * on the way back out. Prompting alone is not a control — a weak model under
@@ -121,7 +147,7 @@ export async function prepareCatChat(
   // Rule 5 explicitly protects general economic knowledge — Cat must still be
   // able to explain Lightning or Twint. The restriction is on inventing facts
   // about THIS user's people and entities, which is the failure that actually
-  // costs trust. See services/agent-core/README.md.
+  // costs trust. See @bitbaum/ai-kit/grounding (the packaged harness).
   const groundingRules = contextString
     ? `\n\n${buildAssistantRules({ subjectNoun: 'profile, entities, contacts and transactions' })}`
     : '';
@@ -131,8 +157,10 @@ export async function prepareCatChat(
   // user. The per-turn reply-language directive goes DEAD LAST: weak models
   // weight the prompt tail most, and burying the language rule mid-prompt
   // let them default to the browser locale's language.
-  const systemPrompt = `${buildCatSystemPrompt({ userContext: contextString || undefined, customInstructions })}${groundingRules}\n\n${getCatFewShotExamplesText()}${buildReplyLanguageDirective(message)}`;
-
+  // History is resolved BEFORE the brief is built: whether this is the first
+  // message of the conversation is an input to section selection (the
+  // orientation sections fire on `first-message`), and it must be a fact read
+  // from the conversation, not inferred from the wording.
   let conversationId: string | null = null;
   let historyMessages: Array<{ role: 'user' | 'assistant'; content: string }> = [];
   try {
@@ -146,13 +174,36 @@ export async function prepareCatChat(
     /* Non-fatal — continue without history */
   }
 
+  const turnDescriptor = buildTurnDescriptor({
+    message,
+    historyLength: historyMessages.length,
+    currentPath: hints.currentPath,
+    currentEntity: hints.currentEntity,
+  });
+
+  const parts: CatPromptParts = {
+    base: buildCatSystemPrompt({ actionsVia: opts.actionsVia, turnDescriptor }),
+    standingInstructions: buildStandingInstructionsBlock(customInstructions),
+    userContext: contextString,
+    groundingRules,
+    fewShot: getCatFewShotExamplesText(),
+    languageDirective: buildReplyLanguageDirective(message),
+    history: historyMessages,
+    message,
+  };
+  const fitted =
+    opts.tokenBudget !== undefined
+      ? fitCatPromptToBudget(parts, opts.tokenBudget)
+      : {
+          messages: composeCatMessages(parts, { history: historyMessages, includeFewShot: true }),
+          report: null,
+        };
+  const systemPrompt = fitted.messages[0]?.content ?? '';
+
   return {
     systemPrompt,
-    messages: [
-      { role: 'system', content: systemPrompt },
-      ...historyMessages,
-      { role: 'user', content: message },
-    ],
+    messages: fitted.messages,
+    budget: fitted.report,
     conversationId,
     grounding: {
       // History counts as evidence: a name Cat established two turns ago is

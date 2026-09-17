@@ -4,18 +4,18 @@ echo "🧹 Running pre-commit checks..."
 
 # Run lint-staged if configured, otherwise run basic checks
 if command -v lint-staged >/dev/null 2>&1; then
-  npx lint-staged
+  pnpm exec lint-staged
 else
   echo "⚡ Running ESLint..."
-  npm run lint
+  pnpm run lint
   echo "✅ ESLint passed"
 
   echo "🔍 Running TypeScript check..."
-  npm run type-check
+  pnpm run type-check
   echo "✅ TypeScript check passed"
 
   echo "🧪 Running tests..."
-  npm run test:unit
+  pnpm run test:unit
   echo "✅ Tests passed"
 fi
 

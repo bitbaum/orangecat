@@ -521,6 +521,11 @@ const STREAMING_ALLOW = new Map([
   // status codes, so the loading skeleton is worth more than the 404.
   ['(authenticated)/dashboard/documents/[id]', 'auth-gated; skeleton kept deliberately'],
   ['(authenticated)/dashboard/wishlists/items/[itemId]', 'auth-gated; skeleton kept deliberately'],
+  // Same reasoning, plus: this page's notFound() fires for a claim that is not
+  // YOURS, which is a privacy answer rather than a routing one — it exists so
+  // the creator of a claim cannot be enumerated, and nothing outside the
+  // session ever sees the status.
+  ['(authenticated)/dashboard/profile-claims/[id]/share', 'auth-gated; 404 hides another user’s claim'],
 ]);
 
 const streamingFailures = [];

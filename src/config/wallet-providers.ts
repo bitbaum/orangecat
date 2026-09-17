@@ -75,17 +75,32 @@ export const WALLET_PROVIDERS: Record<string, WalletProvider> = {
     minutesToLightningAddress: 1,
     oneLiner: 'Free, works in a browser, gives you a Lightning address immediately.',
   },
+  // Alby is NOT a one-minute custodial address any more, and recommending it
+  // as one sent people to a dead end. Verified against a real free Alby
+  // account, 2026-09-07: the dashboard says "Run your own Alby Hub to start
+  // sending and receiving", its lightning address answers
+  //   {"status":"ERROR","reason":"The recipient's wallet is not properly
+  //    configured. Please reach out to the recipient to resolve this issue."}
+  // and the address cannot even be renamed without a paid plan. Alby migrated
+  // to self-custodial Alby Hub, so "install it and you have an address" is now
+  // "run a Lightning node, fund it, manage channels".
+  //
+  // Kept in the list because Alby Hub is genuinely good once it exists — and
+  // because deleting the entry would just let someone re-add the old claim.
+  // The honest framing keeps it out of the beginner path.
   alby: {
     id: 'alby',
-    name: 'Alby',
-    website: 'https://getalby.com',
+    name: 'Alby Hub',
+    website: 'https://albyhub.com',
     formFactor: 'browser',
     platforms: ['Web', 'Chrome', 'Firefox'],
-    custody: 'custodial',
+    custody: 'self',
     lightning: true,
-    lightningAddress: true,
-    minutesToLightningAddress: 2,
-    oneLiner: 'Browser wallet with a Lightning address, and it can connect to OrangeCat over NWC.',
+    // No address until a Hub is running and funded. Deliberately no
+    // minutesToLightningAddress: there is no honest number to put here.
+    lightningAddress: false,
+    oneLiner:
+      'Self-custodial: you run Alby Hub and fund a channel first. Powerful, and it speaks NWC — but not a first wallet.',
   },
   bluewallet: {
     id: 'bluewallet',

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Textarea } from '@/components/ui/Textarea';
 import { cn } from '@/lib/utils';
 import { TIMELINE_CONTENT_LIMITS, TIMELINE_COPY, TIMELINE_SURFACE } from '@/config/timeline';
+import { formatNumber } from '@/utils/locale';
 
 interface EditPostModalProps {
   isOpen: boolean;
@@ -118,29 +119,15 @@ export function EditPostModal({
 
       {/* Modal */}
       <div className="relative w-full max-w-xl rounded-md border border-subtle bg-surface-page shadow-sm animate-in fade-in-0 zoom-in-95 duration-200">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-subtle px-4 py-3">
+        {/* Header — dismissal only. The action that commits the edit lives at
+            the end of the form, next to the character count that says whether
+            it is allowed, rather than diagonally opposite it. */}
+        <div className="flex items-center gap-3 border-b border-subtle px-4 py-3">
           <button onClick={onClose} className={TIMELINE_SURFACE.iconButton} aria-label="Close">
             <X className="w-5 h-5" />
           </button>
 
           <h2 className="text-lg font-semibold text-fg-primary">Edit post</h2>
-
-          <Button
-            onClick={handleSave}
-            disabled={isSaving || !hasChanges || isOverLimit || !content.trim()}
-            size="sm"
-            className={TIMELINE_SURFACE.buttonPrimary}
-          >
-            {isSaving ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                {TIMELINE_COPY.savingButton}
-              </>
-            ) : (
-              'Save'
-            )}
-          </Button>
         </div>
 
         {/* Content */}
@@ -194,14 +181,33 @@ export function EditPostModal({
               </button>
             </div>
 
-            {/* Character count */}
-            <div
-              className={cn(
-                'text-sm',
-                isOverLimit ? 'text-status-negative font-medium' : 'text-fg-tertiary'
-              )}
-            >
-              {charCount.toLocaleString()} / {maxChars.toLocaleString()}
+            {/* Character count and the commit action, in reading order: what
+                you have written, then whether you may save it, then Save. */}
+            <div className="flex items-center gap-3">
+              <div
+                className={cn(
+                  'text-sm tabular-nums',
+                  isOverLimit ? 'text-status-negative font-medium' : 'text-fg-tertiary'
+                )}
+              >
+                {formatNumber(charCount)} / {formatNumber(maxChars)}
+              </div>
+
+              <Button
+                onClick={handleSave}
+                disabled={isSaving || !hasChanges || isOverLimit || !content.trim()}
+                size="sm"
+                className={TIMELINE_SURFACE.buttonPrimary}
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                    {TIMELINE_COPY.savingButton}
+                  </>
+                ) : (
+                  'Save'
+                )}
+              </Button>
             </div>
           </div>
         </div>

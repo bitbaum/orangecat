@@ -8,6 +8,7 @@
  * (already set; platform Cat runs on them). Never touches Cat Credits / NWC.
  */
 
+import { complete, linkId, ChainExhaustedError, type Link } from '@bitbaum/ai-kit';
 import { logger } from '@/utils/logger';
 import { PROVIDER_BASE_URLS } from '@/config/ai-provider-runtime';
 import { DEFAULT_FREE_MODEL_ID } from '@/config/ai-models';
@@ -38,6 +39,88 @@ import { DEFAULT_FREE_MODEL_ID } from '@/config/ai-models';
 const GROQ_MODEL = 'openai/gpt-oss-120b';
 const OPENROUTER_MODEL = DEFAULT_FREE_MODEL_ID;
 
+/**
+ * Models that reject `response_format: { type: 'json_object' }` outright.
+ *
+ * Groq's `openai/gpt-oss-120b` answers 400 `json_validate_failed` with an EMPTY
+ * `failed_generation` for EVERY request carrying the flag — verified against
+ * the live API on 2026-09-12 with a prompt as small as `Return JSON: {"ok":true}`.
+ * The same model, same prompt, without the flag returns valid JSON. So the flag
+ * is not a stricter mode here, it is an outage: in 24h of production traffic
+ * every single Groq attempt died on it and every structured Cat feature was
+ * served by OpenRouter instead, one wasted round-trip later.
+ *
+ * Seeded with what is proven, and added to at runtime, so the next model that
+ * starts rejecting the flag costs one failure rather than every call until
+ * somebody reads the logs.
+ */
+const JSON_MODE_UNSUPPORTED = new Set<string>([`groq:${GROQ_MODEL}`]);
+
+function linkKey(link: Link): string {
+  return `${link.provider.id}:${link.model}`;
+}
+
+function rejectsJsonMode(link: Link): boolean {
+  return JSON_MODE_UNSUPPORTED.has(linkKey(link));
+}
+
+/** Groq says `json_validate_failed`; other vendors name the flag they refused. */
+function isJsonModeRejection(message: string): boolean {
+  return /json_validate_failed|response_format/i.test(message);
+}
+
+/** Consecutive links that agree on whether the JSON flag can be sent at all. */
+function jsonModeRuns(chain: Link[]): Array<{ jsonMode: boolean; links: Link[] }> {
+  const runs: Array<{ jsonMode: boolean; links: Link[] }> = [];
+  for (const link of chain) {
+    const jsonMode = !rejectsJsonMode(link);
+    const last = runs[runs.length - 1];
+    if (last && last.jsonMode === jsonMode) {
+      last.links.push(link);
+    } else {
+      runs.push({ jsonMode, links: [link] });
+    }
+  }
+  return runs;
+}
+
+/**
+ * Record which link actually answered.
+ *
+ * Failures were logged and wins were not, so nothing could tell a provider
+ * that answers every time from one that has answered nothing in days — the
+ * fallback chain served both cases identically. Groq spent days answering 400
+ * to every structured call with no symptom beyond a slightly slower reply.
+ * `CompleteResult.id` already carries `provider/model`, so the win costs one
+ * line, and the box sweep (loki: ai-provider-check.sh) divides the two.
+ *
+ * Nothing about the prompt or the answer is logged — only which link served.
+ */
+function served(result: { text: string; id: string }): string {
+  // always: production logs at warn, and the box sweep that divides wins by
+  // losses must be able to see the wins.
+  logger.info('platform-llm: model call served', { link: result.id }, 'PlatformLLM', {
+    always: true,
+  });
+  return result.text;
+}
+
+/** Did this chain failure include a model refusing `response_format` itself? */
+function mentionsJsonModeRejection(err: unknown): boolean {
+  if (err instanceof ChainExhaustedError) {
+    return err.failures.some(f => isJsonModeRejection(f.message));
+  }
+  return isJsonModeRejection(String(err));
+}
+
+/**
+ * Every link's own failure, not just the last status: "lastStatus 429" cannot
+ * tell a rotted id at one vendor from a spent day at the other.
+ */
+function describeFailure(err: unknown): string[] | string {
+  return err instanceof ChainExhaustedError ? err.failures.map(f => f.message) : String(err);
+}
+
 export interface PlatformJsonOpts {
   temperature?: number;
   maxTokens?: number;
@@ -51,15 +134,13 @@ export interface PlatformJsonOpts {
   timeoutMs?: number;
 }
 
-interface Provider {
-  url: string;
-  model: string;
-  apiKey: string;
-  isOpenRouter: boolean;
-}
-
 /**
- * Providers to try, in order.
+ * The two links, in `ai-kit`'s shape, built from THIS repo's model registry.
+ *
+ * Deliberately not `freeChain()`. The ids above come from `@/config/ai-models`,
+ * which the free-model catalog probe in health-probes.ts watches, and this repo
+ * keeps its own registry on purpose. The engine is adopted for the REQUEST, not
+ * to take over which models orangecat serves.
  *
  * Groq first — fast, and handles long-form JSON inside the free TPM budget.
  * OpenRouter after it, and that ORDERING IS NOT THE POINT: what matters is that
@@ -68,127 +149,175 @@ interface Provider {
  * was no path out — a dead id took every platform-LLM feature down with it and
  * OpenRouter sat there configured and unused.
  */
-function resolveProviders(): Provider[] {
-  const providers: Provider[] = [];
+function resolveChain(): { chain: Link[]; env: Record<string, string> } {
+  const chain: Link[] = [];
+  const env: Record<string, string> = {};
+
   const groqKey = process.env.GROQ_API_KEY;
   const openRouterKey = process.env.OPENROUTER_API_KEY;
 
   if (groqKey) {
-    providers.push({
-      url: `${PROVIDER_BASE_URLS.groq}/chat/completions`,
+    env.GROQ_API_KEY = groqKey;
+    chain.push({
+      provider: {
+        id: 'groq',
+        baseUrl: PROVIDER_BASE_URLS.groq,
+        keyEnv: 'GROQ_API_KEY',
+        models: [GROQ_MODEL],
+        // Only feeds ai-kit's rationing helpers, which this file does not call.
+        // Stated low rather than invented: a generous guess produces the exact
+        // wall the rationing exists to prevent.
+        dailyTokens: 0,
+      },
       model: GROQ_MODEL,
-      apiKey: groqKey,
-      isOpenRouter: false,
     });
   }
+
   if (openRouterKey) {
-    providers.push(openRouter(openRouterKey, OPENROUTER_MODEL));
+    env.OPENROUTER_API_KEY = openRouterKey;
+    chain.push({
+      provider: {
+        id: 'openrouter',
+        baseUrl: PROVIDER_BASE_URLS.openrouter,
+        keyEnv: 'OPENROUTER_API_KEY',
+        models: [OPENROUTER_MODEL],
+        dailyTokens: 0,
+        // Routed ids: `:free` is the difference between free routing and a
+        // per-call charge.
+        routed: true,
+      },
+      model: OPENROUTER_MODEL,
+    });
   }
-  return providers;
+
+  return { chain, env };
 }
 
-function openRouter(apiKey: string, model: string): Provider {
-  return {
-    url: `${PROVIDER_BASE_URLS.openrouter}/chat/completions`,
-    model,
-    apiKey,
-    isOpenRouter: true,
-  };
+/**
+ * Whether any platform AI provider is configured at all.
+ *
+ * Callers that owe the user a specific "not configured" explanation (form
+ * prefill's `provider_not_configured` code, with its settings link) need to
+ * tell this apart from "configured but down" — callPlatformJson collapses both
+ * into null.
+ */
+export function hasPlatformProviders(): boolean {
+  return resolveChain().chain.length > 0;
 }
 
 /**
  * Call the platform LLM with a system+user prompt and JSON response mode.
  * Returns the raw content string (expected to be JSON) or null.
+ *
+ * ── What `complete()` fixed here ─────────────────────────────────────────────
+ *
+ * AN EMPTY 200 WAS AN ANSWER. `json.choices?.[0]?.message?.content ?? null`
+ * looks like it guards, and does not: `??` only catches null/undefined, so an
+ * empty STRING was returned as the model's output. Worse, the loop `return`ed
+ * on the first `response.ok`, so an empty completion never fell through to
+ * OpenRouter — it went straight to `parseJsonLoose('')`, which returns null,
+ * and eight features "degraded gracefully" into doing nothing. That is the same
+ * silence the rotted `llama-3.3-70b-versatile` id caused, from a different
+ * cause, and it would not have shown up in the logs at all.
+ *
+ * A 429 WAS A STATUS CODE. The three kinds share it and want opposite
+ * responses; only the response body separates them. `complete()` reads it, so a
+ * DAILY cap now condemns that vendor (its other models draw on the same
+ * exhausted org-wide budget) and a SIZE cap ends the walk rather than demoting
+ * to a smaller ceiling.
+ *
+ * EVERY LINK'S FAILURE IS NAMED, not just `lastStatus`. "every provider failed,
+ * lastStatus 429" cannot tell a rotted id at Groq from a spent day at
+ * OpenRouter.
  */
 export async function callPlatformJson(
   system: string,
   user: string,
   opts: PlatformJsonOpts = {}
 ): Promise<string | null> {
-  const providers = resolveProviders();
-  if (providers.length === 0) {
+  const { chain, env } = resolveChain();
+  if (chain.length === 0) {
     logger.warn('platform-llm: no platform AI key configured', {}, 'PlatformLLM');
     return null;
   }
 
   const messages = [
-    { role: 'system', content: system },
-    { role: 'user', content: user },
+    { role: 'system' as const, content: system },
+    { role: 'user' as const, content: user },
   ];
   const maxTokens = opts.maxTokens ?? (opts.longform ? 3000 : 1400);
   const temperature = opts.temperature ?? 0.6;
 
-  let lastStatus: number | null = null;
+  const attempt = (jsonMode: boolean, links: Link[] = chain) =>
+    complete({
+      chain: links,
+      env,
+      messages,
+      temperature,
+      maxTokens,
+      ...(opts.timeoutMs ? { timeoutMs: opts.timeoutMs } : {}),
+      ...(jsonMode ? { extraBody: { response_format: { type: 'json_object' } } } : {}),
+      // OpenRouter reads this for app attribution in its public rankings.
+      // Harmless at Groq, which ignores unknown headers.
+      extraHeaders: {
+        'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'https://orangecat.ch',
+      },
+      onLinkFailure: (link, error) => {
+        // A 404 means the model id no longer exists, which is a CONFIGURATION
+        // fault rather than a hiccup: it will fail identically until someone
+        // changes the constant. warn was too quiet — it degraded eight features
+        // to silence for as long as nobody read the logs.
+        if (/: 404\b/.test(error.message)) {
+          logger.error(
+            'platform-llm: model no longer served — the pinned id has rotted',
+            { link: linkId(link) },
+            'PlatformLLM'
+          );
+        } else {
+          // A model that refuses the JSON flag refuses it every time. Record it
+          // so the next call does not spend a round-trip proving it again.
+          if (isJsonModeRejection(error.message)) {
+            JSON_MODE_UNSUPPORTED.add(linkKey(link));
+          }
+          logger.warn(
+            'platform-llm: model call failed',
+            { link: linkId(link), error: error.message },
+            'PlatformLLM'
+          );
+        }
+      },
+    });
 
-  for (const provider of providers) {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${provider.apiKey}`,
-    };
-    if (provider.isOpenRouter) {
-      headers['HTTP-Referer'] = process.env.NEXT_PUBLIC_APP_URL || 'https://orangecat.ch';
-    }
+  // The flag is a PER-MODEL capability, not a chain-wide one. Sending it to a
+  // model that refuses it is a guaranteed 400 in front of a user-facing
+  // feature; withholding it from a model that supports it throws away the
+  // strictness that makes the answer parseable. So the chain is walked in runs
+  // that agree on the flag: Groq answers without it, and if Groq is out, the
+  // OpenRouter fallback still gets it.
+  const runs = jsonModeRuns(chain);
+  const failures: unknown[] = [];
 
-    const call = (jsonMode: boolean) =>
-      fetch(provider.url, {
-        method: 'POST',
-        headers,
-        ...(opts.timeoutMs ? { signal: AbortSignal.timeout(opts.timeoutMs) } : {}),
-        body: JSON.stringify({
-          model: provider.model,
-          messages,
-          temperature,
-          max_tokens: maxTokens,
-          ...(jsonMode ? { response_format: { type: 'json_object' } } : {}),
-        }),
-      });
-
+  for (const run of runs) {
     try {
-      // Some free models 400 on response_format — retry once without it and lean
-      // on parseJsonLoose (the system prompt already demands JSON-only output).
-      let response = await call(true);
-      if (!response.ok) {
-        response = await call(false);
-      }
-
-      if (response.ok) {
-        const json = (await response.json()) as {
-          choices?: { message?: { content?: string } }[];
-        };
-        return json.choices?.[0]?.message?.content ?? null;
-      }
-
-      lastStatus = response.status;
-      // 404 means the model id no longer exists, which is a CONFIGURATION fault
-      // rather than a hiccup: it will fail identically until someone changes the
-      // constant. warn was too quiet — it degraded eight features to silence for
-      // as long as nobody read the logs.
-      if (response.status === 404) {
-        logger.error(
-          'platform-llm: model no longer served — the pinned id has rotted',
-          { model: provider.model, provider: provider.isOpenRouter ? 'openrouter' : 'groq' },
-          'PlatformLLM'
-        );
-      } else {
-        logger.warn(
-          'platform-llm: model call failed',
-          { status: response.status, model: provider.model },
-          'PlatformLLM'
-        );
-      }
+      return served(await attempt(run.jsonMode, run.links));
     } catch (err) {
-      logger.warn(
-        'platform-llm: model call threw',
-        { err: String(err), model: provider.model },
-        'PlatformLLM'
-      );
+      failures.push(err);
+      // A rejection we had not recorded yet: the hook above has just learned
+      // it, so every LATER call is already correct. Rescue this one too, once,
+      // rather than making the user pay for the discovery.
+      if (run.jsonMode && mentionsJsonModeRejection(err)) {
+        try {
+          return served(await attempt(false, run.links));
+        } catch (retryErr) {
+          failures.push(retryErr);
+        }
+      }
     }
-    // Fall through to the next provider.
   }
 
   logger.error(
     'platform-llm: every provider failed',
-    { providers: providers.length, lastStatus },
+    { links: chain.length, failures: failures.map(describeFailure) },
     'PlatformLLM'
   );
   return null;

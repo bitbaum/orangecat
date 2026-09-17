@@ -9,6 +9,7 @@ import { logger } from '@/utils/logger';
 import { ARTICLE_EVENT_TYPE, buildArticleSlug, shortToken } from '@/config/articles';
 import { buildArticleMetadata, validateArticleInput } from './write-shared';
 import type { CreateArticleInput } from './types';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 interface PublishArticleUser {
   id: string;
@@ -51,7 +52,7 @@ export async function publishArticle(
 
   if (!result.success) {
     logger.error('Failed to publish article', { error: result.error }, 'Articles');
-    return { success: false, error: result.error || 'Failed to publish article.' };
+    return { success: false, error: apiErrorMessage(result, 'Failed to publish article.') };
   }
 
   return { success: true, slug };

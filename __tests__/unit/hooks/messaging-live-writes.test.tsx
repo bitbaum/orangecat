@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Typing and presence write directly to their tables under RLS.
  *
@@ -20,28 +21,32 @@
 
 import { renderHook, act, waitFor } from '@testing-library/react';
 
-const upsert = jest.fn().mockResolvedValue({ error: null });
-const del = jest.fn();
-const eq2 = jest.fn().mockResolvedValue({ error: null });
-const eq1 = jest.fn(() => ({ eq: eq2 }));
-const from = jest.fn(() => ({ upsert, delete: del }));
+const upsert = vi.fn().mockResolvedValue({ error: null });
+const del = vi.fn();
+const eq2 = vi.fn().mockResolvedValue({ error: null });
+const eq1 = vi.fn(() => ({ eq: eq2 }));
+const from = vi.fn(() => ({ upsert, delete: del }));
 
 del.mockImplementation(() => ({ eq: eq1 }));
 
-jest.mock('@/lib/supabase/browser', () => ({
+vi.mock('@/lib/supabase/browser', () => ({
   __esModule: true,
-  default: { from: (...a: unknown[]) => from(...(a as [])), channel: () => ({ on: () => ({ subscribe: () => ({}) }) }), removeChannel: () => {} },
+  default: {
+    from: (...a: unknown[]) => from(...(a as [])),
+    channel: () => ({ on: () => ({ subscribe: () => ({}) }) }),
+    removeChannel: () => {},
+  },
 }));
 
-jest.mock('@/hooks/useAuth', () => ({
+vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => ({ user: { id: 'user-1' } }),
 }));
 
 // The subscription half is a separate concern; keep this test on the writes.
-jest.mock('@/features/messaging/hooks/useTypingSubscription', () => ({
+vi.mock('@/features/messaging/hooks/useTypingSubscription', () => ({
   useTypingSubscription: () => [],
 }));
-jest.mock('@/features/messaging/hooks/usePresenceActivity', () => ({
+vi.mock('@/features/messaging/hooks/usePresenceActivity', () => ({
   usePresenceActivity: () => {},
 }));
 

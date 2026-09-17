@@ -66,6 +66,12 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
  */
 export const RELATED_SETTINGS: SettingsSection[] = [
   {
+    href: ROUTES.PROFILE.EDIT,
+    label: 'Profile & handle',
+    description: 'Your name, handle, bio, and links — the public half of your account.',
+    icon: UserRound,
+  },
+  {
     href: ROUTES.DASHBOARD.CAT_PERMISSIONS,
     label: 'Cat permissions & spend caps',
     description: 'What Cat may do on your behalf, and how much it may spend.',

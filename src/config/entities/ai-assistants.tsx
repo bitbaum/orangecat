@@ -61,7 +61,7 @@ export const aiAssistantEntityConfig: EntityConfig<AIAssistant> = {
     };
 
     // Build metadata parts
-    const metadataParts: string[] = [];
+    const metadataParts: string[] = [assistant.is_public ? 'Public' : 'Private'];
     if (assistant.category) {
       metadataParts.push(assistant.category);
     }
@@ -93,11 +93,11 @@ export const aiAssistantEntityConfig: EntityConfig<AIAssistant> = {
   },
 
   emptyState: {
-    title: 'No AI assistants yet',
-    description: 'Create your first AI assistant to start earning from your expertise.',
+    title: 'No companions yet',
+    description: 'Create your first companion: a being with its own voice that remembers you.',
     action: (
       <Link href={ROUTES.DASHBOARD.AI_ASSISTANTS_CREATE}>
-        <Button className={GRADIENTS.brandTiffany}>Create AI Assistant</Button>
+        <Button className={GRADIENTS.brandTiffany}>Create a companion</Button>
       </Link>
     ),
   },

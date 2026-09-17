@@ -13,6 +13,7 @@ import {
   type TaskType,
   type Priority,
 } from '../task-form-types';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 const INITIAL_FORM_DATA: TaskFormData = {
   title: '',
@@ -92,7 +93,7 @@ export function useNewTaskForm() {
       });
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to create task');
+        throw new Error(apiErrorMessage(data, 'Failed to create task'));
       }
       toast.success('Task created!');
       router.push(`/dashboard/tasks/${data.data.task.id}`);

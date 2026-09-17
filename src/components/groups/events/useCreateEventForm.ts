@@ -7,6 +7,7 @@ import { groupEventSchema, type GroupEventFormData } from '@/lib/validation/grou
 import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
 import { API_ROUTES } from '@/config/api-routes';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 export function useCreateEventForm(
   groupSlug: string,
@@ -48,7 +49,7 @@ export function useCreateEventForm(
       const result = await response.json();
 
       if (!response.ok || !result.success) {
-        throw new Error(result.error || 'Failed to create event');
+        throw new Error(apiErrorMessage(result, 'Failed to create event'));
       }
 
       toast.success('Event created successfully');

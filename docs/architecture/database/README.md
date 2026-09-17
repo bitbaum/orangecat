@@ -1,8 +1,8 @@
 # 🗄️ Database Architecture Documentation
 
-**Overall Rating: 9.2/10** ⭐⭐⭐⭐⭐ | **Status: Production Ready** ✅ | **Simplified MVP Architecture** 🚀
+**Overall Rating: 9.2/10** (2025 self-score) | **Status: Stale 2025-12-21 snapshot — not a current Production Ready claim** | **Simplified MVP Architecture**
 
-> Last Updated: December 21, 2025
+> Last Updated: December 21, 2025 (stale; honesty pass 2026-09-03)
 > Database: Supabase PostgreSQL
 > Version: Production v2.0 (Simplified)
 > Tables: 5 core tables (down from 10+)
@@ -58,7 +58,7 @@
 - **Multi-Entity Transactions** - Any entity can donate to any other
 - **Bitcoin Wallet Support** - Lightning/Bitcoin addresses for all entities
 - **Row Level Security** - Comprehensive access control
-- **Production Ready** - Optimized for scalability and performance
+- **2025 snapshot claimed production-ready** - do not treat as today's gate
 - **3 Helper Functions** - Wallet balance and transaction history queries
 - **15+ RLS Policies** - Comprehensive security coverage
 - **15+ Indexes** - Strategic performance optimization
@@ -209,4 +209,4 @@ ORDER BY idx_scan ASC;
 
 ---
 
-**Status**: Production Ready | **Rating**: 9.2/10 | **Architecture**: Simplified MVP | **Last Updated**: December 21, 2025
+**Status**: Stale 2025-12-21 snapshot (not a current Production Ready claim) | **Rating**: 9.2/10 (then) | **Architecture**: Simplified MVP | **Last Updated**: December 21, 2025

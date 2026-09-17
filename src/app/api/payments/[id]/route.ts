@@ -74,7 +74,7 @@ export const POST = withAuth(
       // Zod validation
       const parsed = paymentActionSchema.safeParse(body);
       if (!parsed.success) {
-        return apiBadRequest('Invalid input', parsed.error.errors);
+        return apiBadRequest('Invalid input', parsed.error.issues);
       }
 
       const result =

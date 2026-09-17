@@ -303,6 +303,12 @@ async function checkSilentlyDroppedCatTurns() {
 // three that used to: the handle_new_user trigger, ensureProfile(), and two
 // profile form pre-fills. Each is covered by a test, so a regression here means
 // a FOURTH one was added.
+//
+// System accounts (RFC 2606 `.invalid` addresses) are excluded from the count
+// as of 20260828070000. They matched the predicate perfectly while leaking
+// nothing — an undeliverable address has no mailbox, so no owner, so no
+// personal information in its local part — and the retirement that predicate
+// authorised took `@cat` off the platform for two days. See checkCatHandle.
 const EMAIL_DERIVED_USERNAME_BASELINE = 0;
 
 async function checkEmailDerivedUsernames() {
@@ -319,6 +325,161 @@ async function checkEmailDerivedUsernames() {
     );
   } else {
     notes.push('profiles: no handle is an email local part');
+  }
+}
+
+// The same leak, one column over.
+//
+// The 2026-08-26 sweep cleared display names that were the email local part for
+// exactly this reason, and nothing watched the column afterwards. That gap
+// mattered the moment 20260907090000 added a write path setting `name` from
+// OAuth metadata: some providers put the address itself in that field, so a
+// repair for one leak is a plausible route back in for the other. The migration
+// guards it at write time; this is the gate behind the guard.
+const EMAIL_DERIVED_NAME_BASELINE = 0;
+
+async function checkEmailDerivedNames() {
+  const count = Number(await rpc('count_email_derived_names'));
+
+  if (count > EMAIL_DERIVED_NAME_BASELINE) {
+    violation(
+      'profiles.name_from_email',
+      `${count} profile(s) publish their email local part as a display NAME. A name is as ` +
+        `public as a handle — it renders in every thread, mention and profile card — so this ` +
+        `is the leak count_email_derived_usernames() watches, one column over. Find the write ` +
+        `path that set it before the count grows.`,
+      []
+    );
+  } else {
+    notes.push('profiles: no display name is an email local part');
+  }
+}
+
+/**
+ * `@cat` must point at the Cat.
+ *
+ * This exists because on 2026-08-26 it stopped, and nothing anywhere noticed
+ * for two days. The email-derived-handle retirement renamed the Cat from `cat`
+ * to `user_0234d5e38e66` — correctly, by its own predicate, since the Cat's
+ * handle IS derived from `cat@orangecat.invalid`. Every `@cat` on the platform
+ * then resolved to nobody: no reply in any message, none under any post. The
+ * profile still existed, /profiles/cat still 301'd through the history table,
+ * CI was green and health was 200. The only observable symptom was silence,
+ * from a feature whose whole job is to answer.
+ *
+ * So this checks the product claim rather than a schema fact: not "the Cat
+ * account exists" — it did throughout — but "the name the platform tells people
+ * to type reaches it". Those came apart, which is the entire lesson.
+ *
+ * Reads by handle deliberately. The resolver looks mentions up by username, so
+ * this asks the question in the same terms the resolver does, and a lookup by
+ * id would pass while `@cat` stayed broken.
+ */
+async function checkCatHandle() {
+  // Kept in step with src/config/cat-identity.ts by
+  // __tests__/unit/services/cat-handle-invariant.test.ts, which fails if the
+  // handle there ever changes without this literal changing with it.
+  const CAT_HANDLE = 'cat';
+  const rows = await rest(`profiles?select=id,email&username=eq.${CAT_HANDLE}`);
+
+  if (rows.length === 0) {
+    violation(
+      'cat.handle_resolves',
+      `no profile answers to @${CAT_HANDLE}, so every @${CAT_HANDLE} in a message or under a ` +
+        `post resolves to nobody and the Cat replies to nothing. The account itself may be ` +
+        `perfectly healthy — check whether something renamed it (the handle-retirement script ` +
+        `did exactly this once), then let the worker re-assert it via ensureCatAccount`,
+      []
+    );
+    return;
+  }
+
+  // A handle held by the WRONG account is impersonation of the platform's own
+  // agent, and that is worth naming separately from "missing".
+  const holder = rows[0];
+  if (!String(holder.email ?? '').endsWith('.invalid')) {
+    violation(
+      'cat.handle_resolves',
+      `@${CAT_HANDLE} is held by an account with a deliverable email address, which means it is ` +
+        `not the platform's agent — somebody is receiving every mention meant for the Cat`,
+      [holder.id]
+    );
+    return;
+  }
+
+  notes.push(`cat: @${CAT_HANDLE} resolves to the Cat`);
+}
+
+/**
+ * Functions that reference a column, table or type that does not exist.
+ *
+ * Nineteen of them on 2026-08-28, silently, for months: likes, dislikes,
+ * replies, deleting a post and quote replies were all dead in production, along
+ * with four AI-withdrawal functions and both nearby searches. Every one looked
+ * healthy — defined, routable, called by the app — because plpgsql only plans a
+ * statement when it runs, so a write to a missing column raises 42703 at call
+ * time and never before.
+ *
+ * Nothing else in the stack sees this. Unit tests mock the database;
+ * check-rpc-exists proves a function is DEFINED, which all of these were;
+ * migration replay proves the SQL applies, and creating a function never
+ * validates its body.
+ *
+ * A ratchet rather than a demand for zero: eleven remain after the timeline
+ * ones were repaired, and each of those needs a decision rather than a
+ * mechanical edit (does `ai_creator_withdrawals` want a `completed_at` column,
+ * or should the write go?). Demanding zero tomorrow would make this red about
+ * work that is queued, which is how a gate teaches people to ignore it.
+ * `SELECT * FROM list_broken_plpgsql_functions()` names them.
+ */
+const BROKEN_FUNCTION_BASELINE = 11;
+
+async function checkBrokenFunctions() {
+  const count = Number(await rpc('count_broken_plpgsql_functions'));
+
+  if (count > BROKEN_FUNCTION_BASELINE) {
+    violation(
+      'functions.reference_missing_objects',
+      `${count} plpgsql function(s) reference something that does not exist, up from ` +
+        `${BROKEN_FUNCTION_BASELINE}. A new one will fail only when a user triggers it, with ` +
+        `42703 and no other symptom — run list_broken_plpgsql_functions() to see which`,
+      []
+    );
+  } else {
+    notes.push(
+      `functions: ${count} reference a missing object (baseline ${BROKEN_FUNCTION_BASELINE}, never rises)`
+    );
+  }
+}
+
+/**
+ * You can read the Cat's answer on your own private post.
+ *
+ * The Cat replies with the parent's visibility, which is correct, but the reply
+ * is authored by the CAT — and the rule for a private event is
+ * `actor_id = auth.uid()`. So on 2026-08-28 the answer to a private question
+ * was visible to exactly one account, and it was not the asker's. Measured on
+ * post 5c3ad8ef: three replies existed, the author could see two, and the
+ * missing one was the answer they had asked for.
+ *
+ * Gated here because the failure is SILENT. Nothing errors — the Cat answers,
+ * the row exists, and the thread simply renders without it, which reads as the
+ * Cat having ignored you. Whoever rewrites this policy next gets no warning if
+ * the clause goes.
+ */
+async function checkCatAnswersAreReadable() {
+  const allowed = await rpc('timeline_policy_allows_own_thread');
+
+  if (allowed !== true) {
+    violation(
+      'timeline.own_thread_readable',
+      `the timeline SELECT policy no longer lets you read replies on your own private posts, so ` +
+        `the Cat answers private questions where the person who asked cannot see them — the reply ` +
+        `is written, and the thread renders as though it never came`,
+      []
+    );
+  } else {
+    notes.push('timeline: you can read replies on your own private posts');
   }
 }
 
@@ -454,6 +615,10 @@ async function main() {
     checkSilentlyDroppedCatTurns,
     checkOrphanedProfiles,
     checkEmailDerivedUsernames,
+    checkEmailDerivedNames,
+    checkCatHandle,
+    checkCatAnswersAreReadable,
+    checkBrokenFunctions,
     checkOrphanedCatConversations,
     checkOrphanedActors,
   ];

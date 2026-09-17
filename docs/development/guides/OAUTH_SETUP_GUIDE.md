@@ -134,7 +134,7 @@ SUPABASE_AUTH_EXTERNAL_TWITTER_SECRET=your-actual-twitter-client-secret
 ## 📋 Step 7: Restart Development Server
 
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 ---

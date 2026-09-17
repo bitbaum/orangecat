@@ -1,21 +1,23 @@
 import { listProjectsPage } from '@/domain/projects/service';
 
-jest.mock('@/lib/supabase/server', () => ({
-  createServerClient: jest.fn(),
+vi.mock('@/lib/supabase/server', () => ({
+  createServerClient: vi.fn(),
 }));
 
-jest.mock('@/services/actors/getOrCreateUserActor', () => ({
-  getOrCreateUserActor: jest.fn().mockResolvedValue({ id: 'a1' }),
+vi.mock('@/services/actors/getOrCreateUserActor', () => ({
+  getOrCreateUserActor: vi.fn().mockResolvedValue({ id: 'a1' }),
 }));
 
 // Funding enrichment converts settled BTC totals via the currency service —
 // keep the test deterministic (identity conversion, no rate fetch).
-jest.mock('@/services/currency', () => ({
-  currencyConverter: { getRates: jest.fn().mockResolvedValue({}) },
+vi.mock('@/services/currency', () => ({
+  currencyConverter: { getRates: vi.fn().mockResolvedValue({}) },
   convertBtcTo: (amountBtc: number) => amountBtc,
 }));
 
 import { createServerClient } from '@/lib/supabase/server';
+
+import type { Mock } from 'vitest';
 
 describe('Project list workflow', () => {
   const dataRows = [
@@ -50,11 +52,11 @@ describe('Project list workflow', () => {
    */
   function makeChainableQuery(resolveValue: any) {
     const query: any = {
-      select: jest.fn().mockReturnThis(),
-      eq: jest.fn().mockReturnThis(),
-      in: jest.fn().mockReturnThis(),
-      order: jest.fn().mockReturnThis(),
-      range: jest.fn().mockReturnThis(),
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      in: vi.fn().mockReturnThis(),
+      order: vi.fn().mockReturnThis(),
+      range: vi.fn().mockReturnThis(),
     };
     // Make query thenable so Promise.all resolves it
     query.then = (resolve: any, reject: any) => Promise.resolve(resolveValue).then(resolve, reject);
@@ -62,22 +64,22 @@ describe('Project list workflow', () => {
   }
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('lists active projects and maps funding from the settled ledger, not the dead column', async () => {
     const dataQuery = makeChainableQuery({ data: dataRows, error: null });
     const countQuery = makeChainableQuery({ count: 2, error: null });
 
-    const from = jest.fn().mockReturnValueOnce(dataQuery).mockReturnValueOnce(countQuery);
+    const from = vi.fn().mockReturnValueOnce(dataQuery).mockReturnValueOnce(countQuery);
     // Settled funding stats: only p2 has real contributions. The raised_amount
     // column value (1200 on p2) must be IGNORED — nothing ever writes it.
-    const rpc = jest.fn().mockResolvedValue({
+    const rpc = vi.fn().mockResolvedValue({
       data: [{ entity_id: 'p2', total_btc: 0.01, contributor_count: 2, named_supporter_count: 1 }],
       error: null,
     });
 
-    (createServerClient as jest.Mock).mockResolvedValue({ from, rpc });
+    (createServerClient as Mock).mockResolvedValue({ from, rpc });
 
     const result = await listProjectsPage(20, 0);
 
@@ -96,9 +98,9 @@ describe('Project list workflow', () => {
     const dataQuery = makeChainableQuery({ data: [dataRows[0]], error: null });
     const countQuery = makeChainableQuery({ count: 1, error: null });
 
-    const from = jest.fn().mockReturnValueOnce(dataQuery).mockReturnValueOnce(countQuery);
+    const from = vi.fn().mockReturnValueOnce(dataQuery).mockReturnValueOnce(countQuery);
 
-    (createServerClient as jest.Mock).mockResolvedValue({ from });
+    (createServerClient as Mock).mockResolvedValue({ from });
 
     const result = await listProjectsPage(20, 0, 'u1');
 

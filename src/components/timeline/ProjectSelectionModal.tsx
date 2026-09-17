@@ -6,6 +6,7 @@ import { Check, ArrowLeft, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { TIMELINE_COPY, TIMELINE_SURFACE } from '@/config/timeline';
+import { formatNumber } from '@/utils/locale';
 
 interface Project {
   id: string;
@@ -124,7 +125,7 @@ export default function ProjectSelectionModal({
                         </div>
                         {project.contributor_count !== undefined && (
                           <div className="text-sm text-fg-secondary">
-                            {project.contributor_count.toLocaleString()} supporter
+                            {formatNumber(project.contributor_count)} supporter
                             {project.contributor_count !== 1 ? 's' : ''}
                           </div>
                         )}

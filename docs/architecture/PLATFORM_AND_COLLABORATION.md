@@ -1,26 +1,26 @@
-# OrangeCat as a Platform — and how it couples with FleetCrown
+# OrangeCat as a Platform — and how it couples with Loki
 
 **Status:** Architecture decision / north star. Not fully built — this is the
 design both products converge toward.
-**Scope:** OrangeCat (this repo) + FleetCrown (separate repo,
-`/home/g/dev/fleetcrown`). Cross-product; aligned by both agent tabs 2026-06-16.
-**Companion spec:** `cross-product-identity-bridge.md` (FleetCrown repo — the
-"Login with OrangeCat" / OIDC keystone + the FleetCrown relying-party side).
+**Scope:** OrangeCat (this repo) + Loki (separate repo,
+`/home/g/dev/loki`). Cross-product; aligned by both agent tabs 2026-06-16.
+**Companion spec:** `cross-product-identity-bridge.md` (Loki repo — the
+"Login with OrangeCat" / OIDC keystone + the Loki relying-party side).
 
 ---
 
 ## The problem
 
-OrangeCat and FleetCrown are **both deeply collaborative, multi-tenant** products.
-OrangeCat is identity + economy + communication + presence. FleetCrown is the
+OrangeCat and Loki are **both deeply collaborative, multi-tenant** products.
+OrangeCat is identity + economy + communication + presence. Loki is the
 AI agent-fleet that builds things. But **building is itself collaborative** — teams
-talk, fund, divide roles, ship updates. So FleetCrown appears to "need"
+talk, fund, divide roles, ship updates. So Loki appears to "need"
 collaboration and communication too.
 
 That creates an apparent contradiction:
 
 - Put collaboration/comms in **both** apps → two diverging systems → **SSOT is dead**.
-- Send FleetCrown users **over to** OrangeCat to collaborate → constant
+- Send Loki users **over to** OrangeCat to collaborate → constant
   context-switching → **UX is dead**.
 
 They may merge someday, but **not now**. So we need tight coupling and mutual
@@ -43,7 +43,7 @@ platform), and is rendered natively wherever it's needed.
 2. **OrangeCat the _app_** — one client of that platform (the public social/economy
    product).
 
-**FleetCrown is the second first-party client** of the same platform. Future
+**Loki is the second first-party client** of the same platform. Future
 products — and eventually third parties via "Login with OrangeCat" — are further
 clients.
 
@@ -60,16 +60,16 @@ the one identity + economy.
                  └───────────────▲───────────────▲───────────────┘
                                  │ API + OIDC     │ API + OIDC + async publish
                  ┌───────────────┴──────┐  ┌──────┴────────────────┐
-                 │   OrangeCat the app   │  │      FleetCrown       │
+                 │   OrangeCat the app   │  │      Loki       │
                  │ (presence + economy)  │  │ (build/execution +    │
                  │                       │  │  PRIVATE event spine)  │
                  └───────────────────────┘  └───────────────────────┘
-        OC renders shared surfaces natively; FleetCrown embeds them inline
+        OC renders shared surfaces natively; Loki embeds them inline
 ```
 
 ## SSOT spine — one home per concern
 
-Neither app forks these. FleetCrown **references**, never re-implements.
+Neither app forks these. Loki **references**, never re-implements.
 
 | Concern             | Single source of truth                                   | Both apps         |
 | ------------------- | -------------------------------------------------------- | ----------------- |
@@ -81,7 +81,7 @@ Neither app forks these. FleetCrown **references**, never re-implements.
 | Economy             | `wallets`, `payment_intents`, `contributions`            | surface fund/pay  |
 | Collaboration needs | `project_roles` (new) → existing `/jobs` surface         | surface board     |
 
-FleetCrown owns only its domain: agents, `orchestration_runs`,
+Loki owns only its domain: agents, `orchestration_runs`,
 `control_audit_events`, its **private** build-event spine, repos, the build cockpit.
 
 \* Teams are **mapped, not migrated** yet — see below.
@@ -91,7 +91,7 @@ FleetCrown owns only its domain: agents, `orchestration_runs`,
 This is the correction that keeps SoC intact: `timeline_events` is the
 **publish / activity bus**, not a firehose.
 
-- **FleetCrown keeps its own private build-event spine** (`events.jsonl`,
+- **Loki keeps its own private build-event spine** (`events.jsonl`,
   `orchestration_runs`, `control_audit_events`) — high-volume, private. It renders
   its cockpit from its own data.
 - A curated **"promote" step** lifts only publish-worthy events
@@ -102,9 +102,9 @@ This is the correction that keeps SoC intact: `timeline_events` is the
 
 ### Publishing is async + idempotent + reconcilable
 
-Changelog → wall is **async / best-effort**, reusing FleetCrown's existing
+Changelog → wall is **async / best-effort**, reusing Loki's existing
 fire-and-forget pattern (`syncSubscriptionToOrangeCat`) — **never a synchronous
-cross-app write.** That is what actually gives availability decoupling: FleetCrown
+cross-app write.** That is what actually gives availability decoupling: Loki
 renders from its own data regardless of OC's state.
 
 But "best-effort" alone silently drops posts, so OC (which owns the receiving end)
@@ -119,17 +119,17 @@ makes the published event:
 
 The _end state_ is that a build team is an **OrangeCat group** with a shared
 multi-sig `group_wallet`. But **don't single-source teams into OC groups yet** —
-FleetCrown has its own `orgs` / `orgMemberships` wired into auth bootstrap
+Loki has its own `orgs` / `orgMemberships` wired into auth bootstrap
 (`createPersonalOrg` in `events.signIn`), project sharing, and billing. That's an
 auth-critical working subsystem; swapping it is merge-territory, deferred.
 
 **For now — map at the boundary:**
 
-- FleetCrown keeps its orgs for internal build access.
-- When a FleetCrown project is team-funded / published, **associate** it with an OC
-  `group` + `group_wallet` (funded on OC, spent by FleetCrown via scoped OIDC
+- Loki keeps its orgs for internal build access.
+- When a Loki project is team-funded / published, **associate** it with an OC
+  `group` + `group_wallet` (funded on OC, spent by Loki via scoped OIDC
   tokens).
-- The association requires FleetCrown org members to **resolve to OC actors via the
+- The association requires Loki org members to **resolve to OC actors via the
   OIDC `sub`** — so even mapping is gated on the identity keystone.
 
 Converge to one team model later, if/when the apps merge.
@@ -138,20 +138,20 @@ Converge to one team model later, if/when the apps merge.
 
 Rendering the same concern in two UIs is where duplication creeps back. The naive
 fix — a shared `@oc/collab-ui` React package — is the **wrong** call here: the
-stacks diverge (FleetCrown = Next 16 / Tailwind v4 / Drizzle / a four-layer `ui-*`
+stacks diverge (Loki = Next 16 / Tailwind v4 / Drizzle / a four-layer `ui-*`
 design system; OrangeCat = Next 15 / Supabase). A shared component package means
 ongoing build-pipeline coupling + version lock.
 
 **Instead — embeddable OC widget routes.** OrangeCat exposes self-contained widget
 routes (messaging panel, fund button, activity strip, collaborator board);
-FleetCrown mounts them inline via **iframe / web-component**, passing a **scoped
+Loki mounts them inline via **iframe / web-component**, passing a **scoped
 OIDC token over `postMessage`**. One implementation, **owned by OC, rendered
-natively in FleetCrown, zero build-pipeline coupling.**
+natively in Loki, zero build-pipeline coupling.**
 
 Because OC _serves_ the embeds, OC owns their security:
 
 - **origin-pinned `postMessage`** — only accept from / send to
-  `fleetcrown.orangecat.ch`;
+  `loki.orangecat.ch`;
 - **`frame-ancestors` CSP** on the embed routes — only trusted origins may frame
   them (anti-clickjacking);
 - **short-lived scoped token** over `postMessage` — never the full session.
@@ -185,7 +185,7 @@ In priority order:
   pipelines independent, but OC owns the embed contract (postMessage protocol,
   CSP, token scopes). Version that contract deliberately.
 - **Authz must be SSOT too** — one permission model (OIDC scopes + RLS on
-  actor/project/group), expressed once. Never "FleetCrown's idea of who can post"
+  actor/project/group), expressed once. Never "Loki's idea of who can post"
   _and_ "OrangeCat's".
 - **Availability coupling** — async + idempotent + reconcilable publishing is what
   makes the seam survive either app being down; never a synchronous cross-app write.
@@ -200,15 +200,15 @@ In priority order:
    `oauth_clients` / `oauth_auth_codes`, aligned to `integration_keys`' actor-bound
    model + revocation.) Then the **`resolveRequestAuth` JWT branch** so the
    access_token doubles as the v1 bearer.
-2. **Async publish + read-only surfacing** — FleetCrown promotes publish-worthy
+2. **Async publish + read-only surfacing** — Loki promotes publish-worthy
    build events; OC ingests them idempotently onto the wall; status/changelog shown
    in both via deep-links + a status pill. No embeds yet.
 3. **`project_roles` collaborator primitive** — the one genuinely missing thing;
-   folds into the existing `/jobs` surface. (Parallel — doesn't touch FleetCrown.)
+   folds into the existing `/jobs` surface. (Parallel — doesn't touch Loki.)
 4. **Home feed** — personalized reverse-chron feed of followed actors via the
-   existing `get_user_timeline_feed` RPC. (Parallel — doesn't touch FleetCrown.)
+   existing `get_user_timeline_feed` RPC. (Parallel — doesn't touch Loki.)
 5. **Then, when the pain is real** — embeddable OC widget routes (messaging / fund /
-   activity), mounted inline in FleetCrown over postMessage.
+   activity), mounted inline in Loki over postMessage.
 
 **Building the seam this way _is_ the merge-later de-risk.** A real platform makes
 "merging" just co-hosting two clients of one backbone. Growing two of everything
@@ -218,7 +218,7 @@ SoC now, and a free option to merge later — without committing to it.
 ## North star
 
 > OrangeCat is the collaboration-and-economy **platform**; the OrangeCat app and
-> FleetCrown are two purpose-built **clients** of it; collaboration state is
+> Loki are two purpose-built **clients** of it; collaboration state is
 > **single-sourced** and **embedded** everywhere it's needed; publishing between
 > them is **async, idempotent, reconcilable**; and the **Cat** makes the seam
 > invisible.

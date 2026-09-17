@@ -165,6 +165,97 @@ describe('generateFormPrefill — service floor follows the intent, like the rou
   });
 });
 
+describe('generateFormPrefill — survives one provider failing (the 2026-08-25 outage)', () => {
+  // "Fill with AI" used to pick ONE provider by key presence and stop, so a
+  // Groq model retirement (or daily-cap 429) killed the feature while a live
+  // OpenRouter key sat configured and unused. It now rides the shared
+  // platform-llm chain: every configured provider gets a turn.
+  const target = resolveAiAssistTarget('service');
+  const originalFetch = global.fetch;
+  const savedEnv: Record<string, string | undefined> = {};
+
+  beforeEach(() => {
+    for (const key of ['GROQ_API_KEY', 'OPENROUTER_API_KEY']) {
+      savedEnv[key] = process.env[key];
+      process.env[key] = 'test-key';
+    }
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+    for (const [key, value] of Object.entries(savedEnv)) {
+      if (value === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = value;
+      }
+    }
+  });
+
+  it('falls over to the next provider when the first is down', async () => {
+    const okBody = {
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({ data: { title: 'Fallback fine' }, confidence: {} }),
+          },
+        },
+      ],
+    };
+    // Groq is down; OpenRouter answers.
+    //
+    // The json-mode retry now covers the WHOLE chain rather than one provider,
+    // so the shape is (groq, openrouter) with response_format, then (groq,
+    // openrouter) without — OpenRouter answers on the second pass's second
+    // link. The old per-provider retry made it 3 calls; this is 4.
+    //
+    // The count is not the property worth pinning — "a vendor being down does
+    // not take the feature down" is. Asserting the exact number pinned an
+    // implementation detail of the retry, which is why this line moved rather
+    // than the behaviour.
+    const fetchMock = vi.fn(async (url: string) =>
+      String(url).includes('groq')
+        ? new Response('upstream hiccup', { status: 503 })
+        : new Response(JSON.stringify(okBody), {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+          })
+    );
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    const result = await generateFormPrefill({
+      target: target!,
+      description: 'A cleaning service for offices in Zurich',
+    });
+
+    const asked = fetchMock.mock.calls.map(([url]) => String(url));
+    expect(asked.some(u => u.includes('groq'))).toBe(true);
+    expect(asked.some(u => u.includes('openrouter'))).toBe(true);
+    expect(result.success).toBe(true);
+    expect(result.data.title).toBe('Fallback fine');
+  });
+
+  it('gives up only after EVERY provider failed, with the same user-facing message', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response('still down', { status: 503 }));
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    const result = await generateFormPrefill({
+      target: target!,
+      description: 'A cleaning service for offices in Zurich',
+    });
+
+    // One attempt per provider. It used to be four — every provider was asked
+    // twice, once with response_format and once without — because the retry
+    // was chain-wide. JSON mode is a per-model capability now, so each link is
+    // asked once, with the flag only if that model accepts it. A second pass
+    // happens only when a model rejects the flag for the first time.
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(result.success).toBe(false);
+    expect(result.code).toBe('provider_unavailable');
+    expect(result.error).toBe('AI service temporarily unavailable. Please try again.');
+  });
+});
+
 describe('getExampleDescriptions — standalone forms get starters too', () => {
   it('returns the declared examples for task and proposal', () => {
     expect(getExampleDescriptions('task')).toEqual(AI_ASSIST_FORMS.task.examples);

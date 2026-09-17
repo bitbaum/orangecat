@@ -41,7 +41,7 @@ export function SearchTrigger({ compact = false, className }: SearchTriggerProps
       }
       // "/" hotkey when focus isn't already in an input. Read the composed-path
       // leaf, not e.target: when the keystroke originates inside a shadow root
-      // (e.g. the embedded FleetCrown feedback widget's textarea) the event
+      // (e.g. the embedded Loki feedback widget's textarea) the event
       // retargets to the shadow host, so e.target misreads a text field as
       // "not typing" and the palette steals the keystroke mid-sentence.
       if (e.key === '/' && !isTypingTarget(e.composedPath()[0] ?? e.target)) {

@@ -13,14 +13,18 @@
 #   SELFHOST_SSH_KEY   private SSH key whose public half is in the box's
 #                      authorized_keys for the OC_BOX user (default root). Treat
 #                      as a deploy credential; rotate if leaked.
-#   SELFHOST_KNOWN_HOSTS  output of `ssh-keyscan 167.233.22.31` (pins the host).
+#   SELFHOST_KNOWN_HOSTS  output of `ssh-keyscan <box host>` (pins the host).
 #   NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY /
 #   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY   real self-host values, baked at build.
-# Optional repo variables (vars.*):
-#   OC_BOX (default root@167.233.22.31)
+# Required variables (vars.*) — the deploy target, configuration not source:
+#   OC_BOX      full `user@host` SSH target; or
+#   HETZNER_IP  the box address, used as `root@<HETZNER_IP>` when OC_BOX is unset.
+# There is deliberately NO literal fallback here. A baked-in address means the
+# variable is never exercised, so nobody notices when it is missing or wrong —
+# the "deploy target configured?" guard below fails the run instead.
 #
 # Note: OrangeCat's build does not require live-DB access (no blocking SSG DB
-# queries), so unlike fleetcrown/scripts/hetzner/deploy.sh this needs no tunnel.
+# queries), so unlike loki/scripts/hetzner/deploy.sh this needs no tunnel.
 
 name: CD
 
@@ -35,12 +39,21 @@ concurrency:
   group: cd-selfhost
   cancel-in-progress: false # never interrupt a deploy mid-swap
 
+permissions:
+  contents: read
+  # Needed by the "was this commit verified?" guard, which asks the Actions API
+  # whether a sibling CI run for the same commit passed.
+  actions: read
+
 jobs:
   deploy:
-    # Only on green CI (or a manual dispatch).
+    # Green CI, a manual dispatch — or a CANCELLED CI run, which is not a
+    # verdict. `cancelled` used to be excluded here, and that is how a green,
+    # merged commit silently failed to ship: see the guard step below.
     if: >-
       github.event_name == 'workflow_dispatch' ||
-      github.event.workflow_run.conclusion == 'success'
+      github.event.workflow_run.conclusion == 'success' ||
+      github.event.workflow_run.conclusion == 'cancelled'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
@@ -66,38 +79,109 @@ jobs:
       # box's runtime .env does nothing. The mic on every create form was
       # unreachable dead code — off by omission, not by decision.
       NEXT_PUBLIC_FEATURE_VOICE_INPUT: ${{ vars.NEXT_PUBLIC_FEATURE_VOICE_INPUT }}
-      # FleetCrown feedback widget token — must match ci.yml's build env so a
+      # Loki feedback widget token — must match ci.yml's build env so a
       # cd-side rebuild bakes the same embed into prerendered pages. Public by
       # design (ships in page source): repo variable, not a secret.
-      FLEETCROWN_FEEDBACK_TOKEN: ${{ vars.FLEETCROWN_FEEDBACK_TOKEN }}
-      OC_BOX: ${{ vars.OC_BOX || 'root@167.233.22.31' }}
+      LOKI_FEEDBACK_TOKEN: ${{ vars.LOKI_FEEDBACK_TOKEN }}
+      # The SSH target comes from configuration only — see the header note on
+      # why there is no literal fallback.
+      OC_BOX: ${{ vars.OC_BOX || (vars.HETZNER_IP && format('root@{0}', vars.HETZNER_IP)) }}
     steps:
+      # A CANCELLED CI run is not a failed one, and treating it as one strands
+      # verified work. When several PRs merge inside a couple of minutes, CI's
+      # concurrency group cancels the earlier runs on main; `cancelled` is not
+      # `success`, so this job used to be SKIPPED. A skip turns nothing red —
+      # the PR shows every check green, the merge looks complete, and the box
+      # keeps serving the previous release while /api/health answers 200.
+      # Observed 2026-09-17: four skipped runs in a row, two merged PRs
+      # stranded on a green main.
+      #
+      # So a cancelled run is a question, not an answer: ask the Actions API
+      # whether ANY CI run for this same commit concluded success.
+      - name: Guard — was this commit actually verified?
+        id: ci
+        if: github.event_name != 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+          CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+        run: |
+          if [ "$CONCLUSION" = "success" ]; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # Gate on EXIT STATUS, never on the printed body: `gh api --jq` writes
+          # the error payload to stdout on a 403, which reads like a value.
+          if passed=$(gh api \
+              "repos/$REPO/actions/workflows/ci.yml/runs?head_sha=$SHA&status=success&per_page=1" \
+              --jq '.total_count // 0' 2>/dev/null); then
+            :
+          else
+            echo "::warning::Could not read CI runs for $SHA — refusing to deploy on a $CONCLUSION run."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ "${passed:-0}" -gt 0 ]; then
+            echo "::notice::CI for $SHA was $CONCLUSION here, but a sibling CI run passed — deploying."
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::No successful CI run for $SHA — not deploying. The auto-merge sweep's reconcile will dispatch CD once one lands."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Guard — is the deploy key configured?
         id: guard
         env:
           KEY: ${{ secrets.SELFHOST_SSH_KEY }}
+          # Empty when the step above was skipped, which only happens on a
+          # manual dispatch — a deliberate act that carries its own verdict.
+          CI_OK: ${{ github.event_name == 'workflow_dispatch' && 'true' || steps.ci.outputs.ok }}
         run: |
-          if [ -n "$KEY" ]; then
-            echo "ok=true" >> "$GITHUB_OUTPUT"
-          else
+          if [ -z "$KEY" ]; then
             echo "ok=false" >> "$GITHUB_OUTPUT"
             echo "::notice::SELFHOST_SSH_KEY not set — CD is dormant. Add it to enable deploys."
+          elif [ "$CI_OK" != "true" ]; then
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Guard — is the deploy target configured?
+        # Fail loudly rather than deploying to a guessed address. This runs only
+        # once the key guard passed, so a dormant CD stays a no-op.
+        if: steps.guard.outputs.ok == 'true'
+        run: |
+          if [ -z "$OC_BOX" ]; then
+            echo "::error::OC_BOX is empty — set the OC_BOX (user@host) or HETZNER_IP variable."
+            exit 1
+          fi
+          echo "deploy target: $OC_BOX"
 
       - name: Checkout
         if: steps.guard.outputs.ok == 'true'
         uses: actions/checkout@v7
 
+      - name: Setup pnpm
+        if: steps.guard.outputs.ok == 'true'
+        uses: pnpm/action-setup@v6
+
+      # setup-pnpm's default store nests inside its own bin dir, which breaks
+      # any prepare-building dep (portable-type TS2742) — pin it outside.
+      - name: Pin pnpm store location
+        if: steps.guard.outputs.ok == 'true'
+        run: pnpm config set store-dir ~/.pnpm-store --global
+
       - name: Setup Node.js
         if: steps.guard.outputs.ok == 'true'
         uses: actions/setup-node@v7
         with:
-          node-version: 20
-          cache: 'npm'
+          node-version: 24
+          cache: 'pnpm'
 
       - name: Install dependencies
         if: steps.guard.outputs.ok == 'true'
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Download standalone artifact from the triggering CI run
         # Ship the EXACT artifact CI built + tested (tested == shipped), and skip
@@ -109,9 +193,31 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           name: standalone-${{ github.event.workflow_run.head_sha }}
-          path: .next/standalone
+          path: artifact
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Unpack standalone artifact
+        # CI ships a tarball, not a directory, so the pnpm symlink farm survives
+        # the round-trip. The assertion below is the point of the whole change: a
+        # standalone tree built under pnpm ALWAYS contains symlinks, and a tree
+        # that lost them boots into `Cannot find module '@swc/helpers/_/…'`.
+        # Zero symlinks is therefore not a warning, it is the bug — fail here,
+        # where the cause is one line away, rather than in a boot test on the box.
+        # Explicitly NOT falling through to a rebuild: a silent rebuild would ship
+        # a green deploy and leave the artifact path broken forever.
+        if: steps.guard.outputs.ok == 'true' && hashFiles('artifact/standalone.tar.gz') != ''
+        run: |
+          mkdir -p .next/standalone
+          tar -xzf artifact/standalone.tar.gz -C .next/standalone
+          links=$(find .next/standalone/node_modules -type l 2>/dev/null | wc -l)
+          echo "symlinks preserved: $links"
+          [ "$links" -gt 0 ] || {
+            echo "ERROR: the unpacked standalone tree has NO symlinks."
+            echo "Next's pnpm output resolves peer deps through them; without"
+            echo "them the app cannot require @swc/helpers and will not boot."
+            exit 1
+          }
 
       - name: Build standalone if no artifact (fallback / manual dispatch)
         if: steps.guard.outputs.ok == 'true'
@@ -123,23 +229,27 @@ jobs:
             echo "Using the CI-built standalone artifact — skipping rebuild."
           else
             echo "No artifact (manual dispatch or download failed) — building standalone."
-            npm run build
+            pnpm run build
           fi
 
       - name: Configure SSH
         if: steps.guard.outputs.ok == 'true'
         run: |
+          # One source for the box address: the host half of OC_BOX. Repeating
+          # the literal here is how the ssh config and the deploy target drift
+          # apart without anything failing.
+          BOX_HOST="${OC_BOX##*@}"
           mkdir -p ~/.ssh
           echo "${{ secrets.SELFHOST_SSH_KEY }}" > ~/.ssh/id_deploy
           chmod 600 ~/.ssh/id_deploy
           if [ -n "${{ secrets.SELFHOST_KNOWN_HOSTS }}" ]; then
             echo "${{ secrets.SELFHOST_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
           else
-            ssh-keyscan -H 167.233.22.31 >> ~/.ssh/known_hosts 2>/dev/null
+            ssh-keyscan -H "$BOX_HOST" >> ~/.ssh/known_hosts 2>/dev/null
           fi
-          cat > ~/.ssh/config <<'EOF'
+          cat > ~/.ssh/config <<EOF
           Host bitbaum
-            HostName 167.233.22.31
+            HostName $BOX_HOST
             IdentityFile ~/.ssh/id_deploy
             IdentitiesOnly yes
           EOF

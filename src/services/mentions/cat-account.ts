@@ -9,8 +9,20 @@
  *
  * Idempotent by design, and cheap when it is a no-op: one indexed lookup. It is
  * safe to call on every worker tick, and doing so makes the account
- * self-healing — if the profile is ever deleted, the Cat comes back rather than
- * every `@cat` on the platform quietly resolving to nobody.
+ * self-healing — if the profile is ever deleted OR RENAMED, the Cat comes back
+ * rather than every `@cat` on the platform quietly resolving to nobody.
+ *
+ * The rename half was learned in production. This file used to FIND the Cat by
+ * its username, which is the one field about the Cat that another policy is
+ * entitled to change: on 2026-08-26 the email-derived-handle retirement renamed
+ * `cat` to `user_0234d5e38e66` (see
+ * supabase/migrations/20260828070000_system_accounts_keep_their_handles.sql).
+ * The lookup then missed, creation said "already registered", the second lookup
+ * missed too, and this returned null on every tick thereafter — self-healing
+ * that could not heal, because the thing it searched by was the thing that
+ * broke. Identity is now keyed on the login address, which is a literal in this
+ * file and cannot be reassigned, and the handle is treated as a field to
+ * ASSERT rather than a key to search by.
  */
 
 import { CAT_USERNAME, CAT_DISPLAY_NAME } from '@/config/cat-identity';
@@ -54,7 +66,7 @@ export async function ensureCatAccount(
 ): Promise<CatAccount | null> {
   const existing = await findCatProfile(admin);
   if (existing) {
-    return existing;
+    return assertCatHandle(admin, existing);
   }
 
   // No profile. Either the auth user does not exist either, or it does and its
@@ -93,14 +105,24 @@ export async function ensureCatAccount(
   }
 
   logger.info('Cat account established', { id: profile.id }, 'CatAccount');
-  return profile;
+  return assertCatHandle(admin, profile);
 }
 
+/**
+ * Find the Cat by the one thing about it that cannot be reassigned.
+ *
+ * NOT by username. `@cat` is what the platform advertises, which makes the
+ * handle the thing most worth repairing and therefore the worst possible thing
+ * to search by — if it is wrong, the lookup that would notice returns nothing.
+ * The login address is a literal in this file, belongs to a domain RFC 2606
+ * guarantees nobody can receive mail at, and no product policy has any reason
+ * to rewrite it.
+ */
 async function findCatProfile(admin: SupabaseClient): Promise<CatAccount | null> {
   const { data, error } = await admin
     .from(DATABASE_TABLES.PROFILES)
     .select('id, username')
-    .eq('username', CAT_USERNAME)
+    .eq('email', CAT_EMAIL)
     .maybeSingle();
 
   if (error) {
@@ -108,4 +130,53 @@ async function findCatProfile(admin: SupabaseClient): Promise<CatAccount | null>
     return null;
   }
   return data ? { id: data.id as string, username: data.username as string } : null;
+}
+
+/**
+ * Make the account answer to `@cat`, whatever it currently says.
+ *
+ * A no-op on every ordinary tick — the comparison is free and the write only
+ * happens when the handle has actually drifted. When it has, this is the whole
+ * repair: the resolver looks mentions up by username, so restoring it is what
+ * makes `@cat` mean the Cat again.
+ *
+ * A failure here is reported and swallowed rather than propagated. The account
+ * still exists and the Cat can still WRITE under the wrong handle; refusing to
+ * return it would turn a wrong name into total silence, which is strictly
+ * worse. The mismatch is logged at error level because it means something
+ * outside this file is renaming a system account.
+ */
+async function assertCatHandle(
+  admin: SupabaseClient,
+  profile: CatAccount
+): Promise<CatAccount> {
+  if (profile.username === CAT_USERNAME) {
+    return profile;
+  }
+
+  logger.error(
+    'The Cat is not answering to its own handle',
+    { found: profile.username, expected: CAT_USERNAME },
+    'CatAccount'
+  );
+
+  const { error } = await admin
+    .from(DATABASE_TABLES.PROFILES)
+    .update({ username: CAT_USERNAME })
+    .eq('id', profile.id);
+
+  if (error) {
+    // The likeliest cause is the unique index: something else holds `cat`.
+    // That is impersonation of the platform's own agent, so it is worth the
+    // loud log even though the Cat keeps working under the wrong name.
+    logger.error(
+      'Could not restore the Cat handle',
+      { error: error.message, holding: profile.username },
+      'CatAccount'
+    );
+    return profile;
+  }
+
+  logger.info('Restored the Cat handle', { was: profile.username }, 'CatAccount');
+  return { ...profile, username: CAT_USERNAME };
 }

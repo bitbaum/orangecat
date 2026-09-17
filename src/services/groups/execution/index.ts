@@ -2,6 +2,7 @@ import { logger } from '@/utils/logger';
 import supabase from '@/lib/supabase/browser';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { fromTable, type AnySupabaseClient } from '../db-helpers';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 interface ProposalRecord {
   id: string;
@@ -85,7 +86,7 @@ const handlers: Record<string, ActionHandler> = {
 
       if (!result.success) {
         logger.error('Failed to create contract from proposal', { error: result.error }, 'Groups');
-        throw new Error(result.error || 'Failed to create contract');
+        throw new Error(apiErrorMessage(result, 'Failed to create contract'));
       }
 
       logger.info(

@@ -82,7 +82,6 @@ Make creation on Orangecat conversational. Users describe what they want (voice 
 
 - Environment:
   - OpenRouter key (platform): `OPENROUTER_API_KEY`.
-  - Upstash (optional): `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`.
   - Encryption: `API_KEY_ENCRYPTION_SECRET` (BYOK at-rest encryption).
 
 ## 8) Voice Entry Everywhere (Design Plan)

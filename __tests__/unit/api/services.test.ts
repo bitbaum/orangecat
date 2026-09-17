@@ -3,27 +3,29 @@ import { userServiceSchema } from '@/lib/validation';
 import { PLATFORM_DEFAULT_CURRENCY } from '@/config/currencies';
 
 // Mock the Supabase admin client (createService uses createAdminClient, not createServerClient)
-jest.mock('@/lib/supabase/admin', () => ({
-  createAdminClient: jest.fn(),
+vi.mock('@/lib/supabase/admin', () => ({
+  createAdminClient: vi.fn(),
 }));
 
-jest.mock('@/services/actors/getOrCreateUserActor', () => ({
-  getOrCreateUserActor: jest.fn().mockResolvedValue({ id: 'a1' }),
+vi.mock('@/services/actors/getOrCreateUserActor', () => ({
+  getOrCreateUserActor: vi.fn().mockResolvedValue({ id: 'a1' }),
 }));
 
 import { createAdminClient } from '@/lib/supabase/admin';
 
+import type { Mock } from 'vitest';
+
 const mockSupabase = {
-  from: jest.fn().mockReturnThis(),
-  insert: jest.fn().mockReturnThis(),
-  select: jest.fn().mockReturnThis(),
-  single: jest.fn(),
+  from: vi.fn().mockReturnThis(),
+  insert: vi.fn().mockReturnThis(),
+  select: vi.fn().mockReturnThis(),
+  single: vi.fn(),
 };
 
 describe('Service Creation', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    (createAdminClient as jest.Mock).mockReturnValue(mockSupabase);
+    vi.clearAllMocks();
+    (createAdminClient as Mock).mockReturnValue(mockSupabase);
   });
 
   describe('userServiceSchema validation', () => {

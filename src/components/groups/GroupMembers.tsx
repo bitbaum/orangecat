@@ -41,6 +41,7 @@ import groupsService from '@/services/groups';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { logger } from '@/utils/logger';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 // Extended member type with profile info (from queries/members.ts)
 interface MemberWithProfile extends GroupMember {
@@ -71,7 +72,7 @@ export function GroupMembers({ groupId, members, onUpdate }: GroupMembersProps) 
         toast.success('Successfully joined group!');
         onUpdate?.();
       } else {
-        toast.error(result.error || 'Failed to join group');
+        toast.error(apiErrorMessage(result, 'Failed to join group'));
       }
     } catch (error) {
       logger.error('Failed to join group:', error);
@@ -90,7 +91,7 @@ export function GroupMembers({ groupId, members, onUpdate }: GroupMembersProps) 
         setConfirmLeave(false);
         onUpdate?.();
       } else {
-        toast.error(result.error || 'Failed to leave group');
+        toast.error(apiErrorMessage(result, 'Failed to leave group'));
       }
     } catch (error) {
       logger.error('Failed to leave group:', error);
@@ -121,7 +122,7 @@ export function GroupMembers({ groupId, members, onUpdate }: GroupMembersProps) 
         );
         onUpdate?.();
       } else {
-        toast.error(result.error || 'Failed to update member');
+        toast.error(apiErrorMessage(result, 'Failed to update member'));
       }
     } catch (error) {
       logger.error('Failed to update member role:', error);
@@ -139,7 +140,7 @@ export function GroupMembers({ groupId, members, onUpdate }: GroupMembersProps) 
         toast.success('Member removed');
         onUpdate?.();
       } else {
-        toast.error(result.error || 'Failed to remove member');
+        toast.error(apiErrorMessage(result, 'Failed to remove member'));
       }
     } catch (error) {
       logger.error('Failed to remove member:', error);

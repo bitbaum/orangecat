@@ -16,14 +16,16 @@ import { STARTER_PROMPTS, getStarterPrompts } from '@/config/cat-prompts';
 import { getEntitiesByCategory } from '@/config/entity-registry';
 import type { FullUserContext } from '@/services/ai/document-context';
 
-jest.mock('@/services/cat/platform-llm', () => ({
-  callPlatformJson: jest.fn(async () => null),
-  parseJsonLoose: jest.requireActual('@/services/cat/platform-llm').parseJsonLoose,
+vi.mock('@/services/cat/platform-llm', async () => ({
+  callPlatformJson: vi.fn(async () => null),
+  parseJsonLoose: ((await vi.importActual('@/services/cat/platform-llm')) as any).parseJsonLoose,
 }));
 
 import { callPlatformJson } from '@/services/cat/platform-llm';
 
-const mockedCall = callPlatformJson as jest.MockedFunction<typeof callPlatformJson>;
+import type { MockedFunction } from 'vitest';
+
+const mockedCall = callPlatformJson as MockedFunction<typeof callPlatformJson>;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -193,7 +195,9 @@ describe('detectGaps', () => {
       entities: [makeEntity('product', 'Blue Vase', { price_btc: 0 })],
     });
     const gaps = detectGaps(ctx);
-    expect(gaps.some(g => g.prompt.includes('charge') && g.prompt.includes('Blue Vase'))).toBe(true);
+    expect(gaps.some(g => g.prompt.includes('charge') && g.prompt.includes('Blue Vase'))).toBe(
+      true
+    );
   });
 
   it('does not invent a price gap for entities that are not sold at a price', () => {

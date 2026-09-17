@@ -1,11 +1,12 @@
 /**
- * AI ASSISTANT ENTITY CONFIGURATION
+ * COMPANION ENTITY CONFIGURATION (entity type `ai_assistant`)
  *
- * Defines the form structure, validation, and guidance for AI assistant creation.
- * AI Assistants are autonomous AI services that creators build and monetize.
+ * A companion is a being with its own voice and a memory of whoever talks to
+ * it. The form is character-first: who they are, how they speak, then who
+ * may talk to them. Money comes last and only matters once they are public.
  *
  * Created: 2025-12-25
- * Last Modified: 2025-12-25
+ * Last Modified: 2026-09-15
  */
 
 import { Bot } from 'lucide-react';
@@ -23,6 +24,7 @@ import { getAvailableModels } from '@/config/ai-models';
 // ==================== CONSTANTS ====================
 
 const AI_CATEGORIES = [
+  'Companion',
   'Writing & Content',
   'Code & Development',
   'Customer Support',
@@ -52,22 +54,22 @@ const MODEL_PREFERENCES = [
 const fieldGroups: FieldGroup[] = [
   {
     id: 'basic',
-    title: 'Basic Information',
-    description: 'Give your AI assistant a name and description',
+    title: 'Who they are',
+    description: 'A name, and one paragraph anyone could read',
     fields: [
       {
         name: 'title',
-        label: 'Assistant Name',
+        label: 'Name',
         type: 'text',
-        placeholder: 'e.g., Bitcoin Tax Advisor, Code Reviewer, Writing Coach',
+        placeholder: 'e.g., Mira, The Night Editor, Uncle Bo',
         required: true,
         colSpan: 2,
       },
       {
         name: 'description',
-        label: 'Description',
+        label: 'In one paragraph',
         type: 'textarea',
-        placeholder: "Describe what your AI assistant does, who it's for, and how it can help...",
+        placeholder: 'Who they are, what they care about, what it is like to talk to them.',
         rows: 3,
         colSpan: 2,
       },
@@ -82,36 +84,50 @@ const fieldGroups: FieldGroup[] = [
   },
   {
     id: 'personality',
-    title: 'AI Configuration',
-    description: 'Define how your AI assistant thinks and communicates',
+    title: 'How they think and speak',
+    description:
+      'The definition. This is the whole of who they are: it travels with every clone, and it is what an embodied version would run.',
     fields: [
       {
         name: 'system_prompt',
-        label: 'System Prompt',
+        label: 'Definition',
         type: 'textarea',
         placeholder:
-          'You are a helpful Bitcoin tax advisor. You help users understand tax implications of their Bitcoin transactions. Be concise, professional, and always recommend consulting a qualified tax professional for specific advice...',
-        rows: 8,
+          'You are Mira. You sit with a problem until it moves. You ask one question at a time, never flatter, and say the hard thing plainly and once...',
+        rows: 10,
         required: true,
         colSpan: 2,
-        hint: "This is the core instruction that defines your AI's behavior. Think of it as your AI's \"brain\" - this is the software you're creating.",
+        hint: 'Write to them, in the second person: who they are, how they speak, what they care about, what they refuse to do.',
       },
       {
         name: 'welcome_message',
-        label: 'Welcome Message',
+        label: 'Opening line',
         type: 'textarea',
-        placeholder:
-          "Hello! I'm your Bitcoin Tax Advisor. I can help you understand the tax implications of your Bitcoin transactions. What would you like to know?",
+        placeholder: "Take your time. What's actually the problem?",
         rows: 2,
         colSpan: 2,
-        hint: 'The first message users see when starting a conversation',
+        hint: 'The first thing they say when a conversation starts.',
+      },
+    ],
+  },
+  {
+    id: 'visibility',
+    title: 'Who can talk to them',
+    description: 'A companion starts private. Publishing is a choice, not a default.',
+    fields: [
+      {
+        name: 'is_public',
+        label: 'List publicly',
+        type: 'checkbox',
+        hint: 'Private: only you can talk to them. Public: anyone can, and pays you per message if you set a price.',
+        colSpan: 2,
       },
     ],
   },
   {
     id: 'model',
-    title: 'Model Settings',
-    description: 'Configure AI model preferences and behavior',
+    title: 'Model (advanced)',
+    description: 'Which model runs them, and how freely',
     fields: [
       {
         name: 'model_preference',
@@ -154,9 +170,9 @@ const fieldGroups: FieldGroup[] = [
   },
   {
     id: 'payment',
-    title: 'Bitcoin & Payments',
+    title: 'Payments (public companions)',
     description:
-      'Wallet for receiving donations. Per-message pricing is charged from the chatter’s Cat Credits — you keep 95% as spendable credits.',
+      'Wallet for receiving payments. Per-message pricing is charged from the chatter’s Cat Credits — you keep all of it as spendable credits.',
     customComponent: WalletSelectorField,
     fields: [
       { name: 'bitcoin_address', label: 'Bitcoin Address', type: 'bitcoin_address' },
@@ -187,9 +203,9 @@ const defaultValues: AIAssistantFormData = {
   price_per_1k_tokens: 0,
   subscription_price: 0,
   free_messages_per_day: 0,
-  is_public: true,
+  is_public: false,
   is_featured: false,
-  status: ENTITY_STATUS.DRAFT,
+  status: ENTITY_STATUS.ACTIVE,
   lightning_address: '',
   bitcoin_address: '',
 };
@@ -198,17 +214,17 @@ const defaultValues: AIAssistantFormData = {
 
 export const aiAssistantConfig = createEntityConfig<AIAssistantFormData>({
   entityType: 'ai_assistant',
-  name: 'AI Assistant',
-  namePlural: 'AI Assistants',
+  name: 'Companion',
+  namePlural: 'Companions',
   icon: Bot,
   colorTheme: 'tiffany',
   backUrl: ENTITY_REGISTRY['ai_assistant'].basePath,
   successUrl: `${ENTITY_REGISTRY['ai_assistant'].basePath}/[id]`,
-  pageTitle: 'Create AI Assistant',
-  pageDescription: 'Build an autonomous AI service that earns Bitcoin',
-  formTitle: 'AI Assistant Details',
+  pageTitle: 'Create a companion',
+  pageDescription: 'A being with its own voice that remembers whoever talks to it.',
+  formTitle: 'Your companion',
   formDescription:
-    'Define your AI assistant\'s personality and capabilities. Your system prompt is the "software" that makes your AI unique.',
+    'Write who they are. The definition is the whole of them: it is what a clone copies, and what an embodied version would run.',
   fieldGroups,
   validationSchema: aiAssistantSchema,
   defaultValues,
@@ -216,9 +232,9 @@ export const aiAssistantConfig = createEntityConfig<AIAssistantFormData>({
   defaultGuidance: aiAssistantDefaultGuidance,
   templates: AI_ASSISTANT_TEMPLATES as unknown as AIAssistantTemplate[],
   infoBanner: {
-    title: 'Portable AI Software',
+    title: 'Yours first, then anyone’s',
     content:
-      'Your AI assistant is portable software - the system prompt you create here can work with any AI provider. Focus on crafting valuable instructions, and your AI can earn Bitcoin 24/7.',
+      'A companion starts private: only you can talk to it, and it remembers you. Publish it and anyone can talk to it, paying you per message if you set a price. Clones copy the definition, never the memories.',
     variant: 'info',
   },
 });

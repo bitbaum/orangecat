@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * A busy button has to keep saying which action is busy.
  *

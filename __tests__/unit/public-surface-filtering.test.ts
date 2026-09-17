@@ -16,15 +16,15 @@ import { DATABASE_TABLES } from '@/config/database-tables';
 import { getTableName } from '@/config/entity-registry';
 import { STATUS, ENTITY_STATUS } from '@/config/database-constants';
 
-jest.mock('@/utils/logger', () => ({
-  logger: { warn: jest.fn(), error: jest.fn(), info: jest.fn(), debug: jest.fn() },
+vi.mock('@/utils/logger', () => ({
+  logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 
 // Force searchPlatform onto its keyword path — the semantic path's guard lives
 // in SQL (match_content), which unit tests can't inspect.
-jest.mock('@/services/ai/embeddings', () => ({
+vi.mock('@/services/ai/embeddings', () => ({
   embeddingsEnabled: () => false,
-  embedText: jest.fn(),
+  embedText: vi.fn(),
 }));
 
 type Call = { method: string; args: unknown[] };
@@ -64,7 +64,7 @@ function recordingClient() {
         Promise.resolve({ data: [], count: 0, error: null }).then(resolve);
       return chain;
     },
-    rpc: jest.fn(() => Promise.resolve({ data: [], error: null })),
+    rpc: vi.fn(() => Promise.resolve({ data: [], error: null })),
   };
   return { client: client as never, queries };
 }

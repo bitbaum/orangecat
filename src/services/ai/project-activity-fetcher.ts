@@ -3,8 +3,8 @@
  *
  * Lets Cat answer "what's happening with my projects?" and "who are my
  * customers?". Project activity is read from the timeline_events publish bus —
- * including build updates published by FleetCrown (metadata.source ===
- * 'fleetcrown'), so once FleetCrown publishes to a project's wall, Cat sees it
+ * including build updates published by Loki (metadata.source ===
+ * 'loki'), so once Loki publishes to a project's wall, Cat sees it
  * here with no further wiring. Stakeholder edges expose the typed "customer"
  * relationship (and collaborator/investor/...).
  */
@@ -30,7 +30,7 @@ async function resolveActorId(supabase: AnySupabaseClient, userId: string): Prom
 
 /**
  * Recent timeline events about the user's own projects (newest first).
- * FleetCrown-published build updates surface here automatically.
+ * Loki-published build updates surface here automatically.
  */
 export async function fetchProjectActivityForCat(
   supabase: AnySupabaseClient,
@@ -80,7 +80,7 @@ export async function fetchProjectActivityForCat(
       title: e.title,
       description: e.description,
       eventType: e.event_type,
-      source: e.metadata?.source === 'fleetcrown' ? 'fleetcrown' : 'orangecat',
+      source: e.metadata?.source === 'loki' ? 'loki' : 'orangecat',
       at: e.event_timestamp,
     }));
   } catch (error) {

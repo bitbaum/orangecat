@@ -14,7 +14,7 @@ const config: Config = {
   ],
   theme: {
     extend: {
-      // Semantic border tier (FleetCrown). `border-default`/`-interactive` are
+      // Semantic border tier (Loki). `border-default`/`-interactive` are
       // the migration targets for legacy `border-border`; subtle/strong carry
       // the existing neutral border vars forward under semantic names.
       borderColor: {
@@ -28,6 +28,12 @@ const config: Config = {
         '2xs': ['0.625rem', { lineHeight: '1rem' }], // 10px - Badges, micro labels
         xs: ['0.75rem', { lineHeight: '1rem', letterSpacing: '0' }], // 12px - Labels, captions
         sm: ['0.875rem', { lineHeight: '1.25rem', letterSpacing: '0' }], // 14px - Secondary text
+        // 15px - the reading size for post bodies. Deliberately between sm and
+        // base: 16px is a touch wide in a 672px column and 14px is small to
+        // read at length. It was written as the arbitrary `text-[15px]`, which
+        // is a value nothing else can reference and no theme change can reach —
+        // the same problem as a hardcoded hex. Named, it is a decision.
+        post: ['0.9375rem', { lineHeight: '1.5rem', letterSpacing: '0' }],
         base: ['1rem', { lineHeight: '1.5rem', letterSpacing: '0' }], // 16px - Body text (iOS standard)
         lg: ['1.125rem', { lineHeight: '1.75rem', letterSpacing: '0' }], // 18px - Large body
         xl: ['1.25rem', { lineHeight: '1.75rem', letterSpacing: '0' }], // 20px - Subtitles
@@ -69,7 +75,7 @@ const config: Config = {
         'app-sm': '375px', // iPhone SE width
         'app-lg': '430px', // iPhone 15 Pro Max
         tablet: '768px', // iPad Mini
-        // FleetCrown-aligned layout primitive
+        // Loki-aligned layout primitive
         shell: 'var(--shell-max)',
       },
       colors: {
@@ -156,7 +162,7 @@ const config: Config = {
           '4': 'hsl(var(--chart-4))',
           '5': 'hsl(var(--chart-5))',
         },
-        // ── FleetCrown-aligned semantic tier (commit 2/N of migration) ────
+        // ── Loki-aligned semantic tier (commit 2/N of migration) ────
         // Utility-class surface for the --text-/--surface-/--accent-/--status-
         // CSS vars introduced in eff99bad. Components migrate to these from
         // bg-card / text-foreground / bg-primary as they're refactored.
@@ -203,7 +209,7 @@ const config: Config = {
       },
       fontFamily: {
         sans: ['var(--font-inter)'],
-        // FleetCrown-aligned display stack (migration 7/N)
+        // Loki-aligned display stack (migration 7/N)
         heading: [
           'var(--font-heading)',
           'var(--font-inter)',

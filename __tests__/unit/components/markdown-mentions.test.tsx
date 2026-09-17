@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * How a mention RENDERS, which was a third opinion on what a handle is.
  *

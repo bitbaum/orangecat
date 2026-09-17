@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`buildFullContextString — full-output snapshot renders every section identically (byte-for-byte) 1`] = `
+exports[`buildFullContextString — full-output snapshot > renders every section identically (byte-for-byte) 1`] = `
 "# User Context for Personalized Advice
 
 ## Current Session
@@ -19,7 +19,7 @@ These are durable facts you've learned about them across past conversations. Tre
 Today is Monday, June 29, 2026, 12:00 UTC.
 
 ## User Profile
-**Name**: Mao Nakamoto
+**Name**: Cato
 **Username**: @mao
 **Bio**: Building OrangeCat.
 **Location**: Zurich, CH
@@ -60,8 +60,8 @@ The user is a member of the following groups:
 - Recently followed: @alice, Bob
 
 ## Recent Project Activity
-Updates on the user's projects (FleetCrown build updates are tagged):
-- **Zurich Space** [via FleetCrown] (2026-06-10) — Milestone reached.
+Updates on the user's projects (Loki build updates are tagged):
+- **Zurich Space** [via Loki] (2026-06-10) — Milestone reached.
 
 ## Stakeholders
 Typed relationships on the user's projects (e.g. customers):
@@ -94,7 +94,7 @@ Use the conversation id with reply_to_message to reply on the user's behalf.
 
 ## Payment Capabilities
 ⚡ **NWC wallet connected** — can use send_payment and fund_project exec_action blocks to send Bitcoin automatically
-📬 **Lightning address**: mao@orangecat.ch (others can pay the user here)
+📬 **Lightning address**: hello@orangecat.ch (others can pay the user here)
 
 ## Activity Summary
 The user has: 1 product, 2 services, 1 project, 1 cause, 1 event, 1 asset, 1 loan, 1 research entity, 1 wishlist, 2 active tasks (1 urgent), 1 wallet.

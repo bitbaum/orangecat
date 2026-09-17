@@ -1,9 +1,0 @@
-import type { TestingLibraryMatchers } from '@testing-library/jest-dom/matchers';
-
-declare module '@jest/expect' {
-  // eslint-disable-next-line @typescript-eslint/no-empty-object-type, @typescript-eslint/no-explicit-any
-  interface Matchers<R extends void | Promise<void>> extends TestingLibraryMatchers<
-    typeof expect.stringContaining,
-    R
-  > {}
-}

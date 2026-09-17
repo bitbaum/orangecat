@@ -123,7 +123,7 @@ readTime: '8 min read'
    ---
    ```
 3. **Write content** in MDX (Markdown + React components)
-4. **Test locally**: `npm run dev` → check `http://localhost:3000/blog/your-slug`
+4. **Test locally**: `pnpm run dev` → check `http://localhost:3000/blog/your-slug`
 5. **Deploy**: Automatically appears on website
 
 ### **Blog Post Checklist**

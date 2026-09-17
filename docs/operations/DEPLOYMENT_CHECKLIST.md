@@ -12,8 +12,10 @@ Status: Ready for use
   - `SUPABASE_SERVICE_ROLE_KEY`
 
 - Rate Limiting (production)
-  - `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` (canonical limiter)
-  - `REDIS_URL`, `REDIS_TOKEN` (legacy until all routes migrate; point to Upstash values)
+  - No env vars: the canonical limiter (`src/lib/rate-limit.ts` over `limitkit`)
+    counts in-process, which is correct for the single self-hosted instance
+    (ADR-0002). A second instance would need a shared `Store` implementation,
+    not env vars.
 
 - AI / Voice
   - `OPENROUTER_API_KEY` (optional platform key; users can BYOK)
@@ -27,9 +29,9 @@ Status: Ready for use
 
 ## 3) Build & Test
 
-- Run: `npm run type-check` (non‑blocking TS warnings may exist outside scope).
-- Run: `npm run test:unit` (verify SSE/JSONL stream helper).
-- Build: `npm run build` (Next.js production build).
+- Run: `pnpm run type-check` (non‑blocking TS warnings may exist outside scope).
+- Run: `pnpm run test:unit` (verify SSE/JSONL stream helper).
+- Build: `pnpm run build` (Next.js production build).
 
 ## 4) Rate Limiting
 
@@ -45,7 +47,7 @@ Status: Ready for use
 
 ## 6) Self-Hosted Deployment (Hetzner)
 
-- Node 20; `next build` / `next start` on the box (bitbaum), behind Caddy.
+- Node 24; `next build` / `next start` on the box (bitbaum), behind Caddy.
 - Production env lives in `/opt/orangecat/app/.env` (no cloud dashboard).
 - See docs/operations/deployment/DEPLOYMENT_PROCESS.md for the on-box flow.
 

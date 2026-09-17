@@ -9,6 +9,7 @@ import { updateEvent, deleteEvent } from '@/services/timeline/mutations/events';
 import { logger } from '@/utils/logger';
 import { buildArticleMetadata, validateArticleInput } from './write-shared';
 import type { CreateArticleInput } from './types';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 type ArticleWriteResult = { success: true } | { success: false; error: string };
 
@@ -32,7 +33,7 @@ export async function updateArticle(
 
   if (!result.success) {
     logger.error('Failed to update article', { error: result.error }, 'Articles');
-    return { success: false, error: result.error || 'Failed to save changes.' };
+    return { success: false, error: apiErrorMessage(result, 'Failed to save changes.') };
   }
   return { success: true };
 }

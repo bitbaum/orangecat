@@ -62,8 +62,8 @@ Your core workflow combines surgical patching with the Guardian's Mandate and Fi
 
 ```bash
 # Run targeted checks on changed files
-npm run type-check
-npm test -- src/path/to/changed/file.test.ts
+pnpm run type-check
+pnpm test src/path/to/changed/file.test.ts
 ```
 
 ### Browser Automation
@@ -79,7 +79,7 @@ node scripts/test/browser-automation-helper.mjs test-auth
 ### Full Suites (Pre-Push/Deploy)
 
 ```bash
-npm run lint && npm run test
+pnpm run lint && pnpm run test
 ```
 
 ## 🌐 Browser Automation for Codex

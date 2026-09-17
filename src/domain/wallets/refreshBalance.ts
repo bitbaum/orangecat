@@ -11,6 +11,7 @@ import { auditSuccess, AUDIT_ACTIONS } from '@/lib/api/auditLog';
 import { logger } from '@/utils/logger';
 import { BITCOIN_FETCH_TIMEOUT_MS } from '@/lib/wallets/constants';
 import { satsToBitcoin } from '@/services/currency';
+import { scanUsedAddresses } from '@/domain/wallets/xpubScan';
 
 const COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
 const API_TIMEOUT_MS = BITCOIN_FETCH_TIMEOUT_MS;
@@ -37,25 +38,58 @@ async function fetchWithTimeout(
   }
 }
 
-async function fetchXpubBalance(xpub: string): Promise<number> {
+
+/** Chain stats for one address, in sats. */
+async function fetchAddressStats(
+  address: string
+): Promise<{ balanceSats: number; txCount: number }> {
   const res = await fetchWithTimeout(
-    `https://mempool.space/api/v1/xpub/${xpub}`,
+    `https://mempool.space/api/address/${address}`,
     { headers: { Accept: 'application/json' } },
     API_TIMEOUT_MS
   );
   if (res.status === 429) {
     throw new Error('RATE_LIMITED');
   }
-  if (res.status === 404) {
-    return 0;
-  }
   if (!res.ok) {
     throw new Error(`API_ERROR_${res.status}`);
   }
-  const data = await res.json();
-  const funded: number = data?.chain_stats?.funded_txo_sum ?? 0;
-  const spent: number = data?.chain_stats?.spent_txo_sum ?? 0;
-  return satsToBitcoin(funded - spent);
+  const d = await res.json();
+  const c = d?.chain_stats ?? {};
+  const m = d?.mempool_stats ?? {};
+  const balanceSats =
+    (c.funded_txo_sum ?? 0) -
+    (c.spent_txo_sum ?? 0) +
+    (m.funded_txo_sum ?? 0) -
+    (m.spent_txo_sum ?? 0);
+  return { balanceSats, txCount: (c.tx_count ?? 0) + (m.tx_count ?? 0) };
+}
+
+/**
+ * Sum an extended key's balance across BOTH chains by deriving addresses locally.
+ *
+ * This used to call `mempool.space/api/v1/xpub/<key>` — an endpoint that DOES
+ * NOT EXIST. Every variant of it 404s (verified 2026-09-07), and the 404 was
+ * mapped to `return 0`. So every xpub wallet reported exactly 0.00000000 BTC,
+ * forever, and the card stamped it "Updated <time>": a number nobody had
+ * measured, presented as freshly read from the blockchain. A wallet holding
+ * funds looked empty, which is the one failure a balance display must never
+ * have.
+ *
+ * mempool.space has no xpub support at all, so the addresses are derived here
+ * (deriveOnchainAddress already backs per-invoice addresses) and summed with a
+ * standard gap-limit scan. An error now propagates instead of becoming a zero.
+ */
+async function fetchXpubBalance(xpub: string): Promise<number> {
+  // Change addresses are where a wallet's own coins come home after it spends.
+  // Scanning the receive chain alone left every such coin out of the total, so
+  // any wallet that had ever sent a payment reported less than it held.
+  const used = await scanUsedAddresses(xpub, async address => {
+    const { balanceSats, txCount } = await fetchAddressStats(address);
+    return { used: txCount > 0, value: balanceSats };
+  });
+  const totalSats = used.reduce((sum, a) => sum + a.value, 0);
+  return satsToBitcoin(totalSats);
 }
 
 type RefreshResult =

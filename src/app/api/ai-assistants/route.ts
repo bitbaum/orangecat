@@ -61,7 +61,7 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
 
     const parsed = aiAssistantSchema.safeParse(await (request as NextRequest).json());
     if (!parsed.success) {
-      return apiBadRequest(parsed.error.errors[0]?.message || 'Invalid request data');
+      return apiBadRequest(parsed.error.issues[0]?.message || 'Invalid request data');
     }
 
     const result = await createAssistant(supabase, user.id, parsed.data);

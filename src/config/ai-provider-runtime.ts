@@ -68,6 +68,27 @@ export function isOpenAICompatibleProvider(providerId: string): boolean {
   return providerId in PROVIDER_RUNTIME;
 }
 
+/**
+ * Providers whose `/chat/completions` we drive with OpenAI-style native tool
+ * calling (`tools` + `tool_choice`, replies carrying `tool_calls`).
+ *
+ * These are the two that actually serve OrangeCat: Groq (BYOK, paid TPM) and
+ * OpenRouter (the platform path plus many BYOK models). Everything else —
+ * including every local model — gets no tool definitions, so Cat can only
+ * describe what it would do there.
+ *
+ * SSOT on purpose. This single fact decides two things that MUST agree, and
+ * used to be spelled out independently in each: whether tool definitions are
+ * sent (services/cat/tool-use.ts) and whether the system prompt claims Cat can
+ * act (services/cat/system-prompt.ts). When they disagreed, the prompt won the
+ * argument and the user was told an action had run when nothing could run it.
+ */
+export const TOOL_CAPABLE_PROVIDERS = ['groq', 'openrouter'] as const;
+
+export function providerSupportsNativeTools(providerId: string): boolean {
+  return (TOOL_CAPABLE_PROVIDERS as readonly string[]).includes(providerId);
+}
+
 // ---------------------------------------------------------------------------
 // Image generation (BYOK-only)
 // ---------------------------------------------------------------------------

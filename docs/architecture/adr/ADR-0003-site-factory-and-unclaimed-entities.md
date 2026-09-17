@@ -31,7 +31,7 @@ Four things about the existing code decide most of this:
    `definitions`, `index`, `table`, `meter`), pages as config, one catch-all
    route. `camille-boulangerie` is the same product hand-rolled as `.tsx`.
 2. **`public.profile_claims` already models a draft that is not yet a person.**
-   `profiles.id` is a validated FK to `auth.users(id)`, so a profile *cannot*
+   `profiles.id` is a validated FK to `auth.users(id)`, so a profile _cannot_
    exist before its subject has an account. The claims table is the holding area:
    the row id is the claim token, there are no RLS policies at all, and every
    read goes through a server route on the service-role client.
@@ -41,12 +41,12 @@ Four things about the existing code decide most of this:
    via `findAvailableUsername`, copies the draft onto the caller's own profile,
    and rolls the claim back to `pending` if that copy fails. Revoke and a
    180-day expiry exist. What is missing is only the door in front of it.
-4. `integration_keys` / `webhook_endpoints` already carry FleetCrown's calls.
+4. `integration_keys` / `webhook_endpoints` already carry Loki's calls.
 
-And one fact about the stack: OrangeCat is the **economy** pillar, FleetCrown the
+And one fact about the stack: OrangeCat is the **economy** pillar, Loki the
 **engineering** one, and Solon the **governance** one — early, and not ready to
 be sold to anyone. A prospect is being sold a website. The pillars are what they
-may *later* want, at most.
+may _later_ want, at most.
 
 ## Problem Statement
 
@@ -62,7 +62,7 @@ the money boundary, or money code inside a CRM.
 
 **How does an entity exist before its subject agrees to it?** A profile that can
 raise needs an account the business has not created. `profile_claims` answers
-this for a *person* (name, bio, avatar, links). It has no notion of a business,
+this for a _person_ (name, bio, avatar, links). It has no notion of a business,
 a group, or anything that can receive funds.
 
 ## Decision
@@ -80,13 +80,13 @@ fixing the `cards` renderer improves every site ever generated. It ships no
 design tokens: each site keeps its own `globals.css`, because the system is
 uniform and the aesthetics are not.
 
-**2. FleetCrown — the pipeline and the proposal.** Scrape, assess, generate,
-propose, hand over. FleetCrown already models this shape (projects, crew
+**2. Loki — the pipeline and the proposal.** Scrape, assess, generate,
+propose, hand over. Loki already models this shape (projects, crew
 assignments, agent runs, activity). A prospect is a project that has not said yes
 yet.
 
-**The proposal is FleetCrown's object, and it is deliberately not behind
-OrangeCat auth** — requiring an account to *read an offer* is the leak this
+**The proposal is Loki's object, and it is deliberately not behind
+OrangeCat auth** — requiring an account to _read an offer_ is the leak this
 amendment exists to close. It carries its own token, and accept/decline needs no
 login.
 
@@ -99,7 +99,7 @@ in the funnel. Two changes here:
   under it, not only a person.
 - **Add an ingest door**: `POST /api/claims/ingest` taking `{ url }` or
   `{ text }`, extracting via Cat, and writing **one pending claim**. The same
-  endpoint serves FleetCrown's pipeline and a human typing a sentence to Cat —
+  endpoint serves Loki's pipeline and a human typing a sentence to Cat —
   deliberately, so the pipeline gets no privileged path a person cannot use.
 
 **Not a fourth layer: Solon.** Governance is the direction this eventually
@@ -132,7 +132,7 @@ Publishing requires the same yes as the outbound door.
 
 Generation costs model tokens and hits someone else's server, so the public door
 is rate limited per IP with [`limitkit`](https://github.com/catomean/limitkit),
-which FleetCrown already runs as its proving consumer. A free lead magnet with an
+which Loki already runs as its proving consumer. A free lead magnet with an
 uncapped spend is not a lead magnet.
 
 ## The proposal
@@ -171,7 +171,7 @@ tear the site down and revoke any attached claim.
 
 **On yes, the deliverable is the website** — the repo, or hosting it on their
 domain. Nothing about Bitcoin has been mentioned yet. Only then, as a separate
-sentence: *you can also have a public profile that accepts payments.* If that
+sentence: _you can also have a public profile that accepts payments._ If that
 lands, the claim link from layer 3 is the door, and it is the same flow that
 already ships.
 
@@ -205,7 +205,7 @@ under which the pitch for it is any good.
 
 Generation is not instant, and hiding it behind a spinner wastes the best part.
 **Stream it**: the page being fetched, the sections recognised, the site
-assembling. Watching your own shop turn into a good website in front of you *is*
+assembling. Watching your own shop turn into a good website in front of you _is_
 the wow moment — a reveal after thirty silent seconds is a worse version of the
 same thirty seconds.
 
@@ -222,7 +222,7 @@ polices this fleet:
 - **The generated repo ships the golden CI** from `dotfiles/templates/ci/` and a
   real `verify` — lint, typecheck, test. It passes `verify-floor-audit.sh` on the
   same terms as any repo we own. A site we hand over is a repo we would accept.
-- **Token architecture, not token values.** It inherits the *shape* of
+- **Token architecture, not token values.** It inherits the _shape_ of
   `@fleet/design-tokens` — the knobs block, the primitive/semantic tiers, Tailwind
   referencing CSS vars and never literals — so a retheme is one file. It must
   **not** import the fleet's values: those make things look like OrangeCat, and a
@@ -246,14 +246,14 @@ hundredth site is the first one nobody looked at.
 - **Onboarding is the upside, not the entry fee.** Every accepted site is a
   warm relationship with a real business — a far better position from which to
   introduce OrangeCat than a cold link ever was. Making it optional is what makes
-  it *possible*.
+  it _possible_.
 - **Blast radius.** Claim tokens, identity and fundraising sit on one side of a
   network boundary. Prospecting code cannot widen them by accident because it
   cannot reach the tables.
 - **SSOT.** There is one definition of "an entity that can raise" and it is this
   repo's. A second one inside a CRM would be a second source of truth about money.
 - **The 2-files test.** A new section kind touches `sitekit` only. A new prospect
-  state touches FleetCrown only. A new claimable kind touches this repo only.
+  state touches Loki only. A new claimable kind touches this repo only.
 
 ## The invariant this exists to protect
 
@@ -297,7 +297,7 @@ honest.
 - One migration here (claims `draft` gains a discriminated kind) and one new
   route. The claims table's no-RLS, service-role-only posture is inherited
   deliberately; do not add a permissive policy to make the pipeline simpler.
-- FleetCrown grows a proposal object with its own token and public read. It must
+- Loki grows a proposal object with its own token and public read. It must
   not reach into this repo's tables to render one.
 - Substrata and Camille both become `sitekit` consumers, which is how the schema
   gets tested before it is pointed at strangers.
@@ -318,7 +318,7 @@ honest.
 1. Extract `sitekit` from Substrata and **rebuild Camille on it**. That rebuild
    is the schema's test: if Camille cannot be expressed in the closed union, the
    union is wrong, and it is cheaper to learn that on a site we own.
-2. Build the proposal page in FleetCrown — before/after, measured defects,
+2. Build the proposal page in Loki — before/after, measured defects,
    accept/decline. This is the artifact that decides whether any of it sells.
 3. Walk **one** real prospect through the whole chain by hand, with no pipeline
    and no OrangeCat offer at all. Sell a website.
@@ -327,7 +327,7 @@ honest.
    every subject asked for it, and it is the only step that produces inbound
    demand instead of consuming our attention per target.
 5. Only then offer the profile to a business that already said yes.
-6. Only then give FleetCrown a prospect table, and only the states step 3 proved
+6. Only then give Loki a prospect table, and only the states step 3 proved
    exist.
 
 Steps 1 and 2 are independent. The ingest endpoint here is not on the critical
@@ -354,12 +354,12 @@ stack and it is not finished. Selling an unready governance layer to a Verein
 that trusted us over a website would cost more than it earns. Revisit when the
 product is ready to stand on its own.
 
-**All of it in FleetCrown.** Rejected: it puts a second definition of a fundable
+**All of it in Loki.** Rejected: it puts a second definition of a fundable
 entity next to a CRM, and moves the pre-claim funding invariant from a structural
 guarantee to a rule someone has to keep remembering.
 
 **All of it here.** Rejected: prospect tracking is not an economic primitive, and
-FleetCrown already has the pipeline shape. This repo would grow a CRM.
+Loki already has the pipeline shape. This repo would grow a CRM.
 
 **Skip `sitekit`; let the generator write components.** Rejected: it makes output
 quality unverifiable per site and unimprovable across sites, which is the whole

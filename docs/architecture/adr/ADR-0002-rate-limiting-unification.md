@@ -3,6 +3,7 @@
 Status: Accepted
 Date: 2026-01-18
 Resolved: 2026-08-25
+Completed: 2026-09-05 — remaining work implemented via `limitkit@0.2.0` (see addendum)
 
 ## Context (as written 2026-01-18)
 
@@ -25,7 +26,7 @@ Worth recording, because almost none of the original plan survived contact:
   wrong in both directions — it named a file that was gone and missed the one
   that mattered.
 - **The proposed `src/lib/rate-limit/` directory was never created.** The
-  canonical module is the existing `src/lib/rate-limit.ts` *file*. Renaming it
+  canonical module is the existing `src/lib/rate-limit.ts` _file_. Renaming it
   now would touch 129 importers to buy nothing.
 
 The lesson is not "the plan was bad". It is that a decision recorded as
@@ -63,17 +64,43 @@ anything but process memory. `rateLimitAction` is async for that reason.
   `enforceRateLimit`, `getRateLimitHeaders`, `RATE_LIMIT_CONFIGS` or
   `checkRateLimit` remain anywhere in `src/` or `__tests__/`.
 
-## Known, deliberately not fixed here
+## Known, deliberately not fixed here (as of 2026-08-25; both resolved — see addendum)
 
 - **Upstash is not configured.** `UPSTASH_REDIS_REST_URL` is absent from
   `.env.local` and referenced nowhere in `.github/` or `scripts/`, so the live
   path is the in-memory fallback. On the current deployment — a single
-  self-hosted Node process behind Caddy, not serverless — that is *correct* and
+  self-hosted Node process behind Caddy, not serverless — that is _correct_ and
   the warning in the module header is stale advice from the Vercel era. It stops
   being correct the moment a second instance exists.
 - **`rate-limit.ts` repeats an upstash-limiter + fallback-limiter + exported
   function triple five times** (general, social, write, tip-recipient, ask-cat).
   That is real duplication inside the canonical module. It was left alone because
   changing it touches the behaviour of 129 importers, and this ADR was about
-  removing a second *implementation*, not refactoring the surviving one. It is
+  removing a second _implementation_, not refactoring the surviving one. It is
   the obvious next step, and `rateLimitAction` is the shape to fold them into.
+
+## Addendum 2026-09-05 — algorithm extracted to `limitkit`
+
+The canonical module survived, but its internals moved to the fleet package
+`limitkit@0.2.0` (sliding windows over an injectable two-method `Store`,
+bounded-memory default, standard `X-RateLimit-*`/`Retry-After` headers,
+`clientIp()`). What changed:
+
+- `src/lib/rate-limit.ts` keeps its full export surface (138 importers
+  untouched) but now only declares the LIMITS — every value preserved
+  exactly — while limitkit supplies the window arithmetic, store, and headers.
+  The five-fold limiter triple is gone.
+- The never-configured Upstash path is deleted along with `@upstash/ratelimit`
+  and `@upstash/redis`; runtime behaviour on the single self-hosted instance is
+  unchanged (the in-memory path was always the live one). A second instance
+  now means implementing limitkit's `Store` over shared infrastructure — one
+  seam instead of a parallel code path.
+- `src/lib/client-ip.ts` delegates X-Forwarded-For parsing to limitkit's
+  `clientIp()` (same last-hop correction, `trustedProxies: 1` for the one
+  Caddy hop); the app keeps only its `anonymous` bucket naming.
+- Headers now follow this ADR's spec exactly via limitkit's `toHeaders`:
+  `X-RateLimit-Reset` in epoch seconds (was milliseconds), `Retry-After` on
+  refusals only (was emitted on success responses too).
+- All windows are sliding, which the Upstash path always declared
+  (`Ratelimit.slidingWindow`) — previously the live in-memory fallback
+  approximated it with a first-hit-anchored fixed window.

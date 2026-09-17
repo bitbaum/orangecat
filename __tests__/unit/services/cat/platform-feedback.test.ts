@@ -12,16 +12,18 @@
 import { answerAndRecordFeedback } from '@/services/cat/platform-feedback';
 import { callPlatformJson } from '@/services/cat/platform-llm';
 
-jest.mock('@/utils/logger', () => ({
-  logger: { warn: jest.fn(), error: jest.fn(), info: jest.fn(), debug: jest.fn() },
+import type { Mock } from 'vitest';
+
+vi.mock('@/utils/logger', () => ({
+  logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 
-jest.mock('@/services/cat/platform-llm', () => {
-  const actual = jest.requireActual('@/services/cat/platform-llm');
-  return { ...actual, callPlatformJson: jest.fn() };
+vi.mock('@/services/cat/platform-llm', async () => {
+  const actual = await vi.importActual('@/services/cat/platform-llm');
+  return { ...actual, callPlatformJson: vi.fn() };
 });
 
-const mockCall = callPlatformJson as jest.Mock;
+const mockCall = callPlatformJson as Mock;
 
 interface RecallRow {
   message: string;

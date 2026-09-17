@@ -28,7 +28,7 @@ import {
 
 // Field-level rules live in updatePreferences (the service is the SSOT); this
 // guard only rejects malformed JSON / non-object bodies so they 400, not 500.
-const preferencesBodySchema = z.record(z.unknown());
+const preferencesBodySchema = z.record(z.string(), z.unknown());
 
 /** Map a domain PreferencesResult onto the matching HTTP response. */
 function toResponse<T>(result: PreferencesResult<T>) {

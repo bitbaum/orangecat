@@ -7,17 +7,14 @@
  * while real users are being turned away at noon. Six real accounts were failed
  * in June 2026 and nothing surfaced it; see failed-turn.ts.
  *
- * Deliberately quiet: one unread row per failure CODE, bumping `occurrences`,
- * mirroring the coalescing the eval harness already uses. A capacity outage
- * affects every user at once, so stacking one row per affected request would
- * bury the signal it is meant to raise.
+ * The coalescing — one unread row per failure CODE, bumping `occurrences` —
+ * now lives in `ops-alert.ts`, because the health check needs the same rules
+ * and a second copy of them is a second thing to drift.
  */
 import { getAdminClient } from '@/lib/supabase/admin';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { logger } from '@/utils/logger';
-
-/** Recipient of operational alerts. Same default as scripts/eval-cat.mjs. */
-const OPS_NOTIFY_USER_ID = process.env.OPS_NOTIFY_USER_ID || 'cec88bc9-557f-452b-92f1-e093092fecd6';
+import { alertOps } from './ops-alert';
 
 const SOURCE = 'cat/chat';
 
@@ -56,49 +53,16 @@ export async function alertCatChatFailure(params: FailureAlertParams): Promise<v
       .maybeSingle();
 
     const message = describe(profile?.username ?? null, params);
-    const question = `Help me with this notification: ${params.code} — "${message}" What does it mean and what should I do?`;
 
-    const { data: existing } = await supabase
-      .from(DATABASE_TABLES.NOTIFICATIONS)
-      .select('id, metadata')
-      .eq('user_id', OPS_NOTIFY_USER_ID)
-      .eq('type', 'system')
-      .eq('is_read', false)
-      .eq('metadata->>source', SOURCE)
-      .eq('metadata->>title', params.code)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    const metadata = {
-      title: params.code,
-      source: SOURCE,
-      provider: params.provider ?? null,
-      model: params.model ?? null,
-      lastFailedUserId: params.userId,
-      lastSeenAt: new Date().toISOString(),
-    };
-
-    if (existing) {
-      const prev = (existing.metadata ?? {}) as { occurrences?: number };
-      await supabase
-        .from(DATABASE_TABLES.NOTIFICATIONS)
-        .update({
-          message,
-          action_url: `/dashboard/cat?q=${encodeURIComponent(question)}`,
-          metadata: { ...metadata, occurrences: (Number(prev.occurrences) || 1) + 1 },
-        })
-        .eq('id', existing.id);
-      return;
-    }
-
-    await supabase.from(DATABASE_TABLES.NOTIFICATIONS).insert({
-      user_id: OPS_NOTIFY_USER_ID,
-      type: 'system',
+    await alertOps({
+      code: params.code,
       message,
-      action_url: `/dashboard/cat?q=${encodeURIComponent(question)}`,
-      metadata: { ...metadata, occurrences: 1 },
-      is_read: false,
+      source: SOURCE,
+      metadata: {
+        provider: params.provider ?? null,
+        model: params.model ?? null,
+        lastFailedUserId: params.userId,
+      },
     });
   } catch (err) {
     logger.warn('Failed to raise Cat failure alert', { err }, 'cat/chat');

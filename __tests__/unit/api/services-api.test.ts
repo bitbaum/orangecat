@@ -2,41 +2,41 @@ import { POST } from '@/app/api/services/route';
 import { createService } from '@/domain/commerce/service';
 
 // Mock the dependencies
-jest.mock('@/lib/supabase/server', () => ({
-  createServerClient: jest.fn(),
+vi.mock('@/lib/supabase/server', () => ({
+  createServerClient: vi.fn(),
 }));
 
-jest.mock('@/domain/commerce/service', () => ({
-  createService: jest.fn(),
+vi.mock('@/domain/commerce/service', () => ({
+  createService: vi.fn(),
 }));
 
-jest.mock('@/lib/api/standardResponse', () => ({
-  apiSuccess: jest.fn(),
-  apiUnauthorized: jest.fn(),
-  apiInternalError: jest.fn(),
-  apiRateLimited: jest.fn(),
-  apiValidationError: jest.fn(),
-  handleApiError: jest.fn(),
+vi.mock('@/lib/api/standardResponse', () => ({
+  apiSuccess: vi.fn(),
+  apiUnauthorized: vi.fn(),
+  apiInternalError: vi.fn(),
+  apiRateLimited: vi.fn(),
+  apiValidationError: vi.fn(),
+  handleApiError: vi.fn(),
 }));
 
-jest.mock('@/utils/logger', () => ({
+vi.mock('@/utils/logger', () => ({
   logger: {
-    info: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
   },
 }));
 
-jest.mock('@/lib/rate-limit', () => ({
-  rateLimitWriteAsync: jest.fn(),
-  applyRateLimitHeaders: jest.fn(response => response),
+vi.mock('@/lib/rate-limit', () => ({
+  rateLimitWriteAsync: vi.fn(),
+  applyRateLimitHeaders: vi.fn(response => response),
 }));
 
 // Handler now routes through resolveCreationActor (added in the actor-switcher
 // commit b17b2534). Mock it so the entity create path proceeds without needing
 // a real actors table.
-jest.mock('@/services/actors/resolveCreationActor', () => ({
-  resolveCreationActor: jest.fn().mockResolvedValue({ id: 'actor-123' }),
+vi.mock('@/services/actors/resolveCreationActor', () => ({
+  resolveCreationActor: vi.fn().mockResolvedValue({ id: 'actor-123' }),
   ActorNotPermittedError: class ActorNotPermittedError extends Error {},
 }));
 
@@ -49,9 +49,11 @@ import {
 } from '@/lib/api/standardResponse';
 import { rateLimitWriteAsync, applyRateLimitHeaders } from '@/lib/rate-limit';
 
+import type { Mock } from 'vitest';
+
 const mockSupabase = {
   auth: {
-    getUser: jest.fn(),
+    getUser: vi.fn(),
   },
 };
 
@@ -62,17 +64,17 @@ const mockRateLimit = {
 
 describe('Services API - POST', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    (createServerClient as jest.Mock).mockResolvedValue(mockSupabase);
-    (rateLimitWriteAsync as jest.Mock).mockResolvedValue(mockRateLimit);
-    (apiSuccess as jest.Mock).mockImplementation((data, options) => ({
+    vi.clearAllMocks();
+    (createServerClient as Mock).mockResolvedValue(mockSupabase);
+    (rateLimitWriteAsync as Mock).mockResolvedValue(mockRateLimit);
+    (apiSuccess as Mock).mockImplementation((data, options) => ({
       data,
       options,
       status: 201,
     }));
-    (apiUnauthorized as jest.Mock).mockReturnValue({ error: 'Unauthorized', status: 401 });
-    (apiRateLimited as jest.Mock).mockReturnValue({ error: 'Rate limited', status: 429 });
-    (handleApiError as jest.Mock).mockImplementation(error => ({
+    (apiUnauthorized as Mock).mockReturnValue({ error: 'Unauthorized', status: 401 });
+    (apiRateLimited as Mock).mockReturnValue({ error: 'Rate limited', status: 429 });
+    (handleApiError as Mock).mockImplementation(error => ({
       error: error.message,
       status: 500,
     }));
@@ -95,11 +97,11 @@ describe('Services API - POST', () => {
     mockSupabase.auth.getUser.mockResolvedValue({ data: { user: mockUser }, error: null });
 
     // Mock service creation
-    (createService as jest.Mock).mockResolvedValue(mockCreatedService);
+    (createService as Mock).mockResolvedValue(mockCreatedService);
 
     // Create mock NextRequest with proper json method
     const mockRequest = {
-      json: jest.fn().mockResolvedValue(mockServiceData),
+      json: vi.fn().mockResolvedValue(mockServiceData),
       headers: new Headers(),
     } as any;
 
@@ -117,7 +119,7 @@ describe('Services API - POST', () => {
     mockSupabase.auth.getUser.mockResolvedValue({ data: { user: null }, error: null });
 
     const mockRequest = {
-      json: jest.fn().mockResolvedValue({ title: 'Test', category: 'Other', fixed_price: 1000 }),
+      json: vi.fn().mockResolvedValue({ title: 'Test', category: 'Other', fixed_price: 1000 }),
       headers: new Headers(),
     } as any;
 
@@ -134,13 +136,13 @@ describe('Services API - POST', () => {
     mockSupabase.auth.getUser.mockResolvedValue({ data: { user: mockUser }, error: null });
 
     // Mock rate limit exceeded
-    (rateLimitWriteAsync as jest.Mock).mockResolvedValue({
+    (rateLimitWriteAsync as Mock).mockResolvedValue({
       success: false,
       resetTime: Date.now() + 60000, // 1 minute from now
     });
 
     const mockRequest = {
-      json: jest.fn().mockResolvedValue({ title: 'Test', category: 'Other', fixed_price: 1000 }),
+      json: vi.fn().mockResolvedValue({ title: 'Test', category: 'Other', fixed_price: 1000 }),
       headers: new Headers(),
     } as any;
 
@@ -167,10 +169,10 @@ describe('Services API - POST', () => {
     mockSupabase.auth.getUser.mockResolvedValue({ data: { user: mockUser }, error: null });
 
     // Mock service creation error
-    (createService as jest.Mock).mockRejectedValue(mockError);
+    (createService as Mock).mockRejectedValue(mockError);
 
     const mockRequest = {
-      json: jest.fn().mockResolvedValue(serviceData),
+      json: vi.fn().mockResolvedValue(serviceData),
       headers: new Headers(),
     } as any;
 
@@ -187,7 +189,7 @@ describe('Services API - POST', () => {
     mockSupabase.auth.getUser.mockResolvedValue({ data: { user: null }, error: mockAuthError });
 
     const mockRequest = {
-      json: jest.fn().mockResolvedValue({ title: 'Test', category: 'Other', fixed_price: 1000 }),
+      json: vi.fn().mockResolvedValue({ title: 'Test', category: 'Other', fixed_price: 1000 }),
       headers: new Headers(),
     } as any;
 

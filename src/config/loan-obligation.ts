@@ -12,7 +12,7 @@
 import { z } from 'zod';
 
 export const obligationOfferSchema = z.object({
-  loan_id: z.string().uuid('loan_id must be a UUID'),
+  loan_id: z.string().guid('loan_id must be a UUID'),
   offer_amount: z.number().positive('offer_amount must be greater than 0'),
   interest_rate: z.number().min(0).max(100).optional(),
   term_months: z.number().int().positive().optional(),
@@ -20,7 +20,7 @@ export const obligationOfferSchema = z.object({
 });
 
 export const createObligationLoanSchema = z.object({
-  borrowerId: z.string().uuid('borrowerId must be a UUID'),
+  borrowerId: z.string().guid('borrowerId must be a UUID'),
   lenderProfileName: z.string().min(1).max(200),
   offer: obligationOfferSchema,
 });

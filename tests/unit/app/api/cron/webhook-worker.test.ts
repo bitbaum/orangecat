@@ -12,39 +12,39 @@
  * Created: 2026-06-04
  */
 
-jest.mock('@/utils/logger', () => ({
+vi.mock('@/utils/logger', () => ({
   logger: {
-    info: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
   },
 }));
 
-jest.mock('@/services/webhooks/deliveryService', () => ({
-  pickDueDeliveries: jest.fn(),
-  claimDelivery: jest.fn(),
-  markDelivered: jest.fn(),
-  markFailedOrRetry: jest.fn(),
+vi.mock('@/services/webhooks/deliveryService', () => ({
+  pickDueDeliveries: vi.fn(),
+  claimDelivery: vi.fn(),
+  markDelivered: vi.fn(),
+  markFailedOrRetry: vi.fn(),
 }));
 
-jest.mock('@/services/webhooks/webhookEndpointsService', () => ({
-  getEndpointSigningContext: jest.fn(),
-  touchEndpointLastDelivery: jest.fn(),
+vi.mock('@/services/webhooks/webhookEndpointsService', () => ({
+  getEndpointSigningContext: vi.fn(),
+  touchEndpointLastDelivery: vi.fn(),
 }));
 
-jest.mock('@/services/webhooks/signing', () => ({
-  signWebhookPayload: jest.fn(() => 't=1700000000,v1=stub'),
+vi.mock('@/services/webhooks/signing', () => ({
+  signWebhookPayload: vi.fn(() => 't=1700000000,v1=stub'),
 }));
 
-jest.mock('@/lib/api/standardResponse', () => ({
-  apiSuccess: jest.fn((payload: unknown) => ({ ok: true, data: payload, status: 200 })),
-  apiError: jest.fn((msg: string, code: string, status: number) => ({
+vi.mock('@/lib/api/standardResponse', () => ({
+  apiSuccess: vi.fn((payload: unknown) => ({ ok: true, data: payload, status: 200 })),
+  apiError: vi.fn((msg: string, code: string, status: number) => ({
     ok: false,
     error: msg,
     code,
     status,
   })),
-  apiUnauthorized: jest.fn(() => ({ ok: false, error: 'Unauthorized', status: 401 })),
+  apiUnauthorized: vi.fn(() => ({ ok: false, error: 'Unauthorized', status: 401 })),
 }));
 
 import { GET } from '@/app/api/cron/webhook-worker/route';
@@ -60,6 +60,8 @@ import {
 } from '@/services/webhooks/webhookEndpointsService';
 import { signWebhookPayload } from '@/services/webhooks/signing';
 import { apiSuccess, apiUnauthorized } from '@/lib/api/standardResponse';
+
+import type { Mock } from 'vitest';
 
 const CRON_SECRET = 'test-cron-secret';
 
@@ -97,17 +99,17 @@ const goodCtx = {
 };
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   process.env.CRON_SECRET = CRON_SECRET;
   // Default to "auth + empty batch" so tests opt into delivery rows.
-  (pickDueDeliveries as jest.Mock).mockResolvedValue([]);
-  (claimDelivery as jest.Mock).mockResolvedValue(true);
-  (getEndpointSigningContext as jest.Mock).mockResolvedValue(goodCtx);
-  (markDelivered as jest.Mock).mockResolvedValue(undefined);
-  (markFailedOrRetry as jest.Mock).mockResolvedValue(undefined);
+  (pickDueDeliveries as Mock).mockResolvedValue([]);
+  (claimDelivery as Mock).mockResolvedValue(true);
+  (getEndpointSigningContext as Mock).mockResolvedValue(goodCtx);
+  (markDelivered as Mock).mockResolvedValue(undefined);
+  (markFailedOrRetry as Mock).mockResolvedValue(undefined);
   // Default global fetch — tests override per case.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (global as any).fetch = jest.fn();
+  (global as any).fetch = vi.fn();
 });
 
 afterAll(() => {
@@ -141,7 +143,7 @@ describe('GET /api/cron/webhook-worker — auth', () => {
 
 describe('GET /api/cron/webhook-worker — empty batch', () => {
   it('returns processed:0 when nothing is due', async () => {
-    (pickDueDeliveries as jest.Mock).mockResolvedValue([]);
+    (pickDueDeliveries as Mock).mockResolvedValue([]);
 
     const res = (await GET(makeRequest(`Bearer ${CRON_SECRET}`))) as {
       ok: boolean;
@@ -162,8 +164,8 @@ describe('GET /api/cron/webhook-worker — empty batch', () => {
 
 describe('GET /api/cron/webhook-worker — processDelivery branches', () => {
   it('skipped: claim returns false → no further work, summary.skipped++', async () => {
-    (pickDueDeliveries as jest.Mock).mockResolvedValue([makeDelivery()]);
-    (claimDelivery as jest.Mock).mockResolvedValue(false);
+    (pickDueDeliveries as Mock).mockResolvedValue([makeDelivery()]);
+    (claimDelivery as Mock).mockResolvedValue(false);
 
     const res = (await GET(makeRequest(`Bearer ${CRON_SECRET}`))) as {
       data: { processed: number; summary: Record<string, number> };
@@ -178,8 +180,8 @@ describe('GET /api/cron/webhook-worker — processDelivery branches', () => {
   });
 
   it("delivered (revoked): signing context is null → markDelivered(0, '[endpoint revoked]')", async () => {
-    (pickDueDeliveries as jest.Mock).mockResolvedValue([makeDelivery()]);
-    (getEndpointSigningContext as jest.Mock).mockResolvedValue(null);
+    (pickDueDeliveries as Mock).mockResolvedValue([makeDelivery()]);
+    (getEndpointSigningContext as Mock).mockResolvedValue(null);
 
     const res = (await GET(makeRequest(`Bearer ${CRON_SECRET}`))) as {
       data: { summary: Record<string, number> };
@@ -192,8 +194,8 @@ describe('GET /api/cron/webhook-worker — processDelivery branches', () => {
   });
 
   it('delivered (2xx): POSTs with signature + headers, markDelivered, touchEndpoint fires', async () => {
-    (pickDueDeliveries as jest.Mock).mockResolvedValue([makeDelivery()]);
-    (global.fetch as jest.Mock).mockResolvedValue({
+    (pickDueDeliveries as Mock).mockResolvedValue([makeDelivery()]);
+    (global.fetch as Mock).mockResolvedValue({
       status: 204,
       text: () => Promise.resolve(''),
     });
@@ -209,7 +211,7 @@ describe('GET /api/cron/webhook-worker — processDelivery branches', () => {
     );
 
     expect(global.fetch).toHaveBeenCalledTimes(1);
-    const [calledUrl, init] = (global.fetch as jest.Mock).mock.calls[0];
+    const [calledUrl, init] = (global.fetch as Mock).mock.calls[0];
     expect(calledUrl).toBe(goodCtx.url);
     expect(init.method).toBe('POST');
     expect(init.headers['Content-Type']).toBe('application/json');
@@ -223,8 +225,8 @@ describe('GET /api/cron/webhook-worker — processDelivery branches', () => {
   });
 
   it('retry (non-2xx, under MAX): markFailedOrRetry with response status + body', async () => {
-    (pickDueDeliveries as jest.Mock).mockResolvedValue([makeDelivery({ attempt_count: 2 })]);
-    (global.fetch as jest.Mock).mockResolvedValue({
+    (pickDueDeliveries as Mock).mockResolvedValue([makeDelivery({ attempt_count: 2 })]);
+    (global.fetch as Mock).mockResolvedValue({
       status: 503,
       text: () => Promise.resolve('try again'),
     });
@@ -244,8 +246,8 @@ describe('GET /api/cron/webhook-worker — processDelivery branches', () => {
 
   it('failed (non-2xx, after MAX attempts): summary.failed++ instead of retry', async () => {
     // attempt_count starts at 6 → claim bumps to 7 → 7 > 6 → outcome 'failed'
-    (pickDueDeliveries as jest.Mock).mockResolvedValue([makeDelivery({ attempt_count: 6 })]);
-    (global.fetch as jest.Mock).mockResolvedValue({
+    (pickDueDeliveries as Mock).mockResolvedValue([makeDelivery({ attempt_count: 6 })]);
+    (global.fetch as Mock).mockResolvedValue({
       status: 500,
       text: () => Promise.resolve(''),
     });
@@ -260,8 +262,8 @@ describe('GET /api/cron/webhook-worker — processDelivery branches', () => {
   });
 
   it("retry (network error): markFailedOrRetry(null, '[network] <msg>'), null responseStatus", async () => {
-    (pickDueDeliveries as jest.Mock).mockResolvedValue([makeDelivery({ attempt_count: 2 })]);
-    (global.fetch as jest.Mock).mockRejectedValue(new Error('ECONNRESET'));
+    (pickDueDeliveries as Mock).mockResolvedValue([makeDelivery({ attempt_count: 2 })]);
+    (global.fetch as Mock).mockRejectedValue(new Error('ECONNRESET'));
 
     const res = (await GET(makeRequest(`Bearer ${CRON_SECRET}`))) as {
       data: { summary: Record<string, number> };
@@ -276,8 +278,8 @@ describe('GET /api/cron/webhook-worker — processDelivery branches', () => {
   });
 
   it("retry (non-Error network rejection): markFailedOrRetry with '[network] unknown'", async () => {
-    (pickDueDeliveries as jest.Mock).mockResolvedValue([makeDelivery()]);
-    (global.fetch as jest.Mock).mockRejectedValue('weird');
+    (pickDueDeliveries as Mock).mockResolvedValue([makeDelivery()]);
+    (global.fetch as Mock).mockRejectedValue('weird');
 
     await GET(makeRequest(`Bearer ${CRON_SECRET}`));
 
@@ -291,7 +293,7 @@ describe('GET /api/cron/webhook-worker — processDelivery branches', () => {
 
 describe('GET /api/cron/webhook-worker — top-level error', () => {
   it('returns 500 INTERNAL_ERROR when pickDueDeliveries throws', async () => {
-    (pickDueDeliveries as jest.Mock).mockRejectedValue(new Error('db gone'));
+    (pickDueDeliveries as Mock).mockRejectedValue(new Error('db gone'));
 
     const res = (await GET(makeRequest(`Bearer ${CRON_SECRET}`))) as { status: number };
     expect(res.status).toBe(500);
@@ -304,16 +306,16 @@ describe('GET /api/cron/webhook-worker — top-level error', () => {
 
 describe('GET /api/cron/webhook-worker — batch summary', () => {
   it('aggregates outcomes across deliveries in one batch', async () => {
-    (pickDueDeliveries as jest.Mock).mockResolvedValue([
+    (pickDueDeliveries as Mock).mockResolvedValue([
       makeDelivery({ id: 'd-1' }),
       makeDelivery({ id: 'd-2' }),
       makeDelivery({ id: 'd-3' }),
     ]);
-    (claimDelivery as jest.Mock)
+    (claimDelivery as Mock)
       .mockResolvedValueOnce(true) // d-1 claims
       .mockResolvedValueOnce(false) // d-2 skipped
       .mockResolvedValueOnce(true); // d-3 claims
-    (global.fetch as jest.Mock)
+    (global.fetch as Mock)
       .mockResolvedValueOnce({ status: 200, text: () => Promise.resolve('ok') }) // d-1 delivered
       .mockResolvedValueOnce({ status: 500, text: () => Promise.resolve('bad') }); // d-3 retry
 

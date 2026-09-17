@@ -132,6 +132,8 @@ export function parseActionsFromResponse(content: string): ParsedResponse {
     cleanedMessage = cleanedMessage.replace(match[0], '').trim();
   }
 
+  cleanedMessage = stripLeakedToolCall(cleanedMessage);
+
   // Quick replies are parsed + stripped after action blocks (the action regex
   // never matches `quick_replies`, so the block survives the loop above).
   const quickReplies = parseQuickReplies(cleanedMessage);
@@ -142,4 +144,42 @@ export function parseActionsFromResponse(content: string): ParsedResponse {
     actions,
     quickReplies: quickReplies.length > 0 ? quickReplies : undefined,
   };
+}
+
+/**
+ * A weak model sometimes opens its reply with the tool call it meant to make,
+ * unfenced and often unclosed — seen live 2026-09-10:
+ *
+ *   {
+ *     "type": "suggest_offers",
+ *     "parameters": {}
+ *   С радостью помогу …
+ *
+ * It is a tool call, not prose; it never belongs on screen. Drop it when the
+ * reply STARTS with a `{ "type": … }` object: everything up to the object's
+ * closing brace or, if it never closes, up to the first line that reads as
+ * text (does not start with `{`, `}`, `"` or whitespace).
+ */
+export function stripLeakedToolCall(content: string): string {
+  const head = /^\s*\{\s*"type"\s*:\s*"[a-z_]+"/i;
+  if (!head.test(content)) {
+    return content;
+  }
+  const lines = content.split('\n');
+  let depth = 0;
+  let cut = lines.length;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (i > 0 && !/^\s*["{}\[\]]/.test(line) && line.trim() !== '') {
+      // Prose resumed without the object ever closing.
+      cut = i;
+      break;
+    }
+    depth += (line.match(/\{/g) ?? []).length - (line.match(/\}/g) ?? []).length;
+    if (i > 0 && depth <= 0) {
+      cut = i + 1;
+      break;
+    }
+  }
+  return lines.slice(cut).join('\n').trim();
 }

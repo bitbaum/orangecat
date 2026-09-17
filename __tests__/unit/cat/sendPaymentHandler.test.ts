@@ -14,21 +14,23 @@
 import { paymentHandlers } from '@/services/cat/handlers/payments';
 import { sendToRecipient } from '@/domain/payments/sendPaymentService';
 
-jest.mock('@/utils/logger', () => ({
-  logger: { warn: jest.fn(), error: jest.fn(), info: jest.fn(), debug: jest.fn() },
+import type { Mock } from 'vitest';
+
+vi.mock('@/utils/logger', () => ({
+  logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
-jest.mock('@/domain/payments/sendPaymentService', () => ({
-  sendToRecipient: jest.fn(),
-  resolveSenderNwcUri: jest.fn(),
+vi.mock('@/domain/payments/sendPaymentService', () => ({
+  sendToRecipient: vi.fn(),
+  resolveSenderNwcUri: vi.fn(),
 }));
 
-const sendToRecipientMock = sendToRecipient as jest.Mock;
+const sendToRecipientMock = sendToRecipient as Mock;
 const supabase = {} as never;
 const send = (params: Record<string, unknown>) =>
   paymentHandlers.send_payment(supabase, 'user-1', 'actor-1', params);
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe('cat send_payment', () => {

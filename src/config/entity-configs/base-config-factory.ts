@@ -101,7 +101,7 @@ export interface BaseConfigOptions<T extends Record<string, any>> {
   /** Field groups */
   fieldGroups: FieldGroup[];
   /** Zod validation schema */
-  validationSchema: ZodType<T, any, unknown>;
+  validationSchema: ZodType<T, unknown>;
   /** Default form values */
   defaultValues: T;
   /** Field-specific guidance content */

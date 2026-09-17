@@ -7,19 +7,13 @@
  */
 
 import { withAuth, type AuthenticatedRequest } from '@/lib/api/withAuth';
-import {
-  apiSuccess,
-  apiNotFound,
-  apiInternalError,
-  apiRateLimited,
-  handleApiError,
-} from '@/lib/api/standardResponse';
-import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
+import { apiSuccess, apiInternalError, handleApiError } from '@/lib/api/standardResponse';
 import { validateUUID, getValidationError } from '@/lib/api/validation';
 import { auditSuccess, AUDIT_ACTIONS } from '@/lib/api/auditLog';
+import { rateLimitedFavoriteContext } from '@/lib/api/projectFavorites';
 import { logger } from '@/utils/logger';
-import { getTableName } from '@/config/entity-registry';
 import { DATABASE_TABLES } from '@/config/database-tables';
+
 interface RouteContext {
   params: Promise<{ id: string }>;
 }
@@ -55,27 +49,11 @@ export const POST = withAuth(async (request: AuthenticatedRequest, { params }: R
   }
   try {
     const { user, supabase } = request;
-    const rl = await rateLimitWriteAsync(user.id);
-    if (!rl.success) {
-      return apiRateLimited('Too many requests. Please slow down.', retryAfterSeconds(rl));
+    const context = await rateLimitedFavoriteContext(request, projectId);
+    if ('stop' in context) {
+      return context.stop;
     }
-
-    const { data: project } = await supabase
-      .from(getTableName('project'))
-      .select('id, title')
-      .eq('id', projectId)
-      .single();
-    if (!project) {
-      return apiNotFound('Project not found');
-    }
-
-    const { data: existing } = await supabase
-      .from(DATABASE_TABLES.PROJECT_FAVORITES)
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('project_id', projectId)
-      .maybeSingle();
-    if (existing) {
+    if (context.alreadyFavorited) {
       return apiSuccess({ isFavorited: true, message: 'Project already in favorites' });
     }
 
@@ -88,7 +66,7 @@ export const POST = withAuth(async (request: AuthenticatedRequest, { params }: R
 
     await auditSuccess(AUDIT_ACTIONS.PROJECT_CREATED, user.id, 'project', projectId, {
       action: 'favorite',
-      projectTitle: project.title,
+      projectTitle: context.projectTitle,
     });
     logger.info('Project added to favorites', { userId: user.id, projectId });
     return apiSuccess({ isFavorited: true, message: 'Project added to favorites' });
@@ -105,27 +83,11 @@ export const DELETE = withAuth(async (request: AuthenticatedRequest, { params }:
   }
   try {
     const { user, supabase } = request;
-    const rl = await rateLimitWriteAsync(user.id);
-    if (!rl.success) {
-      return apiRateLimited('Too many requests. Please slow down.', retryAfterSeconds(rl));
+    const context = await rateLimitedFavoriteContext(request, projectId);
+    if ('stop' in context) {
+      return context.stop;
     }
-
-    const { data: project } = await supabase
-      .from(getTableName('project'))
-      .select('id, title')
-      .eq('id', projectId)
-      .single();
-    if (!project) {
-      return apiNotFound('Project not found');
-    }
-
-    const { data: existing } = await supabase
-      .from(DATABASE_TABLES.PROJECT_FAVORITES)
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('project_id', projectId)
-      .maybeSingle();
-    if (!existing) {
+    if (!context.alreadyFavorited) {
       return apiSuccess({ isFavorited: false, message: 'Project not in favorites' });
     }
 
@@ -140,7 +102,7 @@ export const DELETE = withAuth(async (request: AuthenticatedRequest, { params }:
 
     await auditSuccess(AUDIT_ACTIONS.PROJECT_CREATED, user.id, 'project', projectId, {
       action: 'unfavorite',
-      projectTitle: project.title,
+      projectTitle: context.projectTitle,
     });
     logger.info('Project removed from favorites', { userId: user.id, projectId });
     return apiSuccess({ isFavorited: false, message: 'Project removed from favorites' });

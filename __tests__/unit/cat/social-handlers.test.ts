@@ -7,19 +7,22 @@ import type { AnySupabaseClient } from '@/lib/supabase/types';
  * verbs delegate to the booking service (integration-tested there).
  */
 
-const getUnreadCountMock = jest.fn();
-const markAllAsReadMock = jest.fn();
-jest.mock('@/lib/services/notifications', () => ({
-  NotificationService: jest.fn().mockImplementation(() => ({
-    getUnreadCount: (...args: unknown[]) => getUnreadCountMock(...args),
-    markAllAsRead: (...args: unknown[]) => markAllAsReadMock(...args),
-  })),
+const getUnreadCountMock = vi.fn();
+const markAllAsReadMock = vi.fn();
+vi.mock('@/lib/services/notifications', () => ({
+  // function (not arrow): vitest constructs mock implementations with `new`.
+  NotificationService: vi.fn().mockImplementation(function () {
+    return {
+      getUnreadCount: (...args: unknown[]) => getUnreadCountMock(...args),
+      markAllAsRead: (...args: unknown[]) => markAllAsReadMock(...args),
+    };
+  }),
 }));
-jest.mock('@/services/notifications/dispatcher', () => ({
-  NotificationDispatcher: { dispatch: jest.fn().mockResolvedValue(undefined) },
+vi.mock('@/services/notifications/dispatcher', () => ({
+  NotificationDispatcher: { dispatch: vi.fn().mockResolvedValue(undefined) },
 }));
-jest.mock('@/utils/logger', () => ({
-  logger: { error: jest.fn(), warn: jest.fn(), info: jest.fn(), debug: jest.fn() },
+vi.mock('@/utils/logger', () => ({
+  logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 
 type QueryResponse = { data?: unknown; error?: unknown };

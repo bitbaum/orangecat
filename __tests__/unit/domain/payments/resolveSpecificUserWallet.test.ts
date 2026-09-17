@@ -9,13 +9,13 @@
 import { resolveSpecificUserWallet } from '@/domain/payments/walletResolutionService';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-jest.mock('@/utils/logger', () => ({
-  logger: { warn: jest.fn(), error: jest.fn(), info: jest.fn(), debug: jest.fn() },
+vi.mock('@/utils/logger', () => ({
+  logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
-jest.mock('@/lib/supabase/admin', () => ({ getAdminClient: jest.fn() }));
-jest.mock('@/domain/payments/encryptionService', () => ({
-  decrypt: jest.fn((v: string) => `decrypted:${v}`),
-  canDecrypt: jest.fn(() => true),
+vi.mock('@/lib/supabase/admin', () => ({ getAdminClient: vi.fn() }));
+vi.mock('@/domain/payments/encryptionService', () => ({
+  decrypt: vi.fn((v: string) => `decrypted:${v}`),
+  canDecrypt: vi.fn(() => true),
 }));
 
 const USER = 'user-1';
@@ -25,14 +25,14 @@ const WALLET = 'wallet-1';
 function makeSupabase(row: Record<string, unknown> | null) {
   const filters: Array<[string, unknown]> = [];
   const builder: Record<string, unknown> = {};
-  builder.select = jest.fn(() => builder);
-  builder.eq = jest.fn((col: string, val: unknown) => {
+  builder.select = vi.fn(() => builder);
+  builder.eq = vi.fn((col: string, val: unknown) => {
     filters.push([col, val]);
     return builder;
   });
-  builder.maybeSingle = jest.fn(() => Promise.resolve({ data: row, error: null }));
+  builder.maybeSingle = vi.fn(() => Promise.resolve({ data: row, error: null }));
   return {
-    client: { from: jest.fn(() => builder) } as unknown as SupabaseClient,
+    client: { from: vi.fn(() => builder) } as unknown as SupabaseClient,
     filters,
   };
 }
@@ -59,7 +59,15 @@ describe('resolveSpecificUserWallet', () => {
       address_or_xpub: null,
     });
     const res = await resolveSpecificUserWallet(client, USER, WALLET);
-    expect(res).toEqual({ method: 'nwc', wallet_id: WALLET, nwc_uri: 'decrypted:enc' });
+    // NWC still wins — and now carries the wallet's lightning address as a
+    // RECEIVE fallback, because a send-only connection cannot mint invoices
+    // and must not take receiving down with it. See ResolvedWallet.
+    expect(res).toEqual({
+      method: 'nwc',
+      wallet_id: WALLET,
+      nwc_uri: 'decrypted:enc',
+      lightning_address: 'a@b.c',
+    });
   });
 
   it('falls back to the Lightning address, then on-chain', async () => {

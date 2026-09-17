@@ -44,7 +44,7 @@ export const POST = withAuth(
       const body = await request.json();
       const validationResult = wishlistItemSchema.safeParse(body);
       if (!validationResult.success) {
-        return apiBadRequest('Invalid request', validationResult.error.errors);
+        return apiBadRequest('Invalid request', validationResult.error.issues);
       }
 
       // Ownership: the wishlist must belong to the caller's actor.

@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils';
 /**
  * Formatting toolbar for the markdown article body. Purely drives
  * {@link MarkdownActions} — the body stays plain markdown (SSOT), rendered
- * safely by ArticleMarkdown. Design-token styling only.
+ * safely by the bip-kit long-form pipeline. Design-token styling only.
  */
 export default function MarkdownToolbar({
   actions,

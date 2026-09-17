@@ -12,15 +12,15 @@
 import { enrichProjectsWithSettledFunding } from '@/services/wallets/project-funding';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 
-jest.mock('@/services/currency', () => ({
-  currencyConverter: { getRates: jest.fn().mockResolvedValue({}) },
+vi.mock('@/services/currency', () => ({
+  currencyConverter: { getRates: vi.fn().mockResolvedValue({}) },
   convertBtcTo: (amountBtc: number, currency: string) =>
     currency === 'BTC' ? amountBtc : amountBtc * 100_000,
 }));
 
 function clientWithRpc(rows: unknown, error: unknown = null): AnySupabaseClient {
   return {
-    rpc: jest.fn().mockResolvedValue({ data: rows, error }),
+    rpc: vi.fn().mockResolvedValue({ data: rows, error }),
   } as unknown as AnySupabaseClient;
 }
 
@@ -34,7 +34,12 @@ describe('enrichProjectsWithSettledFunding', () => {
   it('attaches settled totals in BTC + project currency + supporter count', async () => {
     const client = clientWithRpc([
       { entity_id: 'btc-project', total_btc: 0.5, contributor_count: 3, named_supporter_count: 2 },
-      { entity_id: 'chf-project', total_btc: 0.001, contributor_count: 1, named_supporter_count: 1 },
+      {
+        entity_id: 'chf-project',
+        total_btc: 0.001,
+        contributor_count: 1,
+        named_supporter_count: 1,
+      },
     ]);
 
     const result = await enrichProjectsWithSettledFunding(client, [
@@ -72,7 +77,7 @@ describe('enrichProjectsWithSettledFunding', () => {
     expect(a).toMatchObject({ raised_amount: 0, settled_raised_btc: 0, supporters_count: 0 });
 
     const throwingClient = {
-      rpc: jest.fn().mockRejectedValue(new Error('network down')),
+      rpc: vi.fn().mockRejectedValue(new Error('network down')),
     } as unknown as AnySupabaseClient;
     const [b] = await enrichProjectsWithSettledFunding(throwingClient, [
       { id: 'y', currency: 'BTC' },

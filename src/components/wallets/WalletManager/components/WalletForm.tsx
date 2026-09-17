@@ -22,6 +22,8 @@ import {
   type WalletInputKind,
 } from '@/types/wallet';
 import type { WalletFormProps } from '../types';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
+import { ReceiveVerdict } from './ReceiveVerdict';
 
 /** Friendly label + hint for whatever the user pasted. */
 const DETECTED: Record<Exclude<WalletInputKind, 'unknown'>, string> = {
@@ -51,6 +53,7 @@ export function WalletForm({
     goal_amount: initialData?.goal_amount,
     goal_currency: initialData?.goal_currency || 'USD',
     is_primary: initialData?.is_primary || false,
+    open_accounting: initialData?.open_accounting || false,
   });
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -121,7 +124,7 @@ export function WalletForm({
     if (formData.address_or_xpub?.trim()) {
       const validation = validateAddressOrXpub(formData.address_or_xpub);
       if (!validation.valid) {
-        setError(validation.error || 'Invalid address or xpub');
+        setError(apiErrorMessage(validation, 'Invalid address or xpub'));
         return;
       }
     }
@@ -177,7 +180,7 @@ export function WalletForm({
         {detected !== 'unknown' ? (
           <p className="mt-1.5 flex items-center gap-1 text-xs font-medium text-status-positive">
             <Check className="h-3.5 w-3.5" />
-            {DETECTED[detected]} — looks good
+            {DETECTED[detected]} detected
           </p>
         ) : (
           <p className="mt-1.5 text-xs text-fg-secondary">
@@ -185,6 +188,8 @@ export function WalletForm({
             a Bitcoin address, or a connection link. We&apos;ll sort out the rest.
           </p>
         )}
+
+        <ReceiveVerdict detected={detected} value={walletInput} />
 
         <button
           type="button"
@@ -380,6 +385,23 @@ export function WalletForm({
               </p>
             </div>
           )}
+
+          <div>
+            <label className="flex cursor-pointer items-center gap-2">
+              <input
+                type="checkbox"
+                checked={formData.open_accounting || false}
+                onChange={e => setFormData({ ...formData, open_accounting: e.target.checked })}
+                className="h-4 w-4 rounded border-strong text-bitcoinOrange focus:ring-ring"
+              />
+              <span className="text-sm font-medium">Publish this wallet&apos;s ledger</span>
+            </label>
+            <p className="ml-6 mt-1 text-xs text-fg-secondary">
+              Open accounting: anyone visiting this wallet&apos;s page sees its balance, its recent
+              transactions and your note on each one. Your extended public key is never published.
+              Off by default, and turning it off hides everything again.
+            </p>
+          </div>
         </div>
       )}
 

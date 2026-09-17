@@ -24,7 +24,7 @@ export const POST = withOptionalAuth(async request => {
 
     const parsed = waitlistSchema.safeParse(body);
     if (!parsed.success) {
-      return apiBadRequest(parsed.error.errors[0]?.message || 'Invalid request data');
+      return apiBadRequest(parsed.error.issues[0]?.message || 'Invalid request data');
     }
     const { email, source, referrer } = parsed.data;
 

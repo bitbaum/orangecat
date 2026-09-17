@@ -11,6 +11,7 @@
 **Short Answer:** A senior engineer at a top Silicon Valley firm would **NOT keep `strict: false` long-term**, but would use a **strategic, incremental migration approach** that allows the build to work while systematically improving type safety.
 
 **Key Principles:**
+
 1. **Never compromise on type safety for new code** - Set standards immediately
 2. **Incremental migration** - Fix legacy code gradually, not all at once
 3. **Pragmatic approach** - Keep builds working while improving
@@ -22,13 +23,16 @@
 ## The Reality: Why `strict: false` Exists
 
 ### Current Situation
+
 - `strict: false` is enabled because enabling `strict: true` would break the build
 - You have 66 remaining type safety issues
 - Some legacy code patterns require gradual migration
 - Build must continue working during migration
 
 ### This is Normal
+
 **Even at top companies:**
+
 - Google's codebase has legacy JavaScript being migrated to TypeScript
 - Microsoft's TypeScript itself had gradual strict mode adoption
 - Airbnb migrated from JavaScript to TypeScript over years
@@ -68,24 +72,24 @@
 ```
 
 **Then use project references:**
+
 ```json
 {
   "files": [],
-  "references": [
-    { "path": "./tsconfig.strict.json" },
-    { "path": "./tsconfig.json" }
-  ]
+  "references": [{ "path": "./tsconfig.strict.json" }, { "path": "./tsconfig.json" }]
 }
 ```
 
 ### 2. **Two-Track Approach (Google/Microsoft Pattern)**
 
 **Track 1: New Code = Strict**
+
 - All new files must pass strict mode
 - New PRs cannot introduce `as any`
 - Use separate `tsconfig.strict.json` for new code
 
 **Track 2: Legacy Code = Gradual**
+
 - Existing code can remain non-strict temporarily
 - Migrate file-by-file when touching legacy code
 - Set deadlines for complete migration (e.g., 6 months)
@@ -93,13 +97,14 @@
 ### 3. **Type Safety Gates (Airbnb Pattern)**
 
 **In CI/CD Pipeline:**
+
 ```yaml
 # .github/workflows/type-check.yml
 - name: Type Check New Code
   run: |
     # Check only changed files with strict mode
-    npx tsc --project tsconfig.strict.json --noEmit
-    
+    pnpm exec tsc --project tsconfig.strict.json --noEmit
+
 - name: Type Safety Metrics
   run: |
     ISSUES=$(grep -r "as any\|@ts-ignore" src --include="*.ts" --include="*.tsx" | wc -l)
@@ -110,32 +115,36 @@
 ### 4. **Automated Migration Tools**
 
 **Use TypeScript's Built-in Fixes:**
+
 ```bash
 # Auto-fix many type issues
-npx tsc --noEmit --fix
+pnpm exec tsc --noEmit --fix
 
 # Use codemods for systematic changes
-npx jscodeshift -t transform.ts src/
+pnpm dlx jscodeshift -t transform.ts src/
 ```
 
 **Generate Types Automatically:**
+
 ```bash
 # Database types
-npx supabase gen types typescript > src/types/database.ts
+pnpm exec supabase gen types typescript > src/types/database.ts
 
 # API types
-npx openapi-typescript schema.json -o src/types/api.ts
+pnpm dlx openapi-typescript schema.json -o src/types/api.ts
 ```
 
 ### 5. **Pragmatic Standards (Meta/Netflix Pattern)**
 
 **Immediate Standards (No Exceptions):**
+
 - ✅ No new `as any` in PRs (reject PRs with them)
 - ✅ All new functions must have return types
 - ✅ All new interfaces must be properly typed
 - ✅ Database queries must use generated types
 
 **Gradual Standards (With Timeline):**
+
 - ⏳ Legacy code: Fix when touched (boy scout rule)
 - ⏳ Enable strict mode per directory (monthly goal)
 - ⏳ Complete migration: 6-month target
@@ -147,6 +156,7 @@ npx openapi-typescript schema.json -o src/types/api.ts
 ### Phase 1: Foundation (Week 1-2)
 
 **1. Create Strict Config for New Code**
+
 ```json
 // tsconfig.strict.json
 {
@@ -156,16 +166,12 @@ npx openapi-typescript schema.json -o src/types/api.ts
     "noUnusedLocals": true,
     "noUnusedParameters": true
   },
-  "include": [
-    "src/components/**/*",
-    "src/hooks/**/*",
-    "src/lib/**/*",
-    "src/services/**/*"
-  ]
+  "include": ["src/components/**/*", "src/hooks/**/*", "src/lib/**/*", "src/services/**/*"]
 }
 ```
 
 **2. Add ESLint Rules (Immediate)**
+
 ```json
 {
   "rules": {
@@ -182,8 +188,10 @@ npx openapi-typescript schema.json -o src/types/api.ts
 ```
 
 **3. Update PR Template**
+
 ```markdown
 ## Type Safety
+
 - [ ] No `as any` casts (new code only)
 - [ ] All functions have return types
 - [ ] Passes `tsc --project tsconfig.strict.json`
@@ -192,13 +200,15 @@ npx openapi-typescript schema.json -o src/types/api.ts
 ### Phase 2: Incremental Migration (Month 1-3)
 
 **Strategy: "Boy Scout Rule"**
+
 - When you touch a file, fix its type issues
 - Migrate one directory at a time
 - Enable strict mode per directory as you go
 
 **Example Migration Order:**
+
 1. ✅ `src/lib/` - Already mostly clean
-2. ✅ `src/hooks/` - Already mostly clean  
+2. ✅ `src/hooks/` - Already mostly clean
 3. ⏳ `src/components/` - Fix as you touch files
 4. ⏳ `src/app/api/` - Fix as you touch routes
 5. ⏳ `src/services/` - Fix as you touch services
@@ -206,15 +216,17 @@ npx openapi-typescript schema.json -o src/types/api.ts
 ### Phase 3: Complete Migration (Month 4-6)
 
 **Enable Strict Mode Globally:**
+
 ```json
 {
   "compilerOptions": {
-    "strict": true  // Finally!
+    "strict": true // Finally!
   }
 }
 ```
 
 **By this point:**
+
 - All new code is strict
 - Most legacy code is migrated
 - Remaining issues are documented and scheduled
@@ -226,6 +238,7 @@ npx openapi-typescript schema.json -o src/types/api.ts
 ### Option A: Per-Directory Strict Mode (Recommended)
 
 **Structure:**
+
 ```
 tsconfig.json              # Base (strict: false)
 tsconfig.strict.json       # New code (strict: true)
@@ -237,6 +250,7 @@ src/
 ```
 
 **Benefits:**
+
 - ✅ Build continues working
 - ✅ New code is type-safe
 - ✅ Gradual migration possible
@@ -245,6 +259,7 @@ src/
 ### Option B: File-Level Overrides
 
 **Use `// @ts-strict` comment:**
+
 ```typescript
 // @ts-strict
 // This file must pass strict mode checks
@@ -254,6 +269,7 @@ export function newFeature() {
 ```
 
 **Then in tsconfig:**
+
 ```json
 {
   "compilerOptions": {
@@ -279,34 +295,39 @@ export function newFeature() {
 ## What NOT to Do (Common Mistakes)
 
 ### ❌ Don't: Enable Strict Mode Globally Overnight
+
 ```json
 // ❌ BAD - Breaks build, blocks all development
 {
-  "strict": true  // 1000+ errors, build fails
+  "strict": true // 1000+ errors, build fails
 }
 ```
 
 ### ❌ Don't: Keep `strict: false` Forever
+
 ```json
 // ❌ BAD - No type safety benefits
 {
-  "strict": false  // Forever
+  "strict": false // Forever
 }
 ```
 
 ### ❌ Don't: Allow New Code to Be Non-Strict
+
 ```typescript
 // ❌ BAD - New code should be strict
-function newFeature(data: any) {  // Should be typed!
+function newFeature(data: any) {
+  // Should be typed!
   return data.value;
 }
 ```
 
 ### ✅ Do: Incremental, Measured Approach
+
 ```json
 // ✅ GOOD - Strategic migration
 {
-  "strict": false,  // Legacy code
+  "strict": false // Legacy code
   // + tsconfig.strict.json for new code
   // + ESLint rules for enforcement
   // + Migration timeline
@@ -318,18 +339,21 @@ function newFeature(data: any) {  // Should be typed!
 ## Real-World Examples
 
 ### Google's Approach
+
 - **New code:** Must pass strict mode
 - **Legacy code:** Migrated when touched
 - **Timeline:** 2-3 year migration for large codebases
 - **Tooling:** Automated type generation, codemods
 
 ### Microsoft's Approach (TypeScript Team)
+
 - **Incremental adoption:** Feature by feature
 - **Backward compatibility:** Maintained during migration
 - **Documentation:** Clear migration guides
 - **Tooling:** Built migration tools
 
 ### Airbnb's Approach
+
 - **Strict from day one:** New projects
 - **Gradual migration:** Existing projects
 - **Code review:** Reject PRs with type issues
@@ -342,9 +366,10 @@ function newFeature(data: any) {  // Should be typed!
 ### Immediate (This Week)
 
 1. **Create `tsconfig.strict.json`**
+
    ```bash
    # New code must pass this
-   npx tsc --project tsconfig.strict.json --noEmit
+   pnpm exec tsc --project tsconfig.strict.json --noEmit
    ```
 
 2. **Add ESLint Rules**
@@ -388,11 +413,13 @@ function newFeature(data: any) {  // Should be typed!
 ## Success Metrics
 
 **Current State:**
+
 - `strict: false` (build works)
 - 66 type safety issues
 - No enforcement for new code
 
 **Target State (6 months):**
+
 - `strict: true` globally
 - < 10 type safety issues (only justified ones)
 - 100% new code in strict mode
@@ -414,6 +441,7 @@ function newFeature(data: any) {  // Should be typed!
 7. ✅ **Complete migration in 6 months** - Not forever
 
 **The key is:**
+
 - **Pragmatic** - Don't break the build
 - **Strategic** - Have a clear plan
 - **Measured** - Track progress
@@ -421,7 +449,4 @@ function newFeature(data: any) {  // Should be typed!
 
 ---
 
-*This strategy is based on practices from Google, Microsoft, Airbnb, Meta, and other top-tier engineering organizations.*
-
-
-
+_This strategy is based on practices from Google, Microsoft, Airbnb, Meta, and other top-tier engineering organizations._

@@ -19,6 +19,7 @@ import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
 import { validateUUID, getValidationError } from '@/lib/api/validation';
 import projectSupportService from '@/services/projects/support';
 import { logger } from '@/utils/logger';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 interface RouteContext {
   params: Promise<{ id: string; supportId: string }>;
@@ -44,7 +45,7 @@ export const DELETE = withAuth(async (request: AuthenticatedRequest, context: Ro
     const result = await projectSupportService.deleteProjectSupport(supportId);
 
     if (!result.success) {
-      const msg = result.error || 'Failed to delete support';
+      const msg = apiErrorMessage(result, 'Failed to delete support');
       if (result.error === 'Unauthorized' || result.error === 'Forbidden') {
         return apiForbidden(msg);
       }

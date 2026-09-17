@@ -13,6 +13,7 @@ import type { MakerStatus, HelpWantedOption } from '@/config/maker-status';
 import { ProfileFieldType } from '@/lib/profile-guidance';
 import { submitProfileForm } from './profileSubmitHandler';
 import type { ProfileFormValues } from '../types';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 const profileSchema = serverProfileSchema;
 
@@ -146,7 +147,7 @@ export function useProfileEditor({
         form.setValue(`${type}_url` as keyof ProfileFormValues, result.url);
         setPreview(result.url);
       } else {
-        throw new Error(result.error || 'Upload failed');
+        throw new Error(apiErrorMessage(result, 'Upload failed'));
       }
     } catch (error) {
       setPreview(null);

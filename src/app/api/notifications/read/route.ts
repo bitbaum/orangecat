@@ -12,8 +12,8 @@ import { z } from 'zod';
 
 const markReadSchema = z.union([
   z.object({ all: z.literal(true) }),
-  z.object({ id: z.string().uuid('Invalid notification ID') }),
-  z.object({ ids: z.array(z.string().uuid('Invalid notification ID')).min(1).max(100) }),
+  z.object({ id: z.string().guid('Invalid notification ID') }),
+  z.object({ ids: z.array(z.string().guid('Invalid notification ID')).min(1).max(100) }),
 ]);
 
 /**
@@ -44,7 +44,7 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
 
     const parsed = markReadSchema.safeParse(body);
     if (!parsed.success) {
-      return apiBadRequest(parsed.error.errors[0]?.message || 'Invalid request body');
+      return apiBadRequest(parsed.error.issues[0]?.message || 'Invalid request body');
     }
     const data = parsed.data;
 

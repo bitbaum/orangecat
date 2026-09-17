@@ -63,7 +63,7 @@ This rule applies to:
 
 ### Before ANY push to main branch:
 
-1. Run the dev server locally (`npm run dev -- -p 3020`)
+1. Run the dev server locally (`pnpm run dev -p 3020`)
 2. Test the feature/page manually in browser
 3. Verify it works with real authentication
 4. Check responsive design on mobile sizes

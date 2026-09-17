@@ -20,7 +20,7 @@ const inter = localFont({
   preload: true,
 });
 
-// FleetCrown-aligned display typography: Space Grotesk for display/heading,
+// Loki-aligned display typography: Space Grotesk for display/heading,
 // IBM Plex Mono for code. Body stays Inter.
 const spaceGrotesk = localFont({
   src: '../fonts/space-grotesk-variable.woff2',
@@ -43,6 +43,7 @@ const ibmPlexMono = localFont({
 import './globals.css';
 import Script from 'next/script';
 import { AuthProvider } from '@/components/providers/AuthProvider';
+import { ClientErrorReporter } from '@/components/providers/ClientErrorReporter';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { CurrencyRatesProvider } from '@/components/providers/CurrencyRatesProvider';
@@ -156,6 +157,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           Skip to main content
         </a>
+        <ClientErrorReporter />
         <ThemeProvider>
           <CurrencyRatesProvider initialSnapshot={rateSnapshot}>
             <QueryProvider>
@@ -175,19 +177,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </CurrencyRatesProvider>
           <Toaster position="top-right" richColors closeButton />
         </ThemeProvider>
-        {/* FleetCrown feedback widget — OrangeCat is customer #2 of the sibling
+        {/* Loki feedback widget — OrangeCat is customer #2 of the sibling
             product's embeddable feedback loop (visitor points at the broken
-            element → FleetCrown per-project inbox → one-click agent dispatch).
+            element → Loki per-project inbox → one-click agent dispatch).
             Env-gated like GA; data-fc-bottom clears the mobile bottom nav.
             afterInteractive, not lazyOnload: busy pages (Cat chat streams and
             polls) can keep the browser from going idle, so lazyOnload left the
             FAB unmounted for minutes — a feedback button that isn't there when
             something breaks is the one time it's needed. */}
-        {process.env.FLEETCROWN_FEEDBACK_TOKEN && (
+        {process.env.LOKI_FEEDBACK_TOKEN && (
           <Script
-            src="https://fleetcrown.orangecat.ch/widget.js"
+            src="https://loki.orangecat.ch/widget.js"
             strategy="afterInteractive"
-            data-fc-project={process.env.FLEETCROWN_FEEDBACK_TOKEN}
+            data-fc-project={process.env.LOKI_FEEDBACK_TOKEN}
             data-fc-bottom="80"
           />
         )}

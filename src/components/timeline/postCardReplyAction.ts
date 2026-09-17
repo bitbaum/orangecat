@@ -2,6 +2,7 @@ import type { TimelineDisplayEvent } from '@/types/timeline';
 import type { User } from '@supabase/supabase-js';
 import { logger } from '@/utils/logger';
 import { timelineService } from '@/services/timeline';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 interface SubmitReplyParams {
   replyText: string;
@@ -45,7 +46,7 @@ export async function submitReplyAction({
       parentEventId: event.id,
     });
     if (!result.success || !result.event) {
-      throw new Error(result.error || 'Failed to reply');
+      throw new Error(apiErrorMessage(result, 'Failed to reply'));
     }
     const hydrated = await timelineService.getEventById(result.event.id);
     setReplyText('');

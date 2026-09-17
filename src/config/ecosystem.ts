@@ -15,7 +15,7 @@ function publicUrl(name: string, fallback: string): URL {
 }
 
 const orangeCatOrigin = publicUrl('NEXT_PUBLIC_ORANGECAT_URL', DEFAULT_ORANGECAT_ORIGIN);
-const fleetCrownOrigin = publicUrl('NEXT_PUBLIC_FLEETCROWN_URL', 'https://fleetcrown.orangecat.ch');
+const lokiOrigin = publicUrl('NEXT_PUBLIC_LOKI_URL', 'https://loki.orangecat.ch');
 const solonOrigin = publicUrl('NEXT_PUBLIC_SOLON_URL', SOLON_BASE_URL_DEFAULT);
 
 function orangeCatPage(path: string): string {
@@ -24,28 +24,33 @@ function orangeCatPage(path: string): string {
 
 /** Canonical public identities used by support and sibling-product surfaces. */
 export const ECOSYSTEM = {
-  owner: 'Mao Nakamoto',
+  owner: 'Cato',
   orangeCat: {
     title: 'OrangeCat',
     projectId:
       process.env.NEXT_PUBLIC_ORANGECAT_PROJECT_ID ?? 'cb093f00-8745-4579-98df-050ebfb37181',
     siteUrl: orangeCatOrigin.toString(),
-    profileUrl: orangeCatPage(publicProfilePath('mao-nakamoto')),
+    profileUrl: orangeCatPage(publicProfilePath('catomean')),
   },
-  fleetCrown: {
-    title: 'FleetCrown',
+  loki: {
+    title: 'Loki',
     projectId:
-      process.env.NEXT_PUBLIC_FLEETCROWN_ORANGECAT_PROJECT_ID ??
+      process.env.NEXT_PUBLIC_LOKI_ORANGECAT_PROJECT_ID ??
       '8130c927-114a-45b7-8cc2-99efd5224025',
-    siteUrl: fleetCrownOrigin.toString(),
+    siteUrl: lokiOrigin.toString(),
   },
   solon: {
     title: 'Solon',
     siteUrl: solonOrigin.toString(),
   },
   support: {
-    lightningAddress:
-      process.env.NEXT_PUBLIC_ECOSYSTEM_LIGHTNING_ADDRESS ?? 'orangecat@getalby.com',
+    // Was orangecat@getalby.com, which 404s — the Alby account behind it no
+    // longer exists, and prod does not override this env var, so the "support
+    // the ecosystem" address could not be paid by anyone. Verified 2026-09-07:
+    // getalby.com/.well-known/lnurlp/orangecat returns a 404 HTML page, while
+    // coinos.io/.well-known/lnurlp/orangecat returns a payRequest, mints a real
+    // invoice, and supports LUD-21 verify (so settlement is detectable).
+    lightningAddress: process.env.NEXT_PUBLIC_ECOSYSTEM_LIGHTNING_ADDRESS ?? 'orangecat@coinos.io',
     bitcoinAddress:
       process.env.NEXT_PUBLIC_ECOSYSTEM_BITCOIN_ADDRESS ??
       'bc1q3hh4yklcmwtpnqmxyksw36yedg7zyfy6tzzqwz',
@@ -55,28 +60,28 @@ export const ECOSYSTEM = {
 export const ECOSYSTEM_LINKS = {
   mao: ECOSYSTEM.orangeCat.profileUrl,
   orangeCat: orangeCatPage(`/projects/${ECOSYSTEM.orangeCat.projectId}`),
-  fleetCrown: orangeCatPage(`/projects/${ECOSYSTEM.fleetCrown.projectId}`),
+  loki: orangeCatPage(`/projects/${ECOSYSTEM.loki.projectId}`),
 } as const;
 
-export const ORANGECAT_FLEETCROWN_INTEGRATION = {
-  customer: ECOSYSTEM.fleetCrown.title,
+export const ORANGECAT_LOKI_INTEGRATION = {
+  customer: ECOSYSTEM.loki.title,
   owner: ECOSYSTEM.owner,
   orangeCat: { title: ECOSYSTEM.orangeCat.title, id: ECOSYSTEM.orangeCat.projectId },
-  fleetCrown: {
-    title: ECOSYSTEM.fleetCrown.title,
-    id: ECOSYSTEM.fleetCrown.projectId,
-    site: ECOSYSTEM.fleetCrown.siteUrl,
+  loki: {
+    title: ECOSYSTEM.loki.title,
+    id: ECOSYSTEM.loki.projectId,
+    site: ECOSYSTEM.loki.siteUrl,
   },
   wallet: {
     btc: ECOSYSTEM.support.bitcoinAddress,
     lightning: ECOSYSTEM.support.lightningAddress,
   },
-  relation: 'FleetCrown is a customer of OrangeCat.',
-  note: 'OrangeCat is the public funding layer; FleetCrown is the building layer.',
+  relation: 'Loki is a customer of OrangeCat.',
+  note: 'OrangeCat is the public funding layer; Loki is the building layer.',
 } as const;
 
 export interface EcosystemPillar {
-  key: 'orangecat' | 'fleetcrown' | 'solon';
+  key: 'orangecat' | 'loki' | 'solon';
   /** Product name. */
   title: string;
   /** The one word that makes this pillar different from the other two. */
@@ -105,8 +110,8 @@ export interface EcosystemPillar {
  * rule-making have different security boundaries — and they are bound by
  * real seams, not by a diagram:
  *
- *   - OrangeCat → FleetCrown: a signed, owner-approved build handoff
- *     (src/services/fleetcrown/build-intent.ts).
+ *   - OrangeCat → Loki: a signed, owner-approved build handoff
+ *     (src/services/loki/build-intent.ts).
  *   - Solon → OrangeCat: the platform allocation policy changes only via a
  *     Bitcoin-signed Solon vote whose decision document OrangeCat re-verifies
  *     locally against its own pinned keys
@@ -131,16 +136,16 @@ export const ECOSYSTEM_PILLARS: readonly EcosystemPillar[] = [
     isSelf: true,
   },
   {
-    key: 'fleetcrown',
-    title: ECOSYSTEM.fleetCrown.title,
+    key: 'loki',
+    title: ECOSYSTEM.loki.title,
     role: 'Engineering',
     tagline: 'Build with Loki and supervised agent fleets',
     summary:
       'The production layer: where Loki plans the work and supervised agent fleets help turn a funded intention into a working system.',
     boundary:
       'Execution stays behind an approval boundary. Funding never dispatches an agent — the owner approves each plan and each real-world action.',
-    siteUrl: ECOSYSTEM.fleetCrown.siteUrl,
-    fundingUrl: ECOSYSTEM_LINKS.fleetCrown,
+    siteUrl: ECOSYSTEM.loki.siteUrl,
+    fundingUrl: ECOSYSTEM_LINKS.loki,
     fundingBody:
       'Fund Loki, supervised agent fleets, and the production layer that turns plans into working systems.',
     icon: Bot,

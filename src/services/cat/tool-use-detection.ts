@@ -154,12 +154,29 @@ export function hasMoneyNeedIntent(message: string): boolean {
   return MONEY_NEED_PATTERNS.some(re => re.test(message));
 }
 
+/**
+ * Every trigger above is an English (or German) word. A message in Cyrillic,
+ * Greek, Arabic, Hebrew, Devanagari, CJK or Hangul matched nothing, so the
+ * tool phase never ran for it — no prefill cards, no search, no action tools —
+ * and the user got prose about the product instead of the product. A message
+ * with enough non-Latin letters to be a sentence goes to the (cheap) routing
+ * step, which decides whether a tool is actually needed.
+ */
+const NON_LATIN_LETTERS =
+  /[\u0370-\u03FF\u0400-\u04FF\u0590-\u08FF\u0900-\u0DFF\u3040-\u30FF\u4E00-\u9FFF\uAC00-\uD7AF]/g;
+const NON_LATIN_SENTENCE_MIN_LETTERS = 12;
+
+export function hasNonLatinSentence(message: string): boolean {
+  return (message.match(NON_LATIN_LETTERS) ?? []).length >= NON_LATIN_SENTENCE_MIN_LETTERS;
+}
+
 export function messageMightNeedTools(message: string): boolean {
   const lower = message.toLowerCase();
   return (
     TOOL_TRIGGER_KEYWORDS.some(kw => lower.includes(kw)) ||
     hasMoneyNeedIntent(message) ||
-    hasWebsiteAnalysisIntent(message)
+    hasWebsiteAnalysisIntent(message) ||
+    hasNonLatinSentence(message)
   );
 }
 
@@ -276,7 +293,7 @@ export const PLATFORM_TOOL_DEFINITION = [
     function: {
       name: 'prefill_entity_form',
       description:
-        'Draft an entity (product, service, project, etc.) from a natural-language description. Use this INSTEAD of a create_* exec_action when the user has described what they want to create with enough detail (title-ish hint + at least one specific attribute like price, location, category, audience). Returns structured fields the user can review in a form before publishing — never auto-creates.',
+        'Draft an entity (product, service, project, etc.) from a natural-language description. Use this INSTEAD of a create_* exec_action when the user has described what they want to create with enough detail (title-ish hint + at least one specific attribute like price, location, category, audience). Returns structured fields the user can review in a form before publishing — never auto-creates. NOT for something that belongs to another person who is not on OrangeCat yet: that is create_project_for_person.',
       parameters: {
         type: 'object',
         properties: {
@@ -405,9 +422,61 @@ export const PLATFORM_TOOL_DEFINITION = [
   {
     type: 'function',
     function: {
+      name: 'web_search',
+      description:
+        "Search the open web. Use for anything that is not stored on OrangeCat: what a thing costs elsewhere, whether a grant or programme is real and still open, who works in a field, what a tool does, current rules, prices, dates and events. Also use it before advising on something you are not certain is still true — your training has a cutoff and the user's question usually does not. This searches the WORLD; search_platform and explore_topic search OrangeCat's own members and listings, so use those for finding people and projects on the platform itself. Results come back as citable sources you must cite by handle.",
+      parameters: {
+        type: 'object',
+        properties: {
+          query: {
+            type: 'string',
+            description:
+              'What to search for, phrased as a search query rather than a question. Include the specifics that matter (place, currency, year) — "coworking desk price Zurich 2026" beats "how much is a desk".',
+          },
+          site: {
+            type: 'string',
+            description:
+              'Optional: restrict to one domain, e.g. "admin.ch" or "github.com". Use when the user named a source, or when only an official page will settle the question.',
+          },
+        },
+        required: ['query'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'read_page',
+      description:
+        "Open one web page and read its text. Call this after web_search whenever the answer needs a real figure, date, term or name — a search snippet is one line an engine chose and is where a confidently wrong number comes from. You may ONLY pass a url that the user wrote in their message or that appeared in a search result in this conversation; any other url is refused, so search first and read from the results. Returns the page's readable text as a citable source.",
+      parameters: {
+        type: 'object',
+        properties: {
+          url: {
+            type: 'string',
+            description:
+              "The exact url, copied from the search result or the user's message. Never a url you composed yourself.",
+          },
+        },
+        required: ['url'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
       name: 'check_cat_health',
       description:
         "Live health check of the AI providers powering the Cat. Call when the user asks why the Cat/AI is failing, slow, or not answering, or asks about a system notification that mentions provider failures, eval/harness errors, or Cat health. Returns per-provider status (ok / rate-limited / auth failure / down) that explains what's wrong in actionable terms. Takes no arguments.",
+      parameters: { type: 'object', properties: {} },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'check_my_track_record',
+      description:
+        "What YOU (the Cat) have done for this user and what became of it: the entities you created in the last 90 days — proposed → published → funded, with real BTC amounts — plus your own setbacks (failed or denied actions, proposals the user never confirmed). Call when the user asks what you did for them, how your suggestions worked out, or whether to trust you; and call it BEFORE proposing something new when you may have proposed the same kind before. Read-only. Takes no arguments. NOT for the user's own numbers or listings — that is query_my_data.",
       parameters: { type: 'object', properties: {} },
     },
   },

@@ -1,7 +1,7 @@
 /**
  * GET /api/v1/demand — the open-market demand feed.
  *
- * The FIND→BUILD wire: FleetCrown reads this so a builder can build for real,
+ * The FIND→BUILD wire: Loki reads this so a builder can build for real,
  * current demand (open wishlists + what people search for) and list the result
  * back — at which point the two-sided matcher introduces it to whoever wished
  * for it. Public: returns only already-public wishlists and anonymous search

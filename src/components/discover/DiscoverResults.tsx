@@ -131,7 +131,7 @@ export default function DiscoverResults({
     },
     {
       id: 'groups',
-      title: 'Groups',
+      title: 'Organizations',
       icon: <Building2 className="w-5 h-5" />,
       items: groups,
       entityType: 'group',

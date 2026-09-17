@@ -13,23 +13,18 @@ import { applyRateLimitHeaders, rateLimitWriteAsync, retryAfterSeconds } from '@
 import { apiSuccess, apiRateLimited } from '@/lib/api/standardResponse';
 import { validateOneOfIds, getValidationError } from '@/lib/api/validation';
 import { getTableName } from '@/config/entity-registry';
-import { getAdminClient } from '@/lib/supabase/admin';
 import { WALLET_CLIENT_COLUMNS } from '@/config/database-tables';
-import { redactExtendedKeys } from '@/lib/wallets/publicWallet';
+import { readPublicWallets } from '@/services/wallets/publicWalletRead';
 import { createWallet } from '@/domain/wallets/createWallet';
 
-// Public wallet fields (safe to return without auth).
-//
-// `address_or_xpub` holds two very different things. A plain address is meant
-// to be shared — it is how someone pays you. An EXTENDED PUBLIC KEY is not an
-// address but the key addresses are derived FROM, so publishing it hands any
-// visitor every past and future address of that wallet, and its whole balance
-// history. The payments domain already treats it that way (walletResolutionService:
-// "it must never be handed to a payer verbatim"); this listing did not, and served
-// real zpubs to anonymous callers through the admin client. Non-owner responses are
-// redacted below — see redactExtendedKeys.
-const PUBLIC_WALLET_FIELDS =
-  'id, address_or_xpub, wallet_type, label, category, category_icon, lightning_address, is_primary, display_order, profile_id, project_id';
+// What a non-owner may see — the curated field list, the is_active filter and
+// extended-key redaction — moved to services/wallets/publicWalletRead, which is
+// now the ONE definition. `address_or_xpub` holds two very different things: a
+// plain address is meant to be shared, while an extended public key is the key
+// every address is derived FROM, and publishing one hands any visitor a
+// wallet's entire past and future address set. This listing served real zpubs
+// to anonymous callers once (#743); the public wallet page needs the identical
+// read, so the rule got a home rather than a second copy.
 
 // GET /api/wallets?profile_id=xxx OR ?project_id=xxx
 export const GET = withOptionalAuth(async request => {
@@ -49,17 +44,23 @@ export const GET = withOptionalAuth(async request => {
     }
 
     const isOwner = user ? isProfileOwner(user, profileId) : false;
-    const selectFields = isOwner ? WALLET_CLIENT_COLUMNS : PUBLIC_WALLET_FIELDS;
 
-    // Wallet rows are owner-readable only at the RLS level; the public wallet
-    // listing (profile wallets tab) is served through this route's CURATED
-    // field list via service role — the API is the one public surface, so raw
-    // PostgREST can no longer enumerate balances or other wallet internals.
-    const db = isOwner ? supabase : (getAdminClient() as unknown as typeof supabase);
+    // Wallet rows are owner-readable only at the RLS level, so a non-owner is
+    // served through a service-role read with a CURATED field list and
+    // extended-key redaction. That combination now lives in one place —
+    // services/wallets/publicWalletRead — because the public wallet PAGE needs
+    // exactly the same read, and a second copy of this rule is how an xpub
+    // reached anonymous callers the first time (#743).
+    if (!isOwner) {
+      const rows = await readPublicWallets(
+        profileId ? { profileId } : { projectId: projectId as string }
+      );
+      return apiSuccess(rows, { cache: 'SHORT' });
+    }
 
-    let query = db
+    let query = supabase
       .from(getTableName('wallet'))
-      .select(selectFields)
+      .select(WALLET_CLIENT_COLUMNS)
       .eq('is_active', true)
       .order('display_order', { ascending: true })
       .order('created_at', { ascending: false });
@@ -82,14 +83,10 @@ export const GET = withOptionalAuth(async request => {
       return handleSupabaseError('fetch wallets', error, { profileId, projectId });
     }
 
-    // The owner sees their own key; nobody else does.
-    // The select uses a runtime column list, so postgrest infers a loose row
-    // type here; the redaction only reads address_or_xpub.
-    const rows = isOwner
-      ? data || []
-      : redactExtendedKeys((data || []) as unknown as Array<Record<string, unknown>>);
-
-    return apiSuccess(rows, { cache: 'SHORT' });
+    // Only the owner reaches here — the non-owner path returned above, already
+    // curated and redacted. The owner sees their own key, which is the whole
+    // point of owning it.
+    return apiSuccess(data || [], { cache: 'SHORT' });
   } catch (error) {
     logger.error('Unexpected error in GET /api/wallets', { error });
     return handleSupabaseError('fetch wallets', error);

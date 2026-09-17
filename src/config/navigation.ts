@@ -37,6 +37,7 @@ import {
   BarChart3,
   Handshake,
   CalendarCheck,
+  UserPlus,
 } from 'lucide-react';
 import { ECOSYSTEM_PILLARS } from './ecosystem';
 
@@ -180,6 +181,17 @@ const entitySections = generateEntityNavigation().map(section =>
             href: ROUTES.DASHBOARD.PEOPLE,
             icon: Users,
             description: 'Find connections',
+            requiresAuth: true,
+          },
+          {
+            // The claims dashboard shipped complete on 2026-08-18 — table,
+            // API, dashboard, and a public /claim/<id> landing page — and had
+            // written zero rows by 2026-09-05, because nothing in this file
+            // pointed at it. The only way in was typing the URL.
+            name: 'Set up for someone',
+            href: ROUTES.DASHBOARD.PROFILE_CLAIMS,
+            icon: UserPlus,
+            description: 'Create a profile for someone who has not joined yet',
             requiresAuth: true,
           },
           {
@@ -438,7 +450,7 @@ export const footerNavigation = {
     },
     {
       name: 'GitHub',
-      href: 'https://github.com/maonakamoto/orangecat',
+      href: 'https://github.com/bitbaum/orangecat',
       icon: GitHubIcon,
     },
   ],
@@ -447,7 +459,7 @@ export const footerNavigation = {
   // change. External URLs are marked with `external: true`.
   bottomBar: [
     { name: 'Documentation', href: ROUTES.DOCS },
-    { name: 'Source Code', href: 'https://github.com/maonakamoto/orangecat', external: true },
+    { name: 'Source Code', href: 'https://github.com/bitbaum/orangecat', external: true },
     { name: 'Roadmap', href: ROUTES.ROADMAP },
     { name: 'Support', href: ROUTES.SUPPORT },
   ] as { name: string; href: string; external?: boolean }[],

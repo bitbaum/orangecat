@@ -69,7 +69,7 @@ function makeBuilder() {
   };
 }
 
-jest.mock('@/lib/supabase/admin', () => ({
+vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: () => ({
     from: () => makeBuilder(),
   }),
@@ -79,8 +79,8 @@ jest.mock('@/lib/supabase/admin', () => ({
 // rotateIntegrationKey calls. We only test rotate's "key not found"
 // path here so resolveCreationActor never runs; mock as a thrower to
 // make accidental coverage shake loose.
-jest.mock('@/services/actors/resolveCreationActor', () => ({
-  resolveCreationActor: jest.fn(() => {
+vi.mock('@/services/actors/resolveCreationActor', () => ({
+  resolveCreationActor: vi.fn(() => {
     throw new Error('resolveCreationActor should not be called in these tests');
   }),
   ActorNotPermittedError: class ActorNotPermittedError extends Error {},

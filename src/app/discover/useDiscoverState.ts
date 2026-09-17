@@ -11,7 +11,7 @@ import { useDiscoverGenericData } from './useDiscoverGenericData';
 import { useDiscoverFilters } from './useDiscoverFilters';
 import { useDiscoverUrlSync } from './useDiscoverUrlSync';
 import { useDiscoverHandlers } from './useDiscoverHandlers';
-import { VALID_TAB_TYPES } from './discoverConstants';
+import { readDiscoverUrl } from './discoverUrlContract';
 import type { DiscoverTabType } from '@/components/discover/DiscoverTabs';
 
 export type ViewMode = 'grid' | 'list';
@@ -20,23 +20,18 @@ export function useDiscoverState() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Standardize on `q` (matches the global search handoff + the SEO sitelinks template);
-  // fall back to the legacy `search` param so old links/bookmarks still work.
-  const initialSearchTerm = searchParams?.get('q') || searchParams?.get('search') || '';
-  const initialCategories = (searchParams?.get('category') || '')
-    .split(',')
-    .map(s => s.trim())
-    .filter(Boolean);
-  const urlSort = searchParams?.get('sort') || 'recent';
-  const initialSort = (['recent', 'relevance'].includes(urlSort) ? urlSort : 'recent') as
-    | 'relevance'
-    | 'recent';
-  const urlType = (searchParams?.get('type') || 'all') as DiscoverTabType;
-  const initialType = VALID_TAB_TYPES.includes(urlType) ? urlType : 'all';
-  const initialCountry = searchParams?.get('country') || '';
-  const initialCity = searchParams?.get('city') || '';
-  const initialPostal = searchParams?.get('postal') || '';
-  const initialRadiusKm = Number(searchParams?.get('radius_km') || 0);
+  // Every param name, default and fallback lives in the contract, shared with
+  // the write side — see discoverUrlContract.ts for why that is one file.
+  const {
+    searchTerm: initialSearchTerm,
+    selectedCategories: initialCategories,
+    sortBy: initialSort,
+    activeTab: initialType,
+    country: initialCountry,
+    city: initialCity,
+    postal: initialPostal,
+    radiusKm: initialRadiusKm,
+  } = readDiscoverUrl(searchParams);
 
   const {
     query: searchTerm,

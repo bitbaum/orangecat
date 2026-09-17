@@ -45,6 +45,7 @@ export default function TimelineView({
     handleEventUpdate,
     handleLoadMore,
     handlePostCreated,
+    handleOptimisticEvent,
   } = useTimelineView({ feedType, ownerId, onPostCreated, onOptimisticEvent });
 
   if (hydrated && !authLoading && !user && (feedType === 'journey' || feedType === 'community')) {
@@ -152,7 +153,10 @@ export default function TimelineView({
                     typeof window !== 'undefined'
                       ? window.location.pathname + window.location.search
                       : '/profiles/me';
-                  window.location.href = `/auth?redirect=${encodeURIComponent(redirect)}`;
+                  // `from` is the param /auth reads (useAuthForm.ts). This said `redirect`,
+                  // which nothing reads, so signing in from here always landed on
+                  // /dashboard instead of coming back.
+                  window.location.href = `/auth?from=${encodeURIComponent(redirect)}`;
                 }}
                 className={TIMELINE_SURFACE.buttonPrimary}
               >
@@ -166,6 +170,10 @@ export default function TimelineView({
         <TimelineComponent
           feed={mergedFeed}
           onEventUpdate={handleEventUpdate}
+          // A quote repost made from a card lands in the same optimistic list
+          // the composer already uses, so it appears where it was made instead
+          // of only after a reload.
+          onEventCreated={handleOptimisticEvent}
           onLoadMore={handleLoadMore}
           showFilters={showFilters}
           compact={compact}

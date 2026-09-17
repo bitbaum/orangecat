@@ -16,6 +16,7 @@ import {
   getTimeAgo,
   isEventRecent,
 } from '@/services/timeline/formatters';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 const PROFILE_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 const profileCheckCache = new Map<string, { exists: boolean; timestamp: number }>();
@@ -343,7 +344,7 @@ export async function submitPost(options: PostSubmitOptions): Promise<PostSubmit
       });
 
   if (!result.success) {
-    const errorMsg = result.error || 'Failed to create post';
+    const errorMsg = apiErrorMessage(result, 'Failed to create post');
     logger.error('Post creation failed', { error: errorMsg, result }, 'usePostComposer');
     return { success: false, error: errorMsg };
   }

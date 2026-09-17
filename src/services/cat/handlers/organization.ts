@@ -78,16 +78,14 @@ export const organizationHandlers: Record<string, ActionHandler> = {
       return { success: false, error: groupError.message };
     }
 
-    // Add creator as admin member
-    const { error: memberError } = await supabase.from(DATABASE_TABLES.GROUP_MEMBERS).insert({
-      group_id: group.id,
-      user_id: userId,
-      role: 'admin',
-    });
-
-    if (memberError) {
-      return { success: false, error: memberError.message };
-    }
+    // The creator's founder membership and the group's `actors` row are written
+    // by the `groups_get_an_identity_and_an_owner` trigger, atomically with the
+    // group row above.
+    //
+    // This path used to insert the membership itself with `role: 'admin'`,
+    // which no DELETE policy on `groups` accepts — both require 'founder'. It
+    // had never fired in production (zero 'admin' memberships exist), but it
+    // would have minted undeletable groups the moment it did.
 
     const groupLabel =
       (params.label as string | null) ?? (params.type as string | null) ?? 'circle';

@@ -7,6 +7,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { X, Search, MessageSquare, Loader2 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 type ProfileLite = {
   id: string;
@@ -97,8 +98,15 @@ export default function NewConversationModal({
         const conversationId = data.data?.conversationId || data.conversationId;
 
         if (!res.ok || !conversationId) {
-          const errorMessage =
-            data.error || data.details || data.hint || 'Failed to create conversation';
+          // This chain was a hand-rolled apiErrorMessage that got the first
+          // link wrong: `data.error` is the envelope's `{ code, message }`
+          // object, so it won the `||` and the thrown Error read
+          // "[object Object]". The remaining links are this endpoint's extra
+          // postgrest detail, kept as a fallback behind the shared reader.
+          const errorMessage = apiErrorMessage(
+            data,
+            data.details || data.hint || 'Failed to create conversation'
+          );
           logger.error('Failed to create conversation:', {
             status: res.status,
             error: data.error,
@@ -155,14 +163,18 @@ export default function NewConversationModal({
 
   return (
     <div
-      className="fixed inset-0 z-modal bg-black/50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-modal bg-black/50 flex items-center justify-center p-0 md:p-4"
       onClick={e => {
         if (e.target === e.currentTarget) {
           onClose();
         }
       }}
     >
-      <div className="w-full max-w-md overflow-hidden rounded-md border border-subtle bg-surface-page animate-in fade-in zoom-in-95 duration-200">
+      {/* Full-screen below md: a centered card left the bottom search rows
+          sharing screen space with the fixed mobile nav / Ask Cat FAB corner
+          on short phones — a full-bleed sheet removes that shared corridor
+          entirely instead of relying on winning a z-index fight every time. */}
+      <div className="flex h-full w-full flex-col overflow-hidden bg-surface-page animate-in fade-in duration-200 md:h-auto md:w-full md:max-w-md md:zoom-in-95 md:rounded-md md:border md:border-subtle">
         {/* Header */}
         <div className="p-4 border-b border-subtle flex items-center justify-between">
           <h3 className="text-lg font-semibold text-fg-primary">New Message</h3>
@@ -196,8 +208,10 @@ export default function NewConversationModal({
           </div>
         )}
 
-        {/* Results */}
-        <div className="max-h-[50vh] overflow-y-auto">
+        {/* Results — fills the remaining sheet height below md so a long
+            list scrolls within itself; safe-area padding keeps the last row
+            clear of a device's home-indicator/gesture-bar inset. */}
+        <div className="flex-1 overflow-y-auto pb-[env(safe-area-inset-bottom)] md:max-h-[50vh] md:flex-none md:pb-0">
           {loading && !creatingId ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="w-6 h-6 animate-spin text-fg-tertiary" />
@@ -249,7 +263,11 @@ export default function NewConversationModal({
                     <div className="font-medium text-fg-primary truncate">
                       {p.name || p.username || 'User'}
                     </div>
-                    {p.username && (
+                    {/* Only when the handle adds information beyond the title above —
+                        a profile with no name already shows its handle there, so
+                        repeating "@handle" underneath is pure noise, worse on
+                        narrow screens where both lines truncate. */}
+                    {p.username && p.name && p.name !== p.username && (
                       <div className="text-sm text-fg-secondary truncate">@{p.username}</div>
                     )}
                   </div>

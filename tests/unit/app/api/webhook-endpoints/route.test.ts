@@ -14,43 +14,43 @@
 
 // Mocked so importing the route doesn't pull the real Upstash client (ESM-only
 // dep jest can't parse). Within-quota by default; branch tests set overrides.
-jest.mock('@/lib/rate-limit', () => ({
-  rateLimitWriteAsync: jest
+vi.mock('@/lib/rate-limit', () => ({
+  rateLimitWriteAsync: vi
     .fn()
     .mockResolvedValue({ success: true, limit: 30, remaining: 29, resetTime: Date.now() + 60_000 }),
-  retryAfterSeconds: jest.fn(() => 1),
+  retryAfterSeconds: vi.fn(() => 1),
 }));
 
-jest.mock('@/lib/supabase/server', () => ({
-  createServerClient: jest.fn(),
+vi.mock('@/lib/supabase/server', () => ({
+  createServerClient: vi.fn(),
 }));
 
-jest.mock('@/services/webhooks/webhookEndpointsService', () => {
+vi.mock('@/services/webhooks/webhookEndpointsService', () => {
   class ActorNotPermittedError extends Error {}
   return {
-    createWebhookEndpoint: jest.fn(),
-    listWebhookEndpoints: jest.fn(),
-    revokeWebhookEndpoint: jest.fn(),
+    createWebhookEndpoint: vi.fn(),
+    listWebhookEndpoints: vi.fn(),
+    revokeWebhookEndpoint: vi.fn(),
     ActorNotPermittedError,
   };
 });
 
-jest.mock('@/lib/api/standardResponse', () => ({
-  apiSuccess: jest.fn((payload: unknown, opts?: { status?: number }) => ({
+vi.mock('@/lib/api/standardResponse', () => ({
+  apiSuccess: vi.fn((payload: unknown, opts?: { status?: number }) => ({
     ok: true,
     data: payload,
     status: opts?.status ?? 200,
   })),
-  apiUnauthorized: jest.fn(() => ({ ok: false, error: 'Unauthorized', status: 401 })),
-  apiForbidden: jest.fn((msg: string) => ({ ok: false, error: msg, status: 403 })),
-  apiNotFound: jest.fn((what: string) => ({ ok: false, error: `${what} not found`, status: 404 })),
-  apiValidationError: jest.fn((msg: string, details: unknown) => ({
+  apiUnauthorized: vi.fn(() => ({ ok: false, error: 'Unauthorized', status: 401 })),
+  apiForbidden: vi.fn((msg: string) => ({ ok: false, error: msg, status: 403 })),
+  apiNotFound: vi.fn((what: string) => ({ ok: false, error: `${what} not found`, status: 404 })),
+  apiValidationError: vi.fn((msg: string, details: unknown) => ({
     ok: false,
     error: msg,
     details,
     status: 400,
   })),
-  handleApiError: jest.fn((err: Error) => ({ ok: false, error: err.message, status: 500 })),
+  handleApiError: vi.fn((err: Error) => ({ ok: false, error: err.message, status: 500 })),
 }));
 
 import { GET, POST } from '@/app/api/webhook-endpoints/route';
@@ -71,12 +71,14 @@ import {
   handleApiError,
 } from '@/lib/api/standardResponse';
 
+import type { Mock } from 'vitest';
+
 const mockUser = { id: 'u-1' };
 
 function setSession(user: { id: string } | null) {
-  (createServerClient as jest.Mock).mockResolvedValue({
+  (createServerClient as Mock).mockResolvedValue({
     auth: {
-      getUser: jest.fn().mockResolvedValue({ data: { user } }),
+      getUser: vi.fn().mockResolvedValue({ data: { user } }),
     },
   });
 }
@@ -104,7 +106,7 @@ function withParams<T extends Record<string, string>>(p: T): { params: Promise<T
 }
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 // =============================================================================
@@ -125,7 +127,7 @@ describe('GET /api/webhook-endpoints', () => {
   it('returns endpoints for the session user', async () => {
     setSession(mockUser);
     const endpoints = [{ id: 'e-1' }, { id: 'e-2' }];
-    (listWebhookEndpoints as jest.Mock).mockResolvedValue(endpoints);
+    (listWebhookEndpoints as Mock).mockResolvedValue(endpoints);
 
     const res = (await GET(makeRequest(), {})) as {
       ok: boolean;
@@ -139,7 +141,7 @@ describe('GET /api/webhook-endpoints', () => {
 
   it('falls through to handleApiError when the service throws', async () => {
     setSession(mockUser);
-    (listWebhookEndpoints as jest.Mock).mockRejectedValue(new Error('boom'));
+    (listWebhookEndpoints as Mock).mockRejectedValue(new Error('boom'));
 
     const res = (await GET(makeRequest(), {})) as { status: number };
 
@@ -153,8 +155,8 @@ describe('GET /api/webhook-endpoints', () => {
 // =============================================================================
 
 const validBody = {
-  name: 'FleetCrown subs',
-  url: 'https://fleetcrown.app/webhooks/orangecat',
+  name: 'Loki subs',
+  url: 'https://loki.app/webhooks/orangecat',
   actor_id: '00000000-0000-0000-0000-000000000001',
 };
 
@@ -199,7 +201,7 @@ describe('POST /api/webhook-endpoints', () => {
   it('allows http:// URLs in development (localhost testing)', async () => {
     setSession(mockUser);
     // NODE_ENV is 'test' in jest by default — same code path as 'development'.
-    (createWebhookEndpoint as jest.Mock).mockResolvedValue({
+    (createWebhookEndpoint as Mock).mockResolvedValue({
       endpoint: { id: 'e-1', secret_prefix: 'ock_whk_abc' },
       secret: 'ock_whk_full',
     });
@@ -214,7 +216,7 @@ describe('POST /api/webhook-endpoints', () => {
 
   it('returns 403 on ActorNotPermittedError with the canonical message', async () => {
     setSession(mockUser);
-    (createWebhookEndpoint as jest.Mock).mockRejectedValue(
+    (createWebhookEndpoint as Mock).mockRejectedValue(
       new ActorNotPermittedError('not a group member')
     );
 
@@ -229,7 +231,7 @@ describe('POST /api/webhook-endpoints', () => {
 
   it('falls through to handleApiError on unknown service exception', async () => {
     setSession(mockUser);
-    (createWebhookEndpoint as jest.Mock).mockRejectedValue(new Error('connection_reset'));
+    (createWebhookEndpoint as Mock).mockRejectedValue(new Error('connection_reset'));
 
     const res = (await POST(makeRequest(validBody), {})) as { status: number };
 
@@ -243,7 +245,7 @@ describe('POST /api/webhook-endpoints', () => {
       endpoint: { id: 'e-1', secret_prefix: 'ock_whk_abc' },
       secret: 'ock_whk_full_secret_value',
     };
-    (createWebhookEndpoint as jest.Mock).mockResolvedValue(minted);
+    (createWebhookEndpoint as Mock).mockResolvedValue(minted);
 
     const res = (await POST(makeRequest(validBody), {})) as { status: number };
 
@@ -263,7 +265,7 @@ describe('POST /api/webhook-endpoints', () => {
 
   it('threads event_types through to the service', async () => {
     setSession(mockUser);
-    (createWebhookEndpoint as jest.Mock).mockResolvedValue({
+    (createWebhookEndpoint as Mock).mockResolvedValue({
       endpoint: { id: 'e-1', secret_prefix: 'ock_whk_abc' },
       secret: 'ock_whk_full',
     });
@@ -308,7 +310,7 @@ describe('DELETE /api/webhook-endpoints/[id]', () => {
 
   it('returns 404 when the service signals the endpoint was not revoked', async () => {
     setSession(mockUser);
-    (revokeWebhookEndpoint as jest.Mock).mockResolvedValue(false);
+    (revokeWebhookEndpoint as Mock).mockResolvedValue(false);
 
     const res = (await DELETE(makeRequest(), withParams({ id: 'e-1' }))) as { status: number };
 
@@ -318,7 +320,7 @@ describe('DELETE /api/webhook-endpoints/[id]', () => {
 
   it('returns 200 with revoked:true on success', async () => {
     setSession(mockUser);
-    (revokeWebhookEndpoint as jest.Mock).mockResolvedValue(true);
+    (revokeWebhookEndpoint as Mock).mockResolvedValue(true);
 
     const res = (await DELETE(makeRequest(), withParams({ id: 'e-1' }))) as {
       ok: boolean;
@@ -332,7 +334,7 @@ describe('DELETE /api/webhook-endpoints/[id]', () => {
 
   it('falls through to handleApiError when the service throws', async () => {
     setSession(mockUser);
-    (revokeWebhookEndpoint as jest.Mock).mockRejectedValue(new Error('boom'));
+    (revokeWebhookEndpoint as Mock).mockRejectedValue(new Error('boom'));
 
     const res = (await DELETE(makeRequest(), withParams({ id: 'e-1' }))) as { status: number };
 

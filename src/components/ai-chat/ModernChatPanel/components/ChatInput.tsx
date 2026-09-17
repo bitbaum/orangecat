@@ -27,6 +27,12 @@ interface ChatInputProps {
   /** Model picker — surfaced at the composer in the focus variant. */
   selectedModel?: string;
   onModelSelect?: (model: string) => void;
+  /**
+   * Prompt text. Defaults to Cat's. The only thing that was hard-wired to one
+   * surface in here — every Cat-specific control above is already an optional
+   * prop, which is what makes this composer the one the whole app uses.
+   */
+  placeholder?: string;
 }
 
 export function ChatInput({
@@ -40,6 +46,7 @@ export function ChatInput({
   onClearChat,
   selectedModel,
   onModelSelect,
+  placeholder = CAT_HUB_COPY.composerPlaceholder,
 }: ChatInputProps) {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const isFocus = variant === 'focus';
@@ -92,7 +99,7 @@ export function ChatInput({
             value={value}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
-            placeholder={CAT_HUB_COPY.composerPlaceholder}
+            placeholder={placeholder}
             rows={1}
             className="oc-chat-composer-input"
           />

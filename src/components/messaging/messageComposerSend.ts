@@ -122,6 +122,11 @@ export async function sendMessage({
       body: JSON.stringify({
         content: messageContent,
         messageType: MESSAGE_TYPES.TEXT,
+        // Sent so the stored row comes back carrying it. This is the only thread
+        // of identity between the bubble already on screen and the row a realtime
+        // INSERT is about to deliver; without it the merge cannot tell they are
+        // the same message, and both render.
+        clientId: tempId,
         ...(selectedActor &&
           !selectedActor.is_personal && { senderActorId: selectedActor.actor_id }),
       }),

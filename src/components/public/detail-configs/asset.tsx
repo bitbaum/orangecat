@@ -48,7 +48,7 @@ export const assetDetailConfig: EntityDetailConfig = {
     }),
     ...(entity.location && { address: entity.location }),
   }),
-  renderDetails: entity => (
+  renderDetails: (entity, _payable, _isOwner, isSignedIn) => (
     <div className="space-y-4">
       <Card>
         <CardHeader>
@@ -149,6 +149,7 @@ export const assetDetailConfig: EntityDetailConfig = {
               <BookEntityButton
                 className="w-full"
                 label="Book this rental"
+                isSignedIn={isSignedIn}
                 bookableType="asset"
                 bookableId={entity.id as string}
                 bookableTitle={(entity.title as string) || 'this asset'}

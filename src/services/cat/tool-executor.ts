@@ -5,15 +5,22 @@
  */
 
 import type { AnySupabaseClient } from '@/lib/supabase/types';
+import { isCatActionTool, runActionAsTool } from './action-as-tool';
 import { searchPlatform, type SearchType } from './platform-search';
 import { generateFormPrefill } from '@/lib/ai/form-prefill-service';
 import { generateOffers } from './offer-engine';
 import { resolveAiAssistTarget } from '@/lib/ai/assist-target';
 import { isValidEntityType, type EntityType } from '@/config/entity-registry';
 import { PREFILLABLE_ENTITY_TYPES } from './tool-use-detection';
-import { handleExploreTopic, handleQueryMyData } from './tool-handlers-lookup';
+import {
+  handleExploreTopic,
+  handleQueryMyData,
+  handleCheckMyTrackRecord,
+} from './tool-handlers-lookup';
 import { fetchWebsiteText, resolveRequestedUrl } from './website-analysis';
 import { runCatHealthProbes } from './health-probes';
+import { isWebTool, executeWebTool } from './tool-handlers-web';
+import type { WebTurnContext } from './web-research';
 import type {
   ToolResultMessage,
   ToolCallResultRef,
@@ -26,15 +33,45 @@ import type {
  * Execute a single tool call and return the `tool` result message to feed back
  * to the model. Side-effects (onToolCall lifecycle, onPrefillProposal) fire here.
  */
+
 export async function executeToolCall(
   supabase: AnySupabaseClient,
   userId: string,
   toolCall: RawToolCall,
   userMessage: string,
   onToolCall?: OnToolCall,
-  onPrefillProposal?: OnPrefillProposal
+  onPrefillProposal?: OnPrefillProposal,
+  /**
+   * The caller's actor. Required to EXECUTE an action (ADR-0006 D2); absent
+   * for read-only tool phases, in which case actions are refused rather than
+   * silently skipped.
+   */
+  actorId?: string | null,
+  /** The turn's web state. Absent ⇒ the web tools refuse rather than run
+   *  without their allow-list. */
+  web?: WebTurnContext
 ): Promise<ToolResultMessage> {
   const toolName = toolCall.function?.name;
+
+  // ── the open web ─── bounded by the turn's URL allow-list, not by the
+  // permission service; see tool-handlers-web.ts.
+  if (isWebTool(toolName)) {
+    return executeWebTool(toolCall, web, onToolCall);
+  }
+
+  // ── a Cat action, called as a tool ──────────────────────────────────────
+  // ADR-0006 D2. Actions used to be scraped out of the model's FINISHED text
+  // and fired afterwards, so the model could never see what happened and the
+  // prompt had to forbid it from saying "done". Here the action runs first and
+  // its outcome goes back as this tool result, so the reply is written knowing.
+  //
+  // Every gate still lives in CatActionExecutor: permissions, spend caps,
+  // confirmation, the cat_action_log row. This changes WHEN the model learns
+  // the outcome, not who may cause it.
+  if (isCatActionTool(toolName)) {
+    const summary = await runActionAsTool(supabase, userId, actorId ?? null, toolCall, onToolCall);
+    return { role: 'tool', tool_call_id: toolCall.id, content: summary };
+  }
 
   // ── analyze_website ─────────────────────────────────────────────────────
   // Fetches a site the user pasted (SSRF-guarded) and returns its readable
@@ -220,6 +257,9 @@ Explain this to the user in plain language: which provider is healthy, degraded,
   if (toolName === 'query_my_data') {
     return handleQueryMyData(supabase, userId, toolCall, onToolCall);
   }
+  if (toolName === 'check_my_track_record') {
+    return handleCheckMyTrackRecord(supabase, userId, toolCall, onToolCall);
+  }
 
   // ── search_platform ──────────────────────────────────────────────────────
   // ── forget_memories ─────────────────────────────────────────────────────
@@ -257,13 +297,20 @@ Explain this to the user in plain language: which provider is healthy, degraded,
         deleted: mem.deleted,
         removedProfileEntries: profile.removed,
         notFound: facts.filter(f => mem.notFound.includes(f) && profile.notFound.includes(f)),
+        // A store we could not reach is not a store with nothing in it. Without
+        // this the model was handed the same shape for both and told the user
+        // "no matching memory was found" while the memory was still there.
+        failedToRemove: [...mem.failed, ...profile.failed],
       };
       content =
         JSON.stringify(outcome) +
         '\n\nReport ONLY what "deleted" and "removedProfileEntries" confirm was removed, ' +
         'quoting the deleted items. For anything in "notFound", say plainly that no matching ' +
         'stored memory or profile entry was found and that the full list is at ' +
-        'Settings → AI → What Cat remembers. Never claim other changes.';
+        'Settings → AI → What Cat remembers. ' +
+        'For anything in "failedToRemove", say the removal did NOT happen and could not be ' +
+        'completed right now, and that they should try again — never describe it as absent ' +
+        'or as removed. Never claim other changes.';
       const removedCount = outcome.deleted.length + outcome.removedProfileEntries.length;
       if (removedCount > 0) {
         onToolCall?.({

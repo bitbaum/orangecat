@@ -15,9 +15,14 @@
  *   channels. `crypto.timingSafeEqual` runs in constant time.
  *
  * Compatibility:
- *   The receive-side function is exported for the @orangecat/sdk to
- *   re-export, so customers can verify with one import. The signing
- *   side is server-only — we never sign on the client.
+ *   The signing side is server-only — we never sign on the client.
+ *
+ * TWO COPIES, ONE BEHAVIOUR:
+ *   packages/sdk/src/webhooks.ts carries the same verification, because the
+ *   SDK ships to customers and cannot import from src/. The copy is held in
+ *   step by __tests__/unit/services/webhook-signature-parity.test.ts, which
+ *   drives BOTH through the same vectors and fails if they ever disagree.
+ *   Change one, change the other, and let that test say you did.
  *
  * Created: 2026-06-03
  */

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Resolving the recipient before money moves.
  *
@@ -11,12 +12,14 @@ import { renderHook, waitFor, act } from '@testing-library/react';
 import { useRecipientCheck } from '@/components/send/useRecipientCheck';
 import { fetchTipReceiveInfo } from '@/services/tips/tip-client';
 
-jest.mock('@/services/tips/tip-client', () => ({ fetchTipReceiveInfo: jest.fn() }));
+import type { Mock } from 'vitest';
 
-const fetchMock = fetchTipReceiveInfo as jest.Mock;
+vi.mock('@/services/tips/tip-client', () => ({ fetchTipReceiveInfo: vi.fn() }));
+
+const fetchMock = fetchTipReceiveInfo as Mock;
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe('useRecipientCheck', () => {
@@ -67,7 +70,7 @@ describe('useRecipientCheck', () => {
   });
 
   it('does not query on every keystroke', async () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     fetchMock.mockResolvedValue({ canReceive: true, recipientName: 'Lena' });
 
     const { rerender } = renderHook(({ value }) => useRecipientCheck(value), {
@@ -78,11 +81,11 @@ describe('useRecipientCheck', () => {
     rerender({ value: 'lena' });
 
     await act(async () => {
-      jest.runAllTimers();
+      vi.runAllTimers();
     });
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock).toHaveBeenCalledWith('lena');
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 });

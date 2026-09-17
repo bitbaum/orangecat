@@ -12,6 +12,7 @@
  */
 
 import { createAdminClient } from '@/lib/supabase/admin';
+import { looseClient } from '@/lib/supabase/untyped';
 import { logger } from '@/utils/logger';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { getOrCreateUserActor } from './getOrCreateUserActor';
@@ -23,7 +24,20 @@ export class ActorNotPermittedError extends Error {
   }
 }
 
-const PRIVILEGED_ROLES = ['founder', 'admin', 'moderator'] as const;
+/**
+ * Roles that may act for a group.
+ *
+ * 'moderator' used to be in this list and could never match: the
+ * `group_members_role_check` constraint permits only founder | admin | member,
+ * so a moderator row cannot exist. (`membership_role_enum` does contain
+ * 'moderator', but no table uses that type — it is an orphan.) Filtering on an
+ * impossible value is not harmless: it reads as "moderators can create for
+ * their group", which is a capability nobody has.
+ *
+ * Kept as the one list, asserted against the constraint by
+ * __tests__/unit/config/privileged-roles-exist.test.ts.
+ */
+export const PRIVILEGED_ROLES = ['founder', 'admin'] as const;
 
 /**
  * @param userId - The authenticated user.
@@ -59,6 +73,28 @@ export async function resolveCreationActor(
 
   if (actor && actor.actor_type === 'user' && actor.user_id === userId) {
     return { id: requestedActorId };
+  }
+
+  // ADR-0005 D5 — the steward. An unclaimed actor is a person set up on
+  // someone else's behalf; whoever created its claim may create for it and
+  // edit what it owns, but only while the claim is still pending. The moment
+  // it is accepted the placeholder is gone; the moment it is declined, so is
+  // everything it owned. Either way this clause then matches nothing.
+  if (actor?.actor_type === 'unclaimed') {
+    const { data: claim } = await looseClient(admin)
+      .from(DATABASE_TABLES.PROFILE_CLAIMS)
+      .select('created_by, status')
+      .eq('actor_id', requestedActorId)
+      .maybeSingle();
+    const isSteward = claim?.created_by === userId && claim?.status === 'pending';
+    if (isSteward) {
+      return { id: requestedActorId };
+    }
+    logger.warn('resolveCreationActor: caller is not the steward of this unclaimed actor', {
+      requestedActorId,
+      userId,
+    });
+    throw new ActorNotPermittedError(requestedActorId);
   }
 
   const groupId = actor?.actor_type === 'group' ? actor.group_id : null;

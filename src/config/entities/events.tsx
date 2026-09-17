@@ -16,6 +16,7 @@ import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { getStatusBadge } from '@/config/entity-status';
 import type { Currency } from '@/types/settings';
 import { GRADIENTS } from '@/config/gradients';
+import { formatDate } from '@/utils/dates';
 
 // Event type from database - matches events table schema
 export interface Event {
@@ -114,7 +115,7 @@ export const eventEntityConfig: EntityConfig<Event> = {
     if (event.start_date) {
       try {
         const date = new Date(event.start_date);
-        metadataParts.push(date.toLocaleDateString());
+        metadataParts.push(formatDate(date));
       } catch {
         // Ignore date parsing errors
       }

@@ -25,6 +25,7 @@ import groupsService from '@/services/groups';
 import { getInitial } from '@/utils/string';
 import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 interface ProfileLite {
   id: string;
@@ -112,7 +113,7 @@ export function InviteMemberDialog({
         toast.success(`Invited ${p.name || p.username || 'member'}`);
         onInvited?.();
       } else {
-        toast.error(result.error || 'Failed to invite member');
+        toast.error(apiErrorMessage(result, 'Failed to invite member'));
       }
     } catch (e) {
       logger.error('Failed to invite member', e, 'Groups');

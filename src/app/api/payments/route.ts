@@ -34,7 +34,7 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
     // Zod validation
     const result = paymentCreateSchema.safeParse(body);
     if (!result.success) {
-      return apiBadRequest('Invalid input', result.error.errors);
+      return apiBadRequest('Invalid input', result.error.issues);
     }
 
     const validated = result.data;

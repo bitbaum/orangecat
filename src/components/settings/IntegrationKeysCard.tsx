@@ -46,13 +46,6 @@ interface Props {
   defaultActorId: string | null;
 }
 
-function formatTimestamp(value: string | null): string {
-  if (!value) {
-    return '—';
-  }
-  return new Date(value).toLocaleString();
-}
-
 export default function IntegrationKeysCard({ actors, defaultActorId }: Props) {
   const [keys, setKeys] = useState<IntegrationKey[]>([]);
   const [loading, setLoading] = useState(true);
@@ -269,7 +262,6 @@ export default function IntegrationKeysCard({ actors, defaultActorId }: Props) {
                 key={key.id}
                 integrationKey={key}
                 actorLabel={actors.find(a => a.actor_id === key.actor_id)?.label ?? key.actor_id}
-                formatTimestamp={formatTimestamp}
                 onRotate={handleRotate}
                 onRevoke={handleRevoke}
               />

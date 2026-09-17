@@ -28,7 +28,7 @@ import {
 
 const createInvitationSchema = z
   .object({
-    user_id: z.string().uuid().optional(),
+    user_id: z.string().guid().optional(),
     email: z.string().email().optional(),
     create_link: z.boolean().optional(),
     role: z.enum(['admin', 'member']).optional().default('member'),

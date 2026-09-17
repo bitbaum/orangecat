@@ -2,8 +2,8 @@
 
 Your AI economic agent — and the platform where it operates.
 
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue.svg)](https://www.typescriptlang.org/)
-[![Next.js](https://img.shields.io/badge/Next.js-15-black.svg)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6-blue.svg)](https://www.typescriptlang.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black.svg)](https://nextjs.org/)
 [![Live](https://img.shields.io/badge/Live-orangecat.ch-orange.svg)](https://orangecat.ch)
 [![Bitcoin](https://img.shields.io/badge/Bitcoin-Native-F7931A.svg)](https://bitcoin.org)
 
@@ -13,26 +13,26 @@ Economic participation still requires gatekeepers. To sell, fund, lend, invest, 
 
 ## The Solution
 
-OrangeCat is an AI-native platform for universal economic participation. Every user gets "My Cat" — an AI agent that manages their economic activity across the full spectrum: exchanging, funding, lending, investing, and governing.
+OrangeCat is an AI-native platform for universal economic participation. The live wedge is a Bitcoin Lightning pay link. "My Cat" — an AI agent across exchanging, funding, lending, investing, and governing — is **roadmap**, not what ships today.
 
 - **Any identity**: Human, pseudonymous, or AI — all are first-class economic participants
 - **Bitcoin now, broader rails later**: Lightning and on-chain Bitcoin are the only live settlement rails. Fiat and privacy rails remain roadmap work because they do not provide the same shared public audit trail.
-- **Full economic spectrum**: From gifts (no strings) to loans (some strings) to investments (more strings)
+- **Full economic spectrum (roadmap beyond the pay link)**: From gifts (no strings) to loans (some strings) to investments (more strings)
 - **Private where needed, transparent where chosen**: E2E encrypted messaging, on-chain transparency when appropriate
 
 ## What Works Today
 
-- **Commerce**: Products and services with Bitcoin Lightning payments
-- **Funding**: Account-free Bitcoin support for public projects and other supportable entities
-- **Lending**: Peer-to-peer loans with repayment tracking
-- **Assets**: Real estate, collateral, and rentable asset management
-- **Groups**: Organizations with shared wallets, governance proposals, and collective decision-making
-- **AI Assistants**: Autonomous economic actors as first-class entities
-- **Events**: Time-bound coordination with ticketing
-- **Documents**: Structured context for the AI agent
-- **Cross-product customers**: Live example of FleetCrown (production) as customer of OrangeCat (economic), using typed stakeholder edges + shared wallets + profiles as projects.
+- **Pay link (the wedge)**: every user gets `orangecat.ch/pay/<username>` for Bitcoin Lightning payments.
+- **Live site**: [orangecat.ch](https://orangecat.ch)
+- **Shipped surfaces**: product/service listings, groups, events, documents, and related entity types exist on the live site. Funding, lending, and investing sit on the roadmap.
+- **Loki dogfood**: Loki (live at [loki.orangecat.ch](https://loki.orangecat.ch)) uses OrangeCat as a sibling product — typed stakeholder edges, shared BTC wallet, profiles as projects. Sibling-product integration: typed stakeholder edges, shared BTC wallet, profiles as projects.
 
-Live at [orangecat.ch](https://orangecat.ch). FleetCrown is a live "customer" of OrangeCat (see projects "OrangeCat" and "FleetCrown" under Mao Nakamoto). Shared BTC wallet. The stakeholder_relationships feature (8 kinds incl. customer) was made production-ready here for this use case — works for all.
+## Roadmap
+
+- **Funding**: account-free Bitcoin support for public projects
+- **Lending**: peer-to-peer loans with repayment tracking
+- **Investing**: investment flows beyond the pay-link wedge
+- **The Cat**: AI agent that manages economic activity across the full spectrum
 
 ## Architecture
 
@@ -69,7 +69,7 @@ Functional composition replaces inheritance. Each middleware does one thing.
 
 | Layer      | Technology                                                                               |
 | ---------- | ---------------------------------------------------------------------------------------- |
-| Framework  | Next.js 15, React 18, TypeScript 5.8                                                     |
+| Framework  | Next.js 16.2, React 19, TypeScript 6                                                     |
 | Styling    | Tailwind CSS, shadcn/ui                                                                  |
 | Database   | Self-hosted Supabase (PostgreSQL + Auth + RLS) on Hetzner                                |
 | Bitcoin    | Lightning Network, LNURL, bitcoinjs-lib                                                  |
@@ -81,18 +81,18 @@ Functional composition replaces inheritance. Each middleware does one thing.
 
 ### Prerequisites
 
-- Node.js 20+
+- Node.js 24 (see `.nvmrc`)
 - A Supabase project (remote — no local Docker needed)
 
 ### Setup
 
 ```bash
-git clone https://github.com/maonakamoto/orangecat.git
+git clone https://github.com/bitbaum/orangecat.git
 cd orangecat
-npm install
+pnpm install
 cp .env.example .env.local
 # Fill in Supabase credentials
-npm run dev
+pnpm run dev
 ```
 
 Dev server starts at `http://localhost:3000`.
@@ -122,7 +122,7 @@ src/
 
 ## Testing
 
-17 test suites, 74 tests. Pre-push hooks run type-check, lint, and the full test suite before any code reaches the remote.
+2648 unit tests across 282 files (CI as of 2026-09-02). Pre-push hooks run type-check, lint, and the full test suite before any code reaches the remote.
 
 ## Security
 

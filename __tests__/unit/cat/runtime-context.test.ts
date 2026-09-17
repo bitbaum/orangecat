@@ -3,7 +3,7 @@ import type { FullUserContext } from '@/services/ai/document-context-types';
 
 describe('Cat Tier 1: runtime context block', () => {
   const ctx: FullUserContext = {
-    profile: { name: 'Mao Nakamoto', username: 'mao' },
+    profile: { name: 'Cato', username: 'mao' },
     documents: [],
     entities: [],
     tasks: [],
@@ -15,7 +15,7 @@ describe('Cat Tier 1: runtime context block', () => {
     runtime: {
       preferredCurrency: 'CHF',
       locale: 'de-CH',
-      currentActor: { id: 'actor-1', type: 'individual', name: 'Mao Nakamoto' },
+      currentActor: { id: 'actor-1', type: 'individual', name: 'Cato' },
       lastVisitedPath: '/dashboard/projects/abc123',
     },
     stats: {
@@ -55,7 +55,7 @@ describe('Cat Tier 1: runtime context block', () => {
   });
 
   it('shows the actor name and type', () => {
-    expect(str).toMatch(/Acting as.+yourself.+Mao Nakamoto/);
+    expect(str).toMatch(/Acting as.+yourself.+Cato/);
   });
 
   it('falls back to en-US when locale is missing from runtime', () => {

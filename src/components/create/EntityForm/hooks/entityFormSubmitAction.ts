@@ -2,6 +2,9 @@ import { ZodError } from 'zod';
 import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
 import { API_ROUTES } from '@/config/api-routes';
+import { ROUTES } from '@/config/routes';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
+import type { CreateOwner } from '../../owner';
 import { entityEvents } from '@/lib/analytics';
 import type { EntityConfig } from '../../types';
 
@@ -25,8 +28,8 @@ interface EntityFormSubmitParams<T extends Record<string, unknown>> {
   router: { push: (url: string) => void };
   existingWalletLinkIdRef: { current: string | undefined };
   wizardMode?: WizardMode;
-  /** Selected actor (null/undefined = personal). Merged into the create POST body. */
-  actorId?: string | null;
+  /** Who will own it (ADR-0004 D8). Defaults to the signed-in user. */
+  owner?: CreateOwner;
 }
 
 export async function executeEntityFormSubmit<T extends Record<string, unknown>>({
@@ -44,7 +47,7 @@ export async function executeEntityFormSubmit<T extends Record<string, unknown>>
   router,
   existingWalletLinkIdRef,
   wizardMode,
-  actorId,
+  owner,
 }: EntityFormSubmitParams<T>): Promise<void> {
   // Wizard intermediate step: validate only visible fields, then advance without submitting.
   if (wizardMode?.onNext) {
@@ -56,7 +59,7 @@ export async function executeEntityFormSubmit<T extends Record<string, unknown>>
       wizardMode.onNext();
     } catch (error) {
       if (error instanceof ZodError) {
-        const visibleErrors = error.errors.filter(err =>
+        const visibleErrors = error.issues.filter(err =>
           wizardMode.visibleFields.includes(err.path[0] as string)
         );
         if (visibleErrors.length > 0) {
@@ -81,13 +84,47 @@ export async function executeEntityFormSubmit<T extends Record<string, unknown>>
     const dataToValidate = { ...config.defaultValues, ...formStateData };
     const validatedData = config.validationSchema.parse(dataToValidate);
 
+    // Owner = someone who is not on the platform yet (ADR-0005). First the
+    // PERSON: a claim plus a placeholder actor — an identity that can own rows
+    // and cannot receive money. Then the thing itself goes down the ordinary
+    // rail below with `actor_id` = that placeholder, so it is hers from the
+    // first row, and every field, validation and template is the same one a
+    // creator uses for themselves.
+    let placeholderActorId: string | undefined;
+    let claimIdForShare: string | undefined;
+    if (mode === 'create' && owner?.kind === 'someone-else') {
+      const recipientName = owner.name.trim();
+      if (!recipientName) {
+        setErrors({ _form: 'Who is this for? Add their name.' });
+        setSubmitting(false);
+        return;
+      }
+      const claimResponse = await fetch(API_ROUTES.PROFILE_CLAIMS.BASE, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ name: recipientName }),
+      });
+      const claimBody = await claimResponse.json().catch(() => null);
+      if (!claimResponse.ok || !claimBody?.success || !claimBody.data?.actorId) {
+        setErrors({
+          _form: apiErrorMessage(claimBody, `Could not set this up for ${recipientName}.`),
+        });
+        setSubmitting(false);
+        return;
+      }
+      placeholderActorId = claimBody.data.actorId as string;
+      claimIdForShare = claimBody.data.id as string;
+    }
+
     const url =
       mode === 'edit' && entityId ? `${config.apiEndpoint}/${entityId}` : config.apiEndpoint;
 
     // Merge actor_id only on create; edit mode never reassigns ownership.
+    const actorIdForCreate = owner?.kind === 'group' ? owner.actorId : placeholderActorId;
     const requestBody =
-      mode === 'create' && actorId
-        ? { ...(validatedData as Record<string, unknown>), actor_id: actorId }
+      mode === 'create' && actorIdForCreate
+        ? { ...(validatedData as Record<string, unknown>), actor_id: actorIdForCreate }
         : validatedData;
 
     const response = await fetch(url, {
@@ -163,6 +200,13 @@ export async function executeEntityFormSubmit<T extends Record<string, unknown>>
     if (onSuccess) {
       showSuccessToast();
       onSuccess(result.data);
+    } else if (claimIdForShare) {
+      // Created for someone else (ADR-0005 D8): the outcome is a LINK, not a
+      // page. Land on the screen that hands it over — the link, a message
+      // already written, and one tap to send it — rather than on the entity,
+      // which belongs to someone who has not seen it yet.
+      clearDraft();
+      router.push(ROUTES.DASHBOARD.PROFILE_CLAIMS_SHARE(claimIdForShare));
     } else if (mode === 'create' && result.data?.id) {
       onEntityCreated({
         id: result.data.id,
@@ -180,7 +224,7 @@ export async function executeEntityFormSubmit<T extends Record<string, unknown>>
   } catch (error) {
     if (error instanceof ZodError) {
       const fieldErrors: Record<string, string> = {};
-      error.errors.forEach(err => {
+      error.issues.forEach(err => {
         const path = err.path[0] as string;
         fieldErrors[path] = err.message;
       });

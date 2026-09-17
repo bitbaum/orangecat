@@ -24,19 +24,21 @@ import { DATABASE_TABLES } from '@/config/database-tables';
 import { getEntityMetadata } from '@/config/entity-registry';
 import { createFakeSupabase, type Row } from '../../../../test-utils/fakeSupabase';
 
-jest.mock('@/utils/logger', () => ({
-  logger: { warn: jest.fn(), error: jest.fn(), info: jest.fn(), debug: jest.fn() },
+vi.mock('@/utils/logger', () => ({
+  logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
-jest.mock('@/lib/supabase/admin', () => ({ getAdminClient: jest.fn() }));
+vi.mock('@/lib/supabase/admin', () => ({ getAdminClient: vi.fn() }));
 // Identity decrypt: these tests assert which wallet wins, not the crypto.
-jest.mock('@/domain/payments/encryptionService', () => ({
-  decrypt: jest.fn((s: string) => s),
+vi.mock('@/domain/payments/encryptionService', () => ({
+  decrypt: vi.fn((s: string) => s),
 }));
 
 import { getAdminClient } from '@/lib/supabase/admin';
 import { decrypt } from '@/domain/payments/encryptionService';
-const getAdminClientMock = getAdminClient as jest.Mock;
-const decryptMock = decrypt as jest.Mock;
+import type { Mock } from 'vitest';
+
+const getAdminClientMock = getAdminClient as Mock;
+const decryptMock = decrypt as Mock;
 
 const OWNER = 'user-1';
 const STRANGER = 'user-2';
@@ -57,7 +59,7 @@ function wallet(over: Row): Row {
 }
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   decryptMock.mockImplementation((s: string) => s);
 });
 
@@ -125,10 +127,14 @@ describe('resolveUserWallet — the wallet set it is allowed to choose from', ()
       ],
     });
 
+    // NWC still wins. It now also carries the OTHER wallet's lightning address
+    // as a receive fallback: they pay the same owner, and a send-only NWC that
+    // cannot mint invoices must not take receiving down with it.
     expect(await resolveUserWallet(client, OWNER)).toEqual({
       method: 'nwc',
       wallet_id: 'w-nwc',
       nwc_uri: 'nostr+walletconnect://relay',
+      lightning_address: 'me@ln',
     });
   });
 
@@ -245,7 +251,7 @@ describe('resolveSellerWallet — a wallet tied to one specific entity', () => {
 
     // Falls through to the owner's profile default rather than paying a wallet
     // that is no longer in use.
-    expect(await resolveSellerWallet({} as never, 'product', 'prod-1')).toMatchObject({
+    expect(await resolveSellerWallet('product', 'prod-1')).toMatchObject({
       wallet_id: 'w-default',
     });
   });
@@ -263,7 +269,7 @@ describe('resolveSellerWallet — a wallet tied to one specific entity', () => {
       ]
     );
 
-    expect(await resolveSellerWallet({} as never, 'product', 'prod-1')).toMatchObject({
+    expect(await resolveSellerWallet('product', 'prod-1')).toMatchObject({
       wallet_id: 'w-chosen',
     });
   });
@@ -277,7 +283,7 @@ describe('resolveSellerWallet — a wallet tied to one specific entity', () => {
       ]
     );
 
-    expect(await resolveSellerWallet({} as never, 'product', 'prod-1')).toMatchObject({
+    expect(await resolveSellerWallet('product', 'prod-1')).toMatchObject({
       wallet_id: 'w-default',
     });
   });
@@ -308,7 +314,7 @@ describe('resolveSellerWallet — group entities', () => {
     });
     getAdminClientMock.mockReturnValue(client);
 
-    expect(await resolveSellerWallet({} as never, 'group', GROUP)).toEqual({
+    expect(await resolveSellerWallet('group', GROUP)).toEqual({
       method: 'lightning_address',
       wallet_id: 'gw-ours',
       lightning_address: 'ours@ln',
@@ -325,7 +331,7 @@ describe('resolveSellerWallet — group entities', () => {
     });
     getAdminClientMock.mockReturnValue(client);
 
-    expect(await resolveSellerWallet({} as never, 'group', GROUP)).toEqual({
+    expect(await resolveSellerWallet('group', GROUP)).toEqual({
       method: 'onchain',
       wallet_id: 'gw-live',
       onchain_address: 'bc1qlive',
@@ -346,11 +352,13 @@ describe('resolveSellerWallet — group entities', () => {
       [DATABASE_TABLES.WALLETS]: [
         wallet({ id: 'w-founder', profile_id: 'founder-1', lightning_address: 'founder@ln' }),
       ],
-      [DATABASE_TABLES.GROUP_WALLETS]: [groupWallet({ id: 'gw-ours', lightning_address: 'ours@ln' })],
+      [DATABASE_TABLES.GROUP_WALLETS]: [
+        groupWallet({ id: 'gw-ours', lightning_address: 'ours@ln' }),
+      ],
     });
     getAdminClientMock.mockReturnValue(fake.client);
 
-    expect(await resolveSellerWallet({} as never, 'product', 'prod-1')).toEqual({
+    expect(await resolveSellerWallet('product', 'prod-1')).toEqual({
       method: 'lightning_address',
       wallet_id: 'gw-ours',
       lightning_address: 'ours@ln',
@@ -370,7 +378,7 @@ describe('resolveSellerWallet — group entities', () => {
     });
     getAdminClientMock.mockReturnValue(client);
 
-    expect(await resolveSellerWallet({} as never, 'group', GROUP)).toMatchObject({
+    expect(await resolveSellerWallet('group', GROUP)).toMatchObject({
       wallet_id: 'gw-old',
     });
   });
@@ -382,6 +390,6 @@ describe('resolveSellerWallet — group entities', () => {
     });
     getAdminClientMock.mockReturnValue(client);
 
-    expect(await resolveSellerWallet({} as never, 'group', GROUP)).toBeNull();
+    expect(await resolveSellerWallet('group', GROUP)).toBeNull();
   });
 });

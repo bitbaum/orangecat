@@ -6,18 +6,6 @@
  * Last Modified Summary: Extracted from loans/index.ts for modularity
  */
 
-import supabase from '@/lib/supabase/browser';
 
-/**
- * Get current authenticated user ID
- */
-export async function getCurrentUserId(): Promise<string | null> {
-  try {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    return user?.id || null;
-  } catch {
-    return null;
-  }
-}
+// Defined once, in the auth layer, where it is cached. See session.ts.
+export { getCurrentUserId } from '@/services/supabase/auth/session';

@@ -15,6 +15,7 @@
  */
 
 import { useState } from 'react';
+import { SharedCapacityCard } from '@/components/ai/SharedCapacityCard';
 import Link from 'next/link';
 import { Bot, Check, Server, Terminal } from 'lucide-react';
 import { ROUTES } from '@/config/routes';
@@ -59,6 +60,7 @@ export default function AISettingsPage() {
       {/* Live status strip — the numbers live on /settings/usage; this one
           line connects config to consumption so neither tab is a dead end. */}
       <AiUsageStrip />
+      <SharedCapacityCard />
 
       {/* ════ Group 1 · How Cat runs ═══════════════════════════════════════ */}
       <section aria-labelledby="how-cat-runs" className="space-y-4">

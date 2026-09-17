@@ -19,6 +19,7 @@ import type {
   LoanPaymentResponse,
 } from '@/types/loans';
 import type { ServiceResult } from '@/types/common';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 interface ApiEnvelope<T> {
   success: boolean;
@@ -77,7 +78,7 @@ async function readEnvelope<T>(
 ): Promise<{ ok: true; data: T } | { ok: false; error: string }> {
   const json = (await res.json().catch(() => ({}))) as ApiEnvelope<T>;
   if (!res.ok || json.success === false) {
-    return { ok: false, error: json.error || `Request failed (${res.status})` };
+    return { ok: false, error: apiErrorMessage(json, `Request failed (${res.status})`) };
   }
   if (json.data === undefined || json.data === null) {
     return { ok: false, error: 'Empty response from server' };
@@ -337,7 +338,7 @@ export async function deleteLoanViaApi(loanId: string): Promise<ServiceResult> {
     });
     const json = (await res.json().catch(() => ({}))) as ApiEnvelope<unknown>;
     if (!res.ok || json.success === false) {
-      return { success: false, error: json.error || `Request failed (${res.status})` };
+      return { success: false, error: apiErrorMessage(json, `Request failed (${res.status})`) };
     }
     logger.info('Loan deleted via API', { loanId }, 'Loans');
     return { success: true };

@@ -20,18 +20,27 @@ const ALLOWLIST = new Set<string>([
   'pricing_model', // service: documented UI-only toggle (hourly vs fixed), never persisted — see commerce.ts UserServiceFormData
 ]);
 
-/** Unwrap ZodEffects (.refine/.transform/.superRefine) to the inner object. */
+/**
+ * Unwrap zod v4 wrappers to the inner object. v4 restructured internals:
+ * refinements are checks ON a schema (no ZodEffects wrapper), transforms are
+ * pipes, and the def lives at `_zod.def` with a lowercase `type` tag.
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function unwrap(schema: any): any {
   let s = schema;
   const seen = new Set();
-  while (s && s._def && !seen.has(s)) {
+  while (s && s._zod?.def && !seen.has(s)) {
     seen.add(s);
-    const tn = s._def.typeName;
-    if (tn === 'ZodEffects') s = s._def.schema;
-    else if (tn === 'ZodDefault') s = s._def.innerType;
-    else if (tn === 'ZodOptional' || tn === 'ZodNullable') s = s._def.innerType;
-    else if (tn === 'ZodBranded') s = s._def.type;
+    const def = s._zod.def;
+    if (def.type === 'pipe') s = def.in;
+    else if (
+      def.type === 'optional' ||
+      def.type === 'nullable' ||
+      def.type === 'default' ||
+      def.type === 'readonly' ||
+      def.type === 'catch'
+    )
+      s = def.innerType;
     else break;
   }
   return s;
@@ -40,14 +49,15 @@ function unwrap(schema: any): any {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function schemaInfo(schema: any): { keys: Set<string>; passthrough: boolean } {
   const s = unwrap(schema);
-  if (!s || !s._def || s._def.typeName !== 'ZodObject') {
+  const def = s?._zod?.def;
+  if (!def || def.type !== 'object') {
     return { keys: new Set(), passthrough: false };
   }
-  const shape = typeof s.shape === 'function' ? s.shape() : s.shape;
-  const passthrough =
-    s._def.unknownKeys === 'passthrough' ||
-    (s._def.catchall && s._def.catchall._def && s._def.catchall._def.typeName !== 'ZodNever');
-  return { keys: new Set(Object.keys(shape ?? {})), passthrough };
+  const shape = def.shape ?? {};
+  // .passthrough()/.loose() set a non-never catchall in v4.
+  const catchallType = def.catchall?._zod?.def?.type;
+  const passthrough = catchallType !== undefined && catchallType !== 'never';
+  return { keys: new Set(Object.keys(shape)), passthrough };
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

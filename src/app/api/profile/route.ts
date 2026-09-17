@@ -122,7 +122,7 @@ export const PUT = withAuth(async (request: AuthenticatedRequest) => {
         path?: (string | number)[];
         message?: string;
       }
-      const firstIssue = (error as Error & { errors?: ZodIssue[] }).errors?.[0];
+      const firstIssue = (error as Error & { issues?: ZodIssue[] }).issues?.[0];
       return apiValidationError(
         `${firstIssue?.path?.join('.') || 'field'}: ${firstIssue?.message || 'Invalid profile data'}`
       );

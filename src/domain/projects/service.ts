@@ -1,4 +1,4 @@
-import { listEntityPage, createEntity } from '@/domain/base/entityService';
+import { listEntityPage, createEntity, withResolvedActor } from '@/domain/base/entityService';
 import { PROJECT_STATUS } from '@/config/project-statuses';
 import { STATUS } from '@/config/database-constants';
 import type { ProjectData } from '@/lib/validation';
@@ -55,7 +55,7 @@ export async function createProject(
   return createEntity(
     'project',
     userId,
-    {
+    withResolvedActor(payload, {
       user_id: userId,
       title: payload.title,
       description: payload.description,
@@ -72,7 +72,21 @@ export async function createProject(
       // Respect the form's profile-visibility toggle; DB default (true) would
       // otherwise always win and ignore an unchecked box.
       show_on_profile: payload.show_on_profile ?? true,
-    },
+    }),
     client ? { client } : undefined
   );
+}
+
+/**
+ * The PostgREST filter for "projects this account owns".
+ *
+ * Ownership is the actor (`actor_id`), not the creating account (`user_id`):
+ * a page set up for someone else is created by the steward and owned by the
+ * person once she claims it (ADR-0005), and a group's project is created by a
+ * member. Two profile surfaces filtered by `user_id` and showed a freshly
+ * claimed owner "Projects 0" (walked live 2026-09-11). Rows from before actors
+ * existed carry no actor and fall back to the creator.
+ */
+export function ownedProjectsFilter(actorId: string, userId: string): string {
+  return `actor_id.eq.${actorId},and(actor_id.is.null,user_id.eq.${userId})`;
 }

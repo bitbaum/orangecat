@@ -83,7 +83,7 @@ export default function AboutPage() {
         </div>
       </div>
 
-      {/* CTA Section — public-surface (near-black) per FleetCrown pattern */}
+      {/* CTA Section — public-surface (near-black) per Loki pattern */}
       <div className="bg-surface-public">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center">

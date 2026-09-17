@@ -2,7 +2,7 @@
  * Cat Memory Service
  *
  * Persistent, semantic memory for My Cat. Durable facts about a user
- * ("Prefers Lightning over on-chain", "Building FleetCrown") are extracted
+ * ("Prefers Lightning over on-chain", "Building Loki") are extracted
  * from chat, embedded, and recalled by MEANING on later turns — so Cat keeps
  * context across sessions instead of re-deriving everything each time.
  *
@@ -22,6 +22,7 @@ import { DATABASE_TABLES } from '@/config/database-tables';
 import { MEMORY_IMPORT_CATEGORIES } from '@/config/cat-memory-import';
 import { embeddingsEnabled, embedText, embedTexts } from '@/services/ai/embeddings';
 import { logger } from '@/utils/logger';
+import { looksLikeSelfDisclosure } from '@/services/ai/self-disclosure';
 
 export interface CatMemory {
   id: string;
@@ -98,6 +99,17 @@ export interface ForgetResult {
   deleted: string[];
   /** Requested facts for which no stored memory matched. */
   notFound: string[];
+  /**
+   * Facts we could not answer for, because the database did not respond.
+   *
+   * Distinct from `notFound`, and the distinction is the whole point: "we
+   * looked and you have no such memory" and "we could not look" used to be the
+   * same value. A failed delete reported `notFound`, so Cat told the user
+   * nothing matched — while the memory they had just disowned was still there.
+   * Telling someone their data is gone when it is not is the worst thing this
+   * feature can do. bitbaum/orangecat#563 finding 8.
+   */
+  failed: string[];
 }
 
 /**
@@ -113,6 +125,48 @@ const FORGET_MATCH_SIMILARITY = 0.45;
 const MAX_FORGET_FACTS = 10;
 /** Ignore degenerate fragments ("a", "is") that would text-match everything. */
 const MIN_FORGET_FRAGMENT_CHARS = 4;
+
+/**
+ * Which of the requested facts a forget call will actually look for — and which
+ * it will not, named rather than dropped.
+ *
+ * Three places used to decide this independently and disagree:
+ * forgetMemoriesMatching trimmed, required 4 characters and capped at 10;
+ * removeFromEconomicProfile trimmed, required 4 characters and had NO cap; and
+ * the handler compared the caller's RAW strings against the trimmed ones the
+ * stores reported. The consequences were all the same shape — the user is not
+ * told something was skipped:
+ *
+ *   * ask to forget 12 things and facts 11 and 12 vanished from the memory
+ *     store with no mention, while the profile store still processed them;
+ *   * pass " photography " with padding and it could never appear in the
+ *     "no stored match" list, because that list was built by matching raw
+ *     against trimmed;
+ *   * pass "cat" and it silently did nothing at all.
+ *
+ * One selector, used by both stores and the handler, so all three agree by
+ * construction and the leftovers have names. bitbaum/orangecat#563 findings
+ * 10 and 11.
+ */
+export interface ForgetFactSelection {
+  /** Normalised facts the stores will actually search for. */
+  wanted: string[];
+  /** Trimmed to nothing, or too short to match anything but noise. */
+  tooShort: string[];
+  /** Beyond the per-call cap: real requests, simply not attempted. */
+  overCap: string[];
+}
+
+export function selectForgetFacts(facts: string[]): ForgetFactSelection {
+  const trimmed = facts.map(f => f.trim());
+  const tooShort = trimmed.filter(f => f.length < MIN_FORGET_FRAGMENT_CHARS);
+  const usable = trimmed.filter(f => f.length >= MIN_FORGET_FRAGMENT_CHARS);
+  return {
+    wanted: usable.slice(0, MAX_FORGET_FACTS),
+    tooShort,
+    overCap: usable.slice(MAX_FORGET_FACTS),
+  };
+}
 
 /**
  * Light suffix-stripping stemmer so inflected forms match: "photography" and
@@ -137,6 +191,41 @@ function stemWord(word: string): string {
     }
   }
   return s;
+}
+
+/**
+ * Does `haystack` contain `needle` as WHOLE WORDS?
+ *
+ * The containment branch used raw `String.includes` in both directions, and
+ * MIN_FORGET_FRAGMENT_CHARS lets a four-character fact through. So "work" was
+ * contained in "network", "framework", "coworking" and "homework": asking Cat
+ * to forget "work" deleted every one of those memories, and Cat then reported
+ * them as removed — accurately, which is exactly what made it hard to notice.
+ *
+ * Boundaries are checked by CHARACTER CLASS rather than a `\b` regex, because
+ * `\b` is ASCII-only in JavaScript: it treats "café" as ending after "caf",
+ * so "café" would match inside "cafés" while plain words behaved correctly.
+ * `\p{L}` and `\p{N}` cover the accented alphabet the tokenizer above already
+ * speaks. bitbaum/orangecat#563 finding 9.
+ */
+const WORD_CHAR = /[\p{L}\p{N}]/u;
+export function containsWholeWords(haystack: string, needle: string): boolean {
+  if (!needle || !haystack) {
+    return false;
+  }
+  for (let from = 0; from <= haystack.length - needle.length;) {
+    const at = haystack.indexOf(needle, from);
+    if (at === -1) {
+      return false;
+    }
+    const before = at === 0 ? '' : haystack[at - 1]!;
+    const after = haystack[at + needle.length] ?? '';
+    if (!WORD_CHAR.test(before) && !WORD_CHAR.test(after)) {
+      return true;
+    }
+    from = at + 1;
+  }
+  return false;
 }
 
 /** Significant stemmed words of a phrase (short glue words dropped). */
@@ -210,11 +299,8 @@ export async function forgetMemoriesMatching(
   userId: string,
   facts: string[]
 ): Promise<ForgetResult> {
-  const wanted = facts
-    .map(f => f.trim())
-    .filter(f => f.length >= MIN_FORGET_FRAGMENT_CHARS)
-    .slice(0, MAX_FORGET_FACTS);
-  const result: ForgetResult = { deleted: [], notFound: [] };
+  const { wanted } = selectForgetFacts(facts);
+  const result: ForgetResult = { deleted: [], notFound: [], failed: [] };
   if (wanted.length === 0) {
     return result;
   }
@@ -224,8 +310,10 @@ export async function forgetMemoriesMatching(
     .select('id, content')
     .eq('user_id', userId);
   if (loadError) {
+    // Could not read the corpus, so we cannot say anything about what matched.
+    // Reporting notFound here would tell the user their memories are absent.
     logger.warn('forgetMemoriesMatching load failed', { error: loadError }, 'CatMemory');
-    return { deleted: [], notFound: wanted };
+    return { deleted: [], notFound: [], failed: wanted };
   }
   const corpus = (rows ?? []) as Array<{ id: string; content: string }>;
 
@@ -244,10 +332,17 @@ export async function forgetMemoriesMatching(
     for (let i = 0; i < corpus.length; i++) {
       const m = corpus[i];
       const c = m.content.toLowerCase();
-      // Containment either way ("photography" ⊂ "Has photography skills…"),
-      // or enough shared stems (see requiredStemHits — two-word facts need
-      // TWO hits, so a single shared "skills" can't delete a stranger).
-      if (c.includes(norm) || norm.includes(c) || stemOverlapMatches(factStems, memoryStems[i])) {
+      // Containment either way, on WORD boundaries ("photography" ⊂ "Has
+      // photography skills…"), or enough shared stems (see requiredStemHits —
+      // two-word facts need TWO hits, so one shared "skills" cannot delete a
+      // stranger).
+      // Whole words only: raw containment let a 4-char fact delete every memory
+      // that merely SPELLED it ("work" ⊂ network/framework/coworking).
+      if (
+        containsWholeWords(c, norm) ||
+        containsWholeWords(norm, c) ||
+        stemOverlapMatches(factStems, memoryStems[i])
+      ) {
         doomed.set(m.id, m.content);
         matched = true;
       }
@@ -283,8 +378,10 @@ export async function forgetMemoriesMatching(
       .eq('user_id', userId)
       .in('id', [...doomed.keys()]);
     if (error) {
+      // We DID match these — the delete is what failed, so the memories are
+      // still there. Saying notFound would be the opposite of the truth.
       logger.warn('forgetMemoriesMatching delete failed', { error }, 'CatMemory');
-      return { deleted: [], notFound: wanted };
+      return { deleted: [], notFound: result.notFound, failed: [...doomed.values()] };
     }
     result.deleted.push(...doomed.values());
     // Remember WHAT was forgotten (suppression list) so passive extraction
@@ -345,7 +442,13 @@ async function recordForgottenFacts(
         .limit(count - MAX_FORGOTTEN_PER_USER);
       const ids = (oldest as Array<{ id: string }> | null)?.map(r => r.id) ?? [];
       if (ids.length > 0) {
-        await supabase.from(DATABASE_TABLES.CAT_FORGOTTEN_FACTS).delete().in('id', ids);
+        // Scoped by user_id as well as id, for the same reason pruneIfNeeded is
+        // — this inherited the pattern, and the gap with it.
+        await supabase
+          .from(DATABASE_TABLES.CAT_FORGOTTEN_FACTS)
+          .delete()
+          .eq('user_id', userId)
+          .in('id', ids);
       }
     }
   } catch (err) {
@@ -571,53 +674,15 @@ export async function editMemoryMatching(
 
 // ─── Extraction ─────────────────────────────────────────────────────────────
 
-/**
- * Cheap gate: only spend an LLM call on extraction when the user's message
- * plausibly discloses something durable about them (preference, identity, goal,
- * relationship). Mirrors the tool-use keyword pre-filter — most utility queries
- * ("convert 0.1 BTC", "what's my balance") skip extraction entirely.
- */
-export function looksLikeSelfDisclosure(message: string): boolean {
-  const m = message.toLowerCase();
-  if (m.trim().length < 12) {
-    return false;
-  }
-  return SELF_DISCLOSURE_SIGNALS.some(s => m.includes(s));
-}
-
-const SELF_DISCLOSURE_SIGNALS = [
-  'i ',
-  "i'm",
-  'i am',
-  'i prefer',
-  'i like',
-  'i love',
-  'i hate',
-  'i use',
-  'i have',
-  'i live',
-  'i work',
-  'i build',
-  'i run',
-  'my ',
-  'me ',
-  'we ',
-  'our ',
-  "we're",
-  'remember',
-  'prefer',
-  'always',
-  'never',
-  'usually',
-  'call me',
-  'working on',
-  'focused on',
-];
+// The self-disclosure gate is shared with companion memory —
+// src/services/ai/self-disclosure.ts. Re-exported so existing callers and
+// tests keep importing it from here.
+export { looksLikeSelfDisclosure };
 
 const EXTRACTION_SYSTEM = `You extract durable, user-specific facts worth remembering long-term about a person, from one chat exchange.
 
 Return ONLY a JSON array of short factual statements written in the third person, e.g.:
-["Prefers Lightning over on-chain payments", "Building FleetCrown, a life-OS for builders", "Based in Zürich"]
+["Prefers Lightning over on-chain payments", "Building Loki, a life-OS for builders", "Based in Zürich"]
 
 Include ONLY stable facts: preferences, identity, goals, skills, relationships, or constraints that will still be true next week.
 EXCLUDE: one-off requests, questions, the assistant's suggestions, transient state, and anything trivial or already obvious.
@@ -763,7 +828,20 @@ export async function extractAndStoreMemories(
   }
 }
 
-/** Keep the corpus bounded: delete the oldest memories beyond the per-user cap. */
+/**
+ * Keep the corpus bounded: delete the oldest memories beyond the per-user cap.
+ *
+ * The delete is scoped by user_id as well as by id. That is redundant today —
+ * the ids come from a query already filtered to this user, run through an
+ * RLS-scoped client — and it is exactly the redundancy worth having: this is an
+ * unconditional DELETE of rows the user never asked to remove, and the only
+ * thing standing between it and someone else's memories is that both of those
+ * conditions keep holding. Hand it a service-role client one day, as three
+ * other paths in this service already use, and RLS stops being the backstop.
+ *
+ * Every other delete in this file is written that way, including the
+ * suppression-lifting one twenty lines above. bitbaum/orangecat#563 finding 13.
+ */
 async function pruneIfNeeded(supabase: AnySupabaseClient, userId: string): Promise<void> {
   const { count } = await supabase
     .from(DATABASE_TABLES.CAT_MEMORIES)
@@ -780,7 +858,7 @@ async function pruneIfNeeded(supabase: AnySupabaseClient, userId: string): Promi
     .limit(count - MAX_MEMORIES_PER_USER);
   const ids = (oldest as Array<{ id: string }> | null)?.map(r => r.id) ?? [];
   if (ids.length > 0) {
-    await supabase.from(DATABASE_TABLES.CAT_MEMORIES).delete().in('id', ids);
+    await supabase.from(DATABASE_TABLES.CAT_MEMORIES).delete().eq('user_id', userId).in('id', ids);
   }
 }
 

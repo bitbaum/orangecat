@@ -17,8 +17,8 @@ import { getCreditBalance, appendCreditEntry } from '@/services/cat/credits';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { logger } from '@/utils/logger';
 
-/** Creator keeps 95% of the message price as spendable Cat Credits; platform keeps 5%. */
-const CREATOR_SHARE = 0.95;
+/** The creator keeps the whole message price as spendable Cat Credits. The platform takes nothing. */
+const CREATOR_SHARE = 1;
 
 /**
  * A per-message charge above this is almost certainly a misconfigured / un-divided legacy

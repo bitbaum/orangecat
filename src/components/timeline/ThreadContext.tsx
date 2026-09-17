@@ -9,6 +9,7 @@ import { logger } from '@/utils/logger';
 import { MessageCircle, ChevronUp, ChevronDown, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TIMELINE_SURFACE } from '@/config/timeline';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 interface ThreadContextProps {
   threadId: string;
@@ -57,7 +58,7 @@ export function ThreadContext({
           }
         }
       } else {
-        setError(result.error || 'Failed to load thread');
+        setError(apiErrorMessage(result, 'Failed to load thread'));
       }
     } catch (err) {
       logger.error('Error loading thread', err, 'ThreadContext');

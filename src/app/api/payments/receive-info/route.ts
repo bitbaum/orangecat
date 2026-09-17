@@ -43,7 +43,7 @@ export const GET = withAuth(async (request: AuthenticatedRequest) => {
       return apiForbidden('Only the owner can view receiving info for this entity');
     }
 
-    const info = await resolveSellerReceiveInfo(supabase, entityType as EntityType, entityId);
+    const info = await resolveSellerReceiveInfo(entityType as EntityType, entityId);
 
     return apiSuccess({
       hasWallet: !!info,

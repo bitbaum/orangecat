@@ -1,7 +1,7 @@
 import { createServerClient } from '@/lib/supabase/server';
 import { PLATFORM_DEFAULT_CURRENCY } from '@/config/currencies';
 import { STATUS } from '@/config/database-constants';
-import { createEntity } from '@/domain/base/entityService';
+import { createEntity, withResolvedActor } from '@/domain/base/entityService';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 
 export interface CreateLoanInput {
@@ -47,7 +47,7 @@ export async function createLoan(
   const data = await createEntity(
     'loan',
     userId,
-    {
+    withResolvedActor(input, {
       user_id: userId,
       title: loanInput.title,
       description: loanInput.description || '',
@@ -83,7 +83,7 @@ export async function createLoan(
       // the caller omits it.
       show_on_profile: loanInput.show_on_profile ?? true,
       amount: loanInput.original_amount,
-    },
+    }),
     {
       client: supabase as unknown as AnySupabaseClient,
     }

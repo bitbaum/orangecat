@@ -11,42 +11,42 @@ import {
   checkPublicPaymentStatus,
 } from '@/domain/payments/paymentFlowService';
 
-jest.mock('@/domain/payments/walletResolutionService', () => ({
-  resolveUserWallet: jest.fn(),
+vi.mock('@/domain/payments/walletResolutionService', () => ({
+  resolveUserWallet: vi.fn(),
 }));
-jest.mock('@/lib/supabase/admin', () => ({
-  getAdminClient: jest.fn(() => ({})),
+vi.mock('@/lib/supabase/admin', () => ({
+  getAdminClient: vi.fn(() => ({})),
 }));
-jest.mock('@/domain/payments/paymentFlowService', () => ({
-  initiateTip: jest.fn(),
-  checkPublicPaymentStatus: jest.fn(),
+vi.mock('@/domain/payments/paymentFlowService', () => ({
+  initiateTip: vi.fn(),
+  checkPublicPaymentStatus: vi.fn(),
 }));
 // The dispatcher transitively imports the Resend email client, which cannot
 // load in the jest environment — and we want to assert dispatch calls anyway.
-jest.mock('@/services/notifications/dispatcher', () => ({
-  NotificationDispatcher: { dispatch: jest.fn().mockResolvedValue(undefined) },
+vi.mock('@/services/notifications/dispatcher', () => ({
+  NotificationDispatcher: { dispatch: vi.fn().mockResolvedValue(undefined) },
 }));
 // Dead-end dedup reads recent notifications through fromTable; default: none.
-const mockDedupLimit = jest.fn().mockResolvedValue({ data: [] });
-jest.mock('@/lib/supabase/untyped', () => ({
-  fromTable: jest.fn(() => ({
-    select: jest.fn().mockReturnThis(),
-    eq: jest.fn().mockReturnThis(),
-    gte: jest.fn().mockReturnThis(),
+const mockDedupLimit = vi.fn().mockResolvedValue({ data: [] });
+vi.mock('@/lib/supabase/untyped', () => ({
+  fromTable: vi.fn(() => ({
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    gte: vi.fn().mockReturnThis(),
     limit: mockDedupLimit,
   })),
 }));
 
 import { NotificationDispatcher } from '@/services/notifications/dispatcher';
 
+import type { MockedFunction } from 'vitest';
+
 /** The dead-end notification is fire-and-forget — let its microtasks settle. */
 const flush = () => new Promise(resolve => setTimeout(resolve, 0));
 
-const mockResolveWallet = resolveUserWallet as jest.MockedFunction<typeof resolveUserWallet>;
-const mockInitiateTipPayment = initiateTipPayment as jest.MockedFunction<typeof initiateTipPayment>;
-const mockCheckStatus = checkPublicPaymentStatus as jest.MockedFunction<
-  typeof checkPublicPaymentStatus
->;
+const mockResolveWallet = resolveUserWallet as MockedFunction<typeof resolveUserWallet>;
+const mockInitiateTipPayment = initiateTipPayment as MockedFunction<typeof initiateTipPayment>;
+const mockCheckStatus = checkPublicPaymentStatus as MockedFunction<typeof checkPublicPaymentStatus>;
 
 /** Minimal supabase stub whose profiles lookup resolves to `profile`. */
 function supabaseWith(profile: Record<string, unknown> | null) {
@@ -62,7 +62,7 @@ function supabaseWith(profile: Record<string, unknown> | null) {
 }
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe('getTipReceiveInfo', () => {

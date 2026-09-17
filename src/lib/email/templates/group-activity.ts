@@ -5,7 +5,7 @@
  * Pure functions — no imports from outside templates.
  */
 
-import { emailLayout, emailPlainText, EMAIL_COLORS } from './layout';
+import { renderEmail, escapeHtml, EMAIL_COLORS } from './layout';
 
 export type GroupActivityType = 'invite' | 'proposal' | 'vote_reminder' | 'proposal_resolved';
 
@@ -191,30 +191,5 @@ export function groupActivityTemplate(data: GroupActivityEmailData): {
 } {
   const config = getGroupActivityConfig(data);
 
-  const html = emailLayout({
-    preheader: config.preheader,
-    heading: config.heading,
-    body: config.bodyHtml,
-    ctaText: config.ctaText,
-    ctaUrl: config.ctaUrl,
-    unsubscribeUrl: data.unsubscribeUrl,
-  });
-
-  const text = emailPlainText({
-    heading: config.heading,
-    body: config.bodyText,
-    ctaText: config.ctaText,
-    ctaUrl: config.ctaUrl,
-    unsubscribeUrl: data.unsubscribeUrl,
-  });
-
-  return { subject: config.subject, html, text };
-}
-
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+  return renderEmail(config, data.unsubscribeUrl);
 }

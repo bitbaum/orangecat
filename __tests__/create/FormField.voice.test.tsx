@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { FormField } from '@/components/create/FormField';
@@ -6,9 +7,9 @@ import { AIFillPanel } from '@/components/create/AIFillPanel';
 // Voice input is env-gated behind FEATURES.voiceInput, evaluated at module-load
 // time — mock the flag ON so the voice path is exercised regardless of the
 // deployment default.
-jest.mock('@/config/features', () => ({ FEATURES: { voiceInput: true } }));
+vi.mock('@/config/features', () => ({ FEATURES: { voiceInput: true } }));
 
-jest.mock('@/components/ui/DictationButton', () => ({
+vi.mock('@/components/ui/DictationButton', () => ({
   __esModule: true,
   DictationButton: ({
     onTranscript,
@@ -52,7 +53,7 @@ describe('voice placement', () => {
   });
 
   it('renders ONE mic in the AI fill panel, appending to the description', () => {
-    const onDescriptionChange = jest.fn();
+    const onDescriptionChange = vi.fn();
     render(
       <AIFillPanel
         description="sell my bike"

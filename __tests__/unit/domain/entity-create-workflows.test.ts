@@ -1,46 +1,48 @@
 import { createProject } from '@/domain/projects/service';
 import { createProduct, createCause } from '@/domain/commerce/service';
 
-jest.mock('@/lib/supabase/server', () => ({
-  createServerClient: jest.fn(),
+vi.mock('@/lib/supabase/server', () => ({
+  createServerClient: vi.fn(),
 }));
 
-jest.mock('@/lib/supabase/admin', () => ({
-  createAdminClient: jest.fn(),
+vi.mock('@/lib/supabase/admin', () => ({
+  createAdminClient: vi.fn(),
 }));
 
-jest.mock('@/services/actors/getOrCreateUserActor', () => ({
-  getOrCreateUserActor: jest.fn().mockResolvedValue({ id: 'a1' }),
+vi.mock('@/services/actors/getOrCreateUserActor', () => ({
+  getOrCreateUserActor: vi.fn().mockResolvedValue({ id: 'a1' }),
 }));
 
 import { createServerClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 
+import type { Mock } from 'vitest';
+
 describe('Entity create workflows (project/product/cause)', () => {
   const mockServerChain = {
-    insert: jest.fn().mockReturnThis(),
-    select: jest.fn().mockReturnThis(),
-    single: jest.fn(),
+    insert: vi.fn().mockReturnThis(),
+    select: vi.fn().mockReturnThis(),
+    single: vi.fn(),
   };
 
   const mockAdminChain = {
-    insert: jest.fn().mockReturnThis(),
-    select: jest.fn().mockReturnThis(),
-    single: jest.fn(),
+    insert: vi.fn().mockReturnThis(),
+    select: vi.fn().mockReturnThis(),
+    single: vi.fn(),
   };
 
   const mockServerClient = {
-    from: jest.fn(() => mockServerChain),
+    from: vi.fn(() => mockServerChain),
   };
 
   const mockAdminClient = {
-    from: jest.fn(() => mockAdminChain),
+    from: vi.fn(() => mockAdminChain),
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    (createServerClient as jest.Mock).mockResolvedValue(mockServerClient);
-    (createAdminClient as jest.Mock).mockReturnValue(mockAdminClient);
+    vi.clearAllMocks();
+    (createServerClient as Mock).mockResolvedValue(mockServerClient);
+    (createAdminClient as Mock).mockReturnValue(mockAdminClient);
   });
 
   it('creates a project with draft defaults and CHF currency fallback', async () => {

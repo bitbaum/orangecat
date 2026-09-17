@@ -8,22 +8,22 @@
  */
 import { resolveOwnerFilter } from '@/lib/api/query';
 
-jest.mock('@/lib/supabase/server', () => ({
-  createServerClient: jest.fn(),
+vi.mock('@/lib/supabase/server', () => ({
+  createServerClient: vi.fn(),
 }));
 
 import { createServerClient } from '@/lib/supabase/server';
 
-const mockedCreateServerClient = createServerClient as jest.MockedFunction<
-  typeof createServerClient
->;
+import type { MockedFunction } from 'vitest';
+
+const mockedCreateServerClient = createServerClient as MockedFunction<typeof createServerClient>;
 
 /** Minimal stub of the one query resolveOwnerFilter makes. */
 function stubProfileLookup(result: { id: string } | null) {
-  const maybeSingle = jest.fn().mockResolvedValue({ data: result, error: null });
-  const eq = jest.fn(() => ({ maybeSingle }));
-  const select = jest.fn(() => ({ eq }));
-  const from = jest.fn(() => ({ select }));
+  const maybeSingle = vi.fn().mockResolvedValue({ data: result, error: null });
+  const eq = vi.fn(() => ({ maybeSingle }));
+  const select = vi.fn(() => ({ eq }));
+  const from = vi.fn(() => ({ select }));
   mockedCreateServerClient.mockResolvedValue({ from } as never);
   return { from, select, eq, maybeSingle };
 }
@@ -32,7 +32,7 @@ const URL_BASE = 'https://orangecat.ch/api/projects';
 
 describe('resolveOwnerFilter', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('returns no filter when neither param is present', async () => {

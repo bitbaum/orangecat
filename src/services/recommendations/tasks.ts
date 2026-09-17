@@ -14,6 +14,7 @@
  * Last Modified: 2026-01-07
  */
 
+import { isMintedHandle } from '@/config/usernames';
 import {
   Star,
   Wallet,
@@ -85,6 +86,30 @@ export const TASK_DEFINITIONS: TaskDefinition[] = [
     action: { label: 'Set Username', href: ROUTES.DASHBOARD.INFO_EDIT },
     icon: Star,
     condition: ctx => !ctx.profile.username,
+  },
+  {
+    id: 'set-display-name',
+    title: 'Add Your Display Name',
+    description: 'Other people currently see a string of hex where your name should be',
+    priority: 'high',
+    category: 'setup',
+    action: { label: 'Add Name', href: ROUTES.DASHBOARD.INFO_EDIT },
+    icon: Edit3,
+    // Narrow on purpose: only the accounts left nameless AND handle-less by the
+    // 2026-08-26 email-leak sweep, which retired the handle and cleared a display
+    // name that was the email local part. Both halves were right; together they
+    // left ~72 profiles rendering as `user_a3eaa53c23cd` in every thread,
+    // mention and profile card. See migration 20260907090000.
+    //
+    // That migration restored everyone whose OAuth provider had given us a real
+    // name. It could not invent one for the rest — and inventing one is exactly
+    // the mistake being repaired — so the remainder have to be ASKED. This is
+    // the asking.
+    //
+    // Conditioned on the MINTED handle, not merely on a missing name: someone who
+    // chose a readable username and simply has not filled in a display name is
+    // not broken and does not need a high-priority nag.
+    condition: ctx => !ctx.profile.display_name?.trim() && isMintedHandle(ctx.profile.username),
   },
   {
     id: 'add-wallet',

@@ -16,6 +16,7 @@ import { useState, useCallback, useRef } from 'react';
 import { Upload, File, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { API_ROUTES } from '@/config/api-routes';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 interface ExtractedContent {
   title: string;
@@ -88,7 +89,7 @@ export function DocumentFileUpload({
 
         if (!response.ok) {
           const data = await response.json();
-          throw new Error(data.error || 'Failed to extract content');
+          throw new Error(apiErrorMessage(data, 'Failed to extract content'));
         }
 
         const data = await response.json();
@@ -102,7 +103,7 @@ export function DocumentFileUpload({
             fileName: file.name,
           });
         } else {
-          throw new Error(data.error || 'Failed to extract content');
+          throw new Error(apiErrorMessage(data, 'Failed to extract content'));
         }
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to process file';

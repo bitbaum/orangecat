@@ -120,11 +120,91 @@ async function markPolled(admin: SupabaseClient, id: string): Promise<void> {
   }
 }
 
+/**
+ * Grace before a paid-but-unmarked intent counts as incomplete.
+ *
+ * Settlement is fast, but it is not instantaneous, and reporting an intent that
+ * is mid-flight would train everyone to ignore this. Five minutes is far longer
+ * than the path takes and far shorter than anyone would want to sit on a lost
+ * order.
+ */
+const SIDE_EFFECT_GRACE_MS = 5 * 60 * 1000;
+
+/** Most incomplete settlements to name in one report. */
+const INCOMPLETE_REPORT_LIMIT = 20;
+
+/**
+ * Paid intents whose settlement side-effects never finished.
+ *
+ * handlePaymentConfirmed flips the intent to paid FIRST — that conditional
+ * update is the lock making settlement run exactly once — and only then writes
+ * the order, decrements inventory, notifies and fans out webhooks. A crash in
+ * that gap used to lose all of it in total silence: the row is paid, so every
+ * later observer skips it as already settled, refresh short-circuits on
+ * terminal statuses, and the sweep above only looks at non-terminal ones. The
+ * buyer's money is gone and their order sits in pending_payment forever.
+ *
+ * WHY THIS REPORTS AND DOES NOT REPLAY
+ *
+ * Replaying looks like the obvious fix and is a worse bug. `decrement_inventory`
+ * is a blind `inventory_count - 1` with no idempotency key, so re-running
+ * settlement for one sale decrements twice and quietly destroys stock; plan
+ * grants and entitlements have the same shape. Trading an invisible loss for a
+ * silent corruption is not progress. Making replay safe needs per-effect
+ * receipts — a separate, larger piece of work. Until then this converts a
+ * permanent silent loss into a named, actionable one, which is the part that
+ * could not wait.
+ */
+export async function findIncompleteSettlements(
+  admin: SupabaseClient
+): Promise<{ count: number; ids: string[] }> {
+  const cutoff = new Date(Date.now() - SIDE_EFFECT_GRACE_MS).toISOString();
+
+  const { data, error } = await admin
+    .from(DATABASE_TABLES.PAYMENT_INTENTS)
+    .select('id')
+    .eq('status', STATUS.PAYMENT_INTENTS.PAID)
+    .is('side_effects_at', null)
+    .lt('paid_at', cutoff)
+    .order('paid_at', { ascending: true })
+    .limit(INCOMPLETE_REPORT_LIMIT + 1);
+
+  if (error) {
+    // Never fail the sweep over the report: the reconciliation above is the
+    // load-bearing half. But say so — a detector that goes quiet on error is
+    // indistinguishable from one finding nothing, which is this whole bug.
+    logger.error('Could not check for incomplete settlements', { error }, 'PaymentSweep');
+    return { count: 0, ids: [] };
+  }
+
+  const rows = data ?? [];
+  if (rows.length === 0) {
+    return { count: 0, ids: [] };
+  }
+
+  const ids = rows.slice(0, INCOMPLETE_REPORT_LIMIT).map(r => (r as { id: string }).id);
+  logger.error(
+    'Paid payment intents whose settlement side-effects never completed — needs reconciliation',
+    {
+      shown: ids.length,
+      more: rows.length > INCOMPLETE_REPORT_LIMIT,
+      paymentIntentIds: ids,
+      whatIsMissing:
+        'order status, inventory decrement, seller notification, webhooks — check each before repairing by hand',
+    },
+    'PaymentSweep'
+  );
+
+  return { count: ids.length, ids };
+}
+
 export interface ReconcileSweepResult {
   scanned: number;
   settled: number;
   expired: number;
   skippedForBudget?: number;
+  /** Paid intents whose side-effects never finished — reported, never replayed. */
+  incompleteSettlements: number;
   ranAt: string;
 }
 
@@ -134,8 +214,19 @@ export async function runPaymentReconcileSweep(): Promise<ReconcileSweepResult> 
   const admin = getAdminClient() as unknown as SupabaseClient;
   const candidates = await pickCandidates(admin, BATCH_SIZE);
 
+  // Runs even when there is nothing to reconcile: an incomplete settlement is a
+  // PAID row, so it never appears among the candidates above. Skipping the
+  // check on a quiet tick would hide exactly the case it exists for.
+  const incomplete = await findIncompleteSettlements(admin);
+
   if (candidates.length === 0) {
-    return { scanned: 0, settled: 0, expired: 0, ranAt: new Date().toISOString() };
+    return {
+      scanned: 0,
+      settled: 0,
+      expired: 0,
+      incompleteSettlements: incomplete.count,
+      ranAt: new Date().toISOString(),
+    };
   }
 
   let scanned = 0;
@@ -158,7 +249,7 @@ export async function runPaymentReconcileSweep(): Promise<ReconcileSweepResult> 
       // The SAME path the payer's browser runs. Settlement side-effects are
       // exactly-once (claimPaidTransition), so overlapping with a live poll
       // is safe by construction.
-      const result = await reconcilePaymentIntent(admin, intent);
+      const result = await reconcilePaymentIntent(intent);
       if (result.status === STATUS.PAYMENT_INTENTS.PAID) {
         settled += 1;
         logger.info(
@@ -192,6 +283,7 @@ export async function runPaymentReconcileSweep(): Promise<ReconcileSweepResult> 
     settled,
     expired,
     skippedForBudget,
+    incompleteSettlements: incomplete.count,
     ranAt: new Date().toISOString(),
   };
 }

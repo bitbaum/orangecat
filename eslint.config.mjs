@@ -28,6 +28,33 @@ const restrictedSyntaxSelectors = [
       'Raw Tailwind gray in dark: variant — use a semantic token (bg-muted, bg-border, border, text-foreground, text-muted-foreground, etc.). See globals.css :root for available tokens. Add eslint-disable-next-line with a reason comment if this is an intentional design exception.',
   },
   {
+    // Close the "[object Object]" class (2026-09-05). apiError() answers
+    // `{ success: false, error: { code, message } }` — `error` is an OBJECT, and
+    // a non-empty object is truthy, so `X.error || 'fallback'` never reaches the
+    // fallback and hands an object to new Error()/toast.error()/setState():
+    //   new Error({code,message}) -> message is the string "[object Object]"
+    //   setError({code,message})  -> React throws on rendering a non-child
+    // 100 call sites did this. A user hit it trying to follow someone: the
+    // server sent "Already following this user" and the toast read
+    // "[object Object]". apiErrorMessage() reads the standard envelope, a bare
+    // { message }, and a plain string, so it is correct at every call site.
+    // Scoped to a STRING fallback on purpose. `if (result.error || !result.data)`
+    // is a truthiness guard and completely correct; an earlier, broader version
+    // of this selector flagged those too, and a gate that fires on correct code
+    // gets disabled rather than obeyed. Only `X.error || <string>` is the bug:
+    // it defaults an object to a message.
+    selector:
+      "LogicalExpression[operator='||'][right.value=/./] > MemberExpression.left[property.name='error']",
+    message:
+      "`X.error || 'fallback'` — the standard API envelope makes `error` an OBJECT, so this yields \"[object Object]\" and the fallback never fires. Use apiErrorMessage(X, 'fallback') from '@/lib/api/errorMessage'.",
+  },
+  {
+    selector:
+      "LogicalExpression[operator='||'][right.type='TemplateLiteral'] > MemberExpression.left[property.name='error']",
+    message:
+      "`X.error || `fallback`` — the standard API envelope makes `error` an OBJECT, so this yields \"[object Object]\" and the fallback never fires. Use apiErrorMessage(X, `fallback`) from '@/lib/api/errorMessage'.",
+  },
+  {
     selector: 'Literal[value=/dark:(?:bg|text|border|ring)-\\[#[0-9a-fA-F]+\\]/]',
     message:
       'Arbitrary hex color in dark: variant — define a CSS custom property in globals.css and use a semantic Tailwind class instead.',
@@ -41,7 +68,7 @@ const restrictedSyntaxSelectors = [
     // Close the keystroke-hijack class (2026-07 dogfood): a global keyboard
     // shortcut's "is the user typing?" guard must inspect the COMPOSED path
     // leaf, not e.target. When a keystroke crosses a shadow-DOM boundary
-    // (e.g. the embedded FleetCrown feedback widget), e.target is retargeted
+    // (e.g. the embedded Loki feedback widget), e.target is retargeted
     // to the shadow host, so the guard misreads a text field as "not typing"
     // and the shortcut fires and eats the keystroke. Pass e.composedPath()[0].
     selector:
@@ -71,10 +98,10 @@ const eslintConfig = [
   {
     // Translated from the former .eslintignore (flat config ignores it).
     ignores: [
-      // Vendored: byte-for-byte mirror of fleetcrown/src/lib/agent/core.
+      // Vendored: byte-for-byte mirror of loki/src/lib/agent/core.
       // `eslint --fix` here would rewrite quotes and break the SHA-256 drift
       // gate that keeps the two copies from silently disagreeing about what
-      // "grounded" means. Edit the canonical copy in FleetCrown and re-run
+      // "grounded" means. Edit the canonical copy in Loki and re-run
       // its `npm run sync:agent-core`. See src/services/agent-core/README.md.
       'src/services/agent-core/**',
       '.next/**',

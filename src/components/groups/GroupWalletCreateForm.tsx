@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/Button';
 import { Plus, Loader2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { API_ROUTES } from '@/config/api-routes';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 const WALLET_PURPOSES = [
   { value: 'general', label: 'General' },
@@ -75,7 +76,7 @@ export function GroupWalletCreateForm({
       });
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to create wallet');
+        throw new Error(apiErrorMessage(error, 'Failed to create wallet'));
       }
       toast.success('Wallet created successfully');
       reset();

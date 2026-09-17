@@ -7,6 +7,7 @@ import { formatCurrency } from '@/services/currency';
 import { PLATFORM_DEFAULT_CURRENCY, CURRENCY_CODES } from '@/config/currencies';
 import type { CurrencyCode } from '@/config/currencies';
 import loansService from '@/services/loans';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 export const formatLoanAmount = (amount: number, currency: string = PLATFORM_DEFAULT_CURRENCY) => {
   const validCurrency = (
@@ -33,7 +34,7 @@ export function useLoanList(onLoanUpdated?: () => void) {
         toast.success(loan.is_public ? 'Loan hidden' : 'Loan made public');
         onLoanUpdated?.();
       } else {
-        toast.error(result.error || 'Failed to update visibility');
+        toast.error(apiErrorMessage(result, 'Failed to update visibility'));
       }
     } catch {
       toast.error('Failed to update visibility');
@@ -52,7 +53,7 @@ export function useLoanList(onLoanUpdated?: () => void) {
         toast.success('Loan deleted');
         onLoanUpdated?.();
       } else {
-        toast.error(result.error || 'Failed to delete loan');
+        toast.error(apiErrorMessage(result, 'Failed to delete loan'));
       }
     } catch {
       toast.error('Failed to delete loan');

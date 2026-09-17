@@ -1,6 +1,6 @@
 'use client';
 import { logger } from '@/utils/logger';
-import { API_ROUTES } from '@/config/api-routes';
+import { fetchFollowList } from '@/services/social/followList';
 import { extractProfiles, type Connection, type FollowWithProfile } from './followProfiles';
 
 import { useState, useEffect } from 'react';
@@ -101,40 +101,17 @@ export default function ProfilePeopleTab({ profile, isOwnProfile }: ProfilePeopl
             setFollowers(followerProfiles);
           }
         } else {
-          // For other profiles, use API (will work if public data)
-          // Fetch following
-          const followingResponse = await fetch(API_ROUTES.SOCIAL.FOLLOWING(profile.id));
+          // For other profiles, use API (will work if public data).
+          // fetchFollowList owns the envelope unwrap — see services/social/followList.ts.
+          const [followingRows, followerRows] = await Promise.all([
+            fetchFollowList('following', profile.id),
+            fetchFollowList('followers', profile.id),
+          ]);
           if (cancelled) {
             return;
           }
-          if (followingResponse.ok) {
-            const followingData = await followingResponse.json();
-            if (cancelled) {
-              return;
-            }
-            if (followingData.success && followingData.data && followingData.data.data) {
-              // Extract profiles from nested structure
-              const followingProfiles = extractProfiles(followingData.data.data as FollowWithProfile[]);
-              setFollowing(followingProfiles);
-            }
-          }
-
-          // Fetch followers
-          const followersResponse = await fetch(API_ROUTES.SOCIAL.FOLLOWERS(profile.id));
-          if (cancelled) {
-            return;
-          }
-          if (followersResponse.ok) {
-            const followersData = await followersResponse.json();
-            if (cancelled) {
-              return;
-            }
-            if (followersData.success && followersData.data && followersData.data.data) {
-              // Extract profiles from nested structure
-              const followerProfiles = extractProfiles(followersData.data.data as FollowWithProfile[]);
-              setFollowers(followerProfiles);
-            }
-          }
+          setFollowing(extractProfiles(followingRows as FollowWithProfile[]));
+          setFollowers(extractProfiles(followerRows as FollowWithProfile[]));
         }
       } catch (error) {
         if (!cancelled) {

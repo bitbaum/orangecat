@@ -30,13 +30,13 @@ Set it on the box (never commit it):
 
 ## 2. Verify the wallet can receive (no money moves)
 
-    cd /opt/orangecat/app && npx tsx scripts/bitcoin/verify-platform-wallet.ts
+    cd /opt/orangecat/app && pnpm dlx tsx scripts/bitcoin/verify-platform-wallet.ts
 
 Proves the URI is valid, connects, and can mint an invoice.
 
 ## 3. Verify the full loop (one real ~1000-sat payment to your own account)
 
-    cd /opt/orangecat/app && VERIFY_USER_ID=<your-user-uuid> npx tsx scripts/bitcoin/verify-credits-roundtrip.ts
+    cd /opt/orangecat/app && VERIFY_USER_ID=<your-user-uuid> pnpm dlx tsx scripts/bitcoin/verify-credits-roundtrip.ts
 
 It issues a real invoice, prints the BOLT11 — **pay it from any wallet** — then
 confirms `checkTopUp` settles it and the ledger balance increases. This is the

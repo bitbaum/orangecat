@@ -11,14 +11,16 @@ import { resolveSellerWallet } from '@/domain/payments/walletResolutionService';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { DATABASE_TABLES } from '@/config/database-tables';
 
-jest.mock('@/utils/logger', () => ({
-  logger: { warn: jest.fn(), error: jest.fn(), info: jest.fn(), debug: jest.fn() },
-}));
-jest.mock('@/lib/supabase/admin', () => ({ getAdminClient: jest.fn() }));
-// decrypt is identity here — we only assert which wallet is chosen, not crypto.
-jest.mock('@/domain/payments/encryptionService', () => ({ decrypt: (s: string) => s }));
+import type { Mock } from 'vitest';
 
-const getAdminClientMock = getAdminClient as jest.Mock;
+vi.mock('@/utils/logger', () => ({
+  logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() },
+}));
+vi.mock('@/lib/supabase/admin', () => ({ getAdminClient: vi.fn() }));
+// decrypt is identity here — we only assert which wallet is chosen, not crypto.
+vi.mock('@/domain/payments/encryptionService', () => ({ decrypt: (s: string) => s }));
+
+const getAdminClientMock = getAdminClient as Mock;
 
 interface Fixtures {
   entityWallets: Array<{ wallet_id: string; is_primary: boolean }>;
@@ -94,7 +96,7 @@ function baseFixtures(): Fixtures {
   };
 }
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => vi.clearAllMocks());
 
 describe('resolveSellerWallet — entity-linked wallet precedence', () => {
   it('uses the wallet tied to the entity over the profile default', async () => {
@@ -110,7 +112,7 @@ describe('resolveSellerWallet — entity-linked wallet precedence', () => {
     };
     getAdminClientMock.mockReturnValue(makeAdmin(fx));
 
-    const resolved = await resolveSellerWallet({} as never, ENTITY.entity_type, ENTITY.entity_id);
+    const resolved = await resolveSellerWallet(ENTITY.entity_type, ENTITY.entity_id);
 
     expect(resolved).toEqual({
       method: 'onchain',
@@ -132,7 +134,7 @@ describe('resolveSellerWallet — entity-linked wallet precedence', () => {
     };
     getAdminClientMock.mockReturnValue(makeAdmin(fx));
 
-    const resolved = await resolveSellerWallet({} as never, ENTITY.entity_type, ENTITY.entity_id);
+    const resolved = await resolveSellerWallet(ENTITY.entity_type, ENTITY.entity_id);
 
     expect(resolved).toEqual({
       method: 'lightning_address',
@@ -145,7 +147,7 @@ describe('resolveSellerWallet — entity-linked wallet precedence', () => {
     const fx = baseFixtures(); // entityWallets empty
     getAdminClientMock.mockReturnValue(makeAdmin(fx));
 
-    const resolved = await resolveSellerWallet({} as never, ENTITY.entity_type, ENTITY.entity_id);
+    const resolved = await resolveSellerWallet(ENTITY.entity_type, ENTITY.entity_id);
 
     expect(resolved).toEqual({
       method: 'onchain',
@@ -160,7 +162,7 @@ describe('resolveSellerWallet — entity-linked wallet precedence', () => {
     fx.walletsById = {}; // linked wallet not active → single() returns null
     getAdminClientMock.mockReturnValue(makeAdmin(fx));
 
-    const resolved = await resolveSellerWallet({} as never, ENTITY.entity_type, ENTITY.entity_id);
+    const resolved = await resolveSellerWallet(ENTITY.entity_type, ENTITY.entity_id);
 
     expect(resolved).toEqual({
       method: 'onchain',

@@ -50,11 +50,10 @@ export const POST = withAuth(async (request: AuthenticatedRequest, context: Rout
     const rateLimitResult = await rateLimitWriteAsync(user.id);
     if (!rateLimitResult.success) {
       const retryAfter = retryAfterSeconds(rateLimitResult);
-      const rlResponse = apiRateLimited('Rate limit exceeded', retryAfter);
-      rlResponse.headers.set('X-RateLimit-Limit', String(rateLimitResult.limit));
-      rlResponse.headers.set('X-RateLimit-Remaining', '0');
-      rlResponse.headers.set('X-RateLimit-Reset', String(rateLimitResult.resetTime));
-      return rlResponse;
+      return applyRateLimitHeaders(
+        apiRateLimited('Rate limit exceeded', retryAfter),
+        rateLimitResult
+      );
     }
 
     const body = await (request as NextRequest).json();

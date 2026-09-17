@@ -25,30 +25,32 @@ import { getAdminClient } from '@/lib/supabase/admin';
 import { STATUS } from '@/config/database-constants';
 import { NotificationDispatcher } from '@/services/notifications/dispatcher';
 
-jest.mock('@/utils/logger', () => ({
-  logger: { warn: jest.fn(), error: jest.fn(), info: jest.fn(), debug: jest.fn() },
+import type { Mock } from 'vitest';
+
+vi.mock('@/utils/logger', () => ({
+  logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 // Break the resend/email import chain (ESM-only, not transformed by jest).
-jest.mock('@/lib/email/send-seller-notification', () => ({
-  sendSellerPaymentNotification: jest.fn().mockResolvedValue(undefined),
+vi.mock('@/lib/email/send-seller-notification', () => ({
+  sendSellerPaymentNotification: vi.fn().mockResolvedValue(undefined),
 }));
-jest.mock('@/services/notifications/dispatcher', () => ({
-  NotificationDispatcher: { dispatch: jest.fn().mockResolvedValue(undefined) },
+vi.mock('@/services/notifications/dispatcher', () => ({
+  NotificationDispatcher: { dispatch: vi.fn().mockResolvedValue(undefined) },
 }));
-jest.mock('@/lib/supabase/admin', () => ({ getAdminClient: jest.fn() }));
-jest.mock('@/services/webhooks/paymentSettledWebhook', () => ({
-  enqueuePaymentSettledWebhook: jest.fn().mockResolvedValue(undefined),
+vi.mock('@/lib/supabase/admin', () => ({ getAdminClient: vi.fn() }));
+vi.mock('@/services/webhooks/paymentSettledWebhook', () => ({
+  enqueuePaymentSettledWebhook: vi.fn().mockResolvedValue(undefined),
 }));
-jest.mock('@/services/fleetcrown/entitlement-notify', () => ({
-  notifyFleetCrownEntitlement: jest.fn().mockResolvedValue(undefined),
-  notifyFleetCrownProjectFunding: jest.fn().mockResolvedValue(undefined),
+vi.mock('@/services/loki/entitlement-notify', () => ({
+  notifyLokiEntitlement: vi.fn().mockResolvedValue(undefined),
+  notifyLokiProjectFunding: vi.fn().mockResolvedValue(undefined),
 }));
-jest.mock('@/services/supporter/grant', () => ({
-  grantSupporterPlan: jest.fn().mockResolvedValue(undefined),
+vi.mock('@/services/supporter/grant', () => ({
+  grantSupporterPlan: vi.fn().mockResolvedValue(undefined),
 }));
 
-const getAdminClientMock = getAdminClient as jest.Mock;
-const dispatchMock = NotificationDispatcher.dispatch as jest.Mock;
+const getAdminClientMock = getAdminClient as Mock;
+const dispatchMock = NotificationDispatcher.dispatch as Mock;
 
 const PI_ID = 'pi-1';
 const BUYER = 'buyer-1';
@@ -60,31 +62,31 @@ const BUYER = 'buyer-1';
 function makeCallerSupabase(intent: Record<string, unknown> | null) {
   const builder: Record<string, unknown> = {};
   for (const m of ['select', 'update', 'eq', 'neq', 'in']) {
-    builder[m] = jest.fn(() => builder);
+    builder[m] = vi.fn(() => builder);
   }
-  builder.single = jest.fn(() => Promise.resolve({ data: intent, error: null }));
-  builder.maybeSingle = jest.fn(() => Promise.resolve({ data: intent, error: null }));
+  builder.single = vi.fn(() => Promise.resolve({ data: intent, error: null }));
+  builder.maybeSingle = vi.fn(() => Promise.resolve({ data: intent, error: null }));
   // An awaited caller-client write behaves like RLS silently filtering the row:
   // zero rows, no error. If production code ever writes through this client
   // again, the assertions on the admin client below will catch it.
   builder.then = (resolve: (v: unknown) => unknown, reject: (e: unknown) => unknown) =>
     Promise.resolve({ data: [], error: null }).then(resolve, reject);
-  return { supabase: { from: jest.fn(() => builder) } as never, builder };
+  return { supabase: { from: vi.fn(() => builder) } as never, builder };
 }
 
 /** Admin client: serves all status-transition writes, in call order. */
 function makeAdmin(awaitQueue: Array<{ data?: unknown; error: unknown }>) {
   const builder: Record<string, unknown> = {};
   for (const m of ['select', 'update', 'eq', 'neq', 'in']) {
-    builder[m] = jest.fn(() => builder);
+    builder[m] = vi.fn(() => builder);
   }
   builder.then = (resolve: (v: unknown) => unknown, reject: (e: unknown) => unknown) =>
     Promise.resolve(awaitQueue.shift() ?? { data: [{ id: PI_ID }], error: null }).then(
       resolve,
       reject
     );
-  const rpc = jest.fn(() => Promise.resolve({ error: null }));
-  const admin = { from: jest.fn(() => builder), rpc };
+  const rpc = vi.fn(() => Promise.resolve({ error: null }));
+  const admin = { from: vi.fn(() => builder), rpc };
   return { admin, builder };
 }
 
@@ -100,7 +102,7 @@ const fixedPriceIntent = {
 };
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   getAdminClientMock.mockReturnValue(makeAdmin([]).admin);
 });
 

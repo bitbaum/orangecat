@@ -53,13 +53,13 @@ log_success "Environment check passed"
 log_info "🧹 Step 2: Code Quality Assurance"
 
 log_info "Running type check (warnings allowed)..."
-npm run type-check 2>&1 | tee /tmp/type-check.log || {
+pnpm run type-check 2>&1 | tee /tmp/type-check.log || {
     log_warning "Type check failed - continuing anyway:"
     head -10 /tmp/type-check.log
 }
 
 log_info "Running linter (warnings allowed)..."
-npm run lint 2>&1 | tee /tmp/lint.log || {
+pnpm run lint 2>&1 | tee /tmp/lint.log || {
     log_warning "Lint check failed - continuing anyway"
     head -10 /tmp/lint.log
 }
@@ -76,7 +76,7 @@ log_success "Code quality checks passed"
 log_info "🔨 Step 3: Build Verification"
 
 log_info "Testing build process (with timeout)..."
-timeout 180 npm run build 2>&1 | tee /tmp/build.log
+timeout 180 pnpm run build 2>&1 | tee /tmp/build.log
 BUILD_EXIT_CODE=$?
 
 if [ $BUILD_EXIT_CODE -eq 124 ]; then
@@ -94,7 +94,7 @@ fi
 log_info "🧪 Step 4: Unit Test Suite"
 
 log_info "Running unit tests..."
-npm test -- --passWithNoTests --coverage --silent 2>&1 | tee /tmp/test.log || {
+pnpm test -- --passWithNoTests --coverage --silent 2>&1 | tee /tmp/test.log || {
     log_warning "Some tests failed - checking coverage..."
     # Allow deployment if coverage is acceptable
 }
@@ -104,18 +104,21 @@ log_success "Test suite completed"
 # 5. Database Health Check
 log_info "🗄️ Step 5: Database Health Check"
 
-# This would use MCP tools in real Claude session
-log_info "In Claude session, run: mcp_supabase_get_advisors({ type: 'security' })"
-log_info "In Claude session, run: mcp_supabase_get_advisors({ type: 'performance' })"
-log_info "In Claude session, run: mcp_supabase_list_tables({ schemas: ['public'] })"
-
-log_success "Database health check completed (MCP tools needed for full verification)"
+# The three lines that used to be here named `mcp_supabase_*`, whose Management
+# API was retired in 2026-06 — and because they were only ever printed, nothing
+# ever failed to tell us. db-check.sh now runs the real checks against the
+# self-host, so call it rather than describing it.
+if bash .claude/commands/db-check.sh; then
+  log_success "Database health check completed"
+else
+  log_warning "Database health check could not complete — see output above"
+fi
 
 # 6. Browser Automation Tests (Critical User Flows)
 log_info "🌐 Step 6: Browser Automation - Critical User Flows"
 
 log_info "Starting development server..."
-npm run dev > /dev/null 2>&1 &
+pnpm run dev > /dev/null 2>&1 &
 DEV_PID=$!
 
 # Wait for server to start
@@ -157,9 +160,9 @@ check_item() {
     fi
 }
 
-check_item "TypeScript compilation" "npm run type-check"
-check_item "ESLint validation" "npm run lint -- --max-warnings 0"
-check_item "Production build" "npm run build"
+check_item "TypeScript compilation" "pnpm run type-check"
+check_item "ESLint validation" "pnpm run lint -- --max-warnings 0"
+check_item "Production build" "pnpm run build"
 check_item "Environment file exists" "[ -f .env.local ]"
 check_item "No critical security issues" "! grep -r 'password\|secret\|key' src/ --exclude-dir=__tests__ | grep -v SUPABASE"
 

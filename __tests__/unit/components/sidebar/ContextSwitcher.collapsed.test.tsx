@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * ContextSwitcher — collapsed-sidebar avatar must be interactive.
  *
@@ -13,20 +14,20 @@ import '@testing-library/jest-dom';
 import { ContextSwitcher } from '@/components/sidebar/ContextSwitcher';
 import type { Profile } from '@/types/database';
 
-jest.mock('next/navigation', () => ({ useRouter: () => ({ push: jest.fn() }) }));
-jest.mock('next/image', () => ({
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
+vi.mock('next/image', () => ({
   __esModule: true,
   // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text
   default: (props: React.ImgHTMLAttributes<HTMLImageElement>) => <img {...props} />,
 }));
-jest.mock('@/components/nostr/NWCStatusBadge', () => ({ NWCStatusBadge: () => null }));
-jest.mock('@/hooks/useNavigationContext', () => ({
+vi.mock('@/components/nostr/NWCStatusBadge', () => ({ NWCStatusBadge: () => null }));
+vi.mock('@/hooks/useNavigationContext', () => ({
   useNavigationContext: () => ({
     context: { type: 'individual' },
     userGroups: [],
     loadingGroups: false,
-    switchToIndividual: jest.fn(),
-    switchToGroup: jest.fn(),
+    switchToIndividual: vi.fn(),
+    switchToGroup: vi.fn(),
     isGroupContext: false,
   }),
 }));
@@ -40,7 +41,7 @@ const profile = {
 
 describe('ContextSwitcher — collapsed mode', () => {
   it('renders the avatar as a button that expands the sidebar', () => {
-    const onExpand = jest.fn();
+    const onExpand = vi.fn();
     render(<ContextSwitcher profile={profile} isExpanded={false} onExpand={onExpand} />);
 
     const avatarButton = screen.getByRole('button', { name: /switch context/i });

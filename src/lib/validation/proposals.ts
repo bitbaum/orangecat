@@ -14,9 +14,9 @@ export const proposalSchema = z.object({
   // Treasury proposal fields
   amount_btc: z.number().positive().optional(),
   recipient_address: z.string().optional(),
-  wallet_id: z.string().uuid().optional(),
+  wallet_id: z.string().guid().optional(),
   // Action type for proposals that execute actions
   action_type: z.string().optional(),
-  action_data: z.record(z.any()).optional(),
+  action_data: z.record(z.string(), z.any()).optional(),
 });
 export type ProposalFormData = z.input<typeof proposalSchema>;

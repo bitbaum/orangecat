@@ -82,7 +82,6 @@ function TimelineContent() {
     <>
       <SocialTimeline
         title="My Timeline"
-        description="Your personal timeline and story"
         icon={BookOpen}
         mode="timeline"
         showShareButton={true}

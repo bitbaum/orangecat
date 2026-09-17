@@ -101,7 +101,7 @@ node scripts/auth/github-login.js
 node scripts/utils/env-manager.js validate
 
 # 4. Start developing
-npm run dev
+pnpm run dev
 ```
 
 ### Daily Development
@@ -109,7 +109,7 @@ npm run dev
 ```bash
 # Just cd into the project - environment loads automatically!
 cd orangecat
-npm run dev  # Variables are already loaded
+pnpm run dev  # Variables are already loaded
 ```
 
 ## 🔧 Manual Management

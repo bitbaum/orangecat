@@ -6,8 +6,8 @@ import { createLoanPaymentSchema } from '@/config/loan-payments';
 import { createLoanPayment, completeLoanPayment } from '@/domain/loans/payments';
 import { STATUS } from '@/config/database-constants';
 
-jest.mock('@/domain/loans/obligation', () => ({
-  createObligationLoan: jest.fn().mockResolvedValue({
+vi.mock('@/domain/loans/obligation', () => ({
+  createObligationLoan: vi.fn().mockResolvedValue({
     ok: true,
     loan: { id: 'obligation-loan-id', status: 'active' },
   }),
@@ -40,20 +40,20 @@ describe('createLoanPayment domain', () => {
       recipient_id: recipientId,
     };
     return {
-      from: jest.fn((table: string) => {
+      from: vi.fn((table: string) => {
         if (table === 'loans') {
           return {
-            select: jest.fn().mockReturnValue({
-              eq: jest.fn().mockReturnValue({
-                maybeSingle: jest.fn().mockResolvedValue({ data: { id: loanId }, error: null }),
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                maybeSingle: vi.fn().mockResolvedValue({ data: { id: loanId }, error: null }),
               }),
             }),
           };
         }
         return {
-          insert: jest.fn().mockReturnValue({
-            select: jest.fn().mockReturnValue({
-              single: jest.fn().mockResolvedValue({ data: paymentRow, error: null }),
+          insert: vi.fn().mockReturnValue({
+            select: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({ data: paymentRow, error: null }),
             }),
           }),
         };
@@ -123,10 +123,10 @@ describe('completeLoanPayment domain', () => {
 
   it('forbids users who are not payment parties', async () => {
     const supabase = {
-      from: jest.fn().mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            maybeSingle: jest.fn().mockResolvedValue({
+      from: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            maybeSingle: vi.fn().mockResolvedValue({
               data: {
                 id: 'payment-1',
                 payer_id: 'other-payer',

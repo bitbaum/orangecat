@@ -26,8 +26,6 @@ export default function SettingsPage() {
     setShowPassword,
     showMFASetup,
     setShowMFASetup,
-    showRecoveryCodes,
-    setShowRecoveryCodes,
     mfaStatusKey,
     refreshMFAStatus,
     handleInputChange,
@@ -48,63 +46,59 @@ export default function SettingsPage() {
   return (
     <>
       <div className="bg-surface-base rounded-lg border border-subtle overflow-hidden">
-          <div className="flex items-center gap-4 border-b border-subtle px-4 py-5 sm:px-8 sm:py-6">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-surface-raised text-fg-secondary">
-              <Lock className="h-5 w-5" />
-            </div>
-            <div>
-              <h2 className="text-lg font-semibold tracking-tight text-fg-primary">
-                Account &amp; Security
-              </h2>
-              <p className="mt-0.5 text-sm text-fg-secondary">
-                Manage your login credentials and account security
-              </p>
-            </div>
+        <div className="flex items-center gap-4 border-b border-subtle px-4 py-5 sm:px-8 sm:py-6">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-surface-raised text-fg-secondary">
+            <Lock className="h-5 w-5" />
           </div>
-
-          <div className="space-y-10 p-4 sm:p-8">
-            <SettingsEmailSection
-              email={formData.email}
-              isSubmitting={isSubmittingEmail}
-              onChange={handleInputChange}
-              onSubmit={handleEmailUpdate}
-            />
-            <SettingsPasswordSection
-              newPassword={formData.newPassword}
-              confirmPassword={formData.confirmPassword}
-              showPassword={showPassword}
-              setShowPassword={setShowPassword}
-              isSubmitting={isSubmittingPassword}
-              onChange={handleInputChange}
-              onSubmit={handlePasswordSubmit}
-            />
-            <SettingsSecuritySection
-              mfaStatusKey={mfaStatusKey}
-              onEnableMFA={() => setShowMFASetup(true)}
-              onViewRecoveryCodes={() => setShowRecoveryCodes(true)}
-              onMFADisableComplete={refreshMFAStatus}
-            />
-            <SettingsPreferencesSection />
-
-            <SettingsAppearanceSection />
-
-            <SettingsDataSection />
-
-            <SettingsDangerSection isDeleting={isDeleting} onDelete={handleDeleteAccount} />
+          <div>
+            <h2 className="text-lg font-semibold tracking-tight text-fg-primary">
+              Account &amp; Security
+            </h2>
+            <p className="mt-0.5 text-sm text-fg-secondary">
+              Manage your login credentials and account security
+            </p>
           </div>
+        </div>
+
+        <div className="space-y-10 p-4 sm:p-8">
+          <SettingsEmailSection
+            email={formData.email}
+            isSubmitting={isSubmittingEmail}
+            onChange={handleInputChange}
+            onSubmit={handleEmailUpdate}
+          />
+          <SettingsPasswordSection
+            newPassword={formData.newPassword}
+            confirmPassword={formData.confirmPassword}
+            showPassword={showPassword}
+            setShowPassword={setShowPassword}
+            isSubmitting={isSubmittingPassword}
+            onChange={handleInputChange}
+            onSubmit={handlePasswordSubmit}
+          />
+          <SettingsSecuritySection
+            mfaStatusKey={mfaStatusKey}
+            onEnableMFA={() => setShowMFASetup(true)}
+            onMFADisableComplete={refreshMFAStatus}
+          />
+          <SettingsPreferencesSection />
+
+          <SettingsAppearanceSection />
+
+          <SettingsDataSection />
+
+          <SettingsDangerSection isDeleting={isDeleting} onDelete={handleDeleteAccount} />
+        </div>
       </div>
 
       <SettingsModals
         showMFASetup={showMFASetup}
         setShowMFASetup={setShowMFASetup}
-        showRecoveryCodes={showRecoveryCodes}
-        setShowRecoveryCodes={setShowRecoveryCodes}
         deleteAccountConfirm={deleteAccountConfirm}
         setDeleteAccountConfirm={setDeleteAccountConfirm}
         onMFASetupComplete={() => {
           setShowMFASetup(false);
           refreshMFAStatus();
-          setShowRecoveryCodes(true);
         }}
         onDeleteConfirm={executeDeleteAccount}
       />

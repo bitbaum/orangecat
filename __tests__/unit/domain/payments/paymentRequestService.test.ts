@@ -19,16 +19,18 @@ import { NotificationDispatcher } from '@/services/notifications/dispatcher';
 import { PAY_MAX_BTC } from '@/config/pay';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-jest.mock('@/utils/logger', () => ({
-  logger: { warn: jest.fn(), error: jest.fn(), info: jest.fn(), debug: jest.fn() },
+import type { Mock } from 'vitest';
+
+vi.mock('@/utils/logger', () => ({
+  logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
-jest.mock('@/lib/supabase/admin', () => ({ getAdminClient: jest.fn() }));
-jest.mock('@/services/notifications/dispatcher', () => ({
-  NotificationDispatcher: { dispatch: jest.fn().mockResolvedValue(undefined) },
+vi.mock('@/lib/supabase/admin', () => ({ getAdminClient: vi.fn() }));
+vi.mock('@/services/notifications/dispatcher', () => ({
+  NotificationDispatcher: { dispatch: vi.fn().mockResolvedValue(undefined) },
 }));
 
-const adminMock = getAdminClient as jest.Mock;
-const dispatchMock = NotificationDispatcher.dispatch as jest.Mock;
+const adminMock = getAdminClient as Mock;
+const dispatchMock = NotificationDispatcher.dispatch as Mock;
 
 const REQUESTER = 'requester-1';
 const PAYER = 'payer-1';
@@ -67,7 +69,7 @@ function makeCallerClient(inserted: Record<string, unknown>[]) {
   } as unknown as SupabaseClient;
 }
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => vi.clearAllMocks());
 
 describe('createPaymentRequest', () => {
   it('writes through the caller client so RLS enforces authorship', async () => {

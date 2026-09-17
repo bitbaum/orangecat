@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * The Cat chat composer's textarea grows to fit typed content, resized
  * imperatively from the DOM `onChange` handler. That only fires on user
@@ -15,7 +16,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ChatInput } from '@/components/ai-chat/ModernChatPanel/components/ChatInput';
 
-jest.mock('@/components/ui/DictationButton', () => ({
+vi.mock('@/components/ui/DictationButton', () => ({
   DictationButton: ({ onTranscript }: { onTranscript: (t: string) => void }) => (
     <button
       type="button"

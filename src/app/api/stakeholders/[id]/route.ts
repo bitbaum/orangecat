@@ -28,7 +28,7 @@ const patchSchema = z
     status: z.string().max(50).nullable().optional(),
     confidence: z.number().int().min(0).max(100).nullable().optional(),
     notes: z.string().max(5000).nullable().optional(),
-    metadata: z.record(z.unknown()).optional(),
+    metadata: z.record(z.string(), z.unknown()).optional(),
   })
   .refine(
     data =>

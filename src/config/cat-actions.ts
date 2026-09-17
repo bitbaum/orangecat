@@ -34,6 +34,7 @@ import {
   ShieldAlert,
   Zap,
   type LucideIcon,
+  Hammer,
 } from 'lucide-react';
 import { API_ROUTES } from '@/config/api-routes';
 import { getApiEndpoint } from '@/config/entity-registry';
@@ -45,14 +46,18 @@ export type ActionCategory =
   | 'communication' // Timeline posts, messages
   | 'payments' // Bitcoin transactions
   | 'organization' // Group/org management
-  | 'settings' // User settings
   | 'context'; // Managing My Cat's context
+// 'settings' was a category with ZERO actions in it — a switch in the
+// permissions UI that governed nothing. Removed from the app (ADR-0006 D5).
+// The Postgres enum public.cat_action_category still carries the value; an
+// enum value cannot be dropped in place and no row references it, so it is
+// left orphaned rather than migrated. Do not add it back without an action.
 
 export type ActionRiskLevel = 'low' | 'medium' | 'high';
 
 interface ActionParameter {
   name: string;
-  type: 'string' | 'number' | 'boolean' | 'entity_id' | 'user_id' | 'btc' | 'array';
+  type: 'string' | 'number' | 'boolean' | 'entity_id' | 'user_id' | 'btc' | 'array' | 'object';
   required: boolean;
   description: string;
   default?: unknown;
@@ -584,6 +589,136 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
     enabled: true,
   },
 
+  /**
+   * Commission a real, deployed website from Loki's site factory.
+   *
+   * `high` risk and always confirmed, and the reason is not that it spends
+   * money — it does not. It creates a repository, a public subdomain and a TLS
+   * certificate, in the open, under the studio's name. Those are externally
+   * visible and cannot be un-spent against the rate limits they consume, which
+   * is precisely the shape of thing a user should see named before it happens.
+   * The autonomy ladder refuses `auto` for high risk, so this can never become
+   * a thing Cat does unattended.
+   */
+  build_site: {
+    id: 'build_site',
+    name: 'Build a Website',
+    description:
+      'Commission Loki to build and deploy a real website on its own subdomain. Queued, not instant: the reply must say a build was STARTED, never that a site is ready.',
+    category: 'entities',
+    icon: Hammer,
+    riskLevel: 'high',
+    requiresConfirmation: true,
+    parameters: [
+      {
+        name: 'slug',
+        type: 'string',
+        required: true,
+        description: 'Subdomain to build on, lowercase letters/digits/hyphens (e.g. "kraftwerk")',
+      },
+      { name: 'title', type: 'string', required: true, description: 'What the site is called' },
+      {
+        name: 'kind',
+        type: 'string',
+        required: false,
+        description: 'demo | product | client-site (default: product)',
+        default: 'product',
+      },
+    ],
+    examples: [
+      'Build me a website for my bakery',
+      'Can you make a real site for this project?',
+      'Set up a landing page on its own domain',
+    ],
+    enabled: true,
+  },
+
+  create_project_for_person: {
+    id: 'create_project_for_person',
+    name: 'Set Up a Project for Someone Else',
+    description:
+      'Page for a person with no account + a project owned by THEM; returns the link they take it over with. No money until they accept.',
+    category: 'entities',
+    icon: Gift,
+    riskLevel: 'medium',
+    requiresConfirmation: true,
+    parameters: [
+      {
+        name: 'person_name',
+        type: 'string',
+        required: true,
+        description: 'Who it is for, e.g. "Annushka"',
+      },
+      { name: 'title', type: 'string', required: true, description: 'Project title' },
+      {
+        name: 'description',
+        type: 'string',
+        required: false,
+        description: 'What it is, in their voice',
+      },
+      {
+        name: 'goal_btc',
+        type: 'btc',
+        required: false,
+        description: 'Funding goal in BTC — ONLY if the user named an amount; never invent one',
+      },
+      { name: 'category', type: 'string', required: false, description: 'Project category' },
+      {
+        name: 'person_bio',
+        type: 'string',
+        required: false,
+        description: 'A line about them, for their page',
+      },
+      {
+        name: 'person_website',
+        type: 'string',
+        required: false,
+        description: 'Their website, if any',
+      },
+    ],
+    examples: [
+      'My friend Maria wants to open an art studio — set it up for her',
+      'This project is for Annushka, she is not registered yet',
+      "Create a page for my mother's bakery, she does not use computers",
+    ],
+    apiEndpoint: API_ROUTES.PROFILE_CLAIMS.BASE,
+    enabled: true,
+  },
+
+  send_to_loki: {
+    id: 'send_to_loki',
+    name: 'Send to Loki',
+    description:
+      'Hand an entity to Loki, where AI agents build it (site, app, launch). Returns a 10-minute link. Works for pages set up for someone else.',
+    category: 'entities',
+    icon: Hammer,
+    riskLevel: 'low',
+    requiresConfirmation: true,
+    parameters: [
+      {
+        name: 'title',
+        type: 'string',
+        required: false,
+        description: 'Title of the entity (id preferred when known)',
+      },
+      { name: 'entity_id', type: 'entity_id', required: false, description: 'Entity id' },
+      {
+        name: 'entity_type',
+        type: 'string',
+        required: false,
+        description: 'project (default), product, service…',
+        default: 'project',
+      },
+    ],
+    examples: [
+      'Can she build this with Loki?',
+      'Send the networking platform to Loki',
+      'Build the website for this project',
+    ],
+    apiEndpoint: API_ROUTES.INTEGRATIONS.LOKI_BUILD_INTENTS,
+    enabled: true,
+  },
+
   update_entity: {
     id: 'update_entity',
     name: 'Update Entity',
@@ -595,7 +730,15 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
     parameters: [
       { name: 'entity_type', type: 'string', required: true, description: 'Type of entity' },
       { name: 'entity_id', type: 'entity_id', required: true, description: 'Entity ID to update' },
-      { name: 'updates', type: 'string', required: true, description: 'Fields to update (JSON)' },
+      // An object, and always was — callers pass `{ title: '…' }`. Declaring
+      // it 'string' was harmless only while nothing validated the
+      // declaration; the moment something did, every update failed.
+      {
+        name: 'updates',
+        type: 'object',
+        required: true,
+        description: 'Fields to update, as an object',
+      },
     ],
     examples: [
       'Update my product price',
@@ -1651,16 +1794,62 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
 
   // ---------- PROFILE ACTIONS ----------
 
+  draft_promotion: {
+    id: 'draft_promotion',
+    name: 'Draft Promotion',
+    description:
+      "Get the real posting rules for one or more channels before writing promotional copy, so the draft cannot get the user banned. Returns each channel's hard limits, prohibitions and required disclosures, and says which channels Cat may post to on its own (only Nostr and the user's own OrangeCat timeline). Use it whenever the user wants to promote, announce or share a project anywhere off-platform.",
+    category: 'communication',
+    icon: Megaphone,
+    riskLevel: 'low',
+    // Nothing is published and nothing leaves the account, so there is nothing
+    // to confirm. The refusal is the point: the user still does the posting.
+    requiresConfirmation: false,
+    parameters: [
+      {
+        name: 'subject',
+        type: 'string',
+        required: true,
+        description: 'What is being promoted — a project title, or its id.',
+      },
+      {
+        name: 'channels',
+        type: 'array',
+        required: true,
+        description:
+          'Where the user wants to promote it: orangecat, nostr, x, linkedin, reddit, hackernews, email.',
+      },
+    ],
+    examples: [
+      'help me promote my roof repair project on X and Reddit',
+      'write a Show HN for this',
+      'how should I announce this on LinkedIn',
+    ],
+    enabled: true,
+  },
+
   update_profile: {
     id: 'update_profile',
     name: 'Update Profile',
     description:
-      "Update the user's public profile — name, bio, background, location, or website. Only these fields: to make someone findable for a TOPIC, use publish_interest instead, which adds a searchable interest rather than rewriting their bio.",
-    category: 'context',
+      "Update the user's public profile — handle, name, bio, background, location, or website. Changing the @handle IS supported: the old one keeps redirecting and still receives payments. To make someone findable for a TOPIC use publish_interest instead, which adds a searchable interest rather than rewriting their bio.",
+    // ADR-0006 D5. This sat in 'context' (granted by default) with no
+    // confirmation, so a brand-new user's Cat could rewrite their public
+    // @handle and bio on the strength of a stray sentence. A public profile is
+    // an entity of the user's, not Cat's context: default-off, confirm each
+    // time. First use goes through grant-on-confirm like any other entity
+    // action — one tap allows it, still confirmed every time.
+    category: 'entities',
     icon: Settings,
     riskLevel: 'medium',
-    requiresConfirmation: false,
+    requiresConfirmation: true,
     parameters: [
+      {
+        name: 'username',
+        type: 'string',
+        required: false,
+        description: 'New @handle (without the @). The old handle keeps resolving.',
+      },
       { name: 'name', type: 'string', required: false, description: 'Display name' },
       {
         name: 'bio',
@@ -1689,6 +1878,7 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
       },
     ],
     examples: [
+      'Change my handle to @catomean',
       "Update my bio to say I'm a freelance photographer",
       'Set my location to Zurich, Switzerland',
       'My website is example.com, add it to my profile',
@@ -1722,11 +1912,6 @@ export const ACTION_CATEGORIES: Record<
     name: 'Organizations',
     description: 'Create and manage organizations',
     icon: Users,
-  },
-  settings: {
-    name: 'Settings',
-    description: 'Manage your account settings',
-    icon: Settings,
   },
   context: {
     name: 'Context',

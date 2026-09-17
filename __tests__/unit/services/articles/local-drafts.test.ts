@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import {
   deleteLocalDraft,
   listLocalDrafts,
@@ -74,7 +75,13 @@ describe('local article drafts', () => {
   it('migrates the legacy single-slot draft and removes the old key', () => {
     localStorage.setItem(
       LEGACY_KEY,
-      JSON.stringify({ title: 'Legacy', excerpt: '', coverImage: '', body: 'old body', visibility: 'followers' })
+      JSON.stringify({
+        title: 'Legacy',
+        excerpt: '',
+        coverImage: '',
+        body: 'old body',
+        visibility: 'followers',
+      })
     );
     const drafts = listLocalDrafts();
     expect(drafts).toHaveLength(1);

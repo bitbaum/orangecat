@@ -17,15 +17,14 @@
  * these into the SSE stream so the user sees what the Cat is actually doing.
  */
 
+import { actionToolDefinitions } from './action-schemas';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
-import { PROVIDER_BASE_URLS } from '@/config/ai-provider-runtime';
-import {
-  messageMightNeedTools,
-  hasCreateIntent,
-  hasWebsiteAnalysisIntent,
-  PLATFORM_TOOL_DEFINITION,
-} from './tool-use-detection';
+import { toolPlanForModel, observedToolVerdict, recordToolAttempt } from './tool-capability';
+import { offerablePlatformTools } from './capability-gate';
+import { hasCreateIntent, PLATFORM_TOOL_DEFINITION } from './tool-use-detection';
+import { degradedMessages } from './tool-use-degrade';
 import { executeToolCall } from './tool-executor';
+import { WebTurnContext } from './web-research';
 import { extractHttpUrls, isUrlOnlyMessage } from './website-analysis';
 import type {
   ToolAugmentedMessage,
@@ -37,7 +36,6 @@ import type {
 } from './tool-use-types';
 
 // Public surface — unchanged for consumers (chat-orchestrator imports from here).
-export { messageMightNeedTools } from './tool-use-detection';
 export type {
   ChatMessage,
   ToolAugmentedMessage,
@@ -48,9 +46,25 @@ export type {
   OnPrefillProposal,
 } from './tool-use-types';
 
-/** Max model⇄tool round-trips per user turn. Bounds cost + latency; most
- *  requests need 1, some 2 (search → refine, or search → prefill). */
-const MAX_TOOL_STEPS = 3;
+/**
+ * Max model⇄tool round-trips per user turn. Bounds cost and latency; most
+ * requests still need 1, some 2 (search → refine, or search → prefill).
+ *
+ * Raised 3 → 5 when the web tools landed, because at 3 the web was unusable
+ * rather than merely limited: the one sequence that makes web research honest
+ * — search, then OPEN the most promising result, then answer from the page
+ * rather than from a snippet — is itself two steps, leaving nothing for the
+ * refinement that a weak first query almost always needs. A ceiling that
+ * forces the model to answer from search snippets is a ceiling that
+ * manufactures confident wrong numbers.
+ *
+ * 5 is not the frontier figure and is not meant to be: agents doing real work
+ * run to dozens of steps. It is what fits inside a tool phase that blocks the
+ * user's stream. Going further means moving the loop off the critical path so
+ * it can run long without the user watching typing dots — a bigger change,
+ * recorded in ADR-0007 rather than smuggled in here.
+ */
+const MAX_TOOL_STEPS = 5;
 
 /**
  * Hard ceiling for the ENTIRE tool phase (routing round-trips + tool
@@ -61,28 +75,6 @@ const MAX_TOOL_STEPS = 3;
  * main model answer.
  */
 const TOOL_PHASE_TIMEOUT_MS = 25_000;
-
-/**
- * When the tool phase fails or times out on a message that wanted a website
- * read, the main model must NOT guess the site's content — it gets this note
- * so it can tell the user honestly what happened.
- */
-const WEBSITE_FETCH_FAILED_NOTE =
-  "NOTE: The user's message contains a website URL, but the site could not be fetched " +
-  '(the tool step failed or timed out). Tell the user plainly that you could not reach ' +
-  'the site right now and ask them to check the URL or try again — do NOT guess, ' +
-  "describe, or invent the site's content.";
-
-/** What the tool phase falls back to when it fails or times out. */
-function degradedMessages(
-  messages: ToolAugmentedMessage[],
-  userMessage: string
-): ToolAugmentedMessage[] {
-  if (hasWebsiteAnalysisIntent(userMessage)) {
-    return [...messages, { role: 'system', content: WEBSITE_FETCH_FAILED_NOTE }];
-  }
-  return messages;
-}
 
 /**
  * Returns the messages array, possibly enriched with platform search results.
@@ -102,33 +94,79 @@ export async function maybeEnrichWithSearchResults(
   messages: ToolAugmentedMessage[],
   userMessage: string,
   provider: string,
-  groqKey: string | null,
   modelToUse: string,
   onToolCall?: OnToolCall,
   onPrefillProposal?: OnPrefillProposal,
-  opts?: { timeoutMs?: number }
+  opts?: {
+    timeoutMs?: number;
+    actorId?: string | null;
+    /**
+     * Where to POST the tool loop, and with what, for the ACTIVE model.
+     * Supplied by the provider resolver, which is the only place a BYOK key
+     * exists in the raw — `aiService` bakes it in and exposes nothing, and
+     * `AiService.chatCompletion` drops `tool_calls`, so the loop cannot go
+     * through that abstraction either.
+     *
+     * When absent, NO tools are sent. There is deliberately no env fallback:
+     * a guessed endpoint sends a user.s model id to the wrong vendor.
+     */
+    toolEndpoint?: string | null;
+    toolKey?: string | null;
+    /**
+     * Receives the evidence blocks for everything Cat actually read from the
+     * web this turn, so the caller's grounding check can verify the reply
+     * against them.
+     *
+     * Fired ONLY on the path where the tool results reach the model. On the
+     * degrade path the model is never shown the web content, so licensing
+     * claims against it would let an invented sentence pass because a page we
+     * did not show happened to contain the words.
+     */
+    onWebEvidence?: (evidence: string[]) => void;
+  }
 ): Promise<ToolAugmentedMessage[]> {
-  // Tool detection uses OpenAI-compatible function-calling. Enabled on the two
-  // providers that actually serve OrangeCat: Groq (BYOK, paid TPM) and
-  // OpenRouter (the platform path + many BYOK models — gpt-oss-120b returns
-  // proper tool_calls). Without this, platform-tier discovery/matchmaking was
-  // dead (Groq 429s, so the platform runs on OpenRouter). Other providers fall
-  // back to no tools until they get an adapter.
-  let toolEndpoint: string;
-  let toolKey: string | undefined;
-  if (provider === 'groq') {
-    toolEndpoint = `${PROVIDER_BASE_URLS.groq}/chat/completions`;
-    toolKey = groqKey ?? process.env.GROQ_API_KEY;
-  } else if (provider === 'openrouter') {
-    toolEndpoint = `${PROVIDER_BASE_URLS.openrouter}/chat/completions`;
-    toolKey = process.env.OPENROUTER_API_KEY;
-  } else {
+  // WHERE to call is the resolver's answer, never a guess. It builds the step,
+  // so it holds the only raw BYOK credential, and it supplies platform steps
+  // too. NO provider-name fallback: a wrong guess sends a user's own model id
+  // to somebody else's vendor with somebody else's key, which is worse than
+  // sending no tools.
+  const toolEndpoint = opts?.toolEndpoint ?? null;
+  const toolKey = opts?.toolKey ?? null;
+  if (!toolEndpoint || !toolKey) {
     return messages;
   }
 
-  if (!messageMightNeedTools(userMessage)) {
+  // Can THIS MODEL drive a tool loop? Asked of the model, not of a two-name
+  // provider list, and what it answers is remembered — so an uncatalogued
+  // model is asked once, not every turn. See tool-capability.ts, ADR-0008 D1.
+  const plan = toolPlanForModel(modelToUse, observedToolVerdict(modelToUse, toolKey));
+  if (!plan.sendTools) {
     return messages;
   }
+
+  // The keyword prefilter is GONE as a gate (ADR-0006 D3), and removing it is
+  // what makes the in-turn action loop actually fire.
+  //
+  // It was ~100 English substrings. Measured against five ordinary requests:
+  // "create a project called X" passed (via "create a"), while "publish my
+  // project", "sell my ebook", "list my mugs for sale" and "make me a service
+  // for haircuts" were ALL blocked — so four of five real action phrasings
+  // never reached the tools at all, and non-English phrasing fared worse.
+  // Deciding whether a tool is needed is the model's job; that is what
+  // tool_choice: 'auto' is for.
+  //
+  // The cost it was buying is one slim routing round-trip on messages that turn
+  // out not to need a tool. That call carries the short routing prompt and
+  // max_tokens 1200, not the ~52k-char system prompt, so it is a small fraction
+  // of the main call — and D7 removes more from the main call than this adds.
+  //
+  // One thing the gate had been doing by accident: thin input ("we're a
+  // bakery") never reached the router, so the main prompt's ask-one-question
+  // posture always applied. With the gate gone the router saw it and drafted
+  // three entities from one noun (eval probe g-bakery, 2026-09-11). The
+  // routing prompt now carries the thin-input rule itself — the router is
+  // the one making that call now, so the rule has to live where the call is
+  // made.
 
   if (!toolKey) {
     return messages;
@@ -156,6 +194,11 @@ export async function maybeEnrichWithSearchResults(
       }
     : undefined;
 
+  // Created HERE rather than inside the loop so the degrade path can still ask
+  // whether a lookup was in flight when the deadline fired. The loop owns what
+  // goes into it; this scope only needs to read `attempted` afterwards.
+  const web = new WebTurnContext(userMessage);
+
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     const raced = await Promise.race([
@@ -170,17 +213,22 @@ export async function maybeEnrichWithSearchResults(
         timeoutMs,
         onToolCall: guardedOnToolCall,
         onPrefillProposal: guardedOnPrefillProposal,
+        actorId: opts?.actorId ?? null,
+        web,
       }),
       new Promise<'timeout'>(resolve => {
         timer = setTimeout(() => resolve('timeout'), timeoutMs);
       }),
     ]);
     if (raced === 'timeout') {
-      return degradedMessages(messages, userMessage);
+      return degradedMessages(messages, userMessage, web.attempted);
+    }
+    if (web.evidence.length > 0) {
+      opts?.onWebEvidence?.(web.evidence);
     }
     return raced;
   } catch {
-    return degradedMessages(messages, userMessage);
+    return degradedMessages(messages, userMessage, web.attempted);
   } finally {
     expired = true;
     if (timer) {
@@ -215,6 +263,10 @@ async function runToolLoop(args: {
   timeoutMs: number;
   onToolCall?: OnToolCall;
   onPrefillProposal?: OnPrefillProposal;
+  /** Present ⇒ the model may CALL actions, not just read tools (ADR-0006 D2). */
+  actorId?: string | null;
+  /** The turn's web state — owned by the caller so it outlives the deadline. */
+  web: WebTurnContext;
 }): Promise<ToolAugmentedMessage[]> {
   const {
     supabase,
@@ -227,7 +279,26 @@ async function runToolLoop(args: {
     timeoutMs,
     onToolCall,
     onPrefillProposal,
+    actorId,
+    web,
   } = args;
+
+  // ADR-0006 D1/D2 — actions are offered as tools alongside the read tools, so
+  // the model can DO something and see the outcome before it writes.
+  //
+  // Deliberately unfiltered by permission: the executor is the authority and
+  // already denies + audits, and a denial comes back as a sentence the model
+  // relays honestly ("not permitted — tell the user what to grant"). Filtering
+  // here would need a second copy of the permission-resolution rules, and two
+  // copies of that is worse than a rare wasted proposal.
+  //
+  // Only when we have an actor: without one nothing can be created, and
+  // offering tools that must fail teaches the model to propose them.
+  // Same rule for the web tools, which were exempt from it — see ADR-0008 D3.
+  const platformTools = offerablePlatformTools(PLATFORM_TOOL_DEFINITION, {
+    modelId: modelToUse,
+  });
+  const availableTools = actorId ? [...platformTools, ...actionToolDefinitions()] : platformTools;
 
   // Tool detection runs on a SLIM, routing-only prompt — NOT the full
   // conversational system prompt. The big "be a warm helpful agent" prompt
@@ -239,14 +310,19 @@ async function runToolLoop(args: {
       role: 'system' as const,
       content:
         'You gather what an OrangeCat chat request needs by calling platform tools. Call ONE tool at a time; after you see its result you may call another tool to refine or follow up, or stop when you have enough.\n' +
-        '- prefill_entity_form: when the user describes something THEY want to create / sell / offer / launch / fundraise (e.g. "I make mugs and want to sell them", "I want to start a project"). This is about THEIR own new thing. Pick entityType by what the thing IS: selling time/skill/labor (even at a fixed price, "haircuts, 40 CHF") = service; a tangible/digital item = product; fundraising a defined outcome = project; open-ended no-strings support = cause; the user NEEDS money and will repay = loan; a dated gathering = event; renting out something owned = asset; a community organizing itself = circle. Call it ONCE per distinct entity — never twice for the same thing.\n' +
+        '- prefill_entity_form: when the user describes something THEY want to create / sell / offer / launch / fundraise (e.g. "I make mugs and want to sell them", "I want to start a project"). This is about THEIR own new thing — if it is for ANOTHER person who is not on OrangeCat ("for my friend Maria", "not for me", "she isn\'t registered"), call the ACTION create_project_for_person instead, never prefill_entity_form (a draft would be the user\'s, not hers). Pick entityType by what the thing IS: selling time/skill/labor (even at a fixed price, "haircuts, 40 CHF") = service; a tangible/digital item = product; fundraising a defined outcome = project; open-ended no-strings support = cause; the user NEEDS money and will repay = loan; a dated gathering = event; renting out something owned = asset; a community organizing itself = circle. Call it ONCE per distinct entity — never twice for the same thing.\n' +
+        '- THIN INPUT: if the message only says who they are or what they do with nothing specific to put on OrangeCat ("we\'re a bakery", "I\'m a designer", a job title, a bio), call NO tool at all — do not guess three drafts from one noun. The reply will ask ONE focused question. Draft only when they name a concrete thing to sell, offer, fund, lend, rent or host.\n' +
         '- search_platform: ONLY when the user wants to FIND, discover, or connect with things that already exist on the platform and belong to OTHERS (e.g. "find a designer", "who else is building X"). You may search again with a refined query if the first results are weak.\n' +
         '- suggest_offers: when the user asks what THEY could offer/sell/create, how they could make money or participate, or wants ideas grounded in who they are (e.g. "what can I offer?", "help me make money", "any ideas for me?"). It reads their stored profile/documents/memories — pass no message text, just an optional focus.\n' +
         '- forget_memories: when the user says something you know about them is WRONG or asks you to forget/remove/correct it (e.g. "I don\'t speak French", "that\'s not true, remove it", "forget the weekend thing"). Pass each wrong fact as a short phrase. Stored memories change ONLY through this tool — if the user asks for a correction and you skip it, nothing is saved.\n' +
         '- analyze_website: when the user pastes a website URL or bare domain and wants it read, analyzed, or used to set them up (e.g. "here\'s my site: https://… — set me up on OrangeCat", or a message that is nothing but a domain). Pass the EXACT URL from their message. After you see the extracted site text, follow its instructions: chain prefill_entity_form calls (at most 3, all in one message) for entities the site directly evidences — never for anything the site does not say.\n' +
         '- explore_topic: when the user expresses an INTEREST or curiosity rather than naming a specific thing to find ("I\'m interested in longevity", "anyone working on Bitcoin education?", "introduce me to people doing X"). Pass the topic in their own words. Use this, NOT search_platform, for interests — it also finds the people behind the work so an introduction is possible.\n' +
         '- query_my_data: when the user asks about their OWN stuff or numbers — earnings/sales ("how much did I earn?"), their listings ("what am I selling?"), bookings, wallet balances/goals, unread notifications, open tasks, or a general catch-up ("how am I doing?", "catch me up"). Read-only. Pick the closest topic (listings, earnings, bookings, wallets, notifications, tasks) or "overview" for a broad question.\n' +
+        "- web_search: when the answer is not on OrangeCat and not certainly still true — what something costs elsewhere, whether a grant/programme/tool is real and still open, how a thing works, current rules, dates, events, who is active in a field. Prefer it over answering from memory whenever being out of date would matter. Pass a search QUERY, not the user's sentence. This searches the WORLD; search_platform and explore_topic search OrangeCat itself.\n" +
+        "- read_page: after web_search, to open the most promising result when the answer needs a real figure, date, name or term rather than a one-line snippet. The url must come from a search result or from the user's own message — one you compose yourself is refused.\n" +
         '- check_cat_health: ONLY when the user asks why the Cat/AI is failing, slow, or not answering, or asks about a system notification mentioning provider failures, eval/harness errors, or Cat health (e.g. "why is my Cat not answering?", "what does this eval error notification mean?"). Takes no arguments.\n' +
+        '- check_my_track_record: when the user asks what YOU did for them or how it went (e.g. "what have you done for me?", "did any of your ideas work?", "why should I trust you?"), or before you propose another thing of a kind you may already have proposed. It is about YOUR actions and their outcomes, not the user\'s own numbers (that is query_my_data). Takes no arguments.\n' +
+        'You may also call any ACTION tool (create_project, update_entity, …) when the user clearly asks you to DO that thing — not to explore it. An action WRITES, so call it only on a clear instruction; its result comes back to you before you reply, so never claim something is done until you have seen that result.\n' +
         'NEVER call search_platform for a create/sell/offer intent — describing your own thing to list is prefill_entity_form, not a search. If neither clearly applies, call no tool. Only decide and call tools — do not write a chat reply.',
     },
     { role: 'user' as const, content: userMessage },
@@ -289,7 +365,9 @@ async function runToolLoop(args: {
         syntheticCall,
         userMessage,
         onToolCall,
-        onPrefillProposal
+        onPrefillProposal,
+        actorId,
+        web
       );
       loopMessages.push(assistantMsg, resultMsg);
       enriched.push(assistantMsg, resultMsg);
@@ -306,7 +384,7 @@ async function runToolLoop(args: {
       body: JSON.stringify({
         model: modelToUse,
         messages: loopMessages,
-        tools: PLATFORM_TOOL_DEFINITION,
+        tools: availableTools,
         tool_choice: 'auto',
         stream: false,
         // Enough headroom for the analyze_website → prefill chain, where one
@@ -316,10 +394,16 @@ async function runToolLoop(args: {
       }),
     });
     if (!res.ok) {
+      // Evidence only when the vendor SAYS it is about tools (classifyToolAttempt).
+      recordToolAttempt(modelToUse, toolKey, {
+        status: res.status,
+        bodyText: await res.text().catch(() => ''),
+      });
       break;
     }
 
     const data = await res.json();
+    recordToolAttempt(modelToUse, toolKey, { status: res.status, parsed: data });
     const choice = data.choices?.[0];
     // Model stopped calling tools → it has what it needs; the main chat call
     // produces the final answer from the gathered context.
@@ -359,7 +443,9 @@ async function runToolLoop(args: {
         toolCall,
         userMessage,
         onToolCall,
-        onPrefillProposal
+        onPrefillProposal,
+        actorId,
+        web
       );
       loopMessages.push(resultMessage);
       enriched.push(resultMessage);

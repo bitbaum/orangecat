@@ -24,31 +24,67 @@ export default function ClaimPageClient({ preview }: ClaimPageClientProps) {
   const { isAuthenticated, hydrated } = useAuth();
   const router = useRouter();
   const [isClaiming, setIsClaiming] = useState(false);
+  const [isDeclining, setIsDeclining] = useState(false);
+  const [hasDeclined, setHasDeclined] = useState(preview.status === 'declined');
 
   const { draft, isExpired } = preview;
-  const claimId = preview.id;
+  const person = draft.profile;
+  // The credential, not the row id — this is what the public routes address.
+  const claimToken = preview.token;
 
   const handleClaim = async () => {
     setIsClaiming(true);
     try {
-      const res = await fetch(API_ROUTES.PROFILE_CLAIMS.CLAIM(claimId), { method: 'POST' });
+      const res = await fetch(API_ROUTES.PROFILE_CLAIMS.CLAIM(claimToken), { method: 'POST' });
       const body = await res.json();
       if (!res.ok || !body.success) {
         toast.error(body?.error?.message || 'Could not claim this profile. Please try again.');
         setIsClaiming(false);
         return;
       }
-      toast.success(`Welcome, ${draft.name} — your profile is live.`);
+      toast.success(`Welcome, ${person.name} — it’s yours now.`);
+      // Land on the page that was theirs all along, under the same address
+      // (ADR-0005 D7): the slug became their handle where it was free.
       const username = body.data?.username as string | null;
-      router.push(username ? publicProfilePath(username) : ROUTES.PROFILES.ME);
+      const pageSlug = body.data?.pageSlug as string | null;
+      router.push(
+        username
+          ? publicProfilePath(username)
+          : pageSlug
+            ? publicProfilePath(pageSlug)
+            : ROUTES.PROFILES.ME
+      );
     } catch {
       toast.error('Could not claim this profile. Check your connection and try again.');
       setIsClaiming(false);
     }
   };
 
-  const registerHref = `${ROUTES.AUTH_REGISTER}&from=${encodeURIComponent(ROUTES.CLAIM(claimId))}`;
-  const loginHref = `${ROUTES.AUTH_LOGIN}&from=${encodeURIComponent(ROUTES.CLAIM(claimId))}`;
+  // Declining needs no account. Making "no" cost a signup would make refusing
+  // more expensive than accepting, which is not consent.
+  const handleDecline = async () => {
+    setIsDeclining(true);
+    try {
+      const res = await fetch(API_ROUTES.PROFILE_CLAIMS.DECLINE(claimToken), { method: 'POST' });
+      const body = await res.json();
+      if (!res.ok || !body.success) {
+        toast.error(body?.error?.message || 'Could not decline this. Please try again.');
+        setIsDeclining(false);
+        return;
+      }
+      setHasDeclined(true);
+      toast.success(
+        'Declined. The page and everything on it were removed, and nobody can use this link now.'
+      );
+    } catch {
+      toast.error('Could not decline this. Check your connection and try again.');
+    } finally {
+      setIsDeclining(false);
+    }
+  };
+
+  const registerHref = `${ROUTES.AUTH_REGISTER}&from=${encodeURIComponent(ROUTES.CLAIM(claimToken))}`;
+  const loginHref = `${ROUTES.AUTH_LOGIN}&from=${encodeURIComponent(ROUTES.CLAIM(claimToken))}`;
 
   return (
     <div className="min-h-[calc(100svh-4rem)] bg-surface-page">
@@ -60,22 +96,22 @@ export default function ClaimPageClient({ preview }: ClaimPageClientProps) {
         <Card variant="elevated" className="mt-6 overflow-hidden">
           <div className="relative h-24 bg-surface-raised">
             <div className="absolute -bottom-8 left-6 h-16 w-16 overflow-hidden rounded-full border-4 border-surface-base bg-surface-raised shadow-sm">
-              {draft.avatarUrl ? (
+              {person.avatarUrl ? (
                 // Draft avatars come from an arbitrary URL a member pastes in when
                 // creating the claim — next/image requires an allowlisted remote
                 // host, which an arbitrary press photo won't be. Plain <img> for
                 // this one, untrusted-source case.
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={draft.avatarUrl}
-                  alt={draft.name}
+                  src={person.avatarUrl}
+                  alt={person.name}
                   className="h-full w-full object-cover"
                   loading="lazy"
                   referrerPolicy="no-referrer"
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center font-heading text-2xl text-fg-secondary">
-                  {initialOf(draft.name)}
+                  {initialOf(person.name)}
                 </div>
               )}
             </div>
@@ -83,13 +119,13 @@ export default function ClaimPageClient({ preview }: ClaimPageClientProps) {
 
           <CardContent className="pt-12">
             <h1 className="font-heading text-2xl font-semibold tracking-display text-fg-primary">
-              {draft.name}
+              {person.name}
             </h1>
-            {draft.bio && <p className="mt-2 text-sm leading-6 text-fg-secondary">{draft.bio}</p>}
+            {person.bio && <p className="mt-2 text-sm leading-6 text-fg-secondary">{person.bio}</p>}
 
-            {!!draft.socialLinks?.length && (
+            {!!person.socialLinks?.length && (
               <div className="mt-4 flex flex-wrap gap-2">
-                {draft.socialLinks.map(link => (
+                {person.socialLinks.map(link => (
                   <span
                     key={`${link.platform}-${link.value}`}
                     className="rounded-full border border-border-subtle bg-surface-page px-3 py-1 text-xs text-fg-secondary"
@@ -101,11 +137,16 @@ export default function ClaimPageClient({ preview }: ClaimPageClientProps) {
             )}
 
             <div className="mt-6 rounded-lg border border-border-subtle bg-surface-page p-4 text-sm text-fg-secondary">
-              Someone put this profile together for {draft.name.split(' ')[0]} on {APP_NAME}. Claim
-              it to take it over — edit anything, add your own payment methods, and make it yours.
+              Someone put this together for {person.name.split(' ')[0]} on {APP_NAME}. Claim it to
+              take it over — edit anything, add your own payment methods, and make it yours.
             </div>
 
-            {isExpired ? (
+            {hasDeclined ? (
+              <div className="mt-6 rounded-lg border border-border-subtle bg-surface-page p-4 text-sm text-fg-secondary">
+                You declined this. The page and everything on it were removed, and the link can’t be
+                used any more.
+              </div>
+            ) : isExpired ? (
               <div className="mt-6 rounded-lg border border-status-warning/40 bg-status-warning-subtle p-4 text-sm text-fg-primary">
                 This claim link has expired. Ask whoever sent it to you for a fresh one.
               </div>
@@ -119,7 +160,7 @@ export default function ClaimPageClient({ preview }: ClaimPageClientProps) {
                 onClick={handleClaim}
                 isLoading={isClaiming}
               >
-                Claim this profile
+                Take it over
               </Button>
             ) : (
               <div className="mt-6 space-y-2">
@@ -133,6 +174,20 @@ export default function ClaimPageClient({ preview }: ClaimPageClientProps) {
                   </a>
                 </p>
               </div>
+            )}
+
+            {!hasDeclined && !isExpired && (
+              <p className="mt-4 text-center text-xs text-fg-muted">
+                Not you, or don’t want this?{' '}
+                <button
+                  type="button"
+                  onClick={handleDecline}
+                  disabled={isDeclining}
+                  className="font-medium text-fg-secondary underline underline-offset-2 disabled:opacity-60"
+                >
+                  {isDeclining ? 'Declining…' : 'Decline this'}
+                </button>
+              </p>
             )}
           </CardContent>
         </Card>

@@ -12,15 +12,17 @@ import {
 import { resolveUserWallet } from '@/domain/payments/walletResolutionService';
 import { getAdminClient } from '@/lib/supabase/admin';
 
-jest.mock('@/domain/payments/walletResolutionService', () => ({
-  resolveUserWallet: jest.fn(),
+import type { MockedFunction } from 'vitest';
+
+vi.mock('@/domain/payments/walletResolutionService', () => ({
+  resolveUserWallet: vi.fn(),
 }));
-jest.mock('@/lib/supabase/admin', () => ({
-  getAdminClient: jest.fn(),
+vi.mock('@/lib/supabase/admin', () => ({
+  getAdminClient: vi.fn(),
 }));
 
-const mockResolveWallet = resolveUserWallet as jest.MockedFunction<typeof resolveUserWallet>;
-const mockGetAdmin = getAdminClient as jest.MockedFunction<typeof getAdminClient>;
+const mockResolveWallet = resolveUserWallet as MockedFunction<typeof resolveUserWallet>;
+const mockGetAdmin = getAdminClient as MockedFunction<typeof getAdminClient>;
 
 /**
  * Table-aware admin stub.
@@ -64,7 +66,7 @@ function adminReturning(
 }
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe('a handle the profile no longer uses', () => {
@@ -115,7 +117,7 @@ describe('a handle the profile no longer uses', () => {
     const recipient = await resolveLnurlRecipient('butaeff+ocauth2');
     expect(recipient?.userId).toBe('user-1');
     // Never a query-string filter — that is what mangled it.
-    expect(stub.calls.some((c) => c.table === 'profile_username_history')).toBe(false);
+    expect(stub.calls.some(c => c.table === 'profile_username_history')).toBe(false);
     expect(stub.rpcCalls[0].args).toEqual({ handle: 'butaeff+ocauth2' });
   });
 
@@ -165,7 +167,11 @@ describe('resolveLnurlRecipient', () => {
 
 describe('resolveLnurlWallet', () => {
   it('returns null when the only wallet is on-chain (not a Lightning rail)', async () => {
-    mockResolveWallet.mockResolvedValue({ method: 'onchain', wallet_id: 'w1', onchain_address: 'bc1x' });
+    mockResolveWallet.mockResolvedValue({
+      method: 'onchain',
+      wallet_id: 'w1',
+      onchain_address: 'bc1x',
+    });
     expect(await resolveLnurlWallet('u1')).toBeNull();
   });
 

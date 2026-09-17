@@ -40,9 +40,9 @@ export const wishlistItemSchema = z.object({
   image_url: webUrl().optional().nullable(),
 
   // Internal reference (mutually exclusive)
-  product_id: z.string().uuid().optional().nullable(),
-  service_id: z.string().uuid().optional().nullable(),
-  asset_id: z.string().uuid().optional().nullable(),
+  product_id: z.string().guid().optional().nullable(),
+  service_id: z.string().guid().optional().nullable(),
+  asset_id: z.string().guid().optional().nullable(),
 
   // External reference
   external_url: webUrl().optional().nullable(),
@@ -85,7 +85,7 @@ export const wishlistItemSchema = z.object({
 });
 
 export const wishlistFulfillmentProofSchema = z.object({
-  wishlist_item_id: z.string().uuid(),
+  wishlist_item_id: z.string().guid(),
   proof_type: z.enum(WISHLIST_PROOF_TYPES),
   description: z.string().min(10, 'Description must be at least 10 characters').max(1000),
   image_url: webUrl().optional().nullable(),
@@ -94,8 +94,8 @@ export const wishlistFulfillmentProofSchema = z.object({
 
 export const wishlistFeedbackSchema = z
   .object({
-    wishlist_item_id: z.string().uuid(),
-    fulfillment_proof_id: z.string().uuid().optional().nullable(),
+    wishlist_item_id: z.string().guid(),
+    fulfillment_proof_id: z.string().guid().optional().nullable(),
     feedback_type: z.enum(WISHLIST_FEEDBACK_TYPES),
     comment: z.string().max(500).optional().nullable(),
   })

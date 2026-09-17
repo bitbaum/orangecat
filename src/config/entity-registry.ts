@@ -81,12 +81,48 @@ const ENTITY_CATEGORY_ORDER: EntityCategory[] = [
 
 // ==================== ENTITY METADATA ====================
 
+/**
+ * THE ADMISSION TEST — what makes something an entity here.
+ *
+ * An entity is anything that can hold a wallet and is better for holding one.
+ * That is the whole definition, and it is deliberately a TEST rather than a
+ * list: the list below is open in principle, and a new type earns its place by
+ * answering the test, not by taste or by resembling the types already here.
+ *
+ * Each entity sits on three planes, and the wallet is only the first:
+ *
+ *   OrangeCat  the economy      — it can hold, receive and send value
+ *   Solon      the governance   — its decisions can be put to a signed vote
+ *   Loki       the engineering  — it can be built and shipped by agents
+ *
+ * `why` is not decoration. It is the sentence that had to be true before the
+ * type was admitted, written in the owner's terms and naming the money that
+ * actually moves. A type whose `why` cannot be written without hedging has not
+ * passed the test yet.
+ *
+ * `holds: false` marks a DELIBERATE exception — a row that lives in this
+ * registry for a different reason and is not an economic actor. Exceptions are
+ * a ratchet: entity-admission.test.ts pins the current set, so the list may
+ * shrink and may never quietly grow.
+ */
+export interface WalletRelation {
+  /** Can it hold a wallet, and is it better for holding one? */
+  holds: boolean;
+  /** One sentence: the money that moves, or what this is instead. */
+  why: string;
+}
+
 /** Payment pattern for an entity type */
 type PaymentPattern = 'fixed_price' | 'contribution' | 'none';
 
 export interface EntityMetadata {
   /** Entity type identifier */
   type: EntityType;
+  /**
+   * Why this is an entity — see the admission test above. Required, because a
+   * type nobody can justify is a type nobody should have added.
+   */
+  wallet: WalletRelation;
   /** Display name (singular) */
   name: string;
   /** Display name (plural) */
@@ -183,6 +219,10 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
   // ==================== GATEWAY (Foundational) ====================
   wallet: {
     type: 'wallet',
+    wallet: {
+      holds: false,
+      why: 'The wallet itself — the primitive every other type is measured against, not a thing that holds one.',
+    },
     name: 'Wallet',
     namePlural: 'Wallets',
     tableName: ENTITY_TABLE_NAMES.wallet,
@@ -205,6 +245,10 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
   // ==================== BUSINESS (Core value creation) ====================
   project: {
     type: 'project',
+    wallet: {
+      holds: true,
+      why: 'Backers fund a defined outcome, and the money is held against milestones.',
+    },
     name: 'Project',
     namePlural: 'Projects',
     tableName: ENTITY_TABLE_NAMES.project,
@@ -225,6 +269,10 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
   },
   product: {
     type: 'product',
+    wallet: {
+      holds: true,
+      why: 'A buyer pays a price and a thing changes hands.',
+    },
     name: 'Product',
     namePlural: 'Products',
     tableName: ENTITY_TABLE_NAMES.product,
@@ -246,6 +294,10 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
   },
   service: {
     type: 'service',
+    wallet: {
+      holds: true,
+      why: "Someone pays for the maker's time, and the fee has to land somewhere.",
+    },
     name: 'Service',
     namePlural: 'Services',
     tableName: ENTITY_TABLE_NAMES.service,
@@ -267,6 +319,10 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
   },
   cause: {
     type: 'cause',
+    wallet: {
+      holds: true,
+      why: 'People give with no strings, and the giving needs an address.',
+    },
     name: 'Cause',
     namePlural: 'Causes',
     tableName: ENTITY_TABLE_NAMES.cause,
@@ -287,30 +343,54 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
   },
   ai_assistant: {
     type: 'ai_assistant',
-    name: 'AI Assistant',
-    namePlural: 'AI Assistants',
+    wallet: {
+      holds: true,
+      why: "It earns and spends on its owner's behalf, so it needs its own purse and its own cap.",
+    },
+    // The TYPE stays `ai_assistant` and so do the tables and the API path:
+    // only what a person reads was renamed. A companion is a being with its
+    // own soul and a memory of the person it talks to — created privately,
+    // published by choice, clonable without its memories.
+    name: 'Companion',
+    namePlural: 'Companions',
     tableName: ENTITY_TABLE_NAMES.ai_assistant,
     userIdField: 'actor_id',
     icon: Bot,
     colorTheme: 'tiffany',
-    basePath: '/dashboard/ai-assistants',
-    createPath: '/dashboard/ai-assistants/create',
-    publicBasePath: '/ai-assistants',
+    basePath: '/dashboard/companions',
+    createPath: '/dashboard/companions/create',
+    publicBasePath: '/companions',
     apiEndpoint: '/api/ai-assistants',
     hasTemplates: true,
-    description: 'Supervised AI services you create and monetize',
-    createActionLabel: 'Build an AI assistant',
+    description: 'AI beings you create, talk to, and can share or sell',
+    createActionLabel: 'Create a companion',
     category: 'business',
     createPriority: 5,
     paymentPattern: 'fixed_price',
-    canReceiveSupport: true,
+    // You do not donate to a companion, you talk to one — and per-message
+    // pricing already pays the creator 100% through Cat Credits. Marking this
+    // supportable put a five-button "Support with Bitcoin" form on the page,
+    // which then ran taller than everything else on it: the one thing a
+    // visitor should do (Talk) read as smaller than a donation nobody has
+    // ever made (zero payment_intents for this type, checked on the box).
+    canReceiveSupport: false,
   },
 
   // ==================== COMMUNITY (Network building) ====================
+  // The TYPE stays `group` and so do the tables: renaming those is a
+  // 10-table migration with RLS policies and functions attached, for zero
+  // user-visible gain. What people READ is renamed, and that is what was
+  // unclear — the docs page literally explained the feature as "Groups are
+  // organizations on OrangeCat", which is the product using the better word
+  // to define the worse one.
   group: {
     type: 'group',
-    name: 'Group',
-    namePlural: 'Groups',
+    wallet: {
+      holds: true,
+      why: 'Members pool funds and decide together how they are spent.',
+    },
+    name: 'Organization',
+    namePlural: 'Organizations',
     tableName: ENTITY_TABLE_NAMES.group,
     userIdField: 'created_by',
     titleColumn: 'name',
@@ -321,8 +401,8 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
     publicBasePath: '/groups',
     apiEndpoint: '/api/groups',
     hasTemplates: false,
-    description: 'Community groups and organizations',
-    createActionLabel: 'Start a community group',
+    description: 'Companies, nonprofits, DAOs and communities with a shared identity and treasury',
+    createActionLabel: 'Start an organization',
     category: 'community',
     createPriority: 1,
     paymentPattern: 'none',
@@ -330,6 +410,10 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
   },
   circle: {
     type: 'circle',
+    wallet: {
+      holds: true,
+      why: 'The same shared purse as a group, with less ceremony around the deciding.',
+    },
     name: 'Circle',
     namePlural: 'Circles',
     tableName: ENTITY_TABLE_NAMES.circle,
@@ -352,6 +436,10 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
   // ==================== FINANCE (P2P financial tools) ====================
   asset: {
     type: 'asset',
+    wallet: {
+      holds: true,
+      why: 'Rent and deposits are paid to whoever holds it.',
+    },
     name: 'Asset',
     namePlural: 'Assets',
     tableName: ENTITY_TABLE_NAMES.asset,
@@ -372,6 +460,10 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
   },
   loan: {
     type: 'loan',
+    wallet: {
+      holds: true,
+      why: 'Principal moves out and repayments move back.',
+    },
     name: 'Loan',
     namePlural: 'Loans',
     tableName: ENTITY_TABLE_NAMES.loan,
@@ -392,6 +484,10 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
   },
   investment: {
     type: 'investment',
+    wallet: {
+      holds: true,
+      why: 'Capital goes in and a return is owed.',
+    },
     name: 'Investment',
     namePlural: 'Investments',
     tableName: ENTITY_TABLE_NAMES.investment,
@@ -412,6 +508,10 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
   },
   event: {
     type: 'event',
+    wallet: {
+      holds: true,
+      why: 'Tickets are sold and costs are settled against a date.',
+    },
     name: 'Event',
     namePlural: 'Events',
     tableName: ENTITY_TABLE_NAMES.event,
@@ -434,6 +534,10 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
   // ==================== RESEARCH (DeSci ecosystem) ====================
   research: {
     type: 'research',
+    wallet: {
+      holds: true,
+      why: 'Independent work, funded transparently by the people who want it done.',
+    },
     name: 'Research',
     namePlural: 'Research',
     tableName: ENTITY_TABLE_NAMES.research, // Database table name (unchanged for compatibility)
@@ -457,6 +561,10 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
   // ==================== PERSONAL (Wishlists & Registries) ====================
   wishlist: {
     type: 'wishlist',
+    wallet: {
+      holds: true,
+      why: 'Specific items are paid for by whoever wants to give them.',
+    },
     name: 'Wishlist',
     namePlural: 'Wishlists',
     tableName: ENTITY_TABLE_NAMES.wishlist,
@@ -479,6 +587,10 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
   // ==================== PERSONAL (My Cat Context) ====================
   document: {
     type: 'document',
+    wallet: {
+      holds: false,
+      why: 'Context the Cat reads. It receives nothing and owes nothing — the entity is whatever the document is ABOUT.',
+    },
     name: 'Document',
     namePlural: 'Documents',
     tableName: ENTITY_TABLE_NAMES.document,
@@ -595,5 +707,5 @@ export function getEntitiesByCategory(): Record<EntityCategory, EntityMetadata[]
 
 export default ENTITY_REGISTRY;
 
-// Backwards-compatible export for the existing FleetCrown CTA.
-export { ORANGECAT_FLEETCROWN_INTEGRATION } from './ecosystem';
+// Backwards-compatible export for the existing Loki CTA.
+export { ORANGECAT_LOKI_INTEGRATION } from './ecosystem';

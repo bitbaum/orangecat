@@ -47,7 +47,7 @@ export const ROUTE_CONTEXTS = {
     '/loans',
     '/investments',
     '/groups',
-    '/ai-assistants',
+    '/companions',
     '/wishlists',
     '/research',
     '/assets',
@@ -130,7 +130,7 @@ const APP_SURFACES = [
   '/events',
   '/loans',
   '/investments',
-  '/ai-assistants',
+  '/companions',
   '/ai-chat',
   '/wishlists',
   '/research',
@@ -182,6 +182,8 @@ export function getRouteSurface(pathname: string): RouteSurface {
 export interface RouteChrome {
   hideMobileBottomNav: boolean;
   preferCollapsedSidebar: boolean;
+  /** The floating Cat launcher. Hidden where a conversation IS the page. */
+  hideGlobalCat: boolean;
 }
 
 /** True when the pathname is the Cat hub (or a sub-route of it). SSOT — do
@@ -190,15 +192,21 @@ export function isCatHubPath(pathname: string): boolean {
   return pathname === '/dashboard/cat' || pathname.startsWith('/dashboard/cat/');
 }
 
+/** True in a companion's room (/companions/<id>/talk): the conversation is the page. */
+export function isCompanionTalkPath(pathname: string): boolean {
+  return /^\/companions\/[^/]+\/talk\/?$/.test(pathname);
+}
+
 /**
  * Per-route shell chrome. Sidebar collapse, mobile nav, and similar decisions
  * must derive from this — do not branch on pathname in layout components.
  */
 export function getRouteChrome(pathname: string): RouteChrome {
-  const catFocus = isCatHubPath(pathname);
+  const focus = isCatHubPath(pathname) || isCompanionTalkPath(pathname);
   return {
-    hideMobileBottomNav: catFocus,
-    preferCollapsedSidebar: catFocus,
+    hideMobileBottomNav: focus,
+    preferCollapsedSidebar: focus,
+    hideGlobalCat: focus,
   };
 }
 
@@ -285,7 +293,6 @@ export const ROUTES = {
   AUTH_CALLBACK: '/auth/callback',
   AUTH_SIGNOUT: '/auth/signout',
   DISCOVER: '/discover',
-  WALLETS: '/wallets',
   CREATE: '/create',
   STUDY_BITCOIN: '/study-bitcoin',
   BITCOIN_WALLET_GUIDE: '/bitcoin-wallet-guide',
@@ -364,6 +371,13 @@ export const ROUTES = {
   ASSETS: {
     VIEW: (id: string) => `${ENTITY_REGISTRY['asset'].publicBasePath}/${id}`,
   },
+  // `/wallets` is the "get a Bitcoin wallet" education page; `/wallets/<id>` is
+  // one wallet's own page. The registry has declared publicBasePath for the
+  // wallet entity all along — only the detail route was missing.
+  WALLETS: {
+    LIST: ENTITY_REGISTRY['wallet'].publicBasePath,
+    VIEW: (id: string) => `${ENTITY_REGISTRY['wallet'].publicBasePath}/${id}`,
+  },
   GROUPS: {
     LIST: ENTITY_REGISTRY['group'].publicBasePath,
     VIEW: (slug: string) => `${ENTITY_REGISTRY['group'].publicBasePath}/${slug}`,
@@ -419,6 +433,9 @@ export const ROUTES = {
     DOCUMENTS_CREATE: ENTITY_REGISTRY['document'].createPath,
     PROFILE_CLAIMS: '/dashboard/profile-claims',
     PROFILE_CLAIMS_NEW: '/dashboard/profile-claims/new',
+    /** Where creating for someone else lands: the link, and a way to send it. */
+    PROFILE_CLAIMS_SHARE: (claimId: string) =>
+      `/dashboard/profile-claims/${encodeURIComponent(claimId)}/share`,
     // Note: there is no /dashboard/settings page. Account settings live at
     // ROUTES.SETTINGS; AI settings at ROUTES.SETTINGS_AI.
   },
@@ -439,7 +456,9 @@ export const ROUTES = {
   },
 
   /** Public, no-account-needed landing for a pre-drafted profile. */
-  CLAIM: (claimId: string) => `/claim/${encodeURIComponent(claimId)}`,
+  // Takes the claim TOKEN, not the row id: the id addresses a claim for its
+  // creator, the token is the credential that travels in the link.
+  CLAIM: (claimToken: string) => `/claim/${encodeURIComponent(claimToken)}`,
 
   // Timeline routes
   TIMELINE: '/timeline',

@@ -8,8 +8,15 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
+import {
+  mergeMessages as mergeThreadMessages,
+  readersOf,
+  type Participant as ThreadParticipant,
+  type Thread,
+} from 'threadkit';
 import type { Message, Participant } from '../types';
 import { MESSAGE_STATUS, type MessageStatus } from './constants';
+import { CLIENT_ID_METADATA_KEY, clientIdOf, toThreadMessage } from './threadkit-adapter';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { logger } from '@/utils/logger';
 
@@ -49,7 +56,7 @@ export function calculateMessageStatus(
   }
 
   // Optimistic/pending messages (not yet confirmed by server)
-  if (message.id.startsWith('temp-')) {
+  if (isOptimisticMessage(message)) {
     return MESSAGE_STATUS.PENDING;
   }
 
@@ -58,29 +65,68 @@ export function calculateMessageStatus(
     return MESSAGE_STATUS.FAILED;
   }
 
-  const messageCreatedAt = new Date(message.created_at);
-
-  // For messages FROM the current user - check if any recipient has read
+  // For messages FROM the current user, "read" is decided by threadkit's
+  // readersOf, which excludes the author and anyone whose visibility window
+  // does not contain the message.
+  //
+  // It is a stricter test than the one it replaces, and deliberately so. The
+  // previous implementation returned READ as soon as ANY other participant had
+  // caught up. In a two-person conversation that is the same answer. In a group
+  // it told you your message had been read when two of three recipients had not
+  // seen it — a claim the UI made on your behalf that simply was not true.
   if (message.sender_id === currentUserId) {
-    // Check if any recipient (other than sender) has read this message
-    for (const [participantId, lastReadAt] of participantReadTimes.entries()) {
-      if (participantId !== currentUserId && lastReadAt) {
-        if (messageCreatedAt <= lastReadAt) {
-          return MESSAGE_STATUS.READ;
-        }
-      }
+    const thread = threadFromReadTimes(participantReadTimes);
+    const recipients = thread.participants.filter(p => p.actorId !== currentUserId);
+    if (recipients.length === 0) {
+      return MESSAGE_STATUS.DELIVERED;
     }
-    // If in database but not read by anyone, it's at least delivered
-    return MESSAGE_STATUS.DELIVERED;
+    const seenBy = readersOf(thread, toThreadMessage(message));
+    return seenBy.length === recipients.length ? MESSAGE_STATUS.READ : MESSAGE_STATUS.DELIVERED;
   }
 
-  // For messages TO the current user - check if current user has read
+  // For messages TO the current user - check if current user has caught up.
   const userLastReadAt = participantReadTimes.get(currentUserId);
-  if (userLastReadAt && messageCreatedAt <= userLastReadAt) {
+  if (userLastReadAt && new Date(message.created_at) <= userLastReadAt) {
     return MESSAGE_STATUS.READ;
   }
 
   return MESSAGE_STATUS.DELIVERED;
+}
+
+/**
+ * How many other participants have seen this message.
+ *
+ * Exposed because `MessageStatus` is a single flag and a group thread has a
+ * number. A UI that wants "seen by 2 of 3" can have it without recomputing the
+ * rule, and without the flag having to lie in order to say something.
+ */
+export function readerCount(
+  message: Message,
+  participantReadTimes: Map<string, Date | null>
+): number {
+  return readersOf(threadFromReadTimes(participantReadTimes), toThreadMessage(message)).length;
+}
+
+/**
+ * A threadkit thread carrying only what a read receipt needs.
+ *
+ * `visibleFrom: 'thread-start'` matches OrangeCat's product rule that everyone
+ * in a conversation shares its whole history — see threadkit-adapter for why
+ * taking threadkit's stricter default here would retroactively hide messages.
+ * `joinedAt` is unused when `visibleFrom` is set, so the epoch is honest filler
+ * rather than a guess with consequences.
+ */
+function threadFromReadTimes(participantReadTimes: Map<string, Date | null>): Thread {
+  const participants: ThreadParticipant[] = [...participantReadTimes.entries()].map(
+    ([actorId, lastReadAt]) => ({
+      actorId,
+      kind: 'human' as const,
+      joinedAt: new Date(0),
+      visibleFrom: 'thread-start' as const,
+      lastReadAt,
+    })
+  );
+  return { id: '', participants, createdAt: new Date(0) };
 }
 
 /**
@@ -145,7 +191,7 @@ export function formatMessageTime(dateStr: string, options: { short?: boolean } 
   const diffMs = now.getTime() - date.getTime();
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-  const timeStr = date.toLocaleTimeString('en-US', {
+  const timeStr = date.toLocaleTimeString(APP_LOCALE, {
     hour: 'numeric',
     minute: '2-digit',
   });
@@ -159,9 +205,9 @@ export function formatMessageTime(dateStr: string, options: { short?: boolean } 
       return 'Yesterday';
     }
     if (diffDays < 7) {
-      return date.toLocaleDateString('en-US', { weekday: 'short' });
+      return date.toLocaleDateString(APP_LOCALE, { weekday: 'short' });
     }
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return date.toLocaleDateString(APP_LOCALE, { month: 'short', day: 'numeric' });
   }
 
   // Full display
@@ -172,17 +218,17 @@ export function formatMessageTime(dateStr: string, options: { short?: boolean } 
     return `Yesterday ${timeStr}`;
   }
   if (diffDays < 7) {
-    return `${date.toLocaleDateString('en-US', { weekday: 'long' })} ${timeStr}`;
+    return `${date.toLocaleDateString(APP_LOCALE, { weekday: 'long' })} ${timeStr}`;
   }
   if (date.getFullYear() === now.getFullYear()) {
     return (
-      date.toLocaleDateString('en-US', {
+      date.toLocaleDateString(APP_LOCALE, {
         month: 'short',
         day: 'numeric',
       }) + ` at ${timeStr}`
     );
   }
-  return date.toLocaleDateString('en-US', {
+  return date.toLocaleDateString(APP_LOCALE, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -217,7 +263,7 @@ export function formatRelativeTime(dateStr: string): string {
   if (weeks < 4) {
     return `${weeks}w`;
   }
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return date.toLocaleDateString(APP_LOCALE, { month: 'short', day: 'numeric' });
 }
 
 /**
@@ -236,12 +282,12 @@ export function getDateDividerText(dateStr: string): string {
     return 'Yesterday';
   }
   if (diffDays < 7) {
-    return date.toLocaleDateString('en-US', { weekday: 'long' });
+    return date.toLocaleDateString(APP_LOCALE, { weekday: 'long' });
   }
   if (date.getFullYear() === now.getFullYear()) {
-    return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+    return date.toLocaleDateString(APP_LOCALE, { month: 'long', day: 'numeric' });
   }
-  return date.toLocaleDateString('en-US', {
+  return date.toLocaleDateString(APP_LOCALE, {
     month: 'long',
     day: 'numeric',
     year: 'numeric',
@@ -335,6 +381,7 @@ export function getParticipantProfileHref(participant: Participant | undefined):
 // =============================================================================
 
 import { VALIDATION } from './constants';
+import { APP_LOCALE } from '@/utils/locale';
 
 /**
  * Validate message content
@@ -382,7 +429,10 @@ export function createOptimisticMessage(
   content: string,
   sender: { id: string; username: string; name: string; avatar_url: string | null }
 ): Message {
-  const tempId = `temp-${Date.now()}`;
+  // A random id, not `temp-${Date.now()}`: two messages sent inside the same
+  // millisecond produced the same id, and the second silently replaced the first
+  // in every Map and Set keyed by it.
+  const tempId = `temp-${globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`}`;
   const now = new Date().toISOString();
 
   return {
@@ -391,7 +441,10 @@ export function createOptimisticMessage(
     sender_id: senderId,
     content: content.trim(),
     message_type: 'text',
-    metadata: null,
+    // The id travels with the write and comes back on the stored row, which is
+    // what lets the confirmed message REPLACE this bubble instead of arriving
+    // beside it. Without it the two rows share no identity and both render.
+    metadata: { [CLIENT_ID_METADATA_KEY]: tempId },
     created_at: now,
     updated_at: now,
     is_deleted: false,
@@ -407,7 +460,11 @@ export function createOptimisticMessage(
  * Check if a message is optimistic (not yet confirmed)
  */
 export function isOptimisticMessage(message: Message): boolean {
-  return message.id.startsWith('temp-');
+  // A bubble is unconfirmed when its id IS its client id — the stored row keeps
+  // the client id but gets a real primary key. The `temp-` prefix check is kept
+  // for messages already sitting in a client from before this change.
+  const clientId = clientIdOf(message);
+  return (clientId !== undefined && clientId === message.id) || message.id.startsWith('temp-');
 }
 
 /**
@@ -415,12 +472,23 @@ export function isOptimisticMessage(message: Message): boolean {
  * Removes duplicates and maintains sort order
  */
 export function mergeMessages(existingMessages: Message[], newMessages: Message[]): Message[] {
-  const existingIds = new Set(existingMessages.map(m => m.id));
-  const uniqueNew = newMessages.filter(m => !existingIds.has(m.id));
-  const merged = [...existingMessages, ...uniqueNew];
+  // Delegates identity and ordering to threadkit, which resolves by id AND by
+  // client id. The previous implementation deduped on id alone, so an optimistic
+  // bubble (`temp-…`) and its stored row (a uuid) shared no identity: whenever
+  // the realtime INSERT landed before the write's own response, the same message
+  // rendered twice. It also gains a deterministic tiebreak, so two messages with
+  // identical timestamps stop swapping places between renders.
+  const byKey = new Map<string, Message>();
+  for (const m of [...existingMessages, ...newMessages]) {
+    byKey.set(m.id, m);
+  }
 
-  // Sort by created_at chronologically
-  return merged.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+  const ordered = mergeThreadMessages(
+    existingMessages.map(toThreadMessage),
+    newMessages.map(toThreadMessage)
+  );
+
+  return ordered.map(tm => byKey.get(tm.id)).filter((m): m is Message => m !== undefined);
 }
 
 /**

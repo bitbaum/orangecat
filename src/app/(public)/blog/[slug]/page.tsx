@@ -1,120 +1,24 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
-// Filesystem-sourced MDX. Static generation with hourly revalidation
+// Filesystem-sourced markdown. Static generation with hourly revalidation
 // gives the CDN cache back; force-dynamic was wasteful here.
 export const revalidate = 3600;
 import { Calendar, Clock, ArrowLeft, Users, Tag } from 'lucide-react';
 import Link from 'next/link';
+import { Toc, ReadingProgress } from 'bip-kit/react';
+import 'bip-kit/styles.css';
+import '@/lib/longform/longform.css';
 import { getBlogPost, getBlogPostSlugs } from '@/lib/blog';
+import { parseLongform } from '@/lib/longform/parse';
+import LongformBody from '@/lib/longform/LongformBody';
 import Button from '@/components/ui/Button';
-import { ComponentProps } from 'react';
 import { JsonLdScript } from '@/lib/seo/structured-data';
 import { APP_NAME, SITE_URL } from '@/config/brand';
 import BlogShareButton from './BlogShareButton';
 import { GRADIENTS } from '@/config/gradients';
 import { ROUTES } from '@/config/routes';
-
-// MDX Components
-const mdxComponents = {
-  // Customize markdown elements
-  h1: ({ children, ...props }: ComponentProps<'h1'>) => (
-    <h1 className="text-3xl sm:text-4xl font-bold text-fg-primary mb-6 leading-tight" {...props}>
-      {children}
-    </h1>
-  ),
-  h2: ({ children, ...props }: ComponentProps<'h2'>) => (
-    <h2 className="text-2xl font-semibold text-fg-primary mb-6 mt-12 flex items-center" {...props}>
-      {children}
-    </h2>
-  ),
-  h3: ({ children, ...props }: ComponentProps<'h3'>) => (
-    <h3 className="text-lg font-semibold text-fg-primary mb-4 mt-8" {...props}>
-      {children}
-    </h3>
-  ),
-  h4: ({ children, ...props }: ComponentProps<'h4'>) => (
-    <h4 className="text-base font-semibold text-fg-primary mb-3 mt-6" {...props}>
-      {children}
-    </h4>
-  ),
-  p: ({ children, ...props }: ComponentProps<'p'>) => (
-    <p className="text-lg text-fg-primary leading-relaxed mb-6" {...props}>
-      {children}
-    </p>
-  ),
-  ul: ({ children, ...props }: ComponentProps<'ul'>) => (
-    <ul className="space-y-3 text-fg-primary mb-6 ml-6" {...props}>
-      {children}
-    </ul>
-  ),
-  ol: ({ children, ...props }: ComponentProps<'ol'>) => (
-    <ol className="space-y-3 text-fg-primary mb-6 ml-6 list-decimal" {...props}>
-      {children}
-    </ol>
-  ),
-  li: ({ children, ...props }: ComponentProps<'li'>) => (
-    <li className="flex items-start" {...props}>
-      <span className="w-2 h-2 bg-surface-raised rounded-full mt-2 mr-4 flex-shrink-0"></span>
-      <span>{children}</span>
-    </li>
-  ),
-  blockquote: ({ children, ...props }: ComponentProps<'blockquote'>) => (
-    <blockquote
-      className="border-l-4 border-fg-primary pl-6 my-8 bg-surface-raised/40 dark:bg-surface-overlay py-4 rounded-r-lg"
-      {...props}
-    >
-      <div className="text-lg text-fg-primary italic">{children}</div>
-    </blockquote>
-  ),
-  code: ({ children, ...props }: ComponentProps<'code'>) => (
-    <code
-      className="bg-surface-raised px-2 py-1 rounded text-sm font-mono text-fg-primary"
-      {...props}
-    >
-      {children}
-    </code>
-  ),
-  pre: ({ children, ...props }: ComponentProps<'pre'>) => (
-    <pre className="bg-fg-primary text-fg-inverted p-6 rounded-lg overflow-x-auto mb-6" {...props}>
-      {children}
-    </pre>
-  ),
-  a: ({ href, children, ...props }: ComponentProps<'a'>) => (
-    <Link
-      href={href || '#'}
-      className="text-fg-primary hover:text-fg-primary font-medium underline"
-      {...props}
-    >
-      {children}
-    </Link>
-  ),
-  // Custom components for blog posts
-  Alert: ({
-    type = 'info',
-    children,
-  }: {
-    type?: 'info' | 'warning' | 'success' | 'error';
-    children: React.ReactNode;
-  }) => {
-    const styles = {
-      info: 'border-subtle bg-surface-raised/30 text-fg-primary',
-      warning: 'border-warning/30 bg-status-warning/10 text-fg-primary',
-      success: 'border-status-positive/25 bg-status-positive/10 text-status-positive',
-      error: 'border-status-negative/25 bg-status-negative/10 text-status-negative',
-    };
-    return <div className={`mb-6 rounded-md border p-6 ${styles[type]}`}>{children}</div>;
-  },
-  SecurityFeature: ({ title, description }: { title: string; description: string }) => (
-    <div className="bg-surface-base border border-status-positive/20 rounded-lg p-6 mb-6">
-      <h4 className="text-lg font-semibold text-fg-primary mb-2 flex items-center">
-        <span className="w-2 h-2 bg-status-positive rounded-full mr-3"></span>
-        {title}
-      </h4>
-      <p className="text-fg-primary">{description}</p>
-    </div>
-  ),
-};
+import { APP_LOCALE } from '@/utils/locale';
 
 interface PageProps {
   params: Promise<{
@@ -174,8 +78,9 @@ export default async function BlogPost({ params }: PageProps) {
     notFound();
   }
 
-  // Dynamically import the MDX content as a React component
-  const MDXContent = (await import(`../../../../../content/blog/${slug}.mdx`)).default;
+  // ONE long-form pipeline: bip-kit typed blocks + reference renderer — the
+  // same parse and renderer the community articles surface uses.
+  const { blocks, toc } = parseLongform(post.content);
 
   const articleJsonLd = {
     '@context': 'https://schema.org',
@@ -199,9 +104,10 @@ export default async function BlogPost({ params }: PageProps) {
   return (
     <>
       <JsonLdScript data={articleJsonLd} />
+      <ReadingProgress />
       <div className="min-h-screen pt-20">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
+          <div className="mx-auto max-w-6xl">
             {/* Back to Blog */}
             <div className="mb-8">
               <Link href={ROUTES.BLOG}>
@@ -213,7 +119,7 @@ export default async function BlogPost({ params }: PageProps) {
             </div>
 
             {/* Article Header */}
-            <header className="mb-12">
+            <header className="mb-12 max-w-4xl">
               {post.featured && (
                 <div className="flex items-center text-sm text-fg-primary mb-4 font-medium">
                   <span className="bg-surface-raised px-3 py-1 rounded-full">Featured Article</span>
@@ -227,7 +133,7 @@ export default async function BlogPost({ params }: PageProps) {
               {/* Post Meta */}
               <div className="flex items-center text-sm text-fg-secondary border-t border-b border-default py-4">
                 <Calendar className="w-4 h-4 mr-2" />
-                {new Date(post.date).toLocaleDateString('en-US', {
+                {new Date(post.date).toLocaleDateString(APP_LOCALE, {
                   year: 'numeric',
                   month: 'long',
                   day: 'numeric',
@@ -259,50 +165,59 @@ export default async function BlogPost({ params }: PageProps) {
               )}
             </header>
 
-            {/* Article Content */}
-            <article className="prose prose-lg max-w-none">
-              <MDXContent components={mdxComponents} />
-            </article>
-
-            {/* Share and Navigation */}
-            <div className="mt-16 pt-8 border-t border-default">
-              <div className="flex flex-col sm:flex-row justify-between items-center">
-                <Link href={ROUTES.BLOG}>
-                  <Button variant="outline">
-                    <ArrowLeft className="w-4 h-4 mr-2" />
-                    Back to Blog
-                  </Button>
-                </Link>
-                <div className="mt-4 sm:mt-0 flex flex-col items-center gap-3">
-                  <BlogShareButton
-                    title={post.title}
-                    description={post.excerpt}
-                    url={`${SITE_URL}/blog/${slug}`}
-                  />
-                  <p className="text-fg-secondary text-xs">
-                    Part of our commitment to building in public
-                  </p>
-                </div>
-              </div>
+            {/* Article Content — sticky TOC rail on xl; the article column
+                keeps bip-kit's measured line length regardless. Toc hides
+                itself under 3 headings, so short posts render one column. */}
+            <div className="xl:grid xl:grid-cols-[minmax(0,1fr)_240px] xl:items-start xl:gap-10">
+              <article>
+                <LongformBody blocks={blocks} />
+              </article>
+              <aside className="hidden xl:block">
+                <Toc items={toc} />
+              </aside>
             </div>
 
-            {/* Related Posts CTA */}
-            <div className={`mt-12 ${GRADIENTS.sectionOrangeTiffany} rounded-lg p-8 text-center`}>
-              <h3 className="text-2xl font-bold text-fg-primary mb-4">More from {APP_NAME}</h3>
-              <p className="text-lg text-fg-primary mb-6">
-                Discover more insights about Bitcoin, security, and building in public.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link href={ROUTES.BLOG}>
-                  <Button size="lg" className={GRADIENTS.btnOrange}>
-                    Read More Articles
-                  </Button>
-                </Link>
-                <Link href={ROUTES.AUTH_REGISTER}>
-                  <Button variant="outline" size="lg">
-                    Join {APP_NAME}
-                  </Button>
-                </Link>
+            <div className="max-w-4xl">
+              {/* Share and Navigation */}
+              <div className="mt-16 pt-8 border-t border-default">
+                <div className="flex flex-col sm:flex-row justify-between items-center">
+                  <Link href={ROUTES.BLOG}>
+                    <Button variant="outline">
+                      <ArrowLeft className="w-4 h-4 mr-2" />
+                      Back to Blog
+                    </Button>
+                  </Link>
+                  <div className="mt-4 sm:mt-0 flex flex-col items-center gap-3">
+                    <BlogShareButton
+                      title={post.title}
+                      description={post.excerpt}
+                      url={`${SITE_URL}/blog/${slug}`}
+                    />
+                    <p className="text-fg-secondary text-xs">
+                      Part of our commitment to building in public
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Related Posts CTA */}
+              <div className={`mt-12 ${GRADIENTS.sectionOrangeTiffany} rounded-lg p-8 text-center`}>
+                <h3 className="text-2xl font-bold text-fg-primary mb-4">More from {APP_NAME}</h3>
+                <p className="text-lg text-fg-primary mb-6">
+                  Discover more insights about Bitcoin, security, and building in public.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <Link href={ROUTES.BLOG}>
+                    <Button size="lg" className={GRADIENTS.btnOrange}>
+                      Read More Articles
+                    </Button>
+                  </Link>
+                  <Link href={ROUTES.AUTH_REGISTER}>
+                    <Button variant="outline" size="lg">
+                      Join {APP_NAME}
+                    </Button>
+                  </Link>
+                </div>
               </div>
             </div>
           </div>

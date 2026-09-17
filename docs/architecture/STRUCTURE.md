@@ -10,10 +10,10 @@ This document provides a detailed explanation of the OrangeCat project's file st
 - `.eslintrc.json` - ESLint configuration file. Defines code style rules and linting settings.
 - `.gitignore` - Specifies which files and directories Git should ignore.
 - `.prettierrc.json` - Prettier configuration file. Defines code formatting rules.
-- `jest.config.js` - Jest testing framework configuration.
+- `vitest.config.ts` - Vitest testing framework configuration.
 - `next.config.js` - Next.js framework configuration, including security headers and image domains.
 - `package.json` - NPM package configuration, including dependencies and scripts.
-- `package-lock.json` - NPM dependency lock file, ensuring consistent installations.
+- `pnpm-lock.yaml` - NPM dependency lock file, ensuring consistent installations.
 - `postcss.config.js` - PostCSS configuration for processing CSS.
 - `tailwind.config.js` - Tailwind CSS framework configuration.
 - `tsconfig.json` - TypeScript configuration, including compiler options and paths.
@@ -112,10 +112,10 @@ orangecat/
 ├── .eslintrc.json
 ├── .gitignore
 ├── .prettierrc.json
-├── jest.config.js
+├── vitest.config.ts
 ├── next.config.js
 ├── package.json
-├── package-lock.json
+├── pnpm-lock.yaml
 ├── postcss.config.js
 ├── tailwind.config.js
 ├── tsconfig.json

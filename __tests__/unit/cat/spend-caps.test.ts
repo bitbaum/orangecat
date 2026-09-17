@@ -12,26 +12,29 @@ import { CatPermissionService, effectiveSpendCaps } from '@/services/cat/permiss
 import { CatActionExecutor } from '@/services/cat/action-executor';
 import { DATABASE_TABLES } from '@/config/database-tables';
 
-jest.mock('@/utils/logger', () => ({
-  logger: { error: jest.fn(), warn: jest.fn(), info: jest.fn(), debug: jest.fn() },
+vi.mock('@/utils/logger', () => ({
+  logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 
 // Executor tests control permission behavior per-test via this mock instance.
 const mockPermissionService = {
-  checkPermission: jest.fn(),
-  checkSpendCaps: jest.fn(),
+  checkPermission: vi.fn(),
+  checkSpendCaps: vi.fn(),
 };
-jest.mock('@/services/cat/permission-service', () => {
-  const actual = jest.requireActual('@/services/cat/permission-service');
+vi.mock('@/services/cat/permission-service', async () => {
+  const actual = await vi.importActual('@/services/cat/permission-service');
   return {
     ...actual,
-    CatPermissionService: jest.fn().mockImplementation(() => mockPermissionService),
+    // function (not arrow): vitest constructs mock implementations with `new`.
+    CatPermissionService: vi.fn().mockImplementation(function () {
+      return mockPermissionService;
+    }),
   };
 });
 
 // Keep the executor tests light — no real handlers (they import wallet/NWC code).
-const mockSendPaymentHandler = jest.fn();
-jest.mock('@/services/cat/handlers', () => ({
+const mockSendPaymentHandler = vi.fn();
+vi.mock('@/services/cat/handlers', () => ({
   ACTION_HANDLERS: {
     get send_payment() {
       return mockSendPaymentHandler;
@@ -88,29 +91,27 @@ function buildCapsSupabase(config: {
       table === DATABASE_TABLES.CAT_PERMISSIONS ? config.permissionRows : (config.logRows ?? []);
     const chain: Record<string, unknown> = {};
     for (const method of ['select', 'eq', 'in', 'gte', 'order', 'limit']) {
-      chain[method] = jest.fn().mockReturnValue(chain);
+      chain[method] = vi.fn().mockReturnValue(chain);
     }
-    chain.neq = jest.fn((...args: unknown[]) => {
+    chain.neq = vi.fn((...args: unknown[]) => {
       neqCalls.push(args);
       return chain;
     });
-    chain.maybeSingle = jest
-      .fn()
-      .mockResolvedValue({ data: config.policyRow ?? null, error: null });
+    chain.maybeSingle = vi.fn().mockResolvedValue({ data: config.policyRow ?? null, error: null });
     chain.then = (resolve: (value: { data: unknown }) => unknown) =>
       Promise.resolve(resolve({ data: rows }));
     return chain;
   };
   return {
-    from: jest.fn((table: string) => makeChain(table)),
+    from: vi.fn((table: string) => makeChain(table)),
     _neqCalls: neqCalls,
   };
 }
 
 // checkSpendCaps tests need the REAL service class, not the module mock above.
-const { CatPermissionService: RealPermissionService } = jest.requireActual(
+const { CatPermissionService: RealPermissionService } = (await vi.importActual(
   '@/services/cat/permission-service'
-) as { CatPermissionService: typeof CatPermissionService };
+)) as { CatPermissionService: typeof CatPermissionService };
 
 describe('CatPermissionService.checkSpendCaps', () => {
   it('allows non-payment actions without querying permissions', async () => {
@@ -193,25 +194,25 @@ function buildExecutorSupabase() {
   const updatesByTable: Record<string, unknown[]> = {};
   const makeChain = (table: string) => {
     const chain: Record<string, unknown> = {};
-    chain.insert = jest.fn((payload: unknown) => {
+    chain.insert = vi.fn((payload: unknown) => {
       (insertsByTable[table] ??= []).push(payload);
       return chain;
     });
-    chain.update = jest.fn((payload: unknown) => {
+    chain.update = vi.fn((payload: unknown) => {
       (updatesByTable[table] ??= []).push(payload);
       return chain;
     });
     for (const method of ['select', 'eq', 'in', 'gte', 'neq', 'order', 'limit']) {
-      chain[method] = jest.fn().mockReturnValue(chain);
+      chain[method] = vi.fn().mockReturnValue(chain);
     }
-    chain.single = jest.fn().mockResolvedValue({ data: { id: 'log-1' }, error: null });
-    chain.maybeSingle = jest.fn().mockResolvedValue({ data: null, error: null });
+    chain.single = vi.fn().mockResolvedValue({ data: { id: 'log-1' }, error: null });
+    chain.maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
     chain.then = (resolve: (value: { data: unknown }) => unknown) =>
       Promise.resolve(resolve({ data: [] }));
     return chain;
   };
   return {
-    from: jest.fn((table: string) => makeChain(table)),
+    from: vi.fn((table: string) => makeChain(table)),
     _insertsByTable: insertsByTable,
     _updatesByTable: updatesByTable,
   };
@@ -219,7 +220,7 @@ function buildExecutorSupabase() {
 
 describe('CatActionExecutor spend-cap enforcement', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockPermissionService.checkPermission.mockResolvedValue({
       allowed: true,
       requiresConfirmation: false,

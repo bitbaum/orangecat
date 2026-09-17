@@ -10,7 +10,7 @@ export function cn(...inputs: ClassValue[]) {
  * Normalizes social media URLs for proper display and linking
  *
  * Converts handles/usernames to full URLs for platforms that support it
- * For example: "maonakamoto" on X platform becomes "https://x.com/maonakamoto"
+ * For example: "catomean" on X platform becomes "https://x.com/catomean"
  */
 export function normalizeSocialUrl(platform: SocialPlatformId, value: string): string {
   // If it's already a full URL, return as-is

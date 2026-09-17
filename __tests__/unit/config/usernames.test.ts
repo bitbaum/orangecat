@@ -11,6 +11,8 @@
  * A name you could not register was one you could rename to afterwards.
  */
 
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import {
   isReservedUsername,
   reservedReason,
@@ -53,7 +55,11 @@ describe('reserved handles', () => {
 });
 
 describe('one set of username rules', () => {
-  const base = { email: 'a@b.com', password: 'Str0ng!passw0rd', confirmPassword: 'Str0ng!passw0rd' };
+  const base = {
+    email: 'a@b.com',
+    password: 'Str0ng!passw0rd',
+    confirmPassword: 'Str0ng!passw0rd',
+  };
 
   it('registration refuses a reserved handle', () => {
     const result = registerSchema.safeParse({ ...base, username: 'cat' });
@@ -81,5 +87,63 @@ describe('one set of username rules', () => {
   it('still accepts an ordinary handle', () => {
     expect(isValidUsername('satoshi_n')).toBe(true);
     expect(registerSchema.safeParse({ ...base, username: 'satoshi_n' }).success).toBe(true);
+  });
+});
+
+/**
+ * The third door.
+ *
+ * A profile claim (`/dashboard/profile-claims/new` → `/claim/<id>`) lets a
+ * member draft a handle for someone who has no account yet; the recipient's
+ * `profiles.username` is written from that draft at claim time. The path
+ * validated `suggestedUsername` with its own local regex and allocated it with
+ * a collision probe that consulted neither `RESERVED_USERNAMES` nor the
+ * case-insensitive unique index — so it was the one way to mint `payments`,
+ * `support` or `security` as a handle, and a handle is a Lightning address
+ * (`<username>@orangecat.ch`). Measured against production 2026-09-05: 14 of
+ * the 15 reserved handles were free.
+ *
+ * Source-level because neither the route's zod schema nor
+ * `findAvailableUsername` is exported — and the thing being prevented is
+ * precisely "someone writes a second set of username rules here again".
+ */
+describe('profile claims ask the same SSOT', () => {
+  const claimsRoute = readFileSync(
+    join(process.cwd(), 'src/app/api/profile-claims/route.ts'),
+    'utf8'
+  );
+  const claimsService = readFileSync(
+    join(process.cwd(), 'src/domain/profileClaims/service.ts'),
+    'utf8'
+  );
+
+  it('validates a suggested handle with the shared schema, not a local pattern', () => {
+    expect(claimsRoute).toMatch(/suggestedUsername:\s*usernameSchema/);
+    expect(claimsRoute).toMatch(/usernameSchema[\s\S]*from '@\/lib\/validation\/base'/);
+  });
+
+  it('declares no username pattern of its own', () => {
+    // The shape that caused this: an inline `.regex(/^[a-zA-Z0-9_-]+$/, …)`.
+    expect(claimsRoute).not.toMatch(/a-zA-Z0-9_-/);
+  });
+
+  // These match the CALL, not the identifier. Asserting `/reservedReason/`
+  // alone passed against a mutant with the guard deleted, because the comment
+  // above the guard still named it — a source scan that a comment can satisfy
+  // is not a gate.
+  it('re-checks reservation when it allocates the handle at claim time', () => {
+    // A draft written before the route was fixed can still carry a reserved
+    // name, and the `-2` suffixes are built inside the allocator rather than
+    // validated upstream.
+    expect(claimsService).toMatch(/if \(reservedReason\(/);
+  });
+
+  it('probes for collisions case-insensitively, like the unique index', () => {
+    // `profiles_username_lower_unique` is on the generated `username_lower`
+    // column. Probing `username` with `.eq` read a case-variant as free and
+    // then failed the insert — after the claim had already been flipped to
+    // `claimed`, landing in the rollback path.
+    expect(claimsService).toMatch(/\.eq\('username_lower',/);
+    expect(claimsService).not.toMatch(/\.eq\('username',/);
   });
 });

@@ -10,7 +10,7 @@ can't take the site down; worst case it stays on the current version).
 
 ### Required repo secrets (`Settings → Secrets and variables → Actions`)
 
-`https://github.com/maonakamoto/orangecat/settings/secrets/actions`
+`https://github.com/bitbaum/orangecat/settings/secrets/actions`
 
 | Secret                                 | Value                                            |
 | -------------------------------------- | ------------------------------------------------ |
@@ -30,8 +30,8 @@ Optional repo **variables** (`vars.*`): `OC_BOX` (default `root@167.233.22.31`),
 ssh-keygen -t ed25519 -C "orangecat-cd-deploy" -f ~/.ssh/orangecat_cd -N ""
 
 # 2. store the PRIVATE half as the secret (file -> gh, never echoed)
-gh secret set SELFHOST_SSH_KEY -R maonakamoto/orangecat < ~/.ssh/orangecat_cd
-ssh-keyscan -H 167.233.22.31 2>/dev/null | gh secret set SELFHOST_KNOWN_HOSTS -R maonakamoto/orangecat
+gh secret set SELFHOST_SSH_KEY -R bitbaum/orangecat < ~/.ssh/orangecat_cd
+ssh-keyscan -H 167.233.22.31 2>/dev/null | gh secret set SELFHOST_KNOWN_HOSTS -R bitbaum/orangecat
 
 # 3. authorize the PUBLIC half on the box (security change — do this deliberately)
 ssh-copy-id -i ~/.ssh/orangecat_cd.pub root@167.233.22.31
@@ -41,16 +41,16 @@ ssh-copy-id -i ~/.ssh/orangecat_cd.pub root@167.233.22.31
 ### Set the public build values
 
 ```bash
-gh secret set NEXT_PUBLIC_SUPABASE_URL -R maonakamoto/orangecat -b "https://supabase.orangecat.ch"
-grep '^NEXT_PUBLIC_SUPABASE_ANON_KEY='        .env.local | cut -d= -f2- | tr -d '"' | gh secret set NEXT_PUBLIC_SUPABASE_ANON_KEY        -R maonakamoto/orangecat
-grep '^NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=' .env.local | cut -d= -f2- | tr -d '"' | gh secret set NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY -R maonakamoto/orangecat
+gh secret set NEXT_PUBLIC_SUPABASE_URL -R bitbaum/orangecat -b "https://supabase.orangecat.ch"
+grep '^NEXT_PUBLIC_SUPABASE_ANON_KEY='        .env.local | cut -d= -f2- | tr -d '"' | gh secret set NEXT_PUBLIC_SUPABASE_ANON_KEY        -R bitbaum/orangecat
+grep '^NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=' .env.local | cut -d= -f2- | tr -d '"' | gh secret set NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY -R bitbaum/orangecat
 ```
 
 ## Deploy now / verify
 
 ```bash
-gh workflow run cd.yml -R maonakamoto/orangecat        # deploy current main
-gh run watch "$(gh run list -R maonakamoto/orangecat --workflow cd.yml --limit 1 --json databaseId --jq '.[0].databaseId')" --exit-status
+gh workflow run cd.yml -R bitbaum/orangecat        # deploy current main
+gh run watch "$(gh run list -R bitbaum/orangecat --workflow cd.yml --limit 1 --json databaseId --jq '.[0].databaseId')" --exit-status
 curl -fsS https://orangecat.ch/api/health && echo "  ✓ live"
 ```
 

@@ -149,7 +149,7 @@ export function useEntityFormState<T extends Record<string, unknown>>({
         ...formState.data,
       });
       if (!result.success) {
-        const fieldError = result.error.errors.find(e => e.path[0] === fieldName);
+        const fieldError = result.error.issues.find(e => e.path[0] === fieldName);
         if (fieldError) {
           setFormState(prev => ({
             ...prev,

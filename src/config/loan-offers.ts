@@ -13,7 +13,7 @@ export const LOAN_OFFER_TYPES = ['refinance', 'payoff'] as const;
 
 export const createLoanOfferSchema = z
   .object({
-    loan_id: z.string().uuid('loan_id must be a UUID'),
+    loan_id: z.string().guid('loan_id must be a UUID'),
     offer_type: z.enum(LOAN_OFFER_TYPES),
     offer_amount: z.number().positive('offer_amount must be greater than 0'),
     interest_rate: z.number().min(0).max(100).optional(),

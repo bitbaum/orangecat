@@ -10,6 +10,7 @@ import { CURRENCY_CODES, PLATFORM_DEFAULT_CURRENCY, type CurrencyCode } from '@/
 import type { LoanPaymentMethod } from '@/config/loan-payments';
 import { respondToOffer } from './offers';
 import { createPayment, completePayment } from './payments';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 export interface AcceptOfferSettlementParams {
   offer: LoanOffer;
@@ -36,7 +37,11 @@ export async function acceptOfferAndSettle(
 
   const respond = await respondToOffer(offer.id, true, notes);
   if (!respond.success) {
-    return { success: false, error: respond.error || 'Failed to accept offer', mutated: false };
+    return {
+      success: false,
+      error: apiErrorMessage(respond, 'Failed to accept offer'),
+      mutated: false,
+    };
   }
 
   const loanCurrency =
@@ -56,7 +61,7 @@ export async function acceptOfferAndSettle(
   if (!payment.success || !payment.payment) {
     return {
       success: false,
-      error: payment.error || 'Offer accepted, but payment record failed',
+      error: apiErrorMessage(payment, 'Offer accepted, but payment record failed'),
       mutated: true,
     };
   }
@@ -74,7 +79,7 @@ export async function acceptOfferAndSettle(
   if (!complete.success) {
     return {
       success: false,
-      error: complete.error || 'Payment created, but completion failed',
+      error: apiErrorMessage(complete, 'Payment created, but completion failed'),
       mutated: true,
     };
   }

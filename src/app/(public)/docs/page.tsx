@@ -213,10 +213,10 @@ export default function DocsPage() {
           </div>
           <div className="bg-surface-base rounded-lg border border-default p-6 space-y-4">
             <p className="text-fg-secondary leading-relaxed">
-              <strong>Groups</strong> are organizations on OrangeCat with a shared identity,
-              treasury, and governance. Members can have different roles, propose and vote on
-              decisions, manage shared funds, and run economic activities collectively. Think DAOs,
-              cooperatives, clubs, or any collective that needs to coordinate.
+              <strong>Organizations</strong> are shared accounts on OrangeCat with a shared
+              identity, treasury, and governance. Members can have different roles, propose and vote
+              on decisions, manage shared funds, and run economic activities collectively. Think
+              DAOs, cooperatives, clubs, or any collective that needs to coordinate.
             </p>
             <p className="text-fg-secondary leading-relaxed">
               Every group has its own Cat — a group AI agent that coordinates on behalf of the
@@ -273,7 +273,7 @@ export default function DocsPage() {
           </div>
         </section>
 
-        {/* Getting Started — public-surface near-black band per FleetCrown pattern */}
+        {/* Getting Started — public-surface near-black band per Loki pattern */}
         <section className="mb-10">
           <div className="bg-surface-public border border-subtle rounded-lg p-8 text-center">
             <h2 className="font-heading tracking-display text-2xl font-bold text-fg-inverted mb-3">

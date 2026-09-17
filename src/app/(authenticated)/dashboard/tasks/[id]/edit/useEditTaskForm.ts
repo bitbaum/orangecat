@@ -11,6 +11,7 @@ import {
   taskFormToPayload,
   type TaskFormData,
 } from '../../task-form-types';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 export function useEditTaskForm(taskId: string, enabled: boolean) {
   const router = useRouter();
@@ -30,7 +31,7 @@ export function useEditTaskForm(taskId: string, enabled: boolean) {
       const response = await fetch(API_ROUTES.TASKS.BY_ID(taskId));
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to load task');
+        throw new Error(apiErrorMessage(data, 'Failed to load task'));
       }
       const loadedTask: Task = data.data?.task;
       if (loadedTask) {
@@ -125,7 +126,7 @@ export function useEditTaskForm(taskId: string, enabled: boolean) {
       });
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to update task');
+        throw new Error(apiErrorMessage(data, 'Failed to update task'));
       }
       toast.success('Task updated!');
       router.push(`/dashboard/tasks/${taskId}`);

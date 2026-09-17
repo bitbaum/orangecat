@@ -91,7 +91,7 @@ export const supportProjectSchema = z
 export const supportFiltersSchema = z.object({
   support_type: supportTypeSchema.optional(),
   is_anonymous: z.boolean().optional(),
-  user_id: z.string().uuid().optional(),
+  user_id: z.string().guid().optional(),
 });
 
 // Support pagination schema

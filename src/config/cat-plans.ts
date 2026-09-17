@@ -88,7 +88,7 @@ export const CAT_FREE_DAILY_LIMIT = 10;
 
 /**
  * Supporter plan — OrangeCat's own flat, Bitcoin-native subscription, built on
- * the same pass-product pattern FleetCrown uses (a tagged product → on
+ * the same pass-product pattern Loki uses (a tagged product → on
  * settlement, grant a time-boxed plan). A Supporter pays a flat monthly in
  * Bitcoin and gets a raised daily Cat cap (tier 'pro' in user_plans); the money
  * funds the platform AI budget. Period comes from the product's
@@ -106,7 +106,7 @@ export const SUPPORTER_PRICE_CHF: number | null = null;
 
 /**
  * Supporter checkout URL — the OrangeCat product page for the Supporter pass.
- * Mirrors FleetCrown's ORANGECAT_PAY_URL_* gate: set
+ * Mirrors Loki's ORANGECAT_PAY_URL_* gate: set
  * NEXT_PUBLIC_SUPPORTER_PRODUCT_URL once the product exists AND the platform
  * wallet (PLATFORM_NWC_URI) can receive, and the card flips from "activating"
  * to a live checkout. Unset (today) → the honest founding-supporter fallback.

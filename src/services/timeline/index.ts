@@ -39,6 +39,26 @@ import {
   getThreadPosts,
 } from './queries';
 
+import { warmCurrentUserId } from '@/services/supabase/auth/session';
+
+/**
+ * Start learning who is reading before the feed query, not after it.
+ *
+ * Every feed read below ends in enrichment, and enrichment needs the reader's
+ * id to mark which posts they already reacted to. That lookup is a round-trip
+ * to /auth/v1/user, it depends on nothing in the feed, and it used to start
+ * only once the feed came back — with the reaction queries then queued behind
+ * it. Measured on a cold timeline load: feed 3147-3520ms, THEN /auth/v1/user
+ * 3552-3784, THEN reactions 3811-4076.
+ *
+ * Applied here, at the one door every feed read goes through, rather than
+ * repeated inside each query function.
+ */
+function withWarmReader<T>(run: () => Promise<T>): Promise<T> {
+  warmCurrentUserId();
+  return run();
+}
+
 // Import mutation functions
 import {
   createEventWithVisibility,
@@ -63,6 +83,7 @@ import {
   getEventComments,
   getCommentReplies,
 } from './processors/socialInteractions';
+import type { ToggleLikeResult, ToggleDislikeResult } from './processors/reactions';
 
 // Import utilities
 import { getDemoTimelineEvents } from './utils/demo';
@@ -149,7 +170,7 @@ class TimelineService {
     filters?: Partial<TimelineFilters>,
     pagination?: Partial<TimelinePagination>
   ): Promise<TimelineFeedResponse> {
-    return getUserFeed(userId, filters, pagination);
+    return withWarmReader(() => getUserFeed(userId, filters, pagination));
   }
 
   /**
@@ -160,7 +181,7 @@ class TimelineService {
     filters?: Partial<TimelineFilters>,
     pagination?: Partial<TimelinePagination>
   ): Promise<TimelineFeedResponse> {
-    return getProjectFeed(projectId, filters, pagination);
+    return withWarmReader(() => getProjectFeed(projectId, filters, pagination));
   }
 
   /**
@@ -171,7 +192,7 @@ class TimelineService {
     filters?: Partial<TimelineFilters>,
     pagination?: Partial<TimelinePagination>
   ): Promise<TimelineFeedResponse> {
-    return getProfileFeed(profileId, filters, pagination);
+    return withWarmReader(() => getProfileFeed(profileId, filters, pagination));
   }
 
   /**
@@ -182,7 +203,7 @@ class TimelineService {
     pagination?: Partial<TimelinePagination>
   ): Promise<TimelineFeedResponse> {
     // Note: getFollowedUsersFeed gets currentUserId internally
-    return getFollowedUsersFeed(undefined, pagination);
+    return withWarmReader(() => getFollowedUsersFeed(undefined, pagination));
   }
 
   /**
@@ -193,7 +214,7 @@ class TimelineService {
     filters?: Partial<TimelineFilters>,
     pagination?: Partial<TimelinePagination>
   ): Promise<TimelineFeedResponse> {
-    return getCommunityFeed(filters, pagination);
+    return withWarmReader(() => getCommunityFeed(filters, pagination));
   }
 
   /**
@@ -204,7 +225,9 @@ class TimelineService {
     filters?: Partial<TimelineFilters>,
     pagination?: Partial<TimelinePagination>
   ): Promise<TimelineFeedResponse> {
-    return getEnrichedUserFeed(userId, filters, pagination, getDemoTimelineEvents);
+    return withWarmReader(() =>
+      getEnrichedUserFeed(userId, filters, pagination, getDemoTimelineEvents)
+    );
   }
 
   /** Home feed — posts from people/projects the user follows (+ own), no public firehose. */
@@ -213,7 +236,7 @@ class TimelineService {
     filters?: Partial<TimelineFilters>,
     pagination?: Partial<TimelinePagination>
   ): Promise<TimelineFeedResponse> {
-    return getEnrichedFollowingFeed(userId, filters, pagination);
+    return withWarmReader(() => getEnrichedFollowingFeed(userId, filters, pagination));
   }
 
   /**
@@ -222,7 +245,7 @@ class TimelineService {
   async getEventById(
     eventId: string
   ): Promise<{ success: boolean; event?: TimelineDisplayEvent; error?: string }> {
-    return getEventById(eventId);
+    return withWarmReader(() => getEventById(eventId));
   }
 
   /**
@@ -233,7 +256,7 @@ class TimelineService {
     eventId: string,
     limit: number = 50
   ): Promise<{ success: boolean; replies?: TimelineDisplayEvent[]; error?: string }> {
-    return getReplies(eventId, limit);
+    return withWarmReader(() => getReplies(eventId, limit));
   }
 
   /**
@@ -252,14 +275,14 @@ class TimelineService {
     total?: number;
     error?: string;
   }> {
-    return searchPosts(query, options);
+    return withWarmReader(() => searchPosts(query, options));
   }
 
   /**
    * Get all posts in a thread
    */
   async getThreadPosts(threadId: string): Promise<ThreadPostsResponse> {
-    const result = await getThreadPosts(threadId);
+    const result = await withWarmReader(() => getThreadPosts(threadId));
     return {
       success: result.success,
       posts: result.posts || [],
@@ -273,20 +296,14 @@ class TimelineService {
   /**
    * Like or unlike an event
    */
-  async toggleLike(
-    eventId: string,
-    userId?: string
-  ): Promise<{ success: boolean; liked: boolean; likeCount: number; error?: string }> {
+  async toggleLike(eventId: string, userId?: string): Promise<ToggleLikeResult> {
     return toggleLikeEvent(eventId, userId);
   }
 
   /**
    * Toggle dislike on a timeline event (for scam detection and wisdom of crowds)
    */
-  async toggleDislike(
-    eventId: string,
-    userId?: string
-  ): Promise<{ success: boolean; disliked: boolean; dislikeCount: number; error?: string }> {
+  async toggleDislike(eventId: string, userId?: string): Promise<ToggleDislikeResult> {
     return toggleDislikeEvent(eventId, userId);
   }
 

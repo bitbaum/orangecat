@@ -5,8 +5,15 @@ import {
   normalizeEconomicPatch,
   removeFromEconomicProfile,
 } from '../economic-profile';
-import { forgetMemoriesMatching, rememberFacts, editMemoryMatching } from '../memory';
+import {
+  forgetMemoriesMatching,
+  rememberFacts,
+  editMemoryMatching,
+  selectForgetFacts,
+} from '../memory';
 import type { ActionHandler } from './types';
+import { usernameSchema } from '@/lib/validation';
+import { ProfileServerService } from '@/services/profile/server';
 
 export const contextHandlers: Record<string, ActionHandler> = {
   // Persist latent economic value the user discloses (skills/assets/goals/etc.)
@@ -59,14 +66,38 @@ export const contextHandlers: Record<string, ActionHandler> = {
       removeFromEconomicProfile(supabase, userId, facts),
     ]);
     const removedCount = mem.deleted.length + profile.removed.length;
-    const stillUnknown = facts.filter(
+    // Compare like with like: the stores report NORMALISED facts, so filtering
+    // the caller's raw strings meant a padded " photography " could never
+    // appear in the "no stored match" list, however plainly it missed.
+    const selection = selectForgetFacts(facts);
+    const stillUnknown = selection.wanted.filter(
       f => mem.notFound.includes(f) && profile.notFound.includes(f)
     );
-    if (removedCount === 0) {
+
+    // A store that could not be reached is NOT a store with nothing in it.
+    // Checked before the no-match branch, because that branch's wording — "no
+    // stored memory matched, nothing was removed" — is a factual claim about
+    // the user's data that we are in no position to make when the query or the
+    // delete failed. Telling someone a memory is gone while it is still there
+    // is the worst outcome this feature has.
+    const failed = [...mem.failed, ...profile.failed];
+    if (failed.length > 0) {
       return {
         success: false,
         error:
-          'No stored memory or profile entry matched — nothing was removed. The full list is at Settings → AI → What Cat remembers.',
+          'Could not reach your memories just now, so nothing was removed — ' +
+          'please try again in a moment. Nothing has been deleted, and you can ' +
+          'check what is stored at Settings → AI → What Cat remembers.',
+      };
+    }
+
+    if (removedCount === 0) {
+      const skipped = [...selection.overCap, ...selection.tooShort];
+      return {
+        success: false,
+        error:
+          'No stored memory or profile entry matched — nothing was removed. The full list is at Settings → AI → What Cat remembers.' +
+          (skipped.length > 0 ? ` Not looked for at all: ${skipped.join(', ')}.` : ''),
       };
     }
     // List exactly WHAT was removed, not just counts — the user must be able
@@ -87,6 +118,14 @@ export const contextHandlers: Record<string, ActionHandler> = {
           `🧹 Removed ${listed}${overflow}.` +
           (stillUnknown.length > 0
             ? ` No stored match found for: ${stillUnknown.join(', ')} — check Settings → AI → What Cat remembers.`
+            : '') +
+          // Anything we never looked for is said out loud. Silently dropping a
+          // fact the user named reads exactly like having removed it.
+          (selection.overCap.length > 0
+            ? ` Only the first ${selection.wanted.length} were processed — not yet attempted: ${selection.overCap.join(', ')}. Ask again for those.`
+            : '') +
+          (selection.tooShort.length > 0
+            ? ` Too short to match safely (they would hit unrelated memories): ${selection.tooShort.join(', ')}.`
             : ''),
         deletedMemories: mem.deleted,
         removedProfileEntries: profile.removed,
@@ -191,8 +230,17 @@ export const contextHandlers: Record<string, ActionHandler> = {
   },
 
   update_profile: async (supabase, userId, _actorId, params) => {
-    // Update the user's public profile. Only safe text fields — no username (affects URLs),
-    // no email, no financial addresses. Profile.id = auth.users.id = userId.
+    // Update the user's public profile. No email, no financial addresses.
+    // Profile.id = auth.users.id = userId.
+    //
+    // The handle IS updatable. It used to be excluded here because a rename
+    // broke public URLs — true until profile_username_history (20260826160000)
+    // made the old handle keep resolving, and left uncorrected afterwards. That
+    // stale exclusion is what made the Cat tell a user on 2026-08-29 that
+    // handles "cannot be changed once set", which was simply wrong.
+    //
+    // It is validated apart from the free-text fields because it is not free
+    // text: it is a public URL and a Lightning address.
     const SAFE_FIELDS = [
       'name',
       'bio',
@@ -203,10 +251,41 @@ export const contextHandlers: Record<string, ActionHandler> = {
     ] as const;
     type SafeField = (typeof SAFE_FIELDS)[number];
 
-    const updates: Partial<Record<SafeField, string>> = {};
+    const updates: Partial<Record<SafeField | 'username', string>> = {};
     for (const field of SAFE_FIELDS) {
       if (params[field] !== undefined && params[field] !== null) {
         updates[field] = params[field] as string;
+      }
+    }
+
+    let oldUsername: string | null = null;
+    if (typeof params.username === 'string' && params.username.trim()) {
+      // The same schema registration and the profile editor use, so a handle
+      // the Cat accepts is exactly one the form would have accepted — length,
+      // shape and reserved names decided in one place. The leading @ is
+      // stripped because that is how people write a handle.
+      const parsed = usernameSchema.safeParse(params.username.trim().replace(/^@/, ''));
+      if (!parsed.success) {
+        return { success: false, error: parsed.error.issues[0]?.message ?? 'Invalid handle' };
+      }
+
+      const { data: before } = await supabase
+        .from(DATABASE_TABLES.PROFILES)
+        .select('username')
+        .eq('id', userId)
+        .single();
+      oldUsername = (before as { username: string | null } | null)?.username ?? null;
+
+      if (!oldUsername || oldUsername.toLowerCase() !== parsed.data.toLowerCase()) {
+        const free = await ProfileServerService.checkUsernameAvailability(
+          supabase,
+          parsed.data,
+          userId
+        );
+        if (!free) {
+          return { success: false, error: `@${parsed.data} is already taken.` };
+        }
+        updates.username = parsed.data;
       }
     }
 
@@ -214,7 +293,7 @@ export const contextHandlers: Record<string, ActionHandler> = {
       return {
         success: false,
         error:
-          'No profile fields to update — provide at least one of: name, bio, background, website, location_city, location_country',
+          'No profile fields to update — provide at least one of: username, name, bio, background, website, location_city, location_country',
       };
     }
 
@@ -222,11 +301,30 @@ export const contextHandlers: Record<string, ActionHandler> = {
       .from(DATABASE_TABLES.PROFILES)
       .update({ ...updates, updated_at: new Date().toISOString() })
       .eq('id', userId)
-      .select('name, bio, background, website, location_city, location_country')
+      .select('username, name, bio, background, website, location_city, location_country')
       .single();
 
     if (error) {
+      // profiles_username_rename_guard raises unique_violation for a handle
+      // another account retired. It is the authority, not the check above: that
+      // check can go stale between reading and writing, the trigger cannot.
+      if (error.code === '23505' && updates.username) {
+        return { success: false, error: `@${updates.username} is already taken.` };
+      }
       return { success: false, error: error.message };
+    }
+
+    // Say what happens to the old handle. It is the fact that makes the rename
+    // safe, and a rename announced without it reads exactly like the breakage
+    // the user was (wrongly) warned about.
+    if (updates.username && oldUsername) {
+      return {
+        success: true,
+        data: {
+          ...data,
+          displayMessage: `🪪 You are now @${updates.username}. Links to @${oldUsername} still work — the old profile URL redirects here, and ${oldUsername}@orangecat.ch still reaches you.`,
+        },
+      };
     }
 
     const updatedFields = Object.keys(updates).join(', ');

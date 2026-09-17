@@ -32,8 +32,14 @@ export function ProfileBannerSection({
   onShareToggle,
   onFollowToggle,
 }: ProfileBannerSectionProps) {
+  // The gap under the banner is NOT set here. The avatar hangs past the
+  // banner's bottom edge, so whatever clears it has to know the overhang — and
+  // that is the identity card in ProfileLayout, which the avatar now overlaps.
+  // A margin here as well would be a second, blind opinion about the same seam,
+  // which is how the avatar ended up floating in a band of background that
+  // belonged to neither box.
   return (
-    <div className="relative mb-4 sm:mb-6 lg:mb-8">
+    <div className="relative">
       {/* Banner — monochrome neutral default per migration 6/N; user
           banner_url image overlays on top. The dark-bottom overlay stays
           so action buttons remain readable. */}
@@ -48,12 +54,16 @@ export function ProfileBannerSection({
             className="object-cover"
           />
         )}
-        <div className="absolute inset-0 bg-black bg-opacity-20"></div>
+        <div className="absolute inset-0 bg-black/20"></div>
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
       </div>
 
       {/* Avatar */}
-      <div className="absolute -bottom-8 sm:-bottom-12 md:-bottom-16 left-3 sm:left-6 lg:left-8">
+      {/* Overhang is half the avatar at every breakpoint (it was 1/2, 3/5, 2/3
+          and 1/2 before), and the horizontal inset matches the identity card's
+          own padding (p-4 sm:p-6) so the avatar and the name share one left
+          edge instead of missing it by 8px. */}
+      <div className="absolute z-10 -bottom-8 sm:-bottom-10 md:-bottom-12 lg:-bottom-16 left-4 sm:left-6">
         {profile.avatar_url ? (
           <Image
             src={profile.avatar_url}

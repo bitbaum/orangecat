@@ -19,6 +19,7 @@ import type {
   TaskPriority,
   TaskCategory,
 } from '@/services/recommendations/types';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 /**
  * Response shape from the stats API
@@ -113,7 +114,7 @@ export function useRecommendations(
       if (result.success) {
         setData(result.data);
       } else {
-        throw new Error(result.error || 'Unknown error');
+        throw new Error(apiErrorMessage(result, 'Unknown error'));
       }
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Unknown error'));

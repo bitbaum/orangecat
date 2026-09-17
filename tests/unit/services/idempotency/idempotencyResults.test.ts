@@ -32,8 +32,8 @@ describe('hashRequestBody', () => {
   });
 
   it('recurses into nested objects', () => {
-    const a = hashRequestBody({ meta: { source: 'fleetcrown', priority: 1 } });
-    const b = hashRequestBody({ meta: { priority: 1, source: 'fleetcrown' } });
+    const a = hashRequestBody({ meta: { source: 'loki', priority: 1 } });
+    const b = hashRequestBody({ meta: { priority: 1, source: 'loki' } });
     expect(a).toBe(b);
   });
 

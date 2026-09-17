@@ -111,8 +111,8 @@ const PostComposerMobile: React.FC<PostComposerMobileProps> = ({
             <AvatarLink
               username={profile?.username || null}
               userId={user?.id || null}
-              avatarUrl={profile?.avatar_url || user?.user_metadata?.avatar_url || null}
-              name={profile?.name || user?.user_metadata?.name || 'User'}
+              avatarUrl={profile?.avatar_url || null}
+              name={profile?.name || profile?.username || 'User'}
               size={44}
             />
           ) : (
@@ -120,8 +120,8 @@ const PostComposerMobile: React.FC<PostComposerMobileProps> = ({
               <AvatarLink
                 username={profile?.username || null}
                 userId={user?.id || null}
-                avatarUrl={profile?.avatar_url || user?.user_metadata?.avatar_url || null}
-                name={profile?.name || user?.user_metadata?.name || 'User'}
+                avatarUrl={profile?.avatar_url || null}
+                name={profile?.name || profile?.username || 'User'}
                 size={40}
               />
             )
@@ -144,11 +144,12 @@ const PostComposerMobile: React.FC<PostComposerMobileProps> = ({
           {!compact && !fullScreen && (
             <div className="flex items-center gap-3 mb-4">
               <div className="flex-1 min-w-0">
+                {/* Profile only — never the OAuth name, and never the email.
+                    This rendered the email local-part as a display name, which
+                    on the mobile composer put an address the user never chose
+                    to show at the top of every post they were about to write. */}
                 <div className="text-sm font-medium text-fg-primary">
-                  {user?.user_metadata?.name ||
-                    (typeof user?.email === 'string' && user.email.includes('@')
-                      ? user.email.split('@')[0]
-                      : user?.email || 'You')}
+                  {profile?.name || profile?.username || 'You'}
                 </div>
                 {showVisibilityToggle && (
                   <button

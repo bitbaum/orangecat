@@ -102,7 +102,7 @@ export const PUBLIC_API_INTEGRATION_ENDPOINTS = [
   },
   {
     // Domain availability. Public and keyless — registry RDAP records are
-    // public. Shared with FleetCrown so the "a .ch not-found proves nothing"
+    // public. Shared with Loki so the "a .ch not-found proves nothing"
     // rule is enforced server-side once, not re-implemented per client.
     name: 'domains',
     methods: ['GET'] as const,
@@ -124,7 +124,7 @@ export const PUBLIC_API_SCOPE_TOKENS: readonly string[] = [
  * Non-entity webhook events that carry an economic signal rather than an
  * entity lifecycle change. `payment.settled` fires when a Bitcoin payment
  * for one of the actor's entities settles — the same ground-truth signal
- * that drives the FleetCrown entitlement rail, now also deliverable to any
+ * that drives the Loki entitlement rail, now also deliverable to any
  * integrator's own endpoint via the generic webhook fan-out.
  */
 export const PUBLIC_API_ECONOMIC_WEBHOOK_EVENTS = ['payment.settled'] as const;

@@ -8,16 +8,25 @@
  * Last Modified Summary: Initial creation of API helper utilities
  */
 
+import { CACHE_PRESETS } from './cache-policy';
+
 /**
- * Get cache control header based on query type
+ * Cache-Control for a GET route, by whether the answer differs per user.
+ *
+ * Both strings are composed from CACHE_PRESETS rather than spelled out: this
+ * helper and the presets held the same two policies in different words, and a
+ * third route typed the public one by hand. The output is byte-identical to
+ * what it always returned — `public` stays on the shared answer, because a
+ * shared cache will not store a response to an authenticated request without
+ * it.
  *
  * @param isUserSpecific - Whether the query is user-specific
  * @returns Cache-Control header value
  */
 export function getCacheControl(isUserSpecific: boolean): string {
   return isUserSpecific
-    ? 'private, no-cache, no-store, must-revalidate'
-    : 'public, s-maxage=60, stale-while-revalidate=300';
+    ? `private, no-cache, ${CACHE_PRESETS.NONE}`
+    : `public, ${CACHE_PRESETS.SHORT}`;
 }
 
 /**

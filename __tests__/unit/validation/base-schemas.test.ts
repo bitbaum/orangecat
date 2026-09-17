@@ -50,7 +50,7 @@ describe('lightningAddressSchema', () => {
     const result = lightningAddressSchema.safeParse('justuser');
     expect(result.success).toBe(false);
     if (!result.success) {
-      const messages = result.error.errors.map(e => e.message);
+      const messages = result.error.issues.map(e => e.message);
       expect(messages.some(m => /valid Lightning address/i.test(m))).toBe(true);
     }
   });

@@ -13,37 +13,39 @@ import { logger } from '@/utils/logger';
 import { checkOnchainPaymentStatus } from '@/domain/payments/paymentStatusService';
 import { NotificationDispatcher } from '@/services/notifications/dispatcher';
 
-jest.mock('@/utils/logger', () => ({
-  logger: { warn: jest.fn(), error: jest.fn(), info: jest.fn(), debug: jest.fn() },
+vi.mock('@/utils/logger', () => ({
+  logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
-jest.mock('@/lib/email/send-seller-notification', () => ({
-  sendSellerPaymentNotification: jest.fn().mockResolvedValue(undefined),
+vi.mock('@/lib/email/send-seller-notification', () => ({
+  sendSellerPaymentNotification: vi.fn().mockResolvedValue(undefined),
 }));
-jest.mock('@/services/notifications/dispatcher', () => ({
-  NotificationDispatcher: { dispatch: jest.fn().mockResolvedValue(undefined) },
+vi.mock('@/services/notifications/dispatcher', () => ({
+  NotificationDispatcher: { dispatch: vi.fn().mockResolvedValue(undefined) },
 }));
-jest.mock('@/domain/payments/paymentStatusService', () => ({
-  checkNWCPaymentStatus: jest.fn(),
-  checkOnchainPaymentStatus: jest.fn(),
+vi.mock('@/domain/payments/paymentStatusService', () => ({
+  checkNWCPaymentStatus: vi.fn(),
+  checkOnchainPaymentStatus: vi.fn(),
 }));
-jest.mock('@/lib/supabase/admin', () => ({ getAdminClient: jest.fn() }));
-jest.mock('@/services/webhooks/paymentSettledWebhook', () => ({
-  enqueuePaymentSettledWebhook: jest.fn().mockResolvedValue(undefined),
+vi.mock('@/lib/supabase/admin', () => ({ getAdminClient: vi.fn() }));
+vi.mock('@/services/webhooks/paymentSettledWebhook', () => ({
+  enqueuePaymentSettledWebhook: vi.fn().mockResolvedValue(undefined),
 }));
-jest.mock('@/services/fleetcrown/entitlement-notify', () => ({
-  notifyFleetCrownEntitlement: jest.fn().mockResolvedValue(undefined),
-  notifyFleetCrownProjectFunding: jest.fn().mockResolvedValue(undefined),
+vi.mock('@/services/loki/entitlement-notify', () => ({
+  notifyLokiEntitlement: vi.fn().mockResolvedValue(undefined),
+  notifyLokiProjectFunding: vi.fn().mockResolvedValue(undefined),
 }));
-jest.mock('@/services/supporter/grant', () => ({
-  grantSupporterPlan: jest.fn().mockResolvedValue(undefined),
+vi.mock('@/services/supporter/grant', () => ({
+  grantSupporterPlan: vi.fn().mockResolvedValue(undefined),
 }));
 
 import { getAdminClient } from '@/lib/supabase/admin';
 
-const getAdminClientMock = getAdminClient as jest.Mock;
-const errorMock = logger.error as jest.Mock;
-const onchainMock = checkOnchainPaymentStatus as jest.Mock;
-const dispatchMock = NotificationDispatcher.dispatch as jest.Mock;
+import type { Mock } from 'vitest';
+
+const getAdminClientMock = getAdminClient as Mock;
+const errorMock = logger.error as Mock;
+const onchainMock = checkOnchainPaymentStatus as Mock;
+const dispatchMock = NotificationDispatcher.dispatch as Mock;
 
 const PI_ID = 'pi-1';
 const BUYER = 'buyer-1';
@@ -79,21 +81,21 @@ function makeSupabase(orderUpdateError: unknown, intent: unknown = onchainIntent
   ];
   const adminBuilder: Record<string, unknown> = {};
   for (const m of ['select', 'update', 'eq', 'neq', 'in']) {
-    adminBuilder[m] = jest.fn(() => adminBuilder);
+    adminBuilder[m] = vi.fn(() => adminBuilder);
   }
   adminBuilder.then = (resolve: (v: unknown) => unknown, reject: (e: unknown) => unknown) =>
     Promise.resolve(awaitQueue.shift() ?? { error: null }).then(resolve, reject);
-  const rpc = jest.fn(() => Promise.resolve({ error: null }));
-  getAdminClientMock.mockReturnValue({ from: jest.fn(() => adminBuilder), rpc });
+  const rpc = vi.fn(() => Promise.resolve({ error: null }));
+  getAdminClientMock.mockReturnValue({ from: vi.fn(() => adminBuilder), rpc });
 
   const builder: Record<string, unknown> = {};
   for (const m of ['select', 'update', 'eq', 'neq', 'in']) {
-    builder[m] = jest.fn(() => builder);
+    builder[m] = vi.fn(() => builder);
   }
-  builder.single = jest.fn(() => Promise.resolve({ data: intent, error: null }));
+  builder.single = vi.fn(() => Promise.resolve({ data: intent, error: null }));
   builder.then = (resolve: (v: unknown) => unknown, reject: (e: unknown) => unknown) =>
     Promise.resolve({ data: [], error: null }).then(resolve, reject);
-  return { from: jest.fn(() => builder), rpc: jest.fn() } as never;
+  return { from: vi.fn(() => builder), rpc: vi.fn() } as never;
 }
 
 /** A tip intent: entity-less, kind='tip'. Confirming it must NOT touch orders or
@@ -120,7 +122,7 @@ function makeSupabaseReturning(intent: unknown) {
 }
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   onchainMock.mockResolvedValue('confirmed');
 });
 

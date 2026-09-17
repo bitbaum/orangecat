@@ -1,5 +1,6 @@
 'use client';
 
+import type { CreateOwner } from '../../owner';
 import { useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { logger } from '@/utils/logger';
@@ -32,7 +33,8 @@ interface UseEntityFormSubmitParams<T extends Record<string, unknown>> {
   handleFieldChange: (name: keyof T, value: unknown) => void;
   wizardMode?: WizardMode;
   /** Selected actor (null = personal). Sent as `actor_id` in the create body. */
-  actorId?: string | null;
+  /** Who will own it (ADR-0004 D8). Defaults to the signed-in user. */
+  owner?: CreateOwner;
 }
 
 export function useEntityFormSubmit<T extends Record<string, unknown>>({
@@ -49,7 +51,7 @@ export function useEntityFormSubmit<T extends Record<string, unknown>>({
   onEntityCreated,
   handleFieldChange,
   wizardMode,
-  actorId,
+  owner,
 }: UseEntityFormSubmitParams<T>) {
   const router = useRouter();
   const existingWalletLinkIdRef = useRef<string | undefined>(undefined);
@@ -105,7 +107,7 @@ export function useEntityFormSubmit<T extends Record<string, unknown>>({
         router,
         existingWalletLinkIdRef,
         wizardMode,
-        actorId,
+        owner,
       });
     },
     [
@@ -122,7 +124,7 @@ export function useEntityFormSubmit<T extends Record<string, unknown>>({
       user,
       onEntityCreated,
       wizardMode,
-      actorId,
+      owner,
     ]
   );
 

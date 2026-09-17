@@ -10,6 +10,13 @@
  * on every tick: it must not create a second Cat, it must recover from a
  * half-built account, and it must refuse rather than improvise when it cannot
  * establish one — a caller that gets null must not invent a sender.
+ *
+ * Recovering from a RENAME is here because the suite below used to cover only
+ * a deleted profile, and production broke the other way: on 2026-08-26 the
+ * email-derived-handle retirement renamed the Cat from `cat` to
+ * `user_0234d5e38e66`, this file searched by username, found nothing, and
+ * returned null on every tick for two days. Self-healing that keys on the field
+ * most likely to break heals nothing.
  */
 
 import { ensureCatAccount } from '@/services/mentions/cat-account';
@@ -20,31 +27,45 @@ function adminWith({
   profile,
   createError,
   profileAfterCreate,
+  updateError,
 }: {
   profile: Row;
   createError?: { message: string };
   profileAfterCreate?: Row;
+  updateError?: { message: string };
 }) {
-  const createUser = jest.fn().mockResolvedValue({ error: createError ?? null });
-  const update = jest.fn(() => ({ eq: jest.fn().mockResolvedValue({ error: null }) }));
+  const createUser = vi.fn().mockResolvedValue({ error: createError ?? null });
+  const update = vi.fn(() => ({
+    eq: vi.fn().mockResolvedValue({ error: updateError ?? null }),
+  }));
   let lookups = 0;
+  const lookupColumns: string[] = [];
 
   const admin = {
     auth: { admin: { createUser } },
     from: () => ({
       select: () => ({
-        eq: () => ({
-          maybeSingle: () => {
-            lookups += 1;
-            const row = lookups === 1 ? profile : (profileAfterCreate ?? profile);
-            return Promise.resolve({ data: row, error: null });
-          },
-        }),
+        eq: (column: string) => {
+          lookupColumns.push(column);
+          return {
+            maybeSingle: () => {
+              lookups += 1;
+              const row = lookups === 1 ? profile : (profileAfterCreate ?? profile);
+              return Promise.resolve({ data: row, error: null });
+            },
+          };
+        },
       }),
       update,
     }),
   };
-  return { admin: admin as never, createUser, update, lookups: () => lookups };
+  return {
+    admin: admin as never,
+    createUser,
+    update,
+    lookups: () => lookups,
+    lookupColumns,
+  };
 }
 
 describe('ensureCatAccount', () => {
@@ -102,5 +123,51 @@ describe('ensureCatAccount', () => {
     });
     await ensureCatAccount(admin);
     expect(update).toHaveBeenCalledWith(expect.objectContaining({ name: 'Cat' }));
+  });
+
+  it('finds the Cat by its login address, not by the handle that can be taken away', async () => {
+    const { admin, lookupColumns } = adminWith({
+      profile: { id: 'cat-1', username: 'cat' },
+    });
+    await ensureCatAccount(admin);
+
+    // Searching by `username` is what made the 2026-08-26 rename unrecoverable:
+    // the field being repaired was the field being searched by.
+    expect(lookupColumns).toContain('email');
+    expect(lookupColumns).not.toContain('username');
+  });
+
+  it('restores the handle when something has renamed the Cat', async () => {
+    const { admin, update } = adminWith({
+      profile: { id: 'cat-1', username: 'user_0234d5e38e66' },
+    });
+
+    await expect(ensureCatAccount(admin)).resolves.toEqual({
+      id: 'cat-1',
+      username: 'cat',
+    });
+    expect(update).toHaveBeenCalledWith({ username: 'cat' });
+  });
+
+  it('does not write on an ordinary tick', async () => {
+    const { admin, update } = adminWith({ profile: { id: 'cat-1', username: 'cat' } });
+    await ensureCatAccount(admin);
+    // This runs on every worker tick; a rename repair that writes unconditionally
+    // is a write per tick forever.
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it('still returns the account when the handle cannot be restored', async () => {
+    const { admin } = adminWith({
+      profile: { id: 'cat-1', username: 'user_0234d5e38e66' },
+      updateError: { message: 'duplicate key value violates unique constraint' },
+    });
+
+    // Somebody else holding `cat` is bad, but refusing to return the account
+    // would turn a wrong name into total silence — strictly worse.
+    await expect(ensureCatAccount(admin)).resolves.toEqual({
+      id: 'cat-1',
+      username: 'user_0234d5e38e66',
+    });
   });
 });

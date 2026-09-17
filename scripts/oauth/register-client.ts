@@ -19,10 +19,10 @@
  *     `--rotate` is passed (which mints a new secret and prints it).
  *
  * Run against the LIVE self-hosted DB (supabase.orangecat.ch) from the box:
- *   ORANGECAT_OWNER_SEED=1 npx tsx scripts/oauth/register-client.ts --client fleetcrown
+ *   ORANGECAT_OWNER_SEED=1 npx tsx scripts/oauth/register-client.ts --client loki
  *   ORANGECAT_OWNER_SEED=1 npx tsx scripts/oauth/register-client.ts --client solon
  *   ORANGECAT_OWNER_SEED=1 npx tsx scripts/oauth/register-client.ts --client solon --rotate
- * (no --client defaults to fleetcrown, preserving the original invocation)
+ * (no --client defaults to loki, preserving the original invocation)
  *
  * Requires in the environment (already in .env.local on the box):
  *   NEXT_PUBLIC_SUPABASE_URL   — self-hosted Supabase URL
@@ -34,31 +34,16 @@
  * Created: 2026-06-17
  */
 
-import { config as loadEnv } from 'dotenv';
+import { die, requireOwnerAdminClient } from '../lib/owner-gate';
 import { createHash, randomBytes } from 'node:crypto';
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { parseAndValidateScopes } from '../../src/lib/oauth/config';
 
-loadEnv({ path: '.env.local' });
-
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-function die(message: string): never {
-  console.error(`✗ ${message}`);
-  process.exit(1);
-}
-
-if (process.env.ORANGECAT_OWNER_SEED !== '1') {
-  die('Refusing to run without ORANGECAT_OWNER_SEED=1 (owner-gated).');
-}
-if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
-  die('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in the environment.');
-}
+const admin = requireOwnerAdminClient();
 
 const rotate = process.argv.includes('--rotate');
 const clientArgIdx = process.argv.indexOf('--client');
-const clientId = (clientArgIdx !== -1 && process.argv[clientArgIdx + 1]) || 'fleetcrown';
+const clientId = (clientArgIdx !== -1 && process.argv[clientArgIdx + 1]) || 'loki';
 const sha256 = (s: string): string => createHash('sha256').update(s).digest('hex');
 
 /** Auth.js v5 callback path — identical for every relying party we register. */
@@ -87,10 +72,10 @@ interface ClientSpec {
  */
 const CLIENT_SPECS: Record<string, ClientSpec> = {
   // Mirrors the row first registered + go-live-verified on 2026-06-17; the
-  // secret already lives in FleetCrown's env.
-  fleetcrown: {
-    name: 'FleetCrown',
-    origins: ['https://fleetcrown.orangecat.ch'], // production origin (PLATFORM_AND_COLLABORATION.md)
+  // secret already lives in Loki's env.
+  loki: {
+    name: 'Loki',
+    origins: ['https://loki.orangecat.ch'], // production origin (PLATFORM_AND_COLLABORATION.md)
     scopes: 'openid profile email project.read project.write timeline.write wallet.read',
     is_confidential: true, // has a server (Auth.js v5) — keeps a secret
     is_trusted: true, // first-party — skips the consent screen after first grant
@@ -105,6 +90,20 @@ const CLIENT_SPECS: Record<string, ClientSpec> = {
     scopes: 'openid profile email',
     is_confidential: true,
     is_trusted: true,
+  },
+  // Heidi needs IDENTITY and nothing else, for the same reason Solon does.
+  // Heidi teaches Swiss German; its portal has learners, tutors who can be
+  // paid, and study groups — and each of those is something OrangeCat already
+  // owns (identity, economy, public presence). So Heidi keeps NO users table
+  // and acts on nobody's behalf: it reads who you are and stops there.
+  // Widen this ceiling deliberately, here, if tutor payouts later need a
+  // wallet scope — never by letting the client ask for more at request time.
+  heidi: {
+    name: 'Heidi',
+    origins: ['https://heidi.orangecat.ch'],
+    scopes: 'openid profile email',
+    is_confidential: true, // has a server (Auth.js v5) — keeps a secret
+    is_trusted: true, // first-party — skips the consent screen after first grant
   },
 };
 
@@ -138,10 +137,6 @@ const CLIENT = {
   is_confidential: spec.is_confidential,
   is_trusted: spec.is_trusted,
 } as const;
-
-const admin: SupabaseClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
-  auth: { persistSession: false, autoRefreshToken: false },
-});
 
 interface ClientRow {
   id: string;

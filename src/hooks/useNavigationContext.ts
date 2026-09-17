@@ -18,6 +18,7 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from './useAuth';
 import { logger } from '@/utils/logger';
 import { API_ROUTES } from '@/config/api-routes';
+import { isFixtureGroupTitle } from '@/config/public-directory';
 
 type NavigationContextType = 'individual' | 'group';
 
@@ -116,14 +117,19 @@ export function useNavigationContext(): UseNavigationContextReturn {
         }
         const data = await response.json();
         if (!cancelled && data.success && data.data?.groups) {
-          const groups: GroupContextInfo[] = data.data.groups.map(
-            (g: { id: string; slug: string; name: string; avatar_url?: string }) => ({
+          const groups: GroupContextInfo[] = data.data.groups
+            // CI and workflow audits mint throwaway groups ("Audit WF009 …")
+            // and add the account they run as to them. Public directories
+            // already hide those rows; the switcher never got the same filter,
+            // so they sat in the user's own context menu as if they were real
+            // teams. Same predicate, one definition — see config/public-directory.
+            .filter((g: { name: string }) => !isFixtureGroupTitle(g.name))
+            .map((g: { id: string; slug: string; name: string; avatar_url?: string }) => ({
               id: g.id,
               slug: g.slug,
               name: g.name,
               avatar_url: g.avatar_url,
-            })
-          );
+            }));
           setUserGroups(groups);
         }
       } catch (error) {

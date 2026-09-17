@@ -20,6 +20,7 @@ import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
 import { API_ROUTES } from '@/config/api-routes';
 import type { LucideIcon } from 'lucide-react';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 export interface EntityTabConfig {
   id: string;
@@ -174,7 +175,7 @@ export function useEntityDashboard<T extends BaseEntity>({
         });
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || `Failed to update ${config.name} status`);
+          throw new Error(apiErrorMessage(errorData, `Failed to update ${config.name} status`));
         }
         await refresh();
         toast.success(`${config.name} status updated`);
@@ -203,7 +204,7 @@ export function useEntityDashboard<T extends BaseEntity>({
         const response = await fetch(`${config.apiEndpoint}/${id}`, { method: 'DELETE' });
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || `Failed to delete ${config.name}`);
+          throw new Error(apiErrorMessage(errorData, `Failed to delete ${config.name}`));
         }
         toast.success(`${config.name} deleted successfully`);
         await refresh();

@@ -1,5 +1,4 @@
 import React from 'react';
-import { LucideIcon } from 'lucide-react';
 import { TimelineFeedResponse, TimelineDisplayEvent } from '@/types/timeline';
 import TimelineComponent from './TimelineComponent';
 import { cn } from '@/lib/utils';
@@ -7,8 +6,6 @@ import { TIMELINE_SURFACE } from '@/config/timeline';
 
 export interface TimelineLayoutProps {
   title: string;
-  description: string;
-  icon: LucideIcon;
   feed: TimelineFeedResponse;
   onEventUpdate: (eventId: string, updates: Partial<TimelineDisplayEvent>) => void;
   onLoadMore: () => void;
@@ -36,8 +33,6 @@ export interface TimelineLayoutProps {
  */
 export default function TimelineLayout({
   title,
-  description,
-  icon: Icon,
   feed,
   onEventUpdate,
   onLoadMore,
@@ -55,16 +50,20 @@ export default function TimelineLayout({
     <div className={TIMELINE_SURFACE.page}>
       <div className={TIMELINE_SURFACE.rail}>
         <div className={TIMELINE_SURFACE.feed}>
+          {/*
+            The header names the surface and gets out of the way.
+
+            It used to carry a 36px icon tile, a 20px bold title AND a
+            description line — roughly 100px of chrome above every feed, saying
+            "Your personal timeline and story" to someone who just clicked
+            "Timeline". The nav already answers where you are; a subtitle
+            restating the title is a second source of truth for the same fact
+            and pushes the first post below the fold.
+
+            Now: the name, and whatever actions belong to this surface.
+          */}
           <div className={cn(TIMELINE_SURFACE.header)}>
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-md bg-surface-raised text-fg-primary">
-                <Icon className="w-5 h-5" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-fg-primary">{title}</h1>
-                {description && <p className="text-sm text-fg-secondary">{description}</p>}
-              </div>
-            </div>
+            <h1 className="text-lg font-semibold tracking-display text-fg-primary">{title}</h1>
             {additionalHeaderContent && (
               <div className="flex items-center gap-2">{additionalHeaderContent}</div>
             )}

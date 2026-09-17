@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
 import { API_ROUTES } from '@/config/api-routes';
 import type { ContributionData, FairnessData, DashboardStats } from './types';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 export function useTaskAnalytics() {
   const { user, isLoading: authLoading, hydrated } = useRequireAuth();
@@ -33,13 +34,13 @@ export function useTaskAnalytics() {
         fairnessRes.json(),
       ]);
       if (!statsRes.ok) {
-        throw new Error(statsData.error || 'Failed to load stats');
+        throw new Error(apiErrorMessage(statsData, 'Failed to load stats'));
       }
       if (!contributionsRes.ok) {
-        throw new Error(contributionsData.error || 'Failed to load contributions');
+        throw new Error(apiErrorMessage(contributionsData, 'Failed to load contributions'));
       }
       if (!fairnessRes.ok) {
-        throw new Error(fairnessDataRes.error || 'Failed to load fairness data');
+        throw new Error(apiErrorMessage(fairnessDataRes, 'Failed to load fairness data'));
       }
       setStats(statsData.data?.stats || null);
       setContributions(contributionsData.data?.contributions || []);

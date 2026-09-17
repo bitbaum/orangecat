@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * The segmented control existed three times by copy-paste before this. What the
  * shared version must keep true is the part the copies were getting subtly
@@ -35,7 +36,12 @@ describe('SegmentedControl', () => {
 
   it('renders stateful segments as buttons that report being pressed', () => {
     render(
-      <SegmentedControl label="Send method" value="person" items={BUTTON_ITEMS} onChange={() => {}} />
+      <SegmentedControl
+        label="Send method"
+        value="person"
+        items={BUTTON_ITEMS}
+        onChange={() => {}}
+      />
     );
 
     expect(screen.getByRole('button', { name: 'To a person' })).toHaveAttribute(
@@ -49,9 +55,14 @@ describe('SegmentedControl', () => {
   });
 
   it('reports the value that was chosen', () => {
-    const onChange = jest.fn();
+    const onChange = vi.fn();
     render(
-      <SegmentedControl label="Send method" value="person" items={BUTTON_ITEMS} onChange={onChange} />
+      <SegmentedControl
+        label="Send method"
+        value="person"
+        items={BUTTON_ITEMS}
+        onChange={onChange}
+      />
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Paste invoice' }));
@@ -60,7 +71,12 @@ describe('SegmentedControl', () => {
 
   it('names the group so the choice is not an anonymous row of words', () => {
     render(
-      <SegmentedControl label="Send method" value="person" items={BUTTON_ITEMS} onChange={() => {}} />
+      <SegmentedControl
+        label="Send method"
+        value="person"
+        items={BUTTON_ITEMS}
+        onChange={() => {}}
+      />
     );
 
     expect(screen.getByRole('group', { name: 'Send method' })).toBeInTheDocument();
@@ -68,7 +84,12 @@ describe('SegmentedControl', () => {
 
   it('keeps every segment at a thumb-sized touch target', () => {
     render(
-      <SegmentedControl label="Send method" value="person" items={BUTTON_ITEMS} onChange={() => {}} />
+      <SegmentedControl
+        label="Send method"
+        value="person"
+        items={BUTTON_ITEMS}
+        onChange={() => {}}
+      />
     );
 
     for (const button of screen.getAllByRole('button')) {

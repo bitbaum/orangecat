@@ -11,7 +11,7 @@
 import { createServerClient } from '@/lib/supabase/server';
 import { logger } from '@/utils/logger';
 import { DATABASE_TABLES } from '@/config/database-tables';
-import { createEntity } from '@/domain/base/entityService';
+import { createEntity, withResolvedActor } from '@/domain/base/entityService';
 import { getOrCreateUserActor } from '@/services/actors/getOrCreateUserActor';
 import type { WishlistFormData } from '@/lib/validation';
 
@@ -71,18 +71,22 @@ export async function listWishlistsPage(
 }
 
 export async function createWishlist(userId: string, data: WishlistFormData) {
-  return createEntity('wishlist', userId, {
-    title: data.title,
-    description: data.description,
-    type: data.type,
-    visibility: data.visibility,
-    // Default to draft (false), not active. Earlier `?? true` forced every
-    // new wishlist live regardless of caller intent or schema default,
-    // which is what surfaced the privacy-bug verify finding (UI promised
-    // "saved as draft, not visible" while the row landed is_active=true,
-    // visibility='public').
-    is_active: data.is_active ?? false,
-    cover_image_url: data.cover_image_url,
-    event_date: data.event_date,
-  });
+  return createEntity(
+    'wishlist',
+    userId,
+    withResolvedActor(data, {
+      title: data.title,
+      description: data.description,
+      type: data.type,
+      visibility: data.visibility,
+      // Default to draft (false), not active. Earlier `?? true` forced every
+      // new wishlist live regardless of caller intent or schema default,
+      // which is what surfaced the privacy-bug verify finding (UI promised
+      // "saved as draft, not visible" while the row landed is_active=true,
+      // visibility='public').
+      is_active: data.is_active ?? false,
+      cover_image_url: data.cover_image_url,
+      event_date: data.event_date,
+    })
+  );
 }

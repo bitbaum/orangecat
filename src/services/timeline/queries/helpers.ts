@@ -8,9 +8,7 @@
  * Last Modified Summary: Extracted from feeds.ts
  */
 
-import supabase from '@/lib/supabase/browser';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
-import { logger } from '@/utils/logger';
 import type { TimelineDisplayEvent, TimelineEventDb, TimelineActorType } from '@/types/timeline';
 import type { Database } from '@/types/database';
 import {
@@ -22,20 +20,8 @@ import {
   isEventRecent,
 } from '@/services/timeline/formatters';
 
-/**
- * Get current user ID helper
- */
-export async function getCurrentUserId(): Promise<string | null> {
-  try {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    return user?.id || null;
-  } catch (error) {
-    logger.error('Error getting current user ID', error, 'Timeline');
-    return null;
-  }
-}
+// Defined once, in the auth layer, where it is cached. See session.ts.
+export { getCurrentUserId } from '@/services/supabase/auth/session';
 
 /**
  * Helper to transform enriched view events to display events

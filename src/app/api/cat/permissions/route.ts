@@ -101,7 +101,7 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
     const body = await (request as NextRequest).json();
     const parseResult = grantPermissionSchema.safeParse(body);
     if (!parseResult.success) {
-      return apiBadRequest('Invalid request', parseResult.error.errors);
+      return apiBadRequest('Invalid request', parseResult.error.issues);
     }
 
     const { actionId, category, requiresConfirmation, ...rawLimits } = parseResult.data;
@@ -172,7 +172,7 @@ export const DELETE = withAuth(async (request: AuthenticatedRequest) => {
     const body = await (request as NextRequest).json();
     const parseResult = revokePermissionSchema.safeParse(body);
     if (!parseResult.success) {
-      return apiBadRequest('Invalid request', parseResult.error.errors);
+      return apiBadRequest('Invalid request', parseResult.error.issues);
     }
 
     const { actionId, category } = parseResult.data;

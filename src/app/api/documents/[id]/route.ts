@@ -64,7 +64,7 @@ export const PUT = withAuth(async (request: AuthenticatedRequest, context: Route
     // Validate input (partial schema)
     const result = documentSchema.partial().safeParse(body);
     if (!result.success) {
-      return apiValidationError('Invalid document data', { details: result.error.errors });
+      return apiValidationError('Invalid document data', { details: result.error.issues });
     }
 
     const document = await updateDocument(id, user.id, result.data);

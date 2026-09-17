@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Tests for useThrottledLog (internal helper in useAuth.ts).
  *
@@ -30,15 +31,15 @@ function useThrottledLog(logFn: () => void, delay: number = 10000) {
 
 describe('useThrottledLog', () => {
   beforeEach(() => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('returns a stable function reference across re-renders', () => {
-    const logFn = jest.fn();
+    const logFn = vi.fn();
     const { result, rerender } = renderHook(() => useThrottledLog(logFn, 1000));
 
     const ref1 = result.current;
@@ -47,17 +48,17 @@ describe('useThrottledLog', () => {
   });
 
   it('returns a stable reference even when logFn changes', () => {
-    let log = jest.fn();
+    let log = vi.fn();
     const { result, rerender } = renderHook(() => useThrottledLog(log, 1000));
 
     const ref1 = result.current;
-    log = jest.fn(); // new function reference
+    log = vi.fn(); // new function reference
     rerender();
     expect(result.current).toBe(ref1); // still same stable callback
   });
 
   it('calls the latest logFn when invoked', () => {
-    const log1 = jest.fn();
+    const log1 = vi.fn();
     let activeLog = log1;
     const { result, rerender } = renderHook(() => useThrottledLog(activeLog, 1000));
 
@@ -66,12 +67,12 @@ describe('useThrottledLog', () => {
     });
     expect(log1).toHaveBeenCalledTimes(1);
 
-    const log2 = jest.fn();
+    const log2 = vi.fn();
     activeLog = log2;
     rerender();
 
     // Advance past throttle window
-    jest.advanceTimersByTime(1001);
+    vi.advanceTimersByTime(1001);
 
     act(() => {
       result.current();
@@ -81,7 +82,7 @@ describe('useThrottledLog', () => {
   });
 
   it('throttles calls within the delay window', () => {
-    const logFn = jest.fn();
+    const logFn = vi.fn();
     const { result } = renderHook(() => useThrottledLog(logFn, 1000));
 
     act(() => {
@@ -98,13 +99,13 @@ describe('useThrottledLog', () => {
   });
 
   it('allows a call after the delay window passes', () => {
-    const logFn = jest.fn();
+    const logFn = vi.fn();
     const { result } = renderHook(() => useThrottledLog(logFn, 1000));
 
     act(() => {
       result.current();
     }); // fires
-    jest.advanceTimersByTime(1001);
+    vi.advanceTimersByTime(1001);
     act(() => {
       result.current();
     }); // fires again
@@ -113,13 +114,13 @@ describe('useThrottledLog', () => {
   });
 
   it('does not call logFn before the delay elapses', () => {
-    const logFn = jest.fn();
+    const logFn = vi.fn();
     const { result } = renderHook(() => useThrottledLog(logFn, 5000));
 
     act(() => {
       result.current();
     }); // fires
-    jest.advanceTimersByTime(4999);
+    vi.advanceTimersByTime(4999);
     act(() => {
       result.current();
     }); // still throttled

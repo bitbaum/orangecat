@@ -8,7 +8,7 @@
  *
  * Created: 2026-06-03
  * Last Modified: 2026-06-03
- * Last Modified Summary: Initial implementation — machine-readable v1 contract for FleetCrown + future SDK consumers.
+ * Last Modified Summary: Initial implementation — machine-readable v1 contract for Loki + future SDK consumers.
  */
 
 import { z } from 'zod';

@@ -66,7 +66,7 @@ export async function initiatePayment(
   }
 
   // 2. Resolve seller's wallet & payment method
-  const wallet = await resolveSellerWallet(supabase, entity_type, entity_id);
+  const wallet = await resolveSellerWallet(entity_type, entity_id);
   if (!wallet) {
     throw new Error('Seller has no wallet connected. Payment not available.');
   }
@@ -205,7 +205,7 @@ export async function initiatePublicSupport(
     throw new Error('Entity owner not found');
   }
 
-  const wallet = await resolveSellerWallet(publicSupabase, entityType, entityId);
+  const wallet = await resolveSellerWallet(entityType, entityId);
   if (!wallet) {
     throw new Error('Seller has no wallet connected. Payment not available.');
   }

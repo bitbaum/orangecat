@@ -1,5 +1,6 @@
 'use client';
 
+import type { CreateOwner } from '../owner';
 import { useCallback, useMemo, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserCurrency } from '@/hooks/useUserCurrency';
@@ -46,7 +47,8 @@ interface EntityFormProps<T extends Record<string, unknown>> {
    * actor IDs are validated server-side (resolveCreationActor) — invalid
    * IDs return 403.
    */
-  actorId?: string | null;
+  /** Who will own it (ADR-0004 D8). Defaults to the signed-in user. */
+  owner?: CreateOwner;
 }
 
 export function EntityForm<T extends Record<string, unknown>>({
@@ -58,7 +60,7 @@ export function EntityForm<T extends Record<string, unknown>>({
   entityId,
   wizardMode,
   embedded,
-  actorId,
+  owner,
 }: EntityFormProps<T>) {
   const { user, isLoading: authLoading, hydrated } = useAuth();
   const userCurrency = useUserCurrency();
@@ -111,7 +113,7 @@ export function EntityForm<T extends Record<string, unknown>>({
     onEntityCreated: setCreatedEntity,
     handleFieldChange,
     wizardMode,
-    actorId,
+    owner,
   });
 
   /**

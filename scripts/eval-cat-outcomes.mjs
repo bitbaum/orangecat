@@ -16,7 +16,10 @@
  * Also acts as the REGRESSION GUARD for the "audit trail silently dead" class
  * (cat_action_log had no INSERT RLS policy for months — every write failed
  * silently): with --gate, exits 1 when the window shows Cat assistant activity
- * (cat_messages) but ZERO logged actions — the exact signature of that bug.
+ * (cat_messages) but the action log is EMPTY — the exact signature of that bug.
+ * NOT when the log has rows and merely no completed create_*: that is a funnel
+ * fact (nothing creatable was asked for, or every attempt was denied), and
+ * conflating the two made this gate fail nightly while the write path was fine.
  *
  * Usage:
  *   node scripts/eval-cat-outcomes.mjs               # report, exit 0
@@ -29,6 +32,7 @@
  */
 
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { pathToFileURL } from 'node:url';
 
 // ---------------------------------------------------------------------------
 // Env
@@ -53,9 +57,11 @@ const WINDOW_DAYS = Number(process.env.OUTCOME_WINDOW_DAYS || 30);
 const JSON_OUT = process.env.OUTCOME_JSON_OUT || null;
 const GATE = process.argv.includes('--gate');
 
-if (!SUPABASE_URL || !SERVICE_KEY) {
-  console.error('eval-cat-outcomes: missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY');
-  process.exit(2);
+function requireEnv() {
+  if (!SUPABASE_URL || !SERVICE_KEY) {
+    console.error('eval-cat-outcomes: missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY');
+    process.exit(2);
+  }
 }
 
 /**
@@ -90,6 +96,66 @@ async function rest(path) {
     throw new Error(`PostgREST ${res.status} on ${path.split('?')[0]}: ${await res.text()}`);
   }
   return res.json();
+}
+
+// ---------------------------------------------------------------------------
+// The gate
+// ---------------------------------------------------------------------------
+
+/**
+ * Decide whether zero *completed create_** rows means the audit trail is dead.
+ *
+ * It usually does not. On 2026-08-29 this gate failed nightly with "the
+ * cat_action_log write path looks dead (check RLS policies and the executor)"
+ * while the log held ten rows for the window, the newest from 2026-08-25 — the
+ * write path was demonstrably alive. `proposed` counts only rows that are BOTH
+ * `status=completed` AND a `create_*` action, and in that window there were
+ * none: the single create_* was `create_cause`, DENIED. Three different worlds
+ * produce proposed === 0:
+ *
+ *   1. nothing is written at all           → the audit trail is dead. Page.
+ *   2. writes happen, no completed creates → users asked for nothing creatable,
+ *                                            or every attempt was denied. A
+ *                                            funnel fact. Not an outage.
+ *   3. no assistant activity at all        → nothing to grade.
+ *
+ * The old predicate could not see the difference between 1 and 2, so it
+ * asserted a cause it had never tested — and a tripwire that cries every night
+ * is one nobody believes on the night it is right. So the gate now fails only
+ * on the shape it was actually built for: the log is EMPTY while the Cat is
+ * talking.
+ */
+export function gateVerdict({ proposed, hasAssistantActivity, logRows }) {
+  if (proposed > 0) {
+    return { fail: false, message: `gate: ${proposed} completed create_* action(s) in window.` };
+  }
+  if (!hasAssistantActivity) {
+    return { fail: false, message: 'gate: no assistant activity in window either — nothing to grade, pass.' };
+  }
+  const rows = logRows || [];
+  if (rows.length === 0) {
+    return {
+      fail: true,
+      message:
+        'GATE FAILED: assistant messages exist in the window but cat_action_log is EMPTY — ' +
+        'the write path looks dead (check RLS policies and the executor).',
+    };
+  }
+  const byStatus = {};
+  for (const r of rows) {
+    byStatus[r.status] = (byStatus[r.status] || 0) + 1;
+  }
+  const summary = Object.entries(byStatus)
+    .map(([k, v]) => `${k} ${v}`)
+    .join(', ');
+  const denied = byStatus.denied || 0;
+  return {
+    fail: false,
+    message:
+      `gate: the write path is alive — ${rows.length} action(s) logged in window (${summary}), ` +
+      `just none of them a completed create_*. Not an outage.` +
+      (denied > 0 ? ` NOTE: ${denied} were DENIED — worth a look if that is unexpected.` : ''),
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -182,24 +248,39 @@ async function main() {
     console.log(`  report → ${JSON_OUT}`);
   }
 
-  // Dead-audit-trail gate: Cat talked but nothing was ever logged → the write
-  // path is broken again (RLS, schema drift, refactor). Fail loudly.
+  // Dead-audit-trail gate — see gateVerdict for why it needs three inputs.
   if (GATE && report.proposed === 0) {
     const msgs = await rest(
       `cat_messages?select=id&role=eq.assistant&created_at=gte.${since}&limit=1`
     );
-    if (msgs.length > 0) {
-      console.error(
-        `GATE FAILED: assistant messages exist in the window but 0 Cat actions were logged — ` +
-          `the cat_action_log write path looks dead (check RLS policies and the executor).`
-      );
+    // The rows the gate must look at are ALL of them, with no status or action
+    // filter: "nothing is written at all" is the only shape that means the
+    // write path is dead. Fetching this is the whole fix.
+    const logAny = await rest(
+      `cat_action_log?select=action_id,status&created_at=gte.${since}&order=created_at.desc&limit=200`
+    );
+    const verdict = gateVerdict({
+      proposed: report.proposed,
+      hasAssistantActivity: msgs.length > 0,
+      logRows: logAny,
+    });
+    if (verdict.fail) {
+      console.error(verdict.message);
       process.exit(1);
     }
-    console.log('  gate: no assistant activity in window either — nothing to grade, pass.');
+    console.log(`  ${verdict.message}`);
   }
 }
 
-main().catch(err => {
-  console.error(`eval-cat-outcomes: ${err.message}`);
-  process.exit(2);
-});
+// Run only when executed directly. Importing this module (the unit test does)
+// must not hit the network or exit the process — that is what kept the gate's
+// own predicate untestable while it was wrong.
+const invokedDirectly =
+  process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (invokedDirectly) {
+  requireEnv();
+  main().catch(err => {
+    console.error(`eval-cat-outcomes: ${err.message}`);
+    process.exit(2);
+  });
+}

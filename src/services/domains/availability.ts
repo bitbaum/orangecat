@@ -1,22 +1,23 @@
 /**
  * Domain availability via registry RDAP.
  *
- * The contract this module keeps: it never reports `unregistered` unless the
- * TLD appears in IANA's RDAP bootstrap AND the registry answered 404. Any
- * other outcome — TLD with no RDAP service, timeout, transport failure,
+ * The contract this module keeps: it never reports `unregistered` unless we
+ * hold the TLD's own RDAP base URL AND that registry answered 404. Any other
+ * outcome — TLD we have no registry for, timeout, transport failure,
  * unexpected status — is `unknown`. See `src/config/domain-search.ts` for the
- * false positive (orangecat.ch) that this rule exists to prevent.
+ * two failures this rule exists to prevent.
  *
- * Created: 2026-08-26
+ * Created: 2026-08-26. Rewritten onto direct registry queries 2026-09-08.
  */
 
 import {
   DOMAIN_RESULT_CACHE_MAX,
   DOMAIN_RESULT_TTL_MS,
+  RDAP_BOOTSTRAP_TIMEOUT_MS,
   RDAP_BOOTSTRAP_TTL_MS,
   RDAP_BOOTSTRAP_URL,
   RDAP_CONCURRENCY,
-  RDAP_QUERY_BASE,
+  RDAP_REGISTRY_OVERRIDES,
   RDAP_TIMEOUT_MS,
   type DomainStatus,
 } from '@/config/domain-search';
@@ -31,52 +32,109 @@ export interface DomainResult {
   status: DomainStatus;
   /** Why the status is what it is — surfaced so nobody has to guess. */
   reason: string;
-  /** True when this registry publishes RDAP, i.e. a definite answer was possible. */
+  /** True when we hold this registry's RDAP base URL, i.e. a definite answer was possible. */
   rdapSupported: boolean;
 }
 
+/** TLD → that registry's RDAP base URL, always with a trailing slash. */
+export type RdapRegistries = Map<string, string>;
+
 // ---------------------------------------------------------------------------
-// Bootstrap: which TLDs can answer at all
+// Bootstrap: which TLDs can answer, and where to ask them
 // ---------------------------------------------------------------------------
 
-let bootstrapCache: { tlds: Set<string>; fetchedAt: number } | null = null;
+let bootstrapCache: { registries: RdapRegistries; fetchedAt: number } | null = null;
 
 /**
- * TLDs that operate a public RDAP service, per IANA.
+ * A base URL is only usable if it is absolute, https, and ends in a slash.
  *
- * On failure this returns null rather than an empty set — an empty set would
- * be indistinguishable from "no TLD supports RDAP" and would silently turn
- * every lookup into `unknown` without saying why.
+ * The trailing slash is not cosmetic: `new URL('domain/x', base)` resolves
+ * against the last path SEGMENT, so a base missing its slash would silently
+ * drop `/v1` and query a path that does not exist — which returns a non-404
+ * error and therefore reads as `unknown` rather than as a bug.
  */
-export async function loadRdapTlds(now: number = Date.now()): Promise<Set<string> | null> {
-  if (bootstrapCache && now - bootstrapCache.fetchedAt < RDAP_BOOTSTRAP_TTL_MS) {
-    return bootstrapCache.tlds;
+function normaliseBase(url: string): string | null {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return null;
   }
+  if (parsed.protocol !== 'https:') {
+    return null;
+  }
+  return parsed.href.endsWith('/') ? parsed.href : `${parsed.href}/`;
+}
+
+/** The overrides, as a map. Built fresh so no caller can mutate the config. */
+function overrideRegistries(): RdapRegistries {
+  const map: RdapRegistries = new Map();
+  for (const [tld, url] of Object.entries(RDAP_REGISTRY_OVERRIDES)) {
+    const base = normaliseBase(url);
+    if (base) {
+      map.set(tld.toLowerCase(), base);
+    }
+  }
+  return map;
+}
+
+/**
+ * TLDs we can ask, mapped to the registry that answers for them.
+ *
+ * IANA's bootstrap is the bulk of it; the verified overrides are layered on top
+ * and WIN, so a TLD IANA lists wrongly can be corrected without waiting on IANA.
+ *
+ * On bootstrap failure this still returns the overrides rather than null. The
+ * old behaviour — null, meaning "conclude nothing" — let one unreachable
+ * document disable TLDs whose registry URL is a compile-time constant and was
+ * never in doubt. `.ch` is this platform's own TLD; it should not go dark
+ * because data.iana.org is slow.
+ */
+export async function loadRdapRegistries(now: number = Date.now()): Promise<RdapRegistries> {
+  if (bootstrapCache && now - bootstrapCache.fetchedAt < RDAP_BOOTSTRAP_TTL_MS) {
+    return bootstrapCache.registries;
+  }
+
+  const overrides = overrideRegistries();
+
   try {
     const response = await fetch(RDAP_BOOTSTRAP_URL, {
-      signal: AbortSignal.timeout(RDAP_TIMEOUT_MS),
+      signal: AbortSignal.timeout(RDAP_BOOTSTRAP_TIMEOUT_MS),
       headers: { accept: 'application/json' },
     });
     if (!response.ok) {
       logger.warn('RDAP bootstrap fetch failed', { status: response.status }, 'DomainSearch');
-      return bootstrapCache?.tlds ?? null;
+      return bootstrapCache?.registries ?? overrides;
     }
+
     const body = (await response.json()) as { services?: Array<[string[], string[]]> };
-    const tlds = new Set<string>();
+    const registries: RdapRegistries = new Map();
     for (const service of body.services ?? []) {
-      for (const tld of service[0] ?? []) {
-        tlds.add(tld.toLowerCase());
+      const [tlds, urls] = service;
+      const base = (urls ?? [])
+        .map(normaliseBase)
+        .find((candidate): candidate is string => Boolean(candidate));
+      if (!base) {
+        continue;
+      }
+      for (const tld of tlds ?? []) {
+        registries.set(tld.toLowerCase(), base);
       }
     }
-    if (tlds.size === 0) {
-      return bootstrapCache?.tlds ?? null;
+
+    if (registries.size === 0) {
+      return bootstrapCache?.registries ?? overrides;
     }
-    bootstrapCache = { tlds, fetchedAt: now };
-    return tlds;
+
+    for (const [tld, base] of overrides) {
+      registries.set(tld, base);
+    }
+    bootstrapCache = { registries, fetchedAt: now };
+    return registries;
   } catch (error) {
     logger.warn('RDAP bootstrap unreachable', { error: String(error) }, 'DomainSearch');
-    // A stale set beats no answer; null means we have never had one.
-    return bootstrapCache?.tlds ?? null;
+    // A stale map beats no answer; the overrides beat an empty one.
+    return bootstrapCache?.registries ?? overrides;
   }
 }
 
@@ -152,11 +210,11 @@ function unknown(name: string, tld: string, reason: string, rdapSupported: boole
 /**
  * Look one domain up.
  *
- * @param rdapTlds the bootstrap set, or null when it could not be loaded.
+ * @param registries TLD → RDAP base URL, or null when none could be resolved.
  */
 export async function checkDomain(
   input: string,
-  rdapTlds: Set<string> | null,
+  registries: RdapRegistries | null,
   now: number = Date.now()
 ): Promise<DomainResult> {
   const parsed = parseDomain(input);
@@ -171,12 +229,14 @@ export async function checkDomain(
     return cached.result;
   }
 
-  if (!rdapTlds) {
+  if (!registries) {
     return unknown(name, tld, 'The RDAP registry list could not be loaded.', false);
   }
-  if (!rdapTlds.has(tld)) {
-    // The important branch. .ch, .io and .co land here — and a 404 from a
-    // redirector for one of them means nothing at all.
+
+  const base = registries.get(tld);
+  if (!base) {
+    // The important branch. A TLD with no known registry can never be called
+    // free, however encouraging some other server's 404 might look.
     return unknown(
       name,
       tld,
@@ -185,9 +245,16 @@ export async function checkDomain(
     );
   }
 
+  // Join here rather than via `new URL(relative, base)`, which resolves against
+  // the last path SEGMENT: a base that lost its trailing slash would silently
+  // drop `/v1` and query a path that does not exist. `loadRdapRegistries`
+  // normalises, but a caller passing its own map (Loki, tests) does not,
+  // and an invariant enforced only at the far end is not enforced.
+  const target = `${base.endsWith('/') ? base : `${base}/`}domain/${encodeURIComponent(domain)}`;
+
   let result: DomainResult;
   try {
-    const response = await fetch(`${RDAP_QUERY_BASE}/${encodeURIComponent(domain)}`, {
+    const response = await fetch(target, {
       signal: AbortSignal.timeout(RDAP_TIMEOUT_MS),
       headers: { accept: 'application/rdap+json, application/json' },
       redirect: 'follow',
@@ -230,12 +297,12 @@ export async function checkDomain(
 
 /** Look several domains up, a few at a time so no registry is hammered. */
 export async function checkDomains(domains: string[]): Promise<DomainResult[]> {
-  const rdapTlds = await loadRdapTlds();
+  const registries = await loadRdapRegistries();
   const results: DomainResult[] = [];
 
   for (let index = 0; index < domains.length; index += RDAP_CONCURRENCY) {
     const batch = domains.slice(index, index + RDAP_CONCURRENCY);
-    results.push(...(await Promise.all(batch.map(domain => checkDomain(domain, rdapTlds)))));
+    results.push(...(await Promise.all(batch.map(domain => checkDomain(domain, registries)))));
   }
   return results;
 }

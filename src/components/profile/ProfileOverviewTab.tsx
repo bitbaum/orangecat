@@ -15,6 +15,7 @@ import { SocialLink } from '@/types/social';
 import { ROUTES } from '@/config/routes';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
+import { APP_LOCALE } from '@/utils/locale';
 
 interface ProfileOverviewTabProps {
   profile: ScalableProfile;
@@ -296,7 +297,7 @@ export default function ProfileOverviewTab({
               <Calendar className="w-4 h-4" />
               <span>
                 Joined{' '}
-                {new Date(profile.created_at).toLocaleDateString('en-US', {
+                {new Date(profile.created_at).toLocaleDateString(APP_LOCALE, {
                   month: 'long',
                   year: 'numeric',
                 })}

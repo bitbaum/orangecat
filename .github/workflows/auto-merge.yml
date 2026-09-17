@@ -1,7 +1,7 @@
 # Auto-merge — nobody is in the merge loop.
 #
 # Green, ready PRs merge themselves and deploy themselves. The policy lives in
-# ONE place for the whole fleet — catomean/dotfiles,
+# ONE place for the whole fleet — bitbaum/fleet,
 # scripts/ci/auto-merge-sweep.sh — and this file only says "run it, with these
 # settings".
 #
@@ -42,7 +42,7 @@ permissions:
 
 jobs:
   sweep:
-    uses: catomean/dotfiles/.github/workflows/auto-merge-sweep.yml@master
+    uses: bitbaum/fleet/.github/workflows/auto-merge-sweep.yml@main
     with:
       base_branch: main
       ci_workflow: ci.yml
@@ -53,3 +53,19 @@ jobs:
       # The reconciler: ships main via cd.yml when the tip and the last
       # successful deploy differ. Without this, merges land and never ship.
       deploy_workflow: cd.yml
+    secrets:
+      # GITHUB_TOKEN cannot merge a PR that touches .github/workflows, so every
+      # Dependabot `github_actions` bump stalls forever: the sweep tries, the
+      # merge API refuses, it logs "leaving for the next sweep", and repeats —
+      # while still exiting 0. ai-kit #11 sat green for nine days that way, and
+      # aoz-housing #122 for nine more.
+      #
+      # A PAT also makes the queue drain at CI speed rather than at the
+      # schedule's. A dispatch made with GITHUB_TOKEN emits no workflow_run, so
+      # after each merge nothing wakes the sweep for the next PR until the cron
+      # fires — and GitHub throttles that to roughly hourly whatever the cron
+      # says. A PAT-created dispatch does emit it.
+      #
+      # Undefined resolves to empty and the reusable workflow falls back to
+      # github.token, so this line is inert until the org secret exists.
+      token: ${{ secrets.FLEET_PAT }}

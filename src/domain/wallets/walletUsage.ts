@@ -88,7 +88,7 @@ export async function getSharedWalletUsage(
   entityId: string
 ): Promise<SharedWalletUsage | null> {
   try {
-    const resolved = await resolveSellerWallet(supabase, entityType, entityId);
+    const resolved = await resolveSellerWallet(entityType, entityId);
     if (!resolved) {
       return null;
     }
@@ -138,7 +138,7 @@ export async function getSharedWalletUsage(
     // to the owner-default chain — so every other unlinked page of the same
     // owner lands on this identical address. That fallback, not the is_primary
     // flag, is what actually makes a wallet the de-facto default: the two
-    // FleetCrown passes both display orangecat@coinos.io through it while the
+    // Loki passes both display orangecat@coinos.io through it while the
     // resolved wallet row is not flagged primary at all, so keying the
     // disclosure on is_primary alone stayed silent on the platform's most
     // visible reuse.

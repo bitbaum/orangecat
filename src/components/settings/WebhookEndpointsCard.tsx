@@ -39,13 +39,6 @@ interface Props {
   defaultActorId: string | null;
 }
 
-function formatTimestamp(value: string | null): string {
-  if (!value) {
-    return '—';
-  }
-  return new Date(value).toLocaleString();
-}
-
 export default function WebhookEndpointsCard({ actors, defaultActorId }: Props) {
   const [endpoints, setEndpoints] = useState<WebhookEndpoint[]>([]);
   const [loading, setLoading] = useState(true);
@@ -225,7 +218,6 @@ export default function WebhookEndpointsCard({ actors, defaultActorId }: Props) 
                   setExpandedEndpointId(prev => (prev === endpoint.id ? null : endpoint.id))
                 }
                 onRevoke={handleRevoke}
-                formatTimestamp={formatTimestamp}
               />
             ))}
           </ul>

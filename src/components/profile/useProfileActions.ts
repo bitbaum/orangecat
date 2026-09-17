@@ -3,11 +3,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { logger } from '@/utils/logger';
 import { API_ROUTES } from '@/config/api-routes';
 import { useAuth } from '@/hooks/useAuth';
+import { fetchFollowStatus } from '@/services/social/followList';
 import type { ScalableProfile } from '@/services/profile/types';
 import type { ProfileFormData } from '@/types/database';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 interface UseProfileActionsParams {
   profile: ScalableProfile;
@@ -28,20 +29,17 @@ export function useProfileActions({ profile, isOwnProfile, onSave }: UseProfileA
     if (!user?.id || isOwnProfile || !profile.id) {
       return;
     }
+    let cancelled = false;
     const checkFollowStatus = async () => {
-      try {
-        const response = await fetch(API_ROUTES.SOCIAL.FOLLOWING(user.id));
-        const data = await response.json();
-        if (data.success && Array.isArray(data.data)) {
-          setIsFollowing(
-            data.data.some((f: { following_id: string }) => f.following_id === profile.id)
-          );
-        }
-      } catch (error) {
-        logger.error('Failed to check follow status:', error);
+      const following = await fetchFollowStatus(profile.id);
+      if (!cancelled) {
+        setIsFollowing(following);
       }
     };
     checkFollowStatus();
+    return () => {
+      cancelled = true;
+    };
   }, [user?.id, profile.id, isOwnProfile]);
 
   useEffect(() => {
@@ -76,10 +74,17 @@ export function useProfileActions({ profile, isOwnProfile, onSave }: UseProfileA
       });
       const data = await response.json();
       if (response.ok && data.success) {
-        setIsFollowing(prev => !prev);
+        setIsFollowing(!isFollowing);
         toast.success(isFollowing ? 'Unfollowed' : 'Followed');
+      } else if (response.status === 409) {
+        // The server says the edge already exists — the button was showing a
+        // stale state (another tab, or a request that landed after we read the
+        // list). The user's intent is already satisfied, so reconcile rather
+        // than reporting a failure for something that is in fact true.
+        setIsFollowing(true);
+        toast.info('You already follow this person');
       } else {
-        throw new Error(data.error || 'Failed to update follow status');
+        throw new Error(apiErrorMessage(data, 'Failed to update follow status'));
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to update follow status');
@@ -97,7 +102,7 @@ export function useProfileActions({ profile, isOwnProfile, onSave }: UseProfileA
       });
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to save profile');
+        throw new Error(apiErrorMessage(errorData, 'Failed to save profile'));
       }
       toast.success('Profile updated successfully');
       router.refresh();

@@ -1,11 +1,11 @@
 import '@testing-library/jest-dom';
 
 // Mock next/router
-jest.mock('next/router', () => ({
+vi.mock('next/router', () => ({
   useRouter: () => ({
-    push: jest.fn(),
+    push: vi.fn(),
   }),
 }));
 
 // Mock window.alert
-window.alert = jest.fn(); 
+window.alert = vi.fn();

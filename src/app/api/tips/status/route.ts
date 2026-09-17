@@ -14,7 +14,7 @@ import { getTipStatus } from '@/domain/tips/tip-service';
 import { logger } from '@/utils/logger';
 
 const bodySchema = z.object({
-  intentId: z.string().uuid(),
+  intentId: z.string().guid(),
   token: z.string().min(1).max(200),
 });
 

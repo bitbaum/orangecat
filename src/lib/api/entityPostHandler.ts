@@ -57,6 +57,7 @@ import {
 } from '@/services/idempotency/idempotencyResults';
 import { enqueueWebhookEvent } from '@/services/webhooks/deliveryService';
 import { auditLog, AUDIT_ACTIONS } from '@/lib/api/auditLog';
+import { clientIpOrUndefined } from '@/lib/client-ip';
 
 // Type for the awaited Supabase client
 type SupabaseClient = Awaited<ReturnType<typeof createServerClient>>;
@@ -128,7 +129,7 @@ export function createEntityPostHandler(config: EntityPostHandlerConfig) {
   const schemaWithActor: ZodSchema =
     schema instanceof ZodObject
       ? (schema as ZodObject<z.ZodRawShape>).extend({
-          actor_id: z.string().uuid().optional(),
+          actor_id: z.string().guid().optional(),
         })
       : schema;
 
@@ -334,7 +335,9 @@ export function createEntityPostHandler(config: EntityPostHandlerConfig) {
           entityType,
           entityId,
           metadata: { actorId: resolvedActor.id, source: auth.source },
-          ipAddress: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || undefined,
+          // The hop Caddy wrote. The first hop is caller-supplied, so recording
+          // it let anyone choose what the audit trail said about them.
+          ipAddress: clientIpOrUndefined(request),
           userAgent: request.headers.get('user-agent') || undefined,
         });
       };

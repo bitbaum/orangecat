@@ -18,20 +18,20 @@ import {
   settleAssistantCharge,
 } from '@/services/ai/assistant-charge';
 
-jest.mock('@/utils/logger', () => ({
-  logger: { warn: jest.fn(), error: jest.fn(), info: jest.fn(), debug: jest.fn() },
+vi.mock('@/utils/logger', () => ({
+  logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 
-const appendCreditEntry = jest.fn();
-const getCreditBalance = jest.fn();
-jest.mock('@/services/cat/credits', () => ({
+const appendCreditEntry = vi.fn();
+const getCreditBalance = vi.fn();
+vi.mock('@/services/cat/credits', () => ({
   appendCreditEntry: (...a: unknown[]) => appendCreditEntry(...a),
   getCreditBalance: (...a: unknown[]) => getCreditBalance(...a),
 }));
 
 // bumpAssistantRevenue reads then updates a counter row; a chainable stub is enough.
 const revenueRow = { total_revenue: 0 };
-jest.mock('@/lib/supabase/untyped', () => ({
+vi.mock('@/lib/supabase/untyped', () => ({
   fromTable: () => ({
     select: () => ({ eq: () => ({ single: async () => ({ data: revenueRow }) }) }),
     update: () => ({ eq: async () => ({ data: null, error: null }) }),
@@ -41,7 +41,7 @@ jest.mock('@/lib/supabase/untyped', () => ({
 const admin = {} as never;
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   revenueRow.total_revenue = 0;
 });
 
@@ -123,7 +123,7 @@ describe('settleAssistantCharge', () => {
     totalTokens: 1234,
   };
 
-  it('debits the payer and grants the creator 95%, keeping 5% for the platform', async () => {
+  it('debits the payer and grants the creator the whole price; the platform keeps nothing', async () => {
     appendCreditEntry.mockResolvedValue(0.5); // non-null → debit landed
     await settleAssistantCharge(admin, baseArgs);
 
@@ -137,11 +137,11 @@ describe('settleAssistantCharge', () => {
     // balance (closes the concurrent-message TOCTOU free-ride).
     expect(debit[2].allowOverdraw).toBe(true);
 
-    // Grant: creator gets exactly 95% of the gross, tagged as assistant revenue.
+    // Grant: the creator gets the whole gross, tagged as assistant revenue.
     const grant = appendCreditEntry.mock.calls[1] as [unknown, string, any];
     expect(grant[1]).toBe('creator');
     expect(grant[2].kind).toBe('grant');
-    expect(grant[2].amountBtc).toBeCloseTo(0.00095, 10); // 0.001 * 0.95
+    expect(grant[2].amountBtc).toBeCloseTo(0.001, 10); // 100% of 0.001
     // A credit (creator payout) must NEVER overdraw — only served debits do.
     expect(grant[2].allowOverdraw).toBeFalsy();
     expect(grant[2].ref).toBe('msg-1:creator');

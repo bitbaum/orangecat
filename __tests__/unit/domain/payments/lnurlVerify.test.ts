@@ -10,23 +10,25 @@ import { checkLnurlVerifyPaymentStatus } from '@/domain/payments/paymentStatusSe
 import { checkPaymentStatus } from '@/domain/payments/paymentFlowService';
 import { STATUS } from '@/config/database-constants';
 import { getAdminClient } from '@/lib/supabase/admin';
-const getAdminClientMock = getAdminClient as jest.Mock;
+import type { Mock } from 'vitest';
 
-jest.mock('@/utils/logger', () => ({
-  logger: { warn: jest.fn(), error: jest.fn(), info: jest.fn(), debug: jest.fn() },
+const getAdminClientMock = getAdminClient as Mock;
+
+vi.mock('@/utils/logger', () => ({
+  logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
-jest.mock('@/lib/email/send-seller-notification', () => ({
-  sendSellerPaymentNotification: jest.fn().mockResolvedValue(undefined),
+vi.mock('@/lib/email/send-seller-notification', () => ({
+  sendSellerPaymentNotification: vi.fn().mockResolvedValue(undefined),
 }));
-jest.mock('@/services/notifications/dispatcher', () => ({
-  NotificationDispatcher: { dispatch: jest.fn().mockResolvedValue(undefined) },
+vi.mock('@/services/notifications/dispatcher', () => ({
+  NotificationDispatcher: { dispatch: vi.fn().mockResolvedValue(undefined) },
 }));
-jest.mock('@/lib/supabase/admin', () => ({ getAdminClient: jest.fn() }));
+vi.mock('@/lib/supabase/admin', () => ({ getAdminClient: vi.fn() }));
 
 const VERIFY_URL = 'https://getalby.com/lnurlp/oc/verify/abc123';
 
 function mockFetchOnce(body: unknown, ok = true) {
-  global.fetch = jest.fn().mockResolvedValue({
+  global.fetch = vi.fn().mockResolvedValue({
     ok,
     json: () => Promise.resolve(body),
   }) as unknown as typeof fetch;
@@ -62,14 +64,14 @@ describe('checkLnurlVerifyPaymentStatus', () => {
   });
 
   it('returns false (never throws) on network error', async () => {
-    global.fetch = jest.fn().mockRejectedValue(new Error('timeout')) as unknown as typeof fetch;
+    global.fetch = vi.fn().mockRejectedValue(new Error('timeout')) as unknown as typeof fetch;
     await expect(
       checkLnurlVerifyPaymentStatus({ id: 'pi-1', lnurl_verify_url: VERIFY_URL })
     ).resolves.toBe(false);
   });
 
   it('returns false when no verify URL is stored (pre-LUD-21 intents)', async () => {
-    global.fetch = jest.fn() as unknown as typeof fetch;
+    global.fetch = vi.fn() as unknown as typeof fetch;
     await expect(
       checkLnurlVerifyPaymentStatus({ id: 'pi-1', lnurl_verify_url: null })
     ).resolves.toBe(false);
@@ -94,20 +96,20 @@ describe('checkPaymentStatus — lightning_address + verify URL', () => {
   };
 
   function makeSupabase(intent: Record<string, unknown>) {
-    const update = jest.fn();
+    const update = vi.fn();
     const builder: Record<string, unknown> = {};
     for (const m of ['select', 'update', 'eq', 'neq', 'in']) {
-      builder[m] = jest.fn((...args: unknown[]) => {
+      builder[m] = vi.fn((...args: unknown[]) => {
         if (m === 'update') update(...args);
         return builder;
       });
     }
-    builder.single = jest.fn(() => Promise.resolve({ data: intent, error: null }));
+    builder.single = vi.fn(() => Promise.resolve({ data: intent, error: null }));
     // The paid transition is a conditional UPDATE … .neq('status','paid').select('id'):
     // a returned row means THIS caller won the claim and owns the side-effects.
     builder.then = (resolve: (v: unknown) => unknown, reject: (e: unknown) => unknown) =>
       Promise.resolve({ data: [{ id: intent.id }], error: null }).then(resolve, reject);
-    const client = { from: jest.fn(() => builder) } as never;
+    const client = { from: vi.fn(() => builder) } as never;
     getAdminClientMock.mockReturnValue(client);
     return { client, update };
   }

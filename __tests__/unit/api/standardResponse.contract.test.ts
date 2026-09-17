@@ -15,9 +15,9 @@
  */
 
 // Provide a real-ish NextResponse.json so the helpers produce parseable objects.
-// The global __mocks__/next-server.js mock returns jest.fn() (→ undefined), which
+// The global __mocks__/next-server.js mock returns vi.fn() (→ undefined), which
 // prevents calling .json() on the result. Override it here with an implementation.
-jest.mock('next/server', () => ({
+vi.mock('next/server', () => ({
   NextResponse: {
     json: (data: unknown, init?: ResponseInit & { headers?: HeadersInit }) => {
       const headerMap = new Headers(init?.headers);
@@ -27,16 +27,17 @@ jest.mock('next/server', () => ({
         json: async () => data,
       };
     },
-    redirect: jest.fn(),
-    next: jest.fn(),
+    redirect: vi.fn(),
+    next: vi.fn(),
   },
 }));
 
-jest.mock('@/utils/logger', () => ({
-  logger: { error: jest.fn(), warn: jest.fn(), info: jest.fn(), debug: jest.fn() },
+vi.mock('@/utils/logger', () => ({
+  logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 
 import {
+  apiPaymentRequired,
   apiSuccess,
   apiError,
   apiBadRequest,
@@ -220,5 +221,30 @@ describe('apiRateLimited — Retry-After header', () => {
     const response = apiRateLimited('Too fast');
     const headers = (response as unknown as { headers: Headers }).headers;
     expect(headers.get('Retry-After')).toBeNull();
+  });
+});
+
+/**
+ * A 402 carries a bearer credential, so it must never be cached.
+ *
+ * The body embeds `token` (`<intentId>.<statusToken>`) and WWW-Authenticate
+ * repeats it — that token is what a payer later exchanges for a receipt. So
+ * anything caching this response caches a credential for someone else's
+ * payment. Every other payment response sets no-store; this one did not.
+ * bitbaum/orangecat#563 suggestion 15.
+ */
+describe('apiPaymentRequired — never cached', () => {
+  const headersOf = (r: unknown) => (r as { headers: Headers }).headers;
+
+  it('sets no-store', () => {
+    expect(
+      headersOf(apiPaymentRequired('Pay up', { token: 'pi-1.tok' })).get('Cache-Control')
+    ).toBe('no-store, must-revalidate');
+  });
+
+  it('sets it on the challenge form, where the header repeats the token', () => {
+    const res = apiPaymentRequired('Pay up', { token: 'pi-1.tok' }, 'L402 token="pi-1.tok"');
+    expect(headersOf(res).get('Cache-Control')).toBe('no-store, must-revalidate');
+    expect(headersOf(res).get('WWW-Authenticate')).toContain('L402');
   });
 });

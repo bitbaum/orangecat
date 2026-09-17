@@ -21,7 +21,7 @@ import { fromTable } from '@/lib/supabase/untyped';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { DATABASE_TABLES } from '@/config/database-tables';
-import { getEmailClient } from '@/lib/email/client';
+import { sendEmail } from '@/lib/email/client';
 import {
   NOTIFICATION_CONFIG,
   isTransactional,
@@ -41,7 +41,6 @@ import { reengagementTemplate, type ReengagementStage } from '@/lib/email/templa
 import { logger } from '@/utils/logger';
 
 const LOG_SOURCE = 'NotificationEmailService';
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'OrangeCat <notifications@orangecat.ch>';
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://orangecat.ch';
 
 // =====================================================================
@@ -126,14 +125,21 @@ export class NotificationEmailService {
         return { sent: false, reason: `no template for type: ${type}` };
       }
 
-      // 6. Send via Resend
-      await getEmailClient().emails.send({
-        from: FROM_EMAIL,
+      // 6. Send via mail-kit (never throws — returns an honest result)
+      const sendResult = await sendEmail({
         to: emailInfo.email,
         subject: emailContent.subject,
         html: emailContent.html,
         text: emailContent.text,
       });
+      if (!sendResult.sent) {
+        logger.error(
+          'Notification email send failed',
+          { userId, type, to: emailInfo.email, error: sendResult.error },
+          LOG_SOURCE
+        );
+        return { sent: false, reason: sendResult.error };
+      }
 
       // 7. Record delivery for frequency capping
       await this.recordDelivery(userId, type);

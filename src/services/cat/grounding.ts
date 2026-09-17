@@ -1,7 +1,7 @@
 /**
  * Cat's groundedness enforcement — check, then one repair pass.
  *
- * The check itself lives in agent-core/verify.ts (mirrored from FleetCrown).
+ * The check itself lives in @bitbaum/ai-kit/grounding (the packaged harness).
  * This module owns the Cat-specific policy around it: when a repair is worth
  * attempting, and — more importantly — when a repair must be REFUSED.
  *
@@ -14,8 +14,12 @@
  * violations, nothing newly invented, no dropped action — and otherwise the
  * original stands with its violations reported.
  */
-import { verifyAnswer, buildRepairPrompt, type Violation } from '@/services/agent-core/verify';
-import { NO_BASIS } from '@/services/agent-core/contract';
+import {
+  verifyAnswer,
+  buildRepairPrompt,
+  type Violation,
+  NO_BASIS,
+} from '@bitbaum/ai-kit/grounding';
 import { parseActionsFromResponse } from '@/services/cat/response-parser';
 import type { AiService } from '@/services/ai/types';
 

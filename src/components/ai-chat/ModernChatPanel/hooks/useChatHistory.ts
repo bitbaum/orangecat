@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { API_ROUTES } from '@/config/api-routes';
 import { logger } from '@/utils/logger';
-import type { Message } from '../types';
+import type { Message, ToolCallEvent } from '../types';
 
 /**
  * Loads chat history for the active conversation.
@@ -57,12 +57,16 @@ export function useChatHistory(
             content: string;
             created_at: string;
             model_used?: string;
+            tool_calls?: ToolCallEvent[] | null;
           }) => ({
             id: m.id,
             role: m.role,
             content: m.content,
             timestamp: new Date(m.created_at),
             modelUsed: m.model_used ?? undefined,
+            // What Cat did, back on screen. Rows written before the column
+            // existed carry null and render exactly as they do today.
+            toolCalls: m.tool_calls ?? undefined,
           })
         );
         setMessages(historicMessages);

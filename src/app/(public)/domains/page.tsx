@@ -4,7 +4,6 @@ import { Metadata } from 'next';
 import { Globe, ShieldCheck, Server } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { DomainSearch } from '@/components/domains/DomainSearch';
-import { ROUTES } from '@/config/routes';
 import {
   DOMAINS_SERVICE_URL,
   WEBSITE_BUILD_SERVICE_URL,
@@ -152,17 +151,22 @@ export default function DomainsPage() {
       {/* CTA */}
       <div className="bg-surface-public">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          {/* The CTA points at the path that actually delivers a site.
+              Registering an account does not: hosting here is set up per site,
+              by hand, on the same box that runs OrangeCat — there is no
+              self-serve provisioning behind a signup button, and a button that
+              implies one sends people to a dead end wearing a welcome mat. */}
           <div className="text-center">
             <h2 className="font-heading tracking-display text-3xl sm:text-4xl font-bold text-fg-inverted mb-4">
               Start with a site that already works
             </h2>
             <p className="text-xl text-fg-inverted/70 mb-8">
-              No preview links, no cold starts — a running site with a real address, managed for
-              you.
+              No preview links, no cold starts — a running site with a real address, set up and
+              managed for you. Tell me what you need and I&apos;ll quote it first.
             </p>
-            <Link href={`${ROUTES.AUTH}?mode=register`}>
+            <Link href={WEBSITE_BUILD_SERVICE_URL}>
               <Button variant="accent" size="lg">
-                Get Started Free
+                Get your site built
               </Button>
             </Link>
           </div>

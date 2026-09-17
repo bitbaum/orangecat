@@ -11,10 +11,10 @@
 
 ```bash
 # Start development server (auto-finds available port)
-npm run d
+pnpm run d
 
 # Or use the full command
-npm run dev
+pnpm run dev
 
 # Alternative: use the dev start script directly
 node scripts/dev/dev-start.js
@@ -27,23 +27,23 @@ node scripts/dev/dev-start.js
 bash scripts/deploy-selfhost.sh
 
 # Build + browser smoke verify against production
-npm run deploy:verify
+pnpm run deploy:verify
 ```
 
 ### Other Useful Commands
 
 ```bash
 # Type check
-npm run type-check
+pnpm run type-check
 
 # Run tests
-npm run test
+pnpm run test
 
 # Build production
-npm run build
+pnpm run build
 
 # Format code
-npm run format
+pnpm run format
 ```
 
 ---
@@ -74,7 +74,7 @@ npm run format
 - ✅ **Command `deploy-selfhost.sh`** - One-button deployment to Hetzner
 - ✅ **Hot Reload** - Next.js Fast Refresh working
 - ✅ **Type Checking** - TypeScript strict mode
-- ✅ **Testing** - Jest + Playwright configured
+- ✅ **Testing** - Vitest + Playwright configured
 
 ---
 
@@ -111,7 +111,7 @@ npm run format
 ### Package Scripts
 
 - **Location**: `package.json`
-- **Commands**: 64+ npm scripts available
+- **Commands**: 64+ pnpm scripts available
 - **Custom Scripts**:
   - `scripts/dev/dev-start.js` - Development server
   - `w` - Deployment wrapper (root directory)
@@ -178,19 +178,19 @@ npm run format
 
 ```bash
 # Unit tests
-npm run test:unit
+pnpm run test:unit
 
 # E2E tests with Playwright
-npm run test:e2e
+pnpm run test:e2e
 
 # Security tests
-npm run test:security
+pnpm run test:security
 
 # Run all tests
-npm run test:all
+pnpm run test:all
 
 # Coverage report
-npm run test:coverage
+pnpm run test:coverage
 ```
 
 ### Test Status
@@ -263,14 +263,14 @@ All critical bugs have been fixed. The platform is stable and ready for feature 
 
 ### For Development
 
-- Use `npm run d` instead of `npm run dev` for automatic port detection
-- Check `npm run dev` output if you need to know which port it's running on
+- Use `pnpm run d` instead of `pnpm run dev` for automatic port detection
+- Check `pnpm run dev` output if you need to know which port it's running on
 - Server usually runs on port 3003 (3000 is often taken)
 
 ### For Deployment
 
 - Run `bash scripts/deploy-selfhost.sh` from the project root to deploy to production
-- Run `npm run deploy:verify` after deploy to smoke-test production
+- Run `pnpm run deploy:verify` after deploy to smoke-test production
 
 ### For Blog
 
@@ -285,14 +285,14 @@ All critical bugs have been fixed. The platform is stable and ready for feature 
 
 | Command                           | Description                             |
 | --------------------------------- | --------------------------------------- |
-| `npm run d`                       | Start dev server (smart port detection) |
+| `pnpm run d`                      | Start dev server (smart port detection) |
 | `bash scripts/deploy-selfhost.sh` | Deploy to production on Hetzner         |
-| `npm run deploy:verify`           | Browser smoke-test production           |
-| `npm run build`                   | Build for production                    |
-| `npm run test`                    | Run all tests                           |
-| `npm run type-check`              | TypeScript type checking                |
-| `npm run lint`                    | Lint code                               |
-| `npm run format`                  | Format code with Prettier               |
+| `pnpm run deploy:verify`          | Browser smoke-test production           |
+| `pnpm run build`                  | Build for production                    |
+| `pnpm run test`                   | Run all tests                           |
+| `pnpm run type-check`             | TypeScript type checking                |
+| `pnpm run lint`                   | Lint code                               |
+| `pnpm run format`                 | Format code with Prettier               |
 
 ---
 

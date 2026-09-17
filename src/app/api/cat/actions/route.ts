@@ -27,13 +27,14 @@ import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
 import { withAuth, type AuthenticatedRequest } from '@/lib/api/withAuth';
 import { getUserActorId } from '@/domain/actors';
 import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from '@/constants/pagination';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 // Validation schema
 const executeActionSchema = z.object({
   actionId: z.string().min(1),
-  parameters: z.record(z.unknown()),
-  conversationId: z.string().uuid().optional(),
-  messageId: z.string().uuid().optional(),
+  parameters: z.record(z.string(), z.unknown()),
+  conversationId: z.string().guid().optional(),
+  messageId: z.string().guid().optional(),
 });
 
 /**
@@ -83,7 +84,7 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
     const parseResult = executeActionSchema.safeParse(body);
 
     if (!parseResult.success) {
-      return apiBadRequest('Invalid request', parseResult.error.errors);
+      return apiBadRequest('Invalid request', parseResult.error.issues);
     }
 
     // Get user's actor ID
@@ -101,7 +102,7 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
       // Denial reasons come from the permission service and are derived from
       // the user's own settings ("exceeds your per-action cap of X BTC", "daily
       // limit reached") — surfacing them is what makes caps actionable.
-      return apiForbidden(result.error || 'Action not permitted');
+      return apiForbidden(apiErrorMessage(result, 'Action not permitted'));
     } else {
       return apiBadRequest('Action could not be executed');
     }

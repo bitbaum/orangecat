@@ -28,6 +28,7 @@ import { toast } from 'sonner';
 import { ROUTES } from '@/config/routes';
 import { logger } from '@/utils/logger';
 import { API_ROUTES } from '@/config/api-routes';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 interface DeleteDocumentButtonProps {
   documentId: string;
@@ -49,7 +50,7 @@ export function DeleteDocumentButton({ documentId, documentTitle }: DeleteDocume
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Failed to delete document');
+        throw new Error(apiErrorMessage(data, 'Failed to delete document'));
       }
 
       toast.success('Document deleted', {

@@ -21,14 +21,16 @@ import { DATABASE_TABLES } from '@/config/database-tables';
 import { getEntityMetadata } from '@/config/entity-registry';
 import { createFakeSupabase, type Row } from '../../../../test-utils/fakeSupabase';
 
-jest.mock('@/utils/logger', () => ({
-  logger: { warn: jest.fn(), error: jest.fn(), info: jest.fn(), debug: jest.fn() },
+vi.mock('@/utils/logger', () => ({
+  logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
-jest.mock('@/lib/supabase/admin', () => ({ getAdminClient: jest.fn() }));
-jest.mock('@/domain/payments/encryptionService', () => ({ decrypt: (s: string) => s }));
+vi.mock('@/lib/supabase/admin', () => ({ getAdminClient: vi.fn() }));
+vi.mock('@/domain/payments/encryptionService', () => ({ decrypt: (s: string) => s }));
 
 import { getAdminClient } from '@/lib/supabase/admin';
-const getAdminClientMock = getAdminClient as jest.Mock;
+import type { Mock } from 'vitest';
+
+const getAdminClientMock = getAdminClient as Mock;
 
 const PRODUCT = getEntityMetadata('product');
 const ENTITY_ID = 'prod-1';
@@ -63,14 +65,14 @@ function wallet(over: Row): Row {
   };
 }
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => vi.clearAllMocks());
 
 describe('resolveSellerReceiveInfo — what the owner is shown', () => {
   it('shows the Lightning address that would receive the payment', async () => {
     const { client } = world({ wallets: [wallet({ lightning_address: 'me@orangecat.ch' })] });
     getAdminClientMock.mockReturnValue(client);
 
-    expect(await resolveSellerReceiveInfo({} as never, 'product', ENTITY_ID)).toEqual({
+    expect(await resolveSellerReceiveInfo('product', ENTITY_ID)).toEqual({
       method: 'lightning_address',
       address: 'me@orangecat.ch',
     });
@@ -80,7 +82,7 @@ describe('resolveSellerReceiveInfo — what the owner is shown', () => {
     const { client } = world({ wallets: [wallet({ address_or_xpub: 'bc1qexample' })] });
     getAdminClientMock.mockReturnValue(client);
 
-    expect(await resolveSellerReceiveInfo({} as never, 'product', ENTITY_ID)).toEqual({
+    expect(await resolveSellerReceiveInfo('product', ENTITY_ID)).toEqual({
       method: 'onchain',
       address: 'bc1qexample',
     });
@@ -92,7 +94,7 @@ describe('resolveSellerReceiveInfo — what the owner is shown', () => {
     const { client } = world({ wallets: [wallet({ nwc_connection_uri: secret })] });
     getAdminClientMock.mockReturnValue(client);
 
-    const info = await resolveSellerReceiveInfo({} as never, 'product', ENTITY_ID);
+    const info = await resolveSellerReceiveInfo('product', ENTITY_ID);
 
     expect(info).toEqual({ method: 'nwc', address: null });
     expect(JSON.stringify(info)).not.toContain('hunter2');
@@ -106,7 +108,7 @@ describe('resolveSellerReceiveInfo — what the owner is shown', () => {
     const { client } = world({ wallets: [wallet({ wallet_type: 'xpub', address_or_xpub: zpub })] });
     getAdminClientMock.mockReturnValue(client);
 
-    const info = await resolveSellerReceiveInfo({} as never, 'product', ENTITY_ID);
+    const info = await resolveSellerReceiveInfo('product', ENTITY_ID);
 
     expect(info).toEqual({ method: 'onchain', address: null });
   });
@@ -115,7 +117,7 @@ describe('resolveSellerReceiveInfo — what the owner is shown', () => {
     const { client } = world({ wallets: [] });
     getAdminClientMock.mockReturnValue(client);
 
-    expect(await resolveSellerReceiveInfo({} as never, 'product', ENTITY_ID)).toBeNull();
+    expect(await resolveSellerReceiveInfo('product', ENTITY_ID)).toBeNull();
   });
 });
 

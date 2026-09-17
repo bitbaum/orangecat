@@ -24,6 +24,7 @@ import { API_ROUTES } from '@/config/api-routes';
 import type { CurrencyCode } from '@/config/currencies';
 import { logger } from '@/utils/logger';
 import type { ExchangeRates, RateCache } from './types';
+import { APP_LOCALE } from '@/utils/locale';
 
 // ==================== RATE CACHE ====================
 
@@ -109,8 +110,23 @@ function toExchangeRates(): ExchangeRates | null {
 
 const isBrowser = typeof window !== 'undefined';
 
+/**
+ * How long to stop asking after a failed rate load.
+ *
+ * `fetchPromise` collapses CONCURRENT callers, but nothing stopped SEQUENTIAL
+ * ones: a failure leaves the cache empty, so the next component to ask starts
+ * a fresh request, and the next, and the next. Measured in a browser whose DNS
+ * was failing: 98 requests to /api/rates from a single page. The one moment
+ * the endpoint is unreachable is the worst moment to hammer it.
+ *
+ * Short enough that a blip costs at most this much staleness, long enough that
+ * a page full of prices makes one attempt rather than one per price.
+ */
+const FAILURE_COOLDOWN_MS = 30_000;
+
 class CurrencyConverterService {
   private fetchPromise: Promise<ExchangeRates | null> | null = null;
+  private lastFailureAt = 0;
 
   /**
    * Load rates from our own origin.
@@ -127,6 +143,11 @@ class CurrencyConverterService {
     if (this.fetchPromise) {
       return this.fetchPromise;
     }
+    // Still inside the cooldown from a recent failure — answer "unknown"
+    // without a request. Callers already handle null by leaving amounts in BTC.
+    if (this.lastFailureAt && Date.now() - this.lastFailureAt < FAILURE_COOLDOWN_MS) {
+      return null;
+    }
 
     this.fetchPromise = (async () => {
       try {
@@ -138,8 +159,12 @@ class CurrencyConverterService {
         }
         const body = (await response.json()) as { data?: RateSnapshotLike };
         applyRateSnapshot(body.data ?? null);
+        this.lastFailureAt = 0;
         return toExchangeRates();
       } catch (error) {
+        // Open the cooldown so a page full of prices does not turn one
+        // unreachable endpoint into one request per price.
+        this.lastFailureAt = Date.now();
         logger.warn(
           'Could not load Bitcoin rates; amounts stay in BTC',
           { error: String(error) },
@@ -218,7 +243,7 @@ class CurrencyConverterService {
       return '0 BTC';
     }
     if (showDecimals) {
-      return `${amountBTC.toLocaleString(undefined, { maximumFractionDigits: 8 })} BTC`;
+      return `${amountBTC.toLocaleString(APP_LOCALE, { maximumFractionDigits: 8 })} BTC`;
     }
     return `${amountBTC.toFixed(2)} BTC`;
   }

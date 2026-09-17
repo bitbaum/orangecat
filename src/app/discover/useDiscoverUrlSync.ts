@@ -1,9 +1,30 @@
 'use client';
 
+/**
+ * Why this codec is written by hand rather than taken from `listkit`.
+ *
+ * The fleet has a shared list package whose whole purpose is to replace URL
+ * builders like this one, and it was evaluated here on 2026-09-12. It does not
+ * fit, and the reason is worth keeping so nobody re-runs the survey: listkit
+ * models a list as FACETS over a known option set, and only four of this page's
+ * eight params are that. `q`, `type`, `category` and `sort` map cleanly;
+ * `country`, `city` and `postal` are free text a reader types, and `radius_km`
+ * is a distance around them — listkit's `range` facet is a min/max over a row's
+ * own numeric field, which is a different thing.
+ *
+ * Adopting it anyway would leave two codecs writing one URLSearchParams inside
+ * one effect, split by which half of the params each owns. That seam is worse
+ * than this file. If listkit grows a free-text param kind, look again here.
+ *
+ * What this file no longer does is decide anything: the params and their
+ * defaults live in `discoverUrlContract`, shared with the read side.
+ */
+
 import { useEffect } from 'react';
 import type { useRouter, useSearchParams } from 'next/navigation';
 import type { SortOption } from '@/services/search';
 import type { DiscoverTabType } from '@/components/discover/DiscoverTabs';
+import { discoverUrlFor } from './discoverUrlContract';
 
 interface UseDiscoverUrlSyncOptions {
   activeTab: DiscoverTabType;
@@ -31,49 +52,16 @@ export function useDiscoverUrlSync({
   searchParams,
 }: UseDiscoverUrlSyncOptions) {
   useEffect(() => {
-    const p = new URLSearchParams(searchParams?.toString() || '');
-    if (activeTab !== 'all') {
-      p.set('type', activeTab);
-    } else {
-      p.delete('type');
-    }
-    if (searchTerm) {
-      p.set('q', searchTerm);
-    } else {
-      p.delete('q');
-    }
-    p.delete('search'); // legacy param — standardized on `q`
-    if (selectedCategories.length > 0) {
-      p.set('category', selectedCategories.join(','));
-    } else {
-      p.delete('category');
-    }
-    if (sortBy !== 'recent') {
-      p.set('sort', sortBy);
-    } else {
-      p.delete('sort');
-    }
-    if (country) {
-      p.set('country', country);
-    } else {
-      p.delete('country');
-    }
-    if (city) {
-      p.set('city', city);
-    } else {
-      p.delete('city');
-    }
-    if (postal) {
-      p.set('postal', postal);
-    } else {
-      p.delete('postal');
-    }
-    if (radiusKm) {
-      p.set('radius_km', String(radiusKm));
-    } else {
-      p.delete('radius_km');
-    }
-    const newUrl = `/discover?${p.toString()}`;
+    const newUrl = discoverUrlFor(searchParams, {
+      activeTab,
+      searchTerm,
+      selectedCategories,
+      sortBy,
+      country,
+      city,
+      postal,
+      radiusKm,
+    });
     const currentUrl = searchParams ? `/discover?${searchParams.toString()}` : '/discover';
     if (newUrl !== currentUrl) {
       router.replace(newUrl, { scroll: false });

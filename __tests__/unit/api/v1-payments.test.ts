@@ -11,81 +11,84 @@ import { resolveRequestAuth } from '@/lib/api/resolveRequestAuth';
 import { initiatePayment } from '@/domain/payments';
 import type { NextRequest } from 'next/server';
 
-jest.mock('@/utils/logger', () => ({
-  logger: { error: jest.fn(), warn: jest.fn(), info: jest.fn(), debug: jest.fn() },
+import type { Mock } from 'vitest';
+
+vi.mock('@/utils/logger', () => ({
+  logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 
-jest.mock('@/lib/api/resolveRequestAuth', () => ({
-  ...jest.requireActual('@/lib/api/resolveRequestAuth'),
-  resolveRequestAuth: jest.fn(),
+vi.mock('@/lib/api/resolveRequestAuth', async () => ({
+  ...((await vi.importActual('@/lib/api/resolveRequestAuth')) as object),
+  resolveRequestAuth: vi.fn(),
 }));
 
 // NextResponse is unavailable in the jest env — repo convention is to mock the
 // response helpers with plain status/json shims (see projects-id-api.test.ts).
-jest.mock('@/lib/api/standardResponse', () => ({
-  apiSuccess: jest.fn((data: unknown, opts?: { status?: number }) => ({
+vi.mock('@/lib/api/standardResponse', () => ({
+  apiSuccess: vi.fn((data: unknown, opts?: { status?: number }) => ({
     status: opts?.status ?? 200,
     json: async () => ({ success: true, data }),
   })),
-  apiUnauthorized: jest.fn(() => ({
+  apiUnauthorized: vi.fn(() => ({
     status: 401,
     json: async () => ({ success: false, error: { message: 'Unauthorized' } }),
   })),
-  apiForbidden: jest.fn((message = 'Forbidden') => ({
+  apiForbidden: vi.fn((message = 'Forbidden') => ({
     status: 403,
     json: async () => ({ success: false, error: { message } }),
   })),
-  apiNotFound: jest.fn((message = 'Not found') => ({
+  apiNotFound: vi.fn((message = 'Not found') => ({
     status: 404,
     json: async () => ({ success: false, error: { message } }),
   })),
-  apiBadRequest: jest.fn((message = 'Bad request') => ({
+  apiBadRequest: vi.fn((message = 'Bad request') => ({
     status: 400,
     json: async () => ({ success: false, error: { message } }),
   })),
-  apiRateLimited: jest.fn(() => ({
+  apiRateLimited: vi.fn(() => ({
     status: 429,
     json: async () => ({ success: false, error: { message: 'Rate limited' } }),
   })),
-  apiInternalError: jest.fn((message = 'Internal error') => ({
+  apiInternalError: vi.fn((message = 'Internal error') => ({
     status: 500,
     json: async () => ({ success: false, error: { message } }),
   })),
 }));
 
-jest.mock('@/domain/payments', () => ({
-  initiatePayment: jest.fn(),
+vi.mock('@/domain/payments', () => ({
+  initiatePayment: vi.fn(),
 }));
 
-jest.mock('@/lib/rate-limit', () => ({
-  rateLimitWriteAsync: jest.fn().mockResolvedValue({ success: true }),
-  rateLimitIntegrationKeyWrite: jest.fn().mockResolvedValue({ success: true }),
-  rateLimitIntegrationKeyRead: jest.fn().mockResolvedValue({ success: true }),
-  retryAfterSeconds: jest.fn().mockReturnValue(30),
+vi.mock('@/lib/rate-limit', () => ({
+  rateLimitWriteAsync: vi.fn().mockResolvedValue({ success: true }),
+  rateLimitPaymentRecipient: vi.fn().mockResolvedValue({ success: true }),
+  rateLimitIntegrationKeyWrite: vi.fn().mockResolvedValue({ success: true }),
+  rateLimitIntegrationKeyRead: vi.fn().mockResolvedValue({ success: true }),
+  retryAfterSeconds: vi.fn().mockReturnValue(30),
 }));
 
 // Public client controls the anonymous-visibility gate for key auth.
-const mockPublicMaybeSingle = jest.fn();
-jest.mock('@/lib/supabase/public', () => ({
-  createPublicClient: jest.fn(() => ({
-    from: jest.fn(() => ({
-      select: jest.fn().mockReturnThis(),
-      eq: jest.fn().mockReturnThis(),
+const mockPublicMaybeSingle = vi.fn();
+vi.mock('@/lib/supabase/public', () => ({
+  createPublicClient: vi.fn(() => ({
+    from: vi.fn(() => ({
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
       maybeSingle: mockPublicMaybeSingle,
     })),
   })),
 }));
 
-jest.mock('@/lib/supabase/server', () => ({
-  createServerClient: jest.fn(async () => ({ _kind: 'session-client' })),
+vi.mock('@/lib/supabase/server', () => ({
+  createServerClient: vi.fn(async () => ({ _kind: 'session-client' })),
 }));
 
-jest.mock('@/lib/supabase/admin', () => ({
-  createAdminClient: jest.fn(() => ({ _kind: 'admin-client' })),
+vi.mock('@/lib/supabase/admin', () => ({
+  createAdminClient: vi.fn(() => ({ _kind: 'admin-client' })),
 }));
 
-const mockResolveRequestAuth = resolveRequestAuth as jest.Mock;
-const mockInitiatePayment = initiatePayment as jest.Mock;
+const mockResolveRequestAuth = resolveRequestAuth as Mock;
+const mockInitiatePayment = initiatePayment as Mock;
 
 const ENTITY_ID = '11111111-2222-3333-4444-555555555555';
 
@@ -109,7 +112,7 @@ function keyAuth(scopes: string[]) {
 
 describe('POST /api/v1/payments', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockPublicMaybeSingle.mockResolvedValue({ data: { id: ENTITY_ID } });
     mockInitiatePayment.mockResolvedValue({
       payment_intent: { id: 'pi-1', status: 'invoice_ready' },
@@ -208,7 +211,7 @@ describe('POST /api/v1/payments', () => {
 describe('OpenAPI spec — payment paths', () => {
   it('includes the machine-payable loop endpoints', async () => {
     // Imported lazily so the route-level mocks above don't interfere.
-    const { getOpenApiSpec } = jest.requireActual('@/lib/openapi/generator') as {
+    const { getOpenApiSpec } = (await vi.importActual('@/lib/openapi/generator')) as {
       getOpenApiSpec: () => { paths: Record<string, Record<string, unknown>> };
     };
     const spec = getOpenApiSpec();

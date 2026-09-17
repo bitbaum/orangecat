@@ -23,9 +23,9 @@ Please read and follow our [Code of Conduct](./CODE_OF_CONDUCT.md).
 
 ## Development Setup
 
-1. Install dependencies: `npm install`
+1. Install dependencies: `pnpm install`
 2. Create a `.env.local` file based on `.env.example`
-3. Start the development server: `npm run dev`
+3. Start the development server: `pnpm run dev`
 
 ## Pull Request Process
 

@@ -15,39 +15,41 @@ import { POST } from '@/app/api/ai/form-prefill/route';
 import { generateFormPrefill } from '@/lib/ai/form-prefill-service';
 import { AI_ASSIST_MIN_INPUT_LENGTH, AI_ADJUSTMENTS } from '@/config/ai-form-assist';
 
-jest.mock('@/utils/logger', () => ({
-  logger: { warn: jest.fn(), error: jest.fn(), info: jest.fn(), debug: jest.fn() },
+import type { MockedFunction } from 'vitest';
+
+vi.mock('@/utils/logger', () => ({
+  logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 
 // withAuth wraps the handler in a real Supabase session lookup; the request
 // itself is what this suite is about, so authentication is stubbed through.
-jest.mock('@/lib/api/withAuth', () => ({
+vi.mock('@/lib/api/withAuth', () => ({
   withAuth:
     (handler: (req: unknown) => Promise<unknown>) =>
     (req: unknown): Promise<unknown> =>
       handler(Object.assign(req as object, { user: { id: 'test-user' }, supabase: {} })),
 }));
 
-jest.mock('@/lib/rate-limit', () => ({
-  rateLimitWriteAsync: jest.fn().mockResolvedValue({ success: true }),
+vi.mock('@/lib/rate-limit', () => ({
+  rateLimitWriteAsync: vi.fn().mockResolvedValue({ success: true }),
   retryAfterSeconds: () => 0,
 }));
 
 // The response helpers wrap NextResponse, which needs the Next runtime; the
 // established convention in route tests is to stub them.
-jest.mock('@/lib/api/standardResponse', () => ({
-  apiSuccess: jest.fn((data: unknown) => ({ status: 200, body: { success: true, data } })),
-  apiValidationError: jest.fn((error: string) => ({ status: 400, error })),
-  apiBadRequest: jest.fn((error: string) => ({ status: 400, error })),
-  apiRateLimited: jest.fn(() => ({ status: 429 })),
-  apiInternalError: jest.fn(() => ({ status: 500 })),
+vi.mock('@/lib/api/standardResponse', () => ({
+  apiSuccess: vi.fn((data: unknown) => ({ status: 200, body: { success: true, data } })),
+  apiValidationError: vi.fn((error: string) => ({ status: 400, error })),
+  apiBadRequest: vi.fn((error: string) => ({ status: 400, error })),
+  apiRateLimited: vi.fn(() => ({ status: 429 })),
+  apiInternalError: vi.fn(() => ({ status: 500 })),
 }));
 
-jest.mock('@/lib/ai/form-prefill-service', () => ({
-  generateFormPrefill: jest.fn(),
+vi.mock('@/lib/ai/form-prefill-service', () => ({
+  generateFormPrefill: vi.fn(),
 }));
 
-const mockedPrefill = generateFormPrefill as jest.MockedFunction<typeof generateFormPrefill>;
+const mockedPrefill = generateFormPrefill as MockedFunction<typeof generateFormPrefill>;
 
 const BASE = {
   entityType: 'service',

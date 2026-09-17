@@ -13,17 +13,17 @@ echo "🚀 Running pre-push checks..."
 # concurrent builds (stale .tsbuildinfo); this non-incremental run is the
 # reliable gate, so type errors are caught before push, not at deploy/build.
 echo "🔎 Type-checking..."
-npm run type-check || { echo "❌ Type check failed"; exit 1; }
+pnpm run type-check || { echo "❌ Type check failed"; exit 1; }
 echo "✅ Type check passed"
 
 # Run tests before pushing (target: ≤30s)
 
 echo "🧭 Checking route integrity..."
-npm run audit:routes || { echo "❌ Route audit failed — a declared or emitted link resolves to no route"; exit 1; }
+pnpm run audit:routes || { echo "❌ Route audit failed — a declared or emitted link resolves to no route"; exit 1; }
 echo "✅ Route audit passed"
 
 echo "🧪 Running unit tests..."
-npm run test:unit || { echo "❌ Unit tests failed"; exit 1; }
+pnpm run test:unit || { echo "❌ Unit tests failed"; exit 1; }
 echo "✅ Unit tests passed"
 
 echo "🎭 Running fast E2E tests..."
@@ -34,7 +34,7 @@ echo "🎭 Running fast E2E tests..."
 # "orangecat" appears in a foreign site's body links but not in its title.
 if curl -sf "${BASE_URL:-http://localhost:3000}/api/health" >/dev/null 2>&1; then
   if curl -sf "${BASE_URL:-http://localhost:3000}/" | grep -io "<title>[^<]*" | grep -qi "orangecat"; then
-    BASE_URL="${BASE_URL:-http://localhost:3000}" npm run test:e2e:node || { echo "❌ E2E tests failed"; exit 1; }
+    BASE_URL="${BASE_URL:-http://localhost:3000}" pnpm run test:e2e:node || { echo "❌ E2E tests failed"; exit 1; }
     echo "✅ E2E tests passed"
   else
     echo "⏭️  Skipped fast E2E (server at ${BASE_URL:-http://localhost:3000} is not OrangeCat; CI runs full P0 matrix)"

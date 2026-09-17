@@ -25,7 +25,8 @@
 --            'user_' || left(replace(p.id::text,'-',''),12) AS new_handle,
 --            (p.name = split_part(u.email,'@',1)) AS name_also_leaks
 --     FROM public.profiles p JOIN auth.users u ON u.id = p.id
---     WHERE p.username = split_part(u.email,'@',1) ORDER BY 1;"
+--     WHERE p.username = split_part(u.email,'@',1)
+--       AND u.email NOT LIKE '%.invalid' ORDER BY 1;"
 --
 -- THEN:  sudo docker exec -i supabase-db psql -U postgres -v ON_ERROR_STOP=1 \
 --          -f - < scripts/rename-email-derived-usernames.sql
@@ -33,6 +34,14 @@
 -- REVERSIBLE: profile_username_history holds the old handle for every row this
 -- touches, so `UPDATE profiles SET username = h.old_username FROM
 -- profile_username_history h WHERE h.profile_id = profiles.id` puts them back.
+--
+-- SYSTEM ACCOUNTS ARE EXCLUDED (`.invalid`, RFC 2606). Learned the hard way:
+-- the first run retired the Cat. Deriving the handle from the address is HOW
+-- the Cat is created — cat-account.ts registers `cat@orangecat.invalid` so that
+-- handle_new_user mints `cat` — so it matched the predicate perfectly while
+-- leaking nothing, and `@cat` resolved to nobody for two days. An undeliverable
+-- address has no mailbox, so no owner, so no personal information in its local
+-- part. See 20260828070000_system_accounts_keep_their_handles.sql.
 
 BEGIN;
 
@@ -44,6 +53,7 @@ SELECT lower(p.username), p.id
 FROM public.profiles p
 JOIN auth.users u ON u.id = p.id
 WHERE p.username = split_part(u.email, '@', 1)
+  AND u.email NOT LIKE '%.invalid'
 ON CONFLICT (old_username) DO NOTHING;
 
 -- Same shape as handle_new_user() and neutralUsernameFor(); see
@@ -54,7 +64,8 @@ SET username = 'user_' || left(replace(p.id::text, '-', ''), 12),
     updated_at = now()
 FROM auth.users u
 WHERE u.id = p.id
-  AND p.username = split_part(u.email, '@', 1);
+  AND p.username = split_part(u.email, '@', 1)
+  AND u.email NOT LIKE '%.invalid';
 
 -- A display name set to the email local part is the same leak wearing another
 -- label. NULL rather than a placeholder: the UI already falls back to the
@@ -64,6 +75,7 @@ SET name = NULL,
     updated_at = now()
 FROM auth.users u
 WHERE u.id = p.id
-  AND p.name = split_part(u.email, '@', 1);
+  AND p.name = split_part(u.email, '@', 1)
+  AND u.email NOT LIKE '%.invalid';
 
 COMMIT;

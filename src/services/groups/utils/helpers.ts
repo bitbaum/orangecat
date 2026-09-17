@@ -11,27 +11,32 @@
 import supabase from '@/lib/supabase/browser';
 import { logger } from '@/utils/logger';
 import { DATABASE_TABLES } from '@/config/database-tables';
-import { slugify } from '@/utils/string';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
+import { getCurrentUserId as getSharedCurrentUserId } from '@/services/supabase/auth/session';
 import { fromTable } from '../db-helpers';
 
 /**
- * Get current authenticated user ID
+ * Get current authenticated user ID.
+ *
+ * With no client this is the shared, cached answer from the auth layer. With an
+ * explicit client it asks that client directly and caches nothing: a caller
+ * passing its own client is usually passing a per-request server client, and a
+ * module-level cache there would hand one request's user to the next.
  */
 export async function getCurrentUserId(client?: AnySupabaseClient): Promise<string | null> {
+  if (!client) {
+    return getSharedCurrentUserId();
+  }
   try {
-    const supabaseClient = client || supabase;
     const {
       data: { user },
-    } = await supabaseClient.auth.getUser();
+    } = await client.auth.getUser();
     return user?.id || null;
   } catch (error) {
     logger.error('Error getting current user ID', error, 'Groups');
     return null;
   }
 }
-
-export const generateSlug = (name: string) => slugify(name);
 
 /**
  * Ensure slug is unique by appending number if needed

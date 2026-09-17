@@ -50,7 +50,7 @@ export const serviceDetailConfig: EntityDetailConfig = {
       ...(entity.duration_minutes && { duration: `PT${entity.duration_minutes}M` }),
     };
   },
-  renderDetails: entity => {
+  renderDetails: (entity, _payable, _isOwner, isSignedIn) => {
     const { amount, currency, perHour } = getServicePrice(entity);
     const durationMinutes = (entity as { duration_minutes?: number }).duration_minutes;
     // Provider-supplied, so filtered rather than trusted — see safeHref. Rows
@@ -138,6 +138,7 @@ export const serviceDetailConfig: EntityDetailConfig = {
             )}
             <BookEntityButton
               className="w-full"
+              isSignedIn={isSignedIn}
               bookableType="service"
               bookableId={entity.id as string}
               bookableTitle={(entity.title as string) || 'this service'}

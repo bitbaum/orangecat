@@ -70,7 +70,7 @@ export const eventSchema = z
     longitude: z.number().min(-180).max(180).optional().nullable(),
     is_online: z.boolean().default(false),
     online_url: optionalUrl(),
-    asset_id: z.string().uuid().optional().nullable().or(z.literal('')),
+    asset_id: z.string().guid().optional().nullable().or(z.literal('')),
 
     // Capacity & Attendance
     max_attendees: z.number().int().positive().optional().nullable(),

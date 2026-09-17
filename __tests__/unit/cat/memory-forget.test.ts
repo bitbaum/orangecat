@@ -72,11 +72,16 @@ describe('forgetMemoriesMatching', () => {
     expect(result.notFound).toEqual(['plays the tuba']);
   });
 
-  it('a failed delete reports nothing as deleted', async () => {
+  // Was: `expect(result.notFound).toEqual(['photography'])`. That assertion
+  // pinned the bug — a failed DELETE reported the fact as "not found", so Cat
+  // told the user no such memory existed while it was still stored. The store
+  // matched it; the removal is what failed. bitbaum/orangecat#563 finding 8.
+  it('a failed delete reports the memory as FAILED, never as absent', async () => {
     const { client } = supabaseWithCorpus(CORPUS, { deleteError: { message: 'boom' } });
     const result = await forgetMemoriesMatching(client, 'u1', ['photography']);
     expect(result.deleted).toEqual([]);
-    expect(result.notFound).toEqual(['photography']);
+    expect(result.notFound).not.toContain('photography');
+    expect(result.failed.length).toBeGreaterThan(0);
   });
 
   it('ignores degenerate fragments that would match everything', async () => {

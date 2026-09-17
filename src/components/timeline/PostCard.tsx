@@ -18,11 +18,13 @@ import { Check } from 'lucide-react';
 import { usePostCardActions } from './usePostCardActions';
 import ReplyAiButton from './ReplyAiButton';
 import PostAiEditMenu from './PostAiEditMenu';
-import { TIMELINE_SURFACE } from '@/config/timeline';
+import { TIMELINE_SURFACE, TIMELINE_AVATAR_SIZE } from '@/config/timeline';
 
 interface PostCardProps {
   event: TimelineDisplayEvent;
   onUpdate: (updates: Partial<TimelineDisplayEvent>) => void;
+  /** A post created from this card (a quote repost), for the list to show. */
+  onAddEvent?: (event: TimelineDisplayEvent) => void;
   onDelete?: () => void;
   compact?: boolean;
   showMetrics?: boolean;
@@ -37,6 +39,7 @@ interface PostCardProps {
 export function PostCard({
   event,
   onUpdate,
+  onAddEvent,
   onDelete,
   compact = false,
   showMetrics: _showMetrics = true,
@@ -82,6 +85,7 @@ export function PostCard({
     user,
     profile,
     onUpdate,
+    onAddEvent,
     onDelete,
     onReplyCreated,
     isSelectionMode,
@@ -149,7 +153,7 @@ export function PostCard({
                 isSimpleRepost ? event.metadata?.original_actor_avatar : event.actor?.avatar
               }
               name={isSimpleRepost ? event.metadata?.original_actor_name : event.actor?.name}
-              size={40}
+              size={TIMELINE_AVATAR_SIZE}
             />
           </div>
 
@@ -193,8 +197,8 @@ export function PostCard({
                 <AvatarLink
                   username={profile?.username || null}
                   userId={user.id}
-                  avatarUrl={profile?.avatar_url || user.user_metadata?.avatar_url || null}
-                  name={profile?.name || user.user_metadata?.name || 'You'}
+                  avatarUrl={profile?.avatar_url || null}
+                  name={profile?.name || profile?.username || 'You'}
                   size={32}
                   className="flex-shrink-0"
                 />
@@ -245,16 +249,27 @@ export function PostCard({
           onSimpleRepost={handleSimpleRepost}
           onQuoteRepost={handleQuoteRepost}
           isReposting={isReposting}
+          // Identity comes from the PROFILE, never from the auth session.
+          //
+          // This block used to read user_metadata and fall back to user.email.
+          // user_metadata holds whatever the OAuth provider handed over at
+          // signup — for a Google account that is the real name on the Google
+          // profile, and an lh3.googleusercontent.com avatar URL that Google
+          // rotates and which therefore 404s. The broken <img> then rendered
+          // its own alt text, so the repost composer displayed
+          // "<real name>'s avatar" in plain sight, and the email fallback was
+          // one null profile away from displaying an email address as a
+          // username. A pseudonymous account cannot be pseudonymous if the
+          // session object is allowed to speak for it.
+          //
+          // profiles is the only identity the user actually controls, so it is
+          // the only source. When it is missing the answer is a neutral
+          // placeholder — never a different, truer name.
           currentUser={{
             id: user?.id,
-            name:
-              (user?.user_metadata as { name?: string } | undefined)?.name || user?.email || 'You',
-            username:
-              (user?.user_metadata as { preferred_username?: string } | undefined)
-                ?.preferred_username || '',
-            avatar:
-              (user?.user_metadata as { avatar_url?: string | null } | undefined)?.avatar_url ||
-              null,
+            name: profile?.name || profile?.username || 'You',
+            username: profile?.username || '',
+            avatar: profile?.avatar_url || null,
           }}
         />
       </article>

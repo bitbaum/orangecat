@@ -23,6 +23,7 @@ import { ENTITY_STATUS } from '@/config/database-constants';
 import { ENTITY_REGISTRY, type EntityType } from '@/config/entity-registry';
 import { useAuth } from '@/hooks/useAuth';
 import { useSellerPaymentMethods } from '@/hooks/useSellerPaymentMethods';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 interface EntityCreationSuccessProps {
   /** Entity type identifier (e.g. 'product', 'service') */
@@ -72,7 +73,7 @@ export function EntityCreationSuccess({
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to publish');
+        throw new Error(apiErrorMessage(errorData, 'Failed to publish'));
       }
 
       entityEvents.published(entityType, entityId);

@@ -18,20 +18,20 @@ import {
 } from '@/services/cat/credit-metering';
 import { calculateCostBtc, getFreeModels, getAvailableModels } from '@/config/ai-models';
 
-jest.mock('@/utils/logger', () => ({
-  logger: { warn: jest.fn(), error: jest.fn(), info: jest.fn(), debug: jest.fn() },
+vi.mock('@/utils/logger', () => ({
+  logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 
 // Registry estimates are priced in USD, so they need a BTC/USD rate. Pin it for
 // determinism — and let a test return null to prove we bill nothing without one.
-const convertBtcToOrNull = jest.fn().mockResolvedValue(100000); // 1 BTC = 100k USD
-jest.mock('@/services/currency/rates.server', () => ({
+const convertBtcToOrNull = vi.fn().mockResolvedValue(100000); // 1 BTC = 100k USD
+vi.mock('@/services/currency/rates.server', () => ({
   convertBtcToOrNull: (...a: unknown[]) => convertBtcToOrNull(...a),
 }));
 
-const appendCreditEntry = jest.fn();
-const getCreditBalance = jest.fn();
-jest.mock('@/services/cat/credits', () => ({
+const appendCreditEntry = vi.fn();
+const getCreditBalance = vi.fn();
+vi.mock('@/services/cat/credits', () => ({
   appendCreditEntry: (...a: unknown[]) => appendCreditEntry(...a),
   getCreditBalance: (...a: unknown[]) => getCreditBalance(...a),
 }));
@@ -41,7 +41,7 @@ const PAID_MODEL = getAvailableModels().find(m => m.tier !== 'free')?.id as stri
 const FREE_MODEL = getFreeModels()[0]?.id as string;
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe('calculateCostBtc returns BTC, not satoshis', () => {

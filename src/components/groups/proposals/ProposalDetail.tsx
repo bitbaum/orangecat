@@ -27,6 +27,7 @@ import { getStatusBadge, getTypeLabel } from './utils';
 import { PROPOSAL_STATUSES, type ProposalStatus } from '@/config/proposal-constants';
 import type { Proposal } from '@/services/groups/queries/proposals';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 interface ProposalDetailProps {
   proposalId: string;
@@ -96,7 +97,7 @@ export function ProposalDetail({
           loadUserVote();
         }
       } else {
-        throw new Error(data.error || 'Failed to load proposal');
+        throw new Error(apiErrorMessage(data, 'Failed to load proposal'));
       }
     } catch (error) {
       if (myLoadId !== loadIdRef.current) {
@@ -130,7 +131,7 @@ export function ProposalDetail({
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to activate proposal');
+        throw new Error(apiErrorMessage(error, 'Failed to activate proposal'));
       }
 
       toast.success('Proposal activated! Voting is now open.');

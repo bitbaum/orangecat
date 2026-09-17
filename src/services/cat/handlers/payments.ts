@@ -310,11 +310,7 @@ export const paymentHandlers: Record<string, ActionHandler> = {
     }
 
     // 2. Resolve project owner's payment method (uses admin internally for cross-user lookup)
-    const projectWallet = await resolveSellerWallet(
-      supabase as unknown as SupabaseClient,
-      'project',
-      projectId
-    );
+    const projectWallet = await resolveSellerWallet('project', projectId);
 
     if (!projectWallet) {
       return {

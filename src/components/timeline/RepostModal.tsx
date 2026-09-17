@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { formatRelativeTime } from '@/utils/dates';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { TIMELINE_CONTENT_LIMITS, TIMELINE_SURFACE } from '@/config/timeline';
+import { cn } from '@/lib/utils';
 
 const QUOTE_MAX_LENGTH = TIMELINE_CONTENT_LIMITS.quote;
 
@@ -170,47 +171,22 @@ export function RepostModal({
                   }
                 }}
                 rows={4}
-                className="w-full resize-none rounded-md border border-subtle bg-surface-page px-4 py-3 text-base text-fg-primary placeholder:text-fg-secondary focus:border-interactive focus:outline-none focus:ring-2 focus:ring-ring"
+                // Borderless: the dialog is already the container, so a second
+                // box around the text just draws a frame inside a frame. The
+                // avatar beside it and the quoted post beneath are what say
+                // "this is the thing you are writing".
+                className="w-full resize-none border-none bg-transparent px-0 py-1 text-base text-fg-primary placeholder:text-fg-secondary focus:outline-none focus:ring-0"
                 placeholder="Add a comment"
                 maxLength={QUOTE_MAX_LENGTH}
                 aria-label="Add your comment before reposting"
                 autoFocus
               />
             </div>
-            <div className="flex items-center justify-between text-sm px-1">
-              <div className="flex items-center gap-2 text-fg-secondary">
-                <span
-                  className={
-                    remainingCharacters <= 20
-                      ? 'text-status-warning font-semibold'
-                      : 'text-fg-secondary'
-                  }
-                >
-                  {remainingCharacters}
-                </span>
-                <span className="text-fg-tertiary">characters left</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  onClick={handleSimpleRepost}
-                  disabled={isReposting}
-                  className="h-9 px-3 text-sm"
-                >
-                  Repost
-                </Button>
-                <Button
-                  onClick={handleQuoteRepost}
-                  disabled={!canQuote}
-                  isLoading={isReposting}
-                  className={TIMELINE_SURFACE.buttonPrimary}
-                >
-                  Quote post
-                </Button>
-              </div>
-            </div>
-
-            {/* Original Post Preview (X-style) */}
+            {/* The post being quoted sits directly under what you are writing,
+                as it does on X and as it will in the timeline once posted. It
+                used to come AFTER the buttons, which put the action row between
+                the composer and the thing it refers to and broke the reading
+                order — write, see what you are quoting, then act. */}
             <div className="rounded-md border border-subtle bg-surface-raised p-3 transition-colors hover:bg-surface-raised/80">
               <div className="flex items-start gap-3">
                 <AvatarLink
@@ -249,6 +225,37 @@ export function RepostModal({
                     </p>
                   )}
                 </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between border-t border-subtle pt-3 text-sm">
+              {/* Only counts down once it matters. A number sitting there from
+                  the first keystroke reads as a limit you are approaching. */}
+              <span
+                className={cn(
+                  'tabular-nums',
+                  remainingCharacters <= 20 ? 'text-status-warning font-semibold' : 'text-fg-tertiary'
+                )}
+              >
+                {remainingCharacters <= 20 ? `${remainingCharacters} left` : ''}
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  onClick={handleSimpleRepost}
+                  disabled={isReposting}
+                  className="h-9 px-3 text-sm"
+                >
+                  Repost
+                </Button>
+                <Button
+                  onClick={handleQuoteRepost}
+                  disabled={!canQuote}
+                  isLoading={isReposting}
+                  className={TIMELINE_SURFACE.buttonPrimary}
+                >
+                  Quote post
+                </Button>
               </div>
             </div>
           </div>

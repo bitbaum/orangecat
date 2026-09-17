@@ -2,7 +2,7 @@
 
 **Purpose**: Agentic, tool-driven development configuration for Claude Code
 
-**Last Updated**: 2026-01-06
+**Last Updated**: 2026-09-04
 
 ---
 
@@ -140,17 +140,16 @@ Runs **after** file edits for self-correction:
 Credentials in `.env.local`:
 
 ```bash
-NEXT_PUBLIC_SUPABASE_URL=https://project.supabase.co
+NEXT_PUBLIC_SUPABASE_URL=https://supabase.orangecat.ch
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
 SUPABASE_SERVICE_ROLE_KEY=eyJ...
 ```
 
-**MCP Tools**:
+**Database access** (the Supabase MCP is retired):
 
-- `mcp_supabase_list_tables()` - List tables
-- `mcp_supabase_execute_sql()` - Run queries
-- `mcp_supabase_apply_migration()` - Create migrations
-- `mcp_supabase_get_advisors()` - Security/performance checks
+- Reads: PostgREST over HTTPS (`$NEXT_PUBLIC_SUPABASE_URL/rest/v1/...` with the keys above)
+- Migrations: files in `supabase/migrations/` — applied automatically on deploy
+- DDL inspection: `ssh ubuntu@167.233.22.31 'docker exec supabase-db psql ...'`
 
 ### Browser Automation
 
@@ -196,7 +195,7 @@ All detailed best practices are in `.claude/rules/`:
 - Reads entity-registry.ts (@file)
 - Checks validation schemas
 - Updates schema with Zod
-- Creates migration with mcp_supabase_apply_migration
+- Adds a migration file in supabase/migrations/ (applied on deploy)
 - Updates form config
 - Post-hook runs (type-check, lint)
 - Tests with browser automation

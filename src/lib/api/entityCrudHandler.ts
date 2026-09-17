@@ -367,7 +367,7 @@ function createPutHandler(config: EntityHandlerConfig) {
       const body = await request.json();
       const validatedData = schema.parse(body);
       const updatePayload = {
-        ...buildUpdatePayload(validatedData),
+        ...buildUpdatePayload(validatedData as Record<string, unknown>),
         updated_at: new Date().toISOString(),
       };
 
@@ -397,7 +397,7 @@ function createPutHandler(config: EntityHandlerConfig) {
     } catch (error) {
       if (error instanceof ZodError) {
         return apiValidationError(`Invalid ${meta.name.toLowerCase()} data`, {
-          details: error.errors,
+          details: error.issues,
         });
       }
       return handleApiError(error);

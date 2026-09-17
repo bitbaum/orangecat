@@ -50,7 +50,7 @@ export function SidebarNavItem({ item, isActive, isExpanded, onNavigate }: Sideb
   const count = item.counter === 'messages' ? unreadCount : 0;
   const showMessagesBadge = item.counter === 'messages';
 
-  // Active style follows the x.ai / FleetCrown pattern: subtle background +
+  // Active style follows the x.ai / Loki pattern: subtle background +
   // a 2px inset accent bar on the left edge, instead of a full bordered
   // pill. Two visual axes change (text color + accent bar) — restraint
   // rather than a chunky shape shift between inactive/active.

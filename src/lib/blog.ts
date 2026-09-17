@@ -42,8 +42,8 @@ export function getBlogPostSlugs(): string[] {
 
   return fs
     .readdirSync(BLOG_POSTS_PATH)
-    .filter(filename => filename.endsWith('.mdx'))
-    .map(filename => filename.replace(/\.mdx$/, ''));
+    .filter(filename => filename.endsWith('.md'))
+    .map(filename => filename.replace(/\.md$/, ''));
 }
 
 // Get a single blog post by slug
@@ -51,7 +51,7 @@ export function getBlogPost(slug: string): BlogPost | null {
   try {
     ensureBlogDirectory();
 
-    const fullPath = path.join(BLOG_POSTS_PATH, `${slug}.mdx`);
+    const fullPath = path.join(BLOG_POSTS_PATH, `${slug}.md`);
 
     if (!fs.existsSync(fullPath)) {
       return null;

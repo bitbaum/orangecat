@@ -30,7 +30,7 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
     const rawBody = await request.json();
     const parseResult = walletTransferSchema.safeParse(rawBody);
     if (!parseResult.success) {
-      return apiBadRequest('Invalid input', parseResult.error.errors);
+      return apiBadRequest('Invalid input', parseResult.error.issues);
     }
     const body = parseResult.data;
 

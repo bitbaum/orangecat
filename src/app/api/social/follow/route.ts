@@ -16,8 +16,8 @@ import { NotificationDispatcher } from '@/services/notifications/dispatcher';
 
 const followBodySchema = z.object({
   following_id: z
-    .string({ required_error: 'following_id is required' })
-    .uuid('Invalid following_id format'),
+    .string({ error: issue => issue.input === undefined ? 'following_id is required' : undefined })
+    .guid('Invalid following_id format'),
 });
 
 async function handleFollow(request: AuthenticatedRequest) {
@@ -35,7 +35,7 @@ async function handleFollow(request: AuthenticatedRequest) {
 
     const parsed = followBodySchema.safeParse(await request.json().catch(() => ({})));
     if (!parsed.success) {
-      return apiBadRequest(parsed.error.errors[0]?.message ?? 'Invalid following_id');
+      return apiBadRequest(parsed.error.issues[0]?.message ?? 'Invalid following_id');
     }
     const { following_id } = parsed.data;
 

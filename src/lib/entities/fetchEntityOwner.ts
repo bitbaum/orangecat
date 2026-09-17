@@ -9,6 +9,13 @@ export interface EntityOwner {
   avatar_url: string | null;
   /** profiles.created_at — drives the "On OrangeCat since <month year>" trust line. */
   created_at: string | null;
+  /**
+   * True when this owner is a placeholder for someone who has not accepted it
+   * yet (ADR-0005). Such an owner has NO profile, so name/avatar come from the
+   * actor row and `user_id` is empty — callers must not treat that as
+   * "anonymous", and must not offer to pay them.
+   */
+  isUnclaimed?: boolean;
 }
 
 /**
@@ -26,11 +33,18 @@ export async function fetchEntityOwner(
   if (entity.actor_id) {
     const { data: actorData } = await supabase
       .from(DATABASE_TABLES.ACTORS)
-      .select('id, actor_type, user_id, group_id')
+      .select('id, actor_type, user_id, group_id, display_name, avatar_url, slug')
       .eq('id', entity.actor_id)
       .maybeSingle();
     if (actorData) {
-      type ActorRow = { id: string; user_id: string | null };
+      type ActorRow = {
+        id: string;
+        user_id: string | null;
+        actor_type?: string | null;
+        display_name?: string | null;
+        avatar_url?: string | null;
+        slug?: string | null;
+      };
       type ProfileRow = {
         username: string | null;
         name: string | null;
@@ -38,6 +52,23 @@ export async function fetchEntityOwner(
         created_at: string | null;
       };
       const actor = actorData as unknown as ActorRow;
+
+      // An unclaimed placeholder has no profile by construction (the CHECK
+      // requires user_id IS NULL), so the profile lookup below would return
+      // nothing and this would render as "Anonymous" with a dead link. Its
+      // name, avatar and public address live on the actor row itself.
+      if (actor.actor_type === 'unclaimed') {
+        return {
+          id: actor.id,
+          user_id: '',
+          username: actor.slug ?? null,
+          name: actor.display_name ?? null,
+          avatar_url: actor.avatar_url ?? null,
+          created_at: null,
+          isUnclaimed: true,
+        };
+      }
+
       let profile: ProfileRow | null = null;
       if (actor.user_id) {
         const { data: profileData } = await supabase

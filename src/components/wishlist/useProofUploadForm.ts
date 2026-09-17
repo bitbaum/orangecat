@@ -13,6 +13,7 @@ import type { ProofType, FulfillmentProof } from './types';
 import { PROOF_TYPE_META } from './types';
 import { ProofStorageService } from '@/services/wishlist';
 import type { FileUploadProgress } from '@/types/storage';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 interface UseProofUploadFormParams {
   wishlistItemId: string;
@@ -80,7 +81,7 @@ export function useProofUploadForm({ wishlistItemId, onSuccess }: UseProofUpload
         setValue('image_url', result.url);
         setUploadProgress(100);
       } else {
-        setUploadError(result.error || 'Failed to upload image');
+        setUploadError(apiErrorMessage(result, 'Failed to upload image'));
         setUploadProgress(0);
       }
     },

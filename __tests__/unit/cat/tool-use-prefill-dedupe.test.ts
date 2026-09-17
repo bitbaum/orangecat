@@ -12,11 +12,13 @@ import { executeToolCall } from '@/services/cat/tool-executor';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import type { RawToolCall } from '@/services/cat/tool-use-types';
 
-jest.mock('@/services/cat/tool-executor', () => ({
-  executeToolCall: jest.fn(),
+import type { MockedFunction } from 'vitest';
+
+vi.mock('@/services/cat/tool-executor', () => ({
+  executeToolCall: vi.fn(),
 }));
 
-const mockExecuteToolCall = executeToolCall as jest.MockedFunction<typeof executeToolCall>;
+const mockExecuteToolCall = executeToolCall as MockedFunction<typeof executeToolCall>;
 
 const supabase = {} as AnySupabaseClient;
 const USER_ID = 'user-1';
@@ -67,8 +69,16 @@ function enrich() {
     ],
     MESSAGE,
     'groq',
-    'test-groq-key',
-    'test-model'
+    'test-model',
+    undefined,
+    undefined,
+    {
+      // Production always supplies these — the resolver owns the active
+      // step's endpoint and key. A caller without them now gets no tools,
+      // which is the point: the loop never guesses a vendor.
+      toolEndpoint: 'https://api.groq.com/openai/v1/chat/completions',
+      toolKey: 'test-groq-key',
+    }
   );
 }
 
@@ -76,7 +86,7 @@ describe('tool loop — cross-step prefill dedupe', () => {
   const originalFetch = global.fetch;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockExecuteToolCall.mockImplementation(async (_sb, _uid, toolCall) => ({
       role: 'tool',
       tool_call_id: toolCall.id,
@@ -89,7 +99,7 @@ describe('tool loop — cross-step prefill dedupe', () => {
   });
 
   it('drops a later-step prefill for an entity type already drafted', async () => {
-    global.fetch = jest
+    global.fetch = vi
       .fn()
       .mockResolvedValueOnce(toolCallsResponse([prefillCall('call_1', 'service')]))
       .mockResolvedValueOnce(toolCallsResponse([prefillCall('call_2', 'service')]))
@@ -102,7 +112,7 @@ describe('tool loop — cross-step prefill dedupe', () => {
   });
 
   it('still allows a DIFFERENT entity type in a later step', async () => {
-    global.fetch = jest
+    global.fetch = vi
       .fn()
       .mockResolvedValueOnce(toolCallsResponse([prefillCall('call_1', 'service')]))
       .mockResolvedValueOnce(toolCallsResponse([prefillCall('call_2', 'product')]))
@@ -118,7 +128,7 @@ describe('tool loop — cross-step prefill dedupe', () => {
   });
 
   it('keeps same-step multiples (the website flow chains several in one message)', async () => {
-    global.fetch = jest
+    global.fetch = vi
       .fn()
       .mockResolvedValueOnce(
         toolCallsResponse([prefillCall('call_1', 'service'), prefillCall('call_2', 'product')])

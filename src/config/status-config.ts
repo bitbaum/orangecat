@@ -165,16 +165,3 @@ export function isPublicStatus(status: string | null | undefined): boolean {
  * (e.g., no extra badge needed on entity cards)
  */
 export const NORMAL_VISIBLE_STATUSES: EntityStatus[] = ['active', 'draft', 'published'];
-
-/**
- * Typed status value constants — use these instead of raw string literals
- * in comparisons and handlers to maintain SSOT.
- */
-export const ENTITY_STATUS = {
-  DRAFT: 'draft',
-  ACTIVE: 'active',
-  PAUSED: 'paused',
-  COMPLETED: 'completed',
-  CANCELLED: 'cancelled',
-  ARCHIVED: 'archived',
-} as const satisfies Record<string, EntityStatus>;

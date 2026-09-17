@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Card Component Tests — behavior, not class strings.
  *

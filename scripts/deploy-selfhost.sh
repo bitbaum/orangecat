@@ -3,7 +3,7 @@
 # OrangeCat self-host deploy — atomic swap + boot-test + rollback.
 #
 # OrangeCat is one of the four hand-rolled "snowflake" services on bitbaum
-# (not managed by fleetcrown/scripts/hetzner/sync-infra.sh, not in apps.conf):
+# (not managed by loki/scripts/hetzner/sync-infra.sh, not in apps.conf):
 # it keeps its own systemd unit + Caddy block and uses this safer deploy than
 # the fleet's in-place `deploy.sh` (which rsyncs over the live tree with no
 # rollback). The flow, proven in the runbook:
@@ -19,7 +19,7 @@
 #   scripts/deploy-selfhost.sh --no-build   # deploy an already-built .next/standalone (CI)
 #
 # Config (env, with proven defaults):
-#   OC_BOX        SSH target              (default root@167.233.22.31)
+#   OC_BOX        SSH target, user@host   (REQUIRED — no default)
 #   OC_APP_BASE   app dir on box          (default /opt/orangecat)
 #   OC_SERVICE    systemd unit            (default orangecat-app)
 #   OC_PORT       live port               (default 4003)
@@ -28,7 +28,7 @@
 #   OC_PUBLIC     public health URL       (default https://orangecat.ch/api/health)
 set -euo pipefail
 
-OC_BOX="${OC_BOX:-root@167.233.22.31}"
+OC_BOX="${OC_BOX:?set OC_BOX to the box SSH target, e.g. OC_BOX=root@<box-host>}"
 OC_APP_BASE="${OC_APP_BASE:-/opt/orangecat}"
 OC_SERVICE="${OC_SERVICE:-orangecat-app}"
 OC_PORT="${OC_PORT:-4003}"
@@ -45,9 +45,9 @@ if [ "${1:-}" != "--no-build" ]; then
   # costs a full build+rsync cycle to discover. (next build type-checks too, but
   # only after compiling.) type-check is non-incremental → deterministic.
   echo "=== type-check (fail fast) ==="
-  npm run type-check
+  pnpm run type-check
   echo "=== build (SELF_HOST=1) ==="
-  SELF_HOST=1 npm run build
+  SELF_HOST=1 pnpm run build
 fi
 
 ST="$REPO_ROOT/.next/standalone"
@@ -61,6 +61,52 @@ echo "=== assemble standalone (static + public) ==="
 # skipped copy here never means missing assets.
 [ -d "$REPO_ROOT/.next/static" ] && cp -r "$REPO_ROOT/.next/static" "$ST/.next/static"
 [ -d "$REPO_ROOT/public" ] && cp -r "$REPO_ROOT/public" "$ST/public"
+
+# ── shiki top-level link ──────────────────────────────────────────────────────
+# Next auto-externalizes shiki, and bip-kit's ArticleBody loads it with plain
+# Node resolution from the server chunk at runtime. Output tracing copies the
+# .pnpm store entries into standalone/node_modules/.pnpm but never emits the
+# top-level node_modules/shiki symlink, so on the box (no outer node_modules to
+# leak from) the import finds nothing and long-form code blocks silently render
+# as the un-highlighted mono fallback while dev shows them highlighted.
+# Same trap and same fix as Loki #513: what the tracer can't see, the
+# assemble step must supply. Version-agnostic; no-op when already present.
+SHIKI_STORE_ENTRY="$(ls "$ST/node_modules/.pnpm" 2>/dev/null | grep -E '^shiki@' | head -1 || true)"
+if [ -n "$SHIKI_STORE_ENTRY" ] && [ ! -e "$ST/node_modules/shiki" ]; then
+  ln -s ".pnpm/$SHIKI_STORE_ENTRY/node_modules/shiki" "$ST/node_modules/shiki"
+  echo "→ deploy: linked standalone node_modules/shiki -> .pnpm/$SHIKI_STORE_ENTRY"
+fi
+
+# ── .release: which commit is actually serving ────────────────────────────────
+# Written INTO the staging tree, so it rsyncs with the release and swaps
+# atomically with it. Two consequences, both wanted:
+#
+#   - A rollback restores the right marker for free. `app-old` carries its own
+#     .release from when IT was deployed, so `mv app-old app` moves the truth
+#     back with the code. A marker written after the swap, or kept outside the
+#     release dir, would survive a rollback and then lie.
+#   - There is no window where the directory and the marker disagree.
+#
+# The gap this closes, from 2026-09-15: every CD run for a merge reported
+# `cancelled` while the box had in fact swapped in a new release — so CI status
+# and box state disagreed in BOTH directions, and answering "which commit is
+# live?" meant grepping the bundle for a string the change happened to
+# introduce. That works by luck: a refactor that adds no new literal (as this
+# one did) is unverifiable, and a string that already existed elsewhere gives a
+# false positive. A commit sha in a known path is the answer instead of an
+# inference.
+#
+# GITHUB_SHA in CI; the working tree's HEAD for a local deploy. `unknown` rather
+# than an empty file when neither is available — absent data should read as
+# absent, not as a blank truth.
+DEPLOY_SHA="${GITHUB_SHA:-$(git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null || echo unknown)}"
+DEPLOY_REF="${GITHUB_REF_NAME:-$(git -C "$REPO_ROOT" rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)}"
+{
+  echo "sha=$DEPLOY_SHA"
+  echo "ref=$DEPLOY_REF"
+  echo "deployed_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+} > "$ST/.release"
+echo "→ deploy: .release sha=$DEPLOY_SHA ref=$DEPLOY_REF"
 
 echo "=== rsync → $OC_BOX:$OC_APP_BASE/app-next ==="
 for attempt in 1 2 3; do
@@ -150,8 +196,40 @@ for _ in $(seq 1 20); do
   [ "$code" = "200" ] && { ok=200; break; }
   read -t 1 _ </dev/zero 2>/dev/null || true
 done
-pkill -f 'app-next/server.js' 2>/dev/null || true
-[ "$ok" != "200" ] && { echo "BOOT-TEST FAILED ($ok)"; tail -25 "$LOG"; exit 1; }
+# `pkill -f 'app-next/server.js'` does NOT reliably match the running
+# process: Next's standalone server rewrites its own process title to
+# "next-server (v...)" during startup, and that rewrite changes
+# /proc/PID/cmdline itself, not just what `ps` displays — confirmed
+# 2026-08-29 by reading /proc/PID/cmdline directly on a leaked instance.
+# Once boot succeeds (usually well before this line runs, since the
+# health-check loop above can take up to 20s), pkill -f has nothing left to
+# match, and the boot-test process leaks forever, squatting on $BOOT. That
+# then silently wedges every FUTURE deploy: the next boot-test binds a
+# different port collision or hits the stale process's stale health
+# response instead of the new build. Kill by what's actually listening on
+# the port instead — immune to whatever the process calls itself.
+fuser -k "$BOOT/tcp" 2>/dev/null || true
+# Name the cause BEFORE the tail.
+#
+# Node prints a boot failure as one line that says what is wrong —
+# `Error: Cannot find module '@swc/helpers/_/_interop_require_default'` — followed
+# by a require stack and a trace that run well past twenty lines. `tail -25`
+# therefore kept the twenty lines that identify nothing and cut the single line
+# that identifies everything. On 2026-09-07 that turned a two-minute diagnosis
+# into forty: the CI log showed only `BOOT-TEST FAILED (000)` and a require
+# stack, and the module name had to be recovered by ssh'ing to the box and
+# requiring the file by hand.
+#
+# grep first, tail second, and grep with `|| true` so a failure that does not
+# match still prints the tail rather than exiting here on grep's exit status.
+[ "$ok" != "200" ] && {
+  echo "BOOT-TEST FAILED ($ok)"
+  echo "--- cause (first error line) ---"
+  grep -m1 -E "Error:|Cannot find module|MODULE_NOT_FOUND|ERR_" "$LOG" || echo "(no error line matched — see tail)"
+  echo "--- last 40 lines ---"
+  tail -40 "$LOG"
+  exit 1
+}
 echo "boot-test: OK"
 
 # atomic swap: live → app-old, staging → live (keep app-old for rollback)
@@ -246,11 +324,15 @@ echo "=== ship ops scripts + nightly Cat-eval timer ==="
 # must never roll back a good app deploy.
 {
   ssh "${SSH_OPTS[@]}" "$OC_BOX" "mkdir -p $OC_APP_BASE/scripts"
-  scp "${SSH_OPTS[@]}" -q scripts/eval-cat.mjs "$OC_BOX:$OC_APP_BASE/scripts/eval-cat.mjs"
-  # eval-cat.mjs imports this next to itself — ship them together or the timer breaks.
-  scp "${SSH_OPTS[@]}" -q scripts/eval-auth.mjs "$OC_BOX:$OC_APP_BASE/scripts/eval-auth.mjs"
-  scp "${SSH_OPTS[@]}" -q scripts/eval-cat-outcomes.mjs \
-    "$OC_BOX:$OC_APP_BASE/scripts/eval-cat-outcomes.mjs"
+  # Every eval-*.mjs ships together. This used to be a hand-written list of
+  # three files with a comment warning that eval-cat.mjs imports a sibling
+  # "next to itself — ship them together or the timer breaks". On 2026-09-11
+  # a fourth sibling (eval-rate-limit.mjs) was added, the list was not, and the
+  # deployed eval-cat.mjs pointed at a file that was not there: the nightly
+  # timer would have crashed on import. A glob cannot forget a file, and
+  # __tests__/unit/scripts/eval-siblings-shipped.test.ts proves every relative
+  # import of the eval scripts is covered by it.
+  scp "${SSH_OPTS[@]}" -q scripts/eval-*.mjs "$OC_BOX:$OC_APP_BASE/scripts/"
   scp "${SSH_OPTS[@]}" -q scripts/check-data-invariants.mjs \
     "$OC_BOX:$OC_APP_BASE/scripts/check-data-invariants.mjs"
   # ONE list. It used to be written three times — the scp arguments, the

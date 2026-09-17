@@ -1,6 +1,6 @@
 # Pre-Incorporation IP Assignment Memorandum
 
-**Author:** Mao Nakamoto
+**Author:** Cato
 **Date of memo:** 2026-06-02
 **Subject:** Intent to assign all intellectual property created on the Cockpit and OrangeCat projects to a to-be-formed corporate entity.
 
@@ -8,12 +8,12 @@
 
 ## 1. Declaration
 
-I, Mao Nakamoto (the "Founder"), residing in Switzerland, sole author and copyright holder of the software, designs, documentation, content, brand assets, and other materials (collectively, the "Work Product") created in connection with the projects currently known as:
+I, Cato (the "Founder"), residing in Switzerland, sole author and copyright holder of the software, designs, documentation, content, brand assets, and other materials (collectively, the "Work Product") created in connection with the projects currently known as:
 
 - **Cockpit** — repository at `github.com/g-but/cockpit` (private), placeholder name pending rebrand
 - **OrangeCat** — repository at `github.com/g-but/orangecat`
 
-hereby declare my intent that all Work Product, whether created before or after the date of this memorandum, is and shall remain my sole property until such time as the planned corporate structure ("bitbaum AG", a Swiss Aktiengesellschaft to be incorporated in the Canton of Zug as a holding entity, together with its product-specific subsidiary GmbHs including but not limited to **orangecat GmbH** and **FleetCrown GmbH** (for the project currently codenamed "Cockpit" in repository paths), collectively "NewCo") is formed for the purpose of owning, developing, and commercializing these projects, at which point all Work Product shall be irrevocably assigned to the appropriate NewCo entity by formal written instrument of assignment.
+hereby declare my intent that all Work Product, whether created before or after the date of this memorandum, is and shall remain my sole property until such time as the planned corporate structure ("bitbaum AG", a Swiss Aktiengesellschaft to be incorporated in the Canton of Zug as a holding entity, together with its product-specific subsidiary GmbHs including but not limited to **orangecat GmbH** and **Loki GmbH** (for the project currently codenamed "Cockpit" in repository paths), collectively "NewCo") is formed for the purpose of owning, developing, and commercializing these projects, at which point all Work Product shall be irrevocably assigned to the appropriate NewCo entity by formal written instrument of assignment.
 
 ## 2. Scope of Work Product
 
@@ -41,7 +41,7 @@ Upon formation of bitbaum AG and the relevant product subsidiary, I will execute
 
 - **bitbaum AG** (holding) — owns all shared infrastructure, brand assets at the holding level, the bitbaum name and goodwill, and equity in each subsidiary
 - **orangecat GmbH** — owns the OrangeCat product, its brand, code, and customer relationships
-- **FleetCrown GmbH** — owns the FleetCrown product (currently codenamed "Cockpit" in repo paths), its brand, code, and customer relationships
+- **Loki GmbH** — owns the Loki product (currently codenamed "Cockpit" in repo paths), its brand, code, and customer relationships
 - Additional subsidiaries (hirn.li GmbH, botsmann GmbH, etc.) may be formed for other bitbaum products
 
 This memorandum is preliminary evidence of intent and shall not be construed as the assignment itself.
@@ -60,7 +60,7 @@ This memorandum shall be construed under the laws of the Canton of Zurich, Switz
 ---
 
 **Signed:** **************\_\_**************
-Mao Nakamoto
+Cato
 
 **Date:** 2026-06-02
 

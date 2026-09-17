@@ -2,7 +2,7 @@
 
 AI-native platform for universal economic and governance participation — "My Cat" AI agent enabling any identity to earn, fund, lend, invest, and govern freely with any currency.
 
-FleetCrown (rebranded from Cockpit) is a live customer project (see "FleetCrown" and "OrangeCat" projects under Mao Nakamoto on this platform). Typed "customer" stakeholder edge + shared BTC wallet. Integration is real: FleetCrown production layer + OrangeCat economic layer. Changes here (e.g. stakeholder_relationships, project profiles) directly improve UX for FleetCrown (the customer) and all future customers.
+Loki (rebranded from Cockpit) is a live customer project (see "Loki" and "OrangeCat" projects under Cato on this platform). Typed "customer" stakeholder edge + shared BTC wallet. Integration is real: Loki production layer + OrangeCat economic layer. Changes here (e.g. stakeholder_relationships, project profiles) directly improve UX for Loki (the customer) and all future customers.
 
 @~/.claude/CLAUDE.md
 @.claude/CLAUDE.md
@@ -11,8 +11,8 @@ FleetCrown (rebranded from Cockpit) is a live customer project (see "FleetCrown"
 
 | Layer      | Technology                                                                          |
 | ---------- | ----------------------------------------------------------------------------------- |
-| Framework  | Next.js 16, React 19, TypeScript 5.8                                                |
-| Styling    | Tailwind CSS 3.3                                                                    |
+| Framework  | Next.js 16, React 19, TypeScript 6.x                                                |
+| Styling    | Tailwind CSS 4                                                                      |
 | Database   | Self-hosted Supabase (PostgreSQL + Auth + RLS) — `supabase.orangecat.ch` on Hetzner |
 | Bitcoin    | Lightning Network, BTCPay, NWC                                                      |
 | Deployment | Self-hosted on Hetzner (`bitbaum`, behind Caddy)                                    |
@@ -29,7 +29,7 @@ The design system runs in **two concentric layers**:
 
 1. **Legacy layer** (in active use): shadcn/ui-style `--background`, `--foreground`, `--card`, `--primary`, etc. as HSL channel values; brand palette `--tiffany-{50..900}`, `--orange-{50..900}`, `--bitcoin-orange` as RGB channels. Utility classes: `bg-card`, `text-foreground`, `bg-tiffany-500`, `bg-bitcoinOrange` etc.
 
-2. **FleetCrown-aligned semantic tier** (migration target, added in commit eff99bad): `--text-primary/secondary/tertiary/muted/inverted`, `--surface-page/base/raised/overlay/modal/drawer/public`, `--border-default/interactive`, `--accent-primary/hover` (→ `#ff5c00`), `--status-positive/warning/negative/neutral` with `-subtle` variants, `--tracking-display/label/caps`, `--shell-max`. Utility classes (commit 71c88988): `text-fg-primary`, `bg-surface-base`, `bg-accent-warm`, `bg-status-positive`, `tracking-display`, `max-w-shell`.
+2. **Loki-aligned semantic tier** (migration target, added in commit eff99bad): `--text-primary/secondary/tertiary/muted/inverted`, `--surface-page/base/raised/overlay/modal/drawer/public`, `--border-default/interactive`, `--accent-primary/hover` (→ `#ff5c00`), `--status-positive/warning/negative/neutral` with `-subtle` variants, `--tracking-display/label/caps`, `--shell-max`. Utility classes (commit 71c88988): `text-fg-primary`, `bg-surface-base`, `bg-accent-warm`, `bg-status-positive`, `tracking-display`, `max-w-shell`.
 
 New components should use the semantic tier. Existing components migrate as touched.
 
@@ -37,7 +37,7 @@ New components should use the semantic tier. Existing components migrate as touc
 
 `--bitcoin-orange: #f7931a` (utility `bg-bitcoinOrange`) is **only for Bitcoin-related UI** — balances, Lightning indicators, Bitcoin icons. Never for general brand elements.
 
-### Migration direction (x.ai-quality, FleetCrown-aligned)
+### Migration direction (x.ai-quality, Loki-aligned)
 
 Multi-commit migration in progress:
 
@@ -45,7 +45,8 @@ Multi-commit migration in progress:
 - ✅ Warm-accent Button variant; landing + auth + about + header CTAs all use `variant="accent"` (ff9f2ce5, 2cdb0907)
 - ⏳ Drop chromatic brand palette (tiffany, orange) from new code; migrate existing classes to semantic tier (`bg-card → bg-surface-base`, `text-foreground → text-fg-primary`)
 - ⏳ Display typography (Space Grotesk for headings, IBM Plex Mono for code) replacing Inter-only
-- ⏳ Tailwind v4 + OKLCH color space
+- ✅ Tailwind v4 (package on 4.x — this line previously claimed 3.3 long after main had moved, which misled agents; keep this table honest)
+- ⏳ OKLCH color space for the token tier
 
 End state: monochromatic surfaces + one warm accent (`#ff5c00`) for top-of-funnel conversion + Bitcoin Orange for Bitcoin-specific UI + status colors only for actual status. Everything else stays achromatic.
 
@@ -74,7 +75,7 @@ push branch → open PR → CI green → auto-merge.yml squash-merges it
 
 `.github/workflows/auto-merge.yml` calls the fleet's canonical sweep — the
 policy no longer lives in this repo. It is defined once in
-`maonakamoto/dotfiles`, `scripts/ci/auto-merge-sweep.sh`, and a fix made to a
+`bitbaum/dotfiles`, `scripts/ci/auto-merge-sweep.sh`, and a fix made to a
 local copy here would reach nobody. The sweep merges **one** PR per sweep, and
 only when: it is not a draft, carries no hold label, every check has finished
 green, GitHub calls it cleanly mergeable, and main's own CI is currently green. One car per sweep is deliberate — a PR's
@@ -102,7 +103,7 @@ exist because `GITHUB_TOKEN` is deliberately inert:
    shipped by the next sweep rather than stranded.
 2. **The `post-main` job** in `ci.yml`. GitHub also suppresses the `workflow_run`
    event for a run that was itself created with `GITHUB_TOKEN` — so the CI run
-   the re-arm just started chains to *nothing*. CD and Main Red Alert both hang
+   the re-arm just started chains to _nothing_. CD and Main Red Alert both hang
    off `workflow_run`, and both are therefore dead on the automated path unless
    the dispatched run hands off itself. It does: file/close the red-main issue,
    then dispatch CD, and fail if no CD run appears.

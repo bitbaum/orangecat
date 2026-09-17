@@ -40,7 +40,28 @@ export async function generateInvoice(
 ): Promise<GeneratedInvoice> {
   switch (wallet.method) {
     case 'nwc':
-      return generateNWCInvoice(wallet.nwc_uri!, amountBtc, description);
+      try {
+        return await generateNWCInvoice(wallet.nwc_uri!, amountBtc, description);
+      } catch (error) {
+        // An NWC connection can be authorised for one direction only. Coinos
+        // issues send-only connections (`pay_invoice` without `make_invoice`),
+        // and NWC outranks every other rail — so connecting one to enable
+        // payouts made this throw and took the owner's ENTIRE receiving path
+        // down with it. Observed in production 2026-09-07: every invoice on
+        // catomean@orangecat.ch failed with "Could not create an invoice right
+        // now" until the connection was pulled back out.
+        //
+        // A rail that cannot mint an invoice is not a receiving rail. Fall
+        // through to one that is, rather than failing the payment.
+        if (!wallet.lightning_address) {
+          throw error;
+        }
+        logger.warn(
+          'NWC cannot mint invoices (likely a send-only connection); receiving via the lightning address instead',
+          { walletId: wallet.wallet_id, error }
+        );
+        return generateLightningAddressInvoice(wallet.lightning_address, amountBtc, description);
+      }
 
     case 'lightning_address':
       return generateLightningAddressInvoice(wallet.lightning_address!, amountBtc, description);

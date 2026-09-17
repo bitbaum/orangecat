@@ -21,17 +21,13 @@ import {
   createRateLimitResponse,
   rateLimitWriteAsync,
 } from '@/lib/rate-limit';
+import { sanitizeApiKey } from '@/lib/api-key';
 
 const GROQ_TRANSCRIBE_URL = `${PROVIDER_BASE_URLS.groq}/audio/transcriptions`;
 const GROQ_WHISPER_MODEL = 'whisper-large-v3-turbo';
 // Generous for short dictation; well under Groq's 25 MB limit. A minute of
 // opus/webm audio is ~0.5 MB, so 15 MB covers long messages with headroom.
 const MAX_AUDIO_BYTES = 15 * 1024 * 1024;
-
-function sanitizeApiKey(key: string): string {
-  // Headers reject control chars / stray whitespace — trim defensively.
-  return key.replace(/[\s\x00-\x1f\x7f]+/g, '');
-}
 
 export const POST = withAuth(async (request: AuthenticatedRequest) => {
   const { user } = request;

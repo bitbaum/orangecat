@@ -15,8 +15,9 @@
  */
 
 import Link from 'next/link';
-import { Sparkles, Plus, MinusCircle } from 'lucide-react';
+import { Sparkles, Plus, MinusCircle, Globe, MessageCircle } from 'lucide-react';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
+import { ROUTES } from '@/config/routes';
 import {
   suggestedEntityForSkill,
   type PublicEconomicProfile,
@@ -27,21 +28,64 @@ interface ProfileOfferingsProps {
   isOwnProfile?: boolean;
 }
 
+/** Opens the Cat with the question already typed. */
+function askCatHref(question: string): string {
+  return `${ROUTES.DASHBOARD.CAT}?q=${encodeURIComponent(question)}`;
+}
+
+const DISCOVER_QUESTION =
+  "Help me work out what I can offer. Ask me what I'm good at, what I own that could earn, " +
+  'and what other people come to me for — then put it on my profile.';
+
+// The Cat can remove entries as well as add them (removeFromEconomicProfile),
+// which is the only way to take something off this card. Say so, because a
+// wrong entry here is wrong in public.
+const CORRECT_QUESTION =
+  'Go through "What I can offer" on my profile with me. Remove anything that is not right ' +
+  "and help me add what's missing.";
+
+function AskCatLink({ label, question }: { label: string; question: string }) {
+  return (
+    <Link
+      href={askCatHref(question)}
+      className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs font-medium text-fg-secondary underline-offset-2 hover:text-fg-primary hover:underline"
+    >
+      <MessageCircle className="h-3.5 w-3.5 flex-shrink-0" />
+      {label}
+    </Link>
+  );
+}
+
 export default function ProfileOfferings({ economicProfile, isOwnProfile }: ProfileOfferingsProps) {
-  if (!economicProfile) {
-    return null;
-  }
-  const skills = economicProfile.skills ?? [];
-  const askedFor = economicProfile.askedFor ?? [];
-  const assets = economicProfile.assets ?? [];
-  const notAvailableFor = economicProfile.notAvailableFor ?? [];
-  if (
+  const skills = economicProfile?.skills ?? [];
+  const askedFor = economicProfile?.askedFor ?? [];
+  const assets = economicProfile?.assets ?? [];
+  const notAvailableFor = economicProfile?.notAvailableFor ?? [];
+  const isEmpty =
     skills.length === 0 &&
     askedFor.length === 0 &&
     assets.length === 0 &&
-    notAvailableFor.length === 0
-  ) {
-    return null;
+    notAvailableFor.length === 0;
+
+  if (isEmpty) {
+    // A visitor sees nothing. The owner sees the way to fill it — an empty
+    // section is the one place the invitation is most useful, and it used to
+    // be the one place that rendered nothing at all.
+    if (!isOwnProfile) {
+      return null;
+    }
+    return (
+      <div className="mb-3 rounded-md border border-subtle bg-surface-raised/40 p-4 sm:mb-4">
+        <div className="mb-1.5 flex items-center gap-1.5">
+          <Sparkles className="h-4 w-4 text-fg-secondary" />
+          <h2 className="text-sm font-semibold text-fg-primary">What I can offer</h2>
+        </div>
+        <p className="mb-3 text-xs text-fg-secondary">
+          Nothing here yet. This is the part of your profile a potential client actually reads.
+        </p>
+        <AskCatLink label="Ask Cat to help me figure this out" question={DISCOVER_QUESTION} />
+      </div>
+    );
   }
 
   return (
@@ -146,10 +190,20 @@ export default function ProfileOfferings({ economicProfile, isOwnProfile }: Prof
         </div>
       )}
 
-      {isOwnProfile && skills.length > 0 && (
-        <p className="mt-3 text-xs text-fg-tertiary">
-          Tap a skill to turn it into a listing. Only you see these create shortcuts.
-        </p>
+      {isOwnProfile && (
+        <div className="mt-4 flex flex-col gap-2 border-t border-subtle pt-3 sm:flex-row sm:items-center sm:justify-between">
+          {/* "Only you see these create shortcuts" was true of the +buttons and
+              easy to read as though it covered the entries themselves. It does
+              not: everything above is on the public profile. Say which is which. */}
+          <p className="flex items-start gap-1.5 text-xs text-fg-tertiary">
+            <Globe className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
+            <span>
+              Visible to everyone.
+              {skills.length > 0 && ' The + shortcuts are yours alone — tap one to list it.'}
+            </span>
+          </p>
+          <AskCatLink label="Ask Cat to fix or add to this" question={CORRECT_QUESTION} />
+        </div>
       )}
     </div>
   );

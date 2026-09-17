@@ -44,16 +44,41 @@ export function useContentEditableEditor({
 
   useEffect(() => {
     const editor = editorRef.current;
-    if (!editor || isComposing || document.activeElement === editor) {
+    if (!editor || isComposing) {
+      return;
+    }
+
+    // Normally an external content change must not overwrite what someone is
+    // actively typing, so a focused editor is left alone. Being RESET to empty
+    // is the exception, and it has to be: that is what a successful post does,
+    // and after Ctrl+Enter the editor still has focus.
+    //
+    // Without this exception the composer kept the text of a post that had just
+    // been created. It looked like the shortcut had done nothing, so the
+    // natural response was to press it again — which the server rejected as a
+    // duplicate ("You just posted this"), making it look broken twice over.
+    // Clicking the button never showed this because clicking moves focus to the
+    // button first.
+    //
+    // Safe as an exception because there is nothing to clobber: the text being
+    // removed is text the app has already decided to remove.
+    const isReset = content.trim().length === 0;
+    if (!isReset && document.activeElement === editor) {
       return;
     }
 
     const currentHtml = editor.innerHTML.replace(/\s+/g, ' ').trim();
     const expectedHtml = markdownToHtml(content).replace(/\s+/g, ' ').trim();
 
-    if (currentHtml !== expectedHtml && expectedHtml !== '<br>') {
+    // `expectedHtml !== '<br>'` stops an empty render from wiping the editor
+    // mid-keystroke, but it would also block a deliberate reset, so a reset is
+    // allowed past it for the same reason as above.
+    if (currentHtml !== expectedHtml && (isReset || expectedHtml !== '<br>')) {
       const selection = getSelectionRange(editor);
-      const wasFocused = document.activeElement === editor;
+      // On a reset there is no position left to restore — the old offsets point
+      // into text that no longer exists — so the caret simply goes to the start
+      // of the now-empty composer, which is where someone would begin typing.
+      const wasFocused = !isReset && document.activeElement === editor;
 
       editor.innerHTML = sanitize(expectedHtml || '<br>');
 

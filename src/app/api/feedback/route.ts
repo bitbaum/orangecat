@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => null);
     const v = platformFeedbackSchema.safeParse(body);
     if (!v.success) {
-      return apiBadRequest('Invalid request', v.error.errors);
+      return apiBadRequest('Invalid request', v.error.issues);
     }
 
     // Attribute the submission when the visitor happens to be signed in;

@@ -6,7 +6,7 @@ last_modified_summary: x.ai-adjacent rebrand — geometric agent-window mark, br
 
 ## Direction
 
-OrangeCat UI follows the same discipline as **FleetCrown** and **x.ai**:
+OrangeCat UI follows the same discipline as **Loki** and **x.ai**:
 
 - Near-monochrome surfaces, hairline borders, tight radii
 - **One geometric mark** (stroke-based, `currentColor`) — not a mascot illustration
@@ -34,22 +34,22 @@ OrangeCat UI follows the same discipline as **FleetCrown** and **x.ai**:
 
 Do not reintroduce the pirate-hat cat, kawaii favicon, or filled orange circle.
 
-## Four-layer rule (target state, aligned with FleetCrown)
+## Four-layer rule (target state, aligned with Loki)
 
 1. **`:root` / `.dark` in `globals.css`** — raw tokens only
 2. **`@theme` / Tailwind config** — maps utilities to vars
 3. **`@layer components`** — recurring patterns as `ui-*` / `oc-*` classes
 4. **JSX** — semantic classes + layout utilities only; no hex, no one-off palette in new code
 
-FleetCrown uses OKLCH throughout; OrangeCat still uses HSL in `:root` but primary is now **neutral** (not Tiffany). A full OKLCH migration is a follow-up.
+Loki uses OKLCH throughout; OrangeCat still uses HSL in `:root` but primary is now **neutral** (not Tiffany). A full OKLCH migration is a follow-up.
 
 ## Rebrand checklist
 
 - [x] `brand.ts` + `BrandMark` + static SVGs
 - [x] Logo/header uses monochrome wordmark
 - [x] Cat toolbar uses `BrandMarkIcon`
-- [ ] `npm run check:design` equivalent (lint script for raw colors in TSX)
-- [ ] Public/marketing pages: dark bands + `ui-public-*` parity with FleetCrown
+- [ ] `pnpm run check:design` equivalent (lint script for raw colors in TSX)
+- [ ] Public/marketing pages: dark bands + `ui-public-*` parity with Loki
 - [ ] Space Grotesk (optional) — Inter remains default until font pass
 - [ ] Deprecate heavy `GRADIENTS.brandTiffany` on marketing CTAs
 
@@ -57,4 +57,4 @@ FleetCrown uses OKLCH throughout; OrangeCat still uses HSL in `:root` but primar
 
 - `docs/architecture/CAT_AND_DESIGN_SSOT.md`
 - `docs/design-system/README.md`
-- FleetCrown reference: `dev/fleetcrown/docs/branding-design.md`
+- Loki reference: `dev/loki/docs/branding-design.md`

@@ -8,7 +8,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { PaymentIntent } from '@/domain/payments/types';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { getEmailClient, isEmailConfigured } from '@/lib/email/client';
+import { isEmailConfigured, sendEmail } from '@/lib/email/client';
 import { paymentReceivedTemplate } from '@/lib/email/templates/payment-received';
 import { logger } from '@/utils/logger';
 import { DATABASE_TABLES } from '@/config/database-tables';
@@ -20,7 +20,6 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
 };
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://orangecat.ch';
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'notifications@orangecat.ch';
 
 export async function sendSellerPaymentNotification(
   paymentIntent: PaymentIntent,
@@ -99,13 +98,21 @@ export async function sendSellerPaymentNotification(
       dashboardUrl: `${APP_URL}/dashboard`,
     });
 
-    await getEmailClient().emails.send({
-      from: FROM_EMAIL,
+    const result = await sendEmail({
       to: sellerEmail,
       subject: template.subject,
       html: template.html,
       text: template.text,
     });
+
+    if (!result.sent) {
+      logger.warn(
+        'Failed to send seller payment notification',
+        { error: result.error, paymentIntentId: paymentIntent.id },
+        'email'
+      );
+      return;
+    }
 
     logger.info(
       'Seller payment notification sent',

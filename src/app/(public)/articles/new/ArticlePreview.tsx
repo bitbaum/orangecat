@@ -1,10 +1,13 @@
 'use client';
 
-import ArticleMarkdown from '../[slug]/ArticleMarkdown';
+import 'bip-kit/styles.css';
+import '@/lib/longform/longform.css';
+import LongformPreviewBody from '@/lib/longform/LongformPreviewBody';
 
 /**
- * Read-only preview of the article being composed.
- * Extracted from ArticleComposer.tsx (pure move — markup unchanged).
+ * Read-only preview of the article being composed — the SAME bip-kit blocks
+ * and reference renderer the published page uses (sans syntax highlighting,
+ * which is server-side), so the preview is honest.
  */
 export default function ArticlePreview({
   title,
@@ -33,7 +36,7 @@ export default function ArticlePreview({
       {excerpt && <p className="mt-3 text-lg text-fg-secondary">{excerpt}</p>}
       <div className="mt-6 [&>*:first-child]:mt-0">
         {body.trim() ? (
-          <ArticleMarkdown body={body} />
+          <LongformPreviewBody body={body} />
         ) : (
           <p className="text-fg-tertiary">Nothing to preview yet.</p>
         )}

@@ -5,10 +5,10 @@ import { getUserPlan } from '@/services/billing/getUserPlan';
  * .eq('user_id', uid).maybeSingle()` to the given { data, error } pair.
  */
 function mockSupabase(result: { data: unknown; error: unknown }) {
-  const maybeSingle = jest.fn().mockResolvedValue(result);
-  const eq = jest.fn().mockReturnValue({ maybeSingle });
-  const select = jest.fn().mockReturnValue({ eq });
-  const from = jest.fn().mockReturnValue({ select });
+  const maybeSingle = vi.fn().mockResolvedValue(result);
+  const eq = vi.fn().mockReturnValue({ maybeSingle });
+  const select = vi.fn().mockReturnValue({ eq });
+  const from = vi.fn().mockReturnValue({ select });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return { from } as any;
 }

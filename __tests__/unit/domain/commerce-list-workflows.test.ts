@@ -1,18 +1,20 @@
 import { listEntitiesPage } from '@/domain/commerce/service';
 
-jest.mock('@/lib/supabase/server', () => ({
-  createServerClient: jest.fn(),
+vi.mock('@/lib/supabase/server', () => ({
+  createServerClient: vi.fn(),
 }));
 
-jest.mock('@/services/actors/getOrCreateUserActor', () => ({
-  getOrCreateUserActor: jest.fn().mockResolvedValue({ id: 'a1' }),
+vi.mock('@/services/actors/getOrCreateUserActor', () => ({
+  getOrCreateUserActor: vi.fn().mockResolvedValue({ id: 'a1' }),
 }));
 
 import { createServerClient } from '@/lib/supabase/server';
 
+import type { Mock } from 'vitest';
+
 describe('Commerce list workflows (services/products/causes)', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   function makeSupabaseForRows(rows: any[], totalCount: number) {
@@ -20,21 +22,21 @@ describe('Commerce list workflows (services/products/causes)', () => {
     const countResult = { count: totalCount, error: null };
 
     const itemsQuery = {
-      select: jest.fn().mockReturnThis(),
-      eq: jest.fn().mockReturnThis(),
-      order: jest.fn().mockReturnThis(),
-      range: jest.fn().mockReturnThis(),
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      order: vi.fn().mockReturnThis(),
+      range: vi.fn().mockReturnThis(),
       then: (resolve: (v: any) => unknown) => Promise.resolve(resolve(itemsResult)),
     } as any;
 
     const countQuery = {
-      select: jest.fn().mockReturnThis(),
-      eq: jest.fn().mockReturnThis(),
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
       then: (resolve: (v: any) => unknown) => Promise.resolve(resolve(countResult)),
     } as any;
 
-    const from = jest.fn().mockReturnValueOnce(itemsQuery).mockReturnValueOnce(countQuery);
-    (createServerClient as jest.Mock).mockResolvedValue({ from });
+    const from = vi.fn().mockReturnValueOnce(itemsQuery).mockReturnValueOnce(countQuery);
+    (createServerClient as Mock).mockResolvedValue({ from });
 
     return { itemsQuery, countQuery };
   }

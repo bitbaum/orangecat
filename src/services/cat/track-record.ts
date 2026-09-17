@@ -303,3 +303,80 @@ async function getSetbacks(
       .slice(0, MAX_SETBACKS),
   };
 }
+
+// ==================== TOOL OUTPUT ====================
+
+/**
+ * The track record as prose for the model, when Cat CALLS for it (ADR-0006 D6)
+ * rather than receiving it as ambient context. Separate from
+ * context-sections.renderTrackRecord on purpose: that rendering is pinned by a
+ * snapshot test and tuned as a background section; this one answers a direct
+ * question ("what did you do for me?") and, more usefully, names Cat's own
+ * pattern so it can act on it — "three drafted, none published" is a fact Cat
+ * should notice before proposing a fourth.
+ *
+ * Prose, not JSON: weak models paraphrase prose and echo JSON.
+ */
+export function formatTrackRecordForModel(tr: CatTrackRecord | null): string {
+  if (!tr) {
+    return 'TRACK RECORD: could not be read (the action log was unavailable). Tell the user you cannot see your own history right now — do not reconstruct it from memory.';
+  }
+  const setbackCount = tr.setbacks.failed + tr.setbacks.denied + tr.setbacks.unconfirmed;
+  if (tr.proposed === 0 && setbackCount === 0) {
+    return `TRACK RECORD (last ${tr.windowDays} days): nothing yet. You have not created anything for this user in this window and nothing failed. Say so plainly; do not invent history.`;
+  }
+
+  const lines: string[] = [];
+  lines.push(
+    `TRACK RECORD (last ${tr.windowDays} days, real outcomes): proposed ${tr.proposed}, published ${tr.published} (active now), funded ${tr.funded}` +
+      (tr.funded > 0 ? ` for ${tr.totalFundedBtc} BTC in total.` : '.')
+  );
+
+  if (tr.entries.length > 0) {
+    lines.push('What you created, most recent first:');
+    for (const e of tr.entries) {
+      const state = e.status === null ? 'deleted since' : `status ${e.status}`;
+      const money = e.payments > 0 ? `, ${e.fundedBtc} BTC from ${e.payments} payment(s)` : '';
+      lines.push(`- ${e.entityType} "${e.title}" — ${state}${money} (created ${e.createdAt.slice(0, 10)})`);
+    }
+  }
+
+  if (setbackCount > 0) {
+    lines.push(
+      `Setbacks: ${tr.setbacks.failed} failed, ${tr.setbacks.denied} denied (permission or spend cap), ${tr.setbacks.unconfirmed} never confirmed by the user.`
+    );
+    for (const sb of tr.setbacks.recent) {
+      lines.push(`- ${sb.actionId}: ${sb.kind}${sb.reason ? ` — ${sb.reason}` : ''} (${sb.at.slice(0, 10)})`);
+    }
+  }
+
+  // The pattern is the point. State it as a fact so the model acts on it
+  // instead of re-proposing the same thing a fourth time.
+  const drafts = tr.entries.filter(e => e.status === 'draft').length;
+  const patterns: string[] = [];
+  if (drafts >= 2 && tr.published === 0) {
+    patterns.push(
+      `${drafts} things drafted, none published — offer to finish ONE of them (name it) before creating anything new.`
+    );
+  } else if (drafts >= 2) {
+    patterns.push(`${drafts} drafts are sitting unpublished — worth offering to finish one.`);
+  }
+  if (tr.published > 0 && tr.funded === 0) {
+    patterns.push(
+      `${tr.published} published but nothing funded yet — the gap is reach or pricing, not more listings.`
+    );
+  }
+  if (tr.setbacks.unconfirmed >= 2) {
+    patterns.push(
+      `${tr.setbacks.unconfirmed} proposals the user never confirmed — ask what held them back before proposing the same kind again.`
+    );
+  }
+  if (patterns.length > 0) {
+    lines.push('PATTERN: ' + patterns.join(' '));
+  }
+
+  lines.push(
+    'Answer from THESE lines only. Amounts are BTC. Own the setbacks in the first person; never claim an outcome not listed here.'
+  );
+  return lines.join('\n');
+}

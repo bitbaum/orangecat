@@ -113,21 +113,21 @@ export interface GroupMembershipSummary {
 
 /**
  * A recent activity event about one of the user's projects. Sourced from the
- * timeline_events bus — `source: 'fleetcrown'` rows are build updates published
- * by FleetCrown; `'orangecat'` rows are native platform activity.
+ * timeline_events bus — `source: 'loki'` rows are build updates published
+ * by Loki; `'orangecat'` rows are native platform activity.
  */
 export interface ProjectActivityEvent {
   projectId: string;
   title: string;
   description: string | null;
   eventType: string;
-  source: 'fleetcrown' | 'orangecat';
+  source: 'loki' | 'orangecat';
   at: string;
 }
 
 /**
  * A typed relationship the user's project has with another party — most
- * importantly "customer" (e.g. FleetCrown built X for this customer).
+ * importantly "customer" (e.g. Loki built X for this customer).
  */
 export interface StakeholderSummary {
   kind: string;
@@ -136,6 +136,8 @@ export interface StakeholderSummary {
 }
 
 /** One of the user's public GitHub repositories (cached). */
+import type { StudioMapSummary } from './studio-map-fetcher';
+
 export interface GitHubRepoSummary {
   name: string;
   description: string | null;
@@ -260,6 +262,9 @@ export interface FullUserContext {
   projectActivity: ProjectActivityEvent[];
   stakeholders: StakeholderSummary[];
   githubRepos: GitHubRepoSummary[];
+  /** The studio map from Loki (every bitbaum project: purpose, state,
+   *  doors, last movement). Optional: absent or null when Loki is unreachable. */
+  studioMap?: StudioMapSummary | null;
   paymentCapabilities: PaymentCapabilities;
   /**
    * Outcome feedback loop: what actually happened to the entities Cat created

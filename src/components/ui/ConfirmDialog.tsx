@@ -20,6 +20,10 @@ interface ConfirmDialogProps {
   description: string;
   confirmLabel?: string;
   isLoading?: boolean;
+  /** Decorative mark above the title — a warning triangle, a bin. */
+  icon?: React.ReactNode;
+  /** Anything the reader needs to see before deciding, e.g. what is being deleted. */
+  children?: React.ReactNode;
 }
 
 export function ConfirmDialog({
@@ -30,6 +34,8 @@ export function ConfirmDialog({
   description,
   confirmLabel = 'Confirm',
   isLoading = false,
+  icon,
+  children,
 }: ConfirmDialogProps) {
   const handleConfirm = async () => {
     await onConfirm();
@@ -39,9 +45,11 @@ export function ConfirmDialog({
     <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
+          {icon && <div className="mx-auto mb-2">{icon}</div>}
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
+        {children}
         <DialogFooter className="gap-2 sm:gap-0">
           <Button variant="outline" onClick={onClose} disabled={isLoading}>
             Cancel

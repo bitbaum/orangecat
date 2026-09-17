@@ -1,7 +1,7 @@
 import { PLATFORM_DEFAULT_CURRENCY } from '@/config/currencies';
 import { STATUS } from '@/config/database-constants';
 import { entityTransforms } from '@/lib/api/normalizeEntityData';
-import { createEntity } from '@/domain/base/entityService';
+import { createEntity, withResolvedActor } from '@/domain/base/entityService';
 import { createServerClient } from '@/lib/supabase/server';
 import type { CreateInvestmentRequest } from '@/types/investments';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
@@ -17,7 +17,7 @@ export async function createInvestment(
   return createEntity(
     'investment',
     userId,
-    {
+    withResolvedActor(input, {
       title: input.title,
       description: input.description || '',
       investment_type: input.investment_type || 'revenue_share',
@@ -36,7 +36,7 @@ export async function createInvestment(
       bitcoin_address: normalizeToNull(input.bitcoin_address),
       lightning_address: normalizeToNull(input.lightning_address),
       status: STATUS.INVESTMENTS.DRAFT,
-    },
+    }),
     {
       client: supabase as unknown as AnySupabaseClient,
     }

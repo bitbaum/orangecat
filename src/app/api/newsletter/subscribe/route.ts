@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => null);
     const parsed = newsletterSubscribeSchema.safeParse(body);
     if (!parsed.success) {
-      return apiBadRequest('Please enter a valid email address', parsed.error.errors);
+      return apiBadRequest('Please enter a valid email address', parsed.error.issues);
     }
 
     const { email, source } = parsed.data;

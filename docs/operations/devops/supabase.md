@@ -23,12 +23,12 @@ Health Check
 
 CLI-Free Local Diagnostics
 
-- Run `npm run diag:supabase` to verify env + connectivity and head-only selects on key tables (`profiles`, `organizations`, `funding_pages`).
+- Run `node scripts/diagnostics/check-supabase.mjs` to verify env + connectivity and head-only selects on key tables (`profiles`, `organizations`, `funding_pages`).
 - Uses `.env.local` (if present) and prefers `SUPABASE_SERVICE_ROLE_KEY` when available.
 
 Write Test (optional)
 
-- Run `npm run diag:supabase:write` to perform a safe end-to-end write test:
+- Run `node scripts/diagnostics/write-test-supabase.js` to perform a safe end-to-end write test:
   - Creates a temporary auth user via Admin API (service-role required)
   - Ensures a profile exists (trigger or fallback insert)
   - Inserts a temporary `funding_pages` row (if owner column detected), then deletes it
@@ -37,9 +37,9 @@ Write Test (optional)
 
 Local Development
 
-1. Start Supabase locally (Supabase CLI) or use hosted project.
+1. Use the remote self-hosted Supabase (`supabase.orangecat.ch`) — do not run a local stack.
 2. Set `.env.local` with the required keys (see `.env.example`).
-3. Run `npm run dev` (or `npm run fresh:start`).
+3. Run `pnpm run dev` (or `pnpm run fresh:start`).
 4. Verify via `curl http://localhost:3000/api/health`.
 
 Production

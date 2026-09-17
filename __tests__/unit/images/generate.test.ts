@@ -47,10 +47,10 @@ describe('IMAGE_PROVIDER_RUNTIME', () => {
 });
 
 describe('generateImageWithKey — images endpoint', () => {
-  afterEach(() => jest.restoreAllMocks());
+  afterEach(() => vi.restoreAllMocks());
 
   it('decodes b64_json and sniffs PNG, omitting response_format for gpt-image models', async () => {
-    const fetchSpy = jest
+    const fetchSpy = vi
       .spyOn(global, 'fetch')
       .mockResolvedValue(jsonResponse({ data: [{ b64_json: PNG_BYTES.toString('base64') }] }));
 
@@ -74,7 +74,7 @@ describe('generateImageWithKey — images endpoint', () => {
   });
 
   it('requests b64_json for non-gpt-image models and sniffs JPEG', async () => {
-    const fetchSpy = jest
+    const fetchSpy = vi
       .spyOn(global, 'fetch')
       .mockResolvedValue(jsonResponse({ data: [{ b64_json: JPEG_BYTES.toString('base64') }] }));
 
@@ -95,9 +95,9 @@ describe('generateImageWithKey — images endpoint', () => {
   });
 
   it('surfaces the provider error message on failure', async () => {
-    jest
-      .spyOn(global, 'fetch')
-      .mockResolvedValue(jsonResponse({ error: { message: 'billing hard limit reached' } }, 400));
+    vi.spyOn(global, 'fetch').mockResolvedValue(
+      jsonResponse({ error: { message: 'billing hard limit reached' } }, 400)
+    );
 
     const result = await generateImageWithKey({
       apiKey: 'sk-test',
@@ -112,11 +112,11 @@ describe('generateImageWithKey — images endpoint', () => {
 });
 
 describe('generateImageWithKey — chat modalities (OpenRouter)', () => {
-  afterEach(() => jest.restoreAllMocks());
+  afterEach(() => vi.restoreAllMocks());
 
   it('asks for image modality and decodes the data-URI response', async () => {
     const dataUri = `data:image/png;base64,${PNG_BYTES.toString('base64')}`;
-    const fetchSpy = jest
+    const fetchSpy = vi
       .spyOn(global, 'fetch')
       .mockResolvedValue(
         jsonResponse({ choices: [{ message: { images: [{ image_url: { url: dataUri } }] } }] })
@@ -143,9 +143,9 @@ describe('generateImageWithKey — chat modalities (OpenRouter)', () => {
   });
 
   it('errors when the model answers with text only', async () => {
-    jest
-      .spyOn(global, 'fetch')
-      .mockResolvedValue(jsonResponse({ choices: [{ message: { content: 'I cannot' } }] }));
+    vi.spyOn(global, 'fetch').mockResolvedValue(
+      jsonResponse({ choices: [{ message: { content: 'I cannot' } }] })
+    );
 
     const result = await generateImageWithKey({
       apiKey: 'sk-or-test',

@@ -20,7 +20,7 @@ const ProjectSummaryRail = dynamic(() => import('@/components/project/ProjectSum
 const ProjectHeader = dynamic(() => import('@/components/project/ProjectHeader'));
 const ProjectContent = dynamic(() => import('@/components/project/ProjectContent'));
 const ProjectTimeline = dynamic(() => import('@/components/project/ProjectTimeline'));
-const FleetCrownBuildCta = dynamic(() => import('@/components/integrations/FleetCrownBuildCta'));
+const LokiBuildCta = dynamic(() => import('@/components/integrations/LokiBuildCta'));
 
 interface Project {
   id: string;
@@ -65,6 +65,14 @@ interface Project {
 interface ProjectPageClientProps {
   project: Project;
   sellerReceive: SellerReceiveInfo | null;
+  /**
+   * Resolved on the server: the OWNER (by actor, not by who created the row)
+   * or the steward of a page set up for someone who has not claimed it yet
+   * (ADR-0005 D5). `user_id` alone is wrong twice — it names the steward as
+   * owner after the claim, and hides the controls from the person it now
+   * belongs to.
+   */
+  canManage?: boolean;
 }
 
 /**
@@ -73,13 +81,17 @@ interface ProjectPageClientProps {
  * Handles all client-side interactivity for project pages.
  * The server component handles data fetching and SEO metadata.
  */
-export default function ProjectPageClient({ project, sellerReceive }: ProjectPageClientProps) {
+export default function ProjectPageClient({
+  project,
+  sellerReceive,
+  canManage,
+}: ProjectPageClientProps) {
   const router = useRouter();
   const { user } = useAuth();
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [showFloatingCTA, setShowFloatingCTA] = useState(false);
 
-  const isOwner = project.user_id === user?.id;
+  const isOwner = canManage ?? project.user_id === user?.id;
   const projectId = project.id;
 
   // Show floating CTA on mobile after scrolling past 300px
@@ -198,9 +210,9 @@ export default function ProjectPageClient({ project, sellerReceive }: ProjectPag
             />
 
             {/* Cross-sell: owners can run AI agents on this project in
-                FleetCrown (sibling product, shared OrangeCat login). */}
+                Loki (sibling product, shared OrangeCat login). */}
             {isOwner && (
-              <FleetCrownBuildCta
+              <LokiBuildCta
                 variant="card"
                 entityType="project"
                 entityId={project.id}

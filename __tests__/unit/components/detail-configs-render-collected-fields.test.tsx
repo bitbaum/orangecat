@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * A field a user fills in must appear on the page that shows the entity.
  *
@@ -64,9 +65,7 @@ describe('loan detail config', () => {
   });
 
   it('still shows the refinance terms when loan_type was never set', () => {
-    render(
-      <div>{loanDetailConfig.renderDetails?.({ ...refinance, loan_type: null })}</div>
-    );
+    render(<div>{loanDetailConfig.renderDetails?.({ ...refinance, loan_type: null })}</div>);
     expect(screen.getByText('8.5% APR')).toBeInTheDocument();
   });
 
@@ -277,7 +276,9 @@ describe('investment return cadence', () => {
 
   it('shows how often the return is paid, not just the rate', () => {
     render(
-      <div>{investmentDetailConfig.renderDetails?.({ ...base, return_frequency: 'quarterly' })}</div>
+      <div>
+        {investmentDetailConfig.renderDetails?.({ ...base, return_frequency: 'quarterly' })}
+      </div>
     );
     // The rate was already rendered; the cadence beside it is what was missing.
     expect(screen.getByText('12.0%')).toBeInTheDocument();
@@ -287,13 +288,17 @@ describe('investment return cadence', () => {
 
   it('falls back to the stored value if the options list ever drifts', () => {
     render(
-      <div>{investmentDetailConfig.renderDetails?.({ ...base, return_frequency: 'fortnightly' })}</div>
+      <div>
+        {investmentDetailConfig.renderDetails?.({ ...base, return_frequency: 'fortnightly' })}
+      </div>
     );
     expect(screen.getByText('fortnightly')).toBeInTheDocument();
   });
 
   it('renders no cadence row when the investment did not state one', () => {
-    render(<div>{investmentDetailConfig.renderDetails?.({ ...base, return_frequency: null })}</div>);
+    render(
+      <div>{investmentDetailConfig.renderDetails?.({ ...base, return_frequency: null })}</div>
+    );
     expect(screen.queryByText('Return Paid')).not.toBeInTheDocument();
   });
 });

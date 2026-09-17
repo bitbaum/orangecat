@@ -6,6 +6,8 @@
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 
 export const API_ROUTES = {
+  /** Browser-side crash reports (see lib/errors/report-client-error). */
+  CLIENT_ERRORS: '/api/client-errors',
   CAT: {
     CHAT: '/api/cat/chat',
     PREPARE: '/api/cat/prepare',
@@ -24,6 +26,7 @@ export const API_ROUTES = {
     MEMORIES_IMPORT: '/api/cat/memories/import',
     INTERESTS: '/api/cat/interests',
     DIAGNOSE: '/api/cat/diagnose',
+    CAPACITY: '/api/cat/capacity',
     NUDGES: '/api/cat/nudges',
     CONVERSATIONS: '/api/cat/conversations',
     CONVERSATION: (id: string) => `/api/cat/conversations/${id}`,
@@ -67,6 +70,14 @@ export const API_ROUTES = {
     TRANSFER: '/api/wallets/transfer',
     ENTITY_VISIBILITY: '/api/wallets/entity-visibility',
     RECEIVE_STATUS: '/api/wallets/receive-status',
+    /** "Can this actually be paid?" — a real probe, not a shape check. */
+    VERIFY: '/api/wallets/verify',
+    /** Owner-only on-chain history. Server-side: mempool.space must not be
+     *  called from a browser — that leaks the viewer's IP and the owner's
+     *  addresses to a third party. */
+    TRANSACTIONS: (id: string) => `/api/wallets/${id}/transactions`,
+    /** The owner's note on a transaction — what the number was for. */
+    NOTES: (id: string) => `/api/wallets/${id}/notes`,
   },
   ENTITY_WALLETS: '/api/entity-wallets',
   /** What Bitcoin costs — our own origin, so no third-party call from a browser. */
@@ -103,6 +114,10 @@ export const API_ROUTES = {
     FOLLOW: '/api/social/follow',
     UNFOLLOW: '/api/social/unfollow',
     FOLLOWING: (id: string) => `/api/social/following/${id}`,
+    // "Do I follow X" — one indexed lookup. Deliberately NOT answered by
+    // paging FOLLOWING: that list is capped at DEFAULT_PAGE_SIZE, so the
+    // answer silently goes wrong past 20 follows.
+    FOLLOW_STATUS: (id: string) => `/api/social/follow-status/${id}`,
     FOLLOWERS: (id: string) => `/api/social/followers/${id}`,
   },
   TASKS: {
@@ -163,7 +178,7 @@ export const API_ROUTES = {
     STATUS: '/api/tips/status',
   },
   INTEGRATIONS: {
-    FLEETCROWN_BUILD_INTENTS: '/api/integrations/fleetcrown/build-intents',
+    LOKI_BUILD_INTENTS: '/api/integrations/loki/build-intents',
   },
   LNURLP: {
     CALLBACK: (username: string) => `/api/lnurlp/${encodeURIComponent(username)}/callback`,
@@ -225,6 +240,8 @@ export const API_ROUTES = {
       `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/${assistantId}/conversations/${conversationId}`,
     CONVERSATION_MESSAGES: (assistantId: string, conversationId: string) =>
       `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/${assistantId}/conversations/${conversationId}/messages`,
+    CLONE: (id: string) => `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/${id}/clone`,
+    MEMORIES: (id: string) => `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/${id}/memories`,
   },
   TRANSACTIONS: '/api/transactions',
   BOOKINGS: {
@@ -234,8 +251,15 @@ export const API_ROUTES = {
   },
   PROFILE_CLAIMS: {
     BASE: '/api/profile-claims',
+    /** Creator-side, addressed by the row id (revoke). */
     BY_ID: (id: string) => `/api/profile-claims/${id}`,
-    CLAIM: (id: string) => `/api/profile-claims/${id}/claim`,
+    /**
+     * Public side, addressed by the credential. `id` addresses the row for its
+     * creator; `token` is what travels in a link — see ADR-0004 D4.
+     */
+    PREVIEW: (token: string) => `/api/profile-claims/token/${token}`,
+    CLAIM: (token: string) => `/api/profile-claims/token/${token}/claim`,
+    DECLINE: (token: string) => `/api/profile-claims/token/${token}/decline`,
   },
 } as const;
 

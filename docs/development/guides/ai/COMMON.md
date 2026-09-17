@@ -316,7 +316,7 @@ async function safeClick(page, selector, retries = 3) {
 ❌ **Avoid automation when:**
 
 - Simple API testing (use curl/Postman)
-- Unit testing (use Jest)
+- Unit testing (use Vitest)
 - Performance testing (use specialized tools)
 - Quick manual verification is faster
 

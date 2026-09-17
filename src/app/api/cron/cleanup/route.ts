@@ -97,7 +97,7 @@ export async function GET(request: Request) {
     if (hadError) {
       logger.error('Cleanup cron partial failure', { results }, LOG_SOURCE);
     } else {
-      logger.info('Cleanup cron completed', { results }, LOG_SOURCE);
+      logger.warn('Cleanup cron completed', { results }, LOG_SOURCE);
     }
 
     return apiSuccess({

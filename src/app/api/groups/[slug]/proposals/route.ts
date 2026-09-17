@@ -23,7 +23,7 @@ const createProposalSchema = z.object({
   description: z.string().max(5000).optional(),
   proposal_type: z.string().max(50).optional(),
   action_type: z.string().max(50).optional(),
-  action_data: z.record(z.unknown()).optional(),
+  action_data: z.record(z.string(), z.unknown()).optional(),
   voting_threshold: z.number().int().min(1).max(100).optional(),
   voting_starts_at: z.string().datetime({ offset: true }).optional(),
   voting_ends_at: z.string().datetime({ offset: true }).optional(),
@@ -94,7 +94,7 @@ export const POST = withAuth(async (request: AuthenticatedRequest, context: Rout
     const body = await request.json();
     const parsed = createProposalSchema.safeParse(body);
     if (!parsed.success) {
-      return apiBadRequest(parsed.error.errors[0]?.message || 'Invalid proposal data');
+      return apiBadRequest(parsed.error.issues[0]?.message || 'Invalid proposal data');
     }
     const result = await createProposal(
       { group_id: groupResult.group.id, ...parsed.data },

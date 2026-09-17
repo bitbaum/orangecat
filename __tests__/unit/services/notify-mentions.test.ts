@@ -13,8 +13,8 @@
  * in it, and part of what was said.
  */
 
-const dispatch = jest.fn().mockResolvedValue(undefined);
-jest.mock('@/services/notifications/dispatcher', () => ({
+const dispatch = vi.fn().mockResolvedValue(undefined);
+vi.mock('@/services/notifications/dispatcher', () => ({
   NotificationDispatcher: { dispatch: (...a: unknown[]) => dispatch(...a) },
 }));
 
@@ -23,7 +23,10 @@ import { notifyMentionedPeople } from '@/services/mentions/notify-mentions';
 const admin = {
   from: () => ({
     select: () => ({
-      eq: () => ({ maybeSingle: () => Promise.resolve({ data: { name: 'Georgy', username: 'g' }, error: null }) }),
+      eq: () => ({
+        maybeSingle: () =>
+          Promise.resolve({ data: { name: 'Cato', username: 'g' }, error: null }),
+      }),
     }),
   }),
 } as never;
@@ -47,7 +50,7 @@ describe('notifyMentionedPeople', () => {
       expect.objectContaining({
         userId: 'u-alice',
         type: 'mention',
-        title: 'Georgy mentioned you',
+        title: 'Cato mentioned you',
         actionUrl: '/posts/e1',
       })
     );

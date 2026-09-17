@@ -21,9 +21,17 @@
  * Mainnet only — testnet prefixes (tpub/upub/vpub) are rejected, because a
  * testnet address shown to a mainnet payer is money lost either way.
  *
- * Derivation is public-key-only (non-hardened, external chain 0/index): the
- * platform can mint receiving addresses but can never spend. That is the
- * non-custodial property, preserved by construction.
+ * Derivation is public-key-only (non-hardened): the platform can mint and read
+ * addresses but can never spend. That is the non-custodial property, preserved
+ * by construction.
+ *
+ * Two chains, and they are not interchangeable. The EXTERNAL chain (0/index) is
+ * where a wallet receives — every invoice address comes from it and must never
+ * come from anywhere else. The INTERNAL chain (1/index) is where the wallet's own
+ * software sends CHANGE when it spends. Minting from it would be wrong; READING
+ * it is mandatory: a balance or a transaction history that scans only chain 0
+ * never sees change coming home, so every wallet that has ever spent reports
+ * less than it holds, and every outgoing payment reads as its whole input sent.
  */
 
 import { BIP32Factory, type BIP32Interface } from 'bip32';
@@ -89,10 +97,37 @@ function addressFor(scheme: ExtendedKeyScheme, publicKey: Uint8Array): string {
  * mint the same address.
  */
 export function deriveOnchainAddress(extendedKey: string, index: number): string {
+  return deriveChainAddress(extendedKey, RECEIVE_CHAIN, index);
+}
+
+/** BIP44 chain numbers: 0 is external (receiving), 1 is internal (change). */
+export const RECEIVE_CHAIN = 0;
+export const CHANGE_CHAIN = 1;
+export type DerivationChain = typeof RECEIVE_CHAIN | typeof CHANGE_CHAIN;
+
+/** Both chains, in the order a scan should walk them. */
+export const SCANNED_CHAINS: readonly DerivationChain[] = [RECEIVE_CHAIN, CHANGE_CHAIN];
+
+/**
+ * Derive address `index` on `chain` of an account-level extended public key.
+ *
+ * For READING a wallet (balance, history). To mint an address someone will pay,
+ * use deriveOnchainAddress, which is pinned to the receiving chain — handing a
+ * payer a change address would put their payment where the recipient's wallet
+ * does not expect incoming funds.
+ */
+export function deriveChainAddress(
+  extendedKey: string,
+  chain: DerivationChain,
+  index: number
+): string {
+  if (chain !== RECEIVE_CHAIN && chain !== CHANGE_CHAIN) {
+    throw new Error(`Derivation chain must be 0 (receive) or 1 (change): ${chain}`);
+  }
   if (!Number.isInteger(index) || index < 0 || index >= 0x80000000) {
     throw new Error(`Derivation index out of range: ${index}`);
   }
   const { node, scheme } = parseAccountKey(extendedKey.trim());
-  const child = node.derive(0).derive(index);
+  const child = node.derive(chain).derive(index);
   return addressFor(scheme, child.publicKey);
 }

@@ -3,8 +3,10 @@
 
 **Created:** 2025-10-13
 **Last Modified:** 2025-01-20
-**Status:** Production Ready
+**Status:** Stale 2025 snapshot — not a current "Production Ready" claim
 **Purpose:** Define clear boundaries between entities and their relationships in the simplified MVP architecture
+
+> Honesty pass 2026-09-03: this document's "Production Ready" status was a 2025 leftover. OrangeCat is live at orangecat.ch; do not treat this file as today's readiness gate.
 
 > 📖 **Long-Term Vision**: See [LONG_TERM_VISION.md](./LONG_TERM_VISION.md) for the complete vision including Assets, Events, and Organizations with multi-entity associations.
 

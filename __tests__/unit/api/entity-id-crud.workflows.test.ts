@@ -2,67 +2,69 @@ import { GET as getService, PUT as putService } from '@/app/api/services/[id]/ro
 import { GET as getProduct, PUT as putProduct } from '@/app/api/products/[id]/route';
 import { GET as getCause, PUT as putCause } from '@/app/api/causes/[id]/route';
 
-jest.mock('@/lib/supabase/server', () => ({
-  createServerClient: jest.fn(),
+vi.mock('@/lib/supabase/server', () => ({
+  createServerClient: vi.fn(),
 }));
 
-jest.mock('@/lib/api/standardResponse', () => ({
-  apiSuccess: jest.fn((data: unknown) => ({
+vi.mock('@/lib/api/standardResponse', () => ({
+  apiSuccess: vi.fn((data: unknown) => ({
     status: 200,
     json: async () => ({ success: true, data }),
   })),
-  apiUnauthorized: jest.fn((message = 'Unauthorized') => ({
+  apiUnauthorized: vi.fn((message = 'Unauthorized') => ({
     status: 401,
     json: async () => ({ success: false, error: { message } }),
   })),
-  apiNotFound: jest.fn((message = 'Not found') => ({
+  apiNotFound: vi.fn((message = 'Not found') => ({
     status: 404,
     json: async () => ({ success: false, error: { message } }),
   })),
-  apiValidationError: jest.fn((message = 'Validation failed') => ({
+  apiValidationError: vi.fn((message = 'Validation failed') => ({
     status: 400,
     json: async () => ({ success: false, error: { message } }),
   })),
-  handleApiError: jest.fn(() => ({
+  handleApiError: vi.fn(() => ({
     status: 500,
     json: async () => ({ success: false, error: { message: 'Internal error' } }),
   })),
-  handleSupabaseError: jest.fn(() => ({
+  handleSupabaseError: vi.fn(() => ({
     status: 500,
     json: async () => ({ success: false, error: { message: 'DB error' } }),
   })),
-  apiForbidden: jest.fn((message = 'Forbidden') => ({
+  apiForbidden: vi.fn((message = 'Forbidden') => ({
     status: 403,
     json: async () => ({ success: false, error: { message } }),
   })),
-  apiRateLimited: jest.fn(() => ({
+  apiRateLimited: vi.fn(() => ({
     status: 429,
     json: async () => ({ success: false, error: { message: 'Rate limited' } }),
   })),
-  apiBadRequest: jest.fn((message = 'Bad request') => ({
+  apiBadRequest: vi.fn((message = 'Bad request') => ({
     status: 400,
     json: async () => ({ success: false, error: { message } }),
   })),
 }));
 
-jest.mock('@/services/actors', () => ({
-  checkOwnership: jest.fn(),
+vi.mock('@/services/actors', () => ({
+  checkOwnership: vi.fn(),
 }));
 
-jest.mock('@/services/actors/getOrCreateUserActor', () => ({
-  getOrCreateUserActor: jest.fn().mockResolvedValue({ id: 'a1' }),
+vi.mock('@/services/actors/getOrCreateUserActor', () => ({
+  getOrCreateUserActor: vi.fn().mockResolvedValue({ id: 'a1' }),
 }));
 
-jest.mock('@/lib/rate-limit', () => ({
-  rateLimit: jest.fn(),
-  rateLimitWriteAsync: jest.fn(),
-  createRateLimitResponse: jest.fn(() => ({ status: 429, json: async () => ({ success: false }) })),
-  applyRateLimitHeaders: jest.fn((response: unknown) => response),
+vi.mock('@/lib/rate-limit', () => ({
+  rateLimit: vi.fn(),
+  rateLimitWriteAsync: vi.fn(),
+  createRateLimitResponse: vi.fn(() => ({ status: 429, json: async () => ({ success: false }) })),
+  applyRateLimitHeaders: vi.fn((response: unknown) => response),
 }));
 
 import { createServerClient } from '@/lib/supabase/server';
 import { checkOwnership } from '@/services/actors';
 import { rateLimit, rateLimitWriteAsync } from '@/lib/rate-limit';
+
+import type { Mock } from 'vitest';
 
 type Case = {
   name: string;
@@ -111,13 +113,13 @@ const cases: Case[] = [
 
 describe('Entity [id] CRUD workflows (service/product/cause)', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    (rateLimit as jest.Mock).mockResolvedValue({ success: true });
-    (rateLimitWriteAsync as jest.Mock).mockResolvedValue({
+    vi.clearAllMocks();
+    (rateLimit as Mock).mockResolvedValue({ success: true });
+    (rateLimitWriteAsync as Mock).mockResolvedValue({
       success: true,
       resetTime: Date.now() + 60000,
     });
-    (checkOwnership as jest.Mock).mockResolvedValue(true);
+    (checkOwnership as Mock).mockResolvedValue(true);
   });
 
   describe.each(cases)('$name id routes', ({ table, getHandler, putHandler, validUpdate }) => {
@@ -131,20 +133,20 @@ describe('Entity [id] CRUD workflows (service/product/cause)', () => {
       };
 
       const fetchQuery = {
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        single: jest.fn().mockResolvedValue({ data: entity, error: null }),
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: entity, error: null }),
       } as any;
 
       const supabase = {
-        auth: { getUser: jest.fn().mockResolvedValue({ data: { user: null } }) },
-        from: jest.fn().mockImplementation((name: string) => {
+        auth: { getUser: vi.fn().mockResolvedValue({ data: { user: null } }) },
+        from: vi.fn().mockImplementation((name: string) => {
           expect(name).toBe(table);
           return fetchQuery;
         }),
       };
 
-      (createServerClient as jest.Mock).mockResolvedValue(supabase);
+      (createServerClient as Mock).mockResolvedValue(supabase);
 
       const response = await getHandler({} as any, {
         params: { id: '00000000-0000-0000-0000-000000000001' },
@@ -166,31 +168,31 @@ describe('Entity [id] CRUD workflows (service/product/cause)', () => {
       const updated = { ...existing, title: String(validUpdate.title) };
 
       const fetchQuery = {
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        single: jest.fn().mockResolvedValue({ data: existing, error: null }),
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: existing, error: null }),
       } as any;
 
       const updateQuery = {
-        update: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        select: jest.fn().mockReturnThis(),
-        single: jest.fn().mockResolvedValue({ data: updated, error: null }),
+        update: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        select: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: updated, error: null }),
       } as any;
 
       const supabase = {
         auth: {
-          getUser: jest.fn().mockResolvedValue({ data: { user: { id: 'u1' } }, error: null }),
+          getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'u1' } }, error: null }),
         },
-        from: jest
+        from: vi
           .fn()
           .mockImplementationOnce(() => fetchQuery)
           .mockImplementationOnce(() => updateQuery),
       };
 
-      (createServerClient as jest.Mock).mockResolvedValue(supabase);
+      (createServerClient as Mock).mockResolvedValue(supabase);
 
-      const request = { json: jest.fn().mockResolvedValue(validUpdate) };
+      const request = { json: vi.fn().mockResolvedValue(validUpdate) };
       const response = await putHandler(request as any, {
         params: { id: '00000000-0000-0000-0000-000000000001' },
       });
@@ -202,7 +204,7 @@ describe('Entity [id] CRUD workflows (service/product/cause)', () => {
     });
 
     it('PUT rejects update from non-owner', async () => {
-      (checkOwnership as jest.Mock).mockResolvedValueOnce(false);
+      (checkOwnership as Mock).mockResolvedValueOnce(false);
       const existing = {
         id: '00000000-0000-0000-0000-000000000001',
         user_id: 'someone-else',
@@ -211,21 +213,21 @@ describe('Entity [id] CRUD workflows (service/product/cause)', () => {
       };
 
       const fetchQuery = {
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        single: jest.fn().mockResolvedValue({ data: existing, error: null }),
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: existing, error: null }),
       } as any;
 
       const supabase = {
         auth: {
-          getUser: jest.fn().mockResolvedValue({ data: { user: { id: 'u1' } }, error: null }),
+          getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'u1' } }, error: null }),
         },
-        from: jest.fn().mockImplementation(() => fetchQuery),
+        from: vi.fn().mockImplementation(() => fetchQuery),
       };
 
-      (createServerClient as jest.Mock).mockResolvedValue(supabase);
+      (createServerClient as Mock).mockResolvedValue(supabase);
 
-      const request = { json: jest.fn().mockResolvedValue(validUpdate) };
+      const request = { json: vi.fn().mockResolvedValue(validUpdate) };
       const response = await putHandler(request as any, {
         params: { id: '00000000-0000-0000-0000-000000000001' },
       });

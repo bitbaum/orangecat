@@ -69,7 +69,7 @@ export const AIAssistantTemplates = createTemplateComponent(
 export const ProjectTemplates = createTemplateComponent(PROJECT_TEMPLATES, 'Projects');
 export const AssetTemplates = createTemplateComponent(ASSET_TEMPLATES, 'Assets');
 export const EventTemplates = createTemplateComponent(EVENT_TEMPLATES, 'Events');
-export const GroupTemplates = createTemplateComponent(GROUP_TEMPLATES, 'Groups');
+export const GroupTemplates = createTemplateComponent(GROUP_TEMPLATES, 'Organizations');
 export const WishlistTemplates = createTemplateComponent(WISHLIST_TEMPLATES, 'Wishlists');
 
 // ==================== TYPE EXPORTS ====================

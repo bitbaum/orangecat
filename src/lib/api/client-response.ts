@@ -1,3 +1,5 @@
+import { apiErrorMessage } from '@/lib/api/errorMessage';
+
 /**
  * Browser-side unwrap for the standard API envelope
  * ({ success, data } | { success: false, error: { code, message } }).
@@ -26,7 +28,11 @@ export async function unwrapApiResponse<T>(res: Response, fallback: string): Pro
   const json = await res.json().catch(() => null);
   if (!res.ok || !json?.success) {
     const err = json?.error;
-    const message = (typeof err === 'string' ? err : err?.message) || fallback;
+    // apiErrorMessage owns "how do I read the message out of an error body".
+    // This function used to carry its own copy of that rule — the exact
+    // drift its docblock above warns about, and the same rule that 100 call
+    // sites got wrong as `X.error || 'fallback'`. One definition, used here.
+    const message = apiErrorMessage(json, fallback);
     const code =
       typeof err === 'object' && err !== null ? (err as { code?: string }).code : undefined;
     throw new ApiResponseError(message, code);

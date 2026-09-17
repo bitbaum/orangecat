@@ -24,6 +24,7 @@ import Loading from '@/components/Loading';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { API_ROUTES } from '@/config/api-routes';
 import { wishlistItemSchema } from '@/lib/validation';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 function AddWishlistItemForm() {
   const router = useRouter();
@@ -57,7 +58,7 @@ function AddWishlistItemForm() {
       target_amount_btc: Number(targetAmountBtc),
     });
     if (!parsed.success) {
-      toast.error(parsed.error.errors[0]?.message || 'Please check the form');
+      toast.error(parsed.error.issues[0]?.message || 'Please check the form');
       return;
     }
 
@@ -70,7 +71,7 @@ function AddWishlistItemForm() {
       });
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to add item');
+        throw new Error(apiErrorMessage(data, 'Failed to add item'));
       }
       toast.success('Item added to your wishlist');
       router.push(backHref);

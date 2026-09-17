@@ -1,6 +1,6 @@
 /**
  * Open-market demand — what the economy is asking for, exposed so the BUILD side
- * (FleetCrown) can build for real need instead of guesses. Two signals:
+ * (Loki) can build for real need instead of guesses. Two signals:
  *   - needs:    public, active wishlists (their title/description + item detail)
  *   - searches: the terms people search for, as anonymous aggregates
  * Both are already-public data; safe to expose without a session.

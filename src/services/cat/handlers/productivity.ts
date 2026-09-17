@@ -2,6 +2,7 @@ import { DATABASE_TABLES } from '@/config/database-tables';
 import { TASK_STATUSES } from '@/config/tasks';
 import { parseReminderDate } from './date-utils';
 import type { ActionHandler } from './types';
+import { APP_LOCALE } from '@/utils/locale';
 
 const WATCH_KINDS = ['funding_reached', 'sale_received', 'booking_received'] as const;
 type WatchKind = (typeof WATCH_KINDS)[number];
@@ -189,7 +190,7 @@ export const productivityHandlers: Record<string, ActionHandler> = {
     }
 
     const dueDateDisplay = dueDate
-      ? new Date(dueDate).toLocaleString('en-CH', { dateStyle: 'medium', timeStyle: 'short' })
+      ? new Date(dueDate).toLocaleString(APP_LOCALE, { dateStyle: 'medium', timeStyle: 'short' })
       : when || 'no date set';
 
     return {
@@ -309,7 +310,7 @@ export const productivityHandlers: Record<string, ActionHandler> = {
     const updatedTitle =
       ((data as Record<string, unknown>)?.title as string) ?? (task.title as string);
     const dueDateDisplay = updates.due_date
-      ? new Date(updates.due_date as string).toLocaleString('en-CH', {
+      ? new Date(updates.due_date as string).toLocaleString(APP_LOCALE, {
           dateStyle: 'medium',
           timeStyle: 'short',
         })

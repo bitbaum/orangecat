@@ -1,6 +1,5 @@
 import { createServerClient } from '@/lib/supabase/server';
 import { DATABASE_TABLES } from '@/config/database-tables';
-import { Redis } from '@upstash/redis';
 
 export type ServiceStatus = 'operational' | 'degraded' | 'outage';
 
@@ -70,32 +69,15 @@ async function probeAuth(): Promise<ServiceStatus> {
   }
 }
 
-// PING the rate-limit Redis. Non-paging: when Upstash isn't configured the app
-// falls back to an in-memory limiter (fine in dev), and a Redis blip degrades
-// rate limiting but not the site — so this never flips `overall` to outage.
-async function probeCache(): Promise<ServiceStatus> {
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-  if (!url || !token) {
-    return 'operational';
-  }
-  try {
-    const redis = new Redis({ url, token });
-    const pong = await withTimeout(redis.ping(), PROBE_TIMEOUT_MS);
-    return pong === 'PONG' ? 'operational' : 'degraded';
-  } catch {
-    return 'degraded';
-  }
-}
+// No cache probe: rate limiting runs in-process (limitkit's bounded
+// MemoryStore) since the Upstash path — never configured in production — was
+// deleted with the limitkit adoption. There is no cache dependency to probe,
+// and a hard-coded "operational" row would be a fake metric.
 
 export async function checkHealth(): Promise<HealthReport> {
   const timestamp = new Date().toISOString();
 
-  const [dbStatus, authStatus, cacheStatus] = await Promise.all([
-    probeDatabase(),
-    probeAuth(),
-    probeCache(),
-  ]);
+  const [dbStatus, authStatus] = await Promise.all([probeDatabase(), probeAuth()]);
 
   const services: ServiceHealth[] = [
     // Website + API are trivially operational: this endpoint is serving the request.
@@ -103,13 +85,12 @@ export async function checkHealth(): Promise<HealthReport> {
     { name: 'API', status: 'operational' },
     { name: 'Database', status: dbStatus },
     { name: 'Authentication', status: authStatus },
-    { name: 'Cache', status: cacheStatus },
     { name: 'Bitcoin Integration', status: 'operational' },
   ];
 
   // The 200/503 that the DEPLOY health-gate and uptime monitor key on reflects
-  // core LIVENESS only: the app is serving + the DB is reachable. Auth and cache
-  // are probed and reported in `services` for visibility, but a GoTrue/Redis blip
+  // core LIVENESS only: the app is serving + the DB is reachable. Auth is
+  // probed and reported in `services` for visibility, but a GoTrue blip
   // must NOT flip the endpoint to 503 — that would roll back a healthy deploy (it
   // did: a bugged auth probe took every deploy down). Alert on a real auth outage
   // off this critical path (uptime.yml reads services.authentication).

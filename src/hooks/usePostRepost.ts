@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import { TimelineDisplayEvent } from '@/types/timeline';
 import { timelineService } from '@/services/timeline';
 import { logger } from '@/utils/logger';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 interface Props {
   event: TimelineDisplayEvent;
@@ -68,7 +69,7 @@ export function usePostRepost({ event, onAddEvent, userId }: Props): UsePostRepo
         setRepostModalOpen(false);
       } else {
         logger.error('Failed to repost event', result.error, 'usePostRepost');
-        throw new Error(result.error || 'Failed to repost');
+        throw new Error(apiErrorMessage(result, 'Failed to repost'));
       }
     } catch (error) {
       logger.error('Error reposting event', error, 'usePostRepost');
@@ -132,7 +133,7 @@ export function usePostRepost({ event, onAddEvent, userId }: Props): UsePostRepo
           setRepostModalOpen(false);
         } else {
           logger.error('Failed to quote repost event', result.error, 'usePostRepost');
-          throw new Error(result.error || 'Failed to quote repost');
+          throw new Error(apiErrorMessage(result, 'Failed to quote repost'));
         }
       } catch (error) {
         logger.error('Error quote reposting event', error, 'usePostRepost');

@@ -33,6 +33,7 @@ import {
   type ResearchField,
 } from '@/config/research';
 import { ProjectCardSkeleton } from '@/components/ui/Skeleton';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 export default function ResearchDashboard() {
   const router = useRouter();
@@ -63,7 +64,7 @@ export default function ResearchDashboard() {
           { status: response.status, error: data.error },
           'Research'
         );
-        setFetchError(data.error || 'Failed to load research entities');
+        setFetchError(apiErrorMessage(data, 'Failed to load research entities'));
       }
     } catch (error) {
       logger.error('Failed to fetch research entities', error, 'Research');

@@ -29,8 +29,8 @@ beforeEach(() => {
 });
 
 // Silence the warn that the missing-rate path emits.
-jest.mock('@/utils/logger', () => ({
-  logger: { warn: jest.fn(), error: jest.fn(), info: jest.fn(), debug: jest.fn() },
+vi.mock('@/utils/logger', () => ({
+  logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 
 const SATS_PER_BTC = 100_000_000;

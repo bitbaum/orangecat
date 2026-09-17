@@ -18,26 +18,26 @@
 import { runTopUpReconcileSweep } from '@/services/cat/topup-reconcile';
 import { TOPUP_EXPIRY_GRACE_MS } from '@/services/cat/credit-topup';
 
-jest.mock('@/utils/logger', () => ({
-  logger: { warn: jest.fn(), error: jest.fn(), info: jest.fn(), debug: jest.fn() },
+vi.mock('@/utils/logger', () => ({
+  logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 
-const platformReceiveEnabled = jest.fn();
-const getPlatformNwcClient = jest.fn();
-jest.mock('@/lib/bitcoin/platform-wallet', () => ({
+const platformReceiveEnabled = vi.fn();
+const getPlatformNwcClient = vi.fn();
+vi.mock('@/lib/bitcoin/platform-wallet', () => ({
   platformReceiveEnabled: () => platformReceiveEnabled(),
   getPlatformNwcClient: () => getPlatformNwcClient(),
 }));
 
-const appendCreditEntry = jest.fn();
-const getCreditBalance = jest.fn();
-jest.mock('@/services/cat/credits', () => ({
+const appendCreditEntry = vi.fn();
+const getCreditBalance = vi.fn();
+vi.mock('@/services/cat/credits', () => ({
   appendCreditEntry: (...a: unknown[]) => appendCreditEntry(...a),
   getCreditBalance: (...a: unknown[]) => getCreditBalance(...a),
 }));
 
-const adminFrom = jest.fn();
-jest.mock('@/lib/supabase/admin', () => ({
+const adminFrom = vi.fn();
+vi.mock('@/lib/supabase/admin', () => ({
   getAdminClient: () => ({ from: (...a: unknown[]) => adminFrom(...a) }),
 }));
 
@@ -75,8 +75,8 @@ function row(over: Partial<Record<string, unknown>> = {}) {
 
 function nwcClient(over: Record<string, unknown> = {}) {
   return {
-    lookupInvoice: jest.fn().mockResolvedValue({ settled_at: null }),
-    disconnect: jest.fn(),
+    lookupInvoice: vi.fn().mockResolvedValue({ settled_at: null }),
+    disconnect: vi.fn(),
     ...over,
   };
 }
@@ -87,7 +87,7 @@ function withRows(rows: unknown[]) {
 }
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   updates.length = 0;
   platformReceiveEnabled.mockReturnValue(true);
   appendCreditEntry.mockResolvedValue(0.0001);
@@ -108,7 +108,7 @@ describe('runTopUpReconcileSweep', () => {
   it('credits a settled top-up nobody was watching, to the row OWNER', async () => {
     withRows([row()]);
     const client = nwcClient({
-      lookupInvoice: jest.fn().mockResolvedValue({ settled_at: 1_700_000_000 }),
+      lookupInvoice: vi.fn().mockResolvedValue({ settled_at: 1_700_000_000 }),
     });
     getPlatformNwcClient.mockResolvedValue(client);
 
@@ -128,7 +128,7 @@ describe('runTopUpReconcileSweep', () => {
     withRows([row()]);
     appendCreditEntry.mockResolvedValue(null);
     getPlatformNwcClient.mockResolvedValue(
-      nwcClient({ lookupInvoice: jest.fn().mockResolvedValue({ settled_at: 1_700_000_000 }) })
+      nwcClient({ lookupInvoice: vi.fn().mockResolvedValue({ settled_at: 1_700_000_000 }) })
     );
 
     const result = await runTopUpReconcileSweep();
@@ -175,7 +175,7 @@ describe('runTopUpReconcileSweep', () => {
   it('still checks a settled invoice that is past its window — payment wins over expiry', async () => {
     withRows([row({ expires_at: new Date(Date.now() - HOUR).toISOString() })]);
     getPlatformNwcClient.mockResolvedValue(
-      nwcClient({ lookupInvoice: jest.fn().mockResolvedValue({ settled_at: 1_700_000_000 }) })
+      nwcClient({ lookupInvoice: vi.fn().mockResolvedValue({ settled_at: 1_700_000_000 }) })
     );
 
     const result = await runTopUpReconcileSweep();
@@ -186,7 +186,7 @@ describe('runTopUpReconcileSweep', () => {
 
   it('one failing row does not abort the sweep', async () => {
     withRows([row({ id: 'tu_bad' }), row({ id: 'tu_good', payment_hash: 'ph_2' })]);
-    const lookupInvoice = jest
+    const lookupInvoice = vi
       .fn()
       .mockRejectedValueOnce(new Error('relay down'))
       .mockResolvedValueOnce({ settled_at: 1_700_000_000 });

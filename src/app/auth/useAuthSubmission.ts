@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import type { AuthFormData, AuthMode } from './useAuthForm';
 import { resetPassword, getMFAAssuranceLevel } from '@/services/supabase/auth';
 import { registrationEvents, trackEvent } from '@/lib/analytics';
-import { getReadableError } from '@/utils/getReadableError';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 import { API_ROUTES } from '@/config/api-routes';
 
 interface UseAuthSubmissionOptions {
@@ -95,7 +95,10 @@ export function useAuthSubmission({
           : await signUp(formData.email, formData.password);
 
       if (result.error) {
-        let errorMessage = getReadableError(result.error);
+        let errorMessage = apiErrorMessage(
+          result.error,
+          'Could not sign you in. Please try again.'
+        );
         if (errorMessage.includes('Invalid login credentials')) {
           errorMessage = 'Invalid email or password. Please check your credentials and try again.';
         } else if (errorMessage.includes('Email not confirmed')) {
@@ -134,7 +137,7 @@ export function useAuthSubmission({
         setSuccess('Login successful! Redirecting...');
       }
     } catch (err) {
-      const errorMessage = getReadableError(err, 'An unexpected error occurred');
+      const errorMessage = apiErrorMessage(err, 'An unexpected error occurred');
       setError(errorMessage);
       setRetryCount(prev => prev + 1);
     } finally {
@@ -154,11 +157,11 @@ export function useAuthSubmission({
       }
       const result = await resetPassword({ email: formData.email });
       if (result.error) {
-        throw new Error(getReadableError(result.error, 'Failed to send reset email'));
+        throw new Error(apiErrorMessage(result.error, 'Failed to send reset email'));
       }
       setSuccess('Password reset email sent! Check your inbox and follow the instructions.');
     } catch (err) {
-      const errorMessage = getReadableError(err, 'Failed to send password reset email');
+      const errorMessage = apiErrorMessage(err, 'Failed to send password reset email');
       setError(errorMessage);
     } finally {
       setLocalLoading(false);

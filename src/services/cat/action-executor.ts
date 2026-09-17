@@ -1,57 +1,30 @@
 /**
- * My Cat Action Executor
- *
- * Executes actions on behalf of users after permission verification.
- * This is the core engine that makes My Cat autonomous.
- *
- * Handler implementations live in ./handlers/ organised by category
- * (entities, communication, organization, context, productivity, payments).
+ * My Cat Action Executor — runs actions after permission verification.
+ * Handlers live in ./handlers/ by category; shared types in ./action-types.
  */
 
+import { validateActionParameters } from './action-schemas';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
-import { CAT_ACTIONS, type CatAction, type ActionCategory } from '@/config/cat-actions';
+import { CAT_ACTIONS, type CatAction } from '@/config/cat-actions';
 import { CatPermissionService } from './permission-service';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { STATUS } from '@/config/database-constants';
 import { logger } from '@/utils/logger';
 import { ACTION_HANDLERS } from './handlers';
 import { generateActionDescription } from './action-descriptions';
-import type { AiErrorCode } from '@/config/ai-errors';
-import { extractBtcAmount, logDeniedAction, updateActionLog } from './action-log';
+import { findIdenticalPending } from './pending-dedupe';
+import { extractBtcAmount, getActionHistory, logDeniedAction, updateActionLog } from './action-log';
 
 // Re-export parseReminderDate for back-compat (legacy tests import from here).
 export { parseReminderDate } from './handlers/date-utils';
 
-// ==================== TYPES ====================
-
-interface ActionRequest {
-  actionId: string;
-  parameters: Record<string, unknown>;
-  conversationId?: string;
-  messageId?: string;
-}
-
-interface ActionResult {
-  success: boolean;
-  actionId: string;
-  status: 'completed' | 'failed' | 'pending_confirmation' | 'denied';
-  data?: unknown;
-  /** Why it failed, as a code the UI resolves into copy + a fix link. */
-  code?: AiErrorCode;
-  error?: string;
-  pendingActionId?: string;
-  logId?: string;
-}
-
-export interface PendingAction {
-  id: string;
-  actionId: string;
-  category: ActionCategory;
-  parameters: Record<string, unknown>;
-  description: string;
-  conversationId?: string;
-  expiresAt: string;
-}
+import {
+  canGrantOnConfirm,
+  type PendingAction,
+  type ActionRequest,
+  type ActionResult,
+} from './action-types';
+export { canGrantOnConfirm, type PendingAction, type ActionRequest, type ActionResult };
 
 // ==================== EXECUTOR SERVICE ====================
 
@@ -94,8 +67,51 @@ export class CatActionExecutor {
       };
     }
 
+    // 1b. Validate parameters against the registry's own declaration
+    // (ADR-0006 D4). This ran nowhere before: the API schema is
+    // `z.record(unknown)` and model JSON went straight to the handler, so a
+    // missing required field surfaced as whatever that handler threw.
+    //
+    // Deliberately BEFORE the permission check. Malformed input is not a
+    // permission story, and an audit row saying "denied" would misattribute a
+    // typo to the user's grants. Nothing has been written at this point, so
+    // rejecting here costs nothing and — with the in-turn loop — hands the
+    // model a sentence it can correct on the next step.
+    const validation = validateActionParameters(actionId, parameters);
+    if (!validation.ok) {
+      return {
+        success: false,
+        code: 'invalid_parameters',
+        actionId,
+        status: 'failed',
+        error: validation.error,
+      };
+    }
+    const validatedParameters = validation.data ?? parameters;
+
     // 2. Check permission
     const permission = await this.permissionService.checkPermission(userId, actionId);
+
+    if (!permission.allowed && canGrantOnConfirm(action, permission.code)) {
+      const pendingAction = await this.createPendingAction(
+        userId,
+        action,
+        validatedParameters,
+        conversationId,
+        messageId,
+        { grantOnConfirm: true }
+      );
+      return {
+        success: true,
+        actionId,
+        status: 'pending_confirmation',
+        pendingActionId: pendingAction.id,
+        data: {
+          description: generateActionDescription(action, validatedParameters),
+          pendingAction,
+        },
+      };
+    }
 
     if (!permission.allowed) {
       const reason = permission.reason || 'Permission denied';
@@ -104,7 +120,7 @@ export class CatActionExecutor {
       await logDeniedAction(this.supabase, {
         userId,
         action,
-        parameters,
+        parameters: validatedParameters,
         reason,
         conversationId,
         messageId,
@@ -124,14 +140,14 @@ export class CatActionExecutor {
     const spendCheck = await this.permissionService.checkSpendCaps(
       userId,
       actionId,
-      extractBtcAmount(action, parameters)
+      extractBtcAmount(action, validatedParameters)
     );
     if (!spendCheck.allowed) {
       const reason = spendCheck.reason || 'Spend cap exceeded';
       await logDeniedAction(this.supabase, {
         userId,
         action,
-        parameters,
+        parameters: validatedParameters,
         reason,
         conversationId,
         messageId,
@@ -150,7 +166,7 @@ export class CatActionExecutor {
       const pendingAction = await this.createPendingAction(
         userId,
         action,
-        parameters,
+        validatedParameters,
         conversationId,
         messageId
       );
@@ -161,14 +177,21 @@ export class CatActionExecutor {
         status: 'pending_confirmation',
         pendingActionId: pendingAction.id,
         data: {
-          description: generateActionDescription(action, parameters),
+          description: generateActionDescription(action, validatedParameters),
           pendingAction,
         },
       };
     }
 
     // 4. Execute action
-    return this.performAction(userId, actorId, action, parameters, conversationId, messageId);
+    return this.performAction(
+      userId,
+      actorId,
+      action,
+      validatedParameters,
+      conversationId,
+      messageId
+    );
   }
 
   /**
@@ -229,6 +252,16 @@ export class CatActionExecutor {
       };
     }
 
+    // The card said "confirming also allows this from now on". Honour it
+    // before running, and only for the category the card named. Confirmation
+    // stays required — the grant widens what Cat may propose, not what it may
+    // do unasked.
+    if (pending.grant_on_confirm && canGrantOnConfirm(action, 'permission_denied')) {
+      await this.permissionService.grantCategory(userId, action.category, {
+        requiresConfirmation: true,
+      });
+    }
+
     return this.performAction(
       userId,
       actorId,
@@ -278,33 +311,16 @@ export class CatActionExecutor {
       description: p.description,
       conversationId: p.conversation_id,
       expiresAt: p.expires_at,
+      grantOnConfirm: p.grant_on_confirm === true,
     }));
   }
 
-  /**
-   * Get action history for a user
-   */
-  async getActionHistory(
+  /** Recent cat_action_log rows for a user — lives with the log code. */
+  getActionHistory(
     userId: string,
     options: { limit?: number; actionId?: string; status?: string } = {}
   ) {
-    let query = this.supabase
-      .from(DATABASE_TABLES.CAT_ACTION_LOG)
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(options.limit || 50);
-
-    if (options.actionId) {
-      query = query.eq('action_id', options.actionId);
-    }
-
-    if (options.status) {
-      query = query.eq('status', options.status);
-    }
-
-    const { data } = await query;
-    return data || [];
+    return getActionHistory(this.supabase, userId, options);
   }
 
   // ==================== PRIVATE METHODS ====================
@@ -424,9 +440,16 @@ export class CatActionExecutor {
     action: CatAction,
     parameters: Record<string, unknown>,
     conversationId?: string,
-    messageId?: string
+    messageId?: string,
+    options: { grantOnConfirm?: boolean } = {}
   ): Promise<PendingAction> {
     const description = generateActionDescription(action, parameters);
+
+    // One consent card per identical request — see findIdenticalPending.
+    const same = await findIdenticalPending(this.supabase, userId, action.id, parameters);
+    if (same) {
+      return same;
+    }
 
     const { data, error } = await this.supabase
       .from(DATABASE_TABLES.CAT_PENDING_ACTIONS)
@@ -438,6 +461,7 @@ export class CatActionExecutor {
         description,
         conversation_id: conversationId || null,
         message_id: messageId || null,
+        grant_on_confirm: options.grantOnConfirm === true,
       })
       .select()
       .single();
@@ -454,6 +478,7 @@ export class CatActionExecutor {
       description: data.description,
       conversationId: data.conversation_id,
       expiresAt: data.expires_at,
+      grantOnConfirm: data.grant_on_confirm === true,
     };
   }
 }

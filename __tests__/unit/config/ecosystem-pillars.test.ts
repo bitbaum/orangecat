@@ -14,10 +14,10 @@ import { ROUTES } from '@/config/routes';
 
 describe('ecosystem pillars SSOT', () => {
   it('describes exactly the three products of the stack', () => {
-    expect(ECOSYSTEM_PILLARS.map(p => p.key)).toEqual(['orangecat', 'fleetcrown', 'solon']);
+    expect(ECOSYSTEM_PILLARS.map(p => p.key)).toEqual(['orangecat', 'loki', 'solon']);
     expect(ECOSYSTEM_PILLARS.map(p => p.title)).toEqual([
       ECOSYSTEM.orangeCat.title,
-      ECOSYSTEM.fleetCrown.title,
+      ECOSYSTEM.loki.title,
       ECOSYSTEM.solon.title,
     ]);
   });

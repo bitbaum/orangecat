@@ -47,7 +47,11 @@ export default async function Home() {
         redirect(ROUTES.ONBOARDING.INTELLIGENT);
       }
     }
-    redirect(ROUTES.DASHBOARD.HOME);
+    // Cat-first: an already-onboarded visitor landing on "/" (or the brand
+    // mark, which points here) goes to the Cat hub. Deliberately NOT
+    // DASHBOARD.HOME — /dashboard is the dashboard again, and the sidebar's
+    // "Home" entry is what takes you there.
+    redirect(ROUTES.DASHBOARD.CAT);
   }
 
   return <HomePublic />;

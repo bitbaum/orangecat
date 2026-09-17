@@ -69,7 +69,7 @@ export const taskSchema = z.object({
     .optional()
     .nullable(),
 
-  project_id: z.string().uuid('Invalid project ID').optional().nullable(),
+  project_id: z.string().guid('Invalid project ID').optional().nullable(),
 });
 
 /**
@@ -113,7 +113,7 @@ export const attentionFlagSchema = z.object({
  * requested_user_id = null means broadcast to all staff
  */
 export const taskRequestSchema = z.object({
-  requested_user_id: z.string().uuid('Invalid user ID').optional().nullable(),
+  requested_user_id: z.string().guid('Invalid user ID').optional().nullable(),
   message: z.string().max(500, 'Message must be at most 500 characters').optional().nullable(),
 });
 

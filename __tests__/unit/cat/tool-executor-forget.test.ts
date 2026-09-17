@@ -7,17 +7,17 @@
  * pins the both-stores contract on the path that missed it.
  */
 
-jest.mock('@/utils/logger', () => ({
-  logger: { error: jest.fn(), warn: jest.fn(), info: jest.fn(), debug: jest.fn() },
+vi.mock('@/utils/logger', () => ({
+  logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 
-const mockForgetMemories = jest.fn();
-jest.mock('@/services/cat/memory', () => ({
+const mockForgetMemories = vi.fn();
+vi.mock('@/services/cat/memory', () => ({
   forgetMemoriesMatching: (...args: unknown[]) => mockForgetMemories(...args),
 }));
 
-const mockRemoveProfile = jest.fn();
-jest.mock('@/services/cat/economic-profile', () => ({
+const mockRemoveProfile = vi.fn();
+vi.mock('@/services/cat/economic-profile', () => ({
   removeFromEconomicProfile: (...args: unknown[]) => mockRemoveProfile(...args),
 }));
 
@@ -43,10 +43,12 @@ describe('executeToolCall forget_memories', () => {
     mockForgetMemories.mockResolvedValue({
       deleted: ['Does photography'],
       notFound: ['speaks French'],
+      failed: [],
     });
     mockRemoveProfile.mockResolvedValue({
       removed: ['skill: photography'],
       notFound: ['speaks French'],
+      failed: [],
     });
 
     const events: Array<Record<string, unknown>> = [];
@@ -80,8 +82,8 @@ describe('executeToolCall forget_memories', () => {
   });
 
   it('counts a profile-only removal as a success, not no_results', async () => {
-    mockForgetMemories.mockResolvedValue({ deleted: [], notFound: ['welding'] });
-    mockRemoveProfile.mockResolvedValue({ removed: ['skill: welding'], notFound: [] });
+    mockForgetMemories.mockResolvedValue({ deleted: [], notFound: ['welding'], failed: [] });
+    mockRemoveProfile.mockResolvedValue({ removed: ['skill: welding'], notFound: [], failed: [] });
 
     const events: Array<Record<string, unknown>> = [];
     await executeToolCall(supabase, USER_ID, forgetCall(['welding']), 'forget welding', e =>
@@ -93,8 +95,8 @@ describe('executeToolCall forget_memories', () => {
   });
 
   it('reports no_results only when BOTH stores found nothing', async () => {
-    mockForgetMemories.mockResolvedValue({ deleted: [], notFound: ['x'] });
-    mockRemoveProfile.mockResolvedValue({ removed: [], notFound: ['x'] });
+    mockForgetMemories.mockResolvedValue({ deleted: [], notFound: ['x'], failed: [] });
+    mockRemoveProfile.mockResolvedValue({ removed: [], notFound: ['x'], failed: [] });
 
     const events: Array<Record<string, unknown>> = [];
     await executeToolCall(supabase, USER_ID, forgetCall(['x']), 'forget x', e =>

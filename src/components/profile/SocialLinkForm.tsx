@@ -10,6 +10,7 @@ import {
   type SocialPlatformId,
 } from '@/lib/social-platforms';
 import { X } from 'lucide-react';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 interface SocialLinkFormProps {
   initialLink?: SocialLink;
@@ -52,7 +53,7 @@ export function SocialLinkForm({
     if (platformConfig?.validation) {
       const validation = platformConfig.validation(value);
       if (!validation.valid) {
-        setError(validation.error || 'Invalid format');
+        setError(apiErrorMessage(validation, 'Invalid format'));
         return;
       }
     }

@@ -120,7 +120,7 @@ Objective: verify **all critical workflows** in Orangecat one by one, capture ev
 ## Phase 9 — Operational & Quality Gates
 
 - ☑ Health endpoint behavior (rerun passed: `@p0 health endpoint responds`)
-- ☑ P0 matrix runs green in CI with required secrets — [GitHub Actions run 28722171024](https://github.com/maonakamoto/orangecat/actions/runs/28722171024) / commit `d3e1bbe6`: **11/11 passed** (2026-07-05)
+- ☑ P0 matrix runs green in CI with required secrets — [GitHub Actions run 28722171024](https://github.com/bitbaum/orangecat/actions/runs/28722171024) / commit `d3e1bbe6`: **11/11 passed** (2026-07-05)
 - ☑ No skip-based false green in required P0 checks — bootstrap mints reset tokens; missing secrets skip matrix explicitly
 - ☑ Lint/type-check/unit tests pass on final state — CI job green; local unit 713/713; type-check pass (2026-07-05)
 - ☑ Workflow YAML validity check (all `.github/workflows/*.yml` parse successfully after fixes)

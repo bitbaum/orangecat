@@ -17,12 +17,12 @@ import type { AnySupabaseClient } from '@/lib/supabase/types';
  * publishing can never happen without an explicit confirmation.
  */
 
-jest.mock('@/services/ai/embeddings', () => ({
+vi.mock('@/services/ai/embeddings', () => ({
   embeddingsEnabled: () => true,
   embedText: async () => new Array(1536).fill(0.01),
 }));
-jest.mock('@/utils/logger', () => ({
-  logger: { error: jest.fn(), warn: jest.fn(), info: jest.fn(), debug: jest.fn() },
+vi.mock('@/utils/logger', () => ({
+  logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 
 interface Row {

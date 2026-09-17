@@ -37,7 +37,7 @@ export const PRIVACY_POLICY: LegalDocument = {
   lastUpdated: '2026-06-02',
   draft: true,
   intro: [
-    'This Privacy Policy describes how OrangeCat ("we," "us," "our," or the "Service"), operated by Mao Nakamoto (pending incorporation of a successor corporate entity), collects, uses, and shares your personal information when you use the Service.',
+    'This Privacy Policy describes how OrangeCat ("we," "us," "our," or the "Service"), operated by Cato (pending incorporation of a successor corporate entity), collects, uses, and shares your personal information when you use the Service.',
     'By using the Service, you agree to the collection and use of information in accordance with this Policy.',
   ],
   sections: [
@@ -169,7 +169,7 @@ export const PRIVACY_POLICY: LegalDocument = {
     {
       heading: 'Contact',
       paragraphs: [
-        'Mao Nakamoto (Data Controller, pending incorporation of a successor corporate entity) — mao@orangecat.ch',
+        'Cato (Data Controller, pending incorporation of a successor corporate entity) — hello@orangecat.ch',
       ],
     },
     {
@@ -186,7 +186,7 @@ export const TERMS_OF_SERVICE: LegalDocument = {
   lastUpdated: '2026-06-02',
   draft: true,
   intro: [
-    'These Terms of Service ("Terms") govern your access to and use of OrangeCat (the "Service"), operated by Mao Nakamoto (pending incorporation of a successor corporate entity, herein "we," "us," "our"). By accessing or using the Service, you agree to be bound by these Terms.',
+    'These Terms of Service ("Terms") govern your access to and use of OrangeCat (the "Service"), operated by Cato (pending incorporation of a successor corporate entity, herein "we," "us," "our"). By accessing or using the Service, you agree to be bound by these Terms.',
     'If you do not agree, do not use the Service.',
   ],
   sections: [
@@ -372,7 +372,7 @@ export const TERMS_OF_SERVICE: LegalDocument = {
     {
       heading: 'Contact',
       paragraphs: [
-        'Mao Nakamoto (pending incorporation of a successor corporate entity) — mao@orangecat.ch',
+        'Cato (pending incorporation of a successor corporate entity) — hello@orangecat.ch',
       ],
     },
   ],

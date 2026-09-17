@@ -1,16 +1,19 @@
 'use client';
 
 import { useState } from 'react';
-import { Share2, X as XIcon, Globe, MessageCircle, Mail, Copy, Check, X } from 'lucide-react';
+import { Share2, Mail, Copy, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { GRADIENTS } from '@/config/gradients';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { APP_NAME } from '@/config/brand';
 
-// Brand icons removed in lucide-react 0.400+
-const Facebook = Globe;
-const Linkedin = Globe;
+// Real brand marks. lucide-react dropped brand icons in 0.400+ and the
+// replacement here was `const Facebook = Globe; const Linkedin = Globe;` — two
+// buttons rendering the SAME generic globe, plus lucide's multiply glyph
+// standing in for X inside a panel whose close button is also a multiply glyph.
+// See BrandIcons.tsx for why these are inline SVG rather than a dependency.
+import { XBrandIcon, FacebookBrandIcon, LinkedInBrandIcon, WhatsAppBrandIcon } from './BrandIcons';
 
 export interface SharePlatform {
   name: string;
@@ -23,7 +26,7 @@ export interface SharePlatform {
 export const SHARE_PLATFORMS: SharePlatform[] = [
   {
     name: 'X',
-    icon: XIcon,
+    icon: XBrandIcon,
     color: 'text-fg-primary',
     bgColor: 'bg-surface-raised hover:bg-surface-raised/80',
     action: (shareUrl, shareTitle, shareDescription) => {
@@ -37,7 +40,7 @@ export const SHARE_PLATFORMS: SharePlatform[] = [
   },
   {
     name: 'Facebook',
-    icon: Facebook,
+    icon: FacebookBrandIcon,
     color: 'text-fg-primary',
     bgColor: 'bg-surface-raised/40 hover:bg-surface-raised',
     action: (shareUrl, shareTitle) => {
@@ -50,7 +53,7 @@ export const SHARE_PLATFORMS: SharePlatform[] = [
   },
   {
     name: 'LinkedIn',
-    icon: Linkedin,
+    icon: LinkedInBrandIcon,
     color: 'text-fg-primary',
     bgColor: 'bg-surface-raised/40 hover:bg-surface-raised',
     action: (shareUrl, shareTitle, shareDescription) => {
@@ -63,7 +66,7 @@ export const SHARE_PLATFORMS: SharePlatform[] = [
   },
   {
     name: 'WhatsApp',
-    icon: MessageCircle,
+    icon: WhatsAppBrandIcon,
     color: 'text-fg-primary',
     bgColor: 'bg-surface-raised hover:bg-surface-raised/80',
     action: (shareUrl, shareTitle) => {

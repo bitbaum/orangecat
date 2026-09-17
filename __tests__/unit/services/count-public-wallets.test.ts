@@ -19,14 +19,14 @@
  * Gated by scripts/check-rpc-exists.mjs; this is the instance.
  */
 
-const from = jest.fn();
-jest.mock('@/lib/supabase/admin', () => ({
+const from = vi.fn();
+vi.mock('@/lib/supabase/admin', () => ({
   getAdminClient: () => ({ from }),
 }));
 
-const errorLog = jest.fn();
-jest.mock('@/utils/logger', () => ({
-  logger: { error: (...args: unknown[]) => errorLog(...args), info: jest.fn(), warn: jest.fn() },
+const errorLog = vi.fn();
+vi.mock('@/utils/logger', () => ({
+  logger: { error: (...args: unknown[]) => errorLog(...args), info: vi.fn(), warn: vi.fn() },
 }));
 
 import { countActiveProfileWallets } from '@/services/wallets/countPublicWallets';
@@ -35,8 +35,8 @@ import { countActiveProfileWallets } from '@/services/wallets/countPublicWallets
 function mockQuery(result: { count?: number | null; error?: { message: string; code?: string } }) {
   const filters: Record<string, unknown> = {};
   const chain = {
-    select: jest.fn(() => chain),
-    eq: jest.fn((col: string, val: unknown) => {
+    select: vi.fn(() => chain),
+    eq: vi.fn((col: string, val: unknown) => {
       filters[col] = val;
       return chain;
     }),

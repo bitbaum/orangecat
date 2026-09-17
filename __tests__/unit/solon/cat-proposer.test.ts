@@ -1,5 +1,5 @@
 /**
- * @jest-environment node
+ * @vitest-environment node
  *
  * The Cat's proposer edge — "the Cat proposes; Solon disposes."
  *
@@ -18,8 +18,10 @@ import {
 import { governanceHandlers } from '@/services/cat/handlers/governance';
 import { contentHashOf } from '@/services/solon/canonical';
 
-jest.mock('@/utils/logger', () => ({
-  logger: { error: jest.fn(), warn: jest.fn(), info: jest.fn(), debug: jest.fn() },
+import type { Mock } from 'vitest';
+
+vi.mock('@/utils/logger', () => ({
+  logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 
 const PRIV = '1111111111111111111111111111111111111111111111111111111111111111';
@@ -73,15 +75,15 @@ function buildSupabase() {
   const makeChain = () => {
     const chain: Record<string, unknown> = {};
     for (const method of ['select', 'eq', 'order', 'limit']) {
-      chain[method] = jest.fn().mockReturnValue(chain);
+      chain[method] = vi.fn().mockReturnValue(chain);
     }
-    chain.maybeSingle = jest.fn().mockResolvedValue({ data: { version: 1 }, error: null });
-    chain.single = jest.fn().mockResolvedValue({ data: { id: 'draft-1' }, error: null });
-    chain.insert = jest.fn((payload: unknown) => {
+    chain.maybeSingle = vi.fn().mockResolvedValue({ data: { version: 1 }, error: null });
+    chain.single = vi.fn().mockResolvedValue({ data: { id: 'draft-1' }, error: null });
+    chain.insert = vi.fn((payload: unknown) => {
       writes.push({ op: 'insert', payload });
       return chain;
     });
-    chain.update = jest.fn((payload: unknown) => {
+    chain.update = vi.fn((payload: unknown) => {
       writes.push({ op: 'update', payload });
       return chain;
     });
@@ -89,7 +91,7 @@ function buildSupabase() {
       Promise.resolve(resolve({ data: null, error: null }));
     return chain;
   };
-  return { from: jest.fn(() => makeChain()), _writes: writes };
+  return { from: vi.fn(() => makeChain()), _writes: writes };
 }
 
 const PARAMS = {
@@ -103,7 +105,7 @@ describe('propose_governance_change handler', () => {
   const OLD_ENV = process.env;
   beforeEach(() => {
     process.env = { ...OLD_ENV, CAT_SOLON_PRIVKEY: PRIV, SOLON_AGENT_API_KEY: 'sk_solon_test' };
-    global.fetch = jest.fn();
+    global.fetch = vi.fn();
   });
   afterAll(() => {
     process.env = OLD_ENV;
@@ -129,7 +131,7 @@ describe('propose_governance_change handler', () => {
   });
 
   it('records a draft, files on Solon, and stores the proposal id', async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({
+    (global.fetch as Mock).mockResolvedValue({
       json: async () => ({ created: true, verified: true, proposalId: 'prop-42' }),
     });
     const supabase = buildSupabase();
@@ -151,7 +153,7 @@ describe('propose_governance_change handler', () => {
     expect(update.solon_proposal_id).toBe('prop-42');
 
     // The POST body carried a signature Solon will accept.
-    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body as string);
+    const body = JSON.parse((global.fetch as Mock).mock.calls[0][1].body as string);
     expect(
       verifyBitcoinMessage(
         solonProposalMessage({
@@ -168,7 +170,7 @@ describe('propose_governance_change handler', () => {
   });
 
   it('marks the draft rejected when Solon refuses the filing', async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({
+    (global.fetch as Mock).mockResolvedValue({
       json: async () => ({
         created: false,
         verified: true,

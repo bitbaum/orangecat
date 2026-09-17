@@ -89,7 +89,7 @@ export default function SupportPage() {
               rel="noopener noreferrer"
               className="font-medium text-fg-primary underline underline-offset-4"
             >
-              Support Mao Nakamoto
+              Support Cato
             </a>{' '}
             and follow the entities being built across the stack.
           </p>

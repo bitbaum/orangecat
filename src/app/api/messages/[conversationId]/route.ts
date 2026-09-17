@@ -33,8 +33,11 @@ const sendMessageSchema = z.object({
   messageType: z
     .enum([MESSAGE_TYPES.TEXT, MESSAGE_TYPES.IMAGE, MESSAGE_TYPES.FILE, MESSAGE_TYPES.SYSTEM])
     .default(MESSAGE_TYPES.TEXT),
-  metadata: z.record(z.unknown()).optional(),
-  senderActorId: z.string().uuid().optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+  /** Echoed back on the stored row so the client retires its optimistic bubble
+   *  rather than rendering a duplicate — see features/messaging/lib/threadkit-adapter. */
+  clientId: z.string().min(1).max(128).optional(),
+  senderActorId: z.string().guid().optional(),
 });
 
 /** GET - Fetch messages for a conversation with cursor-based pagination */
@@ -119,11 +122,12 @@ export const POST = withAuth(
         });
       }
 
-      const { content, messageType, metadata, senderActorId } = validation.data;
+      const { content, messageType, metadata, clientId, senderActorId } = validation.data;
       const result = await postConversationMessage(conversationId, user.id, {
         content,
         messageType,
-        metadata,
+        // Server-owned key, applied last so a caller cannot displace it.
+        metadata: clientId ? { ...(metadata ?? {}), client_id: clientId } : metadata,
         senderActorId,
       });
       if (!result.ok) {

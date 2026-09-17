@@ -133,7 +133,7 @@ export default function HeroSectionStatic() {
                     Non-custodial
                   </span>
                   <span className="rounded-full border border-default bg-surface-raised/40 px-2.5 py-1 text-fg-primary">
-                    Builds on FleetCrown
+                    Builds on Loki
                   </span>
                 </div>
               </div>

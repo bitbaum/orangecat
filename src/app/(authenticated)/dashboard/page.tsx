@@ -1,8 +1,6 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Loading from '@/components/Loading';
 import {
   DashboardHeader,
@@ -14,7 +12,6 @@ import {
 import { MobileDashboardSidebar } from '@/components/dashboard/MobileDashboardSidebar';
 import { CatNudges } from '@/components/dashboard/CatNudges';
 import { PendingActionsCard } from '@/components/ai-chat/PendingActionsCard';
-import { ROUTES } from '@/config/routes';
 import { useDashboard } from './useDashboard';
 
 const DashboardTimeline = dynamic(
@@ -34,7 +31,6 @@ const DashboardTimeline = dynamic(
 );
 
 export default function DashboardPage() {
-  const router = useRouter();
   const {
     user,
     profile,
@@ -45,7 +41,6 @@ export default function DashboardPage() {
     timelineLoading,
     timelineError,
     pendingActions,
-    pendingActionsLoaded,
     safeProjects,
     totalProjects,
     totalDrafts,
@@ -56,45 +51,13 @@ export default function DashboardPage() {
     handleRejectAction,
   } = useDashboard();
 
-  // Cat-first (2026-07-13, one-week plan C-1): the Cat is the DEFAULT surface.
-  // Everyone landing on /dashboard is routed to their Cat hub — brand-new
-  // accounts get the welcome variant, everyone else the plain hub. Dashboard
-  // content stays reachable via the left nav (Timeline → ROUTES.TIMELINE,
-  // entities via their own routes).
-  //
-  // Exception: if the timeline fetch errored we do NOT redirect — we render the
-  // dashboard below so the user keeps a visible error + retry path instead of
-  // being bounced away from a transient failure. (timelineFeed stays null on
-  // error, which would otherwise look identical to "empty".)
-  const isTrulyEmpty =
-    hydrated &&
-    !localLoading &&
-    !timelineLoading &&
-    !timelineError &&
-    pendingActionsLoaded &&
-    !hasProjects &&
-    pendingActions.length === 0 &&
-    (timelineFeed?.events?.length ?? 0) === 0;
-
-  useEffect(() => {
-    if (!hydrated || localLoading || !user || timelineError) {
-      return;
-    }
-    if (isTrulyEmpty) {
-      router.replace(ROUTES.DASHBOARD.CAT_WELCOME);
-    } else if (!timelineLoading && pendingActionsLoaded) {
-      router.replace(ROUTES.DASHBOARD.CAT);
-    }
-  }, [
-    hydrated,
-    localLoading,
-    user,
-    isTrulyEmpty,
-    timelineLoading,
-    pendingActionsLoaded,
-    timelineError,
-    router,
-  ]);
+  // /dashboard renders the dashboard. It used to router.replace() everyone to
+  // the Cat hub ("Cat-first", 2026-07-13), which made the surface unreachable:
+  // the sidebar, the mobile tab bar, the breadcrumb "Dashboard" crumb, the 404
+  // page and every RouteError recovery link all point here, so all of them
+  // silently landed on /dashboard/cat — the destination the "Cat" nav item
+  // already owned. Cat-first is still honoured where it belongs: sign-in goes
+  // to CAT_WELCOME (auth/callback + auth/confirm) and "/" redirects to the Cat.
 
   if (!hydrated || localLoading) {
     return <Loading fullScreen message="Loading your account..." />;
@@ -106,12 +69,6 @@ export default function DashboardPage() {
 
   if (!user) {
     return null;
-  }
-
-  // Cat-first: show the redirect loader for everyone except the timeline-error
-  // fallback (which renders the dashboard below so the user can retry).
-  if (!timelineError) {
-    return <Loading fullScreen message="Taking you to Cat..." />;
   }
 
   return (

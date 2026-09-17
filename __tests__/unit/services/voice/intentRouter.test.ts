@@ -9,25 +9,41 @@
 
 import { routeVoiceIntent, MIN_ROUTE_CONFIDENCE } from '@/services/voice/intent-router';
 
-jest.mock('@/utils/logger', () => ({
-  logger: { warn: jest.fn(), error: jest.fn(), info: jest.fn(), debug: jest.fn() },
+vi.mock('@/utils/logger', () => ({
+  logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 
-const fetchMock = jest.fn();
+const fetchMock = vi.fn();
 global.fetch = fetchMock as unknown as typeof fetch;
 
 /** Shapes a model reply the way the provider returns it. */
+/**
+ * A real `Response`, built fresh per call.
+ *
+ * This was a `{ ok, json }` literal. It quietly encoded an assumption about HOW
+ * the client reads a body, and broke the moment it read the text first — which
+ * it must, to keep the vendor's body in the error and tell a spent daily budget
+ * from a busy minute. And a factory rather than a value, because one Response
+ * body can be read only once: a shared instance makes the second link fail with
+ * "Body has already been read".
+ */
 function modelReplies(payload: unknown) {
-  fetchMock.mockResolvedValue({
-    ok: true,
-    json: async () => ({ choices: [{ message: { content: JSON.stringify(payload) } }] }),
-  });
+  fetchMock.mockImplementation(
+    async () =>
+      new Response(
+        JSON.stringify({ choices: [{ message: { content: JSON.stringify(payload) } }] }),
+        {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }
+      )
+  );
 }
 
 const SENTENCE = 'sell my old road bike for 200 francs, a Cannondale in decent condition';
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   process.env.GROQ_API_KEY = 'test-key';
 });
 
@@ -108,6 +124,11 @@ describe('routeVoiceIntent', () => {
 
     const body = JSON.parse((fetchMock.mock.calls[0][1] as { body: string }).body);
     expect(body.temperature).toBeLessThanOrEqual(0.2);
-    expect(body.response_format).toEqual({ type: 'json_object' });
+    // This used to assert response_format: json_object on every call. Groq's
+    // gpt-oss-120b — the leader here — answers 400 json_validate_failed for
+    // EVERY request carrying that flag, so pinning it pinned an outage. JSON
+    // mode is now sent only to models that accept it; the prompt demands
+    // JSON-only output and parseJsonLoose reads the rest.
+    expect(body.response_format).toBeUndefined();
   });
 });

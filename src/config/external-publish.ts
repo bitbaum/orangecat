@@ -1,13 +1,13 @@
 /**
  * External publish bus — inbound contract SSOT.
  *
- * OrangeCat is the platform's collaboration + economy backbone; FleetCrown (and
+ * OrangeCat is the platform's collaboration + economy backbone; Loki (and
  * future clients) ASYNC-publish publish-worthy build events onto a project's
  * OrangeCat wall. This file is the single source of truth for what that inbound
  * payload may contain — the allow-lists below are the *ceiling*, so a client can
  * never inject an arbitrary event type, subject type, or unknown source onto the
  * wall. The PROMOTE step (which build events are worth publishing, and how they
- * map onto these types) lives on the FleetCrown side, by design.
+ * map onto these types) lives on the Loki side, by design.
  *
  * See docs/architecture/PLATFORM_AND_COLLABORATION.md ("Async publish + read-only
  * surfacing") and src/services/timeline/externalPublish.ts.
@@ -17,12 +17,12 @@ import { webUrl } from '@/lib/validation/base';
 import type { TimelineEventType, TimelineSubjectType } from '@/types/timeline';
 
 /** Recognised publishing clients (the `metadata.source` namespace for dedup). */
-export const EXTERNAL_PUBLISH_SOURCES = ['fleetcrown'] as const;
+export const EXTERNAL_PUBLISH_SOURCES = ['loki'] as const;
 export type ExternalPublishSource = (typeof EXTERNAL_PUBLISH_SOURCES)[number];
 
 /** Human label per source — drives the wall's "via …" attribution (display SSOT). */
 export const EXTERNAL_PUBLISH_SOURCE_LABELS: Record<ExternalPublishSource, string> = {
-  fleetcrown: 'FleetCrown',
+  loki: 'Loki',
 };
 
 /**
@@ -32,7 +32,7 @@ export const EXTERNAL_PUBLISH_SOURCE_LABELS: Record<ExternalPublishSource, strin
  * exact-origin discipline.
  */
 export const EXTERNAL_PUBLISH_SOURCE_ORIGINS: Record<ExternalPublishSource, readonly string[]> = {
-  fleetcrown: ['https://fleetcrown.orangecat.ch'],
+  loki: ['https://loki.orangecat.ch'],
 };
 
 /** True if `url`'s origin is allowed for `source` (used to gate the deep-link). */
@@ -48,7 +48,7 @@ export function isAllowedSourceUrl(source: ExternalPublishSource, url: string): 
 /**
  * Event types an external client may publish. Deliberately a SUBSET of the
  * existing TimelineEventType taxonomy (not new strings) so the wall's formatters,
- * icons, and feeds render them with zero extra work — FleetCrown maps its build
+ * icons, and feeds render them with zero extra work — Loki maps its build
  * events onto these on its side.
  */
 export const EXTERNAL_PUBLISHABLE_EVENT_TYPES = [
@@ -85,13 +85,13 @@ export const externalPublishSchema = z.object({
   event_type: z.enum(EXTERNAL_PUBLISHABLE_EVENT_TYPES),
   subject_type: z.enum(EXTERNAL_PUBLISHABLE_SUBJECT_TYPES).default('project'),
   /** The OrangeCat entity this update is about (must be owned by the caller). */
-  subject_id: z.string().uuid(),
+  subject_id: z.string().guid(),
   title: z.string().min(1).max(200),
   description: z.string().max(2000).optional(),
-  /** Deep-link back to the source surface (e.g. the FleetCrown changelog entry). */
+  /** Deep-link back to the source surface (e.g. the Loki changelog entry). */
   url: webUrl().optional(),
   /** Structured payload preserved verbatim under timeline_events.content. */
-  content: z.record(z.unknown()).optional(),
+  content: z.record(z.string(), z.unknown()).optional(),
   tags: z.array(z.string().max(40)).max(20).optional(),
   /** When the event happened at the source (defaults to now on the OC side). */
   event_timestamp: z.string().datetime().optional(),

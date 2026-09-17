@@ -51,7 +51,7 @@ export const PATCH = withAuth(async (request: AuthenticatedRequest, context: Rou
     const rawBody = await request.json();
     const parseResult = walletUpdateSchema.safeParse(rawBody);
     if (!parseResult.success) {
-      return apiBadRequest('Invalid input', parseResult.error.errors);
+      return apiBadRequest('Invalid input', parseResult.error.issues);
     }
 
     const result = await fetchWalletAndVerifyOwner(supabase, id, user.id, 'update');
@@ -117,9 +117,15 @@ export const DELETE = withAuth(async (request: AuthenticatedRequest, context: Ro
     }
     const { wallet } = result;
 
+    // is_primary is cleared with the same write. A soft delete used to leave the
+    // flag standing, and enforceSinglePrimary only ever sweeps ACTIVE rows — so a
+    // deactivated wallet stayed "primary" permanently, out of reach of every later
+    // correction. Production accumulated four such rows while the live wallets were
+    // not primary at all, and "the primary wallet" resolved to a deleted one. A
+    // partial unique index now backs this up; keeping the two in step is the point.
     const { error: deleteError } = await supabase
       .from(DATABASE_TABLES.WALLETS)
-      .update({ is_active: false, updated_at: new Date().toISOString() })
+      .update({ is_active: false, is_primary: false, updated_at: new Date().toISOString() })
       .eq('id', id);
 
     if (deleteError) {

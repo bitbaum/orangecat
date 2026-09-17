@@ -14,7 +14,7 @@ cd "$PROJECT_ROOT"
 
 # 1. Type Check
 echo "📝 Type checking..."
-if npm run type-check 2>&1 | tee /tmp/type-errors.log; then
+if pnpm run type-check 2>&1 | tee /tmp/type-errors.log; then
   echo "✅ Type check passed"
 else
   echo "❌ Type errors detected. Claude will self-correct:" >&2
@@ -24,7 +24,7 @@ fi
 
 # 2. Lint Check (with auto-fix)
 echo "🧹 Linting..."
-if npm run lint --fix 2>&1 | tee /tmp/lint-errors.log; then
+if pnpm run lint --fix 2>&1 | tee /tmp/lint-errors.log; then
   echo "✅ Lint check passed"
 else
   echo "⚠️  Lint issues found:" >&2

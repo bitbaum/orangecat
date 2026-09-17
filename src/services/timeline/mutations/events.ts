@@ -19,6 +19,7 @@ import type { TimelineVisibility } from '@/types/timeline';
 import type { ServiceResult } from '@/types/common';
 import { resolveActorId } from './events-helpers';
 import { createEvent } from './events-create';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 export {
   createEventWithVisibility,
@@ -139,7 +140,7 @@ export async function shareEvent(
     });
 
     if (!fallback.success) {
-      return { success: false, shareCount: 0, error: fallback.error || 'Share failed' };
+      return { success: false, shareCount: 0, error: apiErrorMessage(fallback, 'Share failed') };
     }
 
     // Attempt to count share events referencing this original

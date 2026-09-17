@@ -14,7 +14,7 @@
 
 export type CapabilityTier = 'conversational' | 'capable' | 'frontier';
 
-export interface ModelCapability {
+export interface ModelCapabilities {
   tier: CapabilityTier;
   /** Short label for badges, e.g. "Capable". */
   label: string;
@@ -27,7 +27,7 @@ export interface ModelCapability {
   agentic: boolean;
 }
 
-const TIERS: Record<CapabilityTier, Omit<ModelCapability, never>> = {
+const TIERS: Record<CapabilityTier, Omit<ModelCapabilities, never>> = {
   conversational: {
     tier: 'conversational',
     label: 'Conversational',
@@ -81,7 +81,7 @@ const CAPABLE = [
 const norm = (id: string) => id.toLowerCase();
 
 /** Classify a model id into an agentic-capability tier (with honest copy). */
-export function getModelCapability(modelId: string | null | undefined): ModelCapability {
+export function getModelCapabilities(modelId: string | null | undefined): ModelCapabilities {
   if (!modelId) {
     return TIERS.capable; // unknown → assume mid, neither over- nor under-promise
   }
@@ -97,5 +97,5 @@ export function getModelCapability(modelId: string | null | undefined): ModelCap
 
 /** Whether the model can reliably drive agentic features (discovery, tools). */
 export function isAgenticModel(modelId: string | null | undefined): boolean {
-  return getModelCapability(modelId).agentic;
+  return getModelCapabilities(modelId).agentic;
 }

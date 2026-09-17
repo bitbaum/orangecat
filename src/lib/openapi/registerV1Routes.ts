@@ -60,7 +60,7 @@ const ENTITY_SCHEMAS: Record<PublicApiEntityType, z.ZodTypeAny> = {
  * field is part of the contract.
  */
 const ACTOR_ID_FIELD = {
-  actor_id: z.string().uuid().optional().openapi({
+  actor_id: z.string().guid().optional().openapi({
     description:
       'Optional actor to create on behalf of. Session auth: user must be a privileged member (founder/admin/moderator) of the group whose actor matches. Integration-key auth: the key is already bound to an actor; this field is ignored.',
   }),
@@ -77,8 +77,8 @@ function buildEntityResponseSchema(requestSchema: z.ZodTypeAny, label: string) {
 
   return requestObject
     .extend({
-      id: z.string().uuid().openapi({ description: 'Server-assigned identifier.' }),
-      actor_id: z.string().uuid().openapi({ description: 'Actor that owns the created entity.' }),
+      id: z.string().guid().openapi({ description: 'Server-assigned identifier.' }),
+      actor_id: z.string().guid().openapi({ description: 'Actor that owns the created entity.' }),
       created_at: z.string().datetime().openapi({ description: 'ISO 8601 creation timestamp.' }),
     })
     .passthrough()
@@ -237,7 +237,7 @@ export function registerV1Routes(): void {
           .object({
             id: z
               .string()
-              .uuid()
+              .guid()
               .openapi({ description: `${meta.name} id (uuid).` }),
           })
           .openapi(`${label}GetParams`),
@@ -264,7 +264,7 @@ export function registerV1Routes(): void {
   // pay (POST /payments) → verify (GET /payments/{id} until status=paid).
   const paymentIntentSchema = z
     .object({
-      id: z.string().uuid(),
+      id: z.string().guid(),
       status: z
         .enum([
           'created',
@@ -333,7 +333,7 @@ export function registerV1Routes(): void {
     tags: ['Payments'],
     security: [{ IntegrationKey: [] }],
     request: {
-      params: z.object({ id: z.string().uuid().openapi({ description: 'Payment intent id.' }) }),
+      params: z.object({ id: z.string().guid().openapi({ description: 'Payment intent id.' }) }),
     },
     responses: {
       200: {
@@ -412,7 +412,7 @@ export function registerV1Routes(): void {
         entity_type: z
           .string()
           .openapi({ description: 'Entity type (product, project, cause, …).' }),
-        entity_id: z.string().uuid(),
+        entity_id: z.string().guid(),
       }),
       query: z.object({
         amount_btc: z.coerce.number().openapi({
@@ -432,7 +432,7 @@ export function registerV1Routes(): void {
                   paid_at: z.string().datetime().nullable(),
                   verified_by: z.enum(['preimage', 'settlement']),
                   entity_type: z.string(),
-                  entity_id: z.string().uuid(),
+                  entity_id: z.string().guid(),
                 })
                 .openapi('L402Receipt'),
               'L402ReceiptSuccess'
@@ -453,7 +453,7 @@ export function registerV1Routes(): void {
                   message: z.string(),
                   details: z
                     .object({
-                      payment_intent_id: z.string().uuid(),
+                      payment_intent_id: z.string().guid(),
                       token: z.string(),
                       bolt11: z.string().nullable(),
                       onchain_address: z.string().nullable(),
@@ -480,11 +480,11 @@ export function registerV1Routes(): void {
   });
 
   // Publish bus — not an entity create, so registered explicitly. External
-  // clients (FleetCrown) land a build event on a project's wall; idempotent +
+  // clients (Loki) land a build event on a project's wall; idempotent +
   // reconcilable by (source, external_id).
   const publishResponseSchema = z
     .object({
-      id: z.string().uuid().openapi({ description: 'OrangeCat timeline event id.' }),
+      id: z.string().guid().openapi({ description: 'OrangeCat timeline event id.' }),
       status: z.enum(['created', 'updated']).openapi({
         description: '`created` on first publish, `updated` on a reconciling re-publish.',
       }),
@@ -496,7 +496,7 @@ export function registerV1Routes(): void {
     path: `${PUBLIC_API_BASE}/timeline/publish`,
     summary: 'Publish an external build event to a project wall',
     description:
-      "Async publish bus: an external client (e.g. FleetCrown) lands a publish-worthy build event onto a project's OrangeCat wall. Requires the `timeline.write` scope and ownership of the subject project. Idempotent + reconcilable — keyed by (source, external_id), so a retry or an edit updates the same event rather than duplicating it.",
+      "Async publish bus: an external client (e.g. Loki) lands a publish-worthy build event onto a project's OrangeCat wall. Requires the `timeline.write` scope and ownership of the subject project. Idempotent + reconcilable — keyed by (source, external_id), so a retry or an edit updates the same event rather than duplicating it.",
     tags: ['Timeline'],
     security: [{ IntegrationKey: [] }],
     request: {
@@ -538,10 +538,10 @@ export function registerV1Routes(): void {
 
   const stakeholderRowSchema = z
     .object({
-      id: z.string().uuid(),
-      from_project_id: z.string().uuid(),
+      id: z.string().guid(),
+      from_project_id: z.string().guid(),
       kind: z.string(),
-      owner_actor_id: z.string().uuid(),
+      owner_actor_id: z.string().guid(),
     })
     .catchall(z.unknown())
     .openapi('StakeholderRelationship');
@@ -568,7 +568,7 @@ export function registerV1Routes(): void {
     security: [{ IntegrationKey: [] }],
     request: {
       query: z.object({
-        fromProjectId: z.string().uuid().openapi({ description: 'Project whose edges to list.' }),
+        fromProjectId: z.string().guid().openapi({ description: 'Project whose edges to list.' }),
         kind: z.string().optional().openapi({ description: 'Optional kind filter.' }),
       }),
     },

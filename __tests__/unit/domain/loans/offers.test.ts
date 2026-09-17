@@ -25,12 +25,12 @@ describe('createLoanOffer domain', () => {
 
   function createSupabase(minimumOfferAmount: number | null = null) {
     return {
-      from: jest.fn((table: string) => {
+      from: vi.fn((table: string) => {
         if (table === 'loans') {
           return {
-            select: jest.fn().mockReturnValue({
-              eq: jest.fn().mockReturnValue({
-                maybeSingle: jest.fn().mockResolvedValue({
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                maybeSingle: vi.fn().mockResolvedValue({
                   data: {
                     id: loanId,
                     user_id: ownerId,
@@ -45,9 +45,9 @@ describe('createLoanOffer domain', () => {
         }
 
         return {
-          insert: jest.fn().mockReturnValue({
-            select: jest.fn().mockReturnValue({
-              single: jest.fn().mockResolvedValue({
+          insert: vi.fn().mockReturnValue({
+            select: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({
                 data: { id: 'offer-1', loan_id: loanId, offerer_id: offererId },
                 error: null,
               }),
@@ -94,12 +94,12 @@ describe('createLoanOffer domain', () => {
 describe('updateLoanOffer domain', () => {
   it('returns not_found when the offer does not belong to the caller', async () => {
     const supabase = {
-      from: jest.fn().mockReturnValue({
-        update: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            eq: jest.fn().mockReturnValue({
-              select: jest.fn().mockReturnValue({
-                maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
+      from: vi.fn().mockReturnValue({
+        update: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              select: vi.fn().mockReturnValue({
+                maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
               }),
             }),
           }),
@@ -127,12 +127,12 @@ describe('respondToLoanOffer domain', () => {
 
   it('rejects responses to non-pending offers', async () => {
     const supabase = {
-      from: jest.fn((table: string) => {
+      from: vi.fn((table: string) => {
         if (table === 'loan_offers') {
           return {
-            select: jest.fn().mockReturnValue({
-              eq: jest.fn().mockReturnValue({
-                maybeSingle: jest.fn().mockResolvedValue({
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                maybeSingle: vi.fn().mockResolvedValue({
                   data: {
                     id: 'offer-2',
                     loan_id: 'loan-2',

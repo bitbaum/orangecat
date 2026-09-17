@@ -17,47 +17,49 @@ import {
 import { initiateTip } from '@/domain/payments/paymentFlowService';
 import { RECEIVE_MAX_BTC } from '@/config/receive';
 
-jest.mock('@/utils/logger', () => ({
-  logger: { warn: jest.fn(), error: jest.fn(), info: jest.fn(), debug: jest.fn() },
+import type { Mock } from 'vitest';
+
+vi.mock('@/utils/logger', () => ({
+  logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
-jest.mock('@/lib/api/withAuth', () => ({
+vi.mock('@/lib/api/withAuth', () => ({
   withAuth:
     (handler: (req: unknown) => Promise<unknown>) =>
     (req: unknown): Promise<unknown> =>
       handler(Object.assign(req as object, { user: { id: 'owner-1' }, supabase: {} })),
 }));
-jest.mock('@/lib/rate-limit', () => ({
-  rateLimitWriteAsync: jest.fn().mockResolvedValue({ success: true }),
+vi.mock('@/lib/rate-limit', () => ({
+  rateLimitWriteAsync: vi.fn().mockResolvedValue({ success: true }),
   retryAfterSeconds: () => 0,
 }));
-jest.mock('@/lib/api/standardResponse', () => ({
-  apiSuccess: jest.fn((data: unknown) => ({ status: 200, data })),
-  apiBadRequest: jest.fn((error: string) => ({ status: 400, error })),
-  apiRateLimited: jest.fn(() => ({ status: 429 })),
-  apiInternalError: jest.fn(() => ({ status: 500 })),
+vi.mock('@/lib/api/standardResponse', () => ({
+  apiSuccess: vi.fn((data: unknown) => ({ status: 200, data })),
+  apiBadRequest: vi.fn((error: string) => ({ status: 400, error })),
+  apiRateLimited: vi.fn(() => ({ status: 429 })),
+  apiInternalError: vi.fn(() => ({ status: 500 })),
 }));
-jest.mock('@/lib/supabase/admin', () => ({
-  getAdminClient: jest.fn(() => ({
-    from: jest.fn(() => ({
-      select: jest.fn().mockReturnThis(),
-      eq: jest.fn().mockReturnThis(),
-      maybeSingle: jest
+vi.mock('@/lib/supabase/admin', () => ({
+  getAdminClient: vi.fn(() => ({
+    from: vi.fn(() => ({
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi
         .fn()
         .mockResolvedValue({ data: { username: 'lena', display_name: 'Lena' }, error: null }),
     })),
   })),
 }));
-jest.mock('@/domain/payments/walletResolutionService', () => ({
-  resolveUserWallet: jest.fn(),
-  resolveSpecificUserWallet: jest.fn(),
+vi.mock('@/domain/payments/walletResolutionService', () => ({
+  resolveUserWallet: vi.fn(),
+  resolveSpecificUserWallet: vi.fn(),
 }));
-jest.mock('@/domain/payments/paymentFlowService', () => ({
-  initiateTip: jest.fn(),
+vi.mock('@/domain/payments/paymentFlowService', () => ({
+  initiateTip: vi.fn(),
 }));
 
-const resolvePrimaryMock = resolveUserWallet as jest.Mock;
-const resolveSpecificMock = resolveSpecificUserWallet as jest.Mock;
-const initiateTipMock = initiateTip as jest.Mock;
+const resolvePrimaryMock = resolveUserWallet as Mock;
+const resolveSpecificMock = resolveSpecificUserWallet as Mock;
+const initiateTipMock = initiateTip as Mock;
 
 const WALLET = { method: 'lightning_address', wallet_id: 'w1', lightning_address: 'a@b.c' };
 const TIP_RESULT = {
@@ -73,7 +75,7 @@ function makeRequest(body: unknown) {
 }
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   initiateTipMock.mockResolvedValue(TIP_RESULT);
 });
 

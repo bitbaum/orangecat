@@ -1,19 +1,25 @@
 # Development Documentation
 
-**Last Updated:** 2025-12-30
+**This page is a 2025-12-30 snapshot. It is not a current production-readiness statement. Do not read "Production Ready" below as today's status.**
+
+**Last Updated of this snapshot:** 2025-12-30
+**Honesty pass:** 2026-09-03 — OrangeCat is live at [orangecat.ch](https://orangecat.ch). Treat the architecture notes as historical unless re-verified.
 
 ---
 
-## Current Status: Production Ready
+## Snapshot status (2025-12-30 — stale)
 
+The 2025-12-30 header said "Production Ready". That claim is **stale**. The linked Production Readiness Handoff at `docs/development/HANDOFF_PRODUCTION_READINESS.md` **404s**; a copy lives at [`docs/archive/2026-h1/HANDOFF_PRODUCTION_READINESS.md`](../archive/2026-h1/HANDOFF_PRODUCTION_READINESS.md). Remaining-work figures from that snapshot (~460 TypeScript errors, ~160 `console.log`s) are **not** current gates.
+
+**Then (snapshot notes, not today's gate):**
 **Build:** Passing
 **Database:** Verified (3 groups, 17 actors, 3 members)
 **Groups Unification:** Complete
 **Actor System:** Implemented
 
 ### Active Status Documents
-- **[Production Readiness Handoff](./HANDOFF_PRODUCTION_READINESS.md)** - Current production status & next steps
-- **[Active Refactoring Tasks](./ACTIVE_REFACTORING_TASKS.md)** - Current work tracker
+- **[Archived Production Readiness Handoff](../archive/2026-h1/HANDOFF_PRODUCTION_READINESS.md)** - 2025 snapshot; the original `./HANDOFF_PRODUCTION_READINESS.md` 404s
+- **[Active Refactoring Tasks](./ACTIVE_REFACTORING_TASKS.md)** - 2025 work tracker (also dated; re-verify before trusting)
 
 ---
 
@@ -73,10 +79,10 @@
 
 ---
 
-## Remaining Work
+## Remaining Work (from the 2025-12-30 snapshot — not a current inventory)
 
-1. **TypeScript Errors** - ~460 non-blocking errors remain
-2. **Console.log Cleanup** - ~160 statements to replace with logger
+1. **TypeScript Errors** - snapshot cited ~460 non-blocking errors; do not treat as today's count
+2. **Console.log Cleanup** - snapshot cited ~160 statements to replace with logger
 3. **Delete Old Components** - ModernProjectCard, DashboardProjectCard after testing
 4. **Remove Organizations Table** - After verification period
 

@@ -84,7 +84,13 @@ export default function MentionSuggestions({
 
           <span className="min-w-0 flex-1">
             <span className="flex items-center gap-1.5">
-              <span className="truncate text-sm font-medium text-fg-primary">{item.name}</span>
+              <span className="truncate text-sm font-medium text-fg-primary">
+                {/* A nameless profile's `name` IS its handle, so printing both
+                    lines gave two identical rows of hex — the most common shape
+                    in the menu, since most accounts have no display name. Show
+                    the handle once, in the position the eye reads first. */}
+                {item.isAnonymous ? `@${item.username}` : item.name}
+              </span>
               {item.isCat && (
                 // `text-on-accent` rather than `text-white`: white on this
                 // orange is 3.10:1 and fails AA (see tailwind.config.ts).
@@ -93,13 +99,15 @@ export default function MentionSuggestions({
                 </span>
               )}
             </span>
-            {/* The handle is always shown, including for the Cat: the point of
-                the menu is that you learn `@cat` exists and can type it next
-                time without opening anything. */}
-            <span className="block truncate text-xs text-fg-tertiary">
-              @{item.username}
-              {item.isCat && ' · ask about this thread'}
-            </span>
+            {/* For a named profile the handle is always shown, including for the
+                Cat: the point of the menu is that you learn `@cat` exists and
+                can type it next time without opening anything. */}
+            {!item.isAnonymous && (
+              <span className="block truncate text-xs text-fg-tertiary">
+                @{item.username}
+                {item.isCat && ' · ask about this thread'}
+              </span>
+            )}
           </span>
         </button>
       ))}

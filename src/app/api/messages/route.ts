@@ -13,7 +13,7 @@ import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
 
 // Schema for creating a conversation
 const createConversationSchema = z.object({
-  participantIds: z.array(z.string().uuid()).min(1).max(50), // Max 50 participants for groups
+  participantIds: z.array(z.string().guid()).min(1).max(50), // Max 50 participants for groups
   title: z.string().max(100).optional(),
   initialMessage: z.string().max(1000).optional(),
 });

@@ -29,6 +29,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { PROPOSAL_STATUSES, type ProposalStatus } from '@/config/proposal-constants';
 import type { Proposal } from '@/services/groups/queries/proposals';
 import { API_ROUTES } from '@/config/api-routes';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 type ProposalWithSlug = Proposal & { groupSlug: string };
 
@@ -89,7 +90,7 @@ export function ProposalsList({
           )
         );
       } else {
-        throw new Error(data.error || 'Failed to load proposals');
+        throw new Error(apiErrorMessage(data, 'Failed to load proposals'));
       }
     } catch (error) {
       if (myLoadId !== loadIdRef.current) {

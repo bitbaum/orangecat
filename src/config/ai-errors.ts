@@ -15,7 +15,7 @@
  * added — no second edit at the call site.
  *
  * Invariant: every failure ends somewhere the user can act. `fix` when we know
- * the cure; a report to FleetCrown always (see src/lib/feedback/report.ts).
+ * the cure; a report to Loki always (see src/lib/feedback/report.ts).
  */
 
 import { ROUTES } from '@/config/routes';
@@ -38,6 +38,7 @@ export type AiErrorCode =
   | 'unparseable_response'
   | 'unknown_action'
   | 'action_disabled'
+  | 'invalid_parameters'
   | 'unknown';
 
 /** Which AI surface the failure came from. Carried into the bug report so a
@@ -134,6 +135,11 @@ const AI_ERRORS: Record<AiErrorCode, (ctx: AiErrorContext) => { title: string; f
     }),
     action_disabled: () => ({
       title: 'That action is switched off right now.',
+    }),
+    invalid_parameters: () => ({
+      // The model got the shape wrong, not the user. Say so plainly rather
+      // than showing them a validation dump they cannot act on.
+      title: 'Cat filled that in wrong, so nothing was changed.',
     }),
     unknown: () => ({
       title: 'Something went wrong on the AI side, and nothing was changed.',

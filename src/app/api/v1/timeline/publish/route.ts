@@ -1,14 +1,14 @@
 /**
  * POST /api/v1/timeline/publish — the async publish bus inbound endpoint.
  *
- * External clients (FleetCrown) publish a publish-worthy build event onto a
+ * External clients (Loki) publish a publish-worthy build event onto a
  * project's OrangeCat wall. Authenticated via the v1 auth path (OIDC "Login with
  * OrangeCat" access token, or an `ock_` integration key) and gated to the
  * `timeline.write` scope. Idempotent + reconcilable — see externalPublish.ts.
  *
  * Part of the platform's async publish + read-only surfacing slice
  * (docs/architecture/PLATFORM_AND_COLLABORATION.md). This is the OC ingest half;
- * the FleetCrown promote/emit half lives in the FleetCrown repo.
+ * the Loki promote/emit half lives in the Loki repo.
  */
 import { NextRequest } from 'next/server';
 import { resolveRequestAuth, hasScope } from '@/lib/api/resolveRequestAuth';

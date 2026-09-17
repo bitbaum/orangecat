@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * A pay link must open on the amount field, not on a spinner.
  *
@@ -15,20 +16,22 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { PayFlow } from '@/components/payment/PayFlow';
 import { fetchTipReceiveInfo } from '@/services/tips/tip-client';
 
-jest.mock('@/utils/logger', () => ({
-  logger: { warn: jest.fn(), error: jest.fn(), info: jest.fn(), debug: jest.fn() },
-}));
-jest.mock('@/services/tips/tip-client', () => ({
-  fetchTipReceiveInfo: jest.fn(),
-  fetchTipInvoice: jest.fn(),
-  fetchTipStatus: jest.fn(),
-}));
-jest.mock('@/hooks/useUserCurrency', () => ({ useUserCurrency: () => 'CHF' }));
+import type { Mock } from 'vitest';
 
-const receiveInfoMock = fetchTipReceiveInfo as jest.Mock;
+vi.mock('@/utils/logger', () => ({
+  logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() },
+}));
+vi.mock('@/services/tips/tip-client', () => ({
+  fetchTipReceiveInfo: vi.fn(),
+  fetchTipInvoice: vi.fn(),
+  fetchTipStatus: vi.fn(),
+}));
+vi.mock('@/hooks/useUserCurrency', () => ({ useUserCurrency: () => 'CHF' }));
+
+const receiveInfoMock = fetchTipReceiveInfo as Mock;
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   receiveInfoMock.mockResolvedValue({ canReceive: true, recipientName: 'Mao' });
 });
 

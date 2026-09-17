@@ -52,9 +52,11 @@ export function NostrConnectionCard() {
           Nostr
         </CardTitle>
         <CardDescription>
-          Connect your Nostr identity for a portable profile. A wallet connection added here stays
-          in this browser — it shows your balance and pays from it, but it does not set up
-          receiving. To get paid, add the wallet above.
+          Connect your Nostr identity for a portable profile. Both the identity and any wallet
+          connection added here stay <strong className="font-medium">in this browser</strong> — they
+          are not saved to your account, so another device or a cleared browser starts over. A
+          wallet here shows your balance and pays from it; it does not set up receiving. To get
+          paid, add a wallet under Wallets.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

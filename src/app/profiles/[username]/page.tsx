@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import { createServerClient } from '@/lib/supabase/server';
 import { notFound, redirect, permanentRedirect } from 'next/navigation';
 import ProfilePageClient from '@/components/profile/ProfilePageClient';
-import { DATABASE_TABLES } from '@/config/database-tables';
+import { DATABASE_TABLES, PUBLIC_PROFILES_VIEW } from '@/config/database-tables';
 import { getTableName } from '@/config/entity-registry';
 import { fetchProfileListingCounts } from '@/services/profile/listingCounts';
 import { getPublicEconomicProfile } from '@/services/cat/economic-profile-public';
@@ -16,6 +16,11 @@ import { ROUTES } from '@/config/routes';
 import { APP_NAME, APP_KICKER, SITE_URL } from '@/config/brand';
 import { applyProfilePrivacy } from '@/config/profile-privacy';
 import { resolveHistoricalUsername } from '@/domain/lightning-address/username-history';
+import { getOrCreateUserActor } from '@/services/actors/getOrCreateUserActor';
+import { ownedProjectsFilter } from '@/domain/projects/service';
+import { getUnclaimedOwnerBySlug } from '@/domain/profileClaims/unclaimed';
+import { UnclaimedProfileView } from '@/components/claim/UnclaimedProfileView';
+import { looseClient } from '@/lib/supabase/untyped';
 
 interface PageProps {
   params: Promise<{ username: string }>;
@@ -70,6 +75,18 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     username: string | null;
   } | null;
   if (!profile) {
+    const unclaimed = await getUnclaimedOwnerBySlug(supabase, targetUsername);
+    if (unclaimed) {
+      return {
+        title: `${unclaimed.name} · ${APP_NAME}`,
+        description: `${unclaimed.name} has a page on ${APP_NAME} that hasn’t been claimed yet.`,
+        // NOT indexed until its subject has accepted it (ADR-0005 D4). Public
+        // on-platform and by link; invisible to search engines until she says
+        // yes — that is the line between a growth mechanic and putting a real
+        // person's name into Google without asking.
+        robots: { index: false, follow: false },
+      };
+    }
     return {
       title: 'Profile Not Found',
       description: 'The profile you are looking for does not exist.',
@@ -151,15 +168,25 @@ export default async function PublicProfilePage({ params }: PageProps) {
     targetUsername = userProfile?.username || user.id;
   }
 
-  // Fetch profile data server-side
-  const { data: profileData, error: profileError } = await supabase
-    .from(DATABASE_TABLES.PROFILES)
+  // Fetch profile data server-side.
+  //
+  // This reads the PUBLIC VIEW, not the table. `supabase` is the anon-key client
+  // (createServerClient), so for a logged-out visitor this runs as the `anon`
+  // role — and anon no longer holds SELECT on profiles.email/.phone/
+  // .contact_email, so `select('*')` on the table would fail and 404 every
+  // public profile. public_profiles is the same row minus the account email,
+  // with the owner's privacy_settings already applied in SQL. See
+  // 20260917120100_anon_cannot_read_the_private_columns_of_a_profile.sql.
+  //
+  // The owner reads their own full row a few lines further down.
+  const { data: profileData, error: profileError } = await looseClient(supabase)
+    .from(PUBLIC_PROFILES_VIEW)
     .select('*')
     .eq('username', targetUsername)
     .single();
   // Supabase Row type and ScalableProfile diverge on narrow union fields (e.g. status);
   // both derive from the same table so the shape is compatible at runtime.
-  const profile = profileData as unknown as ScalableProfile;
+  let profile = profileData as unknown as ScalableProfile;
 
   if (profileError || !profile) {
     // Before 404ing, check whether this handle is one an account used to have.
@@ -180,10 +207,65 @@ export default async function PublicProfilePage({ params }: PageProps) {
         permanentRedirect(ROUTES.PROFILES.VIEW(current.username));
       }
     }
+
+    // ADR-0005 D7 — the slug of a person who has not accepted yet. Her studio
+    // was shared under this address before she had an account, and the link
+    // has to keep working: on claim the slug becomes her username, so this
+    // same URL resolves to a real profile afterwards.
+    const unclaimed = await getUnclaimedOwnerBySlug(supabase, targetUsername);
+    if (unclaimed) {
+      const { data: ownedProjects } = await looseClient(supabase)
+        .from(getTableName('project'))
+        .select('id, title, description')
+        .eq('actor_id', unclaimed.actorId)
+        .order('created_at', { ascending: false });
+
+      return (
+        <UnclaimedProfileView
+          name={unclaimed.name}
+          avatarUrl={unclaimed.avatarUrl}
+          stewardUsername={unclaimed.stewardUsername}
+          projects={
+            (ownedProjects ?? []) as Array<{
+              id: string;
+              title: string;
+              description: string | null;
+            }>
+          }
+        />
+      );
+    }
+
     notFound();
   }
 
-  // Fetch user's projects (exclude drafts, respect show_on_profile setting)
+  // Who is looking? Needed here (rather than further down, where isOwnProfile
+  // used to be derived) because the owner's own row is fetched differently.
+  const {
+    data: { user: currentUser },
+  } = await supabase.auth.getUser();
+  const isOwnProfile = !!currentUser && currentUser.id === profile.id;
+
+  // The owner sees their own private columns — the registration email on the
+  // Info tab, and the phone / contact email / privacy toggles that seed the
+  // in-page editor. public_profiles deliberately withholds all of those, so
+  // re-read the real row. This runs as `authenticated`, which still holds the
+  // table grant, and RLS ("Public profiles are viewable by everyone") allows it.
+  if (isOwnProfile) {
+    const { data: ownRow } = await supabase
+      .from(DATABASE_TABLES.PROFILES)
+      .select('*')
+      .eq('id', profile.id)
+      .single();
+    if (ownRow) {
+      profile = ownRow as unknown as ScalableProfile;
+    }
+  }
+
+  // Fetch the projects this profile OWNS (by actor — a claimed page is owned
+  // by its owner, created by the steward), excluding drafts and respecting
+  // the show_on_profile setting.
+  const ownerActor = await getOrCreateUserActor(profile.id);
   const { data: projectsData } = await supabase
     .from(getTableName('project'))
     .select(
@@ -204,7 +286,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
       updated_at
     `
     )
-    .eq('user_id', profile.id)
+    .or(ownedProjectsFilter(ownerActor.id, profile.id))
     .neq('status', 'draft') // Exclude drafts from public profile
     .neq('show_on_profile', false) // Respect user's visibility preference (null = true by default)
     .order('created_at', { ascending: false });
@@ -255,11 +337,9 @@ export default async function PublicProfilePage({ params }: PageProps) {
   // formatAmountBtc. Summing per-project raised_amount would mix currencies.
   const totalRaised = enrichedProjects.reduce((sum, p) => sum + (p.settled_raised_btc || 0), 0);
 
-  // Check if viewing own profile (server-side, avoids hydration flash)
-  const {
-    data: { user: currentUser },
-  } = await supabase.auth.getUser();
-  const isOwnProfile = !!currentUser && currentUser.id === profile.id;
+  // (isOwnProfile is derived above, right after the profile row is fetched —
+  // the owner's row has to be read from a different source, so the check has
+  // to happen there. Still server-side, so no hydration flash.)
 
   // The Cat's extracted "what I can offer" signals (skills/assets/asked-for/
   // not-available-for). Public slice only — getPublicEconomicProfile reads
@@ -270,9 +350,15 @@ export default async function PublicProfilePage({ params }: PageProps) {
 
   // Redact before anything derives from the row, so hidden data never leaves the
   // server — not in the client payload, not in the JSON-LD below.
-  // 1. `email` is the private account login email; `select('*')` pulls it in.
+  // 1. `email` is the private account login email. For a visitor the row came
+  //    from public_profiles and never carried it; this still sets the key to
+  //    null so the shape matches ScalableProfile. For the owner the row IS the
+  //    full table row (re-read above), so this is the check that matters.
   // 2. Owner-hidden public fields (website, phone, contact_email, social_links)
   //    per profiles.privacy_settings. See config/profile-privacy.ts.
+  // The database now applies rule 2 as well, in the public_profiles view — this
+  // stays because it is the only thing enforcing it on the owner's full row,
+  // and because defence in depth on a leak this cheap is worth the two lines.
   const emailSafeProfile = isOwnProfile ? profile : { ...profile, email: null };
   const safeProfile = applyProfilePrivacy(emailSafeProfile, { isOwner: isOwnProfile });
 

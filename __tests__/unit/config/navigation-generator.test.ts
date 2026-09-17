@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * The navigation generator is the ONLY door from the entity registry into the
  * sidebar. These tests enforce that: if someone adds an entity type and forgets
@@ -6,10 +7,7 @@
  * section (which is exactly how Documents ended up ranked above Home).
  */
 
-import {
-  generateEntityNavigation,
-  GROUPED_ENTITY_TYPES,
-} from '@/config/navigation-generator';
+import { generateEntityNavigation, GROUPED_ENTITY_TYPES } from '@/config/navigation-generator';
 import { ENTITY_TYPES, ENTITY_REGISTRY } from '@/config/entity-registry';
 
 describe('generateEntityNavigation', () => {

@@ -33,8 +33,12 @@ import { cn } from '@/lib/utils';
 import { useProfileActions } from './useProfileActions';
 import { ProfileBannerSection } from './ProfileBannerSection';
 import { MAKER_STATUS_METADATA, isMakerStatus } from '@/config/maker-status';
+import { APP_LOCALE } from '@/utils/locale';
 
-const JOINED_DATE_FORMATTER = new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric' });
+const JOINED_DATE_FORMATTER = new Intl.DateTimeFormat(APP_LOCALE, {
+  month: 'short',
+  year: 'numeric',
+});
 
 /** "Joined Aug 2026" — quiet identity metadata, not a headline stat. */
 function formatJoinedDate(createdAt: string): string | null {
@@ -228,12 +232,16 @@ export default function ProfileLayout({
           onFollowToggle={handleFollowToggle}
         />
 
-        <div className="mt-12 sm:mt-16 md:mt-20">
-          <div className="oc-surface mb-4 p-4 sm:mb-6 sm:p-6">
+        <div className="mt-3 sm:mt-4">
+          {/* Top padding clears the avatar's overhang (half its height) plus a
+              gap, so the avatar overlaps this card the way it overlaps the
+              banner — one continuous header rather than two boxes with a
+              portrait stranded in the white space between them. */}
+          <div className="oc-surface mb-4 p-4 pt-12 sm:mb-6 sm:p-6 sm:pt-14 md:pt-16 lg:pt-20">
             <h1 className="mb-1 break-words text-xl font-bold text-fg-primary sm:mb-2 sm:text-2xl md:text-3xl">
               {profile.name || profile.username || 'User'}
             </h1>
-            <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 sm:mb-4">
+            <div className="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1 sm:mb-4">
               <p className="break-all text-sm font-medium text-fg-secondary sm:text-base md:text-lg">
                 @{profile.username}
               </p>

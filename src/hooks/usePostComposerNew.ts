@@ -103,6 +103,28 @@ export function usePostComposer(options: PostComposerOptions = {}): PostComposer
     setImage(null);
   }, []);
 
+  /**
+   * Empty the composer once the post exists.
+   *
+   * This did not happen. A successful post called `clearDraft()`, which
+   * discards the SAVED draft, and nothing called `clearFormState()`, which is
+   * the one that owns `content` — so the text you had just posted stayed in the
+   * box. Pressing post again then hit the server's duplicate guard ("You just
+   * posted this"), which read as the button being broken rather than as having
+   * already worked. `clearFormState` was reachable only from the offline path
+   * and from `reset()`, neither of which a normal successful post touches.
+   *
+   * It belongs here rather than in usePostSubmission: this hook owns `content`,
+   * and submission should not have to know how to empty someone else's state.
+   */
+  const handleSubmitted = useCallback(
+    (event?: unknown) => {
+      clearFormState();
+      onSuccess?.(event as never);
+    },
+    [clearFormState, onSuccess]
+  );
+
   const {
     isPosting,
     error,
@@ -123,7 +145,7 @@ export function usePostComposer(options: PostComposerOptions = {}): PostComposer
     parentEventId,
     image: image ?? undefined,
     onOptimisticUpdate,
-    onSuccess,
+    onSuccess: handleSubmitted,
     contentValid,
     enableRetry,
     clearDraft,

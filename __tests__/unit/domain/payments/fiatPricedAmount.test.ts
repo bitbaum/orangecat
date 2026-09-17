@@ -16,33 +16,35 @@ import { resolveAmount } from '@/domain/payments/paymentFlowHelpers';
 import { convertToBtcOrNull } from '@/services/currency/rates.server';
 import { getAdminClient } from '@/lib/supabase/admin';
 
-jest.mock('@/utils/logger', () => ({
-  logger: { warn: jest.fn(), error: jest.fn(), info: jest.fn(), debug: jest.fn() },
+import type { Mock } from 'vitest';
+
+vi.mock('@/utils/logger', () => ({
+  logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
-jest.mock('@/services/currency/rates.server', () => ({
-  convertToBtcOrNull: jest.fn(),
+vi.mock('@/services/currency/rates.server', () => ({
+  convertToBtcOrNull: vi.fn(),
 }));
-jest.mock('@/lib/supabase/admin', () => ({
-  getAdminClient: jest.fn(),
+vi.mock('@/lib/supabase/admin', () => ({
+  getAdminClient: vi.fn(),
 }));
 
-const convertMock = convertToBtcOrNull as jest.Mock;
-const adminMock = getAdminClient as jest.Mock;
+const convertMock = convertToBtcOrNull as Mock;
+const adminMock = getAdminClient as Mock;
 
 /** Admin client serving one priced entity row. */
 function withEntity(row: Record<string, unknown> | null) {
   const builder: Record<string, unknown> = {};
   for (const m of ['select', 'eq']) {
-    builder[m] = jest.fn(() => builder);
+    builder[m] = vi.fn(() => builder);
   }
-  builder.single = jest.fn(() => Promise.resolve({ data: row, error: null }));
-  adminMock.mockReturnValue({ from: jest.fn(() => builder) });
+  builder.single = vi.fn(() => Promise.resolve({ data: row, error: null }));
+  adminMock.mockReturnValue({ from: vi.fn(() => builder) });
 }
 
 const supabase = {} as never;
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe('resolveAmount — fiat-priced entities', () => {

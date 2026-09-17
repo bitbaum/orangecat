@@ -4,15 +4,18 @@
  * they stop looking.
  *
  * The naive version of this feature (ask a redirector, treat 404 as available)
- * fails precisely that way, and it fails on this project's own domain: .ch
- * runs no public RDAP service, so orangecat.ch — registered, in production,
- * serving the app these tests belong to — comes back 404. So does .io, and
- * so does .co.
+ * fails precisely that way: a redirector cannot tell "no such domain" from "no
+ * such registry", so any TLD it does not know reads as free.
  *
  * These tests hold the rule that prevents it: `unregistered` is reachable ONLY
- * for a TLD in IANA's RDAP bootstrap that answered 404. Every other path —
- * unsupported TLD, timeout, transport error, odd status, missing bootstrap —
- * is `unknown`. Nothing here talks to the network.
+ * for a TLD whose own RDAP base URL we hold, whose registry then answered 404.
+ * Every other path — TLD with no known registry, timeout, transport error, odd
+ * status, missing registry map — is `unknown`. Nothing here talks to the network.
+ *
+ * The second failure these tests now also cover is the one that actually shipped:
+ * the redirector stayed reachable but began answering 403, so every result
+ * became `unknown` while the search box went on looking like a working feature.
+ * `queries the registry's own base URL` is the test that keeps the middleman out.
  */
 
 import {
@@ -25,7 +28,21 @@ import {
 import { suggestDomains, toSeed } from '@/services/domains/suggest';
 import { CANDIDATE_TLDS, DOMAIN_RESULT_CACHE_MAX, MAX_CANDIDATES } from '@/config/domain-search';
 
-const RDAP_TLDS = new Set(['com', 'ai', 'dev', 'org', 'net', 'xyz']);
+/**
+ * TLD → registry base URL, the shape `checkDomain` now takes. `.co` is absent
+ * on purpose: it is the TLD with no known registry that the "never guess" tests
+ * lean on. `.ch` and `.io` are present because they are real overrides now.
+ */
+const REGISTRIES = new Map<string, string>([
+  ['com', 'https://rdap.verisign.com/com/v1/'],
+  ['ai', 'https://rdap.identitydigital.services/rdap/'],
+  ['dev', 'https://pubapi.registry.google/rdap/'],
+  ['org', 'https://rdap.publicinterestregistry.org/rdap/'],
+  ['net', 'https://rdap.verisign.com/net/v1/'],
+  ['xyz', 'https://rdap.centralnic.com/xyz/'],
+  ['ch', 'https://rdap.nic.ch/'],
+  ['io', 'https://rdap.identitydigital.services/rdap/'],
+]);
 
 const originalFetch = global.fetch;
 
@@ -45,7 +62,7 @@ function isBootstrapUrl(url: string): boolean {
 }
 
 function mockFetch(impl: (url: string) => Promise<Partial<Response>> | Partial<Response>) {
-  global.fetch = jest.fn(async (input: RequestInfo | URL) =>
+  global.fetch = vi.fn(async (input: RequestInfo | URL) =>
     impl(String(input))
   ) as unknown as typeof fetch;
 }
@@ -56,7 +73,7 @@ beforeEach(() => {
 
 afterEach(() => {
   global.fetch = originalFetch;
-  jest.restoreAllMocks();
+  vi.restoreAllMocks();
 });
 
 describe('parseDomain', () => {
@@ -79,7 +96,7 @@ describe('parseDomain', () => {
 describe('availability — the rule that stops a false “available”', () => {
   it('reports unregistered only when a supported registry answers 404', async () => {
     mockFetch(() => ({ status: 404, ok: false }));
-    const result = await checkDomain('substrataintel.com', RDAP_TLDS);
+    const result = await checkDomain('substrataintel.com', REGISTRIES);
 
     expect(result.status).toBe('unregistered');
     expect(result.rdapSupported).toBe(true);
@@ -87,17 +104,17 @@ describe('availability — the rule that stops a false “available”', () => {
 
   it('reports registered when the registry returns a record', async () => {
     mockFetch(() => ({ status: 200, ok: true }));
-    const result = await checkDomain('google.com', RDAP_TLDS);
+    const result = await checkDomain('google.com', REGISTRIES);
     expect(result.status).toBe('registered');
   });
 
-  it.each(['ch', 'io', 'co'])(
-    'never claims a .%s domain is free — that registry publishes no RDAP',
+  it.each(['co', 'de', 'fr'])(
+    'never claims a .%s domain is free — we hold no registry for it',
     async tld => {
-      // A redirector 404s for these exactly as it does for a free name. If this
-      // test ever goes green on 'unregistered', the feature is lying.
+      // Some other server 404s for these exactly as it would for a free name.
+      // If this test ever goes green on 'unregistered', the feature is lying.
       mockFetch(() => ({ status: 404, ok: false }));
-      const result = await checkDomain(`orangecat.${tld}`, RDAP_TLDS);
+      const result = await checkDomain(`orangecat.${tld}`, REGISTRIES);
 
       expect(result.status).toBe('unknown');
       expect(result.rdapSupported).toBe(false);
@@ -105,17 +122,49 @@ describe('availability — the rule that stops a false “available”', () => {
     }
   );
 
+  it("queries the registry's own base URL, never a redirector", async () => {
+    // The bug this pins: routing through rdap.org, which began 403ing in
+    // production and silently turned every answer into `unknown`. A middleman
+    // is an availability dependency the registries themselves do not impose.
+    const seen: string[] = [];
+    mockFetch(url => {
+      seen.push(url);
+      return { status: 404, ok: false };
+    });
+
+    await checkDomain('substrataintel.com', REGISTRIES);
+
+    expect(seen).toHaveLength(1);
+    expect(seen[0]).toBe('https://rdap.verisign.com/com/v1/domain/substrataintel.com');
+    expect(seen[0]).not.toContain('rdap.org');
+  });
+
+  it('keeps the registry path intact when building the query URL', async () => {
+    // `new URL('domain/x', base)` resolves against the last path SEGMENT, so a
+    // base whose trailing slash went missing would drop `/v1` and query a path
+    // that does not exist — reading as `unknown` rather than as a bug.
+    const seen: string[] = [];
+    mockFetch(url => {
+      seen.push(url);
+      return { status: 404, ok: false };
+    });
+
+    await checkDomain('example.net', new Map([['net', 'https://rdap.verisign.com/net/v1']]));
+
+    expect(seen[0]).toBe('https://rdap.verisign.com/net/v1/domain/example.net');
+  });
+
   it('treats a timeout as unresolved, never as free', async () => {
     mockFetch(() => {
       throw new Error('TimeoutError');
     });
-    const result = await checkDomain('substrataintel.com', RDAP_TLDS);
+    const result = await checkDomain('substrataintel.com', REGISTRIES);
     expect(result.status).toBe('unknown');
   });
 
   it('treats an unexpected registry status as unresolved', async () => {
     mockFetch(() => ({ status: 500, ok: false }));
-    const result = await checkDomain('substrataintel.com', RDAP_TLDS);
+    const result = await checkDomain('substrataintel.com', REGISTRIES);
     expect(result.status).toBe('unknown');
   });
 
@@ -127,20 +176,20 @@ describe('availability — the rule that stops a false “available”', () => {
   });
 
   it('rejects a malformed query without calling any registry', async () => {
-    const fetchSpy = jest.fn();
+    const fetchSpy = vi.fn();
     global.fetch = fetchSpy as unknown as typeof fetch;
 
-    const result = await checkDomain('not a domain', RDAP_TLDS);
+    const result = await checkDomain('not a domain', REGISTRIES);
     expect(result.status).toBe('unknown');
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
   it('caches a result so a repeated lookup does not hit the registry twice', async () => {
-    const fetchSpy = jest.fn(async () => ({ status: 404, ok: false }) as Partial<Response>);
+    const fetchSpy = vi.fn(async () => ({ status: 404, ok: false }) as Partial<Response>);
     global.fetch = fetchSpy as unknown as typeof fetch;
 
-    await checkDomain('substrataintel.com', RDAP_TLDS);
-    await checkDomain('substrataintel.com', RDAP_TLDS);
+    await checkDomain('substrataintel.com', REGISTRIES);
+    await checkDomain('substrataintel.com', REGISTRIES);
 
     expect(fetchSpy).toHaveBeenCalledTimes(1);
   });
@@ -150,13 +199,49 @@ describe('availability — batches', () => {
   it('checks every candidate and preserves order', async () => {
     mockFetch(url =>
       isBootstrapUrl(url)
-        ? { ok: true, status: 200, json: async () => ({ services: [[['com', 'ai'], ['x']]] }) }
+        ? {
+            ok: true,
+            status: 200,
+            json: async () => ({ services: [[['com', 'ai'], ['https://rdap.example/']]] }),
+          }
         : { status: 404, ok: false }
     );
 
-    const results = await checkDomains(['a.com', 'b.ai', 'c.ch']);
-    expect(results.map(r => r.domain)).toEqual(['a.com', 'b.ai', 'c.ch']);
+    // `.co` is the unsupported one here: it is in neither the mocked bootstrap
+    // nor the overrides, so it must stay `unknown` while the others resolve.
+    const results = await checkDomains(['a.com', 'b.ai', 'c.co']);
+    expect(results.map(r => r.domain)).toEqual(['a.com', 'b.ai', 'c.co']);
     expect(results.map(r => r.status)).toEqual(['unregistered', 'unregistered', 'unknown']);
+  });
+
+  it('still answers for an override TLD when the bootstrap is unreachable', async () => {
+    // `.ch` is this platform's own TLD and its registry URL is a compile-time
+    // constant. It must not go dark because data.iana.org is slow — the old
+    // code returned null here and downgraded every TLD at once.
+    mockFetch(url => {
+      if (isBootstrapUrl(url)) {
+        throw new Error('TimeoutError');
+      }
+      return { status: 404, ok: false };
+    });
+
+    const [result] = await checkDomains(['causius.ch']);
+    expect(result.status).toBe('unregistered');
+    expect(result.rdapSupported).toBe(true);
+  });
+
+  it('does not let an unreachable bootstrap resolve a TLD it never covered', async () => {
+    // The other half of the rule above: falling back to the overrides must not
+    // become a fallback to guessing for everything else.
+    mockFetch(url => {
+      if (isBootstrapUrl(url)) {
+        throw new Error('TimeoutError');
+      }
+      return { status: 404, ok: false };
+    });
+
+    const [result] = await checkDomains(['example.com']);
+    expect(result.status).toBe('unknown');
   });
 });
 
@@ -178,7 +263,7 @@ describe('suggestions', () => {
     expect(candidates.slice(0, bare.length)).toEqual(bare);
   });
 
-  it('honours a caller-supplied TLD list, which is how FleetCrown narrows it', () => {
+  it('honours a caller-supplied TLD list, which is how Loki narrows it', () => {
     const candidates = suggestDomains({ query: 'substrate', tlds: ['.ch', 'COM'] });
     expect(candidates.slice(0, 2)).toEqual(['substrate.ch', 'substrate.com']);
   });
@@ -226,8 +311,8 @@ describe('availability — the result cache is bounded', () => {
       return { status: 404, ok: false };
     });
 
-    await checkDomain('cached-name.com', new Set(['com']));
-    await checkDomain('cached-name.com', new Set(['com']));
+    await checkDomain('cached-name.com', REGISTRIES);
+    await checkDomain('cached-name.com', REGISTRIES);
 
     expect(lookups).toBe(1);
   });

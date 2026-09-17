@@ -18,13 +18,13 @@ import {
 import type { ResolvedWallet } from '@/domain/payments/types';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-jest.mock('@/utils/logger', () => ({
-  logger: { error: jest.fn(), warn: jest.fn(), info: jest.fn() },
+vi.mock('@/utils/logger', () => ({
+  logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
 }));
-jest.mock('@/domain/payments/encryptionService', () => ({ decrypt: (v: string) => v }));
+vi.mock('@/domain/payments/encryptionService', () => ({ decrypt: (v: string) => v }));
 
-const rpcMock = jest.fn();
-jest.mock('@/lib/supabase/admin', () => ({
+const rpcMock = vi.fn();
+vi.mock('@/lib/supabase/admin', () => ({
   getAdminClient: () => ({ rpc: rpcMock }),
 }));
 
@@ -32,10 +32,10 @@ jest.mock('@/lib/supabase/admin', () => ({
 function clientReturning(wallets: Array<Record<string, unknown>>): SupabaseClient {
   const builder: Record<string, unknown> = {};
   for (const m of ['select', 'eq']) {
-    builder[m] = jest.fn(() => builder);
+    builder[m] = vi.fn(() => builder);
   }
   let orderCalls = 0;
-  builder.order = jest.fn(() => {
+  builder.order = vi.fn(() => {
     orderCalls += 1;
     // Second .order() resolves the query.
     return orderCalls >= 2 ? Promise.resolve({ data: wallets, error: null }) : builder;
@@ -78,7 +78,7 @@ describe('on-chain resolution', () => {
     const resolved = await resolveUserWallet(
       clientReturning([
         { id: 'w1', address_or_xpub: ZPUB, wallet_type: 'xpub', is_primary: true },
-        { id: 'w2', lightning_address: 'mao@orangecat.ch', wallet_type: 'lightning' },
+        { id: 'w2', lightning_address: 'hello@orangecat.ch', wallet_type: 'lightning' },
       ]),
       'user-1'
     );

@@ -197,8 +197,8 @@ export const investmentSchema = z
 export const walletCreateSchema = z
   .object({
     // Entity ownership — exactly one must be provided
-    profile_id: z.string().uuid('Invalid profile ID format').optional(),
-    project_id: z.string().uuid('Invalid project ID format').optional(),
+    profile_id: z.string().guid('Invalid profile ID format').optional(),
+    project_id: z.string().guid('Invalid project ID format').optional(),
 
     // Core fields
     label: z
@@ -282,6 +282,9 @@ export const walletUpdateSchema = z
     goal_currency: z.enum(CURRENCY_CODES).optional().nullable(),
     goal_deadline: z.string().optional().nullable(),
     is_primary: z.boolean().optional(),
+    // Open accounting: publish this wallet's balance and recent transactions on
+    // its public page. Off unless the owner turns it on.
+    open_accounting: z.boolean().optional(),
   })
   .refine(data => Object.keys(data).length > 0, {
     message: 'At least one field must be provided for update',
@@ -290,10 +293,10 @@ export const walletUpdateSchema = z
 /** Schema for POST /api/wallets/transfer — transfer between wallets */
 export const walletTransferSchema = z
   .object({
-    from_wallet_id: z.string().uuid('Invalid from_wallet_id format'),
-    to_wallet_id: z.string().uuid('Invalid to_wallet_id format'),
+    from_wallet_id: z.string().guid('Invalid from_wallet_id format'),
+    to_wallet_id: z.string().guid('Invalid to_wallet_id format'),
     amount_btc: z
-      .number({ required_error: 'amount_btc is required' })
+      .number({ error: issue => issue.input === undefined ? 'amount_btc is required' : 'amount_btc must be a number' })
       .positive('Amount must be positive')
       .max(21_000_000, 'Amount exceeds maximum BTC supply'),
     note: z.string().max(500, 'Note cannot exceed 500 characters').optional(),
@@ -308,13 +311,13 @@ export const walletTransferSchema = z
  * of a wallet-entity link. See src/config/wallet-visibility.ts (SSOT).
  */
 export const walletVisibilitySchema = z.object({
-  wallet_id: z.string().uuid('wallet_id must be a valid UUID'),
+  wallet_id: z.string().guid('wallet_id must be a valid UUID'),
   entity_type: z.enum(ENTITY_TYPES, {
-    errorMap: () => ({ message: 'Invalid entity type' }),
+    error: () => 'Invalid entity type',
   }),
-  entity_id: z.string().uuid('entity_id must be a valid UUID'),
+  entity_id: z.string().guid('entity_id must be a valid UUID'),
   visibility: z.enum(WALLET_VISIBILITY_LEVELS, {
-    errorMap: () => ({ message: 'Invalid visibility level' }),
+    error: () => 'Invalid visibility level',
   }),
 });
 
@@ -326,9 +329,9 @@ export const walletVisibilitySchema = z.object({
  */
 export const paymentCreateSchema = z.object({
   entity_type: z.enum(ENTITY_TYPES, {
-    errorMap: () => ({ message: 'Invalid entity type' }),
+    error: () => 'Invalid entity type',
   }),
-  entity_id: z.string().uuid('entity_id must be a valid UUID'),
+  entity_id: z.string().guid('entity_id must be a valid UUID'),
   /** Required for contributions; ignored for fixed-price entities */
   amount_btc: z.number().positive('amount_btc must be positive').optional(),
   /** Optional message for contributions */
@@ -336,7 +339,7 @@ export const paymentCreateSchema = z.object({
   /** Whether contribution is anonymous */
   is_anonymous: z.boolean().optional().default(false),
   /** Shipping address for physical products */
-  shipping_address_id: z.string().uuid('shipping_address_id must be a valid UUID').optional(),
+  shipping_address_id: z.string().guid('shipping_address_id must be a valid UUID').optional(),
   /** Optional buyer note */
   buyer_note: z.string().max(500, 'Buyer note must be at most 500 characters').optional(),
 });
@@ -346,15 +349,15 @@ export const paymentCreateSchema = z.object({
  */
 export const paymentActionSchema = z.object({
   action: z.enum(['buyer_confirm', 'seller_confirm'], {
-    errorMap: () => ({ message: 'Invalid payment action' }),
+    error: () => 'Invalid payment action',
   }),
 });
 
 export const publicSupportCreateSchema = z.object({
   entity_type: z.enum(ENTITY_TYPES, {
-    errorMap: () => ({ message: 'Invalid entity type' }),
+    error: () => 'Invalid entity type',
   }),
-  entity_id: z.string().uuid('entity_id must be a valid UUID'),
+  entity_id: z.string().guid('entity_id must be a valid UUID'),
   // Same bounds the payer's amount field enforces — one place, so a change to
   // the range can never leave the form offering what the server rejects.
   amount_btc: z
@@ -371,11 +374,11 @@ export const publicPaymentActionSchema = z.object({
 
 /** Schema for POST /api/entity-wallets — link a wallet to an entity */
 export const entityWalletLinkSchema = z.object({
-  wallet_id: z.string().uuid('wallet_id must be a valid UUID'),
+  wallet_id: z.string().guid('wallet_id must be a valid UUID'),
   entity_type: z.enum(ENTITY_TYPES, {
-    errorMap: () => ({ message: `entity_type must be one of: ${ENTITY_TYPES.join(', ')}` }),
+    error: () => `entity_type must be one of: ${ENTITY_TYPES.join(', ')}`,
   }),
-  entity_id: z.string().uuid('entity_id must be a valid UUID'),
+  entity_id: z.string().guid('entity_id must be a valid UUID'),
 });
 
 // Types

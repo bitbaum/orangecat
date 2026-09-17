@@ -22,6 +22,7 @@ import {
 } from '@/lib/api/standardResponse';
 import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
 import { recordGroupActivity } from '@/services/groups/activities';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 interface RouteContext {
   params: Promise<{ slug: string }>;
@@ -49,7 +50,7 @@ export const GET = withOptionalAuth(async (_request, context: RouteContext) => {
     );
 
     if (!membersResult.success) {
-      return apiInternalError(membersResult.error || 'Failed to fetch members');
+      return apiInternalError(apiErrorMessage(membersResult, 'Failed to fetch members'));
     }
 
     return apiSuccess({
@@ -85,7 +86,7 @@ export const POST = withAuth(async (request: AuthenticatedRequest, context: Rout
     const result = await groupsService.joinGroup(groupResult.group.id, supabase);
 
     if (!result.success) {
-      return apiInternalError(result.error || 'Failed to join group');
+      return apiInternalError(apiErrorMessage(result, 'Failed to join group'));
     }
 
     // Await so the activity write completes (and errors surface) before responding.

@@ -6,6 +6,7 @@ import { ChevronDown, Bot, Coins, Users, Shield, Zap, HelpCircle } from 'lucide-
 import { PageHeading } from '@/components/layout/PageHeading';
 import { ROUTES } from '@/config/routes';
 import { cn } from '@/lib/utils';
+import { slugify } from '@/utils/string';
 
 interface FaqItem {
   question: string;
@@ -342,8 +343,5 @@ export default function FAQPage() {
 }
 
 function slugifyFaqSection(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
+  return slugify(title);
 }

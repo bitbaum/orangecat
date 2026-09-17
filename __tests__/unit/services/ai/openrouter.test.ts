@@ -7,6 +7,8 @@ import { TextDecoder as NodeTextDecoder } from 'util';
 import { OpenRouterService } from '@/services/ai/openrouter';
 import { calculateCostBtc } from '@/config/ai-models';
 
+import type { MockInstance } from 'vitest';
+
 // @ts-expect-error Jest/node lacks Web TextDecoder
 global.TextDecoder = NodeTextDecoder;
 
@@ -45,10 +47,10 @@ function completionBody(usage: Record<string, unknown>) {
 }
 
 describe('OpenRouterService chatCompletion cost', () => {
-  let fetchSpy: jest.SpyInstance;
+  let fetchSpy: MockInstance;
 
   beforeEach(() => {
-    fetchSpy = jest.spyOn(global, 'fetch');
+    fetchSpy = vi.spyOn(global, 'fetch');
   });
 
   afterEach(() => {
@@ -124,10 +126,10 @@ describe('OpenRouterService chatCompletion cost', () => {
 });
 
 describe('OpenRouterService streamChatCompletion cost', () => {
-  let fetchSpy: jest.SpyInstance;
+  let fetchSpy: MockInstance;
 
   beforeEach(() => {
-    fetchSpy = jest.spyOn(global, 'fetch');
+    fetchSpy = vi.spyOn(global, 'fetch');
   });
 
   afterEach(() => {
@@ -162,10 +164,10 @@ describe('OpenRouterService streamChatCompletion cost', () => {
 });
 
 describe('OpenRouterService sampling-param gating', () => {
-  let fetchSpy: jest.SpyInstance;
+  let fetchSpy: MockInstance;
 
   beforeEach(() => {
-    fetchSpy = jest.spyOn(global, 'fetch');
+    fetchSpy = vi.spyOn(global, 'fetch');
   });
 
   afterEach(() => {

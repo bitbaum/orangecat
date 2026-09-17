@@ -10,14 +10,22 @@ const STORAGE_KEYS = {
   COLLAPSED_SECTIONS: 'orangecat_collapsed_sections',
 } as const;
 
+/**
+ * `defaultExpanded` in the nav config is the ONLY thing that decides which
+ * sections open on a first visit.
+ *
+ * This used to branch on viewport — `isMobile ? section.priority > 3 : ...` —
+ * so on a phone the declared config was ignored in favour of a bare magic
+ * number, and the same account saw different sections open on a phone than on
+ * a laptop with nothing recording why. A config field that a second rule can
+ * silently override is not a source of truth. One field, one behaviour: to
+ * change what opens by default, edit `defaultExpanded` in config/navigation.
+ */
 export function buildInitialCollapsedSections(sections: NavSection[]): Set<string> {
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 1024;
   const collapsed = new Set<string>();
   sections.forEach(section => {
-    if (section.collapsible) {
-      if (isMobile ? section.priority > 3 : !section.defaultExpanded) {
-        collapsed.add(section.id);
-      }
+    if (section.collapsible && !section.defaultExpanded) {
+      collapsed.add(section.id);
     }
   });
   return collapsed;
@@ -49,14 +57,14 @@ export function useNavigationStorage(
       const savedCollapsedState = localStorage.getItem(STORAGE_KEYS.SIDEBAR_COLLAPSED);
       const isSidebarCollapsed = savedCollapsedState ? JSON.parse(savedCollapsedState) : false;
 
+      // An empty saved set means "the user expanded everything" — it is NOT the
+      // same as "nothing was ever saved". Keying off size made expand-all
+      // silently revert to the defaults on the next load.
       const savedCollapsedSections = localStorage.getItem(STORAGE_KEYS.COLLAPSED_SECTIONS);
-      const collapsedFromStorage = savedCollapsedSections
-        ? new Set<string>(JSON.parse(savedCollapsedSections))
-        : new Set<string>();
-
-      const defaultCollapsed = buildInitialCollapsedSections(sections);
       const collapsedSections =
-        collapsedFromStorage.size > 0 ? collapsedFromStorage : defaultCollapsed;
+        savedCollapsedSections === null
+          ? buildInitialCollapsedSections(sections)
+          : new Set<string>(JSON.parse(savedCollapsedSections));
 
       onStateLoaded({ isSidebarOpen, isSidebarCollapsed, collapsedSections });
     } catch (error) {

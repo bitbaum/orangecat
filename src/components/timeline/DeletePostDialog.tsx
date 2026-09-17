@@ -1,8 +1,17 @@
 'use client';
 
-import React, { useEffect } from 'react';
-import { AlertTriangle, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
+/**
+ * Confirmation for deleting one post.
+ *
+ * The modal mechanics are ConfirmDialog's (Radix): focus trap, Escape, body
+ * scroll lock, backdrop. This file used to hand-roll the Escape key and the
+ * scroll lock and still had no focus trap — while the sibling bulk-delete
+ * dialog hand-rolled neither, so the two irreversible actions on the timeline
+ * behaved differently for a keyboard user.
+ */
+
+import { AlertTriangle } from 'lucide-react';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { TIMELINE_SURFACE } from '@/config/timeline';
 
 interface DeletePostDialogProps {
@@ -20,103 +29,29 @@ export function DeletePostDialog({
   isDeleting = false,
   postPreview,
 }: DeletePostDialogProps) {
-  // Lock body scroll when dialog is open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [isOpen]);
-
-  // Handle escape key
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen && !isDeleting) {
-        onClose();
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, isDeleting, onClose]);
-
-  const handleConfirm = async () => {
-    try {
-      await onConfirm();
-    } catch {
-      // Error handling is done in the parent component
-    }
-  };
-
-  if (!isOpen) {
-    return null;
-  }
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-surface-page/80 backdrop-blur-sm"
-        onClick={isDeleting ? undefined : onClose}
-      />
-
-      {/* Dialog */}
-      <div className="relative w-full max-w-sm rounded-md border border-subtle bg-surface-page shadow-sm animate-in fade-in-0 zoom-in-95 duration-200">
-        <div className="p-6">
-          {/* Icon */}
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-md border border-status-negative/20 bg-status-negative/10">
-            <AlertTriangle className="w-6 h-6 text-status-negative" />
-          </div>
-
-          {/* Title */}
-          <h2 className="text-lg font-semibold text-fg-primary text-center mb-2">Delete post?</h2>
-
-          {/* Description */}
-          <p className="text-fg-secondary text-center text-sm mb-2">
-            This can&apos;t be undone and it will be removed from your profile, the timeline, and
-            search results.
-          </p>
-
-          {/* Post preview */}
-          {postPreview && (
-            <div className="mt-4 rounded-md border border-subtle bg-surface-raised p-3">
-              <p className="text-fg-primary text-sm line-clamp-3">{postPreview}</p>
-            </div>
-          )}
-
-          {/* Actions */}
-          <div className="flex flex-col gap-2 mt-6">
-            <Button
-              onClick={handleConfirm}
-              disabled={isDeleting}
-              className="w-full rounded-md bg-status-negative py-3 font-semibold text-fg-inverted hover:bg-status-negative/90"
-            >
-              {isDeleting ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Deleting...
-                </>
-              ) : (
-                'Delete'
-              )}
-            </Button>
-
-            <Button
-              onClick={onClose}
-              disabled={isDeleting}
-              variant="outline"
-              className={`w-full py-3 font-semibold ${TIMELINE_SURFACE.chip}`}
-            >
-              Cancel
-            </Button>
-          </div>
+    <ConfirmDialog
+      isOpen={isOpen}
+      onClose={onClose}
+      onConfirm={onConfirm}
+      isLoading={isDeleting}
+      confirmLabel={isDeleting ? 'Deleting…' : 'Delete'}
+      title="Delete post?"
+      description="This can't be undone and it will be removed from your profile, the timeline, and search results."
+      icon={
+        <div className="flex h-12 w-12 items-center justify-center rounded-md border border-status-negative/20 bg-status-negative/10">
+          <AlertTriangle className="h-6 w-6 text-status-negative" />
         </div>
-      </div>
-    </div>
+      }
+    >
+      {postPreview && (
+        <p
+          className={`${TIMELINE_SURFACE.chip} line-clamp-3 rounded-md p-3 text-sm text-fg-secondary`}
+        >
+          {postPreview}
+        </p>
+      )}
+    </ConfirmDialog>
   );
 }
 

@@ -182,6 +182,35 @@ export async function deleteAllConversations(
  * Saves a batch of messages to a conversation.
  * Used to save user + assistant message pair after each exchange.
  */
+/**
+ * How much of a turn's tool activity is worth keeping.
+ *
+ * A chip's `results` carry every search hit with its title and url, so an
+ * unbounded write puts an entire web-search page into a chat row — on every
+ * turn, forever. These caps keep a turn's record to something a message row can
+ * hold while preserving what the chips actually render: which tools ran, what
+ * they did, and enough results for the expansion and the citations.
+ */
+const MAX_STORED_TOOL_CALLS = 12;
+const MAX_STORED_RESULTS_PER_CALL = 8;
+
+/** Trim a turn's tool calls to what is worth persisting. */
+export function trimToolCallsForStorage(toolCalls: unknown): unknown[] | null {
+  if (!Array.isArray(toolCalls) || toolCalls.length === 0) {
+    return null;
+  }
+  return toolCalls.slice(0, MAX_STORED_TOOL_CALLS).map(call => {
+    if (!call || typeof call !== 'object') {
+      return call;
+    }
+    const c = call as Record<string, unknown>;
+    if (!Array.isArray(c.results)) {
+      return c;
+    }
+    return { ...c, results: c.results.slice(0, MAX_STORED_RESULTS_PER_CALL) };
+  });
+}
+
 export async function saveMessages(
   supabase: AnySupabaseClient,
   conversationId: string,
@@ -192,6 +221,8 @@ export async function saveMessages(
     model_used?: string;
     provider?: string;
     token_count?: number;
+    /** What Cat did this turn, so a reloaded thread can still show it. */
+    tool_calls?: unknown[];
   }>
 ): Promise<void> {
   const rows = messages.map(m => ({
@@ -202,6 +233,7 @@ export async function saveMessages(
     model_used: m.model_used ?? null,
     provider: m.provider ?? null,
     token_count: m.token_count ?? null,
+    tool_calls: trimToolCallsForStorage(m.tool_calls),
   }));
 
   await supabase.from(DATABASE_TABLES.CAT_MESSAGES).insert(rows);
@@ -289,7 +321,7 @@ export async function getMessagesForDisplay(
 
   const { data } = await supabase
     .from(DATABASE_TABLES.CAT_MESSAGES)
-    .select('id, role, content, model_used, provider, token_count, created_at')
+    .select('id, role, content, model_used, provider, token_count, tool_calls, created_at')
     .eq('conversation_id', conversationId)
     .order('created_at', { ascending: false })
     .limit(limit);

@@ -101,7 +101,7 @@ export function ProfileImagesSection({
               <User className="w-8 h-8 text-fg-tertiary" data-testid="camera-icon" />
             </div>
           )}
-          <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-30 flex items-center justify-center rounded-full">
+          <div className="absolute inset-0 bg-black/0 hover:bg-black/30 flex items-center justify-center rounded-full">
             <Camera className="w-5 h-5 text-white opacity-0 hover:opacity-100" />
           </div>
         </div>

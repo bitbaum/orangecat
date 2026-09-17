@@ -25,6 +25,7 @@ import {
   apiRateLimited,
 } from '@/lib/api/standardResponse';
 import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 interface RouteContext {
   params: Promise<{ slug: string }>;
@@ -51,7 +52,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       if (result.error?.includes('not found')) {
         return apiNotFound('Group not found');
       }
-      return apiInternalError(result.error || 'Failed to fetch group');
+      return apiInternalError(apiErrorMessage(result, 'Failed to fetch group'));
     }
 
     // Standard entity shape: `data` IS the group — consumed by the generic
@@ -79,7 +80,7 @@ export const PUT = withAuth(async (request: AuthenticatedRequest, context: Route
     // Validate request
     const validationResult = updateGroupSchema.safeParse(body);
     if (!validationResult.success) {
-      return apiBadRequest('Invalid request', validationResult.error.errors);
+      return apiBadRequest('Invalid request', validationResult.error.issues);
     }
 
     // Get group first to check permissions (use the authenticated server client)
@@ -92,7 +93,8 @@ export const PUT = withAuth(async (request: AuthenticatedRequest, context: Route
     const canUpdate = await groupsService.checkGroupPermission(
       groupResult.group.id,
       user.id,
-      'canManageSettings'
+      'canManageSettings',
+      request.supabase
     );
 
     if (!canUpdate) {
@@ -106,7 +108,7 @@ export const PUT = withAuth(async (request: AuthenticatedRequest, context: Route
     );
 
     if (!result.success) {
-      return apiInternalError(result.error || 'Failed to update group');
+      return apiInternalError(apiErrorMessage(result, 'Failed to update group'));
     }
 
     // Standard entity shape: `data` IS the group — the generic edit form
@@ -145,7 +147,7 @@ export const DELETE = withAuth(async (request: AuthenticatedRequest, context: Ro
     const result = await groupsService.deleteGroup(groupResult.group.id);
 
     if (!result.success) {
-      return apiInternalError(result.error || 'Failed to delete group');
+      return apiInternalError(apiErrorMessage(result, 'Failed to delete group'));
     }
 
     return apiSuccess({ success: true });

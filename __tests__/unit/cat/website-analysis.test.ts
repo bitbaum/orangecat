@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Website analysis — the safe fetcher behind the Cat's analyze_website tool.
  * Guards the SSRF rails (private-IP rejection, per-hop redirect re-validation,
@@ -216,7 +217,7 @@ describe('validateTargetUrl', () => {
 
 describe('fetchWebsiteText SSRF rails', () => {
   it('rejects hosts that resolve to a private address without fetching', async () => {
-    const fetchFn = jest.fn();
+    const fetchFn = vi.fn();
     const result = await fetchWebsiteText('https://internal.example.com', {
       fetchFn,
       lookupFn: privateLookup,
@@ -226,7 +227,7 @@ describe('fetchWebsiteText SSRF rails', () => {
   });
 
   it('re-validates redirect hops and blocks a bounce to a private target', async () => {
-    const fetchFn = jest.fn().mockResolvedValueOnce(redirectResponse('http://127.0.0.1/steal'));
+    const fetchFn = vi.fn().mockResolvedValueOnce(redirectResponse('http://127.0.0.1/steal'));
     const result = await fetchWebsiteText('https://example.com', {
       fetchFn,
       lookupFn: publicLookup,
@@ -236,11 +237,11 @@ describe('fetchWebsiteText SSRF rails', () => {
   });
 
   it('re-resolves DNS on every redirect hop', async () => {
-    const lookupFn = jest
+    const lookupFn = vi
       .fn()
       .mockResolvedValueOnce([{ address: '93.184.216.34' }]) // hop 0: public
       .mockResolvedValueOnce([{ address: '10.0.0.5' }]); // hop 1: private → block
-    const fetchFn = jest
+    const fetchFn = vi
       .fn()
       .mockResolvedValueOnce(redirectResponse('https://internal.example.com/'));
     const result = await fetchWebsiteText('https://example.com', { fetchFn, lookupFn });
@@ -250,7 +251,7 @@ describe('fetchWebsiteText SSRF rails', () => {
   });
 
   it('gives up after 3 redirects', async () => {
-    const fetchFn = jest.fn().mockResolvedValue(redirectResponse('https://example.com/next'));
+    const fetchFn = vi.fn().mockResolvedValue(redirectResponse('https://example.com/next'));
     const result = await fetchWebsiteText('https://example.com', {
       fetchFn,
       lookupFn: publicLookup,
@@ -422,7 +423,7 @@ describe('analyze_website wiring', () => {
 
 describe('fetchWebsiteText with schemeless input', () => {
   it('normalizes a bare domain to https and fetches it', async () => {
-    const fetchFn: FetchLike = jest.fn(async () =>
+    const fetchFn: FetchLike = vi.fn(async () =>
       htmlResponse(
         '<html><title>RevampIT</title><body><p>We refurbish computers.</p></body></html>'
       )
@@ -436,14 +437,14 @@ describe('fetchWebsiteText with schemeless input', () => {
   });
 
   it('still rejects a schemeless private IP literal', async () => {
-    const fetchFn = jest.fn();
+    const fetchFn = vi.fn();
     const result = await fetchWebsiteText('127.0.0.1', { fetchFn, lookupFn: publicLookup });
     expect(result.ok).toBe(false);
     expect(fetchFn).not.toHaveBeenCalled();
   });
 
   it('still rejects a schemeless host that resolves to a private address', async () => {
-    const fetchFn = jest.fn();
+    const fetchFn = vi.fn();
     const result = await fetchWebsiteText('internal.example.com', {
       fetchFn,
       lookupFn: privateLookup,

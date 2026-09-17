@@ -125,8 +125,54 @@ describe('rankMentionSuggestions', () => {
   });
 
   it('falls back to the handle when a profile has no display name', () => {
-    const items = rankMentionSuggestions('', [{ id: 'x', username: 'solo' }], null);
+    const items = rankMentionSuggestions('so', [{ id: 'x', username: 'solo' }], null);
     expect(items[0].name).toBe('solo');
+    expect(items[0].isAnonymous).toBe(true);
+  });
+
+  // Most accounts on OrangeCat have no display name — 14 of the first 20 on
+  // 2026-08-28 — because handles stopped being minted from email local parts
+  // and NULL is the honest result. So this is the menu's common case, not an
+  // edge one.
+  describe('nameless profiles', () => {
+    const nameless = [
+      { id: 'a', username: 'user_d58c7dccec41' },
+      { id: 'b', username: 'user_09bf1419e7e7' },
+    ];
+
+    it('offers none of them on a bare @, where they are unrecognisable hex', () => {
+      expect(rankMentionSuggestions('', nameless, null)).toHaveLength(0);
+    });
+
+    it('still offers the Cat on a bare @ — it is the row worth discovering', () => {
+      const items = rankMentionSuggestions('', nameless, cat);
+      expect(items).toHaveLength(1);
+      expect(items[0].isCat).toBe(true);
+    });
+
+    it('offers one the moment its handle is typed', () => {
+      const items = rankMentionSuggestions('user_d58', nameless, null);
+      expect(items[0].username).toBe('user_d58c7dccec41');
+    });
+
+    it('sinks below a named person who matches just as well', () => {
+      const items = rankMentionSuggestions(
+        'u',
+        [{ id: 'a', username: 'user_d58c7dccec41' }, { id: 'b', username: 'ursula', name: 'Ursula' }],
+        null
+      );
+      expect(items[0].username).toBe('ursula');
+    });
+
+    it('still wins on an exact handle match against a named person', () => {
+      // Demotion must not override "this is plainly the row being asked for".
+      const items = rankMentionSuggestions(
+        'user_d58c7dccec41',
+        [{ id: 'b', username: 'ursula', name: 'user_d58c7dccec41 fan' }, { id: 'a', username: 'user_d58c7dccec41' }],
+        null
+      );
+      expect(items[0].username).toBe('user_d58c7dccec41');
+    });
   });
 
   it('honours the limit', () => {

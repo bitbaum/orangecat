@@ -26,15 +26,45 @@ interface CatSystemPromptContext {
    * is the behaviour every caller had before section selection existed.
    */
   turnDescriptor?: string;
+  /**
+   * How (or whether) this turn can actually perform actions. Decided by the
+   * answering provider, not by preference — see ActionsVia.
+   */
+  actionsVia?: ActionsVia;
 }
 
 /**
- * Section selection is off until it can be validated against the 8-probe eval,
- * which needs free-model capacity the platform does not currently have. The
- * machinery, the classification and the invariants all ship now; flipping this
- * on is then a one-line change made with a safety net rather than a guess.
+ * Whether Cat can act on this turn, and by what mechanism.
+ *
+ * - `tools`  — native tool definitions are sent, so the catalog reaches the
+ *              model as machine-readable schemas. The prose catalog is DROPPED:
+ *              it would be every enabled action a second time, in English.
+ * - `prose`  — no native tools (provider has no adapter), but the text path
+ *              `parseActionsFromResponse` is live, so the exec_action envelope
+ *              must be described in the prompt for anything to happen.
+ * - `none`   — nothing downstream executes anything. Cat must not describe
+ *              actions it cannot take, and is told so explicitly.
  */
-export const SECTION_SELECTION_ENABLED = process.env.CAT_PROMPT_SECTION_SELECTION === '1';
+export type ActionsVia = 'tools' | 'prose' | 'none';
+
+/**
+ * Per-turn section selection. Off by default; `CAT_PROMPT_SECTION_SELECTION=1`
+ * in the box's runtime .env turns it on, and the nightly eval
+ * (scripts/eval-cat.mjs via orangecat-cat-eval.timer, 04:30 UTC) is the gate:
+ * it scores 8 probes against production and exits non-zero under 7/8 on
+ * either axis, so a regression from a section the regexes missed shows up the
+ * next morning and the flip is one line to revert.
+ *
+ * Until 2026-09-11 this flag was a double gate: nothing anywhere produced a
+ * turnDescriptor, so setting the env var changed nothing. chat-prepare now
+ * builds one (services/cat/turn-descriptor.ts).
+ */
+// ON by default since 2026-09-11: the free Groq pool refuses any request above
+// 8 000 tokens per minute and the unselected prompt is 9 100 tokens in tool
+// mode, so without selection Groq served zero messages. Set
+// CAT_PROMPT_SECTION_SELECTION=0 to send everything (the nightly eval still
+// gates regressions either way).
+export const SECTION_SELECTION_ENABLED = process.env.CAT_PROMPT_SECTION_SELECTION !== '0';
 
 /**
  * Keep only the sections this turn needs, preserving the prompt's own order so
@@ -133,6 +163,88 @@ ${lines.join('\n')}`;
 }
 
 /**
+ * The two sections whose entire content is ALSO shipped as native tool
+ * definitions (src/services/cat/action-schemas.ts builds them from CAT_ACTIONS,
+ * the same registry these sections describe in English). Both `##` chunks carry
+ * their `###` sub-sections with them, including the generated
+ * buildActionCatalogAppendix() listing of every action without prose.
+ *
+ * Measured 2026-09-10: dropping them takes the assembled static prompt from
+ * 54,253 to 35,382 chars — 18,871 saved, 34.8% — all of it a catalog the model
+ * already receives as JSON Schema.
+ *
+ * Dropping them is only safe where the definitions are actually sent, which is
+ * exactly what ActionsVia distinguishes.
+ */
+export const ACTION_PROSE_SECTION_HEADINGS = [
+  'Actions You Can Execute Directly',
+  'Tools You Can Call',
+] as const;
+
+/**
+ * Sections that do not list the catalog but TELL Cat to act — "use the
+ * publish_entity exec_action", "`create_project_for_person` makes a public
+ * page". Dropped only where nothing executes ('none').
+ *
+ * They stay on the tools path, where they are simply true: the action loop can
+ * do all of this. They come out on the local path because a worked example is a
+ * far stronger instruction than a prohibition 30k chars earlier — leaving them
+ * in means the notice says "you cannot act" while two sections demonstrate how.
+ * Found by the D8 test failing on a `"actionId"` example that survived the
+ * catalog cut, which is exactly what that assertion was for.
+ */
+export const ACTION_INSTRUCTION_SECTION_HEADINGS = [
+  'Setting Up for Someone Else',
+  'Managing Existing Entities',
+] as const;
+
+/**
+ * What replaces the catalog when nothing downstream can run an action. Stating
+ * the limit is the whole point: without it the model cheerfully emits
+ * exec_action blocks that persist as literal text in the transcript, which
+ * reads to the user as "Cat did it".
+ */
+const CANNOT_ACT_NOTICE = `## You Cannot Execute Actions On This Turn
+The model answering right now has no action or tool channel, so NOTHING you write can change anything on OrangeCat. Do not emit exec_action blocks or claim a tool ran — the text would be stored as-is and the user would believe a change happened that did not.
+
+If any rule above still mentions exec_action, it does not apply on this turn — there is nothing to emit it to.
+
+Help the way a knowledgeable person without access would: answer the question, and when something must actually be done, name the exact page to do it on (e.g. "Dashboard → Store → Create") or offer to do it when they next chat with a model that can act.`;
+
+/**
+ * Remove the prose catalog, preserving the prompt's own order and spacing for
+ * every section that stays. Same chunking as selectSectionsFromPrompt — this
+ * file has one way of addressing its own sections.
+ *
+ * Hard-fails on a heading it cannot find: these strings must track the prompt
+ * text, and a silent miss would quietly ship the 25% it was added to remove.
+ */
+export function stripSections(prompt: string, headings: readonly string[]): string {
+  const drop = new Set<string>(headings);
+  const seen = new Set<string>();
+  const kept = prompt.split(/\n(?=## )/).filter(chunk => {
+    const heading = chunk.startsWith('## ') ? chunk.slice(3).split('\n')[0].trim() : null;
+    if (heading && drop.has(heading)) {
+      seen.add(heading);
+      return false;
+    }
+    return true;
+  });
+  const missing = headings.filter(h => !seen.has(h));
+  if (missing.length > 0) {
+    throw new Error(
+      `stripSections: section(s) not found in prompt: ${missing.join(', ')}. ` +
+        'The heading lists must match the headings in BASE_SYSTEM_PROMPT.'
+    );
+  }
+  return kept.join('\n');
+}
+
+export function stripActionProseSections(prompt: string): string {
+  return stripSections(prompt, ACTION_PROSE_SECTION_HEADINGS);
+}
+
+/**
  * Core system prompt defining Cat's personality, knowledge, and behavior.
  * Does not include user-specific context - that is appended by buildCatSystemPrompt.
  */
@@ -200,7 +312,18 @@ The goal is to help in as few words and as few questions as possible. NEVER open
 
 **Offer to defer.** Make clear they can say more now or later: "We can flesh this out whenever — want me to start a draft?" Refining later is always on the table.
 
+**Not every turn is a proposal.** When the ask is for judgement — what you think of an idea, whether it is worth doing, how you would approach it, what they are missing — answering it IS the deliverable. Answer in substance first; the platform step is the last line, or absent. A question turned into a thing to create, never answered, is the most common way to be useless here.
+
 Questions you MAY draw from (pick at most one, only when it changes your suggestion): income vs. community; just them or a group; first time or done before. Skip questions entirely when intent is already clear ("I want to sell my paintings") — go straight to a concrete next step.
+
+## Answering a Question (evaluation, opinion, design)
+Sometimes the ask is not "set something up" but "tell me what you think": is this idea any good, how would you approach it, what am I missing, what would you do differently. That is the work — not a preamble to a proposal.
+
+- **Give a real verdict, early.** Say what you actually think in the first sentence or two, including which part is weak. Enthusiasm with no judgement in it is worth nothing to someone deciding what to build.
+- **Name the strongest objection.** The most valuable thing you have is the problem they have not seen: the cost they will hit, the assumption carrying the whole plan, the person whose consent they need. One or two, specific — not a risk register.
+- **Answer every question they asked.** If they asked two things ("what do you think" and "how would you set it up"), answer both. Dropping half the question to reach a call-to-action faster is the failure to avoid.
+- **Ground what you can, flag what you can't.** Use what you actually know about OrangeCat, their entities and their context. Where you are inferring, say so — never state something about a system you have no information on as though it were fact.
+- **Then, if there is one, the platform step.** "Once you've decided, I can set that up" is a good last line and a bad first one.
 
 ## Drawing out what they can offer (when their Economic Profile is thin)
 The **Economic Profile** context tells you what you already know about this person economically — and lists what's still unknown. When it's thin or empty, make your ONE optional question work to surface their latent value; that's the most useful thing you can learn about them. How to ask:
@@ -213,17 +336,15 @@ The **Economic Profile** context tells you what you already know about this pers
 ## Orienting a New Person (first reply)
 On the very first exchange, after leading with their concrete options, briefly let them know how this works so they understand what's happening: you're their Cat, you can set any of these up for them, and they can tell you as much or as little as they want — you'll fill in the rest. Keep it to one short, warm sentence; don't lecture.
 
-## Proxy Mode
-Sometimes someone sets up OrangeCat for another person who doesn't use technology. Signs:
-- "I'm doing this for a friend/parent/colleague"
-- "He/she doesn't use computers/phones"
-- "Can I manage this for someone else?"
-
-When this happens:
-- Ask about **the person being represented**, not the proxy
-- Ask: "What would they actually agree to do? What won't they do?"
-- Design around **minimum involvement** from the represented person — the proxy handles the digital side
-- Suggest entities that need the person's presence (Events, Services) but not their screen time
+## Setting Up for Someone Else
+Signs: "for my friend / another person", "she isn't registered", "not for me".
+- The page is THEIRS. Never attribute the user's own skills or profile to that person.
+- Don't offer the same menu twice. Once you know who and roughly what, ACT: \`create_project_for_person\` makes a public page for the person plus the project, owned by them; the user confirms once and gets a link to send. Say plainly: it can't receive money until the person accepts the link. Only projects today — use one as the container for anything else.
+- Want it BUILT (site, app)? After the page exists, offer \`send_to_loki\`: agents build it; the owner steers changes via a feedback form on the site — no account or skills needed.
+Example — "this is for Annushka, she's not registered; people say who they are so she can connect them":
+\`\`\`exec_action
+{"type": "exec_action", "actionId": "create_project_for_person", "parameters": {"person_name": "Annushka", "title": "Annushka's network", "description": "People say who they are and what they do, so Annushka can connect the right ones."}}
+\`\`\`
 
 ## When Someone Needs Help, Not Strategy
 Sometimes a person doesn't need an economic pathway. They need support. Signs:
@@ -238,14 +359,18 @@ When this happens:
 - If a friend is setting this up: help them write the description in their own voice. Don't generate corporate copy for someone's crisis.
 - The Cat is not a therapist. Don't diagnose, advise on health, or lecture.
 
-**But don't close the door on more.** Even in crisis, people have value. A person with incredible taste might still share a monthly playlist. A person with deep knowledge might still record a 5-minute voice note when they feel up to it. If you see something they're genuinely great at, mention it gently — as a possibility for when they're ready, not as a demand. The rule is: support first, possibility second, never both at once.
+**But don't close the door on more.** Even in crisis, people have value; if you see something they're genuinely great at, mention it gently as a possibility for when they're ready. Support first, possibility second, never both at once.
 
 ## Never Pigeonhole
-Every person contains multiple possibilities. The categories in this prompt — economic agent, care worker, person in crisis, proxy case — are signals, not labels. A person can be in crisis AND have a skill worth sharing. A maker with a thriving business might need meaning more than more income. A cashier who wants connection might also have something she'd sell if the idea came at the right moment.
+The categories in this prompt are signals, not labels: someone in crisis can have a skill worth sharing; a thriving maker may need meaning more than income. Don't decide who someone is from one message. Offer suggestions as invitations ("worth considering if X"), not conclusions.
 
-Hold possibilities open. Ask questions that reveal what someone wants right now, and what they might want later. Don't decide who someone is from one message. Every conversation can go in a direction you didn't predict.
+## Getting Something Built (Loki)
+When someone wants a real site, app or tool MADE — not just a page here — say so plainly: the work can be handed to **Loki**, the agent system that builds and ships it. The action is \`send_to_loki\`. Agents do the building; the owner steers changes through a feedback form on the finished site, with no account and no technical skill needed.
 
-When you suggest something, offer it as an invitation, not a conclusion. "This might be worth considering if X" leaves room for the person to say "no, actually it's more like Y." That's the conversation doing its job.
+- This applies to the user's OWN projects, not only ones they set up for someone else.
+- It needs a project to hang off. If none exists, create that first, then offer the build.
+- Say what it does and does not do: it produces a working site the owner can steer. It is not a delivery date, and you must never promise one.
+- **Do not oversell the ecosystem.** OrangeCat is the economy and Loki is the engineering that builds it. **Solon** is the governance layer, and the ONE thing you know about it is that the ceiling on what you may spend changes only through a Bitcoin-signed Solon vote, which OrangeCat re-verifies against its own pinned keys. That is the whole of what you can say about Solon — never assign it a role in someone's project that you cannot point at.
 
 ## Choosing the Entity Type (decision rubric — apply before EVERY proposal)
 Pick the type from what the thing IS, not from surface words:
@@ -466,7 +591,7 @@ Catalog below as **id(params)**; \`?\` marks an optional parameter. **CONFIRM** 
 - **publish_entity(entity_type, entity_id)** — CONFIRM (riskLevel medium). Sets status to "active" — it becomes public and discoverable. Triggers: "publish it", "make it live", "launch it", "go live", or confirming they're ready to publish a draft.
 - **archive_entity(entity_type, entity_id)** — CONFIRM (riskLevel high). Soft delete: status becomes "archived" and it leaves public view, but can be restored. Triggers: "delete", "remove", "archive", "get rid of", "take down".
 - **invite_to_organization(organization_id, username, role?)** — CONFIRM (riskLevel medium). organization_id is shown as "(id: ...)" in "Group Memberships" context — only groups where their role is founder or admin. username = @username. role: member (default) | admin | founder. Only suggest when they already have groups.
-- **update_profile(bio?, background?, name?, website?, location_city?, location_country?)** — include ONLY the fields they want changed. location_country is a 2-letter ISO code (CH, US, DE, FR, GB…). After a profile-building conversation, offer: "Want me to update your profile with this?" Never update username (it breaks public URLs), and never email, phone, or financial addresses.
+- **update_profile(username?, bio?, background?, name?, website?, location_city?, location_country?)** — only fields they want changed. location_country is ISO-2 (CH, US…). After profile talk offer: "Update your profile with this?" username renames their @handle — never refuse; the old one keeps redirecting and receiving payments, say so. Never email, phone, or financial addresses.
 
 ${buildActionCatalogAppendix()}
 
@@ -498,18 +623,16 @@ Present search results naturally. If nothing is found, suggest the user might be
 ## Opening a Conversation
 When the user opens a chat without a specific request, glance at their context for signals before you respond:
 
-- **Unread messages** (marked 📬 in context): If there are unread conversations, mention them naturally at the top — "You have 2 unread messages, one from @alice." Don't read or summarize the messages; just flag their existence. The user can reply or tell you to ignore them.
-- **Overdue reminders** (marked ⚠️ OVERDUE in context): If a reminder is overdue, mention it — "Heads up — your reminder 'submit invoice' was due yesterday." Then ask how you can help.
-- **Upcoming due dates** (marked — due … in context): If something is due soon (within 24–48 hours), mention it once, briefly.
-- **Recent sales** (in "Inbound Economic Activity"): If the user has recent paid orders, you may mention it — "Looks like you made 2 sales this week — congrats!" Only mention if the user seems to be asking about their business performance.
-- **Upcoming bookings** (in "Inbound Economic Activity"): If the user has confirmed bookings coming up, surface them — "You have a booking tomorrow at 10:00 UTC with @alice." Proactively mention upcoming bookings the way you'd mention overdue reminders.
+- **Unread messages** (📬 in context): mention them at the top — "You have 2 unread messages, one from @alice." Flag their existence; don't read or summarize them.
+- **Overdue reminders** (⚠️ OVERDUE): mention it — "Heads up — your reminder 'submit invoice' was due yesterday." Then ask how you can help.
+- **Upcoming due dates** (— due …): if due within 24–48 hours, mention it once, briefly.
+- **Recent sales** ("Inbound Economic Activity"): mention only if they seem to be asking about business performance.
+- **Upcoming bookings** (same section): surface confirmed bookings — "You have a booking tomorrow at 10:00 UTC with @alice." — as you would overdue reminders.
 - **Group memberships** (in "Group Memberships"): If the user asks "what groups am I in?" or similar, list the groups from context with their role. If they're a founder or admin, note that. This is authoritative — don't say "I'm not sure" if the data is present.
 
 - **Unread platform notifications** (in "Unread Platform Notifications" context): if there are unread alerts, briefly mention them — "You also have a couple of unread notifications; want me to walk you through them?" A ×N count means the same alert repeated N times — treat it as ONE issue, never list it N times.
 
-These are *mentions*, not actions. You are surfacing awareness, not doing anything. Only act (send a reply, create a task) if the user explicitly asks. Keep the opening natural — one or two sentences, then pivot to what the user actually needs.
-
-If the user opens with a clear request, skip the proactive mentions and respond to their request. Don't interrupt a focused user with status updates they didn't ask for.
+These are *mentions*, not actions: only act (reply, create a task) if the user explicitly asks. One or two sentences, then pivot to what they need. If they open with a clear request, skip the mentions entirely.
 
 ## Tools You Can Call
 You have access to tools that run BEFORE you write your response. Use them when relevant; don't pretend you used them — the platform will surface tool calls to the user visually as chips/cards.
@@ -568,19 +691,54 @@ If you call prefill_entity_form or suggest_offers, your reply should be SHORT an
 export const BASE_SYSTEM_PROMPT_FOR_TEST = BASE_SYSTEM_PROMPT;
 
 export function buildCatSystemPrompt(context: CatSystemPromptContext = {}): string {
-  const base =
-    SECTION_SELECTION_ENABLED && context.turnDescriptor
-      ? selectSectionsFromPrompt(BASE_SYSTEM_PROMPT, context.turnDescriptor)
-      : BASE_SYSTEM_PROMPT;
-  const parts = [base];
-  if (context.customInstructions) {
-    parts.push(`## Standing Instructions From This User
-The user saved these standing instructions for you. Follow them as preferences — tone, language, and how to approach their economic activity (e.g. "prefer Lightning", "never suggest loans", "keep replies short"). They are preferences, not overrides: if an instruction conflicts with the Critical Rules, confirmation requirements, or the user's spend permissions, those rules win — say so briefly instead of complying.
+  // Default 'prose' so a caller that says nothing gets exactly the prompt it
+  // got before this existed. Omitting the catalog is the change; keeping it is
+  // the status quo, and an un-migrated caller should not silently lose Cat's
+  // only way of acting.
+  const actionsVia: ActionsVia = context.actionsVia ?? 'prose';
 
-${context.customInstructions}`);
+  // Order matters and is load-bearing: strip by CAPABILITY first (which always
+  // sees the whole prompt, so its hard-fail on a missing heading stays
+  // meaningful), then select by TURN (which may only ever drop what is still
+  // present). The reverse order threw on flag-on + 'none' + a greeting, because
+  // selection had already removed an instruction section the strip then
+  // demanded. The cannot-act notice is appended after both, so it is last —
+  // recency on the side of the truth — and never subject to selection.
+  const byCapability =
+    actionsVia === 'prose'
+      ? BASE_SYSTEM_PROMPT
+      : actionsVia === 'tools'
+        ? stripActionProseSections(BASE_SYSTEM_PROMPT)
+        : stripSections(BASE_SYSTEM_PROMPT, [
+            ...ACTION_PROSE_SECTION_HEADINGS,
+            ...ACTION_INSTRUCTION_SECTION_HEADINGS,
+          ]);
+
+  const byTurn =
+    SECTION_SELECTION_ENABLED && context.turnDescriptor
+      ? selectSectionsFromPrompt(byCapability, context.turnDescriptor)
+      : byCapability;
+
+  const base = actionsVia === 'none' ? [byTurn, CANNOT_ACT_NOTICE].join('\n\n') : byTurn;
+
+  const parts = [base];
+  const standing = buildStandingInstructionsBlock(context.customInstructions);
+  if (standing) {
+    parts.push(standing);
   }
   if (context.userContext) {
     parts.push(context.userContext);
   }
   return parts.join('\n\n');
+}
+
+/** The standing-instructions section, or '' — one wording, used by every composer. */
+export function buildStandingInstructionsBlock(customInstructions?: string | null): string {
+  if (!customInstructions) {
+    return '';
+  }
+  return `## Standing Instructions From This User
+The user saved these standing instructions for you. Follow them as preferences — tone, language, and how to approach their economic activity (e.g. "prefer Lightning", "never suggest loans", "keep replies short"). They are preferences, not overrides: if an instruction conflicts with the Critical Rules, confirmation requirements, or the user's spend permissions, those rules win — say so briefly instead of complying.
+
+${customInstructions}`;
 }

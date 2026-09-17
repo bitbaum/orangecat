@@ -1,0 +1,50 @@
+allowBuilds:
+  '@parcel/watcher': true
+  '@swc/core': true
+  '@tailwindcss/oxide': true
+  esbuild: true
+  sharp: true
+  unrs-resolver: true
+
+# Security/dedupe pins. These lived in package.json "overrides", which pnpm
+# silently IGNORES (npm-only field) — they must live here to keep applying.
+overrides:
+  '@isaacs/brace-expansion': ^5.0.1
+  # npm's override said `$sharp` (follow the direct dep); pnpm 11 deprecates
+  # that reference syntax, so the range is spelled out — keep in sync with the
+  # sharp entry in package.json optionalDependencies.
+  sharp: ^0.35.4
+  '@babel/core': ^7.29.6
+  hono: ^4.12.27
+  js-yaml: ^4.1.1
+  # >=3.15.2 closes GHSA-2883-xcg3-v3hh (maxTotalMergeKeys does not limit CPU
+  # for empty merge sources). The floor must stay ABOVE the advisory, not merely
+  # allow it: the previous ^3.14.1 permitted 3.15.2 and pnpm still held 3.15.1,
+  # because an already-satisfied transitive dep is never upgraded on install.
+  # A range that tolerates the fix is not a range that applies it.
+  'gray-matter>js-yaml': ^3.15.2
+  tar: ^7.5.8
+  postcss: ^8.5.10
+  uuid: ^14.0.0
+  shell-quote: ^1.8.4
+
+# pnpm refuses packages published within its minimum-release-age window — a
+# supply-chain guard against a compromised release being installed before
+# anyone notices. @bitbaum/ai-kit 0.6.2 is our own package, published to npm
+# the day before this commit, so it needs an explicit exemption.
+#
+# Temporary: once 0.6.2 is older than the window this entry is redundant and
+# should be deleted. Add lines only for versions we published ourselves —
+# never to hurry along a third-party package.
+minimumReleaseAgeExclude:
+  - '@bitbaum/ai-kit'
+  - '@bitbaum/mail-kit'
+  - 'limitkit'
+  # Ours, and recent enough to still be inside the window. Its absence failed
+  # BOTH CI jobs at `pnpm install --frozen-lockfile`, before a line of code ran
+  # — which surfaces as a bare "exit code 1" with no annotation, so it reads
+  # like a broken build rather than a refused dependency. vitareba needed the
+  # same entry when it adopted this package.
+  - 'threadkit'
+  # Ours (bitbaum/bip-kit); v0.2.1 published 2026-09-06 — inside the window.
+  - 'bip-kit'

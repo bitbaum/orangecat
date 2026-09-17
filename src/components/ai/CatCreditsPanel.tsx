@@ -16,6 +16,7 @@ import { displayBTC } from '@/services/currency';
 import { logger } from '@/utils/logger';
 import { API_ROUTES } from '@/config/api-routes';
 import { TopUpDialog, type TopUpInvoiceView } from './TopUpDialog';
+import { formatDate } from '@/utils/dates';
 
 interface CreditEntry {
   id: string;
@@ -170,7 +171,7 @@ export function CatCreditsPanel() {
                   )}
                   {KIND_LABELS[e.kind]}
                   <span className="text-fg-tertiary">
-                    {new Date(e.created_at).toLocaleDateString()}
+                    {formatDate(e.created_at)}
                   </span>
                 </span>
                 <span className={credit ? 'text-status-positive' : 'text-fg-secondary'}>

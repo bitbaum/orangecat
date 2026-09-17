@@ -4,6 +4,7 @@ import { logger } from '@/utils/logger';
 import { API_ROUTES } from '@/config/api-routes';
 import type { Profile } from '@/types/profile';
 import { followUser, unfollowUser } from './peopleConnectionActions';
+import { fetchFollowList, type FollowListProfile } from '@/services/social/followList';
 
 export interface Connection {
   profile: Profile;
@@ -15,6 +16,8 @@ interface ConnectionResponseItem {
   follower_id?: string;
   created_at: string;
   updated_at?: string;
+  /** /api/social/* aliases the join to `profile`; a direct supabase query gives `profiles`. */
+  profile?: FollowListProfile | null;
   profiles?: Profile;
   id?: string;
   username?: string;
@@ -31,7 +34,13 @@ function transformConnectionItem(
   idField: 'following_id' | 'follower_id',
   logContext: string
 ): Connection | null {
-  const profileData = item.profiles || (item[idField] ? null : (item as unknown as Profile));
+  // Accept either join key. The API aliases the joined row to `profile`
+  // (singular) while a direct supabase select yields `profiles`; reading only
+  // the plural made every API row resolve to null, so this page rendered an
+  // empty Following/Followers list for everyone. Same trap as
+  // components/profile/followProfiles.ts — one key, two spellings.
+  const profileData =
+    item.profile || item.profiles || (item[idField] ? null : (item as unknown as Profile));
   if (!profileData) {
     logger.warn(`Missing profile data in ${logContext} response`, { item }, 'PeoplePage');
     return null;
@@ -52,23 +61,6 @@ function transformConnectionItem(
   };
 }
 
-function parseResponseArray(data: { success?: boolean; data?: unknown }): ConnectionResponseItem[] {
-  if (!data.success) {
-    return [];
-  }
-  const raw = data.data;
-  if (Array.isArray(raw)) {
-    return raw as ConnectionResponseItem[];
-  }
-  if (raw && typeof raw === 'object' && 'data' in raw) {
-    const nested = (raw as { data?: unknown }).data;
-    if (Array.isArray(nested)) {
-      return nested as ConnectionResponseItem[];
-    }
-  }
-  return [];
-}
-
 export function usePeopleConnections(userId: string | undefined, hydrated: boolean) {
   const [following, setFollowing] = useState<Connection[]>([]);
   const [followers, setFollowers] = useState<Connection[]>([]);
@@ -83,41 +75,29 @@ export function usePeopleConnections(userId: string | undefined, hydrated: boole
 
     setIsLoading(true);
     try {
-      const [followingRes, followersRes, allRes] = await Promise.all([
-        fetch(API_ROUTES.SOCIAL.FOLLOWING(userId), { credentials: 'same-origin' }),
-        fetch(API_ROUTES.SOCIAL.FOLLOWERS(userId), { credentials: 'same-origin' }),
+      // fetchFollowList owns the envelope unwrap — see services/social/followList.ts.
+      const [followingRows, followerRows, allRes] = await Promise.all([
+        fetchFollowList('following', userId),
+        fetchFollowList('followers', userId),
         fetch(`${API_ROUTES.PROFILES.BASE}?limit=100`, { credentials: 'same-origin' }),
       ]);
 
-      if (followingRes.ok) {
-        const data = await followingRes.json();
-        const items = parseResponseArray(data);
-        setFollowing(
-          items
-            .map(item => transformConnectionItem(item, 'following_id', 'following'))
-            .filter(Boolean) as Connection[]
-        );
-      }
-
-      if (followersRes.ok) {
-        const data = await followersRes.json();
-        const items = parseResponseArray(data);
-        setFollowers(
-          items
-            .map(item => transformConnectionItem(item, 'follower_id', 'followers'))
-            .filter(Boolean) as Connection[]
-        );
-      }
+      setFollowing(
+        followingRows
+          .map(item => transformConnectionItem(item, 'following_id', 'following'))
+          .filter(Boolean) as Connection[]
+      );
+      setFollowers(
+        followerRows
+          .map(item => transformConnectionItem(item, 'follower_id', 'followers'))
+          .filter(Boolean) as Connection[]
+      );
 
       if (allRes.ok) {
         const allData = await allRes.json();
         if (allData.success) {
           const raw = allData.data;
-          const arr = Array.isArray(raw)
-            ? raw
-            : Array.isArray(raw?.data)
-              ? raw.data
-              : [];
+          const arr = Array.isArray(raw) ? raw : Array.isArray(raw?.data) ? raw.data : [];
           const transformed: Connection[] = arr.map((p: ConnectionResponseItem) => ({
             profile: {
               id: p.id,

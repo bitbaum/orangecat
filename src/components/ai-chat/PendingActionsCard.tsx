@@ -11,25 +11,16 @@
 
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { CheckCircle, XCircle, Clock, AlertTriangle, FileText, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { API_ROUTES } from '@/config/api-routes';
 import CAT_ACTIONS, { ACTION_CATEGORIES } from '@/config/cat-actions';
-
-interface PendingAction {
-  id: string;
-  actionId: string;
-  category: string;
-  parameters: Record<string, unknown>;
-  description: string;
-  expiresAt: string;
-}
+import type { PendingAction } from './usePendingActions';
 
 interface PendingActionsCardProps {
   action: PendingAction;
   /** Returns the handler's displayMessage if the action produced one */
-  onConfirm: (actionId: string) => Promise<string | undefined>;
+  onConfirm: (actionId: string) => Promise<{ message?: string; url?: string }>;
   onReject: (actionId: string) => Promise<void>;
 }
 
@@ -58,6 +49,7 @@ export function PendingActionsCard({ action, onConfirm, onReject }: PendingActio
   const [rejecting, setRejecting] = useState(false);
   const [completed, setCompleted] = useState<'confirmed' | 'rejected' | null>(null);
   const [confirmMessage, setConfirmMessage] = useState<string | undefined>(undefined);
+  const [confirmUrl, setConfirmUrl] = useState<string | undefined>(undefined);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const Icon =
@@ -71,8 +63,9 @@ export function PendingActionsCard({ action, onConfirm, onReject }: PendingActio
     setConfirming(true);
     setActionError(null);
     try {
-      const msg = await onConfirm(action.id);
-      setConfirmMessage(msg);
+      const outcome = await onConfirm(action.id);
+      setConfirmMessage(outcome.message);
+      setConfirmUrl(outcome.url);
       setCompleted('confirmed');
     } catch (e) {
       setActionError(e instanceof Error ? e.message : 'Failed to confirm action');
@@ -110,6 +103,14 @@ export function PendingActionsCard({ action, onConfirm, onReject }: PendingActio
               <span className="text-sm font-medium text-fg-primary">
                 {confirmMessage ?? 'Action confirmed and executed'}
               </span>
+              {confirmUrl && (
+                <a
+                  href={confirmUrl}
+                  className="ml-auto shrink-0 text-sm font-medium text-fg-primary underline underline-offset-2"
+                >
+                  Open
+                </a>
+              )}
             </>
           ) : (
             <>
@@ -142,6 +143,16 @@ export function PendingActionsCard({ action, onConfirm, onReject }: PendingActio
         <div className="flex-1">
           <h4 className="font-medium text-fg-primary">Action requires confirmation</h4>
           <p className="mt-1 text-base text-fg-secondary">{action.description}</p>
+          {action.grantOnConfirm && (
+            <p className="mt-2 text-sm text-fg-secondary">
+              Cat isn’t allowed to handle{' '}
+              {ACTION_CATEGORIES[
+                action.category as keyof typeof ACTION_CATEGORIES
+              ]?.name.toLowerCase() ?? action.category}{' '}
+              actions yet. Confirming allows it from now on — you’ll still confirm each one — and
+              runs this action.
+            </p>
+          )}
         </div>
       </div>
 
@@ -194,7 +205,7 @@ export function PendingActionsCard({ action, onConfirm, onReject }: PendingActio
           ) : (
             <CheckCircle className="h-4 w-4 mr-2" />
           )}
-          Confirm
+          {action.grantOnConfirm ? 'Allow and confirm' : 'Confirm'}
         </Button>
         <Button
           onClick={handleReject}
@@ -215,60 +226,9 @@ export function PendingActionsCard({ action, onConfirm, onReject }: PendingActio
   );
 }
 
-/**
- * Hook to manage pending actions state.
- *
- * NB: every function returned here is wrapped in useCallback with an empty
- * dependency array. They are pure thin wrappers around fetch — they need no
- * deps and they MUST be stable across renders. Otherwise consumers that wire
- * them through useEffect(deps) get a fresh reference on every render, the
- * effect re-runs, an immediate fetch fires, setState triggers a re-render,
- * and the whole thing infinite-loops. This loop was visible in production as
- * hundreds of polls per second against /api/cat/actions.
- */
-export function usePendingActions() {
-  const confirmAction = useCallback(async (actionId: string): Promise<string | undefined> => {
-    const res = await fetch(`${API_ROUTES.CAT.ACTIONS}/${actionId}`, {
-      method: 'POST',
-    });
-    const json = await res.json();
-    if (!res.ok) {
-      throw new Error(json?.error ?? `Failed to confirm action (${res.status})`);
-    }
-    const data = json?.data as Record<string, unknown> | undefined;
-    return typeof data?.displayMessage === 'string' ? data.displayMessage : undefined;
-  }, []);
-
-  const rejectAction = useCallback(
-    async (actionId: string, reason?: string): Promise<{ success: boolean }> => {
-      const res = await fetch(`${API_ROUTES.CAT.ACTIONS}/${actionId}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason }),
-      });
-      const json = await res.json();
-      if (!res.ok) {
-        throw new Error(json?.error ?? `Failed to reject action (${res.status})`);
-      }
-      return json;
-    },
-    []
-  );
-
-  const getPendingActions = useCallback(async (): Promise<PendingAction[]> => {
-    const res = await fetch(API_ROUTES.CAT.ACTIONS);
-    if (!res.ok) {
-      return [];
-    }
-    const json = await res.json();
-    return json.success ? json.data.pendingActions : [];
-  }, []);
-
-  return {
-    confirmAction,
-    rejectAction,
-    getPendingActions,
-  };
-}
+// The fetch hook moved to ./usePendingActions.ts (component size gate); kept
+// reachable from here so existing imports do not break.
+export { usePendingActions } from './usePendingActions';
+export type { PendingAction } from './usePendingActions';
 
 export default PendingActionsCard;

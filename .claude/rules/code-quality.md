@@ -2,7 +2,7 @@
 
 **Purpose**: Naming conventions, testing requirements, and quality metrics
 
-**Last Updated**: 2026-01-06
+**Last Updated**: 2026-09-04
 
 ---
 
@@ -124,7 +124,7 @@ import styles from './ProductCard.module.css';
 
 ```bash
 # In post-hook
-npx organize-imports-cli "$CLAUDE_EDITED_FILE"
+pnpm dlx organize-imports-cli "$CLAUDE_EDITED_FILE"
 ```
 
 ---
@@ -396,8 +396,8 @@ const handleClick = useCallback(
 
 ```bash
 # Check bundle size after changes
-npm run build
-npx @next/bundle-analyzer
+pnpm run build
+pnpm run analyze
 ```
 
 ---
@@ -465,9 +465,9 @@ Closes #456
 
 ### Before Creating PR
 
-- [ ] All tests pass (`npm test`)
-- [ ] Type check passes (`npm run type-check`)
-- [ ] Linter passes (`npm run lint`)
+- [ ] All tests pass (`pnpm test`)
+- [ ] Type check passes (`pnpm run type-check`)
+- [ ] Linter passes (`pnpm run lint`)
 - [ ] No console.logs in production code
 - [ ] No commented-out code
 - [ ] Follows naming conventions
@@ -502,13 +502,13 @@ Closes #456
 # .husky/pre-commit
 
 # Type check
-npm run type-check || exit 1
+pnpm run type-check || exit 1
 
 # Lint
-npm run lint || exit 1
+pnpm run lint || exit 1
 
 # Tests (only affected)
-npm run test:changed || exit 1
+pnpm run test:changed || exit 1
 ```
 
 ### Post-Edit Hooks (Claude)
@@ -520,10 +520,10 @@ npm run test:changed || exit 1
 echo "🔍 Running quality checks..."
 
 # Type check
-npm run type-check 2>&1 | tee /tmp/type-errors.log
+pnpm run type-check 2>&1 | tee /tmp/type-errors.log
 
 # Lint (with auto-fix)
-npm run lint --fix 2>&1 | tee /tmp/lint-errors.log
+pnpm run lint --fix 2>&1 | tee /tmp/lint-errors.log
 
 # Check file size
 lines=$(wc -l < "$CLAUDE_EDITED_FILE")
@@ -557,14 +557,14 @@ echo "✅ All quality checks passed"
 
 ```bash
 # Lighthouse CI
-npm run build
-npx lighthouse http://localhost:3001 --view
+pnpm run build
+pnpm dlx lighthouse http://localhost:3001 --view
 
 # Bundle analysis
-npx @next/bundle-analyzer
+pnpm run analyze
 
 # Check specific metrics
-npx web-vitals-measure http://localhost:3001
+pnpm dlx web-vitals-measure http://localhost:3001
 ```
 
 ### Performance Budget
@@ -646,7 +646,7 @@ export function calculateBulkPrice(
 
 - **ESLint Config**: `.eslintrc.json`
 - **TypeScript Config**: `tsconfig.json`
-- **Test Setup**: `jest.config.js`
+- **Test Setup**: `vitest.config.ts`
 - **Prettier Config**: `.prettierrc`
 - **Husky Hooks**: `.husky/`
 

@@ -6,6 +6,7 @@ import { logger } from '@/utils/logger';
 import { CONTRACT_TYPES } from '@/config/contract-types';
 import { getCurrentUserId } from '@/services/groups/utils/helpers';
 import { getActor, getActorDisplayName } from '@/services/actors';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 export interface CreateContractInput {
   party_a_actor_id: string;
@@ -47,7 +48,10 @@ export async function createContract(input: CreateContractInput) {
       });
 
       if (!proposalResult.success) {
-        return { success: false, error: proposalResult.error || 'Failed to create proposal' };
+        return {
+          success: false,
+          error: apiErrorMessage(proposalResult, 'Failed to create proposal'),
+        };
       }
 
       return {

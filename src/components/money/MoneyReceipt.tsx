@@ -23,6 +23,7 @@ import { CheckCircle2 } from 'lucide-react';
 import { MoneyDetailList } from '@/components/money/MoneyDetailList';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { haptic } from '@/lib/haptics';
+import { APP_LOCALE } from '@/utils/locale';
 
 interface MoneyReceiptProps {
   /** Past-tense outcome, e.g. "Sent" / "Paid". */
@@ -57,7 +58,7 @@ export function MoneyReceipt({
 
   useEffect(() => {
     setSettledAt(
-      new Date().toLocaleString(undefined, {
+      new Date().toLocaleString(APP_LOCALE, {
         hour: '2-digit',
         minute: '2-digit',
         day: 'numeric',

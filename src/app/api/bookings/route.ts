@@ -23,10 +23,11 @@ import {
 } from '@/lib/api/standardResponse';
 import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
 import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from '@/constants/pagination';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 const createBookingSchema = z.object({
   bookable_type: z.enum(['service', 'asset']),
-  bookable_id: z.string().uuid(),
+  bookable_id: z.string().guid(),
   starts_at: z.string().datetime(),
   ends_at: z.string().datetime(),
   timezone: z.string().max(64).optional(),
@@ -80,7 +81,7 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
 
     const result = await createBookingService(supabase).createBooking(parsed.data, user.id);
     if (!result.success) {
-      return apiBadRequest(result.error || 'Failed to create booking');
+      return apiBadRequest(apiErrorMessage(result, 'Failed to create booking'));
     }
     return apiSuccess(result.booking, { status: 201 });
   } catch (error) {

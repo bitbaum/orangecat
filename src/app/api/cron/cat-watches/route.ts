@@ -27,7 +27,7 @@ export async function GET(request: Request) {
     const admin = createAdminClient();
     const result = await runWatchEvaluation(admin);
     if (result.fired > 0 || result.errors > 0) {
-      logger.info('cat watch run', { ...result }, 'CronCatWatches');
+      logger.warn('cat watch run', { ...result }, 'CronCatWatches');
     }
     return apiSuccess(result);
   } catch (error) {

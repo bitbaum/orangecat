@@ -10,7 +10,7 @@ import type { FullUserContext } from '@/services/ai/document-context-types';
 // A fixture that exercises every render branch.
 const FULL_CTX = {
   profile: {
-    name: 'Mao Nakamoto',
+    name: 'Cato',
     username: 'mao',
     bio: 'Building OrangeCat.',
     location_city: 'Zurich',
@@ -123,7 +123,7 @@ const FULL_CTX = {
   projectActivity: [
     {
       title: 'Zurich Space',
-      source: 'fleetcrown',
+      source: 'loki',
       at: '2026-06-10T00:00:00Z',
       description: 'Milestone reached.',
     },
@@ -139,7 +139,7 @@ const FULL_CTX = {
       pushedAt: '2026-06-28T00:00:00Z',
     },
   ],
-  paymentCapabilities: { hasNwcWallet: true, lightningAddress: 'mao@orangecat.ch' },
+  paymentCapabilities: { hasNwcWallet: true, lightningAddress: 'hello@orangecat.ch' },
   runtime: {
     preferredCurrency: 'CHF',
     locale: 'en-US',
@@ -166,10 +166,10 @@ const FULL_CTX = {
 
 describe('buildFullContextString — full-output snapshot', () => {
   beforeAll(() => {
-    jest.useFakeTimers({ now: new Date('2026-06-29T12:00:00Z'), doNotFake: ['nextTick'] });
+    vi.useFakeTimers({ now: new Date('2026-06-29T12:00:00Z'), doNotFake: ['nextTick'] });
   });
   afterAll(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('renders every section identically (byte-for-byte)', () => {

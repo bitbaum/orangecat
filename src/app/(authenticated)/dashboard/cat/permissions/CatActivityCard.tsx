@@ -16,6 +16,7 @@ import { DATABASE_TABLES } from '@/config/database-tables';
 import { CAT_ACTIONS } from '@/config/cat-actions';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { logger } from '@/utils/logger';
+import { APP_LOCALE } from '@/utils/locale';
 
 const ACTIVITY_LIMIT = 20;
 
@@ -118,7 +119,7 @@ export function CatActivityCard({ userId }: { userId: string }) {
                   {status.label}
                 </span>
                 <span className="text-xs tabular-nums text-fg-tertiary">
-                  {new Date(row.requested_at).toLocaleDateString(undefined, {
+                  {new Date(row.requested_at).toLocaleDateString(APP_LOCALE, {
                     day: 'numeric',
                     month: 'short',
                   })}

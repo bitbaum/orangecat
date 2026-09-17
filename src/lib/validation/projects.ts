@@ -15,8 +15,8 @@ export const projectSchema = z.object({
     .max(2000, 'Description must be 2000 characters or less'),
   goal_amount: z
     .number({
-      required_error: 'Funding goal is required',
-      invalid_type_error: 'Funding goal must be a number',
+      error: issue =>
+        issue.input === undefined ? 'Funding goal is required' : 'Funding goal must be a number',
     })
     .int('Funding goal must be a whole number')
     .positive('Funding goal must be greater than 0')
@@ -24,7 +24,7 @@ export const projectSchema = z.object({
     .nullable(),
   currency: z
     .enum(CURRENCY_CODES, {
-      errorMap: () => ({ message: 'Please select a valid currency' }),
+      error: () => 'Please select a valid currency',
     })
     .optional()
     .nullable(),

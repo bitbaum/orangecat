@@ -1,3 +1,4 @@
+import { formatDate } from '@/utils/dates';
 export function formatLastSeen(lastSeenAt: Date): string {
   const now = new Date();
   const diffMs = now.getTime() - lastSeenAt.getTime();
@@ -20,5 +21,5 @@ export function formatLastSeen(lastSeenAt: Date): string {
   if (days < 7) {
     return `Active ${days}d ago`;
   }
-  return lastSeenAt.toLocaleDateString();
+  return formatDate(lastSeenAt);
 }

@@ -31,7 +31,7 @@ import { logger } from '@/utils/logger';
 
 const bodySchema = z.object({
   amount_btc: z.number().positive().min(RECEIVE_MIN_BTC).max(RECEIVE_MAX_BTC),
-  wallet_id: z.string().uuid().optional(),
+  wallet_id: z.string().guid().optional(),
 });
 
 export const POST = withAuth(async (request: AuthenticatedRequest) => {

@@ -41,7 +41,7 @@ last_modified_summary: "Documented Playwright dev-server port expectation and re
 
 ### Dev server port for Playwright E2E
 
-- Run the Next dev server on port **3003** when executing `npm run test:e2e:node`, or update the test base URL if you intentionally change ports. This avoids `ERR_CONNECTION_REFUSED` during homepage navigation.
+- Run the Next dev server on port **3003** when executing `pnpm run test:e2e:node`, or update the test base URL if you intentionally change ports. This avoids `ERR_CONNECTION_REFUSED` during homepage navigation.
 
 ### Browser DevTools (Frontend)
 
@@ -227,7 +227,7 @@ lsof -i :54322
 kill -9 <PID>
 
 # Alternative: Use different ports
-PORT=3004 npm run dev
+PORT=3004 pnpm run dev
 ```
 
 ### Database Connection Issues
@@ -267,21 +267,21 @@ rm -rf .next
 npm cache clean --force
 
 # Reinstall dependencies
-rm -rf node_modules package-lock.json
-npm install
+rm -rf node_modules pnpm-lock.yaml
+pnpm install
 ```
 
 ### Test Failures
 
 ```bash
 # Run specific test with debugging
-npm test -- --testNamePattern="specific test" --verbose
+pnpm test -t "specific test" --reporter=verbose
 
 # Check test environment
-npm run test:env
+pnpm test tests/env.test.ts
 
-# Debug test database
-npm run test:db:debug
+# Audit the database
+pnpm run db:audit
 ```
 
 ## 📊 Performance Debugging
@@ -327,10 +327,10 @@ EXPLAIN ANALYZE SELECT * FROM projects WHERE status = 'active';
 
 ```bash
 # Analyze bundle size
-npm run analyze
+pnpm run analyze
 
 # Check for large dependencies
-npm run bundle:check
+pnpm run bundle:check
 ```
 
 ## 🔒 Security Debugging
@@ -360,27 +360,27 @@ console.log('Token payload:', jwt.decode(token));
 
 ## 🧪 Testing Debugging
 
-### Jest Debugging
+### Vitest Debugging
 
 ```bash
 # Run tests in debug mode
-node --inspect-brk node_modules/.bin/jest --runInBand
+node --inspect-brk node_modules/.bin/vitest run --no-file-parallelism
 
 # Debug specific test
-npm test -- --testNamePattern="test name" --verbose
+pnpm test -t "test name" --reporter=verbose
 ```
 
 ### Playwright Debugging
 
 ```bash
 # Run in headed mode (visible browser)
-npm run test:e2e:headed
+pnpm run test:e2e:headed
 
 # Debug mode (step through)
-npm run test:e2e:debug
+pnpm run test:e2e:debug
 
 # UI mode (visual test runner)
-npm run test:e2e:ui
+pnpm run test:e2e:ui
 ```
 
 ## 📝 Logging & Monitoring
@@ -420,7 +420,7 @@ if (process.env.NODE_ENV === 'production') {
 
 ```bash
 # Check production metrics
-npm run monitor:metrics
+pnpm run monitor:metrics
 
 # View production logs (on the Hetzner box)
 journalctl -u orangecat-app -f

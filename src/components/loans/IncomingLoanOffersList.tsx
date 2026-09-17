@@ -14,6 +14,7 @@ import {
   acceptOfferSchema,
   type AcceptOfferForm,
 } from './AcceptLoanOfferDialog';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 interface IncomingLoanOffersListProps {
   offers: LoanOffer[];
@@ -48,7 +49,7 @@ export function IncomingLoanOffersList({
     try {
       const result = await loansService.respondToOffer(offer.id, false);
       if (!result.success) {
-        toast.error(result.error || 'Failed to reject offer');
+        toast.error(apiErrorMessage(result, 'Failed to reject offer'));
         return;
       }
       toast.success('Offer rejected');
@@ -77,7 +78,7 @@ export function IncomingLoanOffersList({
       });
 
       if (!result.success) {
-        toast.error(result.error || 'Failed to accept offer');
+        toast.error(apiErrorMessage(result, 'Failed to accept offer'));
         if (result.mutated) {
           onOfferUpdated?.();
         }

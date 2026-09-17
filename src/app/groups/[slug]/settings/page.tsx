@@ -27,6 +27,7 @@ import groupsService from '@/services/groups';
 import type { GroupVisibility } from '@/config/group-labels';
 import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 const VISIBILITY_OPTIONS: Array<{ value: GroupVisibility; label: string; hint: string }> = [
   { value: 'public', label: 'Public', hint: 'Anyone can find the group and see its content' },
@@ -116,7 +117,7 @@ export default function GroupSettingsPage() {
 
   const handleSave = async () => {
     if (!name.trim()) {
-      toast.error('Group name is required');
+      toast.error('Organization name is required');
       return;
     }
     try {
@@ -131,7 +132,7 @@ export default function GroupSettingsPage() {
         toast.success('Group settings saved');
         router.push(backHref);
       } else {
-        toast.error(result.error || 'Failed to save settings');
+        toast.error(apiErrorMessage(result, 'Failed to save settings'));
       }
     } catch (error) {
       logger.error('Failed to save group settings', error, 'Groups');
@@ -149,7 +150,7 @@ export default function GroupSettingsPage() {
         toast.success('Group deleted');
         router.push(groupsBase);
       } else {
-        toast.error(result.error || 'Failed to delete group');
+        toast.error(apiErrorMessage(result, 'Failed to delete group'));
       }
     } catch (error) {
       logger.error('Failed to delete group', error, 'Groups');
@@ -186,7 +187,7 @@ export default function GroupSettingsPage() {
               id="group-name"
               value={name}
               onChange={e => setName(e.target.value)}
-              placeholder="Group name"
+              placeholder="Organization name"
               className="mt-1"
             />
           </div>

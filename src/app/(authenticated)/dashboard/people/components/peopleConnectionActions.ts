@@ -1,6 +1,7 @@
 import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
 import { API_ROUTES } from '@/config/api-routes';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 export async function followUser(
   profileId: string,
@@ -20,7 +21,7 @@ export async function followUser(
       toast.success('Connected!');
       loadConnections();
     } else {
-      throw new Error(data.error || 'Failed to connect');
+      throw new Error(apiErrorMessage(data, 'Failed to connect'));
     }
   } catch (error) {
     logger.error('Failed to follow user', { error, profileId }, 'PeoplePage');
@@ -48,7 +49,7 @@ export async function unfollowUser(
       toast.success('Disconnected');
       loadConnections();
     } else {
-      throw new Error(data.error || 'Failed to disconnect');
+      throw new Error(apiErrorMessage(data, 'Failed to disconnect'));
     }
   } catch (error) {
     logger.error('Failed to unfollow user', { error, profileId }, 'PeoplePage');

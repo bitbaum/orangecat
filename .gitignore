@@ -24,7 +24,14 @@ tests/.auth/
 report/
 jscpd-report.json
 
-# Manual verify-run screenshots (Playwright / browser MCP exports)
+# Manual verify-run screenshots (Playwright / browser MCP exports).
+#
+# The prefix list below grew one entry per incident, which means the next
+# screenshot under a NEW name lands in a commit anyway — 469KB of them reached
+# main on 2026-09-15 inside an unrelated one-line fix. Ignore the DIRECTORIES a
+# verification run writes to instead, and put keepers outside the repo.
+shots/
+screenshots/
 verify-*.jpeg
 verify-*.png
 tab-*.png
@@ -97,7 +104,11 @@ lerna-debug.log*
 ehthumbs.db
 Thumbs.db
 
-# Logs
+# Logs — nothing under here belongs in a public repo.
+# This rule (2025-10-18) postdates an audit log already committed inside logs/
+# (2025-10-13), so it never applied to it: the file stayed in main, carrying 14
+# absolute paths from a developer's machine, until it was untracked in
+# 2026-09. Ignoring a directory does not untrack what is already in it.
 logs/
 *.log
 deployment.log
@@ -155,3 +166,15 @@ post-*.png
 
 # Env backups (contain secrets — never commit)
 .env-backups/
+
+# Data dumps under .claude/ — never commit.
+#
+# .claude/ is a TRACKED directory (CLAUDE.md, rules/, commands/ all live there),
+# so anything dropped inside it is one `git add -A` away from a commit — and
+# this repository is public. Two account backups from the 2026-08 identity
+# migration sat here untracked-and-unignored for two weeks:
+#   .claude/econ-backup-catomean-2026-08-29.json
+#   .claude/nudges-backup-catomean-2026-08-29.json
+# The existing `*.backup` rule does not match `*-backup-*.json`.
+.claude/*backup*.json
+.claude/*dump*.json

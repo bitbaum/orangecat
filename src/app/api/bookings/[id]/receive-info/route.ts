@@ -56,7 +56,6 @@ export const GET = withAuth(async (request: AuthenticatedRequest, context: Route
     }
 
     const info = await resolveSellerReceiveInfo(
-      supabase,
       booking.bookable_type as EntityType,
       booking.bookable_id
     );

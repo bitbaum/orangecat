@@ -11,6 +11,7 @@ import loansService from '@/services/loans';
 import { Loan, CreateLoanOfferRequest } from '@/types/loans';
 import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 export const offerSchema = z
   .object({
@@ -83,7 +84,7 @@ export function useMakeOfferForm(
         onOfferSubmitted();
         form.reset();
       } else {
-        toast.error(result.error || 'Failed to submit offer');
+        toast.error(apiErrorMessage(result, 'Failed to submit offer'));
       }
     } catch (error) {
       logger.error('Failed to submit offer:', error);

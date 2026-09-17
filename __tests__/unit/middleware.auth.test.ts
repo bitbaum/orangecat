@@ -15,7 +15,7 @@ const nextResponseNext = () => ({
   },
 });
 
-jest.mock('next/server', () => ({
+vi.mock('next/server', () => ({
   NextResponse: {
     next: () => nextResponseNext(),
     redirect: (url: URL) => ({
@@ -37,7 +37,7 @@ let mockUser: { id: string } | null = null;
 const setMockUser = (user: { id: string } | null) => {
   mockUser = user;
 };
-jest.mock('@supabase/ssr', () => ({
+vi.mock('@supabase/ssr', () => ({
   createServerClient: () => ({
     auth: {
       getUser: async () => ({ data: { user: mockUser }, error: null }),
@@ -72,7 +72,7 @@ describe('middleware auth protection', () => {
   const realEnv = process.env;
 
   beforeEach(() => {
-    jest.resetModules();
+    vi.resetModules();
     process.env = { ...realEnv };
     setMockUser(null);
   });

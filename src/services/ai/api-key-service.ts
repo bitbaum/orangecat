@@ -19,6 +19,7 @@ import { logger } from '@/utils/logger';
 import { PROVIDER_BASE_URLS } from '@/config/ai-provider-runtime';
 import { WIRED_PROVIDER_IDS } from '@/data/aiProviders';
 import { PLATFORM_CHAIN_ID } from '@/services/ai/key-chain';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 // ==================== TYPES ====================
 
@@ -173,7 +174,7 @@ export class ApiKeyService {
     // check and trust the format-level validation done client-side.
     const validation = await this.validateKeyWithProvider(apiKey, provider);
     if (!validation.isValid) {
-      return { success: false, error: validation.error || 'Invalid API key' };
+      return { success: false, error: apiErrorMessage(validation, 'Invalid API key') };
     }
 
     // Encrypt the key

@@ -1,0 +1,70 @@
+/**
+ * OrangeCat tokens → bip-kit's --bp-* theming contract, for the long-form
+ * surfaces only (/blog/[slug], /articles/[slug], and the composer preview —
+ * imported by those routes, not by globals.css).
+ *
+ * Every value is a reference into the design-token SSOT (src/app/globals.css,
+ * Loki-aligned semantic tier). OC tokens are HSL channel triples, so
+ * each mapping wraps them in hsl(); --accent-primary is already a complete
+ * color. Both themes are covered by ONE mapping — the underlying tokens flip
+ * with next-themes' .dark/.light class.
+ *
+ * The three-selector list is deliberate: bip-kit/styles.css defines its
+ * neutral defaults on `:root`, `[data-theme="dark"]`, and (inside a
+ * prefers-color-scheme media query) `:root:not([data-theme="light"])` — that
+ * last one has higher specificity than a bare `:root`, so a plain mapping
+ * would lose to it whenever the OS is dark. Matching each selector's
+ * specificity and loading after styles.css makes this mapping win everywhere.
+ */
+:root,
+:root:not([data-theme='light']),
+:root[data-theme='dark'] {
+  --bp-font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --bp-font-mono: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --bp-bg: hsl(var(--surface-page));
+  --bp-surface: hsl(var(--surface-raised));
+  --bp-fg: hsl(var(--text-primary));
+  --bp-fg-muted: hsl(var(--text-secondary));
+  --bp-fg-faint: hsl(var(--text-tertiary));
+  --bp-border: hsl(var(--border-subtle));
+
+  /* The warm accent: links, active TOC entry, reading-progress hairline —
+     the same places the pre-bip-kit article reader used accent-warm. */
+  --bp-accent: var(--accent-primary);
+  --bp-accent-contrast: hsl(var(--on-accent));
+
+  /* Callouts follow the status tier: colors mean status, nothing else.
+     Notes are informational → achromatic, per the migration direction. */
+  --bp-note: hsl(var(--text-secondary));
+  --bp-note-bg: hsl(var(--surface-raised) / 0.5);
+  --bp-tip: hsl(var(--status-positive));
+  --bp-tip-bg: hsl(var(--status-positive-subtle));
+  --bp-warn: hsl(var(--status-warning));
+  --bp-warn-bg: hsl(var(--status-warning-subtle));
+  --bp-danger: hsl(var(--status-negative));
+  --bp-danger-bg: hsl(var(--status-negative-subtle));
+}
+
+/* Headings take the display stack, matching the rest of the public surface. */
+.bp-article .bp-h2,
+.bp-article .bp-h3,
+.bp-article .bp-h4 {
+  font-family: var(--font-heading), var(--font-inter), system-ui, sans-serif;
+  letter-spacing: var(--tracking-display);
+}
+
+/*
+ * Shiki dual themes: bip-kit's styles.css flips --shiki-light/--shiki-dark on
+ * `data-theme` + the OS preference, but OrangeCat's theme is a `.dark`/`.light`
+ * CLASS (next-themes attribute="class"). These rules re-key the flip on the
+ * class; same specificity as the bip-kit rules, loaded later, so they win.
+ */
+:root.dark .bp-codeblock-highlighted span {
+  color: var(--shiki-dark);
+}
+@media (prefers-color-scheme: dark) {
+  :root.light .bp-codeblock-highlighted span {
+    color: var(--shiki-light);
+  }
+}

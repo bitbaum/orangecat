@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Button Component Tests — behavior, not class strings.
  *
@@ -15,8 +16,8 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import Button from '@/components/ui/Button';
 
-jest.mock('next/link', () => {
-  return function MockLink({
+vi.mock('next/link', () => ({
+  default: function MockLink({
     children,
     href,
     ...props
@@ -26,8 +27,8 @@ jest.mock('next/link', () => {
         {children}
       </a>
     );
-  };
-});
+  },
+}));
 
 describe('Button', () => {
   describe('rendering', () => {
@@ -75,14 +76,14 @@ describe('Button', () => {
 
   describe('interactivity', () => {
     it('calls onClick when clicked', () => {
-      const onClick = jest.fn();
+      const onClick = vi.fn();
       render(<Button onClick={onClick}>Click</Button>);
       fireEvent.click(screen.getByRole('button'));
       expect(onClick).toHaveBeenCalledTimes(1);
     });
 
     it('does not call onClick when disabled', () => {
-      const onClick = jest.fn();
+      const onClick = vi.fn();
       render(
         <Button onClick={onClick} disabled>
           Disabled

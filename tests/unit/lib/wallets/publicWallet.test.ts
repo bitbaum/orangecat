@@ -86,9 +86,9 @@ describe('getWalletReceiveHandle with the key withheld', () => {
   });
 
   it('still resolves a Lightning wallet', () => {
-    const handle = getWalletReceiveHandle({ lightning_address: 'mao@orangecat.ch' });
+    const handle = getWalletReceiveHandle({ lightning_address: 'hello@orangecat.ch' });
     expect(handle.kind).toBe('lightning');
-    expect(handle.qrValue).toBe('lightning:mao@orangecat.ch');
+    expect(handle.qrValue).toBe('lightning:hello@orangecat.ch');
   });
 
   it('falls back to the connection state when nothing is public', () => {

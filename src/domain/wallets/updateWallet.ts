@@ -14,6 +14,7 @@ import { DATABASE_TABLES, WALLET_CLIENT_COLUMNS } from '@/config/database-tables
 import type { z } from 'zod';
 import type { walletUpdateSchema } from '@/lib/validation/finance';
 import type { NextResponse } from 'next/server';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 type WalletUpdateInput = z.infer<typeof walletUpdateSchema>;
 
@@ -108,6 +109,9 @@ export function buildWalletUpdates(
   if (body.is_primary !== undefined) {
     updates.is_primary = body.is_primary;
   }
+  if (body.open_accounting !== undefined) {
+    updates.open_accounting = body.open_accounting;
+  }
 
   if (body.address_or_xpub !== undefined) {
     const address = body.address_or_xpub?.trim() ?? '';
@@ -116,7 +120,7 @@ export function buildWalletUpdates(
       if (!validation.valid) {
         return {
           updates: null,
-          error: apiBadRequest(validation.error || 'Invalid address or xpub'),
+          error: apiBadRequest(apiErrorMessage(validation, 'Invalid address or xpub')),
         };
       }
       updates.address_or_xpub = address;
@@ -189,10 +193,14 @@ export async function enforceSinglePrimary(
     ? { profile_id: wallet.profile_id }
     : { project_id: wallet.project_id };
 
+  // Deliberately NOT scoped to active rows. Restricting the sweep to
+  // `is_active = true` was how stranded flags survived: a wallet deactivated
+  // while primary could never be reached again by any later promotion, so the
+  // "one primary" invariant silently accumulated exceptions. Clearing every
+  // sibling — live or soft-deleted — is what makes this function's name true.
   await supabase
     .from(DATABASE_TABLES.WALLETS)
     .update({ is_primary: false })
-    .eq('is_active', true)
     .neq('id', walletId)
     .match(entityFilter);
 }

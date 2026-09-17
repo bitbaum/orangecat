@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * The confirmation screen is the one place a money app cannot bluff. It may
  * state only what it actually knows — an amount we were never told must be
@@ -7,21 +8,21 @@
 import { render, screen } from '@testing-library/react';
 import { MoneyReceipt } from '@/components/money/MoneyReceipt';
 
-jest.mock('@/hooks/useDisplayCurrency', () => ({
+vi.mock('@/hooks/useDisplayCurrency', () => ({
   useDisplayCurrency: () => ({ formatAmountBtc: (btc: number) => `${btc} BTC` }),
 }));
 
-const vibrate = jest.fn();
+const vibrate = vi.fn();
 
 beforeAll(() => {
   Object.defineProperty(navigator, 'vibrate', { writable: true, value: vibrate });
   Object.defineProperty(window, 'matchMedia', {
     writable: true,
-    value: jest.fn().mockReturnValue({ matches: false }),
+    value: vi.fn().mockReturnValue({ matches: false }),
   });
 });
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => vi.clearAllMocks());
 
 describe('MoneyReceipt', () => {
   it('states the amount and who it went to', () => {
@@ -34,7 +35,12 @@ describe('MoneyReceipt', () => {
 
   it('omits the amount entirely when the payment never revealed one', () => {
     render(
-      <MoneyReceipt title="Sent" amountBtc={null} counterparty={null} fallbackBody="It went through." />
+      <MoneyReceipt
+        title="Sent"
+        amountBtc={null}
+        counterparty={null}
+        fallbackBody="It went through."
+      />
     );
 
     expect(screen.queryByText(/BTC/)).not.toBeInTheDocument();
@@ -54,7 +60,9 @@ describe('MoneyReceipt', () => {
   });
 
   it('labels the counterparty by direction', () => {
-    render(<MoneyReceipt title="Paid" amountBtc={0.001} counterparty="Lena" counterpartyLabel="From" />);
+    render(
+      <MoneyReceipt title="Paid" amountBtc={0.001} counterparty="Lena" counterpartyLabel="From" />
+    );
 
     expect(screen.getByText('From')).toBeInTheDocument();
   });

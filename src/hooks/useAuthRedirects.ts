@@ -119,7 +119,22 @@ export function useRequireAuth() {
     /** True when the 4s hydration ceiling fired before auth resolved.
      * Pages can branch on this to show "auth seems stuck — sign in" UX. */
     hydrationTimedOut,
-    isAuthenticated: !!user && hydrated && !isLoading,
+    // The EFFECTIVE flags, for the same reason the two above are computed:
+    // this line used to read raw `hydrated` / `isLoading`, so it opted itself
+    // out of the ceiling that every other field honours.
+    //
+    // What that cost, measured on /timeline in production: the page renders
+    // `isLoading ? spinner : !isAuthenticated ? spinner : content`. After 4s
+    // the ceiling cleared the FIRST gate and the second one — reading raw
+    // state — stayed false forever, so the page sat on "Redirecting to
+    // login..." indefinitely. It never redirected either, because the redirect
+    // only fires when there is no `user`, and there was one. Observed live:
+    // 122 seconds of skeleton, zero network requests, zero long tasks — the
+    // app was not slow, it was waiting for a gate that could no longer open.
+    //
+    // `!!user` is unchanged and still does the real work: a timed-out ceiling
+    // can only report authenticated for someone who already has a user object.
+    isAuthenticated: !!user && effectiveHydrated && !effectiveIsLoading,
   };
 }
 

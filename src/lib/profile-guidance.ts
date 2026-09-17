@@ -51,7 +51,7 @@ export const profileGuidanceContent: Record<NonNullable<ProfileFieldType>, Field
     tips: [
       '3-30 characters, letters, numbers, underscores, and hyphens only',
       'Must be unique across all users',
-      'Cannot be changed easily later - choose wisely',
+      'Can be changed later — your old handle keeps redirecting here',
       'This becomes your @handle (e.g., @yourname)',
       'Required field - you need this to use the platform',
     ],
@@ -129,7 +129,7 @@ export const profileGuidanceContent: Record<NonNullable<ProfileFieldType>, Field
       'Add links one at a time - start with your most important',
       'Common platforms: X, Instagram, Facebook, LinkedIn, GitHub, YouTube, Patreon',
       'Can also add custom links (e.g., OnlyFans, TikTok)',
-      'More links = higher transparency score',
+      'Links let supporters verify who you are',
       'Optional but encouraged for credibility',
     ],
     examples: [
@@ -228,7 +228,7 @@ export const profileDefaultContent: DefaultContent = {
     },
     {
       icon: React.createElement(Shield, { className: 'w-4 h-4 text-fg-primary' }),
-      text: 'Higher transparency scores attract more support',
+      text: 'Publishing a wallet ledger, and explaining what moved, earns a transparency score',
     },
   ],
   hint: '💡 Click on any field to get specific guidance',

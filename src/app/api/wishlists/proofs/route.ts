@@ -40,7 +40,7 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
     // Validate request
     const validationResult = wishlistFulfillmentProofSchema.safeParse(body);
     if (!validationResult.success) {
-      return apiBadRequest('Invalid request', validationResult.error.errors);
+      return apiBadRequest('Invalid request', validationResult.error.issues);
     }
 
     // Verify the wishlist item exists and user has access

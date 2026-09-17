@@ -10,11 +10,13 @@
 import { createBookingService } from '@/services/bookings';
 import { NotificationDispatcher } from '@/services/notifications/dispatcher';
 
-jest.mock('@/services/notifications/dispatcher', () => ({
-  NotificationDispatcher: { dispatch: jest.fn().mockResolvedValue(undefined) },
+import type { Mock } from 'vitest';
+
+vi.mock('@/services/notifications/dispatcher', () => ({
+  NotificationDispatcher: { dispatch: vi.fn().mockResolvedValue(undefined) },
 }));
 
-const dispatchMock = NotificationDispatcher.dispatch as jest.Mock;
+const dispatchMock = NotificationDispatcher.dispatch as Mock;
 
 const BOOKING = {
   id: 'booking-1',
@@ -32,32 +34,32 @@ const BOOKING = {
  * booking row; the actors select→eq→single resolves the provider's user_id.
  */
 function makeSupabaseStub(opts: { bookingRow: unknown; bookingError?: { message: string } }) {
-  const single = jest.fn().mockResolvedValue({
+  const single = vi.fn().mockResolvedValue({
     data: opts.bookingError ? null : opts.bookingRow,
     error: opts.bookingError ?? null,
   });
-  const actorSingle = jest
+  const actorSingle = vi
     .fn()
     .mockResolvedValue({ data: { user_id: 'provider-user' }, error: null });
 
-  const chain: Record<string, jest.Mock> = {};
+  const chain: Record<string, Mock> = {};
   for (const method of ['update', 'eq', 'in', 'select']) {
-    chain[method] = jest.fn(() => chain);
+    chain[method] = vi.fn(() => chain);
   }
   chain.single = single;
 
-  const actorChain: Record<string, jest.Mock> = {};
+  const actorChain: Record<string, Mock> = {};
   for (const method of ['select', 'eq']) {
-    actorChain[method] = jest.fn(() => actorChain);
+    actorChain[method] = vi.fn(() => actorChain);
   }
   actorChain.single = actorSingle;
 
   return {
-    from: jest.fn((table: string) => (table === 'actors' ? actorChain : chain)),
+    from: vi.fn((table: string) => (table === 'actors' ? actorChain : chain)),
   } as never;
 }
 
-afterEach(() => jest.clearAllMocks());
+afterEach(() => vi.clearAllMocks());
 
 describe('booking status-change notifications', () => {
   it('confirmBooking notifies the customer', async () => {

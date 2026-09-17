@@ -13,35 +13,35 @@
 
 // Mocked so importing the route doesn't pull the real Upstash client (ESM-only
 // dep jest can't parse). Within-quota by default; branch tests set overrides.
-jest.mock('@/lib/rate-limit', () => ({
-  rateLimitWriteAsync: jest
+vi.mock('@/lib/rate-limit', () => ({
+  rateLimitWriteAsync: vi
     .fn()
     .mockResolvedValue({ success: true, limit: 30, remaining: 29, resetTime: Date.now() + 60_000 }),
-  retryAfterSeconds: jest.fn(() => 1),
+  retryAfterSeconds: vi.fn(() => 1),
 }));
 
-jest.mock('@/lib/supabase/server', () => ({
-  createServerClient: jest.fn(),
+vi.mock('@/lib/supabase/server', () => ({
+  createServerClient: vi.fn(),
 }));
 
-jest.mock('@/services/auth/integrationKeys', () => {
+vi.mock('@/services/auth/integrationKeys', () => {
   class ActorNotPermittedError extends Error {}
   return {
-    rotateIntegrationKey: jest.fn(),
+    rotateIntegrationKey: vi.fn(),
     ActorNotPermittedError,
   };
 });
 
-jest.mock('@/lib/api/standardResponse', () => ({
-  apiSuccess: jest.fn((payload: unknown, opts?: { status?: number }) => ({
+vi.mock('@/lib/api/standardResponse', () => ({
+  apiSuccess: vi.fn((payload: unknown, opts?: { status?: number }) => ({
     ok: true,
     data: payload,
     status: opts?.status ?? 200,
   })),
-  apiUnauthorized: jest.fn(() => ({ ok: false, error: 'Unauthorized', status: 401 })),
-  apiForbidden: jest.fn((msg: string) => ({ ok: false, error: msg, status: 403 })),
-  apiNotFound: jest.fn((what: string) => ({ ok: false, error: `${what} not found`, status: 404 })),
-  handleApiError: jest.fn((err: Error) => ({ ok: false, error: err.message, status: 500 })),
+  apiUnauthorized: vi.fn(() => ({ ok: false, error: 'Unauthorized', status: 401 })),
+  apiForbidden: vi.fn((msg: string) => ({ ok: false, error: msg, status: 403 })),
+  apiNotFound: vi.fn((what: string) => ({ ok: false, error: `${what} not found`, status: 404 })),
+  handleApiError: vi.fn((err: Error) => ({ ok: false, error: err.message, status: 500 })),
 }));
 
 import { POST } from '@/app/api/integration-keys/[id]/rotate/route';
@@ -55,12 +55,14 @@ import {
   handleApiError,
 } from '@/lib/api/standardResponse';
 
+import type { Mock } from 'vitest';
+
 const mockUser = { id: 'u-1' };
 
 function setSession(user: { id: string } | null) {
-  (createServerClient as jest.Mock).mockResolvedValue({
+  (createServerClient as Mock).mockResolvedValue({
     auth: {
-      getUser: jest.fn().mockResolvedValue({ data: { user } }),
+      getUser: vi.fn().mockResolvedValue({ data: { user } }),
     },
   });
 }
@@ -75,7 +77,7 @@ function withParams<T extends Record<string, string>>(p: T): { params: Promise<T
 }
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe('POST /api/integration-keys/[id]/rotate', () => {
@@ -91,7 +93,7 @@ describe('POST /api/integration-keys/[id]/rotate', () => {
 
   it("returns 403 when the user is no longer permitted to act as the key's actor", async () => {
     setSession(mockUser);
-    (rotateIntegrationKey as jest.Mock).mockRejectedValue(
+    (rotateIntegrationKey as Mock).mockRejectedValue(
       new ActorNotPermittedError('lost group membership')
     );
 
@@ -108,7 +110,7 @@ describe('POST /api/integration-keys/[id]/rotate', () => {
 
   it('returns 404 (Integration key) on the "Key not found" sentinel error', async () => {
     setSession(mockUser);
-    (rotateIntegrationKey as jest.Mock).mockRejectedValue(new Error('Key not found'));
+    (rotateIntegrationKey as Mock).mockRejectedValue(new Error('Key not found'));
 
     const res = (await POST(makeRequest(), withParams({ id: 'k-1' }))) as { status: number };
 
@@ -120,7 +122,7 @@ describe('POST /api/integration-keys/[id]/rotate', () => {
 
   it('falls through to handleApiError for unknown exceptions', async () => {
     setSession(mockUser);
-    (rotateIntegrationKey as jest.Mock).mockRejectedValue(new Error('connection_reset'));
+    (rotateIntegrationKey as Mock).mockRejectedValue(new Error('connection_reset'));
 
     const res = (await POST(makeRequest(), withParams({ id: 'k-1' }))) as { status: number };
 
@@ -137,7 +139,7 @@ describe('POST /api/integration-keys/[id]/rotate', () => {
       key: { id: 'k-2', key_prefix: 'ock_abcdefg', name: 'rotated' },
       plaintext: 'ock_full_secret_value',
     };
-    (rotateIntegrationKey as jest.Mock).mockResolvedValue(minted);
+    (rotateIntegrationKey as Mock).mockResolvedValue(minted);
 
     const res = (await POST(makeRequest(), withParams({ id: 'k-1' }))) as {
       ok: boolean;

@@ -13,8 +13,8 @@ import { canonicalJson, contentHashOf } from '@/services/solon/canonical';
 import { activateVersion } from '@/services/solon/allocation-policy';
 import { GENESIS_ALLOCATION_POLICY } from '@/config/solon';
 
-jest.mock('@/utils/logger', () => ({
-  logger: { error: jest.fn(), warn: jest.fn(), info: jest.fn(), debug: jest.fn() },
+vi.mock('@/utils/logger', () => ({
+  logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 
 describe('canonical JSON (cross-repo contract with Solon)', () => {
@@ -48,22 +48,22 @@ function buildPolicySupabase(row: Record<string, unknown> | null) {
     const filters: unknown[][] = [];
     const chain: Record<string, unknown> = {};
     for (const method of ['select', 'order', 'in']) {
-      chain[method] = jest.fn().mockReturnValue(chain);
+      chain[method] = vi.fn().mockReturnValue(chain);
     }
-    chain.eq = jest.fn((...args: unknown[]) => {
+    chain.eq = vi.fn((...args: unknown[]) => {
       filters.push(args);
       return chain;
     });
-    chain.update = jest.fn((values: Record<string, unknown>) => {
+    chain.update = vi.fn((values: Record<string, unknown>) => {
       updates.push({ values, filters });
       return chain;
     });
-    chain.maybeSingle = jest.fn().mockResolvedValue({ data: row, error: null });
+    chain.maybeSingle = vi.fn().mockResolvedValue({ data: row, error: null });
     chain.then = (resolve: (value: { data: unknown; error: null }) => unknown) =>
       Promise.resolve(resolve({ data: row, error: null }));
     return chain;
   };
-  return { from: jest.fn(() => makeChain()), _updates: updates };
+  return { from: vi.fn(() => makeChain()), _updates: updates };
 }
 
 describe('activateVersion', () => {

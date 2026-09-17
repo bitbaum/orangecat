@@ -61,7 +61,7 @@ export const LOAN_OFFER_TYPE_LABELS: Record<LoanOfferType, string> = {
   payoff: 'Payoff - Pay off the loan completely',
 };
 
-export const LOAN_OFFER_TYPES: ReadonlyArray<{ value: LoanOfferType; label: string }> =
+export const LOAN_OFFER_TYPE_OPTIONS: ReadonlyArray<{ value: LoanOfferType; label: string }> =
   LOAN_OFFER_TYPE_VALUES.map(value => ({ value, label: LOAN_OFFER_TYPE_LABELS[value] }));
 
 // ==================== DERIVED LOOKUP MAPS ====================

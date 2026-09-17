@@ -6,16 +6,23 @@ import { logger } from '@/utils/logger';
 import { toast } from 'sonner';
 import { PostCard } from './PostCard';
 import { Button } from '@/components/ui/Button';
-import { Card, CardContent } from '@/components/ui/Card';
-import { Trash2, CheckSquare, Loader2, Newspaper } from 'lucide-react';
+import { CheckSquare, Loader2, Newspaper } from 'lucide-react';
 import { usePostSelection } from '@/hooks/usePostSelection';
 import EmptyState from '@/components/ui/EmptyState';
 import { BulkActionsToolbar } from './BulkActionsToolbar';
+import { BulkDeleteConfirmDialog } from './BulkDeleteConfirmDialog';
 import { TIMELINE_SURFACE } from '@/config/timeline';
 
 interface TimelineComponentProps {
   feed: TimelineFeedResponse;
   onEventUpdate?: (eventId: string, updates: Partial<TimelineDisplayEvent>) => void;
+  /**
+   * A post created FROM a card — currently a quote repost. Without it the new
+   * post is created and then dropped: usePostRepost only hands the result over
+   * `if (result.event && onAddEvent)`, and nobody was passing one, so a repost
+   * existed in the database and nowhere on screen until a reload.
+   */
+  onEventCreated?: (event: TimelineDisplayEvent) => void;
   onLoadMore?: () => void;
   isLoadingMore?: boolean;
   showFilters?: boolean;
@@ -26,6 +33,7 @@ interface TimelineComponentProps {
 export const TimelineComponent: React.FC<TimelineComponentProps> = ({
   feed,
   onEventUpdate,
+  onEventCreated,
   onLoadMore,
   isLoadingMore = false,
   showFilters: _showFilters = true,
@@ -179,16 +187,31 @@ export const TimelineComponent: React.FC<TimelineComponentProps> = ({
       {enableMultiSelect && (
         <>
           {!isSelectionMode ? (
-            // Entry point to selection mode - small button
-            <div className="sticky top-16 z-10 border-b border-subtle bg-surface-page/90 px-4 py-2.5 backdrop-blur-xl">
+            /*
+              The way IN to selection mode is not itself worth a banner.
+
+              This used to be a full-width bar with its own border, background
+              and `sticky top-16` — so a control for bulk-deleting old posts
+              followed you down the entire feed, above every post you came to
+              read. It was the fourth separate bordered band before the first
+              post.
+
+              Managing posts is a rare, deliberate task; reading them is the
+              reason the page exists. So the entry point is a quiet inline
+              control, and everything it opens — the full toolbar with counts,
+              select-all and the destructive actions — is unchanged, because
+              once you ARE selecting, that toolbar is the thing you need and
+              it earns being sticky.
+            */
+            <div className="flex justify-end px-4 py-2">
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={toggleSelectionMode}
-                className="flex items-center gap-2 text-sm"
+                className={TIMELINE_SURFACE.chip}
               >
                 <CheckSquare className="w-4 h-4" />
-                <span>Select Posts</span>
+                <span>Select</span>
               </Button>
             </div>
           ) : (
@@ -215,6 +238,7 @@ export const TimelineComponent: React.FC<TimelineComponentProps> = ({
             key={event.id}
             event={event}
             onUpdate={updates => handleEventUpdate(event.id, updates)}
+            onAddEvent={onEventCreated}
             onDelete={() => handlePostDelete(event.id)}
             compact={compact}
             showMetrics={true}
@@ -246,44 +270,13 @@ export const TimelineComponent: React.FC<TimelineComponentProps> = ({
         </div>
       )}
 
-      {/* Bulk Delete Confirmation Modal */}
       {showBulkDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-surface-page/80 backdrop-blur-sm">
-          <Card className="mx-4 w-full max-w-md rounded-md border-subtle bg-surface-page">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-md border border-status-negative/20 bg-status-negative/10">
-                  <Trash2 className="w-6 h-6 text-status-negative" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-semibold">
-                    Delete {selectedCount} {selectedCount === 1 ? 'post' : 'posts'}?
-                  </h2>
-                  <p className="text-sm text-fg-secondary">This action cannot be undone</p>
-                </div>
-              </div>
-
-              <p className="text-fg-primary mb-6">
-                Are you sure you want to delete {selectedCount === 1 ? 'this post' : 'these posts'}?
-                {selectedCount > 1 && ' They will be'} permanently removed from your timeline.
-              </p>
-
-              <div className="flex gap-2 justify-end">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowBulkDeleteConfirm(false)}
-                  disabled={isProcessing}
-                  className={TIMELINE_SURFACE.chip}
-                >
-                  Cancel
-                </Button>
-                <Button variant="danger" onClick={handleBulkDeleteConfirm} disabled={isProcessing}>
-                  {isProcessing ? 'Deleting...' : 'Delete'}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <BulkDeleteConfirmDialog
+          count={selectedCount}
+          isProcessing={isProcessing}
+          onCancel={() => setShowBulkDeleteConfirm(false)}
+          onConfirm={handleBulkDeleteConfirm}
+        />
       )}
     </div>
   );

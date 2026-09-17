@@ -121,6 +121,7 @@ export type Database = {
           average_rating: number | null;
           bitcoin_address: string | null;
           category: string | null;
+          cloned_from: string | null;
           compute_provider_id: string | null;
           compute_provider_type: Database['public']['Enums']['compute_provider_type'] | null;
           created_at: string | null;
@@ -162,6 +163,7 @@ export type Database = {
           average_rating?: number | null;
           bitcoin_address?: string | null;
           category?: string | null;
+          cloned_from?: string | null;
           compute_provider_id?: string | null;
           compute_provider_type?: Database['public']['Enums']['compute_provider_type'] | null;
           created_at?: string | null;
@@ -203,6 +205,7 @@ export type Database = {
           average_rating?: number | null;
           bitcoin_address?: string | null;
           category?: string | null;
+          cloned_from?: string | null;
           compute_provider_id?: string | null;
           compute_provider_type?: Database['public']['Enums']['compute_provider_type'] | null;
           created_at?: string | null;
@@ -1339,6 +1342,57 @@ export type Database = {
             foreignKeyName: 'circles_actor_id_fkey';
             columns: ['actor_id'];
             referencedRelation: 'actors';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      companion_memories: {
+        Row: {
+          assistant_id: string;
+          content: string;
+          created_at: string;
+          embedding: string | null;
+          id: string;
+          source: string;
+          source_conversation_id: string | null;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          assistant_id: string;
+          content: string;
+          created_at?: string;
+          embedding?: string | null;
+          id?: string;
+          source?: string;
+          source_conversation_id?: string | null;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          assistant_id?: string;
+          content?: string;
+          created_at?: string;
+          embedding?: string | null;
+          id?: string;
+          source?: string;
+          source_conversation_id?: string | null;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'companion_memories_assistant_id_fkey';
+            columns: ['assistant_id'];
+            isOneToOne: false;
+            referencedRelation: 'ai_assistants';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'companion_memories_source_conversation_id_fkey';
+            columns: ['source_conversation_id'];
+            isOneToOne: false;
+            referencedRelation: 'ai_conversations';
             referencedColumns: ['id'];
           },
         ];
@@ -7441,6 +7495,21 @@ export type Database = {
           similarity: number;
         }[];
       };
+      match_companion_memories: {
+        Args: {
+          match_count?: number;
+          min_similarity?: number;
+          p_assistant_id: string;
+          p_user_id: string;
+          query_embedding: string;
+        };
+        Returns: {
+          content: string;
+          created_at: string;
+          id: string;
+          similarity: number;
+        }[];
+      };
       match_content:
         | {
             Args: {
@@ -7640,12 +7709,7 @@ export type Database = {
       ai_assistant_status: 'draft' | 'active' | 'paused' | 'archived';
       ai_pricing_model: 'per_message' | 'per_token' | 'subscription' | 'free';
       cat_action_category:
-        | 'entities'
-        | 'communication'
-        | 'payments'
-        | 'organization'
-        | 'settings'
-        | 'context';
+        'entities' | 'communication' | 'payments' | 'organization' | 'settings' | 'context';
       cat_action_status: 'pending' | 'executing' | 'completed' | 'failed' | 'cancelled' | 'denied';
       compute_provider_type: 'api' | 'self_hosted' | 'community';
       document_type: 'goals' | 'finances' | 'skills' | 'notes' | 'business_plan' | 'other';
@@ -7654,12 +7718,7 @@ export type Database = {
       membership_role_enum: 'owner' | 'admin' | 'moderator' | 'member' | 'guest';
       membership_status_enum: 'active' | 'pending' | 'suspended' | 'left' | 'banned';
       organization_type_enum:
-        | 'non_profit'
-        | 'business'
-        | 'dao'
-        | 'community'
-        | 'foundation'
-        | 'other';
+        'non_profit' | 'business' | 'dao' | 'community' | 'foundation' | 'other';
       support_type: 'bitcoin_funding' | 'signature' | 'message' | 'reaction';
     };
     CompositeTypes: {
@@ -7676,12 +7735,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema['Tables'] & DefaultSchema['Views'])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
@@ -7701,13 +7760,12 @@ export type Tables<
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema['Tables']
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+    keyof DefaultSchema['Tables'] | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
@@ -7726,13 +7784,12 @@ export type TablesInsert<
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema['Tables']
-    | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+    keyof DefaultSchema['Tables'] | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
@@ -7751,13 +7808,12 @@ export type TablesUpdate<
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema['Enums']
-    | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    keyof DefaultSchema['Enums'] | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions['schema']]['Enums']
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }
@@ -7768,13 +7824,12 @@ export type Enums<
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema['CompositeTypes']
-    | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    keyof DefaultSchema['CompositeTypes'] | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes']
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals;
 }

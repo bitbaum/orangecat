@@ -13,20 +13,20 @@
  * from being "tidied up" later.
  */
 
-const ensureCatAccount = jest.fn();
-const claimMentions = jest.fn();
+const ensureCatAccount = vi.fn();
+const claimMentions = vi.fn();
 
-jest.mock('@/services/mentions/cat-account', () => ({
+vi.mock('@/services/mentions/cat-account', () => ({
   ensureCatAccount: (...a: unknown[]) => ensureCatAccount(...a),
 }));
-jest.mock('@/services/mentions/queue', () => ({
+vi.mock('@/services/mentions/queue', () => ({
   claimMentions: (...a: unknown[]) => claimMentions(...a),
-  completeMention: jest.fn(),
-  failMention: jest.fn(),
+  completeMention: vi.fn(),
+  failMention: vi.fn(),
   MAX_ATTEMPTS: 3,
 }));
-jest.mock('@/services/mentions/cat-reply', () => ({
-  replyToConversationMention: jest.fn().mockResolvedValue(true),
+vi.mock('@/services/mentions/cat-reply', () => ({
+  replyToConversationMention: vi.fn().mockResolvedValue(true),
 }));
 
 import { runCatMentions } from '@/services/mentions/worker';
@@ -69,7 +69,15 @@ describe('the mention worker bootstraps the Cat', () => {
 
   it('answers a claimed mention once the account exists', async () => {
     claimMentions.mockResolvedValue([
-      { id: 'q1', source_type: 'message', source_id: 'm1', requester_id: 'u1', conversation_id: 'c1', parent_event_id: null, attempts: 1 },
+      {
+        id: 'q1',
+        source_type: 'message',
+        source_id: 'm1',
+        requester_id: 'u1',
+        conversation_id: 'c1',
+        parent_event_id: null,
+        attempts: 1,
+      },
     ]);
     await expect(runCatMentions({} as never)).resolves.toMatchObject({ claimed: 1, answered: 1 });
   });
@@ -77,7 +85,15 @@ describe('the mention worker bootstraps the Cat', () => {
   it('fails claimed mentions rather than speaking as nobody', async () => {
     ensureCatAccount.mockResolvedValue(null);
     claimMentions.mockResolvedValue([
-      { id: 'q1', source_type: 'message', source_id: 'm1', requester_id: 'u1', conversation_id: 'c1', parent_event_id: null, attempts: 1 },
+      {
+        id: 'q1',
+        source_type: 'message',
+        source_id: 'm1',
+        requester_id: 'u1',
+        conversation_id: 'c1',
+        parent_event_id: null,
+        attempts: 1,
+      },
     ]);
     await expect(runCatMentions({} as never)).resolves.toMatchObject({ failed: 1, answered: 0 });
   });

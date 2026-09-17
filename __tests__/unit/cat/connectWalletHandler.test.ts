@@ -21,24 +21,26 @@ import { paymentHandlers } from '@/services/cat/handlers/payments';
 import { getOwnerReceiveStatus } from '@/domain/wallets/receiveStatus';
 import { encrypt, isEncryptionConfigured } from '@/domain/payments/encryptionService';
 
-jest.mock('@/utils/logger', () => ({
-  logger: { warn: jest.fn(), error: jest.fn(), info: jest.fn(), debug: jest.fn() },
+import type { Mock } from 'vitest';
+
+vi.mock('@/utils/logger', () => ({
+  logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
-jest.mock('@/domain/wallets/receiveStatus', () => ({ getOwnerReceiveStatus: jest.fn() }));
-jest.mock('@/domain/payments/encryptionService', () => ({
+vi.mock('@/domain/wallets/receiveStatus', () => ({ getOwnerReceiveStatus: vi.fn() }));
+vi.mock('@/domain/payments/encryptionService', () => ({
   // Opaque on purpose: an `enc:${plaintext}` stub would contain the secret and
   // make the "never stored in the clear" assertion below vacuous.
-  encrypt: jest.fn(() => 'ciphertext-blob'),
-  isEncryptionConfigured: jest.fn(() => true),
+  encrypt: vi.fn(() => 'ciphertext-blob'),
+  isEncryptionConfigured: vi.fn(() => true),
 }));
-jest.mock('@/domain/payments/sendPaymentService', () => ({
-  sendToRecipient: jest.fn(),
-  resolveSenderNwcUri: jest.fn(),
+vi.mock('@/domain/payments/sendPaymentService', () => ({
+  sendToRecipient: vi.fn(),
+  resolveSenderNwcUri: vi.fn(),
 }));
 
-const receiveStatusMock = getOwnerReceiveStatus as jest.Mock;
-const encryptMock = encrypt as jest.Mock;
-const encryptionConfiguredMock = isEncryptionConfigured as jest.Mock;
+const receiveStatusMock = getOwnerReceiveStatus as Mock;
+const encryptMock = encrypt as Mock;
+const encryptionConfiguredMock = isEncryptionConfigured as Mock;
 
 /** Captures what the handler tried to write, without a real Supabase. */
 function makeSupabase(existingWallet: { id: string; label: string } | null) {
@@ -81,7 +83,7 @@ const connect = (
 };
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   encryptionConfiguredMock.mockReturnValue(true);
   encryptMock.mockReturnValue('ciphertext-blob');
   receiveStatusMock.mockResolvedValue({

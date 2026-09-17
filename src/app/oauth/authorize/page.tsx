@@ -100,7 +100,7 @@ export default async function AuthorizePage({
   }
 
   // 3.5) Anonymous accounts stop here. Federating an identity with no email
-  // would hand relying parties (FleetCrown, Solon) an unattributable account —
+  // would hand relying parties (Loki, Solon) an unattributable account —
   // Solon rejects those downstream anyway; blocking at the root gives one
   // honest explanation instead of N per-app failures.
   if (user.is_anonymous) {

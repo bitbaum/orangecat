@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 };
 
 /**
- * /company/about — corporate parent page. Migrated to FleetCrown
+ * /company/about — corporate parent page. Migrated to Loki
  * semantic tier in migration 6/N: monochrome surfaces, neutral
  * value-card tiles, single warm accent on the 'Join Our Team' CTA.
  * Timeline number badges and vision boxes all unified neutral.

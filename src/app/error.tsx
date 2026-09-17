@@ -2,7 +2,13 @@
 
 import { logger } from '@/utils/logger';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import {
+  DEPLOY_SKEW_RELOAD_KEY,
+  isDeploySkewError,
+  shouldReloadForSkew,
+} from '@/lib/errors/deploy-skew';
+import { reportClientError } from '@/lib/errors/report-client-error';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { AlertTriangle, Home, RefreshCw, ArrowLeft } from 'lucide-react';
@@ -16,11 +22,60 @@ export default function Error({
   reset: () => void;
 }) {
   const router = useRouter();
+  // See RouteError: a build swap under an open tab is not a fault in the page,
+  // and the person cannot fix it. Reload once, then stop.
+  const [recovering, setRecovering] = useState(() => isDeploySkewError(error));
 
   useEffect(() => {
-    // Log the error to console for debugging
-    logger.error('Application error:', error);
+    const skew = isDeploySkewError(error);
+    logger.error('Application error:', {
+      message: error.message,
+      digest: error.digest,
+      deploySkew: skew,
+    });
+    reportClientError({
+      message: error.message,
+      stack: error.stack,
+      digest: error.digest,
+      component: 'app/error',
+      deploySkew: skew,
+    });
+    if (!skew) {
+      setRecovering(false);
+      return;
+    }
+    let lastReloadAt: number | null = null;
+    try {
+      const stored = window.sessionStorage.getItem(DEPLOY_SKEW_RELOAD_KEY);
+      lastReloadAt = stored ? Number(stored) : null;
+    } catch {
+      /* storage unavailable */
+    }
+    if (!shouldReloadForSkew(error, lastReloadAt)) {
+      setRecovering(false);
+      return;
+    }
+    try {
+      window.sessionStorage.setItem(DEPLOY_SKEW_RELOAD_KEY, String(Date.now()));
+    } catch {
+      /* best effort */
+    }
+    window.location.reload();
   }, [error]);
+
+  if (recovering) {
+    return (
+      <div className="oc-page flex items-center justify-center px-4">
+        <div className="oc-surface max-w-md w-full space-y-4 p-6 text-center">
+          <RefreshCw className="mx-auto h-8 w-8 animate-spin text-fg-tertiary" />
+          <h2 className="text-xl font-semibold text-fg-primary">Updating to the latest version</h2>
+          <p className="text-sm text-fg-secondary">
+            OrangeCat was updated while this page was open. Reloading now — nothing is lost.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // Check if it's an authentication error
   const isAuthError =

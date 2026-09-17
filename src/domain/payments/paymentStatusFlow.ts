@@ -51,7 +51,7 @@ export async function checkPaymentStatus(
     throw new Error('Access denied');
   }
 
-  return refreshPaymentStatus(supabase, pi as PaymentIntent);
+  return refreshPaymentStatus(pi as PaymentIntent);
 }
 
 export async function checkPublicPaymentStatus(
@@ -70,16 +70,28 @@ export async function checkPublicPaymentStatus(
     throw new Error('Payment not found');
   }
 
-  const result = await refreshPaymentStatus(admin, pi as PaymentIntent);
+  const result = await refreshPaymentStatus(pi as PaymentIntent);
   return {
     ...result,
     requires_recipient_confirmation: result.status === STATUS.PAYMENT_INTENTS.BUYER_CONFIRMED,
   };
 }
 
+/**
+ * Asked, once, whether this recipient may receive another claim.
+ *
+ * Injected rather than imported: rate limiting is infrastructure, and pulling
+ * it in here would drag the limiter (limitkit and its store) into the payments
+ * domain — wrong layer, and it breaks every domain test that has no business
+ * knowing about it. The HTTP layer owns the policy; the domain owns WHEN it is
+ * asked.
+ */
+export type ClaimGuard = (entityType: string, entityId: string) => Promise<boolean>;
+
 export async function acknowledgePublicPayment(
   paymentIntentId: string,
-  token: string
+  token: string,
+  claimGuard?: ClaimGuard
 ): Promise<PublicPaymentStatusResult> {
   const admin = getAdminClient() as unknown as SupabaseClient;
   const { data: pi } = await admin
@@ -128,6 +140,21 @@ export async function acknowledgePublicPayment(
     };
   }
 
+  // Bound claims per RECIPIENT, not per caller — the abuse shape is many
+  // addresses aimed at one seller's confirmation queue, which the caller-keyed
+  // budget in front of this cannot see. Asked only on the real transition: the
+  // idempotent re-claim paths above return before here, cost an attacker
+  // nothing, and so must not consume a genuine payer's allowance either.
+  if (claimGuard) {
+    const allowed = await claimGuard(
+      (pi.entity_type as string) ?? 'unknown',
+      (pi.entity_id as string) ?? paymentIntentId
+    );
+    if (!allowed) {
+      throw new Error('Too many payment claims for this recipient');
+    }
+  }
+
   await updatePaymentStatus(paymentIntentId, STATUS.PAYMENT_INTENTS.BUYER_CONFIRMED);
   notifyRecipientOfClaim(pi as PaymentIntent);
   return {
@@ -159,10 +186,7 @@ function notifyRecipientOfClaim(pi: PaymentIntent): void {
   });
 }
 
-async function refreshPaymentStatus(
-  supabase: SupabaseClient,
-  pi: PaymentIntent
-): Promise<PaymentStatusResult> {
+async function refreshPaymentStatus(pi: PaymentIntent): Promise<PaymentStatusResult> {
   const terminalStatuses = new Set<PaymentIntentStatus>([
     STATUS.PAYMENT_INTENTS.PAID,
     STATUS.PAYMENT_INTENTS.EXPIRED,
@@ -242,11 +266,8 @@ async function refreshPaymentStatus(
  * Deliberately NOT a second implementation: a copy would drift, and then two
  * parts of the product would disagree about whether money arrived.
  */
-export async function reconcilePaymentIntent(
-  supabase: SupabaseClient,
-  pi: PaymentIntent
-): Promise<PaymentStatusResult> {
-  return refreshPaymentStatus(supabase, pi);
+export async function reconcilePaymentIntent(pi: PaymentIntent): Promise<PaymentStatusResult> {
+  return refreshPaymentStatus(pi);
 }
 
 /**

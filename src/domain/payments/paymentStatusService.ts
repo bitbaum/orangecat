@@ -55,8 +55,12 @@ export async function checkNWCPaymentStatus(paymentIntent: PaymentIntent): Promi
   try {
     nwcUri = decrypt(wallet.nwc_connection_uri);
   } catch {
-    logger.error('Failed to decrypt NWC URI for status check', {
+    // warn, not error — a permanent, owner-fixable state (the stored URI
+    // predates the current PAYMENT_ENCRYPTION_KEY), already disclosed on the
+    // owner's wallet card. See walletResolutionService for the full note.
+    logger.warn('NWC URI could not be decrypted for status check; treating as unpaid', {
       sellerId: paymentIntent.seller_id,
+      remedy: 'owner must reconnect the wallet',
     });
     return false;
   }

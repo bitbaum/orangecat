@@ -10,23 +10,25 @@
 import { initiatePayment } from '@/domain/payments/paymentFlowService';
 import { getSellerUserId, resolveSellerWallet } from '@/domain/payments/walletResolutionService';
 
-jest.mock('@/utils/logger', () => ({
-  logger: { warn: jest.fn(), error: jest.fn(), info: jest.fn(), debug: jest.fn() },
+import type { Mock } from 'vitest';
+
+vi.mock('@/utils/logger', () => ({
+  logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
-jest.mock('@/domain/payments/walletResolutionService', () => ({
-  getSellerUserId: jest.fn(),
-  resolveSellerWallet: jest.fn(),
+vi.mock('@/domain/payments/walletResolutionService', () => ({
+  getSellerUserId: vi.fn(),
+  resolveSellerWallet: vi.fn(),
 }));
 // Break the resend/email import chain (ESM-only, not transformed by jest).
-jest.mock('@/lib/email/send-seller-notification', () => ({
-  sendSellerPaymentNotification: jest.fn().mockResolvedValue(undefined),
+vi.mock('@/lib/email/send-seller-notification', () => ({
+  sendSellerPaymentNotification: vi.fn().mockResolvedValue(undefined),
 }));
-jest.mock('@/services/notifications/dispatcher', () => ({
-  NotificationDispatcher: { dispatch: jest.fn().mockResolvedValue(undefined) },
+vi.mock('@/services/notifications/dispatcher', () => ({
+  NotificationDispatcher: { dispatch: vi.fn().mockResolvedValue(undefined) },
 }));
 
-const getSellerUserIdMock = getSellerUserId as jest.Mock;
-const resolveSellerWalletMock = resolveSellerWallet as jest.Mock;
+const getSellerUserIdMock = getSellerUserId as Mock;
+const resolveSellerWalletMock = resolveSellerWallet as Mock;
 
 /**
  * Caller-scoped client serving only the publication-gate read. `visible`
@@ -35,19 +37,19 @@ const resolveSellerWalletMock = resolveSellerWallet as jest.Mock;
 function makeSupabase(visible: boolean) {
   const builder: Record<string, unknown> = {};
   for (const m of ['select', 'eq']) {
-    builder[m] = jest.fn(() => builder);
+    builder[m] = vi.fn(() => builder);
   }
-  builder.maybeSingle = jest.fn(() =>
+  builder.maybeSingle = vi.fn(() =>
     Promise.resolve({ data: visible ? { id: 'prod-1' } : null, error: null })
   );
-  return { from: jest.fn(() => builder) } as never;
+  return { from: vi.fn(() => builder) } as never;
 }
 
 const BUYER = 'buyer-1';
 const input = { entity_type: 'product' as const, entity_id: 'prod-1' };
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 describe('initiatePayment — guards', () => {

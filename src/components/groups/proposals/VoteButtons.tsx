@@ -16,6 +16,7 @@ import { CheckCircle2, XCircle, Minus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
 import { API_ROUTES } from '@/config/api-routes';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 interface VoteButtonsProps {
   proposalId: string;
@@ -54,7 +55,7 @@ export function VoteButtons({
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to cast vote');
+        throw new Error(apiErrorMessage(error, 'Failed to cast vote'));
       }
 
       toast.success(`Vote cast: ${vote === 'yes' ? 'Yes' : vote === 'no' ? 'No' : 'Abstain'}`);

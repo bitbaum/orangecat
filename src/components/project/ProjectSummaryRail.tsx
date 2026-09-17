@@ -12,6 +12,7 @@ import { formatRelativeTime } from '@/utils/dates';
 import { PLATFORM_DEFAULT_CURRENCY } from '@/config/currencies';
 import { formatCurrency } from '@/services/currency';
 import { API_ROUTES } from '@/config/api-routes';
+import { DAY_FIRST_LOCALE } from '@/utils/locale';
 
 /**
  * `target_completion` is `optionalText` in the schema, so the stored value is
@@ -28,7 +29,7 @@ function formatTargetCompletion(value: unknown): string | null {
   if (Number.isNaN(parsed.getTime())) {
     return value.trim();
   }
-  return parsed.toLocaleDateString('en-GB', {
+  return parsed.toLocaleDateString(DAY_FIRST_LOCALE, {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
@@ -150,9 +151,22 @@ export default function ProjectSummaryRail({ project, settledRaisedBtc = 0, isOw
                 Bitcoin Balance
               </span>
             </div>
-            <div className="text-base font-semibold text-fg-primary">
-              {formatAmountBtc(bitcoinBalanceBtc)}
+            {/* An unchecked balance is UNKNOWN, not zero — the rule #946 set
+                for wallet cards, which this rail never followed. Until the
+                column existed at all, `bitcoin_balance_btc` came back
+                undefined and `|| 0` rendered a confident 0.00 for a project
+                whose address nobody had ever read. `bitcoin_balance_updated_at`
+                is the only honest witness that a chain lookup happened. */}
+            <div
+              className={`text-base font-semibold ${
+                bitcoinBalanceUpdatedAt ? 'text-fg-primary' : 'text-fg-tertiary'
+              }`}
+            >
+              {bitcoinBalanceUpdatedAt ? formatAmountBtc(bitcoinBalanceBtc) : '—'}
             </div>
+            {!bitcoinBalanceUpdatedAt && (
+              <div className="text-xs text-fg-secondary mt-1">Not checked yet</div>
+            )}
             {bitcoinBalanceUpdatedAt && (
               <div className="text-xs text-fg-secondary mt-1">
                 Updated {formatRelativeTime(bitcoinBalanceUpdatedAt)}

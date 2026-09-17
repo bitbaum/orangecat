@@ -7,7 +7,7 @@
  */
 
 import { z } from 'zod';
-import { webUrl } from '@/lib/validation/base';
+import { usernameSchema, webUrl } from '@/lib/validation/base';
 import { withAuth, type AuthenticatedRequest } from '@/lib/api/withAuth';
 import {
   apiCreated,
@@ -18,7 +18,9 @@ import {
 } from '@/lib/api/standardResponse';
 import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
 import { logger } from '@/utils/logger';
-import { createProfileClaim, listProfileClaimsCreatedBy } from '@/domain/profileClaims/service';
+import { createProfileClaim } from '@/domain/profileClaims/service';
+import { listProfileClaimsCreatedBy } from '@/domain/profileClaims/creator';
+import { normalizeClaimDraft } from '@/domain/profileClaims/draft';
 import { ROUTES } from '@/config/routes';
 
 const socialLinkSchema = z.object({
@@ -34,13 +36,12 @@ const createClaimSchema = z.object({
   bannerUrl: webUrl({ max: 2000 }).optional(),
   website: webUrl({ max: 2000 }).optional(),
   socialLinks: z.array(socialLinkSchema).max(10).optional(),
-  suggestedUsername: z
-    .string()
-    .trim()
-    .min(3)
-    .max(30)
-    .regex(/^[a-zA-Z0-9_-]+$/, 'Usernames can only contain letters, numbers, - and _')
-    .optional(),
+  // The shared schema, not a hand-rolled regex: a suggested username becomes a
+  // real handle at claim time, and a handle is a Lightning address
+  // (<username>@orangecat.ch). A local pattern here made this the one door into
+  // `profiles.username` that skipped RESERVED_USERNAMES — `payments`,
+  // `support`, `security` were all suggestible.
+  suggestedUsername: usernameSchema.optional(),
 });
 
 export const POST = withAuth(async (req: AuthenticatedRequest) => {
@@ -63,7 +64,10 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
 
     const result = await createProfileClaim({
       createdBy: user.id,
-      draft: { name, bio, avatarUrl, bannerUrl, website, socialLinks },
+      draft: {
+        kind: 'person',
+        profile: { name, bio, avatarUrl, bannerUrl, website, socialLinks },
+      },
       suggestedUsername,
     });
 
@@ -73,7 +77,13 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
 
     return apiCreated({
       id: result.data.id,
-      claimUrl: ROUTES.CLAIM(result.data.id),
+      // The link carries the TOKEN, never the row id — see ADR-0004 D4.
+      claimUrl: ROUTES.CLAIM(result.data.token),
+      // The placeholder actor: pass it as `actor_id` when creating what this
+      // person will own, and the rows are theirs from the start (ADR-0005 D1).
+      actorId: result.data.actorId,
+      slug: result.data.slug,
+      pageUrl: ROUTES.PROFILES.VIEW(result.data.slug),
     });
   } catch (error) {
     logger.error('profile-claims create failed', error, 'ProfileClaims');
@@ -90,16 +100,25 @@ export const GET = withAuth(async (req: AuthenticatedRequest) => {
     }
 
     return apiSuccess({
-      claims: result.data.map(claim => ({
-        id: claim.id,
-        name: claim.draft.name,
-        status: claim.status,
-        suggestedUsername: claim.suggested_username,
-        claimUrl: ROUTES.CLAIM(claim.id),
-        createdAt: claim.created_at,
-        claimedAt: claim.claimed_at,
-        expiresAt: claim.expires_at,
-      })),
+      claims: result.data.map(claim => {
+        // Rows predating the `{kind, profile}` shape carry a flat person draft.
+        const draft = normalizeClaimDraft(claim.draft);
+        return {
+          id: claim.id,
+          name: draft?.profile.name ?? 'Unnamed',
+          status: claim.status,
+          suggestedUsername: claim.suggested_username,
+          claimUrl: ROUTES.CLAIM(claim.token),
+          createdAt: claim.created_at,
+          claimedAt: claim.claimed_at,
+          expiresAt: claim.expires_at,
+          // The funnel a creator actually needs: sent? opened? refused?
+          deliveredAt: claim.delivered_at,
+          firstViewedAt: claim.first_viewed_at,
+          viewCount: claim.view_count,
+          declinedAt: claim.declined_at,
+        };
+      }),
     });
   } catch (error) {
     logger.error('profile-claims list failed', error, 'ProfileClaims');

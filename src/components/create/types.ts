@@ -18,7 +18,7 @@
 
 import { ReactNode, ComponentType } from 'react';
 import { LucideIcon } from 'lucide-react';
-import { ZodType, ZodTypeDef } from 'zod';
+import { ZodType } from 'zod';
 import type { EntityType } from '@/config/entity-registry';
 import type { AiErrorCode } from '@/config/ai-errors';
 
@@ -215,7 +215,7 @@ export interface EntityConfig<T extends Record<string, any> = Record<string, any
   /** Field groups */
   fieldGroups: FieldGroup[];
   /** Zod validation schema - uses ZodType for flexibility with defaults/transforms */
-  validationSchema: ZodType<T, ZodTypeDef, unknown>;
+  validationSchema: ZodType<T, unknown>;
   /** Default form values */
   defaultValues: T;
   /** Field-specific guidance content */

@@ -20,6 +20,12 @@ export function generateActionDescription(
     }
     case 'create_cause':
       return `Create cause "${parameters.title}"`;
+    case 'create_project_for_person': {
+      const who = String(parameters.person_name ?? 'them');
+      return `Set up "${parameters.title}" for ${who} as a public page, owned by ${who} — you get a link to send; ${who} takes it over by signing up, and nothing can receive money until then`;
+    }
+    case 'send_to_loki':
+      return `Create a Loki handoff link for "${parameters.title ?? parameters.entity_id}" (valid 10 minutes) so AI agents can build it`;
     case 'create_investment': {
       const target = parameters.target_amount_btc ?? parameters.target_amount ?? 'open-ended';
       const type = parameters.investment_type || 'revenue_share';
@@ -103,6 +109,13 @@ export function generateActionDescription(
     case 'create_organization':
       return `Create organization "${parameters.name}"`;
     case 'update_profile': {
+      // A handle change is named on its own, and names what happens to the old
+      // one: "update profile: username" would hide the only part of this write
+      // that changes a public URL and a payment address.
+      if (typeof parameters.username === 'string' && parameters.username) {
+        const handle = parameters.username.replace(/^@/, '');
+        return `Change your handle to @${handle} (your old handle keeps working)`;
+      }
       const fields = ['name', 'bio', 'background', 'website', 'location_city', 'location_country']
         .filter(f => parameters[f] !== undefined)
         .join(', ');

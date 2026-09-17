@@ -86,8 +86,8 @@ describe('parseActionsFromResponse — create_entity', () => {
     expect(actions).toHaveLength(0);
   });
 
-  it('accepts all CAT_CREATABLE_ENTITY_TYPES including group', () => {
-    const { CAT_CREATABLE_ENTITY_TYPES } = require('@/types/cat');
+  it('accepts all CAT_CREATABLE_ENTITY_TYPES including group', async () => {
+    const { CAT_CREATABLE_ENTITY_TYPES } = await import('@/types/cat');
     expect(CAT_CREATABLE_ENTITY_TYPES).toContain('group');
     expect(CAT_CREATABLE_ENTITY_TYPES).toContain('product');
     expect(CAT_CREATABLE_ENTITY_TYPES).toContain('service');

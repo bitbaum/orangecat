@@ -26,6 +26,7 @@ import {
 } from '@/lib/api/standardResponse';
 import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
 import { validateUUID, getValidationError } from '@/lib/api/validation';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -106,7 +107,7 @@ export const POST = withAuth(async (request: AuthenticatedRequest, context: Rout
     // Validate request
     const validationResult = supportProjectSchema.safeParse(body);
     if (!validationResult.success) {
-      return apiBadRequest('Invalid request', validationResult.error.errors);
+      return apiBadRequest('Invalid request', validationResult.error.issues);
     }
 
     // Create support
@@ -116,7 +117,7 @@ export const POST = withAuth(async (request: AuthenticatedRequest, context: Rout
     );
 
     if (!result.success) {
-      return apiInternalError(result.error || 'Failed to create support');
+      return apiInternalError(apiErrorMessage(result, 'Failed to create support'));
     }
 
     return apiCreated(result.support);

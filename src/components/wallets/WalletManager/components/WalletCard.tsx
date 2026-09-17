@@ -7,6 +7,7 @@ import { Pencil, Trash2, Star, RefreshCw, Copy, AlertTriangle } from 'lucide-rea
 import { toast } from 'sonner';
 import { WALLET_CATEGORIES } from '@/types/wallet';
 import { WalletForm } from './WalletForm';
+import { WalletTransactions } from './WalletTransactions';
 import type { WalletCardProps } from '../types';
 import { truncateAddress } from '@/utils/string';
 import { displayBTC } from '@/services/currency/formatting';
@@ -14,6 +15,7 @@ import { getWalletReceiveHandle } from '@/lib/wallet-receive-handle';
 import { computeWalletGoalProgress } from '@/lib/wallet-goal';
 import { useCurrencyConversion } from '@/hooks/useCurrencyConversion';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
+import { formatDateTime } from '@/utils/locale';
 
 export function WalletCard({
   wallet,
@@ -48,6 +50,7 @@ export function WalletCard({
           goal_amount: wallet.goal_amount || undefined,
           goal_currency: wallet.goal_currency || undefined,
           is_primary: wallet.is_primary,
+          open_accounting: wallet.open_accounting,
         }}
         onFieldFocus={onFieldFocus}
         onSubmit={onUpdate}
@@ -72,7 +75,6 @@ export function WalletCard({
     },
     convertFromBTC
   );
-
 
   // The public receive handle to show + copy. A wallet may have an on-chain
   // address, a Lightning address, or only a wallet connection (NWC — no public
@@ -194,14 +196,35 @@ export function WalletCard({
               </button>
             )}
           </div>
-          <div className="text-2xl sm:text-3xl font-bold text-bitcoinOrange">
-            {displayBTC(wallet.balance_btc)}
+          {/* An unchecked balance is UNKNOWN, not zero. `balance_updated_at`
+              is null until someone reads the chain, and rendering that as
+              "0 BTC" in the headline asserted a number nobody had measured —
+              the small print below said "not checked yet" and lost the
+              argument to the big orange figure. A wallet holding 60,580 sats
+              displayed as 0 BTC while its own transaction list showed the
+              deposit (observed 2026-09-08). Same class as the xpub balance
+              this UI sits on top of: never present unmeasured as measured. */}
+          <div
+            className={`text-2xl sm:text-3xl font-bold ${
+              wallet.balance_updated_at ? 'text-bitcoinOrange' : 'text-fg-tertiary'
+            }`}
+          >
+            {wallet.balance_updated_at ? displayBTC(wallet.balance_btc) : '—'}
           </div>
           <div className="text-xs text-fg-secondary mt-2">
             {wallet.balance_updated_at
-              ? `Updated ${new Date(wallet.balance_updated_at).toLocaleString()}`
+              ? `Updated ${formatDateTime(wallet.balance_updated_at)}`
               : 'Not checked yet — refresh to read it from the blockchain'}
           </div>
+        </div>
+      )}
+
+      {/* History — same condition as the balance, and owner-only: the route
+          refuses anyone else, and an address's transactions are not ours to
+          publish on someone else's behalf. */}
+      {tracksOnChainBalance && isOwner && (
+        <div className="mb-4">
+          <WalletTransactions walletId={wallet.id} />
         </div>
       )}
 

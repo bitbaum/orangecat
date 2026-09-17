@@ -18,8 +18,31 @@
 import { withAuth, type AuthenticatedRequest } from '@/lib/api/withAuth';
 import { apiSuccess } from '@/lib/api/standardResponse';
 import { runCatHealthProbes } from '@/services/cat/health-probes';
+import { DEFAULT_GROQ_MODEL } from '@/services/ai/groq';
+import {
+  getGroqObservations,
+  getGroqTpmLimit,
+  getOpenRouterFreeStatus,
+} from '@/services/ai/groq-capacity';
 
 export const GET = withAuth(async (_request: AuthenticatedRequest) => {
   const report = await runCatHealthProbes();
-  return apiSuccess(report);
+  // The pool's headroom, in the same sentence as the health verdict — a
+  // healthy provider with no requests left today is not a Cat that answers.
+  const groq = getGroqObservations().find(o => o.model === DEFAULT_GROQ_MODEL) ?? null;
+  const openrouter = getOpenRouterFreeStatus();
+  const lines: string[] = [];
+  if (groq) {
+    lines.push(
+      `Groq free pool: ${groq.remainingRequests ?? '?'} of ${groq.limitRequests ?? '?'} requests left today, ${groq.remainingTokens ?? '?'} of ${groq.limitTokens ?? getGroqTpmLimit(DEFAULT_GROQ_MODEL)} tokens this minute.`
+    );
+  }
+  if (openrouter.dailyCapHitAt && openrouter.resetsAt) {
+    lines.push(`OpenRouter free models: daily cap hit, resets at 00:00 UTC.`);
+  }
+  return apiSuccess({
+    ...report,
+    summary: lines.length ? `${report.summary} ${lines.join(' ')}` : report.summary,
+    capacity: { groq, openrouter },
+  });
 });

@@ -188,8 +188,24 @@ export function ContextSwitcher({
               !isGroupContext && 'bg-surface-raised'
             )}
           >
-            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-surface-raised">
-              <User className="w-4 h-4 text-fg-primary" />
+            {/* Your own row showed a generic person glyph while every group
+                below it showed its real picture — the one row a person can
+                identify at a glance was the one rendered anonymously. */}
+            <div className="flex-shrink-0">
+              {profile.avatar_url ? (
+                <Image
+                  src={profile.avatar_url}
+                  alt={profile.name || profile.username || 'You'}
+                  width={32}
+                  height={32}
+                  className="h-8 w-8 rounded-md object-cover"
+                  unoptimized={profile.avatar_url.includes('supabase.co')}
+                />
+              ) : (
+                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-surface-raised">
+                  <User className="w-4 h-4 text-fg-primary" />
+                </div>
+              )}
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-fg-primary truncate">

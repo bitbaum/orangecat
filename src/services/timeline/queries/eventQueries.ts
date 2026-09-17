@@ -18,6 +18,10 @@ import { logger } from '@/utils/logger';
 import { TIMELINE_TABLES } from '@/config/database-tables';
 import type { TimelineDisplayEvent, TimelineEventType, TimelineActorType } from '@/types/timeline';
 import { transformEnrichedEventToDisplay } from './helpers';
+import {
+  attachReactionState,
+  EMPTY_REACTION_STATE,
+} from '@/services/timeline/processors/reaction-state';
 import { enrichEventsForDisplay } from '@/services/timeline/processors/enrichment';
 import { getTimeAgo, isEventRecent } from '@/services/timeline/formatters';
 
@@ -70,42 +74,62 @@ export async function getReplies(
   limit: number = 50
 ): Promise<{ success: boolean; replies?: TimelineDisplayEvent[]; error?: string }> {
   try {
-    const buildTree = async (parentId: string, depth: number): Promise<TimelineDisplayEvent[]> => {
-      // Limit depth to avoid accidental cycles
-      if (depth > 3) {
-        return [];
-      }
+    // Fetch the tree a LEVEL at a time, then enrich the whole thing once.
+    //
+    // This used to recurse per node: one query and one enrichEventsForDisplay
+    // per reply. Enrichment is itself several round-trips — profiles, projects,
+    // the reader's id, and the three reaction tables — so a thread cost roughly
+    // six requests per reply, and opening a three-reply thread fired eight
+    // `/auth/v1/user` calls alone. Level-order asks once per depth regardless of
+    // width, and enriches once regardless of both.
+    const MAX_DEPTH = 3;
+    const levels: Array<Record<string, unknown>>[] = [];
+    let frontier = [eventId];
 
+    for (let depth = 0; depth <= MAX_DEPTH && frontier.length > 0; depth++) {
       const { data: childEvents, error } = await supabase
         .from(TIMELINE_TABLES.EVENTS)
         .select('*')
-        .eq('parent_event_id', parentId)
+        .in('parent_event_id', frontier)
         .eq('is_deleted', false)
         .order('created_at', { ascending: true })
-        .limit(depth === 0 ? limit : 50);
+        .limit(depth === 0 ? limit : 200);
 
       if (error) {
         logger.error('Error fetching replies', error, 'Timeline');
-        return [];
+        break;
       }
 
-      const enrichedChildren = await enrichEventsForDisplay(childEvents || []);
+      const rows = (childEvents || []) as Array<Record<string, unknown>>;
+      if (rows.length === 0) {
+        break;
+      }
+      levels.push(rows);
+      frontier = rows.map(row => String(row.id));
+    }
 
-      // Recursively fetch children for each reply, in parallel — a sequential
-      // loop here made thread latency grow linearly with reply count
-      return Promise.all(
-        enrichedChildren.map(async reply => {
-          const nestedReplies = await buildTree(reply.id, depth + 1);
-          return {
-            ...reply,
-            replies: nestedReplies,
-            replyCount: nestedReplies.length,
-          };
-        })
-      );
+    const enriched = await enrichEventsForDisplay(levels.flat());
+
+    // Assemble parent → children from the flat list. Every node is visited
+    // once, and a reply whose parent did not come back (deleted mid-read)
+    // simply does not attach, rather than orphaning the whole branch.
+    const byParent = new Map<string, TimelineDisplayEvent[]>();
+    for (const reply of enriched) {
+      const parentId = reply.parentEventId ?? '';
+      byParent.set(parentId, [...(byParent.get(parentId) ?? []), reply]);
+    }
+
+    const attach = (parentId: string, depth: number): TimelineDisplayEvent[] => {
+      if (depth > MAX_DEPTH) {
+        return [];
+      }
+      return (byParent.get(parentId) ?? []).map(reply => {
+        const nested = attach(reply.id, depth + 1);
+        return { ...reply, replies: nested, replyCount: nested.length };
+      });
     };
 
-    const replies = await buildTree(eventId, 0);
+    const replies = attach(eventId, 0);
     return { success: true, replies };
   } catch (error) {
     logger.error('Error fetching replies', error, 'Timeline');
@@ -159,8 +183,11 @@ export async function searchPosts(
       return { success: false, error: 'Search failed. Please try again.' };
     }
 
-    // Transform to display events
-    const displayEvents = (events || []).map(transformEnrichedEventToDisplay);
+    // Transform to display events. The view carries no reaction columns, so
+    // search results would otherwise show every post as unreacted-to.
+    const displayEvents = await attachReactionState(
+      (events || []).map(transformEnrichedEventToDisplay)
+    );
 
     return {
       success: true,
@@ -229,10 +256,10 @@ export async function getThreadPosts(threadId: string): Promise<{
       },
       timeAgo: getTimeAgo(event.event_timestamp),
       isRecent: isEventRecent(event.event_timestamp),
-      likesCount: 0,
-      commentsCount: 0,
-      sharesCount: 0,
-      userLiked: false,
+      // Filled in below from timeline_event_stats. These were hardcoded zeros
+      // under a comment saying the UI enriched them later; nothing did, so
+      // every thread post rendered as if nobody had ever reacted to it.
+      ...EMPTY_REACTION_STATE,
       userShared: false,
       userCommented: false,
       parentPostId: event.parent_event_id,
@@ -241,6 +268,11 @@ export async function getThreadPosts(threadId: string): Promise<{
       isQuoteReply: event.is_quote_reply || false,
       quotedContent: (event.metadata as { quoted_content?: string })?.quoted_content,
     })) as unknown as TimelineDisplayEvent[];
+
+    // Built from an RPC rather than through enrichEventsForDisplay, so this
+    // path asks for reaction state itself — through the same helper, so the
+    // two cannot disagree about where a count comes from.
+    await attachReactionState(displayEvents);
 
     return {
       success: true,

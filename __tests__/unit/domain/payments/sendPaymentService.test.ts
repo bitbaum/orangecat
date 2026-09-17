@@ -13,27 +13,29 @@ import { getAdminClient } from '@/lib/supabase/admin';
 import { decrypt, isEncryptionConfigured } from '@/domain/payments/encryptionService';
 import { NWCClient } from '@/lib/nostr/nwc';
 
-jest.mock('@/utils/logger', () => ({
-  logger: { warn: jest.fn(), error: jest.fn(), info: jest.fn(), debug: jest.fn() },
-}));
-jest.mock('@/lib/supabase/admin', () => ({ getAdminClient: jest.fn() }));
-jest.mock('@/domain/payments/encryptionService', () => ({
-  decrypt: jest.fn(),
-  isEncryptionConfigured: jest.fn(() => true),
-}));
-jest.mock('@/domain/payments/walletResolutionService', () => ({ resolveUserWallet: jest.fn() }));
-jest.mock('@/domain/payments/invoiceGenerationService', () => ({ generateInvoice: jest.fn() }));
-jest.mock('@/lib/nostr/nwc', () => ({ NWCClient: jest.fn() }));
+import type { Mock } from 'vitest';
 
-const adminMock = getAdminClient as jest.Mock;
-const decryptMock = decrypt as jest.Mock;
-const isEncryptionConfiguredMock = isEncryptionConfigured as jest.Mock;
-const resolveWalletMock = resolveUserWallet as jest.Mock;
-const generateInvoiceMock = generateInvoice as jest.Mock;
-const NWCClientMock = NWCClient as unknown as jest.Mock;
+vi.mock('@/utils/logger', () => ({
+  logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() },
+}));
+vi.mock('@/lib/supabase/admin', () => ({ getAdminClient: vi.fn() }));
+vi.mock('@/domain/payments/encryptionService', () => ({
+  decrypt: vi.fn(),
+  isEncryptionConfigured: vi.fn(() => true),
+}));
+vi.mock('@/domain/payments/walletResolutionService', () => ({ resolveUserWallet: vi.fn() }));
+vi.mock('@/domain/payments/invoiceGenerationService', () => ({ generateInvoice: vi.fn() }));
+vi.mock('@/lib/nostr/nwc', () => ({ NWCClient: vi.fn() }));
+
+const adminMock = getAdminClient as Mock;
+const decryptMock = decrypt as Mock;
+const isEncryptionConfiguredMock = isEncryptionConfigured as Mock;
+const resolveWalletMock = resolveUserWallet as Mock;
+const generateInvoiceMock = generateInvoice as Mock;
+const NWCClientMock = NWCClient as unknown as Mock;
 
 const MAINNET_INVOICE = 'lnbc100u1pabcdef';
-const payInvoiceSpy = jest.fn();
+const payInvoiceSpy = vi.fn();
 
 /** Admin client whose wallets query yields the given NWC row. */
 function mockAdmin({ nwc, profileId }: { nwc?: string | null; profileId?: string | null } = {}) {
@@ -58,13 +60,16 @@ function mockAdmin({ nwc, profileId }: { nwc?: string | null; profileId?: string
 }
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   payInvoiceSpy.mockResolvedValue({ payment_hash: 'hash-1' });
-  NWCClientMock.mockImplementation(() => ({
-    connect: jest.fn().mockResolvedValue(undefined),
-    payInvoice: payInvoiceSpy,
-    disconnect: jest.fn(),
-  }));
+  // function (not arrow): vitest constructs mock implementations with `new`.
+  NWCClientMock.mockImplementation(function () {
+    return {
+      connect: vi.fn().mockResolvedValue(undefined),
+      payInvoice: payInvoiceSpy,
+      disconnect: vi.fn(),
+    };
+  });
   decryptMock.mockReturnValue('nostr+walletconnect://sender');
   isEncryptionConfiguredMock.mockReturnValue(true);
 });

@@ -65,6 +65,19 @@ export function getTimelineVisibilityOption(
   );
 }
 
+/**
+ * The avatar that sets the feed's text column, in pixels.
+ *
+ * Every row in the feed — the composer and every post — puts an avatar on the
+ * left and the text beside it, so the avatar's width IS the left edge of the
+ * text column. Two components rendering that row with different numbers put
+ * the feed on two grids: the composer used 44 and posts used 40, so the
+ * composer's text started 4px right of every post body underneath it.
+ *
+ * One number, read by both, so they cannot disagree again.
+ */
+export const TIMELINE_AVATAR_SIZE = 40;
+
 export const TIMELINE_SURFACE = {
   page: 'min-h-screen bg-surface-page text-fg-primary',
   rail: 'mx-auto flex w-full max-w-6xl justify-center px-0 sm:px-4 lg:px-8',
@@ -72,7 +85,12 @@ export const TIMELINE_SURFACE = {
   header:
     'sticky top-0 z-20 flex items-center justify-between border-b border-subtle bg-surface-page/90 px-4 py-3 backdrop-blur-xl sm:px-5',
   composer: 'border-b border-subtle bg-surface-page px-4 py-4 sm:px-5',
-  post: 'border-b border-subtle bg-surface-page px-4 py-3 transition-colors hover:bg-surface-raised/35',
+  // `sm:px-5` matches header and composer above. Without it the feed ran on a
+  // SECOND grid 4px to the left of them: measured in production, the header
+  // and composer began at x=467 and every post at x=463. Scrolling past the
+  // composer shifted the whole avatar column sideways by 4px — small enough
+  // that you read it as sloppiness rather than seeing it.
+  post: 'border-b border-subtle bg-surface-page px-4 py-3 transition-colors hover:bg-surface-raised/35 sm:px-5',
   selectedPost: 'bg-surface-raised/60 hover:bg-surface-raised/70',
   buttonPrimary:
     'rounded-md bg-fg-primary px-5 py-2 text-sm font-semibold text-fg-inverted transition-colors hover:bg-fg-primary/90 disabled:bg-surface-raised disabled:text-fg-secondary',

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { renderHook, act } from '@testing-library/react';
 import {
   buildInitialCollapsedSections,
@@ -5,6 +6,8 @@ import {
   useNavigationStorage,
 } from '@/hooks/useNavigationStorage';
 import type { NavSection } from '@/hooks/useNavigation';
+
+import type { Mock } from 'vitest';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -45,16 +48,16 @@ const basicSections: NavSection[] = [
 // We provide a real in-memory backing store per test.
 function setupLocalStorageMock() {
   const store: Record<string, string> = {};
-  jest
-    .spyOn(window.localStorage, 'getItem')
-    .mockImplementation(key => (key in store ? store[key] : null));
-  jest.spyOn(window.localStorage, 'setItem').mockImplementation((key, val) => {
+  vi.spyOn(window.localStorage, 'getItem').mockImplementation(key =>
+    key in store ? store[key] : null
+  );
+  vi.spyOn(window.localStorage, 'setItem').mockImplementation((key, val) => {
     store[key] = val;
   });
-  jest.spyOn(window.localStorage, 'removeItem').mockImplementation(key => {
+  vi.spyOn(window.localStorage, 'removeItem').mockImplementation(key => {
     delete store[key];
   });
-  jest.spyOn(window.localStorage, 'clear').mockImplementation(() => {
+  vi.spyOn(window.localStorage, 'clear').mockImplementation(() => {
     Object.keys(store).forEach(k => delete store[k]);
   });
   return store;
@@ -82,9 +85,20 @@ describe('buildInitialCollapsedSections', () => {
     expect(collapsed.has('settings')).toBe(false);
   });
 
-  it('on mobile collapses collapsible sections with priority > 3', () => {
+  it('gives the same defaults on mobile as on desktop — config is the only input', () => {
+    // Viewport used to override the config with `priority > 3`, so the same
+    // account saw different sections open on a phone than on a laptop and the
+    // declared `defaultExpanded` was a lie on one of them.
+    Object.defineProperty(window, 'innerWidth', { value: 1280, writable: true });
+    const onDesktop = buildInitialCollapsedSections(basicSections);
     Object.defineProperty(window, 'innerWidth', { value: 375, writable: true });
-    const mobileSections: NavSection[] = [
+    const onMobile = buildInitialCollapsedSections(basicSections);
+    expect([...onMobile].sort()).toEqual([...onDesktop].sort());
+  });
+
+  it('honours defaultExpanded regardless of priority', () => {
+    Object.defineProperty(window, 'innerWidth', { value: 375, writable: true });
+    const sections: NavSection[] = [
       { id: 'low', title: 'Low', items: [], collapsible: true, defaultExpanded: true, priority: 2 },
       {
         id: 'high',
@@ -95,9 +109,7 @@ describe('buildInitialCollapsedSections', () => {
         priority: 4,
       },
     ];
-    const collapsed = buildInitialCollapsedSections(mobileSections);
-    expect(collapsed.has('low')).toBe(false);
-    expect(collapsed.has('high')).toBe(true);
+    expect(buildInitialCollapsedSections(sections).size).toBe(0);
   });
 
   it('returns empty set when no collapsible sections', () => {
@@ -120,7 +132,7 @@ describe('clearNavigationStorage', () => {
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   it('removes all three storage keys', () => {
@@ -143,17 +155,17 @@ describe('clearNavigationStorage', () => {
 // ─── useNavigationStorage ───────────────────────────────────────────────────
 
 describe('useNavigationStorage', () => {
-  let onStateLoaded: jest.Mock;
-  let onLoadFailed: jest.Mock;
+  let onStateLoaded: Mock;
+  let onLoadFailed: Mock;
 
   beforeEach(() => {
-    onStateLoaded = jest.fn();
-    onLoadFailed = jest.fn();
+    onStateLoaded = vi.fn();
+    onLoadFailed = vi.fn();
     setupLocalStorageMock();
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   it('does not call onStateLoaded when hydrated is false', () => {
@@ -176,6 +188,26 @@ describe('useNavigationStorage', () => {
     });
 
     expect(onStateLoaded).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps an empty saved set — expanding every section survives a reload', () => {
+    // "[]" means the user opened everything. Reading it as "nothing saved" and
+    // falling back to the defaults made that click silently revert on reload.
+    window.localStorage.setItem(STORAGE_KEYS.COLLAPSED_SECTIONS, '[]');
+
+    renderHook(() => useNavigationStorage(true, basicSections, { onStateLoaded, onLoadFailed }));
+
+    expect(onStateLoaded).toHaveBeenCalledWith(
+      expect.objectContaining({ collapsedSections: new Set<string>() })
+    );
+  });
+
+  it('falls back to config defaults only when nothing was ever saved', () => {
+    renderHook(() => useNavigationStorage(true, basicSections, { onStateLoaded, onLoadFailed }));
+
+    expect(onStateLoaded).toHaveBeenCalledWith(
+      expect.objectContaining({ collapsedSections: new Set(['discover']) })
+    );
   });
 
   it('loads saved state from localStorage', () => {
@@ -204,7 +236,7 @@ describe('useNavigationStorage', () => {
   });
 
   it('calls onLoadFailed when localStorage throws', () => {
-    jest.spyOn(window.localStorage, 'getItem').mockImplementation(() => {
+    vi.spyOn(window.localStorage, 'getItem').mockImplementation(() => {
       throw new Error('storage error');
     });
 
@@ -219,17 +251,17 @@ describe('useNavigationStorage', () => {
   // (stable ref pattern) remains necessary.
   it('re-fires the effect when a new callback reference is passed', () => {
     const { rerender } = renderHook(
-      ({ cb }: { cb: jest.Mock }) =>
+      ({ cb }: { cb: Mock }) =>
         useNavigationStorage(true, basicSections, {
           onStateLoaded: cb,
-          onLoadFailed: jest.fn(),
+          onLoadFailed: vi.fn(),
         }),
       { initialProps: { cb: onStateLoaded } }
     );
 
     expect(onStateLoaded).toHaveBeenCalledTimes(1);
 
-    const newCb = jest.fn();
+    const newCb = vi.fn();
     act(() => {
       rerender({ cb: newCb });
     });

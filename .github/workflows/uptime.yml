@@ -65,7 +65,7 @@ jobs:
       - name: Alert / resolve via GitHub issue (+ Telegram on transition)
         uses: actions/github-script@v9
         env:
-          # Same bot fleetcrown/openclaw use — box-death (orangecat.ch = the box)
+          # Same bot loki/openclaw use — box-death (orangecat.ch = the box)
           # reaches the channel George actually watches, not just a GitHub issue.
           # Optional: absent secrets just skip the Telegram send (issue still fires).
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}

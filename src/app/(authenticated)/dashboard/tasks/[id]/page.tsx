@@ -34,6 +34,7 @@ import type { TaskWithRelations } from './types';
 import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import { ROUTES } from '@/config/routes';
 import { API_ROUTES } from '@/config/api-routes';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 export default function TaskDetailPage() {
   const { user, isLoading: authLoading, hydrated } = useRequireAuth();
@@ -59,7 +60,7 @@ export default function TaskDetailPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to load task');
+        throw new Error(apiErrorMessage(data, 'Failed to load task'));
       }
 
       const taskData = data.data?.task || null;

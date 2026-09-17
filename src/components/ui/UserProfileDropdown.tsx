@@ -146,20 +146,23 @@ export default function UserProfileDropdown({
   // Only show loading state when we have literally nothing to show
   const isProfileLoading = false; // Never block the UI — always render with best available data
 
-  // PRIORITY: Profile data → user metadata → email prefix → fallback
+  // PRIORITY: profile only. There is no second source.
+  //
+  // This chain used to continue: user_metadata.full_name → user_metadata.name →
+  // the email local-part, TITLECASED. Each step is a better guess at the
+  // person's legal name than the one before it, which is precisely backwards
+  // for an account that chose a pseudonym. `firstname.lastname@…` came out of
+  // that last branch as "Firstname Lastname" — the app reconstructing a real
+  // name nobody typed, from an address the user never chose to display.
+  //
+  // user_metadata is whatever the OAuth provider handed over at signup and the
+  // user cannot edit it; profiles is what they control. When the profile has
+  // not loaded the honest answer is a placeholder, not a truer name.
   let displayName: string;
   if (profile?.name) {
     displayName = profile.name;
   } else if (profile?.username) {
     displayName = profile.username;
-  } else if (user?.user_metadata?.full_name) {
-    displayName = user.user_metadata.full_name;
-  } else if (user?.user_metadata?.name) {
-    displayName = user.user_metadata.name;
-  } else if (email) {
-    const atIndex = email.indexOf('@');
-    const emailName = atIndex > 0 ? email.slice(0, atIndex) : email;
-    displayName = emailName.replace(/[._-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   } else {
     displayName = 'Me';
   }
@@ -186,7 +189,7 @@ export default function UserProfileDropdown({
         </button>
 
         {isOpen && (
-          <div className="absolute right-0 mt-2 w-48 rounded-md shadow-sm bg-surface-base ring-1 ring-black ring-opacity-5 dark:ring-border dark:ring-opacity-100 z-50">
+          <div className="absolute right-0 mt-2 w-48 rounded-md shadow-sm bg-surface-base ring-1 ring-black/5 dark:ring-border z-50">
             <div className="py-1" role="menu" aria-orientation="vertical">
               {menuItems.map(item => {
                 const Icon = item.icon;

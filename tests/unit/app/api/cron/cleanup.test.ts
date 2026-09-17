@@ -22,7 +22,7 @@ const adminDeleteResult: {
   error: null,
 };
 
-jest.mock('@/lib/supabase/admin', () => ({
+vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: () => ({
     from: () => ({
       delete: () => ({
@@ -32,32 +32,34 @@ jest.mock('@/lib/supabase/admin', () => ({
   }),
 }));
 
-jest.mock('@/services/webhooks/deliveryService', () => ({
-  pruneDeliveredWebhookDeliveries: jest.fn(),
+vi.mock('@/services/webhooks/deliveryService', () => ({
+  pruneDeliveredWebhookDeliveries: vi.fn(),
 }));
 
-jest.mock('@/lib/api/standardResponse', () => ({
-  apiSuccess: jest.fn((payload: unknown) => ({ ok: true, data: payload, status: 200 })),
-  apiError: jest.fn((msg: string, code: string, status: number) => ({
+vi.mock('@/lib/api/standardResponse', () => ({
+  apiSuccess: vi.fn((payload: unknown) => ({ ok: true, data: payload, status: 200 })),
+  apiError: vi.fn((msg: string, code: string, status: number) => ({
     ok: false,
     error: msg,
     code,
     status,
   })),
-  apiUnauthorized: jest.fn(() => ({ ok: false, error: 'Unauthorized', status: 401 })),
+  apiUnauthorized: vi.fn(() => ({ ok: false, error: 'Unauthorized', status: 401 })),
 }));
 
-jest.mock('@/utils/logger', () => ({
+vi.mock('@/utils/logger', () => ({
   logger: {
-    info: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
   },
 }));
 
 import { GET } from '@/app/api/cron/cleanup/route';
 import { pruneDeliveredWebhookDeliveries } from '@/services/webhooks/deliveryService';
 import { apiSuccess, apiUnauthorized } from '@/lib/api/standardResponse';
+
+import type { Mock } from 'vitest';
 
 const CRON_SECRET = 'test-cron-secret';
 
@@ -74,7 +76,7 @@ function makeRequest(authHeader: string | null): any {
 }
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   process.env.CRON_SECRET = CRON_SECRET;
   adminDeleteResult.count = 0;
   adminDeleteResult.error = null;
@@ -108,7 +110,7 @@ describe('GET /api/cron/cleanup', () => {
   describe('happy path', () => {
     it('runs both tasks and returns per-task deleted counts', async () => {
       adminDeleteResult.count = 42;
-      (pruneDeliveredWebhookDeliveries as jest.Mock).mockResolvedValue(7);
+      (pruneDeliveredWebhookDeliveries as Mock).mockResolvedValue(7);
 
       const res = (await GET(makeRequest(`Bearer ${CRON_SECRET}`))) as {
         ok: boolean;
@@ -127,7 +129,7 @@ describe('GET /api/cron/cleanup', () => {
 
     it('reports 0 when neither task pruned anything', async () => {
       adminDeleteResult.count = 0;
-      (pruneDeliveredWebhookDeliveries as jest.Mock).mockResolvedValue(0);
+      (pruneDeliveredWebhookDeliveries as Mock).mockResolvedValue(0);
 
       const res = (await GET(makeRequest(`Bearer ${CRON_SECRET}`))) as {
         data: { tasks: Record<string, number | string> };
@@ -141,7 +143,7 @@ describe('GET /api/cron/cleanup', () => {
 
     it('handles null count from idempotency delete (returns 0)', async () => {
       adminDeleteResult.count = null;
-      (pruneDeliveredWebhookDeliveries as jest.Mock).mockResolvedValue(3);
+      (pruneDeliveredWebhookDeliveries as Mock).mockResolvedValue(3);
 
       const res = (await GET(makeRequest(`Bearer ${CRON_SECRET}`))) as {
         data: { tasks: Record<string, number | string> };
@@ -155,7 +157,7 @@ describe('GET /api/cron/cleanup', () => {
   describe('partial failure (one task fails, the other continues)', () => {
     it('reports the idempotency error string and keeps the webhook count', async () => {
       adminDeleteResult.error = { message: 'connection_reset' };
-      (pruneDeliveredWebhookDeliveries as jest.Mock).mockResolvedValue(5);
+      (pruneDeliveredWebhookDeliveries as Mock).mockResolvedValue(5);
 
       const res = (await GET(makeRequest(`Bearer ${CRON_SECRET}`))) as {
         ok: boolean;
@@ -171,7 +173,7 @@ describe('GET /api/cron/cleanup', () => {
 
     it('reports the webhook error string and keeps the idempotency count', async () => {
       adminDeleteResult.count = 11;
-      (pruneDeliveredWebhookDeliveries as jest.Mock).mockRejectedValue(new Error('table_lock'));
+      (pruneDeliveredWebhookDeliveries as Mock).mockRejectedValue(new Error('table_lock'));
 
       const res = (await GET(makeRequest(`Bearer ${CRON_SECRET}`))) as {
         ok: boolean;
@@ -186,7 +188,7 @@ describe('GET /api/cron/cleanup', () => {
     it('handles non-Error rejections from the webhook task (String(error))', async () => {
       // Non-Error rejections happen in practice when underlying SDKs
       // throw raw strings or undefined.
-      (pruneDeliveredWebhookDeliveries as jest.Mock).mockRejectedValue('weird');
+      (pruneDeliveredWebhookDeliveries as Mock).mockRejectedValue('weird');
 
       const res = (await GET(makeRequest(`Bearer ${CRON_SECRET}`))) as {
         data: { tasks: Record<string, number | string> };

@@ -21,6 +21,7 @@ import {
   apiRateLimited,
 } from '@/lib/api/standardResponse';
 import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 export const GET = withAuth(async (request: AuthenticatedRequest) => {
   try {
@@ -44,7 +45,7 @@ export const GET = withAuth(async (request: AuthenticatedRequest) => {
     const userGroupsResult = await getUserGroups(query, { page, pageSize }, supabase);
 
     if (!userGroupsResult.success) {
-      return apiInternalError(userGroupsResult.error || 'Failed to fetch groups');
+      return apiInternalError(apiErrorMessage(userGroupsResult, 'Failed to fetch groups'));
     }
 
     return apiSuccess({
@@ -72,7 +73,7 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
     // Validate request
     const validationResult = createGroupSchema.safeParse(body);
     if (!validationResult.success) {
-      return apiBadRequest('Invalid request', validationResult.error.errors);
+      return apiBadRequest('Invalid request', validationResult.error.issues);
     }
 
     // Create group using server client
@@ -80,7 +81,7 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
     const result = await createGroup(validationResult.data as CreateGroupInput, supabase, user.id);
 
     if (!result.success) {
-      return apiInternalError(result.error || 'Failed to create group');
+      return apiInternalError(apiErrorMessage(result, 'Failed to create group'));
     }
 
     // Standard entity shape: apiCreated already wraps in `data`, so pass

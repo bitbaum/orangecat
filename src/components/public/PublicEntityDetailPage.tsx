@@ -38,7 +38,8 @@ import {
   type EntityDetailConfig,
 } from './public-entity-detail-config';
 import { MobileStickyCTA } from './PublicEntityStickyCTA';
-import FleetCrownBuildCta from '@/components/integrations/FleetCrownBuildCta';
+import LokiBuildCta from '@/components/integrations/LokiBuildCta';
+import SolonGovernCta from '@/components/integrations/SolonGovernCta';
 
 // Re-export config types + metadata helper for back-compat with the many
 // entity page/config modules that import them from here.
@@ -151,7 +152,7 @@ export default async function PublicEntityDetailPage({
   let priceAmountBtc: number | undefined;
   const hasPaymentSurface = config.showPaymentSection !== false || meta.canReceiveSupport;
   if (hasPaymentSurface) {
-    sellerReceive = await resolveSellerReceiveInfo(supabase, config.entityType, id);
+    sellerReceive = await resolveSellerReceiveInfo(config.entityType, id);
     // Address-reuse disclosure — only worth resolving when an address will
     // actually be shown (NWC reveals no static address to link).
     if (sellerReceive?.address) {
@@ -254,7 +255,7 @@ export default async function PublicEntityDetailPage({
                 </Card>
               )}
 
-              {config.renderDetails?.(entity, !!sellerReceive, isOwner)}
+              {config.renderDetails?.(entity, !!sellerReceive, isOwner, !!user)}
             </div>
 
             <div className="space-y-6">
@@ -274,11 +275,21 @@ export default async function PublicEntityDetailPage({
               />
 
               {isOwner && config.entityType !== 'wallet' && config.entityType !== 'document' && (
-                <FleetCrownBuildCta
+                <LokiBuildCta
                   variant="card"
                   entityType={config.entityType}
                   entityId={id}
                   sourcePath={viewRoute}
+                />
+              )}
+
+              {isOwner && config.entityType === 'investment' && (
+                <SolonGovernCta
+                  variant="card"
+                  entityType={config.entityType}
+                  entityId={id}
+                  sourcePath={viewRoute}
+                  title={entity.title}
                 />
               )}
 

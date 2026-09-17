@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import { TimelineDisplayEvent } from '@/types/timeline';
 import { timelineService } from '@/services/timeline';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 export function useSocialTimelineSearch() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -27,7 +28,7 @@ export function useSocialTimelineSearch() {
       setSearchError(null);
       const result = await timelineService.searchPosts(query, { limit: 30, offset: 0 });
       if (!result.success) {
-        setSearchError(result.error || 'Search failed. Please try again.');
+        setSearchError(apiErrorMessage(result, 'Search failed. Please try again.'));
         setSearchResults(null);
         setSearchTotal(null);
       } else {

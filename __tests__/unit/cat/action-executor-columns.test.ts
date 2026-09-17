@@ -17,18 +17,23 @@ import { CatActionExecutor } from '@/services/cat/action-executor';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { DATABASE_TABLES } from '@/config/database-tables';
 
+import type { Mock } from 'vitest';
+
 // ── Mock CatPermissionService ─────────────────────────────────────────────────
 // Auto-allow every action: allowed=true, requiresConfirmation=false
-jest.mock('@/services/cat/permission-service', () => ({
-  CatPermissionService: jest.fn().mockImplementation(() => ({
-    checkPermission: jest.fn().mockResolvedValue({ allowed: true, requiresConfirmation: false }),
-    checkSpendCaps: jest.fn().mockResolvedValue({ allowed: true }),
-  })),
+vi.mock('@/services/cat/permission-service', () => ({
+  // function (not arrow): vitest constructs mock implementations with `new`.
+  CatPermissionService: vi.fn().mockImplementation(function () {
+    return {
+      checkPermission: vi.fn().mockResolvedValue({ allowed: true, requiresConfirmation: false }),
+      checkSpendCaps: vi.fn().mockResolvedValue({ allowed: true }),
+    };
+  }),
 }));
 
 // ── Mock logger (suppress noise) ─────────────────────────────────────────────
-jest.mock('@/utils/logger', () => ({
-  logger: { error: jest.fn(), warn: jest.fn(), info: jest.fn(), debug: jest.fn() },
+vi.mock('@/utils/logger', () => ({
+  logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 
 // ── Supabase mock factory ─────────────────────────────────────────────────────
@@ -41,38 +46,38 @@ function buildMockSupabase() {
     const chain: Record<string, unknown> = {};
 
     // Mutation trackers
-    chain.insert = jest.fn((payload: unknown) => {
+    chain.insert = vi.fn((payload: unknown) => {
       if (!insertsByTable[tableName]) insertsByTable[tableName] = [];
       insertsByTable[tableName].push(payload);
       return chain;
     });
-    chain.update = jest.fn((payload: unknown) => {
+    chain.update = vi.fn((payload: unknown) => {
       if (!updatesByTable[tableName]) updatesByTable[tableName] = [];
       updatesByTable[tableName].push(payload);
       return chain;
     });
 
     // Terminal resolvers — single returns a row, maybeSingle returns null for participant lookup
-    chain.single = jest
+    chain.single = vi
       .fn()
       .mockResolvedValue({ data: { id: 'mock-id', title: 'mock' }, error: null });
-    chain.maybeSingle = jest.fn().mockResolvedValue({ data: null, error: null }); // no shared conv → create new
+    chain.maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null }); // no shared conv → create new
 
     // Chainable filters / modifiers
-    chain.select = jest.fn().mockReturnThis();
-    chain.eq = jest.fn().mockReturnThis();
-    chain.neq = jest.fn().mockReturnThis();
-    chain.or = jest.fn().mockReturnThis();
-    chain.in = jest.fn().mockReturnThis();
-    chain.not = jest.fn().mockReturnThis();
-    chain.order = jest.fn().mockReturnThis();
-    chain.limit = jest.fn().mockReturnThis();
+    chain.select = vi.fn().mockReturnThis();
+    chain.eq = vi.fn().mockReturnThis();
+    chain.neq = vi.fn().mockReturnThis();
+    chain.or = vi.fn().mockReturnThis();
+    chain.in = vi.fn().mockReturnThis();
+    chain.not = vi.fn().mockReturnThis();
+    chain.order = vi.fn().mockReturnThis();
+    chain.limit = vi.fn().mockReturnThis();
 
     return chain;
   };
 
   const supabase = {
-    from: jest.fn((table: string) => makeChain(table)),
+    from: vi.fn((table: string) => makeChain(table)),
     _insertsByTable: insertsByTable,
     _updatesByTable: updatesByTable,
   };
@@ -1078,28 +1083,28 @@ describe('Cat action-executor — correct DB column names', () => {
       };
 
       const supabase = {
-        from: jest.fn((table: string) => {
+        from: vi.fn((table: string) => {
           const chain: Record<string, unknown> = {};
-          chain.insert = jest.fn((payload: unknown) => {
+          chain.insert = vi.fn((payload: unknown) => {
             if (!insertsByTable[table]) insertsByTable[table] = [];
             insertsByTable[table].push(payload);
             return chain;
           });
-          chain.update = jest.fn().mockReturnThis();
-          chain.select = jest.fn().mockReturnThis();
-          chain.eq = jest.fn().mockReturnThis();
-          chain.in = jest.fn().mockReturnThis();
-          chain.order = jest.fn().mockReturnThis();
-          chain.limit = jest.fn().mockReturnThis();
+          chain.update = vi.fn().mockReturnThis();
+          chain.select = vi.fn().mockReturnThis();
+          chain.eq = vi.fn().mockReturnThis();
+          chain.in = vi.fn().mockReturnThis();
+          chain.order = vi.fn().mockReturnThis();
+          chain.limit = vi.fn().mockReturnThis();
           // Tasks select returns real task data; everything else returns a generic insert success
-          chain.single = jest
+          chain.single = vi
             .fn()
             .mockResolvedValue(
               table === DATABASE_TABLES.TASKS
                 ? { data: taskRow, error: null }
                 : { data: { id: 'new-id' }, error: null }
             );
-          chain.maybeSingle = jest.fn().mockResolvedValue({ data: null, error: null });
+          chain.maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
           return chain;
         }),
         _insertsByTable: insertsByTable,
@@ -1180,27 +1185,27 @@ describe('Cat action-executor — correct DB column names', () => {
       };
 
       const supabase = {
-        from: jest.fn((table: string) => {
+        from: vi.fn((table: string) => {
           const chain: Record<string, unknown> = {};
-          chain.insert = jest.fn().mockReturnThis();
-          chain.update = jest.fn((payload: unknown) => {
+          chain.insert = vi.fn().mockReturnThis();
+          chain.update = vi.fn((payload: unknown) => {
             if (!updatesByTable[table]) updatesByTable[table] = [];
             updatesByTable[table].push(payload);
             return chain;
           });
-          chain.select = jest.fn().mockReturnThis();
-          chain.eq = jest.fn().mockReturnThis();
-          chain.order = jest.fn().mockReturnThis();
-          chain.limit = jest.fn().mockReturnThis();
+          chain.select = vi.fn().mockReturnThis();
+          chain.eq = vi.fn().mockReturnThis();
+          chain.order = vi.fn().mockReturnThis();
+          chain.limit = vi.fn().mockReturnThis();
           // Tasks select returns real task data; update single returns updated row
-          chain.single = jest
+          chain.single = vi
             .fn()
             .mockResolvedValue(
               table === DATABASE_TABLES.TASKS
                 ? { data: { ...taskRow, due_date: null, priority: 'normal' }, error: null }
                 : { data: { id: 'new-id' }, error: null }
             );
-          chain.maybeSingle = jest.fn().mockResolvedValue({ data: null, error: null });
+          chain.maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
           return chain;
         }),
         _updatesByTable: updatesByTable,
@@ -1349,11 +1354,15 @@ describe('Cat action-executor — correct DB column names', () => {
       expect(update!.location_country).toBe('CH');
     });
 
-    it('filters out unsafe fields — username must never appear in update payload', async () => {
+    it('filters out unsafe fields — email and id must never appear in update payload', async () => {
+      // username used to be asserted here too, as a field that must always be
+      // dropped. That stopped being true once profile_username_history made a
+      // rename safe: the handle is now updatable, validated apart from the
+      // free-text fields, and covered in cat/rename-handle.test.ts. email and id
+      // are still never writable from a chat action.
       const supabase = buildMockSupabase();
       await run(supabase, 'update_profile', {
         bio: 'Safe bio',
-        username: 'hacked_username', // must be silently dropped
         email: 'hacker@evil.com', // must be silently dropped
         id: 'injected-id', // must be silently dropped
       });
@@ -1361,7 +1370,6 @@ describe('Cat action-executor — correct DB column names', () => {
       const update = getEntityUpdate(supabase, DATABASE_TABLES.PROFILES);
       expect(update!.bio).toBe('Safe bio');
       // Unsafe fields must NOT appear in the DB update
-      expect((update as Record<string, unknown>).username).toBeUndefined();
       expect((update as Record<string, unknown>).email).toBeUndefined();
       expect((update as Record<string, unknown>).id).toBeUndefined();
     });
@@ -1375,7 +1383,7 @@ describe('Cat action-executor — correct DB column names', () => {
       // eq is called on the chain — USER_ID should be used (not ACTOR_ID)
       // We verify via the mock's .eq call — the chain for profiles must be called
       // with eq('id', USER_ID). Since eq returns this, we verify via call order.
-      const profileCalls = (supabase.from as jest.Mock).mock.calls.filter(
+      const profileCalls = (supabase.from as Mock).mock.calls.filter(
         ([t]: [string]) => t === DATABASE_TABLES.PROFILES
       );
       expect(profileCalls.length).toBeGreaterThan(0);
@@ -1385,8 +1393,8 @@ describe('Cat action-executor — correct DB column names', () => {
       const supabase = buildMockSupabase();
       const result = await run(supabase, 'update_profile', {
         // Only unsafe fields — nothing valid to update
-        username: 'blocked',
         email: 'blocked@example.com',
+        id: 'injected-id',
       });
 
       expect(result.status).toBe('failed');
@@ -1441,32 +1449,32 @@ describe('Cat action-executor — correct DB column names', () => {
 
       const chain: Record<string, unknown> = {};
 
-      chain.select = jest.fn(() => {
+      chain.select = vi.fn(() => {
         _operation = 'select';
         return chain;
       });
-      chain.insert = jest.fn((payload: unknown) => {
+      chain.insert = vi.fn((payload: unknown) => {
         _operation = 'insert';
         if (!insertsByTable[tableName]) insertsByTable[tableName] = [];
         insertsByTable[tableName].push(payload);
         return chain;
       });
-      chain.update = jest.fn(() => {
+      chain.update = vi.fn(() => {
         _operation = 'update';
         return chain;
       });
-      chain.eq = jest.fn().mockReturnThis();
-      chain.not = jest.fn().mockReturnThis();
-      chain.order = jest.fn().mockReturnThis();
-      chain.limit = jest.fn().mockReturnThis();
-      chain.neq = jest.fn().mockReturnThis();
-      chain.or = jest.fn().mockReturnThis();
-      chain.in = jest.fn().mockReturnThis();
-      chain.maybeSingle = jest.fn().mockResolvedValue({ data: null, error: null });
+      chain.eq = vi.fn().mockReturnThis();
+      chain.not = vi.fn().mockReturnThis();
+      chain.order = vi.fn().mockReturnThis();
+      chain.limit = vi.fn().mockReturnThis();
+      chain.neq = vi.fn().mockReturnThis();
+      chain.or = vi.fn().mockReturnThis();
+      chain.in = vi.fn().mockReturnThis();
+      chain.maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
 
       // Make chain thenable so `await chain` (for list queries like .limit(1)) resolves correctly.
       // The wallets SELECT returns a list with the lightning address; inserts return the new row.
-      chain.then = jest.fn().mockImplementation((resolve: (v: unknown) => void) => {
+      chain.then = vi.fn().mockImplementation((resolve: (v: unknown) => void) => {
         if (tableName === DATABASE_TABLES.WALLETS && _operation === 'select') {
           resolve({
             data: existingLightningAddress ? [{ lightning_address: existingLightningAddress }] : [],
@@ -1478,7 +1486,7 @@ describe('Cat action-executor — correct DB column names', () => {
       });
 
       // single() — used by INSERT .select().single() and by action log
-      chain.single = jest.fn().mockImplementation(() => {
+      chain.single = vi.fn().mockImplementation(() => {
         if (tableName === DATABASE_TABLES.WALLETS && _operation === 'insert') {
           return Promise.resolve({
             data: {
@@ -1501,7 +1509,7 @@ describe('Cat action-executor — correct DB column names', () => {
     };
 
     const supabase = {
-      from: jest.fn((table: string) => makeChain(table)),
+      from: vi.fn((table: string) => makeChain(table)),
       _insertsByTable: insertsByTable,
     };
 

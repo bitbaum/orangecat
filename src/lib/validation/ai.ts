@@ -54,7 +54,7 @@ export const aiAssistantSchema = z.object({
   compute_provider_type: z
     .enum(AI_COMPUTE_PROVIDER_TYPES.map(t => t.value) as [string, ...string[]])
     .default('api'),
-  compute_provider_id: z.string().uuid().optional().nullable(),
+  compute_provider_id: z.string().guid().optional().nullable(),
   api_provider: optionalText(50),
 
   // Pricing

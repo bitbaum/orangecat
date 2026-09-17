@@ -63,7 +63,7 @@ describe('OpenAICompatibleService', () => {
       status: 200,
       json: async () => ({ choices: [], usage: {} }),
     } as unknown as Response;
-    const fetchSpy = jest.spyOn(global, 'fetch').mockResolvedValue(fakeResponse);
+    const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValue(fakeResponse);
 
     const svc = createOpenAICompatibleServiceWithByok({
       apiKey: 'sk-test-1234567890abcdef\n',

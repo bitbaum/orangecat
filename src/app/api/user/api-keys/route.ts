@@ -22,6 +22,7 @@ import {
   apiRateLimited,
 } from '@/lib/api/standardResponse';
 import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 const addKeySchema = z.object({
   // WIRED_PROVIDER_IDS is the SSOT for providers the chat pipeline can
@@ -37,7 +38,7 @@ const reorderSchema = z.object({
   // Each entry is a key id (uuid) or the literal 'platform' sentinel for the
   // free OrangeCat default's position in the chain.
   order: z
-    .array(z.union([z.string().uuid(), z.literal(PLATFORM_CHAIN_ID)]))
+    .array(z.union([z.string().guid(), z.literal(PLATFORM_CHAIN_ID)]))
     .min(1)
     .max(50),
 });
@@ -100,7 +101,7 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
     });
 
     if (!addResult.success) {
-      return apiBadRequest(addResult.error || 'Failed to add API key');
+      return apiBadRequest(apiErrorMessage(addResult, 'Failed to add API key'));
     }
 
     return apiCreated(addResult.key);

@@ -1,7 +1,7 @@
 /**
  * Supporter plan granter — OrangeCat's own pass-product checkout.
  *
- * Mirrors the FleetCrown entitlement pattern (a product tagged for a plan →
+ * Mirrors the Loki entitlement pattern (a product tagged for a plan →
  * on Bitcoin settlement, grant a time-boxed plan) but writes the grant LOCALLY
  * to user_plans instead of HTTP-notifying a sibling product. A Supporter
  * product carries two tags: `supporter-plan` and `supporter-days:<n>`. When it

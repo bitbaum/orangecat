@@ -11,7 +11,7 @@
  * CI turned a stalled merge queue into a genuinely red main.
  *
  * These lived in auto-merge-base-guard.test.ts until the sweep itself moved to
- * maonakamoto/dotfiles (where its behaviour is tested against the canonical
+ * bitbaum/dotfiles (where its behaviour is tested against the canonical
  * script). The fixture script stayed HERE, so its guard stays here too — in its
  * own file, because the thing it tests no longer shares a file-worth of context
  * with a script this repo no longer carries.

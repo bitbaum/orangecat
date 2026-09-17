@@ -49,7 +49,7 @@ export const COMPONENT_STYLES = {
       danger: 'bg-status-negative text-fg-inverted hover:bg-status-negative/90',
       outline: 'border border-strong bg-transparent text-fg-primary hover:bg-surface-raised',
       gradient: 'bg-fg-primary text-fg-inverted hover:bg-muted-strong',
-      // Migration commit 3/N: warm-accent CTA per FleetCrown — the single
+      // Migration commit 3/N: warm-accent CTA per Loki — the single
       // chromatic color reserved for top-of-funnel conversion ("Start
       // Creating", "Get Started", "Sign Up"). Everything else stays
       // monochromatic.

@@ -7,14 +7,17 @@ import type { SupabaseClient } from '@supabase/supabase-js';
  * per day, and a watch fires exactly once (marked fired BEFORE notifying).
  */
 
-const createNotificationMock = jest.fn().mockResolvedValue({ success: true, notificationId: 'n1' });
-jest.mock('@/lib/services/notifications', () => ({
-  NotificationService: jest.fn().mockImplementation(() => ({
-    createNotification: (...args: unknown[]) => createNotificationMock(...args),
-  })),
+const createNotificationMock = vi.fn().mockResolvedValue({ success: true, notificationId: 'n1' });
+vi.mock('@/lib/services/notifications', () => ({
+  // function (not arrow): vitest constructs mock implementations with `new`.
+  NotificationService: vi.fn().mockImplementation(function () {
+    return {
+      createNotification: (...args: unknown[]) => createNotificationMock(...args),
+    };
+  }),
 }));
-jest.mock('@/utils/logger', () => ({
-  logger: { error: jest.fn(), warn: jest.fn(), info: jest.fn(), debug: jest.fn() },
+vi.mock('@/utils/logger', () => ({
+  logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 
 type QueryResponse = { data?: unknown; error?: unknown; count?: number | null };

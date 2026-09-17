@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { ROUTES } from '@/config/routes';
 import { API_ROUTES } from '@/config/api-routes';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 interface UseTaskActionsOptions {
   taskId: string;
@@ -37,7 +38,7 @@ export function useTaskActions({ taskId, onSuccess }: UseTaskActionsOptions) {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Failed to complete task');
+        throw new Error(apiErrorMessage(data, 'Failed to complete task'));
       }
 
       toast.success('Task completed!');
@@ -63,7 +64,7 @@ export function useTaskActions({ taskId, onSuccess }: UseTaskActionsOptions) {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Failed to flag task');
+        throw new Error(apiErrorMessage(data, 'Failed to flag task'));
       }
 
       toast.success('Task flagged');
@@ -92,7 +93,7 @@ export function useTaskActions({ taskId, onSuccess }: UseTaskActionsOptions) {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Failed to send request');
+        throw new Error(apiErrorMessage(data, 'Failed to send request'));
       }
 
       toast.success(requestUserId ? 'Request sent' : 'Request sent to everyone');
@@ -118,7 +119,7 @@ export function useTaskActions({ taskId, onSuccess }: UseTaskActionsOptions) {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Failed to archive task');
+        throw new Error(apiErrorMessage(data, 'Failed to archive task'));
       }
 
       toast.success('Task archived');

@@ -10,6 +10,7 @@ import {
   messageSyncProgress,
   messageSyncComplete,
 } from './message-queue-events';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 const MAX_SYNC_ATTEMPTS = 5;
 
@@ -66,7 +67,7 @@ async function sendQueuedMessage(message: QueuedMessage): Promise<boolean> {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw Object.assign(new Error(errorData.error || 'Failed to send message'), {
+      throw Object.assign(new Error(apiErrorMessage(errorData, 'Failed to send message')), {
         status: response.status,
         response: { status: response.status },
       });

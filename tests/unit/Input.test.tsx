@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Input Component Tests — behavior, not class strings.
  *

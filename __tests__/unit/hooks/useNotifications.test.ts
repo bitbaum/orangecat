@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Regression test for the notifications double-fetch.
  *
@@ -17,24 +18,24 @@ import { API_ROUTES } from '@/config/api-routes';
 // Stable references — real useAuth returns a stable user across renders, so the
 // mock must too (a fresh object each render would itself retrigger the effect).
 const mockStableAuth = { user: { id: 'user-1' } };
-jest.mock('@/hooks/useAuth', () => ({
+vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => mockStableAuth,
 }));
-jest.mock('@/hooks/useNotificationsRealtime', () => ({
-  useNotificationsRealtime: jest.fn(),
+vi.mock('@/hooks/useNotificationsRealtime', () => ({
+  useNotificationsRealtime: vi.fn(),
 }));
-jest.mock('@/hooks/useNotificationsMutations', () => ({
+vi.mock('@/hooks/useNotificationsMutations', () => ({
   useNotificationsMutations: () => ({
-    markAsRead: jest.fn(),
-    deleteNotification: jest.fn(),
-    clearRead: jest.fn(),
+    markAsRead: vi.fn(),
+    deleteNotification: vi.fn(),
+    clearRead: vi.fn(),
   }),
 }));
 
 const listUrl = (url: string) => url.startsWith(API_ROUTES.NOTIFICATIONS.BASE + '?');
 
 function mockFetch() {
-  return jest.fn((url: string) => {
+  return vi.fn((url: string) => {
     if (url === API_ROUTES.NOTIFICATIONS.UNREAD) {
       return Promise.resolve({
         ok: true,
@@ -49,7 +50,7 @@ function mockFetch() {
 }
 
 afterEach(() => {
-  jest.restoreAllMocks();
+  vi.restoreAllMocks();
 });
 
 describe('useNotifications — no double-fetch', () => {

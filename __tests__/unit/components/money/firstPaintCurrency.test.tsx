@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * The first paint must already speak the visitor's currency.
  *
@@ -18,11 +19,11 @@ import { CurrencyRatesProvider } from '@/components/providers/CurrencyRatesProvi
 import { AmountField } from '@/components/money/AmountField';
 import { currencyConverter } from '@/services/currency/rates';
 
-jest.mock('@/utils/logger', () => ({
-  logger: { warn: jest.fn(), error: jest.fn(), info: jest.fn(), debug: jest.fn() },
+vi.mock('@/utils/logger', () => ({
+  logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 // An anonymous visitor: no profile, so the platform default (CHF) applies.
-jest.mock('@/hooks/useUserCurrency', () => ({
+vi.mock('@/hooks/useUserCurrency', () => ({
   useUserCurrency: () => 'CHF',
 }));
 

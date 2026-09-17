@@ -11,30 +11,32 @@ import { getOwnerReceiveStatus } from '@/domain/wallets/receiveStatus';
 import { resolveUserWallet } from '@/domain/payments/walletResolutionService';
 import { canDecrypt } from '@/domain/payments/encryptionService';
 
-jest.mock('@/domain/payments/walletResolutionService', () => ({
-  resolveUserWallet: jest.fn(),
+import type { MockedFunction } from 'vitest';
+
+vi.mock('@/domain/payments/walletResolutionService', () => ({
+  resolveUserWallet: vi.fn(),
 }));
-jest.mock('@/domain/payments/encryptionService', () => ({
-  canDecrypt: jest.fn(),
+vi.mock('@/domain/payments/encryptionService', () => ({
+  canDecrypt: vi.fn(),
 }));
 
 const nwcRows: Array<{ id: string; nwc_connection_uri: string | null }> = [];
 
-jest.mock('@/lib/supabase/admin', () => ({
+vi.mock('@/lib/supabase/admin', () => ({
   getAdminClient: () => ({
     from: () => ({
-      select: jest.fn().mockReturnThis(),
-      eq: jest.fn().mockReturnThis(),
-      not: jest.fn().mockResolvedValue({ data: nwcRows, error: null }),
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      not: vi.fn().mockResolvedValue({ data: nwcRows, error: null }),
     }),
   }),
 }));
 
-const mockResolve = resolveUserWallet as jest.MockedFunction<typeof resolveUserWallet>;
-const mockCanDecrypt = canDecrypt as jest.MockedFunction<typeof canDecrypt>;
+const mockResolve = resolveUserWallet as MockedFunction<typeof resolveUserWallet>;
+const mockCanDecrypt = canDecrypt as MockedFunction<typeof canDecrypt>;
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   nwcRows.length = 0;
   mockCanDecrypt.mockReturnValue(true);
 });

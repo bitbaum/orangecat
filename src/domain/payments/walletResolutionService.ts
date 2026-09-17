@@ -14,7 +14,7 @@ import { getAdminClient } from '@/lib/supabase/admin';
 import { decrypt } from './encryptionService';
 import { deriveOnchainAddress } from './addressDerivation';
 import { detectWalletType } from '@/types/wallet';
-import type { ResolvedWallet } from './types';
+import { nwcResolved, type ResolvedWallet } from './types';
 import { logger } from '@/utils/logger';
 
 /**
@@ -28,7 +28,6 @@ import { logger } from '@/utils/logger';
  * Returns null if seller has no wallet connected.
  */
 export async function resolveSellerWallet(
-  supabase: SupabaseClient,
   entityType: EntityType,
   entityId: string
 ): Promise<ResolvedWallet | null> {
@@ -122,11 +121,10 @@ export interface SellerReceiveInfo {
  * buyers will actually pay to. Returns null when no wallet is connected.
  */
 export async function resolveSellerReceiveInfo(
-  supabase: SupabaseClient,
   entityType: EntityType,
   entityId: string
 ): Promise<SellerReceiveInfo | null> {
-  const resolved = await resolveSellerWallet(supabase, entityType, entityId);
+  const resolved = await resolveSellerWallet(entityType, entityId);
   if (!resolved) {
     return null;
   }
@@ -258,9 +256,10 @@ function onchainResolution(walletId: string, value?: string | null): ResolvedWal
 function pickMethodFromWallet(wallet: WalletRow): ResolvedWallet | null {
   if (wallet.nwc_connection_uri) {
     try {
-      return { method: 'nwc', wallet_id: wallet.id, nwc_uri: decrypt(wallet.nwc_connection_uri) };
+      return nwcResolved(wallet.id, decrypt(wallet.nwc_connection_uri), wallet.lightning_address);
     } catch (e) {
-      logger.error('Failed to decrypt NWC URI', { walletId: wallet.id, error: e });
+      // warn, not error: permanent + owner-fixable; see PR #910.
+      logger.warn('NWC URI undecryptable; wallet skipped', { walletId: wallet.id, error: e });
       // Fall through to next method
     }
   }
@@ -384,13 +383,13 @@ export async function resolveUserWallet(
   if (nwcWallet) {
     try {
       const decryptedUri = decrypt(nwcWallet.nwc_connection_uri!);
-      return {
-        method: 'nwc',
-        wallet_id: nwcWallet.id,
-        nwc_uri: decryptedUri,
-      };
+      // Any wallet's address will do — they all pay the same owner.
+      const fallback =
+        nwcWallet.lightning_address ?? wallets.find(w => w.lightning_address)?.lightning_address;
+      return nwcResolved(nwcWallet.id, decryptedUri, fallback);
     } catch (e) {
-      logger.error('Failed to decrypt NWC URI', { walletId: nwcWallet.id, error: e });
+      // Same owner-fixable state as pickMethodFromWallet above.
+      logger.warn('NWC URI undecryptable; wallet skipped', { walletId: nwcWallet.id, error: e });
       // Fall through to next method
     }
   }

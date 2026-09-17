@@ -25,6 +25,7 @@ import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { AIPrefillBar } from '@/components/create/AIPrefillBar';
 import { AI_ASSIST_FORMS } from '@/config/ai-assist-forms';
 import { ProposalFormFields } from './ProposalFormFields';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 /** Field names the AI may write — anything else it returns is ignored. */
 const PROPOSAL_AI_FIELD_NAMES = new Set(AI_ASSIST_FORMS.proposal.fields.map(field => field.name));
@@ -104,7 +105,7 @@ export function CreateProposalDialog({
       });
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to create proposal');
+        throw new Error(apiErrorMessage(error, 'Failed to create proposal'));
       }
       toast.success('Proposal created successfully!');
       form.reset();

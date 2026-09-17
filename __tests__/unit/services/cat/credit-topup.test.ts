@@ -21,26 +21,26 @@ import {
   getResumableTopUp,
 } from '@/services/cat/credit-topup';
 
-jest.mock('@/utils/logger', () => ({
-  logger: { warn: jest.fn(), error: jest.fn(), info: jest.fn(), debug: jest.fn() },
+vi.mock('@/utils/logger', () => ({
+  logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 
-const platformReceiveEnabled = jest.fn();
-const getPlatformNwcClient = jest.fn();
-jest.mock('@/lib/bitcoin/platform-wallet', () => ({
+const platformReceiveEnabled = vi.fn();
+const getPlatformNwcClient = vi.fn();
+vi.mock('@/lib/bitcoin/platform-wallet', () => ({
   platformReceiveEnabled: () => platformReceiveEnabled(),
   getPlatformNwcClient: () => getPlatformNwcClient(),
 }));
 
-const appendCreditEntry = jest.fn();
-const getCreditBalance = jest.fn();
-jest.mock('@/services/cat/credits', () => ({
+const appendCreditEntry = vi.fn();
+const getCreditBalance = vi.fn();
+vi.mock('@/services/cat/credits', () => ({
   appendCreditEntry: (...a: unknown[]) => appendCreditEntry(...a),
   getCreditBalance: (...a: unknown[]) => getCreditBalance(...a),
 }));
 
-const adminFrom = jest.fn();
-jest.mock('@/lib/supabase/admin', () => ({
+const adminFrom = vi.fn();
+vi.mock('@/lib/supabase/admin', () => ({
   getAdminClient: () => ({ from: (...a: unknown[]) => adminFrom(...a) }),
 }));
 
@@ -88,15 +88,15 @@ function qb(
 
 function nwcClient(over: Record<string, unknown> = {}) {
   return {
-    makeInvoice: jest.fn().mockResolvedValue({ invoice: 'lnbc1...', payment_hash: 'ph_abc' }),
-    lookupInvoice: jest.fn().mockResolvedValue({ settled_at: null }),
-    disconnect: jest.fn(),
+    makeInvoice: vi.fn().mockResolvedValue({ invoice: 'lnbc1...', payment_hash: 'ph_abc' }),
+    lookupInvoice: vi.fn().mockResolvedValue({ settled_at: null }),
+    disconnect: vi.fn(),
     ...over,
   };
 }
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   qbCalls.length = 0;
   platformReceiveEnabled.mockReturnValue(true);
 });
@@ -230,7 +230,7 @@ describe('checkTopUp', () => {
   it('credits the OWNER (idempotent on payment_hash) when the invoice has settled', async () => {
     adminFrom.mockReturnValue(qb({ terminal: { data: pendingRow } }));
     getPlatformNwcClient.mockResolvedValue(
-      nwcClient({ lookupInvoice: jest.fn().mockResolvedValue({ settled_at: 1_700_000_000 }) })
+      nwcClient({ lookupInvoice: vi.fn().mockResolvedValue({ settled_at: 1_700_000_000 }) })
     );
     // The new balance comes straight from the atomic append (no extra read).
     appendCreditEntry.mockResolvedValue(0.0005);
@@ -269,7 +269,7 @@ describe('checkTopUp', () => {
       then: (resolve: (v: unknown) => unknown) => resolve({ data: null, error: null }),
     }));
     getPlatformNwcClient.mockResolvedValue(
-      nwcClient({ lookupInvoice: jest.fn().mockResolvedValue({ settled_at: 1_700_000_000 }) })
+      nwcClient({ lookupInvoice: vi.fn().mockResolvedValue({ settled_at: 1_700_000_000 }) })
     );
     appendCreditEntry.mockResolvedValue(null); // crediting failed
 
@@ -281,7 +281,7 @@ describe('checkTopUp', () => {
   it('stays pending on a transient lookup failure (client polls again)', async () => {
     adminFrom.mockReturnValue(qb({ terminal: { data: pendingRow } }));
     getPlatformNwcClient.mockResolvedValue(
-      nwcClient({ lookupInvoice: jest.fn().mockRejectedValue(new Error('relay timeout')) })
+      nwcClient({ lookupInvoice: vi.fn().mockRejectedValue(new Error('relay timeout')) })
     );
     await expect(checkTopUp('owner', 'tp1')).resolves.toEqual({ status: 'pending' });
     expect(appendCreditEntry).not.toHaveBeenCalled();

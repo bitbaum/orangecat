@@ -13,29 +13,31 @@
 import { createHash, randomBytes } from 'crypto';
 import { STATUS } from '@/config/database-constants';
 
-jest.mock('@/utils/logger', () => ({
-  logger: { error: jest.fn(), warn: jest.fn(), info: jest.fn(), debug: jest.fn() },
+vi.mock('@/utils/logger', () => ({
+  logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 
-const mockMaybeSingle = jest.fn();
-const queryChain: Record<string, jest.Mock> = {};
-queryChain.select = jest.fn(() => queryChain);
-queryChain.eq = jest.fn(() => queryChain);
+const mockMaybeSingle = vi.fn();
+const queryChain: Record<string, Mock> = {};
+queryChain.select = vi.fn(() => queryChain);
+queryChain.eq = vi.fn(() => queryChain);
 queryChain.maybeSingle = mockMaybeSingle;
-jest.mock('@/lib/supabase/admin', () => ({
+vi.mock('@/lib/supabase/admin', () => ({
   getAdminClient: () => ({ from: () => queryChain }),
 }));
 
-const mockCheckStatus = jest.fn();
-const mockSettle = jest.fn();
-jest.mock('@/domain/payments/paymentFlowService', () => ({
-  initiatePublicSupport: jest.fn(),
+const mockCheckStatus = vi.fn();
+const mockSettle = vi.fn();
+vi.mock('@/domain/payments/paymentFlowService', () => ({
+  initiatePublicSupport: vi.fn(),
   checkPublicPaymentStatus: (...args: unknown[]) => mockCheckStatus(...args),
   hashPublicStatusToken: (t: string) => `hashed:${t}`,
   settleVerifiedPayment: (...args: unknown[]) => mockSettle(...args),
 }));
 
 import { verifyL402Payment } from '@/domain/payments/l402';
+
+import type { Mock } from 'vitest';
 
 const ENTITY_ID = '11111111-2222-3333-4444-555555555555';
 const OTHER_ENTITY_ID = '99999999-8888-7777-6666-555555555555';
@@ -103,10 +105,7 @@ describe('verifyL402Payment — preimage branch settles', () => {
   it('falls back to settlement status on a wrong preimage', async () => {
     mockMaybeSingle.mockResolvedValue({ data: intentRow() });
     mockCheckStatus.mockResolvedValue({ status: 'invoice_ready', paid_at: null });
-    const result = await verifyL402Payment(
-      { ...creds, preimage: 'f'.repeat(64) },
-      expected
-    );
+    const result = await verifyL402Payment({ ...creds, preimage: 'f'.repeat(64) }, expected);
     expect(mockSettle).not.toHaveBeenCalled();
     expect(result.ok).toBe(false);
     expect(result.verified_by).toBeUndefined();

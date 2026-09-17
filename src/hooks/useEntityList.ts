@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { logger } from '@/utils/logger';
 
 /**
  * useEntityList - Reusable hook for fetching and managing entity lists
@@ -91,6 +92,9 @@ export function useEntityList<T extends { id: string }>(
           signal,
         });
         if (!response.ok) {
+          if (response.status === 429) {
+            throw new Error('Too many requests — wait a moment and try again.');
+          }
           throw new Error(`Failed to load items: ${response.statusText}`);
         }
 
@@ -102,8 +106,36 @@ export function useEntityList<T extends { id: string }>(
           setItems(transformed.items);
           setTotal(transformed.total);
         } else {
-          setItems(data.data || []);
-          setTotal(data.metadata?.total || 0);
+          // `data.data` MUST be the array of rows. A route that nests its own
+          // envelope (`apiSuccess({ data, count })`) puts an OBJECT here, and
+          // the old code assigned it to `items` verbatim — so the feed
+          // rendered nothing and `total` read 0, with no error anywhere.
+          // /api/projects/favorites did exactly that and the Favorites tab was
+          // dead; same class as the follow-list envelope behind #902.
+          //
+          // Recover if the rows are one level deeper, but say so loudly:
+          // silence is what let both of these live in production.
+          const payload = data.data;
+          if (Array.isArray(payload)) {
+            setItems(payload);
+          } else if (Array.isArray(payload?.data)) {
+            logger.error(
+              'Entity feed returned a nested envelope; reading one level deeper',
+              { apiEndpoint, keys: Object.keys(payload) },
+              'useEntityList'
+            );
+            setItems(payload.data);
+          } else {
+            if (payload !== null && payload !== undefined) {
+              logger.error(
+                'Entity feed payload is not an array',
+                { apiEndpoint, received: typeof payload },
+                'useEntityList'
+              );
+            }
+            setItems([]);
+          }
+          setTotal(data.metadata?.total ?? payload?.count ?? 0);
         }
       } catch (err) {
         // Ignore abort errors — they're intentional (component unmounted or deps changed)

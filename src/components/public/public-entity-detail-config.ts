@@ -63,7 +63,12 @@ export interface EntityDetailConfig {
    * `isOwner` is true when the viewer owns this entity — render management
    * affordances (e.g. add/edit sub-items) instead of the read-only view.
    */
-  renderDetails?: (entity: EntityData, payable: boolean, isOwner: boolean) => ReactNode;
+  renderDetails?: (
+    entity: EntityData,
+    payable: boolean,
+    isOwner: boolean,
+    isSignedIn: boolean,
+  ) => ReactNode;
   /**
    * Resolve the entity's price for the payment section, in its OWN currency
    * (NOT BTC — there is no price_btc column). Returns null when the entity has

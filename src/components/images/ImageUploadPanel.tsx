@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { IMAGE_UPLOAD_ACCEPT, uploadUserImage } from '@/services/images/upload';
 import type { StockImage } from '@/services/images/types';
 import { cn } from '@/lib/utils';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 /**
  * Own-photo upload for the shared image picker: click, drag & drop, or paste.
@@ -28,7 +29,7 @@ export default function ImageUploadPanel({ onPick }: { onPick: (image: StockImag
     const result = await uploadUserImage(user.id, file, 'post-image');
     setBusy(false);
     if (!result.success || !result.url) {
-      setError(result.error || 'Upload failed. Please try again.');
+      setError(apiErrorMessage(result, 'Upload failed. Please try again.'));
       return;
     }
     onPick({

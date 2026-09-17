@@ -14,6 +14,7 @@ export interface UsePostThreadResult {
   handlePostUpdate: (eventId: string, updates: Partial<TimelineDisplayEvent>) => void;
   handleReplyCreated: () => void;
   handleNestedReplyCreated: (parentId: string, reply: TimelineDisplayEvent) => void;
+  handleReplyDeleted: (eventId: string) => void;
 }
 
 export function usePostThread(postId: string): UsePostThreadResult {
@@ -40,6 +41,30 @@ export function usePostThread(postId: string): UsePostThreadResult {
         }
         return item;
       });
+    },
+    []
+  );
+
+  /**
+   * Drop a reply from the tree, at any depth, and correct the reply count of
+   * whichever branch held it. Deleting a reply used to leave it on screen: the
+   * card called an `onDelete` nobody had passed, so the row stayed until a
+   * reload — the same shape as deleting the main post.
+   */
+  const removeFromReplyTree = useCallback(
+    (items: TimelineDisplayEvent[], eventId: string): TimelineDisplayEvent[] => {
+      return items
+        .filter(item => item.id !== eventId)
+        .map(item => {
+          if (!item.replies?.length) {
+            return item;
+          }
+          const nextReplies = removeFromReplyTree(item.replies, eventId);
+          if (nextReplies.length === item.replies.length) {
+            return item;
+          }
+          return { ...item, replies: nextReplies, replyCount: nextReplies.length };
+        });
     },
     []
   );
@@ -154,6 +179,13 @@ export function usePostThread(postId: string): UsePostThreadResult {
     [appendReplyToTree]
   );
 
+  const handleReplyDeleted = useCallback(
+    (eventId: string) => {
+      setReplies(prev => removeFromReplyTree(prev, eventId));
+    },
+    [removeFromReplyTree]
+  );
+
   return {
     mainPost,
     parentPosts,
@@ -163,5 +195,6 @@ export function usePostThread(postId: string): UsePostThreadResult {
     handlePostUpdate,
     handleReplyCreated,
     handleNestedReplyCreated,
+    handleReplyDeleted,
   };
 }

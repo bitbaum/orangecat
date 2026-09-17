@@ -10,30 +10,32 @@
 import { createLoan } from '@/domain/loans/service';
 import { createInvestment } from '@/domain/investments/service';
 
-jest.mock('@/lib/supabase/server', () => ({
-  createServerClient: jest.fn(),
+vi.mock('@/lib/supabase/server', () => ({
+  createServerClient: vi.fn(),
 }));
 
-jest.mock('@/services/actors/getOrCreateUserActor', () => ({
-  getOrCreateUserActor: jest.fn().mockResolvedValue({ id: 'actor-001' }),
+vi.mock('@/services/actors/getOrCreateUserActor', () => ({
+  getOrCreateUserActor: vi.fn().mockResolvedValue({ id: 'actor-001' }),
 }));
 
 import { createServerClient } from '@/lib/supabase/server';
 
+import type { Mock } from 'vitest';
+
 describe('Financial entity create workflows (loan/investment)', () => {
   const mockChain = {
-    insert: jest.fn().mockReturnThis(),
-    select: jest.fn().mockReturnThis(),
-    single: jest.fn(),
+    insert: vi.fn().mockReturnThis(),
+    select: vi.fn().mockReturnThis(),
+    single: vi.fn(),
   };
 
   const mockClient = {
-    from: jest.fn(() => mockChain),
+    from: vi.fn(() => mockChain),
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    (createServerClient as jest.Mock).mockResolvedValue(mockClient);
+    vi.clearAllMocks();
+    (createServerClient as Mock).mockResolvedValue(mockClient);
   });
 
   // ==================== LOAN ====================
@@ -95,11 +97,11 @@ describe('Financial entity create workflows (loan/investment)', () => {
 
     it('propagates a supabase client passed from the route handler', async () => {
       const externalChain = {
-        insert: jest.fn().mockReturnThis(),
-        select: jest.fn().mockReturnThis(),
-        single: jest.fn().mockResolvedValue({ data: { id: 'loan-3' }, error: null }),
+        insert: vi.fn().mockReturnThis(),
+        select: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: { id: 'loan-3' }, error: null }),
       };
-      const externalClient = { from: jest.fn(() => externalChain) };
+      const externalClient = { from: vi.fn(() => externalChain) };
 
       await createLoan(
         'user-1',

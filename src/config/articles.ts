@@ -15,6 +15,8 @@
  * `metadata`, which the RPC persists verbatim. No migration required.
  */
 
+import { slugify } from '@/utils/string';
+
 export const ARTICLE_EVENT_TYPE = 'status_update' as const;
 
 /** Discriminator stored at `metadata.is_article`. */
@@ -87,15 +89,7 @@ export function estimateReadingTime(markdown: string): number {
  * with a suffix via {@link buildArticleSlug}.
  */
 export function slugifyTitle(title: string): string {
-  return (
-    title
-      .toLowerCase()
-      .normalize('NFKD')
-      .replace(/[̀-ͯ]/g, '') // strip combining diacritics
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .slice(0, 80) || 'article'
-  );
+  return slugify(title, { maxLength: 80 }) || 'article';
 }
 
 /**

@@ -15,7 +15,6 @@ export default function HomePage() {
   return (
     <SocialTimeline
       title="Home"
-      description="Updates from the people and projects you follow"
       icon={Home}
       mode="following"
       showShareButton={false}

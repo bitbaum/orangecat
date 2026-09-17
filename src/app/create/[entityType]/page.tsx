@@ -18,7 +18,7 @@ export default async function CreateEntityRedirect({
   const { entityType } = await params;
 
   // URL slugs commonly use hyphens (ai-assistant, ai_assistants —
-  // /dashboard/ai-assistants/create), but the registry keys are
+  // /dashboard/companions/create), but the registry keys are
   // snake_case singular (ai_assistant). Try the most likely
   // normalizations: the slug as-is, hyphen → underscore, and the
   // trailing-`s` plural stripped. Unknown slugs fall back to the chooser.

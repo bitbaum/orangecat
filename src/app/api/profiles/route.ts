@@ -15,7 +15,7 @@ export const GET = withAuth(async (request: AuthenticatedRequest) => {
     let query = supabase
       .from(DATABASE_TABLES.PROFILES)
       .select(
-        `id, username, name, bio, avatar_url, bitcoin_address, lightning_address, created_at, updated_at`,
+        `id, username, name, bio, avatar_url, bitcoin_address, lightning_address, created_at, updated_at, email`,
         { count: 'exact' }
       )
       .order('created_at', { ascending: false })
@@ -38,8 +38,18 @@ export const GET = withAuth(async (request: AuthenticatedRequest) => {
       throw error;
     }
 
-    const { isFixtureProfile } = await import('@/config/public-directory');
-    const profiles = (data || []).filter(p => !isFixtureProfile(p));
+    const { isFixtureProfile, isEmailDerivedHandle } = await import('@/config/public-directory');
+    const rows = (data || []).filter(p => !isFixtureProfile(p));
+    // Defense in depth for accounts not yet through the (manual, deliberate —
+    // see scripts/rename-email-derived-usernames.sql) backfill: keep them out
+    // of the unprompted default suggestion list, the surface this was
+    // reported from. An explicit search still finds them — hiding a real
+    // person from someone typing their exact name would be an availability
+    // regression, not a privacy fix.
+    const filtered = search ? rows : rows.filter(p => !isEmailDerivedHandle(p));
+    // Never ship the email column to the client — it was only selected for
+    // the filter above.
+    const profiles = filtered.map(({ email: _email, ...rest }) => rest);
     return apiSuccessPaginated(profiles, page, limit, count ?? profiles.length);
   } catch (error) {
     return handleApiError(error);

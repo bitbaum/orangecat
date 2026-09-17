@@ -44,7 +44,7 @@ not archaeology. The OC-specific pieces are now version-controlled:
 > snapshot if the RTO target drops below the manual-provision time.
 
 **Full box IaC** (cloud-init/Ansible for Docker + Supabase + Caddy) belongs in the shared
-`fleetcrown/scripts/hetzner/` toolkit — coordinate there rather than forking box-wide
+`loki/scripts/hetzner/` toolkit — coordinate there rather than forking box-wide
 provisioning into this repo.
 
 ---
@@ -91,13 +91,13 @@ CD SSHes in as `root`. Scope it down so a leaked deploy key can't own the box.
 
 ## 4. Backup pipeline dependency (know what you depend on)
 
-`pg-backup.sh` + `pg-backup.timer` are installed by the **fleetcrown** Hetzner toolkit
+`pg-backup.sh` + `pg-backup.timer` are installed by the **loki** Hetzner toolkit
 (`scripts/hetzner/install-backups.sh`), not this repo — so OC's durability is governed by
 code OC doesn't version-control. Two must-holds, verified at each drill:
 
 - The dump covers the **`supabase-db` container** DB (`docker exec supabase-db pg_dump`), not
   just the box-system Postgres — OrangeCat's data lives in the container. (This was the
-  original "zero backups" bug; the fix must stay in fleetcrown's `install-backups.sh` or it
+  original "zero backups" bug; the fix must stay in loki's `install-backups.sh` or it
   reverts on reinstall.)
 - Backup freshness is now monitored: `/api/health` reports `last_backup_age_hours` and
   `.github/workflows/uptime.yml` opens a `backup-stale` issue past 26h. Confirm the app user

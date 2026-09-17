@@ -13,22 +13,25 @@ import { CatActionExecutor } from '@/services/cat/action-executor';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 
-jest.mock('@/utils/logger', () => ({
-  logger: { error: jest.fn(), warn: jest.fn(), info: jest.fn(), debug: jest.fn() },
+vi.mock('@/utils/logger', () => ({
+  logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 
 const mockPermissionService = {
-  checkPermission: jest.fn(),
-  checkSpendCaps: jest.fn(),
+  checkPermission: vi.fn(),
+  checkSpendCaps: vi.fn(),
 };
-jest.mock('@/services/cat/permission-service', () => {
-  const actual = jest.requireActual('@/services/cat/permission-service');
+vi.mock('@/services/cat/permission-service', async () => {
+  const actual = await vi.importActual('@/services/cat/permission-service');
   return {
     ...actual,
-    CatPermissionService: jest.fn().mockImplementation(() => mockPermissionService),
+    // function (not arrow): vitest constructs mock implementations with `new`.
+    CatPermissionService: vi.fn().mockImplementation(function () {
+      return mockPermissionService;
+    }),
   };
 });
-jest.mock('@/services/cat/handlers', () => ({ ACTION_HANDLERS: {} }));
+vi.mock('@/services/cat/handlers', () => ({ ACTION_HANDLERS: {} }));
 
 const USER_ID = 'user-1';
 

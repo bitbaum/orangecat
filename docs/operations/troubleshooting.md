@@ -120,7 +120,7 @@ ORDER BY tablename;
 
 ```bash
 # Check bundle size
-npm run analyze
+pnpm run analyze
 
 # Profile React components
 # Use React DevTools Profiler
@@ -151,10 +151,10 @@ npm run analyze
 
 ```bash
 # Check build locally
-npm run build
+pnpm run build
 
 # Verify environment variables
-npm run env:validate
+pnpm run env:validate
 
 # Check deployment logs (on the Hetzner box)
 # Tail the app process logs / Caddy logs on bitbaum
@@ -175,13 +175,13 @@ npm run env:validate
 
 ```bash
 # Kill existing processes
-npm run kill:node
+pnpm run kill:node
 
 # Or find and kill manually
 lsof -ti:3003 | xargs kill -9
 
 # Start fresh
-npm run fresh:start
+pnpm run fresh:start
 ```
 
 ### **Database Connection Issues**
@@ -205,14 +205,14 @@ supabase stop && supabase start
 
 ```bash
 # Clear cache and rebuild
-npm run clear:cache
-npm run build
+pnpm run clear:cache
+pnpm run build
 
 # Check for TypeScript errors
-npm run type-check
+pnpm run type-check
 
 # Check for linting issues
-npm run lint
+pnpm run lint
 ```
 
 ### **Test Failures**
@@ -221,13 +221,13 @@ npm run lint
 
 ```bash
 # Run tests with verbose output
-npm test -- --verbose
+pnpm test --reporter=verbose
 
 # Check test environment
-npm run test:env
+pnpm test tests/env.test.ts
 
 # Run specific failing test
-npm test -- --testNamePattern="failing test name"
+pnpm test -t "failing test name"
 ```
 
 ### **Memory Leaks**
@@ -252,10 +252,10 @@ useEffect(() => {
 
 ```bash
 # Check application health
-npm run health:check
+pnpm run health:check
 
 # Monitor real-time metrics
-npm run monitor:metrics
+pnpm run monitor:metrics
 
 # Check database connectivity
 supabase status
@@ -312,7 +312,7 @@ export async function trackApiPerformance(endpoint: string, duration: number) {
 
 - Use nvm to manage Node versions: `nvm use 18`
 - Clear npm cache: `npm cache clean --force`
-- Delete node_modules and reinstall: `rm -rf node_modules && npm install`
+- Delete node_modules and reinstall: `rm -rf node_modules && pnpm install`
 
 ### **Git Issues**
 

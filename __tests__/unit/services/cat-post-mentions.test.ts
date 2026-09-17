@@ -10,29 +10,29 @@
  * exactly the kind of duplication that drifts silently.
  */
 
-const replyToPostMention = jest.fn().mockResolvedValue(true);
-const resolveMentions = jest.fn();
-const notifyMentionedPeople = jest.fn().mockResolvedValue(0);
-const claimMentions = jest.fn();
-const completeMention = jest.fn();
-const failMention = jest.fn();
+const replyToPostMention = vi.fn().mockResolvedValue(true);
+const resolveMentions = vi.fn();
+const notifyMentionedPeople = vi.fn().mockResolvedValue(0);
+const claimMentions = vi.fn();
+const completeMention = vi.fn();
+const failMention = vi.fn();
 
-jest.mock('@/services/mentions/cat-account', () => ({
-  ensureCatAccount: jest.fn().mockResolvedValue({ id: 'cat-1', username: 'cat' }),
+vi.mock('@/services/mentions/cat-account', () => ({
+  ensureCatAccount: vi.fn().mockResolvedValue({ id: 'cat-1', username: 'cat' }),
 }));
-jest.mock('@/services/mentions/cat-post-reply', () => ({
+vi.mock('@/services/mentions/cat-post-reply', () => ({
   replyToPostMention: (...a: unknown[]) => replyToPostMention(...a),
 }));
-jest.mock('@/services/mentions/cat-reply', () => ({
-  replyToConversationMention: jest.fn().mockResolvedValue(true),
+vi.mock('@/services/mentions/cat-reply', () => ({
+  replyToConversationMention: vi.fn().mockResolvedValue(true),
 }));
-jest.mock('@/services/mentions/resolve', () => ({
+vi.mock('@/services/mentions/resolve', () => ({
   resolveMentions: (...a: unknown[]) => resolveMentions(...a),
 }));
-jest.mock('@/services/mentions/notify-mentions', () => ({
+vi.mock('@/services/mentions/notify-mentions', () => ({
   notifyMentionedPeople: (...a: unknown[]) => notifyMentionedPeople(...a),
 }));
-jest.mock('@/services/mentions/queue', () => ({
+vi.mock('@/services/mentions/queue', () => ({
   claimMentions: (...a: unknown[]) => claimMentions(...a),
   completeMention: (...a: unknown[]) => completeMention(...a),
   failMention: (...a: unknown[]) => failMention(...a),

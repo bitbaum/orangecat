@@ -19,6 +19,7 @@ import { API_ROUTES } from '@/config/api-routes';
 // Use existing FundingPage type from funding.ts
 import type { FundingPage } from '@/types/funding';
 import type { Database } from '@/types/database';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 export interface Project extends FundingPage {
   isDraft: boolean;
@@ -99,10 +100,11 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
       // A `user_projects` row plus the view-model fields this mapper computes
       // below (isDraft/isActive/total_funding/...), which the row itself lacks.
-      type RawProjectRow = Database['public']['Tables'][(typeof ENTITY_TABLE_NAMES)['project']]['Row'] &
-        Partial<Project> & {
-          raised_amount?: number;
-        };
+      type RawProjectRow =
+        Database['public']['Tables'][(typeof ENTITY_TABLE_NAMES)['project']]['Row'] &
+          Partial<Project> & {
+            raised_amount?: number;
+          };
       const projects: Project[] = ((data || []) as unknown as RawProjectRow[]).map(project => ({
         ...project,
         // Map database fields to FundingPage interface
@@ -140,7 +142,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to delete project');
+        throw new Error(apiErrorMessage(errorData, 'Failed to delete project'));
       }
 
       // Remove the project from the store
@@ -172,7 +174,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to update project status');
+        throw new Error(apiErrorMessage(errorData, 'Failed to update project status'));
       }
 
       const { data: updatedProject } = await response.json();

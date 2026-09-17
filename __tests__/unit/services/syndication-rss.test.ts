@@ -1,6 +1,6 @@
 /**
  * The RSS parser feeding the syndication sweep. Fixtures mirror what the fleet
- * feeds actually emit (FleetCrown /rss.xml shape) — plain tags, CDATA blocks,
+ * feeds actually emit (Loki /rss.xml shape) — plain tags, CDATA blocks,
  * and entity-encoded text — plus the malformed shapes the parser must shrug
  * off rather than throw on, because a bad feed must never fail the cron tick.
  */
@@ -9,18 +9,18 @@ import { parseRssItems } from '@/services/syndication/rss';
 const FLEET_SHAPED_FEED = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>FleetCrown Thoughts</title>
-    <link>https://fleetcrown.orangecat.ch/thoughts</link>
+    <title>Loki Thoughts</title>
+    <link>https://loki.orangecat.ch/thoughts</link>
     <item>
       <title>Load Through the Seam &amp; Beyond</title>
-      <link>https://fleetcrown.orangecat.ch/thoughts/load-through-the-seam</link>
-      <guid isPermaLink="true">https://fleetcrown.orangecat.ch/thoughts/load-through-the-seam</guid>
+      <link>https://loki.orangecat.ch/thoughts/load-through-the-seam</link>
+      <guid isPermaLink="true">https://loki.orangecat.ch/thoughts/load-through-the-seam</guid>
       <pubDate>Thu, 20 Aug 2026 00:00:00 GMT</pubDate>
       <description><![CDATA[An audit of <em>The Two Halves</em>, joined.]]></description>
     </item>
     <item>
       <title>One Star &#8212; the baseline</title>
-      <link>https://fleetcrown.orangecat.ch/thoughts/one-star</link>
+      <link>https://loki.orangecat.ch/thoughts/one-star</link>
       <pubDate>not a date</pubDate>
     </item>
   </channel>
@@ -33,8 +33,8 @@ describe('parseRssItems', () => {
 
     expect(items[0]).toEqual({
       title: 'Load Through the Seam & Beyond',
-      link: 'https://fleetcrown.orangecat.ch/thoughts/load-through-the-seam',
-      guid: 'https://fleetcrown.orangecat.ch/thoughts/load-through-the-seam',
+      link: 'https://loki.orangecat.ch/thoughts/load-through-the-seam',
+      guid: 'https://loki.orangecat.ch/thoughts/load-through-the-seam',
       description: 'An audit of <em>The Two Halves</em>, joined.',
       publishedAt: '2026-08-20T00:00:00.000Z',
     });

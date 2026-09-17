@@ -1,7 +1,8 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
-import { UserPlus, Link2, Loader2, Copy, Check, Ban } from 'lucide-react';
+import { UserPlus, Link2, Loader2, Copy, Check, Ban, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import EntityListShell from '@/components/entity/EntityListShell';
 import EmptyState from '@/components/ui/EmptyState';
@@ -15,7 +16,7 @@ import { logger } from '@/utils/logger';
 interface ProfileClaimListItem {
   id: string;
   name: string;
-  status: 'pending' | 'claimed' | 'revoked';
+  status: 'pending' | 'claimed' | 'revoked' | 'declined';
   suggestedUsername: string | null;
   claimUrl: string;
   createdAt: string;
@@ -27,12 +28,16 @@ const STATUS_LABEL: Record<ProfileClaimListItem['status'], string> = {
   pending: 'Waiting to be claimed',
   claimed: 'Claimed',
   revoked: 'Revoked',
+  // The recipient said no. Distinct from `revoked`, which is the creator
+  // pulling the link — collapsing them would hide a refusal.
+  declined: 'Declined',
 };
 
 const STATUS_CLASS: Record<ProfileClaimListItem['status'], string> = {
   pending: 'bg-status-warning-subtle text-fg-primary',
   claimed: 'bg-status-positive-subtle text-fg-primary',
   revoked: 'bg-surface-raised text-fg-muted',
+  declined: 'bg-surface-raised text-fg-muted',
 };
 
 function ClaimRow({
@@ -82,8 +87,18 @@ function ClaimRow({
 
         {claim.status === 'pending' && (
           <div className="flex items-center gap-2">
+            <Link href={ROUTES.DASHBOARD.PROFILE_CLAIMS_SHARE(claim.id)}>
+              <Button variant="accent" size="sm">
+                <Send className="mr-1.5 h-3.5 w-3.5" />
+                Send
+              </Button>
+            </Link>
             <Button variant="outline" size="sm" onClick={() => copy(fullUrl)}>
-              {copied ? <Check className="mr-1.5 h-3.5 w-3.5" /> : <Copy className="mr-1.5 h-3.5 w-3.5" />}
+              {copied ? (
+                <Check className="mr-1.5 h-3.5 w-3.5" />
+              ) : (
+                <Copy className="mr-1.5 h-3.5 w-3.5" />
+              )}
               Copy link
             </Button>
             <Button variant="ghost" size="sm" onClick={handleRevoke} isLoading={isRevoking}>

@@ -14,6 +14,13 @@ import { fromTable } from '@/lib/supabase/untyped';
 import supabase from '@/lib/supabase/browser';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { getTableName, ENTITY_REGISTRY } from '@/config/entity-registry';
+import { logger } from '@/utils/logger';
+import { getCurrentUserId } from './social-shared';
+import {
+  fetchReactionState,
+  EMPTY_REACTION_STATE,
+  type ReactionState,
+} from './reaction-state';
 import type {
   TimelineDisplayEvent,
   TimelineActorType,
@@ -126,7 +133,14 @@ function profileRowToSubject(id: string, profile: ProfileRow | null): SubjectInf
  * Enrich events for display — batch version. Collects every distinct
  * profileId + projectId across the batch, fetches each set in a single
  * `.in('id', ids)` query, then resolves actor/subject/target via map
- * lookups. Three queries total regardless of batch size.
+ * lookups. A fixed number of queries regardless of batch size.
+ *
+ * Reaction state is resolved here, and here only, because every read path
+ * already goes through this function. It used to be each caller's job and no
+ * caller did it: eventQueries hardcoded `likesCount: 0`, userFeeds read a
+ * `like_count` column off `timeline_events` that has never existed, and both
+ * were wrong in the same direction — a like was stored and then read back as
+ * zero everywhere. Anything that wants a post now gets its counters with it.
  */
 export async function enrichEventsForDisplay(events: unknown[]): Promise<TimelineDisplayEvent[]> {
   const timelineEvents = events.map(e => mapDbEventToTimelineEvent(e as TimelineEventDb));
@@ -154,9 +168,10 @@ export async function enrichEventsForDisplay(events: unknown[]): Promise<Timelin
   }
 
   // One round-trip per kind, in parallel.
-  const [profilesById, projectsById] = await Promise.all([
+  const [profilesById, projectsById, reactionsByEvent] = await Promise.all([
     fetchProfilesById(Array.from(profileIds)),
     fetchProjectsById(Array.from(projectIds)),
+    fetchReactionStateFor(timelineEvents.map(ev => ev.id)),
   ]);
 
   const resolveSubject = (type: TimelineSubjectType, id: string): SubjectInfo => {
@@ -193,8 +208,23 @@ export async function enrichEventsForDisplay(events: unknown[]): Promise<Timelin
       formattedAmount: formatAmount(timelineEvent),
       timeAgo: getTimeAgo(timelineEvent.eventTimestamp),
       isRecent: isEventRecent(timelineEvent.eventTimestamp),
+      ...(reactionsByEvent.get(timelineEvent.id) ?? EMPTY_REACTION_STATE),
     } as TimelineDisplayEvent;
   });
+}
+
+/**
+ * Reaction state must never be the reason a feed fails to render. A post
+ * without its counters is a small loss; a blank timeline is a total one.
+ */
+async function fetchReactionStateFor(eventIds: string[]) {
+  try {
+    const userId = await getCurrentUserId();
+    return await fetchReactionState(eventIds, userId);
+  } catch (error) {
+    logger.error('Could not resolve reaction state for feed', error, 'Timeline');
+    return new Map<string, ReactionState>();
+  }
 }
 
 async function fetchProfilesById(ids: string[]): Promise<Map<string, ProfileRow>> {

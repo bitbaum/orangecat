@@ -1,13 +1,13 @@
 // Simple Jest mock for next/navigation
 module.exports = {
   useRouter: () => ({
-    push: jest.fn(),
-    replace: jest.fn(),
-    prefetch: jest.fn(),
-    back: jest.fn(),
+    push: vi.fn(),
+    replace: vi.fn(),
+    prefetch: vi.fn(),
+    back: vi.fn(),
   }),
   useSearchParams: () => ({
-    get: jest.fn(),
+    get: vi.fn(),
   }),
-  usePathname: jest.fn(() => '/'),
+  usePathname: vi.fn(() => '/'),
 };

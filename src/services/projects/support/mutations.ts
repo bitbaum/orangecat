@@ -30,7 +30,7 @@ export async function createProjectSupport(
     if (!validationResult.success) {
       return {
         success: false,
-        error: `Validation failed: ${validationResult.error.errors.map(e => e.message).join(', ')}`,
+        error: `Validation failed: ${validationResult.error.issues.map(e => e.message).join(', ')}`,
       };
     }
 

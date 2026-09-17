@@ -57,9 +57,9 @@ Add to your Claude Desktop config file (`~/AppData/Roaming/Claude/claude_desktop
       "command": "node",
       "args": ["/path/to/orangecat/mcp-servers/lint-server.js"]
     },
-    "jest": {
+    "vitest": {
       "command": "node",
-      "args": ["/path/to/orangecat/mcp-servers/jest-server.js"]
+      "args": ["/path/to/orangecat/mcp-servers/vitest-server.js"]
     },
     "supabase": {
       "command": "node",
@@ -83,7 +83,7 @@ node fs-server.js          # Filesystem (workspace-restricted)
 node shell-server.js       # Shell (allowlist)
 node git-server.js         # Git
 node lint-server.js        # ESLint/Prettier
-node jest-server.js        # Jest
+node vitest-server.js      # Vitest
 node supabase-server.js    # Supabase
 ```
 
@@ -93,7 +93,7 @@ Once configured, you'll have access to these tools in Claude/Codex:
 
 - GitHub: repository/PRs/actions/secrets management
 - FS: read/write/list/move/delete files within workspace
-- Shell: run allowlisted commands (npm, next, jest, eslint, prettier, rg)
+- Shell: run allowlisted commands (npm, next, vitest, eslint, prettier, rg)
 - Git: status/diff/branch/checkout/add/commit/push
 - Lint: eslint check/fix, prettier check/write
 - Jest: run tests by pattern or file

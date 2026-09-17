@@ -16,7 +16,6 @@ export default function CommunityPage() {
   return (
     <SocialTimeline
       title="Community"
-      description="Public posts and updates from the OrangeCat community"
       icon={Globe}
       mode="community"
       showShareButton={false}

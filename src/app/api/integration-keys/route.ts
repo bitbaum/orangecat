@@ -31,7 +31,7 @@ import {
 
 const createKeySchema = z.object({
   name: z.string().min(1).max(120),
-  actor_id: z.string().uuid(),
+  actor_id: z.string().guid(),
   /** Optional scopes allowlist. Omit (or pass ['*']) for full authority.
    *  Token format `<entity>.<read|write>` (e.g. 'products.write'). */
   scopes: z.array(z.string().min(1).max(80)).max(40).optional(),

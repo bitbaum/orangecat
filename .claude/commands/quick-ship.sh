@@ -36,7 +36,7 @@ log_success "Environment OK"
 
 # 2. Quick build attempt
 log_info "Attempting build (may take time)..."
-timeout 300 npm run build > /tmp/quick-build.log 2>&1 &
+timeout 300 pnpm run build > /tmp/quick-build.log 2>&1 &
 BUILD_PID=$!
 
 # Wait for build to complete or timeout

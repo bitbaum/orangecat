@@ -15,7 +15,8 @@ import type { Group, CreateGroupInput, UpdateGroupInput } from '@/types/group';
 import type { GroupResponse } from '../types';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { getDefaultsForLabel } from '../constants';
-import { getCurrentUserId, generateSlug, ensureUniqueSlug } from '../utils/helpers';
+import { getCurrentUserId, ensureUniqueSlug } from '../utils/helpers';
+import { slugify } from '@/utils/string';
 import { logGroupActivity } from '../utils/activity';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import type { ServiceResult } from '@/types/common';
@@ -41,7 +42,7 @@ export async function createGroup(
 
     // Generate slug if not provided
     const slug =
-      input.slug || (await ensureUniqueSlug(generateSlug(input.name), undefined, supabaseClient));
+      input.slug || (await ensureUniqueSlug(slugify(input.name) || 'group', undefined, supabaseClient));
 
     // Get config-based defaults for this label
     const label = input.label || 'circle';
@@ -77,20 +78,16 @@ export async function createGroup(
       return { success: false, error: error.message };
     }
 
-    // Add creator as founder in group_members
-
-    const { error: memberError } = await fromTable(
-      supabaseClient,
-      DATABASE_TABLES.GROUP_MEMBERS
-    ).insert({
-      group_id: data.id,
-      user_id: currentUserId,
-      role: 'founder',
-    });
-
-    if (memberError) {
-      logger.warn('Failed to add creator as member', memberError, 'Groups');
-    }
+    // The creator's founder membership and the group's `actors` row are both
+    // written by the `groups_get_an_identity_and_an_owner` trigger, in the same
+    // transaction as the group itself.
+    //
+    // They used to be written here, as a second statement whose failure was a
+    // `logger.warn` — so a failed insert still returned success and left a
+    // group with no members. Both DELETE policies require role='founder', so
+    // that group could then be deleted by nobody. Three production groups are
+    // in exactly that state. A second statement cannot be atomic with the
+    // first; a trigger is.
 
     // Enable suggested features for this label
     if (labelDefaults.suggestedFeatures && labelDefaults.suggestedFeatures.length > 0) {

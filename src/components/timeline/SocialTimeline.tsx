@@ -14,7 +14,6 @@ import { TIMELINE_COPY, TIMELINE_SURFACE } from '@/config/timeline';
 
 export interface SocialTimelineProps {
   title: string;
-  description: string;
   icon: LucideIcon;
   mode: 'timeline' | 'community' | 'following';
   timelineOwnerId?: string;
@@ -38,7 +37,6 @@ export interface SocialTimelineProps {
 
 export default function SocialTimeline({
   title,
-  description,
   icon: Icon,
   mode,
   timelineOwnerId,
@@ -269,8 +267,6 @@ export default function SocialTimeline({
   return (
     <TimelineLayout
       title={title}
-      description={description}
-      icon={Icon}
       feed={activeFeed}
       onEventUpdate={handleEventUpdate}
       onLoadMore={handleLoadMore}

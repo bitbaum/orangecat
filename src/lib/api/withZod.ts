@@ -14,8 +14,8 @@ export function withZodBody<T>(schema: ZodSchema<T>): Middleware<ZodContext<T>> 
       ctx.body = parsed;
       return next(req, ctx);
     } catch (err: unknown) {
-      const e = err as { errors?: unknown; message?: string };
-      const details = e?.errors ?? e?.message;
+      const e = err as { issues?: unknown; message?: string };
+      const details = e?.issues ?? e?.message;
       return apiValidationError('Invalid request body', details);
     }
   };

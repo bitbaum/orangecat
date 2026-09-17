@@ -28,6 +28,7 @@ import { logger } from '@/utils/logger';
 import { useAuth } from '@/hooks/useAuth';
 import type { GroupEvent } from '@/services/groups/types';
 import { API_ROUTES } from '@/config/api-routes';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 interface EventsListProps {
   groupId: string;
@@ -72,7 +73,7 @@ export function EventsList({ groupId, groupSlug, canCreateEvent = false }: Event
       if (data.success) {
         setEvents(data.data?.events || []);
       } else {
-        throw new Error(data.error || 'Failed to load events');
+        throw new Error(apiErrorMessage(data, 'Failed to load events'));
       }
     } catch (error) {
       if (myLoadId !== loadIdRef.current) {

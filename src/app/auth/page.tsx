@@ -66,7 +66,7 @@ export default function AuthPage() {
     <div className="min-h-screen bg-surface-raised/40 dark:bg-surface-page flex flex-col lg:flex-row">
       <AuthHeroPanel />
 
-      <div className="flex-1 flex flex-col justify-center items-center p-8 lg:p-12 bg-surface-raised/40 dark:bg-surface-page">
+      <div className="flex-1 flex flex-col justify-center items-center p-8 max-[359px]:pt-4 lg:p-12 bg-surface-raised/40 dark:bg-surface-page">
         {/* Mobile-only back link — the desktop hero panel hosts the same
             link but is hidden below lg. Without this, mobile users have
             no non-browser escape from the form. */}
@@ -78,7 +78,12 @@ export default function AuthPage() {
           Back to home
         </Link>
         <div className="w-full max-w-md">
-          <div className="text-center mb-8">
+          {/* max-[359px] trims below: on the narrowest phones this form's last
+              row (OAuth buttons) lands under the Loki feedback FAB
+              (fixed bottom-right). Compacting non-essential vertical rhythm
+              here — never touch-target sizes — clears it without a layout
+              rewrite. */}
+          <div className="text-center mb-8 max-[359px]:mb-4">
             <h2 className="text-2xl font-semibold mb-2 text-fg-primary">
               {mode === 'login'
                 ? 'Welcome back'
@@ -139,7 +144,7 @@ export default function AuthPage() {
               by default is a core principle — let people start with zero friction
               and add an email later. Email/social remain right below. */}
           {mode !== 'forgot' && (
-            <div className="mb-6">
+            <div className="mb-6 max-[359px]:mb-3">
               <Button
                 type="button"
                 variant="accent"

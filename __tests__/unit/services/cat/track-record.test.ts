@@ -10,8 +10,8 @@
 
 import { getCatTrackRecord } from '@/services/cat/track-record';
 
-jest.mock('@/utils/logger', () => ({
-  logger: { warn: jest.fn(), error: jest.fn(), info: jest.fn(), debug: jest.fn() },
+vi.mock('@/utils/logger', () => ({
+  logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 
 type Response = { data: unknown; error: { message: string } | null };

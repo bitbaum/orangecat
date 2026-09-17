@@ -36,6 +36,7 @@ import TaskCard from './components/TaskCard';
 import TaskFilters from './components/TaskFilters';
 import { GRADIENTS } from '@/config/gradients';
 import { API_ROUTES } from '@/config/api-routes';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 type TaskCategory = (typeof TASK_CATEGORIES)[keyof typeof TASK_CATEGORIES];
 type TaskStatus = (typeof TASK_STATUSES)[keyof typeof TASK_STATUSES];
@@ -92,7 +93,7 @@ export default function TasksPage() {
       const response = await fetch(`${API_ROUTES.TASKS.BASE}?${params.toString()}`);
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to load tasks');
+        throw new Error(apiErrorMessage(data, 'Failed to load tasks'));
       }
       setTasks(data.data?.tasks || []);
     } catch (err) {
@@ -131,7 +132,7 @@ export default function TasksPage() {
       });
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Failed to complete task');
+        throw new Error(apiErrorMessage(data, 'Failed to complete task'));
       }
       toast.success('Task completed!');
       loadTasks();
@@ -149,7 +150,7 @@ export default function TasksPage() {
       });
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Failed to flag task');
+        throw new Error(apiErrorMessage(data, 'Failed to flag task'));
       }
       toast.success('Task flagged');
       loadTasks();

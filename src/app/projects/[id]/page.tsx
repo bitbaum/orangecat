@@ -1,7 +1,16 @@
+import type { ProjectFull } from './projectFull';
 import { Metadata } from 'next';
 import { createServerClient } from '@/lib/supabase/server';
 import dynamic from 'next/dynamic';
 import { notFound } from 'next/navigation';
+import { UnclaimedBand } from '@/components/claim/UnclaimedBand';
+import {
+  getUnclaimedOwner,
+  resolveActorUserId,
+  usernameOf,
+} from '@/domain/profileClaims/unclaimed';
+import { getEntityStewardUserId } from '@/domain/profileClaims/stewardship';
+import { SetUpBy } from '@/components/claim/SetUpBy';
 import { ROUTES } from '@/config/routes';
 import { PublicEntityOwnerBar } from '@/components/public/PublicEntityOwnerBar';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
@@ -40,30 +49,6 @@ type ProjectMeta = {
   category: string | null;
   status: string;
   user_id: string;
-};
-
-// Mirrors ProjectPageClient's Project interface — all required fields plus known optionals
-type ProjectFull = {
-  id: string;
-  user_id: string;
-  title: string;
-  description: string | null;
-  goal_amount: number | null;
-  raised_amount: number | null;
-  currency: string | null;
-  category: string | null;
-  status: string;
-  bitcoin_address: string | null;
-  lightning_address: string | null;
-  funding_purpose: string | null;
-  website_url: string | null;
-  tags: string[] | null;
-  created_at: string;
-  updated_at: string;
-  bitcoin_balance_btc?: number | null;
-  bitcoin_balance_updated_at?: string | null;
-  supporters_count?: number | null;
-  last_support_at?: string | null;
 };
 
 type ProfileSnippet = {
@@ -172,19 +157,34 @@ export default async function PublicProjectPage({ params }: PageProps) {
     notFound();
   }
 
+  // ADR-0005: the project may be owned by a placeholder — a person who has not
+  // accepted it yet. That owner has no profile, so the lookup below finds
+  // nothing; the band says whose it is instead of the page rendering ownerless.
+  const unclaimedOwner = await getUnclaimedOwner(supabase, project.actor_id);
+
+  // Whose page this is: the OWNING actor's account (legacy rows: the creator).
+  // After a claim (ADR-0005) `user_id` is the steward, not the owner.
+  const ownerUserId = (await resolveActorUserId(supabase, project.actor_id)) ?? project.user_id;
+
   // Fetch profile separately (more reliable than JOIN)
   let profile: (ProfileSnippet & { id: string }) | null = null;
-  if (project.user_id) {
+  if (ownerUserId) {
     const { data: profileData } = await supabase
       .from(DATABASE_TABLES.PROFILES)
       .select('id, username, name, avatar_url')
-      .eq('id', project.user_id)
+      .eq('id', ownerUserId)
       .maybeSingle();
 
     if (profileData) {
       profile = profileData as ProfileSnippet & { id: string };
     }
   }
+
+  // Set up for someone and since taken over: attribution stays visible.
+  const setUpByUsername =
+    !unclaimedOwner && project.user_id && ownerUserId && project.user_id !== ownerUserId
+      ? await usernameOf(supabase, project.user_id)
+      : null;
 
   // Honest funding total: the settled `contributions` ledger via
   // get_entity_funding_stats — NOT the `raised_amount` column, which no code
@@ -207,7 +207,7 @@ export default async function PublicProjectPage({ params }: PageProps) {
     supporters_count: fundingStats?.contributorCount ?? 0,
     profiles: profile ?? undefined,
   };
-  const sellerReceive = await resolveSellerReceiveInfo(supabase, 'project', id);
+  const sellerReceive = await resolveSellerReceiveInfo('project', id);
 
   // A draft project is invisible to everyone but its owner (the projects_public_read
   // RLS policy), and nothing on the page used to say so — projects were the one
@@ -216,7 +216,11 @@ export default async function PublicProjectPage({ params }: PageProps) {
   const {
     data: { user: viewer },
   } = await supabase.auth.getUser();
-  const isOwner = !!viewer && !!project.user_id && viewer.id === project.user_id;
+  const isOwner = !!viewer && !!ownerUserId && viewer.id === ownerUserId;
+  // The steward of an unclaimed page manages it until the claim (ADR-0005 D5).
+  const isSteward =
+    !!viewer && !!unclaimedOwner && (await getEntityStewardUserId('project', id)) === viewer.id;
+  const canManage = isOwner || isSteward;
   const isOwnerPreview = !isProjectPubliclyVisible(project.status);
 
   // Generate JSON-LD structured data for SEO
@@ -268,7 +272,14 @@ export default async function PublicProjectPage({ params }: PageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: safeJsonLdString(structuredData) }}
       />
-      {isOwner && (
+      {unclaimedOwner && (
+        <UnclaimedBand
+          ownerName={unclaimedOwner.name}
+          stewardUsername={unclaimedOwner.stewardUsername}
+        />
+      )}
+      {setUpByUsername && <SetUpBy stewardUsername={setUpByUsername} />}
+      {canManage && (
         <PublicEntityOwnerBar
           isOwnerPreview={isOwnerPreview}
           entityName={ENTITY_REGISTRY.project.name}
@@ -279,7 +290,11 @@ export default async function PublicProjectPage({ params }: PageProps) {
           entityId={id}
         />
       )}
-      <ProjectPageClient project={projectWithProfile} sellerReceive={sellerReceive} />
+      <ProjectPageClient
+        project={projectWithProfile}
+        sellerReceive={sellerReceive}
+        canManage={canManage}
+      />
     </>
   );
 }

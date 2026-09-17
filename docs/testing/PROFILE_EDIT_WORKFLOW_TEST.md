@@ -20,7 +20,7 @@ Verify that users can successfully:
 
 ## 📋 Pre-Test Checklist
 
-- [ ] Dev server is running (`npm run dev`)
+- [ ] Dev server is running (`pnpm run dev`)
 - [ ] You have a test account or can create one
 - [ ] Browser console is open (F12) to check for errors
 

@@ -20,6 +20,7 @@
 
 import { CAT_USERNAME } from '@/config/cat-identity';
 import { normalizeUsername } from '@/config/usernames';
+import { parseMentionCandidates } from '@/domain/mentions/parse';
 
 /** A profile as the people endpoint returns it, narrowed to what a menu needs. */
 export interface MentionCandidateProfile {
@@ -39,6 +40,17 @@ export interface MentionSuggestion {
   avatarUrl: string | null;
   /** Renders the Cat differently, and explains why it is at the top. */
   isCat: boolean;
+  /**
+   * This profile has no display name, so `name` above is just the handle again.
+   *
+   * Worth a flag rather than leaving the renderer to compare the two strings:
+   * it is the difference between a row you can recognise and a row you cannot,
+   * and both the order and the markup depend on it. Measured on production
+   * 2026-08-28: 14 of the first 20 profiles, because the handle-retirement
+   * fix correctly stopped inventing display names out of email local parts —
+   * NULL is honest, and it means most accounts genuinely have no name yet.
+   */
+  isAnonymous: boolean;
 }
 
 /** How many rows the menu shows. Enough to choose from, few enough to scan. */
@@ -58,17 +70,40 @@ export function catMatchesQuery(query: string): boolean {
   return normalizeUsername(CAT_USERNAME).startsWith(normalizeUsername(query));
 }
 
+/**
+ * Does this text tag the Cat?
+ *
+ * Uses `parseMentionCandidates`, so it agrees with the resolver that decides
+ * whether the Cat actually answers. Anything else here would be a fourth
+ * opinion about what an `@handle` is, and the last time this codebase had three
+ * the renderer linked one person while the resolver notified another.
+ *
+ * `@catalogue` is not the Cat: the parser yields candidates longest-first, and
+ * only an exact match after normalization counts.
+ */
+export function activeMentionsCat(text: string): boolean {
+  const wanted = normalizeUsername(CAT_USERNAME);
+  for (const mention of parseMentionCandidates(text)) {
+    if (mention.candidates.some(candidate => normalizeUsername(candidate) === wanted)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function toSuggestion(profile: MentionCandidateProfile): MentionSuggestion | null {
   const username = profile.username?.trim();
   if (!username) {
     return null;
   }
+  const name = profile.name?.trim();
   return {
     id: profile.id,
     username,
-    name: profile.name?.trim() || username,
+    name: name || username,
     avatarUrl: profile.avatar_url ?? null,
     isCat: isCatHandle(username),
+    isAnonymous: !name,
   };
 }
 
@@ -80,6 +115,12 @@ function toSuggestion(profile: MentionCandidateProfile): MentionSuggestion | nul
  * and handle beats display name. Ties keep the order the query returned rather
  * than being re-sorted alphabetically, because that order is already
  * newest-first and stable.
+ *
+ * A nameless profile sinks below every named one, UNLESS the query matches its
+ * handle — in which case it is plainly the row being asked for and leads. The
+ * asymmetry is the point: `user_d58c7dccec41` is unrecognisable, so offering it
+ * to someone who has typed nothing about it is noise, while offering it to
+ * someone typing `user_d58` is precisely right.
  */
 function score(suggestion: MentionSuggestion, query: string): number {
   const q = normalizeUsername(query);
@@ -87,7 +128,6 @@ function score(suggestion: MentionSuggestion, query: string): number {
     return 0;
   }
   const handle = normalizeUsername(suggestion.username);
-  const name = suggestion.name.toLowerCase();
 
   if (handle === q) {
     return -3;
@@ -95,7 +135,9 @@ function score(suggestion: MentionSuggestion, query: string): number {
   if (handle.startsWith(q)) {
     return -2;
   }
-  if (name.startsWith(query.toLowerCase())) {
+  // Only for a real name. For a nameless profile `name` is the handle again, so
+  // this would silently re-run the check above and promote a row nobody can read.
+  if (!suggestion.isAnonymous && suggestion.name.toLowerCase().startsWith(query.toLowerCase())) {
     return -1;
   }
   return 0;
@@ -125,8 +167,24 @@ export function rankMentionSuggestions(
     // The Cat is placed deliberately, so drop it from the general pool rather
     // than letting the people search list it a second time further down.
     .filter(s => !s.isCat)
+    // On a bare `@` there is nothing to match on, so a nameless profile is a
+    // row of hex offered to someone who cannot possibly be looking for it —
+    // and with most accounts unnamed it is what the menu opened with. You
+    // cannot be searching for a name that does not exist; type any of the
+    // handle and they come back immediately via the prefix rules above.
+    .filter(s => query.length > 0 || !s.isAnonymous)
     .map((s, index) => ({ s, index, rank: score(s, query) }))
-    .sort((a, b) => a.rank - b.rank || a.index - b.index)
+    // Match quality first, then recognisability, then the order the query
+    // returned. The middle term matters because most accounts have no name:
+    // `@u` matches both `ursula` and `user_d58c7dccec41` as handle prefixes,
+    // equally well by any measure the score can see, and only one of them is a
+    // row a human can act on.
+    .sort(
+      (a, b) =>
+        a.rank - b.rank ||
+        Number(a.s.isAnonymous) - Number(b.s.isAnonymous) ||
+        a.index - b.index
+    )
     .map(entry => entry.s);
 
   const deduped: MentionSuggestion[] = [];

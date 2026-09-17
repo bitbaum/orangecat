@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Tests for useNavigation — specifically the stable-ref fix that prevents
  * the "Maximum update depth exceeded" infinite loop regression.
@@ -22,10 +23,10 @@ import type { NavSection } from '@/hooks/useNavigation';
 let capturedOnStateLoaded: ((...args: unknown[]) => void) | undefined;
 let capturedOnLoadFailed: ((...args: unknown[]) => void) | undefined;
 
-jest.mock('@/hooks/useNavigationStorage', () => ({
-  buildInitialCollapsedSections: jest.fn(() => new Set<string>()),
-  clearNavigationStorage: jest.fn(),
-  useNavigationStorage: jest.fn(
+vi.mock('@/hooks/useNavigationStorage', () => ({
+  buildInitialCollapsedSections: vi.fn(() => new Set<string>()),
+  clearNavigationStorage: vi.fn(),
+  useNavigationStorage: vi.fn(
     (
       _hydrated: boolean,
       _sections: NavSection[],
@@ -37,29 +38,29 @@ jest.mock('@/hooks/useNavigationStorage', () => ({
       capturedOnStateLoaded = onStateLoaded;
       capturedOnLoadFailed = onLoadFailed;
       return {
-        persistSidebarState: jest.fn(),
-        persistSidebarCollapsedState: jest.fn(),
-        persistCollapsedSections: jest.fn(),
+        persistSidebarState: vi.fn(),
+        persistSidebarCollapsedState: vi.fn(),
+        persistCollapsedSections: vi.fn(),
       };
     }
   ),
 }));
 
-jest.mock('@/hooks/useActiveNavItem', () => ({
-  useActiveNavItem: jest.fn(() => ({
+vi.mock('@/hooks/useActiveNavItem', () => ({
+  useActiveNavItem: vi.fn(() => ({
     activeSection: null,
     activeItem: null,
-    isItemActive: jest.fn(() => false),
+    isItemActive: vi.fn(() => false),
   })),
 }));
 
 // Mock useAuth: hydrated by default, no user/profile.
-const mockUseAuth = jest.fn(() => ({
+const mockUseAuth = vi.fn(() => ({
   user: null,
   profile: null,
   hydrated: true,
 }));
-jest.mock('@/hooks/useAuth', () => ({
+vi.mock('@/hooks/useAuth', () => ({
   useAuth: (...args: unknown[]) => mockUseAuth(...args),
 }));
 
@@ -87,7 +88,7 @@ describe('useNavigation — stable callback refs (regression: infinite loop fix)
   beforeEach(() => {
     capturedOnStateLoaded = undefined;
     capturedOnLoadFailed = undefined;
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockUseAuth.mockReturnValue({ user: null, profile: null, hydrated: true });
   });
 
@@ -142,7 +143,7 @@ describe('useNavigation — stable callback refs (regression: infinite loop fix)
 
 describe('useNavigation — getFilteredSections', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('returns empty array when not hydrated', () => {
@@ -206,7 +207,7 @@ describe('useNavigation — getFilteredSections', () => {
 
 describe('useNavigation — toggle functions', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockUseAuth.mockReturnValue({ user: null, profile: null, hydrated: true });
   });
 

@@ -107,7 +107,10 @@ describe('selection preserves what Cat needs to function', () => {
 describe('selection is worth doing', () => {
   it('pulls in the relevant situational section when the turn calls for it', () => {
     expect(selectPromptSections('what should I charge for this?')).toContain('Pricing Guidance');
-    expect(selectPromptSections('my friend needs help')).toContain('Proxy Mode');
+    expect(selectPromptSections('my friend needs help')).toContain('Setting Up for Someone Else');
+    expect(selectPromptSections('это не для меня, это для другого пользователя')).toContain(
+      'Setting Up for Someone Else'
+    );
     expect(selectPromptSections('hi')).not.toContain('Pricing Guidance');
   });
 
@@ -144,12 +147,36 @@ describe('selection is worth doing', () => {
     // file Solon governance proposals about its own spending leash — a new
     // capability worth its prompt cost. Its description and parameters were
     // already cut to the bone to keep the hard 54.6k static budget green.
-    expect(remaining).toBeLessThanOrEqual(3_650);
+    // Raised 3,650 -> 3,800 for the CORE line "Not every turn is a proposal".
+    // It is 375 characters on EVERY turn, and it buys the thing this whole
+    // selection machinery cannot: a turn that asks for judgement rather than
+    // an object. The situational section that coaches it can be missed by the
+    // regexes — a miss there costs sharpness — but the guardrail itself must
+    // never be missed, because without it every path through this brief ends
+    // at a proposal and a question comes back as an entity to create. That is
+    // capability, not coaching, so it is CORE and it is paid for here.
+    expect(remaining).toBeLessThanOrEqual(3_800);
   });
 
-  it('leaves the prompt unchanged when the flag is off (default)', () => {
-    // Every existing caller must be untouched until this is validated.
-    expect(buildCatSystemPrompt({ turnDescriptor: 'hi' })).toContain('## Pricing Guidance');
+  it('selects by default now, and still sends everything when told to', async () => {
+    // The default flipped on 2026-09-11 and the reason is arithmetic, not
+    // taste: the free Groq pool refuses any request over 8 000 tokens per
+    // minute, and the unselected prompt is ~9 100 in tool mode — so with
+    // selection off, that pool could not answer a single message. A greeting
+    // does not need the pricing section; the escape hatch stays for anyone
+    // who wants the whole brief.
+    expect(buildCatSystemPrompt({ turnDescriptor: 'hi' })).not.toContain('## Pricing Guidance');
+    expect(buildCatSystemPrompt({ turnDescriptor: 'what should I charge?' })).toContain(
+      '## Pricing Guidance'
+    );
+
+    vi.resetModules();
+    vi.stubEnv('CAT_PROMPT_SECTION_SELECTION', '0');
+    const off = await import('@/services/cat/system-prompt');
+    expect(off.SECTION_SELECTION_ENABLED).toBe(false);
+    expect(off.buildCatSystemPrompt({ turnDescriptor: 'hi' })).toContain('## Pricing Guidance');
+    vi.unstubAllEnvs();
+    vi.resetModules();
   });
 
   it('every situational section can actually be reached by some turn', () => {

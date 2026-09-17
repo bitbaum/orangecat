@@ -68,7 +68,7 @@ export default function WebhookEndpointMintForm({
             maxLength={120}
             value={name}
             onChange={e => onNameChange(e.target.value)}
-            placeholder='e.g. "FleetCrown subscriptions"'
+            placeholder='e.g. "Loki subscriptions"'
             className="mt-1 w-full rounded-md border border-subtle bg-surface-page px-3 py-2 text-sm text-fg-primary placeholder:text-fg-secondary focus:border-interactive/50 focus:outline-none"
           />
         </label>
@@ -94,7 +94,7 @@ export default function WebhookEndpointMintForm({
             maxLength={2048}
             value={url}
             onChange={e => onUrlChange(e.target.value)}
-            placeholder="https://fleetcrown.app/webhooks/orangecat"
+            placeholder="https://loki.app/webhooks/orangecat"
             className="mt-1 w-full rounded-md border border-subtle bg-surface-page px-3 py-2 text-sm text-fg-primary placeholder:text-fg-secondary focus:border-interactive/50 focus:outline-none"
           />
         </label>

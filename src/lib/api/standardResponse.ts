@@ -9,6 +9,7 @@
 
 import { NextResponse } from 'next/server';
 import { logger } from '@/utils/logger';
+import { CACHE_PRESETS } from './cache-policy';
 
 // =====================================================================
 // TYPES
@@ -41,25 +42,6 @@ export interface ApiErrorResponse {
 // SUCCESS RESPONSES
 // =====================================================================
 
-/**
- * Cache configuration presets
- */
-const CACHE_PRESETS = {
-  // No caching - always fresh
-  NONE: 'no-store, must-revalidate',
-
-  // Short cache - 1 minute CDN, 5 minutes stale-while-revalidate
-  SHORT: 's-maxage=60, stale-while-revalidate=300',
-
-  // Medium cache - 5 minutes CDN, 30 minutes stale-while-revalidate
-  MEDIUM: 's-maxage=300, stale-while-revalidate=1800',
-
-  // Long cache - 1 hour CDN, 24 hours stale-while-revalidate
-  LONG: 's-maxage=3600, stale-while-revalidate=86400',
-
-  // Static - 1 day CDN, 1 week stale-while-revalidate
-  STATIC: 's-maxage=86400, stale-while-revalidate=604800',
-} as const;
 
 /**
  * Create a successful API response with standard format
@@ -195,6 +177,11 @@ export function apiPaymentRequired(
     },
     { status: 402 }
   );
+  // The 402 body and the WWW-Authenticate header both carry the payment
+  // token — a bearer credential for this intent. Every other payment response
+  // sets no-store; this one did not, so a shared cache or an intermediary was
+  // free to keep the credential and hand it to the next caller.
+  response.headers.set('Cache-Control', CACHE_PRESETS.NONE);
   if (wwwAuthenticate) {
     response.headers.set('WWW-Authenticate', wwwAuthenticate);
   }
@@ -302,7 +289,7 @@ export function apiServiceUnavailable(
 // =====================================================================
 
 type SupabaseError = { code?: string; message?: string; hint?: string };
-type ZodLikeError = { errors?: Array<{ path?: string[]; message?: string }> };
+type ZodLikeError = { issues?: Array<{ path?: Array<string | number>; message?: string }> };
 type ApiLikeError = {
   name?: string;
   code?: string;
@@ -353,9 +340,9 @@ export function handleSupabaseError(error: unknown): NextResponse<ApiErrorRespon
  */
 export function handleValidationError(error: unknown): NextResponse<ApiErrorResponse> {
   const err = error as ZodLikeError;
-  if (err.errors && Array.isArray(err.errors)) {
+  if (err.issues && Array.isArray(err.issues)) {
     return apiValidationError('Validation failed', {
-      fields: err.errors.map(e => ({
+      fields: err.issues.map(e => ({
         field: e.path?.join('.'),
         message: e.message,
       })),

@@ -14,38 +14,38 @@
 
 // Mocked so importing the route doesn't pull the real Upstash client (ESM-only
 // dep jest can't parse). Within-quota by default; branch tests set overrides.
-jest.mock('@/lib/rate-limit', () => ({
-  rateLimitWriteAsync: jest
+vi.mock('@/lib/rate-limit', () => ({
+  rateLimitWriteAsync: vi
     .fn()
     .mockResolvedValue({ success: true, limit: 30, remaining: 29, resetTime: Date.now() + 60_000 }),
-  retryAfterSeconds: jest.fn(() => 1),
+  retryAfterSeconds: vi.fn(() => 1),
 }));
 
-jest.mock('@/lib/supabase/server', () => ({
-  createServerClient: jest.fn(),
+vi.mock('@/lib/supabase/server', () => ({
+  createServerClient: vi.fn(),
 }));
 
-jest.mock('@/services/webhooks/webhookEndpointsService', () => ({
-  userOwnsEndpoint: jest.fn(),
+vi.mock('@/services/webhooks/webhookEndpointsService', () => ({
+  userOwnsEndpoint: vi.fn(),
 }));
 
-jest.mock('@/services/webhooks/deliveryService', () => ({
-  listRecentDeliveriesForEndpoint: jest.fn(),
-  deliveryBelongsToEndpoint: jest.fn(),
-  enqueueDeliveryReplay: jest.fn(),
+vi.mock('@/services/webhooks/deliveryService', () => ({
+  listRecentDeliveriesForEndpoint: vi.fn(),
+  deliveryBelongsToEndpoint: vi.fn(),
+  enqueueDeliveryReplay: vi.fn(),
 }));
 
-jest.mock('@/lib/api/standardResponse', () => ({
-  apiSuccess: jest.fn((payload: unknown) => ({ ok: true, data: payload, status: 200 })),
-  apiUnauthorized: jest.fn(() => ({ ok: false, error: 'Unauthorized', status: 401 })),
-  apiNotFound: jest.fn((what: string) => ({ ok: false, error: `${what} not found`, status: 404 })),
-  apiError: jest.fn((msg: string, code: string, status: number) => ({
+vi.mock('@/lib/api/standardResponse', () => ({
+  apiSuccess: vi.fn((payload: unknown) => ({ ok: true, data: payload, status: 200 })),
+  apiUnauthorized: vi.fn(() => ({ ok: false, error: 'Unauthorized', status: 401 })),
+  apiNotFound: vi.fn((what: string) => ({ ok: false, error: `${what} not found`, status: 404 })),
+  apiError: vi.fn((msg: string, code: string, status: number) => ({
     ok: false,
     error: msg,
     code,
     status,
   })),
-  handleApiError: jest.fn((err: Error) => ({ ok: false, error: err.message, status: 500 })),
+  handleApiError: vi.fn((err: Error) => ({ ok: false, error: err.message, status: 500 })),
 }));
 
 import { GET } from '@/app/api/webhook-endpoints/[id]/deliveries/route';
@@ -59,12 +59,14 @@ import {
 } from '@/services/webhooks/deliveryService';
 import { apiSuccess, apiUnauthorized, apiNotFound, apiError } from '@/lib/api/standardResponse';
 
+import type { Mock } from 'vitest';
+
 const mockUser = { id: 'u-1' };
 
 function setSession(user: { id: string } | null) {
-  (createServerClient as jest.Mock).mockResolvedValue({
+  (createServerClient as Mock).mockResolvedValue({
     auth: {
-      getUser: jest.fn().mockResolvedValue({ data: { user } }),
+      getUser: vi.fn().mockResolvedValue({ data: { user } }),
     },
   });
 }
@@ -81,7 +83,7 @@ function withParams<T extends Record<string, string>>(p: T): { params: Promise<T
 }
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 // =============================================================================
@@ -103,7 +105,7 @@ describe('GET /api/webhook-endpoints/[id]/deliveries', () => {
 
   it('returns 404 when the user does not own the endpoint', async () => {
     setSession(mockUser);
-    (userOwnsEndpoint as jest.Mock).mockResolvedValue(false);
+    (userOwnsEndpoint as Mock).mockResolvedValue(false);
 
     const res = (await GET(
       makeRequest('http://x/api/webhook-endpoints/e-1/deliveries'),
@@ -117,9 +119,9 @@ describe('GET /api/webhook-endpoints/[id]/deliveries', () => {
 
   it('returns deliveries on success and caps at default limit (50)', async () => {
     setSession(mockUser);
-    (userOwnsEndpoint as jest.Mock).mockResolvedValue(true);
+    (userOwnsEndpoint as Mock).mockResolvedValue(true);
     const rows = [{ id: 'd-1' }, { id: 'd-2' }];
-    (listRecentDeliveriesForEndpoint as jest.Mock).mockResolvedValue(rows);
+    (listRecentDeliveriesForEndpoint as Mock).mockResolvedValue(rows);
 
     const res = (await GET(
       makeRequest('http://x/api/webhook-endpoints/e-1/deliveries'),
@@ -134,8 +136,8 @@ describe('GET /api/webhook-endpoints/[id]/deliveries', () => {
 
   it('honours ?limit= up to MAX (100)', async () => {
     setSession(mockUser);
-    (userOwnsEndpoint as jest.Mock).mockResolvedValue(true);
-    (listRecentDeliveriesForEndpoint as jest.Mock).mockResolvedValue([]);
+    (userOwnsEndpoint as Mock).mockResolvedValue(true);
+    (listRecentDeliveriesForEndpoint as Mock).mockResolvedValue([]);
 
     await GET(
       makeRequest('http://x/api/webhook-endpoints/e-1/deliveries?limit=25'),
@@ -146,8 +148,8 @@ describe('GET /api/webhook-endpoints/[id]/deliveries', () => {
 
   it('caps ?limit= at MAX (100) when the caller asks for more', async () => {
     setSession(mockUser);
-    (userOwnsEndpoint as jest.Mock).mockResolvedValue(true);
-    (listRecentDeliveriesForEndpoint as jest.Mock).mockResolvedValue([]);
+    (userOwnsEndpoint as Mock).mockResolvedValue(true);
+    (listRecentDeliveriesForEndpoint as Mock).mockResolvedValue([]);
 
     await GET(
       makeRequest('http://x/api/webhook-endpoints/e-1/deliveries?limit=999'),
@@ -158,8 +160,8 @@ describe('GET /api/webhook-endpoints/[id]/deliveries', () => {
 
   it('falls back to DEFAULT when ?limit= is non-numeric or <=0', async () => {
     setSession(mockUser);
-    (userOwnsEndpoint as jest.Mock).mockResolvedValue(true);
-    (listRecentDeliveriesForEndpoint as jest.Mock).mockResolvedValue([]);
+    (userOwnsEndpoint as Mock).mockResolvedValue(true);
+    (listRecentDeliveriesForEndpoint as Mock).mockResolvedValue([]);
 
     await GET(
       makeRequest('http://x/api/webhook-endpoints/e-1/deliveries?limit=abc'),
@@ -196,7 +198,7 @@ describe('POST /api/webhook-endpoints/[id]/deliveries/[deliveryId]/replay', () =
 
   it('returns 404 (Webhook endpoint) when the user does not own the endpoint', async () => {
     setSession(mockUser);
-    (userOwnsEndpoint as jest.Mock).mockResolvedValue(false);
+    (userOwnsEndpoint as Mock).mockResolvedValue(false);
 
     const res = (await REPLAY_POST(
       makeRequest('http://x/api/webhook-endpoints/e-1/deliveries/d-1/replay'),
@@ -211,8 +213,8 @@ describe('POST /api/webhook-endpoints/[id]/deliveries/[deliveryId]/replay', () =
 
   it('returns 404 (Webhook delivery) when delivery does not belong to endpoint', async () => {
     setSession(mockUser);
-    (userOwnsEndpoint as jest.Mock).mockResolvedValue(true);
-    (deliveryBelongsToEndpoint as jest.Mock).mockResolvedValue(false);
+    (userOwnsEndpoint as Mock).mockResolvedValue(true);
+    (deliveryBelongsToEndpoint as Mock).mockResolvedValue(false);
 
     const res = (await REPLAY_POST(
       makeRequest('http://x/api/webhook-endpoints/e-1/deliveries/d-1/replay'),
@@ -228,9 +230,9 @@ describe('POST /api/webhook-endpoints/[id]/deliveries/[deliveryId]/replay', () =
 
   it('returns 500 when the enqueue service signals failure', async () => {
     setSession(mockUser);
-    (userOwnsEndpoint as jest.Mock).mockResolvedValue(true);
-    (deliveryBelongsToEndpoint as jest.Mock).mockResolvedValue(true);
-    (enqueueDeliveryReplay as jest.Mock).mockResolvedValue(false);
+    (userOwnsEndpoint as Mock).mockResolvedValue(true);
+    (deliveryBelongsToEndpoint as Mock).mockResolvedValue(true);
+    (enqueueDeliveryReplay as Mock).mockResolvedValue(false);
 
     const res = (await REPLAY_POST(
       makeRequest('http://x/api/webhook-endpoints/e-1/deliveries/d-1/replay'),
@@ -243,9 +245,9 @@ describe('POST /api/webhook-endpoints/[id]/deliveries/[deliveryId]/replay', () =
 
   it('returns 200 with replayed:true on the happy path', async () => {
     setSession(mockUser);
-    (userOwnsEndpoint as jest.Mock).mockResolvedValue(true);
-    (deliveryBelongsToEndpoint as jest.Mock).mockResolvedValue(true);
-    (enqueueDeliveryReplay as jest.Mock).mockResolvedValue(true);
+    (userOwnsEndpoint as Mock).mockResolvedValue(true);
+    (deliveryBelongsToEndpoint as Mock).mockResolvedValue(true);
+    (enqueueDeliveryReplay as Mock).mockResolvedValue(true);
 
     const res = (await REPLAY_POST(
       makeRequest('http://x/api/webhook-endpoints/e-1/deliveries/d-1/replay'),

@@ -18,6 +18,7 @@ import { logger } from '@/utils/logger';
 import { z } from 'zod';
 import { resolveGroupBySlug, checkGroupAdmin } from '@/domain/groups/helpers.server';
 import { createGroupWallet } from '@/services/groups/mutations/wallets';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 const createWalletSchema = z
   .object({
@@ -84,7 +85,7 @@ export const POST = withAuth(
           { error: result.error, groupId: group.id },
           'Groups'
         );
-        return handleApiError(new Error(result.error || 'Failed to create wallet'));
+        return handleApiError(new Error(apiErrorMessage(result, 'Failed to create wallet')));
       }
 
       return apiCreated({ wallet: result.wallets?.[0] });

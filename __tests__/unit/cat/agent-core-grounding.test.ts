@@ -1,51 +1,20 @@
 /**
- * Cat groundedness + agent-core mirror integrity.
+ * Cat groundedness rules, served from the package.
  *
- * Two jobs:
+ * This file used to have a second job: asserting the src/services/agent-core
+ * mirror was byte-identical to Loki's canonical copy. That mirror is
+ * deleted — both apps import `@bitbaum/ai-kit/grounding` now, so there are no longer
+ * two copies of "what counts as grounded" to diverge. (The mirror check also
+ * self-skipped in CI, which clones one repo at a time; it only ever ran on a
+ * laptop with both checkouts side by side. A gate that runs where nobody is
+ * looking and skips where everybody is was part of why the extraction won.)
  *
- * 1. Assert the mirror in src/services/agent-core/ is byte-identical to
- *    FleetCrown's canonical copy. The harness is duplicated rather than
- *    packaged (see agent-core/README.md); duplication is only safe if
- *    divergence cannot be committed by accident. Two copies of "what counts as
- *    grounded", quietly disagreeing, would make the two assistants wrong in
- *    different ways — worse than the single failure this all exists to fix.
- *    Skipped when FleetCrown is not checked out beside this repo (CI clones one
- *    repo at a time), which is why the same gate exists on the FleetCrown side.
- *
- * 2. Assert Cat's grounding mode does the two things it must do at once: catch
- *    an invented attribute about one of the USER'S OWN records, while leaving
- *    general economic knowledge alone. A check that flags "Lightning" gets
- *    switched off within a week, and then protects nothing.
+ * What remains is the half that was always about Cat: grounding mode must
+ * catch an invented attribute about one of the USER'S OWN records while
+ * leaving general economic knowledge alone. A check that flags "Lightning"
+ * gets switched off within a week, and then protects nothing.
  */
-import { createHash } from 'node:crypto';
-import { readdirSync, readFileSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
-import { verifyAnswer } from '@/services/agent-core/verify';
-import { buildAssistantRules, NO_BASIS } from '@/services/agent-core/contract';
-
-const MIRROR = join(process.cwd(), 'src', 'services', 'agent-core');
-const CANONICAL =
-  process.env.FLEETCROWN_DIR ??
-  join(process.cwd(), '..', 'fleetcrown', 'src', 'lib', 'agent', 'core');
-
-const sha = (s: string) => createHash('sha256').update(s).digest('hex');
-
-describe('agent-core mirror', () => {
-  const canonicalPresent = existsSync(CANONICAL);
-  const testIfPresent = canonicalPresent ? it : it.skip;
-
-  testIfPresent('is byte-identical to FleetCrown’s canonical copy', () => {
-    const mirrorFiles = readdirSync(MIRROR).sort();
-    const canonicalFiles = readdirSync(CANONICAL).sort();
-    expect(mirrorFiles).toEqual(canonicalFiles);
-    for (const f of canonicalFiles) {
-      expect({ file: f, hash: sha(readFileSync(join(MIRROR, f), 'utf8')) }).toEqual({
-        file: f,
-        hash: sha(readFileSync(join(CANONICAL, f), 'utf8')),
-      });
-    }
-  });
-});
+import { verifyAnswer, buildAssistantRules, NO_BASIS } from '@bitbaum/ai-kit/grounding';
 
 describe('Cat grounding rules', () => {
   it('forbids inferring an affiliation and claiming research', () => {

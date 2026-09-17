@@ -63,6 +63,20 @@ function ageOf(s: RateSnapshot): number {
 }
 
 /**
+ * Are we executing in a browser rather than on the server?
+ *
+ * Deliberately NOT `typeof window`. jsdom — every component test in this repo —
+ * defines `window`, so that check would refuse to fetch during tests and report
+ * a passing suite for a module that never ran. Node identifies itself with a
+ * version record that bundlers do not synthesise when they shim `process.env`
+ * for the browser, which distinguishes the two environments that actually
+ * matter here.
+ */
+function runningInBrowser(): boolean {
+  return typeof process === 'undefined' || !process.versions?.node;
+}
+
+/**
  * A rate we would be willing to price money with.
  *
  * Guards against upstream handing back nonsense as much as against network
@@ -75,13 +89,51 @@ function isSaneRate(value: unknown): value is number {
 }
 
 async function fetchUpstream(): Promise<RateSnapshot | null> {
+  // This module is server-only by contract, and the contract was being broken.
+  // Measured in production 2026-08-28: `api.coingecko.com` was present in a
+  // client chunk on disk, and the browser fetched it directly on page load —
+  // 534ms in the critical path, one upstream call per visitor instead of one
+  // per minute for the platform, and every visitor's IP handed to a third
+  // party. It arrives through a transitive import that carries no directive
+  // (dashboard page → services/bookings → rates.server → here), which is why
+  // the `'use client'` check never saw it.
+  //
+  // The import graph is being fixed separately and slowly; this is the part
+  // that must not wait. Browsers have /api/rates, which is same-origin and
+  // shared, so refusing here costs them nothing.
+  if (runningInBrowser()) {
+    logger.warn(
+      'Refusing to fetch rates from a browser — use /api/rates',
+      { reason: 'rateSource.server reached the client bundle' },
+      'Currency'
+    );
+    return null;
+  }
+
   try {
     const response = await fetch(SOURCE_URL, {
       headers: { Accept: 'application/json' },
       signal: AbortSignal.timeout(TIMEOUT_MS),
-      // We do our own caching with an explicit freshness policy; letting the
-      // fetch layer cache too would make "how old is this rate" unanswerable.
-      cache: 'no-store',
+      // NOT `cache: 'no-store'`. Next instruments the global fetch and
+      // attributes every call to whatever render is on the async stack; a
+      // no-store fetch seen during the render of a statically prerendered page
+      // reclassifies the route and fails that render:
+      //
+      //   Error: Page changed from static to dynamic at runtime /discover,
+      //   reason: revalidate: 0 fetch https://api.coingecko.com/... /discover
+      //
+      // The page then paints with no rate at all, which is how "amounts stay
+      // in BTC" reached production on a page that had a perfectly good
+      // snapshot available.
+      //
+      // A cacheable fetch is not reclassified, so declaring our freshness
+      // window here instead of refusing to cache keeps /discover static. The
+      // window is FRESH_MS — the same constant this module already treats as
+      // "fresh enough to serve" — so the two caches agree rather than
+      // answering "how old is this rate" differently. Within that window a
+      // served response can be up to FRESH_MS older than `fetchedAt` implies,
+      // which is precisely the staleness the module already accepts.
+      next: { revalidate: FRESH_MS / 1000 },
     });
 
     if (!response.ok) {
@@ -128,6 +180,44 @@ function refresh(): Promise<RateSnapshot | null> {
 }
 
 /**
+ * Start a refresh that does NOT belong to whatever render asked for it.
+ *
+ * `fetchUpstream` uses `cache: 'no-store'`, and Next tracks every fetch made
+ * during a render. A no-store fetch inside the render of a page that was
+ * statically prerendered raises, in production:
+ *
+ *   Error: Page changed from static to dynamic at runtime /discover,
+ *   reason: revalidate: 0 fetch https://api.coingecko.com/... /discover
+ *
+ * The refresh here is deliberately fire-and-forget — nothing awaits it and the
+ * caller has already returned a snapshot or null — but "not awaited" is not the
+ * same as "not attributed". Next sees the fetch start inside the render's async
+ * context and reclassifies the route, and the page that was meant to paint
+ * instantly instead fails its render.
+ *
+ * CORRECTION (2026-09-05). This function used to claim that the `setTimeout`
+ * below "puts the fetch outside that context". It does not, and never did:
+ * AsyncLocalStorage propagates through timers by design — that is the whole
+ * point of async_hooks — so the callback runs with the render's store still
+ * attached. The reclassification error kept firing in production after that
+ * change shipped; it was still firing on 2026-09-05.
+ *
+ * What actually fixes it is in `fetchUpstream`: the request is declared
+ * cacheable, so Next has no dynamic fetch to reclassify no matter which async
+ * context starts it. The timeout is kept only for what it genuinely does —
+ * keep the upstream call off the caller's critical path.
+ *
+ * Deliberately not `after()` from next/server: this module is called from
+ * plain server code as well as from requests, and it must not require a
+ * request scope to exist.
+ */
+function scheduleRefresh(): void {
+  setTimeout(() => {
+    void refresh();
+  }, 0);
+}
+
+/**
  * The current rates without ever touching the network.
  *
  * This is what server rendering uses: a page must not wait on a third party to
@@ -136,15 +226,21 @@ function refresh(): Promise<RateSnapshot | null> {
  */
 export function getCachedRateSnapshot(): RateSnapshot | null {
   if (!snapshot) {
+    // A cold process — every deploy — had no way to warm itself from here: it
+    // returned null and scheduled nothing, so amounts stayed in BTC until some
+    // other caller happened to await getRateSnapshot(). Now that a refresh no
+    // longer contaminates the render that triggered it, the first reader can
+    // safely start one for the next.
+    scheduleRefresh();
     return null;
   }
   const age = ageOf(snapshot);
   if (age > MAX_AGE_MS) {
-    void refresh();
+    scheduleRefresh();
     return null;
   }
   if (age > FRESH_MS) {
-    void refresh();
+    scheduleRefresh();
   }
   return snapshot;
 }

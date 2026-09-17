@@ -2,7 +2,7 @@
 
 **Purpose**: Single source of truth for development principles - ALWAYS enforce these
 
-**Last Updated**: 2026-01-06
+**Last Updated**: 2026-09-04
 
 ---
 
@@ -42,7 +42,7 @@ export function createEntityCrudHandlers(entityType: EntityType) {
 
 ```bash
 # Check for duplicate code
-npx jscpd src/ --threshold 0.1
+pnpm exec jscpd src/ --threshold 0.1
 ```
 
 ---
@@ -290,7 +290,7 @@ export async function POST(request: Request) {
 ```bash
 # .claude/hooks/post-edit.sh
 # Run type checker after every edit
-npm run type-check 2>&1 | tee /tmp/type-errors.log
+pnpm run type-check 2>&1 | tee /tmp/type-errors.log
 if [ ${PIPESTATUS[0]} -ne 0 ]; then
   echo "❌ Type errors detected. Claude will self-correct:" >&2
   cat /tmp/type-errors.log >&2
@@ -405,11 +405,8 @@ router.push(meta.createPath);
 # 3. Create schema
 # Add to src/lib/validation.ts
 
-# 4. Create migration
-mcp_supabase_apply_migration({
-  name: "create_user_newentity_table",
-  query: "CREATE TABLE user_newentity ..."
-})
+# 4. Create migration: add supabase/migrations/YYYYMMDDHHMMSS_create_user_newentity_table.sql
+#    (applied automatically on deploy by scripts/apply-migrations.sh)
 
 # 5. Done! Everything else is automatic
 ```
@@ -506,13 +503,13 @@ fi
 # .claude/hooks/post-edit.sh
 
 # Type check
-npm run type-check 2>&1 | tee /tmp/type-errors.log
+pnpm run type-check 2>&1 | tee /tmp/type-errors.log
 
 # Lint check
-npm run lint 2>&1 | tee /tmp/lint-errors.log
+pnpm run lint 2>&1 | tee /tmp/lint-errors.log
 
 # Check for duplicates
-npx jscpd src/ --threshold 0.1 2>&1 | tee /tmp/duplicate-code.log
+pnpm exec jscpd src/ --threshold 0.1 2>&1 | tee /tmp/duplicate-code.log
 
 # Report to Claude via stderr for self-correction
 if [ -s /tmp/type-errors.log ] || [ -s /tmp/lint-errors.log ]; then

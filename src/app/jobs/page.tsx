@@ -21,6 +21,7 @@ import { formatRelativeTime } from '@/utils/dates';
 import { API_ROUTES } from '@/config/api-routes';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import EntityListShell from '@/components/entity/EntityListShell';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 export default function JobsPage() {
   const [jobs, setJobs] = useState<any[]>([]);
@@ -50,7 +51,7 @@ export default function JobsPage() {
       if (data.success) {
         setJobs(data.data?.jobs || []);
       } else {
-        throw new Error(data.error || 'Failed to load job postings');
+        throw new Error(apiErrorMessage(data, 'Failed to load job postings'));
       }
     } catch (err) {
       if (signal?.aborted || (err as { name?: string }).name === 'AbortError') {

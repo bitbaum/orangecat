@@ -14,6 +14,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { waitlistSchema, type WaitlistFormData } from '@/lib/validation/social';
 import { toast } from 'sonner';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 export default function ChannelComingSoonPage() {
   const { user, profile } = useAuth();
@@ -121,7 +122,7 @@ export default function ChannelComingSoonPage() {
                       });
                       const json = await res.json();
                       if (!res.ok || !json.success) {
-                        throw new Error(json.error || 'Failed to subscribe');
+                        throw new Error(apiErrorMessage(json, 'Failed to subscribe'));
                       }
                       toast.success('We will notify you when Channel goes live');
                       reset({ email: profile?.email || '' });
