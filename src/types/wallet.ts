@@ -1,5 +1,6 @@
 // Fixed wallet types with proper validation
 
+import { normalizePastedHandle } from '@/lib/wallets/pastedHandle';
 import { bech32, bech32m } from 'bech32';
 import bs58check from 'bs58check';
 
@@ -246,7 +247,8 @@ export type WalletInputKind = 'onchain' | 'xpub' | 'lightning' | 'nwc' | 'unknow
  * that they paste WHATEVER their wallet gives them and it just works.
  */
 export function classifyWalletInput(raw: string): WalletInputKind {
-  const v = (raw ?? '').trim();
+  // Normalised first: a wallet hands you `bitcoin:bc1q…`, not `bc1q…`.
+  const v = normalizePastedHandle(raw);
   if (!v) {
     return 'unknown';
   }
@@ -409,7 +411,9 @@ export function sanitizeWalletInput(data: WalletFormData): WalletFormData {
     ...data,
     label: data.label.trim().slice(0, MAX_LABEL_LENGTH),
     description: data.description?.trim().slice(0, MAX_DESCRIPTION_LENGTH) || undefined,
-    address_or_xpub: data.address_or_xpub?.trim() ?? null,
+    // Strip BIP-21 packaging server-side too — the API is a paste target as
+    // much as the form is, and a URI must not reach the checksum validator.
+    address_or_xpub: data.address_or_xpub ? normalizePastedHandle(data.address_or_xpub) || null : null,
     nwc_connection_uri: data.nwc_connection_uri?.trim() || null,
     category_icon: (ALLOWED_CATEGORY_ICONS as readonly string[]).includes(data.category_icon || '')
       ? data.category_icon

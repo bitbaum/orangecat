@@ -15,6 +15,7 @@ import type { z } from 'zod';
 import type { walletUpdateSchema } from '@/lib/validation/finance';
 import type { NextResponse } from 'next/server';
 import { apiErrorMessage } from '@/lib/api/errorMessage';
+import { normalizePastedHandle } from '@/lib/wallets/pastedHandle';
 
 type WalletUpdateInput = z.infer<typeof walletUpdateSchema>;
 
@@ -114,7 +115,7 @@ export function buildWalletUpdates(
   }
 
   if (body.address_or_xpub !== undefined) {
-    const address = body.address_or_xpub?.trim() ?? '';
+    const address = normalizePastedHandle(body.address_or_xpub ?? '');
     if (address) {
       const validation = validateAddressOrXpub(address);
       if (!validation.valid) {
@@ -135,7 +136,7 @@ export function buildWalletUpdates(
   }
 
   if (body.lightning_address !== undefined) {
-    const lightningAddress = body.lightning_address?.trim() ?? '';
+    const lightningAddress = normalizePastedHandle(body.lightning_address ?? '');
     if (lightningAddress && !isValidLightningAddress(lightningAddress)) {
       return {
         updates: null,
