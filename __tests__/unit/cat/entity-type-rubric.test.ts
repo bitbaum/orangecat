@@ -31,8 +31,13 @@ describe('system prompt — entity-type decision rubric', () => {
   });
 
   it('maps a repayable money need to loan — never product or cause', () => {
-    expect(prompt).toContain('NEEDS money and intends to REPAY');
-    expect(prompt).toContain('**loan** — never a product, never a cause');
+    // The rubric is now GENERATED from the registry (entity-rubric.ts), so the
+    // bold type name renders last and reads as its display name. The rule this
+    // pins is unchanged, and the assertion is stronger than the two fragments
+    // it replaces: the whole line, in one piece, so a partial edit cannot pass.
+    expect(prompt).toContain(
+      'the user NEEDS money and intends to REPAY it — never a product, never a cause → **Loan**'
+    );
   });
 
   it('requires a one-line "why this type" with every proposal', () => {
