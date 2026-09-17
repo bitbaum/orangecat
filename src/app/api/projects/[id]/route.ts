@@ -43,7 +43,10 @@ async function postProcessProjectGet(
   if (profileUserId) {
     const { data: profileData, error: profileError } = await supabase
       .from(DATABASE_TABLES.PROFILES)
-      .select('id, username, name, avatar_url, email')
+      // No `email`: this GET is unauthenticated and publicly cacheable, so it
+      // put the creator's login email in a shared cache, and no consumer read
+      // it. anon has no SELECT on it either now (migration 20260917120100).
+      .select('id, username, name, avatar_url')
       .eq('id', profileUserId)
       .maybeSingle();
 

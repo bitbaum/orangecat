@@ -225,6 +225,22 @@ export const STORAGE_BUCKETS = {
 } as const;
 
 /**
+ * The public read surface of `profiles`, for any client that can run as `anon`.
+ *
+ * `anon` holds no SELECT grant on profiles.email / .phone / .contact_email
+ * (migration 20260917120100_anon_cannot_read_the_private_columns_of_a_profile),
+ * so `select('*')` on the profiles TABLE fails with permission-denied for a
+ * logged-out visitor. This view carries the same row without the account email,
+ * and with phone / contact_email / website / social_links already nulled when
+ * the owner listed them in privacy_settings.hidden_fields.
+ *
+ * Read this from any path an unauthenticated visitor can reach. Read the table
+ * only where the caller is known to be authenticated — and, for the private
+ * columns, to be the owner.
+ */
+export const PUBLIC_PROFILES_VIEW = 'public_profiles';
+
+/**
  * Every wallets column EXCEPT the write-only secret `nwc_connection_uri`.
  *
  * Client roles have a column-level SELECT grant for exactly this list

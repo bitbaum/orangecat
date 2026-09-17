@@ -1,14 +1,14 @@
 /**
  * Public profile lookup domain logic (server-only).
  *
- * Resolves a profile by username OR email (with an auth.users admin fallback)
- * and attaches the public project count. Kept out of the API route so it stays
+ * Resolves a profile by username and attaches the public project count. Email
+ * lookup was removed — see getPublicProfileByIdentifier. Kept out of the API route so it stays
  * a thin validate → delegate → respond wrapper. Returns a discriminated result
  * the route maps to an HTTP response (no HTTP concerns in this layer).
  */
 
-import { createAdminClient } from '@/lib/supabase/admin';
-import { DATABASE_TABLES } from '@/config/database-tables';
+import { PUBLIC_PROFILES_VIEW } from '@/config/database-tables';
+import { looseClient } from '@/lib/supabase/untyped';
 import { getTableName } from '@/config/entity-registry';
 import { ENTITY_STATUS } from '@/config/database-constants';
 import { getOrCreateUserActor } from '@/services/actors/getOrCreateUserActor';
@@ -25,9 +25,9 @@ export type PublicProfileResult =
 /**
  * Account PII / internal columns on the `profiles` row that must NEVER be
  * returned from the UNAUTHENTICATED (withOptionalAuth) profile endpoint. Anyone
- * can call it — by username OR by email — so returning the raw row (the previous
- * `select('*')` + `{ ...profile }`) leaked emails, phones, and internal blobs
- * to any caller and turned the email branch into a harvesting oracle.
+ * can call it, so returning the raw row (the previous `select('*')` +
+ * `{ ...profile }`) leaked emails, phones, and internal blobs to any caller —
+ * and the by-email branch it also had was a harvesting oracle, since removed.
  *
  * This is a DENYLIST, not an allowlist, on purpose: `src/types/database.ts`
  * drifts from the live schema (prod has columns like `background`,
@@ -69,11 +69,12 @@ function toPublicProfile(profile: Record<string, unknown>): Record<string, unkno
 }
 
 /**
- * Look up a public profile by username or email.
+ * Look up a public profile by username.
  *
  * `identifier` is expected already trimmed and non-empty (the route validates
- * presence). Email lookups first try the `profiles.email` column, then fall
- * back to resolving the user via the auth.users admin client.
+ * presence). An identifier that looks like an email address is refused rather
+ * than resolved: this endpoint is unauthenticated, so answering it would tell
+ * any caller whether a given address has an account here.
  */
 export async function getPublicProfileByIdentifier(
   supabase: AnySupabaseClient,
@@ -81,84 +82,57 @@ export async function getPublicProfileByIdentifier(
 ): Promise<PublicProfileResult> {
   const isEmail = identifier.includes('@');
 
-  let profile = null;
+  // The row comes from a view read through looseClient, so it arrives untyped
+  // (`{}`) — name the one field this function actually reaches into.
+  let profile: (Record<string, unknown> & { id: string }) | null = null;
   let error = null;
   let userId: string | null = null;
 
   if (isEmail) {
-    // Try to find profile by email field first (if it exists in profiles table)
-    const { data: profileByEmail, error: emailError } = await supabase
-      .from(DATABASE_TABLES.PROFILES)
-      .select('*')
-      .eq('email', identifier)
-      .single();
+    // Looking a person up BY EMAIL is not something an unauthenticated endpoint
+    // should answer, so it no longer does.
+    //
+    // The comment on SENSITIVE_PROFILE_FIELDS above already called this branch
+    // a harvesting oracle: anyone could confirm, one address at a time, whether
+    // an email has an account here and get the matching handle back. Stripping
+    // the columns from the RESPONSE never fixed that — the answer was the
+    // existence of the row, not the fields on it.
+    //
+    // It is also unreachable from the product: nothing in src/ calls
+    // /api/profile/[identifier] at all, let alone with an address. The two ways
+    // it used to answer are both gone — `.eq('email', …)` because `anon` no
+    // longer holds SELECT on profiles.email (migration 20260917120100), and the
+    // auth.users admin fallback because service_role would have walked straight
+    // around that grant and kept the oracle alive.
+    return {
+      ok: false,
+      code: 'not_found',
+      message: 'Profile not found. Please use username instead of email.',
+    };
+  }
 
-    if (!emailError && profileByEmail) {
-      profile = profileByEmail;
-      userId = profileByEmail.id;
-    } else {
-      // If email field doesn't exist in profiles, try to find user by email
-      // in auth.users via the admin client. Uses the createAdminClient SSOT
-      // (src/lib/supabase/admin.ts) so env-var fallback (SERVICE_ROLE_KEY
-      // → SECRET_KEY → SERVICE_KEY) stays consistent with every other
-      // server-side admin call.
-      try {
-        const adminClient = createAdminClient();
-        // List users and find by email (compatible across versions)
-        const { data: usersData, error: listError } = await adminClient.auth.admin.listUsers();
-        if (!listError && usersData?.users) {
-          const user = usersData.users.find(
-            u => u.email?.toLowerCase() === identifier.toLowerCase()
-          );
-          if (user?.id) {
-            userId = user.id;
-          } else {
-            return { ok: false, code: 'not_found', message: 'Profile not found' };
-          }
-        } else {
-          return { ok: false, code: 'not_found', message: 'Profile not found' };
-        }
+  // Look up by username, against the PUBLIC VIEW.
+  //
+  // This route is withOptionalAuth, so `supabase` is the anon-key client and a
+  // logged-out caller reaches Postgres as `anon` — which no longer holds SELECT
+  // on profiles.email/.phone/.contact_email, so `select('*')` on the table would
+  // now fail outright. public_profiles carries the same row minus the account
+  // email, with the owner's privacy_settings applied in SQL.
+  //
+  // toPublicProfile() below still runs its denylist over the result. That is
+  // now belt-and-braces rather than the only guard, and it stays: it is what
+  // keeps this endpoint's contract identical for phone/contact_email, which the
+  // view returns (masked) but this endpoint has always withheld outright.
+  const { data: profileByUsername, error: usernameError } = await looseClient(supabase)
+    .from(PUBLIC_PROFILES_VIEW)
+    .select('*')
+    .eq('username', identifier)
+    .single();
 
-        // Now fetch the profile by user ID
-        if (userId) {
-          const { data: profileById, error: profileError } = await supabase
-            .from(DATABASE_TABLES.PROFILES)
-            .select('*')
-            .eq('id', userId)
-            .single();
-
-          if (!profileError && profileById) {
-            profile = profileById;
-          } else {
-            error = profileError;
-          }
-        } else {
-          return { ok: false, code: 'not_found', message: 'Profile not found' };
-        }
-      } catch {
-        // createAdminClient returns a dummy proxy when service-role env vars
-        // are missing; calling .auth.admin.listUsers on it throws. That's
-        // expected — fall through to suggesting the username lookup.
-        return {
-          ok: false,
-          code: 'not_found',
-          message: 'Profile not found. Please use username instead of email.',
-        };
-      }
-    }
-  } else {
-    // Look up by username
-    const { data: profileByUsername, error: usernameError } = await supabase
-      .from(DATABASE_TABLES.PROFILES)
-      .select('*')
-      .eq('username', identifier)
-      .single();
-
-    profile = profileByUsername;
-    error = usernameError;
-    if (profile) {
-      userId = profile.id;
-    }
+  profile = profileByUsername as (Record<string, unknown> & { id: string }) | null;
+  error = usernameError;
+  if (profile) {
+    userId = profile.id;
   }
 
   if (error || !profile) {
