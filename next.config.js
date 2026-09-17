@@ -207,7 +207,20 @@ const nextConfig = {
           },
           {
             key: 'Referrer-Policy',
-            value: 'origin-when-cross-origin',
+            // strict-origin-when-cross-origin — the fleet baseline (see
+            // aoz-begleitung/next.config.js), and the only one of the five
+            // baseline headers orangecat.ch was not already sending in its
+            // agreed form. It differs from the previous `origin-when-cross-
+            // origin` in one respect: on an HTTPS -> HTTP downgrade it sends NO
+            // referrer at all instead of the bare origin. Same-origin requests
+            // still carry the full URL and cross-origin ones still carry the
+            // origin, so nothing that reads document.referrer or server-side
+            // Referer sees a change in practice — and no rendering depends on
+            // it. The other four (X-Content-Type-Options, X-Frame-Options:
+            // DENY — stricter than the SAMEORIGIN baseline, HSTS, and
+            // Permissions-Policy with its deliberate microphone=(self)) are
+            // already correct and are left exactly as they are.
+            value: 'strict-origin-when-cross-origin',
           },
           {
             key: 'Permissions-Policy',
