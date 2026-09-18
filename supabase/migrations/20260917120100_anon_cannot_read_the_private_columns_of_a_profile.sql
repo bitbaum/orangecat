@@ -35,11 +35,12 @@
 -- platform a published payment address is the product, not a leak.
 --
 -- ORDER OF APPLICATION — this one goes LAST.
--- Apply 20260917120000 (the view), deploy the application, and only then apply
--- this. CD does not run migrations, so the two halves land at different times;
--- applying this before the code is deployed 404s every public profile page,
--- because the running code still does select('*') on the table. See the header
--- of 20260917120000.
+-- Ship 20260917120000 (the view) and the application change first, let that
+-- deploy finish, and only then ship this — in its own PR. CD applies pending
+-- migrations BEFORE swapping the release, so this landing in the same deploy as
+-- the code would revoke the columns while the PREVIOUS release is still serving,
+-- and every public profile page 404s because that code still does select('*')
+-- on the table. See the header of 20260917120000.
 --
 -- SCOPE: `anon` only. `authenticated` keeps its table grant, so the owner's own
 -- profile, the settings/edit flow and every withAuth route behave exactly as
