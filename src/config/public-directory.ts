@@ -37,9 +37,10 @@ const FIXTURE_HEX_USER = /^user_[0-9a-f]{8}$/i;
 /**
  * Known CI-tool smoke-test accounts. Exact strings, not a pattern — every
  * entry here is a literal login used by this repo's own E2E/manual test
- * runs, confirmed against @example.com / *.test signups in
- * scripts/db/data_sample.sql, not guessed from a naming convention that
- * could also match a real user's handle.
+ * runs, each confirmed against the @example.com / *.test signups in a
+ * production auth export that is deliberately no longer kept in this
+ * repository, not guessed from a naming convention that could also match
+ * a real user's handle.
  */
 export const EXACT_FIXTURE_USERNAMES = [
   'curl-test',
