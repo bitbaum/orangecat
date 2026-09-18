@@ -130,4 +130,4 @@ See [SECURITY.md](SECURITY.md) for reporting vulnerabilities.
 
 ## License
 
-Proprietary. All Rights Reserved. See [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE). The OrangeCat name and visual identity are not covered by it.

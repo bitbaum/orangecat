@@ -303,7 +303,7 @@ export const TERMS_OF_SERVICE: LegalDocument = {
     {
       heading: 'Our intellectual property',
       bullets: [
-        'The Service, its software, design, brand (including the OrangeCat name and visual identity), and documentation are our proprietary property.',
+        'The software is open source under the MIT licence (see LICENSE in the repository) and these Terms do not narrow it. The OrangeCat name and visual identity are NOT covered by that licence and remain ours: running your own copy does not grant the right to present it as this Service.',
         'These Terms do not grant you any rights to our intellectual property except the limited right to use the Service as described above.',
         'Feedback, suggestions, or ideas you provide may be used by us without compensation or attribution.',
       ],
