@@ -19,9 +19,12 @@ ALTER TABLE profiles
 -- The resolver understands exactly these. A constraint rather than an enum so
 -- adding a format later is an ALTER, not a type migration; 'auto' is accepted
 -- as an explicit way to say "go back to inferring".
-ALTER TABLE profiles
-  DROP CONSTRAINT IF EXISTS profiles_date_format_check;
-
+--
+-- No `DROP CONSTRAINT IF EXISTS` first, deliberately: DROP is contract-phase DDL
+-- and `scripts/db/check-migration-safety.mjs` rejects it, because the deploy
+-- applies migrations BEFORE the atomic swap while auto-rollback reverts only the
+-- code. There is nothing to drop anyway — this constraint is new here, and a
+-- migration runs once.
 ALTER TABLE profiles
   ADD CONSTRAINT profiles_date_format_check
   CHECK (date_format IS NULL OR date_format IN ('auto', 'day-first', 'month-first', 'iso'));
