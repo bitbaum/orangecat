@@ -3,10 +3,11 @@
 -- This migration is ADDITIVE and changes nothing about what anyone can already
 -- read. It is deliberately separate from the migration that follows it
 -- (20260917120100), which takes `anon`'s read access to the private columns
--- away. They are split because this repo's CD does not run migrations — the box
--- database is migrated by hand — so the schema and the code roll out at
--- different moments, and a single migration would break the site in whichever
--- order it was applied:
+-- away. They are split because CD applies pending migrations BEFORE it swaps
+-- the release (scripts/deploy-selfhost.sh, "apply pending DB migrations"), so a
+-- migration shipped in the same commit as the code that needs it still lands
+-- first — against the PREVIOUS release. Ship the two halves as separate
+-- deploys, or the site breaks in whichever order they were applied:
 --
 --   revoke first  -> the deployed code still does select('*') on the table,
 --                    which now fails, and every public profile page 404s.
