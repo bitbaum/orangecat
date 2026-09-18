@@ -47,7 +47,7 @@ export default function ProfileProjectCard({ project }: { project: ProfileProjec
   const raisedAmount = project.raisedAmount || 0;
   const currentAmount = balanceBTC > 0 ? balanceBTC : raisedAmount;
   const progress = goalAmount > 0 ? Math.min((currentAmount / goalAmount) * 100, 100) : 0;
-  const statusInfo = getStatusInfo(project.status || PROJECT_STATUS.ACTIVE);
+  const statusInfo = getStatusInfo(project.status || PROJECT_STATUS.ACTIVE, 'project');
   const showStatusBadge =
     project.status &&
     !([PROJECT_STATUS.ACTIVE, PROJECT_STATUS.DRAFT] as string[]).includes(

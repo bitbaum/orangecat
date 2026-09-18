@@ -16,6 +16,7 @@ import Button from '@/components/ui/Button';
 import { ROUTES } from '@/config/routes';
 import { API_ROUTES } from '@/config/api-routes';
 import { getUniqueCategories } from '@/utils/project';
+import type { EntityType } from '@/config/entity-registry';
 import { getInitial } from '@/utils/string';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
@@ -39,7 +40,12 @@ interface ProjectHeaderProps {
   };
   isOwner: boolean;
   onShare: () => void;
-  getStatusInfo: (status: string) => { label: string; className: string };
+  /**
+   * Injected by ProjectPageClient, which passes the real resolver. The second
+   * argument is what makes a project's status read the same here as it does
+   * on the dashboard list; without it this header had its own answer.
+   */
+  getStatusInfo: (status: string, entityType?: EntityType) => { label: string; className: string };
 }
 
 export default function ProjectHeader({
@@ -50,7 +56,7 @@ export default function ProjectHeader({
 }: ProjectHeaderProps) {
   const { user } = useAuth();
   const router = useRouter();
-  const statusInfo = getStatusInfo(project.status);
+  const statusInfo = getStatusInfo(project.status, 'project');
   const creatorProfileUrl = project.profiles?.username
     ? ROUTES.PROFILE.VIEW(project.profiles.username)
     : project.profiles?.id

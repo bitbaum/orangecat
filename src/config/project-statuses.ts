@@ -1,16 +1,23 @@
 /**
- * Project Status Configuration - Single Source of Truth
+ * Project status: the VALUES, the visibility rules, and nothing about colour.
  *
- * Centralized status definitions, labels, colors, and validation for projects.
- * All project status constants and helpers live here — import from this file only.
+ * This file used to open by calling itself the single source of truth and
+ * telling you to "import from this file only", while three other tables also
+ * decided what colour a project status is — `STATUS_CONFIG`, the per-entity
+ * `STATUS_BADGES`, and a private map inside `EntityCard`. They disagreed: a
+ * completed project rendered blue here and on its header, and green on the
+ * dashboard list. A docblock cannot make a claim like that true; only having
+ * one table can.
  *
- * Created: 2025-01-30
- * Last Modified: 2026-02-23
- * Last Modified Summary: Consolidated from lib/projectStatus.ts and database-constants.ts
+ * So the colours are gone from here. `PROJECT_STATUSES` still exists because
+ * plenty of code reads its shape, but every entry is now DERIVED from
+ * `getStatusInfo(status, 'project')` — the same call the rest of the app makes.
+ * What stays owned here is what is genuinely project-specific: the status
+ * values, which of them a signed-out visitor may see, and validation.
  */
 
-import { BADGE_COLORS } from '@/config/badge-colors';
-import { STATUS_LABELS } from './status-labels';
+import { getStatusInfo } from '@/config/status-config';
+import { getStatusBadge, type BadgeVariant } from '@/config/entity-status';
 
 /** String constants for project status comparisons (follows STATUS.* pattern) */
 export const PROJECT_STATUS = {
@@ -37,35 +44,33 @@ export function isProjectPubliclyVisible(status: string | null | undefined): boo
   return !!status && PROJECT_PUBLICLY_VISIBLE_STATUSES.includes(status);
 }
 
-export const PROJECT_STATUSES = {
-  draft: {
-    label: STATUS_LABELS.draft,
-    className: `border ${BADGE_COLORS.muted}`,
-    badgeVariant: 'default' as const,
-  },
-  active: {
-    label: STATUS_LABELS.active,
-    className: `border ${BADGE_COLORS.success}`,
-    badgeVariant: 'success' as const,
-  },
-  paused: {
-    label: STATUS_LABELS.paused,
-    className: `border ${BADGE_COLORS.warning}`,
-    badgeVariant: 'warning' as const,
-  },
-  completed: {
-    label: STATUS_LABELS.completed,
-    className: `border ${BADGE_COLORS.info}`,
-    badgeVariant: 'info' as const,
-  },
-  cancelled: {
-    label: STATUS_LABELS.cancelled,
-    className: `border ${BADGE_COLORS.error}`,
-    badgeVariant: 'error' as const,
-  },
-};
+export type ProjectStatus = 'draft' | 'active' | 'paused' | 'completed' | 'cancelled';
 
-export type ProjectStatus = keyof typeof PROJECT_STATUSES;
+interface ProjectStatusDisplay {
+  label: string;
+  className: string;
+  badgeVariant: BadgeVariant;
+}
+
+/**
+ * Derived, not declared. `getStatusInfo(status, 'project')` is the same call
+ * every other surface makes, so this cannot drift from them again; the `border`
+ * prefix is the one thing this shape adds, because its callers render a bordered
+ * pill.
+ */
+export const PROJECT_STATUSES: Record<ProjectStatus, ProjectStatusDisplay> = Object.fromEntries(
+  (['draft', 'active', 'paused', 'completed', 'cancelled'] as const).map(status => {
+    const info = getStatusInfo(status, 'project');
+    return [
+      status,
+      {
+        label: info.label,
+        className: `border ${info.className}`,
+        badgeVariant: getStatusBadge('project', status)?.variant ?? 'default',
+      },
+    ];
+  })
+) as Record<ProjectStatus, ProjectStatusDisplay>;
 
 /** All valid project status values */
 export const VALID_PROJECT_STATUSES = [
