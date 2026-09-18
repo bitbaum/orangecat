@@ -151,6 +151,6 @@ export const config = {
      * - images (image files)
      * - .*\\..* (files with extensions)
      */
-    '/((?!_next/static|_next/image|favicon.ico|images|api|.*\\..*).*)',
+    '/((?!_next/|favicon.ico|images|api|.*\\..*).*)',
   ],
 };
