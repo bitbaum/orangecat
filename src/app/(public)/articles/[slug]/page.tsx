@@ -15,7 +15,7 @@ import LongformBody from '@/lib/longform/LongformBody';
 import ShareButton from './ShareButton';
 import TipButton from '@/components/tips/TipButton';
 import ArticleOwnerActions from './ArticleOwnerActions';
-import { formatDateLong } from '@/utils/dates';
+import { FormattedDate } from '@/components/ui/FormattedDate';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -155,7 +155,9 @@ export default async function ArticlePage({ params }: PageProps) {
               <span aria-hidden className="text-fg-tertiary">
                 ·
               </span>
-              <time dateTime={article.publishedAt}>{formatDateLong(article.publishedAt)}</time>
+              <time dateTime={article.publishedAt}>
+                <FormattedDate value={article.publishedAt} mode="long" />
+              </time>
               <span className="inline-flex items-center gap-1.5">
                 <Clock className="h-4 w-4" />
                 {article.readingTime} min read

@@ -1,7 +1,7 @@
 import React from 'react';
 import { PageHeading } from '@/components/layout/PageHeading';
 import { CHANGELOG, CHANGELOG_TAGS, type ChangelogTag } from '@/config/changelog';
-import { formatIsoDay } from '@/utils/dates';
+import { FormattedDate } from '@/components/ui/FormattedDate';
 
 export const metadata = {
   title: 'Changelog',
@@ -54,7 +54,7 @@ export default function ChangelogPage() {
 
               <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1">
                 <time dateTime={entry.date} className="font-mono text-xs text-fg-tertiary">
-                  {formatIsoDay(entry.date)}
+                  <FormattedDate value={entry.date} mode="isoDay" />
                 </time>
                 <span
                   className={`inline-flex items-center rounded-full border px-2 py-0.5 text-2xs font-medium uppercase tracking-wide ${TAG_CHIP[entry.tag]}`}

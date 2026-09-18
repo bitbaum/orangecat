@@ -11,7 +11,7 @@
 
 import { RotateCcw, Trash2 } from 'lucide-react';
 import type { IntegrationKey } from '@/components/settings/IntegrationKeysCard';
-import { formatOptionalDateTime } from '@/utils/locale';
+import { FormattedDate } from '@/components/ui/FormattedDate';
 
 interface Props {
   integrationKey: IntegrationKey;
@@ -55,8 +55,12 @@ export default function IntegrationKeyRow({
               {(key.scopes ?? ['*']).join(', ')}
             </code>
           </span>
-          <span>Created {formatOptionalDateTime(key.created_at)}</span>
-          <span>Last used {formatOptionalDateTime(key.last_used_at)}</span>
+          <span>
+            Created <FormattedDate value={key.created_at} mode="datetime" />
+          </span>
+          <span>
+            Last used <FormattedDate value={key.last_used_at} mode="datetime" />
+          </span>
         </div>
       </div>
       {!isRevoked && (

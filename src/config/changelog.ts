@@ -32,6 +32,18 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     date: '2026-09-17',
     tag: 'feature',
+    title: 'Dates read the way you read them',
+    summary:
+      'OrangeCat wrote every date the American way \u2014 March 15, 2027 \u2014 regardless of where you are. Date format is now a setting, and left alone it follows the country on your profile.',
+    items: [
+      'Settings \u2192 Date Format offers day first (15 Mar 2027), month first (Mar 15, 2027) or year first (2027-03-15).',
+      'Left on automatic it is inferred from your country, then your currency \u2014 so moving country changes your dates without you touching anything.',
+      'Most of the world, and most of this platform, writes the day first. Signed-out pages now do too.',
+    ],
+  },
+  {
+    date: '2026-09-17',
+    tag: 'feature',
     title: 'Every wallet has a page of its own',
     summary:
       'A wallet used to exist only as a card inside somebody\u2019s profile. It now has its own address you can send someone \u2014 and the on-chain numbers behind it were corrected.',

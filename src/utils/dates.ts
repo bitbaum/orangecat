@@ -2,40 +2,42 @@
  * Shared date formatting utilities — SSOT for display-layer date/time formatting.
  * Eliminates duplicate formatDate/formatTime/formatRelativeTime definitions
  * scattered across components. Uses date-fns (already installed).
+ *
+ * These take a `DateFormat` rather than a locale, because they render through
+ * date-fns patterns rather than `toLocaleDateString`. That distinction is why
+ * `check:app-locale` never saw this file: `'MMM d, yyyy'` contains no `toLocale`
+ * or `Intl` call, so the gate meant to keep dates consistent was watching only
+ * the other half of the app while the larger half wrote American dates.
+ *
+ * The default is `month-first`, which is exactly what these rendered before, so
+ * a caller that has not been given the viewer's format is unchanged rather than
+ * silently restyled. Components should get the format from `useDisplayDate()`
+ * or render `<FormattedDate />` instead of passing it by hand.
  */
 import { format, formatDistanceToNow } from 'date-fns';
 import { APP_LOCALE } from '@/utils/locale';
+import { DATE_FORMATS, type DateFormat } from '@/config/date-formats';
 
-export function formatDate(date: string | Date): string {
-  return format(typeof date === 'string' ? new Date(date) : date, 'MMM d, yyyy');
+/** What this module rendered before it could be told otherwise. */
+const DEFAULT_FORMAT: DateFormat = 'month-first';
+
+const toDate = (date: string | Date): Date => (typeof date === 'string' ? new Date(date) : date);
+
+export function formatDate(date: string | Date, fmt: DateFormat = DEFAULT_FORMAT): string {
+  return format(toDate(date), DATE_FORMATS[fmt].pattern);
 }
 
 /**
  * The same day, spelled out: "July 22, 2026". For article datelines, where the
  * abbreviated form reads like a log entry.
  */
-export function formatDateLong(date: string | Date): string {
-  return (typeof date === 'string' ? new Date(date) : date).toLocaleDateString(APP_LOCALE, {
+export function formatDateLong(date: string | Date, locale: string = APP_LOCALE): string {
+  return toDate(date).toLocaleDateString(locale, {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
   });
 }
-
-const ISO_DAY_MONTHS = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec',
-];
 
 /**
  * 'YYYY-MM-DD' → 'Jul 22, 2026', read as calendar digits and never as an
@@ -44,13 +46,15 @@ const ISO_DAY_MONTHS = [
  * the server than in the browser, which is a hydration mismatch. A date with
  * no time in it has no timezone; this formatter is the one that acts like it.
  */
-export function formatIsoDay(iso: string): string {
+export function formatIsoDay(iso: string, fmt: DateFormat = DEFAULT_FORMAT): string {
   const [y, m, d] = iso.split('-').map(Number);
-  return `${ISO_DAY_MONTHS[(m ?? 1) - 1]} ${d}, ${y}`;
+  // Local midnight, never UTC — that is the whole point of this function, and
+  // date-fns formats a Date in local time, so the guarantee survives.
+  return format(new Date(y ?? 1970, (m ?? 1) - 1, d ?? 1), DATE_FORMATS[fmt].pattern);
 }
 
-export function formatTime(date: string | Date): string {
-  return format(typeof date === 'string' ? new Date(date) : date, 'h:mm a');
+export function formatTime(date: string | Date, fmt: DateFormat = DEFAULT_FORMAT): string {
+  return format(toDate(date), DATE_FORMATS[fmt].timePattern);
 }
 
 export function formatRelativeTime(date: string | Date): string {
@@ -90,7 +94,10 @@ export function formatDurationMinutes(minutes: number | null | undefined): strin
  * carried a private copy of this because the coarse one was all we exported,
  * so two "x ago" dialects rendered on adjacent screens.
  */
-export function formatRelativeTimeFine(date: string | Date): string {
+export function formatRelativeTimeFine(
+  date: string | Date,
+  fmt: DateFormat = DEFAULT_FORMAT
+): string {
   const d = typeof date === 'string' ? new Date(date) : date;
   const minutes = Math.floor((Date.now() - d.getTime()) / 60000);
   if (minutes < 1) {
@@ -107,10 +114,13 @@ export function formatRelativeTimeFine(date: string | Date): string {
   if (days < 30) {
     return `${days}d ago`;
   }
-  return formatDate(d);
+  return formatDate(d, fmt);
 }
 
-export function formatRelativeTimeCompact(date: string | Date): string {
+export function formatRelativeTimeCompact(
+  date: string | Date,
+  fmt: DateFormat = DEFAULT_FORMAT
+): string {
   const d = typeof date === 'string' ? new Date(date) : date;
   const days = Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));
   if (days === 0) {
@@ -125,5 +135,5 @@ export function formatRelativeTimeCompact(date: string | Date): string {
   if (days < 30) {
     return `${Math.floor(days / 7)}w ago`;
   }
-  return formatDate(d);
+  return formatDate(d, fmt);
 }

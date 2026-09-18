@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Shield, Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { getMFAFactors, unenrollMFA } from '@/services/supabase/auth';
-import { formatDate } from '@/utils/dates';
+import { FormattedDate } from '@/components/ui/FormattedDate';
 
 export function MFAStatus({
   onEnableClick,
@@ -114,7 +114,9 @@ export function MFAStatus({
       )}
 
       {hasMFA && (
-        <p className="text-xs text-fg-secondary">Added on {formatDate(factors[0].created_at)}</p>
+        <p className="text-xs text-fg-secondary">
+          Added on <FormattedDate value={factors[0].created_at} />
+        </p>
       )}
     </div>
   );

@@ -11,8 +11,8 @@ import {
 } from '@/services/mempool';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import Button from '@/components/ui/Button';
-import { formatDate } from '@/utils/dates';
 import { GRADIENTS } from '@/config/gradients';
+import { FormattedDate } from '@/components/ui/FormattedDate';
 
 interface BitcoinWalletStatsCompactProps {
   address: string;
@@ -152,7 +152,11 @@ export default function BitcoinWalletStatsCompact({
                   )}
                 </div>
                 <div className="text-xs text-fg-secondary">
-                  {tx.timestamp ? formatDate(new Date(tx.timestamp * 1000)) : 'Unconfirmed'}
+                  {tx.timestamp ? (
+                    <FormattedDate value={new Date(tx.timestamp * 1000)} />
+                  ) : (
+                    'Unconfirmed'
+                  )}
                 </div>
               </div>
             ))}

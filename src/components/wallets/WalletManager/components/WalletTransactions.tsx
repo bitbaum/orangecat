@@ -27,9 +27,9 @@ import { ArrowDownLeft, ArrowUpRight, ExternalLink, Loader2, RefreshCw } from 'l
 import { API_ROUTES } from '@/config/api-routes';
 import { apiErrorMessage } from '@/lib/api/errorMessage';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
-import { formatDateTime } from '@/utils/locale';
 import { logger } from '@/utils/logger';
 import { TransactionNote } from './TransactionNote';
+import { FormattedDate } from '@/components/ui/FormattedDate';
 
 interface OnchainTransaction {
   txid: string;
@@ -163,9 +163,11 @@ export function WalletTransactions({ walletId }: { walletId: string }) {
                       {incoming ? 'Received' : 'Sent'}
                     </span>
                     <span className="block truncate text-xs text-fg-secondary">
-                      {tx.confirmed && tx.blockTime
-                        ? formatDateTime(tx.blockTime * 1000)
-                        : 'Pending confirmation'}
+                      {tx.confirmed && tx.blockTime ? (
+                        <FormattedDate value={tx.blockTime * 1000} mode="datetime" />
+                      ) : (
+                        'Pending confirmation'
+                      )}
                     </span>
                   </span>
                 </span>
