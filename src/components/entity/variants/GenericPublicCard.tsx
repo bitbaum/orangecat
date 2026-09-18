@@ -6,6 +6,8 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/badge';
 import { EntityCard } from '@/components/entity/EntityCard';
 import { ENTITY_REGISTRY, type EntityType } from '@/config/entity-registry';
+import { getStatusInfo } from '@/config/status-config';
+import { cn } from '@/lib/utils';
 
 export interface GenericPublicEntity {
   id: string;
@@ -74,8 +76,15 @@ export function GenericPublicCard({
       href={href}
       headerSlot={
         entity.status ? (
-          <Badge variant="secondary" className="text-xs capitalize">
-            {entity.status}
+          // Not `{entity.status}` with a `capitalize` class: CSS capitalises the
+          // first letter and leaves the underscore, so a sold-out product read
+          // "Sold_out" on every public card. This component already knew that —
+          // it does `.replace(/_/g, ' ')` for the category two lines down.
+          <Badge
+            variant="secondary"
+            className={cn('text-xs', getStatusInfo(entity.status, entityType).className)}
+          >
+            {getStatusInfo(entity.status, entityType).label}
           </Badge>
         ) : null
       }

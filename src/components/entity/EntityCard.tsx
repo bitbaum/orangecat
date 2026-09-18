@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { EntityCardActions } from './EntityCardActions';
 import { EntityCardImage } from './EntityCardImage';
 import { getStatusInfo } from '@/config/status-config';
-import { BADGE_COLORS } from '@/config/badge-colors';
+import { BADGE_VARIANT_CLASSES } from '@/config/badge-colors';
 
 export interface EntityCardProps {
   id: string;
@@ -48,16 +48,6 @@ export interface EntityCardProps {
   footerSlot?: ReactNode;
   compact?: boolean;
 }
-
-const badgeVariantClasses: Record<string, string> = {
-  default: BADGE_COLORS.neutral,
-  success: BADGE_COLORS.success,
-  warning: BADGE_COLORS.warning,
-  error: BADGE_COLORS.error,
-  info: BADGE_COLORS.info,
-  destructive: BADGE_COLORS.error,
-  secondary: BADGE_COLORS.neutral,
-};
 
 export function EntityCard({
   id: _id,
@@ -154,7 +144,10 @@ export function EntityCard({
       <div className={cn('flex flex-1 flex-col', compact ? 'p-3' : 'p-4')}>
         {badge && (
           <div className={cn(compact ? 'mb-1' : 'mb-2')}>
-            <Badge variant="secondary" className={cn('text-xs', badgeVariantClasses[badgeVariant])}>
+            <Badge
+              variant="secondary"
+              className={cn('text-xs', BADGE_VARIANT_CLASSES[badgeVariant])}
+            >
               {badge}
             </Badge>
           </div>

@@ -82,7 +82,7 @@ export default function ProfileEntityTab({
 
       <div className="space-y-4">
         {entities.map(entity => {
-          const statusInfo = getStatusInfo(entity.status || '');
+          const statusInfo = getStatusInfo(entity.status || '', entityType);
           const thumbnail = getThumbnail(entity);
           const showStatusBadge =
             entity.status &&

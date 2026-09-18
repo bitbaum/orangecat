@@ -30,6 +30,29 @@ export const BADGE_COLORS = {
 export type BadgeColorKey = keyof typeof BADGE_COLORS;
 
 /**
+ * The one translation from a Badge `variant` to the classes that paint it.
+ *
+ * Two status vocabularies exist on purpose: `variant` is the semantic name a
+ * component asks for, `className` is what actually renders. What was NOT on
+ * purpose is that the translation between them lived privately inside
+ * `EntityCard`, so anything else needing it had to guess — and the guesses
+ * drifted. It lives here now, next to the colours it names.
+ *
+ * `destructive` and `error` are the same paint; both spellings are in use.
+ */
+export const BADGE_VARIANT_CLASSES = {
+  default: BADGE_COLORS.neutral,
+  secondary: BADGE_COLORS.neutral,
+  success: BADGE_COLORS.success,
+  warning: BADGE_COLORS.warning,
+  info: BADGE_COLORS.info,
+  error: BADGE_COLORS.error,
+  destructive: BADGE_COLORS.error,
+} as const;
+
+export type BadgeVariantKey = keyof typeof BADGE_VARIANT_CLASSES;
+
+/**
  * Stat panel accent colors — for full-card colored panels (stat cards, KPI tiles).
  * Lighter variant: bg-*-50 text-*-600 border-*-200
  * Use BADGE_COLORS for small pill badges; use STAT_COLORS for panel backgrounds.

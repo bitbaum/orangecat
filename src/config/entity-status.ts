@@ -10,12 +10,7 @@ export interface EntityStatusBadge {
 }
 
 export type ClientStatusIntent =
-  | 'draft'
-  | 'active'
-  | 'paused'
-  | 'completed'
-  | 'cancelled'
-  | 'archived';
+  'draft' | 'active' | 'paused' | 'completed' | 'cancelled' | 'archived';
 
 export const CLIENT_STATUS_INTENTS = [
   'draft',
@@ -126,7 +121,13 @@ const STATUS_BADGES = {
   },
 } as const satisfies Partial<Record<EntityType, Record<string, EntityStatusBadge>>>;
 
-const ENTITY_STATUS_BADGES: Partial<Record<EntityType, Record<string, EntityStatusBadge>>> =
+/**
+ * The per-entity status table — the SSOT for what a status looks like when we
+ * know which entity it belongs to. Exported so a test can walk every entry and
+ * assert the other surfaces agree with it; nothing else should read it
+ * directly, use `getStatusBadge` or `getStatusInfo`.
+ */
+export const ENTITY_STATUS_BADGES: Partial<Record<EntityType, Record<string, EntityStatusBadge>>> =
   STATUS_BADGES;
 
 export function resolvePublishStatus(entityType: EntityType, clientStatus: string): string {

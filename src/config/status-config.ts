@@ -47,7 +47,9 @@ interface StatusInfo {
 /**
  * Status configuration - SSOT for all status labels and styles
  */
-import { BADGE_COLORS } from '@/config/badge-colors';
+import { BADGE_COLORS, BADGE_VARIANT_CLASSES } from '@/config/badge-colors';
+import { getStatusBadge } from '@/config/entity-status';
+import type { EntityType } from '@/config/entity-registry';
 import { STATUS_LABELS } from './status-labels';
 
 export const STATUS_CONFIG: Record<EntityStatus, StatusInfo> = {
@@ -119,16 +121,38 @@ export const STATUS_CONFIG: Record<EntityStatus, StatusInfo> = {
 // ==================== UTILITY FUNCTIONS ====================
 
 /**
- * Get status info for any status string
- * Returns default styling for unknown statuses
+ * How a status should read, for whoever is rendering it.
+ *
+ * PASS THE ENTITY TYPE WHEN YOU KNOW IT. The same word means different things
+ * to different entities, and `ENTITY_STATUS_BADGES` is where that nuance is
+ * recorded — a completed project is a success, a completed cause is simply
+ * over. This function used to ignore that table entirely, so the same project
+ * rendered `Completed` in blue on its header, profile card and project card,
+ * and in green on the dashboard list, which reads the entity table instead.
+ * Three tables, three answers, no way to notice.
+ *
+ * So: the entity table wins wherever it has an entry, because it is the more
+ * specific one. `STATUS_CONFIG` remains the answer when the entity type is
+ * unknown or the entity has no opinion about that status, and an unrecognised
+ * status still falls back to its own capitalised name rather than "Unknown".
  *
  * @example
- * const info = getStatusInfo('active');
- * // { label: STATUS_LABELS.active, className: 'bg-green-100 text-green-700' }
+ * getStatusInfo('active');            // entity-agnostic
+ * getStatusInfo('completed', 'cause') // what a cause means by it
  */
-export function getStatusInfo(status: string | null | undefined): StatusInfo {
+export function getStatusInfo(
+  status: string | null | undefined,
+  entityType?: EntityType
+): StatusInfo {
   if (!status) {
     return { label: 'Unknown', className: BADGE_COLORS.neutral };
+  }
+
+  if (entityType) {
+    const badge = getStatusBadge(entityType, status);
+    if (badge) {
+      return { label: badge.label, className: BADGE_VARIANT_CLASSES[badge.variant] };
+    }
   }
 
   const normalized = status.toLowerCase() as EntityStatus;
