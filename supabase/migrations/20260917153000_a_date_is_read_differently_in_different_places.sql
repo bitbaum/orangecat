@@ -29,5 +29,16 @@ ALTER TABLE profiles
   ADD CONSTRAINT profiles_date_format_check
   CHECK (date_format IS NULL OR date_format IN ('auto', 'day-first', 'month-first', 'iso'));
 
+-- Grant the new column back to the client roles, explicitly.
+--
+-- Postgres does NOT add a new column to an existing column-level GRANT, and
+-- `20260917120100_anon_cannot_read_the_private_columns_of_a_profile.sql` already
+-- computed its grant from the catalog as it stood BEFORE this column existed.
+-- Without this line `date_format` is readable by nobody, and the first `select`
+-- that mentions it answers 42501 — for every signed-in user loading their
+-- profile, not just for this feature. `date_format` is a display preference
+-- with nothing private in it, so it is public by default like the rest.
+GRANT SELECT (date_format) ON TABLE public.profiles TO anon, authenticated;
+
 COMMENT ON COLUMN profiles.date_format IS
   'How this person reads dates. NULL or ''auto'' = infer from location_country, then currency, then language. Read by src/config/date-formats.ts.';
