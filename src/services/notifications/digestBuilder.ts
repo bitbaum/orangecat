@@ -21,6 +21,8 @@ import { STATUS, ENTITY_STATUS } from '@/config/database-constants';
 import { logger } from '@/utils/logger';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { generateNudges } from '@/services/cat/nudges';
+import { getUserActorId } from '@/domain/actors';
+import type { AnySupabaseClient } from '@/lib/supabase/types';
 
 const LOG_SOURCE = 'DigestBuilder';
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://orangecat.ch';
@@ -115,13 +117,7 @@ async function fetchActorId(
   admin: ReturnType<typeof createAdminClient>,
   userId: string
 ): Promise<string | null> {
-  const { data } = await fromTable(admin, DATABASE_TABLES.ACTORS)
-    .select('id')
-    .eq('user_id', userId)
-    .eq('actor_type', 'user')
-    .single();
-
-  return data?.id ?? null;
+  return getUserActorId(admin as unknown as AnySupabaseClient, userId);
 }
 
 async function fetchPaymentStats(

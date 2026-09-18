@@ -15,11 +15,11 @@
  * are not covered here and remain served by the direct Loki rail.
  */
 import { getAdminClient } from '@/lib/supabase/admin';
-import { DATABASE_TABLES } from '@/config/database-tables';
 import { enqueueWebhookEvent } from '@/services/webhooks/deliveryService';
 import { logger } from '@/utils/logger';
 import type { PaymentIntent } from '@/domain/payments/types';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
+import { getUserActorId } from '@/domain/actors';
 
 /** Must match the economic event advertised in PUBLIC_API_WEBHOOK_EVENTS. */
 export const PAYMENT_SETTLED_EVENT = 'payment.settled' as const;
@@ -39,17 +39,12 @@ export function buildPaymentSettledPayload(pi: PaymentIntent) {
 export async function enqueuePaymentSettledWebhook(pi: PaymentIntent): Promise<number> {
   try {
     const admin = getAdminClient() as unknown as AnySupabaseClient;
-    const { data: actor } = await admin
-      .from(DATABASE_TABLES.ACTORS)
-      .select('id')
-      .eq('user_id', pi.seller_id)
-      .eq('actor_type', 'user')
-      .maybeSingle();
-    if (!actor?.id) {
+    const actorId = await getUserActorId(admin, pi.seller_id);
+    if (!actorId) {
       return 0;
     }
     return await enqueueWebhookEvent({
-      actorId: actor.id,
+      actorId,
       eventType: PAYMENT_SETTLED_EVENT,
       payload: buildPaymentSettledPayload(pi),
     });

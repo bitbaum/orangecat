@@ -4,6 +4,7 @@ import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { STATUS } from '@/config/database-constants';
 import type { EntitySummary, FullUserContext } from './document-context-types';
+import { getUserActorId } from '@/domain/actors';
 
 type AnyQuery = any;
 
@@ -82,14 +83,9 @@ export async function fetchEntitiesForCat(
   const entities: EntitySummary[] = [];
 
   try {
-    const { data: actor, error: actorError } = await supabase
-      .from(DATABASE_TABLES.ACTORS)
-      .select('id')
-      .eq('actor_type', 'user')
-      .eq('user_id', userId)
-      .maybeSingle();
+    const actorId = await getUserActorId(supabase, userId);
 
-    if (actorError || !actor) {
+    if (!actorId) {
       logger.warn(
         'Could not find actor for user when fetching entities',
         { userId },
@@ -97,8 +93,6 @@ export async function fetchEntitiesForCat(
       );
       return { entities, stats };
     }
-
-    const actorId = actor.id;
 
     const d = (r: Record<string, unknown>) =>
       (r.description as string | undefined)?.substring(0, 300);

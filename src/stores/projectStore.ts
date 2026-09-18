@@ -7,19 +7,18 @@
  * - Simple state management with Zustand
  */
 
-import { fromTable } from '@/lib/supabase/untyped';
 import { create } from 'zustand';
 import { logger } from '@/utils/logger';
 import supabase from '@/lib/supabase/browser';
 import { ENTITY_TABLE_NAMES, getTableName } from '@/config/entity-registry';
 import { PROJECT_STATUS, type ProjectStatus } from '@/config/project-statuses';
-import { DATABASE_TABLES } from '@/config/database-tables';
 import { API_ROUTES } from '@/config/api-routes';
 
 // Use existing FundingPage type from funding.ts
 import type { FundingPage } from '@/types/funding';
 import type { Database } from '@/types/database';
 import { apiErrorMessage } from '@/lib/api/errorMessage';
+import { getUserActorId } from '@/domain/actors';
 
 export interface Project extends FundingPage {
   isDraft: boolean;
@@ -76,11 +75,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     try {
       // Resolve user_id to actor_id for ownership filtering
 
-      const { data: actor } = (await fromTable(supabase, DATABASE_TABLES.ACTORS)
-        .select('id')
-        .eq('user_id', userId)
-        .eq('actor_type', 'user')
-        .maybeSingle()) as { data: { id: string } | null };
+      const actorId = await getUserActorId(supabase, userId);
+      const actor = actorId ? { id: actorId } : null;
 
       if (!actor) {
         // No actor yet — no projects to load

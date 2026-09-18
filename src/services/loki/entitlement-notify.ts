@@ -16,11 +16,11 @@
  */
 import { postSignedToLoki } from './signed-post';
 import { getAdminClient } from '@/lib/supabase/admin';
-import { DATABASE_TABLES } from '@/config/database-tables';
 import { getEntityMetadata, type EntityType } from '@/config/entity-registry';
 import { logger } from '@/utils/logger';
 import type { PaymentIntent } from '@/domain/payments/types';
 import { parseLokiPass } from '@/config/loki-passes';
+import { getUserActorId } from '@/domain/actors';
 
 const LOKI_URL =
   process.env.LOKI_ENTITLEMENT_URL || 'https://loki.orangecat.ch/api/orangecat/entitlement';
@@ -99,13 +99,11 @@ export async function notifyLokiEntitlement(pi: PaymentIntent): Promise<void> {
     // The buyer's PERSONAL actor id is what Loki stored as orangecatActorId
     // (= the OIDC id_token.sub). buyer_id is the user id — resolve via admin
     // (headless: no session), never create here.
-    const { data: actor } = await admin
-      .from(DATABASE_TABLES.ACTORS)
-      .select('id')
-      .eq('user_id', pi.buyer_id)
-      .eq('actor_type', 'user')
-      .maybeSingle();
-    if (!actor?.id) {
+    // buyer_id is nullable. The old inline query passed it straight into
+    // .eq('user_id', …), so a null buyer silently matched nothing; the typed
+    // helper makes the case explicit instead.
+    const actorId = pi.buyer_id ? await getUserActorId(admin, pi.buyer_id) : null;
+    if (!actorId) {
       logger.warn('[loki-entitlement] no personal actor for buyer — cannot map to Loki', {
         buyerId: pi.buyer_id,
       });
@@ -113,7 +111,7 @@ export async function notifyLokiEntitlement(pi: PaymentIntent): Promise<void> {
     }
 
     const result = await postSignedToLoki(LOKI_URL, {
-      actorId: actor.id,
+      actorId,
       plan: pass.plan,
       externalId: pi.id,
       periodDays: pass.periodDays,

@@ -43,6 +43,7 @@ import {
 import { fetchProjectActivityForCat, fetchStakeholdersForCat } from './project-activity-fetcher';
 import { fetchGitHubReposForCat } from './github-repos-fetcher';
 import { fetchNotificationsForCat } from './notification-context-fetcher';
+import { getUserActorId } from '@/domain/actors';
 
 // Re-export types so existing callers stay unchanged
 export type {
@@ -94,14 +95,9 @@ async function fetchDocumentsForCat(
   userId: string
 ): Promise<DocumentContext[]> {
   try {
-    const { data: actor, error: actorError } = await supabase
-      .from(DATABASE_TABLES.ACTORS)
-      .select('id')
-      .eq('actor_type', 'user')
-      .eq('user_id', userId)
-      .maybeSingle();
+    const actorId = await getUserActorId(supabase, userId);
 
-    if (actorError || !actor) {
+    if (!actorId) {
       logger.warn('Could not find actor for user', { userId }, 'DocumentContext');
       return [];
     }
@@ -109,7 +105,7 @@ async function fetchDocumentsForCat(
     const { data: documents, error: docsError } = await supabase
       .from(ENTITY_REGISTRY.document.tableName)
       .select('id, title, content, document_type, visibility')
-      .eq('actor_id', actor.id)
+      .eq('actor_id', actorId)
       .in('visibility', ['cat_visible', 'public'])
       .order('document_type', { ascending: true });
 

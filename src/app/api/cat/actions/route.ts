@@ -18,14 +18,13 @@ import { logger } from '@/utils/logger';
 import {
   apiSuccess,
   apiBadRequest,
-  apiNotFound,
   apiForbidden,
   apiInternalError,
   apiRateLimited,
 } from '@/lib/api/standardResponse';
 import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
 import { withAuth, type AuthenticatedRequest } from '@/lib/api/withAuth';
-import { getUserActorId } from '@/domain/actors';
+import { getOrCreateUserActor } from '@/services/actors/getOrCreateUserActor';
 import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from '@/constants/pagination';
 import { apiErrorMessage } from '@/lib/api/errorMessage';
 
@@ -87,11 +86,12 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
       return apiBadRequest('Invalid request', parseResult.error.issues);
     }
 
-    // Get user's actor ID
-    const actorId = await getUserActorId(supabase, user.id);
-    if (!actorId) {
-      return apiNotFound('Actor not found');
-    }
+    // A signed-in person is about to ACT, so mint their actor if they somehow
+    // have none. Creating an entity already did this lazily, so the same user
+    // could create a project and yet be 404'd here — same account, same missing
+    // row, opposite answer. This is that lazy creation made consistent, not a
+    // new capability.
+    const { id: actorId } = await getOrCreateUserActor(user.id);
 
     const executor = createActionExecutor(supabase);
     const result = await executor.executeAction(user.id, actorId, parseResult.data);

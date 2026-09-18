@@ -23,7 +23,6 @@
  * is defence in depth.
  */
 
-import { DATABASE_TABLES } from '@/config/database-tables';
 import { withAuth, type AuthenticatedRequest } from '@/lib/api/withAuth';
 import {
   apiSuccess,
@@ -42,6 +41,7 @@ import {
   listStakeholderRelationships,
   createStakeholderRelationship,
 } from '@/services/platform/stakeholderRelationships';
+import { getUserActorId } from '@/domain/actors';
 
 export const GET = withAuth(async (request: AuthenticatedRequest) => {
   try {
@@ -90,16 +90,12 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
       return apiValidationError('Invalid request', parsed.error.flatten());
     }
 
-    const { data: actorRow, error: actorErr } = await supabase
-      .from(DATABASE_TABLES.ACTORS)
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('actor_type', 'user')
-      .maybeSingle();
-    if (actorErr || !actorRow) {
-      logger.error('No actor found for authenticated user', actorErr, 'StakeholdersAPI');
+    const actorId = await getUserActorId(supabase, user.id);
+    if (!actorId) {
+      logger.error('No actor found for authenticated user', { userId: user.id }, 'StakeholdersAPI');
       return apiUnauthorized('No actor associated with this user');
     }
+    const actorRow = { id: actorId };
     const ownerActorId = actorRow.id as string;
 
     const result = await createStakeholderRelationship(supabase, ownerActorId, parsed.data);
