@@ -15,6 +15,7 @@ import {
 } from '@/config/stakeholders';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { logger } from '@/utils/logger';
+import { getUserActorId } from '@/domain/actors';
 
 export type StakeholderRow = Record<string, unknown> & { id: string };
 
@@ -55,17 +56,7 @@ async function assertOwnsProject(
 }
 
 async function resolveOwnerActorId(db: AnySupabaseClient, userId: string): Promise<string | null> {
-  const { data, error } = await db
-    .from(DATABASE_TABLES.ACTORS)
-    .select('id')
-    .eq('user_id', userId)
-    .eq('actor_type', 'user')
-    .maybeSingle();
-  if (error) {
-    logger.error('Failed to resolve owner actor', error, 'StakeholderRelationships');
-    return null;
-  }
-  return (data as { id: string } | null)?.id ?? null;
+  return getUserActorId(db, userId);
 }
 
 function buildInsertRow(ownerActorId: string, input: CreateStakeholderInput) {

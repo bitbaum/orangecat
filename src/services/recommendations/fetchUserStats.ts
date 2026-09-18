@@ -14,6 +14,8 @@ import {
 } from '@/config/entity-registry';
 import { STATUS } from '@/config/database-constants';
 import { DATABASE_TABLES, OWN_PROFILE_VIEW } from '@/config/database-tables';
+import { getUserActorId } from '@/domain/actors';
+import type { AnySupabaseClient } from '@/lib/supabase/types';
 
 type UntypedTable = any;
 
@@ -50,11 +52,7 @@ export async function fetchUserStats(
     // (20260917163100). `userId` is always the session user here, and the view
     // is confined to auth.uid() anyway, so the filter is redundant but harmless.
     (supabase.from(OWN_PROFILE_VIEW) as UntypedTable).select('*').eq('id', userId).single(),
-    (supabase.from(DATABASE_TABLES.ACTORS) as UntypedTable)
-      .select('id')
-      .eq('user_id', userId)
-      .eq('actor_type', 'user')
-      .single(),
+    getUserActorId(supabase as unknown as AnySupabaseClient, userId),
   ]);
 
   const profile = profileResult.data as ProfileRecord | null;
@@ -62,7 +60,8 @@ export async function fetchUserStats(
     return null;
   }
 
-  const actorId = (actorResult.data as { id: string } | null)?.id;
+  // actorResult is now the id itself — getUserActorId returns string | null.
+  const actorId = actorResult ?? undefined;
 
   // Parallel entity counts for all registered types (except wallet)
   const entityCountPromises = ENTITY_TYPES.filter(type => type !== 'wallet').map(

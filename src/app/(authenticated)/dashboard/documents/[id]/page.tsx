@@ -26,6 +26,7 @@ import {
 import type { DocumentType, DocumentVisibility } from '@/lib/validation';
 import { DeleteDocumentButton } from './DeleteDocumentButton';
 import { APP_LOCALE } from '@/utils/locale';
+import { getUserActorId } from '@/domain/actors';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -89,16 +90,12 @@ export default async function DocumentDetailPage({ params }: PageProps) {
   }
 
   // Get user's actor
-  const { data: actorData } = await supabase
-    .from(DATABASE_TABLES.ACTORS)
-    .select('id')
-    .eq('user_id', user.id)
-    .eq('actor_type', 'user')
-    .maybeSingle();
+  const ownActorId = await getUserActorId(supabase, user.id);
 
-  if (!actorData) {
+  if (!ownActorId) {
     notFound();
   }
+  const actorData = { id: ownActorId };
 
   const actor = actorData as { id: string };
 

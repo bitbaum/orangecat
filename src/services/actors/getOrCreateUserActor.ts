@@ -14,34 +14,35 @@ import { createServerClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/utils/logger';
 import { DATABASE_TABLES } from '@/config/database-tables';
+import { lookupUserActor } from '@/domain/actors';
 
 /**
- * Get or create actor for user.
- * Actors are required for domain entities but may not exist for all users.
- * If no actor exists, one is created using the admin client (bypasses RLS).
+ * Get or create the actor for a user.
+ *
+ * Creation happens ONLY when the lookup succeeded and found nothing. That
+ * distinction is the whole point: this function used to test the PostgREST
+ * error code `PGRST116` before creating, and PostgREST returns that same code
+ * both for "no rows" and for "too many rows" — so an account that already had
+ * several actors read as having none, and this minted another. One account
+ * reached six that way. See `lookupUserActor` for the shared query.
  */
 export async function getOrCreateUserActor(userId: string): Promise<{ id: string }> {
   const supabase = await createServerClient();
   const adminClient = createAdminClient();
 
-  // First try to find existing actor
-  const { data: existingActor, error: findError } = await supabase
-    .from(DATABASE_TABLES.ACTORS)
-    .select('id')
-    .eq('user_id', userId)
-    .eq('actor_type', 'user')
-    .maybeSingle();
+  const found = await lookupUserActor(supabase, userId);
 
-  if (existingActor) {
-    return existingActor as { id: string };
+  if (!found.ok) {
+    // The lookup itself failed. Creating now would risk a second actor for
+    // someone who already has one, and nothing in the schema forbids that.
+    throw new Error(`Could not read the actor for user ${userId}`);
   }
 
-  if (findError && findError.code !== 'PGRST116') {
-    logger.error('Error checking for existing actor', { error: findError.message, userId });
-    throw findError;
+  if (found.actorId) {
+    return { id: found.actorId };
   }
 
-  // Actor doesn't exist - create one using admin client (bypasses RLS)
+  // Genuinely no actor — create one using the admin client (bypasses RLS).
 
   const { data: newActor, error: createError } = await fromTable(
     adminClient,

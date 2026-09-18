@@ -22,6 +22,7 @@ import type {
 import { STATUS } from '@/config/database-constants';
 import { getCurrentUserId } from '../utils/auth';
 import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, paginationRange } from '@/constants/pagination';
+import { getUserActorId } from '@/domain/actors';
 
 /**
  * Get a specific loan by ID
@@ -81,11 +82,8 @@ export async function getUserLoans(
 
     // Resolve user to actor for ownership filtering
 
-    const { data: actor } = (await fromTable(supabase, DATABASE_TABLES.ACTORS)
-      .select('id')
-      .eq('user_id', userId)
-      .eq('actor_type', 'user')
-      .maybeSingle()) as { data: { id: string } | null };
+    const actorId = await getUserActorId(supabase, userId);
+    const actor = actorId ? { id: actorId } : null;
 
     if (!actor) {
       return { success: true, loans: [], total: 0 };

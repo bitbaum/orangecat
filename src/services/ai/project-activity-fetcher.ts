@@ -14,18 +14,13 @@ import { logger } from '@/utils/logger';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import type { ProjectActivityEvent, StakeholderSummary } from './document-context-types';
+import { getUserActorId } from '@/domain/actors';
 
 const PROJECTS_TABLE = ENTITY_REGISTRY['project'].tableName;
 
 /** Resolve the user's actor id (user-type actor). Returns null if none. */
 async function resolveActorId(supabase: AnySupabaseClient, userId: string): Promise<string | null> {
-  const { data } = await supabase
-    .from(DATABASE_TABLES.ACTORS)
-    .select('id')
-    .eq('actor_type', 'user')
-    .eq('user_id', userId)
-    .maybeSingle();
-  return (data?.id as string | undefined) ?? null;
+  return getUserActorId(supabase, userId);
 }
 
 /**

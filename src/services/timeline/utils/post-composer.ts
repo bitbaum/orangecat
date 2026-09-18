@@ -1,9 +1,8 @@
-import { fromTable } from '@/lib/supabase/untyped';
 import supabase from '@/lib/supabase/browser';
 import { logger } from '@/utils/logger';
 import { TimelineVisibility } from '@/types/timeline';
 import { getTableName } from '@/config/entity-registry';
-import { DATABASE_TABLES, STORAGE_BUCKETS } from '@/config/database-tables';
+import { STORAGE_BUCKETS } from '@/config/database-tables';
 import { API_ROUTES } from '@/config/api-routes';
 import { ENTITY_STATUS } from '@/config/database-constants';
 import { TIMELINE_CONTENT_LIMITS } from '@/config/timeline';
@@ -17,6 +16,7 @@ import {
   isEventRecent,
 } from '@/services/timeline/formatters';
 import { apiErrorMessage } from '@/lib/api/errorMessage';
+import { getUserActorId } from '@/domain/actors';
 
 const PROFILE_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 const profileCheckCache = new Map<string, { exists: boolean; timestamp: number }>();
@@ -263,8 +263,7 @@ interface PostSubmitOptions {
 }
 
 type PostSubmitResult =
-  | { success: true; event: TimelineDisplayEvent | undefined }
-  | { success: false; error: string };
+  { success: true; event: TimelineDisplayEvent | undefined } | { success: false; error: string };
 
 /**
  * Submits a post to the timeline service.
@@ -419,11 +418,8 @@ export async function fetchUserProjects(userId: string): Promise<UserProject[]> 
   try {
     // Resolve user to actor for ownership filtering
 
-    const { data: actor } = (await fromTable(supabase, DATABASE_TABLES.ACTORS)
-      .select('id')
-      .eq('user_id', userId)
-      .eq('actor_type', 'user')
-      .maybeSingle()) as { data: { id: string } | null };
+    const actorId = await getUserActorId(supabase, userId);
+    const actor = actorId ? { id: actorId } : null;
 
     if (!actor) {
       return [];

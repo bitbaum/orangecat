@@ -33,6 +33,7 @@ import {
 } from './economic-profile';
 import { logger } from '@/utils/logger';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
+import { getUserActorId } from '@/domain/actors';
 
 export interface Nudge {
   nudge_type: 'activation' | 'connection' | 'completion' | 'growth';
@@ -85,12 +86,8 @@ export async function generateNudges(
   const nudges: Nudge[] = [];
 
   // ── User's own entities (active + drafts) ──────────────────────────────────
-  const { data: actor } = await supabase
-    .from(DATABASE_TABLES.ACTORS)
-    .select('id')
-    .eq('user_id', userId)
-    .eq('actor_type', 'user')
-    .maybeSingle();
+  const ownActorId = await getUserActorId(supabase, userId);
+  const actor = ownActorId ? { id: ownActorId } : null;
   const created: Record<string, { active: number; drafts: Array<{ id: string; title: string }> }> =
     {};
   const ownEntityTitles: string[] = [];
