@@ -30,6 +30,18 @@ export const CHANGELOG_TAGS: Record<ChangelogTag, { label: string }> = {
 /** Newest first. */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    date: '2026-09-19',
+    tag: 'improvement',
+    title: 'Build it with Loki now asks before it builds',
+    summary:
+      'The handoff to Loki carried this page\u2019s title and one public sentence, and an agent started work on exactly that. Loki now interviews you first \u2014 a few short questions about who it is for and what finished looks like \u2014 and builds from your answers.',
+    items: [
+      'Five questions, one at a time, each skippable; the build starts as soon as you are done.',
+      'Your answers become the project profile Loki plans milestones and briefs its agents from.',
+      'Questions are phrased around your actual page, so you are never asked what it already says.',
+    ],
+  },
+  {
     date: '2026-09-17',
     tag: 'feature',
     title: 'Dates read the way you read them',
