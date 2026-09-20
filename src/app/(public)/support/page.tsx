@@ -5,7 +5,7 @@ import { ROUTES } from '@/config/routes';
 import { CAT_FRONTIER_MODELS_OR } from '@/config/cat-plans';
 import { PRO_DESTINATION_COPY } from '@/config/public-content';
 import { FoundingSupporterDonation } from '@/components/support/FoundingSupporterDonation';
-import { ECOSYSTEM_LINKS, ECOSYSTEM_PILLARS } from '@/config/ecosystem';
+import { ECOSYSTEM_LINKS, ECOSYSTEM_PILLARS, ECOSYSTEM_STACK_LINE } from '@/config/ecosystem';
 
 export const metadata = {
   title: 'Become a founding supporter',
@@ -46,8 +46,7 @@ export default function SupportPage() {
             Choose what to support
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-center text-fg-secondary">
-            One stack, three pillars: the economy, the engineering that builds it, and the
-            governance that keeps both honest.{' '}
+            One stack, three pillars: {ECOSYSTEM_STACK_LINE}.{' '}
             <Link
               href={ROUTES.ECOSYSTEM}
               className="font-medium text-fg-primary underline underline-offset-4"

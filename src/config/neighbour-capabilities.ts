@@ -48,7 +48,7 @@ export interface Neighbour {
 export const NEIGHBOURS = {
   loki: {
     title: 'Loki',
-    what: 'the engineering plane — it builds and ships software with AI agents',
+    what: 'the execution layer — where an operator gets work done, including building and shipping software with AI agents',
     can: [
       {
         says: 'take a brief and produce a repository, a deployed result, and a feedback form the owner steers changes through',

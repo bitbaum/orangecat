@@ -158,7 +158,7 @@ export const STAKEHOLDER_EDGES: StakeholderEdgeSpec[] = [
   {
     toProjectTitle: 'Loki',
     kind: 'in_house_dev',
-    notes: 'Loki is the engineering/execution layer — the agent fleet that runs each job.',
+    notes: 'Loki is the execution layer — the agent fleet that runs each job.',
   },
   {
     toProjectTitle: 'OrangeCat',
