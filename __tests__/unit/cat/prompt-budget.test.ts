@@ -146,8 +146,20 @@ describe('what the ladder gives up, in order', () => {
 
   it('shortens the context before dropping it', () => {
     const parts = partsFor('what do you know about me?', 0, 12_000);
+    // The floor is measured with every droppable section ALREADY GONE and no
+    // few-shot, because those are now spent before the context is touched
+    // (see the ladder's step order). Measuring against the untrimmed prompt
+    // would pick a budget the ladder can satisfy by dropping prose, so the
+    // context would never be truncated and this test would be asserting the
+    // old order rather than the intent — which is that shortening comes
+    // before discarding.
     const floorTokens = estimateMessagesTokens(
-      composeCatMessages(parts, { history: [], includeFewShot: true, contextChars: 0 })
+      composeCatMessages(parts, {
+        history: [],
+        includeFewShot: false,
+        contextChars: 0,
+        base: dropSections(parts.base, DROPPABLE_SECTIONS_IN_ORDER),
+      })
     );
     const { report } = fitCatPromptToBudget(parts, floorTokens + 400);
     expect(report.contextTruncated).toBe(true);

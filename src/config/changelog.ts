@@ -31,6 +31,19 @@ export const CHANGELOG_TAGS: Record<ChangelogTag, { label: string }> = {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     date: '2026-09-20',
+    tag: 'improvement',
+    title: 'Cat keeps more of your conversation',
+    summary:
+      "Cat's instructions are larger than the free tier allows in one go, so some are trimmed on every message. It was trimming your conversation before the generic advice. Now it is the other way round.",
+    items: [
+      'What Cat knows about you \u2014 your listings, your history \u2014 is now the last thing given up, not the second.',
+      'When it does have to shorten what it knows about you, it now keeps as much as the free tier has room for. It was throwing all of it away over a handful of tokens.',
+      'On an ordinary message this keeps a turn of conversation that used to be discarded.',
+      'Fixed a diagnostic that reported your context as discarded when it was present, which is the kind of thing that sends whoever is debugging at the wrong problem.',
+    ],
+  },
+  {
+    date: '2026-09-20',
     tag: 'platform',
     title: 'Prices are real; the checkout is deliberately shut',
     summary:
