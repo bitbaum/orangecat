@@ -24,9 +24,14 @@ import type { EntityType } from '@/config/entity-registry';
 // through "Continue with OrangeCat" and land in the open dialog.
 const LOKI_BUILD_URL = `${ORANGECAT_LOKI_INTEGRATION.loki.site}/projects?new=1`;
 
+// What this button promises has to match what Loki does on the other side.
+// It used to say "one click … puts an AI agent on it", which was true and was
+// the problem: the agent was briefed on this page's title and one public
+// sentence, because that is all the handoff carries. Loki now interviews the
+// owner first and builds from the answers, so the promise says so.
 const COPY = {
   title: `Build it with ${ORANGECAT_LOKI_INTEGRATION.loki.title}`,
-  body: 'One click: Loki creates the project and puts an AI agent on it. One login: your OrangeCat account.',
+  body: 'Loki asks you a few questions about it, builds a project profile from your answers, and puts an AI agent on it. One login: your OrangeCat account.',
   action: `Open ${ORANGECAT_LOKI_INTEGRATION.loki.title}`,
 } as const;
 
