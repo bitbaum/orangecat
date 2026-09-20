@@ -85,7 +85,6 @@ export function ChatInput({
     inputRef.current?.focus();
   };
 
-  const showClear = isFocus && hasMessages && !!onClearChat;
   const canSend = !!value.trim() && !isLoading;
 
   return (
@@ -115,11 +114,21 @@ export function ChatInput({
                   subtle
                 />
               )}
-              {showClear && (
+              {/* The slot is always here, so the model picker beside it does
+                  not shift sideways the moment the first message lands. It
+                  used to mount with the first reply and move every control in
+                  the row with it. */}
+              {isFocus && !!onClearChat && (
                 <button
                   type="button"
                   onClick={onClearChat}
-                  className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg text-fg-secondary transition-colors hover:bg-surface-raised hover:text-fg-primary"
+                  disabled={!hasMessages}
+                  className={cn(
+                    'flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg transition-colors',
+                    hasMessages
+                      ? 'text-fg-secondary hover:bg-surface-raised hover:text-fg-primary'
+                      : 'invisible'
+                  )}
                   aria-label="Clear chat"
                   title="Clear chat"
                 >
@@ -154,7 +163,10 @@ export function ChatInput({
                     'flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg transition-colors',
                     canSend
                       ? 'bg-fg-primary text-fg-inverted hover:opacity-90'
-                      : 'cursor-not-allowed text-fg-secondary'
+                      : // `text-fg-secondary` alone left the disabled arrow
+                        // nearly as dark as the live one, so an empty composer
+                        // looked ready to send.
+                        'cursor-not-allowed text-fg-tertiary opacity-40'
                   )}
                   aria-label="Send message"
                   title="Send message (Enter)"

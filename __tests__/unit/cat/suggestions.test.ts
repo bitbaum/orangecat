@@ -327,7 +327,9 @@ describe('generatePromptSuggestions', () => {
 
     const first = await generatePromptSuggestions('u-cache', ctx);
     const cached = await generatePromptSuggestions('u-cache', ctx);
-    expect(cached).toBe(first);
+    // Not array identity: a second serve re-windows the pool (see the rotation
+    // tests below). What must not happen is a second round trip to the model.
+    expect(cached[0]).toEqual(first[0]);
     expect(mockedCall).toHaveBeenCalledTimes(1);
 
     // Publishing the draft is a different reality — the answer must be recomputed.
@@ -339,5 +341,114 @@ describe('generatePromptSuggestions', () => {
     const after = await generatePromptSuggestions('u-cache', published);
     expect(mockedCall).toHaveBeenCalledTimes(2);
     expect(after[0].prompt).not.toEqual(first[0].prompt);
+  });
+});
+
+/**
+ * The screen was frozen: cached results were the SERVED results, so a user
+ * whose listings hadn't changed saw the identical four prompts every visit,
+ * forever. Caching what was computed is right; caching what was shown is not.
+ */
+describe('rotation', () => {
+  const busyContext = () =>
+    makeContext({
+      profile: PROFILE,
+      wallets: [makeWallet()],
+      entities: [
+        makeEntity('product', 'Alpha', { status: 'draft' }),
+        makeEntity('product', 'Beta', { status: 'draft' }),
+        makeEntity('service', 'Gamma', { description: null }),
+        makeEntity('service', 'Delta', { price_btc: 0 }),
+        makeEntity('product', 'Epsilon', { description: null }),
+      ],
+    });
+
+  it('shows different alternatives on a second visit, with no state change', async () => {
+    const ctx = busyContext();
+    const first = await generatePromptSuggestions('u-rotate', ctx);
+    const second = await generatePromptSuggestions('u-rotate', ctx);
+
+    expect(first.slice(1).map(s => s.prompt)).not.toEqual(second.slice(1).map(s => s.prompt));
+  });
+
+  it('keeps the SAME recommendation across visits — a lead that moves is not a recommendation', async () => {
+    const ctx = busyContext();
+    const first = await generatePromptSuggestions('u-lead-stable', ctx);
+    const second = await generatePromptSuggestions('u-lead-stable', ctx);
+    const third = await generatePromptSuggestions('u-lead-stable', ctx);
+
+    expect(second[0]).toEqual(first[0]);
+    expect(third[0]).toEqual(first[0]);
+  });
+
+  it('still never repeats a prompt within one serve', async () => {
+    const ctx = busyContext();
+    for (let visit = 0; visit < 6; visit++) {
+      const out = await generatePromptSuggestions('u-rotate-dupes', ctx);
+      expect(new Set(out.map(s => s.prompt)).size).toBe(out.length);
+      expect(out.length).toBeLessThanOrEqual(4);
+    }
+  });
+
+  it('still marks exactly one recommendation on every visit', async () => {
+    const ctx = busyContext();
+    for (let visit = 0; visit < 4; visit++) {
+      const out = await generatePromptSuggestions('u-rotate-lead', ctx);
+      expect(out[0].reason).toBeTruthy();
+      expect(out.slice(1).every(s => s.reason === undefined)).toBe(true);
+    }
+  });
+
+  it('degrades to a stable list when there is nothing to rotate through', async () => {
+    // One gap, no alternatives: rotation must not invent or drop anything.
+    const ctx = makeContext({ profile: PROFILE, entities: [makeEntity('product', 'Only')] });
+    const first = await generatePromptSuggestions('u-thin', ctx);
+    const second = await generatePromptSuggestions('u-thin', ctx);
+    expect(second).toEqual(first);
+  });
+});
+
+describe('gap breadth', () => {
+  it('names more than one draft — a user with five was told about one', async () => {
+    const gaps = detectGaps(
+      makeContext({
+        profile: PROFILE,
+        wallets: [makeWallet()],
+        entities: [
+          makeEntity('product', 'Alpha', { status: 'draft' }),
+          makeEntity('product', 'Beta', { status: 'draft' }),
+          makeEntity('product', 'Gamma', { status: 'draft' }),
+        ],
+      })
+    );
+    const drafts = gaps.filter(g => g.prompt.includes('publish'));
+    expect(drafts.length).toBeGreaterThan(1);
+    expect(new Set(drafts.map(g => g.prompt)).size).toBe(drafts.length);
+  });
+
+  it('caps how many it takes from any one category', async () => {
+    const many = Array.from({ length: 12 }, (_, i) =>
+      makeEntity('product', `Draft ${i}`, { status: 'draft' })
+    );
+    const gaps = detectGaps(
+      makeContext({ profile: PROFILE, wallets: [makeWallet()], entities: many })
+    );
+    expect(gaps.filter(g => g.prompt.includes('publish')).length).toBeLessThanOrEqual(3);
+  });
+
+  it('every gap still states a reason, however many it found', () => {
+    const gaps = detectGaps(
+      makeContext({
+        profile: PROFILE,
+        wallets: [makeWallet()],
+        entities: [
+          makeEntity('product', 'Alpha', { status: 'draft' }),
+          makeEntity('product', 'Beta', { status: 'draft' }),
+          makeEntity('service', 'Gamma', { description: null }),
+        ],
+      })
+    );
+    expect(gaps.length).toBeGreaterThan(0);
+    expect(gaps.every(g => !!g.reason?.trim())).toBe(true);
   });
 });

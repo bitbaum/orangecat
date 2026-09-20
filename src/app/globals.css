@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 @config "../../tailwind.config.ts";
 
 /* Initiative color system (src/data/initiatives/) and gradient opacity
@@ -245,7 +245,7 @@
     --status-neutral: 0 0% 58%;
     /* Typography tracking */
     --tracking-display: -0.03em;
-    --tracking-label: 0.10em;
+    --tracking-label: 0.1em;
     --tracking-caps: 0.16em;
     /* Layout primitives */
     --shell-max: 90rem;
@@ -436,8 +436,16 @@
     @apply mx-auto w-full max-w-3xl space-y-6 px-4 py-6 sm:px-6;
   }
 
+  /* Bottom-anchored, so it must clear the home indicator / gesture bar on
+     phones — viewportFit: 'cover' means the inset is ours to add. */
   .oc-chat-composer-wrap {
     @apply flex-shrink-0 bg-surface-page px-3 pb-3 pt-2 sm:px-4 sm:pb-4;
+    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+  }
+  @media (min-width: 640px) {
+    .oc-chat-composer-wrap {
+      padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+    }
   }
 
   .oc-chat-composer {
@@ -473,9 +481,22 @@
   }
 
   /* Alternatives under a recommendation — reachable, but not competing for the
-     read. min-h keeps them at a 44px touch target. */
+     read. min-h keeps them at a 44px touch target.
+
+     ONE LINE, always. These were meant to be small chips demoted under the
+     recommendation, but the text is a whole sentence, so on a phone every chip
+     wrapped to full width and the "demotion" rendered as four more full-size
+     boxes filling the screen. A chip that can wrap is not a chip — it is a
+     card that hasn't noticed yet. They scroll horizontally instead. */
   .oc-chat-suggestion-quiet {
-    @apply inline-flex min-h-11 items-center rounded-lg border border-border-subtle bg-surface-page px-3 py-2 text-left text-xs text-fg-secondary transition-colors hover:bg-surface-raised/50 hover:text-fg-primary;
+    @apply inline-flex min-h-11 max-w-[15rem] shrink-0 items-center truncate whitespace-nowrap rounded-lg border border-border-subtle bg-surface-page px-3 py-2 text-left text-xs text-fg-secondary transition-colors hover:bg-surface-raised/50 hover:text-fg-primary;
+    scroll-snap-align: start;
+  }
+
+  /* The swipeable rail the chips live in. */
+  .oc-chat-suggestion-rail {
+    @apply -mx-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:justify-center sm:overflow-visible sm:px-0;
+    scroll-snap-type: x proximity;
   }
 
   .oc-chat-empty {
@@ -933,11 +954,60 @@
  * generated and chat surfaces collapsed to content height (composer floated,
  * page scrolled). Header is 56px (pt-14) mobile / 64px (sm:pt-16) >=sm.
  */
+/*
+ * Hides the native scrollbar on a surface the user drags with a thumb. Used by
+ * horizontal rails (suggestion chips, the settings tab strip), where Android
+ * paints a grey track across the middle of the UI and the strip reads as a
+ * rendering bug rather than as something you can swipe.
+ */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/*
+ * Space a scrolling page must leave under its content for the fixed mobile
+ * bottom nav. `pb-20` (80px) was short on three counts: the 8px spacer above
+ * the bar, the home-indicator inset (viewportFit: 'cover' means it is ours to
+ * add), and the primary Receive button, which sits ~18px ABOVE the bar and so
+ * covers content the bar itself never reaches. The visible result was a "Top
+ * up" button and an "Add API Key" button each half-buried under the nav.
+ */
+.app-bottom-nav-clearance {
+  padding-bottom: calc(6.5rem + env(safe-area-inset-bottom, 0px));
+}
+@media (min-width: 768px) {
+  .app-bottom-nav-clearance {
+    padding-bottom: 0;
+  }
+}
+
+/*
+ * Resting place for the floating Cat launcher on phones: clear of the bottom
+ * nav AND of the home indicator. `bottom-20` was measured against the old
+ * `pb-20` and sat low enough to overlap the bar's raised primary button.
+ */
+.app-fab-anchor {
+  bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+}
+@media (min-width: 768px) {
+  .app-fab-anchor {
+    bottom: 1.5rem;
+  }
+}
+
 .app-content-height {
-  height: calc(100dvh - 3.5rem);
+  /* --app-viewport-height is the VISUAL viewport (ViewportHeightSync), which
+     shrinks when the soft keyboard opens; 100dvh does not, and sizing against
+     it left the composer behind the keyboard. The fallback keeps first paint
+     correct, before the effect has run. */
+  height: calc(var(--app-viewport-height, 100dvh) - 3.5rem);
 }
 @media (min-width: 640px) {
   .app-content-height {
-    height: calc(100dvh - 4rem);
+    height: calc(var(--app-viewport-height, 100dvh) - 4rem);
   }
 }

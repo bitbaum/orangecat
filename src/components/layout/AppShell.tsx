@@ -13,6 +13,7 @@ import MobileBottomNav from './MobileBottomNav';
 import { useNavigation } from '@/hooks/useNavigation';
 import { sidebarSections, bottomNavItems } from '@/config/navigation';
 import { MessageSyncManagerInitializer } from '@/components/MessageSyncManagerInitializer';
+import { ViewportHeightSync } from './ViewportHeightSync';
 
 interface AppShellProps {
   children: ReactNode;
@@ -126,6 +127,10 @@ export function AppShell({ children }: AppShellProps) {
       {/* Initialize message sync manager */}
       <MessageSyncManagerInitializer />
 
+      {/* Publishes --app-viewport-height so full-height surfaces (chat) track
+          the visible viewport when the soft keyboard opens. */}
+      <ViewportHeightSync />
+
       {/* Header - Always visible on non-auth surfaces */}
       <Header
         showSidebarToggle={!!shouldShowSidebar}
@@ -166,7 +171,7 @@ export function AppShell({ children }: AppShellProps) {
                 ? 'lg:ml-16'
                 : 'lg:ml-64'
               : 'ml-0'
-          } ${showsMobileBottomNav ? 'pb-20 md:pb-0' : ''}`}
+          } ${showsMobileBottomNav ? 'app-bottom-nav-clearance' : ''}`}
         >
           {children}
         </main>

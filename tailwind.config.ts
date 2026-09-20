@@ -35,6 +35,12 @@ const config: Config = {
         // the same problem as a hardcoded hex. Named, it is a decision.
         post: ['0.9375rem', { lineHeight: '1.5rem', letterSpacing: '0' }],
         base: ['1rem', { lineHeight: '1.5rem', letterSpacing: '0' }], // 16px - Body text (iOS standard)
+        // A code span sits INSIDE a sentence, so its size is relative to
+        // whatever that sentence is set in — the one place in the scale where
+        // an em is the right unit rather than a lapse. Monospace runs visually
+        // larger than the surrounding sans at the same size; 0.9em puts the
+        // x-heights back in agreement.
+        code: ['0.9em', { lineHeight: 'inherit' }],
         lg: ['1.125rem', { lineHeight: '1.75rem', letterSpacing: '0' }], // 18px - Large body
         xl: ['1.25rem', { lineHeight: '1.75rem', letterSpacing: '0' }], // 20px - Subtitles
         '2xl': ['1.5rem', { lineHeight: '2rem', letterSpacing: '0' }], // 24px - Headings

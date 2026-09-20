@@ -60,6 +60,10 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
+  // The soft keyboard must SHRINK the layout viewport, not overlay it.
+  // Without this, `dvh` stays at full height while the keyboard covers the
+  // bottom of the screen, so a bottom-anchored composer ends up behind it.
+  interactiveWidget: 'resizes-content',
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#fafafa' },
     { media: '(prefers-color-scheme: dark)', color: '#0a0a0a' },
