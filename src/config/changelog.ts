@@ -31,6 +31,18 @@ export const CHANGELOG_TAGS: Record<ChangelogTag, { label: string }> = {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     date: '2026-09-20',
+    tag: 'fix',
+    title: 'Cat keeps its footing when the free tier runs short',
+    summary:
+      "When Cat's instructions do not fit the free tier, some are trimmed. Two of the ones it trimmed early were the ones telling it how to answer someone having a hard time. Those are now the last things it will ever give up.",
+    items: [
+      'If you write to Cat about a difficult situation, it no longer risks answering with a business strategy because it was short on room that minute.',
+      'Three newer parts of its instructions were being kept no matter what, purely because nobody had classified them \u2014 they were taking up room that your own information should have had.',
+      'A check now fails the build if any part of Cat\u2019s instructions is left unclassified, so this cannot happen quietly again.',
+    ],
+  },
+  {
+    date: '2026-09-20',
     tag: 'improvement',
     title: 'Cat keeps more of your conversation',
     summary:

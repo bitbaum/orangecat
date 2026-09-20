@@ -31,6 +31,7 @@ import {
   estimateMessagesTokens,
   estimateTokens,
 } from '@/services/ai/groq-capacity';
+import { DEFECT_IF_MISSING_SECTIONS } from '@/config/cat-prompt-sections';
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
@@ -72,9 +73,7 @@ export const DROPPABLE_SECTIONS_IN_ORDER: readonly string[] = [
   'Tappable Answers (quick replies)',
   'Response Format for Wallet Suggestions',
   'Platform Discovery (search_platform tool)',
-  'Never Pigeonhole',
   'Using Context',
-  'When Someone Needs Help, Not Strategy',
   'Response Format for Entity Updates',
   'Helping With Notifications (assistance scope)',
   'Multi-Entity Strategies',
@@ -89,18 +88,27 @@ export const DROPPABLE_SECTIONS_IN_ORDER: readonly string[] = [
   'Orienting a New Person (first reply)',
   'How to Think About Users',
   'Current Session Awareness',
+  // Situational sections: only in the prompt when the turn matched them, so
+  // when they ARE here they are the most on-topic prose present — dropped
+  // last among the droppables, never first. All three were added after this
+  // list was written and appeared in NEITHER list, which meant the ladder
+  // pinned them as hard as `Critical Rules` purely because nobody had said
+  // otherwise. `Proactive Suggestions` alone is 441 tokens of every user's
+  // floor, held by an oversight.
+  'Proactive Suggestions (only when it earns the interruption)',
+  'Getting Something Built (Loki)',
+  'Answering a Question (evaluation, opinion, design)',
 ];
 
-/** Sections the ladder must never remove. Pinned by test. */
-export const NEVER_DROPPED_SECTIONS: readonly string[] = [
-  'Your Purpose',
-  'Grounding & Honesty (non-negotiable)',
-  "How to Respond — be useful fast, don't interrogate",
-  'Response Format for Entity Suggestions',
-  'Actions You Can Execute Directly',
-  'Tools You Can Call',
-  'Critical Rules',
-];
+/**
+ * Sections the ladder must never remove.
+ *
+ * Derived, not retyped. This was its own hand-maintained list, and it had
+ * silently fallen out of step with the safety floor the prompt config argues
+ * for — see DEFECT_IF_MISSING_SECTIONS. A second copy of a safety list is a
+ * copy that goes stale, and this one did.
+ */
+export const NEVER_DROPPED_SECTIONS: readonly string[] = DEFECT_IF_MISSING_SECTIONS;
 
 const HISTORY_FIRST_CUT = 6;
 const HISTORY_FLOOR = 2;

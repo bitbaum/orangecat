@@ -21,6 +21,7 @@ import {
 } from '@/services/cat/system-prompt';
 import {
   CORE_SECTIONS,
+  DEFECT_IF_MISSING_SECTIONS,
   SITUATIONAL_SECTIONS,
   CLASSIFIED_SECTION_HEADINGS,
   selectPromptSections,
@@ -56,16 +57,11 @@ describe('prompt section classification', () => {
   });
 
   it('keeps capability and safety sections in core, not situational', () => {
-    // These are the ones whose absence is a defect rather than a dullness.
-    for (const heading of [
-      'Actions You Can Execute Directly',
-      'Tools You Can Call',
-      'Critical Rules',
-      'Grounding & Honesty (non-negotiable)',
-      'When Someone Needs Help, Not Strategy',
-      'Never Pigeonhole',
-      'Response Format for Entity Suggestions',
-    ]) {
+    // The ones whose absence is a defect rather than a dullness. This used to
+    // be a seventh copy of that list, typed out here; it is now read from the
+    // one place that owns it, because the budget ladder reads the same
+    // constant and the two silently disagreed for as long as both existed.
+    for (const heading of DEFECT_IF_MISSING_SECTIONS) {
       expect(CORE_SECTIONS).toContain(heading);
     }
   });
