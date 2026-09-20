@@ -12,14 +12,18 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, ExternalLink, FileSignature, ShieldCheck } from 'lucide-react';
-import { ECOSYSTEM, ECOSYSTEM_LINKS, ECOSYSTEM_PILLARS } from '@/config/ecosystem';
+import {
+  ECOSYSTEM,
+  ECOSYSTEM_LINKS,
+  ECOSYSTEM_PILLARS,
+  ECOSYSTEM_STACK_LINE,
+} from '@/config/ecosystem';
 import { ROUTES } from '@/config/routes';
 import { SOLON_BASE_URL_DEFAULT } from '@/config/solon';
 
 export const metadata: Metadata = {
   title: 'The stack',
-  description:
-    'OrangeCat, Loki, and Solon are one stack and three products: the economy, the engineering that builds it, and the governance that keeps both honest.',
+  description: `OrangeCat, Loki, and Solon are one stack and three products: ${ECOSYSTEM_STACK_LINE}.`,
   openGraph: {
     title: 'One stack, three pillars',
     description:

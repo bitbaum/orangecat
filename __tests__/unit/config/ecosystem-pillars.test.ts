@@ -86,3 +86,45 @@ describe('navigation derives from the pillar SSOT', () => {
     }
   });
 });
+
+/**
+ * The axis the three products are split on.
+ *
+ * Until 2026-09-20 Loki's role read "Engineering", which named its deepest
+ * capability rather than the product: the same workspace also holds the people
+ * an operator works with, what they owe, and what the day looks like. Naming it
+ * after code made the rest read as clutter and produced a recurring proposal to
+ * move those surfaces to OrangeCat — where no such surface exists.
+ *
+ * So the axis is not category but AUDIENCE, and these tests pin both halves:
+ * the three roles, and the fact that each boundary opens by saying who is meant
+ * to see that pillar.
+ */
+describe('the pillars are split by audience, not by subject matter', () => {
+  it('names one role per pillar, and keeps them the three that were chosen', () => {
+    expect(ECOSYSTEM_PILLARS.map(p => p.role)).toEqual(['Economy', 'Execution', 'Governance']);
+  });
+
+  it('opens every boundary by saying who the pillar is for', () => {
+    const audience: Record<string, RegExp> = {
+      orangecat: /\bpublic\b/i,
+      loki: /\bprivate\b/i,
+      solon: /\bmembers\b/i,
+    };
+    for (const pillar of ECOSYSTEM_PILLARS) {
+      const opening = pillar.boundary.split('.')[0];
+      expect(opening).toMatch(audience[pillar.key]);
+    }
+  });
+
+  it('describes Loki as more than the code it writes', () => {
+    const loki = ECOSYSTEM_PILLARS.find(p => p.key === 'loki');
+    expect(loki).toBeDefined();
+    const copy = `${loki?.tagline} ${loki?.summary}`.toLowerCase();
+    // The surfaces that only exist in Loki. If the copy stops naming them, the
+    // "move the life-ops half to OrangeCat" proposal comes back.
+    for (const surface of ['people', 'projects', 'agent']) {
+      expect(copy).toContain(surface);
+    }
+  });
+});

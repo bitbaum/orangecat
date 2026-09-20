@@ -31,11 +31,26 @@ test, not by taste and not by resembling the types already there.
 
 Each entity sits on three planes, and the wallet is only the first:
 
-| Plane       | Product       | What it means for the entity              |
-| ----------- | ------------- | ----------------------------------------- |
-| Economy     | **OrangeCat** | it can hold, receive and send value       |
-| Governance  | **Solon**     | its decisions can be put to a signed vote |
-| Engineering | **Loki**      | it can be built and shipped by agents     |
+| Plane      | Product       | What it means for the entity              |
+| ---------- | ------------- | ----------------------------------------- |
+| Economy    | **OrangeCat** | it can hold, receive and send value       |
+| Governance | **Solon**     | its decisions can be put to a signed vote |
+| Execution  | **Loki**      | it can be worked on, built and shipped    |
+
+This plane was called "Engineering" until 2026-09-20. That named Loki's
+deepest capability rather than the product: Loki is where an operator's work
+gets done, and building software is the largest part of that but not the whole
+of it — the people, commitments and spending the work runs on live there too.
+The narrow label made those read as scope creep and produced a recurring
+proposal to move them onto the Cat, which has no such surfaces and never has.
+The one-word role is SSOT in `src/config/ecosystem.ts` → `ECOSYSTEM_PILLARS`;
+this table follows it.
+
+What actually separates the three is AUDIENCE, not category — the same thing
+the pillar config means by different security boundaries. OrangeCat is public
+by design, Loki is private by default, Solon is shared with its members. Work
+crosses a boundary when it needs to be seen, paid, or decided on, which is why
+a Loki crew assignment mirrors here as a service only once it is paid.
 
 **The list itself has exactly one producer: `src/config/entity-registry.ts`.**
 Every type there carries `wallet: { holds, why }` — the admission test answered

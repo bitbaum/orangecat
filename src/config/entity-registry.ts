@@ -93,7 +93,7 @@ const ENTITY_CATEGORY_ORDER: EntityCategory[] = [
  *
  *   OrangeCat  the economy      — it can hold, receive and send value
  *   Solon      the governance   — its decisions can be put to a signed vote
- *   Loki       the engineering  — it can be built and shipped by agents
+ *   Loki       the execution    — it can be worked on, built and shipped
  *
  * `why` is not decoration. It is the sentence that had to be true before the
  * type was admitted, written in the owner's terms and naming the money that

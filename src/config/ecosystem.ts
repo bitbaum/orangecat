@@ -35,8 +35,7 @@ export const ECOSYSTEM = {
   loki: {
     title: 'Loki',
     projectId:
-      process.env.NEXT_PUBLIC_LOKI_ORANGECAT_PROJECT_ID ??
-      '8130c927-114a-45b7-8cc2-99efd5224025',
+      process.env.NEXT_PUBLIC_LOKI_ORANGECAT_PROJECT_ID ?? '8130c927-114a-45b7-8cc2-99efd5224025',
     siteUrl: lokiOrigin.toString(),
   },
   solon: {
@@ -56,6 +55,16 @@ export const ECOSYSTEM = {
       'bc1q3hh4yklcmwtpnqmxyksw36yedg7zyfy6tzzqwz',
   },
 } as const;
+
+/**
+ * The stack in one breath, for surfaces that introduce all three products
+ * before naming any of them (/ecosystem's metadata, /support's section lead).
+ * It was typed out twice, identically, so renaming a pillar meant remembering
+ * both — and on 2026-09-20 one of the two would have kept calling Loki "the
+ * engineering that builds it" after the other stopped.
+ */
+export const ECOSYSTEM_STACK_LINE =
+  'the economy, the execution that gets the work done, and the governance that keeps both honest';
 
 export const ECOSYSTEM_LINKS = {
   mao: ECOSYSTEM.orangeCat.profileUrl,
@@ -77,7 +86,7 @@ export const ORANGECAT_LOKI_INTEGRATION = {
     lightning: ECOSYSTEM.support.lightningAddress,
   },
   relation: 'Loki is a customer of OrangeCat.',
-  note: 'OrangeCat is the public funding layer; Loki is the building layer.',
+  note: 'OrangeCat is the public funding layer; Loki is the execution layer where the work gets done.',
 } as const;
 
 export interface EcosystemPillar {
@@ -138,16 +147,27 @@ export const ECOSYSTEM_PILLARS: readonly EcosystemPillar[] = [
   {
     key: 'loki',
     title: ECOSYSTEM.loki.title,
-    role: 'Engineering',
-    tagline: 'Build with Loki and supervised agent fleets',
+    // "Engineering" until 2026-09-20, which named the deepest capability and
+    // not the product. Loki is where an operator's work actually gets done —
+    // agent fleets and projects, yes, but also the people they work with, what
+    // they owe, and what the day holds. Calling that "engineering" made the
+    // rest read as clutter and invited a recurring proposal to move it
+    // somewhere else. There is nowhere else: these surfaces exist only here.
+    //
+    // The axis that separates the three is not category but AUDIENCE, which is
+    // what the header comment above means by different security boundaries:
+    // OrangeCat is public by design, Loki is private by default, Solon is
+    // shared with members.
+    role: 'Execution',
+    tagline: 'Get the work done — agents, projects, people, money',
     summary:
-      'The production layer: where Loki plans the work and supervised agent fleets help turn a funded intention into a working system.',
+      "The execution layer: an operator's own workspace for getting work done — agent fleets and the projects they build, alongside the people, commitments and spending that the work runs on.",
     boundary:
-      'Execution stays behind an approval boundary. Funding never dispatches an agent — the owner approves each plan and each real-world action.',
+      'Private by default, and execution stays behind an approval boundary. Funding never dispatches an agent — the owner approves each plan and each real-world action, and nothing here is published without them saying so.',
     siteUrl: ECOSYSTEM.loki.siteUrl,
     fundingUrl: ECOSYSTEM_LINKS.loki,
     fundingBody:
-      'Fund Loki, supervised agent fleets, and the production layer that turns plans into working systems.',
+      'Fund Loki, supervised agent fleets, and the execution layer that turns plans into working systems.',
     icon: Bot,
   },
   {
@@ -158,7 +178,7 @@ export const ECOSYSTEM_PILLARS: readonly EcosystemPillar[] = [
     summary:
       'The governance layer: where platform-level rules are proposed, voted on with Bitcoin-signed messages, and published as decision documents anyone can re-verify.',
     boundary:
-      'It decides, it does not execute. OrangeCat re-verifies every vote signature against its own pinned keys before a decision changes anything.',
+      'Shared with members, and it decides rather than executes. OrangeCat re-verifies every vote signature against its own pinned keys before a decision changes anything.',
     siteUrl: ECOSYSTEM.solon.siteUrl,
     fundingBody:
       'Back Bitcoin-signed voting and independently verifiable decisions for the whole stack.',
