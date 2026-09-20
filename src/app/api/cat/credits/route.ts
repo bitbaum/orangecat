@@ -11,6 +11,7 @@
 import { getCreditBalance, listCreditEntries } from '@/services/cat/credits';
 import { getResumableTopUp } from '@/services/cat/credit-topup';
 import { platformReceiveEnabled } from '@/lib/bitcoin/platform-wallet';
+import { PAID_PLANS_OPEN } from '@/config/commerce';
 import { apiSuccess, handleApiError } from '@/lib/api/standardResponse';
 import { withAuth, type AuthenticatedRequest } from '@/lib/api/withAuth';
 
@@ -29,7 +30,8 @@ export const GET = withAuth(async (request: AuthenticatedRequest) => {
     return apiSuccess({
       balanceBtc,
       entries,
-      topupEnabled: platformReceiveEnabled(),
+      // Both must hold: able to receive (wallet) AND allowed to charge.
+      topupEnabled: PAID_PLANS_OPEN && platformReceiveEnabled(),
       pendingTopup,
     });
   } catch (error) {

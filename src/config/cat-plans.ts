@@ -33,6 +33,7 @@
 import { ROUTES } from '@/config/routes';
 import { FEATURES } from '@/config/features';
 import { CREDIT_USAGE_MARKUP } from '@/services/cat/credit-metering';
+import { PAID_PLANS_OPEN, COMMERCE_CLOSED } from '@/config/commerce';
 import { WIRED_PROVIDER_DISPLAY_NAMES } from '@/data/aiProviders';
 
 export type CatPlanId = 'free' | 'supporter' | 'byok' | 'credits';
@@ -194,14 +195,15 @@ export const CAT_PLANS: CatPlan[] = [
       'Directly funds the platform AI budget (P2P stays 0% fees, always)',
       `First access to managed frontier models (${CAT_FRONTIER_MODELS_LIST}) the day Pro ships`,
     ],
-    cta: SUPPORTER_LIVE
-      ? { label: 'Become a Supporter', href: SUPPORTER_CHECKOUT_URL, variant: 'accent' }
-      : { label: 'Become a supporter', href: ROUTES.SUPPORT, variant: 'outline' },
-    status: SUPPORTER_LIVE ? 'available' : 'coming-soon',
+    cta:
+      SUPPORTER_LIVE && PAID_PLANS_OPEN
+        ? { label: 'Become a Supporter', href: SUPPORTER_CHECKOUT_URL, variant: 'accent' }
+        : { label: 'How Cat runs', href: ROUTES.HOW_CAT_RUNS, variant: 'outline' },
+    status: SUPPORTER_LIVE && PAID_PLANS_OPEN ? 'available' : 'coming-soon',
     // "Activating" reads as "any moment now" for a plan with no price and no
     // checkout — SUPPORTER_PRICE_CHF is null and SUPPORTER_CHECKOUT_URL is
     // unset. Say the true thing: it is planned, and you cannot buy it yet.
-    badge: SUPPORTER_LIVE ? 'Live' : 'Planned',
+    badge: SUPPORTER_LIVE && PAID_PLANS_OPEN ? 'Live' : COMMERCE_CLOSED.badge,
   },
   {
     id: 'byok',
@@ -232,11 +234,15 @@ export const CAT_PLANS: CatPlan[] = [
       'Prepaid balance, transparent per-message ledger, top up from 0.00001 BTC',
       'Full agentic Cat: discovery, matchmaking, multi-step tasks',
     ],
-    cta: CAT_CREDITS_LIVE
-      ? { label: 'Top up credits', href: SETTINGS_AI_ANCHORS.credits, variant: 'accent' }
-      : { label: 'Become a supporter', href: ROUTES.SUPPORT, variant: 'outline' },
-    status: CAT_CREDITS_LIVE ? 'available' : 'coming-soon',
-    badge: CAT_CREDITS_LIVE ? 'Live' : 'Activating',
+    // The PRICE stays visible and real whether or not the till is open — a
+    // plan you cannot evaluate is worse than one you cannot yet buy. Only the
+    // CTA changes, and it changes to the truth.
+    cta:
+      CAT_CREDITS_LIVE && PAID_PLANS_OPEN
+        ? { label: 'Top up credits', href: SETTINGS_AI_ANCHORS.credits, variant: 'accent' }
+        : { label: 'How Cat runs', href: ROUTES.HOW_CAT_RUNS, variant: 'outline' },
+    status: CAT_CREDITS_LIVE && PAID_PLANS_OPEN ? 'available' : 'coming-soon',
+    badge: CAT_CREDITS_LIVE && PAID_PLANS_OPEN ? 'Live' : COMMERCE_CLOSED.badge,
   },
 ];
 

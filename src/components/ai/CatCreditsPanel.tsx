@@ -21,6 +21,9 @@ import { API_ROUTES } from '@/config/api-routes';
 // about the user's money. The label exists precisely so marketing cannot
 // drift; using it is not optional.
 import { CAT_CREDITS_MARKUP_LABEL } from '@/config/cat-plans';
+import { COMMERCE_CLOSED } from '@/config/commerce';
+import { ROUTES } from '@/config/routes';
+import Link from 'next/link';
 import { TopUpDialog, type TopUpInvoiceView } from './TopUpDialog';
 import { FormattedDate } from '@/components/ui/FormattedDate';
 
@@ -112,16 +115,34 @@ export function CatCreditsPanel() {
             setTopUpOpen(true);
           }}
           disabled={!topupEnabled}
-          title={topupEnabled ? 'Top up with Lightning' : 'Lightning top-up is coming soon'}
+          title={topupEnabled ? 'Top up with Lightning' : COMMERCE_CLOSED.short}
           className={
             topupEnabled
               ? 'rounded-md bg-accent-warm px-4 py-2 text-sm font-medium text-on-accent hover:bg-accent-warm-hover'
               : 'cursor-not-allowed rounded-md border border-subtle px-4 py-2 text-sm font-medium text-fg-tertiary opacity-60'
           }
         >
-          {topupEnabled ? 'Top up' : 'Top up (soon)'}
+          {topupEnabled ? 'Top up' : COMMERCE_CLOSED.badge}
         </button>
       </div>
+
+      {/* THE MOMENT OF TRUTH. A disabled button with "(soon)" on it makes the
+          user hunt for a reason and guess at a fault. Say it plainly, say why,
+          and say what still works — the free pool and their own key both do,
+          and paying other people was never part of this. */}
+      {!topupEnabled && !isLoading && (
+        <div className="mb-4 rounded-md border border-subtle bg-surface-raised/30 p-4">
+          <p className="text-sm font-medium text-fg-primary">{COMMERCE_CLOSED.badge}</p>
+          <p className="mt-1 text-sm text-fg-secondary">{COMMERCE_CLOSED.full}</p>
+          <p className="mt-2 text-sm text-fg-secondary">{COMMERCE_CLOSED.meanwhile}</p>
+          <Link
+            href={ROUTES.HOW_CAT_RUNS}
+            className="mt-3 inline-flex text-sm text-fg-primary underline underline-offset-2 hover:no-underline"
+          >
+            How Cat runs, and what each route costs
+          </Link>
+        </div>
+      )}
 
       {/* An invoice issued earlier and still payable. Without this the only
           handle on it was the dialog's own state, so closing the modal made a

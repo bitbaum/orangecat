@@ -31,6 +31,20 @@ export const CHANGELOG_TAGS: Record<ChangelogTag, { label: string }> = {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     date: '2026-09-20',
+    tag: 'platform',
+    title: 'Prices are real; the checkout is deliberately shut',
+    summary:
+      'You can now read exactly what Cat costs on every route. You cannot pay us yet, on purpose: OrangeCat is not a registered company, so it must not take money. Paying other people was never affected.',
+    items: [
+      'One switch now decides whether OrangeCat may charge at all, it is off unless explicitly turned on, and every path that takes money for OrangeCat refuses behind it on the server.',
+      'Before this, the only thing in the way was whether a receiving wallet happened to be configured \u2014 an infrastructure setting standing in for a legal decision, which would have opened the till as a side effect of testing.',
+      'An invoice already paid still credits. Shutting a till must never strand money somebody already sent.',
+      'Reaching the top-up screen now explains why it is shut and what still works, instead of showing a disabled button labelled \u201csoon\u201d.',
+      'Paying other people on OrangeCat is untouched and always will be \u2014 that money goes directly to them at 0% fees and never passes through us.',
+    ],
+  },
+  {
+    date: '2026-09-20',
     tag: 'feature',
     title: 'Bring a Claude key straight to Cat',
     summary:

@@ -17,6 +17,7 @@ import {
   MAX_TOPUP_BTC,
 } from '@/services/cat/credit-topup';
 import { platformReceiveEnabled } from '@/lib/bitcoin/platform-wallet';
+import { PAID_PLANS_OPEN, COMMERCE_CLOSED } from '@/config/commerce';
 import { apiSuccess, apiError, apiRateLimited, handleApiError } from '@/lib/api/standardResponse';
 import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
 import { withAuth, type AuthenticatedRequest } from '@/lib/api/withAuth';
@@ -28,6 +29,12 @@ const bodySchema = z.object({
 export const POST = withAuth(async (request: AuthenticatedRequest) => {
   const { user } = request;
 
+  // Two independent refusals, both server-side. PAID_PLANS_OPEN is the
+  // commercial one (may we charge at all) and is checked again inside
+  // initiateTopUp, so no caller can reach the wallet by another route.
+  if (!PAID_PLANS_OPEN) {
+    return apiError(COMMERCE_CLOSED.short, 'PAID_PLANS_NOT_OPEN', 503);
+  }
   if (!platformReceiveEnabled()) {
     return apiError('Lightning top-up is not available yet', 'TOPUP_DISABLED', 503);
   }

@@ -18,6 +18,7 @@ import { getAdminClient } from '@/lib/supabase/admin';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { getPlatformNwcClient, platformReceiveEnabled } from '@/lib/bitcoin/platform-wallet';
+import { PAID_PLANS_OPEN } from '@/config/commerce';
 import type { NWCClient } from '@/lib/nostr/nwc';
 import { appendCreditEntry, getCreditBalance } from '@/services/cat/credits';
 import { logger } from '@/utils/logger';
@@ -98,6 +99,13 @@ export async function initiateTopUp(
   userId: string,
   amountBtc: number
 ): Promise<TopUpInvoice | null> {
+  // The commercial gate comes FIRST, and is separate from the wallet check
+  // below on purpose: a configured wallet means we CAN take money, and this
+  // means we MAY. Until the company exists the answer is no, however good the
+  // plumbing is. See config/commerce.ts.
+  if (!PAID_PLANS_OPEN) {
+    return null;
+  }
   if (!platformReceiveEnabled()) {
     return null;
   }
@@ -280,6 +288,11 @@ export async function getResumableTopUp(
  * answer without a wallet round-trip.
  */
 export async function checkTopUp(userId: string, topupId: string): Promise<TopUpStatus> {
+  // Deliberately NOT gated on PAID_PLANS_OPEN. Closing the till must never
+  // strand money already in flight: if someone paid an invoice while it was
+  // open, they are owed the credit whatever the switch says afterwards.
+  // Refusing to honour a payment already made is a worse failure than the one
+  // the gate exists to prevent.
   if (!platformReceiveEnabled()) {
     return { status: 'not_enabled' };
   }
