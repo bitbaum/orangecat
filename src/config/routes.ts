@@ -317,6 +317,8 @@ export const ROUTES = {
   ARTICLE: (slug: string) => `/articles/${slug}`,
   ARTICLE_EDIT: (slug: string) => `/articles/${slug}/edit`,
   DOCS: '/docs',
+  /** Canonical explanation of the four ways Cat can be powered. */
+  HOW_CAT_RUNS: '/docs/how-cat-runs',
   FAQ: '/faq',
   FEEDBACK: '/feedback',
   PRICING: '/pricing',
@@ -488,5 +490,6 @@ export const ROUTES = {
   SETTINGS_AI_ONBOARDING: '/settings/ai/onboarding',
   SETTINGS_INTEGRATIONS: '/settings/integrations',
   SETTINGS_NOTIFICATIONS: '/settings/notifications',
+  SETTINGS_MEMORY: '/settings/memory',
   SETTINGS_USAGE: '/settings/usage',
 } as const;

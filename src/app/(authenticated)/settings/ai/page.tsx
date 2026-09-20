@@ -14,7 +14,6 @@
  * right-sidebar guidance (added noise).
  */
 
-import { useState } from 'react';
 import { SharedCapacityCard } from '@/components/ai/SharedCapacityCard';
 import Link from 'next/link';
 import { Bot, Check, Server, Terminal } from 'lucide-react';
@@ -25,17 +24,11 @@ import { useAISettings } from '@/hooks/useAISettings';
 import Loading from '@/components/Loading';
 import { AIKeyManager } from '@/components/ai/AIKeyManager';
 import { CatCreditsPanel } from '@/components/ai/CatCreditsPanel';
-import { CatCustomInstructions } from '@/components/ai/CatCustomInstructions';
-import { CatMemoryManager } from '@/components/ai/CatMemoryManager';
-import { CatMemoryImport } from '@/components/ai/CatMemoryImport';
-import { CatProactivityToggle } from '@/components/ai/CatProactivityToggle';
-import { CatInterestsManager } from '@/components/ai/CatInterestsManager';
 import { LocalRuntimePanel } from '@/components/ai/LocalRuntimePanel';
 import { AiUsageStrip } from '@/components/ai/AiUsageStrip';
 
 export default function AISettingsPage() {
   const { user, hydrated, isLoading: authLoading } = useRequireAuth();
-  const [memoryReloadKey, setMemoryReloadKey] = useState(0);
 
   const {
     keys,
@@ -46,7 +39,6 @@ export default function AISettingsPage() {
     deleteKey,
     setPrimaryKey,
     reorderKeys,
-    updatePreferences,
   } = useAISettings();
 
   if (!hydrated || authLoading) {
@@ -60,6 +52,19 @@ export default function AISettingsPage() {
     <div className="space-y-12">
       {/* Live status strip — the numbers live on /settings/usage; this one
           line connects config to consumption so neither tab is a dead end. */}
+      {/* One canonical explanation, linked — not restated here. Restating it
+          is how two different markup claims ended up on adjacent screens. */}
+      <p className="text-sm text-fg-secondary">
+        Four ways to power Cat — free pool, credits, your own key, or your own machine.{' '}
+        <Link
+          href={ROUTES.HOW_CAT_RUNS}
+          className="underline underline-offset-2 hover:no-underline"
+        >
+          How Cat runs
+        </Link>{' '}
+        explains what each costs and what each is bad at.
+      </p>
+
       <AiUsageStrip />
       <SharedCapacityCard />
 
@@ -138,8 +143,8 @@ export default function AISettingsPage() {
               </div>
               <p className="mt-1 text-sm text-fg-secondary">
                 Use any provider — direct or aggregator. You pay them, OrangeCat never sees your
-                bill. Want {CAT_FRONTIER_MODELS_OR}? Add an OpenRouter key — one key fronts all 200+
-                models.
+                bill. Claude, GPT and Grok are wired direct, so their own key works as-is; an
+                OpenRouter key fronts 200+ models with one key instead.
               </p>
               <p className="mt-2 text-xs text-fg-tertiary">
                 Seeing Groq or OpenRouter in chat but nothing listed here? That&apos;s the free pool
@@ -182,49 +187,25 @@ export default function AISettingsPage() {
       </section>
 
       {/* ════ Group 2 · What Cat knows ═════════════════════════════════════ */}
-      <section aria-labelledby="what-cat-knows" className="space-y-4">
-        <div>
-          <h2
-            id="what-cat-knows"
-            className="text-xs font-semibold uppercase tracking-caps text-fg-tertiary"
+      {/* What Cat knows moved to its own page. Billing is a setup surface;
+          memory is a data surface you return to in order to read, correct and
+          delete. Stacking them made one scroll answer three questions. */}
+      <section className="rounded-lg border border-default bg-surface-base p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="text-lg font-semibold text-fg-primary">What Cat knows</h2>
+            <p className="mt-1 text-sm text-fg-secondary">
+              Memories, standing instructions, interests and imported context now live on their own
+              page.
+            </p>
+          </div>
+          <Link
+            href={ROUTES.SETTINGS_MEMORY}
+            className="inline-flex min-h-11 flex-shrink-0 items-center gap-1.5 rounded-lg border border-interactive bg-surface-raised px-4 py-2 text-sm font-medium text-fg-primary transition-colors hover:bg-surface-raised/70"
           >
-            What Cat knows
-          </h2>
-          <p className="mt-1 text-sm text-fg-secondary">
-            Cat&apos;s memory is yours and private: review it, delete any of it, export it, or bring
-            context over from another AI. Standing instructions steer how Cat behaves in every chat.
-            Interests are the deliberate exception — the one part you choose to make public so other
-            people can find you.
-          </p>
+            Open Memory
+          </Link>
         </div>
-
-        <CatCustomInstructions
-          value={preferences?.custom_instructions ?? null}
-          isLoading={settingsLoading}
-          onSave={async instructions => {
-            await updatePreferences({ custom_instructions: instructions });
-          }}
-        />
-
-        <CatMemoryManager
-          reloadKey={memoryReloadKey}
-          memoryEnabled={preferences?.memory_enabled !== false}
-          onToggleMemory={async enabled => {
-            await updatePreferences({ memory_enabled: enabled });
-          }}
-        />
-
-        <CatProactivityToggle
-          enabled={preferences?.proactive_suggestions_enabled !== false}
-          isLoading={settingsLoading}
-          onToggle={async enabled => {
-            await updatePreferences({ proactive_suggestions_enabled: enabled });
-          }}
-        />
-
-        <CatMemoryImport onImported={() => setMemoryReloadKey(k => k + 1)} />
-
-        <CatInterestsManager />
       </section>
 
       {/* Privacy footnote */}

@@ -15,7 +15,7 @@ import { PROVIDER_BASE_URLS } from '@/config/ai-provider-runtime';
 import { configuredFreeVendors, vendorModel } from '@/config/free-vendors';
 import { DEFAULT_FREE_MODEL_ID } from '@/config/ai-models';
 import { promptFitsGroqOnDemand, PLATFORM_GROQ_MODEL } from '@/services/ai/groq';
-import { checkModelRot } from './provider-catalog';
+import { checkModelRot, type SupersededPin } from './provider-catalog';
 import { webSearch, describeAttempts } from '@bitbaum/ai-kit/web';
 import { buildCatSystemPrompt } from './system-prompt';
 import { sanitizeApiKeyChecked } from '@/lib/api-key';
@@ -64,6 +64,13 @@ export interface CatHealthReport {
    * drift; null = check unavailable (no key, or the catalog fetch failed).
    */
   missingGroqModels: string[] | null;
+  /**
+   * Pins a vendor has since published a NEWER VERSION of. Not rot — these
+   * still serve — so this never fails a check; it only says so out loud.
+   * Without it, being a version behind is silent by construction: the old id
+   * keeps working, so nothing that watches for breakage ever notices.
+   */
+  supersededModels: SupersededPin[];
   /**
    * Whether Groq can serve a REAL Cat request, not just a ping. False while the
    * prompt exceeds the on-demand TPM limit — the state in which the old report
@@ -191,8 +198,6 @@ export function probeOpenRouter(): Promise<ProbeResult> {
     DEFAULT_FREE_MODEL_ID
   );
 }
-
-
 
 /**
  * Does Groq's on-demand tier actually admit a REAL Cat request?
@@ -340,6 +345,7 @@ export async function runCatHealthProbes(): Promise<CatHealthReport> {
   };
   const missingFreeModels = byProvider('openrouter');
   const missingGroqModels = byProvider('groq');
+  const supersededModels = rot.superseded;
   // Groq being up is not the same as Groq being usable for Cat.
   const groqUsable = groq.class === 'ok' && groqCanServeCatPrompt();
   const drift =
@@ -348,6 +354,12 @@ export async function runCatHealthProbes(): Promise<CatHealthReport> {
       : '') +
     (missingGroqModels && missingGroqModels.length > 0
       ? ` ⚠️ Configured Groq models no longer exist: ${missingGroqModels.join(', ')} — update GROQ_MODELS in src/services/ai/groq.ts.`
+      : '') +
+    // A nudge, not a warning: nothing is broken, we are simply behind.
+    (supersededModels.length > 0
+      ? ` ℹ️ Newer versions available: ${supersededModels
+          .map(m => `${m.pinned} → ${m.successor}`)
+          .join(', ')}.`
       : '');
   const oversized =
     groq.class === 'ok' && !groqUsable
@@ -363,6 +375,7 @@ export async function runCatHealthProbes(): Promise<CatHealthReport> {
     probes: { ...vendorProbes, groq, openrouter },
     missingFreeModels,
     missingGroqModels,
+    supersededModels,
     groqCanServeCatPrompt: groqUsable,
     // A third vendor answering means Cat CAN answer, and this line used to
     // say otherwise. With Gemini configured, the first day OpenRouter's 50

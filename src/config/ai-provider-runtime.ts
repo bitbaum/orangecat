@@ -28,6 +28,12 @@ export interface ProviderRuntimeConfig {
  * src/config should spell out a provider host.
  */
 export const PROVIDER_BASE_URLS = {
+  // Anthropic serves an OpenAI-compatible surface at this base: the same
+  // `POST /chat/completions` with `Authorization: Bearer sk-ant-…`, and
+  // `GET /models` for key validation. Verified live 2026-09-20 (both answer
+  // 401 `authentication_error` on a bad key, exactly like Groq's). That is
+  // what lets Claude be a DIRECT provider here rather than "roadmap".
+  anthropic: 'https://api.anthropic.com/v1',
   openai: 'https://api.openai.com/v1',
   together: 'https://api.together.xyz/v1',
   deepseek: 'https://api.deepseek.com/v1',
@@ -37,6 +43,10 @@ export const PROVIDER_BASE_URLS = {
 } as const;
 
 export const PROVIDER_RUNTIME: Record<string, ProviderRuntimeConfig> = {
+  anthropic: {
+    baseUrl: PROVIDER_BASE_URLS.anthropic,
+    defaultModel: 'claude-opus-5',
+  },
   openai: {
     baseUrl: PROVIDER_BASE_URLS.openai,
     defaultModel: 'gpt-4o-mini',
