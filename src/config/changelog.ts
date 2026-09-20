@@ -30,6 +30,23 @@ export const CHANGELOG_TAGS: Record<ChangelogTag, { label: string }> = {
 /** Newest first. */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    date: '2026-09-20',
+    tag: 'fix',
+    title: 'Cat on a phone, fixed end to end',
+    summary:
+      'A pass over every screen of Cat and AI settings on a small screen. The box you type in stayed put, replies stopped showing their own formatting marks, and the navigation bar stopped being see-through.',
+    items: [
+      'The message box no longer floats into the middle of the screen when the keyboard opens.',
+      'Replies render quotes and code blocks properly instead of printing the raw “>” and backticks.',
+      'Your remaining daily messages were being covered by the conversations button, so the count read “f 10 left”. Both now sit in the toolbar side by side.',
+      'Suggested prompts are one recommendation plus a row you swipe, and the row changes between visits rather than showing the same four boxes forever.',
+      'The bottom navigation bar is opaque and stays full size — page content used to be readable straight through it, and buttons at the end of a page sat underneath it.',
+      'The round button above the bar says “Receive”; it was an unlabelled QR icon.',
+      'The model picker dims the page behind it, closes with Escape, and its locked models are now links to the page that unlocks them.',
+      'Cat no longer claims a reply “fell back to Groq because Groq was rate-limited” — it names the model that actually answered.',
+    ],
+  },
+  {
     date: '2026-09-17',
     tag: 'feature',
     title: 'Dates read the way you read them',

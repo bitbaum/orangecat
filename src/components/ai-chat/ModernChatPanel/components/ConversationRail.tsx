@@ -4,13 +4,20 @@
  * CONVERSATION RAIL — Grok/ChatGPT-style left list of Cat conversations.
  *
  * Desktop (md+): an always-visible fixed-width column.
- * Mobile: a slide-over drawer toggled by a floating button (the chat area owns
- * the full width otherwise).
+ * Mobile: a slide-over drawer. The TRIGGER is not here — it lives in the chat
+ * toolbar as an ordinary flex child, so the caller owns `open` state.
+ *
+ * It used to be `absolute left-2 top-2 z-20`, floating over the top-left of
+ * the chat column — which is exactly where the toolbar row is. On phones the
+ * toolbar's left slot is hidden, so the quota chip became the first flex child
+ * and landed under the button: "9 of 10 left" rendered as "f 10 left", with
+ * the whole right half of the toolbar empty. An absolutely-positioned control
+ * over a flex row it isn't part of cannot be laid out around; it has to join
+ * the row.
  */
 
-import { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { Plus, MessageSquare, Trash2, PanelLeft, X } from 'lucide-react';
+import { Plus, MessageSquare, Trash2, X } from 'lucide-react';
 import type { ConversationSummary } from '../hooks/useConversations';
 
 interface ConversationRailProps {
@@ -22,6 +29,12 @@ interface ConversationRailProps {
   onSelect: (id: string) => void;
   onNew: () => void;
   onDelete: (id: string) => void;
+}
+
+interface ConversationRailShellProps extends ConversationRailProps {
+  /** Mobile drawer state — owned by the caller, which also renders the trigger. */
+  mobileOpen: boolean;
+  onMobileOpenChange: (open: boolean) => void;
 }
 
 function railTitle(c: ConversationSummary): string {
@@ -116,8 +129,12 @@ function RailBody({
   );
 }
 
-export function ConversationRail(props: ConversationRailProps) {
-  const [mobileOpen, setMobileOpen] = useState(false);
+export function ConversationRail({
+  mobileOpen,
+  onMobileOpenChange,
+  ...props
+}: ConversationRailShellProps) {
+  const setMobileOpen = onMobileOpenChange;
 
   return (
     <>
@@ -125,16 +142,6 @@ export function ConversationRail(props: ConversationRailProps) {
       <aside className="hidden w-64 flex-shrink-0 border-r border-subtle bg-surface-page md:flex md:flex-col">
         <RailBody {...props} />
       </aside>
-
-      {/* Mobile trigger */}
-      <button
-        type="button"
-        onClick={() => setMobileOpen(true)}
-        className="absolute left-2 top-2 z-20 flex h-9 w-9 items-center justify-center rounded-lg border border-subtle bg-surface-base text-fg-secondary transition-colors hover:bg-surface-raised md:hidden"
-        aria-label="Show conversations"
-      >
-        <PanelLeft className="h-4 w-4" />
-      </button>
 
       {/* Mobile drawer */}
       {mobileOpen && (

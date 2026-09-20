@@ -21,9 +21,19 @@
  *
  * Only the lead carries a `reason`; see the contract in @/config/cat-prompts.
  *
- * Freshness comes from the cache key, not a timer: results are keyed by a
- * fingerprint of the state they were derived from, so suggestions change
- * exactly when the user's reality changes and never merely because time passed.
+ * Freshness has two halves, and for a long time only the first existed:
+ *
+ *   - WHAT is true is keyed by a fingerprint of the state it was derived from,
+ *     so the expensive half never recomputes until the user's reality changes.
+ *   - WHICH of the true things you are shown rotates on every serve. The lead
+ *     does not: it is the most consequential gap and it should stay put until
+ *     it is fixed. The alternatives do, drawn from a pool wider than the three
+ *     on screen.
+ *
+ * Without the second half the screen was frozen — correct on day 1, and still
+ * showing the identical four boxes on day 100 because nothing in the state had
+ * moved. Cached and unchanging are not the same property, and the cache was
+ * being asked to provide both.
  */
 
 import { ENTITY_REGISTRY, type EntityType } from '@/config/entity-registry';
@@ -34,6 +44,14 @@ import type { EntitySummary, FullUserContext } from '@/services/ai/document-cont
 
 /** Suggestions shown at once: one recommendation plus a short tail. */
 const MAX_SUGGESTIONS = 4;
+/** Alternatives held in reserve, so a second visit is not the same screen. */
+const MAX_POOL = 9;
+/**
+ * Gaps taken per category. One was the old cap — `.find()` — so a user with
+ * five drafts saw one prompt about one of them and the pool had nothing to
+ * rotate through.
+ */
+const MAX_PER_CATEGORY = 3;
 /** A prompt longer than this stops being a chip and becomes reading. */
 const MAX_PROMPT_CHARS = 80;
 /** A reason is one glanceable clause, not a paragraph. */
@@ -64,9 +82,8 @@ export function hasRichContext(context: FullUserContext): boolean {
 
 const isDraft = (e: EntitySummary): boolean => e.status?.toLowerCase() === 'draft';
 
-const registryFor = (e: EntitySummary) => ENTITY_REGISTRY[e.type as EntityType] as
-  | (typeof ENTITY_REGISTRY)[EntityType]
-  | undefined;
+const registryFor = (e: EntitySummary) =>
+  ENTITY_REGISTRY[e.type as EntityType] as (typeof ENTITY_REGISTRY)[EntityType] | undefined;
 
 /** True when this entity type is bought at a price, so a missing price blocks a sale. */
 const isPriced = (e: EntitySummary): boolean => registryFor(e)?.paymentPattern === 'fixed_price';
@@ -92,35 +109,42 @@ export function detectGaps(context: FullUserContext): CatPromptSuggestion[] {
     });
   }
 
+  // Categories 2-4 and 6 each take up to MAX_PER_CATEGORY entities. They used
+  // to take exactly one (`.find`), which capped the whole pool at six prompts
+  // no matter how much the user owned — and meant four of a user's five drafts
+  // were never mentioned at all.
+  const take = (
+    match: (e: EntitySummary) => boolean,
+    build: (title: string) => CatPromptSuggestion
+  ) => {
+    for (const e of entities.filter(match).slice(0, MAX_PER_CATEGORY)) {
+      gaps.push(build(truncate(e.title, MAX_TITLE_CHARS)));
+    }
+  };
+
   // 2. Drafts are invisible — work already done that earns nothing.
-  const draft = entities.find(isDraft);
-  if (draft) {
-    const title = truncate(draft.title, MAX_TITLE_CHARS);
-    gaps.push({
-      prompt: `What's missing before I publish "${title}"?`,
-      reason: `"${title}" is still a draft, so nobody can find it.`,
-    });
-  }
+  take(isDraft, title => ({
+    prompt: `What's missing before I publish "${title}"?`,
+    reason: `"${title}" is still a draft, so nobody can find it.`,
+  }));
 
   // 3. A live listing nobody can understand.
-  const undescribed = entities.find(e => !isDraft(e) && !e.description?.trim());
-  if (undescribed) {
-    const title = truncate(undescribed.title, MAX_TITLE_CHARS);
-    gaps.push({
+  take(
+    e => !isDraft(e) && !e.description?.trim(),
+    title => ({
       prompt: `Help me write a description for "${title}"`,
       reason: `"${title}" has no description, so nobody can tell what it is.`,
-    });
-  }
+    })
+  );
 
   // 4. A live listing nobody can buy.
-  const unpriced = entities.find(e => !isDraft(e) && isPriced(e) && !e.price_btc);
-  if (unpriced) {
-    const title = truncate(unpriced.title, MAX_TITLE_CHARS);
-    gaps.push({
+  take(
+    e => !isDraft(e) && isPriced(e) && !e.price_btc,
+    title => ({
       prompt: `What should I charge for "${title}"?`,
       reason: `"${title}" has no price, so it can't be bought.`,
-    });
-  }
+    })
+  );
 
   // 5. A profile nobody can trust.
   if (!context.profile?.bio?.trim()) {
@@ -131,13 +155,14 @@ export function detectGaps(context: FullUserContext): CatPromptSuggestion[] {
   }
 
   // 6. Everything is set up: the remaining lever is demand.
-  const live = entities.find(e => !isDraft(e));
-  if (live && canBePaid(context)) {
-    const title = truncate(live.title, MAX_TITLE_CHARS);
-    gaps.push({
-      prompt: `Who on OrangeCat needs "${title}"?`,
-      reason: `"${title}" is live and can take payment — the next lever is demand.`,
-    });
+  if (canBePaid(context)) {
+    take(
+      e => !isDraft(e),
+      title => ({
+        prompt: `Who on OrangeCat needs "${title}"?`,
+        reason: `"${title}" is live and can take payment — the next lever is demand.`,
+      })
+    );
   }
 
   return gaps;
@@ -196,9 +221,9 @@ const SYSTEM_PROMPT = [
   'ask their AI economic agent, called Cat.',
   '',
   'You do NOT answer the user. You write the messages the USER should send to Cat,',
-  'in the user\'s own first-person voice.',
+  "in the user's own first-person voice.",
   '',
-  'You are given that user\'s real state and the single most consequential gap in',
+  "You are given that user's real state and the single most consequential gap in",
   'it. Return JSON exactly:',
   '{"recommended":{"prompt":"...","reason":"..."},"alternatives":["...","...","..."]}',
   '',
@@ -277,9 +302,7 @@ async function generateWithLlm(
   }
 
   const alternatives = Array.isArray(parsed.alternatives)
-    ? parsed.alternatives
-        .map(a => cleanLine(a, MAX_PROMPT_CHARS))
-        .filter((a): a is string => !!a)
+    ? parsed.alternatives.map(a => cleanLine(a, MAX_PROMPT_CHARS)).filter((a): a is string => !!a)
     : [];
 
   return { lead: { prompt, reason }, alternatives };
@@ -288,12 +311,27 @@ async function generateWithLlm(
 // ─── Fingerprint cache ────────────────────────────────────────────────────────
 
 /**
+ * What was computed for one state: the recommendation, and every alternative
+ * worth offering — more than fit on screen at once.
+ */
+interface SuggestionPool {
+  lead: CatPromptSuggestion;
+  alternatives: CatPromptSuggestion[];
+}
+
+/**
  * Process-local cache. Deliberately not a table: this is derived data with a
  * cheap recompute, and a cold process regenerating once is a better failure
  * mode than a schema to migrate. The KEY carries the state fingerprint, so a
  * stale entry is impossible — a changed listing is a different key.
+ *
+ * It caches the POOL, not the four prompts that were served. Caching the
+ * served answer is what made the screen identical forever: the cache's job is
+ * to avoid recomputing, not to decide what the user looks at.
  */
-const cache = new Map<string, CatPromptSuggestion[]>();
+const cache = new Map<string, SuggestionPool>();
+/** How many times each pool has been served — the rotation offset. */
+const served = new Map<string, number>();
 const MAX_CACHE_ENTRIES = 500;
 
 function fingerprint(input: string): string {
@@ -304,14 +342,38 @@ function fingerprint(input: string): string {
   return (h >>> 0).toString(36);
 }
 
-function remember(key: string, value: CatPromptSuggestion[]): void {
+function remember(key: string, value: SuggestionPool): void {
   if (cache.size >= MAX_CACHE_ENTRIES) {
     const oldest = cache.keys().next().value;
     if (oldest) {
       cache.delete(oldest);
+      served.delete(oldest);
     }
   }
   cache.set(key, value);
+}
+
+/**
+ * The lead, then a window onto the alternatives that moves one step per serve.
+ *
+ * The lead is deliberately NOT rotated. It is the most consequential gap in
+ * the user's state, and a recommendation that changes every time you look at
+ * it is not a recommendation. Everything under it is a menu, and a menu may
+ * as well show you something new.
+ */
+function serve(key: string, pool: SuggestionPool): CatPromptSuggestion[] {
+  const offset = served.get(key) ?? 0;
+  served.set(key, offset + 1);
+
+  const room = MAX_SUGGESTIONS - 1;
+  const { alternatives } = pool;
+  const window =
+    alternatives.length <= room
+      ? alternatives
+      : Array.from({ length: room }, (_, i) => alternatives[(offset + i) % alternatives.length]);
+
+  // Only the lead carries a reason — see the contract in @/config/cat-prompts.
+  return [pool.lead, ...window.map(({ prompt }) => ({ prompt }))];
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────
@@ -338,7 +400,7 @@ export async function generatePromptSuggestions(
   const key = `${userId}:${fingerprint(digest.text)}`;
   const cached = cache.get(key);
   if (cached) {
-    return cached;
+    return serve(key, cached);
   }
 
   let lead = gaps[0];
@@ -358,19 +420,19 @@ export async function generatePromptSuggestions(
   tail.push(...gaps.slice(1).map(g => g.prompt));
 
   const seen = new Set([lead.prompt.toLowerCase()]);
-  const suggestions: CatPromptSuggestion[] = [lead];
+  const alternatives: CatPromptSuggestion[] = [];
   for (const prompt of tail) {
-    if (suggestions.length >= MAX_SUGGESTIONS) {
+    if (alternatives.length >= MAX_POOL) {
       break;
     }
     const dedupeKey = prompt.toLowerCase();
     if (!seen.has(dedupeKey)) {
       seen.add(dedupeKey);
-      // Only the lead carries a reason — see the contract in @/config/cat-prompts.
-      suggestions.push({ prompt });
+      alternatives.push({ prompt });
     }
   }
 
-  remember(key, suggestions);
-  return suggestions;
+  const pool: SuggestionPool = { lead, alternatives };
+  remember(key, pool);
+  return serve(key, pool);
 }

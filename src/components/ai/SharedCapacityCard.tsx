@@ -7,6 +7,12 @@
  * response; OpenRouter's free pool is a per-day cap that resets at 00:00 UTC.
  * This card shows both next to the user's own daily allowance, so "capacity
  * is maxed out" is a number with a reset time, not a shrug.
+ *
+ * It is read by the person paying nothing for the thing it describes, not by
+ * whoever deploys it — so it says what the number means for them. Three lines
+ * here used to be operator telemetry read aloud: "no request seen since the
+ * last restart" (whose restart?), and a token-budget line quoting an 8.0k TPM
+ * window and a 6.8k prompt cap, neither of which a user can act on.
  */
 import { useCallback, useEffect, useState } from 'react';
 import { Gauge, RefreshCw } from 'lucide-react';
@@ -31,7 +37,9 @@ export function SharedCapacityCard() {
     try {
       const res = await fetch(API_ROUTES.CAT.CAPACITY, { cache: 'no-store' });
       const json = await res.json().catch(() => null);
-      if (!res.ok || !json?.data) throw new Error('Could not read capacity');
+      if (!res.ok || !json?.data) {
+        throw new Error('Could not read capacity');
+      }
       setData(json.data as CatCapacityResponse);
       setError(null);
     } catch (err) {
@@ -97,7 +105,7 @@ export function SharedCapacityCard() {
               {obs
                 ? `requests left · resets in ${formatCountdownShort(obs.resetRequestsSeconds)}`
                 : data.groq.configured
-                  ? 'no request seen since the last restart'
+                  ? 'nothing used yet — full allowance available'
                   : 'not configured'}
             </dd>
           </div>
@@ -108,9 +116,11 @@ export function SharedCapacityCard() {
             <dd className="mt-1 text-lg font-semibold text-fg-primary">
               {obs ? `${compact(obs.remainingTokens)} / ${compact(obs.limitTokens)}` : '—'}
             </dd>
-            <dd className="text-xs text-fg-tertiary">
-              tokens · one request may use up to {compact(data.promptBudget.tpmLimit)}; Cat builds
-              its prompt to {compact(data.promptBudget.budgetTokens)} so a reply fits
+            <dd
+              className="text-xs text-fg-tertiary"
+              title={`Per-minute token window: ${compact(data.promptBudget.tpmLimit)}. Cat trims its prompt to ${compact(data.promptBudget.budgetTokens)} so a reply always fits.`}
+            >
+              tokens left this minute — a long conversation uses more of it
             </dd>
           </div>
           <div className="rounded-md border border-default p-4">
@@ -135,10 +145,12 @@ export function SharedCapacityCard() {
         </dl>
       )}
 
+      {/* Deliberately NOT repeating "N of M messages left today" — AiUsageStrip
+          says that at the top of this same page, and it was on screen twice in
+          two different wordings. What this card can add is the reset. */}
       {data && (
         <p className="mt-4 text-xs text-fg-tertiary">
-          You: {data.quota.requestsRemaining} of {data.quota.dailyLimit} messages left today ·
-          resets in {formatCountdownShort(data.quota.resetInSeconds)}.
+          Your own allowance resets in {formatCountdownShort(data.quota.resetInSeconds)}.
         </p>
       )}
     </section>
