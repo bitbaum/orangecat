@@ -58,6 +58,38 @@ export const CORE_SECTIONS: readonly string[] = [
 ];
 
 /**
+ * The sections whose absence is a DEFECT rather than a dullness — the safety
+ * and capability floor, named once so two systems cannot disagree about it.
+ *
+ * This list already existed twice, in prose and in a test, and the budget
+ * ladder in services/cat/prompt-budget.ts had never heard of either. Measured
+ * 2026-09-20, that ladder dropped `Never Pigeonhole` 4th and
+ * `When Someone Needs Help, Not Strategy` 6th of its twenty — so on any
+ * free-tier turn that ran out of room, Cat answered someone describing a
+ * crisis with its crisis posture removed. That is precisely the defect the
+ * CORE/SITUATIONAL note above argues must never happen, reintroduced one
+ * layer down by a file that classified the same sections for a different
+ * question and never compared notes.
+ *
+ * CORE answers "is this sent on an ordinary turn?". This answers "would we
+ * rather fail the turn than send without it?" — a strictly smaller set, and
+ * the one the ladder must treat as its floor.
+ */
+export const DEFECT_IF_MISSING_SECTIONS: readonly string[] = [
+  'Your Purpose',
+  'Grounding & Honesty (non-negotiable)',
+  "How to Respond — be useful fast, don't interrogate",
+  'Response Format for Entity Suggestions',
+  'Actions You Can Execute Directly',
+  'Tools You Can Call',
+  'Critical Rules',
+  // Both of these read as situational and are not. The cost of missing them
+  // lands on a person having a bad day, not on a metric.
+  'When Someone Needs Help, Not Strategy',
+  'Never Pigeonhole',
+];
+
+/**
  * Sections sent only when the turn looks related. The regex is matched against
  * the user's message plus a coarse turn descriptor (e.g. "first-message"), all
  * lowercased.
