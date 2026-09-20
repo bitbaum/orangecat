@@ -140,6 +140,13 @@ jobs:
           # only runtime-rendered routes get it. Public by design (it ships in
           # page source), hence a repo variable, not a secret.
           LOKI_FEEDBACK_TOKEN: ${{ vars.LOKI_FEEDBACK_TOKEN }}
+          # Whether OrangeCat may CHARGE — see src/config/commerce.ts. Absent
+          # or anything but "true" means the till stays shut, which is the
+          # correct default until the company is registered. It lives here so
+          # that flipping it is a one-variable change rather than a code
+          # change; a NEXT_PUBLIC flag the build never sets can never be
+          # turned on at all.
+          NEXT_PUBLIC_PAID_PLANS_OPEN: ${{ vars.NEXT_PUBLIC_PAID_PLANS_OPEN }}
         run: pnpm run build
 
       - name: Assemble standalone (static + public + content)

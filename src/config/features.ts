@@ -25,4 +25,10 @@ export const FEATURES = {
    * server still independently refuses top-up when PLATFORM_NWC_URI is unset.
    */
   catCreditsLive: envFlag(process.env.NEXT_PUBLIC_CAT_CREDITS_LIVE),
+  /**
+   * OrangeCat is able to CHARGE — see config/commerce.ts, which is where this
+   * should be read from. Off unless explicitly set, because the expensive
+   * direction of this mistake is taking money we are not yet allowed to take.
+   */
+  paidPlansOpen: envFlag(process.env.NEXT_PUBLIC_PAID_PLANS_OPEN),
 } as const;

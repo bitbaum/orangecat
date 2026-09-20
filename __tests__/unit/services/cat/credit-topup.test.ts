@@ -27,6 +27,16 @@ vi.mock('@/utils/logger', () => ({
 
 const platformReceiveEnabled = vi.fn();
 const getPlatformNwcClient = vi.fn();
+// The commercial gate is a compile-time constant from the env, and it is
+// CLOSED by default (src/config/commerce.ts). These tests exercise the minting
+// logic, so they open it deliberately; the gate's own behaviour — including
+// that a shut till mints nothing — is pinned in commerce-gate.test.ts and by
+// the dedicated case at the bottom of this file.
+vi.mock('@/config/commerce', () => ({
+  PAID_PLANS_OPEN: true,
+  COMMERCE_CLOSED: { badge: 'Not open yet', short: '', full: '', meanwhile: '' },
+}));
+
 vi.mock('@/lib/bitcoin/platform-wallet', () => ({
   platformReceiveEnabled: () => platformReceiveEnabled(),
   getPlatformNwcClient: () => getPlatformNwcClient(),
