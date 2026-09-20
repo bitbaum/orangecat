@@ -7,13 +7,17 @@ import type { EntityType } from '@/config/entity-registry';
 /**
  * Solon cross-sell — "govern the strings" for investment entities.
  *
- * Mirrors LokiBuildCta as the economy→governance bridge. v1 is a deep
- * link into Solon with entity context in the query string. Solon already
- * governs platform allocation via verified decisions; entity-scoped proposal
- * ingest can grow behind this same CTA without changing the owner-facing seam.
+ * Mirrors LokiBuildCta as the economy→governance bridge: a deep link into
+ * Solon's proposal form with the entity in the query, which Solon reads into a
+ * pre-filled draft (bitbaum/solon `lib/domain/proposal-draft`). The draft
+ * survives Solon's sign-in and join round-trips, so the owner lands on a form
+ * that already names their entity — never on a page that forgot it.
  *
- * No signed handoff until Solon has a receive path — a working discoverability
- * bridge beats a half-broken protocol. Do not delete LokiBuildCta.
+ * This used to target /dashboard, which read none of the parameters: the
+ * button promised to govern a specific thing and delivered a generic page.
+ *
+ * No signed handoff yet — a working pre-fill beats a half-broken protocol.
+ * Do not delete LokiBuildCta.
  */
 
 interface SolonGovernCtaProps {
@@ -30,12 +34,14 @@ function solonGovernUrl(props: {
   sourcePath: string;
   title?: string;
 }): string {
-  const url = new URL('/dashboard', ECOSYSTEM.solon.siteUrl);
+  const url = new URL('/propose', ECOSYSTEM.solon.siteUrl);
   url.searchParams.set('from', 'orangecat');
   url.searchParams.set('entity_type', props.entityType);
   url.searchParams.set('entity_id', props.entityId);
   url.searchParams.set('source', props.sourcePath);
-  if (props.title) url.searchParams.set('title', props.title.slice(0, 120));
+  if (props.title) {
+    url.searchParams.set('title', props.title.slice(0, 120));
+  }
   return url.toString();
 }
 
