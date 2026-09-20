@@ -6,8 +6,8 @@
  * - Hide/show on scroll down/up
  *
  * Created: 2025-01-07
- * Last Modified: 2025-01-27
- * Last Modified Summary: Extended to support bottom nav transparency
+ * Last Modified: 2026-09-20
+ * Last Modified Summary: Bottom-nav transparency removed — see useBottomNavScroll
  */
 
 import { useState, useEffect, useRef } from 'react';
@@ -94,73 +94,52 @@ export function useHeaderScroll(options: UseHeaderScrollOptions = {}): UseHeader
 }
 
 /**
- * Hook for bottom navigation scroll transparency
- * Reuses scroll detection pattern from useHeaderScroll
+ * Bottom-nav density on scroll.
+ *
+ * This used to also return `shouldBeTransparent`, and the nav rendered it as
+ * `bg-surface-page/20` + `opacity: 0.7` + `transform: scale(0.85)`. Past 50px
+ * the flag latched on and never cleared until you scrolled back to the very
+ * top — so for the whole length of a normal page the app's primary navigation
+ * was a translucent, shrunken ghost with the page text legible THROUGH it, and
+ * buttons at the bottom of the content ("Top up", "Add API Key") sitting
+ * half-buried under it.
+ *
+ * Two separate mistakes, both removed:
+ *
+ *   - Transparency. Primary navigation is not decoration; it does not get to
+ *     be unreadable to look modern.
+ *   - `scale()`. A transform does not change layout, so the space the page
+ *     reserves below its content no longer matched the nav's apparent size,
+ *     and it silently shrank the touch targets below 44px.
+ *
+ * What survives is the part that was actually useful: a COMPACT mode that
+ * gives a little height back to the content while you read, done by changing
+ * real height, and legible throughout.
  */
 interface UseBottomNavScrollOptions {
-  transparencyThreshold?: number;
-  scrollDelay?: number;
+  /** Scroll depth, in px, past which the nav goes compact. */
+  compactThreshold?: number;
 }
 
 interface UseBottomNavScrollReturn {
-  shouldBeTransparent: boolean;
-  shouldBeSmall: boolean;
+  isCompact: boolean;
 }
 
 export function useBottomNavScroll(
   options: UseBottomNavScrollOptions = {}
 ): UseBottomNavScrollReturn {
-  const { transparencyThreshold = 10, scrollDelay = 200 } = options;
-  const [shouldBeTransparent, setShouldBeTransparent] = useState(false);
-  const [shouldBeSmall, setShouldBeSmall] = useState(false);
-  const scrollTimeoutRef = useRef<NodeJS.Timeout>(undefined);
-  const lastScrollY = useRef(0);
-  const isScrollingRef = useRef(false);
+  const { compactThreshold = 50 } = options;
+  const [isCompact, setIsCompact] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      const isScrollingDown = currentScrollY > lastScrollY.current;
-      const scrollThreshold = 50; // Start shrinking/transparency after 50px
-
-      // More transparent and smaller when actively scrolling down
-      if (isScrollingDown && currentScrollY > transparencyThreshold) {
-        isScrollingRef.current = true;
-        setShouldBeTransparent(true);
-        setShouldBeSmall(currentScrollY > scrollThreshold);
-
-        if (scrollTimeoutRef.current) {
-          clearTimeout(scrollTimeoutRef.current);
-        }
-
-        scrollTimeoutRef.current = setTimeout(() => {
-          isScrollingRef.current = false;
-          // Keep slightly transparent and small even when stopped (like X)
-          const keepTransparent = currentScrollY > scrollThreshold;
-          setShouldBeTransparent(keepTransparent);
-          setShouldBeSmall(keepTransparent);
-        }, scrollDelay);
-      } else if (!isScrollingDown && currentScrollY < scrollThreshold) {
-        // Less transparent and full size when near top
-        setShouldBeTransparent(false);
-        setShouldBeSmall(false);
-      } else if (currentScrollY > scrollThreshold) {
-        // Maintain state when scrolling up but still scrolled
-        setShouldBeTransparent(true);
-        setShouldBeSmall(true);
-      }
-
-      lastScrollY.current = currentScrollY;
+      setIsCompact(window.scrollY > compactThreshold);
     };
 
+    handleScroll();
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
-    };
-  }, [transparencyThreshold, scrollDelay]);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [compactThreshold]);
 
-  return { shouldBeTransparent, shouldBeSmall };
+  return { isCompact };
 }

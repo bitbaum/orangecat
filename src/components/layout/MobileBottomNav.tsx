@@ -25,7 +25,7 @@ const MobileBottomNav = React.memo(function MobileBottomNav() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, hydrated } = useAuth();
-  const { shouldBeTransparent, shouldBeSmall } = useBottomNavScroll();
+  const { isCompact } = useBottomNavScroll();
   const { openComposer } = useComposer();
   const [showCreateSheet, setShowCreateSheet] = useState(false);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
@@ -108,35 +108,34 @@ const MobileBottomNav = React.memo(function MobileBottomNav() {
     <>
       <div
         className={cn(
-          'md:hidden fixed bottom-0 left-0 right-0 border-t',
+          'md:hidden fixed bottom-0 left-0 right-0 border-t border-default',
           'transition-all duration-300 ease-in-out',
-          shouldBeTransparent
-            ? 'bg-surface-page/20 backdrop-blur-sm border-transparent'
-            : 'bg-surface-page/95 backdrop-blur-md',
-          isAuthenticated ? 'border-default shadow-sm' : 'border-default'
+          // OPAQUE, always. `bg-surface-page/95` let page content read through
+          // the nav on a light background; primary navigation has to be a
+          // surface, not a filter.
+          'bg-surface-page',
+          isAuthenticated && 'shadow-sm'
         )}
         style={{
           zIndex: Z_INDEX.MOBILE_BOTTOM_NAV,
           // SSOT for nav-vs-home-indicator clearance lives on this outer container.
           // Inner <nav> uses a fixed interior padding so we don't double up.
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-          transform: shouldBeSmall ? 'scale(0.85) translateY(4px)' : 'scale(1) translateY(0)',
-          opacity: shouldBeTransparent ? 0.7 : 1,
         }}
       >
         {/* Primary button spacer - creates space above nav for floating button */}
         <div
-          className={cn('transition-all duration-300', shouldBeSmall ? 'h-1' : 'h-2')}
+          className={cn('transition-all duration-300', isCompact ? 'h-1' : 'h-2')}
           aria-hidden="true"
         />
 
         <nav
           className={cn(
             'flex items-center justify-around transition-all duration-300 pb-2',
-            shouldBeSmall ? 'px-1 py-1' : 'px-2 py-2'
+            isCompact ? 'px-1 py-1' : 'px-2 py-2'
           )}
           style={{
-            minHeight: shouldBeSmall ? '48px' : '64px',
+            minHeight: isCompact ? '56px' : '64px',
           }}
           role="navigation"
           aria-label="Mobile navigation"
@@ -168,39 +167,56 @@ const MobileBottomNav = React.memo(function MobileBottomNav() {
                   isActive && 'text-fg-primary',
                   !isActive && 'text-fg-secondary',
                   item.primary && 'relative',
-                  shouldBeSmall ? 'min-h-12 gap-0.5' : 'min-h-14 gap-1'
+                  isCompact ? 'min-h-12 gap-0.5' : 'min-h-14 gap-1'
                 )}
                 aria-label={label}
                 aria-current={isActive ? 'page' : undefined}
                 type="button"
               >
                 {item.primary ? (
-                  <div
-                    className={cn(
-                      'absolute flex items-center justify-center rounded-full shadow-sm',
-                      'transition-all duration-300 hover:scale-105 active:scale-95',
-                      'bg-fg-primary'
-                    )}
-                    style={{
-                      width: shouldBeSmall ? '48px' : '56px',
-                      height: shouldBeSmall ? '48px' : '56px',
-                      top: shouldBeSmall ? '-24px' : '-28px',
-                    }}
-                  >
-                    <Icon
+                  // LABELLED, like every other slot. It rendered as a bare
+                  // black circle holding a QR glyph — no text, its only
+                  // accessible name on the aria-label — so the most prominent
+                  // control in the bar was the one nobody could name. "Receive"
+                  // is not guessable from a QR icon.
+                  <>
+                    <div
                       className={cn(
-                        'text-fg-inverted transition-all duration-300',
-                        shouldBeSmall ? 'w-5 h-5' : 'w-6 h-6'
+                        'absolute flex items-center justify-center rounded-full shadow-sm',
+                        'transition-all duration-300 hover:scale-105 active:scale-95',
+                        'bg-fg-primary'
                       )}
-                      strokeWidth={2}
-                    />
-                  </div>
+                      style={{
+                        width: isCompact ? '44px' : '48px',
+                        height: isCompact ? '44px' : '48px',
+                        top: isCompact ? '-16px' : '-18px',
+                      }}
+                      aria-hidden="true"
+                    >
+                      <Icon
+                        className={cn(
+                          'text-fg-inverted transition-all duration-300',
+                          isCompact ? 'w-5 h-5' : 'w-6 h-6'
+                        )}
+                        strokeWidth={2}
+                      />
+                    </div>
+                    <span
+                      className={cn(
+                        'mt-auto font-medium leading-tight transition-all duration-300',
+                        isCompact ? 'text-2xs' : 'text-xs',
+                        isActive ? 'font-semibold text-fg-primary' : 'text-fg-secondary'
+                      )}
+                    >
+                      {label}
+                    </span>
+                  </>
                 ) : (
                   <>
                     <Icon
                       className={cn(
                         'transition-all duration-300',
-                        shouldBeSmall ? 'w-5 h-5' : 'w-6 h-6',
+                        isCompact ? 'w-5 h-5' : 'w-6 h-6',
                         isActive && 'fill-current scale-110'
                       )}
                       strokeWidth={isActive ? 2.5 : 2}
@@ -208,7 +224,7 @@ const MobileBottomNav = React.memo(function MobileBottomNav() {
                     <span
                       className={cn(
                         'font-medium transition-all duration-300 leading-tight',
-                        shouldBeSmall ? 'text-2xs' : 'text-xs',
+                        isCompact ? 'text-2xs' : 'text-xs',
                         isActive && 'font-semibold'
                       )}
                     >

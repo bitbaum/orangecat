@@ -18,6 +18,14 @@ import { cn } from '@/lib/utils';
  *
  * Mounted once in AppShell; the parent decides when to render it (authed app
  * surfaces only, never the Cat hub itself).
+ *
+ * It YIELDS WHILE YOU READ. A 56px circle pinned to the right edge sits on top
+ * of whatever body text is behind it, permanently — on the AI settings page it
+ * covered the free-pool card's refresh control, the end of "resets in 15h 33m",
+ * and the tail of a sentence about whose keys are whose. A floating control
+ * that never moves is a floating control that eventually lands on something
+ * that matters, so this one fades out while the page is scrolling and comes
+ * back when it stops.
  */
 export default function GlobalCatLauncher() {
   const pathname = usePathname();
@@ -27,6 +35,25 @@ export default function GlobalCatLauncher() {
   const [conversationId, setConversationId] = useState<string | null>(null);
 
   const page = describePageForCat(pathname);
+
+  // Out of the way while the page is moving; back when it settles.
+  const [scrolling, setScrolling] = useState(false);
+  useEffect(() => {
+    if (open) {
+      return;
+    }
+    let timer: ReturnType<typeof setTimeout>;
+    const onScroll = () => {
+      setScrolling(true);
+      clearTimeout(timer);
+      timer = setTimeout(() => setScrolling(false), 450);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      clearTimeout(timer);
+    };
+  }, [open]);
 
   // Close on Escape.
   useEffect(() => {
@@ -44,13 +71,20 @@ export default function GlobalCatLauncher() {
 
   return (
     <>
-      {/* Floating launcher — clears the mobile bottom nav (pb-20) on small screens. */}
+      {/* Floating launcher — anchored clear of the bottom nav and the home
+          indicator (.app-fab-anchor), and faded while the page scrolls. */}
       {!open && (
         <button
           type="button"
           onClick={() => setOpen(true)}
-          aria-label="Ask Cat"
-          className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-accent-warm text-on-accent shadow-lg transition-transform hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-warm focus-visible:ring-offset-2 md:bottom-6 md:right-6"
+          aria-label="Ask Cat about this page"
+          className={cn(
+            'app-fab-anchor fixed right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-accent-warm text-on-accent shadow-lg md:right-6',
+            'transition-all duration-200 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-warm focus-visible:ring-offset-2',
+            // Still focusable while faded: a keyboard user never triggers the
+            // scroll state, and hiding it from them would be a regression.
+            scrolling && 'pointer-events-none opacity-0 focus-visible:opacity-100'
+          )}
           title="Ask Cat about this page"
         >
           <Cat className="h-6 w-6" />

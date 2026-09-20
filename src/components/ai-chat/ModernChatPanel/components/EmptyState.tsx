@@ -13,6 +13,13 @@
  * The old layout was four identical boxes in a 2×2 grid regardless — which
  * silently claimed all four were equally worth reading, and none of them said
  * why it was there.
+ *
+ * The demotion has to survive the phone, and it didn't: the "quiet chips" were
+ * `inline-flex` inside a wrapping row, and every chip holds a whole sentence,
+ * so each one wrapped to full width and the screen filled with four large
+ * boxes again — the exact layout this file exists to avoid. They are now a
+ * single-line horizontal rail you swipe, which is also what lets the pool
+ * behind them (see services/cat/prompt-suggestions) be wider than the screen.
  */
 
 import Link from 'next/link';
@@ -96,9 +103,13 @@ export function EmptyState({
             <div
               className={cn(
                 recommendation
-                  ? 'mt-3 flex flex-wrap justify-center gap-2'
+                  ? 'oc-chat-suggestion-rail no-scrollbar mt-3'
                   : 'flex flex-col gap-2 sm:grid sm:grid-cols-2'
               )}
+              // A rail is only discoverable if it announces itself as one.
+              {...(recommendation
+                ? { role: 'group' as const, 'aria-label': 'More things to ask Cat' }
+                : {})}
             >
               {alternatives.map((suggestion, i) => (
                 <button
@@ -106,6 +117,7 @@ export function EmptyState({
                   type="button"
                   onClick={() => onSuggestionClick(suggestion.prompt)}
                   className={recommendation ? 'oc-chat-suggestion-quiet' : 'oc-chat-suggestion'}
+                  title={recommendation ? suggestion.prompt : undefined}
                 >
                   {suggestion.prompt}
                 </button>

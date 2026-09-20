@@ -24,6 +24,9 @@ export default function CatHubPage() {
   const { user, isLoading } = useRequireAuth();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<CatHubTab>('chat');
+  // Owned here, not in the rail: the toolbar renders the trigger (see
+  // CatChatToolbar), so both halves read the same state.
+  const [railOpen, setRailOpen] = useState(false);
   const { quota, refresh: refreshQuota } = useCatQuota();
   const {
     conversations,
@@ -74,9 +77,15 @@ export default function CatHubPage() {
         onSelect={selectConversation}
         onNew={newConversation}
         onDelete={deleteConversation}
+        mobileOpen={railOpen}
+        onMobileOpenChange={setRailOpen}
       />
       <div className="oc-chat-layout min-h-0 min-w-0 flex-1">
-        <CatChatToolbar activePanel="chat" quota={quota} />
+        <CatChatToolbar
+          activePanel="chat"
+          quota={quota}
+          onOpenConversations={() => setRailOpen(true)}
+        />
         <ModernChatPanel
           variant="focus"
           conversationId={activeId}

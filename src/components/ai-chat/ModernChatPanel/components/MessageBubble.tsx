@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { Cat, User, Copy, Check, Clock } from 'lucide-react';
 import { getModelDisplayName } from '@/config/ai-models';
+import { formatShortTime } from '@/utils/dates';
 import { getModelCapabilities } from '@/config/model-capability';
 import { renderChatMarkdown } from '@/utils/markdown';
 import { ActionButton } from './ActionButton';
@@ -15,7 +16,12 @@ import { linkifyCitations, citationsFromToolCalls } from '@/lib/chat/citations';
 import { ToolCallChip } from './ToolCallChip';
 import { PrefilledFormCard } from './PrefilledFormCard';
 import { UpgradeNudge } from './UpgradeNudge';
-import type { Message, CatAction, ExecActionResult } from '../types';
+import type {
+  Message,
+  CatAction,
+  ExecActionResult,
+  FallbackNotice as FallbackNoticeType,
+} from '../types';
 import { ENTITY_REGISTRY, ENTITY_TYPES } from '@/config/entity-registry';
 import { CAT_ACTIONS } from '@/config/cat-actions';
 import { AiErrorNotice } from '@/components/ai/AiErrorNotice';
@@ -24,6 +30,47 @@ const PROVIDER_LABELS: Record<string, string> = {
   groq: 'Groq',
   openrouter: 'OpenRouter',
 };
+
+const providerLabel = (id: string): string => PROVIDER_LABELS[id] ?? id;
+
+/**
+ * "X was rate-limited; answered on Y instead."
+ *
+ * Y was always a PROVIDER name, and the fallback chain has a same-provider hop
+ * in it on purpose: Groq rations per model, so a second Groq model is a second
+ * budget and a second TPM window, not a longer queue. Taking that hop printed
+ * "Groq was rate-limited; answered on Groq instead" — a sentence that refutes
+ * itself, on the one notice whose whole job is to be believed.
+ *
+ * When the provider is the same, the model is what changed, so the model is
+ * what the sentence names.
+ */
+function ProviderFallbackNotice({ from, to, model }: FallbackNoticeType) {
+  const sameProvider = from === to;
+  const modelName = model ? getModelDisplayName(model) : null;
+
+  return (
+    <p className="mt-1 text-xs italic text-fg-tertiary">
+      ↻{' '}
+      {sameProvider ? (
+        <>
+          {providerLabel(from)} rate-limited that model
+          {modelName ? (
+            <>; answered on {modelName} instead</>
+          ) : (
+            '; answered on another of its models'
+          )}
+        </>
+      ) : (
+        <>
+          {providerLabel(from)} was rate-limited; answered on {providerLabel(to)}
+          {modelName ? <> ({modelName})</> : null} instead
+        </>
+      )}{' '}
+      — {sameProvider ? 'still' : 'both'} on OrangeCat&apos;s free pool, not your keys.
+    </p>
+  );
+}
 
 // Human-readable labels for exec_action IDs — shown when no displayMessage is available.
 // Entity-creation labels come from ENTITY_REGISTRY[type].name (SSOT); non-entity labels stay local.
@@ -181,7 +228,10 @@ export function MessageBubble({
             'inline-block max-w-full px-1 py-0.5 text-sm leading-relaxed sm:max-w-[92%]',
             isUser
               ? isFocus
-                ? 'rounded-2xl bg-surface-raised px-4 py-2.5 text-fg-primary'
+                ? // Border, not just fill: surface-raised on surface-page is two
+                  // greys one shade apart, so on a phone there was nothing
+                  // marking where the user's turn ended and Cat's began.
+                  'rounded-2xl border border-subtle bg-surface-raised px-4 py-2.5 text-fg-primary'
                 : 'rounded-md rounded-tr-sm bg-fg-primary px-4 py-2.5 text-fg-inverted'
               : isFocus
                 ? 'text-fg-primary'
@@ -191,19 +241,29 @@ export function MessageBubble({
           <div className={cn('break-words', isUser && 'whitespace-pre-wrap')}>
             {isUser ? displayContent : renderChatMarkdown(linkedContent)}
             {isLast && !isUser && !displayContent && (
-              <span className="inline-flex items-center gap-1">
-                <span
-                  className="h-2 w-2 animate-bounce rounded-sm bg-fg-secondary"
-                  style={{ animationDelay: '0ms' }}
-                />
-                <span
-                  className="h-2 w-2 animate-bounce rounded-sm bg-fg-secondary"
-                  style={{ animationDelay: '150ms' }}
-                />
-                <span
-                  className="h-2 w-2 animate-bounce rounded-sm bg-fg-secondary"
-                  style={{ animationDelay: '300ms' }}
-                />
+              // Three unlabelled dots at the left edge of a blank screen do not
+              // say who is doing what, and a screen reader announced nothing at
+              // all. Named, and announced once it settles.
+              <span
+                className="inline-flex items-center gap-2 text-fg-secondary"
+                role="status"
+                aria-live="polite"
+              >
+                <span className="inline-flex items-center gap-1" aria-hidden="true">
+                  <span
+                    className="h-2 w-2 animate-bounce rounded-sm bg-fg-secondary"
+                    style={{ animationDelay: '0ms' }}
+                  />
+                  <span
+                    className="h-2 w-2 animate-bounce rounded-sm bg-fg-secondary"
+                    style={{ animationDelay: '150ms' }}
+                  />
+                  <span
+                    className="h-2 w-2 animate-bounce rounded-sm bg-fg-secondary"
+                    style={{ animationDelay: '300ms' }}
+                  />
+                </span>
+                <span className="text-xs">Cat is thinking…</span>
               </span>
             )}
           </div>
@@ -294,10 +354,23 @@ export function MessageBubble({
                   </>
                 );
               })()}
+              {/* When. A thread of turns with no time on any of them gives the
+                  reader nothing to anchor "did I already ask this today?" to —
+                  and the timestamp was on the message object all along. */}
+              {message.timestamp && (
+                <>
+                  <span aria-hidden> · </span>
+                  <time dateTime={new Date(message.timestamp).toISOString()}>
+                    {formatShortTime(message.timestamp)}
+                  </time>
+                </>
+              )}
             </span>
             <button
+              type="button"
               onClick={handleCopy}
               className="rounded p-2 text-fg-tertiary transition-colors hover:text-fg-primary"
+              aria-label={copied ? 'Response copied' : 'Copy response'}
               title="Copy response"
             >
               {copied ? (
@@ -311,13 +384,15 @@ export function MessageBubble({
 
         {/* Fallback notice — shown when primary provider rate-limited and the
             route silently switched to the backup. So users know which engine
-            actually answered and aren't surprised by a different tone/voice. */}
+            actually answered and aren't surprised by a different tone/voice.
+
+            It names the MODEL when the provider is unchanged. The fallback
+            chain includes a second Groq model (a separate request budget and
+            TPM window — see services/ai/groq-models), so a legitimate hop
+            produced "Groq was rate-limited; answered on Groq instead", which
+            reads as a bug and taught the user to distrust the notice. */}
         {!isUser && message.fallback && displayContent && (
-          <p className="mt-1 text-xs text-fg-tertiary italic">
-            ↻ {PROVIDER_LABELS[message.fallback.from] ?? message.fallback.from} was rate-limited;
-            answered on {PROVIDER_LABELS[message.fallback.to] ?? message.fallback.to} instead — both
-            run on OrangeCat&apos;s free pool, not your keys.
-          </p>
+          <ProviderFallbackNotice {...message.fallback} />
         )}
 
         {/* Upgrade nudge — only on the latest assistant turn, when this task
