@@ -31,6 +31,22 @@ export const CHANGELOG_TAGS: Record<ChangelogTag, { label: string }> = {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     date: '2026-09-20',
+    tag: 'feature',
+    title: 'Bring a Claude key straight to Cat',
+    summary:
+      'Anthropic is now wired directly, so a Claude key works on its own instead of having to go through OpenRouter. Getting a key from any provider is one click. And there is finally one page explaining what actually powers Cat.',
+    items: [
+      'Anthropic joins Groq, OpenRouter, OpenAI, Together AI, xAI and DeepSeek as a direct provider — paste your key and Cat uses it.',
+      'Choosing a provider now shows a button straight to that provider\u2019s own key page, naming where it sends you, instead of four words of grey text under the password box.',
+      '\u201cHow Cat runs\u201d explains the four ways to power Cat \u2014 free pool, credits, your own key, your own machine \u2014 with what each costs, where your words go, and what each is bad at. Local models are genuinely weak at taking actions, and it says so.',
+      'Memory moved to its own settings tab. What Cat remembers about you is not a billing setting and should not be buried under one.',
+      'Cat Credits stated two different prices on two adjacent screens. Both now read from one source.',
+      'Image generation was described as free; it does not use your daily messages, but it is billed to Cat Credits, and it now says that.',
+      'Claude Fable 5.1 was missing because Fable 5 still worked \u2014 so nothing detected it. The catalogue check now also notices when a newer version of a model we use has shipped.',
+    ],
+  },
+  {
+    date: '2026-09-20',
     tag: 'fix',
     title: 'Cat on a phone, fixed end to end',
     summary:

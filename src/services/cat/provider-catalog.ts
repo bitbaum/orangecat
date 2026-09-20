@@ -206,6 +206,97 @@ export function orangecatChain(): Provider[] {
   );
 }
 
+/**
+ * Split a model id into the family it belongs to and its version.
+ *
+ * `anthropic/claude-fable-5-1` → stem `anthropic/claude-fable`, version [5, 1]
+ * `anthropic/claude-opus-4.8`  → stem `anthropic/claude-opus`,  version [4, 8]
+ * `openai/gpt-oss-20b`         → no version (the trailing segment is not
+ *                                digits), so the id is never compared
+ *
+ * Requiring the version to be PURELY numeric is what keeps this quiet. A
+ * looser parse makes `gpt-oss-120b` a successor to `gpt-oss-20b`, which is a
+ * different model at a different size, and a check that cries wolf is a check
+ * that gets muted.
+ */
+function splitVersion(rawId: string): { stem: string; version: number[] } | null {
+  const id = rawId.replace(/:free$/, '');
+  const parts = id.split(/[-.]/);
+  const version: number[] = [];
+  let i = parts.length;
+  while (i > 0 && /^\d+$/.test(parts[i - 1])) {
+    version.unshift(Number(parts[i - 1]));
+    i--;
+  }
+  if (version.length === 0 || i === 0) {
+    return null;
+  }
+  return { stem: parts.slice(0, i).join('-'), version };
+}
+
+/** Numeric version compare: [5,1] > [5] > [4,8]. */
+function isNewer(a: number[], b: number[]): boolean {
+  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+    const x = a[i] ?? 0;
+    const y = b[i] ?? 0;
+    if (x !== y) {
+      return x > y;
+    }
+  }
+  return false;
+}
+
+export type SupersededPin = {
+  provider: string;
+  /** The id we pin. It still works — this is not rot. */
+  pinned: string;
+  /** A newer version of the same family the vendor now lists. */
+  successor: string;
+};
+
+/**
+ * Pins the vendor has since published a NEWER VERSION of.
+ *
+ * This is the half the rot check could not see. `missing` answers "did a
+ * pinned id die"; a model that is merely superseded is still listed, still
+ * served, and still answers — so nothing ever fired, and the catalogue sat a
+ * version behind indefinitely. That is exactly how `claude-fable-5` stayed
+ * pinned after `claude-fable-5-1` shipped: not a dead pointer, just an old
+ * one, and the check was structurally blind to the difference.
+ *
+ * Reads `verdict.live`, which checkCatalog already fetched, so this costs no
+ * extra request. It is a NUDGE, never a failure: being a version behind is a
+ * decision someone should make deliberately, not an outage.
+ */
+export function findSupersededPins(verdicts: CatalogVerdict[]): SupersededPin[] {
+  const found: SupersededPin[] = [];
+
+  for (const verdict of verdicts) {
+    if (!verdict.live) {
+      continue; // Could not read the catalogue — unknown, not "up to date".
+    }
+    const liveParsed = verdict.live
+      .map(id => ({ id, parsed: splitVersion(id) }))
+      .filter((x): x is { id: string; parsed: { stem: string; version: number[] } } => !!x.parsed);
+
+    for (const pinned of verdict.present) {
+      const mine = splitVersion(pinned);
+      if (!mine) {
+        continue;
+      }
+      const newer = liveParsed
+        .filter(x => x.parsed.stem === mine.stem && isNewer(x.parsed.version, mine.version))
+        .sort((a, b) => (isNewer(a.parsed.version, b.parsed.version) ? -1 : 1))[0];
+
+      if (newer) {
+        found.push({ provider: verdict.provider, pinned, successor: newer.id });
+      }
+    }
+  }
+
+  return found;
+}
+
 export type ModelRotReport = {
   verdicts: CatalogVerdict[];
   /** Pinned ids the vendor no longer lists, across every provider. */
@@ -214,6 +305,12 @@ export type ModelRotReport = {
   unreadable: string[];
   /** True only when a pinned id is CONFIRMED gone. */
   rotted: boolean;
+  /**
+   * Pins with a newer version available. NOT counted in `rotted` — these
+   * still serve. Surfaced so being a version behind is a choice rather than
+   * an oversight.
+   */
+  superseded: SupersededPin[];
 };
 
 /**
@@ -231,5 +328,6 @@ export async function checkModelRot(): Promise<ModelRotReport> {
     // health either. Naming it keeps the third state visible to the caller.
     unreadable: deadProviders(verdicts),
     rotted: hasRot(verdicts),
+    superseded: findSupersededPins(verdicts),
   };
 }

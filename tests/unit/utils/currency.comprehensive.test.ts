@@ -225,12 +225,62 @@ describe('🪙 Currency Utilities - Comprehensive Coverage', () => {
       }
     });
 
-    test('converts large numbers of amounts without drift', () => {
+    // A satoshi is the smallest unit there is, so bitcoinToSats QUANTISES:
+    // any BTC value carrying more than 8 decimals is rounded to the nearest
+    // sat, and the most a round trip can therefore lose is HALF a satoshi.
+    //
+    // That is 5e-9 — and `toBeCloseTo(x, 8)` passes only when the difference
+    // is strictly BELOW 5e-9. The assertion's tolerance was exactly the
+    // largest error the code is allowed to produce, with the boundary
+    // excluded, so a value landing precisely on a half-sat (9.424111705, and
+    // every other …5 at the ninth decimal) was a legitimate result the test
+    // called a failure. With 10 000 random draws a run it surfaced on any
+    // PR, at random, forever.
+    //
+    // Loosening to 7 decimals would have hidden a real one-sat drift. The
+    // contract is what gets asserted instead, boundary included.
+    const HALF_SATOSHI_BTC = 0.5 / 100_000_000;
+
+    /**
+     * Half a satoshi, plus the float slop of getting there.
+     *
+     * `9.424111705` is not exactly representable as a double, so the value the
+     * test holds is already a hair off the number written down, and the
+     * multiply/round/divide chain adds a little more. Measured across 400 000
+     * samples — random values and exact half-sat boundaries — the worst excess
+     * over half a satoshi was 4.14e-16, or 0.69 × EPSILON×|btc|. Four gives
+     * 5.8× margin.
+     *
+     * The allowance is ~1.9e-6 of ONE satoshi, so it cannot hide a real
+     * drift: an off-by-one-sat bug is five million times larger than this.
+     */
+    const roundTripTolerance = (btc: number): number =>
+      HALF_SATOSHI_BTC + 4 * Number.EPSILON * Math.max(1, Math.abs(btc));
+
+    test('round-trips within half a satoshi, the most quantising can lose', () => {
       for (let i = 0; i < 10000; i++) {
         const btc = Math.random() * 21;
-        // Round-trip must land back on the same value to 8 decimal places —
-        // catches precision regressions a timing budget never could.
-        expect(satsToBitcoin(bitcoinToSats(btc))).toBeCloseTo(btc, 8);
+        expect(Math.abs(satsToBitcoin(bitcoinToSats(btc)) - btc)).toBeLessThanOrEqual(
+          roundTripTolerance(btc)
+        );
+      }
+    });
+
+    test('is exact for values already on the satoshi grid', () => {
+      // Nothing to quantise, so nothing may be lost — a much stronger claim
+      // than the fuzz above, and the one that catches genuine drift.
+      for (const btc of [0, 0.00000001, 0.001, 1, 20.99999999, 21]) {
+        expect(satsToBitcoin(bitcoinToSats(btc))).toBe(btc);
+      }
+    });
+
+    test('accepts the exact half-satoshi boundary the fuzz used to fail on', () => {
+      // Pinned deterministically: these are the values that made the random
+      // test red, so a regression here no longer waits on a lucky draw.
+      for (const btc of [9.424111705, 0.000000005, 20.999999995, 1.000000005]) {
+        expect(Math.abs(satsToBitcoin(bitcoinToSats(btc)) - btc)).toBeLessThanOrEqual(
+          roundTripTolerance(btc)
+        );
       }
     });
   });

@@ -15,6 +15,12 @@ import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { displayBTC } from '@/services/currency';
 import { logger } from '@/utils/logger';
 import { API_ROUTES } from '@/config/api-routes';
+// Derived from CREDIT_USAGE_MARKUP. This panel used to understate the markup
+// in a hardcoded sentence while /settings/usage quoted the real figure from
+// the SSOT — the same product, two adjacent screens, two different claims
+// about the user's money. The label exists precisely so marketing cannot
+// drift; using it is not optional.
+import { CAT_CREDITS_MARKUP_LABEL } from '@/config/cat-plans';
 import { TopUpDialog, type TopUpInvoiceView } from './TopUpDialog';
 import { FormattedDate } from '@/components/ui/FormattedDate';
 
@@ -81,7 +87,8 @@ export function CatCreditsPanel() {
           <h2 className="text-lg font-semibold text-fg-primary">Cat Credits</h2>
           <p className="mt-1 text-sm text-fg-secondary">
             Pay with Bitcoin to run Cat on frontier models — no card, no per-provider accounts.
-            Credits are priced near cost; OrangeCat earns from platform activity, not your AI bill.
+            Credits are charged at {CAT_CREDITS_MARKUP_LABEL}, at the Bitcoin rate when you spend
+            them. Bring your own key instead and OrangeCat takes nothing.
           </p>
         </div>
       </div>

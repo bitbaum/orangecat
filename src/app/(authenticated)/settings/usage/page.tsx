@@ -148,7 +148,14 @@ export default function UsageSettingsPage() {
             • Frontier-model messages paid with Cat Credits are metered per message from your credit
             balance, not from the daily budget.
           </li>
-          <li>• Image generation is free and doesn&apos;t count.</li>
+          {/* "Free" was wrong in the way that matters: image generation does
+              not touch this DAILY MESSAGE budget, but it is billed to Cat
+              Credits like any other frontier call. A user reading "free" and
+              watching their balance fall has been misled about money. */}
+          <li>
+            • Image generation doesn&apos;t use your daily messages — it&apos;s billed to Cat
+            Credits instead.
+          </li>
           <li>
             • The counter resets every day at midnight UTC. Unused messages don&apos;t roll over.
           </li>

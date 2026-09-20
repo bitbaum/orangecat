@@ -265,6 +265,26 @@ export const AI_MODEL_REGISTRY: Record<string, AIModelMetadata> = {
     supportsTemperature: false,
   },
 
+  // Fable 5.1 supersedes Fable 5 in the same tier at the same per-token price.
+  // Fable 5 is still served, which is exactly why nothing alarmed when 5.1
+  // shipped: the old id never died, it just stopped being the newest. See
+  // findSupersededPins in services/cat/provider-catalog.
+  'anthropic/claude-fable-5.1': {
+    id: 'anthropic/claude-fable-5.1',
+    name: 'Claude Fable 5.1',
+    provider: 'Anthropic',
+    description: "Anthropic's most capable model — deepest reasoning, longest autonomous runs",
+    contextWindow: 1000000,
+    maxOutputTokens: 8192,
+    inputCostPer1M: 10.0,
+    outputCostPer1M: 50.0,
+    capabilities: ['text', 'vision', 'function_calling', 'streaming'],
+    tier: 'premium',
+    recommendedFor: ['autonomous agents', 'long-running tasks', 'deep research'],
+    isAvailable: true,
+    supportsTemperature: false,
+  },
+
   'anthropic/claude-fable-5': {
     id: 'anthropic/claude-fable-5',
     name: 'Claude Fable 5',

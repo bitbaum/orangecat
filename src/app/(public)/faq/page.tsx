@@ -7,6 +7,7 @@ import { PageHeading } from '@/components/layout/PageHeading';
 import { ROUTES } from '@/config/routes';
 import { cn } from '@/lib/utils';
 import { slugify } from '@/utils/string';
+import { CAT_FREE_DAILY_LIMIT, CAT_CREDITS_MARKUP_LABEL } from '@/config/cat-plans';
 
 interface FaqItem {
   question: string;
@@ -38,8 +39,11 @@ const FAQ_SECTIONS: FaqSection[] = [
       },
       {
         question: 'Is OrangeCat free to use?',
-        answer:
-          'Creating a profile and using the platform is free. OrangeCat does not take a cut of Bitcoin or Lightning payments — you send and receive directly. Some premium Cat AI features may use credits. Check the pricing page for the latest details.',
+        answer: `Yes. Creating a profile and using the platform is free, and OrangeCat does not take a cut of Bitcoin or Lightning payments — you send and receive directly. Cat, the AI agent, gives you ${CAT_FREE_DAILY_LIMIT} free messages a day; beyond that you can add credits, bring your own API key, or run a model on your own machine. See "How Cat runs" for what each of those costs and means.`,
+      },
+      {
+        question: 'What powers Cat, and who pays for it?',
+        answer: `Four routes, and you can mix them: OrangeCat's free pool (${CAT_FREE_DAILY_LIMIT} messages a day, no setup), Cat Credits (${CAT_CREDITS_MARKUP_LABEL}, paid in Bitcoin), your own API key (you pay the provider directly, OrangeCat takes nothing), or a model running on your own computer (nothing leaves your machine). "How Cat runs" explains the trade-offs of each — including what local models are bad at.`,
       },
       {
         question: 'Do I need to use my real name?',

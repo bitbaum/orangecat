@@ -28,6 +28,7 @@ export type AIProviderCategory = 'direct' | 'aggregator' | 'local';
 export const WIRED_PROVIDER_IDS = [
   'groq',
   'openrouter',
+  'anthropic',
   'openai',
   'together',
   'deepseek',
@@ -97,7 +98,7 @@ export const aiProviders: AIProvider[] = [
     id: 'anthropic',
     name: 'Anthropic',
     type: 'direct',
-    description: 'Claude models direct from the makers.',
+    description: 'Claude models direct from the makers — Opus, Sonnet, Fable.',
     websiteUrl: 'https://anthropic.com',
     apiKeyUrl: 'https://console.anthropic.com/settings/keys',
     docsUrl: 'https://docs.anthropic.com',

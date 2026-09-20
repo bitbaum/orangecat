@@ -121,6 +121,23 @@ export const SUPPORTER_LIVE = SUPPORTER_CHECKOUT_URL.length > 0;
  */
 export const CAT_WIRED_PROVIDERS = WIRED_PROVIDER_DISPLAY_NAMES;
 
+/** Spelled-out count of wired providers, derived so prose cannot fall behind. */
+const COUNT_WORDS = [
+  'No',
+  'One',
+  'Two',
+  'Three',
+  'Four',
+  'Five',
+  'Six',
+  'Seven',
+  'Eight',
+  'Nine',
+  'Ten',
+] as const;
+export const CAT_WIRED_PROVIDER_COUNT_WORD: string =
+  COUNT_WORDS[CAT_WIRED_PROVIDERS.length] ?? String(CAT_WIRED_PROVIDERS.length);
+
 /**
  * SSOT for the frontier models named in marketing copy (pricing, support,
  * settings). Brand-level on purpose — never a specific version like "GPT-4o",
@@ -181,7 +198,10 @@ export const CAT_PLANS: CatPlan[] = [
       ? { label: 'Become a Supporter', href: SUPPORTER_CHECKOUT_URL, variant: 'accent' }
       : { label: 'Become a supporter', href: ROUTES.SUPPORT, variant: 'outline' },
     status: SUPPORTER_LIVE ? 'available' : 'coming-soon',
-    badge: SUPPORTER_LIVE ? 'Live' : 'Activating',
+    // "Activating" reads as "any moment now" for a plan with no price and no
+    // checkout — SUPPORTER_PRICE_CHF is null and SUPPORTER_CHECKOUT_URL is
+    // unset. Say the true thing: it is planned, and you cannot buy it yet.
+    badge: SUPPORTER_LIVE ? 'Live' : 'Planned',
   },
   {
     id: 'byok',
@@ -189,8 +209,11 @@ export const CAT_PLANS: CatPlan[] = [
     tagline: 'Any provider. Your bill. No markup.',
     priceCopy: 'CHF 0 / mo to OrangeCat',
     bullets: [
-      `Six providers wired direct: ${CAT_WIRED_PROVIDERS.join(', ')}`,
-      'Want Claude / GPT / Gemini? OpenRouter fronts 200+ models with one key',
+      // The COUNT is derived too. It was the literal "Six" sitting next to a
+      // derived list, so wiring Anthropic made the sentence contradict the
+      // words directly after it.
+      `${CAT_WIRED_PROVIDER_COUNT_WORD} providers wired direct: ${CAT_WIRED_PROVIDERS.join(', ')}`,
+      'Want Gemini, or something exotic? OpenRouter fronts 200+ models with one key',
       'Cat routes through your key — OrangeCat never sees your bill, never marks it up',
       'Keys encrypted at rest, scrubbed from logs, never echoed back to the client',
     ],

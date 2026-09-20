@@ -34,10 +34,18 @@ type FormState = 'idle' | 'submitting' | 'success';
 
 // Derived from the provider SSOT: direct (non-local) providers not yet wired.
 const wiredIds = new Set(wiredProviders.map(p => p.id));
-const unwiredDirectNames = aiProviders
-  .filter(p => p.type === 'direct' && !wiredIds.has(p.id))
-  .map(p => p.name)
-  .join(' + ');
+const unwiredDirect = aiProviders.filter(p => p.type === 'direct' && !wiredIds.has(p.id));
+const unwiredDirectNames = unwiredDirect.map(p => p.name).join(' + ');
+const unwiredDirectCount = unwiredDirect.length;
+
+/** "console.anthropic.com" — so the link says where it is about to send you. */
+function providerKeyHost(p: { apiKeyUrl: string }): string {
+  try {
+    return new URL(p.apiKeyUrl).host;
+  } catch {
+    return 'the provider';
+  }
+}
 
 export function AIKeyAddForm({ onAdd, onCancel, onFieldFocus }: AIKeyAddFormProps) {
   const [selectedProvider, setSelectedProvider] = useState<string>('openrouter');
@@ -164,11 +172,34 @@ export function AIKeyAddForm({ onAdd, onCancel, onFieldFocus }: AIKeyAddFormProp
               </button>
             ))}
           </div>
-          <p className="mt-2 text-xs text-fg-secondary">
-            Want Claude or Gemini? Add an <strong className="text-fg-primary">OpenRouter</strong>{' '}
-            key — one key fronts all 200+ models. Direct {unwiredDirectNames} support is on the
-            roadmap.
-          </p>
+          {/* ONE CLICK TO THE KEY. This used to be four words of grey text
+              under the password field, below the fold on a phone — so
+              "where do I even get a key" was answered after the box that
+              wanted one. It is now the first thing you see after choosing a
+              provider, it names the provider, and it goes to that provider's
+              exact key page (AIProvider.apiKeyUrl, one per provider). */}
+          {provider && (
+            <a
+              href={provider.apiKeyUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 inline-flex min-h-11 w-full items-center justify-between gap-2 rounded-lg border border-interactive bg-surface-raised px-4 py-2.5 text-sm transition-colors hover:bg-surface-raised/70 sm:w-auto"
+            >
+              <span className="text-fg-primary">
+                Get your {provider.name} key
+                <span className="ml-1 text-fg-secondary">— opens {providerKeyHost(provider)}</span>
+              </span>
+              <ExternalLink className="h-4 w-4 flex-shrink-0 text-fg-tertiary" />
+            </a>
+          )}
+
+          {unwiredDirectNames && (
+            <p className="mt-2 text-xs text-fg-secondary">
+              {unwiredDirectNames} {unwiredDirectCount === 1 ? 'is' : 'are'} not wired directly yet
+              — an <strong className="text-fg-primary">OpenRouter</strong> key reaches{' '}
+              {unwiredDirectCount === 1 ? 'it' : 'them'} today, along with 200+ other models.
+            </p>
+          )}
         </div>
 
         <div>
@@ -205,20 +236,9 @@ export function AIKeyAddForm({ onAdd, onCancel, onFieldFocus }: AIKeyAddFormProp
               {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
-          {provider && (
-            <p className="mt-1 text-xs text-fg-secondary">
-              Get your key at{' '}
-              <a
-                href={provider.apiKeyUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-fg-primary hover:underline inline-flex items-center gap-1"
-              >
-                {provider.name}
-                <ExternalLink className="w-3 h-3" />
-              </a>
-            </p>
-          )}
+          {/* The "get a key" link lives beside the provider picker now, where
+              the question is actually asked. Repeating it here said the same
+              thing twice on one short form. */}
         </div>
 
         {error && (

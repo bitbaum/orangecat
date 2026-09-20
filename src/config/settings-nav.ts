@@ -1,5 +1,6 @@
 import {
   Bell,
+  Brain,
   BrainCircuit,
   Gauge,
   KeyRound,
@@ -43,6 +44,12 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
     label: 'AI',
     description: 'How Cat runs: managed, credits, your own keys, or local.',
     icon: BrainCircuit,
+  },
+  {
+    href: ROUTES.SETTINGS_MEMORY,
+    label: 'Memory',
+    description: 'Everything Cat remembers about you — review it, correct it, delete it.',
+    icon: Brain,
   },
   {
     href: ROUTES.SETTINGS_USAGE,
