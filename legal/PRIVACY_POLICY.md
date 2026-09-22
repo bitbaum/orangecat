@@ -3,7 +3,7 @@
 **Last updated:** 2026-06-02
 **Status:** TEMPLATE — review with counsel before publishing.
 
-This Privacy Policy describes how OrangeCat ("we," "us," "our," or the "Service"), operated by Cato (pending incorporation of a successor corporate entity), collects, uses, and shares your personal information when you use the Service.
+This Privacy Policy describes how OrangeCat ("we," "us," "our," or the "Service"), operated by Cato, collects, uses, and shares your personal information when you use the Service.
 
 By using the Service, you agree to the collection and use of information in accordance with this Policy.
 
@@ -138,7 +138,7 @@ The Service is not directed to individuals under 18. We do not knowingly collect
 
 ## 11. Contact
 
-**Cato** (Data Controller, pending NewCo formation)
+**Cato** (Data Controller)
 [ADDRESS]
 hello@orangecat.ch
 

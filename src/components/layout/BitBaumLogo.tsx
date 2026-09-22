@@ -15,7 +15,7 @@ export default function BitBaumLogo({
       target="_blank"
       rel="noopener noreferrer"
       className={`flex items-center space-x-2 group ${className}`.trim()}
-      aria-label="BitBaum - Corporate parent of OrangeCat"
+      aria-label="bitbaum - the studio behind OrangeCat and Loki"
     >
       {/* BitBaum Tree Logo */}
       <span className="inline-block w-8 h-8 flex-shrink-0">
@@ -46,7 +46,7 @@ export default function BitBaumLogo({
 
       {showText && (
         <span className="text-lg font-bold text-fg-primary group-hover:underline underline-offset-4">
-          BitBaum
+          bitbaum
         </span>
       )}
     </Link>
