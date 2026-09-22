@@ -3,7 +3,7 @@
 **Last updated:** 2026-06-02
 **Status:** TEMPLATE — review with counsel before publishing. Marketplace + cryptocurrency operations carry significant regulatory exposure.
 
-These Terms of Service ("Terms") govern your access to and use of OrangeCat (the "Service"), operated by Cato (pending incorporation of a successor corporate entity, herein "we," "us," "our"). By accessing or using the Service, you agree to be bound by these Terms.
+These Terms of Service ("Terms") govern your access to and use of OrangeCat (the "Service"), operated by Cato (herein "we," "us," "our"). By accessing or using the Service, you agree to be bound by these Terms.
 
 If you do not agree, do not use the Service.
 
@@ -152,7 +152,7 @@ We may update these Terms from time to time. Material changes will be notified b
 
 ## 22. Contact
 
-**Cato** (pending NewCo formation)
+**Cato**
 [ADDRESS]
 hello@orangecat.ch
 

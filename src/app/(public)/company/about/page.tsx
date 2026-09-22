@@ -7,13 +7,13 @@ import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
 import Button from '@/components/ui/Button';
 
 export const metadata: Metadata = {
-  title: 'About BitBaum',
+  title: 'About bitbaum',
   description:
-    'Learn about BitBaum AG, the Swiss company behind OrangeCat — building open economic infrastructure for the Bitcoin era.',
+    'Learn about bitbaum, the studio behind OrangeCat and Loki — building open economic infrastructure for the Bitcoin era.',
 };
 
 /**
- * /company/about — corporate parent page. Migrated to Loki
+ * /company/about — the studio behind the products. Migrated to Loki
  * semantic tier in migration 6/N: monochrome surfaces, neutral
  * value-card tiles, single warm accent on the 'Join Our Team' CTA.
  * Timeline number badges and vision boxes all unified neutral.
@@ -29,11 +29,11 @@ export default function BitBaumAboutPage() {
               <BitBaumLogo className="scale-150" />
             </div>
             <h1 className="font-heading tracking-display text-4xl font-bold text-fg-primary sm:text-5xl mb-4">
-              About BitBaum
+              About bitbaum
             </h1>
             <p className="text-xl text-fg-secondary max-w-3xl mx-auto">
-              Building open economic infrastructure for the Bitcoin era. The corporate parent of
-              OrangeCat.
+              Building open economic infrastructure for the Bitcoin era. The studio behind
+              OrangeCat and Loki.
             </p>
           </div>
         </div>
@@ -70,17 +70,17 @@ export default function BitBaumAboutPage() {
               <div className="flex justify-center mb-4">
                 <BitBaumLogo />
               </div>
-              <h4 className="text-xl font-semibold text-fg-primary mb-3">BitBaum AG</h4>
+              <h4 className="text-xl font-semibold text-fg-primary mb-3">bitbaum</h4>
               <p className="text-fg-secondary mb-4">
-                Corporate parent company focused on Bitcoin innovation, community building, and
-                creating platforms that empower creators and communities worldwide.
+                The studio the products are built in — focused on Bitcoin innovation, community
+                building, and platforms that empower creators and communities worldwide.
               </p>
               <div className="flex flex-wrap justify-center gap-2">
                 <span className="px-3 py-1 bg-surface-raised text-fg-primary rounded-full text-sm">
-                  Corporate
+                  Studio
                 </span>
                 <span className="px-3 py-1 bg-surface-raised text-fg-primary rounded-full text-sm">
-                  Swiss-Based
+                  Switzerland
                 </span>
                 <span className="px-3 py-1 bg-surface-raised text-fg-primary rounded-full text-sm">
                   Innovation
@@ -117,7 +117,7 @@ export default function BitBaumAboutPage() {
 
         {/* Values */}
         <div className="mb-16">
-          <h3 className="text-3xl font-bold text-fg-primary text-center mb-12">BitBaum Values</h3>
+          <h3 className="text-3xl font-bold text-fg-primary text-center mb-12">bitbaum Values</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="text-center">
               <div className="w-16 h-16 bg-surface-raised border border-subtle rounded-full flex items-center justify-center mx-auto mb-4">
@@ -173,9 +173,10 @@ export default function BitBaumAboutPage() {
                   <span className="text-fg-inverted text-sm font-bold">1</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-fg-primary">Founded in Switzerland</h4>
+                  <h4 className="font-semibold text-fg-primary">Started in Switzerland</h4>
                   <p className="text-fg-secondary text-sm">
-                    BitBaum AG established as a Swiss company committed to Bitcoin innovation.
+                    bitbaum began in Switzerland as a place to build Bitcoin-native products in the
+                    open.
                   </p>
                 </div>
               </div>
