@@ -10,6 +10,7 @@ import {
   usernameOf,
 } from '@/domain/profileClaims/unclaimed';
 import { getEntityStewardUserId } from '@/domain/profileClaims/stewardship';
+import { getLokiProjectLink } from '@/services/loki/project-link';
 import { SetUpBy } from '@/components/claim/SetUpBy';
 import { ROUTES } from '@/config/routes';
 import { PublicEntityOwnerBar } from '@/components/public/PublicEntityOwnerBar';
@@ -223,6 +224,13 @@ export default async function PublicProjectPage({ params }: PageProps) {
   const canManage = isOwner || isSteward;
   const isOwnerPreview = !isProjectPubliclyVisible(project.status);
 
+  // Does this project have a public build record in Loki? Resolved here rather
+  // than in the client so a reader who never signs in still gets the link —
+  // the person weighing whether to fund this is exactly who it is for. Falls
+  // back to "not linked" on any failure: a neighbouring product being slow
+  // must never cost this page a render.
+  const lokiBuild = await getLokiProjectLink(id);
+
   // Generate JSON-LD structured data for SEO
   const creatorName = profile?.name || profile?.username || 'Creator';
   const _progress = project.goal_amount
@@ -294,6 +302,7 @@ export default async function PublicProjectPage({ params }: PageProps) {
         project={projectWithProfile}
         sellerReceive={sellerReceive}
         canManage={canManage}
+        lokiBuild={lokiBuild}
       />
     </>
   );

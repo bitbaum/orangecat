@@ -66,6 +66,19 @@ export const ECOSYSTEM = {
 export const ECOSYSTEM_STACK_LINE =
   'the economy, the execution that gets the work done, and the governance that keeps both honest';
 
+/**
+ * Endpoints OrangeCat calls ON a sibling product.
+ *
+ * Here for the same reason API_ROUTES exists one file over — a path typed at
+ * the call site is a path nobody can find when it moves — and here rather than
+ * there because these are somebody else's routes, answering to somebody else's
+ * release. The origin they hang off is already in ECOSYSTEM above.
+ */
+export const LOKI_ENDPOINTS = {
+  /** "Is this OrangeCat project already being built in Loki?" — public, cached. */
+  projectLink: '/api/orangecat/project-link',
+} as const;
+
 export const ECOSYSTEM_LINKS = {
   mao: ECOSYSTEM.orangeCat.profileUrl,
   orangeCat: orangeCatPage(`/projects/${ECOSYSTEM.orangeCat.projectId}`),

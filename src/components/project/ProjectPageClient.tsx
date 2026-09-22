@@ -12,6 +12,7 @@ import { getStatusInfo } from '@/config/status-config';
 import { PublicEntityPaymentSection } from '@/components/payment';
 import { Z_INDEX_CLASSES } from '@/constants/z-index';
 import type { SellerReceiveInfo } from '@/domain/payments';
+import type { LokiProjectLink } from '@/services/loki/project-link';
 
 const MissingWalletBanner = dynamic(() => import('@/components/project/MissingWalletBanner'));
 const ProjectShare = dynamic(() => import('@/components/sharing/ProjectShare'));
@@ -21,6 +22,7 @@ const ProjectHeader = dynamic(() => import('@/components/project/ProjectHeader')
 const ProjectContent = dynamic(() => import('@/components/project/ProjectContent'));
 const ProjectTimeline = dynamic(() => import('@/components/project/ProjectTimeline'));
 const LokiBuildCta = dynamic(() => import('@/components/integrations/LokiBuildCta'));
+const LokiBuildRecordCard = dynamic(() => import('@/components/integrations/LokiBuildRecordCard'));
 
 interface Project {
   id: string;
@@ -73,6 +75,8 @@ interface ProjectPageClientProps {
    * belongs to.
    */
   canManage?: boolean;
+  /** What Loki says about this project, resolved on the server. */
+  lokiBuild?: LokiProjectLink | null;
 }
 
 /**
@@ -85,6 +89,7 @@ export default function ProjectPageClient({
   project,
   sellerReceive,
   canManage,
+  lokiBuild,
 }: ProjectPageClientProps) {
   const router = useRouter();
   const { user } = useAuth();
@@ -209,15 +214,23 @@ export default function ProjectPageClient({
               isOwner={isOwner}
             />
 
-            {/* Cross-sell: owners can run AI agents on this project in
-                Loki (sibling product, shared OrangeCat login). */}
-            {isOwner && (
-              <LokiBuildCta
-                variant="card"
-                entityType="project"
-                entityId={project.id}
-                sourcePath={ROUTES.PROJECTS.VIEW(project.id)}
-              />
+            {/* Two states, never both. A project already building in Loki
+                shows its build record — to EVERYONE, because the reader who
+                needs it most is the one deciding whether to fund this. A
+                project that is not shows the owner how to start one. Offering
+                to create what someone already has is how a page tells its most
+                invested reader it has not been paying attention. */}
+            {lokiBuild?.linked && lokiBuild.profileUrl ? (
+              <LokiBuildRecordCard profileUrl={lokiBuild.profileUrl} projectName={lokiBuild.name} />
+            ) : (
+              isOwner && (
+                <LokiBuildCta
+                  variant="card"
+                  entityType="project"
+                  entityId={project.id}
+                  sourcePath={ROUTES.PROJECTS.VIEW(project.id)}
+                />
+              )
             )}
           </div>
         </div>
