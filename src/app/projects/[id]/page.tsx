@@ -11,6 +11,7 @@ import {
 } from '@/domain/profileClaims/unclaimed';
 import { getEntityStewardUserId } from '@/domain/profileClaims/stewardship';
 import { getLokiProjectLink } from '@/services/loki/project-link';
+import { buildProjectStructuredData } from './structuredData';
 import { SetUpBy } from '@/components/claim/SetUpBy';
 import { ROUTES } from '@/config/routes';
 import { PublicEntityOwnerBar } from '@/components/public/PublicEntityOwnerBar';
@@ -237,40 +238,17 @@ export default async function PublicProjectPage({ params }: PageProps) {
     ? Math.round((Number(settledRaised) / Number(project.goal_amount)) * 100)
     : 0;
 
-  const structuredData = {
-    '@context': 'https://schema.org',
-    '@type': 'CreativeWork',
-    name: project.title,
-    description: project.description || `Support ${project.title} on ${APP_NAME}`,
-    url: `${SITE_URL}/projects/${id}`,
-    creator: {
-      '@type': 'Person',
-      name: creatorName,
-      ...(profile?.username && { url: `${SITE_URL}/profiles/${profile.username}` }),
-    },
-    ...(project.goal_amount && {
-      funding: {
-        '@type': 'MonetaryGrant',
-        amount: {
-          '@type': 'MonetaryAmount',
-          value: project.goal_amount,
-          currency: project.currency || 'BTC',
-        },
-        ...(settledRaised !== null &&
-          settledRaised > 0 && {
-            amountRaised: {
-              '@type': 'MonetaryAmount',
-              value: settledRaised,
-              currency: project.currency || 'BTC',
-            },
-          }),
-      },
-    }),
-    ...(project.bitcoin_address && {
-      paymentAccepted: 'Bitcoin',
-      bitcoinAddress: project.bitcoin_address,
-    }),
-  };
+  const structuredData = buildProjectStructuredData({
+    id,
+    title: project.title,
+    description: project.description,
+    goalAmount: project.goal_amount,
+    currency: project.currency,
+    bitcoinAddress: project.bitcoin_address,
+    settledRaised: settledRaised === null ? null : Number(settledRaised),
+    creatorName,
+    creatorUsername: profile?.username ?? null,
+  });
 
   // Pass data to client component for interactivity
   return (
