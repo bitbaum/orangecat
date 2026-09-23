@@ -170,7 +170,7 @@ const fieldGroups: FieldGroup[] = [
   },
   {
     id: 'payment',
-    title: 'Payments (public companions)',
+    title: 'Pay into',
     description:
       'Wallet for receiving payments. Per-message pricing is charged from the chatter’s Cat Credits — you keep all of it as spendable credits.',
     customComponent: WalletSelectorField,
