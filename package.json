@@ -220,7 +220,7 @@
     "playwright": "^1.62.1",
     "prettier": "^3.9.6",
     "shadcn": "^4.21.0",
-    "supabase": "^2.116.0",
+    "supabase": "^2.117.0",
     "typescript": "^6.0.3",
     "vitest": "^4.1.11",
     "wait-on": "^9.1.0",
