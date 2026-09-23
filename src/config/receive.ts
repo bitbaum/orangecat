@@ -14,6 +14,7 @@
  */
 
 import { TIP_MIN_BTC, TIP_MAX_BTC, TIP_POLL_INTERVAL_MS } from './tips';
+import { WALLET_PROVIDERS } from './wallet-providers';
 
 /** Same sane bounds as tips — a receive request is the same economic object. */
 export const RECEIVE_MIN_BTC = TIP_MIN_BTC;
@@ -22,12 +23,25 @@ export const RECEIVE_POLL_INTERVAL_MS = TIP_POLL_INTERVAL_MS;
 
 /**
  * Where the owner opens the wallet that actually holds the coins.
- * Only hosts we know. A saved address must not become a link we did not mean.
+ * The host of the Lightning address must be a provider we already list.
+ * Anything else stays plain text, so a saved address cannot become a link.
  */
 export function walletAppUrl(destination: string): string | null {
-  const host = destination.slice(destination.lastIndexOf('@') + 1).toLowerCase();
-  if (host === 'coinos.io') {
-    return 'https://coinos.io';
+  const at = destination.lastIndexOf('@');
+  if (at < 1) {
+    return null;
+  }
+  const host = destination.slice(at + 1).toLowerCase();
+  for (const provider of Object.values(WALLET_PROVIDERS)) {
+    let site: URL;
+    try {
+      site = new URL(provider.website);
+    } catch {
+      continue;
+    }
+    if (site.hostname === host || site.hostname === `www.${host}`) {
+      return provider.website;
+    }
   }
   return null;
 }
