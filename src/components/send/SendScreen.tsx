@@ -205,20 +205,30 @@ export function SendScreen() {
 
                 <RecipientStatus check={recipientCheck} handle={recipient} />
 
-                <AmountField
-                  value={amount}
-                  onChange={setAmount}
-                  minBtc={PAY_MIN_BTC}
-                  maxBtc={PAY_MAX_BTC}
-                />
-
-                <Input
-                  label={SEND_COPY.memoLabel}
-                  value={memo}
-                  onChange={e => setMemo(e.target.value.slice(0, SEND_NOTE_MAX_LENGTH))}
-                  placeholder={SEND_COPY.memoPlaceholder}
-                  className="min-h-11"
-                />
+                {recipientCheck.payable && (
+                  <>
+                    <AmountField
+                      value={amount}
+                      onChange={setAmount}
+                      minBtc={PAY_MIN_BTC}
+                      maxBtc={PAY_MAX_BTC}
+                    />
+                    <details className="rounded-lg border border-subtle">
+                      <summary className="flex min-h-11 cursor-pointer list-none items-center px-3 text-sm text-fg-secondary [&::-webkit-details-marker]:hidden">
+                        {SEND_COPY.memoLabel}
+                      </summary>
+                      <div className="px-3 pb-3">
+                        <Input
+                          label={SEND_COPY.memoLabel}
+                          value={memo}
+                          onChange={e => setMemo(e.target.value.slice(0, SEND_NOTE_MAX_LENGTH))}
+                          placeholder={SEND_COPY.memoPlaceholder}
+                          className="min-h-11"
+                        />
+                      </div>
+                    </details>
+                  </>
+                )}
               </>
             ) : (
               <>
@@ -247,7 +257,9 @@ export function SendScreen() {
             )}
 
             {error && <p className="text-sm text-status-negative">{error}</p>}
-            <p className="text-center text-xs text-fg-tertiary">{SEND_COPY.disclaimer}</p>
+            {tab === 'invoice' && (
+              <p className="text-center text-xs text-fg-tertiary">{SEND_COPY.disclaimer}</p>
+            )}
 
             <MoneyActionBar>
               <Button

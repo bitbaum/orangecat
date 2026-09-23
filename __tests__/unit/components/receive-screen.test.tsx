@@ -38,6 +38,7 @@ describe('ReceiveScreen', () => {
     render(<ReceiveScreen />);
 
     expect(await screen.findByText('Your pay link')).toBeTruthy();
+    expect(screen.getByText('Where this goes')).toBeTruthy();
     expect(screen.getByText('catomean@orangecat.ch')).toBeTruthy();
     expect(screen.getByText(/old name still pays/i)).toBeTruthy();
     const destination = screen.getByRole('link', { name: 'orangecat@coinos.io' });

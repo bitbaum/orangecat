@@ -58,7 +58,7 @@ export const RECEIVE_SHARE_COPY = {
 
 export const RECEIVE_COPY = {
   title: 'Receive',
-  subtitle: 'Share this. The person paying needs a Bitcoin wallet, not an OrangeCat account.',
+  subtitle: 'Anyone with a Bitcoin wallet can pay you.',
   addressLabel: 'Your name',
   addressHint:
     'The same door, for a wallet app. A rename changes the name we show. The old name still pays.',
