@@ -184,7 +184,7 @@
     "tailwindcss-animate": "^1.0.7",
     "threadkit": "^0.1.1",
     "tiny-secp256k1": "^2.2.4",
-    "uuid": "^14.0.0",
+    "uuid": "^14.0.2",
     "zod": "^4.5.4",
     "zustand": "^5.0.15"
   },
