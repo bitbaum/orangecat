@@ -15,9 +15,10 @@
  */
 
 import { useState } from 'react';
-import { Cat, ArrowRight, ArrowLeft, Sparkles, Plus, MessageCircle } from 'lucide-react';
-import Link from 'next/link';
+import { Cat, ArrowLeft, Sparkles } from 'lucide-react';
 import Button from '@/components/ui/Button';
+import { OnboardingOffers } from '@/components/onboarding/OnboardingOffers';
+import { OnboardingPay } from '@/components/onboarding/OnboardingPay';
 import Input from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
 import { DictationButton } from '@/components/ui/DictationButton';
@@ -30,9 +31,7 @@ import { unwrapApiResponse } from '@/lib/api/client-response';
 import { ROUTES } from '@/config/routes';
 import { FEATURES } from '@/config/features';
 import { ONBOARDING_METHOD } from '@/config/onboarding';
-import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { useCatHealth } from '@/hooks/useCatHealth';
-import { CatStatusNote } from '@/components/ai-chat/CatStatusNote';
 import type { ProposedOffer } from '@/services/cat/offer-engine';
 
 const EXAMPLE_PROMPTS = [
@@ -46,12 +45,13 @@ const EXAMPLE_PROMPTS = [
 
 export default function IntelligentOnboarding() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [displayName, setDisplayName] = useState('');
   const [description, setDescription] = useState('');
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [offers, setOffers] = useState<ProposedOffer[] | null>(null);
+  const [askPay, setAskPay] = useState(false);
   const [genError, setGenError] = useState<string | null>(null);
   // When offers come back empty, the platform LLM being down produces the exact
   // same empty result as genuinely thin input — probe Cat's health to tell them
@@ -74,6 +74,16 @@ export default function IntelligentOnboarding() {
     }).catch(err => {
       logger.error('Failed to mark intelligent onboarding complete', err, 'IntelligentOnboarding');
     });
+  };
+
+  // Name and bio are saved. Ask where money should land before the offerings.
+  // Skip is allowed — the Cat still works without a receive destination.
+  const handleAskPay = () => {
+    if (!canSubmit || isGenerating) {
+      return;
+    }
+    persistProfile();
+    setAskPay(true);
   };
 
   // Primary path: turn the pasted description into concrete offerings right here.
@@ -124,7 +134,17 @@ export default function IntelligentOnboarding() {
       <div className="w-full max-w-lg">
         {/* Back navigation */}
         <button
-          onClick={() => (offers ? setOffers(null) : router.back())}
+          onClick={() => {
+            if (offers) {
+              setOffers(null);
+              return;
+            }
+            if (askPay) {
+              setAskPay(false);
+              return;
+            }
+            router.back();
+          }}
           className="flex items-center gap-1.5 text-sm text-fg-secondary hover:text-fg-primary mb-6 transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -146,6 +166,16 @@ export default function IntelligentOnboarding() {
                 — or refine them in a chat.
               </p>
             </>
+          ) : askPay ? (
+            <>
+              <h1 className="mb-2 text-2xl font-bold text-fg-primary">
+                How should people pay you?
+              </h1>
+              <p className="text-fg-secondary">
+                Paste what your Bitcoin app shows under Receive. OrangeCat does not hold the money.
+                You can skip this.
+              </p>
+            </>
           ) : (
             <>
               <h1 className="text-2xl font-bold text-fg-primary mb-2">Tell Cat who you are</h1>
@@ -158,77 +188,21 @@ export default function IntelligentOnboarding() {
         </div>
 
         {offers ? (
-          /* ---- Offers view ---- */
           <div className="space-y-4">
-            {offers.length === 0 ? (
-              <div className="rounded-md border border-subtle bg-surface-page p-6 text-center">
-                {health && !health.catCanAnswer ? (
-                  // Real cause: the AI layer is down, not thin input.
-                  <CatStatusNote health={health} />
-                ) : (
-                  <>
-                    <p className="text-fg-secondary mb-4">
-                      Cat needs a little more to go on. Tell it more in a chat and it&apos;ll
-                      suggest offerings as you talk.
-                    </p>
-                    <Button
-                      onClick={handleStartChat}
-                      disabled={isRedirecting}
-                      className="bg-fg-primary text-fg-inverted hover:bg-fg-primary/90"
-                    >
-                      <MessageCircle className="h-4 w-4 mr-2" />
-                      Chat with Cat
-                    </Button>
-                  </>
-                )}
-              </div>
-            ) : (
-              <>
-                {offers.map((offer, i) => {
-                  const meta = ENTITY_REGISTRY[offer.entityType];
-                  if (!meta) {
-                    return null;
-                  }
-                  const href = `${meta.createPath}?description=${encodeURIComponent(offer.description)}`;
-                  return (
-                    <div
-                      key={`${offer.entityType}-${i}`}
-                      data-testid="offer-card"
-                      className="rounded-md border border-subtle bg-surface-page p-5"
-                    >
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="inline-flex items-center rounded-full border border-default bg-surface-raised px-2.5 py-0.5 text-xs font-medium text-fg-primary">
-                          {meta.name}
-                        </span>
-                      </div>
-                      <p className="text-sm text-fg-primary mb-2">{offer.description}</p>
-                      {offer.rationale && (
-                        <p className="text-xs text-fg-tertiary mb-4">{offer.rationale}</p>
-                      )}
-                      <Link href={href}>
-                        <Button
-                          variant="accent"
-                          size="sm"
-                          className="w-full sm:w-auto"
-                          data-testid="offer-create"
-                        >
-                          <Plus className="h-4 w-4 mr-2" />
-                          Create this
-                          <ArrowRight className="h-4 w-4 ml-2" />
-                        </Button>
-                      </Link>
-                    </div>
-                  );
-                })}
-                <button
-                  onClick={handleStartChat}
-                  className="w-full text-center text-sm text-fg-secondary hover:text-fg-primary transition-colors py-2"
-                >
-                  Or refine these with your Cat in a chat →
-                </button>
-              </>
-            )}
+            <OnboardingOffers
+              offers={offers}
+              health={health}
+              isRedirecting={isRedirecting}
+              onChat={handleStartChat}
+            />
           </div>
+        ) : askPay ? (
+          <OnboardingPay
+            profileId={profile?.id ?? user?.id}
+            onDone={() => {
+              void handleSeeOffers();
+            }}
+          />
         ) : (
           /* ---- Input view ---- */
           <div className="space-y-4 rounded-md border border-subtle bg-surface-page p-6">
@@ -292,7 +266,7 @@ export default function IntelligentOnboarding() {
 
             <Button
               data-testid="onboarding-see-offers"
-              onClick={handleSeeOffers}
+              onClick={handleAskPay}
               disabled={!canSubmit || isGenerating}
               variant="accent"
               className="w-full"

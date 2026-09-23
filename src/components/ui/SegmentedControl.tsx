@@ -41,7 +41,7 @@ interface SegmentedControlProps<T extends string> {
 }
 
 const SEGMENT_BASE =
-  'flex flex-1 min-h-11 items-center justify-center gap-2 rounded-md px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+  'flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-md px-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:gap-2 sm:px-3 sm:text-sm';
 const SEGMENT_ACTIVE = 'bg-surface-base text-fg-primary shadow-sm';
 const SEGMENT_IDLE = 'text-fg-secondary hover:text-fg-primary';
 
