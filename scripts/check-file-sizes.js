@@ -21,8 +21,6 @@ const path = require('path');
 // Exception list (ratchet — may only shrink). Violators as of 2026-08-02.
 // ---------------------------------------------------------------------------
 const EXCEPTIONS = [
-  // Landed on main between this gate's authoring and its merge — baseline, split pending.
-  'src/components/receive/ReceiveScreen.tsx',
   // API routes > 150
   'src/app/api/entities/[entityType]/[id]/status/route.ts',
   'src/app/api/groups/[slug]/events/route.ts',

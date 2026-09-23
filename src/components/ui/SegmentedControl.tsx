@@ -3,9 +3,9 @@
 /**
  * SegmentedControl — SSOT for the pill-in-a-trough switch.
  *
- * It existed three times by copy-paste (the Money tabs, Receive's
- * address/request switch, Send's person/invoice switch) with the class strings
- * typed out again each time — so the three drifted the moment one was touched.
+ * It existed three times by copy-paste (the Money tabs and Send's
+ * person/invoice switch among them) with the class strings typed out again
+ * each time — so they drifted the moment one was touched.
  *
  * Two modes, because a segment is sometimes a route and sometimes local state:
  *  - give an item an `href` and it renders as a link (real navigation, real

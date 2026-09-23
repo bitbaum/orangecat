@@ -1,13 +1,10 @@
 'use client';
 
 /**
- * The Receive/Send toggle shared by both money screens.
+ * Receive, Send, and Request — one money surface, three routes.
  *
- * Receiving and sending are two halves of one act, so they get ONE entry in the
- * sidebar and switch between themselves here — rather than two nav rows in a
- * sidebar the founder already found crowded. This mirrors how every consumer
- * money app groups them (Revolut and Wise both have a single "Payments" tab
- * containing both directions).
+ * They share one sidebar entry and switch here. Receive is "anyone can pay
+ * me". Send is "I pay". Request is "I ask one OrangeCat account".
  */
 
 import { usePathname } from 'next/navigation';
@@ -25,11 +22,6 @@ export function MoneyTabs({ className }: { className?: string }) {
   const pathname = usePathname();
 
   return (
-    <SegmentedControl
-      className={className}
-      label="Money"
-      items={TABS}
-      value={pathname ?? ''}
-    />
+    <SegmentedControl className={className} label="Money" items={TABS} value={pathname ?? ''} />
   );
 }
