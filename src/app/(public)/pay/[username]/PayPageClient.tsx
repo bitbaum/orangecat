@@ -32,7 +32,7 @@ export function PayPageClient({ username, recipientName, canReceive }: PayPageCl
       username={username}
       recipientName={recipientName}
       initialCanReceive={canReceive}
-      initialAmountBtc={prefill.amountBtc}
+      initialAmountBtc={prefill.amountBtc ?? 0}
       words={PAY_COPY}
       noteSlot={
         prefill.note ? (

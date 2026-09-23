@@ -45,7 +45,6 @@ import { parseBolt11 } from '@/lib/bitcoin/bolt11';
 import { haptic } from '@/lib/haptics';
 import { SEND_COPY, SEND_NOTE_MAX_LENGTH } from '@/config/send';
 import { PAY_MAX_BTC, PAY_MIN_BTC } from '@/config/pay';
-import { DEFAULT_TIP_BTC } from '@/config/tips';
 import { ROUTES } from '@/config/routes';
 
 type Tab = 'person' | 'invoice';
@@ -61,7 +60,8 @@ export function SendScreen() {
 
   const [tab, setTab] = useState<Tab>('person');
   const [recipient, setRecipient] = useState('');
-  const [amount, setAmount] = useState(DEFAULT_TIP_BTC);
+  // Empty until typed. A prefilled amount is a payment the person did not choose.
+  const [amount, setAmount] = useState(0);
   const [memo, setMemo] = useState('');
   const [invoice, setInvoice] = useState('');
 

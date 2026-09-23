@@ -17,16 +17,18 @@ import { Button } from '@/components/ui/Button';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { cn } from '@/lib/utils';
 import { buildPayUrl, payLinkOrigin, PAY_COPY } from '@/config/pay';
-import { RECEIVE_SHARE_COPY } from '@/config/receive';
+import { RECEIVE_COPY, RECEIVE_SHARE_COPY } from '@/config/receive';
 
 interface SharePayLinkProps {
   username: string;
+  /** The same door, typed into a wallet app. Not a second way to get paid. */
+  walletAddress?: string | null;
   /** When set, offers a link that pre-fills this amount for the payer. */
   amountBtc?: number;
   className?: string;
 }
 
-export function SharePayLink({ username, amountBtc, className }: SharePayLinkProps) {
+export function SharePayLink({ username, walletAddress, amountBtc, className }: SharePayLinkProps) {
   const { copied, copy } = useCopyToClipboard();
   const [includeAmount, setIncludeAmount] = useState(false);
 
@@ -62,6 +64,13 @@ export function SharePayLink({ username, amountBtc, className }: SharePayLinkPro
       <p className="mt-3 break-all rounded-md bg-surface-base px-3 py-2 font-mono text-xs text-fg-secondary">
         {url}
       </p>
+
+      {walletAddress && (
+        <p className="mt-3 text-sm text-fg-secondary">
+          In a wallet app, <span className="font-mono text-fg-primary">{walletAddress}</span>.{' '}
+          {RECEIVE_COPY.addressHint}
+        </p>
+      )}
 
       {amountBtc !== undefined && amountBtc > 0 && (
         <label className="mt-3 flex items-center gap-2 text-sm text-fg-secondary">
