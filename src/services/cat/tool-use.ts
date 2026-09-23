@@ -25,6 +25,7 @@ import { hasCreateIntent, PLATFORM_TOOL_DEFINITION } from './tool-use-detection'
 import { degradedMessages } from './tool-use-degrade';
 import { ToolTurnState, toolRoutingHistory } from './tool-turn-state';
 import { routeWithFallback, type ToolRoutingStep } from './tool-routing-fallback';
+import { uniqueToolDefinitions } from './tool-definitions';
 import { executeToolCall } from './tool-executor';
 import { WebTurnContext } from './web-research';
 import { extractHttpUrls, isUrlOnlyMessage } from './website-analysis';
@@ -318,7 +319,9 @@ async function runToolLoop(args: {
   const platformTools = offerablePlatformTools(PLATFORM_TOOL_DEFINITION, {
     modelId: modelToUse,
   });
-  const availableTools = actorId ? [...platformTools, ...actionToolDefinitions()] : platformTools;
+  const availableTools = actorId
+    ? uniqueToolDefinitions([...platformTools, ...actionToolDefinitions()])
+    : platformTools;
 
   // Tool detection runs on a SLIM, routing-only prompt — NOT the full
   // conversational system prompt. The big "be a warm helpful agent" prompt
