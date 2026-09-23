@@ -19,6 +19,8 @@ import {
   schemaForAction,
 } from '@/services/cat/action-schemas';
 import { CAT_ACTIONS } from '@/config/cat-actions';
+import { PLATFORM_TOOL_DEFINITION } from '@/services/cat/tool-use-detection';
+import { uniqueToolDefinitions } from '@/services/cat/tool-definitions';
 
 describe('validateActionParameters', () => {
   it('accepts a well-formed call', () => {
@@ -65,7 +67,9 @@ describe('validateActionParameters', () => {
     // BTC is the canonical unit and an amount is never zero or negative;
     // letting one through would put it in a real row.
     expect(validateActionParameters('create_product', { title: 'x', price_btc: 0 }).ok).toBe(false);
-    expect(validateActionParameters('create_product', { title: 'x', price_btc: -1 }).ok).toBe(false);
+    expect(validateActionParameters('create_product', { title: 'x', price_btc: -1 }).ok).toBe(
+      false
+    );
   });
 
   it('passes an undeclared parameter THROUGH to the handler', () => {
@@ -147,5 +151,18 @@ describe('every action in the registry produces a usable schema', () => {
         expect(def.function.parameters.properties[param.name]).toBeDefined();
       }
     }
+  });
+});
+
+describe('platform + action tools are offered without duplicate names', () => {
+  it('dedupes and keeps the platform forget_memories over an action clone', () => {
+    const platform = PLATFORM_TOOL_DEFINITION;
+    const combined = uniqueToolDefinitions([...platform, ...actionToolDefinitions()]);
+    const names = combined.map(tool => tool.function.name);
+    expect(names).toHaveLength(new Set(names).size);
+    expect(combined.find(tool => tool.function.name === 'forget_memories')).toBe(
+      platform.find(tool => tool.function.name === 'forget_memories')
+    );
+    expect(names).toContain('prefill_entity_form');
   });
 });

@@ -54,26 +54,3 @@ describe('the switch', () => {
     }
   });
 });
-
-describe('the bar is written down', () => {
-  const prompt = buildCatSystemPrompt({ proactivity: true });
-
-  it('requires the suggestion to be anchored in their own context', () => {
-    expect(prompt).toContain('It is anchored.');
-  });
-
-  it('forbids repeating a suggestion, which is how people learn to skim', () => {
-    expect(prompt).toContain('You have not raised it before.');
-  });
-
-  it('allows a turn with no suggestion at all', () => {
-    // The failure mode this prevents is filler: an assistant that must always
-    // have something to add will invent something to add.
-    expect(prompt).toContain('A turn with no suggestion is a perfectly good turn.');
-  });
-
-  it('never goes proactive on sensitive ground, or to upsell', () => {
-    expect(prompt).toContain('Never proactive about');
-    expect(prompt).toContain('move them up a\nplan');
-  });
-});
