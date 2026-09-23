@@ -99,7 +99,7 @@ fi
 # GITHUB_SHA in CI; the working tree's HEAD for a local deploy. `unknown` rather
 # than an empty file when neither is available — absent data should read as
 # absent, not as a blank truth.
-DEPLOY_SHA="${GITHUB_SHA:-$(git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null || echo unknown)}"
+DEPLOY_SHA="${DEPLOY_COMMIT_SHA:-${GITHUB_SHA:-$(git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null || echo unknown)}}"
 DEPLOY_REF="${GITHUB_REF_NAME:-$(git -C "$REPO_ROOT" rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)}"
 {
   echo "sha=$DEPLOY_SHA"

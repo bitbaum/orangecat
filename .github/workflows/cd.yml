@@ -33,7 +33,16 @@ on:
     workflows: ['CI']
     types: [completed]
     branches: [main]
-  workflow_dispatch: {} # allow manual redeploy of current main
+  workflow_dispatch:
+    inputs:
+      ci_run_id:
+        description: Successful CI run to reuse (set by the CI handoff)
+        required: false
+        type: string
+      ci_sha:
+        description: Commit verified by that CI run
+        required: false
+        type: string
 
 concurrency:
   group: cd-selfhost
@@ -47,13 +56,12 @@ permissions:
 
 jobs:
   deploy:
-    # Green CI, a manual dispatch — or a CANCELLED CI run, which is not a
-    # verdict. `cancelled` used to be excluded here, and that is how a green,
-    # merged commit silently failed to ship: see the guard step below.
+    # A cancelled CI run has no verdict. Its successful sibling, if any,
+    # triggers CD itself; starting a job here reported a misleading success
+    # after every deploy step was skipped.
     if: >-
       github.event_name == 'workflow_dispatch' ||
-      github.event.workflow_run.conclusion == 'success' ||
-      github.event.workflow_run.conclusion == 'cancelled'
+      github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
@@ -87,17 +95,6 @@ jobs:
       # why there is no literal fallback.
       OC_BOX: ${{ vars.OC_BOX || (vars.HETZNER_IP && format('root@{0}', vars.HETZNER_IP)) }}
     steps:
-      # A CANCELLED CI run is not a failed one, and treating it as one strands
-      # verified work. When several PRs merge inside a couple of minutes, CI's
-      # concurrency group cancels the earlier runs on main; `cancelled` is not
-      # `success`, so this job used to be SKIPPED. A skip turns nothing red —
-      # the PR shows every check green, the merge looks complete, and the box
-      # keeps serving the previous release while /api/health answers 200.
-      # Observed 2026-09-17: four skipped runs in a row, two merged PRs
-      # stranded on a green main.
-      #
-      # So a cancelled run is a question, not an answer: ask the Actions API
-      # whether ANY CI run for this same commit concluded success.
       - name: Guard — was this commit actually verified?
         id: ci
         if: github.event_name != 'workflow_dispatch'
@@ -158,86 +155,9 @@ jobs:
           fi
           echo "deploy target: $OC_BOX"
 
-      - name: Checkout
-        if: steps.guard.outputs.ok == 'true'
-        uses: actions/checkout@v7
-
-      - name: Setup pnpm
-        if: steps.guard.outputs.ok == 'true'
-        uses: pnpm/action-setup@v6
-
-      # setup-pnpm's default store nests inside its own bin dir, which breaks
-      # any prepare-building dep (portable-type TS2742) — pin it outside.
-      - name: Pin pnpm store location
-        if: steps.guard.outputs.ok == 'true'
-        run: pnpm config set store-dir ~/.pnpm-store --global
-
-      - name: Setup Node.js
-        if: steps.guard.outputs.ok == 'true'
-        uses: actions/setup-node@v7
-        with:
-          node-version: 24
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        if: steps.guard.outputs.ok == 'true'
-        run: pnpm install --frozen-lockfile
-
-      - name: Download standalone artifact from the triggering CI run
-        # Ship the EXACT artifact CI built + tested (tested == shipped), and skip
-        # the rebuild. Best-effort: if the download fails — or this is a manual
-        # dispatch with no CI run behind it — the next step falls back to building,
-        # so a broken artifact path can never break deploys (worst case = today).
-        if: steps.guard.outputs.ok == 'true' && github.event_name == 'workflow_run'
-        continue-on-error: true
-        uses: actions/download-artifact@v8
-        with:
-          name: standalone-${{ github.event.workflow_run.head_sha }}
-          path: artifact
-          run-id: ${{ github.event.workflow_run.id }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Unpack standalone artifact
-        # CI ships a tarball, not a directory, so the pnpm symlink farm survives
-        # the round-trip. The assertion below is the point of the whole change: a
-        # standalone tree built under pnpm ALWAYS contains symlinks, and a tree
-        # that lost them boots into `Cannot find module '@swc/helpers/_/…'`.
-        # Zero symlinks is therefore not a warning, it is the bug — fail here,
-        # where the cause is one line away, rather than in a boot test on the box.
-        # Explicitly NOT falling through to a rebuild: a silent rebuild would ship
-        # a green deploy and leave the artifact path broken forever.
-        if: steps.guard.outputs.ok == 'true' && hashFiles('artifact/standalone.tar.gz') != ''
-        run: |
-          mkdir -p .next/standalone
-          tar -xzf artifact/standalone.tar.gz -C .next/standalone
-          links=$(find .next/standalone/node_modules -type l 2>/dev/null | wc -l)
-          echo "symlinks preserved: $links"
-          [ "$links" -gt 0 ] || {
-            echo "ERROR: the unpacked standalone tree has NO symlinks."
-            echo "Next's pnpm output resolves peer deps through them; without"
-            echo "them the app cannot require @swc/helpers and will not boot."
-            exit 1
-          }
-
-      - name: Build standalone if no artifact (fallback / manual dispatch)
-        if: steps.guard.outputs.ok == 'true'
-        env:
-          NODE_ENV: production
-          SELF_HOST: '1'
-        run: |
-          if [ -f .next/standalone/server.js ]; then
-            echo "Using the CI-built standalone artifact — skipping rebuild."
-          else
-            echo "No artifact (manual dispatch or download failed) — building standalone."
-            pnpm run build
-          fi
-
       - name: Configure SSH
         if: steps.guard.outputs.ok == 'true'
         run: |
-          # One source for the box address: the host half of OC_BOX. Repeating
-          # the literal here is how the ssh config and the deploy target drift
-          # apart without anything failing.
           BOX_HOST="${OC_BOX##*@}"
           mkdir -p ~/.ssh
           echo "${{ secrets.SELFHOST_SSH_KEY }}" > ~/.ssh/id_deploy
@@ -254,8 +174,131 @@ jobs:
             IdentitiesOnly yes
           EOF
 
-      - name: Deploy (atomic swap + rollback)
+      - name: Skip commit already live
+        id: live
         if: steps.guard.outputs.ok == 'true'
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || inputs.ci_sha }}
+          CI_RUN_ID: ${{ inputs.ci_run_id }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [ -n "$CI_RUN_ID" ] && [ -z "$EXPECTED_SHA" ]; then
+            echo '::error::ci_run_id requires ci_sha'
+            exit 1
+          fi
+          if [ -n "$EXPECTED_SHA" ] && [ "${{ github.event_name }}" = 'workflow_dispatch' ]; then
+            if [ -z "$CI_RUN_ID" ]; then
+              echo '::error::ci_sha requires ci_run_id'
+              exit 1
+            fi
+            run_sha=$(gh api "repos/$REPO/actions/runs/$CI_RUN_ID" --jq '.head_sha')
+            if [ "$run_sha" != "$EXPECTED_SHA" ]; then
+              echo '::error::CI run SHA does not match ci_sha'
+              exit 1
+            fi
+          fi
+          if [ -z "$EXPECTED_SHA" ]; then
+            echo 'needed=true' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          main_sha=$(gh api "repos/$REPO/commits/main" --jq '.sha')
+          if [ "$main_sha" != "$EXPECTED_SHA" ]; then
+            echo "::notice::CI commit $EXPECTED_SHA is superseded by main $main_sha; skipping stale deploy."
+            echo 'needed=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          live_sha=$(ssh -o BatchMode=yes -o ConnectTimeout=10 "$OC_BOX" \
+            "sed -n 's/^sha=//p' /opt/orangecat/app/.release" 2>/dev/null || true)
+          if [ "$live_sha" = "$EXPECTED_SHA" ]; then
+            echo "::notice::Commit $EXPECTED_SHA is already live; skipping duplicate deploy."
+            echo 'needed=false' >> "$GITHUB_OUTPUT"
+          else
+            echo 'needed=true' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout
+        if: steps.live.outputs.needed == 'true'
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || inputs.ci_sha || github.sha }}
+
+      - name: Setup pnpm
+        if: steps.live.outputs.needed == 'true'
+        uses: pnpm/action-setup@v6
+
+      # setup-pnpm's default store nests inside its own bin dir, which breaks
+      # any prepare-building dep (portable-type TS2742) — pin it outside.
+      - name: Pin pnpm store location
+        if: steps.live.outputs.needed == 'true'
+        run: pnpm config set store-dir ~/.pnpm-store --global
+
+      - name: Setup Node.js
+        if: steps.live.outputs.needed == 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        if: steps.live.outputs.needed == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Download standalone artifact from the triggering CI run
+        # Ship the EXACT artifact CI built + tested (tested == shipped), and skip
+        # the rebuild. Missing artifacts on a successful CI run are an error;
+        # only manual dispatches without a triggering run build locally.
+        if: steps.live.outputs.needed == 'true' && (github.event_name == 'workflow_run' || inputs.ci_run_id != '')
+        uses: actions/download-artifact@v8
+        with:
+          name: standalone-${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || inputs.ci_sha }}
+          path: artifact
+          run-id: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.id || inputs.ci_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Unpack standalone artifact
+        # CI ships a tarball, not a directory, so the pnpm symlink farm survives
+        # the round-trip. The assertion below is the point of the whole change: a
+        # standalone tree built under pnpm ALWAYS contains symlinks, and a tree
+        # that lost them boots into `Cannot find module '@swc/helpers/_/…'`.
+        # Zero symlinks is therefore not a warning, it is the bug — fail here,
+        # where the cause is one line away, rather than in a boot test on the box.
+        # Explicitly NOT falling through to a rebuild: a silent rebuild would ship
+        # a green deploy and leave the artifact path broken forever.
+        if: steps.live.outputs.needed == 'true' && (github.event_name == 'workflow_run' || inputs.ci_run_id != '')
+        run: |
+          test -f artifact/standalone.tar.gz || {
+            echo '::error::CI artifact download returned no standalone.tar.gz'
+            exit 1
+          }
+          mkdir -p .next/standalone
+          tar -xzf artifact/standalone.tar.gz -C .next/standalone
+          links=$(find .next/standalone/node_modules -type l 2>/dev/null | wc -l)
+          echo "symlinks preserved: $links"
+          [ "$links" -gt 0 ] || {
+            echo "ERROR: the unpacked standalone tree has NO symlinks."
+            echo "Next's pnpm output resolves peer deps through them; without"
+            echo "them the app cannot require @swc/helpers and will not boot."
+            exit 1
+          }
+
+      - name: Build standalone if no artifact (fallback / manual dispatch)
+        if: steps.live.outputs.needed == 'true'
+        env:
+          NODE_ENV: production
+          SELF_HOST: '1'
+        run: |
+          if [ -f .next/standalone/server.js ]; then
+            echo "Using the CI-built standalone artifact — skipping rebuild."
+          else
+            echo "No artifact (manual dispatch or download failed) — building standalone."
+            pnpm run build
+          fi
+
+      - name: Deploy (atomic swap + rollback)
+        if: steps.live.outputs.needed == 'true'
+        env:
+          DEPLOY_COMMIT_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || inputs.ci_sha || github.sha }}
         run: |
           eval "$(ssh-agent -s)"
           ssh-add ~/.ssh/id_deploy
