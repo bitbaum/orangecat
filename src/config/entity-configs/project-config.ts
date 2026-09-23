@@ -82,8 +82,8 @@ const fieldGroups: FieldGroup[] = [
   },
   {
     id: 'bitcoin',
-    title: 'Bitcoin & Payments',
-    description: 'Select a wallet or enter an address',
+    title: 'Pay into',
+    description: 'Where money for this page should land',
     customComponent: WalletSelectorField,
     fields: [
       { name: 'bitcoin_address', label: 'Bitcoin Address', type: 'bitcoin_address' },

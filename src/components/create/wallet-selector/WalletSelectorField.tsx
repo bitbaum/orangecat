@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Wallet as WalletIcon, PenLine, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { Input } from '@/components/ui/Input';
 import { detectWalletType, type Wallet } from '@/types/wallet';
+import { PAY_DESTINATION_COPY } from '@/config/pay-destination';
 import { WalletCard } from './WalletCard';
+import { WalletPasteField } from './WalletPasteField';
+import { applyWalletSelection } from './applyWalletSelection';
 import { API_ROUTES } from '@/config/api-routes';
 
 interface WalletSelectorFieldProps {
@@ -14,14 +16,15 @@ interface WalletSelectorFieldProps {
   disabled?: boolean;
 }
 
-type Mode = 'select' | 'manual';
+type Mode = 'select' | 'paste';
 
 export function WalletSelectorField({
   formData,
   onFieldChange,
   disabled = false,
 }: WalletSelectorFieldProps) {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
+  const profileId = profile?.id ?? user?.id;
   const [wallets, setWallets] = useState<Wallet[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -31,8 +34,9 @@ export function WalletSelectorField({
   );
 
   const fetchWallets = useCallback(async () => {
-    if (!profile?.id) {
+    if (!profileId) {
       setIsLoading(false);
+      setMode('paste');
       return;
     }
 
@@ -42,7 +46,7 @@ export function WalletSelectorField({
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-      const response = await fetch(`${API_ROUTES.WALLETS.BASE}?profile_id=${profile.id}`, {
+      const response = await fetch(`${API_ROUTES.WALLETS.BASE}?profile_id=${profileId}`, {
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
@@ -51,21 +55,21 @@ export function WalletSelectorField({
         const result = await response.json();
         const data = Array.isArray(result.data) ? result.data : [];
         setWallets(data);
-        // If no wallets, default to manual mode
+        // No saved destination: the paste box, never two protocol fields.
         if (data.length === 0) {
-          setMode('manual');
+          setMode('paste');
         }
       } else {
         setFetchError('Could not load wallets');
-        setMode('manual');
+        setMode('paste');
       }
     } catch {
       setFetchError('Could not load wallets');
-      setMode('manual');
+      setMode('paste');
     } finally {
       setIsLoading(false);
     }
-  }, [profile?.id]);
+  }, [profileId]);
 
   useEffect(() => {
     fetchWallets();
@@ -90,9 +94,7 @@ export function WalletSelectorField({
 
     const primary = wallets.find(w => w.is_primary) ?? wallets[0];
     setSelectedWalletId(primary.id);
-    onFieldChange('bitcoin_address', primary.address_or_xpub);
-    onFieldChange('lightning_address', primary.lightning_address || '');
-    onFieldChange('_wallet_id', primary.id);
+    applyWalletSelection(onFieldChange, primary);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- run once after wallets load
   }, [wallets]);
 
@@ -100,9 +102,7 @@ export function WalletSelectorField({
   // makes those pages publicly linkable on-chain. Warn at the moment of
   // attachment — including the silent auto-preselect above — so reuse is a
   // choice, not an accident. Best-effort: a failed lookup shows no warning.
-  const [reuseInfo, setReuseInfo] = useState<{ count: number; isXpubWallet: boolean } | null>(
-    null
-  );
+  const [reuseInfo, setReuseInfo] = useState<{ count: number; isXpubWallet: boolean } | null>(null);
   useEffect(() => {
     if (!selectedWalletId) {
       setReuseInfo(null);
@@ -116,7 +116,9 @@ export function WalletSelectorField({
     fetch(`${API_ROUTES.ENTITY_WALLETS}?wallet_id=${selectedWalletId}`)
       .then(res => (res.ok ? res.json() : null))
       .then(result => {
-        if (cancelled || !result) {return;}
+        if (cancelled || !result) {
+          return;
+        }
         const rows: Array<{ entity_id: string }> = Array.isArray(result.data) ? result.data : [];
         // In edit mode the entity's own existing link must not count as reuse.
         const currentEntityId = formData.id as string | undefined;
@@ -124,7 +126,9 @@ export function WalletSelectorField({
         setReuseInfo({ count, isXpubWallet });
       })
       .catch(() => {
-        if (!cancelled) {setReuseInfo(null);}
+        if (!cancelled) {
+          setReuseInfo(null);
+        }
       });
     return () => {
       cancelled = true;
@@ -134,26 +138,16 @@ export function WalletSelectorField({
 
   const handleSelectWallet = (wallet: Wallet) => {
     setSelectedWalletId(wallet.id);
-    onFieldChange('bitcoin_address', wallet.address_or_xpub);
-    onFieldChange('lightning_address', wallet.lightning_address || '');
-    onFieldChange('_wallet_id', wallet.id);
+    applyWalletSelection(onFieldChange, wallet);
   };
 
-  const handleSwitchToManual = () => {
-    setMode('manual');
-    setSelectedWalletId(null);
-    onFieldChange('_wallet_id', undefined);
-  };
-
-  const handleSwitchToSelect = () => {
+  const handleWalletSaved = (wallet: Wallet) => {
+    setWallets(prev =>
+      prev.some(existing => existing.id === wallet.id) ? prev : [...prev, wallet]
+    );
+    setSelectedWalletId(wallet.id);
+    applyWalletSelection(onFieldChange, wallet);
     setMode('select');
-    // Clear manual entries if switching back
-    if (wallets.length > 0) {
-      onFieldChange('bitcoin_address', '');
-      onFieldChange('lightning_address', '');
-      onFieldChange('_wallet_id', undefined);
-      setSelectedWalletId(null);
-    }
   };
 
   if (isLoading) {
@@ -167,41 +161,9 @@ export function WalletSelectorField({
 
   return (
     <div className="space-y-4">
-      {/* Mode toggle - only show if wallets exist */}
-      {wallets.length > 0 && (
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={handleSwitchToSelect}
-            disabled={disabled}
-            className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg border text-sm transition-colors ${
-              mode === 'select'
-                ? 'border-fg-primary bg-surface-raised/40 text-fg-primary font-medium'
-                : 'border-default text-fg-secondary hover:border-strong dark:hover:border-default'
-            }`}
-          >
-            <WalletIcon className="w-4 h-4" />
-            Select from wallets
-          </button>
-          <button
-            type="button"
-            onClick={handleSwitchToManual}
-            disabled={disabled}
-            className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg border text-sm transition-colors ${
-              mode === 'manual'
-                ? 'border-fg-primary bg-surface-raised/40 text-fg-primary font-medium'
-                : 'border-default text-fg-secondary hover:border-strong dark:hover:border-default'
-            }`}
-          >
-            <PenLine className="w-4 h-4" />
-            Enter manually
-          </button>
-        </div>
-      )}
-
-      {/* Select mode */}
       {mode === 'select' && wallets.length > 0 && (
         <>
+          <p className="text-sm font-medium text-fg-primary">{PAY_DESTINATION_COPY.payInto}</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {wallets.map(wallet => (
               <WalletCard
@@ -216,50 +178,39 @@ export function WalletSelectorField({
           {reuseInfo && reuseInfo.count > 0 && !reuseInfo.isXpubWallet && (
             <p className="rounded-lg border border-status-warning/40 bg-status-warning-subtle px-3 py-2 text-xs text-fg-secondary">
               This wallet already receives funds for {reuseInfo.count} other{' '}
-              {reuseInfo.count === 1 ? 'page' : 'pages'}. On-chain payments to the same address
-              are publicly linkable — anyone can connect these pages on the blockchain. For
-              separate identities, pick a different wallet, or use an xpub wallet to get a fresh
-              address per payment.
+              {reuseInfo.count === 1 ? 'page' : 'pages'}. On-chain payments to the same address are
+              publicly linkable — anyone can connect these pages on the blockchain. For separate
+              identities, pick a different wallet, or use an xpub wallet to get a fresh address per
+              payment.
             </p>
           )}
           {reuseInfo && reuseInfo.count > 0 && reuseInfo.isXpubWallet && (
             <p className="text-xs text-fg-secondary">
               This wallet collects for {reuseInfo.count} other{' '}
-              {reuseInfo.count === 1 ? 'page' : 'pages'}, but it derives a fresh address per
-              payment — payments aren&apos;t linkable on-chain.
+              {reuseInfo.count === 1 ? 'page' : 'pages'}, but it derives a fresh address per payment
+              — payments aren&apos;t linkable on-chain.
             </p>
           )}
+          <button
+            type="button"
+            onClick={() => setMode('paste')}
+            disabled={disabled}
+            className="text-sm font-medium text-accent-warm underline hover:text-accent-warm-hover disabled:opacity-50"
+          >
+            {PAY_DESTINATION_COPY.differentDestination}
+          </button>
         </>
       )}
 
-      {/* Manual mode */}
-      {mode === 'manual' && (
-        <div className="space-y-3">
-          <div>
-            <label className="block text-sm font-medium mb-1">Bitcoin Address</label>
-            <Input
-              value={(formData.bitcoin_address as string) || ''}
-              onChange={e => onFieldChange('bitcoin_address', e.target.value)}
-              placeholder="bc1q... or 1..."
-              disabled={disabled}
-            />
-            <p className="text-xs text-fg-secondary mt-1">
-              Your Bitcoin address for receiving funding
-            </p>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Lightning Address</label>
-            <Input
-              value={(formData.lightning_address as string) || ''}
-              onChange={e => onFieldChange('lightning_address', e.target.value)}
-              placeholder="you@lightning.address"
-              disabled={disabled}
-            />
-            <p className="text-xs text-fg-secondary mt-1">
-              Optional: Lightning Network address for instant payments
-            </p>
-          </div>
-        </div>
+      {mode === 'paste' && (
+        <WalletPasteField
+          profileId={profileId}
+          defaultLabel={wallets.length === 0 ? 'Main' : 'Another destination'}
+          hideIntro={wallets.length > 0}
+          cancelLabel={wallets.length > 0 ? PAY_DESTINATION_COPY.back : undefined}
+          onCancel={wallets.length > 0 ? () => setMode('select') : undefined}
+          onSaved={handleWalletSaved}
+        />
       )}
 
       {fetchError && wallets.length === 0 && (

@@ -15,8 +15,9 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { Clock, Copy, Check, Loader2, Share2, Wallet, Zap } from 'lucide-react';
+import { Clock, Copy, Check, Loader2, Share2, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { ReceiveSetup } from '@/components/receive/ReceiveSetup';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { PageHeading } from '@/components/layout/PageHeading';
 import { PaymentQRCode } from '@/components/payment/PaymentQRCode';
@@ -43,13 +44,11 @@ import {
 } from '@/config/receive';
 import { QR_RENDER } from '@/config/payment-qr';
 import { DEFAULT_TIP_BTC } from '@/config/tips';
-import { ROUTES } from '@/config/routes';
-
 type Tab = 'address' | 'request';
 type SettleState = 'pending' | 'paid' | 'expired';
 
 export function ReceiveScreen() {
-  const { user, isLoading: authLoading } = useRequireAuth();
+  const { user, profile, isLoading: authLoading } = useRequireAuth();
   const { copied, copy } = useCopyToClipboard();
 
   const [loading, setLoading] = useState(true);
@@ -169,14 +168,25 @@ export function ReceiveScreen() {
   const canReceive = !!overview?.rail;
   if (!canReceive) {
     return (
-      <div className="mx-auto flex max-w-md flex-col items-center gap-4 px-4 py-16 text-center">
-        <Wallet className="h-12 w-12 text-fg-tertiary" />
-        <h2 className="text-lg font-semibold text-fg-primary">{RECEIVE_COPY.noWalletTitle}</h2>
-        <p className="text-sm text-fg-secondary">{RECEIVE_COPY.noWalletBody}</p>
-        <Button variant="accent" href={ROUTES.DASHBOARD.WALLETS}>
-          {RECEIVE_COPY.noWalletCta}
-        </Button>
-      </div>
+      <ReceiveSetup
+        profileId={profile?.id ?? user?.id}
+        onConnected={() => {
+          if (!user?.id) {
+            return;
+          }
+          void Promise.all([fetchReceiveOverview(), fetchReceiveWallets(user.id).catch(() => [])])
+            .then(([ov, ws]) => {
+              setOverview(ov);
+              setWallets(ws);
+              if (!ov.lightningAddressActive) {
+                setTab('request');
+              }
+            })
+            .catch(() => {
+              setOverview(null);
+            });
+        }}
+      />
     );
   }
 
@@ -187,6 +197,9 @@ export function ReceiveScreen() {
     <div className="mx-auto w-full max-w-md px-4 py-6">
       <PageHeading>{RECEIVE_COPY.title}</PageHeading>
       <p className="mt-1 text-sm text-fg-secondary">{RECEIVE_COPY.subtitle}</p>
+      {overview?.rail === 'onchain' && (
+        <p className="mt-2 text-xs text-fg-tertiary">{RECEIVE_COPY.onchainNote}</p>
+      )}
 
       <MoneyTabs className="mt-5" />
 
@@ -232,9 +245,7 @@ export function ReceiveScreen() {
           </div>
           {/* The QR above serves the person standing in front of you; this
               serves everyone else. Different artifact for a different job. */}
-          {overview?.username && (
-            <SharePayLink username={overview.username} className="w-full" />
-          )}
+          {overview?.username && <SharePayLink username={overview.username} className="w-full" />}
         </div>
       ) : request && settleState === 'paid' ? (
         <MoneyReceipt

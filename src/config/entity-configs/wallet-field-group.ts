@@ -3,7 +3,7 @@ import type { FieldGroup } from '@/components/create/types';
 
 export const WALLET_FIELD_GROUP: FieldGroup = {
   id: 'payment',
-  title: 'Bitcoin & Payments',
-  description: 'Select a wallet or enter an address',
+  title: 'Pay into',
+  description: 'Where money for this page should land',
   customComponent: WalletSelectorField,
 };

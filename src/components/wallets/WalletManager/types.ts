@@ -41,8 +41,14 @@ export interface WalletCardProps {
 export interface WalletFormProps {
   initialData?: Partial<WalletFormData>;
   onSubmit: (data: WalletFormData) => Promise<void>;
-  onCancel: () => void;
+  /** Omit to hide the second button (the paste is optional, not a wall). */
+  onCancel?: () => void;
+  cancelLabel?: string;
   submitLabel?: string;
+  /** Used when the name field is left blank. */
+  defaultLabel?: string;
+  /** Parent already asked the question, so the form heading would repeat it. */
+  hideIntro?: boolean;
   onFieldFocus?: (field: WalletFieldType) => void;
   /**
    * This wallet already has a stored connection (whose secret never reaches the

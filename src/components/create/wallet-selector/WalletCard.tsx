@@ -34,14 +34,11 @@ export function WalletCard({ wallet, selected, onSelect, disabled }: WalletCardP
         <span className="text-lg">{categoryInfo.icon}</span>
         <div className="min-w-0 flex-1">
           <div className="font-medium text-sm truncate">{wallet.label}</div>
-          <div className="text-xs text-fg-secondary mt-0.5 font-mono">
-            {truncateAddress(wallet.address_or_xpub)}
+          <div className="text-xs text-fg-secondary mt-0.5 font-mono truncate">
+            {wallet.address_or_xpub
+              ? truncateAddress(wallet.address_or_xpub)
+              : wallet.lightning_address || 'Connected'}
           </div>
-          {wallet.lightning_address && (
-            <div className="text-xs text-fg-secondary mt-0.5 truncate">
-              {wallet.lightning_address}
-            </div>
-          )}
         </div>
       </div>
     </button>

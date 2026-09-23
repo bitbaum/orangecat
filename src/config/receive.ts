@@ -59,8 +59,8 @@ export const RECEIVE_COPY = {
   onchainSeen: 'Payment seen — waiting for confirmation…',
   undetectableNote:
     'This wallet can’t report payments automatically — confirm receipt in your wallet app.',
-  noWalletTitle: 'Connect a wallet to start receiving',
+  noWalletTitle: 'How should people pay you?',
   noWalletBody:
-    'Add a Lightning or Bitcoin wallet — payments go directly to it, OrangeCat never holds funds.',
-  noWalletCta: 'Set up receiving',
+    'Paste whatever your Bitcoin app shows when you tap Receive. If you do not have one yet, get a free one below and paste what it gives you. You can skip this and come back later.',
+  notNow: 'Not now',
 } as const;

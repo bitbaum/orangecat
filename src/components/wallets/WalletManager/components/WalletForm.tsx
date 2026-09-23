@@ -13,6 +13,7 @@ import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
+import { PAY_DESTINATION_COPY } from '@/config/pay-destination';
 import { LIGHTNING_ADDRESS_PROVIDERS } from '@/config/wallet-providers';
 import {
   WalletFormData,
@@ -44,7 +45,10 @@ export function WalletForm({
   initialData,
   onSubmit,
   onCancel,
+  cancelLabel = 'Cancel',
   submitLabel = 'Save',
+  defaultLabel = 'My wallet',
+  hideIntro = false,
   onFieldFocus,
   hasSavedConnection = false,
 }: WalletFormProps) {
@@ -120,8 +124,8 @@ export function WalletForm({
     ) {
       setError(
         walletInput.trim()
-          ? "Hmm, we couldn't recognize that. Paste a Lightning address (you@wallet.com), a Bitcoin address, or a nostr+walletconnect:// link — or tap “Don't have a wallet?” below."
-          : 'Add your wallet so people can pay you — paste a Lightning address, a Bitcoin address, or a wallet-connect link.'
+          ? "Hmm, we couldn't recognize that. Paste the receive address from your Bitcoin app — or tap “Don't have a wallet?” below."
+          : 'Paste the receive address from your Bitcoin app so people can pay you.'
       );
       return;
     }
@@ -145,7 +149,7 @@ export function WalletForm({
     // Name and category are optional — default them so nothing blocks saving.
     const payload: WalletFormData = {
       ...formData,
-      label: formData.label?.trim() || 'My wallet',
+      label: formData.label?.trim() || defaultLabel,
       category: formData.category || 'general',
       behavior_type: formData.behavior_type || 'general',
     };
@@ -160,6 +164,7 @@ export function WalletForm({
       await onSubmit(payload);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save wallet');
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -168,12 +173,16 @@ export function WalletForm({
 
   return (
     <div className="rounded-lg border border-default bg-surface-raised p-4">
-      <h4 className="mb-1 font-semibold text-fg-primary">
-        {submitLabel === 'Save' ? 'Get paid in Bitcoin' : submitLabel}
-      </h4>
-      <p className="mb-4 text-sm text-fg-secondary">
-        Add where you want the money to land. You can change this anytime.
-      </p>
+      {!hideIntro && (
+        <>
+          <h4 className="mb-1 font-semibold text-fg-primary">
+            {submitLabel === 'Save' ? 'Get paid in Bitcoin' : submitLabel}
+          </h4>
+          <p className="mb-4 text-sm text-fg-secondary">
+            Add where you want the money to land. You can change this anytime.
+          </p>
+        </>
+      )}
 
       {error && <div className="oc-error-surface mb-4 px-4 py-2">{error}</div>}
 
@@ -196,7 +205,7 @@ export function WalletForm({
               value={walletInput}
               onChange={e => handleWalletInput(e.target.value)}
               onFocus={() => onFieldFocus?.('lightningAddress')}
-              placeholder="you@wallet.com  ·  bc1q…  ·  nostr+walletconnect://…"
+              placeholder="you@wallet.com or bc1…"
               autoComplete="off"
               className="h-11"
             />
@@ -214,10 +223,15 @@ export function WalletForm({
           </button>
         </div>
         {detected !== 'unknown' ? (
-          <p className="mt-1.5 flex items-center gap-1 text-xs font-medium text-status-positive">
-            <Check className="h-3.5 w-3.5" />
-            {DETECTED[detected]} detected
-          </p>
+          <>
+            <p className="mt-1.5 flex items-center gap-1 text-xs font-medium text-status-positive">
+              <Check className="h-3.5 w-3.5" />
+              {DETECTED[detected]} detected
+            </p>
+            {detected === 'onchain' && (
+              <p className="mt-1 text-xs text-fg-secondary">{PAY_DESTINATION_COPY.onchainHint}</p>
+            )}
+          </>
         ) : (
           <p className="mt-1.5 text-xs text-fg-secondary">
             Paste whatever your wallet gives you — a Lightning address (like an email for Bitcoin),
@@ -456,9 +470,11 @@ export function WalletForm({
         <Button type="button" onClick={handleSubmit} disabled={isSubmitting} className="flex-1">
           {isSubmitting ? 'Saving…' : submitLabel}
         </Button>
-        <Button type="button" onClick={onCancel} variant="outline">
-          Cancel
-        </Button>
+        {onCancel && (
+          <Button type="button" onClick={onCancel} variant="outline">
+            {cancelLabel}
+          </Button>
+        )}
       </div>
     </div>
   );
