@@ -24,8 +24,8 @@ importers:
         specifier: ^9.1.0
         version: 9.1.0(zod@4.5.4)
       '@bitbaum/ai-kit':
-        specifier: ^1.6.0
-        version: 1.6.0(react@19.2.8)
+        specifier: ^1.11.0
+        version: 1.11.0(react@19.2.8)
       '@bitbaum/mail-kit':
         specifier: ^0.1.1
         version: 0.1.1
@@ -108,8 +108,8 @@ importers:
         specifier: ^2.0.0
         version: 2.0.0
       bip-kit:
-        specifier: ^0.2.7
-        version: 0.2.7(katex@0.16.47)(mermaid@11.17.2)(react@19.2.8)(shiki@4.4.3)
+        specifier: ^0.3.1
+        version: 0.3.1(katex@0.16.47)(mermaid@11.17.2)(react@19.2.8)(shiki@4.4.3)
       bip32:
         specifier: ^5.0.0
         version: 5.0.1(typescript@6.0.3)
@@ -516,8 +516,8 @@ packages:
     resolution: {integrity: sha512-6zABk/ECA/QYSCQ1NGiVwwbQerUCZ+TQbp64Q3AgmfNvurHH0j8TtXa1qbShXA6qqkpAj4V5W8pP6mLe1mcMqA==}
     engines: {node: '>=18'}
 
-  '@bitbaum/ai-kit@1.6.0':
-    resolution: {integrity: sha512-sB/72W28aPJIByXLzaC7nrnUCHvigXOG3bE0BHZKoCDxQvRDAAsVESdqOLpKWS206SWC7XIVIXFT0qa4tYnerQ==}
+  '@bitbaum/ai-kit@1.11.0':
+    resolution: {integrity: sha512-WNprP0kydOfxyFz4itnkbc1Khu2R7CP+z4809usXKFukc+xEiooKT1qKnf0RWu0ti4CIFikz3BluoNlF1Di83w==}
     engines: {node: '>=20'}
     peerDependencies:
       react: '>=18'
@@ -2740,8 +2740,8 @@ packages:
   bidi-js@1.0.3:
     resolution: {integrity: sha512-RKshQI1R3YQ+n9YJz2QQ147P66ELpa1FQEg20Dk8oW9t2KgLbpDLLp9aGZ7y8WHSshDknG0bknqGw5/tyCs5tw==}
 
-  bip-kit@0.2.7:
-    resolution: {integrity: sha512-oe4f2IXAYuOQ1ocDLg0ET27qpNfb7nOSVobFEbu+xLyvluZ1rLygjOhg4b9tB9CxTKb9R35Bh3RdibVLxFAYkw==}
+  bip-kit@0.3.1:
+    resolution: {integrity: sha512-OnkaJiDCRz0UeMifgI8NHnHoaBWyvpYOgdDIfOcxMiIWDWliVyHU+jg5aYX6zccIH15G5uze1vaGJV1XdRDDJg==}
     engines: {node: '>=20'}
     peerDependencies:
       katex: '>=0.16'
@@ -6369,7 +6369,7 @@ snapshots:
 
   '@bcoe/v8-coverage@1.0.2': {}
 
-  '@bitbaum/ai-kit@1.6.0(react@19.2.8)':
+  '@bitbaum/ai-kit@1.11.0(react@19.2.8)':
     dependencies:
       ai-forms: 0.1.2(react@19.2.8)
     optionalDependencies:
@@ -8449,7 +8449,7 @@ snapshots:
     dependencies:
       require-from-string: 2.0.2
 
-  bip-kit@0.2.7(katex@0.16.47)(mermaid@11.17.2)(react@19.2.8)(shiki@4.4.3):
+  bip-kit@0.3.1(katex@0.16.47)(mermaid@11.17.2)(react@19.2.8)(shiki@4.4.3):
     dependencies:
       react: 19.2.8
     optionalDependencies:
