@@ -2,7 +2,7 @@
 
 created_date: 2025-01-01
 last_modified_date: 2026-09-23
-last_modified_summary: Wave-5 Cat cull — folded forget-generic-stem-innocents into memory-forget; compressed hasRichContext matrix in suggestions.
+last_modified_summary: Wave-6 Cat cull — dropped byok active-step source-grep; resolveProvider return is the contract.
 
 ## What we believe
 

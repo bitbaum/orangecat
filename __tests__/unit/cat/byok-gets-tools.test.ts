@@ -18,8 +18,6 @@
  *     layer down: the list is incomplete by construction, and a user can always
  *     bring a model nobody here has catalogued.
  */
-import { readFileSync } from 'fs';
-import { join } from 'path';
 import { maybeEnrichWithSearchResults } from '@/services/cat/tool-use';
 import { declaredToolVerdict, toolPlanForModel } from '@/services/cat/tool-capability';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
@@ -157,25 +155,6 @@ describe('a BYOK user gets the tool loop', () => {
     );
 
     expect(calls).toEqual(['https://openrouter.ai/api/v1/chat/completions']);
-  });
-
-  it('reads the credentials off the ACTIVE step, not off chain[0]', () => {
-    // A metered frontier request REPLACES the primary wholesale and leaves the
-    // rest of the chain as its fallbacks. Reading chain[0] there would point
-    // the tool loop at whatever vendor the user configured first, with that
-    // vendor's key, while the answer itself came from platform OpenRouter.
-    const src = readFileSync(
-      join(__dirname, '../../../src/services/cat/provider-resolver.ts'),
-      'utf8'
-    );
-    expect(src).toContain('toolEndpoint: primary?.toolEndpoint ?? null');
-    expect(src).not.toContain('chain[0]?.toolEndpoint');
-    // And the replacement step must carry its own pair rather than inherit one.
-    expect(src).toMatch(/metered = true;/);
-    const meteredBlock = src.slice(
-      src.indexOf('primary = {', src.indexOf('isPlatformMeteredModel'))
-    );
-    expect(meteredBlock.slice(0, 800)).toContain('toolEndpoint:');
   });
 
   it('gives every platform vendor its OWN endpoint, including local Ollama', async () => {
