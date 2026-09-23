@@ -163,6 +163,14 @@ export function ReceiveScreen() {
         {overview.rail === 'onchain' && (
           <p className="text-xs text-fg-tertiary">{RECEIVE_COPY.onchainNote}</p>
         )}
+        {overview.arrivesAt ? (
+          <p className="text-sm text-fg-secondary">{RECEIVE_COPY.arrivesAt(overview.arrivesAt)}</p>
+        ) : (
+          overview.rail &&
+          overview.rail !== 'onchain' && (
+            <p className="text-sm text-fg-secondary">{RECEIVE_COPY.arrivesInApp}</p>
+          )
+        )}
         {overview.username && <SharePayLink username={overview.username} />}
         {address && (
           <ReceiveAddress

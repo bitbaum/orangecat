@@ -48,6 +48,7 @@ describe('getOwnerReceiveStatus', () => {
       rail: 'nwc',
       lightningAddressActive: true,
       unusableConnectionWalletIds: [],
+      arrivesAt: null,
     });
   });
 
@@ -59,6 +60,7 @@ describe('getOwnerReceiveStatus', () => {
     });
     const status = await getOwnerReceiveStatus('u1');
     expect(status.lightningAddressActive).toBe(true);
+    expect(status.arrivesAt).toBe('a@b.c');
   });
 
   it('does NOT claim a Lightning address when the rail is on-chain', async () => {

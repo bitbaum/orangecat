@@ -21,6 +21,7 @@ vi.mock('@/services/receive/receive-client', () => ({
     lightningAddress: 'catomean@orangecat.ch',
     rail: 'lightning_address',
     lightningAddressActive: true,
+    arrivesAt: 'a@wallet.example',
   }),
   fetchReceiveWallets: async () => [],
   createReceiveRequest: async () => {
@@ -39,6 +40,7 @@ describe('ReceiveScreen', () => {
     expect(screen.getByText('catomean@orangecat.ch')).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Your name' })).toBeTruthy();
     expect(screen.getByText(/old name still pays/i)).toBeTruthy();
+    expect(screen.getByText(/Payments arrive at a@wallet.example/)).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'One amount' })).toBeTruthy();
     expect(screen.queryByRole('tab', { name: 'Request amount' })).toBeNull();
     expect(screen.queryByText('Request amount')).toBeNull();

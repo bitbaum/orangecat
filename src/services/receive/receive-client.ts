@@ -24,6 +24,8 @@ export interface OwnerReceiveOverview {
   lightningAddress: string | null;
   rail: 'nwc' | 'lightning_address' | 'onchain' | null;
   lightningAddressActive: boolean;
+  /** The wallet a payment settles into, when we can name it. */
+  arrivesAt: string | null;
 }
 
 export interface ReceiveWalletOption {
@@ -42,7 +44,11 @@ export async function fetchReceiveOverview(): Promise<OwnerReceiveOverview> {
 /** The owner's active wallets, for the receive-with switcher. */
 export async function fetchReceiveWallets(profileId: string): Promise<ReceiveWalletOption[]> {
   const res = await fetch(`${API_ROUTES.WALLETS.BASE}?profile_id=${encodeURIComponent(profileId)}`);
-  const rows = (await unwrapApiResponse<Array<Record<string, unknown>> | null>(res, 'Could not load your wallets.')) ?? [];
+  const rows =
+    (await unwrapApiResponse<Array<Record<string, unknown>> | null>(
+      res,
+      'Could not load your wallets.'
+    )) ?? [];
   return rows.map(w => ({
     id: String(w.id),
     label: String(w.label ?? 'Wallet'),

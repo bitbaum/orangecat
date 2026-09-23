@@ -33,6 +33,12 @@ export interface OwnerReceiveStatus {
    * them. Surfaced so the UI can say "reconnect" instead of "auto-receive".
    */
   unusableConnectionWalletIds: string[];
+  /**
+   * The wallet a payment actually settles into, when we can name it.
+   * A Lightning address the owner pasted, or a static on-chain address.
+   * Never a connection secret, and never an address derived from the username.
+   */
+  arrivesAt: string | null;
 }
 
 /**
@@ -53,7 +59,22 @@ export async function getOwnerReceiveStatus(userId: string): Promise<OwnerReceiv
     rail: wallet?.method ?? null,
     lightningAddressActive: isLightningCapable(wallet),
     unusableConnectionWalletIds,
+    arrivesAt: publicDestination(wallet),
   };
+}
+
+/** Where the coins land. An extended public key is not itself an address. */
+function publicDestination(wallet: ResolvedWallet | null): string | null {
+  if (!wallet) {
+    return null;
+  }
+  if (wallet.lightning_address) {
+    return wallet.lightning_address;
+  }
+  if (wallet.onchain_address) {
+    return wallet.onchain_address;
+  }
+  return null;
 }
 
 /**
@@ -62,10 +83,7 @@ export async function getOwnerReceiveStatus(userId: string): Promise<OwnerReceiv
  * will skip this". Decryption happens server-side and the plaintext is dropped
  * immediately — it is never returned or logged.
  */
-async function findUnusableConnections(
-  admin: SupabaseClient,
-  userId: string
-): Promise<string[]> {
+async function findUnusableConnections(admin: SupabaseClient, userId: string): Promise<string[]> {
   const { data } = await admin
     .from(DATABASE_TABLES.WALLETS)
     .select('id, nwc_connection_uri')
