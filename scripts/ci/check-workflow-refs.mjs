@@ -40,6 +40,52 @@ import { join } from 'node:path';
 const WORKFLOW_DIR = '.github/workflows';
 const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
 
+// CD must have one normal trigger. Main CI dispatches CD with its exact run
+// artifact; CD must not also listen to workflow_run or race the sweep's
+// reconciliation dispatch. Keep this invariant local and fast, before the
+// network-only canonical-owner checks below.
+const ciWorkflow = readFileSync(join(WORKFLOW_DIR, 'ci.yml'), 'utf8');
+const cdWorkflow = readFileSync(join(WORKFLOW_DIR, 'cd.yml'), 'utf8');
+const armCd = readFileSync('scripts/ci/arm-cd.sh', 'utf8');
+const cdWiringProblems = [];
+
+if (/^\s+workflow_run:/m.test(cdWorkflow)) {
+  cdWiringProblems.push('cd.yml must not add a workflow_run trigger beside the CI handoff');
+}
+if (!/^on:\n  workflow_dispatch:/m.test(cdWorkflow)) {
+  cdWiringProblems.push('cd.yml must be dispatched by main CI or the reconciler');
+}
+if (
+  !/github\.event_name == 'workflow_dispatch'\s*\|\|\s*github\.event_name == 'push'/.test(
+    ciWorkflow
+  )
+) {
+  cdWiringProblems.push('main CI post-main handoff must run for push and workflow_dispatch');
+}
+if (
+  !armCd.includes('-f ci_run_id="${GITHUB_RUN_ID:?GITHUB_RUN_ID is required}"') ||
+  !armCd.includes('-f ci_sha="${GITHUB_SHA:?GITHUB_SHA is required}"')
+) {
+  cdWiringProblems.push('arm-cd.sh must pass the successful CI run ID and SHA');
+}
+if (
+  !cdWorkflow.includes('run-id: ${{ steps.ci.outputs.run_id }}') ||
+  !cdWorkflow.includes('name: standalone-${{ steps.ci.outputs.sha }}')
+) {
+  cdWiringProblems.push('CD must download the artifact for the handed-off CI run and SHA');
+}
+if (!cdWorkflow.includes('build-and-smoke=success') || !cdWorkflow.includes('security=success')) {
+  cdWiringProblems.push('CD must verify both build-and-smoke and security before deploy');
+}
+if (cdWiringProblems.length > 0) {
+  console.error('[check-cd-wiring] FAIL');
+  for (const problem of cdWiringProblems) console.error(`  ${problem}`);
+  process.exit(1);
+}
+console.log(
+  '[check-cd-wiring] OK — one main-CI handoff, exact artifact, no competing workflow_run trigger.'
+);
+
 if (!token) {
   console.log('[check-workflow-refs] no GITHUB_TOKEN — skipping (this gate runs in CI)');
   process.exit(0);
