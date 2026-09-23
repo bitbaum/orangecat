@@ -35,7 +35,6 @@ import {
 } from '@/services/payment-requests/request-client';
 import { REQUEST_COPY, REQUEST_NOTE_MAX_LENGTH } from '@/config/payment-requests';
 import { PAY_MAX_BTC, PAY_MIN_BTC } from '@/config/pay';
-import { DEFAULT_TIP_BTC } from '@/config/tips';
 import { haptic } from '@/lib/haptics';
 
 interface SentRequest {
@@ -53,7 +52,8 @@ export function RequestsScreen() {
 
   const [payer, setPayer] = useState('');
   const payerCheck = useRecipientCheck(payer);
-  const [amount, setAmount] = useState(DEFAULT_TIP_BTC);
+  // Empty until typed. An ask for a number the person did not choose is not an ask.
+  const [amount, setAmount] = useState(0);
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);

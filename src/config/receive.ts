@@ -14,11 +14,37 @@
  */
 
 import { TIP_MIN_BTC, TIP_MAX_BTC, TIP_POLL_INTERVAL_MS } from './tips';
+import { WALLET_PROVIDERS } from './wallet-providers';
 
 /** Same sane bounds as tips — a receive request is the same economic object. */
 export const RECEIVE_MIN_BTC = TIP_MIN_BTC;
 export const RECEIVE_MAX_BTC = TIP_MAX_BTC;
 export const RECEIVE_POLL_INTERVAL_MS = TIP_POLL_INTERVAL_MS;
+
+/**
+ * Where the owner opens the wallet that actually holds the coins.
+ * The host of the Lightning address must be a provider we already list.
+ * Anything else stays plain text, so a saved address cannot become a link.
+ */
+export function walletAppUrl(destination: string): string | null {
+  const at = destination.lastIndexOf('@');
+  if (at < 1) {
+    return null;
+  }
+  const host = destination.slice(at + 1).toLowerCase();
+  for (const provider of Object.values(WALLET_PROVIDERS)) {
+    let site: URL;
+    try {
+      site = new URL(provider.website);
+    } catch {
+      continue;
+    }
+    if (site.hostname === host || site.hostname === `www.${host}`) {
+      return provider.website;
+    }
+  }
+  return null;
+}
 
 export const RECEIVE_SHARE_COPY = {
   heading: 'Your pay link',
@@ -32,12 +58,12 @@ export const RECEIVE_SHARE_COPY = {
 
 export const RECEIVE_COPY = {
   title: 'Receive',
-  subtitle: 'Anyone can pay you here. OrangeCat never holds the money.',
+  subtitle: 'Share this. The person paying needs a Bitcoin wallet, not an OrangeCat account.',
   addressLabel: 'Your name',
   addressHint:
-    'Same door as the link, for a wallet app. A rename changes the name on this screen. The old name still pays the same wallet.',
+    'The same door, for a wallet app. A rename changes the name we show. The old name still pays.',
   arrivesAt: (destination: string) =>
-    `Payments arrive at ${destination}. That wallet is not inside OrangeCat. Open it to see the balance.`,
+    `The money arrives at ${destination}. Open that wallet to see the balance.`,
   arrivesInApp:
     'Payments arrive in the wallet app you connected. OrangeCat cannot open that app or show its balance.',
   exactHeading: 'One amount',

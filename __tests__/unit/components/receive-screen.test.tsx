@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 /**
- * Receive is one screen: a pay link, an in-person code, and a one-amount code.
- * It must not grow a second tab bar that says "Request" — that word is the
- * other money page, where you ask a named account.
+ * Receive is the door you share: one link, the same name for a wallet app,
+ * and where the money actually arrives. It does not mint an invoice or offer
+ * a wallet menu. Request stays the other page.
  */
 
 import { render, screen } from '@testing-library/react';
@@ -21,7 +21,7 @@ vi.mock('@/services/receive/receive-client', () => ({
     lightningAddress: 'catomean@orangecat.ch',
     rail: 'lightning_address',
     lightningAddressActive: true,
-    arrivesAt: 'a@wallet.example',
+    arrivesAt: 'orangecat@coinos.io',
   }),
   fetchReceiveWallets: async () => [],
   createReceiveRequest: async () => {
@@ -31,6 +31,7 @@ vi.mock('@/services/receive/receive-client', () => ({
 }));
 
 import { ReceiveScreen } from '@/components/receive/ReceiveScreen';
+import { walletAppUrl } from '@/config/receive';
 
 describe('ReceiveScreen', () => {
   it('shows the pay link and an in-person code without a second tab bar', async () => {
@@ -38,13 +39,19 @@ describe('ReceiveScreen', () => {
 
     expect(await screen.findByText('Your pay link')).toBeTruthy();
     expect(screen.getByText('catomean@orangecat.ch')).toBeTruthy();
-    expect(screen.getByRole('heading', { name: 'Your name' })).toBeTruthy();
     expect(screen.getByText(/old name still pays/i)).toBeTruthy();
-    expect(screen.getByText(/Payments arrive at a@wallet.example/)).toBeTruthy();
-    expect(screen.getByRole('heading', { name: 'One amount' })).toBeTruthy();
+    const destination = screen.getByRole('link', { name: 'orangecat@coinos.io' });
+    expect(destination.getAttribute('href')).toBe('https://coinos.io');
+    expect(screen.queryByRole('heading', { name: 'One amount' })).toBeNull();
+    expect(screen.queryByText('Receive with')).toBeNull();
     expect(screen.queryByRole('tab', { name: 'Request amount' })).toBeNull();
     expect(screen.queryByText('Request amount')).toBeNull();
     expect(screen.queryByText('Send someone a payment link')).toBeNull();
     expect(screen.getByRole('link', { name: 'Request' })).toBeTruthy();
+  });
+
+  it('does not turn an unknown wallet host into a link', () => {
+    expect(walletAppUrl('me@getalby.com')).toBeNull();
+    expect(walletAppUrl('orangecat@coinos.io')).toBe('https://coinos.io');
   });
 });
