@@ -2,7 +2,7 @@
 
 created_date: 2025-01-01
 last_modified_date: 2026-09-23
-last_modified_summary: Wave-2 Cat cull — merged prompt-budget-order into prompt-budget; slimmed entity-type-rubric to money-need-intent; cut empty-completion/chips/probe source-grep theatre; thinned suggestion rotation.
+last_modified_summary: Wave-3 Cat cull from explore kill list — deleted routing-thin-input / actions-via-wiring / model-display-name / quota-helpers; folded tool-definitions into action-schemas; thinned proactivity prose pins. Kept forget-failure (SELECT-fail channel not in memory-forget).
 
 ## What we believe
 
