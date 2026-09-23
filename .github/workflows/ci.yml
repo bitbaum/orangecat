@@ -444,19 +444,14 @@ jobs:
         # the decision is reviewable instead of inherited.
         run: pnpm audit --audit-level=high --prod
 
-  # Everything GitHub would have chained off this run, had it emitted the event.
+  # Hand the exact successful CI artifact and SHA to CD.
   #
-  # CD and Main Red Alert both trigger on `workflow_run` of CI. GitHub does not
-  # emit that event when the CI run was itself created with the default
-  # GITHUB_TOKEN — which is exactly how the auto-merge sweep re-arms CI after a
-  # bot merge (a GITHUB_TOKEN push triggers nothing, hence the dispatch). So on
-  # the automated path both consumers are dead, and dead *silently*: green CI,
-  # no red check, nothing deployed. That stranded 14 verified commits on main
-  # for eight hours on 2026-08-04 while the box served the old build.
-  #
-  # A dispatched run therefore does the handoff itself. The push path is left
-  # alone — its `workflow_run` fires normally, and is the better path there
-  # (CD downloads the exact artifact this run built). One trigger per path.
+  # GitHub's `workflow_run` does not fire for CI runs dispatched with GITHUB_TOKEN,
+  # which is how the auto-merge sweep re-arms CI after a bot merge. Letting CD
+  # also listen to `workflow_run` creates two deploys when the sweep's periodic
+  # reconciler dispatches CD at the same time. This job is now the single normal
+  # handoff for both push and dispatched main CI; it sends this run's artifact
+  # and SHA to CD. The sweep remains the recovery path for a missed/failed handoff.
   post-main:
     # `verify-in-worktree` is DELIBERATELY absent here — it is not an oversight,
     # do not add it. It proves agents can run `verify` locally; it does not say
@@ -466,7 +461,9 @@ jobs:
     # The enforcement point is PR-time: auto-merge requires EVERY check green, so
     # a worktree regression cannot reach main in the first place.
     needs: [build-and-smoke, security]
-    if: always() && github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
+    if: >-
+      always() && github.ref == 'refs/heads/main' &&
+      (github.event_name == 'workflow_dispatch' || github.event_name == 'push')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:

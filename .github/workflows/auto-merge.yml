@@ -6,16 +6,12 @@
 # settings".
 #
 # This repo held one of eight drifted copies of that script, and was one of the
-# last two converted: its copy re-armed CI so that CD (cd.yml, workflow_run on
-# CI) would ship the merge. That chain has a known hole — a CI run started by
-# GITHUB_TOKEN emits no workflow_run event, so CD never fires for an automated
-# merge. The canonical sweep closes it with a RECONCILER: every sweep compares
-# main's tip against the last successful cd.yml run and dispatches cd.yml
-# directly when they differ, so a deploy that never fired or fired and failed
-# is retried next sweep instead of sitting merged-but-not-live.
+# last two converted. GitHub does not emit `workflow_run` for CI dispatched with
+# GITHUB_TOKEN, so main CI now hands its exact run and artifact to CD directly.
+# The canonical sweep remains a RECONCILER: every sweep compares main's tip
+# against the last successful cd.yml run and retries missed or failed handoffs.
 #
-# The triggers stay here because they are genuinely per-repo: workflow_run must
-# name the CI workflow exactly.
+# The triggers stay here because the CI workflow name is repo-specific.
 #
 # To stop all of this: delete this file, or add a `hold` label to a PR.
 name: Auto-merge

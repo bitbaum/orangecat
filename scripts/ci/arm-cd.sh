@@ -4,14 +4,10 @@
 #
 # WHY THIS EXISTS
 # ---------------
-# CD triggers on `workflow_run` of CI. GitHub does not emit that event when the
-# CI run was itself created with the default GITHUB_TOKEN — which is exactly how
-# the auto-merge sweep re-arms CI after every bot merge. The chain therefore
-# breaks precisely on the automated path, and breaks *silently*: CI is green, no
-# check is red, and nothing deploys. On 2026-08-04 that stranded 14 verified
-# commits on main for eight hours while the box kept serving the old build.
-#
-# So the dispatched run hands off explicitly instead of relying on the event.
+# CD accepts one explicit handoff from successful main CI. This passes the
+# triggering run ID and SHA so CD downloads the exact artifact CI built and
+# tested instead of rebuilding. It also avoids racing an independent
+# `workflow_run` trigger against the scheduled auto-merge reconciler.
 #
 # A dispatch that quietly creates no run is the same silent failure one level
 # down, so it is verified rather than assumed. If no run appears, exit non-zero:
