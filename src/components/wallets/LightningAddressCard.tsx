@@ -17,6 +17,7 @@
 import { useState } from 'react';
 import { Zap, Copy, Check, AlertTriangle } from 'lucide-react';
 import { API_ROUTES } from '@/config/api-routes';
+import { RECEIVE_COPY } from '@/config/receive';
 import type { ReceiveStatus } from '@/app/(authenticated)/dashboard/wallets/hooks/useReceiveStatus';
 
 interface LightningAddressCardProps {
@@ -86,7 +87,9 @@ export function LightningAddressCard({ status, isLoading }: LightningAddressCard
       <div className="flex items-start gap-3">
         <div className="mt-0.5 rounded-full bg-surface-raised p-2">
           <Zap
-            className={lightningAddressActive ? 'h-5 w-5 text-bitcoinOrange' : 'h-5 w-5 text-fg-secondary'}
+            className={
+              lightningAddressActive ? 'h-5 w-5 text-bitcoinOrange' : 'h-5 w-5 text-fg-secondary'
+            }
             aria-hidden="true"
           />
         </div>
@@ -130,7 +133,9 @@ export function LightningAddressCard({ status, isLoading }: LightningAddressCard
 
           {lightningAddressActive ? (
             <p className="mt-2 text-xs text-fg-secondary">
-              Payments arrive directly in your own wallet — OrangeCat never holds your funds.
+              {status.arrivesAt
+                ? RECEIVE_COPY.arrivesAt(status.arrivesAt)
+                : RECEIVE_COPY.arrivesInApp}
             </p>
           ) : (
             <p className="mt-2 text-sm text-fg-secondary">

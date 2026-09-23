@@ -36,6 +36,10 @@ export const RECEIVE_COPY = {
   addressLabel: 'Your name',
   addressHint:
     'Same door as the link, for a wallet app. A rename changes the name on this screen. The old name still pays the same wallet.',
+  arrivesAt: (destination: string) =>
+    `Payments arrive at ${destination}. That wallet is not inside OrangeCat. Open it to see the balance.`,
+  arrivesInApp:
+    'Payments arrive in the wallet app you connected. OrangeCat cannot open that app or show its balance.',
   exactHeading: 'One amount',
   exactHint:
     'A code for a specific amount, for someone with you. To ask one person by name, use Request.',

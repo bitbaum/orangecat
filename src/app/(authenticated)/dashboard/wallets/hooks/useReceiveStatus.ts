@@ -17,6 +17,7 @@ export interface ReceiveStatus {
   rail: 'nwc' | 'lightning_address' | 'onchain' | null;
   lightningAddressActive: boolean;
   unusableConnectionWalletIds: string[];
+  arrivesAt: string | null;
 }
 
 export function useReceiveStatus(walletsSignature: string, enabled: boolean) {
