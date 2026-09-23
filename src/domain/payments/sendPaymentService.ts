@@ -22,6 +22,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { NWCClient } from '@/lib/nostr/nwc';
 import { decrypt, isEncryptionConfigured } from '@/domain/payments/encryptionService';
 import { generateInvoice } from '@/domain/payments/invoiceGenerationService';
+import { resolveLnurlRecipient } from '@/domain/lightning-address/lnurl-service';
 import { resolveUserWallet } from '@/domain/payments/walletResolutionService';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { DATABASE_TABLES } from '@/config/database-tables';
@@ -195,18 +196,14 @@ export async function sendToRecipient(
   if (trimmed.includes('@')) {
     wallet = { method: 'lightning_address', wallet_id: 'external', lightning_address: trimmed };
   } else {
-    const { data: profile } = await admin
-      .from(DATABASE_TABLES.PROFILES)
-      .select('id')
-      .ilike('username', trimmed)
-      .maybeSingle();
-
-    const profileId = (profile as { id?: string } | null)?.id;
-    if (!profileId) {
+    // Same handle lookup as the Lightning address, so a rename does not make
+    // the old name unpayable, and `_` in a username is not a wildcard.
+    const recipient = await resolveLnurlRecipient(trimmed);
+    if (!recipient) {
       return fail('recipient_not_found', `We couldn't find @${trimmed} on OrangeCat.`);
     }
 
-    wallet = await resolveUserWallet(admin, profileId);
+    wallet = await resolveUserWallet(admin, recipient.userId);
     if (!wallet) {
       return fail(
         'recipient_cannot_receive',

@@ -15,6 +15,7 @@ import {
   PAY_MAX_BTC,
   PAY_MIN_BTC,
   PAY_NOTE_MAX_LENGTH,
+  renamedPayHref,
 } from '@/config/pay';
 
 const ORIGIN = 'https://orangecat.ch';
@@ -52,6 +53,18 @@ describe('buildPayUrl', () => {
     const url = new URL(buildPayUrl(ORIGIN, 'lena', { amountBtc: 0.0005, note: 'Concert' }));
     const prefill = parsePayPrefill(url.searchParams);
     expect(prefill).toEqual({ amountBtc: 0.0005, note: 'Concert' });
+  });
+});
+
+describe('renamedPayHref', () => {
+  it('stays put when the link already uses the current name', () => {
+    expect(renamedPayHref('cato', 'cato', {})).toBeNull();
+  });
+
+  it('sends an old name to the current page and keeps the amount', () => {
+    expect(renamedPayHref('catomean', 'cato', { amount: '0.0001', for: 'dinner' })).toBe(
+      '/pay/cato?amount=0.0001&for=dinner'
+    );
   });
 });
 

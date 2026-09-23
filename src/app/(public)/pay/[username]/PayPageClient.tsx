@@ -33,6 +33,7 @@ export function PayPageClient({ username, recipientName, canReceive }: PayPageCl
       recipientName={recipientName}
       initialCanReceive={canReceive}
       initialAmountBtc={prefill.amountBtc}
+      words={PAY_COPY}
       noteSlot={
         prefill.note ? (
           <p className="rounded-md border border-subtle bg-surface-raised/40 px-3 py-2 text-center text-sm text-fg-secondary">

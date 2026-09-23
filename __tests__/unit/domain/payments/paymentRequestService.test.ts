@@ -38,10 +38,10 @@ const PAYER = 'payer-1';
 /** Admin client that resolves usernames to profiles. */
 function mockAdmin(profile: { id: string; username?: string } | null) {
   adminMock.mockReturnValue({
+    rpc: async () => ({ data: null, error: null }),
     from: () => {
       const b: Record<string, unknown> = {};
       b.select = () => b;
-      b.ilike = () => b;
       b.eq = () => b;
       b.maybeSingle = () => Promise.resolve({ data: profile });
       return b;

@@ -37,7 +37,8 @@ describe('ReceiveScreen', () => {
 
     expect(await screen.findByText('Your pay link')).toBeTruthy();
     expect(screen.getByText('catomean@orangecat.ch')).toBeTruthy();
-    expect(screen.getByRole('heading', { name: 'In person' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Your name' })).toBeTruthy();
+    expect(screen.getByText(/old name still pays/i)).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'One amount' })).toBeTruthy();
     expect(screen.queryByRole('tab', { name: 'Request amount' })).toBeNull();
     expect(screen.queryByText('Request amount')).toBeNull();

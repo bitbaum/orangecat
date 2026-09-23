@@ -20,14 +20,9 @@ import {
   initiateTip as initiateTipPayment,
   checkPublicPaymentStatus,
 } from '@/domain/payments/paymentFlowService';
+import { METHOD_LABELS } from '@/domain/payments/paymentFlowHelpers';
 import type { ResolvedWallet } from '@/domain/payments/types';
 import { logger } from '@/utils/logger';
-
-const METHOD_LABELS: Record<ResolvedWallet['method'], string> = {
-  nwc: 'Lightning',
-  lightning_address: 'Lightning',
-  onchain: 'On-chain Bitcoin',
-};
 
 /**
  * Resolve the recipient's receiving wallet with the service-role client — same

@@ -40,12 +40,16 @@ const payInvoiceSpy = vi.fn();
 /** Admin client whose wallets query yields the given NWC row. */
 function mockAdmin({ nwc, profileId }: { nwc?: string | null; profileId?: string | null } = {}) {
   adminMock.mockReturnValue({
+    rpc: async () => ({ data: null, error: null }),
     from: (table: string) => {
       if (table === 'profiles') {
         const b: Record<string, unknown> = {};
         b.select = () => b;
-        b.ilike = () => b;
-        b.maybeSingle = () => Promise.resolve({ data: profileId ? { id: profileId } : null });
+        b.eq = () => b;
+        b.maybeSingle = () =>
+          Promise.resolve({
+            data: profileId ? { id: profileId, username: 'lena', display_name: 'Lena' } : null,
+          });
         return b;
       }
       const b: Record<string, unknown> = {};

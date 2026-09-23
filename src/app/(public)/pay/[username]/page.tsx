@@ -12,40 +12,24 @@
  */
 
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import { cache, Suspense } from 'react';
 import { Loader2 } from 'lucide-react';
 import { getAdminClient } from '@/lib/supabase/admin';
-import { DATABASE_TABLES } from '@/config/database-tables';
-import { APP_NAME, SITE_URL } from '@/config/brand';
-import { PAY_COPY } from '@/config/pay';
+import { SITE_URL } from '@/config/brand';
+import { PAY_COPY, renamedPayHref } from '@/config/pay';
+import { resolveLnurlRecipient } from '@/domain/lightning-address/lnurl-service';
 import { getTipReceiveInfo } from '@/domain/tips/tip-service';
 import { PayPageClient } from './PayPageClient';
 
 interface PageProps {
   params: Promise<{ username: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-interface PayRecipient {
-  username: string;
-  displayName: string;
-}
-
-// cache() dedupes the lookup across generateMetadata and the page body, which
-// both need the recipient — otherwise every pay link costs two profile queries.
-const getRecipient = cache(async (username: string): Promise<PayRecipient | null> => {
-  const { data } = await getAdminClient()
-    .from(DATABASE_TABLES.PROFILES)
-    .select('username, display_name:name')
-    .ilike('username', username)
-    .maybeSingle();
-
-  const row = data as { username?: string | null; display_name?: string | null } | null;
-  if (!row?.username) {
-    return null;
-  }
-  return { username: row.username, displayName: row.display_name || row.username };
-});
+// Same handle lookup as the Lightning address, including names an account
+// used to have. cache() dedupes it across metadata and the page.
+const getRecipient = cache((username: string) => resolveLnurlRecipient(username));
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { username } = await params;
@@ -57,22 +41,26 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     // link to a mistyped name should fail honestly.
     notFound();
   }
-  const title = `${PAY_COPY.title(recipient.displayName)} — ${APP_NAME}`;
+  const title = PAY_COPY.title(recipient.displayName);
   return {
     title,
     description: PAY_COPY.subtitle,
     alternates: { canonical: `${SITE_URL}/pay/${recipient.username}` },
-    openGraph: { title, description: PAY_COPY.subtitle, type: 'website' },
+    openGraph: { title: `${title} — OrangeCat`, description: PAY_COPY.subtitle, type: 'website' },
     // A personal payment page is for the person holding the link, not for search.
     robots: { index: false, follow: false },
   };
 }
 
-export default async function PayPage({ params }: PageProps) {
+export default async function PayPage({ params, searchParams }: PageProps) {
   const { username } = await params;
   const recipient = await getRecipient(username);
   if (!recipient) {
     notFound();
+  }
+  const href = renamedPayHref(username, recipient.username, await searchParams);
+  if (href) {
+    permanentRedirect(href);
   }
 
   // Resolve "can this person receive?" here rather than from the browser. It is

@@ -15,8 +15,8 @@ import type { PaymentIntentStatus } from './types';
 import { logger } from '@/utils/logger';
 
 export const METHOD_LABELS: Record<string, string> = {
-  nwc: 'Lightning (NWC)',
-  lightning_address: 'Lightning Address',
+  nwc: 'Lightning',
+  lightning_address: 'Lightning',
   onchain: 'On-chain Bitcoin',
 };
 
