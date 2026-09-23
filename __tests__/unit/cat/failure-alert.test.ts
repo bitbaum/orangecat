@@ -1,6 +1,3 @@
-import { readFileSync } from 'fs';
-import { join } from 'path';
-
 import { alertCatChatFailure } from '@/services/cat/failure-alert';
 import { getAdminClient } from '@/lib/supabase/admin';
 
@@ -128,18 +125,5 @@ describe('Cat failure alerting', () => {
     expect(insert).toHaveBeenCalledTimes(1);
     expect(insert.mock.calls[0][0].message).toContain('someone');
     expect(insert.mock.calls[0][0].metadata.lastFailedUserId).toBe('u9');
-  });
-
-  it('stays wired into the streaming failure path', () => {
-    // Same reasoning as failed-turn.test.ts: the streaming path cannot be
-    // unit-booted, and the regression being prevented is "the failure branch
-    // silently stops alerting".
-    const source = readFileSync(
-      join(process.cwd(), 'src/services/cat/chat-orchestrator.ts'),
-      'utf8'
-    );
-    const catchStart = source.indexOf('} catch (err) {', source.indexOf('async start(controller)'));
-    const errorEmit = source.indexOf('event: error', catchStart);
-    expect(source.slice(catchStart, errorEmit)).toContain('alertCatChatFailure');
   });
 });

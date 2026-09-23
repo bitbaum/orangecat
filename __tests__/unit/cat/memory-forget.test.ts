@@ -215,3 +215,42 @@ describe('forgetMemoriesMatching — 2026-08-02 incident regression (stemming)',
     expect(result.notFound).toEqual(['constraint']);
   });
 });
+
+/**
+ * Stem-sharing innocents — the corpus that flatters the matcher is all targets
+ * or obviously unrelated. These pin near-misses: cooking vs photography skills,
+ * weekend work vs freelance work. (#563 suggestion 17 / #831)
+ */
+const STEM_INNOCENT_CORPUS: Row[] = [
+  { id: 'a1', content: 'Has photography skills from years of freelance work' },
+  { id: 'a2', content: 'Has strong cooking skills' },
+  { id: 'a3', content: 'Can only work on weekends.' },
+  { id: 'a4', content: 'Has a documentary photography background' },
+  { id: 'a5', content: 'Prefers Lightning over on-chain payments' },
+  { id: 'a6', content: 'Owns a drone.' },
+];
+
+describe('forget leaves stem-sharing innocents alone', () => {
+  it('"cooking skills" does not take the photography skills with it', async () => {
+    const { client } = supabaseWithCorpus(STEM_INNOCENT_CORPUS);
+    const result = await forgetMemoriesMatching(client, 'u1', ['cooking skills']);
+    expect(result.deleted).toEqual(['Has strong cooking skills']);
+  });
+
+  it('treats a generic word as a topic, clearing every memory phrased with it', async () => {
+    // Deliberate: single-word containment is how topic removal works. Cost is
+    // visibility in the forget receipt (#838), not silent over-deletion.
+    const { client } = supabaseWithCorpus(STEM_INNOCENT_CORPUS);
+    const result = await forgetMemoriesMatching(client, 'u1', ['skills']);
+    expect(result.deleted).toEqual([
+      'Has photography skills from years of freelance work',
+      'Has strong cooking skills',
+    ]);
+  });
+
+  it('"weekend work" does not reach "freelance work"', async () => {
+    const { client } = supabaseWithCorpus(STEM_INNOCENT_CORPUS);
+    const result = await forgetMemoriesMatching(client, 'u1', ['weekend work']);
+    expect(result.deleted).not.toContain('Has photography skills from years of freelance work');
+  });
+});
