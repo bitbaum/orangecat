@@ -114,18 +114,17 @@ jobs:
             sha="$CI_SHA"
           else
             # Scheduled reconciliation/manual recovery uses the latest verified
-            # main SHA. Build locally when its original artifact is not supplied.
+            # main SHA. Re-use its CI artifact when available instead of rebuilding.
             run=$(gh api \
               "repos/$REPO/actions/workflows/ci.yml/runs?branch=main&status=success&per_page=1" \
-              --jq '.workflow_runs[0] | [.head_sha, .head_branch, .conclusion] | @tsv')
-            IFS=$'\t' read -r sha branch conclusion <<< "$run"
+              --jq '.workflow_runs[0] | [.head_sha, .head_branch, .conclusion, (.id | tostring)] | @tsv')
+            IFS=$'\t' read -r sha branch conclusion run_id <<< "$run"
             main_sha=$(gh api "repos/$REPO/commits/main" --jq '.sha')
             if [ -z "$sha" ] || [ "$branch" != 'main' ] \
                || [ "$conclusion" != 'success' ] || [ "$sha" != "$main_sha" ]; then
               echo '::error::No successful CI run verifies the current main SHA; refusing to deploy'
               exit 1
             fi
-            run_id=''
           fi
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
           echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
