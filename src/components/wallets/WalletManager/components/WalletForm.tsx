@@ -466,12 +466,17 @@ export function WalletForm({
       )}
 
       {/* Actions */}
-      <div className="flex gap-2">
-        <Button type="button" onClick={handleSubmit} disabled={isSubmitting} className="flex-1">
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <Button
+          type="button"
+          onClick={handleSubmit}
+          disabled={isSubmitting}
+          className="w-full sm:flex-1"
+        >
           {isSubmitting ? 'Saving…' : submitLabel}
         </Button>
         {onCancel && (
-          <Button type="button" onClick={onCancel} variant="outline">
+          <Button type="button" onClick={onCancel} variant="outline" className="w-full sm:w-auto">
             {cancelLabel}
           </Button>
         )}

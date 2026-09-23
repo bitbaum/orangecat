@@ -75,12 +75,12 @@ export function SharePayLink({ username, amountBtc, className }: SharePayLinkPro
         </label>
       )}
 
-      <div className="mt-3 flex gap-2">
-        <Button variant="outline" size="sm" onClick={() => void copy(url)}>
+      <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+        <Button variant="outline" className="w-full sm:w-auto" onClick={() => void copy(url)}>
           {copied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
           {copied ? RECEIVE_SHARE_COPY.copied : RECEIVE_SHARE_COPY.copy}
         </Button>
-        <Button variant="accent" size="sm" onClick={handleShare}>
+        <Button variant="accent" className="w-full sm:w-auto" onClick={handleShare}>
           <Share2 className="mr-2 h-4 w-4" />
           {RECEIVE_SHARE_COPY.share}
         </Button>

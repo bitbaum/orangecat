@@ -1,17 +1,8 @@
 'use client';
 
 /**
- * Intelligent Onboarding
- *
- * Collects a brief description of who the user is, then — instead of only
- * seeding a Cat conversation — runs the economic-agent chain synchronously
- * (POST /api/cat/offers-from-text → extract profile + generateOffers) and shows
- * concrete, typed offerings the user can create in one click. "Paste who you
- * are → get monetizable offerings." The Cat chat remains as a fallback.
- *
- * Created: 2026-01-22
- * Last Modified: 2026-07-28
- * Last Modified Summary: Add synchronous "see what Cat suggests" offer cards
+ * Name and a sentence, then one optional paste, then concrete offerings.
+ * The Cat chat remains the way through when that chain fails.
  */
 
 import { useState } from 'react';
@@ -145,7 +136,7 @@ export default function IntelligentOnboarding() {
             }
             router.back();
           }}
-          className="flex items-center gap-1.5 text-sm text-fg-secondary hover:text-fg-primary mb-6 transition-colors"
+          className="mb-6 flex min-h-11 items-center gap-1.5 text-sm text-fg-secondary transition-colors hover:text-fg-primary"
         >
           <ArrowLeft className="h-4 w-4" />
           Back
@@ -169,11 +160,12 @@ export default function IntelligentOnboarding() {
           ) : askPay ? (
             <>
               <h1 className="mb-2 text-2xl font-bold text-fg-primary">
-                How should people pay you?
+                {isGenerating ? 'Finding ways to earn' : 'How should people pay you?'}
               </h1>
               <p className="text-fg-secondary">
-                Paste what your Bitcoin app shows under Receive. OrangeCat does not hold the money.
-                You can skip this.
+                {isGenerating
+                  ? 'Cat is reading what you wrote.'
+                  : 'Paste what your Bitcoin app shows under Receive. OrangeCat does not hold the money. You can skip this.'}
               </p>
             </>
           ) : (
@@ -199,9 +191,10 @@ export default function IntelligentOnboarding() {
         ) : askPay ? (
           <OnboardingPay
             profileId={profile?.id ?? user?.id}
-            onDone={() => {
-              void handleSeeOffers();
-            }}
+            busy={isGenerating}
+            error={genError}
+            onChat={handleStartChat}
+            onDone={() => handleSeeOffers()}
           />
         ) : (
           /* ---- Input view ---- */
