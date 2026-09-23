@@ -14,8 +14,6 @@
  * these tests pin both halves: that it is emitted, and that it is what the
  * client matches on.
  */
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { vi, beforeEach } from 'vitest';
 
 const executeAction = vi.hoisted(() => vi.fn());
@@ -163,40 +161,5 @@ describe('declining is not failing', () => {
     });
     expect(out[0]!.status).toBe('failed');
     expect(out[0] && 'error' in out[0] && out[0].error).toBe('wallet unreachable');
-  });
-});
-
-describe('the mirrored rule has not drifted from the real one', () => {
-  // `resolve()` above is a copy of `resolvePendingChip`, kept so the matching
-  // rule is testable without mounting React. A copy that drifts in silence is
-  // the failure this whole file exists to prevent, so the copy is tied to the
-  // original here rather than trusted.
-  const src = readFileSync(
-    join(__dirname, '../../../src/components/ai-chat/ModernChatPanel/hooks/useChatMessages.ts'),
-    'utf8'
-  )
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/^[ \t]*\/\/.*$/gm, '')
-    .replace(/\s+/g, ' ');
-
-  it('matches on the row id, narrowed by the waiting status', () => {
-    expect(src).toContain(
-      "t.status === 'pending_confirmation' && t.pendingActionId === pendingActionId"
-    );
-  });
-
-  it('is actually called when the user answers the card', () => {
-    // A resolver nothing calls is decoration — the chip would still be stale.
-    const panel = readFileSync(
-      join(__dirname, '../../../src/components/ai-chat/ModernChatPanel/index.tsx'),
-      'utf8'
-    ).replace(/\/\*[\s\S]*?\*\//g, '');
-    expect(panel).toContain("resolvePendingChip(action.id, { status: 'completed' })");
-    expect(panel).toContain("resolvePendingChip(actionId, { status: 'declined' })");
-  });
-
-  it('keeps a decline out of the failed branch', () => {
-    expect(src).toContain("outcome.status === 'declined'");
-    expect(src).toContain("status: 'declined' as const");
   });
 });

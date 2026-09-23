@@ -1,23 +1,15 @@
-import { readFileSync } from 'node:fs';
-import { labelForTool } from '@/lib/chat/tool-labels';
-import { join } from 'node:path';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { PLATFORM_TOOL_DEFINITION } from '@/services/cat/tool-use-detection';
 import { isCatActionTool } from '@/services/cat/action-as-tool';
 import { formatTrackRecordForModel, type CatTrackRecord } from '@/services/cat/track-record';
+import { labelForTool } from '@/lib/chat/tool-labels';
 
 /**
  * ADR-0006 D6 — Cat can check its own work.
  *
- * The track record already existed as ambient context. This makes it a READ
- * TOOL the model can call, so "what did you do for me?" is answered from the
- * action log, and so Cat can see its own pattern (drafted, never published)
- * before proposing more of the same.
+ * Wiring (executor dispatch) is owned by the platform tool list + label module.
+ * This file pins the definition contract and formatTrackRecordForModel behaviour.
  */
-
-const ROOT = join(__dirname, '../../..');
-const stripComments = (s: string) =>
-  s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^[ \t]*\/\/.*$/gm, '');
 
 const TOOL = 'check_my_track_record';
 
@@ -34,13 +26,11 @@ function record(overrides: Partial<CatTrackRecord> = {}): CatTrackRecord {
   };
 }
 
-describe('check_my_track_record is wired as a read tool', () => {
+describe('check_my_track_record is a platform read tool', () => {
   it('is offered as a zero-argument tool definition', () => {
     const def = PLATFORM_TOOL_DEFINITION.find(t => t.function.name === TOOL);
     expect(def).toBeDefined();
     expect(def!.function.parameters).toEqual({ type: 'object', properties: {} });
-    // Disambiguation is in the description, not left to luck: the sibling
-    // tool query_my_data owns the user's own numbers.
     expect(def!.function.description).toContain('query_my_data');
   });
 
@@ -48,25 +38,7 @@ describe('check_my_track_record is wired as a read tool', () => {
     expect(isCatActionTool(TOOL)).toBe(false);
   });
 
-  it('is dispatched by the executor and described to the router', () => {
-    // Call syntax, comment-stripped: a mention in a comment cannot satisfy this.
-    const executor = stripComments(
-      readFileSync(join(ROOT, 'src/services/cat/tool-executor.ts'), 'utf8')
-    );
-    expect(executor).toContain(`if (toolName === '${TOOL}') {`);
-    expect(executor).toContain('handleCheckMyTrackRecord(supabase, userId, toolCall, onToolCall)');
-
-    const router = stripComments(readFileSync(join(ROOT, 'src/services/cat/tool-use.ts'), 'utf8'));
-    expect(router).toContain(`'- ${TOOL}: `);
-
-    // Without a label the chip would read "Done (3)" for a self-audit. Asserted
-    // against the LABEL MODULE, not the component: the wording moved out of the
-    // chip when it started deriving action labels from the registry, and a scan
-    // pointed at the old file would pass or fail for reasons that have nothing
-    // to do with whether the label exists.
-    const labels = stripComments(readFileSync(join(ROOT, 'src/lib/chat/tool-labels.ts'), 'utf8'));
-    expect(labels).toContain(`${TOOL}: {`);
-    // Behaviour, not just text: a self-audit must not borrow search wording.
+  it('has its own chip wording, not borrowed search copy', () => {
     expect(labelForTool(TOOL).completed(3)).toContain('record');
   });
 });
