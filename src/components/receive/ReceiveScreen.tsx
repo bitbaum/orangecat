@@ -15,7 +15,7 @@ import { SharePayLink } from '@/components/receive/SharePayLink';
 import { MoneyLoading, MoneyPage } from '@/components/money/MoneyPage';
 import { useRequireAuth } from '@/hooks/useAuth';
 import { fetchReceiveOverview, type OwnerReceiveOverview } from '@/services/receive/receive-client';
-import { RECEIVE_COPY, walletAppUrl } from '@/config/receive';
+import { RECEIVE_COPY } from '@/config/receive';
 
 export function ReceiveScreen() {
   const { user, profile, isLoading: authLoading } = useRequireAuth();
@@ -67,35 +67,22 @@ export function ReceiveScreen() {
   }
 
   const address = overview.lightningAddressActive ? overview.lightningAddress : null;
-  const home = overview.arrivesAt ? walletAppUrl(overview.arrivesAt) : null;
 
   return (
     <MoneyPage title={RECEIVE_COPY.title} subtitle={RECEIVE_COPY.subtitle}>
-      <div className="space-y-6">
+      <div className="space-y-4">
         {overview.rail === 'onchain' && (
-          <p className="text-xs text-fg-tertiary">{RECEIVE_COPY.onchainNote}</p>
+          <p className="text-center text-sm text-fg-tertiary">{RECEIVE_COPY.onchainNote}</p>
         )}
-        {overview.username && <SharePayLink username={overview.username} walletAddress={address} />}
-        {overview.arrivesAt ? (
-          <p className="text-sm text-fg-secondary">
-            The money arrives at{' '}
-            {home ? (
-              <a
-                href={home}
-                className="font-medium text-fg-primary underline"
-                rel="noopener noreferrer"
-              >
-                {overview.arrivesAt}
-              </a>
-            ) : (
-              <span className="font-medium text-fg-primary">{overview.arrivesAt}</span>
-            )}
-            . Open that wallet to see the balance.
-          </p>
-        ) : (
-          overview.rail !== 'onchain' && (
-            <p className="text-sm text-fg-secondary">{RECEIVE_COPY.arrivesInApp}</p>
-          )
+        {overview.username && (
+          <SharePayLink
+            username={overview.username}
+            walletAddress={address}
+            arrivesAt={overview.arrivesAt}
+          />
+        )}
+        {!overview.arrivesAt && overview.rail !== 'onchain' && (
+          <p className="text-center text-sm text-fg-secondary">{RECEIVE_COPY.arrivesInApp}</p>
         )}
       </div>
     </MoneyPage>

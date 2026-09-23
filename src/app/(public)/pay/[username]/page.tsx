@@ -71,12 +71,12 @@ export default async function PayPage({ params, searchParams }: PageProps) {
 
   return (
     <div className="mx-auto w-full max-w-md px-4 py-10">
-      <header className="mb-6 text-center">
-        <h1 className="text-2xl font-bold text-fg-primary">
-          {PAY_COPY.title(recipient.displayName)}
+      <header className="mb-8 text-center">
+        <p className="text-sm text-fg-tertiary">Pay</p>
+        <h1 className="mt-1 font-heading text-3xl font-bold tracking-display text-fg-primary">
+          {recipient.displayName}
         </h1>
-        <p className="mt-1 text-sm text-fg-secondary">{PAY_COPY.subtitle}</p>
-        <p className="mt-1 font-mono text-xs text-fg-tertiary">@{recipient.username}</p>
+        <p className="mt-2 text-sm text-fg-secondary">{PAY_COPY.subtitle}</p>
       </header>
 
       <Suspense

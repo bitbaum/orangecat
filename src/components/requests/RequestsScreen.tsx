@@ -158,20 +158,30 @@ export function RequestsScreen() {
 
         <PayerStatus check={payerCheck} handle={payer} />
 
-        <AmountField
-          value={amount}
-          onChange={setAmount}
-          minBtc={PAY_MIN_BTC}
-          maxBtc={PAY_MAX_BTC}
-        />
-
-        <Input
-          label={REQUEST_COPY.noteLabel}
-          value={note}
-          onChange={e => setNote(e.target.value.slice(0, REQUEST_NOTE_MAX_LENGTH))}
-          placeholder={REQUEST_COPY.notePlaceholder}
-          className="min-h-11"
-        />
+        {isRequestablePayer(payerCheck) && (
+          <>
+            <AmountField
+              value={amount}
+              onChange={setAmount}
+              minBtc={PAY_MIN_BTC}
+              maxBtc={PAY_MAX_BTC}
+            />
+            <details className="rounded-lg border border-subtle">
+              <summary className="flex min-h-11 cursor-pointer list-none items-center px-3 text-sm text-fg-secondary [&::-webkit-details-marker]:hidden">
+                {REQUEST_COPY.noteLabel}
+              </summary>
+              <div className="px-3 pb-3">
+                <Input
+                  label={REQUEST_COPY.noteLabel}
+                  value={note}
+                  onChange={e => setNote(e.target.value.slice(0, REQUEST_NOTE_MAX_LENGTH))}
+                  placeholder={REQUEST_COPY.notePlaceholder}
+                  className="min-h-11"
+                />
+              </div>
+            </details>
+          </>
+        )}
 
         {error && <p className="text-sm text-status-negative">{error}</p>}
         <p className="text-center text-xs text-fg-tertiary">{REQUEST_COPY.disclaimer}</p>

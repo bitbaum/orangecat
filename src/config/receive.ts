@@ -1,16 +1,13 @@
 /**
  * Receive — SSOT for the owner-side "get paid" surface (/receive).
  *
- * Receiving is the mirror of the tips/payment stack, pointed at yourself: a
- * receive request is an entity-less payment_intent against YOUR OWN wallet,
- * minted through the exact same wallet-resolution + invoice + settle path a
- * tipper would use. OrangeCat never touches the funds — the QR pays straight
- * into the owner's wallet.
+ * One question on screen: the pay link, with Copy (and Share) right under it.
+ * "Where this goes" opens the Lightning name and the wallet the coins settle
+ * in. This page does not mint an invoice and does not ask which wallet — the
+ * payer types the amount on the link. Asking a named account is Request.
  *
- * One screen, not a second tab bar. The pay link is the standing way anyone
- * pays. The address code is the in-person version of that same link, and only
- * when it can actually be paid. An exact amount is a code for someone who is
- * here — asking a named account is the Request page.
+ * OrangeCat never holds the funds. The link and the Lightning name are the
+ * same door; the coins land in the wallet the owner connected.
  */
 
 import { TIP_MIN_BTC, TIP_MAX_BTC, TIP_POLL_INTERVAL_MS } from './tips';
@@ -58,7 +55,7 @@ export const RECEIVE_SHARE_COPY = {
 
 export const RECEIVE_COPY = {
   title: 'Receive',
-  subtitle: 'Share this. The person paying needs a Bitcoin wallet, not an OrangeCat account.',
+  subtitle: 'Anyone with a Bitcoin wallet can pay you.',
   addressLabel: 'Your name',
   addressHint:
     'The same door, for a wallet app. A rename changes the name we show. The old name still pays.',

@@ -1,8 +1,9 @@
 /**
  * Payment requests — SSOT for asking a specific person for money.
  *
- * Bounds are shared with pay links, so anything you can request is something
- * the payer can actually pay.
+ * Who first, then amount once that person checks out. The note stays closed
+ * until opened. Bounds are shared with pay links, so anything you can request
+ * is something the payer can actually pay.
  */
 
 export const REQUEST_NOTE_MAX_LENGTH = 80;

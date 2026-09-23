@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 /**
- * Receive is the door you share: one link, the same name for a wallet app,
- * and where the money actually arrives. It does not mint an invoice or offer
- * a wallet menu. Request stays the other page.
+ * Receive opens on the link. "Where this goes" holds the wallet name and the
+ * Coinos (or other) settle destination. No invoice form, no wallet menu.
+ * Request stays the other page.
  */
 
 import { render, screen } from '@testing-library/react';
@@ -34,10 +34,11 @@ import { ReceiveScreen } from '@/components/receive/ReceiveScreen';
 import { walletAppUrl } from '@/config/receive';
 
 describe('ReceiveScreen', () => {
-  it('shows the pay link and an in-person code without a second tab bar', async () => {
+  it('shows the pay link, and keeps where it goes a tap away', async () => {
     render(<ReceiveScreen />);
 
     expect(await screen.findByText('Your pay link')).toBeTruthy();
+    expect(screen.getByText('Where this goes')).toBeTruthy();
     expect(screen.getByText('catomean@orangecat.ch')).toBeTruthy();
     expect(screen.getByText(/old name still pays/i)).toBeTruthy();
     const destination = screen.getByRole('link', { name: 'orangecat@coinos.io' });

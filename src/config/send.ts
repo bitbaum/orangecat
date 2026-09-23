@@ -1,8 +1,9 @@
 /**
  * Sending — SSOT for the outbound payment surface (/send).
  *
- * The mirror of src/config/receive.ts. Bounds are shared with pay links so a
- * link someone can create is always a link someone can pay.
+ * Who first, then amount once that person checks out. The note stays closed
+ * until opened. Bounds are shared with pay links so a link someone can create
+ * is always a link someone can pay.
  */
 
 export const SEND_NOTE_MAX_LENGTH = 120;
