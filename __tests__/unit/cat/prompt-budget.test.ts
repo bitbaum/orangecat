@@ -184,3 +184,126 @@ describe('what the ladder gives up, in order', () => {
     }
   });
 });
+
+/**
+ * What Cat knows about you outlives the generic advice.
+ *
+ * Reordered ladder regression (2026-09-20): user context used to be spent to
+ * save prose that did not survive the turn. Pin: context is last; sections
+ * drop in documented order; the report tells the truth; shortening spends room.
+ */
+function makeDroppableBase(paddingPerSection: number): string {
+  const filler = 'x '.repeat(paddingPerSection);
+  return [
+    '## Your Purpose',
+    'Help the user.',
+    ...DROPPABLE_SECTIONS_IN_ORDER.flatMap(h => [`## ${h}`, filler]),
+  ].join('\n');
+}
+
+const syntheticParts = (base: string, userContext: string): CatPromptParts => ({
+  base,
+  standingInstructions: '',
+  userContext,
+  groundingRules: 'Only state facts present in the context.',
+  fewShot: 'Example: …',
+  languageDirective: '',
+  history: [
+    { role: 'user', content: 'what should I do next?' },
+    { role: 'assistant', content: 'Your listing is still a draft.' },
+    { role: 'user', content: 'help me price it' },
+  ],
+  message: 'what should I charge?',
+});
+
+describe('the user data is spent last', () => {
+  const CONTEXT = 'Product: "Handmade Candles" — DRAFT, no price\n';
+
+  it('keeps the context while any droppable section remains', () => {
+    const parts = syntheticParts(makeDroppableBase(200), CONTEXT);
+    const { report } = fitCatPromptToBudget(parts, 2000);
+
+    expect(report.sectionsDropped.length).toBeGreaterThan(0);
+    expect(report.contextDropped).toBe(false);
+    expect(report.contextTruncated).toBe(false);
+  });
+
+  it('drops sections in the documented order, cheapest advice first', () => {
+    const parts = syntheticParts(makeDroppableBase(200), CONTEXT);
+    const { report } = fitCatPromptToBudget(parts, 2000);
+    const expectedPrefix = DROPPABLE_SECTIONS_IN_ORDER.slice(0, report.sectionsDropped.length);
+    expect(report.sectionsDropped).toEqual([...expectedPrefix]);
+  });
+
+  it('only touches the context once EVERY section is gone', () => {
+    const parts = syntheticParts(makeDroppableBase(400), CONTEXT);
+    const { report } = fitCatPromptToBudget(parts, 300);
+
+    if (report.contextTruncated || report.contextDropped) {
+      const droppable = DROPPABLE_SECTIONS_IN_ORDER.filter(h => parts.base.includes(`## ${h}`));
+      expect(report.sectionsDropped.length).toBe(droppable.length);
+    }
+  });
+
+  it('spends the few-shot examples before any of the user data', () => {
+    const parts = syntheticParts(makeDroppableBase(200), CONTEXT);
+    const { report } = fitCatPromptToBudget(parts, 2000);
+    expect(report.fewShotDropped).toBe(true);
+    expect(report.contextDropped).toBe(false);
+  });
+});
+
+describe('the report tells the truth about the context', () => {
+  const short = 'Product: "Candles"\n';
+
+  it('an untouched context is neither dropped nor truncated, however short', () => {
+    const parts = syntheticParts('## Your Purpose\nHelp.', short);
+    const { messages, report } = fitCatPromptToBudget(parts, 100_000);
+    expect(messages.map(m => m.content).join('\n')).toContain('Candles');
+    expect(report.contextDropped).toBe(false);
+    expect(report.contextTruncated).toBe(false);
+    expect(report.contextChars).toBe(short.length);
+  });
+
+  it('still reports a real drop as a drop', () => {
+    const parts = syntheticParts(makeDroppableBase(4000), short);
+    const { messages, report } = fitCatPromptToBudget(parts, 200);
+    if (report.contextDropped) {
+      expect(messages.map(m => m.content).join('\n')).not.toContain('Candles');
+    }
+  });
+});
+
+describe('shortening actually uses the room it has', () => {
+  const HUGE = 'Product: "Candles" — DRAFT\n'.repeat(400);
+  const fitAt = (budget: number) =>
+    fitCatPromptToBudget(syntheticParts(makeDroppableBase(200), HUGE), budget).report;
+
+  it('shortens rather than discards when there is room for a slice', () => {
+    const report = fitAt(2000);
+    expect(report.fits).toBe(true);
+    expect(report.contextTruncated).toBe(true);
+    expect(report.contextDropped).toBe(false);
+    expect(report.contextChars).toBeGreaterThan(0);
+  });
+
+  it('a larger budget keeps more of the context, not the same sliver', () => {
+    expect(fitAt(3000).contextChars).toBeGreaterThan(fitAt(2000).contextChars);
+  });
+
+  it('fills the budget instead of leaving it on the table', () => {
+    const report = fitAt(2500);
+    expect(report.tokens).toBeLessThanOrEqual(report.budgetTokens);
+    expect(report.tokens).toBeGreaterThan(report.budgetTokens - 60);
+  });
+
+  it('the kept slice is really in the prompt, with the marker to explain it', () => {
+    const { messages, report } = fitCatPromptToBudget(
+      syntheticParts(makeDroppableBase(200), HUGE),
+      2000
+    );
+    expect(report.contextTruncated).toBe(true);
+    expect(messages[0].content).toContain('Candles');
+    expect(messages[0].content).toContain('context shortened');
+  });
+});

@@ -2,7 +2,7 @@
 
 created_date: 2025-01-01
 last_modified_date: 2026-09-23
-last_modified_summary: Replaced coverage-percentage fantasy with a lean contract-first policy; Cat column regression suite compressed to a table-driven gate; dropped prompt context snapshots.
+last_modified_summary: Wave-2 Cat cull — merged prompt-budget-order into prompt-budget; slimmed entity-type-rubric to money-need-intent; cut empty-completion/chips/probe source-grep theatre; thinned suggestion rotation.
 
 ## What we believe
 
@@ -28,7 +28,8 @@ Do **not** add:
 
 - Byte snapshots of prompt prose (they train people to update goldens instead of thinking)
 - Per-field exhaustiveness for every create handler (one table of forbidden/required columns is enough — see `action-executor-columns.test.ts`)
-- Source-grep theatre that breaks when Prettier wraps a line (unless the assertion is about wiring _arguments_, with whitespace collapsed)
+- Source-grep theatre that breaks when Prettier wraps a line (unless the assertion is about wiring _arguments_ or a TDZ order that typecheck cannot see, with whitespace collapsed)
+- A second file that re-pins the same ladder/order/fit relationship already covered in `prompt-budget.test.ts`
 
 ## Commands
 
