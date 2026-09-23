@@ -1,14 +1,14 @@
 'use client';
 
 /**
- * The remote half of getting paid.
+ * The remote half of getting paid — one link on screen, the rest a tap away.
  *
  * A QR is the wrong artifact to put in a chat — the person reading it is on the
  * phone that would have to scan it. This shares a link instead, and the link is
  * alias-backed so it still works tomorrow, unlike an invoice.
  *
- * The link, the copy button and the share sheet all emit the SAME string from
- * buildPayUrl, so what someone pastes and what someone scans can never drift.
+ * Copy and Share emit the SAME string from buildPayUrl. Wallet name and settle
+ * destination sit behind "Where this goes", so the first look is only the link.
  */
 
 import { useCallback, useMemo, useState } from 'react';
