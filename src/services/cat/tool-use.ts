@@ -23,6 +23,8 @@ import { toolPlanForModel, observedToolVerdict, recordToolAttempt } from './tool
 import { offerablePlatformTools } from './capability-gate';
 import { hasCreateIntent, PLATFORM_TOOL_DEFINITION } from './tool-use-detection';
 import { degradedMessages } from './tool-use-degrade';
+import { ToolTurnState, toolRoutingHistory } from './tool-turn-state';
+import { routeWithFallback, type ToolRoutingStep } from './tool-routing-fallback';
 import { executeToolCall } from './tool-executor';
 import { WebTurnContext } from './web-research';
 import { extractHttpUrls, isUrlOnlyMessage } from './website-analysis';
@@ -70,17 +72,16 @@ const MAX_TOOL_STEPS = 5;
  * Hard ceiling for the ENTIRE tool phase (routing round-trips + tool
  * executions). The tool phase runs inside the SSE stream BEFORE any content
  * reaches the user, so an unbounded await here means the chat hangs on typing
- * dots. When the deadline hits, we degrade to the un-enriched messages (plus
- * an honest note when the user clearly wanted a site analyzed) and let the
- * main model answer.
+ * dots. When the deadline hits, keep completed tool exchanges, stop starting work,
+ * and tell the main model which outcome is still unconfirmed.
  */
 const TOOL_PHASE_TIMEOUT_MS = 25_000;
 
 /**
  * Returns the messages array, possibly enriched with platform search results.
  * Non-fatal AND bounded: on any failure — or when the whole tool phase exceeds
- * its hard timeout — resolves with the original messages (plus an honest
- * degrade note where appropriate). It never throws and never hangs, so the
+ * its hard timeout — resolves with completed exchanges and an honest
+ * interruption note. It never throws and never hangs, so the
  * chat stream around it always completes.
  *
  * If `onToolCall` is provided, every tool the Cat invokes emits at least one
@@ -99,6 +100,7 @@ export async function maybeEnrichWithSearchResults(
   onPrefillProposal?: OnPrefillProposal,
   opts?: {
     timeoutMs?: number;
+    toolFallbacks?: ToolRoutingStep[];
     actorId?: string | null;
     /**
      * Where to POST the tool loop, and with what, for the ACTIVE model.
@@ -117,10 +119,8 @@ export async function maybeEnrichWithSearchResults(
      * web this turn, so the caller's grounding check can verify the reply
      * against them.
      *
-     * Fired ONLY on the path where the tool results reach the model. On the
-     * degrade path the model is never shown the web content, so licensing
-     * claims against it would let an invented sentence pass because a page we
-     * did not show happened to contain the words.
+     * Evidence is returned only for completed exchanges that reach the model,
+     * including partial progress preserved when a later step is interrupted.
      */
     onWebEvidence?: (evidence: string[]) => void;
   }
@@ -132,15 +132,19 @@ export async function maybeEnrichWithSearchResults(
   // sending no tools.
   const toolEndpoint = opts?.toolEndpoint ?? null;
   const toolKey = opts?.toolKey ?? null;
-  if (!toolEndpoint || !toolKey) {
-    return messages;
-  }
 
   // Can THIS MODEL drive a tool loop? Asked of the model, not of a two-name
   // provider list, and what it answers is remembered — so an uncatalogued
   // model is asked once, not every turn. See tool-capability.ts, ADR-0008 D1.
   const plan = toolPlanForModel(modelToUse, observedToolVerdict(modelToUse, toolKey));
-  if (!plan.sendTools) {
+  const hasUsableFallback = opts?.toolFallbacks?.some(
+    step =>
+      step.toolEndpoint &&
+      step.toolKey &&
+      toolPlanForModel(step.modelToUse, observedToolVerdict(step.modelToUse, step.toolKey))
+        .sendTools
+  );
+  if (!(toolEndpoint && toolKey && plan.sendTools) && !hasUsableFallback) {
     return messages;
   }
 
@@ -168,27 +172,24 @@ export async function maybeEnrichWithSearchResults(
   // the one making that call now, so the rule has to live where the call is
   // made.
 
-  if (!toolKey) {
-    return messages;
-  }
-
   // Robustness guarantee: the whole tool phase races a hard deadline. A
   // hanging provider or tool can therefore never stall the chat stream — the
-  // worst case is an un-enriched answer. After the deadline, callback events
+  // worst case is a partial answer. After the deadline, callback events
   // from the orphaned loop are suppressed so nothing is enqueued into a
   // stream that has moved on.
   const timeoutMs = opts?.timeoutMs ?? TOOL_PHASE_TIMEOUT_MS;
   let expired = false;
+  const state = new ToolTurnState();
   const guardedOnToolCall: OnToolCall | undefined = onToolCall
     ? event => {
-        if (!expired) {
+        if (!expired && !state.controller.signal.aborted) {
           onToolCall(event);
         }
       }
     : undefined;
   const guardedOnPrefillProposal: OnPrefillProposal | undefined = onPrefillProposal
     ? proposal => {
-        if (!expired) {
+        if (!expired && !state.controller.signal.aborted) {
           onPrefillProposal(proposal);
         }
       }
@@ -202,35 +203,54 @@ export async function maybeEnrichWithSearchResults(
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     const raced = await Promise.race([
-      runToolLoop({
-        supabase,
-        userId,
-        messages,
-        userMessage,
-        toolEndpoint,
-        toolKey,
-        modelToUse,
-        timeoutMs,
-        onToolCall: guardedOnToolCall,
-        onPrefillProposal: guardedOnPrefillProposal,
-        actorId: opts?.actorId ?? null,
-        web,
-      }),
+      routeWithFallback(
+        [{ modelToUse, toolEndpoint, toolKey }, ...(opts?.toolFallbacks ?? [])],
+        state,
+        step =>
+          runToolLoop({
+            supabase,
+            userId,
+            messages,
+            userMessage,
+            ...step,
+            state,
+            onToolCall: guardedOnToolCall,
+            onPrefillProposal: guardedOnPrefillProposal,
+            actorId: opts?.actorId ?? null,
+            web,
+          })
+      ),
       new Promise<'timeout'>(resolve => {
-        timer = setTimeout(() => resolve('timeout'), timeoutMs);
+        timer = setTimeout(() => {
+          state.reportPending(guardedOnToolCall);
+          state.controller.abort();
+          resolve('timeout');
+        }, timeoutMs);
       }),
     ]);
     if (raced === 'timeout') {
-      return degradedMessages(messages, userMessage, web.attempted);
+      if (state.completed.length) {
+        opts?.onWebEvidence?.(state.webEvidence);
+      }
+      return state.interrupted(
+        state.completed.length ? messages : degradedMessages(messages, userMessage, web.attempted)
+      );
     }
     if (web.evidence.length > 0) {
       opts?.onWebEvidence?.(web.evidence);
     }
     return raced;
   } catch {
-    return degradedMessages(messages, userMessage, web.attempted);
+    state.reportPending(guardedOnToolCall);
+    if (state.completed.length) {
+      opts?.onWebEvidence?.(state.webEvidence);
+    }
+    return state.interrupted(
+      state.completed.length ? messages : degradedMessages(messages, userMessage, web.attempted)
+    );
   } finally {
     expired = true;
+    state.controller.abort();
     if (timer) {
       clearTimeout(timer);
     }
@@ -260,7 +280,7 @@ async function runToolLoop(args: {
   toolEndpoint: string;
   toolKey: string;
   modelToUse: string;
-  timeoutMs: number;
+  state: ToolTurnState;
   onToolCall?: OnToolCall;
   onPrefillProposal?: OnPrefillProposal;
   /** Present ⇒ the model may CALL actions, not just read tools (ADR-0006 D2). */
@@ -276,7 +296,7 @@ async function runToolLoop(args: {
     toolEndpoint,
     toolKey,
     modelToUse,
-    timeoutMs,
+    state,
     onToolCall,
     onPrefillProposal,
     actorId,
@@ -325,6 +345,7 @@ async function runToolLoop(args: {
         'You may also call any ACTION tool (create_project, update_entity, …) when the user clearly asks you to DO that thing — not to explore it. An action WRITES, so call it only on a clear instruction; its result comes back to you before you reply, so never claim something is done until you have seen that result.\n' +
         'NEVER call search_platform for a create/sell/offer intent — describing your own thing to list is prefill_entity_form, not a search. If neither clearly applies, call no tool. Only decide and call tools — do not write a chat reply.',
     },
+    ...toolRoutingHistory(messages, userMessage),
     { role: 'user' as const, content: userMessage },
   ];
 
@@ -332,7 +353,7 @@ async function runToolLoop(args: {
   // each step is informed by prior results; `enriched` is what the main chat
   // call sees.
   const loopMessages: ToolAugmentedMessage[] = [...detectionMessages];
-  const enriched: ToolAugmentedMessage[] = [...messages];
+  const enriched = () => [...messages, ...state.completed];
 
   // Entity types already drafted in an EARLIER step. Weak routing models keep
   // re-calling prefill_entity_form for the same thing after seeing its result,
@@ -359,6 +380,7 @@ async function runToolLoop(args: {
         content: null,
         tool_calls: [syntheticCall],
       };
+      state.pending = syntheticCall;
       const resultMsg: ToolResultMessage = await executeToolCall(
         supabase,
         userId,
@@ -369,18 +391,20 @@ async function runToolLoop(args: {
         actorId,
         web
       );
+      state.controller.signal.throwIfAborted();
       loopMessages.push(assistantMsg, resultMsg);
-      enriched.push(assistantMsg, resultMsg);
+      state.record(syntheticCall, resultMsg, web.evidence);
     }
   }
 
   for (let step = 0; step < MAX_TOOL_STEPS; step++) {
+    state.controller.signal.throwIfAborted();
     const res = await fetch(toolEndpoint, {
       method: 'POST',
       headers: { Authorization: `Bearer ${toolKey}`, 'Content-Type': 'application/json' },
       // Belt & braces with the outer race: the provider socket itself is
       // aborted at the same deadline so no orphaned request lingers.
-      signal: AbortSignal.timeout(timeoutMs),
+      signal: state.controller.signal,
       body: JSON.stringify({
         model: modelToUse,
         messages: loopMessages,
@@ -399,10 +423,11 @@ async function runToolLoop(args: {
         status: res.status,
         bodyText: await res.text().catch(() => ''),
       });
-      break;
+      throw new Error('Tool provider did not complete the request');
     }
 
     const data = await res.json();
+    state.controller.signal.throwIfAborted();
     recordToolAttempt(modelToUse, toolKey, { status: res.status, parsed: data });
     const choice = data.choices?.[0];
     // Model stopped calling tools → it has what it needs; the main chat call
@@ -434,9 +459,10 @@ async function runToolLoop(args: {
 
     const assistantToolMsg: ToolCallAssistantMessage = { ...assistantMsg, tool_calls: toolCalls };
     loopMessages.push(assistantToolMsg);
-    enriched.push(assistantToolMsg);
 
     for (const toolCall of toolCalls) {
+      state.controller.signal.throwIfAborted();
+      state.pending = toolCall;
       const resultMessage = await executeToolCall(
         supabase,
         userId,
@@ -447,8 +473,9 @@ async function runToolLoop(args: {
         actorId,
         web
       );
+      state.controller.signal.throwIfAborted();
       loopMessages.push(resultMessage);
-      enriched.push(resultMessage);
+      state.record(toolCall, resultMessage, web.evidence);
       if (toolCall.function?.name === 'prefill_entity_form') {
         prefilledTypes.add(prefillType(toolCall));
       }
@@ -457,5 +484,5 @@ async function runToolLoop(args: {
     // tool (e.g. refine a search) or stop.
   }
 
-  return enriched;
+  return enriched();
 }

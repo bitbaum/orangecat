@@ -73,6 +73,12 @@ export type ToolCallEvent =
       error?: string;
     }
   | {
+      /** A timed-out call may still finish after the response; its outcome is unknown. */
+      id: string;
+      name: string;
+      status: 'unconfirmed';
+    }
+  | {
       /**
        * An action that now waits on the confirmation card — not done, not
        * failed. `pendingActionId` is the row the card will confirm, and it is
