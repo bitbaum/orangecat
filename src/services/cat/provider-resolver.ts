@@ -48,6 +48,9 @@ export interface FallbackProvider {
   modelToUse: string;
   aiService: AiService;
   reason: 'rate_limit';
+  /** Routing uses the same endpoint and credential as this completion step. */
+  toolEndpoint?: string | null;
+  toolKey?: string | null;
   /** Platform-served link (false = the user's own key). Drives circuit-breaker marking. */
   hasByok: boolean;
 }
@@ -411,6 +414,8 @@ export async function resolveProvider(
     aiService: s.aiService,
     reason: 'rate_limit' as const,
     hasByok: s.hasByok,
+    toolEndpoint: s.toolEndpoint,
+    toolKey: s.toolKey,
   }));
 
   // Read off `primary`, NOT `chain[0]`. They are usually the same object and

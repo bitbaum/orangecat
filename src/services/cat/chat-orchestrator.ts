@@ -421,6 +421,7 @@ export async function orchestrateCatChat(
               // reach THEIR vendor rather than being silently dropped.
               toolEndpoint,
               toolKey,
+              toolFallbacks: fallbacks,
               onWebEvidence: evidence => {
                 webEvidence.push(...evidence);
               },
@@ -792,7 +793,7 @@ export async function orchestrateCatChat(
       collectedPrefillProposals.push(proposal);
     },
     // Same as the streaming path: an actor is what makes actions callable.
-    { actorId, toolEndpoint, toolKey }
+    { actorId, toolEndpoint, toolKey, toolFallbacks: fallbacks }
   );
   // The non-streaming path runs no grounding check (see below), so there is
   // nothing here to feed web evidence into. Stated rather than left as an

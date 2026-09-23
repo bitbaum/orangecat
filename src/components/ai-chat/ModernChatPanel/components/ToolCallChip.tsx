@@ -3,7 +3,7 @@
  *
  * Visible chip showing what Cat is doing — searching, reading a page, funding
  * a project. Chronology: the chip appears as the tool runs, then settles into
- * completed / no_results / failed / pending_confirmation. Click to expand any
+ * completed / no_results / failed / unconfirmed / pending_confirmation. Click to expand any
  * results so the user can navigate straight to the cited entities.
  *
  * Without this, Cat's work is silent and looks like magic — users cannot tell
@@ -70,6 +70,11 @@ export function ToolCallChip({ event }: ToolCallChipProps) {
       icon = <AlertCircle className="h-3 w-3 flex-shrink-0" />;
       badgeClass = 'border-status-negative/20 bg-status-negative/10 text-status-negative';
       text = label.failed;
+      break;
+    case 'unconfirmed':
+      icon = <Clock className="h-3 w-3 flex-shrink-0" />;
+      badgeClass = 'border-status-warning/20 bg-status-warning/10 text-status-warning';
+      text = 'Outcome unconfirmed — check before retrying';
       break;
     case 'declined':
       // Muted, not red: the user made a choice and it was carried out. Red

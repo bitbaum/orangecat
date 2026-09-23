@@ -131,11 +131,12 @@ describe('maybeEnrichWithSearchResults — bare-URL message', () => {
 
     // Resolved (no throw, no hang) with the original messages plus a system
     // note instructing the model to tell the user the site couldn't be read.
-    expect(result).toHaveLength(baseMessages.length + 1);
-    expect(result[result.length - 1]).toMatchObject({
+    expect(result).toHaveLength(baseMessages.length + 2);
+    expect(result).toContainEqual({
       role: 'system',
       content: expect.stringContaining('could not be fetched'),
     });
+    expect(result.at(-1)?.content).toContain('unconfirmed');
   });
 
   it('resolves within the hard timeout when the tool phase hangs forever', async () => {
@@ -149,10 +150,11 @@ describe('maybeEnrichWithSearchResults — bare-URL message', () => {
       timeoutMs: 50,
     });
 
-    expect(result[result.length - 1]).toMatchObject({
+    expect(result).toContainEqual({
       role: 'system',
       content: expect.stringContaining('could not be fetched'),
     });
+    expect(result.at(-1)?.content).toContain('unconfirmed');
 
     // Late callbacks from the orphaned loop are suppressed after the timeout.
     const eventsAtTimeout = events.length;
@@ -160,7 +162,7 @@ describe('maybeEnrichWithSearchResults — bare-URL message', () => {
     expect(events.length).toBe(eventsAtTimeout);
   });
 
-  it('returns messages unchanged when the routing provider errors on a non-URL message', async () => {
+  it('reports unfinished work when the routing provider errors on a non-URL message', async () => {
     global.fetch = vi.fn(async () => {
       throw new Error('network down');
     }) as unknown as typeof fetch;
@@ -169,6 +171,7 @@ describe('maybeEnrichWithSearchResults — bare-URL message', () => {
     expect(result).toEqual([
       { role: 'system', content: 'system prompt' },
       { role: 'user', content: 'help me find a designer' },
+      { role: 'system', content: expect.stringContaining('stopped before it finished') },
     ]);
     expect(mockExecuteToolCall).not.toHaveBeenCalled();
   });
