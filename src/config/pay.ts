@@ -68,9 +68,7 @@ export function buildPayUrl(
  * Read prefill params. Invalid amounts return an `amountError` so the page can
  * say what happened instead of rendering a blank form and looking broken.
  */
-export function parsePayPrefill(params: {
-  get(name: string): string | null;
-}): PayPrefill {
+export function parsePayPrefill(params: { get(name: string): string | null }): PayPrefill {
   const prefill: PayPrefill = {};
 
   const note = params.get(PAY_PARAMS.note)?.trim();
@@ -111,31 +109,65 @@ export const PAY_COPY = {
   shareHint: 'Send this link and they can pay you from any Bitcoin wallet.',
   copyLink: 'Copy link',
   copiedLink: 'Link copied',
+  generate: 'Show the code',
+  generating: 'Preparing…',
+  scan: 'Scan with any Bitcoin wallet.',
+  again: 'Change amount',
+  paidTitle: 'Paid',
+  paidBody: (name: string) => `Paid straight to ${name}'s wallet.`,
+  expiredTitle: 'This code expired',
+  expiredBody: 'Nothing was sent. You can make another.',
 } as const;
 
-/** Copy for the public /pay landing page (what pay links ARE). */
+/**
+ * Where a renamed handle should send a payer.
+ * Null when the URL is already the name we show today.
+ */
+export function renamedPayHref(
+  requested: string,
+  canonical: string,
+  search: Record<string, string | string[] | undefined>
+): string | null {
+  if (requested === canonical) {
+    return null;
+  }
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(search)) {
+    if (typeof value === 'string') {
+      params.set(key, value);
+    } else if (Array.isArray(value)) {
+      for (const item of value) {
+        params.append(key, item);
+      }
+    }
+  }
+  const path = `/pay/${encodeURIComponent(canonical)}`;
+  const qs = params.toString();
+  return qs ? `${path}?${qs}` : path;
+}
+
+/** Copy for /pay — one explanation, not a second product. */
 export const PAY_LANDING_COPY = {
-  title: 'Get paid with a link',
+  title: 'Get paid',
   subtitle:
-    'Everyone on OrangeCat has a payment page at orangecat.ch/pay/<username>. Share it anywhere — the person paying you needs a Bitcoin wallet, not an account.',
+    'Your page is orangecat.ch/pay/your-name. The money goes to the wallet you connected. OrangeCat does not hold it.',
   points: [
     {
-      title: 'No account for the payer',
+      title: 'One door',
       description:
-        'Send your link in a chat, pin it in a bio, print it on an invoice. Whoever opens it can pay you on the spot — no signup, no app install.',
+        'The link and your-name@orangecat.ch are the same door. A chat gets the link. A wallet app gets the address.',
     },
     {
-      title: 'Non-custodial, zero fee',
-      description:
-        'Payments go straight to your wallet over Bitcoin and Lightning. OrangeCat never holds your funds and takes 0%.',
+      title: 'The payer needs a Bitcoin wallet',
+      description: 'They do not need an OrangeCat account. They do need their own wallet.',
     },
     {
-      title: 'A link that keeps working',
+      title: 'The page can receive once a wallet is connected',
       description:
-        'Invoices expire in about an hour; your pay link never does. It mints a fresh invoice the moment someone arrives, so it survives sitting in a thread overnight.',
+        'Creating an account makes the page. Until a wallet is connected, the page says it cannot receive.',
     },
   ],
   ctaFind: 'Find people to pay',
-  ctaOwn: 'Get your own pay link',
-  ctaOwnHint: 'Create an account and your page at /pay/<username> works immediately.',
+  ctaOwn: 'Get your page',
+  ctaOwnHint: 'A rename changes the name we show. The old name still pays the same wallet.',
 } as const;

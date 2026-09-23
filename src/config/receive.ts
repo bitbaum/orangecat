@@ -33,8 +33,9 @@ export const RECEIVE_SHARE_COPY = {
 export const RECEIVE_COPY = {
   title: 'Receive',
   subtitle: 'Anyone can pay you here. OrangeCat never holds the money.',
-  addressLabel: 'In person',
-  addressHint: 'Any amount. This code does not expire.',
+  addressLabel: 'Your name',
+  addressHint:
+    'Same door as the link, for a wallet app. A rename changes the name on this screen. The old name still pays the same wallet.',
   exactHeading: 'One amount',
   exactHint:
     'A code for a specific amount, for someone with you. To ask one person by name, use Request.',

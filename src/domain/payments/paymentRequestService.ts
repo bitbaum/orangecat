@@ -18,6 +18,7 @@ import { getAdminClient } from '@/lib/supabase/admin';
 import { fromTable } from '@/lib/supabase/untyped';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { NotificationDispatcher } from '@/services/notifications/dispatcher';
+import { resolveLnurlRecipient } from '@/domain/lightning-address/lnurl-service';
 import { buildPayUrl } from '@/config/pay';
 import { SITE_URL } from '@/config/brand';
 import { PAY_MAX_BTC, PAY_MIN_BTC } from '@/config/pay';
@@ -93,19 +94,12 @@ export async function createPaymentRequest(
     return fail('invalid_amount', 'Enter an amount we can actually request.');
   }
 
-  const admin = getAdminClient();
   const username = payerUsername.trim().replace(/^@/, '');
-
-  const { data: payer } = await fromTable(admin, DATABASE_TABLES.PROFILES)
-    .select('id, username, name')
-    .ilike('username', username)
-    .maybeSingle();
-
-  const payerRow = payer as { id?: string; username?: string; name?: string } | null;
-  if (!payerRow?.id) {
+  const payer = await resolveLnurlRecipient(username);
+  if (!payer) {
     return fail('payer_not_found', `We couldn't find @${username} on OrangeCat.`);
   }
-  if (payerRow.id === requesterId) {
+  if (payer.userId === requesterId) {
     return fail('self_request', "You can't request money from yourself.");
   }
 
@@ -114,7 +108,7 @@ export async function createPaymentRequest(
   const { data, error } = await fromTable(supabase, DATABASE_TABLES.PAYMENT_REQUESTS)
     .insert({
       requester_id: requesterId,
-      payer_id: payerRow.id,
+      payer_id: payer.userId,
       amount_btc: amountBtc,
       note: note?.trim() || null,
     })
@@ -131,8 +125,8 @@ export async function createPaymentRequest(
   // missing exactly the fields the UI renders.
   const request: PaymentRequestRow = {
     ...(data as Omit<PaymentRequestRow, 'counterparty_username' | 'counterparty_name'>),
-    counterparty_username: payerRow.username ?? null,
-    counterparty_name: payerRow.name ?? payerRow.username ?? null,
+    counterparty_username: payer.username,
+    counterparty_name: payer.displayName,
   };
 
   await notifyPayer(request, requesterId);

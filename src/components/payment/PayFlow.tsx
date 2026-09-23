@@ -33,6 +33,20 @@ import {
   TIP_POLL_INTERVAL_MS,
 } from '@/config/tips';
 
+/** The words around the one pay machine. Tips and the public page are not the same sentence. */
+interface PayWords {
+  noWallet: (name: string) => string;
+  paidTitle: string;
+  paidBody: (name: string) => string;
+  expiredTitle: string;
+  expiredBody: string;
+  again: string;
+  scan: string;
+  disclaimer: string;
+  generating: string;
+  generate: string;
+}
+
 export type PayFlowState = 'pending' | 'paid' | 'expired';
 
 interface PayFlowProps {
@@ -54,6 +68,8 @@ interface PayFlowProps {
   beforeActionSlot?: React.ReactNode;
   /** Shown alongside the confirmation — lets a modal offer "Done". */
   renderDone?: (reset: () => void) => React.ReactNode;
+  /** Defaults to tip wording. The public pay page passes its own. */
+  words?: PayWords;
 }
 
 export function PayFlow({
@@ -65,6 +81,7 @@ export function PayFlow({
   noteSlot,
   beforeActionSlot,
   renderDone,
+  words = TIP_COPY,
 }: PayFlowProps) {
   const knownUpFront = initialCanReceive !== undefined;
   const [amount, setAmount] = useState(initialAmountBtc ?? DEFAULT_TIP_BTC);
@@ -167,7 +184,7 @@ export function PayFlow({
   if (canReceive === false) {
     return (
       <p className="rounded-md border border-subtle bg-surface-raised/40 px-4 py-6 text-center text-sm text-fg-secondary">
-        {TIP_COPY.noWallet(recipientName)}
+        {words.noWallet(recipientName)}
       </p>
     );
   }
@@ -175,10 +192,10 @@ export function PayFlow({
   if (invoice && settleState === 'paid') {
     return (
       <MoneyReceipt
-        title={TIP_COPY.paidTitle}
+        title={words.paidTitle}
         amountBtc={invoice.amountBtc}
         counterparty={recipientName}
-        fallbackBody={TIP_COPY.paidBody(recipientName)}
+        fallbackBody={words.paidBody(recipientName)}
       >
         {renderDone?.(reset)}
       </MoneyReceipt>
@@ -189,10 +206,10 @@ export function PayFlow({
     return (
       <div className="flex flex-col items-center gap-3 py-6 text-center">
         <Clock className="h-12 w-12 text-fg-tertiary" />
-        <p className="text-lg font-semibold text-fg-primary">{TIP_COPY.expiredTitle}</p>
-        <p className="text-sm text-fg-secondary">{TIP_COPY.expiredBody}</p>
+        <p className="text-lg font-semibold text-fg-primary">{words.expiredTitle}</p>
+        <p className="text-sm text-fg-secondary">{words.expiredBody}</p>
         <Button variant="outline" className="mt-2" onClick={reset}>
-          {TIP_COPY.again}
+          {words.again}
         </Button>
       </div>
     );
@@ -209,12 +226,12 @@ export function PayFlow({
         />
         <p className="flex items-center justify-center gap-2 text-center text-sm text-fg-secondary">
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          {TIP_COPY.scan}
+          {words.scan}
         </p>
-        <p className="text-center text-xs text-fg-tertiary">{TIP_COPY.disclaimer}</p>
+        <p className="text-center text-xs text-fg-tertiary">{words.disclaimer}</p>
         <div className="flex justify-center gap-3">
           <Button variant="outline" onClick={reset}>
-            {TIP_COPY.again}
+            {words.again}
           </Button>
           {renderDone?.(reset)}
         </div>
@@ -228,7 +245,7 @@ export function PayFlow({
       <AmountField value={amount} onChange={setAmount} minBtc={TIP_MIN_BTC} maxBtc={TIP_MAX_BTC} />
       {beforeActionSlot}
       {error && <p className="text-sm text-status-negative">{error}</p>}
-      <p className="text-center text-xs text-fg-tertiary">{TIP_COPY.disclaimer}</p>
+      <p className="text-center text-xs text-fg-tertiary">{words.disclaimer}</p>
       <Button
         variant="accent"
         className="w-full"
@@ -236,7 +253,7 @@ export function PayFlow({
         disabled={generating || amount <= 0}
         isLoading={generating}
       >
-        {generating ? TIP_COPY.generating : TIP_COPY.generate}
+        {generating ? words.generating : words.generate}
       </Button>
     </div>
   );

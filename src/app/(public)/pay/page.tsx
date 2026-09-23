@@ -11,18 +11,18 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Link2, ShieldCheck, UserX } from 'lucide-react';
 import Button from '@/components/ui/Button';
-import { APP_NAME, SITE_URL } from '@/config/brand';
+import { SITE_URL } from '@/config/brand';
 import { PAY_LANDING_COPY } from '@/config/pay';
 import { ROUTES } from '@/config/routes';
 
 const POINT_ICONS = [UserX, ShieldCheck, Link2] as const;
 
 export const metadata: Metadata = {
-  title: 'Pay links',
+  title: 'Get paid',
   description: PAY_LANDING_COPY.subtitle,
   alternates: { canonical: `${SITE_URL}${ROUTES.PAY_LANDING}` },
   openGraph: {
-    title: `${PAY_LANDING_COPY.title} — ${APP_NAME}`,
+    title: PAY_LANDING_COPY.title,
     description: PAY_LANDING_COPY.subtitle,
     url: `${SITE_URL}${ROUTES.PAY_LANDING}`,
     type: 'website',
@@ -42,7 +42,7 @@ export default function PayLandingPage() {
           </p>
         </header>
 
-        <div className="mb-14 grid gap-6 sm:grid-cols-3">
+        <div className="mx-auto mb-14 flex w-full max-w-xl flex-col gap-6">
           {PAY_LANDING_COPY.points.map((point, index) => {
             const Icon = POINT_ICONS[index] ?? Link2;
             return (
