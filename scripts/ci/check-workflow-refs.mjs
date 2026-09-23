@@ -82,6 +82,9 @@ if (!cdWorkflow.includes('build-and-smoke=success') || !cdWorkflow.includes('sec
 if (!/GH_TOKEN:\s*\$\{\{\s*github\.token\s*\}\}/.test(liveGuard)) {
   cdWiringProblems.push('CD live-SHA guard must authenticate its GitHub API request');
 }
+if (!/REPO:\s*\$\{\{\s*github\.repository\s*\}\}/.test(liveGuard)) {
+  cdWiringProblems.push('CD live-SHA guard must pass the repository to its GitHub API request');
+}
 if (cdWiringProblems.length > 0) {
   console.error('[check-cd-wiring] FAIL');
   for (const problem of cdWiringProblems) console.error(`  ${problem}`);
