@@ -32,8 +32,10 @@ latest_cd_run() {
 before=$(latest_cd_run)
 echo "[arm-cd] latest CD run before dispatch: ${before}"
 
-gh workflow run cd.yml --repo "$REPO" --ref "$BASE_BRANCH"
-echo "[arm-cd] dispatched cd.yml on ${BASE_BRANCH}"
+gh workflow run cd.yml --repo "$REPO" --ref "$BASE_BRANCH" \
+  -f ci_run_id="${GITHUB_RUN_ID:?GITHUB_RUN_ID is required}" \
+  -f ci_sha="${GITHUB_SHA:?GITHUB_SHA is required}"
+echo "[arm-cd] dispatched cd.yml on ${BASE_BRANCH} with CI artifact ${GITHUB_RUN_ID} (${GITHUB_SHA})"
 
 for attempt in $(seq 1 12); do
   sleep 5

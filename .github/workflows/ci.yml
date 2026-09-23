@@ -118,8 +118,8 @@ jobs:
         env:
           NODE_ENV: production
           # Build the SELF_HOST standalone here so CI tests the same artifact CD
-          # deploys (tested == shipped). On main this artifact is uploaded and
-          # shipped verbatim; PRs build it too (dummy env) to catch standalone-only
+          # deploys (tested == shipped). On main, including dispatched CI, this
+          # artifact is uploaded and shipped verbatim; PRs build it too to catch standalone-only
           # breakage. Bake the same client vars CD bakes — public receiving
           # addresses; empty on PRs/forks, which is fine for a test build.
           SELF_HOST: '1'
@@ -169,11 +169,13 @@ jobs:
         # @swc/helpers still ships; nothing can reach it. Boot dies on
         # `Cannot find module '@swc/helpers/_/_interop_require_default'`.
         # tar records links as links, so the tree arrives byte-identical.
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        # Bot merges re-arm CI by workflow_dispatch. Those builds must upload
+        # the same artifact as push builds, or CD has to rebuild from scratch.
+        if: github.ref == 'refs/heads/main'
         run: tar -czf standalone.tar.gz -C .next/standalone .
 
       - name: Upload standalone artifact (main → shipped by CD)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
         with:
           name: standalone-${{ github.sha }}
