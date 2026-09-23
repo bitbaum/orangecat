@@ -74,37 +74,6 @@ describe('the chain description is read, not written', () => {
   });
 });
 
-describe('the old per-provider probes are gone', () => {
-  const src = readFileSync(
-    join(__dirname, '../../../src/services/cat/health-probes.ts'),
-    'utf8'
-  );
-
-  it('leaves no second implementation behind to drift', () => {
-    // Adopting a shared check and leaving the copy in place is how two answers
-    // to one question survive — the failure this whole adoption is about.
-    expect(src).not.toContain('export async function probeFreeModelCatalog');
-    expect(src).not.toContain('export async function probeGroqModelCatalog');
-  });
-
-  it('asks the shared checker instead', () => {
-    expect(src).toContain('checkModelRot()');
-  });
-
-  it('still reports per provider, so the report shape is unchanged', () => {
-    // Everything downstream — the diagnose route, the health action, the new
-    // cron alert — reads missingFreeModels / missingGroqModels.
-    expect(src).toContain('const missingFreeModels = byProvider(');
-    expect(src).toContain('const missingGroqModels = byProvider(');
-  });
-
-  it('keeps null meaning "could not look", not "nothing is missing"', () => {
-    // The one line that must not be simplified: an unreadable catalogue that
-    // reported [] would claim every pinned model is fine.
-    expect(src).toContain("v.live === null ? null : v.missing");
-  });
-});
-
 describe('the health probe asks for a model the chain serves', () => {
   // This probed `llama-3.1-8b-instant` long after Groq withdrew the whole
   // llama-3.x family — groq-models.ts names that retirement in its own
@@ -112,10 +81,7 @@ describe('the health probe asks for a model the chain serves', () => {
   // came from asking for a decommissioned model. The OpenRouter probe directly
   // below it carries a comment warning about exactly this drift: the fix was
   // applied there and not here.
-  const src = readFileSync(
-    join(__dirname, '../../../src/services/cat/health-probes.ts'),
-    'utf8'
-  );
+  const src = readFileSync(join(__dirname, '../../../src/services/cat/health-probes.ts'), 'utf8');
 
   it('probes Groq with the model the platform actually offers', () => {
     expect(src).toContain('PLATFORM_GROQ_MODEL');

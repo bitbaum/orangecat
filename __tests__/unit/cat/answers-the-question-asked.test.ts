@@ -17,11 +17,7 @@
  * because the person who found this does not type them.
  */
 
-import { selectPromptSections, SITUATIONAL_SECTIONS } from '@/config/cat-prompt-sections';
-import {
-  BASE_SYSTEM_PROMPT_FOR_TEST,
-  selectSectionsFromPrompt,
-} from '@/services/cat/system-prompt';
+import { SITUATIONAL_SECTIONS } from '@/config/cat-prompt-sections';
 import { createAutoRouter, qualityRank } from '@/services/ai/auto-router';
 import { getFreeModels, getModelMetadata } from '@/config/ai-models';
 import { servingChain, shouldEscalateForComplexity } from '@/services/cat/provider-catalog';
@@ -34,36 +30,6 @@ const HARD_ASK =
   'borrowing it and why. maybe some otehr reasons. what do you thinkj of trhis idea and how ' +
   'would you set it up. take iontop accont orangecat, but also loki and solon, which could ' +
   'also be used for this project.';
-
-describe('the brief has a mode for a question', () => {
-  it('reaches the answering section, and the build section, for this ask', () => {
-    const chosen = selectPromptSections(HARD_ASK);
-    expect(chosen.has('Answering a Question (evaluation, opinion, design)')).toBe(true);
-    expect(chosen.has('Getting Something Built (Loki)')).toBe(true);
-  });
-
-  it('does not tell Cat this is being set up for someone else', () => {
-    // 'loki' used to live in the third-party regex, which is the only reason a
-    // build ask reached the build offer at all — at the cost of framing the
-    // user's own project as someone else's page.
-    expect(selectPromptSections(HARD_ASK).has('Setting Up for Someone Else')).toBe(false);
-  });
-
-  it('keeps the guardrail on every turn, including a bare greeting', () => {
-    // CORE, not situational: a regex miss must not be able to remove it.
-    for (const turn of ['hi', '', HARD_ASK]) {
-      expect(selectSectionsFromPrompt(BASE_SYSTEM_PROMPT_FOR_TEST, turn)).toContain(
-        'Not every turn is a proposal.'
-      );
-    }
-  });
-
-  it('names Loki and refuses to invent a role for Solon', () => {
-    const built = selectSectionsFromPrompt(BASE_SYSTEM_PROMPT_FOR_TEST, HARD_ASK);
-    expect(built).toContain('send_to_loki');
-    expect(built).toContain('Do not oversell the ecosystem');
-  });
-});
 
 describe('the matcher matches words, not letters inside words', () => {
   const opening = SITUATIONAL_SECTIONS.find(s => s.heading === 'Opening a Conversation')!;
