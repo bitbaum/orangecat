@@ -48,6 +48,8 @@ const ciWorkflow = readFileSync(join(WORKFLOW_DIR, 'ci.yml'), 'utf8');
 const cdWorkflow = readFileSync(join(WORKFLOW_DIR, 'cd.yml'), 'utf8');
 const armCd = readFileSync('scripts/ci/arm-cd.sh', 'utf8');
 const cdWiringProblems = [];
+const liveGuard =
+  cdWorkflow.split('name: Skip commit already live')[1]?.split('\n      - name:')[0] ?? '';
 
 if (/^\s+workflow_run:/m.test(cdWorkflow)) {
   cdWiringProblems.push('cd.yml must not add a workflow_run trigger beside the CI handoff');
@@ -76,6 +78,9 @@ if (
 }
 if (!cdWorkflow.includes('build-and-smoke=success') || !cdWorkflow.includes('security=success')) {
   cdWiringProblems.push('CD must verify both build-and-smoke and security before deploy');
+}
+if (!/GH_TOKEN:\s*\$\{\{\s*github\.token\s*\}\}/.test(liveGuard)) {
+  cdWiringProblems.push('CD live-SHA guard must authenticate its GitHub API request');
 }
 if (cdWiringProblems.length > 0) {
   console.error('[check-cd-wiring] FAIL');
