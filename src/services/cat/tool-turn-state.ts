@@ -1,4 +1,9 @@
-import type { RawToolCall, ToolAugmentedMessage, ToolResultMessage } from './tool-use-types';
+import type {
+  OnToolCall,
+  RawToolCall,
+  ToolAugmentedMessage,
+  ToolResultMessage,
+} from './tool-use-types';
 
 /** Bounded conversational context for follow-ups, excluding system prompts and tool payloads. */
 export function toolRoutingHistory(messages: ToolAugmentedMessage[], userMessage: string) {
@@ -25,6 +30,23 @@ export class ToolTurnState {
   readonly completed: ToolAugmentedMessage[] = [];
   pending: RawToolCall | null = null;
   webEvidence: string[] = [];
+  private pendingReported = false;
+
+  reportPending(onToolCall?: OnToolCall) {
+    if (this.pendingReported || !this.pending) {
+      return;
+    }
+    this.pendingReported = true;
+    try {
+      onToolCall?.({
+        id: this.pending.id,
+        name: this.pending.function.name,
+        status: 'unconfirmed',
+      });
+    } catch {
+      // A closed SSE stream cannot prevent the deadline from resolving.
+    }
+  }
 
   record(call: RawToolCall, result: ToolResultMessage, evidence: string[] = []) {
     if (this.controller.signal.aborted) {

@@ -194,22 +194,6 @@ export async function maybeEnrichWithSearchResults(
         }
       }
     : undefined;
-  let pendingReported = false;
-  const reportPending = () => {
-    if (pendingReported || !state.pending) {
-      return;
-    }
-    pendingReported = true;
-    try {
-      guardedOnToolCall?.({
-        id: state.pending.id,
-        name: state.pending.function.name,
-        status: 'unconfirmed',
-      });
-    } catch {
-      // The SSE stream may already be closed; the deadline must still resolve.
-    }
-  };
 
   // Created HERE rather than inside the loop so the degrade path can still ask
   // whether a lookup was in flight when the deadline fired. The loop owns what
@@ -238,7 +222,7 @@ export async function maybeEnrichWithSearchResults(
       ),
       new Promise<'timeout'>(resolve => {
         timer = setTimeout(() => {
-          reportPending();
+          state.reportPending(guardedOnToolCall);
           state.controller.abort();
           resolve('timeout');
         }, timeoutMs);
@@ -257,7 +241,7 @@ export async function maybeEnrichWithSearchResults(
     }
     return raced;
   } catch {
-    reportPending();
+    state.reportPending(guardedOnToolCall);
     if (state.completed.length) {
       opts?.onWebEvidence?.(state.webEvidence);
     }
