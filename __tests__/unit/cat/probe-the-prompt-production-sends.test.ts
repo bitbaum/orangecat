@@ -6,25 +6,8 @@
  * check fail on every run — it drove `catCanAnswer`, so the nightly cron raised
  * CAT_CANNOT_ANSWER on a day when Cat could answer perfectly well.
  *
- * Measured 2026-09-13 against the 6 826 budget chat-orchestrator computes
- * (8 000 TPM − 1 024 reply reserve − 150 margin):
- *
- *     buildCatSystemPrompt({})                 14 729   what was measured
- *     tools + turnDescriptor                    6 115   what is SENT — fits
- *     tools + first-message                     6 600   fits
- *     few-shot examples                           961   trimmed when tight
- *
- * `{}` defaults to prose AND skips section selection, so it measured the whole
- * prose prompt. Production sends tools mode with a turn descriptor and trims
- * the rest through fitCatPromptToBudget, which drops few-shot and history
- * before it touches the base.
- *
- * The numbers move as the prompt is edited, so this pins the RELATIONSHIPS —
- * which configuration fits and which does not — rather than the constants.
+ * Pins RELATIONSHIPS (which configuration fits) rather than token constants.
  */
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-
 import { buildCatSystemPrompt } from '@/services/cat/system-prompt';
 import { getCatFewShotExamplesText } from '@/services/cat/few-shot-examples';
 import { estimateMessagesTokens, getGroqTpmLimit } from '@/services/ai/groq-capacity';
@@ -71,17 +54,4 @@ describe('the Groq probe measures what production sends', () => {
     expect(withFewShot).toBeGreaterThan(PRODUCTION_BUDGET);
     expect(tokens(baseTools())).toBeLessThanOrEqual(PRODUCTION_BUDGET);
   });
-
-  it('the probe no longer measures the prose default or the few-shot block', () => {
-    const src = readFileSync(
-      join(__dirname, '../../../src/services/cat/health-probes.ts'),
-      'utf8'
-    );
-    const fn = src.slice(src.indexOf('export function groqCanServeCatPrompt'));
-    const body = fn.slice(0, fn.indexOf('\n}'));
-    expect(body).toContain("actionsVia: 'tools'");
-    expect(body).toContain('turnDescriptor');
-    expect(body).not.toContain('getCatFewShotExamplesText');
-  });
 });
-

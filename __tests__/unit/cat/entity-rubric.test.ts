@@ -40,7 +40,16 @@ describe('every type Cat can create has a rule', () => {
     // The 8 canonical probes (PR #375) expect these types. A rubric that stops
     // naming one of them regresses the gate that runs at 04:30 while nobody is
     // watching — so it fails here first, in a second, for free.
-    for (const type of ['service', 'product', 'cause', 'project', 'loan', 'event', 'group', 'circle'] as const) {
+    for (const type of [
+      'service',
+      'product',
+      'cause',
+      'project',
+      'loan',
+      'event',
+      'group',
+      'circle',
+    ] as const) {
       expect(rubric).toContain(`**${ENTITY_REGISTRY[type].name}**`);
     }
   });
@@ -75,5 +84,15 @@ describe('the brief carries the generated rubric, not a copy of it', () => {
 
   it('no longer hard-codes the old eight-type list', () => {
     expect(BASE_SYSTEM_PROMPT_FOR_TEST).not.toContain('Selling your time, skill, or labor');
+  });
+
+  it('requires a one-line why with every proposal', () => {
+    expect(BASE_SYSTEM_PROMPT_FOR_TEST).toContain('Always say WHY (required)');
+    expect(BASE_SYSTEM_PROMPT_FOR_TEST).toContain('Never present a proposal without its why');
+  });
+
+  it('softens thin input: one focused question, not a blind draft', () => {
+    expect(BASE_SYSTEM_PROMPT_FOR_TEST).toContain('When input is THIN, ask');
+    expect(BASE_SYSTEM_PROMPT_FOR_TEST).toContain('ONE focused question');
   });
 });
