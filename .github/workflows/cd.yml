@@ -179,6 +179,7 @@ jobs:
         id: live
         if: steps.guard.outputs.ok == 'true'
         env:
+          GH_TOKEN: ${{ github.token }}
           EXPECTED_SHA: ${{ steps.ci.outputs.sha }}
         run: |
           if [ -z "$EXPECTED_SHA" ]; then
