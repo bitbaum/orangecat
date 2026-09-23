@@ -127,28 +127,20 @@ describe('starter prompts', () => {
 // ─── hasRichContext ───────────────────────────────────────────────────────────
 
 describe('hasRichContext', () => {
-  it('returns false for completely empty context', () => {
+  it('returns false for empty or blank profile-only context', () => {
     expect(hasRichContext(makeContext())).toBe(false);
+    expect(
+      hasRichContext(
+        makeContext({ profile: { username: 'alice', name: null, bio: null, background: null } })
+      )
+    ).toBe(false);
   });
 
-  it('returns true when profile has a name', () => {
+  it('returns true when there is a name, entity, or wallet', () => {
     expect(hasRichContext(makeContext({ profile: { name: 'Alice', username: 'alice' } }))).toBe(
       true
     );
-  });
-
-  it('returns false when profile exists but is blank', () => {
-    const ctx = makeContext({
-      profile: { username: 'alice', name: null, bio: null, background: null },
-    });
-    expect(hasRichContext(ctx)).toBe(false);
-  });
-
-  it('returns true when there is at least one entity', () => {
     expect(hasRichContext(makeContext({ entities: [makeEntity('product', 'Mug')] }))).toBe(true);
-  });
-
-  it('returns true when there is at least one wallet', () => {
     expect(hasRichContext(makeContext({ wallets: [makeWallet()] }))).toBe(true);
   });
 });
