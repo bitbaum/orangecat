@@ -7,12 +7,10 @@
  * tipper would use. OrangeCat never touches the funds — the QR pays straight
  * into the owner's wallet.
  *
- * Two modes:
- *  - "My address": a static QR of <username>@orangecat.ch. Never expires,
- *    works with any Lightning wallet, payer picks the amount. It is an ALIAS —
- *    only alive while a real receiving wallet is configured behind it.
- *  - "Request amount": an exact-amount invoice (or fresh on-chain address)
- *    with live settlement feedback, so the payer can't fat-finger the amount.
+ * One screen, not a second tab bar. The pay link is the standing way anyone
+ * pays. The address code is the in-person version of that same link, and only
+ * when it can actually be paid. An exact amount is a code for someone who is
+ * here — asking a named account is the Request page.
  */
 
 import { TIP_MIN_BTC, TIP_MAX_BTC, TIP_POLL_INTERVAL_MS } from './tips';
@@ -23,9 +21,9 @@ export const RECEIVE_MAX_BTC = TIP_MAX_BTC;
 export const RECEIVE_POLL_INTERVAL_MS = TIP_POLL_INTERVAL_MS;
 
 export const RECEIVE_SHARE_COPY = {
-  heading: 'Send someone a payment link',
-  /** Why a link and not the QR: a QR is useless inside a chat thread. */
-  hint: 'Works in WhatsApp, email, anywhere. They can pay from any Bitcoin wallet — no OrangeCat account needed.',
+  heading: 'Your pay link',
+  /** Why a link and not only a QR: a QR is useless inside a chat thread. */
+  hint: 'Anyone with this link can pay you. They need a Bitcoin wallet, not an OrangeCat account.',
   copy: 'Copy link',
   copied: 'Link copied',
   share: 'Share',
@@ -34,10 +32,12 @@ export const RECEIVE_SHARE_COPY = {
 
 export const RECEIVE_COPY = {
   title: 'Receive',
-  subtitle: 'Get paid straight to your wallet — OrangeCat never holds your money.',
-  addressTab: 'My address',
-  requestTab: 'Request amount',
-  addressHint: 'Any amount, any Lightning wallet. This QR never expires.',
+  subtitle: 'Anyone can pay you here. OrangeCat never holds the money.',
+  addressLabel: 'In person',
+  addressHint: 'Any amount. This code does not expire.',
+  exactHeading: 'One amount',
+  exactHint:
+    'A code for a specific amount, for someone with you. To ask one person by name, use Request.',
   addressCaption: (address: string) => address,
   requestHint: 'Exact amount — you’ll see it the moment it’s paid.',
   amountLabel: 'Amount',

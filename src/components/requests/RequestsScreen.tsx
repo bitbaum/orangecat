@@ -16,12 +16,11 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { HandCoins, Inbox, Loader2, Send } from 'lucide-react';
+import { HandCoins, Inbox, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { PageHeading } from '@/components/layout/PageHeading';
-import { MoneyTabs } from '@/components/money/MoneyTabs';
+import { MoneyLoading, MoneyPage } from '@/components/money/MoneyPage';
 import { MoneyReceipt } from '@/components/money/MoneyReceipt';
 import { AmountField } from '@/components/money/AmountField';
 import { RequestList } from '@/components/requests/RequestList';
@@ -121,16 +120,12 @@ export function RequestsScreen() {
   );
 
   if (authLoading || loading) {
-    return (
-      <div className="flex justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-fg-tertiary" />
-      </div>
-    );
+    return <MoneyLoading />;
   }
 
   if (sent) {
     return (
-      <div className="mx-auto w-full max-w-md px-4">
+      <MoneyPage title={REQUEST_COPY.title} subtitle={REQUEST_COPY.subtitle} icon={HandCoins}>
         <MoneyReceipt
           title={REQUEST_COPY.sent}
           amountBtc={sent.amountBtc}
@@ -143,21 +138,13 @@ export function RequestsScreen() {
             {REQUEST_COPY.submit}
           </Button>
         </MoneyReceipt>
-      </div>
+      </MoneyPage>
     );
   }
 
   return (
-    <div className="mx-auto w-full max-w-md px-4 py-6">
-      <PageHeading className="flex items-center gap-2">
-        <HandCoins className="h-6 w-6 shrink-0 text-fg-secondary" aria-hidden="true" />
-        {REQUEST_COPY.title}
-      </PageHeading>
-      <p className="mt-1 text-sm text-fg-secondary">{REQUEST_COPY.subtitle}</p>
-
-      <MoneyTabs className="mt-5" />
-
-      <div className="mt-6 space-y-4">
+    <MoneyPage title={REQUEST_COPY.title} subtitle={REQUEST_COPY.subtitle} icon={HandCoins}>
+      <div className="space-y-4">
         <Input
           label={REQUEST_COPY.payerLabel}
           value={payer}
@@ -216,6 +203,6 @@ export function RequestsScreen() {
         direction="outgoing"
         onClose={id => handleClose(id, 'cancelled')}
       />
-    </div>
+    </MoneyPage>
   );
 }

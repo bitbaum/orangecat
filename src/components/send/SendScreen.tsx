@@ -19,13 +19,12 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowUpRight, Loader2, Wallet } from 'lucide-react';
+import { ArrowUpRight, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
-import { PageHeading } from '@/components/layout/PageHeading';
-import { MoneyTabs } from '@/components/money/MoneyTabs';
+import { MoneyLoading, MoneyPage } from '@/components/money/MoneyPage';
 import { MoneyReceipt } from '@/components/money/MoneyReceipt';
 import { StatusNote } from '@/components/money/StatusNote';
 import { AmountField } from '@/components/money/AmountField';
@@ -120,11 +119,7 @@ export function SendScreen() {
   }, [tab, invoice, recipient, amount, memo]);
 
   if (authLoading || !capability) {
-    return (
-      <div className="flex justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-fg-tertiary" />
-      </div>
-    );
+    return <MoneyLoading />;
   }
 
   // Nothing on this screen can work without a wallet to spend from, so say so
@@ -135,25 +130,23 @@ export function SendScreen() {
     // sending them to set one up blames them for our outage.
     const oursNotTheirs = capability.reason === 'sending_unavailable';
     return (
-      <div className="mx-auto flex max-w-md flex-col items-center gap-4 px-4 py-16 text-center">
-        <Wallet className="h-12 w-12 text-fg-tertiary" aria-hidden="true" />
-        <h2 className="text-lg font-semibold text-fg-primary">
-          {oursNotTheirs ? SEND_COPY.unavailableTitle : SEND_COPY.noWalletTitle}
-        </h2>
-        <p className="text-sm text-fg-secondary">{capability.message ?? SEND_COPY.noWalletBody}</p>
+      <MoneyPage
+        title={oursNotTheirs ? SEND_COPY.unavailableTitle : SEND_COPY.noWalletTitle}
+        subtitle={capability.message ?? SEND_COPY.noWalletBody}
+        icon={Wallet}
+      >
         {!oursNotTheirs && (
           <Button variant="accent" href={ROUTES.DASHBOARD.WALLETS}>
             {SEND_COPY.noWalletCta}
           </Button>
         )}
-        <MoneyTabs className="mt-4 w-full" />
-      </div>
+      </MoneyPage>
     );
   }
 
   if (outcome) {
     return (
-      <div className="mx-auto w-full max-w-md px-4">
+      <MoneyPage title={SEND_COPY.title} subtitle={SEND_COPY.subtitle} icon={ArrowUpRight}>
         <MoneyReceipt
           title={SEND_COPY.sentTitle}
           amountBtc={outcome.amountBtc}
@@ -166,22 +159,14 @@ export function SendScreen() {
             {SEND_COPY.again}
           </Button>
         </MoneyReceipt>
-      </div>
+      </MoneyPage>
     );
   }
 
   const canReview = tab === 'invoice' ? invoiceIsPayable : recipientCheck.payable && amount > 0;
 
   return (
-    <div className="mx-auto w-full max-w-md px-4 py-6">
-      <PageHeading className="flex items-center gap-2">
-        <ArrowUpRight className="h-6 w-6 shrink-0 text-fg-secondary" aria-hidden="true" />
-        {SEND_COPY.title}
-      </PageHeading>
-      <p className="mt-1 text-sm text-fg-secondary">{SEND_COPY.subtitle}</p>
-
-      <MoneyTabs className="mt-5" />
-
+    <MoneyPage title={SEND_COPY.title} subtitle={SEND_COPY.subtitle} icon={ArrowUpRight}>
       {reviewing ? (
         <SendReviewStep
           recipientName={recipientCheck.name ?? recipient}
@@ -195,7 +180,6 @@ export function SendScreen() {
       ) : (
         <>
           <SegmentedControl
-            className="mt-3"
             label="Send method"
             items={TABS}
             value={tab}
@@ -283,6 +267,6 @@ export function SendScreen() {
           </div>
         </>
       )}
-    </div>
+    </MoneyPage>
   );
 }
