@@ -608,7 +608,8 @@ export function renderConversations(
 
 export function renderNotifications(
   notifications: FullUserContext['notifications'],
-  locale: string
+  locale: string,
+  unreadTotal?: number
 ): string | null {
   if (!notifications || notifications.length === 0) {
     return null;
@@ -627,8 +628,12 @@ export function renderNotifications(
     });
     return `- [${n.type}] **${n.title}**${repeat}${preview} (latest ${latest})`;
   });
+  const total =
+    unreadTotal === undefined
+      ? ''
+      : `Total unread: ${unreadTotal} (the bell's number — quote this, never a sum of the ×N below). `;
   return `## Unread Platform Notifications
-These are the user's unread in-app notifications, coalesced (×N = the same alert fired N times — one problem repeated, not N problems). If the user asks about their notifications, or a system alert concerns something you can act on (like Cat/provider health), help them with it in plain language — never just repeat raw ops jargon back.
+${total}These are the user's newest unread in-app notifications, coalesced (×N = the same alert fired N times — one problem repeated, not N problems). If the user asks about their notifications, or a system alert concerns something you can act on (like Cat/provider health), help them with it in plain language — never just repeat raw ops jargon back.
 ${lines.join('\n')}`;
 }
 

@@ -22,7 +22,8 @@ import {
 import { ChatHeader, ChatInput, EmptyState, ErrorDisplay, MessageBubble } from './components';
 import { MemoryNoteCard } from './components/MemoryNoteCard';
 import { PendingActionsCard } from '../PendingActionsCard';
-import { composeMessage, type ChatAttachment } from './attachments';
+import { composeMessage, imagesOf, type ChatAttachment } from './attachments';
+import type { ChatImage } from '@/services/cat/chat-images';
 import type { CatAction } from './types';
 
 interface ModernChatPanelProps {
@@ -97,7 +98,7 @@ export function ModernChatPanel({
   }, []);
   const selectedModel = selectedModelProp ?? internalModel;
   const setSelectedModel = onModelSelect ?? persistModel;
-  const lastUserMessageRef = useRef<string>('');
+  const lastUserMessageRef = useRef<{ content: string; images: ChatImage[] } | null>(null);
   const initialMessageSentRef = useRef(false);
   const refreshPendingActionsRef = useRef<(() => Promise<void>) | undefined>(undefined);
   const isFocus = variant === 'focus';
@@ -175,17 +176,18 @@ export function ModernChatPanel({
   const handleSend = useCallback(() => {
     const content = composeMessage(input, attachments);
     if (content) {
-      lastUserMessageRef.current = content;
+      const images = imagesOf(attachments);
+      lastUserMessageRef.current = { content, images };
       setInput('');
       setAttachments([]);
-      void sendMessage(content);
+      void sendMessage(content, images);
     }
   }, [input, attachments, sendMessage]);
 
   const handleRetry = useCallback(() => {
     if (lastUserMessageRef.current) {
       setError(null);
-      void sendMessage(lastUserMessageRef.current);
+      void sendMessage(lastUserMessageRef.current.content, lastUserMessageRef.current.images);
     }
   }, [sendMessage, setError]);
 

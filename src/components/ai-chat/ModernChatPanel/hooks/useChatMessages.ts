@@ -8,6 +8,7 @@ import { STORAGE_KEYS } from '@/config/storage-keys';
 import { readPageExcerptForCat, type CatPageDescriptor } from '@/config/cat-page-context';
 import { getLocalRuntime, parseLocalModelId } from '@/config/local-ai';
 import { runLocalTurn } from '@/services/ai/local-turn';
+import type { ChatImage } from '@/services/cat/chat-images';
 import type {
   Message,
   CatAction,
@@ -186,7 +187,7 @@ export function useChatMessages({
   }, []);
 
   const sendMessage = useCallback(
-    async (content: string) => {
+    async (content: string, images?: ChatImage[]) => {
       if (!content.trim() || isLoading) {
         return;
       }
@@ -232,6 +233,14 @@ export function useChatMessages({
         // Inference runs on the USER's machine (Ollama / LM Studio); the
         // server only prepares Cat's context and persists the exchange.
         const local = parseLocalModelId(selectedModel);
+        if (local && images?.length) {
+          // The local path sends text only; dropping the photo silently would
+          // get an answer about nothing.
+          throw new CatChatError(
+            'Your local model can’t see photos. Switch to Auto to send a photo, or describe it in words.',
+            'NO_VISION_MODEL'
+          );
+        }
         if (local) {
           const prepRes = await fetch(API_ROUTES.CAT.PREPARE, {
             method: 'POST',
@@ -354,6 +363,7 @@ export function useChatMessages({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             message: content,
+            images: images?.length ? images : undefined,
             model: selectedModel !== 'auto' ? selectedModel : undefined,
             stream: true,
             preferredCurrency,

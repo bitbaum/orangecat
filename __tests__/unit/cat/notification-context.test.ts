@@ -78,6 +78,13 @@ describe('renderNotifications', () => {
     expect(out).toContain('latest Jul 22, 2026');
   });
 
+  it('states the exact total the bell shows, not a sum of the fetched groups', () => {
+    // 80 unread, but only the newest few were fetched and coalesced: the Cat
+    // said "30" beside a bell panel that said 80.
+    const out = renderNotifications(coalesceNotifications([row(), row()]), 'en-US', 80);
+    expect(out).toContain('Total unread: 80');
+  });
+
   it('omits the count and preview for single, message-only notifications', () => {
     const out = renderNotifications(
       coalesceNotifications([row({ metadata: null, message: 'Payment received' })]),

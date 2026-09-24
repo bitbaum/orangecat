@@ -13,6 +13,7 @@ import { DATABASE_TABLES } from '@/config/database-tables';
 import { STATUS } from '@/config/database-constants';
 import { NotificationService } from '@/lib/services/notifications';
 import { logger } from '@/utils/logger';
+import { countUnreadNotifications } from '@/services/notifications/unread-count';
 import { exploreTopic } from './discovery';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 
@@ -81,7 +82,7 @@ export async function composeDailyBrief(
   admin: SupabaseClient,
   userId: string
 ): Promise<string | null> {
-  const [actorRows, salesRes, tasksRes, unreadRes] = await Promise.all([
+  const [actorRows, salesRes, tasksRes, unread] = await Promise.all([
     admin.from(DATABASE_TABLES.ACTORS).select('id').eq('user_id', userId),
     admin
       .from(DATABASE_TABLES.ORDERS)
@@ -97,11 +98,7 @@ export async function composeDailyBrief(
       .eq('is_completed', false)
       .lt('due_date', new Date().toISOString())
       .limit(10),
-    admin
-      .from(DATABASE_TABLES.NOTIFICATIONS)
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .eq('is_read', false),
+    countUnreadNotifications(admin, userId).catch(() => 0),
   ]);
 
   const actorIds = ((actorRows.data ?? []) as Array<{ id: string }>).map(a => a.id);
@@ -119,7 +116,6 @@ export async function composeDailyBrief(
   const sales = (salesRes.data ?? []) as Array<{ amount_btc: number }>;
   const overdue = (tasksRes.data ?? []) as Array<{ title: string }>;
   const bookings = (bookingsRes.data ?? []) as Array<{ starts_at: string }>;
-  const unread = unreadRes.count ?? 0;
 
   const parts: string[] = [];
   if (sales.length > 0) {
@@ -152,6 +148,24 @@ export interface BriefRunResult {
   errors: number;
 }
 
+/**
+ * An earlier day's brief describes a state that has since moved on, so it
+ * stops counting as unread once a new day's run reaches the user. Without this
+ * the briefs piled up one a day — 51 of one account's 80 unread — and each new
+ * brief then reported the pile of old briefs as "unread notifications".
+ */
+async function supersedeOldBriefs(admin: SupabaseClient, userId: string): Promise<void> {
+  const { error } = await admin
+    .from(DATABASE_TABLES.NOTIFICATIONS)
+    .update({ is_read: true, read_at: new Date().toISOString() })
+    .eq('user_id', userId)
+    .eq('is_read', false)
+    .eq('metadata->>kind', 'cat_brief');
+  if (error) {
+    logger.warn('could not supersede old briefs', { userId, error }, LOG_SOURCE);
+  }
+}
+
 /** Run the daily brief over all active Cat users. Idempotent per day. */
 export async function runDailyBrief(admin: SupabaseClient, limit: number): Promise<BriefRunResult> {
   const users = await findActiveCatUsers(admin, limit);
@@ -163,6 +177,7 @@ export async function runDailyBrief(admin: SupabaseClient, limit: number): Promi
       if (await briefAlreadySentToday(admin, userId)) {
         continue;
       }
+      await supersedeOldBriefs(admin, userId);
       const brief = await composeDailyBrief(admin, userId);
       if (!brief) {
         continue;

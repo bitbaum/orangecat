@@ -15,19 +15,22 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
-import { FileText, Package, Send, Square, Trash2, X } from 'lucide-react';
+import { Send, Square, Trash2 } from 'lucide-react';
 import { CAT_HUB_COPY } from '@/config/cat-hub';
 import { CHAT_CONTENT_MAX_WIDTH_CLASS } from '@/config/layout-chrome';
 import { DictationButton } from '@/components/ui/DictationButton';
 import type { CatReference } from '@/config/cat-prompts';
 import { ModelSelector } from './ModelSelector';
-import { ComposerAddMenu, referenceLabel } from './ComposerAddMenu';
+import { ComposerAddMenu } from './ComposerAddMenu';
+import { ComposerAttachments, readPhoto } from './ComposerAttachments';
 import {
   ATTACHMENT_UNSUPPORTED_COPY,
   MAX_ATTACHMENT_BYTES,
+  isImageFile,
   isReadableTextFile,
   type ChatAttachment,
 } from '../attachments';
+import { CHAT_IMAGE_MAX_COUNT } from '@/services/cat/chat-images';
 
 interface ChatInputProps {
   value: string;
@@ -119,7 +122,22 @@ export function ChatInput({
     }
     setAttachError(null);
     const added: ChatAttachment[] = [];
+    let photos = attachments.filter(a => a.kind === 'image').length;
     for (const file of Array.from(files)) {
+      if (isImageFile(file)) {
+        if (photos >= CHAT_IMAGE_MAX_COUNT) {
+          setAttachError(`Up to ${CHAT_IMAGE_MAX_COUNT} photos per message.`);
+          continue;
+        }
+        const dataUrl = await readPhoto(file);
+        if (!dataUrl) {
+          setAttachError(`Couldn't read "${file.name}" as a photo — try a JPEG or PNG.`);
+          continue;
+        }
+        added.push({ kind: 'image', id: newId(), name: file.name, dataUrl });
+        photos += 1;
+        continue;
+      }
       if (!isReadableTextFile(file)) {
         setAttachError(ATTACHMENT_UNSUPPORTED_COPY);
         continue;
@@ -178,35 +196,7 @@ export function ChatInput({
             aria-label={placeholder}
           />
 
-          {attachments.length > 0 && (
-            <ul className="flex flex-wrap gap-1.5 px-1 pb-1" aria-label="Attached">
-              {attachments.map(a => (
-                <li key={a.id} className="oc-chat-attachment">
-                  {a.kind === 'file' ? (
-                    <FileText className="h-3.5 w-3.5 flex-shrink-0 text-fg-secondary" />
-                  ) : (
-                    <Package className="h-3.5 w-3.5 flex-shrink-0 text-fg-secondary" />
-                  )}
-                  <span className="min-w-0 truncate">
-                    {a.kind === 'file' ? a.name : a.ref.title}
-                  </span>
-                  {a.kind === 'ref' && (
-                    <span className="flex-shrink-0 text-fg-tertiary">
-                      {referenceLabel(a.ref.type)}
-                    </span>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => removeAttachment(a.id)}
-                    className="-mr-1 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded text-fg-tertiary hover:bg-surface-raised hover:text-fg-primary"
-                    aria-label={`Remove ${a.kind === 'file' ? a.name : a.ref.title}`}
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
+          <ComposerAttachments attachments={attachments} onRemove={removeAttachment} />
 
           <div className="oc-chat-composer-controls">
             <div className="flex min-w-0 items-center gap-0.5">

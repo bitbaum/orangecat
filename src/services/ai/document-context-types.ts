@@ -257,6 +257,11 @@ export interface FullUserContext {
    * Cat context fetch populates it; other consumers leave it undefined.
    */
   notifications?: NotificationSummary[];
+  /**
+   * Exact unread count — the number the bell shows. `notifications` is only
+   * the newest rows coalesced, so its counts must never be summed into a total.
+   */
+  notificationsUnread?: number;
   inboundActivity: InboundActivity;
   memberGroups: GroupMembershipSummary[];
   socialGraph: SocialGraphSummary;
