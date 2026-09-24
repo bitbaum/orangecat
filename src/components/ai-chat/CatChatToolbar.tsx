@@ -7,9 +7,9 @@
 
 import Link from 'next/link';
 import { FolderOpen, PanelLeft, Settings2 } from 'lucide-react';
-import { CAT_AGENT, CAT_HUB_COPY, CAT_HUB_TAB_HREFS, type CatHubTab } from '@/config/cat-hub';
+import { CAT_HUB_COPY, CAT_HUB_TAB_HREFS, type CatHubTab } from '@/config/cat-hub';
 import { cn } from '@/lib/utils';
-import { QuotaMeter } from './ModernChatPanel/components/QuotaMeter';
+import { QuotaMeter, isQuotaWorthShowing } from './ModernChatPanel/components/QuotaMeter';
 import type { CatQuota } from './ModernChatPanel/hooks/useCatQuota';
 
 interface CatChatToolbarProps {
@@ -55,38 +55,30 @@ export function CatChatToolbar({
 
   return (
     <div className={cn('oc-chat-toolbar', className)}>
-      {/* LEFT SLOT — never empty. The conversation trigger holds it on mobile
-          and the "Cat · Private" label on >=sm, so `justify-between` always
-          has two sides to push apart. With the label alone the slot vanished
-          on phones, the quota chip became the first child and drifted left
-          under the floating trigger, and the right half of the row sat empty. */}
-      <div className="flex min-w-0 items-center gap-2">
-        {onOpenConversations && (
-          <button
-            type="button"
-            onClick={onOpenConversations}
-            className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg text-fg-secondary transition-colors hover:bg-surface-raised hover:text-fg-primary md:hidden"
-            aria-label="Show conversations"
-            title="Show conversations"
-          >
-            <PanelLeft className="h-4 w-4" />
-          </button>
-        )}
-        <div className="hidden min-w-0 items-center gap-2 sm:flex" title={CAT_AGENT.privacyBadge}>
-          <p className="truncate text-sm font-medium text-fg-primary">{CAT_AGENT.name}</p>
-          <p className="hidden truncate text-xs text-fg-secondary sm:inline">
-            · {CAT_AGENT.privacyBadge}
-          </p>
-        </div>
-      </div>
+      {/* Left: the conversation trigger, phones only (the rail is always
+          visible from md). It used to share the row with a "Cat · Saved ·
+          clear anytime" label that told the user nothing they could act on. */}
+      {onOpenConversations && (
+        <button
+          type="button"
+          onClick={onOpenConversations}
+          className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg text-fg-secondary transition-colors hover:bg-surface-raised hover:text-fg-primary md:hidden"
+          aria-label="Show conversations"
+          title="Show conversations"
+        >
+          <PanelLeft className="h-4 w-4" />
+        </button>
+      )}
 
       {/* min-w-0 (not flex-shrink-0): the quota chip must be allowed to shrink
           and truncate. Pinned at its natural width it overflowed the toolbar
           on phones in the capped state and slid under the panel toggle. The
           two panel links stay fixed — they're the controls that must remain
           tappable. */}
-      <div className="flex min-w-0 items-center gap-1 sm:gap-2">
-        {activePanel === 'chat' && <QuotaMeter quota={quota} className="min-w-0" />}
+      <div className="ml-auto flex min-w-0 items-center gap-1 sm:gap-2">
+        {activePanel === 'chat' && isQuotaWorthShowing(quota) && (
+          <QuotaMeter quota={quota} className="min-w-0" />
+        )}
         <div className="flex flex-shrink-0 items-center gap-1 sm:gap-2">
           {panelLink('context')}
           {panelLink('controls')}

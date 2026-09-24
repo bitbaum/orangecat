@@ -460,47 +460,55 @@
   }
 
   .oc-chat-composer-input {
-    @apply max-h-[200px] min-h-[2.25rem] w-full resize-none bg-transparent px-1 py-1.5 text-sm leading-relaxed text-fg-primary;
-    @apply placeholder:text-fg-secondary focus:outline-none;
+    @apply max-h-[200px] min-h-[2.25rem] w-full resize-none border-0 bg-transparent px-1 py-1.5 text-sm leading-relaxed text-fg-primary shadow-none;
+    /* The composer box shows focus (focus-within); the global form-field
+       ring drew a second box inside it. */
+    @apply placeholder:text-fg-secondary focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0;
   }
 
-  .oc-chat-suggestion {
-    @apply rounded-lg border border-border-subtle bg-surface-page px-4 py-3 text-left text-sm text-fg-primary transition-colors hover:bg-surface-raised/50;
-  }
-
-  /* The one recommended prompt: states its reason, then the prompt itself.
-     Weighted above the alternatives so there is a single obvious next action. */
-  .oc-chat-lead {
-    @apply flex w-full flex-col gap-1.5 rounded-xl border border-interactive bg-surface-raised px-4 py-3.5 text-left transition-colors hover:bg-surface-raised/70;
-  }
-  .oc-chat-lead-reason {
-    @apply text-xs leading-snug text-fg-secondary;
-  }
-  .oc-chat-lead-prompt {
-    @apply flex items-center justify-between gap-3 text-sm font-medium text-fg-primary;
-  }
-
-  /* Alternatives under a recommendation — reachable, but not competing for the
-     read. min-h keeps them at a 44px touch target.
-
-     ONE LINE, always. These were meant to be small chips demoted under the
-     recommendation, but the text is a whole sentence, so on a phone every chip
-     wrapped to full width and the "demotion" rendered as four more full-size
-     boxes filling the screen. A chip that can wrap is not a chip — it is a
-     card that hasn't noticed yet. They scroll horizontally instead. */
-  .oc-chat-suggestion-quiet {
-    @apply inline-flex min-h-11 max-w-[15rem] shrink-0 items-center truncate whitespace-nowrap rounded-lg border border-border-subtle bg-surface-page px-3 py-2 text-left text-xs text-fg-secondary transition-colors hover:bg-surface-raised/50 hover:text-fg-primary;
-    scroll-snap-align: start;
-  }
-
-  /* The swipeable rail the chips live in. */
-  .oc-chat-suggestion-rail {
-    @apply -mx-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:justify-center sm:overflow-visible sm:px-0;
-    scroll-snap-type: x proximity;
-  }
-
+  /* Empty chat: one centred column — greeting, the Cat's opener, the
+     composer, then chips. Vertically centred, but scrolls on short screens. */
   .oc-chat-empty {
-    @apply flex h-full flex-col items-center justify-center px-4 py-8 text-center;
+    @apply flex min-h-full flex-col items-center justify-center px-4 py-8;
+  }
+  .oc-chat-home {
+    @apply flex w-full max-w-2xl flex-col gap-5;
+  }
+
+  /* The Cat speaking first: its mark, what it noticed, the replies. */
+  .oc-chat-opener {
+    @apply flex items-start gap-3 rounded-2xl border border-border-subtle bg-surface-raised/40 px-4 py-3.5 text-left;
+  }
+  .oc-chat-opener-mark {
+    @apply flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-fg-primary text-fg-inverted;
+  }
+
+  /* A reply the user can tap — Cat's quick replies and the opener's actions. */
+  .oc-chat-reply {
+    @apply rounded-full border border-border-subtle bg-surface-page px-3 py-1.5 text-left text-sm text-fg-primary transition-colors;
+    @apply hover:border-border-strong hover:bg-surface-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
+  }
+
+  /* Starter chips under the composer. ONE line each, always: a chip that
+     wraps is a card that hasn't noticed yet. On phones they stack. */
+  .oc-chat-chips {
+    @apply flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-center;
+  }
+  .oc-chat-chip {
+    @apply min-h-10 truncate rounded-full border border-border-subtle px-3.5 py-2 text-left text-sm text-fg-secondary transition-colors sm:max-w-[24rem];
+    @apply hover:bg-surface-raised hover:text-fg-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
+  }
+
+  /* An attached file or thing: in the composer, and on the sent message. */
+  .oc-chat-attachment {
+    @apply inline-flex max-w-[16rem] items-center gap-1.5 rounded-lg border border-border-subtle bg-surface-page px-2 py-1 text-xs text-fg-primary;
+  }
+
+  /* The composer's "+" menu — opens downward from the centred composer and
+     upward from the pinned one; `bottom-full` keeps it on screen either way
+     because the pinned composer has the whole thread above it. */
+  .oc-chat-menu {
+    @apply absolute bottom-full left-0 z-50 mb-2 w-72 max-w-[calc(100vw-1.5rem)] rounded-xl border border-border-subtle bg-surface-modal p-1.5 shadow-lg;
   }
 
   /* Brand mark — same contract as Loki ui-brand-mark */

@@ -18,19 +18,12 @@ export type CatHubTab = 'chat' | 'context' | 'controls';
 export const CAT_AGENT = {
   name: 'Cat',
   productName: APP_NAME,
-  /**
-   * Persisted to your account history; cleared from the trash button. Honest:
-   * the chat route saves every message to cat_messages. Previously this said
-   * "Private · not saved" but the implementation has always saved.
-   */
-  privacyBadge: 'Saved · clear anytime',
 } as const;
 
 export const CAT_HUB_COPY = {
   title: CAT_AGENT.name,
-  greeting: 'What can Cat help you with?',
+  /** The personal greeting ("Good evening, Cato") is built in EmptyState. */
   greetingNewUser: 'Tell Cat what you want to do',
-  greetingHint: 'Projects, products, funding, coordination, strategy — ask in plain language.',
   composerPlaceholder: 'Message Cat…',
   contextTitle: 'Context',
   contextDescription: 'Documents and facts your Cat can use for better answers.',

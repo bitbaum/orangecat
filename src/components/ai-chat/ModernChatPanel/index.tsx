@@ -22,6 +22,7 @@ import {
 import { ChatHeader, ChatInput, EmptyState, ErrorDisplay, MessageBubble } from './components';
 import { MemoryNoteCard } from './components/MemoryNoteCard';
 import { PendingActionsCard } from '../PendingActionsCard';
+import { composeMessage, type ChatAttachment } from './attachments';
 import type { CatAction } from './types';
 
 interface ModernChatPanelProps {
@@ -73,6 +74,7 @@ export function ModernChatPanel({
 }: ModernChatPanelProps = {}) {
   const router = useRouter();
   const [input, setInput] = useState('');
+  const [attachments, setAttachments] = useState<ChatAttachment[]>([]);
   const [internalModel, setInternalModel] = useState('auto');
   // Remember the user's model choice (incl. custom ids) across reloads.
   useEffect(() => {
@@ -132,7 +134,7 @@ export function ModernChatPanel({
     pageContext,
   });
 
-  const { suggestions, hasContext, isLoadingSuggestions } = useSuggestions();
+  const { opener, chips, attachable, dismissOpener, isLoadingSuggestions } = useSuggestions();
 
   const { pendingActions, handleConfirmAction, handleRejectAction, refreshPendingActions } =
     usePendingActionsManager({
@@ -171,13 +173,14 @@ export function ModernChatPanel({
   }, [initialMessage, isLoadingHistory, messages.length, isLoading, sendMessage]);
 
   const handleSend = useCallback(() => {
-    const content = input.trim();
+    const content = composeMessage(input, attachments);
     if (content) {
       lastUserMessageRef.current = content;
       setInput('');
+      setAttachments([]);
       void sendMessage(content);
     }
-  }, [input, sendMessage]);
+  }, [input, attachments, sendMessage]);
 
   const handleRetry = useCallback(() => {
     if (lastUserMessageRef.current) {
@@ -232,6 +235,28 @@ export function ModernChatPanel({
     [router]
   );
 
+  const isEmpty = !isLoadingHistory && messages.length === 0;
+  // Centred in the empty state (focus variant), pinned below the thread otherwise.
+  const composerInline = isFocus && isEmpty;
+  const composer = (
+    <ChatInput
+      value={input}
+      onChange={setInput}
+      onSend={handleSend}
+      isLoading={isLoading}
+      onStop={stopGeneration}
+      variant={variant}
+      placement={composerInline ? 'inline' : 'bottom'}
+      hasMessages={messages.length > 0}
+      onClearChat={clearChat}
+      selectedModel={selectedModel}
+      onModelSelect={setSelectedModel}
+      attachments={attachments}
+      onAttachmentsChange={setAttachments}
+      attachable={attachable}
+    />
+  );
+
   return (
     <div
       className={cn(
@@ -260,12 +285,14 @@ export function ModernChatPanel({
             </div>
           ) : messages.length === 0 ? (
             <EmptyState
-              suggestions={suggestions}
-              hasContext={hasContext}
+              opener={opener}
+              chips={chips}
               isLoadingSuggestions={isLoadingSuggestions}
               onSuggestionClick={handleSuggestionClick}
+              onDismissOpener={dismissOpener}
               isNewUser={isNewUser}
               variant={variant}
+              composer={composerInline ? composer : undefined}
             />
           ) : (
             <div className="oc-chat-thread">
@@ -309,18 +336,7 @@ export function ModernChatPanel({
           />
         )}
 
-        <ChatInput
-          value={input}
-          onChange={setInput}
-          onSend={handleSend}
-          isLoading={isLoading}
-          onStop={stopGeneration}
-          variant={variant}
-          hasMessages={messages.length > 0}
-          onClearChat={clearChat}
-          selectedModel={selectedModel}
-          onModelSelect={setSelectedModel}
-        />
+        {!composerInline && composer}
       </div>
     </div>
   );

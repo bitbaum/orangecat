@@ -1,18 +1,21 @@
 /**
- * Unit tests for the Cat prompt-suggestion engine.
+ * Unit tests for Cat home — what the Cat opens an empty chat with.
  *
- * The engine's promise is that a suggestion is EARNED: it names something the
- * user actually has, and the lead states why it leads. These tests pin that
- * contract, plus the degradation path when the platform LLM is unavailable
- * (which is the normal case in CI — callPlatformJson is mocked to null).
+ * The promise: the Cat speaks first, in its own voice, about something real
+ * and timely in THIS user's life, and "not now" has somewhere to go. These
+ * tests pin that, plus the degradation path when the platform LLM is
+ * unavailable (the normal case in CI — callPlatformJson is mocked to null).
  */
 
 import {
-  generatePromptSuggestions,
-  detectGaps,
+  generateCatHome,
+  detectOpeners,
   hasRichContext,
+  isPlaceholderTitle,
+  listAttachable,
 } from '@/services/cat/prompt-suggestions';
-import { STARTER_PROMPTS, getStarterPrompts } from '@/config/cat-prompts';
+import { cleanChip, isGroundedChip } from '@/services/cat/cat-home-chips';
+import { STARTER_HOME, getStarterChips, CAT_HOME_MAX_CHIPS } from '@/config/cat-prompts';
 import { getEntitiesByCategory } from '@/config/entity-registry';
 import type { FullUserContext } from '@/services/ai/document-context';
 
@@ -99,7 +102,7 @@ function makeWallet(): import('@/services/ai/document-context').WalletSummary {
 
 const PAID_UP = { ...EMPTY_PAYMENT, lightningAddress: 'me@orangecat.ch' };
 
-/** A user with a bio, so the "no bio" gap doesn't shadow the case under test. */
+/** A user with a bio, so the "no bio" opener doesn't shadow the case under test. */
 const PROFILE = { name: 'Alice', username: 'alice', bio: 'Ceramicist in Zürich' };
 
 beforeEach(() => {
@@ -107,20 +110,16 @@ beforeEach(() => {
   mockedCall.mockResolvedValue(null);
 });
 
-// ─── Starter prompts are derived, not written ─────────────────────────────────
+// ─── Starters are derived, not written ───────────────────────────────────────
 
-describe('starter prompts', () => {
-  it('derives one prompt per top business entity type in the registry', () => {
+describe('starter chips', () => {
+  it('derives one chip per top business entity type in the registry', () => {
     const business = getEntitiesByCategory().business.slice(0, 3);
-    const starters = getStarterPrompts();
+    const starters = getStarterChips();
     expect(starters).toHaveLength(business.length);
     business.forEach((meta, i) => {
-      expect(starters[i].prompt.toLowerCase()).toContain(meta.name.toLowerCase());
+      expect(starters[i].toLowerCase()).toContain(meta.name.toLowerCase());
     });
-  });
-
-  it('offers a fork of equals — no starter claims to be a recommendation', () => {
-    expect(STARTER_PROMPTS.every(s => s.reason === undefined)).toBe(true);
   });
 });
 
@@ -145,241 +144,99 @@ describe('hasRichContext', () => {
   });
 });
 
-// ─── Gap detection: every gap names a real thing ──────────────────────────────
+// ─── Openers: the Cat speaking, about real things ─────────────────────────────
 
-describe('detectGaps', () => {
-  it('leads with the payment gap when listings exist but money cannot arrive', () => {
-    const ctx = makeContext({
-      profile: PROFILE,
-      entities: [makeEntity('product', 'Handmade Candles')],
-    });
-    const [top] = detectGaps(ctx);
-    expect(top.reason).toContain('1 listing');
-    expect(top.prompt.toLowerCase()).toContain('paid');
-  });
-
-  it('flags an unpublished draft by name', () => {
-    const ctx = makeContext({
-      profile: PROFILE,
-      wallets: [makeWallet()],
-      entities: [makeEntity('product', 'Handmade Candles', { status: 'draft' })],
-    });
-    const gaps = detectGaps(ctx);
-    expect(gaps[0].prompt).toContain('Handmade Candles');
-    expect(gaps[0].reason).toContain('draft');
-  });
-
-  it('flags a published listing with no description by name', () => {
-    const ctx = makeContext({
-      profile: PROFILE,
-      paymentCapabilities: PAID_UP,
-      entities: [makeEntity('product', 'Blue Vase', { description: '  ' })],
-    });
-    const gaps = detectGaps(ctx);
-    expect(gaps[0].prompt).toContain('Blue Vase');
-    expect(gaps[0].reason).toContain('no description');
-  });
-
-  it('flags a fixed-price listing with no price by name', () => {
-    const ctx = makeContext({
-      profile: PROFILE,
-      paymentCapabilities: PAID_UP,
-      entities: [makeEntity('product', 'Blue Vase', { price_btc: 0 })],
-    });
-    const gaps = detectGaps(ctx);
-    expect(gaps.some(g => g.prompt.includes('charge') && g.prompt.includes('Blue Vase'))).toBe(
-      true
-    );
-  });
-
-  it('does not invent a price gap for entities that are not sold at a price', () => {
-    const ctx = makeContext({
-      profile: PROFILE,
-      paymentCapabilities: PAID_UP,
-      entities: [makeEntity('cause', 'Clean Water', { price_btc: 0 })],
-    });
-    expect(detectGaps(ctx).some(g => g.prompt.includes('charge'))).toBe(false);
-  });
-
-  it('falls through to demand once the listing is live and payable', () => {
-    const ctx = makeContext({
-      profile: PROFILE,
-      paymentCapabilities: PAID_UP,
-      entities: [makeEntity('service', 'Pottery Classes')],
-    });
-    const gaps = detectGaps(ctx);
-    expect(gaps[0].prompt).toContain('Pottery Classes');
-    expect(gaps[0].reason).toContain('demand');
-  });
-
-  it('every gap states a reason — a suggestion that cannot justify itself is not one', () => {
-    const ctx = makeContext({
-      profile: { name: 'Alice', username: 'alice' },
-      entities: [makeEntity('product', 'Blue Vase', { status: 'draft', description: null })],
-    });
-    const gaps = detectGaps(ctx);
-    expect(gaps.length).toBeGreaterThan(0);
-    expect(gaps.every(g => !!g.reason?.trim())).toBe(true);
-  });
-});
-
-// ─── Composition ──────────────────────────────────────────────────────────────
-
-describe('generatePromptSuggestions', () => {
-  it('returns the starter fork for a user the Cat knows nothing about', async () => {
-    expect(await generatePromptSuggestions('u-empty', makeContext())).toEqual(STARTER_PROMPTS);
-  });
-
-  it('degrades to deterministic gaps when the platform LLM is unavailable', async () => {
-    const ctx = makeContext({
-      profile: PROFILE,
-      entities: [makeEntity('product', 'Handmade Candles')],
-    });
-    const out = await generatePromptSuggestions('u-nollm', ctx);
-    expect(out.length).toBeGreaterThan(0);
-    expect(out[0].reason).toBeTruthy();
-    expect(out[0].prompt.toLowerCase()).toContain('paid');
-  });
-
-  it('returns at most four prompts', async () => {
-    const ctx = makeContext({
-      profile: { name: 'Alice', username: 'alice' },
-      entities: [
-        makeEntity('product', 'A', { status: 'draft' }),
-        makeEntity('product', 'B', { description: null }),
-        makeEntity('service', 'C', { price_btc: 0 }),
-        makeEntity('cause', 'D'),
-      ],
-    });
-    expect((await generatePromptSuggestions('u-many', ctx)).length).toBeLessThanOrEqual(4);
-  });
-
-  it('marks exactly one recommendation — the rest are unweighted alternatives', async () => {
-    const ctx = makeContext({
-      profile: { name: 'Alice', username: 'alice' },
-      entities: [makeEntity('product', 'Handmade Candles', { status: 'draft' })],
-    });
-    const out = await generatePromptSuggestions('u-onelead', ctx);
-    expect(out[0].reason).toBeTruthy();
-    expect(out.slice(1).every(s => s.reason === undefined)).toBe(true);
-  });
-
-  it('never repeats the same prompt', async () => {
-    const ctx = makeContext({
-      profile: PROFILE,
-      entities: [makeEntity('product', 'Widget A'), makeEntity('product', 'Widget B')],
-    });
-    const out = await generatePromptSuggestions('u-dupes', ctx);
-    expect(new Set(out.map(s => s.prompt)).size).toBe(out.length);
-  });
-
-  it('uses the LLM phrasing when it is grounded in the user’s own data', async () => {
-    mockedCall.mockResolvedValue(
-      JSON.stringify({
-        recommended: {
-          prompt: 'What is missing before I publish "Handmade Candles"?',
-          reason: '"Handmade Candles" is a draft and earns nothing while hidden.',
-        },
-        alternatives: ['Who would buy my candles?', 'Help me price my candles'],
+describe('detectOpeners', () => {
+  it('speaks as the Cat, never as the user addressing it', () => {
+    const openers = detectOpeners(
+      makeContext({
+        profile: { name: 'Alice', username: 'alice' },
+        entities: [makeEntity('product', 'Blue Vase', { status: 'draft', description: '' })],
       })
     );
-    const ctx = makeContext({
-      profile: PROFILE,
-      wallets: [makeWallet()],
-      entities: [makeEntity('product', 'Handmade Candles', { status: 'draft' })],
-    });
-    const out = await generatePromptSuggestions('u-grounded', ctx);
-    expect(out[0].prompt).toContain('Handmade Candles');
-    expect(out.map(s => s.prompt)).toContain('Who would buy my candles?');
+    expect(openers.length).toBeGreaterThan(0);
+    for (const o of openers) {
+      expect(o.say).not.toMatch(/^cat[,:]/i);
+      expect(o.replies.length).toBeGreaterThan(0);
+      o.replies.forEach(r => expect(r).not.toMatch(/^cat[,:]/i));
+    }
   });
 
-  it('discards an LLM recommendation that names nothing the user has', async () => {
-    mockedCall.mockResolvedValue(
-      JSON.stringify({
-        recommended: {
-          prompt: 'Help me market my haircuts',
-          reason: 'Your barbershop needs customers.',
+  it('puts something that HAPPENED ahead of a chore', () => {
+    const [top] = detectOpeners(
+      makeContext({
+        profile: PROFILE,
+        entities: [makeEntity('product', 'Blue Vase', { status: 'draft' })],
+        inboundActivity: {
+          recentSales: [
+            {
+              entity_title: 'Pottery Class',
+              entity_type: 'service',
+              amount_btc: 0.001,
+              status: 'paid',
+              created_at: '2026-09-23T10:00:00Z',
+            },
+          ],
+          upcomingBookings: [],
         },
-        alternatives: [],
       })
     );
-    const ctx = makeContext({
-      profile: PROFILE,
-      wallets: [makeWallet()],
-      entities: [makeEntity('product', 'Handmade Candles', { status: 'draft' })],
-    });
-    const out = await generatePromptSuggestions('u-hallucinated', ctx);
-    expect(out[0].prompt).not.toContain('haircuts');
-    expect(out[0].prompt).toContain('Handmade Candles');
+    expect(top.say).toContain('Pottery Class');
+    expect(top.key).toMatch(/^sales:/);
   });
 
-  it('regenerates when the user’s state changes, and only then', async () => {
-    const draft = makeEntity('product', 'Handmade Candles', { status: 'draft' });
-    const ctx = makeContext({ profile: PROFILE, wallets: [makeWallet()], entities: [draft] });
-
-    const first = await generatePromptSuggestions('u-cache', ctx);
-    const cached = await generatePromptSuggestions('u-cache', ctx);
-    // Not array identity: a second serve re-windows the pool (see the rotation
-    // tests below). What must not happen is a second round trip to the model.
-    expect(cached[0]).toEqual(first[0]);
-    expect(mockedCall).toHaveBeenCalledTimes(1);
-
-    // Publishing the draft is a different reality — the answer must be recomputed.
-    const published = makeContext({
-      profile: PROFILE,
-      wallets: [makeWallet()],
-      entities: [{ ...draft, status: 'active' }],
-    });
-    const after = await generatePromptSuggestions('u-cache', published);
-    expect(mockedCall).toHaveBeenCalledTimes(2);
-    expect(after[0].prompt).not.toEqual(first[0].prompt);
-  });
-});
-
-/**
- * The screen was frozen: cached results were the SERVED results, so a user
- * whose listings hadn't changed saw the identical four prompts every visit,
- * forever. Caching what was computed is right; caching what was shown is not.
- */
-describe('rotation', () => {
-  const busyContext = () =>
-    makeContext({
-      profile: PROFILE,
-      wallets: [makeWallet()],
-      entities: [
-        makeEntity('product', 'Alpha', { status: 'draft' }),
-        makeEntity('product', 'Beta', { status: 'draft' }),
-        makeEntity('service', 'Gamma', { description: null }),
-        makeEntity('service', 'Delta', { price_btc: 0 }),
-        makeEntity('product', 'Epsilon', { description: null }),
-      ],
-    });
-
-  it('shows different alternatives on a second visit, with no state change', async () => {
-    const ctx = busyContext();
-    const first = await generatePromptSuggestions('u-rotate', ctx);
-    const second = await generatePromptSuggestions('u-rotate', ctx);
-    expect(first.slice(1).map(s => s.prompt)).not.toEqual(second.slice(1).map(s => s.prompt));
+  it('brings up an overdue task by name', () => {
+    const openers = detectOpeners(
+      makeContext({
+        profile: PROFILE,
+        tasks: [
+          {
+            id: 't1',
+            title: 'Send invoice',
+            category: 'admin',
+            priority: 'high',
+            current_status: 'idle',
+            task_type: 'one_time',
+            due_date: '2026-09-01T00:00:00Z',
+          },
+        ],
+      }),
+      new Date('2026-09-24T00:00:00Z')
+    );
+    expect(openers[0].key).toBe('task:t1');
+    expect(openers[0].say).toContain('Send invoice');
   });
 
-  it('keeps the SAME recommendation across visits — a lead that moves is not a recommendation', async () => {
-    const ctx = busyContext();
-    const first = await generatePromptSuggestions('u-lead-stable', ctx);
-    const second = await generatePromptSuggestions('u-lead-stable', ctx);
-    expect(second[0]).toEqual(first[0]);
+  it('builds on a goal the user told the Cat about', () => {
+    const openers = detectOpeners(
+      makeContext({
+        profile: PROFILE,
+        economicProfile: {
+          skills: [],
+          assets: [],
+          goals: [{ text: 'Earn 2k a month from ceramics' }],
+          constraints: [],
+          askedFor: [],
+          notAvailableFor: [],
+        },
+      })
+    );
+    expect(openers.some(o => o.say.includes('Earn 2k a month from ceramics'))).toBe(true);
   });
 
-  it('degrades to a stable list when there is nothing to rotate through', async () => {
-    const ctx = makeContext({ profile: PROFILE, entities: [makeEntity('product', 'Only')] });
-    const first = await generatePromptSuggestions('u-thin', ctx);
-    const second = await generatePromptSuggestions('u-thin', ctx);
-    expect(second).toEqual(first);
+  it('never spotlights a test or placeholder draft', () => {
+    const openers = detectOpeners(
+      makeContext({
+        profile: PROFILE,
+        wallets: [makeWallet()],
+        entities: [makeEntity('service', 'Test Service - Web Development', { status: 'draft' })],
+      })
+    );
+    expect(openers.some(o => o.say.includes('Test Service'))).toBe(false);
   });
-});
 
-describe('gap breadth', () => {
-  it('names more than one draft — a user with five was told about one', async () => {
-    const gaps = detectGaps(
+  it('talks about several drafts as one pile, not one arbitrary spotlight', () => {
+    const openers = detectOpeners(
       makeContext({
         profile: PROFILE,
         wallets: [makeWallet()],
@@ -390,34 +247,237 @@ describe('gap breadth', () => {
         ],
       })
     );
-    const drafts = gaps.filter(g => g.prompt.includes('publish'));
-    expect(drafts.length).toBeGreaterThan(1);
-    expect(new Set(drafts.map(g => g.prompt)).size).toBe(drafts.length);
+    const drafts = openers.filter(o => o.key.startsWith('draft'));
+    expect(drafts).toHaveLength(1);
+    expect(drafts[0].say).toContain('3 drafts');
   });
 
-  it('caps how many it takes from any one category', async () => {
-    const many = Array.from({ length: 12 }, (_, i) =>
-      makeEntity('product', `Draft ${i}`, { status: 'draft' })
+  it('keys a single draft by its id, so dismissing it is specific', () => {
+    const draft = makeEntity('product', 'Handmade Candles', { status: 'draft' });
+    const openers = detectOpeners(
+      makeContext({ profile: PROFILE, wallets: [makeWallet()], entities: [draft] })
     );
-    const gaps = detectGaps(
-      makeContext({ profile: PROFILE, wallets: [makeWallet()], entities: many })
-    );
-    expect(gaps.filter(g => g.prompt.includes('publish')).length).toBeLessThanOrEqual(3);
+    const o = openers.find(x => x.key === `draft:${draft.id}`);
+    expect(o?.say).toContain('Handmade Candles');
+    expect(o?.replies[0]).toContain('Handmade Candles');
   });
 
-  it('every gap still states a reason, however many it found', () => {
-    const gaps = detectGaps(
+  it('flags the payment gap when listings exist but money cannot arrive', () => {
+    const openers = detectOpeners(
+      makeContext({ profile: PROFILE, entities: [makeEntity('product', 'Handmade Candles')] })
+    );
+    expect(openers.find(o => o.key === 'payment')?.say).toContain('1 listing');
+  });
+
+  it('does not invent a price gap for entities not sold at a price', () => {
+    const openers = detectOpeners(
       makeContext({
         profile: PROFILE,
-        wallets: [makeWallet()],
+        paymentCapabilities: PAID_UP,
+        entities: [makeEntity('cause', 'Clean Water', { price_btc: 0 })],
+      })
+    );
+    expect(openers.some(o => o.key.startsWith('price:'))).toBe(false);
+  });
+
+  it('falls through to demand once a listing is live and payable', () => {
+    const openers = detectOpeners(
+      makeContext({
+        profile: PROFILE,
+        paymentCapabilities: PAID_UP,
+        entities: [makeEntity('service', 'Pottery Classes')],
+      })
+    );
+    expect(openers[0].key).toMatch(/^demand:/);
+    expect(openers[0].replies.join(' ')).toContain('Pottery Classes');
+  });
+
+  it('gives every opener a unique key', () => {
+    const openers = detectOpeners(
+      makeContext({
+        profile: { name: 'Alice', username: 'alice' },
         entities: [
-          makeEntity('product', 'Alpha', { status: 'draft' }),
-          makeEntity('product', 'Beta', { status: 'draft' }),
-          makeEntity('service', 'Gamma', { description: null }),
+          makeEntity('product', 'A', { status: 'draft' }),
+          makeEntity('product', 'B', { description: '' }),
+          makeEntity('product', 'C', { price_btc: 0 }),
         ],
       })
     );
-    expect(gaps.length).toBeGreaterThan(0);
-    expect(gaps.every(g => !!g.reason?.trim())).toBe(true);
+    expect(new Set(openers.map(o => o.key)).size).toBe(openers.length);
+  });
+});
+
+describe('isPlaceholderTitle', () => {
+  it.each(['Test Service - Web Development', 'untitled', 'Demo product', 'asdf'])(
+    'treats "%s" as a placeholder',
+    t => expect(isPlaceholderTitle(t)).toBe(true)
+  );
+  it.each(['Loki Pro — 30-day pass', 'Testament Leather Goods', 'Handmade Candles'])(
+    'treats "%s" as real',
+    t => expect(isPlaceholderTitle(t)).toBe(false)
+  );
+});
+
+describe('isGroundedChip', () => {
+  const digest = 'Bio: Ceramicist in Zürich\nCat remembers: Runs autumn workshops';
+  it('accepts a chip quoting the state, ignoring accents and case', () => {
+    expect(isGroundedChip({ text: 'x', from: 'ceramicist in zurich' }, digest)).toBe(true);
+    expect(isGroundedChip({ text: 'x', from: 'Runs autumn workshops' }, digest)).toBe(true);
+  });
+  it('rejects a quote that is not there, too short, or missing', () => {
+    expect(isGroundedChip({ text: 'x', from: 'hair salon' }, digest)).toBe(false);
+    expect(isGroundedChip({ text: 'x', from: 'in' }, digest)).toBe(false);
+    expect(isGroundedChip('plain string', digest)).toBe(false);
+  });
+});
+
+describe('cleanChip', () => {
+  it('strips the "Cat, …" address the model keeps writing', () => {
+    expect(cleanChip('Cat, help me price my vases')).toBe('Help me price my vases');
+    expect(cleanChip('Hey Cat: what should I do next?')).toBe('What should I do next?');
+  });
+
+  it('drops non-strings, blanks and links', () => {
+    expect(cleanChip(42)).toBeNull();
+    expect(cleanChip('   ')).toBeNull();
+    expect(cleanChip('Read https://example.com')).toBeNull();
+  });
+});
+
+// ─── Composition ──────────────────────────────────────────────────────────────
+
+describe('generateCatHome', () => {
+  it('returns the starter home for a user the Cat knows nothing about', async () => {
+    expect(await generateCatHome('u-empty', makeContext())).toEqual(STARTER_HOME);
+  });
+
+  it('still opens with something when the platform LLM is unavailable', async () => {
+    const home = await generateCatHome(
+      'u-nollm',
+      makeContext({ profile: PROFILE, entities: [makeEntity('product', 'Handmade Candles')] })
+    );
+    expect(home.openers.length).toBeGreaterThan(0);
+    expect(home.chips.length).toBeGreaterThan(0);
+    expect(home.chips.length).toBeLessThanOrEqual(CAT_HOME_MAX_CHIPS);
+  });
+
+  it('hands the chip writer what the Cat remembers', async () => {
+    await generateCatHome('u-memory', makeContext({ profile: PROFILE }), [
+      'Runs a pottery studio in Zürich',
+    ]);
+    const [, userPrompt] = mockedCall.mock.calls[0];
+    expect(userPrompt).toContain('Runs a pottery studio in Zürich');
+  });
+
+  it('uses the model’s grounded chips, cleaned', async () => {
+    mockedCall.mockResolvedValue(
+      JSON.stringify({
+        chips: [
+          { text: 'Cat, who buys ceramics in Zürich?', from: 'Ceramicist in Zürich' },
+          { text: 'Plan my autumn market.', from: 'Ceramicist' },
+        ],
+      })
+    );
+    const home = await generateCatHome('u-llm', makeContext({ profile: PROFILE }));
+    expect(home.chips).toContain('Who buys ceramics in Zürich?');
+    expect(home.chips).toContain('Plan my autumn market');
+  });
+
+  it('drops a chip about something the user does not have (haircuts to a ceramicist)', async () => {
+    mockedCall.mockResolvedValue(
+      JSON.stringify({
+        chips: [{ text: 'Promote my hair-cut services', from: 'hair salon services' }],
+      })
+    );
+    const home = await generateCatHome('u-haircut', makeContext({ profile: PROFILE }));
+    expect(home.chips.join(' ')).not.toMatch(/hair/i);
+  });
+
+  it('rotates chips on a second visit and does not call the model again', async () => {
+    mockedCall.mockResolvedValue(
+      JSON.stringify({
+        chips: ['One thing', 'Two thing', 'Three thing', 'Four thing', 'Five'].map(text => ({
+          text,
+          from: 'Ceramicist',
+        })),
+      })
+    );
+    const ctx = makeContext({ profile: PROFILE });
+    const first = await generateCatHome('u-rotate', ctx);
+    const second = await generateCatHome('u-rotate', ctx);
+    expect(mockedCall).toHaveBeenCalledTimes(1);
+    expect(second.chips).not.toEqual(first.chips);
+  });
+
+  it('recomputes when the state changes', async () => {
+    mockedCall.mockResolvedValue(
+      JSON.stringify({ chips: [{ text: 'Something', from: 'Ceramicist' }] })
+    );
+    const draft = makeEntity('product', 'Handmade Candles', { status: 'draft' });
+    await generateCatHome('u-cache', makeContext({ profile: PROFILE, entities: [draft] }));
+    await generateCatHome(
+      'u-cache',
+      makeContext({ profile: PROFILE, entities: [{ ...draft, status: 'active' }] })
+    );
+    expect(mockedCall).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not hold the page for a slow model, and serves its answer next visit', async () => {
+    vi.useFakeTimers();
+    try {
+      mockedCall.mockImplementation(
+        () =>
+          new Promise(resolve =>
+            setTimeout(
+              () =>
+                resolve(
+                  JSON.stringify({
+                    chips: ['Slow one', 'Slow two', 'Slow three'].map(text => ({
+                      text,
+                      from: 'Ceramicist',
+                    })),
+                  })
+                ),
+              6000
+            )
+          )
+      );
+      const ctx = makeContext({ profile: PROFILE, entities: [makeEntity('product', 'Mug')] });
+
+      const firstP = generateCatHome('u-slow', ctx);
+      await vi.advanceTimersByTimeAsync(2600);
+      const first = await firstP;
+      expect(first.openers.length).toBeGreaterThan(0);
+      expect(first.chips).not.toContain('Slow one');
+
+      await vi.advanceTimersByTimeAsync(4000);
+      const second = await generateCatHome('u-slow', ctx);
+      expect(second.chips).toContain('Slow one');
+      expect(mockedCall).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('offers the user’s own things to the "+" menu', async () => {
+    const home = await generateCatHome(
+      'u-attach',
+      makeContext({ profile: PROFILE, entities: [makeEntity('product', 'Blue Vase')] })
+    );
+    expect(home.attachable.map(a => a.title)).toContain('Blue Vase');
+  });
+});
+
+describe('listAttachable', () => {
+  it('lists listings before notes', () => {
+    const refs = listAttachable(
+      makeContext({
+        entities: [makeEntity('product', 'Blue Vase')],
+        documents: [
+          { id: 'd1', title: 'Goals', content: '', document_type: 'goals', visibility: 'private' },
+        ],
+      })
+    );
+    expect(refs.map(r => r.type)).toEqual(['product', 'document']);
   });
 });

@@ -6,7 +6,7 @@
 import { useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
-import { Cat, User, Copy, Check, Clock } from 'lucide-react';
+import { Cat, User, Copy, Check, Clock, FileText, Package } from 'lucide-react';
 import { getModelDisplayName } from '@/config/ai-models';
 import { formatShortTime } from '@/utils/dates';
 import { getModelCapabilities } from '@/config/model-capability';
@@ -14,6 +14,8 @@ import { renderChatMarkdown } from '@/utils/markdown';
 import { ActionButton } from './ActionButton';
 import { linkifyCitations, citationsFromToolCalls } from '@/lib/chat/citations';
 import { ToolCallChip } from './ToolCallChip';
+import { referenceLabel } from './ComposerAddMenu';
+import { parseUserMessage } from '../attachments';
 import { PrefilledFormCard } from './PrefilledFormCard';
 import { UpgradeNudge } from './UpgradeNudge';
 import type {
@@ -174,9 +176,13 @@ export function MessageBubble({
 
   // Clean the message content by removing action, exec_action, and quick_replies
   // blocks for display (quick_replies render as chips below, never as raw text).
-  const displayContent = message.content
+  const stripped = message.content
     .replace(/```(?:action|exec_action|quick_replies)[\s\S]*?```/g, '')
     .trim();
+  // A user turn may carry attached files/things (see ../attachments): show the
+  // typed text, and the attachments as chips — never a wall of file contents.
+  const attached = isUser ? parseUserMessage(stripped) : null;
+  const displayContent = attached ? attached.text : stripped;
 
   // Cat cites its web sources as [F1], and the verifier checks those handles
   // mechanically. A reader who cannot reach the page is being shown the
@@ -223,9 +229,27 @@ export function MessageBubble({
             ))}
           </div>
         )}
+        {attached && attached.files.length + attached.refs.length > 0 && (
+          <div className="mb-1.5 flex flex-wrap justify-end gap-1.5">
+            {attached.files.map((f, i) => (
+              <span key={`f${i}`} className="oc-chat-attachment">
+                <FileText className="h-3.5 w-3.5 flex-shrink-0 text-fg-secondary" />
+                <span className="min-w-0 truncate">{f.name}</span>
+              </span>
+            ))}
+            {attached.refs.map((r, i) => (
+              <span key={`r${i}`} className="oc-chat-attachment">
+                <Package className="h-3.5 w-3.5 flex-shrink-0 text-fg-secondary" />
+                <span className="min-w-0 truncate">{r.title}</span>
+                <span className="flex-shrink-0 text-fg-tertiary">{referenceLabel(r.type)}</span>
+              </span>
+            ))}
+          </div>
+        )}
         <div
           className={cn(
             'inline-block max-w-full px-1 py-0.5 text-sm leading-relaxed sm:max-w-[92%]',
+            isUser && !displayContent && 'hidden',
             isUser
               ? isFocus
                 ? // Border, not just fill: surface-raised on surface-page is two
@@ -278,7 +302,7 @@ export function MessageBubble({
                 key={idx}
                 type="button"
                 onClick={() => onQuickReply?.(reply)}
-                className="rounded-full border border-default bg-surface-base px-3 py-1.5 text-sm text-fg-secondary transition-colors hover:border-strong hover:bg-surface-raised hover:text-fg-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="oc-chat-reply"
               >
                 {reply}
               </button>

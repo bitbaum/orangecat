@@ -1,40 +1,65 @@
 /**
- * CAT PROMPT SUGGESTIONS — the shape, and the one case we can't generate.
+ * CAT HOME — the contract for what the Cat says before you say anything.
  *
- * The Cat proposes what the human should ask it. Those proposals are GENERATED
- * from the user's own state (src/services/cat/prompt-suggestions.ts) — there is
- * deliberately no list of prompt strings in this codebase, because a fixed list
- * says the same thing on day 1 and day 100 and therefore says nothing.
+ * An empty chat is the Cat's turn, not a menu. It used to be a list of prompts
+ * written in the USER's voice ("Cat, help me publish…"), led by the single most
+ * consequential gap in their listings — pinned until fixed. On a real account
+ * that meant the same test draft headlined the page every visit, and every
+ * option was a chore. Nothing in it said the Cat knew the person.
  *
- * The single exception is a user the Cat knows nothing about: zero data is zero
- * signal, so there is nothing to recommend and the only honest structure is a
- * fork of intent. Even that fork is DERIVED — one template applied to
- * ENTITY_REGISTRY in the registry's own create order — so adding an entity type
- * never means editing prompt copy.
+ * Now the server returns two things, both GENERATED from the user's own state
+ * (src/services/cat/prompt-suggestions.ts):
  *
- * ── The contract that makes these readable ──────────────────────────────────
- * The list is ordered, and AT MOST the first item carries a `reason`. A reason
- * is the Cat's justification for putting that prompt first, drawn from the
- * user's real data ("Handmade Candles is still a draft"). So:
+ *   openers — things the Cat would bring up, in the Cat's voice, ranked by how
+ *             timely they are (a sale, a booking, an overdue task) before how
+ *             consequential (a gap). Each carries the one or two replies that
+ *             act on it. The client shows the first one the user has not
+ *             dismissed, so "not now" moves the Cat on instead of freezing it.
+ *   chips   — short things this person might ask, in their voice, drawn from
+ *             what the Cat knows about them (goals, memories, listings).
  *
- *   reason present on [0]  → that is a recommendation; render it as the lead.
- *   no reasons at all      → these are equal alternatives; render them equally.
- *
- * Four equally-weighted boxes with no stated reason is the thing this replaces:
- * it forces the reader to compare four options before they can start.
+ * There is deliberately no list of prompt strings here. The single exception is
+ * a user the Cat knows nothing about: zero data is zero signal, so the only
+ * honest structure is a fork of intent — and even that is DERIVED from
+ * ENTITY_REGISTRY, so adding an entity type never means editing prompt copy.
  */
 
 import { getEntitiesByCategory } from '@/config/entity-registry';
 
-export interface CatPromptSuggestion {
-  /** Sent verbatim to the Cat when the user picks it. */
-  prompt: string;
+export interface CatOpener {
   /**
-   * Why THIS is the recommended opener, grounded in the user's own data.
-   * Only ever set on the lead item — see the contract above.
+   * Stable identity of the fact this opener is about ("draft:<id>",
+   * "sales:<date>"). Dismissals are keyed on it, so a new fact — the next
+   * sale — is a new key and is shown even after the last one was dismissed.
    */
-  reason?: string;
+  key: string;
+  /** What the Cat says, first person, one or two short sentences. */
+  say: string;
+  /** Tap-to-send replies in the user's voice. The first is the primary action. */
+  replies: string[];
 }
+
+/** One of the user's own things they can bring into a message from the "+" menu. */
+export interface CatReference {
+  /** Registry entity type ("product", "service"…) or "document". */
+  type: string;
+  id: string;
+  title: string;
+}
+
+export interface CatHome {
+  /** Ranked; the client shows the first not dismissed. May be empty. */
+  openers: CatOpener[];
+  /** Short prompts in the user's voice, at most CAT_HOME_MAX_CHIPS. */
+  chips: string[];
+  /**
+   * What the "+" menu can attach. Rides on this payload because the server
+   * already loaded exactly this state to write the openers.
+   */
+  attachable: CatReference[];
+}
+
+export const CAT_HOME_MAX_CHIPS = 3;
 
 /** How many starter options a brand-new user is offered. Three is a fork; six is a menu. */
 const STARTER_COUNT = 3;
@@ -45,15 +70,14 @@ const STARTER_COUNT = 3;
  * funds, already sorted by its `createPriority`, so this tracks the registry
  * rather than restating it.
  */
-export function getStarterPrompts(): CatPromptSuggestion[] {
+export function getStarterChips(): string[] {
   return getEntitiesByCategory()
     .business.slice(0, STARTER_COUNT)
-    .map(meta => ({ prompt: `Help me create my first ${meta.name.toLowerCase()}` }));
+    .map(meta => `Help me create my first ${meta.name.toLowerCase()}`);
 }
 
 /**
- * Precomputed starter fork — safe as a module constant because it derives from
- * a static registry. Used as the client's initial state and as the server's
- * fallback for anonymous visitors and for errors.
+ * What an unknown user sees — and the fallback for anonymous visitors and
+ * errors. Safe as a module constant: it derives from a static registry.
  */
-export const STARTER_PROMPTS: CatPromptSuggestion[] = getStarterPrompts();
+export const STARTER_HOME: CatHome = { openers: [], chips: getStarterChips(), attachable: [] };
