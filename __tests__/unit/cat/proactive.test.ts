@@ -97,10 +97,11 @@ describe('runDailyBrief', () => {
   });
 
   it('sends the brief when signals exist and none was sent today', async () => {
-    const { client } = mockAdmin({
+    const { client, updates } = mockAdmin({
       cat_messages: [{ data: [{ user_id: 'u1' }] }],
       notifications: [
         { data: [] }, // dedupe check: nothing today
+        { data: [] }, // supersede earlier days' briefs
         { data: [], count: 2 }, // unread count in compose
       ],
       actors: [{ data: [] }],
@@ -116,6 +117,10 @@ describe('runDailyBrief', () => {
         metadata: { kind: 'cat_brief' },
       })
     );
+    // Yesterday's brief stops counting as unread — they piled up one a day.
+    expect(updates).toEqual([
+      { table: 'notifications', values: expect.objectContaining({ is_read: true }) },
+    ]);
   });
 });
 
