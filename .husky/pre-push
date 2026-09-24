@@ -18,6 +18,10 @@ echo "✅ Type check passed"
 
 # Run tests before pushing (target: ≤30s)
 
+# Sub-second, and CI's verify fails on it: a component over its line limit
+# passed this hook and failed two CI jobs (#1141).
+pnpm run check:sizes || { echo "❌ File size limit exceeded — split the file"; exit 1; }
+
 echo "🧭 Checking route integrity..."
 pnpm run audit:routes || { echo "❌ Route audit failed — a declared or emitted link resolves to no route"; exit 1; }
 echo "✅ Route audit passed"
