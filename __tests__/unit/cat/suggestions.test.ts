@@ -12,10 +12,9 @@ import {
   detectOpeners,
   hasRichContext,
   isPlaceholderTitle,
-  cleanChip,
-  isGroundedChip,
   listAttachable,
 } from '@/services/cat/prompt-suggestions';
+import { cleanChip, isGroundedChip } from '@/services/cat/cat-home-chips';
 import { STARTER_HOME, getStarterChips, CAT_HOME_MAX_CHIPS } from '@/config/cat-prompts';
 import { getEntitiesByCategory } from '@/config/entity-registry';
 import type { FullUserContext } from '@/services/ai/document-context';
