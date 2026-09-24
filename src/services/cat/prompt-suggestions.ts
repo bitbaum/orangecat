@@ -35,6 +35,7 @@ import {
   type CatReference,
 } from '@/config/cat-prompts';
 import { logger } from '@/utils/logger';
+import { APP_LOCALE } from '@/utils/locale';
 import { callPlatformJson, parseJsonLoose } from './platform-llm';
 import type { EntitySummary, FullUserContext } from '@/services/ai/document-context-types';
 
@@ -101,7 +102,11 @@ const canBePaid = (context: FullUserContext): boolean =>
   !!context.paymentCapabilities?.lightningAddress;
 
 const shortDate = (iso: string): string =>
-  new Date(iso).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+  new Date(iso).toLocaleDateString(APP_LOCALE, {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  });
 
 /** A short, stable hash for keys built from free text (goals). */
 function fingerprint(input: string): string {
