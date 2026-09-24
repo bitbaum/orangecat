@@ -3,11 +3,13 @@
  * travels.
  *
  * The chat API takes one text message (catChatBodySchema), so an attachment is
- * serialised INTO that message as a tagged block the model reads naturally and
- * the thread can turn back into a chip:
+ * serialised INTO that message as a tagged block the thread can turn back into
+ * a chip. The tag NAMES carry the meaning, deliberately: explaining them in the
+ * system prompt cost every turn tokens against Groq's per-request budget, for
+ * the few turns that carry an attachment.
  *
- *   <attachment name="notes.md">…file text…</attachment>
- *   <ref type="product" id="…" title="Loki Pro — 30-day pass"/>
+ *   <attached_file name="notes.md">…file text…</attached_file>
+ *   <my_item type="product" id="…" title="Loki Pro — 30-day pass"/>
  *
  * Text files only, for an honest reason: every model on the free chain reads
  * text, few read images, and none reads a PDF without an extraction step this
@@ -71,7 +73,7 @@ export function isReadableTextFile(file: { name: string; type: string }): boolea
 const attr = (v: string): string => v.replace(/"/g, "'").replace(/[<>]/g, '');
 
 /** Prevents file text from closing its own block early. */
-const escapeBody = (v: string): string => v.replace(/<\/attachment>/gi, '</ attachment>');
+const escapeBody = (v: string): string => v.replace(/<\/attached_file>/gi, '</ attached_file>');
 
 const TRUNCATED_NOTE = '\n…[truncated to fit]';
 
@@ -88,7 +90,8 @@ export function composeMessage(
   const refs = attachments
     .filter((a): a is Extract<ChatAttachment, { kind: 'ref' }> => a.kind === 'ref')
     .map(
-      a => `<ref type="${attr(a.ref.type)}" id="${attr(a.ref.id)}" title="${attr(a.ref.title)}"/>`
+      a =>
+        `<my_item type="${attr(a.ref.type)}" id="${attr(a.ref.id)}" title="${attr(a.ref.title)}"/>`
     );
   const files = attachments.filter(
     (a): a is Extract<ChatAttachment, { kind: 'file' }> => a.kind === 'file'
@@ -100,8 +103,8 @@ export function composeMessage(
   }
 
   const wrappers = files.map(f => ({
-    open: `<attachment name="${attr(f.name)}">\n`,
-    close: '\n</attachment>',
+    open: `<attached_file name="${attr(f.name)}">\n`,
+    close: '\n</attached_file>',
     body: escapeBody(f.content),
   }));
   const overhead =
@@ -123,8 +126,8 @@ export interface ParsedUserMessage {
   refs: Array<{ type: string; title: string }>;
 }
 
-const FILE_BLOCK = /<attachment name="([^"]*)">[\s\S]*?<\/attachment>/g;
-const REF_TAG = /<ref type="([^"]*)" id="[^"]*" title="([^"]*)"\/>/g;
+const FILE_BLOCK = /<attached_file name="([^"]*)">[\s\S]*?<\/attached_file>/g;
+const REF_TAG = /<my_item type="([^"]*)" id="[^"]*" title="([^"]*)"\/>/g;
 
 /** The inverse, for display: the typed text, plus chips for what was attached. */
 export function parseUserMessage(content: string): ParsedUserMessage {

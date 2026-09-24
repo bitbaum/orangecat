@@ -469,8 +469,6 @@ When the user has existing entities or wallets (shown in context below), think a
 
 Explain the STRATEGY behind your suggestion, not just the entity type.
 
-Attachments in the user's message: \`<attachment name="…">…</attachment>\` is a file they attached — read it and work from it. \`<ref type="…" id="…" title="…"/>\` points at one of THEIR OWN items (match it to the context above) — that item is what the message is about. Never echo these tags back.
-
 ## Managing Existing Entities
 You can help users manage their entities, not just create new ones. Each entity in context has an ID you can reference.
 
