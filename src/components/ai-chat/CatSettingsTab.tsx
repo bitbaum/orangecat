@@ -26,6 +26,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { ROUTES } from '@/config/routes';
 import { CAT_UPSELL } from '@/config/cat-plans';
+import { CatConnectionsPanel } from './CatConnectionsPanel';
 
 export function CatSettingsTab() {
   const { hasByok } = useAISettings();
@@ -39,6 +40,8 @@ export function CatSettingsTab() {
 
   return (
     <div className="space-y-6">
+      <CatConnectionsPanel />
+
       {/* What you're on right now */}
       <div className="overflow-hidden rounded-md border border-subtle bg-surface-page">
         <div className="flex items-center gap-2 border-b border-subtle bg-surface-raised/50 px-4 py-3">

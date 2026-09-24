@@ -11,6 +11,7 @@
 
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { fetchStudioMapForCat } from './studio-map-fetcher';
+import { fetchLokiActorStatus, type LokiProjectStatus } from '@/services/loki/actor-status';
 import { logger } from '@/utils/logger';
 import { getAdminClient } from '@/lib/supabase/admin';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -405,6 +406,7 @@ export async function fetchFullContextForCat(
     economicProfile,
     trackRecord,
     studioMap,
+    lokiProjects,
   ] = await Promise.all([
     fetchProfileForCat(supabase, userId),
     fetchDocumentsForCat(supabase, userId),
@@ -422,6 +424,7 @@ export async function fetchFullContextForCat(
     getEconomicProfile(supabase, userId),
     getCatTrackRecord(supabase, userId),
     fetchStudioMapForCat(),
+    fetchLokiProjectsForCat(supabase, userId),
   ]);
 
   const runtime = await fetchRuntimeContextForCat(supabase, userId, runtimeHints, profile);
@@ -452,6 +455,7 @@ export async function fetchFullContextForCat(
     stakeholders,
     githubRepos,
     studioMap,
+    lokiProjects,
     paymentCapabilities,
     runtime,
     stats: {
@@ -461,4 +465,26 @@ export async function fetchFullContextForCat(
       totalWallets: wallets.length,
     },
   };
+}
+
+/**
+ * The person's Loki projects, keyed by their OrangeCat actor — the Loki half
+ * of the two-way rail (see services/loki/actor-status). null when unknown or
+ * when they have never signed in to Loki with OrangeCat.
+ */
+async function fetchLokiProjectsForCat(
+  supabase: AnySupabaseClient,
+  userId: string
+): Promise<LokiProjectStatus[] | null> {
+  try {
+    const actorId = await getUserActorId(supabase, userId);
+    if (!actorId) {
+      return null;
+    }
+    const status = await fetchLokiActorStatus(actorId);
+    return status?.linked ? status.projects : null;
+  } catch (error) {
+    logger.warn('Loki projects unavailable for Cat', { error }, 'DocumentContext');
+    return null;
+  }
 }

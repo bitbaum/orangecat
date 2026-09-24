@@ -123,6 +123,31 @@ export function detectOpeners(context: FullUserContext, now: Date = new Date()):
 
   // ── Timely: something happened, or is about to ──
 
+  // Loki first: a build blocked on its owner is the one thing here that is
+  // literally waiting for them, and until the rail ran both ways Cat could not
+  // see it at all.
+  const loki = context.lokiProjects ?? [];
+  const waiting = loki.find(p => p.status === 'blocked' && p.blockReason === 'awaiting_user');
+  if (waiting) {
+    const name = truncate(waiting.name, MAX_TITLE_CHARS);
+    openers.push({
+      key: `loki-waiting:${waiting.id}:${waiting.currentWork ?? ''}`,
+      say: `Loki is waiting on you to continue "${name}".`,
+      replies: [`What does "${name}" need from me?`],
+    });
+  }
+  const withFeedback = loki.find(p => p.feedback.new > 0);
+  if (withFeedback) {
+    const name = truncate(withFeedback.name, MAX_TITLE_CHARS);
+    openers.push({
+      key: `loki-feedback:${withFeedback.id}:${withFeedback.feedback.new}`,
+      say: `"${name}" has ${plural(withFeedback.feedback.new, 'new piece')} of visitor feedback in Loki.`,
+      // Cat sees the count and the Loki link, not the feedback text — so the
+      // reply asks for the next step, never for a summary it would invent.
+      replies: [`How do I act on the feedback for "${name}"?`],
+    });
+  }
+
   const sales = context.inboundActivity?.recentSales ?? [];
   if (sales.length > 0) {
     const latest = sales[0];

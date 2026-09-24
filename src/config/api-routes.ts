@@ -16,6 +16,7 @@ export const API_ROUTES = {
     SUGGESTIONS: '/api/cat/suggestions',
     HISTORY: '/api/cat/history',
     CONTEXT: '/api/cat/context',
+    CONNECTIONS: '/api/cat/connections',
     TRACK_RECORD: '/api/cat/track-record',
     PERMISSIONS: '/api/cat/permissions',
     ACTIONS: '/api/cat/actions',
