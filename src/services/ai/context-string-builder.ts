@@ -56,7 +56,7 @@ export function buildFullContextString(context: FullUserContext): string {
     renderTasks(context.tasks, locale),
     renderWallets(context.wallets),
     renderConversations(context.conversations),
-    renderNotifications(context.notifications, locale),
+    renderNotifications(context.notifications, locale, context.notificationsUnread),
     renderInboundActivity(context.inboundActivity, locale),
     renderPaymentCapabilities(context.paymentCapabilities),
     renderActivitySummary(context.stats),

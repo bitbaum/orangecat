@@ -162,6 +162,23 @@ describe('detectOpeners', () => {
     }
   });
 
+  it('quotes the exact unread total, not the sum of the coalesced newest rows', () => {
+    const group = {
+      type: 'system',
+      title: 'Cat eval harness error',
+      message: 'failed',
+      count: 30,
+      latest_at: '2026-09-23T10:00:00Z',
+      action_url: null,
+    };
+    const say = (ctx: Partial<FullUserContext>) =>
+      detectOpeners(makeContext({ profile: PROFILE, notifications: [group], ...ctx })).find(o =>
+        o.key.startsWith('notifications:')
+      )?.say;
+    expect(say({ notificationsUnread: 80 })).toContain('80 unread notifications');
+    expect(say({})).toContain('30 unread notifications');
+  });
+
   it('puts something that HAPPENED ahead of a chore', () => {
     const [top] = detectOpeners(
       makeContext({

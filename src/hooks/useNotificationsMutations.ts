@@ -4,6 +4,7 @@ import { useCallback, type Dispatch, type SetStateAction } from 'react';
 import { logger } from '@/utils/logger';
 import { API_ROUTES } from '@/config/api-routes';
 import type { Notification } from './useNotifications';
+import { announceNotificationsChanged } from './useUnreadNotifications';
 
 interface MutationSetters {
   setNotifications: Dispatch<SetStateAction<Notification[]>>;
@@ -55,6 +56,7 @@ export function useNotificationsMutations({
           );
           setUnreadCount(prev => Math.max(0, prev - ids.length));
         }
+        announceNotificationsChanged();
       } catch (err) {
         logger.error('Failed to mark as read', err, 'Notifications');
         throw err;
@@ -86,6 +88,7 @@ export function useNotificationsMutations({
           return prev.filter(n => n.id !== id);
         });
         setTotal(prev => prev - 1);
+        announceNotificationsChanged();
       } catch (err) {
         logger.error('Failed to delete notification', err, 'Notifications');
         throw err;

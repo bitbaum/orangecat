@@ -44,6 +44,7 @@ import {
 import { fetchProjectActivityForCat, fetchStakeholdersForCat } from './project-activity-fetcher';
 import { fetchGitHubReposForCat } from './github-repos-fetcher';
 import { fetchNotificationsForCat } from './notification-context-fetcher';
+import { countUnreadNotifications } from '@/services/notifications/unread-count';
 import { getUserActorId } from '@/domain/actors';
 
 // Re-export types so existing callers stay unchanged
@@ -397,6 +398,7 @@ export async function fetchFullContextForCat(
     wallets,
     conversations,
     notifications,
+    notificationsUnread,
     inboundActivity,
     memberGroups,
     socialGraph,
@@ -415,6 +417,7 @@ export async function fetchFullContextForCat(
     fetchWalletsForCat(supabase, userId),
     fetchConversationsForCat(supabase, userId),
     fetchNotificationsForCat(supabase, userId),
+    countUnreadNotifications(supabase, userId).catch(() => undefined),
     fetchInboundActivityForCat(supabase, userId),
     fetchGroupMembershipsForCat(supabase, userId),
     fetchSocialGraphForCat(supabase, userId),
@@ -448,6 +451,7 @@ export async function fetchFullContextForCat(
     wallets,
     conversations,
     notifications,
+    notificationsUnread,
     inboundActivity,
     memberGroups,
     socialGraph,

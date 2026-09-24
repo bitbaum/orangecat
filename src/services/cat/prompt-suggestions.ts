@@ -185,7 +185,9 @@ export function detectOpeners(context: FullUserContext, now: Date = new Date()):
 
   const unread = context.notifications ?? [];
   if (unread.length > 0) {
-    const total = unread.reduce((n, x) => n + (x.count || 1), 0);
+    // The exact count, not a sum of the coalesced groups: those cover only the
+    // newest rows fetched, so summing them said "30" beside a bell that said 80.
+    const total = context.notificationsUnread ?? unread.reduce((n, x) => n + (x.count || 1), 0);
     const latest = [...unread].sort((a, b) => b.latest_at.localeCompare(a.latest_at))[0];
     openers.push({
       key: `notifications:${latest.latest_at}`,

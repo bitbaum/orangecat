@@ -12,7 +12,11 @@ import { cn } from '@/lib/utils';
 interface NotificationBadgeProps {
   /** Number of unread items */
   count: number;
-  /** Maximum number to display before showing "9+" */
+  /**
+   * Maximum number to display before showing "N+". 99, like the sidebar and
+   * conversation list: at 9 the bell read "9+" while its panel said 80, which
+   * reads as two systems disagreeing rather than as a cap.
+   */
   maxDisplay?: number;
   /** Additional CSS classes */
   className?: string;
@@ -23,9 +27,9 @@ interface NotificationBadgeProps {
  *
  * @example
  * <NotificationBadge count={5} />
- * <NotificationBadge count={15} maxDisplay={9} /> // Shows "9+"
+ * <NotificationBadge count={150} /> // Shows "99+"
  */
-export function NotificationBadge({ count, maxDisplay = 9, className }: NotificationBadgeProps) {
+export function NotificationBadge({ count, maxDisplay = 99, className }: NotificationBadgeProps) {
   if (count === 0) {
     return null;
   }
@@ -33,7 +37,7 @@ export function NotificationBadge({ count, maxDisplay = 9, className }: Notifica
   return (
     <span
       className={cn(
-        'absolute top-1 right-1 bg-status-negative text-white text-2xs rounded-full h-4 w-4 min-w-4 flex items-center justify-center font-semibold leading-none',
+        'absolute top-1 right-1 bg-status-negative text-white text-2xs rounded-full h-4 min-w-4 px-1 flex items-center justify-center font-semibold leading-none',
         className
       )}
       aria-label={`${count} unread`}

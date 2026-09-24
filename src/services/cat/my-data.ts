@@ -17,6 +17,7 @@ import type { AnySupabaseClient } from '@/lib/supabase/types';
 export { MY_DATA_TOPICS, type MyDataTopic } from './my-data-topics';
 import type { MyDataTopic } from './my-data-topics';
 import { listInterests } from './interests';
+import { countUnreadNotifications } from '@/services/notifications/unread-count';
 
 const DEFAULT_WINDOW_DAYS = 30;
 const MAX_ROWS_PER_TYPE = 8;
@@ -270,12 +271,8 @@ async function walletsSection(supabase: AnySupabaseClient, userId: string): Prom
 
 async function notificationsSection(supabase: AnySupabaseClient, userId: string): Promise<string> {
   try {
-    const [countRes, recentRes] = await Promise.all([
-      supabase
-        .from(DATABASE_TABLES.NOTIFICATIONS)
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', userId)
-        .eq('is_read', false),
+    const [count, recentRes] = await Promise.all([
+      countUnreadNotifications(supabase, userId),
       supabase
         .from(DATABASE_TABLES.NOTIFICATIONS)
         .select('message, created_at')
@@ -284,7 +281,6 @@ async function notificationsSection(supabase: AnySupabaseClient, userId: string)
         .order('created_at', { ascending: false })
         .limit(5),
     ]);
-    const count = countRes.count ?? 0;
     if (count === 0) {
       return 'NOTIFICATIONS: all caught up — nothing unread.';
     }

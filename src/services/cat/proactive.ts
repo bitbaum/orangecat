@@ -13,6 +13,7 @@ import { DATABASE_TABLES } from '@/config/database-tables';
 import { STATUS } from '@/config/database-constants';
 import { NotificationService } from '@/lib/services/notifications';
 import { logger } from '@/utils/logger';
+import { countUnreadNotifications } from '@/services/notifications/unread-count';
 import { exploreTopic } from './discovery';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 
@@ -81,7 +82,7 @@ export async function composeDailyBrief(
   admin: SupabaseClient,
   userId: string
 ): Promise<string | null> {
-  const [actorRows, salesRes, tasksRes, unreadRes] = await Promise.all([
+  const [actorRows, salesRes, tasksRes, unread] = await Promise.all([
     admin.from(DATABASE_TABLES.ACTORS).select('id').eq('user_id', userId),
     admin
       .from(DATABASE_TABLES.ORDERS)
@@ -97,11 +98,7 @@ export async function composeDailyBrief(
       .eq('is_completed', false)
       .lt('due_date', new Date().toISOString())
       .limit(10),
-    admin
-      .from(DATABASE_TABLES.NOTIFICATIONS)
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .eq('is_read', false),
+    countUnreadNotifications(admin, userId).catch(() => 0),
   ]);
 
   const actorIds = ((actorRows.data ?? []) as Array<{ id: string }>).map(a => a.id);
@@ -119,7 +116,6 @@ export async function composeDailyBrief(
   const sales = (salesRes.data ?? []) as Array<{ amount_btc: number }>;
   const overdue = (tasksRes.data ?? []) as Array<{ title: string }>;
   const bookings = (bookingsRes.data ?? []) as Array<{ starts_at: string }>;
-  const unread = unreadRes.count ?? 0;
 
   const parts: string[] = [];
   if (sales.length > 0) {
