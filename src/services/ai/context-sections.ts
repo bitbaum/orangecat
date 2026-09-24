@@ -378,6 +378,37 @@ export function renderStakeholders(stakeholders: FullUserContext['stakeholders']
   return `## Stakeholders\nTyped relationships on the user's projects (e.g. customers):\n${lines.join('\n')}`;
 }
 
+/**
+ * What Loki is doing with this person's projects. Only the state that changes
+ * what Cat says: live or not, blocked on them, working, and feedback waiting.
+ */
+export function renderLokiProjects(lokiProjects: FullUserContext['lokiProjects']): string | null {
+  if (!lokiProjects || lokiProjects.length === 0) {
+    return null;
+  }
+  const lines = lokiProjects.slice(0, 10).map(p => {
+    const state =
+      p.status === 'blocked'
+        ? `BLOCKED${p.blockReason === 'awaiting_user' ? ' — waiting on the user' : p.blockReason ? ` (${p.blockReason})` : ''}`
+        : p.status === 'working'
+          ? `building${p.currentWork ? `: ${p.currentWork.slice(0, 60)}` : ''}`
+          : 'idle';
+    const parts = [state];
+    if (p.queueDepth > 0) {
+      parts.push(`${p.queueDepth} queued`);
+    }
+    if (p.recentOutcomes[0]) {
+      parts.push(`last run ${p.recentOutcomes[0]}`);
+    }
+    if (p.feedback.new > 0) {
+      parts.push(`${p.feedback.new} new feedback`);
+    }
+    const site = p.liveUrl ? `live at ${p.liveUrl}` : 'not deployed';
+    return `- **${p.name}** — ${site}; ${parts.join(', ')} (Loki: ${p.lokiUrl})`;
+  });
+  return `## Loki Projects\nWhat Loki (the studio that builds and runs their sites) reports right now. Link the Loki page when they need to act there:\n${lines.join('\n')}`;
+}
+
 export function renderGithubRepos(githubRepos: FullUserContext['githubRepos']): string | null {
   if (!githubRepos || githubRepos.length === 0) {
     return null;

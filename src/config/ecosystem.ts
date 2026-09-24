@@ -77,6 +77,8 @@ export const ECOSYSTEM_STACK_LINE =
 export const LOKI_ENDPOINTS = {
   /** "Is this OrangeCat project already being built in Loki?" — public, cached. */
   projectLink: '/api/orangecat/project-link',
+  /** "What is happening to this person's projects?" — signed, per actor (Cat). */
+  actorStatus: '/api/orangecat/actor-status',
 } as const;
 
 export const ECOSYSTEM_LINKS = {

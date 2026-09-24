@@ -36,7 +36,11 @@ function parseGitHubHandle(raw: string | undefined): string | null {
   return /^[\w-]+$/.test(handle) ? handle : null;
 }
 
-async function getHandle(supabase: AnySupabaseClient, userId: string): Promise<string | null> {
+/** The GitHub handle from the profile's social links, or null. */
+export async function getGitHubHandleForUser(
+  supabase: AnySupabaseClient,
+  userId: string
+): Promise<string | null> {
   const { data } = await supabase
     .from(DATABASE_TABLES.PROFILES)
     .select('social_links')
@@ -115,7 +119,7 @@ export async function fetchGitHubReposForCat(
   nowMs: number = Date.now()
 ): Promise<GitHubRepoSummary[]> {
   try {
-    const handle = await getHandle(supabase, userId);
+    const handle = await getGitHubHandleForUser(supabase, userId);
     if (!handle) {
       return [];
     }
