@@ -45,9 +45,12 @@ import { isGroqDailyPoolSpent } from '@/services/ai/groq-capacity';
 import { EmptyCompletion, hasUsableContent } from '@/services/cat/empty-completion';
 import { promptFitsGroqOnDemand, GROQ_CHAT_MAX_TOKENS } from '@/services/ai/groq';
 import { getGroqTpmLimit, recordOpenRouterRateLimit } from '@/services/ai/groq-capacity';
+import { CHAT_IMAGE_MAX_COUNT, chatImageSchema, withImages } from '@/services/cat/chat-images';
 
 export const catChatBodySchema = z.object({
   message: z.string().min(1).max(AI_MESSAGE_MAX_CHARS),
+  /** Photos for this turn — see chat-images.ts. The message carries their tags. */
+  images: z.array(chatImageSchema).max(CHAT_IMAGE_MAX_COUNT).optional(),
   model: z.string().optional(),
   stream: z.boolean().optional(),
   /** Target conversation. Omitted → the user's default conversation. */
@@ -216,6 +219,7 @@ export async function orchestrateCatChat(
   const { user, supabase } = request;
   const {
     message,
+    images,
     model: requestedModel,
     stream,
     preferredCurrency,
@@ -231,6 +235,7 @@ export async function orchestrateCatChat(
   const resolved = await resolveProvider(supabase, user.id, request.headers, {
     requestedModel,
     message,
+    hasImages: Boolean(images?.length),
   });
   if (resolved instanceof Response) {
     return resolved;
@@ -495,7 +500,7 @@ export async function orchestrateCatChat(
             let doneEmitted = false;
             for await (const chunk of activeService.streamChatCompletion({
               model: activeModel,
-              messages,
+              messages: withImages(messages, images),
               temperature: 0.7,
             })) {
               if (chunk.usage) {
@@ -815,7 +820,7 @@ export async function orchestrateCatChat(
     try {
       result = await aiService.chatCompletion({
         model: modelToUse,
-        messages,
+        messages: withImages(messages, images),
         temperature: 0.7,
       });
       // `while (!result && ...)` below treats any object as an answer, so an
@@ -859,7 +864,7 @@ export async function orchestrateCatChat(
     try {
       result = await next.aiService.chatCompletion({
         model: next.modelToUse,
-        messages,
+        messages: withImages(messages, images),
         temperature: 0.7,
       });
       if (!hasUsableContent(result?.content)) {

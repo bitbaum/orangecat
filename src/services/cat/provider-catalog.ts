@@ -23,6 +23,7 @@ import {
   checkCatalog,
   hasRot,
   deadProviders,
+  freeChain,
   type CatalogVerdict,
   type Provider,
 } from '@bitbaum/ai-kit';
@@ -103,6 +104,15 @@ export function shouldEscalateForComplexity(message?: string): boolean {
 }
 
 /**
+ * Which of a vendor's models can read an image — ai-kit's declaration, adopted
+ * rather than re-listed (ai-kit owns the chain; apps adapt). Absent for a
+ * vendor ai-kit does not classify, which ai-kit reads as "unknown", not "no".
+ */
+function declaredVisionModels(providerId: string): string[] | undefined {
+  return freeChain().find(p => p.id === providerId)?.visionModels;
+}
+
+/**
  * THE CHAIN OrangeCat ACTUALLY CALLS, in order. One definition, one order.
  *
  * This used to be two. `orangecatChain()` described a chain for the rot check
@@ -137,6 +147,7 @@ export function servingChain(message?: string): Provider[] {
     // the bug #1000 fixed. BYOK-selectable ids are watched by
     // `orangecatChain()` below instead of being dialled here.
     models: [...new Set([PLATFORM_GROQ_MODEL, PLATFORM_GROQ_FALLBACK_MODEL])],
+    visionModels: declaredVisionModels('groq'),
     dailyTokens: GROQ_DAILY_TOKENS,
   };
   // Free vendors before OpenRouter: their quotas are per project/account of
@@ -146,6 +157,7 @@ export function servingChain(message?: string): Provider[] {
     baseUrl: v.baseUrl,
     keyEnv: v.keyEnv,
     models: [vendorModel(v)],
+    visionModels: declaredVisionModels(v.id),
     dailyTokens: FREE_VENDOR_DAILY_TOKENS,
   }));
 
@@ -174,6 +186,7 @@ export function servingChain(message?: string): Provider[] {
       baseUrl: PROVIDER_BASE_URLS.openrouter,
       keyEnv: 'OPENROUTER_API_KEY',
       models: openRouterModels,
+      visionModels: declaredVisionModels('openrouter'),
       dailyTokens: OPENROUTER_DAILY_TOKENS,
     },
     {

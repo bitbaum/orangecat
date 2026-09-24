@@ -19,7 +19,7 @@
  * Created: 2026-06-10
  */
 
-import { usableChain, type Link } from '@bitbaum/ai-kit';
+import { usableChain, linkSeesImages, type Link, type VisionVerdict } from '@bitbaum/ai-kit';
 
 import {
   createGroqService,
@@ -56,6 +56,8 @@ export interface PlatformProvider {
   aiService: AiService;
   /** Model to use when the user hasn't requested a specific one. */
   defaultModel: string;
+  /** Can this link read an attached photo? ai-kit's verdict; "unknown" is tried. */
+  seesImages: VisionVerdict;
 }
 
 /**
@@ -106,6 +108,7 @@ export function buildPlatformProviders(message: string): PlatformProvider[] {
       defaultModel: link.model,
       toolEndpoint: `${link.provider.baseUrl}/chat/completions`,
       toolKey: key,
+      seesImages: linkSeesImages(link),
     };
   });
 
@@ -127,6 +130,7 @@ export function buildPlatformProviders(message: string): PlatformProvider[] {
       defaultModel: process.env.PLATFORM_OLLAMA_MODEL || PLATFORM_OLLAMA_DEFAULT_MODEL,
       toolEndpoint: `${ollamaUrl}/chat/completions`,
       toolKey: process.env.PLATFORM_OLLAMA_API_KEY || 'ollama-no-auth-required',
+      seesImages: 'unknown',
     });
   }
 

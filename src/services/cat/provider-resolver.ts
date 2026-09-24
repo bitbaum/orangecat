@@ -36,6 +36,7 @@ import type { WiredProviderId } from '@/data/aiProviders';
 export type AIProvider = WiredProviderId;
 
 import type { AiService } from '@/services/ai/types';
+import type { VisionVerdict } from '@bitbaum/ai-kit';
 
 /**
  * Pre-resolved alternate provider to use if the primary one rate-limits.
@@ -96,7 +97,7 @@ export async function resolveProvider(
   supabase: AnySupabaseClient,
   userId: string,
   requestHeaders: Headers,
-  opts: { requestedModel?: string; message: string }
+  opts: { requestedModel?: string; message: string; hasImages?: boolean }
 ): Promise<ResolvedProvider | Response> {
   const { requestedModel, message } = opts;
   const keyService = createApiKeyService(supabase);
@@ -136,6 +137,8 @@ export async function resolveProvider(
      */
     toolEndpoint?: string;
     toolKey?: string;
+    /** ai-kit's vision verdict. Absent (a user's own key) reads as "unknown". */
+    seesImages?: VisionVerdict;
   };
 
   /** Every wired provider speaks the OpenAI-compatible chat-completions path. */
@@ -303,13 +306,34 @@ export async function resolveProvider(
           // a paid vendor — each with the wrong key.
           toolEndpoint: p.toolEndpoint,
           toolKey: p.toolKey,
+          seesImages: p.seesImages,
         })),
     });
   }
 
   // Sort by position, then expand into the concrete chain.
   entries.sort((a, b) => a.order - b.order);
-  const chain: ChainStep[] = entries.flatMap(e => e.build());
+  const fullChain: ChainStep[] = entries.flatMap(e => e.build());
+
+  // A turn carrying a photo skips the links DECLARED blind (ai-kit's rule:
+  // order kept, "unknown" still tried). Without this the free chain led with
+  // Groq, which cannot see, and a blind model answers the words around a
+  // picture fluently, about nothing.
+  const chain = opts.hasImages ? fullChain.filter(s => s.seesImages !== 'no') : fullChain;
+
+  if (opts.hasImages && fullChain.length > 0 && chain.length === 0) {
+    return Response.json(
+      {
+        success: false,
+        error: 'No model here can see images',
+        code: 'NO_VISION_MODEL',
+        message:
+          'None of the models available to you can read a photo right now. Describe it in words, or add a key for a model that can see images in Settings → AI.',
+        helpUrl: ROUTES.SETTINGS_AI,
+      },
+      { status: 422 }
+    );
+  }
 
   if (chain.length === 0) {
     return Response.json(

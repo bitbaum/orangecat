@@ -151,8 +151,10 @@ export const AWAITING_CONSUMER: Partial<Record<CatCapability, string>> = {
   // delegates to that same function so the two answers cannot diverge when a
   // caller does arrive — it is deliberately redundant, not unwired.
   tools: 'the tool loop asks toolPlanForModel directly; this row delegates to it',
-  // Nothing sends an image to a model yet.
-  vision: 'no caller sends images',
+  // The chat DOES send photos now, but routes them by ai-kit's verdict
+  // (linkSeesImages: skip declared-blind, try unknown) — this registry-only
+  // row would refuse unclassified models ai-kit deliberately tries.
+  vision: 'photo routing asks ai-kit linkSeesImages (provider-resolver), not this row',
   // ADR-0008 D4: the gate term is built, the executor is not — it needs a
   // sandboxed browser and an enumerated origin list.
   computer_use: 'no executor; see ADR-0008 D4',

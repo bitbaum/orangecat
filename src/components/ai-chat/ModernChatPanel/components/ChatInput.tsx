@@ -25,9 +25,12 @@ import { ComposerAddMenu, referenceLabel } from './ComposerAddMenu';
 import {
   ATTACHMENT_UNSUPPORTED_COPY,
   MAX_ATTACHMENT_BYTES,
+  isImageFile,
   isReadableTextFile,
   type ChatAttachment,
 } from '../attachments';
+import { shrinkToFit } from '@/services/images/upload';
+import { CHAT_IMAGE_MAX_COUNT, CHAT_IMAGE_MAX_EDGE_PX } from '@/services/cat/chat-images';
 
 interface ChatInputProps {
   value: string;
@@ -53,6 +56,26 @@ interface ChatInputProps {
 }
 
 const newId = () => Math.random().toString(36).slice(2, 10);
+
+/** A phone photo is 3–12 MB; a model reads a 1568px re-encode just as well. */
+const PHOTO_MAX_BYTES = 1.5 * 1024 * 1024;
+
+/** Downscale in the browser and hand back a data URL, or null if unreadable. */
+async function readPhoto(file: File): Promise<string | null> {
+  const blob = await shrinkToFit(file, {
+    maxDimension: CHAT_IMAGE_MAX_EDGE_PX,
+    maxBytes: PHOTO_MAX_BYTES,
+  });
+  if (!blob) {
+    return null;
+  }
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : null);
+    reader.onerror = () => resolve(null);
+    reader.readAsDataURL(blob);
+  });
+}
 
 export function ChatInput({
   value,
@@ -119,7 +142,22 @@ export function ChatInput({
     }
     setAttachError(null);
     const added: ChatAttachment[] = [];
+    let photos = attachments.filter(a => a.kind === 'image').length;
     for (const file of Array.from(files)) {
+      if (isImageFile(file)) {
+        if (photos >= CHAT_IMAGE_MAX_COUNT) {
+          setAttachError(`Up to ${CHAT_IMAGE_MAX_COUNT} photos per message.`);
+          continue;
+        }
+        const dataUrl = await readPhoto(file);
+        if (!dataUrl) {
+          setAttachError(`Couldn't read "${file.name}" as a photo — try a JPEG or PNG.`);
+          continue;
+        }
+        added.push({ kind: 'image', id: newId(), name: file.name, dataUrl });
+        photos += 1;
+        continue;
+      }
       if (!isReadableTextFile(file)) {
         setAttachError(ATTACHMENT_UNSUPPORTED_COPY);
         continue;
@@ -182,13 +220,21 @@ export function ChatInput({
             <ul className="flex flex-wrap gap-1.5 px-1 pb-1" aria-label="Attached">
               {attachments.map(a => (
                 <li key={a.id} className="oc-chat-attachment">
-                  {a.kind === 'file' ? (
+                  {a.kind === 'image' ? (
+                    // A data URL has nothing for next/image to optimise.
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={a.dataUrl}
+                      alt=""
+                      className="h-6 w-6 flex-shrink-0 rounded object-cover"
+                    />
+                  ) : a.kind === 'file' ? (
                     <FileText className="h-3.5 w-3.5 flex-shrink-0 text-fg-secondary" />
                   ) : (
                     <Package className="h-3.5 w-3.5 flex-shrink-0 text-fg-secondary" />
                   )}
                   <span className="min-w-0 truncate">
-                    {a.kind === 'file' ? a.name : a.ref.title}
+                    {a.kind === 'ref' ? a.ref.title : a.name}
                   </span>
                   {a.kind === 'ref' && (
                     <span className="flex-shrink-0 text-fg-tertiary">
@@ -199,7 +245,7 @@ export function ChatInput({
                     type="button"
                     onClick={() => removeAttachment(a.id)}
                     className="-mr-1 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded text-fg-tertiary hover:bg-surface-raised hover:text-fg-primary"
-                    aria-label={`Remove ${a.kind === 'file' ? a.name : a.ref.title}`}
+                    aria-label={`Remove ${a.kind === 'ref' ? a.ref.title : a.name}`}
                   >
                     <X className="h-3 w-3" />
                   </button>

@@ -10,19 +10,36 @@
  *
  *   <attached_file name="notes.md">…file text…</attached_file>
  *   <my_item type="product" id="…" title="Loki Pro — 30-day pass"/>
+ *   <attached_image name="IMG_2231.jpg"/>
  *
- * Text files only, for an honest reason: every model on the free chain reads
- * text, few read images, and none reads a PDF without an extraction step this
- * app does not have yet. The picker says so rather than accepting a file the
- * Cat would silently ignore.
+ * Photos are the exception to "inside the message": pixels do not fit a 10k
+ * text cap, so they travel beside it (`images` on the request, see
+ * services/cat/chat-images.ts) and the server routes the turn to a model that
+ * can see. The tag stays in the text so the thread shows what was sent.
+ *
+ * PDFs are still refused: no model on the free chain reads one without an
+ * extraction step this app does not have yet.
  */
 
 import { AI_MESSAGE_MAX_CHARS } from '@/lib/validation/ai';
 import type { CatReference } from '@/config/cat-prompts';
+import type { ChatImage } from '@/services/cat/chat-images';
 
 export type ChatAttachment =
   | { kind: 'file'; id: string; name: string; content: string }
+  | { kind: 'image'; id: string; name: string; dataUrl: string }
   | { kind: 'ref'; id: string; ref: CatReference };
+
+/** The photos to send beside the message. */
+export function imagesOf(attachments: ChatAttachment[]): ChatImage[] {
+  return attachments
+    .filter((a): a is Extract<ChatAttachment, { kind: 'image' }> => a.kind === 'image')
+    .map(a => ({ name: a.name, dataUrl: a.dataUrl }));
+}
+
+export function isImageFile(file: { type: string }): boolean {
+  return file.type.startsWith('image/');
+}
 
 /** Extensions the Cat can read as text. `accept` for the file input. */
 export const TEXT_FILE_EXTENSIONS = [
@@ -54,13 +71,14 @@ export const TEXT_FILE_EXTENSIONS = [
   '.env.example',
 ] as const;
 
-export const ATTACHMENT_ACCEPT = TEXT_FILE_EXTENSIONS.join(',');
+/** `image/*` first: without it a phone's photo library is greyed out in the picker. */
+export const ATTACHMENT_ACCEPT = ['image/*', ...TEXT_FILE_EXTENSIONS].join(',');
 
 /** Refuse before reading: a file this large cannot fit the message anyway. */
 export const MAX_ATTACHMENT_BYTES = 512 * 1024;
 
 export const ATTACHMENT_UNSUPPORTED_COPY =
-  'Cat can read text files for now (.txt, .md, .csv, .json, code). Images and PDFs are not supported yet — paste the text instead.';
+  'Cat can read photos and text files (.txt, .md, .csv, .json, code). PDFs are not supported yet — paste the text instead.';
 
 export function isReadableTextFile(file: { name: string; type: string }): boolean {
   const name = file.name.toLowerCase();
@@ -93,11 +111,12 @@ export function composeMessage(
       a =>
         `<my_item type="${attr(a.ref.type)}" id="${attr(a.ref.id)}" title="${attr(a.ref.title)}"/>`
     );
+  const images = imagesOf(attachments).map(i => `<attached_image name="${attr(i.name)}"/>`);
   const files = attachments.filter(
     (a): a is Extract<ChatAttachment, { kind: 'file' }> => a.kind === 'file'
   );
 
-  const head = [text.trim(), ...refs].filter(Boolean).join('\n\n');
+  const head = [text.trim(), ...refs, ...images].filter(Boolean).join('\n\n');
   if (files.length === 0) {
     return head;
   }
@@ -123,16 +142,19 @@ export function composeMessage(
 export interface ParsedUserMessage {
   text: string;
   files: Array<{ name: string }>;
+  images: Array<{ name: string }>;
   refs: Array<{ type: string; title: string }>;
 }
 
 const FILE_BLOCK = /<attached_file name="([^"]*)">[\s\S]*?<\/attached_file>/g;
+const IMAGE_TAG = /<attached_image name="([^"]*)"\/>/g;
 const REF_TAG = /<my_item type="([^"]*)" id="[^"]*" title="([^"]*)"\/>/g;
 
 /** The inverse, for display: the typed text, plus chips for what was attached. */
 export function parseUserMessage(content: string): ParsedUserMessage {
   const files = [...content.matchAll(FILE_BLOCK)].map(m => ({ name: m[1] }));
+  const images = [...content.matchAll(IMAGE_TAG)].map(m => ({ name: m[1] }));
   const refs = [...content.matchAll(REF_TAG)].map(m => ({ type: m[1], title: m[2] }));
-  const text = content.replace(FILE_BLOCK, '').replace(REF_TAG, '').trim();
-  return { text, files, refs };
+  const text = content.replace(FILE_BLOCK, '').replace(IMAGE_TAG, '').replace(REF_TAG, '').trim();
+  return { text, files, images, refs };
 }

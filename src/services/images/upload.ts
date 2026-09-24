@@ -50,11 +50,17 @@ export function validateImageFile(file: File): { valid: boolean; error?: string 
   return { valid: true };
 }
 
-/** Downscale + re-encode until the result fits the bucket limit. */
-async function shrinkToFit(file: File): Promise<Blob | null> {
+/**
+ * Downscale + re-encode until the result fits. Defaults to the bucket's limits;
+ * the Cat chat passes its own (a photo for a model, not for a cover).
+ */
+export async function shrinkToFit(
+  file: File,
+  { maxDimension = MAX_DIMENSION, maxBytes = MAX_UPLOAD_BYTES } = {}
+): Promise<Blob | null> {
   try {
     const bitmap = await createImageBitmap(file);
-    const scale = Math.min(1, MAX_DIMENSION / Math.max(bitmap.width, bitmap.height));
+    const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height));
     const width = Math.max(1, Math.round(bitmap.width * scale));
     const height = Math.max(1, Math.round(bitmap.height * scale));
 
@@ -75,7 +81,7 @@ async function shrinkToFit(file: File): Promise<Blob | null> {
       const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, type, quality));
       // Some browsers silently fall back to PNG for unsupported types — the
       // type check filters that out so the ladder keeps stepping down.
-      if (blob && blob.type === type && blob.size <= MAX_UPLOAD_BYTES) {
+      if (blob && blob.type === type && blob.size <= maxBytes) {
         return blob;
       }
     }

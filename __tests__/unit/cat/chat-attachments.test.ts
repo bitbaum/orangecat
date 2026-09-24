@@ -8,6 +8,9 @@ import {
   composeMessage,
   parseUserMessage,
   isReadableTextFile,
+  isImageFile,
+  imagesOf,
+  ATTACHMENT_ACCEPT,
   type ChatAttachment,
 } from '@/components/ai-chat/ModernChatPanel/attachments';
 
@@ -66,7 +69,12 @@ describe('parseUserMessage', () => {
   });
 
   it('leaves an ordinary message untouched', () => {
-    expect(parseUserMessage('just words')).toEqual({ text: 'just words', files: [], refs: [] });
+    expect(parseUserMessage('just words')).toEqual({
+      text: 'just words',
+      files: [],
+      images: [],
+      refs: [],
+    });
   });
 });
 
@@ -80,5 +88,36 @@ describe('isReadableTextFile', () => {
   it('refuses what the Cat cannot read yet', () => {
     expect(isReadableTextFile({ name: 'photo.png', type: 'image/png' })).toBe(false);
     expect(isReadableTextFile({ name: 'deck.pdf', type: 'application/pdf' })).toBe(false);
+  });
+});
+
+describe('photos', () => {
+  const photo: ChatAttachment = {
+    kind: 'image',
+    id: 'p1',
+    name: 'IMG_2231.jpg',
+    dataUrl: 'data:image/jpeg;base64,AAAA',
+  };
+
+  it('the picker offers photos — without image/* the photo library is greyed out', () => {
+    expect(ATTACHMENT_ACCEPT.split(',')).toContain('image/*');
+    expect(isImageFile({ type: 'image/heic' })).toBe(true);
+  });
+
+  it('travels beside the text, leaving only a tag in the message', () => {
+    const out = composeMessage('What is this?', [photo]);
+    expect(out).toBe('What is this?\n\n<attached_image name="IMG_2231.jpg"/>');
+    expect(out).not.toContain('base64');
+    expect(imagesOf([photo])).toEqual([{ name: 'IMG_2231.jpg', dataUrl: photo.dataUrl }]);
+  });
+
+  it('a photo alone is still a sendable message', () => {
+    expect(composeMessage('', [photo])).toBe('<attached_image name="IMG_2231.jpg"/>');
+  });
+
+  it('shows as a chip in the thread, not as a tag', () => {
+    const parsed = parseUserMessage(composeMessage('What is this?', [photo]));
+    expect(parsed.text).toBe('What is this?');
+    expect(parsed.images).toEqual([{ name: 'IMG_2231.jpg' }]);
   });
 });

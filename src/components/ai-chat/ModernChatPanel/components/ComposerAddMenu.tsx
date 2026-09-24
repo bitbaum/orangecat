@@ -3,7 +3,7 @@
  * the way ChatGPT/Claude/Grok consolidate it.
  *
  * Only real capabilities are listed:
- *   - Upload a text file        → attached to this message (see ../attachments)
+ *   - Add photos or text files  → attached to this message (see ../attachments)
  *   - Add one of your things    → a reference to a listing or note you own
  *   - Context documents         → notes the Cat reads on EVERY message
  *   - Connections & keys        → your AI keys and what the Cat may do
@@ -112,8 +112,8 @@ export function ComposerAddMenu({
                 }}
               >
                 <Paperclip className="h-4 w-4 text-fg-secondary" />
-                <span className="flex-1">Upload a file</span>
-                <span className="text-xs text-fg-tertiary">text</span>
+                <span className="flex-1">Add photos or files</span>
+                <span className="text-xs text-fg-tertiary">photo · text</span>
               </button>
               <button
                 type="button"
