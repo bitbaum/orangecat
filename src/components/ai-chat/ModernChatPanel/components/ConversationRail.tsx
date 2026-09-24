@@ -75,21 +75,10 @@ function RailBody({
             ))}
           </div>
         ) : conversations.length === 0 ? (
-          // Compact rail-sized empty state: icon + why it's empty + one CTA.
-          <div className="px-3 py-6 text-center">
-            <MessageSquare className="mx-auto mb-2 h-6 w-6 text-fg-tertiary" />
-            <p className="text-xs text-fg-tertiary">
-              No conversations yet — chats with your Cat will appear here.
-            </p>
-            <button
-              type="button"
-              onClick={onNew}
-              className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-subtle bg-surface-base px-3 py-1.5 text-xs font-medium text-fg-primary transition-colors hover:bg-surface-raised"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              Start a chat
-            </button>
-          </div>
+          // One quiet line. It used to carry its own "Start a chat" button
+          // directly under "New chat" — two buttons for one action, and the
+          // chat itself is already open beside it.
+          <p className="px-3 py-4 text-xs text-fg-tertiary">Your chats will appear here.</p>
         ) : (
           conversations.map(c => {
             const isActive = c.id === activeId;

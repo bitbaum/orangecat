@@ -1,19 +1,19 @@
 /**
- * My Cat — Prompt Suggestions API
+ * My Cat — Home API
  *
- * GET /api/cat/suggestions — returns the prompts THIS user should send the Cat,
- * generated from their real state (listings, drafts, payment setup, profile).
- * Rendered in the empty state of My Cat chat.
+ * GET /api/cat/suggestions — what the Cat opens an empty chat with for THIS
+ * user: ranked openers in the Cat's voice (each with its replies) and a few
+ * personal chips. Generated from their real state and what the Cat remembers.
  *
- * Ordered; at most the first item carries a `reason` and is the recommendation.
- * Generation + ranking rules live in services/cat/prompt-suggestions.ts.
+ * Contract: @/config/cat-prompts. Rules: services/cat/prompt-suggestions.ts.
  */
 
 import { apiSuccess } from '@/lib/api/standardResponse';
 import { withOptionalAuth } from '@/lib/api/withAuth';
 import { fetchFullContextForCat } from '@/services/ai/document-context';
-import { generatePromptSuggestions, hasRichContext } from '@/services/cat/prompt-suggestions';
-import { STARTER_PROMPTS } from '@/config/cat-prompts';
+import { generateCatHome } from '@/services/cat/prompt-suggestions';
+import { listMemories } from '@/services/cat/memory';
+import { STARTER_HOME } from '@/config/cat-prompts';
 import { logger } from '@/utils/logger';
 
 export const GET = withOptionalAuth(async request => {
@@ -21,16 +21,22 @@ export const GET = withOptionalAuth(async request => {
     const { user, supabase } = request;
 
     if (!user) {
-      return apiSuccess({ suggestions: STARTER_PROMPTS, hasContext: false });
+      return apiSuccess(STARTER_HOME);
     }
 
-    const context = await fetchFullContextForCat(supabase, user.id);
-    const rich = hasRichContext(context);
-    const suggestions = await generatePromptSuggestions(user.id, context);
+    const [context, memories] = await Promise.all([
+      fetchFullContextForCat(supabase, user.id),
+      listMemories(supabase, user.id),
+    ]);
+    const home = await generateCatHome(
+      user.id,
+      context,
+      memories.map(m => m.content)
+    );
 
-    return apiSuccess({ suggestions, hasContext: rich });
+    return apiSuccess(home);
   } catch (error) {
-    logger.error('Cat Suggestions error', error, 'CatSuggestionsAPI');
-    return apiSuccess({ suggestions: STARTER_PROMPTS, hasContext: false });
+    logger.error('Cat home error', error, 'CatSuggestionsAPI');
+    return apiSuccess(STARTER_HOME);
   }
 });

@@ -33,6 +33,18 @@ interface QuotaMeterProps {
 
 const NEAR_CAP_THRESHOLD = 2;
 
+/**
+ * Whether the chip has anything to say. "10 of 10 free messages left" on every
+ * visit is chrome, not information: shown only near or at the cap, and for a
+ * BYOK user (it names whose key is paying). /settings/usage has the full view.
+ */
+export function isQuotaWorthShowing(quota: CatQuota | null): boolean {
+  if (!quota) {
+    return false;
+  }
+  return quota.tier === 'byok' || quota.requestsRemaining <= NEAR_CAP_THRESHOLD;
+}
+
 export function QuotaMeter({ quota, className }: QuotaMeterProps) {
   if (!quota) {
     return null;

@@ -1,72 +1,71 @@
 /**
- * PROMPT SUGGESTIONS — the Cat proposing what the human should ask it.
+ * CAT HOME — what the Cat brings up before the user types anything.
  *
- * The chat empty state used to show a fixed list of four prompts. A fixed list
- * is the same on day 1 and day 100, so after the first visit it carries no
- * information while still demanding four reads before you can start. Worse,
- * nothing in it pointed at anything the user owned, so nothing recommended
- * anything: it was four equal strangers.
+ * Contract and history: @/config/cat-prompts. In short, the empty chat is the
+ * Cat's turn: it opens with something it noticed, in its own voice, and offers
+ * the one or two replies that act on it.
  *
- * Here the prompts are GENERATED from the user's actual state, and ranked:
+ *   1. OPENERS are deterministic reads of the user's state, ranked by
+ *      TIMELINESS first (a sale, a booking, an overdue task, unread
+ *      notifications, a stated goal) and only then by consequence (the gaps:
+ *      can't get paid > invisible drafts > unreadable/unbuyable listings > no
+ *      bio > demand). The old engine had only the gaps, pinned the worst one
+ *      forever, and so headlined a test draft on every visit. Now:
+ *        - test/placeholder drafts are not the Cat's business;
+ *        - several drafts are ONE opener about the pile, not a spotlight on
+ *          whichever happened to sort first;
+ *        - every opener has a stable key, and the client skips dismissed keys,
+ *          so "not now" moves the Cat on.
+ *   2. CHIPS are what this person might ask, written by the platform LLM (free
+ *      pool, never Cat Credits) from a digest that includes what the Cat
+ *      REMEMBERS about them and their stated goals — the part the old engine
+ *      never looked at. If the LLM is down, the openers' own replies stand in.
  *
- *   1. Gaps are detected deterministically from the user's own data, ordered by
- *      economic consequence (can't get paid > invisible draft > unsellable
- *      listing > no demand). Every one names a real object of theirs.
- *   2. The platform LLM (free pool, never Cat Credits) rewrites the top gap as
- *      a natural prompt and proposes alternatives. Its recommendation must
- *      quote something real from the state or it is dropped — the same
- *      grounding rule the nudge engine enforces.
- *   3. If the LLM is unavailable or ungrounded, the deterministic gaps ARE the
- *      answer. Cat is never left with nothing to say.
- *
- * Only the lead carries a `reason`; see the contract in @/config/cat-prompts.
- *
- * Freshness has two halves, and for a long time only the first existed:
- *
- *   - WHAT is true is keyed by a fingerprint of the state it was derived from,
- *     so the expensive half never recomputes until the user's reality changes.
- *   - WHICH of the true things you are shown rotates on every serve. The lead
- *     does not: it is the most consequential gap and it should stay put until
- *     it is fixed. The alternatives do, drawn from a pool wider than the three
- *     on screen.
- *
- * Without the second half the screen was frozen — correct on day 1, and still
- * showing the identical four boxes on day 100 because nothing in the state had
- * moved. Cached and unchanging are not the same property, and the cache was
- * being asked to provide both.
+ * Freshness: the LLM pool is cached per state fingerprint (recompute only when
+ * reality changes) and the three chips shown rotate through it on every serve.
  */
 
 import { ENTITY_REGISTRY, type EntityType } from '@/config/entity-registry';
-import { STARTER_PROMPTS, type CatPromptSuggestion } from '@/config/cat-prompts';
+import {
+  CAT_HOME_MAX_CHIPS,
+  STARTER_HOME,
+  getStarterChips,
+  type CatHome,
+  type CatOpener,
+  type CatReference,
+} from '@/config/cat-prompts';
 import { logger } from '@/utils/logger';
 import { callPlatformJson, parseJsonLoose } from './platform-llm';
 import type { EntitySummary, FullUserContext } from '@/services/ai/document-context-types';
 
-/** Suggestions shown at once: one recommendation plus a short tail. */
-const MAX_SUGGESTIONS = 4;
-/** Alternatives held in reserve, so a second visit is not the same screen. */
-const MAX_POOL = 9;
+/** Openers held in reserve behind the one shown, so dismissing has somewhere to go. */
+const MAX_OPENERS = 6;
+/** LLM chips kept per state, rotated three at a time. */
+const MAX_CHIP_POOL = 6;
+/** A chip longer than this stops being a chip and becomes reading. */
+const MAX_CHIP_CHARS = 55;
+/** Memories handed to the chip writer — the newest are the most current. */
+const MAX_MEMORIES = 8;
 /**
- * Gaps taken per category. One was the old cap — `.find()` — so a user with
- * five drafts saw one prompt about one of them and the pool had nothing to
- * rotate through.
+ * The openers render without waiting on this, and the result is cached per
+ * state, so only the first visit after a change pays for a reasoning model.
  */
-const MAX_PER_CATEGORY = 3;
-/** A prompt longer than this stops being a chip and becomes reading. */
-const MAX_PROMPT_CHARS = 80;
-/** A reason is one glanceable clause, not a paragraph. */
-const MAX_REASON_CHARS = 110;
-/** Chat opens should not wait on a slow free-pool model; gaps are ready anyway. */
-const LLM_TIMEOUT_MS = 5000;
-/** Entity titles are quoted into prompts; long ones are elided. */
-const MAX_TITLE_CHARS = 35;
+const LLM_TIMEOUT_MS = 15_000;
+/** How long a request waits for the chips before answering with the filler. */
+const FIRST_PAINT_MS = 2500;
+/** Items offered in the composer's "+" menu. */
+const MAX_ATTACHABLE = 20;
+/** Entity titles are quoted into copy; long ones are elided. */
+const MAX_TITLE_CHARS = 40;
 
 const truncate = (s: string, max: number): string =>
   s.length <= max ? s : `${s.slice(0, max - 1).trimEnd()}…`;
 
+const plural = (n: number, word: string): string => `${n} ${word}${n === 1 ? '' : 's'}`;
+
 /**
  * Returns true when the user has enough context for the Cat to say something
- * specific. Below this bar there is nothing to ground a recommendation in.
+ * specific. Below this bar there is nothing to ground an opener in.
  */
 export function hasRichContext(context: FullUserContext): boolean {
   return (
@@ -78,9 +77,17 @@ export function hasRichContext(context: FullUserContext): boolean {
   );
 }
 
-// ─── Deterministic gap detection ──────────────────────────────────────────────
+// ─── Entity predicates ────────────────────────────────────────────────────────
 
 const isDraft = (e: EntitySummary): boolean => e.status?.toLowerCase() === 'draft';
+
+/**
+ * A title that says the thing was never meant for anyone: "Test Service",
+ * "Untitled", "asdf". Spotlighting one of these as the most important thing
+ * in someone's life is what made the old empty state feel robotic.
+ */
+export const isPlaceholderTitle = (title: string): boolean =>
+  /\b(test(ing)?|demo|sample|example|untitled|placeholder|dummy|asdf|foo|lorem)\b/i.test(title);
 
 const registryFor = (e: EntitySummary) =>
   ENTITY_REGISTRY[e.type as EntityType] as (typeof ENTITY_REGISTRY)[EntityType] | undefined;
@@ -93,247 +100,10 @@ const canBePaid = (context: FullUserContext): boolean =>
   !!context.paymentCapabilities?.hasNwcWallet ||
   !!context.paymentCapabilities?.lightningAddress;
 
-/**
- * Gaps in the user's own data, most economically consequential first. Each one
- * names a real object, which is what lets it justify itself.
- */
-export function detectGaps(context: FullUserContext): CatPromptSuggestion[] {
-  const gaps: CatPromptSuggestion[] = [];
-  const { entities } = context;
+const shortDate = (iso: string): string =>
+  new Date(iso).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
 
-  // 1. Listed things nobody can pay for. Everything downstream is moot.
-  if (entities.length > 0 && !canBePaid(context)) {
-    gaps.push({
-      prompt: 'How do I set up a way to get paid?',
-      reason: `You have ${entities.length} listing${entities.length === 1 ? '' : 's'} but no way to receive money.`,
-    });
-  }
-
-  // Categories 2-4 and 6 each take up to MAX_PER_CATEGORY entities. They used
-  // to take exactly one (`.find`), which capped the whole pool at six prompts
-  // no matter how much the user owned — and meant four of a user's five drafts
-  // were never mentioned at all.
-  const take = (
-    match: (e: EntitySummary) => boolean,
-    build: (title: string) => CatPromptSuggestion
-  ) => {
-    for (const e of entities.filter(match).slice(0, MAX_PER_CATEGORY)) {
-      gaps.push(build(truncate(e.title, MAX_TITLE_CHARS)));
-    }
-  };
-
-  // 2. Drafts are invisible — work already done that earns nothing.
-  take(isDraft, title => ({
-    prompt: `What's missing before I publish "${title}"?`,
-    reason: `"${title}" is still a draft, so nobody can find it.`,
-  }));
-
-  // 3. A live listing nobody can understand.
-  take(
-    e => !isDraft(e) && !e.description?.trim(),
-    title => ({
-      prompt: `Help me write a description for "${title}"`,
-      reason: `"${title}" has no description, so nobody can tell what it is.`,
-    })
-  );
-
-  // 4. A live listing nobody can buy.
-  take(
-    e => !isDraft(e) && isPriced(e) && !e.price_btc,
-    title => ({
-      prompt: `What should I charge for "${title}"?`,
-      reason: `"${title}" has no price, so it can't be bought.`,
-    })
-  );
-
-  // 5. A profile nobody can trust.
-  if (!context.profile?.bio?.trim()) {
-    gaps.push({
-      prompt: 'Help me write my profile bio',
-      reason: 'Your profile has no bio — it is the first thing visitors read.',
-    });
-  }
-
-  // 6. Everything is set up: the remaining lever is demand.
-  if (canBePaid(context)) {
-    take(
-      e => !isDraft(e),
-      title => ({
-        prompt: `Who on OrangeCat needs "${title}"?`,
-        reason: `"${title}" is live and can take payment — the next lever is demand.`,
-      })
-    );
-  }
-
-  return gaps;
-}
-
-// ─── State digest (what the model is allowed to reason about) ─────────────────
-
-interface Digest {
-  text: string;
-  /** Real strings from the user's data; the lead prompt must quote one. */
-  tokens: string[];
-}
-
-function buildDigest(context: FullUserContext): Digest {
-  const lines: string[] = [];
-  const tokens: string[] = [];
-
-  if (context.profile?.name) {
-    lines.push(`Name: ${context.profile.name}`);
-  }
-  if (context.profile?.bio) {
-    lines.push(`Bio: ${truncate(context.profile.bio, 200)}`);
-  }
-
-  for (const e of context.entities.slice(0, 10)) {
-    const meta = registryFor(e);
-    const flags = [
-      isDraft(e) ? 'DRAFT (not published)' : 'published',
-      e.description?.trim() ? 'has description' : 'NO description',
-      isPriced(e) ? (e.price_btc ? 'has price' : 'NO price') : null,
-    ].filter(Boolean);
-    lines.push(`${meta?.name ?? e.type}: "${e.title}" — ${flags.join(', ')}`);
-    tokens.push(e.title);
-  }
-
-  for (const d of context.documents.slice(0, 5)) {
-    lines.push(`Note (${d.document_type ?? 'other'}): "${d.title}"`);
-    tokens.push(d.title);
-  }
-
-  for (const t of context.tasks.slice(0, 5)) {
-    lines.push(`Task: "${t.title}" (${t.priority} priority)`);
-    tokens.push(t.title);
-  }
-
-  lines.push(canBePaid(context) ? 'Can receive payment: yes' : 'Can receive payment: NO');
-
-  return { text: lines.join('\n'), tokens };
-}
-
-// ─── LLM generation ───────────────────────────────────────────────────────────
-
-const SYSTEM_PROMPT = [
-  'You help a user of OrangeCat (a Bitcoin-native platform where people list',
-  'products, services, projects and causes and get paid for them) decide what to',
-  'ask their AI economic agent, called Cat.',
-  '',
-  'You do NOT answer the user. You write the messages the USER should send to Cat,',
-  "in the user's own first-person voice.",
-  '',
-  "You are given that user's real state and the single most consequential gap in",
-  'it. Return JSON exactly:',
-  '{"recommended":{"prompt":"...","reason":"..."},"alternatives":["...","...","..."]}',
-  '',
-  'Rules:',
-  '- "recommended" must address the stated top gap and must quote a real name from',
-  '  the state in double quotes when the gap concerns a specific listing.',
-  `- "prompt" is at most ${MAX_PROMPT_CHARS} characters, phrased as the user talking to Cat.`,
-  `- "reason" is at most ${MAX_REASON_CHARS} characters and states the FACT from the state that`,
-  '  makes this the top priority. It is a justification, never a sales pitch.',
-  '- "alternatives" are 3 other useful things this specific user could ask, each',
-  '  distinct from the recommendation and from each other.',
-  '- Never invent listings, numbers, or people that are not in the state.',
-  '- Output JSON only.',
-].join('\n');
-
-interface LlmShape {
-  recommended?: { prompt?: unknown; reason?: unknown };
-  alternatives?: unknown;
-}
-
-const cleanLine = (v: unknown, max: number): string | null => {
-  if (typeof v !== 'string') {
-    return null;
-  }
-  const s = v.replace(/\s+/g, ' ').trim();
-  if (!s || s.length > max * 2 || /https?:\/\//i.test(s)) {
-    return null;
-  }
-  return truncate(s, max);
-};
-
-/** The lead must quote something real, or it is not a recommendation. */
-const isGrounded = (prompt: string, tokens: string[]): boolean => {
-  const p = prompt.toLowerCase();
-  return tokens.some(t => t.trim().length > 2 && p.includes(t.toLowerCase().slice(0, 20)));
-};
-
-async function generateWithLlm(
-  digest: Digest,
-  topGap: CatPromptSuggestion
-): Promise<{ lead: CatPromptSuggestion; alternatives: string[] } | null> {
-  const userPrompt = [
-    "This user's state:",
-    digest.text,
-    '',
-    `Most consequential gap: ${topGap.reason}`,
-    `A plain phrasing of it: ${topGap.prompt}`,
-  ].join('\n');
-
-  const raw = await callPlatformJson(SYSTEM_PROMPT, userPrompt, {
-    temperature: 0.7,
-    maxTokens: 500,
-    timeoutMs: LLM_TIMEOUT_MS,
-  });
-  const parsed = parseJsonLoose<LlmShape>(raw);
-  if (!parsed) {
-    return null;
-  }
-
-  const prompt = cleanLine(parsed.recommended?.prompt, MAX_PROMPT_CHARS);
-  const reason = cleanLine(parsed.recommended?.reason, MAX_REASON_CHARS);
-  if (!prompt || !reason) {
-    return null;
-  }
-
-  // A recommendation about a specific listing that doesn't name it is the
-  // "haircuts to a ceramicist" failure — drop the model's version and keep ours.
-  const gapNamesEntity = topGap.reason?.includes('"') ?? false;
-  if (gapNamesEntity && !isGrounded(prompt, digest.tokens)) {
-    logger.warn(
-      'prompt-suggestions: ungrounded LLM recommendation discarded',
-      { prompt },
-      'PromptSuggestions'
-    );
-    return null;
-  }
-
-  const alternatives = Array.isArray(parsed.alternatives)
-    ? parsed.alternatives.map(a => cleanLine(a, MAX_PROMPT_CHARS)).filter((a): a is string => !!a)
-    : [];
-
-  return { lead: { prompt, reason }, alternatives };
-}
-
-// ─── Fingerprint cache ────────────────────────────────────────────────────────
-
-/**
- * What was computed for one state: the recommendation, and every alternative
- * worth offering — more than fit on screen at once.
- */
-interface SuggestionPool {
-  lead: CatPromptSuggestion;
-  alternatives: CatPromptSuggestion[];
-}
-
-/**
- * Process-local cache. Deliberately not a table: this is derived data with a
- * cheap recompute, and a cold process regenerating once is a better failure
- * mode than a schema to migrate. The KEY carries the state fingerprint, so a
- * stale entry is impossible — a changed listing is a different key.
- *
- * It caches the POOL, not the four prompts that were served. Caching the
- * served answer is what made the screen identical forever: the cache's job is
- * to avoid recomputing, not to decide what the user looks at.
- */
-const cache = new Map<string, SuggestionPool>();
-/** How many times each pool has been served — the rotation offset. */
-const served = new Map<string, number>();
-const MAX_CACHE_ENTRIES = 500;
-
+/** A short, stable hash for keys built from free text (goals). */
 function fingerprint(input: string): string {
   let h = 5381;
   for (let i = 0; i < input.length; i++) {
@@ -342,7 +112,280 @@ function fingerprint(input: string): string {
   return (h >>> 0).toString(36);
 }
 
-function remember(key: string, value: SuggestionPool): void {
+// ─── Openers ──────────────────────────────────────────────────────────────────
+
+/**
+ * Everything the Cat could bring up, most timely first. Each names a real
+ * object of the user's, which is what lets it justify being said at all.
+ */
+export function detectOpeners(context: FullUserContext, now: Date = new Date()): CatOpener[] {
+  const openers: CatOpener[] = [];
+  const entities = context.entities.filter(e => !isPlaceholderTitle(e.title));
+  const title = (e: EntitySummary) => truncate(e.title, MAX_TITLE_CHARS);
+
+  // ── Timely: something happened, or is about to ──
+
+  const sales = context.inboundActivity?.recentSales ?? [];
+  if (sales.length > 0) {
+    const latest = sales[0];
+    const name = truncate(latest.entity_title, MAX_TITLE_CHARS);
+    openers.push({
+      key: `sales:${latest.created_at}`,
+      say:
+        sales.length === 1
+          ? `"${name}" sold recently.`
+          : `You've had ${plural(sales.length, 'sale')} recently — the latest was "${name}".`,
+      replies: ['How should I follow up with my buyers?', 'What should I offer next?'],
+    });
+  }
+
+  const booking = context.inboundActivity?.upcomingBookings?.[0];
+  if (booking) {
+    const who = booking.customer_display_name || booking.customer_username || 'a customer';
+    openers.push({
+      key: `booking:${booking.starts_at}`,
+      say: `You have a booking with ${who} on ${shortDate(booking.starts_at)}.`,
+      replies: ['Help me prepare for it'],
+    });
+  }
+
+  // The context fetch only loads open tasks, so "past due" is "overdue".
+  const overdue = context.tasks.find(t => !!t.due_date && new Date(t.due_date) < now);
+  if (overdue?.due_date) {
+    const name = truncate(overdue.title, MAX_TITLE_CHARS);
+    openers.push({
+      key: `task:${overdue.id}`,
+      say: `"${name}" was due ${shortDate(overdue.due_date)} and is still open.`,
+      replies: [`Help me get "${name}" done`, `Move "${name}" to next week`],
+    });
+  }
+
+  const unread = context.notifications ?? [];
+  if (unread.length > 0) {
+    const total = unread.reduce((n, x) => n + (x.count || 1), 0);
+    const latest = [...unread].sort((a, b) => b.latest_at.localeCompare(a.latest_at))[0];
+    openers.push({
+      key: `notifications:${latest.latest_at}`,
+      say: `You have ${plural(total, 'unread notification')} — the latest is "${truncate(latest.title, MAX_TITLE_CHARS)}".`,
+      replies: ['What needs my attention?'],
+    });
+  }
+
+  // ── Where they said they're going ──
+
+  const goal = context.economicProfile?.goals?.[0]?.text?.trim();
+  if (goal) {
+    openers.push({
+      key: `goal:${fingerprint(goal)}`,
+      say: `You're working toward "${truncate(goal, 80)}". Want to take the next step together?`,
+      replies: ["What's the next step toward it?"],
+    });
+  }
+
+  // ── Gaps: things standing between their work and getting paid ──
+
+  if (entities.length > 0 && !canBePaid(context)) {
+    openers.push({
+      key: 'payment',
+      say: `You have ${plural(entities.length, 'listing')} but no way to receive money yet.`,
+      replies: ['Help me set up a way to get paid'],
+    });
+  }
+
+  const drafts = entities.filter(isDraft);
+  if (drafts.length === 1) {
+    const name = title(drafts[0]);
+    openers.push({
+      key: `draft:${drafts[0].id}`,
+      say: `"${name}" is still a draft, so nobody can see it yet.`,
+      replies: [`What's missing before I publish "${name}"?`],
+    });
+  } else if (drafts.length > 1) {
+    openers.push({
+      // Keyed on the set, so a new draft re-opens the topic after a dismissal.
+      key: `drafts:${fingerprint(drafts.map(d => d.id).join(','))}`,
+      say: `You have ${drafts.length} drafts nobody can see yet.`,
+      replies: ['Which of my drafts is worth publishing?', 'Help me clean up my drafts'],
+    });
+  }
+
+  const live = entities.filter(e => !isDraft(e));
+
+  const undescribed = live.find(e => !e.description?.trim());
+  if (undescribed) {
+    const name = title(undescribed);
+    openers.push({
+      key: `description:${undescribed.id}`,
+      say: `"${name}" is live but has no description, so people can't tell what it is.`,
+      replies: [`Write a description for "${name}"`],
+    });
+  }
+
+  const unpriced = live.find(e => isPriced(e) && !e.price_btc);
+  if (unpriced) {
+    const name = title(unpriced);
+    openers.push({
+      key: `price:${unpriced.id}`,
+      say: `"${name}" has no price, so nobody can buy it.`,
+      replies: [`What should I charge for "${name}"?`],
+    });
+  }
+
+  if (!context.profile?.bio?.trim()) {
+    openers.push({
+      key: 'bio',
+      say: "Your profile has no bio yet — it's the first thing visitors read.",
+      replies: ['Help me write my bio'],
+    });
+  }
+
+  const ready = canBePaid(context) ? live.find(e => !!e.description?.trim()) : undefined;
+  if (ready) {
+    const name = title(ready);
+    openers.push({
+      key: `demand:${ready.id}`,
+      say: `"${name}" is live and can take payment. The next lever is getting it in front of people.`,
+      replies: [`Who on OrangeCat might want "${name}"?`, `Help me promote "${name}"`],
+    });
+  }
+
+  return openers.slice(0, MAX_OPENERS);
+}
+
+// ─── Chips (LLM, grounded in memory) ─────────────────────────────────────────
+
+function buildDigest(context: FullUserContext, memories: string[]): string {
+  const lines: string[] = [];
+
+  if (context.profile?.name) {
+    lines.push(`Name: ${context.profile.name}`);
+  }
+  if (context.profile?.bio) {
+    lines.push(`Bio: ${truncate(context.profile.bio, 200)}`);
+  }
+  for (const g of context.economicProfile?.goals?.slice(0, 3) ?? []) {
+    lines.push(`Goal: ${truncate(g.text, 120)}`);
+  }
+  for (const s of context.economicProfile?.skills?.slice(0, 5) ?? []) {
+    lines.push(`Skill: ${truncate(s.name, 60)}`);
+  }
+  for (const m of memories.slice(0, MAX_MEMORIES)) {
+    lines.push(`Cat remembers: ${truncate(m, 160)}`);
+  }
+  for (const e of context.entities.filter(x => !isPlaceholderTitle(x.title)).slice(0, 8)) {
+    lines.push(
+      `${registryFor(e)?.name ?? e.type}: "${e.title}" (${isDraft(e) ? 'draft' : 'published'})`
+    );
+  }
+  for (const d of context.documents.slice(0, 4)) {
+    lines.push(`Note: "${d.title}"`);
+  }
+
+  return lines.filter(l => !/:\s*$/.test(l)).join('\n');
+}
+
+const SYSTEM_PROMPT = [
+  'You help a user of OrangeCat (a Bitcoin-native platform where people list',
+  'products, services, projects and causes and get paid for them) think of what',
+  'to ask their AI agent, Cat.',
+  '',
+  'Write short messages the USER would send, in their own first-person voice.',
+  'Never start with "Cat" or address Cat by name. Never write as Cat.',
+  '',
+  'Return JSON exactly:',
+  '{"chips":[{"text":"...","from":"..."}, ...]} with 6 items.',
+  '"from" is 2-6 words COPIED EXACTLY from the state that the chip builds on.',
+  '',
+  'Rules:',
+  `- Each chip is at most 8 words and ${MAX_CHIP_CHARS} characters: a plain request or question.`,
+  '- Make them PERSONAL: every chip builds on one line of the state — a goal,',
+  '  a skill, a listing, or something Cat remembers — and names that thing.',
+  '- Only things Cat can do on OrangeCat: pricing, writing listings, finding',
+  '  buyers, collaborators or funding, promotion, planning their week or their',
+  '  next offer. Vary across these — not all about one listing. Nothing',
+  '  unrelated to their work (no coding lessons, trivia, weather).',
+  '- Never mention an offering, skill, number or person that is not in the state.',
+  '- Output JSON only.',
+].join('\n');
+
+/** Removes the "Cat, …" address the model keeps writing despite being told not to. */
+export function cleanChip(v: unknown): string | null {
+  if (typeof v !== 'string') {
+    return null;
+  }
+  let s = v
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/^["'“”]+|["'“”]+$/g, '');
+  s = s.replace(/^(hey |hi )?cat[,:!]?\s+/i, '');
+  if (!s || s.length > MAX_CHIP_CHARS * 1.5 || /https?:\/\//i.test(s)) {
+    return null;
+  }
+  // A chip is a tap target, not a sentence: no closing full stop.
+  s = s.replace(/\.+$/, '');
+  s = s.charAt(0).toUpperCase() + s.slice(1);
+  return truncate(s, MAX_CHIP_CHARS);
+}
+
+async function generateChips(digest: string): Promise<string[]> {
+  const raw = await callPlatformJson(SYSTEM_PROMPT, `This user's state:\n${digest}`, {
+    // gpt-oss reasons before it writes (~700 tokens here), and Groq's JSON
+    // mode rejects a document cut off mid-way ("max completion tokens reached
+    // before generating a valid document") — at 400 and at the 1400 default
+    // most calls came back empty. Measured: ~1.6–2k total. Cached per state,
+    // so this is paid once per change, not per visit.
+    maxTokens: 2500,
+    temperature: 0.6,
+    timeoutMs: LLM_TIMEOUT_MS,
+  });
+  const parsed = parseJsonLoose<{ chips?: unknown }>(raw);
+  if (!parsed || !Array.isArray(parsed.chips)) {
+    return [];
+  }
+  return parsed.chips
+    .filter(c => isGroundedChip(c, digest))
+    .map(c => cleanChip((c as { text: string }).text))
+    .filter((c): c is string => !!c);
+}
+
+const fold = (s: string): string =>
+  s
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+
+/**
+ * A chip survives only if the words it claims to build on are really in the
+ * state. Without this, the free model offered a ceramicist "Promote my
+ * hair-cut services" — the same "haircuts to a ceramicist" failure the nudge
+ * engine guards against, one prompt over.
+ */
+export function isGroundedChip(chip: unknown, digest: string): boolean {
+  const c = chip as { text?: unknown; from?: unknown };
+  if (!c || typeof c.text !== 'string' || typeof c.from !== 'string') {
+    return false;
+  }
+  const from = fold(c.from);
+  return from.length >= 4 && fold(digest).includes(from);
+}
+
+// ─── Cache + rotation ────────────────────────────────────────────────────────
+
+/**
+ * Process-local cache of the LLM chip pool. Deliberately not a table: derived
+ * data with a cheap recompute. The KEY carries the state fingerprint, so a
+ * stale entry is impossible — a changed listing or a new memory is a new key.
+ */
+const cache = new Map<string, string[]>();
+/** Generations still running, so a second request joins instead of re-asking. */
+const inflight = new Map<string, Promise<string[]>>();
+/** How many times each pool has been served — the rotation offset. */
+const served = new Map<string, number>();
+const MAX_CACHE_ENTRIES = 500;
+
+function remember(key: string, value: string[]): void {
   if (cache.size >= MAX_CACHE_ENTRIES) {
     const oldest = cache.keys().next().value;
     if (oldest) {
@@ -353,86 +396,104 @@ function remember(key: string, value: SuggestionPool): void {
   cache.set(key, value);
 }
 
-/**
- * The lead, then a window onto the alternatives that moves one step per serve.
- *
- * The lead is deliberately NOT rotated. It is the most consequential gap in
- * the user's state, and a recommendation that changes every time you look at
- * it is not a recommendation. Everything under it is a menu, and a menu may
- * as well show you something new.
- */
-function serve(key: string, pool: SuggestionPool): CatPromptSuggestion[] {
+function rotate(key: string, pool: string[]): string[] {
   const offset = served.get(key) ?? 0;
   served.set(key, offset + 1);
+  if (pool.length <= CAT_HOME_MAX_CHIPS) {
+    return pool;
+  }
+  return Array.from(
+    { length: CAT_HOME_MAX_CHIPS },
+    (_, i) => pool[(offset * CAT_HOME_MAX_CHIPS + i) % pool.length]
+  );
+}
 
-  const room = MAX_SUGGESTIONS - 1;
-  const { alternatives } = pool;
-  const window =
-    alternatives.length <= room
-      ? alternatives
-      : Array.from({ length: room }, (_, i) => alternatives[(offset + i) % alternatives.length]);
+function dedupe(items: string[], limit: number): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const item of items) {
+    const k = item.toLowerCase();
+    if (!seen.has(k)) {
+      seen.add(k);
+      out.push(item);
+    }
+    if (out.length >= limit) {
+      break;
+    }
+  }
+  return out;
+}
 
-  // Only the lead carries a reason — see the contract in @/config/cat-prompts.
-  return [pool.lead, ...window.map(({ prompt }) => ({ prompt }))];
+/** The user's own things, for the composer's "+" menu — listings first, then notes. */
+export function listAttachable(context: FullUserContext): CatReference[] {
+  return [
+    ...context.entities.map(e => ({ type: e.type, id: e.id, title: e.title })),
+    ...context.documents.map(d => ({ type: 'document', id: d.id, title: d.title })),
+  ].slice(0, MAX_ATTACHABLE);
+}
+
+/**
+ * The chips to rotate through. The openers' replies and the starters are only
+ * filler — when the model wrote enough, rotating into them would bring the
+ * chores back.
+ */
+function poolFrom(generated: string[], openers: CatOpener[]): string[] {
+  if (generated.length >= CAT_HOME_MAX_CHIPS) {
+    return dedupe(generated, MAX_CHIP_POOL);
+  }
+  const fallback = [...openers.slice(1).map(o => o.replies[0]), ...getStarterChips()];
+  return dedupe([...generated, ...fallback], CAT_HOME_MAX_CHIPS);
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
 /**
- * Compose the ordered prompts for a user. Never throws and never returns empty:
- * the deterministic gaps stand in for the LLM, and the registry-derived starter
- * fork stands in for both.
+ * Compose what the Cat opens with for this user. Never throws, never returns an
+ * empty screen: the openers' own replies stand in for the LLM, and the
+ * registry-derived starters stand in for everything.
  */
-export async function generatePromptSuggestions(
+export async function generateCatHome(
   userId: string,
-  context: FullUserContext
-): Promise<CatPromptSuggestion[]> {
-  if (!hasRichContext(context)) {
-    return STARTER_PROMPTS;
+  context: FullUserContext,
+  memories: string[] = []
+): Promise<CatHome> {
+  if (!hasRichContext(context) && memories.length === 0) {
+    return STARTER_HOME;
   }
 
-  const gaps = detectGaps(context);
-  if (gaps.length === 0) {
-    return STARTER_PROMPTS;
-  }
+  const openers = detectOpeners(context);
+  const digest = buildDigest(context, memories);
+  const key = `${userId}:${fingerprint(digest)}`;
 
-  const digest = buildDigest(context);
-  const key = `${userId}:${fingerprint(digest.text)}`;
-  const cached = cache.get(key);
-  if (cached) {
-    return serve(key, cached);
-  }
-
-  let lead = gaps[0];
-  const tail: string[] = [];
-
-  try {
-    const llm = await generateWithLlm(digest, gaps[0]);
-    if (llm) {
-      lead = llm.lead;
-      tail.push(...llm.alternatives);
+  let pool = cache.get(key);
+  if (!pool) {
+    // The model takes seconds (it reasons first); the openers are ready now.
+    // Wait briefly, and if it is slower, answer with the filler while the
+    // model finishes in the background and fills the cache for next time.
+    // The process is long-lived (self-hosted Node), so the promise outlives
+    // the request.
+    let pending = inflight.get(key);
+    if (!pending) {
+      pending = generateChips(digest)
+        .then(generated => {
+          if (generated.length > 0) {
+            remember(key, poolFrom(generated, openers));
+          }
+          return generated;
+        })
+        .catch(error => {
+          logger.warn('cat-home: chip generation failed', { error }, 'PromptSuggestions');
+          return [] as string[];
+        })
+        .finally(() => inflight.delete(key));
+      inflight.set(key, pending);
     }
-  } catch (error) {
-    logger.warn('prompt-suggestions: generation failed', { error }, 'PromptSuggestions');
+    const generated = await Promise.race([
+      pending,
+      new Promise<string[]>(resolve => setTimeout(() => resolve([]), FIRST_PAINT_MS)),
+    ]);
+    pool = cache.get(key) ?? poolFrom(generated, openers);
   }
 
-  // Deterministic gaps back-fill the tail, so a terse model still yields a full set.
-  tail.push(...gaps.slice(1).map(g => g.prompt));
-
-  const seen = new Set([lead.prompt.toLowerCase()]);
-  const alternatives: CatPromptSuggestion[] = [];
-  for (const prompt of tail) {
-    if (alternatives.length >= MAX_POOL) {
-      break;
-    }
-    const dedupeKey = prompt.toLowerCase();
-    if (!seen.has(dedupeKey)) {
-      seen.add(dedupeKey);
-      alternatives.push({ prompt });
-    }
-  }
-
-  const pool: SuggestionPool = { lead, alternatives };
-  remember(key, pool);
-  return serve(key, pool);
+  return { openers, chips: rotate(key, pool), attachable: listAttachable(context) };
 }
