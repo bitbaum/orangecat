@@ -16,6 +16,23 @@
 /** Flat context; rendered as `key: value` lines into the report body. */
 export type ReportDiagnostics = Record<string, string | number | boolean | null | undefined>;
 
+/**
+ * What the person wants Loki to do with what they pointed at: `build` changes
+ * the experience for them, `guide` shows them the way to what they want (it may
+ * already exist). Same vocabulary as Loki's widget/intents.ts.
+ */
+export type ReportIntent = 'build' | 'guide';
+
+export interface ReportInput {
+  message?: string;
+  diagnostics?: ReportDiagnostics;
+  intent?: ReportIntent;
+  /** The element the report is about — preselected so nobody has to re-find it. */
+  target?: Element;
+  /** Open in pick mode: tap the element first, then say what should change. */
+  pick?: boolean;
+}
+
 interface LokiApi {
   /**
    * False until the widget's boot gate has said active AND its panel exists.
@@ -26,7 +43,7 @@ interface LokiApi {
    * ships a control that silently does nothing.
    */
   ready?: boolean;
-  report(input: { message?: string; diagnostics?: ReportDiagnostics }): void;
+  report(input: ReportInput): void;
 }
 
 declare global {
@@ -44,10 +61,7 @@ declare global {
  * capable of doing nothing. That shape also covers the cases a readiness check
  * alone cannot: no JavaScript, and widget.js not yet executed (it loads async).
  */
-export function reportToLoki(input: {
-  message: string;
-  diagnostics?: ReportDiagnostics;
-}): boolean {
+export function reportToLoki(input: ReportInput): boolean {
   if (typeof window === 'undefined') {
     return false;
   }

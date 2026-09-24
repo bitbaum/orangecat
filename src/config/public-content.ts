@@ -69,6 +69,13 @@ export const WHITEPAPER_SECTIONS = [
     ],
   },
   {
+    title: 'The product fits the person',
+    paragraphs: [
+      'Whatever you do not like, you point at and say so. Every surface on OrangeCat, starting with the drafts the Cat writes for you, can be pointed at, and you choose one of two things: change it for me, or show me how to get there. Loki takes it from there. It either builds the experience you asked for, or shows you the path, because often what you want already exists and you could not find it. Either way it makes that path easier to find for the next person.',
+      'This is the long-run direction for the whole stack: not one product shaped the same for everyone, but products tailored to each person who uses them, one pointed-at element at a time. Today a change ships for everyone. The next step is changes that apply to one person without being imposed on everyone else.',
+    ],
+  },
+  {
     title: 'Bitcoin first',
     paragraphs: [
       'The first settlement rail is Bitcoin. Lightning gives ordinary users fast, inexpensive payments; on-chain Bitcoin supports larger or slower transfers. Both are non-custodial and can be independently verified.',

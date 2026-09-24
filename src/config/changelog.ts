@@ -30,6 +30,18 @@ export const CHANGELOG_TAGS: Record<ChangelogTag, { label: string }> = {
 /** Newest first. */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    date: '2026-09-24',
+    tag: 'feature',
+    title: 'Point at what you don\u2019t like, and have it changed',
+    summary:
+      'Drafts the Cat writes for you now carry a \u201cChange this\u201d control. Tap it, say how you want it to work, and choose what should happen next: Loki changes it for you, or shows you how to get where you were going.',
+    items: [
+      'The draft you were reading is already selected, so you do not have to go and find it again.',
+      '\u201cShow me how\u201d is for when the thing you want probably exists and you could not find it. The answer also makes that path easier to find for the next person.',
+      'The feedback button on every page offers the same two choices.',
+    ],
+  },
+  {
     date: '2026-09-20',
     tag: 'fix',
     title: 'Cat keeps its footing when the free tier runs short',

@@ -1,6 +1,6 @@
 # OrangeCat Mission, Vision & Core Values
 
-**Last Updated:** December 17, 2025
+**Last Updated:** September 24, 2026
 **Document Owner:** Founder & CEO
 **Review Cycle:** Quarterly
 
@@ -51,6 +51,7 @@ A world where anyone can participate in the global economy on their own terms, u
 3. **Bitcoin Integration** - Seamless, transparent payment requests for both commerce and donations
 4. **Community Building** - Foster collaboration, mutual support, and social welfare networks
 5. **Global Accessibility** - Break down geographic and institutional barriers for all participants
+6. **The Product Fits the Person** - Whatever a user dislikes, they point at and choose "change it for me" or "show me how to get there". Loki builds it or shows the way. Long run: every person gets an experience tailored to them. SSOT: bitbaum/loki `docs/architecture/tailored-experience.md`
 
 ## 📊 Success Metrics
 
@@ -72,7 +73,5 @@ A world where anyone can participate in the global economy on their own terms, u
 **Document History:**
 
 - December 2025: Initial creation and core values definition
+- September 2026: Added pillar 6, the product fits the person (point at what you dislike → Loki changes it or shows the way)
 - [Future updates will be tracked here]
-
-
-

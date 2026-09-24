@@ -24,6 +24,7 @@ import { ENTITY_REGISTRY, isValidEntityType, type EntityType } from '@/config/en
 import { resolvePublishStatus } from '@/config/entity-status';
 import { ENTITY_STATUS } from '@/config/database-constants';
 import { SellerWalletBanner } from '@/components/payment/SellerWalletBanner';
+import { ChangeThisLink } from '@/components/feedback/ChangeThisLink';
 import { useAuth } from '@/hooks/useAuth';
 import { useSellerPaymentMethods } from '@/hooks/useSellerPaymentMethods';
 import type { PrefillProposal } from '../types';
@@ -255,12 +256,22 @@ export function PrefilledFormCard({ proposal }: PrefilledFormCardProps) {
   const saving = phase === 'saving';
 
   return (
-    <div className="mt-3 rounded-md border border-subtle bg-surface-raised/30 p-4">
+    <div
+      data-loki-target="cat-draft-card"
+      role="group"
+      aria-label={`Draft ${meta.name.toLowerCase()}`}
+      className="mt-3 rounded-md border border-subtle bg-surface-raised/30 p-4"
+    >
       <div className="mb-3 flex items-center gap-2">
         <Sparkles className="h-4 w-4 text-fg-primary" />
         <span className="text-sm font-semibold text-fg-primary">
           Draft {meta.name.toLowerCase()}
         </span>
+        <ChangeThisLink
+          subject="this draft card"
+          surface="cat-draft-card"
+          className="-my-3 ml-auto"
+        />
       </div>
       {sourceDescription && (
         <p className="mb-3 text-xs italic text-fg-secondary">

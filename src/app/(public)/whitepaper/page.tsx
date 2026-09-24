@@ -17,10 +17,12 @@ export default function WhitepaperPage() {
         <header className="border-b border-default pb-10">
           <div className="flex flex-wrap items-center gap-3 font-mono text-xs text-fg-tertiary">
             <span className="rounded-full border border-default px-2.5 py-1">WHITEPAPER</span>
-            <span>v0.1</span>
-            <span>July 2026</span>
+            <span>v0.2</span>
+            <span>September 2026</span>
           </div>
-          <PageHeading className="mt-6">Fund what people build. Build what people fund.</PageHeading>
+          <PageHeading className="mt-6">
+            Fund what people build. Build what people fund.
+          </PageHeading>
           <p className="mt-5 text-lg leading-relaxed text-fg-secondary">
             A focused architecture for connecting public economic coordination on OrangeCat with
             supervised agent execution on Loki.

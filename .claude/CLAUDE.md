@@ -20,6 +20,7 @@
 4. **Full economic spectrum** — from gift (no strings) to loan (some strings) to investment (more strings). All forms of value coordination belong on this platform.
 5. **Private where needed, transparent where chosen** — the privacy goal (E2E-encrypted messaging and Nostr as the censorship-resistant layer) is on the roadmap, **not yet shipped**: direct messages are currently stored as plaintext (realtime, but server-readable). Bitcoin's on-chain transparency is available when appropriate. Do not describe messaging as encrypted until it actually is.
 6. **Entities are the Cat's world model** — every entity type represents a form of economic or governance activity. The richer the entity structure, the smarter the Cat can be.
+7. **The product fits the person** — anything a user dislikes, they can point at and choose "change it for me" or "show me how to get there". Loki (embedded widget, `window.Loki.report({ target, intent })`) builds that experience, or shows the path and makes it findable. Tailored experiences for each person are the long-run direction. New surfaces carry `data-loki-target`, and where it earns the space a `ChangeThisLink` (`src/components/feedback/ChangeThisLink.tsx`). The direction, and what is and isn't shipped, is SSOT in bitbaum/loki `docs/architecture/tailored-experience.md`.
 
 ### What an entity IS
 
@@ -68,6 +69,7 @@ nothing).
 ### What This Means for Development
 
 - When adding features, ask: does this serve the Cat, or does it serve a human manually? Prefer both.
+- When adding a surface, ask: can a person who dislikes it point at it and have it changed? (Principle 7.)
 - Payment fields should support any payment method, not just Bitcoin addresses.
 - "Wallet" is a subset of "payment methods" — a user may have Lightning, PayPal, and Twint all as valid receiving options.
 - Messaging should be built with E2E encryption and Nostr integration in mind, even if not yet implemented.
