@@ -38,7 +38,7 @@
  * delivered by a queue. It is named here so that exception stays one line.
  */
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
-import { dirname, join, relative } from 'node:path';
+import { dirname, join } from 'node:path';
 
 const ROOT = join(__dirname, '../../..');
 
@@ -98,8 +98,11 @@ const GET_ALLOWED = new Map([
 type Chain = string[];
 
 function read(file: string): string | null {
-  const abs = join(ROOT, file);
-  return existsSync(abs) && statSync(abs).isFile() ? readFileSync(abs, 'utf8') : null;
+  try {
+    return readFileSync(join(ROOT, file), 'utf8');
+  } catch {
+    return null; // missing, or a directory
+  }
 }
 
 /** Runtime imports of a file, each with the names it binds (null = whole module). */
