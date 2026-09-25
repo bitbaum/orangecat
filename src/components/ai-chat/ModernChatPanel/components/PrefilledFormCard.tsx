@@ -30,6 +30,16 @@ import { getEntityConfig } from '@/config/entity-configs/get-config';
 import type { PrefillProposal } from '../types';
 import { DraftPhoto, publishDraftPhoto } from './DraftPhoto';
 
+/** First clause of the description, capped — a starting point the user edits. */
+export function fallbackTitle(source: string): string {
+  const first =
+    source
+      .trim()
+      .split(/[.!?\n]/)[0]
+      ?.trim() ?? '';
+  return first.length > 70 ? `${first.slice(0, 70).trimEnd()}…` : first;
+}
+
 function formHasField(type: EntityType, field: string): boolean {
   return (
     getEntityConfig(type)?.fieldGroups.some(g => (g.fields ?? []).some(f => f.name === field)) ??
@@ -78,7 +88,11 @@ export function PrefilledFormCard({ proposal }: PrefilledFormCardProps) {
   const meta = valid ? ENTITY_REGISTRY[entityType as EntityType] : null;
 
   const present = (v: unknown): boolean => v !== null && v !== undefined && v !== '';
-  const [title, setTitle] = useState(String(data.title ?? data.name ?? ''));
+  // The prefill model can omit a title it was not handed verbatim; a blank
+  // required title disabled both buttons. Fall back to the draft's own source.
+  const [title, setTitle] = useState(
+    String(data.title ?? data.name ?? fallbackTitle(sourceDescription))
+  );
   const [description, setDescription] = useState(String(data.description ?? ''));
   // Shown whenever the form HAS a price, not only when the draft found one:
   // a dropped price used to hide the input and publish failed on "price".

@@ -70,7 +70,8 @@ REVISION RULES:
 RULES:
 1. Only include fields you can confidently derive from the description
 2. Do not make up factual information that is not in the description
-3. For unclear values, omit them rather than guess`;
+3. For unclear values, omit them rather than guess
+4. Always return every field marked required that is a name or text — for a title, write a short, specific one from the description. (Rule 1 once left a draft product with no title, and a draft without its required title cannot be saved.)`;
 
   return `You are the form-filling assistant for OrangeCat, an AI-powered platform for economic activity.
 
