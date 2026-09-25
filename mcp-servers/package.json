@@ -26,6 +26,6 @@
   "license": "MIT",
   "overrides": {
     "ajv": "^8.18.0",
-    "hono": "^4.13.0"
+    "hono": "^4.13.5"
   }
 }
