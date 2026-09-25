@@ -1,12 +1,18 @@
 'use client';
 
 /**
- * The Cat settings page's summary AND its section menu, as one sticky row:
- * each item names a section and carries its current state ("Sees · 3 of 4
- * connected"), so reading the row answers "how is Cat set up?" and tapping it
- * goes to the place to change it. One row instead of a summary plus a menu.
+ * The Cat settings page's summary AND its section menu, as one pinned bar:
+ * each item names a section and carries its current state ("Sees · 3 of 4"),
+ * and the section you are reading is highlighted.
+ *
+ * A flat bar across the column, not a floating card: the card version sat in
+ * mid-air over the content, and on phones its 2×2 grid covered a fifth of the
+ * screen. Now ONE row — swipeable on a phone, the four items evenly spread
+ * from sm up — pinned under the header, and to the very top once the header
+ * hides (`.sticky-below-header`).
  */
 
+import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 export interface CatSettingsNavItem {
@@ -16,31 +22,71 @@ export interface CatSettingsNavItem {
   value: string | null;
 }
 
+/** The section whose top most recently crossed the upper third of the screen. */
+function useActiveSection(ids: string[]): string | null {
+  const [active, setActive] = useState<string | null>(ids[0] ?? null);
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      entries => {
+        const visible = entries
+          .filter(e => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        if (visible[0]) {
+          setActive(visible[0].target.id);
+        }
+      },
+      { rootMargin: '-20% 0px -65% 0px' }
+    );
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        observer.observe(el);
+      }
+    });
+    return () => observer.disconnect();
+  }, [ids]);
+  return active;
+}
+
 export function CatSettingsNav({ items }: { items: CatSettingsNavItem[] }) {
+  const ids = items.map(i => i.id);
+  const active = useActiveSection(ids);
+
   return (
     <nav
       aria-label="Cat settings sections"
-      className="sticky top-14 z-10 -mx-4 border-b border-subtle bg-surface-page/95 px-4 py-2 backdrop-blur sm:top-16 sm:mx-0 sm:rounded-lg sm:border sm:px-2"
+      className="sticky-below-header z-10 -mx-4 border-b border-subtle bg-surface-page sm:-mx-6"
     >
-      <ul className="grid grid-cols-2 gap-1 sm:grid-cols-4">
-        {items.map(item => (
-          <li key={item.id}>
-            <a
-              href={`#${item.id}`}
-              className="flex min-h-12 flex-col justify-center rounded-md px-3 py-1.5 transition-colors hover:bg-surface-raised"
-            >
-              <span className="text-sm font-medium text-fg-primary">{item.label}</span>
-              <span
+      <ul className="no-scrollbar flex gap-1 overflow-x-auto px-4 py-2 sm:grid sm:grid-cols-4 sm:px-6">
+        {items.map(item => {
+          const isActive = item.id === active;
+          return (
+            <li key={item.id} className="flex-shrink-0">
+              <a
+                href={`#${item.id}`}
+                aria-current={isActive ? 'location' : undefined}
                 className={cn(
-                  'truncate text-xs text-fg-secondary',
-                  item.value === null && 'h-3 w-20 animate-pulse rounded bg-surface-raised'
+                  'flex min-h-11 flex-col justify-center rounded-md px-3 py-1 transition-colors',
+                  isActive ? 'bg-surface-raised' : 'hover:bg-surface-raised/60'
                 )}
               >
-                {item.value}
-              </span>
-            </a>
-          </li>
-        ))}
+                <span
+                  className={cn(
+                    'text-sm',
+                    isActive ? 'font-semibold text-fg-primary' : 'font-medium text-fg-secondary'
+                  )}
+                >
+                  {item.label}
+                </span>
+                {item.value === null ? (
+                  <span className="mt-0.5 h-3 w-16 animate-pulse rounded bg-surface-raised" />
+                ) : (
+                  <span className="whitespace-nowrap text-xs text-fg-tertiary">{item.value}</span>
+                )}
+              </a>
+            </li>
+          );
+        })}
       </ul>
     </nav>
   );

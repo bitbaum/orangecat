@@ -46,6 +46,8 @@ export interface CatConnection {
    * our own API (an OAuth start) — never client-side navigation.
    */
   connect: CatConnectionLink;
+  /** One line shown above the connect button when the next screen asks a question. */
+  connectHint?: string;
 }
 
 export const CAT_CONNECTIONS: readonly CatConnection[] = [
@@ -94,6 +96,8 @@ export const CAT_CONNECTIONS: readonly CatConnection[] = [
     // The default. services/cat/connections swaps in the account connect
     // (a redirect through /api/integrations/github/connect) when the server
     // has the GitHub App configured.
+    connectHint:
+      'On GitHub, pick the account or organisation that owns your repositories — for a team that is the organisation, not your personal account. You choose which repositories Cat may read, and can change it any time on GitHub.',
     connect: {
       label: 'Add your GitHub to your profile',
       href: ROUTES.PROFILE.EDIT,

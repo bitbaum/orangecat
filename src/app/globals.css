@@ -1016,6 +1016,28 @@
   }
 }
 
+/* Pinned just below the app header — and at the very top once the header
+   hides on scroll-down (Header sets html[data-header-hidden]). Pinning at the
+   header's height alone left an empty band where the header had been. */
+.sticky-below-header {
+  position: sticky;
+  top: 3.5rem;
+  transition: top 200ms ease;
+}
+@media (min-width: 640px) {
+  .sticky-below-header {
+    top: 4rem;
+  }
+}
+html[data-header-hidden='true'] .sticky-below-header {
+  top: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sticky-below-header {
+    transition: none;
+  }
+}
+
 .app-content-height {
   /* --app-viewport-height is the VISUAL viewport (ViewportHeightSync), which
      shrinks when the soft keyboard opens; 100dvh does not, and sizing against

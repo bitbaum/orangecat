@@ -48,7 +48,7 @@ function Section({
     <section
       id={id}
       aria-labelledby={`${id}-title`}
-      className="scroll-mt-48 space-y-4 sm:scroll-mt-40"
+      className="scroll-mt-32 space-y-4 sm:scroll-mt-36"
     >
       <div>
         <h2 id={`${id}-title`} className="text-lg font-semibold text-fg-primary">
