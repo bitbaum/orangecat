@@ -13,6 +13,7 @@ import BitcoinDonationCard from '@/components/bitcoin/BitcoinDonationCard';
 import BitcoinWalletStatsCompact from '@/components/bitcoin/BitcoinWalletStatsCompact';
 import { WalletsSkeleton } from '@/components/profile/ProfileSkeleton';
 import { getWalletReceiveHandle } from '@/lib/wallet-receive-handle';
+import { showsLegacyReceive } from '@/lib/wallets/shownReceiveMethods';
 import { ROUTES } from '@/config/routes';
 import { computeWalletGoalProgress } from '@/lib/wallet-goal';
 import { useCurrencyConversion } from '@/hooks/useCurrencyConversion';
@@ -66,172 +67,171 @@ export default function ProfileWalletSection({
               PUBLIC_WALLET_FIELDS — so for a visitor the filter tested
               `undefined` and dropped every wallet. This section rendered its
               heading and no cards at all. */}
-          {wallets
-            .map(wallet => {
-              const categoryInfo = WALLET_CATEGORIES[wallet.category];
-              // Balance is BTC, the goal is in goal_currency — see
-              // lib/wallet-goal.ts for why dividing them directly is wrong.
-              const goal = computeWalletGoalProgress(
-                {
-                  balanceBtc: wallet.balance_btc,
-                  goalAmount: wallet.goal_amount,
-                  goalCurrency: wallet.goal_currency,
-                },
-                convertFromBTC
-              );
-              const handle = getWalletReceiveHandle(wallet);
+          {wallets.map(wallet => {
+            const categoryInfo = WALLET_CATEGORIES[wallet.category];
+            // Balance is BTC, the goal is in goal_currency — see
+            // lib/wallet-goal.ts for why dividing them directly is wrong.
+            const goal = computeWalletGoalProgress(
+              {
+                balanceBtc: wallet.balance_btc,
+                goalAmount: wallet.goal_amount,
+                goalCurrency: wallet.goal_currency,
+              },
+              convertFromBTC
+            );
+            const handle = getWalletReceiveHandle(wallet);
 
-              return (
-                <div key={wallet.id} className="oc-surface p-6 oc-card-link">
-                  <div className="flex items-start gap-3 mb-4">
-                    <span className="text-3xl">{wallet.category_icon || categoryInfo.icon}</span>
-                    <div className="flex-1">
-                      <h4 className="font-semibold flex items-center gap-2">
-                        {/* The wallet's own page. A wallet is the thing a
+            return (
+              <div key={wallet.id} className="oc-surface p-6 oc-card-link">
+                <div className="flex items-start gap-3 mb-4">
+                  <span className="text-3xl">{wallet.category_icon || categoryInfo.icon}</span>
+                  <div className="flex-1">
+                    <h4 className="font-semibold flex items-center gap-2">
+                      {/* The wallet's own page. A wallet is the thing a
                             supporter is actually asked to fund, and until this
                             route existed there was nothing to send them —
                             only a card inside somebody's profile tab. */}
-                        <Link
-                          href={ROUTES.WALLETS.VIEW(wallet.id)}
-                          className="hover:text-bitcoinOrange transition-colors"
-                        >
-                          {wallet.label}
-                        </Link>
-                        {wallet.is_primary && (
-                          <span className="text-xs bg-bitcoinOrange/10 text-bitcoinOrange border border-bitcoinOrange/30 px-2 py-0.5 rounded">
-                            Primary
-                          </span>
-                        )}
-                      </h4>
-                      {wallet.description && (
-                        <p className="text-sm text-fg-secondary mt-1">{wallet.description}</p>
+                      <Link
+                        href={ROUTES.WALLETS.VIEW(wallet.id)}
+                        className="hover:text-bitcoinOrange transition-colors"
+                      >
+                        {wallet.label}
+                      </Link>
+                      {wallet.is_primary && (
+                        <span className="text-xs bg-bitcoinOrange/10 text-bitcoinOrange border border-bitcoinOrange/30 px-2 py-0.5 rounded">
+                          Primary
+                        </span>
                       )}
-                      <p className="text-xs text-fg-secondary mt-1">{categoryInfo.label}</p>
-                    </div>
+                    </h4>
+                    {wallet.description && (
+                      <p className="text-sm text-fg-secondary mt-1">{wallet.description}</p>
+                    )}
+                    <p className="text-xs text-fg-secondary mt-1">{categoryInfo.label}</p>
                   </div>
+                </div>
 
-                  {/* Balance — read from the chain against the wallet's address,
+                {/* Balance — read from the chain against the wallet's address,
                       so it means nothing for a Lightning wallet. The second
                       condition matters as much as the first: `balance_btc` is
                       not among PUBLIC_WALLET_FIELDS, so on a visitor's request
                       it is absent, and formatting it produced the literal
                       string "₿NaN" on a public page. A balance we did not fetch
                       is not a balance of zero — show nothing. */}
-                  {handle.kind === 'onchain' && typeof wallet.balance_btc === 'number' && (
-                    <div className="bg-surface-raised rounded-lg p-3 mb-3">
-                      <div className="text-sm text-fg-secondary mb-1">Current Balance</div>
-                      <div className="text-xl font-bold text-bitcoinOrange">
-                        {formatAmountBtc(wallet.balance_btc)}
-                      </div>
+                {handle.kind === 'onchain' && typeof wallet.balance_btc === 'number' && (
+                  <div className="bg-surface-raised rounded-lg p-3 mb-3">
+                    <div className="text-sm text-fg-secondary mb-1">Current Balance</div>
+                    <div className="text-xl font-bold text-bitcoinOrange">
+                      {formatAmountBtc(wallet.balance_btc)}
                     </div>
-                  )}
+                  </div>
+                )}
 
-                  {/* Goal progress — tracked from the on-chain balance. Both
+                {/* Goal progress — tracked from the on-chain balance. Both
                       amounts in the goal's own currency; bar only when the
                       balance could be converted into it. */}
-                  {handle.kind === 'onchain' && goal && (
-                    <div className="mb-3">
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="text-fg-secondary">Goal</span>
-                        <span className="font-medium">
-                          {goal.balanceInGoalCurrency === null
-                            ? formatPrice(goal.goalAmount, goal.currency)
-                            : `${formatPrice(goal.balanceInGoalCurrency, goal.currency)} / ${formatPrice(goal.goalAmount, goal.currency)}`}
-                        </span>
+                {handle.kind === 'onchain' && goal && (
+                  <div className="mb-3">
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="text-fg-secondary">Goal</span>
+                      <span className="font-medium">
+                        {goal.balanceInGoalCurrency === null
+                          ? formatPrice(goal.goalAmount, goal.currency)
+                          : `${formatPrice(goal.balanceInGoalCurrency, goal.currency)} / ${formatPrice(goal.goalAmount, goal.currency)}`}
+                      </span>
+                    </div>
+                    {goal.percent === null ? (
+                      <div className="text-xs text-fg-secondary mt-1">
+                        Progress needs a {goal.currency} rate, which isn’t available right now.
                       </div>
-                      {goal.percent === null ? (
-                        <div className="text-xs text-fg-secondary mt-1">
-                          Progress needs a {goal.currency} rate, which isn’t available right now.
+                    ) : (
+                      <>
+                        <div className="w-full bg-surface-raised rounded-full h-2">
+                          <div
+                            className="bg-bitcoinOrange h-2 rounded-full transition-all"
+                            style={{ width: `${Math.min(goal.percent, 100)}%` }}
+                          />
                         </div>
-                      ) : (
-                        <>
-                          <div className="w-full bg-surface-raised rounded-full h-2">
-                            <div
-                              className="bg-bitcoinOrange h-2 rounded-full transition-all"
-                              style={{ width: `${Math.min(goal.percent, 100)}%` }}
-                            />
-                          </div>
-                          <div className="text-xs text-fg-secondary mt-1">
-                            {goal.percent.toFixed(1)}% funded
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  )}
-
-                  {/* QR — only when there is something scannable (a Lightning
-                      or connection wallet has no bitcoin: URI). */}
-                  {handle.qrValue && (
-                    <div className="mb-4 flex justify-center">
-                      <div className="bg-surface-base p-3 rounded-lg border-2 border-default shadow-sm">
-                        <QRCodeSVG
-                          value={handle.qrValue}
-                          size={120}
-                          level="H"
-                          includeMargin={false}
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Public receive handle — whatever rail this wallet uses */}
-                  <div className="pt-3 border-t">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs text-fg-secondary">{handle.label}</span>
-                      {handle.value && (
-                        <button
-                          onClick={() => {
-                            navigator.clipboard.writeText(handle.value as string);
-                            toast.success('Copied to clipboard');
-                          }}
-                          className="text-xs text-fg-primary hover:text-fg-primary font-medium"
-                          aria-label={`Copy ${handle.label}`}
-                        >
-                          <Copy className="w-3 h-3 inline mr-1" />
-                          Copy
-                        </button>
-                      )}
-                    </div>
-                    <code
-                      className="text-xs text-fg-primary block font-mono break-all bg-surface-raised p-2 rounded cursor-pointer hover:bg-surface-raised/80 transition-colors"
-                      onClick={() => {
-                        if (handle.value) {
-                          navigator.clipboard.writeText(handle.value);
-                          toast.success('Copied to clipboard');
-                        }
-                      }}
-                      title={handle.value ? 'Click to copy' : undefined}
-                    >
-                      {handle.kind === 'onchain' && handle.value
-                        ? truncateAddress(handle.value, 20, 10)
-                        : (handle.value ?? handle.emptyText)}
-                    </code>
+                        <div className="text-xs text-fg-secondary mt-1">
+                          {goal.percent.toFixed(1)}% funded
+                        </div>
+                      </>
+                    )}
                   </div>
+                )}
 
-                  {/* Send Button — needs a payable URI. An xpub or a wallet
-                      connection has none, and `bitcoin:null` opened nothing. */}
-                  {handle.qrValue && (
-                    <div className="mt-3 pt-3 border-t">
-                      <Button
-                        onClick={() => {
-                          window.location.href = handle.qrValue as string;
-                          // Fallback: show toast if wallet doesn't open
-                          setTimeout(() => {
-                            toast.info(
-                              "If your wallet didn't open, copy the address and paste it manually"
-                            );
-                          }, 500);
-                        }}
-                        className="w-full bg-bitcoinOrange hover:bg-bitcoinOrange/90 text-white"
-                      >
-                        <ExternalLink className="w-4 h-4 mr-2" />
-                        Send with Wallet
-                      </Button>
+                {/* QR — only when there is something scannable (a Lightning
+                      or connection wallet has no bitcoin: URI). */}
+                {handle.qrValue && (
+                  <div className="mb-4 flex justify-center">
+                    <div className="bg-surface-base p-3 rounded-lg border-2 border-default shadow-sm">
+                      <QRCodeSVG
+                        value={handle.qrValue}
+                        size={120}
+                        level="H"
+                        includeMargin={false}
+                      />
                     </div>
-                  )}
+                  </div>
+                )}
+
+                {/* Public receive handle — whatever rail this wallet uses */}
+                <div className="pt-3 border-t">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-fg-secondary">{handle.label}</span>
+                    {handle.value && (
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(handle.value as string);
+                          toast.success('Copied to clipboard');
+                        }}
+                        className="text-xs text-fg-primary hover:text-fg-primary font-medium"
+                        aria-label={`Copy ${handle.label}`}
+                      >
+                        <Copy className="w-3 h-3 inline mr-1" />
+                        Copy
+                      </button>
+                    )}
+                  </div>
+                  <code
+                    className="text-xs text-fg-primary block font-mono break-all bg-surface-raised p-2 rounded cursor-pointer hover:bg-surface-raised/80 transition-colors"
+                    onClick={() => {
+                      if (handle.value) {
+                        navigator.clipboard.writeText(handle.value);
+                        toast.success('Copied to clipboard');
+                      }
+                    }}
+                    title={handle.value ? 'Click to copy' : undefined}
+                  >
+                    {handle.kind === 'onchain' && handle.value
+                      ? truncateAddress(handle.value, 20, 10)
+                      : (handle.value ?? handle.emptyText)}
+                  </code>
                 </div>
-              );
-            })}
+
+                {/* Send Button — needs a payable URI. An xpub or a wallet
+                      connection has none, and `bitcoin:null` opened nothing. */}
+                {handle.qrValue && (
+                  <div className="mt-3 pt-3 border-t">
+                    <Button
+                      onClick={() => {
+                        window.location.href = handle.qrValue as string;
+                        // Fallback: show toast if wallet doesn't open
+                        setTimeout(() => {
+                          toast.info(
+                            "If your wallet didn't open, copy the address and paste it manually"
+                          );
+                        }, 500);
+                      }}
+                      className="w-full bg-bitcoinOrange hover:bg-bitcoinOrange/90 text-white"
+                    >
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      Send with Wallet
+                    </Button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     );
@@ -259,7 +259,7 @@ export default function ProfileWalletSection({
   }
 
   // Show legacy Bitcoin address if no new wallets but has legacy addresses
-  if (wallets.length === 0 && (legacyBitcoinAddress || legacyLightningAddress)) {
+  if (showsLegacyReceive(wallets.length) && (legacyBitcoinAddress || legacyLightningAddress)) {
     return (
       <div className="space-y-4">
         <BitcoinDonationCard

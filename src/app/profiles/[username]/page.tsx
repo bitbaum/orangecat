@@ -12,6 +12,8 @@ import type { ScalableProfile } from '@/services/profile/types';
 import { mapProjectRow } from '@/types/project';
 import { enrichProjectsWithSettledFunding } from '@/services/wallets/project-funding';
 import { countActiveProfileWallets } from '@/services/wallets/countPublicWallets';
+import { countShownReceiveMethods } from '@/lib/wallets/shownReceiveMethods';
+import { PROFILE_HIDDEN_STATUS_FILTER } from '@/config/profile-listing-visibility';
 import { ROUTES } from '@/config/routes';
 import { APP_NAME, APP_KICKER, SITE_URL } from '@/config/brand';
 import { applyProfilePrivacy } from '@/config/profile-privacy';
@@ -290,7 +292,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
     `
     )
     .or(ownedProjectsFilter(ownerActor.id, profile.id))
-    .neq('status', 'draft') // Exclude drafts from public profile
+    .not('status', 'in', PROFILE_HIDDEN_STATUS_FILTER) // config/profile-listing-visibility
     .neq('show_on_profile', false) // Respect user's visibility preference (null = true by default)
     .order('created_at', { ascending: false });
   // Honest funding figures from the settled ledger — the raised_amount column
@@ -321,14 +323,9 @@ export default async function PublicProfilePage({ params }: PageProps) {
   // address. See services/wallets/countPublicWallets.ts for the full note.
   const walletCount = await countActiveProfileWallets(profile.id);
 
-  // A profile's legacy single bitcoin_address / lightning_address is a real way to
-  // receive Bitcoin (the public donation card sends to exactly these), even though
-  // they predate the multi-wallet table. Count them so the Wallets tab badge never
-  // reads "0" for a profile that can actually receive. (SSOT note: legacy fields +
-  // the wallets table are two representations of "ways to receive"; both feed the
-  // badge until the legacy address is migrated into the wallets table.)
-  const receiveMethodCount =
-    walletCount + (profile.bitcoin_address ? 1 : 0) + (profile.lightning_address ? 1 : 0);
+  // The badge counts what the Wallets tab renders — wallet rows, or the
+  // legacy single address(es) when there are no rows (lib/wallets/shownReceiveMethods).
+  const receiveMethodCount = countShownReceiveMethods(walletCount, profile);
 
   // Fetch entity counts for profile tab badges (shared SSOT with the
   // entity-detail trust block — see listingCounts.ts).

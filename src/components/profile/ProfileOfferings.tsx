@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * ProfileOfferings — "What I can offer" on the public maker profile.
  *
@@ -14,6 +16,7 @@
  * PublicEconomicProfile type this reads doesn't even carry them.
  */
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { Sparkles, Plus, MinusCircle, Globe, MessageCircle } from 'lucide-react';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
@@ -44,6 +47,37 @@ const CORRECT_QUESTION =
   'Go through "What I can offer" on my profile with me. Remove anything that is not right ' +
   "and help me add what's missing.";
 
+/**
+ * How many chips of a list show before "+N more". Twenty skill chips and a
+ * dozen asset chips were a wall between the bio and the tabs; the first few
+ * say who this is, the rest are one tap away.
+ */
+const PREVIEW_COUNT = { skills: 8, assets: 6 } as const;
+
+function MoreToggle({
+  hidden,
+  expanded,
+  onToggle,
+}: {
+  hidden: number;
+  expanded: boolean;
+  onToggle: () => void;
+}) {
+  if (hidden <= 0) {
+    return null;
+  }
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-expanded={expanded}
+      className="inline-flex min-h-7 items-center rounded-full px-2.5 py-0.5 text-xs font-medium text-fg-secondary underline-offset-2 hover:text-fg-primary hover:underline"
+    >
+      {expanded ? 'Show less' : `+${hidden} more`}
+    </button>
+  );
+}
+
 function AskCatLink({ label, question }: { label: string; question: string }) {
   return (
     <Link
@@ -61,6 +95,10 @@ export default function ProfileOfferings({ economicProfile, isOwnProfile }: Prof
   const askedFor = economicProfile?.askedFor ?? [];
   const assets = economicProfile?.assets ?? [];
   const notAvailableFor = economicProfile?.notAvailableFor ?? [];
+  const [showAllSkills, setShowAllSkills] = useState(false);
+  const [showAllAssets, setShowAllAssets] = useState(false);
+  const shownSkills = showAllSkills ? skills : skills.slice(0, PREVIEW_COUNT.skills);
+  const shownAssets = showAllAssets ? assets : assets.slice(0, PREVIEW_COUNT.assets);
   const isEmpty =
     skills.length === 0 &&
     askedFor.length === 0 &&
@@ -75,7 +113,7 @@ export default function ProfileOfferings({ economicProfile, isOwnProfile }: Prof
       return null;
     }
     return (
-      <div className="mb-3 rounded-md border border-subtle bg-surface-raised/40 p-4 sm:mb-4">
+      <div className="mt-4 rounded-md border border-subtle bg-surface-raised/40 p-4">
         <div className="mb-1.5 flex items-center gap-1.5">
           <Sparkles className="h-4 w-4 text-fg-secondary" />
           <h2 className="text-sm font-semibold text-fg-primary">What I can offer</h2>
@@ -89,7 +127,7 @@ export default function ProfileOfferings({ economicProfile, isOwnProfile }: Prof
   }
 
   return (
-    <div className="mb-3 rounded-md border border-subtle bg-surface-raised/40 p-4 sm:mb-4">
+    <div className="mt-4 rounded-md border border-subtle bg-surface-raised/40 p-4">
       <div className="mb-3 flex items-center gap-1.5">
         <Sparkles className="h-4 w-4 text-fg-secondary" />
         <h2 className="text-sm font-semibold text-fg-primary">What I can offer</h2>
@@ -101,7 +139,7 @@ export default function ProfileOfferings({ economicProfile, isOwnProfile }: Prof
             Skills
           </p>
           <div className="flex flex-wrap gap-2">
-            {skills.map(skill => {
+            {shownSkills.map(skill => {
               const type = suggestedEntityForSkill(skill.name);
               const meta = ENTITY_REGISTRY[type];
               const label = skill.years ? `${skill.name} · ${skill.years}y` : skill.name;
@@ -131,6 +169,11 @@ export default function ProfileOfferings({ economicProfile, isOwnProfile }: Prof
                 </span>
               );
             })}
+            <MoreToggle
+              hidden={skills.length - PREVIEW_COUNT.skills}
+              expanded={showAllSkills}
+              onToggle={() => setShowAllSkills(v => !v)}
+            />
           </div>
         </div>
       )}
@@ -159,7 +202,7 @@ export default function ProfileOfferings({ economicProfile, isOwnProfile }: Prof
             Assets
           </p>
           <div className="flex flex-wrap gap-2">
-            {assets.map(asset => (
+            {shownAssets.map(asset => (
               <span
                 key={asset.name}
                 className="inline-flex items-center rounded-full border border-default bg-surface-base px-2.5 py-0.5 text-xs text-fg-secondary"
@@ -167,6 +210,11 @@ export default function ProfileOfferings({ economicProfile, isOwnProfile }: Prof
                 {asset.name}
               </span>
             ))}
+            <MoreToggle
+              hidden={assets.length - PREVIEW_COUNT.assets}
+              expanded={showAllAssets}
+              onToggle={() => setShowAllAssets(v => !v)}
+            />
           </div>
         </div>
       )}

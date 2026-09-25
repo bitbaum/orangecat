@@ -5,13 +5,14 @@
  *  - /profiles/[username] (per-type tab badges)
  *  - entity-detail trust block ("N active listings" on the provider card)
  *
- * Filter shape matches the public profile tabs (exclude drafts, respect
- * show_on_profile) so the trust-block number always equals what a visitor
+ * Filter shape matches the public profile tabs (PROFILE_HIDDEN_STATUS_FILTER,
+ * respect show_on_profile) so the trust-block number always equals what a visitor
  * finds when they click through to the profile. Real counts only — never
  * a placeholder.
  */
 import { getTableName, type EntityType } from '@/config/entity-registry';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
+import { PROFILE_HIDDEN_STATUS_FILTER } from '@/config/profile-listing-visibility';
 
 /**
  * Entity types counted on a public profile, with the column that links the
@@ -56,7 +57,7 @@ export async function fetchProfileListingCounts(
         .from(getTableName(type))
         .select('*', { count: 'exact', head: true })
         .eq(userField, profileId)
-        .neq('status', 'draft')
+        .not('status', 'in', PROFILE_HIDDEN_STATUS_FILTER)
         .neq('show_on_profile', false);
       return publicField ? query.eq(publicField, true) : query;
     })

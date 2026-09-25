@@ -45,7 +45,6 @@ const EXCEPTIONS = [
   'src/components/public/PublicEntityDetailPage.tsx',
   'src/app/(authenticated)/dashboard/analytics/components/AnalyticsInsights.tsx',
   'src/components/ai-chat/ModernChatPanel/index.tsx',
-  'src/components/profile/ProfileOverviewTab.tsx',
   'src/app/(public)/docs/page.tsx',
   'src/components/ai-chat/ModernChatPanel/components/MessageBubble.tsx',
   // Services > 500
