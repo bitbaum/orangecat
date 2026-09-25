@@ -19,7 +19,7 @@ import {
   getEntityMetadata,
 } from '@/config/entity-registry';
 import { getOrCreateUserActor } from '@/services/actors/getOrCreateUserActor';
-import { ENTITY_STATUS } from '@/config/database-constants';
+import { PROFILE_HIDDEN_STATUS_FILTER } from '@/config/profile-listing-visibility';
 import { enrichProjectsWithSettledFunding } from '@/services/wallets/project-funding';
 
 // Entity-specific column selections for optimal queries
@@ -96,13 +96,14 @@ export const GET = withOptionalAuth(async (request, context: RouteContext) => {
       .eq(userIdField, filterValue)
       .order('created_at', { ascending: false });
 
-    // Exclude drafts from the public profile. Most entities use a `status` column;
+    // Exclude drafts, cancelled and archived rows from the public profile (see
+    // config/profile-listing-visibility). Most entities use a `status` column;
     // wishlists have no status (they use is_active) — applying .neq('status',…) there
     // 500s ("column wishlists.status does not exist").
     if (entityType === 'wishlist') {
       query = query.neq('is_active', false);
     } else {
-      query = query.neq('status', ENTITY_STATUS.DRAFT);
+      query = query.not('status', 'in', PROFILE_HIDDEN_STATUS_FILTER);
     }
 
     // Add show_on_profile filter (exclude false, keep true and null)

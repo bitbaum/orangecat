@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { API_ROUTES } from '@/config/api-routes';
+import { ROUTES } from '@/config/routes';
 import { useAuth } from '@/hooks/useAuth';
 import { fetchFollowStatus } from '@/services/social/followList';
 import type { ScalableProfile } from '@/services/profile/types';
@@ -61,7 +62,13 @@ export function useProfileActions({ profile, isOwnProfile, onSave }: UseProfileA
   }, [showShare]);
 
   const handleFollowToggle = async () => {
-    if (!user?.id || !profile.id || isFollowLoading) {
+    // A signed-out visitor used to get nothing at all — no request, no toast,
+    // no redirect — so Follow looked broken. Send them to sign in and back.
+    if (!user?.id) {
+      router.push(`${ROUTES.AUTH}?from=${encodeURIComponent(window.location.pathname)}`);
+      return;
+    }
+    if (!profile.id || isFollowLoading) {
       return;
     }
     setIsFollowLoading(true);

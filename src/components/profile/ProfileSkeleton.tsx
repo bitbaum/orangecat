@@ -103,10 +103,6 @@ export function ProfilePageSkeleton() {
           <div className="absolute z-10 -bottom-8 sm:-bottom-10 md:-bottom-12 lg:-bottom-16 left-4 sm:left-6">
             <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 lg:w-32 lg:h-32 rounded-lg bg-surface-raised border-2 sm:border-4 border-fg-inverted dark:border-default shadow-sm animate-pulse" />
           </div>
-          <div className="absolute top-2 right-2 sm:top-4 sm:right-4 lg:top-6 lg:right-6 flex gap-2 sm:gap-3">
-            <div className="h-10 w-24 bg-surface-raised rounded-lg animate-pulse" />
-            <div className="h-10 w-32 bg-surface-raised rounded-lg animate-pulse" />
-          </div>
         </div>
 
         {/* Main Content Skeleton */}

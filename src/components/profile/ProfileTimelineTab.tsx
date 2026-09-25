@@ -3,6 +3,7 @@
 import { Suspense, useCallback, useState } from 'react';
 import type { ScalableProfile } from '@/services/profile/types';
 import TimelineView from '@/components/timeline/TimelineView';
+import { useAuth } from '@/hooks/useAuth';
 
 interface ProfileTimelineTabProps {
   profile: ScalableProfile;
@@ -14,10 +15,13 @@ interface ProfileTimelineTabProps {
  *
  * Displays timeline for profile pages.
  * - Shows posts that appear on this profile's timeline (subject_id = profile.id)
- * - Shows composer for all profiles (users can post on any profile's timeline)
+ * - Signed-in users get the composer on any profile's timeline. A visitor
+ *   gets none: a "Sign in to post" box above someone else's feed was the
+ *   first thing a stranger read on every profile.
  * - Reuses TimelineView component (DRY)
  */
 export default function ProfileTimelineTab({ profile, isOwnProfile }: ProfileTimelineTabProps) {
+  const { user } = useAuth();
   const [refreshKey, setRefreshKey] = useState(0);
 
   const handlePostCreated = useCallback(() => {
@@ -27,14 +31,13 @@ export default function ProfileTimelineTab({ profile, isOwnProfile }: ProfileTim
 
   return (
     <div className="w-full px-0 sm:px-4 sm:max-w-2xl sm:mx-auto space-y-0 sm:space-y-4">
-      {/* Timeline Feed - Show composer for all profiles (users can post on any profile) */}
       <Suspense fallback={<TimelineLoadingSkeleton />}>
         <TimelineView
           key={refreshKey}
           feedType="profile"
           ownerId={profile.id}
           ownerType="profile"
-          showComposer={true} // Enable composer for all profiles
+          showComposer={!!user}
           compact={false}
           showFilters={false}
           emptyStateTitle="No posts yet"

@@ -14,12 +14,11 @@
  * arrive, and stays silent otherwise rather than guessing from a column.
  */
 
-import { useEffect, useState } from 'react';
 import { Zap } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/Card';
 import TipButton from '@/components/tips/TipButton';
 import { SharePayLink } from '@/components/receive/SharePayLink';
-import { fetchTipReceiveInfo } from '@/services/tips/tip-client';
+import { useCanReceive } from './useCanReceive';
 import { PAY_COPY } from '@/config/pay';
 
 interface ProfileSupportSectionProps {
@@ -34,17 +33,7 @@ export function ProfileSupportSection({
   displayName,
   isOwner = false,
 }: ProfileSupportSectionProps) {
-  const [canReceive, setCanReceive] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    let live = true;
-    fetchTipReceiveInfo(username)
-      .then(info => live && setCanReceive(info.canReceive))
-      .catch(() => live && setCanReceive(false));
-    return () => {
-      live = false;
-    };
-  }, [username]);
+  const canReceive = useCanReceive(username);
 
   if (!canReceive) {
     return null;

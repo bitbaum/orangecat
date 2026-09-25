@@ -15,36 +15,16 @@ import ProfileEntityTab from '@/components/profile/ProfileEntityTab';
 import ProfileArticlesTab from '@/components/profile/ProfileArticlesTab';
 import ProfileOfferings from '@/components/profile/ProfileOfferings';
 import type { PublicEconomicProfile } from '@/services/cat/economic-profile';
-import {
-  Users,
-  User,
-  MessageSquare,
-  Globe,
-  ExternalLink,
-  Info,
-  Wallet,
-  FileText,
-  Calendar,
-} from 'lucide-react';
+import { Users, User, MessageSquare, Info, Wallet, FileText } from 'lucide-react';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import type { EntityType } from '@/config/entity-registry';
 import type { Article } from '@/services/articles/types';
 import { cn } from '@/lib/utils';
 import { useProfileActions } from './useProfileActions';
 import { ProfileBannerSection } from './ProfileBannerSection';
+import { ProfileActions } from './ProfileActions';
+import { ProfileIdentityMeta } from './ProfileIdentityMeta';
 import { MAKER_STATUS_METADATA, isMakerStatus } from '@/config/maker-status';
-import { APP_LOCALE } from '@/utils/locale';
-
-const JOINED_DATE_FORMATTER = new Intl.DateTimeFormat(APP_LOCALE, {
-  month: 'short',
-  year: 'numeric',
-});
-
-/** "Joined Aug 2026" — quiet identity metadata, not a headline stat. */
-function formatJoinedDate(createdAt: string): string | null {
-  const date = new Date(createdAt);
-  return Number.isNaN(date.getTime()) ? null : JOINED_DATE_FORMATTER.format(date);
-}
 
 // Entity types displayed as generic ProfileEntityTab tabs, in order.
 const PROFILE_ENTITY_TABS: EntityType[] = [
@@ -99,7 +79,6 @@ export default function ProfileLayout({
 }: ProfileLayoutProps) {
   const { user } = useAuth();
   const isOwnProfile = serverIsOwnProfile ?? profile.id === user?.id;
-  const joinedDate = profile.created_at ? formatJoinedDate(profile.created_at) : null;
 
   const {
     showShare,
@@ -123,7 +102,6 @@ export default function ProfileLayout({
           projects={projects}
           stats={stats}
           isOwnProfile={isOwnProfile}
-          context="public"
         />
       ),
     },
@@ -197,6 +175,11 @@ export default function ProfileLayout({
     if (isOwnProfile) {
       return true;
     }
+    // Info is the owner's field-by-field view (with "Not filled out yet" rows);
+    // what a visitor needs from it is in the header line and on Overview.
+    if (tab.id === 'info') {
+      return false;
+    }
     if (ENTITY_TAB_IDS.has(tab.id)) {
       return (tab.badge || 0) > 0;
     }
@@ -220,73 +203,55 @@ export default function ProfileLayout({
   return (
     <div className={cn('min-h-screen bg-surface-page', className)}>
       <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6 lg:py-8">
-        <ProfileBannerSection
-          profile={profile}
-          isOwnProfile={isOwnProfile}
-          isFollowing={isFollowing}
-          isFollowLoading={isFollowLoading}
-          showShare={showShare}
-          shareButtonRef={shareButtonRef}
-          shareDropdownRef={shareDropdownRef}
-          onShareToggle={() => setShowShare(prev => !prev)}
-          onFollowToggle={handleFollowToggle}
-        />
+        <ProfileBannerSection profile={profile} />
 
         <div className="mt-3 sm:mt-4">
-          {/* Top padding clears the avatar's overhang (half its height) plus a
-              gap, so the avatar overlaps this card the way it overlaps the
-              banner — one continuous header rather than two boxes with a
-              portrait stranded in the white space between them. */}
-          <div className="oc-surface mb-4 p-4 pt-12 sm:mb-6 sm:p-6 sm:pt-14 md:pt-16 lg:pt-20">
-            <h1 className="mb-1 break-words text-xl font-bold text-fg-primary sm:mb-2 sm:text-2xl md:text-3xl">
+          {/* The avatar overhangs this card. On a phone the top padding clears
+              it and the actions sit full-width between the bio and the
+              offerings (flex order); from sm up the
+              actions row comes first, right-aligned beside the avatar, and its
+              own height clears the overhang. */}
+          <div className="oc-surface mb-4 flex flex-col p-4 pt-12 sm:mb-6 sm:p-6 sm:pt-4">
+            <ProfileActions
+              className="order-1 mt-4 w-full sm:order-first sm:mb-2 sm:mt-0 sm:w-auto sm:self-end lg:mb-6"
+              profile={profile}
+              isOwnProfile={isOwnProfile}
+              isFollowing={isFollowing}
+              isFollowLoading={isFollowLoading}
+              showShare={showShare}
+              shareButtonRef={shareButtonRef}
+              shareDropdownRef={shareDropdownRef}
+              onShareToggle={() => setShowShare(prev => !prev)}
+              onFollowToggle={handleFollowToggle}
+            />
+            <h1 className="mb-1 break-words text-xl font-bold text-fg-primary sm:text-2xl md:text-3xl">
               {profile.name || profile.username || 'User'}
             </h1>
-            <div className="mb-3 flex flex-wrap items-baseline gap-x-3 gap-y-1 sm:mb-4">
-              <p className="break-all text-sm font-medium text-fg-secondary sm:text-base md:text-lg">
-                @{profile.username}
-              </p>
-              {joinedDate && (
-                <span className="inline-flex items-center gap-1 text-xs text-fg-tertiary">
-                  <Calendar className="h-3.5 w-3.5" aria-hidden="true" />
-                  Joined {joinedDate}
-                </span>
-              )}
-            </div>
+            <ProfileIdentityMeta profile={profile} />
             {isMakerStatus(profile.current_status) && (
-              <span className="mb-3 inline-flex items-center rounded-full bg-surface-raised border border-default px-2.5 py-1 text-xs font-medium text-fg-primary sm:mb-4">
+              <span className="mt-3 inline-flex w-fit items-center rounded-full border border-default bg-surface-raised px-2.5 py-1 text-xs font-medium text-fg-primary">
                 {MAKER_STATUS_METADATA[profile.current_status].label}
               </span>
             )}
             {profile.bio && (
-              // Surface the bio in the header card so the "who is this" answer
-              // is immediate, reinforcing the Overview-first default below.
-              // Clamp to 3 lines so a long bio doesn't push tabs off-screen —
-              // the Overview tab still has the full text.
-              <p className="mb-3 line-clamp-3 max-w-3xl text-sm text-fg-secondary sm:mb-4 sm:text-base">
+              // The bio lives here, once. Overview used to repeat it in an
+              // "About" card directly under this one.
+              <p className="mt-3 max-w-3xl whitespace-pre-line text-sm leading-relaxed text-fg-secondary sm:mt-4 sm:text-base">
                 {profile.bio}
               </p>
             )}
-            <ProfileOfferings economicProfile={economicProfile} isOwnProfile={isOwnProfile} />
-            {profile.website && (
-              <a
-                href={profile.website}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center text-fg-primary hover:text-fg-primary font-medium underline-offset-4 hover:underline"
-              >
-                <Globe className="w-4 h-4 mr-2" />
-                Visit Website
-                <ExternalLink className="w-3 h-3 ml-1" />
-              </a>
-            )}
+            <div className="order-2">
+              <ProfileOfferings economicProfile={economicProfile} isOwnProfile={isOwnProfile} />
+            </div>
           </div>
 
-          {/* Timeline-first: open on the living activity feed so visitors see the
-              latest — new projects, funding, updates — the way an X profile does,
-              rather than a static summary. Overview remains one tap away. */}
+          {/* Overview-first. Timeline-first (#420) assumed the feed was people's
+              activity; on a builder's profile it is mostly automated project
+              updates, so a visitor landed on a log. Overview answers "who is
+              this and what can I do here"; Timeline is one tap away. */}
           <ProfileViewTabs
             tabs={filteredTabs}
-            defaultTab="timeline"
+            defaultTab="overview"
             primaryTabIds={PRIMARY_PROFILE_TAB_IDS}
           />
         </div>
