@@ -122,6 +122,12 @@ export interface PrefillProposal {
   data: Record<string, unknown>;
   /** Per-field confidence 0–1 from the prefill service. */
   confidence: Record<string, number>;
+  /**
+   * The chat photo this draft was made from: its PRIVATE storage path and the
+   * form field it belongs in. Published (made public) only when the user acts
+   * on the draft — see /api/cat/attachments/publish.
+   */
+  photo?: { ref: string; field: string };
 }
 
 export type OnPrefillProposal = (proposal: PrefillProposal) => void;

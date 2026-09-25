@@ -39,7 +39,8 @@ export type FieldInputType =
   | 'currency'
   | 'bitcoin_address'
   | 'tags'
-  | 'availability';
+  | 'availability'
+  | 'image';
 
 export interface SelectOption {
   value: string;

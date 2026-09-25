@@ -15,8 +15,12 @@
     font-size: 16px;
     /* Prevent zoom on iOS when focusing inputs */
     -webkit-text-size-adjust: 100%;
-    /* Prevent horizontal scrolling on mobile */
+    /* Prevent horizontal scrolling on mobile. `clip`, not `hidden`: hidden
+       makes an element a scroll container, and see body below for what that
+       does to every position: sticky in the app. (hidden stays as the
+       fallback for browsers without clip.) */
     overflow-x: hidden;
+    overflow-x: clip;
     /* Support for iOS safe areas */
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
       env(safe-area-inset-left);
@@ -26,8 +30,13 @@
     @apply bg-surface-page text-fg-primary antialiased;
     /* Improve touch experience on mobile */
     -webkit-tap-highlight-color: transparent;
-    /* Prevent horizontal scrolling */
+    /* Prevent horizontal scrolling — with `clip`. `overflow-x: hidden` plus
+       `overflow-y: auto` made BODY a scroll container that never scrolls (the
+       page scrolls on html), and every position: sticky anchors to its
+       nearest scroll container: the form guidance panel, and every other
+       sticky in the app, scrolled away like normal content. */
     overflow-x: hidden;
+    overflow-x: clip;
     /* Allow vertical scrolling, prevent horizontal overscroll only */
     overscroll-behavior-x: none;
     overscroll-behavior-y: auto;
@@ -37,8 +46,8 @@
     /* Full viewport height for mobile */
     min-height: 100vh;
     min-height: -webkit-fill-available;
-    /* Ensure vertical scrolling works on all devices */
-    overflow-y: auto;
+    /* No overflow-y here: the document scrolls on html. A body overflow-y
+       (auto) made body a non-scrolling scroll container — see above. */
     -webkit-overflow-scrolling: touch;
   }
 

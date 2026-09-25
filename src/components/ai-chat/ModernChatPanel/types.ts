@@ -45,6 +45,8 @@ export interface Message {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+  /** Photos just sent from this tab, shown before the stored copies exist. */
+  imagePreviews?: string[];
   modelUsed?: string;
   /** LLM provider this response came from ('groq' | 'openrouter'). */
   provider?: string;

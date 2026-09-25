@@ -26,7 +26,7 @@ export function ProfileSidebarPanel({
   const missingFields = getProfileMissingFields(profile);
 
   return (
-    <div className="lg:sticky lg:top-8 space-y-6">
+    <div className="lg:sticky lg:top-20 space-y-6">
       <Card className="p-6 shadow-sm border-default">
         <div className="mb-4">
           <div className="flex items-center justify-between mb-3">

@@ -53,6 +53,8 @@ interface BasePrefillFields {
   investment_type?: string; // investment
   methodology?: string; // research
   visibility?: string; // wishlist
+  product_type?: string; // product
+  fulfillment_type?: string; // product
 }
 
 interface UseCreatePrefillOptions {
@@ -149,6 +151,12 @@ function buildUrlPrefill<T extends Record<string, unknown>>(
   if (priceDisplayCurrency) {
     prefillData.currency = priceDisplayCurrency;
   }
+  // A BTC price with no display pair is still a price: the product form has no
+  // `price_btc` field, so it used to vanish and the form opened at 0.00.
+  if (prefillData.price === undefined && typeof prefillData.price_btc === 'number') {
+    prefillData.price = prefillData.price_btc;
+    prefillData.currency = prefillData.currency ?? 'BTC';
+  }
 
   const stringFields = [
     'goal_deadline',
@@ -164,6 +172,8 @@ function buildUrlPrefill<T extends Record<string, unknown>>(
     'investment_type',
     'methodology',
     'visibility', // new entity types
+    'product_type',
+    'fulfillment_type', // product — silently dropped before, so "digital" opened as physical
   ] as const;
   for (const field of stringFields) {
     const val = searchParams?.get(field);

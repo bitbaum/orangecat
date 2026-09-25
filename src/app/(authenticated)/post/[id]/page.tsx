@@ -59,7 +59,7 @@ export default function PostPage() {
   );
 
   const pageHeader = (
-    <header className="sticky top-0 z-10 bg-surface-base backdrop-blur-sm border-b border-default">
+    <header className="sticky top-14 sm:top-16 z-10 bg-surface-base backdrop-blur-sm border-b border-default">
       <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-4">
         <Button variant="ghost" size="sm" onClick={() => router.back()} className="-ml-2">
           <ArrowLeft className="w-5 h-5" />

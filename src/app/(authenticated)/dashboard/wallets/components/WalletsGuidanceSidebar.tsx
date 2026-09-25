@@ -23,7 +23,7 @@ interface WalletsGuidanceSidebarProps {
 export function WalletsGuidanceSidebar({ focusedField }: WalletsGuidanceSidebarProps) {
   return (
     <div className="hidden lg:block lg:col-span-5 lg:order-2">
-      <div className="lg:sticky lg:top-8 space-y-6">
+      <div className="lg:sticky lg:top-20 space-y-6">
         {/* A static "How wallet setup works" card used to sit here, duplicating
             walletDefaultContent below (which the DynamicSidebar already shows
             when no field is focused) and still telling people to paste an xpub.

@@ -119,7 +119,7 @@ export function DynamicSidebar<T extends string = string>({
   // Default state: Show intro content
   if (!activeField) {
     return (
-      <div className={`sticky top-4 ${className}`}>
+      <div className={`sticky top-20 ${className}`}>
         <GuidanceDefaultCard content={defaultContent} />
       </div>
     );
@@ -131,14 +131,14 @@ export function DynamicSidebar<T extends string = string>({
   if (!content) {
     // Fallback if field not found
     return (
-      <div className={`sticky top-4 ${className}`}>
+      <div className={`sticky top-20 ${className}`}>
         <GuidanceFallbackCard />
       </div>
     );
   }
 
   return (
-    <div className={`sticky top-4 ${className}`}>
+    <div className={`sticky top-20 ${className}`}>
       <GuidanceFieldCard content={content}>
         {/* Currency Converter (only for project goal/currency fields with amount) */}
         {(activeField === 'goalAmount' || activeField === 'currency') &&

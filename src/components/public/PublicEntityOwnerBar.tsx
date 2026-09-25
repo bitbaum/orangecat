@@ -10,6 +10,7 @@ import Button from '@/components/ui/Button';
 import { WalletVisibilityToggle } from '@/components/wallets/WalletVisibilityToggle';
 import { type WalletVisibility } from '@/config/wallet-visibility';
 import type { EntityType } from '@/config/entity-registry';
+import { DeleteEntityButton } from '@/components/entity/DeleteEntityButton';
 
 export function PublicEntityOwnerBar({
   isOwnerPreview,
@@ -19,7 +20,9 @@ export function PublicEntityOwnerBar({
   fundingLink,
   entityType,
   entityId,
+  entityTitle,
 }: {
+  entityTitle: string;
   isOwnerPreview: boolean;
   /** Human label for the entity type, e.g. meta.name ("Product"). */
   entityName: string;
@@ -44,12 +47,19 @@ export function PublicEntityOwnerBar({
               <>This is your live {entityName.toLowerCase()} as buyers see it.</>
             )}
           </span>
-          <Link href={editHref}>
-            <Button variant="outline" size="sm" className="gap-1.5">
-              <Pencil className="h-3.5 w-3.5" />
-              Edit
-            </Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link href={editHref}>
+              <Button variant="outline" size="sm" className="gap-1.5">
+                <Pencil className="h-3.5 w-3.5" />
+                Edit
+              </Button>
+            </Link>
+            <DeleteEntityButton
+              entityType={entityType}
+              entityId={entityId}
+              entityTitle={entityTitle}
+            />
+          </div>
         </div>
       </div>
       {fundingLink && (

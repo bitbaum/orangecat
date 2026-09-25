@@ -129,7 +129,7 @@ export default function ProjectSummaryRail({ project, settledRaisedBtc = 0, isOw
   }, [project.id, project.bitcoin_address]);
 
   return (
-    <aside className="sticky top-6 rounded-lg border bg-surface-base dark:border-default p-6 space-y-4">
+    <aside className="sticky top-20 rounded-lg border bg-surface-base dark:border-default p-6 space-y-4">
       <div>
         {/* No rate → quote the Bitcoin that actually arrived rather than claim
             "CHF 0 raised", which would be a false statement about the project. */}

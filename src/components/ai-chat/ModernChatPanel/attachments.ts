@@ -24,6 +24,7 @@
 import { AI_MESSAGE_MAX_CHARS } from '@/lib/validation/ai';
 import type { CatReference } from '@/config/cat-prompts';
 import type { ChatImage } from '@/services/cat/chat-images';
+import { fileBlockOpen, imageTag, refTag } from '@/lib/chat/attachment-tags';
 
 export type ChatAttachment =
   | { kind: 'file'; id: string; name: string; content: string }
@@ -88,8 +89,6 @@ export function isReadableTextFile(file: { name: string; type: string }): boolea
   return file.type.startsWith('text/') || file.type === 'application/json';
 }
 
-const attr = (v: string): string => v.replace(/"/g, "'").replace(/[<>]/g, '');
-
 /** Prevents file text from closing its own block early. */
 const escapeBody = (v: string): string => v.replace(/<\/attached_file>/gi, '</ attached_file>');
 
@@ -107,11 +106,8 @@ export function composeMessage(
 ): string {
   const refs = attachments
     .filter((a): a is Extract<ChatAttachment, { kind: 'ref' }> => a.kind === 'ref')
-    .map(
-      a =>
-        `<my_item type="${attr(a.ref.type)}" id="${attr(a.ref.id)}" title="${attr(a.ref.title)}"/>`
-    );
-  const images = imagesOf(attachments).map(i => `<attached_image name="${attr(i.name)}"/>`);
+    .map(a => refTag(a.ref));
+  const images = imagesOf(attachments).map(i => imageTag(i.name));
   const files = attachments.filter(
     (a): a is Extract<ChatAttachment, { kind: 'file' }> => a.kind === 'file'
   );
@@ -122,7 +118,7 @@ export function composeMessage(
   }
 
   const wrappers = files.map(f => ({
-    open: `<attached_file name="${attr(f.name)}">\n`,
+    open: fileBlockOpen(f.name),
     close: '\n</attached_file>',
     body: escapeBody(f.content),
   }));
@@ -139,22 +135,4 @@ export function composeMessage(
   return [head, ...blocks].filter(Boolean).join('\n\n');
 }
 
-export interface ParsedUserMessage {
-  text: string;
-  files: Array<{ name: string }>;
-  images: Array<{ name: string }>;
-  refs: Array<{ type: string; title: string }>;
-}
-
-const FILE_BLOCK = /<attached_file name="([^"]*)">[\s\S]*?<\/attached_file>/g;
-const IMAGE_TAG = /<attached_image name="([^"]*)"\/>/g;
-const REF_TAG = /<my_item type="([^"]*)" id="[^"]*" title="([^"]*)"\/>/g;
-
-/** The inverse, for display: the typed text, plus chips for what was attached. */
-export function parseUserMessage(content: string): ParsedUserMessage {
-  const files = [...content.matchAll(FILE_BLOCK)].map(m => ({ name: m[1] }));
-  const images = [...content.matchAll(IMAGE_TAG)].map(m => ({ name: m[1] }));
-  const refs = [...content.matchAll(REF_TAG)].map(m => ({ type: m[1], title: m[2] }));
-  const text = content.replace(FILE_BLOCK, '').replace(IMAGE_TAG, '').replace(REF_TAG, '').trim();
-  return { text, files, images, refs };
-}
+export { parseUserMessage, type ParsedUserMessage } from '@/lib/chat/attachment-tags';

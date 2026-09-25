@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { takeMessageDraft } from '@/features/messaging/lib/draft';
 import { useAuth } from '@/hooks/useAuth';
 import { useTypingIndicator } from '@/features/messaging/hooks/useTypingIndicator';
 import { useMessagingActors } from '@/features/messaging/hooks/useMessagingActors';
@@ -24,6 +25,20 @@ export function useMessageComposer({
   const [content, setContent] = useState('');
   const [isSending, setIsSending] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // A draft left for this conversation ("Ask about this" on a listing): put it
+  // in the box with the cursor at the end, for the user to finish and send.
+  useEffect(() => {
+    const draft = conversationId ? takeMessageDraft(conversationId) : null;
+    if (draft) {
+      setContent(draft);
+      requestAnimationFrame(() => {
+        const el = textareaRef.current;
+        el?.focus();
+        el?.setSelectionRange(draft.length, draft.length);
+      });
+    }
+  }, [conversationId]);
 
   const { actors, personalActor, groupActors } = useMessagingActors();
   const [selectedActorId, setSelectedActorId] = useState<string | null>(null);

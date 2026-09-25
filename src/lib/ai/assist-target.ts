@@ -25,6 +25,17 @@ export interface AiAssistTarget {
   instructions: string[];
 }
 
+/** The form field a photo goes into for this entity type, if it has one. */
+export function imageFieldOf(formType: string): string | null {
+  if (!isValidEntityType(formType)) {
+    return null;
+  }
+  const field = getEntityConfig(formType)
+    ?.fieldGroups.flatMap(group => group.fields ?? [])
+    .find(f => f.type === 'image');
+  return field?.name ?? null;
+}
+
 export function resolveAiAssistTarget(formType: string): AiAssistTarget | null {
   if (isValidEntityType(formType)) {
     const entityConfig = getEntityConfig(formType);
@@ -34,7 +45,12 @@ export function resolveAiAssistTarget(formType: string): AiAssistTarget | null {
     return {
       id: formType,
       name: ENTITY_REGISTRY[formType].name,
-      fields: entityConfig.fieldGroups.flatMap(group => group.fields ?? []),
+      // Never an image field: a model asked for one writes a plausible URL to
+      // a picture that does not exist. A photo comes only from a real upload
+      // (imageFieldOf + the chat's stored photo).
+      fields: entityConfig.fieldGroups
+        .flatMap(group => group.fields ?? [])
+        .filter(f => f.type !== 'image'),
       instructions: [...AI_UNIVERSAL_INSTRUCTIONS, ...(AI_ENTITY_INSTRUCTIONS[formType] ?? [])],
     };
   }

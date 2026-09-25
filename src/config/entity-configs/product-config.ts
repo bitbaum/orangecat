@@ -19,7 +19,7 @@ import { PRODUCT_TEMPLATES, type ProductTemplate } from '@/components/create/tem
 import { createEntityConfig } from './base-config-factory';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { WALLET_FIELD_GROUP } from './wallet-field-group';
-import { PRODUCT_TYPES, PRODUCT_FULFILLMENT_TYPES } from '@/config/products';
+import { PRODUCT_TYPES, PRODUCT_FULFILLMENT_CHOICES } from '@/config/products';
 
 // ==================== FIELD GROUPS ====================
 
@@ -43,6 +43,14 @@ const fieldGroups: FieldGroup[] = [
         type: 'textarea',
         placeholder: 'Describe your product in detail...',
         rows: 4,
+        colSpan: 2,
+      },
+      {
+        // The cover buyers see first. `images` stays the column for a gallery;
+        // the public page shows both.
+        name: 'thumbnail_url',
+        label: 'Photo',
+        type: 'image',
         colSpan: 2,
       },
       {
@@ -83,7 +91,6 @@ const fieldGroups: FieldGroup[] = [
           { value: 'USD', label: 'US Dollar (USD)' },
           { value: 'EUR', label: 'Euro (EUR)' },
           { value: 'BTC', label: 'Bitcoin (BTC)' },
-          { value: 'BTC', label: 'Bitcoin (BTC)' },
         ],
         hint: 'Your preferred currency for displaying prices. All transactions settle in Bitcoin.',
       },
@@ -104,9 +111,9 @@ const fieldGroups: FieldGroup[] = [
       },
       {
         name: 'fulfillment_type',
-        label: 'Fulfillment Type',
-        type: 'select',
-        options: PRODUCT_FULFILLMENT_TYPES,
+        label: 'How the buyer gets it',
+        type: 'radio',
+        options: PRODUCT_FULFILLMENT_CHOICES,
       },
     ],
   },

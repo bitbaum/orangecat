@@ -46,6 +46,9 @@ import { EmptyCompletion, hasUsableContent } from '@/services/cat/empty-completi
 import { promptFitsGroqOnDemand, GROQ_CHAT_MAX_TOKENS } from '@/services/ai/groq';
 import { getGroqTpmLimit, recordOpenRouterRateLimit } from '@/services/ai/groq-capacity';
 import { CHAT_IMAGE_MAX_COUNT, chatImageSchema, withImages } from '@/services/cat/chat-images';
+import { storeChatImages } from '@/services/cat/chat-image-store';
+import { imageRefsIn, withImageRefs } from '@/lib/chat/attachment-tags';
+import { imageFieldOf } from '@/lib/ai/assist-target';
 
 export const catChatBodySchema = z.object({
   message: z.string().min(1).max(AI_MESSAGE_MAX_CHARS),
@@ -240,6 +243,14 @@ export async function orchestrateCatChat(
   if (resolved instanceof Response) {
     return resolved;
   }
+  // What is saved: the same message, with each photo's private storage path
+  // in its tag — so the thread can show the photo and the Cat can put it on
+  // what it drafts. The model still reads `message`.
+  const imageRefs = images?.length ? await storeChatImages(user.id, images) : [];
+  const storedMessage = withImageRefs(
+    message,
+    imageRefs.map(r => r ?? '')
+  );
   const {
     provider,
     hasByok,
@@ -353,6 +364,22 @@ export async function orchestrateCatChat(
 
   const baseMessages: ToolAugmentedMessage[] = prepared.messages;
 
+  // The photo a draft listing should carry: this turn's, else the latest one
+  // in the recent thread ("sell this" → "make it a digital download" is two
+  // turns). Only a PRIVATE ref here; nothing is published until the user acts.
+  const draftPhotoRef =
+    imageRefs.find((r): r is string => Boolean(r)) ??
+    imageRefsIn(
+      baseMessages.filter(m => m.role === 'user').map(m => String(m.content ?? ''))
+    ).pop() ??
+    null;
+  const withDraftPhoto = (proposal: PrefillProposal): PrefillProposal => {
+    const field = draftPhotoRef ? imageFieldOf(proposal.entityType) : null;
+    return field && draftPhotoRef
+      ? { ...proposal, photo: { ref: draftPhotoRef, field } }
+      : proposal;
+  };
+
   // ── Streaming ──────────────────────────────────────────────────────────────
   if (stream) {
     const encoder = new TextEncoder();
@@ -413,7 +440,9 @@ export async function orchestrateCatChat(
             },
             (proposal: PrefillProposal) => {
               controller.enqueue(
-                encoder.encode(`data: ${JSON.stringify({ prefill_proposal: proposal })}\n\n`)
+                encoder.encode(
+                  `data: ${JSON.stringify({ prefill_proposal: withDraftPhoto(proposal) })}\n\n`
+                )
               );
             },
             // ADR-0006 D2 — with an actor, the tool phase may also EXECUTE
@@ -630,7 +659,7 @@ export async function orchestrateCatChat(
 
           if (conversationId && fullContent) {
             saveMessages(supabase, conversationId, user.id, [
-              { role: 'user', content: message },
+              { role: 'user', content: storedMessage },
               {
                 role: 'assistant',
                 content: fullContent,
@@ -737,7 +766,7 @@ export async function orchestrateCatChat(
               conversationId,
               user.id,
               buildFailedTurnMessages({
-                message,
+                message: storedMessage,
                 partialContent: fullContent,
                 errorText: errPayload.error,
                 model: activeModel,
@@ -795,7 +824,7 @@ export async function orchestrateCatChat(
       collectedToolCalls.push(event);
     },
     (proposal: PrefillProposal) => {
-      collectedPrefillProposals.push(proposal);
+      collectedPrefillProposals.push(withDraftPhoto(proposal));
     },
     // Same as the streaming path: an actor is what makes actions callable.
     { actorId, toolEndpoint, toolKey, toolFallbacks: fallbacks }
@@ -911,7 +940,7 @@ export async function orchestrateCatChat(
 
   if (conversationId) {
     saveMessages(supabase, conversationId, user.id, [
-      { role: 'user', content: message },
+      { role: 'user', content: storedMessage },
       {
         role: 'assistant',
         content: cleanedMessage,

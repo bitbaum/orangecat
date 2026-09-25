@@ -18,6 +18,7 @@
 
 import { cn } from '@/lib/utils';
 import { Plus, MessageSquare, Trash2, X } from 'lucide-react';
+import { readableTitle } from '@/lib/chat/attachment-tags';
 import type { ConversationSummary } from '../hooks/useConversations';
 
 interface ConversationRailProps {
@@ -38,7 +39,7 @@ interface ConversationRailShellProps extends ConversationRailProps {
 }
 
 function railTitle(c: ConversationSummary): string {
-  return c.title?.trim() || 'New chat';
+  return readableTitle(c.title ?? '') || 'New chat';
 }
 
 function RailBody({

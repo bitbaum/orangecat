@@ -200,6 +200,7 @@ export function useChatMessages({
         role: 'user',
         content,
         timestamp: new Date(),
+        imagePreviews: images?.map(i => i.dataUrl),
       };
       setMessages(prev => [...prev, userMessage]);
       setIsLoading(true);

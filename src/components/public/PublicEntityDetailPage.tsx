@@ -189,6 +189,7 @@ export default async function PublicEntityDetailPage({
             fundingLink={fundingLink}
             entityType={config.entityType}
             entityId={id}
+            entityTitle={entity.title}
           />
         )}
         <div className="bg-surface-base border-b border-default">
@@ -264,6 +265,7 @@ export default async function PublicEntityDetailPage({
                   owner={owner}
                   label={config.ownerLabel || 'Owner'}
                   activeListingCount={ownerListingCount}
+                  inquiry={isOwner ? undefined : { title: entity.title, path: viewRoute }}
                 />
               )}
 

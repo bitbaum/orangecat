@@ -14,6 +14,7 @@
 
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { DATABASE_TABLES } from '@/config/database-tables';
+import { messageLabel } from '@/lib/chat/attachment-tags';
 
 // Type alias that accepts any typed Supabase client (avoids schema mismatch errors)
 
@@ -241,8 +242,10 @@ export async function saveMessages(
 
   // Keep the conversation fresh for rail ordering, and name an untitled
   // conversation from its first user message (Grok/ChatGPT behaviour).
+  // The label, not the raw content: attachment tags are markup for the model
+  // and the thread, and read as garbage in the rail.
   const firstUser = messages.find(m => m.role === 'user')?.content;
-  await bumpConversation(supabase, conversationId, firstUser);
+  await bumpConversation(supabase, conversationId, firstUser && messageLabel(firstUser));
 }
 
 /**
