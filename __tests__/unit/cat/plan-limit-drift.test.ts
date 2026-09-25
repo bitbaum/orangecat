@@ -87,10 +87,11 @@ describe('plan limit SSOT (TS ↔ SQL drift guard)', () => {
 
   it('settings anchors point at sections that exist', () => {
     // SETTINGS_AI_ANCHORS deep-links (#credits/#byok/#local) are config facts;
-    // the ids live in settings/ai/page.tsx. If a section is renamed or removed
-    // the pricing CTAs would silently land on the page top — fail instead.
+    // the ids live in RunsOnSection, which both /settings/ai and the Cat
+    // settings page render. If a section is renamed or removed the pricing
+    // CTAs would silently land on the page top — fail instead.
     const aiPage = readFileSync(
-      join(process.cwd(), 'src', 'app', '(authenticated)', 'settings', 'ai', 'page.tsx'),
+      join(process.cwd(), 'src', 'components', 'cat-settings', 'RunsOnSection.tsx'),
       'utf8'
     );
     for (const anchor of Object.values(SETTINGS_AI_ANCHORS)) {

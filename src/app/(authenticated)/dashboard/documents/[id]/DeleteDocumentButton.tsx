@@ -57,7 +57,7 @@ export function DeleteDocumentButton({ documentId, documentTitle }: DeleteDocume
         description: `"${documentTitle}" has been deleted.`,
       });
 
-      router.push(`${ROUTES.DASHBOARD.CAT}?tab=context`);
+      router.push(`${ROUTES.DASHBOARD.CAT_SETTINGS}#knows`);
       router.refresh();
     } catch (error) {
       logger.error('Delete error', error, 'Documents');

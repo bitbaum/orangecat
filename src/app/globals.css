@@ -15,8 +15,11 @@
     font-size: 16px;
     /* Prevent zoom on iOS when focusing inputs */
     -webkit-text-size-adjust: 100%;
-    /* Prevent horizontal scrolling on mobile */
-    overflow-x: hidden;
+    /* Prevent horizontal scrolling on mobile. `clip`, not `hidden`: hidden
+       makes html/body a scroll container that never scrolls (the window
+       does), and every position:sticky in the app anchored to it and silently
+       stopped sticking. clip cuts the overflow without becoming a container. */
+    overflow-x: clip;
     /* Support for iOS safe areas */
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
       env(safe-area-inset-left);
@@ -26,8 +29,8 @@
     @apply bg-surface-page text-fg-primary antialiased;
     /* Improve touch experience on mobile */
     -webkit-tap-highlight-color: transparent;
-    /* Prevent horizontal scrolling */
-    overflow-x: hidden;
+    /* Prevent horizontal scrolling — `clip` for the reason given on html. */
+    overflow-x: clip;
     /* Allow vertical scrolling, prevent horizontal overscroll only */
     overscroll-behavior-x: none;
     overscroll-behavior-y: auto;
@@ -37,9 +40,10 @@
     /* Full viewport height for mobile */
     min-height: 100vh;
     min-height: -webkit-fill-available;
-    /* Ensure vertical scrolling works on all devices */
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
+    /* No overflow-y here. body grows with its content, so it never scrolled —
+       the window does. `overflow-y: auto` did nothing except (per the CSS
+       spec) turn the `clip` above back into `hidden`, which made body a scroll
+       container and broke every position:sticky in the app. */
   }
 
   /* PWA Viewport Fix for Mobile */

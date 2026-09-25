@@ -14,7 +14,7 @@ export function DocumentChooseMode({ onUpload, onWrite }: Props) {
     <div className="max-w-4xl mx-auto px-4 py-8">
       <div className="mb-8">
         <Link
-          href={`${ROUTES.DASHBOARD.CAT}?tab=context`}
+          href={`${ROUTES.DASHBOARD.CAT_SETTINGS}#knows`}
           className="inline-flex items-center text-sm text-fg-secondary hover:text-fg-primary mb-4"
         >
           <ArrowLeft className="h-4 w-4 mr-1" />

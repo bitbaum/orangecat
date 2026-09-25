@@ -425,6 +425,8 @@ export const ROUTES = {
     BOOKINGS: '/dashboard/bookings',
     BOOKINGS_VIEW: (id: string) => `/dashboard/bookings/${id}`,
     CAT: '/dashboard/cat',
+    /** Everything about Cat in one page: knows · sees · can do · runs on. */
+    CAT_SETTINGS: '/dashboard/cat/settings',
     CAT_PERMISSIONS: '/dashboard/cat/permissions',
     /** Deep link straight to one category's card (see catPermissionAnchorId). */
     CAT_PERMISSIONS_CATEGORY: (category: string) =>
