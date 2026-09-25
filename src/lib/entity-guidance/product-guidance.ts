@@ -148,37 +148,30 @@ export const productGuidanceContent: Record<NonNullable<ProductFieldType>, Guida
   },
   fulfillment_type: {
     icon: React.createElement(Truck, { className: 'w-5 h-5 text-fg-primary' }),
-    title: 'Fulfillment Type',
-    description: 'How orders will be fulfilled after payment.',
+    title: 'How the buyer gets it',
+    description:
+      'What happens after someone pays. Today you always do the delivering — OrangeCat notifies you of each paid order.',
     tips: [
-      'Manual: You handle shipping/delivery yourself',
-      'Automatic: System delivers digital files instantly',
-      'Digital: Files are sent immediately after payment',
-      'Choose based on your product type',
+      'Ship or hand over: prints, mugs, anything physical',
+      'Send a file or link: photos, e-books, templates — you send it after payment',
+      'OrangeCat does not host or send files yet, so keep the file ready to send',
     ],
     examples: [
-      'Manual - Physical products you ship',
-      'Automatic - Digital files with instant delivery',
-      'Digital - E-books, templates, courses',
+      'Framed print → ship or hand over',
+      'High-resolution photo download → send a file or link',
     ],
   },
-  images: {
+  thumbnail_url: {
     icon: React.createElement(Image, { className: 'w-5 h-5 text-fg-primary' }),
-    title: 'Product Images',
+    title: 'Photo',
     description:
-      'High-quality images significantly increase sales. Show your product from multiple angles.',
+      'The picture buyers see first, on your listing and wherever it is shared. Drop, paste or click to add one.',
     tips: [
-      'Use well-lit, high-resolution photos',
-      'Show the product from multiple angles',
-      'Include scale reference (hand, ruler)',
-      'First image is your main thumbnail',
-      'Maximum 5 images recommended',
+      'Well lit, the product filling the frame',
+      'Large photos are resized for you',
+      'Selling a photo or artwork? Use a smaller or watermarked version here — this image is public',
     ],
-    examples: [
-      'Front view, back view, detail shot',
-      'Product in use or context',
-      'Packaging and contents',
-    ],
+    examples: ['A print: the framed piece on a wall', 'A digital photo: a watermarked preview'],
   },
   tags: {
     icon: React.createElement(Tag, { className: 'w-5 h-5 text-fg-primary' }),

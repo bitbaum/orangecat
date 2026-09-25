@@ -236,6 +236,8 @@ export function getAdjustmentById(id: string): AiAdjustment | undefined {
 export const AI_ENTITY_INSTRUCTIONS: Partial<Record<EntityType, string[]>> = {
   product: [
     'For product_type: Choose "physical" for tangible goods, "digital" for downloads/files, or "service" for service-based products.',
+    'For price: the amount in the unit named by `currency`, as the user said it — "CHF 15" is price 15 with currency "CHF". Never convert it to BTC.',
+    'For fulfillment_type: "digital" when the buyer receives a file or link, otherwise "manual".',
     'For inventory_count: Use -1 for unlimited inventory, or a positive number for limited stock.',
   ],
   service: [
@@ -258,7 +260,11 @@ export const AI_ENTITY_INSTRUCTIONS: Partial<Record<EntityType, string[]>> = {
 
 /** Instruction that applies to every entity type. */
 export const AI_UNIVERSAL_INSTRUCTIONS: readonly string[] = [
-  'For Bitcoin prices: Express amounts in BTC as decimal values (e.g., 0.001 BTC). Never use satoshis. Common price points: 0.00005 BTC (~$5), 0.0003 BTC (~$30), 0.001 BTC (~$100).',
+  // Scoped to BTC-denominated fields. It used to read "For Bitcoin prices" and
+  // was applied to a product's `price` too — an amount in its own `currency`
+  // with a minimum of 1 — so "CHF 15" came back as 0.0002, was dropped by the
+  // field's min, and the form opened at 0.00.
+  'For fields ending in _btc (and amounts the user gave in BTC): express them in BTC as decimal values (e.g., 0.001). Never use satoshis. Fields paired with a `currency` field take the amount in that currency as stated.',
 ];
 
 // ==================== STARTER EXAMPLES ====================

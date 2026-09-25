@@ -6,7 +6,7 @@
 import { useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
-import { Cat, User, Copy, Check, Clock, FileText, Image as ImageIcon, Package } from 'lucide-react';
+import { Cat, User, Copy, Check, Clock } from 'lucide-react';
 import { getModelDisplayName } from '@/config/ai-models';
 import { formatShortTime } from '@/utils/dates';
 import { getModelCapabilities } from '@/config/model-capability';
@@ -14,7 +14,7 @@ import { renderChatMarkdown } from '@/utils/markdown';
 import { ActionButton } from './ActionButton';
 import { linkifyCitations, citationsFromToolCalls } from '@/lib/chat/citations';
 import { ToolCallChip } from './ToolCallChip';
-import { referenceLabel } from './ComposerAddMenu';
+import { MessageAttachments } from './MessageAttachments';
 import { parseUserMessage } from '../attachments';
 import { PrefilledFormCard } from './PrefilledFormCard';
 import { UpgradeNudge } from './UpgradeNudge';
@@ -229,29 +229,7 @@ export function MessageBubble({
             ))}
           </div>
         )}
-        {attached && attached.files.length + attached.images.length + attached.refs.length > 0 && (
-          <div className="mb-1.5 flex flex-wrap justify-end gap-1.5">
-            {attached.images.map((f, i) => (
-              <span key={`i${i}`} className="oc-chat-attachment">
-                <ImageIcon className="h-3.5 w-3.5 flex-shrink-0 text-fg-secondary" />
-                <span className="min-w-0 truncate">{f.name}</span>
-              </span>
-            ))}
-            {attached.files.map((f, i) => (
-              <span key={`f${i}`} className="oc-chat-attachment">
-                <FileText className="h-3.5 w-3.5 flex-shrink-0 text-fg-secondary" />
-                <span className="min-w-0 truncate">{f.name}</span>
-              </span>
-            ))}
-            {attached.refs.map((r, i) => (
-              <span key={`r${i}`} className="oc-chat-attachment">
-                <Package className="h-3.5 w-3.5 flex-shrink-0 text-fg-secondary" />
-                <span className="min-w-0 truncate">{r.title}</span>
-                <span className="flex-shrink-0 text-fg-tertiary">{referenceLabel(r.type)}</span>
-              </span>
-            ))}
-          </div>
-        )}
+        {attached && <MessageAttachments attached={attached} previews={message.imagePreviews} />}
         <div
           className={cn(
             'inline-block max-w-full px-1 py-0.5 text-sm leading-relaxed sm:max-w-[92%]',

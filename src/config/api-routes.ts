@@ -32,6 +32,8 @@ export const API_ROUTES = {
     CONVERSATIONS: '/api/cat/conversations',
     CONVERSATION: (id: string) => `/api/cat/conversations/${id}`,
     OFFERS_FROM_TEXT: '/api/cat/offers-from-text',
+    ATTACHMENTS: '/api/cat/attachments',
+    ATTACHMENT: (path: string) => `/api/cat/attachments?path=${encodeURIComponent(path)}`,
   },
   SEARCH: {
     LOG: '/api/search/log',

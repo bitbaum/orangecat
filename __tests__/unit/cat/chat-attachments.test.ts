@@ -13,6 +13,12 @@ import {
   ATTACHMENT_ACCEPT,
   type ChatAttachment,
 } from '@/components/ai-chat/ModernChatPanel/attachments';
+import {
+  imageRefsIn,
+  messageLabel,
+  readableTitle,
+  withImageRefs,
+} from '@/lib/chat/attachment-tags';
 
 const file = (name: string, content: string): ChatAttachment => ({
   kind: 'file',
@@ -118,6 +124,25 @@ describe('photos', () => {
   it('shows as a chip in the thread, not as a tag', () => {
     const parsed = parseUserMessage(composeMessage('What is this?', [photo]));
     expect(parsed.text).toBe('What is this?');
-    expect(parsed.images).toEqual([{ name: 'IMG_2231.jpg' }]);
+    expect(parsed.images).toEqual([{ name: 'IMG_2231.jpg', ref: null }]);
+  });
+
+  it('the server writes each stored photo path into its tag, and it reads back', () => {
+    const stored = withImageRefs(composeMessage('sell this', [photo]), ['u1/cat/a.webp']);
+    expect(parseUserMessage(stored).images).toEqual([
+      { name: 'IMG_2231.jpg', ref: 'u1/cat/a.webp' },
+    ]);
+    expect(imageRefsIn(['no photo', stored])).toEqual(['u1/cat/a.webp']);
+  });
+
+  it('titles never show the markup', () => {
+    expect(messageLabel(composeMessage('i want to sell this photo', [photo]))).toBe(
+      'i want to sell this photo'
+    );
+    expect(messageLabel(composeMessage('', [photo]))).toBe('IMG_2231.jpg');
+    // A title stored before labelling, cut mid-tag at 60 chars.
+    expect(readableTitle('i want to sell this photo <attached_image name="gyeti.jpg"/…')).toBe(
+      'i want to sell this photo'
+    );
   });
 });

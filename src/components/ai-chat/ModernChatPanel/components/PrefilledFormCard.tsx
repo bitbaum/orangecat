@@ -26,7 +26,16 @@ import { ENTITY_STATUS } from '@/config/database-constants';
 import { SellerWalletBanner } from '@/components/payment/SellerWalletBanner';
 import { useAuth } from '@/hooks/useAuth';
 import { useSellerPaymentMethods } from '@/hooks/useSellerPaymentMethods';
+import { getEntityConfig } from '@/config/entity-configs/get-config';
 import type { PrefillProposal } from '../types';
+import { DraftPhoto, publishDraftPhoto } from './DraftPhoto';
+
+function formHasField(type: EntityType, field: string): boolean {
+  return (
+    getEntityConfig(type)?.fieldGroups.some(g => (g.fields ?? []).some(f => f.name === field)) ??
+    false
+  );
+}
 
 const EDITABLE_KEYS = ['title', 'name', 'description', 'price', 'price_btc', 'currency'];
 
@@ -71,7 +80,13 @@ export function PrefilledFormCard({ proposal }: PrefilledFormCardProps) {
   const present = (v: unknown): boolean => v !== null && v !== undefined && v !== '';
   const [title, setTitle] = useState(String(data.title ?? data.name ?? ''));
   const [description, setDescription] = useState(String(data.description ?? ''));
-  const hasPrice = present(data.price) || present(data.price_btc);
+  // Shown whenever the form HAS a price, not only when the draft found one:
+  // a dropped price used to hide the input and publish failed on "price".
+  const hasPrice =
+    present(data.price) ||
+    present(data.price_btc) ||
+    (valid && formHasField(entityType as EntityType, 'price'));
+  const [usePhoto, setUsePhoto] = useState(true);
   const [price, setPrice] = useState(
     present(data.price) ? String(data.price) : present(data.price_btc) ? String(data.price_btc) : ''
   );
@@ -106,6 +121,15 @@ export function PrefilledFormCard({ proposal }: PrefilledFormCardProps) {
     return true;
   });
 
+  // The chat photo, made public only now that the user acts on the draft.
+  const withPhoto = async (values: Record<string, unknown>) => {
+    if (!proposal.photo || !usePhoto) {
+      return values;
+    }
+    const url = await publishDraftPhoto(proposal.photo.ref);
+    return url ? { ...values, [proposal.photo.field]: url } : values;
+  };
+
   const buildPayload = (status: string): Record<string, unknown> => {
     const payload: Record<string, unknown> = { ...data, status };
     payload.title = title.trim();
@@ -126,13 +150,14 @@ export function PrefilledFormCard({ proposal }: PrefilledFormCardProps) {
     setPhase('saving');
     setErrorMsg(null);
     try {
+      const photo = await withPhoto({});
       // 1. Create. The entity create API always persists a DRAFT (status in the
       //    body is ignored on create), so publishing is a second step.
       const res = await fetch(meta.apiEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify(buildPayload(ENTITY_STATUS.DRAFT)),
+        body: JSON.stringify({ ...buildPayload(ENTITY_STATUS.DRAFT), ...photo }),
       });
       const json = await res.json().catch(() => null);
       if (!res.ok || !json?.success) {
@@ -158,7 +183,7 @@ export function PrefilledFormCard({ proposal }: PrefilledFormCardProps) {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify(buildPayload(liveStatus)),
+          body: JSON.stringify({ ...buildPayload(liveStatus), ...photo }),
         });
         const pubJson = await pubRes.json().catch(() => null);
         didPublish = pubRes.ok && pubJson?.success === true;
@@ -172,11 +197,13 @@ export function PrefilledFormCard({ proposal }: PrefilledFormCardProps) {
     }
   };
 
-  const openInForm = () => {
+  const openInForm = async () => {
+    const photo = await withPhoto({});
     if (typeof window !== 'undefined') {
       try {
         const merged = {
           ...data,
+          ...photo,
           title,
           description,
           ...(hasPrice && !isNaN(parseFloat(price)) ? { price: parseFloat(price) } : {}),
@@ -272,6 +299,15 @@ export function PrefilledFormCard({ proposal }: PrefilledFormCardProps) {
         </p>
       )}
 
+      {proposal.photo && (
+        <DraftPhoto
+          photoRef={proposal.photo.ref}
+          use={usePhoto}
+          onUseChange={setUsePhoto}
+          disabled={saving}
+        />
+      )}
+
       {/* Editable core fields — tweak inline, no form bounce */}
       <div className="space-y-2.5">
         <label className="block">
@@ -348,7 +384,7 @@ export function PrefilledFormCard({ proposal }: PrefilledFormCardProps) {
         </button>
         <button
           type="button"
-          onClick={openInForm}
+          onClick={() => void openInForm()}
           disabled={saving}
           className="inline-flex min-h-11 items-center text-sm font-medium text-fg-secondary underline-offset-4 hover:text-fg-primary hover:underline disabled:opacity-50"
         >

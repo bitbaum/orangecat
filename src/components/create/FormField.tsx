@@ -18,6 +18,7 @@ import { useUserCurrency } from '@/hooks/useUserCurrency';
 import type { FormFieldProps } from './types';
 import type { Currency } from '@/types/settings';
 import { AvailabilityEditor } from './fields/AvailabilityEditor';
+import { ImageField } from './fields/ImageField';
 
 // ==================== COMPONENT ====================
 
@@ -99,27 +100,34 @@ export function FormField({
           />
         );
 
-      case 'select':
+      case 'select': {
+        // The chosen option's meaning, where the choice is made — not in a
+        // guidance panel a screen away.
+        const chosen = options?.find(o => o.value === value)?.description;
         return (
-          <select
-            id={name}
-            value={(value as string) || ''}
-            onChange={e => onChange(e.target.value)}
-            onFocus={onFocus}
-            onBlur={onBlur}
-            disabled={disabled}
-            className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:border-interactive transition-colors ${baseInputClass} ${
-              disabled ? 'bg-surface-raised cursor-not-allowed' : ''
-            }`}
-          >
-            <option value="">Select {label.toLowerCase()}</option>
-            {options?.map(option => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+          <>
+            <select
+              id={name}
+              value={(value as string) || ''}
+              onChange={e => onChange(e.target.value)}
+              onFocus={onFocus}
+              onBlur={onBlur}
+              disabled={disabled}
+              className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:border-interactive transition-colors ${baseInputClass} ${
+                disabled ? 'bg-surface-raised cursor-not-allowed' : ''
+              }`}
+            >
+              <option value="">Select {label.toLowerCase()}</option>
+              {options?.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            {chosen && <p className="mt-1.5 text-xs text-fg-secondary">{chosen}</p>}
+          </>
         );
+      }
 
       case 'radio':
         return (
@@ -217,6 +225,9 @@ export function FormField({
 
       case 'availability':
         return <AvailabilityEditor value={value} onChange={onChange} />;
+
+      case 'image':
+        return <ImageField value={value} onChange={onChange} label={label} disabled={disabled} />;
 
       case 'text':
       default:
