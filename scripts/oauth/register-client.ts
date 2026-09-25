@@ -105,6 +105,18 @@ const CLIENT_SPECS: Record<string, ClientSpec> = {
     is_confidential: true, // has a server (Auth.js v5) — keeps a secret
     is_trusted: true, // first-party — skips the consent screen after first grant
   },
+  // Skif (safety: bookable Protectors, safety assessments) needs IDENTITY and
+  // nothing else. It keeps no users table — `sub` is the only key it stores —
+  // and it holds some of the most sensitive data in the fleet (bookings,
+  // incident reports, a person's stated safety limits), which is exactly why
+  // it must not be able to read or act on anything else at OrangeCat.
+  skif: {
+    name: 'Skif',
+    origins: ['https://skif.orangecat.ch'],
+    scopes: 'openid profile email',
+    is_confidential: true, // has a server (Auth.js v5) — keeps a secret
+    is_trusted: true, // first-party — skips the consent screen after first grant
+  },
 };
 
 const spec = CLIENT_SPECS[clientId];
