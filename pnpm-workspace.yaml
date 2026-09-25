@@ -16,7 +16,9 @@ overrides:
   sharp: ^0.35.4
   '@babel/core': ^7.29.6
   hono: ^4.12.27
-  js-yaml: ^4.1.1
+  js-yaml: ^4.3.2
+  # qs: first_patched_version, bounded to its major (2026-09-25).
+  qs@6: ^6.16.0
   # >=3.15.2 closes GHSA-2883-xcg3-v3hh (maxTotalMergeKeys does not limit CPU
   # for empty merge sources). The floor must stay ABOVE the advisory, not merely
   # allow it: the previous ^3.14.1 permitted 3.15.2 and pnpm still held 3.15.1,
