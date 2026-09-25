@@ -63,9 +63,7 @@ describe('what earns an alarm', () => {
 
   it('reports being unable to answer ahead of model rot', () => {
     // Both true at once: the operator needs the outage first.
-    const v = classifyHealth(
-      healthy({ catCanAnswer: false, missingGroqModels: ['gone-model'] })
-    );
+    const v = classifyHealth(healthy({ catCanAnswer: false, missingGroqModels: ['gone-model'] }));
     expect(v.alert && v.code).toBe('CAT_CANNOT_ANSWER');
   });
 });
@@ -103,45 +101,6 @@ describe('what must NOT earn an alarm', () => {
     const v = classifyHealth(healthy({ web: { reachable: false, detail: 'no search backend' } }));
     expect(v.alert).toBe(false);
     expect(v.alert === false && v.reason).toBe('degraded-but-serving');
-  });
-});
-
-describe('the check is actually scheduled', () => {
-  it('is wired to a cron route, not only to a human asking', () => {
-    // The whole defect: the report was computed only by /api/cat/diagnose and
-    // the check_cat_health action. A classifier nothing calls on a clock is the
-    // same silence in a new file.
-    const fs = require('node:fs') as typeof import('node:fs');
-    const path = require('node:path') as typeof import('node:path');
-    const route = fs.readFileSync(
-      path.join(__dirname, '../../../src/app/api/cron/cat-health/route.ts'),
-      'utf8'
-    );
-    expect(route).toContain('runCatHealthProbes()');
-    expect(route).toContain('alertOnCatHealth(report)');
-    // Cron routes are secret-gated like every other one.
-    expect(route).toContain('verifyCronSecret(request)');
-  });
-
-  it('logs the run even when it decides not to alert, at a level PRODUCTION keeps', () => {
-    // A run that quietly did nothing is indistinguishable from a run that never
-    // happened — which is exactly how the nightly eval skipped two nights
-    // without anyone noticing.
-    //
-    // This assertion used to require logger.INFO, and so it passed while the
-    // guarantee was false: the logger's active level in production is `warn`,
-    // so every healthy run was discarded before it reached the journal.
-    // Confirmed on the box 2026-09-13 — a successful run (curl exit 0, HTTP
-    // 2xx) left no journal entry at all. A test can pin the wrong level as
-    // confidently as the right one.
-    const fs = require('node:fs') as typeof import('node:fs');
-    const path = require('node:path') as typeof import('node:path');
-    const route = fs.readFileSync(
-      path.join(__dirname, '../../../src/app/api/cron/cat-health/route.ts'),
-      'utf8'
-    );
-    expect(route).toContain("logger.warn(\n      'cat provider health check'");
-    expect(route).toContain('alerted: verdict.alert');
   });
 });
 
@@ -194,9 +153,7 @@ describe('losing the last fallback is worth saying out loud', () => {
   it('does not count a vendor that was never configured as exhausted', () => {
     // No key means it was never in the chain — that is not a loss of
     // redundancy, it is a chain that never had it.
-    const v = classifyHealth(
-      vendors({ class: 'ok' }, { configured: false, class: 'rate_limit' })
-    );
+    const v = classifyHealth(vendors({ class: 'ok' }, { configured: false, class: 'rate_limit' }));
     expect(v.alert && v.code).not.toBe('CAT_NO_VENDOR_REDUNDANCY');
   });
 

@@ -18,15 +18,17 @@
  * fallback works. An alarm that fires nightly for a known state is how an
  * alarm gets ignored, which then costs you the one night it means something.
  * So that is reported and not escalated.
+ *
+ * 2026-09-25: the nightly cron that fed this to alertOps is gone. Every probe
+ * is a real completion against the free vendors, and the standing rule is that
+ * a free-tier key is spent only when a person deliberately asks. What remains
+ * is the classifier, for the person-initiated probe (/api/cat/diagnose, the
+ * check_cat_health action).
  */
-import { alertOps } from './ops-alert';
 import type { CatHealthReport } from './health-probes';
 
 /** Why this run did or did not raise an alarm. */
-export type HealthAlertCode =
-  | 'CAT_CANNOT_ANSWER'
-  | 'CAT_MODEL_ROT'
-  | 'CAT_NO_VENDOR_REDUNDANCY';
+export type HealthAlertCode = 'CAT_CANNOT_ANSWER' | 'CAT_MODEL_ROT' | 'CAT_NO_VENDOR_REDUNDANCY';
 
 export type HealthVerdict =
   | { alert: false; reason: 'healthy' | 'degraded-but-serving'; detail: string }
@@ -127,23 +129,4 @@ export function classifyHealth(report: CatHealthReport): HealthVerdict {
   }
 
   return { alert: false, reason: 'healthy', detail: report.summary };
-}
-
-/**
- * Run the classification and raise the alarm when it earns one.
- *
- * Returns the verdict either way so the caller (a cron route) can log what it
- * decided — a run that decided NOT to alert is a real answer, and a run that
- * silently did nothing is indistinguishable from a run that never happened.
- */
-export async function alertOnCatHealth(report: CatHealthReport): Promise<HealthVerdict> {
-  const verdict = classifyHealth(report);
-  if (verdict.alert) {
-    await alertOps({
-      code: verdict.code,
-      message: verdict.detail,
-      source: 'cat/health',
-    });
-  }
-  return verdict;
 }

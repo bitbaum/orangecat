@@ -14,7 +14,7 @@ import { STATUS } from '@/config/database-constants';
 import { NotificationService } from '@/lib/services/notifications';
 import { logger } from '@/utils/logger';
 import { countUnreadNotifications } from '@/services/notifications/unread-count';
-import { exploreTopic } from './discovery';
+import { exploreTopicByVector } from './discovery-match';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 
 const LOG_SOURCE = 'CatProactive';
@@ -214,7 +214,25 @@ interface WatchRow {
   entity_id: string | null;
   target_btc: number | null;
   topic: string | null;
+  /** Stored when the user created the watch — the timer never embeds. */
+  topic_embedding: string | number[] | null;
   created_at: string;
+}
+
+/** pgvector comes back over PostgREST as its text form, "[0.1,0.2,...]". */
+function parseStoredVector(v: WatchRow['topic_embedding']): number[] | null {
+  if (Array.isArray(v)) {
+    return v;
+  }
+  if (typeof v !== 'string') {
+    return null;
+  }
+  try {
+    const parsed: unknown = JSON.parse(v);
+    return Array.isArray(parsed) && parsed.every(n => typeof n === 'number') ? parsed : null;
+  } catch {
+    return null;
+  }
 }
 
 /** Has this watch's condition become true? */
@@ -223,13 +241,21 @@ async function watchConditionMet(admin: SupabaseClient, watch: WatchRow): Promis
     if (!watch.topic) {
       return false;
     }
+    // This runs on a timer, so it may not call the embedding provider: it
+    // matches with the vector stored when the user asked for the watch. A
+    // watch without one (created before the column existed) cannot fire.
+    const vec = parseStoredVector(watch.topic_embedding);
+    if (!vec) {
+      return false;
+    }
     // Fires on either channel: something published on the topic, or someone
     // declaring the interest. The watcher is excluded as the viewer, so their
     // own work can never trigger their own watch.
-    const result = await exploreTopic(
+    const result = await exploreTopicByVector(
       admin as unknown as AnySupabaseClient,
       watch.user_id,
-      watch.topic
+      watch.topic,
+      vec
     );
     if (result.degraded) {
       return false;
@@ -292,7 +318,9 @@ export interface WatchRunResult {
 export async function runWatchEvaluation(admin: SupabaseClient): Promise<WatchRunResult> {
   const { data, error } = await admin
     .from(DATABASE_TABLES.CAT_WATCHES)
-    .select('id, user_id, kind, label, entity_type, entity_id, target_btc, topic, created_at')
+    .select(
+      'id, user_id, kind, label, entity_type, entity_id, target_btc, topic, topic_embedding, created_at'
+    )
     .eq('status', 'active')
     .order('created_at', { ascending: true })
     .limit(MAX_WATCHES_PER_RUN);

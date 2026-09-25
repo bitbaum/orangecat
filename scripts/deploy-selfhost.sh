@@ -316,9 +316,9 @@ else
 fi
 CADDY_GUARD
 
-echo "=== ship ops scripts + nightly Cat-eval timer ==="
-# The nightly eval (scripts/eval-cat.mjs + scripts/systemd/orangecat-cat-eval.*)
-# lives OUTSIDE the app swap dir so it survives releases. Repo is the SSOT for
+echo "=== ship ops scripts + nightly gate timers ==="
+# The ops scripts (eval-*.mjs — run by hand now, check-data-invariants.mjs —
+# nightly) live OUTSIDE the app swap dir so they survive releases. Repo is the SSOT for
 # both the script and the unit files; every deploy re-syncs them and reloads
 # systemd only when a unit actually changed. Non-fatal: an eval-ship hiccup
 # must never roll back a good app deploy.
@@ -340,8 +340,6 @@ echo "=== ship ops scripts + nightly Cat-eval timer ==="
   # places, and missing the third shipped a unit file that never ran. That is
   # the same silent-failure shape as a cron route nothing invokes.
   UNITS=(
-    orangecat-cat-eval.service
-    orangecat-cat-eval.timer
     orangecat-cat-outcomes.service
     orangecat-cat-outcomes.timer
     orangecat-data-invariants.service
@@ -350,13 +348,33 @@ echo "=== ship ops scripts + nightly Cat-eval timer ==="
     "orangecat-cron@cat-mentions.timer"
     "orangecat-cron@cat-brief.timer"
     "orangecat-cron@cat-watches.timer"
+  )
+  # Units this repo USED to install. Removing a unit from UNITS does not remove
+  # it from the box, so each one is disabled and deleted on every deploy until
+  # the box is known clean. All four spent AI keys on a timer with nobody
+  # asking (standing rule 2026-09-25: a free-tier key is spent only when a
+  # person deliberately asks): the nightly Cat eval (chat + judge on the free
+  # pool), the nightly provider probe, and the nightly embedding sweep.
+  RETIRED=(
+    orangecat-cat-eval.timer
+    orangecat-cat-eval.service
+    "orangecat-cron@cat-health.timer"
     "orangecat-cron@reindex-embeddings.timer"
   )
   scp "${SSH_OPTS[@]}" -q "${UNITS[@]/#/scripts/systemd/}" "$OC_BOX:/tmp/"
-  ssh "${SSH_OPTS[@]}" "$OC_BOX" 'bash -s' "${UNITS[@]}" <<'EVAL_UNITS'
+  ssh "${SSH_OPTS[@]}" "$OC_BOX" 'bash -s' "${#UNITS[@]}" "${UNITS[@]}" "${RETIRED[@]}" <<'EVAL_UNITS'
 set -e
-units=("$@")
+n=$1; shift
+units=("${@:1:$n}")
+retired=("${@:$((n + 1))}")
 changed=0
+for u in "${retired[@]}"; do
+  if [ -e "/etc/systemd/system/$u" ]; then
+    case "$u" in *.timer) systemctl disable --now "$u" >/dev/null 2>&1 || true ;; esac
+    rm -rf "/etc/systemd/system/$u" "/etc/systemd/system/$u.d"; changed=1
+    echo "$u: retired"
+  fi
+done
 for u in "${units[@]}"; do
   if ! cmp -s "/tmp/$u" "/etc/systemd/system/$u" 2>/dev/null; then
     install -m 644 "/tmp/$u" "/etc/systemd/system/$u"; changed=1

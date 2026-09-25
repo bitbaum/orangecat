@@ -60,12 +60,6 @@ describe('a cron run is visible in production', () => {
     ).toEqual([]);
   });
 
-  it('still records the health run, at a level that survives', () => {
-    // The specific line the incident above was about.
-    const health = readFileSync(join(CRON_DIR, 'cat-health/route.ts'), 'utf8');
-    expect(health).toContain("logger.warn(\n      'cat provider health check'");
-  });
-
   it('pins the production level this gate depends on', () => {
     // If productionLevel ever becomes 'info', the rule above stops being
     // necessary — and a gate whose premise silently changed is worse than none.

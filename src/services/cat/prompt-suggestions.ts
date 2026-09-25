@@ -16,13 +16,13 @@
  *          whichever happened to sort first;
  *        - every opener has a stable key, and the client skips dismissed keys,
  *          so "not now" moves the Cat on.
- *   2. CHIPS are what this person might ask, written by the platform LLM (free
- *      pool, never Cat Credits) from a digest that includes what the Cat
- *      REMEMBERS about them and their stated goals — the part the old engine
- *      never looked at. If the LLM is down, the openers' own replies stand in.
+ *   2. CHIPS are what this person might ask next: the replies of the openers
+ *      held in reserve, then the registry-derived starters. Deterministic.
  *
- * Freshness: the LLM pool is cached per state fingerprint (recompute only when
- * reality changes) and the three chips shown rotate through it on every serve.
+ * No model call. The chips used to be written by the platform LLM on every
+ * open of an empty chat — a free-tier spend on page load, before the person
+ * had asked anything. Standing rule (2026-09-25): a free-tier key is spent
+ * only when a person deliberately asks, and opening the chat is not asking.
  */
 
 import { ENTITY_REGISTRY, type EntityType } from '@/config/entity-registry';
@@ -34,19 +34,11 @@ import {
   type CatOpener,
   type CatReference,
 } from '@/config/cat-prompts';
-import { logger } from '@/utils/logger';
 import { APP_LOCALE } from '@/utils/locale';
-import { generateChips } from './cat-home-chips';
 import type { EntitySummary, FullUserContext } from '@/services/ai/document-context-types';
 
 /** Openers held in reserve behind the one shown, so dismissing has somewhere to go. */
 const MAX_OPENERS = 6;
-/** LLM chips kept per state, rotated three at a time. */
-const MAX_CHIP_POOL = 6;
-/** Memories handed to the chip writer — the newest are the most current. */
-const MAX_MEMORIES = 8;
-/** How long a request waits for the chips before answering with the filler. */
-const FIRST_PAINT_MS = 2500;
 /** Items offered in the composer's "+" menu. */
 const MAX_ATTACHABLE = 20;
 /** Entity titles are quoted into copy; long ones are elided. */
@@ -277,75 +269,6 @@ export function detectOpeners(context: FullUserContext, now: Date = new Date()):
   return openers.slice(0, MAX_OPENERS);
 }
 
-// ─── Chip digest (what the chip writer may build on — see ./cat-home-chips) ──
-
-function buildDigest(context: FullUserContext, memories: string[]): string {
-  const lines: string[] = [];
-
-  if (context.profile?.name) {
-    lines.push(`Name: ${context.profile.name}`);
-  }
-  if (context.profile?.bio) {
-    lines.push(`Bio: ${truncate(context.profile.bio, 200)}`);
-  }
-  for (const g of context.economicProfile?.goals?.slice(0, 3) ?? []) {
-    lines.push(`Goal: ${truncate(g.text, 120)}`);
-  }
-  for (const s of context.economicProfile?.skills?.slice(0, 5) ?? []) {
-    lines.push(`Skill: ${truncate(s.name, 60)}`);
-  }
-  for (const m of memories.slice(0, MAX_MEMORIES)) {
-    lines.push(`Cat remembers: ${truncate(m, 160)}`);
-  }
-  for (const e of context.entities.filter(x => !isPlaceholderTitle(x.title)).slice(0, 8)) {
-    lines.push(
-      `${registryFor(e)?.name ?? e.type}: "${e.title}" (${isDraft(e) ? 'draft' : 'published'})`
-    );
-  }
-  for (const d of context.documents.slice(0, 4)) {
-    lines.push(`Note: "${d.title}"`);
-  }
-
-  return lines.filter(l => !/:\s*$/.test(l)).join('\n');
-}
-
-// ─── Cache + rotation ────────────────────────────────────────────────────────
-
-/**
- * Process-local cache of the LLM chip pool. Deliberately not a table: derived
- * data with a cheap recompute. The KEY carries the state fingerprint, so a
- * stale entry is impossible — a changed listing or a new memory is a new key.
- */
-const cache = new Map<string, string[]>();
-/** Generations still running, so a second request joins instead of re-asking. */
-const inflight = new Map<string, Promise<string[]>>();
-/** How many times each pool has been served — the rotation offset. */
-const served = new Map<string, number>();
-const MAX_CACHE_ENTRIES = 500;
-
-function remember(key: string, value: string[]): void {
-  if (cache.size >= MAX_CACHE_ENTRIES) {
-    const oldest = cache.keys().next().value;
-    if (oldest) {
-      cache.delete(oldest);
-      served.delete(oldest);
-    }
-  }
-  cache.set(key, value);
-}
-
-function rotate(key: string, pool: string[]): string[] {
-  const offset = served.get(key) ?? 0;
-  served.set(key, offset + 1);
-  if (pool.length <= CAT_HOME_MAX_CHIPS) {
-    return pool;
-  }
-  return Array.from(
-    { length: CAT_HOME_MAX_CHIPS },
-    (_, i) => pool[(offset * CAT_HOME_MAX_CHIPS + i) % pool.length]
-  );
-}
-
 function dedupe(items: string[], limit: number): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
@@ -371,27 +294,22 @@ export function listAttachable(context: FullUserContext): CatReference[] {
 }
 
 /**
- * The chips to rotate through. The openers' replies and the starters are only
- * filler — when the model wrote enough, rotating into them would bring the
- * chores back.
+ * The chips: the reserve openers' replies first (they are about this person),
+ * then the starters.
  */
-function poolFrom(generated: string[], openers: CatOpener[]): string[] {
-  if (generated.length >= CAT_HOME_MAX_CHIPS) {
-    return dedupe(generated, MAX_CHIP_POOL);
-  }
+function chipsFrom(openers: CatOpener[]): string[] {
   const fallback = [...openers.slice(1).map(o => o.replies[0]), ...getStarterChips()];
-  return dedupe([...generated, ...fallback], CAT_HOME_MAX_CHIPS);
+  return dedupe(fallback, CAT_HOME_MAX_CHIPS);
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
 /**
  * Compose what the Cat opens with for this user. Never throws, never returns an
- * empty screen: the openers' own replies stand in for the LLM, and the
- * registry-derived starters stand in for everything.
+ * empty screen: the registry-derived starters stand in for everything.
  */
 export async function generateCatHome(
-  userId: string,
+  _userId: string,
   context: FullUserContext,
   memories: string[] = []
 ): Promise<CatHome> {
@@ -400,38 +318,5 @@ export async function generateCatHome(
   }
 
   const openers = detectOpeners(context);
-  const digest = buildDigest(context, memories);
-  const key = `${userId}:${fingerprint(digest)}`;
-
-  let pool = cache.get(key);
-  if (!pool) {
-    // The model takes seconds (it reasons first); the openers are ready now.
-    // Wait briefly, and if it is slower, answer with the filler while the
-    // model finishes in the background and fills the cache for next time.
-    // The process is long-lived (self-hosted Node), so the promise outlives
-    // the request.
-    let pending = inflight.get(key);
-    if (!pending) {
-      pending = generateChips(digest)
-        .then(generated => {
-          if (generated.length > 0) {
-            remember(key, poolFrom(generated, openers));
-          }
-          return generated;
-        })
-        .catch(error => {
-          logger.warn('cat-home: chip generation failed', { error }, 'PromptSuggestions');
-          return [] as string[];
-        })
-        .finally(() => inflight.delete(key));
-      inflight.set(key, pending);
-    }
-    const generated = await Promise.race([
-      pending,
-      new Promise<string[]>(resolve => setTimeout(() => resolve([]), FIRST_PAINT_MS)),
-    ]);
-    pool = cache.get(key) ?? poolFrom(generated, openers);
-  }
-
-  return { openers, chips: rotate(key, pool), attachable: listAttachable(context) };
+  return { openers, chips: chipsFrom(openers), attachable: listAttachable(context) };
 }

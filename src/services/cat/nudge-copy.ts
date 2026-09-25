@@ -64,8 +64,6 @@ export interface NudgeCopy {
     wanted: boolean;
   }): CopyBlock;
   growthAsset(args: { asset: string; wanted: boolean }): CopyBlock;
-  activation(args: { title: string; noun: string }): { title: string; cta: string };
-  connection(name: string): { title: string; cta: string };
 }
 
 const NOUN_DE: Partial<Record<EntityType, string>> = {
@@ -108,14 +106,6 @@ export const NUDGE_COPY: Record<NudgeLanguage, NudgeCopy> = {
         : `Your ${asset} mostly sits idle. Listed as an asset, it can earn while you're not using it.`,
       cta: `List your ${asset}`,
     }),
-    activation: ({ title, noun }) => ({
-      title: `Offer "${title}" as a ${noun}`,
-      cta: `Create ${noun}`,
-    }),
-    connection: name => ({
-      title: `You should meet ${name}`,
-      cta: 'View profile',
-    }),
   },
   de: {
     languageName: 'German (Deutsch)',
@@ -145,14 +135,6 @@ export const NUDGE_COPY: Record<NudgeLanguage, NudgeCopy> = {
         ? `Genau so etwas wie ${asset} wird hier gesucht — und deins liegt meist ungenutzt. Als Asset gelistet kann es verdienen.`
         : `Dein ${asset} liegt meist ungenutzt. Als Asset gelistet kann es verdienen, während du es nicht brauchst.`,
       cta: `„${asset}“ listen`,
-    }),
-    activation: ({ title, noun }) => ({
-      title: `Biete „${title}“ als ${noun} an`,
-      cta: `${noun} erstellen`,
-    }),
-    connection: name => ({
-      title: `Du solltest ${name} kennenlernen`,
-      cta: 'Profil ansehen',
     }),
   },
 };

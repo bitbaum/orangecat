@@ -53,7 +53,6 @@ const EXCEPTIONS = [
   'src/services/ai/context-sections.ts',
   'src/services/cat/chat-orchestrator.ts',
   'src/services/cat/memory.ts',
-  'src/services/cat/nudges.ts',
   'src/services/ai/openrouter.ts',
   'src/services/ai/api-key-service.ts',
   'src/services/cat/permission-service.ts',

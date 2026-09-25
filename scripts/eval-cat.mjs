@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Cat judgment eval — nightly regression gate.
+ * Cat judgment eval — regression gate, run by hand (never on a timer).
  *
  * Runs the 8 canonical entity-type probes (established in PR #375) against the
  * PRODUCTION Cat chat pipeline (`POST /api/cat/chat`, streaming SSE — the
@@ -51,8 +51,9 @@
  *   CAT_EVAL_JSON_OUT      write full JSON report to this path
  *
  * Deploy path on the box: /opt/orangecat/scripts/eval-cat.mjs
- * (installed by scripts/deploy-selfhost.sh; run nightly by the
- *  orangecat-cat-eval.timer systemd unit at 04:30 UTC).
+ * (shipped by scripts/deploy-selfhost.sh; run BY HAND. The nightly
+ *  orangecat-cat-eval.timer was retired 2026-09-25: every run spent the free
+ *  model pool shared by the whole box with nobody asking.)
  */
 
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
