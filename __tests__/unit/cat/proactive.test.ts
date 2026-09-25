@@ -16,6 +16,20 @@ vi.mock('@/lib/services/notifications', () => ({
     };
   }),
 }));
+const exploreByVectorMock = vi.fn();
+vi.mock('@/services/cat/discovery-match', () => ({
+  exploreTopicByVector: (...args: unknown[]) => exploreByVectorMock(...args),
+}));
+// The timer path must never reach the embedding provider. If it does, this
+// throws and the watch errors instead of firing — the assertions below catch it.
+const embedMock = vi.fn(async () => {
+  throw new Error('the cat-watches timer called the embedding provider');
+});
+vi.mock('@/services/ai/embeddings', () => ({
+  embeddingsEnabled: () => true,
+  embedText: (...args: unknown[]) => embedMock(...(args as [])),
+  embedTexts: (...args: unknown[]) => embedMock(...(args as [])),
+}));
 vi.mock('@/utils/logger', () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
@@ -59,6 +73,8 @@ function mockAdmin(queues: Record<string, QueryResponse[]>) {
 
 beforeEach(() => {
   createNotificationMock.mockClear();
+  exploreByVectorMock.mockReset();
+  embedMock.mockClear();
 });
 
 describe('composeDailyBrief', () => {
@@ -184,5 +200,45 @@ describe('runWatchEvaluation', () => {
     });
     const result = await runWatchEvaluation(client);
     expect(result.fired).toBe(1);
+  });
+});
+
+describe('topic watches on the timer spend no key', () => {
+  const topicWatch = {
+    id: 'w9',
+    user_id: 'u1',
+    kind: 'topic_match',
+    label: 'Someone new is working on longevity',
+    entity_type: null,
+    entity_id: null,
+    target_btc: null,
+    topic: 'longevity',
+    created_at: '2026-01-01T00:00:00Z',
+  };
+
+  it('matches with the vector stored at creation, never embedding', async () => {
+    exploreByVectorMock.mockResolvedValue({
+      topic: 'longevity',
+      hits: [],
+      people: [{ userId: 'u2' }],
+      degraded: false,
+    });
+    const { client } = mockAdmin({
+      cat_watches: [{ data: [{ ...topicWatch, topic_embedding: '[0.1,0.2]' }] }],
+    });
+    const result = await runWatchEvaluation(client);
+    expect(result.fired).toBe(1);
+    expect(exploreByVectorMock).toHaveBeenCalledWith(client, 'u1', 'longevity', [0.1, 0.2]);
+    expect(embedMock).not.toHaveBeenCalled();
+  });
+
+  it('cannot fire without a stored vector — it does not embed one on the timer', async () => {
+    const { client } = mockAdmin({
+      cat_watches: [{ data: [{ ...topicWatch, topic_embedding: null }] }],
+    });
+    const result = await runWatchEvaluation(client);
+    expect(result).toEqual({ watchesChecked: 1, fired: 0, errors: 0 });
+    expect(exploreByVectorMock).not.toHaveBeenCalled();
+    expect(embedMock).not.toHaveBeenCalled();
   });
 });

@@ -19,14 +19,12 @@ import { embeddingsEnabled, embedText } from '@/services/ai/embeddings';
 import { logger } from '@/utils/logger';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import type { DiscoveryPerson } from './discovery-types';
+import { findPeopleByInterestVector } from './discovery-match';
 
 const LOG_SOURCE = 'CatInterests';
 
 export const MAX_TOPIC_LENGTH = 80;
 const MIN_TOPIC_LENGTH = 2;
-/** Above this two phrasings mean the same interest ("longevity" ~ "long life"). */
-const PEOPLE_MIN_SIMILARITY = 0.45;
-const PEOPLE_MATCH_COUNT = 8;
 /** A person is a directory, not a tag cloud. */
 export const MAX_INTERESTS_PER_USER = 40;
 
@@ -179,62 +177,14 @@ export async function unpublishInterest(
 export async function findPeopleByInterest(
   supabase: AnySupabaseClient,
   viewerUserId: string,
-  topic: string,
-  /** Reuse the caller's vector for this same topic — saves a round trip and its cost. */
-  precomputedEmbedding?: number[] | null
+  topic: string
 ): Promise<DiscoveryPerson[]> {
   if (!topic.trim() || !embeddingsEnabled()) {
     return [];
   }
   try {
-    const vec = precomputedEmbedding ?? (await embedText(topic));
-    if (!vec) {
-      return [];
-    }
-    const { data, error } = await supabase.rpc('match_interested_people', {
-      query_embedding: JSON.stringify(vec),
-      exclude_user: viewerUserId,
-      match_count: PEOPLE_MATCH_COUNT,
-      min_similarity: PEOPLE_MIN_SIMILARITY,
-    });
-    if (error || !data) {
-      logger.warn('match_interested_people failed', { error }, LOG_SOURCE);
-      return [];
-    }
-
-    const rows = data as { user_id: string; topic: string }[];
-    if (rows.length === 0) {
-      return [];
-    }
-
-    const { data: profiles } = await supabase
-      .from(DATABASE_TABLES.PROFILES)
-      .select('id, username, name')
-      .in(
-        'id',
-        rows.map(r => r.user_id)
-      );
-    type ProfileRow = { id: string; username: string | null; name: string | null };
-    const byId = new Map<string, ProfileRow>(
-      ((profiles ?? []) as ProfileRow[]).map(p => [p.id, p] as const)
-    );
-
-    const people: DiscoveryPerson[] = [];
-    for (const r of rows) {
-      const p = byId.get(r.user_id);
-      // No readable profile → a name-less ghost. Drop it rather than show it.
-      if (!p) {
-        continue;
-      }
-      people.push({
-        userId: r.user_id,
-        displayName: p.name || p.username || 'Someone',
-        username: p.username,
-        profileUrl: p.username ? `/profiles/${p.username}` : null,
-        via: [`Interested in ${r.topic}`],
-      });
-    }
-    return people;
+    const vec = await embedText(topic);
+    return vec ? await findPeopleByInterestVector(supabase, viewerUserId, vec) : [];
   } catch (err) {
     logger.warn('findPeopleByInterest threw', { err }, LOG_SOURCE);
     return [];

@@ -9,6 +9,7 @@
  */
 
 import { DATABASE_TABLES } from '@/config/database-tables';
+import { embeddingsEnabled, embedText } from '@/services/ai/embeddings';
 import {
   publishInterest,
   unpublishInterest,
@@ -102,11 +103,21 @@ export const interestHandlers: Record<string, ActionHandler> = {
       };
     }
 
+    // Embed once, now, while the user is asking: the cat-watches timer matches
+    // with this stored vector and never calls the embedding provider itself.
+    const vec = embeddingsEnabled() ? await embedText(topic) : null;
+    if (!vec) {
+      return {
+        success: false,
+        error: 'Topic search is unavailable right now, so I cannot watch it.',
+      };
+    }
     const { error } = await supabase.from(DATABASE_TABLES.CAT_WATCHES).insert({
       user_id: userId,
       kind: 'topic_match',
       label: `Someone new is working on ${topic}`,
       topic,
+      topic_embedding: JSON.stringify(vec),
     });
     if (error) {
       return { success: false, error: 'Could not set up that watch.' };

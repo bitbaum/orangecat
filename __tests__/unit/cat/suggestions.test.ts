@@ -3,8 +3,8 @@
  *
  * The promise: the Cat speaks first, in its own voice, about something real
  * and timely in THIS user's life, and "not now" has somewhere to go. These
- * tests pin that, plus the degradation path when the platform LLM is
- * unavailable (the normal case in CI — callPlatformJson is mocked to null).
+ * tests pin that, and that opening the chat never calls a model (the chips
+ * used to be LLM-written on page load — a free-tier spend nobody asked for).
  */
 
 import {
@@ -14,14 +14,13 @@ import {
   isPlaceholderTitle,
   listAttachable,
 } from '@/services/cat/prompt-suggestions';
-import { cleanChip, isGroundedChip } from '@/services/cat/cat-home-chips';
 import { STARTER_HOME, getStarterChips, CAT_HOME_MAX_CHIPS } from '@/config/cat-prompts';
 import { getEntitiesByCategory } from '@/config/entity-registry';
 import type { FullUserContext } from '@/services/ai/document-context';
 
-vi.mock('@/services/cat/platform-llm', async () => ({
+vi.mock('@/services/cat/platform-llm', () => ({
   callPlatformJson: vi.fn(async () => null),
-  parseJsonLoose: ((await vi.importActual('@/services/cat/platform-llm')) as any).parseJsonLoose,
+  parseJsonLoose: vi.fn(),
 }));
 
 import { callPlatformJson } from '@/services/cat/platform-llm';
@@ -335,32 +334,6 @@ describe('isPlaceholderTitle', () => {
   );
 });
 
-describe('isGroundedChip', () => {
-  const digest = 'Bio: Ceramicist in Zürich\nCat remembers: Runs autumn workshops';
-  it('accepts a chip quoting the state, ignoring accents and case', () => {
-    expect(isGroundedChip({ text: 'x', from: 'ceramicist in zurich' }, digest)).toBe(true);
-    expect(isGroundedChip({ text: 'x', from: 'Runs autumn workshops' }, digest)).toBe(true);
-  });
-  it('rejects a quote that is not there, too short, or missing', () => {
-    expect(isGroundedChip({ text: 'x', from: 'hair salon' }, digest)).toBe(false);
-    expect(isGroundedChip({ text: 'x', from: 'in' }, digest)).toBe(false);
-    expect(isGroundedChip('plain string', digest)).toBe(false);
-  });
-});
-
-describe('cleanChip', () => {
-  it('strips the "Cat, …" address the model keeps writing', () => {
-    expect(cleanChip('Cat, help me price my vases')).toBe('Help me price my vases');
-    expect(cleanChip('Hey Cat: what should I do next?')).toBe('What should I do next?');
-  });
-
-  it('drops non-strings, blanks and links', () => {
-    expect(cleanChip(42)).toBeNull();
-    expect(cleanChip('   ')).toBeNull();
-    expect(cleanChip('Read https://example.com')).toBeNull();
-  });
-});
-
 // ─── Composition ──────────────────────────────────────────────────────────────
 
 describe('generateCatHome', () => {
@@ -368,7 +341,7 @@ describe('generateCatHome', () => {
     expect(await generateCatHome('u-empty', makeContext())).toEqual(STARTER_HOME);
   });
 
-  it('still opens with something when the platform LLM is unavailable', async () => {
+  it("opens with something from the user's own state", async () => {
     const home = await generateCatHome(
       'u-nollm',
       makeContext({ profile: PROFILE, entities: [makeEntity('product', 'Handmade Candles')] })
@@ -378,102 +351,14 @@ describe('generateCatHome', () => {
     expect(home.chips.length).toBeLessThanOrEqual(CAT_HOME_MAX_CHIPS);
   });
 
-  it('hands the chip writer what the Cat remembers', async () => {
-    await generateCatHome('u-memory', makeContext({ profile: PROFILE }), [
-      'Runs a pottery studio in Zürich',
-    ]);
-    const [, userPrompt] = mockedCall.mock.calls[0];
-    expect(userPrompt).toContain('Runs a pottery studio in Zürich');
-  });
-
-  it('uses the model’s grounded chips, cleaned', async () => {
-    mockedCall.mockResolvedValue(
-      JSON.stringify({
-        chips: [
-          { text: 'Cat, who buys ceramics in Zürich?', from: 'Ceramicist in Zürich' },
-          { text: 'Plan my autumn market.', from: 'Ceramicist' },
-        ],
-      })
+  it('never calls a model, even for a user with rich state and memories', async () => {
+    const home = await generateCatHome(
+      'u-nomodel',
+      makeContext({ profile: PROFILE, entities: [makeEntity('product', 'Handmade Candles')] }),
+      ['Runs a pottery studio in Zürich']
     );
-    const home = await generateCatHome('u-llm', makeContext({ profile: PROFILE }));
-    expect(home.chips).toContain('Who buys ceramics in Zürich?');
-    expect(home.chips).toContain('Plan my autumn market');
-  });
-
-  it('drops a chip about something the user does not have (haircuts to a ceramicist)', async () => {
-    mockedCall.mockResolvedValue(
-      JSON.stringify({
-        chips: [{ text: 'Promote my hair-cut services', from: 'hair salon services' }],
-      })
-    );
-    const home = await generateCatHome('u-haircut', makeContext({ profile: PROFILE }));
-    expect(home.chips.join(' ')).not.toMatch(/hair/i);
-  });
-
-  it('rotates chips on a second visit and does not call the model again', async () => {
-    mockedCall.mockResolvedValue(
-      JSON.stringify({
-        chips: ['One thing', 'Two thing', 'Three thing', 'Four thing', 'Five'].map(text => ({
-          text,
-          from: 'Ceramicist',
-        })),
-      })
-    );
-    const ctx = makeContext({ profile: PROFILE });
-    const first = await generateCatHome('u-rotate', ctx);
-    const second = await generateCatHome('u-rotate', ctx);
-    expect(mockedCall).toHaveBeenCalledTimes(1);
-    expect(second.chips).not.toEqual(first.chips);
-  });
-
-  it('recomputes when the state changes', async () => {
-    mockedCall.mockResolvedValue(
-      JSON.stringify({ chips: [{ text: 'Something', from: 'Ceramicist' }] })
-    );
-    const draft = makeEntity('product', 'Handmade Candles', { status: 'draft' });
-    await generateCatHome('u-cache', makeContext({ profile: PROFILE, entities: [draft] }));
-    await generateCatHome(
-      'u-cache',
-      makeContext({ profile: PROFILE, entities: [{ ...draft, status: 'active' }] })
-    );
-    expect(mockedCall).toHaveBeenCalledTimes(2);
-  });
-
-  it('does not hold the page for a slow model, and serves its answer next visit', async () => {
-    vi.useFakeTimers();
-    try {
-      mockedCall.mockImplementation(
-        () =>
-          new Promise(resolve =>
-            setTimeout(
-              () =>
-                resolve(
-                  JSON.stringify({
-                    chips: ['Slow one', 'Slow two', 'Slow three'].map(text => ({
-                      text,
-                      from: 'Ceramicist',
-                    })),
-                  })
-                ),
-              6000
-            )
-          )
-      );
-      const ctx = makeContext({ profile: PROFILE, entities: [makeEntity('product', 'Mug')] });
-
-      const firstP = generateCatHome('u-slow', ctx);
-      await vi.advanceTimersByTimeAsync(2600);
-      const first = await firstP;
-      expect(first.openers.length).toBeGreaterThan(0);
-      expect(first.chips).not.toContain('Slow one');
-
-      await vi.advanceTimersByTimeAsync(4000);
-      const second = await generateCatHome('u-slow', ctx);
-      expect(second.chips).toContain('Slow one');
-      expect(mockedCall).toHaveBeenCalledTimes(1);
-    } finally {
-      vi.useRealTimers();
-    }
+    expect(home.chips.length).toBeGreaterThan(0);
+    expect(mockedCall).not.toHaveBeenCalled();
   });
 
   it('offers the user’s own things to the "+" menu', async () => {

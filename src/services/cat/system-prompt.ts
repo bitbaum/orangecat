@@ -57,11 +57,11 @@ export type ActionsVia = 'tools' | 'prose' | 'none';
 
 /**
  * Per-turn section selection. Off by default; `CAT_PROMPT_SECTION_SELECTION=1`
- * in the box's runtime .env turns it on, and the nightly eval
- * (scripts/eval-cat.mjs via orangecat-cat-eval.timer, 04:30 UTC) is the gate:
- * it scores 8 probes against production and exits non-zero under 7/8 on
- * either axis, so a regression from a section the regexes missed shows up the
- * next morning and the flip is one line to revert.
+ * in the box's runtime .env turns it on, and the eval (scripts/eval-cat.mjs,
+ * run BY HAND since 2026-09-25 — its nightly timer spent the free model pool
+ * with nobody asking) is the gate: it scores 8 probes against production and
+ * exits non-zero under 7/8 on either axis. Run it before and after the flip;
+ * the flip is one line to revert.
  *
  * Until 2026-09-11 this flag was a double gate: nothing anywhere produced a
  * turnDescriptor, so setting the env var changed nothing. chat-prepare now

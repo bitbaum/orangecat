@@ -2,8 +2,6 @@
  * Proactive nudges — the Cat working for you in the background.
  *
  * Generates specific, GROUNDED, actionable suggestions per user:
- *  - activation:  bio implies an offering they haven't created → "Publish a … service"
- *  - connection:  a real, semantically-related person → "You should meet X"
  *  - completion:  deterministic gaps → add a bio, publish a draft
  *  - growth:      a skill/asset they HAVE but haven't listed → one-tap prefilled draft,
  *                 preferring (and flagging) ones real platform demand is asking for
@@ -12,19 +10,21 @@
  *  - Names are always entity display titles — never raw URLs or slugs.
  *  - One language per user (profile.language / currency heuristic) across ALL copy.
  *  - Every nudge is grounded in the user's actual entities, profile, and economic
- *    profile — LLM proposals that don't overlap that grounding are dropped
- *    (the "haircuts to a ceramicist" bug).
+ *    profile.
  *
- * Activation + connection are LLM-reasoned; completion + growth are rule-based.
+ * All rule-based. The LLM-reasoned kinds (activation, connection) were removed
+ * 2026-09-25: this runs when the dashboard MOUNTS (GET /api/cat/nudges) and
+ * from the weekly-digest cron, so they spent the shared free model pool — and
+ * embedded the user's bio — with nobody asking. Standing rule: a free-tier key
+ * is spent only when a person deliberately asks. The same suggestions are one
+ * question away in the Cat chat. `nudge_type` keeps the old values because
+ * cached user_nudges rows still carry them.
  * Results are cached in user_nudges; dismissed ones never reappear (dedupe_key).
  */
 
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { ROUTES } from '@/config/routes';
-import { DEFAULT_FREE_MODEL_ID } from '@/config/ai-models';
-import { createOpenRouterService } from '@/services/ai';
-import { searchPlatform } from './platform-search';
 import { NUDGE_COPY, resolveNudgeLanguage, type NudgeCopy } from './nudge-copy';
 import {
   getEconomicProfile,
@@ -45,29 +45,11 @@ export interface Nudge {
   score: number;
 }
 
-// Entity types the Cat may proactively suggest creating.
-const SUGGESTABLE = new Set(['service', 'product', 'project', 'cause', 'event', 'wishlist']);
 const ENTITY_SOURCE: Array<{ type: 'product' | 'service' | 'cause' }> = [
   { type: 'product' },
   { type: 'service' },
   { type: 'cause' },
 ];
-
-const usernameFromUrl = (url: string): string | null => {
-  const m = url.match(/^\/profiles\/(.+)$/);
-  return m ? m[1] : null;
-};
-
-/** True when a string is a URL/path/slug — never acceptable as a display name. */
-const looksLikeUrl = (s: string): boolean =>
-  /^https?:\/\//i.test(s) || s.startsWith('/') || /\.[a-z]{2,}(\/|$)/i.test(s);
-
-interface NeighborPerson {
-  username: string;
-  /** Always a real display name (profile name or username) — never a URL. */
-  title: string;
-  description: string;
-}
 
 export async function generateNudges(
   supabase: AnySupabaseClient,
@@ -90,7 +72,6 @@ export async function generateNudges(
   const actor = ownActorId ? { id: ownActorId } : null;
   const created: Record<string, { active: number; drafts: Array<{ id: string; title: string }> }> =
     {};
-  const ownEntityTitles: string[] = [];
   if (actor?.id) {
     // One query per entity type, fired in parallel — this endpoint is
     // force-dynamic, so serial queries here directly slow every dashboard load
@@ -111,11 +92,6 @@ export async function generateNudges(
           .filter((e: any) => e.status === 'draft')
           .map((e: any) => ({ id: e.id, title: e.title })),
       };
-      for (const e of data) {
-        if (e?.title) {
-          ownEntityTitles.push(String(e.title).toLowerCase());
-        }
-      }
     }
   }
 
@@ -159,78 +135,12 @@ export async function generateNudges(
     }
   }
 
-  // ── Smart nudges (activation + connection), only with a bio to reason from ──
-  if (profile.bio) {
-    let neighbors: NeighborPerson[] = [];
-    try {
-      const results = await searchPlatform(
-        supabase,
-        `${profile.name ?? ''} ${profile.bio}`,
-        'people'
-      );
-      neighbors = results
-        .map(r => ({
-          username: usernameFromUrl(r.url) ?? '',
-          title: r.title,
-          description: r.description,
-        }))
-        .filter(n => n.username && n.username !== profile.username)
-        .slice(0, 4);
-      neighbors = await resolveNeighborNames(supabase, neighbors);
-    } catch (err) {
-      logger.warn('nudges: neighbor search failed', { err }, 'Nudges');
-    }
-
-    try {
-      const smart = await smartNudges(profile, created, neighbors, econ, ownEntityTitles, copy);
-      nudges.push(...smart);
-    } catch (err) {
-      logger.warn('nudges: smart generation failed', { err }, 'Nudges');
-    }
-  }
-
   // rank, dedupe, cap
   const seen = new Set<string>();
   return nudges
     .sort((a, b) => b.score - a.score)
     .filter(n => (seen.has(n.dedupe_key) ? false : (seen.add(n.dedupe_key), true)))
     .slice(0, 5);
-}
-
-/**
- * Guarantee neighbor names are DISPLAY TITLES: look each username up in profiles
- * and use name → username. Search-result titles have rendered raw URLs/slugs as
- * people's names on suggestion cards (founder-verified); never trust them alone.
- */
-async function resolveNeighborNames(
-  supabase: AnySupabaseClient,
-  neighbors: NeighborPerson[]
-): Promise<NeighborPerson[]> {
-  if (neighbors.length === 0) {
-    return neighbors;
-  }
-  const names = new Map<string, string>();
-  try {
-    const { data } = await supabase
-      .from(DATABASE_TABLES.PROFILES)
-      .select('username, name')
-      .in(
-        'username',
-        neighbors.map(n => n.username)
-      );
-    for (const row of data ?? []) {
-      if (row?.username) {
-        names.set(row.username, row.name || row.username);
-      }
-    }
-  } catch (err) {
-    logger.warn('nudges: neighbor name resolve failed', { err }, 'Nudges');
-  }
-  return neighbors.map(n => {
-    const resolved = names.get(n.username);
-    const safe = resolved ?? (n.title && !looksLikeUrl(n.title) ? n.title : n.username);
-    return { ...n, title: safe };
-  });
 }
 
 /** Stem-aware substring match — conservative, so a "match" is a real signal. */
@@ -241,46 +151,6 @@ function termMatches(term: string, haystack: string[]): boolean {
   }
   const stem = x.slice(0, Math.max(4, Math.round(x.length * 0.6)));
   return haystack.some(h => h.includes(x) || h.includes(stem));
-}
-
-/**
- * The user's actual grounding: bio + background + economic profile terms + their
- * own entity titles, lowercased. LLM proposals must overlap this or they're stale
- * context (old chat scraps) and get dropped.
- */
-function groundingCorpus(
-  profile: { bio?: string | null; background?: string | null },
-  econ: EconomicProfile | null,
-  ownEntityTitles: string[]
-): string[] {
-  const corpus: string[] = [...ownEntityTitles];
-  if (profile.bio) {
-    corpus.push(String(profile.bio).toLowerCase());
-  }
-  if (profile.background) {
-    corpus.push(String(profile.background).toLowerCase());
-  }
-  if (econ) {
-    for (const s of econ.skills) {
-      corpus.push(s.name.toLowerCase());
-    }
-    for (const a of econ.assets) {
-      corpus.push(a.name.toLowerCase());
-    }
-    for (const w of econ.askedFor) {
-      corpus.push(w.toLowerCase());
-    }
-  }
-  return corpus.filter(Boolean);
-}
-
-/** True when the text shares at least one significant term with the corpus. */
-function isGrounded(text: string, corpus: string[]): boolean {
-  const tokens = text
-    .toLowerCase()
-    .split(/[^a-zà-öø-ÿäöüß0-9]+/i)
-    .filter(t => t.length >= 4);
-  return tokens.some(t => termMatches(t, corpus));
 }
 
 /**
@@ -424,111 +294,5 @@ async function growthNudges(
     });
   }
 
-  return out;
-}
-
-async function smartNudges(
-  profile: any,
-  created: Record<string, { active: number; drafts: Array<{ id: string; title: string }> }>,
-  neighbors: NeighborPerson[],
-  econ: EconomicProfile | null,
-  ownEntityTitles: string[],
-  copy: NudgeCopy
-): Promise<Nudge[]> {
-  const system = `You are the proactive engine of OrangeCat's Cat. Given a user's profile, what they've already created, their economic profile, and real people on the platform related to them, propose specific, GROUNDED nudges that help them succeed.
-
-STRICT RULES:
-- Ground everything in the data given. NEVER invent a skill they didn't state or a person not in the provided list.
-- Two kinds of nudge:
-  1. "activation" — if their bio or economic profile clearly implies an offering they have NOT already created, suggest creating ONE entity. entityType must be one of: service, product, project, cause, event, wishlist. Give a concrete title and a one-sentence reason.
-  2. "connection" — suggest meeting ONE of the listed people, with a one-sentence reason tied to BOTH bios.
-- Don't suggest creating an entity type they already have active. If nothing is genuinely useful, return [].
-- Write every "title" and "reason" in ${copy.languageName} — the user's language. Never mix languages.
-
-Return ONLY a JSON array (max 3), each item exactly:
-{"type":"activation","entityType":"service","title":"<entity title>","reason":"<one sentence>"}
-or {"type":"connection","username":"<one of the provided usernames>","reason":"<one sentence>"}`;
-
-  const payload = {
-    profile: { name: profile.name, bio: profile.bio, location: profile.location_city },
-    economicProfile: econ
-      ? {
-          skills: econ.skills.map(s => s.name),
-          assets: econ.assets.map(a => a.name),
-          askedFor: econ.askedFor,
-        }
-      : null,
-    alreadyCreated: Object.fromEntries(
-      Object.entries(created).map(([k, v]) => [k, { active: v.active }])
-    ),
-    people: neighbors,
-  };
-
-  const ai = createOpenRouterService();
-  const res = await ai.chatCompletion({
-    model: DEFAULT_FREE_MODEL_ID,
-    messages: [
-      { role: 'system', content: system },
-      { role: 'user', content: JSON.stringify(payload) },
-    ],
-    temperature: 0.4,
-  });
-
-  const raw = (res.content || '').replace(/```json\s*|\s*```/g, '').trim();
-  let parsed: any[];
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    return [];
-  }
-  if (!Array.isArray(parsed)) {
-    return [];
-  }
-
-  // Activation proposals must overlap the user's ACTUAL grounding (bio, background,
-  // economic profile, own entities). A weak model reasoning from stale chat scraps
-  // ("haircuts" for a ceramicist) fails this check and is dropped.
-  const corpus = groundingCorpus(profile, econ, ownEntityTitles);
-
-  const neighborUsernames = new Set(neighbors.map(n => n.username));
-  const out: Nudge[] = [];
-  for (const p of parsed) {
-    if (p?.type === 'activation' && SUGGESTABLE.has(p.entityType) && p.title) {
-      const meta = ENTITY_REGISTRY[p.entityType as keyof typeof ENTITY_REGISTRY];
-      const proposedTitle = String(p.title).slice(0, 80);
-      if (!meta || looksLikeUrl(proposedTitle)) {
-        continue;
-      }
-      if (!isGrounded(`${proposedTitle} ${p.reason ?? ''}`, corpus)) {
-        logger.info('nudges: dropped ungrounded activation', { title: proposedTitle }, 'Nudges');
-        continue;
-      }
-      const c = copy.activation({
-        title: proposedTitle,
-        noun: copy.entityNoun(p.entityType as keyof typeof ENTITY_REGISTRY),
-      });
-      out.push({
-        nudge_type: 'activation',
-        title: c.title,
-        body: String(p.reason || '').slice(0, 240),
-        cta_label: c.cta,
-        cta_url: meta.createPath,
-        dedupe_key: `activation:${p.entityType}`,
-        score: 0.85,
-      });
-    } else if (p?.type === 'connection' && neighborUsernames.has(p.username)) {
-      const n = neighbors.find(x => x.username === p.username)!;
-      const c = copy.connection(n.title);
-      out.push({
-        nudge_type: 'connection',
-        title: c.title,
-        body: String(p.reason || '').slice(0, 240),
-        cta_label: c.cta,
-        cta_url: `/profiles/${p.username}`,
-        dedupe_key: `connection:${p.username}`,
-        score: 0.8,
-      });
-    }
-  }
   return out;
 }
