@@ -162,5 +162,8 @@ describe("'use client' modules never reach server-only code", () => {
     }
 
     expect(offenders.length).toBeLessThanOrEqual(CLIENT_TO_SERVER_BASELINE);
-  });
+    // It walks every client file's import graph: ~29s on an idle laptop, so the
+    // default 30s timeout failed it whenever anything else was running (twice
+    // on 2026-09-25, blocking a push while the same run passed in isolation).
+  }, 120_000);
 });

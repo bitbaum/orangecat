@@ -21,7 +21,9 @@ import {
   recordGrant,
   createAuthCode,
 } from '@/services/auth/oauthProvider';
+import { authHandoffUrl } from '@/lib/oauth/handoff';
 import { ConsentForm } from './ConsentForm';
+import { AddEmailForm } from './AddEmailForm';
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -53,6 +55,11 @@ export default async function AuthorizePage({
   const codeChallenge = one(sp.code_challenge);
   const codeChallengeMethod = one(sp.code_challenge_method) || 'S256';
   const nonce = one(sp.nonce);
+  // What the person already chose on the relying party's own screen — see
+  // src/lib/oauth/handoff.ts. Only used to shape the sign-in screen.
+  const prompt = one(sp.prompt);
+  const loginHint = one(sp.login_hint);
+  const idpHint = one(sp.idp_hint);
 
   // 1) Validate client + redirect FIRST — these gate whether we may redirect at all.
   const client = clientId ? await getClient(clientId) : null;
@@ -96,19 +103,20 @@ export default async function AuthorizePage({
         nonce,
       }).filter(([, v]) => v) as [string, string][]
     ).toString()}`;
-    redirect(`/auth?from=${encodeURIComponent(returnTo)}`);
+    redirect(authHandoffUrl({ returnTo, prompt, loginHint, idpHint, clientId }));
   }
 
-  // 3.5) Anonymous accounts stop here. Federating an identity with no email
-  // would hand relying parties (Loki, Solon) an unattributable account —
-  // Solon rejects those downstream anyway; blocking at the root gives one
-  // honest explanation instead of N per-app failures.
+  // 3.5) Anonymous accounts add an email first. Federating an identity with no
+  // email would hand relying parties (Loki, Solon) an unattributable account,
+  // so it is asked for here, once, on the same screen — never a dead end.
   if (user.is_anonymous) {
+    const returnTo = `${OAUTH_PATHS.authorize}?${new URLSearchParams(
+      Object.entries(sp).map(([k, v]) => [k, one(v)]) as [string, string][]
+    ).toString()}`;
     return (
-      <ErrorPanel
-        title="Add an email to continue"
-        detail={`You're exploring OrangeCat anonymously. To sign in to ${client.name}, first add an email address to your account (Settings → Account), then try again. Nothing was shared.`}
-      />
+      <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-12">
+        <AddEmailForm clientName={client.name} returnTo={returnTo} />
+      </div>
     );
   }
 

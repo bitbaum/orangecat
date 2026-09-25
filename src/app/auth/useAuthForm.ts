@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { useAuth, useRedirectIfAuthenticated } from '@/hooks/useAuth';
@@ -8,6 +8,7 @@ import supabase from '@/lib/supabase/browser';
 import { useAuthSubmission } from './useAuthSubmission';
 import type { Provider } from '@supabase/supabase-js';
 import { OAUTH_TO_SUPABASE, type OAuthProvider } from './oauth-provider-map';
+import { callbackUrl, readHandoff } from '@/lib/oauth/handoff';
 
 export type { OAuthProvider };
 
@@ -67,8 +68,11 @@ export function useAuthForm() {
     }
   }, [searchParams]);
 
+  // What another app asked for on the person's behalf (lib/oauth/handoff.ts).
+  const handoff = readHandoff({ get: name => searchParams?.get(name) ?? null });
+
   const [formData, setFormData] = useState<AuthFormData>({
-    email: '',
+    email: handoff.email ?? '',
     password: '',
     confirmPassword: '',
   });
@@ -170,7 +174,11 @@ export function useAuthForm() {
         // `linkedin_oidc`). Cast to supabase-js's own Provider union derived
         // from the map (SSOT) rather than a hardcoded list.
         provider: OAUTH_TO_SUPABASE[provider] as Provider,
-        options: { redirectTo: `${window.location.origin}/auth/callback` },
+        // Carry `from` through the provider round trip, or a person who
+        // started on Solon lands on OrangeCat's welcome page instead.
+        options: {
+          redirectTo: callbackUrl(window.location.origin, searchParams?.get('from') ?? null),
+        },
       });
       if (error) {
         throw error;
@@ -183,6 +191,19 @@ export function useAuthForm() {
       toast.error(message);
     }
   };
+
+  // They already chose Google/GitHub/… on the other app's screen: go there
+  // directly instead of making them choose again. Once per page load.
+  const providerStarted = useRef(false);
+  useEffect(() => {
+    if (!hydrated || session || providerStarted.current || !handoff.provider) {
+      return;
+    }
+    providerStarted.current = true;
+    void handleOAuthSignIn(handoff.provider);
+    // handleOAuthSignIn is recreated each render; the ref makes this run once.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated, session, handoff.provider]);
 
   const handleAnonymousSignIn = async () => {
     try {
