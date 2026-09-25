@@ -18,7 +18,7 @@
  *            credit-metering)   → APPLY the rules (BYOK bypass, metering,
  *                                 grants). grant.ts imports
  *                                 CAT_SUPPORTER_DAILY_LIMIT — never a literal.
- *   UI      (/pricing, /settings/usage, QuotaMeter, CatSettingsTab)
+ *   UI      (/pricing, /settings/usage, QuotaMeter, Cat settings page)
  *                               → RENDER only. No plan fact may be typed into
  *                                 a component; import it from here.
  *
@@ -270,7 +270,7 @@ export const PLAN_ID_BY_QUOTA_TIER = {
 
 /**
  * Canonical upsell copy — the "you can have more Cat" strings, written once.
- * UI surfaces (QuotaMeter, CatSettingsTab, /settings/usage, error states)
+ * UI surfaces (QuotaMeter, Cat settings page, /settings/usage, error states)
  * import these instead of each hand-writing a slightly different promise.
  */
 export const CAT_UPSELL = {

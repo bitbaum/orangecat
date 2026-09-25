@@ -86,7 +86,7 @@ export function CatActivityCard({ userId }: { userId: string }) {
     <div className="mt-6 rounded-lg border border-default bg-surface-base p-6">
       <div className="mb-1 flex items-center gap-2">
         <History className="h-5 w-5 text-fg-secondary" />
-        <h2 className="text-lg font-semibold text-fg-primary">Recent Cat activity</h2>
+        <h3 className="text-base font-semibold text-fg-primary">Recent activity</h3>
       </div>
       <p className="mb-4 text-sm text-fg-secondary">
         Everything Cat has done on your behalf — the audit trail behind the permissions above.
@@ -96,8 +96,8 @@ export function CatActivityCard({ userId }: { userId: string }) {
         <p className="text-sm text-fg-tertiary">Loading…</p>
       ) : rows.length === 0 ? (
         <p className="text-sm text-fg-tertiary">
-          No actions yet. When Cat creates something, sends a payment, or posts for you, it shows
-          up here.
+          No actions yet. When Cat creates something, sends a payment, or posts for you, it shows up
+          here.
         </p>
       ) : (
         <ul className="divide-y divide-subtle">

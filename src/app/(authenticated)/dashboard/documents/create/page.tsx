@@ -42,7 +42,7 @@ function DocumentPageContent() {
           <h2 className="text-lg font-semibold mb-2">Error</h2>
           <p className="mb-4 text-status-negative/80">{loadError}</p>
           <button
-            onClick={() => router.push(`${ROUTES.DASHBOARD.CAT}?tab=context`)}
+            onClick={() => router.push(`${ROUTES.DASHBOARD.CAT_SETTINGS}#knows`)}
             className="text-sm text-status-negative underline hover:text-status-negative/80"
           >
             Back to My Context

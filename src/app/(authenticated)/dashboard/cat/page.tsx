@@ -1,21 +1,20 @@
 /**
  * Cat — conversational AI entry (chat-first)
  *
- * Default view is a full-height chat surface. Context and controls are
- * secondary panels via ?tab=, not competing hub chrome.
+ * A full-height chat surface. Everything about configuring Cat lives on the
+ * Cat settings page; old `?tab=context|controls` links are forwarded there.
  */
 
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useRequireAuth } from '@/hooks/useAuth';
 import Loading from '@/components/Loading';
 import { ModernChatPanel } from '@/components/ai-chat/ModernChatPanel/index';
 import { useCatQuota } from '@/components/ai-chat/ModernChatPanel/hooks/useCatQuota';
 import { CatChatToolbar } from '@/components/ai-chat/CatChatToolbar';
-import { CatSecondaryPanel } from '@/components/ai-chat/CatSecondaryPanel';
-import { isCatHubTab, type CatHubTab } from '@/config/cat-hub';
+import { CAT_HUB_TAB_HREFS } from '@/config/cat-hub';
 import { APP_CONTENT_HEIGHT_CLASS } from '@/config/layout-chrome';
 import { useConversations } from '@/components/ai-chat/ModernChatPanel/hooks/useConversations';
 import { ConversationRail } from '@/components/ai-chat/ModernChatPanel/components/ConversationRail';
@@ -23,7 +22,10 @@ import { ConversationRail } from '@/components/ai-chat/ModernChatPanel/component
 export default function CatHubPage() {
   const { user, isLoading } = useRequireAuth();
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState<CatHubTab>('chat');
+  const router = useRouter();
+  const oldTab = searchParams?.get('tab');
+  const forwardTo =
+    oldTab === 'context' || oldTab === 'controls' ? CAT_HUB_TAB_HREFS[oldTab] : null;
   // Owned here, not in the rail: the toolbar renders the trigger (see
   // CatChatToolbar), so both halves read the same state.
   const [railOpen, setRailOpen] = useState(false);
@@ -40,15 +42,12 @@ export default function CatHubPage() {
   } = useConversations();
 
   useEffect(() => {
-    const tab = searchParams?.get('tab');
-    if (isCatHubTab(tab)) {
-      setActiveTab(tab);
-    } else {
-      setActiveTab('chat');
+    if (forwardTo) {
+      router.replace(forwardTo);
     }
-  }, [searchParams]);
+  }, [forwardTo, router]);
 
-  if (isLoading) {
+  if (isLoading || forwardTo) {
     return <Loading fullScreen message="Loading..." />;
   }
 
@@ -58,10 +57,6 @@ export default function CatHubPage() {
 
   const initialMessage = searchParams?.get('q') || undefined;
   const isNewUser = searchParams?.get('welcome') === 'true';
-
-  if (activeTab !== 'chat') {
-    return <CatSecondaryPanel tab={activeTab} />;
-  }
 
   return (
     // Viewport-lock the chat to the region below the fixed header (the mobile
@@ -81,11 +76,7 @@ export default function CatHubPage() {
         onMobileOpenChange={setRailOpen}
       />
       <div className="oc-chat-layout min-h-0 min-w-0 flex-1">
-        <CatChatToolbar
-          activePanel="chat"
-          quota={quota}
-          onOpenConversations={() => setRailOpen(true)}
-        />
+        <CatChatToolbar quota={quota} onOpenConversations={() => setRailOpen(true)} />
         <ModernChatPanel
           variant="focus"
           conversationId={activeId}
