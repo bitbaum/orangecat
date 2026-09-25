@@ -101,7 +101,7 @@ pending=()
 for mig in "$OC_MIGRATIONS_DIR"/*.sql; do
   [ -e "$mig" ] || break
   fn="$(basename "$mig")"
-  printf '%s\n' "$applied" | grep -qxF "$fn" || pending+=("$fn")
+  grep -qxF "$fn" <<<"$applied" || pending+=("$fn")
 done
 
 # --- 3. Backfill mode: record everything up to now as applied, run nothing -----

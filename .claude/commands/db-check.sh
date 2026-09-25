@@ -49,7 +49,7 @@ echo "2. Last applied migrations (the deploy applies these; never by hand)"
 # migration table — a wrong answer rather than a failed question. So the error
 # is shown as an error.
 mig=$(rest 'schema_migrations?select=filename&order=applied_at.desc&limit=5')
-if printf '%s' "$mig" | grep -q '"code"'; then
+if grep -q '"code"' <<<"$mig"; then
   echo "   ✗ query failed: $(printf '%s' "$mig" | head -c 200)"
 elif [ "$mig" = "[]" ] || [ -z "$mig" ]; then
   echo "   ⚠️  table is EMPTY — a fresh database bootstraps as 'done' and"
