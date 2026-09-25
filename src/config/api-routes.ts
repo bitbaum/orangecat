@@ -180,6 +180,12 @@ export const API_ROUTES = {
   },
   INTEGRATIONS: {
     LOKI_BUILD_INTENTS: '/api/integrations/loki/build-intents',
+    /** DELETE disconnects GitHub from Cat. */
+    GITHUB: '/api/integrations/github',
+    /** GET (full-page) starts the GitHub App authorisation. */
+    GITHUB_CONNECT: '/api/integrations/github/connect',
+    /** Where GitHub returns the person (the GitHub App's callback URL). */
+    GITHUB_CALLBACK: '/api/integrations/github/callback',
   },
   LNURLP: {
     CALLBACK: (username: string) => `/api/lnurlp/${encodeURIComponent(username)}/callback`,

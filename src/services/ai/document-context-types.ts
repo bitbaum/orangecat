@@ -138,6 +138,7 @@ export interface StakeholderSummary {
 /** One of the user's public GitHub repositories (cached). */
 import type { StudioMapSummary } from './studio-map-fetcher';
 import type { LokiProjectStatus } from '@/services/loki/actor-status';
+import type { ConnectedGitHub } from '@/services/github/cat-context';
 
 export interface GitHubRepoSummary {
   name: string;
@@ -148,6 +149,8 @@ export interface GitHubRepoSummary {
   pushedAt: string;
   fork: boolean;
   archived: boolean;
+  /** Only ever true through a connected account; public reads never see these. */
+  private?: boolean;
 }
 
 /** The user's follow graph — counts plus a few people they follow, for context. */
@@ -274,6 +277,9 @@ export interface FullUserContext {
   /** This person's projects as Loki sees them (status, live site, feedback).
    *  Optional: absent or null when Loki is unreachable or not linked. */
   lokiProjects?: LokiProjectStatus[] | null;
+  /** Through a connected GitHub account: assigned issues + latest releases.
+   *  Optional: absent or null when GitHub is not connected. */
+  githubWork?: Pick<ConnectedGitHub, 'login' | 'assignedIssues' | 'releases'> | null;
   paymentCapabilities: PaymentCapabilities;
   /**
    * Outcome feedback loop: what actually happened to the entities Cat created

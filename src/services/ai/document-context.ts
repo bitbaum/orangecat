@@ -12,6 +12,7 @@
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { fetchStudioMapForCat } from './studio-map-fetcher';
 import { fetchLokiActorStatus, type LokiProjectStatus } from '@/services/loki/actor-status';
+import { fetchConnectedGitHubForCat } from '@/services/github/cat-context';
 import { logger } from '@/utils/logger';
 import { getAdminClient } from '@/lib/supabase/admin';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -409,6 +410,7 @@ export async function fetchFullContextForCat(
     trackRecord,
     studioMap,
     lokiProjects,
+    connectedGitHub,
   ] = await Promise.all([
     fetchProfileForCat(supabase, userId),
     fetchDocumentsForCat(supabase, userId),
@@ -428,6 +430,7 @@ export async function fetchFullContextForCat(
     getCatTrackRecord(supabase, userId),
     fetchStudioMapForCat(),
     fetchLokiProjectsForCat(supabase, userId),
+    fetchConnectedGitHubForCat(userId).catch(() => null),
   ]);
 
   const runtime = await fetchRuntimeContextForCat(supabase, userId, runtimeHints, profile);
@@ -457,7 +460,9 @@ export async function fetchFullContextForCat(
     socialGraph,
     projectActivity,
     stakeholders,
-    githubRepos,
+    // A connected account sees private repos too; the profile handle only public ones.
+    githubRepos: connectedGitHub?.repos.length ? connectedGitHub.repos : githubRepos,
+    githubWork: connectedGitHub,
     studioMap,
     lokiProjects,
     paymentCapabilities,

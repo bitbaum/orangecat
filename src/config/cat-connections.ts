@@ -24,6 +24,12 @@ import { ROUTES } from '@/config/routes';
 
 export type CatConnectionId = 'loki' | 'solon' | 'github' | 'lightning';
 
+export interface CatConnectionLink {
+  label: string;
+  href: string;
+  kind: 'page' | 'external' | 'redirect';
+}
+
 export interface CatConnection {
   id: CatConnectionId;
   name: string;
@@ -35,8 +41,11 @@ export interface CatConnection {
   actions: string[];
   /** What it tells Cat without being asked. Empty = Cat only reads on demand. */
   pushes: string[];
-  /** Where the user goes to connect it. */
-  connect: { label: string; href: string; external: boolean };
+  /**
+   * Where the user goes to connect it. `redirect` is a full-page hop through
+   * our own API (an OAuth start) — never client-side navigation.
+   */
+  connect: CatConnectionLink;
 }
 
 export const CAT_CONNECTIONS: readonly CatConnection[] = [
@@ -54,7 +63,7 @@ export const CAT_CONNECTIONS: readonly CatConnection[] = [
     connect: {
       label: 'Sign in to Loki with OrangeCat',
       href: ECOSYSTEM.loki.siteUrl,
-      external: true,
+      kind: 'external',
     },
   },
   {
@@ -67,19 +76,28 @@ export const CAT_CONNECTIONS: readonly CatConnection[] = [
     reads: ['Platform policies that passed a vote in Solon'],
     actions: ['propose_governance_change'],
     pushes: ['Platform decisions, re-verified here before they take effect'],
-    connect: { label: 'Open Solon', href: ECOSYSTEM.solon.siteUrl, external: true },
+    connect: { label: 'Open Solon', href: ECOSYSTEM.solon.siteUrl, kind: 'external' },
   },
   {
     id: 'github',
     name: 'GitHub',
-    purpose: 'Let Cat know what you are building in public.',
-    reads: ['Your public repositories: what they are, language, stars, last push'],
+    purpose: 'Let Cat know what you are building — and what is waiting on you.',
+    // Connected through the read-only GitHub App: all three. Through only a
+    // profile handle: public repositories alone (the status says which).
+    reads: [
+      'Your repositories — private ones too once you connect your account',
+      'Issues and pull requests assigned to you',
+      'Your latest releases',
+    ],
     actions: [],
     pushes: [],
+    // The default. services/cat/connections swaps in the account connect
+    // (a redirect through /api/integrations/github/connect) when the server
+    // has the GitHub App configured.
     connect: {
       label: 'Add your GitHub to your profile',
       href: ROUTES.PROFILE.EDIT,
-      external: false,
+      kind: 'page',
     },
   },
   {
@@ -89,7 +107,7 @@ export const CAT_CONNECTIONS: readonly CatConnection[] = [
     reads: ['Your wallets, balances and goals'],
     actions: ['send_payment', 'connect_wallet', 'add_wallet'],
     pushes: [],
-    connect: { label: 'Set up a wallet', href: ROUTES.DASHBOARD.WALLETS, external: false },
+    connect: { label: 'Set up a wallet', href: ROUTES.DASHBOARD.WALLETS, kind: 'page' },
   },
 ];
 

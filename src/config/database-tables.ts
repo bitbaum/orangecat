@@ -79,6 +79,9 @@ export const DATABASE_TABLES = {
   // Cache of a user's public GitHub repos (for Cat context)
   GITHUB_REPO_CACHE: 'github_repo_cache',
 
+  // Encrypted credentials for Cat connections (GitHub App user tokens) — service role only
+  CAT_CONNECTION_TOKENS: 'cat_connection_tokens',
+
   // Documents
   USER_DOCUMENTS: 'user_documents',
 
