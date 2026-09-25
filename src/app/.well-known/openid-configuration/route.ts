@@ -28,6 +28,8 @@ export function GET() {
     jwks_uri: oauthUrl(OAUTH_PATHS.jwks),
     scopes_supported: SUPPORTED_SCOPE_NAMES,
     response_types_supported: ['code'],
+    // OIDC Prompt Create 1.0: a relying party may open straight on sign-up.
+    prompt_values_supported: ['create'],
     response_modes_supported: ['query'],
     grant_types_supported: ['authorization_code', 'refresh_token'],
     subject_types_supported: ['public'],
