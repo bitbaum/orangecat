@@ -424,12 +424,45 @@ export function renderGithubRepos(githubRepos: FullUserContext['githubRepos']): 
     if (r.archived) {
       meta.push('archived');
     }
+    if (r.private) {
+      meta.push('private');
+    }
     const metaStr = meta.length ? ` (${meta.join(', ')})` : '';
     const desc = r.description ? ` — ${r.description.slice(0, 120)}` : '';
     const when = r.pushedAt ? ` [pushed ${r.pushedAt.slice(0, 10)}]` : '';
     return `- **${r.name}**${metaStr}${desc}${when}`;
   });
-  return `## GitHub Repositories\nThe user's public GitHub projects (most recently pushed first):\n${lines.join('\n')}`;
+  const which = githubRepos.some(r => r.private)
+    ? 'including private ones, from their connected account — never repeat private details publicly'
+    : 'public';
+  return `## GitHub Repositories\nThe user's GitHub projects (${which}; most recently pushed first):\n${lines.join('\n')}`;
+}
+
+/** Through a connected account: what is assigned to them, and what just shipped. */
+export function renderGithubWork(githubWork: FullUserContext['githubWork']): string | null {
+  if (!githubWork) {
+    return null;
+  }
+  const parts: string[] = [];
+  if (githubWork.assignedIssues.length > 0) {
+    parts.push(
+      `Open issues/PRs assigned to them:\n${githubWork.assignedIssues
+        .map(i => `- ${i.title.slice(0, 100)} (${i.repo}) ${i.url}`)
+        .join('\n')}`
+    );
+  }
+  if (githubWork.releases.length > 0) {
+    parts.push(
+      `Latest releases:\n${githubWork.releases
+        .map(r => `- ${r.repo} ${r.name} (${r.publishedAt.slice(0, 10)}) ${r.url}`)
+        .join('\n')}`
+    );
+  }
+  if (parts.length === 0) {
+    return null;
+  }
+  const who = githubWork.login ? ` (@${githubWork.login})` : '';
+  return `## GitHub Work${who}\n${parts.join('\n')}`;
 }
 
 export function renderStudioMap(map: FullUserContext['studioMap']): string | null {

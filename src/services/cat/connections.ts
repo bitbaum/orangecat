@@ -17,7 +17,11 @@ import {
   CAT_CONNECTIONS,
   type CatConnection,
   type CatConnectionId,
+  type CatConnectionLink,
 } from '@/config/cat-connections';
+import { API_ROUTES } from '@/config/api-routes';
+import { getAdminClient } from '@/lib/supabase/admin';
+import { githubConnectionConfigured, hasGitHubConnection } from '@/services/github/connection';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { getUserActorId } from '@/domain/actors';
 import { getGitHubHandleForUser } from '@/services/ai/github-repos-fetcher';
@@ -31,12 +35,23 @@ export interface CatConnectionStatus extends CatConnection {
   state: CatConnectionState;
   /** e.g. "3 projects", "@octocat" — shown beside the state. */
   detail: string | null;
+  /** Offered when set: connecting, or upgrading a partial connection. */
+  offerConnect: boolean;
+  /** Where DELETE disconnects it, when the user can end it from here. */
+  disconnectEndpoint: string | null;
 }
 
-type Probe = (
-  supabase: AnySupabaseClient,
-  userId: string
-) => Promise<{ state: CatConnectionState; detail?: string | null }>;
+interface ProbeResult {
+  state: CatConnectionState;
+  detail?: string | null;
+  /** Replaces the registry's default connect link (e.g. an OAuth start). */
+  connect?: CatConnectionLink;
+  /** Offer connect even while `connected` — a partial connection that can grow. */
+  upgradable?: boolean;
+  disconnectEndpoint?: string;
+}
+
+type Probe = (supabase: AnySupabaseClient, userId: string) => Promise<ProbeResult>;
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
@@ -59,8 +74,26 @@ const PROBES: Record<CatConnectionId, Probe> = {
   solon: async () => ({ state: 'everyone' }),
 
   github: async (supabase, userId) => {
+    const accountReady = githubConnectionConfigured();
+    const account = accountReady ? await hasGitHubConnection(getAdminClient(), userId) : null;
+    if (account) {
+      return {
+        state: 'connected',
+        detail: account.login ? `@${account.login} · private too` : 'account connected',
+        disconnectEndpoint: API_ROUTES.INTEGRATIONS.GITHUB,
+      };
+    }
+    const connect: CatConnectionLink | undefined = accountReady
+      ? {
+          label: 'Connect your GitHub account',
+          href: API_ROUTES.INTEGRATIONS.GITHUB_CONNECT,
+          kind: 'redirect',
+        }
+      : undefined;
     const handle = await getGitHubHandleForUser(supabase, userId);
-    return handle ? { state: 'connected', detail: `@${handle}` } : { state: 'not_connected' };
+    return handle
+      ? { state: 'connected', detail: `@${handle} · public only`, connect, upgradable: !!connect }
+      : { state: 'not_connected', connect };
   },
 
   lightning: async (supabase, userId) => {
@@ -89,11 +122,24 @@ export async function getCatConnectionStatuses(
   return Promise.all(
     CAT_CONNECTIONS.map(async connection => {
       try {
-        const { state, detail = null } = await PROBES[connection.id](supabase, userId);
-        return { ...connection, state, detail };
+        const r = await PROBES[connection.id](supabase, userId);
+        return {
+          ...connection,
+          connect: r.connect ?? connection.connect,
+          state: r.state,
+          detail: r.detail ?? null,
+          offerConnect: r.state === 'not_connected' || !!r.upgradable,
+          disconnectEndpoint: r.disconnectEndpoint ?? null,
+        };
       } catch (error) {
         logger.warn('Cat connection probe failed', { id: connection.id, error }, 'CatConnections');
-        return { ...connection, state: 'unknown' as const, detail: null };
+        return {
+          ...connection,
+          state: 'unknown' as const,
+          detail: null,
+          offerConnect: false,
+          disconnectEndpoint: null,
+        };
       }
     })
   );
