@@ -53,6 +53,8 @@ interface BasePrefillFields {
   investment_type?: string; // investment
   methodology?: string; // research
   visibility?: string; // wishlist
+  product_type?: string; // product
+  fulfillment_type?: string; // product
 }
 
 interface UseCreatePrefillOptions {

@@ -274,6 +274,7 @@ export default async function PublicProjectPage({ params }: PageProps) {
           fundingLink={null}
           entityType="project"
           entityId={id}
+          entityTitle={project.title}
         />
       )}
       <ProjectPageClient

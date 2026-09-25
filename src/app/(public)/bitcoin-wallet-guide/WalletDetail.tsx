@@ -16,7 +16,7 @@ export function WalletDetail({ wallet }: WalletDetailProps) {
       key={wallet.id}
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
-      className="sticky top-8"
+      className="sticky top-20"
     >
       <Card className="shadow-sm">
         <CardHeader>

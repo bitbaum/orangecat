@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { User, CalendarDays, LayoutGrid } from 'lucide-react';
+import { User, CalendarDays, LayoutGrid, MessageCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { ROUTES } from '@/config/routes';
 import { APP_NAME } from '@/config/brand';
@@ -14,6 +14,11 @@ interface PublicEntityOwnerCardProps {
    * Rendered only when > 0 — real numbers only, zero adds no trust.
    */
   activeListingCount?: number;
+  /**
+   * The listing a visitor can ask the owner about — opens a direct message
+   * with the listing already named. Omitted for the owner themself.
+   */
+  inquiry?: { title: string; path: string };
 }
 
 /**
@@ -25,6 +30,7 @@ export default function PublicEntityOwnerCard({
   owner,
   label,
   activeListingCount,
+  inquiry,
 }: PublicEntityOwnerCardProps) {
   const profileHref = owner.username ? ROUTES.PROFILES.VIEW(owner.username) : '#';
   const isClickable = !!owner.username;
@@ -82,6 +88,20 @@ export default function PublicEntityOwnerCard({
               </div>
             )}
           </div>
+        )}
+
+        {inquiry && owner.user_id && (
+          <Link
+            href={`${ROUTES.MESSAGES}?${new URLSearchParams({
+              to: owner.user_id,
+              about: inquiry.title,
+              ref: inquiry.path,
+            }).toString()}`}
+            className="mt-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-md border border-default px-4 py-2 text-sm font-medium text-fg-primary transition-colors hover:bg-surface-raised"
+          >
+            <MessageCircle className="h-4 w-4" />
+            Ask {owner.name || (owner.username ? `@${owner.username}` : 'the seller')} about this
+          </Link>
         )}
       </CardContent>
     </Card>

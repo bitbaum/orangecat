@@ -36,7 +36,7 @@ export function GuidancePanel({
   // Default state: Show intro content
   if (!activeField) {
     return (
-      <div className="sticky top-4">
+      <div className="sticky top-20">
         <GuidanceDefaultCard content={defaultGuidance} />
       </div>
     );
@@ -48,14 +48,14 @@ export function GuidancePanel({
   // Fallback if field not found
   if (!content) {
     return (
-      <div className="sticky top-4">
+      <div className="sticky top-20">
         <GuidanceFallbackCard />
       </div>
     );
   }
 
   return (
-    <div className="sticky top-4">
+    <div className="sticky top-20">
       <GuidanceFieldCard content={content}>
         {/* Additional Content (e.g., currency converter) */}
         {additionalContent && (

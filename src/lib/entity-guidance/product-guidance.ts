@@ -32,7 +32,7 @@ export type ProductFieldType =
   | 'currency'
   | 'inventory_count'
   | 'fulfillment_type'
-  | 'images'
+  | 'thumbnail_url'
   | 'tags'
   | null;
 

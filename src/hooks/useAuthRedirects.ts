@@ -83,7 +83,10 @@ export function useRequireAuth() {
       // Preserve the original destination so post-login we send the user
       // back where they were trying to go. Without this, signing in from
       // /dashboard/projects lands on /dashboard regardless.
-      const from = pathname && pathname !== '/' ? pathname : null;
+      // With the query: `/messages?to=<seller>&about=…` without it logs a buyer
+      // in to an empty inbox, the seller and the listing they asked about lost.
+      const search = typeof window !== 'undefined' ? window.location.search : '';
+      const from = pathname && pathname !== '/' ? `${pathname}${search}` : null;
       const redirectUrl = from
         ? `${ROUTES.AUTH}?mode=login&from=${encodeURIComponent(from)}`
         : `${ROUTES.AUTH}?mode=login`;

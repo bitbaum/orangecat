@@ -18,10 +18,10 @@ export const PRODUCT_TEMPLATES: EntityTemplate<UserProductFormData>[] = [
     id: 'digital-download',
     icon: React.createElement(FileDigit, { className: 'w-4 h-4' }),
     name: 'Digital Download',
-    tagline: 'One file, instant delivery.',
+    tagline: 'A file you send each buyer.',
     defaults: {
       title: 'Digital Download',
-      description: 'A digital file delivered instantly after purchase.',
+      description: 'A digital file you send to each buyer after they pay.',
       category: 'Digital',
       product_type: 'digital',
       price: 15,

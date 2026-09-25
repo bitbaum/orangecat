@@ -238,6 +238,7 @@ export const AI_ENTITY_INSTRUCTIONS: Partial<Record<EntityType, string[]>> = {
     'For product_type: Choose "physical" for tangible goods, "digital" for downloads/files, or "service" for service-based products.',
     'For price: the amount in the unit named by `currency`, as the user said it — "CHF 15" is price 15 with currency "CHF". Never convert it to BTC.',
     'For fulfillment_type: "digital" when the buyer receives a file or link, otherwise "manual".',
+    'Never promise automatic or instant delivery in the description: OrangeCat does not deliver files; the seller sends them after payment.',
     'For inventory_count: Use -1 for unlimited inventory, or a positive number for limited stock.',
   ],
   service: [
