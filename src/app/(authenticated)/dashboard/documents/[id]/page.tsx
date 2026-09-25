@@ -117,7 +117,7 @@ export default async function DocumentDetailPage({ params }: PageProps) {
     <div className="container max-w-4xl py-8 space-y-6">
       {/* Back link */}
       <Link
-        href={`${ROUTES.DASHBOARD.CAT}?tab=context`}
+        href={`${ROUTES.DASHBOARD.CAT_SETTINGS}#knows`}
         className="inline-flex items-center gap-2 text-sm text-fg-secondary hover:text-fg-primary transition-colors"
       >
         <ArrowLeft className="h-4 w-4" />

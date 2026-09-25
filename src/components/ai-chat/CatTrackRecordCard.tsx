@@ -48,7 +48,7 @@ export function CatTrackRecordCard() {
   return (
     <div className="rounded-md border border-subtle bg-surface-page p-5">
       <div className="mb-3 flex items-center justify-between gap-2">
-        <h3 className="flex items-center gap-2 font-semibold text-fg-primary">
+        <h3 className="flex items-center gap-2 text-base font-semibold text-fg-primary">
           <TrendingUp className="h-4 w-4 text-fg-secondary" aria-hidden />
           Track Record
         </h3>

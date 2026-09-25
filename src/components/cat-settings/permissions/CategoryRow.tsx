@@ -95,7 +95,7 @@ export function CategoryRow({
           </button>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-semibold text-fg-primary">{cat.name}</h3>
+              <h3 className="text-base font-semibold text-fg-primary">{cat.name}</h3>
               <Badge variant="secondary" className="text-xs">
                 {cat.enabledActionCount}/{cat.actionCount}
               </Badge>

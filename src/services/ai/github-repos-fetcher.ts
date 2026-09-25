@@ -82,6 +82,14 @@ async function fetchFromGitHub(handle: string): Promise<GitHubRepoSummary[] | nu
       `https://api.github.com/users/${encodeURIComponent(handle)}/repos?sort=pushed&per_page=30&type=owner`,
       { headers, signal: controller.signal }
     );
+    if (res.status === 404) {
+      // The account is gone or renamed. That is an ANSWER, not an outage: an
+      // empty list replaces the cache. Treating it as a failure served the
+      // last cached repos forever — Cat showed a renamed account's repos,
+      // frozen on the day of the rename, for a month.
+      logger.warn('GitHub handle no longer exists', { handle }, 'GitHubRepos');
+      return [];
+    }
     if (!res.ok) {
       logger.warn('GitHub repos fetch non-OK', { handle, status: res.status }, 'GitHubRepos');
       return null;

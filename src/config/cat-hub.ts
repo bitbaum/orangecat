@@ -25,16 +25,17 @@ export const CAT_HUB_COPY = {
   /** The personal greeting ("Good evening, Cato") is built in EmptyState. */
   greetingNewUser: 'Tell Cat what you want to do',
   composerPlaceholder: 'Message Cat…',
-  contextTitle: 'Context',
-  contextDescription: 'Documents and facts your Cat can use for better answers.',
-  controlsTitle: 'Controls',
-  controlsDescription: 'Model, keys, and permissions for autonomous actions.',
-  backToChat: 'Back to chat',
 } as const;
 
+/**
+ * The old Context and Controls tabs are sections of the Cat settings page now
+ * (knows / sees). Kept under their old names so every caller — the "+" menu,
+ * the GitHub return — lands in the right section; `?tab=` links to the Cat
+ * page are forwarded there too.
+ */
 export const CAT_HUB_TAB_HREFS: Record<Exclude<CatHubTab, 'chat'>, string> = {
-  context: `${ROUTES.DASHBOARD.CAT}?tab=context`,
-  controls: `${ROUTES.DASHBOARD.CAT}?tab=controls`,
+  context: `${ROUTES.DASHBOARD.CAT_SETTINGS}#knows`,
+  controls: `${ROUTES.DASHBOARD.CAT_SETTINGS}#sees`,
 };
 
 export function isCatHubTab(value: string | null): value is CatHubTab {

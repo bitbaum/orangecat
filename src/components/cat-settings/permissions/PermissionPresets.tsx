@@ -26,7 +26,7 @@ export function PermissionPresets({
 
   return (
     <div className="mt-8">
-      <h3 className="font-semibold text-fg-primary mb-3">Quick Presets</h3>
+      <h3 className="mb-3 text-base font-semibold text-fg-primary">Quick presets</h3>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <button
           onClick={() => applyPreset(id => id === 'context')}

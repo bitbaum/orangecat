@@ -1,19 +1,19 @@
 'use client';
 
 /**
- * Minimal toolbar for the Cat chat focus layout.
- * Context and controls live here instead of competing hub tabs/headers.
+ * Minimal toolbar for the Cat chat: the conversations trigger (phones), the
+ * quota chip when it matters, and ONE way into Cat settings — which replaced
+ * the separate Context and Controls tabs.
  */
 
 import Link from 'next/link';
-import { FolderOpen, PanelLeft, Settings2 } from 'lucide-react';
-import { CAT_HUB_COPY, CAT_HUB_TAB_HREFS, type CatHubTab } from '@/config/cat-hub';
+import { PanelLeft, Settings2 } from 'lucide-react';
+import { ROUTES } from '@/config/routes';
 import { cn } from '@/lib/utils';
 import { QuotaMeter, isQuotaWorthShowing } from './ModernChatPanel/components/QuotaMeter';
 import type { CatQuota } from './ModernChatPanel/hooks/useCatQuota';
 
 interface CatChatToolbarProps {
-  activePanel?: CatHubTab;
   className?: string;
   /** Daily-cap meter; rendered on the chat panel only. */
   quota?: CatQuota | null;
@@ -25,34 +25,10 @@ interface CatChatToolbarProps {
 }
 
 export function CatChatToolbar({
-  activePanel = 'chat',
   className,
   quota = null,
   onOpenConversations,
 }: CatChatToolbarProps) {
-  const panelLink = (tab: Exclude<CatHubTab, 'chat'>) => {
-    const href = CAT_HUB_TAB_HREFS[tab];
-    const isActive = activePanel === tab;
-    const Icon = tab === 'context' ? FolderOpen : Settings2;
-    const label = tab === 'context' ? CAT_HUB_COPY.contextTitle : CAT_HUB_COPY.controlsTitle;
-
-    return (
-      <Link
-        href={href}
-        className={cn(
-          'flex min-h-10 min-w-10 items-center justify-center gap-1.5 rounded-md px-2.5 text-sm transition-colors sm:min-w-0 sm:px-3',
-          isActive
-            ? 'bg-surface-raised text-fg-primary'
-            : 'text-fg-secondary hover:bg-surface-raised/60 hover:text-fg-primary'
-        )}
-        aria-current={isActive ? 'page' : undefined}
-      >
-        <Icon className="h-4 w-4 flex-shrink-0" />
-        <span className="hidden sm:inline">{label}</span>
-      </Link>
-    );
-  };
-
   return (
     <div className={cn('oc-chat-toolbar', className)}>
       {/* Left: the conversation trigger, phones only (the rail is always
@@ -76,12 +52,16 @@ export function CatChatToolbar({
           two panel links stay fixed — they're the controls that must remain
           tappable. */}
       <div className="ml-auto flex min-w-0 items-center gap-1 sm:gap-2">
-        {activePanel === 'chat' && isQuotaWorthShowing(quota) && (
-          <QuotaMeter quota={quota} className="min-w-0" />
-        )}
+        {isQuotaWorthShowing(quota) && <QuotaMeter quota={quota} className="min-w-0" />}
         <div className="flex flex-shrink-0 items-center gap-1 sm:gap-2">
-          {panelLink('context')}
-          {panelLink('controls')}
+          <Link
+            href={ROUTES.DASHBOARD.CAT_SETTINGS}
+            className="flex min-h-10 min-w-10 items-center justify-center gap-1.5 rounded-md px-2.5 text-sm text-fg-secondary transition-colors hover:bg-surface-raised/60 hover:text-fg-primary sm:min-w-0 sm:px-3"
+            aria-label="Cat settings"
+          >
+            <Settings2 className="h-4 w-4 flex-shrink-0" />
+            <span className="hidden sm:inline">Settings</span>
+          </Link>
         </div>
       </div>
     </div>

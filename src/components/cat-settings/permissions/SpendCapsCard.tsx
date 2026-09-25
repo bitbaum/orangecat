@@ -76,7 +76,7 @@ export function SpendCapsCard({ caps, disabled, onSaved }: SpendCapsCardProps) {
     <div className="bg-surface-base rounded-lg border border-default p-4">
       <div className="flex items-center gap-2 mb-1">
         <Wallet className="h-4 w-4 text-fg-secondary" />
-        <h3 className="font-semibold text-fg-primary">Spending caps</h3>
+        <h3 className="text-base font-semibold text-fg-primary">Spending caps</h3>
       </div>
       <p className="text-sm text-fg-secondary mb-4">
         Hard limits on what Cat can pay, even after you confirm. Leave empty for no cap.

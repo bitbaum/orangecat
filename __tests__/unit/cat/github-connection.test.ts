@@ -15,6 +15,54 @@ import { shapeConnectedGitHub } from '@/services/github/cat-context';
 import { renderGithubRepos, renderGithubWork } from '@/services/ai/context-sections';
 import { resetCachedKey } from '@/lib/crypto/webhookSecretCipher';
 import { decideGitHubReturn } from '@/app/api/integrations/github/state';
+import { fetchGitHubReposForCat } from '@/services/ai/github-repos-fetcher';
+
+describe('public repos from a profile handle', () => {
+  it('drops the cached repos when the handle no longer exists (renamed account)', async () => {
+    const upserts: unknown[] = [];
+    const table = (name: string) => {
+      const q = {
+        select: () => q,
+        eq: () => q,
+        maybeSingle: async () =>
+          name === 'profiles'
+            ? {
+                data: {
+                  social_links: {
+                    links: [{ platform: 'github', value: 'https://github.com/oldname' }],
+                  },
+                },
+              }
+            : {
+                data: {
+                  handle: 'oldname',
+                  repos: [{ name: 'stale-repo' }],
+                  fetched_at: '2026-08-27T00:00:00Z',
+                },
+              },
+        upsert: async (row: unknown) => {
+          upserts.push(row);
+          return { error: null };
+        },
+      };
+      return q;
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response('{"message":"Not Found"}', { status: 404 }))
+    );
+
+    const repos = await fetchGitHubReposForCat(
+      { from: table } as never,
+      'u1',
+      Date.parse('2026-09-25T00:00:00Z')
+    );
+
+    expect(repos).toEqual([]);
+    expect(upserts).toHaveLength(1);
+    expect((upserts[0] as { repos: unknown[] }).repos).toEqual([]);
+  });
+});
 
 describe('decideGitHubReturn', () => {
   const base = {
