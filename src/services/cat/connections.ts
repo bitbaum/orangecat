@@ -29,7 +29,13 @@ import { fetchLokiActorStatus } from '@/services/loki/actor-status';
 import { logger } from '@/utils/logger';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 
-export type CatConnectionState = 'connected' | 'not_connected' | 'everyone' | 'unknown';
+/**
+ * `limited` is a partial connection that must never read as "connected":
+ * e.g. GitHub known only from a profile handle (public repos) — the row said
+ * "Connected · public only" beside a "Connect" button, and nobody could tell
+ * whether it was connected or not.
+ */
+export type CatConnectionState = 'connected' | 'limited' | 'not_connected' | 'everyone' | 'unknown';
 
 export interface CatConnectionStatus extends CatConnection {
   state: CatConnectionState;
@@ -79,20 +85,20 @@ const PROBES: Record<CatConnectionId, Probe> = {
     if (account) {
       return {
         state: 'connected',
-        detail: account.login ? `@${account.login} · private too` : 'account connected',
+        detail: account.login ? `@${account.login} · private repos, issues, releases` : null,
         disconnectEndpoint: API_ROUTES.INTEGRATIONS.GITHUB,
       };
     }
     const connect: CatConnectionLink | undefined = accountReady
       ? {
-          label: 'Connect your GitHub account',
+          label: 'Connect GitHub for private repos, issues and releases',
           href: API_ROUTES.INTEGRATIONS.GITHUB_CONNECT,
           kind: 'redirect',
         }
       : undefined;
     const handle = await getGitHubHandleForUser(supabase, userId);
     return handle
-      ? { state: 'connected', detail: `@${handle} · public only`, connect, upgradable: !!connect }
+      ? { state: 'limited', detail: `@${handle}`, connect, upgradable: !!connect }
       : { state: 'not_connected', connect };
   },
 
@@ -128,7 +134,7 @@ export async function getCatConnectionStatuses(
           connect: r.connect ?? connection.connect,
           state: r.state,
           detail: r.detail ?? null,
-          offerConnect: r.state === 'not_connected' || !!r.upgradable,
+          offerConnect: r.state === 'not_connected' || r.state === 'limited' || !!r.upgradable,
           disconnectEndpoint: r.disconnectEndpoint ?? null,
         };
       } catch (error) {

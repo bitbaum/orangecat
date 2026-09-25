@@ -8,6 +8,7 @@
  * user can see and erase it, ChatGPT-style. Talks to /api/cat/memories.
  */
 
+import { Switch } from '@/components/ui/switch';
 import { useCallback, useEffect, useState } from 'react';
 import {
   Brain,
@@ -163,23 +164,16 @@ export function CatMemoryManager({
             across sessions. You control all of it — delete anything, anytime.
           </p>
           {memoryEnabled !== undefined && onToggleMemory && (
-            <label className="mt-3 flex cursor-pointer items-center gap-3">
-              <button
-                type="button"
-                role="switch"
-                aria-checked={memoryEnabled}
+            <label className="mt-3 flex cursor-pointer items-start gap-3">
+              {/* The shared Switch. The hand-built one positioned its knob
+                  with no `left`, so at phone width it drifted out of the track
+                  and over this label. */}
+              <Switch
+                checked={memoryEnabled}
+                onCheckedChange={checked => void onToggleMemory(checked)}
                 aria-label="Remember details from our conversations"
-                onClick={() => void onToggleMemory(!memoryEnabled)}
-                className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-                  memoryEnabled ? 'bg-accent-warm' : 'bg-surface-raised border border-default'
-                }`}
-              >
-                <span
-                  className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
-                    memoryEnabled ? 'translate-x-[22px]' : 'translate-x-0.5'
-                  }`}
-                />
-              </button>
+                className="mt-0.5 flex-shrink-0"
+              />
               <span className="text-sm text-fg-primary">
                 Remember details from our conversations
                 <span className="block text-xs text-fg-tertiary">

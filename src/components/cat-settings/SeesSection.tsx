@@ -21,6 +21,7 @@ import type { CatConnectionStatus } from '@/services/cat/connections';
 
 const STATE: Record<CatConnectionStatus['state'], { label: string; dot: string }> = {
   connected: { label: 'Connected', dot: 'bg-status-positive' },
+  limited: { label: 'Public only', dot: 'bg-status-warning' },
   everyone: { label: 'On for everyone', dot: 'bg-status-positive' },
   not_connected: { label: 'Not connected', dot: 'border border-strong bg-transparent' },
   unknown: { label: 'Status unavailable', dot: 'bg-fg-tertiary' },
@@ -177,6 +178,11 @@ export function SeesSection({ connections, failed, onChanged }: SeesSectionProps
                       </div>
                     )}
                   </dl>
+                  {c.offerConnect && c.connectHint && c.connect.kind === 'redirect' && (
+                    <p className="rounded-md bg-surface-raised px-3 py-2 text-sm text-fg-secondary">
+                      {c.connectHint}
+                    </p>
+                  )}
                   {(c.offerConnect || c.disconnectEndpoint) && (
                     <div className="flex flex-wrap items-center gap-3">
                       {c.offerConnect && <ConnectLink link={c.connect} />}

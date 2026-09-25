@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useHeaderScroll } from '@/hooks/useHeaderScroll';
 import { useMobileMenu } from '@/hooks/useMobileMenu';
@@ -54,6 +54,13 @@ export function Header({
   const authState = useAuth();
   const authStatus = getAuthStatus(authState);
   const { isScrolled, isHidden } = useHeaderScroll();
+
+  // Announce the header's visibility on <html> so anything pinned below it
+  // (`.sticky-below-header` in globals.css) can move up when it hides —
+  // otherwise it leaves an empty band where the header was.
+  useEffect(() => {
+    document.documentElement.dataset.headerHidden = isHidden ? 'true' : 'false';
+  }, [isHidden]);
   const mobileMenu = useMobileMenu();
   const isAuthRoute = useIsAuthRoute();
   const navigation = getHeaderNavigationItems();
