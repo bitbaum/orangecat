@@ -10,11 +10,19 @@
  * This mirrors, for the UI, the same inputs `provider-resolver.ts` uses at
  * send-time — so what the picker offers and what the resolver serves agree.
  */
-import { getAvailableModels, getFreeModels, type AIModelMetadata } from '@/config/ai-models';
+import {
+  getAvailableModels,
+  getFreeModels,
+  getModelMetadata,
+  type AIModelMetadata,
+} from '@/config/ai-models';
 import { getCreditBalance } from '@/services/cat/credits';
 import { MIN_FRONTIER_BALANCE_BTC } from '@/services/cat/credit-metering';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
+import { getAIProvider } from '@/data/aiProviders';
+import { createApiKeyService } from '@/services/ai/api-key-service';
+import { isProbedProvider, modelsForKey, type KeyModels } from '@/services/cat/key-models';
 
 /** How a model is served for this specific user. */
 export type ModelAccessSource = 'free' | 'byok' | 'credits';
@@ -95,17 +103,51 @@ function toUsable(m: AIModelMetadata, source: ModelAccessSource): UsableModel {
 }
 
 /**
+ * The models each of the user's verified DIRECT keys (Anthropic, OpenAI, Groq…)
+ * can use, asked of the provider itself. OpenRouter is not asked — it already
+ * unlocks the whole registry below.
+ */
+async function directKeyModels(supabase: AnySupabaseClient, userId: string): Promise<KeyModels[]> {
+  const keys = await createApiKeyService(supabase).listDecryptedKeysOrdered(userId);
+  const direct = keys.filter(k => isProbedProvider(k.provider));
+  return Promise.all(direct.map(k => modelsForKey(k.provider, k.key)));
+}
+
+/** A model a direct key lists, in the picker's shape. Registry metadata when we have it. */
+function toKeyModel(id: string, keyModels: KeyModels): UsableModel {
+  const known = getModelMetadata(id);
+  const providerName = getAIProvider(keyModels.provider)?.name ?? keyModels.provider;
+  const strongest = id === keyModels.suggested ? ' · strongest' : '';
+  return {
+    id,
+    name: known?.name ?? id,
+    provider: `${providerName} · your key${strongest}`,
+    tier: known?.tier ?? 'premium',
+    contextWindow: known?.contextWindow ?? 0,
+    capabilities: known?.capabilities ?? ['text', 'streaming'],
+    source: 'byok',
+  };
+}
+
+export interface ModelAccessDeps {
+  /** Test seam for the per-key provider lookup. */
+  directKeyModels?: (supabase: AnySupabaseClient, userId: string) => Promise<KeyModels[]>;
+}
+
+/**
  * Resolve the models this user can use right now, plus the ones locked behind a
  * key or credits. Pure read; never throws (a balance/key read failure degrades
  * to "free only", which is the honest floor).
  */
 export async function getUsableModels(
   supabase: AnySupabaseClient,
-  userId: string
+  userId: string,
+  deps: ModelAccessDeps = {}
 ): Promise<ModelAccess> {
-  const [byokProviders, creditBalanceBtc] = await Promise.all([
+  const [byokProviders, creditBalanceBtc, keyModels] = await Promise.all([
     getVerifiedProviderIds(supabase, userId).catch(() => [] as string[]),
     getCreditBalance(supabase, userId).catch(() => 0),
+    (deps.directKeyModels ?? directKeyModels)(supabase, userId).catch(() => [] as KeyModels[]),
   ]);
 
   const hasAggregatorKey = byokProviders.includes(AGGREGATOR_PROVIDER);
@@ -134,6 +176,19 @@ export async function getUsableModels(
         tier: m.tier,
         unlock: ['credits', 'byok'],
       });
+    }
+  }
+
+  // The user's own direct keys: every model the provider lists for that key,
+  // strongest first — the model someone pays for is one they can pick.
+  const offered = new Set(models.map(m => m.id));
+  for (const km of keyModels) {
+    for (const id of km.models) {
+      if (offered.has(id)) {
+        continue;
+      }
+      offered.add(id);
+      models.push(toKeyModel(id, km));
     }
   }
 

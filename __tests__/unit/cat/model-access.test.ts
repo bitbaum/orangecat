@@ -72,6 +72,33 @@ describe('getUsableModels — access derivation', () => {
     expect(access.models.every(m => m.source === 'free')).toBe(true);
   });
 
+  it("a direct key's own models become pickable, strongest marked", async () => {
+    const access = await getUsableModels(fakeSupabase({ providers: ['anthropic'] }), 'u1', {
+      directKeyModels: async () => [
+        {
+          provider: 'anthropic',
+          models: ['claude-opus-5-5', 'claude-sonnet-5'],
+          suggested: 'claude-opus-5-5',
+        },
+      ],
+    });
+    const mine = access.models.filter(m => m.source === 'byok');
+    expect(mine.map(m => m.id)).toEqual(['claude-opus-5-5', 'claude-sonnet-5']);
+    expect(mine[0].provider).toMatch(/your key · strongest/);
+    // Paid registry models stay locked — one provider's key is not a router.
+    expect(access.locked).toHaveLength(PAID_COUNT);
+    expect(access.allowsCustomModel).toBe(false);
+  });
+
+  it('a direct key that cannot be read adds nothing and breaks nothing', async () => {
+    const access = await getUsableModels(fakeSupabase({ providers: ['openai'] }), 'u1', {
+      directKeyModels: async () => {
+        throw new Error('provider down');
+      },
+    });
+    expect(access.models).toHaveLength(FREE_COUNT);
+  });
+
   it('a non-aggregator key (e.g. xai) does not open the custom-model door', async () => {
     const access = await getUsableModels(fakeSupabase({ providers: ['xai'] }), 'u1');
     expect(access.allowsCustomModel).toBe(false);
