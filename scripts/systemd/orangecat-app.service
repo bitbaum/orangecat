@@ -17,7 +17,14 @@ User=ubuntu
 WorkingDirectory=/opt/orangecat/app
 EnvironmentFile=/opt/orangecat/app/.env
 ExecStart=/opt/orangecat/app/launch.sh
-Restart=on-failure
+# `always`, not `on-failure`, because of SuccessExitStatus below: with
+# on-failure, a SIGTERM that nobody asked for is a "success", so the app just
+# stays down — no restart and no OnFailure page. 2026-09-26 01:53:42 a stray
+# SIGTERM hit every app on the box at once; the other ~20 units restarted in
+# 3s, orangecat sat dead for 3h45m and nothing alerted. `always` still never
+# restarts after an explicit `systemctl stop`/`restart` (a deploy), so the
+# journal stays clean.
+Restart=always
 RestartSec=3
 # A deploy stops this unit with SIGTERM, and Next exits 143. Without this,
 # systemd records every ordinary deploy as
@@ -35,8 +42,9 @@ RestartSec=3
 # requested stop is a success makes the journal mean what it says, and stops
 # spawning a notifier per deploy to conclude nothing happened.
 #
-# Safe because SIGTERM here is always a requested stop: OOM kills with SIGKILL
-# (9), which still counts as a failure and still pages.
+# OOM kills with SIGKILL (9), which still counts as a failure and still pages.
+# SIGTERM is NOT always a requested stop (see Restart= above) — which is why
+# this line is only safe paired with Restart=always.
 SuccessExitStatus=143 SIGTERM
 StandardOutput=journal
 StandardError=journal
