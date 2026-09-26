@@ -25,6 +25,7 @@ import {
   PROVIDER_BASE_URLS,
 } from '@/config/ai-provider-runtime';
 import { createAutoRouter } from '@/services/ai/auto-router';
+import { modelForDirectKey, peekModelsForKey } from '@/services/cat/key-models';
 import { buildPlatformProviders } from '@/services/ai/platform-providers';
 import { GROQ_KEY_HEADER, OPENROUTER_KEY_HEADER } from '@/config/http-headers';
 import { ROUTES } from '@/config/routes';
@@ -152,10 +153,13 @@ export async function resolveProvider(
   // A concrete step for one BYOK key. Returns null for unknown/unconfigured
   // providers, which are then skipped from the chain.
   const buildKeyStep = (prov: string, key: string): ChainStep | null => {
+    // What this key's provider says it can serve — cached by the picker; never
+    // awaited here (see key-models.ts).
+    const keyModels = peekModelsForKey(prov, key);
     if (prov === 'groq') {
       return {
         provider: 'groq',
-        modelToUse: groqModelFor(requestedModel),
+        modelToUse: modelForDirectKey(requestedModel, keyModels, groqModelFor),
         aiService: createGroqServiceWithByok(key),
         hasByok: true,
         toolEndpoint: completionsUrl(PROVIDER_BASE_URLS.groq),
@@ -191,10 +195,11 @@ export async function resolveProvider(
       if (!rt) {
         return null;
       }
-      const model =
-        requestedModel && requestedModel !== 'auto' && requestedModel !== 'any'
-          ? requestedModel
-          : (rt.defaultModel ?? DEFAULT_FREE_MODEL_ID);
+      const model = modelForDirectKey(requestedModel, keyModels, requested =>
+        requested && requested !== 'auto' && requested !== 'any'
+          ? requested
+          : (rt.defaultModel ?? DEFAULT_FREE_MODEL_ID)
+      );
       return {
         provider: prov as AIProvider,
         modelToUse: model,
