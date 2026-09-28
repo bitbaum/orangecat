@@ -245,6 +245,8 @@ export function useAuthForm() {
     isPasswordFocused,
     setIsPasswordFocused,
     showMFAVerify,
+    setShowMFAVerify,
+    handoff,
     session,
     hydrated,
     captchaToken,

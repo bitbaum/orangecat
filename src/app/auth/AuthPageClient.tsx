@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { AlertCircle, ArrowLeft, CheckCircle2, Loader2, RefreshCw, Sparkles } from 'lucide-react';
 import { ROUTES } from '@/config/routes';
@@ -10,14 +11,24 @@ import { AuthHeroPanel } from './AuthHeroPanel';
 import { AuthFormBody } from './AuthFormBody';
 import { AuthSocialLogin } from './AuthSocialLogin';
 import { useAuthForm } from './useAuthForm';
+import { EmailCodeSignIn } from './EmailCodeSignIn';
 import { APP_NAME } from '@/config/brand';
 
 /**
  * @param clientName  The app that sent the person here (Solon, Loki…), already
  *   resolved against oauth_clients by the server page — or null for a plain
  *   OrangeCat sign-in.
+ * @param emailCodeAvailable  Whether this deployment can mail a sign-in code;
+ *   the option is not shown where it could never arrive.
  */
-export default function AuthPageClient({ clientName }: { clientName: string | null }) {
+export default function AuthPageClient({
+  clientName,
+  emailCodeAvailable,
+}: {
+  clientName: string | null;
+  emailCodeAvailable: boolean;
+}) {
+  const [codeMode, setCodeMode] = useState(false);
   const {
     mode,
     setMode,
@@ -35,6 +46,8 @@ export default function AuthPageClient({ clientName }: { clientName: string | nu
     isPasswordFocused,
     setIsPasswordFocused,
     showMFAVerify,
+    setShowMFAVerify,
+    handoff,
     session,
     hydrated,
     captchaEnabled,
@@ -191,28 +204,55 @@ export default function AuthPageClient({ clientName }: { clientName: string | nu
             </div>
           )}
 
-          <AuthFormBody
-            mode={mode}
-            setMode={setMode}
-            formData={formData}
-            setFormData={setFormData}
-            showPassword={showPassword}
-            setShowPassword={setShowPassword}
-            showConfirmPassword={showConfirmPassword}
-            setShowConfirmPassword={setShowConfirmPassword}
-            loading={loading}
-            isPasswordFocused={isPasswordFocused}
-            setIsPasswordFocused={setIsPasswordFocused}
-            captchaEnabled={captchaEnabled}
-            turnstileSiteKey={turnstileSiteKey}
-            handleCaptchaSuccess={handleCaptchaSuccess}
-            handleCaptchaError={handleCaptchaError}
-            handleCaptchaExpire={handleCaptchaExpire}
-            rememberMe={rememberMe}
-            setRememberMe={setRememberMe}
-            handleSubmit={handleSubmit}
-            handleForgotPassword={handleForgotPassword}
-          />
+          {codeMode && mode !== 'forgot' ? (
+            <EmailCodeSignIn
+              initialEmail={formData.email}
+              clientId={handoff.client ?? null}
+              captchaSiteKey={captchaEnabled ? turnstileSiteKey : undefined}
+              onBack={() => setCodeMode(false)}
+              onNeedsSecondFactor={() => setShowMFAVerify(true)}
+            />
+          ) : (
+            <>
+              <AuthFormBody
+                mode={mode}
+                setMode={setMode}
+                formData={formData}
+                setFormData={setFormData}
+                showPassword={showPassword}
+                setShowPassword={setShowPassword}
+                showConfirmPassword={showConfirmPassword}
+                setShowConfirmPassword={setShowConfirmPassword}
+                loading={loading}
+                isPasswordFocused={isPasswordFocused}
+                setIsPasswordFocused={setIsPasswordFocused}
+                captchaEnabled={captchaEnabled}
+                turnstileSiteKey={turnstileSiteKey}
+                handleCaptchaSuccess={handleCaptchaSuccess}
+                handleCaptchaError={handleCaptchaError}
+                handleCaptchaExpire={handleCaptchaExpire}
+                rememberMe={rememberMe}
+                setRememberMe={setRememberMe}
+                handleSubmit={handleSubmit}
+                handleForgotPassword={handleForgotPassword}
+              />
+
+              {/* The password-free way in: no password to invent, remember or reset. */}
+              {emailCodeAvailable && mode !== 'forgot' && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={loading}
+                  onClick={() => setCodeMode(true)}
+                  className="mt-3 h-12 w-full"
+                >
+                  {mode === 'login'
+                    ? 'Email me a sign-in code instead'
+                    : 'Sign up with an emailed code instead'}
+                </Button>
+              )}
+            </>
+          )}
 
           <AuthSocialLogin
             mode={mode}

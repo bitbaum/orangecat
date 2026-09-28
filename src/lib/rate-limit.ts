@@ -81,6 +81,13 @@ const askCatLimiter = slidingWindow({ limit: 8, windowMs: 5 * 60_000 });
 // depend on. Same reasoning as ask-cat: an expensive downstream call on behalf
 // of an anonymous caller gets its own tight budget on top of the general limiter.
 const domainSearchLimiter = slidingWindow({ limit: 10, windowMs: 5 * 60_000 });
+// Sign-in codes by email (/api/auth/email-code). Each request mails a real
+// inbox and replaces that account's pending code, so the limits guard two
+// things: someone flooding a stranger's inbox (per email, whatever the IP), and
+// one caller spraying many addresses (per IP). A person who mistypes or never
+// receives the first mail can still ask twice more within the window.
+const emailCodeByEmailLimiter = slidingWindow({ limit: 3, windowMs: 15 * 60_000 });
+const emailCodeByIpLimiter = slidingWindow({ limit: 10, windowMs: 60 * 60_000 });
 
 // ==================== RATE LIMIT FUNCTIONS ====================
 //
@@ -211,6 +218,18 @@ export async function rateLimitAskCat(request: RequestLike): Promise<RateLimitRe
  */
 export async function rateLimitDomainSearch(request: RequestLike): Promise<RateLimitResult> {
   return toRateLimitResult(domainSearchLimiter.check(`domain-search:${clientIpKey(request)}`));
+}
+
+/** Sign-in code requests per caller IP: 10 per hour. */
+export async function rateLimitEmailCodeByIp(request: RequestLike): Promise<RateLimitResult> {
+  return toRateLimitResult(emailCodeByIpLimiter.check(`email-code-ip:${clientIpKey(request)}`));
+}
+
+/** Sign-in code requests per recipient address: 3 per 15 minutes, whatever the IP. */
+export async function rateLimitEmailCodeByEmail(email: string): Promise<RateLimitResult> {
+  return toRateLimitResult(
+    emailCodeByEmailLimiter.check(`email-code-email:${email.trim().toLowerCase()}`)
+  );
 }
 
 /**
