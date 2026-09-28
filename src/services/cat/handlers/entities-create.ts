@@ -8,7 +8,15 @@
 
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { STATUS, ENTITY_STATUS } from '@/config/database-constants';
+import { z } from 'zod';
+import {
+  commitPreregistration,
+  decidePreregistration,
+  openScienceFields,
+} from '@/domain/research/openScience';
 import type { ActionHandler } from './types';
+
+const catOpenScienceSchema = z.object(openScienceFields);
 
 export const entityCreateHandlers: Record<string, ActionHandler> = {
   create_product: async (supabase, userId, actorId, params) => {
@@ -333,6 +341,18 @@ export const entityCreateHandlers: Record<string, ActionHandler> = {
     const fundingGoalBtc =
       (params.funding_goal_btc as number | null) ?? (params.funding_goal as number | null) ?? 0.001;
 
+    // Same rules as the form and the API: an invalid link or licence is refused
+    // with the reason, never silently dropped.
+    const open = catOpenScienceSchema.safeParse({
+      license: params.license ?? 'CC-BY-4.0',
+      output_links: params.output_links ?? [],
+      preregistration: params.preregistration ?? null,
+    });
+    if (!open.success) {
+      return { success: false, error: open.error.issues.map(i => i.message).join('; ') };
+    }
+    const prereg = decidePreregistration(open.data.preregistration, null);
+
     const { data, error } = await supabase
       .from(ENTITY_REGISTRY.research.tableName)
       .insert({
@@ -361,6 +381,9 @@ export const entityCreateHandlers: Record<string, ActionHandler> = {
         status: ENTITY_STATUS.DRAFT,
         is_public: true,
         is_featured: false,
+        license: open.data.license ?? null,
+        output_links: open.data.output_links ?? [],
+        ...(prereg.kind === 'commit' ? await commitPreregistration(prereg.text) : {}),
         // Denormalized counter columns were dropped in migration
         // 20260404000005 — inserting them breaks live.
       })

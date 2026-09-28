@@ -38,6 +38,8 @@ import {
   Landmark,
 } from 'lucide-react';
 import { API_ROUTES } from '@/config/api-routes';
+import { RESEARCH_FIELDS } from '@/config/research';
+import { RESEARCH_LICENSE_VALUES } from '@/config/open-science';
 import { getApiEndpoint } from '@/config/entity-registry';
 
 // ==================== ACTION TYPES ====================
@@ -411,8 +413,9 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
         name: 'field',
         type: 'string',
         required: false,
-        description:
-          'Research field: biology, computer_science, mathematics, physics, economics, medicine, artificial_intelligence, blockchain_cryptography, other (default: other)',
+        // Derived, not typed: this used to list "physics", which the table's
+        // CHECK rejects (the value is fundamental_physics).
+        description: `Research field: ${RESEARCH_FIELDS.map(f => f.value).join(', ')} (default: other)`,
         default: 'other',
       },
       {
@@ -434,12 +437,34 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
         name: 'lead_researcher',
         type: 'string',
         required: false,
-        description: 'Lead researcher name (defaults to your username)',
+        description: 'Lead researcher — a name or a pseudonym; real identity is never required',
         default: '',
+      },
+      {
+        name: 'license',
+        type: 'string',
+        required: false,
+        description: `Licence for the outputs: ${RESEARCH_LICENSE_VALUES.join(', ')} (default: CC-BY-4.0)`,
+        default: 'CC-BY-4.0',
+      },
+      {
+        name: 'output_links',
+        type: 'array',
+        required: false,
+        description:
+          'Where the outputs live (preprints, datasets, code): https://, ipfs://, ipns:// or ar:// links',
+      },
+      {
+        name: 'preregistration',
+        type: 'string',
+        required: false,
+        description:
+          'Hypothesis and analysis plan, committed before results. It is hashed, timestamped and can never be edited — only include it when the user has written it and agreed to lock it.',
       },
     ],
     examples: [
       'Start a DeSci research project on AI safety',
+      'Start an open-science study under CC0 with the code on GitHub',
       'Create a Bitcoin-funded biology research entity',
       'Launch a decentralized science study on climate',
     ],

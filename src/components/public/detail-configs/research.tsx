@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/badge';
 import FundingProgress from '@/components/public/FundingProgress';
 import EntityLedgerTotal from '@/components/public/EntityLedgerTotal';
+import ResearchOpenScience from '@/components/public/ResearchOpenScience';
 import type { EntityDetailConfig } from '@/components/public/PublicEntityDetailPage';
 import { ROUTES } from '@/config/routes';
 import { RESEARCH_FIELDS, METHODOLOGIES, TIMELINES } from '@/config/research';
@@ -74,6 +75,14 @@ export const researchDetailConfig: EntityDetailConfig = {
             )}
           </CardContent>
         </Card>
+
+        <ResearchOpenScience
+          license={entity.license}
+          outputLinks={entity.output_links}
+          preregistration={entity.preregistration}
+          preregistrationSha256={entity.preregistration_sha256}
+          preregisteredAt={entity.preregistered_at}
+        />
       </>
     );
   },
