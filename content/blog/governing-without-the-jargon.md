@@ -12,7 +12,7 @@ Most writing about Bitcoin signatures, smart contracts and zero-knowledge proofs
 
 Nine people walk through **Solon**, the governance tool of the OrangeCat stack. For each one you get the part they see, which should never be harder than a tap, and then, under a clearly marked **Under the hood** heading, what actually happens. Read only the stories and you will understand the product. Read the hoods too and you could rebuild it.
 
-One promise before we start: every path is labelled **Live**, **Built, rolling out** or **Planned**. Governance is a business of stating things plainly, and that includes stating what does not exist yet.
+One promise before we start: every path is labelled **Live**, **Engine live, screens next** or **Planned**. Governance is a business of stating things plainly, and that includes stating what does not exist yet.
 
 ```stats
 1 tap | to vote, with no wallet
@@ -54,6 +54,9 @@ A **hash** is the other building block: a short fingerprint of any data. The sam
 
 She taps **Yes**. Later she changes her mind and taps **No**. Only her latest ballot counts, until the vote closes.
 
+> [!NOTE] Where this runs today
+> The one-tap proposal and voting screens run for the OrangeCat organization today. Organizations founded since keep their roster and full record on Solon from day one, and their own voting screens are the next thing being built.
+
 ### Under the hood: the one-tap vote
 
 ```mermaid
@@ -77,7 +80,7 @@ A few details that matter:
 
 ## Path 2 · Ben founds an organization and chooses who decides
 
-**Built, rolling out.** Ben is starting a project and wants a place to make its decisions. Founding takes one form: a name, an address such as `/orgs/bens-workshop`, and one choice that matters more than it looks: **who decides.**
+**Live.** Ben is starting a project and wants a place to make its decisions. Founding takes one form: a name, an address such as `/orgs/bens-workshop`, and one choice that matters more than it looks: **who decides.**
 
 ![Three cards: one person decides, everyone decides, elected delegates decide](/images/blog/governing-without-the-jargon/three-structures.svg 'The three structures. Solon names them for what they do, not for the history they resemble.')
 
@@ -113,7 +116,7 @@ Each structure is a **profile**: a small table in code that answers, for each of
 
 ## Path 3 · The supper club elects delegates, and a term runs out
 
-**Built, rolling out.** The club grows to forty people, and voting on every grocery order gets old. They switch to **elected delegates decide**, elect two people for a year, and go back to eating.
+**Engine live, screens next.** The club grows to forty people, and voting on every grocery order gets old. They switch to **elected delegates decide**, elect two people for a year, and go back to eating.
 
 Then a year passes, and nobody remembers to hold an election.
 
@@ -128,6 +131,8 @@ flowchart TD
 ```
 
 Nothing freezes. The moment no delegate holds a live mandate, the decisions that belonged to delegates go back to all members, including the vote to elect new ones. The record says it happened.
+
+Everything in this path runs in production today: mandates, terms, the hand-back, and decisions that elect, recall or switch structure. What is still to come is the screen for filing an election; for now it is filed through Solon's API.
 
 > [!TIP] No dead ends
 > A rule that can freeze an organization, including the vote that would unfreeze it, is a bug, not a safeguard. Everywhere in the stack, a gate that stops you also shows you the way forward.
