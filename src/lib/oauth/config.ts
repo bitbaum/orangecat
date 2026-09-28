@@ -80,7 +80,7 @@ export const OAUTH_SCOPES: readonly OAuthScope[] = [
   {
     name: 'loki.act',
     description:
-      'Let Loki act for you: dispatch work, book appointments, approve or reject queued actions',
+      'Let Loki act for you: dispatch work to your projects, book appointments, and approve or reject queued actions — approving runs the action',
   },
 ] as const;
 
