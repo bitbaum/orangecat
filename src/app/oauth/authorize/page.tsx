@@ -2,7 +2,11 @@
  * OAuth2 / OIDC authorization endpoint (consent screen).
  *
  * GET /oauth/authorize?response_type=code&client_id&redirect_uri&scope&state
- *   &code_challenge&code_challenge_method=S256&nonce
+ *   &code_challenge&code_challenge_method=S256&nonce[&resource]
+ *
+ * `resource` (RFC 8707) binds the eventual access token to one of
+ * OAUTH_RESOURCES — OrangeCat's MCP server or Loki's — and narrows (or, when no
+ * scope was asked for, defaults) the scopes to that resource's.
  *
  * Validates the client + redirect BEFORE any redirect (never bounce to an
  * unvalidated URI). Requires the user's Supabase session (else → login with a
@@ -12,11 +16,16 @@
 import { redirect } from 'next/navigation';
 import { createServerClient } from '@/lib/supabase/server';
 import { getOrCreateUserActor } from '@/services/actors/getOrCreateUserActor';
-import { OAUTH_PATHS, OAUTH_SCOPES, parseAndValidateScopes } from '@/lib/oauth/config';
+import {
+  OAUTH_CLIENT_ORIGINS,
+  OAUTH_PATHS,
+  OAUTH_SCOPES,
+  findOAuthResource,
+} from '@/lib/oauth/config';
 import {
   getClient,
   clientAllowsRedirect,
-  effectiveScopes,
+  grantableScopes,
   hasRememberedGrant,
   recordGrant,
   createAuthCode,
@@ -55,6 +64,7 @@ export default async function AuthorizePage({
   const codeChallenge = one(sp.code_challenge);
   const codeChallengeMethod = one(sp.code_challenge_method) || 'S256';
   const nonce = one(sp.nonce);
+  const resourceParam = one(sp.resource);
   // What the person already chose on the relying party's own screen — see
   // src/lib/oauth/handoff.ts. Only used to shape the sign-in screen.
   const prompt = one(sp.prompt);
@@ -80,8 +90,13 @@ export default async function AuthorizePage({
     redirect(appendParams(redirectUri, { error: 'invalid_request', state }));
   }
 
-  const { granted } = parseAndValidateScopes(scopeStr);
-  const scopes = effectiveScopes(client, granted);
+  // RFC 8707 §2: a resource we don't issue tokens for is `invalid_target`.
+  const resource = findOAuthResource(resourceParam);
+  if (resourceParam && !resource) {
+    redirect(appendParams(redirectUri, { error: 'invalid_target', state }));
+  }
+
+  const scopes = grantableScopes(client, scopeStr, resource);
   if (scopes.length === 0) {
     redirect(appendParams(redirectUri, { error: 'invalid_scope', state }));
   }
@@ -101,6 +116,7 @@ export default async function AuthorizePage({
         code_challenge: codeChallenge,
         code_challenge_method: codeChallengeMethod,
         nonce,
+        resource: resource?.uri ?? '',
       }).filter(([, v]) => v) as [string, string][]
     ).toString()}`;
     redirect(authHandoffUrl({ returnTo, prompt, loginHint, idpHint, clientId }));
@@ -133,6 +149,7 @@ export default async function AuthorizePage({
       codeChallenge,
       codeChallengeMethod,
       nonce: nonce || null,
+      resource: resource?.uri ?? null,
     });
     redirect(appendParams(redirectUri, { code, state }));
   }
@@ -147,6 +164,9 @@ export default async function AuthorizePage({
     <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-12">
       <ConsentForm
         clientName={client.name}
+        selfRegistered={client.registered_via === OAUTH_CLIENT_ORIGINS.dcr}
+        redirectHost={new URL(redirectUri).host}
+        resourceName={resource?.name ?? null}
         scopes={scopeRows}
         hidden={{
           client_id: clientId,
@@ -156,6 +176,7 @@ export default async function AuthorizePage({
           code_challenge: codeChallenge,
           code_challenge_method: codeChallengeMethod,
           nonce,
+          resource: resource?.uri ?? '',
         }}
       />
     </div>

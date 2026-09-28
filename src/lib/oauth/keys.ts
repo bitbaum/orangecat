@@ -90,14 +90,24 @@ export async function getPublicJwks(): Promise<{ keys: JWK[] }> {
 /**
  * Verify an OrangeCat-issued access/id token against our own public key set.
  * Returns the payload on success, or null on ANY failure (bad signature, wrong
- * issuer, expired, not our token). Callers must treat null as "not an OIDC token"
- * and may fall through to other auth — so it must not throw.
+ * issuer, expired, not our token, and — when `audience` is given — minted for
+ * someone else). Callers must treat null as "not an OIDC token" and may fall
+ * through to other auth — so it must not throw.
+ *
+ * A resource server that tokens are bound to (RFC 8707, e.g. /api/mcp) passes
+ * its own identifier as `audience`; without it only the issuer is checked.
  */
-export async function verifyAccessToken(token: string): Promise<JWTPayload | null> {
+export async function verifyAccessToken(
+  token: string,
+  opts: { audience?: string } = {}
+): Promise<JWTPayload | null> {
   try {
     const jwks = await getPublicJwks();
     const keySet = createLocalJWKSet(jwks);
-    const { payload } = await jwtVerify(token, keySet, { issuer: OAUTH_ISSUER });
+    const { payload } = await jwtVerify(token, keySet, {
+      issuer: OAUTH_ISSUER,
+      ...(opts.audience ? { audience: opts.audience } : {}),
+    });
     return payload;
   } catch {
     return null;
