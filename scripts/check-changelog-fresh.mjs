@@ -2,10 +2,11 @@
 /**
  * The public changelog must not silently rot.
  *
- * `src/config/changelog.ts` is hand-written prose, which is the right call —
- * the alternative was piping Loki's internal session log (`dev_log`) straight
- * onto a public page, and those entries are written for the agent that comes
- * next, not for a reader deciding whether to trust this platform.
+ * `CHANGELOG.md` at the repository root is hand-written prose, which is the
+ * right call — the alternative was piping Loki's internal session log
+ * (`dev_log`) straight onto a public page, and those entries are written for
+ * the agent that comes next, not for a reader deciding whether to trust this
+ * platform. The fleet map ingests this file; /changelog renders the map.
  *
  * But hand-written means someone has to write it, and nothing was checking.
  * The newest entry sat at 2026-07-31 while main ran on to PR #1063 — six weeks
@@ -22,11 +23,14 @@
 
 import { readFileSync } from 'node:fs';
 
-const FILE = 'src/config/changelog.ts';
+const FILE = 'CHANGELOG.md';
 const MAX_AGE_DAYS = Number(process.env.CHANGELOG_MAX_AGE_DAYS ?? 30);
 
 const source = readFileSync(FILE, 'utf8');
-const dates = [...source.matchAll(/date:\s*'(\d{4}-\d{2}-\d{2})'/g)].map(m => m[1]).sort();
+// One `## YYYY-MM-DD` heading per entry — the Keep-a-Changelog dialect the
+// fleet map ingests (`## [0.4.0] - 2026-09-20` counts too; the date is what
+// matters). Text before the first dated heading is prose, not an entry.
+const dates = [...source.matchAll(/^## .*?(\d{4}-\d{2}-\d{2})/gm)].map(m => m[1]).sort();
 
 if (dates.length === 0) {
   // A regex that matches nothing would make this gate a green light over an
@@ -42,7 +46,8 @@ if (ageDays > MAX_AGE_DAYS) {
   console.error(
     `❌ changelog is ${ageDays} days old — newest entry is ${newest}, limit is ${MAX_AGE_DAYS}.\n` +
       `\n` +
-      `   Add what shipped to ${FILE}. Entries are user-facing: describe the\n` +
+      `   Add what shipped to ${FILE} under a new ## YYYY-MM-DD heading. Entries\n` +
+      `   are user-facing: describe the\n` +
       `   change from the reader's side, not the commit. If nothing user-facing\n` +
       `   shipped, say that in an entry rather than raising the limit.\n` +
       `\n` +

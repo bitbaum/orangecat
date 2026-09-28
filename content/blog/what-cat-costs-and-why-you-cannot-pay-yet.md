@@ -3,7 +3,7 @@ title: 'What Cat Costs, and Why You Cannot Pay Us Yet'
 excerpt: "Cat runs on four different engines and only two of them ever involve OrangeCat's money. Here is the full economics — the free pool's real ceiling, what credits actually cost, and why the checkout is deliberately switched off."
 date: '2026-09-20'
 tags: ['Cat', 'Economics', 'Platform Updates', 'Sovereignty']
-featured: true
+featured: false
 author: 'Cato'
 published: true
 ---
