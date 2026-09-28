@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 660" role="img" aria-labelledby="t d">
+  <title id="t">Three ways an organization can decide</title>
+  <desc id="d">One person decides: a single mandate holder decides everything while members propose. Everyone decides: every member votes on everything. Elected delegates decide: members elect delegates for a term; delegates decide money and operations, members keep membership, safety and the rules.</desc>
+  <style>
+    .bg{fill:#f6f5f3}.card{fill:#ffffff;stroke:#dedbd6}
+    .h{fill:#171513;font:650 26px system-ui,-apple-system,Segoe UI,sans-serif}
+    .b{fill:#57534e;font:400 17px system-ui,-apple-system,Segoe UI,sans-serif}
+    .k{fill:#8a847d;font:600 13px system-ui,-apple-system,Segoe UI,sans-serif;letter-spacing:.08em}
+    .m{fill:#ffffff;stroke:#8a847d;stroke-width:2.5}.d{fill:#ff5c00}
+    .ln{stroke:#b9b3ab;stroke-width:2;fill:none}.lnd{stroke:#ff5c00;stroke-width:2.5;fill:none}
+    .ring{fill:none;stroke:#b9b3ab;stroke-width:2;stroke-dasharray:6 6}
+    @media (prefers-color-scheme: dark){
+      .bg{fill:#121110}.card{fill:#1c1a18;stroke:#34302c}
+      .h{fill:#f3f1ee}.b{fill:#b8b2aa}.k{fill:#8d867e}
+      .m{fill:#1c1a18;stroke:#8d867e}.ln,.ring{stroke:#5a544d}
+    }
+  </style>
+  <rect class="bg" width="1200" height="660" rx="24"/>
+
+  <!-- 1 -->
+  <rect class="card" x="40" y="40" width="360" height="580" rx="20" stroke-width="1.5"/>
+  <text class="k" x="72" y="84">ONE PERSON DECIDES</text>
+  <g transform="translate(220,230)">
+    <line class="ln" x1="0" y1="0" x2="-90" y2="-70"/><line class="ln" x1="0" y1="0" x2="90" y2="-70"/>
+    <line class="ln" x1="0" y1="0" x2="-100" y2="50"/><line class="ln" x1="0" y1="0" x2="100" y2="50"/>
+    <line class="ln" x1="0" y1="0" x2="0" y2="100"/>
+    <circle class="m" cx="-90" cy="-70" r="16"/><circle class="m" cx="90" cy="-70" r="16"/>
+    <circle class="m" cx="-100" cy="50" r="16"/><circle class="m" cx="100" cy="50" r="16"/>
+    <circle class="m" cx="0" cy="100" r="16"/>
+    <circle class="d" r="30"/>
+  </g>
+  <text class="h" x="72" y="410">One mandate</text>
+  <text class="b" x="72" y="446">The founder decides</text>
+  <text class="b" x="72" y="472">everything, rules included.</text>
+  <text class="b" x="72" y="508">Members propose. They</text>
+  <text class="b" x="72" y="534">see every decision.</text>
+  <text class="k" x="72" y="590">A FOUNDER BUILDING IN THE OPEN</text>
+
+  <!-- 2 -->
+  <rect class="card" x="420" y="40" width="360" height="580" rx="20" stroke-width="1.5"/>
+  <text class="k" x="452" y="84">EVERYONE DECIDES</text>
+  <g transform="translate(600,230)">
+    <circle class="ring" r="104"/>
+    <circle class="d" cx="0" cy="-104" r="20"/><circle class="d" cx="99" cy="-32" r="20"/>
+    <circle class="d" cx="61" cy="84" r="20"/><circle class="d" cx="-61" cy="84" r="20"/>
+    <circle class="d" cx="-99" cy="-32" r="20"/><circle class="d" cx="0" cy="0" r="20"/>
+  </g>
+  <text class="h" x="452" y="410">Every member votes</text>
+  <text class="b" x="452" y="446">On every decision, with</text>
+  <text class="b" x="452" y="472">the bar raised for</text>
+  <text class="b" x="452" y="498">changing the rules.</text>
+  <text class="k" x="452" y="590">A TOWN, A NETWORK, A CO-OP</text>
+
+  <!-- 3 -->
+  <rect class="card" x="800" y="40" width="360" height="580" rx="20" stroke-width="1.5"/>
+  <text class="k" x="832" y="84">ELECTED DELEGATES DECIDE</text>
+  <g transform="translate(980,230)">
+    <line class="lnd" x1="-40" y1="-40" x2="-110" y2="60"/><line class="lnd" x1="-40" y1="-40" x2="-40" y2="80"/>
+    <line class="lnd" x1="40" y1="-40" x2="40" y2="80"/><line class="lnd" x1="40" y1="-40" x2="110" y2="60"/>
+    <line class="lnd" x1="-40" y1="-40" x2="40" y2="80"/><line class="lnd" x1="40" y1="-40" x2="-40" y2="80"/>
+    <circle class="m" cx="-110" cy="60" r="16"/><circle class="m" cx="-40" cy="80" r="16"/>
+    <circle class="m" cx="40" cy="80" r="16"/><circle class="m" cx="110" cy="60" r="16"/>
+    <circle class="d" cx="-40" cy="-40" r="24"/><circle class="d" cx="40" cy="-40" r="24"/>
+    <text class="k" x="0" y="-86" text-anchor="middle">TERM: 1 YEAR</text>
+  </g>
+  <text class="h" x="832" y="410">Mandates for a term</text>
+  <text class="b" x="832" y="446">Delegates run money and</text>
+  <text class="b" x="832" y="472">operations. Members keep</text>
+  <text class="b" x="832" y="498">the roster, safety and the</text>
+  <text class="b" x="832" y="524">rules, and elect or recall.</text>
+  <text class="k" x="832" y="590">A COMPANY, A MUNICIPALITY</text>
+</svg>
