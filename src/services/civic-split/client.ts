@@ -6,6 +6,7 @@ import { API_ROUTES } from '@/config/api-routes';
 import { unwrapApiResponse } from '@/lib/api/client-response';
 import type { CivicSplitInput } from '@/domain/civic-split/schema';
 import type { CivicSplit, PlaceAggregate } from '@/domain/civic-split/service';
+import type { LocalFund, PlaceRef } from '@/domain/local-fund/service';
 
 export type { CivicSplit, CivicSplitInput, PlaceAggregate };
 
@@ -56,4 +57,21 @@ export async function fetchPlaceAggregate(
     res,
     'Could not load the numbers for that place.'
   );
+}
+
+export interface LocalFundAnswer {
+  place: PlaceRef;
+  fund: LocalFund | null;
+  /** Where to start one, set only when there is none. */
+  start_href: string | null;
+}
+
+export async function fetchLocalFund(place: PlaceRef): Promise<LocalFundAnswer> {
+  const params = new URLSearchParams({
+    country: place.country_code,
+    region: place.region,
+    locality: place.locality,
+  });
+  const res = await fetch(`${API_ROUTES.CIVIC_SPLIT.FUND}?${params}`);
+  return unwrapApiResponse<LocalFundAnswer>(res, 'Could not look up the fund for that place.');
 }
