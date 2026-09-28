@@ -19,6 +19,7 @@ import {
   Briefcase,
   Handshake,
   TrendingUp,
+  PiggyBank,
 } from 'lucide-react';
 import type { EntityTemplate } from '../types';
 import type { CreateGroupSchemaType } from '@/services/groups/validation';
@@ -144,15 +145,35 @@ export const GROUP_TEMPLATES: EntityTemplate<CreateGroupSchemaType>[] = [
     },
   },
   {
-    id: 'nonprofit',
-    icon: React.createElement(Heart, { className: 'w-4 h-4' }),
-    name: 'Non-Profit Foundation',
-    tagline: 'Mission-driven organization with transparent operations',
+    id: 'local-fund',
+    icon: React.createElement(PiggyBank, { className: 'w-4 h-4' }),
+    name: 'Local fund',
+    tagline: 'Money residents direct to their own place, governed by them',
     defaults: {
-      name: 'Bitcoin Education Foundation',
+      name: 'Witikon Fund',
       description:
-        'A mission-driven nonprofit focused on Bitcoin education and adoption. We provide free resources, workshops, and support for Bitcoin learners worldwide.',
-      label: 'nonprofit',
+        'A fund for Witikon, by the people of Witikon. Residents put in what they choose, on top of what the law takes, and decide together what it pays for — the things the quarter wants and the city does not get to.',
+      label: 'local_fund',
+      governance_preset: 'democratic',
+      is_public: true,
+      visibility: 'public',
+      bitcoin_address: null,
+      lightning_address: null,
+      country_code: 'CH',
+      region: 'Zürich',
+      locality: 'Witikon',
+    },
+  },
+  {
+    id: 'association',
+    icon: React.createElement(Heart, { className: 'w-4 h-4' }),
+    name: 'Association',
+    tagline: 'A member association: the assembly decides, the statutes bind',
+    defaults: {
+      name: 'Bitcoin Education Association',
+      description:
+        'A member association for Bitcoin education. Members meet in assembly, elect the board and vote the budget; the statutes say how. In Switzerland this is a Verein under Art. 60 ZGB.',
+      label: 'association',
       governance_preset: 'democratic',
       is_public: true,
       visibility: 'public',

@@ -24,6 +24,12 @@ to the map, sub-bullets stay here for the human reader.
   - Cat can set it from a sentence: “send 60% of my public money to Witikon”.
 - **New essay: Where the Wall Is.** One Hetzner box runs the whole studio today. The piece gives the order in which it stops being enough, what fixes each wall, and why the only one that costs real money is tokens, not servers.
 
+- **Organisations know what kind of body they are, and where.** The kinds of collective — circle, family, association, cooperative, collective, company, guild, DAO, town, network state, local fund — are now one list shared with Solon, and an organisation can say where it belongs (country, region, locality) and what it legally is.
+  - "Nonprofit" is now "Association", which is what the world calls it (in Switzerland, a Verein). Existing organisations were renamed.
+  - A town or a local fund cannot be founded without a place; everything else may add one.
+  - Legal status is a fact with evidence — informal, registered, or recognised tax-exempt — and only the last may ever be described as receiving deductible gifts.
+  - A **Local fund** template, Witikon first: money residents direct to their own place, governed by them, on top of what the law takes.
+
 ### Improved
 
 - **A shorter sidebar, one page for your things, a door on Home.** The sidebar had fifteen kinds of thing behind four chevrons. Now it has six lines. Everything you made or joined is one page, My things, and Home starts with a box: say what you want and your Cat drafts it.

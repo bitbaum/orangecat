@@ -1,3 +1,9 @@
+# Workspace packages. package.json "workspaces" is an npm field pnpm ignores,
+# so the list lives here. packages/sdk is published on its own and is
+# deliberately NOT a workspace member (its consumers install it from npm).
+packages:
+  - 'packages/collective-kinds'
+
 allowBuilds:
   '@parcel/watcher': true
   '@swc/core': true

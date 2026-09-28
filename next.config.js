@@ -42,6 +42,8 @@ const nextConfig = {
   // tiny-secp256k1 is wasm-backed — bundling it breaks the .wasm file's path,
   // so it (and the bitcoin libs that wrap it) must stay external and load from
   // node_modules at runtime (output file tracing carries them into standalone).
+  // Workspace packages that ship TypeScript source rather than a built dist.
+  transpilePackages: ['@bitbaum/collective-kinds'],
   serverExternalPackages: [
     '@supabase/supabase-js',
     '@supabase/ssr',
