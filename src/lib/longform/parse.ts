@@ -30,6 +30,12 @@ import type { ContentBlock, TocEntry } from 'bip-kit';
  * - `# Heading` → `## Heading` (both surfaces render the title from
  *   metadata as the page's single h1; a body h1 outside the vocabulary
  *   would render as a literal `# …` paragraph)
+ * - `![alt](src 'caption')` → `![alt](src "caption")` (bip-kit reads only a
+ *   double-quoted title; CommonMark allows single quotes too, and this
+ *   repo's prettier config — `singleQuote: true` — rewrites every caption to
+ *   them on commit, so a captioned figure shipped to production as a stray
+ *   "!" and a link. A caption holding a `"` is left alone: it cannot be
+ *   re-quoted without escaping, which the parser does not read either)
  *
  * Code fences are left untouched — a `# comment` or `* pointer` inside
  * ``` fences is code, not markdown.
@@ -47,6 +53,10 @@ export function normalizeLongformMarkdown(markdown: string): string {
     }
     if (/^# (?!#)/.test(line)) {
       return `#${line}`;
+    }
+    const singleQuotedCaption = line.match(/^(!\[[^\]]*\]\(\s*\S+?)\s+'([^'"]*)'\s*\)\s*$/);
+    if (singleQuotedCaption) {
+      return `${singleQuotedCaption[1]} "${singleQuotedCaption[2]}")`;
     }
     const bullet = line.match(/^(\s*)[*+] (.*)$/);
     if (bullet) {

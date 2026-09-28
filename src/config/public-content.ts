@@ -12,52 +12,12 @@ export const PRO_DESTINATION_COPY = {
   after: `: frontier models — ${CAT_FRONTIER_MODELS_LIST} — fully managed by OrangeCat, no keys, no setup. The kind of effortless AI a serious company runs on.`,
 } as const;
 
-export const CURRENT_CAPABILITIES = [
-  'Public pages for people, projects, groups, products, services, events, and other entities.',
-  'Non-custodial Bitcoin payments through Lightning, Lightning Address, NWC, and on-chain addresses.',
-  'Public project funding records based on confirmed Bitcoin settlement.',
-  'Human-approved Cat actions and an identity bridge to Loki.',
-] as const;
-
-export const ROADMAP_PHASES = [
-  {
-    marker: 'NOW',
-    title: 'Share and fund anything',
-    summary:
-      'Make every eligible public entity easy to share and support in Bitcoin, including for people without an OrangeCat account.',
-    items: [
-      'One clear “Support with Bitcoin” action alongside buying, booking, or joining.',
-      'Tracked public payment requests with confirmed amounts attributed to the correct entity.',
-      'Consistent share controls and link previews across public entity pages.',
-      'Open accounting: a wallet can publish its balance, its transactions, and the owner\u2019s note on each one \u2014 for owners who turn it on.',
-      'A transparency score computed from what is observable in that ledger, never from what anyone claims about themselves.',
-      'No fiat, privacy-coin, or smart-contract controls presented as if they work today.',
-    ],
-  },
-  {
-    marker: 'NEXT',
-    title: 'Fund-to-build',
-    summary:
-      'Connect OrangeCat entities to Loki projects without forcing people to understand two internal systems.',
-    items: [
-      'Send any actionable OrangeCat entity to Loki with a signed, owner-approved handoff.',
-      'Link a Loki project back to its public OrangeCat funding and promotion page.',
-      'Let Loki propose a practical plan while the owner chooses what agents may execute.',
-      'Show a read-only Bitcoin funding summary inside the linked Loki project.',
-    ],
-  },
-  {
-    marker: 'LATER',
-    title: 'More rails and deeper coordination',
-    summary: 'Broaden only after the Bitcoin fund-to-build loop works reliably for ordinary users.',
-    items: [
-      'Fiat rails such as Twint require bank, identity, reconciliation, and custody decisions. They are not available now.',
-      'Privacy coins improve confidentiality but cannot provide the same public funding audit trail. They are not available now.',
-      'Smart contracts may support escrow and milestone releases after disputes and oracle boundaries are designed.',
-      'Full Nostr identity, relay federation, and automatic funding-driven dispatch remain research, not current product claims.',
-    ],
-  },
-] as const;
+/**
+ * The roadmap and the "available today" list used to live here. They are now
+ * `ROADMAP.md` at the repository root — the record the fleet map ingests and
+ * `/roadmap` renders from (see `src/lib/development/records.ts`). A second
+ * copy here would drift from the one readers see.
+ */
 
 export const WHITEPAPER_SECTIONS = [
   {
