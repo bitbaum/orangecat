@@ -451,6 +451,7 @@ export const footerNavigation = {
     { name: 'Get paid', href: ROUTES.PAY_LANDING },
     { name: 'How it works', href: ROUTES.HOW_IT_WORKS },
     { name: 'What you can do', href: ROUTES.WHAT_YOU_CAN_DO },
+    { name: 'Partners', href: ROUTES.PARTNERS },
     { name: 'Roadmap', href: ROUTES.ROADMAP },
     { name: 'Changelog', href: ROUTES.CHANGELOG },
     { name: 'Cat plans', href: ROUTES.PRICING },
