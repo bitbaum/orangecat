@@ -158,7 +158,10 @@ describe('rankMentionSuggestions', () => {
     it('sinks below a named person who matches just as well', () => {
       const items = rankMentionSuggestions(
         'u',
-        [{ id: 'a', username: 'user_d58c7dccec41' }, { id: 'b', username: 'ursula', name: 'Ursula' }],
+        [
+          { id: 'a', username: 'user_d58c7dccec41' },
+          { id: 'b', username: 'ursula', name: 'Ursula' },
+        ],
         null
       );
       expect(items[0].username).toBe('ursula');
@@ -168,7 +171,10 @@ describe('rankMentionSuggestions', () => {
       // Demotion must not override "this is plainly the row being asked for".
       const items = rankMentionSuggestions(
         'user_d58c7dccec41',
-        [{ id: 'b', username: 'ursula', name: 'user_d58c7dccec41 fan' }, { id: 'a', username: 'user_d58c7dccec41' }],
+        [
+          { id: 'b', username: 'ursula', name: 'user_d58c7dccec41 fan' },
+          { id: 'a', username: 'user_d58c7dccec41' },
+        ],
         null
       );
       expect(items[0].username).toBe('user_d58c7dccec41');

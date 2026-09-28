@@ -39,7 +39,7 @@ import {
 } from 'lucide-react';
 import { API_ROUTES } from '@/config/api-routes';
 import { RESEARCH_FIELDS } from '@/config/research';
-import { RESEARCH_LICENSE_VALUES } from '@/config/open-science';
+import { RESEARCH_LICENSE_VALUES, REVIEW_VERDICT_VALUES } from '@/config/open-science';
 import { getApiEndpoint } from '@/config/entity-registry';
 
 // ==================== ACTION TYPES ====================
@@ -469,6 +469,30 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
       'Launch a decentralized science study on climate',
     ],
     apiEndpoint: getApiEndpoint('research'),
+    enabled: true,
+  },
+
+  review_research: {
+    id: 'review_research',
+    name: 'Review Research',
+    description:
+      "Post an open peer review on someone else's research. Public, permanent, hashed; a changed mind is a new review.",
+    category: 'entities',
+    icon: FileText,
+    riskLevel: 'medium',
+    requiresConfirmation: true,
+    parameters: [
+      { name: 'research_id', type: 'entity_id', required: true, description: 'Research id' },
+      {
+        name: 'verdict',
+        type: 'string',
+        required: true,
+        description: REVIEW_VERDICT_VALUES.join(', '),
+      },
+      { name: 'body', type: 'string', required: true, description: 'What was checked and found' },
+      { name: 'output_link', type: 'string', required: false, description: 'Output reviewed' },
+    ],
+    examples: ['Review that soil study: I re-ran the code and it reproduces'],
     enabled: true,
   },
 

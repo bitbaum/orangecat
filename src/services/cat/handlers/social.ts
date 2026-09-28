@@ -237,9 +237,8 @@ export const socialHandlers: Record<string, ActionHandler> = {
     const ownerLabel = owner?.name || (owner?.username ? `@${owner.username}` : 'them');
 
     // Lazy import: messaging helpers pull the notification/email stack.
-    const { openOrCreateConversation } = await import(
-      '@/features/messaging/lib/conversation-helpers'
-    );
+    const { openOrCreateConversation } =
+      await import('@/features/messaging/lib/conversation-helpers');
     const convo = await openOrCreateConversation(userId, [ownerUserId]);
     const conversationId =
       (convo as { conversationId?: string; id?: string }).conversationId ??

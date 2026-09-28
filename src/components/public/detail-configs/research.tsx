@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import FundingProgress from '@/components/public/FundingProgress';
 import EntityLedgerTotal from '@/components/public/EntityLedgerTotal';
 import ResearchOpenScience from '@/components/public/ResearchOpenScience';
+import ResearchReviews from '@/components/public/ResearchReviews';
 import type { EntityDetailConfig } from '@/components/public/PublicEntityDetailPage';
 import { ROUTES } from '@/config/routes';
 import { RESEARCH_FIELDS, METHODOLOGIES, TIMELINES } from '@/config/research';
@@ -28,7 +29,7 @@ export const researchDetailConfig: EntityDetailConfig = {
       </Badge>
     );
   },
-  renderDetails: entity => {
+  renderDetails: (entity, _hasReceive, isOwner, signedIn) => {
     const fundingGoal = Number(entity.funding_goal_btc ?? entity.funding_goal ?? 0);
     const fundingRaised = Number(entity.funding_raised_btc ?? 0);
 
@@ -82,6 +83,13 @@ export const researchDetailConfig: EntityDetailConfig = {
           preregistration={entity.preregistration}
           preregistrationSha256={entity.preregistration_sha256}
           preregisteredAt={entity.preregistered_at}
+        />
+
+        <ResearchReviews
+          researchId={String(entity.id)}
+          outputLinks={(entity.output_links as string[] | null) ?? []}
+          canReview={Boolean(signedIn && !isOwner && entity.is_public)}
+          signedIn={Boolean(signedIn)}
         />
       </>
     );

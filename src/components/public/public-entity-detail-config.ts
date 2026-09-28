@@ -67,7 +67,7 @@ export interface EntityDetailConfig {
     entity: EntityData,
     payable: boolean,
     isOwner: boolean,
-    isSignedIn: boolean,
+    isSignedIn: boolean
   ) => ReactNode;
   /**
    * Resolve the entity's price for the payment section, in its OWN currency

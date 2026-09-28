@@ -67,6 +67,7 @@ export const VERB_FORMS: Record<string, { gerund: string; past: string }> = {
   remove: { gerund: 'Removing', past: 'Removed' },
   reply: { gerund: 'Replying', past: 'Replied' },
   request: { gerund: 'Requesting', past: 'Requested' },
+  review: { gerund: 'Reviewing', past: 'Reviewed' },
   save: { gerund: 'Saving', past: 'Saved' },
   send: { gerund: 'Sending', past: 'Sent' },
   set: { gerund: 'Setting', past: 'Set' },

@@ -73,7 +73,10 @@ export const assetDetailConfig: EntityDetailConfig = {
             <div className="flex justify-between items-center">
               <span className="text-sm text-fg-secondary">Estimated Value</span>
               <span className="font-semibold">
-                {formatCurrency(Number(entity.estimated_value), String(entity.currency || PLATFORM_DEFAULT_CURRENCY))}
+                {formatCurrency(
+                  Number(entity.estimated_value),
+                  String(entity.currency || PLATFORM_DEFAULT_CURRENCY)
+                )}
               </span>
             </div>
           )}

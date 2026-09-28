@@ -79,3 +79,32 @@ export const OPEN_SCIENCE_LIMITS = {
   MAX_OUTPUT_LINK_LENGTH: 500,
   MAX_PREREGISTRATION_LENGTH: 5000,
 } as const;
+
+// ==================== PEER REVIEW ====================
+
+/**
+ * What a reviewer concludes. A changed mind is a NEW review — reviews are
+ * append-only — so `retracted` exists for a reviewer to withdraw an earlier
+ * verdict in public rather than by deleting it.
+ */
+export const REVIEW_VERDICTS = [
+  { value: 'reproduced', label: 'Reproduced', tone: 'positive' },
+  { value: 'supports', label: 'Supports the claims', tone: 'positive' },
+  { value: 'concerns', label: 'Has concerns', tone: 'warning' },
+  { value: 'refutes', label: 'Does not hold up', tone: 'negative' },
+  { value: 'retracted', label: 'Retracts an earlier review', tone: 'neutral' },
+] as const;
+
+export type ReviewVerdict = (typeof REVIEW_VERDICTS)[number]['value'];
+
+export const REVIEW_VERDICT_VALUES = REVIEW_VERDICTS.map(v => v.value) as [
+  ReviewVerdict,
+  ...ReviewVerdict[],
+];
+
+export const REVIEW_LIMITS = {
+  MIN_BODY_LENGTH: 20,
+  MAX_BODY_LENGTH: 10000,
+  /** Reviews shown per project, newest first. The heading always shows the full count. */
+  PAGE_SIZE: 50,
+} as const;

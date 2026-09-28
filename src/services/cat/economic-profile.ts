@@ -436,7 +436,6 @@ export function normalizeEconomicPatch(
   return hasAny ? patch : null;
 }
 
-
 /**
  * Passive, deterministic economic extraction — runs after each self-disclosing turn
  * (the reliable path the chat model's save_economic_profile action can't guarantee).

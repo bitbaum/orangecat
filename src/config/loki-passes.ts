@@ -43,9 +43,7 @@ export function passTags(plan: LokiPlan, periodDays: number): [string, string] {
 }
 
 /** Extract {plan, periodDays} from a product's tags, or null if not a pass. */
-export function parseLokiPass(
-  tags: unknown
-): { plan: LokiPlan; periodDays: number } | null {
+export function parseLokiPass(tags: unknown): { plan: LokiPlan; periodDays: number } | null {
   if (!Array.isArray(tags)) {
     return null;
   }
