@@ -319,6 +319,7 @@ export async function POST(request: Request) {
 | `.claude/QUICK_REFERENCE.md` | Common operations     |
 | `.claude/CREDENTIALS.md`     | Where credentials are |
 | `.claude/rules/`             | All best practices    |
+| `.claude/skills/publish-article/SKILL.md` | How to publish an article (voice, frontmatter, checks, shipping) |
 
 ---
 
