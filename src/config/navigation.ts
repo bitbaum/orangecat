@@ -23,6 +23,7 @@ import {
   Compass,
   Map,
   LayoutGrid,
+  Receipt,
   QrCode,
   Users,
   Settings,
@@ -332,6 +333,13 @@ const simplifiedSections: NavSection[] = [
         href: ROUTES.PROFILES.ME,
         icon: UserIcon,
         description: 'Your profile',
+        requiresAuth: true,
+      },
+      {
+        name: 'Your money',
+        href: ROUTES.DASHBOARD.FINANCES,
+        icon: Receipt,
+        description: 'Income, debts, civic split, tax estimate',
         requiresAuth: true,
       },
       {

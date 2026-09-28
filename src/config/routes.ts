@@ -440,6 +440,8 @@ export const ROUTES = {
     DOCUMENTS_CREATE: ENTITY_REGISTRY['document'].createPath,
     /** Everything the person made or joined, in one list. */
     THINGS: '/dashboard/things',
+    /** Income, debts, the civic split and a labelled tax estimate, in one place. */
+    FINANCES: '/dashboard/finances',
     /** Where a person declares how they would split their public money. */
     CIVIC_SPLIT: '/dashboard/civic-split',
     PROFILE_CLAIMS: '/dashboard/profile-claims',
