@@ -32,6 +32,18 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     date: '2026-09-28',
     tag: 'feature',
+    title: 'What you can do here, on one page',
+    summary:
+      'Every thing this place can do, in plain words, with an example, the three steps, and a Start button \u2014 at /what-you-can-do, from the sidebar, the footer, the create page and How it works.',
+    items: [
+      'Grouped by what you want: earn, raise money, borrow or lend, do it together, move money, or just ask your Cat.',
+      'The page starts with a box: say what you want in one sentence and your Cat drafts it. No account needed to read the map.',
+      'The list is generated from the same registry that runs the app, so a new capability appears here the day it ships.',
+    ],
+  },
+  {
+    date: '2026-09-28',
+    tag: 'feature',
     title: 'Say where your public money should go',
     summary:
       'Of the money you owe the public, how would you divide it between your locality, your region and your nation? Nobody asks. Now you can say it \u2014 and see what the people of your place would choose.',

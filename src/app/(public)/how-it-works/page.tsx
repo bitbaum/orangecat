@@ -3,13 +3,9 @@
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import { Shield, Zap, Eye, Sparkles, ArrowRight } from 'lucide-react';
-import {
-  HOW_IT_WORKS_STEPS,
-  SECTION_HEADERS,
-  CTA_LABELS,
-  SUPER_APP_CATEGORIES,
-  FEE_CLAIMS,
-} from '@/config/landing-page';
+import Link from 'next/link';
+import { CapabilityMap } from '@/components/map/CapabilityMap';
+import { HOW_IT_WORKS_STEPS, SECTION_HEADERS, CTA_LABELS, FEE_CLAIMS } from '@/config/landing-page';
 import { ROUTES } from '@/config/routes';
 
 /**
@@ -119,39 +115,16 @@ export default function HowItWorksPage() {
             <p className="text-xl text-fg-secondary max-w-3xl mx-auto">{whatCanYouDo.subtitle}</p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
-            {SUPER_APP_CATEGORIES.map(category => {
-              const Icon = category.icon;
-              return (
-                <div key={category.id}>
-                  <Card className="p-6 h-full oc-card-link">
-                    <div className="flex items-start gap-4">
-                      <div className={`${category.bgColor} p-3 rounded-lg flex-shrink-0`}>
-                        <Icon className="w-6 h-6 text-fg-primary" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold mb-2">{category.title}</h3>
-                        <p className="text-fg-secondary mb-3">{category.description}</p>
-                        <ul className="space-y-1">
-                          {category.features.map(feature => (
-                            <li
-                              key={feature.title}
-                              className="text-sm text-fg-secondary flex items-center gap-2"
-                            >
-                              <div
-                                className={`w-1.5 h-1.5 rounded-full ${category.iconGradient}`}
-                              />
-                              {feature.title}: {feature.description}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-                  </Card>
-                </div>
-              );
-            })}
-          </div>
+          <CapabilityMap compact className="max-w-5xl mx-auto" />
+          <p className="mt-8 text-center">
+            <Link
+              href={ROUTES.WHAT_YOU_CAN_DO}
+              className="inline-flex min-h-11 items-center gap-1 text-sm font-semibold text-fg-primary underline underline-offset-2"
+            >
+              The whole map, with an example and the three steps for each
+              <ArrowRight className="w-4 h-4" aria-hidden="true" />
+            </Link>
+          </p>
         </div>
 
         {/* Why Bitcoin Section */}

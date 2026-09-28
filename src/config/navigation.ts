@@ -22,6 +22,7 @@ import {
   Home,
   Plus,
   Compass,
+  Map,
   QrCode,
   Users,
   Settings,
@@ -276,6 +277,15 @@ const simplifiedSections: NavSection[] = [
         description: 'Discover',
         requiresAuth: false,
       },
+      {
+        // The map. Every capability in plain words with a Start button — the
+        // answer to "what can I even do here?", reachable from every screen.
+        name: 'What you can do',
+        href: ROUTES.WHAT_YOU_CAN_DO,
+        icon: Map,
+        description: 'Everything here, explained',
+        requiresAuth: false,
+      },
     ],
   },
   ...entitySections,
@@ -419,6 +429,7 @@ export const footerNavigation = {
     { name: 'Discover', href: ROUTES.DISCOVER },
     { name: 'Get paid', href: ROUTES.PAY_LANDING },
     { name: 'How it works', href: ROUTES.HOW_IT_WORKS },
+    { name: 'What you can do', href: ROUTES.WHAT_YOU_CAN_DO },
     { name: 'Roadmap', href: ROUTES.ROADMAP },
     { name: 'Changelog', href: ROUTES.CHANGELOG },
     { name: 'Cat plans', href: ROUTES.PRICING },

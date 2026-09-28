@@ -6,6 +6,7 @@ import {
   CREATE_PAGE,
   type CreateOption,
 } from '@/config/create-options';
+import { ROUTES } from '@/config/routes';
 
 function groupOptions(
   options: CreateOption[]
@@ -71,6 +72,15 @@ export function CreateChooser() {
           </section>
         ))}
       </div>
+
+      <p className="mt-8 text-sm text-fg-secondary">
+        <Link
+          href={ROUTES.WHAT_YOU_CAN_DO}
+          className="underline underline-offset-2 hover:text-fg-primary"
+        >
+          {CREATE_PAGE.browseAll}
+        </Link>
+      </p>
     </div>
   );
 }
