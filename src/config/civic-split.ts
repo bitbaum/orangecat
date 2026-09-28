@@ -86,3 +86,15 @@ export const CIVIC_SPLIT_COPY = {
   publicHint:
     'Off: it still counts, anonymously, in the numbers for your place once enough people there have declared.',
 } as const;
+
+/** The card that turns the locality share into a destination. */
+export const LOCAL_FUND_COPY = {
+  title: 'Where the locality share goes',
+  has: (fund: string, locality: string, share: number) =>
+    `${locality} has a fund: ${fund}. The ${share}% you give your locality goes there — when you give voluntarily, on top of what the law takes, never instead of it.`,
+  give: 'Give to it',
+  none: (locality: string) =>
+    `${locality} has no fund yet. The first one is a group of kind “local fund”, bound to the place, governed by the people in it.`,
+  start: 'Start one',
+  loading: 'Looking for your place’s fund…',
+} as const;

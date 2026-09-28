@@ -33,6 +33,7 @@ import {
 import { logger } from '@/utils/logger';
 import ShareSliders from './ShareSliders';
 import PlaceAggregateCard from './PlaceAggregateCard';
+import LocalFundCard from './LocalFundCard';
 
 interface FormState {
   country_code: string;
@@ -246,19 +247,26 @@ export function CivicSplitScreen() {
             countryCode={(saved?.country_code ?? form.country_code).toUpperCase()}
             region={saved?.region ?? form.region}
           />
-          <Card variant="minimal">
-            <CardContent className="space-y-2 p-6 text-sm text-fg-secondary">
-              <h2 className="font-heading text-base text-fg-primary">What happens with it</h2>
-              <p>
-                Today: it is your public statement, and it goes into the average for your place.
-              </p>
-              <p>
-                Next: local funds. When your locality has one, the share you give it here becomes
-                the standing instruction for what you contribute voluntarily — on top of what the
-                law takes, never instead of it.
-              </p>
-            </CardContent>
-          </Card>
+          {saved ? (
+            <LocalFundCard
+              countryCode={saved.country_code}
+              region={saved.region}
+              locality={saved.locality}
+              shares={saved.shares}
+            />
+          ) : (
+            <Card variant="minimal">
+              <CardContent className="space-y-2 p-6 text-sm text-fg-secondary">
+                <h2 className="font-heading text-base text-fg-primary">What happens with it</h2>
+                <p>It is your public statement, and it goes into the average for your place.</p>
+                <p>
+                  Once declared, the share you give your locality points at its local fund — the
+                  standing instruction for what you contribute voluntarily, on top of what the law
+                  takes, never instead of it. No fund yet? You can start it from here.
+                </p>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </EntityListShell>

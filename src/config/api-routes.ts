@@ -262,6 +262,8 @@ export const API_ROUTES = {
     BASE: '/api/civic-split',
     /** Public: mean split per locality for a country (+ optional region). */
     AGGREGATE: '/api/civic-split/aggregate',
+    /** The local fund the locality share routes to, for a place. */
+    FUND: '/api/civic-split/fund',
   },
   PROFILE_CLAIMS: {
     BASE: '/api/profile-claims',
