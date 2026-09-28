@@ -15,7 +15,6 @@
  */
 
 import { ComponentType, SVGProps } from 'react';
-import { generateEntityNavigation } from './navigation-generator';
 import { ROUTES } from './routes';
 import { XBrandIcon, GitHubIcon } from '@/components/icons/BrandIcons';
 import {
@@ -23,6 +22,7 @@ import {
   Plus,
   Compass,
   Map,
+  LayoutGrid,
   QrCode,
   Users,
   Settings,
@@ -171,55 +171,57 @@ export function getHeaderNavigationItems(): NavigationItem[] {
  * 3. More (Settings, Profile, Help) - collapsed by default
  */
 
-// Generate entity-based navigation as semantic groups instead of one long list.
-const entitySections = generateEntityNavigation().map(section =>
-  section.id === 'coordinate'
-    ? {
-        ...section,
-        items: [
-          ...section.items,
-          {
-            name: 'People',
-            href: ROUTES.DASHBOARD.PEOPLE,
-            icon: Users,
-            description: 'Find connections',
-            requiresAuth: true,
-          },
-          {
-            // The claims dashboard shipped complete on 2026-08-18 — table,
-            // API, dashboard, and a public /claim/<id> landing page — and had
-            // written zero rows by 2026-09-05, because nothing in this file
-            // pointed at it. The only way in was typing the URL.
-            name: 'Set up for someone',
-            href: ROUTES.DASHBOARD.PROFILE_CLAIMS,
-            icon: UserPlus,
-            description: 'Create a profile for someone who has not joined yet',
-            requiresAuth: true,
-          },
-          {
-            // "Of the money you owe the public, how would you divide it?" —
-            // a person's declared split between locality, region and nation.
-            // Sits with the people-and-groups section because it is a civic
-            // statement, and the aggregate is what a place would choose.
-            name: 'Your civic split',
-            href: ROUTES.DASHBOARD.CIVIC_SPLIT,
-            icon: Landmark,
-            description: 'Say where your public money should go',
-            requiresAuth: true,
-          },
-          {
-            // Open-roles board. Lives here (not the top header) since the
-            // slimmed app header hands all section nav to the sidebar.
-            name: 'Collaborate',
-            href: ROUTES.COLLABORATE,
-            icon: Handshake,
-            description: 'Open roles',
-            requiresAuth: true,
-          },
-        ],
-      }
-    : section
-);
+/**
+ * The four entity sections the sidebar used to carry (Create · Fund ·
+ * Coordinate · Finance — fifteen nouns behind four chevrons) are gone. One
+ * page, "My things", lists everything the person made or joined, and the map
+ * ("What you can do") explains every type in plain words. What remains here is
+ * the handful of destinations that are about PEOPLE rather than things.
+ */
+const peopleSection: NavSection = {
+  id: 'people',
+  title: 'People',
+  priority: 2,
+  defaultExpanded: false,
+  collapsible: true,
+  requiresAuth: true,
+  items: [
+    {
+      name: 'People',
+      href: ROUTES.DASHBOARD.PEOPLE,
+      icon: Users,
+      description: 'Find connections',
+      requiresAuth: true,
+    },
+    {
+      // The claims dashboard shipped complete on 2026-08-18 — table,
+      // API, dashboard, and a public /claim/<id> landing page — and had
+      // written zero rows by 2026-09-05, because nothing in this file
+      // pointed at it. The only way in was typing the URL.
+      name: 'Set up for someone',
+      href: ROUTES.DASHBOARD.PROFILE_CLAIMS,
+      icon: UserPlus,
+      description: 'Create a profile for someone who has not joined yet',
+      requiresAuth: true,
+    },
+    {
+      // "Of the money you owe the public, how would you divide it?" —
+      // a person's declared split between locality, region and nation.
+      name: 'Your civic split',
+      href: ROUTES.DASHBOARD.CIVIC_SPLIT,
+      icon: Landmark,
+      description: 'Say where your public money should go',
+      requiresAuth: true,
+    },
+    {
+      name: 'Collaborate',
+      href: ROUTES.COLLABORATE,
+      icon: Handshake,
+      description: 'Open roles',
+      requiresAuth: true,
+    },
+  ],
+};
 
 // Simplified main navigation - X/Twitter style
 const simplifiedSections: NavSection[] = [
@@ -246,6 +248,15 @@ const simplifiedSections: NavSection[] = [
         requiresAuth: true,
       },
       {
+        // Everything the person made or joined, one list. Replaces the four
+        // collapsed entity sections that used to sit under Home.
+        name: 'My things',
+        href: ROUTES.DASHBOARD.THINGS,
+        icon: LayoutGrid,
+        description: 'Everything you made or joined',
+        requiresAuth: true,
+      },
+      {
         // Moving money is the defining verb on an economic platform, so it gets
         // ONE primary entry covering both directions — the screens toggle
         // between themselves rather than taking two rows in the sidebar.
@@ -256,26 +267,14 @@ const simplifiedSections: NavSection[] = [
         requiresAuth: true,
       },
       {
-        name: 'Timeline',
-        href: ROUTES.TIMELINE,
-        icon: BookOpen,
-        description: 'Your feed',
-        requiresAuth: true,
-      },
-      {
+        // Stays primary: it carries the unread counter and holds a slot in the
+        // mobile tab bar, which must agree with this list.
         name: 'Messages',
         href: ROUTES.MESSAGES,
         icon: MessageSquare,
         description: 'Private messages',
         requiresAuth: true,
         counter: 'messages',
-      },
-      {
-        name: 'Explore',
-        href: ROUTES.DISCOVER,
-        icon: Search,
-        description: 'Discover',
-        requiresAuth: false,
       },
       {
         // The map. Every capability in plain words with a Start button — the
@@ -288,7 +287,7 @@ const simplifiedSections: NavSection[] = [
       },
     ],
   },
-  ...entitySections,
+  peopleSection,
   {
     id: 'operations',
     title: 'Work',
@@ -341,6 +340,20 @@ const simplifiedSections: NavSection[] = [
         icon: Settings,
         description: 'Preferences',
         requiresAuth: true,
+      },
+      {
+        name: 'Timeline',
+        href: ROUTES.TIMELINE,
+        icon: BookOpen,
+        description: 'Your feed',
+        requiresAuth: true,
+      },
+      {
+        name: 'Explore',
+        href: ROUTES.DISCOVER,
+        icon: Search,
+        description: 'Discover',
+        requiresAuth: false,
       },
       {
         name: 'Community',

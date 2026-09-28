@@ -438,6 +438,8 @@ export const ROUTES = {
     CAT_WELCOME: '/dashboard/cat?welcome=true',
     DOCUMENTS: ENTITY_REGISTRY['document'].basePath,
     DOCUMENTS_CREATE: ENTITY_REGISTRY['document'].createPath,
+    /** Everything the person made or joined, in one list. */
+    THINGS: '/dashboard/things',
     /** Where a person declares how they would split their public money. */
     CIVIC_SPLIT: '/dashboard/civic-split',
     PROFILE_CLAIMS: '/dashboard/profile-claims',

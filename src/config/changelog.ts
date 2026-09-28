@@ -31,6 +31,18 @@ export const CHANGELOG_TAGS: Record<ChangelogTag, { label: string }> = {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     date: '2026-09-28',
+    tag: 'improvement',
+    title: 'A shorter sidebar, one page for your things, a door on Home',
+    summary:
+      'The sidebar had fifteen kinds of thing behind four chevrons. Now it has six lines. Everything you made or joined is one page, My things, and Home starts with a box: say what you want and your Cat drafts it.',
+    items: [
+      'My things groups what you have by what you wanted \u2014 earn, raise money, borrow or lend, do it together \u2014 with its state and a link into it.',
+      'Sidebar: Cat \u00b7 Home \u00b7 My things \u00b7 Money \u00b7 Messages \u00b7 What you can do. People, Work and More stay folded.',
+      'Timeline and Explore moved under More; the phone tab bar is unchanged.',
+    ],
+  },
+  {
+    date: '2026-09-28',
     tag: 'feature',
     title: 'What you can do here, on one page',
     summary:

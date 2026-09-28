@@ -11,6 +11,7 @@ import {
 } from '@/components/dashboard/sections';
 import { MobileDashboardSidebar } from '@/components/dashboard/MobileDashboardSidebar';
 import { CatNudges } from '@/components/dashboard/CatNudges';
+import { TheDoor } from '@/components/map/TheDoor';
 import { PendingActionsCard } from '@/components/ai-chat/PendingActionsCard';
 import { useDashboard } from './useDashboard';
 
@@ -79,6 +80,10 @@ export default function DashboardPage() {
           totalProjects={totalProjects}
           totalDrafts={totalDrafts}
         />
+
+        {/* The door: one sentence in, the right thing out. The Cat answers with
+            a draft card, so this is the fastest route from wanting to having. */}
+        <TheDoor className="max-w-2xl" />
 
         {pendingActions.length > 0 && (
           <div className="space-y-3">

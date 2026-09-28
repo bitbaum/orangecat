@@ -188,6 +188,14 @@ export interface EntityMetadata {
    * paymentPattern === 'fixed_price'; omit for contribution/none entities.
    */
   priceColumn?: string;
+  /**
+   * Where ONE row of this type opens for its owner, given its key. Absent when
+   * the type has no detail page (a wallet opens its list). "My things" and any
+   * cross-entity list read this instead of guessing `${basePath}/${id}`.
+   */
+  detailPath?: (key: string) => string;
+  /** The column that keys `detailPath`. Defaults to `id`; organisations use their slug. */
+  detailKeyColumn?: string;
 }
 
 /**
@@ -301,6 +309,7 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
     createPath: '/dashboard/projects/create',
     publicBasePath: '/projects',
     apiEndpoint: '/api/projects',
+    detailPath: key => `/project/${key}`,
     hasTemplates: true,
     description: 'Community-funded initiatives',
     createActionLabel: 'Launch a project',
@@ -333,6 +342,7 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
     createPath: '/dashboard/store/create',
     publicBasePath: '/products',
     apiEndpoint: '/api/products',
+    detailPath: key => `/dashboard/store/${key}`,
     hasTemplates: true,
     description: 'Physical or digital products for sale',
     createActionLabel: 'Sell goods in your store',
@@ -371,6 +381,7 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
     createPath: '/dashboard/services/create',
     publicBasePath: '/services',
     apiEndpoint: '/api/services',
+    detailPath: key => `/dashboard/services/${key}`,
     hasTemplates: true,
     description: 'Professional services you offer',
     createActionLabel: 'Offer your expertise',
@@ -404,6 +415,7 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
     createPath: '/dashboard/causes/create',
     publicBasePath: '/causes',
     apiEndpoint: '/api/causes',
+    detailPath: key => `/dashboard/causes/${key}`,
     hasTemplates: false,
     description: 'Charitable causes to support',
     createActionLabel: 'Support a meaningful cause',
@@ -445,6 +457,7 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
     createPath: '/dashboard/companions/create',
     publicBasePath: '/companions',
     apiEndpoint: '/api/ai-assistants',
+    detailPath: key => `/dashboard/companions/${key}`,
     hasTemplates: true,
     description: 'AI beings you create, talk to, and can share or sell',
     createActionLabel: 'Create a companion',
@@ -492,6 +505,8 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
     createPath: '/dashboard/groups/create',
     publicBasePath: '/groups',
     apiEndpoint: '/api/groups',
+    detailPath: key => `/dashboard/groups/${key}`,
+    detailKeyColumn: 'slug',
     hasTemplates: false,
     description: 'Companies, nonprofits, DAOs and communities with a shared identity and treasury',
     createActionLabel: 'Start an organization',
@@ -524,6 +539,7 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
     createPath: '/dashboard/circles/create',
     publicBasePath: '/circles',
     apiEndpoint: '/api/circles',
+    detailPath: key => `/dashboard/circles/${key}`,
     hasTemplates: false,
     description: 'Lightweight communities and interest circles',
     createActionLabel: 'Start a circle',
@@ -562,6 +578,7 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
     createPath: '/dashboard/assets/create',
     publicBasePath: '/assets',
     apiEndpoint: '/api/assets',
+    detailPath: key => `/dashboard/assets/${key}`,
     hasTemplates: true,
     description: 'Property and valuables you own — rent them out, or pledge them as collateral',
     createActionLabel: 'Rent out or use as collateral',
@@ -598,6 +615,7 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
     createPath: '/dashboard/loans/create',
     publicBasePath: '/loans',
     apiEndpoint: '/api/loans',
+    detailPath: key => `/dashboard/loans/${key}`,
     hasTemplates: false,
     description: 'Peer-to-peer Bitcoin loans',
     createActionLabel: 'Request or offer a loan',
@@ -630,6 +648,7 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
     createPath: '/dashboard/investments/create',
     publicBasePath: '/investments',
     apiEndpoint: '/api/investments',
+    detailPath: key => `/dashboard/investments/${key}`,
     hasTemplates: false,
     description: 'Equity, revenue-share, and structured investment deals',
     createActionLabel: 'Create an investment opportunity',
@@ -666,6 +685,7 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
     createPath: '/dashboard/events/create',
     publicBasePath: '/events',
     apiEndpoint: '/api/events',
+    detailPath: key => `/dashboard/events/${key}`,
     hasTemplates: true,
     description: 'In-person gatherings and meetups',
     createActionLabel: 'Organize an in-person event',
@@ -704,6 +724,7 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
     createPath: '/dashboard/research/create',
     publicBasePath: '/research',
     apiEndpoint: '/api/research',
+    detailPath: key => `/dashboard/research/${key}`,
     hasTemplates: true,
     description:
       'Independent research topics with decentralized funding (e.g., Dark Matter, Climate Science)',
@@ -739,6 +760,7 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
     createPath: '/dashboard/wishlists/create',
     publicBasePath: '/wishlists',
     apiEndpoint: '/api/wishlists',
+    detailPath: key => `/dashboard/wishlists/${key}`,
     hasTemplates: true,
     description: 'List items you want - others can buy them for you',
     createActionLabel: 'Create a wishlist',
@@ -773,6 +795,7 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
     createPath: '/dashboard/documents/create',
     publicBasePath: '/documents',
     apiEndpoint: '/api/documents',
+    detailPath: key => `/dashboard/documents/${key}`,
     hasTemplates: false,
     description: 'Personal context for your Cat - goals, skills, notes',
     createActionLabel: 'Add context for Cat',
