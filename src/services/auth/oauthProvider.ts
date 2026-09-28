@@ -16,7 +16,15 @@ import { SignJWT } from 'jose';
 import { createAdminClient } from '@/lib/supabase/admin';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { getSigningKey } from '@/lib/oauth/keys';
-import { OAUTH_ISSUER, OAUTH_SIGNING_ALG, OAUTH_TTL } from '@/lib/oauth/config';
+import {
+  OAUTH_ISSUER,
+  OAUTH_SIGNING_ALG,
+  OAUTH_TTL,
+  parseAndValidateScopes,
+  scopesForResource,
+  type OAuthClientOrigin,
+  type OAuthResource,
+} from '@/lib/oauth/config';
 import { logger } from '@/utils/logger';
 
 function adminDb(): AnySupabaseClient {
@@ -36,6 +44,8 @@ export interface OAuthClient {
   is_confidential: boolean;
   is_trusted: boolean;
   disabled_at: string | null;
+  /** 'dcr' when the client registered itself via /oauth/register. */
+  registered_via: OAuthClientOrigin;
 }
 
 export async function getClient(clientId: string): Promise<OAuthClient | null> {
@@ -65,6 +75,32 @@ export function effectiveScopes(client: OAuthClient, requested: string[]): strin
   return requested.filter(s => client.allowed_scopes.includes(s));
 }
 
+/**
+ * The scopes a consent may grant: known scopes only, narrowed to the target
+ * resource (or defaulted to it when none were asked for — see
+ * scopesForResource), then to the client's own ceiling. The authorize page and
+ * the approve action both call this, so a replayed form can't widen it.
+ */
+export function grantableScopes(
+  client: OAuthClient,
+  rawScope: string | null | undefined,
+  resource: OAuthResource | null
+): string[] {
+  const { granted } = parseAndValidateScopes(rawScope);
+  return effectiveScopes(client, scopesForResource(granted, resource));
+}
+
+/**
+ * RFC 8707 sentinel: the token request named a resource other than the one the
+ * grant was bound to. The token endpoint answers `invalid_target`.
+ */
+export const INVALID_TARGET = 'invalid_target' as const;
+
+/** A token request may repeat the bound resource, or omit it — nothing else. */
+function resourceMatches(bound: string | null, requested: string | null | undefined): boolean {
+  return !requested || requested === bound;
+}
+
 // ── Authorization codes ────────────────────────────────────────────────────
 
 export async function createAuthCode(params: {
@@ -76,6 +112,8 @@ export async function createAuthCode(params: {
   codeChallenge: string;
   codeChallengeMethod: string;
   nonce?: string | null;
+  /** RFC 8707 resource the eventual access token is bound to (its `aud`). */
+  resource?: string | null;
 }): Promise<string> {
   const code = randomToken(32);
   const expiresAt = new Date(Date.now() + OAUTH_TTL.authCode * 1000).toISOString();
@@ -91,6 +129,7 @@ export async function createAuthCode(params: {
       code_challenge: params.codeChallenge,
       code_challenge_method: params.codeChallengeMethod,
       nonce: params.nonce ?? null,
+      resource: params.resource ?? null,
       expires_at: expiresAt,
     });
   if (error) {
@@ -104,17 +143,21 @@ export interface ConsumedCode {
   userId: string;
   scopes: string[];
   nonce: string | null;
+  resource: string | null;
 }
 
 /**
  * Validate + single-use-consume an authorization code. Returns null on ANY
  * failure (unknown / replayed / expired / client or redirect mismatch / bad
- * PKCE) — callers must not branch on the reason (avoid an oracle).
+ * PKCE) — callers must not branch on the reason (avoid an oracle). The one
+ * distinguished answer is INVALID_TARGET, returned only AFTER every check above
+ * has passed (so it reveals nothing to someone without the code + verifier)
+ * and BEFORE the code is burned, so the client can retry without `resource`.
  */
 export async function consumeAuthCode(
   code: string,
-  opts: { clientId: string; redirectUri: string; codeVerifier: string }
-): Promise<ConsumedCode | null> {
+  opts: { clientId: string; redirectUri: string; codeVerifier: string; resource?: string | null }
+): Promise<ConsumedCode | typeof INVALID_TARGET | null> {
   const db = adminDb();
   const { data } = await db
     .from(DATABASE_TABLES.OAUTH_AUTH_CODES)
@@ -142,6 +185,10 @@ export async function consumeAuthCode(
     return null;
   }
 
+  if (!resourceMatches(data.resource ?? null, opts.resource)) {
+    return INVALID_TARGET;
+  }
+
   // Single-use: conditional update guards against a concurrent second redeem.
   const { data: claimed } = await db
     .from(DATABASE_TABLES.OAUTH_AUTH_CODES)
@@ -159,6 +206,7 @@ export async function consumeAuthCode(
     userId: data.user_id,
     scopes: (data.scopes ?? []) as string[],
     nonce: data.nonce ?? null,
+    resource: data.resource ?? null,
   };
 }
 
@@ -207,6 +255,12 @@ export async function issueTokens(params: {
   scopes: string[];
   nonce?: string | null;
   withRefresh?: boolean;
+  /**
+   * RFC 8707 resource the access token is FOR. It becomes the token's `aud`,
+   * so only that resource server accepts it; without one, `aud` stays the
+   * client_id (the original "Login with OrangeCat" shape).
+   */
+  resource?: string | null;
 }): Promise<TokenResponse> {
   const { privateKey, kid } = await getSigningKey();
   const scope = params.scopes.join(' ');
@@ -214,11 +268,16 @@ export async function issueTokens(params: {
   const header = { alg: OAUTH_SIGNING_ALG, kid };
 
   // Access token: carries scope + uid so resolveRequestAuth needs no DB lookup.
-  const accessToken = await new SignJWT({ scope, uid: params.userId })
+  // `client_id` (RFC 9068) names the app even when `aud` names a resource.
+  const accessToken = await new SignJWT({
+    scope,
+    uid: params.userId,
+    client_id: params.client.client_id,
+  })
     .setProtectedHeader(header)
     .setIssuer(OAUTH_ISSUER)
     .setSubject(params.actorId) // sub = actor_id
-    .setAudience(params.client.client_id)
+    .setAudience(params.resource ?? params.client.client_id)
     .setIssuedAt(now)
     .setJti(randomToken(16))
     .setExpirationTime(now + OAUTH_TTL.accessToken)
@@ -251,6 +310,7 @@ export async function issueTokens(params: {
         actor_id: params.actorId,
         user_id: params.userId,
         scopes: params.scopes,
+        resource: params.resource ?? null,
         expires_at: new Date(Date.now() + OAUTH_TTL.refreshToken * 1000).toISOString(),
       });
     if (error) {
@@ -269,11 +329,16 @@ export async function issueTokens(params: {
   };
 }
 
-/** Rotate a refresh token: verify, revoke the old, issue a fresh set. */
+/**
+ * Rotate a refresh token: verify, revoke the old, issue a fresh set bound to
+ * the same resource. A mismatched `resource` answers INVALID_TARGET before
+ * anything is revoked, so the client keeps a working token.
+ */
 export async function rotateRefreshToken(
   refreshToken: string,
-  client: OAuthClient
-): Promise<TokenResponse | null> {
+  client: OAuthClient,
+  opts: { resource?: string | null } = {}
+): Promise<TokenResponse | typeof INVALID_TARGET | null> {
   const db = adminDb();
   const { data } = await db
     .from(DATABASE_TABLES.OAUTH_REFRESH_TOKENS)
@@ -286,6 +351,9 @@ export async function rotateRefreshToken(
   }
   if (new Date(data.expires_at).getTime() < Date.now()) {
     return null;
+  }
+  if (!resourceMatches(data.resource ?? null, opts.resource)) {
+    return INVALID_TARGET;
   }
 
   // Revoke (rotate) — conditional to avoid double-rotation races.
@@ -306,6 +374,7 @@ export async function rotateRefreshToken(
     userId: data.user_id,
     scopes: (data.scopes ?? []) as string[],
     withRefresh: true,
+    resource: data.resource ?? null,
   });
 }
 

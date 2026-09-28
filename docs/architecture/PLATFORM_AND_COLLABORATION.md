@@ -215,6 +215,41 @@ In priority order:
 makes merging a migration. So we get tight coupling + mutual empowerment + clean
 SoC now, and a free option to merge later — without committing to it.
 
+## Connect OrangeCat and Loki to AI apps (MCP)
+
+AI apps — claude.ai custom connectors, ChatGPT connectors, Claude Code, Cursor —
+connect to both products with **one OrangeCat sign-in**. OrangeCat is the
+authorization server for both; each product runs its own MCP server:
+
+| Connector URL                       | Server    | Scopes it honours                                 |
+| ----------------------------------- | --------- | ------------------------------------------------- |
+| `https://orangecat.ch/api/mcp`      | OrangeCat | `project.read`, `project.write`, `timeline.write` |
+| `https://loki.orangecat.ch/api/mcp` | Loki      | `loki.chat`, `loki.act`                           |
+
+Paste either URL into the app. What happens next is standard MCP authorization,
+with nothing to configure by hand:
+
+1. The MCP server answers 401 with `WWW-Authenticate: Bearer
+resource_metadata=".../.well-known/oauth-protected-resource"` (RFC 9728),
+   which names `https://orangecat.ch` as the authorization server.
+2. The app reads `/.well-known/oauth-authorization-server` (RFC 8414 — the same
+   document as `/.well-known/openid-configuration`) and registers itself at
+   `POST /oauth/register` (RFC 7591): a public client, PKCE S256, https or
+   loopback redirects only.
+3. The person signs in and approves on `/oauth/authorize?…&resource=<server>`
+   (RFC 8707). Self-registered apps always get the consent screen, marked as
+   unverified with the host they will return to.
+4. The access token's `aud` is that server. Each server refuses tokens minted
+   for the other, and `/api/v1` refuses tokens minted for Loki.
+
+Tools OrangeCat offers: `orangecat_whoami`, `orangecat_search`,
+`orangecat_my_entities`, `orangecat_create_project`, `orangecat_post_update`
+(`src/services/mcp/tools.ts`). Writes run the same `/api/v1` handlers, so scope
+checks, rate limits, audit and webhooks are identical. Clients configured by
+hand (a Claude Code or Cursor config file) may send an integration key
+(`Authorization: Bearer ock_…`) instead of signing in. Resource URIs and scopes
+are SSOT in `src/lib/oauth/config.ts` → `OAUTH_RESOURCES`.
+
 ## North star
 
 > OrangeCat is the collaboration-and-economy **platform**; the OrangeCat app and

@@ -11,10 +11,11 @@
 import { redirect } from 'next/navigation';
 import { createServerClient } from '@/lib/supabase/server';
 import { getOrCreateUserActor } from '@/services/actors/getOrCreateUserActor';
+import { findOAuthResource } from '@/lib/oauth/config';
 import {
   getClient,
   clientAllowsRedirect,
-  effectiveScopes,
+  grantableScopes,
   createAuthCode,
   recordGrant,
 } from '@/services/auth/oauthProvider';
@@ -42,6 +43,7 @@ export async function approveAuthorization(formData: FormData): Promise<void> {
   const codeChallenge = f('code_challenge');
   const codeChallengeMethod = f('code_challenge_method') || 'S256';
   const nonce = f('nonce');
+  const resourceParam = f('resource');
 
   // Re-validate the client + redirect from the DB — never trust the form.
   const client = await getClient(clientId);
@@ -63,7 +65,13 @@ export async function approveAuthorization(formData: FormData): Promise<void> {
     redirect('/oauth/error?reason=anonymous_account');
   }
 
-  const scopes = effectiveScopes(client!, scopeStr.split(/\s+/).filter(Boolean));
+  const resource = findOAuthResource(resourceParam);
+  if (resourceParam && !resource) {
+    redirect(withParams(redirectUri, { error: 'invalid_target', state }));
+  }
+  // The scope field is already narrowed, so an empty one here means someone
+  // emptied it — never let that re-expand into the resource's defaults.
+  const scopes = scopeStr.trim() ? grantableScopes(client!, scopeStr, resource) : [];
   if (scopes.length === 0) {
     redirect(withParams(redirectUri, { error: 'invalid_scope', state }));
   }
@@ -81,6 +89,7 @@ export async function approveAuthorization(formData: FormData): Promise<void> {
       codeChallenge,
       codeChallengeMethod,
       nonce: nonce || null,
+      resource: resource?.uri ?? null,
     });
     target = withParams(redirectUri, { code, state });
   } catch (error) {

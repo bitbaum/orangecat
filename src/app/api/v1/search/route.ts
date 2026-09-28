@@ -10,18 +10,10 @@
 import { NextRequest } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { apiSuccess, apiError } from '@/lib/api/standardResponse';
-import { searchPlatform, type SearchType } from '@/services/cat/platform-search';
+import { searchPlatform, SEARCH_TYPES, type SearchType } from '@/services/cat/platform-search';
 import { logger } from '@/utils/logger';
 
-const VALID_TYPES: readonly SearchType[] = [
-  'all',
-  'people',
-  'projects',
-  'products',
-  'services',
-  'events',
-  'causes',
-];
+const VALID_TYPES: readonly SearchType[] = SEARCH_TYPES;
 
 export async function GET(request: NextRequest) {
   try {
@@ -31,8 +23,7 @@ export async function GET(request: NextRequest) {
       return apiError('Query "q" (min 2 chars) is required', 'BAD_REQUEST', 400);
     }
     const typeParam = url.searchParams.get('type') as SearchType | null;
-    const type: SearchType =
-      typeParam && VALID_TYPES.includes(typeParam) ? typeParam : 'all';
+    const type: SearchType = typeParam && VALID_TYPES.includes(typeParam) ? typeParam : 'all';
 
     const results = await searchPlatform(createAdminClient(), q, type);
     return apiSuccess({ query: q, type, results });

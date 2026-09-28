@@ -16,13 +16,19 @@ import { z } from 'zod';
 import { webUrl } from '@/lib/validation/base';
 import type { TimelineEventType, TimelineSubjectType } from '@/types/timeline';
 
-/** Recognised publishing clients (the `metadata.source` namespace for dedup). */
-export const EXTERNAL_PUBLISH_SOURCES = ['loki'] as const;
+/**
+ * Recognised publishing clients (the `metadata.source` namespace for dedup).
+ * `ai_app` is any AI app posting through OrangeCat's MCP server
+ * (src/services/mcp/tools.ts) — claude.ai, ChatGPT and the like. Which app it
+ * was is the app's own claim, so the wall does not repeat it.
+ */
+export const EXTERNAL_PUBLISH_SOURCES = ['loki', 'ai_app'] as const;
 export type ExternalPublishSource = (typeof EXTERNAL_PUBLISH_SOURCES)[number];
 
 /** Human label per source — drives the wall's "via …" attribution (display SSOT). */
 export const EXTERNAL_PUBLISH_SOURCE_LABELS: Record<ExternalPublishSource, string> = {
   loki: 'Loki',
+  ai_app: 'an AI app',
 };
 
 /**
@@ -33,6 +39,8 @@ export const EXTERNAL_PUBLISH_SOURCE_LABELS: Record<ExternalPublishSource, strin
  */
 export const EXTERNAL_PUBLISH_SOURCE_ORIGINS: Record<ExternalPublishSource, readonly string[]> = {
   loki: ['https://loki.orangecat.ch'],
+  // None: an AI app has no surface of ours to deep-link back into.
+  ai_app: [],
 };
 
 /** True if `url`'s origin is allowed for `source` (used to gate the deep-link). */

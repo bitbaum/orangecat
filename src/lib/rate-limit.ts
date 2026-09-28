@@ -88,6 +88,17 @@ const domainSearchLimiter = slidingWindow({ limit: 10, windowMs: 5 * 60_000 });
 // receives the first mail can still ask twice more within the window.
 const emailCodeByEmailLimiter = slidingWindow({ limit: 3, windowMs: 15 * 60_000 });
 const emailCodeByIpLimiter = slidingWindow({ limit: 10, windowMs: 60 * 60_000 });
+// OAuth Dynamic Client Registration (/oauth/register). Anyone may register, and
+// each registration is a row in oauth_clients. An AI app registers once per
+// install (Claude Code once per login), so 10 an hour per IP is ample for a
+// person and flat for a script filling the table.
+const oauthRegistrationLimiter = slidingWindow({ limit: 10, windowMs: 60 * 60_000 });
+// MCP (/api/mcp), per signed-in person. A model working a task calls tools in
+// bursts — a search, a list, a create — so the budget is generous; what it
+// stops is a runaway agent loop, whose searches each cost an embedding call.
+// Writes are additionally held to the ordinary per-user write limit, because
+// they run through the /api/v1 handlers.
+const mcpLimiter = slidingWindow({ limit: 120, windowMs: 60_000 });
 
 // ==================== RATE LIMIT FUNCTIONS ====================
 //
@@ -223,6 +234,18 @@ export async function rateLimitDomainSearch(request: RequestLike): Promise<RateL
 /** Sign-in code requests per caller IP: 10 per hour. */
 export async function rateLimitEmailCodeByIp(request: RequestLike): Promise<RateLimitResult> {
   return toRateLimitResult(emailCodeByIpLimiter.check(`email-code-ip:${clientIpKey(request)}`));
+}
+
+/** OAuth client self-registrations per caller IP: 10 per hour. */
+export async function rateLimitOAuthRegistration(request: RequestLike): Promise<RateLimitResult> {
+  return toRateLimitResult(
+    oauthRegistrationLimiter.check(`oauth-register:${clientIpKey(request)}`)
+  );
+}
+
+/** MCP requests per signed-in person: 120 per minute. */
+export async function rateLimitMcp(userId: string): Promise<RateLimitResult> {
+  return toRateLimitResult(mcpLimiter.check(`mcp:${userId}`));
 }
 
 /** Sign-in code requests per recipient address: 3 per 15 minutes, whatever the IP. */
