@@ -13,7 +13,7 @@ to the map, sub-bullets stay here for the human reader.
 
 ### Added
 
-- **Sign in without a password.** On the sign-in screen, choose "Email me a sign-in code instead": type your email, get a six-digit code, enter it. New here? The same code creates your account. It works for Solon and Loki too, since they use the same account.
+- **Sign in without a password.** On the sign-in screen, choose "Email me a sign-in code instead": type your email, get a six-digit code, enter it. New here? The same code creates your account. Solon's sign-in uses it too, and so does Loki's "Sign in with OrangeCat".
   - The email carries only the code — no link to click — so a notification on your phone is enough.
   - Accounts with two-factor authentication still get their second step.
   - Codes can only be requested a few times in a row for any one address, so nobody can flood your inbox with them.
