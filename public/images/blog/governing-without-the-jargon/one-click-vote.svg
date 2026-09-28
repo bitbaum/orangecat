@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 640" role="img" aria-labelledby="t d">
+  <title id="t">Voting in Solon takes three taps</title>
+  <desc id="d">Three phone screens: a notification that a decision needs you, the proposal with Yes, No and Abstain buttons, and a confirmation that your vote is counted and can be changed until the vote closes.</desc>
+  <style>
+    .bg{fill:#f6f5f3}.card{fill:#ffffff;stroke:#dedbd6}.screen{fill:#fbfaf9}
+    .t1{fill:#171513;font:600 22px system-ui,-apple-system,Segoe UI,sans-serif}
+    .t2{fill:#57534e;font:400 17px system-ui,-apple-system,Segoe UI,sans-serif}
+    .t3{fill:#8a847d;font:500 13px system-ui,-apple-system,Segoe UI,sans-serif;letter-spacing:.08em}
+    .step{fill:#171513;font:700 15px system-ui,-apple-system,Segoe UI,sans-serif}
+    .btn{fill:#ffffff;stroke:#cfcac3}.btnt{fill:#171513;font:600 17px system-ui,-apple-system,Segoe UI,sans-serif}
+    .acc{fill:#ff5c00}.acct{fill:#ffffff;font:600 17px system-ui,-apple-system,Segoe UI,sans-serif}
+    .ok{fill:#1f8a4c}.line{stroke:#cfcac3;stroke-width:2;fill:none}.dot{fill:#dedbd6}
+    @media (prefers-color-scheme: dark){
+      .bg{fill:#121110}.card{fill:#1c1a18;stroke:#34302c}.screen{fill:#181614}
+      .t1,.step,.btnt{fill:#f3f1ee}.t2{fill:#b8b2aa}.t3{fill:#8d867e}
+      .btn{fill:#1c1a18;stroke:#48433d}.line{stroke:#48433d}.dot{fill:#34302c}.ok{fill:#3fb970}
+    }
+  </style>
+  <rect class="bg" width="1200" height="640" rx="24"/>
+  <text class="t3" x="600" y="52" text-anchor="middle">WHAT A MEMBER SEES</text>
+
+  <!-- phone 1 -->
+  <g transform="translate(90,80)">
+    <rect class="card" width="300" height="520" rx="36" stroke-width="2"/>
+    <rect class="screen" x="14" y="14" width="272" height="492" rx="26"/>
+    <rect class="dot" x="115" y="28" width="70" height="8" rx="4"/>
+    <text class="t3" x="36" y="84">SOLON · NOW</text>
+    <rect class="card" x="28" y="100" width="244" height="148" rx="16" stroke-width="1.5"/>
+    <circle class="acc" cx="52" cy="130" r="8"/>
+    <text class="t1" x="68" y="136" style="font-size:16px">A decision needs you</text>
+    <text class="t2" x="46" y="170" style="font-size:15px">Wednesday Supper Club</text>
+    <text class="t2" x="46" y="198" style="font-size:15px">“Move supper to</text>
+    <text class="t2" x="46" y="220" style="font-size:15px">Thursdays”</text>
+    <text class="t2" x="36" y="470" style="font-size:15px">Signed in with OrangeCat.</text>
+    <text class="t2" x="36" y="492" style="font-size:15px">No wallet, no key needed.</text>
+  </g>
+  <text class="step" x="240" y="626" text-anchor="middle">1 · You are told</text>
+
+  <path class="line" d="M404 340 h42 m-10 -8 l10 8 l-10 8"/>
+
+  <!-- phone 2 -->
+  <g transform="translate(450,80)">
+    <rect class="card" width="300" height="520" rx="36" stroke-width="2"/>
+    <rect class="screen" x="14" y="14" width="272" height="492" rx="26"/>
+    <rect class="dot" x="115" y="28" width="70" height="8" rx="4"/>
+    <text class="t3" x="36" y="84">OPERATIONS · CLOSES IN 6 DAYS</text>
+    <text class="t1" x="36" y="124">Move supper to</text>
+    <text class="t1" x="36" y="152">Thursdays</text>
+    <text class="t2" x="36" y="190">Wednesday clashes with</text>
+    <text class="t2" x="36" y="214">choir for half of us.</text>
+    <rect class="acc" x="36" y="300" width="228" height="52" rx="14"/>
+    <text class="acct" x="150" y="332" text-anchor="middle">Yes</text>
+    <rect class="btn" x="36" y="364" width="228" height="52" rx="14" stroke-width="1.5"/>
+    <text class="btnt" x="150" y="396" text-anchor="middle">No</text>
+    <rect class="btn" x="36" y="428" width="228" height="52" rx="14" stroke-width="1.5"/>
+    <text class="btnt" x="150" y="460" text-anchor="middle">Abstain</text>
+  </g>
+  <text class="step" x="600" y="626" text-anchor="middle">2 · You tap once</text>
+
+  <path class="line" d="M764 340 h42 m-10 -8 l10 8 l-10 8"/>
+
+  <!-- phone 3 -->
+  <g transform="translate(810,80)">
+    <rect class="card" width="300" height="520" rx="36" stroke-width="2"/>
+    <rect class="screen" x="14" y="14" width="272" height="492" rx="26"/>
+    <rect class="dot" x="115" y="28" width="70" height="8" rx="4"/>
+    <circle class="ok" cx="150" cy="170" r="42"/>
+    <path d="M130 170 l14 14 l28 -30" stroke="#fff" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <text class="t1" x="150" y="258" text-anchor="middle">Your vote is counted</text>
+    <text class="t2" x="150" y="292" text-anchor="middle">You voted Yes.</text>
+    <text class="t2" x="150" y="318" text-anchor="middle">Change it any time</text>
+    <text class="t2" x="150" y="342" text-anchor="middle">until the vote closes.</text>
+    <rect class="btn" x="36" y="428" width="228" height="52" rx="14" stroke-width="1.5"/>
+    <text class="btnt" x="150" y="460" text-anchor="middle">See the live count</text>
+  </g>
+  <text class="step" x="960" y="626" text-anchor="middle">3 · It is on the record</text>
+</svg>

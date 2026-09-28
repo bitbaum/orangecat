@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" role="img" aria-labelledby="t d">
+  <title id="t">The trust ladder</title>
+  <desc id="d">Six rungs, each replacing trust in the platform with something anyone can check. One: Solon's record (live). Two: signed with your own key (live). Three: timestamped in Bitcoin (live for code origins). Four: published to Nostr so it survives Solon (planned). Five: money that only the elected key holders can move (planned). Six: secret ballots that can still be recounted (planned).</desc>
+  <style>
+    .bg{fill:#f6f5f3}.rung{fill:#ffffff;stroke:#dedbd6}
+    .n{fill:#8a847d;font:700 34px system-ui,-apple-system,Segoe UI,sans-serif}
+    .h{fill:#171513;font:650 22px system-ui,-apple-system,Segoe UI,sans-serif}
+    .b{fill:#57534e;font:400 16px system-ui,-apple-system,Segoe UI,sans-serif}
+    .live{fill:#1f8a4c}.plan{fill:#8a847d}
+    .tag{fill:#ffffff;font:700 12px system-ui,-apple-system,Segoe UI,sans-serif;letter-spacing:.08em}
+    .ax{stroke:#b9b3ab;stroke-width:2;fill:none}.axt{fill:#8a847d;font:600 13px system-ui,-apple-system,Segoe UI,sans-serif;letter-spacing:.08em}
+    @media (prefers-color-scheme: dark){
+      .bg{fill:#121110}.rung{fill:#1c1a18;stroke:#34302c}
+      .h{fill:#f3f1ee}.b{fill:#b8b2aa}.n{fill:#6f6962}.live{fill:#2f9c5d}.plan{fill:#5a544d}
+      .ax{stroke:#5a544d}.axt{fill:#8d867e}
+    }
+  </style>
+  <rect class="bg" width="1200" height="720" rx="24"/>
+  <path class="ax" d="M70 670 V60 m-9 14 l9 -14 l9 14"/>
+  <text class="axt" transform="translate(52 400) rotate(-90)" text-anchor="middle">LESS TRUST NEEDED IN ANYONE</text>
+
+  <g transform="translate(390,590)"><rect class="rung" width="760" height="84" rx="16" stroke-width="1.5"/>
+    <text class="n" x="28" y="54">1</text><text class="h" x="80" y="38">Solon's record</text><text class="b" x="80" y="64">One tap, signed in. You trust Solon's database.</text>
+    <rect class="live" x="640" y="28" width="96" height="28" rx="14"/><text class="tag" x="688" y="47" text-anchor="middle">LIVE</text></g>
+  <g transform="translate(330,490)"><rect class="rung" width="820" height="84" rx="16" stroke-width="1.5"/>
+    <text class="n" x="28" y="54">2</text><text class="h" x="80" y="38">Signed with your own key</text><text class="b" x="80" y="64">Anyone can recount it. A faked vote simply fails the check.</text>
+    <rect class="live" x="700" y="28" width="96" height="28" rx="14"/><text class="tag" x="748" y="47" text-anchor="middle">LIVE</text></g>
+  <g transform="translate(270,390)"><rect class="rung" width="880" height="84" rx="16" stroke-width="1.5"/>
+    <text class="n" x="28" y="54">3</text><text class="h" x="80" y="38">Timestamped in Bitcoin</text><text class="b" x="80" y="64">Nobody can backdate it. Live today for who wrote which code first.</text>
+    <rect class="live" x="760" y="28" width="96" height="28" rx="14"/><text class="tag" x="808" y="47" text-anchor="middle">LIVE</text></g>
+  <g transform="translate(210,290)"><rect class="rung" width="940" height="84" rx="16" stroke-width="1.5"/>
+    <text class="n" x="28" y="54">4</text><text class="h" x="80" y="38">Published everywhere</text><text class="b" x="80" y="64">Decisions copied to Nostr relays, so they outlive any one server, Solon's included.</text>
+    <rect class="plan" x="820" y="28" width="96" height="28" rx="14"/><text class="tag" x="868" y="47" text-anchor="middle">PLANNED</text></g>
+  <g transform="translate(150,190)"><rect class="rung" width="1000" height="84" rx="16" stroke-width="1.5"/>
+    <text class="n" x="28" y="54">5</text><text class="h" x="80" y="38">Enforced by Bitcoin</text><text class="b" x="80" y="64">A shared treasury only the elected key holders can move, together, with a recovery path.</text>
+    <rect class="plan" x="880" y="28" width="96" height="28" rx="14"/><text class="tag" x="928" y="47" text-anchor="middle">PLANNED</text></g>
+  <g transform="translate(90,90)"><rect class="rung" width="1060" height="84" rx="16" stroke-width="1.5"/>
+    <text class="n" x="28" y="54">6</text><text class="h" x="80" y="38">Private, and still provable</text><text class="b" x="80" y="64">Secret ballots anyone can recount, and proving you're a person without saying who you are.</text>
+    <rect class="plan" x="940" y="28" width="96" height="28" rx="14"/><text class="tag" x="988" y="47" text-anchor="middle">PLANNED</text></g>
+</svg>
