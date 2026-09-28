@@ -75,6 +75,16 @@ export function generateActionDescription(
       return `Add context document: "${parameters.title}"`;
     case 'save_economic_profile':
       return 'Update your economic profile';
+    case 'set_civic_split': {
+      const shares = ['locality', 'region', 'nation']
+        .map(level => {
+          const v = parameters[`${level}_share`];
+          return v === undefined || v === null || v === '' ? null : `${v}% ${level}`;
+        })
+        .filter(Boolean)
+        .join(', ');
+      return `Set your civic split${shares ? `: ${shares}` : ''}`;
+    }
     case 'create_task': {
       const priority = parameters.priority ? ` [${parameters.priority}]` : '';
       const due = parameters.due_date ? ` due ${parameters.due_date}` : '';

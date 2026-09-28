@@ -35,6 +35,7 @@ import {
   Zap,
   type LucideIcon,
   Hammer,
+  Landmark,
 } from 'lucide-react';
 import { API_ROUTES } from '@/config/api-routes';
 import { getApiEndpoint } from '@/config/entity-registry';
@@ -1788,6 +1789,70 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
       'Remind me to check on my project tomorrow',
       'Set a reminder for the meeting next week',
       'Notify me when funding reaches 50%',
+    ],
+    enabled: true,
+  },
+
+  // ---------- CIVIC ACTIONS ----------
+
+  set_civic_split: {
+    id: 'set_civic_split',
+    name: 'Set Civic Split',
+    description:
+      'How the user would split their public money between locality, region and nation — a statement, never a tax setting. Merges over the split on file; one share rebalances the rest.',
+    category: 'context',
+    icon: Landmark,
+    riskLevel: 'low',
+    requiresConfirmation: true,
+    parameters: [
+      {
+        name: 'locality_share',
+        type: 'number',
+        required: false,
+        description: 'Whole percent to their locality (e.g. 60)',
+      },
+      {
+        name: 'region_share',
+        type: 'number',
+        required: false,
+        description: 'Whole percent to their region',
+      },
+      {
+        name: 'nation_share',
+        type: 'number',
+        required: false,
+        description: 'Whole percent to their nation',
+      },
+      {
+        name: 'country_code',
+        type: 'string',
+        required: false,
+        description: 'Two-letter country code (e.g. CH). Required the first time.',
+      },
+      {
+        name: 'region',
+        type: 'string',
+        required: false,
+        description: 'Their region, e.g. Zürich. Required the first time.',
+      },
+      {
+        name: 'locality',
+        type: 'string',
+        required: false,
+        description: 'Their locality, e.g. Witikon. Required the first time.',
+      },
+      {
+        name: 'is_public',
+        type: 'boolean',
+        required: false,
+        description: 'Show it on their public profile',
+      },
+      { name: 'note', type: 'string', required: false, description: 'Why, in a sentence' },
+    ],
+    examples: [
+      'Send 60% of my public money to Witikon',
+      'Set my civic split to 50 local, 30 canton, 20 federal',
+      'Show my civic split on my profile',
     ],
     enabled: true,
   },
