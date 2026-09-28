@@ -13,6 +13,10 @@ to the map, sub-bullets stay here for the human reader.
 
 ### Added
 
+- **Sign in without a password.** On the sign-in screen, choose "Email me a sign-in code instead": type your email, get a six-digit code, enter it. New here? The same code creates your account. It works for Solon and Loki too, since they use the same account.
+  - The email carries only the code — no link to click — so a notification on your phone is enough.
+  - Accounts with two-factor authentication still get their second step.
+  - Codes can only be requested a few times in a row for any one address, so nobody can flood your inbox with them.
 - **What you can do here, on one page.** Every thing this place can do, in plain words, with an example, the three steps, and a Start button — at /what-you-can-do, from the sidebar, the footer, the create page and How it works.
   - Grouped by what you want: earn, raise money, borrow or lend, do it together, move money, or just ask your Cat.
   - The page starts with a box: say what you want in one sentence and your Cat drafts it. No account needed to read the map.
