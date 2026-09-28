@@ -56,6 +56,8 @@ const AUTH_ALLOWLIST: Record<string, string> = {
   // require an authenticated session; all three are per-IP rate limited.
   'auth/callback/route.ts': 'session bootstrap — validates Supabase tokens itself',
   'auth/verify-captcha/route.ts': 'pre-registration CAPTCHA check',
+  'auth/email-code/route.ts':
+    'mails a sign-in code to someone who has no session yet; limited per IP and per recipient',
   // Anonymous tipping is a product feature (easy UX, non-custodial); abuse is
   // bounded per-IP and per-recipient instead of per-account.
   'tips/invoice/route.ts': 'anonymous tip invoice mint by design',

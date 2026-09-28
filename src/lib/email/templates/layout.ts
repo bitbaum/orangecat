@@ -20,8 +20,13 @@ interface EmailLayoutProps {
   ctaUrl?: string;
   /** Additional footer text */
   footer?: string;
-  /** Unsubscribe link (required) */
-  unsubscribeUrl: string;
+  /**
+   * Unsubscribe link — required, and null ONLY for security mail the person
+   * asked for this minute (a sign-in code), where "unsubscribe" would mean
+   * "stop letting me sign in". A required key, not an optional one, so a new
+   * newsletter template cannot drop the link by forgetting it.
+   */
+  unsubscribeUrl: string | null;
 }
 
 // Exported so all email templates can share a single source of truth for
@@ -147,8 +152,12 @@ export function emailLayout(props: EmailLayoutProps): string {
                 Sent by your Cat &middot; <a href="https://orangecat.ch" style="color:${TIFFANY};text-decoration:none;">orangecat.ch</a>
               </p>
               <p style="font-size:12px;color:${TEXT_MUTED};margin:0;">
-                <a href="${escapeHtml(unsubscribeUrl)}" style="color:${TEXT_MUTED};text-decoration:underline;">Unsubscribe</a>
-                &nbsp;&middot;&nbsp; OrangeCat &middot; Switzerland
+                ${
+                  unsubscribeUrl
+                    ? `<a href="${escapeHtml(unsubscribeUrl)}" style="color:${TEXT_MUTED};text-decoration:underline;">Unsubscribe</a>
+                &nbsp;&middot;&nbsp; `
+                    : ''
+                }OrangeCat &middot; Switzerland
               </p>
             </td>
           </tr>
@@ -173,7 +182,7 @@ export function emailPlainText(props: {
   ctaText?: string;
   ctaUrl?: string;
   footer?: string;
-  unsubscribeUrl: string;
+  unsubscribeUrl: string | null;
 }): string {
   const { heading, body, ctaText, ctaUrl, footer, unsubscribeUrl } = props;
 
@@ -187,7 +196,10 @@ export function emailPlainText(props: {
     lines.push(footer, '');
   }
 
-  lines.push('---', 'Sent by your Cat | orangecat.ch', `Unsubscribe: ${unsubscribeUrl}`);
+  lines.push('---', 'Sent by your Cat | orangecat.ch');
+  if (unsubscribeUrl) {
+    lines.push(`Unsubscribe: ${unsubscribeUrl}`);
+  }
 
   return lines.join('\n');
 }

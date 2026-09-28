@@ -146,6 +146,7 @@ export const API_ROUTES = {
     SYNC: '/api/auth/sync',
     VERIFY_CAPTCHA: '/api/auth/verify-captcha',
     OAUTH_PROVIDERS: '/api/auth/oauth-providers',
+    EMAIL_CODE: '/api/auth/email-code',
   },
   DOCUMENTS: {
     BASE: ENTITY_REGISTRY['document'].apiEndpoint,
