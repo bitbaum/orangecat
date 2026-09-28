@@ -435,6 +435,8 @@ export const ROUTES = {
     CAT_WELCOME: '/dashboard/cat?welcome=true',
     DOCUMENTS: ENTITY_REGISTRY['document'].basePath,
     DOCUMENTS_CREATE: ENTITY_REGISTRY['document'].createPath,
+    /** Where a person declares how they would split their public money. */
+    CIVIC_SPLIT: '/dashboard/civic-split',
     PROFILE_CLAIMS: '/dashboard/profile-claims',
     PROFILE_CLAIMS_NEW: '/dashboard/profile-claims/new',
     /** Where creating for someone else lands: the link, and a way to send it. */

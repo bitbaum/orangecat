@@ -14,6 +14,7 @@ import ProfileWalletsTab from '@/components/profile/ProfileWalletsTab';
 import ProfileEntityTab from '@/components/profile/ProfileEntityTab';
 import ProfileArticlesTab from '@/components/profile/ProfileArticlesTab';
 import ProfileOfferings from '@/components/profile/ProfileOfferings';
+import ProfileCivicSplit, { type PublicCivicSplit } from '@/components/profile/ProfileCivicSplit';
 import type { PublicEconomicProfile } from '@/services/cat/economic-profile';
 import { Users, User, MessageSquare, Info, Wallet, FileText } from 'lucide-react';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
@@ -63,6 +64,8 @@ interface ProfileLayoutProps {
   serverIsOwnProfile?: boolean;
   /** The Cat's extracted "what I can offer" signals for this profile. */
   economicProfile?: PublicEconomicProfile | null;
+  /** Their declared civic split, only when they made it public. */
+  civicSplit?: PublicCivicSplit | null;
 }
 
 export default function ProfileLayout({
@@ -76,6 +79,7 @@ export default function ProfileLayout({
   className,
   serverIsOwnProfile,
   economicProfile,
+  civicSplit,
 }: ProfileLayoutProps) {
   const { user } = useAuth();
   const isOwnProfile = serverIsOwnProfile ?? profile.id === user?.id;
@@ -243,6 +247,11 @@ export default function ProfileLayout({
             <div className="order-2">
               <ProfileOfferings economicProfile={economicProfile} isOwnProfile={isOwnProfile} />
             </div>
+            {civicSplit && (
+              <div className="order-3 mt-4">
+                <ProfileCivicSplit split={civicSplit} />
+              </div>
+            )}
           </div>
 
           {/* Overview-first. Timeline-first (#420) assumed the feed was people's

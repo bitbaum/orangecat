@@ -38,6 +38,7 @@ import {
   Handshake,
   CalendarCheck,
   UserPlus,
+  Landmark,
 } from 'lucide-react';
 import { ECOSYSTEM_PILLARS } from './ecosystem';
 
@@ -192,6 +193,17 @@ const entitySections = generateEntityNavigation().map(section =>
             href: ROUTES.DASHBOARD.PROFILE_CLAIMS,
             icon: UserPlus,
             description: 'Create a profile for someone who has not joined yet',
+            requiresAuth: true,
+          },
+          {
+            // "Of the money you owe the public, how would you divide it?" —
+            // a person's declared split between locality, region and nation.
+            // Sits with the people-and-groups section because it is a civic
+            // statement, and the aggregate is what a place would choose.
+            name: 'Your civic split',
+            href: ROUTES.DASHBOARD.CIVIC_SPLIT,
+            icon: Landmark,
+            description: 'Say where your public money should go',
             requiresAuth: true,
           },
           {

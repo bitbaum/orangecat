@@ -6,6 +6,7 @@ import ProfileLayout from '@/components/profile/ProfileLayout';
 import type { EntityType } from '@/config/entity-registry';
 import type { Article } from '@/services/articles/types';
 import type { PublicEconomicProfile } from '@/services/cat/economic-profile';
+import type { PublicCivicSplit } from '@/components/profile/ProfileCivicSplit';
 
 interface ProfilePageClientProps {
   profile: ScalableProfile;
@@ -13,6 +14,8 @@ interface ProfilePageClientProps {
   articles?: Article[];
   isOwnProfile?: boolean;
   economicProfile?: PublicEconomicProfile | null;
+  /** Their declared civic split, only when they made it public. */
+  civicSplit?: PublicCivicSplit | null;
   stats: {
     projectCount: number;
     totalRaised: number;
@@ -29,6 +32,7 @@ export default function ProfilePageClient({
   articles,
   isOwnProfile,
   economicProfile,
+  civicSplit,
   stats,
 }: ProfilePageClientProps) {
   return (
@@ -39,6 +43,7 @@ export default function ProfilePageClient({
       stats={stats}
       serverIsOwnProfile={isOwnProfile}
       economicProfile={economicProfile}
+      civicSplit={civicSplit}
     />
   );
 }

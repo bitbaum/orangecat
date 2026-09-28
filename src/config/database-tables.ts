@@ -190,6 +190,11 @@ export const DATABASE_TABLES = {
 
   // Solon governance (platform allocation policies)
   ALLOCATION_POLICIES: 'allocation_policies',
+
+  // Civic split — a person's declared split of their public contribution
+  // between locality / region / nation (src/config/civic-split.ts).
+  CIVIC_SPLITS: 'civic_splits',
+  CIVIC_SPLITS_PUBLIC: 'civic_splits_public',
   SOLON_TRUSTED_KEYS: 'solon_trusted_keys',
 
   // OAuth provider ("Login with OrangeCat")

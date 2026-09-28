@@ -151,7 +151,15 @@ describe('selection is worth doing', () => {
     // never be missed, because without it every path through this brief ends
     // at a proposal and a question comes back as an entity to create. That is
     // capability, not coaching, so it is CORE and it is paid for here.
-    expect(remaining).toBeLessThanOrEqual(3_800);
+    //
+    // Raised 3,800 -> 4,100 for `set_civic_split`: "send 60% of my public
+    // money to Witikon" is now a sentence the Cat can act on, and the action
+    // is the one way to declare a civic split from chat. Its description was
+    // cut to two clauses and its eight parameters carry no prose in the
+    // appendix; the remaining ~295 characters are the parameter names, and
+    // the names are the interface — a model that cannot see them cannot call
+    // it. Paid for as capability, like connect_wallet and the Solon proposal.
+    expect(remaining).toBeLessThanOrEqual(4_100);
   });
 
   it('selects by default now, and still sends everything when told to', async () => {
