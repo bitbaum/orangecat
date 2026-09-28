@@ -13,12 +13,23 @@ to the map, sub-bullets stay here for the human reader.
 
 ### Added
 
+- **What you can do here, on one page.** Every thing this place can do, in plain words, with an example, the three steps, and a Start button — at /what-you-can-do, from the sidebar, the footer, the create page and How it works.
+  - Grouped by what you want: earn, raise money, borrow or lend, do it together, move money, or just ask your Cat.
+  - The page starts with a box: say what you want in one sentence and your Cat drafts it. No account needed to read the map.
+  - The list is generated from the same registry that runs the app, so a new capability appears here the day it ships.
 - **Say where your public money should go.** Of the money you owe the public, how would you divide it between your locality, your region and your nation? Nobody asks. Now you can say it — and see what the people of your place would choose.
   - Three sliders that always add up to 100, under Your civic split in the dashboard. Show it on your profile or keep it to yourself; it counts either way, anonymously, once three people in a place have declared.
   - It changes nothing about what the law takes or where it goes. It says where you stand, and it will decide where what you give voluntarily goes once local funds exist.
   - The average per place is public, so anyone — including the Solon map to come — can read what a locality would choose.
   - Cat can set it from a sentence: “send 60% of my public money to Witikon”.
 - **New essay: Where the Wall Is.** One Hetzner box runs the whole studio today. The piece gives the order in which it stops being enough, what fixes each wall, and why the only one that costs real money is tokens, not servers.
+
+### Improved
+
+- **A shorter sidebar, one page for your things, a door on Home.** The sidebar had fifteen kinds of thing behind four chevrons. Now it has six lines. Everything you made or joined is one page, My things, and Home starts with a box: say what you want and your Cat drafts it.
+  - My things groups what you have by what you wanted — earn, raise money, borrow or lend, do it together — with its state and a link into it.
+  - Sidebar: Cat · Home · My things · Money · Messages · What you can do. People, Work and More stay folded.
+  - Timeline and Explore moved under More; the phone tab bar is unchanged.
 
 ### Platform
 

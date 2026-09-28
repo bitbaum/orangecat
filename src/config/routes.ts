@@ -55,6 +55,7 @@ export const ROUTE_CONTEXTS = {
     '/bitcoin-wallet-guide',
     '/study-bitcoin',
     '/how-it-works',
+    '/what-you-can-do',
     '/donations',
     '/pages',
     '/wallets',
@@ -307,6 +308,8 @@ export const ROUTES = {
   ECOSYSTEM: '/ecosystem',
   ABOUT: '/about',
   HOW_IT_WORKS: '/how-it-works',
+  /** The map: every capability in the visitor's words, with a Start on each. */
+  WHAT_YOU_CAN_DO: '/what-you-can-do',
   BLOG: '/blog',
   RSS: '/rss.xml',
   CHANGELOG: '/changelog',
@@ -435,6 +438,8 @@ export const ROUTES = {
     CAT_WELCOME: '/dashboard/cat?welcome=true',
     DOCUMENTS: ENTITY_REGISTRY['document'].basePath,
     DOCUMENTS_CREATE: ENTITY_REGISTRY['document'].createPath,
+    /** Everything the person made or joined, in one list. */
+    THINGS: '/dashboard/things',
     /** Where a person declares how they would split their public money. */
     CIVIC_SPLIT: '/dashboard/civic-split',
     PROFILE_CLAIMS: '/dashboard/profile-claims',

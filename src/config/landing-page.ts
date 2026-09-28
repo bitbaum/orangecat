@@ -14,107 +14,13 @@
  * Last updated: 2026-03-01 — Aligned with vision: Cat-centric, universal payments, pseudonymous-by-default
  */
 
-import {
-  LucideIcon,
-  Globe,
-  Package,
-  Lock,
-  Wallet,
-  Scale,
-  Coins,
-  Cat,
-  TrendingUp,
-  Bot,
-} from 'lucide-react';
+import { LucideIcon, Globe, Lock, Wallet, Cat, TrendingUp } from 'lucide-react';
 import { GRADIENTS } from '@/config/gradients';
 
-// ==================== SUPER-APP CATEGORIES ====================
-
-/**
- * Main categories shown on landing page
- * Reflects the full economic spectrum: exchange, funding, coordination, AI agent
- */
-interface SuperAppCategory {
-  id: string;
-  title: string;
-  description: string;
-  icon: LucideIcon;
-  iconGradient: string;
-  bgColor: string;
-  features: {
-    title: string;
-    description: string;
-  }[];
-}
-
-export const SUPER_APP_CATEGORIES: SuperAppCategory[] = [
-  {
-    id: 'exchange',
-    title: 'Exchange',
-    description: 'Buy and sell with anyone',
-    icon: Package,
-    iconGradient: GRADIENTS.iconBlue,
-    bgColor: 'bg-surface-raised',
-    features: [
-      { title: 'Products', description: 'Sell physical or digital goods to anyone, anywhere' },
-      { title: 'Services', description: 'Offer your expertise — hourly, fixed, or on your terms' },
-    ],
-  },
-  {
-    id: 'finance',
-    title: 'Fund & Finance',
-    description: 'From gifts to investments',
-    icon: Coins,
-    iconGradient: GRADIENTS.iconOrange,
-    bgColor: 'bg-surface-raised',
-    features: [
-      {
-        title: 'Fund Projects & Causes',
-        description:
-          'From no-strings gifts to milestone-based backing — all funding forms supported',
-      },
-      {
-        title: 'Loans & Investments',
-        description: 'Peer-to-peer lending and equity-style investing without intermediaries',
-      },
-    ],
-  },
-  {
-    id: 'coordination',
-    title: 'Coordinate Together',
-    description: 'Organize people, money, and decisions',
-    icon: Scale,
-    iconGradient: GRADIENTS.iconTiffany,
-    bgColor: 'bg-surface-raised',
-    features: [
-      { title: 'Groups', description: 'Shared treasuries, roles, and collective decisions' },
-      {
-        title: 'Circles & Events',
-        description: 'Lighter communities and time-bound coordination',
-      },
-    ],
-  },
-  {
-    id: 'ai',
-    title: 'Your Cat',
-    description: 'An AI agent that acts on your behalf',
-    icon: Bot,
-    iconGradient: GRADIENTS.iconTiffany,
-    bgColor: 'bg-surface-raised',
-    features: [
-      {
-        title: 'Cat',
-        description:
-          'Your personal AI economic agent — sets up entities, manages activity, and acts on your behalf.',
-      },
-      {
-        title: 'AI Assistants',
-        description:
-          'Deploy AI agents for your group or project. They can earn, spend, and coordinate — within owner-approved limits.',
-      },
-    ],
-  },
-];
+// The "what you can do" grid used to be a hand-written list here, a second
+// copy of the entity registry that drifted from it. The capability map
+// (src/config/capability-map.ts) now derives it from the registry's `plain`
+// copy; how-it-works renders <CapabilityMap compact />.
 
 // ==================== HOW IT WORKS STEPS ====================
 
@@ -390,9 +296,9 @@ export const FIRST_MOVES = [
  */
 export const SECTION_HEADERS = {
   whatCanYouDo: {
-    title: 'Everyone Can Make Things',
+    title: 'What you can do here',
     subtitle:
-      'Products, services, projects, causes, events, loans, investments — anyone can create any of these under any identity and settle in Bitcoin.',
+      'Everything below works today, for anyone, under any name, in any currency you like — settled in Bitcoin, paid to you directly.',
   },
   howItWorks: {
     title: 'Meet Your Cat',

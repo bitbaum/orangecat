@@ -21,6 +21,8 @@ export interface CreateOption {
 export const CREATE_PAGE = {
   title: 'Create',
   lede: 'Say it, or pick a type.',
+  /** The way out for the person the list does not answer: the map. */
+  browseAll: 'Not sure which one? See everything you can do, explained.',
 } as const;
 
 export const CREATE_CATEGORY_LABELS: Record<CreateOptionCategory, string> = {

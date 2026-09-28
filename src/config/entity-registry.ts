@@ -20,6 +20,7 @@
  */
 
 import type { Database as GeneratedDatabase } from '@/types/database.generated';
+import type { PlainCopy } from '@/config/intents';
 import {
   LucideIcon,
   Package,
@@ -133,6 +134,13 @@ export interface EntityMetadata {
    * description of the type: Cat matches it against what someone just said.
    */
   choose: string;
+  /**
+   * How this type reads to the PERSON who wants it — the verb they came with,
+   * what it is, an example, the three things that happen. Every human-facing
+   * surface (the map, the create hub, empty states, the Cat's suggestions)
+   * shows this instead of the type's name. See src/config/intents.ts.
+   */
+  plain: PlainCopy;
   /** Display name (singular) */
   name: string;
   /** Display name (plural) */
@@ -180,6 +188,14 @@ export interface EntityMetadata {
    * paymentPattern === 'fixed_price'; omit for contribution/none entities.
    */
   priceColumn?: string;
+  /**
+   * Where ONE row of this type opens for its owner, given its key. Absent when
+   * the type has no detail page (a wallet opens its list). "My things" and any
+   * cross-entity list read this instead of guessing `${basePath}/${id}`.
+   */
+  detailPath?: (key: string) => string;
+  /** The column that keys `detailPath`. Defaults to `id`; organisations use their slug. */
+  detailKeyColumn?: string;
 }
 
 /**
@@ -229,6 +245,17 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
   // ==================== GATEWAY (Foundational) ====================
   wallet: {
     type: 'wallet',
+    plain: {
+      intent: 'money',
+      verb: 'Get paid in Bitcoin',
+      what: 'Connect a wallet you control, so anything you make here has somewhere for money to land.',
+      example: 'A Lightning address from the wallet on your phone.',
+      steps: [
+        'Connect a wallet you control',
+        'Everything you make points at it',
+        'Money lands there, directly — never with us',
+      ],
+    },
     choose: 'never proposed — it is the account every other type settles into',
     wallet: {
       holds: false,
@@ -256,6 +283,17 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
   // ==================== BUSINESS (Core value creation) ====================
   project: {
     type: 'project',
+    plain: {
+      intent: 'fund',
+      verb: 'Raise money for a goal',
+      what: 'A defined outcome with a target and milestones people can hold you to.',
+      example: 'A documentary, a school roof, a village well.',
+      steps: [
+        'Say what, how much, by when',
+        'Share the link',
+        'Watch it fill and report on each milestone',
+      ],
+    },
     choose: 'money is raised for a defined outcome, and milestones make the spending accountable',
     wallet: {
       holds: true,
@@ -271,6 +309,7 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
     createPath: '/dashboard/projects/create',
     publicBasePath: '/projects',
     apiEndpoint: '/api/projects',
+    detailPath: key => `/project/${key}`,
     hasTemplates: true,
     description: 'Community-funded initiatives',
     createActionLabel: 'Launch a project',
@@ -281,6 +320,13 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
   },
   product: {
     type: 'product',
+    plain: {
+      intent: 'earn',
+      verb: 'Sell something',
+      what: 'A thing changes hands — made, grown, written or coded.',
+      example: 'Bread on Saturdays, an ebook, a used bike.',
+      steps: ['Name it and set a price', 'Share the link', 'Get paid directly and hand it over'],
+    },
     choose: 'a tangible or digital ITEM changes hands — mugs, bread, an ebook, software',
     wallet: {
       holds: true,
@@ -296,6 +342,7 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
     createPath: '/dashboard/store/create',
     publicBasePath: '/products',
     apiEndpoint: '/api/products',
+    detailPath: key => `/dashboard/store/${key}`,
     hasTemplates: true,
     description: 'Physical or digital products for sale',
     createActionLabel: 'Sell goods in your store',
@@ -307,6 +354,17 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
   },
   service: {
     type: 'service',
+    plain: {
+      intent: 'earn',
+      verb: 'Offer your time or skill',
+      what: 'Work sold by the hour or by the job.',
+      example: 'Tutoring, plumbing, building a website.',
+      steps: [
+        'Say what you do and what it costs',
+        'People book you',
+        'The payment lands in your wallet',
+      ],
+    },
     choose:
       "someone's time, skill or labour is sold, even at a fixed price. A price attached to work does NOT make it a product",
     wallet: {
@@ -323,6 +381,7 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
     createPath: '/dashboard/services/create',
     publicBasePath: '/services',
     apiEndpoint: '/api/services',
+    detailPath: key => `/dashboard/services/${key}`,
     hasTemplates: true,
     description: 'Professional services you offer',
     createActionLabel: 'Offer your expertise',
@@ -334,6 +393,13 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
   },
   cause: {
     type: 'cause',
+    plain: {
+      intent: 'fund',
+      verb: 'Raise money for ongoing work',
+      what: 'Open-ended support with no strings, for work that has no end date.',
+      example: 'A soup kitchen, an open-source library, a family in a hard month.',
+      steps: ['Say what it is for', 'Share the link', 'Support arrives as people give'],
+    },
     choose: 'support is open-ended and carries no strings, for ongoing work or need',
     wallet: {
       holds: true,
@@ -349,6 +415,7 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
     createPath: '/dashboard/causes/create',
     publicBasePath: '/causes',
     apiEndpoint: '/api/causes',
+    detailPath: key => `/dashboard/causes/${key}`,
     hasTemplates: false,
     description: 'Charitable causes to support',
     createActionLabel: 'Support a meaningful cause',
@@ -359,6 +426,17 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
   },
   ai_assistant: {
     type: 'ai_assistant',
+    plain: {
+      intent: 'earn',
+      verb: 'Create a companion',
+      what: 'An AI being with its own memory and its own purse, made by you — shared or sold if you choose.',
+      example: 'A language tutor that remembers every learner.',
+      steps: [
+        'Give it a soul and a job',
+        'Talk to it; let it earn for you',
+        'Share or sell it — without its memories',
+      ],
+    },
     choose:
       "an agent should work and earn on its owner's behalf, with its own purse and its own cap",
     wallet: {
@@ -379,6 +457,7 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
     createPath: '/dashboard/companions/create',
     publicBasePath: '/companions',
     apiEndpoint: '/api/ai-assistants',
+    detailPath: key => `/dashboard/companions/${key}`,
     hasTemplates: true,
     description: 'AI beings you create, talk to, and can share or sell',
     createActionLabel: 'Create a companion',
@@ -403,6 +482,13 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
   // to define the worse one.
   group: {
     type: 'group',
+    plain: {
+      intent: 'together',
+      verb: 'Start an organisation',
+      what: 'People acting together, with a shared treasury and a say in how it is spent.',
+      example: 'A Verein, a co-op, a company, a neighbourhood fund.',
+      steps: ['Name it and choose its kind', 'Invite people', 'Decide together — money and rules'],
+    },
     choose: 'people organise together, with shared funds and a say in how they are spent',
     wallet: {
       holds: true,
@@ -419,6 +505,8 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
     createPath: '/dashboard/groups/create',
     publicBasePath: '/groups',
     apiEndpoint: '/api/groups',
+    detailPath: key => `/dashboard/groups/${key}`,
+    detailKeyColumn: 'slug',
     hasTemplates: false,
     description: 'Companies, nonprofits, DAOs and communities with a shared identity and treasury',
     createActionLabel: 'Start an organization',
@@ -429,6 +517,13 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
   },
   circle: {
     type: 'circle',
+    plain: {
+      intent: 'together',
+      verb: 'Gather a few people you trust',
+      what: 'The same people, informally: no rules ceremony, just a shared place and, if you want, a shared purse.',
+      example: 'Four friends saving for a trip.',
+      steps: ['Name it', 'Invite them', 'Save or spend together'],
+    },
     choose: 'the same people, informally — trust instead of governance ceremony',
     wallet: {
       holds: true,
@@ -444,6 +539,7 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
     createPath: '/dashboard/circles/create',
     publicBasePath: '/circles',
     apiEndpoint: '/api/circles',
+    detailPath: key => `/dashboard/circles/${key}`,
     hasTemplates: false,
     description: 'Lightweight communities and interest circles',
     createActionLabel: 'Start a circle',
@@ -456,6 +552,17 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
   // ==================== FINANCE (P2P financial tools) ====================
   asset: {
     type: 'asset',
+    plain: {
+      intent: 'borrow',
+      verb: 'Rent out or pledge something you own',
+      what: 'Something you already own earns for you, or backs a loan.',
+      example: 'A spare room, a camera, a car.',
+      steps: [
+        'Describe it and how it can be used',
+        'People rent it, or a lender accepts it as collateral',
+        'Get paid — or borrow against it',
+      ],
+    },
     choose: 'something already OWNED could be rented, used or bought by others',
     wallet: {
       holds: true,
@@ -471,6 +578,7 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
     createPath: '/dashboard/assets/create',
     publicBasePath: '/assets',
     apiEndpoint: '/api/assets',
+    detailPath: key => `/dashboard/assets/${key}`,
     hasTemplates: true,
     description: 'Property and valuables you own — rent them out, or pledge them as collateral',
     createActionLabel: 'Rent out or use as collateral',
@@ -481,6 +589,17 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
   },
   loan: {
     type: 'loan',
+    plain: {
+      intent: 'borrow',
+      verb: 'Borrow, or lend',
+      what: 'Money now, repaid later on terms two people agreed — no bank between them.',
+      example: '500 to bridge a month, repaid in two.',
+      steps: [
+        'Say how much, for how long, on what terms',
+        'A lender accepts',
+        'Repay on schedule; both of you can read the ledger',
+      ],
+    },
     choose: 'the user NEEDS money and intends to REPAY it — never a product, never a cause',
     wallet: {
       holds: true,
@@ -496,6 +615,7 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
     createPath: '/dashboard/loans/create',
     publicBasePath: '/loans',
     apiEndpoint: '/api/loans',
+    detailPath: key => `/dashboard/loans/${key}`,
     hasTemplates: false,
     description: 'Peer-to-peer Bitcoin loans',
     createActionLabel: 'Request or offer a loan',
@@ -506,6 +626,13 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
   },
   investment: {
     type: 'investment',
+    plain: {
+      intent: 'borrow',
+      verb: 'Take investment, or invest',
+      what: 'Capital in exchange for a share or a return, not a repayment schedule.',
+      example: "A bakery's second oven for 5% of profits.",
+      steps: ['Describe the deal', 'Investors commit', 'Returns flow as agreed'],
+    },
     choose: 'capital is taken in exchange for a return or a share, not a repayment schedule',
     wallet: {
       holds: true,
@@ -521,6 +648,7 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
     createPath: '/dashboard/investments/create',
     publicBasePath: '/investments',
     apiEndpoint: '/api/investments',
+    detailPath: key => `/dashboard/investments/${key}`,
     hasTemplates: false,
     description: 'Equity, revenue-share, and structured investment deals',
     createActionLabel: 'Create an investment opportunity',
@@ -531,6 +659,17 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
   },
   event: {
     type: 'event',
+    plain: {
+      intent: 'together',
+      verb: 'Hold an event',
+      what: 'A gathering with a date and a place — free or ticketed.',
+      example: 'A repair café, a meetup, a concert.',
+      steps: [
+        'Set the date, the place and the price',
+        'People sign up',
+        'Meet — the money is already in',
+      ],
+    },
     choose: 'a gathering is bound to a date and a place',
     wallet: {
       holds: true,
@@ -546,6 +685,7 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
     createPath: '/dashboard/events/create',
     publicBasePath: '/events',
     apiEndpoint: '/api/events',
+    detailPath: key => `/dashboard/events/${key}`,
     hasTemplates: true,
     description: 'In-person gatherings and meetups',
     createActionLabel: 'Organize an in-person event',
@@ -558,6 +698,17 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
   // ==================== RESEARCH (DeSci ecosystem) ====================
   research: {
     type: 'research',
+    plain: {
+      intent: 'fund',
+      verb: 'Fund a question',
+      what: 'Independent enquiry, paid for by the people who want the answer.',
+      example: "Soil health in your valley; a drug's off-label use.",
+      steps: [
+        'State the question and the method',
+        'Backers fund it',
+        'Publish what you find, openly',
+      ],
+    },
     choose: 'independent enquiry is funded transparently by the people who want it done',
     wallet: {
       holds: true,
@@ -573,6 +724,7 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
     createPath: '/dashboard/research/create',
     publicBasePath: '/research',
     apiEndpoint: '/api/research',
+    detailPath: key => `/dashboard/research/${key}`,
     hasTemplates: true,
     description:
       'Independent research topics with decentralized funding (e.g., Dark Matter, Climate Science)',
@@ -586,6 +738,13 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
   // ==================== PERSONAL (Wishlists & Registries) ====================
   wishlist: {
     type: 'wishlist',
+    plain: {
+      intent: 'fund',
+      verb: 'Ask for the things you need',
+      what: 'Specific items someone may simply buy for you.',
+      example: 'A laptop for school, winter tyres.',
+      steps: ['List the items', 'Share the link', 'Someone buys one; you see it arrive'],
+    },
     choose: 'specific items are wanted and someone may simply buy them — lighter than a cause',
     wallet: {
       holds: true,
@@ -601,6 +760,7 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
     createPath: '/dashboard/wishlists/create',
     publicBasePath: '/wishlists',
     apiEndpoint: '/api/wishlists',
+    detailPath: key => `/dashboard/wishlists/${key}`,
     hasTemplates: true,
     description: 'List items you want - others can buy them for you',
     createActionLabel: 'Create a wishlist',
@@ -613,6 +773,13 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
   // ==================== PERSONAL (My Cat Context) ====================
   document: {
     type: 'document',
+    plain: {
+      intent: 'cat',
+      verb: 'Tell your Cat about yourself',
+      what: 'Notes, goals and skills your Cat reads to work for you. Nobody else sees them.',
+      example: '“I am a carpenter in Witikon with Saturdays free.”',
+      steps: ['Write it, or say it', 'Your Cat reads it', 'Every suggestion fits you better'],
+    },
     choose: 'structured context for you to read; it receives nothing and owes nothing',
     wallet: {
       holds: false,
@@ -628,6 +795,7 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
     createPath: '/dashboard/documents/create',
     publicBasePath: '/documents',
     apiEndpoint: '/api/documents',
+    detailPath: key => `/dashboard/documents/${key}`,
     hasTemplates: false,
     description: 'Personal context for your Cat - goals, skills, notes',
     createActionLabel: 'Add context for Cat',
