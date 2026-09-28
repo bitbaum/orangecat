@@ -258,6 +258,11 @@ export const API_ROUTES = {
     BY_ID: (id: string) => `/api/bookings/${id}`,
     RECEIVE_INFO: (id: string) => `/api/bookings/${id}/receive-info`,
   },
+  CIVIC_SPLIT: {
+    BASE: '/api/civic-split',
+    /** Public: mean split per locality for a country (+ optional region). */
+    AGGREGATE: '/api/civic-split/aggregate',
+  },
   PROFILE_CLAIMS: {
     BASE: '/api/profile-claims',
     /** Creator-side, addressed by the row id (revoke). */

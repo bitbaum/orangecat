@@ -6,6 +6,7 @@ import { DATABASE_TABLES, PUBLIC_PROFILES_VIEW, OWN_PROFILE_VIEW } from '@/confi
 import { getTableName } from '@/config/entity-registry';
 import { fetchProfileListingCounts } from '@/services/profile/listingCounts';
 import { getPublicEconomicProfile } from '@/services/cat/economic-profile-public';
+import { getPublicCivicSplit } from '@/domain/civic-split/service';
 import { listArticlesByAuthor } from '@/services/articles/get-article';
 import { safeJsonLdString } from '@/lib/seo/structured-data';
 import type { ScalableProfile } from '@/services/profile/types';
@@ -347,6 +348,10 @@ export default async function PublicProfilePage({ params }: PageProps) {
   // the owner (the base table's RLS is owner-only). Degrades to null if the
   // store is empty/absent — the section then hides.
   const economicProfile = await getPublicEconomicProfile(supabase, profile.id);
+  // Their civic split, if they chose to show it. Reads the public view, which
+  // carries only rows marked public — so a private declaration cannot leak
+  // here even by mistake. Null hides the section.
+  const civicSplit = await getPublicCivicSplit(supabase, ownerActor.id).catch(() => null);
 
   // Redact before anything derives from the row, so hidden data never leaves the
   // server — not in the client payload, not in the JSON-LD below.
@@ -398,6 +403,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
         articles={articles}
         isOwnProfile={isOwnProfile}
         economicProfile={economicProfile}
+        civicSplit={civicSplit}
         stats={{
           projectCount,
           totalRaised,

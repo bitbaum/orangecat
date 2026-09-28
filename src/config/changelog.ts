@@ -30,6 +30,19 @@ export const CHANGELOG_TAGS: Record<ChangelogTag, { label: string }> = {
 /** Newest first. */
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    date: '2026-09-28',
+    tag: 'feature',
+    title: 'Say where your public money should go',
+    summary:
+      'Of the money you owe the public, how would you divide it between your locality, your region and your nation? Nobody asks. Now you can say it \u2014 and see what the people of your place would choose.',
+    items: [
+      'Three sliders that always add up to 100, under Your civic split in the dashboard. Show it on your profile or keep it to yourself; it counts either way, anonymously, once three people in a place have declared.',
+      'It changes nothing about what the law takes or where it goes. It says where you stand, and it will decide where what you give voluntarily goes once local funds exist.',
+      'The average per place is public, so anyone \u2014 including the Solon map to come \u2014 can read what a locality would choose.',
+      'Cat can set it from a sentence: \u201csend 60% of my public money to Witikon\u201d.',
+    ],
+  },
+  {
     date: '2026-09-20',
     tag: 'fix',
     title: 'Cat keeps its footing when the free tier runs short',
