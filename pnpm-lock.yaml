@@ -27,6 +27,9 @@ importers:
       '@bitbaum/ai-kit':
         specifier: ^1.18.0
         version: 1.18.0(react@19.2.8)
+      '@bitbaum/collective-kinds':
+        specifier: workspace:*
+        version: link:packages/collective-kinds
       '@bitbaum/mail-kit':
         specifier: ^0.1.1
         version: 0.1.1
@@ -347,6 +350,8 @@ importers:
       sharp:
         specifier: ^0.35.4
         version: 0.35.4(@types/node@26.3.0)
+
+  packages/collective-kinds: {}
 
 packages:
 

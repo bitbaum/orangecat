@@ -8,6 +8,7 @@
 import type { GroupLabel, GroupVisibility } from '@/config/group-labels';
 import type { GovernancePreset, GroupRole, ActionPermission } from '@/config/governance-presets';
 import type { GroupFeature } from '@/config/group-features';
+import type { LegalStatus } from '@bitbaum/collective-kinds';
 
 /**
  * Core Group entity
@@ -35,6 +36,16 @@ export interface Group {
   // Governance (preset provides defaults, can be customized)
   governance_preset: GovernancePreset;
   voting_threshold?: number | null; // Override preset threshold if needed
+  // Where it belongs (required for place-bound kinds: town, local_fund)
+  country_code?: string | null;
+  region?: string | null;
+  locality?: string | null;
+  // What it legally is — see @bitbaum/collective-kinds legal.ts
+  legal_status?: LegalStatus;
+  legal_form?: string | null;
+  jurisdiction?: string | null;
+  register_id?: string | null;
+  recognised_on?: string | null;
 
   // Metadata
   created_by: string;

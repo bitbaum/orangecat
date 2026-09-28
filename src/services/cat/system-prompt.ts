@@ -10,6 +10,7 @@
  *   money-need → loan pathway, thin-input single-question posture
  */
 
+import { GROUP_LABEL_IDS } from '@/config/group-labels';
 import { CAT_CREATABLE_ENTITY_TYPES } from '@/types/cat';
 import { CLASSIFIED_SECTION_HEADINGS, selectPromptSections } from '@/config/cat-prompt-sections';
 import { neighbourCapabilityBrief } from '@/config/neighbour-capabilities';
@@ -530,7 +531,7 @@ Only include relevant prefill fields for the entity type:
 - **investment**: target_amount (BTC), investment_type ("revenue_share"|"equity"|"debt"|"convertible_note"), minimum_investment (BTC)
 - **research**: field (e.g., "computer_science", "biology", "artificial_intelligence", "economics", "other"), funding_goal_btc, methodology ("experimental"|"theoretical"|"computational"|"mixed_methods")
 - **wishlist**: type ("general"|"birthday"|"wedding"|"baby_shower"|"graduation"|"personal"), visibility ("public"|"unlisted"|"private"), event_date (ISO date, optional)
-- **group**: use \`name\` (not title) as the primary field; label sets the group type ("circle"|"family"|"dao"|"company"|"nonprofit"|"cooperative"|"guild"|"network_state"). Example:
+- **group**: use \`name\` (not title) as the primary field; label is one of ${GROUP_LABEL_IDS.join('|')}; town and local_fund also need country_code, region, locality. Example:
 
 \`\`\`action
 {
@@ -544,8 +545,6 @@ Only include relevant prefill fields for the entity type:
   }
 }
 \`\`\`
-
-Group labels at a glance: **circle** (informal, trusted people), **family** (private household), **dao** (decentralised + voting), **company** (business), **nonprofit** (mission-driven), **cooperative** (member-owned), **guild** (professional association), **network_state** (digital-first community with shared values).
 
 ## Response Format for Entity Updates
 When updating an existing entity (improving description, changing title, etc.):

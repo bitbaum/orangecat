@@ -42,7 +42,8 @@ export async function createGroup(
 
     // Generate slug if not provided
     const slug =
-      input.slug || (await ensureUniqueSlug(slugify(input.name) || 'group', undefined, supabaseClient));
+      input.slug ||
+      (await ensureUniqueSlug(slugify(input.name) || 'group', undefined, supabaseClient));
 
     // Get config-based defaults for this label
     const label = input.label || 'circle';
@@ -63,6 +64,16 @@ export async function createGroup(
       lightning_address: input.lightning_address || null,
       governance_preset: input.governance_preset || labelDefaults.governance_preset,
       voting_threshold: input.voting_threshold || null,
+      // Where it belongs and what it legally is — validated against the kind
+      // by createGroupSchema before this runs.
+      country_code: input.country_code || null,
+      region: input.region || null,
+      locality: input.locality || null,
+      legal_status: input.legal_status || 'informal',
+      legal_form: input.legal_form || null,
+      jurisdiction: input.jurisdiction || null,
+      register_id: input.register_id || null,
+      recognised_on: input.recognised_on || null,
       created_by: currentUserId,
     };
 

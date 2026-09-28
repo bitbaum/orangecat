@@ -1,24 +1,44 @@
 /**
- * Group Labels Configuration (SSOT)
+ * Group labels — OrangeCat's defaults per kind of collective.
  *
- * Labels are IDENTITY + TEMPLATE, not capability locks.
- * A "Family" can enable voting. A "DAO" can disable treasury.
- * Labels influence defaults but don't restrict capabilities.
+ * WHAT A KIND IS lives in @bitbaum/collective-kinds (one list for OrangeCat,
+ * Loki and Solon: name, description, whether it is bound to a place, whether it
+ * can be tax-exempt). This file holds only what OrangeCat adds on top: the icon,
+ * the visibility defaults, the features to switch on, the governance preset.
+ * It is keyed by the package's ids, so a kind added there without a row here
+ * fails the build — and `nonprofit`, which was OrangeCat's own word for what
+ * the world calls an association, is gone (migration 20260928120000 renames
+ * the rows).
  *
- * Adding a new label = adding an entry here. No code changes needed.
+ * Labels are IDENTITY + TEMPLATE, not capability locks. A "Family" can enable
+ * voting. A "DAO" can disable treasury. Labels influence defaults but don't
+ * restrict capabilities.
  */
 
-import { Users, Building2, Heart, Briefcase, Globe, Home, Handshake } from 'lucide-react';
+import {
+  Users,
+  Building2,
+  Heart,
+  Briefcase,
+  Globe,
+  Home,
+  Handshake,
+  Landmark,
+  Sparkles,
+  PiggyBank,
+} from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import {
+  COLLECTIVE_KINDS,
+  COLLECTIVE_KIND_IDS,
+  type CollectiveKindId,
+} from '@bitbaum/collective-kinds';
 import type { GovernancePreset } from './governance-presets';
 import type { GroupFeature } from './group-features';
 
 export type GroupVisibility = 'public' | 'members_only' | 'private';
 
-interface GroupLabelConfig {
-  id: string;
-  name: string;
-  description: string;
+interface GroupLabelDefaults {
   icon: LucideIcon;
   iconClass: string;
   defaults: {
@@ -29,121 +49,122 @@ interface GroupLabelConfig {
   defaultGovernance: GovernancePreset;
 }
 
-export const GROUP_LABELS = {
+/** OrangeCat's additions, one row per kind — the type makes a missing kind a build error. */
+const LABEL_DEFAULTS: Record<CollectiveKindId, GroupLabelDefaults> = {
   circle: {
-    id: 'circle',
-    name: 'Circle',
-    description: 'Informal group of trusted people',
     icon: Users,
     iconClass: 'text-fg-primary',
-    defaults: {
-      is_public: false,
-      visibility: 'members_only',
-    },
+    defaults: { is_public: false, visibility: 'members_only' },
     suggestedFeatures: [],
     defaultGovernance: 'consensus',
   },
-
   family: {
-    id: 'family',
-    name: 'Family',
-    description: 'Private family group for savings and planning',
     icon: Home,
-    iconClass: 'text-amber-500',
-    defaults: {
-      is_public: false,
-      visibility: 'private',
-    },
+    iconClass: 'text-fg-primary',
+    defaults: { is_public: false, visibility: 'private' },
     suggestedFeatures: ['shared_wallet'],
     defaultGovernance: 'consensus',
   },
-
-  dao: {
-    id: 'dao',
-    name: 'DAO',
-    description: 'Decentralized organization with voting',
-    icon: Globe,
-    iconClass: 'text-fg-primary',
-    defaults: {
-      is_public: true,
-      visibility: 'public',
-    },
-    suggestedFeatures: ['treasury', 'proposals', 'voting'],
-    defaultGovernance: 'democratic',
-  },
-
-  company: {
-    id: 'company',
-    name: 'Company',
-    description: 'Business organization',
-    icon: Building2,
-    iconClass: 'text-fg-secondary',
-    defaults: {
-      is_public: false,
-      visibility: 'members_only',
-    },
-    suggestedFeatures: ['treasury'],
-    defaultGovernance: 'hierarchical',
-  },
-
-  nonprofit: {
-    id: 'nonprofit',
-    name: 'Nonprofit',
-    description: 'Mission-driven organization',
+  association: {
     icon: Heart,
-    iconClass: 'text-rose-500',
-    defaults: {
-      is_public: true,
-      visibility: 'public',
-    },
+    iconClass: 'text-fg-primary',
+    defaults: { is_public: true, visibility: 'public' },
     suggestedFeatures: ['treasury', 'proposals'],
     defaultGovernance: 'democratic',
   },
-
   cooperative: {
-    id: 'cooperative',
-    name: 'Cooperative',
-    description: 'Member-owned organization',
     icon: Handshake,
-    iconClass: 'text-green-500',
-    defaults: {
-      is_public: true,
-      visibility: 'public',
-    },
+    iconClass: 'text-fg-primary',
+    defaults: { is_public: true, visibility: 'public' },
     suggestedFeatures: ['treasury', 'proposals', 'voting'],
     defaultGovernance: 'democratic',
   },
-
+  collective: {
+    icon: Sparkles,
+    iconClass: 'text-fg-primary',
+    defaults: { is_public: false, visibility: 'members_only' },
+    suggestedFeatures: ['proposals'],
+    defaultGovernance: 'consensus',
+  },
+  company: {
+    icon: Building2,
+    iconClass: 'text-fg-secondary',
+    defaults: { is_public: false, visibility: 'members_only' },
+    suggestedFeatures: ['treasury'],
+    defaultGovernance: 'hierarchical',
+  },
   guild: {
-    id: 'guild',
-    name: 'Guild',
-    description: 'Professional association',
     icon: Briefcase,
     iconClass: 'text-fg-primary',
-    defaults: {
-      is_public: true,
-      visibility: 'public',
-    },
+    defaults: { is_public: true, visibility: 'public' },
     suggestedFeatures: ['events', 'marketplace'],
     defaultGovernance: 'hierarchical',
   },
-
-  network_state: {
-    id: 'network_state',
-    name: 'Network State',
-    description: 'Digital-first nation or community with shared values',
+  dao: {
     icon: Globe,
     iconClass: 'text-fg-primary',
-    defaults: {
-      is_public: true,
-      visibility: 'public',
-    },
+    defaults: { is_public: true, visibility: 'public' },
+    suggestedFeatures: ['treasury', 'proposals', 'voting'],
+    defaultGovernance: 'democratic',
+  },
+  town: {
+    icon: Landmark,
+    iconClass: 'text-fg-primary',
+    defaults: { is_public: true, visibility: 'public' },
     suggestedFeatures: ['treasury', 'proposals', 'voting', 'events'],
     defaultGovernance: 'democratic',
   },
-} as const satisfies Record<string, GroupLabelConfig>;
+  network_state: {
+    icon: Globe,
+    iconClass: 'text-fg-primary',
+    defaults: { is_public: true, visibility: 'public' },
+    suggestedFeatures: ['treasury', 'proposals', 'voting', 'events'],
+    defaultGovernance: 'democratic',
+  },
+  local_fund: {
+    icon: PiggyBank,
+    iconClass: 'text-fg-primary',
+    defaults: { is_public: true, visibility: 'public' },
+    suggestedFeatures: ['treasury', 'proposals', 'voting'],
+    defaultGovernance: 'democratic',
+  },
+};
 
-export type GroupLabel = keyof typeof GROUP_LABELS;
+export type GroupLabel = CollectiveKindId;
+
+export interface GroupLabelConfig extends GroupLabelDefaults {
+  id: GroupLabel;
+  name: string;
+  description: string;
+  needsPlace: boolean;
+  canBeTaxExempt: boolean;
+}
+
+/** The kind (from the package) merged with OrangeCat's defaults — one object per label. */
+export const GROUP_LABELS: Readonly<Record<GroupLabel, GroupLabelConfig>> = Object.fromEntries(
+  COLLECTIVE_KIND_IDS.map(id => {
+    const kind = COLLECTIVE_KINDS[id];
+    return [
+      id,
+      {
+        id,
+        name: kind.name,
+        description: kind.description,
+        needsPlace: kind.needsPlace,
+        canBeTaxExempt: kind.canBeTaxExempt,
+        ...LABEL_DEFAULTS[id],
+      },
+    ];
+  })
+) as Record<GroupLabel, GroupLabelConfig>;
+
+/** Labels in the package's declared order — for forms and enums. */
+export const GROUP_LABEL_IDS: readonly GroupLabel[] = COLLECTIVE_KIND_IDS;
+
+/** The labels that cannot be founded without a place (a town, a local fund). */
+export const PLACE_BOUND_LABELS: readonly GroupLabel[] = GROUP_LABEL_IDS.filter(
+  id => GROUP_LABELS[id].needsPlace
+);
 
 /**
  * Get defaults for a group label
@@ -162,8 +183,5 @@ export function getGroupLabelDefaults(label: GroupLabel) {
  * Get all group labels as array for UI rendering
  */
 export function getGroupLabelsArray() {
-  return Object.entries(GROUP_LABELS).map(([key, config]) => ({
-    key: key as GroupLabel,
-    ...config,
-  }));
+  return GROUP_LABEL_IDS.map(key => ({ key, ...GROUP_LABELS[key] }));
 }

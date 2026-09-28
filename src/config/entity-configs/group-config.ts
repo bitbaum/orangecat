@@ -15,7 +15,7 @@ import { groupGuidanceContent, groupDefaultGuidance } from '@/lib/entity-guidanc
 import type { FieldGroup } from '@/components/create/types';
 import { GROUP_TEMPLATES } from '@/components/create/templates/group-templates';
 import { createEntityConfig } from './base-config-factory';
-import { getGroupLabelsArray } from '@/config/group-labels';
+import { getGroupLabelsArray, PLACE_BOUND_LABELS, GROUP_LABELS } from '@/config/group-labels';
 import { GOVERNANCE_PRESETS } from '@/config/governance-presets';
 import { WalletSelectorField } from '@/components/create/wallet-selector';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
@@ -60,6 +60,37 @@ const fieldGroups: FieldGroup[] = [
         type: 'textarea',
         placeholder: "Describe your group's purpose and goals...",
         rows: 4,
+        colSpan: 2,
+      },
+    ],
+  },
+  {
+    id: 'place',
+    title: 'Where it belongs',
+    description: `Optional for most kinds. ${PLACE_BOUND_LABELS.map(id => GROUP_LABELS[id].name).join(' and ')} cannot exist without a place.`,
+    fields: [
+      {
+        name: 'country_code',
+        label: 'Country',
+        type: 'text',
+        placeholder: 'CH',
+        hint: 'Two-letter country code',
+        colSpan: 1,
+      },
+      {
+        name: 'region',
+        label: 'Region',
+        type: 'text',
+        placeholder: 'Zürich',
+        hint: 'Canton, state or province',
+        colSpan: 1,
+      },
+      {
+        name: 'locality',
+        label: 'Locality',
+        type: 'text',
+        placeholder: 'Witikon',
+        hint: 'Village, quarter or town — spelled the way its people spell it',
         colSpan: 2,
       },
     ],
@@ -126,6 +157,9 @@ const defaultValues: CreateGroupSchemaType = {
   avatar_url: null,
   banner_url: null,
   voting_threshold: null,
+  country_code: null,
+  region: null,
+  locality: null,
 };
 
 // ==================== EXPORT CONFIG ====================

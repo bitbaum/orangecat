@@ -57,7 +57,7 @@ export const organizationHandlers: Record<string, ActionHandler> = {
 
   create_organization: async (supabase, userId, _actorId, params) => {
     // groups table has: name, slug (UNIQUE NOT NULL), label (not type), created_by
-    // label enum: circle|family|dao|company|nonprofit|cooperative|guild|network_state
+    // label enum: the ids in @bitbaum/collective-kinds (GROUP_LABEL_IDS)
     const name = params.name as string;
     const slug = slugify(name, { maxLength: 60, randomSuffix: true });
 
