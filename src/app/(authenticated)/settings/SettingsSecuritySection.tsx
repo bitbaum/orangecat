@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import { Shield, Link2, Loader2, MonitorSmartphone } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Shield, Link2, Loader2, MonitorSmartphone, KeyRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { MFAStatus } from '@/components/auth/MFASetup';
+import { PasskeysCard } from '@/components/auth/PasskeysCard';
 import { NostrConnectionCard } from '@/components/nostr/NostrConnectionCard';
 import Button from '@/components/ui/Button';
 import { supabase } from '@/lib/supabase/browser';
@@ -23,6 +24,23 @@ export function SettingsSecuritySection({
   onMFADisableComplete,
 }: Props) {
   const [isSigningOut, setIsSigningOut] = useState(false);
+  // Shown only when the auth server has passkeys switched on (a public fact,
+  // cached server-side); see docs/operations/passkeys.md.
+  const [passkeysAvailable, setPasskeysAvailable] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    fetch(API_ROUTES.AUTH.PASSKEYS_AVAILABLE)
+      .then(res => (res.ok ? res.json() : null))
+      .then((json: { data?: { available?: boolean } } | null) => {
+        if (!cancelled) {
+          setPasskeysAvailable(json?.data?.available === true);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Two revocations, in this order: first the OAuth refresh tokens every
   // connected app (Solon, Loki, Heidi, outside sites) holds for this person —
@@ -83,6 +101,23 @@ export function SettingsSecuritySection({
           </div>
         </div>
       </div>
+
+      {passkeysAvailable && (
+        <div className="border-t border-subtle pt-10">
+          <h3 className="text-lg font-semibold text-fg-primary mb-4 flex items-center">
+            <KeyRound className="w-6 h-6 mr-2 text-fg-secondary" />
+            Passkeys
+          </h3>
+          <p className="text-fg-secondary mb-6">
+            Sign in with your face, fingerprint or device PIN instead of a password or a code. A
+            passkey never leaves your device and cannot be phished. Add one per device you sign in
+            from.
+          </p>
+          <div className="bg-surface-raised border border-default rounded-lg p-6 max-w-md">
+            <PasskeysCard />
+          </div>
+        </div>
+      )}
 
       <div className="border-t border-subtle pt-10">
         <h3 className="text-lg font-semibold text-fg-primary mb-4 flex items-center">

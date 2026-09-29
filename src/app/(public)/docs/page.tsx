@@ -226,6 +226,29 @@ export default function DocsPage() {
           </div>
         </section>
 
+        {/* For developers: the identity provider */}
+        <section className="mb-10">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="p-2 rounded-lg bg-surface-raised border border-subtle">
+              <Lock className="h-5 w-5 text-fg-secondary" />
+            </div>
+            <h2 className="text-2xl font-semibold text-fg-primary">Sign in with OrangeCat</h2>
+          </div>
+          <div className="bg-surface-base rounded-lg border border-default p-6">
+            <p className="text-fg-secondary leading-relaxed mb-4">
+              OrangeCat is an OpenID Connect provider. Any site can add &ldquo;Sign in with
+              OrangeCat&rdquo; with one registration request and a standard OIDC library, and its
+              users arrive with the same identity they have on OrangeCat, Solon, Loki and Heidi.
+            </p>
+            <Link
+              href={ROUTES.SIGN_IN_WITH_ORANGECAT}
+              className="inline-flex items-center gap-2 text-sm font-medium text-fg-primary"
+            >
+              Developer guide <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </section>
+
         {/* Tech Stack */}
         <section className="mb-10">
           <div className="flex items-center gap-3 mb-5">

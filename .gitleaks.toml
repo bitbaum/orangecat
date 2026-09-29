@@ -23,3 +23,12 @@ regexes = [
   '''sbp_7bc7546939c5675c6146d5773f83f05b0131c614''',
   '''sbp_8a9797e27e1e7b1819c04ce9e2ccee0cfb9ed85b''',
 ]
+
+# Placeholders in the developer docs (/docs/sign-in-with-orangecat) that a
+# reader replaces with their own value. `Bearer THE_ACCESS_TOKEN` matched the
+# curl-auth-header rule in commit 028bd775; the working tree now uses a shell
+# variable, but the commit stays in history, so the placeholder is allowlisted
+# rather than the history rewritten. It can never match a real token.
+[[allowlists]]
+description = "Documentation placeholder standing in for a bearer token"
+regexes = ['''THE_ACCESS_TOKEN''']

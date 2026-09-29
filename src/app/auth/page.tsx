@@ -7,6 +7,7 @@
 import { getClient } from '@/services/auth/oauthProvider';
 import { readHandoff } from '@/lib/oauth/handoff';
 import { isEmailConfigured } from '@/lib/email/client';
+import { arePasskeysEnabled } from '@/lib/auth/passkeys-availability';
 import AuthPageClient from './AuthPageClient';
 
 export default async function AuthPage({
@@ -24,7 +25,12 @@ export default async function AuthPage({
   const found = client ? await getClient(client) : null;
   // Offer sign-in by emailed code only where this deployment can actually send
   // the email — a button that can never deliver is a dead end.
+  // Same rule for passkeys: offered only where the auth server has them on.
   return (
-    <AuthPageClient clientName={found?.name ?? null} emailCodeAvailable={isEmailConfigured()} />
+    <AuthPageClient
+      clientName={found?.name ?? null}
+      emailCodeAvailable={isEmailConfigured()}
+      passkeysAvailable={await arePasskeysEnabled()}
+    />
   );
 }
