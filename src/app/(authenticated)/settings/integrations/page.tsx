@@ -17,7 +17,7 @@
  */
 
 import Link from 'next/link';
-import { KeyRound, LogIn, Webhook } from 'lucide-react';
+import { AppWindow, KeyRound, LogIn, Webhook } from 'lucide-react';
 import { useRequireAuth } from '@/hooks/useAuth';
 import { useMessagingActors } from '@/features/messaging/hooks/useMessagingActors';
 import { PUBLIC_API_BASE, PUBLIC_API_OPENAPI_PATH } from '@/config/public-api';
@@ -26,6 +26,7 @@ import Loading from '@/components/Loading';
 import Button from '@/components/ui/Button';
 import IntegrationKeysCard from '@/components/settings/IntegrationKeysCard';
 import WebhookEndpointsCard from '@/components/settings/WebhookEndpointsCard';
+import ConnectedAppsCard from '@/components/settings/ConnectedAppsCard';
 
 export default function IntegrationsPage() {
   const { user, isLoading: authLoading } = useRequireAuth();
@@ -72,7 +73,8 @@ export default function IntegrationsPage() {
     <div className="space-y-10">
       <div>
         <p className="text-sm text-fg-secondary">
-          Let external services authenticate to OrangeCat and receive signed events.
+          See which apps can act as you, let external services authenticate to OrangeCat, and
+          receive signed events.
         </p>
         <p className="mt-1 text-xs text-fg-tertiary">
           Looking for AI provider keys (Groq, OpenRouter, OpenAI…)? Those live in{' '}
@@ -101,6 +103,18 @@ export default function IntegrationsPage() {
             discovery
           </a>
         </p>
+      </div>
+
+      <div>
+        <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-fg-primary">
+          <AppWindow className="h-5 w-5" />
+          Connected apps
+        </h2>
+        <p className="mb-4 text-sm text-fg-secondary">
+          Apps and sites you signed in to with your OrangeCat account. Disconnect one and it must
+          ask your permission again before it can act as you.
+        </p>
+        <ConnectedAppsCard />
       </div>
 
       <div>
