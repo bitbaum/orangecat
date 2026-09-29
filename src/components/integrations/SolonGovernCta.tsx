@@ -26,30 +26,41 @@ interface SolonGovernCtaProps {
   entityId: string;
   sourcePath: string;
   title?: string;
+  /** A pre-filled proposal body and Solon category (e.g. a research milestone). */
+  draft?: { title?: string; body: string; category: string };
 }
 
-function solonGovernUrl(props: {
-  entityType: EntityType;
-  entityId: string;
-  sourcePath: string;
-  title?: string;
-}): string {
+function solonGovernUrl(props: Omit<SolonGovernCtaProps, 'variant'>): string {
   const url = new URL('/propose', ECOSYSTEM.solon.siteUrl);
   url.searchParams.set('from', 'orangecat');
   url.searchParams.set('entity_type', props.entityType);
   url.searchParams.set('entity_id', props.entityId);
   url.searchParams.set('source', props.sourcePath);
-  if (props.title) {
-    url.searchParams.set('title', props.title.slice(0, 120));
+  const title = props.draft?.title ?? props.title;
+  if (title) {
+    url.searchParams.set('title', title.slice(0, 120));
+  }
+  if (props.draft) {
+    url.searchParams.set('body', props.draft.body);
+    url.searchParams.set('category', props.draft.category);
   }
   return url.toString();
 }
 
-const COPY = {
+const DEFAULT_COPY = {
   title: `Govern it with ${ECOSYSTEM.solon.title}`,
   body: 'Investment strings become decisions: Bitcoin-signed votes, verifiable policies, no custody.',
   action: `Open ${ECOSYSTEM.solon.title}`,
-} as const;
+};
+
+/** Per-type wording; a type not listed says what an investment says. */
+const COPY_BY_TYPE: Partial<Record<EntityType, typeof DEFAULT_COPY>> = {
+  research: {
+    title: `Let backers decide with ${ECOSYSTEM.solon.title}`,
+    body: 'Put a milestone to a signed vote before the next tranche goes out. The proposal arrives citing your pre-registration and outputs. No custody.',
+    action: 'Propose a milestone vote',
+  },
+};
 
 export default function SolonGovernCta({
   variant,
@@ -57,8 +68,10 @@ export default function SolonGovernCta({
   entityId,
   sourcePath,
   title,
+  draft,
 }: SolonGovernCtaProps) {
-  const href = solonGovernUrl({ entityType, entityId, sourcePath, title });
+  const href = solonGovernUrl({ entityType, entityId, sourcePath, title, draft });
+  const COPY = COPY_BY_TYPE[entityType] ?? DEFAULT_COPY;
 
   if (variant === 'banner') {
     return (

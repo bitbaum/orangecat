@@ -84,6 +84,7 @@ export async function createResearch(
     status: STATUS.RESEARCH.DRAFT,
     is_public: validatedData.is_public ?? true,
     is_featured: false,
+    current_milestone: (validatedData.current_milestone as string | null | undefined) ?? null,
     license: validatedData.license ?? null,
     output_links: validatedData.output_links ?? [],
     ...(prereg.kind === 'commit' ? await commitPreregistration(prereg.text) : {}),

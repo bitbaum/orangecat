@@ -35,3 +35,13 @@ export const GENESIS_ALLOCATION_POLICY: AllocationPolicyContent = {
   max_cat_daily_spend_btc: 0.001,
   max_cat_btc_per_action: 0.00025,
 };
+
+/**
+ * Solon decision categories OrangeCat pre-fills (Solon's DECISION_CATEGORIES,
+ * src/lib/db/enums.ts). Only fileable ones: Solon ignores any other value and
+ * falls back to OPERATIONS.
+ */
+export const SOLON_PROPOSAL_CATEGORY = {
+  TREASURY_SPEND: 'TREASURY_SPEND',
+  OPERATIONS: 'OPERATIONS',
+} as const;

@@ -97,6 +97,8 @@ export const researchEntitySchema = z.object({
   is_public: z.boolean().optional(),
   // Licence, output links, pre-registration. The hash and timestamp of a
   // pre-registration are server-set and deliberately absent: zod strips them.
+  // What the researcher says is done now; a Solon milestone vote cites it.
+  current_milestone: z.string().trim().max(300).nullable().optional(),
   ...openScienceFields,
 });
 

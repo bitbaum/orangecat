@@ -76,6 +76,14 @@ export interface EntityDetailConfig {
    * BTC-converted amount server-side; this only drives display.
    */
   getPrice?: (entity: EntityData) => { amount: number; currency: string } | null;
+  /**
+   * Owner-only: a pre-filled Solon proposal for this entity (e.g. a research
+   * milestone vote). Its presence is what shows the Solon card for the type.
+   */
+  getSolonDraft?: (
+    entity: EntityData,
+    pageUrl: string,
+  ) => { title?: string; body: string; category: string };
   /** Extra sidebar cards rendered after EntityShare (e.g., Quick Stats, CTAs) */
   renderSidebarExtra?: (entity: EntityData) => ReactNode;
   /** Select columns for metadata query (defaults to 'title, description, price_btc') */
