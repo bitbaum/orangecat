@@ -41,6 +41,8 @@ export function generateActionDescription(
       const field = parameters.field ? ` [${parameters.field}]` : '';
       return `Create research entity "${parameters.title}"${field} with ${goal} BTC funding goal`;
     }
+    case 'review_research':
+      return `Post a permanent public review (${parameters.verdict}) — it cannot be edited`;
     case 'create_wishlist': {
       const type = parameters.type ? ` (${parameters.type})` : '';
       return `Create wishlist "${parameters.title}"${type}`;

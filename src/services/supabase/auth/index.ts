@@ -7,6 +7,9 @@
  *   session.ts    → getSession, getUser, onAuthStateChange, isAuthenticated, getCurrentUserId
  *   mfa.ts        → getMFAFactors, enrollMFA, verifyMFAEnrollment, unenrollMFA,
  *                    getMFAAssuranceLevel, verifyMFALogin
+ *   passkeys.ts   → listPasskeys, addPasskey, removePasskey, signInWithPasskey,
+ *                    browserSupportsPasskeys
+ *   identities.ts → listSignInMethods, linkProvider, unlinkMethod
  *
  * The public API is unchanged — all named exports and the default authService object remain.
  */
@@ -20,6 +23,16 @@ export {
   resendConfirmationEmail,
   signInAnonymously,
 } from './operations';
+
+export { listSignInMethods, linkProvider, unlinkMethod } from './identities';
+
+export {
+  listPasskeys,
+  addPasskey,
+  removePasskey,
+  signInWithPasskey,
+  browserSupportsPasskeys,
+} from './passkeys';
 
 export {
   getSession,

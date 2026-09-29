@@ -127,6 +127,7 @@ export const DATABASE_TABLES = {
   RESEARCH_VOTES: 'research_votes',
   RESEARCH_CONTRIBUTIONS: 'research_contributions',
   RESEARCH_PROGRESS_UPDATES: 'research_progress_updates',
+  RESEARCH_REVIEWS: 'research_reviews',
 
   // Wishlists
   WISHLISTS: 'wishlists',

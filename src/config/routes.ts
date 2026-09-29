@@ -292,6 +292,8 @@ export const ROUTES = {
   AUTH_REGISTER: '/auth?mode=register',
   AUTH_FORGOT_PASSWORD: '/auth?mode=forgot',
   AUTH_RESET_PASSWORD: '/auth/reset-password',
+  /** The recovery branch for a person who cannot reach their inbox. */
+  AUTH_NO_EMAIL: '/auth/cant-get-email',
   AUTH_CALLBACK: '/auth/callback',
   AUTH_SIGNOUT: '/auth/signout',
   DISCOVER: '/discover',
@@ -325,6 +327,8 @@ export const ROUTES = {
   DOCS: '/docs',
   /** Canonical explanation of the four ways Cat can be powered. */
   HOW_CAT_RUNS: '/docs/how-cat-runs',
+  /** For developers: add "Sign in with OrangeCat" to any site. */
+  SIGN_IN_WITH_ORANGECAT: '/docs/sign-in-with-orangecat',
   FAQ: '/faq',
   FEEDBACK: '/feedback',
   PRICING: '/pricing',

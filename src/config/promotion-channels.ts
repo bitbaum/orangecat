@@ -86,8 +86,10 @@ export const PROMOTION_CHANNELS: Record<PromotionChannelId, PromotionChannel> = 
     // account for it — but nothing in this repo publishes a note yet, so Cat
     // must not claim it can.
     policyAllowsPosting: true,
-    // No `implementedBy`: nothing in this repo publishes a Nostr note.
-    // src/lib/nostr exists, but it carries NWC wallet traffic.
+    // No `implementedBy`: Cat cannot post a Nostr note. The one thing that
+    // reaches Nostr is research a researcher signs in their own browser
+    // (NIP-07, components/public/ResearchNostrPublish) — a human act with the
+    // human's key, not an agent channel.
     prohibitions: [],
     guidance:
       'A zap goal (NIP-75) or classified listing (NIP-99) carries the ask better ' +

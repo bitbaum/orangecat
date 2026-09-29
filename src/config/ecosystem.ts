@@ -30,7 +30,7 @@ export const ECOSYSTEM = {
     projectId:
       process.env.NEXT_PUBLIC_ORANGECAT_PROJECT_ID ?? 'cb093f00-8745-4579-98df-050ebfb37181',
     siteUrl: orangeCatOrigin.toString(),
-    profileUrl: orangeCatPage(publicProfilePath('catomean')),
+    profileUrl: orangeCatPage(publicProfilePath('cato')),
   },
   loki: {
     title: 'Loki',

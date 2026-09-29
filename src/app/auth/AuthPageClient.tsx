@@ -12,6 +12,7 @@ import { AuthFormBody } from './AuthFormBody';
 import { AuthSocialLogin } from './AuthSocialLogin';
 import { useAuthForm } from './useAuthForm';
 import { EmailCodeSignIn } from './EmailCodeSignIn';
+import { PasskeySignInButton } from './PasskeySignInButton';
 import { APP_NAME } from '@/config/brand';
 
 /**
@@ -24,9 +25,12 @@ import { APP_NAME } from '@/config/brand';
 export default function AuthPageClient({
   clientName,
   emailCodeAvailable,
+  passkeysAvailable = false,
 }: {
   clientName: string | null;
   emailCodeAvailable: boolean;
+  /** Whether the auth server has passkeys switched on; the button is hidden otherwise. */
+  passkeysAvailable?: boolean;
 }) {
   const [codeMode, setCodeMode] = useState(false);
   const {
@@ -251,6 +255,7 @@ export default function AuthPageClient({
                     : 'Sign up with an emailed code instead'}
                 </Button>
               )}
+              {passkeysAvailable && mode === 'login' && <PasskeySignInButton disabled={loading} />}
             </>
           )}
 

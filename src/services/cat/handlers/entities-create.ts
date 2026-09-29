@@ -8,9 +8,57 @@
 
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { STATUS, ENTITY_STATUS } from '@/config/database-constants';
+import { z } from 'zod';
+import {
+  commitPreregistration,
+  decidePreregistration,
+  openScienceFields,
+} from '@/domain/research/openScience';
+import { createResearchReview, reviewInputSchema } from '@/domain/research/reviews';
+import { getUserActorId } from '@/domain/actors';
 import type { ActionHandler } from './types';
 
+const catOpenScienceSchema = z.object(openScienceFields);
+
+/**
+ * The Cat reviews through the same domain call as the page, so self-review,
+ * unlisted outputs and thin bodies are refused with the same words.
+ */
+const reviewResearch: ActionHandler = async (supabase, userId, _actorId, params) => {
+  const parsed = reviewInputSchema.safeParse({
+    verdict: params.verdict,
+    body: params.body,
+    output_link: params.output_link ?? null,
+  });
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues.map(i => i.message).join('; ') };
+  }
+  // A review is signed by the PERSON, even when the Cat is acting in a group's
+  // context: the insert policy only accepts the caller's own actor.
+  const reviewerActorId = await getUserActorId(supabase, userId);
+  if (!reviewerActorId) {
+    return { success: false, error: 'No profile to sign the review with' };
+  }
+  const researchId = String(params.research_id ?? '');
+  const result = await createResearchReview(
+    supabase,
+    researchId,
+    userId,
+    reviewerActorId,
+    parsed.data
+  );
+  if (!result.ok) {
+    return { success: false, error: result.message };
+  }
+  return {
+    success: true,
+    data: { ...result.review, displayMessage: `🔎 Review posted (${parsed.data.verdict})` },
+  };
+};
+
 export const entityCreateHandlers: Record<string, ActionHandler> = {
+  review_research: reviewResearch,
+
   create_product: async (supabase, userId, actorId, params) => {
     // DB column is `price` (numeric), not `price_btc`
     const price = (params.price_btc as number | null) ?? (params.price as number | null) ?? null;
@@ -333,6 +381,18 @@ export const entityCreateHandlers: Record<string, ActionHandler> = {
     const fundingGoalBtc =
       (params.funding_goal_btc as number | null) ?? (params.funding_goal as number | null) ?? 0.001;
 
+    // Same rules as the form and the API: an invalid link or licence is refused
+    // with the reason, never silently dropped.
+    const open = catOpenScienceSchema.safeParse({
+      license: params.license ?? 'CC-BY-4.0',
+      output_links: params.output_links ?? [],
+      preregistration: params.preregistration ?? null,
+    });
+    if (!open.success) {
+      return { success: false, error: open.error.issues.map(i => i.message).join('; ') };
+    }
+    const prereg = decidePreregistration(open.data.preregistration, null);
+
     const { data, error } = await supabase
       .from(ENTITY_REGISTRY.research.tableName)
       .insert({
@@ -361,6 +421,9 @@ export const entityCreateHandlers: Record<string, ActionHandler> = {
         status: ENTITY_STATUS.DRAFT,
         is_public: true,
         is_featured: false,
+        license: open.data.license ?? null,
+        output_links: open.data.output_links ?? [],
+        ...(prereg.kind === 'commit' ? await commitPreregistration(prereg.text) : {}),
         // Denormalized counter columns were dropped in migration
         // 20260404000005 — inserting them breaks live.
       })

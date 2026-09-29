@@ -18,6 +18,8 @@ import {
   PROGRESS_FREQUENCIES,
   TRANSPARENCY_LEVELS,
 } from '@/config/research';
+import { RESEARCH_LICENSES } from '@/config/open-science';
+import { openScienceFields } from '@/domain/research/openScience';
 import {
   researchGuidanceContent,
   researchDefaultGuidance,
@@ -43,6 +45,10 @@ export type ResearchWizardFormData = {
   transparency_level: string;
   voting_enabled: boolean;
   is_public: boolean;
+  license?: string | null;
+  output_links?: string[];
+  preregistration?: string | null;
+  current_milestone?: string | null;
 };
 
 // ==================== VALIDATION SCHEMA ====================
@@ -62,6 +68,8 @@ const researchWizardSchema = z.object({
   transparency_level: z.string().min(1, 'Transparency level is required'),
   voting_enabled: z.boolean().optional().default(true),
   is_public: z.boolean().optional().default(true),
+  current_milestone: z.string().trim().max(300).nullable().optional(),
+  ...openScienceFields,
 });
 
 // ==================== FIELD GROUPS ====================
@@ -161,7 +169,7 @@ const fieldGroups: FieldGroup[] = [
         name: 'lead_researcher',
         label: 'Lead Researcher',
         type: 'text',
-        placeholder: 'Your name or the primary researcher',
+        placeholder: 'A name or a pseudonym — real identity is never required',
         required: true,
         colSpan: 2,
       },
@@ -170,6 +178,39 @@ const fieldGroups: FieldGroup[] = [
         label: 'Open to New Collaborators',
         type: 'checkbox',
         hint: 'Allow other researchers to join this project',
+        colSpan: 2,
+      },
+    ],
+  },
+  {
+    id: 'open-science',
+    title: 'Open Science',
+    description: 'What your backers get back: the terms, the outputs, and the plan you commit to',
+    fields: [
+      {
+        name: 'license',
+        label: 'Licence for the outputs',
+        type: 'select',
+        options: RESEARCH_LICENSES.map(({ value, label }) => ({ value, label })),
+        hint: 'An open licence lets anyone read, check and build on what you find.',
+        colSpan: 2,
+      },
+      {
+        name: 'output_links',
+        label: 'Where the outputs live',
+        type: 'tags',
+        placeholder: 'https://github.com/…, ipfs://…, https://zenodo.org/records/…',
+        hint: 'Preprints, datasets, code, protocols — separated by commas. ipfs:// and ar:// links are content-addressed, so what they point at cannot be swapped later.',
+        colSpan: 2,
+      },
+      {
+        name: 'preregistration',
+        label: 'Pre-registration (optional)',
+        type: 'textarea',
+        placeholder:
+          'Hypothesis, what you will measure, how you will analyse it, and what result would prove you wrong.',
+        hint: 'Written before you see results. Saving it records a SHA-256 hash and a timestamp, and it can never be edited afterwards — that is what makes it worth trusting.',
+        rows: 5,
         colSpan: 2,
       },
     ],
@@ -194,6 +235,14 @@ const fieldGroups: FieldGroup[] = [
         required: true,
         options: [...TRANSPARENCY_LEVELS],
         colSpan: 1,
+      },
+      {
+        name: 'current_milestone',
+        label: 'Current milestone',
+        type: 'text',
+        placeholder: 'e.g. Season-one samples collected and analysed',
+        hint: 'What is done now. Backers can vote in Solon on whether it was met before the next tranche is released.',
+        colSpan: 2,
       },
       {
         name: 'voting_enabled',
@@ -230,6 +279,9 @@ const defaultValues: ResearchWizardFormData = {
   transparency_level: 'progress',
   voting_enabled: true,
   is_public: true,
+  license: 'CC-BY-4.0',
+  output_links: [],
+  preregistration: '',
 };
 
 // ==================== TEMPLATES ====================

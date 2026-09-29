@@ -47,6 +47,11 @@ export const API_ROUTES = {
     BASE: '/api/integration-keys',
     BY_ID: (id: string) => `/api/integration-keys/${id}`,
   },
+  /** Apps that signed in with OrangeCat on the person's behalf (OAuth grants). */
+  CONNECTED_APPS: {
+    BASE: '/api/connected-apps',
+    BY_CLIENT: (clientId: string) => `/api/connected-apps/${encodeURIComponent(clientId)}`,
+  },
   WEBHOOK_ENDPOINTS: {
     BASE: '/api/webhook-endpoints',
     BY_ID: (id: string) => `/api/webhook-endpoints/${id}`,
@@ -115,6 +120,8 @@ export const API_ROUTES = {
     WISHLIST_TIERS: (id: string) => `/api/profiles/${id}/wishlist-tiers`,
   },
   RESEARCH: ENTITY_REGISTRY['research'].apiEndpoint,
+  RESEARCH_REVIEWS: (id: string) => `${ENTITY_REGISTRY['research'].apiEndpoint}/${id}/reviews`,
+  RESEARCH_NOSTR: (id: string) => `${ENTITY_REGISTRY['research'].apiEndpoint}/${id}/nostr`,
   SOCIAL: {
     FOLLOW: '/api/social/follow',
     UNFOLLOW: '/api/social/unfollow',
@@ -149,6 +156,10 @@ export const API_ROUTES = {
     VERIFY_CAPTCHA: '/api/auth/verify-captcha',
     OAUTH_PROVIDERS: '/api/auth/oauth-providers',
     EMAIL_CODE: '/api/auth/email-code',
+    /** Revoke the OAuth refresh tokens every connected app holds for the caller. */
+    SIGNOUT_EVERYWHERE: '/api/auth/signout-everywhere',
+    /** Whether the auth server has passkeys switched on (public fact). */
+    PASSKEYS_AVAILABLE: '/api/auth/passkeys/available',
   },
   DOCUMENTS: {
     BASE: ENTITY_REGISTRY['document'].apiEndpoint,

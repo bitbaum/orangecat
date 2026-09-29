@@ -13,6 +13,7 @@ import { STATUS } from '@/config/database-constants';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { getOrCreateUserActor } from '@/services/actors/getOrCreateUserActor';
 import type { ResearchEntityCreate } from '@/types/research';
+import { commitPreregistration, decidePreregistration } from './openScience';
 import type { NextResponse } from 'next/server';
 
 const MAX_RESEARCH_PER_USER = 10;
@@ -52,6 +53,10 @@ export async function createResearch(
   // research_entities.actor_id is NOT NULL — an insert without it violates the
   // constraint. Dual-write user_id + actor_id like ai_assistants does.
   const actor = await getOrCreateUserActor(userId);
+  const prereg = decidePreregistration(
+    validatedData.preregistration as string | null | undefined,
+    null
+  );
 
   const insertData = {
     user_id: userId,
@@ -79,6 +84,10 @@ export async function createResearch(
     status: STATUS.RESEARCH.DRAFT,
     is_public: validatedData.is_public ?? true,
     is_featured: false,
+    current_milestone: (validatedData.current_milestone as string | null | undefined) ?? null,
+    license: validatedData.license ?? null,
+    output_links: validatedData.output_links ?? [],
+    ...(prereg.kind === 'commit' ? await commitPreregistration(prereg.text) : {}),
     // Denormalized counter columns (citation_count, follower_count, …) were
     // dropped in migration 20260404000005 — inserting them breaks live.
   };

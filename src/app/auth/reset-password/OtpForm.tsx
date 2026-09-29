@@ -119,6 +119,14 @@ export function OtpForm({
         </Button>
         <div className="text-center">
           <Link
+            href={ROUTES.AUTH_NO_EMAIL}
+            className="text-sm text-fg-secondary underline hover:text-fg-primary"
+          >
+            Can&apos;t get to your email?
+          </Link>
+        </div>
+        <div className="text-center">
+          <Link
             href={`${ROUTES.AUTH}?mode=login`}
             className="inline-flex items-center text-sm text-fg-secondary hover:text-fg-primary transition-colors"
           >
