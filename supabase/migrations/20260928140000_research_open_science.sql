@@ -36,10 +36,8 @@ ALTER TABLE public.research_entities
 -- True invariants only: a hash is 64 hex chars, and a commitment is all three
 -- fields or none of them.
 ALTER TABLE public.research_entities
-  DROP CONSTRAINT IF EXISTS research_entities_preregistration_sha256_format,
   ADD CONSTRAINT research_entities_preregistration_sha256_format
     CHECK (preregistration_sha256 IS NULL OR preregistration_sha256 ~ '^[0-9a-f]{64}$'),
-  DROP CONSTRAINT IF EXISTS research_entities_preregistration_complete,
   ADD CONSTRAINT research_entities_preregistration_complete
     CHECK (
       (preregistration IS NULL AND preregistration_sha256 IS NULL AND preregistered_at IS NULL)

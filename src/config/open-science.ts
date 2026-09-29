@@ -108,3 +108,18 @@ export const REVIEW_LIMITS = {
   /** Reviews shown per project, newest first. The heading always shows the full count. */
   PAGE_SIZE: 50,
 } as const;
+
+// ==================== NOSTR ====================
+
+/**
+ * How research is published to Nostr. Kind 30023 (NIP-23 long-form) is
+ * ADDRESSABLE: `d` = the research id, so a republish after new outputs
+ * replaces the old version on relays instead of piling up beside it.
+ */
+export const RESEARCH_NOSTR = {
+  KIND: 30023,
+  HASHTAGS: ['openscience', 'desci'],
+  /** A public Nostr gateway that renders an naddr for people without a client. */
+  VIEWER_BASE_URL: 'https://njump.me/',
+  SUMMARY_MAX_LENGTH: 280,
+} as const;

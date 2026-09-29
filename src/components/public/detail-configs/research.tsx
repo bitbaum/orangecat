@@ -6,6 +6,7 @@ import ResearchOpenScience from '@/components/public/ResearchOpenScience';
 import ResearchReviews from '@/components/public/ResearchReviews';
 import type { EntityDetailConfig } from '@/components/public/PublicEntityDetailPage';
 import { ROUTES } from '@/config/routes';
+import { SITE_URL } from '@/config/brand';
 import { RESEARCH_FIELDS, METHODOLOGIES, TIMELINES } from '@/config/research';
 
 const FIELD_LABELS = Object.fromEntries(RESEARCH_FIELDS.map(f => [f.value, f.label]));
@@ -78,6 +79,27 @@ export const researchDetailConfig: EntityDetailConfig = {
         </Card>
 
         <ResearchOpenScience
+          researchId={String(entity.id)}
+          nostrPubkey={entity.nostr_pubkey}
+          nostrPublishedAt={entity.nostr_published_at}
+          publish={
+            isOwner
+              ? {
+                  research: {
+                    id: String(entity.id),
+                    title: String(entity.title ?? ''),
+                    description: String(entity.description ?? ''),
+                    field: entity.field,
+                    license: entity.license,
+                    output_links: entity.output_links,
+                    preregistration: entity.preregistration,
+                    preregistration_sha256: entity.preregistration_sha256,
+                    preregistered_at: entity.preregistered_at,
+                  },
+                  pageUrl: `${SITE_URL}${ROUTES.RESEARCH.VIEW(String(entity.id))}`,
+                }
+              : undefined
+          }
           license={entity.license}
           outputLinks={entity.output_links}
           preregistration={entity.preregistration}
