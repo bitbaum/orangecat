@@ -6,11 +6,11 @@ wherever it appears: **where** it is and **what it legally is**.
 
 Three exports, nothing else:
 
-| Module  | Answers                                                                                                                                 | Owned by     |
-| ------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
-| `kinds` | What kind of body is this? (circle, family, association, cooperative, collective, company, guild, DAO, town, network state, local fund) | this package |
-| `place` | Where does it belong? (country → region → locality, and the one key rule for grouping)                                                  | this package |
-| `legal` | What is it legally, with what evidence? (informal → registered → recognised tax-exempt)                                                 | this package |
+| Module  | Answers                                                                                                                                               | Owned by     |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| `kinds` | What kind of body is this? (circle, family, association, cooperative, collective, company, guild, DAO, town, charter city, network state, local fund) | this package |
+| `place` | Where does it belong? (country → region → locality, and the one key rule for grouping)                                                                | this package |
+| `legal` | What is it legally, with what evidence? (informal → registered → recognised tax-exempt)                                                               | this package |
 
 What it deliberately does **not** contain:
 

@@ -33,8 +33,9 @@ describe('kinds', () => {
     }
   });
 
-  it('a town and a local fund are bound to a place; a DAO is not', () => {
+  it('a town, a charter city and a local fund are bound to a place; a DAO is not', () => {
     expect(COLLECTIVE_KINDS.town.needsPlace).toBe(true);
+    expect(COLLECTIVE_KINDS.charter_city.needsPlace).toBe(true);
     expect(COLLECTIVE_KINDS.local_fund.needsPlace).toBe(true);
     expect(COLLECTIVE_KINDS.dao.needsPlace).toBe(false);
   });

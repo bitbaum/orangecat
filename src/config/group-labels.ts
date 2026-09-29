@@ -114,6 +114,13 @@ const LABEL_DEFAULTS: Record<CollectiveKindId, GroupLabelDefaults> = {
     suggestedFeatures: ['treasury', 'proposals', 'voting', 'events'],
     defaultGovernance: 'democratic',
   },
+  charter_city: {
+    icon: Building2,
+    iconClass: 'text-fg-primary',
+    defaults: { is_public: true, visibility: 'public' },
+    suggestedFeatures: ['treasury', 'proposals', 'voting', 'events'],
+    defaultGovernance: 'democratic',
+  },
   network_state: {
     icon: Globe,
     iconClass: 'text-fg-primary',

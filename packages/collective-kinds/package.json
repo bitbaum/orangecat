@@ -1,6 +1,6 @@
 {
   "name": "@bitbaum/collective-kinds",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "SSOT for what kinds of collective exist across OrangeCat, Loki and Solon \u2014 kinds, place, legal status. Data and pure functions only.",
   "license": "MIT",
   "repository": {

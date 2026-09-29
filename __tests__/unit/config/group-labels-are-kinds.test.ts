@@ -99,7 +99,7 @@ describe('a place-bound kind cannot be created without a place', () => {
   });
 
   it('lists the place-bound kinds from the package', () => {
-    expect(PLACE_BOUND_LABELS).toEqual(['town', 'local_fund']);
+    expect(PLACE_BOUND_LABELS).toEqual(['town', 'charter_city', 'local_fund']);
   });
 });
 
