@@ -36,6 +36,10 @@ vi.mock('@/services/webhooks/deliveryService', () => ({
   pruneDeliveredWebhookDeliveries: vi.fn(),
 }));
 
+vi.mock('@/services/auth/oauthRegistration', () => ({
+  pruneAbandonedDcrClients: vi.fn(async () => 0),
+}));
+
 vi.mock('@/lib/api/standardResponse', () => ({
   apiSuccess: vi.fn((payload: unknown) => ({ ok: true, data: payload, status: 200 })),
   apiError: vi.fn((msg: string, code: string, status: number) => ({
@@ -108,7 +112,7 @@ describe('GET /api/cron/cleanup', () => {
   });
 
   describe('happy path', () => {
-    it('runs both tasks and returns per-task deleted counts', async () => {
+    it('runs every task and returns per-task deleted counts', async () => {
       adminDeleteResult.count = 42;
       (pruneDeliveredWebhookDeliveries as Mock).mockResolvedValue(7);
 
@@ -121,6 +125,7 @@ describe('GET /api/cron/cleanup', () => {
       expect(res.data.tasks).toEqual({
         idempotency_results: 42,
         webhook_deliveries_delivered: 7,
+        oauth_clients_dcr_abandoned: 0,
       });
       expect(typeof res.data.ranAt).toBe('string');
       expect(pruneDeliveredWebhookDeliveries).toHaveBeenCalledTimes(1);
@@ -138,6 +143,7 @@ describe('GET /api/cron/cleanup', () => {
       expect(res.data.tasks).toEqual({
         idempotency_results: 0,
         webhook_deliveries_delivered: 0,
+        oauth_clients_dcr_abandoned: 0,
       });
     });
 

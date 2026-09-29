@@ -17,6 +17,10 @@
  *   - webhook_deliveries (delivered only): prune rows older than 30
  *     days. Failed + pending rows are kept — failed is the operator
  *     audit trail, pending is in-flight work the worker still owns.
+ *   - oauth_clients (self-registered only): drop clients an AI app
+ *     registered through /oauth/register that nobody consented to
+ *     within a day. A connector that finished sign-in holds a grant
+ *     and is kept; the rest are abandoned registrations or probes.
  *
  * When you add another expirable plumbing table, add a new task to the
  * `tasks` array and the response will widen automatically.
@@ -30,6 +34,7 @@ import { logger } from '@/utils/logger';
 import { apiSuccess, apiError, apiUnauthorized } from '@/lib/api/standardResponse';
 import { verifyCronSecret } from '@/lib/api/cronAuth';
 import { pruneDeliveredWebhookDeliveries } from '@/services/webhooks/deliveryService';
+import { pruneAbandonedDcrClients } from '@/services/auth/oauthRegistration';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -49,6 +54,19 @@ async function pruneOldDeliveredWebhooks(): Promise<CleanupResult> {
   } catch (error) {
     return {
       task: 'webhook_deliveries_delivered',
+      deleted: 0,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+async function pruneAbandonedSelfRegisteredClients(): Promise<CleanupResult> {
+  try {
+    const deleted = await pruneAbandonedDcrClients();
+    return { task: 'oauth_clients_dcr_abandoned', deleted };
+  } catch (error) {
+    return {
+      task: 'oauth_clients_dcr_abandoned',
       deleted: 0,
       error: error instanceof Error ? error.message : String(error),
     };
@@ -84,6 +102,7 @@ export async function GET(request: Request) {
     const tasks: Array<() => Promise<CleanupResult>> = [
       pruneExpiredIdempotencyResults,
       pruneOldDeliveredWebhooks,
+      pruneAbandonedSelfRegisteredClients,
     ];
 
     const results = await Promise.all(tasks.map(task => task()));

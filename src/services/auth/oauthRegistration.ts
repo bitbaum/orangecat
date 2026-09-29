@@ -170,6 +170,71 @@ export interface RegistrationResponse {
   scope: string;
 }
 
+/**
+ * How long a self-registered client may exist without anyone consenting to it.
+ * An AI app registers itself and sends the person to consent within seconds;
+ * a row still without a grant a day later is a registration that was never
+ * finished (or a probe), and every one of them would otherwise live forever.
+ */
+export const DCR_ABANDONED_AFTER_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Delete self-registered clients older than a day that no user ever consented
+ * to and that hold no live refresh token. A client with either is in use and
+ * is kept regardless of age. Returns the number of rows removed.
+ */
+export async function pruneAbandonedDcrClients(now: number = Date.now()): Promise<number> {
+  const db = createAdminClient() as unknown as AnySupabaseClient;
+  const cutoff = new Date(now - DCR_ABANDONED_AFTER_MS).toISOString();
+
+  const { data: stale, error } = await db
+    .from(DATABASE_TABLES.OAUTH_CLIENTS)
+    .select('client_id')
+    .eq('registered_via', OAUTH_CLIENT_ORIGINS.dcr)
+    .lt('created_at', cutoff)
+    .limit(500);
+  if (error) {
+    throw new Error(`Failed to list self-registered clients: ${error.message}`);
+  }
+  const ids = ((stale ?? []) as Array<{ client_id: string }>).map(r => r.client_id);
+  if (ids.length === 0) {
+    return 0;
+  }
+
+  const [grants, tokens] = await Promise.all([
+    db.from(DATABASE_TABLES.OAUTH_USER_GRANTS).select('client_id').in('client_id', ids),
+    db
+      .from(DATABASE_TABLES.OAUTH_REFRESH_TOKENS)
+      .select('client_id')
+      .in('client_id', ids)
+      .is('revoked_at', null),
+  ]);
+  if (grants.error || tokens.error) {
+    throw new Error(
+      `Failed to check client usage: ${grants.error?.message ?? tokens.error?.message}`
+    );
+  }
+  const inUse = new Set(
+    [...(grants.data ?? []), ...(tokens.data ?? [])].map(
+      r => (r as { client_id: string }).client_id
+    )
+  );
+  const abandoned = ids.filter(id => !inUse.has(id));
+  if (abandoned.length === 0) {
+    return 0;
+  }
+
+  const { count, error: deleteError } = await db
+    .from(DATABASE_TABLES.OAUTH_CLIENTS)
+    .delete({ count: 'exact' })
+    .in('client_id', abandoned)
+    .eq('registered_via', OAUTH_CLIENT_ORIGINS.dcr);
+  if (deleteError) {
+    throw new Error(`Failed to prune self-registered clients: ${deleteError.message}`);
+  }
+  return count ?? 0;
+}
+
 /** Persist a validated registration and return its RFC 7591 response. */
 export async function registerClient(
   metadata: RegistrationMetadata
