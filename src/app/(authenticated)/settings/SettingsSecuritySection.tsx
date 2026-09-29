@@ -5,6 +5,7 @@ import { Shield, Link2, Loader2, MonitorSmartphone, KeyRound } from 'lucide-reac
 import { toast } from 'sonner';
 import { MFAStatus } from '@/components/auth/MFASetup';
 import { PasskeysCard } from '@/components/auth/PasskeysCard';
+import { SignInMethodsCard } from '@/components/auth/SignInMethodsCard';
 import { NostrConnectionCard } from '@/components/nostr/NostrConnectionCard';
 import Button from '@/components/ui/Button';
 import { supabase } from '@/lib/supabase/browser';
@@ -144,6 +145,21 @@ export function SettingsSecuritySection({
             'Sign out all devices'
           )}
         </Button>
+      </div>
+
+      <div className="border-t border-subtle pt-10">
+        <h3 className="text-lg font-semibold text-fg-primary mb-4 flex items-center">
+          <Link2 className="w-6 h-6 mr-2 text-fg-secondary" />
+          Ways to sign in
+        </h3>
+        <p className="text-fg-secondary mb-6">
+          Every way into this account. Keep at least two: if you ever lose your inbox, a linked
+          Google or GitHub account (or a passkey) still signs you in, and you change the email from
+          inside.
+        </p>
+        <div className="bg-surface-raised border border-default rounded-lg p-6 max-w-md">
+          <SignInMethodsCard />
+        </div>
       </div>
 
       <div className="border-t border-subtle pt-10">

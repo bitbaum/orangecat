@@ -9,6 +9,7 @@
  *                    getMFAAssuranceLevel, verifyMFALogin
  *   passkeys.ts   → listPasskeys, addPasskey, removePasskey, signInWithPasskey,
  *                    browserSupportsPasskeys
+ *   identities.ts → listSignInMethods, linkProvider, unlinkMethod
  *
  * The public API is unchanged — all named exports and the default authService object remain.
  */
@@ -22,6 +23,8 @@ export {
   resendConfirmationEmail,
   signInAnonymously,
 } from './operations';
+
+export { listSignInMethods, linkProvider, unlinkMethod } from './identities';
 
 export {
   listPasskeys,

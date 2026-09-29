@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+import { ROUTES } from '@/config/routes';
 import { ArrowRight, Eye, EyeOff, Loader2, Mail } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
@@ -208,6 +210,16 @@ export function AuthFormBody({
           </div>
         )}
       </Button>
+      {mode === 'forgot' && (
+        <p className="text-center text-sm">
+          <Link
+            href={ROUTES.AUTH_NO_EMAIL}
+            className="text-fg-secondary underline hover:text-fg-primary"
+          >
+            Can&apos;t get to your email?
+          </Link>
+        </p>
+      )}
     </form>
   );
 }
