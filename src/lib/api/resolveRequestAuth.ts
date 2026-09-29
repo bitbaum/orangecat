@@ -14,6 +14,7 @@
 import { NextRequest } from 'next/server';
 import { createServerClient } from '@/lib/supabase/server';
 import { verifyIntegrationKey } from '@/services/auth/integrationKeys';
+import { OAUTH_RESOURCES } from '@/lib/oauth/config';
 
 export interface ResolvedRequestAuth {
   userId: string;
@@ -41,6 +42,24 @@ export interface ResolvedRequestAuth {
 }
 
 const BEARER_PREFIX = 'Bearer ';
+
+/**
+ * Resource identifiers (RFC 8707) that are NOT this API. A token whose `aud`
+ * is one of them was minted for another server — Loki's MCP endpoint — and
+ * must not double as an OrangeCat bearer, or Loki could replay what it is
+ * handed. Tokens with `aud` = a client_id (plain "Login with OrangeCat") or
+ * = OrangeCat's own MCP resource are accepted as before.
+ */
+const FOREIGN_AUDIENCES: ReadonlySet<string> = new Set(
+  Object.values(OAUTH_RESOURCES)
+    .map(r => r.uri)
+    .filter(uri => uri !== OAUTH_RESOURCES.orangecat.uri)
+);
+
+function isForeignAudience(aud: string | string[] | undefined): boolean {
+  const list = Array.isArray(aud) ? aud : aud ? [aud] : [];
+  return list.some(a => FOREIGN_AUDIENCES.has(a));
+}
 const INTEGRATION_KEY_HEADER = 'x-orangecat-key';
 
 function extractIntegrationKey(req: NextRequest): string | null {
@@ -91,6 +110,11 @@ export async function resolveRequestAuth(req: NextRequest): Promise<ResolvedRequ
       // non-OIDC code paths (and Jest's ts-jest preset) never load it.
       const { verifyAccessToken } = await import('@/lib/oauth/keys');
       const payload = await verifyAccessToken(token);
+      if (payload && isForeignAudience(payload.aud)) {
+        // A genuine OrangeCat token, meant for someone else: fail closed rather
+        // than fall through to the session, like a bad integration key.
+        return null;
+      }
       if (payload?.sub) {
         const scopeClaim = typeof payload.scope === 'string' ? payload.scope : '';
         return {

@@ -45,10 +45,11 @@ const DELEGATED_REEXPORT = /export\s*\{[^}]*\}\s*from\s*['"]@\/app\/api\//;
 /**
  * Evidence of authentication. Factory tokens count because the factories
  * (entityCrudHandler / entityPostHandler / taskActionRoute) authenticate
- * internally.
+ * internally. authenticateMcpRequest is /api/mcp's bearer check (OAuth token
+ * for that resource, or an integration key).
  */
 const AUTH_TOKENS =
-  /withAuth|withOptionalAuth|createEntityCrudHandlers|createEntityPostHandler|entityPostHandler|createTaskActionRoute|resolveRequestAuth|verifyCronSecret|getAuthenticatedUserId|auth\.getUser|REINDEX_SECRET/;
+  /withAuth|withOptionalAuth|createEntityCrudHandlers|createEntityPostHandler|entityPostHandler|createTaskActionRoute|resolveRequestAuth|authenticateMcpRequest|verifyCronSecret|getAuthenticatedUserId|auth\.getUser|REINDEX_SECRET/;
 
 /** Intentionally-public mutating routes. Every entry needs a reason. */
 const AUTH_ALLOWLIST: Record<string, string> = {

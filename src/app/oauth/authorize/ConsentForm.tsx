@@ -12,10 +12,19 @@ interface ScopeRow {
 
 export function ConsentForm({
   clientName,
+  selfRegistered,
+  redirectHost,
+  resourceName,
   scopes,
   hidden,
 }: {
   clientName: string;
+  /** The app registered itself (RFC 7591) — its name is its own claim. */
+  selfRegistered: boolean;
+  /** Where the person is sent back to — the one fact the app cannot fake. */
+  redirectHost: string;
+  /** The resource the token is for (OrangeCat, Loki), when one was named. */
+  resourceName: string | null;
   scopes: ScopeRow[];
   hidden: Record<string, string>;
 }) {
@@ -25,8 +34,19 @@ export function ConsentForm({
         Allow <span className="text-accent-warm">{clientName}</span> to use your OrangeCat account?
       </h1>
       <p className="mt-2 text-sm text-fg-secondary">
-        It will be able to act on your behalf for the following:
+        {resourceName
+          ? `It will be able to use ${resourceName} on your behalf for the following:`
+          : 'It will be able to act on your behalf for the following:'}
       </p>
+
+      {selfRegistered && (
+        <p className="mt-4 rounded-card border border-border-default bg-surface-raised px-3 py-2 text-sm text-fg-secondary">
+          This app registered itself and has not been verified by OrangeCat. The name above is what
+          it calls itself. After you choose, you will be sent to{' '}
+          <span className="font-medium text-fg-primary">{redirectHost}</span> — only allow it if you
+          started this from that app.
+        </p>
+      )}
 
       <ul className="mt-5 space-y-3">
         {scopes.map(s => (

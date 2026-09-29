@@ -3214,6 +3214,7 @@ export type Database = {
           id: string;
           nonce: string | null;
           redirect_uri: string;
+          resource: string | null;
           scopes: string[];
           user_id: string;
         };
@@ -3229,6 +3230,7 @@ export type Database = {
           id?: string;
           nonce?: string | null;
           redirect_uri: string;
+          resource?: string | null;
           scopes?: string[];
           user_id: string;
         };
@@ -3244,6 +3246,7 @@ export type Database = {
           id?: string;
           nonce?: string | null;
           redirect_uri?: string;
+          resource?: string | null;
           scopes?: string[];
           user_id?: string;
         };
@@ -3261,6 +3264,7 @@ export type Database = {
           is_trusted: boolean;
           name: string;
           redirect_uris: string[];
+          registered_via: string;
         };
         Insert: {
           allowed_scopes?: string[];
@@ -3273,6 +3277,7 @@ export type Database = {
           is_trusted?: boolean;
           name: string;
           redirect_uris?: string[];
+          registered_via?: string;
         };
         Update: {
           allowed_scopes?: string[];
@@ -3285,6 +3290,7 @@ export type Database = {
           is_trusted?: boolean;
           name?: string;
           redirect_uris?: string[];
+          registered_via?: string;
         };
         Relationships: [];
       };
@@ -3296,6 +3302,7 @@ export type Database = {
           expires_at: string;
           id: string;
           last_used_at: string | null;
+          resource: string | null;
           revoked_at: string | null;
           scopes: string[];
           token_hash: string;
@@ -3308,6 +3315,7 @@ export type Database = {
           expires_at: string;
           id?: string;
           last_used_at?: string | null;
+          resource?: string | null;
           revoked_at?: string | null;
           scopes?: string[];
           token_hash: string;
@@ -3320,6 +3328,7 @@ export type Database = {
           expires_at?: string;
           id?: string;
           last_used_at?: string | null;
+          resource?: string | null;
           revoked_at?: string | null;
           scopes?: string[];
           token_hash?: string;

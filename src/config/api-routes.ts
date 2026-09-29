@@ -8,6 +8,8 @@ import { ENTITY_REGISTRY } from '@/config/entity-registry';
 export const API_ROUTES = {
   /** Browser-side crash reports (see lib/errors/report-client-error). */
   CLIENT_ERRORS: '/api/client-errors',
+  /** OrangeCat's MCP server — AI apps connect here (see services/mcp). */
+  MCP: '/api/mcp',
   CAT: {
     CHAT: '/api/cat/chat',
     PREPARE: '/api/cat/prepare',
@@ -44,6 +46,11 @@ export const API_ROUTES = {
   INTEGRATION_KEYS: {
     BASE: '/api/integration-keys',
     BY_ID: (id: string) => `/api/integration-keys/${id}`,
+  },
+  /** Apps that signed in with OrangeCat on the person's behalf (OAuth grants). */
+  CONNECTED_APPS: {
+    BASE: '/api/connected-apps',
+    BY_CLIENT: (clientId: string) => `/api/connected-apps/${encodeURIComponent(clientId)}`,
   },
   WEBHOOK_ENDPOINTS: {
     BASE: '/api/webhook-endpoints',
@@ -149,6 +156,8 @@ export const API_ROUTES = {
     VERIFY_CAPTCHA: '/api/auth/verify-captcha',
     OAUTH_PROVIDERS: '/api/auth/oauth-providers',
     EMAIL_CODE: '/api/auth/email-code',
+    /** Revoke the OAuth refresh tokens every connected app holds for the caller. */
+    SIGNOUT_EVERYWHERE: '/api/auth/signout-everywhere',
   },
   DOCUMENTS: {
     BASE: ENTITY_REGISTRY['document'].apiEndpoint,

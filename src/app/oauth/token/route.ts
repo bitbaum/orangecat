@@ -5,6 +5,9 @@
  *   - grant_type=authorization_code: code, redirect_uri, client_id, code_verifier,
  *     [client_secret for confidential clients] → access/id/refresh tokens.
  *   - grant_type=refresh_token: refresh_token, client_id, [client_secret] → rotated set.
+ *   - Either grant may repeat `resource` (RFC 8707). It must be the resource the
+ *     grant was bound to at /oauth/authorize; anything else is `invalid_target`.
+ *     Omitting it keeps the bound one — the token's `aud` never changes.
  *
  * Errors follow RFC 6749 §5.2 ({ error, error_description }, 400). Tokens are
  * never cached.
@@ -16,13 +19,18 @@ import {
   consumeAuthCode,
   issueTokens,
   rotateRefreshToken,
+  INVALID_TARGET,
   type OAuthClient,
 } from '@/services/auth/oauthProvider';
+import { findOAuthResource } from '@/lib/oauth/config';
+import { OPEN_CORS_HEADERS, corsPreflight } from '@/lib/oauth/metadata';
 import { logger } from '@/utils/logger';
 
 export const dynamic = 'force-dynamic';
 
-const NO_STORE = { 'Cache-Control': 'no-store', Pragma: 'no-cache' };
+// CORS: browser-based MCP clients redeem codes from their own origin. No
+// cookie is read here — a code is worthless without its PKCE verifier.
+const NO_STORE = { 'Cache-Control': 'no-store', Pragma: 'no-cache', ...OPEN_CORS_HEADERS };
 
 function err(error: string, description: string, status = 400) {
   return NextResponse.json(
@@ -68,6 +76,15 @@ export async function POST(req: NextRequest) {
   }
   const { client } = auth;
 
+  // RFC 8707: an unknown resource is refused before any grant is looked at.
+  const rawResource = get('resource');
+  const resource = rawResource ? findOAuthResource(rawResource) : null;
+  if (rawResource && !resource) {
+    return err(INVALID_TARGET, 'resource is not a resource this server issues tokens for');
+  }
+  const targetMismatch = () =>
+    err(INVALID_TARGET, 'resource does not match the one this grant was issued for');
+
   try {
     if (grantType === 'authorization_code') {
       const code = get('code');
@@ -80,7 +97,11 @@ export async function POST(req: NextRequest) {
         clientId: client.client_id,
         redirectUri,
         codeVerifier,
+        resource: resource?.uri,
       });
+      if (consumed === INVALID_TARGET) {
+        return targetMismatch();
+      }
       if (!consumed) {
         return err('invalid_grant', 'authorization code invalid, expired, or already used');
       }
@@ -90,6 +111,7 @@ export async function POST(req: NextRequest) {
         userId: consumed.userId,
         scopes: consumed.scopes,
         nonce: consumed.nonce,
+        resource: consumed.resource,
       });
       return NextResponse.json(tokens, { headers: NO_STORE });
     }
@@ -99,7 +121,10 @@ export async function POST(req: NextRequest) {
       if (!refreshToken) {
         return err('invalid_request', 'refresh_token is required');
       }
-      const tokens = await rotateRefreshToken(refreshToken, client);
+      const tokens = await rotateRefreshToken(refreshToken, client, { resource: resource?.uri });
+      if (tokens === INVALID_TARGET) {
+        return targetMismatch();
+      }
       if (!tokens) {
         return err('invalid_grant', 'refresh token invalid, expired, or revoked');
       }
@@ -111,4 +136,8 @@ export async function POST(req: NextRequest) {
     logger.error('Token endpoint failure', error, 'OAuth');
     return err('server_error', 'could not issue tokens', 500);
   }
+}
+
+export function OPTIONS() {
+  return corsPreflight();
 }

@@ -16,14 +16,17 @@ import { ENTITY_STATUS } from '@/config/database-constants';
 import { embeddingsEnabled, embedText } from '@/services/ai/embeddings';
 import { logger } from '@/utils/logger';
 
-export type SearchType =
-  | 'all'
-  | 'people'
-  | 'projects'
-  | 'products'
-  | 'services'
-  | 'events'
-  | 'causes';
+/** What public search can be narrowed to — the list /api/v1/search and the MCP tool accept. */
+export const SEARCH_TYPES = [
+  'all',
+  'people',
+  'projects',
+  'products',
+  'services',
+  'events',
+  'causes',
+] as const;
+export type SearchType = (typeof SEARCH_TYPES)[number];
 
 export interface SearchResult {
   type: SearchType;
