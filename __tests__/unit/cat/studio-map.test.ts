@@ -50,8 +50,8 @@ const map: StudioMapSummary = {
       now: { openRuns: 0, lastRun: null, lastLog: null },
     },
     {
-      slug: 'townsism',
-      name: 'Townsism',
+      slug: 'next-idea',
+      name: 'Next Idea',
       what: null,
       layer: 'next',
       status: 'not live',
@@ -82,7 +82,7 @@ describe('renderStudioMap', () => {
     expect(s).toContain(
       '- **Kivvi** (kivvi) — Nanny booking [client, live, for kivvi; https://kivvi.orangecat.ch]'
     );
-    expect(s).toContain('- **Townsism** (townsism) [next, not live]');
+    expect(s).toContain('- **Next Idea** (next-idea) [next, not live]');
     expect(s.split('**Loki**').length).toBe(2);
   });
 });
