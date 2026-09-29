@@ -7,6 +7,7 @@ import { MFAStatus } from '@/components/auth/MFASetup';
 import { NostrConnectionCard } from '@/components/nostr/NostrConnectionCard';
 import Button from '@/components/ui/Button';
 import { supabase } from '@/lib/supabase/browser';
+import { API_ROUTES } from '@/config/api-routes';
 import { ROUTES } from '@/config/routes';
 import { logger } from '@/utils/logger';
 
@@ -23,12 +24,21 @@ export function SettingsSecuritySection({
 }: Props) {
   const [isSigningOut, setIsSigningOut] = useState(false);
 
-  // Revokes every refresh token for the account (scope: 'global'), then sends
-  // this browser to the sign-in page. Other devices are signed out as their
+  // Two revocations, in this order: first the OAuth refresh tokens every
+  // connected app (Solon, Loki, Heidi, outside sites) holds for this person —
+  // that needs the session, so it goes before the session is gone — then every
+  // OrangeCat session (scope: 'global'). Other devices are signed out as their
   // access tokens expire (~1h max).
   const handleSignOutEverywhere = async () => {
     setIsSigningOut(true);
     try {
+      const apps = await fetch(API_ROUTES.AUTH.SIGNOUT_EVERYWHERE, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (!apps.ok) {
+        throw new Error(`Could not sign out of connected apps (${apps.status})`);
+      }
       const { error } = await supabase.auth.signOut({ scope: 'global' });
       if (error) {
         throw error;
@@ -81,7 +91,8 @@ export function SettingsSecuritySection({
         </h3>
         <p className="text-fg-secondary mb-6">
           Lost a device, or signed in somewhere you don&apos;t trust? Sign out of your account on
-          every device, including this one. You&apos;ll need to sign in again.
+          every device, including this one — and out of every app that signed in with it (Solon,
+          Loki and the rest). You&apos;ll need to sign in again.
         </p>
         <Button
           type="button"

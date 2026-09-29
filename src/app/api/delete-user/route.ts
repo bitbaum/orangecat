@@ -19,6 +19,7 @@ import {
 import { withAuth, type AuthenticatedRequest } from '@/lib/api/withAuth';
 import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
 import { getAdminClient } from '@/lib/supabase/admin';
+import { revokeAllConnectedApps } from '@/services/auth/connectedApps';
 import { logger } from '@/utils/logger';
 
 export const POST = withAuth(async (request: AuthenticatedRequest) => {
@@ -31,6 +32,10 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
     }
 
     const admin = getAdminClient();
+
+    // The oauth_* rows do not cascade from auth.users. Revoke first, so no app
+    // that signed in as this person keeps a session after the person is gone.
+    await revokeAllConnectedApps(user.id, { forgetConsents: true });
 
     const { error } = await admin.auth.admin.deleteUser(user.id);
     if (error) {
