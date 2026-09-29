@@ -3,6 +3,7 @@
 # deliberately NOT a workspace member (its consumers install it from npm).
 packages:
   - 'packages/collective-kinds'
+  - 'packages/tax-model'
 
 allowBuilds:
   '@parcel/watcher': true

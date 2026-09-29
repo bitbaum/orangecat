@@ -1,0 +1,32 @@
+{
+  "name": "@bitbaum/tax-model",
+  "version": "0.1.0",
+  "description": "A tax formula as data, and the pure evaluator that turns it into an estimate. Knows no country.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bitbaum/orangecat.git",
+    "directory": "packages/tax-model"
+  },
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "type-check": "tsc --noEmit -p tsconfig.json"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
