@@ -1,7 +1,7 @@
 # ADR-0009: One Account for Every Door
 
 Date: 2026-09-29
-Status: Accepted (D1–D5, D9 shipped; D6 in this PR; D7–D8 in order below)
+Status: Accepted (D1–D7, D9 shipped; D8 in bitbaum/evig#523)
 
 ## Context
 
@@ -80,8 +80,8 @@ require earlier ones to be undone.
 | D4  | Sign out everywhere revokes OAuth refresh tokens too; account deletion revokes them; the key-rotation runbook uses the JWKS overlap (`OAUTH_JWT_PREVIOUS_JWKS`) so a rotation signs nobody out                                                                                                                                                            | OrangeCat       | this PR                             |
 | D5  | Passkeys: add/list/remove in Settings → Security, "Sign in with a passkey" on `/auth`, both hidden until the auth server reports `passkeys_enabled` (`docs/operations/passkeys.md` is the switch: `GOTRUE_PASSKEY_ENABLED`, RP id `orangecat.ch`)                                                                                                         | OrangeCat + box | code in this PR; box switch pending |
 | D6  | Second recovery path: "Ways to sign in" in Settings → Security (link Google/GitHub/…, remove refused while it would leave no way in), "Can't get to your email?" branch on both recovery forms (`docs/operations/account-recovery.md`; the box switch is `GOTRUE_SECURITY_MANUAL_LINKING_ENABLED`). Backup codes deliberately not built — see the runbook | OrangeCat + box | this PR                             |
-| D7  | Loki: sign-up goes through OrangeCat; existing password users get a one-click link; password kept only for unlinked accounts                                                                                                                                                                                                                              | Loki            | next                                |
-| D8  | evig: "Sign in with OrangeCat" beside its own login; staff stays gated by the `is_staff` column, never by email                                                                                                                                                                                                                                           | evig            | next                                |
+| D7  | Loki: sign-up goes through OrangeCat; existing password users get a one-click link; password kept only for unlinked accounts                                                                                                                                                                                                                              | Loki            | shipped bitbaum/loki#977            |
+| D8  | evig: "Sign in with OrangeCat" beside its own login; staff stays gated by the `is_staff` column, never by email                                                                                                                                                                                                                                           | evig            | bitbaum/evig#523                    |
 | D9  | Developer page `/docs/sign-in-with-orangecat`: discovery URL, registration example, Auth.js and generic OIDC snippets, button wording, scopes rendered from `OAUTH_SCOPES`; `scripts/oauth/sign-in-roundtrip.mjs` completes a full code + PKCE round trip against production                                                                              | OrangeCat       | this PR                             |
 
 ## Security properties this relies on
@@ -159,3 +159,9 @@ require earlier ones to be undone.
   ADR carries forward (option A)
 - `bitbaum/loki` `docs/architecture/cross-product-identity-bridge.md` — the
   Loki relying-party side
+- `bitbaum/solon` `src/lib/auth/oc-session.ts`, `bitbaum/heidi` `lib/auth/oc-session.ts`
+  — a relying party's session ends on `invalid_grant` (#203, #145)
+- `bitbaum/solon` `src/lib/domain/member-identity.ts` — a seat shows the
+  person's OrangeCat picture and handle, never a second copy of the name (#204)
+- `bitbaum/evig` `src/lib/auth/orangecat.ts` — the rules for an OrangeCat
+  identity meeting an evig account (never linked by email)
