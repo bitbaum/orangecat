@@ -28,6 +28,7 @@ import { fetchProfileListingCounts } from '@/services/profile/listingCounts';
 import { type WalletVisibility } from '@/config/wallet-visibility';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { ROUTES } from '@/config/routes';
+import { SITE_URL } from '@/config/brand';
 import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import { PublicEntityOwnerBar } from './PublicEntityOwnerBar';
 import {
@@ -285,13 +286,14 @@ export default async function PublicEntityDetailPage({
                 />
               )}
 
-              {isOwner && config.entityType === 'investment' && (
+              {isOwner && (config.entityType === 'investment' || config.getSolonDraft) && (
                 <SolonGovernCta
                   variant="card"
                   entityType={config.entityType}
                   entityId={id}
                   sourcePath={viewRoute}
                   title={entity.title}
+                  draft={config.getSolonDraft?.(entity, `${SITE_URL}${viewRoute}`)}
                 />
               )}
 

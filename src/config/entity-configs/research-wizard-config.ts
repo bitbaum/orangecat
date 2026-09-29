@@ -48,6 +48,7 @@ export type ResearchWizardFormData = {
   license?: string | null;
   output_links?: string[];
   preregistration?: string | null;
+  current_milestone?: string | null;
 };
 
 // ==================== VALIDATION SCHEMA ====================
@@ -67,6 +68,7 @@ const researchWizardSchema = z.object({
   transparency_level: z.string().min(1, 'Transparency level is required'),
   voting_enabled: z.boolean().optional().default(true),
   is_public: z.boolean().optional().default(true),
+  current_milestone: z.string().trim().max(300).nullable().optional(),
   ...openScienceFields,
 });
 
@@ -233,6 +235,14 @@ const fieldGroups: FieldGroup[] = [
         required: true,
         options: [...TRANSPARENCY_LEVELS],
         colSpan: 1,
+      },
+      {
+        name: 'current_milestone',
+        label: 'Current milestone',
+        type: 'text',
+        placeholder: 'e.g. Season-one samples collected and analysed',
+        hint: 'What is done now. Backers can vote in Solon on whether it was met before the next tranche is released.',
+        colSpan: 2,
       },
       {
         name: 'voting_enabled',

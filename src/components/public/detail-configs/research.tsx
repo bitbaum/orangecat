@@ -4,6 +4,7 @@ import FundingProgress from '@/components/public/FundingProgress';
 import EntityLedgerTotal from '@/components/public/EntityLedgerTotal';
 import ResearchOpenScience from '@/components/public/ResearchOpenScience';
 import ResearchReviews from '@/components/public/ResearchReviews';
+import { researchMilestoneProposal } from '@/domain/research/governance';
 import type { EntityDetailConfig } from '@/components/public/PublicEntityDetailPage';
 import { ROUTES } from '@/config/routes';
 import { SITE_URL } from '@/config/brand';
@@ -20,6 +21,17 @@ export const researchDetailConfig: EntityDetailConfig = {
   descriptionTitle: 'About this Research',
   metadataSelect: 'title, description',
   getViewRoute: id => ROUTES.RESEARCH.VIEW(id),
+  getSolonDraft: (entity, pageUrl) =>
+    researchMilestoneProposal(
+      {
+        title: String(entity.title ?? ''),
+        current_milestone: entity.current_milestone,
+        output_links: entity.output_links,
+        preregistration_sha256: entity.preregistration_sha256,
+        preregistered_at: entity.preregistered_at,
+      },
+      pageUrl
+    ),
   renderHeaderExtra: entity => {
     if (!entity.field) {
       return null;
@@ -61,6 +73,12 @@ export const researchDetailConfig: EntityDetailConfig = {
                 <span className="font-medium">
                   {TIMELINE_LABELS[entity.timeline] || entity.timeline}
                 </span>
+              </div>
+            )}
+            {entity.current_milestone && (
+              <div className="flex justify-between gap-3 text-sm">
+                <span className="shrink-0 text-fg-secondary">Current milestone</span>
+                <span className="text-right font-medium">{entity.current_milestone}</span>
               </div>
             )}
             {entity.lead_researcher && (
