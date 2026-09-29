@@ -89,7 +89,7 @@ export const refreshSnippet = `curl -s ${meta.token_endpoint} \\
 # 200 → a NEW refresh_token (the old one is spent) and a new access_token
 # 400 {"error":"invalid_grant"} → the person disconnected your app. End their session.`;
 
-export const userinfoSnippet = `curl -s ${meta.userinfo_endpoint} -H 'Authorization: Bearer THE_ACCESS_TOKEN'
+export const userinfoSnippet = `curl -s ${meta.userinfo_endpoint} -H "Authorization: Bearer $ACCESS_TOKEN"
 # → { "sub": "<actor id>", "name", "preferred_username", "picture", "email" }`;
 
 export const DISCOVERY_PATH = OAUTH_PATHS.discovery;
