@@ -33,6 +33,9 @@ importers:
       '@bitbaum/mail-kit':
         specifier: ^0.1.1
         version: 0.1.1
+      '@bitbaum/tax-model':
+        specifier: workspace:*
+        version: link:packages/tax-model
       '@hono/node-server':
         specifier: ^2.1.1
         version: 2.1.1(hono@4.13.5)
@@ -352,6 +355,8 @@ importers:
         version: 0.35.4(@types/node@26.3.0)
 
   packages/collective-kinds: {}
+
+  packages/tax-model: {}
 
 packages:
 
