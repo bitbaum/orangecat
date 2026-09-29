@@ -120,6 +120,8 @@ export const API_ROUTES = {
     WISHLIST_TIERS: (id: string) => `/api/profiles/${id}/wishlist-tiers`,
   },
   RESEARCH: ENTITY_REGISTRY['research'].apiEndpoint,
+  RESEARCH_REVIEWS: (id: string) => `${ENTITY_REGISTRY['research'].apiEndpoint}/${id}/reviews`,
+  RESEARCH_NOSTR: (id: string) => `${ENTITY_REGISTRY['research'].apiEndpoint}/${id}/nostr`,
   SOCIAL: {
     FOLLOW: '/api/social/follow',
     UNFOLLOW: '/api/social/unfollow',

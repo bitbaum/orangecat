@@ -11,6 +11,11 @@ import { DATABASE_TABLES } from '@/config/database-tables';
 import { getTableName } from '@/config/entity-registry';
 import { logger } from '@/utils/logger';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
+import {
+  commitPreregistration,
+  decidePreregistration,
+  PREREGISTRATION_LOCKED_MESSAGE,
+} from './openScience';
 
 export type ResearchErrorCode = 'not_found' | 'forbidden';
 
@@ -19,19 +24,26 @@ export type ResearchResult<T> =
   | { ok: false; code: ResearchErrorCode; message: string }
   | { ok: false; dbError: unknown };
 
+interface ResearchOwnerRow {
+  user_id: string;
+  funding_raised_btc?: number;
+  preregistration?: string | null;
+  preregistered_at?: string | null;
+}
+
 /** Fetch the row's owner (+ optional extra fields); classifies not-found/forbidden. */
 async function verifyResearchOwner(
   supabase: AnySupabaseClient,
   id: string,
   userId: string,
   extraFields = ''
-): Promise<'not_found' | 'forbidden' | 'error' | { user_id: string; funding_raised_btc?: number }> {
+): Promise<'not_found' | 'forbidden' | 'error' | ResearchOwnerRow> {
   const result = (await supabase
     .from(getTableName('research'))
     .select(`user_id${extraFields ? ', ' + extraFields : ''}`)
     .eq('id', id)
     .single()) as {
-    data: { user_id: string; funding_raised_btc?: number } | null;
+    data: ResearchOwnerRow | null;
     error: { code?: string } | null;
   };
   const { data, error } = result;
@@ -96,7 +108,12 @@ export async function updateResearch(
   userId: string,
   patch: Record<string, unknown>
 ): Promise<ResearchResult<Record<string, unknown>>> {
-  const ownership = await verifyResearchOwner(supabase, id, userId);
+  const ownership = await verifyResearchOwner(
+    supabase,
+    id,
+    userId,
+    'preregistration, preregistered_at'
+  );
   if (ownership === 'not_found') {
     return { ok: false, code: 'not_found', message: 'Research entity not found' };
   }
@@ -111,9 +128,20 @@ export async function updateResearch(
     return { ok: false, dbError: new Error('DB error') };
   }
 
+  // The raw text never goes straight to the row: a committed pre-registration
+  // is immutable (the DB trigger would reject it anyway), and a first one needs
+  // its hash and timestamp written with it.
+  const { preregistration, ...rest } = patch;
+  const prereg = decidePreregistration(preregistration as string | null | undefined, ownership);
+  if (prereg.kind === 'locked') {
+    return { ok: false, code: 'forbidden', message: PREREGISTRATION_LOCKED_MESSAGE };
+  }
+  const writable =
+    prereg.kind === 'commit' ? { ...rest, ...(await commitPreregistration(prereg.text)) } : rest;
+
   const { data: entity, error } = await supabase
     .from(getTableName('research'))
-    .update({ ...patch, updated_at: new Date().toISOString() })
+    .update({ ...writable, updated_at: new Date().toISOString() })
     .eq('id', id)
     .select()
     .single();

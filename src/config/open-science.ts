@@ -1,0 +1,125 @@
+/**
+ * Open science — Single Source of Truth
+ *
+ * What a research entity's outputs are released under, which kinds of link it
+ * can point at, and the limits on each. Validation (zod), the create form and
+ * the public page all read from here.
+ *
+ * Why it exists: research on OrangeCat is funded by the people who want the
+ * answer, and they are owed the answer. A licence, public outputs and a
+ * pre-registration are what turn "fund a question" into open science that a
+ * pseudonymous researcher can be trusted on without an institution behind them.
+ */
+
+// ==================== LICENCES ====================
+
+/**
+ * `open: true` means anyone may read, reuse and build on the work. The closed
+ * option exists on purpose: saying "all rights reserved" out loud is honest,
+ * and funders can decide with that in view.
+ */
+export const RESEARCH_LICENSES = [
+  { value: 'CC-BY-4.0', label: 'CC BY 4.0 — reuse with credit', open: true },
+  { value: 'CC0-1.0', label: 'CC0 — public domain', open: true },
+  { value: 'CC-BY-SA-4.0', label: 'CC BY-SA 4.0 — reuse, share alike', open: true },
+  { value: 'MIT', label: 'MIT — code', open: true },
+  { value: 'Apache-2.0', label: 'Apache 2.0 — code', open: true },
+  { value: 'GPL-3.0-or-later', label: 'GPL 3.0 or later — code, share alike', open: true },
+  { value: 'all-rights-reserved', label: 'All rights reserved', open: false },
+] as const;
+
+export type ResearchLicense = (typeof RESEARCH_LICENSES)[number]['value'];
+
+export const RESEARCH_LICENSE_VALUES = RESEARCH_LICENSES.map(l => l.value) as [
+  ResearchLicense,
+  ...ResearchLicense[],
+];
+
+// ==================== OUTPUT LINKS ====================
+
+/**
+ * Schemes an output may live under. `ipfs`/`ipns`/`ar` are the decentralised
+ * ones; `ipfs` and `ar` are content-addressed, so the address is the hash.
+ */
+export const OUTPUT_LINK_SCHEMES = ['https', 'http', 'ipfs', 'ipns', 'ar'] as const;
+export const CONTENT_ADDRESSED_SCHEMES = ['ipfs', 'ar'] as const;
+
+export const OUTPUT_KINDS = [
+  { value: 'preprint', label: 'Preprint / paper' },
+  { value: 'dataset', label: 'Dataset' },
+  { value: 'code', label: 'Code' },
+  { value: 'protocol', label: 'Protocol' },
+  { value: 'link', label: 'Link' },
+] as const;
+
+export type OutputKind = (typeof OUTPUT_KINDS)[number]['value'];
+
+/**
+ * Hosts whose kind is unambiguous. Matched on the hostname or any parent
+ * domain; anything else is a plain `link`. A guess is never shown as a fact —
+ * an unknown host is labelled "Link", not assigned a kind it might not be.
+ */
+export const OUTPUT_KIND_BY_HOST: Record<string, OutputKind> = {
+  'arxiv.org': 'preprint',
+  'biorxiv.org': 'preprint',
+  'medrxiv.org': 'preprint',
+  'osf.io': 'preprint',
+  'zenodo.org': 'dataset',
+  'figshare.com': 'dataset',
+  'datadryad.org': 'dataset',
+  'huggingface.co': 'dataset',
+  'github.com': 'code',
+  'gitlab.com': 'code',
+  'codeberg.org': 'code',
+  'protocols.io': 'protocol',
+};
+
+export const OPEN_SCIENCE_LIMITS = {
+  MAX_OUTPUT_LINKS: 20,
+  MAX_OUTPUT_LINK_LENGTH: 500,
+  MAX_PREREGISTRATION_LENGTH: 5000,
+} as const;
+
+// ==================== PEER REVIEW ====================
+
+/**
+ * What a reviewer concludes. A changed mind is a NEW review — reviews are
+ * append-only — so `retracted` exists for a reviewer to withdraw an earlier
+ * verdict in public rather than by deleting it.
+ */
+export const REVIEW_VERDICTS = [
+  { value: 'reproduced', label: 'Reproduced', tone: 'positive' },
+  { value: 'supports', label: 'Supports the claims', tone: 'positive' },
+  { value: 'concerns', label: 'Has concerns', tone: 'warning' },
+  { value: 'refutes', label: 'Does not hold up', tone: 'negative' },
+  { value: 'retracted', label: 'Retracts an earlier review', tone: 'neutral' },
+] as const;
+
+export type ReviewVerdict = (typeof REVIEW_VERDICTS)[number]['value'];
+
+export const REVIEW_VERDICT_VALUES = REVIEW_VERDICTS.map(v => v.value) as [
+  ReviewVerdict,
+  ...ReviewVerdict[],
+];
+
+export const REVIEW_LIMITS = {
+  MIN_BODY_LENGTH: 20,
+  MAX_BODY_LENGTH: 10000,
+  /** Reviews shown per project, newest first. The heading always shows the full count. */
+  PAGE_SIZE: 50,
+} as const;
+
+// ==================== NOSTR ====================
+
+/**
+ * How research is published to Nostr. Kind 30023 (NIP-23 long-form) is
+ * ADDRESSABLE: `d` = the research id, so a republish after new outputs
+ * replaces the old version on relays instead of piling up beside it.
+ */
+export const RESEARCH_NOSTR = {
+  KIND: 30023,
+  HASHTAGS: ['openscience', 'desci'],
+  /** A public Nostr gateway that renders an naddr for people without a client. */
+  VIEWER_BASE_URL: 'https://njump.me/',
+  SUMMARY_MAX_LENGTH: 280,
+} as const;

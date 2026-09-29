@@ -12,6 +12,7 @@ import {
   PROGRESS_FREQUENCIES,
   TRANSPARENCY_LEVELS,
 } from '@/config/research';
+import { openScienceFields } from '@/domain/research/openScience';
 
 // Derive Zod enum values from the SSOT arrays in research.ts
 const researchFieldValues = RESEARCH_FIELDS.map(f => f.value) as [string, ...string[]];
@@ -94,6 +95,9 @@ export const researchEntitySchema = z.object({
     )
     .optional(),
   is_public: z.boolean().optional(),
+  // Licence, output links, pre-registration. The hash and timestamp of a
+  // pre-registration are server-set and deliberately absent: zod strips them.
+  ...openScienceFields,
 });
 
 // Partial schema for PUT updates — all fields optional
@@ -228,7 +232,7 @@ export const researchConfig: EntityConfig<ResearchEntity> = {
           label: 'Lead Researcher',
           type: 'text',
           required: true,
-          placeholder: 'Your name or the primary researcher',
+          placeholder: 'A name or a pseudonym — real identity is never required',
         },
         {
           name: 'team_members',

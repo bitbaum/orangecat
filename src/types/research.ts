@@ -8,6 +8,7 @@ import type {
   ResearchTimeline as TimelineType,
   ResearchStatus,
 } from '@/config/research';
+import type { ResearchLicense } from '@/config/open-science';
 
 interface TeamMember {
   id?: string;
@@ -127,6 +128,13 @@ export interface ResearchEntity extends BaseEntity {
   // completion_percentage, follower_count, citation_count, …) were dropped
   // from the database in migration 20260404000005 and no longer exist.
 
+  // Open science — see src/config/open-science.ts
+  license?: ResearchLicense | null;
+  output_links?: string[];
+  preregistration?: string | null;
+  preregistration_sha256?: string | null; // server-set on first commit
+  preregistered_at?: string | null; // server-set on first commit
+
   // Visibility
   is_public: boolean;
   is_featured?: boolean;
@@ -148,6 +156,8 @@ export interface ResearchEntityCreate extends Omit<
   | 'wallet_address'
   | 'is_featured'
   | 'status'
+  | 'preregistration_sha256'
+  | 'preregistered_at'
 > {
   // Optional overrides for creation
   is_public?: boolean;
