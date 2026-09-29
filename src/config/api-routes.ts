@@ -158,6 +158,8 @@ export const API_ROUTES = {
     EMAIL_CODE: '/api/auth/email-code',
     /** Revoke the OAuth refresh tokens every connected app holds for the caller. */
     SIGNOUT_EVERYWHERE: '/api/auth/signout-everywhere',
+    /** Whether the auth server has passkeys switched on (public fact). */
+    PASSKEYS_AVAILABLE: '/api/auth/passkeys/available',
   },
   DOCUMENTS: {
     BASE: ENTITY_REGISTRY['document'].apiEndpoint,

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable no-console -- a CLI talks through stdout */
 /**
  * Sign in with OrangeCat — the whole round trip from a terminal.
  *
@@ -28,7 +29,9 @@ const fail = msg => {
 
 // 1. Discovery.
 const meta = await (await fetch(`${ISSUER}/.well-known/openid-configuration`)).json();
-if (meta.issuer !== ISSUER) fail(`discovery issuer ${meta.issuer} != ${ISSUER}`);
+if (meta.issuer !== ISSUER) {
+  fail(`discovery issuer ${meta.issuer} != ${ISSUER}`);
+}
 log('✓ discovery', meta.authorization_endpoint);
 
 // 2. Register a public client.
@@ -43,7 +46,9 @@ const reg = await (
     }),
   })
 ).json();
-if (!reg.client_id) fail(`registration refused: ${JSON.stringify(reg)}`);
+if (!reg.client_id) {
+  fail(`registration refused: ${JSON.stringify(reg)}`);
+}
 log('✓ registered', reg.client_id);
 
 // 3. Authorization request with PKCE, state and nonce.
@@ -87,8 +92,12 @@ if (!process.env.NO_OPEN) {
 }
 
 const cb = await callback;
-if (cb.error) fail(`authorization refused: ${cb.error} ${cb.error_description ?? ''}`);
-if (cb.state !== state) fail('state mismatch — someone else sent this code');
+if (cb.error) {
+  fail(`authorization refused: ${cb.error} ${cb.error_description ?? ''}`);
+}
+if (cb.state !== state) {
+  fail('state mismatch — someone else sent this code');
+}
 log('✓ code received, state matches');
 
 // 4. Exchange the code.
@@ -106,11 +115,19 @@ const tokens = await post({
   client_id: reg.client_id,
   code_verifier: verifier,
 });
-if (tokens.status !== 200) fail(`token exchange: ${tokens.status} ${JSON.stringify(tokens.body)}`);
+if (tokens.status !== 200) {
+  fail(`token exchange: ${tokens.status} ${JSON.stringify(tokens.body)}`);
+}
 const idToken = JSON.parse(Buffer.from(tokens.body.id_token.split('.')[1], 'base64url').toString());
-if (idToken.iss !== ISSUER) fail(`id_token iss ${idToken.iss}`);
-if (idToken.aud !== reg.client_id) fail(`id_token aud ${idToken.aud}`);
-if (idToken.nonce !== nonce) fail('id_token nonce mismatch');
+if (idToken.iss !== ISSUER) {
+  fail(`id_token iss ${idToken.iss}`);
+}
+if (idToken.aud !== reg.client_id) {
+  fail(`id_token aud ${idToken.aud}`);
+}
+if (idToken.nonce !== nonce) {
+  fail('id_token nonce mismatch');
+}
 log('✓ tokens issued; id_token sub =', idToken.sub, `(expires_in ${tokens.body.expires_in}s)`);
 
 // 5. Profile.
@@ -119,7 +136,9 @@ const me = await (
     headers: { authorization: `Bearer ${tokens.body.access_token}` },
   })
 ).json();
-if (me.sub !== idToken.sub) fail(`userinfo sub ${me.sub} != id_token sub ${idToken.sub}`);
+if (me.sub !== idToken.sub) {
+  fail(`userinfo sub ${me.sub} != id_token sub ${idToken.sub}`);
+}
 log('✓ userinfo', JSON.stringify(me));
 
 // 6. Refresh — rotates.

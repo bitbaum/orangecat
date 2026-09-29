@@ -53,6 +53,10 @@ const supabase = createBrowserClient<Database>(supabaseUrl, supabaseAnonKey, {
     // Fixed: Aligned timeout with auth operations
     flowType: 'pkce',
     debug: enableAuthDebug, // Controlled by NEXT_PUBLIC_SUPABASE_DEBUG env var
+    // Passkeys (WebAuthn). The client throws on every passkey call without this
+    // flag; whether the SERVER has them on is a separate question the UI asks
+    // through lib/auth/passkeys-availability before offering a button.
+    experimental: { passkey: true },
   },
   // Fixed: Increased timeout to match auth operations (20s)
   global: {
