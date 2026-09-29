@@ -325,6 +325,8 @@ export const ROUTES = {
   DOCS: '/docs',
   /** Canonical explanation of the four ways Cat can be powered. */
   HOW_CAT_RUNS: '/docs/how-cat-runs',
+  /** For developers: add "Sign in with OrangeCat" to any site. */
+  SIGN_IN_WITH_ORANGECAT: '/docs/sign-in-with-orangecat',
   FAQ: '/faq',
   FEEDBACK: '/feedback',
   PRICING: '/pricing',

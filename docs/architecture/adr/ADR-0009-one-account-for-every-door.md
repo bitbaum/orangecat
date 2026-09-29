@@ -1,7 +1,7 @@
 # ADR-0009: One Account for Every Door
 
 Date: 2026-09-29
-Status: Accepted (D1, D2 shipped; D3, D4 in this PR; D5–D9 in order below)
+Status: Accepted (D1–D4 shipped; D9 in this PR; D5–D8 in order below)
 
 ## Context
 
@@ -72,17 +72,17 @@ Concretely:
 Each step ships and is tested in production on its own. Later steps never
 require earlier ones to be undone.
 
-| #   | What                                                                                                                                                                                                                                   | Where           | Status  |
-| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------- | ------- |
-| D1  | Sign in or create an account with an emailed code — no password                                                                                                                                                                        | OrangeCat #1163 | shipped |
-| D2  | Participation pages offer "Create an account", not "Sign in with OrangeCat"                                                                                                                                                            | Solon #199      | shipped |
-| D3  | Connected apps: see every app that signed in as you, and disconnect it (consent + refresh tokens)                                                                                                                                      | OrangeCat       | this PR |
-| D4  | Sign out everywhere revokes OAuth refresh tokens too; account deletion revokes them; the key-rotation runbook uses the JWKS overlap (`OAUTH_JWT_PREVIOUS_JWKS`) so a rotation signs nobody out                                         | OrangeCat       | this PR |
-| D5  | Passkeys: enable on the auth server (`GOTRUE_PASSKEY_ENABLED`, RP id `orangecat.ch`), add/list/remove in settings, "Sign in with a passkey" on `/auth`                                                                                 | box + OrangeCat | next    |
-| D6  | Second recovery path: one-time backup code shown once; linked Google/GitHub usable for recovery; an "I can't get email" branch on the reset page                                                                                       | OrangeCat       | next    |
-| D7  | Loki: sign-up goes through OrangeCat; existing password users get a one-click link; password kept only for unlinked accounts                                                                                                           | Loki            | next    |
-| D8  | evig: "Sign in with OrangeCat" beside its own login; staff stays gated by the `is_staff` column, never by email                                                                                                                        | evig            | next    |
-| D9  | Developer page `/developers/sign-in`: discovery URL, registration example, Auth.js and generic OIDC snippets, button wording, scopes rendered from `OAUTH_SCOPES`; a script completes a full code + PKCE round trip against production | OrangeCat       | next    |
+| #   | What                                                                                                                                                                                                                                                                         | Where           | Status  |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------- | ------- |
+| D1  | Sign in or create an account with an emailed code — no password                                                                                                                                                                                                              | OrangeCat #1163 | shipped |
+| D2  | Participation pages offer "Create an account", not "Sign in with OrangeCat"                                                                                                                                                                                                  | Solon #199      | shipped |
+| D3  | Connected apps: see every app that signed in as you, and disconnect it (consent + refresh tokens)                                                                                                                                                                            | OrangeCat       | this PR |
+| D4  | Sign out everywhere revokes OAuth refresh tokens too; account deletion revokes them; the key-rotation runbook uses the JWKS overlap (`OAUTH_JWT_PREVIOUS_JWKS`) so a rotation signs nobody out                                                                               | OrangeCat       | this PR |
+| D5  | Passkeys: enable on the auth server (`GOTRUE_PASSKEY_ENABLED`, RP id `orangecat.ch`), add/list/remove in settings, "Sign in with a passkey" on `/auth`                                                                                                                       | box + OrangeCat | next    |
+| D6  | Second recovery path: one-time backup code shown once; linked Google/GitHub usable for recovery; an "I can't get email" branch on the reset page                                                                                                                             | OrangeCat       | next    |
+| D7  | Loki: sign-up goes through OrangeCat; existing password users get a one-click link; password kept only for unlinked accounts                                                                                                                                                 | Loki            | next    |
+| D8  | evig: "Sign in with OrangeCat" beside its own login; staff stays gated by the `is_staff` column, never by email                                                                                                                                                              | evig            | next    |
+| D9  | Developer page `/docs/sign-in-with-orangecat`: discovery URL, registration example, Auth.js and generic OIDC snippets, button wording, scopes rendered from `OAUTH_SCOPES`; `scripts/oauth/sign-in-roundtrip.mjs` completes a full code + PKCE round trip against production | OrangeCat       | this PR |
 
 ## Security properties this relies on
 
@@ -107,20 +107,20 @@ require earlier ones to be undone.
 
 ## Edge cases, and where each lands
 
-| Situation                                              | What happens                                                                                                                                                                             |
-| ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Forgot the password                                    | Reset link, or the six-digit code in the same email (works across devices); or skip passwords with the sign-in code                                                                      |
-| Never had a password (signed up by code or Google)     | Nothing to forget; the code or the provider signs them in                                                                                                                                |
-| Cannot reach the inbox                                 | D6: backup code, or a linked Google/GitHub; until D6, support                                                                                                                            |
-| Started anonymously on OrangeCat, then opened Solon    | Asked for an email inline on the consent screen; the account is upgraded, not replaced                                                                                                   |
-| Changes the email                                      | Confirmation on the new address; `sub` is unchanged, so every product's link survives                                                                                                    |
-| Two accounts share an email (one Google, one password) | They stay two accounts; linking is explicit (D6 makes a linked provider usable for recovery)                                                                                             |
-| Removes the only sign-in method                        | Not yet refused — D6 adds the guard: an account must keep at least one way in                                                                                                            |
-| Lost a device                                          | Sign out everywhere (D4 makes it reach every product)                                                                                                                                    |
-| Lets an AI app in, then regrets it                     | D3: Settings → Integrations → Connected apps → Disconnect                                                                                                                                |
-| Deletes the account                                    | Auth user deleted. The `oauth_*` rows do not cascade today — D4 revokes them in the same request; Loki/evig rows keyed by `sub` become orphans they clean up on the next sign-in attempt |
-| A relying party is compromised                         | Disable its client row; every token it holds stops at the next refresh, and within an hour otherwise                                                                                     |
-| Signing key rotation                                   | D4: publish old and new in JWKS, issue with new, retire old after the access-token lifetime                                                                                              |
+| Situation                                              | What happens                                                                                                                                                                                  |
+| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Forgot the password                                    | Reset link, or the six-digit code in the same email (works across devices); or skip passwords with the sign-in code                                                                           |
+| Never had a password (signed up by code or Google)     | Nothing to forget; the code or the provider signs them in                                                                                                                                     |
+| Cannot reach the inbox                                 | D6: backup code, or a linked Google/GitHub; until D6, support                                                                                                                                 |
+| Started anonymously on OrangeCat, then opened Solon    | Asked for an email inline on the consent screen; the account is upgraded, not replaced                                                                                                        |
+| Changes the email                                      | Confirmation on the new address; `sub` is unchanged, so every product's link survives                                                                                                         |
+| Two accounts share an email (one Google, one password) | They stay two accounts; linking is explicit (D6 makes a linked provider usable for recovery)                                                                                                  |
+| Removes the only sign-in method                        | Not yet refused — D6 adds the guard: an account must keep at least one way in                                                                                                                 |
+| Lost a device                                          | Sign out everywhere (D4 makes it reach every product)                                                                                                                                         |
+| Lets an AI app in, then regrets it                     | D3: Settings → Integrations → Connected apps → Disconnect. A relying party sees `invalid_grant` on its next refresh and ends the session (Solon #203, Heidi #145); Loki marks the link broken |
+| Deletes the account                                    | Auth user deleted. The `oauth_*` rows do not cascade today — D4 revokes them in the same request; Loki/evig rows keyed by `sub` become orphans they clean up on the next sign-in attempt      |
+| A relying party is compromised                         | Disable its client row; every token it holds stops at the next refresh, and within an hour otherwise                                                                                          |
+| Signing key rotation                                   | D4: publish old and new in JWKS, issue with new, retire old after the access-token lifetime                                                                                                   |
 
 ## Alternatives considered
 
