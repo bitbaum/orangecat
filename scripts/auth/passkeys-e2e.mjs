@@ -16,6 +16,7 @@
  * answered as the runbook says. Skips with exit 2 when the server reports
  * passkeys_enabled: false — that is the box switch, not a bug.
  */
+import crypto from 'node:crypto';
 import { chromium } from 'playwright';
 
 const BASE = (process.env.BASE ?? 'https://orangecat.ch').replace(/\/$/, '');
@@ -46,7 +47,7 @@ async function mt(path, init = {}, token) {
 }
 const domain = (await mt('/domains'))['hydra:member'][0].domain;
 const address = `oc-passkey-${Date.now().toString(36)}@${domain}`;
-const password = 'Pw-' + Math.random().toString(36).slice(2);
+const password = 'Pw-' + crypto.randomBytes(12).toString('base64url');
 await mt('/accounts', { method: 'POST', body: JSON.stringify({ address, password }) });
 const { token: mtToken } = await mt('/token', {
   method: 'POST',
