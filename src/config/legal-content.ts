@@ -168,7 +168,9 @@ export const PRIVACY_POLICY: LegalDocument = {
     },
     {
       heading: 'Contact',
-      paragraphs: ['Cato (Data Controller) — hello@orangecat.ch'],
+      paragraphs: [
+        'Cato (Data Controller) — hello@orangecat.ch',
+      ],
     },
     {
       heading: 'Changes to this Policy',
@@ -369,7 +371,9 @@ export const TERMS_OF_SERVICE: LegalDocument = {
     },
     {
       heading: 'Contact',
-      paragraphs: ['Cato — hello@orangecat.ch'],
+      paragraphs: [
+        'Cato — hello@orangecat.ch',
+      ],
     },
   ],
 };

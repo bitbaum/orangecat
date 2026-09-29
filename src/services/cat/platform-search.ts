@@ -17,7 +17,13 @@ import { embeddingsEnabled, embedText } from '@/services/ai/embeddings';
 import { logger } from '@/utils/logger';
 
 export type SearchType =
-  'all' | 'people' | 'projects' | 'products' | 'services' | 'events' | 'causes';
+  | 'all'
+  | 'people'
+  | 'projects'
+  | 'products'
+  | 'services'
+  | 'events'
+  | 'causes';
 
 export interface SearchResult {
   type: SearchType;

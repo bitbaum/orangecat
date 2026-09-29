@@ -230,7 +230,8 @@ async function assertPublicHost(hostname: string, lookupFn: LookupLike): Promise
 // ── Fetch with redirects re-validated per hop + size cap ─────────────────────
 
 export type WebsiteFetchResult =
-  { ok: true; url: string; title: string | null; text: string } | { ok: false; error: string };
+  | { ok: true; url: string; title: string | null; text: string }
+  | { ok: false; error: string };
 
 /**
  * Fetch a website's readable text with the full SSRF guard rail. Never throws —

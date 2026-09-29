@@ -29,8 +29,7 @@ export interface TurnDescriptorInput {
  * A message that names nothing to do. Short, and made of greeting/filler words
  * only. "hi", "hello there", "hey cat" — not "hi, sell my bike".
  */
-const NO_REQUEST =
-  /^[\s\p{P}]*(hi|hello|hey|yo|hola|hallo|salut|ciao|привет|good (morning|afternoon|evening)|there|cat|you)?(\s+(hi|hello|hey|there|cat|you|again))*[\s\p{P}]*$/iu;
+const NO_REQUEST = /^[\s\p{P}]*(hi|hello|hey|yo|hola|hallo|salut|ciao|привет|good (morning|afternoon|evening)|there|cat|you)?(\s+(hi|hello|hey|there|cat|you|again))*[\s\p{P}]*$/iu;
 
 export function isNoSpecificRequest(message: string): boolean {
   const m = message.trim();

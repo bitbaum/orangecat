@@ -21,7 +21,11 @@
  */
 
 import type { FieldConfig, SelectOption } from '@/components/create/types';
-import { TASK_TYPE_LABELS, TASK_CATEGORY_LABELS, PRIORITY_LABELS } from '@/config/tasks';
+import {
+  TASK_TYPE_LABELS,
+  TASK_CATEGORY_LABELS,
+  PRIORITY_LABELS,
+} from '@/config/tasks';
 import { PROPOSAL_TYPE_SELECT_OPTIONS } from '@/config/proposal-constants';
 
 export interface AiAssistFormConfig {

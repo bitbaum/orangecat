@@ -337,9 +337,7 @@ export function formatTrackRecordForModel(tr: CatTrackRecord | null): string {
     for (const e of tr.entries) {
       const state = e.status === null ? 'deleted since' : `status ${e.status}`;
       const money = e.payments > 0 ? `, ${e.fundedBtc} BTC from ${e.payments} payment(s)` : '';
-      lines.push(
-        `- ${e.entityType} "${e.title}" — ${state}${money} (created ${e.createdAt.slice(0, 10)})`
-      );
+      lines.push(`- ${e.entityType} "${e.title}" — ${state}${money} (created ${e.createdAt.slice(0, 10)})`);
     }
   }
 
@@ -348,9 +346,7 @@ export function formatTrackRecordForModel(tr: CatTrackRecord | null): string {
       `Setbacks: ${tr.setbacks.failed} failed, ${tr.setbacks.denied} denied (permission or spend cap), ${tr.setbacks.unconfirmed} never confirmed by the user.`
     );
     for (const sb of tr.setbacks.recent) {
-      lines.push(
-        `- ${sb.actionId}: ${sb.kind}${sb.reason ? ` — ${sb.reason}` : ''} (${sb.at.slice(0, 10)})`
-      );
+      lines.push(`- ${sb.actionId}: ${sb.kind}${sb.reason ? ` — ${sb.reason}` : ''} (${sb.at.slice(0, 10)})`);
     }
   }
 

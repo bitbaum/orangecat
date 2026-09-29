@@ -20,7 +20,12 @@
 // =====================================================================
 
 export type NotificationCategory =
-  'transactional' | 'economic' | 'social' | 'group' | 'progress' | 'reengagement';
+  | 'transactional'
+  | 'economic'
+  | 'social'
+  | 'group'
+  | 'progress'
+  | 'reengagement';
 
 export interface FrequencyCap {
   maxPerHour?: number;

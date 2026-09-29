@@ -125,9 +125,7 @@ export function schemaForAction(action: CatAction): z.ZodTypeAny {
   for (const param of action.parameters) {
     const base = zodForParameter(param);
     shape[param.name] =
-      param.default !== undefined
-        ? base.optional().default(param.default as never)
-        : base.optional();
+      param.default !== undefined ? base.optional().default(param.default as never) : base.optional();
   }
   // `.catchall(z.unknown())` is the load-bearing call: it keeps undeclared
   // aliases intact so the handler still sees them. NOT `.passthrough()` —
@@ -208,9 +206,7 @@ export function toolDefinitionForAction(action: CatAction): ActionToolDefinition
  * tool the permission service will refuse teaches the model to propose things
  * that always fail, and spends a confirmation prompt on the user to say no.
  */
-export function actionToolDefinitions(
-  allowedActionIds?: readonly string[]
-): ActionToolDefinition[] {
+export function actionToolDefinitions(allowedActionIds?: readonly string[]): ActionToolDefinition[] {
   const allow = allowedActionIds ? new Set(allowedActionIds) : null;
   return Object.values(CAT_ACTIONS)
     .filter(action => action.enabled && (!allow || allow.has(action.id)))
