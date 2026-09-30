@@ -29,6 +29,7 @@ export default async function AuthPage({
   return (
     <AuthPageClient
       clientName={found?.name ?? null}
+      clientHome={found?.redirect_uris[0] ? new URL(found.redirect_uris[0]).origin : null}
       emailCodeAvailable={isEmailConfigured()}
       passkeysAvailable={await arePasskeysEnabled()}
     />

@@ -9,6 +9,18 @@ reads, and [orangecat.ch/changelog](https://orangecat.ch/changelog) renders
 it from there. One `## YYYY-MM-DD` heading per day; bullets under it travel
 to the map, sub-bullets stay here for the human reader.
 
+## 2026-09-30
+
+### Changed
+
+- **Every FAQ answer has its own link.** Open a question on /faq and share the address: `/faq#is-orangecat-free-to-use` opens straight at that answer. The page no longer needs its scripts to open a question, and search engines now read the questions and answers directly.
+  - The FAQ, the blog and Solon's pages now share one markdown reader (bip-kit 0.5), so a fix to it reaches all of them.
+
+### Fixed
+
+- **Signing in from Solon or Loki looks like it.** The sign-in screen now says "Continue to Solon" beside the form, explains that it is one account with one password, and its back link returns you to the app you came from instead of OrangeCat's home page.
+- **Signing in to Solon and Loki with an email you added later.** If you added or changed your email after creating your account (including an account you started without one), OrangeCat told the other app you had no email, and Solon turned you away. It now sends the email your account has.
+
 ## 2026-09-28
 
 ### Added
