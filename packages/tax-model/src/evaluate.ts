@@ -18,6 +18,8 @@ export interface ComponentResult {
   applies: boolean;
   /** The tariff applied to the base, before multipliers. Null when the tariff is missing. */
   tariffAmount: number | null;
+  /** The divisor the tariff was applied with. Null when the component has none or it is missing. */
+  divisor: number | null;
   /** The sum of the multipliers that count. Null when the component has none. */
   multiplier: number | null;
   /** Null when a required fact is missing. */
@@ -80,12 +82,30 @@ export function evaluate(model: TaxModel, facts: readonly Fact[], input: Evaluat
         key: component.key,
         applies: false,
         tariffAmount: 0,
+        divisor: null,
         multiplier: null,
         amount: 0,
         missing: [],
       };
     }
     const missing: FactRef[] = [];
+    let divisor: number | null = null;
+    if (component.divisor !== undefined) {
+      const value = lookup(component.divisor);
+      if (value === undefined) {
+        if (component.divisor.optional) {
+          divisor = 1;
+        } else {
+          missing.push(ref(component.divisor));
+        }
+      } else if (typeof value !== 'number') {
+        throw new Error(`${describe(component.divisor)} is a tariff where a divisor was expected`);
+      } else if (!(value >= 1) || !Number.isFinite(value)) {
+        throw new Error(`${describe(component.divisor)}: divisor ${value} is below 1`);
+      } else {
+        divisor = value;
+      }
+    }
     const tariff = lookup(component.tariff);
     let tariffAmount: number | null = null;
     if (tariff === undefined) {
@@ -101,7 +121,10 @@ export function evaluate(model: TaxModel, facts: readonly Fact[], input: Evaluat
         throw new Error(`tariffs in ${currency} and ${tariff.currency} cannot be combined`);
       }
       currency = tariff.currency;
-      tariffAmount = applyTariff(base, tariff);
+      tariffAmount =
+        divisor === null
+          ? applyTariff(base, tariff)
+          : divisor * applyTariff(base / divisor, tariff);
     }
 
     let multiplier: number | null = null;
@@ -131,7 +154,15 @@ export function evaluate(model: TaxModel, facts: readonly Fact[], input: Evaluat
         : multiplier === null
           ? tariffAmount
           : tariffAmount * multiplier;
-    return { key: component.key, applies: true, tariffAmount, multiplier, amount, missing };
+    return {
+      key: component.key,
+      applies: true,
+      tariffAmount,
+      divisor,
+      multiplier,
+      amount,
+      missing,
+    };
   });
 
   const total = components.reduce((sum, c) => sum + (c.amount ?? 0), 0);
@@ -150,7 +181,8 @@ export function evaluate(model: TaxModel, facts: readonly Fact[], input: Evaluat
 export function referencedLevels(model: TaxModel): string[] {
   const levels: string[] = [];
   for (const component of model.components) {
-    for (const r of [component.tariff, ...(component.multipliers ?? [])]) {
+    const refs = [component.tariff, ...(component.divisor ? [component.divisor] : [])];
+    for (const r of [...refs, ...(component.multipliers ?? [])]) {
       if (!levels.includes(r.level)) {
         levels.push(r.level);
       }

@@ -13,7 +13,12 @@
  * current for the place and period; the evaluator only combines them.
  */
 
-export const TAX_MODEL_SCHEMA_VERSION = 1;
+/**
+ * 2 adds a component's `divisor`. A model says which version it needs, so an
+ * evaluator that predates a feature refuses the model instead of ignoring it.
+ */
+export const TAX_MODEL_SCHEMA_VERSION = 2;
+const SUPPORTED_SCHEMA_VERSIONS: readonly number[] = [1, 2];
 
 /** Where a component reads a number: the fact a level publishes under a metric key. */
 export interface FactRef {
@@ -28,10 +33,22 @@ export interface MultiplierRef extends FactRef {
   when?: string;
 }
 
+export interface DivisorRef extends FactRef {
+  /** When the fact is missing, divide by 1 instead of making the estimate incomplete. */
+  optional?: boolean;
+}
+
 export interface TaxComponent {
   /** Unique within the model; the result reports each component under it. */
   key: string;
   tariff: FactRef;
+  /**
+   * The tariff is applied to the base divided by this fact, and the tariff
+   * amount multiplied by it again: a couple's income split in two (2), or a
+   * family quotient. Read per variant, so one tariff serves a single person
+   * (1) and a couple. At least 1. Needs `schemaVersion` 2.
+   */
+  divisor?: DivisorRef;
   /**
    * Summed, then applied to the tariff amount. Absent: the tariff amount is
    * the tax.
@@ -42,7 +59,7 @@ export interface TaxComponent {
 }
 
 export interface TaxModel {
-  schemaVersion: typeof TAX_MODEL_SCHEMA_VERSION;
+  schemaVersion: 1 | 2;
   /** The input the tariffs are applied to. Must be listed in `inputs`. */
   base: string;
   /** Every input the model reads: the base amount and any boolean conditions. */
@@ -76,14 +93,17 @@ export interface Fact {
   metric: string;
   /** Absent: the fact applies to every variant. */
   variant?: string;
-  /** A tariff for a component's `tariff`, a fraction (1.19 = 119%) for a multiplier. */
+  /**
+   * A tariff for a component's `tariff`, a fraction (1.19 = 119%) for a
+   * multiplier, a number of at least 1 for a divisor.
+   */
   value: Tariff | number;
 }
 
 /** Why a model cannot be evaluated, one line per problem; empty when it can. */
 export function modelProblems(model: TaxModel): string[] {
   const problems: string[] = [];
-  if (model.schemaVersion !== TAX_MODEL_SCHEMA_VERSION) {
+  if (!SUPPORTED_SCHEMA_VERSIONS.includes(model.schemaVersion)) {
     problems.push(`schemaVersion ${String(model.schemaVersion)} is not supported`);
   }
   if (!model.inputs.includes(model.base)) {
@@ -101,6 +121,9 @@ export function modelProblems(model: TaxModel): string[] {
       problems.push(`component "${component.key}" is declared twice`);
     }
     seen.add(component.key);
+    if (component.divisor !== undefined && model.schemaVersion < 2) {
+      problems.push(`component "${component.key}" has a divisor, which needs schemaVersion 2`);
+    }
     const conditions = [component.when, ...(component.multipliers ?? []).map(m => m.when)];
     for (const condition of conditions) {
       if (condition !== undefined && !model.inputs.includes(condition)) {
