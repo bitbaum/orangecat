@@ -30,6 +30,9 @@ importers:
       '@bitbaum/collective-kinds':
         specifier: workspace:*
         version: link:packages/collective-kinds
+      '@bitbaum/geo-kit':
+        specifier: github:bitbaum/geo-kit#599e5685da512f16b361e6b124129961c6f56d4e
+        version: https://codeload.github.com/bitbaum/geo-kit/tar.gz/599e5685da512f16b361e6b124129961c6f56d4e
       '@bitbaum/mail-kit':
         specifier: ^0.1.1
         version: 0.1.1
@@ -528,6 +531,11 @@ packages:
     peerDependenciesMeta:
       react:
         optional: true
+
+  '@bitbaum/geo-kit@https://codeload.github.com/bitbaum/geo-kit/tar.gz/599e5685da512f16b361e6b124129961c6f56d4e':
+    resolution: {gitHosted: true, tarball: https://codeload.github.com/bitbaum/geo-kit/tar.gz/599e5685da512f16b361e6b124129961c6f56d4e}
+    version: 0.1.0
+    engines: {node: '>=20'}
 
   '@bitbaum/mail-kit@0.1.1':
     resolution: {integrity: sha512-3JfaeuwkI+8TVGeSDrr8/esaWkv2d7UAcNg1Xu5HHu6k3cBzuSaLGhuzHp0KlAJgGa2QEQIqtE7W1+PosKFOjw==}
@@ -6382,6 +6390,8 @@ snapshots:
       ai-forms: 0.1.2(react@19.2.8)
     optionalDependencies:
       react: 19.2.8
+
+  '@bitbaum/geo-kit@https://codeload.github.com/bitbaum/geo-kit/tar.gz/599e5685da512f16b361e6b124129961c6f56d4e': {}
 
   '@bitbaum/mail-kit@0.1.1': {}
 
