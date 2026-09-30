@@ -1,7 +1,6 @@
-import fs from 'fs';
-import path from 'path';
-import matter from 'gray-matter';
-import { normalizeLongformMarkdown, parseLongform } from '@/lib/longform/parse';
+import { normalizeMarkdown } from 'bip-kit';
+import { parseLongform } from '@/lib/longform/parse';
+import { getBlogPost, getBlogPostSlugs } from '@/lib/blog';
 
 /**
  * Captioned figures must survive this repo's own formatter.
@@ -25,23 +24,20 @@ describe('longform figure captions', () => {
 
   it('leaves a caption holding a double quote untouched rather than breaking it', () => {
     const line = `![A](/a.svg 'He said "no"')`;
-    expect(normalizeLongformMarkdown(line)).toBe(line);
+    expect(normalizeMarkdown(line)).toBe(line);
   });
 
   it('does not touch image syntax inside a code fence', () => {
     const md = "```md\n![A](/a.svg 'Caption')\n```";
-    expect(normalizeLongformMarkdown(md)).toBe(md);
+    expect(normalizeMarkdown(md)).toBe(md);
   });
 
   it('renders every image in every committed blog post as an image, never as a link', () => {
-    const dir = path.join(process.cwd(), 'content/blog');
-    for (const file of fs.readdirSync(dir).filter(f => f.endsWith('.md'))) {
-      const { content } = matter(fs.readFileSync(path.join(dir, file), 'utf8'));
-      const { blocks } = parseLongform(content);
-      const strays = blocks.filter(
+    for (const slug of getBlogPostSlugs()) {
+      const strays = getBlogPost(slug)!.blocks.filter(
         b => b.type === 'p' && 'text' in b && typeof b.text === 'string' && /^!\[/.test(b.text)
       );
-      expect(strays, `${file} has an image that renders as text`).toEqual([]);
+      expect(strays, `${slug} has an image that renders as text`).toEqual([]);
     }
   });
 });

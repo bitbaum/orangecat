@@ -10,7 +10,6 @@ import { Toc, ReadingProgress } from 'bip-kit/react';
 import 'bip-kit/styles.css';
 import '@/lib/longform/longform.css';
 import { getBlogPost, getBlogPostSlugs } from '@/lib/blog';
-import { parseLongform } from '@/lib/longform/parse';
 import LongformBody from '@/lib/longform/LongformBody';
 import Button from '@/components/ui/Button';
 import { JsonLdScript } from '@/lib/seo/structured-data';
@@ -79,8 +78,8 @@ export default async function BlogPost({ params }: PageProps) {
   }
 
   // ONE long-form pipeline: bip-kit typed blocks + reference renderer — the
-  // same parse and renderer the community articles surface uses.
-  const { blocks, toc } = parseLongform(post.content);
+  // same normalization, parse and renderer the community articles use.
+  const { blocks, toc } = post;
 
   const articleJsonLd = {
     '@context': 'https://schema.org',
