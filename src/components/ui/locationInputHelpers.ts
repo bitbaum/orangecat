@@ -2,6 +2,7 @@ import { lookupSwissZipCode, isSwissZipCode, SWISS_CANTONS } from '@/lib/swiss-l
 import { lookupZipCode, getCountryName } from '@/lib/global-location';
 import { getNominatimDetails, type LocationSuggestion } from '@/lib/nominatim';
 import { logger } from '@/utils/logger';
+import { isWgs84Position } from '@bitbaum/geo-kit';
 
 export interface LocationData {
   country: string;
@@ -14,6 +15,26 @@ export interface LocationData {
   latitude?: number;
   longitude?: number;
   formattedAddress: string;
+}
+
+/** Return a complete, finite WGS84 coordinate pair, using the fallback only if needed. */
+export function validatedLocationCoordinates(
+  latitude: unknown,
+  longitude: unknown,
+  fallbackLatitude?: unknown,
+  fallbackLongitude?: unknown
+): Pick<LocationData, 'latitude' | 'longitude'> {
+  const position = [longitude, latitude] as const;
+  if (isWgs84Position(position)) {
+    return { latitude: position[1], longitude: position[0] };
+  }
+
+  const fallback = [fallbackLongitude, fallbackLatitude] as const;
+  if (isWgs84Position(fallback)) {
+    return { latitude: fallback[1], longitude: fallback[0] };
+  }
+
+  return {};
 }
 
 export async function lookupZipCodeLocation(
@@ -104,8 +125,12 @@ export async function processLocationSuggestion(
         stateCode: details.stateCode,
         canton,
         cantonCode,
-        latitude: details.latitude || suggestion.lat,
-        longitude: details.longitude || suggestion.lon,
+        ...validatedLocationCoordinates(
+          details.latitude,
+          details.longitude,
+          suggestion.lat,
+          suggestion.lon
+        ),
         formattedAddress: details.formattedAddress,
       });
       setDetectedCountry(details.country);
@@ -115,8 +140,7 @@ export async function processLocationSuggestion(
         city: suggestion.mainText,
         zipCode: '',
         formattedAddress: suggestion.displayName,
-        latitude: suggestion.lat,
-        longitude: suggestion.lon,
+        ...validatedLocationCoordinates(suggestion.lat, suggestion.lon),
       });
     }
   } catch (error) {
