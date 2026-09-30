@@ -16,6 +16,7 @@ model and the facts it is given. Design: Solon
 | `evaluate(model, facts, input)`    | the estimate: per component, total, effective rate, currency, and which facts were missing                                                                                      |
 | `applyTariff(base, tariff)`        | marginal layers or a flat rate, with an optional cap                                                                                                                            |
 | `referencedLevels`, `taxingLevels` | which levels a model reads, and which of them take tax in a set of facts                                                                                                        |
+| `componentRefs`                    | every fact a component reads (tariff, divisor, multipliers), for callers that load or count facts                                                                               |
 | `modelProblems`, `tariffProblem`   | validation for config and importers                                                                                                                                             |
 
 It does no I/O and reads no clock, so it runs in the browser and a person's

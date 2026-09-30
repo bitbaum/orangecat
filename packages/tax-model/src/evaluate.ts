@@ -3,7 +3,14 @@
  * person's inputs to an estimate. No I/O and no clock, so it runs in the
  * browser and the income never leaves the device.
  */
-import { tariffProblem, type Fact, type FactRef, type Tariff, type TaxModel } from './model';
+import {
+  componentRefs,
+  tariffProblem,
+  type Fact,
+  type FactRef,
+  type Tariff,
+  type TaxModel,
+} from './model';
 
 export interface EvaluateInput {
   /** The model's inputs: a number for `base`, booleans for conditions. */
@@ -181,8 +188,7 @@ export function evaluate(model: TaxModel, facts: readonly Fact[], input: Evaluat
 export function referencedLevels(model: TaxModel): string[] {
   const levels: string[] = [];
   for (const component of model.components) {
-    const refs = [component.tariff, ...(component.divisor ? [component.divisor] : [])];
-    for (const r of [...refs, ...(component.multipliers ?? [])]) {
+    for (const r of componentRefs(component)) {
       if (!levels.includes(r.level)) {
         levels.push(r.level);
       }

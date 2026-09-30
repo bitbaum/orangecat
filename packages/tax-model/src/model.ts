@@ -101,6 +101,15 @@ export interface Fact {
 }
 
 /** Why a model cannot be evaluated, one line per problem; empty when it can. */
+/** Every fact a component reads: its tariff, its divisor, then its multipliers. */
+export function componentRefs(component: TaxComponent): FactRef[] {
+  return [
+    component.tariff,
+    ...(component.divisor ? [component.divisor] : []),
+    ...(component.multipliers ?? []),
+  ];
+}
+
 export function modelProblems(model: TaxModel): string[] {
   const problems: string[] = [];
   if (!SUPPORTED_SCHEMA_VERSIONS.includes(model.schemaVersion)) {

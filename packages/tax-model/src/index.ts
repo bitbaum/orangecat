@@ -5,6 +5,7 @@
  */
 export {
   TAX_MODEL_SCHEMA_VERSION,
+  componentRefs,
   modelProblems,
   tariffProblem,
   type Bracket,
