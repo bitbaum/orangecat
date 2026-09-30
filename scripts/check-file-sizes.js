@@ -35,7 +35,6 @@ const EXCEPTIONS = [
   'src/app/(authenticated)/dashboard/bookings/[id]/page.tsx',
   'src/components/ai-chat/ModernChatPanel/components/PrefilledFormCard.tsx',
   'src/app/groups/[slug]/settings/page.tsx',
-  'src/app/(public)/faq/page.tsx',
   'src/components/groups/GroupMembers.tsx',
   'src/components/timeline/TimelineComposer.tsx',
   'src/components/providers/AuthProvider.tsx',
