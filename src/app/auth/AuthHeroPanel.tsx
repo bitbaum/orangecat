@@ -9,11 +9,23 @@
  * the global header on auth routes — without this the user has no
  * non-browser escape from the form.
  *
- * Last updated: 2026-06-03
+ * When another app sent the person (Solon, Loki…), the column speaks for
+ * that trip instead: one account, where the password stays, and the way back
+ * to the app they came from. OrangeCat's pitch would only confuse them.
+ *
+ * Last updated: 2026-09-30
  */
 
 import Link from 'next/link';
-import { ArrowLeft, Globe, Shield, TrendingUp } from 'lucide-react';
+import {
+  ArrowLeft,
+  CornerDownLeft,
+  Globe,
+  KeyRound,
+  Shield,
+  TrendingUp,
+  UserRound,
+} from 'lucide-react';
 import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
 import { APP_NAME, APP_KICKER, APP_TAGLINE } from '@/config/brand';
 import { ROUTES } from '@/config/routes';
@@ -24,15 +36,28 @@ const HIGHLIGHTS = [
   { icon: Shield, label: 'Pseudonymous by default — real identity opt-in, never required' },
 ] as const;
 
-export function AuthHeroPanel() {
+export interface AuthHeroClient {
+  name: string;
+  home: string | null;
+}
+
+const clientHighlights = (name: string) =>
+  [
+    { icon: UserRound, label: `One account for ${name}, ${APP_NAME} and the apps built with it` },
+    { icon: KeyRound, label: `Your password stays here: ${name} never sees it` },
+    { icon: CornerDownLeft, label: `Once you are in, you go straight back to ${name}` },
+  ] as const;
+
+export function AuthHeroPanel({ client = null }: { client?: AuthHeroClient | null }) {
+  const highlights = client ? clientHighlights(client.name) : HIGHLIGHTS;
   return (
     <div className="relative hidden flex-1 flex-col justify-between border-r border-default bg-surface-base p-10 lg:flex lg:p-12">
       <Link
-        href={ROUTES.HOME}
+        href={client?.home ?? ROUTES.HOME}
         className="inline-flex items-center gap-1.5 text-sm text-fg-secondary transition-colors hover:text-fg-primary"
       >
         <ArrowLeft className="h-4 w-4" />
-        Back to home
+        {client?.home ? `Back to ${client.name}` : 'Back to home'}
       </Link>
 
       <div className="max-w-lg">
@@ -41,7 +66,7 @@ export function AuthHeroPanel() {
             <BrandMarkIcon size={24} />
           </div>
           <div>
-            <p className="ui-kicker">{APP_KICKER}</p>
+            <p className="ui-kicker">{client ? 'Your account' : APP_KICKER}</p>
             <span className="block text-lg font-medium tracking-tight text-fg-primary">
               {APP_NAME}
             </span>
@@ -49,16 +74,17 @@ export function AuthHeroPanel() {
         </div>
 
         <h1 className="mb-5 text-4xl font-bold leading-tight tracking-tight text-fg-primary lg:text-5xl">
-          {APP_TAGLINE}
+          {client ? `Continue to ${client.name}` : APP_TAGLINE}
         </h1>
 
         <p className="mb-10 text-lg leading-relaxed text-fg-secondary">
-          Fund, lend, invest, trade, and govern — with any identity, any counterparty, settled in
-          Bitcoin. No gatekeepers.
+          {client
+            ? `${client.name} uses your ${APP_NAME} account, so there is only one account and one password to remember.`
+            : 'Fund, lend, invest, trade, and govern — with any identity, any counterparty, settled in Bitcoin. No gatekeepers.'}
         </p>
 
         <ul className="space-y-3">
-          {HIGHLIGHTS.map(({ icon: Icon, label }) => (
+          {highlights.map(({ icon: Icon, label }) => (
             <li key={label} className="flex items-start gap-3">
               <div className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md border border-subtle bg-surface-raised/40">
                 <Icon className="h-4 w-4 text-fg-primary" />

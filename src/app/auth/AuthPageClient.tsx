@@ -24,10 +24,13 @@ import { APP_NAME } from '@/config/brand';
  */
 export default function AuthPageClient({
   clientName,
+  clientHome = null,
   emailCodeAvailable,
   passkeysAvailable = false,
 }: {
   clientName: string | null;
+  /** Where "Back" leads when another app sent the person: that app, not OrangeCat's home. */
+  clientHome?: string | null;
   emailCodeAvailable: boolean;
   /** Whether the auth server has passkeys switched on; the button is hidden otherwise. */
   passkeysAvailable?: boolean;
@@ -86,18 +89,18 @@ export default function AuthPageClient({
 
   return (
     <div className="min-h-screen bg-surface-raised/40 dark:bg-surface-page flex flex-col lg:flex-row">
-      <AuthHeroPanel />
+      <AuthHeroPanel client={clientName ? { name: clientName, home: clientHome } : null} />
 
       <div className="flex-1 flex flex-col justify-center items-center p-8 max-[359px]:pt-4 lg:p-12 bg-surface-raised/40 dark:bg-surface-page">
         {/* Mobile-only back link — the desktop hero panel hosts the same
             link but is hidden below lg. Without this, mobile users have
             no non-browser escape from the form. */}
         <Link
-          href={ROUTES.HOME}
+          href={clientName && clientHome ? clientHome : ROUTES.HOME}
           className="mb-6 inline-flex items-center gap-1.5 self-start text-sm text-fg-secondary transition-colors hover:text-fg-primary lg:hidden"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to home
+          {clientName && clientHome ? `Back to ${clientName}` : 'Back to home'}
         </Link>
         <div className="w-full max-w-md">
           {/* max-[359px] trims below: on the narrowest phones this form's last
