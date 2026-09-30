@@ -9,6 +9,12 @@ reads, and [orangecat.ch/changelog](https://orangecat.ch/changelog) renders
 it from there. One `## YYYY-MM-DD` heading per day; bullets under it travel
 to the map, sub-bullets stay here for the human reader.
 
+## 2026-09-30
+
+### Fixed
+
+- **Signing in to Solon and Loki with an email you added later.** If you added or changed your email after creating your account (including an account you started without one), OrangeCat told the other app you had no email, and Solon turned you away. It now sends the email your account has.
+
 ## 2026-09-28
 
 ### Added

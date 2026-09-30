@@ -243,7 +243,13 @@ export async function profileClaims(
     claims.picture = profile.avatar_url ?? null;
   }
   if (scopes.includes('email')) {
-    claims.email = profile.email ?? null;
+    // The account holds the email. profiles.email is a copy taken at sign-up
+    // and never follows a later add or change (an anonymous account adding its
+    // email, a changed address), so it is only the fallback.
+    const { data: account } = await adminDb().auth.admin.getUserById(userId);
+    const accountEmail = account?.user?.email || null;
+    claims.email = accountEmail ?? profile.email ?? null;
+    claims.email_verified = accountEmail !== null && Boolean(account?.user?.email_confirmed_at);
   }
   return claims;
 }
