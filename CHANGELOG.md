@@ -13,6 +13,7 @@ to the map, sub-bullets stay here for the human reader.
 
 ### Fixed
 
+- **Signing in from Solon or Loki looks like it.** The sign-in screen now says "Continue to Solon" beside the form, explains that it is one account with one password, and its back link returns you to the app you came from instead of OrangeCat's home page.
 - **Signing in to Solon and Loki with an email you added later.** If you added or changed your email after creating your account (including an account you started without one), OrangeCat told the other app you had no email, and Solon turned you away. It now sends the email your account has.
 
 ## 2026-09-28
