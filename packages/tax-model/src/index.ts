@@ -8,6 +8,7 @@ export {
   modelProblems,
   tariffProblem,
   type Bracket,
+  type DivisorRef,
   type Fact,
   type FactRef,
   type MultiplierRef,

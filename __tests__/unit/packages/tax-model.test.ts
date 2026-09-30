@@ -169,6 +169,88 @@ describe('evaluate', () => {
   });
 });
 
+describe('divisor', () => {
+  /** The local tariff is split for couples: applied to half the income, then doubled. */
+  const SPLIT: TaxModel = {
+    ...MODEL,
+    schemaVersion: 2,
+    components: [
+      MODEL.components[0]!,
+      { ...MODEL.components[1]!, divisor: { level: 'realm', metric: 'divisor' } },
+    ],
+  };
+  const LOCAL_TARIFF: Fact = {
+    level: 'realm',
+    metric: 'tariff.basic',
+    value: progressive([
+      [0, 0],
+      [20_000, 0.1],
+    ]),
+  };
+  const facts = (...divisors: Fact[]) => [
+    ...FACTS.filter(f => f.metric !== 'tariff.basic'),
+    LOCAL_TARIFF,
+    ...divisors,
+  ];
+  const local = (estimate: ReturnType<typeof evaluate>) =>
+    estimate.components.find(c => c.key === 'local')!;
+
+  it('applies the tariff to the divided base and multiplies the amount back', () => {
+    const f = facts(
+      { level: 'realm', metric: 'divisor', variant: 'alone', value: 1 },
+      { level: 'realm', metric: 'divisor', variant: 'together', value: 2 }
+    );
+    const alone = evaluate(SPLIT, f, { values: { income: 60_000 }, variant: 'alone' });
+    const together = evaluate(SPLIT, f, { values: { income: 60_000 }, variant: 'together' });
+    // Alone: 40k over the threshold at 10%. Together: 2 × (10k over it at 10%).
+    expect(local(alone)).toMatchObject({ tariffAmount: 4_000, divisor: 1 });
+    expect(local(together)).toMatchObject({ tariffAmount: 2_000, divisor: 2 });
+    expect(local(together).amount).toBeCloseTo(4_000);
+  });
+
+  it('makes the estimate incomplete when a required divisor is missing, and divides by 1 when optional', () => {
+    const missing = evaluate(SPLIT, facts(), { values: { income: 60_000 }, variant: 'together' });
+    expect(missing.complete).toBe(false);
+    expect(missing.missing).toEqual([{ level: 'realm', metric: 'divisor' }]);
+    expect(local(missing).amount).toBeNull();
+
+    const optional: TaxModel = {
+      ...SPLIT,
+      components: [
+        SPLIT.components[0]!,
+        { ...SPLIT.components[1]!, divisor: { level: 'realm', metric: 'divisor', optional: true } },
+      ],
+    };
+    const estimate = evaluate(optional, facts(), {
+      values: { income: 60_000 },
+      variant: 'together',
+    });
+    expect(local(estimate)).toMatchObject({ tariffAmount: 4_000, divisor: 1 });
+  });
+
+  it('refuses a divisor below 1 or a tariff in its place', () => {
+    const below = facts({ level: 'realm', metric: 'divisor', value: 0.5 });
+    expect(() => evaluate(SPLIT, below, { values: { income: 1 }, variant: 'alone' })).toThrow(
+      /below 1/
+    );
+    const tariff = facts({ level: 'realm', metric: 'divisor', value: progressive([[0, 0.1]]) });
+    expect(() => evaluate(SPLIT, tariff, { values: { income: 1 }, variant: 'alone' })).toThrow(
+      /where a divisor was expected/
+    );
+  });
+
+  it('needs schemaVersion 2, and counts as a level the model reads', () => {
+    expect(modelProblems(SPLIT)).toEqual([]);
+    expect(modelProblems({ ...SPLIT, schemaVersion: 1 })).toEqual([
+      'component "local" has a divisor, which needs schemaVersion 2',
+    ]);
+    expect(modelProblems({ ...SPLIT, schemaVersion: 3 as 2 })).toEqual([
+      'schemaVersion 3 is not supported',
+    ]);
+    expect(referencedLevels(SPLIT)).toEqual(['realm', 'shire', 'guild', 'temple']);
+  });
+});
+
 describe('levels', () => {
   it('names each level the model reads, once', () => {
     expect(referencedLevels(MODEL)).toEqual(['realm', 'shire', 'guild', 'temple']);
