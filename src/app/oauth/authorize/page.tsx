@@ -15,6 +15,7 @@
  */
 import { redirect } from 'next/navigation';
 import { createServerClient } from '@/lib/supabase/server';
+import { DATABASE_TABLES } from '@/config/database-tables';
 import { getOrCreateUserActor } from '@/services/actors/getOrCreateUserActor';
 import {
   OAUTH_CLIENT_ORIGINS,
@@ -102,9 +103,10 @@ export default async function AuthorizePage({
   }
 
   // 3) Require a logged-in OrangeCat user; otherwise log in and come back here.
+  const supabase = await createServerClient();
   const {
     data: { user },
-  } = await (await createServerClient()).auth.getUser();
+  } = await supabase.auth.getUser();
   if (!user) {
     const returnTo = `${OAUTH_PATHS.authorize}?${new URLSearchParams(
       Object.entries({
@@ -154,11 +156,18 @@ export default async function AuthorizePage({
     redirect(appendParams(redirectUri, { code, state }));
   }
 
-  // 5) Show consent.
-  const scopeRows = scopes.map(name => ({
-    name,
-    description: OAUTH_SCOPES.find(s => s.name === name)?.description ?? name,
-  }));
+  // 5) Show consent — as which account, so a person signed in as the wrong
+  // one sees it before allowing, not after.
+  const { data: profile } = await supabase
+    .from(DATABASE_TABLES.PROFILES)
+    .select('username, name')
+    .eq('id', user!.id)
+    .maybeSingle<{ username: string | null; name: string | null }>();
+
+  const scopeRows = scopes.map(name => {
+    const scope = OAUTH_SCOPES.find(s => s.name === name);
+    return { name, description: scope?.description ?? name, sensitive: !!scope?.sensitive };
+  });
 
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-12">
@@ -166,6 +175,13 @@ export default async function AuthorizePage({
         clientName={client.name}
         selfRegistered={client.registered_via === OAUTH_CLIENT_ORIGINS.dcr}
         redirectHost={new URL(redirectUri).host}
+        account={{
+          name: profile?.name ?? null,
+          username: profile?.username ?? null,
+          email: user!.email ?? null,
+        }}
+        policyUri={client.policy_uri ?? null}
+        tosUri={client.tos_uri ?? null}
         resourceName={resource?.name ?? null}
         scopes={scopeRows}
         hidden={{

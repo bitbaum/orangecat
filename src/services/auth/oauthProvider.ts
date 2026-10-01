@@ -46,6 +46,9 @@ export interface OAuthClient {
   disabled_at: string | null;
   /** 'dcr' when the client registered itself via /oauth/register. */
   registered_via: OAuthClientOrigin;
+  /** The app's own privacy policy / terms (RFC 7591), shown on consent. NULL = none. */
+  policy_uri: string | null;
+  tos_uri: string | null;
 }
 
 export async function getClient(clientId: string): Promise<OAuthClient | null> {

@@ -57,6 +57,12 @@ interface ClientSpec {
   scopes: string;
   is_confidential: boolean;
   is_trusted: boolean;
+  /**
+   * The app's own privacy policy / terms, linked from the consent screen.
+   * Only a page that exists — the screen says "none published" otherwise.
+   */
+  policy_uri?: string;
+  tos_uri?: string;
 }
 
 /**
@@ -76,6 +82,8 @@ const CLIENT_SPECS: Record<string, ClientSpec> = {
   loki: {
     name: 'Loki',
     origins: ['https://loki.orangecat.ch'], // production origin (PLATFORM_AND_COLLABORATION.md)
+    policy_uri: 'https://loki.orangecat.ch/privacy',
+    tos_uri: 'https://loki.orangecat.ch/terms',
     scopes: 'openid profile email project.read project.write timeline.write wallet.read',
     is_confidential: true, // has a server (Auth.js v5) — keeps a secret
     is_trusted: true, // first-party — skips the consent screen after first grant
@@ -101,6 +109,7 @@ const CLIENT_SPECS: Record<string, ClientSpec> = {
   heidi: {
     name: 'Heidi',
     origins: ['https://heidi.orangecat.ch'],
+    policy_uri: 'https://heidi.orangecat.ch/privacy', // no terms page yet
     scopes: 'openid profile email',
     is_confidential: true, // has a server (Auth.js v5) — keeps a secret
     is_trusted: true, // first-party — skips the consent screen after first grant
@@ -160,6 +169,8 @@ const CLIENT = {
   allowed_scopes: allowedScopes,
   is_confidential: spec.is_confidential,
   is_trusted: spec.is_trusted,
+  policy_uri: spec.policy_uri ?? null,
+  tos_uri: spec.tos_uri ?? null,
 } as const;
 
 interface ClientRow {
@@ -195,6 +206,8 @@ async function run(): Promise<void> {
     allowed_scopes: CLIENT.allowed_scopes,
     is_confidential: CLIENT.is_confidential,
     is_trusted: CLIENT.is_trusted,
+    policy_uri: CLIENT.policy_uri,
+    tos_uri: CLIENT.tos_uri,
     disabled_at: null, // re-enable if it had been revoked
   };
 

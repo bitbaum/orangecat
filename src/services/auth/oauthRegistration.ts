@@ -27,6 +27,7 @@ export const DCR_LIMITS = {
   maxRedirectUris: 5,
   maxRedirectUriLength: 2000,
   maxClientNameLength: 80,
+  maxDocumentUriLength: 2000,
   defaultClientName: 'Unnamed app',
   clientIdPrefix: 'dcr_',
 } as const;
@@ -38,6 +39,9 @@ const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
 export interface RegistrationMetadata {
   clientName: string;
   redirectUris: string[];
+  /** RFC 7591 policy_uri / tos_uri — linked from the consent screen. */
+  policyUri: string | null;
+  tosUri: string | null;
 }
 
 export type RegistrationValidation =
@@ -83,6 +87,24 @@ function cleanClientName(raw: unknown): string {
     .slice(0, DCR_LIMITS.maxClientNameLength)
     .trim();
   return cleaned || DCR_LIMITS.defaultClientName;
+}
+
+/**
+ * A privacy-policy or terms link the consent screen will render as an <a>:
+ * https only (never javascript:, data:, or plain http), bounded, no userinfo.
+ * Anything else is dropped rather than refused — the app still registers, and
+ * the screen says it published no policy.
+ */
+export function cleanDocumentUri(raw: unknown): string | null {
+  if (typeof raw !== 'string' || raw.length > DCR_LIMITS.maxDocumentUriLength) {
+    return null;
+  }
+  try {
+    const url = new URL(raw);
+    return url.protocol === 'https:' && !url.username && !url.password ? url.toString() : null;
+  } catch {
+    return null;
+  }
 }
 
 function isSubsetOf(value: unknown, allowed: readonly string[]): boolean {
@@ -154,6 +176,8 @@ export function validateRegistration(body: unknown): RegistrationValidation {
     metadata: {
       clientName: cleanClientName(b.client_name),
       redirectUris: Array.from(new Set(uris as string[])),
+      policyUri: cleanDocumentUri(b.policy_uri),
+      tosUri: cleanDocumentUri(b.tos_uri),
     },
   };
 }
@@ -168,6 +192,8 @@ export interface RegistrationResponse {
   response_types: string[];
   token_endpoint_auth_method: 'none';
   scope: string;
+  policy_uri?: string;
+  tos_uri?: string;
 }
 
 /**
@@ -252,6 +278,8 @@ export async function registerClient(
     is_confidential: false,
     is_trusted: false,
     registered_via: OAUTH_CLIENT_ORIGINS.dcr,
+    policy_uri: metadata.policyUri,
+    tos_uri: metadata.tosUri,
   });
   if (error) {
     throw new Error(`Failed to register OAuth client: ${error.message}`);
@@ -266,5 +294,8 @@ export async function registerClient(
     response_types: [...RESPONSE_TYPES],
     token_endpoint_auth_method: 'none',
     scope: SUPPORTED_SCOPE_NAMES.join(' '),
+    // RFC 7591 §3.2.1: echo the metadata as registered (dropped values omitted).
+    ...(metadata.policyUri ? { policy_uri: metadata.policyUri } : {}),
+    ...(metadata.tosUri ? { tos_uri: metadata.tosUri } : {}),
   };
 }

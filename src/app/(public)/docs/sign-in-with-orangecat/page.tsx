@@ -134,6 +134,11 @@ export default function SignInWithOrangeCatPage() {
               names the host it will send the person back to. Your app&apos;s name is trimmed to{' '}
               {DCR_LIMITS.maxClientNameLength} characters; logos and homepage URLs are not shown.
             </li>
+            <li>
+              Send <code>policy_uri</code> and <code>tos_uri</code> (<code>https</code> only) and
+              the consent screen links them; without them it tells the person your app has published
+              neither.
+            </li>
           </ul>
           <p>
             <strong className="text-fg-primary">Verified client.</strong> Once your site is live,{' '}
