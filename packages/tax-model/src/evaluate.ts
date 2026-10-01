@@ -6,6 +6,7 @@
 import {
   componentRefs,
   tariffProblem,
+  tariffSchemaVersion,
   type Fact,
   type FactRef,
   type Tariff,
@@ -52,21 +53,48 @@ export function applyTariff(base: number, tariff: Tariff): number {
   if (!(base > 0)) {
     return 0;
   }
-  let amount = 0;
-  if (tariff.kind === 'flat') {
-    amount = base * tariff.rate;
-  } else {
-    const brackets = tariff.brackets;
-    for (let i = 0; i < brackets.length; i++) {
-      const floor = brackets[i]!.from;
-      if (base <= floor) {
-        break;
-      }
-      const ceiling = i + 1 < brackets.length ? brackets[i + 1]!.from : Infinity;
-      amount += (Math.min(base, ceiling) - floor) * brackets[i]!.rate;
-    }
-  }
+  const amount = uncapped(base, tariff);
   return tariff.cap === undefined ? amount : Math.min(amount, tariff.cap);
+}
+
+function uncapped(base: number, tariff: Tariff): number {
+  switch (tariff.kind) {
+    case 'flat':
+      return base * tariff.rate;
+    case 'progressive': {
+      const brackets = tariff.brackets;
+      let amount = 0;
+      for (let i = 0; i < brackets.length; i++) {
+        const floor = brackets[i]!.from;
+        if (base <= floor) {
+          break;
+        }
+        const ceiling = i + 1 < brackets.length ? brackets[i + 1]!.from : Infinity;
+        amount += (Math.min(base, ceiling) - floor) * brackets[i]!.rate;
+      }
+      return amount;
+    }
+    case 'stepped': {
+      const reached = tariff.steps.filter(s => s.from <= base);
+      const step = reached[reached.length - 1];
+      return step === undefined ? 0 : step.base + (base - step.from) * step.rate;
+    }
+    case 'average': {
+      const points = tariff.points;
+      const next = points.findIndex(p => p.from > base);
+      if (next === 0) {
+        return 0;
+      }
+      if (next === -1) {
+        return base * points[points.length - 1]!.rate;
+      }
+      const a = points[next - 1]!;
+      const b = points[next]!;
+      return base * (a.rate + ((base - a.from) / (b.from - a.from)) * (b.rate - a.rate));
+    }
+    default:
+      throw new Error(`tariff kind "${(tariff as { kind: unknown }).kind}" is not known`);
+  }
 }
 
 export function evaluate(model: TaxModel, facts: readonly Fact[], input: EvaluateInput): Estimate {
@@ -123,6 +151,11 @@ export function evaluate(model: TaxModel, facts: readonly Fact[], input: Evaluat
       const problem = tariffProblem(tariff);
       if (problem !== null) {
         throw new Error(`${describe(component.tariff)}: ${problem}`);
+      }
+      if (tariffSchemaVersion(tariff) > model.schemaVersion) {
+        throw new Error(
+          `${describe(component.tariff)}: a ${tariff.kind} tariff needs schemaVersion ${tariffSchemaVersion(tariff)}`
+        );
       }
       if (currency !== null && tariff.currency !== currency) {
         throw new Error(`tariffs in ${currency} and ${tariff.currency} cannot be combined`);

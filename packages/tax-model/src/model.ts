@@ -14,11 +14,12 @@
  */
 
 /**
- * 2 adds a component's `divisor`. A model says which version it needs, so an
- * evaluator that predates a feature refuses the model instead of ignoring it.
+ * 2 adds a component's `divisor`; 3 adds the `stepped` and `average` tariffs.
+ * A model says which version it needs, so an evaluator that predates a
+ * feature refuses the model instead of ignoring it.
  */
-export const TAX_MODEL_SCHEMA_VERSION = 2;
-const SUPPORTED_SCHEMA_VERSIONS: readonly number[] = [1, 2];
+export const TAX_MODEL_SCHEMA_VERSION = 3;
+const SUPPORTED_SCHEMA_VERSIONS: readonly number[] = [1, 2, 3];
 
 /** Where a component reads a number: the fact a level publishes under a metric key. */
 export interface FactRef {
@@ -59,7 +60,7 @@ export interface TaxComponent {
 }
 
 export interface TaxModel {
-  schemaVersion: 1 | 2;
+  schemaVersion: 1 | 2 | 3;
   /** The input the tariffs are applied to. Must be listed in `inputs`. */
   base: string;
   /** Every input the model reads: the base amount and any boolean conditions. */
@@ -76,6 +77,24 @@ export interface Bracket {
   rate: number;
 }
 
+/** A step of a `stepped` tariff. */
+export interface Step {
+  /** The amount at which this step starts. */
+  from: number;
+  /** The tax at `from`, as the tariff states it. */
+  base: number;
+  /** Marginal rate on the excess over `from`, as a fraction. */
+  rate: number;
+}
+
+/** A point of an `average` tariff. */
+export interface RatePoint {
+  /** The amount at which the average rate is `rate`. */
+  from: number;
+  /** Average rate on the whole amount, as a fraction. */
+  rate: number;
+}
+
 interface TariffBase {
   /** ISO 4217. Every tariff one estimate reads must share it. */
   currency: string;
@@ -83,9 +102,24 @@ interface TariffBase {
   cap?: number;
 }
 
+/**
+ * `progressive`: marginal rates summed bracket by bracket. `flat`: one rate.
+ * `stepped`: the tax a step states at its start plus its rate on the excess;
+ * where the stated amounts and the rates below them disagree, the stated
+ * amounts hold (needs `schemaVersion` 3). `average`: an average rate on the
+ * whole amount, interpolated linearly between points and held beyond the last
+ * (needs `schemaVersion` 3).
+ */
 export type Tariff =
   | (TariffBase & { kind: 'progressive'; brackets: readonly Bracket[] })
-  | (TariffBase & { kind: 'flat'; rate: number });
+  | (TariffBase & { kind: 'flat'; rate: number })
+  | (TariffBase & { kind: 'stepped'; steps: readonly Step[] })
+  | (TariffBase & { kind: 'average'; points: readonly RatePoint[] });
+
+/** The schema version a model needs for its facts to carry this tariff. */
+export function tariffSchemaVersion(tariff: Tariff): number {
+  return tariff.kind === 'stepped' || tariff.kind === 'average' ? 3 : 1;
+}
 
 /** One number for one period. At most one fact per (level, metric, variant). */
 export interface Fact {
@@ -151,22 +185,39 @@ export function tariffProblem(tariff: Tariff): string | null {
   if (tariff.cap !== undefined && !(tariff.cap >= 0)) {
     return 'cap is negative';
   }
-  if (tariff.kind === 'flat') {
-    return isRate(tariff.rate) ? null : `rate ${tariff.rate} is outside [0, 1]`;
-  }
-  if (tariff.brackets.length === 0) {
-    return 'brackets is empty';
-  }
-  for (let i = 0; i < tariff.brackets.length; i++) {
-    const bracket = tariff.brackets[i]!;
-    if (!isRate(bracket.rate)) {
-      return `bracket ${i} rate ${bracket.rate} is outside [0, 1]`;
+  switch (tariff.kind) {
+    case 'flat':
+      return isRate(tariff.rate) ? null : `rate ${tariff.rate} is outside [0, 1]`;
+    case 'progressive':
+      return rowsProblem('bracket', tariff.brackets);
+    case 'stepped': {
+      const negative = tariff.steps.findIndex(step => !(step.base >= 0));
+      return negative >= 0
+        ? `step ${negative} states a negative tax`
+        : rowsProblem('step', tariff.steps);
     }
-    if (!(bracket.from >= 0)) {
-      return `bracket ${i} starts below zero`;
+    case 'average':
+      return rowsProblem('point', tariff.points);
+    default:
+      return `tariff kind "${(tariff as { kind: unknown }).kind}" is not known`;
+  }
+}
+
+/** Rows that each start at `from` with a rate: non-empty, rates in [0, 1], rising from zero. */
+function rowsProblem(name: string, rows: readonly { from: number; rate: number }[]): string | null {
+  if (rows.length === 0) {
+    return `${name}s is empty`;
+  }
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i]!;
+    if (!isRate(row.rate)) {
+      return `${name} ${i} rate ${row.rate} is outside [0, 1]`;
     }
-    if (i > 0 && !(bracket.from > tariff.brackets[i - 1]!.from)) {
-      return `bracket ${i} does not start above bracket ${i - 1}`;
+    if (!(row.from >= 0)) {
+      return `${name} ${i} starts below zero`;
+    }
+    if (i > 0 && !(row.from > rows[i - 1]!.from)) {
+      return `${name} ${i} does not start above ${name} ${i - 1}`;
     }
   }
   return null;

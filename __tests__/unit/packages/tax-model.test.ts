@@ -245,8 +245,8 @@ describe('divisor', () => {
     expect(modelProblems({ ...SPLIT, schemaVersion: 1 })).toEqual([
       'component "local" has a divisor, which needs schemaVersion 2',
     ]);
-    expect(modelProblems({ ...SPLIT, schemaVersion: 3 as 2 })).toEqual([
-      'schemaVersion 3 is not supported',
+    expect(modelProblems({ ...SPLIT, schemaVersion: 4 as 3 })).toEqual([
+      'schemaVersion 4 is not supported',
     ]);
     expect(referencedLevels(SPLIT)).toEqual(['realm', 'shire', 'guild', 'temple']);
   });
@@ -257,6 +257,74 @@ describe('divisor', () => {
       'divisor',
       ...SPLIT.components[1]!.multipliers!.map(m => m.metric),
     ]);
+  });
+});
+
+describe('stepped and average tariffs', () => {
+  /** States 20 at 1,000 where the rate below it would give 1: the stated amount holds. */
+  const STEPPED: Tariff = {
+    kind: 'stepped',
+    currency: 'XTS',
+    steps: [
+      { from: 0, base: 0, rate: 0.001 },
+      { from: 1_000, base: 20, rate: 0.05 },
+      { from: 5_000, base: 220, rate: 0.1 },
+    ],
+  };
+  /** 2% at 10,000 rising to 6% at 30,000, then held. */
+  const AVERAGE: Tariff = {
+    kind: 'average',
+    currency: 'XTS',
+    points: [
+      { from: 10_000, rate: 0.02 },
+      { from: 30_000, rate: 0.06 },
+    ],
+  };
+
+  it('adds the rate on the excess to the tax a step states', () => {
+    expect(applyTariff(500, STEPPED)).toBeCloseTo(0.5);
+    expect(applyTariff(1_000, STEPPED)).toBeCloseTo(20);
+    expect(applyTariff(3_000, STEPPED)).toBeCloseTo(120);
+    expect(applyTariff(10_000, STEPPED)).toBeCloseTo(720);
+  });
+
+  it('applies an interpolated average rate to the whole amount, and holds it beyond the last point', () => {
+    expect(applyTariff(5_000, AVERAGE)).toBe(0);
+    expect(applyTariff(10_000, AVERAGE)).toBeCloseTo(200);
+    expect(applyTariff(20_000, AVERAGE)).toBeCloseTo(800);
+    expect(applyTariff(100_000, AVERAGE)).toBeCloseTo(6_000);
+  });
+
+  it('needs schemaVersion 3, so an older model cannot read one by mistake', () => {
+    const facts = [
+      ...FACTS.filter(f => f.metric !== 'tariff'),
+      { level: 'realm', metric: 'tariff', value: STEPPED },
+    ];
+    expect(() => run(3_000, {}, facts)).toThrow(/a stepped tariff needs schemaVersion 3/);
+    const estimate = evaluate({ ...MODEL, schemaVersion: 3 }, facts, {
+      values: { income: 3_000 },
+      variant: 'alone',
+    });
+    expect(estimate.components[0]!.amount).toBeCloseTo(120);
+  });
+
+  it('rejects a negative stated tax, unsorted steps and an empty table', () => {
+    expect(
+      tariffProblem({ ...STEPPED, steps: [{ from: 0, base: -1, rate: 0.1 }] } as Tariff)
+    ).toMatch(/negative tax/);
+    expect(
+      tariffProblem({
+        ...AVERAGE,
+        points: [
+          { from: 10, rate: 0.1 },
+          { from: 5, rate: 0.2 },
+        ],
+      } as Tariff)
+    ).toMatch(/point 1 does not start above point 0/);
+    expect(tariffProblem({ kind: 'average', currency: 'XTS', points: [] })).toBe('points is empty');
+    expect(tariffProblem({ kind: 'mystery', currency: 'XTS' } as unknown as Tariff)).toMatch(
+      /not known/
+    );
   });
 });
 
