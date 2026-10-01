@@ -11,7 +11,8 @@
 import { redirect } from 'next/navigation';
 import { createServerClient } from '@/lib/supabase/server';
 import { getOrCreateUserActor } from '@/services/actors/getOrCreateUserActor';
-import { findOAuthResource } from '@/lib/oauth/config';
+import { OAUTH_PATHS, findOAuthResource } from '@/lib/oauth/config';
+import { authHandoffUrl } from '@/lib/oauth/handoff';
 import {
   getClient,
   clientAllowsRedirect,
@@ -109,4 +110,41 @@ export async function denyAuthorization(formData: FormData): Promise<void> {
     redirect('/oauth/error?reason=invalid_client_or_redirect');
   }
   redirect(withParams(redirectUri, { error: 'access_denied', state }));
+}
+
+/** The hidden fields that make up an authorize request — see page.tsx. */
+const AUTHORIZE_FIELDS = [
+  'client_id',
+  'redirect_uri',
+  'scope',
+  'state',
+  'code_challenge',
+  'code_challenge_method',
+  'nonce',
+  'resource',
+] as const;
+
+/**
+ * "Not you?" — sign out and sign in again, then land back on this same
+ * consent screen. Nothing is granted or sent to the app; the authorize request
+ * is re-validated in full when it is loaded again.
+ */
+export async function switchAccount(formData: FormData): Promise<void> {
+  const params = new URLSearchParams({ response_type: 'code' });
+  for (const k of AUTHORIZE_FIELDS) {
+    const v = formData.get(k);
+    if (typeof v === 'string' && v) {
+      params.set(k, v);
+    }
+  }
+  const { error } = await (await createServerClient()).auth.signOut();
+  if (error) {
+    logger.error('switchAccount signOut failed', error, 'OAuth');
+  }
+  redirect(
+    authHandoffUrl({
+      returnTo: `${OAUTH_PATHS.authorize}?${params.toString()}`,
+      clientId: params.get('client_id') ?? undefined,
+    })
+  );
 }

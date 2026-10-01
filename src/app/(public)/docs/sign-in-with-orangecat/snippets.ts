@@ -20,6 +20,8 @@ export const registerSnippet = `curl -s ${meta.registration_endpoint} \\
   -d '{
     "client_name": "My app",
     "redirect_uris": ["https://my-app.example/auth/callback/orangecat"],
+    "policy_uri": "https://my-app.example/privacy",
+    "tos_uri": "https://my-app.example/terms",
     "token_endpoint_auth_method": "none"
   }'
 # → { "client_id": "${DCR_LIMITS.clientIdPrefix}…", "redirect_uris": [...], ... }`;

@@ -55,6 +55,12 @@ export interface OAuthScope {
   description: string;
   /** OIDC standard scopes are always offered; capability scopes are opt-in. */
   standard?: boolean;
+  /**
+   * Reads private data or acts in the person's name. The consent screen lists
+   * these first, marked, so "send messages as you" never reads with the same
+   * weight as "sign you in".
+   */
+  sensitive?: boolean;
 }
 
 export const OAUTH_SCOPES: readonly OAuthScope[] = [
@@ -66,19 +72,36 @@ export const OAUTH_SCOPES: readonly OAuthScope[] = [
   },
   { name: 'email', description: 'Read your email address', standard: true },
   { name: 'project.read', description: 'See your projects' },
-  { name: 'project.write', description: 'Create and update projects on your behalf' },
-  { name: 'timeline.write', description: 'Post updates to your wall on your behalf' },
+  {
+    name: 'project.write',
+    sensitive: true,
+    description: 'Create and update projects on your behalf',
+  },
+  {
+    name: 'timeline.write',
+    sensitive: true,
+    description: 'Post updates to your wall on your behalf',
+  },
   { name: 'stakeholders.read', description: 'Read stakeholder relationships on your projects' },
-  { name: 'stakeholders.write', description: 'Add stakeholder relationships on your projects' },
-  { name: 'wallet.read', description: 'See your wallet balances and payment methods' },
-  { name: 'messages.read', description: 'Read your messages' },
-  { name: 'messages.write', description: 'Send messages on your behalf' },
-  { name: 'roles.write', description: 'Post collaborator roles on your projects' },
+  {
+    name: 'stakeholders.write',
+    sensitive: true,
+    description: 'Add stakeholder relationships on your projects',
+  },
+  {
+    name: 'wallet.read',
+    sensitive: true,
+    description: 'See your wallet balances and payment methods',
+  },
+  { name: 'messages.read', sensitive: true, description: 'Read your messages' },
+  { name: 'messages.write', sensitive: true, description: 'Send messages on your behalf' },
+  { name: 'roles.write', sensitive: true, description: 'Post collaborator roles on your projects' },
   // Loki scopes. OrangeCat only MINTS these; Loki's MCP server is the resource
   // that honours them (see OAUTH_RESOURCES.loki below).
   { name: 'loki.chat', description: 'Talk to Loki and see what your fleet is doing' },
   {
     name: 'loki.act',
+    sensitive: true,
     description:
       'Let Loki act for you: dispatch work to your projects, book appointments, and approve or reject queued actions — approving runs the action',
   },

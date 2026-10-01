@@ -116,6 +116,27 @@ describe('validateRegistration', () => {
     expect(named('Bank‮gnp.exe')).toBe('Bank gnp.exe');
     expect(named('x'.repeat(200))).toHaveLength(DCR_LIMITS.maxClientNameLength);
   });
+  it('keeps only https privacy/terms links — they become <a href> on consent', () => {
+    const docs = (policy_uri: unknown, tos_uri?: unknown) => {
+      const r = validateRegistration({ ...good, policy_uri, tos_uri });
+      return r.ok ? [r.metadata.policyUri, r.metadata.tosUri] : null;
+    };
+    expect(docs('https://claude.ai/privacy', 'https://claude.ai/terms')).toEqual([
+      'https://claude.ai/privacy',
+      'https://claude.ai/terms',
+    ]);
+    expect(docs(undefined)).toEqual([null, null]);
+    expect(docs('javascript:alert(1)')).toEqual([null, null]);
+    expect(docs('data:text/html,<script>')).toEqual([null, null]);
+    expect(docs('http://plain.example/privacy')).toEqual([null, null]);
+    expect(docs('https://user:pw@evil.example/')).toEqual([null, null]);
+    expect(docs(`https://a.example/${'x'.repeat(DCR_LIMITS.maxDocumentUriLength)}`)).toEqual([
+      null,
+      null,
+    ]);
+    // A bad link is dropped, never a reason to refuse the registration.
+    expect(validateRegistration({ ...good, policy_uri: 'javascript:x' }).ok).toBe(true);
+  });
 });
 
 describe('POST /oauth/register', () => {
@@ -125,6 +146,8 @@ describe('POST /oauth/register', () => {
       redirect_uris: ['https://claude.ai/api/mcp/auth_callback'],
       token_endpoint_auth_method: 'none',
       logo_uri: 'https://evil.example/looks-like-orangecat.png',
+      policy_uri: 'https://claude.ai/privacy',
+      tos_uri: 'javascript:alert(1)',
     });
     expect(res.status).toBe(201);
     expect(res.headers.get('cache-control')).toBe('no-store');
@@ -139,6 +162,8 @@ describe('POST /oauth/register', () => {
     expect(body.client_id).toMatch(/^dcr_[A-Za-z0-9_-]{20,}$/);
     expect(typeof body.client_id_issued_at).toBe('number');
     expect(body).not.toHaveProperty('client_secret');
+    expect(body.policy_uri).toBe('https://claude.ai/privacy');
+    expect(body).not.toHaveProperty('tos_uri');
 
     const row = insert.mock.calls[0][0];
     expect(row).toMatchObject({
@@ -148,6 +173,8 @@ describe('POST /oauth/register', () => {
       is_confidential: false,
       registered_via: 'dcr',
       allowed_scopes: [...SUPPORTED_SCOPE_NAMES],
+      policy_uri: 'https://claude.ai/privacy',
+      tos_uri: null,
     });
     expect(row).not.toHaveProperty('logo_uri');
   });
