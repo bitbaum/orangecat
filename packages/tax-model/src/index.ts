@@ -15,6 +15,8 @@ export {
   type FactRef,
   type MultiplierRef,
   type RatePoint,
+  type ReductionRef,
+  type Rounding,
   type Step,
   type Tariff,
   type TaxComponent,

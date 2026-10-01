@@ -48,8 +48,30 @@ export interface Estimate {
   missing: readonly FactRef[];
 }
 
-/** The tariff amount for a base: the sum of marginal layers, or a flat rate, then capped. */
+/** The tariff amount for a base, rounded as the tariff says, then capped. */
 export function applyTariff(base: number, tariff: Tariff): number {
+  return amountAt(roundDown(base, tariff.rounding?.base), tariff);
+}
+
+/**
+ * The tariff amount for a base divided by `divisor`, multiplied back. Where
+ * the tariff rounds the divided amount, the rate at the rounded amount applies
+ * to the whole (rounded) base.
+ */
+function dividedAmount(base: number, divisor: number, tariff: Tariff): number {
+  const rounded = roundDown(base, tariff.rounding?.base);
+  const exact = rounded / divisor;
+  const divided = roundDown(exact, tariff.rounding?.divided);
+  if (divided === exact) {
+    return divisor * amountAt(exact, tariff);
+  }
+  return divided > 0 ? (rounded * amountAt(divided, tariff)) / divided : 0;
+}
+
+const roundDown = (amount: number, step: number | undefined): number =>
+  step === undefined ? amount : Math.floor(amount / step) * step;
+
+function amountAt(base: number, tariff: Tariff): number {
   if (!(base > 0)) {
     return 0;
   }
@@ -162,9 +184,7 @@ export function evaluate(model: TaxModel, facts: readonly Fact[], input: Evaluat
       }
       currency = tariff.currency;
       tariffAmount =
-        divisor === null
-          ? applyTariff(base, tariff)
-          : divisor * applyTariff(base / divisor, tariff);
+        divisor === null ? applyTariff(base, tariff) : dividedAmount(base, divisor, tariff);
     }
 
     let multiplier: number | null = null;
@@ -184,7 +204,20 @@ export function evaluate(model: TaxModel, facts: readonly Fact[], input: Evaluat
         if (typeof value !== 'number') {
           throw new Error(`${describe(m)} is a tariff where a multiplier was expected`);
         }
-        multiplier += value;
+        let reduction = 0;
+        if (m.reducedBy !== undefined) {
+          const share = lookup(m.reducedBy);
+          if (share === undefined) {
+            if (!m.reducedBy.optional) {
+              missing.push(ref(m.reducedBy));
+            }
+          } else if (typeof share !== 'number' || !(share >= 0 && share < 1)) {
+            throw new Error(`${describe(m.reducedBy)}: a reduction must be a share in [0, 1)`);
+          } else {
+            reduction = share;
+          }
+        }
+        multiplier += value * (1 - reduction);
       }
     }
 

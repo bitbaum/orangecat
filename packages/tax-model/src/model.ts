@@ -14,12 +14,13 @@
  */
 
 /**
- * 2 adds a component's `divisor`; 3 adds the `stepped` and `average` tariffs.
- * A model says which version it needs, so an evaluator that predates a
- * feature refuses the model instead of ignoring it.
+ * 2 adds a component's `divisor`; 3 adds the `stepped` and `average` tariffs;
+ * 4 adds a tariff's `rounding` and a multiplier's `reducedBy`. A model says
+ * which version it needs, so an evaluator that predates a feature refuses the
+ * model instead of ignoring it.
  */
-export const TAX_MODEL_SCHEMA_VERSION = 3;
-const SUPPORTED_SCHEMA_VERSIONS: readonly number[] = [1, 2, 3];
+export const TAX_MODEL_SCHEMA_VERSION = 4;
+const SUPPORTED_SCHEMA_VERSIONS: readonly number[] = [1, 2, 3, 4];
 
 /** Where a component reads a number: the fact a level publishes under a metric key. */
 export interface FactRef {
@@ -32,10 +33,22 @@ export interface MultiplierRef extends FactRef {
   optional?: boolean;
   /** A boolean input that must be true for this multiplier to count. */
   when?: string;
+  /**
+   * A share by which the tariff amount is reduced before this multiplier
+   * applies, and only for it (0.05: the multiplier applies to 95% of it): a
+   * canton that cuts its own share of a basic tax its communes also levy.
+   * In [0, 1). Optional: missing, nothing is reduced. Needs `schemaVersion` 4.
+   */
+  reducedBy?: ReductionRef;
 }
 
 export interface DivisorRef extends FactRef {
   /** When the fact is missing, divide by 1 instead of making the estimate incomplete. */
+  optional?: boolean;
+}
+
+export interface ReductionRef extends FactRef {
+  /** When the fact is missing, reduce nothing instead of making the estimate incomplete. */
   optional?: boolean;
 }
 
@@ -60,7 +73,7 @@ export interface TaxComponent {
 }
 
 export interface TaxModel {
-  schemaVersion: 1 | 2 | 3;
+  schemaVersion: 1 | 2 | 3 | 4;
   /** The input the tariffs are applied to. Must be listed in `inputs`. */
   base: string;
   /** Every input the model reads: the base amount and any boolean conditions. */
@@ -95,11 +108,23 @@ export interface RatePoint {
   rate: number;
 }
 
+/**
+ * How a tariff rounds what it reads, each amount down to a multiple of its
+ * step. `base`: the amount taxed. `divided`: where a component divides the
+ * base, the divided amount, whose rate then applies to the whole (rounded)
+ * base. Needs `schemaVersion` 4.
+ */
+export interface Rounding {
+  base: number;
+  divided?: number;
+}
+
 interface TariffBase {
   /** ISO 4217. Every tariff one estimate reads must share it. */
   currency: string;
   /** Upper bound on the tariff amount, in `currency`. */
   cap?: number;
+  rounding?: Rounding;
 }
 
 /**
@@ -118,6 +143,9 @@ export type Tariff =
 
 /** The schema version a model needs for its facts to carry this tariff. */
 export function tariffSchemaVersion(tariff: Tariff): number {
+  if (tariff.rounding !== undefined) {
+    return 4;
+  }
   return tariff.kind === 'stepped' || tariff.kind === 'average' ? 3 : 1;
 }
 
@@ -135,12 +163,12 @@ export interface Fact {
 }
 
 /** Why a model cannot be evaluated, one line per problem; empty when it can. */
-/** Every fact a component reads: its tariff, its divisor, then its multipliers. */
+/** Every fact a component reads: its tariff, its divisor, then its multipliers and their reductions. */
 export function componentRefs(component: TaxComponent): FactRef[] {
   return [
     component.tariff,
     ...(component.divisor ? [component.divisor] : []),
-    ...(component.multipliers ?? []),
+    ...(component.multipliers ?? []).flatMap(m => (m.reducedBy ? [m, m.reducedBy] : [m])),
   ];
 }
 
@@ -167,6 +195,11 @@ export function modelProblems(model: TaxModel): string[] {
     if (component.divisor !== undefined && model.schemaVersion < 2) {
       problems.push(`component "${component.key}" has a divisor, which needs schemaVersion 2`);
     }
+    if (component.multipliers?.some(m => m.reducedBy !== undefined) && model.schemaVersion < 4) {
+      problems.push(
+        `component "${component.key}" has a reduced multiplier, which needs schemaVersion 4`
+      );
+    }
     const conditions = [component.when, ...(component.multipliers ?? []).map(m => m.when)];
     for (const condition of conditions) {
       if (condition !== undefined && !model.inputs.includes(condition)) {
@@ -184,6 +217,12 @@ export function tariffProblem(tariff: Tariff): string | null {
   }
   if (tariff.cap !== undefined && !(tariff.cap >= 0)) {
     return 'cap is negative';
+  }
+  if (tariff.rounding !== undefined) {
+    const { base, divided } = tariff.rounding;
+    if (!(base > 0) || (divided !== undefined && !(divided > 0))) {
+      return 'a rounding step is not positive';
+    }
   }
   switch (tariff.kind) {
     case 'flat':

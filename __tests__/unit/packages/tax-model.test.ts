@@ -245,8 +245,8 @@ describe('divisor', () => {
     expect(modelProblems({ ...SPLIT, schemaVersion: 1 })).toEqual([
       'component "local" has a divisor, which needs schemaVersion 2',
     ]);
-    expect(modelProblems({ ...SPLIT, schemaVersion: 4 as 3 })).toEqual([
-      'schemaVersion 4 is not supported',
+    expect(modelProblems({ ...SPLIT, schemaVersion: 5 as 4 })).toEqual([
+      'schemaVersion 5 is not supported',
     ]);
     expect(referencedLevels(SPLIT)).toEqual(['realm', 'shire', 'guild', 'temple']);
   });
@@ -325,6 +325,96 @@ describe('stepped and average tariffs', () => {
     expect(tariffProblem({ kind: 'mystery', currency: 'XTS' } as unknown as Tariff)).toMatch(
       /not known/
     );
+  });
+});
+
+describe('rounding and reductions', () => {
+  /** 10% from 0, rounding the base down to 100. */
+  const ROUNDED: Tariff = { ...progressive([[0, 0.1]]), rounding: { base: 100 } };
+  /** 0 up to 10,000, then 10%: the divided amount decides the rate. */
+  const SPLIT_TARIFF: Tariff = {
+    ...progressive([
+      [0, 0],
+      [10_000, 0.1],
+    ]),
+    rounding: { base: 100, divided: 100 },
+  };
+  const V4: TaxModel = {
+    ...MODEL,
+    schemaVersion: 4,
+    components: [
+      MODEL.components[0]!,
+      {
+        ...MODEL.components[1]!,
+        divisor: { level: 'realm', metric: 'divisor', optional: true },
+        multipliers: [
+          {
+            level: 'realm',
+            metric: 'multiplier',
+            reducedBy: { level: 'realm', metric: 'reduction', optional: true },
+          },
+          { level: 'shire', metric: 'multiplier' },
+        ],
+      },
+    ],
+  };
+  const local = (estimate: ReturnType<typeof evaluate>) =>
+    estimate.components.find(c => c.key === 'local')!;
+
+  it('rounds the base down before the tariff applies', () => {
+    expect(applyTariff(1_299, ROUNDED)).toBeCloseTo(120);
+  });
+
+  it('applies the rate at the rounded divided amount to the whole rounded base', () => {
+    const facts: Fact[] = [
+      ...FACTS.filter(f => f.metric !== 'tariff.basic'),
+      { level: 'realm', metric: 'tariff.basic', value: SPLIT_TARIFF },
+      { level: 'realm', metric: 'divisor', variant: 'together', value: 1.8 },
+    ];
+    // 37,777 → 37,700; ÷ 1.8 = 20,944.4 → 20,900, where the average rate is
+    // 1,090 / 20,900; applied to 37,700.
+    const together = evaluate(V4, facts, { values: { income: 37_777 }, variant: 'together' });
+    expect(local(together).tariffAmount).toBeCloseTo((37_700 * 1_090) / 20_900);
+    // Without a divided step, the divided amount is not rounded.
+    const unrounded = facts.map(f =>
+      f.metric === 'tariff.basic'
+        ? { ...f, value: { ...SPLIT_TARIFF, rounding: { base: 100 } } }
+        : f
+    );
+    const plain = evaluate(V4, unrounded, { values: { income: 37_777 }, variant: 'together' });
+    expect(local(plain).tariffAmount).toBeCloseTo(1.8 * (37_700 / 1.8 - 10_000) * 0.1);
+  });
+
+  it('reduces only the multiplier it is attached to, and nothing when the share is missing', () => {
+    const reduced = [...FACTS, { level: 'realm', metric: 'reduction', value: 0.05 }];
+    const estimate = evaluate(V4, reduced, { values: { income: 10_000 }, variant: 'alone' });
+    expect(local(estimate).multiplier).toBeCloseTo(0.8 * 0.95 + 1.2);
+    const none = evaluate(V4, FACTS, { values: { income: 10_000 }, variant: 'alone' });
+    expect(local(none).multiplier).toBeCloseTo(2);
+    const wrong = [...FACTS, { level: 'realm', metric: 'reduction', value: 1 }];
+    expect(() => evaluate(V4, wrong, { values: { income: 1 }, variant: 'alone' })).toThrow(
+      /share in \[0, 1\)/
+    );
+  });
+
+  it('needs schemaVersion 4, and counts the reduction among the facts a component reads', () => {
+    expect(modelProblems(V4)).toEqual([]);
+    expect(modelProblems({ ...V4, schemaVersion: 3 })).toEqual([
+      'component "local" has a reduced multiplier, which needs schemaVersion 4',
+    ]);
+    const rounded = [
+      ...FACTS.filter(f => f.metric !== 'tariff'),
+      { level: 'realm', metric: 'tariff', value: ROUNDED },
+    ];
+    expect(() => run(1_000, {}, rounded)).toThrow(/needs schemaVersion 4/);
+    expect(componentRefs(V4.components[1]!).map(r => r.metric)).toEqual([
+      'tariff.basic',
+      'divisor',
+      'multiplier',
+      'reduction',
+      'multiplier',
+    ]);
+    expect(tariffProblem({ ...ROUNDED, rounding: { base: 0 } })).toMatch(/not positive/);
   });
 });
 
