@@ -1,6 +1,6 @@
 # @bitbaum/tax-model
 
-_Created 2026-09-29. Last modified 2026-10-01: 0.2.0, schema version 2: a
+_Created 2026-09-29. Last modified 2026-10-01: 0.4.0, schema version 3: `stepped` tariffs (the tax each step states, plus its rate on the excess) and `average` tariffs (an interpolated average rate on the whole amount). Earlier the same day: 0.3.0, `componentRefs`; 0.2.0, schema version 2: a
 component's `divisor` applies the tariff to a divided base (a couple's income
 split in two, a family quotient). Earlier, 2026-09-29: first version (P0 of
 Solon's Places design)._
@@ -14,7 +14,7 @@ model and the facts it is given. Design: Solon
 | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `TaxModel`, `Fact`, `Tariff`       | the shapes: components reading a tariff from one level, times the sum of multipliers from others; a `divisor` applies the tariff to base ÷ d and multiplies it back (splitting) |
 | `evaluate(model, facts, input)`    | the estimate: per component, total, effective rate, currency, and which facts were missing                                                                                      |
-| `applyTariff(base, tariff)`        | marginal layers or a flat rate, with an optional cap                                                                                                                            |
+| `applyTariff(base, tariff)`        | marginal layers, a flat rate, stated steps or an interpolated average rate, with an optional cap                                                                                |
 | `referencedLevels`, `taxingLevels` | which levels a model reads, and which of them take tax in a set of facts                                                                                                        |
 | `componentRefs`                    | every fact a component reads (tariff, divisor, multipliers), for callers that load or count facts                                                                               |
 | `modelProblems`, `tariffProblem`   | validation for config and importers                                                                                                                                             |

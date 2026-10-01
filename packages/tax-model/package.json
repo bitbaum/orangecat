@@ -1,6 +1,6 @@
 {
   "name": "@bitbaum/tax-model",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "A tax formula as data, and the pure evaluator that turns it into an estimate. Knows no country.",
   "license": "MIT",
   "repository": {
