@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   applyTariff,
+  componentRefs,
   evaluate,
   modelProblems,
   referencedLevels,
@@ -248,6 +249,14 @@ describe('divisor', () => {
       'schemaVersion 3 is not supported',
     ]);
     expect(referencedLevels(SPLIT)).toEqual(['realm', 'shire', 'guild', 'temple']);
+  });
+
+  it('is among the facts a component reads, between its tariff and its multipliers', () => {
+    expect(componentRefs(SPLIT.components[1]!).map(r => r.metric)).toEqual([
+      'tariff.basic',
+      'divisor',
+      ...SPLIT.components[1]!.multipliers!.map(m => m.metric),
+    ]);
   });
 });
 
