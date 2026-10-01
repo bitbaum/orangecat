@@ -16,12 +16,13 @@
 /**
  * 2 adds a component's `divisor`; 3 adds the `stepped` and `average` tariffs;
  * 4 adds a tariff's `rounding` and a multiplier's `reducedBy`; 5 adds the
- * `logarithmic` tariff and a tariff's `minimum`. A model says
+ * `logarithmic` tariff and a tariff's `minimum`; 6 adds the model's `limits`.
+ * A model says
  * which version it needs, so an evaluator that predates a feature refuses the
  * model instead of ignoring it.
  */
-export const TAX_MODEL_SCHEMA_VERSION = 5;
-const SUPPORTED_SCHEMA_VERSIONS: readonly number[] = [1, 2, 3, 4, 5];
+export const TAX_MODEL_SCHEMA_VERSION = 6;
+const SUPPORTED_SCHEMA_VERSIONS: readonly number[] = [1, 2, 3, 4, 5, 6];
 
 /** Where a component reads a number: the fact a level publishes under a metric key. */
 export interface FactRef {
@@ -53,6 +54,21 @@ export interface ReductionRef extends FactRef {
   optional?: boolean;
 }
 
+export interface LimitRef extends FactRef {
+  /** When the fact is missing, limit nothing instead of making the estimate incomplete. */
+  optional?: boolean;
+}
+
+/**
+ * The listed components together may not exceed a share of the base (a
+ * fact, in (0, 1]); above it, each is reduced in proportion to its amount.
+ * Needs `schemaVersion` 6.
+ */
+export interface ShareLimit {
+  components: readonly string[];
+  share: LimitRef;
+}
+
 export interface TaxComponent {
   /** Unique within the model; the result reports each component under it. */
   key: string;
@@ -74,7 +90,7 @@ export interface TaxComponent {
 }
 
 export interface TaxModel {
-  schemaVersion: 1 | 2 | 3 | 4 | 5;
+  schemaVersion: 1 | 2 | 3 | 4 | 5 | 6;
   /** The input the tariffs are applied to. Must be listed in `inputs`. */
   base: string;
   /** Every input the model reads: the base amount and any boolean conditions. */
@@ -82,6 +98,7 @@ export interface TaxModel {
   /** Which tariff variant applies (for example by household). At least one. */
   variants: readonly string[];
   components: readonly TaxComponent[];
+  limits?: readonly ShareLimit[];
 }
 
 export interface Bracket {
@@ -193,6 +210,14 @@ export function componentRefs(component: TaxComponent): FactRef[] {
   ];
 }
 
+/** Every fact a model reads: each component's, then each limit's share. */
+export function modelRefs(model: TaxModel): FactRef[] {
+  return [
+    ...model.components.flatMap(componentRefs),
+    ...(model.limits ?? []).map(limit => limit.share),
+  ];
+}
+
 /** Why a model cannot be evaluated, one line per problem; empty when it can. */
 export function modelProblems(model: TaxModel): string[] {
   const problems: string[] = [];
@@ -226,6 +251,19 @@ export function modelProblems(model: TaxModel): string[] {
     for (const condition of conditions) {
       if (condition !== undefined && !model.inputs.includes(condition)) {
         problems.push(`component "${component.key}" reads undeclared input "${condition}"`);
+      }
+    }
+  }
+  if (model.limits !== undefined && model.schemaVersion < 6) {
+    problems.push('limits need schemaVersion 6');
+  }
+  for (const limit of model.limits ?? []) {
+    if (limit.components.length === 0) {
+      problems.push(`the limit on ${limit.share.metric} names no component`);
+    }
+    for (const key of limit.components) {
+      if (!seen.has(key)) {
+        problems.push(`the limit on ${limit.share.metric} names unknown component "${key}"`);
       }
     }
   }

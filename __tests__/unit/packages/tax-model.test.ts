@@ -4,6 +4,7 @@ import {
   componentRefs,
   evaluate,
   modelProblems,
+  modelRefs,
   referencedLevels,
   tariffProblem,
   tariffSchemaVersion,
@@ -246,8 +247,8 @@ describe('divisor', () => {
     expect(modelProblems({ ...SPLIT, schemaVersion: 1 })).toEqual([
       'component "local" has a divisor, which needs schemaVersion 2',
     ]);
-    expect(modelProblems({ ...SPLIT, schemaVersion: 6 as 5 })).toEqual([
-      'schemaVersion 6 is not supported',
+    expect(modelProblems({ ...SPLIT, schemaVersion: 7 as 6 })).toEqual([
+      'schemaVersion 7 is not supported',
     ]);
     expect(referencedLevels(SPLIT)).toEqual(['realm', 'shire', 'guild', 'temple']);
   });
@@ -326,6 +327,58 @@ describe('stepped and average tariffs', () => {
     expect(tariffProblem({ kind: 'mystery', currency: 'XTS' } as unknown as Tariff)).toMatch(
       /not known/
     );
+  });
+});
+
+describe('limits on a share of the base', () => {
+  const LIMITED: TaxModel = {
+    ...MODEL,
+    schemaVersion: 6,
+    limits: [{ components: ['realm', 'local'], share: { level: 'realm', metric: 'limit' } }],
+  };
+  const at = (income: number, facts: Fact[], model = LIMITED) =>
+    evaluate(model, facts, { values: { income }, variant: 'alone' });
+  const amounts = (estimate: ReturnType<typeof evaluate>) => estimate.components.map(c => c.amount);
+
+  it('reduces the limited components in proportion, to the share of the base', () => {
+    // 14,000 and 10,000 at 100,000: 24 % of the base, limited to 12 %.
+    const limited = at(100_000, [...FACTS, { level: 'realm', metric: 'limit', value: 0.12 }]);
+    expect(amounts(limited)).toEqual([7_000, 5_000]);
+    expect(limited.total).toBeCloseTo(12_000);
+    // Under the limit, nothing changes.
+    const under = at(100_000, [...FACTS, { level: 'realm', metric: 'limit', value: 0.3 }]);
+    expect(amounts(under)).toEqual([14_000, 10_000]);
+  });
+
+  it('limits nothing where an optional share is missing, and is incomplete where a required one is', () => {
+    const optional: TaxModel = {
+      ...LIMITED,
+      limits: [
+        { components: ['local'], share: { level: 'realm', metric: 'limit', optional: true } },
+      ],
+    };
+    expect(amounts(at(100_000, FACTS, optional))).toEqual([14_000, 10_000]);
+    const required = at(100_000, FACTS);
+    expect(required.complete).toBe(false);
+    expect(required.missing).toEqual([{ level: 'realm', metric: 'limit' }]);
+    expect(() => at(1, [...FACTS, { level: 'realm', metric: 'limit', value: 0 }])).toThrow(
+      /share in \(0, 1\]/
+    );
+  });
+
+  it('needs schemaVersion 6 and known components, and counts the share among the facts read', () => {
+    expect(modelProblems(LIMITED)).toEqual([]);
+    expect(
+      modelProblems({
+        ...LIMITED,
+        schemaVersion: 5,
+        limits: [{ components: ['nowhere'], share: { level: 'realm', metric: 'limit' } }],
+      })
+    ).toEqual([
+      'limits need schemaVersion 6',
+      'the limit on limit names unknown component "nowhere"',
+    ]);
+    expect(modelRefs(LIMITED).at(-1)).toEqual({ level: 'realm', metric: 'limit' });
   });
 });
 
