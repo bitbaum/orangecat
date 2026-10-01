@@ -1,6 +1,6 @@
 # @bitbaum/tax-model
 
-_Created 2026-09-29. Last modified 2026-10-01: 0.4.0, schema version 3: `stepped` tariffs (the tax each step states, plus its rate on the excess) and `average` tariffs (an interpolated average rate on the whole amount). Earlier the same day: 0.3.0, `componentRefs`; 0.2.0, schema version 2: a
+_Created 2026-09-29. Last modified 2026-10-01: 0.5.0, schema version 4: a tariff's `rounding` (the base, and the divided base whose rate then applies to the whole) and a multiplier's `reducedBy` (a share cut from the tariff amount for that multiplier only). Earlier the same day: 0.4.0, schema version 3: `stepped` tariffs (the tax each step states, plus its rate on the excess) and `average` tariffs (an interpolated average rate on the whole amount). Earlier the same day: 0.3.0, `componentRefs`; 0.2.0, schema version 2: a
 component's `divisor` applies the tariff to a divided base (a couple's income
 split in two, a family quotient). Earlier, 2026-09-29: first version (P0 of
 Solon's Places design)._
