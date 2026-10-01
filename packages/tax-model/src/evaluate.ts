@@ -4,7 +4,7 @@
  * browser and the income never leaves the device.
  */
 import {
-  componentRefs,
+  modelRefs,
   tariffProblem,
   tariffSchemaVersion,
   type Fact,
@@ -30,7 +30,7 @@ export interface ComponentResult {
   divisor: number | null;
   /** The sum of the multipliers that count. Null when the component has none. */
   multiplier: number | null;
-  /** Null when a required fact is missing. */
+  /** Null when a required fact is missing. Reduced in proportion where a model limit applies. */
   amount: number | null;
   missing: readonly FactRef[];
 }
@@ -248,8 +248,30 @@ export function evaluate(model: TaxModel, facts: readonly Fact[], input: Evaluat
     };
   });
 
+  const limitsMissing: FactRef[] = [];
+  for (const limit of model.limits ?? []) {
+    const share = lookup(limit.share);
+    if (share === undefined) {
+      if (!limit.share.optional) {
+        limitsMissing.push(ref(limit.share));
+      }
+      continue;
+    }
+    if (typeof share !== 'number' || !(share > 0 && share <= 1)) {
+      throw new Error(`${describe(limit.share)}: a limit must be a share in (0, 1]`);
+    }
+    const limited = components.filter(c => limit.components.includes(c.key) && c.amount !== null);
+    const sum = limited.reduce((s, c) => s + c.amount!, 0);
+    const ceiling = share * base;
+    if (sum > ceiling) {
+      for (const c of limited) {
+        c.amount = (c.amount! * ceiling) / sum;
+      }
+    }
+  }
+
   const total = components.reduce((sum, c) => sum + (c.amount ?? 0), 0);
-  const missing = components.flatMap(c => c.missing);
+  const missing = [...components.flatMap(c => c.missing), ...limitsMissing];
   return {
     components,
     total,
@@ -263,11 +285,9 @@ export function evaluate(model: TaxModel, facts: readonly Fact[], input: Evaluat
 /** The distinct levels a model reads from, in the order it names them. */
 export function referencedLevels(model: TaxModel): string[] {
   const levels: string[] = [];
-  for (const component of model.components) {
-    for (const r of componentRefs(component)) {
-      if (!levels.includes(r.level)) {
-        levels.push(r.level);
-      }
+  for (const r of modelRefs(model)) {
+    if (!levels.includes(r.level)) {
+      levels.push(r.level);
     }
   }
   return levels;
