@@ -117,6 +117,18 @@ const CLIENT_SPECS: Record<string, ClientSpec> = {
     is_confidential: true, // has a server (Auth.js v5) — keeps a secret
     is_trusted: true, // first-party — skips the consent screen after first grant
   },
+  // Substrata (research on physical chokepoints) needs IDENTITY and nothing
+  // else: the signed `sub` keys a reader's desk settings and marks. It was
+  // registered by hand before this entry existed, so a re-run would have had
+  // nothing to refresh. Two origins: it moves to substrata.ch and the
+  // orangecat.ch address keeps working, so sign-in must be accepted on both.
+  substrata: {
+    name: 'Substrata',
+    origins: ['https://substrata.ch', 'https://substrata.orangecat.ch'],
+    scopes: 'openid profile email',
+    is_confidential: true, // has a server (Auth.js v5) — keeps a secret
+    is_trusted: true, // first-party — skips the consent screen after first grant
+  },
 };
 
 const spec = CLIENT_SPECS[clientId];
