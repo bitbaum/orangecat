@@ -15,12 +15,13 @@
 
 /**
  * 2 adds a component's `divisor`; 3 adds the `stepped` and `average` tariffs;
- * 4 adds a tariff's `rounding` and a multiplier's `reducedBy`. A model says
+ * 4 adds a tariff's `rounding` and a multiplier's `reducedBy`; 5 adds the
+ * `logarithmic` tariff and a tariff's `minimum`. A model says
  * which version it needs, so an evaluator that predates a feature refuses the
  * model instead of ignoring it.
  */
-export const TAX_MODEL_SCHEMA_VERSION = 4;
-const SUPPORTED_SCHEMA_VERSIONS: readonly number[] = [1, 2, 3, 4];
+export const TAX_MODEL_SCHEMA_VERSION = 5;
+const SUPPORTED_SCHEMA_VERSIONS: readonly number[] = [1, 2, 3, 4, 5];
 
 /** Where a component reads a number: the fact a level publishes under a metric key. */
 export interface FactRef {
@@ -73,7 +74,7 @@ export interface TaxComponent {
 }
 
 export interface TaxModel {
-  schemaVersion: 1 | 2 | 3 | 4;
+  schemaVersion: 1 | 2 | 3 | 4 | 5;
   /** The input the tariffs are applied to. Must be listed in `inputs`. */
   base: string;
   /** Every input the model reads: the base amount and any boolean conditions. */
@@ -109,6 +110,17 @@ export interface RatePoint {
 }
 
 /**
+ * A piece of a `logarithmic` tariff: from `from` on, the amount at x is
+ * constant + linear·x + xLnX·x·ln(x).
+ */
+export interface Piece {
+  from: number;
+  constant: number;
+  linear: number;
+  xLnX: number;
+}
+
+/**
  * How a tariff rounds what it reads, each amount down to a multiple of its
  * step. `base`: the amount taxed. `divided`: where a component divides the
  * base, the divided amount, whose rate then applies to the whole (rounded)
@@ -125,6 +137,11 @@ interface TariffBase {
   /** Upper bound on the tariff amount, in `currency`. */
   cap?: number;
   rounding?: Rounding;
+  /**
+   * A tariff amount below this is not levied (0), after any divisor is
+   * multiplied back. Needs `schemaVersion` 5.
+   */
+  minimum?: number;
 }
 
 /**
@@ -133,16 +150,21 @@ interface TariffBase {
  * where the stated amounts and the rates below them disagree, the stated
  * amounts hold (needs `schemaVersion` 3). `average`: an average rate on the
  * whole amount, interpolated linearly between points and held beyond the last
- * (needs `schemaVersion` 3).
+ * (needs `schemaVersion` 3). `logarithmic`: the formula of the last piece
+ * begun, 0 before the first (needs `schemaVersion` 5).
  */
 export type Tariff =
   | (TariffBase & { kind: 'progressive'; brackets: readonly Bracket[] })
   | (TariffBase & { kind: 'flat'; rate: number })
   | (TariffBase & { kind: 'stepped'; steps: readonly Step[] })
-  | (TariffBase & { kind: 'average'; points: readonly RatePoint[] });
+  | (TariffBase & { kind: 'average'; points: readonly RatePoint[] })
+  | (TariffBase & { kind: 'logarithmic'; pieces: readonly Piece[] });
 
 /** The schema version a model needs for its facts to carry this tariff. */
 export function tariffSchemaVersion(tariff: Tariff): number {
+  if (tariff.kind === 'logarithmic' || tariff.minimum !== undefined) {
+    return 5;
+  }
   if (tariff.rounding !== undefined) {
     return 4;
   }
@@ -162,7 +184,6 @@ export interface Fact {
   value: Tariff | number;
 }
 
-/** Why a model cannot be evaluated, one line per problem; empty when it can. */
 /** Every fact a component reads: its tariff, its divisor, then its multipliers and their reductions. */
 export function componentRefs(component: TaxComponent): FactRef[] {
   return [
@@ -172,6 +193,7 @@ export function componentRefs(component: TaxComponent): FactRef[] {
   ];
 }
 
+/** Why a model cannot be evaluated, one line per problem; empty when it can. */
 export function modelProblems(model: TaxModel): string[] {
   const problems: string[] = [];
   if (!SUPPORTED_SCHEMA_VERSIONS.includes(model.schemaVersion)) {
@@ -218,6 +240,9 @@ export function tariffProblem(tariff: Tariff): string | null {
   if (tariff.cap !== undefined && !(tariff.cap >= 0)) {
     return 'cap is negative';
   }
+  if (tariff.minimum !== undefined && !(tariff.minimum >= 0)) {
+    return 'minimum is negative';
+  }
   if (tariff.rounding !== undefined) {
     const { base, divided } = tariff.rounding;
     if (!(base > 0) || (divided !== undefined && !(divided > 0))) {
@@ -237,6 +262,8 @@ export function tariffProblem(tariff: Tariff): string | null {
     }
     case 'average':
       return rowsProblem('point', tariff.points);
+    case 'logarithmic':
+      return piecesProblem(tariff.pieces);
     default:
       return `tariff kind "${(tariff as { kind: unknown }).kind}" is not known`;
   }
@@ -257,6 +284,26 @@ function rowsProblem(name: string, rows: readonly { from: number; rate: number }
     }
     if (i > 0 && !(row.from > rows[i - 1]!.from)) {
       return `${name} ${i} does not start above ${name} ${i - 1}`;
+    }
+  }
+  return null;
+}
+
+/** Pieces: non-empty, finite coefficients, rising from zero. */
+function piecesProblem(pieces: readonly Piece[]): string | null {
+  if (pieces.length === 0) {
+    return 'pieces is empty';
+  }
+  for (let i = 0; i < pieces.length; i++) {
+    const { from, constant, linear, xLnX } = pieces[i]!;
+    if (![constant, linear, xLnX].every(Number.isFinite)) {
+      return `piece ${i} has a coefficient that is not a finite number`;
+    }
+    if (!(from >= 0)) {
+      return `piece ${i} starts below zero`;
+    }
+    if (i > 0 && !(from > pieces[i - 1]!.from)) {
+      return `piece ${i} does not start above piece ${i - 1}`;
     }
   }
   return null;

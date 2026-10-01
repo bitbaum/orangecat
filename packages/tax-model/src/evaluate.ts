@@ -48,9 +48,9 @@ export interface Estimate {
   missing: readonly FactRef[];
 }
 
-/** The tariff amount for a base, rounded as the tariff says, then capped. */
+/** The tariff amount for a base, rounded as the tariff says, capped, and 0 below its minimum. */
 export function applyTariff(base: number, tariff: Tariff): number {
-  return amountAt(roundDown(base, tariff.rounding?.base), tariff);
+  return levied(amountAt(roundDown(base, tariff.rounding?.base), tariff), tariff);
 }
 
 /**
@@ -63,10 +63,13 @@ function dividedAmount(base: number, divisor: number, tariff: Tariff): number {
   const exact = rounded / divisor;
   const divided = roundDown(exact, tariff.rounding?.divided);
   if (divided === exact) {
-    return divisor * amountAt(exact, tariff);
+    return levied(divisor * amountAt(exact, tariff), tariff);
   }
-  return divided > 0 ? (rounded * amountAt(divided, tariff)) / divided : 0;
+  return levied(divided > 0 ? (rounded * amountAt(divided, tariff)) / divided : 0, tariff);
 }
+
+const levied = (amount: number, tariff: Tariff): number =>
+  tariff.minimum !== undefined && amount < tariff.minimum ? 0 : amount;
 
 const roundDown = (amount: number, step: number | undefined): number =>
   step === undefined ? amount : Math.floor(amount / step) * step;
@@ -113,6 +116,13 @@ function uncapped(base: number, tariff: Tariff): number {
       const a = points[next - 1]!;
       const b = points[next]!;
       return base * (a.rate + ((base - a.from) / (b.from - a.from)) * (b.rate - a.rate));
+    }
+    case 'logarithmic': {
+      const begun = tariff.pieces.filter(p => p.from <= base);
+      const piece = begun[begun.length - 1];
+      return piece === undefined
+        ? 0
+        : piece.constant + piece.linear * base + piece.xLnX * base * Math.log(base);
     }
     default:
       throw new Error(`tariff kind "${(tariff as { kind: unknown }).kind}" is not known`);

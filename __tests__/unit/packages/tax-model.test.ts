@@ -6,6 +6,7 @@ import {
   modelProblems,
   referencedLevels,
   tariffProblem,
+  tariffSchemaVersion,
   taxingLevels,
   type Fact,
   type Tariff,
@@ -245,8 +246,8 @@ describe('divisor', () => {
     expect(modelProblems({ ...SPLIT, schemaVersion: 1 })).toEqual([
       'component "local" has a divisor, which needs schemaVersion 2',
     ]);
-    expect(modelProblems({ ...SPLIT, schemaVersion: 5 as 4 })).toEqual([
-      'schemaVersion 5 is not supported',
+    expect(modelProblems({ ...SPLIT, schemaVersion: 6 as 5 })).toEqual([
+      'schemaVersion 6 is not supported',
     ]);
     expect(referencedLevels(SPLIT)).toEqual(['realm', 'shire', 'guild', 'temple']);
   });
@@ -325,6 +326,64 @@ describe('stepped and average tariffs', () => {
     expect(tariffProblem({ kind: 'mystery', currency: 'XTS' } as unknown as Tariff)).toMatch(
       /not known/
     );
+  });
+});
+
+describe('logarithmic tariffs and minimum amounts', () => {
+  // Basel-Landschaft 2025: −0.827429·x + 0.089718·x·(ln x − 1) + 829.41877 from CHF 16,716.
+  const PIECES = [
+    { from: 0, constant: 0, linear: 0, xLnX: 0 },
+    { from: 16_716, constant: 829.41877, linear: -0.827429 - 0.089718, xLnX: 0.089718 },
+  ];
+  const LOG: Tariff = { kind: 'logarithmic', currency: 'CHF', pieces: PIECES };
+
+  it('applies the formula of the last piece begun, and nothing before it', () => {
+    const x = 30_000;
+    expect(applyTariff(x, LOG)).toBeCloseTo(
+      -0.827429 * x + 0.089718 * x * (Math.log(x) - 1) + 829.41877
+    );
+    expect(applyTariff(16_715, LOG)).toBe(0);
+    // Where the piece starts, it meets the 0.49% the couple's table gives below it.
+    expect(applyTariff(16_716, LOG)).toBeCloseTo(16_716 * 0.0049, 0);
+  });
+
+  it('levies nothing below the minimum, after the divisor is multiplied back', () => {
+    const tariff: Tariff = { ...progressive([[0, 0.01]]), minimum: 25 };
+    expect(applyTariff(2_400, tariff)).toBe(0);
+    expect(applyTariff(2_500, tariff)).toBeCloseTo(25);
+    const model: TaxModel = {
+      ...MODEL,
+      schemaVersion: 5,
+      components: [
+        {
+          key: 'split',
+          tariff: { level: 'realm', metric: 't' },
+          divisor: { level: 'realm', metric: 'd' },
+        },
+      ],
+    };
+    const facts: Fact[] = [
+      { level: 'realm', metric: 't', value: tariff },
+      { level: 'realm', metric: 'd', value: 2 },
+    ];
+    // 4,000 ÷ 2 = 2,000: 20 a half, but 40 multiplied back is levied.
+    const together = evaluate(model, facts, { values: { income: 4_000 }, variant: 'alone' });
+    expect(together.total).toBeCloseTo(40);
+  });
+
+  it('needs schemaVersion 5', () => {
+    expect(tariffSchemaVersion(LOG)).toBe(5);
+    expect(tariffSchemaVersion({ ...progressive([[0, 0.01]]), minimum: 25 })).toBe(5);
+    expect(tariffProblem(LOG)).toBeNull();
+    expect(tariffProblem({ ...LOG, pieces: [PIECES[1]!, PIECES[0]!] })).toMatch(
+      /does not start above/
+    );
+    expect(tariffProblem({ ...LOG, minimum: -1 })).toBe('minimum is negative');
+    const facts = [
+      ...FACTS.filter(f => f.metric !== 'tariff'),
+      { level: 'realm', metric: 'tariff', value: LOG },
+    ];
+    expect(() => run(30_000, {}, facts)).toThrow(/needs schemaVersion 5/);
   });
 });
 

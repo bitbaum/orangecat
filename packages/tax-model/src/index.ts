@@ -14,6 +14,7 @@ export {
   type Fact,
   type FactRef,
   type MultiplierRef,
+  type Piece,
   type RatePoint,
   type ReductionRef,
   type Rounding,
