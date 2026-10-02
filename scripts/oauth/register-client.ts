@@ -138,6 +138,45 @@ const CLIENT_SPECS: Record<string, ClientSpec> = {
     is_confidential: true, // has a server (Auth.js v5) — keeps a secret
     is_trusted: true, // first-party — skips the consent screen after first grant
   },
+  // 2026-10-02 — George: "move all our own products to sign in with
+  // orangecat". These four ran their own email/password logins, so a new
+  // person had no Google or GitHub and an OrangeCat account bought them
+  // nothing. IDENTITY only, like heidi and skif: each keys its users on
+  // `sub` and links no account by email (email_verified cannot be trusted
+  // while GoTrue auto-confirms sign-ups). policy_uri/tos_uri only where the
+  // page exists — curl-checked the same day.
+  evig: {
+    name: 'evig',
+    // Serves both names; sign-in must be accepted on either.
+    origins: ['https://evig.orangecat.ch', 'https://revampit.orangecat.ch'],
+    policy_uri: 'https://evig.orangecat.ch/datenschutz',
+    tos_uri: 'https://evig.orangecat.ch/agb',
+    scopes: 'openid profile email',
+    is_confidential: true,
+    is_trusted: true,
+  },
+  petvity: {
+    name: 'Petvity',
+    origins: ['https://petvity.orangecat.ch'],
+    scopes: 'openid profile email',
+    is_confidential: true,
+    is_trusted: true,
+  },
+  'surf-your-life': {
+    name: 'Surf Your Life',
+    origins: ['https://surf-your-life.orangecat.ch'],
+    policy_uri: 'https://surf-your-life.orangecat.ch/de/privacy',
+    scopes: 'openid profile email',
+    is_confidential: true,
+    is_trusted: true,
+  },
+  datacat: {
+    name: 'Datacat',
+    origins: ['https://datacat.orangecat.ch'],
+    scopes: 'openid profile email',
+    is_confidential: true,
+    is_trusted: true,
+  },
 };
 
 const spec = CLIENT_SPECS[clientId];
