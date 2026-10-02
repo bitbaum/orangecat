@@ -53,6 +53,43 @@ describe('public copy', () => {
     expect(CONTACT_EMAIL).toBe('cato@orangecat.ch');
   });
 
+  // The round after: the same dead addresses and a "proprietary" licence
+  // survived one directory away — the SDK README, the password-recovery email,
+  // the security docs. Prose that leaves the app (markdown, email templates,
+  // package metadata) is scanned here as text.
+  it('outside the app, names no dead address and claims no licence but MIT', () => {
+    const roleAddress =
+      /\b(hello|support|security|integrations|info|contact|privacy|legal|press|mao)@orangecat\.(ch|com|org)\b/;
+    const notMit = /\bUNLICENSED\b|\(proprietary\)/;
+    const prose = (dir: string): string[] =>
+      readdirSync(dir).flatMap(name => {
+        const path = join(dir, name);
+        if (name === 'node_modules' || name === 'dist') {
+          return [];
+        }
+        if (statSync(path).isDirectory()) {
+          return prose(path);
+        }
+        return /\.(md|html|json)$/.test(name) ? [path] : [];
+      });
+    const scanned = [
+      ...['packages', 'supabase/templates', 'legal', 'content', 'docs/security'].flatMap(dir =>
+        prose(join(ROOT, dir))
+      ),
+      join(ROOT, 'README.md'),
+      join(ROOT, 'SECURITY.md'),
+      join(ROOT, 'package.json'),
+    ];
+    expect(scanned.length).toBeGreaterThan(10);
+    const offenders = scanned
+      .filter(path => {
+        const text = readFileSync(path, 'utf8');
+        return roleAddress.test(text) || notMit.test(text);
+      })
+      .map(path => relative(ROOT, path));
+    expect(offenders).toEqual([]);
+  });
+
   it('types no framework version by hand', () => {
     const handTyped = /(Next\.js|TypeScript|Tailwind CSS|React) \d+/;
     const offenders = sources

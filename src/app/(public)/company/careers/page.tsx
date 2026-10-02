@@ -31,7 +31,7 @@ export default function CareersPage() {
       icon: <Handshake className="w-6 h-6" />,
       title: 'Build for others as a partner',
       description:
-        'Join the guild after a course and an assessed portfolio, then take on projects at your own price. The platform takes nothing.',
+        'Partners are independent builders in one guild, admitted by its members, who take on projects at their own price. The guild is not founded yet; the partners page shows how the first partner starts it.',
       href: ROUTES.PARTNERS,
       label: 'See the partners',
     },

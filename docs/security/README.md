@@ -88,17 +88,8 @@ Security is a top priority for OrangeCat. This section contains all security-rel
 
 ## 🚨 Security Contacts
 
-### **🔴 Emergency Security Issues**
-
-- **Email**: security@orangecat.com
-- **Response Time**: < 4 hours
-- **Escalation**: Immediate for critical issues
-
-### **🟡 Non-Emergency Security**
-
-- **GitHub Issues**: Use security label
-- **Email**: security@orangecat.com
-- **Response Time**: < 24 hours
+- **Email**: cato@orangecat.ch (the only OrangeCat address that receives mail)
+- **GitHub Issues**: use the security label for anything that is not an exploitable hole
 
 ---
 

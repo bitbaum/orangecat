@@ -41,7 +41,7 @@ export const LADDER: readonly LadderRung[] = [
     id: 'partner',
     title: 'A partner',
     who: 'For a project that wants a person who has done this before.',
-    what: 'Partners are independent builders admitted to the guild after a course and an assessed portfolio. You choose one from the list below and agree terms directly.',
+    what: 'Partners are independent builders admitted to the guild by its members. You choose one from the list below and agree terms directly.',
     price: 'Their price, paid to them directly. The platform takes nothing.',
     cta: { label: 'See the partners', href: '#partners' },
   },
@@ -76,6 +76,6 @@ export function guildHref(): string {
 
 /** Where "found the guild" goes when there is none yet: the group form, pre-described. */
 export function foundGuildHref(): string {
-  const sentence = `${PARTNER_GUILD.name}: a guild of independent builders who ship with OrangeCat, Loki and Solon. Members are admitted by the members after a course and an assessed portfolio.`;
+  const sentence = `${PARTNER_GUILD.name}: a guild of independent builders who ship with OrangeCat, Loki and Solon. Members are admitted by the members.`;
   return `${ENTITY_REGISTRY.group.createPath}?description=${encodeURIComponent(sentence)}&autofill=1`;
 }
