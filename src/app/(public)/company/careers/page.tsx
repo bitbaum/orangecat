@@ -1,53 +1,46 @@
 import React from 'react';
 import Link from 'next/link';
 import { Metadata } from 'next';
-import { Briefcase, Users, Zap, Heart, Globe, Coffee } from 'lucide-react';
+import { Briefcase, Users, Zap, Heart, Globe, Code, Handshake, Bitcoin } from 'lucide-react';
 import Button from '@/components/ui/Button';
+import { ROUTES } from '@/config/routes';
 
 export const metadata: Metadata = {
-  title: 'Careers — Join Our Mission',
+  title: 'Build with us',
   description:
-    'Work with us to build open economic participation around accountable Bitcoin settlement.',
+    'OrangeCat is open source under the MIT licence. Ways to build it with us: code, partnership, or backing.',
 };
 
 /**
- * /company/careers — monochrome surfaces, single warm-accent CTA on the
- * Apply / View Open Positions buttons per Loki contract. Value
- * cards, position tiles, and perk pills all unified neutral. Migration 6/N.
+ * /company/careers — the ways in. It used to list four full-time openings with
+ * salaries, health cover and unlimited PTO, none of which existed, under
+ * buttons that went nowhere. The true doors are the open repository, the
+ * partners' guild and backing in Bitcoin, so those are what it lists.
  */
 export default function CareersPage() {
-  const openPositions = [
+  const ways = [
     {
-      title: 'Senior Bitcoin Developer',
-      department: 'Engineering',
-      location: 'Remote / Switzerland',
-      type: 'Full-time',
+      icon: <Code className="w-6 h-6" />,
+      title: 'Contribute code',
       description:
-        'Build Bitcoin-native applications and integrations. Experience with Lightning Network, NWC, and BTCPay Server preferred.',
+        'The whole platform is open source under the MIT licence. Read it, open an issue, or send a pull request.',
+      href: 'https://github.com/bitbaum/orangecat',
+      label: 'Open the repository',
     },
     {
-      title: 'Community Manager',
-      department: 'Operations',
-      location: 'Remote',
-      type: 'Full-time',
+      icon: <Handshake className="w-6 h-6" />,
+      title: 'Build for others as a partner',
       description:
-        'Help grow and nurture communities of creators, researchers, entrepreneurs, and groups using OrangeCat worldwide.',
+        'Partners are independent builders in one guild, admitted by its members, who take on projects at their own price. The guild is not founded yet; the partners page shows how the first partner starts it.',
+      href: ROUTES.PARTNERS,
+      label: 'See the partners',
     },
     {
-      title: 'Product Designer',
-      department: 'Design',
-      location: 'Remote / Switzerland',
-      type: 'Full-time',
-      description:
-        'Design intuitive interfaces for economic participation — from funding to governance to AI-assisted workflows.',
-    },
-    {
-      title: 'DevRel Engineer',
-      department: 'Engineering',
-      location: 'Remote',
-      type: 'Full-time',
-      description:
-        'Build developer tools, documentation, and community around the OrangeCat platform and Cat agent ecosystem.',
+      icon: <Bitcoin className="w-6 h-6" />,
+      title: 'Back it in Bitcoin',
+      description: 'Fund the economy, execution or governance layer — or all three.',
+      href: ROUTES.SUPPORT,
+      label: 'Choose what to support',
     },
   ];
 
@@ -78,17 +71,6 @@ export default function CareersPage() {
     },
   ];
 
-  const perks = [
-    '100% Remote Work',
-    'Competitive Bitcoin Compensation',
-    'Health & Dental Coverage',
-    'Unlimited PTO',
-    'Learning & Development Budget',
-    'Bitcoin Conference Attendance',
-    'Home Office Stipend',
-    'Flexible Hours',
-  ];
-
   return (
     <div className="min-h-screen bg-surface-page">
       {/* Hero Section */}
@@ -99,11 +81,11 @@ export default function CareersPage() {
               <Briefcase className="w-8 h-8 text-fg-secondary" />
             </div>
             <h1 className="font-heading tracking-display text-4xl font-bold text-fg-primary sm:text-5xl mb-4">
-              Join OrangeCat
+              Build OrangeCat with us
             </h1>
             <p className="text-xl text-fg-secondary max-w-3xl mx-auto">
-              Help us build universal economic participation. Work on a platform that lets anyone —
-              including a pseudonym or agent — organize and fund work with Bitcoin.
+              A platform that lets anyone — including a pseudonym or agent — organize and fund work
+              with Bitcoin. It is built in the open, and there is more than one way in.
             </p>
           </div>
         </div>
@@ -117,7 +99,6 @@ export default function CareersPage() {
             We&apos;re not just building software — we&apos;re creating infrastructure for open
             economic participation. Bitcoin is the only live settlement rail while other payment
             systems remain explicit roadmap work. The Cat helps every user navigate that economy.
-            Every role at OrangeCat contributes to this mission.
           </p>
         </div>
 
@@ -134,115 +115,25 @@ export default function CareersPage() {
           ))}
         </div>
 
-        {/* Open Positions */}
-        <div className="mb-16">
-          <h2 className="text-2xl font-semibold text-fg-primary text-center mb-12">
-            Open Positions
-          </h2>
-
-          {openPositions.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {openPositions.map((position, index) => (
-                <div
-                  key={index}
-                  className="bg-surface-base rounded-lg shadow-sm p-6 border border-default"
-                >
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h3 className="text-lg font-semibold text-fg-primary mb-1">
-                        {position.title}
-                      </h3>
-                      <p className="text-fg-secondary font-medium text-sm">{position.department}</p>
-                    </div>
-                    <span className="px-3 py-1 bg-surface-raised text-fg-primary rounded-full text-sm font-medium">
-                      {position.type}
-                    </span>
-                  </div>
-
-                  <p className="text-fg-secondary text-sm mb-4">{position.description}</p>
-
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-fg-secondary">{position.location}</span>
-                    <Button variant="accent" size="sm">
-                      Apply Now
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 bg-surface-raised rounded-full flex items-center justify-center mx-auto mb-4">
-                <Coffee className="w-8 h-8 text-fg-tertiary/50" />
+        {/* Ways in */}
+        <div id="ways-in" className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {ways.map(way => (
+            <div
+              key={way.title}
+              className="flex flex-col bg-surface-base rounded-lg shadow-sm p-6 border border-default"
+            >
+              <div className="w-12 h-12 bg-surface-raised border border-subtle rounded-full flex items-center justify-center mb-4 text-fg-secondary">
+                {way.icon}
               </div>
-              <h3 className="text-lg font-semibold text-fg-primary mb-2">
-                No Open Positions Right Now
-              </h3>
-              <p className="text-fg-secondary mb-6">
-                We&apos;re always growing! Send us your resume and we&apos;ll keep you in mind for
-                future opportunities.
-              </p>
-              <Button variant="accent" size="lg">
-                Send Your Resume
-              </Button>
+              <h3 className="text-lg font-semibold text-fg-primary mb-2">{way.title}</h3>
+              <p className="text-fg-secondary text-sm mb-6 flex-1">{way.description}</p>
+              <Link href={way.href}>
+                <Button variant="outline" size="sm">
+                  {way.label}
+                </Button>
+              </Link>
             </div>
-          )}
-        </div>
-
-        {/* Perks & Benefits */}
-        <div className="bg-surface-base rounded-lg shadow-sm p-8 mb-16">
-          <h2 className="text-2xl font-semibold text-fg-primary text-center mb-8">
-            Why Work With Us?
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {perks.map((perk, index) => (
-              <div
-                key={index}
-                className="flex items-center p-4 bg-surface-raised/40 border border-subtle rounded-lg"
-              >
-                <div className="w-8 h-8 bg-surface-raised border border-subtle rounded-full flex items-center justify-center mr-3">
-                  <span className="text-fg-secondary text-sm font-bold">✓</span>
-                </div>
-                <span className="text-fg-primary font-medium text-sm">{perk}</span>
-              </div>
-            ))}
-          </div>
-
-          <div className="text-center">
-            <p className="text-fg-secondary mb-6">
-              We believe in compensating our team fairly with competitive salaries, Bitcoin bonuses,
-              and benefits that support work-life balance.
-            </p>
-          </div>
-        </div>
-
-        {/* CTA */}
-        <div className="text-center">
-          <h2 className="text-2xl font-semibold text-fg-primary mb-4">
-            Ready to Join Our Mission?
-          </h2>
-          <p className="text-lg text-fg-secondary mb-8 max-w-2xl mx-auto">
-            Whether we have an open position or not, we&apos;d love to hear from talented
-            individuals who share our passion for open economic participation and Bitcoin.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="#open-positions">
-              <Button variant="accent" size="lg">
-                View Open Positions
-              </Button>
-            </Link>
-            <Button variant="outline" size="lg">
-              Send Your Resume
-            </Button>
-          </div>
-
-          <p className="text-sm text-fg-secondary mt-6">
-            We are an equal opportunity employer and value diversity at our company. We do not
-            discriminate on the basis of race, religion, color, national origin, gender, sexual
-            orientation, age, marital status, veteran status, or disability status.
-          </p>
+          ))}
         </div>
       </div>
     </div>

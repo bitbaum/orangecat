@@ -4,6 +4,7 @@ import 'bip-kit/styles.css';
 import '@/lib/longform/longform.css';
 import { PageHeading } from '@/components/layout/PageHeading';
 import { ROUTES } from '@/config/routes';
+import { CONTACT_EMAIL } from '@/config/brand';
 import { getFaqSections } from '@/lib/faq';
 
 // content/faq.md only changes with a deploy, so the page is built once.
@@ -57,7 +58,7 @@ export default function FAQPage() {
                   Ask the Cat
                 </Link>
                 <a
-                  href="mailto:hello@orangecat.ch"
+                  href={`mailto:${CONTACT_EMAIL}`}
                   className="inline-flex items-center gap-2 border border-default text-fg-primary hover:bg-surface-base font-medium px-5 py-2.5 rounded-lg transition-colors"
                 >
                   Contact us
