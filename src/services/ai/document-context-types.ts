@@ -62,6 +62,8 @@ export interface WalletSummary {
   balance_btc: number | null;
   /** When balance_btc was last refreshed from the chain. */
   balance_updated_at: string | null;
+  /** Publishes its ledger and the owner's notes on /wallets/[id] (open accounting). */
+  open_accounting?: boolean;
   /** Whether this wallet has a Nostr Wallet Connect URI configured (can auto-send payments) */
   has_nwc: boolean;
   /** Lightning address for receiving payments, if configured */

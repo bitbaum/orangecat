@@ -159,7 +159,15 @@ describe('selection is worth doing', () => {
     // appendix; the remaining ~295 characters are the parameter names, and
     // the names are the interface — a model that cannot see them cannot call
     // it. Paid for as capability, like connect_wallet and the Solon proposal.
-    expect(remaining).toBeLessThanOrEqual(4_100);
+    //
+    // Raised 4,100 -> 4,250 for `note_transaction`: the owner can explain a
+    // transaction by saying what it was for, and the share of explained
+    // entries is most of a published wallet's transparency score. It has no
+    // hand-written catalog line, only its ~140-character appendix entry, and
+    // the handler refuses any txid the wallet does not have — so the guidance
+    // the prompt would otherwise need ("never invent a txid") is enforced in
+    // code instead of paid for in prose.
+    expect(remaining).toBeLessThanOrEqual(4_250);
   });
 
   it('selects by default now, and still sends everything when told to', async () => {

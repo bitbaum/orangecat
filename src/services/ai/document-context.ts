@@ -175,7 +175,7 @@ async function fetchWalletsForCat(
     const { data: wallets, error } = await (getAdminClient() as unknown as SupabaseClient)
       .from(DATABASE_TABLES.WALLETS)
       .select(
-        'label, description, category, behavior_type, goal_amount, goal_currency, goal_deadline, budget_amount, budget_period, is_primary, balance_btc, balance_updated_at, nwc_connection_uri, lightning_address'
+        'label, description, category, behavior_type, goal_amount, goal_currency, goal_deadline, budget_amount, budget_period, is_primary, balance_btc, balance_updated_at, nwc_connection_uri, lightning_address, open_accounting'
       )
       .eq('profile_id', profile.id)
       .eq('is_active', true)
@@ -201,6 +201,7 @@ async function fetchWalletsForCat(
       balance_updated_at: w.balance_updated_at ?? null,
       has_nwc: !!w.nwc_connection_uri,
       lightning_address: w.lightning_address ?? null,
+      open_accounting: (w as { open_accounting?: boolean | null }).open_accounting === true,
     })) as WalletSummary[];
   } catch (error) {
     logger.error('Exception fetching wallets for cat', error, 'DocumentContext');

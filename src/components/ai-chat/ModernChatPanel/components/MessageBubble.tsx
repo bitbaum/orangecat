@@ -94,6 +94,7 @@ const ACTION_LABELS: Record<string, string> = {
   send_payment: 'Payment',
   fund_project: 'Contribution',
   connect_wallet: 'Wallet connected',
+  note_transaction: 'Transaction explained',
   add_wallet: 'Wallet',
   // Context
   add_context: 'Context saved',

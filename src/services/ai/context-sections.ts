@@ -604,6 +604,11 @@ export function renderWallets(wallets: FullUserContext['wallets']): string | nul
     if (w.is_primary) {
       parts.push(' - primary wallet');
     }
+    if (w.open_accounting) {
+      parts.push(
+        ' - publishes its ledger (open accounting; query_my_data("wallets") lists entries without a note)'
+      );
+    }
     return parts.join('');
   });
 

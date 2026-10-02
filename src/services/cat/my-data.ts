@@ -17,6 +17,7 @@ import type { AnySupabaseClient } from '@/lib/supabase/types';
 export { MY_DATA_TOPICS, type MyDataTopic } from './my-data-topics';
 import type { MyDataTopic } from './my-data-topics';
 import { listInterests } from './interests';
+import { ledgerSection } from './my-data-ledger';
 import { countUnreadNotifications } from '@/services/notifications/unread-count';
 
 const DEFAULT_WINDOW_DAYS = 30;
@@ -364,8 +365,15 @@ export async function queryMyData(
       return earningsSection(supabase, userId, days);
     case 'bookings':
       return bookingsSection(supabase, userId);
-    case 'wallets':
-      return walletsSection(supabase, userId);
+    case 'wallets': {
+      const walletLines = await walletsSection(supabase, userId);
+      // If the wallets themselves could not be read, a ledger line beside that
+      // ("no Bitcoin wallets") would contradict it. Say the one honest thing.
+      if (walletLines.startsWith('WALLETS: could not')) {
+        return walletLines;
+      }
+      return `${walletLines}\n\n${await ledgerSection(supabase, userId)}`;
+    }
     case 'notifications':
       return notificationsSection(supabase, userId);
     case 'tasks':

@@ -99,6 +99,10 @@ export const DEFAULT_PERMISSIONS: Partial<Record<ActionCategory, boolean>> = {
  */
 export const DEFAULT_ACTION_PERMISSIONS: Partial<Record<string, boolean>> = {
   connect_wallet: true,
+  // Moves nothing: writes the owner's own note on their own transaction, under
+  // RLS, after confirmation. Off by default it would sit behind the switch that
+  // also unlocks send_payment.
+  note_transaction: true,
 };
 
 /** Resolve the shipped default for an action: per-action first, then category. */

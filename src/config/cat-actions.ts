@@ -36,6 +36,7 @@ import {
   type LucideIcon,
   Hammer,
   Landmark,
+  BookOpenCheck,
 } from 'lucide-react';
 import { API_ROUTES } from '@/config/api-routes';
 import { RESEARCH_FIELDS } from '@/config/research';
@@ -1320,6 +1321,42 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
       'Create a monthly food budget of 0.002 BTC',
       'Start an emergency fund',
       'I want to save for a new laptop — 0.1 BTC by end of year',
+    ],
+    enabled: true,
+  },
+
+  note_transaction: {
+    id: 'note_transaction',
+    name: 'Explain Transaction',
+    description: "Owner's note on what a Bitcoin transaction was for; public if the ledger is.",
+    category: 'payments',
+    icon: BookOpenCheck,
+    riskLevel: 'low',
+    requiresConfirmation: true,
+    parameters: [
+      {
+        name: 'txid',
+        type: 'string',
+        required: true,
+        description: 'From query_my_data("wallets"); 8+ leading characters suffice',
+      },
+      {
+        name: 'note',
+        type: 'string',
+        required: true,
+        description: "What it was for, in the user's words (max 500 characters)",
+      },
+      {
+        name: 'wallet',
+        type: 'string',
+        required: false,
+        description: 'Wallet label, if they have several',
+      },
+    ],
+    examples: [
+      'The 0.002 that came in on Tuesday was the laptop for Amina',
+      'Explain my fund wallet transactions',
+      'That payment out was the rent for the workshop space',
     ],
     enabled: true,
   },
