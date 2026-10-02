@@ -7,6 +7,8 @@
  * because the link itself discloses which wallet receives for this entity.
  */
 
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
 let linkRow: Record<string, unknown> | null = null;
 let walletRow: Record<string, unknown> | null = null;
 let linkError: unknown = null;
@@ -41,7 +43,6 @@ vi.mock('@/lib/supabase/admin', () => ({
   }),
 }));
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getEntityOpenLedgerWalletId } from '@/services/wallets/entityOpenLedger';
 
 const ENTITY = '11111111-1111-4111-8111-111111111111';
