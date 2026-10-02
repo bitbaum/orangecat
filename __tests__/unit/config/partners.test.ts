@@ -1,6 +1,7 @@
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { LADDER, PARTNER_GUILD, foundGuildHref, guildHref } from '@/config/partners';
 import { ROUTES } from '@/config/routes';
+import { ECOSYSTEM } from '@/config/ecosystem';
 
 /**
  * Who is a partner is membership of one guild, never a list here. These pin
@@ -11,7 +12,9 @@ describe('the ladder', () => {
   it('has the three rungs, in order, each with a way forward', () => {
     expect(LADDER.map(r => r.id)).toEqual(['studio', 'partner', 'yourself']);
     for (const rung of LADDER) {
-      expect(rung.cta.href.startsWith('/') || rung.cta.href.startsWith('#')).toBe(true);
+      // Internal, or the studio's own hire page (it lives on bitbaum's site).
+      const internal = rung.cta.href.startsWith('/') || rung.cta.href.startsWith('#');
+      expect(internal || rung.cta.href === ECOSYSTEM.studio.hireUrl).toBe(true);
       expect(rung.price.length).toBeGreaterThan(10);
     }
   });

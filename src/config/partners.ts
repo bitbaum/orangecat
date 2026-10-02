@@ -10,6 +10,7 @@
  * is typed twice.
  */
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
+import { ECOSYSTEM } from '@/config/ecosystem';
 
 export const PARTNER_GUILD = {
   /** The group's slug on this platform. Founding it is the first admission. */
@@ -31,10 +32,10 @@ export const LADDER: readonly LadderRung[] = [
     id: 'studio',
     title: 'The studio',
     who: 'For work that has to be right the first time.',
-    what: 'The studio takes the whole thing: scope, build, ship, run. A few clients at a time, by application.',
+    what: 'The studio takes the whole thing: scope, build, ship, run. By application.',
     price:
       'Priced per engagement. Everything the studio makes stays open source; it asks for appreciation, not a licence.',
-    cta: { label: 'Talk to the studio', href: '/support' },
+    cta: { label: 'Talk to the studio', href: ECOSYSTEM.studio.hireUrl },
   },
   {
     id: 'partner',

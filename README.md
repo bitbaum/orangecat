@@ -36,14 +36,14 @@ OrangeCat is an AI-native platform for universal economic participation. The liv
 
 ## Architecture
 
-13 entity types, one registry. One ownership model (actors), one permission layer (database RLS). Adding a new entity type requires 2-3 files.
+15 entity types, one registry. One ownership model (actors), one permission layer (database RLS). Adding a new entity type requires 2-3 files.
 
 <details>
 <summary><strong>Technical details</strong></summary>
 
 ### Entity Registry Pattern
 
-`src/config/entity-registry.ts` — single source of truth for all 13 entity types. Drives CRUD, navigation, forms, and validation. No entity-specific switch statements.
+`src/config/entity-registry.ts` — single source of truth for all 15 entity types. Drives CRUD, navigation, forms, and validation. No entity-specific switch statements.
 
 ### Actor System
 
@@ -69,7 +69,7 @@ Functional composition replaces inheritance. Each middleware does one thing.
 
 | Layer      | Technology                                                                               |
 | ---------- | ---------------------------------------------------------------------------------------- |
-| Framework  | Next.js 16.2, React 19, TypeScript 6                                                     |
+| Framework  | Next.js 16, React 19, TypeScript 6                                                       |
 | Styling    | Tailwind CSS, shadcn/ui                                                                  |
 | Database   | Self-hosted Supabase (PostgreSQL + Auth + RLS) on Hetzner                                |
 | Bitcoin    | Lightning Network, LNURL, bitcoinjs-lib                                                  |
@@ -111,7 +111,7 @@ See `.env.example` for the full list. Key variables:
 
 ```
 src/
-  config/entity-registry.ts  -- SSOT: all 13 entity types
+  config/entity-registry.ts  -- SSOT: all 15 entity types
   lib/api/                    -- Middleware composition, generic CRUD
   domain/                     -- Business logic (no HTTP, no UI)
   services/                   -- Currency, search, notifications, groups

@@ -10,6 +10,8 @@
  * `draft` flag; bump `lastUpdated` on any substantive change.
  */
 
+import { CONTACT_EMAIL } from '@/config/brand';
+
 export interface LegalSection {
   heading: string;
   /** Paragraphs rendered before any bullets. */
@@ -168,9 +170,7 @@ export const PRIVACY_POLICY: LegalDocument = {
     },
     {
       heading: 'Contact',
-      paragraphs: [
-        'Cato (Data Controller) — hello@orangecat.ch',
-      ],
+      paragraphs: [`Cato (Data Controller) — ${CONTACT_EMAIL}`],
     },
     {
       heading: 'Changes to this Policy',
@@ -371,9 +371,7 @@ export const TERMS_OF_SERVICE: LegalDocument = {
     },
     {
       heading: 'Contact',
-      paragraphs: [
-        'Cato — hello@orangecat.ch',
-      ],
+      paragraphs: [`Cato — ${CONTACT_EMAIL}`],
     },
   ],
 };

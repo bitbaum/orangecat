@@ -19,6 +19,8 @@ to the map, sub-bullets stay here for the human reader.
 
 ### Fixed
 
+- **Mail to OrangeCat arrives.** The FAQ, status, security, privacy and terms pages and the API description gave hello@, support@, security@ and integrations@orangecat.ch, and none of them was a mailbox, so a security report or a privacy request bounced. They all give cato@orangecat.ch now.
+- **The careers page no longer lists jobs that do not exist.** It showed four full-time openings with salaries and benefits; it now lists the real ways in — the open-source code, the partners' guild, and backing in Bitcoin. The footer says the code is MIT-licensed instead of "all rights reserved", and /technology names the framework versions the app actually runs.
 - **A project owner can see their project wallet's transactions.** The transaction history checked only who created the wallet row, so the owner of a project wallet could be refused their own history. It now uses the same owner check as every other wallet action.
 
 ## 2026-09-30

@@ -289,7 +289,7 @@ export default function DocsPage() {
                   </li>
                   <li className="flex items-center gap-2">
                     <Zap className="h-4 w-4 text-bitcoinOrange" />
-                    Lightning Network + BTCPay
+                    Lightning Network (Nostr Wallet Connect, LNURL)
                   </li>
                 </ul>
               </div>

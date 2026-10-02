@@ -42,6 +42,12 @@ export const ECOSYSTEM = {
     title: 'Solon',
     siteUrl: solonOrigin.toString(),
   },
+  /** The studio. bitbaum.com never resolved; this is where the studio lives. */
+  studio: {
+    title: 'bitbaum',
+    siteUrl: 'https://bitbaum.orangecat.ch/',
+    hireUrl: 'https://bitbaum.orangecat.ch/hire/',
+  },
   support: {
     // Was orangecat@getalby.com, which 404s — the Alby account behind it no
     // longer exists, and prod does not override this env var, so the "support

@@ -128,9 +128,10 @@ export default async function GovernancePage() {
         <div className="mt-8 border-t border-subtle pt-8">
           <h2 className="text-xl font-semibold text-fg-primary">Verify it yourself</h2>
           <p className="mt-2 text-fg-secondary">
-            Don&apos;t take this page&apos;s word for it. Every decision document is served by the{' '}
-            <a href={`${solonBase}/api/v1/decisions`} className="underline" rel="noopener">
-              Solon decision API
+            Don&apos;t take this page&apos;s word for it. Every proposal and how its vote went is
+            published on{' '}
+            <a href={`${solonBase}/proposals`} className="underline" rel="noopener">
+              Solon&apos;s decisions page
             </a>
             , and the live governed state of the whole stack is published at{' '}
             <a href={`${solonBase}/ecosystem`} className="underline" rel="noopener">

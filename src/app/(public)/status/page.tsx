@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { checkHealth } from '@/lib/health';
 import { PageHeading } from '@/components/layout/PageHeading';
 import { ROUTES } from '@/config/routes';
+import { CONTACT_EMAIL } from '@/config/brand';
 import type { ServiceStatus } from '@/lib/health';
 import { APP_LOCALE } from '@/utils/locale';
 
@@ -146,7 +147,7 @@ export default async function StatusPage() {
                   Visit FAQ →
                 </Link>
                 <a
-                  href="mailto:support@orangecat.ch"
+                  href={`mailto:${CONTACT_EMAIL}`}
                   className="text-fg-primary hover:text-fg-primary font-medium underline-offset-4 hover:underline"
                 >
                   Contact Support →
