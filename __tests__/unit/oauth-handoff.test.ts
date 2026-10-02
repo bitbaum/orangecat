@@ -3,7 +3,16 @@
  * craftable, so the tests are mostly about what gets DROPPED.
  */
 import { describe, it, expect } from 'vitest';
-import { authHandoffUrl, callbackUrl, readHandoff, safeReturnPath } from '@/lib/oauth/handoff';
+import {
+  authHandoffUrl,
+  callbackUrl,
+  CLEAR_RETURN_COOKIE,
+  readHandoff,
+  RETURN_COOKIE,
+  returnCookie,
+  returnPathFromCookies,
+  safeReturnPath,
+} from '@/lib/oauth/handoff';
 
 const RETURN = '/oauth/authorize?client_id=solon&state=x';
 const params = (url: string) => new URL(url, 'https://orangecat.ch').searchParams;
@@ -88,5 +97,34 @@ describe('callbackUrl', () => {
       'https://orangecat.ch/auth/callback'
     );
     expect(safeReturnPath(null)).toBeNull();
+  });
+});
+
+describe('the return path remembered across a password reset', () => {
+  it('round-trips a same-origin path through the cookie', () => {
+    const cookie = returnCookie(RETURN)!;
+    expect(cookie).toContain(`${RETURN_COOKIE}=`);
+    expect(cookie).toContain('Max-Age=3600');
+    expect(cookie).toContain('SameSite=Lax');
+    const jar = `theme=dark; ${cookie.split(';')[0]}; other=1`;
+    expect(returnPathFromCookies(jar)).toBe(RETURN);
+  });
+
+  it('never remembers a path that would leave OrangeCat', () => {
+    expect(returnCookie('https://evil.example/')).toBeNull();
+    expect(returnCookie('//evil.example/')).toBeNull();
+    expect(returnCookie(null)).toBeNull();
+  });
+
+  it('re-validates on the way back, so a planted cookie cannot redirect off-site', () => {
+    expect(
+      returnPathFromCookies(`${RETURN_COOKIE}=${encodeURIComponent('//evil.example')}`)
+    ).toBeNull();
+    expect(returnPathFromCookies(`${RETURN_COOKIE}=%E0%A4%A`)).toBeNull();
+    expect(returnPathFromCookies('theme=dark')).toBeNull();
+  });
+
+  it('forgets it once used', () => {
+    expect(CLEAR_RETURN_COOKIE).toContain('Max-Age=0');
   });
 });
