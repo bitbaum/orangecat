@@ -9,6 +9,7 @@ import supabase from '@/lib/supabase/browser';
 import { cn } from '@/lib/utils';
 import { GRADIENTS } from '@/config/gradients';
 import { ROUTES } from '@/config/routes';
+import { CLEAR_RETURN_COOKIE, returnPathFromCookies } from '@/lib/oauth/handoff';
 import { OtpForm } from './OtpForm';
 import { NewPasswordForm } from './NewPasswordForm';
 
@@ -26,6 +27,13 @@ export default function ResetPasswordPage() {
   const searchParams = useSearchParams();
   const [step, setStep] = useState<Step>('loading');
   const [error, setError] = useState<string | null>(null);
+  // The app they were signing in to when they asked for the reset (see
+  // returnCookie in lib/oauth/handoff.ts). Null on another device.
+  const [returnTo, setReturnTo] = useState<string | null>(null);
+
+  useEffect(() => {
+    setReturnTo(returnPathFromCookies(document.cookie));
+  }, []);
 
   useEffect(() => {
     // Supabase v2 may deliver tokens via hash fragment. Merge hash into search params if present.
@@ -74,6 +82,12 @@ export default function ResetPasswordPage() {
   }, [searchParams]);
 
   const goToLogin = () => router.push(ROUTES.AUTH_LOGIN);
+  // A finished reset leaves them signed in, so going back to where they were
+  // headed (usually another app's /oauth/authorize) completes that sign-in.
+  const continueToApp = () => {
+    document.cookie = CLEAR_RETURN_COOKIE;
+    window.location.assign(returnTo ?? ROUTES.AUTH_LOGIN);
+  };
   const goToForgot = () => router.push(ROUTES.AUTH_FORGOT_PASSWORD);
 
   return (
@@ -128,11 +142,19 @@ export default function ResetPasswordPage() {
               Password Updated Successfully
             </h1>
             <p className="text-fg-secondary mb-6">
-              Your password has been updated. You can now sign in with your new password.
+              {returnTo
+                ? 'Your password has been updated and you are signed in.'
+                : 'Your password has been updated. You can now sign in with your new password.'}
             </p>
-            <Button onClick={goToLogin} variant="primary" className="w-full">
-              Sign In Now
-            </Button>
+            {returnTo ? (
+              <Button onClick={continueToApp} variant="primary" className="w-full">
+                Continue
+              </Button>
+            ) : (
+              <Button onClick={goToLogin} variant="primary" className="w-full">
+                Sign In Now
+              </Button>
+            )}
           </div>
         </Card>
       )}
