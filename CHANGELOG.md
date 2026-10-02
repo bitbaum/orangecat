@@ -9,6 +9,16 @@ reads, and [orangecat.ch/changelog](https://orangecat.ch/changelog) renders
 it from there. One `## YYYY-MM-DD` heading per day; bullets under it travel
 to the map, sub-bullets stay here for the human reader.
 
+## 2026-10-02
+
+### Added
+
+- **A fund's page shows where to check where its money went.** When a cause, research or project page's receiving wallet is fully public and publishes its ledger, the page now says "This fund publishes its ledger" and links to it: every transaction, read from the chain, with the owner's note on what each was for. Funds that have not opted in show nothing new.
+
+### Fixed
+
+- **A project owner can see their project wallet's transactions.** The transaction history checked only who created the wallet row, so the owner of a project wallet could be refused their own history. It now uses the same owner check as every other wallet action.
+
 ## 2026-09-30
 
 ### Changed

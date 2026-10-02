@@ -21,8 +21,7 @@ const ProjectSummaryRail = dynamic(() => import('@/components/project/ProjectSum
 const ProjectHeader = dynamic(() => import('@/components/project/ProjectHeader'));
 const ProjectContent = dynamic(() => import('@/components/project/ProjectContent'));
 const ProjectTimeline = dynamic(() => import('@/components/project/ProjectTimeline'));
-const LokiBuildCta = dynamic(() => import('@/components/integrations/LokiBuildCta'));
-const LokiBuildRecordCard = dynamic(() => import('@/components/integrations/LokiBuildRecordCard'));
+const ProjectEvidence = dynamic(() => import('@/components/project/ProjectEvidence'));
 
 interface Project {
   id: string;
@@ -77,6 +76,8 @@ interface ProjectPageClientProps {
   canManage?: boolean;
   /** What Loki says about this project, resolved on the server. */
   lokiBuild?: LokiProjectLink | null;
+  /** The receiving wallet whose ledger is public, if any (services/wallets/entityOpenLedger). */
+  openLedgerWalletId?: string | null;
 }
 
 /**
@@ -90,6 +91,7 @@ export default function ProjectPageClient({
   sellerReceive,
   canManage,
   lokiBuild,
+  openLedgerWalletId,
 }: ProjectPageClientProps) {
   const router = useRouter();
   const { user } = useAuth();
@@ -214,24 +216,12 @@ export default function ProjectPageClient({
               isOwner={isOwner}
             />
 
-            {/* Two states, never both. A project already building in Loki
-                shows its build record — to EVERYONE, because the reader who
-                needs it most is the one deciding whether to fund this. A
-                project that is not shows the owner how to start one. Offering
-                to create what someone already has is how a page tells its most
-                invested reader it has not been paying attention. */}
-            {lokiBuild?.linked && lokiBuild.profileUrl ? (
-              <LokiBuildRecordCard profileUrl={lokiBuild.profileUrl} projectName={lokiBuild.name} />
-            ) : (
-              isOwner && (
-                <LokiBuildCta
-                  variant="card"
-                  entityType="project"
-                  entityId={project.id}
-                  sourcePath={ROUTES.PROJECTS.VIEW(project.id)}
-                />
-              )
-            )}
+            <ProjectEvidence
+              projectId={project.id}
+              isOwner={isOwner}
+              lokiBuild={lokiBuild}
+              openLedgerWalletId={openLedgerWalletId}
+            />
           </div>
         </div>
       </div>

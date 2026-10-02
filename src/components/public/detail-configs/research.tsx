@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/badge';
 import FundingProgress from '@/components/public/FundingProgress';
 import EntityLedgerTotal from '@/components/public/EntityLedgerTotal';
+import EntityOpenLedger from '@/components/public/EntityOpenLedger';
 import ResearchOpenScience from '@/components/public/ResearchOpenScience';
 import ResearchReviews from '@/components/public/ResearchReviews';
 import { researchMilestoneProposal } from '@/domain/research/governance';
@@ -52,6 +53,7 @@ export const researchDetailConfig: EntityDetailConfig = {
         {/* Honest, ledger-derived BTC total — renders only when the owner has
             opted the fundraise into transparency (public/total). */}
         <EntityLedgerTotal entityType="research" entityId={String(entity.id)} />
+        <EntityOpenLedger entityType="research" entityId={String(entity.id)} />
 
         {/* Research Details */}
         <Card>

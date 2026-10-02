@@ -23,6 +23,7 @@ import { safeJsonLdString } from '@/lib/seo/structured-data';
 import { APP_NAME, SITE_URL } from '@/config/brand';
 import { resolveSellerReceiveInfo } from '@/domain/payments';
 import { getEntityFundingStats } from '@/services/wallets/funding-stats';
+import { getEntityOpenLedgerWalletId } from '@/services/wallets/entityOpenLedger';
 import { computeAmountRaised } from '@/lib/projectGoal';
 
 const ProjectPageClient = dynamic(() => import('@/components/project/ProjectPageClient'), {
@@ -231,6 +232,9 @@ export default async function PublicProjectPage({ params }: PageProps) {
   // back to "not linked" on any failure: a neighbouring product being slow
   // must never cost this page a render.
   const lokiBuild = await getLokiProjectLink(id);
+  // Where the money went, beside what was built: the receiving wallet's
+  // public ledger, when both the link and the wallet are published.
+  const openLedgerWalletId = await getEntityOpenLedgerWalletId('project', id);
 
   // Generate JSON-LD structured data for SEO
   const creatorName = profile?.name || profile?.username || 'Creator';
@@ -282,6 +286,7 @@ export default async function PublicProjectPage({ params }: PageProps) {
         sellerReceive={sellerReceive}
         canManage={canManage}
         lokiBuild={lokiBuild}
+        openLedgerWalletId={openLedgerWalletId}
       />
     </>
   );
