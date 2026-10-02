@@ -13,6 +13,8 @@ to the map, sub-bullets stay here for the human reader.
 
 ### Added
 
+- **Explain a transaction by telling your Cat what it was for.** Say "the 0.002 that came in on Tuesday was the laptop for Amina" and the Cat, after you confirm, saves it as your note on that transaction. If the wallet publishes its ledger, the note appears there publicly, and it counts toward the wallet's transparency score. Ask the Cat about your wallets and it now lists the recent transactions that still have no note, and the score as the ledger page computes it.
+  - The Cat only saves a note on a transaction the wallet actually has; it refuses an id it cannot find rather than saving a note that would never appear.
 - **A fund's page shows where to check where its money went.** When a cause, research or project page's receiving wallet is fully public and publishes its ledger, the page now says "This fund publishes its ledger" and links to it: every transaction, read from the chain, with the owner's note on what each was for. Funds that have not opted in show nothing new.
 
 ### Fixed

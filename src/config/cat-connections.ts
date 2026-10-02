@@ -109,7 +109,7 @@ export const CAT_CONNECTIONS: readonly CatConnection[] = [
     name: 'Lightning wallet',
     purpose: 'Receive money, and let Cat pay within the limits you set.',
     reads: ['Your wallets, balances and goals'],
-    actions: ['send_payment', 'connect_wallet', 'add_wallet'],
+    actions: ['send_payment', 'connect_wallet', 'add_wallet', 'note_transaction'],
     pushes: [],
     connect: { label: 'Set up a wallet', href: ROUTES.DASHBOARD.WALLETS, kind: 'page' },
   },

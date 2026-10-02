@@ -67,7 +67,13 @@ describe('shipped permission defaults', () => {
     const defaultedOn = Object.values(CAT_ACTIONS).filter(
       a => a.enabled && a.category === 'payments' && defaultAllowedFor(a.id, a.category)
     );
-    expect(defaultedOn.map(a => a.id)).toEqual(['connect_wallet']);
+    // Both are in the payments category and neither moves money: connect_wallet
+    // sets where the user's own money arrives, note_transaction writes the
+    // owner's note on their own transaction. Each still requires confirmation.
+    expect(defaultedOn.map(a => a.id).sort()).toEqual(['connect_wallet', 'note_transaction']);
+    for (const a of defaultedOn) {
+      expect(a.requiresConfirmation).toBe(true);
+    }
   });
 
   it('leaves every other category default untouched', () => {

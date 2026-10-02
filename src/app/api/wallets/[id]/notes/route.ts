@@ -20,12 +20,14 @@ import { apiSuccess, apiBadRequest, apiRateLimited } from '@/lib/api/standardRes
 import { applyRateLimitHeaders, rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
 import { handleSupabaseError } from '@/lib/wallets/errorHandling';
 import { fetchWalletAndVerifyOwner } from '@/domain/wallets/updateWallet';
+import {
+  TXID_PATTERN,
+  normalizeTxid,
+  noteValidationError,
+  saveTransactionNote,
+} from '@/domain/wallets/transactionNotes';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { logger } from '@/utils/logger';
-
-/** A bitcoin txid is 32 bytes rendered as 64 lowercase hex characters. */
-const TXID = /^[0-9a-f]{64}$/;
-const MAX_NOTE = 500;
 
 async function walletIdFrom(params: Promise<{ id: string }>): Promise<string> {
   return (await params).id;
@@ -70,17 +72,11 @@ export const PUT = withAuth(
     }
 
     const body = await request.json().catch(() => null);
-    const txid = typeof body?.txid === 'string' ? body.txid.trim().toLowerCase() : '';
+    const txid = normalizeTxid(body?.txid);
     const note = typeof body?.note === 'string' ? body.note.trim() : '';
-
-    if (!TXID.test(txid)) {
-      return apiBadRequest('txid must be 64 hexadecimal characters');
-    }
-    if (!note) {
-      return apiBadRequest('A note cannot be empty — delete it instead');
-    }
-    if (note.length > MAX_NOTE) {
-      return apiBadRequest(`A note is at most ${MAX_NOTE} characters`);
+    const invalid = noteValidationError(txid, note);
+    if (invalid) {
+      return apiBadRequest(invalid);
     }
 
     const owner = await fetchWalletAndVerifyOwner(supabase, walletId, user.id, 'annotate');
@@ -88,16 +84,7 @@ export const PUT = withAuth(
       return owner.error;
     }
 
-    // One note per transaction: writing again corrects it rather than stacking
-    // a second opinion under the same number.
-    const { data, error } = await supabase
-      .from(DATABASE_TABLES.WALLET_TRANSACTION_NOTES)
-      .upsert(
-        { wallet_id: walletId, txid, note, updated_at: new Date().toISOString() },
-        { onConflict: 'wallet_id,txid' }
-      )
-      .select('txid, note, updated_at')
-      .single();
+    const { data, error } = await saveTransactionNote(supabase, walletId, txid, note);
 
     if (error) {
       logger.error('Failed to save wallet transaction note', { walletId, error: error.message });
@@ -121,8 +108,8 @@ export const DELETE = withAuth(
     }
 
     const body = await request.json().catch(() => null);
-    const txid = typeof body?.txid === 'string' ? body.txid.trim().toLowerCase() : '';
-    if (!TXID.test(txid)) {
+    const txid = normalizeTxid(body?.txid);
+    if (!TXID_PATTERN.test(txid)) {
       return apiBadRequest('txid must be 64 hexadecimal characters');
     }
 

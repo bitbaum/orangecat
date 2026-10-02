@@ -147,6 +147,11 @@ export function generateActionDescription(
       };
       return `Connect wallet: set your ${kindLabel[kind]} as where you get paid`;
     }
+    case 'note_transaction': {
+      const txid = String(parameters.txid ?? '').slice(0, 8);
+      const note = String(parameters.note ?? '');
+      return `Explain transaction ${txid}…: "${note}"`;
+    }
     case 'add_wallet': {
       const walletLabel = parameters.label as string | undefined;
       const btype = parameters.behavior_type as string | undefined;

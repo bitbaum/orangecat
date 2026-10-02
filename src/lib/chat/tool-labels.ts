@@ -54,6 +54,7 @@ export const VERB_FORMS: Record<string, { gerund: string; past: string }> = {
   decline: { gerund: 'Declining', past: 'Declined' },
   draft: { gerund: 'Drafting', past: 'Drafted' },
   edit: { gerund: 'Editing', past: 'Edited' },
+  explain: { gerund: 'Explaining', past: 'Explained' },
   follow: { gerund: 'Following', past: 'Followed' },
   forget: { gerund: 'Forgetting', past: 'Forgot' },
   fund: { gerund: 'Funding', past: 'Funded' },

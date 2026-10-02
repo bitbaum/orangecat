@@ -4,6 +4,7 @@ import { organizationHandlers } from './organization';
 import { contextHandlers } from './context';
 import { productivityHandlers } from './productivity';
 import { paymentHandlers } from './payments';
+import { walletLedgerHandlers } from './wallet-ledger';
 import { governanceHandlers } from './governance';
 import { socialHandlers } from './social';
 import { interestHandlers } from './interests';
@@ -21,6 +22,7 @@ export const ACTION_HANDLERS: Partial<Record<string, ActionHandler>> = {
   ...contextHandlers,
   ...productivityHandlers,
   ...paymentHandlers,
+  ...walletLedgerHandlers,
   ...governanceHandlers,
   ...siteBuildHandlers,
   ...promotionHandlers,
