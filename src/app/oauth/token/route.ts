@@ -4,7 +4,8 @@
  * POST /oauth/token (application/x-www-form-urlencoded)
  *   - grant_type=authorization_code: code, redirect_uri, client_id, code_verifier,
  *     [client_secret for confidential clients] → access/id/refresh tokens.
- *   - grant_type=refresh_token: refresh_token, client_id, [client_secret] → rotated set.
+ *   - grant_type=refresh_token: refresh_token, client_id, [client_secret] → fresh access token
+ *     (refresh token rotated for public clients, kept + slid for confidential ones).
  *   - Either grant may repeat `resource` (RFC 8707). It must be the resource the
  *     grant was bound to at /oauth/authorize; anything else is `invalid_target`.
  *     Omitting it keeps the bound one — the token's `aud` never changes.

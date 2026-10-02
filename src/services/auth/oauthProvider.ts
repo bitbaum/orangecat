@@ -339,9 +339,27 @@ export async function issueTokens(params: {
 }
 
 /**
- * Rotate a refresh token: verify, revoke the old, issue a fresh set bound to
- * the same resource. A mismatched `resource` answers INVALID_TARGET before
- * anything is revoked, so the client keeps a working token.
+ * Redeem a refresh token for a fresh access token, bound to the same resource.
+ * A mismatched `resource` answers INVALID_TARGET before anything changes, so
+ * the client keeps a working token.
+ *
+ * PUBLIC clients (self-registered AI apps, no secret) get the token ROTATED:
+ * the presented one is revoked and a new one issued. A leaked public-client
+ * token is a bearer credential, and rotation is what detects its reuse
+ * (RFC 9700 §4.14.2).
+ *
+ * CONFIDENTIAL clients (Loki, Solon, Heidi, Skif, Substrata) keep the SAME
+ * token, with its expiry slid forward. Their token is already bound to the
+ * client secret authenticated on every refresh, which is the alternative RFC
+ * 9700 names to rotation. Rotating them anyway broke sign-in: an Auth.js app
+ * refreshes inside a page render, where it cannot write the session cookie,
+ * so the rotated token was thrown away and the next refresh presented a
+ * revoked one — `invalid_grant`, which every app correctly reads as "access
+ * taken back", signing the person out about an hour after they signed in.
+ * Measured on Heidi 2026-09-30: every refresh's successor was never used, and
+ * each was followed by a fresh sign-in. Two tabs refreshing at once failed the
+ * same way. Revocation is unaffected: Disconnect and "Sign out everywhere" set
+ * `revoked_at`, and a revoked token is refused here either way.
  */
 export async function rotateRefreshToken(
   refreshToken: string,
@@ -365,10 +383,42 @@ export async function rotateRefreshToken(
     return INVALID_TARGET;
   }
 
+  const now = new Date();
+  const grant = {
+    client,
+    actorId: data.actor_id,
+    userId: data.user_id,
+    scopes: (data.scopes ?? []) as string[],
+    resource: data.resource ?? null,
+  };
+
+  if (client.is_confidential) {
+    // Slide the expiry: a person who keeps using the app stays signed in; one
+    // who stops for OAUTH_TTL.refreshToken signs in again. Conditional on
+    // still being live, so a revocation racing this refresh wins.
+    const { data: kept } = await db
+      .from(DATABASE_TABLES.OAUTH_REFRESH_TOKENS)
+      .update({
+        last_used_at: now.toISOString(),
+        expires_at: new Date(now.getTime() + OAUTH_TTL.refreshToken * 1000).toISOString(),
+      })
+      .eq('id', data.id)
+      .is('revoked_at', null)
+      .select('id')
+      .maybeSingle();
+    if (!kept) {
+      return null;
+    }
+    const tokens = await issueTokens({ ...grant, withRefresh: false });
+    // Echoed, not omitted: a client that finds no refresh_token in the
+    // response may treat its link as broken (Loki does).
+    return { ...tokens, refresh_token: refreshToken };
+  }
+
   // Revoke (rotate) — conditional to avoid double-rotation races.
   const { data: revoked } = await db
     .from(DATABASE_TABLES.OAUTH_REFRESH_TOKENS)
-    .update({ revoked_at: new Date().toISOString(), last_used_at: new Date().toISOString() })
+    .update({ revoked_at: now.toISOString(), last_used_at: now.toISOString() })
     .eq('id', data.id)
     .is('revoked_at', null)
     .select('id')
@@ -377,14 +427,7 @@ export async function rotateRefreshToken(
     return null;
   }
 
-  return issueTokens({
-    client,
-    actorId: data.actor_id,
-    userId: data.user_id,
-    scopes: (data.scopes ?? []) as string[],
-    withRefresh: true,
-    resource: data.resource ?? null,
-  });
+  return issueTokens({ ...grant, withRefresh: true });
 }
 
 // ── Remembered consent (skip screen for trusted clients) ────────────────────
