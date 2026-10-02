@@ -1,5 +1,6 @@
 import FundingProgress from '@/components/public/FundingProgress';
 import EntityLedgerTotal from '@/components/public/EntityLedgerTotal';
+import EntityOpenLedger from '@/components/public/EntityOpenLedger';
 import type { EntityDetailConfig } from '@/components/public/PublicEntityDetailPage';
 import { ROUTES } from '@/config/routes';
 
@@ -40,6 +41,7 @@ export const causeDetailConfig: EntityDetailConfig = {
       <div className="space-y-4">
         <FundingProgress raised={raised} goal={goal} currency={currency} />
         <EntityLedgerTotal entityType="cause" entityId={String(entity.id)} />
+        <EntityOpenLedger entityType="cause" entityId={String(entity.id)} />
       </div>
     );
   },
