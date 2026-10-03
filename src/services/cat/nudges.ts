@@ -20,8 +20,17 @@
  * question away in the Cat chat. `nudge_type` keeps the old values because
  * cached user_nudges rows still carry them.
  * Results are cached in user_nudges; dismissed ones never reappear (dedupe_key).
+ * Which candidates are SHOWN — one per kind, three at most, and fewer of a
+ * kind the person keeps dismissing — is nudge-policy.ts.
+ *
+ * Timing matters as much as grounding. A draft saved a minute ago is not
+ * "forgotten", so a draft is only raised after STALE_DRAFT_DAYS untouched,
+ * and only the oldest one (the rest are counted in its sentence). Good news
+ * ranks first: when people recently searched for something the person
+ * already offers, that is the most useful thing the Cat can say.
  */
 
+import { searchMatches, searchTerms } from 'listkit';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { ROUTES } from '@/config/routes';
@@ -45,11 +54,27 @@ export interface Nudge {
   score: number;
 }
 
-const ENTITY_SOURCE: Array<{ type: 'product' | 'service' | 'cause' }> = [
+const ENTITY_SOURCE: Array<{ type: 'product' | 'service' | 'cause' | 'asset' }> = [
   { type: 'product' },
   { type: 'service' },
   { type: 'cause' },
+  { type: 'asset' },
 ];
+
+/** A draft is raised only once it has sat this long untouched. */
+export const STALE_DRAFT_DAYS = 3;
+/** How far back "people searched for this" looks, and how many searches it takes. */
+export const DEMAND_WINDOW_DAYS = 14;
+export const DEMAND_MIN_SEARCHES = 2;
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+interface OwnRow {
+  id: string;
+  title: string;
+  status: string;
+  touched: number;
+}
 
 export async function generateNudges(
   supabase: AnySupabaseClient,
@@ -70,8 +95,7 @@ export async function generateNudges(
   // ── User's own entities (active + drafts) ──────────────────────────────────
   const ownActorId = await getUserActorId(supabase, userId);
   const actor = ownActorId ? { id: ownActorId } : null;
-  const created: Record<string, { active: number; drafts: Array<{ id: string; title: string }> }> =
-    {};
+  const created: Record<string, { active: OwnRow[]; drafts: OwnRow[] }> = {};
   if (actor?.id) {
     // One query per entity type, fired in parallel — this endpoint is
     // force-dynamic, so serial queries here directly slow every dashboard load
@@ -80,17 +104,21 @@ export async function generateNudges(
         const meta = ENTITY_REGISTRY[type];
         const { data } = await supabase
           .from(meta.tableName)
-          .select('id, title, status')
+          .select('id, title, status, created_at, updated_at')
           .eq('actor_id', actor.id);
         return { type, data: data ?? [] };
       })
     );
     for (const { type, data } of results) {
+      const rows: OwnRow[] = data.map((e: any) => ({
+        id: e.id,
+        title: e.title,
+        status: e.status,
+        touched: Date.parse(e.updated_at ?? e.created_at ?? '') || Date.now(),
+      }));
       created[type] = {
-        active: data.filter((e: any) => e.status === 'active').length,
-        drafts: data
-          .filter((e: any) => e.status === 'draft')
-          .map((e: any) => ({ id: e.id, title: e.title })),
+        active: rows.filter(r => r.status === 'active'),
+        drafts: rows.filter(r => r.status === 'draft'),
       };
     }
   }
@@ -107,18 +135,53 @@ export async function generateNudges(
       score: 0.6,
     });
   }
-  for (const { type } of ENTITY_SOURCE) {
-    for (const d of created[type]?.drafts ?? []) {
-      const c = copy.publishDraft(d.title);
-      nudges.push({
-        nudge_type: 'completion',
-        title: c.title,
-        body: c.body,
-        cta_label: c.cta,
-        cta_url: ENTITY_REGISTRY[type].basePath,
-        dedupe_key: `completion:publish:${d.id}`,
-        score: 0.7,
-      });
+  // ONE card for the oldest stale draft; the others are counted in its body.
+  const staleBefore = Date.now() - STALE_DRAFT_DAYS * DAY_MS;
+  const stale = ENTITY_SOURCE.flatMap(({ type }) =>
+    (created[type]?.drafts ?? []).filter(d => d.touched < staleBefore).map(d => ({ ...d, type }))
+  ).sort((a, b) => a.touched - b.touched);
+  if (stale[0]) {
+    const oldest = stale[0];
+    const others = stale.length - 1;
+    const c = copy.publishDraft(oldest.title, others);
+    nudges.push({
+      nudge_type: 'completion',
+      title: c.title,
+      body: c.body,
+      cta_label: c.cta,
+      cta_url: others > 0 ? ROUTES.DASHBOARD.THINGS : ENTITY_REGISTRY[oldest.type].basePath,
+      dedupe_key: `completion:publish:${oldest.id}`,
+      score: 0.7,
+    });
+  }
+
+  // ── Demand: people searched for something this person already offers ──────
+  const offered = ENTITY_SOURCE.flatMap(({ type }) =>
+    (created[type]?.active ?? []).map(r => ({ ...r, type }))
+  );
+  if (offered.length > 0) {
+    try {
+      const match = demandMatch(offered, await recentSearches(supabase));
+      if (match) {
+        const meta = ENTITY_REGISTRY[match.listing.type];
+        const c = copy.demandMatch({
+          query: match.query,
+          count: match.count,
+          title: match.listing.title,
+          noun: copy.entityNoun(match.listing.type),
+        });
+        nudges.push({
+          nudge_type: 'connection',
+          title: c.title,
+          body: c.body,
+          cta_label: c.cta,
+          cta_url: `${meta.publicBasePath}/${match.listing.id}`,
+          dedupe_key: `demand:match:${match.listing.id}`,
+          score: 0.92,
+        });
+      }
+    } catch (err) {
+      logger.warn('nudges: demand match failed', { err }, 'Nudges');
     }
   }
 
@@ -135,12 +198,58 @@ export async function generateNudges(
     }
   }
 
-  // rank, dedupe, cap
+  // Rank and dedupe. What is SHOWN (one per kind, three at most, fewer of a
+  // dismissed kind) is selectNudges in nudge-policy.ts, which sees history.
   const seen = new Set<string>();
   return nudges
     .sort((a, b) => b.score - a.score)
-    .filter(n => (seen.has(n.dedupe_key) ? false : (seen.add(n.dedupe_key), true)))
-    .slice(0, 5);
+    .filter(n => (seen.has(n.dedupe_key) ? false : (seen.add(n.dedupe_key), true)));
+}
+
+/** Committed searches from the last DEMAND_WINDOW_DAYS. No user ids: the log has none. */
+async function recentSearches(supabase: AnySupabaseClient): Promise<string[]> {
+  const since = new Date(Date.now() - DEMAND_WINDOW_DAYS * DAY_MS).toISOString();
+  const { data } = await supabase
+    .from(DATABASE_TABLES.SEARCH_QUERIES)
+    .select('query')
+    .gte('created_at', since)
+    .limit(1000);
+  return (data ?? []).map((r: any) => String(r.query ?? '')).filter(Boolean);
+}
+
+/**
+ * The listing most searched for, and the search that found it. A search
+ * "matches" a listing when every one of its words appears in the title
+ * (listkit's rule: any order, accents folded), and only searches of at least
+ * one real word count. It takes DEMAND_MIN_SEARCHES hits on one phrasing, so
+ * a single stray query, perhaps the owner's own, never becomes a claim.
+ */
+export function demandMatch<L extends { id: string; title: string }>(
+  listings: L[],
+  searches: string[]
+): { listing: L; query: string; count: number } | null {
+  const byQuery = new Map<string, { query: string; count: number }>();
+  for (const raw of searches) {
+    const terms = searchTerms(raw).filter(t => t.length >= 3);
+    if (terms.length === 0) {
+      continue;
+    }
+    // Word order is the searcher's, not a different search.
+    const key = [...terms].sort().join(' ');
+    const hit = byQuery.get(key);
+    byQuery.set(key, { query: hit?.query ?? raw.trim(), count: (hit?.count ?? 0) + 1 });
+  }
+  let best: { listing: L; query: string; count: number } | null = null;
+  for (const { query, count } of byQuery.values()) {
+    if (count < DEMAND_MIN_SEARCHES || (best && count <= best.count)) {
+      continue;
+    }
+    const listing = listings.find(l => searchMatches({ text: r => [r.title] }, l, query));
+    if (listing) {
+      best = { listing, query, count };
+    }
+  }
+  return best;
 }
 
 /** Stem-aware substring match — conservative, so a "match" is a real signal. */

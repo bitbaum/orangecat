@@ -3,7 +3,8 @@
  * POST /api/cat/nudges   — { action: 'dismiss', id }  → hide a nudge (won't return)
  *
  * Nudges are cached in user_nudges and regenerated when the profile changed or
- * the cache is older than ~24h. Dismissed nudges never reappear (dedupe_key).
+ * the cache is older than ~24h. Dismissed nudges never reappear (dedupe_key),
+ * and a kind dismissed twice in 30 days is muted for 30 (nudge-policy.ts).
  */
 
 import { DATABASE_TABLES } from '@/config/database-tables';
@@ -12,6 +13,7 @@ import { apiSuccess, apiBadRequest, apiRateLimited } from '@/lib/api/standardRes
 import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { generateNudges } from '@/services/cat/nudges';
+import { selectNudges, type DismissedNudge } from '@/services/cat/nudge-policy';
 import { logger } from '@/utils/logger';
 
 export const dynamic = 'force-dynamic';
@@ -58,11 +60,12 @@ export const GET = withAuth(async (req: AuthenticatedRequest) => {
     const fresh = await generateNudges(db, user.id);
     const { data: dismissedRows } = await db
       .from(DATABASE_TABLES.USER_NUDGES)
-      .select('dedupe_key')
+      .select('dedupe_key, dismissed_at')
       .eq('user_id', user.id)
       .eq('status', 'dismissed');
-    const dismissed = new Set((dismissedRows ?? []).map((r: any) => r.dedupe_key));
-    const toStore = fresh.filter(n => !dismissed.has(n.dedupe_key));
+    // Never a dismissed one again, one per kind, three at most, and a kind
+    // dismissed twice this month stays quiet for a month (nudge-policy.ts).
+    const toStore = selectNudges(fresh, (dismissedRows ?? []) as DismissedNudge[]);
 
     await db
       .from(DATABASE_TABLES.USER_NUDGES)
