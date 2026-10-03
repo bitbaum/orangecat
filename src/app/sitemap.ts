@@ -1,4 +1,5 @@
 import { MetadataRoute } from 'next';
+import { SITE_ORIGIN } from '@/config/site-origin';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { looseClient } from '@/lib/supabase/untyped';
 import { ENTITY_REGISTRY, type EntityType } from '@/config/entity-registry';
@@ -9,7 +10,7 @@ import { getPublishedPosts } from '@/lib/blog';
 import { listPublicArticleRefs } from '@/services/articles/get-article';
 import { logger } from '@/utils/logger';
 
-const BASE_URL = 'https://orangecat.ch';
+const BASE_URL = SITE_ORIGIN;
 
 // The DB-backed sections need runtime env (service-role key). At build time on
 // CI that key is absent, so a purely-static sitemap would be baked in forever —
@@ -175,7 +176,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     if (profiles) {
       const profilePages: MetadataRoute.Sitemap = profiles
         .filter((p): p is SitemapProfile & { username: string } => p.username !== null)
-        .filter((p) => !isFixtureUsername(p.username))
+        .filter(p => !isFixtureUsername(p.username))
         .map(profile => ({
           // encodeURIComponent: usernames containing '@' (we observed
           // literal webdev@example.com profiles live) produce invalid

@@ -1,4 +1,5 @@
 import { MetadataRoute } from 'next';
+import { SITE_ORIGIN } from '@/config/site-origin';
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -17,6 +18,6 @@ export default function robots(): MetadataRoute.Robots {
         ],
       },
     ],
-    sitemap: 'https://orangecat.ch/sitemap.xml',
+    sitemap: `${SITE_ORIGIN}/sitemap.xml`,
   };
 }

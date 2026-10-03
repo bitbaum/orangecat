@@ -107,6 +107,30 @@ See `.env.example` for the full list. Key variables:
 
 </details>
 
+## Run your own copy
+
+OrangeCat is MIT. Everything a copy needs is in this repository; nothing points
+at bitbaum's infrastructure that an environment variable cannot repoint.
+
+- **Database and auth**: a [Supabase](https://supabase.com) project — the free
+  tier works — or the self-hosted Supabase stack ([supabase/docker](https://github.com/supabase/supabase/tree/master/docker)).
+  Point `NEXT_PUBLIC_SUPABASE_URL` and the keys at it; the schema is
+  `supabase/migrations/*.sql`, applied in filename order (`scripts/apply-migrations.sh`).
+- **Your hostname**: set `NEXT_PUBLIC_APP_URL`. Sitemap, robots, SEO
+  metadata, structured data, emails and the OpenAPI document all build on it
+  (`src/config/site-origin.ts`); `https://orangecat.ch` is only the fallback.
+- **Sibling products are optional**: Loki, Solon and the feedback widget are
+  reached through `NEXT_PUBLIC_LOKI_URL` / `NEXT_PUBLIC_SOLON_URL` and are
+  simply absent when their keys are unset.
+- **The contract is `.env.example`**: every variable `src/` reads is named
+  there with the file that reads it, and `__tests__/unit/ci/env-example-covers-src.test.ts`
+  fails CI when one is not. A feature whose key is empty is off, not broken.
+- **Deploy anywhere Node 24 runs**: `pnpm run build && pnpm start`. The
+  Hetzner scripts under `scripts/` are how bitbaum deploys, not a requirement.
+
+The OrangeCat name and visual identity are not part of the licence; a copy
+should carry its own.
+
 ## Project Structure
 
 ```
