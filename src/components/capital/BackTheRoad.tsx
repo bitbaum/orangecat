@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
+import { ROUTES } from '@/config/routes';
 import { formatCurrency } from '@/services/currency';
 import type {
   CapitalRail,
@@ -67,6 +68,16 @@ export function BackTheRoad({ capital }: { capital: OpenCapital }) {
           />
         ))}
       </div>
+      <p className="mt-6 text-sm text-fg-secondary">
+        Need money for something yourself?{' '}
+        <Link
+          href={ROUTES.RAISE}
+          className="font-medium text-fg-primary underline-offset-4 hover:underline"
+        >
+          Raise it in a sentence
+        </Link>{' '}
+        — the same three ways, priced and written for you.
+      </p>
     </section>
   );
 }

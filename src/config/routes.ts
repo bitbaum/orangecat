@@ -298,6 +298,8 @@ export const ROUTES = {
   AUTH_SIGNOUT: '/auth/signout',
   DISCOVER: '/discover',
   CREATE: '/create',
+  /** Say what you need; the Cat prices it and drafts the page. */
+  RAISE: '/raise',
   STUDY_BITCOIN: '/study-bitcoin',
   BITCOIN_WALLET_GUIDE: '/bitcoin-wallet-guide',
   ONBOARDING: {
