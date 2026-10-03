@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import {
   buildCreateItems,
   buildPages,
+  hrefForHit,
   rankItems,
   thingItems,
 } from '@/components/search/command-palette-items';
+import type { GlobalSearchHit } from '@/services/search';
 import { ENTITY_REGISTRY, ENTITY_TYPES } from '@/config/entity-registry';
 import type { Thing } from '@/domain/things/service';
 
@@ -61,5 +63,28 @@ describe('command palette items', () => {
   it('keeps the given order when nothing is typed, and caps the group', () => {
     const pages = buildPages();
     expect(rankItems(pages, '', 3)).toEqual(pages.slice(0, 3));
+  });
+
+  it('links every search hit to its public page, by id or by its path key', () => {
+    const hit = (entity_type: string, over: Partial<GlobalSearchHit> = {}): GlobalSearchHit => ({
+      entity_type,
+      id: 'abc',
+      title: 't',
+      subtitle: null,
+      image_url: null,
+      rank: 1,
+      path_key: null,
+      ...over,
+    });
+    for (const type of ENTITY_TYPES.filter(t => t !== 'group')) {
+      expect(hrefForHit(hit(type))).toBe(`${ENTITY_REGISTRY[type].publicBasePath}/abc`);
+    }
+    // Organisations are routed by slug, never by id.
+    expect(hrefForHit(hit('group', { path_key: 'zurich-btc' }))).toBe('/groups/zurich-btc');
+    expect(hrefForHit(hit('profile', { path_key: 'cato' }))).toBe('/profiles/cato');
+    // Before the migration lands there is no path_key; the old subtitle still works.
+    expect(hrefForHit(hit('profile', { subtitle: '@cato', path_key: undefined as never }))).toBe(
+      '/profiles/cato'
+    );
   });
 });
