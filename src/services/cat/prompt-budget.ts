@@ -32,6 +32,7 @@ import {
   estimateTokens,
 } from '@/services/ai/groq-capacity';
 import { DEFECT_IF_MISSING_SECTIONS } from '@/config/cat-prompt-sections';
+import { PARTY_SECTION_HEADING } from '@/config/party';
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
@@ -97,6 +98,7 @@ export const DROPPABLE_SECTIONS_IN_ORDER: readonly string[] = [
   // floor, held by an oversight.
   'Proactive Suggestions (only when it earns the interruption)',
   'Getting Something Built (Loki)',
+  PARTY_SECTION_HEADING,
   'Answering a Question (evaluation, opinion, design)',
 ];
 

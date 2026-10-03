@@ -47,8 +47,11 @@ export function generateActionDescription(
       const type = parameters.type ? ` (${parameters.type})` : '';
       return `Create wishlist "${parameters.title}"${type}`;
     }
-    case 'create_event':
-      return `Create event "${parameters.title}" at ${parameters.location}`;
+    case 'create_event': {
+      const kind = parameters.event_type ? `${parameters.event_type} ` : 'event ';
+      const where = parameters.location ? ` at ${parameters.location}` : '';
+      return `Create ${kind}"${parameters.title}" on ${parameters.start_date}${where}`;
+    }
     case 'create_asset':
       return `Register asset "${parameters.title}"${parameters.location ? ` at ${parameters.location}` : ''}`;
     case 'update_entity':
@@ -63,6 +66,10 @@ export function generateActionDescription(
       return `Send message to user`;
     case 'reply_to_message':
       return `Reply in conversation: "${String(parameters.content).slice(0, 50)}"`;
+    case 'propose_to_group':
+      return parameters.decide_on === 'solon'
+        ? `Prepare "${parameters.title}" as a Solon proposal for the group to file and vote on`
+        : `File "${parameters.title}" as a draft proposal in the group — members vote before anything is spent`;
     case 'invite_to_organization':
       return `Invite user to organization (role: ${parameters.role || 'member'})`;
     case 'send_payment': {

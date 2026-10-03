@@ -167,7 +167,14 @@ describe('selection is worth doing', () => {
     // the handler refuses any txid the wallet does not have — so the guidance
     // the prompt would otherwise need ("never invent a txid") is enforced in
     // code instead of paid for in prose.
-    expect(remaining).toBeLessThanOrEqual(4_250);
+    //
+    // Raised 4,250 -> 4,475 for "Throw a party": `propose_to_group` (shared
+    // money decided by the people who share it — an OrangeCat group vote, or a
+    // prefilled Solon proposal) and the `create_event` parameters a party needs
+    // (event_type, end_date, is_free, max_attendees; `location` became
+    // optional). Only appendix names and a one-clause description land here —
+    // the playbook itself is SITUATIONAL and costs a greeting nothing.
+    expect(remaining).toBeLessThanOrEqual(4_475);
   });
 
   it('selects by default now, and still sends everything when told to', async () => {

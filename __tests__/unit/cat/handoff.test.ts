@@ -49,14 +49,19 @@ describe('the brief travels with the link', () => {
 });
 
 describe('it does not invent a neighbour that cannot receive', () => {
-  it('has no Solon handoff, because Solon has no agent surface', () => {
-    // Solon is in the capability config as a governance plane, and has no
-    // chat, no brief and nothing to prefill. A "talk to Solon" link would
-    // point at a page that cannot answer, which is worse than no link.
+  it('hands Solon a decision to file, never a question to answer', () => {
+    // Solon has no chat and no brief, so there is no "talk to Solon" link — it
+    // would point at a page that cannot answer. What its proposal form DOES
+    // read is a prefilled draft (bitbaum/solon lib/domain/proposal-draft), so
+    // the one Solon handoff carries a decision for a member to file and sign.
     expect(NEIGHBOURS.solon).toBeDefined();
     const exported = Object.keys(neighbours);
-    expect(exported.some(k => k.toLowerCase().includes('solon'))).toBe(false);
-    // And the one handoff that does exist points at Loki, not anywhere else.
-    expect(exported.filter(k => k.toLowerCase().includes('handoff'))).toEqual(['lokiBuildHandoff']);
+    expect(exported.filter(k => k.toLowerCase().includes('handoff')).sort()).toEqual([
+      'lokiBuildHandoff',
+      'solonProposalHandoff',
+    ]);
+    const url = new URL(neighbours.solonProposalHandoff({ title: 'Party budget' }));
+    expect(url.origin).toBe(new URL(ECOSYSTEM.solon.siteUrl).origin);
+    expect(url.pathname).toBe('/propose');
   });
 });

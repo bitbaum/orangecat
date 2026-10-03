@@ -8,6 +8,7 @@
 
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { STATUS, ENTITY_STATUS } from '@/config/database-constants';
+import { EVENT_TYPES } from '@/config/events';
 import { z } from 'zod';
 import {
   commitPreregistration,
@@ -230,6 +231,14 @@ export const entityCreateHandlers: Record<string, ActionHandler> = {
   },
 
   create_event: async (supabase, userId, actorId, params) => {
+    // `events` has no `location` column — the place is `venue_address` — and
+    // its `currency` default ('SATS') fails the table's own CHECK. Both used to
+    // be left to the database, so every event the Cat created was refused.
+    const eventType = EVENT_TYPES.some(t => t.value === params.event_type)
+      ? (params.event_type as string)
+      : 'meetup';
+    const location = typeof params.location === 'string' ? params.location.trim() : '';
+    const maxAttendees = Number(params.max_attendees);
     const { data, error } = await supabase
       .from(ENTITY_REGISTRY.event.tableName)
       .insert({
@@ -237,8 +246,13 @@ export const entityCreateHandlers: Record<string, ActionHandler> = {
         actor_id: actorId,
         title: params.title,
         description: params.description || null,
+        event_type: eventType,
         start_date: params.start_date,
-        location: params.location,
+        end_date: params.end_date || null,
+        venue_address: location || null,
+        is_free: params.is_free !== false,
+        max_attendees: Number.isInteger(maxAttendees) && maxAttendees > 0 ? maxAttendees : null,
+        currency: 'BTC',
         status: params.publish ? STATUS.EVENTS.PUBLISHED : STATUS.EVENTS.DRAFT,
       })
       .select()

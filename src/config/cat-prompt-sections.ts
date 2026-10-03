@@ -34,6 +34,8 @@
  * matcher fires.
  */
 
+import { PARTY_SECTION_HEADING, PARTY_TRIGGER } from '@/config/party';
+
 /**
  * Sections every message pays for. Keys are the exact `## ` heading text.
  * `assertEveryPromptSectionClassified` fails the build if a heading here drifts.
@@ -132,6 +134,12 @@ export const SITUATIONAL_SECTIONS: ReadonlyArray<{ heading: string; when: RegExp
     // built never saw the one action that does it.
     heading: 'Getting Something Built (Loki)',
     when: /\bloki\b|fleet ?crown|\bbuild\b|\bbuilt\b|building|\bsite\b|website|\bapp\b|prototype|\bmvp\b|make it real|ship it|\bdevelop/,
+  },
+  {
+    // One click on "Throw a party" sends PARTY.request, which this matches —
+    // so the button always arrives with the playbook that answers it.
+    heading: PARTY_SECTION_HEADING,
+    when: PARTY_TRIGGER,
   },
   {
     heading: 'Choosing the Entity Type (decision rubric — apply before EVERY proposal)',

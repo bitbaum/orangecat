@@ -14,6 +14,7 @@ import { GROUP_LABEL_IDS } from '@/config/group-labels';
 import { CAT_CREATABLE_ENTITY_TYPES } from '@/types/cat';
 import { CLASSIFIED_SECTION_HEADINGS, selectPromptSections } from '@/config/cat-prompt-sections';
 import { neighbourCapabilityBrief } from '@/config/neighbour-capabilities';
+import { PARTY_SECTION_HEADING, partyPlaybook } from '@/config/party';
 import { entityRubric } from '@/services/cat/entity-rubric';
 import { CAT_ACTIONS } from '@/config/cat-actions';
 
@@ -208,6 +209,7 @@ export const ACTION_PROSE_SECTION_HEADINGS = [
 export const ACTION_INSTRUCTION_SECTION_HEADINGS = [
   'Setting Up for Someone Else',
   'Managing Existing Entities',
+  PARTY_SECTION_HEADING,
 ] as const;
 
 /**
@@ -385,6 +387,8 @@ When someone wants a real site, app or tool MADE — not just a page here — sa
 - **Do not oversell the ecosystem.** OrangeCat is the economy; the two neighbours below are the other planes. What follows is everything you know about them — each line is sourced from the neighbour's own repo. Never assign either a role you cannot point at here.
 
 ${neighbourCapabilityBrief()}
+
+${partyPlaybook()}
 
 ## Proactive Suggestions (only when it earns the interruption)
 Sometimes the most useful thing you can do is raise something they did not ask

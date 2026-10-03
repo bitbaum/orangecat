@@ -108,6 +108,7 @@ const ACTION_LABELS: Record<string, string> = {
   publish_entity: 'Entity',
   archive_entity: 'Entity',
   invite_to_organization: 'Invitation',
+  propose_to_group: 'Proposal',
 };
 
 function ExecResultChip({ result }: { result: ExecActionResult }) {
