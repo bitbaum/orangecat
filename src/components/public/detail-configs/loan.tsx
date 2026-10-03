@@ -7,6 +7,7 @@ import { formatCurrency } from '@/services/currency';
 import { PLATFORM_DEFAULT_CURRENCY } from '@/config/currencies';
 import PublicEntityCTA from '@/components/public/PublicEntityCTA';
 import { ROUTES } from '@/config/routes';
+import { PUBLIC_VISIBILITY } from '@/config/public-visibility';
 import type { EntityDetailConfig, EntityData } from '@/components/public/PublicEntityDetailPage';
 import { calculateProgress } from '@/lib/loans/progress';
 import { LOAN_TYPES, LOAN_CATEGORIES } from '@/config/loans';
@@ -54,7 +55,7 @@ export const loanDetailConfig: EntityDetailConfig = {
   entityType: 'loan',
   ownerLabel: 'Listed By',
   descriptionTitle: 'About this Loan',
-  visibilityFilter: { column: 'is_public', value: true },
+  visibilityFilter: PUBLIC_VISIBILITY.loan,
   getViewRoute: id => ROUTES.LOANS.VIEW(id),
   showPaymentSection: false,
   mobileStickyCTA: (entity: EntityData) => ({

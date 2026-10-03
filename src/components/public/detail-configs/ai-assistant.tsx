@@ -4,6 +4,7 @@ import { CompanionActions } from '@/components/companions/CompanionActions';
 import { AssistantPriceChip } from '@/components/ai-assistants/AssistantPriceChip';
 import type { EntityDetailConfig } from '@/components/public/PublicEntityDetailPage';
 import { ROUTES } from '@/config/routes';
+import { PUBLIC_VISIBILITY } from '@/config/public-visibility';
 
 // ai_assistants price by pricing_model, stored in BTC (no currency column;
 // the sats→BTC migration dropped the _sats suffix and converted values).
@@ -42,7 +43,7 @@ export const aiAssistantDetailConfig: EntityDetailConfig = {
   metadataSelect: 'title, description, avatar_url',
   // A private companion is the owner's alone. RLS already hides it from
   // strangers; this keeps the page honest even for a signed-in non-owner.
-  visibilityFilter: { column: 'is_public', value: true },
+  visibilityFilter: PUBLIC_VISIBILITY.ai_assistant,
   // No pay-the-seller-direct section: you don't pay an assistant up front — you
   // chat, and it charges per its pricing model (free / per-message via Cat
   // Credits) inside the chat widget. This also suppresses the default mobile
