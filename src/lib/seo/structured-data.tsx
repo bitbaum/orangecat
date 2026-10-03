@@ -1,6 +1,7 @@
 import { ENTITY_REGISTRY, type EntityType } from '@/config/entity-registry';
+import { SITE_ORIGIN } from '@/config/site-origin';
 
-const BASE_URL = 'https://orangecat.ch';
+const BASE_URL = SITE_ORIGIN;
 
 // Maps entity types to schema.org types
 const SCHEMA_TYPE_MAP: Partial<Record<EntityType, string>> = {
