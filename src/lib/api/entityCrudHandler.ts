@@ -54,6 +54,15 @@ interface EntityHandlerConfig {
   schema?: ZodSchema;
   /** Function to build update payload from validated data */
   buildUpdatePayload?: (data: Record<string, unknown>) => Record<string, unknown>;
+  /**
+   * Async last step on the built update payload, given the row as it stands —
+   * for derived columns that need I/O (e.g. an event's map pin, re-geocoded
+   * only when its address actually changed).
+   */
+  refineUpdatePayload?: (
+    payload: Record<string, unknown>,
+    existing: Record<string, unknown>
+  ) => Promise<Record<string, unknown>>;
   /** Whether to check for 'active' status on public GET */
   requireActiveStatus?: boolean;
   /** Field name for ownership check (default: 'user_id', use 'actor_id' for unified ownership) */
@@ -295,6 +304,7 @@ function createPutHandler(config: EntityHandlerConfig) {
     tableName,
     checkPutAccess,
     postProcessPut,
+    refineUpdatePayload,
   } = config;
   const meta = getEntityMetadata(entityType);
   const table = tableName ?? meta.tableName;
@@ -366,8 +376,9 @@ function createPutHandler(config: EntityHandlerConfig) {
 
       const body = await request.json();
       const validatedData = schema.parse(body);
+      const built = buildUpdatePayload(validatedData as Record<string, unknown>);
       const updatePayload = {
-        ...buildUpdatePayload(validatedData as Record<string, unknown>),
+        ...(refineUpdatePayload ? await refineUpdatePayload(built, existing) : built),
         updated_at: new Date().toISOString(),
       };
 

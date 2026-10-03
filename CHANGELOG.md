@@ -15,7 +15,8 @@ to the map, sub-bullets stay here for the human reader.
 
 - **Tell your Cat about a party and it's posted.** Say "a party at Langstrasse 120 on Saturday at 10, house and disco, I need a DJ and two bartenders, 20 CHF entry" and, after you confirm, the Cat creates the whole event: the address is put on the map, the music and the vibe are on the page, the ticket price is set in your currency, and the crew is posted as open roles. Say "post it" and it goes live straight away.
   - Anyone looking at the event sees "Crew wanted" with an "I can do this" button for each role, which opens a message to you already naming the role and the event. You add, fill and remove roles from the same card on your event page ("DJ, 2 bartenders" works).
-  - Events now have Music and Vibe fields on the form too, and every event with an address gets a map pin, whether the Cat made it or you did. The page links to the map.
+  - Events now have Music and Vibe fields on the form too, and every event with an address gets a map pin, whether the Cat made it or you did. The page links to the map. Change the address later and the pin moves with it.
+- **Find what's on near you.** /events has a "What's on near you" search: use your location or type a place, pick the music and a distance, and get upcoming events nearest first. Or ask your Cat — "any house parties near Zürich this weekend?" — and it answers from the same search, linking each event.
 
 ### Fixed
 

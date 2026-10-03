@@ -39,11 +39,16 @@ export function venueQuery(fields: VenueFields): string | null {
   return [name, street, cityLine || null, country].filter(Boolean).join(', ');
 }
 
-const hasPin = (f: VenueFields) =>
-  typeof f.latitude === 'number' &&
-  Number.isFinite(f.latitude) &&
-  typeof f.longitude === 'number' &&
-  Number.isFinite(f.longitude);
+const coord = (v: unknown): number | null => {
+  if (v === null || v === undefined || v === '') {
+    return null;
+  }
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+};
+
+// numeric columns can arrive as strings; a pin is two finite coordinates.
+const hasPin = (f: VenueFields) => coord(f.latitude) !== null && coord(f.longitude) !== null;
 
 /**
  * Return the fields with latitude/longitude filled when they were missing and
@@ -73,6 +78,37 @@ export async function withVenuePin<T extends VenueFields>(
     venue_postal_code: text(fields.venue_postal_code) ?? hit.venue_postal_code,
     venue_country: text(fields.venue_country) ?? hit.venue_country,
   };
+}
+
+const VENUE_TEXT_FIELDS = [
+  'venue_name',
+  'venue_address',
+  'venue_city',
+  'venue_postal_code',
+  'venue_country',
+] as const;
+
+/**
+ * The pin for an edited event. The edit form sends back whatever pin it
+ * loaded, so a changed address would otherwise keep pointing at the old place.
+ * Re-geocodes when the address moved (or the event never had a pin); keeps
+ * the pin when only other fields changed; clears it when nothing resolves,
+ * because no pin beats a wrong one.
+ */
+export async function repinIfMoved<T extends VenueFields>(
+  update: T,
+  existing: VenueFields,
+  geocode: (q: string) => Promise<GeocodedVenue | null> = geocodeAddress
+): Promise<T> {
+  const moved = VENUE_TEXT_FIELDS.some(f => f in update && text(update[f]) !== text(existing[f]));
+  if (!moved && hasPin(existing)) {
+    return hasPin(update)
+      ? update
+      : { ...update, latitude: coord(existing.latitude), longitude: coord(existing.longitude) };
+  }
+  const merged = { ...existing, ...update, latitude: null, longitude: null };
+  const pinned = await withVenuePin(merged, geocode);
+  return { ...update, latitude: pinned.latitude, longitude: pinned.longitude };
 }
 
 /**

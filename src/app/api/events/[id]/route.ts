@@ -16,6 +16,7 @@ import {
   commonFieldMappings,
   entityTransforms,
 } from '@/lib/api/buildUpdatePayload';
+import { repinIfMoved } from '@/domain/events/venue';
 
 // Build update payload from validated event data
 const buildEventUpdatePayload = createUpdatePayloadBuilder([
@@ -70,6 +71,8 @@ const { GET, PUT, DELETE } = createEntityCrudHandlers({
   entityType: 'event',
   schema: eventSchema,
   buildUpdatePayload: buildEventUpdatePayload,
+  // A changed address moves the map pin with it.
+  refineUpdatePayload: (payload, existing) => repinIfMoved(payload, existing),
   ownershipField: 'actor_id',
   useActorOwnership: true,
   requireActiveStatus: false, // Events have different status values

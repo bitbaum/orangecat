@@ -1,4 +1,4 @@
-import { venueFromText, venueQuery, withVenuePin } from '@/domain/events/venue';
+import { repinIfMoved, venueFromText, venueQuery, withVenuePin } from '@/domain/events/venue';
 import type { GeocodedVenue } from '@/lib/nominatim';
 
 const ZURICH: GeocodedVenue = {
@@ -70,5 +70,54 @@ describe('venueFromText', () => {
   it('keeps the words verbatim when they cannot be placed', async () => {
     const out = await venueFromText('the old barn', vi.fn().mockResolvedValue(null));
     expect(out).toMatchObject({ venue_address: 'the old barn', latitude: null, longitude: null });
+  });
+});
+
+describe('repinIfMoved — an edited address moves the pin', () => {
+  const existing = {
+    venue_address: 'Bahnhofstrasse 1',
+    venue_city: 'Zürich',
+    latitude: 47.37,
+    longitude: 8.54,
+  };
+
+  it('re-geocodes when the address changed, replacing the stale pin the form sent back', async () => {
+    const geocode = vi.fn().mockResolvedValue(ZURICH);
+    const out = await repinIfMoved(
+      { venue_address: 'Langstrasse 120', venue_city: 'Zürich', latitude: 47.37, longitude: 8.54 },
+      existing,
+      geocode
+    );
+    expect(geocode).toHaveBeenCalledWith('Langstrasse 120, Zürich');
+    expect(out).toMatchObject({ latitude: 47.3779, longitude: 8.5265 });
+  });
+
+  it('clears the pin when the new address cannot be placed', async () => {
+    const out = await repinIfMoved(
+      { venue_address: 'somewhere odd', venue_city: 'Zürich' },
+      existing,
+      vi.fn().mockResolvedValue(null)
+    );
+    expect(out).toMatchObject({ latitude: null, longitude: null });
+  });
+
+  it('keeps the pin when only other fields changed, even if the form sent it as null', async () => {
+    const geocode = vi.fn();
+    const out = await repinIfMoved(
+      { venue_address: 'Bahnhofstrasse 1', title: 'Renamed', latitude: null, longitude: null },
+      existing,
+      geocode
+    );
+    expect(geocode).not.toHaveBeenCalled();
+    expect(out).toMatchObject({ latitude: 47.37, longitude: 8.54, title: 'Renamed' });
+  });
+
+  it('back-fills a pin for an older event that never had one', async () => {
+    const out = await repinIfMoved(
+      { title: 'Same place' },
+      { venue_address: 'Langstrasse 120', venue_city: 'Zürich', latitude: null, longitude: null },
+      vi.fn().mockResolvedValue(ZURICH)
+    );
+    expect(out).toMatchObject({ latitude: 47.3779, longitude: 8.5265 });
   });
 });
