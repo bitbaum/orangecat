@@ -10,6 +10,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { CAT_SEND_EVENT } from '@/lib/chat/cat-send-event';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 
 import {
@@ -201,6 +202,19 @@ export function ModernChatPanel({
     },
     [sendMessage]
   );
+
+  // Words sent from beside the panel (lib/chat/cat-send-event) go through the
+  // same send as a suggestion chip.
+  useEffect(() => {
+    const onSend = (e: Event) => {
+      const text = (e as CustomEvent<string>).detail;
+      if (typeof text === 'string' && text.trim()) {
+        void sendMessage(text);
+      }
+    };
+    window.addEventListener(CAT_SEND_EVENT, onSend);
+    return () => window.removeEventListener(CAT_SEND_EVENT, onSend);
+  }, [sendMessage]);
 
   const handleActionClick = useCallback(
     (action: CatAction) => {

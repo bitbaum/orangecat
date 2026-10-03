@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { PanelLeft, Settings2 } from 'lucide-react';
 import { ROUTES } from '@/config/routes';
 import { cn } from '@/lib/utils';
+import { LokiChip } from './LokiChip';
 import { QuotaMeter, isQuotaWorthShowing } from './ModernChatPanel/components/QuotaMeter';
 import type { CatQuota } from './ModernChatPanel/hooks/useCatQuota';
 
@@ -54,6 +55,9 @@ export function CatChatToolbar({
       <div className="ml-auto flex min-w-0 items-center gap-1 sm:gap-2">
         {isQuotaWorthShowing(quota) && <QuotaMeter quota={quota} className="min-w-0" />}
         <div className="flex flex-shrink-0 items-center gap-1 sm:gap-2">
+          {/* Loki is one of the Cat's hands — visible here, where you ask,
+              not only in settings. */}
+          <LokiChip />
           <Link
             href={ROUTES.DASHBOARD.CAT_SETTINGS}
             className="flex min-h-10 min-w-10 items-center justify-center gap-1.5 rounded-md px-2.5 text-sm text-fg-secondary transition-colors hover:bg-surface-raised/60 hover:text-fg-primary sm:min-w-0 sm:px-3"
