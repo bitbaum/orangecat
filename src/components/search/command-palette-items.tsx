@@ -11,6 +11,7 @@
  * ("zurich" finds "Zürich"), and a hit in the label beats a hit in a keyword.
  */
 import type { ComponentType } from 'react';
+import { User } from 'lucide-react';
 import { applyQuery, emptyQuery, type ListSpec } from 'listkit';
 import { ENTITY_REGISTRY, ENTITY_TYPES } from '@/config/entity-registry';
 import { sidebarSections, type NavigationItem } from '@/config/navigation';
@@ -28,32 +29,34 @@ export interface PaletteItem {
   href: string;
 }
 
-/** Public detail route for a global-search hit, by entity type. */
+/**
+ * Public page for a global-search hit. Entity types come from the registry —
+ * every type global_search returns has a `publicBasePath` keyed by id — so a
+ * type added to the RPC links correctly without a new case here. Two keys are
+ * not the id: a profile's username and a group's slug, both sent as
+ * `path_key` (a profile also carries "@username" in its subtitle, the older
+ * channel, kept as the fallback).
+ */
 export function hrefForHit(hit: GlobalSearchHit): string {
-  switch (hit.entity_type) {
-    case 'project':
-      return ROUTES.PROJECTS.VIEW(hit.id);
-    case 'product':
-      return ROUTES.PRODUCTS.VIEW(hit.id);
-    case 'service':
-      return ROUTES.SERVICES.VIEW(hit.id);
-    case 'cause':
-      return ROUTES.CAUSES.VIEW(hit.id);
-    case 'loan':
-      return ROUTES.LOANS.VIEW(hit.id);
-    case 'event':
-      return ROUTES.EVENTS.VIEW(hit.id);
-    case 'profile':
-      return ROUTES.PROFILES.VIEW((hit.subtitle ?? '').replace(/^@/, '') || hit.id);
-    default:
-      return ROUTES.DISCOVER;
+  if (hit.entity_type === 'profile') {
+    const username = hit.path_key || (hit.subtitle ?? '').replace(/^@/, '');
+    return ROUTES.PROFILES.VIEW(username || hit.id);
   }
+  if (hit.entity_type === 'group') {
+    return hit.path_key ? ROUTES.GROUPS.VIEW(hit.path_key) : ROUTES.GROUPS.LIST;
+  }
+  const meta = (ENTITY_REGISTRY as Partial<Record<string, { publicBasePath: string }>>)[
+    hit.entity_type
+  ];
+  return meta ? `${meta.publicBasePath}/${hit.id}` : ROUTES.DISCOVER;
 }
 
-/** Icon for a global-search hit: the registry's, else the profile/people one. */
+/** Icon for a global-search hit: the registry's, else the person icon for a profile. */
 export function iconForHit(hit: GlobalSearchHit): PaletteItem['icon'] {
-  const meta = (ENTITY_REGISTRY as Record<string, { icon: PaletteItem['icon'] }>)[hit.entity_type];
-  return meta?.icon ?? ENTITY_REGISTRY.group.icon;
+  const meta = (ENTITY_REGISTRY as Partial<Record<string, { icon: PaletteItem['icon'] }>>)[
+    hit.entity_type
+  ];
+  return meta?.icon ?? User;
 }
 
 /** "Sell something", "Raise money for a goal" … one per entity type, from the registry. */

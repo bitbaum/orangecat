@@ -7429,6 +7429,7 @@ export type Database = {
           entity_type: string;
           id: string;
           image_url: string;
+          path_key: string;
           rank: number;
           subtitle: string;
           title: string;
