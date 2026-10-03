@@ -10,12 +10,12 @@ import { createInvestment } from '@/domain/investments/service';
 import type { CreateInvestmentRequest } from '@/types/investments';
 import { createEntityListHandler } from '@/lib/api/entityListHandler';
 import { createEntityPostHandler } from '@/lib/api/entityPostHandler';
-import { STATUS } from '@/config/database-constants';
+import { INVESTMENT_PUBLIC_STATUSES } from '@/config/investments';
 
 // GET /api/investments - List investments with pagination and filtering
 export const GET = createEntityListHandler({
   entityType: 'investment',
-  publicStatuses: [STATUS.INVESTMENTS.OPEN, STATUS.INVESTMENTS.FUNDED, STATUS.INVESTMENTS.ACTIVE],
+  publicStatuses: [...INVESTMENT_PUBLIC_STATUSES],
   additionalFilters: { status: 'status', investment_type: 'investment_type' },
 });
 

@@ -12,8 +12,9 @@
 import { CAPITAL, type CapitalSlug } from '@/config/capital';
 import { getTableName } from '@/config/entity-registry';
 import { ENTITY_STATUS } from '@/config/database-constants';
-import { INVESTMENT_TYPE_LABELS } from '@/config/investments';
+import { INVESTMENT_PUBLIC_STATUSES, INVESTMENT_TYPE_LABELS } from '@/config/investments';
 import { ROUTES } from '@/config/routes';
+import { applyVisibility, type VisibilityFilter } from '@/lib/entities/visibility';
 import { createPublicClient } from '@/lib/supabase/public';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { convertBtcToOrNull } from '@/services/currency/rates.server';
@@ -70,14 +71,12 @@ async function readPublicRow(
   supabase: AnySupabaseClient,
   table: string,
   id: string,
-  visibility: { column: string; value: unknown }
+  visibility: VisibilityFilter
 ): Promise<Row | null> {
-  const { data, error } = await supabase
-    .from(table)
-    .select('*')
-    .eq('id', id)
-    .eq(visibility.column, visibility.value)
-    .maybeSingle();
+  const { data, error } = await applyVisibility(
+    supabase.from(table).select('*').eq('id', id),
+    visibility
+  ).maybeSingle();
   if (error) {
     logger.warn('Capital rail unreadable', { table, id, error }, 'Capital');
     return null;
@@ -165,7 +164,7 @@ async function investRail(supabase: AnySupabaseClient, id: string | null): Promi
   }
   const row = await readPublicRow(supabase, getTableName('investment'), id, {
     column: 'status',
-    value: ENTITY_STATUS.ACTIVE,
+    value: INVESTMENT_PUBLIC_STATUSES,
   });
   if (!row) {
     return closed('invest');

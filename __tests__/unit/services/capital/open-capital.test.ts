@@ -39,8 +39,19 @@ function fakeClient(rows: Record<string, Row[]>) {
           filters.push([col, val]);
           return q;
         },
+        in: (col: string, vals: unknown[]) => {
+          filters.push([col, { in: vals }]);
+          return q;
+        },
         maybeSingle: async () => ({
-          data: (rows[table] ?? []).find(r => filters.every(([c, v]) => r[c] === v)) ?? null,
+          data:
+            (rows[table] ?? []).find(r =>
+              filters.every(([c, v]) =>
+                v && typeof v === 'object' && 'in' in v
+                  ? (v as { in: unknown[] }).in.includes(r[c])
+                  : r[c] === v
+              )
+            ) ?? null,
           error: null,
         }),
       };
@@ -81,7 +92,8 @@ describe('loadOpenCapital', () => {
         [INVESTMENTS]: [
           {
             id: loki.investmentId,
-            status: 'active',
+            // Publishing an investment sets `open`; it must read as open.
+            status: 'open',
             title: 'Loki revenue share',
             currency: 'BTC',
             target_amount: '1',

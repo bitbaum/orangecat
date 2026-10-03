@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import FundingProgress from '@/components/public/FundingProgress';
 import type { EntityDetailConfig } from '@/components/public/PublicEntityDetailPage';
 import { ROUTES } from '@/config/routes';
+import { INVESTMENT_PUBLIC_STATUSES } from '@/config/investments';
 import { formatCurrency } from '@/services/currency';
 import {
   INVESTMENT_TYPE_LABELS,
@@ -25,6 +26,8 @@ export const investmentDetailConfig: EntityDetailConfig = {
   ownerLabel: 'Offered By',
   descriptionTitle: 'About this Investment',
   metadataSelect: 'title, description',
+  // Live as open, funded or active — the same set the public list shows.
+  visibilityFilter: { column: 'status', value: INVESTMENT_PUBLIC_STATUSES },
   getViewRoute: id => ROUTES.INVESTMENTS.VIEW(id),
   getJsonLdExtra: entity => ({
     ...(entity.target_amount && {
