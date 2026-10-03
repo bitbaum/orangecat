@@ -9,7 +9,7 @@ allowBuilds:
   # Ours (bitbaum/listkit), GitHub-hosted with no committed dist: its `prepare`
   # builds it on install, which pnpm only runs for packages named here. Keep
   # the URL in step with the commit package.json pins.
-  listkit@https://codeload.github.com/bitbaum/listkit/tar.gz/e8945d827f305acae4fedf69147b61a54938d10a: true
+  listkit@https://codeload.github.com/bitbaum/listkit/tar.gz/c519d389b99d22f74bf9c092a603fe27061857cc: true
   '@parcel/watcher': true
   '@swc/core': true
   '@tailwindcss/oxide': true
