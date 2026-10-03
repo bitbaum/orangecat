@@ -12,7 +12,7 @@ import { useDashboardTimeline } from './useDashboardTimeline';
 
 export function useDashboard() {
   const { user, profile, isLoading, hydrated } = useRequireAuth();
-  const { projects, drafts, loadProjects, getStats } = useProjectStore();
+  const { projects, drafts, loadProjects } = useProjectStore();
   useTimelineEvents();
   const { getPendingActions, confirmAction, rejectAction } = usePendingActions();
 
@@ -112,14 +112,6 @@ export function useDashboard() {
 
   const safeProjects = useMemo(() => (Array.isArray(projects) ? projects : []), [projects]);
   const safeDrafts = useMemo(() => (Array.isArray(drafts) ? drafts : []), [drafts]);
-  // Re-compute when projects actually change. `getStats` is a stable Zustand
-  // accessor — depending on it alone left totalProjects pinned at the initial
-  // 0 (computed at mount, before the first loadProjects() resolved), so the
-  // header subtitle stayed on "Let's get started" forever for users who had
-  // projects. ESLint can't see that getStats reads `projects` through the
-  // store's closure, so disable the dep-check for this line.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const stats = useMemo(() => getStats(), [getStats, projects]);
   const totalDrafts = safeDrafts.length;
 
   const fundingByCurrency = useMemo(
@@ -166,11 +158,8 @@ export function useDashboard() {
     pendingActions,
     pendingActionsLoaded,
     safeProjects,
-    totalProjects: stats.totalProjects,
     totalDrafts,
-    hasProjects: safeProjects.length > 0,
-    sidebarStats: {
-      totalProjects: stats.totalProjects,
+    projectStats: {
       totalRaised,
       totalSupporters,
       primaryCurrency,

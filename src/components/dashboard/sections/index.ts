@@ -10,5 +10,5 @@
 export { DashboardHeader } from './DashboardHeader';
 export { DashboardInviteCTA } from './DashboardInviteCTA';
 export { DashboardJourney } from './DashboardJourney';
-export { DashboardQuickActions } from './DashboardQuickActions';
+export { DashboardSection } from './DashboardSection';
 export { DashboardProjects } from './DashboardProjects';
