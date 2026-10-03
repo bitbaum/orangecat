@@ -110,6 +110,23 @@ describe('selection is worth doing', () => {
     expect(selectPromptSections('hi')).not.toContain('Pricing Guidance');
   });
 
+  it('selects the end-to-end setup only when the person asks for the whole thing', () => {
+    const setup = 'Setting Someone Up End to End';
+    for (const ask of [
+      "I'm a ceramicist in Zug, set me up",
+      'can you do everything for me — profile, website, funding',
+      'help me find backers for my studio',
+      'I need funding for a community garden',
+    ]) {
+      expect(selectPromptSections(ask)).toContain(setup);
+    }
+    // An opinion about how to set something up is a question, not a setup.
+    expect(selectPromptSections('what do you think, how would you set it up?')).not.toContain(
+      setup
+    );
+    expect(selectPromptSections('hi')).not.toContain(setup);
+  });
+
   /**
    * Selection is necessary but NOT yet sufficient, and this test says so out
    * loud rather than asserting a fit that has not been achieved. On a plain

@@ -166,6 +166,7 @@
     "jose": "^6.2.12",
     "jsqr": "^1.4.0",
     "limitkit": "^0.2.0",
+    "listkit": "github:bitbaum/listkit#c519d389b99d22f74bf9c092a603fe27061857cc",
     "lodash": "^4.17.23",
     "lucide-react": "^1.41.0",
     "mermaid": "^11.17.2",

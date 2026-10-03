@@ -29,9 +29,11 @@ import {
   Share2,
   MessageSquare,
   Calendar,
+  Hammer,
 } from 'lucide-react';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { ROUTES } from '@/config/routes';
+import { CAT_QUERY_PARAM } from '@/config/cat-door';
 import type { TaskDefinition, SmartQuestion, UserContext } from './types';
 
 /**
@@ -75,6 +77,11 @@ export function calculateProfileCompletion(profile: UserContext['profile']): num
  * - Medium: Enhance engagement
  * - Low: Growth and exploration
  */
+/** A link that opens the Cat with `sentence` already sent — the Cat door's own URL shape. */
+function catAsk(sentence: string): string {
+  return `${ROUTES.DASHBOARD.CAT}?${CAT_QUERY_PARAM}=${encodeURIComponent(sentence)}`;
+}
+
 export const TASK_DEFINITIONS: TaskDefinition[] = [
   // ==================== CRITICAL: Profile Setup ====================
   {
@@ -144,18 +151,34 @@ export const TASK_DEFINITIONS: TaskDefinition[] = [
     condition: ctx => !ctx.profile.avatar_url && !!ctx.profile.username,
   },
 
-  // ==================== HIGH: Cat Consult (before first entity) ====================
+  // ==================== HIGH: The Cat sets you up ====================
   {
     id: 'chat-with-cat',
-    title: 'Ask Cat what to create first',
+    title: 'Let your Cat set you up',
     description:
-      'Cat is your AI economic agent — describe your goals and it will suggest the right first step',
+      'Say who you are and what you need. It drafts your profile, a funding page and a website, and looks for people who might back you — you confirm each step.',
     priority: 'high',
     category: 'setup',
-    action: { label: 'Open Cat', href: ROUTES.DASHBOARD.CAT },
+    // Opens the Cat with the request already typed, so the first thing the
+    // person sees is the whole setup proposed, not an empty chat box.
+    action: {
+      label: 'Set me up',
+      href: catAsk('Set me up — profile, a funding page and a website'),
+    },
     icon: MessageSquare,
     // Show when the user has no entities at all — Cat is the best guide here
     condition: ctx => Object.values(ctx.entityCounts).reduce((sum, c) => sum + (c ?? 0), 0) === 0,
+  },
+  {
+    id: 'get-a-website',
+    title: 'Get a website for your project',
+    description:
+      'Your Cat can have Loki build a real site on its own address, linked to your funding page. You confirm before anything goes live.',
+    priority: 'high',
+    category: 'setup',
+    action: { label: 'Ask for a website', href: catAsk('Build a website for my project') },
+    icon: Hammer,
+    condition: ctx => (ctx.entityCounts.project ?? 0) > 0 && !ctx.profile.website?.trim(),
   },
 
   // ==================== HIGH: First Entity Creation ====================

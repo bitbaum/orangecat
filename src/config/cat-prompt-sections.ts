@@ -105,6 +105,15 @@ export const SITUATIONAL_SECTIONS: ReadonlyArray<{ heading: string; when: RegExp
   },
   { heading: 'Orienting a New Person (first reply)', when: /first-message/ },
   {
+    // The whole setup in one reply: profile, funding container, website,
+    // findability, then backers via explore_topic. NOT on the first-message
+    // marker: an opener cannot afford it (probe-the-prompt-production-sends),
+    // and an opener that asks for the whole thing says so in words this
+    // matches.
+    heading: 'Setting Someone Up End to End',
+    when: /set me up|set (everything|it all) up|do (it all|everything)|everything for me|get (me )?(started|going|funded)|find (me )?(funding|funders|backers|investors|supporters|money)|backers|funders|raise money|need (money|funding)|website and|profile and/,
+  },
+  {
     heading: 'Setting Up for Someone Else',
     // Cyrillic on purpose: the two conversations that motivated this section
     // were in Russian ("не для меня", "для другого пользователя", "не зарегистрирован").
