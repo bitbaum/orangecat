@@ -167,7 +167,15 @@ describe('selection is worth doing', () => {
     // the handler refuses any txid the wallet does not have — so the guidance
     // the prompt would otherwise need ("never invent a txid") is enforced in
     // code instead of paid for in prose.
-    expect(remaining).toBeLessThanOrEqual(4_250);
+    //
+    // Raised 4,250 -> 4,400 for `send_task_to_loki`: a task the owner writes
+    // once in Cat now reaches several of their Loki projects at the same time
+    // (a change that spans OrangeCat AND Loki was previously two pastes into
+    // another product). ~140 characters: a one-clause description and two
+    // parameter names of three words or fewer. Loki writes the coordination
+    // brief the agents read, and Loki refuses unknown project names with the
+    // list of real ones, so neither is paid for in prose here.
+    expect(remaining).toBeLessThanOrEqual(4_400);
   });
 
   it('selects by default now, and still sends everything when told to', async () => {
