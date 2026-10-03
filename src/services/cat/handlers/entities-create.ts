@@ -17,6 +17,7 @@ import {
 import { createResearchReview, reviewInputSchema } from '@/domain/research/reviews';
 import { getUserActorId } from '@/domain/actors';
 import type { ActionHandler } from './types';
+import { createEvent } from './event-create';
 
 const catOpenScienceSchema = z.object(openScienceFields);
 
@@ -229,31 +230,7 @@ export const entityCreateHandlers: Record<string, ActionHandler> = {
     };
   },
 
-  create_event: async (supabase, userId, actorId, params) => {
-    const { data, error } = await supabase
-      .from(ENTITY_REGISTRY.event.tableName)
-      .insert({
-        user_id: userId,
-        actor_id: actorId,
-        title: params.title,
-        description: params.description || null,
-        start_date: params.start_date,
-        location: params.location,
-        status: params.publish ? STATUS.EVENTS.PUBLISHED : STATUS.EVENTS.DRAFT,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      return { success: false, error: error.message };
-    }
-    const title = params.title as string;
-    const statusLabel = params.publish ? 'live' : 'draft';
-    return {
-      success: true,
-      data: { ...data, displayMessage: `📅 Event "${title}" created (${statusLabel})` },
-    };
-  },
+  create_event: createEvent,
 
   create_asset: async (supabase, _userId, actorId, params) => {
     const { data, error } = await supabase

@@ -10,7 +10,7 @@
  *     neither, while showing `monthly_payment` from that same form section. A
  *     lender could not see the spread they were being asked to beat.
  *   - Events: the form collects a full postal address, and the page rendered
- *     only the free-text `location`, so attendees could not find the venue. The
+ *     a free-text `location` (a column events never had), so attendees could not find the venue. The
  *     online join link had the same fate.
  *
  * The class is gated by scripts/check-dead-fields.mjs; these are the instances.
@@ -21,6 +21,10 @@ import { loanDetailConfig } from '@/components/public/detail-configs/loan';
 import { eventDetailConfig } from '@/components/public/detail-configs/event';
 import { serviceDetailConfig } from '@/components/public/detail-configs/service';
 import { investmentDetailConfig } from '@/components/public/detail-configs/investment';
+
+// The crew card is an async server component reading event_roles; this file is
+// about the fields the event form collects, so it is stubbed out here.
+vi.mock('@/components/events/EventCrewCard', () => ({ default: () => null }));
 
 describe('loan detail config', () => {
   const refinance = {
@@ -88,7 +92,6 @@ describe('event detail config', () => {
   const event = {
     id: 'event-1',
     start_date: '2026-09-01T18:00:00Z',
-    location: 'Community Center',
     venue_name: 'Community Center',
     venue_address: 'Bahnhofstrasse 1',
     venue_city: 'Zurich',
@@ -103,6 +106,27 @@ describe('event detail config', () => {
     expect(screen.getByText('Bahnhofstrasse 1')).toBeInTheDocument();
     expect(screen.getByText('8001 Zurich')).toBeInTheDocument();
     expect(screen.getByText('Switzerland')).toBeInTheDocument();
+  });
+
+  it('shows the music and the vibe, and links the pin to a map', () => {
+    render(
+      <div>
+        {eventDetailConfig.renderDetails?.({
+          ...event,
+          music_genres: ['House', 'Disco'],
+          vibe: 'Sunset into a warehouse night',
+          latitude: 47.3779,
+          longitude: 8.5265,
+        })}
+      </div>
+    );
+    expect(screen.getByText('House')).toBeInTheDocument();
+    expect(screen.getByText('Disco')).toBeInTheDocument();
+    expect(screen.getByText('Sunset into a warehouse night')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Open in map' })).toHaveAttribute(
+      'href',
+      expect.stringContaining('mlat=47.3779&mlon=8.5265')
+    );
   });
 
   it('shows the RSVP deadline the form asks for', () => {
@@ -300,5 +324,26 @@ describe('investment return cadence', () => {
       <div>{investmentDetailConfig.renderDetails?.({ ...base, return_frequency: null })}</div>
     );
     expect(screen.queryByText('Return Paid')).not.toBeInTheDocument();
+  });
+});
+
+describe('event page visibility', () => {
+  // Events are never 'active'; the default filter made every published event
+  // a 404 to everyone but its organizer.
+  it('opens in every public status and in no private one', async () => {
+    const { applyVisibility } = await import('@/components/public/public-entity-detail-config');
+    const calls: Array<[string, string, unknown]> = [];
+    const builder = {
+      eq: (c: string, v: unknown) => (calls.push(['eq', c, v]), builder),
+      in: (c: string, v: unknown) => (calls.push(['in', c, v]), builder),
+    };
+    applyVisibility(builder, eventDetailConfig.visibilityFilter);
+    expect(calls).toHaveLength(1);
+    const [op, column, values] = calls[0];
+    expect([op, column]).toEqual(['in', 'status']);
+    expect(values).toEqual(expect.arrayContaining(['published', 'open', 'full', 'ongoing']));
+    expect(values).not.toContain('draft');
+    expect(values).not.toContain('cancelled');
+    expect(values).not.toContain('active');
   });
 });

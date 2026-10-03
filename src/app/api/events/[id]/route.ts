@@ -24,6 +24,8 @@ const buildEventUpdatePayload = createUpdatePayloadBuilder([
   { from: 'category', transform: entityTransforms.emptyStringToNull },
   { from: 'event_type' },
   commonFieldMappings.arrayField('tags', []),
+  commonFieldMappings.arrayField('music_genres', []),
+  { from: 'vibe', transform: entityTransforms.emptyStringToNull },
   commonFieldMappings.dateField('start_date'),
   commonFieldMappings.dateField('end_date'),
   { from: 'timezone', default: 'UTC' },

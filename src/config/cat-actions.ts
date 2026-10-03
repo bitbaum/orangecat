@@ -42,6 +42,8 @@ import { API_ROUTES } from '@/config/api-routes';
 import { RESEARCH_FIELDS } from '@/config/research';
 import { RESEARCH_LICENSE_VALUES, REVIEW_VERDICT_VALUES } from '@/config/open-science';
 import { getApiEndpoint } from '@/config/entity-registry';
+import { EVENT_TYPES } from '@/config/events';
+import { CURRENCY_CODES } from '@/config/currencies';
 
 // ==================== ACTION TYPES ====================
 
@@ -233,7 +235,7 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
   create_event: {
     id: 'create_event',
     name: 'Create Event',
-    description: 'Create an event or meetup',
+    description: 'Create an event from one sentence; it is mapped and its crew posted',
     category: 'entities',
     icon: Calendar,
     riskLevel: 'medium',
@@ -241,19 +243,72 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
     parameters: [
       { name: 'title', type: 'string', required: true, description: 'Event title' },
       { name: 'description', type: 'string', required: false, description: 'Event description' },
-      { name: 'start_date', type: 'string', required: true, description: 'Event start date/time' },
-      { name: 'location', type: 'string', required: true, description: 'Event location' },
+      {
+        name: 'start_date',
+        type: 'string',
+        required: true,
+        description: 'Start as an ISO 8601 date-time with offset, resolved from the current date',
+      },
+      {
+        name: 'end_date',
+        type: 'string',
+        required: false,
+        description: 'End as an ISO 8601 date-time with offset, when said or obvious',
+      },
+      {
+        name: 'location',
+        type: 'string',
+        required: true,
+        description: 'Street address or venue and city, as said — it is put on the map',
+      },
+      {
+        name: 'event_type',
+        type: 'string',
+        required: false,
+        description: `One of: ${EVENT_TYPES.map(t => t.value).join(', ')}`,
+      },
+      {
+        name: 'music_genres',
+        type: 'array',
+        required: false,
+        description: 'Music genres people can expect, e.g. ["House", "Disco"]',
+      },
+      {
+        name: 'vibe',
+        type: 'string',
+        required: false,
+        description: 'One line on the feel: crowd, dress, energy',
+      },
+      {
+        name: 'crew',
+        type: 'array',
+        required: false,
+        description:
+          'People needed to run it, one per item with a count, e.g. ["1 DJ", "2 bartenders", "sound tech"]',
+      },
+      {
+        name: 'ticket_price',
+        type: 'number',
+        required: false,
+        description: 'Ticket price in `currency`; omit or 0 for free entry',
+      },
+      {
+        name: 'currency',
+        type: 'string',
+        required: false,
+        description: `Currency of ticket_price: ${CURRENCY_CODES.join(', ')} (default: the user's)`,
+      },
       {
         name: 'publish',
         type: 'boolean',
         required: false,
-        description: 'Publish immediately',
+        description: 'Publish immediately (when the user says post / publish / make it live)',
         default: false,
       },
     ],
     examples: [
-      'Create a Bitcoin meetup',
-      'Set up a conference event',
+      'Create a party at Langstrasse 120, Zürich on Saturday 10pm — house and disco, I need a DJ and 2 bartenders, 20 CHF entry',
+      'Set up a Bitcoin meetup next Thursday at 7pm at Hive Zürich',
       'Organize a community gathering',
     ],
     apiEndpoint: getApiEndpoint('event'),

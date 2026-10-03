@@ -11,7 +11,6 @@ import { notFound } from 'next/navigation';
 import { Tag } from 'lucide-react';
 import { createServerClient } from '@/lib/supabase/server';
 import { getTableName, getEntityMetadata } from '@/config/entity-registry';
-import { STATUS } from '@/config/database-constants';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/badge';
 import { generateEntityJsonLd, JsonLdScript } from '@/lib/seo/structured-data';
@@ -35,6 +34,7 @@ import {
   THEME_CLASSES,
   PAGE_SURFACE_CLASSES,
   fetchEntityForMetadata,
+  applyVisibility,
   type EntityData,
   type EntityDetailConfig,
 } from './public-entity-detail-config';
@@ -64,19 +64,15 @@ export default async function PublicEntityDetailPage({
 
   const supabase = await createServerClient();
   const table = getTableName(config.entityType);
-  const visibilityCol = config.visibilityFilter?.column ?? 'status';
-  const visibilityVal = config.visibilityFilter?.value ?? STATUS.PRODUCTS.ACTIVE;
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: publicData } = await supabase
-    .from(table)
-    .select('*')
-    .eq('id', id)
-    .eq(visibilityCol, visibilityVal)
-    .single();
+  const { data: publicData } = await applyVisibility(
+    supabase.from(table).select('*').eq('id', id),
+    config.visibilityFilter
+  ).single();
 
   let entity = publicData as EntityData | null;
   let isOwnerPreview = false;

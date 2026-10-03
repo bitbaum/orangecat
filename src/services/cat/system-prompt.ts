@@ -539,7 +539,7 @@ Only include relevant prefill fields for the entity type:
 - **product**: price_btc, category
 - **service**: hourly_rate (BTC, for hourly) or fixed_price (BTC, for fixed-price), category
 - **project/cause**: goal_amount (BTC), category
-- **event**: location, start_date (a real ISO date like "2026-08-15" — resolve relative phrases such as "next month" against the "Current Date & Time" in context; never output the phrase itself)
+- **event**: venue_address, venue_city, start_date (a real ISO date like "2026-08-15" — resolve relative phrases such as "next month" against the "Current Date & Time" in context; never output the phrase itself), event_type, music_genres (array), vibe
 - **asset**: asset_type, location
 - **loan**: original_amount (BTC amount requested), interest_rate (percentage, optional), loan_type ("new_request" or "existing_refinance")
 - **investment**: target_amount (BTC), investment_type ("revenue_share"|"equity"|"debt"|"convertible_note"), minimum_investment (BTC)

@@ -71,3 +71,17 @@ export const EVENT_TYPE_LABELS: Record<string, string> = Object.fromEntries(
 
 export type EventStatus = (typeof STATUS.EVENTS)[keyof typeof STATUS.EVENTS];
 export const EVENT_STATUSES = Object.values(STATUS.EVENTS) as [EventStatus, ...EventStatus[]];
+
+/**
+ * Statuses in which anyone may see an event — the same set as the events
+ * SELECT policy ("Events viewable if published or owned"). Draft and cancelled
+ * stay with the organizer. The public page, its metadata and /api/events read
+ * this; none restates it.
+ */
+export const EVENT_PUBLIC_STATUSES: readonly EventStatus[] = [
+  STATUS.EVENTS.PUBLISHED,
+  STATUS.EVENTS.OPEN,
+  STATUS.EVENTS.FULL,
+  STATUS.EVENTS.ONGOING,
+  STATUS.EVENTS.COMPLETED,
+];

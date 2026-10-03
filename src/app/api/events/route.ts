@@ -13,24 +13,23 @@ import { eventSchema } from '@/lib/validation';
 import { createEntityListHandler } from '@/lib/api/entityListHandler';
 import { createEntityPostHandler } from '@/lib/api/entityPostHandler';
 import { normalizeDates } from '@/lib/api/helpers';
-import { CURRENCY_CODES, PLATFORM_DEFAULT_CURRENCY } from '@/config/currencies';
-import { DATABASE_TABLES } from '@/config/database-tables';
+import { CURRENCY_CODES } from '@/config/currencies';
+import { getProfileCurrency } from '@/services/currency/profileCurrency';
+import { withVenuePin } from '@/domain/events/venue';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { getOrCreateUserActor } from '@/services/actors/getOrCreateUserActor';
 import { STATUS } from '@/config/database-constants';
+import { EVENT_PUBLIC_STATUSES } from '@/config/events';
 
 // Date fields that need normalization
 const EVENT_DATE_FIELDS = ['start_date', 'end_date', 'rsvp_deadline'] as const;
 
 const EVENT_DRAFT_STATUSES = Object.values(STATUS.EVENTS);
-const EVENT_PUBLIC_STATUSES = EVENT_DRAFT_STATUSES.filter(
-  s => s !== STATUS.EVENTS.DRAFT && s !== STATUS.EVENTS.CANCELLED
-);
 
 // GET /api/events - Get all published events
 export const GET = createEntityListHandler({
   entityType: 'event',
-  publicStatuses: EVENT_PUBLIC_STATUSES,
+  publicStatuses: [...EVENT_PUBLIC_STATUSES],
   draftStatuses: EVENT_DRAFT_STATUSES,
   orderBy: 'start_date',
   orderDirection: 'asc',
@@ -46,22 +45,11 @@ export const POST = createEntityPostHandler({
   useActorOwnership: true,
   transformData: async (data, userId, supabase) => {
     // Get user's preferred currency from profile (SSOT)
-    let userCurrency = PLATFORM_DEFAULT_CURRENCY;
-    const { data: profile } = await (supabase as AnySupabaseClient)
-      .from(DATABASE_TABLES.PROFILES)
-      .select('currency')
-      .eq('id', userId)
-      .single();
+    const userCurrency = await getProfileCurrency(supabase as AnySupabaseClient, userId);
 
-    if (
-      profile?.currency &&
-      CURRENCY_CODES.includes(profile.currency as (typeof CURRENCY_CODES)[number])
-    ) {
-      userCurrency = profile.currency as (typeof CURRENCY_CODES)[number];
-    }
-
-    // Normalize dates first
-    const normalized = normalizeDates(data, [...EVENT_DATE_FIELDS]);
+    // Normalize dates first, then put the venue on the map so people nearby
+    // can find it (fills latitude/longitude only when missing).
+    const normalized = await withVenuePin(normalizeDates(data, [...EVENT_DATE_FIELDS]));
 
     // Resolve user to actor for ownership
     const actor = await getOrCreateUserActor(userId);
@@ -89,6 +77,7 @@ export const POST = createEntityPostHandler({
       'banner_url',
       'video_url',
       'asset_id',
+      'vibe',
     ];
 
     for (const field of optionalStringFields) {

@@ -192,7 +192,15 @@ describe('selection is worth doing', () => {
     // parameter names of three words or fewer. Loki writes the coordination
     // brief the agents read, and Loki refuses unknown project names with the
     // list of real ones, so neither is paid for in prose here.
-    expect(remaining).toBeLessThanOrEqual(4_400);
+    //
+    // Raised 4,400 -> 4,600 for `create_event`: "a party at Langstrasse 120 on
+    // Saturday, house and disco, I need a DJ and two bartenders, 20 CHF" is one
+    // sentence the Cat now turns into one complete event. The action's
+    // description is a single clause; the cost is seven parameter names
+    // (end_date, event_type, music_genres, vibe, crew, ticket_price, currency).
+    // Geocoding, genre spelling and crew parsing live in code
+    // (domain/events, config/event-crew), not in prose here.
+    expect(remaining).toBeLessThanOrEqual(4_600);
   });
 
   it('selects by default now, and still sends everything when told to', async () => {

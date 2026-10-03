@@ -12,7 +12,12 @@ interface NominatimResult {
   display_name: string;
   lat: string;
   lon: string;
+  name?: string;
   address: {
+    road?: string;
+    pedestrian?: string;
+    house_number?: string;
+    amenity?: string;
     city?: string;
     town?: string;
     village?: string;
@@ -191,6 +196,69 @@ export async function getNominatimDetails(placeId: number): Promise<{
     };
   } catch (error) {
     logger.error('Nominatim details error', error, 'LOCATION');
+    return null;
+  }
+}
+
+/** A street address resolved to a point, split into the venue fields events store. */
+export interface GeocodedVenue {
+  latitude: number;
+  longitude: number;
+  venue_name: string | null;
+  venue_address: string | null;
+  venue_city: string | null;
+  venue_postal_code: string | null;
+  venue_country: string | null;
+  display_name: string;
+}
+
+/**
+ * Resolve a free-text address ("Langstrasse 120, Zürich") to coordinates and
+ * structured venue fields. Server-side, one request, a short timeout: a slow
+ * or failing geocoder must never block creating the thing that has the
+ * address — the caller keeps the text and simply has no pin.
+ */
+export async function geocodeAddress(query: string): Promise<GeocodedVenue | null> {
+  const q = query.trim();
+  if (q.length < 3) {
+    return null;
+  }
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1&addressdetails=1`,
+      {
+        headers: { 'User-Agent': 'OrangeCat/1.0 (https://orangecat.ch)', 'Accept-Language': 'en' },
+        signal: AbortSignal.timeout(4000),
+      }
+    );
+    if (!response.ok) {
+      return null;
+    }
+    const data: NominatimResult[] = await response.json();
+    const hit = data?.[0];
+    if (!hit) {
+      return null;
+    }
+    const latitude = parseFloat(hit.lat);
+    const longitude = parseFloat(hit.lon);
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+      return null;
+    }
+    const a = hit.address || {};
+    const street = a.road || a.pedestrian;
+    const city = a.city || a.town || a.village || a.municipality || null;
+    return {
+      latitude,
+      longitude,
+      venue_name: hit.name || a.amenity || null,
+      venue_address: street ? [street, a.house_number].filter(Boolean).join(' ') : null,
+      venue_city: city,
+      venue_postal_code: a.postcode || null,
+      venue_country: a.country || null,
+      display_name: hit.display_name,
+    };
+  } catch (error) {
+    logger.warn('Geocoding failed', { error: String(error) }, 'LOCATION');
     return null;
   }
 }

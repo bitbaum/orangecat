@@ -9,6 +9,21 @@ reads, and [orangecat.ch/changelog](https://orangecat.ch/changelog) renders
 it from there. One `## YYYY-MM-DD` heading per day; bullets under it travel
 to the map, sub-bullets stay here for the human reader.
 
+## 2026-10-03
+
+### Added
+
+- **Tell your Cat about a party and it's posted.** Say "a party at Langstrasse 120 on Saturday at 10, house and disco, I need a DJ and two bartenders, 20 CHF entry" and, after you confirm, the Cat creates the whole event: the address is put on the map, the music and the vibe are on the page, the ticket price is set in your currency, and the crew is posted as open roles. Say "post it" and it goes live straight away.
+  - Anyone looking at the event sees "Crew wanted" with an "I can do this" button for each role, which opens a message to you already naming the role and the event. You add, fill and remove roles from the same card on your event page ("DJ, 2 bartenders" works).
+  - Events now have Music and Vibe fields on the form too, and every event with an address gets a map pin, whether the Cat made it or you did. The page links to the map.
+
+### Fixed
+
+- **Asking the Cat to create an event works.** It wrote the place into a field events don't have, so every event it tried to make failed. It now fills the real address fields.
+- **Published events open for everyone.** The public event page only looked for listings marked "active", a status events never have, so a published event opened only for its organizer and everyone else got "not found". It now opens in every public status (published, open, full, ongoing, completed).
+- **Buying a ticket works.** Checkout read a price field events don't have and refused every ticket. It now charges the ticket price, converted to Bitcoin at the rate shown on the page.
+- **Event pages show the event's title and place in search results and link previews.** The page description looked up that same missing field, so every event's preview read "Event Not Found".
+
 ## 2026-10-02
 
 ### Added

@@ -3,7 +3,11 @@ import { generateEntityMetadata } from '@/lib/seo/metadata';
 import PublicEntityDetailPage, {
   fetchEntityForMetadata,
 } from '@/components/public/PublicEntityDetailPage';
-import { eventDetailConfig } from '@/components/public/detail-configs/event';
+import {
+  eventDetailConfig,
+  eventPlaceLine,
+  EVENT_METADATA_SELECT,
+} from '@/components/public/detail-configs/event';
 import { format } from 'date-fns';
 
 interface PageProps {
@@ -15,7 +19,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const event = await fetchEntityForMetadata(
     'event',
     id,
-    'title, description, start_date, location'
+    EVENT_METADATA_SELECT,
+    eventDetailConfig.visibilityFilter
   );
   if (!event) {
     return {
@@ -26,10 +31,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const dateStr = event.start_date
     ? ` on ${format(new Date(event.start_date as string), 'MMM d, yyyy')}`
     : '';
-  const locationStr = event.location ? ` in ${event.location}` : '';
+  const place = eventPlaceLine(event);
+  const locationStr = place ? ` in ${place}` : '';
+  const genres = Array.isArray(event.music_genres) ? (event.music_genres as string[]) : [];
+  const soundStr = genres.length > 0 ? ` — ${genres.slice(0, 3).join(', ')}` : '';
   const description =
-    event.description ||
-    `${event.title}${dateStr}${locationStr} - Bitcoin community event on OrangeCat.`;
+    event.description || `${event.title}${dateStr}${locationStr}${soundStr} — on OrangeCat.`;
   return generateEntityMetadata({ type: 'event', id, title: event.title, description });
 }
 

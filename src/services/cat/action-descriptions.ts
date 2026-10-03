@@ -47,8 +47,14 @@ export function generateActionDescription(
       const type = parameters.type ? ` (${parameters.type})` : '';
       return `Create wishlist "${parameters.title}"${type}`;
     }
-    case 'create_event':
-      return `Create event "${parameters.title}" at ${parameters.location}`;
+    case 'create_event': {
+      const crew =
+        Array.isArray(parameters.crew) && parameters.crew.length > 0
+          ? ` — crew: ${parameters.crew.join(', ')}`
+          : '';
+      const live = parameters.publish ? ' and post it' : '';
+      return `Create event "${parameters.title}" at ${parameters.location}${live}${crew}`;
+    }
     case 'create_asset':
       return `Register asset "${parameters.title}"${parameters.location ? ` at ${parameters.location}` : ''}`;
     case 'update_entity':

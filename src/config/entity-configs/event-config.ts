@@ -18,6 +18,7 @@ import { createEntityConfig } from './base-config-factory';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { WalletSelectorField } from '@/components/create/wallet-selector';
 import { EVENT_TYPES, EVENT_CATEGORIES } from '@/config/events';
+import { MUSIC_GENRES } from '@/config/event-crew';
 
 // ==================== FIELD GROUPS ====================
 
@@ -55,6 +56,29 @@ const fieldGroups: FieldGroup[] = [
         label: 'Category',
         type: 'select',
         options: EVENT_CATEGORIES.map(cat => ({ value: cat, label: cat })),
+      },
+    ],
+  },
+  {
+    id: 'sound-and-feel',
+    title: 'Music & Vibe',
+    description: 'What it will sound and feel like — how people decide it is their night',
+    fields: [
+      {
+        name: 'music_genres',
+        label: 'Music',
+        type: 'tags',
+        placeholder: `e.g., ${MUSIC_GENRES.slice(0, 3).join(', ')}`,
+        hint: 'Genres people can expect. They are shown on the page and searchable.',
+        colSpan: 2,
+      },
+      {
+        name: 'vibe',
+        label: 'Vibe',
+        type: 'text',
+        placeholder: 'e.g., Rooftop sunset into a warehouse night — come as you are',
+        hint: 'One line on the crowd, the dress, the energy',
+        colSpan: 2,
       },
     ],
   },
@@ -289,6 +313,8 @@ const defaultValues: EventFormData = {
   category: '',
   event_type: 'meetup',
   tags: [],
+  music_genres: [],
+  vibe: '',
   start_date: new Date().toISOString(),
   end_date: null,
   timezone: 'UTC',

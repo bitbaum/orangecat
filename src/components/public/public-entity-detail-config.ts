@@ -90,8 +90,11 @@ export interface EntityDetailConfig {
   metadataSelect?: string;
   /** View route for sign-in redirect */
   getViewRoute?: (id: string) => string;
-  /** Override default visibility filter. Defaults to `status = active`. */
-  visibilityFilter?: { column: string; value: string | boolean };
+  /**
+   * Override default visibility filter. Defaults to `status = active`. Use
+   * `values` when several statuses are public (events: published, open, …).
+   */
+  visibilityFilter?: VisibilityFilter;
   /** Whether to show the payment section in the sidebar (default: true) */
   showPaymentSection?: boolean;
   /**
@@ -112,20 +115,38 @@ export interface EntityDetailConfig {
 /**
  * Fetch entity data for metadata generation
  */
+export type VisibilityFilter =
+  { column: string; value: string | boolean } | { column: string; values: readonly string[] };
+
+/**
+ * Restrict a query to the publicly visible rows, per the entity's filter.
+ * Generic over the builder so callers keep supabase's typed `.single()`; the
+ * cast is only to call `eq`/`in` with a column name known at runtime.
+ */
+export function applyVisibility<Q>(query: Q, filter?: VisibilityFilter): Q {
+  const builder = query as unknown as {
+    eq: (column: string, value: unknown) => Q;
+    in: (column: string, values: unknown[]) => Q;
+  };
+  if (filter && 'values' in filter) {
+    return builder.in(filter.column, [...filter.values]);
+  }
+  return builder.eq(filter?.column ?? 'status', filter?.value ?? STATUS.PRODUCTS.ACTIVE);
+}
+
 export async function fetchEntityForMetadata(
   entityType: EntityType,
   id: string,
   select?: string,
-  visibilityFilter?: { column: string; value: string | boolean }
+  visibilityFilter?: VisibilityFilter
 ) {
   const supabase = await createServerClient();
-  const filterCol = visibilityFilter?.column ?? 'status';
-  const filterVal = visibilityFilter?.value ?? STATUS.PRODUCTS.ACTIVE;
-  const { data } = await supabase
-    .from(getTableName(entityType))
-    .select(select || 'title, description')
-    .eq('id', id)
-    .eq(filterCol, filterVal)
-    .single();
+  const { data } = await applyVisibility(
+    supabase
+      .from(getTableName(entityType))
+      .select(select || 'title, description')
+      .eq('id', id),
+    visibilityFilter
+  ).single();
   return data as EntityData | null;
 }

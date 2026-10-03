@@ -692,6 +692,9 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
     category: 'community',
     createPriority: 3,
     paymentPattern: 'fixed_price',
+    // A ticket. Without this, checkout read a `price` column events never had
+    // and refused every ticket with "Entity has no price set".
+    priceColumn: 'ticket_price',
     canReceiveSupport: true,
   },
 

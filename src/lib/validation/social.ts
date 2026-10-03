@@ -3,6 +3,7 @@ import { CURRENCY_CODES } from '@/config/currencies';
 import { EVENT_TYPES, EVENT_STATUSES } from '@/config/events';
 import { STATUS } from '@/config/database-constants';
 import { DAYS_OF_WEEK, RECURRENCE_FREQUENCIES } from '@/config/schedule';
+import { MAX_GENRE_LENGTH, MAX_MUSIC_GENRES, MAX_VIBE_LENGTH } from '@/config/event-crew';
 import { lightningAddressSchema, optionalText, optionalUrl, webUrl } from './base';
 
 /**
@@ -34,6 +35,14 @@ export const eventSchema = z
     category: optionalText(50),
     event_type: z.enum(EVENT_TYPES.map(t => t.value) as [string, ...string[]]).default('meetup'),
     tags: z.array(z.string()).optional().default([]),
+
+    // Sound & feel — how people decide whether this is their night
+    music_genres: z
+      .array(z.string().trim().min(1).max(MAX_GENRE_LENGTH))
+      .max(MAX_MUSIC_GENRES, `At most ${MAX_MUSIC_GENRES} genres`)
+      .optional()
+      .default([]),
+    vibe: optionalText(MAX_VIBE_LENGTH),
 
     // Date & Time
     start_date: z
