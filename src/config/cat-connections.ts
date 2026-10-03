@@ -60,7 +60,7 @@ export const CAT_CONNECTIONS: readonly CatConnection[] = [
       'Which sites are live, and where',
       'New visitor feedback on your sites',
     ],
-    actions: ['send_to_loki', 'build_site'],
+    actions: ['send_to_loki', 'build_site', 'send_task_to_loki'],
     pushes: ['Build progress on projects you published to OrangeCat'],
     connect: {
       label: 'Sign in to Loki with OrangeCat',
