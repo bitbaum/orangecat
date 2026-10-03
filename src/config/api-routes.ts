@@ -40,6 +40,8 @@ export const API_ROUTES = {
   SEARCH: {
     LOG: '/api/search/log',
   },
+  /** Everything the signed-in person made or joined (My things). */
+  THINGS: '/api/things',
   // Public feedback + Ask Cat (no auth required)
   FEEDBACK: '/api/feedback',
   NEWSLETTER_SUBSCRIBE: '/api/newsletter/subscribe',

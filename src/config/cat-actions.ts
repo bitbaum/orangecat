@@ -174,10 +174,14 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
       { name: 'title', type: 'string', required: true, description: 'Project title' },
       { name: 'description', type: 'string', required: false, description: 'Project description' },
       {
+        // Optional, like create_project_for_person's: a required goal made the
+        // model invent a number to get past validation, against the rule that
+        // amounts come only from the user. The handler stores null and the
+        // owner sets the goal when they know it.
         name: 'goal_btc',
         type: 'btc',
-        required: true,
-        description: 'Funding goal in BTC (e.g., 0.1)',
+        required: false,
+        description: 'Funding goal in BTC — ONLY if the user named an amount; never invent one',
       },
       { name: 'category', type: 'string', required: false, description: 'Project category' },
       {

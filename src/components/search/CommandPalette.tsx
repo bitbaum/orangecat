@@ -12,10 +12,13 @@
  *   - "/" while focus isn't already in an input (Slack-style)
  *
  * Inside the palette:
- *   - cmdk handles arrow-key nav + Enter + Esc natively
- *   - Type to filter — the empty state shows quick actions + suggestions
- *   - Once query is non-empty, async suggestions stream in via
- *     useSearchSuggestions; quick actions filter client-side
+ *   - cmdk handles arrow-key nav + Enter + Esc natively; its own filter is
+ *     OFF — listkit ranks the local lists (every word, any order, accents
+ *     folded) and global_search ranks the server hits, so one engine decides
+ *     what a group shows instead of two disagreeing.
+ *   - Typing offers "Ask your Cat" first: a sentence is often a task, and the
+ *     Cat can set the whole thing up (profile, project, website, backers).
+ *   - Your own things (GET /api/things), then pages, create, and everyone's.
  *
  * Created: 2026-06-03
  */
@@ -25,19 +28,25 @@ import { useRouter } from 'next/navigation';
 import { Command } from 'cmdk';
 import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
-import { ArrowRight, Search } from 'lucide-react';
+import { ArrowRight, Cat, Search } from 'lucide-react';
 import {
+  buildCreateItems,
   buildPages,
-  buildQuickActions,
   hrefForHit,
-  HIT_ICONS,
+  iconForHit,
+  rankItems,
+  thingItems,
   type PaletteItem,
 } from './command-palette-items';
 import { ROUTES } from '@/config/routes';
 import { API_ROUTES } from '@/config/api-routes';
+import { CAT_QUERY_PARAM } from '@/config/cat-door';
 import { useGlobalSearch } from '@/hooks/useGlobalSearch';
 import { cn } from '@/lib/utils';
-import type { LucideIcon } from 'lucide-react';
+import type { Thing } from '@/domain/things/service';
+
+/** Rows per local group: enough to see the right one, few enough to scan. */
+const GROUP_LIMIT = { things: 5, pages: 6, create: 5 } as const;
 
 export interface CommandPaletteProps {
   open: boolean;
@@ -58,6 +67,23 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
       setQuery('');
     }
   }, [open]);
+
+  // Your things, fetched once per page load on first open. Signed out (401)
+  // or failed: an empty list, never an error in a search box.
+  const [things, setThings] = useState<Thing[] | null>(null);
+  useEffect(() => {
+    if (!open || things !== null) {
+      return;
+    }
+    let live = true;
+    fetch(API_ROUTES.THINGS)
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => live && setThings(d?.data?.things ?? []))
+      .catch(() => live && setThings([]));
+    return () => {
+      live = false;
+    };
+  }, [open, things]);
 
   const close = useCallback(() => onOpenChange(false), [onOpenChange]);
 
@@ -100,9 +126,13 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     [close, router, hits]
   );
 
-  const quickActions: PaletteItem[] = useMemo(() => buildQuickActions(navigateTo), [navigateTo]);
-
-  const pages: PaletteItem[] = useMemo(() => buildPages(navigateTo), [navigateTo]);
+  const pages = useMemo(() => buildPages(), []);
+  const creates = useMemo(() => buildCreateItems(), []);
+  const mine = useMemo(() => thingItems(things ?? []), [things]);
+  const typed = query.trim();
+  const shownThings = typed ? rankItems(mine, typed, GROUP_LIMIT.things) : [];
+  const shownPages = rankItems(pages, typed, GROUP_LIMIT.pages);
+  const shownCreates = rankItems(creates, typed, GROUP_LIMIT.create);
 
   if (!open) {
     return null;
@@ -113,6 +143,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
       open={open}
       onOpenChange={onOpenChange}
       label="Command palette"
+      shouldFilter={false}
       className={cn(
         'fixed left-1/2 top-[15vh] z-[100] w-[min(640px,calc(100vw-2rem))]',
         '-translate-x-1/2 overflow-hidden rounded-md',
@@ -154,69 +185,43 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
           <kbd className="rounded border border-subtle bg-surface-raised/40 px-1.5 py-0.5 text-2xs">
             ⌘ Enter
           </kbd>{' '}
-          to search Discover.
+          to search everyone.
         </Command.Empty>
 
-        {query.trim().length > 0 && (
-          <Command.Group
-            heading="Search"
-            className="text-2xs uppercase tracking-wider text-fg-tertiary"
-          >
+        {typed && (
+          <Command.Group heading="Ask" className={GROUP_HEADING}>
+            <PaletteRow
+              icon={Cat}
+              label={`Ask your Cat: "${typed}"`}
+              hint="It can set it up for you"
+              onSelect={() =>
+                navigateTo(
+                  `${ROUTES.DASHBOARD.CAT}?${CAT_QUERY_PARAM}=${encodeURIComponent(typed)}`
+                )
+              }
+              value="ask-cat"
+            />
             <PaletteRow
               icon={Search}
-              label={`Search Discover for "${query.trim()}"`}
-              hint="Press Enter"
+              label={`Search everyone for "${typed}"`}
+              hint="⌘ Enter"
               onSelect={() => submitFullSearch(query)}
-              value={`search-discover-${query}`}
+              value="search-discover"
             />
           </Command.Group>
         )}
 
-        <Command.Group
-          heading="Jump to"
-          className="mt-1 text-2xs uppercase tracking-wider text-fg-tertiary"
-        >
-          {pages.map(item => (
-            <PaletteRow
-              key={item.id}
-              value={`${item.id} ${item.label} ${item.keywords ?? ''}`}
-              icon={item.icon}
-              label={item.label}
-              hint={item.hint}
-              onSelect={item.run}
-            />
-          ))}
-        </Command.Group>
-
-        <Command.Group
-          heading="Create"
-          className="mt-1 text-2xs uppercase tracking-wider text-fg-tertiary"
-        >
-          {quickActions.map(item => (
-            <PaletteRow
-              key={item.id}
-              value={`${item.id} ${item.label} ${item.keywords ?? ''}`}
-              icon={item.icon}
-              label={item.label}
-              hint={item.hint}
-              onSelect={item.run}
-            />
-          ))}
-        </Command.Group>
+        <PaletteGroup heading="Your things" items={shownThings} onPick={navigateTo} />
+        <PaletteGroup heading="Jump to" items={shownPages} onPick={navigateTo} />
+        <PaletteGroup heading="Create" items={shownCreates} onPick={navigateTo} />
 
         {query.trim().length > 1 && hits.length > 0 && (
-          <Command.Group
-            heading="Results"
-            className="mt-1 text-2xs uppercase tracking-wider text-fg-tertiary"
-          >
+          <Command.Group heading="Everyone" className={GROUP_HEADING}>
             {hits.map(hit => (
               <PaletteRow
-                // `value` is prefixed with the live query so cmdk's built-in
-                // filter always keeps server-ranked (typo-tolerant) hits, which
-                // may not literally contain the typed text.
                 key={`${hit.entity_type}-${hit.id}`}
-                value={`${query} ${hit.entity_type} ${hit.title} ${hit.id}`}
-                icon={HIT_ICONS[hit.entity_type] ?? Search}
+                value={`hit-${hit.entity_type}-${hit.id}`}
+                icon={iconForHit(hit)}
                 label={hit.title}
                 hint={hit.subtitle ?? hit.entity_type}
                 onSelect={() => navigateTo(hrefForHit(hit))}
@@ -231,9 +236,42 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   );
 }
 
+// Styles the HEADING only. On the group itself the uppercase was inherited by
+// every row, so results read in capitals ("BITCOIN MEETUP ZÜRICH").
+const GROUP_HEADING =
+  'mt-1 [&_[cmdk-group-heading]]:px-2.5 [&_[cmdk-group-heading]]:py-1 [&_[cmdk-group-heading]]:text-2xs [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:text-fg-tertiary';
+
+function PaletteGroup({
+  heading,
+  items,
+  onPick,
+}: {
+  heading: string;
+  items: PaletteItem[];
+  onPick: (href: string) => void;
+}) {
+  if (items.length === 0) {
+    return null;
+  }
+  return (
+    <Command.Group heading={heading} className={GROUP_HEADING}>
+      {items.map(item => (
+        <PaletteRow
+          key={item.id}
+          value={item.id}
+          icon={item.icon}
+          label={item.label}
+          hint={item.hint}
+          onSelect={() => onPick(item.href)}
+        />
+      ))}
+    </Command.Group>
+  );
+}
+
 interface PaletteRowProps {
   value: string;
-  icon: LucideIcon;
+  icon: PaletteItem['icon'];
   label: string;
   hint?: string;
   onSelect: () => void;
@@ -251,8 +289,10 @@ function PaletteRow({ value, icon: Icon, label, hint, onSelect }: PaletteRowProp
       )}
     >
       <Icon className="h-4 w-4 flex-shrink-0" />
-      <span className="text-fg-primary">{label}</span>
-      {hint && <span className="text-xs text-fg-tertiary">{hint}</span>}
+      <span className="min-w-0 truncate text-fg-primary">{label}</span>
+      {hint && (
+        <span className="hidden min-w-0 truncate text-xs text-fg-tertiary sm:inline">{hint}</span>
+      )}
       <ArrowRight className="ml-auto h-3.5 w-3.5 flex-shrink-0 opacity-0 group-aria-selected:opacity-100" />
     </Command.Item>
   );

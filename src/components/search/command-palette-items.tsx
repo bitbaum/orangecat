@@ -1,38 +1,31 @@
 /**
- * CommandPalette items + helpers — extracted from CommandPalette.tsx to keep the
- * component under the 300-line limit. Pure data/helpers; the two builder fns
- * close over `navigateTo` so the component wires them via useMemo.
+ * What the command palette can find, and how it is ranked.
+ *
+ * Every list is DERIVED: pages from the sidebar's sections, "create" from the
+ * entity registry's plain copy, your things from /api/things. It used to be
+ * two hand-typed arrays — ten create links and eight pages — that had already
+ * drifted: no organisations, circles, research, companions or "Your money",
+ * and no way to find something you had made.
+ *
+ * Ranking is listkit's: every word must match in any order, accents fold
+ * ("zurich" finds "Zürich"), and a hit in the label beats a hit in a keyword.
  */
-import {
-  Bookmark,
-  Briefcase,
-  Building2,
-  Calendar,
-  Compass,
-  HandHeart,
-  Heart,
-  Home,
-  Lightbulb,
-  Mail,
-  MessageCircle,
-  Package,
-  PiggyBank,
-  Sparkles,
-  TrendingUp,
-  Users,
-  Wallet,
-} from 'lucide-react';
+import type { ComponentType } from 'react';
+import { applyQuery, emptyQuery, type ListSpec } from 'listkit';
+import { ENTITY_REGISTRY, ENTITY_TYPES } from '@/config/entity-registry';
+import { sidebarSections, type NavigationItem } from '@/config/navigation';
 import { ROUTES } from '@/config/routes';
-import type { LucideIcon } from 'lucide-react';
+import type { Thing } from '@/domain/things/service';
 import type { GlobalSearchHit } from '@/services/search';
 
 export interface PaletteItem {
   id: string;
   label: string;
   hint?: string;
-  icon: LucideIcon;
+  icon: ComponentType<{ className?: string }>;
+  /** Extra words that should find this item but are not shown. */
   keywords?: string;
-  run: () => void;
+  href: string;
 }
 
 /** Public detail route for a global-search hit, by entity type. */
@@ -57,162 +50,98 @@ export function hrefForHit(hit: GlobalSearchHit): string {
   }
 }
 
-export const HIT_ICONS: Record<string, LucideIcon> = {
-  project: Lightbulb,
-  product: Package,
-  service: Briefcase,
-  cause: HandHeart,
-  loan: PiggyBank,
-  event: Calendar,
-  profile: Users,
-};
-
-/** "Create X" quick actions. `navigateTo` closes the palette + routes. */
-export function buildQuickActions(navigateTo: (href: string) => void): PaletteItem[] {
-  return [
-    {
-      id: 'create-product',
-      label: 'Create a product',
-      hint: 'Physical or digital goods',
-      icon: Package,
-      keywords: 'sell store shop merchandise digital',
-      run: () => navigateTo(ROUTES.DASHBOARD.STORE_CREATE),
-    },
-    {
-      id: 'create-service',
-      label: 'Create a service',
-      hint: 'Offer your time or expertise',
-      icon: Briefcase,
-      keywords: 'consulting freelance hourly',
-      run: () => navigateTo(ROUTES.DASHBOARD.SERVICES_CREATE),
-    },
-    {
-      id: 'create-project',
-      label: 'Create a project',
-      hint: 'Raise funds with milestones',
-      icon: Lightbulb,
-      keywords: 'fundraise campaign goal',
-      run: () => navigateTo(ROUTES.DASHBOARD.PROJECTS_CREATE),
-    },
-    {
-      id: 'create-cause',
-      label: 'Create a cause',
-      hint: 'No-strings charitable funding',
-      icon: HandHeart,
-      keywords: 'donate charity nonprofit',
-      run: () => navigateTo(ROUTES.DASHBOARD.CAUSES_CREATE),
-    },
-    {
-      id: 'create-event',
-      label: 'Create an event',
-      hint: 'Workshops, meetups, hackathons',
-      icon: Calendar,
-      keywords: 'meetup workshop conference rsvp',
-      run: () => navigateTo(ROUTES.DASHBOARD.EVENTS_CREATE),
-    },
-    {
-      id: 'create-group',
-      label: 'Create a group',
-      hint: 'Organization, collective, or DAO',
-      icon: Building2,
-      keywords: 'organization team collective dao company',
-      run: () => navigateTo(ROUTES.DASHBOARD.GROUPS_CREATE),
-    },
-    {
-      id: 'create-loan',
-      label: 'Create a loan request',
-      hint: 'Borrow with repayment terms',
-      icon: PiggyBank,
-      keywords: 'borrow credit interest',
-      run: () => navigateTo(ROUTES.DASHBOARD.LOANS_CREATE),
-    },
-    {
-      id: 'create-investment',
-      label: 'Create an investment offer',
-      hint: 'Raise equity / revenue share',
-      icon: TrendingUp,
-      keywords: 'equity revenue share raise capital',
-      run: () => navigateTo(ROUTES.DASHBOARD.INVESTMENTS_CREATE),
-    },
-    {
-      id: 'create-wishlist',
-      label: 'Create a wishlist',
-      hint: 'Gift registry',
-      icon: Heart,
-      keywords: 'gift registry wishlist',
-      run: () => navigateTo(ROUTES.DASHBOARD.WISHLISTS),
-    },
-    {
-      id: 'create-asset',
-      label: 'Create an asset listing',
-      hint: 'Property, equipment, rentals',
-      icon: Bookmark,
-      keywords: 'rental property equipment',
-      run: () => navigateTo(ROUTES.DASHBOARD.ASSETS_CREATE),
-    },
-  ];
+/** Icon for a global-search hit: the registry's, else the profile/people one. */
+export function iconForHit(hit: GlobalSearchHit): PaletteItem['icon'] {
+  const meta = (ENTITY_REGISTRY as Record<string, { icon: PaletteItem['icon'] }>)[hit.entity_type];
+  return meta?.icon ?? ENTITY_REGISTRY.group.icon;
 }
 
-/** Navigate-to-page items. `navigateTo` closes the palette + routes. */
-export function buildPages(navigateTo: (href: string) => void): PaletteItem[] {
-  return [
-    {
-      id: 'go-cat',
-      label: 'My Cat',
-      hint: 'Your AI economic agent',
-      icon: Sparkles,
-      keywords: 'ai agent chat assistant',
-      run: () => navigateTo(ROUTES.DASHBOARD.CAT),
-    },
-    {
-      id: 'go-dashboard',
-      label: 'Dashboard',
-      icon: Home,
-      run: () => navigateTo(ROUTES.DASHBOARD.HOME),
-    },
-    {
-      id: 'go-discover',
-      label: 'Discover',
-      hint: 'Browse everyone',
-      icon: Compass,
-      keywords: 'explore browse',
-      run: () => navigateTo(ROUTES.DISCOVER),
-    },
-    {
-      id: 'go-timeline',
-      label: 'Timeline',
-      icon: TrendingUp,
-      keywords: 'feed updates',
-      run: () => navigateTo(ROUTES.TIMELINE),
-    },
-    {
-      id: 'go-messages',
-      label: 'Messages',
-      icon: MessageCircle,
-      run: () => navigateTo(ROUTES.MESSAGES),
-    },
-    {
-      id: 'go-people',
-      label: 'People',
-      hint: 'Discover users',
-      icon: Users,
-      keywords: 'profiles users',
-      run: () => navigateTo(ROUTES.DASHBOARD.PEOPLE),
-    },
-    {
-      id: 'go-wallets',
-      label: 'Wallets',
-      icon: Wallet,
-      keywords: 'bitcoin lightning balance',
-      run: () => navigateTo(ROUTES.DASHBOARD.WALLETS),
-    },
-    {
-      id: 'go-integrations',
-      label: 'Integration keys',
-      hint: 'API keys for Loki, hirn.li, …',
-      icon: Mail,
-      keywords: 'api token settings developers',
-      run: () => navigateTo(ROUTES.SETTINGS_INTEGRATIONS),
-    },
-  ];
+/** "Sell something", "Raise money for a goal" … one per entity type, from the registry. */
+export function buildCreateItems(): PaletteItem[] {
+  return ENTITY_TYPES.map(type => {
+    const meta = ENTITY_REGISTRY[type];
+    return {
+      id: `create-${type}`,
+      label: meta.plain.verb,
+      hint: meta.plain.what,
+      icon: meta.icon,
+      keywords: `create new ${meta.name} ${meta.namePlural} ${meta.plain.example}`,
+      href: meta.createPath,
+    };
+  });
+}
+
+function flatten(items: NavigationItem[]): NavigationItem[] {
+  return items.flatMap(item => [item, ...flatten(item.children ?? [])]);
+}
+
+/** Every page in the sidebar, plus each entity type's own list. */
+export function buildPages(): PaletteItem[] {
+  const seen = new Set<string>();
+  const out: PaletteItem[] = [];
+  const add = (item: PaletteItem) => {
+    if (seen.has(item.href)) {
+      return;
+    }
+    seen.add(item.href);
+    out.push(item);
+  };
+  for (const section of sidebarSections) {
+    for (const item of flatten(section.items)) {
+      if (!item.href || item.external || item.comingSoon || !item.icon) {
+        continue;
+      }
+      add({
+        id: `page-${item.href}`,
+        label: item.name,
+        hint: item.description,
+        icon: item.icon as PaletteItem['icon'],
+        keywords: section.title,
+        href: item.href,
+      });
+    }
+  }
+  for (const type of ENTITY_TYPES) {
+    const meta = ENTITY_REGISTRY[type];
+    add({
+      id: `page-${meta.basePath}`,
+      label: `Your ${meta.namePlural.toLowerCase()}`,
+      icon: meta.icon,
+      keywords: `${meta.name} ${meta.namePlural} my list manage`,
+      href: meta.basePath,
+    });
+  }
+  return out;
+}
+
+/** Your own things, as palette rows. */
+export function thingItems(things: Thing[]): PaletteItem[] {
+  return things.map(thing => {
+    const meta = ENTITY_REGISTRY[thing.type];
+    return {
+      id: `thing-${thing.type}-${thing.id}`,
+      label: thing.title,
+      hint: thing.status ? `${meta.name} · ${thing.status}` : meta.name,
+      icon: meta.icon,
+      keywords: meta.namePlural,
+      href: thing.href,
+    };
+  });
+}
+
+/** Label first, so a word in the label outranks the same word in a keyword. */
+const PALETTE_SPEC: ListSpec<PaletteItem> = {
+  facets: [],
+  search: { text: item => [item.label, item.hint, item.keywords] },
+  sorts: [{ key: 'given', by: [] }],
+  defaultSort: 'given',
+};
+
+/**
+ * The best `limit` items for what was typed, best first. With nothing typed,
+ * the first `limit` in their given order — the sidebar's order is a decision.
+ */
+export function rankItems(items: PaletteItem[], typed: string, limit: number): PaletteItem[] {
+  const query = { ...emptyQuery(PALETTE_SPEC), q: typed.trim(), pageSize: limit };
+  return applyQuery(items, PALETTE_SPEC, query).rows;
 }
