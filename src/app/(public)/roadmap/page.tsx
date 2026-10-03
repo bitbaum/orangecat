@@ -3,6 +3,11 @@ import { PageHeading } from '@/components/layout/PageHeading';
 import { FLEET_PROFILE_URL, loadOrangeCatProfile } from '@/lib/development/records';
 import { buildJourney } from '@/lib/development/roadmap-journey';
 import { RoadmapJourney } from '@/components/roadmap/RoadmapJourney';
+import { BackTheRoad } from '@/components/capital/BackTheRoad';
+import { loadOpenCapital } from '@/services/capital/open-capital';
+
+/** The capital figures are live; the fleet map is itself cached five minutes. */
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: 'Roadmap',
@@ -16,7 +21,10 @@ export const metadata: Metadata = {
  * the markup only.
  */
 export default async function RoadmapPage() {
-  const profile = await loadOrangeCatProfile();
+  const [profile, capital] = await Promise.all([
+    loadOrangeCatProfile(),
+    loadOpenCapital('orangecat'),
+  ]);
 
   return (
     <main className="min-h-screen bg-surface-page">
@@ -48,6 +56,9 @@ export default async function RoadmapPage() {
             <RoadmapJourney journey={buildJourney(profile.roadmap)} />
           </div>
         )}
+
+        {/* The money behind the road, in the open: fund, lend, invest. */}
+        {capital && <BackTheRoad capital={capital} />}
 
         <p className="mt-16 border-t border-default pt-8 text-sm text-fg-tertiary">
           Read from the fleet map. The record is{' '}
