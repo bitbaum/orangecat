@@ -481,6 +481,7 @@ export const footerNavigation = {
     { name: 'Governance', href: ROUTES.GOVERNANCE },
     { name: 'Community', href: ROUTES.COMMUNITY },
     { name: 'About OrangeCat', href: ROUTES.ABOUT },
+    { name: 'Steal the cat', href: ROUTES.STEAL },
   ],
   legal: [
     { name: 'Privacy', href: ROUTES.PRIVACY },
