@@ -114,6 +114,11 @@ export interface UpdateGroupInput {
   lightning_address?: string | null;
   governance_preset?: GovernancePreset;
   voting_threshold?: number | null;
+  country_code?: string | null;
+  region?: string | null;
+  locality?: string | null;
+  street_address?: string | null;
+  postal_code?: string | null;
 }
 
 /**

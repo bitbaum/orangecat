@@ -14,13 +14,30 @@ import { EVENT_TYPES } from '@/config/events';
 import { MAX_VIBE_LENGTH, normalizeGenres, parseCrewRoles } from '@/config/event-crew';
 import { addEventRoles, describeCrew, type EventRole } from '@/domain/events/crew';
 import { venueFromText } from '@/domain/events/venue';
+import { findMyVenueByName } from '@/domain/events/venue-page';
 import { getProfileCurrency, isCurrencyCode } from '@/services/currency/profileCurrency';
 import type { ActionHandler } from './types';
 
 export const createEvent: ActionHandler = async (supabase, userId, actorId, params) => {
   // One sentence in, one complete event out: the place is put on the map,
   // the music and vibe are stated, the crew it needs is posted with it.
-  const venue = await venueFromText(String(params.location ?? ''));
+  // When the user names one of their own organizations (a bar's page), the
+  // event links to it and takes its door — street and pin — as the place.
+  // Otherwise the location they said is geocoded as before.
+  const venueName = typeof params.venue === 'string' ? params.venue.trim() : '';
+  const venuePage = venueName ? await findMyVenueByName(supabase, userId, venueName) : null;
+  const venue =
+    venuePage?.street_address && venuePage.latitude !== null
+      ? {
+          venue_name: venuePage.name,
+          venue_address: venuePage.street_address,
+          venue_city: venuePage.locality,
+          venue_postal_code: venuePage.postal_code,
+          venue_country: null,
+          latitude: venuePage.latitude,
+          longitude: venuePage.longitude,
+        }
+      : await venueFromText(String(params.location ?? ''));
   const ticketPrice = Number(params.ticket_price);
   const isPaid = Number.isFinite(ticketPrice) && ticketPrice > 0;
   const currency = isCurrencyCode(params.currency)
@@ -42,6 +59,7 @@ export const createEvent: ActionHandler = async (supabase, userId, actorId, para
       end_date: params.end_date || null,
       ...(eventType && { event_type: eventType }),
       ...venue,
+      venue_group_id: venuePage?.id ?? null,
       music_genres: normalizeGenres(params.music_genres),
       vibe: vibe || null,
       is_free: !isPaid,
@@ -59,6 +77,13 @@ export const createEvent: ActionHandler = async (supabase, userId, actorId, para
   const title = params.title as string;
   const statusLabel = params.publish ? 'live' : 'draft';
   const lines = [`📅 Event "${title}" created (${statusLabel})`];
+  if (venuePage) {
+    lines.push(`Listed on ${venuePage.name}'s page.`);
+  } else if (venueName) {
+    lines.push(
+      `${venueName} has no page you manage on OrangeCat yet — ask me to make one ("make a page for ${venueName}, <address>") and its events will show there.`
+    );
+  }
   if (venue.latitude === null) {
     lines.push(
       'Could not place the address on the map — add the city or street to make it findable nearby.'

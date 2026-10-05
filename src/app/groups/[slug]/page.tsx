@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { notFound } from 'next/navigation';
 import { safeJsonLdString } from '@/lib/seo/structured-data';
 import { APP_NAME, APP_KICKER, SITE_URL } from '@/config/brand';
+import VenueEventsSection from '@/components/venues/VenueEventsSection';
 
 const GroupDetailClient = dynamic(
   () => import('@/components/groups/GroupDetail').then(mod => ({ default: mod.GroupDetail })),
@@ -109,6 +110,8 @@ export default async function GroupDetailPage({ params }: PageProps) {
         dangerouslySetInnerHTML={{ __html: safeJsonLdString(structuredData) }}
       />
       <GroupDetailClient groupSlug={slug} />
+      {/* A bar, a club, a hall: where its door is and what is on there. */}
+      <VenueEventsSection groupId={g.id} />
     </>
   );
 }

@@ -43,6 +43,7 @@ const buildEventUpdatePayload = createUpdatePayloadBuilder([
   { from: 'is_online' },
   commonFieldMappings.urlField('online_url'),
   commonFieldMappings.uuidField('asset_id'),
+  commonFieldMappings.uuidField('venue_group_id'),
   { from: 'max_attendees' },
   { from: 'requires_rsvp' },
   commonFieldMappings.dateField('rsvp_deadline'),

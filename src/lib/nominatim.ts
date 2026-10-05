@@ -209,6 +209,10 @@ export interface GeocodedVenue {
   venue_city: string | null;
   venue_postal_code: string | null;
   venue_country: string | null;
+  /** ISO 3166-1 alpha-2, upper-case — what groups.country_code stores. */
+  country_code: string | null;
+  /** State, canton or province. */
+  region: string | null;
   display_name: string;
 }
 
@@ -255,6 +259,8 @@ export async function geocodeAddress(query: string): Promise<GeocodedVenue | nul
       venue_city: city,
       venue_postal_code: a.postcode || null,
       venue_country: a.country || null,
+      country_code: a.country_code ? a.country_code.toUpperCase() : null,
+      region: a.state || a.region || null,
       display_name: hit.display_name,
     };
   } catch (error) {

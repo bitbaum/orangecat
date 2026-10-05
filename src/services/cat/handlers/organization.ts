@@ -1,6 +1,8 @@
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { slugify } from '@/utils/string';
+import { GROUP_LABELS, isGroupLabel } from '@/config/group-labels';
+import { geocodeAddress } from '@/lib/nominatim';
 import type { ActionHandler } from './types';
 
 export const organizationHandlers: Record<string, ActionHandler> = {
@@ -57,9 +59,31 @@ export const organizationHandlers: Record<string, ActionHandler> = {
 
   create_organization: async (supabase, userId, _actorId, params) => {
     // groups table has: name, slug (UNIQUE NOT NULL), label (not type), created_by
-    // label enum: the ids in @bitbaum/collective-kinds (GROUP_LABEL_IDS)
+    // label enum: the ids in @bitbaum/collective-kinds (GROUP_LABEL_IDS). A word
+    // the model invented ("bar", "venue") is not a kind: a place people come to
+    // is a company, anything else falls back to the neutral circle.
     const name = params.name as string;
     const slug = slugify(name, { maxLength: 60, randomSuffix: true });
+    const address = typeof params.address === 'string' ? params.address.trim() : '';
+    const asked = (params.label as string | null) ?? (params.type as string | null);
+    const label = isGroupLabel(asked) ? asked : address ? 'company' : 'circle';
+
+    // A venue's door: the address said, resolved to street, town and a pin.
+    // The place is all-or-nothing (country, region, locality) because a group
+    // with half a place fails the place rule on its own settings page.
+    const place = address ? await geocodeAddress(address) : null;
+    const placeFields =
+      place?.country_code && place.region && place.venue_city
+        ? {
+            country_code: place.country_code,
+            region: place.region.slice(0, 80),
+            locality: place.venue_city.slice(0, 80),
+            street_address: place.venue_address,
+            postal_code: place.venue_postal_code,
+            latitude: place.latitude,
+            longitude: place.longitude,
+          }
+        : {};
 
     // Create the group (organization)
     const { data: group, error: groupError } = await supabase
@@ -68,7 +92,8 @@ export const organizationHandlers: Record<string, ActionHandler> = {
         name,
         slug,
         description: params.description || null,
-        label: (params.label as string | null) ?? (params.type as string | null) ?? 'circle',
+        label,
+        ...placeFields,
         created_by: userId,
       })
       .select()
@@ -87,13 +112,17 @@ export const organizationHandlers: Record<string, ActionHandler> = {
     // had never fired in production (zero 'admin' memberships exist), but it
     // would have minted undeletable groups the moment it did.
 
-    const groupLabel =
-      (params.label as string | null) ?? (params.type as string | null) ?? 'circle';
+    const where =
+      'street_address' in placeFields && placeFields.street_address
+        ? ` at ${placeFields.street_address}, ${placeFields.locality}`
+        : address
+          ? ` (could not place "${address}" on the map — add the address on its page)`
+          : '';
     return {
       success: true,
       data: {
         ...group,
-        displayMessage: `👥 ${groupLabel.charAt(0).toUpperCase() + groupLabel.slice(1)} "${name}" created`,
+        displayMessage: `👥 ${GROUP_LABELS[label].name} "${name}" created${where}`,
       },
     };
   },

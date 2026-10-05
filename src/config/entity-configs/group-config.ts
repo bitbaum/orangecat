@@ -93,6 +93,21 @@ const fieldGroups: FieldGroup[] = [
         hint: 'Village, quarter or town — spelled the way its people spell it',
         colSpan: 2,
       },
+      {
+        name: 'street_address',
+        label: 'Street address',
+        type: 'text',
+        placeholder: 'Bahnhofstrasse 5',
+        hint: 'For a place people come to — a bar, a shop, a hall. It is put on the map.',
+        colSpan: 1,
+      },
+      {
+        name: 'postal_code',
+        label: 'Postal code',
+        type: 'text',
+        placeholder: '7302',
+        colSpan: 1,
+      },
     ],
   },
   {
@@ -160,6 +175,8 @@ const defaultValues: CreateGroupSchemaType = {
   country_code: null,
   region: null,
   locality: null,
+  street_address: null,
+  postal_code: null,
 };
 
 // ==================== EXPORT CONFIG ====================

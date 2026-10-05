@@ -44,6 +44,7 @@ import { RESEARCH_LICENSE_VALUES, REVIEW_VERDICT_VALUES } from '@/config/open-sc
 import { getApiEndpoint } from '@/config/entity-registry';
 import { EVENT_TYPES } from '@/config/events';
 import { CURRENCY_CODES } from '@/config/currencies';
+import { GROUP_LABEL_IDS } from '@/config/group-labels';
 
 // ==================== ACTION TYPES ====================
 
@@ -260,6 +261,12 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
         type: 'string',
         required: true,
         description: 'Street address or venue and city, as said — it is put on the map',
+      },
+      {
+        name: 'venue',
+        type: 'string',
+        required: false,
+        description: "Name of the bar or venue, when it is one of the user's organizations",
       },
       {
         name: 'event_type',
@@ -1498,9 +1505,21 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
     parameters: [
       { name: 'name', type: 'string', required: true, description: 'Organization name' },
       { name: 'description', type: 'string', required: false, description: 'Description' },
-      { name: 'type', type: 'string', required: false, description: 'Organization type' },
+      {
+        name: 'type',
+        type: 'string',
+        required: false,
+        description: `Kind: ${GROUP_LABEL_IDS.join(', ')} — a bar, shop or venue is a company`,
+      },
+      {
+        name: 'address',
+        type: 'string',
+        required: false,
+        description: 'Street address and town, for a place people come to; it is put on the map',
+      },
     ],
     examples: [
+      'Make a page for my bar, Espresso Bar, Bahnhofstrasse 5, Landquart',
       'Create an organization for my project',
       'Set up a group for collaborators',
       'Start a company on OrangeCat',

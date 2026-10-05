@@ -133,6 +133,9 @@ export const createGroupSchema = z
       .nullable(),
     region: z.string().trim().min(1).max(PLACE_NAME_MAX).optional().nullable(),
     locality: z.string().trim().min(1).max(PLACE_NAME_MAX).optional().nullable(),
+    // Where its door is — a venue is found by it. Geocoded into a map pin.
+    street_address: z.string().trim().min(1).max(200).optional().nullable(),
+    postal_code: z.string().trim().min(1).max(20).optional().nullable(),
     // What it legally is — a claim with evidence, validated by the package.
     legal_status: z.enum(LEGAL_STATUSES).optional(),
     legal_form: z.string().trim().max(120).optional().nullable(),
@@ -180,6 +183,9 @@ export const updateGroupSchema = z
       .nullable(),
     region: z.string().trim().min(1).max(PLACE_NAME_MAX).optional().nullable(),
     locality: z.string().trim().min(1).max(PLACE_NAME_MAX).optional().nullable(),
+    // Where its door is — a venue is found by it. Geocoded into a map pin.
+    street_address: z.string().trim().min(1).max(200).optional().nullable(),
+    postal_code: z.string().trim().min(1).max(20).optional().nullable(),
     // What it legally is — a claim with evidence, validated by the package.
     legal_status: z.enum(LEGAL_STATUSES).optional(),
     legal_form: z.string().trim().max(120).optional().nullable(),

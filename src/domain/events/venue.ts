@@ -144,3 +144,39 @@ export async function venueFromText(
     longitude: hit.longitude,
   };
 }
+
+/** A group's place, as the groups table stores it. */
+export interface GroupPlace {
+  name?: string | null;
+  street_address?: string | null;
+  postal_code?: string | null;
+  locality?: string | null;
+  country_code?: string | null;
+}
+
+/**
+ * The map pin for an organization's door (a bar, a hall). Null when it has no
+ * street address — a group known only by its locality gets no pin, because a
+ * town's centre is not anyone's front door.
+ */
+export async function pinForGroupPlace(
+  place: GroupPlace,
+  geocode: (q: string) => Promise<GeocodedVenue | null> = geocodeAddress
+): Promise<{ latitude: number | null; longitude: number | null }> {
+  if (!text(place.street_address)) {
+    return { latitude: null, longitude: null };
+  }
+  const pinned = await withVenuePin(
+    {
+      venue_name: place.name,
+      venue_address: place.street_address,
+      venue_postal_code: place.postal_code,
+      venue_city: place.locality,
+      venue_country: place.country_code,
+      latitude: null,
+      longitude: null,
+    },
+    geocode
+  );
+  return { latitude: coord(pinned.latitude), longitude: coord(pinned.longitude) };
+}

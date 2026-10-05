@@ -33,6 +33,11 @@ vi.mock('@/utils/logger', () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 
+let myVenues: Array<Record<string, unknown>> = [];
+beforeEach(() => {
+  myVenues = [];
+});
+
 function mockSupabase(profileCurrency: string | null = 'EUR') {
   const inserts: Record<string, unknown[]> = {};
   const from = vi.fn((table: string) => {
@@ -52,7 +57,11 @@ function mockSupabase(profileCurrency: string | null = 'EUR') {
       }
       return chain;
     });
-    chain.eq = vi.fn(() => chain);
+    chain.eq = vi.fn(() =>
+      table === DATABASE_TABLES.GROUP_MEMBERS
+        ? Promise.resolve({ data: myVenues.map(group => ({ group })), error: null })
+        : chain
+    );
     chain.single = vi.fn().mockResolvedValue({ data: { id: 'event-1' }, error: null });
     chain.maybeSingle = vi
       .fn()
@@ -135,5 +144,56 @@ describe('Cat create_event — one sentence, one complete event', () => {
     });
     expect(row).not.toHaveProperty('event_type');
     expect(inserts[DATABASE_TABLES.EVENT_ROLES]).toBeUndefined();
+  });
+
+  it('lists the event on the bar\u2019s page and takes its door as the place', async () => {
+    myVenues = [
+      {
+        id: 'bar-1',
+        name: 'Espresso Bar',
+        slug: 'espresso-bar',
+        street_address: 'Bahnhofstrasse 5',
+        postal_code: '7302',
+        locality: 'Landquart',
+        latitude: 46.9667,
+        longitude: 9.555,
+      },
+    ];
+    const { client, inserts } = mockSupabase();
+    const result = await run(client, {
+      title: 'Electronic Night',
+      start_date: '2026-10-09T21:00:00+02:00',
+      location: 'Espresso Bar, Landquart',
+      venue: 'Espresso Bar',
+      music_genres: ['electronic'],
+    });
+    const row = inserts[ENTITY_REGISTRY.event.tableName][0] as Record<string, unknown>;
+    expect(row).toMatchObject({
+      venue_group_id: 'bar-1',
+      venue_name: 'Espresso Bar',
+      venue_address: 'Bahnhofstrasse 5',
+      venue_city: 'Landquart',
+      latitude: 46.9667,
+      music_genres: ['Electronic'],
+    });
+    expect((result.data as { displayMessage: string }).displayMessage).toContain(
+      "Listed on Espresso Bar's page."
+    );
+  });
+
+  it('says how to give a venue a page when the user has none by that name', async () => {
+    const { client, inserts } = mockSupabase();
+    const result = await run(client, {
+      title: 'Electronic Night',
+      start_date: '2026-10-09T21:00:00+02:00',
+      location: 'Langstrasse 120, Zürich',
+      venue: 'Espresso Bar',
+    });
+    const row = inserts[ENTITY_REGISTRY.event.tableName][0] as Record<string, unknown>;
+    expect(row.venue_group_id).toBeNull();
+    expect(row.venue_address).toBe('Langstrasse 120');
+    expect((result.data as { displayMessage: string }).displayMessage).toMatch(
+      /Espresso Bar has no page you manage/
+    );
   });
 });

@@ -80,6 +80,9 @@ export const eventSchema = z
     is_online: z.boolean().default(false),
     online_url: optionalUrl(),
     asset_id: z.string().guid().optional().nullable().or(z.literal('')),
+    // The organization whose place this is (a bar's page). Only its members may
+    // set it — enforced by a trigger on events.
+    venue_group_id: z.string().guid().optional().nullable().or(z.literal('')),
 
     // Capacity & Attendance
     max_attendees: z.number().int().positive().optional().nullable(),

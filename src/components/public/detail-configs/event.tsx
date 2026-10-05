@@ -17,6 +17,7 @@ import { safeHref } from '@/lib/security/safeHref';
 import { formatRecurrence } from '@/lib/recurrence';
 import EventCrewCard from '@/components/events/EventCrewCard';
 import EventTicketCard from '@/components/events/EventTicketCard';
+import EventVenueCard from '@/components/events/EventVenueCard';
 import { EVENT_PUBLIC_STATUSES } from '@/config/events';
 
 /**
@@ -73,6 +74,10 @@ export const eventDetailConfig: EntityDetailConfig = {
   visibilityFilter: { column: 'status', values: EVENT_PUBLIC_STATUSES },
   metadataSelect: EVENT_METADATA_SELECT,
   getPrice: ticketOf,
+  renderSidebarExtra: entity =>
+    typeof entity.venue_group_id === 'string' ? (
+      <EventVenueCard groupId={entity.venue_group_id} />
+    ) : null,
   getViewRoute: id => ROUTES.EVENTS.VIEW(id),
   getCoverImages: entity => {
     const images = Array.isArray(entity.images) ? (entity.images as string[]) : [];

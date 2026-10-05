@@ -17,8 +17,13 @@ to the map, sub-bullets stay here for the human reader.
   - At the door, the organizer scans a ticket with their phone camera. The event's door page opens and says in one glance whether the person is in, was already checked in, or holds a ticket for something else. The same page lists every guest, with a name search and a manual check-in for someone whose phone has died.
   - Buying a ticket now needs an account, so the ticket has somewhere to live. The event's bare Bitcoin address is no longer shown to signed-out visitors for a paid event, because paying it left no ticket.
 
+- **A page for your bar, and its events on it.** Tell your Cat "make a page for my bar, Espresso Bar, Bahnhofstrasse 5, Landquart" and it creates the bar as an organization with its address on the map. Then "electronic music night at Espresso Bar on Friday" lists the event on the bar's page and uses the bar's exact address. The bar's page shows where its door is and what's on there next, and the event page links back to the bar.
+  - Only members of a venue's page can list events there, so nobody can post onto a bar's page uninvited.
+  - Organizations now have a street address and postal code on their form, for a place people come to.
+
 ### Fixed
 
+- **Editing an organization's place is saved.** Changing its country, region or locality passed the checks and was then silently dropped. It's saved now, and the map pin follows the address.
 - **Event guest lists are private.** Anyone could read who was going to a public event, and anyone could write themselves onto the list as paid. Now you see only your own ticket, the organizer sees the list, and only payment issues a paid ticket.
 
 ## 2026-10-03

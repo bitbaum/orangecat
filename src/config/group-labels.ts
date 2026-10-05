@@ -168,6 +168,10 @@ export const GROUP_LABELS: Readonly<Record<GroupLabel, GroupLabelConfig>> = Obje
 /** Labels in the package's declared order — for forms and enums. */
 export const GROUP_LABEL_IDS: readonly GroupLabel[] = COLLECTIVE_KIND_IDS;
 
+/** Whether a string is one of the kinds — model or form input is checked against this. */
+export const isGroupLabel = (value: unknown): value is GroupLabel =>
+  typeof value === 'string' && (GROUP_LABEL_IDS as readonly string[]).includes(value);
+
 /** The labels that cannot be founded without a place (a town, a local fund). */
 export const PLACE_BOUND_LABELS: readonly GroupLabel[] = GROUP_LABEL_IDS.filter(
   id => GROUP_LABELS[id].needsPlace

@@ -331,6 +331,7 @@ const defaultValues: EventFormData = {
   is_online: false,
   online_url: '',
   asset_id: null,
+  venue_group_id: null,
   max_attendees: null,
   requires_rsvp: true,
   rsvp_deadline: null,
