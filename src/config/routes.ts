@@ -338,6 +338,8 @@ export const ROUTES = {
   TERMS: '/terms',
   STATUS: '/status',
   SECURITY: '/security',
+  /** "Steal the cat": use it, or take the MIT code and own your copy. */
+  STEAL: '/steal',
   DISCOVER_TYPE: (type: string) => `/discover?type=${type}`,
   DISCOVER_TRENDING: '/discover?trending=true',
 

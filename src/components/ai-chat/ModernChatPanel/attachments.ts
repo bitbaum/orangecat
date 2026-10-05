@@ -72,8 +72,36 @@ export const TEXT_FILE_EXTENSIONS = [
   '.env.example',
 ] as const;
 
-/** `image/*` first: without it a phone's photo library is greyed out in the picker. */
-export const ATTACHMENT_ACCEPT = ['image/*', ...TEXT_FILE_EXTENSIONS].join(',');
+/**
+ * Where an attachment comes from: one file input per source, never one input
+ * with a mixed `accept`. A phone answers `image/*,.txt,.md,…` with a chooser of
+ * capture apps (Camera, Camera, Recorder, "Photos & Videos") in which the
+ * screenshot you came to send is three levels down and the file browser is not
+ * offered at all — measured on Android, 2026-10-05, where it made attaching
+ * effectively impossible. The same rule is SSOT in bitbaum/chatkit
+ * (`ATTACH_SOURCE_INPUT`), which Loki's composer uses; keep the two identical.
+ *
+ * - camera: `capture` opens the camera straight away.
+ * - photos: `image/*` alone opens the system photo picker (Screenshots first).
+ * - files:  no `accept` opens the real document browser; what can be read is
+ *           decided after the pick (isReadableTextFile), with a sentence for
+ *           anything else.
+ */
+export type AttachSource = 'camera' | 'photos' | 'files';
+
+export const ATTACH_SOURCES: readonly {
+  id: AttachSource;
+  label: string;
+  input: { accept?: string; capture?: 'environment'; multiple: boolean };
+}[] = [
+  {
+    id: 'camera',
+    label: 'Take a photo',
+    input: { accept: 'image/*', capture: 'environment', multiple: false },
+  },
+  { id: 'photos', label: 'Photo library', input: { accept: 'image/*', multiple: true } },
+  { id: 'files', label: 'Files', input: { multiple: true } },
+];
 
 /** Refuse before reading: a file this large cannot fit the message anyway. */
 export const MAX_ATTACHMENT_BYTES = 512 * 1024;
