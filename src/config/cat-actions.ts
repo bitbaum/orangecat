@@ -176,10 +176,14 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
       { name: 'title', type: 'string', required: true, description: 'Project title' },
       { name: 'description', type: 'string', required: false, description: 'Project description' },
       {
+        // Optional, like create_project_for_person's: a required goal made the
+        // model invent a number to get past validation, against the rule that
+        // amounts come only from the user. The handler stores null and the
+        // owner sets the goal when they know it.
         name: 'goal_btc',
         type: 'btc',
-        required: true,
-        description: 'Funding goal in BTC (e.g., 0.1)',
+        required: false,
+        description: 'Funding goal in BTC — ONLY if the user named an amount; never invent one',
       },
       { name: 'category', type: 'string', required: false, description: 'Project category' },
       {
@@ -258,8 +262,14 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
         name: 'is_free',
         type: 'boolean',
         required: false,
-        description: 'Free entry (default: true)',
+        description: 'Free entry (default: true unless ticket_price_btc is set)',
         default: true,
+      },
+      {
+        name: 'ticket_price_btc',
+        type: 'btc',
+        required: false,
+        description: 'Ticket price in BTC, for a ticketed event',
       },
       {
         name: 'max_attendees',
@@ -278,6 +288,7 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
     examples: [
       'Create a Bitcoin meetup',
       'Throw a birthday party on Saturday',
+      'Run a ticketed conference in Basel',
       'Set up a conference event',
       'Organize a community gathering',
     ],
@@ -709,6 +720,45 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
       'Build me a website for my bakery',
       'Can you make a real site for this project?',
       'Set up a landing page on its own domain',
+    ],
+    enabled: true,
+  },
+
+  /**
+   * Write a task once and send it to several of the user's Loki projects —
+   * a change that spans repositories (e.g. OrangeCat AND Loki).
+   *
+   * `high` and always confirmed: it starts AI agents that change code in the
+   * user's repositories. The autonomy ladder refuses `auto` for high risk, so
+   * Cat never dispatches agents unattended.
+   */
+  send_task_to_loki: {
+    id: 'send_task_to_loki',
+    name: 'Send a Task to Loki',
+    description:
+      'Send one coding task to several Loki projects at once. Dispatched, not done: say SENT.',
+    category: 'entities',
+    icon: Hammer,
+    riskLevel: 'high',
+    requiresConfirmation: true,
+    parameters: [
+      {
+        name: 'task',
+        type: 'string',
+        required: true,
+        description: 'Verbatim, not summarised',
+      },
+      {
+        name: 'projects',
+        type: 'array',
+        required: true,
+        description: 'Loki project names',
+      },
+    ],
+    examples: [
+      'Send this to OrangeCat and Loki: make it so I can post prompts in both',
+      'Have the agents on solon and loki fix the shared header',
+      'Post this task to my orangecat project',
     ],
     enabled: true,
   },

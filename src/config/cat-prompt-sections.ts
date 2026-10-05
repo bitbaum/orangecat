@@ -34,7 +34,7 @@
  * matcher fires.
  */
 
-import { PARTY_SECTION_HEADING, PARTY_TRIGGER } from '@/config/party';
+import { CAT_PLAYBOOKS } from '@/config/cat-playbooks';
 
 /**
  * Sections every message pays for. Keys are the exact `## ` heading text.
@@ -107,6 +107,15 @@ export const SITUATIONAL_SECTIONS: ReadonlyArray<{ heading: string; when: RegExp
   },
   { heading: 'Orienting a New Person (first reply)', when: /first-message/ },
   {
+    // The whole setup in one reply: profile, funding container, website,
+    // findability, then backers via explore_topic. NOT on the first-message
+    // marker: an opener cannot afford it (probe-the-prompt-production-sends),
+    // and an opener that asks for the whole thing says so in words this
+    // matches.
+    heading: 'Setting Someone Up End to End',
+    when: /set me up|set (everything|it all) up|do (it all|everything)|everything for me|get (me )?(started|going|funded)|find (me )?(funding|funders|backers|investors|supporters|money)|backers|funders|raise money|need (money|funding)|website and|profile and/,
+  },
+  {
     heading: 'Setting Up for Someone Else',
     // Cyrillic on purpose: the two conversations that motivated this section
     // were in Russian ("не для меня", "для другого пользователя", "не зарегистрирован").
@@ -135,12 +144,8 @@ export const SITUATIONAL_SECTIONS: ReadonlyArray<{ heading: string; when: RegExp
     heading: 'Getting Something Built (Loki)',
     when: /\bloki\b|fleet ?crown|\bbuild\b|\bbuilt\b|building|\bsite\b|website|\bapp\b|prototype|\bmvp\b|make it real|ship it|\bdevelop/,
   },
-  {
-    // One click on "Throw a party" sends PARTY.request, which this matches —
-    // so the button always arrives with the playbook that answers it.
-    heading: PARTY_SECTION_HEADING,
-    when: PARTY_TRIGGER,
-  },
+  // Every Cat playbook (cat-playbooks.ts), each loaded by its own trigger.
+  ...CAT_PLAYBOOKS.map(p => ({ heading: p.heading, when: p.trigger })),
   {
     heading: 'Choosing the Entity Type (decision rubric — apply before EVERY proposal)',
     when: /sell|offer|create|list|start|fund|raise|loan|borrow|rent|event|cause|project|product|service|make money|earn/,

@@ -9,17 +9,18 @@ reads, and [orangecat.ch/changelog](https://orangecat.ch/changelog) renders
 it from there. One `## YYYY-MM-DD` heading per day; bullets under it travel
 to the map, sub-bullets stay here for the human reader.
 
-## 2026-10-03
+## 2026-10-05
 
 ### Added
 
-- **Throw a party in one click.** "Throw a party" in the create menu (and "Throw a party on Saturday" on the Cat's front door) opens your Cat with the request already sent. It asks what it needs in one message — what for and when, where, who, and who pays — then sets it up: the party page people RSVP on, a wishlist so guests chip in for the actual drinks and music, a message to each guest on OrangeCat, and a reminder for you the day before. Anything that publishes or messages someone waits for your okay.
-  - When the party is paid from money a group shares, the Cat puts the spend to that group as a draft proposal instead of spending it — the members vote. A group that decides on Solon gets the proposal prefilled there for a member to file and sign.
-  - Want a site of its own (a wedding, a festival)? The Cat can ask Loki to build one. It only offers this when you ask for more than the party page.
+- **Tell your Cat about an event and it sets the whole thing up.** A birthday, a meetup or a two-day conference: say what you're planning and the Cat asks what it needs in one message — what and when, where, how many and whether it's private or public, and who pays — then does it. The event page people sign up on, free or ticketed; a wishlist so people chip in for the actual drinks, gear or venue deposit; a message to each guest or speaker on OrangeCat; and a reminder for you before the day. A public event also gets its announcement drafted, and the Cat can find a venue, caterer or DJ offered on OrangeCat and book the one you choose. Anything that publishes, books or messages someone waits for your okay.
+  - The plan fits the event: a party for fifteen gets four things, not a conference's worth.
+  - When the event is paid from money a group shares, the Cat puts the spend to that group as a draft proposal instead of spending it — the members vote. A group that decides on Solon gets the proposal prefilled there for a member to file and sign.
+  - Want a site of its own (a conference programme, a wedding)? The Cat can ask Loki to build one. It only offers this when you ask for more than the event page.
 
 ### Fixed
 
-- **The Cat can create events again.** Every event the Cat tried to create was refused: it wrote the place to a field events do not have and left the currency on a value the database rejects. The place now lands in the venue address, and the Cat can also set the kind of event, an end time, free entry and how many people fit.
+- **The Cat can create events again.** Every event the Cat tried to create was refused: it wrote the place to a field events do not have and left the currency on a value the database rejects. The place now lands in the venue address, and the Cat can also set the kind of event, an end time, free entry or a ticket price, and how many people fit.
 
 ## 2026-10-02
 

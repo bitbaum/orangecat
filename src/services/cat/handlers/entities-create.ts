@@ -239,6 +239,8 @@ export const entityCreateHandlers: Record<string, ActionHandler> = {
       : 'meetup';
     const location = typeof params.location === 'string' ? params.location.trim() : '';
     const maxAttendees = Number(params.max_attendees);
+    const ticketPrice = Number(params.ticket_price_btc);
+    const ticketed = Number.isFinite(ticketPrice) && ticketPrice > 0;
     const { data, error } = await supabase
       .from(ENTITY_REGISTRY.event.tableName)
       .insert({
@@ -250,7 +252,8 @@ export const entityCreateHandlers: Record<string, ActionHandler> = {
         start_date: params.start_date,
         end_date: params.end_date || null,
         venue_address: location || null,
-        is_free: params.is_free !== false,
+        is_free: ticketed ? false : params.is_free !== false,
+        ticket_price: ticketed ? ticketPrice : null,
         max_attendees: Number.isInteger(maxAttendees) && maxAttendees > 0 ? maxAttendees : null,
         currency: 'BTC',
         status: params.publish ? STATUS.EVENTS.PUBLISHED : STATUS.EVENTS.DRAFT,

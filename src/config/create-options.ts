@@ -1,8 +1,6 @@
-import { MessageSquare, PartyPopper, type LucideIcon } from 'lucide-react';
-import { PARTY, partyCatHref } from '@/config/party';
+import { MessageSquare, type LucideIcon } from 'lucide-react';
 import {
   COLOR_CLASSES,
-  ENTITY_REGISTRY,
   getEntitiesForCreateMenu,
   type EntityCategory,
   type EntityMetadata,
@@ -59,22 +57,7 @@ export function buildCreateOptions(): CreateOption[] {
     bgColor: 'bg-surface-raised',
     category: 'content',
   };
-  // Not a type: a whole occasion the Cat sets up (src/config/party.ts). It sits
-  // directly above Event, the type it is built on, so the "People" group stays
-  // one run and someone scanning for "event" finds the one-click version first.
-  const party: CreateOption = {
-    name: PARTY.label,
-    description: PARTY.description,
-    href: partyCatHref(),
-    icon: PartyPopper,
-    color: 'text-fg-primary',
-    bgColor: 'bg-surface-raised',
-    category: ENTITY_REGISTRY.event.category,
-  };
-  const entities = getEntitiesForCreateMenu().flatMap(entity =>
-    entity.type === 'event' ? [party, optionFromEntity(entity)] : [optionFromEntity(entity)]
-  );
-  return [post, ...entities];
+  return [post, ...getEntitiesForCreateMenu().map(optionFromEntity)];
 }
 
 export const CREATE_OPTIONS = buildCreateOptions();

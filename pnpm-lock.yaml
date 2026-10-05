@@ -171,6 +171,9 @@ importers:
       limitkit:
         specifier: ^0.2.0
         version: 0.2.0
+      listkit:
+        specifier: github:bitbaum/listkit#c519d389b99d22f74bf9c092a603fe27061857cc
+        version: https://codeload.github.com/bitbaum/listkit/tar.gz/c519d389b99d22f74bf9c092a603fe27061857cc
       lodash:
         specifier: ^4.17.23
         version: 4.18.1
@@ -4509,6 +4512,11 @@ packages:
 
   limitkit@0.2.0:
     resolution: {integrity: sha512-x05857iOBGf04eRBAXWTtRTrGhRdBfW9fZa8rfJDx3rQNRBVQpwK2z9aiMYNWhRp71QoIjvA0rl4ZiL4+6O8rA==}
+    engines: {node: '>=20'}
+
+  listkit@https://codeload.github.com/bitbaum/listkit/tar.gz/c519d389b99d22f74bf9c092a603fe27061857cc:
+    resolution: {gitHosted: true, tarball: https://codeload.github.com/bitbaum/listkit/tar.gz/c519d389b99d22f74bf9c092a603fe27061857cc}
+    version: 0.2.0
     engines: {node: '>=20'}
 
   lines-and-columns@1.2.4:
@@ -10321,6 +10329,8 @@ snapshots:
       lightningcss-win32-x64-msvc: 1.33.0
 
   limitkit@0.2.0: {}
+
+  listkit@https://codeload.github.com/bitbaum/listkit/tar.gz/c519d389b99d22f74bf9c092a603fe27061857cc: {}
 
   lines-and-columns@1.2.4: {}
 

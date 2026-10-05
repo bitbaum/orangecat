@@ -1,13 +1,10 @@
 import { CREATE_OPTIONS, CREATE_PAGE } from '@/config/create-options';
 import { getEntitiesForCreateMenu } from '@/config/entity-registry';
-import { partyCatHref } from '@/config/party';
 
 describe('CREATE_OPTIONS', () => {
-  it('starts with a post, then every registry create path (plus the one-click party)', () => {
+  it('starts with a post, then every registry create path', () => {
     expect(CREATE_OPTIONS[0]?.href).toBe('/timeline?compose=true');
-    const hrefs = CREATE_OPTIONS.slice(1)
-      .map(option => option.href)
-      .filter(href => href !== partyCatHref());
+    const hrefs = CREATE_OPTIONS.slice(1).map(option => option.href);
     expect(hrefs).toEqual(getEntitiesForCreateMenu().map(entity => entity.createPath));
   });
 

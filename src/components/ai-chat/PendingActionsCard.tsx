@@ -134,56 +134,59 @@ export function PendingActionsCard({ action, onConfirm, onReject }: PendingActio
     );
   }
 
+  // What the action is about, when the Cat named it — "Der HochhinHouse Party
+  // RENNER" says more than "Execute Build a Website" alone.
+  const subject =
+    typeof action.parameters.title === 'string' && action.parameters.title.trim()
+      ? action.parameters.title.trim()
+      : null;
+  const details = Object.entries(action.parameters).filter(([key]) => key !== 'title');
+
   return (
-    <div className="space-y-3 rounded-md border border-status-warning/20 bg-status-warning/10 p-4">
-      <div className="flex items-start gap-3">
-        <div className="rounded-md bg-surface-page p-2">
-          <AlertTriangle className="h-5 w-5 text-status-warning" />
-        </div>
-        <div className="flex-1">
-          <h4 className="font-medium text-fg-primary">Action requires confirmation</h4>
-          <p className="mt-1 text-base text-fg-secondary">{action.description}</p>
-          {action.grantOnConfirm && (
-            <p className="mt-2 text-sm text-fg-secondary">
-              Cat isn’t allowed to handle{' '}
-              {ACTION_CATEGORIES[
-                action.category as keyof typeof ACTION_CATEGORIES
-              ]?.name.toLowerCase() ?? action.category}{' '}
-              actions yet. Confirming allows it from now on — you’ll still confirm each one — and
-              runs this action.
-            </p>
-          )}
-        </div>
+    <div className="space-y-3 rounded-lg border border-default border-l-4 border-l-status-warning bg-surface-base p-4">
+      <div className="flex items-center justify-between gap-3 text-xs text-fg-secondary">
+        <span className="inline-flex min-w-0 items-center gap-1.5">
+          <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+          <span className="truncate">Your Cat asks first</span>
+        </span>
+        <span className="inline-flex shrink-0 items-center gap-1">
+          <Clock className="h-3.5 w-3.5" aria-hidden="true" />
+          {timeLeft}
+        </span>
       </div>
 
-      <div className="flex items-center gap-4 text-xs text-fg-secondary">
-        <div className="flex items-center gap-1">
-          <Icon className="h-4 w-4" />
-          <span className="capitalize">{action.actionId.replace(/_/g, ' ')}</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <Clock className="h-4 w-4" />
-          <span>{timeLeft}</span>
-        </div>
+      <div className="min-w-0">
+        <h4 className="font-medium text-fg-primary">{action.description}</h4>
+        {subject && <p className="mt-0.5 break-words text-sm text-fg-secondary">{subject}</p>}
+        {action.grantOnConfirm && (
+          <p className="mt-2 text-sm text-fg-secondary">
+            Cat isn’t allowed to handle{' '}
+            {ACTION_CATEGORIES[
+              action.category as keyof typeof ACTION_CATEGORIES
+            ]?.name.toLowerCase() ?? action.category}{' '}
+            actions yet. Confirming allows it from now on — you’ll still confirm each one — and runs
+            this action.
+          </p>
+        )}
       </div>
 
-      {Object.keys(action.parameters).length > 0 && (
-        <div className="rounded-md bg-surface-page/70 p-3 text-xs">
-          <div className="mb-1 font-medium text-fg-primary">Details:</div>
-          <ul className="space-y-0.5 text-fg-secondary">
-            {Object.entries(action.parameters)
-              .slice(0, 4)
-              .map(([key, value]) => (
-                <li key={key}>
-                  <span className="opacity-70">{key.replace(/_/g, ' ')}:</span>{' '}
-                  <span>
-                    {String(value).slice(0, 50)}
-                    {String(value).length > 50 ? '...' : ''}
-                  </span>
-                </li>
-              ))}
-          </ul>
-        </div>
+      {details.length > 0 && (
+        <details className="text-xs text-fg-secondary">
+          <summary className="min-h-9 cursor-pointer select-none py-2 font-medium text-fg-primary">
+            Details
+          </summary>
+          <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 rounded-md bg-surface-raised p-3">
+            {details.slice(0, 6).map(([key, value]) => (
+              <div key={key} className="contents">
+                <dt className="opacity-70">{key.replace(/_/g, ' ')}</dt>
+                <dd className="min-w-0 break-words">
+                  {String(value).slice(0, 80)}
+                  {String(value).length > 80 ? '…' : ''}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </details>
       )}
 
       {actionError && (

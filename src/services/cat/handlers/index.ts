@@ -9,6 +9,7 @@ import { governanceHandlers } from './governance';
 import { socialHandlers } from './social';
 import { interestHandlers } from './interests';
 import { siteBuildHandlers } from './site-build';
+import { lokiTaskHandlers } from './loki-task';
 import { promotionHandlers } from './promotion';
 import { civicSplitHandlers } from './civic-split';
 import type { ActionHandler } from './types';
@@ -25,6 +26,7 @@ export const ACTION_HANDLERS: Partial<Record<string, ActionHandler>> = {
   ...walletLedgerHandlers,
   ...governanceHandlers,
   ...siteBuildHandlers,
+  ...lokiTaskHandlers,
   ...promotionHandlers,
   ...civicSplitHandlers,
 };

@@ -163,6 +163,18 @@ const CASES: Array<{
     forbid: ['location'],
   },
   {
+    actionId: 'create_event',
+    table: ENTITY_REGISTRY.event.tableName,
+    parameters: {
+      title: 'Bitcoin Basel',
+      start_date: '2026-11-14T09:00:00Z',
+      event_type: 'conference',
+      ticket_price_btc: 0.0005,
+    },
+    expect: { ticket_price: 0.0005, is_free: false, currency: 'BTC', venue_address: null },
+    forbid: ['location', 'ticket_price_btc'],
+  },
+  {
     actionId: 'create_organization',
     table: ENTITY_REGISTRY.group.tableName,
     parameters: { name: 'Circle', type: 'circle' },

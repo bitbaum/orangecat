@@ -110,6 +110,23 @@ describe('selection is worth doing', () => {
     expect(selectPromptSections('hi')).not.toContain('Pricing Guidance');
   });
 
+  it('selects the end-to-end setup only when the person asks for the whole thing', () => {
+    const setup = 'Setting Someone Up End to End';
+    for (const ask of [
+      "I'm a ceramicist in Zug, set me up",
+      'can you do everything for me — profile, website, funding',
+      'help me find backers for my studio',
+      'I need funding for a community garden',
+    ]) {
+      expect(selectPromptSections(ask)).toContain(setup);
+    }
+    // An opinion about how to set something up is a question, not a setup.
+    expect(selectPromptSections('what do you think, how would you set it up?')).not.toContain(
+      setup
+    );
+    expect(selectPromptSections('hi')).not.toContain(setup);
+  });
+
   /**
    * Selection is necessary but NOT yet sufficient, and this test says so out
    * loud rather than asserting a fit that has not been achieved. On a plain
@@ -168,13 +185,21 @@ describe('selection is worth doing', () => {
     // the prompt would otherwise need ("never invent a txid") is enforced in
     // code instead of paid for in prose.
     //
-    // Raised 4,250 -> 4,475 for "Throw a party": `propose_to_group` (shared
+    // Raised 4,250 -> 4,400 for `send_task_to_loki`: a task the owner writes
+    // once in Cat now reaches several of their Loki projects at the same time
+    // (a change that spans OrangeCat AND Loki was previously two pastes into
+    // another product). ~140 characters: a one-clause description and two
+    // parameter names of three words or fewer. Loki writes the coordination
+    // brief the agents read, and Loki refuses unknown project names with the
+    // list of real ones, so neither is paid for in prose here.
+    //
+    // Raised 4,400 -> 4,650 for "hold an event": `propose_to_group` (shared
     // money decided by the people who share it — an OrangeCat group vote, or a
-    // prefilled Solon proposal) and the `create_event` parameters a party needs
-    // (event_type, end_date, is_free, max_attendees; `location` became
-    // optional). Only appendix names and a one-clause description land here —
+    // prefilled Solon proposal) and the `create_event` parameters an event
+    // needs (event_type, end_date, is_free, ticket_price_btc, max_attendees;
+    // `location` became optional). Only appendix names and a one-clause description land here —
     // the playbook itself is SITUATIONAL and costs a greeting nothing.
-    expect(remaining).toBeLessThanOrEqual(4_475);
+    expect(remaining).toBeLessThanOrEqual(4_650);
   });
 
   it('selects by default now, and still sends everything when told to', async () => {

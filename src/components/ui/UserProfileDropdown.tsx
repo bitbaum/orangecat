@@ -257,7 +257,7 @@ export default function UserProfileDropdown({
         {/* Identity (name/@username/email) lives once in the dropdown panel —
             no name text in the trigger, to avoid the doubled "Mao / Mao" read. */}
         <ChevronDown
-          className={`h-4 w-4 transition-transform duration-300 ease-out ${isOpen ? 'rotate-180' : ''}`}
+          className={`hidden h-4 w-4 transition-transform duration-300 ease-out sm:block ${isOpen ? 'rotate-180' : ''}`}
         />
       </button>
 

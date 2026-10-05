@@ -23,3 +23,21 @@ extendZodWithOpenApi(z);
  * specs.
  */
 export const openApiRegistry = new OpenAPIRegistry();
+
+/**
+ * Give a schema its component name — safe for a schema built before this file ran.
+ *
+ * With zod 4, extendZodWithOpenApi adds `.openapi` to schemas constructed
+ * AFTER it runs; one constructed earlier never has the method. Locally this
+ * file happened to load first. In the production bundle, config/external-publish
+ * loaded first, and /api/v1/openapi.json answered 500 with
+ * "externalPublishSchema.openapi is not a function" (2026-10-03). Calling the
+ * method off the prototype makes import order irrelevant. Use this for any
+ * schema imported from another module.
+ */
+export function named<T extends z.ZodType>(schema: T, refId: string): T {
+  return (z.ZodType.prototype as unknown as { openapi: (this: T, id: string) => T }).openapi.call(
+    schema,
+    refId
+  );
+}

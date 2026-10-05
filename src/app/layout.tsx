@@ -1,4 +1,5 @@
 import localFont from 'next/font/local';
+import { ECOSYSTEM } from '@/config/ecosystem';
 
 // Self-hosted fonts (src/fonts/*.woff2) — NO build-time fetch from Google Fonts.
 // Removes a non-sovereign external dependency and the ETIMEDOUT build flakiness;
@@ -191,7 +192,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             something breaks is the one time it's needed. */}
         {process.env.LOKI_FEEDBACK_TOKEN && (
           <Script
-            src="https://loki.orangecat.ch/widget.js"
+            src={new URL('/widget.js', ECOSYSTEM.loki.siteUrl).toString()}
             strategy="afterInteractive"
             data-fc-project={process.env.LOKI_FEEDBACK_TOKEN}
             data-fc-bottom="80"

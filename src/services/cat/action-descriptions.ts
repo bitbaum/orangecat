@@ -50,7 +50,10 @@ export function generateActionDescription(
     case 'create_event': {
       const kind = parameters.event_type ? `${parameters.event_type} ` : 'event ';
       const where = parameters.location ? ` at ${parameters.location}` : '';
-      return `Create ${kind}"${parameters.title}" on ${parameters.start_date}${where}`;
+      const price = parameters.ticket_price_btc
+        ? `, tickets ${parameters.ticket_price_btc} BTC`
+        : '';
+      return `Create ${kind}"${parameters.title}" on ${parameters.start_date}${where}${price}`;
     }
     case 'create_asset':
       return `Register asset "${parameters.title}"${parameters.location ? ` at ${parameters.location}` : ''}`;

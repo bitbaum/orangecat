@@ -1,49 +1,16 @@
 /**
  * One list, grouped the way the map is grouped, each row opening where its
- * owner works on it. Reads registry metadata for the icon and name and
- * getStatusInfo for the badge, so a new type or a status recolour lands here
- * without a change.
+ * owner works on it. Rows render through ThingRow, which reads the registry
+ * and getStatusInfo, so a new type or a status recolour lands here unchanged.
  */
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { TheDoor } from '@/components/map/TheDoor';
+import { ThingRow } from '@/components/things/ThingRow';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { ROUTES } from '@/config/routes';
-import { getStatusInfo } from '@/config/status-config';
 import { THINGS_PAGE } from '@/config/things';
 import { groupThingsByIntent, type Thing } from '@/domain/things/service';
-
-function ThingRow({ thing }: { thing: Thing }) {
-  const meta = ENTITY_REGISTRY[thing.type];
-  const Icon = meta.icon;
-  const status = thing.status ? getStatusInfo(thing.status, thing.type) : null;
-  return (
-    <li>
-      <Link
-        href={thing.href}
-        className="flex min-h-14 items-center gap-3 px-3 py-3 hover:bg-surface-raised"
-      >
-        <span className="oc-icon-tile h-10 w-10 shrink-0">
-          <Icon className="h-5 w-5 text-fg-secondary" aria-hidden="true" />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block truncate font-medium text-fg-primary">{thing.title}</span>
-          <span className="block text-xs text-fg-tertiary">
-            {meta.name}
-            {thing.joined ? ` · ${THINGS_PAGE.joinedLabel}` : ''}
-          </span>
-        </span>
-        {status && (
-          <Badge variant="outline" className={status.className}>
-            {status.label}
-          </Badge>
-        )}
-        <ArrowRight className="h-4 w-4 shrink-0 text-fg-muted" aria-hidden="true" />
-      </Link>
-    </li>
-  );
-}
 
 function EmptyThings() {
   return (
@@ -94,7 +61,18 @@ export function MyThingsList({ things }: { things: Thing[] }) {
             </div>
             <ul className="divide-y divide-subtle rounded-lg border border-default bg-surface-base">
               {section.things.map(thing => (
-                <ThingRow key={`${thing.type}:${thing.id}`} thing={thing} />
+                <ThingRow
+                  key={`${thing.type}:${thing.id}`}
+                  type={thing.type}
+                  title={thing.title}
+                  href={thing.href}
+                  status={thing.status}
+                  subtitle={
+                    thing.joined
+                      ? `${ENTITY_REGISTRY[thing.type].name} · ${THINGS_PAGE.joinedLabel}`
+                      : undefined
+                  }
+                />
               ))}
             </ul>
           </section>
