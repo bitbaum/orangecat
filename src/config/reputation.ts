@@ -127,6 +127,50 @@ export const DEAL_STATUS_LABEL = {
   cancelled: 'Cancelled',
 } as const;
 
+// ==================== NUDGES ====================
+
+/** The notification type every review prompt is sent under. */
+export const DEAL_REVIEW_NOTIFICATION_TYPE = 'deal_review';
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * When the review-nudges cron asks a side that has not reviewed yet. At most
+ * one of each kind per side per deal (deal_review_nudges records them), and
+ * the two windows never overlap, so nobody is asked twice in one run.
+ *
+ *   ask        from 3 days after the deal settled (time for the thing to
+ *              arrive) until the last call takes over
+ *   last_call  in the final 5 days before the window closes
+ */
+export const REVIEW_NUDGES = {
+  ask: { afterSettledMs: 3 * DAY_MS },
+  last_call: { beforeCloseMs: 5 * DAY_MS },
+} as const;
+
+export type ReviewNudgeKind = keyof typeof REVIEW_NUDGES;
+
+/** What each nudge says. `who` is the other side's display name. */
+export const REVIEW_NUDGE_COPY: Record<
+  ReviewNudgeKind,
+  (p: { who: string; title: string; role: ReviewerRole }) => { title: string; message: string }
+> = {
+  ask: ({ who, title, role }) => ({
+    title: `How did it go with ${who}?`,
+    message: `${role === 'customer' ? 'You bought' : 'You sold'} "${title}". Would you deal with them again? Your answer stays hidden until ${who} has reviewed too.`,
+  }),
+  last_call: ({ who, title }) => ({
+    title: `Last days to review ${who}`,
+    message: `The review window for "${title}" closes in a few days. After that, neither of you can add one.`,
+  }),
+};
+
+/** Sent to the other side the moment one side reviews. Says THAT, never WHAT. */
+export const COUNTERPART_REVIEWED_COPY = ({ who, title }: { who: string; title: string }) => ({
+  title: `${who} reviewed your deal`,
+  message: `${who} has reviewed "${title}". Their review stays hidden until you write yours, or until the window closes.`,
+});
+
 /** The label for one question id, whichever side asked it. Falls back to the id. */
 export function questionLabel(id: string): string {
   for (const role of REVIEWER_ROLES) {

@@ -48,6 +48,10 @@ const EMAIL_ENABLED_TYPES: Record<string, boolean> = {
   // user who hasn't set up receiving — and they may not visit the app to see
   // the in-app notification. Deduped at the dispatch site (7 days).
   tip_dead_end: true,
+  // Review prompts (ADR-0010). Most people never review unless asked, and the
+  // in-app bell alone reaches only those already here. Capped at source: per
+  // deal, a side gets at most two cron nudges plus one "they reviewed you".
+  deal_review: true,
   // Onboarding drip emails are dispatched directly by the scheduler,
   // not through this config, since they use custom templates.
 };

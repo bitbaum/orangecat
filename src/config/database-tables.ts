@@ -132,6 +132,7 @@ export const DATABASE_TABLES = {
   // Reputation (ADR-0010)
   DEALS: 'deals',
   DEAL_REVIEWS: 'deal_reviews',
+  DEAL_REVIEW_NUDGES: 'deal_review_nudges',
 
   // Wishlists
   WISHLISTS: 'wishlists',

@@ -11,6 +11,7 @@ import { DATABASE_TABLES } from '@/config/database-tables';
 import { HEADLINE_QUESTION, dealReviewInputSchema, type ReviewerRole } from '@/config/reputation';
 import { actorNames, nameOf, type ActorName } from '@/domain/actors/names';
 import { sha256Hex } from '@/domain/research/openScience';
+import { notifyCounterpartReviewed } from './nudges';
 import { callRpc, fromTable } from '@/lib/supabase/untyped';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 
@@ -249,6 +250,10 @@ export async function createDealReview(
   const { data: revealed } = (await callRpc(supabase, 'deal_reviews_revealed', {
     p_deal_id: dealId,
   })) as { data: boolean | null };
+  if (!revealed) {
+    // Still blind, so the other side has not written yet: tell them they can.
+    await notifyCounterpartReviewed(supabase, deal, role);
+  }
   return { ok: true, review: { created_at: data.created_at, revealed: Boolean(revealed) } };
 }
 
