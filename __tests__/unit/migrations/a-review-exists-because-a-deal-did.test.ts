@@ -46,6 +46,15 @@ describe('a deal is observed, never declared', () => {
   it('keeps who dealt with whom private to the two of them', () => {
     expect(sql).not.toMatch(/GRANT SELECT ON public\.deals TO anon/);
   });
+
+  it("records a deal against the person's OLDEST actor, as lookupUserActor does", () => {
+    // Users can hold duplicate actors; an unordered pick would split a track
+    // record across them and disagree with the profile that displays it.
+    expect(sql).toMatch(/ORDER BY created_at ASC, id ASC\s+LIMIT 1/);
+    expect(sql).toMatch(/v_provider := public\.primary_user_actor\(NEW\.seller_id\)/);
+    expect(sql).toMatch(/public\.primary_user_actor\(o\.seller_id\) AS provider/);
+    expect(sql).not.toMatch(/JOIN public\.actors/);
+  });
 });
 
 describe('a review belongs to a deal and to one side of it', () => {

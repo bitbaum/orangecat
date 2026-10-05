@@ -55,4 +55,8 @@ describe('a shipped feature is reachable from the sidebar', () => {
     expect(entry?.name).toBeTruthy();
     expect(entry?.name).not.toContain('/');
   });
+
+  it('links the deals page, the only place a review can be written (ADR-0010)', () => {
+    expect(allSidebarHrefs()).toContain(ROUTES.DASHBOARD.DEALS);
+  });
 });

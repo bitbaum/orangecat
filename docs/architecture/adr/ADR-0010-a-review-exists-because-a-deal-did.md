@@ -1,7 +1,9 @@
 # ADR-0010: A Review Exists Because a Deal Did
 
 Date: 2026-10-05
-Status: Accepted (D1–D5 shipped in `20261005120000_deals_and_deal_reviews.sql`; D6–D8 to follow)
+Status: Accepted. D1–D5 shipped: the schema is `20261005120000_deals_and_deal_reviews.sql`,
+reviews are written at `/dashboard/deals` (`POST /api/deals/:id/reviews`), and the track record
+is on every profile (`GET /api/actors/:id/track-record`). D6–D8 are still to come.
 
 ## Context
 
@@ -38,7 +40,10 @@ second. A review can only be written about a deal the writer was part of.**
   (`orangecat.order`, `evig.it_hilfe`, `loki.crew_assignment`); the list is
   `src/config/reputation.ts`. Parties are OrangeCat actor ids, which evig
   already stores as `users.orangecat_actor_id`. Amounts carry a currency so a
-  CHF repair and a BTC purchase sit in one table.
+  CHF repair and a BTC purchase sit in one table. A user can hold duplicate
+  actors, so OrangeCat deals are filed against the OLDEST one
+  (`primary_user_actor()`, the same rule as `lookupUserActor`), and a person's
+  own deal list reads across all of them.
 - **D3 — One review per side, blind until both have written.** Customer and
   provider each get exactly one review per deal. A review is visible only to
   its author until both sides have written or `review_closes_at` passes (30

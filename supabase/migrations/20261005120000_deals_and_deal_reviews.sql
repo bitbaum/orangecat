@@ -98,6 +98,27 @@ COMMENT ON COLUMN public.deals.review_closes_at IS
 
 -- ==================== ORANGECAT ORDERS BECOME DEALS ====================
 
+-- Which actor a user's deals are recorded against. Nothing makes a user's
+-- actor unique (one account had six on 2026-09-18), so this is the same rule
+-- as lookupUserActor in src/domain/actors: the OLDEST user actor wins, so a
+-- person's track record never splits across duplicates.
+CREATE OR REPLACE FUNCTION public.primary_user_actor(p_user_id UUID)
+RETURNS UUID
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT id FROM public.actors
+   WHERE user_id = p_user_id AND actor_type = 'user'
+   ORDER BY created_at ASC, id ASC
+   LIMIT 1
+$$;
+
+-- An internal helper for the trigger below, not an API.
+REVOKE EXECUTE ON FUNCTION public.primary_user_actor(UUID) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.primary_user_actor(UUID) TO service_role;
+
 -- A deal starts when the money settles (orders.status = 'paid'), because that
 -- is the moment OrangeCat has confirmed something real. Later order states are
 -- followed. An order cancelled before payment never was a deal.
@@ -134,10 +155,8 @@ BEGIN
       RETURN NEW;
     END IF;
 
-    SELECT id INTO v_provider FROM public.actors
-     WHERE user_id = NEW.seller_id AND actor_type = 'user' LIMIT 1;
-    SELECT id INTO v_customer FROM public.actors
-     WHERE user_id = NEW.buyer_id AND actor_type = 'user' LIMIT 1;
+    v_provider := public.primary_user_actor(NEW.seller_id);
+    v_customer := public.primary_user_actor(NEW.buyer_id);
     IF v_provider IS NULL OR v_customer IS NULL OR v_provider = v_customer THEN
       RETURN NEW;
     END IF;
@@ -172,17 +191,20 @@ INSERT INTO public.deals (
   settled_at, review_closes_at
 )
 SELECT
-  'orangecat.order', o.id::text, pa.id, ca.id,
+  'orangecat.order', o.id::text, a.provider, a.customer,
   o.entity_type, o.entity_id, COALESCE(NULLIF(o.entity_title, ''), 'Order'),
   o.amount_btc, 'BTC',
   CASE o.status WHEN 'completed' THEN 'completed' WHEN 'refunded' THEN 'refunded' ELSE 'settled' END,
   COALESCE(o.updated_at, o.created_at, now()),
   now() + public.deal_review_window()
 FROM public.orders o
-JOIN public.actors pa ON pa.user_id = o.seller_id AND pa.actor_type = 'user'
-JOIN public.actors ca ON ca.user_id = o.buyer_id AND ca.actor_type = 'user'
+CROSS JOIN LATERAL (
+  SELECT public.primary_user_actor(o.seller_id) AS provider,
+         public.primary_user_actor(o.buyer_id) AS customer
+) a
 WHERE o.status IN ('paid', 'shipped', 'completed', 'refunded')
-  AND pa.id <> ca.id
+  AND a.provider IS NOT NULL AND a.customer IS NOT NULL
+  AND a.provider <> a.customer
 ON CONFLICT (source, source_ref) DO NOTHING;
 
 -- ==================== DEAL REVIEWS ====================
@@ -372,5 +394,6 @@ GRANT EXECUTE ON FUNCTION public.actor_track_record(UUID) TO anon, authenticated
 --   DROP FUNCTION public.deal_review_is_placed();
 --   DROP TRIGGER orders_become_deals ON public.orders;
 --   DROP FUNCTION public.order_becomes_a_deal();
+--   DROP FUNCTION public.primary_user_actor(UUID);
 --   DROP TABLE public.deals;
 --   DROP FUNCTION public.deal_review_window();

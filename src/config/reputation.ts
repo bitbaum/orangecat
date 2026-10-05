@@ -104,3 +104,36 @@ export function dealReviewInputSchema(role: ReviewerRole) {
 }
 
 export type DealReviewInput = z.infer<ReturnType<typeof dealReviewInputSchema>>;
+
+// ==================== COPY ====================
+
+export const DEALS_PAGE = {
+  title: 'Your deals',
+  lede: 'Everything you bought or sold here, and what each side said about the other. Reviews stay hidden until both of you have written, or the window closes, so neither of you can answer the other.',
+  empty:
+    'No deals yet. When something you buy or sell is paid, it shows up here and you can review the other side.',
+} as const;
+
+/** What each side of a deal is called, from the reader's point of view. */
+export const DEAL_ROLE_LABEL: Record<ReviewerRole, string> = {
+  customer: 'You bought',
+  provider: 'You sold',
+};
+
+export const DEAL_STATUS_LABEL = {
+  settled: 'Paid',
+  completed: 'Completed',
+  refunded: 'Refunded',
+  cancelled: 'Cancelled',
+} as const;
+
+/** The label for one question id, whichever side asked it. Falls back to the id. */
+export function questionLabel(id: string): string {
+  for (const role of REVIEWER_ROLES) {
+    const q = REVIEW_QUESTIONS[role].find(x => x.id === id);
+    if (q) {
+      return q.label;
+    }
+  }
+  return id;
+}
