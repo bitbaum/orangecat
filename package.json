@@ -2,6 +2,7 @@
   "name": "orangecat",
   "version": "0.1.2",
   "private": true,
+  "license": "MIT",
   "workspaces": [
     "packages/*"
   ],
