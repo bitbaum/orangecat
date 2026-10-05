@@ -186,6 +186,7 @@ export const DATABASE_TABLES = {
   // Collaboration
   PROJECT_ROLES: 'project_roles',
   EVENT_ROLES: 'event_roles',
+  EVENT_ATTENDEES: 'event_attendees',
 
   // Plans
   USER_PLANS: 'user_plans',

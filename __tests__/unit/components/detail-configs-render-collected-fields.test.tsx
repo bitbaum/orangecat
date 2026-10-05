@@ -22,9 +22,10 @@ import { eventDetailConfig } from '@/components/public/detail-configs/event';
 import { serviceDetailConfig } from '@/components/public/detail-configs/service';
 import { investmentDetailConfig } from '@/components/public/detail-configs/investment';
 
-// The crew card is an async server component reading event_roles; this file is
+// The crew and ticket cards are async server components reading their own rows; this file is
 // about the fields the event form collects, so it is stubbed out here.
 vi.mock('@/components/events/EventCrewCard', () => ({ default: () => null }));
+vi.mock('@/components/events/EventTicketCard', () => ({ default: () => null }));
 
 describe('loan detail config', () => {
   const refinance = {

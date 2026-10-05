@@ -9,6 +9,18 @@ reads, and [orangecat.ch/changelog](https://orangecat.ch/changelog) renders
 it from there. One `## YYYY-MM-DD` heading per day; bullets under it travel
 to the map, sub-bullets stay here for the human reader.
 
+## 2026-10-05
+
+### Added
+
+- **Event tickets, with a QR for the door.** Paying for an event now gives you a ticket on the event page: a QR code, the number of people it lets in, and a short code. Free events have a "Get a free ticket" button, and "Can't make it" gives the place back. When an event has a capacity, the page shows how many places are left, a full event stops selling before anyone pays, and it reopens when someone gives a place back.
+  - At the door, the organizer scans a ticket with their phone camera. The event's door page opens and says in one glance whether the person is in, was already checked in, or holds a ticket for something else. The same page lists every guest, with a name search and a manual check-in for someone whose phone has died.
+  - Buying a ticket now needs an account, so the ticket has somewhere to live. The event's bare Bitcoin address is no longer shown to signed-out visitors for a paid event, because paying it left no ticket.
+
+### Fixed
+
+- **Event guest lists are private.** Anyone could read who was going to a public event, and anyone could write themselves onto the list as paid. Now you see only your own ticket, the organizer sees the list, and only payment issues a paid ticket.
+
 ## 2026-10-03
 
 ### Added

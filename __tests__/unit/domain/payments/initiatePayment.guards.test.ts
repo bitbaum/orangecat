@@ -88,3 +88,35 @@ describe('initiatePayment — guards', () => {
     );
   });
 });
+
+describe('initiatePayment — sold-out event', () => {
+  function eventSupabase(seatsLeft: number | null) {
+    const builder: Record<string, unknown> = {};
+    for (const m of ['select', 'eq']) {
+      builder[m] = vi.fn(() => builder);
+    }
+    builder.maybeSingle = vi.fn(() => Promise.resolve({ data: { id: 'ev-1' }, error: null }));
+    return {
+      from: vi.fn(() => builder),
+      rpc: vi.fn(() => Promise.resolve({ data: seatsLeft, error: null })),
+    } as never;
+  }
+  const ticket = { entity_type: 'event' as const, entity_id: 'ev-1' };
+
+  it('refuses before anyone pays when no seats are left', async () => {
+    await expect(initiatePayment(eventSupabase(0), BUYER, ticket)).rejects.toThrow(
+      'This event is sold out'
+    );
+    expect(getSellerUserIdMock).not.toHaveBeenCalled();
+  });
+
+  it('lets an event with seats (or no limit) through to the seller checks', async () => {
+    getSellerUserIdMock.mockResolvedValue(null);
+    await expect(initiatePayment(eventSupabase(5), BUYER, ticket)).rejects.toThrow(
+      'Entity owner not found'
+    );
+    await expect(initiatePayment(eventSupabase(null), BUYER, ticket)).rejects.toThrow(
+      'Entity owner not found'
+    );
+  });
+});

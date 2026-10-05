@@ -16,6 +16,7 @@ import {
 import { safeHref } from '@/lib/security/safeHref';
 import { formatRecurrence } from '@/lib/recurrence';
 import EventCrewCard from '@/components/events/EventCrewCard';
+import EventTicketCard from '@/components/events/EventTicketCard';
 import { EVENT_PUBLIC_STATUSES } from '@/config/events';
 
 /**
@@ -271,6 +272,7 @@ export const eventDetailConfig: EntityDetailConfig = {
             )}
           </CardContent>
         </Card>
+        <EventTicketCard event={entity} isOwner={isOwner} />
         <EventCrewCard
           eventId={entity.id as string}
           eventTitle={entity.title as string}

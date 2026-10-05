@@ -72,6 +72,10 @@ export function PublicEntityPaymentSection({
   // Use sellerUserId (auth.users ID) for wallet lookup — wallets are keyed by profile_id = auth user ID
   // sellerProfileId may be an actor ID for actor-owned entities, which won't match wallet.profile_id
   const { hasWallet, loading: walletLoading } = useSellerPaymentMethods(sellerUserId);
+  // A ticket is issued to an account so the door can scan it. Paying the
+  // organizer's bare address without one would take the money and leave no
+  // ticket, so a priced event always goes through sign-in.
+  const isTicket = entityType === 'event' && !!priceAmount;
 
   // Auth still hydrating — show skeleton to avoid flash
   if (authLoading) {
@@ -108,6 +112,7 @@ export function PublicEntityPaymentSection({
     }
 
     if (
+      !isTicket &&
       sellerReceive?.address &&
       (sellerReceive.method === 'onchain' || sellerReceive.method === 'lightning_address')
     ) {
@@ -147,11 +152,13 @@ export function PublicEntityPaymentSection({
               <Link href={`${ROUTES.AUTH}?mode=login&from=${signInRedirect}`} className="block">
                 <Button className="w-full gap-2 min-h-11">
                   <LogIn className="w-4 h-4" />
-                  Sign in to purchase
+                  {isTicket ? 'Sign in to buy a ticket' : 'Sign in to purchase'}
                 </Button>
               </Link>
               <p className="text-xs text-fg-secondary text-center">
-                This seller uses a connected Lightning wallet for purchases.
+                {isTicket
+                  ? 'Your ticket and its QR code for the door are kept in your account.'
+                  : 'This seller uses a connected Lightning wallet for purchases.'}
               </p>
               <PaymentExpectationNote />
             </>
