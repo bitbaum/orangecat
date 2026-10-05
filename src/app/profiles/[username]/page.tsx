@@ -7,6 +7,8 @@ import { getTableName } from '@/config/entity-registry';
 import { fetchProfileListingCounts } from '@/services/profile/listingCounts';
 import { getPublicEconomicProfile } from '@/services/cat/economic-profile-public';
 import { getPublicCivicSplit } from '@/domain/civic-split/service';
+import { getTrackRecord } from '@/domain/reputation/service';
+import { createPublicClient } from '@/lib/supabase/public';
 import { listArticlesByAuthor } from '@/services/articles/get-article';
 import { safeJsonLdString } from '@/lib/seo/structured-data';
 import type { ScalableProfile } from '@/services/profile/types';
@@ -352,6 +354,9 @@ export default async function PublicProfilePage({ params }: PageProps) {
   // carries only rows marked public — so a private declaration cannot leak
   // here even by mistake. Null hides the section.
   const civicSplit = await getPublicCivicSplit(supabase, ownerActor.id).catch(() => null);
+  // What their deals showed (ADR-0010). Read sessionless so every visitor —
+  // the owner included — sees the same record, never a still-blind review.
+  const trackRecord = await getTrackRecord(createPublicClient(), ownerActor.id).catch(() => null);
 
   // Redact before anything derives from the row, so hidden data never leaves the
   // server — not in the client payload, not in the JSON-LD below.
@@ -404,6 +409,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
         isOwnProfile={isOwnProfile}
         economicProfile={economicProfile}
         civicSplit={civicSplit}
+        trackRecord={trackRecord}
         stats={{
           projectCount,
           totalRaised,

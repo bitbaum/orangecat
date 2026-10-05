@@ -451,6 +451,8 @@ export const ROUTES = {
     THINGS: '/dashboard/things',
     /** Income, debts, the civic split and a labelled tax estimate, in one place. */
     FINANCES: '/dashboard/finances',
+    /** Every deal you were part of, and reviewing the other side (ADR-0010). */
+    DEALS: '/dashboard/deals',
     /** Where a person declares how they would split their public money. */
     CIVIC_SPLIT: '/dashboard/civic-split',
     PROFILE_CLAIMS: '/dashboard/profile-claims',

@@ -9,6 +9,16 @@ reads, and [orangecat.ch/changelog](https://orangecat.ch/changelog) renders
 it from there. One `## YYYY-MM-DD` heading per day; bullets under it travel
 to the map, sub-bullets stay here for the human reader.
 
+## 2026-10-05
+
+### Added
+
+- **Review the people you buy from and sell to, and only them.** Every paid order is now a deal, listed under "Your deals" in the sidebar. Each side can answer a few yes/no questions about the other ("Would you deal with them again?") and add a note. Only the two people in a deal can review it, once each, and a review can never be edited.
+  - Both reviews stay hidden until both of you have written, or 30 days pass, so neither side can read the other's review and answer it. After that, nobody can add one.
+  - There are no stars. A yes/no answer keeps its meaning however many reviews someone has, where star averages drift until everyone has 4.8.
+  - Tips never become deals. A gift tests nothing about whether anyone delivered.
+- **Profiles show a track record.** A profile now shows what OrangeCat itself saw: how many paid deals the person had, with how many different people, how many were refunded, and what share of the reviews about them say "would deal again". The counts come from settled payments nobody typed in. A profile with no deals shows nothing new.
+
 ## 2026-10-02
 
 ### Added

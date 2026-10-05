@@ -15,6 +15,8 @@ import ProfileEntityTab from '@/components/profile/ProfileEntityTab';
 import ProfileArticlesTab from '@/components/profile/ProfileArticlesTab';
 import ProfileOfferings from '@/components/profile/ProfileOfferings';
 import ProfileCivicSplit, { type PublicCivicSplit } from '@/components/profile/ProfileCivicSplit';
+import ProfileTrackRecord from '@/components/profile/ProfileTrackRecord';
+import type { TrackRecord } from '@/domain/reputation/service';
 import type { PublicEconomicProfile } from '@/services/cat/economic-profile';
 import { Users, User, MessageSquare, Info, Wallet, FileText } from 'lucide-react';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
@@ -66,6 +68,8 @@ interface ProfileLayoutProps {
   economicProfile?: PublicEconomicProfile | null;
   /** Their declared civic split, only when they made it public. */
   civicSplit?: PublicCivicSplit | null;
+  /** Observed deals and revealed reviews; null hides the section (ADR-0010). */
+  trackRecord?: TrackRecord | null;
 }
 
 export default function ProfileLayout({
@@ -80,6 +84,7 @@ export default function ProfileLayout({
   serverIsOwnProfile,
   economicProfile,
   civicSplit,
+  trackRecord,
 }: ProfileLayoutProps) {
   const { user } = useAuth();
   const isOwnProfile = serverIsOwnProfile ?? profile.id === user?.id;
@@ -250,6 +255,11 @@ export default function ProfileLayout({
             {civicSplit && (
               <div className="order-3 mt-4">
                 <ProfileCivicSplit split={civicSplit} />
+              </div>
+            )}
+            {trackRecord && (
+              <div className="order-4 mt-4">
+                <ProfileTrackRecord record={trackRecord} />
               </div>
             )}
           </div>
