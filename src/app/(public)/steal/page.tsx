@@ -36,7 +36,7 @@ export default function StealPage() {
   return (
     <div className="min-h-screen bg-surface-page">
       <section className="border-b border-default">
-        <div className="mx-auto max-w-shell px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
           <p className="text-sm font-medium uppercase tracking-caps text-fg-tertiary">
             Open source · MIT
           </p>
@@ -71,7 +71,7 @@ export default function StealPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-shell px-4 py-16 sm:px-6 lg:px-8">
+      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <h2 className="font-heading tracking-display text-2xl font-semibold text-fg-primary">
           From &ldquo;I like it&rdquo; to &ldquo;it&apos;s mine&rdquo;
         </h2>
@@ -93,7 +93,7 @@ export default function StealPage() {
       </section>
 
       <section className="border-y border-default bg-surface-base">
-        <div className="mx-auto grid grid-cols-1 max-w-shell items-center gap-10 px-4 py-16 sm:px-6 md:grid-cols-2 lg:px-8">
+        <div className="mx-auto grid grid-cols-1 max-w-7xl items-center gap-10 px-4 py-16 sm:px-6 md:grid-cols-2 lg:px-8">
           <div className="min-w-0">
             <h2 className="font-heading tracking-display text-2xl font-semibold text-fg-primary">
               Pass it on
@@ -107,7 +107,7 @@ export default function StealPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-shell px-4 py-16 sm:px-6 lg:px-8">
+      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <h2 className="font-heading tracking-display text-2xl font-semibold text-fg-primary">
           The rest of the fleet is yours too
         </h2>
@@ -143,7 +143,7 @@ export default function StealPage() {
       </section>
 
       <section className="border-t border-default">
-        <div className="mx-auto max-w-shell px-4 py-16 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <h2 className="font-heading tracking-display text-2xl font-semibold text-fg-primary">
             Want to build it with us? Show us how you think.
           </h2>
