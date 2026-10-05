@@ -67,6 +67,8 @@ export interface NudgeCopy {
     wanted: boolean;
   }): CopyBlock;
   growthAsset(args: { asset: string; wanted: boolean }): CopyBlock;
+  /** A paid deal the person has not reviewed yet. `others`: more open ones, counted once. */
+  reviewDeal(args: { who: string | null; title: string; others: number }): CopyBlock;
 }
 
 const NOUN_DE: Partial<Record<EntityType, string>> = {
@@ -95,6 +97,14 @@ export const NUDGE_COPY: Record<NudgeLanguage, NudgeCopy> = {
           ? `Nobody can find a draft, and you have ${others} more like it. Publishing takes a couple of clicks — or ask your Cat to tidy them up.`
           : `Nobody can find it while it's a draft. Publishing takes a couple of clicks.`,
       cta: others > 0 ? 'Review your drafts' : 'Review & publish',
+    }),
+    reviewDeal: ({ who, title, others }) => ({
+      title: who ? `How did "${title}" go with ${who}?` : `How did "${title}" go?`,
+      body:
+        others > 0
+          ? `Your answer helps the next person decide, and ${others} more of your deals are waiting for one. Reviews stay hidden until both sides have written.`
+          : 'Your answer helps the next person decide. It stays hidden until both of you have written.',
+      cta: others > 0 || !who ? 'Review your deals' : `Review ${who}`,
     }),
     demandMatch: ({ query, count, title, noun }) => ({
       title: `People are looking for what you offer`,
@@ -133,6 +143,14 @@ export const NUDGE_COPY: Record<NudgeLanguage, NudgeCopy> = {
           ? `Einen Entwurf findet niemand, und du hast noch ${others} weitere. Veröffentlichen sind zwei Klicks — oder bitte deine Cat, sie aufzuräumen.`
           : 'Solange er ein Entwurf ist, findet ihn niemand. Veröffentlichen sind zwei Klicks.',
       cta: others > 0 ? 'Entwürfe ansehen' : 'Prüfen & veröffentlichen',
+    }),
+    reviewDeal: ({ who, title, others }) => ({
+      title: who ? `Wie lief „${title}“ mit ${who}?` : `Wie lief „${title}“?`,
+      body:
+        others > 0
+          ? `Deine Antwort hilft der nächsten Person bei der Entscheidung, und ${others} weitere deiner Deals warten noch darauf. Bewertungen bleiben verborgen, bis beide Seiten geschrieben haben.`
+          : 'Deine Antwort hilft der nächsten Person bei der Entscheidung. Sie bleibt verborgen, bis ihr beide geschrieben habt.',
+      cta: others > 0 || !who ? 'Deals bewerten' : `${who} bewerten`,
     }),
     demandMatch: ({ query, count, title, noun }) => ({
       title: 'Jemand sucht, was du anbietest',

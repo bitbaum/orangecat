@@ -65,6 +65,14 @@ second. A review can only be written about a deal the writer was part of.**
   anyone can check it without trusting us.
 - **D8 — The Cat reads it.** Before a purchase or a loan, the Cat quotes the
   counterparty's track record.
+- **D9 — People are asked.** Most people never review unless asked, and a
+  track record nobody writes is empty. The `review-nudges` cron (hourly,
+  deterministic, no model) asks each side that has not reviewed: once 3 days
+  after settlement, once in the last 5 days of the window
+  (`REVIEW_NUDGES`). `deal_review_nudges` records each nudge before it is
+  sent, so none is sent twice. When one side reviews, the other is told
+  THAT it happened, never WHAT was said. The Cat's dashboard suggestions
+  carry the most urgent unreviewed deal.
 
 Tips are not deals and never become one: a gift tests nothing about whether
 anyone delivered.
