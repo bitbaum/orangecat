@@ -58,6 +58,17 @@ describe('the brief carries each playbook, and only when it is wanted', () => {
     expect(selectPromptSections(sentence).has(heading)).toBe(true);
   });
 
+  it('loads for people who do not write in English (ADR-0010 D7)', () => {
+    // A non-ASCII example per playbook is a crude proxy, and enough: an
+    // English-only trigger is the failure, and every one of them is ASCII.
+    for (const p of CAT_PLAYBOOKS) {
+      expect(
+        p.examples.some(e => /[^\x00-\x7F]/.test(e)),
+        `${p.id} needs an example in another language`
+      ).toBe(true);
+    }
+  });
+
   it('stays out of a turn about pricing a mug', () => {
     const chosen = selectPromptSections('how much should i charge for a mug');
     for (const p of CAT_PLAYBOOKS) {

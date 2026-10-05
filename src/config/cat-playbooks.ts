@@ -1,5 +1,5 @@
 /**
- * Cat playbooks — how the Cat carries out an UNDERTAKING, not a single action.
+ * Cat playbooks — how the Cat carries out a whole goal, not a single action.
  *
  * A person does not arrive wanting "an event entity". They arrive wanting a
  * birthday, a meetup, a conference. Each of those is several things the Cat
@@ -21,7 +21,7 @@
  * Neighbours appear only where their own repos say they can help
  * (neighbour-capabilities.ts): Loki builds a site when someone asks for one;
  * Solon holds a decision for a group that already governs there. Most
- * undertakings need neither, and the steps that use them are `conditional`.
+ * goals need neither, and the steps that use them are `conditional`.
  */
 
 import { MAX_ACTION_STEPS } from '@/services/cat/action-loop';
@@ -47,7 +47,7 @@ export interface Playbook {
   examples: readonly string[];
   /** The few things only the person knows, asked together in ONE message. */
   questions: readonly string[];
-  /** How the plan grows or shrinks with the undertaking. */
+  /** How the plan grows or shrinks with what they are doing. */
   sizing: string;
   steps: readonly PlaybookStep[];
 }
