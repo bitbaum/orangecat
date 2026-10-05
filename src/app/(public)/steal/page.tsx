@@ -47,11 +47,11 @@ export default function StealPage() {
             We build technology to release it. Use OrangeCat as it is, or take the whole thing,
             change it and run it as your own. You don&apos;t need to ask us first.
           </p>
-          <div className="mt-10 grid-cols-safe grid gap-4 sm:grid-cols-2">
+          <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="rounded-xl border border-default bg-surface-base p-6">
               <h2 className="text-lg font-semibold text-fg-primary">Use it</h2>
               <p className="mt-2 text-fg-secondary">
-                Create an account and let your Cat get to work. It&apos;s free to start.
+                Create an account and let your Cat get to work.
               </p>
               <Button href={ROUTES.AUTH_REGISTER} variant="accent" className="mt-5">
                 Start using OrangeCat
@@ -75,7 +75,7 @@ export default function StealPage() {
         <h2 className="font-heading tracking-display text-2xl font-semibold text-fg-primary">
           From &ldquo;I like it&rdquo; to &ldquo;it&apos;s mine&rdquo;
         </h2>
-        <ol className="mt-8 grid-cols-safe grid gap-6 md:grid-cols-3">
+        <ol className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
           {STEAL_STEPS.map((step, index) => (
             <li key={step.title} className="min-w-0">
               <span className="font-mono text-sm text-fg-tertiary">0{index + 1}</span>
@@ -85,13 +85,15 @@ export default function StealPage() {
           ))}
         </ol>
         <div className="mt-8 max-w-2xl space-y-2">
-          <CopyCommand command={`${cloneCommand(STEAL_THE_CAT.repo)} && cd my-${STEAL_THE_CAT.repo} && pnpm install`} />
+          <CopyCommand
+            command={`${cloneCommand(STEAL_THE_CAT.repo)} && cd my-${STEAL_THE_CAT.repo} && pnpm install`}
+          />
           <p className="text-sm text-fg-tertiary">You&apos;ll need {STEAL_THE_CAT.needs}.</p>
         </div>
       </section>
 
       <section className="border-y border-default bg-surface-base">
-        <div className="mx-auto grid-cols-safe grid max-w-shell items-center gap-10 px-4 py-16 sm:px-6 md:grid-cols-2 lg:px-8">
+        <div className="mx-auto grid grid-cols-1 max-w-shell items-center gap-10 px-4 py-16 sm:px-6 md:grid-cols-2 lg:px-8">
           <div className="min-w-0">
             <h2 className="font-heading tracking-display text-2xl font-semibold text-fg-primary">
               Pass it on
@@ -113,9 +115,12 @@ export default function StealPage() {
           Bitbaum is a platform for the new economy and for creation: building, engineering and
           researching. Every project below is public and MIT-licensed.
         </p>
-        <ul className="mt-8 grid-cols-safe grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {STEALABLE_REPOS.map(item => (
-            <li key={item.repo} className="min-w-0 rounded-xl border border-default bg-surface-base p-5">
+            <li
+              key={item.repo}
+              className="min-w-0 rounded-xl border border-default bg-surface-base p-5"
+            >
               <a
                 href={repoUrl(item.repo)}
                 className="inline-flex items-center gap-1 font-semibold text-fg-primary hover:underline"
@@ -148,7 +153,7 @@ export default function StealPage() {
             it is seeing the whole system. Pick one of these, in any of our repos, and open an issue
             or a pull request.
           </p>
-          <ol className="mt-8 grid-cols-safe grid gap-6 md:grid-cols-3">
+          <ol className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
             {SYSTEMS_THINKING_PROMPTS.map(prompt => (
               <li key={prompt.title} className="min-w-0 rounded-xl border border-default p-5">
                 <h3 className="font-semibold text-fg-primary">{prompt.title}</h3>

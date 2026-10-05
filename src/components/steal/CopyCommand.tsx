@@ -29,11 +29,7 @@ export function CopyCommand({ command }: { command: string }) {
         aria-label={copied ? 'Copied' : 'Copy command'}
         className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-md text-fg-secondary hover:text-fg-primary"
       >
-        {copied ? (
-          <Check className="h-4 w-4 text-status-positive" />
-        ) : (
-          <Copy className="h-4 w-4" />
-        )}
+        {copied ? <Check className="h-4 w-4 text-status-positive" /> : <Copy className="h-4 w-4" />}
       </button>
     </div>
   );
