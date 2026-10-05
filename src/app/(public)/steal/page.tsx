@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { ExternalLink, GitFork } from 'lucide-react';
+import { ExternalLink, GitFork, Wand2 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { CopyCommand } from '@/components/steal/CopyCommand';
 import { StealQrCode } from '@/components/steal/StealQrCode';
@@ -12,6 +12,7 @@ import {
   SYSTEMS_THINKING_PROMPTS,
   cloneCommand,
   forkUrl,
+  makeItYoursUrl,
   repoUrl,
 } from '@/config/steal';
 
@@ -62,10 +63,16 @@ export default function StealPage() {
               <p className="mt-2 text-fg-secondary">
                 Fork the code and it&apos;s yours: your name, your server, your rules.
               </p>
-              <Button href={forkUrl(STEAL_THE_CAT.repo)} variant="outline" className="mt-5">
-                <GitFork className="mr-2 h-4 w-4" />
-                Fork it on GitHub
-              </Button>
+              <div className="mt-5 flex flex-wrap gap-3">
+                <Button href={forkUrl(STEAL_THE_CAT.repo)} variant="outline">
+                  <GitFork className="mr-2 h-4 w-4" />
+                  Fork it on GitHub
+                </Button>
+                <Button href={makeItYoursUrl(STEAL_THE_CAT.repo)} variant="outline">
+                  <Wand2 className="mr-2 h-4 w-4" />
+                  Make it yours with Loki
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -130,6 +137,12 @@ export default function StealPage() {
               </a>
               <p className="mt-2 text-sm text-fg-secondary">{item.what}</p>
               <p className="mt-3 text-xs text-fg-tertiary">Needs: {item.needs}</p>
+              <a
+                href={makeItYoursUrl(item.repo)}
+                className="mt-3 inline-flex min-h-11 items-center text-sm font-medium text-fg-primary underline hover:no-underline"
+              >
+                Make it yours with Loki
+              </a>
             </li>
           ))}
         </ul>

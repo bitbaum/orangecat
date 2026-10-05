@@ -9,6 +9,7 @@
  */
 
 import { APP_NAME, SITE_URL } from './brand';
+import { ECOSYSTEM } from './ecosystem';
 import { ROUTES } from './routes';
 
 export const STEAL_ORG_URL = 'https://github.com/bitbaum';
@@ -67,6 +68,14 @@ export const STEALABLE_REPOS: readonly StealableRepo[] = [
 
 export const repoUrl = (repo: string) => `${STEAL_ORG_URL}/${repo}`;
 export const forkUrl = (repo: string) => `${repoUrl(repo)}/fork`;
+/**
+ * Loki's "Make it yours": agents import the repo into a project of the
+ * person's own and rename it for them, for people who would rather not fork
+ * and set up by hand. Loki's allowlist (loki src/config/open-source-starters.ts)
+ * holds the same repos.
+ */
+export const makeItYoursUrl = (repo: string) =>
+  `${new URL('/take', ECOSYSTEM.loki.siteUrl).toString()}?repo=${encodeURIComponent(repo)}`;
 /** A clean copy with none of our git history: the copy starts as yours. */
 export const cloneCommand = (repo: string) => `npx degit bitbaum/${repo} my-${repo}`;
 
