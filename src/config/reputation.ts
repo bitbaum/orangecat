@@ -74,7 +74,7 @@ export const REVIEW_QUESTIONS = {
   readonly { id: string; label: string; required: boolean }[]
 >;
 
-export const REVIEW_LIMITS = {
+export const DEAL_REVIEW_LIMITS = {
   MAX_BODY_LENGTH: 5000,
 } as const;
 
@@ -99,7 +99,7 @@ export function dealReviewInputSchema(role: ReviewerRole) {
   return z.object({
     deal_id: z.uuid(),
     answers: reviewAnswersSchema(role),
-    body: z.string().trim().min(1).max(REVIEW_LIMITS.MAX_BODY_LENGTH).optional(),
+    body: z.string().trim().min(1).max(DEAL_REVIEW_LIMITS.MAX_BODY_LENGTH).optional(),
   });
 }
 
