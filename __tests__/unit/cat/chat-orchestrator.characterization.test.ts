@@ -313,7 +313,10 @@ describe('before any model is called', () => {
   });
 
   it('budgets the prompt to the smallest platform-Groq cap in the chain', async () => {
-    (getGroqTpmLimit as Mock).mockImplementation((m: string) => (m === 'g-small' ? 6000 : 8000));
+    // The BYOK Groq link has the SMALLEST cap, and must still not count.
+    (getGroqTpmLimit as Mock).mockImplementation((m: string) =>
+      m === 'g-small' ? 6000 : m === 'byok-groq' ? 2000 : 8000
+    );
     const a = service('A', { chunks: [] }, result('hi', 'g-big'));
     const b = service('B', { chunks: [] }, result('hi', 'g-small'));
     const c = service('C', { chunks: [] }, result('hi', 'byok-groq'));
@@ -863,6 +866,30 @@ describe('streaming', () => {
     );
     await (await run({ stream: true })).text();
     expect(markLinkDown).not.toHaveBeenCalled();
+  });
+
+  it('marks by the ACTIVE link: BYOK primary unmarked, the platform fallback that then fails is marked', async () => {
+    const a = service('A', { throws: serverErr() });
+    const b = service('B', { throws: serverErr() });
+    (resolveProvider as Mock).mockResolvedValue(
+      resolved({ provider: 'openrouter', modelToUse: 'or-a', aiService: a, hasByok: true }, [
+        { provider: 'groq', modelToUse: 'g-b', aiService: b },
+      ])
+    );
+    await (await run({ stream: true })).text();
+    expect((markLinkDown as Mock).mock.calls).toEqual([['groq', 'g-b']]);
+  });
+
+  it('marks by the ACTIVE link: platform primary marked, the BYOK fallback that then fails is not', async () => {
+    const a = service('A', { throws: serverErr() });
+    const b = service('B', { throws: serverErr() });
+    (resolveProvider as Mock).mockResolvedValue(
+      resolved({ provider: 'groq', modelToUse: 'g-a', aiService: a }, [
+        { provider: 'openrouter', modelToUse: 'or-b', aiService: b, hasByok: true },
+      ])
+    );
+    await (await run({ stream: true })).text();
+    expect((markLinkDown as Mock).mock.calls).toEqual([['groq', 'g-a']]);
   });
 
   it('pre-flight skips a platform-Groq primary whose prompt cannot fit, without marking it down', async () => {
