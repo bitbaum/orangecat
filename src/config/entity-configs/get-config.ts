@@ -31,6 +31,7 @@ import { circleConfig } from './circle-config';
  * Note: Only includes entity types that are defined in ENTITY_TYPES
  * from entity-registry.ts.
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- heterogeneous map: EntityConfig<T> is invariant in T (T is in callbacks), so no single T fits every entity
 const ENTITY_CONFIGS: Partial<Record<EntityType, EntityConfig<any>>> = {
   product: productConfig,
   service: serviceConfig,
@@ -54,6 +55,7 @@ const ENTITY_CONFIGS: Partial<Record<EntityType, EntityConfig<any>>> = {
  * @param entityType - The entity type to get config for
  * @returns The entity configuration or null if not found
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- see ENTITY_CONFIGS above
 export function getEntityConfig(entityType: EntityType): EntityConfig<any> | null {
   return ENTITY_CONFIGS[entityType] || null;
 }

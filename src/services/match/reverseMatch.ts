@@ -14,6 +14,7 @@
  * Fire-and-forget from reindexService.reconcileOne; never throws.
  */
 import { DATABASE_TABLES } from '@/config/database-tables';
+import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { getEntityMetadata, type EntityType } from '@/config/entity-registry';
 import { NotificationDispatcher } from '@/services/notifications/dispatcher';
 import { logger } from '@/utils/logger';
@@ -33,7 +34,7 @@ interface Side {
 
 /** Resolve an entity's owning auth user: entity → actor_id → actors.user_id. */
 async function resolveOwnerUserId(
-  supabase: any,
+  supabase: AnySupabaseClient,
   entityType: string,
   entityId: string
 ): Promise<string | null> {
@@ -61,7 +62,7 @@ async function resolveOwnerUserId(
 }
 
 export async function introduceMatches(
-  supabase: any,
+  supabase: AnySupabaseClient,
   self: Side,
   embedding: number[]
 ): Promise<void> {

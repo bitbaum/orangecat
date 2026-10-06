@@ -41,10 +41,10 @@ async function getActorIds(supabase: AnySupabaseClient, userId: string): Promise
   return actors?.map((a: { id: string }) => a.id) || [];
 }
 
-async function tryProviderAction(
+async function tryProviderAction<R extends { success: boolean }>(
   actorIds: string[],
-  fn: (id: string) => Promise<any>
-): Promise<any> {
+  fn: (id: string) => Promise<R>
+): Promise<R | undefined> {
   for (const actorId of actorIds) {
     const result = await fn(actorId);
     if (result.success) {

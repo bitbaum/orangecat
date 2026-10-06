@@ -78,6 +78,15 @@ interface OwnRow {
   touched: number;
 }
 
+/** The columns selected from each entity table below. */
+interface EntityRow {
+  id: string;
+  title: string;
+  status: string;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
 export async function generateNudges(
   supabase: AnySupabaseClient,
   userId: string
@@ -112,7 +121,7 @@ export async function generateNudges(
       })
     );
     for (const { type, data } of results) {
-      const rows: OwnRow[] = data.map((e: any) => ({
+      const rows: OwnRow[] = data.map((e: EntityRow) => ({
         id: e.id,
         title: e.title,
         status: e.status,
@@ -246,7 +255,7 @@ async function recentSearches(supabase: AnySupabaseClient): Promise<string[]> {
     .select('query')
     .gte('created_at', since)
     .limit(1000);
-  return (data ?? []).map((r: any) => String(r.query ?? '')).filter(Boolean);
+  return (data ?? []).map((r: { query: string | null }) => String(r.query ?? '')).filter(Boolean);
 }
 
 /**

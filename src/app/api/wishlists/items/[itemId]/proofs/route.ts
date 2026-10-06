@@ -14,10 +14,29 @@ interface RouteParams {
   params: Promise<{ itemId: string }>;
 }
 
-type Row = Record<string, any>;
+/** A row of the selects below; the embedded profile is passed through untouched. */
+interface ProofRow {
+  id: string;
+  wishlist_item_id: string;
+  user_id: string;
+  proof_type: string;
+  description: string | null;
+  image_url: string | null;
+  transaction_id: string | null;
+  created_at: string;
+  profiles: unknown;
+}
 
-function groupFeedbackByProof(feedback: Row[]): Record<string, Row[]> {
-  return feedback.reduce((acc: Record<string, Row[]>, f: Row) => {
+interface FeedbackRow {
+  id: string;
+  fulfillment_proof_id: string | null;
+  user_id: string;
+  feedback_type: string;
+  comment: string | null;
+}
+
+function groupFeedbackByProof(feedback: FeedbackRow[]): Record<string, FeedbackRow[]> {
+  return feedback.reduce((acc: Record<string, FeedbackRow[]>, f: FeedbackRow) => {
     if (f.fulfillment_proof_id) {
       acc[f.fulfillment_proof_id] = [...(acc[f.fulfillment_proof_id] || []), f];
     }
@@ -26,10 +45,10 @@ function groupFeedbackByProof(feedback: Row[]): Record<string, Row[]> {
 }
 
 function enrichProof(
-  proof: Row,
-  feedbackMap: Record<string, Row[]>,
+  proof: ProofRow,
+  feedbackMap: Record<string, FeedbackRow[]>,
   userId: string | undefined
-): Row {
+) {
   const proofFeedback = feedbackMap[proof.id] || [];
   return {
     id: proof.id,
@@ -42,13 +61,13 @@ function enrichProof(
     created_at: proof.created_at,
     creator: proof.profiles,
     feedback: {
-      likes: proofFeedback.filter((f: Row) => f.feedback_type === 'like').length,
-      dislikes: proofFeedback.filter((f: Row) => f.feedback_type === 'dislike').length,
+      likes: proofFeedback.filter((f: FeedbackRow) => f.feedback_type === 'like').length,
+      dislikes: proofFeedback.filter((f: FeedbackRow) => f.feedback_type === 'dislike').length,
       user_feedback: userId
-        ? proofFeedback.find((f: Row) => f.user_id === userId)
+        ? proofFeedback.find((f: FeedbackRow) => f.user_id === userId)
           ? {
-              type: proofFeedback.find((f: Row) => f.user_id === userId)!.feedback_type,
-              comment: proofFeedback.find((f: Row) => f.user_id === userId)!.comment,
+              type: proofFeedback.find((f: FeedbackRow) => f.user_id === userId)!.feedback_type,
+              comment: proofFeedback.find((f: FeedbackRow) => f.user_id === userId)!.comment,
             }
           : null
         : null,
@@ -88,8 +107,8 @@ export const GET = withOptionalAuth(async (request, { params }: RouteParams) => 
       return apiInternalError('Failed to fetch proofs');
     }
 
-    const proofs = (proofsData ?? []) as Row[];
-    let feedbackMap: Record<string, Row[]> = {};
+    const proofs = (proofsData ?? []) as unknown as ProofRow[];
+    let feedbackMap: Record<string, FeedbackRow[]> = {};
 
     if (proofs.length > 0) {
       const { data: feedbackData } = await supabase
@@ -102,11 +121,11 @@ export const GET = withOptionalAuth(async (request, { params }: RouteParams) => 
           proofs.map(p => p.id)
         );
       if (feedbackData) {
-        feedbackMap = groupFeedbackByProof(feedbackData as Row[]);
+        feedbackMap = groupFeedbackByProof(feedbackData as unknown as FeedbackRow[]);
       }
     }
 
-    const wishlists = wishlistItem.wishlists as Row | Row[];
+    const wishlists = wishlistItem.wishlists as { actor_id: string } | { actor_id: string }[];
     const wishlist = Array.isArray(wishlists) ? wishlists[0] : wishlists;
 
     return apiSuccess({

@@ -37,6 +37,12 @@ overrides:
   postcss: ^8.5.10
   uuid: ^14.0.0
   shell-quote: ^1.8.4
+  # Transitive-only advisories, published 2026-10 (pnpm audit --prod blocks on
+  # them). First patched version, bounded to its major like qs.
+  # proxy-addr: IPv4-mapped IP spoofing (critical), via @modelcontextprotocol/sdk > express.
+  proxy-addr@2: ^2.0.8
+  # source-map-js: event-loop DoS (high), via postcss.
+  source-map-js@1: ^1.2.2
 
 # pnpm refuses packages published within its minimum-release-age window — a
 # supply-chain guard against a compromised release being installed before

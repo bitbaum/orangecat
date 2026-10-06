@@ -74,7 +74,10 @@ export const GET = withAuth(async (request: AuthenticatedRequest) => {
     const uniqueUserIds = [
       ...new Set(completions.map((c: { completed_by: string }) => c.completed_by)),
     ];
-    const profilesMap = new Map<string, any>();
+    const profilesMap = new Map<
+      string,
+      { id: string; username: string; display_name: string | null }
+    >();
 
     if (uniqueUserIds.length > 0) {
       const { data: profiles } = await supabase

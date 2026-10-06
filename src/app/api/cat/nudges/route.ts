@@ -27,7 +27,7 @@ export const GET = withAuth(async (req: AuthenticatedRequest) => {
   // even enabled on it in the baseline schema), and generateNudges reads
   // search_queries, which is RLS-on with zero policies — a session client would
   // see nothing. Every user_nudges query below pins user_id explicitly.
-  const db = createAdminClient() as any;
+  const db = createAdminClient();
 
   const { data: existing } = await db
     .from(DATABASE_TABLES.USER_NUDGES)
@@ -115,7 +115,7 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
   }
   // Admin client kept on purpose: user_nudges has no RLS policies, so a session
   // client has no owner scoping to lean on — the user_id filter below is the guard.
-  const db = createAdminClient() as any;
+  const db = createAdminClient();
   await db
     .from(DATABASE_TABLES.USER_NUDGES)
     .update({ status: 'dismissed', dismissed_at: new Date().toISOString() })

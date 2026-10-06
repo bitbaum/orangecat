@@ -134,7 +134,7 @@ async function defaultOwnershipCheck(
   // an actor-owned entity 403s for the legitimate owner. Mirrors the fix
   // shipped in 136f65ac for the STATUS endpoint.
 
-  supabase?: any
+  supabase?: AnySupabaseClient
 ): Promise<NextResponse | null> {
   if (useActorOwnership && existing.actor_id) {
     const hasAccess = await checkOwnership(existing as { actor_id: string }, userId, supabase);
@@ -249,7 +249,7 @@ function createGetHandler(config: EntityHandlerConfig) {
 
       // Custom authorization check
       if (checkGetAccess) {
-        const authError = await checkGetAccess(entity, userId, supabase as any);
+        const authError = await checkGetAccess(entity, userId, supabase);
         if (authError) {
           return authError;
         }
@@ -258,7 +258,7 @@ function createGetHandler(config: EntityHandlerConfig) {
       // Post-process entity (add computed fields, etc.)
       let processedEntity = entity;
       if (postProcessGet) {
-        processedEntity = await postProcessGet(entity, userId, supabase as any);
+        processedEntity = await postProcessGet(entity, userId, supabase);
       }
 
       // Custom cache control
@@ -330,7 +330,7 @@ function createPutHandler(config: EntityHandlerConfig) {
         .select('*')
         .eq('id', entityId)
         .single();
-      const existing = existingData as any;
+      const existing = existingData as Record<string, unknown> | null;
 
       if (fetchError || !existing) {
         return apiNotFound(`${meta.name} not found`);
@@ -338,7 +338,7 @@ function createPutHandler(config: EntityHandlerConfig) {
 
       // Custom authorization check (if provided, use it; otherwise use default ownership check)
       if (checkPutAccess) {
-        const authError = await checkPutAccess(existing, user.id, supabase as any);
+        const authError = await checkPutAccess(existing, user.id, supabase);
         if (authError) {
           return authError;
         }
@@ -389,7 +389,7 @@ function createPutHandler(config: EntityHandlerConfig) {
 
       // Post-process (audit logging, etc.)
       if (postProcessPut) {
-        await postProcessPut(entity, user.id, supabase as any);
+        await postProcessPut(entity, user.id, supabase);
       }
 
       logger.info(`${meta.name} updated successfully`, { userId: user.id, entityId });
@@ -450,7 +450,7 @@ function createDeleteHandler(config: EntityHandlerConfig) {
         .select('*')
         .eq('id', entityId)
         .single();
-      const existing = existingData as any;
+      const existing = existingData as Record<string, unknown> | null;
 
       if (fetchError || !existing) {
         return apiNotFound(`${meta.name} not found`);
@@ -458,7 +458,7 @@ function createDeleteHandler(config: EntityHandlerConfig) {
 
       // Custom authorization check (if provided, use it; otherwise use default ownership check)
       if (checkDeleteAccess) {
-        const authError = await checkDeleteAccess(existing, user.id, supabase as any);
+        const authError = await checkDeleteAccess(existing, user.id, supabase);
         if (authError) {
           return authError;
         }
@@ -479,7 +479,7 @@ function createDeleteHandler(config: EntityHandlerConfig) {
 
       // Pre-delete hook (cleanup operations)
       if (preDelete) {
-        await preDelete(existing, user.id, supabase as any);
+        await preDelete(existing, user.id, supabase);
       }
 
       const { error } = await fromTable(supabase, table).delete().eq('id', entityId);
@@ -518,7 +518,7 @@ function createDeleteHandler(config: EntityHandlerConfig) {
 
       // Post-process (audit logging, etc.)
       if (postProcessDelete) {
-        await postProcessDelete(existing, user.id, supabase as any);
+        await postProcessDelete(existing, user.id, supabase);
       }
 
       logger.info(`${meta.name} deleted successfully`, { userId: user.id, entityId });

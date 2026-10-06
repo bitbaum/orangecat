@@ -3,12 +3,11 @@
  * Never throws; failures are logged but do not surface to callers.
  */
 
-import type { SupabaseClient } from '@supabase/supabase-js';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { logger } from '@/utils/logger';
 import type { ActivityType } from './types';
 
-type AnyClient = any;
+import type { AnySupabaseClient } from '@/lib/supabase/types';
 
 interface ActivityParams {
   group_id: string;
@@ -18,10 +17,10 @@ interface ActivityParams {
 }
 
 export async function recordGroupActivity(
-  supabase: SupabaseClient | AnyClient,
+  supabase: AnySupabaseClient,
   params: ActivityParams
 ): Promise<void> {
-  const { error } = await (supabase.from(DATABASE_TABLES.GROUP_ACTIVITIES) as AnyClient).insert({
+  const { error } = await supabase.from(DATABASE_TABLES.GROUP_ACTIVITIES).insert({
     group_id: params.group_id,
     user_id: params.user_id,
     activity_type: params.activity_type,

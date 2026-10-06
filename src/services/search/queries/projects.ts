@@ -42,10 +42,11 @@ export async function searchFundingPages(
         p_lat: filters.lat,
         p_lng: filters.lng,
         p_radius_km: filters.radius_km,
-        p_query: query || null,
+        // NULL means "no text filter" in SQL; the generated Args type omits that it is nullable.
+        p_query: (query || null) as string | undefined,
         p_limit: limit,
         p_offset: offset,
-      } as any);
+      });
 
       if (!error && data) {
         let results = data as RawSearchProject[];
@@ -64,7 +65,7 @@ export async function searchFundingPages(
         p_query: query,
         p_limit: limit,
         p_offset: offset,
-      } as any);
+      });
 
       if (!error && data) {
         let results = data as RawSearchProject[];
@@ -186,7 +187,10 @@ function applyProjectFilters(
 /**
  * Apply Supabase query-builder filters for the fallback path.
  */
-function applyProjectQueryFilters<B extends FilterChain<B>>(projectQuery: B, filters: SearchFilters) {
+function applyProjectQueryFilters<B extends FilterChain<B>>(
+  projectQuery: B,
+  filters: SearchFilters
+) {
   // Status filtering
   if (filters.statuses && filters.statuses.length > 0) {
     projectQuery = projectQuery.in('status', filters.statuses);
