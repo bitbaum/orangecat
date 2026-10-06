@@ -26,12 +26,8 @@ import { buildCompanionSystemPrompt } from '@/services/companions/system-prompt'
 import {
   verifyConversation,
   fetchAssistant,
-  resolveProvider,
-  selectModel,
   checkFreeMessageUsage,
-  buildMessageHistory,
-  callAi,
-  createChatService,
+  generateReply,
   storeUserMessage,
   storeAssistantMessage,
 } from './sendMessage-internals';
@@ -64,11 +60,6 @@ export async function sendAiMessage(
   const userOpenRouterKey = await keyService.getDecryptedKey(userId, 'openrouter');
   const hasByok = !!userOpenRouterKey;
 
-  const provider = resolveProvider(hasByok, userOpenRouterKey);
-  if (!provider) {
-    return { code: 'SERVICE_UNAVAILABLE' };
-  }
-
   // 4. Check platform usage limits (non-BYOK users)
   if (!hasByok) {
     const platformUsage = await keyService.checkPlatformUsage(userId);
@@ -92,10 +83,7 @@ export async function sendAiMessage(
     .limit(20);
   const history = (historyData || []) as { role: string; content: string }[];
 
-  // 6. Select model
-  const modelToUse = selectModel(provider, hasByok, requestedModel, assistant, history, content);
-
-  // 7. Free message check
+  // 6. Free message check
   const freeMessagesPerDay = assistant.free_messages_per_day || 0;
   const { usesFreeMessage, freeMessagesRemaining } = await checkFreeMessageUsage(
     supabase,
@@ -137,10 +125,14 @@ export async function sendAiMessage(
     definition: assistant.system_prompt,
     memories: recalled.map(m => m.content),
   });
-  const messages = buildMessageHistory(history, content);
-  const aiResult = await callAi(provider, hasByok, userOpenRouterKey, modelToUse, messages, {
-    ...assistant,
-    system_prompt: systemPrompt ?? null,
+  const aiResult = await generateReply({
+    hasByok,
+    userKey: userOpenRouterKey,
+    requestedModel,
+    assistant,
+    systemPrompt: systemPrompt ?? null,
+    history,
+    content,
   });
   if ('error' in aiResult) {
     // Clean up user message on AI failure
@@ -194,8 +186,8 @@ export async function sendAiMessage(
     conversationId: convId,
     userMessage: content,
     assistantMessage: aiResponse.content,
-    aiService: createChatService(provider, hasByok, userOpenRouterKey),
-    model: modelToUse,
+    aiService: aiResult.chatService,
+    model: aiResponse.model,
   });
 
   await fromTable(supabase, DATABASE_TABLES.AI_CONVERSATIONS)
@@ -206,8 +198,7 @@ export async function sendAiMessage(
     userMessage,
     assistantMessage: {
       ...assistantMessage,
-      model_name:
-        (provider === 'openrouter' ? getModelMetadata(modelToUse)?.name : null) || modelToUse,
+      model_name: aiResult.modelLabel,
       is_free_model: aiResponse.isFreeModel,
       used_byok: hasByok,
     },
