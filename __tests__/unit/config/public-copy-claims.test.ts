@@ -61,6 +61,9 @@ describe('public copy', () => {
     const roleAddress =
       /\b(hello|support|security|integrations|info|contact|privacy|legal|press|mao)@orangecat\.(ch|com|org)\b/;
     const notMit = /\bUNLICENSED\b|\(proprietary\)/;
+    // Round three: the reset email promised "10,000+ Bitcoin innovators" and
+    // the audit report a bug bounty "coming soon". Neither was ever true.
+    const unmeasured = /\d[\d,]*\+ (?:Bitcoin|users|innovators|members|people)\b|bug bounty/i;
     const prose = (dir: string): string[] =>
       readdirSync(dir).flatMap(name => {
         const path = join(dir, name);
@@ -84,9 +87,26 @@ describe('public copy', () => {
     const offenders = scanned
       .filter(path => {
         const text = readFileSync(path, 'utf8');
-        return roleAddress.test(text) || notMit.test(text);
+        return roleAddress.test(text) || notMit.test(text) || unmeasured.test(text);
       })
       .map(path => relative(ROOT, path));
+    expect(offenders).toEqual([]);
+  });
+
+  // ROUTES.SUPPORT is the Bitcoin backing page, not a contact form. It was
+  // linked as "Talk to the studio" (/partners) and "Questions, or a verified
+  // client" (/docs/sign-in-with-orangecat) — a reader with a question landed
+  // on a donation page with no way to ask it.
+  it('does not send a question to the backing page', () => {
+    const askViaSupport =
+      /href=\{ROUTES\.SUPPORT\}[^]{0,300}?\b(question|ask|talk|contact|client)/i;
+    const offenders = sources
+      .filter(({ text }) =>
+        text
+          .split(/<\/(?:Link|a)>/)
+          .some(chunk => askViaSupport.test(chunk.slice(chunk.lastIndexOf('href={'))))
+      )
+      .map(({ path }) => path);
     expect(offenders).toEqual([]);
   });
 

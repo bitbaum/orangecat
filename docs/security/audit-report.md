@@ -317,11 +317,6 @@ If you discover a security issue, please contact us through:
 
 - **Email**: cato@orangecat.ch
 - **GitHub Issues**: For non-critical security improvements
-- **Direct Contact**: Through platform messaging
-
-### **Bug Bounty Program** (Coming Soon)
-
-We're launching a community bug bounty program to reward security researchers who help make OrangeCat safer for everyone.
 
 ---
 

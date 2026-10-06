@@ -222,12 +222,6 @@ The default Supabase email template is generic and doesn't encourage users to en
             <p style="color:#4a5568;font-size:14px;margin:8px 0;">
               💰 Transparent funding with real-time donations
             </p>
-            <p style="color:#4a5568;font-size:14px;margin:8px 0;">
-              🌐 Connect with 10,000+ Bitcoin innovators
-            </p>
-            <p style="color:#4a5568;font-size:14px;margin:8px 0;">
-              🔒 Bank-grade security + Lightning Network
-            </p>
           </div>
         </div>
 
