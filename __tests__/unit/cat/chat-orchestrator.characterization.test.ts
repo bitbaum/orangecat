@@ -191,6 +191,8 @@ const BASE_MESSAGES = [
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // The meter's idempotency ref is a fresh UUID per request; fix it.
+  vi.spyOn(crypto, 'randomUUID').mockReturnValue('00000000-0000-4000-8000-000000000000');
   events.length = 0;
   keyService = {
     incrementPlatformUsage: vi.fn(async (...a: unknown[]) => {
@@ -1222,7 +1224,7 @@ describe('streaming', () => {
           "model": "frontier",
           "outputTokens": 2,
           "rawCostBtc": 0.0001,
-          "ref": "cat_chat_7041ae85-55a3-4691-8455-0ddad8adc681",
+          "ref": "cat_chat_00000000-0000-4000-8000-000000000000",
         },
       ]
     `);
@@ -1582,7 +1584,7 @@ describe('non-streaming', () => {
           "model": "frontier",
           "outputTokens": 5,
           "rawCostBtc": 0.001,
-          "ref": "cat_chat_c51942a2-b136-4262-b92f-59f8c86522d5",
+          "ref": "cat_chat_00000000-0000-4000-8000-000000000000",
         },
       ]
     `);
