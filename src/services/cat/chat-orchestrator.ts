@@ -205,6 +205,38 @@ function logServed(provider: string, model: string): void {
   });
 }
 
+// ==================== ONE TURN ====================
+//
+// orchestrateCatChat reads as its phases: resolve who answers, prepare the
+// turn (prompt, budget, actor, photo), then either stream it or answer it in
+// one piece. Both halves share CatTurn, everything decided before a model is
+// called.
+//
+// Behaviour is pinned by __tests__/unit/cat/chat-orchestrator.characterization.test.ts
+// (every SSE frame and side effect, recorded from the pre-split orchestrator)
+// and by the source pins in chat-logs-the-win / chips-survive-a-reload.
+
+type ResolvedTurnProvider = Exclude<Awaited<ReturnType<typeof resolveProvider>>, Response>;
+
+/** Everything about this turn that is settled before any model is called. */
+interface CatTurn {
+  request: AuthenticatedRequest;
+  body: CatChatBody;
+  resolved: ResolvedTurnProvider;
+  /** The message as saved: each photo's private storage path in its tag. */
+  storedMessage: string;
+  /** Ledger idempotency ref for a metered exchange; null when not metered. */
+  meterRef: string | null;
+  actorId: string | null;
+  prepared: Awaited<ReturnType<typeof prepareCatChat>>;
+  conversationId: string | null;
+  /** Advisory: drives the `suggestUpgrade` hint only. */
+  wantsAgentic: boolean;
+  baseMessages: ToolAugmentedMessage[];
+  /** Puts the turn's draft photo, if any, on a prefill proposal. */
+  withDraftPhoto: (proposal: PrefillProposal) => PrefillProposal;
+}
+
 /**
  * Orchestrate a single Cat chat exchange and return the HTTP Response.
  *
@@ -220,29 +252,62 @@ export async function orchestrateCatChat(
   rl: RateLimitResult
 ): Promise<Response> {
   const { user, supabase } = request;
-  const {
-    message,
-    images,
-    model: requestedModel,
-    stream,
-    preferredCurrency,
-    locale,
-    lastVisitedPath,
-    currentPath,
-    currentEntity,
-    pageExcerpt,
-    conversationId: requestedConversationId,
-  } = body;
 
   // Resolve provider, BYOK keys, model, and platform limits
   const resolved = await resolveProvider(supabase, user.id, request.headers, {
-    requestedModel,
-    message,
-    hasImages: Boolean(images?.length),
+    requestedModel: body.model,
+    message: body.message,
+    hasImages: Boolean(body.images?.length),
   });
   if (resolved instanceof Response) {
     return resolved;
   }
+
+  const turn = await prepareTurn(request, body, resolved);
+  if (body.stream) {
+    return streamCatChat(turn, rl);
+  }
+  return answerCatChat(turn, rl);
+}
+
+/**
+ * The budget for the prompt: built to FIT the link that will answer, rather
+ * than discovering it does not. The free Groq pool refuses any single request
+ * over its per-minute cap (8 000 tokens for the models this key serves, reply
+ * reserve included) — and Cat's system prompt alone measured 9 100 tokens in
+ * tool mode on 2026-09-11, so platform Groq could not serve one message. Every
+ * turn paid a guaranteed 413, fell through to OpenRouter's free pool, and
+ * exhausted THAT by mid-morning; the user then read "Free AI capacity is
+ * maxed out right now" for the rest of the day.
+ *
+ * The budget is the smallest cap among the platform-Groq links in this
+ * user's chain. A BYOK chain, or one with no Groq link, gets the whole
+ * prompt: their limits are their own and usually far higher.
+ */
+function promptTokenBudget(resolved: ResolvedTurnProvider): number | undefined {
+  const { provider, hasByok, modelToUse, fallbacks } = resolved;
+  const platformGroqModels = [
+    { provider, hasByok, model: modelToUse },
+    ...fallbacks.map(f => ({ provider: f.provider, hasByok: f.hasByok, model: f.modelToUse })),
+  ]
+    .filter(link => link.provider === 'groq' && !link.hasByok)
+    .map(link => link.model);
+  return platformGroqModels.length > 0
+    ? Math.min(...platformGroqModels.map(m => getGroqTpmLimit(m))) -
+        GROQ_CHAT_MAX_TOKENS -
+        PROMPT_BUDGET_MARGIN_TOKENS
+    : undefined;
+}
+
+/** Store the photos, resolve the actor, and assemble the prompt for this turn. */
+async function prepareTurn(
+  request: AuthenticatedRequest,
+  body: CatChatBody,
+  resolved: ResolvedTurnProvider
+): Promise<CatTurn> {
+  const { user, supabase } = request;
+  const { message, images } = body;
+
   // What is saved: the same message, with each photo's private storage path
   // in its tag — so the thread can show the photo and the Cat can put it on
   // what it drafts. The model still reads `message`.
@@ -251,18 +316,7 @@ export async function orchestrateCatChat(
     message,
     imageRefs.map(r => r ?? '')
   );
-  const {
-    provider,
-    hasByok,
-    modelToUse,
-    aiService,
-    platformUsage,
-    keyService,
-    metered,
-    fallbacks,
-    toolEndpoint,
-    toolKey,
-  } = resolved;
+  const { modelToUse, metered, toolEndpoint, toolKey } = resolved;
 
   // One stable id per request — the ledger idempotency ref for a metered
   // (credit-paid frontier) exchange.
@@ -296,44 +350,18 @@ export async function orchestrateCatChat(
     observedToolVerdict(modelToUse, toolKey)
   );
 
-  // Build the prompt to FIT the link that will answer, rather than discovering
-  // it does not. The free Groq pool refuses any single request over its
-  // per-minute cap (8 000 tokens for the models this key serves, reply reserve
-  // included) — and Cat's system prompt alone measured 9 100 tokens in tool
-  // mode on 2026-09-11, so platform Groq could not serve one message. Every
-  // turn paid a guaranteed 413, fell through to OpenRouter's free pool, and
-  // exhausted THAT by mid-morning; the user then read "Free AI capacity is
-  // maxed out right now" for the rest of the day.
-  //
-  // The budget is the smallest cap among the platform-Groq links in this
-  // user's chain. A BYOK chain, or one with no Groq link, gets the whole
-  // prompt: their limits are their own and usually far higher.
-  const platformGroqModels = [
-    { provider, hasByok, model: modelToUse },
-    ...fallbacks.map(f => ({ provider: f.provider, hasByok: f.hasByok, model: f.modelToUse })),
-  ]
-    .filter(link => link.provider === 'groq' && !link.hasByok)
-    .map(link => link.model);
-  const tokenBudget =
-    platformGroqModels.length > 0
-      ? Math.min(...platformGroqModels.map(m => getGroqTpmLimit(m))) -
-        GROQ_CHAT_MAX_TOKENS -
-        PROMPT_BUDGET_MARGIN_TOKENS
-      : undefined;
-
   const prepared = await prepareCatChat(supabase, user.id, {
     message,
-    requestedConversationId,
-    preferredCurrency,
-    locale,
-    lastVisitedPath,
-    currentPath,
-    currentEntity,
-    pageExcerpt,
+    requestedConversationId: body.conversationId,
+    preferredCurrency: body.preferredCurrency,
+    locale: body.locale,
+    lastVisitedPath: body.lastVisitedPath,
+    currentPath: body.currentPath,
+    currentEntity: body.currentEntity,
+    pageExcerpt: body.pageExcerpt,
     actionsVia,
-    tokenBudget,
+    tokenBudget: promptTokenBudget(resolved),
   });
-  const conversationId = prepared.conversationId;
   // What fitting the budget cost, when it cost anything. Logged rather than
   // silent: a prompt that reaches the model without the user's context is a
   // different answer, and the reason has to be findable.
@@ -380,465 +408,577 @@ export async function orchestrateCatChat(
       : proposal;
   };
 
-  // ── Streaming ──────────────────────────────────────────────────────────────
-  if (stream) {
-    const encoder = new TextEncoder();
-    const readable = new ReadableStream({
-      async start(controller) {
-        // Lifted outside the try block so the catch at the bottom can
-        // tell whether the failover attempt was reached (and which
-        // provider/model was active when the chain died), and can persist
-        // whatever text had already streamed. Block-scoped `let` inside the
-        // try is invisible to the outer catch.
-        let attemptedFallback = false;
-        let activeProvider = provider;
-        let activeModel = modelToUse;
-        let activeService = aiService;
-        let activeIsPlatform = !hasByok;
-        let fullContent = '';
-        try {
-          let usage:
-            | {
-                inputTokens?: number;
-                outputTokens?: number;
-                totalTokens?: number;
-                costBtc?: number;
-              }
-            | undefined;
-          controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify({ model: modelToUse, provider })}\n\n`)
-          );
+  return {
+    request,
+    body,
+    resolved,
+    storedMessage,
+    meterRef,
+    actorId,
+    prepared,
+    conversationId: prepared.conversationId,
+    wantsAgentic,
+    baseMessages,
+    withDraftPhoto,
+  };
+}
 
-          // Tool use happens INSIDE the stream so we can surface each
-          // lifecycle event ('running' → completed/no_results/failed) to
-          // the user in real time as `tool_call` SSE events. Prefill
-          // proposals (the prefill_entity_form tool) emit a second event
-          // type carrying the structured draft so the UI can render a
-          // PrefilledFormCard instead of narrating field values as prose.
-          // Everything Cat read from the web this turn, as evidence blocks
-          // labelled with the citation handle that licenses each one. Fed to
-          // the grounding check below so a figure Cat correctly quoted from a
-          // page is recognised as quoted rather than flagged as invented.
-          const webEvidence: string[] = [];
+// ==================== STREAMING ====================
 
-          const streamedToolCalls: ToolCallEvent[] = [];
-          const messages = await maybeEnrichWithSearchResults(
-            supabase,
-            user.id,
-            baseMessages,
-            message,
-            provider,
-            modelToUse,
-            (event: ToolCallEvent) => {
-              // Kept as well as sent. The SSE frame reaches the live tab and
-              // nothing else; without this copy the chips exist only in that
-              // tab's React state and a reload erases what Cat did.
-              streamedToolCalls.push(event);
-              controller.enqueue(
-                encoder.encode(`data: ${JSON.stringify({ tool_call: event })}\n\n`)
-              );
-            },
-            (proposal: PrefillProposal) => {
-              controller.enqueue(
-                encoder.encode(
-                  `data: ${JSON.stringify({ prefill_proposal: withDraftPhoto(proposal) })}\n\n`
-                )
-              );
-            },
-            // ADR-0006 D2 — with an actor, the tool phase may also EXECUTE
-            // actions, so their outcome is in the messages the model writes
-            // from. Without one nothing can be created, and the phase stays
-            // read-only.
-            {
-              actorId,
-              // The active step's own endpoint and key, so a BYOK user's tools
-              // reach THEIR vendor rather than being silently dropped.
-              toolEndpoint,
-              toolKey,
-              toolFallbacks: fallbacks,
-              onWebEvidence: evidence => {
-                webEvidence.push(...evidence);
-              },
-            }
-          );
+type StreamUsage =
+  | {
+      inputTokens?: number;
+      outputTokens?: number;
+      totalTokens?: number;
+      costBtc?: number;
+    }
+  | undefined;
 
-          // After any content has streamed it's too late to swap providers
-          // cleanly without corrupting the response, so we only failover
-          // when nothing has been sent to the user yet.
-          let streamStarted = false;
+/**
+ * What a streaming turn learns as it runs. Created before the try so the
+ * failure path can tell whether the failover attempt was reached, which link
+ * was active when the chain died, and persist whatever text had already
+ * streamed.
+ */
+interface StreamState {
+  attemptedFallback: boolean;
+  activeProvider: string;
+  activeModel: string;
+  activeService: ResolvedTurnProvider['aiService'];
+  activeIsPlatform: boolean;
+  fullContent: string;
+  usage: StreamUsage;
+  /**
+   * After any content has streamed it's too late to swap providers cleanly
+   * without corrupting the response, so we only failover when nothing has
+   * been sent to the user yet.
+   */
+  streamStarted: boolean;
+}
 
-          const emitDone = async () => {
-            // Completion guarantee: a model that finishes without emitting any
-            // content (e.g. it tried to "call a tool" the main completion
-            // doesn't have) would leave the client's last assistant bubble
-            // empty — rendered as typing dots forever. Always send at least
-            // one honest sentence before closing.
-            if (!fullContent.trim()) {
-              fullContent = EMPTY_REPLY_FALLBACK;
-              controller.enqueue(
-                encoder.encode(`data: ${JSON.stringify({ content: fullContent })}\n\n`)
-              );
-            }
-            // Groundedness check, then a one-shot repair.
-            //
-            // Streaming makes this awkward and the compromise is deliberate: the
-            // fabricated text has already reached the screen by the time it can
-            // be checked, so the repair cannot un-say it live. What it CAN do is
-            // fix the two things that outlast the moment — what gets persisted
-            // into the conversation, and what the client renders once told — so
-            // a reload never shows the fabrication and the model never reads its
-            // own invention back as history next turn.
-            //
-            // Scoped to entity-attribution: Cat must stay free to name Lightning,
-            // Twint or PayPal in general advice. See @bitbaum/ai-kit/grounding verify.
-            const groundingCheck = await enforceGrounding({
-              content: fullContent,
-              message,
-              grounding: {
-                ...prepared.grounding,
-                // Pages and results Cat actually read this turn count as
-                // evidence. Without this the citation handles would be
-                // decorative: the verifier would flag every real figure Cat
-                // correctly quoted from a source as a novel number, and the
-                // repair pass would delete the researched half of the answer.
-                evidence: [...prepared.grounding.evidence, ...webEvidence],
-              },
-              service: activeService,
-              model: activeModel,
-              userId: user.id,
-              conversationId,
-            });
-            const correctedContent = groundingCheck.corrected;
-            if (correctedContent) {
-              // Everything downstream — action parsing, persistence — must run on
-              // the repaired text. Parsing actions from the ORIGINAL would let a
-              // claim we just deleted still drive a side effect.
-              fullContent = correctedContent;
-            }
+/** One SSE writer per stream; each call enqueues exactly what it did inline before. */
+interface SseOut {
+  controller: ReadableStreamDefaultController;
+  encoder: TextEncoder;
+}
 
-            const { actions, quickReplies } = parseActionsFromResponse(fullContent);
-            const execResults = await runExecActions(supabase, user.id, actorId, actions);
-            controller.enqueue(
-              encoder.encode(
-                `data: ${JSON.stringify({ done: true, usage, model: activeModel, provider: activeProvider, actions: actions.length > 0 ? actions : undefined, execResults: execResults.length > 0 ? execResults : undefined, quickReplies, suggestUpgrade: wantsAgentic && !isAgenticModel(activeModel), grounding: { ok: groundingCheck.ok, unsupported: groundingCheck.violations.map(v => v.text).slice(0, 8) }, ...(correctedContent ? { correctedContent } : {}) })}\n\n`
-              )
-            );
-          };
+function sendData(out: SseOut, payload: unknown): void {
+  out.controller.enqueue(out.encoder.encode(`data: ${JSON.stringify(payload)}\n\n`));
+}
 
-          const consumeStream = async () => {
-            let doneEmitted = false;
-            for await (const chunk of activeService.streamChatCompletion({
-              model: activeModel,
-              messages: withImages(messages, images),
-              temperature: 0.7,
-            })) {
-              if (chunk.usage) {
-                usage = chunk.usage;
-              }
-              if (chunk.content) {
-                streamStarted = true;
-                fullContent += chunk.content;
-                controller.enqueue(
-                  encoder.encode(`data: ${JSON.stringify({ content: chunk.content })}\n\n`)
-                );
-              }
-              if (chunk.done) {
-                if (!streamStarted) {
-                  throw new EmptyCompletion(activeProvider, activeModel);
-                }
-                await emitDone();
-                doneEmitted = true;
-                logServed(activeProvider, activeModel);
-                break;
-              }
-            }
-            // Provider stream ended without a done chunk. Same rule: nothing
-            // streamed is a failed link, not a finished answer. Finalising here
-            // is what made an empty 200 look like a completed reply.
-            if (!doneEmitted) {
-              if (!streamStarted) {
-                throw new EmptyCompletion(activeProvider, activeModel);
-              }
-              await emitDone();
-            }
-          };
-
-          // Walk the fallback chain on ANY pre-stream failure — rate-limit,
-          // retired model id (404), upstream 5xx. A single dead link must
-          // never end the chat while a later link could serve it. Each
-          // provider gets one attempt. We can only swap providers BEFORE any
-          // content streams — otherwise the client sees half a response and
-          // then a switch.
-          let lastErr: unknown = null;
-          // Pre-flight: a platform-Groq primary deterministically 413s once
-          // the prompt outgrows the on-demand TPM limit — skip the guaranteed
-          // failure when another link can serve. BYOK Groq (possibly a higher
-          // tier) and a chain with no other links still get the real attempt.
-          if (
-            fallbacks.length > 0 &&
-            overflowsPlatformGroq(provider, hasByok, modelToUse, messages)
-          ) {
-            lastErr = new GroqPreflightSkip();
-          } else {
-            try {
-              await consumeStream();
-            } catch (err) {
-              lastErr = err;
-            }
-          }
-          let fallbackIndex = 0;
-          while (lastErr && !streamStarted && fallbackIndex < fallbacks.length) {
-            attemptedFallback = true;
-            const reason = isAiRateLimitError(lastErr) ? 'rate_limit' : 'provider_error';
-            // Remember the dead PLATFORM link so the next message's chain
-            // skips it for a minute instead of paying the failed round-trip
-            // again. BYOK links are never marked — the user's own key failing
-            // must not sideline the platform's identical provider+model. A
-            // pre-flight skip is never marked either: this user's prompt is
-            // too big for the link, other users' prompts may fit it fine.
-            if (activeIsPlatform && !(lastErr instanceof GroqPreflightSkip)) {
-              noteRateLimit(activeProvider, lastErr);
-              markLinkDown(activeProvider, activeModel);
-            }
-            const next = fallbacks[fallbackIndex++];
-            if (
-              fallbackIndex < fallbacks.length &&
-              overflowsPlatformGroq(next.provider, next.hasByok, next.modelToUse, messages)
-            ) {
-              lastErr = new GroqPreflightSkip();
-              continue;
-            }
-            activeIsPlatform = !next.hasByok;
-            logger.warn(
-              'Cat chat: provider failed, trying next fallback',
-              {
-                from: { provider: activeProvider, model: activeModel },
-                to: { provider: next.provider, model: next.modelToUse },
-                reason,
-                err: lastErr,
-                attempt: fallbackIndex,
-              },
-              'cat/chat'
-            );
-            activeProvider = next.provider;
-            activeModel = next.modelToUse;
-            activeService = next.aiService;
-            controller.enqueue(
-              encoder.encode(
-                `data: ${JSON.stringify({ fallback: { from: provider, to: activeProvider, model: activeModel, reason } })}\n\n`
-              )
-            );
-            controller.enqueue(
-              encoder.encode(
-                `data: ${JSON.stringify({ model: activeModel, provider: activeProvider })}\n\n`
-              )
-            );
-            try {
-              await consumeStream();
-              lastErr = null;
-            } catch (nextErr) {
-              lastErr = nextErr;
-            }
-          }
-          if (lastErr) {
-            if (activeIsPlatform && !(lastErr instanceof GroqPreflightSkip)) {
-              noteRateLimit(activeProvider, lastErr);
-              markLinkDown(activeProvider, activeModel);
-            }
-            // Every link came back empty. NOW the honest sentence is right —
-            // it is the chain's verdict rather than the first link's. Throwing
-            // instead would replace today's polite ending with an error page,
-            // which would be a regression for the one case where the apology
-            // was always the correct answer.
-            if (lastErr instanceof EmptyCompletion && !streamStarted) {
-              await emitDone();
-            } else {
-              throw lastErr;
-            }
-          }
-
-          if (conversationId && fullContent) {
-            saveMessages(supabase, conversationId, user.id, [
-              { role: 'user', content: storedMessage },
-              {
-                role: 'assistant',
-                content: fullContent,
-                model_used: activeModel,
-                provider: activeProvider,
-                token_count: usage?.totalTokens,
-                // What Cat DID, stored with what it said. Held only in React
-                // state before, so a reload erased the chips — and with them
-                // the sources behind the citations in this very sentence.
-                tool_calls: streamedToolCalls,
-              },
-            ]).catch((err: unknown) => {
-              logger.error('Failed to persist streaming messages', { err }, 'cat/chat');
-            });
-            // Learn durable facts from this exchange for future turns. Fully
-            // best-effort and detached — never blocks or fails the response.
-            void extractAndStoreMemories(
-              supabase,
-              user.id,
-              conversationId,
-              message,
-              fullContent,
-              activeService,
-              activeModel
-            );
-            // Reliably populate the economic-profile store from the same exchange —
-            // deterministic, not dependent on the chat model emitting an action.
-            void extractAndStoreEconomicProfile(
-              supabase,
-              user.id,
-              message,
-              fullContent,
-              activeService,
-              activeModel
-            );
-          }
-          if (metered && meterRef && usage?.totalTokens && activeModel === modelToUse) {
-            // Credit-paid frontier exchange: debit the ledger for the model
-            // that actually served. If a rate-limit fallback answered instead
-            // (activeModel changed), the user is NOT billed.
-            await meterCreditUsage(getAdminClient() as never, user.id, {
-              model: activeModel,
-              inputTokens: usage.inputTokens ?? 0,
-              outputTokens: usage.outputTokens ?? 0,
-              rawCostBtc: usage.costBtc,
-              ref: meterRef,
-              conversationId,
-            });
-          } else if (!hasByok && usage?.totalTokens) {
-            await keyService.incrementPlatformUsage(user.id, 1, usage.totalTokens);
-          }
-        } catch (err) {
-          logger.error(
-            'Cat chat stream error',
-            { err, attemptedFallback, hasByok, provider: activeProvider, model: activeModel },
-            'cat/chat'
-          );
-          // Honest error copy. Never echo raw err.message — it can contain
-          // API keys (e.g. a malformed Authorization header leaks the
-          // credential in the Headers.append error). Log server-side;
-          // return a structured, actionable error to the client. Only claim
-          // what we actually know — "providers are down" when the real cause
-          // was a config bug erodes trust and sends users chasing outages.
-          let errPayload: { error: string; code: string };
-          if (isAiRateLimitError(err)) {
-            errPayload = {
-              error: hasByok
-                ? 'Your provider returned a rate-limit. Try again in a moment.'
-                : 'Free AI capacity is maxed out right now. Try again in a minute — or add your own free Groq key in Settings → AI for capacity that’s all yours.',
-              code: 'AI_RATE_LIMITED',
-            };
-          } else if (attemptedFallback) {
-            // The whole chain threw — quota exhaustion, retired model ids,
-            // or a revoked platform key. From the user's side the action is
-            // the same; the details are in the server log either way.
-            errPayload = {
-              error: hasByok
-                ? 'None of your providers could answer just now. Check your keys in Settings → AI, then try again.'
-                : 'Cat couldn’t reach an AI model just now — this is usually momentary. Try again; if it keeps happening, add your own free Groq key in Settings → AI.',
-              code: 'ALL_PROVIDERS_DOWN',
-            };
-          } else {
-            errPayload = {
-              error:
-                'Cat couldn’t generate a response. Try again, or add your own key in Settings → AI.',
-              code: 'STREAM_ERROR',
-            };
-          }
-          // Persist the turn even though it failed. The success path saves
-          // only `if (fullContent)`, so before this a total provider failure
-          // threw away the user's own words: they reloaded to an empty thread
-          // and we kept no record of what they had asked. Six real accounts
-          // reached exactly this state in June 2026 — one message-less
-          // conversation each, never seen again — and because an unsaved turn
-          // is indistinguishable from "opened the page and typed nothing",
-          // those failures were invisible in the data too.
-          //
-          // The assistant turn stores the same sentence the user just saw, so
-          // the thread reads back honestly, and the user/assistant alternation
-          // the next request's history depends on stays intact.
-          if (conversationId) {
-            await saveMessages(
-              supabase,
-              conversationId,
-              user.id,
-              buildFailedTurnMessages({
-                message: storedMessage,
-                partialContent: fullContent,
-                errorText: errPayload.error,
-                model: activeModel,
-                provider: activeProvider,
-              })
-            ).catch((persistErr: unknown) => {
-              logger.error('Failed to persist failed turn', { persistErr }, 'cat/chat');
-            });
-          }
-          // Raise it with the operator too. Persisting the turn makes the
-          // failure visible to anyone who goes looking; this makes it visible
-          // to someone who isn't looking. Detached and self-swallowing — a
-          // chat that already failed must not fail differently because the
-          // alert could not be written.
-          void alertCatChatFailure({
-            userId: user.id,
-            code: errPayload.code,
-            provider: activeProvider,
-            model: activeModel,
-          });
-          controller.enqueue(encoder.encode(`event: error\n`));
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify(errPayload)}\n\n`));
-        } finally {
-          controller.close();
-        }
+function streamCatChat(turn: CatTurn, rl: RateLimitResult): Response {
+  const encoder = new TextEncoder();
+  const readable = new ReadableStream({
+    async start(controller) {
+      await runStreamingTurn(turn, { controller, encoder });
+    },
+  });
+  return applyRateLimitHeaders(
+    new Response(readable, {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache, no-transform',
+        Connection: 'keep-alive',
+        'X-Accel-Buffering': 'no',
       },
-    });
-    return applyRateLimitHeaders(
-      new Response(readable, {
-        status: 200,
-        headers: {
-          'Content-Type': 'text/event-stream',
-          'Cache-Control': 'no-cache, no-transform',
-          Connection: 'keep-alive',
-          'X-Accel-Buffering': 'no',
-        },
-      }),
-      rl
-    );
-  }
+    }),
+    rl
+  );
+}
 
-  // ── Non-streaming ──────────────────────────────────────────────────────────
-  // Buffer tool calls + prefill proposals so the JSON response can carry
-  // them alongside the answer.
-  const collectedToolCalls: ToolCallEvent[] = [];
-  const collectedPrefillProposals: PrefillProposal[] = [];
-  const messages = await maybeEnrichWithSearchResults(
+/** The whole streamed turn: the stream is always closed, success or failure. */
+async function runStreamingTurn(turn: CatTurn, out: SseOut): Promise<void> {
+  const { provider, modelToUse, aiService, hasByok } = turn.resolved;
+  const state: StreamState = {
+    attemptedFallback: false,
+    activeProvider: provider,
+    activeModel: modelToUse,
+    activeService: aiService,
+    activeIsPlatform: !hasByok,
+    fullContent: '',
+    usage: undefined,
+    streamStarted: false,
+  };
+  try {
+    sendData(out, { model: modelToUse, provider });
+
+    // Everything Cat read from the web this turn, as evidence blocks
+    // labelled with the citation handle that licenses each one. Fed to
+    // the grounding check below so a figure Cat correctly quoted from a
+    // page is recognised as quoted rather than flagged as invented.
+    const webEvidence: string[] = [];
+    const streamedToolCalls: ToolCallEvent[] = [];
+    const messages = await runStreamingToolPhase(turn, out, streamedToolCalls, webEvidence);
+
+    await walkStreamingChain(turn, out, state, messages, webEvidence);
+    await settleStreamedTurn(turn, state, streamedToolCalls);
+  } catch (err) {
+    await failStreamedTurn(turn, out, state, err);
+  } finally {
+    out.controller.close();
+  }
+}
+
+/**
+ * Tool use happens INSIDE the stream so we can surface each lifecycle event
+ * ('running' → completed/no_results/failed) to the user in real time as
+ * `tool_call` SSE events. Prefill proposals (the prefill_entity_form tool)
+ * emit a second event type carrying the structured draft so the UI can render
+ * a PrefilledFormCard instead of narrating field values as prose.
+ */
+function runStreamingToolPhase(
+  turn: CatTurn,
+  out: SseOut,
+  streamedToolCalls: ToolCallEvent[],
+  webEvidence: string[]
+): Promise<ToolAugmentedMessage[]> {
+  const { user, supabase } = turn.request;
+  const { provider, modelToUse, toolEndpoint, toolKey, fallbacks } = turn.resolved;
+  return maybeEnrichWithSearchResults(
     supabase,
     user.id,
-    baseMessages,
-    message,
+    turn.baseMessages,
+    turn.body.message,
     provider,
     modelToUse,
     (event: ToolCallEvent) => {
-      collectedToolCalls.push(event);
+      // Kept as well as sent. The SSE frame reaches the live tab and
+      // nothing else; without this copy the chips exist only in that
+      // tab's React state and a reload erases what Cat did.
+      streamedToolCalls.push(event);
+      sendData(out, { tool_call: event });
     },
     (proposal: PrefillProposal) => {
-      collectedPrefillProposals.push(withDraftPhoto(proposal));
+      sendData(out, { prefill_proposal: turn.withDraftPhoto(proposal) });
     },
-    // Same as the streaming path: an actor is what makes actions callable.
-    { actorId, toolEndpoint, toolKey, toolFallbacks: fallbacks }
+    // ADR-0006 D2 — with an actor, the tool phase may also EXECUTE
+    // actions, so their outcome is in the messages the model writes
+    // from. Without one nothing can be created, and the phase stays
+    // read-only.
+    {
+      actorId: turn.actorId,
+      // The active step's own endpoint and key, so a BYOK user's tools
+      // reach THEIR vendor rather than being silently dropped.
+      toolEndpoint,
+      toolKey,
+      toolFallbacks: fallbacks,
+      onWebEvidence: evidence => {
+        webEvidence.push(...evidence);
+      },
+    }
   );
-  // The non-streaming path runs no grounding check (see below), so there is
-  // nothing here to feed web evidence into. Stated rather than left as an
-  // unexplained asymmetry between two call sites of the same function.
+}
 
-  // Try primary; on ANY failure (rate-limit, retired model id, upstream
-  // 5xx), walk the fallback chain. Non-streaming is even safer than
-  // streaming because each attempt is atomic — no partial-content
-  // corruption risk to worry about.
-  let activeProvider = provider;
-  let result;
+/**
+ * Close the answer: guarantee content, check and repair groundedness, run the
+ * actions it asks for, and send the `done` frame.
+ */
+async function emitDone(
+  turn: CatTurn,
+  out: SseOut,
+  state: StreamState,
+  webEvidence: string[]
+): Promise<void> {
+  const { user, supabase } = turn.request;
+  // Completion guarantee: a model that finishes without emitting any
+  // content (e.g. it tried to "call a tool" the main completion
+  // doesn't have) would leave the client's last assistant bubble
+  // empty — rendered as typing dots forever. Always send at least
+  // one honest sentence before closing.
+  if (!state.fullContent.trim()) {
+    state.fullContent = EMPTY_REPLY_FALLBACK;
+    sendData(out, { content: state.fullContent });
+  }
+  // Groundedness check, then a one-shot repair.
+  //
+  // Streaming makes this awkward and the compromise is deliberate: the
+  // fabricated text has already reached the screen by the time it can
+  // be checked, so the repair cannot un-say it live. What it CAN do is
+  // fix the two things that outlast the moment — what gets persisted
+  // into the conversation, and what the client renders once told — so
+  // a reload never shows the fabrication and the model never reads its
+  // own invention back as history next turn.
+  //
+  // Scoped to entity-attribution: Cat must stay free to name Lightning,
+  // Twint or PayPal in general advice. See @bitbaum/ai-kit/grounding verify.
+  const groundingCheck = await enforceGrounding({
+    content: state.fullContent,
+    message: turn.body.message,
+    grounding: {
+      ...turn.prepared.grounding,
+      // Pages and results Cat actually read this turn count as
+      // evidence. Without this the citation handles would be
+      // decorative: the verifier would flag every real figure Cat
+      // correctly quoted from a source as a novel number, and the
+      // repair pass would delete the researched half of the answer.
+      evidence: [...turn.prepared.grounding.evidence, ...webEvidence],
+    },
+    service: state.activeService,
+    model: state.activeModel,
+    userId: user.id,
+    conversationId: turn.conversationId,
+  });
+  const correctedContent = groundingCheck.corrected;
+  if (correctedContent) {
+    // Everything downstream — action parsing, persistence — must run on
+    // the repaired text. Parsing actions from the ORIGINAL would let a
+    // claim we just deleted still drive a side effect.
+    state.fullContent = correctedContent;
+  }
+
+  const { actions, quickReplies } = parseActionsFromResponse(state.fullContent);
+  const execResults = await runExecActions(supabase, user.id, turn.actorId, actions);
+  sendData(out, {
+    done: true,
+    usage: state.usage,
+    model: state.activeModel,
+    provider: state.activeProvider,
+    actions: actions.length > 0 ? actions : undefined,
+    execResults: execResults.length > 0 ? execResults : undefined,
+    quickReplies,
+    suggestUpgrade: turn.wantsAgentic && !isAgenticModel(state.activeModel),
+    grounding: {
+      ok: groundingCheck.ok,
+      unsupported: groundingCheck.violations.map(v => v.text).slice(0, 8),
+    },
+    ...(correctedContent ? { correctedContent } : {}),
+  });
+}
+
+/**
+ * Stream one link's answer to the client. Nothing streamed is a failed link
+ * (EmptyCompletion), not a finished answer.
+ */
+async function consumeStream(
+  turn: CatTurn,
+  out: SseOut,
+  state: StreamState,
+  messages: ToolAugmentedMessage[],
+  webEvidence: string[]
+): Promise<void> {
+  const { activeProvider, activeModel, activeService } = state;
+  let doneEmitted = false;
+  for await (const chunk of activeService.streamChatCompletion({
+    model: activeModel,
+    messages: withImages(messages, turn.body.images),
+    temperature: 0.7,
+  })) {
+    if (chunk.usage) {
+      state.usage = chunk.usage;
+    }
+    if (chunk.content) {
+      state.streamStarted = true;
+      state.fullContent += chunk.content;
+      sendData(out, { content: chunk.content });
+    }
+    if (chunk.done) {
+      if (!state.streamStarted) {
+        throw new EmptyCompletion(activeProvider, activeModel);
+      }
+      await emitDone(turn, out, state, webEvidence);
+      doneEmitted = true;
+      logServed(activeProvider, activeModel);
+      break;
+    }
+  }
+  // Provider stream ended without a done chunk. Same rule: nothing
+  // streamed is a failed link, not a finished answer. Finalising here
+  // is what made an empty 200 look like a completed reply.
+  if (!doneEmitted) {
+    if (!state.streamStarted) {
+      throw new EmptyCompletion(activeProvider, activeModel);
+    }
+    await emitDone(turn, out, state, webEvidence);
+  }
+}
+
+/**
+ * Remember a dead PLATFORM link so the next message's chain skips it for a
+ * minute instead of paying the failed round-trip again. BYOK links are never
+ * marked — the user's own key failing must not sideline the platform's
+ * identical provider+model. A pre-flight skip is never marked either: this
+ * user's prompt is too big for the link, other users' prompts may fit it fine.
+ */
+function markFailedLink(isPlatform: boolean, provider: string, model: string, err: unknown): void {
+  if (isPlatform && !(err instanceof GroqPreflightSkip)) {
+    noteRateLimit(provider, err);
+    markLinkDown(provider, model);
+  }
+}
+
+/**
+ * Walk the fallback chain on ANY pre-stream failure — rate-limit, retired
+ * model id (404), upstream 5xx. A single dead link must never end the chat
+ * while a later link could serve it. Each provider gets one attempt. We can
+ * only swap providers BEFORE any content streams — otherwise the client sees
+ * half a response and then a switch. Throws when the chain ends in an error.
+ */
+async function walkStreamingChain(
+  turn: CatTurn,
+  out: SseOut,
+  state: StreamState,
+  messages: ToolAugmentedMessage[],
+  webEvidence: string[]
+): Promise<void> {
+  const { provider, hasByok, modelToUse, fallbacks } = turn.resolved;
+  let lastErr: unknown = null;
+  // Pre-flight: a platform-Groq primary deterministically 413s once
+  // the prompt outgrows the on-demand TPM limit — skip the guaranteed
+  // failure when another link can serve. BYOK Groq (possibly a higher
+  // tier) and a chain with no other links still get the real attempt.
+  if (fallbacks.length > 0 && overflowsPlatformGroq(provider, hasByok, modelToUse, messages)) {
+    lastErr = new GroqPreflightSkip();
+  } else {
+    try {
+      await consumeStream(turn, out, state, messages, webEvidence);
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  let fallbackIndex = 0;
+  while (lastErr && !state.streamStarted && fallbackIndex < fallbacks.length) {
+    state.attemptedFallback = true;
+    const reason = isAiRateLimitError(lastErr) ? 'rate_limit' : 'provider_error';
+    markFailedLink(state.activeIsPlatform, state.activeProvider, state.activeModel, lastErr);
+    const next = fallbacks[fallbackIndex++];
+    if (
+      fallbackIndex < fallbacks.length &&
+      overflowsPlatformGroq(next.provider, next.hasByok, next.modelToUse, messages)
+    ) {
+      lastErr = new GroqPreflightSkip();
+      continue;
+    }
+    state.activeIsPlatform = !next.hasByok;
+    logger.warn(
+      'Cat chat: provider failed, trying next fallback',
+      {
+        from: { provider: state.activeProvider, model: state.activeModel },
+        to: { provider: next.provider, model: next.modelToUse },
+        reason,
+        err: lastErr,
+        attempt: fallbackIndex,
+      },
+      'cat/chat'
+    );
+    state.activeProvider = next.provider;
+    state.activeModel = next.modelToUse;
+    state.activeService = next.aiService;
+    sendData(out, {
+      fallback: { from: provider, to: state.activeProvider, model: state.activeModel, reason },
+    });
+    sendData(out, { model: state.activeModel, provider: state.activeProvider });
+    try {
+      await consumeStream(turn, out, state, messages, webEvidence);
+      lastErr = null;
+    } catch (nextErr) {
+      lastErr = nextErr;
+    }
+  }
+  if (lastErr) {
+    markFailedLink(state.activeIsPlatform, state.activeProvider, state.activeModel, lastErr);
+    // Every link came back empty. NOW the honest sentence is right —
+    // it is the chain's verdict rather than the first link's. Throwing
+    // instead would replace today's polite ending with an error page,
+    // which would be a regression for the one case where the apology
+    // was always the correct answer.
+    if (lastErr instanceof EmptyCompletion && !state.streamStarted) {
+      await emitDone(turn, out, state, webEvidence);
+    } else {
+      throw lastErr;
+    }
+  }
+}
+
+/** Persist the streamed turn, learn from it, and bill or count it. */
+async function settleStreamedTurn(
+  turn: CatTurn,
+  state: StreamState,
+  streamedToolCalls: ToolCallEvent[]
+): Promise<void> {
+  const { user, supabase } = turn.request;
+  const { conversationId } = turn;
+  const { metered, modelToUse, hasByok, keyService } = turn.resolved;
+  const { fullContent, usage, activeModel, activeProvider, activeService } = state;
+  if (conversationId && fullContent) {
+    saveMessages(supabase, conversationId, user.id, [
+      { role: 'user', content: turn.storedMessage },
+      {
+        role: 'assistant',
+        content: fullContent,
+        model_used: activeModel,
+        provider: activeProvider,
+        token_count: usage?.totalTokens,
+        // What Cat DID, stored with what it said. Held only in React
+        // state before, so a reload erased the chips — and with them
+        // the sources behind the citations in this very sentence.
+        tool_calls: streamedToolCalls,
+      },
+    ]).catch((err: unknown) => {
+      logger.error('Failed to persist streaming messages', { err }, 'cat/chat');
+    });
+    // Learn durable facts from this exchange for future turns. Fully
+    // best-effort and detached — never blocks or fails the response.
+    void extractAndStoreMemories(
+      supabase,
+      user.id,
+      conversationId,
+      turn.body.message,
+      fullContent,
+      activeService,
+      activeModel
+    );
+    // Reliably populate the economic-profile store from the same exchange —
+    // deterministic, not dependent on the chat model emitting an action.
+    void extractAndStoreEconomicProfile(
+      supabase,
+      user.id,
+      turn.body.message,
+      fullContent,
+      activeService,
+      activeModel
+    );
+  }
+  if (metered && turn.meterRef && usage?.totalTokens && activeModel === modelToUse) {
+    // Credit-paid frontier exchange: debit the ledger for the model
+    // that actually served. If a rate-limit fallback answered instead
+    // (activeModel changed), the user is NOT billed.
+    await meterCreditUsage(getAdminClient() as never, user.id, {
+      model: activeModel,
+      inputTokens: usage.inputTokens ?? 0,
+      outputTokens: usage.outputTokens ?? 0,
+      rawCostBtc: usage.costBtc,
+      ref: turn.meterRef,
+      conversationId,
+    });
+  } else if (!hasByok && usage?.totalTokens) {
+    await keyService.incrementPlatformUsage(user.id, 1, usage.totalTokens);
+  }
+}
+
+/**
+ * Honest error copy. Never echo raw err.message — it can contain API keys
+ * (e.g. a malformed Authorization header leaks the credential in the
+ * Headers.append error). Log server-side; return a structured, actionable
+ * error to the client. Only claim what we actually know — "providers are
+ * down" when the real cause was a config bug erodes trust and sends users
+ * chasing outages.
+ */
+function streamErrorPayload(
+  err: unknown,
+  hasByok: boolean,
+  attemptedFallback: boolean
+): { error: string; code: string } {
+  if (isAiRateLimitError(err)) {
+    return {
+      error: hasByok
+        ? 'Your provider returned a rate-limit. Try again in a moment.'
+        : 'Free AI capacity is maxed out right now. Try again in a minute — or add your own free Groq key in Settings → AI for capacity that’s all yours.',
+      code: 'AI_RATE_LIMITED',
+    };
+  }
+  if (attemptedFallback) {
+    // The whole chain threw — quota exhaustion, retired model ids,
+    // or a revoked platform key. From the user's side the action is
+    // the same; the details are in the server log either way.
+    return {
+      error: hasByok
+        ? 'None of your providers could answer just now. Check your keys in Settings → AI, then try again.'
+        : 'Cat couldn’t reach an AI model just now — this is usually momentary. Try again; if it keeps happening, add your own free Groq key in Settings → AI.',
+      code: 'ALL_PROVIDERS_DOWN',
+    };
+  }
+  return {
+    error: 'Cat couldn’t generate a response. Try again, or add your own key in Settings → AI.',
+    code: 'STREAM_ERROR',
+  };
+}
+
+/** End a failed stream honestly: log, persist the turn, alert, send an error event. */
+async function failStreamedTurn(
+  turn: CatTurn,
+  out: SseOut,
+  state: StreamState,
+  err: unknown
+): Promise<void> {
+  const { user, supabase } = turn.request;
+  const { hasByok } = turn.resolved;
+  const { attemptedFallback, activeProvider, activeModel } = state;
+  logger.error(
+    'Cat chat stream error',
+    { err, attemptedFallback, hasByok, provider: activeProvider, model: activeModel },
+    'cat/chat'
+  );
+  const errPayload = streamErrorPayload(err, hasByok, attemptedFallback);
+  // Persist the turn even though it failed. The success path saves
+  // only `if (fullContent)`, so before this a total provider failure
+  // threw away the user's own words: they reloaded to an empty thread
+  // and we kept no record of what they had asked. Six real accounts
+  // reached exactly this state in June 2026 — one message-less
+  // conversation each, never seen again — and because an unsaved turn
+  // is indistinguishable from "opened the page and typed nothing",
+  // those failures were invisible in the data too.
+  //
+  // The assistant turn stores the same sentence the user just saw, so
+  // the thread reads back honestly, and the user/assistant alternation
+  // the next request's history depends on stays intact.
+  if (turn.conversationId) {
+    await saveMessages(
+      supabase,
+      turn.conversationId,
+      user.id,
+      buildFailedTurnMessages({
+        message: turn.storedMessage,
+        partialContent: state.fullContent,
+        errorText: errPayload.error,
+        model: activeModel,
+        provider: activeProvider,
+      })
+    ).catch((persistErr: unknown) => {
+      logger.error('Failed to persist failed turn', { persistErr }, 'cat/chat');
+    });
+  }
+  // Raise it with the operator too. Persisting the turn makes the
+  // failure visible to anyone who goes looking; this makes it visible
+  // to someone who isn't looking. Detached and self-swallowing — a
+  // chat that already failed must not fail differently because the
+  // alert could not be written.
+  void alertCatChatFailure({
+    userId: user.id,
+    code: errPayload.code,
+    provider: activeProvider,
+    model: activeModel,
+  });
+  out.controller.enqueue(out.encoder.encode(`event: error\n`));
+  sendData(out, errPayload);
+}
+
+// ==================== NON-STREAMING ====================
+
+type Completion = Awaited<ReturnType<ResolvedTurnProvider['aiService']['chatCompletion']>>;
+
+/** The link that answered a buffered turn, and how the chain got there. */
+interface ChainAnswer {
+  result: Completion;
+  /** Set when a fallback, not the primary, answered. */
+  fellBackTo: FallbackProvider | null;
+  activeProvider: string;
+}
+
+/**
+ * Try primary; on ANY failure (rate-limit, retired model id, upstream 5xx),
+ * walk the fallback chain. Non-streaming is even safer than streaming because
+ * each attempt is atomic — no partial-content corruption risk to worry about.
+ * Throws the last error when no link produced an answer.
+ */
+async function walkCompletionChain(
+  turn: CatTurn,
+  messages: ToolAugmentedMessage[]
+): Promise<ChainAnswer> {
+  const { provider, hasByok, modelToUse, aiService, fallbacks } = turn.resolved;
+  const images = turn.body.images;
+  let activeProvider: string = provider;
+  let result: Completion | undefined;
   let fellBackTo: FallbackProvider | null = null;
   let lastErr: unknown = null;
   // Same pre-flight as the streaming path: never pay a guaranteed 413 on a
@@ -865,10 +1005,7 @@ export async function orchestrateCatChat(
   let fallbackIndex = 0;
   let lastTried = { provider: provider as string, model: modelToUse, platform: !hasByok };
   while (!result && lastErr && fallbackIndex < fallbacks.length) {
-    if (lastTried.platform && !(lastErr instanceof GroqPreflightSkip)) {
-      noteRateLimit(lastTried.provider, lastErr);
-      markLinkDown(lastTried.provider, lastTried.model);
-    }
+    markFailedLink(lastTried.platform, lastTried.provider, lastTried.model, lastErr);
     const next = fallbacks[fallbackIndex++];
     lastTried = { provider: next.provider, model: next.modelToUse, platform: !next.hasByok };
     if (
@@ -909,15 +1046,58 @@ export async function orchestrateCatChat(
     }
   }
   if (!result) {
-    if (lastTried.platform && !(lastErr instanceof GroqPreflightSkip)) {
-      noteRateLimit(lastTried.provider, lastErr);
-      markLinkDown(lastTried.provider, lastTried.model);
-    }
+    markFailedLink(lastTried.platform, lastTried.provider, lastTried.model, lastErr);
     throw lastErr ?? new Error('Cat chat: no AI provider produced a response');
   }
   logServed(lastTried.provider, lastTried.model);
+  return { result, fellBackTo, activeProvider };
+}
 
-  if (metered && meterRef && !fellBackTo) {
+/** A buffered turn: tools, the chain, billing, actions, persistence, then one JSON body. */
+async function answerCatChat(turn: CatTurn, rl: RateLimitResult): Promise<Response> {
+  const { user, supabase } = turn.request;
+  const { message } = turn.body;
+  const { conversationId } = turn;
+  const {
+    provider,
+    hasByok,
+    modelToUse,
+    aiService,
+    platformUsage,
+    keyService,
+    metered,
+    fallbacks,
+    toolEndpoint,
+    toolKey,
+  } = turn.resolved;
+
+  // Buffer tool calls + prefill proposals so the JSON response can carry
+  // them alongside the answer.
+  const collectedToolCalls: ToolCallEvent[] = [];
+  const collectedPrefillProposals: PrefillProposal[] = [];
+  const messages = await maybeEnrichWithSearchResults(
+    supabase,
+    user.id,
+    turn.baseMessages,
+    message,
+    provider,
+    modelToUse,
+    (event: ToolCallEvent) => {
+      collectedToolCalls.push(event);
+    },
+    (proposal: PrefillProposal) => {
+      collectedPrefillProposals.push(turn.withDraftPhoto(proposal));
+    },
+    // Same as the streaming path: an actor is what makes actions callable.
+    { actorId: turn.actorId, toolEndpoint, toolKey, toolFallbacks: fallbacks }
+  );
+  // The non-streaming path runs no grounding check (see below), so there is
+  // nothing here to feed web evidence into. Stated rather than left as an
+  // unexplained asymmetry between two call sites of the same function.
+
+  const { result, fellBackTo, activeProvider } = await walkCompletionChain(turn, messages);
+
+  if (metered && turn.meterRef && !fellBackTo) {
     // Credit-paid frontier exchange (non-streaming): debit only when the
     // metered primary served — a fallback answer is a free-tier answer.
     await meterCreditUsage(getAdminClient() as never, user.id, {
@@ -925,7 +1105,7 @@ export async function orchestrateCatChat(
       inputTokens: result.inputTokens,
       outputTokens: result.outputTokens,
       rawCostBtc: result.costBtc,
-      ref: meterRef,
+      ref: turn.meterRef,
       conversationId,
     });
   } else if (!hasByok) {
@@ -936,11 +1116,11 @@ export async function orchestrateCatChat(
   // empty reply (it renders as a hang, not as an answer).
   const rawContent = result.content?.trim() ? result.content : EMPTY_REPLY_FALLBACK;
   const { message: cleanedMessage, actions, quickReplies } = parseActionsFromResponse(rawContent);
-  const execResults = await runExecActions(supabase, user.id, actorId, actions);
+  const execResults = await runExecActions(supabase, user.id, turn.actorId, actions);
 
   if (conversationId) {
     saveMessages(supabase, conversationId, user.id, [
-      { role: 'user', content: storedMessage },
+      { role: 'user', content: turn.storedMessage },
       {
         role: 'assistant',
         content: cleanedMessage,
@@ -983,7 +1163,7 @@ export async function orchestrateCatChat(
         collectedPrefillProposals.length > 0 ? collectedPrefillProposals : undefined,
       modelUsed: result.model,
       provider: activeProvider,
-      suggestUpgrade: wantsAgentic && !isAgenticModel(fellBackTo?.modelToUse ?? modelToUse),
+      suggestUpgrade: turn.wantsAgentic && !isAgenticModel(fellBackTo?.modelToUse ?? modelToUse),
       fallback: fellBackTo
         ? {
             from: provider,
