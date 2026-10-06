@@ -16,6 +16,11 @@ vi.mock('@/services/notifications/dispatcher', () => ({
   NotificationDispatcher: { dispatch: vi.fn().mockResolvedValue(undefined) },
 }));
 
+vi.mock('@/domain/profileClaims/stewardship', () => ({
+  getActorStewardUserId: vi.fn().mockResolvedValue('steward-user'),
+  getStewardedActorIds: vi.fn().mockResolvedValue([]),
+}));
+
 const dispatchMock = NotificationDispatcher.dispatch as Mock;
 
 const BOOKING = {
@@ -33,14 +38,20 @@ const BOOKING = {
  * Chainable supabase stub. update→eq→eq→eq/in→select→single resolves the
  * booking row; the actors select→eq→single resolves the provider's user_id.
  */
-function makeSupabaseStub(opts: { bookingRow: unknown; bookingError?: { message: string } }) {
+function makeSupabaseStub(opts: {
+  bookingRow: unknown;
+  bookingError?: { message: string };
+  /** null = the provider is an unclaimed placeholder with no account. */
+  providerUserId?: string | null;
+}) {
   const single = vi.fn().mockResolvedValue({
     data: opts.bookingError ? null : opts.bookingRow,
     error: opts.bookingError ?? null,
   });
-  const actorSingle = vi
-    .fn()
-    .mockResolvedValue({ data: { user_id: 'provider-user' }, error: null });
+  const actorSingle = vi.fn().mockResolvedValue({
+    data: { user_id: opts.providerUserId === undefined ? 'provider-user' : opts.providerUserId },
+    error: null,
+  });
 
   const chain: Record<string, Mock> = {};
   for (const method of ['update', 'eq', 'in', 'select']) {
@@ -118,12 +129,31 @@ describe('booking status-change notifications', () => {
     );
     await svc.cancelBooking('booking-1', 'customer-user');
 
-    expect(dispatchMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        userId: 'provider-user',
-        type: 'booking_update',
-        title: 'Booking cancelled',
-      })
+    // The provider notification is fire-and-forget behind an actor lookup, so
+    // wait for it rather than counting microtask ticks.
+    await vi.waitFor(() =>
+      expect(dispatchMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 'provider-user',
+          type: 'booking_update',
+          title: 'Booking cancelled',
+        })
+      )
+    );
+  });
+
+  it('a cancellation for a place set up for someone reaches its steward', async () => {
+    // The provider is an unclaimed placeholder: no account of its own. Before
+    // the steward fallback this dispatched nothing and the request vanished.
+    const svc = createBookingService(
+      makeSupabaseStub({ bookingRow: { ...BOOKING, status: 'cancelled' }, providerUserId: null })
+    );
+    await svc.cancelBooking('booking-1', 'customer-user');
+
+    await vi.waitFor(() =>
+      expect(dispatchMock).toHaveBeenCalledWith(
+        expect.objectContaining({ userId: 'steward-user', title: 'Booking cancelled' })
+      )
     );
   });
 

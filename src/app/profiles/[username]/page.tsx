@@ -25,6 +25,7 @@ import { getOrCreateUserActor } from '@/services/actors/getOrCreateUserActor';
 import { ownedProjectsFilter } from '@/domain/projects/service';
 import { getUnclaimedOwnerBySlug } from '@/domain/profileClaims/unclaimed';
 import { UnclaimedProfileView } from '@/components/claim/UnclaimedProfileView';
+import { fetchUnclaimedListings } from '@/domain/profileClaims/unclaimedListings';
 import { looseClient } from '@/lib/supabase/untyped';
 
 interface PageProps {
@@ -219,24 +220,14 @@ export default async function PublicProfilePage({ params }: PageProps) {
     // same URL resolves to a real profile afterwards.
     const unclaimed = await getUnclaimedOwnerBySlug(supabase, targetUsername);
     if (unclaimed) {
-      const { data: ownedProjects } = await looseClient(supabase)
-        .from(getTableName('project'))
-        .select('id, title, description')
-        .eq('actor_id', unclaimed.actorId)
-        .order('created_at', { ascending: false });
+      const listings = await fetchUnclaimedListings(supabase, unclaimed.actorId);
 
       return (
         <UnclaimedProfileView
           name={unclaimed.name}
           avatarUrl={unclaimed.avatarUrl}
           stewardUsername={unclaimed.stewardUsername}
-          projects={
-            (ownedProjects ?? []) as Array<{
-              id: string;
-              title: string;
-              description: string | null;
-            }>
-          }
+          listings={listings}
         />
       );
     }
