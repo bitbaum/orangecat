@@ -12,7 +12,6 @@
 import { fromTable } from '@/lib/supabase/untyped';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { DATABASE_TABLES } from '@/config/database-tables';
-import { getModelMetadata } from '@/config/ai-models';
 import { createApiKeyService } from './api-key-service';
 import { getAdminClient } from '@/lib/supabase/admin';
 import {
