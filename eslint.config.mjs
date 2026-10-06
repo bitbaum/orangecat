@@ -8,6 +8,10 @@ import * as espree from 'espree';
 // rule set is carried over verbatim; eslint-config-next 16's native flat configs
 // are composed directly (FlatCompat crashes on the react plugin's circular object).
 
+// Ceiling for `max-lines-per-function` (code lines, blanks and comments not
+// counted). A ratchet: it may only go down.
+const MAX_LINES_PER_FUNCTION = 600;
+
 // Shared no-restricted-syntax selectors. Flat config REPLACES (not merges) a
 // rule's options when a later block redefines it, so any scoped block that adds
 // a selector must spread these to keep the base set active there.
@@ -52,7 +56,7 @@ const restrictedSyntaxSelectors = [
     selector:
       "LogicalExpression[operator='||'][right.type='TemplateLiteral'] > MemberExpression.left[property.name='error']",
     message:
-      "`X.error || `fallback`` — the standard API envelope makes `error` an OBJECT, so this yields \"[object Object]\" and the fallback never fires. Use apiErrorMessage(X, `fallback`) from '@/lib/api/errorMessage'.",
+      '`X.error || `fallback`` — the standard API envelope makes `error` an OBJECT, so this yields "[object Object]" and the fallback never fires. Use apiErrorMessage(X, `fallback`) from \'@/lib/api/errorMessage\'.',
   },
   {
     selector: 'Literal[value=/dark:(?:bg|text|border|ring)-\\[#[0-9a-fA-F]+\\]/]',
@@ -288,7 +292,20 @@ const eslintConfig = [
     rules: {
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
-      '@typescript-eslint/no-explicit-any': 'off',
+      // Hold the line (2026-10): src/ was typed down from 123 explicit `any`
+      // to a handful of audited escape hatches, each carrying an
+      // eslint-disable with its reason. A new `any` must argue for itself the
+      // same way, in review, instead of arriving silently.
+      '@typescript-eslint/no-explicit-any': 'error',
+      // Hold the line (2026-10): orchestrateCatChat grew to a 737-line function
+      // with a 389-line closure inside it before anyone split it, because
+      // nothing made its length visible. The ceiling sits just above the
+      // longest function that remains; lower it as those get split, never
+      // raise it to admit a new one. Counts code lines only.
+      'max-lines-per-function': [
+        'error',
+        { max: MAX_LINES_PER_FUNCTION, skipBlankLines: true, skipComments: true },
+      ],
       '@typescript-eslint/ban-ts-comment': [
         'error',
         {
@@ -299,6 +316,12 @@ const eslintConfig = [
         },
       ],
     },
+  },
+  {
+    // Entity templates are DATA (prefill values), not logic, and are not part
+    // of the typing pass above.
+    files: ['src/components/create/templates/**'],
+    rules: { '@typescript-eslint/no-explicit-any': 'off' },
   },
 
   {
