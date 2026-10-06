@@ -15,7 +15,7 @@ import { withApiRetry } from '@/utils/retry';
 import { TIMELINE_TABLES } from '@/config/database-tables';
 import type { TimelineFeedResponse, TimelineFilters, TimelinePagination } from '@/types/timeline';
 import { pageWindow, feedResponse, emptyFeed } from './feed-shape';
-import { transformEnrichedEventToDisplay } from './helpers';
+import { displayEventsFromView } from './helpers';
 
 /**
  * Get public community timeline (posts from all users and projects)
@@ -47,7 +47,7 @@ export async function getCommunityFeed(
         }
 
         // Transform enriched VIEW data to display events (no N+1 queries needed!)
-        const displayEvents = (enrichedEvents || []).map(transformEnrichedEventToDisplay);
+        const displayEvents = await displayEventsFromView(enrichedEvents);
 
         return feedResponse(displayEvents, { page, limit }, count || 0, filters);
       },

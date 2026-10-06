@@ -126,12 +126,16 @@ export function formatAmountSuffixed(
 export function formatBitcoinDisplay(amount: number): string {
   // BTC is the only user-facing Bitcoin unit — small amounts get more
   // precision, never a satoshi rendering.
+  if (!Number.isFinite(amount)) {
+    amount = 0;
+  }
   if (amount >= 1) {
     return `${amount.toFixed(4)} BTC`;
   } else if (amount >= 0.001) {
     return `${amount.toFixed(6)} BTC`;
   }
-  return `${amount.toFixed(8).replace(/0+$/, '')} BTC`;
+  // Strip the dot WITH the zeros: an empty balance used to read "0. BTC".
+  return `${amount.toFixed(8).replace(/\.?0+$/, '')} BTC`;
 }
 
 export function formatBTC(amount: number): string {

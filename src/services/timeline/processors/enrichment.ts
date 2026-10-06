@@ -167,6 +167,12 @@ export async function enrichEventsForDisplay(events: unknown[]): Promise<Timelin
     }
   }
 
+  // A repost's original author rides the same profile batch — see
+  // applyLiveOriginalAuthors.
+  for (const id of originalActorIds(timelineEvents)) {
+    profileIds.add(id);
+  }
+
   // One round-trip per kind, in parallel.
   const [profilesById, projectsById, reactionsByEvent] = await Promise.all([
     fetchProfilesById(Array.from(profileIds)),
@@ -184,7 +190,8 @@ export async function enrichEventsForDisplay(events: unknown[]): Promise<Timelin
     return { id, name: `Unknown ${type}`, type };
   };
 
-  return timelineEvents.map(timelineEvent => {
+  return timelineEvents.map(rawEvent => {
+    const timelineEvent = applyLiveOriginalAuthor(rawEvent, profilesById);
     const actor = profileRowToActor(
       timelineEvent.actorId,
       profilesById.get(timelineEvent.actorId) ?? null
@@ -211,6 +218,69 @@ export async function enrichEventsForDisplay(events: unknown[]): Promise<Timelin
       ...(reactionsByEvent.get(timelineEvent.id) ?? EMPTY_REACTION_STATE),
     } as TimelineDisplayEvent;
   });
+}
+
+type WithRepostMetadata = { metadata?: Record<string, unknown> | object | null };
+
+function originalActorIds(events: WithRepostMetadata[]): string[] {
+  const ids = new Set<string>();
+  for (const ev of events) {
+    const id = (ev.metadata as { original_actor_id?: unknown } | null | undefined)
+      ?.original_actor_id;
+    if (typeof id === 'string' && id) {
+      ids.add(id);
+    }
+  }
+  return Array.from(ids);
+}
+
+/**
+ * A repost stores its original author's name and avatar AS THEY WERE when it
+ * was reposted. Read back verbatim, that snapshot never moves: after an avatar
+ * change, the post and its reposts showed different pictures side by side. The
+ * live profile wins; the snapshot is only the fallback for a profile that is
+ * gone.
+ */
+function applyLiveOriginalAuthor<T extends WithRepostMetadata>(
+  event: T,
+  profilesById: Map<string, ProfileRow>
+): T {
+  const metadata = event.metadata as Record<string, unknown> | null | undefined;
+  const id = metadata?.original_actor_id;
+  const live = typeof id === 'string' ? profilesById.get(id) : undefined;
+  if (!metadata || !live) {
+    return event;
+  }
+  return {
+    ...event,
+    metadata: {
+      ...metadata,
+      original_actor_name: live.name || live.username || metadata.original_actor_name,
+      original_actor_username: live.username ?? metadata.original_actor_username,
+      original_actor_avatar: live.avatar_url,
+    },
+  };
+}
+
+/**
+ * The same for events built outside enrichEventsForDisplay (the thread RPC).
+ * One query, and only when there is a repost to resolve.
+ */
+export async function attachLiveOriginalAuthors<T extends WithRepostMetadata>(
+  events: T[]
+): Promise<T[]> {
+  const ids = originalActorIds(events);
+  if (ids.length === 0) {
+    return events;
+  }
+  try {
+    const profilesById = await fetchProfilesById(ids);
+    return events.map(ev => applyLiveOriginalAuthor(ev, profilesById));
+  } catch (error) {
+    // The snapshot is still a usable picture; a stale avatar beats no thread.
+    logger.error('Could not resolve live repost authors', error, 'Timeline');
+    return events;
+  }
 }
 
 /**

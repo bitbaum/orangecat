@@ -17,12 +17,15 @@ import supabase from '@/lib/supabase/browser';
 import { logger } from '@/utils/logger';
 import { TIMELINE_TABLES } from '@/config/database-tables';
 import type { TimelineDisplayEvent, TimelineEventType, TimelineActorType } from '@/types/timeline';
-import { transformEnrichedEventToDisplay } from './helpers';
+import { displayEventsFromView } from './helpers';
 import {
   attachReactionState,
   EMPTY_REACTION_STATE,
 } from '@/services/timeline/processors/reaction-state';
-import { enrichEventsForDisplay } from '@/services/timeline/processors/enrichment';
+import {
+  attachLiveOriginalAuthors,
+  enrichEventsForDisplay,
+} from '@/services/timeline/processors/enrichment';
 import { getTimeAgo, isEventRecent } from '@/services/timeline/formatters';
 
 /**
@@ -186,7 +189,7 @@ export async function searchPosts(
     // Transform to display events. The view carries no reaction columns, so
     // search results would otherwise show every post as unreacted-to.
     const displayEvents = await attachReactionState(
-      (events || []).map(transformEnrichedEventToDisplay)
+      await displayEventsFromView(events)
     );
 
     return {
@@ -276,7 +279,7 @@ export async function getThreadPosts(threadId: string): Promise<{
 
     return {
       success: true,
-      posts: displayEvents,
+      posts: await attachLiveOriginalAuthors(displayEvents),
       total: result.data.length,
     };
   } catch (error) {
