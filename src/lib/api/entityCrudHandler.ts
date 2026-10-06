@@ -149,6 +149,81 @@ async function defaultOwnershipCheck(
   return null;
 }
 
+/**
+ * The shared first half of PUT and DELETE: authenticate with the session
+ * client, load the row, then authorize the write — through the route's own
+ * check when it has one, otherwise the default ownership check. Returns the
+ * loaded state, or the response that ends the request (401, 404, 403, or the
+ * custom check's own).
+ */
+async function loadForWrite(
+  table: string,
+  entityId: string | undefined,
+  meta: ReturnType<typeof getEntityMetadata>,
+  authorize: {
+    customCheck?: (
+      entity: Record<string, unknown>,
+      userId: string,
+      supabase: AnySupabaseClient
+    ) => Promise<NextResponse | null>;
+    ownershipField: string;
+    useActorOwnership: boolean | undefined;
+    action: 'update' | 'delete';
+  }
+): Promise<
+  | {
+      loaded: {
+        supabase: Awaited<ReturnType<typeof createServerClient>>;
+        user: { id: string };
+        existing: Record<string, unknown>;
+      };
+    }
+  | { response: NextResponse }
+> {
+  const supabase = await createServerClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return { response: apiUnauthorized() };
+  }
+
+  // Check if entity exists
+  const { data: existingData, error: fetchError } = await fromTable(supabase, table)
+    .select('*')
+    .eq('id', entityId)
+    .single();
+  const existing = existingData as Record<string, unknown> | null;
+
+  if (fetchError || !existing) {
+    return { response: apiNotFound(`${meta.name} not found`) };
+  }
+
+  // Custom authorization check (if provided, use it; otherwise use default ownership check)
+  if (authorize.customCheck) {
+    const accessError = await authorize.customCheck(existing, user.id, supabase);
+    if (accessError) {
+      return { response: accessError };
+    }
+  } else {
+    const ownershipError = await defaultOwnershipCheck(
+      existing,
+      user.id,
+      authorize.ownershipField,
+      authorize.useActorOwnership,
+      authorize.action,
+      meta.namePlural.toLowerCase(),
+      supabase
+    );
+    if (ownershipError) {
+      return { response: ownershipError };
+    }
+  }
+  return { loaded: { supabase, user, existing } };
+}
+
 // ==================== GET HANDLER ====================
 
 /**
@@ -315,47 +390,16 @@ function createPutHandler(config: EntityHandlerConfig) {
     }
 
     try {
-      const supabase = await createServerClient();
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
-
-      if (authError || !user) {
-        return apiUnauthorized();
+      const load = await loadForWrite(table, entityId, meta, {
+        customCheck: checkPutAccess,
+        ownershipField,
+        useActorOwnership: config.useActorOwnership,
+        action: 'update',
+      });
+      if ('response' in load) {
+        return load.response;
       }
-
-      // Check if entity exists
-      const { data: existingData, error: fetchError } = await fromTable(supabase, table)
-        .select('*')
-        .eq('id', entityId)
-        .single();
-      const existing = existingData as Record<string, unknown> | null;
-
-      if (fetchError || !existing) {
-        return apiNotFound(`${meta.name} not found`);
-      }
-
-      // Custom authorization check (if provided, use it; otherwise use default ownership check)
-      if (checkPutAccess) {
-        const authError = await checkPutAccess(existing, user.id, supabase);
-        if (authError) {
-          return authError;
-        }
-      } else {
-        const ownershipError = await defaultOwnershipCheck(
-          existing,
-          user.id,
-          ownershipField,
-          config.useActorOwnership,
-          'update',
-          meta.namePlural.toLowerCase(),
-          supabase
-        );
-        if (ownershipError) {
-          return ownershipError;
-        }
-      }
+      const { supabase, user } = load.loaded;
 
       // Rate limiting check
       const rateLimitResult = await rateLimitWriteAsync(user.id);
@@ -435,47 +479,16 @@ function createDeleteHandler(config: EntityHandlerConfig) {
     }
 
     try {
-      const supabase = await createServerClient();
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
-
-      if (authError || !user) {
-        return apiUnauthorized();
+      const load = await loadForWrite(table, entityId, meta, {
+        customCheck: checkDeleteAccess,
+        ownershipField,
+        useActorOwnership: config.useActorOwnership,
+        action: 'delete',
+      });
+      if ('response' in load) {
+        return load.response;
       }
-
-      // Check if entity exists
-      const { data: existingData, error: fetchError } = await fromTable(supabase, table)
-        .select('*')
-        .eq('id', entityId)
-        .single();
-      const existing = existingData as Record<string, unknown> | null;
-
-      if (fetchError || !existing) {
-        return apiNotFound(`${meta.name} not found`);
-      }
-
-      // Custom authorization check (if provided, use it; otherwise use default ownership check)
-      if (checkDeleteAccess) {
-        const authError = await checkDeleteAccess(existing, user.id, supabase);
-        if (authError) {
-          return authError;
-        }
-      } else {
-        const ownershipError = await defaultOwnershipCheck(
-          existing,
-          user.id,
-          ownershipField,
-          config.useActorOwnership,
-          'delete',
-          meta.namePlural.toLowerCase(),
-          supabase
-        );
-        if (ownershipError) {
-          return ownershipError;
-        }
-      }
+      const { supabase, user, existing } = load.loaded;
 
       // Pre-delete hook (cleanup operations)
       if (preDelete) {
