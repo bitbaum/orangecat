@@ -9,8 +9,10 @@ import * as espree from 'espree';
 // are composed directly (FlatCompat crashes on the react plugin's circular object).
 
 // Ceiling for `max-lines-per-function` (code lines, blanks and comments not
-// counted). A ratchet: it may only go down.
-const MAX_LINES_PER_FUNCTION = 600;
+// counted). A ratchet: it may only go down. 600 -> 490 when orchestrateCatChat
+// (587) was split; the longest left is registerV1Routes (481), then
+// useChatMessages (449) and executeToolCall (386).
+const MAX_LINES_PER_FUNCTION = 490;
 
 // Shared no-restricted-syntax selectors. Flat config REPLACES (not merges) a
 // rule's options when a later block redefines it, so any scoped block that adds
