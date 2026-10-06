@@ -20,7 +20,7 @@ import type {
   TimelinePagination,
 } from '@/types/timeline';
 import { pageWindow, feedResponse, emptyFeed } from './feed-shape';
-import { getCurrentUserId, transformEnrichedEventToDisplay } from './helpers';
+import { getCurrentUserId, displayEventsFromView } from './helpers';
 
 /**
  * Get project timeline feed
@@ -62,7 +62,7 @@ export async function getProjectFeed(
     }
 
     // Transform enriched VIEW data to display events
-    const displayEvents = (events || []).map(transformEnrichedEventToDisplay);
+    const displayEvents = await displayEventsFromView(events);
 
     return feedResponse(displayEvents, { page, limit }, count || 0, filters);
   } catch (error) {

@@ -6,6 +6,7 @@ import { Loader2, ImageIcon, X, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { IMAGE_UPLOAD_ACCEPT, IMAGE_UPLOAD_FORMATS_LABEL } from '@/services/images/upload';
 import type { ProofType } from './types';
 import type { FieldError } from 'react-hook-form';
 
@@ -80,7 +81,7 @@ export function ProofImageUpload({
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+            accept={IMAGE_UPLOAD_ACCEPT}
             onChange={onFileInputChange}
             className="hidden"
             disabled={isUploading}
@@ -104,7 +105,7 @@ export function ProofImageUpload({
               <p className="text-sm font-medium mb-1">
                 {isDragging ? 'Drop image here' : 'Click to upload or drag and drop'}
               </p>
-              <p className="text-xs text-fg-secondary">JPEG, PNG, WebP or GIF (max 10MB)</p>
+              <p className="text-xs text-fg-secondary">{IMAGE_UPLOAD_FORMATS_LABEL}</p>
             </>
           )}
         </div>

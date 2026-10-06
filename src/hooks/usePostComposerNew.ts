@@ -48,7 +48,9 @@ interface PostComposerState {
 }
 
 export function usePostComposer(options: PostComposerOptions = {}): PostComposerState {
-  const { user } = useAuth();
+  const { user: authUser, profile } = useAuth();
+  // The optimistic post is drawn from the profile, like the post that replaces it.
+  const user = useMemo(() => (authUser ? { ...authUser, profile } : null), [authUser, profile]);
   const {
     subjectType = 'profile',
     subjectId,
