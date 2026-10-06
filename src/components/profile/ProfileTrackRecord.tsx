@@ -1,32 +1,34 @@
 'use client';
 
 /**
- * ProfileTrackRecord — what OrangeCat observed about this person's deals,
- * then what the other side said (ADR-0010). Facts first: the counts come from
- * settled payments nobody typed in. Hidden when they have no deals at all.
+ * ProfileTrackRecord — what OrangeCat observed about this person's SALES, then
+ * what their customers chose to say publicly (ADR-0010). Counts come from
+ * settled payments nobody typed in. Deliberately absent: how much they earned,
+ * what they bought, and who reviewed them unless that person chose to be named.
+ * Hidden when they have sold nothing.
  */
 import { Handshake } from 'lucide-react';
-import { ReviewAnswers } from '@/components/reputation/ReviewAnswers';
-import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
+import { PublicReviewItem } from '@/components/reputation/PublicReviewItem';
 import { useDisplayDate } from '@/hooks/useDisplayDate';
-import type { TrackRecord } from '@/domain/reputation/service';
+import type { TrackRecord } from '@/domain/reputation/track-record';
 
-/** How the reviewer stood toward the person whose profile this is. */
-const REVIEWER_STANCE = { customer: 'bought from them', provider: 'sold to them' } as const;
-
-export default function ProfileTrackRecord({ record }: { record?: TrackRecord | null }) {
-  const { formatAmountBtc } = useDisplayCurrency();
+export default function ProfileTrackRecord({
+  record,
+  isOwnProfile,
+  isSignedIn,
+}: {
+  record?: TrackRecord | null;
+  isOwnProfile: boolean;
+  isSignedIn: boolean;
+}) {
   const { formatDate } = useDisplayDate();
   if (!record) {
     return null;
   }
   const { yes, of } = record.wouldDealAgain;
   const facts = [
-    record.dealsProvided > 0 &&
-      `${record.dealsProvided} sold to ${record.distinctCustomers} ${record.distinctCustomers === 1 ? 'person' : 'different people'}`,
-    record.btcProvided > 0 && `${formatAmountBtc(record.btcProvided)} in settled sales`,
+    `${record.dealsProvided} paid ${record.dealsProvided === 1 ? 'deal' : 'deals'} with ${record.distinctCustomers} ${record.distinctCustomers === 1 ? 'person' : 'different people'}`,
     record.refunded > 0 && `${record.refunded} refunded`,
-    record.dealsAsCustomer > 0 && `${record.dealsAsCustomer} bought`,
     record.firstDealAt && `since ${formatDate(record.firstDealAt)}`,
   ].filter((f): f is string => Boolean(f));
 
@@ -48,7 +50,7 @@ export default function ProfileTrackRecord({ record }: { record?: TrackRecord | 
             <span className="font-heading text-lg tabular-nums">
               {Math.round((yes / of) * 100)}%
             </span>{' '}
-            would deal with them again{' '}
+            of customers would deal with them again{' '}
             <span className="text-fg-muted">
               ({yes} of {of})
             </span>
@@ -60,19 +62,18 @@ export default function ProfileTrackRecord({ record }: { record?: TrackRecord | 
       {record.recentReviews.length > 0 && (
         <ul className="mt-4 space-y-4 border-t border-default pt-4">
           {record.recentReviews.map(review => (
-            <li key={`${review.reviewer.actor_id}-${review.created_at}`} className="space-y-2">
-              <p className="text-xs text-fg-muted">
-                {review.reviewer.name || review.reviewer.username || 'Someone'}{' '}
-                {REVIEWER_STANCE[review.role]} · {formatDate(review.created_at)}
-              </p>
-              <ReviewAnswers answers={review.answers} body={review.body} />
-            </li>
+            <PublicReviewItem
+              key={review.id}
+              review={review}
+              canReply={isOwnProfile}
+              canReport={isSignedIn && !isOwnProfile}
+            />
           ))}
         </ul>
       )}
       <p className="mt-3 text-xs text-fg-muted">
-        Only people who had a paid deal with them can review. Each side&apos;s review stays hidden
-        until both have written or the review window closes.
+        Only customers who paid can review, and each review stays hidden until both sides have
+        written or the review window closes. Reviewers are anonymous unless they chose to be named.
       </p>
     </section>
   );

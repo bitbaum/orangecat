@@ -17,6 +17,7 @@ import { isEmailConfigured, sendEmail } from '@/lib/email/client';
 import { EMAIL_COLORS } from '@/lib/email/templates/layout';
 import { SITE_URL } from '@/config/brand';
 import { logger } from '@/utils/logger';
+import { NotificationEmailService } from './emailService';
 
 const LOG_SOURCE = 'NotificationDispatcher';
 
@@ -48,13 +49,19 @@ const EMAIL_ENABLED_TYPES: Record<string, boolean> = {
   // user who hasn't set up receiving — and they may not visit the app to see
   // the in-app notification. Deduped at the dispatch site (7 days).
   tip_dead_end: true,
-  // Review prompts (ADR-0010). Most people never review unless asked, and the
-  // in-app bell alone reaches only those already here. Capped at source: per
-  // deal, a side gets at most two cron nudges plus one "they reviewed you".
-  deal_review: true,
   // Onboarding drip emails are dispatched directly by the scheduler,
   // not through this config, since they use custom templates.
 };
+
+/**
+ * Types whose email goes through NotificationEmailService instead of the
+ * generic path below: that service honours the person's notification
+ * preferences (per type and per category), frequency caps and the
+ * unsubscribe link. The generic path honours none of them, which is why a new
+ * type belongs here, not in EMAIL_ENABLED_TYPES. Each must be registered in
+ * NOTIFICATION_CONFIG with a template.
+ */
+const PREFERENCE_AWARE_EMAIL_TYPES = new Set(['deal_review']);
 
 // =====================================================================
 // TYPES
@@ -106,15 +113,28 @@ export class NotificationDispatcher {
     });
 
     // Send email if this type has email enabled (non-blocking)
-    const emailPromise = EMAIL_ENABLED_TYPES[type]
-      ? NotificationDispatcher.sendEmailNotification(params).catch(err => {
-          logger.error(
-            'Failed to send email notification',
-            { userId, type, error: err instanceof Error ? err.message : err },
-            LOG_SOURCE
-          );
-        })
-      : Promise.resolve();
+    const emailPromise = PREFERENCE_AWARE_EMAIL_TYPES.has(type)
+      ? new NotificationEmailService()
+          .sendNotificationEmail({
+            userId: params.userId,
+            type,
+            data: {
+              ...(params.data ?? {}),
+              title,
+              message: params.message,
+              actionUrl: params.actionUrl,
+            },
+          })
+          .then(() => undefined)
+      : EMAIL_ENABLED_TYPES[type]
+        ? NotificationDispatcher.sendEmailNotification(params).catch(err => {
+            logger.error(
+              'Failed to send email notification',
+              { userId, type, error: err instanceof Error ? err.message : err },
+              LOG_SOURCE
+            );
+          })
+        : Promise.resolve();
 
     // Wait for both but don't throw
     await Promise.allSettled([inAppPromise, emailPromise]);

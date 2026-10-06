@@ -77,6 +77,37 @@ second. A review can only be written about a deal the writer was part of.**
 Tips are not deals and never become one: a gift tests nothing about whether
 anyone delivered.
 
+## Revisited 2026-10-06: private where it matters
+
+The first version, shipped 2026-10-05, published more than the principles
+allow ("private where needed, transparent where chosen"): every seller's
+settled BTC volume, backfilled over past sales nobody was warned about;
+reviewers' names; and reviews OF buyers, so a seller reviewing you put your
+purchase on your profile without you doing anything. Review text could not be
+removed and the person reviewed could not answer. Migration
+`20261006120000_reputation_privacy.sql` keeps D1–D5 and changes who sees what:
+
+- **D10 — Reviews belong to the two parties.** `deal_reviews` is not readable
+  by the public. The public sees only `public_deal_reviews()`: customers'
+  reviews of sellers, revealed. Reviews of buyers stay with the two parties
+  (and, later, a lending check the buyer consents to).
+- **D11 — Anonymous unless chosen.** `reviewer_shown` defaults to false; a
+  public review shows "a verified buyer". Existing reviews became anonymous.
+- **D12 — No volume, no purchase count.** `actor_track_record()` returns deal
+  and distinct-customer counts, outcomes and the "would deal again" tally, and
+  nothing about money or buying. Showing volume becomes an opt-in later, if
+  sellers ask for it.
+- **D13 — Report, hide, reply.** Anyone signed in can report a public review
+  (`deal_review_reports`; the operator is alerted with the review id only, never
+  the reporter's words). The operator hides text through
+  `deal_review_moderation`; the record and its hash stay, and the page says text
+  was removed. Reports alone never hide anything, so a pile of throwaway
+  accounts cannot bury an honest negative review. The seller replies once
+  (`deal_review_replies`, append-only).
+- **D14 — Reminders ask, they do not spam.** `deal_review` mail goes through
+  `NotificationEmailService` (opt-out under "Progress & digests", at most two a
+  day), and the cron sends one message per person per run.
+
 ## Consequences
 
 - A fake review now costs a real, settled payment to yourself through a second

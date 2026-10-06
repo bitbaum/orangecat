@@ -15,6 +15,7 @@ import {
   COUNTERPART_REVIEWED_COPY,
   DEAL_REVIEW_NOTIFICATION_TYPE,
   REVIEW_NUDGES,
+  REVIEW_NUDGE_BATCH_COPY,
   REVIEW_NUDGE_COPY,
   REVIEWER_ROLES,
   type ReviewNudgeKind,
@@ -214,8 +215,9 @@ export async function runReviewNudges(
   ]);
   const userOf = new Map((actors ?? []).map(a => [a.id, a.user_id]));
 
-  let sent = 0;
+  // Claim every due nudge first; a conflict means another run already sent it.
   let skipped = 0;
+  const claimedByUser = new Map<string, DueNudge[]>();
   for (const nudge of due) {
     const userId = userOf.get(nudge.recipientActorId);
     if (!userId) {
@@ -223,7 +225,6 @@ export async function runReviewNudges(
       skipped += 1;
       continue;
     }
-    // Claim the nudge first. A conflict means another run already sent it.
     const { error: claimError } = (await fromTable(
       admin,
       DATABASE_TABLES.DEAL_REVIEW_NUDGES
@@ -239,19 +240,30 @@ export async function runReviewNudges(
       skipped += 1;
       continue;
     }
-    const counterparty = nameOf(names, nudge.counterpartyActorId);
+    claimedByUser.set(userId, [...(claimedByUser.get(userId) ?? []), nudge]);
+  }
+
+  // Then ONE message per person per run, however many of their deals are due:
+  // an active seller with twenty sales must not get twenty notifications.
+  let sent = 0;
+  for (const [userId, nudges] of claimedByUser) {
+    const first = nudges[0];
+    const counterparty = nameOf(names, first.counterpartyActorId);
     const who = counterparty.name || counterparty.username || 'the other side';
-    const copy = REVIEW_NUDGE_COPY[nudge.kind]({ who, title: nudge.title, role: nudge.role });
+    const copy =
+      nudges.length === 1
+        ? REVIEW_NUDGE_COPY[first.kind]({ who, title: first.title, role: first.role })
+        : REVIEW_NUDGE_BATCH_COPY(nudges.length);
     await NotificationDispatcher.dispatch({
       userId,
       type: DEAL_REVIEW_NOTIFICATION_TYPE,
       title: copy.title,
       message: copy.message,
       actionUrl: ROUTES.DASHBOARD.DEALS,
-      data: { deal_id: nudge.dealId, nudge: nudge.kind },
-      sourceActorId: nudge.counterpartyActorId,
+      data: { deal_ids: nudges.map(n => n.dealId), nudges: nudges.map(n => n.kind) },
+      ...(nudges.length === 1 ? { sourceActorId: first.counterpartyActorId } : {}),
     });
-    sent += 1;
+    sent += nudges.length;
   }
   return { due: due.length, sent, skipped };
 }

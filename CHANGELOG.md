@@ -11,6 +11,16 @@ to the map, sub-bullets stay here for the human reader.
 
 ## 2026-10-06
 
+### Changed
+
+- **Reviews and track records now show far less about you.** Yesterday's version made more public than it should have; this corrects it.
+  - **Your sales total is no longer on your profile**, and neither is how many things you have bought. The track record keeps only what helps someone decide whether to trust a seller: how many paid deals, with how many different people, refunds, and what share of customers would deal with them again.
+  - **Reviews of buyers are never public.** A seller can still review you, but only the two of you see it, so a purchase can no longer appear on your profile because someone else wrote about it.
+  - **Reviewers are anonymous by default.** A customer's review of a seller shows as "a verified buyer" unless the customer ticks "show my name". Reviews written before today are anonymous.
+  - **A seller can reply once** to any public review about them.
+  - **Anyone signed in can report a review.** OrangeCat can hide its text, and the review then says so rather than quietly changing.
+- **Review reminders respect your email settings.** They can be turned off with "Progress & digests" in your notification settings without losing payment receipts, are limited to two emails a day, and several deals waiting at once arrive as one message instead of one each.
+
 ### Fixed
 
 - **A payment OrangeCat sends for you now leaves a record on our side.** Until now, money sent from the Send screen or by asking your Cat moved from your wallet and OrangeCat kept no trace that it had. Every send now writes a private record of the payment, the amount and who it went to, and a payment that fails writes one too.
