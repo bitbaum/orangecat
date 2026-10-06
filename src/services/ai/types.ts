@@ -14,8 +14,14 @@ export interface AiService {
     messages: any[];
     temperature: number;
   }): AsyncIterable<{ content?: string; usage?: unknown; done?: boolean }>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see streamChatCompletion above
-  chatCompletion(opts: { model: string; messages: any[]; temperature: number }): Promise<{
+  chatCompletion(opts: {
+    model: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see streamChatCompletion above
+    messages: any[];
+    temperature: number;
+    /** Every implementation (groq, openrouter, openai-compat) already honours it. */
+    maxTokens?: number;
+  }): Promise<{
     content: string;
     model: string;
     inputTokens: number;
