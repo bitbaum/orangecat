@@ -1,0 +1,103 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`streaming > error copy: rate limit, BYOK 1`] = `
+{
+  "data": {
+    "code": "AI_RATE_LIMITED",
+    "error": "Your provider returned a rate-limit. Try again in a moment.",
+  },
+  "event": "error",
+}
+`;
+
+exports[`streaming > error copy: rate limit, BYOK 2`] = `
+[
+  "enrich",
+  "stream:A",
+  "save:user+assistant",
+  "alert:{"userId":"11111111-1111-4111-8111-111111111111","code":"AI_RATE_LIMITED","provider":"groq","model":"g-a"}",
+]
+`;
+
+exports[`streaming > error copy: rate limit, platform 1`] = `
+{
+  "data": {
+    "code": "AI_RATE_LIMITED",
+    "error": "Free AI capacity is maxed out right now. Try again in a minute — or add your own free Groq key in Settings → AI for capacity that’s all yours.",
+  },
+  "event": "error",
+}
+`;
+
+exports[`streaming > error copy: rate limit, platform 2`] = `
+[
+  "enrich",
+  "stream:A",
+  "markLinkDown:groq/g-a",
+  "save:user+assistant",
+  "alert:{"userId":"11111111-1111-4111-8111-111111111111","code":"AI_RATE_LIMITED","provider":"groq","model":"g-a"}",
+]
+`;
+
+exports[`streaming > error copy: single link failed 1`] = `
+{
+  "data": {
+    "code": "STREAM_ERROR",
+    "error": "Cat couldn’t generate a response. Try again, or add your own key in Settings → AI.",
+  },
+  "event": "error",
+}
+`;
+
+exports[`streaming > error copy: single link failed 2`] = `
+[
+  "enrich",
+  "stream:A",
+  "markLinkDown:groq/g-a",
+  "save:user+assistant",
+  "alert:{"userId":"11111111-1111-4111-8111-111111111111","code":"STREAM_ERROR","provider":"groq","model":"g-a"}",
+]
+`;
+
+exports[`streaming > error copy: whole chain failed, BYOK 1`] = `
+{
+  "data": {
+    "code": "ALL_PROVIDERS_DOWN",
+    "error": "None of your providers could answer just now. Check your keys in Settings → AI, then try again.",
+  },
+  "event": "error",
+}
+`;
+
+exports[`streaming > error copy: whole chain failed, BYOK 2`] = `
+[
+  "enrich",
+  "stream:A",
+  "stream:B",
+  "save:user+assistant",
+  "alert:{"userId":"11111111-1111-4111-8111-111111111111","code":"ALL_PROVIDERS_DOWN","provider":"openrouter","model":"or-b"}",
+]
+`;
+
+exports[`streaming > error copy: whole chain failed, platform 1`] = `
+{
+  "data": {
+    "code": "ALL_PROVIDERS_DOWN",
+    "error": "Cat couldn’t reach an AI model just now — this is usually momentary. Try again; if it keeps happening, add your own free Groq key in Settings → AI.",
+  },
+  "event": "error",
+}
+`;
+
+exports[`streaming > error copy: whole chain failed, platform 2`] = `
+[
+  "enrich",
+  "stream:A",
+  "markLinkDown:groq/g-a",
+  "stream:B",
+  "recordOpenRouterRateLimit",
+  "markLinkDown:openrouter/or-b",
+  "save:user+assistant",
+  "alert:{"userId":"11111111-1111-4111-8111-111111111111","code":"ALL_PROVIDERS_DOWN","provider":"openrouter","model":"or-b"}",
+]
+`;
