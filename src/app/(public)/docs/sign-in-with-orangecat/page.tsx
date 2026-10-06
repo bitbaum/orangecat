@@ -175,8 +175,11 @@ export default function SignInWithOrangeCatPage() {
         <Section icon={RefreshCw} title="Sessions, and taking access back">
           <p>
             Access tokens live {accessTokenHours} hour{accessTokenHours === 1 ? '' : 's'}; refresh
-            tokens {refreshTokenDays} days and rotate on every use. Store the refresh token and the
-            expiry with your session, and refresh when the access token runs out:
+            tokens {refreshTokenDays} days from their last use. A self-registered (public) app gets
+            a new refresh token on every use; a verified app with a secret keeps the same one, so a
+            refresh whose response you could not save does no harm. Either way, store the{' '}
+            <code>refresh_token</code> the response carries and the expiry with your session, and
+            refresh when the access token runs out:
           </p>
           <Snippet label="Refresh">{refreshSnippet}</Snippet>
           <p>

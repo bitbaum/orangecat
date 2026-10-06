@@ -49,7 +49,7 @@ export async function handleMessageUpdate(
   callbacksRef: CallbacksRef
 ) {
   const { onNewMessage } = callbacksRef.current;
-  debugLog('[useMessageSubscription] update', (payload.new as any)?.id);
+  debugLog('[useMessageSubscription] update', payload.new?.id);
   if (onNewMessage && payload.new) {
     try {
       const updated = await fetchFullMessage(supabase, payload.new.id as string, payload.new);

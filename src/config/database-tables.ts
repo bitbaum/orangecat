@@ -129,6 +129,11 @@ export const DATABASE_TABLES = {
   RESEARCH_PROGRESS_UPDATES: 'research_progress_updates',
   RESEARCH_REVIEWS: 'research_reviews',
 
+  // Reputation (ADR-0010)
+  DEALS: 'deals',
+  DEAL_REVIEWS: 'deal_reviews',
+  DEAL_REVIEW_NUDGES: 'deal_review_nudges',
+
   // Wishlists
   WISHLISTS: 'wishlists',
   WISHLIST_ITEMS: 'wishlist_items',

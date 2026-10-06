@@ -120,7 +120,7 @@ export async function updateGroupWallet(
       .eq('id', walletId)
       .single();
 
-    const wallet = walletData as any;
+    const wallet = walletData as { group_id: string } | null;
 
     if (!wallet) {
       return { success: false, error: 'Wallet not found' };

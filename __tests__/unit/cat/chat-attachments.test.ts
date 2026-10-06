@@ -10,7 +10,7 @@ import {
   isReadableTextFile,
   isImageFile,
   imagesOf,
-  ATTACHMENT_ACCEPT,
+  ATTACH_SOURCES,
   type ChatAttachment,
 } from '@/components/ai-chat/ModernChatPanel/attachments';
 import {
@@ -105,8 +105,14 @@ describe('photos', () => {
     dataUrl: 'data:image/jpeg;base64,AAAA',
   };
 
-  it('the picker offers photos — without image/* the photo library is greyed out', () => {
-    expect(ATTACHMENT_ACCEPT.split(',')).toContain('image/*');
+  it('offers camera, photo library and files — one input each, never a mixed accept', () => {
+    // A mixed accept is what made Android offer a recorder and no file browser.
+    const byId = Object.fromEntries(ATTACH_SOURCES.map(s => [s.id, s.input]));
+    expect(Object.keys(byId)).toEqual(['camera', 'photos', 'files']);
+    expect(byId.camera).toMatchObject({ accept: 'image/*', capture: 'environment' });
+    expect(byId.photos).toMatchObject({ accept: 'image/*' });
+    expect(byId.files.accept).toBeUndefined();
+    for (const s of ATTACH_SOURCES) expect(s.input.accept ?? '').not.toContain(',');
     expect(isImageFile({ type: 'image/heic' })).toBe(true);
   });
 

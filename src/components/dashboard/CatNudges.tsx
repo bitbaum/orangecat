@@ -8,7 +8,8 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Sparkles, X, ArrowRight } from 'lucide-react';
+import { X, ArrowRight } from 'lucide-react';
+import { DashboardSection } from '@/components/dashboard/sections/DashboardSection';
 import { API_ROUTES } from '@/config/api-routes';
 
 interface Nudge {
@@ -20,13 +21,16 @@ interface Nudge {
   cta_url: string | null;
 }
 
-// Show the Cat's top proactive suggestions (API returns them ordered by
-// confidence score, highest first). This is the agent's main in-app "here's
-// how to earn next" surface, so give it room beyond a token two.
-const DASHBOARD_NUDGE_CAP = 4;
+// At most three arrive, already chosen by the server's nudge-policy: one per
+// kind, never a dismissed one, and fewer of a kind you keep dismissing. Four
+// full cards used to fill two phone screens, which is how a suggestion
+// becomes wallpaper.
+const DASHBOARD_NUDGE_CAP = 3;
 
 export function CatNudges() {
   const [nudges, setNudges] = useState<Nudge[] | null>(null);
+  // A quiet acknowledgement after a hide, so dismissing reads as being heard.
+  const [heard, setHeard] = useState(false);
 
   useEffect(() => {
     let on = true;
@@ -52,6 +56,7 @@ export function CatNudges() {
     // reappear on next load (the dismissal wasn't persisted).
     const prev = nudges;
     setNudges(n => n?.filter(x => x.id !== id) ?? null);
+    setHeard(true);
     fetch(API_ROUTES.CAT.NUDGES, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -64,50 +69,54 @@ export function CatNudges() {
       })
       .catch(() => {
         setNudges(prev);
+        setHeard(false);
       });
   };
 
   if (!nudges || nudges.length === 0) {
-    return null;
+    return heard ? (
+      <p className="text-sm text-fg-tertiary" role="status">
+        Got it. You won't see that one again.
+      </p>
+    ) : null;
   }
 
   return (
-    <section className="rounded-lg border border-default bg-surface-base p-5">
-      <div className="mb-3 flex items-center gap-2">
-        <Sparkles className="h-4 w-4 text-accent-warm" />
-        <h2 className="text-sm font-semibold text-fg-primary">Your Cat suggests</h2>
-        <span className="text-xs text-fg-tertiary">— ways to earn, grounded in what you have</span>
-      </div>
-      <div className="space-y-2">
+    <DashboardSection id="dashboard-cat-suggests" title="Your Cat suggests">
+      <ul className="divide-y divide-subtle rounded-lg border border-default bg-surface-base">
         {nudges.map(n => (
-          <div
-            key={n.id}
-            className="flex items-start gap-3 rounded-md border border-subtle bg-surface-raised/40 p-3"
-          >
+          <li key={n.id} className="flex items-start gap-2 p-3">
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-fg-primary">{n.title}</p>
-              <p className="mt-0.5 text-sm text-fg-secondary">{n.body}</p>
+              <p className="mt-0.5 line-clamp-2 text-sm text-fg-secondary">{n.body}</p>
               {n.cta_url && n.cta_label && (
                 <Link
                   href={n.cta_url}
-                  className="mt-1.5 inline-flex items-center gap-1 text-sm font-medium text-accent-warm hover:underline"
+                  className="mt-1 inline-flex min-h-9 max-w-full items-center gap-1 text-sm font-semibold text-fg-primary hover:underline"
                 >
-                  {n.cta_label}
-                  <ArrowRight className="h-3.5 w-3.5" />
+                  <span className="truncate">{n.cta_label}</span>
+                  <ArrowRight className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                 </Link>
               )}
             </div>
             <button
+              type="button"
               onClick={() => dismiss(n.id)}
-              aria-label="Dismiss"
-              className="rounded p-0.5 text-fg-tertiary hover:text-fg-primary"
+              aria-label={`Hide: ${n.title}`}
+              title="Hide. Hide two of a kind and your Cat stops suggesting it for a month."
+              className="-mr-1 -mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-fg-tertiary hover:bg-surface-raised hover:text-fg-primary"
             >
               <X className="h-4 w-4" />
             </button>
-          </div>
+          </li>
         ))}
-      </div>
-    </section>
+      </ul>
+      {heard && (
+        <p className="mt-1 text-xs text-fg-tertiary" role="status">
+          Got it. You won't see that one again.
+        </p>
+      )}
+    </DashboardSection>
   );
 }
 

@@ -8,7 +8,7 @@ import supabase from '@/lib/supabase/browser';
 import { useAuthSubmission } from './useAuthSubmission';
 import type { Provider } from '@supabase/supabase-js';
 import { OAUTH_TO_SUPABASE, type OAuthProvider } from './oauth-provider-map';
-import { callbackUrl, readHandoff } from '@/lib/oauth/handoff';
+import { callbackUrl, readHandoff, safeReturnPath } from '@/lib/oauth/handoff';
 
 export type { OAuthProvider };
 
@@ -118,6 +118,7 @@ export function useAuthForm() {
     rememberMe,
     signIn,
     signUp,
+    returnTo: safeReturnPath(searchParams?.get('from')),
   });
 
   const loading = localLoading || authLoading;

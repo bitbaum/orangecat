@@ -88,3 +88,43 @@ export function callbackUrl(origin: string, from: string | null): string {
     ? `${origin}/auth/callback?next=${encodeURIComponent(next)}`
     : `${origin}/auth/callback`;
 }
+
+/**
+ * Where a password reset should land once it succeeds.
+ *
+ * The reset email cannot carry the return path: GoTrue only redirects to
+ * allow-listed URLs, and the reset page's own URL is the one allow-listed.
+ * So the path is remembered in a short-lived first-party cookie when the
+ * reset is requested, and read back on the reset page. A person who opens
+ * the email on another device has no cookie and lands where they always did;
+ * one who opens it in the same browser goes back to the app they came from,
+ * instead of being stranded on OrangeCat's dashboard.
+ */
+export const RETURN_COOKIE = 'oc_return_to';
+const RETURN_COOKIE_MAX_AGE = 60 * 60; // a reset link is good for an hour
+
+/** The Set-Cookie value remembering `from`, or null when it is not ours. */
+export function returnCookie(from: string | null | undefined): string | null {
+  const path = safeReturnPath(from);
+  return path
+    ? `${RETURN_COOKIE}=${encodeURIComponent(path)}; Max-Age=${RETURN_COOKIE_MAX_AGE}; Path=/; SameSite=Lax; Secure`
+    : null;
+}
+
+/** The cookie value that forgets it. */
+export const CLEAR_RETURN_COOKIE = `${RETURN_COOKIE}=; Max-Age=0; Path=/; SameSite=Lax; Secure`;
+
+/** Read the remembered path back from a `document.cookie` string, re-validated. */
+export function returnPathFromCookies(cookies: string): string | null {
+  for (const part of cookies.split(';')) {
+    const [name, ...rest] = part.trim().split('=');
+    if (name === RETURN_COOKIE) {
+      try {
+        return safeReturnPath(decodeURIComponent(rest.join('=')));
+      } catch {
+        return null;
+      }
+    }
+  }
+  return null;
+}

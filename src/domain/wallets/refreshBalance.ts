@@ -16,7 +16,7 @@ import { scanUsedAddresses } from '@/domain/wallets/xpubScan';
 const COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
 const API_TIMEOUT_MS = BITCOIN_FETCH_TIMEOUT_MS;
 
-type AnyClient = any;
+import type { AnySupabaseClient } from '@/lib/supabase/types';
 
 async function fetchWithTimeout(
   url: string,
@@ -37,7 +37,6 @@ async function fetchWithTimeout(
     throw new Error('NETWORK_ERROR');
   }
 }
-
 
 /** Chain stats for one address, in sats. */
 async function fetchAddressStats(
@@ -104,7 +103,7 @@ type RefreshResult =
   | { ok: false; code: 'UPDATE_FAILED' };
 
 export async function refreshWalletBalance(
-  supabase: AnyClient,
+  supabase: AnySupabaseClient,
   walletId: string,
   userId: string,
   wallet: Record<string, unknown>
@@ -170,5 +169,5 @@ export async function refreshWalletBalance(
     walletType: wallet.wallet_type,
   });
 
-  return { ok: true, wallet: updatedWallet as Record<string, unknown> };
+  return { ok: true, wallet: updatedWallet as unknown as Record<string, unknown> };
 }

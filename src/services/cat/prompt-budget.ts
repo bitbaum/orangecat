@@ -96,6 +96,9 @@ export const DROPPABLE_SECTIONS_IN_ORDER: readonly string[] = [
   // otherwise. `Proactive Suggestions` alone is 441 tokens of every user's
   // floor, held by an oversight.
   'Proactive Suggestions (only when it earns the interruption)',
+  // Only selected when the person asked for the whole setup, so when it is
+  // present it is the turn's point; it goes late.
+  'Setting Someone Up End to End',
   'Getting Something Built (Loki)',
   'Answering a Question (evaluation, opinion, design)',
 ];

@@ -17,7 +17,7 @@ export const ECON_EXTRACTION_SYSTEM = `You extract a person's LATENT ECONOMIC VA
 
 Pull, where present:
 - skills: things they can do (names). Treat self-deprecation ("it's nothing", "just a hobby", "anyone can do that") as a real skill worth capturing.
-- assets: things they OWN that could be rented or sold.
+- assets: durable things they OWN that could be rented or sold — equipment, a space, a vehicle, a domain, rights to their work. Only what THEY say they own, in their words. Never the name of something they already list or sell (a product, ticket, pass or download is a listing, not an asset), never a draft, and never a generic word from the conversation ("photo", "website").
 - goals: what they want; each {text, kind} where kind is earn | fund | learn | connect | build.
 - constraints: PRIVATE limits like "only evenings", "no upfront capital" — never shown publicly.
 - asked_for: what OTHER PEOPLE come to THIS PERSON for — help they are sought out to give.

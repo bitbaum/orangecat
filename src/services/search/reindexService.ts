@@ -11,6 +11,7 @@
  */
 
 import { DATABASE_TABLES } from '@/config/database-tables';
+import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { embedTexts } from '@/services/ai/embeddings';
 import { ENTITY_STATUS } from '@/config/database-constants';
 import { getEntityMetadata, type EntityType } from '@/config/entity-registry';
@@ -24,6 +25,7 @@ import {
   EVENT_PUBLIC_STATUSES,
   PUBLIC_FLAG_ENTITY_TYPES,
   type IndexItem,
+  type IndexableEntityRow,
 } from './reindex-sources';
 
 export interface ReconcileResult {
@@ -57,7 +59,7 @@ const isNewer = (a: string | null, b: string | null) => {
  * otherwise prunes it (deleted / deactivated / bio removed). O(1).
  */
 export async function reconcileOne(
-  supabase: any,
+  supabase: AnySupabaseClient,
   type: string,
   id: string
 ): Promise<{ indexed: number; pruned: number; failed: number }> {
@@ -99,7 +101,8 @@ export async function reconcileOne(
       type === 'cause'
         ? 'id, title, description, status, updated_at, total_raised, goal_amount'
         : 'id, title, description, status, updated_at';
-    const { data } = await supabase.from(table).select(cols).eq('id', id).maybeSingle();
+    const { data: row } = await supabase.from(table).select(cols).eq('id', id).maybeSingle();
+    const data = row as unknown as IndexableEntityRow | null;
     if (data && data.status === ENTITY_STATUS.ACTIVE) {
       const text = [data.title, data.description].filter(Boolean).join('. ').trim();
       if (text) {
@@ -244,7 +247,7 @@ export async function reconcileOne(
 
 /** Build the full current searchable corpus (profiles + active indexable entities). */
 export async function reconcileCorpus(
-  supabase: any,
+  supabase: AnySupabaseClient,
   { full }: { full: boolean }
 ): Promise<ReconcileResult> {
   // 1. Current corpus (with source timestamps)

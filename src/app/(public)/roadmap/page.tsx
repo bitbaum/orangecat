@@ -1,12 +1,8 @@
 import type { Metadata } from 'next';
-import { CheckCircle2, Circle } from 'lucide-react';
 import { PageHeading } from '@/components/layout/PageHeading';
-import {
-  FLEET_PROFILE_URL,
-  groupRoadmap,
-  loadOrangeCatProfile,
-  milestoneParts,
-} from '@/lib/development/records';
+import { FLEET_PROFILE_URL, loadOrangeCatProfile } from '@/lib/development/records';
+import { buildJourney } from '@/lib/development/roadmap-journey';
+import { RoadmapJourney } from '@/components/roadmap/RoadmapJourney';
 
 export const metadata: Metadata = {
   title: 'Roadmap',
@@ -21,7 +17,6 @@ export const metadata: Metadata = {
  */
 export default async function RoadmapPage() {
   const profile = await loadOrangeCatProfile();
-  const buckets = profile ? groupRoadmap(profile.roadmap) : [];
 
   return (
     <main className="min-h-screen bg-surface-page">
@@ -42,68 +37,15 @@ export default async function RoadmapPage() {
             The roadmap is temporarily unavailable. It is read from the fleet map, which did not
             answer just now; try again in a few minutes.
           </p>
-        ) : buckets.length === 0 ? (
+        ) : profile.roadmap.length === 0 ? (
           <p className="mt-14 rounded-lg border border-default bg-surface-base p-6 text-fg-secondary">
             Nothing recorded yet.
           </p>
         ) : (
-          <div className="mt-16 space-y-16">
-            {buckets.map(bucket => (
-              <section key={bucket.status} className="border-t border-default pt-10">
-                <h2 className="font-mono text-xs uppercase tracking-caps text-fg-tertiary">
-                  {bucket.title}
-                </h2>
-                <div className="mt-6 space-y-10">
-                  {bucket.items.map(item => (
-                    <article key={item.title}>
-                      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                        <h3 className="text-2xl font-semibold tracking-display text-fg-primary">
-                          {item.title}
-                        </h3>
-                        {item.targetDate && (
-                          <span className="font-mono text-xs text-fg-tertiary">
-                            {item.targetDate}
-                          </span>
-                        )}
-                        {item.progress !== null && (
-                          <span className="font-mono text-xs text-fg-tertiary">
-                            {item.progress}%
-                          </span>
-                        )}
-                      </div>
-                      {item.milestones.length > 0 && (
-                        <ul className="mt-4 space-y-3">
-                          {item.milestones.map(m => {
-                            const { title, done } = milestoneParts(m);
-                            return (
-                              <li key={title} className="flex gap-3 text-fg-secondary">
-                                {done ? (
-                                  <CheckCircle2
-                                    className="mt-0.5 h-5 w-5 shrink-0 text-status-positive"
-                                    aria-label="Done"
-                                  />
-                                ) : done === false ? (
-                                  <Circle
-                                    className="mt-0.5 h-5 w-5 shrink-0 text-fg-tertiary"
-                                    aria-label="Not yet"
-                                  />
-                                ) : (
-                                  <span
-                                    className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-strong"
-                                    aria-hidden
-                                  />
-                                )}
-                                <span>{title}</span>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      )}
-                    </article>
-                  ))}
-                </div>
-              </section>
-            ))}
+          // Drawn as a road — behind us, you are here, ahead — instead of four
+          // stacked lists of equal weight (see RoadmapJourney).
+          <div className="mt-14">
+            <RoadmapJourney journey={buildJourney(profile.roadmap)} />
           </div>
         )}
 

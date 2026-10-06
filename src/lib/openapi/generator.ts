@@ -8,6 +8,7 @@
  */
 
 import { OpenApiGeneratorV31 } from '@asteasolutions/zod-to-openapi';
+import { SITE_ORIGIN } from '@/config/site-origin';
 import { openApiRegistry } from './registry';
 import { registerV1Routes } from './registerV1Routes';
 import { PUBLIC_API_VERSION } from '@/config/public-api';
@@ -30,7 +31,7 @@ export function getOpenApiSpec() {
       license: { name: 'MIT', url: 'https://github.com/bitbaum/orangecat/blob/main/LICENSE' },
     },
     servers: [
-      { url: 'https://orangecat.ch', description: 'Production' },
+      { url: SITE_ORIGIN, description: 'Production' },
       { url: 'http://localhost:3020', description: 'Local development' },
     ],
   });

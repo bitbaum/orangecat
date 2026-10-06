@@ -87,7 +87,7 @@ interface AuditLogEntry {
   entityType?: string;
   entityId?: string;
 
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   ipAddress?: string;
   userAgent?: string;
   success?: boolean;
@@ -159,7 +159,7 @@ export async function auditSuccess(
   entityType?: AuditLogEntry['entityType'],
   entityId?: string,
 
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 ): Promise<void> {
   return auditLog({
     action,

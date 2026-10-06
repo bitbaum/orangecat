@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase/browser';
-import type { User } from '@supabase/supabase-js';
+import type { RealtimePostgresDeletePayload, User } from '@supabase/supabase-js';
 import type { Notification } from './useNotifications';
 import { DATABASE_TABLES } from '@/config/database-tables';
 
@@ -34,7 +34,7 @@ export function useNotificationsRealtime({ user, enabled, onInsert, onUpdate, on
       return;
     }
 
-    const channel = (supabase as any)
+    const channel = supabase
       // Channel name includes userId so simultaneous mounts in different
       // components don't collide.
       .channel(`notifications:${userId}`)
@@ -70,8 +70,8 @@ export function useNotificationsRealtime({ user, enabled, onInsert, onUpdate, on
           table: DATABASE_TABLES.NOTIFICATIONS,
           filter: `user_id=eq.${userId}`,
         },
-        (payload: { old: { id: string } }) => {
-          onDeleteRef.current(payload.old.id);
+        (payload: RealtimePostgresDeletePayload<{ id: string }>) => {
+          onDeleteRef.current(payload.old.id as string);
         }
       )
       .subscribe();

@@ -21,6 +21,7 @@ import { STATUS, ENTITY_STATUS } from '@/config/database-constants';
 import { logger } from '@/utils/logger';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { generateNudges } from '@/services/cat/nudges';
+import { selectNudges, type DismissedNudge } from '@/services/cat/nudge-policy';
 import { getUserActorId } from '@/domain/actors';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 
@@ -298,8 +299,8 @@ function generateSuggestions(context: {
 
 /**
  * The weekly digest's proactive half. Prefer the Cat's real nudge engine
- * (generateNudges — grounded, LLM-backed activation/connection/growth
- * suggestions) so the Cat's intelligence actually reaches the one unprompted
+ * (generateNudges — grounded, rule-based completion/growth/demand
+ * suggestions, filtered through the same nudge-policy as the dashboard) so the Cat's intelligence actually reaches the one unprompted
  * channel it has. Fall back to the deterministic rules above when the engine
  * yields nothing (thin context, no AI key configured, or a transient failure),
  * so the digest is never worse than before.
@@ -315,9 +316,18 @@ async function buildDigestSuggestions(
   }
 ): Promise<Array<{ text: string; actionLabel: string; actionUrl: string }>> {
   try {
-    const nudges = await generateNudges(admin, userId);
+    // The same restraint as the dashboard: what the person dismissed there
+    // must not arrive by email, and a kind they keep dismissing stays quiet.
+    const { data: dismissedRows } = await fromTable(admin, DATABASE_TABLES.USER_NUDGES)
+      .select('dedupe_key, dismissed_at')
+      .eq('user_id', userId)
+      .eq('status', 'dismissed');
+    const nudges = selectNudges(
+      await generateNudges(admin, userId),
+      (dismissedRows ?? []) as DismissedNudge[]
+    );
     if (nudges.length > 0) {
-      return nudges.slice(0, 3).map(n => ({
+      return nudges.map(n => ({
         text: n.title ? `${n.title} — ${n.body}` : n.body,
         actionLabel: n.cta_label || 'Open OrangeCat',
         actionUrl: n.cta_url

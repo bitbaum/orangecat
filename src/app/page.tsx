@@ -1,4 +1,4 @@
-import { fromTable } from '@/lib/supabase/untyped';
+import { fromTable, looseClient } from '@/lib/supabase/untyped';
 import { redirect } from 'next/navigation';
 import { createServerClient } from '@/lib/supabase/server';
 import HomePublic from '@/components/home/HomePublic';
@@ -26,9 +26,8 @@ export default async function Home() {
       // Catches users who abandoned the flow mid-way or whose flag never
       // got written. Otherwise every visit to / sends a power user back
       // to a wizard they don't want.
-      const { count: projectCount } = await supabase
-
-        .from(ENTITY_REGISTRY.project.tableName as any)
+      const { count: projectCount } = await looseClient(supabase)
+        .from(ENTITY_REGISTRY.project.tableName)
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id);
 

@@ -14,6 +14,7 @@
  * platform wallet (PLATFORM_NWC_URI) can receive — same gate as Cat Credits.
  */
 import { getAdminClient } from '@/lib/supabase/admin';
+import { looseClient } from '@/lib/supabase/untyped';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { getEntityMetadata, type EntityType } from '@/config/entity-registry';
 import { CAT_SUPPORTER_DAILY_LIMIT } from '@/config/cat-plans';
@@ -51,10 +52,10 @@ export async function grantSupporterPlan(pi: PaymentIntent): Promise<void> {
   } // only product passes carry a plan
 
   try {
-    const admin = getAdminClient() as any;
+    const admin = getAdminClient();
 
     const meta = getEntityMetadata('product' as EntityType);
-    const { data: product } = await admin
+    const { data: product } = await looseClient(admin)
       .from(meta.tableName)
       .select('tags')
       .eq('id', pi.entity_id)
@@ -64,13 +65,19 @@ export async function grantSupporterPlan(pi: PaymentIntent): Promise<void> {
       return;
     } // a normal product sale, not a Supporter pass
 
+    // buyer_id is nullable on the intent and is passed through as-is: a null
+    // buyer matches no plan row and the upsert below then fails user_plans'
+    // NOT NULL, which is logged and returns. Typed as the column's type so the
+    // queries type-check without widening the client.
+    const buyerId = pi.buyer_id as string;
+
     // Idempotent: the same settled invoice must never extend twice. The
     // terminal-status short-circuit in checkPaymentStatus already fires this
     // once per intent; guarding on last_invoice_id is belt-and-suspenders.
     const { data: current } = await admin
       .from(DATABASE_TABLES.USER_PLANS)
       .select('expires_at, last_invoice_id')
-      .eq('user_id', pi.buyer_id)
+      .eq('user_id', buyerId)
       .maybeSingle();
     if (current?.last_invoice_id === pi.id) {
       return;
@@ -88,7 +95,7 @@ export async function grantSupporterPlan(pi: PaymentIntent): Promise<void> {
 
     const { error } = await admin.from(DATABASE_TABLES.USER_PLANS).upsert(
       {
-        user_id: pi.buyer_id,
+        user_id: buyerId,
         tier: 'pro',
         daily_limit: CAT_SUPPORTER_DAILY_LIMIT,
         expires_at: expiresAt.toISOString(),

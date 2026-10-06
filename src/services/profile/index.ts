@@ -83,8 +83,8 @@ export class ProfileService {
 
   static async fallbackProfileUpdate(
     userId: string,
-    updates: Record<string, any>
-  ): Promise<ProfileServiceResponse<any>> {
+    updates: Record<string, unknown>
+  ): Promise<ProfileServiceResponse<unknown>> {
     return ProfileWriter.fallbackUpdate(userId, updates);
   }
 

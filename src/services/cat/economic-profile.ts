@@ -17,6 +17,11 @@ import { DATABASE_TABLES } from '@/config/database-tables';
 import { logger } from '@/utils/logger';
 import { looksLikeSelfDisclosure, selectForgetFacts, type MemoryAiService } from './memory';
 import { ECON_EXTRACTION_SYSTEM } from './economic-profile-prompt';
+import {
+  dedupeEntries,
+  existingEntriesNote,
+  isGroundedInUserMessage,
+} from './economic-profile-hygiene';
 
 export interface EconomicSkill {
   name: string;
@@ -213,18 +218,8 @@ export async function getEconomicProfile(
 // safe for a viewer who isn't the profile's owner (kept there to stay under
 // this file's line budget; see that file's header for why).
 
-function dedupe<T>(items: T[]): T[] {
-  const seen = new Set<string>();
-  const out: T[] = [];
-  for (const it of items) {
-    const key = typeof it === 'string' ? it.toLowerCase().trim() : JSON.stringify(it);
-    if (key && !seen.has(key)) {
-      seen.add(key);
-      out.push(it);
-    }
-  }
-  return out;
-}
+// Compares by normalised name/text — see economic-profile-hygiene.
+const dedupe = dedupeEntries;
 
 /**
  * Merge-upsert: union the provided array dimensions onto what's stored (so an
@@ -436,7 +431,6 @@ export function normalizeEconomicPatch(
   return hasAny ? patch : null;
 }
 
-
 /**
  * Passive, deterministic economic extraction — runs after each self-disclosing turn
  * (the reliable path the chat model's save_economic_profile action can't guarantee).
@@ -454,11 +448,20 @@ export async function extractAndStoreEconomicProfile(
     return;
   }
   try {
+    const current = await getEconomicProfile(supabase, userId);
     const { content } = await aiService.chatCompletion({
       model,
       temperature: 0,
       messages: [
-        { role: 'system', content: ECON_EXTRACTION_SYSTEM },
+        {
+          role: 'system',
+          content:
+            ECON_EXTRACTION_SYSTEM +
+            existingEntriesNote({
+              skills: (current?.skills ?? []).map(s => s.name),
+              assets: (current?.assets ?? []).map(a => a.name),
+            }),
+        },
         {
           role: 'user',
           content: `User said: "${userMessage}"\n\nAssistant replied: "${assistantMessage.slice(0, 800)}"\n\nExtract the user's economic profile as a JSON object.`,
@@ -475,6 +478,9 @@ export async function extractAndStoreEconomicProfile(
     if (!patch) {
       return;
     }
+    // An asset is something the person says they own. The assistant's reply
+    // names their listings, and those were landing here as "assets".
+    patch.assets = (patch.assets ?? []).filter(a => isGroundedInUserMessage(a.name, userMessage));
     await saveEconomicProfile(supabase, userId, patch);
   } catch (err) {
     logger.warn('extractAndStoreEconomicProfile threw', { err: String(err) }, 'EconomicProfile');

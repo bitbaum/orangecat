@@ -2,7 +2,7 @@
  * Search Suggestions Queries
  *
  * Type-ahead / autocomplete backed by the `global_search` RPC (typo-tolerant,
- * accent-insensitive, ranked, across all main entity types). Falls back to a
+ * accent-insensitive, ranked, across every publicly findable entity type). Falls back to a
  * simple ILIKE query on profiles + projects if the RPC is unavailable.
  */
 
@@ -21,12 +21,18 @@ export interface GlobalSearchHit {
   subtitle: string | null;
   image_url: string | null;
   rank: number;
+  /**
+   * The key the public URL uses when it is not the id: the username for a
+   * profile, the slug for a group (organisation). Null otherwise.
+   */
+  path_key: string | null;
 }
 
 /**
- * Ranked structured results across all main entity types (projects, profiles,
- * products, services, causes, loans, events). Use for richer surfaces like the
- * command palette where each hit links straight to its entity.
+ * Ranked structured results across profiles and every public entity type —
+ * projects, products, services, causes, loans, events, investments, assets,
+ * research, wishlists, organisations, circles and companions. Use for richer
+ * surfaces like the command palette where each hit links straight to its entity.
  */
 export async function getGlobalSearchResults(
   query: string,

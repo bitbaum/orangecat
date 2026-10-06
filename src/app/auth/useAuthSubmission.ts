@@ -4,6 +4,14 @@ import { resetPassword, getMFAAssuranceLevel } from '@/services/supabase/auth';
 import { registrationEvents, trackEvent } from '@/lib/analytics';
 import { apiErrorMessage } from '@/lib/api/errorMessage';
 import { API_ROUTES } from '@/config/api-routes';
+import { returnCookie } from '@/lib/oauth/handoff';
+import type { Session, User } from '@supabase/supabase-js';
+
+/** What the auth store's signIn/signUp resolve to. */
+interface AuthAttempt {
+  data: { user: User | null; session: Session | null } | null;
+  error: Error | null;
+}
 
 interface UseAuthSubmissionOptions {
   formData: AuthFormData;
@@ -14,8 +22,10 @@ interface UseAuthSubmissionOptions {
   setMode: (mode: AuthMode) => void;
   setShowMFAVerify: (show: boolean) => void;
   rememberMe: boolean;
-  signIn: (email: string, password: string, rememberMe?: boolean) => Promise<any>;
-  signUp: (email: string, password: string) => Promise<any>;
+  signIn: (email: string, password: string, rememberMe?: boolean) => Promise<AuthAttempt>;
+  signUp: (email: string, password: string) => Promise<AuthAttempt>;
+  /** Where the person was headed (`from`), so a reset can send them back. */
+  returnTo?: string | null;
 }
 
 export function useAuthSubmission({
@@ -29,6 +39,7 @@ export function useAuthSubmission({
   rememberMe,
   signIn,
   signUp,
+  returnTo = null,
 }: UseAuthSubmissionOptions) {
   const [localLoading, setLocalLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -154,6 +165,10 @@ export function useAuthSubmission({
     try {
       if (!formData.email) {
         throw new Error('Please enter your email address');
+      }
+      const cookie = returnCookie(returnTo);
+      if (cookie) {
+        document.cookie = cookie;
       }
       const result = await resetPassword({ email: formData.email });
       if (result.error) {

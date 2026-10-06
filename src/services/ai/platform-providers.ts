@@ -27,7 +27,7 @@ import {
   createOpenAICompatibleServiceWithByok,
 } from '@/services/ai';
 import { servingChain } from '@/services/cat/provider-catalog';
-import { pruneDownLinks } from '@/services/ai/link-health';
+import { markLinkDown, pruneDownLinks } from '@/services/ai/link-health';
 
 import type { AiService } from './types';
 
@@ -137,4 +137,101 @@ export function buildPlatformProviders(message: string): PlatformProvider[] {
   // Skip links that failed in the last minute (circuit breaker) — but never
   // prune to an empty chain; retrying dead links beats refusing to try.
   return pruneDownLinks(out, p => ({ provider: p.providerId, model: p.defaultModel }));
+}
+
+/** What `completeOnPlatform` returns: the answer, and which link gave it. */
+export interface PlatformCompletion {
+  result: Awaited<ReturnType<AiService['chatCompletion']>>;
+  provider: PlatformProvider;
+}
+
+/** Every link in the chain failed. `failures` says how, in chain order. */
+export class PlatformChainExhausted extends Error {
+  constructor(
+    public readonly failures: Array<{ provider: string; model: string; error: unknown }>
+  ) {
+    super(
+      failures.length === 0
+        ? 'No platform AI provider is configured'
+        : `Every platform AI provider failed (${failures.map(f => `${f.provider}:${f.model}`).join(', ')})`
+    );
+    this.name = 'PlatformChainExhausted';
+  }
+
+  /** True when the chain ran dry because every link was rationed, not broken. */
+  get allRateLimited(): boolean {
+    return this.failures.length > 0 && this.failures.every(f => isRateLimit(f.error));
+  }
+}
+
+function isRateLimit(error: unknown): boolean {
+  const e = error as { statusCode?: number; status?: number; type?: string; message?: string };
+  return (
+    e?.statusCode === 429 ||
+    e?.status === 429 ||
+    e?.type === 'rate_limit' ||
+    /rate.?limit|429|too many requests/i.test(e?.message ?? '')
+  );
+}
+
+/**
+ * A request too big for THIS link (Groq's per-minute token budget answers 413).
+ * The link is healthy — other people's smaller prompts fit it — so it must not
+ * be marked down. The same rule the Cat's chain walk follows.
+ */
+function isRequestTooLarge(error: unknown): boolean {
+  const e = error as { statusCode?: number; status?: number; type?: string };
+  return e?.statusCode === 413 || e?.status === 413 || e?.type === 'request_too_large';
+}
+
+/**
+ * Answer one non-streaming request on the platform chain.
+ *
+ * The chain is `buildPlatformProviders` — the ONE definition, ordered by
+ * capacity with the scarcest pool last. Each link is tried once, in order, on
+ * ANY failure: a rate limit, a retired model id, an upstream 5xx. A dead link is
+ * remembered for a minute so the next request skips it.
+ *
+ * This exists because AI-assistant conversations (companions) used to pick
+ * OpenRouter FIRST — a free tier of 50 requests a day shared by every app on the
+ * box — and fall back exactly one hop, to Groq, and only on a rate limit. Under
+ * real use a companion went silent after a handful of messages, while Gemini,
+ * which holds this platform's own quota, was never asked.
+ *
+ * The system prompt travels as the first message, which every OpenAI-compatible
+ * vendor accepts; not every client here takes a separate `systemPrompt` field.
+ */
+export async function completeOnPlatform(
+  message: string,
+  request: {
+    systemPrompt?: string | null;
+    messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>;
+    temperature: number;
+    maxTokens?: number;
+  },
+  /** The chain to walk. Defaults to the real one; injectable so the walk can be tested. */
+  chain: PlatformProvider[] = buildPlatformProviders(message)
+): Promise<PlatformCompletion> {
+  const messages = request.systemPrompt
+    ? [{ role: 'system' as const, content: request.systemPrompt }, ...request.messages]
+    : request.messages;
+
+  const failures: Array<{ provider: string; model: string; error: unknown }> = [];
+  for (const provider of chain) {
+    try {
+      const result = await provider.aiService.chatCompletion({
+        model: provider.defaultModel,
+        messages,
+        temperature: request.temperature,
+        maxTokens: request.maxTokens,
+      });
+      return { result, provider };
+    } catch (error) {
+      if (!isRequestTooLarge(error)) {
+        markLinkDown(provider.providerId, provider.defaultModel);
+      }
+      failures.push({ provider: provider.providerId, model: provider.defaultModel, error });
+    }
+  }
+  throw new PlatformChainExhausted(failures);
 }

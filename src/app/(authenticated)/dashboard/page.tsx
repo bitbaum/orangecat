@@ -6,10 +6,9 @@ import {
   DashboardHeader,
   DashboardInviteCTA,
   DashboardJourney,
-  DashboardQuickActions,
   DashboardProjects,
+  DashboardSection,
 } from '@/components/dashboard/sections';
-import { MobileDashboardSidebar } from '@/components/dashboard/MobileDashboardSidebar';
 import { CatNudges } from '@/components/dashboard/CatNudges';
 import { TheDoor } from '@/components/map/TheDoor';
 import { PendingActionsCard } from '@/components/ai-chat/PendingActionsCard';
@@ -43,10 +42,8 @@ export default function DashboardPage() {
     timelineError,
     pendingActions,
     safeProjects,
-    totalProjects,
     totalDrafts,
-    hasProjects,
-    sidebarStats,
+    projectStats,
     reloadTimeline,
     handleConfirmAction,
     handleRejectAction,
@@ -72,58 +69,61 @@ export default function DashboardPage() {
     return null;
   }
 
+  // One column, in the order a person asks: does anything need me (the
+  // header line and the Cat's pending questions), what do I want to do (the
+  // door), what could I do next (setup, while unfinished, and the Cat's
+  // suggestions), what do I have (projects), what is everyone else doing (the
+  // feed). Each section is a heading and one list — no card around a card.
+  // It replaced a stack of a dozen cards where "18 projects" appeared three
+  // times, three tiles said 0, a finished checklist kept its 100% bar, and
+  // each project took a whole phone screen to show its first letter.
   return (
     <div className="oc-page">
-      <div className="oc-page-container oc-page-stack pb-20 sm:pb-8">
-        <DashboardHeader
-          profile={profile}
-          totalProjects={totalProjects}
-          totalDrafts={totalDrafts}
-        />
-
-        {/* The door: one sentence in, the right thing out. The Cat answers with
-            a draft card, so this is the fastest route from wanting to having. */}
-        <TheDoor className="max-w-2xl" />
-
-        {pendingActions.length > 0 && (
-          <div className="space-y-3">
-            {pendingActions.map(action => (
-              <PendingActionsCard
-                key={action.id}
-                action={action}
-                onConfirm={handleConfirmAction}
-                onReject={handleRejectAction}
-              />
-            ))}
-          </div>
-        )}
-
-        <DashboardJourney />
-
-        <CatNudges />
-
-        <div className="space-y-4 sm:space-y-6">
-          <div className="block lg:hidden">
-            <MobileDashboardSidebar stats={sidebarStats} />
-          </div>
-          {/* Your stuff (Projects) above the social feed (Timeline) —
-              founders' work belongs above news. */}
-          <div className="space-y-6">
-            <DashboardProjects projects={safeProjects} />
-            <DashboardTimeline
-              timelineFeed={timelineFeed}
-              isLoading={timelineLoading}
-              error={timelineError}
-              onRefresh={reloadTimeline}
-              onPostSuccess={reloadTimeline}
-              userId={user?.id}
+      <div className="oc-page-container pb-20 sm:pb-8">
+        <div className="mx-auto max-w-2xl space-y-8">
+          <div className="space-y-5">
+            <DashboardHeader
+              profile={profile}
+              waiting={pendingActions.length}
+              totalDrafts={totalDrafts}
             />
+            {/* The door: one sentence in, the right thing out. The Cat answers
+                with a draft card, so this is the fastest route from wanting to
+                having. */}
+            <TheDoor />
           </div>
-        </div>
 
-        <div className={hasProjects ? 'grid grid-cols-1 md:grid-cols-2 gap-6' : ''}>
+          {pendingActions.length > 0 && (
+            <DashboardSection id="dashboard-needs-you" title="Needs you">
+              <div className="space-y-3">
+                {pendingActions.map(action => (
+                  <PendingActionsCard
+                    key={action.id}
+                    action={action}
+                    onConfirm={handleConfirmAction}
+                    onReject={handleRejectAction}
+                  />
+                ))}
+              </div>
+            </DashboardSection>
+          )}
+
+          <DashboardJourney />
+
+          <CatNudges />
+
+          <DashboardProjects projects={safeProjects} stats={projectStats} />
+
+          <DashboardTimeline
+            timelineFeed={timelineFeed}
+            isLoading={timelineLoading}
+            error={timelineError}
+            onRefresh={reloadTimeline}
+            onPostSuccess={reloadTimeline}
+            userId={user?.id}
+          />
+
           <DashboardInviteCTA profile={profile} userId={user.id} />
-          {hasProjects && <DashboardQuickActions />}
         </div>
       </div>
     </div>

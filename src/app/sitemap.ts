@@ -1,15 +1,17 @@
 import { MetadataRoute } from 'next';
+import { SITE_ORIGIN } from '@/config/site-origin';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { looseClient } from '@/lib/supabase/untyped';
 import { ENTITY_REGISTRY, type EntityType } from '@/config/entity-registry';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { ENTITY_STATUS } from '@/config/database-constants';
+import { PUBLIC_VISIBILITY } from '@/config/public-visibility';
 import { isFixtureUsername } from '@/config/public-directory';
 import { getPublishedPosts } from '@/lib/blog';
 import { listPublicArticleRefs } from '@/services/articles/get-article';
 import { logger } from '@/utils/logger';
 
-const BASE_URL = 'https://orangecat.ch';
+const BASE_URL = SITE_ORIGIN;
 
 // The DB-backed sections need runtime env (service-role key). At build time on
 // CI that key is absent, so a purely-static sitemap would be baked in forever —
@@ -49,6 +51,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     },
     {
+      url: `${BASE_URL}/steal`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+    {
       url: `${BASE_URL}/ecosystem`,
       lastModified: new Date(),
       changeFrequency: 'monthly',
@@ -80,12 +88,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     {
       url: `${BASE_URL}/loans`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.7,
-    },
-    {
-      url: `${BASE_URL}/groups`,
       lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 0.7,
@@ -175,7 +177,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     if (profiles) {
       const profilePages: MetadataRoute.Sitemap = profiles
         .filter((p): p is SitemapProfile & { username: string } => p.username !== null)
-        .filter((p) => !isFixtureUsername(p.username))
+        .filter(p => !isFixtureUsername(p.username))
         .map(profile => ({
           // encodeURIComponent: usernames containing '@' (we observed
           // literal webdev@example.com profiles live) produce invalid
@@ -203,16 +205,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       'research',
       'investment',
     ];
+    // Each type is filtered by the SAME rule its public page applies
+    // (PUBLIC_VISIBILITY), so the sitemap never lists a page that 404s.
     const entityTables = SITEMAP_ENTITY_TYPES.map(type => ({
       table: ENTITY_REGISTRY[type].tableName,
       publicBasePath: ENTITY_REGISTRY[type].publicBasePath,
+      visible: PUBLIC_VISIBILITY[type] ?? { column: 'status', value: ENTITY_STATUS.ACTIVE },
     }));
 
-    for (const { table, publicBasePath } of entityTables) {
+    for (const { table, publicBasePath, visible } of entityTables) {
       const { data: entities } = (await supabase
         .from(table)
         .select('id, updated_at')
-        .eq('status', ENTITY_STATUS.ACTIVE)) as { data: SitemapEntity[] | null };
+        .eq(visible.column, visible.value)) as { data: SitemapEntity[] | null };
 
       if (entities) {
         const entityPages: MetadataRoute.Sitemap = entities.map(entity => ({

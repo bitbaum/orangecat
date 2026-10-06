@@ -1,7 +1,8 @@
 import { Metadata } from 'next';
+import { SITE_ORIGIN } from '@/config/site-origin';
 import { ENTITY_REGISTRY, type EntityType } from '@/config/entity-registry';
 
-const BASE_URL = 'https://orangecat.ch';
+const BASE_URL = SITE_ORIGIN;
 
 interface EntityMetadataInput {
   type: EntityType;
