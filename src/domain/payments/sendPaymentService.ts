@@ -25,6 +25,7 @@ import { generateInvoice } from '@/domain/payments/invoiceGenerationService';
 import { resolveLnurlRecipient } from '@/domain/lightning-address/lnurl-service';
 import { resolveUserWallet } from '@/domain/payments/walletResolutionService';
 import { getAdminClient } from '@/lib/supabase/admin';
+import { auditLog, AUDIT_ACTIONS } from '@/lib/api/auditLog';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { isPayableBolt11, normalizeBolt11, parseBolt11 } from '@/lib/bitcoin/bolt11';
 import type { ResolvedWallet } from '@/domain/payments/types';
@@ -115,20 +116,59 @@ export async function resolveSenderNwcUri(userId: string): Promise<string | Send
   }
 }
 
-/** Pay an already-minted invoice over the sender's NWC connection. */
+/**
+ * Pay an already-minted invoice over the sender's NWC connection, and leave a
+ * trace that we did.
+ *
+ * Until the trace, a successful send wrote nothing anywhere: our server moved a
+ * user's money and could not later say that it had. The trace is an AUDIT row
+ * of our action, not a ledger entry — the wallet's own history is the ledger
+ * (open accounting reads the chain; a Lightning wallet keeps its own), and a
+ * table of sends would be a second, incomplete copy of it that misses every
+ * payment made from the wallet app directly.
+ *
+ * Written through the admin client because the Cat calls this too, where a
+ * cookie session is not guaranteed and auditLog swallows its own failures. The
+ * user id is the one the caller already authenticated; it never comes from input.
+ */
 async function payOverNwc(
+  userId: string,
   nwcUri: string,
   bolt11: string,
   amountBtc: number | null,
   destination: string
 ): Promise<SendResult> {
+  // Resolved before any money moves: once the invoice is paid, nothing on the
+  // way to returning success may throw, or a paid payment reads as failed.
+  const auditClient = getAdminClient();
   const client = new NWCClient(nwcUri);
   try {
     await client.connect();
     const result = await client.payInvoice(bolt11);
+    await auditLog(
+      {
+        action: AUDIT_ACTIONS.PAYMENT_SENT,
+        userId,
+        entityType: 'payment',
+        entityId: result.payment_hash,
+        metadata: { rail: 'lightning', amountBtc, destination },
+      },
+      auditClient
+    );
     return { ok: true, paymentHash: result.payment_hash, amountBtc, destination };
   } catch (error) {
     logger.warn('Lightning send failed', { error: String(error) }, 'SendPayment');
+    await auditLog(
+      {
+        action: AUDIT_ACTIONS.PAYMENT_SEND_FAILED,
+        userId,
+        entityType: 'payment',
+        metadata: { rail: 'lightning', amountBtc, destination },
+        success: false,
+        errorMessage: String(error).slice(0, 500),
+      },
+      auditClient
+    );
     return fail(
       'payment_failed',
       'The payment did not go through. Check your wallet has enough balance and try again.'
@@ -166,7 +206,7 @@ export async function payInvoice(userId: string, rawInvoice: string): Promise<Se
   if (typeof nwc !== 'string') {
     return nwc;
   }
-  return payOverNwc(nwc, bolt11, parsed.amountBtc, 'invoice');
+  return payOverNwc(userId, nwc, bolt11, parsed.amountBtc, 'invoice');
 }
 
 /**
@@ -235,5 +275,5 @@ export async function sendToRecipient(
     return fail('invoice_failed', `${trimmed} didn't return a payable invoice.`);
   }
 
-  return payOverNwc(nwc, invoice.bolt11, amountBtc, trimmed);
+  return payOverNwc(userId, nwc, invoice.bolt11, amountBtc, trimmed);
 }

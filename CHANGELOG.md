@@ -9,6 +9,13 @@ reads, and [orangecat.ch/changelog](https://orangecat.ch/changelog) renders
 it from there. One `## YYYY-MM-DD` heading per day; bullets under it travel
 to the map, sub-bullets stay here for the human reader.
 
+## 2026-10-06
+
+### Fixed
+
+- **A payment OrangeCat sends for you now leaves a record on our side.** Until now, money sent from the Send screen or by asking your Cat moved from your wallet and OrangeCat kept no trace that it had. Every send now writes a private record of the payment, the amount and who it went to, and a payment that fails writes one too.
+  - The record is private: nobody can read it through the site, including you, for now. Your wallet's own history is still the account of your money; this is OrangeCat's account of what it did with your permission.
+
 ## 2026-10-05
 
 ### Added
