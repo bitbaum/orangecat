@@ -31,6 +31,7 @@ export const PAGE_SURFACE_CLASSES: Record<string, string> = {
   green: 'bg-surface-page',
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- a row from any of 15 entity tables, rendered by per-type configs; typing it needs a config generic per type (unknown here = 104 render errors)
 export type EntityData = Record<string, any>;
 
 export interface EntityDetailConfig {
@@ -67,7 +68,7 @@ export interface EntityDetailConfig {
     entity: EntityData,
     payable: boolean,
     isOwner: boolean,
-    isSignedIn: boolean,
+    isSignedIn: boolean
   ) => ReactNode;
   /**
    * Resolve the entity's price for the payment section, in its OWN currency
@@ -82,7 +83,7 @@ export interface EntityDetailConfig {
    */
   getSolonDraft?: (
     entity: EntityData,
-    pageUrl: string,
+    pageUrl: string
   ) => { title?: string; body: string; category: string };
   /** Extra sidebar cards rendered after EntityShare (e.g., Quick Stats, CTAs) */
   renderSidebarExtra?: (entity: EntityData) => ReactNode;

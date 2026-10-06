@@ -10,9 +10,11 @@
 export interface AiService {
   streamChatCompletion(opts: {
     model: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- providers declare text-only messages but the Cat sends image parts and tool turns; needs each provider's message type widened
     messages: any[];
     temperature: number;
   }): AsyncIterable<{ content?: string; usage?: unknown; done?: boolean }>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see streamChatCompletion above
   chatCompletion(opts: { model: string; messages: any[]; temperature: number }): Promise<{
     content: string;
     model: string;

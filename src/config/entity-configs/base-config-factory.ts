@@ -75,7 +75,7 @@ export const commonFields = {
 /**
  * Base config factory options
  */
-export interface BaseConfigOptions<T extends Record<string, any>> {
+export interface BaseConfigOptions<T extends object> {
   /** Entity type from registry (excluding wallet) */
   entityType: Exclude<EntityType, 'wallet'>;
   /** Display name (singular). Defaults to entity registry metadata. */
@@ -157,7 +157,7 @@ export interface BaseConfigOptions<T extends Record<string, any>> {
  * });
  * ```
  */
-export function createEntityConfig<T extends Record<string, any>>(
+export function createEntityConfig<T extends object>(
   options: BaseConfigOptions<T>
 ): EntityConfig<T> {
   const meta = getEntityMetadata(options.entityType);

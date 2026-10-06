@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     return apiServiceUnavailable('No embedding provider configured (set OPENAI_API_KEY).');
   }
 
-  const supabase = createAdminClient() as any;
+  const supabase = createAdminClient();
 
   // Single-row reconcile: the DB trigger POSTs {entity_type, entity_id} on each
   // profile/entity write for near-instant indexing. No body (cron) ⇒ full sweep.

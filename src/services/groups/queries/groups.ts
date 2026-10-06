@@ -17,6 +17,7 @@ import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from '../constants';
 import { getCurrentUserId, getUserGroupIds } from '../utils/helpers';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { fromTable } from '../db-helpers';
+import type { FilterChain } from '@/lib/supabase/untyped';
 
 // Legacy query fields → live `groups` schema. The table has no `type`,
 // `category`, `governance_model`, or `member_count` columns; those are legacy
@@ -53,13 +54,18 @@ function safeGroupSort(sortBy?: string): string {
   return sortBy && SORTABLE_GROUP_COLUMNS.has(sortBy) ? sortBy : 'created_at';
 }
 
+/** The PostgREST filter methods {@link applyGroupFilters} chains; keeps the caller's builder type. */
+type GroupFilterChain<B> = Pick<FilterChain<B>, 'eq' | 'not'> & {
+  contains(column: string, value: unknown): B;
+  is(column: string, value: null): B;
+};
+
 /**
  * Apply GroupsQuery filters onto a `groups` query, mapping legacy fields onto the
  * live schema. Shared by getUserGroups / getAvailableGroups / searchGroups so the
  * mapping lives in exactly one place (was triplicated and drifting).
  */
-
-function applyGroupFilters(dbQuery: any, q?: GroupsQuery): any {
+function applyGroupFilters<B extends GroupFilterChain<B>>(dbQuery: B, q?: GroupsQuery): B {
   if (!q) {
     return dbQuery;
   }

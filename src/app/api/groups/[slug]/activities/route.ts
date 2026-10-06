@@ -11,8 +11,6 @@ import { resolveGroupBySlug } from '@/domain/groups/helpers.server';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { logger } from '@/utils/logger';
 
-type AnyClient = any;
-
 const MAX_LIMIT = 50;
 
 export const GET = withAuth(
@@ -31,9 +29,8 @@ export const GET = withAuth(
       }
 
       // Fetch activities (RLS restricts to members)
-      const { data: activities, error } = await (
-        supabase.from(DATABASE_TABLES.GROUP_ACTIVITIES) as AnyClient
-      )
+      const { data: activities, error } = await supabase
+        .from(DATABASE_TABLES.GROUP_ACTIVITIES)
         .select('id, activity_type, metadata, created_at, user_id')
         .eq('group_id', group.id)
         .order('created_at', { ascending: false })
@@ -52,7 +49,8 @@ export const GET = withAuth(
       const userIds = [
         ...new Set(activities.map((a: { user_id: string }) => a.user_id).filter(Boolean)),
       ];
-      const { data: profiles } = await (supabase.from(DATABASE_TABLES.PROFILES) as AnyClient)
+      const { data: profiles } = await supabase
+        .from(DATABASE_TABLES.PROFILES)
         .select('id, name, username, avatar_url')
         .in('id', userIds);
 

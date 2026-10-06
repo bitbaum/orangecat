@@ -25,8 +25,6 @@ import { attachEventProfiles, fetchProfilesMap } from '@/services/groups/eventPr
 import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from '@/constants/pagination';
 import { STATUS } from '@/config/database-constants';
 
-type UntypedTable = any;
-
 const createEventSchema = z.object({
   title: z.string().min(1).max(200),
   description: z.string().max(5000).optional(),
@@ -65,7 +63,8 @@ export const GET = withAuth(
 
       // creator_id / rsvp user_id reference auth.users (not profiles), so
       // profiles cannot be embedded — attachEventProfiles splits the lookup.
-      let query = (supabase.from(DATABASE_TABLES.GROUP_EVENTS) as UntypedTable)
+      let query = supabase
+        .from(DATABASE_TABLES.GROUP_EVENTS)
         .select(`*, rsvps:group_event_rsvps (id, user_id, status)`, { count: 'exact' })
         .eq('group_id', group.id)
         .order('starts_at', { ascending: true })
@@ -142,9 +141,8 @@ export const POST = withAuth(
         requires_rsvp: validation.data.requires_rsvp ?? false,
       };
 
-      const { data: event, error: insertError } = await (
-        supabase.from(DATABASE_TABLES.GROUP_EVENTS) as UntypedTable
-      )
+      const { data: event, error: insertError } = await supabase
+        .from(DATABASE_TABLES.GROUP_EVENTS)
         .insert(eventData)
         .select()
         .single();

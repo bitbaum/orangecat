@@ -1,6 +1,15 @@
-import { BookOpen, Wallet, Shield, TrendingUp, Globe, Zap, Lightbulb } from 'lucide-react';
+import {
+  BookOpen,
+  Wallet,
+  Shield,
+  TrendingUp,
+  Globe,
+  Zap,
+  Lightbulb,
+  type LucideIcon,
+} from 'lucide-react';
 
-type IconComponent = React.ComponentType<any>;
+type IconComponent = LucideIcon;
 
 export interface LearningPath {
   id: string;

@@ -6,13 +6,13 @@
 
 import { DATABASE_TABLES } from '@/config/database-tables';
 
-type AnyClient = any;
+import type { AnySupabaseClient } from '@/lib/supabase/types';
 
 /**
  * Resolve a group by slug. Returns { id, name } or null if not found.
  */
 export async function resolveGroupBySlug(
-  supabase: AnyClient,
+  supabase: AnySupabaseClient,
   slug: string
 ): Promise<{ id: string; name?: string } | null> {
   const { data, error } = await supabase
@@ -31,7 +31,7 @@ export async function resolveGroupBySlug(
  * Returns the role string if they are, null otherwise.
  */
 export async function checkGroupAdmin(
-  supabase: AnyClient,
+  supabase: AnySupabaseClient,
   groupId: string,
   userId: string
 ): Promise<string | null> {
@@ -51,7 +51,7 @@ export async function checkGroupAdmin(
  * Check if a user can edit/delete an event: creator OR group admin.
  */
 export async function canEditEvent(
-  supabase: AnyClient,
+  supabase: AnySupabaseClient,
   groupId: string,
   userId: string,
   creatorId: string
@@ -67,7 +67,7 @@ export async function canEditEvent(
  * Check if a user is a member of the group (any role).
  */
 export async function checkGroupMember(
-  supabase: AnyClient,
+  supabase: AnySupabaseClient,
   groupId: string,
   userId: string
 ): Promise<boolean> {

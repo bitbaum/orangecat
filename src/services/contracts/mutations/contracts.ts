@@ -12,7 +12,7 @@ export interface CreateContractInput {
   party_a_actor_id: string;
   party_b_actor_id: string;
   contract_type: keyof typeof CONTRACT_TYPES;
-  terms: Record<string, any>;
+  terms: Record<string, unknown>;
   proposal_id?: string;
 }
 

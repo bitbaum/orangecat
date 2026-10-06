@@ -10,7 +10,7 @@ import { auditSuccess, AUDIT_ACTIONS } from '@/lib/api/auditLog';
 import { DATABASE_TABLES, WALLET_CLIENT_COLUMNS } from '@/config/database-tables';
 import { STATUS } from '@/config/database-constants';
 
-type AnyClient = any;
+import type { AnySupabaseClient } from '@/lib/supabase/types';
 
 type TransferResult =
   | { ok: true; transaction: Record<string, unknown>; wallets: Wallet[] | null; message: string }
@@ -28,7 +28,7 @@ type TransferResult =
     };
 
 export async function executeWalletTransfer(
-  supabase: AnyClient,
+  supabase: AnySupabaseClient,
   userId: string,
   fromWalletId: string,
   toWalletId: string,
@@ -47,9 +47,8 @@ export async function executeWalletTransfer(
   }
 
   // Fetch both wallets and verify they exist
-  const { data: walletsData, error: walletsError } = await (
-    supabase.from(DATABASE_TABLES.WALLETS) as AnyClient
-  )
+  const { data: walletsData, error: walletsError } = await supabase
+    .from(DATABASE_TABLES.WALLETS)
     .select('id, user_id, label, balance_btc, profile_id, project_id')
     .in('id', [fromWalletId, toWalletId])
     .eq('is_active', true);
@@ -119,9 +118,8 @@ export async function executeWalletTransfer(
   const now = new Date().toISOString();
 
   // Create transaction record
-  const { data: transactionData, error: txError } = await (
-    supabase.from(DATABASE_TABLES.TRANSACTIONS) as AnyClient
-  )
+  const { data: transactionData, error: txError } = await supabase
+    .from(DATABASE_TABLES.TRANSACTIONS)
     .insert({
       amount_btc: amountBtc,
       from_entity_type,
@@ -154,7 +152,7 @@ export async function executeWalletTransfer(
   const transaction = transactionData as { id: string } & Record<string, unknown>;
 
   // Update wallet balances via RPC
-  const { error: updateError } = await (supabase.rpc as AnyClient)('transfer_between_wallets', {
+  const { error: updateError } = await supabase.rpc('transfer_between_wallets', {
     p_from_wallet_id: fromWalletId,
     p_to_wallet_id: toWalletId,
     p_amount_btc: amountBtc,
@@ -171,7 +169,8 @@ export async function executeWalletTransfer(
   }
 
   // Fetch updated wallet states
-  const { data: updatedWalletsData } = await (supabase.from(DATABASE_TABLES.WALLETS) as AnyClient)
+  const { data: updatedWalletsData } = await supabase
+    .from(DATABASE_TABLES.WALLETS)
     .select(WALLET_CLIENT_COLUMNS)
     .in('id', [fromWalletId, toWalletId]);
 

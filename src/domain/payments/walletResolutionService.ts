@@ -71,7 +71,7 @@ export async function resolveSellerWallet(
   }
 
   // The userIdField could be actor_id, user_id, or profile_id
-  const ownerId = (entity as any)[meta.userIdField] as string;
+  const ownerId = (entity as unknown as Record<string, unknown>)[meta.userIdField] as string;
 
   // Step 2: Resolve the owner to an actor or user ID
   // If userIdField is actor_id, look up the actor to determine if it's a user or group
@@ -166,7 +166,7 @@ export async function getSellerUserId(
     return null;
   }
 
-  const ownerId = (entity as any)[meta.userIdField] as string;
+  const ownerId = (entity as unknown as Record<string, unknown>)[meta.userIdField] as string;
 
   if (meta.userIdField === 'actor_id') {
     const { data: actor } = await admin

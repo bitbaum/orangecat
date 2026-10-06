@@ -33,7 +33,7 @@ import { apiErrorMessage } from '@/lib/api/errorMessage';
 type WalletCreateInput = z.infer<typeof walletCreateSchema>;
 
 interface CreateWalletResult {
-  response: NextResponse<any>;
+  response: NextResponse<unknown>;
 }
 
 export async function createWallet(
@@ -181,7 +181,7 @@ async function verifyOwnership(
   supabase: SupabaseClient,
   user: User,
   body: WalletCreateInput
-): Promise<NextResponse<any> | null> {
+): Promise<NextResponse<unknown> | null> {
   if (body.profile_id) {
     if (body.profile_id !== user.id) {
       logWalletError('verify profile ownership', new Error('Ownership mismatch'), {
@@ -217,7 +217,7 @@ interface PreCheckOk {
   response: null;
 }
 interface PreCheckFail {
-  response: NextResponse<any>;
+  response: NextResponse<unknown>;
 }
 
 async function runPreInsertChecks(

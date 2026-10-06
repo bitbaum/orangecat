@@ -803,7 +803,7 @@ export async function orchestrateCatChat(
           Connection: 'keep-alive',
           'X-Accel-Buffering': 'no',
         },
-      }) as any,
+      }),
       rl
     );
   }

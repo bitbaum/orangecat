@@ -162,7 +162,7 @@ export async function sendMessage({
       if (data?.id) {
         try {
           const { data: fullMessage } = (await supabase
-            .from(DATABASE_TABLES.MESSAGE_DETAILS as any)
+            .from(DATABASE_TABLES.MESSAGE_DETAILS)
             .select('*')
             .eq('id', data.id)
             .single()) as { data: Message | null };
