@@ -19,10 +19,19 @@
 
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { DATABASE_TABLES } from '@/config/database-tables';
-import { MEMORY_IMPORT_CATEGORIES } from '@/config/cat-memory-import';
 import { embeddingsEnabled, embedText, embedTexts } from '@/services/ai/embeddings';
 import { logger } from '@/utils/logger';
 import { looksLikeSelfDisclosure } from '@/services/ai/self-disclosure';
+import {
+  containsWholeWords,
+  phrasesOverlap,
+  significantStems,
+  stemOverlapMatches,
+} from './memory-matching';
+import { parseImportedMemories } from './memory-import-parse';
+
+export { containsWholeWords } from './memory-matching';
+export { parseImportedMemories } from './memory-import-parse';
 
 export interface CatMemory {
   id: string;
@@ -166,122 +175,6 @@ export function selectForgetFacts(facts: string[]): ForgetFactSelection {
     tooShort,
     overCap: usable.slice(MAX_FORGET_FACTS),
   };
-}
-
-/**
- * Light suffix-stripping stemmer so inflected forms match: "photography" and
- * "photographer" both stem to "photograph", "ceramics" → "ceramic",
- * "speaking"/"speaks" → "speak", "weekends" → "weekend". Deliberately
- * conservative: strips only while ≥4 chars remain, and stems compare by
- * EQUALITY — never substring — so "constraint" can't collide with
- * "construction".
- */
-const STEM_SUFFIXES = ['ing', 'ers', 'ed', 'er', 'es', 's', 'y', 'e'] as const;
-function stemWord(word: string): string {
-  let s = word;
-  let changed = true;
-  while (changed) {
-    changed = false;
-    for (const suffix of STEM_SUFFIXES) {
-      if (s.endsWith(suffix) && s.length - suffix.length >= 4) {
-        s = s.slice(0, -suffix.length);
-        changed = true;
-        break;
-      }
-    }
-  }
-  return s;
-}
-
-/**
- * Does `haystack` contain `needle` as WHOLE WORDS?
- *
- * The containment branch used raw `String.includes` in both directions, and
- * MIN_FORGET_FRAGMENT_CHARS lets a four-character fact through. So "work" was
- * contained in "network", "framework", "coworking" and "homework": asking Cat
- * to forget "work" deleted every one of those memories, and Cat then reported
- * them as removed — accurately, which is exactly what made it hard to notice.
- *
- * Boundaries are checked by CHARACTER CLASS rather than a `\b` regex, because
- * `\b` is ASCII-only in JavaScript: it treats "café" as ending after "caf",
- * so "café" would match inside "cafés" while plain words behaved correctly.
- * `\p{L}` and `\p{N}` cover the accented alphabet the tokenizer above already
- * speaks. bitbaum/orangecat#563 finding 9.
- */
-const WORD_CHAR = /[\p{L}\p{N}]/u;
-export function containsWholeWords(haystack: string, needle: string): boolean {
-  if (!needle || !haystack) {
-    return false;
-  }
-  for (let from = 0; from <= haystack.length - needle.length;) {
-    const at = haystack.indexOf(needle, from);
-    if (at === -1) {
-      return false;
-    }
-    const before = at === 0 ? '' : haystack[at - 1]!;
-    const after = haystack[at + needle.length] ?? '';
-    if (!WORD_CHAR.test(before) && !WORD_CHAR.test(after)) {
-      return true;
-    }
-    from = at + 1;
-  }
-  return false;
-}
-
-/** Significant stemmed words of a phrase (short glue words dropped). */
-function significantStems(text: string): Set<string> {
-  return new Set(
-    text
-      .toLowerCase()
-      .split(/[^a-z0-9äöüéèàç]+/)
-      .filter(t => t.length >= 4)
-      .map(stemWord)
-  );
-}
-
-/**
- * How many of a fact's significant stems must appear in a memory for the
- * LEXICAL layer to call it a match.
- *
- * A majority rule (ceil(n/2)) is WRONG for two-word facts: it needs only one
- * hit, so "photography skills" matches "Has strong cooking skills" on the
- * shared stem "skill" and silently deletes an unrelated memory. Deleting the
- * wrong memory is the worst failure this code has, so multi-word facts require
- * TWO stem hits; looser paraphrases ("speaking French" → "Knows French", one
- * shared stem) are caught by the semantic layer instead, which scores them
- * 0.45+ while unrelated pairs stay ≤0.29.
- */
-function requiredStemHits(factStemCount: number): number {
-  return factStemCount <= 1 ? 1 : 2;
-}
-
-/** Do `a`'s significant stems appear in `b` often enough to be the same fact? */
-function stemOverlapMatches(aStems: Set<string>, bStems: Set<string>): boolean {
-  if (aStems.size === 0) {
-    return false;
-  }
-  let hits = 0;
-  for (const s of aStems) {
-    if (bStems.has(s)) {
-      hits++;
-    }
-  }
-  return hits >= requiredStemHits(aStems.size);
-}
-
-/**
- * Shared lexical predicate: does phrase `a` refer to (roughly) the same fact
- * as phrase `b`? Containment in either direction, or enough shared stems —
- * the SAME rule the forget matcher uses, so "what gets forgotten", "what stays
- * suppressed", and "which memory gets edited" can never disagree.
- */
-function phrasesOverlap(a: string, b: string): boolean {
-  const na = a.toLowerCase();
-  const nb = b.toLowerCase();
-  if (nb.includes(na) || na.includes(nb)) {
-    return true;
-  }
-  return stemOverlapMatches(significantStems(na), significantStems(nb));
 }
 
 /**
@@ -937,15 +830,10 @@ export async function deleteAllMemories(
 }
 
 // ─── Import (bring memory from another AI) ─────────────────────────────────────
+// Turning the paste into facts is memory-import-parse.ts; storing them is here.
 
-/** Cap facts accepted from a single paste — a one-time bulk import, kept sane. */
-const MAX_IMPORT_FACTS = 200;
-/** Imported entries may be a full sentence — allow more than a chat-distilled fact. */
-const MAX_IMPORT_FACT_CHARS = 500;
 /** Batch size for embedding many candidates without oversized requests. */
 const IMPORT_EMBED_BATCH = 100;
-
-const IMPORT_HEADER_SET = new Set<string>(MEMORY_IMPORT_CATEGORIES.map(c => c.toLowerCase()));
 
 export interface MemoryImportResult {
   /** Candidate facts found in the pasted text. */
@@ -957,87 +845,6 @@ export interface MemoryImportResult {
   /** False when no embeddings provider is configured — imported facts are stored
    *  but won't be recalled semantically until one is set. */
   embeddingsEnabled: boolean;
-}
-
-/** Some assistants answer with a JSON array of strings — accept that shape too. */
-function tryParseJsonArray(raw: string): string[] {
-  const cleaned = raw.replace(/```(?:json)?/gi, '').trim();
-  const match = cleaned.match(/\[[\s\S]*\]/);
-  if (!match) {
-    return [];
-  }
-  try {
-    const arr = JSON.parse(match[0]);
-    return Array.isArray(arr) ? arr.filter((x): x is string => typeof x === 'string') : [];
-  } catch {
-    return [];
-  }
-}
-
-/** Strip list markers, numbering, markdown headings/bold from a line. */
-function stripLineDecorations(line: string): string {
-  return line
-    .replace(/^\s*#{1,6}\s*/, '') // markdown heading
-    .replace(/^\s*[-*•·]\s+/, '') // bullet
-    .replace(/^\s*\d+[.)]\s+/, '') // "1. " / "1) "
-    .replace(/\*\*/g, '') // bold
-    .replace(/^\s*[-–—]\s*/, '') // stray leading dash (e.g. exposed after a date strip)
-    .trim();
-}
-
-/** Remove a leading date tag like "[2026-01-01] - " or "[unknown] - ". */
-function stripDatePrefix(line: string): string {
-  return line.replace(/^\[[^\]]*\]\s*[-–—:]\s*/, '').trim();
-}
-
-/** True when a line is just a category heading (e.g. "Projects", "**Identity**:"). */
-function isImportHeader(line: string): boolean {
-  const normalized = stripLineDecorations(line).replace(/:$/, '').trim().toLowerCase();
-  return IMPORT_HEADER_SET.has(normalized);
-}
-
-/**
- * Turn a pasted memory export (from any AI) into a clean list of fact strings.
- * Defensive: accepts a JSON array, or category-grouped markdown/bulleted/dated
- * lines. Strips headers, bullets, numbering and date tags; dedupes and caps.
- */
-export function parseImportedMemories(raw: string): string[] {
-  if (!raw || !raw.trim()) {
-    return [];
-  }
-  const jsonFacts = tryParseJsonArray(raw);
-  const isJson = jsonFacts.length > 0;
-  const lines = isJson ? jsonFacts : raw.replace(/```(?:json|markdown)?/gi, '').split('\n');
-
-  const seen = new Set<string>();
-  const facts: string[] = [];
-  for (const rawLine of lines) {
-    let line = (rawLine ?? '').trim();
-    if (!line) {
-      continue;
-    }
-    if (!isJson) {
-      if (isImportHeader(line)) {
-        continue;
-      }
-      line = stripDatePrefix(stripLineDecorations(line));
-      line = stripLineDecorations(line); // a date strip can expose a leading dash
-    }
-    const lower = line.toLowerCase();
-    if (!line || line.length < 3 || lower === '(none)' || lower === 'none') {
-      continue;
-    }
-    const key = lower.slice(0, MAX_IMPORT_FACT_CHARS);
-    if (seen.has(key)) {
-      continue;
-    }
-    seen.add(key);
-    facts.push(line.slice(0, MAX_IMPORT_FACT_CHARS));
-    if (facts.length >= MAX_IMPORT_FACTS) {
-      break;
-    }
-  }
-  return facts;
 }
 
 /**
