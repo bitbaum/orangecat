@@ -97,7 +97,7 @@ export const GET = withOptionalAuth(async (request, { params }: RouteParams) => 
     const { data: proofsData, error: proofsError } = await supabase
       .from(DATABASE_TABLES.WISHLIST_FULFILLMENT_PROOFS)
       .select(
-        'id, wishlist_item_id, user_id, proof_type, description, image_url, transaction_id, created_at, profiles:user_id(id, username, display_name, avatar_url)'
+        'id, wishlist_item_id, user_id, proof_type, description, image_url, transaction_id, created_at, profiles:user_id(id, username, display_name:name, avatar_url)'
       )
       .eq('wishlist_item_id', itemId)
       .order('created_at', { ascending: false });
@@ -114,7 +114,7 @@ export const GET = withOptionalAuth(async (request, { params }: RouteParams) => 
       const { data: feedbackData } = await supabase
         .from(DATABASE_TABLES.WISHLIST_FEEDBACK)
         .select(
-          'id, fulfillment_proof_id, user_id, feedback_type, comment, created_at, profiles:user_id(id, username, display_name, avatar_url)'
+          'id, fulfillment_proof_id, user_id, feedback_type, comment, created_at, profiles:user_id(id, username, display_name:name, avatar_url)'
         )
         .in(
           'fulfillment_proof_id',
