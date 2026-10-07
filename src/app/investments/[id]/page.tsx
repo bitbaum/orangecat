@@ -11,7 +11,12 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
-  const investment = await fetchEntityForMetadata('investment', id, 'title, description');
+  const investment = await fetchEntityForMetadata(
+    'investment',
+    id,
+    'title, description',
+    investmentDetailConfig.visibilityFilter
+  );
   if (!investment) {
     return {
       title: 'Investment Not Found',

@@ -6,6 +6,14 @@
  */
 
 import { BADGE_COLORS } from './badge-colors';
+import { STATUS } from './database-constants';
+
+/** The statuses in which an investment is publicly visible (list, page, capital rail). */
+export const INVESTMENT_PUBLIC_STATUSES = [
+  STATUS.INVESTMENTS.OPEN,
+  STATUS.INVESTMENTS.FUNDED,
+  STATUS.INVESTMENTS.ACTIVE,
+] as const;
 
 // ==================== INVESTMENT TYPES ====================
 

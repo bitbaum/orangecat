@@ -6,8 +6,8 @@
  * back-compat with existing importers.
  */
 import { createServerClient } from '@/lib/supabase/server';
+import { applyVisibility, type VisibilityFilter } from '@/lib/entities/visibility';
 import { getTableName, type EntityType } from '@/config/entity-registry';
-import { STATUS } from '@/config/database-constants';
 import type { ReactNode } from 'react';
 
 // Color theme → semantic class mapping. The four colorTheme values in
@@ -91,8 +91,13 @@ export interface EntityDetailConfig {
   metadataSelect?: string;
   /** View route for sign-in redirect */
   getViewRoute?: (id: string) => string;
-  /** Override default visibility filter. Defaults to `status = active`. */
-  visibilityFilter?: { column: string; value: string | boolean };
+  /**
+   * Override default visibility filter. Defaults to `status = active`. An
+   * array value means "any of these" — an investment is live as open, funded
+   * or active, and a page that only knew `active` 404'd every freshly
+   * published offering (publishing sets `open`).
+   */
+  visibilityFilter?: VisibilityFilter;
   /** Whether to show the payment section in the sidebar (default: true) */
   showPaymentSection?: boolean;
   /**
@@ -117,16 +122,15 @@ export async function fetchEntityForMetadata(
   entityType: EntityType,
   id: string,
   select?: string,
-  visibilityFilter?: { column: string; value: string | boolean }
+  visibilityFilter?: VisibilityFilter
 ) {
   const supabase = await createServerClient();
-  const filterCol = visibilityFilter?.column ?? 'status';
-  const filterVal = visibilityFilter?.value ?? STATUS.PRODUCTS.ACTIVE;
-  const { data } = await supabase
+  const query = supabase
     .from(getTableName(entityType))
     .select(select || 'title, description')
-    .eq('id', id)
-    .eq(filterCol, filterVal)
-    .single();
+    .eq('id', id);
+  const { data } = await applyVisibility(query, visibilityFilter).single();
   return data as EntityData | null;
 }
+
+export { applyVisibility, type VisibilityFilter };
