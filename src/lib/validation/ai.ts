@@ -5,7 +5,7 @@ import {
   AI_ASSISTANT_STATUSES,
 } from '@/config/ai-assistants';
 import { STATUS } from '@/config/database-constants';
-import { lightningAddressSchema, optionalText, optionalUrl } from './base';
+import { lightningAddressSchema, optionalText, optionalUrl, publicBitcoinAddress } from './base';
 
 /** Maximum character length for AI chat messages and system prompts */
 export const AI_MESSAGE_MAX_CHARS = 10_000;
@@ -75,7 +75,7 @@ export const aiAssistantSchema = z.object({
 
   // Bitcoin Payment Info
   lightning_address: lightningAddressSchema,
-  bitcoin_address: optionalText(),
+  bitcoin_address: publicBitcoinAddress(),
 });
 
 // Types
