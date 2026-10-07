@@ -28,6 +28,7 @@ import {
 import { FeedbackButtons } from './FeedbackButtons';
 import { PROOF_TYPE_META, type ProofOfPurchaseCardProps } from './types';
 import { cn } from '@/lib/utils';
+import { explorerTxUrl } from '@/lib/bitcoin/explorer';
 
 export function ProofOfPurchaseCard({
   proof,
@@ -108,8 +109,11 @@ export function ProofOfPurchaseCard({
             variant="ghost"
             size="sm"
             className="h-6 w-6 p-0"
+            aria-label="View transaction on a block explorer"
             onClick={() => {
-              window.open(`https://mempool.space/tx/${proof.transaction_id}`, '_blank');
+              if (proof.transaction_id) {
+                window.open(explorerTxUrl(proof.transaction_id), '_blank', 'noopener');
+              }
             }}
           >
             <ExternalLink className="h-3 w-3" />

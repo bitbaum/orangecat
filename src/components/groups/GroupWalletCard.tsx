@@ -16,6 +16,7 @@ import { API_ROUTES } from '@/config/api-routes';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { BADGE_COLORS } from '@/config/badge-colors';
 import { apiErrorMessage } from '@/lib/api/errorMessage';
+import { explorerAddressUrl } from '@/lib/bitcoin/explorer';
 
 export function GroupWalletCard({
   wallet,
@@ -99,10 +100,7 @@ export function GroupWalletCard({
                 variant="ghost"
                 aria-label="View address on a block explorer"
                 onClick={() =>
-                  window.open(
-                    `https://blockstream.info/address/${wallet.bitcoin_address}`,
-                    '_blank'
-                  )
+                  window.open(explorerAddressUrl(wallet.bitcoin_address!), '_blank', 'noopener')
                 }
               >
                 <ExternalLink className="h-4 w-4" />

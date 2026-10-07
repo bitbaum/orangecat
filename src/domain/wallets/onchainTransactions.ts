@@ -16,6 +16,7 @@ import { scanUsedAddresses } from '@/domain/wallets/xpubScan';
 import { satsToBitcoin } from '@/services/currency';
 import { BITCOIN_FETCH_TIMEOUT_MS } from '@/lib/wallets/constants';
 import { logger } from '@/utils/logger';
+import { explorerTxUrl } from '@/lib/bitcoin/explorer';
 
 const MEMPOOL_API = 'https://mempool.space/api';
 /** Most recent transactions returned to the caller. */
@@ -141,7 +142,7 @@ export async function fetchWalletTransactions(
         direction: netSats >= 0 ? 'in' : 'out',
         confirmed: tx.status?.confirmed ?? false,
         blockTime: tx.status?.block_time ?? null,
-        explorerUrl: `https://mempool.space/tx/${tx.txid}`,
+        explorerUrl: explorerTxUrl(tx.txid),
       });
     }
   }
