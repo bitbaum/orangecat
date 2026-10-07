@@ -18,6 +18,7 @@ import { getCurrentUserId, getUserGroupIds } from '../utils/helpers';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { fromTable } from '../db-helpers';
 import type { FilterChain } from '@/lib/supabase/untyped';
+import { ilikeAny } from '@/lib/db/likePattern';
 
 // Legacy query fields → live `groups` schema. The table has no `type`,
 // `category`, `governance_model`, or `member_count` columns; those are legacy
@@ -282,10 +283,9 @@ export async function searchGroups(
     const sb = client || supabase;
     const _userId = await getCurrentUserId(sb);
 
-    const escapedSearchQuery = searchQuery.replace(/[%_]/g, '\\$&');
     let dbQuery = fromTable(sb, DATABASE_TABLES.GROUPS)
       .select('*', { count: 'exact' })
-      .or(`name.ilike.%${escapedSearchQuery}%,description.ilike.%${escapedSearchQuery}%`);
+      .or(ilikeAny(['name', 'description'], searchQuery));
 
     // Apply filters (legacy fields mapped to live schema)
     dbQuery = applyGroupFilters(dbQuery, filters);

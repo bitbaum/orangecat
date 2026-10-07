@@ -9,7 +9,8 @@ import { logger } from '@/utils/logger';
 import { getTableName } from '@/config/entity-registry';
 import { STATUS } from '@/config/database-constants';
 import type { SearchLoan, SearchFilters, RawSearchLoan } from '../types';
-import { sanitizeQuery, buildProfileMap } from './helpers';
+import { buildProfileMap } from './helpers';
+import { ilikeAny } from '@/lib/db/likePattern';
 
 /**
  * Search loans with filters
@@ -36,8 +37,7 @@ export async function searchLoans(
 
   // Apply text search if query provided
   if (query) {
-    const sanitized = sanitizeQuery(query);
-    loanQuery = loanQuery.or(`title.ilike.%${sanitized}%,description.ilike.%${sanitized}%`);
+    loanQuery = loanQuery.or(ilikeAny(['title', 'description'], query));
   }
 
   // Apply filters

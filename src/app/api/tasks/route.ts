@@ -18,6 +18,7 @@ import { taskSchema, type TaskFilter } from '@/lib/schemas/tasks';
 import { TASK_DEFAULTS } from '@/config/tasks';
 import { logger } from '@/utils/logger';
 import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
+import { ilikeAny } from '@/lib/db/likePattern';
 
 export const GET = withAuth(async (request: AuthenticatedRequest) => {
   const { supabase } = request;
@@ -60,8 +61,7 @@ export const GET = withAuth(async (request: AuthenticatedRequest) => {
       query = query.eq('project_id', filters.project_id);
     }
     if (filters.search) {
-      const escaped = filters.search.replace(/[%_]/g, '\\$&');
-      query = query.or(`title.ilike.%${escaped}%,description.ilike.%${escaped}%`);
+      query = query.or(ilikeAny(['title', 'description'], filters.search));
     }
 
     const { data: tasks, error, count } = await query;

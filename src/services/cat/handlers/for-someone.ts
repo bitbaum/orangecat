@@ -22,6 +22,7 @@ import { createLokiHandoff } from '@/services/loki/handoff';
 import { getTableName } from '@/config/entity-registry';
 import { looseClient } from '@/lib/supabase/untyped';
 import type { ActionHandler } from './types';
+import { containsPattern } from '@/lib/db/likePattern';
 
 /**
  * Entity types with a public page a builder can be pointed at. Named routes,
@@ -134,7 +135,7 @@ export const forSomeoneHandlers: Record<string, ActionHandler> = {
         .from(getTableName(entityType as keyof typeof ENTITY_REGISTRY))
         .select(`id, ${titleColumn}`)
         .or(`user_id.eq.${userId},actor_id.eq.${actorId}`)
-        .ilike(titleColumn, `%${title.replace(/[%_]/g, '')}%`)
+        .ilike(titleColumn, containsPattern(title))
         .order('created_at', { ascending: false })
         .limit(2);
       if (!rows || rows.length === 0) {

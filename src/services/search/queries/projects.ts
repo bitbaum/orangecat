@@ -15,7 +15,8 @@ import {
   type SettledProjectFunding,
 } from '@/services/wallets/project-funding';
 import type { SearchFundingPage, SearchFilters, RawSearchProject } from '../types';
-import { sanitizeQuery, buildProfileMap } from './helpers';
+import { buildProfileMap } from './helpers';
+import { ilikeAny } from '@/lib/db/likePattern';
 
 /**
  * Search projects with filters
@@ -87,8 +88,7 @@ export async function searchFundingPages(
 
   // Fallback: Use standard Supabase query builder with ILIKE
   if (query) {
-    const sanitized = sanitizeQuery(query);
-    projectQuery = projectQuery.or(`title.ilike.%${sanitized}%,description.ilike.%${sanitized}%`);
+    projectQuery = projectQuery.or(ilikeAny(['title', 'description'], query));
   }
 
   // Apply filters
