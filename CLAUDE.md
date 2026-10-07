@@ -65,8 +65,17 @@ grep -rn "style={{.*#" src/
 
 ## Shipping: nobody merges by hand
 
-**Do not merge PRs, and do not ask anyone to.** Open a PR and stop there —
-merging and deploying are automated end to end:
+**Finished work ships without asking.** The owner steers by saying what to
+build and checks the result on the live site; the owner does not read GitHub and
+does not want to be asked about branches or PRs. So when the work they asked for is
+done and verified, open a **non-draft** PR yourself, stay on it until it is
+merged and deployed, and then give the owner the live URL to look at. Work that sits
+on a branch never reaches anyone — that is how finished work used to go
+missing. Ask the owner only about the product, never about git, and when you must
+ask, offer options to pick rather than an open question.
+
+**Do not merge PRs, and do not ask anyone to.** Open the PR and let the chain
+below merge and deploy it:
 
 ```
 push branch → open PR → CI green → auto-merge.yml squash-merges it

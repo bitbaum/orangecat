@@ -1,9 +1,82 @@
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { slugify } from '@/utils/string';
+import { PROPOSAL_TYPES } from '@/config/proposal-constants';
+import { ROUTES } from '@/config/routes';
+import { SOLON_PROPOSAL_CATEGORY } from '@/config/solon';
+import { solonProposalHandoff } from '@/config/neighbour-capabilities';
+import { createProposal } from '@/services/groups/mutations/proposals';
 import type { ActionHandler } from './types';
 
+const PROPOSAL_TYPE_VALUES: readonly string[] = Object.values(PROPOSAL_TYPES);
+
+/**
+ * Shared money is decided by the people who share it. This files the
+ * question; it never spends, opens the vote, or casts one.
+ */
+const proposeToGroup: ActionHandler = async (supabase, _userId, _actorId, params) => {
+  const groupId = typeof params.group_id === 'string' ? params.group_id : '';
+  const title = typeof params.title === 'string' ? params.title.trim() : '';
+  const description = typeof params.description === 'string' ? params.description.trim() : '';
+  if (!groupId || !title || !description) {
+    return { success: false, error: 'group_id, title and description are required' };
+  }
+  const proposalType = PROPOSAL_TYPE_VALUES.includes(params.proposal_type as string)
+    ? (params.proposal_type as string)
+    : PROPOSAL_TYPES.TREASURY;
+
+  const { data: group } = await supabase
+    .from(ENTITY_REGISTRY.group.tableName)
+    .select('id, name, slug')
+    .eq('id', groupId)
+    .maybeSingle();
+  if (!group) {
+    return { success: false, error: 'No such group, or you are not in it' };
+  }
+  const groupPath = ROUTES.GROUPS.VIEW(group.slug as string);
+
+  if (params.decide_on === 'solon') {
+    const link = solonProposalHandoff({
+      title,
+      body: `${description}\n\nGroup: ${group.name}`,
+      category:
+        proposalType === PROPOSAL_TYPES.TREASURY
+          ? SOLON_PROPOSAL_CATEGORY.TREASURY_SPEND
+          : SOLON_PROPOSAL_CATEGORY.OPERATIONS,
+      source: groupPath,
+    });
+    return {
+      success: true,
+      data: {
+        solonProposalUrl: link,
+        displayMessage: `🏛️ Solon proposal prepared for ${group.name} — a member files and signs it there`,
+        message: `Nothing is filed yet. The proposal is written and waiting at ${link}; a member of ${group.name} opens it, files it and signs it, and the members vote.`,
+      },
+    };
+  }
+
+  const result = await createProposal(
+    { group_id: group.id as string, title, description, proposal_type: proposalType },
+    supabase
+  );
+  if (!result.success || !result.proposal) {
+    return { success: false, error: result.error ?? 'Could not file the proposal' };
+  }
+  const proposalPath = `${groupPath}/proposals/${result.proposal.id}`;
+  return {
+    success: true,
+    data: {
+      proposalId: result.proposal.id,
+      proposalPath,
+      displayMessage: `🗳️ Proposal "${title}" filed as a draft in ${group.name}`,
+      message: `Filed as a draft in ${group.name}. Nothing is spent: open the vote from ${proposalPath} and the members decide.`,
+    },
+  };
+};
+
 export const organizationHandlers: Record<string, ActionHandler> = {
+  propose_to_group: proposeToGroup,
+
   invite_to_organization: async (supabase, userId, _actorId, params) => {
     // group_invitations: group_id (= organization_id), user_id, role, invited_by (inviter's userId)
     // Accepts either `username` (Cat-friendly) or `user_id` (UUID). Resolves username → user_id.
