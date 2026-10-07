@@ -12,7 +12,7 @@ import { Card, CardContent } from '@/components/ui/Card';
 import { CurrencyDisplay } from '@/components/ui/CurrencyDisplay';
 import { ExternalLink } from 'lucide-react';
 import { getUniqueCategories } from '@/utils/project';
-import { ProjectDonationSection } from './ProjectDonationSection';
+import { ProjectFavoriteButton } from './ProjectFavoriteButton';
 import { ProjectUpdatesTimeline } from './ProjectUpdatesTimeline';
 import { PLATFORM_DEFAULT_CURRENCY } from '@/config/currencies';
 
@@ -126,10 +126,7 @@ export default function ProjectContent({ project }: ProjectContentProps) {
                       amount={project.raised_amount || 0}
                       currency={
                         (project.currency || PLATFORM_DEFAULT_CURRENCY) as
-                          | 'CHF'
-                          | 'USD'
-                          | 'EUR'
-                          | 'BTC'
+                          'CHF' | 'USD' | 'EUR' | 'BTC'
                       }
                     />
                   </div>
@@ -139,10 +136,7 @@ export default function ProjectContent({ project }: ProjectContentProps) {
                       amount={project.goal_amount}
                       currency={
                         (project.currency || PLATFORM_DEFAULT_CURRENCY) as
-                          | 'CHF'
-                          | 'USD'
-                          | 'EUR'
-                          | 'BTC'
+                          'CHF' | 'USD' | 'EUR' | 'BTC'
                       }
                     />
                   </div>
@@ -167,14 +161,13 @@ export default function ProjectContent({ project }: ProjectContentProps) {
             </section>
           )}
 
-          {/* Funding Section */}
-          <ProjectDonationSection
-            projectId={project.id}
-            ownerId={project.user_id}
-            projectTitle={project.title || 'Project'}
-            bitcoinAddress={project.bitcoin_address}
-            isOwner={project.isOwner}
-          />
+          {/* Paying happens in the page's one payment section (#pay); this
+              only saves the project to come back to. */}
+          {!project.isOwner && (
+            <div className="border-t pt-6">
+              <ProjectFavoriteButton projectId={project.id} />
+            </div>
+          )}
         </CardContent>
       </Card>
 

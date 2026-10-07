@@ -13,6 +13,7 @@ import { PublicEntityPaymentSection } from '@/components/payment';
 import { Z_INDEX_CLASSES } from '@/constants/z-index';
 import type { SellerReceiveInfo } from '@/domain/payments';
 import type { LokiProjectLink } from '@/services/loki/project-link';
+import { WishlistDonationTiers } from '@/components/wishlist/WishlistDonationTiers';
 
 const MissingWalletBanner = dynamic(() => import('@/components/project/MissingWalletBanner'));
 const ProjectShare = dynamic(() => import('@/components/sharing/ProjectShare'));
@@ -113,7 +114,10 @@ export default function ProjectPageClient({
 
   // Scroll to support section
   const scrollToSupport = () => {
-    const supportSection = document.getElementById('bitcoin-support-section');
+    // The payment section. This used to target #bitcoin-support-section, which
+    // only existed on projects with a legacy address — on every other project
+    // the floating "Support" button did nothing.
+    const supportSection = document.getElementById('pay');
     if (supportSection) {
       supportSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
@@ -198,6 +202,14 @@ export default function ProjectPageClient({
                 signInRedirect={ROUTES.PROJECTS.VIEW(project.id)}
               />
             </div>
+
+            {!isOwner && project.user_id && (
+              <WishlistDonationTiers
+                userId={project.user_id}
+                projectId={project.id}
+                projectTitle={project.title}
+              />
+            )}
 
             <ProjectSummaryRail
               project={{

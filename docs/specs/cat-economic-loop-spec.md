@@ -45,7 +45,7 @@ On the (now-default) Cat surface: "Start a fundraiser", "Sell something I make",
 ## Decisions / cleanup
 
 - **Double down on the inline `PrefilledFormCard` path.** Treat the wizard "Open full form" as pure fallback. All C work optimizes the inline path.
-- **Delete legacy dead code** (separate cleanup commit, not on the critical path): `CAT_ACTIONS` create actions (`config/cat-actions.ts`, superseded by the tool pipeline) and `ProjectDonationSection.tsx` (superseded by `PublicEntityPaymentSection`). They're confusion risks; don't build on them.
+- **Delete legacy dead code** (separate cleanup commit, not on the critical path): `CAT_ACTIONS` create actions (`config/cat-actions.ts`, superseded by the tool pipeline) and ~~`ProjectDonationSection.tsx`~~ (removed 2026-10-07: legacy project addresses became linked wallets, so `PublicEntityPaymentSection` pays them). They're confusion risks; don't build on them.
 
 ## Risks
 
