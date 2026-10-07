@@ -6,10 +6,10 @@ packages:
   - 'packages/tax-model'
 
 allowBuilds:
-  # Ours (bitbaum/listkit), GitHub-hosted with no committed dist: its `prepare`
+  # Ours (bitbaum/listkit), git-hosted with no committed dist: its `prepare`
   # builds it on install, which pnpm only runs for packages named here. Keep
   # the URL in step with the commit package.json pins.
-  listkit@https://codeload.github.com/bitbaum/listkit/tar.gz/c519d389b99d22f74bf9c092a603fe27061857cc: true
+  listkit@git+https://github.com/bitbaum/listkit.git#c519d389b99d22f74bf9c092a603fe27061857cc: true
   '@parcel/watcher': true
   '@swc/core': true
   '@tailwindcss/oxide': true
@@ -24,7 +24,7 @@ overrides:
   # npm's override said `$sharp` (follow the direct dep); pnpm 11 deprecates
   # that reference syntax, so the range is spelled out — keep in sync with the
   # sharp entry in package.json optionalDependencies.
-  sharp: ^0.35.4
+  sharp: ^0.35.5
   '@babel/core': ^7.29.6
   hono: ^4.12.27
   js-yaml: ^4.3.2
