@@ -9,6 +9,7 @@
  */
 
 import { DAYS_OF_WEEK, type DayOfWeek } from '@/config/schedule';
+import { isValidTimeZone, zoneLabel } from '@/utils/timezone';
 
 export interface AvailabilityHours {
   start: string; // "HH:MM" 24h
@@ -80,7 +81,7 @@ const shortOf = (d: DayOfWeek) => WEEKDAYS.find(w => w.key === d)?.short ?? d;
  * Consecutive days collapse into a range; otherwise they're comma-joined.
  */
 export function formatAvailabilityLines(value: unknown): string[] {
-  const { days, hours } = parseAvailability(value);
+  const { days, hours, timezone } = parseAvailability(value);
   if (!days?.length || !hours?.length) {
     return [];
   }
@@ -99,6 +100,8 @@ export function formatAvailabilityLines(value: unknown): string[] {
   }
 
   const daysLine = groups.join(', ');
-  const hoursLine = hours.map(h => `${h.start}–${h.end}`).join(', ');
+  // Name the clock: the provider's hours, not the reader's.
+  const clock = isValidTimeZone(timezone) ? ` (${zoneLabel(timezone)})` : '';
+  const hoursLine = hours.map(h => `${h.start}–${h.end}`).join(', ') + clock;
   return [daysLine, hoursLine];
 }

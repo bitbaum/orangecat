@@ -20,6 +20,7 @@ import type { FormFieldProps } from './types';
 import type { Currency } from '@/types/settings';
 import { AvailabilityEditor } from './fields/AvailabilityEditor';
 import { ImageField } from './fields/ImageField';
+import { browserTimeZone, instantToWallTime } from '@/utils/timezone';
 
 // ==================== COMPONENT ====================
 
@@ -229,6 +230,39 @@ export function FormField({
             label={label}
             disabled={disabled}
             subject={subject}
+          />
+        );
+
+      // `date` used to fall through to a text box: no picker, and an edit form
+      // showed the stored "2026-06-12T00:00:00+00:00" verbatim.
+      case 'date':
+        return (
+          <Input
+            id={name}
+            type="date"
+            value={typeof value === 'string' ? value.slice(0, 10) : ''}
+            onChange={e => onChange(e.target.value || null)}
+            onFocus={onFocus}
+            onBlur={onBlur}
+            disabled={disabled}
+            className={baseInputClass}
+          />
+        );
+
+      // Wall-clock time, no offset: the server reads it in the entity's zone
+      // (resolveEventTimes). The config converts stored instants back into
+      // that zone before the form sees them.
+      case 'datetime':
+        return (
+          <Input
+            id={name}
+            type="datetime-local"
+            value={typeof value === 'string' ? instantToWallTime(value, browserTimeZone()) : ''}
+            onChange={e => onChange(e.target.value || null)}
+            onFocus={onFocus}
+            onBlur={onBlur}
+            disabled={disabled}
+            className={baseInputClass}
           />
         );
 

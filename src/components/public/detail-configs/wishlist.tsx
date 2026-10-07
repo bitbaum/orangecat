@@ -178,10 +178,13 @@ export function buildWishlistDetailConfig(items: WishlistDetailItem[]): EntityDe
         </Badge>
         {entity.event_date && (
           <span className="text-sm text-fg-secondary">
+            {/* A calendar date, stored as midnight UTC: read in UTC, or anyone
+                west of Greenwich saw the day before. */}
             {new Date(entity.event_date as string).toLocaleDateString(APP_LOCALE, {
               month: 'long',
               day: 'numeric',
               year: 'numeric',
+              timeZone: 'UTC',
             })}
           </span>
         )}

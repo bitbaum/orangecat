@@ -33,6 +33,8 @@ export type FieldInputType =
   | 'checkbox'
   | 'boolean'
   | 'date'
+  /** A wall-clock time ("2026-10-09T22:00"), read in the entity's own zone. */
+  | 'datetime'
   | 'url'
   | 'email'
   | 'phone'
