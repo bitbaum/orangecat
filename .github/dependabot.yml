@@ -12,6 +12,12 @@ updates:
     labels:
       - 'dependencies'
       - 'security'
+    groups:
+      # The fleet's own packages (chatkit, ai-kit, geo-kit…) arrive as ONE PR
+      # when they release, so a fix made once reaches this app on its own.
+      bitbaum:
+        patterns:
+          - '@bitbaum/*'
 
   # GitHub Actions
   - package-ecosystem: 'github-actions'
