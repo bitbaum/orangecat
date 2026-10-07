@@ -16,7 +16,12 @@ import { createServerClient } from '@/lib/supabase/server';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { ROUTES } from '@/config/routes';
-import { checkInTicket, listTickets, type CheckInResult } from '@/domain/events/tickets';
+import {
+  checkInTicket,
+  listTickets,
+  ticketHolderName,
+  type CheckInResult,
+} from '@/domain/events/tickets';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import DoorList, { type DoorGuest } from '@/components/events/DoorList';
 import { canCheckInAt } from '@/domain/events/crew';
@@ -89,7 +94,7 @@ export default async function DoorPage({ params, searchParams }: PageProps) {
 
   const checkIn = code ? await checkInTicket(supabase, id, code) : null;
   const tickets = await listTickets(supabase, id);
-  const userIds = [...new Set(tickets.map(t => t.user_id))];
+  const userIds = [...new Set(tickets.flatMap(t => (t.user_id ? [t.user_id] : [])))];
   const { data: profiles } = userIds.length
     ? await supabase.from(DATABASE_TABLES.PROFILES).select('id, username, name').in('id', userIds)
     : { data: [] };
@@ -104,14 +109,19 @@ export default async function DoorPage({ params, searchParams }: PageProps) {
     .map(t => ({
       id: t.id,
       code: t.ticket_code,
-      name: nameOf.get(t.user_id) ?? 'Guest',
+      name: ticketHolderName(t, uid => nameOf.get(uid)),
       count: t.ticket_count,
       paid: t.payment_status === 'paid',
       checkedInAt: t.checked_in_at,
     }));
 
   const verdict = checkIn ? VERDICT[checkIn.result] : null;
-  const verdictName = checkIn && 'user_id' in checkIn ? nameOf.get(checkIn.user_id) : null;
+  // By the scanned code, not the user id: a guest ticket has no user, only a name.
+  const scanned = code ? tickets.find(t => t.ticket_code === code) : undefined;
+  const verdictName =
+    checkIn && checkIn.result !== 'not_found' && scanned
+      ? ticketHolderName(scanned, uid => nameOf.get(uid))
+      : null;
   const verdictCount = checkIn && 'ticket_count' in checkIn ? checkIn.ticket_count : 1;
 
   return (
