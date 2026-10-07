@@ -117,8 +117,6 @@ export interface UpdateGroupInput {
   country_code?: string | null;
   region?: string | null;
   locality?: string | null;
-  street_address?: string | null;
-  postal_code?: string | null;
 }
 
 /**

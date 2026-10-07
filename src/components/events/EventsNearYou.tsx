@@ -8,6 +8,7 @@
  */
 
 import { useState } from 'react';
+import { API_ROUTES } from '@/config/api-routes';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { LocateFixed, MapPin, Music, Search } from 'lucide-react';
@@ -43,7 +44,7 @@ export default function EventsNearYou() {
         radius_km: String(nextRadius),
         ...(nextGenre && { genre: nextGenre }),
       });
-      const res = await fetch(`/api/events/nearby?${params}`);
+      const res = await fetch(`${API_ROUTES.EVENTS.NEARBY}?${params}`);
       const json = await res.json();
       if (!res.ok) {
         throw new Error(json?.error?.message || 'Search failed');

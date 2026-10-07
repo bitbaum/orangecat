@@ -235,6 +235,15 @@ export const API_ROUTES = {
     COLLATERAL: '/api/loan-collateral',
   },
   PROFILE: '/api/profile',
+  EVENTS: {
+    NEARBY: `${ENTITY_REGISTRY['event'].apiEndpoint}/nearby`,
+    TICKET: (eventId: string) => `${ENTITY_REGISTRY['event'].apiEndpoint}/${eventId}/ticket`,
+    CHECK_IN: (eventId: string) => `${ENTITY_REGISTRY['event'].apiEndpoint}/${eventId}/check-in`,
+    ROLES: (eventId: string) => `${ENTITY_REGISTRY['event'].apiEndpoint}/${eventId}/roles`,
+    ROLE: (roleId: string) => `/api/event-roles/${roleId}`,
+    /** Venue pages the signed-in person can list events at. */
+    MY_PLACES: '/api/places/mine',
+  },
   GROUPS: {
     BASE: ENTITY_REGISTRY['group'].apiEndpoint,
     EVENTS: (slug: string) => `${ENTITY_REGISTRY['group'].apiEndpoint}/${slug}/events`,

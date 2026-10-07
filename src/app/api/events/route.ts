@@ -77,7 +77,6 @@ export const POST = createEntityPostHandler({
       'banner_url',
       'video_url',
       'asset_id',
-      'venue_group_id',
       'vibe',
     ];
 

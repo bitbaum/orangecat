@@ -75,8 +75,8 @@ export const eventDetailConfig: EntityDetailConfig = {
   metadataSelect: EVENT_METADATA_SELECT,
   getPrice: ticketOf,
   renderSidebarExtra: entity =>
-    typeof entity.venue_group_id === 'string' ? (
-      <EventVenueCard groupId={entity.venue_group_id} />
+    typeof entity.asset_id === 'string' && entity.asset_id ? (
+      <EventVenueCard assetId={entity.asset_id} />
     ) : null,
   getViewRoute: id => ROUTES.EVENTS.VIEW(id),
   getCoverImages: entity => {

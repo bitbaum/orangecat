@@ -200,7 +200,13 @@ describe('selection is worth doing', () => {
     // (end_date, event_type, music_genres, vibe, crew, ticket_price, currency).
     // Geocoding, genre spelling and crew parsing live in code
     // (domain/events, config/event-crew), not in prose here.
-    expect(remaining).toBeLessThanOrEqual(4_600);
+    //
+    // Raised 4,600 -> 4,720 for `create_venue`: "make a page for my bar,
+    // Espresso Bar, Bahnhofstrasse 5, Landquart" — the place an event is
+    // listed at, set up for its owner when they are not here yet. ~120
+    // characters: a one-clause description and four parameter names. The
+    // address is resolved and the claim made in code, not explained here.
+    expect(remaining).toBeLessThanOrEqual(4_720);
   });
 
   it('selects by default now, and still sends everything when told to', async () => {

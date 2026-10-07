@@ -21,7 +21,6 @@ import { logGroupActivity } from '../utils/activity';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import type { ServiceResult } from '@/types/common';
 import { fromTable } from '../db-helpers';
-import { pinForGroupPlace } from '@/domain/events/venue';
 
 /**
  * Create a new group
@@ -75,10 +74,6 @@ export async function createGroup(
       jurisdiction: input.jurisdiction || null,
       register_id: input.register_id || null,
       recognised_on: input.recognised_on || null,
-      street_address: input.street_address || null,
-      postal_code: input.postal_code || null,
-      // A door on the map, when it has a street address.
-      ...(await pinForGroupPlace(input)),
       created_by: currentUserId,
     };
 
@@ -201,32 +196,12 @@ export async function updateGroup(
       payload.voting_threshold = input.voting_threshold;
     }
 
-    // The place. These were accepted by the schema and never written, so an
-    // edited locality silently stayed what it was.
-    const PLACE_FIELDS = [
-      'country_code',
-      'region',
-      'locality',
-      'street_address',
-      'postal_code',
-    ] as const;
-    let placeChanged = false;
-    for (const field of PLACE_FIELDS) {
+    // The place. The schema accepted these and this builder never wrote them,
+    // so an edited country, region or locality silently stayed what it was.
+    for (const field of ['country_code', 'region', 'locality'] as const) {
       if (input[field] !== undefined) {
         payload[field] = input[field] || null;
-        placeChanged = true;
       }
-    }
-    if (placeChanged) {
-      // Re-pin from the place as it will be after this edit.
-      const { data: current } = await fromTable(supabaseClient, DATABASE_TABLES.GROUPS)
-        .select('name, street_address, postal_code, locality, country_code')
-        .eq('id', groupId)
-        .single();
-      Object.assign(
-        payload,
-        await pinForGroupPlace({ ...(current ?? {}), ...payload } as Record<string, string | null>)
-      );
     }
 
     const { data, error } = await fromTable(supabaseClient, DATABASE_TABLES.GROUPS)

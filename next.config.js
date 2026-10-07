@@ -240,9 +240,15 @@ const nextConfig = {
             // to allow. `(self)` permits only this origin, so the browser asks
             // the person, which is the decision that should be theirs.
             //
-            // camera and geolocation stay fully denied: nothing here uses them,
-            // and an unused capability should not be reachable.
-            value: 'camera=(), microphone=(self), geolocation=()',
+            // geolocation=(self) for the same reason: /events has "Near me",
+            // and `geolocation=()` made every press of it fail before the
+            // browser could ask — "Geolocation has been disabled in this
+            // document by permissions policy" (found 2026-10-07 by driving the
+            // page in a real browser). `(self)` lets only this origin ask.
+            //
+            // camera stays fully denied: nothing here uses it, and an unused
+            // capability should not be reachable.
+            value: 'camera=(), microphone=(self), geolocation=(self)',
           },
           // HSTS: tell browsers to always use HTTPS (production only)
           ...(!isDevelopment

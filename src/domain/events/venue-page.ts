@@ -1,118 +1,64 @@
 /**
- * The link between an event and the organization whose place it is at — a
- * bar's page. Reads only; who may make the link is the events trigger's rule
- * (members of the venue), and which events are public is the events RLS.
+ * Where an event happens, when the place has a page: a bar, a studio, a hall —
+ * an asset (#1237). The event names it through events.asset_id and the
+ * place's page lists it under "Happening here".
+ *
+ * Who may name a place is the database's rule (public.can_list_events_at:
+ * whoever runs it — its person, its organization's members, or the steward of
+ * a place set up for someone not here yet). This module only reads.
  */
 
-import { DATABASE_TABLES } from '@/config/database-tables';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
-import { EVENT_PUBLIC_STATUSES } from '@/config/events';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 
-export interface VenueGroup {
-  id: string;
-  name: string;
-  slug: string;
-  avatar_url: string | null;
-  street_address: string | null;
-  postal_code: string | null;
-  locality: string | null;
-  country_code: string | null;
-  latitude: number | null;
-  longitude: number | null;
-}
-
-const VENUE_SELECT =
-  'id, name, slug, avatar_url, street_address, postal_code, locality, country_code, latitude, longitude';
-
-export interface VenueEvent {
+export interface Venue {
   id: string;
   title: string;
-  start_date: string;
-  music_genres: string[] | null;
-  is_free: boolean | null;
-  ticket_price: number | null;
-  currency: string | null;
+  location: string | null;
   status: string;
 }
 
-export async function getVenueGroup(
+/** A place's public face, for the event page. Null when hidden or gone. */
+export async function getVenue(
   supabase: AnySupabaseClient,
-  groupId: string
-): Promise<VenueGroup | null> {
+  assetId: string
+): Promise<Venue | null> {
   const { data } = await supabase
-    .from(DATABASE_TABLES.GROUPS)
-    .select(VENUE_SELECT)
-    .eq('id', groupId)
+    .from(ENTITY_REGISTRY.asset.tableName)
+    .select('id, title, location, status')
+    .eq('id', assetId)
     .maybeSingle();
-  return (data as VenueGroup | null) ?? null;
+  return (data as Venue | null) ?? null;
 }
 
-/** Upcoming public events at a venue, soonest first. */
-export async function listUpcomingAtVenue(
-  supabase: AnySupabaseClient,
-  groupId: string,
-  limit = 20
-): Promise<VenueEvent[]> {
-  const sinceMidnight = new Date();
-  sinceMidnight.setHours(0, 0, 0, 0);
-  const { data, error } = await supabase
-    .from(ENTITY_REGISTRY.event.tableName)
-    .select('id, title, start_date, music_genres, is_free, ticket_price, currency, status')
-    .eq('venue_group_id', groupId)
-    .in(
-      'status',
-      [...EVENT_PUBLIC_STATUSES].filter(s => s !== 'completed')
-    )
-    .gte('start_date', sinceMidnight.toISOString())
-    .order('start_date', { ascending: true })
-    .limit(limit);
+/** Places the signed-in person can list events at (the trigger's rule, as a list). */
+export async function listPlacesICanListAt(supabase: AnySupabaseClient): Promise<Venue[]> {
+  const { data, error } = await supabase.rpc('places_i_can_list_events_at');
   if (error) {
     throw new Error(error.message);
   }
-  return (data ?? []) as VenueEvent[];
+  return (data ?? []) as Venue[];
 }
 
 /**
- * The venue the signed-in person means by a name ("Espresso Bar") — among the
- * organizations they are a member of, since only members may list events
- * there. Exact name first, then a name that contains what was said.
+ * The place someone means by a name ("Espresso Bar"), among the places they
+ * run. Exact name first; otherwise a close name, but only when exactly one
+ * fits and the shorter of the two is not a fragment — a wrong place on an
+ * event is worse than none.
  */
-export async function findMyVenueByName(
-  supabase: AnySupabaseClient,
-  userId: string,
-  name: string
-): Promise<VenueGroup | null> {
+export function matchVenueByName(places: Venue[], name: string): Venue | null {
   const wanted = name.trim().toLowerCase();
   if (!wanted) {
     return null;
   }
-  const { data } = await supabase
-    .from(DATABASE_TABLES.GROUP_MEMBERS)
-    .select(`group:groups(${VENUE_SELECT})`)
-    .eq('user_id', userId);
-  const mine = ((data ?? []) as Array<{ group: VenueGroup | VenueGroup[] | null }>)
-    .flatMap(row => (Array.isArray(row.group) ? row.group : row.group ? [row.group] : []))
-    .filter(g => g?.name);
-  const exact = mine.find(g => g.name.trim().toLowerCase() === wanted);
+  const exact = places.find(p => p.title.trim().toLowerCase() === wanted);
   if (exact) {
     return exact;
   }
-  // "Espresso" for "Espresso Bar Landquart" — but only when exactly one of
-  // their organizations fits, and never on a fragment too short to mean much:
-  // a wrong venue on an event is worse than none.
-  const close = mine.filter(g => {
-    const have = g.name.trim().toLowerCase();
+  const close = places.filter(p => {
+    const have = p.title.trim().toLowerCase();
     const shorter = have.length < wanted.length ? have : wanted;
     return shorter.length >= 5 && (have.includes(wanted) || wanted.includes(have));
   });
   return close.length === 1 ? close[0] : null;
-}
-
-/** "Bahnhofstrasse 5, 7302 Landquart" — the venue's door as one line. */
-export function venueAddressLine(
-  v: Pick<VenueGroup, 'street_address' | 'postal_code' | 'locality'>
-) {
-  const cityLine = [v.postal_code, v.locality].filter(Boolean).join(' ');
-  return [v.street_address, cityLine].filter(Boolean).join(', ') || null;
 }

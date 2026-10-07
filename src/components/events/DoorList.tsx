@@ -6,6 +6,7 @@
  */
 
 import { useMemo, useState } from 'react';
+import { API_ROUTES } from '@/config/api-routes';
 import { useRouter } from 'next/navigation';
 import { Check } from 'lucide-react';
 import Button from '@/components/ui/Button';
@@ -43,7 +44,7 @@ export default function DoorList({ eventId, guests, capacity }: DoorListProps) {
     setBusy(code);
     setError(null);
     try {
-      const res = await fetch(`/api/events/${eventId}/check-in`, {
+      const res = await fetch(API_ROUTES.EVENTS.CHECK_IN(eventId), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code }),

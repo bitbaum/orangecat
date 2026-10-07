@@ -3,6 +3,7 @@
 /** Get, or give back, a free ticket — then reload the page so the box shows the result. */
 
 import { useState } from 'react';
+import { API_ROUTES } from '@/config/api-routes';
 import { useRouter } from 'next/navigation';
 import Button from '@/components/ui/Button';
 
@@ -20,7 +21,7 @@ export default function ClaimTicketButton({ eventId, mode }: ClaimTicketButtonPr
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch(`/api/events/${eventId}/ticket`, {
+      const res = await fetch(API_ROUTES.EVENTS.TICKET(eventId), {
         method: mode === 'claim' ? 'POST' : 'DELETE',
       });
       if (!res.ok) {

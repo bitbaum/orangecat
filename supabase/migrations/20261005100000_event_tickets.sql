@@ -36,7 +36,10 @@ ALTER TABLE public.event_attendees
 
 CREATE UNIQUE INDEX IF NOT EXISTS event_attendees_ticket_code_key ON public.event_attendees (ticket_code);
 
--- A free seat is neither pending nor paid.
+-- A free seat is neither pending nor paid. The check is dropped only to be
+-- re-added WIDER in the same transaction: every value the previous release
+-- writes is still allowed, so a code rollback is unaffected.
+-- migration-safety: contract-ok the CHECK is widened, never narrowed
 ALTER TABLE public.event_attendees DROP CONSTRAINT IF EXISTS event_attendees_payment_status_check;
 ALTER TABLE public.event_attendees ADD CONSTRAINT event_attendees_payment_status_check
   CHECK (payment_status IN ('pending', 'paid', 'refunded', 'free'));

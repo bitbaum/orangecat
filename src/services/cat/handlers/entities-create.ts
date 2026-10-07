@@ -18,6 +18,8 @@ import { createResearchReview, reviewInputSchema } from '@/domain/research/revie
 import { getUserActorId } from '@/domain/actors';
 import type { ActionHandler } from './types';
 import { createEvent } from './event-create';
+import { createVenue } from './venue-create';
+import { isAssetType } from '@/config/assets';
 
 const catOpenScienceSchema = z.object(openScienceFields);
 
@@ -231,15 +233,20 @@ export const entityCreateHandlers: Record<string, ActionHandler> = {
   },
 
   create_event: createEvent,
+  create_venue: createVenue,
 
-  create_asset: async (supabase, _userId, actorId, params) => {
+  create_asset: async (supabase, userId, actorId, params) => {
+    // owner_id and type are NOT NULL and the insert policy checks owner_id =
+    // auth.uid(); this handler set neither, so every asset the Cat tried to
+    // register failed.
     const { data, error } = await supabase
       .from(ENTITY_REGISTRY.asset.tableName)
       .insert({
+        owner_id: userId,
         actor_id: actorId,
         title: params.title,
         description: params.description || null,
-        type: params.asset_type || null,
+        type: isAssetType(params.asset_type) ? params.asset_type : 'other',
         location: params.location || null,
         currency: 'BTC',
         verification_status: 'unverified',

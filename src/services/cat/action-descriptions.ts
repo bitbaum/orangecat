@@ -55,6 +55,10 @@ export function generateActionDescription(
       const live = parameters.publish ? ' and post it' : '';
       return `Create event "${parameters.title}" at ${parameters.location}${live}${crew}`;
     }
+    case 'create_venue':
+      return parameters.owner_name
+        ? `Set up a page for ${parameters.name} (${parameters.address}) for ${parameters.owner_name} to take over`
+        : `Create a page for ${parameters.name} at ${parameters.address}`;
     case 'create_asset':
       return `Register asset "${parameters.title}"${parameters.location ? ` at ${parameters.location}` : ''}`;
     case 'update_entity':

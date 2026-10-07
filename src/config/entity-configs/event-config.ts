@@ -17,6 +17,7 @@ import { EVENT_TEMPLATES, type EventTemplate } from '@/components/create/templat
 import { createEntityConfig } from './base-config-factory';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { WalletSelectorField } from '@/components/create/wallet-selector';
+import { VenuePickerField } from '@/components/events/VenuePickerField';
 import { EVENT_TYPES, EVENT_CATEGORIES } from '@/config/events';
 import { MUSIC_GENRES } from '@/config/event-crew';
 
@@ -195,19 +196,13 @@ const fieldGroups: FieldGroup[] = [
         },
         colSpan: 2,
       },
-      {
-        name: 'asset_id',
-        label: 'Link to Asset (Optional)',
-        type: 'text',
-        placeholder: 'UUID of asset if venue is a rented asset',
-        hint: "If you're renting a venue from the assets marketplace, link it here",
-        showWhen: {
-          field: 'is_online',
-          value: false,
-        },
-        colSpan: 2,
-      },
     ],
+  },
+  {
+    id: 'venue-page',
+    title: 'Venue page',
+    description: 'At a bar, club or studio you run? List the event on its page.',
+    customComponent: VenuePickerField,
   },
   {
     id: 'capacity',
@@ -331,7 +326,6 @@ const defaultValues: EventFormData = {
   is_online: false,
   online_url: '',
   asset_id: null,
-  venue_group_id: null,
   max_attendees: null,
   requires_rsvp: true,
   rsvp_deadline: null,

@@ -1,96 +1,44 @@
-import { findMyVenueByName, venueAddressLine } from '@/domain/events/venue-page';
-import { pinForGroupPlace } from '@/domain/events/venue';
+import { listPlacesICanListAt, matchVenueByName, type Venue } from '@/domain/events/venue-page';
 
-const group = (name: string, extra: Record<string, unknown> = {}) => ({
-  id: `g-${name}`,
-  name,
-  slug: name.toLowerCase().replace(/\s+/g, '-'),
-  avatar_url: null,
-  street_address: null,
-  postal_code: null,
-  locality: null,
-  country_code: null,
-  latitude: null,
-  longitude: null,
-  ...extra,
+const place = (title: string): Venue => ({
+  id: `a-${title}`,
+  title,
+  location: 'Bahnhofstrasse 5, 7302 Landquart',
+  status: 'active',
 });
 
-function memberOf(...groups: ReturnType<typeof group>[]) {
-  const chain: Record<string, unknown> = {};
-  chain.select = vi.fn(() => chain);
-  chain.eq = vi.fn(() => Promise.resolve({ data: groups.map(g => ({ group: g })), error: null }));
-  return { from: vi.fn(() => chain) } as never;
-}
-
-describe('findMyVenueByName — only a venue the user belongs to, never a guess', () => {
-  it('matches the exact name, ignoring case', async () => {
-    const v = await findMyVenueByName(
-      memberOf(group('Espresso Bar'), group('Choir')),
-      'u',
-      'espresso bar'
-    );
-    expect(v?.name).toBe('Espresso Bar');
-  });
-
-  it('accepts a close name when exactly one organization fits', async () => {
-    const v = await findMyVenueByName(
-      memberOf(group('Espresso Bar Landquart')),
-      'u',
+describe('matchVenueByName — a place the user runs, never a guess', () => {
+  it('matches the exact name, ignoring case', () => {
+    expect(matchVenueByName([place('Espresso Bar'), place('Studio')], 'espresso bar')?.title).toBe(
       'Espresso Bar'
     );
-    expect(v?.name).toBe('Espresso Bar Landquart');
   });
 
-  it('refuses when two organizations would fit', async () => {
-    const v = await findMyVenueByName(
-      memberOf(group('Espresso Bar Landquart'), group('Espresso Bar Chur')),
-      'u',
-      'Espresso Bar'
+  it('accepts a close name when exactly one place fits', () => {
+    expect(matchVenueByName([place('Espresso Bar Landquart')], 'Espresso Bar')?.title).toBe(
+      'Espresso Bar Landquart'
     );
-    expect(v).toBeNull();
   });
 
-  it('refuses a fragment too short to mean much', async () => {
-    expect(await findMyVenueByName(memberOf(group('Bar')), 'u', 'Espresso Bar')).toBeNull();
-  });
-
-  it('finds nothing among organizations the user is not in', async () => {
-    expect(await findMyVenueByName(memberOf(), 'u', 'Espresso Bar')).toBeNull();
-  });
-});
-
-describe('venue address and pin', () => {
-  it('writes the door as one line', () => {
+  it('refuses when two places would fit', () => {
     expect(
-      venueAddressLine({
-        street_address: 'Bahnhofstrasse 5',
-        postal_code: '7302',
-        locality: 'Landquart',
-      })
-    ).toBe('Bahnhofstrasse 5, 7302 Landquart');
-    expect(
-      venueAddressLine({ street_address: null, postal_code: null, locality: null })
+      matchVenueByName(
+        [place('Espresso Bar Landquart'), place('Espresso Bar Chur')],
+        'Espresso Bar'
+      )
     ).toBeNull();
   });
 
-  it('pins an organization only when it has a street address', async () => {
-    const geocode = vi.fn().mockResolvedValue({ latitude: 46.96, longitude: 9.55 });
-    expect(await pinForGroupPlace({ locality: 'Landquart' }, geocode)).toEqual({
-      latitude: null,
-      longitude: null,
-    });
-    expect(geocode).not.toHaveBeenCalled();
-    expect(
-      await pinForGroupPlace(
-        {
-          street_address: 'Bahnhofstrasse 5',
-          postal_code: '7302',
-          locality: 'Landquart',
-          country_code: 'CH',
-        },
-        geocode
-      )
-    ).toEqual({ latitude: 46.96, longitude: 9.55 });
-    expect(geocode).toHaveBeenCalledWith('Bahnhofstrasse 5, 7302 Landquart, CH');
+  it('refuses a fragment too short to mean much, and an empty list', () => {
+    expect(matchVenueByName([place('Bar')], 'Espresso Bar')).toBeNull();
+    expect(matchVenueByName([], 'Espresso Bar')).toBeNull();
+  });
+});
+
+describe('listPlacesICanListAt', () => {
+  it('asks the database rule the events trigger enforces', async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: [place('Espresso Bar')], error: null });
+    expect(await listPlacesICanListAt({ rpc } as never)).toHaveLength(1);
+    expect(rpc).toHaveBeenCalledWith('places_i_can_list_events_at');
   });
 });

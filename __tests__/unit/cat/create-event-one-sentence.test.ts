@@ -14,18 +14,29 @@ import { DATABASE_TABLES } from '@/config/database-tables';
 
 vi.mock('@/lib/nominatim', () => ({
   geocodeAddress: vi.fn(async (q: string) =>
-    q.includes('Langstrasse')
+    q.includes('Landquart')
       ? {
-          latitude: 47.3779,
-          longitude: 8.5265,
+          latitude: 46.9667,
+          longitude: 9.555,
           venue_name: null,
-          venue_address: 'Langstrasse 120',
-          venue_city: 'Zürich',
-          venue_postal_code: '8004',
+          venue_address: 'Bahnhofstrasse 5',
+          venue_city: 'Landquart',
+          venue_postal_code: '7302',
           venue_country: 'Switzerland',
-          display_name: 'Langstrasse 120, 8004 Zürich, Switzerland',
+          display_name: 'Bahnhofstrasse 5, 7302 Landquart, Switzerland',
         }
-      : null
+      : q.includes('Langstrasse')
+        ? {
+            latitude: 47.3779,
+            longitude: 8.5265,
+            venue_name: null,
+            venue_address: 'Langstrasse 120',
+            venue_city: 'Zürich',
+            venue_postal_code: '8004',
+            venue_country: 'Switzerland',
+            display_name: 'Langstrasse 120, 8004 Zürich, Switzerland',
+          }
+        : null
   ),
 }));
 
@@ -57,18 +68,21 @@ function mockSupabase(profileCurrency: string | null = 'EUR') {
       }
       return chain;
     });
-    chain.eq = vi.fn(() =>
-      table === DATABASE_TABLES.GROUP_MEMBERS
-        ? Promise.resolve({ data: myVenues.map(group => ({ group })), error: null })
-        : chain
-    );
+    chain.eq = vi.fn(() => chain);
     chain.single = vi.fn().mockResolvedValue({ data: { id: 'event-1' }, error: null });
     chain.maybeSingle = vi
       .fn()
       .mockResolvedValue({ data: { currency: profileCurrency }, error: null });
     return chain;
   });
-  return { client: { from } as never, inserts };
+  const rpc = vi.fn((fn: string) =>
+    Promise.resolve(
+      fn === 'places_i_can_list_events_at'
+        ? { data: myVenues, error: null }
+        : { data: null, error: { message: `unexpected rpc ${fn}` } }
+    )
+  );
+  return { client: { from, rpc } as never, inserts };
 }
 
 const run = (supabase: never, params: Record<string, unknown>) =>
@@ -146,17 +160,13 @@ describe('Cat create_event — one sentence, one complete event', () => {
     expect(inserts[DATABASE_TABLES.EVENT_ROLES]).toBeUndefined();
   });
 
-  it('lists the event on the bar\u2019s page and takes its door as the place', async () => {
+  it('lists the event at the bar\u2019s page and takes its address', async () => {
     myVenues = [
       {
         id: 'bar-1',
-        name: 'Espresso Bar',
-        slug: 'espresso-bar',
-        street_address: 'Bahnhofstrasse 5',
-        postal_code: '7302',
-        locality: 'Landquart',
-        latitude: 46.9667,
-        longitude: 9.555,
+        title: 'Espresso Bar',
+        location: 'Bahnhofstrasse 5, 7302 Landquart',
+        status: 'active',
       },
     ];
     const { client, inserts } = mockSupabase();
@@ -169,13 +179,14 @@ describe('Cat create_event — one sentence, one complete event', () => {
     });
     const row = inserts[ENTITY_REGISTRY.event.tableName][0] as Record<string, unknown>;
     expect(row).toMatchObject({
-      venue_group_id: 'bar-1',
+      asset_id: 'bar-1',
       venue_name: 'Espresso Bar',
       venue_address: 'Bahnhofstrasse 5',
       venue_city: 'Landquart',
       latitude: 46.9667,
       music_genres: ['Electronic'],
     });
+    expect(row).not.toHaveProperty('venue_group_id');
     expect((result.data as { displayMessage: string }).displayMessage).toContain(
       "Listed on Espresso Bar's page."
     );
@@ -190,10 +201,10 @@ describe('Cat create_event — one sentence, one complete event', () => {
       venue: 'Espresso Bar',
     });
     const row = inserts[ENTITY_REGISTRY.event.tableName][0] as Record<string, unknown>;
-    expect(row.venue_group_id).toBeNull();
+    expect(row.asset_id).toBeNull();
     expect(row.venue_address).toBe('Langstrasse 120');
     expect((result.data as { displayMessage: string }).displayMessage).toMatch(
-      /Espresso Bar has no page you manage/
+      /Espresso Bar has no page you run/
     );
   });
 });

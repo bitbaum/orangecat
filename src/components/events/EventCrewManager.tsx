@@ -7,6 +7,7 @@
  */
 
 import { useState } from 'react';
+import { API_ROUTES } from '@/config/api-routes';
 import { Users, X, Check, RotateCcw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
@@ -53,7 +54,7 @@ export default function EventCrewManager({ eventId, initialRoles }: EventCrewMan
     if (crew.length === 0) {
       return;
     }
-    const data = await call(`/api/events/${eventId}/roles`, {
+    const data = await call(API_ROUTES.EVENTS.ROLES(eventId), {
       method: 'POST',
       body: JSON.stringify({ crew }),
     });
@@ -64,7 +65,7 @@ export default function EventCrewManager({ eventId, initialRoles }: EventCrewMan
   }
 
   async function setStatus(role: EventRole, status: RoleStatus) {
-    const data = await call(`/api/event-roles/${role.id}`, {
+    const data = await call(API_ROUTES.EVENTS.ROLE(role.id), {
       method: 'PATCH',
       body: JSON.stringify({ status }),
     });
@@ -74,7 +75,7 @@ export default function EventCrewManager({ eventId, initialRoles }: EventCrewMan
   }
 
   async function remove(role: EventRole) {
-    const data = await call(`/api/event-roles/${role.id}`, { method: 'DELETE' });
+    const data = await call(API_ROUTES.EVENTS.ROLE(role.id), { method: 'DELETE' });
     if (data) {
       setRoles(prev => prev.filter(r => r.id !== role.id));
     }
