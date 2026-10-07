@@ -20,6 +20,21 @@ No fiat, privacy-coin, or smart-contract controls are presented as if they work 
 - [x] Open accounting: a wallet can publish its balance, its transactions, and the owner’s note on each one — for owners who turn it on.
 - [x] A transparency score computed from what is observable in that ledger, never from what anyone claims about themselves.
 
+### Events, end to end {#events}
+
+Run a real night on OrangeCat — "electronic music night at Espresso Bar in Landquart on Friday" — from the first sentence to the last guest through the door, and pay the people who made it happen. The plan and how it was tested: `docs/features/events-end-to-end.md`.
+
+- [x] One sentence to the Cat makes the whole event: on the map, music and vibe, crew wanted, priced in your currency. {#event-one-sentence}
+- [x] Find what's on near you, on the page and through the Cat. {#events-nearby}
+- [x] Times in the venue's own time zone, everywhere. {#event-time-zones}
+- [x] Tickets with a QR code, checked in at the door. {#event-tickets}
+- [x] A page for the place, listing what's on there, run by whoever runs the place. {#venue-pages}
+- [x] The crew are people; the door crew check guests in. {#event-crew}
+- [x] Pay the crew and refund tickets from the organizer's wallet, on the event's record. {#event-payouts}
+- [x] Cover pictures: upload, find, generate, or the photo sent to the Cat. {#event-cover}
+- [ ] Guests without an account can get a ticket or RSVP. {#event-rsvp-guests}
+- [ ] Tickets paid with Twint, bank or PayPal (waits on "More rails"). {#event-fiat-tickets}
+
 ## Next
 
 ### Fund-to-build

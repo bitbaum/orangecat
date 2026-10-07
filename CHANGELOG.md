@@ -19,6 +19,18 @@ to the map, sub-bullets stay here for the human reader.
   - The plan fits the event: a party for fifteen gets four things, not a conference's worth.
   - When the event is paid from money a group shares, the Cat puts the spend to that group as a draft proposal instead of spending it — the members vote. A group that decides on Solon gets the proposal prefilled there for a member to file and sign.
   - Want a site of its own (a conference programme, a wedding)? The Cat can ask Loki to build one. It only offers this when you ask for more than the event page.
+- **An event from one sentence, mapped, with its crew.** Say "electronic music night at Espresso Bar in Landquart on Friday at 10, techno and house, I need a DJ, two bartenders and someone on the door, 15 CHF" and, after you confirm, the Cat makes the whole event: the address on the map, the music and the vibe on the page, the price in your currency, and the crew posted as open roles. Say "post it" and it goes live. {#event-one-sentence}
+  - Anyone looking at the event sees "Crew wanted" with an "I can do this" button per role, which opens a message to you naming the role and the event. Events also have Music and Vibe fields on the form, and the pin moves when you change the address.
+- **Find what's on near you.** /events has "What's on near you": share your location or type a place, pick the music and a distance, and get upcoming events nearest first. Or ask your Cat ("any house parties near Zürich this weekend?"); it answers from the same search. {#events-nearby}
+- **Event times are the venue's time.** A 22:00 night in Landquart reads 22:00 everywhere: on the page, in lists, at the door, on the venue's page and in what the Cat tells you, whoever reads it and wherever the server is. The Cat now writes "Friday at 10" as 10 at the venue, not 10 in UTC. {#event-time-zones}
+- **Tickets with a QR, checked at the door.** Paying for an event gives you a ticket on its page: a QR code, how many people it lets in, and a short code. Free events have "Get a free ticket", "Can't make it" gives the place back, and a full event stops selling before anyone pays. You get a notification with the ticket link. {#event-tickets}
+  - At the door, scanning a ticket with a phone camera opens the event's door page and says in one glance: in, already in, or not a ticket for this event. The page lists every guest, with a name search and a manual check-in for a dead phone.
+- **A page for the place, with what's on there.** "Make a page for my bar, Espresso Bar, Bahnhofstrasse 5, Landquart" sets up the bar as a place on the map, and its events show under "Happening here". If the bar isn't yours, name its owner and the page waits for them to claim it while you look after it. {#venue-pages}
+  - Only whoever runs a place can list events there, so nobody posts onto a bar's page uninvited. The event form picks from the places you run instead of asking for an id.
+- **The crew are real people, and the door crew check guests in.** On your event page, put a person on a role by @username; they're notified and see "You're on the crew". Whoever holds the Door or Security role can open the door page and check guests in from their own phone. {#event-crew}
+- **Pay your crew and refund tickets, on the record.** Next to each person on the crew, "Pay" sends their fee in Bitcoin from your own connected wallet, or records that you paid them another way (Twint, cash). From the door list you can refund a paid ticket the same two ways; the ticket is cancelled and its place freed. Everything paid out shows on the event, nobody is paid twice for the same role, and a send that fails is recorded as failed. {#event-payouts}
+- **Cover pictures.** The event form has a cover picture, and every picture field on OrangeCat can now find an openly licensed photo or generate one with your own AI key, not only take an upload. Send the Cat a photo and ask for it as the cover, or ask it to make one; without an image key it creates the event anyway and tells you where to add one. {#event-cover}
+- **The roadmap and the changelog point at each other.** Each roadmap step that shipped links to the days in this changelog that delivered it, and each change here says which roadmap step it was for. The links come from the fleet's shared building-in-public kit, so the other products' pages can show them too.
 
 ### Fixed
 
@@ -29,6 +41,11 @@ to the map, sub-bullets stay here for the human reader.
   - The SDK's README and package metadata said "UNLICENSED (proprietary)"; the SDK is MIT like the rest of the repository. The partner copy no longer mentions an admission course, which does not exist, and the careers page says the partners' guild is not founded yet.
 - **A published investment page opens for everyone.** Publishing an investment marked it open, but its public page only showed active ones, so a freshly published offering was a 404 for everyone but its owner, and its Invest card said "not open yet". It now shows as soon as it is published.
 - **The Cat can create events again.** Every event the Cat tried to create was refused: it wrote the place to a field events do not have and left the currency on a value the database rejects. The place now lands in the venue address, and the Cat can also set the kind of event, an end time, free entry or a ticket price, and how many people fit.
+- **Published events open for everyone.** The public event page only looked for listings marked "active", a status events never have, so a published event opened only for its organizer. Link previews and search results said "Event Not Found" for the same reason. {#event-one-sentence}
+- **Buying an event ticket works.** Checkout read a price field events don't have and refused every ticket; it charges the ticket price now. {#event-tickets}
+- **"Near me" can find you.** The site told browsers not to share location with itself, so "Near me" could never work. When location can't be had, it now says why — blocked, unavailable or too slow — instead of one sentence for all three. {#events-nearby}
+- **Booking requests, booking updates and review reminders reach you.** Their notifications were refused by the database and only logged, so nobody saw them. Every kind of notification the app sends is now on one list the database checks against.
+- **Asking the Cat to register something you own works.** It left out the owner and the kind of thing, so every attempt failed.
 
 ## 2026-10-06
 
@@ -58,35 +75,6 @@ to the map, sub-bullets stay here for the human reader.
 - **You're asked to review, so reviews actually get written.** A few days after a deal is paid, each side gets a notification and an email asking how it went, and one more a few days before the review window closes. When the other person reviews you, you hear about it at once (that they reviewed, not what they said). Your Cat's suggestions on the dashboard now include the deal most in need of your review.
   - Nobody is asked about the same deal more than twice by the reminder, and never after they have reviewed or the window has closed.
 - **Profiles show a track record.** A profile now shows what OrangeCat itself saw: how many paid deals the person had, with how many different people, how many were refunded, and what share of the reviews about them say "would deal again". The counts come from settled payments nobody typed in. A profile with no deals shows nothing new.
-
-- **Event tickets, with a QR for the door.** Paying for an event now gives you a ticket on the event page: a QR code, the number of people it lets in, and a short code. Free events have a "Get a free ticket" button, and "Can't make it" gives the place back. When an event has a capacity, the page shows how many places are left, a full event stops selling before anyone pays, and it reopens when someone gives a place back.
-  - At the door, the organizer scans a ticket with their phone camera. The event's door page opens and says in one glance whether the person is in, was already checked in, or holds a ticket for something else. The same page lists every guest, with a name search and a manual check-in for someone whose phone has died.
-  - Buying a ticket now needs an account, so the ticket has somewhere to live. The event's bare Bitcoin address is no longer shown to signed-out visitors for a paid event, because paying it left no ticket.
-
-- **A page for your bar, and its events on it.** Tell your Cat "make a page for my bar, Espresso Bar, Bahnhofstrasse 5, Landquart" and it creates the bar as an organization with its address on the map. Then "electronic music night at Espresso Bar on Friday" lists the event on the bar's page and uses the bar's exact address. The bar's page shows where its door is and what's on there next, and the event page links back to the bar.
-  - Only members of a venue's page can list events there, so nobody can post onto a bar's page uninvited.
-  - Organizations now have a street address and postal code on their form, for a place people come to.
-
-### Fixed
-
-- **Editing an organization's place is saved.** Changing its country, region or locality passed the checks and was then silently dropped. It's saved now, and the map pin follows the address.
-- **Event guest lists are private.** Anyone could read who was going to a public event, and anyone could write themselves onto the list as paid. Now you see only your own ticket, the organizer sees the list, and only payment issues a paid ticket.
-
-## 2026-10-03
-
-### Added
-
-- **Tell your Cat about a party and it's posted.** Say "a party at Langstrasse 120 on Saturday at 10, house and disco, I need a DJ and two bartenders, 20 CHF entry" and, after you confirm, the Cat creates the whole event: the address is put on the map, the music and the vibe are on the page, the ticket price is set in your currency, and the crew is posted as open roles. Say "post it" and it goes live straight away.
-  - Anyone looking at the event sees "Crew wanted" with an "I can do this" button for each role, which opens a message to you already naming the role and the event. You add, fill and remove roles from the same card on your event page ("DJ, 2 bartenders" works).
-  - Events now have Music and Vibe fields on the form too, and every event with an address gets a map pin, whether the Cat made it or you did. The page links to the map. Change the address later and the pin moves with it.
-- **Find what's on near you.** /events has a "What's on near you" search: use your location or type a place, pick the music and a distance, and get upcoming events nearest first. Or ask your Cat — "any house parties near Zürich this weekend?" — and it answers from the same search, linking each event.
-
-### Fixed
-
-- **Asking the Cat to create an event works.** It wrote the place into a field events don't have, so every event it tried to make failed. It now fills the real address fields.
-- **Published events open for everyone.** The public event page only looked for listings marked "active", a status events never have, so a published event opened only for its organizer and everyone else got "not found". It now opens in every public status (published, open, full, ongoing, completed).
-- **Buying a ticket works.** Checkout read a price field events don't have and refused every ticket. It now charges the ticket price, converted to Bitcoin at the rate shown on the page.
-- **Event pages show the event's title and place in search results and link previews.** The page description looked up that same missing field, so every event's preview read "Event Not Found".
 
 ## 2026-10-02
 

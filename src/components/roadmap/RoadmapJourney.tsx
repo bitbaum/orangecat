@@ -1,5 +1,8 @@
 import { Check } from 'lucide-react';
-import type { Journey, JourneyStop } from '@/lib/development/roadmap-journey';
+import type { LinkedDevelopment, LinkedGoal } from 'bip-kit';
+import { GoalRecord, RoadmapSteps } from './RoadmapSteps';
+
+type Journey = LinkedDevelopment['journey'];
 
 /**
  * The roadmap drawn as a road: behind us, a "you are here" where the work is,
@@ -9,7 +12,9 @@ import type { Journey, JourneyStop } from '@/lib/development/roadmap-journey';
  * The headline answers "how far along" first; every stop's ring fills from
  * ticked steps only. Server-rendered, no client JavaScript: steps open with
  * <details>, and the only motion (the beacon, rings drawing in) stops under
- * prefers-reduced-motion. Same journey as Loki's /roadmap.
+ * prefers-reduced-motion. The model is bip-kit's linkDevelopment, which every
+ * fleet site shares: each goal and milestone links to the changelog days that
+ * delivered it, and the changelog links back.
  */
 export function RoadmapJourney({ journey }: { journey: Journey }) {
   const segments = [
@@ -79,7 +84,11 @@ export function RoadmapJourney({ journey }: { journey: Journey }) {
               </summary>
               <ul className="mt-3 flex flex-col gap-2">
                 {journey.shipped.map(s => (
-                  <li key={s.title} className="flex items-start gap-2 text-sm text-fg-secondary">
+                  <li
+                    key={s.anchor}
+                    id={s.anchor}
+                    className="flex items-start gap-2 text-sm text-fg-secondary"
+                  >
                     <Check
                       className="mt-0.5 h-3.5 w-3.5 shrink-0 text-status-positive"
                       aria-hidden
@@ -92,10 +101,10 @@ export function RoadmapJourney({ journey }: { journey: Journey }) {
           </li>
         )}
         {journey.now.map((stop, i) => (
-          <Stop key={stop.title} stop={stop} here={i === 0} anchor={i === 0 ? 'now' : undefined} />
+          <Stop key={stop.anchor} stop={stop} here={i === 0} anchor={i === 0 ? 'now' : undefined} />
         ))}
         {journey.next.map((stop, i) => (
-          <Stop key={stop.title} stop={stop} anchor={i === 0 ? 'next' : undefined} />
+          <Stop key={stop.anchor} stop={stop} anchor={i === 0 ? 'next' : undefined} />
         ))}
         {journey.later.length > 0 && (
           <li id="later" className="oc-journey-stop" data-phase="later">
@@ -106,7 +115,7 @@ export function RoadmapJourney({ journey }: { journey: Journey }) {
               </span>
               <ul className="mt-3 flex flex-col gap-2">
                 {journey.later.map(s => (
-                  <li key={s.title} className="font-medium text-fg-primary">
+                  <li key={s.anchor} id={s.anchor} className="font-medium text-fg-primary">
                     {s.title}
                   </li>
                 ))}
@@ -124,7 +133,7 @@ function Stop({
   here = false,
   anchor,
 }: {
-  stop: JourneyStop;
+  stop: LinkedGoal;
   here?: boolean;
   anchor?: string;
 }) {
@@ -138,7 +147,7 @@ function Stop({
       <span className="oc-journey-marker" aria-hidden>
         <Ring percent={stop.percent} />
       </span>
-      <div className="oc-journey-card">
+      <div id={stop.anchor} className="oc-journey-card">
         {here && <span className="oc-journey-here">You are here</span>}
         {!here && stop.phase === 'now' && (
           <span className="text-xs font-medium uppercase tracking-caps text-fg-tertiary">
@@ -162,30 +171,10 @@ function Stop({
                 : `${stop.steps.length} steps`}
               {stop.targetDate ? ` · target ${stop.targetDate}` : ''}
             </summary>
-            <ul className="mt-1 flex flex-col gap-2">
-              {stop.steps.map(m => (
-                <li
-                  key={m.title}
-                  className={
-                    m.done
-                      ? 'flex gap-2.5 text-sm text-fg-tertiary line-through'
-                      : 'flex gap-2.5 text-sm text-fg-secondary'
-                  }
-                >
-                  <span className="oc-journey-step" data-done={m.done || undefined} aria-hidden>
-                    {m.done ? <Check className="h-3 w-3" /> : null}
-                  </span>
-                  <span className="min-w-0">
-                    {m.title}
-                    {m.done !== null && (
-                      <span className="sr-only">{m.done ? ' — done' : ' — not done'}</span>
-                    )}
-                  </span>
-                </li>
-              ))}
-            </ul>
+            <RoadmapSteps goal={stop} />
           </details>
         )}
+        <GoalRecord goal={stop} />
         {stop.steps.length === 0 && stop.targetDate && (
           <p className="text-sm text-fg-tertiary">target {stop.targetDate}</p>
         )}
