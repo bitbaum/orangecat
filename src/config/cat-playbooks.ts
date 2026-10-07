@@ -131,7 +131,7 @@ export function playbookSection(p: Playbook): string {
   return `## ${p.heading}
 When someone wants this ("${p.examples[0]}"), you carry it out end to end. Do the steps; never hand them a checklist to do themselves.
 
-First, ask everything you need in ONE message, then stop asking:
+Your FIRST reply asks all of these together, as a short numbered list, and contains NO \`action\` block — a Create button before the answers is an empty card. Then stop asking:
 ${questions}
 
 Size the plan: ${p.sizing}
