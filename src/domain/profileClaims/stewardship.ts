@@ -37,11 +37,20 @@ export async function getEntityStewardUserId(
     .select('actor_id')
     .eq('id', entityId)
     .maybeSingle();
-  const actorId = entity?.actor_id as string | null | undefined;
+  return getActorStewardUserId((entity?.actor_id as string | null | undefined) ?? null);
+}
+
+/**
+ * The steward of an actor: the user who set up this unclaimed placeholder,
+ * while its claim is still pending. Null for any other actor.
+ */
+export async function getActorStewardUserId(
+  actorId: string | null | undefined
+): Promise<string | null> {
   if (!actorId) {
     return null;
   }
-
+  const admin = looseClient(getAdminClient());
   const { data: actor } = await admin
     .from(DATABASE_TABLES.ACTORS)
     .select('actor_type, claim_id')
@@ -60,6 +69,32 @@ export async function getEntityStewardUserId(
     return null;
   }
   return (claim.created_by as string | null) ?? null;
+}
+
+/**
+ * The placeholders `userId` currently stewards — the inverse of
+ * getActorStewardUserId. A booking for a studio set up for a friend is
+ * addressed to the friend's placeholder actor; without this, the request
+ * reached no account at all (the placeholder has none) and nobody could answer
+ * it. Management only: nothing here routes money (see the header).
+ */
+export async function getStewardedActorIds(userId: string): Promise<string[]> {
+  const admin = looseClient(getAdminClient());
+  const { data: claims } = await admin
+    .from(DATABASE_TABLES.PROFILE_CLAIMS)
+    .select('id')
+    .eq('created_by', userId)
+    .eq('status', 'pending');
+  const claimIds = ((claims ?? []) as Array<{ id: string }>).map(c => c.id);
+  if (claimIds.length === 0) {
+    return [];
+  }
+  const { data: actors } = await admin
+    .from(DATABASE_TABLES.ACTORS)
+    .select('id')
+    .eq('actor_type', 'unclaimed')
+    .in('claim_id', claimIds);
+  return ((actors ?? []) as Array<{ id: string }>).map(a => a.id);
 }
 
 /**

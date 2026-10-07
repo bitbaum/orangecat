@@ -12,20 +12,15 @@ import { logger } from '@/utils/logger';
 import { STORAGE_BUCKETS } from '@/config/database-tables';
 import type { FileUploadResult, FileUploadProgress } from '@/types/storage';
 import type { ServiceResult } from '@/types/common';
+import { prepareImageForUpload } from '@/services/images/upload';
 
 export type { FileUploadResult, FileUploadProgress };
 
 export class ProfileStorageService {
   private static readonly AVATAR_BUCKET = STORAGE_BUCKETS.AVATARS;
   private static readonly BANNER_BUCKET = STORAGE_BUCKETS.BANNERS;
-  private static readonly MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB for profile images
-  private static readonly ALLOWED_TYPES = [
-    'image/jpeg',
-    'image/jpg',
-    'image/png',
-    'image/webp',
-    'image/gif',
-  ];
+  // Both buckets' server-side file_size_limit. Bigger photos are shrunk to fit.
+  private static readonly MAX_FILE_SIZE = 5 * 1024 * 1024;
 
   /**
    * Upload profile avatar image
@@ -60,15 +55,12 @@ export class ProfileStorageService {
     onProgress?: (progress: FileUploadProgress) => void
   ): Promise<FileUploadResult> {
     try {
-      // Validate file
-      const validation = this.validateFile(file);
-      if (!validation.valid) {
-        return { success: false, error: validation.error };
+      const prepared = await prepareImageForUpload(file, { maxBytes: this.MAX_FILE_SIZE });
+      if (!prepared.ok) {
+        return { success: false, error: prepared.error };
       }
-
-      // Generate unique filename
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${path}_${Date.now()}.${fileExt}`;
+      const { payload, contentType, ext } = prepared;
+      const fileName = `${path}_${Date.now()}.${ext}`;
 
       // Simulate progress for small files
       if (onProgress) {
@@ -77,8 +69,8 @@ export class ProfileStorageService {
           const interval = setInterval(() => {
             progress += 20;
             onProgress({
-              loaded: (progress / 100) * file.size,
-              total: file.size,
+              loaded: (progress / 100) * payload.size,
+              total: payload.size,
               percentage: Math.min(progress, 90),
             });
             if (progress >= 90) {
@@ -92,7 +84,8 @@ export class ProfileStorageService {
       // Upload to Supabase Storage
       const { data: _data, error } = await supabase.storage
         .from(bucketName)
-        .upload(fileName, file, {
+        .upload(fileName, payload, {
+          contentType,
           cacheControl: '31536000', // 1 year
           upsert: true, // Replace if exists
         });
@@ -108,8 +101,8 @@ export class ProfileStorageService {
       // Complete progress
       if (onProgress) {
         onProgress({
-          loaded: file.size,
-          total: file.size,
+          loaded: payload.size,
+          total: payload.size,
           percentage: 100,
         });
       }
@@ -133,29 +126,6 @@ export class ProfileStorageService {
         error: message,
       };
     }
-  }
-
-  /**
-   * Validate file before upload
-   */
-  private static validateFile(file: File): { valid: boolean; error?: string } {
-    // Check file size
-    if (file.size > this.MAX_FILE_SIZE) {
-      return {
-        valid: false,
-        error: `File size must be less than ${this.MAX_FILE_SIZE / 1024 / 1024}MB`,
-      };
-    }
-
-    // Check file type
-    if (!this.ALLOWED_TYPES.includes(file.type)) {
-      return {
-        valid: false,
-        error: `File type must be one of: ${this.ALLOWED_TYPES.join(', ')}`,
-      };
-    }
-
-    return { valid: true };
   }
 
   /**

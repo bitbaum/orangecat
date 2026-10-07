@@ -15,6 +15,7 @@ interface ContextWithUser {
   };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- runs on any route context; see compose.ts
 export function withRateLimit(mode: Mode = 'read'): Middleware<any> {
   return async (req, ctx, next) => {
     let result: RateLimitResult;

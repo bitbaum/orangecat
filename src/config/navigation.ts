@@ -343,6 +343,13 @@ const simplifiedSections: NavSection[] = [
         requiresAuth: true,
       },
       {
+        name: 'Your deals',
+        href: ROUTES.DASHBOARD.DEALS,
+        icon: Handshake,
+        description: 'What you bought and sold, and reviewing the other side',
+        requiresAuth: true,
+      },
+      {
         name: 'Settings',
         href: ROUTES.SETTINGS,
         icon: Settings,

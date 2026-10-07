@@ -18,6 +18,7 @@
 
 import { fromTable } from '@/lib/supabase/untyped';
 import { createServerClient } from '@/lib/supabase/server';
+import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { logger } from '@/utils/logger';
 import { DATABASE_TABLES } from '@/config/database-tables';
 
@@ -64,6 +65,10 @@ export const AUDIT_ACTIONS = {
   DONATION_COMPLETED: 'DONATION_COMPLETED',
   DONATION_FAILED: 'DONATION_FAILED',
 
+  // Payments — money leaving a user's own wallet through our server
+  PAYMENT_SENT: 'PAYMENT_SENT',
+  PAYMENT_SEND_FAILED: 'PAYMENT_SEND_FAILED',
+
   // Admin
   ADMIN_ACTION: 'ADMIN_ACTION',
   PERMISSIONS_CHANGED: 'PERMISSIONS_CHANGED',
@@ -87,7 +92,7 @@ interface AuditLogEntry {
   entityType?: string;
   entityId?: string;
 
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   ipAddress?: string;
   userAgent?: string;
   success?: boolean;
@@ -98,6 +103,10 @@ interface AuditLogEntry {
  * Create audit log entry
  *
  * @param entry - Audit log entry data
+ * @param client - Write through this client instead of the request's session.
+ *   For callers that can run without a cookie session (the Cat's tools): the
+ *   default client would fail there, and a failure here is swallowed, so the
+ *   row would vanish without a sound.
  * @returns Promise that resolves when log is created
  *
  * @example
@@ -109,9 +118,9 @@ interface AuditLogEntry {
  *   metadata: { address: newWallet.address_or_xpub }
  * });
  */
-export async function auditLog(entry: AuditLogEntry): Promise<void> {
+export async function auditLog(entry: AuditLogEntry, client?: AnySupabaseClient): Promise<void> {
   try {
-    const supabase = await createServerClient();
+    const supabase = client ?? (await createServerClient());
 
     // Create audit log entry in database
 
@@ -159,7 +168,7 @@ export async function auditSuccess(
   entityType?: AuditLogEntry['entityType'],
   entityId?: string,
 
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 ): Promise<void> {
   return auditLog({
     action,

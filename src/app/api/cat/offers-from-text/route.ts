@@ -43,7 +43,8 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
     return apiBadRequest('Invalid JSON body');
   }
 
-  const text = typeof (body as any)?.text === 'string' ? (body as any).text.trim() : '';
+  const rawText = (body as { text?: unknown } | null)?.text;
+  const text = typeof rawText === 'string' ? rawText.trim() : '';
   if (!text) {
     return apiBadRequest('text is required');
   }
@@ -69,7 +70,7 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
   // Admin client kept for offer generation only: generateOffers reads
   // platform-wide demand signals from search_queries (RLS-on, zero policies —
   // service-role is the only reader), so a session client would see nothing.
-  const db = createAdminClient() as any;
+  const db = createAdminClient();
 
   try {
     const offers = await generateOffers(db, user.id, { focus: clamped, count: 4 });

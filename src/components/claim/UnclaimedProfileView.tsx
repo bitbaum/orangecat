@@ -13,26 +13,22 @@
  */
 
 import Link from 'next/link';
-import { ROUTES } from '@/config/routes';
 import { APP_NAME } from '@/config/brand';
+import { ENTITY_REGISTRY } from '@/config/entity-registry';
+import type { UnclaimedListing } from '@/domain/profileClaims/unclaimedListings';
 import { UnclaimedBand } from './UnclaimedBand';
-
-export interface UnclaimedProfileEntity {
-  id: string;
-  title: string;
-  description: string | null;
-}
 
 export function UnclaimedProfileView({
   name,
   avatarUrl,
   stewardUsername,
-  projects,
+  listings,
 }: {
   name: string;
   avatarUrl: string | null;
   stewardUsername: string | null;
-  projects: UnclaimedProfileEntity[];
+  /** Everything set up for them — projects, a studio, a service (unclaimedListings). */
+  listings: UnclaimedListing[];
 }) {
   const initial = name.trim().charAt(0).toUpperCase() || '?';
 
@@ -67,22 +63,25 @@ export function UnclaimedProfileView({
           </div>
         </div>
 
-        {projects.length > 0 && (
+        {listings.length > 0 && (
           <section className="mt-10">
             <h2 className="text-xs font-medium uppercase tracking-caps text-fg-muted">
               Set up for {name.split(' ')[0]}
             </h2>
             <ul className="mt-3 space-y-3">
-              {projects.map(project => (
-                <li key={project.id}>
+              {listings.map(listing => (
+                <li key={`${listing.type}:${listing.id}`}>
                   <Link
-                    href={ROUTES.PROJECTS.VIEW(project.id)}
+                    href={listing.href}
                     className="block rounded-lg border border-default bg-surface-base p-4 transition-colors hover:bg-surface-raised"
                   >
-                    <p className="font-medium text-fg-primary">{project.title}</p>
-                    {project.description && (
+                    <p className="text-xs font-medium uppercase tracking-caps text-fg-muted">
+                      {ENTITY_REGISTRY[listing.type].name}
+                    </p>
+                    <p className="mt-1 font-medium text-fg-primary">{listing.title}</p>
+                    {listing.description && (
                       <p className="mt-1 line-clamp-2 text-sm text-fg-secondary">
-                        {project.description}
+                        {listing.description}
                       </p>
                     )}
                   </Link>

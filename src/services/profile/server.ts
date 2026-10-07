@@ -145,7 +145,7 @@ export class ProfileServerService {
     supabase: AnySupabaseClient,
     userId: string,
     userEmail?: string | null,
-    userMetadata?: Record<string, any> | null
+    userMetadata?: Record<string, unknown> | null
   ): Promise<{ data: ProfileRow | null; error: Error | null }> {
     try {
       // Check if profile exists

@@ -16,6 +16,7 @@
  */
 import { postSignedToLoki } from './signed-post';
 import { getAdminClient } from '@/lib/supabase/admin';
+import { looseClient } from '@/lib/supabase/untyped';
 import { getEntityMetadata, type EntityType } from '@/config/entity-registry';
 import { logger } from '@/utils/logger';
 import type { PaymentIntent } from '@/domain/payments/types';
@@ -83,10 +84,10 @@ export async function notifyLokiEntitlement(pi: PaymentIntent): Promise<void> {
   } // only product passes carry a plan
 
   try {
-    const admin = getAdminClient() as any;
+    const admin = getAdminClient();
 
     const meta = getEntityMetadata('product' as EntityType);
-    const { data: product } = await admin
+    const { data: product } = await looseClient(admin)
       .from(meta.tableName)
       .select('tags')
       .eq('id', pi.entity_id)

@@ -42,7 +42,9 @@ import {
 } from './economic-profile';
 import { logger } from '@/utils/logger';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
-import { getUserActorId } from '@/domain/actors';
+import { getUserActorId, getUserActorIds } from '@/domain/actors';
+import { listMyDeals } from '@/domain/reputation/service';
+import { nudgeKindAt } from '@/domain/reputation/nudges';
 
 export interface Nudge {
   nudge_type: 'activation' | 'connection' | 'completion' | 'growth';
@@ -74,6 +76,15 @@ interface OwnRow {
   title: string;
   status: string;
   touched: number;
+}
+
+/** The columns selected from each entity table below. */
+interface EntityRow {
+  id: string;
+  title: string;
+  status: string;
+  created_at: string | null;
+  updated_at: string | null;
 }
 
 export async function generateNudges(
@@ -110,7 +121,7 @@ export async function generateNudges(
       })
     );
     for (const { type, data } of results) {
-      const rows: OwnRow[] = data.map((e: any) => ({
+      const rows: OwnRow[] = data.map((e: EntityRow) => ({
         id: e.id,
         title: e.title,
         status: e.status,
@@ -153,6 +164,36 @@ export async function generateNudges(
       dedupe_key: `completion:publish:${oldest.id}`,
       score: 0.7,
     });
+  }
+
+  // ── A paid deal waiting for this person's review (ADR-0010) ───────────────
+  // Same timing as the review-nudges cron (nudgeKindAt): not the minute they
+  // paid, and never once the window has closed. ONE card, the most urgent.
+  try {
+    const now = new Date();
+    const open = (await listMyDeals(supabase, await getUserActorIds(supabase, userId), now))
+      .filter(d => d.canReview && nudgeKindAt(d, now))
+      .sort((a, b) => Date.parse(a.review_closes_at) - Date.parse(b.review_closes_at));
+    if (open[0]) {
+      const deal = open[0];
+      const others = open.length - 1;
+      const c = copy.reviewDeal({
+        who: deal.counterparty.name || deal.counterparty.username,
+        title: deal.title,
+        others,
+      });
+      nudges.push({
+        nudge_type: 'completion',
+        title: c.title,
+        body: c.body,
+        cta_label: c.cta,
+        cta_url: ROUTES.DASHBOARD.DEALS,
+        dedupe_key: `completion:review:${deal.id}`,
+        score: 0.75,
+      });
+    }
+  } catch (err) {
+    logger.warn('nudges: review-deal lookup failed', { err }, 'Nudges');
   }
 
   // ── Demand: people searched for something this person already offers ──────
@@ -214,7 +255,7 @@ async function recentSearches(supabase: AnySupabaseClient): Promise<string[]> {
     .select('query')
     .gte('created_at', since)
     .limit(1000);
-  return (data ?? []).map((r: any) => String(r.query ?? '')).filter(Boolean);
+  return (data ?? []).map((r: { query: string | null }) => String(r.query ?? '')).filter(Boolean);
 }
 
 /**

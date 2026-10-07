@@ -19,7 +19,7 @@ import type { NextResponse } from 'next/server';
 const MAX_RESEARCH_PER_USER = 10;
 
 interface CreateResearchResult {
-  response: NextResponse<any>;
+  response: NextResponse<unknown>;
 }
 
 export async function createResearch(

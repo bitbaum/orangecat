@@ -22,7 +22,7 @@ import type {
   TimelinePagination,
 } from '@/types/timeline';
 import { pageWindow, feedResponse, emptyFeed } from './feed-shape';
-import { getCurrentUserId, transformEnrichedEventToDisplay } from './helpers';
+import { getCurrentUserId, displayEventsFromView } from './helpers';
 import { getDateRangeFilter } from '@/services/timeline/formatters/filters';
 import { enrichEventsForDisplay } from '@/services/timeline/processors/enrichment';
 import { attachReactionState } from '@/services/timeline/processors/reaction-state';
@@ -175,7 +175,7 @@ export async function getFollowedUsersFeed(
     // reaction columns, so without this every post in the followed feed
     // renders as though nobody had ever liked it.
     const displayEvents = await attachReactionState(
-      (events || []).map(transformEnrichedEventToDisplay)
+      await displayEventsFromView(events)
     );
 
     return feedResponse(displayEvents, { page, limit }, count || 0, filters);

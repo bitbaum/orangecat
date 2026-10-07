@@ -293,6 +293,16 @@ export const API_ROUTES = {
     CLAIM: (token: string) => `/api/profile-claims/token/${token}/claim`,
     DECLINE: (token: string) => `/api/profile-claims/token/${token}/decline`,
   },
+  /** Reputation (ADR-0010): your deals, reviewing one, and anyone's public track record. */
+  DEALS: {
+    BASE: '/api/deals',
+    REVIEWS: (dealId: string) => `/api/deals/${dealId}/reviews`,
+    TRACK_RECORD: (actorId: string) => `/api/actors/${actorId}/track-record`,
+    /** The seller's one reply to a public review about them. */
+    REVIEW_REPLY: (reviewId: string) => `/api/deal-reviews/${reviewId}/reply`,
+    /** Anyone signed in can report a public review to the operator. */
+    REVIEW_REPORT: (reviewId: string) => `/api/deal-reviews/${reviewId}/reports`,
+  },
 } as const;
 
 /** Download filename served by API_ROUTES.ACCOUNT_EXPORT (and used by its UI button). */

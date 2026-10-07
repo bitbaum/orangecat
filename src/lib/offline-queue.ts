@@ -65,7 +65,7 @@ export async function clearQueue(): Promise<void> {
  * Retrieves all posts for a specific user.
  */
 export async function getQueueByUser(userId: string): Promise<QueuedPost[]> {
-  return baseGetQueueByUser<any>(STORE_NAME, userId);
+  return baseGetQueueByUser<unknown>(STORE_NAME, userId);
 }
 
 export const offlineQueueService = {

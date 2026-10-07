@@ -341,7 +341,11 @@ class TimelineService {
   /**
    * Get comments for an event
    */
-  async getEventComments(eventId: string, limit: number = 50, offset: number = 0): Promise<any[]> {
+  async getEventComments(
+    eventId: string,
+    limit: number = 50,
+    offset: number = 0
+  ): Promise<Record<string, unknown>[]> {
     return getEventComments(eventId, limit, offset);
   }
 
@@ -362,7 +366,10 @@ class TimelineService {
   /**
    * Get replies to a comment
    */
-  async getCommentReplies(commentId: string, limit: number = 20): Promise<any[]> {
+  async getCommentReplies(
+    commentId: string,
+    limit: number = 20
+  ): Promise<Record<string, unknown>[]> {
     return getCommentReplies(commentId, limit);
   }
 

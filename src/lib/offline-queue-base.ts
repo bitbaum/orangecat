@@ -9,7 +9,7 @@ const DB_VERSION = 2; // Incremented to support new message queue store
 // Known store names - must be registered here for upgrade handler
 const KNOWN_STORES = ['offlinePostQueue', 'offlineMessageQueue'];
 
-export interface QueuedItem<T = any> {
+export interface QueuedItem<T = unknown> {
   id: string;
   payload: T;
   createdAt: number;

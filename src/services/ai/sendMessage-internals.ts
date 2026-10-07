@@ -12,20 +12,12 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { STATUS } from '@/config/database-constants';
 import { logger } from '@/utils/logger';
-import {
-  createOpenRouterService,
-  createOpenRouterServiceWithByok,
-  type OpenRouterMessage,
-} from './openrouter';
-import { createGroqService, isGroqAvailable, DEFAULT_GROQ_MODEL, type GroqMessage } from './groq';
-import {
-  DEFAULT_FREE_MODEL_ID,
-  isModelFree,
-  getModelMetadata,
-  getFreeModels,
-} from '@/config/ai-models';
+import { createOpenRouterServiceWithByok, type OpenRouterMessage } from './openrouter';
+import { DEFAULT_FREE_MODEL_ID, getModelMetadata } from '@/config/ai-models';
 import { createAutoRouter } from '@/services/ai/auto-router';
-import type { AIProvider, AssistantRecord, SendMessageError } from './sendMessage-types';
+import { completeOnPlatform, PlatformChainExhausted } from '@/services/ai/platform-providers';
+import type { AiService } from './types';
+import type { AssistantRecord, SendMessageError } from './sendMessage-types';
 
 export async function verifyConversation(
   supabase: SupabaseClient,
@@ -69,52 +61,27 @@ export async function fetchAssistant(
   return { assistant: data as AssistantRecord };
 }
 
-export function resolveProvider(hasByok: boolean, userKey: string | null): AIProvider | null {
-  if (userKey) {
-    return 'openrouter';
-  }
-  if (process.env.OPENROUTER_API_KEY) {
-    return 'openrouter';
-  }
-  if (isGroqAvailable()) {
-    return 'groq';
-  }
-  return null;
-}
-
-export function selectModel(
-  provider: AIProvider,
-  hasByok: boolean,
+/**
+ * The model for a person using their OWN OpenRouter key. They pay, so the
+ * assistant's preference and the auto-router's pick across its allowed models
+ * apply. The platform path does not come through here: the shared chain
+ * carries its own models.
+ */
+export function selectByokModel(
   requestedModel: string | undefined,
   assistant: AssistantRecord,
   history: { role: string; content: string }[],
   content: string
 ): string {
-  if (provider === 'groq') {
-    return DEFAULT_GROQ_MODEL;
-  }
-
   let modelToUse = requestedModel || assistant.model_preference || 'auto';
-  const historyMapped = history.map(m => ({ role: m.role, content: m.content }));
-
-  if (!hasByok) {
-    if (modelToUse === 'auto' || modelToUse === 'any' || !isModelFree(modelToUse)) {
-      const freeModelIds = getFreeModels().map(m => m.id);
-      modelToUse = createAutoRouter().selectModel({
-        message: content,
-        conversationHistory: historyMapped,
-        allowedModels: freeModelIds,
-      }).model;
-    }
-  } else if (modelToUse === 'auto' || modelToUse === 'any') {
+  if (modelToUse === 'auto' || modelToUse === 'any') {
     const allowedModels = assistant.allowed_models?.length ? assistant.allowed_models : undefined;
     modelToUse = createAutoRouter().selectModel({
       message: content,
-      conversationHistory: historyMapped,
+      conversationHistory: history.map(m => ({ role: m.role, content: m.content })),
       allowedModels,
     }).model;
   }
-
   return getModelMetadata(modelToUse) ? modelToUse : DEFAULT_FREE_MODEL_ID;
 }
 
@@ -160,100 +127,116 @@ export function buildMessageHistory(history: { role: string; content: string }[]
   ];
 }
 
-/**
- * The chat service for a resolved provider. Shared by the turn itself and by
- * the post-turn memory distillation, so both talk to the same vendor.
- */
-export function createChatService(
-  provider: AIProvider,
-  hasByok: boolean,
-  userKey: string | null
-): { chatCompletion: ReturnType<typeof createOpenRouterService>['chatCompletion'] } {
-  if (provider === 'groq') {
-    return createGroqService() as unknown as {
-      chatCompletion: ReturnType<typeof createOpenRouterService>['chatCompletion'];
-    };
-  }
-  return hasByok ? createOpenRouterServiceWithByok(userKey!) : createOpenRouterService();
+export interface GeneratedReply {
+  response: {
+    content: string;
+    model: string;
+    inputTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+    isFreeModel: boolean;
+    costBtc: number;
+  };
+  /**
+   * The client that produced it. Post-turn memory distillation reuses it, so
+   * the facts are distilled by the same vendor that just answered — the one
+   * known to be up — rather than one picked again from scratch.
+   */
+  chatService: AiService;
+  /** Human label for the model, as stored and shown. */
+  modelLabel: string;
 }
 
-export async function callAi(
-  provider: AIProvider,
-  hasByok: boolean,
-  userKey: string | null,
-  modelToUse: string,
-  messages: (OpenRouterMessage | GroqMessage)[],
-  assistant: AssistantRecord
-): Promise<
-  | {
-      response: {
-        content: string;
-        model: string;
-        inputTokens: number;
-        outputTokens: number;
-        totalTokens: number;
-        isFreeModel: boolean;
-        costBtc: number;
+const RATE_LIMITED_MESSAGE =
+  'The free AI tier is busy right now. Try again shortly, or add your own API key in Settings → AI for unlimited use.';
+
+/**
+ * Produce the assistant's reply.
+ *
+ * Two paths, and only two:
+ *
+ * - **Own key (BYOK).** The person pays, so their OpenRouter key and the
+ *   assistant's model preference decide. Unchanged.
+ * - **Platform.** The shared chain (`completeOnPlatform`) — the same one the Cat
+ *   serves from, ordered by capacity with the scarcest pool last. This replaced
+ *   a hand-written path that asked OpenRouter's free tier FIRST (50 requests a
+ *   day, shared by every app on the box) and fell back one hop, to Groq, only on
+ *   a rate limit — so a companion went silent after a handful of messages while
+ *   the vendor holding this platform's own quota was never asked.
+ *
+ * The platform absorbs the model cost of a platform reply (`costBtc: 0`); what
+ * the person pays is the creator's own price, charged separately.
+ */
+export async function generateReply(params: {
+  hasByok: boolean;
+  userKey: string | null;
+  requestedModel: string | undefined;
+  assistant: AssistantRecord;
+  systemPrompt: string | null;
+  history: { role: string; content: string }[];
+  content: string;
+}): Promise<GeneratedReply | { error: SendMessageError }> {
+  const { assistant, systemPrompt, history, content } = params;
+  const messages = buildMessageHistory(history, content);
+  const temperature = assistant.temperature ?? 0.7;
+  const maxTokens = assistant.max_tokens_per_response || undefined;
+
+  if (params.hasByok && params.userKey) {
+    const model = selectByokModel(params.requestedModel, assistant, history, content);
+    const service = createOpenRouterServiceWithByok(params.userKey);
+    try {
+      const result = await service.chatCompletion({
+        model,
+        messages: messages as OpenRouterMessage[],
+        systemPrompt: systemPrompt || undefined,
+        temperature,
+        maxTokens,
+      });
+      return {
+        response: { ...result, costBtc: result.costBtc ?? 0 },
+        chatService: service as unknown as AiService,
+        modelLabel: getModelMetadata(model)?.name || model,
+      };
+    } catch (aiError: unknown) {
+      logger.error('AI API error (own key)', aiError, 'AIMessagesService');
+      return {
+        error: isAiRateLimitError(aiError)
+          ? {
+              code: 'RATE_LIMITED',
+              message: 'Your own API key is rate-limited. Try again shortly.',
+            }
+          : {
+              code: 'AI_ERROR',
+              message: aiError instanceof Error ? aiError.message : 'AI service error',
+            },
       };
     }
-  | { error: SendMessageError }
-> {
+  }
+
   try {
-    if (provider === 'groq') {
-      const result = await createGroqService().chatCompletion({
-        model: modelToUse,
-        messages: messages as GroqMessage[],
-        systemPrompt: assistant.system_prompt || undefined,
-        temperature: assistant.temperature ?? 0.7,
-        maxTokens: assistant.max_tokens_per_response || undefined,
-      });
-      return { response: { ...result, costBtc: 0 } };
-    } else {
-      const openRouter = hasByok
-        ? createOpenRouterServiceWithByok(userKey!)
-        : createOpenRouterService();
-      const result = await openRouter.chatCompletion({
-        model: modelToUse,
-        messages: messages as OpenRouterMessage[],
-        systemPrompt: assistant.system_prompt || undefined,
-        temperature: assistant.temperature ?? 0.7,
-        maxTokens: assistant.max_tokens_per_response || undefined,
-      });
-      return { response: result };
-    }
-  } catch (aiError: unknown) {
-    // The platform-free OpenRouter tier frequently 429s. Rather than fail the whole
-    // chat, fall back to Groq (platform key) for non-BYOK users — mirrors the Cat path.
-    if (provider === 'openrouter' && !hasByok && isAiRateLimitError(aiError) && isGroqAvailable()) {
-      try {
-        const result = await createGroqService().chatCompletion({
-          model: DEFAULT_GROQ_MODEL,
-          messages: messages as GroqMessage[],
-          systemPrompt: assistant.system_prompt || undefined,
-          temperature: assistant.temperature ?? 0.7,
-          maxTokens: assistant.max_tokens_per_response || undefined,
-        });
-        return { response: { ...result, costBtc: 0 } };
-      } catch (groqError: unknown) {
-        logger.error(
-          'Groq fallback after OpenRouter rate-limit also failed',
-          groqError,
-          'AIMessagesService'
-        );
-      }
-    }
-    logger.error('AI API error', aiError, 'AIMessagesService');
-    const isRateLimited = isAiRateLimitError(aiError);
+    const { result, provider } = await completeOnPlatform(content, {
+      systemPrompt,
+      messages,
+      temperature,
+      maxTokens,
+    });
     return {
-      error: isRateLimited
-        ? {
-            code: 'RATE_LIMITED',
-            message:
-              'The free AI tier is busy right now. Try again shortly, or add your own API key in Settings → AI for unlimited use.',
-          }
+      response: { ...result, costBtc: 0 },
+      chatService: provider.aiService,
+      modelLabel: getModelMetadata(provider.defaultModel)?.name || provider.defaultModel,
+    };
+  } catch (aiError: unknown) {
+    if (aiError instanceof PlatformChainExhausted && aiError.failures.length === 0) {
+      return { error: { code: 'SERVICE_UNAVAILABLE' } };
+    }
+    logger.error('AI API error (platform chain exhausted)', aiError, 'AIMessagesService');
+    const rationed = aiError instanceof PlatformChainExhausted && aiError.allRateLimited;
+    return {
+      error: rationed
+        ? { code: 'RATE_LIMITED', message: RATE_LIMITED_MESSAGE }
         : {
             code: 'AI_ERROR',
-            message: aiError instanceof Error ? aiError.message : 'AI service error',
+            message: 'The AI service could not answer just now. Try again shortly.',
           },
     };
   }

@@ -262,11 +262,16 @@ export async function createProjectEvent(
 ): Promise<TimelineEventResponse> {
   // Get project details
 
-  const { data: project } = await (supabase as any)
+  const { data: project } = await supabase
     .from(getTableName('project'))
     .select('title, description, goal_amount, currency')
     .eq('id', projectId)
-    .single();
+    .single<{
+      title: string;
+      description: string | null;
+      goal_amount?: number;
+      currency?: string;
+    }>();
 
   if (!project) {
     return { success: false, error: 'Project not found' };
@@ -311,13 +316,13 @@ export async function createTransactionEvent(
     .eq('id', transactionId)
     .single();
 
-  const { data: project } = await (supabase as any)
+  const { data: project } = await supabase
     .from(getTableName('project'))
     .select('title')
     .eq('id', projectId)
     .single();
 
-  const { data: supporter } = await (supabase as any)
+  const { data: supporter } = await supabase
     .from(DATABASE_TABLES.PROFILES)
     .select('username, display_name:name')
     .eq('id', supporterId)

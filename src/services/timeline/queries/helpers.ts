@@ -11,6 +11,7 @@
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import type { TimelineDisplayEvent, TimelineEventDb, TimelineActorType } from '@/types/timeline';
 import type { Database } from '@/types/database';
+import { attachLiveOriginalAuthors } from '@/services/timeline/processors/enrichment';
 import {
   mapDbEventToTimelineEvent,
   getEventIcon,
@@ -115,4 +116,19 @@ export function transformEnrichedEventToDisplay(
     timeAgo: getTimeAgo(timelineEvent.eventTimestamp),
     isRecent: isEventRecent(timelineEvent.eventTimestamp),
   };
+}
+
+/**
+ * View rows → display events, for every feed that reads the enriched views.
+ *
+ * Five feeds wrote `rows.map(transformEnrichedEventToDisplay)` themselves, so a
+ * step every feed needs had to be added five times — and the repost author was
+ * the step nobody added: a repost showed its original author's avatar as it was
+ * on the day of the repost. This is the one place that turns view rows into
+ * posts.
+ */
+export async function displayEventsFromView(
+  rows: EnrichedTimelineViewRow[] | null | undefined
+): Promise<TimelineDisplayEvent[]> {
+  return attachLiveOriginalAuthors((rows || []).map(transformEnrichedEventToDisplay));
 }

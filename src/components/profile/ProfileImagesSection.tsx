@@ -10,6 +10,7 @@
  */
 
 import { User, Camera } from 'lucide-react';
+import { IMAGE_UPLOAD_ACCEPT } from '@/services/images/upload';
 import { Profile } from '@/types/profile';
 
 interface ProfileImagesSectionProps {
@@ -68,7 +69,7 @@ export function ProfileImagesSection({
         <input
           ref={bannerInputRef}
           type="file"
-          accept="image/*"
+          accept={IMAGE_UPLOAD_ACCEPT}
           onChange={e => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'banner')}
           className="hidden"
         />
@@ -108,7 +109,7 @@ export function ProfileImagesSection({
         <input
           ref={avatarInputRef}
           type="file"
-          accept="image/*"
+          accept={IMAGE_UPLOAD_ACCEPT}
           onChange={e => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'avatar')}
           className="hidden"
         />

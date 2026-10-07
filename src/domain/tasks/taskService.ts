@@ -16,7 +16,7 @@ import type { TaskUpdateInput } from '@/lib/schemas/tasks';
 import { logger } from '@/utils/logger';
 import type { NextResponse } from 'next/server';
 
-type AnyResponse = NextResponse<any>;
+type AnyResponse = NextResponse<unknown>;
 
 /** Map validated update input to DB column update object. */
 export function buildTaskUpdates(updateData: TaskUpdateInput): Record<string, unknown> {
@@ -71,7 +71,7 @@ export async function updateTask(
   id: string,
   updates: Record<string, unknown>
 ): Promise<AnyResponse> {
-  const { data: task, error } = await (supabase as any)
+  const { data: task, error } = await supabase
     .from(DATABASE_TABLES.TASKS)
     .update(updates)
     .eq('id', id)
@@ -112,7 +112,7 @@ export async function archiveTask(
     return apiForbidden('Only the creator can archive this task');
   }
 
-  const { error } = await (supabase as any)
+  const { error } = await supabase
     .from(DATABASE_TABLES.TASKS)
     .update({ is_archived: true })
     .eq('id', id);

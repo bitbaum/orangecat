@@ -23,6 +23,8 @@ import {
 import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
 import { validateUUID, getValidationError } from '@/lib/api/validation';
 import { apiErrorMessage } from '@/lib/api/errorMessage';
+import { getAdminClient } from '@/lib/supabase/admin';
+import { getStewardedActorIds } from '@/domain/profileClaims/stewardship';
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -41,10 +43,10 @@ async function getActorIds(supabase: AnySupabaseClient, userId: string): Promise
   return actors?.map((a: { id: string }) => a.id) || [];
 }
 
-async function tryProviderAction(
+async function tryProviderAction<R extends { success: boolean }>(
   actorIds: string[],
-  fn: (id: string) => Promise<any>
-): Promise<any> {
+  fn: (id: string) => Promise<R>
+): Promise<R | undefined> {
   for (const actorId of actorIds) {
     const result = await fn(actorId);
     if (result.success) {
@@ -62,12 +64,18 @@ export const GET = withAuth(async (request: AuthenticatedRequest, context: Route
   }
   try {
     const { user, supabase } = request;
-    const booking = await createBookingService(supabase).getBooking(id);
+    // A steward's booking (a place set up for someone not yet on the
+    // platform) is invisible to them under RLS; read it with the admin client
+    // and let the provider check below decide whether they may see it.
+    const stewarded = await getStewardedActorIds(user.id);
+    const booking =
+      (await createBookingService(supabase).getBooking(id)) ??
+      (stewarded.length > 0 ? await createBookingService(getAdminClient()).getBooking(id) : null);
     if (!booking) {
       return apiNotFound('Booking not found');
     }
 
-    const actorIds = await getActorIds(supabase, user.id);
+    const actorIds = [...(await getActorIds(supabase, user.id)), ...stewarded];
     const isCustomer = booking.customer_user_id === user.id;
     const isProvider = actorIds.includes(booking.provider_actor_id);
     if (!isCustomer && !isProvider) {
@@ -115,6 +123,18 @@ export const PUT = withAuth(async (request: AuthenticatedRequest, context: Route
         complete: (aid: string) => svc.completeBooking(id, aid),
       };
       bookingResult = await tryProviderAction(actorIds, actionMap[action]);
+      if (!bookingResult?.success) {
+        // As steward: the same transition, written with the admin client and
+        // scoped by provider_actor_id to placeholders this user stewards.
+        const stewarded = await getStewardedActorIds(user.id);
+        const asSteward = createBookingService(getAdminClient());
+        const stewardMap = {
+          confirm: (aid: string) => asSteward.confirmBooking(id, aid),
+          reject: (aid: string) => asSteward.rejectBooking(id, aid, reason),
+          complete: (aid: string) => asSteward.completeBooking(id, aid),
+        };
+        bookingResult = (await tryProviderAction(stewarded, stewardMap[action])) ?? bookingResult;
+      }
     }
 
     if (!bookingResult?.success) {

@@ -2,6 +2,8 @@
 
 import { useCallback, useState } from 'react';
 import { ImagePlus, Loader2, X } from 'lucide-react';
+import { toast } from 'sonner';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 import ImageSuggestPicker from '@/components/images/ImageSuggestPicker';
 import { uploadUserImage } from '@/services/images/upload';
 import { toPostImageMeta, type PostImageMeta } from '@/types/timeline';
@@ -53,6 +55,10 @@ export function useComposerImage({
             sourceUrl: null,
           })
         );
+      } else {
+        // A paste has no picker to show an error in, so a failure used to vanish:
+        // the spinner stopped and nothing was attached, with no reason given.
+        toast.error(apiErrorMessage(result, 'Could not attach that image.'));
       }
     },
     [userId, setImage, isPasting]

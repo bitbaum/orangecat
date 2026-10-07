@@ -9,6 +9,7 @@
 
 import { z } from 'zod';
 import { DATABASE_TABLES } from '@/config/database-tables';
+import { actorNames, nameOf, type ActorName } from '@/domain/actors/names';
 import { getTableName } from '@/config/entity-registry';
 import { REVIEW_LIMITS, REVIEW_VERDICT_VALUES, type ReviewVerdict } from '@/config/open-science';
 import { fromTable } from '@/lib/supabase/untyped';
@@ -46,7 +47,7 @@ export interface ResearchReview {
   body_sha256: string;
   output_link: string | null;
   created_at: string;
-  reviewer: { actor_id: string; name: string | null; username: string | null };
+  reviewer: ActorName;
 }
 
 interface ReviewRow {
@@ -60,48 +61,6 @@ interface ReviewRow {
 }
 
 const REVIEW_COLUMNS = 'id, reviewer_actor_id, verdict, body, body_sha256, output_link, created_at';
-
-/**
- * Names for a set of reviewer actors. Two queries, not an embed: the live DB
- * has no FK from actors.user_id to profiles (see fetchEntityOwner).
- */
-async function reviewerNames(
-  supabase: AnySupabaseClient,
-  actorIds: string[]
-): Promise<Map<string, ResearchReview['reviewer']>> {
-  const names = new Map<string, ResearchReview['reviewer']>();
-  if (actorIds.length === 0) {
-    return names;
-  }
-  const { data: actors } = (await fromTable(supabase, DATABASE_TABLES.ACTORS)
-    .select('id, user_id, display_name, slug')
-    .in('id', actorIds)) as {
-    data: Array<{
-      id: string;
-      user_id: string | null;
-      display_name: string | null;
-      slug: string | null;
-    }> | null;
-  };
-  const userIds = (actors ?? []).map(a => a.user_id).filter((id): id is string => Boolean(id));
-  const { data: profiles } = userIds.length
-    ? ((await fromTable(supabase, DATABASE_TABLES.PROFILES)
-        .select('id, username, name')
-        .in('id', userIds)) as {
-        data: Array<{ id: string; username: string | null; name: string | null }> | null;
-      })
-    : { data: [] };
-  const byUser = new Map((profiles ?? []).map(p => [p.id, p]));
-  for (const actor of actors ?? []) {
-    const profile = actor.user_id ? byUser.get(actor.user_id) : undefined;
-    names.set(actor.id, {
-      actor_id: actor.id,
-      name: profile?.name ?? actor.display_name ?? null,
-      username: profile?.username ?? actor.slug ?? null,
-    });
-  }
-  return names;
-}
 
 /** Reviews of one research entity, newest first, with the total count. RLS decides visibility. */
 export async function listResearchReviews(
@@ -121,7 +80,7 @@ export async function listResearchReviews(
     throw error;
   }
   const rows = data ?? [];
-  const names = await reviewerNames(supabase, [...new Set(rows.map(r => r.reviewer_actor_id))]);
+  const names = await actorNames(supabase, [...new Set(rows.map(r => r.reviewer_actor_id))]);
   return {
     total: count ?? rows.length,
     reviews: rows.map(row => ({
@@ -131,11 +90,7 @@ export async function listResearchReviews(
       body_sha256: row.body_sha256,
       output_link: row.output_link,
       created_at: row.created_at,
-      reviewer: names.get(row.reviewer_actor_id) ?? {
-        actor_id: row.reviewer_actor_id,
-        name: null,
-        username: null,
-      },
+      reviewer: nameOf(names, row.reviewer_actor_id),
     })),
   };
 }

@@ -56,8 +56,12 @@ interface OptimisticEventUser {
   email?: string;
   user_metadata?: {
     name?: string;
-    avatar_url?: string;
   };
+  /**
+   * The author's profile — the same row the server renders the post from, so
+   * the post does not change name or picture when the real one replaces it.
+   */
+  profile?: { name?: string | null; username?: string | null; avatar_url?: string | null } | null;
 }
 
 interface CreateOptimisticEventParams {
@@ -91,12 +95,14 @@ function createOptimisticEvent(params: CreateOptimisticEventParams): TimelineDis
   const now = new Date().toISOString();
 
   const displayName =
+    user.profile?.name ||
     user.user_metadata?.name ||
     (typeof user.email === 'string' && user.email.includes('@')
       ? user.email.split('@')[0]
       : null) ||
     'You';
   const username =
+    user.profile?.username ||
     (typeof user.email === 'string' && user.email.includes('@')
       ? user.email.split('@')[0]
       : null) || user.id;
@@ -128,7 +134,7 @@ function createOptimisticEvent(params: CreateOptimisticEventParams): TimelineDis
       id: user.id,
       name: displayName,
       username,
-      avatar: user.user_metadata?.avatar_url,
+      avatar: user.profile?.avatar_url ?? undefined,
       type: 'user',
     },
     icon: getEventIcon('status_update'),

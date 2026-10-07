@@ -46,7 +46,7 @@ describe('lookupUserActor tells absence apart from failure', () => {
 
   it('returns the one actor when there is exactly one', async () => {
     const r = await lookupUserActor(client({ data: [{ id: 'a1' }] }), 'u1');
-    expect(r).toEqual({ ok: true, actorId: 'a1', duplicates: 1 });
+    expect(r).toEqual({ ok: true, actorId: 'a1', duplicates: 1, actorIds: ['a1'] });
   });
 });
 
@@ -64,6 +64,8 @@ describe('several actors are survivable, and deterministic', () => {
     );
     expect(r.actorId).toBe('oldest');
     expect(r.ok && r.duplicates).toBe(3);
+    // All of them, for reads that must also find rows filed against a duplicate.
+    expect(r.ok && r.actorIds).toEqual(['oldest', 'newer', 'newest']);
   });
 
   it('asks for them oldest-first rather than hoping', async () => {
