@@ -92,6 +92,9 @@ export function AIPrefillBar({
       setPending(requestId);
       clearError();
       setLastChanged(null);
+      // What the server sees. The answer echoes it back, so it is also what
+      // tells a field the AI changed from one the person changed meanwhile.
+      const sent = existingData;
 
       try {
         const response = await fetch(API_ROUTES.AI.FORM_PREFILL, {
@@ -100,7 +103,7 @@ export function AIPrefillBar({
           body: JSON.stringify({
             formType,
             description: prompt.trim(),
-            existingData,
+            existingData: sent,
             intent,
           }),
         });
@@ -110,7 +113,7 @@ export function AIPrefillBar({
         >(response, 'Failed to generate form data');
 
         const changedFields = result.changedFields ?? Object.keys(result.data);
-        onPrefill(result.data, result.confidence, changedFields);
+        onPrefill(result.data, result.confidence, changedFields, sent);
         setHasFilled(true);
         setLastChanged(changedFields);
 

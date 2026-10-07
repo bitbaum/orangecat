@@ -3,15 +3,18 @@
 /**
  * Entity Creation Success Component
  *
- * Shown after successful entity creation. Offers the user a clear choice:
- * publish the entity immediately, or keep it as a draft.
+ * Shown after successful entity creation. A draft gets the choice to publish
+ * now or keep it as a draft; something that is live on creation (an
+ * assistant, a circle, a group, an active wishlist) is said to be live and
+ * offered a link to it. It used to call everything a draft, and "Publish
+ * Now" on an already-live item failed with "Failed to publish".
  *
  * Created: 2026-03-28
  */
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CheckCircle2, Rocket, FileText } from 'lucide-react';
+import { CheckCircle2, Rocket, FileText, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import Button from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
@@ -21,6 +24,7 @@ import { entityEvents } from '@/lib/analytics';
 import { API_ROUTES } from '@/config/api-routes';
 import { ENTITY_STATUS } from '@/config/database-constants';
 import { ENTITY_REGISTRY, type EntityType } from '@/config/entity-registry';
+import { isLiveEntityStatus } from '@/config/entity-status';
 import { useAuth } from '@/hooks/useAuth';
 import { useSellerPaymentMethods } from '@/hooks/useSellerPaymentMethods';
 import { apiErrorMessage } from '@/lib/api/errorMessage';
@@ -38,6 +42,27 @@ interface EntityCreationSuccessProps {
   dashboardUrl: string;
   /** URL to the entity detail page (optional) */
   detailUrl?: string;
+  /** The created row, as the API returned it. */
+  record?: Record<string, unknown>;
+}
+
+/**
+ * Whether a just-created row is already visible. Publish state lives in
+ * `status` for most types and in a boolean for wishlists; a group exists for
+ * its members from the start — "listed in the directory" is a setting it was
+ * created with, not a draft state to publish out of.
+ */
+export function isLiveOnCreate(entityType: string, record: Record<string, unknown> = {}): boolean {
+  if (entityType === 'group') {
+    return true;
+  }
+  if ('status' in record) {
+    return isLiveEntityStatus(record.status as string | null);
+  }
+  if ('is_active' in record) {
+    return record.is_active === true;
+  }
+  return false;
 }
 
 export function EntityCreationSuccess({
@@ -47,8 +72,10 @@ export function EntityCreationSuccess({
   entityTypeName,
   dashboardUrl,
   detailUrl,
+  record,
 }: EntityCreationSuccessProps) {
   const router = useRouter();
+  const isLive = isLiveOnCreate(entityType, record);
   const [isPublishing, setIsPublishing] = useState(false);
 
   // Soft-nudge (C-2): if this entity type receives payments and the owner has no
@@ -114,8 +141,14 @@ export function EntityCreationSuccess({
           <div className="space-y-2">
             <h2 className="text-xl font-semibold text-fg-primary">{entityTypeName} created!</h2>
             <p className="text-sm text-fg-secondary">
-              &ldquo;{entityTitle}&rdquo; is saved as a <span className="font-medium">draft</span>.
-              It&apos;s not visible to anyone yet.
+              {isLive ? (
+                <>&ldquo;{entityTitle}&rdquo; is live.</>
+              ) : (
+                <>
+                  &ldquo;{entityTitle}&rdquo; is saved as a{' '}
+                  <span className="font-medium">draft</span>. It&apos;s not visible to anyone yet.
+                </>
+              )}
             </p>
           </div>
 
@@ -128,30 +161,38 @@ export function EntityCreationSuccess({
           )}
 
           {/* Actions */}
-          <div className="space-y-3">
-            <Button
-              onClick={handlePublish}
-              disabled={isPublishing}
-              className="w-full bg-status-positive hover:bg-status-positive/90 text-white"
-            >
-              <Rocket className="mr-2 h-4 w-4" />
-              {isPublishing ? 'Publishing...' : 'Publish Now'}
-            </Button>
-            <Button
-              onClick={handleKeepDraft}
-              variant="outline"
-              disabled={isPublishing}
-              className="w-full"
-            >
-              <FileText className="mr-2 h-4 w-4" />
-              Keep as Draft
-            </Button>
-          </div>
-
-          {/* Hint */}
-          <p className="text-xs text-fg-tertiary">
-            You can always publish or unpublish from your dashboard.
-          </p>
+          {isLive ? (
+            <div className="space-y-3">
+              <Button href={detailUrl || dashboardUrl} className="w-full">
+                <ExternalLink className="mr-2 h-4 w-4" />
+                View {entityTypeName.toLowerCase()}
+              </Button>
+              <Button href={dashboardUrl} variant="outline" className="w-full">
+                Back to dashboard
+              </Button>
+            </div>
+          ) : (
+            <>
+              <div className="space-y-3">
+                <Button onClick={handlePublish} disabled={isPublishing} className="w-full">
+                  <Rocket className="mr-2 h-4 w-4" />
+                  {isPublishing ? 'Publishing...' : 'Publish now'}
+                </Button>
+                <Button
+                  onClick={handleKeepDraft}
+                  variant="outline"
+                  disabled={isPublishing}
+                  className="w-full"
+                >
+                  <FileText className="mr-2 h-4 w-4" />
+                  Keep as draft
+                </Button>
+              </div>
+              <p className="text-xs text-fg-tertiary">
+                You can always publish or unpublish from your dashboard.
+              </p>
+            </>
+          )}
         </CardContent>
       </Card>
     </div>

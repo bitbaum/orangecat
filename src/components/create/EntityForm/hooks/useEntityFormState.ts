@@ -42,6 +42,13 @@ export function useEntityFormState<T extends Record<string, unknown>>({
     confidence: {},
   });
 
+  // The initial data the form currently stands on — what "untouched" means.
+  const baselineRef = useRef(initialFormData);
+  const dataRef = useRef(formState.data);
+  useEffect(() => {
+    dataRef.current = formState.data;
+  });
+
   useEffect(() => {
     setFormState(prev => {
       // Same builder as the first render. This reset used to skip the
@@ -50,6 +57,24 @@ export function useEntityFormState<T extends Record<string, unknown>>({
       // and the form no longer matched the draft hook's pristine snapshot —
       // so an untouched form wrote a "draft" over a real one (audit 2026-10-07).
       const data = buildInitialData(config, initialValues, userCurrencyRef.current);
+      const previousBaseline = baselineRef.current;
+      baselineRef.current = data;
+
+      // New initial values on create are a template pick (the wizard keeps the
+      // form mounted behind its template step). They used to replace the whole
+      // form, so Previous → pick a template wiped everything typed, without a
+      // word. A template now fills only what the person has not touched. On
+      // edit, new initial values are the loaded entity: those replace.
+      if (mode === 'create' && prev.isDirty) {
+        const merged = { ...data } as Record<string, unknown>;
+        for (const [key, value] of Object.entries(prev.data as Record<string, unknown>)) {
+          if (!sameValue(value, (previousBaseline as Record<string, unknown>)[key])) {
+            merged[key] = value;
+          }
+        }
+        return { ...prev, data: merged as T, errors: {}, activeField: null };
+      }
+
       return {
         ...prev,
         data,
@@ -58,7 +83,7 @@ export function useEntityFormState<T extends Record<string, unknown>>({
         activeField: null,
       };
     });
-  }, [initialValues, config]);
+  }, [initialValues, config, mode]);
 
   const { lastSavedAt, clearDraft } = useEntityFormDraft({
     mode,
@@ -119,17 +144,35 @@ export function useEntityFormState<T extends Record<string, unknown>>({
     (
       data: Record<string, unknown>,
       confidence: Record<string, FieldConfidence>,
-      changedFields: string[]
+      changedFields: string[],
+      sent?: Record<string, unknown>
     ) => {
-      setFormState(prev => ({
-        ...prev,
-        data: { ...prev.data, ...data } as T,
-        isDirty: true,
-      }));
-      // Highlight only what the AI actually wrote. `data` carries the whole
-      // form (including the user's own untouched values), so keying off it
-      // flagged every field as AI-generated.
-      setAiGeneratedFields({ fields: new Set<string>(changedFields), confidence });
+      // Apply only what the AI changed, and never over an edit made while it
+      // was thinking. `data` echoes the snapshot the request was sent with, so
+      // merging all of it put a title typed during those seconds back to what
+      // it was (audit 2026-10-07). A field counts as edited meanwhile when it
+      // no longer equals what was sent — or, for a field the snapshot left out
+      // because it was still at its default, that default.
+      // The latest committed form: the answer arrives seconds after the send,
+      // long after any render that could have closed over the data.
+      const current = dataRef.current as Record<string, unknown>;
+      const baseline = baselineRef.current as Record<string, unknown>;
+      const patch: Record<string, unknown> = {};
+      const applied: string[] = [];
+      for (const key of changedFields) {
+        if (!(key in data)) {
+          continue;
+        }
+        const atSend = sent && key in sent ? sent[key] : baseline[key];
+        if (sent && !sameValue(current[key], atSend)) {
+          continue;
+        }
+        patch[key] = data[key];
+        applied.push(key);
+      }
+      setFormState(prev => ({ ...prev, data: { ...prev.data, ...patch } as T, isDirty: true }));
+      // Highlight only what the AI actually wrote.
+      setAiGeneratedFields({ fields: new Set<string>(applied), confidence });
       window.scrollTo({ top: 0, behavior: 'smooth' });
     },
     []
@@ -180,6 +223,10 @@ export function useEntityFormState<T extends Record<string, unknown>>({
     setErrors,
     validateField,
   };
+}
+
+function sameValue(a: unknown, b: unknown): boolean {
+  return a === b || JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
 }
 
 /** Defaults + supplied values, the user's currency where none is set, then

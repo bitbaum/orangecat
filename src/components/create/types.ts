@@ -417,7 +417,10 @@ export interface AIPrefillBarProps {
   onPrefill: (
     data: Record<string, unknown>,
     confidence: Record<string, FieldConfidence>,
-    changedFields: string[]
+    changedFields: string[],
+    /** The `existingData` the request was sent with — lets the form skip a
+     *  field the person edited while the request was in flight. */
+    sent?: Record<string, unknown>
   ) => void;
   /** Whether form is currently submitting */
   disabled?: boolean;

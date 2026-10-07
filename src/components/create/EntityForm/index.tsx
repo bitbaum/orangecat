@@ -12,6 +12,8 @@ import { AIPrefillBar } from '../AIPrefillBar';
 import type { EntityConfig } from '../types';
 
 import { EntityCreationSuccess } from '../EntityCreationSuccess';
+import type { CreatedEntity } from './hooks/entityFormSubmitAction';
+import { fillUrlTemplate } from '@/utils/urlTemplate';
 import { useEntityFormState } from './hooks/useEntityFormState';
 import { formatRelativeTime } from './hooks/useEntityFormDraft';
 import { useFieldVisibility } from './hooks/useFieldVisibility';
@@ -78,7 +80,7 @@ export function EntityForm<T extends Record<string, unknown>>({
     validateField,
   } = useEntityFormState({ config, initialValues, userCurrency, userId: user?.id, mode });
 
-  const [createdEntity, setCreatedEntity] = useState<{ id: string; title: string } | null>(null);
+  const [createdEntity, setCreatedEntity] = useState<CreatedEntity | null>(null);
 
   // Flat field list for the AI bar: it offers only the adjustments this form's
   // fields support, and names changed fields by their label.
@@ -160,9 +162,11 @@ export function EntityForm<T extends Record<string, unknown>>({
         entityTitle={createdEntity.title}
         entityTypeName={config.name}
         dashboardUrl={config.backUrl}
-        detailUrl={config.successUrl
-          .replace(/:id/g, createdEntity.id)
-          .replace(/\[id\]/g, createdEntity.id)}
+        record={createdEntity.record}
+        detailUrl={fillUrlTemplate(config.successUrl, {
+          ...createdEntity.record,
+          id: createdEntity.id,
+        })}
       />
     );
   }
