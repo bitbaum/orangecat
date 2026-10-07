@@ -16,6 +16,8 @@ import {
   commonFieldMappings,
   entityTransforms,
 } from '@/lib/api/buildUpdatePayload';
+import { repinIfMoved } from '@/domain/events/venue';
+import { resolveEventTimes } from '@/domain/events/time';
 
 // Build update payload from validated event data
 const buildEventUpdatePayload = createUpdatePayloadBuilder([
@@ -24,6 +26,8 @@ const buildEventUpdatePayload = createUpdatePayloadBuilder([
   { from: 'category', transform: entityTransforms.emptyStringToNull },
   { from: 'event_type' },
   commonFieldMappings.arrayField('tags', []),
+  commonFieldMappings.arrayField('music_genres', []),
+  { from: 'vibe', transform: entityTransforms.emptyStringToNull },
   commonFieldMappings.dateField('start_date'),
   commonFieldMappings.dateField('end_date'),
   { from: 'timezone', default: 'UTC' },
@@ -68,6 +72,13 @@ const { GET, PUT, DELETE } = createEntityCrudHandlers({
   entityType: 'event',
   schema: eventSchema,
   buildUpdatePayload: buildEventUpdatePayload,
+  // A changed address moves the map pin with it.
+  // A changed address moves the pin (and the zone); times without an offset
+  // are wall-clock times in the event's zone.
+  refineUpdatePayload: async (payload, existing) => {
+    const pinned = await repinIfMoved(payload, existing);
+    return resolveEventTimes({ ...pinned, timezone: pinned.timezone ?? existing.timezone });
+  },
   ownershipField: 'actor_id',
   useActorOwnership: true,
   requireActiveStatus: false, // Events have different status values

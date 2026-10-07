@@ -1,6 +1,7 @@
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { slugify } from '@/utils/string';
+import { GROUP_LABELS, isGroupLabel } from '@/config/group-labels';
 import { PROPOSAL_TYPES } from '@/config/proposal-constants';
 import { ROUTES } from '@/config/routes';
 import { SOLON_PROPOSAL_CATEGORY } from '@/config/solon';
@@ -133,6 +134,10 @@ export const organizationHandlers: Record<string, ActionHandler> = {
     // label enum: the ids in @bitbaum/collective-kinds (GROUP_LABEL_IDS)
     const name = params.name as string;
     const slug = slugify(name, { maxLength: 60, randomSuffix: true });
+    // A word the model made up ("bar", "party crew") is not a kind — storing it
+    // gave the group a label no screen knows. Unknown words fall back to circle.
+    const asked = (params.label as string | null) ?? (params.type as string | null);
+    const label = isGroupLabel(asked) ? asked : 'circle';
 
     // Create the group (organization)
     const { data: group, error: groupError } = await supabase
@@ -141,7 +146,7 @@ export const organizationHandlers: Record<string, ActionHandler> = {
         name,
         slug,
         description: params.description || null,
-        label: (params.label as string | null) ?? (params.type as string | null) ?? 'circle',
+        label,
         created_by: userId,
       })
       .select()
@@ -160,13 +165,11 @@ export const organizationHandlers: Record<string, ActionHandler> = {
     // had never fired in production (zero 'admin' memberships exist), but it
     // would have minted undeletable groups the moment it did.
 
-    const groupLabel =
-      (params.label as string | null) ?? (params.type as string | null) ?? 'circle';
     return {
       success: true,
       data: {
         ...group,
-        displayMessage: `👥 ${groupLabel.charAt(0).toUpperCase() + groupLabel.slice(1)} "${name}" created`,
+        displayMessage: `👥 ${GROUP_LABELS[label].name} "${name}" created`,
       },
     };
   },

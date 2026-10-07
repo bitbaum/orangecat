@@ -25,6 +25,9 @@ export const ASSET_TYPES = [
 
 export type AssetType = (typeof ASSET_TYPES)[number]['value'];
 
+export const isAssetType = (value: unknown): value is AssetType =>
+  typeof value === 'string' && ASSET_TYPES.some(t => t.value === value);
+
 // ==================== VERIFICATION LEVELS ====================
 
 export const VERIFICATION_LEVELS = [

@@ -25,10 +25,11 @@ import {
 import { BADGE_COLORS } from '@/config/badge-colors';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { FEE_CLAIMS } from '@/config/landing-page';
+import EventsNearYou from '@/components/events/EventsNearYou';
 
 export default function EventsPage() {
   const _router = useRouter();
-  const { user: _user, session } = useAuth();
+  const { session } = useAuth();
 
   const features = [
     {
@@ -119,7 +120,9 @@ export default function EventsPage() {
     if (session) {
       _router.push(`${ENTITY_REGISTRY['event'].publicBasePath}/create`);
     } else {
-      _router.push(`${ROUTES.AUTH_LOGIN}&redirect=${ENTITY_REGISTRY['event'].publicBasePath}/create`);
+      _router.push(
+        `${ROUTES.AUTH_LOGIN}&redirect=${ENTITY_REGISTRY['event'].publicBasePath}/create`
+      );
     }
   };
 
@@ -131,6 +134,10 @@ export default function EventsPage() {
         description="Create unforgettable parties, art exhibits, and gatherings with seamless ticketing and Bitcoin-powered event management"
       />
 
+      <PageSection>
+        <h2 className="text-2xl font-semibold mb-6">What&apos;s on near you</h2>
+        <EventsNearYou />
+      </PageSection>
       {/* Key Features */}
       <PageSection>
         <h2 className="text-2xl font-semibold text-center mb-12">Why Choose Bitcoin for Events?</h2>

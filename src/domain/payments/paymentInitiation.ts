@@ -23,6 +23,7 @@ import type {
   InitiateTipInput,
 } from './types';
 import { logger } from '@/utils/logger';
+import { getSeatsLeft } from '@/domain/events/tickets';
 import {
   METHOD_LABELS,
   hashPublicStatusToken,
@@ -53,6 +54,12 @@ export async function initiatePayment(
     .maybeSingle();
   if (!visibleEntity) {
     throw new Error('Entity is not publicly available');
+  }
+
+  // A sold-out event refuses here, before anyone pays — once money has moved
+  // the ticket is always issued, so this is the only place capacity can hold.
+  if (entity_type === 'event' && (await getSeatsLeft(supabase, entity_id)) === 0) {
+    throw new Error('This event is sold out');
   }
 
   // 1. Resolve seller

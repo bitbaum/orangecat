@@ -83,6 +83,10 @@ export function FormFieldGroups<T extends Record<string, unknown>>({
                           onFocus={() => handleFieldFocus(field.name)}
                           onBlur={() => handleFieldBlur(field.name)}
                           disabled={formState.isSubmitting}
+                          subject={{
+                            title: String(formState.data['title' as keyof T] ?? ''),
+                            description: String(formState.data['description' as keyof T] ?? ''),
+                          }}
                           currency={
                             'currency' in formState.data
                               ? (formState.data.currency as string)

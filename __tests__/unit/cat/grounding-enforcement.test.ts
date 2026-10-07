@@ -63,7 +63,11 @@ describe('enforceGrounding', () => {
   });
 
   it('accepts a repair that removes the fabrication', async () => {
-    const r = await enforceGrounding({ ...base, content: FABRICATION, service: stubService(CLEAN) });
+    const r = await enforceGrounding({
+      ...base,
+      content: FABRICATION,
+      service: stubService(CLEAN),
+    });
     expect(r.corrected).toBe(CLEAN);
     expect(r.ok).toBe(true);
     expect(r.violations).toEqual([]);
@@ -74,7 +78,11 @@ describe('enforceGrounding', () => {
     // nouns than the original and would pass a pure count test while being just
     // as invented. A repair is a deletion — nothing new may appear.
     const worse = 'Elena Weber SINGA Switzerland is Director at Seedstars Geneva.';
-    const r = await enforceGrounding({ ...base, content: FABRICATION, service: stubService(worse) });
+    const r = await enforceGrounding({
+      ...base,
+      content: FABRICATION,
+      service: stubService(worse),
+    });
     expect(r.corrected).toBeUndefined(); // original stands, flagged
     expect(r.ok).toBe(false);
     expect(r.violations.length).toBeGreaterThan(0);
@@ -86,7 +94,11 @@ describe('enforceGrounding', () => {
     // for. Losing a side effect is worse than the fabrication being fixed.
     const withAction = `${FABRICATION}\n\`\`\`exec_action\n{"type":"exec_action","actionId":"send_message","parameters":{"to":"Elena"}}\n\`\`\``;
     const strippedAction = 'Elena Weber SINGA Switzerland — whatsapp +41774730093.';
-    const r = await enforceGrounding({ ...base, content: withAction, service: stubService(strippedAction) });
+    const r = await enforceGrounding({
+      ...base,
+      content: withAction,
+      service: stubService(strippedAction),
+    });
     expect(r.corrected).toBeUndefined();
     expect(r.ok).toBe(false);
   });
@@ -103,7 +115,11 @@ describe('enforceGrounding', () => {
   });
 
   it('falls back to the flagged original when the repair returns empty', async () => {
-    const r = await enforceGrounding({ ...base, content: FABRICATION, service: stubService('   ') });
+    const r = await enforceGrounding({
+      ...base,
+      content: FABRICATION,
+      service: stubService('   '),
+    });
     expect(r.corrected).toBeUndefined();
     expect(r.ok).toBe(false);
   });

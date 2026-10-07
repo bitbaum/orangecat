@@ -10,21 +10,10 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { logger } from '@/utils/logger';
 import { DATABASE_TABLES } from '@/config/database-tables';
+import type { InAppNotificationType } from '@/config/notification-types';
 
-// Notification types supported by the system
-type NotificationType =
-  | 'follow'
-  | 'payment'
-  | 'project_funded'
-  | 'message'
-  | 'comment'
-  | 'like'
-  | 'mention'
-  | 'system'
-  | 'task_attention'
-  | 'task_request'
-  | 'task_completed'
-  | 'task_broadcast';
+// The one list (config/notification-types.ts) — the database CHECK mirrors it.
+type NotificationType = InAppNotificationType;
 
 interface CreateNotificationOptions {
   recipientUserId: string;

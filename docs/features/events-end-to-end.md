@@ -1,0 +1,53 @@
+# Events, end to end — audit, plan, status
+
+The question this answers: can someone run a real night on OrangeCat — "electronic
+music night at Espresso Bar in Landquart on Friday" — from the first sentence to the
+last guest through the door, and pay the people who made it happen?
+
+Method: every gap below was **tested**, not assumed. The database was rebuilt from
+all migrations on Supabase's own Postgres 15 image (the same image the box runs),
+with PostgREST and GoTrue in front of it, and the app driven in Chromium at 390px
+as four people: an organizer, a guest, a door person and a DJ. Each finding names
+how it was found. The status column is kept current as items land.
+
+## Found by testing (defects)
+
+| # | Defect | How it was found | Status |
+| --- | --- | --- | --- |
+| 1 | A database built from the migrations creates accounts with **no profile**: the `auth.users` triggers live outside the dumped schema. | Sign-up on the replayed DB: account made, `profiles` empty. | Fixed — `20261007090000` creates them only where missing. |
+| 2 | On a fresh database **every write to a search-indexed table fails** (`private.reindex_config` does not exist). | Same sign-up, after #1: "Database error creating new user". | Fixed — same migration creates the empty table. |
+| 3 | **"Near me" can never work**: the site's `Permissions-Policy` sends `geolocation=()`, which denies the feature to its own origin. | Browser probe: "Geolocation has been disabled in this document by permissions policy". | Fixed — `geolocation=(self)`, pinned by a test. |
+| 4 | **The Cat's `create_asset` always failed**: it set neither `owner_id` nor `type`, both required. | Reading the asset table while reworking venues. | Fixed. |
+| 5 | **Event times are shown in the server's timezone**, and the Cat writes "Friday 22:00" as 22:00 UTC (its clock says UTC). A Landquart night at 22:00 showed as 8:00 PM. | Seeded a 22:00 Zurich event; the venue page read "8:00:00 PM". | Fixed — times are read and written in the venue's zone (`src/utils/timezone.ts`). |
+| 6 | **Two models for "the place an event is at"**: main shipped place = asset (`events.asset_id`, "Happening here"); this branch had place = organization. | Merging main. | Fixed — one model (asset); anyone could list onto anyone's place before, now only whoever runs it. |
+| 7 | The ticket migration would have **failed the migration-safety gate** CI runs on PRs. | Running `check-migration-safety.mjs` locally. | Fixed — the widened CHECK is acknowledged. |
+| 9 | **Booking requests and deal-review reminders never reached anyone's notifications**: the database's list of notification types had drifted from the app's, so those inserts were rejected and only logged. | Inserting each dispatched type into the replayed DB. | Fixed — one list (`config/notification-types.ts`), the dispatcher's type checks it, a test keeps the database's copy equal. |
+| 8 | "Near me" says "Location was not shared" for **every** geolocation failure, including ones the person cannot fix by sharing. | Same probe as #3. | Fixed — one sentence per kind of failure. |
+
+## Product gaps (to build)
+
+| Gap | Decision | Status |
+| --- | --- | --- |
+| Door staff cannot check people in — only the organizer's account. | A crew role can be **given to a person**; whoever holds the Door role can check people in. | Done — P2 |
+| Crew roles have no person on them. | Roles hold people (up to the head-count), set by the organizer by @username; each is notified. | Done — P2 |
+| Paying the crew. | **One click per person, by the organizer**, from the organizer's own connected wallet — or recorded as paid another way (Twint, cash). Each payout is on the event's record (`event_payouts`), at most once per person per role. Not automatic: OrangeCat does not hold money, and an automatic payout would need it to. | Done — P3 |
+| Refunds. | From the door list, the organizer refunds a paid ticket: what the buyer paid goes back through the same rail (or is recorded as given back another way), the ticket is cancelled, the seat freed, the order marked refunded. | Done — P3 |
+| Ticket reaches the guest only on the page. | A notification with the ticket link when a ticket is issued (paid or free). | Done — P2 |
+| Cover pictures. | The event form had **no picture field at all**. It now has one, and every entity form's picture field can upload, find an openly licensed photo, or generate one with the person's own AI key. The Cat sets a cover from the photo just sent in chat or generates one; without a key it creates the event anyway and says where to add one. | Done — P4 |
+| Venue in the manual form was a UUID text box. | A picker of the venues you run. | Done |
+| Twint / bank / PayPal. | Platform-wide rails that need business accounts and are on the main roadmap; not built here, and nothing claims otherwise. | Not in this plan |
+| The Cat against the live model. | Needs model keys this environment does not have; every handler is unit-tested and the tool schemas are generated from the registry. | Verified in production after merge |
+
+## Plan, in order
+
+- **P1 — correctness first.** ✅ Event times in the event's own timezone everywhere (page, lists, door, venue page, Cat); the Cat sends venue-local wall-clock times and the server converts them; a place's timezone comes from its coordinates. Geolocation errors say which kind they are.
+- **P2 — the crew is real people.** ✅ Assign a person to a role; the Door role checks people in; tickets are announced by notification.
+- **P3 — money out.** ✅ One-click crew payouts and refunds through the existing send rail, each leaving a record; a failed send is recorded as failed, never hidden.
+- **P4 — the cover.** ✅ A cover field on the event form; the shared image field finds or generates; the Cat uses the chat photo or the person's own image key.
+- **P5 — record it.** ✅ An "Events, end to end" goal in ROADMAP.md, today's CHANGELOG entries citing its milestones by `{#id}`, both pages linking each other through bip-kit 0.6.0 (`linkDevelopment`), and the write-up: `content/blog/one-night-at-espresso-bar.md`.
+
+## How it was tested
+
+- Migrations: all 101 replayed from zero on `supabase/postgres:15.8.1.060`, one transaction each (as `scripts/apply-migrations.sh`).
+- Rules: ticket claims, seat race, forged tickets, check-in rights, venue listing rights (owner, organization member, pending steward, after a claim) — exercised as each role with `SET ROLE authenticated` and a real `auth.uid()`.
+- UI: Chromium at 390×844, signed in through the real login form as each person; every page checked for sideways overflow, HTTP status and console errors, with a screenshot.

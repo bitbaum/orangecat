@@ -88,10 +88,7 @@ describe('runActionStep', () => {
       return { status: 'completed' as const };
     });
 
-    await runActionStep(
-      [call('create_project', {}, 'a'), call('publish_entity', {}, 'b')],
-      run
-    );
+    await runActionStep([call('create_project', {}, 'a'), call('publish_entity', {}, 'b')], run);
 
     // Parallel execution would mean publish could not see the create — the
     // exact defect the loop exists to remove.
@@ -127,7 +124,10 @@ describe('shouldContinue', () => {
   it('stops when a step needs the user to confirm', () => {
     // Continuing would queue writes behind a decision the user has not made.
     expect(
-      shouldContinue([{ toolCallId: 'a', actionId: 'x', status: 'pending_confirmation', summary: '' }], 1)
+      shouldContinue(
+        [{ toolCallId: 'a', actionId: 'x', status: 'pending_confirmation', summary: '' }],
+        1
+      )
     ).toBe(false);
   });
 

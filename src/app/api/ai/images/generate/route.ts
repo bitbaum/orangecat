@@ -18,12 +18,9 @@ import { withAuth, type AuthenticatedRequest } from '@/lib/api/withAuth';
 import { createRateLimitResponse, rateLimitWriteAsync } from '@/lib/rate-limit';
 import { apiBadRequest, apiError, apiInternalError, apiSuccess } from '@/lib/api/standardResponse';
 import { createApiKeyService } from '@/services/ai/api-key-service';
-import { IMAGE_PROVIDER_RUNTIME, getImageProviderRuntime } from '@/config/ai-provider-runtime';
-import { generateImageWithKey } from '@/services/images/generate';
-import { IMAGE_MIME_EXT } from '@/services/images/types';
+import { IMAGE_PROVIDER_RUNTIME } from '@/config/ai-provider-runtime';
+import { generateAndStoreImage } from '@/services/images/generate-and-store';
 import { IMAGE_PROMPT_LIMITS } from '@/config/images';
-import { getAdminClient } from '@/lib/supabase/admin';
-import { STORAGE_BUCKETS } from '@/config/database-tables';
 import { logger } from '@/utils/logger';
 
 const bodySchema = z.object({
@@ -59,58 +56,22 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
     }
     const { prompt } = parsed.data;
 
-    // First image-capable key in the user's own fallback-chain order.
-    const keys = await createApiKeyService(supabase).listDecryptedKeysOrdered(user.id);
-    const imageKey = keys.find(k => k.provider in IMAGE_PROVIDER_RUNTIME);
-    if (!imageKey) {
-      // No provider names here — the client derives them from
-      // IMAGE_PROVIDER_RUNTIME so the list can't drift.
-      return apiError(
-        'Image generation uses your own AI key. Add one in Settings → AI.',
-        'NO_IMAGE_KEY',
-        400
-      );
-    }
-
-    const runtime = getImageProviderRuntime(imageKey.provider);
-    if (!runtime) {
-      return apiInternalError('Image provider is not configured.');
-    }
-
-    const result = await generateImageWithKey({
-      apiKey: imageKey.key,
-      baseUrl: runtime.baseUrl,
-      model: runtime.defaultImageModel,
-      prompt,
-      api: runtime.api,
-    });
+    const result = await generateAndStoreImage(supabase, user.id, prompt);
     if (!result.ok) {
-      return apiError(`Image generation failed: ${result.error}`, 'UPSTREAM_ERROR', 502);
+      // No provider names in the NO_IMAGE_KEY message — the client derives
+      // them from IMAGE_PROVIDER_RUNTIME so the list can't drift.
+      if (result.code === 'NO_IMAGE_KEY') {
+        return apiError(result.error, 'NO_IMAGE_KEY', 400);
+      }
+      if (result.code === 'UPSTREAM') {
+        return apiError(result.error, 'UPSTREAM_ERROR', 502);
+      }
+      return apiInternalError(result.error);
     }
-
-    // Persist a stable copy — provider URLs/base64 are ephemeral. The admin
-    // client bypasses RLS, so the path MUST be scoped to the authenticated
-    // user id (mirrors the browser cover-upload path convention).
-    const ext = IMAGE_MIME_EXT[result.image.mimeType] ?? 'png';
-    const path = `${user.id}/ai-gen_${Date.now()}.${ext}`;
-    const admin = getAdminClient();
-    const { error: uploadError } = await admin.storage
-      .from(STORAGE_BUCKETS.BANNERS)
-      .upload(path, result.image.bytes, {
-        contentType: result.image.mimeType,
-        cacheControl: '31536000',
-        upsert: false,
-      });
-    if (uploadError) {
-      logger.error('Generated image upload failed', { error: uploadError }, 'ImagesAPI');
-      return apiInternalError('Could not save the generated image. Please try again.');
-    }
-
-    const { data: urlData } = admin.storage.from(STORAGE_BUCKETS.BANNERS).getPublicUrl(path);
     return apiSuccess({
-      url: urlData.publicUrl,
-      provider: imageKey.provider,
-      model: runtime.defaultImageModel,
+      url: result.url,
+      provider: result.provider,
+      model: result.model,
     }) as NextResponse;
   } catch (error) {
     logger.error('images/generate failed', error, 'ImagesAPI');

@@ -33,6 +33,7 @@ import {
   ShieldCheck,
   ShieldAlert,
   Zap,
+  Store,
   type LucideIcon,
   Hammer,
   Landmark,
@@ -42,7 +43,9 @@ import { API_ROUTES } from '@/config/api-routes';
 import { RESEARCH_FIELDS } from '@/config/research';
 import { RESEARCH_LICENSE_VALUES, REVIEW_VERDICT_VALUES } from '@/config/open-science';
 import { getApiEndpoint } from '@/config/entity-registry';
-import { EVENT_TYPES } from '@/config/events';
+import { EVENT_COVER_SOURCES, EVENT_TYPES } from '@/config/events';
+import { CURRENCY_CODES } from '@/config/currencies';
+import { GROUP_LABEL_IDS } from '@/config/group-labels';
 import { PROPOSAL_TYPES } from '@/config/proposal-constants';
 
 // ==================== ACTION TYPES ====================
@@ -235,7 +238,7 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
   create_event: {
     id: 'create_event',
     name: 'Create Event',
-    description: 'Create an event or meetup',
+    description: 'Create an event from one sentence; it is mapped and its crew posted',
     category: 'entities',
     icon: Calendar,
     riskLevel: 'medium',
@@ -243,13 +246,30 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
     parameters: [
       { name: 'title', type: 'string', required: true, description: 'Event title' },
       { name: 'description', type: 'string', required: false, description: 'Event description' },
-      { name: 'start_date', type: 'string', required: true, description: 'Event start date/time' },
-      { name: 'end_date', type: 'string', required: false, description: 'Event end date/time' },
+      {
+        name: 'start_date',
+        type: 'string',
+        required: true,
+        description: 'Start as wall-clock time at the venue, ISO without offset: 2026-10-09T22:00',
+      },
+      {
+        name: 'end_date',
+        type: 'string',
+        required: false,
+        description: 'End, same form, when said or obvious',
+      },
       {
         name: 'location',
         type: 'string',
         required: false,
-        description: 'Where it happens — omit when still to be announced',
+        description:
+          'Street address or venue and city, as said (mapped); omit when to be announced',
+      },
+      {
+        name: 'venue',
+        type: 'string',
+        required: false,
+        description: 'Name of the place (bar, club, studio) when it has a page the user runs',
       },
       {
         name: 'event_type',
@@ -259,17 +279,42 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
         default: 'meetup',
       },
       {
+        name: 'music_genres',
+        type: 'array',
+        required: false,
+        description: 'Music genres people can expect, e.g. ["House", "Disco"]',
+      },
+      {
+        name: 'vibe',
+        type: 'string',
+        required: false,
+        description: 'One line on the feel: crowd, dress, energy',
+      },
+      {
+        name: 'crew',
+        type: 'array',
+        required: false,
+        description:
+          'People needed to run it, one per item with a count, e.g. ["1 DJ", "2 bartenders", "sound tech"]',
+      },
+      {
+        name: 'ticket_price',
+        type: 'number',
+        required: false,
+        description: 'Ticket price in `currency`; omit or 0 for free entry',
+      },
+      {
+        name: 'currency',
+        type: 'string',
+        required: false,
+        description: `Currency of ticket_price: ${CURRENCY_CODES.join(', ')} (default: the user's)`,
+      },
+      {
         name: 'is_free',
         type: 'boolean',
         required: false,
-        description: 'Free entry (default: true unless ticket_price_btc is set)',
+        description: 'Free entry (default: true unless a ticket price is set)',
         default: true,
-      },
-      {
-        name: 'ticket_price_btc',
-        type: 'btc',
-        required: false,
-        description: 'Ticket price in BTC, for a ticketed event',
       },
       {
         name: 'max_attendees',
@@ -281,15 +326,21 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
         name: 'publish',
         type: 'boolean',
         required: false,
-        description: 'Publish immediately',
+        description: 'Publish immediately (when the user says post / publish / make it live)',
         default: false,
+      },
+      {
+        name: 'cover',
+        type: 'string',
+        required: false,
+        description: `Cover picture: ${EVENT_COVER_SOURCES.join(' (the photo they just sent) | ')} (made with their AI key)`,
       },
     ],
     examples: [
-      'Create a Bitcoin meetup',
+      'Create a party at Langstrasse 120, Zürich on Saturday 10pm — house and disco, I need a DJ and 2 bartenders, 20 CHF entry',
+      'Set up a Bitcoin meetup next Thursday at 7pm at Hive Zürich',
       'Throw a birthday party on Saturday',
       'Run a ticketed conference in Basel',
-      'Set up a conference event',
       'Organize a community gathering',
     ],
     apiEndpoint: getApiEndpoint('event'),
@@ -326,6 +377,32 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
       'Register my rental equipment',
       'List my co-working space',
       'Add my property as an asset',
+    ],
+    apiEndpoint: getApiEndpoint('asset'),
+    enabled: true,
+  },
+
+  create_venue: {
+    id: 'create_venue',
+    name: 'Create a Venue Page',
+    description: 'A page for a bar, club or studio; events can then be listed at it',
+    category: 'entities',
+    icon: Store,
+    riskLevel: 'medium',
+    requiresConfirmation: true,
+    parameters: [
+      { name: 'name', type: 'string', required: true, description: 'Name of the place' },
+      { name: 'address', type: 'string', required: true, description: 'Street and town' },
+      {
+        name: 'owner_name',
+        type: 'string',
+        required: false,
+        description: 'Its owner, ONLY if not the user — they get a link to take it over',
+      },
+    ],
+    examples: [
+      'Make a page for my bar, Espresso Bar, Bahnhofstrasse 5, Landquart',
+      'Set up Espresso Bar in Landquart for its owner Marco',
     ],
     apiEndpoint: getApiEndpoint('asset'),
     enabled: true,
@@ -1479,7 +1556,12 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
     parameters: [
       { name: 'name', type: 'string', required: true, description: 'Organization name' },
       { name: 'description', type: 'string', required: false, description: 'Description' },
-      { name: 'type', type: 'string', required: false, description: 'Organization type' },
+      {
+        name: 'type',
+        type: 'string',
+        required: false,
+        description: `Kind: ${GROUP_LABEL_IDS.join(', ')}`,
+      },
     ],
     examples: [
       'Create an organization for my project',

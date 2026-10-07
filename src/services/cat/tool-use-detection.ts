@@ -474,6 +474,23 @@ export const PLATFORM_TOOL_DEFINITION = [
   {
     type: 'function',
     function: {
+      name: 'find_events_near',
+      description:
+        'Upcoming public events near a place, nearest first — "parties in Zürich this weekend?", "any jazz near me?". Read-only.',
+      parameters: {
+        type: 'object',
+        properties: {
+          place: { type: 'string', description: 'City, street or venue to search around' },
+          genre: { type: 'string', description: 'Music genre, only if the user named one' },
+          radius_km: { type: 'number', description: 'Search radius in km (default 25)' },
+        },
+        required: ['place'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
       name: 'check_my_track_record',
       description:
         "What YOU (the Cat) have done for this user and what became of it: the entities you created in the last 90 days — proposed → published → funded, with real BTC amounts — plus your own setbacks (failed or denied actions, proposals the user never confirmed). Call when the user asks what you did for them, how your suggestions worked out, or whether to trust you; and call it BEFORE proposing something new when you may have proposed the same kind before. Read-only. Takes no arguments. NOT for the user's own numbers or listings — that is query_my_data.",

@@ -74,7 +74,7 @@ export const HOLD_AN_EVENT: Playbook = {
   steps: [
     {
       title: 'The event page',
-      how: 'create_event with the event_type that fits (party, meetup, conference, workshop, festival…), the date, the place, and either is_free or ticket_price_btc. A draft until they say publish.',
+      how: 'create_event with the event_type that fits (party, meetup, conference, workshop, festival…), the date, the place, and either is_free or ticket_price with its currency. A draft until they say publish.',
       action: 'create_event',
     },
     {

@@ -2,17 +2,12 @@
  * /roadmap and /changelog render the fleet map, never a local copy. This
  * covers the data path between a fetched map and what the pages draw, on a
  * fixture — no network — so the pages' contract with bip-kit is pinned:
- * bucket titles from ROADMAP.md statuses, newest-first changelog, and the
+ * phases from ROADMAP.md statuses, newest-first changelog, and the
  * two degraded states (map unavailable, project recorded but empty).
  */
 import { describe, expect, it } from 'vitest';
-import {
-  changelogLines,
-  groupRoadmap,
-  milestoneParts,
-  orangeCatProfileFromMap,
-  sortChangelog,
-} from '@/lib/development/records';
+import { linkDevelopment } from 'bip-kit';
+import { orangeCatProfileFromMap } from '@/lib/development/records';
 
 const MAP = {
   generatedAt: '2026-09-28T10:59:21.707Z',
@@ -76,36 +71,30 @@ describe('development records from the fleet map', () => {
     });
     expect(profile).not.toBeNull();
     expect(profile?.roadmap).toEqual([]);
-    expect(groupRoadmap(profile!.roadmap)).toEqual([]);
+    expect(linkDevelopment(profile!).goals).toEqual([]);
   });
 
-  it('buckets items by the status ROADMAP.md headings produce, in Now/Next/Later/Shipped order', () => {
-    const buckets = groupRoadmap(orangeCatProfileFromMap(MAP)!.roadmap);
-    expect(buckets.map(b => b.title)).toEqual(['Now', 'Next', 'Later', 'Shipped', 'Parked']);
-    // Loki's own goal rows say `active`; they read as in progress, not as a stray bucket.
-    expect(buckets[0].items.map(i => i.title)).toEqual([
-      'Share and fund anything',
-      'Launch OrangeCat',
-    ]);
-    expect(buckets[1].items[0].title).toBe('Fund-to-build');
-    expect(buckets[4].items[0].title).toBe('Odd one');
+  it('places each goal on the road by the status ROADMAP.md headings produce', () => {
+    const { journey } = linkDevelopment(orangeCatProfileFromMap(MAP)!);
+    expect(journey.now.map(g => g.title)).toEqual(['Share and fund anything', 'Launch OrangeCat']);
+    expect(journey.next.map(g => g.title)).toEqual(['Fund-to-build', 'Odd one']);
+    expect(journey.later.map(g => g.title)).toEqual(['More rails']);
+    expect(journey.shipped.map(g => g.title)).toEqual(['Public pages for every entity']);
   });
 
   it('reads both milestone shapes the map carries', () => {
-    expect(milestoneParts('legacy row')).toEqual({ title: 'legacy row', done: null });
-    expect(milestoneParts({ title: 'checked', done: true })).toEqual({
-      title: 'checked',
-      done: true,
-    });
+    const [fund, share] = linkDevelopment(orangeCatProfileFromMap(MAP)!).goals;
+    expect(fund.steps.map(s => s.done)).toEqual([true, false]);
+    expect(share.steps).toMatchObject([{ title: 'One Support with Bitcoin action', done: null }]);
   });
 
   it('orders the changelog newest first and splits joined bullets', () => {
-    const entries = sortChangelog(orangeCatProfileFromMap(MAP)!.changelog);
-    expect(entries.map(e => e.date)).toEqual(['2026-09-28', '2026-09-20']);
-    expect(changelogLines(entries[0])).toEqual([
+    const { changes } = linkDevelopment(orangeCatProfileFromMap(MAP)!);
+    expect(changes.map(c => c.date)).toEqual(['2026-09-28', '2026-09-20']);
+    expect(changes[0].anchor).toBe('change-2026-09-28');
+    expect(changes[0].lines.map(l => l.text)).toEqual([
       'New essay: Where the Wall Is.',
       'Roadmap and changelog now come from the fleet record.',
     ]);
-    expect(changelogLines(entries[1])).toHaveLength(1);
   });
 });

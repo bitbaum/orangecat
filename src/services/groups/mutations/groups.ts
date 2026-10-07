@@ -196,6 +196,14 @@ export async function updateGroup(
       payload.voting_threshold = input.voting_threshold;
     }
 
+    // The place. The schema accepted these and this builder never wrote them,
+    // so an edited country, region or locality silently stayed what it was.
+    for (const field of ['country_code', 'region', 'locality'] as const) {
+      if (input[field] !== undefined) {
+        payload[field] = input[field] || null;
+      }
+    }
+
     const { data, error } = await fromTable(supabaseClient, DATABASE_TABLES.GROUPS)
       .update(payload)
       .eq('id', groupId)

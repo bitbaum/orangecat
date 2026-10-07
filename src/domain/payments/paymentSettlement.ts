@@ -13,6 +13,8 @@ import { getEntityMetadata, type EntityType } from '@/config/entity-registry';
 import { getAdminClient } from '@/lib/supabase/admin';
 import type { PaymentIntent } from './types';
 import { logger } from '@/utils/logger';
+import { issuePaidTicket } from '@/domain/events/tickets';
+import { notifyTicketIssued } from '@/domain/events/notify';
 import { sendSellerPaymentNotification } from '@/lib/email/send-seller-notification';
 import { NotificationDispatcher } from '@/services/notifications/dispatcher';
 import {
@@ -184,6 +186,28 @@ export async function handlePaymentConfirmed(paymentIntent: PaymentIntent): Prom
         entityId,
         error: orderError,
       });
+    }
+
+    // A ticket purchase issues the ticket: the buyer is now on the guest list
+    // with a code the door scans. Same non-throwing rule as the order above.
+    if (entityType === 'event' && paymentIntent.buyer_id) {
+      const buyerId = paymentIntent.buyer_id;
+      await issuePaidTicket(admin, entityId, buyerId, piId)
+        .then(ticket =>
+          notifyTicketIssued({
+            eventId: entityId,
+            userId: buyerId,
+            seats: ticket.ticket_count,
+            paid: true,
+          })
+        )
+        .catch(error =>
+          logger.error('Ticket issue failed after confirmed payment — needs reconciliation', {
+            paymentIntentId: piId,
+            entityId,
+            error: error instanceof Error ? error.message : String(error),
+          })
+        );
     }
 
     // Decrement inventory (atomic — prevents overselling)

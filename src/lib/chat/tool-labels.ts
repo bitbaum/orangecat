@@ -177,6 +177,12 @@ const READ_TOOL_LABELS: Record<string, ToolLabel> = {
     noResults: 'Nothing on file',
     failed: "Couldn't read your data",
   },
+  find_events_near: {
+    running: 'Looking for events nearby',
+    completed: n => `Found ${n} event${n === 1 ? '' : 's'} nearby`,
+    noResults: 'No events nearby yet',
+    failed: "Couldn't search nearby events",
+  },
   check_my_track_record: {
     running: 'Checking my own track record',
     completed: n => (n === 0 ? 'Nothing on my record yet' : `Checked my record (${n} created)`),

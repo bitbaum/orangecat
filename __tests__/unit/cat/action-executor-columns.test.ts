@@ -156,7 +156,9 @@ const CASES: Array<{
     expect: {
       venue_address: 'Seefeldstrasse 1, Zürich',
       event_type: 'party',
-      currency: 'BTC',
+      // Not the 'SATS' default the CHECK rejects: the person's own currency
+      // (CHF when their profile names none).
+      currency: 'CHF',
       is_free: true,
       actor_id: ACTOR_ID,
     },
@@ -169,7 +171,8 @@ const CASES: Array<{
       title: 'Bitcoin Basel',
       start_date: '2026-11-14T09:00:00Z',
       event_type: 'conference',
-      ticket_price_btc: 0.0005,
+      ticket_price: 0.0005,
+      currency: 'BTC',
     },
     expect: { ticket_price: 0.0005, is_free: false, currency: 'BTC', venue_address: null },
     forbid: ['location', 'ticket_price_btc'],

@@ -247,8 +247,7 @@ describe('CatActionExecutor spend-cap enforcement', () => {
     // Denials ARE audit rows now (loss side of the track record): one terminal
     // 'denied' insert with the reason, instead of no trace at all.
     const deniedRows = supabase._insertsByTable[DATABASE_TABLES.CAT_ACTION_LOG] as
-      | { status: string; error_message: string | null }[]
-      | undefined;
+      { status: string; error_message: string | null }[] | undefined;
     expect(deniedRows).toHaveLength(1);
     expect(deniedRows?.[0]?.status).toBe('denied');
     expect(deniedRows?.[0]?.error_message).toContain('per-action cap');

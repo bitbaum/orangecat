@@ -17,6 +17,7 @@ import {
   handleQueryMyData,
   handleCheckMyTrackRecord,
 } from './tool-handlers-lookup';
+import { handleFindEventsNear } from './tool-handler-events-near';
 import { fetchWebsiteText, resolveRequestedUrl } from './website-analysis';
 import { runCatHealthProbes } from './health-probes';
 import { isWebTool, executeWebTool } from './tool-handlers-web';
@@ -256,6 +257,9 @@ Explain this to the user in plain language: which provider is healthy, degraded,
   }
   if (toolName === 'query_my_data') {
     return handleQueryMyData(supabase, userId, toolCall, onToolCall);
+  }
+  if (toolName === 'find_events_near') {
+    return handleFindEventsNear(supabase, toolCall, onToolCall);
   }
   if (toolName === 'check_my_track_record') {
     return handleCheckMyTrackRecord(supabase, userId, toolCall, onToolCall);

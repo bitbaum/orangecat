@@ -8,7 +8,6 @@
 
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { STATUS, ENTITY_STATUS } from '@/config/database-constants';
-import { EVENT_TYPES } from '@/config/events';
 import { z } from 'zod';
 import {
   commitPreregistration,
@@ -18,6 +17,9 @@ import {
 import { createResearchReview, reviewInputSchema } from '@/domain/research/reviews';
 import { getUserActorId } from '@/domain/actors';
 import type { ActionHandler } from './types';
+import { createEvent } from './event-create';
+import { createVenue } from './venue-create';
+import { isAssetType } from '@/config/assets';
 
 const catOpenScienceSchema = z.object(openScienceFields);
 
@@ -230,56 +232,21 @@ export const entityCreateHandlers: Record<string, ActionHandler> = {
     };
   },
 
-  create_event: async (supabase, userId, actorId, params) => {
-    // `events` has no `location` column — the place is `venue_address` — and
-    // its `currency` default ('SATS') fails the table's own CHECK. Both used to
-    // be left to the database, so every event the Cat created was refused.
-    const eventType = EVENT_TYPES.some(t => t.value === params.event_type)
-      ? (params.event_type as string)
-      : 'meetup';
-    const location = typeof params.location === 'string' ? params.location.trim() : '';
-    const maxAttendees = Number(params.max_attendees);
-    const ticketPrice = Number(params.ticket_price_btc);
-    const ticketed = Number.isFinite(ticketPrice) && ticketPrice > 0;
-    const { data, error } = await supabase
-      .from(ENTITY_REGISTRY.event.tableName)
-      .insert({
-        user_id: userId,
-        actor_id: actorId,
-        title: params.title,
-        description: params.description || null,
-        event_type: eventType,
-        start_date: params.start_date,
-        end_date: params.end_date || null,
-        venue_address: location || null,
-        is_free: ticketed ? false : params.is_free !== false,
-        ticket_price: ticketed ? ticketPrice : null,
-        max_attendees: Number.isInteger(maxAttendees) && maxAttendees > 0 ? maxAttendees : null,
-        currency: 'BTC',
-        status: params.publish ? STATUS.EVENTS.PUBLISHED : STATUS.EVENTS.DRAFT,
-      })
-      .select()
-      .single();
+  create_event: createEvent,
+  create_venue: createVenue,
 
-    if (error) {
-      return { success: false, error: error.message };
-    }
-    const title = params.title as string;
-    const statusLabel = params.publish ? 'live' : 'draft';
-    return {
-      success: true,
-      data: { ...data, displayMessage: `📅 Event "${title}" created (${statusLabel})` },
-    };
-  },
-
-  create_asset: async (supabase, _userId, actorId, params) => {
+  create_asset: async (supabase, userId, actorId, params) => {
+    // owner_id and type are NOT NULL and the insert policy checks owner_id =
+    // auth.uid(); this handler set neither, so every asset the Cat tried to
+    // register failed.
     const { data, error } = await supabase
       .from(ENTITY_REGISTRY.asset.tableName)
       .insert({
+        owner_id: userId,
         actor_id: actorId,
         title: params.title,
         description: params.description || null,
-        type: params.asset_type || null,
+        type: isAssetType(params.asset_type) ? params.asset_type : 'other',
         location: params.location || null,
         currency: 'BTC',
         verification_status: 'unverified',

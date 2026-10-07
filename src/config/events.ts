@@ -71,3 +71,25 @@ export const EVENT_TYPE_LABELS: Record<string, string> = Object.fromEntries(
 
 export type EventStatus = (typeof STATUS.EVENTS)[keyof typeof STATUS.EVENTS];
 export const EVENT_STATUSES = Object.values(STATUS.EVENTS) as [EventStatus, ...EventStatus[]];
+
+/**
+ * Statuses in which anyone may see an event — the same set as the events
+ * SELECT policy ("Events viewable if published or owned"). Draft and cancelled
+ * stay with the organizer. The public page, its metadata and /api/events read
+ * this; none restates it.
+ */
+export const EVENT_PUBLIC_STATUSES: readonly EventStatus[] = [
+  STATUS.EVENTS.PUBLISHED,
+  STATUS.EVENTS.OPEN,
+  STATUS.EVENTS.FULL,
+  STATUS.EVENTS.ONGOING,
+  STATUS.EVENTS.COMPLETED,
+];
+
+/**
+ * Where the Cat may take an event's cover from: the photo the person just
+ * sent, or an image generated with their own AI key. Nothing else — a model
+ * asked for a picture URL invents one.
+ */
+export const EVENT_COVER_SOURCES = ['chat_photo', 'generate'] as const;
+export type EventCoverSource = (typeof EVENT_COVER_SOURCES)[number];

@@ -13,7 +13,7 @@ import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { STATUS } from '@/config/database-constants';
 import { createServerClient } from '@/lib/supabase/server';
 import { looseClient } from '@/lib/supabase/untyped';
-import { formatDateTime } from '@/utils/locale';
+import { eventZone, formatEventShort } from '@/domain/events/time';
 
 /** Statuses of an event a visitor can still go to. */
 export const UPCOMING_EVENT_STATUSES = [
@@ -29,6 +29,7 @@ interface VenueEvent {
   id: string;
   title: string;
   start_date: string | null;
+  timezone: string | null;
 }
 
 export async function AssetEventsCard({ assetId }: { assetId: string }) {
@@ -38,7 +39,7 @@ export async function AssetEventsCard({ assetId }: { assetId: string }) {
   const today = new Date(new Date().setUTCHours(0, 0, 0, 0)).toISOString();
   const { data } = await looseClient(supabase)
     .from(ENTITY_REGISTRY.event.tableName)
-    .select('id, title, start_date')
+    .select('id, title, start_date, timezone')
     .eq('asset_id', assetId)
     .in('status', [...UPCOMING_EVENT_STATUSES])
     .or(`end_date.gte.${today},start_date.gte.${today}`)
@@ -66,7 +67,7 @@ export async function AssetEventsCard({ assetId }: { assetId: string }) {
                 <span className="block font-medium text-fg-primary">{event.title}</span>
                 {event.start_date && (
                   <span className="block text-sm text-fg-secondary">
-                    {formatDateTime(event.start_date)}
+                    {formatEventShort(event.start_date, eventZone(event))}
                   </span>
                 )}
               </Link>

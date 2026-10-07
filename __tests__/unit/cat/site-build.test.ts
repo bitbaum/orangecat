@@ -15,10 +15,7 @@
  * stores was untouched.
  */
 import { createHmac } from 'crypto';
-import {
-  postSignedToLoki,
-  lokiRailConfigured,
-} from '@/services/loki/signed-post';
+import { postSignedToLoki, lokiRailConfigured } from '@/services/loki/signed-post';
 import { requestLokiSite, slugFromTitle } from '@/services/loki/site-build';
 import { siteBuildHandlers } from '@/services/cat/handlers/site-build';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
@@ -53,11 +50,7 @@ describe('the signed rail', () => {
       return jsonResponse(200, { ok: true });
     }) as unknown as typeof fetch;
 
-    await postSignedToLoki(
-      'https://fc.example/x',
-      { b: 2, a: 1 },
-      { fetchImpl, secret: SECRET }
-    );
+    await postSignedToLoki('https://fc.example/x', { b: 2, a: 1 }, { fetchImpl, secret: SECRET });
 
     // Recomputing over the transmitted body must reproduce the header. If the
     // payload were serialised twice, key order or number formatting could

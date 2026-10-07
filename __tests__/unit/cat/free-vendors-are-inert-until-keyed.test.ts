@@ -198,7 +198,10 @@ describe('a vendor that does not answer is not carried', () => {
     // Google left this list when a key disproved the 404 inference.
     expect([...REJECTED_VENDORS]).toEqual(['github', 'cerebras']);
     for (const id of REJECTED_VENDORS) {
-      expect(FREE_VENDORS.some(v => v.id === id), id).toBe(false);
+      expect(
+        FREE_VENDORS.some(v => v.id === id),
+        id
+      ).toBe(false);
     }
   });
 });

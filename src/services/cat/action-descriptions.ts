@@ -50,11 +50,20 @@ export function generateActionDescription(
     case 'create_event': {
       const kind = parameters.event_type ? `${parameters.event_type} ` : 'event ';
       const where = parameters.location ? ` at ${parameters.location}` : '';
-      const price = parameters.ticket_price_btc
-        ? `, tickets ${parameters.ticket_price_btc} BTC`
+      const price = parameters.ticket_price
+        ? `, tickets ${parameters.ticket_price} ${parameters.currency ?? ''}`.trimEnd()
         : '';
-      return `Create ${kind}"${parameters.title}" on ${parameters.start_date}${where}${price}`;
+      const crew =
+        Array.isArray(parameters.crew) && parameters.crew.length > 0
+          ? ` — crew: ${parameters.crew.join(', ')}`
+          : '';
+      const live = parameters.publish ? ' and post it' : '';
+      return `Create ${kind}"${parameters.title}" on ${parameters.start_date}${where}${price}${live}${crew}`;
     }
+    case 'create_venue':
+      return parameters.owner_name
+        ? `Set up a page for ${parameters.name} (${parameters.address}) for ${parameters.owner_name} to take over`
+        : `Create a page for ${parameters.name} at ${parameters.address}`;
     case 'create_asset':
       return `Register asset "${parameters.title}"${parameters.location ? ` at ${parameters.location}` : ''}`;
     case 'update_entity':

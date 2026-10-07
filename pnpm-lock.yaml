@@ -124,8 +124,8 @@ importers:
         specifier: ^2.0.0
         version: 2.0.0
       bip-kit:
-        specifier: ^0.5.1
-        version: 0.5.1(katex@0.16.47)(mermaid@11.17.2)(react@19.2.8)(shiki@4.4.3)
+        specifier: ^0.6.0
+        version: 0.6.0(katex@0.16.47)(mermaid@11.17.2)(react@19.2.8)(shiki@4.4.3)
       bip32:
         specifier: ^5.0.0
         version: 5.0.1(typescript@6.0.3)
@@ -2763,8 +2763,8 @@ packages:
   bidi-js@1.1.0:
     resolution: {integrity: sha512-fX1Onk0tdVPC7obPWB5EbJ1z7NVhLq4m2xZLq2YXBkxzMXIGRpNMU88n0EPgWseKl12J7zXs7qrDxPK4sRs2fg==}
 
-  bip-kit@0.5.1:
-    resolution: {integrity: sha512-0+AbK4rrnz+RZbrDCD/i2bbroja4rQcS77ntfrQCF9cZd8tfvxawI5ObJrgiN1se3+JmVeMJGPptMRCQBTIVaw==}
+  bip-kit@0.6.0:
+    resolution: {integrity: sha512-evyb2/RtTK7EXrQBde3misyHj/vCZYxJLVBv285iPa3nKl8Mr60sAIspCaSL6SFY0872Jz5MX7gf/uJ0Avvtew==}
     engines: {node: '>=20'}
     peerDependencies:
       katex: '>=0.16'
@@ -8452,7 +8452,7 @@ snapshots:
     dependencies:
       require-from-string: 2.0.2
 
-  bip-kit@0.5.1(katex@0.16.47)(mermaid@11.17.2)(react@19.2.8)(shiki@4.4.3):
+  bip-kit@0.6.0(katex@0.16.47)(mermaid@11.17.2)(react@19.2.8)(shiki@4.4.3):
     dependencies:
       react: 19.2.8
     optionalDependencies:

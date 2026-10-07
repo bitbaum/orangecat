@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { PageHeading } from '@/components/layout/PageHeading';
 import { FLEET_PROFILE_URL, loadOrangeCatProfile } from '@/lib/development/records';
-import { buildJourney } from '@/lib/development/roadmap-journey';
+import { linkDevelopment } from 'bip-kit';
 import { RoadmapJourney } from '@/components/roadmap/RoadmapJourney';
 import { BackTheRoad } from '@/components/capital/BackTheRoad';
 import { loadOpenCapital } from '@/services/capital/open-capital';
@@ -53,7 +53,7 @@ export default async function RoadmapPage() {
           // Drawn as a road — behind us, you are here, ahead — instead of four
           // stacked lists of equal weight (see RoadmapJourney).
           <div className="mt-14">
-            <RoadmapJourney journey={buildJourney(profile.roadmap)} />
+            <RoadmapJourney journey={linkDevelopment(profile).journey} />
           </div>
         )}
 

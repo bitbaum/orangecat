@@ -95,6 +95,11 @@ export default function ImageSuggestPicker({
     },
     [title, body]
   );
+  const searchManual = () => {
+    if (manual.trim()) {
+      void load(manual.trim());
+    }
+  };
 
   // Search is lazy: the (LLM + Openverse) call only fires when the Search tab
   // is actually shown — opening straight into Upload/Generate costs nothing.
@@ -167,15 +172,9 @@ export default function ImageSuggestPicker({
         <ImageGeneratePanel initialPrompt={title || body} onPick={onPick} />
       ) : (
         <>
-          <form
-            onSubmit={e => {
-              e.preventDefault();
-              if (manual.trim()) {
-                void load(manual.trim());
-              }
-            }}
-            className="mb-2 flex gap-2"
-          >
+          {/* Not a <form>: the picker also sits inside entity forms, where a
+              nested form is invalid and Enter would submit the outer one. */}
+          <div role="search" className="mb-2 flex gap-2">
             <div className="relative flex-1">
               <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-tertiary" />
               <input
@@ -183,19 +182,26 @@ export default function ImageSuggestPicker({
                 value={manual}
                 maxLength={IMAGE_SEARCH_QUERY_MAX}
                 onChange={e => setManual(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    searchManual();
+                  }
+                }}
                 placeholder="Search free images…"
                 aria-label="Search images"
                 className="w-full rounded-md border border-default bg-surface-page py-1.5 pl-8 pr-3 text-sm text-fg-primary placeholder:text-fg-tertiary focus:border-accent-warm focus:outline-none"
               />
             </div>
             <button
-              type="submit"
+              type="button"
+              onClick={searchManual}
               disabled={!manual.trim() || loading}
               className="rounded-md border border-default px-3 py-1.5 text-sm font-medium text-fg-primary transition-colors hover:bg-surface-raised disabled:opacity-50"
             >
               Search
             </button>
-          </form>
+          </div>
 
           {queries.length > 0 && (
             <div className="mb-2 flex flex-wrap gap-1.5">
