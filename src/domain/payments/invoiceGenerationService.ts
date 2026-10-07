@@ -9,11 +9,11 @@
 
 import { NWCClient } from '@/lib/nostr/nwc';
 import { materializeOnchainAddress } from './walletResolutionService';
-import type { ResolvedWallet } from './types';
+import type { PaymentMethod, ResolvedWallet } from './types';
 import { logger } from '@/utils/logger';
 import { bitcoinToSats } from '@/services/currency';
 
-interface GeneratedInvoice {
+interface RailInvoice {
   /** BOLT11 invoice string (Lightning) or null (on-chain) */
   bolt11: string | null;
   /** Payment hash for NWC lookups */
@@ -31,6 +31,18 @@ interface GeneratedInvoice {
 const LIGHTNING_INVOICE_EXPIRY_SECS = 3600; // 1 hour
 
 /**
+ * An invoice plus the rail that actually minted it — which is NOT always the
+ * wallet's resolved method. A send-only NWC connection falls back to the
+ * wallet's lightning address below; the intent must then be recorded as
+ * `lightning_address`, or no status check matches it (the NWC check needs a
+ * payment_hash, which an LNURL invoice does not carry) and a PAID payment is
+ * written EXPIRED an hour later. Store `invoice.method`, never `wallet.method`.
+ */
+export interface GeneratedInvoice extends RailInvoice {
+  method: PaymentMethod;
+}
+
+/**
  * Generate an invoice for a payment using the resolved wallet.
  */
 export async function generateInvoice(
@@ -38,10 +50,21 @@ export async function generateInvoice(
   amountBtc: number,
   description: string
 ): Promise<GeneratedInvoice> {
+  return mintInvoice(wallet, amountBtc, description);
+}
+
+async function mintInvoice(
+  wallet: ResolvedWallet,
+  amountBtc: number,
+  description: string
+): Promise<GeneratedInvoice> {
   switch (wallet.method) {
     case 'nwc':
       try {
-        return await generateNWCInvoice(wallet.nwc_uri!, amountBtc, description);
+        return {
+          ...(await generateNWCInvoice(wallet.nwc_uri!, amountBtc, description)),
+          method: 'nwc',
+        };
       } catch (error) {
         // An NWC connection can be authorised for one direction only. Coinos
         // issues send-only connections (`pay_invoice` without `make_invoice`),
@@ -60,11 +83,25 @@ export async function generateInvoice(
           'NWC cannot mint invoices (likely a send-only connection); receiving via the lightning address instead',
           { walletId: wallet.wallet_id, error }
         );
-        return generateLightningAddressInvoice(wallet.lightning_address, amountBtc, description);
+        return {
+          ...(await generateLightningAddressInvoice(
+            wallet.lightning_address,
+            amountBtc,
+            description
+          )),
+          method: 'lightning_address',
+        };
       }
 
     case 'lightning_address':
-      return generateLightningAddressInvoice(wallet.lightning_address!, amountBtc, description);
+      return {
+        ...(await generateLightningAddressInvoice(
+          wallet.lightning_address!,
+          amountBtc,
+          description
+        )),
+        method: 'lightning_address',
+      };
 
     case 'onchain': {
       // A wallet configured with an xpub has no address yet — derive a fresh,
@@ -72,7 +109,10 @@ export async function generateInvoice(
       // through. Uniqueness per invoice is what makes on-chain settlement
       // detection sound.
       const materialized = await materializeOnchainAddress(wallet);
-      return generateOnchainInvoice(materialized.onchain_address!, amountBtc, description);
+      return {
+        ...(await generateOnchainInvoice(materialized.onchain_address!, amountBtc, description)),
+        method: 'onchain',
+      };
     }
 
     default:
@@ -87,7 +127,7 @@ async function generateNWCInvoice(
   nwcUri: string,
   amountBtc: number,
   description: string
-): Promise<GeneratedInvoice> {
+): Promise<RailInvoice> {
   const client = new NWCClient(nwcUri);
   // NWC protocol uses sats
   const amountSats = bitcoinToSats(amountBtc);
@@ -125,7 +165,7 @@ async function generateLightningAddressInvoice(
   lightningAddress: string,
   amountBtc: number,
   description: string
-): Promise<GeneratedInvoice> {
+): Promise<RailInvoice> {
   // Step 1: Resolve Lightning Address to LNURL-pay endpoint
   // Lightning address format: user@domain.com -> https://domain.com/.well-known/lnurlp/user
   const [user, domain] = lightningAddress.split('@');
@@ -201,7 +241,7 @@ async function generateOnchainInvoice(
   address: string,
   amountBtc: number,
   description: string
-): Promise<GeneratedInvoice> {
+): Promise<RailInvoice> {
   // BIP21 format: bitcoin:<address>?amount=<btc>&label=<description>
   const params = new URLSearchParams();
   params.set('amount', amountBtc.toFixed(8));

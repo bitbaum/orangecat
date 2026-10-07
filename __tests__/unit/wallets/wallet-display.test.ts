@@ -49,6 +49,15 @@ describe('wallet display', () => {
     expect(same.has('c')).toBe(false);
   });
 
+  it('a wallet with both rails is paid over Lightning, and says so', () => {
+    const both = w({
+      lightning_address: 'me@coinos.io',
+      address_or_xpub: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
+    });
+    expect(walletRail(both).rail).toBe('lightning');
+    expect(reuseIsPublicOnChain(both)).toBe(false);
+  });
+
   it('only a plain on-chain address makes reuse public on the blockchain', () => {
     expect(reuseIsPublicOnChain(w({ lightning_address: 'orangecat@coinos.io' }))).toBe(false);
     expect(

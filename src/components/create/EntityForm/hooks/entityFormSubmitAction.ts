@@ -232,11 +232,10 @@ export async function executeEntityFormSubmit<T extends Record<string, unknown>>
     } else {
       const errorMsg =
         error instanceof Error ? error.message : `Failed to ${mode} ${config.name.toLowerCase()}`;
+      // Shown once, inline beside the submit button that was just tapped. A
+      // toast with the same words also landed at the top of the screen, over
+      // the header, five seconds after the person had already read it.
       setErrors({ general: errorMsg });
-      toast.error(`Failed to ${mode} ${config.name.toLowerCase()}`, {
-        description: errorMsg,
-        duration: 5000,
-      });
       if (onError) {
         onError(errorMsg);
       }

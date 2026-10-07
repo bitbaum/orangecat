@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useBottomNavScroll } from '@/hooks/useHeaderScroll';
@@ -12,14 +12,12 @@ import { isNavHrefActive } from '@/lib/navigation/isActive';
 import { mobileTabBar, mobileTabBarAnonymous } from '@/config/navigation';
 import { MobileCreateSheet } from '@/components/create/MobileCreateSheet';
 import { Z_INDEX } from '@/constants/z-index';
+import { useSoftKeyboard } from '@/hooks/useSoftKeyboard';
 
-// When the iOS/Android software keyboard opens, the visual viewport
-// height shrinks below the layout viewport height. The bottom nav is
-// position:fixed so it stays "at the bottom" of the LAYOUT viewport —
-// which means it sits underneath the keyboard, hiding any input the
-// user is actually typing into. Detect the shrink and hide the nav
-// while the keyboard is up.
-const KEYBOARD_HEIGHT_THRESHOLD_PX = 150;
+// The nav is position:fixed to the bottom, so while the soft keyboard is up
+// it sits right where the field being typed into scrolls to. It hides then —
+// see useSoftKeyboard for why the old viewport comparison never fired on
+// Android.
 
 const MobileBottomNav = React.memo(function MobileBottomNav() {
   const pathname = usePathname();
@@ -28,27 +26,8 @@ const MobileBottomNav = React.memo(function MobileBottomNav() {
   const { isCompact } = useBottomNavScroll();
   const { openComposer } = useComposer();
   const [showCreateSheet, setShowCreateSheet] = useState(false);
-  const [keyboardOpen, setKeyboardOpen] = useState(false);
-
-  useEffect(() => {
-    const vv = typeof window !== 'undefined' ? window.visualViewport : null;
-    if (!vv) {
-      return;
-    }
-    const onResize = () => {
-      // Difference between layout viewport and visual viewport — when
-      // the keyboard rises, vv.height shrinks but window.innerHeight
-      // stays the same. The 150px threshold filters out URL-bar
-      // show/hide on mobile Safari, which is also a viewport shrink
-      // but not a keyboard.
-      setKeyboardOpen(window.innerHeight - vv.height > KEYBOARD_HEIGHT_THRESHOLD_PX);
-    };
-    vv.addEventListener('resize', onResize);
-    onResize();
-    return () => {
-      vv.removeEventListener('resize', onResize);
-    };
-  }, []);
+  // Shared with the floating Cat button: both step aside while typing.
+  const keyboardOpen = useSoftKeyboard();
 
   // Don't render until auth is hydrated to prevent layout shift
   if (!hydrated) {

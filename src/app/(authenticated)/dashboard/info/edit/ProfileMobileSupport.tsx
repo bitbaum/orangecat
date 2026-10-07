@@ -1,7 +1,7 @@
 'use client';
 
-import { CheckCircle2, HelpCircle } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { CheckCircle2 } from 'lucide-react';
+import { FieldHelpButton } from '@/components/ui/FieldHelpButton';
 import { GRADIENTS } from '@/config/gradients';
 import { DynamicSidebar } from '@/components/create/DynamicSidebar';
 import {
@@ -59,18 +59,7 @@ export function ProfileMobileSupport({
       </div>
 
       {/* Floating help button (mobile, only when a field is focused) */}
-      {focusedField && (
-        <button
-          onClick={() => setShowMobileGuidance(true)}
-          className={cn(
-            GRADIENTS.brandBitcoin,
-            'fixed bottom-6 right-6 z-50 rounded-full p-4 text-white transition-colors duration-200 lg:hidden'
-          )}
-          aria-label="Get help"
-        >
-          <HelpCircle className="w-6 h-6" />
-        </button>
-      )}
+      {focusedField && <FieldHelpButton onClick={() => setShowMobileGuidance(true)} />}
 
       {/* Guidance modal (mobile) */}
       {showMobileGuidance && (

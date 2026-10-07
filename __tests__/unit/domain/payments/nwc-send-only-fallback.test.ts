@@ -75,6 +75,12 @@ describe('send-only NWC falls back to the lightning address', () => {
     // The regression: this threw "Failed to generate Lightning invoice via NWC"
     // and the whole payment failed.
     expect(invoice.bolt11).toBe(LN_INVOICE);
+    // And the intent must be recorded on the rail that minted it. Stored as
+    // 'nwc' it had no payment_hash for the NWC check and no lightning_address
+    // method for the verify-URL check, so a PAID payment was written EXPIRED
+    // an hour later (audit, 2026-10-07).
+    expect(invoice.method).toBe('lightning_address');
+    expect(invoice.lnurl_verify_url).toBe('https://coinos.io/v');
   });
 
   it('still prefers NWC when it works — the fallback is not a downgrade', async () => {
@@ -92,6 +98,7 @@ describe('send-only NWC falls back to the lightning address', () => {
     );
 
     expect(invoice.bolt11).toBe('lnbc_from_nwc');
+    expect(invoice.method).toBe('nwc');
   });
 
   it('still fails when NWC is the only rail — nothing to fall back to', async () => {
