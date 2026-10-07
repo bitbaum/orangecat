@@ -16,6 +16,7 @@ import { addEventRoles, describeCrew, type EventRole } from '@/domain/events/cre
 import { venueFromText } from '@/domain/events/venue';
 import { formatEventShort, resolveEventTimes } from '@/domain/events/time';
 import { listPlacesICanListAt, matchVenueByName } from '@/domain/events/venue-page';
+import { resolveEventCover } from '@/domain/events/cover';
 import { getProfileCurrency, isCurrencyCode } from '@/services/currency/profileCurrency';
 import type { ActionHandler } from './types';
 
@@ -103,6 +104,29 @@ export const createEvent: ActionHandler = async (supabase, userId, actorId, para
     lines.push(
       `Starts ${formatEventShort(times.start_date as string, times.timezone)} (${times.timezone}).`
     );
+  }
+
+  // The cover comes after the event exists too: generating one can take a
+  // while and can fail, and neither may cost the person their event.
+  const cover = await resolveEventCover(supabase, userId, params.cover, {
+    title,
+    genres: (data.music_genres as string[] | null) ?? [],
+    vibe: (data.vibe as string | null) ?? null,
+    place: place?.title ?? (typeof venue.venue_name === 'string' ? venue.venue_name : null),
+  }).catch(() => ({
+    banner_url: null,
+    note: 'The cover could not be added — add one from the event page.',
+  }));
+  if (cover.banner_url) {
+    const { error: coverError } = await supabase
+      .from(ENTITY_REGISTRY.event.tableName)
+      .update({ banner_url: cover.banner_url })
+      .eq('id', data.id);
+    lines.push(
+      coverError ? 'The cover could not be saved — add one from the event page.' : cover.note
+    );
+  } else {
+    lines.push(cover.note);
   }
 
   // The crew is posted after the event exists (it references it). A failure

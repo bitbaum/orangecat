@@ -46,6 +46,14 @@ const fieldGroups: FieldGroup[] = [
         colSpan: 2,
       },
       {
+        // The picture on the event's page and in every list. A photo the Cat
+        // was sent arrives here on its draft (imageFieldOf).
+        name: 'banner_url',
+        label: 'Cover picture',
+        type: 'image',
+        colSpan: 2,
+      },
+      {
         name: 'event_type',
         label: 'Event Type',
         type: 'select',

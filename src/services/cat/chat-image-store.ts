@@ -97,3 +97,26 @@ export async function publishChatImage(path: string, userId: string): Promise<st
   }
   return admin.storage.from(PUBLIC_BUCKET).getPublicUrl(target).data.publicUrl;
 }
+
+/**
+ * The newest photo this person sent the Cat, if it is recent — "use the photo
+ * I just sent" for an action that runs without the chat's attachment list.
+ * Only their own folder is listed, so it can only ever be their photo.
+ */
+export async function latestChatImagePath(
+  userId: string,
+  maxAgeMinutes = 60
+): Promise<string | null> {
+  const { data, error } = await getAdminClient()
+    .storage.from(PRIVATE_BUCKET)
+    .list(`${userId}/cat`, { limit: 1, sortBy: { column: 'created_at', order: 'desc' } });
+  const newest = error ? null : data?.[0];
+  if (!newest?.name || !newest.created_at) {
+    return null;
+  }
+  if (Date.now() - new Date(newest.created_at).getTime() > maxAgeMinutes * 60_000) {
+    return null;
+  }
+  const path = `${userId}/cat/${newest.name}`;
+  return isOwnChatImagePath(path, userId) ? path : null;
+}

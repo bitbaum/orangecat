@@ -43,7 +43,7 @@ import { API_ROUTES } from '@/config/api-routes';
 import { RESEARCH_FIELDS } from '@/config/research';
 import { RESEARCH_LICENSE_VALUES, REVIEW_VERDICT_VALUES } from '@/config/open-science';
 import { getApiEndpoint } from '@/config/entity-registry';
-import { EVENT_TYPES } from '@/config/events';
+import { EVENT_COVER_SOURCES, EVENT_TYPES } from '@/config/events';
 import { CURRENCY_CODES } from '@/config/currencies';
 import { GROUP_LABEL_IDS } from '@/config/group-labels';
 
@@ -312,6 +312,12 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
         required: false,
         description: 'Publish immediately (when the user says post / publish / make it live)',
         default: false,
+      },
+      {
+        name: 'cover',
+        type: 'string',
+        required: false,
+        description: `Cover picture: ${EVENT_COVER_SOURCES.join(' (the photo they just sent) | ')} (made with their AI key)`,
       },
     ],
     examples: [
