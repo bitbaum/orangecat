@@ -312,6 +312,19 @@ describe('before any model is called', () => {
     ]);
   });
 
+  it('keeps shrinking a prompt that cannot fit only when every link is capped', async () => {
+    (getGroqTpmLimit as Mock).mockImplementation(() => 8000);
+    const a = service('A', { chunks: [] }, result('hi', 'g-big'));
+    const b = service('B', { chunks: [] }, result('hi', 'g-small'));
+    (resolveProvider as Mock).mockResolvedValue(
+      resolved({ provider: 'groq', modelToUse: 'g-big', aiService: a }, [
+        { provider: 'groq', modelToUse: 'g-small', aiService: b },
+      ])
+    );
+    await run({ stream: false, conversationId: CONV });
+    expect((prepareCatChat as Mock).mock.calls[0][2].wholePromptIfItCannotFit).toBe(false);
+  });
+
   it('budgets the prompt to the smallest platform-Groq cap in the chain', async () => {
     // The BYOK Groq link has the SMALLEST cap, and must still not count.
     (getGroqTpmLimit as Mock).mockImplementation((m: string) =>
@@ -356,6 +369,7 @@ describe('before any model is called', () => {
           "preferredCurrency": "CHF",
           "requestedConversationId": "99999999-9999-4999-8999-999999999999",
           "tokenBudget": 4826,
+          "wholePromptIfItCannotFit": true,
         },
       ]
     `);

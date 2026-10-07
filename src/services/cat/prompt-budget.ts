@@ -67,6 +67,12 @@ export interface BudgetReport {
   contextDropped: boolean;
   fewShotDropped: boolean;
   sectionsDropped: string[];
+  /**
+   * The shrink could not fit, so none of it was applied: the whole prompt went
+   * to a link without this cap. The fields above say what fitting WOULD have
+   * cost. Set by chat-prepare, never by fitCatPromptToBudget.
+   */
+  sentWhole?: boolean;
 }
 
 /** Base sections a turn can lose, least valuable first. */
@@ -333,4 +339,30 @@ export function fitCatPromptToBudget(
   }
 
   return { messages, report: report(messages, false) };
+}
+
+/**
+ * The prompt a turn sends: shrunk to `budgetTokens` when there is one — or,
+ * when no shrink can fit and `wholeIfItCannotFit`, the WHOLE prompt.
+ *
+ * The capped link is skipped for a prompt that overflows it (the preflight in
+ * chat-orchestrator), so a shrink that still overflows bought nothing and cost
+ * the answering link the turn's own instructions. Measured 2026-10-07: "Throw
+ * a party on Saturday" in prose mode lost twelve sections — its event
+ * playbook among them — still did not fit, and the fallback model answered
+ * from what was left with an empty draft instead of the playbook's questions.
+ */
+export function fitOrSendWhole(
+  parts: CatPromptParts,
+  budgetTokens: number | undefined,
+  wholeIfItCannotFit: boolean
+): { messages: ChatMessage[]; report: BudgetReport | null } {
+  const whole = () => composeCatMessages(parts, { history: parts.history, includeFewShot: true });
+  if (budgetTokens === undefined) {
+    return { messages: whole(), report: null };
+  }
+  const fitted = fitCatPromptToBudget(parts, budgetTokens);
+  return !fitted.report.fits && wholeIfItCannotFit
+    ? { messages: whole(), report: { ...fitted.report, sentWhole: true } }
+    : fitted;
 }
