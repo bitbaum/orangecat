@@ -5,64 +5,16 @@
  * Handles xpub resolution, cooldown enforcement, DB update, and audit logging.
  */
 
-import { fetchBitcoinBalance } from '@/services/blockchain';
+import { fetchAddressBalance, fetchAddressStats } from '@/lib/bitcoin/addressBalance';
 import { DATABASE_TABLES, WALLET_CLIENT_COLUMNS } from '@/config/database-tables';
 import { auditSuccess, AUDIT_ACTIONS } from '@/lib/api/auditLog';
 import { logger } from '@/utils/logger';
-import { BITCOIN_FETCH_TIMEOUT_MS } from '@/lib/wallets/constants';
 import { satsToBitcoin } from '@/services/currency';
 import { scanUsedAddresses } from '@/domain/wallets/xpubScan';
 
 const COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
-const API_TIMEOUT_MS = BITCOIN_FETCH_TIMEOUT_MS;
 
 import type { AnySupabaseClient } from '@/lib/supabase/types';
-
-async function fetchWithTimeout(
-  url: string,
-  options: RequestInit,
-  timeoutMs: number
-): Promise<Response> {
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const res = await fetch(url, { ...options, signal: controller.signal });
-    clearTimeout(id);
-    return res;
-  } catch (error) {
-    clearTimeout(id);
-    if (error instanceof Error && error.name === 'AbortError') {
-      throw new Error('TIMEOUT');
-    }
-    throw new Error('NETWORK_ERROR');
-  }
-}
-
-/** Chain stats for one address, in sats. */
-async function fetchAddressStats(
-  address: string
-): Promise<{ balanceSats: number; txCount: number }> {
-  const res = await fetchWithTimeout(
-    `https://mempool.space/api/address/${address}`,
-    { headers: { Accept: 'application/json' } },
-    API_TIMEOUT_MS
-  );
-  if (res.status === 429) {
-    throw new Error('RATE_LIMITED');
-  }
-  if (!res.ok) {
-    throw new Error(`API_ERROR_${res.status}`);
-  }
-  const d = await res.json();
-  const c = d?.chain_stats ?? {};
-  const m = d?.mempool_stats ?? {};
-  const balanceSats =
-    (c.funded_txo_sum ?? 0) -
-    (c.spent_txo_sum ?? 0) +
-    (m.funded_txo_sum ?? 0) -
-    (m.spent_txo_sum ?? 0);
-  return { balanceSats, txCount: (c.tx_count ?? 0) + (m.tx_count ?? 0) };
-}
 
 /**
  * Sum an extended key's balance across BOTH chains by deriving addresses locally.
@@ -124,7 +76,7 @@ export async function refreshWalletBalance(
   let totalBalanceBtc: number;
   try {
     if (wallet.wallet_type === 'address') {
-      const data = await fetchBitcoinBalance(wallet.address_or_xpub as string);
+      const data = await fetchAddressBalance(wallet.address_or_xpub as string);
       totalBalanceBtc = data.balance_btc;
     } else if (wallet.wallet_type === 'xpub') {
       totalBalanceBtc = await fetchXpubBalance(wallet.address_or_xpub as string);

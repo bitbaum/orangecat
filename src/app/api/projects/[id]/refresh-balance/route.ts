@@ -4,7 +4,7 @@
  * POST /api/projects/[id]/refresh-balance - Refresh project Bitcoin balance
  */
 
-import { fetchBitcoinBalance } from '@/services/blockchain';
+import { fetchAddressBalance } from '@/lib/bitcoin/addressBalance';
 import {
   apiSuccess,
   apiForbidden,
@@ -79,7 +79,7 @@ export const POST = withAuth(async (request: AuthenticatedRequest, context: Rout
 
     let balance;
     try {
-      balance = await fetchBitcoinBalance(project.bitcoin_address);
+      balance = await fetchAddressBalance(project.bitcoin_address);
     } catch (err) {
       logger.error('Failed to fetch Bitcoin balance', {
         projectId,

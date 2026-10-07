@@ -37,7 +37,7 @@ supabase/migrations/20251104_bitcoin_balance_mvp.sql        [NEW] - Idempotent m
 ### Backend Services
 
 ```
-src/services/blockchain.ts                                  [NEW] - Mempool.space API client
+src/services/blockchain.ts                                  [NEW] - Mempool.space API client (since replaced by src/lib/bitcoin/addressBalance.ts)
 src/lib/projectGoal.ts                                      [NEW] - Amount raised computation
 src/types/project.ts                                        [NEW] - TypeScript types with mappers
 ```
