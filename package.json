@@ -119,7 +119,7 @@
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^9.1.0",
     "@bitbaum/ai-kit": "^1.18.0",
-    "@bitbaum/chatkit": "github:bitbaum/chatkit#6995036fd75565dd31547373a77c84b06672de9b",
+    "@bitbaum/chatkit": "github:bitbaum/chatkit#5ed3095bada46045e8ec2478740699d580984492",
     "@bitbaum/collective-kinds": "workspace:*",
     "@bitbaum/geo-kit": "github:bitbaum/geo-kit#a337aec928cf7804fecf459c308d366b90f4b2fa",
     "@bitbaum/mail-kit": "^0.1.1",

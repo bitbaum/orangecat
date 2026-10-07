@@ -31,8 +31,8 @@ importers:
         specifier: ^1.18.0
         version: 1.18.0(react@19.2.8)
       '@bitbaum/chatkit':
-        specifier: github:bitbaum/chatkit#6995036fd75565dd31547373a77c84b06672de9b
-        version: https://codeload.github.com/bitbaum/chatkit/tar.gz/6995036fd75565dd31547373a77c84b06672de9b(react@19.2.8)
+        specifier: github:bitbaum/chatkit#5ed3095bada46045e8ec2478740699d580984492
+        version: https://codeload.github.com/bitbaum/chatkit/tar.gz/5ed3095bada46045e8ec2478740699d580984492(react@19.2.8)
       '@bitbaum/collective-kinds':
         specifier: workspace:*
         version: link:packages/collective-kinds
@@ -538,8 +538,8 @@ packages:
       react:
         optional: true
 
-  '@bitbaum/chatkit@https://codeload.github.com/bitbaum/chatkit/tar.gz/6995036fd75565dd31547373a77c84b06672de9b':
-    resolution: {gitHosted: true, tarball: https://codeload.github.com/bitbaum/chatkit/tar.gz/6995036fd75565dd31547373a77c84b06672de9b}
+  '@bitbaum/chatkit@https://codeload.github.com/bitbaum/chatkit/tar.gz/5ed3095bada46045e8ec2478740699d580984492':
+    resolution: {gitHosted: true, tarball: https://codeload.github.com/bitbaum/chatkit/tar.gz/5ed3095bada46045e8ec2478740699d580984492}
     version: 0.3.2
     engines: {node: '>=20'}
     peerDependencies:
@@ -6375,7 +6375,7 @@ snapshots:
     optionalDependencies:
       react: 19.2.8
 
-  '@bitbaum/chatkit@https://codeload.github.com/bitbaum/chatkit/tar.gz/6995036fd75565dd31547373a77c84b06672de9b(react@19.2.8)':
+  '@bitbaum/chatkit@https://codeload.github.com/bitbaum/chatkit/tar.gz/5ed3095bada46045e8ec2478740699d580984492(react@19.2.8)':
     dependencies:
       react: 19.2.8
 
