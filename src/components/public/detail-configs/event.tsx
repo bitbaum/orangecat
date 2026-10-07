@@ -1,7 +1,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import type { EntityDetailConfig } from '@/components/public/PublicEntityDetailPage';
 import { ROUTES } from '@/config/routes';
-import { format } from 'date-fns';
+import {
+  eventZone,
+  formatEventClockRange,
+  formatEventDate,
+  formatEventDay,
+  zoneLabel,
+} from '@/domain/events/time';
 import {
   Calendar as CalendarIcon,
   MapPin,
@@ -34,7 +40,7 @@ export const eventPlaceLine = (entity: Record<string, unknown>): string | null =
 
 /** The selected columns the page metadata reads — SSOT for both callers. */
 export const EVENT_METADATA_SELECT =
-  'title, description, start_date, venue_name, venue_address, venue_city, music_genres';
+  'title, description, start_date, timezone, venue_name, venue_address, venue_city, music_genres';
 
 const hasMapPin = (entity: Record<string, unknown>): boolean =>
   Number.isFinite(Number(entity.latitude ?? NaN)) &&
@@ -113,7 +119,7 @@ export const eventDetailConfig: EntityDetailConfig = {
   renderHeaderExtra: entity =>
     entity.start_date ? (
       <span className="text-fg-secondary text-sm">
-        {format(new Date(entity.start_date as string), 'EEEE, MMMM d, yyyy')}
+        {formatEventDay(entity.start_date as string, eventZone(entity))}
       </span>
     ) : null,
   renderDetails: (entity, _payable, isOwner, isSignedIn) => {
@@ -141,16 +147,16 @@ export const eventDetailConfig: EntityDetailConfig = {
                 </div>
                 <div>
                   <div className="font-medium">
-                    {format(new Date(entity.start_date as string), 'EEEE, MMMM d, yyyy')}
+                    {formatEventDay(entity.start_date as string, eventZone(entity))}
                   </div>
                   <div className="text-sm text-fg-secondary">
                     {entity.is_all_day
                       ? 'All day'
-                      : `${format(new Date(entity.start_date as string), 'h:mm a')}${
-                          entity.end_date
-                            ? ` - ${format(new Date(entity.end_date as string), 'h:mm a')}`
-                            : ''
-                        }`}
+                      : `${formatEventClockRange(
+                          entity.start_date as string,
+                          entity.end_date as string | null,
+                          eventZone(entity)
+                        )} · ${zoneLabel(eventZone(entity))}`}
                   </div>
                 </div>
               </div>
@@ -270,7 +276,7 @@ export const eventDetailConfig: EntityDetailConfig = {
                 </div>
                 <div>
                   <div className="font-medium">
-                    RSVP by {format(new Date(entity.rsvp_deadline as string), 'MMMM d, yyyy')}
+                    RSVP by {formatEventDate(entity.rsvp_deadline as string, eventZone(entity))}
                   </div>
                 </div>
               </div>

@@ -19,6 +19,7 @@ import { ROUTES } from '@/config/routes';
 import { checkInTicket, listTickets, type CheckInResult } from '@/domain/events/tickets';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import DoorList, { type DoorGuest } from '@/components/events/DoorList';
+import { eventZone } from '@/domain/events/time';
 
 export const metadata: Metadata = { title: 'Door', robots: { index: false } };
 
@@ -53,7 +54,7 @@ export default async function DoorPage({ params, searchParams }: PageProps) {
 
   const { data: event } = await supabase
     .from(ENTITY_REGISTRY.event.tableName)
-    .select('id, title, user_id, max_attendees')
+    .select('id, title, user_id, max_attendees, timezone')
     .eq('id', id)
     .maybeSingle();
   if (!event) {
@@ -137,7 +138,12 @@ export default async function DoorPage({ params, searchParams }: PageProps) {
         </Card>
       )}
 
-      <DoorList eventId={id} guests={guests} capacity={event.max_attendees ?? null} />
+      <DoorList
+        eventId={id}
+        guests={guests}
+        capacity={event.max_attendees ?? null}
+        zone={eventZone(event)}
+      />
     </main>
   );
 }

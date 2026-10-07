@@ -8,6 +8,7 @@
  */
 
 import { ROUTES } from '@/config/routes';
+import { eventZone, formatEventShort, zoneLabel } from '@/domain/events/time';
 import { normalizeGenre } from '@/config/event-crew';
 import { geocodeAddress } from '@/lib/nominatim';
 import {
@@ -50,7 +51,7 @@ export function formatNearbyForModel(place: string, events: NearbyEvent[]): stri
       e.is_free || !e.ticket_price ? 'free' : `${e.ticket_price} ${e.currency ?? ''}`.trim();
     const where = [e.venue_name, e.venue_city].filter(Boolean).join(', ');
     return [
-      `- ${e.title} — ${e.start_date}`,
+      `- ${e.title} — ${formatEventShort(e.start_date, eventZone(e))} ${zoneLabel(eventZone(e))}`,
       where && `at ${where}`,
       `${e.distance_km.toFixed(1)} km away`,
       e.music_genres.length > 0 && `music: ${e.music_genres.join(', ')}`,
@@ -62,8 +63,8 @@ export function formatNearbyForModel(place: string, events: NearbyEvent[]): stri
       .join(' · ');
   });
   return (
-    `Upcoming public events near ${place}, nearest first (start times are ISO, UTC unless an offset is shown — ` +
-    `give them in the user's terms):\n${lines.join('\n')}\n` +
+    `Upcoming public events near ${place}, nearest first (times are local to each venue):\n` +
+    `${lines.join('\n')}\n` +
     'Link each title you mention to its link. Mention only these events.'
   );
 }

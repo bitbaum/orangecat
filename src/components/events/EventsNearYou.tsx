@@ -10,7 +10,7 @@
 import { useState } from 'react';
 import { API_ROUTES } from '@/config/api-routes';
 import Link from 'next/link';
-import { format } from 'date-fns';
+import { eventZone, formatEventShort } from '@/domain/events/time';
 import { LocateFixed, MapPin, Music, Search } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { ROUTES } from '@/config/routes';
@@ -23,6 +23,15 @@ import type { NearbyEvent } from '@/domain/events/nearby';
 type Point = { lat: number; lng: number; label: string };
 
 const RADII_KM = [5, 25, 100] as const;
+
+// One sentence per way it fails, each with the way forward: telling someone
+// who was never asked that they "did not share" sends them to the wrong fix.
+const GEO_ERRORS: Record<number, string> = {
+  0: 'Could not find your location — type a place instead.',
+  1: 'Location is blocked for this site. Allow it in your browser settings, or type a place.',
+  2: 'Your device could not work out where it is — type a place instead.',
+  3: 'Finding your location took too long. Try again, or type a place.',
+};
 
 export default function EventsNearYou() {
   const [point, setPoint] = useState<Point | null>(null);
@@ -65,7 +74,7 @@ export default function EventsNearYou() {
     setStatus('Finding you…');
     navigator.geolocation.getCurrentPosition(
       pos => search({ lat: pos.coords.latitude, lng: pos.coords.longitude, label: 'you' }),
-      () => setStatus('Location was not shared — type a place instead.'),
+      err => setStatus(GEO_ERRORS[err.code] ?? GEO_ERRORS[0]),
       { timeout: 10000, maximumAge: 300000 }
     );
   }
@@ -168,7 +177,7 @@ export default function EventsNearYou() {
                   </span>
                 </div>
                 <div className="text-sm text-fg-secondary">
-                  {format(new Date(ev.start_date), 'EEE d MMM, HH:mm')}
+                  {formatEventShort(ev.start_date, eventZone(ev))}
                   {' · '}
                   {ev.is_free || !ev.ticket_price
                     ? 'Free'

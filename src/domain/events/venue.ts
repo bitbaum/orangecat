@@ -8,6 +8,7 @@
  */
 
 import { geocodeAddress, type GeocodedVenue } from '@/lib/nominatim';
+import { isValidTimeZone, timeZoneForPlace } from '@/utils/timezone';
 
 type VenueFields = {
   venue_name?: unknown;
@@ -18,6 +19,7 @@ type VenueFields = {
   latitude?: unknown;
   longitude?: unknown;
   is_online?: unknown;
+  timezone?: unknown;
 };
 
 const text = (v: unknown): string | null => (typeof v === 'string' && v.trim() ? v.trim() : null);
@@ -51,6 +53,23 @@ const coord = (v: unknown): number | null => {
 const hasPin = (f: VenueFields) => coord(f.latitude) !== null && coord(f.longitude) !== null;
 
 /**
+ * The zone an event at this place keeps: one already chosen (other than the
+ * 'UTC' default) wins; otherwise the place's own; otherwise what was there.
+ */
+function zoneFor(current: unknown, hit: GeocodedVenue): string | undefined {
+  if (isValidTimeZone(current) && current !== 'UTC') {
+    return current;
+  }
+  return (
+    timeZoneForPlace({
+      countryCode: hit.country_code,
+      latitude: hit.latitude,
+      longitude: hit.longitude,
+    }) ?? (isValidTimeZone(current) ? current : undefined)
+  );
+}
+
+/**
  * Return the fields with latitude/longitude filled when they were missing and
  * the address resolves. Structured fields the person typed always win over the
  * geocoder's reading of them; it only fills blanks.
@@ -74,6 +93,7 @@ export async function withVenuePin<T extends VenueFields>(
     ...fields,
     latitude: hit.latitude,
     longitude: hit.longitude,
+    timezone: zoneFor(fields.timezone, hit),
     venue_city: text(fields.venue_city) ?? hit.venue_city,
     venue_postal_code: text(fields.venue_postal_code) ?? hit.venue_postal_code,
     venue_country: text(fields.venue_country) ?? hit.venue_country,
@@ -108,7 +128,12 @@ export async function repinIfMoved<T extends VenueFields>(
   }
   const merged = { ...existing, ...update, latitude: null, longitude: null };
   const pinned = await withVenuePin(merged, geocode);
-  return { ...update, latitude: pinned.latitude, longitude: pinned.longitude };
+  return {
+    ...update,
+    latitude: pinned.latitude,
+    longitude: pinned.longitude,
+    ...(pinned.timezone !== undefined && { timezone: pinned.timezone }),
+  };
 }
 
 /**
@@ -119,7 +144,7 @@ export async function repinIfMoved<T extends VenueFields>(
 export async function venueFromText(
   location: string,
   geocode: (q: string) => Promise<GeocodedVenue | null> = geocodeAddress
-): Promise<Required<Omit<VenueFields, 'is_online'>>> {
+): Promise<Required<Omit<VenueFields, 'is_online' | 'timezone'>> & { timezone?: string }> {
   const raw = location.trim();
   const hit = raw ? await geocode(raw) : null;
   if (!hit) {
@@ -142,5 +167,6 @@ export async function venueFromText(
     venue_country: hit.venue_country,
     latitude: hit.latitude,
     longitude: hit.longitude,
+    timezone: zoneFor(undefined, hit),
   };
 }

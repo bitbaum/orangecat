@@ -92,6 +92,7 @@ RETURNS TABLE (
   title text,
   event_type text,
   start_date timestamp with time zone,
+  timezone text,
   venue_name text,
   venue_city text,
   music_genres text[],
@@ -109,7 +110,7 @@ SET search_path TO 'public'
 AS $$
   SELECT * FROM (
     SELECT
-      e.id, e.title, e.event_type, e.start_date, e.venue_name, e.venue_city,
+      e.id, e.title, e.event_type, e.start_date, e.timezone, e.venue_name, e.venue_city,
       e.music_genres, e.vibe, e.is_free, e.ticket_price, e.currency, e.thumbnail_url,
       e.latitude, e.longitude,
       6371.0 * 2 * asin(sqrt(

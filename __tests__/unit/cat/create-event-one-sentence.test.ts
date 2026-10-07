@@ -23,6 +23,7 @@ vi.mock('@/lib/nominatim', () => ({
           venue_city: 'Landquart',
           venue_postal_code: '7302',
           venue_country: 'Switzerland',
+          country_code: 'CH',
           display_name: 'Bahnhofstrasse 5, 7302 Landquart, Switzerland',
         }
       : q.includes('Langstrasse')
@@ -34,6 +35,7 @@ vi.mock('@/lib/nominatim', () => ({
             venue_city: 'Zürich',
             venue_postal_code: '8004',
             venue_country: 'Switzerland',
+          country_code: 'CH',
             display_name: 'Langstrasse 120, 8004 Zürich, Switzerland',
           }
         : null
@@ -205,6 +207,25 @@ describe('Cat create_event — one sentence, one complete event', () => {
     expect(row.venue_address).toBe('Langstrasse 120');
     expect((result.data as { displayMessage: string }).displayMessage).toMatch(
       /Espresso Bar has no page you run/
+    );
+  });
+
+  it('reads "Friday 22:00" as 22:00 at the venue, not 22:00 UTC', async () => {
+    const { client, inserts } = mockSupabase();
+    const result = await run(client, {
+      title: 'Electronic Night',
+      start_date: '2026-10-09T22:00',
+      end_date: '2026-10-10T03:00',
+      location: 'Bahnhofstrasse 5, Landquart',
+    });
+    const row = inserts[ENTITY_REGISTRY.event.tableName][0] as Record<string, unknown>;
+    expect(row).toMatchObject({
+      timezone: 'Europe/Zurich',
+      start_date: '2026-10-09T20:00:00.000Z',
+      end_date: '2026-10-10T01:00:00.000Z',
+    });
+    expect((result.data as { displayMessage: string }).displayMessage).toContain(
+      'Starts Fri, Oct 9, 10:00 PM (Europe/Zurich)'
     );
   });
 });

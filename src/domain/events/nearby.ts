@@ -14,6 +14,7 @@ export interface NearbyEvent {
   title: string;
   event_type: string | null;
   start_date: string;
+  timezone: string | null;
   venue_name: string | null;
   venue_city: string | null;
   music_genres: string[];

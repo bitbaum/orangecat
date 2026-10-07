@@ -8,7 +8,7 @@ import {
   eventPlaceLine,
   EVENT_METADATA_SELECT,
 } from '@/components/public/detail-configs/event';
-import { format } from 'date-fns';
+import { eventZone, formatEventDate } from '@/domain/events/time';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   }
   const dateStr = event.start_date
-    ? ` on ${format(new Date(event.start_date as string), 'MMM d, yyyy')}`
+    ? ` on ${formatEventDate(event.start_date as string, eventZone(event))}`
     : '';
   const place = eventPlaceLine(event);
   const locationStr = place ? ` in ${place}` : '';

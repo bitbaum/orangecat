@@ -18,10 +18,10 @@ how it was found. The status column is kept current as items land.
 | 2 | On a fresh database **every write to a search-indexed table fails** (`private.reindex_config` does not exist). | Same sign-up, after #1: "Database error creating new user". | Fixed — same migration creates the empty table. |
 | 3 | **"Near me" can never work**: the site's `Permissions-Policy` sends `geolocation=()`, which denies the feature to its own origin. | Browser probe: "Geolocation has been disabled in this document by permissions policy". | Fixed — `geolocation=(self)`, pinned by a test. |
 | 4 | **The Cat's `create_asset` always failed**: it set neither `owner_id` nor `type`, both required. | Reading the asset table while reworking venues. | Fixed. |
-| 5 | **Event times are shown in the server's timezone**, and the Cat writes "Friday 22:00" as 22:00 UTC (its clock says UTC). A Landquart night at 22:00 showed as 8:00 PM. | Seeded a 22:00 Zurich event; the venue page read "8:00:00 PM". | Planned — see P1. |
+| 5 | **Event times are shown in the server's timezone**, and the Cat writes "Friday 22:00" as 22:00 UTC (its clock says UTC). A Landquart night at 22:00 showed as 8:00 PM. | Seeded a 22:00 Zurich event; the venue page read "8:00:00 PM". | Fixed — times are read and written in the venue's zone (`src/utils/timezone.ts`). |
 | 6 | **Two models for "the place an event is at"**: main shipped place = asset (`events.asset_id`, "Happening here"); this branch had place = organization. | Merging main. | Fixed — one model (asset); anyone could list onto anyone's place before, now only whoever runs it. |
 | 7 | The ticket migration would have **failed the migration-safety gate** CI runs on PRs. | Running `check-migration-safety.mjs` locally. | Fixed — the widened CHECK is acknowledged. |
-| 8 | "Near me" says "Location was not shared" for **every** geolocation failure, including ones the person cannot fix by sharing. | Same probe as #3. | Planned — see P1. |
+| 8 | "Near me" says "Location was not shared" for **every** geolocation failure, including ones the person cannot fix by sharing. | Same probe as #3. | Fixed — one sentence per kind of failure. |
 
 ## Product gaps (to build)
 
@@ -39,7 +39,7 @@ how it was found. The status column is kept current as items land.
 
 ## Plan, in order
 
-- **P1 — correctness first.** Event times in the event's own timezone everywhere (page, lists, door, venue page, Cat); the Cat sends venue-local wall-clock times and the server converts them; a place's timezone comes from its coordinates. Geolocation errors say which kind they are.
+- **P1 — correctness first.** ✅ Event times in the event's own timezone everywhere (page, lists, door, venue page, Cat); the Cat sends venue-local wall-clock times and the server converts them; a place's timezone comes from its coordinates. Geolocation errors say which kind they are.
 - **P2 — the crew is real people.** Assign a person to a role; the Door role checks people in; tickets are announced by notification.
 - **P3 — money out.** One-click crew payouts and refunds through the existing send rail, each leaving a record.
 - **P4 — the cover.** From a chat photo or a generated image.

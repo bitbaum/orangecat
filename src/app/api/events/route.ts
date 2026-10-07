@@ -16,6 +16,7 @@ import { normalizeDates } from '@/lib/api/helpers';
 import { CURRENCY_CODES } from '@/config/currencies';
 import { getProfileCurrency } from '@/services/currency/profileCurrency';
 import { withVenuePin } from '@/domain/events/venue';
+import { resolveEventTimes } from '@/domain/events/time';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { getOrCreateUserActor } from '@/services/actors/getOrCreateUserActor';
 import { STATUS } from '@/config/database-constants';
@@ -47,9 +48,12 @@ export const POST = createEntityPostHandler({
     // Get user's preferred currency from profile (SSOT)
     const userCurrency = await getProfileCurrency(supabase as AnySupabaseClient, userId);
 
-    // Normalize dates first, then put the venue on the map so people nearby
-    // can find it (fills latitude/longitude only when missing).
-    const normalized = await withVenuePin(normalizeDates(data, [...EVENT_DATE_FIELDS]));
+    // Normalize dates, put the venue on the map so people nearby can find it
+    // (fills latitude/longitude and the place's time zone only when missing),
+    // then read the times the form sent as wall-clock times in that zone.
+    const normalized = resolveEventTimes(
+      await withVenuePin(normalizeDates(data, [...EVENT_DATE_FIELDS]))
+    );
 
     // Resolve user to actor for ownership
     const actor = await getOrCreateUserActor(userId);

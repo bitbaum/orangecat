@@ -10,6 +10,7 @@ import { API_ROUTES } from '@/config/api-routes';
 import { useRouter } from 'next/navigation';
 import { Check } from 'lucide-react';
 import Button from '@/components/ui/Button';
+import { formatEventClock } from '@/domain/events/time';
 
 export interface DoorGuest {
   code: string;
@@ -23,9 +24,11 @@ interface DoorListProps {
   eventId: string;
   guests: DoorGuest[];
   capacity: number | null;
+  /** The event's zone: check-in times read on the venue's clock. */
+  zone: string;
 }
 
-export default function DoorList({ eventId, guests, capacity }: DoorListProps) {
+export default function DoorList({ eventId, guests, capacity, zone }: DoorListProps) {
   const router = useRouter();
   const [query, setQuery] = useState('');
   const [busy, setBusy] = useState<string | null>(null);
@@ -88,9 +91,7 @@ export default function DoorList({ eventId, guests, capacity }: DoorListProps) {
                 </div>
                 <div className="text-sm text-fg-secondary">
                   {g.paid ? 'Paid' : 'Free'}
-                  {g.checkedInAt
-                    ? ` · in at ${new Date(g.checkedInAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-                    : ''}
+                  {g.checkedInAt ? ` · in at ${formatEventClock(g.checkedInAt, zone)}` : ''}
                 </div>
               </div>
               {g.checkedInAt ? (

@@ -14,6 +14,7 @@ import { EVENT_TYPES } from '@/config/events';
 import { MAX_VIBE_LENGTH, normalizeGenres, parseCrewRoles } from '@/config/event-crew';
 import { addEventRoles, describeCrew, type EventRole } from '@/domain/events/crew';
 import { venueFromText } from '@/domain/events/venue';
+import { formatEventShort, resolveEventTimes } from '@/domain/events/time';
 import { listPlacesICanListAt, matchVenueByName } from '@/domain/events/venue-page';
 import { getProfileCurrency, isCurrencyCode } from '@/services/currency/profileCurrency';
 import type { ActionHandler } from './types';
@@ -36,6 +37,14 @@ export const createEvent: ActionHandler = async (supabase, userId, actorId, para
   if (place) {
     venue.venue_name = place.title;
   }
+  // The model says times the way the user did — wall-clock at the venue — and
+  // they become instants in the venue's zone here. Its own clock is UTC, so
+  // leaving this to the model moved every non-UTC night by hours.
+  const times = resolveEventTimes({
+    start_date: params.start_date,
+    end_date: params.end_date || null,
+    timezone: venue.timezone,
+  });
   const ticketPrice = Number(params.ticket_price);
   const isPaid = Number.isFinite(ticketPrice) && ticketPrice > 0;
   const currency = isCurrencyCode(params.currency)
@@ -53,8 +62,9 @@ export const createEvent: ActionHandler = async (supabase, userId, actorId, para
       actor_id: actorId,
       title: params.title,
       description: params.description || null,
-      start_date: params.start_date,
-      end_date: params.end_date || null,
+      start_date: times.start_date,
+      end_date: times.end_date,
+      timezone: times.timezone,
       ...(eventType && { event_type: eventType }),
       ...venue,
       asset_id: place?.id ?? null,
@@ -85,6 +95,13 @@ export const createEvent: ActionHandler = async (supabase, userId, actorId, para
   if (venue.latitude === null) {
     lines.push(
       'Could not place the address on the map — add the city or street to make it findable nearby.'
+    );
+  }
+  if (times.timezone === 'UTC') {
+    lines.push("Times are in UTC — I couldn't tell the venue's time zone. Check them on the page.");
+  } else {
+    lines.push(
+      `Starts ${formatEventShort(times.start_date as string, times.timezone)} (${times.timezone}).`
     );
   }
 

@@ -17,6 +17,7 @@ import {
   entityTransforms,
 } from '@/lib/api/buildUpdatePayload';
 import { repinIfMoved } from '@/domain/events/venue';
+import { resolveEventTimes } from '@/domain/events/time';
 
 // Build update payload from validated event data
 const buildEventUpdatePayload = createUpdatePayloadBuilder([
@@ -72,7 +73,12 @@ const { GET, PUT, DELETE } = createEntityCrudHandlers({
   schema: eventSchema,
   buildUpdatePayload: buildEventUpdatePayload,
   // A changed address moves the map pin with it.
-  refineUpdatePayload: (payload, existing) => repinIfMoved(payload, existing),
+  // A changed address moves the pin (and the zone); times without an offset
+  // are wall-clock times in the event's zone.
+  refineUpdatePayload: async (payload, existing) => {
+    const pinned = await repinIfMoved(payload, existing);
+    return resolveEventTimes({ ...pinned, timezone: pinned.timezone ?? existing.timezone });
+  },
   ownershipField: 'actor_id',
   useActorOwnership: true,
   requireActiveStatus: false, // Events have different status values

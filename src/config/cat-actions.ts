@@ -249,13 +249,13 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
         name: 'start_date',
         type: 'string',
         required: true,
-        description: 'Start as an ISO 8601 date-time with offset, resolved from the current date',
+        description: 'Start as wall-clock time at the venue, ISO without offset: 2026-10-09T22:00',
       },
       {
         name: 'end_date',
         type: 'string',
         required: false,
-        description: 'End as an ISO 8601 date-time with offset, when said or obvious',
+        description: 'End, same form, when said or obvious',
       },
       {
         name: 'location',
