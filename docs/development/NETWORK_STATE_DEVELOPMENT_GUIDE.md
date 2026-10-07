@@ -181,6 +181,9 @@ export async function enforcePermission(
 
 ### Feature 1: Member Invitation System
 
+> **Superseded (2026-10-07).** The plan below was never built as written. What
+> exists: `docs/development/GROUP_FEATURES_IMPLEMENTATION_STATUS.md` → Invitations.
+
 **Database Schema (already exists, needs new table):**
 ```sql
 CREATE TABLE group_invitations (

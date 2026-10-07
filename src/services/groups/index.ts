@@ -121,48 +121,6 @@ class GroupsService {
     );
   }
 
-  // Invitation management
-  async createInvitation(
-    input: Parameters<typeof import('./mutations/invitations').createInvitation>[0]
-  ) {
-    return import('./mutations/invitations').then(m => m.createInvitation(input));
-  }
-
-  async acceptInvitation(invitationId: string) {
-    return import('./mutations/invitations').then(m => m.acceptInvitation(invitationId));
-  }
-
-  async declineInvitation(invitationId: string) {
-    return import('./mutations/invitations').then(m => m.declineInvitation(invitationId));
-  }
-
-  async acceptInvitationByToken(token: string) {
-    return import('./mutations/invitations').then(m => m.acceptInvitationByToken(token));
-  }
-
-  async revokeInvitation(invitationId: string) {
-    return import('./mutations/invitations').then(m => m.revokeInvitation(invitationId));
-  }
-
-  async getUserPendingInvitations() {
-    return import('./queries/invitations').then(m => m.getUserPendingInvitations());
-  }
-
-  async getUserInvitationCount() {
-    return import('./queries/invitations').then(m => m.getUserInvitationCount());
-  }
-
-  async getGroupInvitations(
-    groupId: string,
-    options?: Parameters<typeof import('./queries/invitations').getGroupInvitations>[1]
-  ) {
-    return import('./queries/invitations').then(m => m.getGroupInvitations(groupId, options));
-  }
-
-  async getInvitationByToken(token: string) {
-    return import('./queries/invitations').then(m => m.getInvitationByToken(token));
-  }
-
   // Event management
   async createEvent(input: Parameters<typeof import('./mutations/events').createEvent>[0]) {
     return import('./mutations/events').then(m => m.createEvent(input));

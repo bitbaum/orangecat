@@ -7,6 +7,7 @@ import { sortGenericResults } from '@/services/search/processors';
 import type { SortOption } from '@/services/search/types';
 import type { DiscoverTabType } from '@/components/discover/DiscoverTabs';
 import type { GenericPublicEntity } from '@/components/entity/variants/GenericPublicCard';
+import { ilikeAny } from '@/lib/db/likePattern';
 
 type Setter<T> = (v: T) => void;
 
@@ -60,7 +61,6 @@ export async function fetchDiscoverGenericData(
   } = setters;
 
   const limit = 50;
-  const escaped = searchTerm ? searchTerm.replace(/[%_]/g, '\\$&') : null;
   const should = (tab: DiscoverTabType) => activeTab === 'all' || activeTab === tab;
 
   // `base` is a builder over a different table on every call, so it is accepted
@@ -75,13 +75,8 @@ export async function fetchDiscoverGenericData(
     let q = base
       .order('created_at', { ascending: false })
       .limit(activeTab === tab ? limit : tabLimit);
-    if (escaped) {
-      q = q.or(
-        searchFields
-          .split(',')
-          .map(f => `${f}.ilike.%${escaped}%`)
-          .join(',')
-      );
+    if (searchTerm) {
+      q = q.or(ilikeAny(searchFields.split(','), searchTerm));
     }
     return q as unknown as Promise<{ data: T[] | null; error: unknown }>;
   };
@@ -204,8 +199,7 @@ export async function fetchDiscoverGenericData(
         : Promise.resolve({ data: null, error: null }),
     ]);
 
-    const sorted = (items: GenericPublicEntity[]) =>
-      sortGenericResults(items, sortBy, searchTerm);
+    const sorted = (items: GenericPublicEntity[]) => sortGenericResults(items, sortBy, searchTerm);
 
     if (should('causes')) {
       setCauses(sorted((causesRes.data ?? []) as unknown as GenericPublicEntity[]));

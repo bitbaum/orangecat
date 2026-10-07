@@ -18,7 +18,6 @@
 
 import { useState } from 'react';
 import { ArrowRight, Lightbulb, X } from 'lucide-react';
-import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import type { SmartQuestion } from '@/services/recommendations/types';
 
@@ -83,12 +82,10 @@ function QuestionCard({ question, onDismiss }: { question: SmartQuestion; onDism
       <p className="text-sm text-fg-primary flex-1">{question.question}</p>
 
       <div className="flex items-center gap-2 flex-shrink-0">
-        <Link href={question.action.href}>
-          <Button size="sm" variant="outline" className="bg-surface-base">
-            {question.action.label}
-            <ArrowRight className="w-3 h-3 ml-1" />
-          </Button>
-        </Link>
+        <Button href={question.action.href} size="sm" variant="outline" className="bg-surface-base">
+          {question.action.label}
+          <ArrowRight className="w-3 h-3 ml-1" />
+        </Button>
 
         <button
           onClick={onDismiss}

@@ -308,12 +308,10 @@ export default function DocsPage() {
               you launch your first entity.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link href={`${ROUTES.AUTH}?mode=register`}>
-                <Button variant="accent" size="lg">
-                  Create Account
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
-              </Link>
+              <Button href={`${ROUTES.AUTH}?mode=register`} variant="accent" size="lg">
+                Create Account
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
               <Link href={ROUTES.FAQ}>
                 {/* Outline inverted for the dark band — the default outline
                     (dark text/border) is invisible on bg-surface-public. */}

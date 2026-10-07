@@ -12,6 +12,7 @@ import type { Investment } from '@/types/investments';
 import type { GenericPublicEntity } from '@/components/entity/variants/GenericPublicCard';
 import { sortGenericResults } from '@/services/search/processors';
 import type { SortOption } from '@/services/search/types';
+import { ilikeAny } from '@/lib/db/likePattern';
 
 interface DiscoverFinancialData {
   loans: Loan[];
@@ -52,8 +53,7 @@ export function useDiscoverFinancialData(
           .limit(activeTab === 'loans' ? 50 : 12);
 
         if (searchTerm) {
-          const escaped = searchTerm.replace(/[%_]/g, '\\$&');
-          query = query.or(`title.ilike.%${escaped}%,description.ilike.%${escaped}%`);
+          query = query.or(ilikeAny(['title', 'description'], searchTerm));
         }
 
         const { data, error } = await query;
@@ -91,8 +91,7 @@ export function useDiscoverFinancialData(
           .limit(activeTab === 'investments' ? 50 : 12);
 
         if (searchTerm) {
-          const escaped = searchTerm.replace(/[%_]/g, '\\$&');
-          query = query.or(`title.ilike.%${escaped}%,description.ilike.%${escaped}%`);
+          query = query.or(ilikeAny(['title', 'description'], searchTerm));
         }
 
         const { data, error } = await query;
@@ -136,8 +135,7 @@ export function useDiscoverFinancialData(
           .limit(activeTab === 'assets' ? 50 : 12);
 
         if (searchTerm) {
-          const escaped = searchTerm.replace(/[%_]/g, '\\$&');
-          query = query.or(`title.ilike.%${escaped}%,description.ilike.%${escaped}%`);
+          query = query.or(ilikeAny(['title', 'description'], searchTerm));
         }
 
         const { data, error } = await query;

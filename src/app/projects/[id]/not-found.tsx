@@ -20,11 +20,9 @@ export default function ProjectNotFound() {
             The project you are looking for does not exist or may have been removed.
           </p>
           <div className="flex gap-2 justify-center">
-            <Link href={ROUTES.HOME}>
-              <Button variant="outline">
-                <ArrowLeft className="mr-2 h-4 w-4" /> Go Home
-              </Button>
-            </Link>
+            <Button href={ROUTES.HOME} variant="outline">
+              <ArrowLeft className="mr-2 h-4 w-4" /> Go Home
+            </Button>
             <Link href={ROUTES.PROJECTS.LIST}>
               <Button>Browse Projects</Button>
             </Link>

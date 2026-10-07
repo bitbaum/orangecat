@@ -21,7 +21,6 @@ import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
 import { API_ROUTES } from '@/config/api-routes';
 import { formatRelativeTime } from '@/utils/dates';
-import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { getStatusBadge, getTypeLabel } from './utils';
 import { PROPOSAL_STATUSES, type ProposalStatus } from '@/config/proposal-constants';
@@ -166,12 +165,14 @@ export function ProposalDetail({
       <Card>
         <CardContent className="py-12 text-center">
           <p className="text-fg-secondary">Proposal not found</p>
-          <Link href={`${ENTITY_REGISTRY['group'].publicBasePath}/${groupSlug}`}>
-            <Button variant="outline" className="mt-4">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Group
-            </Button>
-          </Link>
+          <Button
+            href={`${ENTITY_REGISTRY['group'].publicBasePath}/${groupSlug}`}
+            variant="outline"
+            className="mt-4"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Group
+          </Button>
         </CardContent>
       </Card>
     );
@@ -180,12 +181,14 @@ export function ProposalDetail({
   return (
     <div className="space-y-6">
       {/* Back Button */}
-      <Link href={`${ENTITY_REGISTRY['group'].publicBasePath}/${groupSlug}`}>
-        <Button variant="outline" size="sm">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Group
-        </Button>
-      </Link>
+      <Button
+        href={`${ENTITY_REGISTRY['group'].publicBasePath}/${groupSlug}`}
+        variant="outline"
+        size="sm"
+      >
+        <ArrowLeft className="h-4 w-4 mr-2" />
+        Back to Group
+      </Button>
 
       {/* Proposal Header */}
       <Card>

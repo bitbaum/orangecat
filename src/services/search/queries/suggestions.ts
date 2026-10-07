@@ -11,7 +11,7 @@ import { logger } from '@/utils/logger';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { PUBLIC_SEARCH_STATUSES } from '@/config/project-statuses';
 import { getTableName } from '@/config/entity-registry';
-import { sanitizeQuery } from './helpers';
+import { ilikeAny } from '@/lib/db/likePattern';
 
 /** A single ranked, navigable search hit from global_search(). */
 export interface GlobalSearchHit {
@@ -89,18 +89,17 @@ export async function getSearchSuggestions(query: string, limit: number = 5): Pr
 
   // Fallback: simple ILIKE on profiles + projects.
   try {
-    const sanitized = sanitizeQuery(query);
     const [profileSuggestions, projectSuggestions] = await Promise.all([
       supabase
         .from(DATABASE_TABLES.PROFILES)
         .select('username, name')
-        .or(`username.ilike.%${sanitized}%,name.ilike.%${sanitized}%`)
+        .or(ilikeAny(['username', 'name'], query))
         .not('username', 'is', null)
         .limit(limit),
       supabase
         .from(getTableName('project'))
         .select('title, category')
-        .or(`title.ilike.%${sanitized}%,category.ilike.%${sanitized}%`)
+        .or(ilikeAny(['title', 'category'], query))
         .in('status', PUBLIC_SEARCH_STATUSES as string[])
         .limit(limit),
     ]);

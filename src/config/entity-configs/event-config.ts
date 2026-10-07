@@ -8,6 +8,7 @@
  * Last Modified Summary: Initial creation of event entity configuration
  */
 
+import { walletFieldGroup } from './wallet-field-group';
 import { Calendar } from 'lucide-react';
 import { ENTITY_STATUS } from '@/config/database-constants';
 import { eventSchema, type EventFormData } from '@/lib/validation';
@@ -16,10 +17,11 @@ import type { FieldGroup } from '@/components/create/types';
 import { EVENT_TEMPLATES, type EventTemplate } from '@/components/create/templates';
 import { createEntityConfig } from './base-config-factory';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
-import { WalletSelectorField } from '@/components/create/wallet-selector';
 import { VenuePickerField } from '@/components/events/VenuePickerField';
 import { EVENT_TYPES, EVENT_CATEGORIES } from '@/config/events';
 import { MUSIC_GENRES } from '@/config/event-crew';
+import { browserTimeZone, instantToWallTime, supportedTimeZones } from '@/utils/timezone';
+import { eventZone } from '@/domain/events/time';
 
 // ==================== FIELD GROUPS ====================
 
@@ -99,18 +101,16 @@ const fieldGroups: FieldGroup[] = [
       {
         name: 'start_date',
         label: 'Start Date & Time',
-        type: 'text',
-        placeholder: 'YYYY-MM-DDTHH:mm',
+        type: 'datetime',
         required: true,
-        hint: 'Format: YYYY-MM-DDTHH:mm (e.g., 2025-02-15T18:00)',
+        hint: 'In the event’s time zone, below.',
         colSpan: 2,
       },
       {
         name: 'end_date',
         label: 'End Date & Time',
-        type: 'text',
-        placeholder: 'YYYY-MM-DDTHH:mm',
-        hint: 'Leave empty for single-day events. Format: YYYY-MM-DDTHH:mm',
+        type: 'datetime',
+        hint: 'Leave empty for single-day events.',
         colSpan: 2,
       },
       {
@@ -121,10 +121,13 @@ const fieldGroups: FieldGroup[] = [
       },
       {
         name: 'timezone',
-        label: 'Timezone',
-        type: 'text',
-        placeholder: 'UTC',
-        hint: 'Default is UTC. Use format like "Europe/Zurich"',
+        label: 'Time zone',
+        type: 'select',
+        options: supportedTimeZones().map(zone => ({
+          value: zone,
+          label: zone.replace(/_/g, ' '),
+        })),
+        hint: 'Where the event happens. Times above are read on this clock.',
         colSpan: 2,
       },
     ],
@@ -235,9 +238,8 @@ const fieldGroups: FieldGroup[] = [
       {
         name: 'rsvp_deadline',
         label: 'RSVP Deadline',
-        type: 'text',
-        placeholder: 'YYYY-MM-DDTHH:mm',
-        hint: 'When should people RSVP by? Format: YYYY-MM-DDTHH:mm',
+        type: 'datetime',
+        hint: 'When should people RSVP by?',
         showWhen: {
           field: 'requires_rsvp',
           value: true,
@@ -282,16 +284,7 @@ const fieldGroups: FieldGroup[] = [
       },
     ],
   },
-  {
-    id: 'bitcoin',
-    title: 'Pay into',
-    description: 'Where money for this page should land',
-    customComponent: WalletSelectorField,
-    fields: [
-      { name: 'bitcoin_address', label: 'Bitcoin Address', type: 'bitcoin_address' },
-      { name: 'lightning_address', label: 'Lightning Address', type: 'text' },
-    ],
-  },
+  walletFieldGroup({ addressColumns: true }),
   {
     id: 'visibility',
     title: 'Profile Visibility',
@@ -318,7 +311,7 @@ const defaultValues: EventFormData = {
   tags: [],
   music_genres: [],
   vibe: '',
-  start_date: new Date().toISOString(),
+  start_date: '',
   end_date: null,
   timezone: 'UTC',
   is_all_day: false,
@@ -373,4 +366,27 @@ export const eventConfig = createEntityConfig<EventFormData>({
   guidanceContent: eventGuidanceContent,
   defaultGuidance: eventDefaultGuidance,
   templates: EVENT_TEMPLATES as unknown as EventTemplate[],
+  // The form edits wall-clock time on the event's own clock. A new event
+  // starts on this browser's zone (it used to default to UTC, so a creator in
+  // Zurich typing 19:00 published 21:00); stored instants, template defaults
+  // and any value with an offset are shown as that zone's wall time, so an
+  // edit cannot keep a stray "+00:00" and shift the night (audit 2026-10-07).
+  deriveInitialValues: data => {
+    const zone =
+      !(data as Record<string, unknown>).id && (!data.timezone || data.timezone === 'UTC')
+        ? browserTimeZone()
+        : eventZone(data);
+    const wall = (v: unknown) =>
+      v instanceof Date
+        ? instantToWallTime(v.toISOString(), zone)
+        : typeof v === 'string' && v
+          ? instantToWallTime(v, zone)
+          : v;
+    return {
+      timezone: zone,
+      start_date: wall(data.start_date) as string,
+      end_date: wall(data.end_date) as string | null,
+      rsvp_deadline: wall(data.rsvp_deadline) as string | null,
+    };
+  },
 });

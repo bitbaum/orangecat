@@ -63,11 +63,9 @@ export function UnclaimedBand({
         </span>
 
         {claimToken && (
-          <Link href={ROUTES.CLAIM(claimToken)}>
-            <Button variant="accent" size="sm">
-              Take it over
-            </Button>
-          </Link>
+          <Button href={ROUTES.CLAIM(claimToken)} variant="accent" size="sm">
+            Take it over
+          </Button>
         )}
       </div>
     </div>

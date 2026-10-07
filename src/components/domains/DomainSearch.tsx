@@ -11,7 +11,6 @@
  */
 
 import React, { useCallback, useState } from 'react';
-import Link from 'next/link';
 import { ArrowUpRight, Loader2, Search } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { DOMAIN_STATUS_COPY, type DomainStatus } from '@/config/domain-search';
@@ -184,11 +183,9 @@ export function DomainSearch() {
                 have shared breaks.
               </p>
               <div className="mt-4">
-                <Link href={WEBSITE_BUILD_SERVICE_URL}>
-                  <Button variant="accent" className="min-h-11">
-                    Start at {freeSubdomainHost(seed)}
-                  </Button>
-                </Link>
+                <Button href={WEBSITE_BUILD_SERVICE_URL} variant="accent" className="min-h-11">
+                  Start at {freeSubdomainHost(seed)}
+                </Button>
               </div>
             </div>
           )}

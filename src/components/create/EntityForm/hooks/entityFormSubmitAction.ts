@@ -7,6 +7,14 @@ import { apiErrorMessage } from '@/lib/api/errorMessage';
 import type { CreateOwner } from '../../owner';
 import { entityEvents } from '@/lib/analytics';
 import type { EntityConfig } from '../../types';
+import { fillUrlTemplate } from '@/utils/urlTemplate';
+
+/** A row just created: what the success screen shows and links to. */
+export interface CreatedEntity {
+  id: string;
+  title: string;
+  record: Record<string, unknown>;
+}
 
 interface WizardMode {
   visibleFields: string[];
@@ -24,7 +32,7 @@ interface EntityFormSubmitParams<T extends Record<string, unknown>> {
   clearDraft: () => void;
   setSubmitting: (v: boolean) => void;
   setErrors: (errors: Record<string, string>) => void;
-  onEntityCreated: (entity: { id: string; title: string }) => void;
+  onEntityCreated: (entity: CreatedEntity) => void;
   router: { push: (url: string) => void };
   existingWalletLinkIdRef: { current: string | undefined };
   wizardMode?: WizardMode;
@@ -208,15 +216,15 @@ export async function executeEntityFormSubmit<T extends Record<string, unknown>>
       onEntityCreated({
         id: result.data.id,
         title: result.data.title || result.data.name || config.name,
+        // The whole row: the success screen needs its real state (an assistant
+        // or circle is live on creation, not a draft) and its slug.
+        record: result.data,
       });
     } else {
       showSuccessToast();
-      let redirectUrl = config.successUrl;
-      if (result.data) {
-        redirectUrl = redirectUrl.replace(/:(\w+)/g, (_, field) => result.data[field] || '');
-        redirectUrl = redirectUrl.replace(/\[(\w+)\]/g, (_, field) => result.data[field] || '');
-      }
-      router.push(redirectUrl);
+      router.push(
+        result.data ? fillUrlTemplate(config.successUrl, result.data) : config.successUrl
+      );
     }
   } catch (error) {
     if (error instanceof ZodError) {
@@ -229,7 +237,10 @@ export async function executeEntityFormSubmit<T extends Record<string, unknown>>
       // left "Create" looking dead: on a long phone form the field is off
       // screen, in an earlier wizard step, or hidden (showWhen, a custom
       // section) and never renders its message at all.
-      setErrors({ ...fieldErrors, general: invalidFieldsSummary(config, Object.keys(fieldErrors)) });
+      setErrors({
+        ...fieldErrors,
+        general: invalidFieldsSummary(config, Object.keys(fieldErrors)),
+      });
     } else {
       const errorMsg =
         error instanceof Error ? error.message : `Failed to ${mode} ${config.name.toLowerCase()}`;

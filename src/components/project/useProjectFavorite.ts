@@ -3,13 +3,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
-import { useUserCurrency } from '@/hooks/useUserCurrency';
 import { logger } from '@/utils/logger';
 import { API_ROUTES } from '@/config/api-routes';
 
-export function useProjectDonation(projectId: string) {
+export function useProjectFavorite(projectId: string) {
   const { user } = useAuth();
-  const userCurrency = useUserCurrency();
   const [isFavorited, setIsFavorited] = useState(false);
   const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
 
@@ -30,7 +28,7 @@ export function useProjectDonation(projectId: string) {
         logger.error(
           'Failed to check favorite status',
           { projectId, error },
-          'ProjectDonationSection'
+          'ProjectFavoriteButton'
         );
       }
     };
@@ -61,24 +59,17 @@ export function useProjectDonation(projectId: string) {
       toast.success(result.data?.isFavorited ? 'Added to favorites' : 'Removed from favorites');
     } catch (error) {
       setIsFavorited(previousState);
-      logger.error('Failed to toggle favorite', { projectId, error }, 'ProjectDonationSection');
+      logger.error('Failed to toggle favorite', { projectId, error }, 'ProjectFavoriteButton');
       toast.error('Failed to update favorite. Please try again.');
     } finally {
       setIsTogglingFavorite(false);
     }
   }, [projectId, user, isFavorited]);
 
-  const copyToClipboard = (text: string, label: string) => {
-    navigator.clipboard.writeText(text);
-    toast.success(`${label} copied to clipboard!`);
-  };
-
   return {
     user,
-    userCurrency,
     isFavorited,
     isTogglingFavorite,
     handleToggleFavorite,
-    copyToClipboard,
   };
 }

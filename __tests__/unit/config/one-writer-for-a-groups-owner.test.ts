@@ -47,8 +47,8 @@ describe('the trigger is the only writer of a group owner', () => {
   });
 
   it("Cat's create_organization does not insert a membership itself", () => {
-    // The invite action in the same file legitimately writes
-    // GROUP_INVITATIONS; only the group_members insert is forbidden here.
+    // The invite action in the same file writes invitations (through
+    // domain/groups/invitations.server); only a membership insert is forbidden.
     expect(catOrgHandler).not.toMatch(/GROUP_MEMBERS/);
   });
 

@@ -35,6 +35,7 @@ import {
 import Button from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
+import { browserTimeZone } from '@/utils/timezone';
 
 export interface BookEntityDialogProps {
   isOpen: boolean;
@@ -128,6 +129,9 @@ export function BookEntityDialog({
           bookable_id: bookableId,
           starts_at,
           ends_at,
+          // The instants are exact already; the zone is the clock the booker
+          // read them on, so the provider sees "14:00 Zurich time", not UTC.
+          timezone: browserTimeZone(),
           customer_notes: notes || undefined,
         }),
       });

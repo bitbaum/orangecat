@@ -12,7 +12,7 @@ import {
 } from '@/types/wallet';
 import { WALLET_VISIBILITY_LEVELS } from '@/config/wallet-visibility';
 import { TIP_MAX_BTC, TIP_MIN_BTC } from '@/config/tips';
-import { lightningAddressSchema, optionalText, webUrl } from './base';
+import { lightningAddressSchema, optionalText, webUrl, publicBitcoinAddress } from './base';
 
 /**
  * Collateral item for loans.
@@ -110,7 +110,7 @@ export const loanSchema = z.object({
   currency: z.enum(CURRENCY_CODES).optional(),
 
   // Bitcoin payment addresses
-  bitcoin_address: optionalText(),
+  bitcoin_address: publicBitcoinAddress(),
   lightning_address: lightningAddressSchema,
   fulfillment_type: z
     .enum(LOAN_FULFILLMENT_TYPES.map(t => t.value) as [string, ...string[]])
@@ -174,7 +174,7 @@ export const investmentSchema = z
       .nullable(),
     terms: optionalText(5000),
     is_public: z.boolean().optional().default(false),
-    bitcoin_address: optionalText(),
+    bitcoin_address: publicBitcoinAddress(),
     lightning_address: lightningAddressSchema,
     currency: z.enum(CURRENCY_CODES).optional(),
   })
@@ -296,7 +296,10 @@ export const walletTransferSchema = z
     from_wallet_id: z.string().guid('Invalid from_wallet_id format'),
     to_wallet_id: z.string().guid('Invalid to_wallet_id format'),
     amount_btc: z
-      .number({ error: issue => issue.input === undefined ? 'amount_btc is required' : 'amount_btc must be a number' })
+      .number({
+        error: issue =>
+          issue.input === undefined ? 'amount_btc is required' : 'amount_btc must be a number',
+      })
       .positive('Amount must be positive')
       .max(21_000_000, 'Amount exceeds maximum BTC supply'),
     note: z.string().max(500, 'Note cannot exceed 500 characters').optional(),

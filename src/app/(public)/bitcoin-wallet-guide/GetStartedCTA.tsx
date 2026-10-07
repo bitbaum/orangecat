@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Bitcoin, Download } from 'lucide-react';
 import Button from '@/components/ui/Button';
@@ -35,15 +34,14 @@ export function GetStartedCTA({ onGetWallet }: GetStartedCTAProps) {
               <Download className="w-4 h-4 mr-2" />
               Get a Wallet Now
             </Button>
-            <Link href={ROUTES.PROFILES.ME}>
-              <Button
-                variant="outline"
-                className="border-bitcoinOrange text-bitcoinOrange hover:bg-bitcoinOrange/10"
-              >
-                <Bitcoin className="w-4 h-4 mr-2" />
-                Complete Profile Setup
-              </Button>
-            </Link>
+            <Button
+              href={ROUTES.PROFILES.ME}
+              variant="outline"
+              className="border-bitcoinOrange text-bitcoinOrange hover:bg-bitcoinOrange/10"
+            >
+              <Bitcoin className="w-4 h-4 mr-2" />
+              Complete Profile Setup
+            </Button>
           </div>
         </CardContent>
       </Card>

@@ -224,7 +224,7 @@ CREATE TABLE transactions (
 
 #### Business Rules
 
-**Bitcoin Service** (`src/services/bitcoin/index.ts`)
+**Bitcoin Service** (address validation: `src/types/wallet.ts`; the old `src/services/bitcoin/index.ts` was removed)
 
 **Address Validation**:
 

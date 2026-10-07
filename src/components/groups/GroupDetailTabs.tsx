@@ -90,7 +90,12 @@ export function GroupDetailTabs({
       </TabsContent>
 
       <TabsContent value="members">
-        <GroupMembers groupId={group.id} members={members} onUpdate={onUpdate} />
+        <GroupMembers
+          groupId={group.id}
+          groupSlug={group.slug}
+          members={members}
+          onUpdate={onUpdate}
+        />
       </TabsContent>
 
       <TabsContent value="wallets">

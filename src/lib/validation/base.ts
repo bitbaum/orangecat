@@ -17,6 +17,7 @@ import {
   reservedReason,
 } from '@/config/usernames';
 import { apiErrorMessage } from '@/lib/api/errorMessage';
+import { isExtendedPublicKey } from '@/lib/wallets/publicWallet';
 
 /**
  * The one username schema. Registration and profile-edit both use it, so a name
@@ -111,6 +112,23 @@ export const optionalText = (maxLen?: number) => {
   const base = maxLen ? z.string().max(maxLen) : z.string();
   return base.optional().nullable().or(z.literal(''));
 };
+
+/**
+ * An entity's public on-chain address. Lenient about format (legacy rows hold
+ * non-standard values), strict about one thing: an extended public key on a
+ * public page reveals every address the wallet will ever use, and it is not
+ * payable anyway — link the wallet instead and payers get a fresh address.
+ */
+export const publicBitcoinAddress = (maxLen = 200) =>
+  z
+    .string()
+    .max(maxLen)
+    .refine(val => !isExtendedPublicKey(val), {
+      message: 'That is an extended public key, not an address. Link the wallet instead.',
+    })
+    .optional()
+    .nullable()
+    .or(z.literal(''));
 
 /**
  * A URL we are willing to put in an `href` or `src`.

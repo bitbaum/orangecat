@@ -27,6 +27,7 @@ import {
   enrichEventsForDisplay,
 } from '@/services/timeline/processors/enrichment';
 import { getTimeAgo, isEventRecent } from '@/services/timeline/formatters';
+import { ilikeAny } from '@/lib/db/likePattern';
 
 /**
  * Get event by ID
@@ -167,7 +168,6 @@ export async function searchPosts(
 
     // Search in enriched_timeline_events view
     // Using ilike for case-insensitive search
-    const escapedSearch = searchQuery.replace(/[%_]/g, '\\$&');
     const {
       data: events,
       error,
@@ -177,7 +177,7 @@ export async function searchPosts(
       .select('*', { count: 'exact' })
       .eq('visibility', 'public')
       .eq('is_deleted', false)
-      .or(`title.ilike.%${escapedSearch}%,description.ilike.%${escapedSearch}%`)
+      .or(ilikeAny(['title', 'description'], searchQuery))
       .order('event_timestamp', { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -188,9 +188,7 @@ export async function searchPosts(
 
     // Transform to display events. The view carries no reaction columns, so
     // search results would otherwise show every post as unreacted-to.
-    const displayEvents = await attachReactionState(
-      await displayEventsFromView(events)
-    );
+    const displayEvents = await attachReactionState(await displayEventsFromView(events));
 
     return {
       success: true,

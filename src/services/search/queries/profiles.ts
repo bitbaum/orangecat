@@ -9,12 +9,13 @@ import supabase from '@/lib/supabase/browser';
 import { logger } from '@/utils/logger';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import type { SearchProfile, SearchFilters, RawSearchProfile } from '../types';
-import { sanitizeQuery, haversineDistance } from './helpers';
+import { haversineDistance } from './helpers';
 import {
   isFixtureProfile,
   FIXTURE_USERNAME_ILIKE_PATTERNS,
   EXACT_FIXTURE_USERNAMES,
 } from '@/config/public-directory';
+import { containsPattern, ilikeAny } from '@/lib/db/likePattern';
 
 /**
  * Search profiles with filters
@@ -100,10 +101,7 @@ export async function searchProfiles(
 
   // Fallback: Use standard Supabase query builder with ILIKE
   if (query) {
-    const sanitized = sanitizeQuery(query);
-    profileQuery = profileQuery.or(
-      `username.ilike.%${sanitized}%,name.ilike.%${sanitized}%,bio.ilike.%${sanitized}%`
-    );
+    profileQuery = profileQuery.or(ilikeAny(['username', 'name', 'bio'], query));
   }
 
   // Apply location filters
@@ -113,8 +111,7 @@ export async function searchProfiles(
     }
 
     if (filters.city) {
-      const sanitizedCity = sanitizeQuery(filters.city);
-      profileQuery = profileQuery.ilike('location_city', `%${sanitizedCity}%`);
+      profileQuery = profileQuery.ilike('location_city', containsPattern(filters.city));
     }
 
     if (filters.postal_code) {
@@ -183,10 +180,11 @@ function applyLocationFilters(
     filtered = filtered.filter(p => p.location_country === filters.country!.toUpperCase());
   }
   if (filters.city) {
-    const sanitizedCity = sanitizeQuery(filters.city);
-    filtered = filtered.filter(p =>
-      p.location_city?.toLowerCase().includes(sanitizedCity.toLowerCase())
-    );
+    // A plain substring test. This compared against the LIKE-escaped term, so
+    // a city typed with an underscore or a % carried a backslash and matched
+    // nothing.
+    const city = filters.city.toLowerCase();
+    filtered = filtered.filter(p => p.location_city?.toLowerCase().includes(city));
   }
   if (filters.postal_code) {
     filtered = filtered.filter(p => p.location_zip === filters.postal_code);

@@ -7,6 +7,7 @@
  * Last Modified: 2025-12-03
  */
 
+import { walletFieldGroup } from './wallet-field-group';
 import { Heart } from 'lucide-react';
 import { ENTITY_STATUS } from '@/config/database-constants';
 import { userCauseSchema, type UserCauseFormData } from '@/lib/validation';
@@ -15,7 +16,6 @@ import type { FieldGroup } from '@/components/create/types';
 import { CAUSE_TEMPLATES, type CauseTemplate } from '@/components/create/templates';
 import { createEntityConfig } from './base-config-factory';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
-import { WalletSelectorField } from '@/components/create/wallet-selector';
 import { CAUSE_CATEGORIES, CAUSE_CATEGORY_OPTIONS } from '@/config/causes';
 
 // ==================== FIELD GROUPS ====================
@@ -70,16 +70,7 @@ const fieldGroups: FieldGroup[] = [
       },
     ],
   },
-  {
-    id: 'payment',
-    title: 'Pay into',
-    description: 'Where money for this page should land',
-    customComponent: WalletSelectorField,
-    fields: [
-      { name: 'bitcoin_address', label: 'Bitcoin Address', type: 'bitcoin_address' },
-      { name: 'lightning_address', label: 'Lightning Address', type: 'text' },
-    ],
-  },
+  walletFieldGroup({ addressColumns: true }),
   {
     id: 'visibility',
     title: 'Profile Visibility',

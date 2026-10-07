@@ -4,7 +4,13 @@ import { CAUSE_CATEGORIES, CAUSE_STATUSES, DISTRIBUTION_RULE_TYPES } from '@/con
 import { PRODUCT_TYPES, PRODUCT_FULFILLMENT_TYPES, PRODUCT_STATUSES } from '@/config/products';
 import { SERVICE_LOCATION_TYPES, SERVICE_STATUSES } from '@/config/services';
 import { DAYS_OF_WEEK } from '@/config/schedule';
-import { lightningAddressSchema, optionalText, optionalUrl, webUrl } from './base';
+import {
+  lightningAddressSchema,
+  optionalText,
+  optionalUrl,
+  webUrl,
+  publicBitcoinAddress,
+} from './base';
 import { ENTITY_STATUS } from '@/config/database-constants';
 
 // =============================================================================
@@ -130,7 +136,7 @@ export const userCauseSchema = z.object({
   cause_category: z.enum(CAUSE_CATEGORIES),
   goal_amount: z.number().positive().optional().nullable(),
   currency: z.enum(CURRENCY_CODES).optional(),
-  bitcoin_address: optionalText(),
+  bitcoin_address: publicBitcoinAddress(),
   lightning_address: lightningAddressSchema,
   distribution_rules: distributionRulesSchema.optional().nullable(),
   beneficiaries: z.array(beneficiarySchema).optional().default([]),

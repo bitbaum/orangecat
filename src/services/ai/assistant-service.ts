@@ -14,6 +14,7 @@ import { getTableName } from '@/config/entity-registry';
 import { getOrCreateUserActor } from '@/services/actors/getOrCreateUserActor';
 import { logger } from '@/utils/logger';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
+import { ilikeAny } from '@/lib/db/likePattern';
 
 export type AssistantResult<T> = { ok: true; data: T } | { ok: false; dbError: unknown };
 
@@ -87,8 +88,7 @@ export async function listAssistants(
   }
 
   if (searchQuery) {
-    const escaped = searchQuery.replace(/[%_]/g, '\\$&');
-    const filter = `title.ilike.%${escaped}%,description.ilike.%${escaped}%`;
+    const filter = ilikeAny(['title', 'description'], searchQuery);
     itemsQuery = itemsQuery.or(filter);
     countQuery = countQuery.or(filter);
   }

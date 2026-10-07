@@ -13,6 +13,9 @@ import { checkGroupAdmin, resolveGroupBySlug } from '@/domain/groups/helpers.ser
 import { logger } from '@/utils/logger';
 import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from '@/constants/pagination';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
+import { getAdminClient } from '@/lib/supabase/admin';
+import { NotificationService } from '@/lib/services/notifications';
+import { ROUTES } from '@/config/routes';
 
 /** Outcome codes the route maps to apiForbidden / apiNotFound / apiValidationError. */
 export type InvitationErrorCode = 'not_found' | 'forbidden' | 'invalid';
@@ -30,105 +33,124 @@ export type InvitationCollectionResult<T> =
 
 /** Validated create-invitation input (shape mirrors the route's zod schema). */
 export type CreateInvitationInput = {
-  user_id?: string;
-  email?: string;
-  create_link?: boolean;
+  /** The person invited. Link and e-mail invitations were never deliverable
+   *  (no join page, no mail) and are not offered. */
+  user_id: string;
   role: 'admin' | 'member';
   message?: string;
   expires_in_days: number;
 };
 
-type InvitationRow = {
-  user_id: string | null;
-  status: string;
-  expires_at: string;
-  group_id: string;
-  role: string;
-  invited_by: string;
-  groups: { slug: string } | null;
-};
-
-async function acceptInvitation(
-  supabase: AnySupabaseClient,
-  inv: InvitationRow,
-  invitationId: string,
-  userId: string
-): Promise<InvitationResult> {
-  const { data: existingMember } = await supabase
-    .from(DATABASE_TABLES.GROUP_MEMBERS)
-    .select('id')
-    .eq('group_id', inv.group_id)
-    .eq('user_id', userId)
-    .maybeSingle();
-
-  const markAccepted = () =>
-    supabase
-      .from(DATABASE_TABLES.GROUP_INVITATIONS)
-      .update({ status: STATUS.GROUP_INVITATIONS.ACCEPTED, responded_at: new Date().toISOString() })
-      .eq('id', invitationId);
-
-  if (existingMember) {
-    await markAccepted();
-    return {
-      ok: true,
-      message: 'You are already a member of this group',
-      group_slug: inv.groups?.slug,
-    };
-  }
-
-  const { error: memberError } = await supabase.from(DATABASE_TABLES.GROUP_MEMBERS).insert({
-    group_id: inv.group_id,
-    user_id: userId,
-    role: inv.role,
-    invited_by: inv.invited_by,
-  });
-  if (memberError) {
-    return { ok: false, dbError: memberError };
-  }
-
-  await markAccepted();
-  return { ok: true, message: 'Successfully joined the group', group_slug: inv.groups?.slug };
-}
-
-/** Accept or decline an invitation addressed to `userId`. */
+/**
+ * Accept or decline an invitation addressed to `userId`.
+ *
+ * Through the database functions, which run as definer: accepting adds the
+ * invitee to group_members, and group_members' own policy lets only admins
+ * insert — so the multi-step version here could never succeed. The functions
+ * answer "not found" alike for a missing id and someone else's, and lock the
+ * row, so two taps cannot both win.
+ */
 export async function respondToInvitation(
   supabase: AnySupabaseClient,
   invitationId: string,
-  userId: string,
+  _userId: string,
   action: 'accept' | 'decline'
 ): Promise<InvitationResult> {
-  const { data: inv, error } = await supabase
+  const fn = action === 'accept' ? 'accept_group_invitation' : 'decline_group_invitation';
+  const { data, error } = await supabase.rpc(fn, { invitation_id: invitationId });
+  if (error) {
+    return { ok: false, dbError: error };
+  }
+  const result = (data ?? {}) as { success?: boolean; error?: string; group_id?: string };
+  if (!result.success) {
+    // The RPC's own jsonb, not the API envelope: `error` is a sentence here.
+    const message =
+      typeof result.error === 'string' && result.error ? result.error : 'Invitation not found';
+    return {
+      ok: false,
+      code: message === 'Invitation not found' ? 'not_found' : 'invalid',
+      message,
+    };
+  }
+  if (action === 'decline') {
+    return { ok: true, message: 'Invitation declined' };
+  }
+  // A member now, so the group — public or private — is readable.
+  const { data: group } = await supabase
+    .from(DATABASE_TABLES.GROUPS)
+    .select('slug')
+    .eq('id', result.group_id)
+    .maybeSingle();
+  return {
+    ok: true,
+    message: 'You joined the group',
+    group_slug: (group as { slug?: string } | null)?.slug,
+  };
+}
+
+/** What the invitee sees before answering: who asked, into what. */
+export type InvitationForInvitee = {
+  id: string;
+  status: string;
+  role: string;
+  message: string | null;
+  expires_at: string;
+  group: { name: string; slug: string; description: string | null } | null;
+  inviter: { name: string } | null;
+};
+
+/**
+ * An invitation as its invitee may see it. The row is read with the caller's
+ * own client (RLS: "Users can view their invitations"), which is the proof it
+ * is theirs; only then is the group — which may be private and so unreadable
+ * to a non-member — fetched with the service role.
+ */
+export async function getInvitationForInvitee(
+  supabase: AnySupabaseClient,
+  admin: AnySupabaseClient,
+  invitationId: string,
+  userId: string
+): Promise<InvitationForInvitee | null> {
+  const { data: inv } = await supabase
     .from(DATABASE_TABLES.GROUP_INVITATIONS)
-    .select('*, groups(slug)')
+    .select('id, status, role, message, expires_at, group_id, invited_by, user_id')
     .eq('id', invitationId)
-    .single();
-
-  if (error || !inv) {
-    return { ok: false, code: 'not_found', message: 'Invitation not found' };
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (!inv) {
+    return null;
   }
-  if (inv.user_id && inv.user_id !== userId) {
-    return { ok: false, code: 'forbidden', message: 'This invitation is for another user' };
-  }
-  if (inv.status !== STATUS.GROUP_INVITATIONS.PENDING) {
-    return { ok: false, code: 'invalid', message: 'Invitation has already been responded to' };
-  }
-  if (new Date(inv.expires_at) < new Date()) {
-    await supabase
-      .from(DATABASE_TABLES.GROUP_INVITATIONS)
-      .update({ status: STATUS.GROUP_INVITATIONS.EXPIRED })
-      .eq('id', invitationId);
-    return { ok: false, code: 'invalid', message: 'Invitation has expired' };
-  }
-
-  if (action === 'accept') {
-    return acceptInvitation(supabase, inv as InvitationRow, invitationId, userId);
-  }
-
-  await supabase
-    .from(DATABASE_TABLES.GROUP_INVITATIONS)
-    .update({ status: STATUS.GROUP_INVITATIONS.DECLINED, responded_at: new Date().toISOString() })
-    .eq('id', invitationId);
-  return { ok: true, message: 'Invitation declined' };
+  const row = inv as {
+    id: string;
+    status: string;
+    role: string;
+    message: string | null;
+    expires_at: string;
+    group_id: string;
+    invited_by: string;
+  };
+  const [{ data: group }, { data: inviter }] = await Promise.all([
+    admin
+      .from(DATABASE_TABLES.GROUPS)
+      .select('name, slug, description')
+      .eq('id', row.group_id)
+      .maybeSingle(),
+    admin
+      .from(DATABASE_TABLES.PROFILES)
+      .select('name, username')
+      .eq('id', row.invited_by)
+      .maybeSingle(),
+  ]);
+  const who = inviter as { name?: string | null; username?: string | null } | null;
+  return {
+    id: row.id,
+    status: row.status,
+    role: row.role,
+    message: row.message,
+    expires_at: row.expires_at,
+    group: (group as InvitationForInvitee['group']) ?? null,
+    inviter: who ? { name: who.name || (who.username ? `@${who.username}` : 'Someone') } : null,
+  };
 }
 
 /** Revoke a pending invitation (group admins only). */
@@ -238,17 +260,26 @@ export async function authorizeGroupInvitationCreate(
   if (!group) {
     return { ok: false, code: 'not_found', message: 'Group not found' };
   }
-  if (!(await checkGroupAdmin(supabase, group.id, userId))) {
+  return authorizeGroupInvitationCreateById(supabase, group.id, userId);
+}
+
+/** The same gate for a caller that holds the group's id (the Cat). */
+export async function authorizeGroupInvitationCreateById(
+  supabase: AnySupabaseClient,
+  groupId: string,
+  userId: string
+): Promise<InvitationCollectionResult<{ groupId: string }>> {
+  if (!(await checkGroupAdmin(supabase, groupId, userId))) {
     return { ok: false, code: 'forbidden', message: 'Only admins can create invitations' };
   }
-  return { ok: true, data: { groupId: group.id } };
+  return { ok: true, data: { groupId } };
 }
 
 /**
  * Create an invitation for an already-authorized group. Guards against inviting
- * an existing member or duplicating a pending invite (targeted invites only),
- * computes expiry, optionally mints a share token, and returns the row plus its
- * join URL when a link was requested.
+ * an existing member or duplicating a pending invite, computes expiry, and
+ * tells the invitee — with a link to the page where they answer. Inserting the
+ * row was all this did before; nobody ever learned they had been invited.
  */
 export async function createGroupInvitation(
   supabase: AnySupabaseClient,
@@ -256,57 +287,43 @@ export async function createGroupInvitation(
   invitedBy: string,
   input: CreateInvitationInput
 ): Promise<InvitationCollectionResult<{ invitation: Record<string, unknown> }>> {
-  const { user_id, email, create_link, role, message, expires_in_days } = input;
+  const { user_id, role, message, expires_in_days } = input;
 
-  if (user_id) {
-    const [{ data: existingMember }, { data: existingInvite }] = await Promise.all([
-      supabase
-        .from(DATABASE_TABLES.GROUP_MEMBERS)
-        .select('id')
-        .eq('group_id', groupId)
-        .eq('user_id', user_id)
-        .maybeSingle(),
-      supabase
-        .from(DATABASE_TABLES.GROUP_INVITATIONS)
-        .select('id')
-        .eq('group_id', groupId)
-        .eq('user_id', user_id)
-        .eq('status', STATUS.GROUP_INVITATIONS.PENDING)
-        .maybeSingle(),
-    ]);
-    if (existingMember) {
-      return { ok: false, code: 'invalid', message: 'User is already a member of this group' };
-    }
-    if (existingInvite) {
-      return { ok: false, code: 'invalid', message: 'User already has a pending invitation' };
-    }
+  const [{ data: existingMember }, { data: existingInvite }] = await Promise.all([
+    supabase
+      .from(DATABASE_TABLES.GROUP_MEMBERS)
+      .select('id')
+      .eq('group_id', groupId)
+      .eq('user_id', user_id)
+      .maybeSingle(),
+    supabase
+      .from(DATABASE_TABLES.GROUP_INVITATIONS)
+      .select('id')
+      .eq('group_id', groupId)
+      .eq('user_id', user_id)
+      .eq('status', STATUS.GROUP_INVITATIONS.PENDING)
+      .maybeSingle(),
+  ]);
+  if (existingMember) {
+    return { ok: false, code: 'invalid', message: 'They are already a member of this group' };
+  }
+  if (existingInvite) {
+    return { ok: false, code: 'invalid', message: 'They already have a pending invitation' };
   }
 
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + expires_in_days);
 
-  const invitationData: Record<string, unknown> = {
-    group_id: groupId,
-    role,
-    message: message || null,
-    invited_by: invitedBy,
-    expires_at: expiresAt.toISOString(),
-    ...(user_id && { user_id }),
-    ...(email && { email: email.toLowerCase().trim() }),
-  };
-
-  if (create_link) {
-    const bytes = new Uint8Array(24);
-    crypto.getRandomValues(bytes);
-    invitationData.token = btoa(String.fromCharCode(...bytes))
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=/g, '');
-  }
-
   const { data: invitation, error: insertError } = await supabase
     .from(DATABASE_TABLES.GROUP_INVITATIONS)
-    .insert(invitationData)
+    .insert({
+      group_id: groupId,
+      user_id,
+      role,
+      message: message || null,
+      invited_by: invitedBy,
+      expires_at: expiresAt.toISOString(),
+    })
     .select()
     .single();
 
@@ -315,8 +332,42 @@ export async function createGroupInvitation(
     return { ok: false, dbError: insertError };
   }
 
-  const inviteUrl = invitation.token
-    ? `${process.env.NEXT_PUBLIC_APP_URL}/groups/join/${invitation.token}`
-    : undefined;
-  return { ok: true, data: { invitation: { ...invitation, invite_url: inviteUrl } } };
+  await notifyInvitee(groupId, invitation.id as string, user_id, invitedBy);
+  return { ok: true, data: { invitation } };
+}
+
+/** Best effort: the invitation stands even if the notice fails to send. */
+async function notifyInvitee(
+  groupId: string,
+  invitationId: string,
+  inviteeId: string,
+  invitedBy: string
+): Promise<void> {
+  try {
+    // Service role: the invitee's notifications, and a group that may be
+    // private, are not the inviter's to read or write.
+    const admin = getAdminClient() as unknown as AnySupabaseClient;
+    const [{ data: group }, { data: inviter }] = await Promise.all([
+      admin.from(DATABASE_TABLES.GROUPS).select('name').eq('id', groupId).maybeSingle(),
+      admin
+        .from(DATABASE_TABLES.PROFILES)
+        .select('name, username')
+        .eq('id', invitedBy)
+        .maybeSingle(),
+    ]);
+    const groupName = (group as { name?: string } | null)?.name || 'a group';
+    const who = inviter as { name?: string | null; username?: string | null } | null;
+    const inviterName = who?.name || (who?.username ? `@${who.username}` : 'Someone');
+    await new NotificationService(admin as never).createNotification({
+      recipientUserId: inviteeId,
+      type: 'group_invite',
+      title: `${inviterName} invited you to join ${groupName}`,
+      actionUrl: ROUTES.DASHBOARD.INVITATION(invitationId),
+      sourceEntityType: 'group',
+      sourceEntityId: groupId,
+      metadata: { groupName, invitationId },
+    });
+  } catch (error) {
+    logger.warn('Invitation notice not sent', { error, invitationId }, 'Groups');
+  }
 }

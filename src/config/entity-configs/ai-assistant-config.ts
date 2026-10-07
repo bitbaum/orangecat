@@ -9,6 +9,7 @@
  * Last Modified: 2026-09-15
  */
 
+import { walletFieldGroup } from './wallet-field-group';
 import { Bot } from 'lucide-react';
 import { ENTITY_STATUS } from '@/config/database-constants';
 import { aiAssistantSchema, type AIAssistantFormData } from '@/lib/validation';
@@ -17,7 +18,6 @@ import { aiAssistantGuidanceContent, aiAssistantDefaultGuidance } from '@/lib/en
 import { AI_ASSISTANT_TEMPLATES, type AIAssistantTemplate } from '@/components/create/templates';
 import { createEntityConfig } from './base-config-factory';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
-import { WalletSelectorField } from '@/components/create/wallet-selector';
 import { AI_COMPUTE_PROVIDER_TYPES } from '@/config/ai-assistants';
 import { getAvailableModels } from '@/config/ai-models';
 
@@ -168,17 +168,11 @@ const fieldGroups: FieldGroup[] = [
       },
     ],
   },
-  {
-    id: 'payment',
-    title: 'Pay into',
+  walletFieldGroup({
     description:
       'Wallet for receiving payments. Per-message pricing is charged from the chatter’s Cat Credits — you keep all of it as spendable credits.',
-    customComponent: WalletSelectorField,
-    fields: [
-      { name: 'bitcoin_address', label: 'Bitcoin Address', type: 'bitcoin_address' },
-      { name: 'lightning_address', label: 'Lightning Address', type: 'text' },
-    ],
-  },
+    addressColumns: true,
+  }),
 ];
 
 // ==================== DEFAULT VALUES ====================

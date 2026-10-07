@@ -92,12 +92,14 @@ export default function PersonCard({
                 </Button>
               )}
               {profile.username && (
-                <Link href={`/pay/${encodeURIComponent(profile.username)}`}>
-                  <Button size="sm" variant="outline">
-                    <ExternalLink className="w-3 h-3 mr-1" />
-                    Pay
-                  </Button>
-                </Link>
+                <Button
+                  href={`/pay/${encodeURIComponent(profile.username)}`}
+                  size="sm"
+                  variant="outline"
+                >
+                  <ExternalLink className="w-3 h-3 mr-1" />
+                  Pay
+                </Button>
               )}
             </div>
           </div>

@@ -140,3 +140,61 @@ export function formatInZone(
     timeZone: isValidTimeZone(zone) ? zone : 'UTC',
   }).format(date);
 }
+
+/**
+ * An instant as the wall-clock value a `datetime-local` input takes
+ * ("2026-10-09T22:00"), in a zone. The inverse of `wallTimeToUtc`. A value
+ * without an offset is already wall time and is only trimmed to minutes.
+ * Empty string when unparseable.
+ */
+export function instantToWallTime(value: string, zone: string): string {
+  const text = value.trim();
+  if (!hasUtcOffset(text)) {
+    const m = text.match(/^\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2})?/);
+    return m ? m[0].replace(' ', 'T') : '';
+  }
+  const date = new Date(text);
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat(APP_LOCALE, {
+      timeZone: isValidTimeZone(zone) ? zone : 'UTC',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    })
+      .formatToParts(date)
+      .map(p => [p.type, p.value])
+  );
+  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
+}
+
+/** The zone this browser keeps, or UTC where it cannot say (the server). */
+export function browserTimeZone(): string {
+  try {
+    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return isValidTimeZone(zone) ? zone : 'UTC';
+  } catch {
+    return 'UTC';
+  }
+}
+
+/** Every IANA zone the runtime knows, for a picker. */
+export function supportedTimeZones(): string[] {
+  const intl = Intl as typeof Intl & { supportedValuesOf?: (key: 'timeZone') => string[] };
+  const zones = intl.supportedValuesOf?.('timeZone') ?? Object.values(COUNTRY_ZONE);
+  return Array.from(new Set(['UTC', ...zones])).sort();
+}
+
+/** "Zurich time", "New York time", "UTC" — which clock the times are on. */
+export function zoneLabel(zone: string): string {
+  if (zone === 'UTC') {
+    return 'UTC';
+  }
+  const city = zone.split('/').pop() ?? zone;
+  return `${city.replace(/_/g, ' ')} time`;
+}

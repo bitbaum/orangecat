@@ -1,7 +1,6 @@
 'use client';
 
 import { ArrowRight, MessageCircle, Plus } from 'lucide-react';
-import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import { CatStatusNote } from '@/components/ai-chat/CatStatusNote';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
@@ -63,18 +62,17 @@ export function OnboardingOffers({ offers, health, isRedirecting, onChat }: Onbo
             </div>
             <p className="mb-2 text-sm text-fg-primary">{offer.description}</p>
             {offer.rationale && <p className="mb-4 text-xs text-fg-tertiary">{offer.rationale}</p>}
-            <Link href={href}>
-              <Button
-                variant="accent"
-                size="sm"
-                className="w-full sm:w-auto"
-                data-testid="offer-create"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Create this
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
+            <Button
+              href={href}
+              variant="accent"
+              size="sm"
+              className="w-full sm:w-auto"
+              data-testid="offer-create"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Create this
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
           </div>
         );
       })}

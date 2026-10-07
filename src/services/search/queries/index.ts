@@ -11,7 +11,8 @@
  *   loans.ts       — searchLoans
  *   suggestions.ts — getSearchSuggestions
  *   trending.ts    — getTrending
- *   helpers.ts     — shared utilities (sanitizeQuery, buildProfileMap, haversineDistance)
+ *   helpers.ts     — shared utilities (buildProfileMap, haversineDistance); search terms
+ *                    go through lib/db/likePattern
  */
 
 export { searchProfiles } from './profiles';

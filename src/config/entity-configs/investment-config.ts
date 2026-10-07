@@ -4,12 +4,12 @@
  * Defines the form structure, validation, and guidance for investment creation.
  */
 
+import { walletFieldGroup } from './wallet-field-group';
 import { TrendingUp } from 'lucide-react';
 import { investmentSchema, type InvestmentFormData } from '@/lib/validation';
 import type { FieldGroup } from '@/components/create/types';
 import { createEntityConfig } from './base-config-factory';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
-import { WalletSelectorField } from '@/components/create/wallet-selector';
 import {
   investmentGuidanceContent,
   investmentDefaultGuidance,
@@ -170,16 +170,10 @@ const fieldGroups: FieldGroup[] = [
       },
     ],
   },
-  {
-    id: 'bitcoin',
-    title: 'Pay into',
+  walletFieldGroup({
     description: 'Where money for this investment should land',
-    customComponent: WalletSelectorField,
-    fields: [
-      { name: 'bitcoin_address', label: 'Bitcoin Address', type: 'bitcoin_address' },
-      { name: 'lightning_address', label: 'Lightning Address', type: 'text' },
-    ],
-  },
+    addressColumns: true,
+  }),
   {
     id: 'visibility',
     title: 'Visibility',

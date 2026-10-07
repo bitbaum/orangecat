@@ -20,6 +20,7 @@ import type { FormFieldProps } from './types';
 import type { Currency } from '@/types/settings';
 import { AvailabilityEditor } from './fields/AvailabilityEditor';
 import { ImageField } from './fields/ImageField';
+import { DateInput } from './fields/DateInputs';
 
 // ==================== COMPONENT ====================
 
@@ -46,19 +47,17 @@ export function FormField({
     switch (type) {
       case 'textarea':
         return (
-          <>
-            <Textarea
-              id={name}
-              value={(value as string) || ''}
-              onChange={e => onChange(e.target.value)}
-              onFocus={onFocus}
-              onBlur={onBlur}
-              placeholder={placeholder}
-              rows={rows}
-              disabled={disabled}
-              className={baseInputClass}
-            />
-          </>
+          <Textarea
+            id={name}
+            value={(value as string) || ''}
+            onChange={e => onChange(e.target.value)}
+            onFocus={onFocus}
+            onBlur={onBlur}
+            placeholder={placeholder}
+            rows={rows}
+            disabled={disabled}
+            className={baseInputClass}
+          />
         );
 
       case 'number':
@@ -229,6 +228,21 @@ export function FormField({
             label={label}
             disabled={disabled}
             subject={subject}
+          />
+        );
+
+      case 'date':
+      case 'datetime':
+        return (
+          <DateInput
+            id={name}
+            kind={type}
+            value={value}
+            onChange={onChange}
+            onFocus={onFocus}
+            onBlur={onBlur}
+            disabled={disabled}
+            className={baseInputClass}
           />
         );
 

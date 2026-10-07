@@ -52,12 +52,10 @@ export default function ProfileEntityTab({
             : `No ${displayName.toLowerCase()} to display`}
         </p>
         {isOwnProfile && (
-          <Link href={getCreatePath()}>
-            <Button>
-              <Icon className="w-4 h-4 mr-2" />
-              Create Your First {metadata?.name || entityType}
-            </Button>
-          </Link>
+          <Button href={getCreatePath()}>
+            <Icon className="w-4 h-4 mr-2" />
+            Create Your First {metadata?.name || entityType}
+          </Button>
         )}
       </div>
     );
@@ -71,12 +69,10 @@ export default function ProfileEntityTab({
           {entities.length} {entities.length === 1 ? metadata?.name : metadata?.namePlural}
         </h3>
         {isOwnProfile && (
-          <Link href={getDashboardPath()}>
-            <Button variant="ghost" size="sm">
-              Manage All
-              <ArrowRight className="w-4 h-4 ml-1" />
-            </Button>
-          </Link>
+          <Button href={getDashboardPath()} variant="ghost" size="sm">
+            Manage All
+            <ArrowRight className="w-4 h-4 ml-1" />
+          </Button>
         )}
       </div>
 

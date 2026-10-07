@@ -270,7 +270,10 @@ export const API_ROUTES = {
     WALLET_REFRESH: (slug: string, walletId: string) =>
       `${ENTITY_REGISTRY['group'].apiEndpoint}/${slug}/wallets/${walletId}/refresh`,
     ACTIVITIES: (slug: string) => `${ENTITY_REGISTRY['group'].apiEndpoint}/${slug}/activities`,
+    INVITATIONS: (slug: string) => `${ENTITY_REGISTRY['group'].apiEndpoint}/${slug}/invitations`,
   },
+  /** Answer (POST {action}) or revoke (DELETE) one group invitation. */
+  INVITATION: (id: string) => `/api/invitations/${id}`,
   JOBS: '/api/jobs',
   ACCOUNT_EXPORT: '/api/account/export',
   DELETE_USER: '/api/delete-user',

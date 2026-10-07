@@ -12,14 +12,6 @@ import { DATABASE_TABLES } from '@/config/database-tables';
 import type { ProfileReference } from '../types';
 
 /**
- * Sanitize user input for use in ILIKE queries.
- * Escapes SQL wildcards to prevent injection.
- */
-export function sanitizeQuery(query: string): string {
-  return query.replace(/[%_]/g, '\\$&');
-}
-
-/**
  * Fetch profiles for a set of user IDs and return a lookup map.
  */
 export async function buildProfileMap(

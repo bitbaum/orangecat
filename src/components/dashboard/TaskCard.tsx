@@ -6,7 +6,6 @@
  * the parent owns task state and passes complete/incomplete handlers.
  */
 import { CheckCircle2, Circle, ArrowRight, Target } from 'lucide-react';
-import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import { TASK_DEFINITIONS } from '@/services/recommendations/tasks';
 import type { RecommendedTask, TaskPriority } from '@/services/recommendations/types';
@@ -95,16 +94,15 @@ export function TaskCard({
             <p className="text-sm text-fg-secondary mb-3">{task.description}</p>
 
             {!isCompleted && (
-              <Link href={task.action.href}>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="hover:border-strong hover:bg-surface-raised hover:text-fg-primary"
-                >
-                  {task.action.label}
-                  <ArrowRight className="w-3 h-3 ml-1" />
-                </Button>
-              </Link>
+              <Button
+                href={task.action.href}
+                size="sm"
+                variant="outline"
+                className="hover:border-strong hover:bg-surface-raised hover:text-fg-primary"
+              >
+                {task.action.label}
+                <ArrowRight className="w-3 h-3 ml-1" />
+              </Button>
             )}
           </div>
         </div>

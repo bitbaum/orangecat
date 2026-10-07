@@ -465,6 +465,8 @@ export const ROUTES = {
     DEALS: '/dashboard/deals',
     /** Where a person declares how they would split their public money. */
     CIVIC_SPLIT: '/dashboard/civic-split',
+    /** Where an invitee answers a group invitation (the notification links here). */
+    INVITATION: (id: string) => `/dashboard/invitations/${encodeURIComponent(id)}`,
     PROFILE_CLAIMS: '/dashboard/profile-claims',
     PROFILE_CLAIMS_NEW: '/dashboard/profile-claims/new',
     /** Where creating for someone else lands: the link, and a way to send it. */

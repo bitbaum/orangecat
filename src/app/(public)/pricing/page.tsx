@@ -105,16 +105,12 @@ export default function PricingPage() {
               first access to Pro the day it&apos;s live.
             </p>
             <div className="flex flex-col justify-center gap-4 sm:flex-row">
-              <Link href={ROUTES.SUPPORT}>
-                <Button variant="accent" size="lg">
-                  Become a founding supporter
-                </Button>
-              </Link>
-              <Link href={ROUTES.DASHBOARD.CAT}>
-                <Button variant="outline" size="lg">
-                  Try Cat free
-                </Button>
-              </Link>
+              <Button href={ROUTES.SUPPORT} variant="accent" size="lg">
+                Become a founding supporter
+              </Button>
+              <Button href={ROUTES.DASHBOARD.CAT} variant="outline" size="lg">
+                Try Cat free
+              </Button>
             </div>
           </div>
         </section>

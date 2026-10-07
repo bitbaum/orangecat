@@ -14,45 +14,8 @@ import { DATABASE_TABLES } from '@/config/database-tables';
 import supabase from '@/lib/supabase/browser';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import type { ServiceResult } from '@/types/common';
-import { satsToBitcoin } from '@/services/currency';
+import { fetchAddressBalance } from '@/lib/bitcoin/addressBalance';
 import { fromTable } from '../db-helpers';
-
-/**
- * Fetch Bitcoin balance from mempool.space API
- *
- * @param bitcoinAddress - Bitcoin address to check
- * @returns Balance in sats, or null if error
- */
-export async function fetchBitcoinBalance(bitcoinAddress: string): Promise<number | null> {
-  try {
-    const response = await fetch(`https://mempool.space/api/address/${bitcoinAddress}`);
-
-    if (!response.ok) {
-      logger.warn(
-        'Failed to fetch balance from mempool.space',
-        {
-          address: bitcoinAddress,
-          status: response.status,
-        },
-        'Groups'
-      );
-      return null;
-    }
-
-    const data = await response.json();
-
-    // mempool.space returns balance in sats
-    const unspentSats = data.chain_stats?.tx_count
-      ? data.chain_stats.funded_txo_sum - (data.chain_stats.spent_txo_sum || 0)
-      : 0;
-
-    // Return unspent balance (actual available balance)
-    return Math.max(0, unspentSats);
-  } catch (error) {
-    logger.error('Exception fetching Bitcoin balance', error, 'Groups');
-    return null;
-  }
-}
 
 /**
  * Update treasury balance for a group wallet
@@ -114,17 +77,13 @@ export async function refreshWalletBalance(
       return { success: false, error: 'Wallet has no Bitcoin address' };
     }
 
-    // Fetch balance from mempool.space (returns sats)
-    const balanceSats = await fetchBitcoinBalance(wallet.bitcoin_address);
-
-    if (balanceSats === null) {
+    let balanceBtc: number;
+    try {
+      balanceBtc = (await fetchAddressBalance(wallet.bitcoin_address)).balance_btc;
+    } catch (error) {
+      logger.warn('Treasury balance fetch failed', { walletId, error }, 'Groups');
       return { success: false, error: 'Failed to fetch balance from blockchain' };
     }
-
-    // Convert to BTC for storage in the *_btc column (BTC is the canonical
-    // unit per CLAUDE.md). fetchBitcoinBalance returns sats; the column is
-    // current_balance_btc.
-    const balanceBtc = satsToBitcoin(balanceSats);
 
     // Update wallet balance
     const updateResult = await updateWalletBalance(walletId, balanceBtc, sb);

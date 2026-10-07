@@ -4,7 +4,13 @@ import { EVENT_TYPES, EVENT_STATUSES } from '@/config/events';
 import { STATUS } from '@/config/database-constants';
 import { DAYS_OF_WEEK, RECURRENCE_FREQUENCIES } from '@/config/schedule';
 import { MAX_GENRE_LENGTH, MAX_MUSIC_GENRES, MAX_VIBE_LENGTH } from '@/config/event-crew';
-import { lightningAddressSchema, optionalText, optionalUrl, webUrl } from './base';
+import {
+  lightningAddressSchema,
+  optionalText,
+  optionalUrl,
+  webUrl,
+  publicBitcoinAddress,
+} from './base';
 
 /**
  * Recurrence pattern for events.
@@ -103,7 +109,7 @@ export const eventSchema = z
     currency: z.enum(CURRENCY_CODES).optional(),
     is_free: z.boolean().default(false),
     funding_goal: z.number().positive().optional().nullable(),
-    bitcoin_address: optionalText(),
+    bitcoin_address: publicBitcoinAddress(),
     lightning_address: lightningAddressSchema,
 
     // Media

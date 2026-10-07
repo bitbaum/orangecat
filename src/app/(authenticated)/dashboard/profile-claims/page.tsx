@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { UserPlus, Link2, Loader2, Copy, Check, Ban, Send } from 'lucide-react';
 import { toast } from 'sonner';
@@ -87,12 +86,14 @@ function ClaimRow({
 
         {claim.status === 'pending' && (
           <div className="flex items-center gap-2">
-            <Link href={ROUTES.DASHBOARD.PROFILE_CLAIMS_SHARE(claim.id)}>
-              <Button variant="accent" size="sm">
-                <Send className="mr-1.5 h-3.5 w-3.5" />
-                Send
-              </Button>
-            </Link>
+            <Button
+              href={ROUTES.DASHBOARD.PROFILE_CLAIMS_SHARE(claim.id)}
+              variant="accent"
+              size="sm"
+            >
+              <Send className="mr-1.5 h-3.5 w-3.5" />
+              Send
+            </Button>
             <Button variant="outline" size="sm" onClick={() => copy(fullUrl)}>
               {copied ? (
                 <Check className="mr-1.5 h-3.5 w-3.5" />

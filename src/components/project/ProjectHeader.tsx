@@ -200,12 +200,15 @@ export default function ProjectHeader({
         <div className="flex gap-2 flex-shrink-0" role="group" aria-label="Project actions">
           {/* Edit - only for owners */}
           {isOwner && (
-            <Link href={ROUTES.PROJECTS.EDIT(project.id)}>
-              <Button variant="outline" size="sm" aria-label="Edit project">
-                <Edit className="w-4 h-4 mr-2" aria-hidden="true" />
-                Edit
-              </Button>
-            </Link>
+            <Button
+              href={ROUTES.PROJECTS.EDIT(project.id)}
+              variant="outline"
+              size="sm"
+              aria-label="Edit project"
+            >
+              <Edit className="w-4 h-4 mr-2" aria-hidden="true" />
+              Edit
+            </Button>
           )}
           {/* Contact - only for non-owners */}
           {!isOwner && (

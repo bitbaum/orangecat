@@ -1,3 +1,4 @@
+import type React from 'react';
 import { ButtonHTMLAttributes, forwardRef } from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -29,13 +30,30 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     );
 
     if (props.href) {
+      // A link that looks like a button. Accessible name, tooltip and test
+      // hooks carry over, and a disabled one is announced and inert — this
+      // branch used to drop all of them, which is why callers wrapped a
+      // <Button> in a <Link> instead (a button inside a link: invalid HTML,
+      // two tab stops, read out twice).
+      const disabled = Boolean(props.disabled || isLoading);
       return (
         <Link
           href={props.href}
+          aria-label={props['aria-label']}
+          aria-disabled={disabled || undefined}
+          tabIndex={disabled ? -1 : undefined}
+          title={props.title}
+          id={props.id}
+          onClick={
+            disabled
+              ? e => e.preventDefault()
+              : (props.onClick as unknown as React.MouseEventHandler<HTMLAnchorElement>)
+          }
           className={cn(
             COMPONENT_STYLES.button.base,
             COMPONENT_STYLES.button.variants[variant],
             COMPONENT_STYLES.button.sizes[size],
+            disabled && 'pointer-events-none opacity-50',
             className
           )}
         >

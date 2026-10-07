@@ -52,11 +52,12 @@ interface MemberWithProfile extends GroupMember {
 
 interface GroupMembersProps {
   groupId: string;
+  groupSlug: string;
   members: MemberWithProfile[];
   onUpdate?: () => void;
 }
 
-export function GroupMembers({ groupId, members, onUpdate }: GroupMembersProps) {
+export function GroupMembers({ groupId, groupSlug, members, onUpdate }: GroupMembersProps) {
   const { user } = useAuth();
   const [joining, setJoining] = useState(false);
   const [leaving, setLeaving] = useState(false);
@@ -327,11 +328,10 @@ export function GroupMembers({ groupId, members, onUpdate }: GroupMembersProps) 
 
       {canManage && (
         <InviteMemberDialog
-          groupId={groupId}
+          groupSlug={groupSlug}
           open={inviteOpen}
           onOpenChange={setInviteOpen}
           existingMemberIds={members.map(m => m.user_id)}
-          onInvited={() => onUpdate?.()}
         />
       )}
     </div>

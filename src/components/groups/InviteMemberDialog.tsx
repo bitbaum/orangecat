@@ -1,9 +1,10 @@
 /**
- * InviteMemberDialog — founders/admins search people and add them to a group.
+ * InviteMemberDialog — founders/admins search people and invite them.
  *
- * Reuses the platform profile search (GET /api/profiles?search=) and the
- * existing groupsService.addMember mutation. Completes group member management
- * alongside leave + promote/demote/remove.
+ * An invitation, not an addition: this used to call addMember and put the
+ * person in the group outright, under a button labelled "Invite" — nobody
+ * was asked. Now they get a notification and join only if they accept
+ * (/dashboard/invitations/[id]). People already invited show as "Invited".
  */
 
 'use client';
@@ -21,7 +22,6 @@ import { Button } from '@/components/ui/Button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Search, UserPlus, Loader2, Check } from 'lucide-react';
 import { API_ROUTES } from '@/config/api-routes';
-import groupsService from '@/services/groups';
 import { getInitial } from '@/utils/string';
 import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
@@ -35,25 +35,25 @@ interface ProfileLite {
 }
 
 interface InviteMemberDialogProps {
-  groupId: string;
+  groupSlug: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** user_ids already in the group — shown as "Member", not invitable. */
   existingMemberIds: string[];
-  onInvited?: () => void;
 }
 
 export function InviteMemberDialog({
-  groupId,
+  groupSlug,
   open,
   onOpenChange,
   existingMemberIds,
-  onInvited,
 }: InviteMemberDialogProps) {
   const [search, setSearch] = useState('');
   const [profiles, setProfiles] = useState<ProfileLite[]>([]);
   const [loading, setLoading] = useState(false);
   const [invitingId, setInvitingId] = useState<string | null>(null);
+  /** Who already has a pending invitation — loaded on open, grown on invite. */
+  const [invitedIds, setInvitedIds] = useState<Set<string>>(new Set());
   const abortRef = useRef<AbortController | null>(null);
 
   const runSearch = useCallback(async (q: string) => {
@@ -97,27 +97,50 @@ export function InviteMemberDialog({
     return () => clearTimeout(t);
   }, [search, open, runSearch]);
 
-  // Reset when closed.
+  // Reset when closed; load who is already invited when opened.
   useEffect(() => {
     if (!open) {
       setSearch('');
       setProfiles([]);
+      return;
     }
-  }, [open]);
+    const controller = new AbortController();
+    fetch(`${API_ROUTES.GROUPS.INVITATIONS(groupSlug)}?status=pending&limit=100`, {
+      signal: controller.signal,
+    })
+      .then(res => (res.ok ? res.json() : null))
+      .then(body => {
+        const rows = (body?.data?.invitations ?? []) as Array<{ user_id: string | null }>;
+        setInvitedIds(new Set(rows.map(r => r.user_id).filter((id): id is string => !!id)));
+      })
+      .catch(() => {
+        // Without the list every button still works; the server refuses a
+        // duplicate with a sentence.
+      });
+    return () => controller.abort();
+  }, [open, groupSlug]);
 
   const handleInvite = async (p: ProfileLite) => {
+    const who = p.name || (p.username ? `@${p.username}` : 'them');
     try {
       setInvitingId(p.id);
-      const result = await groupsService.addMember(groupId, { user_id: p.id });
-      if (result.success) {
-        toast.success(`Invited ${p.name || p.username || 'member'}`);
-        onInvited?.();
+      const res = await fetch(API_ROUTES.GROUPS.INVITATIONS(groupSlug), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: p.id }),
+      });
+      const body = await res.json().catch(() => null);
+      if (res.ok) {
+        setInvitedIds(prev => new Set(prev).add(p.id));
+        toast.success(`Invited ${who}`, {
+          description: 'They join once they accept.',
+        });
       } else {
-        toast.error(apiErrorMessage(result, 'Failed to invite member'));
+        toast.error(apiErrorMessage(body, `Could not invite ${who}`));
       }
     } catch (e) {
       logger.error('Failed to invite member', e, 'Groups');
-      toast.error('Failed to invite member');
+      toast.error('Could not reach OrangeCat. Check your connection and try again.');
     } finally {
       setInvitingId(null);
     }
@@ -131,7 +154,7 @@ export function InviteMemberDialog({
         <DialogHeader>
           <DialogTitle>Invite a member</DialogTitle>
           <DialogDescription>
-            Search by name or @username and add them to the group.
+            Search by name or @username. They get a notification and join once they accept.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
@@ -158,6 +181,7 @@ export function InviteMemberDialog({
             ) : (
               profiles.map(p => {
                 const isMember = existing.has(p.id);
+                const isInvited = invitedIds.has(p.id);
                 return (
                   <div
                     key={p.id}
@@ -182,9 +206,9 @@ export function InviteMemberDialog({
                         )}
                       </div>
                     </div>
-                    {isMember ? (
+                    {isMember || isInvited ? (
                       <span className="flex items-center gap-1 text-xs text-fg-secondary">
-                        <Check className="h-4 w-4" /> Member
+                        <Check className="h-4 w-4" /> {isMember ? 'Member' : 'Invited'}
                       </span>
                     ) : (
                       <Button

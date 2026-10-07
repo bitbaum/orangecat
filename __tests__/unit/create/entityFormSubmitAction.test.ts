@@ -97,7 +97,9 @@ describe('executeEntityFormSubmit', () => {
     const body = JSON.parse((global.fetch as Mock).mock.calls[0][1].body);
     expect(body).toEqual({ title: 'My cause' });
     expect(params.clearDraft).toHaveBeenCalled();
-    expect(params.onEntityCreated).toHaveBeenCalledWith({ id: 'new-1', title: 'My cause' });
+    expect(params.onEntityCreated).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'new-1', title: 'My cause' })
+    );
   });
 
   it('create mode merges actor_id when acting as a group', async () => {
@@ -334,7 +336,10 @@ describe('executeEntityFormSubmit', () => {
       });
       await executeEntityFormSubmit(params);
       const calls = (global.fetch as Mock).mock.calls.map(c => `${c[1]?.method} ${c[0]}`);
-      expect(calls.slice(1)).toEqual(['POST /api/entity-wallets', 'DELETE /api/entity-wallets/link-old']);
+      expect(calls.slice(1)).toEqual([
+        'POST /api/entity-wallets',
+        'DELETE /api/entity-wallets/link-old',
+      ]);
     });
   });
 });

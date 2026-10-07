@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import ProfileShare from '@/components/sharing/ProfileShare';
 import { Search, Share2, Copy } from 'lucide-react';
@@ -38,11 +37,9 @@ export default function InviteBanner({
             </p>
           </div>
           <div className="flex items-center gap-2 relative">
-            <Link href={`${ROUTES.DISCOVER}?section=people`}>
-              <Button variant="outline">
-                <Search className="w-4 h-4 mr-2" /> Discover People
-              </Button>
-            </Link>
+            <Button href={`${ROUTES.DISCOVER}?section=people`} variant="outline">
+              <Search className="w-4 h-4 mr-2" /> Discover People
+            </Button>
             <div className="flex items-center gap-2 relative">
               <Button
                 onClick={onToggleShare}

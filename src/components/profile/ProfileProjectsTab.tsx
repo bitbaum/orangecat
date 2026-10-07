@@ -2,7 +2,6 @@
 import { logger } from '@/utils/logger';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { Target, ArrowRight } from 'lucide-react';
 import type { ScalableProfile } from '@/services/profile/types';
 import Button from '@/components/ui/Button';
@@ -123,12 +122,10 @@ export default function ProfileProjectsTab({ profile, isOwnProfile }: ProfilePro
           {isOwnProfile ? "You haven't published any projects yet" : 'No projects to display'}
         </p>
         {isOwnProfile && (
-          <Link href={ROUTES.PROJECTS.CREATE}>
-            <Button>
-              <Target className="w-4 h-4 mr-2" />
-              Create Your First Project
-            </Button>
-          </Link>
+          <Button href={ROUTES.PROJECTS.CREATE}>
+            <Target className="w-4 h-4 mr-2" />
+            Create Your First Project
+          </Button>
         )}
       </div>
     );
@@ -146,12 +143,10 @@ export default function ProfileProjectsTab({ profile, isOwnProfile }: ProfilePro
             : ENTITY_REGISTRY.project.namePlural}
         </h3>
         {isOwnProfile && (
-          <Link href={ROUTES.DASHBOARD.PROJECTS}>
-            <Button variant="ghost" size="sm">
-              Manage All
-              <ArrowRight className="w-4 h-4 ml-1" />
-            </Button>
-          </Link>
+          <Button href={ROUTES.DASHBOARD.PROJECTS} variant="ghost" size="sm">
+            Manage All
+            <ArrowRight className="w-4 h-4 ml-1" />
+          </Button>
         )}
       </div>
 

@@ -5,9 +5,15 @@
  * Used as the 'availability' field type in the entity form (services).
  * Emits the shared AvailabilitySchedule ({ days, hours }); people see it on the
  * public page before booking. v1 uses a single hours range applied to all days.
+ *
+ * Hours are on the provider's clock, so the schedule carries its zone. The
+ * editor used to rebuild `{ days, hours }` on every change, dropping any zone
+ * already stored, and the public page printed "09:00–17:00" with no clock —
+ * a visitor elsewhere read the provider's hours as their own (audit 2026-10-07).
  */
 
 import { WEEKDAYS, parseAvailability, type AvailabilitySchedule } from '@/lib/availability';
+import { browserTimeZone, zoneLabel } from '@/utils/timezone';
 
 interface AvailabilityEditorProps {
   value: unknown;
@@ -21,12 +27,13 @@ export function AvailabilityEditor({ value, onChange }: AvailabilityEditorProps)
   const current = parseAvailability(value);
   const selectedDays = new Set(current.days ?? []);
   const range = current.hours?.[0] ?? { start: DEFAULT_START, end: DEFAULT_END };
+  const timezone = current.timezone ?? browserTimeZone();
 
   const emit = (next: AvailabilitySchedule) => {
     // Only keep hours when at least one day is selected, so an empty schedule
     // round-trips to "no availability set".
     const days = next.days ?? [];
-    onChange(days.length ? { days, hours: next.hours ?? [range] } : {});
+    onChange(days.length ? { days, hours: next.hours ?? [range], timezone } : {});
   };
 
   const toggleDay = (day: (typeof WEEKDAYS)[number]['key'], on: boolean) => {
@@ -89,6 +96,7 @@ export function AvailabilityEditor({ value, onChange }: AvailabilityEditorProps)
           )}
         </div>
       )}
+      {selectedDays.size > 0 && <p className="text-xs text-fg-tertiary">{zoneLabel(timezone)}</p>}
     </div>
   );
 }

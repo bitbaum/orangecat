@@ -12,6 +12,7 @@ import { logger } from '@/utils/logger';
 import { ProfileMapper } from './mapper';
 import type { ScalableProfile } from './types';
 import { DATABASE_TABLES, PUBLIC_PROFILES_VIEW } from '@/config/database-tables';
+import { ilikeAny } from '@/lib/db/likePattern';
 
 /**
  * The row shape ProfileMapper accepts, derived from the mapper itself so the
@@ -131,10 +132,9 @@ export class ProfileReader {
     }
 
     try {
-      const escapedTerm = searchTerm.replace(/[%_]/g, '\\$&');
       const { data, error } = await fromTable(supabase, PUBLIC_PROFILES_VIEW)
         .select('*')
-        .or(`username.ilike.%${escapedTerm}%,name.ilike.%${escapedTerm}%`)
+        .or(ilikeAny(['username', 'name'], searchTerm))
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
 

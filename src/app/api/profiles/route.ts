@@ -2,6 +2,7 @@ import { apiSuccessPaginated, handleApiError } from '@/lib/api/standardResponse'
 import { withAuth, type AuthenticatedRequest } from '@/lib/api/withAuth';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { DATABASE_TABLES } from '@/config/database-tables';
+import { ilikeAny } from '@/lib/db/likePattern';
 
 // GET /api/profiles - List profiles (basic fields)
 export const GET = withAuth(async (request: AuthenticatedRequest) => {
@@ -45,9 +46,7 @@ export const GET = withAuth(async (request: AuthenticatedRequest) => {
       .not('username', 'ilike', 'e2e\\_%');
 
     if (search) {
-      // Search across username OR name (escape % and _ for LIKE patterns)
-      const escapedSearch = search.replace(/[%_]/g, '\\$&');
-      query = query.or(`username.ilike.%${escapedSearch}%,name.ilike.%${escapedSearch}%`);
+      query = query.or(ilikeAny(['username', 'name'], search));
     }
 
     const { data, error, count } = await query;

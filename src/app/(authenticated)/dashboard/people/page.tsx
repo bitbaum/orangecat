@@ -8,7 +8,6 @@ import Button from '@/components/ui/Button';
 import EmptyState from '@/components/ui/EmptyState';
 import EntityListShell from '@/components/entity/EntityListShell';
 import { Users, Search } from 'lucide-react';
-import Link from 'next/link';
 import InviteBanner from './components/InviteBanner';
 import PeopleTabBar from './components/PeopleTabBar';
 import PersonCard from './components/PersonCard';
@@ -73,12 +72,10 @@ export default function PeoplePage() {
         : 'No users found yet.';
 
   const discoverButton = (
-    <Link href={`${ROUTES.DISCOVER}?section=people`}>
-      <Button>
-        <Search className="w-4 h-4 mr-2" />
-        Discover People
-      </Button>
-    </Link>
+    <Button href={`${ROUTES.DISCOVER}?section=people`}>
+      <Search className="w-4 h-4 mr-2" />
+      Discover People
+    </Button>
   );
 
   return (

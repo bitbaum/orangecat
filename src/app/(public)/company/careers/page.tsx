@@ -1,5 +1,4 @@
 import React from 'react';
-import Link from 'next/link';
 import { Metadata } from 'next';
 import { Briefcase, Users, Zap, Heart, Globe, Code, Handshake, Bitcoin } from 'lucide-react';
 import Button from '@/components/ui/Button';
@@ -127,11 +126,9 @@ export default function CareersPage() {
               </div>
               <h3 className="text-lg font-semibold text-fg-primary mb-2">{way.title}</h3>
               <p className="text-fg-secondary text-sm mb-6 flex-1">{way.description}</p>
-              <Link href={way.href}>
-                <Button variant="outline" size="sm">
-                  {way.label}
-                </Button>
-              </Link>
+              <Button href={way.href} variant="outline" size="sm">
+                {way.label}
+              </Button>
             </div>
           ))}
         </div>

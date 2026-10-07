@@ -170,7 +170,12 @@ convertToBTC(amount: number, fromCurrency: Currency): number
 convert(amount: number, fromCurrency: Currency, toCurrency: Currency): number
 ```
 
-### 2. Bitcoin Monitoring Service (`src/services/bitcoin/index.ts`)
+### 2. Bitcoin Monitoring Service
+
+> `src/services/bitcoin/index.ts` had no importers and was removed (2026-10-07).
+> Balances: `src/domain/wallets/refreshBalance.ts`; transactions:
+> `src/domain/wallets/onchainTransactions.ts`; payment detection:
+> `src/lib/bitcoin/mempool.ts`; explorer links: `src/lib/bitcoin/explorer.ts`.
 
 **Purpose:** Fetch BTC balance from blockchain
 

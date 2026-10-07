@@ -8,6 +8,10 @@ import { SOLON_PROPOSAL_CATEGORY } from '@/config/solon';
 import { solonProposalHandoff } from '@/config/neighbour-capabilities';
 import { createProposal } from '@/services/groups/mutations/proposals';
 import type { ActionHandler } from './types';
+import {
+  authorizeGroupInvitationCreateById,
+  createGroupInvitation,
+} from '@/domain/groups/invitations.server';
 
 const PROPOSAL_TYPE_VALUES: readonly string[] = Object.values(PROPOSAL_TYPES);
 
@@ -100,21 +104,27 @@ export const organizationHandlers: Record<string, ActionHandler> = {
       return { success: false, error: 'Provide either username or user_id for the invitee' };
     }
 
-    const { data, error } = await supabase
-      .from(DATABASE_TABLES.GROUP_INVITATIONS)
-      .insert({
-        group_id: params.organization_id,
-        user_id: inviteeId,
-        role: (params.role as string) || 'member',
-        invited_by: userId,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      return { success: false, error: error.message };
+    // The same path as the API: admin gate, no inviting a member or a person
+    // already invited, an expiry, and a notice the invitee can answer. The raw
+    // insert this replaces skipped all four — the invitation went nowhere.
+    const groupId = params.organization_id as string;
+    const auth = await authorizeGroupInvitationCreateById(supabase, groupId, userId);
+    if (!auth.ok) {
+      return { success: false, error: 'message' in auth ? auth.message : 'Could not invite' };
     }
-    const role = (params.role as string) || 'member';
+    const created = await createGroupInvitation(supabase, groupId, userId, {
+      user_id: inviteeId,
+      role: params.role === 'admin' ? 'admin' : 'member',
+      expires_in_days: 7,
+    });
+    if (!created.ok) {
+      return {
+        success: false,
+        error: 'message' in created ? created.message : 'Could not create the invitation',
+      };
+    }
+    const data = created.data.invitation;
+    const role = params.role === 'admin' ? 'admin' : 'member';
     const recipientDisplay = params.username
       ? (params.username as string).startsWith('@')
         ? params.username
@@ -124,7 +134,7 @@ export const organizationHandlers: Record<string, ActionHandler> = {
       success: true,
       data: {
         ...data,
-        displayMessage: `📨 Invitation sent to ${recipientDisplay} (role: ${role})`,
+        displayMessage: `📨 Invited ${recipientDisplay} (role: ${role}) — they'll get a notification to accept`,
       },
     };
   },

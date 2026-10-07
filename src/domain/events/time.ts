@@ -49,14 +49,7 @@ export function formatEventClockRange(start: string, end: string | null | undefi
   return end ? `${from} – ${formatEventClock(end, zone)}` : from;
 }
 
-/** "Zurich time", "New York time", "UTC" — which clock the times are on. */
-export function zoneLabel(zone: string): string {
-  if (zone === 'UTC') {
-    return 'UTC';
-  }
-  const city = zone.split('/').pop() ?? zone;
-  return `${city.replace(/_/g, ' ')} time`;
-}
+export { zoneLabel } from '@/utils/timezone';
 
 const DATE_FIELDS = ['start_date', 'end_date', 'rsvp_deadline'] as const;
 

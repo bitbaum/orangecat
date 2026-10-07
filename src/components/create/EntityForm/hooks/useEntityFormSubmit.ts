@@ -7,6 +7,7 @@ import { logger } from '@/utils/logger';
 import { API_ROUTES } from '@/config/api-routes';
 import type { EntityConfig, FormState } from '../../types';
 import { executeEntityFormSubmit } from './entityFormSubmitAction';
+import type { CreatedEntity } from './entityFormSubmitAction';
 
 interface WizardMode {
   currentStep: number;
@@ -29,7 +30,7 @@ interface UseEntityFormSubmitParams<T extends Record<string, unknown>> {
   clearDraft: () => void;
   setSubmitting: (v: boolean) => void;
   setErrors: (errors: Record<string, string>) => void;
-  onEntityCreated: (entity: { id: string; title: string }) => void;
+  onEntityCreated: (entity: CreatedEntity) => void;
   handleFieldChange: (name: keyof T, value: unknown) => void;
   wizardMode?: WizardMode;
   /** Selected actor (null = personal). Sent as `actor_id` in the create body. */
