@@ -135,14 +135,14 @@ export function lokiBuildHandoff(brief: string, name?: string): string {
 }
 
 export interface SolonProposalPrefill {
-  title?: string;
-  body?: string;
+  title?: string | undefined;
+  body?: string | undefined;
   /** A Solon decision category — SOLON_PROPOSAL_CATEGORY. */
-  category?: string;
+  category?: string | undefined;
   /** The OrangeCat path the decision is about, so Solon can link back. */
-  source?: string;
-  entityType?: string;
-  entityId?: string;
+  source?: string | undefined;
+  entityType?: string | undefined;
+  entityId?: string | undefined;
 }
 
 /**
