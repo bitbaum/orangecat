@@ -32,6 +32,7 @@ export function FormField({
   disabled = false,
   onCurrencyChange,
   currency,
+  subject,
 }: FormFieldProps) {
   const userCurrency = useUserCurrency();
   const { name, label, type, placeholder, required, options, hint, min, max, rows = 4 } = config;
@@ -227,7 +228,15 @@ export function FormField({
         return <AvailabilityEditor value={value} onChange={onChange} />;
 
       case 'image':
-        return <ImageField value={value} onChange={onChange} label={label} disabled={disabled} />;
+        return (
+          <ImageField
+            value={value}
+            onChange={onChange}
+            label={label}
+            disabled={disabled}
+            subject={subject}
+          />
+        );
 
       case 'text':
       default:

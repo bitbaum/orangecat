@@ -19,9 +19,11 @@ interface ImageFieldProps {
   onChange: (url: string | null) => void;
   label: string;
   disabled?: boolean;
+  /** The entity so far: the picker searches for it, not for the field's name. */
+  subject?: { title?: string; description?: string };
 }
 
-export function ImageField({ value, onChange, label, disabled }: ImageFieldProps) {
+export function ImageField({ value, onChange, label, disabled, subject }: ImageFieldProps) {
   const url = typeof value === 'string' && value ? value : null;
   const [replacing, setReplacing] = useState(false);
   const [picking, setPicking] = useState(false);
@@ -34,8 +36,8 @@ export function ImageField({ value, onChange, label, disabled }: ImageFieldProps
   if (picking) {
     return (
       <ImageSuggestPicker
-        title={label}
-        body=""
+        title={subject?.title?.trim() || label}
+        body={subject?.description ?? ''}
         heading={`Choose a ${label.toLowerCase()}`}
         onPick={img => pick(img.fullUrl)}
         onClose={() => setPicking(false)}

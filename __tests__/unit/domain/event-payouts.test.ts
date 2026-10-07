@@ -219,3 +219,23 @@ describe('refunding a ticket', () => {
     expect(admin.inserts[0].row).toMatchObject({ payment_hash: 'h3', status: 'sent' });
   });
 });
+
+describe('what the person paid is told', () => {
+  it('a refund given back another way says so, not "paid you"', async () => {
+    const user = fakeClient({
+      [ENTITY_REGISTRY.event.tableName]: EVENT,
+      [DATABASE_TABLES.EVENT_ATTENDEES]: { id: 'a1', user_id: 'g', payment_status: 'paid' },
+    });
+    const admin = fakeClient({});
+    await refundTicket(
+      { supabase: user.client, admin: admin.client, organizerId: 'org' },
+      { eventId: 'e1', attendeeId: 'a1', method: 'other' }
+    );
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Ticket refunded',
+        message: expect.stringMatching(/ticket was cancelled.*gave the money back/),
+      })
+    );
+  });
+});

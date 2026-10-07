@@ -285,6 +285,8 @@ export interface FormFieldProps {
   /** Current currency value (for currency input fields) */
   currency?: string;
   disabled?: boolean;
+  /** What the entity is so far — lets a picture field search for the right thing. */
+  subject?: { title?: string; description?: string };
 }
 
 export interface GuidancePanelProps {

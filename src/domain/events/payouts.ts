@@ -157,7 +157,7 @@ export async function payCrewMember(
 
   if (params.method === 'other') {
     const row = await record(ctx, { ...base, amount_btc: null, method: 'other', status: 'sent' });
-    await notifyPaid(params.recipientUserId, event, `for ${role.role_title}`, 'recorded');
+    await notifyPaid(params.recipientUserId, event, 'crew', 'recorded');
     return row;
   }
 
@@ -195,7 +195,7 @@ export async function payCrewMember(
     status: 'sent',
     payment_hash: sent.paymentHash,
   });
-  await notifyPaid(params.recipientUserId, event, `for ${role.role_title}`, 'sent');
+  await notifyPaid(params.recipientUserId, event, 'crew', 'sent');
   return row;
 }
 
@@ -308,12 +308,7 @@ export async function refundTicket(
     status: 'sent',
     payment_hash: paymentHash,
   });
-  await notifyPaid(
-    buyerId,
-    event,
-    'as a refund for your ticket',
-    params.method === 'lightning' ? 'sent' : 'recorded'
-  );
+  await notifyPaid(buyerId, event, 'refund', params.method === 'lightning' ? 'sent' : 'recorded');
   return row;
 }
 
@@ -335,17 +330,25 @@ export async function listPayouts(
 async function notifyPaid(
   userId: string,
   event: { id: string; title: string },
-  what: string,
+  what: 'crew' | 'refund',
   how: 'sent' | 'recorded'
 ) {
+  const sentence = {
+    crew: {
+      sent: 'your crew fee was sent to your wallet.',
+      recorded: 'the organizer recorded paying your crew fee outside OrangeCat.',
+    },
+    refund: {
+      sent: 'your ticket was refunded to your wallet.',
+      recorded:
+        'your ticket was cancelled and the organizer gave the money back outside OrangeCat.',
+    },
+  }[what][how];
   await NotificationDispatcher.dispatch({
     userId,
     type: 'payment',
-    title: how === 'sent' ? `You were paid ${what}` : `Payment recorded ${what}`,
-    message:
-      how === 'sent'
-        ? `${event.title}: sent to your wallet.`
-        : `${event.title}: the organizer recorded paying you outside OrangeCat.`,
+    title: what === 'refund' ? 'Ticket refunded' : 'Crew fee paid',
+    message: `${event.title}: ${sentence}`,
     actionUrl: ROUTES.EVENTS.VIEW(event.id),
     sourceEntityType: 'event',
     sourceEntityId: event.id,
