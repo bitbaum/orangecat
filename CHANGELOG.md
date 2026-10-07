@@ -34,6 +34,7 @@ to the map, sub-bullets stay here for the human reader.
 
 ### Fixed
 
+- **Signing in takes you where you were going.** Opening a link like "ask the Cat: throw a party on Saturday" while signed out, then signing in (or tapping "Start instantly — no email"), landed on the dashboard and the Cat never got your sentence: the sign-in page sent you back to the link, and a second redirect sent you to the dashboard and won. Both now go to the link.
 - **Mail to OrangeCat arrives.** The FAQ, status, security, privacy and terms pages and the API description gave hello@, support@, security@ and integrations@orangecat.ch, and none of them was a mailbox, so a security report or a privacy request bounced. They all give cato@orangecat.ch now.
   - The password-reset email template kept in the repository pointed at support@; it gives cato@ too.
   - "Ask for a verified client" on the Sign in with OrangeCat guide opened the Bitcoin backing page; it now opens an email to cato@. The reset email no longer claims a community size nobody counted, and the security docs no longer announce a bug bounty, a security score or a passed penetration test, none of which exists.
