@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
 import { VoiceCreate } from '@/components/create/VoiceCreate';
 import {
   CREATE_CATEGORY_LABELS,
@@ -34,6 +35,20 @@ export function CreateChooser() {
       <p className="mt-1 text-base text-fg-secondary">{CREATE_PAGE.lede}</p>
 
       <VoiceCreate className="mt-5" />
+
+      {/* Most people who need money arrive with a need, not a type. */}
+      <Link
+        href={ROUTES.RAISE}
+        className="mt-4 flex min-h-11 items-center justify-between gap-3 rounded-lg border border-default bg-surface-base px-4 py-3 transition-colors hover:border-strong"
+      >
+        <span>
+          <span className="block font-medium text-fg-primary">Need money for something?</span>
+          <span className="block text-sm text-fg-secondary">
+            Say what you need — the Cat prices it and writes the page.
+          </span>
+        </span>
+        <ArrowRight className="h-4 w-4 shrink-0 text-fg-tertiary" aria-hidden />
+      </Link>
 
       <div className="mt-6 space-y-6">
         {groups.map(group => (

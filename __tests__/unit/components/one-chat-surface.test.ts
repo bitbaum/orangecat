@@ -31,6 +31,8 @@ const NOT_A_CONVERSATION: Record<string, string> = {
     'human-to-human DM with delivery and read receipts, on threadkit — a different job from an AI turn',
   'src/components/timeline/RepostModal.tsx': 'post composer, not a conversation',
   'src/components/timeline/ShareModal.tsx': 'post composer, not a conversation',
+  'src/components/raise/NeedStep.tsx':
+    'one-shot "what do you need?" prompt that returns a priced plan — no turns, no history, no reply',
 };
 
 function filesUnder(dir: string, out: string[] = []): string[] {
