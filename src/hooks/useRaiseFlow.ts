@@ -19,6 +19,7 @@ import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { apiErrorMessage } from '@/lib/api/errorMessage';
 import { entityEvents } from '@/lib/analytics';
 import { formatCurrency } from '@/services/currency';
+import { APP_LOCALE } from '@/utils/locale';
 
 export type RaiseStep = 'need' | 'planning' | 'plan' | 'publishing' | 'done';
 
@@ -74,7 +75,7 @@ export function useRaiseFlow() {
     if (code === 'BTC') {
       return formatCurrency(n, code);
     }
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat(APP_LOCALE, {
       style: 'currency',
       currency: code,
       maximumFractionDigits: Number.isInteger(n) ? 0 : 2,

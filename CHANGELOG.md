@@ -13,6 +13,8 @@ to the map, sub-bullets stay here for the human reader.
 
 ### Added
 
+- **Raise money from one sentence.** Go to /raise, say what you need ("a new roof for the community garden"), and the Cat prices it line by line, writes the title and story, and suggests how to raise it: backing, a loan, or investment. Every price is editable, a preview shows the page as backers will see it, and publishing gives you the link, a QR code and a share button. It works before you sign up; your plan waits for you after sign-in.
+- **Back the road.** Under /roadmap, three cards show how to support OrangeCat in the open: fund it, lend to it, or invest, each with what has been raised so far from the public ledger.
 - **Tell your Cat about an event and it sets the whole thing up.** A birthday, a meetup or a two-day conference: say what you're planning and the Cat asks what it needs in one message — what and when, where, how many and whether it's private or public, and who pays — then does it. The event page, free or ticketed; a wishlist so people chip in for the actual drinks, gear or venue deposit; a message to each guest or speaker on OrangeCat; and a reminder for you before the day. A public event also gets its announcement drafted, and the Cat can find a venue, caterer or DJ offered on OrangeCat and book the one you choose. Anything that publishes, books or messages someone waits for your okay.
   - The plan fits the event: a party for fifteen gets four things, not a conference's worth.
   - When the event is paid from money a group shares, the Cat puts the spend to that group as a draft proposal instead of spending it — the members vote. A group that decides on Solon gets the proposal prefilled there for a member to file and sign.
@@ -20,6 +22,7 @@ to the map, sub-bullets stay here for the human reader.
 
 ### Fixed
 
+- **A published investment page opens for everyone.** Publishing an investment marked it open, but its public page only showed active ones, so a freshly published offering was a 404 for everyone but its owner, and its Invest card said "not open yet". It now shows as soon as it is published.
 - **The Cat can create events again.** Every event the Cat tried to create was refused: it wrote the place to a field events do not have and left the currency on a value the database rejects. The place now lands in the venue address, and the Cat can also set the kind of event, an end time, free entry or a ticket price, and how many people fit.
 
 ## 2026-10-06
