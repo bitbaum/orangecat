@@ -36,6 +36,8 @@ export const IN_APP_NOTIFICATION_TYPES = [
   // Events: a ticket was issued to you; you were put on an event's crew.
   'ticket',
   'crew',
+  // Someone invited you to a group; the group page asks you to accept.
+  'group_invite',
 ] as const;
 
 export type InAppNotificationType = (typeof IN_APP_NOTIFICATION_TYPES)[number];

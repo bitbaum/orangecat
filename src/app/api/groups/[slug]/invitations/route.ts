@@ -26,18 +26,12 @@ import {
   type InvitationCollectionResult,
 } from '@/domain/groups/invitations.server';
 
-const createInvitationSchema = z
-  .object({
-    user_id: z.string().guid().optional(),
-    email: z.string().email().optional(),
-    create_link: z.boolean().optional(),
-    role: z.enum(['admin', 'member']).optional().default('member'),
-    message: z.string().max(500).optional(),
-    expires_in_days: z.number().int().min(1).max(30).optional().default(7),
-  })
-  .refine(data => data.user_id || data.email || data.create_link, {
-    message: 'Must provide user_id, email, or create_link',
-  });
+const createInvitationSchema = z.object({
+  user_id: z.string().guid(),
+  role: z.enum(['admin', 'member']).optional().default('member'),
+  message: z.string().max(500).optional(),
+  expires_in_days: z.number().int().min(1).max(30).optional().default(7),
+});
 
 /** Map a failed domain result onto the matching HTTP error response. */
 function toErrorResponse(result: Extract<InvitationCollectionResult<unknown>, { ok: false }>) {

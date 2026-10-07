@@ -60,9 +60,9 @@ export async function canPerformAction(
 ): Promise<PermissionResult> {
   // No group = user acting as self = always allowed. Deliberately `=== null`,
   // not falsy: this is the one permissive branch in the whole permission layer,
-  // and `!groupId` also caught '' and undefined. Three callers take the id from
-  // a request body (mutations/proposals.ts, mutations/invitations.ts ×2), so a
-  // body carrying `group_id: ""` was an unconditional allow for any action.
+  // and `!groupId` also caught '' and undefined. Callers take the id from a
+  // request body (mutations/proposals.ts), so a body carrying `group_id: ""`
+  // was an unconditional allow for any action.
   if (groupId === null) {
     return { allowed: true };
   }

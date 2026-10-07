@@ -40,11 +40,18 @@
 - ✅ **Status:** Fully functional
 
 ### 3. Invitations
-- ✅ Database: `group_invitations` table
-- ✅ Service: `mutations/invitations.ts`, `queries/invitations.ts`
-- ✅ API: `/api/groups/[slug]/invitations/route.ts`, `/api/invitations/route.ts`
-- ✅ UI: Invitation components
-- ✅ **Status:** Fully functional
+- ✅ Database: `group_invitations`; answered only through `accept_group_invitation` /
+  `decline_group_invitation`, which require the invitation to name the caller
+  (migration `20261007171000_an_invitation_is_for_its_invitee_only.sql`)
+- ✅ Domain: `src/domain/groups/invitations.server.ts` — the one implementation
+  (the browser-side `services/groups/*/invitations.ts` copy was removed 2026-10-07)
+- ✅ API: `POST/GET /api/groups/[slug]/invitations`, `POST/DELETE /api/invitations/[id]`
+- ✅ The invitee gets a `group_invite` notification linking to
+  `/dashboard/invitations/[id]`, where they accept or decline
+- ✅ Cat's `invite_to_organization` uses the same domain path
+- ⛔ Link and e-mail invitations: not offered (no join page, no mail)
+- ✅ **Status:** Fully functional (until 2026-10-07 it was not: accepting failed
+  on group_members' RLS, and no invitee was ever told)
 
 ### 4. Events
 - ✅ Database: `group_events`, `group_event_rsvps` tables
