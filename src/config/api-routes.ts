@@ -298,6 +298,10 @@ export const API_ROUTES = {
     BASE: '/api/deals',
     REVIEWS: (dealId: string) => `/api/deals/${dealId}/reviews`,
     TRACK_RECORD: (actorId: string) => `/api/actors/${actorId}/track-record`,
+    /** The seller's one reply to a public review about them. */
+    REVIEW_REPLY: (reviewId: string) => `/api/deal-reviews/${reviewId}/reply`,
+    /** Anyone signed in can report a public review to the operator. */
+    REVIEW_REPORT: (reviewId: string) => `/api/deal-reviews/${reviewId}/reports`,
   },
 } as const;
 

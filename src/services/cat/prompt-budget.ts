@@ -32,6 +32,7 @@ import {
   estimateTokens,
 } from '@/services/ai/groq-capacity';
 import { DEFECT_IF_MISSING_SECTIONS } from '@/config/cat-prompt-sections';
+import { PLAYBOOK_HEADINGS } from '@/config/cat-playbooks';
 
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
@@ -100,6 +101,7 @@ export const DROPPABLE_SECTIONS_IN_ORDER: readonly string[] = [
   // present it is the turn's point; it goes late.
   'Setting Someone Up End to End',
   'Getting Something Built (Loki)',
+  ...PLAYBOOK_HEADINGS,
   'Answering a Question (evaluation, opinion, design)',
 ];
 

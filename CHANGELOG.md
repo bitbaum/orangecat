@@ -9,6 +9,36 @@ reads, and [orangecat.ch/changelog](https://orangecat.ch/changelog) renders
 it from there. One `## YYYY-MM-DD` heading per day; bullets under it travel
 to the map, sub-bullets stay here for the human reader.
 
+## 2026-10-07
+
+### Added
+
+- **Tell your Cat about an event and it sets the whole thing up.** A birthday, a meetup or a two-day conference: say what you're planning and the Cat asks what it needs in one message — what and when, where, how many and whether it's private or public, and who pays — then does it. The event page, free or ticketed; a wishlist so people chip in for the actual drinks, gear or venue deposit; a message to each guest or speaker on OrangeCat; and a reminder for you before the day. A public event also gets its announcement drafted, and the Cat can find a venue, caterer or DJ offered on OrangeCat and book the one you choose. Anything that publishes, books or messages someone waits for your okay.
+  - The plan fits the event: a party for fifteen gets four things, not a conference's worth.
+  - When the event is paid from money a group shares, the Cat puts the spend to that group as a draft proposal instead of spending it — the members vote. A group that decides on Solon gets the proposal prefilled there for a member to file and sign.
+  - Want a site of its own (a conference programme, a wedding)? The Cat can ask Loki to build one. It only offers this when you ask for more than the event page.
+
+### Fixed
+
+- **The Cat can create events again.** Every event the Cat tried to create was refused: it wrote the place to a field events do not have and left the currency on a value the database rejects. The place now lands in the venue address, and the Cat can also set the kind of event, an end time, free entry or a ticket price, and how many people fit.
+
+## 2026-10-06
+
+### Changed
+
+- **Reviews and track records now show far less about you.** Yesterday's version made more public than it should have; this corrects it.
+  - **Your sales total is no longer on your profile**, and neither is how many things you have bought. The track record keeps only what helps someone decide whether to trust a seller: how many paid deals, with how many different people, refunds, and what share of customers would deal with them again.
+  - **Reviews of buyers are never public.** A seller can still review you, but only the two of you see it, so a purchase can no longer appear on your profile because someone else wrote about it.
+  - **Reviewers are anonymous by default.** A customer's review of a seller shows as "a verified buyer" unless the customer ticks "show my name". Reviews written before today are anonymous.
+  - **A seller can reply once** to any public review about them.
+  - **Anyone signed in can report a review.** OrangeCat can hide its text, and the review then says so rather than quietly changing.
+- **Review reminders respect your email settings.** They can be turned off with "Progress & digests" in your notification settings without losing payment receipts, are limited to two emails a day, and several deals waiting at once arrive as one message instead of one each.
+
+### Fixed
+
+- **A payment OrangeCat sends for you now leaves a record on our side.** Until now, money sent from the Send screen or by asking your Cat moved from your wallet and OrangeCat kept no trace that it had. Every send now writes a private record of the payment, the amount and who it went to, and a payment that fails writes one too.
+  - The record is private: nobody can read it through the site, including you, for now. Your wallet's own history is still the account of your money; this is OrangeCat's account of what it did with your permission.
+
 ## 2026-10-05
 
 ### Added

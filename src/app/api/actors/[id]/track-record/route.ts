@@ -1,15 +1,15 @@
 /**
- * GET /api/actors/:id/track-record — what OrangeCat observed about an actor's
- * deals, and the reviews both sides have let go public (ADR-0010).
+ * GET /api/actors/:id/track-record — a seller's public track record (ADR-0010):
+ * deal and customer counts, outcomes, and the reviews their customers let go
+ * public. Never sales volume, never what anyone bought, never a reviewer who
+ * did not choose to be named; the database functions decide that.
  *
- * Public and identical for every caller: it reads through a sessionless
- * client, so a signed-in viewer never sees their own still-blind review
- * counted here. `null` data means the actor has no deals yet.
+ * `null` data means the actor has sold nothing yet.
  */
 
 import { apiSuccess, handleApiError } from '@/lib/api/standardResponse';
 import { validateUUID, getValidationError } from '@/lib/api/validation';
-import { getTrackRecord } from '@/domain/reputation/service';
+import { getTrackRecord } from '@/domain/reputation/track-record';
 import { createPublicClient } from '@/lib/supabase/public';
 
 interface RouteContext {

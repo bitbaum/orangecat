@@ -38,6 +38,7 @@ import {
   type GroupActivityType,
 } from '@/lib/email/templates/group-activity';
 import { reengagementTemplate, type ReengagementStage } from '@/lib/email/templates/reengagement';
+import { dealReviewTemplate } from '@/lib/email/templates/deal-review';
 import { logger } from '@/utils/logger';
 
 const LOG_SOURCE = 'NotificationEmailService';
@@ -431,6 +432,18 @@ export class NotificationEmailService {
         dashboardUrl: `${APP_URL}/dashboard`,
         entityUrl: data.entityUrl as string | undefined,
         exploreUrl: `${APP_URL}/discover`,
+        unsubscribeUrl,
+      });
+    }
+
+    // --- Deal review prompts (ADR-0010) ---
+    if (type === 'deal_review') {
+      const actionUrl = (data.actionUrl as string) || '/dashboard/deals';
+      return dealReviewTemplate({
+        displayName,
+        title: (data.title as string) || 'How did your deal go?',
+        message: (data.message as string) || '',
+        dealsUrl: actionUrl.startsWith('http') ? actionUrl : `${APP_URL}${actionUrl}`,
         unsubscribeUrl,
       });
     }

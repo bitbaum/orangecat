@@ -133,6 +133,8 @@ export const DATABASE_TABLES = {
   DEALS: 'deals',
   DEAL_REVIEWS: 'deal_reviews',
   DEAL_REVIEW_NUDGES: 'deal_review_nudges',
+  DEAL_REVIEW_REPLIES: 'deal_review_replies',
+  DEAL_REVIEW_REPORTS: 'deal_review_reports',
 
   // Wishlists
   WISHLISTS: 'wishlists',

@@ -192,7 +192,14 @@ describe('selection is worth doing', () => {
     // parameter names of three words or fewer. Loki writes the coordination
     // brief the agents read, and Loki refuses unknown project names with the
     // list of real ones, so neither is paid for in prose here.
-    expect(remaining).toBeLessThanOrEqual(4_400);
+    //
+    // Raised 4,400 -> 4,650 for "hold an event": `propose_to_group` (shared
+    // money decided by the people who share it — an OrangeCat group vote, or a
+    // prefilled Solon proposal) and the `create_event` parameters an event
+    // needs (event_type, end_date, is_free, ticket_price_btc, max_attendees;
+    // `location` became optional). Only appendix names and a one-clause description land here —
+    // the playbook itself is SITUATIONAL and costs a greeting nothing.
+    expect(remaining).toBeLessThanOrEqual(4_650);
   });
 
   it('selects by default now, and still sends everything when told to', async () => {

@@ -13,7 +13,7 @@ import { logger } from '@/utils/logger';
 import { TIMELINE_TABLES } from '@/config/database-tables';
 import type { TimelineFeedResponse, TimelineFilters, TimelinePagination } from '@/types/timeline';
 import { pageWindow, feedResponse, emptyFeed } from './feed-shape';
-import { transformEnrichedEventToDisplay } from './helpers';
+import { displayEventsFromView } from './helpers';
 
 /**
  * Get profile timeline feed
@@ -43,7 +43,7 @@ export async function getProfileFeed(
     }
 
     // Transform enriched VIEW data to display events
-    const displayEvents = (events || []).map(transformEnrichedEventToDisplay);
+    const displayEvents = await displayEventsFromView(events);
 
     return feedResponse(displayEvents, { page, limit }, count || 0, filters);
   } catch (error) {

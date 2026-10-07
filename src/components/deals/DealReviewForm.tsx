@@ -28,6 +28,9 @@ export function DealReviewForm({
   const [answers, setAnswers] = useState<Record<string, boolean>>({});
   const [body, setBody] = useState('');
   const [sending, setSending] = useState(false);
+  // Only a customer's review of a seller is ever public; there, being named is opt-in.
+  const isPublic = role === 'customer';
+  const [showName, setShowName] = useState(false);
   const missing = questions.filter(q => q.required && answers[q.id] === undefined);
 
   const submit = async () => {
@@ -37,7 +40,11 @@ export function DealReviewForm({
       const res = await fetch(API_ROUTES.DEALS.REVIEWS(dealId), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ answers, ...(trimmed ? { body: trimmed } : {}) }),
+        body: JSON.stringify({
+          answers,
+          ...(trimmed ? { body: trimmed } : {}),
+          ...(isPublic && showName ? { show_name: true } : {}),
+        }),
       });
       const json = await res.json().catch(() => null);
       if (!res.ok || !json?.success) {
@@ -46,7 +53,7 @@ export function DealReviewForm({
       }
       toast.success(
         json.data?.revealed
-          ? 'Review sent. Both reviews are now public.'
+          ? `Review sent. You and ${counterpartyName} can now see each other's review.`
           : `Review sent. It stays hidden until ${counterpartyName} reviews too, or the window closes.`
       );
       router.refresh();
@@ -92,12 +99,30 @@ export function DealReviewForm({
       ))}
       <Textarea
         label="Anything to add? (optional)"
-        description="Public once revealed. It cannot be edited after you send it."
+        description={
+          isPublic
+            ? 'Shown on their profile once revealed. It cannot be edited after you send it.'
+            : 'Only the two of you will see this. It cannot be edited after you send it.'
+        }
         value={body}
         maxLength={DEAL_REVIEW_LIMITS.MAX_BODY_LENGTH}
         rows={3}
         onChange={e => setBody(e.target.value)}
       />
+      {isPublic && (
+        <label className="flex items-start gap-2 text-sm text-fg-secondary">
+          <input
+            type="checkbox"
+            className="mt-1"
+            checked={showName}
+            onChange={e => setShowName(e.target.checked)}
+          />
+          <span>
+            Show my name with this review. Leave it off and you appear as &ldquo;a verified
+            buyer&rdquo;.
+          </span>
+        </label>
+      )}
       <div className="flex flex-wrap gap-2">
         <Button onClick={submit} isLoading={sending} disabled={missing.length > 0 || sending}>
           Send review

@@ -76,7 +76,20 @@ export const REVIEW_QUESTIONS = {
 
 export const DEAL_REVIEW_LIMITS = {
   MAX_BODY_LENGTH: 5000,
+  MAX_REPLY_LENGTH: 2000,
+  MAX_REPORT_REASON_LENGTH: 1000,
+  /** Public reviews shown on a profile. The database caps it at 20. */
+  PUBLIC_REVIEWS_SHOWN: 5,
 } as const;
+
+/** The seller's one reply to a public review, and a report about one. */
+export const dealReviewReplySchema = z.object({
+  body: z.string().trim().min(1).max(DEAL_REVIEW_LIMITS.MAX_REPLY_LENGTH),
+});
+
+export const dealReviewReportSchema = z.object({
+  reason: z.string().trim().min(1).max(DEAL_REVIEW_LIMITS.MAX_REPORT_REASON_LENGTH),
+});
 
 /**
  * The answers a reviewer on `role` may send: only that side's question ids,
@@ -100,6 +113,8 @@ export function dealReviewInputSchema(role: ReviewerRole) {
     deal_id: z.uuid(),
     answers: reviewAnswersSchema(role),
     body: z.string().trim().min(1).max(DEAL_REVIEW_LIMITS.MAX_BODY_LENGTH).optional(),
+    /** Put my name on the public review. Default: shown as a verified buyer. */
+    show_name: z.boolean().optional(),
   });
 }
 
@@ -164,6 +179,12 @@ export const REVIEW_NUDGE_COPY: Record<
     message: `The review window for "${title}" closes in a few days. After that, neither of you can add one.`,
   }),
 };
+
+/** When several of one person's deals are due in the same run: one message, not many. */
+export const REVIEW_NUDGE_BATCH_COPY = (count: number) => ({
+  title: `${count} of your deals are waiting for a review`,
+  message: `Tell others whether you would deal with them again. Each review stays hidden until the other side has reviewed too.`,
+});
 
 /** Sent to the other side the moment one side reviews. Says THAT, never WHAT. */
 export const COUNTERPART_REVIEWED_COPY = ({ who, title }: { who: string; title: string }) => ({

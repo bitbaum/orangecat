@@ -71,7 +71,6 @@ const SRC = join(ROOT, 'src');
  */
 const KNOWN_DEAD = new Set([
   // === Identifiers and routing plumbing — never reader-facing content. =======
-  'asset_id', // FK: links an event to a rented venue asset
 
   // --- Rendered, but through a parent the scanner cannot follow. -------------
   // These three are properties of `recurrencePatternSchema`, i.e. they live
