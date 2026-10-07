@@ -16,6 +16,8 @@ export interface ProfileContext {
   location_country?: string;
   background?: string;
   website?: string;
+  /** IANA zone from the profile, so "today" is the person's today. */
+  timezone?: string;
 }
 
 export interface EntitySummary {

@@ -41,7 +41,7 @@ export function buildFullContextString(context: FullUserContext): string {
   const sections = [
     renderCurrentSession(context.runtime),
     renderMemories(context.memories),
-    renderDateTime(locale),
+    renderDateTime(locale, context.profile?.timezone),
     renderProfile(context.profile),
     renderEconomicProfile(context.economicProfile),
     renderTrackRecord(context.trackRecord),

@@ -18,6 +18,8 @@ import { formatEventShort, resolveEventTimes } from '@/domain/events/time';
 import { listPlacesICanListAt, matchVenueByName } from '@/domain/events/venue-page';
 import { resolveEventCover } from '@/domain/events/cover';
 import { getProfileCurrency, isCurrencyCode } from '@/services/currency/profileCurrency';
+import { isValidTimeZone } from '@/utils/timezone';
+import { parseEventWords } from '../event-draft';
 import type { ActionHandler } from './types';
 
 export const createEvent: ActionHandler = async (supabase, userId, actorId, params) => {
@@ -41,9 +43,26 @@ export const createEvent: ActionHandler = async (supabase, userId, actorId, para
   // The model says times the way the user did — wall-clock at the venue — and
   // they become instants in the venue's zone here. Its own clock is UTC, so
   // leaving this to the model moved every non-UTC night by hours.
+  // A weak model sometimes passes the words through ("today 7pm") despite
+  // being asked for ISO. They are read here, in the venue's zone, instead of
+  // reaching the timestamp column as text (event-draft.ts).
+  const wordsZone = isValidTimeZone(venue.timezone) ? venue.timezone : 'UTC';
+  const startWords = typeof params.start_date === 'string' ? params.start_date : '';
+  const start = parseEventWords(startWords, { now: new Date(), zone: wordsZone });
+  if (!start) {
+    return {
+      success: false,
+      error: startWords
+        ? `I couldn't read "${startWords}" as a date and time. Say it like "today 19:00" or "Friday 8pm".`
+        : 'When is it? Give a day and a time, like "today 19:00".',
+    };
+  }
+  const endWords = typeof params.end_date === 'string' ? params.end_date : '';
   const times = resolveEventTimes({
-    start_date: params.start_date,
-    end_date: params.end_date || null,
+    start_date: start,
+    end_date: endWords
+      ? (parseEventWords(endWords, { now: new Date(), zone: wordsZone }) ?? null)
+      : null,
     timezone: venue.timezone,
   });
   // A price in any currency: "20 CHF", or "0.0005 BTC" with currency BTC.
