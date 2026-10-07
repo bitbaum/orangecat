@@ -7,7 +7,7 @@ import type { EntityType } from '@/config/entity-registry';
 import type { Article } from '@/services/articles/types';
 import type { PublicEconomicProfile } from '@/services/cat/economic-profile';
 import type { PublicCivicSplit } from '@/components/profile/ProfileCivicSplit';
-import type { TrackRecord } from '@/domain/reputation/service';
+import type { TrackRecord } from '@/domain/reputation/track-record';
 
 interface ProfilePageClientProps {
   profile: ScalableProfile;

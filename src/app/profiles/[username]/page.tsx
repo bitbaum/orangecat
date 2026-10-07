@@ -7,7 +7,7 @@ import { getTableName } from '@/config/entity-registry';
 import { fetchProfileListingCounts } from '@/services/profile/listingCounts';
 import { getPublicEconomicProfile } from '@/services/cat/economic-profile-public';
 import { getPublicCivicSplit } from '@/domain/civic-split/service';
-import { getTrackRecord } from '@/domain/reputation/service';
+import { getTrackRecord } from '@/domain/reputation/track-record';
 import { createPublicClient } from '@/lib/supabase/public';
 import { listArticlesByAuthor } from '@/services/articles/get-article';
 import { safeJsonLdString } from '@/lib/seo/structured-data';
