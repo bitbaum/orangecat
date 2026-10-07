@@ -16,6 +16,7 @@
  */
 
 import { COUNTRY_ZONE, MULTI_ZONE_BANDS } from '@/config/time-zones';
+import { APP_LOCALE } from '@/utils/locale';
 
 /** Whether the runtime knows a zone name ("Europe/Zurich" yes, "CET+1" no). */
 export function isValidTimeZone(zone: unknown): zone is string {
@@ -23,7 +24,7 @@ export function isValidTimeZone(zone: unknown): zone is string {
     return false;
   }
   try {
-    new Intl.DateTimeFormat('en-US', { timeZone: zone });
+    new Intl.DateTimeFormat(APP_LOCALE, { timeZone: zone });
     return true;
   } catch {
     return false;
@@ -74,7 +75,7 @@ export function hasUtcOffset(value: string): boolean {
 
 /** Minutes the zone is ahead of UTC at that instant (Zurich in summer: 120). */
 export function zoneOffsetMinutes(instant: Date, zone: string): number {
-  const parts = new Intl.DateTimeFormat('en-US', {
+  const parts = new Intl.DateTimeFormat(APP_LOCALE, {
     timeZone: zone,
     hourCycle: 'h23',
     year: 'numeric',
@@ -128,7 +129,7 @@ export function formatInZone(
   value: string | number | Date,
   zone: string,
   options: Intl.DateTimeFormatOptions,
-  locale = 'en-US'
+  locale = APP_LOCALE
 ): string {
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) {

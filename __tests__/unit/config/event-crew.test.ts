@@ -8,12 +8,33 @@ import {
 
 describe('parseCrewRole — crew lines the way people say them', () => {
   it.each([
-    ['DJ', { role_title: 'DJ', quantity: 1, engagement_type: 'paid' }],
-    ['2 bartenders', { role_title: 'Bartender', quantity: 2, engagement_type: 'paid' }],
-    ['3x security', { role_title: 'Security', quantity: 3, engagement_type: 'paid' }],
-    ['4× helpers', { role_title: 'Setup & cleanup', quantity: 4, engagement_type: 'volunteer' }],
-    ['sound tech', { role_title: 'Sound technician', quantity: 1, engagement_type: 'paid' }],
-    ['fire dancer', { role_title: 'Fire dancer', quantity: 1, engagement_type: 'paid' }],
+    ['DJ', { role_title: 'DJ', quantity: 1, engagement_type: 'paid', can_check_in: false }],
+    [
+      '2 bartenders',
+      { role_title: 'Bartender', quantity: 2, engagement_type: 'paid', can_check_in: false },
+    ],
+    [
+      '3x security',
+      { role_title: 'Security', quantity: 3, engagement_type: 'paid', can_check_in: true },
+    ],
+    [
+      '4× helpers',
+      {
+        role_title: 'Setup & cleanup',
+        quantity: 4,
+        engagement_type: 'volunteer',
+        can_check_in: false,
+      },
+    ],
+    [
+      'sound tech',
+      { role_title: 'Sound technician', quantity: 1, engagement_type: 'paid', can_check_in: false },
+    ],
+    ['door', { role_title: 'Door', quantity: 1, engagement_type: 'paid', can_check_in: true }],
+    [
+      'fire dancer',
+      { role_title: 'Fire dancer', quantity: 1, engagement_type: 'paid', can_check_in: false },
+    ],
   ])('%s', (line, expected) => {
     expect(parseCrewRole(line)).toEqual(expected);
   });
@@ -25,8 +46,8 @@ describe('parseCrewRole — crew lines the way people say them', () => {
 
   it('merges repeats of the same role and drops non-strings', () => {
     expect(parseCrewRoles(['bartender', '2 bartenders', 42, 'DJ'])).toEqual([
-      { role_title: 'Bartender', quantity: 3, engagement_type: 'paid' },
-      { role_title: 'DJ', quantity: 1, engagement_type: 'paid' },
+      { role_title: 'Bartender', quantity: 3, engagement_type: 'paid', can_check_in: false },
+      { role_title: 'DJ', quantity: 1, engagement_type: 'paid', can_check_in: false },
     ]);
     expect(parseCrewRoles('DJ')).toEqual([]);
   });

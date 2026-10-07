@@ -81,6 +81,8 @@ interface CrewRolePreset {
   /** Words people actually type for it (lower-case, singular and plural). */
   aliases: readonly string[];
   engagement: EngagementType;
+  /** People in this role can check guests in at the door. */
+  checksIn?: boolean;
 }
 
 /** The roles a party usually needs. Order is the order they are suggested in. */
@@ -101,11 +103,17 @@ export const EVENT_CREW_PRESETS: readonly CrewRolePreset[] = [
     aliases: ['lights', 'lighting', 'light tech', 'lighting tech', 'vj', 'vjs'],
     engagement: 'paid',
   },
-  { title: 'Security', aliases: ['security', 'bouncer', 'bouncers'], engagement: 'paid' },
+  {
+    title: 'Security',
+    aliases: ['security', 'bouncer', 'bouncers'],
+    engagement: 'paid',
+    checksIn: true,
+  },
   {
     title: 'Door',
     aliases: ['door', 'door staff', 'doorperson', 'tickets', 'ticket desk', 'entrance'],
     engagement: 'paid',
+    checksIn: true,
   },
   {
     title: 'Photographer',
@@ -143,6 +151,7 @@ export interface ParsedCrewRole {
   role_title: string;
   quantity: number;
   engagement_type: EngagementType;
+  can_check_in: boolean;
 }
 
 /**
@@ -167,6 +176,7 @@ export function parseCrewRole(raw: string): ParsedCrewRole | null {
     role_title: title.slice(0, MAX_EVENT_ROLE_TITLE),
     quantity,
     engagement_type: preset ? preset.engagement : 'paid',
+    can_check_in: preset?.checksIn === true,
   };
 }
 

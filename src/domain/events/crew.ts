@@ -20,10 +20,14 @@ export interface EventRole {
   fee_amount: number | null;
   description: string | null;
   status: RoleStatus;
+  /** Who is in the role — at most `quantity` people. */
+  assignee_user_ids: string[];
+  /** People in this role can check guests in at the door. */
+  can_check_in: boolean;
 }
 
 const SELECT =
-  'id, event_id, role_title, quantity, engagement_type, fee_amount, description, status';
+  'id, event_id, role_title, quantity, engagement_type, fee_amount, description, status, assignee_user_ids, can_check_in';
 
 export interface NewEventRole extends ParsedCrewRole {
   fee_amount?: number | null;
@@ -63,6 +67,7 @@ export async function addEventRoles(
         engagement_type: r.engagement_type,
         fee_amount: r.fee_amount ?? null,
         description: r.description ?? null,
+        can_check_in: r.can_check_in,
       }))
     )
     .select(SELECT);
@@ -114,4 +119,88 @@ export async function removeEventRole(
     throw new Error(error.message);
   }
   return (data ?? []).length > 0;
+}
+
+/** Why an assignment did not happen, in words the organizer can act on. */
+export class CrewAssignError extends Error {}
+
+async function readRole(supabase: AnySupabaseClient, roleId: string): Promise<EventRole> {
+  const { data } = await supabase
+    .from(DATABASE_TABLES.EVENT_ROLES)
+    .select(SELECT)
+    .eq('id', roleId)
+    .maybeSingle();
+  if (!data) {
+    throw new CrewAssignError('Role not found');
+  }
+  return data as EventRole;
+}
+
+async function writeAssignees(
+  supabase: AnySupabaseClient,
+  role: EventRole,
+  assignees: string[]
+): Promise<EventRole> {
+  const { data, error } = await supabase
+    .from(DATABASE_TABLES.EVENT_ROLES)
+    .update({
+      assignee_user_ids: assignees,
+      status: assignees.length >= role.quantity ? 'filled' : 'open',
+    })
+    .eq('id', role.id)
+    .select(SELECT)
+    .maybeSingle();
+  if (error || !data) {
+    throw new CrewAssignError(error?.message ?? 'Only the organizer can change the crew');
+  }
+  return data as EventRole;
+}
+
+/**
+ * Put a person in a role. It fills when it holds as many people as it asked
+ * for, and the table refuses more. Owner-only by RLS: someone else's role
+ * comes back as no row.
+ */
+export async function assignToRole(
+  supabase: AnySupabaseClient,
+  roleId: string,
+  userId: string
+): Promise<EventRole> {
+  const role = await readRole(supabase, roleId);
+  if (role.assignee_user_ids.includes(userId)) {
+    return role;
+  }
+  if (role.assignee_user_ids.length >= role.quantity) {
+    throw new CrewAssignError(
+      `${role.role_title} already has ${role.quantity} — take someone off first.`
+    );
+  }
+  return writeAssignees(supabase, role, [...role.assignee_user_ids, userId]);
+}
+
+/** Take a person out of a role; it reopens. */
+export async function unassignFromRole(
+  supabase: AnySupabaseClient,
+  roleId: string,
+  userId: string
+): Promise<EventRole> {
+  const role = await readRole(supabase, roleId);
+  return writeAssignees(
+    supabase,
+    role,
+    role.assignee_user_ids.filter(id => id !== userId)
+  );
+}
+
+/** Whether this person may check guests in at the event (organizer or door crew). */
+export async function canCheckInAt(
+  supabase: AnySupabaseClient,
+  eventId: string,
+  userId: string
+): Promise<boolean> {
+  const { data } = await supabase.rpc('can_check_in_at', {
+    p_event_id: eventId,
+    p_user_id: userId,
+  });
+  return data === true;
 }

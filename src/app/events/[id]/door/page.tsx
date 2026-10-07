@@ -2,7 +2,7 @@
  * The door: the organizer's guest list, and what a ticket's QR opens.
  *
  * Scanning a ticket with the phone camera lands here with ?code=…; for the
- * organizer that checks the guest in and says so in one glance (green, already
+ * organizer or the door crew that checks the guest in and says so in one glance (green, already
  * in, or not a ticket for this event). Anyone else who opens a ticket link —
  * usually the guest themselves — is told to show it at the door.
  */
@@ -19,6 +19,7 @@ import { ROUTES } from '@/config/routes';
 import { checkInTicket, listTickets, type CheckInResult } from '@/domain/events/tickets';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import DoorList, { type DoorGuest } from '@/components/events/DoorList';
+import { canCheckInAt } from '@/domain/events/crew';
 import { eventZone } from '@/domain/events/time';
 
 export const metadata: Metadata = { title: 'Door', robots: { index: false } };
@@ -71,13 +72,13 @@ export default async function DoorPage({ params, searchParams }: PageProps) {
     );
   }
 
-  if (event.user_id !== user.id) {
+  if (!(await canCheckInAt(supabase, id, user.id))) {
     // Usually the guest opening their own ticket's QR.
     return (
       <main className="mx-auto max-w-md px-4 py-12 text-center">
         <h1 className="mb-3 text-xl font-semibold text-fg-primary">This is a ticket</h1>
         <p className="mb-6 text-fg-secondary">
-          Show it at the door of {event.title}. Only the organizer&apos;s phone checks people in.
+          Show it at the door of {event.title}. The organizer and the door crew check people in.
         </p>
         <Link href={eventPath} className="underline underline-offset-4">
           Back to the event

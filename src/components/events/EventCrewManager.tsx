@@ -8,21 +8,29 @@
 
 import { useState } from 'react';
 import { API_ROUTES } from '@/config/api-routes';
-import { Users, X, Check, RotateCcw } from 'lucide-react';
+import { Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
-import { ENGAGEMENT_LABELS, ROLE_STATUS_LABELS, type RoleStatus } from '@/config/project-roles';
+import { type RoleStatus } from '@/config/project-roles';
 import type { EventRole } from '@/domain/events/crew';
+import CrewRoleRow, { type CrewPerson } from './CrewRoleRow';
 
 interface EventCrewManagerProps {
   eventId: string;
   initialRoles: EventRole[];
+  /** Names of the people already in roles, by user id. */
+  initialPeople: Record<string, CrewPerson>;
 }
 
 const label = (r: EventRole) => (r.quantity > 1 ? `${r.quantity}× ${r.role_title}` : r.role_title);
 
-export default function EventCrewManager({ eventId, initialRoles }: EventCrewManagerProps) {
+export default function EventCrewManager({
+  eventId,
+  initialRoles,
+  initialPeople,
+}: EventCrewManagerProps) {
   const [roles, setRoles] = useState(initialRoles);
+  const [people, setPeople] = useState(initialPeople);
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -74,6 +82,37 @@ export default function EventCrewManager({ eventId, initialRoles }: EventCrewMan
     }
   }
 
+  const replace = (role: EventRole) =>
+    setRoles(prev => prev.map(r => (r.id === role.id ? role : r)));
+
+  async function assign(role: EventRole, username: string) {
+    const data = await call(API_ROUTES.EVENTS.ROLE(role.id), {
+      method: 'PATCH',
+      body: JSON.stringify({ assign: username }),
+    });
+    if (data?.role) {
+      const updated = data.role as EventRole;
+      const added = updated.assignee_user_ids.find(id => !role.assignee_user_ids.includes(id));
+      if (added) {
+        setPeople(prev => ({
+          ...prev,
+          [added]: { username: username.replace(/^@/, ''), name: null },
+        }));
+      }
+      replace(updated);
+    }
+  }
+
+  async function unassign(role: EventRole, userId: string) {
+    const data = await call(API_ROUTES.EVENTS.ROLE(role.id), {
+      method: 'PATCH',
+      body: JSON.stringify({ unassign: userId }),
+    });
+    if (data?.role) {
+      replace(data.role as EventRole);
+    }
+  }
+
   async function remove(role: EventRole) {
     const data = await call(API_ROUTES.EVENTS.ROLE(role.id), { method: 'DELETE' });
     if (data) {
@@ -98,47 +137,16 @@ export default function EventCrewManager({ eventId, initialRoles }: EventCrewMan
         ) : (
           <ul className="divide-y divide-default">
             {roles.map(role => (
-              <li key={role.id} className="flex flex-wrap items-center justify-between gap-2 py-3">
-                <div className="min-w-0">
-                  <div className="break-words font-medium text-fg-primary">{label(role)}</div>
-                  <div className="text-sm text-fg-secondary">
-                    {ENGAGEMENT_LABELS[role.engagement_type] ?? role.engagement_type} ·{' '}
-                    {ROLE_STATUS_LABELS[role.status] ?? role.status}
-                  </div>
-                </div>
-                <div className="flex gap-1">
-                  {role.status === 'open' ? (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      disabled={busy}
-                      onClick={() => setStatus(role, 'filled')}
-                      aria-label={`Mark ${role.role_title} filled`}
-                    >
-                      <Check className="mr-1 h-4 w-4" /> Filled
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      disabled={busy}
-                      onClick={() => setStatus(role, 'open')}
-                      aria-label={`Reopen ${role.role_title}`}
-                    >
-                      <RotateCcw className="mr-1 h-4 w-4" /> Reopen
-                    </Button>
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled={busy}
-                    onClick={() => remove(role)}
-                    aria-label={`Remove ${role.role_title}`}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              </li>
+              <CrewRoleRow
+                key={role.id}
+                role={role}
+                people={people}
+                busy={busy}
+                onAssign={assign}
+                onUnassign={unassign}
+                onStatus={setStatus}
+                onRemove={remove}
+              />
             ))}
           </ul>
         )}

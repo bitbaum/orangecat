@@ -11,6 +11,7 @@
  */
 
 import { fromTable } from '@/lib/supabase/untyped';
+import type { InAppNotificationType } from '@/config/notification-types';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { isEmailConfigured, sendEmail } from '@/lib/email/client';
@@ -70,8 +71,8 @@ const PREFERENCE_AWARE_EMAIL_TYPES = new Set(['deal_review']);
 interface DispatchParams {
   /** Recipient user ID (auth.users.id) */
   userId: string;
-  /** Notification type (e.g., 'payment', 'follow', 'system') */
-  type: string;
+  /** Notification type — one of config/notification-types.ts (the DB CHECK mirrors it) */
+  type: InAppNotificationType;
   /** Short title for the notification */
   title: string;
   /** Longer message body */

@@ -16,6 +16,7 @@ import {
   claimFreeTicket,
   getMyTicket,
 } from '@/domain/events/tickets';
+import { notifyTicketIssued } from '@/domain/events/notify';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { logger } from '@/utils/logger';
 
@@ -63,7 +64,11 @@ async function write(run: (supabase: AnySupabaseClient) => Promise<unknown>) {
 
 export async function POST(_request: NextRequest, { params }: Ctx) {
   const { id } = await params;
-  return write(supabase => claimFreeTicket(supabase, id));
+  return write(async supabase => {
+    const ticket = await claimFreeTicket(supabase, id);
+    void notifyTicketIssued({ eventId: id, userId: ticket.user_id, seats: 1, paid: false });
+    return ticket;
+  });
 }
 
 export async function DELETE(_request: NextRequest, { params }: Ctx) {
