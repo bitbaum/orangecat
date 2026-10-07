@@ -16,7 +16,7 @@ import ProfileArticlesTab from '@/components/profile/ProfileArticlesTab';
 import ProfileOfferings from '@/components/profile/ProfileOfferings';
 import ProfileCivicSplit, { type PublicCivicSplit } from '@/components/profile/ProfileCivicSplit';
 import ProfileTrackRecord from '@/components/profile/ProfileTrackRecord';
-import type { TrackRecord } from '@/domain/reputation/service';
+import type { TrackRecord } from '@/domain/reputation/track-record';
 import type { PublicEconomicProfile } from '@/services/cat/economic-profile';
 import { Users, User, MessageSquare, Info, Wallet, FileText } from 'lucide-react';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
@@ -259,7 +259,11 @@ export default function ProfileLayout({
             )}
             {trackRecord && (
               <div className="order-4 mt-4">
-                <ProfileTrackRecord record={trackRecord} />
+                <ProfileTrackRecord
+                  record={trackRecord}
+                  isOwnProfile={isOwnProfile}
+                  isSignedIn={Boolean(user)}
+                />
               </div>
             )}
           </div>

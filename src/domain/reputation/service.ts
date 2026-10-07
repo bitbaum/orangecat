@@ -8,7 +8,7 @@
  */
 
 import { DATABASE_TABLES } from '@/config/database-tables';
-import { HEADLINE_QUESTION, dealReviewInputSchema, type ReviewerRole } from '@/config/reputation';
+import { dealReviewInputSchema, type ReviewerRole } from '@/config/reputation';
 import { actorNames, nameOf, type ActorName } from '@/domain/actors/names';
 import { sha256Hex } from '@/domain/research/openScience';
 import { notifyCounterpartReviewed } from './nudges';
@@ -232,6 +232,9 @@ export async function createDealReview(
       subject_actor_id: role === 'customer' ? deal.provider_actor_id : deal.customer_actor_id,
       reviewer_role: role,
       answers: parsed.data.answers,
+      // Only a customer's review of a seller is ever public, so only there
+      // does being named mean anything. Anonymous unless they asked.
+      reviewer_shown: role === 'customer' && parsed.data.show_name === true,
       body,
       body_sha256: body === null ? null : await sha256Hex(body),
     })
@@ -255,95 +258,4 @@ export async function createDealReview(
     await notifyCounterpartReviewed(supabase, deal, role);
   }
   return { ok: true, review: { created_at: data.created_at, revealed: Boolean(revealed) } };
-}
-
-// ==================== PUBLIC TRACK RECORD ====================
-
-export interface PublicDealReview extends DealReviewView {
-  reviewer: ActorName;
-}
-
-export interface TrackRecord {
-  dealsProvided: number;
-  completed: number;
-  refunded: number;
-  cancelled: number;
-  distinctCustomers: number;
-  dealsAsCustomer: number;
-  btcProvided: number;
-  firstDealAt: string | null;
-  lastDealAt: string | null;
-  /** Of the revealed reviews about this actor that answer the headline question, how many said yes. */
-  wouldDealAgain: { yes: number; of: number };
-  recentReviews: PublicDealReview[];
-}
-
-interface TrackRecordRow {
-  deals_provided: number;
-  deals_provided_completed: number;
-  deals_provided_refunded: number;
-  deals_provided_cancelled: number;
-  distinct_customers: number;
-  deals_as_customer: number;
-  btc_provided: number | string;
-  first_deal_at: string | null;
-  last_deal_at: string | null;
-}
-
-const RECENT_REVIEWS = 5;
-
-/**
- * An actor's public track record. Pass a SESSIONLESS client
- * (createPublicClient): with a session, RLS also returns the viewer's own
- * still-blind reviews, and the record would differ by who is looking.
- *
- * Null when the actor has no deals at all — a profile with nothing to show
- * hides the section rather than displaying a row of zeros.
- */
-export async function getTrackRecord(
-  publicClient: AnySupabaseClient,
-  actorId: string
-): Promise<TrackRecord | null> {
-  const { data: counts, error } = (await callRpc(publicClient, 'actor_track_record', {
-    p_actor_id: actorId,
-  })) as { data: TrackRecordRow[] | null; error: unknown };
-  if (error) {
-    throw error;
-  }
-  const c = counts?.[0];
-  if (!c || c.deals_provided + c.deals_as_customer === 0) {
-    return null;
-  }
-  const headline = `answers->>${HEADLINE_QUESTION}`;
-  const aboutThem = () =>
-    fromTable(publicClient, DATABASE_TABLES.DEAL_REVIEWS)
-      .select('deal_id', { count: 'exact', head: true })
-      .eq('subject_actor_id', actorId);
-  const [answered, yes, latest] = (await Promise.all([
-    aboutThem().not(headline, 'is', null),
-    aboutThem().eq(headline, 'true'),
-    fromTable(publicClient, DATABASE_TABLES.DEAL_REVIEWS)
-      .select(REVIEW_COLUMNS)
-      .eq('subject_actor_id', actorId)
-      .order('created_at', { ascending: false })
-      .limit(RECENT_REVIEWS),
-  ])) as [{ count: number | null }, { count: number | null }, { data: ReviewRow[] | null }];
-  const recent = latest.data ?? [];
-  const names = await actorNames(publicClient, [...new Set(recent.map(r => r.reviewer_actor_id))]);
-  return {
-    dealsProvided: c.deals_provided,
-    completed: c.deals_provided_completed,
-    refunded: c.deals_provided_refunded,
-    cancelled: c.deals_provided_cancelled,
-    distinctCustomers: c.distinct_customers,
-    dealsAsCustomer: c.deals_as_customer,
-    btcProvided: Number(c.btc_provided),
-    firstDealAt: c.first_deal_at,
-    lastDealAt: c.last_deal_at,
-    wouldDealAgain: { yes: yes.count ?? 0, of: answered.count ?? 0 },
-    recentReviews: recent.map(r => ({
-      ...toReviewView(r),
-      reviewer: nameOf(names, r.reviewer_actor_id),
-    })),
-  };
 }
