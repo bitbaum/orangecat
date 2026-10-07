@@ -4,6 +4,7 @@ import { STATUS } from '@/config/database-constants';
 import type { ProjectData } from '@/lib/validation';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { PLATFORM_DEFAULT_CURRENCY } from '@/config/currencies';
+import { normalizeDate } from '@/lib/api/helpers';
 import { createServerClient } from '@/lib/supabase/server';
 import { enrichProjectsWithSettledFunding } from '@/services/wallets/project-funding';
 
@@ -68,6 +69,9 @@ export async function createProject(
       website_url: payload.website_url ?? null,
       category: payload.category ?? null,
       tags: payload.tags ?? [],
+      // The create wizard asks for both; only the edit route used to save them.
+      start_date: normalizeDate(payload.start_date),
+      target_completion: normalizeDate(payload.target_completion),
       status: payload.status ?? STATUS.PROJECTS.DRAFT,
       // Respect the form's profile-visibility toggle; DB default (true) would
       // otherwise always win and ignore an unchecked box.

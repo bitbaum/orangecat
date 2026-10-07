@@ -158,7 +158,7 @@ export function FormField({
 
       case 'checkbox':
         return (
-          <label className="flex items-center gap-3 cursor-pointer">
+          <label className="flex min-h-11 items-center gap-3 cursor-pointer">
             <input
               type="checkbox"
               id={name}
@@ -246,6 +246,9 @@ export function FormField({
     return (
       <div>
         {renderInput()}
+        {/* The hint is what a checkbox like "Private" actually does — 23 of
+            them had one, and none was ever shown. */}
+        {hint && !error && <p className="text-xs text-fg-secondary mt-1 ml-7">{hint}</p>}
         {error && (
           <p role="alert" className="text-status-negative text-sm mt-1">
             {error}
