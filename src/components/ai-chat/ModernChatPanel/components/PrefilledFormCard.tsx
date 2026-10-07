@@ -59,6 +59,13 @@ const PREVIEW_LABELS: Record<string, string> = {
   start_date: 'Starts',
   end_date: 'Ends',
   product_type: 'Type',
+  // Events (see services/cat/event-draft): the fields a draft lands in.
+  event_type: 'Type',
+  venue_name: 'Venue',
+  venue_city: 'City',
+  timezone: 'Time zone',
+  ticket_price: 'Ticket',
+  is_free: 'Free',
 };
 
 interface PrefilledFormCardProps {

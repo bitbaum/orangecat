@@ -7,17 +7,16 @@
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { isCatActionTool, runActionAsTool } from './action-as-tool';
 import { searchPlatform, type SearchType } from './platform-search';
-import { generateFormPrefill } from '@/lib/ai/form-prefill-service';
 import { generateOffers } from './offer-engine';
+import { generateFormPrefill } from '@/lib/ai/form-prefill-service';
 import { resolveAiAssistTarget } from '@/lib/ai/assist-target';
-import { isValidEntityType, type EntityType } from '@/config/entity-registry';
-import { PREFILLABLE_ENTITY_TYPES } from './tool-use-detection';
 import {
   handleExploreTopic,
   handleQueryMyData,
   handleCheckMyTrackRecord,
 } from './tool-handlers-lookup';
 import { handleFindEventsNear } from './tool-handler-events-near';
+import { handlePrefillEntityForm } from './tool-handler-prefill';
 import { fetchWebsiteText, resolveRequestedUrl } from './website-analysis';
 import { runCatHealthProbes } from './health-probes';
 import { isWebTool, executeWebTool } from './tool-handlers-web';
@@ -394,101 +393,7 @@ Explain this to the user in plain language: which provider is healthy, degraded,
 
   // ── prefill_entity_form ──────────────────────────────────────────────────
   if (toolName === 'prefill_entity_form') {
-    const parsedArgs = (() => {
-      try {
-        return JSON.parse(toolCall.function.arguments ?? '{}') as {
-          entityType?: string;
-          description?: string;
-        };
-      } catch {
-        return {} as { entityType?: string; description?: string };
-      }
-    })();
-
-    const requestedType = parsedArgs.entityType ?? '';
-    const description = parsedArgs.description ?? '';
-
-    onToolCall?.({
-      id: toolCall.id,
-      name: toolName,
-      status: 'running',
-      args: { entityType: requestedType },
-    });
-
-    if (!isValidEntityType(requestedType)) {
-      onToolCall?.({
-        id: toolCall.id,
-        name: toolName,
-        status: 'failed',
-        error: 'invalid_entity_type',
-      });
-      return {
-        role: 'tool',
-        tool_call_id: toolCall.id,
-        content: `Invalid entityType "${requestedType}". Pick one of: ${PREFILLABLE_ENTITY_TYPES.join(', ')}.`,
-      };
-    }
-
-    const entityType = requestedType as EntityType;
-    const target = resolveAiAssistTarget(entityType);
-    if (!target) {
-      onToolCall?.({
-        id: toolCall.id,
-        name: toolName,
-        status: 'failed',
-        error: 'no_entity_config',
-      });
-      return {
-        role: 'tool',
-        tool_call_id: toolCall.id,
-        content: `No config for entity type "${entityType}". Skip prefill.`,
-      };
-    }
-
-    try {
-      const prefill = await generateFormPrefill({ target, description });
-      if (!prefill.success) {
-        onToolCall?.({
-          id: toolCall.id,
-          name: toolName,
-          status: 'failed',
-          error: prefill.error ?? 'unknown',
-        });
-        return {
-          role: 'tool',
-          tool_call_id: toolCall.id,
-          content: `Prefill failed: ${prefill.error ?? 'unknown error'}`,
-        };
-      }
-
-      const fieldCount = Object.keys(prefill.data).length;
-      onToolCall?.({
-        id: toolCall.id,
-        name: toolName,
-        status: 'completed',
-        resultCount: fieldCount,
-        results: [],
-      });
-      onPrefillProposal?.({
-        entityType,
-        sourceDescription: description,
-        data: prefill.data as Record<string, unknown>,
-        confidence: prefill.confidence as Record<string, number>,
-      });
-      return {
-        role: 'tool',
-        tool_call_id: toolCall.id,
-        content: `Drafted a ${entityType} with ${fieldCount} fields. The user will see a card to review and open in the form. Do not repeat the field values in your response — briefly confirm what you drafted, include ONE short line on why a ${entityType} is the right type for it (tied to the user's own words), and invite them to review. Do NOT call prefill_entity_form again for this same ${entityType} — it is already drafted.`,
-      };
-    } catch (err) {
-      onToolCall?.({
-        id: toolCall.id,
-        name: toolName,
-        status: 'failed',
-        error: err instanceof Error ? err.message : 'unknown',
-      });
-      return { role: 'tool', tool_call_id: toolCall.id, content: 'Prefill failed unexpectedly.' };
-    }
+    return handlePrefillEntityForm(supabase, userId, toolCall, onToolCall, onPrefillProposal);
   }
 
   // Unknown tool — return a benign result so the thread stays well-formed.

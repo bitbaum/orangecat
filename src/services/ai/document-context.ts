@@ -34,6 +34,7 @@ import { isSupportedCurrency, PLATFORM_DEFAULT_CURRENCY } from '@/config/currenc
 import { convertBtcToOrNull } from '@/services/currency/rates.server';
 
 import { fetchEntitiesForCat } from './entity-context-fetcher';
+import { fetchProfileForCat } from './profile-context-fetcher';
 import { getEconomicProfile } from '@/services/cat/economic-profile';
 import { getCatTrackRecord } from '@/services/cat/track-record';
 import {
@@ -121,36 +122,6 @@ async function fetchDocumentsForCat(
   } catch (error) {
     logger.error('Exception fetching documents for cat', error, 'DocumentContext');
     return [];
-  }
-}
-
-async function fetchProfileForCat(
-  supabase: AnySupabaseClient,
-  userId: string
-): Promise<ProfileContext | null> {
-  try {
-    const { data: profile, error: profileError } = await supabase
-      .from(DATABASE_TABLES.PROFILES)
-      .select('username, name, bio, location_city, location_country, background, website')
-      .eq('id', userId)
-      .maybeSingle();
-
-    if (profileError || !profile) {
-      return null;
-    }
-
-    return {
-      username: profile.username,
-      name: profile.name,
-      bio: profile.bio,
-      location_city: profile.location_city,
-      location_country: profile.location_country,
-      background: profile.background,
-      website: profile.website,
-    };
-  } catch (error) {
-    logger.error('Exception fetching profile for cat', error, 'DocumentContext');
-    return null;
   }
 }
 

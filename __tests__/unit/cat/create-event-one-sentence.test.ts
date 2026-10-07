@@ -194,6 +194,41 @@ describe('Cat create_event — one sentence, one complete event', () => {
     );
   });
 
+  it('reads the words for when, in the venue\u2019s zone, when the model passes them through', async () => {
+    // 2026-10-07: "a concert today at 7pm at Rote Fabrik, 1 franc". A weak model
+    // sends "today at 7pm" where ISO was asked; it must become 19:00 in Zürich
+    // (17:00Z in October), never text in a timestamp column.
+    vi.useFakeTimers({ now: new Date('2026-10-07T11:10:00Z'), toFake: ['Date'] });
+    try {
+      const { client, inserts } = mockSupabase('CHF');
+      const result = await run(client, {
+        title: 'Concert at Rote Fabrik',
+        start_date: 'today at 7pm',
+        location: 'Langstrasse 120, Zürich',
+        ticket_price: 1,
+      });
+      expect(result.success).toBe(true);
+      const row = inserts[ENTITY_REGISTRY.event.tableName][0] as Record<string, unknown>;
+      expect(row).toMatchObject({
+        start_date: '2026-10-07T17:00:00.000Z',
+        timezone: 'Europe/Zurich',
+        ticket_price: 1,
+        is_free: false,
+        currency: 'CHF',
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('asks for a time instead of guessing one', async () => {
+    const { client, inserts } = mockSupabase();
+    const result = await run(client, { title: 'Concert', start_date: 'today', location: 'Zürich' });
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/today/);
+    expect(inserts[ENTITY_REGISTRY.event.tableName]).toBeUndefined();
+  });
+
   it('says how to give a venue a page when the user has none by that name', async () => {
     const { client, inserts } = mockSupabase();
     const result = await run(client, {

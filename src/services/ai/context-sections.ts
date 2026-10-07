@@ -5,6 +5,7 @@
  * context-string-builder.ts purely for SoC — output is byte-identical (guarded by
  * context-string-builder.snapshot.test.ts), so keep wording/format changes here.
  */
+import { isValidTimeZone } from '@/utils/timezone';
 import type { DocumentContext, EntitySummary, FullUserContext } from './document-context-types';
 import { ENTITY_STATUS } from '@/config/database-constants';
 import { renderLightningAddressProviders } from '@/config/wallet-providers';
@@ -124,17 +125,40 @@ export function renderMemories(memories: FullUserContext['memories']): string | 
   return `## What you remember about this user\nThese are durable facts you've learned about them across past conversations. Treat them as known and use them naturally — don't re-ask what you already know.\n${memoryLines.join('\n')}`;
 }
 
-export function renderDateTime(locale: string): string {
-  const now = new Date();
-  const dateStr = now.toLocaleDateString(locale, {
+/**
+ * "Today" is the person's today. This used to print the UTC date only, so
+ * for the two hours after midnight in Zürich the model was told it was still
+ * yesterday — and "a concert today at 7pm" landed on the wrong day. When the
+ * profile names a zone, the date and clock are in it; UTC is kept beside it
+ * because timestamps elsewhere in the context are UTC.
+ */
+export function renderDateTime(
+  locale: string,
+  zone?: string | null,
+  now: Date = new Date()
+): string {
+  const utcTime = now.toISOString().slice(11, 16);
+  if (!isValidTimeZone(zone) || zone === 'UTC') {
+    const dateStr = now.toLocaleDateString(locale, {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      timeZone: 'UTC',
+    });
+    return `## Current Date & Time\nToday is ${dateStr}, ${utcTime} UTC.`;
+  }
+  const local = now.toLocaleString(locale, {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
     day: 'numeric',
-    timeZone: 'UTC',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+    timeZone: zone,
   });
-  const timeStr = now.toISOString().slice(11, 16);
-  return `## Current Date & Time\nToday is ${dateStr}, ${timeStr} UTC.`;
+  return `## Current Date & Time\nToday is ${local} in ${zone} (${utcTime} UTC). Times the user says are in ${zone} unless they say otherwise.`;
 }
 
 export function renderProfile(p: FullUserContext['profile']): string | null {
