@@ -4,6 +4,7 @@ import { Shield, Lock, Eye, Server, Key, AlertTriangle } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { PageHeading } from '@/components/layout/PageHeading';
 import { ROUTES } from '@/config/routes';
+import { CONTACT_EMAIL } from '@/config/brand';
 
 export const metadata = {
   title: 'Security',
@@ -60,15 +61,14 @@ export default function SecurityPage() {
         'Multi-factor authentication support',
         'Password hashing handled by Supabase Auth (bcrypt-based)',
         'Session management with automatic expiration',
-        'OAuth 2.0 social login (GitHub)',
+        'OAuth 2.0 social login',
       ],
     },
     {
       title: 'Data Protection',
       items: [
-        'Personal data encryption at rest (provided by Supabase)',
         'Data minimization — we collect only what the product needs',
-        'Public bug-bounty channel via security@orangecat.ch',
+        `Vulnerability reports to ${CONTACT_EMAIL}`,
       ],
     },
     {
@@ -172,7 +172,7 @@ export default function SecurityPage() {
               please contact us immediately.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a href="mailto:security@orangecat.ch">
+              <a href={`mailto:${CONTACT_EMAIL}`}>
                 <Button variant="accent" size="lg">
                   Report Security Issue
                 </Button>
@@ -196,7 +196,7 @@ export default function SecurityPage() {
             doesn't drift to today on every render, which falsely implied
             continuous review. Bump this when you actually re-audit the page. */}
         <div className="mt-8 text-center text-fg-secondary">
-          <p className="text-sm">Page last reviewed: 2026-06-09.</p>
+          <p className="text-sm">Page last reviewed: 2026-10-02.</p>
         </div>
       </div>
     </div>

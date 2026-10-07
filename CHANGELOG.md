@@ -22,6 +22,11 @@ to the map, sub-bullets stay here for the human reader.
 
 ### Fixed
 
+- **Mail to OrangeCat arrives.** The FAQ, status, security, privacy and terms pages and the API description gave hello@, support@, security@ and integrations@orangecat.ch, and none of them was a mailbox, so a security report or a privacy request bounced. They all give cato@orangecat.ch now.
+  - The password-reset email template kept in the repository pointed at support@; it gives cato@ too.
+  - "Ask for a verified client" on the Sign in with OrangeCat guide opened the Bitcoin backing page; it now opens an email to cato@. The reset email no longer claims a community size nobody counted, and the security docs no longer announce a bug bounty, a security score or a passed penetration test, none of which exists.
+- **The careers page no longer lists jobs that do not exist.** It showed four full-time openings with salaries and benefits; it now lists the real ways in — the open-source code, the partners' guild, and backing in Bitcoin. The footer says the code is MIT-licensed instead of "all rights reserved", and /technology names the framework versions the app actually runs.
+  - The SDK's README and package metadata said "UNLICENSED (proprietary)"; the SDK is MIT like the rest of the repository. The partner copy no longer mentions an admission course, which does not exist, and the careers page says the partners' guild is not founded yet.
 - **A published investment page opens for everyone.** Publishing an investment marked it open, but its public page only showed active ones, so a freshly published offering was a 404 for everyone but its owner, and its Invest card said "not open yet". It now shows as soon as it is published.
 - **The Cat can create events again.** Every event the Cat tried to create was refused: it wrote the place to a field events do not have and left the currency on a value the database rejects. The place now lands in the venue address, and the Cat can also set the kind of event, an end time, free entry or a ticket price, and how many people fit.
 

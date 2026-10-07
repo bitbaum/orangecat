@@ -140,7 +140,7 @@ const Footer = React.memo(function Footer() {
         <div className="mt-8 sm:mt-12 pt-6 sm:pt-8 border-t border-default">
           <div className="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
             <div className="text-sm text-fg-secondary text-center sm:text-left">
-              <p>&copy; 2026 {APP_NAME}. All rights reserved.</p>
+              <p>&copy; 2026 {APP_NAME}. Open source under the MIT licence.</p>
             </div>
 
             {/* Additional Links — sourced from config.footerNavigation.bottomBar

@@ -140,7 +140,7 @@ The Service is not directed to individuals under 18. We do not knowingly collect
 
 **Cato** (Data Controller)
 [ADDRESS]
-hello@orangecat.ch
+cato@orangecat.ch
 
 ---
 
