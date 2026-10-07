@@ -721,6 +721,28 @@ function markFailedLink(isPlatform: boolean, provider: string, model: string, er
 }
 
 /**
+ * The messages a given link is sent. The prompt was shrunk to the free-Groq
+ * cap so the Groq link could serve it; a link WITHOUT that cap — the fallback
+ * after Groq answers 429, or an uncapped primary — gets the whole system
+ * prompt back. Measured 2026-10-07: every "Throw a party" turn that Groq
+ * rate-limited reached Gemini without the event playbook or the quick replies,
+ * and drafted an empty event; the turns Gemini served first asked the
+ * playbook's questions.
+ */
+function messagesFor(
+  turn: CatTurn,
+  link: { provider: string; hasByok: boolean },
+  messages: ToolAugmentedMessage[]
+): ToolAugmentedMessage[] {
+  const whole = turn.prepared.wholeSystemPrompt;
+  const first = messages[0];
+  if (!whole || (link.provider === 'groq' && !link.hasByok) || first?.role !== 'system') {
+    return messages;
+  }
+  return [{ ...first, content: whole }, ...messages.slice(1)];
+}
+
+/**
  * Walk the fallback chain on ANY pre-stream failure — rate-limit, retired
  * model id (404), upstream 5xx. A single dead link must never end the chat
  * while a later link could serve it. Each provider gets one attempt. We can
@@ -744,7 +766,13 @@ async function walkStreamingChain(
     lastErr = new GroqPreflightSkip();
   } else {
     try {
-      await consumeStream(turn, out, state, messages, webEvidence);
+      await consumeStream(
+        turn,
+        out,
+        state,
+        messagesFor(turn, { provider, hasByok }, messages),
+        webEvidence
+      );
     } catch (err) {
       lastErr = err;
     }
@@ -782,7 +810,7 @@ async function walkStreamingChain(
     });
     sendData(out, { model: state.activeModel, provider: state.activeProvider });
     try {
-      await consumeStream(turn, out, state, messages, webEvidence);
+      await consumeStream(turn, out, state, messagesFor(turn, next, messages), webEvidence);
       lastErr = null;
     } catch (nextErr) {
       lastErr = nextErr;
@@ -1002,7 +1030,7 @@ async function walkCompletionChain(
     try {
       result = await aiService.chatCompletion({
         model: modelToUse,
-        messages: withImages(messages, images),
+        messages: withImages(messagesFor(turn, { provider, hasByok }, messages), images),
         temperature: 0.7,
       });
       // `while (!result && ...)` below treats any object as an answer, so an
@@ -1043,7 +1071,7 @@ async function walkCompletionChain(
     try {
       result = await next.aiService.chatCompletion({
         model: next.modelToUse,
-        messages: withImages(messages, images),
+        messages: withImages(messagesFor(turn, next, messages), images),
         temperature: 0.7,
       });
       if (!hasUsableContent(result?.content)) {

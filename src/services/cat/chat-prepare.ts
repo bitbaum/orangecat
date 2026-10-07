@@ -76,6 +76,12 @@ export interface PreparedCatChat {
   /** What the token budget cost this turn; null when no budget applied. */
   budget: BudgetReport | null;
   /**
+   * The unshrunk system prompt, when `messages` carries one shrunk to the
+   * free-Groq cap; null when nothing was shrunk. A link without that cap is
+   * given this instead — a 429 from Groq must not hand Gemini the leftovers.
+   */
+  wholeSystemPrompt: string | null;
+  /**
    * Everything Cat was legitimately shown this turn, for the groundedness check
    * on the way back out. Prompting alone is not a control — a weak model under
    * format pressure trades rules away, which is exactly how the sibling
@@ -211,6 +217,7 @@ export async function prepareCatChat(
     systemPrompt,
     messages: fitted.messages,
     budget: fitted.report,
+    wholeSystemPrompt: fitted.wholeSystemPrompt,
     conversationId,
     grounding: {
       // History counts as evidence: a name Cat established two turns ago is
