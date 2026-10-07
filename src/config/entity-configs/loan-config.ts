@@ -8,6 +8,7 @@
  * Last Modified Summary: Initial loan configuration
  */
 
+import { walletFieldGroup } from './wallet-field-group';
 import { DollarSign } from 'lucide-react';
 import { loanSchema, type LoanFormData } from '@/lib/validation';
 import { loanGuidanceContent, loanDefaultGuidance } from '@/lib/entity-guidance/loan-guidance';
@@ -16,7 +17,6 @@ import { LOAN_TEMPLATES, type LoanTemplate } from '@/components/create/templates
 import { createEntityConfig } from './base-config-factory';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { LoanCollateralField } from '@/components/create/collateral/LoanCollateralField';
-import { WalletSelectorField } from '@/components/create/wallet-selector';
 import { LOAN_CATEGORIES, LOAN_TYPES, LOAN_FULFILLMENT_TYPES } from '@/config/loans';
 
 // ==================== FIELD GROUPS ====================
@@ -138,16 +138,10 @@ const fieldGroups: FieldGroup[] = [
       },
     ],
   },
-  {
-    id: 'bitcoin',
-    title: 'Pay into',
+  walletFieldGroup({
     description: 'Where repayment for this loan should land',
-    customComponent: WalletSelectorField,
-    fields: [
-      { name: 'bitcoin_address', label: 'Bitcoin Address', type: 'bitcoin_address' },
-      { name: 'lightning_address', label: 'Lightning Address', type: 'text' },
-    ],
-  },
+    addressColumns: true,
+  }),
   {
     id: 'collateral',
     title: 'Collateral',

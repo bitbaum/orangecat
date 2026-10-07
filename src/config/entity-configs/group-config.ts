@@ -9,6 +9,7 @@
  * Last Modified Summary: Initial group config following EntityConfig pattern
  */
 
+import { walletFieldGroup } from './wallet-field-group';
 import { Users } from 'lucide-react';
 import { createGroupSchema, type CreateGroupSchemaType } from '@/services/groups/validation';
 import { groupGuidanceContent, groupDefaultGuidance } from '@/lib/entity-guidance/group-guidance';
@@ -17,7 +18,6 @@ import { GROUP_TEMPLATES } from '@/components/create/templates/group-templates';
 import { createEntityConfig } from './base-config-factory';
 import { getGroupLabelsArray, PLACE_BOUND_LABELS, GROUP_LABELS } from '@/config/group-labels';
 import { GOVERNANCE_PRESETS } from '@/config/governance-presets';
-import { WalletSelectorField } from '@/components/create/wallet-selector';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 
 // ==================== FIELD GROUPS ====================
@@ -130,16 +130,7 @@ const fieldGroups: FieldGroup[] = [
       },
     ],
   },
-  {
-    id: 'bitcoin',
-    title: 'Pay into',
-    description: 'Where money for this group should land',
-    customComponent: WalletSelectorField,
-    fields: [
-      { name: 'bitcoin_address', label: 'Bitcoin Address', type: 'bitcoin_address' },
-      { name: 'lightning_address', label: 'Lightning Address', type: 'text' },
-    ],
-  },
+  walletFieldGroup({ description: 'Where money for this group should land', addressColumns: true }),
 ];
 
 // ==================== DEFAULT VALUES ====================

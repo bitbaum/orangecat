@@ -8,6 +8,7 @@
  * Last Modified Summary: Initial creation of event entity configuration
  */
 
+import { walletFieldGroup } from './wallet-field-group';
 import { Calendar } from 'lucide-react';
 import { ENTITY_STATUS } from '@/config/database-constants';
 import { eventSchema, type EventFormData } from '@/lib/validation';
@@ -16,7 +17,6 @@ import type { FieldGroup } from '@/components/create/types';
 import { EVENT_TEMPLATES, type EventTemplate } from '@/components/create/templates';
 import { createEntityConfig } from './base-config-factory';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
-import { WalletSelectorField } from '@/components/create/wallet-selector';
 import { VenuePickerField } from '@/components/events/VenuePickerField';
 import { EVENT_TYPES, EVENT_CATEGORIES } from '@/config/events';
 import { MUSIC_GENRES } from '@/config/event-crew';
@@ -284,16 +284,7 @@ const fieldGroups: FieldGroup[] = [
       },
     ],
   },
-  {
-    id: 'bitcoin',
-    title: 'Pay into',
-    description: 'Where money for this page should land',
-    customComponent: WalletSelectorField,
-    fields: [
-      { name: 'bitcoin_address', label: 'Bitcoin Address', type: 'bitcoin_address' },
-      { name: 'lightning_address', label: 'Lightning Address', type: 'text' },
-    ],
-  },
+  walletFieldGroup({ addressColumns: true }),
   {
     id: 'visibility',
     title: 'Profile Visibility',

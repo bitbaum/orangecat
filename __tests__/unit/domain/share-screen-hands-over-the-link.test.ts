@@ -41,7 +41,8 @@ describe('creating for someone else lands on the send screen', () => {
     // otherwise the creator lands on a page that belongs to someone who has
     // not seen it yet.
     const shareAt = submit.indexOf('PROFILE_CLAIMS_SHARE');
-    const successAt = submit.indexOf('router.push(redirectUrl)');
+    // The generic redirect fills config.successUrl through fillUrlTemplate.
+    const successAt = submit.indexOf('fillUrlTemplate(config.successUrl');
     expect(shareAt).toBeGreaterThan(-1);
     expect(successAt).toBeGreaterThan(shareAt);
   });
