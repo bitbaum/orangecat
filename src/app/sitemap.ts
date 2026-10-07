@@ -5,6 +5,7 @@ import { looseClient } from '@/lib/supabase/untyped';
 import { ENTITY_REGISTRY, type EntityType } from '@/config/entity-registry';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { ENTITY_STATUS } from '@/config/database-constants';
+import { PUBLIC_VISIBILITY } from '@/config/public-visibility';
 import { isFixtureUsername } from '@/config/public-directory';
 import { getPublishedPosts } from '@/lib/blog';
 import { listPublicArticleRefs } from '@/services/articles/get-article';
@@ -50,6 +51,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     },
     {
+      url: `${BASE_URL}/steal`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+    {
       url: `${BASE_URL}/ecosystem`,
       lastModified: new Date(),
       changeFrequency: 'monthly',
@@ -81,12 +88,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     {
       url: `${BASE_URL}/loans`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.7,
-    },
-    {
-      url: `${BASE_URL}/groups`,
       lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 0.7,
@@ -204,16 +205,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       'research',
       'investment',
     ];
+    // Each type is filtered by the SAME rule its public page applies
+    // (PUBLIC_VISIBILITY), so the sitemap never lists a page that 404s.
     const entityTables = SITEMAP_ENTITY_TYPES.map(type => ({
       table: ENTITY_REGISTRY[type].tableName,
       publicBasePath: ENTITY_REGISTRY[type].publicBasePath,
+      visible: PUBLIC_VISIBILITY[type] ?? { column: 'status', value: ENTITY_STATUS.ACTIVE },
     }));
 
-    for (const { table, publicBasePath } of entityTables) {
+    for (const { table, publicBasePath, visible } of entityTables) {
       const { data: entities } = (await supabase
         .from(table)
         .select('id, updated_at')
-        .eq('status', ENTITY_STATUS.ACTIVE)) as { data: SitemapEntity[] | null };
+        .eq(visible.column, visible.value)) as { data: SitemapEntity[] | null };
 
       if (entities) {
         const entityPages: MetadataRoute.Sitemap = entities.map(entity => ({

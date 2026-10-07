@@ -4,6 +4,7 @@
  */
 
 import type { ModelTier } from '@/config/ai-models';
+import type { UserAIPreferences } from '@/hooks/useAISettings';
 
 export interface OnboardingStep {
   id: string;
@@ -16,8 +17,8 @@ export interface OnboardingStep {
 
 export interface AIOnboardingProps {
   onComplete?: () => void;
-  onAddKey?: (params: { provider: string; apiKey: string; keyName: string }) => Promise<any>;
-  onUpdatePreferences?: (preferences: Record<string, any>) => Promise<any>;
+  onAddKey?: (params: { provider: string; apiKey: string; keyName: string }) => Promise<unknown>;
+  onUpdatePreferences?: (preferences: Partial<UserAIPreferences>) => Promise<unknown>;
 }
 
 export interface OnboardingState {

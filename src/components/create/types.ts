@@ -188,7 +188,7 @@ export interface DefaultGuidance {
 
 // ==================== ENTITY CONFIGURATION ====================
 
-export interface EntityConfig<T extends Record<string, any> = Record<string, any>> {
+export interface EntityConfig<T extends object = Record<string, unknown>> {
   /** Entity type identifier */
   type: EntityType | 'organization';
   /** Display name (singular) */
@@ -264,7 +264,7 @@ export interface FormActions<T> {
 
 // ==================== COMPONENT PROPS ====================
 
-export interface EntityFormProps<T extends Record<string, any>> {
+export interface EntityFormProps<T extends object> {
   config: EntityConfig<T>;
   initialValues?: Partial<T>;
   onSuccess?: (data: T & { id: string }) => void;
@@ -305,7 +305,7 @@ export interface GuidancePanelProps {
  *
  * Note: Use `defaults` (not `data`) to store the prefill values.
  */
-export interface EntityTemplate<T extends Record<string, any> = Record<string, any>> {
+export interface EntityTemplate<T extends object = Record<string, unknown>> {
   /** Unique identifier for the template */
   id: string;
   /** Icon to display (ReactNode, typically a Lucide icon) */

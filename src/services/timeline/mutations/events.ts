@@ -13,6 +13,7 @@
 
 import { callRpc } from '@/lib/supabase/untyped';
 import supabase from '@/lib/supabase/browser';
+import type { TablesUpdate } from '@/types/database.generated';
 import { logger } from '@/utils/logger';
 import { TIMELINE_TABLES } from '@/config/database-tables';
 import type { TimelineVisibility } from '@/types/timeline';
@@ -62,9 +63,9 @@ export async function updateEvent(
 
     updateData.updated_at = new Date().toISOString();
 
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from(TIMELINE_TABLES.EVENTS)
-      .update(updateData)
+      .update(updateData as TablesUpdate<'timeline_events'>)
       .eq('id', eventId);
 
     if (error) {

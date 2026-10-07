@@ -56,7 +56,7 @@ const CATEGORIES: Array<{
   {
     key: 'progress_emails',
     label: 'Progress & digests',
-    description: 'Onboarding tips, milestones, the periodic digest.',
+    description: 'Onboarding tips, milestones, review reminders, the periodic digest.',
   },
   {
     key: 'reengagement_emails',

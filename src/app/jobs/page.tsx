@@ -23,8 +23,18 @@ import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import EntityListShell from '@/components/entity/EntityListShell';
 import { apiErrorMessage } from '@/lib/api/errorMessage';
 
+/** The fields of a job proposal (GET /api/jobs → `jobs`) that this page renders. */
+interface JobPosting {
+  id: string;
+  title: string;
+  description?: string | null;
+  created_at: string;
+  groups?: { slug: string; name: string } | null;
+  action_data?: { location?: string | null } | null;
+}
+
 export default function JobsPage() {
-  const [jobs, setJobs] = useState<any[]>([]);
+  const [jobs, setJobs] = useState<JobPosting[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

@@ -343,6 +343,13 @@ const simplifiedSections: NavSection[] = [
         requiresAuth: true,
       },
       {
+        name: 'Your deals',
+        href: ROUTES.DASHBOARD.DEALS,
+        icon: Handshake,
+        description: 'What you bought and sold, and reviewing the other side',
+        requiresAuth: true,
+      },
+      {
         name: 'Settings',
         href: ROUTES.SETTINGS,
         icon: Settings,
@@ -481,6 +488,7 @@ export const footerNavigation = {
     { name: 'Governance', href: ROUTES.GOVERNANCE },
     { name: 'Community', href: ROUTES.COMMUNITY },
     { name: 'About OrangeCat', href: ROUTES.ABOUT },
+    { name: 'Steal the cat', href: ROUTES.STEAL },
   ],
   legal: [
     { name: 'Privacy', href: ROUTES.PRIVACY },

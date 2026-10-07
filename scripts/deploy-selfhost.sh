@@ -348,6 +348,7 @@ echo "=== ship ops scripts + nightly gate timers ==="
     "orangecat-cron@cat-mentions.timer"
     "orangecat-cron@cat-brief.timer"
     "orangecat-cron@cat-watches.timer"
+    "orangecat-cron@review-nudges.timer"
   )
   # Units this repo USED to install. Removing a unit from UNITS does not remove
   # it from the box, so each one is disabled and deleted on every deploy until

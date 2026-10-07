@@ -13,7 +13,7 @@
  */
 
 import { z } from 'zod';
-import { openApiRegistry } from './registry';
+import { named, openApiRegistry } from './registry';
 import { apiSuccessSchema, apiErrorSchema } from './responses';
 import {
   PUBLIC_API_BASE,
@@ -308,7 +308,7 @@ export function registerV1Routes(): void {
     request: {
       body: {
         required: true,
-        content: { 'application/json': { schema: paymentCreateSchema.openapi('PaymentCreate') } },
+        content: { 'application/json': { schema: named(paymentCreateSchema, 'PaymentCreate') } },
       },
     },
     responses: {
@@ -364,7 +364,7 @@ export function registerV1Routes(): void {
         required: true,
         content: {
           'application/json': {
-            schema: publicSupportCreateSchema.openapi('PublicPaymentCreate'),
+            schema: named(publicSupportCreateSchema, 'PublicPaymentCreate'),
           },
         },
       },
@@ -503,7 +503,7 @@ export function registerV1Routes(): void {
       body: {
         required: true,
         content: {
-          'application/json': { schema: externalPublishSchema.openapi('TimelinePublish') },
+          'application/json': { schema: named(externalPublishSchema, 'TimelinePublish') },
         },
       },
     },
@@ -606,7 +606,7 @@ export function registerV1Routes(): void {
         required: true,
         content: {
           'application/json': {
-            schema: createStakeholderSchema.openapi('StakeholderCreate'),
+            schema: named(createStakeholderSchema, 'StakeholderCreate'),
           },
         },
       },

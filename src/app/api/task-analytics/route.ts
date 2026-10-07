@@ -79,7 +79,10 @@ export const GET = withAuth(async (request: AuthenticatedRequest) => {
     // Fetch profiles for recent completers
     const completions = rawCompletions || [];
     const completerIds = [...new Set(completions.map(c => c.completed_by))];
-    const profilesMap: Record<string, any> = {};
+    const profilesMap: Record<
+      string,
+      { id: string; username: string; display_name: string | null; avatar_url: string | null }
+    > = {};
     if (completerIds.length > 0) {
       const { data: profiles } = await supabase
         .from(DATABASE_TABLES.PROFILES)

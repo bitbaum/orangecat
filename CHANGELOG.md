@@ -9,9 +9,34 @@ reads, and [orangecat.ch/changelog](https://orangecat.ch/changelog) renders
 it from there. One `## YYYY-MM-DD` heading per day; bullets under it travel
 to the map, sub-bullets stay here for the human reader.
 
+## 2026-10-06
+
+### Changed
+
+- **Reviews and track records now show far less about you.** Yesterday's version made more public than it should have; this corrects it.
+  - **Your sales total is no longer on your profile**, and neither is how many things you have bought. The track record keeps only what helps someone decide whether to trust a seller: how many paid deals, with how many different people, refunds, and what share of customers would deal with them again.
+  - **Reviews of buyers are never public.** A seller can still review you, but only the two of you see it, so a purchase can no longer appear on your profile because someone else wrote about it.
+  - **Reviewers are anonymous by default.** A customer's review of a seller shows as "a verified buyer" unless the customer ticks "show my name". Reviews written before today are anonymous.
+  - **A seller can reply once** to any public review about them.
+  - **Anyone signed in can report a review.** OrangeCat can hide its text, and the review then says so rather than quietly changing.
+- **Review reminders respect your email settings.** They can be turned off with "Progress & digests" in your notification settings without losing payment receipts, are limited to two emails a day, and several deals waiting at once arrive as one message instead of one each.
+
+### Fixed
+
+- **A payment OrangeCat sends for you now leaves a record on our side.** Until now, money sent from the Send screen or by asking your Cat moved from your wallet and OrangeCat kept no trace that it had. Every send now writes a private record of the payment, the amount and who it went to, and a payment that fails writes one too.
+  - The record is private: nobody can read it through the site, including you, for now. Your wallet's own history is still the account of your money; this is OrangeCat's account of what it did with your permission.
+
 ## 2026-10-05
 
 ### Added
+
+- **Review the people you buy from and sell to, and only them.** Every paid order is now a deal, listed under "Your deals" in the sidebar. Each side can answer a few yes/no questions about the other ("Would you deal with them again?") and add a note. Only the two people in a deal can review it, once each, and a review can never be edited.
+  - Both reviews stay hidden until both of you have written, or 30 days pass, so neither side can read the other's review and answer it. After that, nobody can add one.
+  - There are no stars. A yes/no answer keeps its meaning however many reviews someone has, where star averages drift until everyone has 4.8.
+  - Tips never become deals. A gift tests nothing about whether anyone delivered.
+- **You're asked to review, so reviews actually get written.** A few days after a deal is paid, each side gets a notification and an email asking how it went, and one more a few days before the review window closes. When the other person reviews you, you hear about it at once (that they reviewed, not what they said). Your Cat's suggestions on the dashboard now include the deal most in need of your review.
+  - Nobody is asked about the same deal more than twice by the reminder, and never after they have reviewed or the window has closed.
+- **Profiles show a track record.** A profile now shows what OrangeCat itself saw: how many paid deals the person had, with how many different people, how many were refunded, and what share of the reviews about them say "would deal again". The counts come from settled payments nobody typed in. A profile with no deals shows nothing new.
 
 - **Event tickets, with a QR for the door.** Paying for an event now gives you a ticket on the event page: a QR code, the number of people it lets in, and a short code. Free events have a "Get a free ticket" button, and "Can't make it" gives the place back. When an event has a capacity, the page shows how many places are left, a full event stops selling before anyone pays, and it reopens when someone gives a place back.
   - At the door, the organizer scans a ticket with their phone camera. The event's door page opens and says in one glance whether the person is in, was already checked in, or holds a ticket for something else. The same page lists every guest, with a name search and a manual check-in for someone whose phone has died.

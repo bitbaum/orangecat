@@ -80,6 +80,7 @@ export type FilterChain<B> = {
  * Returns an untyped query builder so callers don't need individual `as any` casts.
  */
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- the ONE audited escape hatch for dynamic table names (see file header); prefer looseClient()
 export function fromTable(sb: AnySupabaseClient, table: string): any {
   return sb.from(table);
 }
@@ -94,6 +95,7 @@ export function callRpc(
   fn: string,
   params?: Record<string, unknown>,
   options?: Record<string, unknown>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- the ONE audited escape hatch for dynamic RPC names (see file header)
 ): any {
   return sb.rpc(fn as never, params as never, options as never);
 }

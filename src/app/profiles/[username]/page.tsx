@@ -7,6 +7,8 @@ import { getTableName } from '@/config/entity-registry';
 import { fetchProfileListingCounts } from '@/services/profile/listingCounts';
 import { getPublicEconomicProfile } from '@/services/cat/economic-profile-public';
 import { getPublicCivicSplit } from '@/domain/civic-split/service';
+import { getTrackRecord } from '@/domain/reputation/track-record';
+import { createPublicClient } from '@/lib/supabase/public';
 import { listArticlesByAuthor } from '@/services/articles/get-article';
 import { safeJsonLdString } from '@/lib/seo/structured-data';
 import type { ScalableProfile } from '@/services/profile/types';
@@ -23,6 +25,7 @@ import { getOrCreateUserActor } from '@/services/actors/getOrCreateUserActor';
 import { ownedProjectsFilter } from '@/domain/projects/service';
 import { getUnclaimedOwnerBySlug } from '@/domain/profileClaims/unclaimed';
 import { UnclaimedProfileView } from '@/components/claim/UnclaimedProfileView';
+import { fetchUnclaimedListings } from '@/domain/profileClaims/unclaimedListings';
 import { looseClient } from '@/lib/supabase/untyped';
 
 interface PageProps {
@@ -217,24 +220,14 @@ export default async function PublicProfilePage({ params }: PageProps) {
     // same URL resolves to a real profile afterwards.
     const unclaimed = await getUnclaimedOwnerBySlug(supabase, targetUsername);
     if (unclaimed) {
-      const { data: ownedProjects } = await looseClient(supabase)
-        .from(getTableName('project'))
-        .select('id, title, description')
-        .eq('actor_id', unclaimed.actorId)
-        .order('created_at', { ascending: false });
+      const listings = await fetchUnclaimedListings(supabase, unclaimed.actorId);
 
       return (
         <UnclaimedProfileView
           name={unclaimed.name}
           avatarUrl={unclaimed.avatarUrl}
           stewardUsername={unclaimed.stewardUsername}
-          projects={
-            (ownedProjects ?? []) as Array<{
-              id: string;
-              title: string;
-              description: string | null;
-            }>
-          }
+          listings={listings}
         />
       );
     }
@@ -352,6 +345,9 @@ export default async function PublicProfilePage({ params }: PageProps) {
   // carries only rows marked public — so a private declaration cannot leak
   // here even by mistake. Null hides the section.
   const civicSplit = await getPublicCivicSplit(supabase, ownerActor.id).catch(() => null);
+  // What their deals showed (ADR-0010). Read sessionless so every visitor —
+  // the owner included — sees the same record, never a still-blind review.
+  const trackRecord = await getTrackRecord(createPublicClient(), ownerActor.id).catch(() => null);
 
   // Redact before anything derives from the row, so hidden data never leaves the
   // server — not in the client payload, not in the JSON-LD below.
@@ -404,6 +400,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
         isOwnProfile={isOwnProfile}
         economicProfile={economicProfile}
         civicSplit={civicSplit}
+        trackRecord={trackRecord}
         stats={{
           projectCount,
           totalRaised,

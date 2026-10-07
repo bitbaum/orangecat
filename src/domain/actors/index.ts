@@ -36,7 +36,8 @@ import { logger } from '@/utils/logger';
 
 /** What the lookup found, distinguishing "nothing" from "the query failed". */
 export type UserActorLookup =
-  { ok: true; actorId: string | null; duplicates: number } | { ok: false; actorId: null };
+  | { ok: true; actorId: string | null; duplicates: number; actorIds: string[] }
+  | { ok: false; actorId: null };
 
 /**
  * The one query. Callers that need to tell a failure from an absence use this;
@@ -71,7 +72,12 @@ export async function lookupUserActor(
     );
   }
 
-  return { ok: true, actorId: rows[0]?.id ?? null, duplicates: rows.length };
+  return {
+    ok: true,
+    actorId: rows[0]?.id ?? null,
+    duplicates: rows.length,
+    actorIds: rows.map(r => r.id),
+  };
 }
 
 /**
@@ -88,4 +94,17 @@ export async function getUserActorId(
 ): Promise<string | null> {
   const result = await lookupUserActor(supabase, userId);
   return result.actorId;
+}
+
+/**
+ * Every user actor this person holds, oldest first — for reads that must find
+ * rows recorded against a duplicate as well as the primary (their own deals,
+ * say). Empty on failure, which reads as "nothing of yours", the closed side.
+ */
+export async function getUserActorIds(
+  supabase: AnySupabaseClient,
+  userId: string
+): Promise<string[]> {
+  const result = await lookupUserActor(supabase, userId);
+  return result.ok ? result.actorIds : [];
 }

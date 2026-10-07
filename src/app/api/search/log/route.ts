@@ -44,9 +44,8 @@ export async function POST(request: Request) {
         ? Math.max(0, Math.trunc(body.resultCount))
         : null;
 
-    // search_queries isn't in the generated DB types yet; the admin client is the
-    // only writer (RLS-on, no policies), so a loose cast here is intentional.
-    const db = createAdminClient() as any;
+    // The admin client is the only writer of search_queries (RLS-on, no policies).
+    const db = createAdminClient();
     await db.from(DATABASE_TABLES.SEARCH_QUERIES).insert({ query, result_count: resultCount });
 
     return apiSuccess({ ok: true });

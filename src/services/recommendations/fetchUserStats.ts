@@ -17,8 +17,6 @@ import { DATABASE_TABLES, OWN_PROFILE_VIEW } from '@/config/database-tables';
 import { getUserActorId } from '@/domain/actors';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 
-type UntypedTable = any;
-
 interface ProfileRecord {
   id: string;
   username: string | null;
@@ -51,7 +49,7 @@ export async function fetchUserStats(
     // and `select('*')` on the table would now hit the revoked private columns
     // (20260917163100). `userId` is always the session user here, and the view
     // is confined to auth.uid() anyway, so the filter is redundant but harmless.
-    (supabase.from(OWN_PROFILE_VIEW) as UntypedTable).select('*').eq('id', userId).single(),
+    supabase.from(OWN_PROFILE_VIEW).select('*').eq('id', userId).single(),
     getUserActorId(supabase as unknown as AnySupabaseClient, userId),
   ]);
 
@@ -68,7 +66,7 @@ export async function fetchUserStats(
     async (entityType: EntityType) => {
       const meta = ENTITY_REGISTRY[entityType];
       try {
-        let query = (supabase.from(meta.tableName) as UntypedTable).select('id', {
+        let query = supabase.from(meta.tableName).select('id', {
           count: 'exact',
           head: true,
         });
@@ -85,18 +83,21 @@ export async function fetchUserStats(
     }
   );
 
-  const walletCountPromise = (supabase.from(DATABASE_TABLES.WALLETS) as UntypedTable)
+  const walletCountPromise = supabase
+    .from(DATABASE_TABLES.WALLETS)
     .select('id', { count: 'exact', head: true })
     .eq('user_id', userId);
 
   const wishlistItemsPromise = actorId
-    ? (supabase.from(DATABASE_TABLES.WISHLIST_ITEMS) as UntypedTable)
+    ? supabase
+        .from(DATABASE_TABLES.WISHLIST_ITEMS)
         .select('id, wishlists!inner(actor_id)', { count: 'exact', head: true })
         .eq('wishlists.actor_id', actorId)
     : Promise.resolve({ count: 0 });
 
   const recentProjectPromise = actorId
-    ? (supabase.from(getTableName('project')) as UntypedTable)
+    ? supabase
+        .from(getTableName('project'))
         .select('updated_at')
         .eq('actor_id', actorId)
         .order('updated_at', { ascending: false })
@@ -105,7 +106,8 @@ export async function fetchUserStats(
     : Promise.resolve({ data: null });
 
   const publishedCountPromise = actorId
-    ? (supabase.from(getTableName('project')) as UntypedTable)
+    ? supabase
+        .from(getTableName('project'))
         .select('id', { count: 'exact', head: true })
         .eq('actor_id', actorId)
         .eq('status', STATUS.PROJECTS.ACTIVE)

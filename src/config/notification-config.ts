@@ -20,12 +20,7 @@
 // =====================================================================
 
 export type NotificationCategory =
-  | 'transactional'
-  | 'economic'
-  | 'social'
-  | 'group'
-  | 'progress'
-  | 'reengagement';
+  'transactional' | 'economic' | 'social' | 'group' | 'progress' | 'reengagement';
 
 export interface FrequencyCap {
   maxPerHour?: number;
@@ -176,6 +171,26 @@ export const NOTIFICATION_CONFIG: Record<string, NotificationTypeConfig> = {
     catVoice: false,
     label: 'Order updates',
     description: 'Shipping and delivery status changes',
+  },
+
+  // Review prompts (ADR-0010): "how did it go?", the last call before the
+  // window closes, and "they reviewed you". Filed under progress, not
+  // economic: the settings page offers one switch per category, and turning
+  // off reminders must not also turn off payment receipts. Capped so an active
+  // seller is not buried; the review-nudges cron already folds one person's
+  // due deals into a single message per run.
+  deal_review: {
+    type: 'deal_review',
+    category: 'progress',
+    emailEnabled: true,
+    emailDefaultOn: true,
+    canOptOut: true,
+    frequencyCap: { maxPerDay: 2 },
+    batchable: true,
+    subject: data => (typeof data.title === 'string' && data.title) || 'How did your deal go?',
+    catVoice: false,
+    label: 'Review reminders',
+    description: 'Asking you to review people you bought from or sold to',
   },
 
   goal_reached: {

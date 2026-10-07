@@ -1,12 +1,11 @@
 import type { AnySupabaseClient } from '@/lib/supabase/types';
+import { looseClient, type FilterChain } from '@/lib/supabase/untyped';
 import { logger } from '@/utils/logger';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { STATUS } from '@/config/database-constants';
 import type { EntitySummary, FullUserContext } from './document-context-types';
 import { getUserActorId } from '@/domain/actors';
-
-type AnyQuery = any;
 
 async function fetchEntityBatch(
   supabase: AnySupabaseClient,
@@ -17,11 +16,11 @@ async function fetchEntityBatch(
     filterField: string;
     filterValue: string;
     statuses?: string[];
-    extraWhere?: (q: AnyQuery) => AnyQuery;
+    extraWhere?: <B extends FilterChain<B>>(q: B) => B;
   },
   map: (row: Record<string, unknown>) => EntitySummary
 ): Promise<EntitySummary[]> {
-  let q = (supabase as any)
+  let q = looseClient(supabase)
     .from(opts.tableName)
     .select(opts.select)
     .eq(opts.filterField, opts.filterValue);
@@ -40,7 +39,7 @@ async function fetchEntityBatch(
     );
     return [];
   }
-  return ((data as Record<string, unknown>[]) || []).map(map);
+  return ((data as unknown as Record<string, unknown>[]) || []).map(map);
 }
 
 // Entity-specific status sets for Cat context queries (excludes terminal/hidden statuses)

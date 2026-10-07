@@ -6,6 +6,7 @@
  * Both are already-public data; safe to expose without a session.
  */
 import { DATABASE_TABLES } from '@/config/database-tables';
+import type { AnySupabaseClient } from '@/lib/supabase/types';
 
 export interface DemandNeed {
   id: string;
@@ -28,7 +29,7 @@ export interface OpenDemand {
 
 const SEARCH_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
 
-export async function getOpenDemand(supabase: any, limit = 20): Promise<OpenDemand> {
+export async function getOpenDemand(supabase: AnySupabaseClient, limit = 20): Promise<OpenDemand> {
   // Needs = public + active wishlists, newest first.
   const { data: wl } = await supabase
     .from(DATABASE_TABLES.WISHLISTS)

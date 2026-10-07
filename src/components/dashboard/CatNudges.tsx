@@ -21,16 +21,16 @@ interface Nudge {
   cta_url: string | null;
 }
 
-// The Cat's proactive suggestions, highest confidence first (the API's
-// order). Four are kept; three show, the fourth behind "Show 1 more". Four
-// full cards with a paragraph each filled two phone screens, which is how a
-// suggestion becomes wallpaper.
-const DASHBOARD_NUDGE_CAP = 4;
-const DASHBOARD_NUDGE_VISIBLE = 3;
+// At most three arrive, already chosen by the server's nudge-policy: one per
+// kind, never a dismissed one, and fewer of a kind you keep dismissing. Four
+// full cards used to fill two phone screens, which is how a suggestion
+// becomes wallpaper.
+const DASHBOARD_NUDGE_CAP = 3;
 
 export function CatNudges() {
   const [nudges, setNudges] = useState<Nudge[] | null>(null);
-  const [showAll, setShowAll] = useState(false);
+  // A quiet acknowledgement after a hide, so dismissing reads as being heard.
+  const [heard, setHeard] = useState(false);
 
   useEffect(() => {
     let on = true;
@@ -56,6 +56,7 @@ export function CatNudges() {
     // reappear on next load (the dismissal wasn't persisted).
     const prev = nudges;
     setNudges(n => n?.filter(x => x.id !== id) ?? null);
+    setHeard(true);
     fetch(API_ROUTES.CAT.NUDGES, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -68,20 +69,22 @@ export function CatNudges() {
       })
       .catch(() => {
         setNudges(prev);
+        setHeard(false);
       });
   };
 
   if (!nudges || nudges.length === 0) {
-    return null;
+    return heard ? (
+      <p className="text-sm text-fg-tertiary" role="status">
+        Got it. You won't see that one again.
+      </p>
+    ) : null;
   }
-
-  const shown = showAll ? nudges : nudges.slice(0, DASHBOARD_NUDGE_VISIBLE);
-  const hidden = nudges.length - shown.length;
 
   return (
     <DashboardSection id="dashboard-cat-suggests" title="Your Cat suggests">
       <ul className="divide-y divide-subtle rounded-lg border border-default bg-surface-base">
-        {shown.map(n => (
+        {nudges.map(n => (
           <li key={n.id} className="flex items-start gap-2 p-3">
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-fg-primary">{n.title}</p>
@@ -99,7 +102,8 @@ export function CatNudges() {
             <button
               type="button"
               onClick={() => dismiss(n.id)}
-              aria-label={`Dismiss: ${n.title}`}
+              aria-label={`Hide: ${n.title}`}
+              title="Hide. Hide two of a kind and your Cat stops suggesting it for a month."
               className="-mr-1 -mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-fg-tertiary hover:bg-surface-raised hover:text-fg-primary"
             >
               <X className="h-4 w-4" />
@@ -107,14 +111,10 @@ export function CatNudges() {
           </li>
         ))}
       </ul>
-      {hidden > 0 && (
-        <button
-          type="button"
-          onClick={() => setShowAll(true)}
-          className="mt-1 min-h-11 text-sm font-medium text-fg-secondary hover:text-fg-primary"
-        >
-          Show {hidden} more
-        </button>
+      {heard && (
+        <p className="mt-1 text-xs text-fg-tertiary" role="status">
+          Got it. You won't see that one again.
+        </p>
       )}
     </DashboardSection>
   );

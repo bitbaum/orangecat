@@ -130,7 +130,7 @@ export async function deleteProjectSupport(supportId: string): Promise<ServiceRe
       return { success: false, error: 'Support not found' };
     }
 
-    if ((support as any).user_id !== userId) {
+    if ((support as { user_id: string }).user_id !== userId) {
       return { success: false, error: 'Forbidden' };
     }
 

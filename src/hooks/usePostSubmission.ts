@@ -14,7 +14,8 @@ const RETRY_DELAY = 2000;
 type PostUser = {
   id: string;
   email?: string;
-  user_metadata?: { name?: string; avatar_url?: string };
+  user_metadata?: { name?: string };
+  profile?: { name?: string | null; username?: string | null; avatar_url?: string | null } | null;
 };
 
 interface UsePostSubmissionOptions {

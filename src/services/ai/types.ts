@@ -10,10 +10,18 @@
 export interface AiService {
   streamChatCompletion(opts: {
     model: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- providers declare text-only messages but the Cat sends image parts and tool turns; needs each provider's message type widened
     messages: any[];
     temperature: number;
   }): AsyncIterable<{ content?: string; usage?: unknown; done?: boolean }>;
-  chatCompletion(opts: { model: string; messages: any[]; temperature: number }): Promise<{
+  chatCompletion(opts: {
+    model: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see streamChatCompletion above
+    messages: any[];
+    temperature: number;
+    /** Every implementation (groq, openrouter, openai-compat) already honours it. */
+    maxTokens?: number;
+  }): Promise<{
     content: string;
     model: string;
     inputTokens: number;

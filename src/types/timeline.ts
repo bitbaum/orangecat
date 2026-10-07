@@ -144,9 +144,33 @@ export function toPostImageMeta(img: {
   };
 }
 
+/**
+ * An event's free-form `metadata` column, with the keys the timeline UI reads
+ * named. Every key is optional — each writer sets only what applies — and
+ * anything else a writer stores stays reachable as `unknown`.
+ */
+export interface TimelineEventMetadata {
+  [key: string]: unknown;
+  /** Read only through {@link getPostImage}, which validates it. */
+  image?: unknown;
+  is_repost?: boolean;
+  is_quote_repost?: boolean;
+  is_user_post?: boolean;
+  is_cat_reply?: boolean;
+  is_article?: boolean;
+  /** `slug` is type-checked at the read site before use. */
+  article?: { slug?: unknown } | null;
+  original_event_id?: string;
+  original_actor_id?: string;
+  original_actor_name?: string;
+  original_actor_username?: string;
+  original_actor_avatar?: string | null;
+  original_description?: string;
+}
+
 /** SSOT reader for `metadata.image` — every render surface goes through this. */
-export function getPostImage(metadata: Record<string, any> | undefined): PostImageMeta | null {
-  const img = metadata?.image;
+export function getPostImage(metadata: Record<string, unknown> | undefined): PostImageMeta | null {
+  const img = metadata?.image as { url?: unknown } | null | undefined;
   return img && typeof img === 'object' && typeof img.url === 'string' && img.url
     ? (img as PostImageMeta)
     : null;
@@ -199,7 +223,7 @@ export interface TimelineEvent {
 
   // Metadata
 
-  metadata?: Record<string, any>;
+  metadata?: TimelineEventMetadata;
   tags?: string[];
 
   // Relationships
@@ -244,7 +268,7 @@ interface TimelineEmbed {
   title?: string;
   thumbnail?: string;
 
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -430,7 +454,7 @@ export interface CreateTimelineEventRequest {
   visibility?: TimelineVisibility;
   isFeatured?: boolean;
 
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   tags?: string[];
   parentEventId?: string;
   threadId?: string;
@@ -444,7 +468,7 @@ export interface TimelineEventResponse {
   event?: TimelineEvent | TimelineDisplayEvent;
   error?: string;
 
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 // ==================== UTILITY TYPES ====================
@@ -470,7 +494,7 @@ export interface TimelineEventDb extends Omit<
   created_at: string;
   updated_at: string;
 
-  metadata?: Record<string, any>;
+  metadata?: TimelineEventMetadata;
   tags?: string[];
   parent_event_id?: string;
   thread_id?: string;

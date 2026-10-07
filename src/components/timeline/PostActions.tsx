@@ -65,7 +65,7 @@ function ActionButton({ spec }: { spec: ActionSpec }) {
       aria-label={spec.label}
       aria-pressed={active}
       className={cn(
-        'group flex items-center gap-1 rounded-md py-1.5 pl-1.5 pr-2 text-sm transition-colors',
+        'group flex min-w-0 items-center gap-1 rounded-md py-1.5 pl-1.5 pr-0.5 text-sm transition-colors sm:pr-2',
         'text-fg-secondary disabled:cursor-not-allowed disabled:opacity-50',
         active ? accent : 'hover:text-fg-primary'
       )}
@@ -83,8 +83,11 @@ function ActionButton({ spec }: { spec: ActionSpec }) {
       </span>
       {count !== undefined && (
         // Reserved width, tabular figures: the row cannot reflow when a count
-        // appears, changes, or ticks over to two digits.
-        <span className="min-w-[1.25rem] text-left text-sm tabular-nums">
+        // appears, changes, or ticks over to two digits. Not on a phone: five
+        // buttons each reserving room for an empty count measured 326px in a
+        // 276px row inside a project-update card, and every project page
+        // scrolled sideways at 390px (2026-10-04).
+        <span className="min-w-0 text-left text-sm tabular-nums sm:min-w-[1.25rem]">
           {count > 0 ? count : ''}
         </span>
       )}

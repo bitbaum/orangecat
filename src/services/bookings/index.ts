@@ -16,6 +16,8 @@ import { NotificationDispatcher } from '@/services/notifications/dispatcher';
 import { convertToBtcOrNull } from '@/services/currency/rates.server';
 import type { CurrencyCode } from '@/config/currencies';
 import { APP_LOCALE } from '@/utils/locale';
+import { getActorStewardUserId } from '@/domain/profileClaims/stewardship';
+import { fetchStewardedProviderBookings } from './stewardBookings';
 
 // Types
 type BookableType = 'service' | 'asset';
@@ -224,12 +226,25 @@ class BookingService {
     return actor?.user_id ?? null;
   }
 
+  /**
+   * Who answers for the provider: its account, or — for a place set up for
+   * someone who has not accepted yet — the steward who set it up. Without the
+   * second half a request for that place notified nobody (ADR-0005; booking
+   * requests are management, not money).
+   */
+  private async resolveProviderRecipient(providerActorId: string): Promise<string | null> {
+    return (
+      (await this.resolveActorUserId(providerActorId)) ??
+      (await getActorStewardUserId(providerActorId))
+    );
+  }
+
   private async notifyProviderOfBooking(
     providerActorId: string,
     booking: Booking,
     bookableType: BookableType
   ): Promise<void> {
-    const providerUserId = await this.resolveActorUserId(providerActorId);
+    const providerUserId = await this.resolveProviderRecipient(providerActorId);
     if (!providerUserId) {
       return;
     }
@@ -279,7 +294,7 @@ class BookingService {
         message = `Your ${booking.bookable_type} booking starting ${startLocal} was marked as completed.`;
         break;
       case STATUS.BOOKINGS.CANCELLED:
-        userId = await this.resolveActorUserId(booking.provider_actor_id);
+        userId = await this.resolveProviderRecipient(booking.provider_actor_id);
         title = 'Booking cancelled';
         message = `The customer cancelled the ${booking.bookable_type} booking starting ${startLocal}.${reasonSuffix}`;
         break;
@@ -430,7 +445,20 @@ class BookingService {
       return [];
     }
 
-    return data || [];
+    // Plus requests for places this user stewards (stewardBookings.ts).
+    const stewardRows =
+      role === 'customer'
+        ? []
+        : await fetchStewardedProviderBookings<NonNullable<typeof data>[number]>(userId, {
+            status,
+            limit,
+            offset,
+          });
+    if (stewardRows.length === 0) {
+      return data || [];
+    }
+    const merged = [...(data || []), ...stewardRows];
+    return merged.sort((a, b) => String(a.starts_at).localeCompare(String(b.starts_at)));
   }
 
   /**
