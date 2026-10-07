@@ -3,7 +3,8 @@
  *
  *   organizer → how many are coming, and the door list
  *   has one   → the ticket: a QR the door scans, the seat count, its code
- *   free      → "Get a free ticket" (seats left, when limited)
+ *   free      → "Get a free ticket" (seats left, when limited); signed out, a
+ *               name is enough — no account (GuestTicketForm)
  *   paid      → where the ticket will appear once paid (the pay panel does the paying)
  *
  * Async server component: reads the viewer's own row under RLS.
@@ -25,6 +26,7 @@ import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { logger } from '@/utils/logger';
 import TicketQr from './TicketQr';
 import ClaimTicketButton from './ClaimTicketButton';
+import GuestTicketForm from './GuestTicketForm';
 
 const OPEN_FOR_TICKETS = new Set(['published', 'open', 'full', 'ongoing']);
 
@@ -142,12 +144,8 @@ export default async function EventTicketCard({ event, isOwner }: EventTicketCar
               signedIn ? (
                 <ClaimTicketButton eventId={eventId} mode="claim" />
               ) : (
-                <Link
-                  href={`${ROUTES.AUTH}?mode=login&from=${encodeURIComponent(eventPath)}`}
-                  className="flex min-h-11 items-center justify-center rounded-md border border-default px-4 text-sm font-medium text-fg-primary transition-colors hover:bg-surface-raised"
-                >
-                  Sign in to get a free ticket
-                </Link>
+                // Most people a host invites have no account; a name is enough.
+                <GuestTicketForm eventId={eventId} eventPath={eventPath} />
               )
             ) : (
               <p className="text-sm text-fg-secondary">

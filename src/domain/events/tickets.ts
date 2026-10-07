@@ -17,7 +17,9 @@ import type { AnySupabaseClient } from '@/lib/supabase/types';
 export interface EventTicket {
   id: string;
   event_id: string;
-  user_id: string;
+  /** Null for a guest ticket: no account, just the name below. */
+  user_id: string | null;
+  guest_name: string | null;
   status: 'registered' | 'waitlisted' | 'cancelled' | 'attended' | 'no_show';
   ticket_count: number;
   payment_status: 'pending' | 'paid' | 'refunded' | 'free';
@@ -29,15 +31,15 @@ export interface EventTicket {
 export type CheckInResult =
   | {
       result: 'checked_in' | 'already';
-      user_id: string;
+      user_id: string | null;
       ticket_count: number;
       checked_in_at: string;
     }
-  | { result: 'cancelled'; user_id: string }
+  | { result: 'cancelled'; user_id: string | null }
   | { result: 'not_found' };
 
 const SELECT =
-  'id, event_id, user_id, status, ticket_count, payment_status, ticket_code, registered_at, checked_in_at';
+  'id, event_id, user_id, guest_name, status, ticket_count, payment_status, ticket_code, registered_at, checked_in_at';
 
 /** Thrown with a sentence a person can read; the code says which wall they hit. */
 export class TicketError extends Error {
@@ -165,4 +167,77 @@ export async function listTickets(
     throw new Error(error.message);
   }
   return (data ?? []) as EventTicket[];
+}
+
+// ---------------------------------------------------------------- guests
+// A free ticket without an account (migration 20261007160000): a name, and the
+// ticket's code as the guest's key. The code is the only way back to the
+// ticket, so the page it opens is the ticket.
+
+/** The page that IS a guest's ticket: the QR for the door, and give-it-back. */
+export function guestTicketPath(eventId: string, code: string): string {
+  return `${ROUTES.EVENTS.VIEW(eventId)}/ticket/${encodeURIComponent(code)}`;
+}
+
+export const GUEST_NAME_MAX = 80;
+
+export async function claimGuestTicket(
+  supabase: AnySupabaseClient,
+  eventId: string,
+  name: string
+): Promise<EventTicket> {
+  const { data, error } = await supabase.rpc('claim_guest_ticket', {
+    p_event_id: eventId,
+    p_name: name,
+  });
+  if (error) {
+    throw toTicketError(error);
+  }
+  return data as EventTicket;
+}
+
+export interface GuestTicketView {
+  ticket: Pick<
+    EventTicket,
+    'event_id' | 'guest_name' | 'status' | 'ticket_count' | 'ticket_code' | 'checked_in_at'
+  >;
+  event: {
+    id: string;
+    title: string;
+    start_date: string | null;
+    timezone: string | null;
+    venue_name: string | null;
+    venue_address: string | null;
+    status: string;
+  };
+}
+
+/** A guest ticket by its code, or null. Never returns a signed-in person's ticket. */
+export async function getGuestTicket(
+  supabase: AnySupabaseClient,
+  code: string
+): Promise<GuestTicketView | null> {
+  const { data, error } = await supabase.rpc('guest_ticket', { p_code: code });
+  if (error) {
+    throw toTicketError(error);
+  }
+  return (data as GuestTicketView | null) ?? null;
+}
+
+export async function cancelGuestTicket(supabase: AnySupabaseClient, code: string) {
+  const { error } = await supabase.rpc('cancel_guest_ticket', { p_code: code });
+  if (error) {
+    throw toTicketError(error);
+  }
+}
+
+/** Who a ticket is for, on the door list: the guest's own name for a guest ticket. */
+export function ticketHolderName(
+  ticket: Pick<EventTicket, 'user_id' | 'guest_name'>,
+  nameOfUser: (userId: string) => string | undefined
+): string {
+  if (ticket.user_id) {
+    return nameOfUser(ticket.user_id) ?? 'Guest';
+  }
+  return ticket.guest_name ? `${ticket.guest_name} (guest)` : 'Guest';
 }
