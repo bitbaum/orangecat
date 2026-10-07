@@ -422,7 +422,7 @@ function createPutHandler(config: EntityHandlerConfig) {
       const validatedData = schema.parse(body);
       const built = buildUpdatePayload(validatedData as Record<string, unknown>);
       const updatePayload = {
-        ...(refineUpdatePayload ? await refineUpdatePayload(built, existing) : built),
+        ...(refineUpdatePayload ? await refineUpdatePayload(built, load.loaded.existing) : built),
         updated_at: new Date().toISOString(),
       };
 
