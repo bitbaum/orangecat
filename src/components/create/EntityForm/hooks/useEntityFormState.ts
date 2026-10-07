@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { FormState, AIGeneratedFields, FieldConfidence, EntityConfig } from '../../types';
 import { useEntityFormDraft } from './useEntityFormDraft';
 import { slugify } from '@/utils/string';
@@ -18,18 +18,16 @@ export function useEntityFormState<T extends Record<string, unknown>>({
   userId,
   mode,
 }: UseEntityFormStateOptions<T>) {
-  const initialFormData = useMemo(() => {
-    let data = { ...config.defaultValues, ...initialValues } as T;
-    if ('currency' in data && !initialValues?.currency) {
-      if (data.currency === undefined || data.currency === null || data.currency === '') {
-        (data as Record<string, unknown>).currency = userCurrency;
-      }
-    }
-    if (config.deriveInitialValues) {
-      data = { ...data, ...config.deriveInitialValues(data) };
-    }
-    return data;
-  }, [config, initialValues, userCurrency]);
+  const initialFormData = useMemo(
+    () => buildInitialData(config, initialValues, userCurrency),
+    [config, initialValues, userCurrency]
+  );
+  // The reset below must fill the currency too, but must NOT re-run when the
+  // preference finishes loading — that would wipe what was typed meanwhile.
+  const userCurrencyRef = useRef(userCurrency);
+  useEffect(() => {
+    userCurrencyRef.current = userCurrency;
+  });
 
   const [formState, setFormState] = useState<FormState<T>>({
     data: initialFormData,
@@ -46,10 +44,12 @@ export function useEntityFormState<T extends Record<string, unknown>>({
 
   useEffect(() => {
     setFormState(prev => {
-      let data = { ...config.defaultValues, ...initialValues } as T;
-      if (config.deriveInitialValues) {
-        data = { ...data, ...config.deriveInitialValues(data) };
-      }
+      // Same builder as the first render. This reset used to skip the
+      // currency fill, so `currency` went back to undefined right after mount:
+      // the field still DISPLAYED the user's currency, the server stored CHF,
+      // and the form no longer matched the draft hook's pristine snapshot —
+      // so an untouched form wrote a "draft" over a real one (audit 2026-10-07).
+      const data = buildInitialData(config, initialValues, userCurrencyRef.current);
       return {
         ...prev,
         data,
@@ -71,27 +71,31 @@ export function useEntityFormState<T extends Record<string, unknown>>({
 
   const handleFieldChange = useCallback(
     (field: keyof T, value: unknown) => {
-      const updatedData = { ...formState.data, [field]: value };
-
-      if (field === 'name' && config.type === 'group') {
-        (updatedData as Record<string, unknown>).slug = slugify(value as string);
-      }
-
       // Mode-toggle fields declare clearOnChange: reset the listed siblings so a
       // value entered under the previous mode never rides along invisibly.
       const fieldConfig = config.fieldGroups
         .flatMap(g => g.fields ?? [])
         .find(f => f.name === field);
-      for (const sibling of fieldConfig?.clearOnChange ?? []) {
-        (updatedData as Record<string, unknown>)[sibling] = null;
-      }
 
-      setFormState(prev => ({
-        ...prev,
-        data: updatedData,
-        errors: { ...prev.errors, [field as string]: '' },
-        isDirty: true,
-      }));
+      // Built from `prev`, not from the render's snapshot: several changes in
+      // one tick (picking a wallet sets _wallet_id, bitcoin_address and
+      // lightning_address) each started from the same stale data, and only
+      // the last one survived.
+      setFormState(prev => {
+        const updatedData = { ...prev.data, [field]: value };
+        if (field === 'name' && config.type === 'group') {
+          (updatedData as Record<string, unknown>).slug = slugify(value as string);
+        }
+        for (const sibling of fieldConfig?.clearOnChange ?? []) {
+          (updatedData as Record<string, unknown>)[sibling] = null;
+        }
+        return {
+          ...prev,
+          data: updatedData,
+          errors: { ...prev.errors, [field as string]: '' },
+          isDirty: true,
+        };
+      });
 
       setAiGeneratedFields(prev => {
         if (prev.fields.has(field as string)) {
@@ -104,7 +108,7 @@ export function useEntityFormState<T extends Record<string, unknown>>({
         return prev;
       });
     },
-    [formState.data, config.type, config.fieldGroups]
+    [config.type, config.fieldGroups]
   );
 
   const handleFieldFocus = useCallback((field: string) => {
@@ -176,4 +180,23 @@ export function useEntityFormState<T extends Record<string, unknown>>({
     setErrors,
     validateField,
   };
+}
+
+/** Defaults + supplied values, the user's currency where none is set, then
+ *  derived values. The one builder for both the first render and a reset. */
+function buildInitialData<T extends Record<string, unknown>>(
+  config: { defaultValues: T; deriveInitialValues?: (data: T) => Partial<T> },
+  initialValues: Partial<T> | undefined,
+  userCurrency: unknown
+): T {
+  let data = { ...config.defaultValues, ...initialValues } as T;
+  if ('currency' in data && !initialValues?.currency) {
+    if (data.currency === undefined || data.currency === null || data.currency === '') {
+      (data as Record<string, unknown>).currency = userCurrency;
+    }
+  }
+  if (config.deriveInitialValues) {
+    data = { ...data, ...config.deriveInitialValues(data) };
+  }
+  return data;
 }

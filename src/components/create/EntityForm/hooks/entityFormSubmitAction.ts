@@ -95,7 +95,7 @@ export async function executeEntityFormSubmit<T extends Record<string, unknown>>
     if (mode === 'create' && owner?.kind === 'someone-else') {
       const recipientName = owner.name.trim();
       if (!recipientName) {
-        setErrors({ _form: 'Who is this for? Add their name.' });
+        setErrors({ general: 'Who is this for? Add their name.' });
         setSubmitting(false);
         return;
       }
@@ -108,7 +108,7 @@ export async function executeEntityFormSubmit<T extends Record<string, unknown>>
       const claimBody = await claimResponse.json().catch(() => null);
       if (!claimResponse.ok || !claimBody?.success || !claimBody.data?.actorId) {
         setErrors({
-          _form: apiErrorMessage(claimBody, `Could not set this up for ${recipientName}.`),
+          general: apiErrorMessage(claimBody, `Could not set this up for ${recipientName}.`),
         });
         setSubmitting(false);
         return;
@@ -163,29 +163,26 @@ export async function executeEntityFormSubmit<T extends Record<string, unknown>>
     }
 
     const walletId = (formStateData as Record<string, unknown>)._wallet_id as string | undefined;
-    if (walletId && result.data?.id) {
-      (async () => {
-        try {
-          if (mode === 'edit' && existingWalletLinkIdRef.current) {
-            await fetch(`${API_ROUTES.ENTITY_WALLETS}/${existingWalletLinkIdRef.current}`, {
-              method: 'DELETE',
-              credentials: 'include',
-            });
-          }
-          await fetch(API_ROUTES.ENTITY_WALLETS, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-              entity_type: config.type,
-              entity_id: result.data.id,
-              wallet_id: walletId,
-            }),
-          });
-        } catch (err) {
-          logger.warn('Failed to link wallet to entity', { err }, 'EntityForm');
-        }
-      })();
+    // Awaited, and in the safe order. It used to be fire-and-forget, and on
+    // edit it DELETED the old link before POSTing the new one: a failed POST
+    // (a 429, a 500) left the page with no wallet — payments then fell back to
+    // whatever wallet the owner had as default — while the success toast said
+    // all was well. Now the new link goes in first, the old one is removed only
+    // once it exists, and a failure is said out loud.
+    const walletLinked =
+      walletId && result.data?.id
+        ? await linkWallet({
+            entityType: config.type,
+            entityId: result.data.id,
+            walletId,
+            previousLinkId: mode === 'edit' ? existingWalletLinkIdRef.current : null,
+          })
+        : true;
+    if (!walletLinked) {
+      toast.warning('Saved — but the wallet could not be attached', {
+        description: 'Open this page again and pick the wallet under "Pay into".',
+        duration: 8000,
+      });
     }
 
     const showSuccessToast = () =>
@@ -228,7 +225,11 @@ export async function executeEntityFormSubmit<T extends Record<string, unknown>>
         const path = err.path[0] as string;
         fieldErrors[path] = err.message;
       });
-      setErrors(fieldErrors);
+      // Also say it beside the button that was just tapped. Field errors alone
+      // left "Create" looking dead: on a long phone form the field is off
+      // screen, in an earlier wizard step, or hidden (showWhen, a custom
+      // section) and never renders its message at all.
+      setErrors({ ...fieldErrors, general: invalidFieldsSummary(config, Object.keys(fieldErrors)) });
     } else {
       const errorMsg =
         error instanceof Error ? error.message : `Failed to ${mode} ${config.name.toLowerCase()}`;
@@ -242,5 +243,65 @@ export async function executeEntityFormSubmit<T extends Record<string, unknown>>
     }
   } finally {
     setSubmitting(false);
+  }
+}
+
+/** "Check these fields: Title, Price." — labels from the config, raw names never. */
+export function invalidFieldsSummary<T extends Record<string, unknown>>(
+  config: EntityConfig<T>,
+  fields: string[]
+): string {
+  const labels = new Map(
+    config.fieldGroups.flatMap(g => (g.fields ?? []).map(f => [f.name as string, f.label] as const))
+  );
+  const named = [...new Set(fields.map(f => labels.get(f)).filter((l): l is string => !!l))];
+  return named.length > 0
+    ? `Check ${named.length === 1 ? 'this field' : 'these fields'}: ${named.join(', ')}.`
+    : 'Some details need fixing before this can be saved.';
+}
+
+/** Link a wallet to an entity; on edit, retire the previous link only after
+ *  the new one exists. True when the page ends up pointing at `walletId`. */
+async function linkWallet({
+  entityType,
+  entityId,
+  walletId,
+  previousLinkId,
+}: {
+  entityType: string;
+  entityId: string;
+  walletId: string;
+  previousLinkId: string | null | undefined;
+}): Promise<boolean> {
+  try {
+    const res = await fetch(API_ROUTES.ENTITY_WALLETS, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ entity_type: entityType, entity_id: entityId, wallet_id: walletId }),
+    });
+    // 409: this exact wallet is already linked — the page already points there,
+    // and the "previous" link IS this one, so it must not be deleted.
+    if (res.status === 409) {
+      return true;
+    }
+    if (!res.ok) {
+      logger.warn('Failed to link wallet to entity', { status: res.status }, 'EntityForm');
+      return false;
+    }
+    if (previousLinkId) {
+      const del = await fetch(`${API_ROUTES.ENTITY_WALLETS}/${previousLinkId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (!del.ok) {
+        // The new link exists; a leftover old row is untidy, not wrong money.
+        logger.warn('Failed to remove previous wallet link', { status: del.status }, 'EntityForm');
+      }
+    }
+    return true;
+  } catch (err) {
+    logger.warn('Failed to link wallet to entity', { err }, 'EntityForm');
+    return false;
   }
 }
