@@ -12,6 +12,7 @@
  */
 
 import { Input } from '@/components/ui/Input';
+import { TagsField } from './fields/TagsField';
 import { Textarea } from '@/components/ui/Textarea';
 import { CurrencyInput } from '@/components/ui/CurrencyInput';
 import { useUserCurrency } from '@/hooks/useUserCurrency';
@@ -204,20 +205,13 @@ export function FormField({
 
       case 'tags':
         return (
-          <Input
+          <TagsField
             id={name}
-            type="text"
-            value={Array.isArray(value) ? (value as string[]).join(', ') : (value as string) || ''}
-            onChange={e => {
-              const tags = e.target.value
-                .split(',')
-                .map(t => t.trim())
-                .filter(Boolean);
-              onChange(tags);
-            }}
+            value={value}
+            onChange={onChange}
             onFocus={onFocus}
             onBlur={onBlur}
-            placeholder={placeholder || 'Enter tags separated by commas'}
+            placeholder={placeholder}
             disabled={disabled}
             className={baseInputClass}
           />

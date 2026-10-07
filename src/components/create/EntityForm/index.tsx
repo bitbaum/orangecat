@@ -186,7 +186,10 @@ export function EntityForm<T extends Record<string, unknown>>({
    *   form card takes 2/3 (~3xl of fields) and the GuidancePanel 1/3.
    */
   const formElement = (
-    <form onSubmit={handleSubmit} className="space-y-8">
+    // noValidate: the schema validates, in words. The browser's own number
+    // checks rejected valid amounts (step=1 from min 0.00001 refused 0.01 BTC;
+    // step 0.1 refused a 4.75% rate) with a native bubble the form never saw.
+    <form onSubmit={handleSubmit} noValidate className="space-y-8">
       {/* Cat-powered prefill on EVERY form — create and edit alike — so
                     users can describe what they want (or the change they want)
                     and have the fields filled instead of typing each one. On edit
