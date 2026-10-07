@@ -389,6 +389,12 @@ export interface AIPrefillResponse {
   /** Confidence scores for each changed field (0-1) */
   confidence: Record<string, FieldConfidence>;
   /**
+   * The fill is partial and says so: the facts came from the words, the model
+   * did not answer for the rest. Shown beside the form, not as an error — the
+   * form is usable as it stands.
+   */
+  notice?: string;
+  /**
    * Why it failed, as a code the UI resolves into copy + a fix link via
    * @/config/ai-errors. Absent for validation feedback ("describe the change
    * you want"), which is guidance the user can act on as written, not a

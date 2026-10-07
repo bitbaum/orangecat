@@ -25,6 +25,8 @@ import { logger } from '@/utils/logger';
 import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
 import { AI_ASSIST_MIN_INPUT_LENGTH } from '@/config/ai-form-assist';
 import { apiErrorMessage } from '@/lib/api/errorMessage';
+import { getProfileCurrency } from '@/services/currency/profileCurrency';
+import { getProfileTimezone } from '@/services/profile/profileTimezone';
 
 /**
  * Request validation schema
@@ -106,12 +108,23 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
       'AI'
     );
 
+    // An event form reads its facts from the words in the person's zone and
+    // currency (event-draft.ts); other forms need neither.
+    const context =
+      target.id === 'event'
+        ? await Promise.all([
+            getProfileTimezone(req.supabase, user.id).catch(() => null),
+            getProfileCurrency(req.supabase, user.id),
+          ]).then(([zone, currency]) => ({ now: new Date(), zone: zone ?? 'UTC', currency }))
+        : undefined;
+
     // Generate form prefill using AI
     const result = await generateFormPrefill({
       target,
       description,
       existingData,
       intent,
+      context,
     });
 
     if (!result.success) {
@@ -150,6 +163,7 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
       data: result.data,
       changedFields: result.changedFields ?? [],
       confidence: result.confidence,
+      ...(result.notice ? { notice: result.notice } : {}),
     });
   } catch (error) {
     logger.error(

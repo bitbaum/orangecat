@@ -2,13 +2,13 @@
 
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Sparkles, AlertCircle, CheckCircle2, RefreshCw } from 'lucide-react';
+import { Sparkles, CheckCircle2, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
 import { API_ROUTES } from '@/config/api-routes';
 import { ApiResponseError, unwrapApiResponse } from '@/lib/api/client-response';
 import { isAiErrorCode, type AiErrorCode } from '@/config/ai-errors';
-import { AiErrorNotice } from '@/components/ai/AiErrorNotice';
+import { AIPrefillFeedback } from './AIPrefillFeedback';
 
 import { AIFillPanel } from './AIFillPanel';
 import { AIRefinePanel } from './AIRefinePanel';
@@ -58,12 +58,15 @@ export function AIPrefillBar({
    * change you want" is already actionable and needs no fix link.
    */
   const [errorCode, setErrorCode] = useState<AiErrorCode | null>(null);
+  /** A partial fill's own words: the facts landed, the prose did not. */
+  const [notice, setNotice] = useState<string | null>(null);
 
   /** Clear both halves of the error state together — a stale notice outliving
    *  its message is the kind of drift two separate resets invite. */
   const clearError = useCallback(() => {
     setError(null);
     setErrorCode(null);
+    setNotice(null);
   }, []);
   const [hasFilled, setHasFilled] = useState(false);
   const [lastChanged, setLastChanged] = useState<string[] | null>(null);
@@ -109,13 +112,18 @@ export function AIPrefillBar({
         });
 
         const result = await unwrapApiResponse<
-          Pick<AIPrefillResponse, 'data' | 'changedFields' | 'confidence'>
+          Pick<AIPrefillResponse, 'data' | 'changedFields' | 'confidence' | 'notice'>
         >(response, 'Failed to generate form data');
 
         const changedFields = result.changedFields ?? Object.keys(result.data);
         onPrefill(result.data, result.confidence, changedFields, sent);
         setHasFilled(true);
         setLastChanged(changedFields);
+        setNotice(result.notice ?? null);
+        if (result.notice) {
+          toast('Filled what your words say', { description: 'The AI prose is missing.' });
+          return;
+        }
 
         if (intent === 'refine') {
           setInstruction('');
@@ -268,19 +276,7 @@ export function AIPrefillBar({
         {statusMessage}
       </p>
 
-      {errorCode ? (
-        <AiErrorNotice
-          code={errorCode}
-          context={{ surface: 'form-prefill', detail: error ?? undefined }}
-        />
-      ) : (
-        error && (
-          <div className="flex items-start gap-2 text-sm text-status-negative">
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-            <span>{error}</span>
-          </div>
-        )
-      )}
+      <AIPrefillFeedback notice={notice} error={error} errorCode={errorCode} />
     </div>
   );
 }

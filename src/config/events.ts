@@ -11,6 +11,10 @@ import { STATUS } from '@/config/database-constants';
 
 export const EVENT_TYPES = [
   { value: 'meetup', label: 'Meetup' },
+  // Added 2026-10-07: a concert is what people most often make here, and it
+  // was filed under Other. The events table's check constraint carries the
+  // same list (migration 20261007190000).
+  { value: 'concert', label: 'Concert' },
   { value: 'conference', label: 'Conference' },
   { value: 'workshop', label: 'Workshop' },
   { value: 'party', label: 'Party' },

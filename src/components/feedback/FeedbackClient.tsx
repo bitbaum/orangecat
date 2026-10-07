@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Cat, Send, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Textarea } from '@/components/ui/Textarea';
@@ -30,6 +30,18 @@ export function FeedbackClient() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  // A report that arrives written (an error's "Report this" carries the
+  // failure in ?message=) lands in the box, so Send is one tap. Read on the
+  // client after mount: this page is static and useSearchParams would make
+  // it wait on the request.
+  const [prefilled, setPrefilled] = useState(false);
+  useEffect(() => {
+    const given = new URLSearchParams(window.location.search).get('message')?.trim();
+    if (given) {
+      setMessage(given.slice(0, MAX_MESSAGE_CHARS));
+      setPrefilled(true);
+    }
+  }, []);
 
   const canSubmit = message.trim().length > 0 && !isSubmitting;
 
@@ -123,7 +135,13 @@ export function FeedbackClient() {
         <form onSubmit={handleSubmit} className="mt-10 space-y-4" aria-label="Send a message">
           <Textarea
             ref={textareaRef}
-            label={exchanges.length > 0 ? 'Anything else?' : 'Your question or feedback'}
+            label={
+              exchanges.length > 0
+                ? 'Anything else?'
+                : prefilled
+                  ? 'What happened — already written, just send it'
+                  : 'Your question or feedback'
+            }
             placeholder="e.g. How do I get paid without a bank account? — or: the signup button is broken on my phone"
             value={message}
             onChange={e => setMessage(e.target.value)}

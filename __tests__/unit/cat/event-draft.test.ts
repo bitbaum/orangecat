@@ -6,9 +6,13 @@
  */
 import {
   classifyEvent,
+  eventFactsFromWords,
   guessTimezone,
   normalizeEventDraft,
   parseEventWords,
+  readPrice,
+  readVenue,
+  titleFromWords,
   withEventDayContext,
 } from '@/services/cat/event-draft';
 import { renderDateTime } from '@/services/ai/context-sections';
@@ -70,9 +74,9 @@ describe('guessTimezone / classifyEvent', () => {
     expect(guessTimezone('Berlin')).toBe('Europe/Berlin');
     expect(guessTimezone('somewhere')).toBeNull();
   });
-  it('a concert is "other" in the Music category — the enum has no concert', () => {
+  it('a concert is a concert, in the Music category', () => {
     expect(classifyEvent('Concert at Rote Fabrik')).toEqual({
-      event_type: 'other',
+      event_type: 'concert',
       category: 'Music',
     });
     expect(classifyEvent('Bitcoin meetup')).toEqual({ event_type: 'meetup' });
@@ -94,7 +98,7 @@ describe('normalizeEventDraft — the draft card', () => {
     expect(out.ticket_price).toBe(1);
     expect(out.is_free).toBe(false);
     expect(out.currency).toBe('CHF');
-    expect(out.event_type).toBe('other');
+    expect(out.event_type).toBe('concert');
     expect(out.category).toBe('Music');
   });
   it('one franc is not free; a price of 0 is', () => {
@@ -131,6 +135,59 @@ describe('what the models are told', () => {
     // No zone known: the UTC line it always printed.
     expect(renderDateTime('en-US', null, late)).toBe(
       '## Current Date & Time\nToday is Wednesday, October 7, 2026, 22:30 UTC.'
+    );
+  });
+});
+
+describe('eventFactsFromWords — the form fills from the words, model or not', () => {
+  it('the sentence typed on 2026-10-07, in German', () => {
+    const facts = eventFactsFromWords(
+      'Konzert heute Abend in der Roten Fabrik. Beginn: 19:00 Uhr. Eintritt: 1 CHF.',
+      ctx
+    );
+    expect(facts).toEqual({
+      venue_name: 'Roten Fabrik',
+      start_date: '2026-10-07T19:00',
+      timezone: 'Europe/Zurich',
+      ticket_price: 1,
+      is_free: false,
+      currency: 'CHF',
+      event_type: 'concert',
+      category: 'Music',
+    });
+  });
+  it('the same in English, with the city naming the zone', () => {
+    const facts = eventFactsFromWords('Concert tonight at 7pm at Rote Fabrik, Zürich, 1 CHF', {
+      ...ctx,
+      zone: 'UTC',
+    });
+    expect(facts).toMatchObject({
+      venue_name: 'Rote Fabrik',
+      start_date: '2026-10-07T19:00',
+      timezone: 'Europe/Zurich',
+      ticket_price: 1,
+      currency: 'CHF',
+      event_type: 'concert',
+    });
+  });
+  it('says only what the words say: no time → no date; "free" → free', () => {
+    const facts = eventFactsFromWords('Free meetup at Kraftwerk', ctx);
+    expect(facts).not.toHaveProperty('start_date');
+    expect(facts).toMatchObject({ venue_name: 'Kraftwerk', is_free: true, event_type: 'meetup' });
+  });
+  it('reads prices and venues in the ways people write them', () => {
+    expect(readPrice('Eintritt: 1 CHF')).toEqual({ amount: 1, currency: 'CHF' });
+    expect(readPrice('CHF 20 at the door')).toEqual({ amount: 20, currency: 'CHF' });
+    expect(readPrice('€5')).toEqual({ amount: 5, currency: 'EUR' });
+    expect(readPrice('12.50 Fr.')).toEqual({ amount: 12.5, currency: 'CHF' });
+    expect(readPrice('starts at 7pm')).toBeNull();
+    expect(readVenue('party at the Hive, Zürich')).toBe('Hive');
+    expect(readVenue('im Kaufleuten um 22:00')).toBe('Kaufleuten');
+    expect(readVenue('tonight at 7pm')).toBeNull();
+  });
+  it('a title from the words is the first clause, never invented', () => {
+    expect(titleFromWords('Konzert heute Abend in der Roten Fabrik. Beginn: 19:00 Uhr.')).toBe(
+      'Konzert heute Abend in der Roten Fabrik'
     );
   });
 });
