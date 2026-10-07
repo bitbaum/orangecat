@@ -40,7 +40,9 @@ export type SendFailureReason =
   | 'recipient_cannot_receive'
   | 'invalid_invoice'
   | 'invoice_failed'
-  | 'payment_failed';
+  | 'payment_failed'
+  /** No answer in time. The wallet may still be paying — never "failed". */
+  | 'payment_unconfirmed';
 
 export interface SendSuccess {
   ok: true;
@@ -169,6 +171,16 @@ async function payOverNwc(
       },
       auditClient
     );
+    // A timeout is not a "no". The NWC request gives up after 30s while the
+    // wallet and the network may still be paying; calling that a failure sent
+    // people straight back to the filled-in form, and a retry mints a NEW
+    // invoice — a second real payment (audit, 2026-10-07).
+    if (isTimeout(error)) {
+      return fail(
+        'payment_unconfirmed',
+        "We couldn't confirm this payment in time — it may still go through. Check your wallet's history before trying again."
+      );
+    }
     return fail(
       'payment_failed',
       'The payment did not go through. Check your wallet has enough balance and try again.'
@@ -276,4 +288,9 @@ export async function sendToRecipient(
   }
 
   return payOverNwc(userId, nwc, invoice.bolt11, amountBtc, trimmed);
+}
+
+/** NWC gave up waiting (lib/nostr/nwc: "NWC request timed out: …"). */
+function isTimeout(error: unknown): boolean {
+  return /timed out|timeout/i.test(error instanceof Error ? error.message : String(error));
 }

@@ -154,7 +154,7 @@ We may update these Terms from time to time. Material changes will be notified b
 
 **Cato**
 [ADDRESS]
-hello@orangecat.ch
+cato@orangecat.ch
 
 ---
 

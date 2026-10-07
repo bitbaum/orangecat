@@ -373,7 +373,7 @@ export const paymentHandlers: Record<string, ActionHandler> = {
           entity_type: 'project',
           entity_id: projectId,
           amount_btc: amountBtc,
-          payment_method: projectWallet.method,
+          payment_method: invoice.method,
           bolt11: invoice.bolt11,
           payment_hash: payResult.payment_hash ?? null,
           onchain_address: null,

@@ -72,7 +72,9 @@ describe('selection with the flag on, composed with actionsVia', () => {
   it('does not throw on the turn that used to throw: none + a greeting', async () => {
     const { buildCatSystemPrompt, SECTION_SELECTION_ENABLED } = await loadWithFlagOn();
     expect(SECTION_SELECTION_ENABLED).toBe(true);
-    expect(() => buildCatSystemPrompt({ actionsVia: 'none', turnDescriptor: greeting })).not.toThrow();
+    expect(() =>
+      buildCatSystemPrompt({ actionsVia: 'none', turnDescriptor: greeting })
+    ).not.toThrow();
   });
 
   it.each(['prose', 'tools', 'none'] as const)(
@@ -89,7 +91,9 @@ describe('selection with the flag on, composed with actionsVia', () => {
       }
       if (actionsVia === 'prose') {
         for (const a of Object.values(CAT_ACTIONS).filter(a => a.enabled)) {
-          expect(out.includes(`**${a.id}(`) || out.includes(`"actionId": "${a.id}"`), a.id).toBe(true);
+          expect(out.includes(`**${a.id}(`) || out.includes(`"actionId": "${a.id}"`), a.id).toBe(
+            true
+          );
         }
       }
     }

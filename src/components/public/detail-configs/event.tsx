@@ -77,7 +77,7 @@ export const eventDetailConfig: EntityDetailConfig = {
   backHref: '/events',
   // Events are public in several statuses and never 'active' — the default
   // filter made every published event a 404 for everyone but its organizer.
-  visibilityFilter: { column: 'status', values: EVENT_PUBLIC_STATUSES },
+  visibilityFilter: { column: 'status', value: EVENT_PUBLIC_STATUSES },
   metadataSelect: EVENT_METADATA_SELECT,
   getPrice: ticketOf,
   renderSidebarExtra: entity =>

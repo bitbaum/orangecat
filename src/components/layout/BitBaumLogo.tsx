@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { ECOSYSTEM } from '@/config/ecosystem';
 
 export default function BitBaumLogo({
   className = '',
@@ -11,7 +12,7 @@ export default function BitBaumLogo({
 }) {
   return (
     <Link
-      href="https://bitbaum.com"
+      href={ECOSYSTEM.studio.siteUrl}
       target="_blank"
       rel="noopener noreferrer"
       className={`flex items-center space-x-2 group ${className}`.trim()}

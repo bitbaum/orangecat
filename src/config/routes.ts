@@ -208,8 +208,16 @@ export function getRouteChrome(pathname: string): RouteChrome {
   return {
     hideMobileBottomNav: focus,
     preferCollapsedSidebar: focus,
-    hideGlobalCat: focus,
+    // A create/edit form has its own Cat (the "Fill with AI" bar at the top).
+    // The floating button over it was a second Cat on the same screen, and it
+    // sat on the right edge of the inputs and the submit row.
+    hideGlobalCat: focus || isEntityFormPath(pathname),
   };
+}
+
+/** A create or edit form: /…/create, /…/<id>/edit. */
+export function isEntityFormPath(pathname: string): boolean {
+  return /\/(create|edit)\/?$/.test(pathname);
 }
 
 // =============================================================================
@@ -298,6 +306,8 @@ export const ROUTES = {
   AUTH_SIGNOUT: '/auth/signout',
   DISCOVER: '/discover',
   CREATE: '/create',
+  /** Say what you need; the Cat prices it and drafts the page. */
+  RAISE: '/raise',
   STUDY_BITCOIN: '/study-bitcoin',
   BITCOIN_WALLET_GUIDE: '/bitcoin-wallet-guide',
   ONBOARDING: {

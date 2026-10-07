@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Bitcoin, Shield, Zap, Lock, Globe, Code, Server, CheckCircle } from 'lucide-react';
 import { ROUTES } from '@/config/routes';
 import { FEE_CLAIMS } from '@/config/landing-page';
+import { STACK } from '@/config/stack-versions';
 
 export const metadata: Metadata = {
   title: 'Technology',
@@ -95,7 +96,7 @@ export default function TechnologyPage() {
                   <li className="flex items-start">
                     <CheckCircle className="h-5 w-5 text-status-positive mr-2 mt-0.5 flex-shrink-0" />
                     <div>
-                      <span className="font-medium">Next.js 15</span>
+                      <span className="font-medium">{STACK.next}</span>
                       <p className="text-sm text-fg-secondary">
                         Modern React framework with App Router
                       </p>
@@ -104,14 +105,14 @@ export default function TechnologyPage() {
                   <li className="flex items-start">
                     <CheckCircle className="h-5 w-5 text-status-positive mr-2 mt-0.5 flex-shrink-0" />
                     <div>
-                      <span className="font-medium">TypeScript</span>
+                      <span className="font-medium">{STACK.typescript}</span>
                       <p className="text-sm text-fg-secondary">Type-safe development</p>
                     </div>
                   </li>
                   <li className="flex items-start">
                     <CheckCircle className="h-5 w-5 text-status-positive mr-2 mt-0.5 flex-shrink-0" />
                     <div>
-                      <span className="font-medium">Tailwind CSS</span>
+                      <span className="font-medium">{STACK.tailwind}</span>
                       <p className="text-sm text-fg-secondary">Responsive, mobile-first design</p>
                     </div>
                   </li>

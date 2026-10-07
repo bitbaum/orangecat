@@ -48,12 +48,17 @@ export function generateActionDescription(
       return `Create wishlist "${parameters.title}"${type}`;
     }
     case 'create_event': {
+      const kind = parameters.event_type ? `${parameters.event_type} ` : 'event ';
+      const where = parameters.location ? ` at ${parameters.location}` : '';
+      const price = parameters.ticket_price
+        ? `, tickets ${parameters.ticket_price} ${parameters.currency ?? ''}`.trimEnd()
+        : '';
       const crew =
         Array.isArray(parameters.crew) && parameters.crew.length > 0
           ? ` — crew: ${parameters.crew.join(', ')}`
           : '';
       const live = parameters.publish ? ' and post it' : '';
-      return `Create event "${parameters.title}" at ${parameters.location}${live}${crew}`;
+      return `Create ${kind}"${parameters.title}" on ${parameters.start_date}${where}${price}${live}${crew}`;
     }
     case 'create_venue':
       return parameters.owner_name
@@ -73,6 +78,10 @@ export function generateActionDescription(
       return `Send message to user`;
     case 'reply_to_message':
       return `Reply in conversation: "${String(parameters.content).slice(0, 50)}"`;
+    case 'propose_to_group':
+      return parameters.decide_on === 'solon'
+        ? `Prepare "${parameters.title}" as a Solon proposal for the group to file and vote on`
+        : `File "${parameters.title}" as a draft proposal in the group — members vote before anything is spent`;
     case 'invite_to_organization':
       return `Invite user to organization (role: ${parameters.role || 'member'})`;
     case 'send_payment': {

@@ -25,6 +25,7 @@ import { AI_MESSAGE_MAX_CHARS } from '@/lib/validation/ai';
 import type { CatReference } from '@/config/cat-prompts';
 import type { ChatImage } from '@/services/cat/chat-images';
 import { fileBlockOpen, imageTag, refTag } from '@/lib/chat/attachment-tags';
+import { ATTACH_SOURCE_INPUT, type AttachSource } from '@bitbaum/chatkit';
 
 export type ChatAttachment =
   | { kind: 'file'; id: string; name: string; content: string }
@@ -74,34 +75,29 @@ export const TEXT_FILE_EXTENSIONS = [
 
 /**
  * Where an attachment comes from: one file input per source, never one input
- * with a mixed `accept`. A phone answers `image/*,.txt,.md,…` with a chooser of
- * capture apps (Camera, Camera, Recorder, "Photos & Videos") in which the
- * screenshot you came to send is three levels down and the file browser is not
- * offered at all — measured on Android, 2026-10-05, where it made attaching
- * effectively impossible. The same rule is SSOT in bitbaum/chatkit
- * (`ATTACH_SOURCE_INPUT`), which Loki's composer uses; keep the two identical.
- *
- * - camera: `capture` opens the camera straight away.
- * - photos: `image/*` alone opens the system photo picker (Screenshots first).
- * - files:  no `accept` opens the real document browser; what can be read is
- *           decided after the pick (isReadableTextFile), with a sentence for
- *           anything else.
+ * with a mixed `accept` (a phone answers that with a chooser of capture apps
+ * and no file browser — 2026-10-05). The rule itself is @bitbaum/chatkit's
+ * `ATTACH_SOURCE_INPUT`, the one definition every product reads; only the
+ * menu's own words live here. CI runs `chatkit-check-file-inputs`.
  */
-export type AttachSource = 'camera' | 'photos' | 'files';
+export type { AttachSource };
+
+const SOURCE_LABELS: Record<AttachSource, string> = {
+  camera: 'Take a photo',
+  photos: 'Photo library',
+  files: 'Files',
+};
 
 export const ATTACH_SOURCES: readonly {
   id: AttachSource;
   label: string;
   input: { accept?: string; capture?: 'environment'; multiple: boolean };
-}[] = [
-  {
-    id: 'camera',
-    label: 'Take a photo',
-    input: { accept: 'image/*', capture: 'environment', multiple: false },
-  },
-  { id: 'photos', label: 'Photo library', input: { accept: 'image/*', multiple: true } },
-  { id: 'files', label: 'Files', input: { multiple: true } },
-];
+}[] = (['camera', 'photos', 'files'] as const).map(id => ({
+  id,
+  label: SOURCE_LABELS[id],
+  // One photo from the camera; several from the library or the file browser.
+  input: { ...ATTACH_SOURCE_INPUT[id], multiple: id !== 'camera' },
+}));
 
 /** Refuse before reading: a file this large cannot fit the message anyway. */
 export const MAX_ATTACHMENT_BYTES = 512 * 1024;

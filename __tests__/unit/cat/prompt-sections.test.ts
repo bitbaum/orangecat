@@ -193,7 +193,13 @@ describe('selection is worth doing', () => {
     // brief the agents read, and Loki refuses unknown project names with the
     // list of real ones, so neither is paid for in prose here.
     //
-    // Raised 4,400 -> 4,600 for `create_event`: "a party at Langstrasse 120 on
+    // Raised 4,400 -> 4,650 for "hold an event": `propose_to_group` (shared
+    // money decided by the people who share it — an OrangeCat group vote, or a
+    // prefilled Solon proposal) and the `create_event` parameters an event
+    // needs (event_type, end_date, is_free, ticket_price_btc, max_attendees;
+    // `location` became optional). Only appendix names and a one-clause description land here —
+    // the playbook itself is SITUATIONAL and costs a greeting nothing.
+    // Then +225 for `create_event`: "a party at Langstrasse 120 on
     // Saturday, house and disco, I need a DJ and two bartenders, 20 CHF" is one
     // sentence the Cat now turns into one complete event. The action's
     // description is a single clause; the cost is seven parameter names
@@ -201,12 +207,15 @@ describe('selection is worth doing', () => {
     // Geocoding, genre spelling and crew parsing live in code
     // (domain/events, config/event-crew), not in prose here.
     //
-    // Raised 4,600 -> 4,720 for `create_venue`: "make a page for my bar,
+    // Then +120 for `create_venue`: "make a page for my bar,
     // Espresso Bar, Bahnhofstrasse 5, Landquart" — the place an event is
     // listed at, set up for its owner when they are not here yet. ~120
     // characters: a one-clause description and four parameter names. The
     // address is resolved and the claim made in code, not explained here.
-    expect(remaining).toBeLessThanOrEqual(4_720);
+    // Both landed on the same action in parallel; merged, the prompt measures
+    // 4,927 (4,650 + the venue, music, vibe, crew, currency and cover
+    // parameters and create_venue), so the ceiling is 4,930.
+    expect(remaining).toBeLessThanOrEqual(4_930);
   });
 
   it('selects by default now, and still sends everything when told to', async () => {

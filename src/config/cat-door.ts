@@ -13,4 +13,5 @@ export const DOOR_EXAMPLES = [
   'Raise money for the school roof',
   'Lend a friend 500 for two months',
   'Start a fund for Witikon',
+  'Throw a party on Saturday',
 ] as const;

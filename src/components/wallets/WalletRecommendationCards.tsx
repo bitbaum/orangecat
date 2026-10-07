@@ -147,8 +147,8 @@ export default function WalletRecommendationCards() {
           Find the perfect Bitcoin wallet for receiving funding
         </h2>
         <p className="text-fg-secondary">
-          All recommendations are non-custodial — you control your keys. We connect directly for
-          transparent autoposting.
+          All recommendations are self-custodial — you hold your keys. Payments go straight to your
+          wallet; OrangeCat never holds them.
         </p>
       </div>
 

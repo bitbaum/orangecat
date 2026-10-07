@@ -30,6 +30,8 @@ interface CurrencyInputProps {
   isGoal?: boolean;
   onFocus?: () => void;
   onBlur?: () => void;
+  /** Accepted for config compatibility; limits are enforced by validation,
+   *  never by rewriting what was typed (see useCurrencyInput). */
   min?: number;
   max?: number;
   id?: string;
@@ -52,8 +54,6 @@ export function CurrencyInput({
   isGoal = false,
   onFocus,
   onBlur,
-  min,
-  max,
   id,
 }: CurrencyInputProps) {
   const {
@@ -70,9 +70,7 @@ export function CurrencyInput({
     onCurrencyChange,
     defaultCurrency,
     userCurrency,
-    showBreakdown,
-    min,
-    max
+    showBreakdown
   );
 
   return (

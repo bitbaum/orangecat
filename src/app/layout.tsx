@@ -180,7 +180,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </AuthProvider>
             </QueryProvider>
           </CurrencyRatesProvider>
-          <Toaster position="top-right" richColors closeButton />
+          {/* Below the 3.5rem app header on phones, never on top of it (sonner
+              otherwise sits 16px from the top, over the logo and avatar). */}
+          <Toaster
+            position="top-right"
+            richColors
+            closeButton
+            mobileOffset={{ top: 'calc(3.5rem + env(safe-area-inset-top) + 0.5rem)' }}
+          />
         </ThemeProvider>
         {/* Loki feedback widget — OrangeCat is customer #2 of the sibling
             product's embeddable feedback loop (visitor points at the broken

@@ -46,14 +46,17 @@ export const createEvent: ActionHandler = async (supabase, userId, actorId, para
     end_date: params.end_date || null,
     timezone: venue.timezone,
   });
+  // A price in any currency: "20 CHF", or "0.0005 BTC" with currency BTC.
   const ticketPrice = Number(params.ticket_price);
+  // A price wins over is_free, which the executor defaults to true.
   const isPaid = Number.isFinite(ticketPrice) && ticketPrice > 0;
   const currency = isCurrencyCode(params.currency)
     ? params.currency
     : await getProfileCurrency(supabase, userId);
   const eventType = EVENT_TYPES.some(t => t.value === params.event_type)
     ? (params.event_type as string)
-    : undefined;
+    : 'meetup';
+  const maxAttendees = Number(params.max_attendees);
   const vibe = typeof params.vibe === 'string' ? params.vibe.trim().slice(0, MAX_VIBE_LENGTH) : '';
 
   const { data, error } = await supabase
@@ -66,7 +69,8 @@ export const createEvent: ActionHandler = async (supabase, userId, actorId, para
       start_date: times.start_date,
       end_date: times.end_date,
       timezone: times.timezone,
-      ...(eventType && { event_type: eventType }),
+      event_type: eventType,
+      max_attendees: Number.isInteger(maxAttendees) && maxAttendees > 0 ? maxAttendees : null,
       ...venue,
       asset_id: place?.id ?? null,
       music_genres: normalizeGenres(params.music_genres),
@@ -93,7 +97,9 @@ export const createEvent: ActionHandler = async (supabase, userId, actorId, para
       `${venueName} has no page you run on OrangeCat yet — say "make a page for ${venueName}, <address>" and its events will show there.`
     );
   }
-  if (venue.latitude === null) {
+  if (!where.trim()) {
+    lines.push('No place yet — add it when it is known, and the event shows up on the map then.');
+  } else if (venue.latitude === null) {
     lines.push(
       'Could not place the address on the map — add the city or street to make it findable nearby.'
     );

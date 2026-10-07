@@ -143,6 +143,41 @@ const CASES: Array<{
     forbid: ['amount_btc', 'amount_sats'],
   },
   {
+    // `events` has no `location` column, and its 'SATS' currency default fails
+    // the table's own CHECK — so every Cat-created event used to be refused.
+    actionId: 'create_event',
+    table: ENTITY_REGISTRY.event.tableName,
+    parameters: {
+      title: 'Housewarming',
+      start_date: '2026-10-10T19:00:00Z',
+      location: 'Seefeldstrasse 1, Zürich',
+      event_type: 'party',
+    },
+    expect: {
+      venue_address: 'Seefeldstrasse 1, Zürich',
+      event_type: 'party',
+      // Not the 'SATS' default the CHECK rejects: the person's own currency
+      // (CHF when their profile names none).
+      currency: 'CHF',
+      is_free: true,
+      actor_id: ACTOR_ID,
+    },
+    forbid: ['location'],
+  },
+  {
+    actionId: 'create_event',
+    table: ENTITY_REGISTRY.event.tableName,
+    parameters: {
+      title: 'Bitcoin Basel',
+      start_date: '2026-11-14T09:00:00Z',
+      event_type: 'conference',
+      ticket_price: 0.0005,
+      currency: 'BTC',
+    },
+    expect: { ticket_price: 0.0005, is_free: false, currency: 'BTC', venue_address: null },
+    forbid: ['location', 'ticket_price_btc'],
+  },
+  {
     actionId: 'create_organization',
     table: ENTITY_REGISTRY.group.tableName,
     parameters: { name: 'Circle', type: 'circle' },

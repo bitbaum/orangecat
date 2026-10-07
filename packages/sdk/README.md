@@ -118,7 +118,7 @@ Error codes mirror `docs/api/CONVENTIONS.md` §3:
 
 | Feature             | Behaviour                                                                                                                                                                                                                                               |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Timeout**         | 20 s per request (matches Loki's `useFetch`). Override per call with `{ timeoutMs }`.                                                                                                                                                             |
+| **Timeout**         | 20 s per request (matches Loki's `useFetch`). Override per call with `{ timeoutMs }`.                                                                                                                                                                   |
 | **Retries**         | Up to 3 retries on transient failures (network, 5xx, 429). Exponential backoff with jitter, honours `Retry-After`. Override with `{ maxRetries }`.                                                                                                      |
 | **Idempotency-Key** | Auto-generated on every mutating request (`ock_idem_<32-hex>`). Override with `{ idempotencyKey }` if you have your own dedup key. Server-side dedup is planned — the SDK ships the header today so retries are forward-compatible the moment it lands. |
 | **Authorization**   | Sends both `X-OrangeCat-Key` and `Authorization: Bearer` headers so it works against any gateway.                                                                                                                                                       |
@@ -152,7 +152,7 @@ at least 12 months and a separate major version targets v2.
 
 ## License
 
-UNLICENSED (proprietary). Contact integrations@orangecat.ch for terms.
+MIT — see [LICENSE](../../LICENSE) at the repository root.
 
 ## Status
 

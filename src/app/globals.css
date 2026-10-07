@@ -263,7 +263,9 @@
      * above the mobile bottom nav (sticky action bars, bulk-select
      * toolbars, etc.). Use the .oc-above-mobile-nav utility instead
      * of hand-positioning bottom-14 / bottom-16. */
-    --mobile-nav-height: 56px;
+    /* The bar is min-h-16 (64px) plus its 8px spacer and border — ~73px.
+     * At 56px every sticky action bar covered the top of the tab bar. */
+    --mobile-nav-height: 4.5rem;
     --mobile-nav-clearance: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px));
   }
   .dark {
@@ -1249,5 +1251,80 @@ html[data-header-hidden='true'] .sticky-below-header {
   .oc-journey-ring-fill,
   .oc-journey-stop[data-here] .oc-journey-marker::after {
     animation: none;
+  }
+}
+
+/* ── Raise (/raise): the little motion that makes it feel like magic ───── */
+.oc-raise-box {
+  transition: box-shadow 0.2s ease;
+}
+.oc-raise-box:focus-within {
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-primary) 18%, transparent);
+}
+.oc-raise-think {
+  transition: color 0.3s ease;
+}
+.oc-raise-think[data-state='next'] {
+  color: hsl(var(--text-muted));
+}
+.oc-raise-think[data-state='now'] {
+  color: hsl(var(--text-primary));
+}
+.oc-raise-think-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  flex-shrink: 0;
+  border-radius: 9999px;
+  border: 1px solid hsl(var(--border-default));
+}
+.oc-raise-think[data-state='done'] .oc-raise-think-dot {
+  border-color: transparent;
+  background: hsl(var(--text-tertiary));
+}
+.oc-raise-think[data-state='now'] .oc-raise-think-dot {
+  border-color: transparent;
+  background: var(--accent-primary);
+  animation: oc-raise-pulse 1s ease-in-out infinite;
+}
+.oc-raise-reveal {
+  animation: oc-raise-rise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.oc-raise-done {
+  animation: oc-raise-pop 0.5s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+.oc-raise-rail {
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease,
+    transform 0.15s ease;
+}
+.oc-raise-rail:active {
+  transform: scale(0.98);
+}
+@keyframes oc-raise-pulse {
+  50% {
+    transform: scale(1.5);
+    opacity: 0.6;
+  }
+}
+@keyframes oc-raise-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@keyframes oc-raise-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .oc-raise-think-dot,
+  .oc-raise-reveal,
+  .oc-raise-done,
+  .oc-raise-rail {
+    animation: none;
+    transition: none;
   }
 }

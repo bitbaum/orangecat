@@ -171,15 +171,15 @@ export default function EcosystemPage() {
             </li>
             <li>
               <a
-                href={`${solonBase}/api/v1/decisions`}
+                href={`${solonBase}/proposals`}
                 rel="noopener"
                 className="font-medium text-fg-primary underline underline-offset-4"
               >
-                Solon decision API
+                Solon decisions
               </a>
               <span className="text-fg-secondary">
                 {' '}
-                — the signed decision documents themselves, served by Solon.
+                — every proposal and how its vote went, published by Solon.
               </span>
             </li>
             <li>

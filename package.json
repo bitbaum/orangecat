@@ -1,6 +1,7 @@
 {
   "name": "orangecat",
   "version": "0.1.2",
+  "license": "MIT",
   "private": true,
   "license": "MIT",
   "workspaces": [
@@ -48,7 +49,8 @@
     "check:content": "node scripts/check-content.mjs",
     "check:changelog": "node scripts/check-changelog-fresh.mjs",
     "check:follow-envelope": "node scripts/check-follow-envelope.mjs",
-    "verify": "pnpm run ci:docs && pnpm run check:accent-ink && pnpm run type-check && pnpm run type-check:scripts && pnpm run check:sizes && pnpm run audit:routes && pnpm run lint && pnpm run check:duplication && pnpm run check:dead-fields && pnpm run check:dead-labels && pnpm run check:migration-versions && pnpm run check:schema-columns && pnpm run check:currency-units && pnpm run check:rpc-exists && pnpm run check:one-current-user && pnpm run check:app-locale && pnpm run check:type-scale && pnpm run check:client-ip && pnpm run check:user-scoped-deletes && pnpm run check:content && pnpm run check:changelog && pnpm run check:follow-envelope && pnpm run test:unit",
+    "check:file-inputs": "chatkit-check-file-inputs src",
+    "verify": "pnpm run ci:docs && pnpm run check:file-inputs && pnpm run check:accent-ink && pnpm run type-check && pnpm run type-check:scripts && pnpm run check:sizes && pnpm run audit:routes && pnpm run lint && pnpm run check:duplication && pnpm run check:dead-fields && pnpm run check:dead-labels && pnpm run check:migration-versions && pnpm run check:schema-columns && pnpm run check:currency-units && pnpm run check:rpc-exists && pnpm run check:one-current-user && pnpm run check:app-locale && pnpm run check:type-scale && pnpm run check:client-ip && pnpm run check:user-scoped-deletes && pnpm run check:content && pnpm run check:changelog && pnpm run check:follow-envelope && pnpm run test:unit",
     "audit:schema": "node scripts/db/audit-schema-drift.mjs",
     "audit:routes": "node scripts/audit-routes.mjs",
     "gen:types": "bash scripts/db/gen-types.sh",
@@ -119,6 +121,7 @@
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^9.1.0",
     "@bitbaum/ai-kit": "^1.18.0",
+    "@bitbaum/chatkit": "github:bitbaum/chatkit#70824785e86189704aeb7cc92c33bc198ad17cda",
     "@bitbaum/collective-kinds": "workspace:*",
     "@bitbaum/geo-kit": "github:bitbaum/geo-kit#a337aec928cf7804fecf459c308d366b90f4b2fa",
     "@bitbaum/mail-kit": "^0.1.1",

@@ -1,8 +1,7 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { KeyRound, ShieldCheck, Plug, RefreshCw, ArrowRight } from 'lucide-react';
 import { PageHeading } from '@/components/layout/PageHeading';
-import { ROUTES } from '@/config/routes';
+import { CONTACT_EMAIL } from '@/config/brand';
 import { OAUTH_SCOPES, OAUTH_TTL } from '@/lib/oauth/config';
 import { DCR_LIMITS } from '@/services/auth/oauthRegistration';
 import {
@@ -142,9 +141,9 @@ export default function SignInWithOrangeCatPage() {
           </ul>
           <p>
             <strong className="text-fg-primary">Verified client.</strong> Once your site is live,{' '}
-            <Link href={ROUTES.SUPPORT} className="text-fg-primary underline">
+            <a href={`mailto:${CONTACT_EMAIL}`} className="text-fg-primary underline">
               ask for a verified client
-            </Link>
+            </a>
             : a confidential client with a secret (<code>client_secret_post</code>), your name shown
             without the warning, and consent remembered so returning people skip the screen.
           </p>
@@ -222,12 +221,12 @@ export default function SignInWithOrangeCatPage() {
             registers a client, opens the sign-in, exchanges the code, reads the profile and
             refreshes.
           </p>
-          <Link
-            href={ROUTES.SUPPORT}
+          <a
+            href={`mailto:${CONTACT_EMAIL}`}
             className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-fg-primary"
           >
             Questions, or a verified client <ArrowRight className="h-4 w-4" />
-          </Link>
+          </a>
         </div>
       </div>
     </div>

@@ -6,8 +6,8 @@
  * back-compat with existing importers.
  */
 import { createServerClient } from '@/lib/supabase/server';
+import { applyVisibility, type VisibilityFilter } from '@/lib/entities/visibility';
 import { getTableName, type EntityType } from '@/config/entity-registry';
-import { STATUS } from '@/config/database-constants';
 import type { ReactNode } from 'react';
 
 // Color theme → semantic class mapping. The four colorTheme values in
@@ -92,8 +92,10 @@ export interface EntityDetailConfig {
   /** View route for sign-in redirect */
   getViewRoute?: (id: string) => string;
   /**
-   * Override default visibility filter. Defaults to `status = active`. Use
-   * `values` when several statuses are public (events: published, open, …).
+   * Override default visibility filter. Defaults to `status = active`. An
+   * array value means "any of these" — an investment is live as open, funded
+   * or active, and a page that only knew `active` 404'd every freshly
+   * published offering (publishing sets `open`).
    */
   visibilityFilter?: VisibilityFilter;
   /** Whether to show the payment section in the sidebar (default: true) */
@@ -116,25 +118,6 @@ export interface EntityDetailConfig {
 /**
  * Fetch entity data for metadata generation
  */
-export type VisibilityFilter =
-  { column: string; value: string | boolean } | { column: string; values: readonly string[] };
-
-/**
- * Restrict a query to the publicly visible rows, per the entity's filter.
- * Generic over the builder so callers keep supabase's typed `.single()`; the
- * cast is only to call `eq`/`in` with a column name known at runtime.
- */
-export function applyVisibility<Q>(query: Q, filter?: VisibilityFilter): Q {
-  const builder = query as unknown as {
-    eq: (column: string, value: unknown) => Q;
-    in: (column: string, values: unknown[]) => Q;
-  };
-  if (filter && 'values' in filter) {
-    return builder.in(filter.column, [...filter.values]);
-  }
-  return builder.eq(filter?.column ?? 'status', filter?.value ?? STATUS.PRODUCTS.ACTIVE);
-}
-
 export async function fetchEntityForMetadata(
   entityType: EntityType,
   id: string,
@@ -142,12 +125,12 @@ export async function fetchEntityForMetadata(
   visibilityFilter?: VisibilityFilter
 ) {
   const supabase = await createServerClient();
-  const { data } = await applyVisibility(
-    supabase
-      .from(getTableName(entityType))
-      .select(select || 'title, description')
-      .eq('id', id),
-    visibilityFilter
-  ).single();
+  const query = supabase
+    .from(getTableName(entityType))
+    .select(select || 'title, description')
+    .eq('id', id);
+  const { data } = await applyVisibility(query, visibilityFilter).single();
   return data as EntityData | null;
 }
+
+export { applyVisibility, type VisibilityFilter };

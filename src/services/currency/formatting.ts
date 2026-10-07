@@ -160,6 +160,7 @@ export function displayBTC(amount: number | string | null | undefined): string {
   if (!isFinite(num) || num === 0) {
     return '0 BTC';
   }
-  // Show up to 8 decimals but strip trailing zeros
-  return `${parseFloat(num.toFixed(8))} BTC`;
+  // Up to 8 decimals, trailing zeros stripped on the STRING: going back
+  // through a number printed 0.0000005 as "5e-7 BTC".
+  return `${num.toFixed(8).replace(/\.?0+$/, '')} BTC`;
 }

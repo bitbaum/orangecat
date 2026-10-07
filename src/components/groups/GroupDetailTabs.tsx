@@ -43,7 +43,8 @@ export function GroupDetailTabs({
 }: GroupDetailTabsProps) {
   return (
     <Tabs value={activeTab} onValueChange={onTabChange} className="space-y-6">
-      <TabsList>
+      {/* Six tabs do not fit a 320px phone: scroll the strip, never the page. */}
+      <TabsList className="max-w-full justify-start overflow-x-auto">
         <TabsTrigger value="overview">Overview</TabsTrigger>
         <TabsTrigger value="members">Members ({members.length})</TabsTrigger>
         <TabsTrigger value="wallets">Wallets ({wallets.length})</TabsTrigger>

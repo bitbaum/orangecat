@@ -12,7 +12,8 @@
 import { Mic, Square, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { API_ROUTES } from '@/config/api-routes';
-import { useDictation, type DictationError } from '@/hooks/useDictation';
+import { useDictation } from '@/hooks/useDictation';
+import { DICTATION_RETRY_LABEL, dictationErrorMessage } from '@/config/dictation-copy';
 import { cn } from '@/lib/utils';
 
 interface DictationButtonProps {
@@ -24,15 +25,6 @@ interface DictationButtonProps {
   disabled?: boolean;
   ariaLabel?: string;
 }
-
-/** Each failure needs its own recovery step, or it reads as a broken button. */
-const ERROR_COPY: Record<DictationError, string> = {
-  permission_denied:
-    'Microphone blocked — allow mic access for orangecat.ch in your browser, then try again.',
-  no_microphone: 'No microphone available — check your device and browser settings.',
-  transcription_failed: 'Couldn\u2019t transcribe — check your connection and try again.',
-  no_speech: 'Didn\u2019t catch any speech — try speaking closer to the mic.',
-};
 
 export function DictationButton({
   onTranscript,
@@ -46,8 +38,19 @@ export function DictationButton({
     endpoint: API_ROUTES.CAT.TRANSCRIBE,
     lang,
     onTranscript,
-    onError: error =>
-      error === 'no_speech' ? toast.message(ERROR_COPY[error]) : toast.error(ERROR_COPY[error]),
+    // Each failure names its own recovery step, or it reads as a broken button.
+    // A failed transcription keeps the recording: Try again resends it.
+    onError: (error, { detail, retry }) => {
+      const message = dictationErrorMessage(error, detail);
+      if (error === 'no_speech') {
+        toast.message(message);
+        return;
+      }
+      toast.error(
+        message,
+        retry ? { action: { label: DICTATION_RETRY_LABEL, onClick: retry } } : {}
+      );
+    },
   });
 
   // No MediaRecorder/mic API → render nothing (the composer keeps its other controls).

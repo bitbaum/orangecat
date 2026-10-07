@@ -34,6 +34,8 @@
  * matcher fires.
  */
 
+import { CAT_PLAYBOOKS } from '@/config/cat-playbooks';
+
 /**
  * Sections every message pays for. Keys are the exact `## ` heading text.
  * `assertEveryPromptSectionClassified` fails the build if a heading here drifts.
@@ -142,6 +144,8 @@ export const SITUATIONAL_SECTIONS: ReadonlyArray<{ heading: string; when: RegExp
     heading: 'Getting Something Built (Loki)',
     when: /\bloki\b|fleet ?crown|\bbuild\b|\bbuilt\b|building|\bsite\b|website|\bapp\b|prototype|\bmvp\b|make it real|ship it|\bdevelop/,
   },
+  // Every Cat playbook (cat-playbooks.ts), each loaded by its own trigger.
+  ...CAT_PLAYBOOKS.map(p => ({ heading: p.heading, when: p.trigger })),
   {
     heading: 'Choosing the Entity Type (decision rubric — apply before EVERY proposal)',
     when: /sell|offer|create|list|start|fund|raise|loan|borrow|rent|event|cause|project|product|service|make money|earn/,

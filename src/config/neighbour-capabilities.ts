@@ -82,7 +82,12 @@ export const NEIGHBOURS = {
           'bitbaum/solon AGENTS.md — "proposals, Bitcoin-signed votes, versioned policies, append-only audit"',
       },
       {
-        says: 'change the ceiling on what the Cat may spend platform-wide — the only wire between the two products today',
+        says: "receive a decision written here (a group's party budget, a research tranche) as a prefilled proposal that a member then files and signs there",
+        source:
+          'bitbaum/solon .claude/CLAUDE.md — "A link that arrives with context (?from=orangecat…, ?title=…) keeps that context through sign-in and /join (lib/domain/proposal-draft.ts)"',
+      },
+      {
+        says: 'change the ceiling on what the Cat may spend platform-wide — the only Solon decision OrangeCat enforces by itself today',
         source:
           'this repo — src/config/solon.ts and src/services/solon/ re-verify the signed decision locally',
       },
@@ -112,9 +117,11 @@ export const NEIGHBOURS = {
  * following one of these. A link that acted on someone's behalf would be a
  * different and much worse thing.
  *
- * Solon is absent on purpose. It has no agent surface and no brief to prefill,
- * so there is nothing here to hand a question to; a "talk to Solon" link would
- * point at a page that cannot answer. When that changes, it goes here.
+ * Solon has no agent surface to hand a QUESTION to, but its proposal form does
+ * read a prefilled draft (`/propose?from=orangecat&title=&body=&category=`,
+ * bitbaum/solon `lib/domain/proposal-draft`), and keeps it through sign-in and
+ * join. So a DECISION can be carried across — `solonProposalHandoff` below —
+ * and the members file and sign it themselves.
  */
 export function lokiBuildHandoff(brief: string, name?: string): string {
   const url = new URL('/control/new-from-scratch', ECOSYSTEM.loki.siteUrl);
@@ -123,6 +130,45 @@ export function lokiBuildHandoff(brief: string, name?: string): string {
   url.searchParams.set('brief', brief.trim().slice(0, 2000));
   if (name?.trim()) {
     url.searchParams.set('name', name.trim().slice(0, 100));
+  }
+  return url.toString();
+}
+
+export interface SolonProposalPrefill {
+  title?: string | undefined;
+  body?: string | undefined;
+  /** A Solon decision category — SOLON_PROPOSAL_CATEGORY. */
+  category?: string | undefined;
+  /** The OrangeCat path the decision is about, so Solon can link back. */
+  source?: string | undefined;
+  entityType?: string | undefined;
+  entityId?: string | undefined;
+}
+
+/**
+ * A Solon proposal form with the decision already written. Prefill only: the
+ * proposal exists once a member files it there and signs it.
+ */
+export function solonProposalHandoff(draft: SolonProposalPrefill): string {
+  const url = new URL('/propose', ECOSYSTEM.solon.siteUrl);
+  url.searchParams.set('from', 'orangecat');
+  if (draft.entityType) {
+    url.searchParams.set('entity_type', draft.entityType);
+  }
+  if (draft.entityId) {
+    url.searchParams.set('entity_id', draft.entityId);
+  }
+  if (draft.source) {
+    url.searchParams.set('source', draft.source);
+  }
+  if (draft.title?.trim()) {
+    url.searchParams.set('title', draft.title.trim().slice(0, 120));
+  }
+  if (draft.body?.trim()) {
+    url.searchParams.set('body', draft.body.trim());
+  }
+  if (draft.category) {
+    url.searchParams.set('category', draft.category);
   }
   return url.toString();
 }

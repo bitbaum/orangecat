@@ -32,8 +32,8 @@ export default function BitBaumAboutPage() {
               About bitbaum
             </h1>
             <p className="text-xl text-fg-secondary max-w-3xl mx-auto">
-              Building open economic infrastructure for the Bitcoin era. The studio behind
-              OrangeCat and Loki.
+              Building open economic infrastructure for the Bitcoin era. The studio behind OrangeCat
+              and Loki.
             </p>
           </div>
         </div>
@@ -49,8 +49,8 @@ export default function BitBaumAboutPage() {
           <p className="text-lg text-fg-secondary max-w-4xl mx-auto leading-relaxed">
             Enable anyone — any person, pseudonym, or organization — to participate in the full
             spectrum of economic activity: exchanging, funding, lending, investing, and governing
-            without gatekeepers. Bitcoin is the accountable settlement rail available today;
-            broader rails remain part of the long-term mission.
+            without gatekeepers. Bitcoin is the accountable settlement rail available today; broader
+            rails remain part of the long-term mission.
           </p>
         </div>
 
@@ -238,17 +238,17 @@ export default function BitBaumAboutPage() {
           </div>
         </div>
 
-        {/* Team Section Placeholder */}
+        {/* Build with us — the door in, not a team roster */}
         <div className="bg-surface-base rounded-lg shadow-sm p-8 text-center">
           <Users className="w-12 h-12 text-fg-tertiary/50 mx-auto mb-4" />
-          <h3 className="text-2xl font-bold text-fg-primary mb-4">Our Team</h3>
+          <h3 className="text-2xl font-bold text-fg-primary mb-4">Build with us</h3>
           <p className="text-fg-secondary mb-6">
-            A passionate team of Bitcoin enthusiasts, developers, and community builders working
-            from Switzerland and around the world.
+            The code is open source under the MIT licence. Read it, open an issue, send a pull
+            request, or build for others as a partner.
           </p>
           <Link href="/company/careers">
             <Button variant="accent" size="lg">
-              Join Our Team
+              Ways in
             </Button>
           </Link>
         </div>

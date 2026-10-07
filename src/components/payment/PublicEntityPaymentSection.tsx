@@ -95,11 +95,7 @@ export function PublicEntityPaymentSection({
   if (!isAuthenticated) {
     if (meta.canReceiveSupport && meta.paymentPattern !== 'fixed_price') {
       return sellerReceive ? (
-        <PublicSupportPanel
-          entityType={entityType}
-          entityId={entityId}
-          entityTitle={entityTitle}
-        />
+        <PublicSupportPanel entityType={entityType} entityId={entityId} entityTitle={entityTitle} />
       ) : (
         <Card>
           <CardContent className="pt-6">
@@ -128,7 +124,7 @@ export function PublicEntityPaymentSection({
             address={sellerReceive.address}
             signInHref={`${ROUTES.AUTH}?mode=login&from=${signInRedirect}`}
           />
-          <SharedWalletNotice usage={sharedWalletUsage} />
+          <SharedWalletNotice usage={sharedWalletUsage} method={sellerReceive.method} />
           {meta.canReceiveSupport && meta.paymentPattern === 'fixed_price' && (
             <PublicSupportPanel
               entityType={entityType}
@@ -158,7 +154,7 @@ export function PublicEntityPaymentSection({
               <p className="text-xs text-fg-secondary text-center">
                 {isTicket
                   ? 'Your ticket and its QR code for the door are kept in your account.'
-                  : 'This seller uses a connected Lightning wallet for purchases.'}
+                  : 'Sign in to get a Lightning invoice for this purchase.'}
               </p>
               <PaymentExpectationNote />
             </>
@@ -169,11 +165,7 @@ export function PublicEntityPaymentSection({
     return sellerReceive && meta.canReceiveSupport && meta.paymentPattern === 'fixed_price' ? (
       <div className="space-y-4">
         {purchaseFallback}
-        <PublicSupportPanel
-          entityType={entityType}
-          entityId={entityId}
-          entityTitle={entityTitle}
-        />
+        <PublicSupportPanel entityType={entityType} entityId={entityId} entityTitle={entityTitle} />
       </div>
     ) : (
       purchaseFallback
@@ -250,11 +242,7 @@ export function PublicEntityPaymentSection({
         </CardContent>
       </Card>
       {meta.canReceiveSupport && meta.paymentPattern === 'fixed_price' && (
-        <PublicSupportPanel
-          entityType={entityType}
-          entityId={entityId}
-          entityTitle={entityTitle}
-        />
+        <PublicSupportPanel entityType={entityType} entityId={entityId} entityTitle={entityTitle} />
       )}
     </div>
   );

@@ -142,6 +142,12 @@ export const API_ROUTES = {
     REQUEST: (id: string) => `/api/tasks/${id}/request`,
     ANALYTICS: '/api/task-analytics',
   },
+  /** "I need A, it costs B" → a priced plan (see domain/raise). */
+  RAISE: {
+    PLAN: '/api/raise/plan',
+  },
+  /** Public Fund / Lend / Invest rails for a product (see services/capital). */
+  CAPITAL: (slug: string) => `/api/capital/${slug}`,
   AI: {
     FORM_PREFILL: '/api/ai/form-prefill',
     IMAGES_GENERATE: '/api/ai/images/generate',

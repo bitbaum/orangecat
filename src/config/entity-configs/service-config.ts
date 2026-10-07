@@ -129,6 +129,10 @@ const fieldGroups: FieldGroup[] = [
       },
     ],
   },
+  // Right after the price: what it costs and where the money goes are one
+  // decision. At the end of the form it sat under "Profile Visibility" and
+  // read as part of it.
+  WALLET_FIELD_GROUP,
   {
     id: 'location',
     title: 'Location & Availability',
@@ -176,7 +180,6 @@ const fieldGroups: FieldGroup[] = [
       },
     ],
   },
-  WALLET_FIELD_GROUP,
 ];
 
 // ==================== DEFAULT VALUES ====================

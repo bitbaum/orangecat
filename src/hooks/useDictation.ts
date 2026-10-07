@@ -3,18 +3,23 @@
 /**
  * Recording and transcription, with no opinion about what happens to the words.
  *
- * Lifted out of DictationButton so the mic-in-a-textbox and the voice-first
- * create flow share one implementation of the fiddly part: MIME negotiation,
- * stream cleanup, and the permission failures that otherwise read as "the mic
- * button is broken".
+ * The recording itself is the fleet's — `@bitbaum/chatkit`'s useDictation, the
+ * same one Loki's composer runs on. This file used to be OrangeCat's own copy,
+ * and the two drifted: when a transcription failed here, the server's reason
+ * ("busy, try again in a moment") was thrown away for "check your connection",
+ * and the take was dropped, so trying again meant saying it all a second time
+ * (2026-10-07, the AI fill panel on a create form). chatkit keeps the take and
+ * the reason; this adapter keeps OrangeCat's interface (`endpoint`, the
+ * `{ data: { text } }` envelope, its error names) so callers did not change.
  *
- * PORTABILITY — this is the piece meant to travel to the other apps. It depends
- * on nothing OrangeCat-specific: pass `endpoint` and it works anywhere that has
- * a multipart transcription route. Keep it that way; app-specific behaviour
- * belongs in the components that call it.
+ * Server-first on purpose (`prefer: 'server'`): Whisper detects the language,
+ * while a browser recogniser listens in the page's language — a Russian or
+ * German sentence on an English page would come back as English nonsense.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
+import { TranscriptionError, reasonFromBody } from '@bitbaum/chatkit';
+import { useDictation as useChatkitDictation } from '@bitbaum/chatkit/react';
 
 export type DictationState = 'idle' | 'recording' | 'transcribing';
 
@@ -28,143 +33,99 @@ export type DictationError =
   /** Recorded silence — nothing to transcribe. */
   | 'no_speech';
 
+export interface DictationErrorExtra {
+  /** What the server said, when it said anything ("Dictation is busy…"). */
+  detail: string | null;
+  /** Send the same recording again; null when there is nothing kept. */
+  retry: (() => void) | null;
+}
+
 interface UseDictationOptions {
   /** Multipart endpoint taking field "file"; returns { data: { text } }. */
   endpoint: string;
   /** BCP-47 hint (e.g. "en-US"); only the primary subtag is sent. */
   lang?: string;
   onTranscript: (text: string) => void;
-  onError?: (error: DictationError) => void;
+  onError?: (error: DictationError, extra: DictationErrorExtra) => void;
 }
 
-const MIME_CANDIDATES = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg'];
-
-function pickMimeType(): string | undefined {
-  if (typeof MediaRecorder === 'undefined') {
-    return undefined;
+/** OrangeCat's transcribe route: field "file", optional "language", answers
+ *  `{ data: { text } }` or `{ error: { message } }`. */
+async function postToRoute(endpoint: string, audio: Blob, lang: string | undefined) {
+  const fd = new FormData();
+  fd.append('file', audio, 'audio.webm');
+  if (lang) {
+    fd.append('language', lang);
   }
-  return MIME_CANDIDATES.find(m => MediaRecorder.isTypeSupported(m));
+  const res = await fetch(endpoint, { method: 'POST', body: fd });
+  const json = (await res.json().catch(() => null)) as { data?: { text?: unknown } } | null;
+  if (!res.ok) {
+    throw new TranscriptionError(reasonFromBody(json), res.status);
+  }
+  const text = json?.data?.text;
+  return typeof text === 'string' ? text : '';
 }
 
 export function useDictation({ endpoint, lang, onTranscript, onError }: UseDictationOptions) {
-  const [state, setState] = useState<DictationState>('idle');
-  const recorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
-  const streamRef = useRef<MediaStream | null>(null);
-
-  // Read through refs so a re-render mid-recording can't strand the callbacks
-  // registered on the recorder.
-  const onTranscriptRef = useRef(onTranscript);
-  onTranscriptRef.current = onTranscript;
   const onErrorRef = useRef(onError);
-  onErrorRef.current = onError;
+  useEffect(() => {
+    onErrorRef.current = onError;
+  });
 
-  const supported =
-    typeof navigator !== 'undefined' &&
-    !!navigator.mediaDevices?.getUserMedia &&
-    typeof MediaRecorder !== 'undefined';
+  const transcribe = useCallback(
+    // Only the primary subtag; without a hint Whisper detects the language.
+    (audio: Blob) => postToRoute(endpoint, audio, lang?.split('-')[0]),
+    [endpoint, lang]
+  );
 
-  const releaseStream = useCallback(() => {
-    streamRef.current?.getTracks().forEach(t => t.stop());
-    streamRef.current = null;
-  }, []);
+  const d = useChatkitDictation({
+    onText: onTranscript,
+    lang,
+    prefer: 'server',
+    transcribe,
+  });
 
-  // A live mic track outlives the component otherwise — the browser keeps
-  // showing "recording" on a page the user has already left.
-  useEffect(() => () => releaseStream(), [releaseStream]);
-
-  const start = useCallback(async () => {
-    if (!supported) {
-      onErrorRef.current?.('no_microphone');
+  // chatkit reports one problem at a time; each new one reaches the caller once.
+  // retry/clearProblem are read through refs: their identity changes with the
+  // status, and re-running on that would toast the same failure twice.
+  const { problem, problemDetail, canRetry } = d;
+  const retryRef = useRef(d.retry);
+  const clearRef = useRef(d.clearProblem);
+  useEffect(() => {
+    retryRef.current = d.retry;
+    clearRef.current = d.clearProblem;
+  });
+  useEffect(() => {
+    if (!problem) {
       return;
     }
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      streamRef.current = stream;
-      const mimeType = pickMimeType();
-      const rec = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
-      chunksRef.current = [];
-
-      rec.ondataavailable = e => {
-        if (e.data.size > 0) {
-          chunksRef.current.push(e.data);
-        }
-      };
-
-      rec.onstop = async () => {
-        releaseStream();
-        const blob = new Blob(chunksRef.current, { type: rec.mimeType || 'audio/webm' });
-        chunksRef.current = [];
-        if (blob.size === 0) {
-          setState('idle');
-          onErrorRef.current?.('no_speech');
-          return;
-        }
-
-        setState('transcribing');
-        try {
-          const fd = new FormData();
-          fd.append('file', blob, 'audio.webm');
-          if (lang) {
-            fd.append('language', lang.split('-')[0]);
-          }
-          const res = await fetch(endpoint, { method: 'POST', body: fd });
-          const json = (await res.json().catch(() => null)) as {
-            data?: { text?: string };
-          } | null;
-          const text = json?.data?.text ?? '';
-
-          if (text) {
-            onTranscriptRef.current(text);
-          } else {
-            onErrorRef.current?.(res.ok ? 'no_speech' : 'transcription_failed');
-          }
-        } catch {
-          onErrorRef.current?.('transcription_failed');
-        } finally {
-          setState('idle');
-        }
-      };
-
-      recorderRef.current = rec;
-      rec.start();
-      setState('recording');
-    } catch (error) {
-      // Silence here reads as a broken button — a real founder bug report from
-      // Brave, which blocks mic access by default. Always surface it.
-      releaseStream();
-      setState('idle');
-      onErrorRef.current?.(
-        error instanceof DOMException && error.name === 'NotAllowedError'
-          ? 'permission_denied'
-          : 'no_microphone'
-      );
+    const error: DictationError =
+      problem === 'mic'
+        ? 'permission_denied'
+        : problem === 'silence'
+          ? 'no_speech'
+          : 'transcription_failed';
+    onErrorRef.current?.(error, {
+      detail: problemDetail,
+      retry: canRetry ? () => void retryRef.current() : null,
+    });
+    // The caller now owns the message (a toast, a line); a kept take stays
+    // retryable through the function it was handed.
+    if (!canRetry) {
+      clearRef.current();
     }
-  }, [supported, endpoint, lang, releaseStream]);
+  }, [problem, problemDetail, canRetry]);
 
-  const stop = useCallback(() => {
-    try {
-      recorderRef.current?.stop();
-    } catch {
-      // Already stopped; onstop has run or will not fire.
-    }
-  }, []);
-
-  const toggle = useCallback(() => {
-    if (state === 'recording') {
-      stop();
-    } else if (state === 'idle') {
-      void start();
-    }
-  }, [state, start, stop]);
+  const state: DictationState =
+    d.status === 'listening' ? 'recording' : d.status === 'transcribing' ? 'transcribing' : 'idle';
 
   return {
     state,
-    supported,
+    supported: d.supported,
     isRecording: state === 'recording',
     isTranscribing: state === 'transcribing',
-    start,
-    stop,
-    toggle,
+    start: d.start,
+    stop: d.stop,
+    toggle: d.toggle,
   };
 }

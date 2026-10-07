@@ -217,6 +217,11 @@ export function PaymentDialog({
                     I&apos;ve paid
                   </Button>
                 )}
+              {state.notice && (
+                <p role="status" className="text-sm text-fg-secondary text-center">
+                  {state.notice}
+                </p>
+              )}
             </div>
           )}
 
@@ -227,6 +232,20 @@ export function PaymentDialog({
               <p className="text-lg font-semibold text-status-positive">Payment successful!</p>
               <p className="text-sm text-fg-secondary">
                 {isContribution ? 'Thank you for your support!' : 'Your order has been placed.'}
+              </p>
+              <Button onClick={handleClose} className="min-h-11">
+                Done
+              </Button>
+            </div>
+          )}
+
+          {/* Phase: Claimed — the buyer's word, awaiting the seller's check */}
+          {state.phase === 'claimed' && (
+            <div className="flex flex-col items-center gap-4 py-8 text-center">
+              <CheckCircle2 className="h-12 w-12 text-fg-secondary" />
+              <p className="text-lg font-semibold text-fg-primary">Thanks — noted</p>
+              <p className="text-sm text-fg-secondary">
+                The seller confirms once it shows in their wallet. You don&apos;t need to pay again.
               </p>
               <Button onClick={handleClose} className="min-h-11">
                 Done

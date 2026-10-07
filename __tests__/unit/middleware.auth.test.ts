@@ -100,6 +100,18 @@ describe('middleware auth protection', () => {
     expect(res?.headers.get('location')).toContain('from=%2Fdashboard');
   });
 
+  it('keeps the query when sending a signed-out visitor to sign in', async () => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
+    setMockUser(null);
+
+    const req = buildRequest('/dashboard/cat?q=Throw%20a%20party');
+    const res = await middleware(req as any);
+
+    const location = new URL(res?.headers.get('location') ?? '');
+    expect(location.searchParams.get('from')).toBe('/dashboard/cat?q=Throw%20a%20party');
+  });
+
   it('allows a protected route through when @supabase/ssr returns a user', async () => {
     process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';

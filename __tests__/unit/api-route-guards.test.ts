@@ -84,6 +84,10 @@ const AUTH_ALLOWLIST: Record<string, string> = {
   // limited like any other anonymous write.
   'profile-claims/token/[token]/decline/route.ts':
     'anonymous decline by design — the token is the capability, and requiring a signup to say no is not consent',
+  // Pricing a need writes nothing: it returns a plan, and publishing it goes
+  // through the entity's own authed create endpoint. It has to work before
+  // signup or nobody learns that it works; per-IP limited like Ask-Cat.
+  'raise/plan/route.ts': 'read-only plan for visitors by design — publishing is authed elsewhere',
 };
 
 /**

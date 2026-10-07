@@ -12,6 +12,7 @@ import { SITE_ORIGIN } from '@/config/site-origin';
 import { openApiRegistry } from './registry';
 import { registerV1Routes } from './registerV1Routes';
 import { PUBLIC_API_VERSION } from '@/config/public-api';
+import { CONTACT_EMAIL } from '@/config/brand';
 
 let memo: object | null = null;
 
@@ -26,8 +27,7 @@ export function getOpenApiSpec() {
     info: {
       title: 'OrangeCat Public API',
       version: PUBLIC_API_VERSION,
-      description:
-        'Authenticate sibling products and third-party integrations into OrangeCat with an integration key (see /settings/integrations). The v1 surface is the stable contract; non-versioned endpoints are internal and may change. Contact: integrations@orangecat.ch.',
+      description: `Authenticate sibling products and third-party integrations into OrangeCat with an integration key (see /settings/integrations). The v1 surface is the stable contract; non-versioned endpoints are internal and may change. Contact: ${CONTACT_EMAIL}.`,
       license: { name: 'MIT', url: 'https://github.com/bitbaum/orangecat/blob/main/LICENSE' },
     },
     servers: [

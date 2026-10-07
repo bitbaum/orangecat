@@ -46,6 +46,7 @@ import { getApiEndpoint } from '@/config/entity-registry';
 import { EVENT_COVER_SOURCES, EVENT_TYPES } from '@/config/events';
 import { CURRENCY_CODES } from '@/config/currencies';
 import { GROUP_LABEL_IDS } from '@/config/group-labels';
+import { PROPOSAL_TYPES } from '@/config/proposal-constants';
 
 // ==================== ACTION TYPES ====================
 
@@ -260,8 +261,9 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
       {
         name: 'location',
         type: 'string',
-        required: true,
-        description: 'Street address or venue and city, as said — it is put on the map',
+        required: false,
+        description:
+          'Street address or venue and city, as said (mapped); omit when to be announced',
       },
       {
         name: 'venue',
@@ -273,7 +275,8 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
         name: 'event_type',
         type: 'string',
         required: false,
-        description: `One of: ${EVENT_TYPES.map(t => t.value).join(', ')}`,
+        description: `One of: ${EVENT_TYPES.map(t => t.value).join(', ')} (default: meetup)`,
+        default: 'meetup',
       },
       {
         name: 'music_genres',
@@ -307,6 +310,19 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
         description: `Currency of ticket_price: ${CURRENCY_CODES.join(', ')} (default: the user's)`,
       },
       {
+        name: 'is_free',
+        type: 'boolean',
+        required: false,
+        description: 'Free entry (default: true unless a ticket price is set)',
+        default: true,
+      },
+      {
+        name: 'max_attendees',
+        type: 'number',
+        required: false,
+        description: 'How many people fit',
+      },
+      {
         name: 'publish',
         type: 'boolean',
         required: false,
@@ -323,6 +339,8 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
     examples: [
       'Create a party at Langstrasse 120, Zürich on Saturday 10pm — house and disco, I need a DJ and 2 bartenders, 20 CHF entry',
       'Set up a Bitcoin meetup next Thursday at 7pm at Hive Zürich',
+      'Throw a birthday party on Saturday',
+      'Run a ticketed conference in Basel',
       'Organize a community gathering',
     ],
     apiEndpoint: getApiEndpoint('event'),
@@ -1585,6 +1603,57 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
       },
     ],
     examples: ['Propose raising your daily spending ceiling to 0.002 BTC'],
+    enabled: true,
+  },
+
+  /**
+   * Put a decision about a group's shared money to the group. The OrangeCat
+   * group vote by default; when the group governs with Solon, a prefilled
+   * Solon proposal link instead — Solon holds no money and has no agent
+   * surface, so filing there is the members' act, not the Cat's.
+   */
+  propose_to_group: {
+    id: 'propose_to_group',
+    name: 'Propose to Group',
+    description: 'Put a shared-money decision to a group vote (here, or prefilled for Solon)',
+    category: 'organization',
+    icon: Landmark,
+    riskLevel: 'medium',
+    requiresConfirmation: true,
+    parameters: [
+      {
+        name: 'group_id',
+        type: 'entity_id',
+        required: true,
+        description: 'Group id, shown as "(id: ...)" in "Group Memberships" context',
+      },
+      { name: 'title', type: 'string', required: true, description: 'What is being decided' },
+      {
+        name: 'description',
+        type: 'string',
+        required: true,
+        description: 'What, why, and how much — shown to the members who vote',
+      },
+      {
+        name: 'proposal_type',
+        type: 'string',
+        required: false,
+        description: `One of: ${Object.values(PROPOSAL_TYPES).join(', ')} (default: treasury)`,
+        default: PROPOSAL_TYPES.TREASURY,
+      },
+      {
+        name: 'decide_on',
+        type: 'string',
+        required: false,
+        description:
+          'orangecat (default — the group votes here) | solon (the group is a Verein/co-op that governs with Solon)',
+        default: 'orangecat',
+      },
+    ],
+    examples: [
+      'Ask the flat whether we use the shared purse for the party',
+      'Put the summer party budget to the Verein',
+    ],
     enabled: true,
   },
 

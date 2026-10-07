@@ -35,7 +35,7 @@ vi.mock('@/lib/nominatim', () => ({
             venue_city: 'Zürich',
             venue_postal_code: '8004',
             venue_country: 'Switzerland',
-          country_code: 'CH',
+            country_code: 'CH',
             display_name: 'Langstrasse 120, 8004 Zürich, Switzerland',
           }
         : null
@@ -157,8 +157,8 @@ describe('Cat create_event — one sentence, one complete event', () => {
       venue_address: 'the old barn',
       latitude: null,
       status: 'draft',
+      event_type: 'meetup',
     });
-    expect(row).not.toHaveProperty('event_type');
     expect(inserts[DATABASE_TABLES.EVENT_ROLES]).toBeUndefined();
   });
 

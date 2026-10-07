@@ -10,6 +10,7 @@
  * is typed twice.
  */
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
+import { ECOSYSTEM } from '@/config/ecosystem';
 
 export const PARTNER_GUILD = {
   /** The group's slug on this platform. Founding it is the first admission. */
@@ -31,16 +32,16 @@ export const LADDER: readonly LadderRung[] = [
     id: 'studio',
     title: 'The studio',
     who: 'For work that has to be right the first time.',
-    what: 'The studio takes the whole thing: scope, build, ship, run. A few clients at a time, by application.',
+    what: 'The studio takes the whole thing: scope, build, ship, run. By application.',
     price:
       'Priced per engagement. Everything the studio makes stays open source; it asks for appreciation, not a licence.',
-    cta: { label: 'Talk to the studio', href: '/support' },
+    cta: { label: 'Talk to the studio', href: ECOSYSTEM.studio.hireUrl },
   },
   {
     id: 'partner',
     title: 'A partner',
     who: 'For a project that wants a person who has done this before.',
-    what: 'Partners are independent builders admitted to the guild after a course and an assessed portfolio. You choose one from the list below and agree terms directly.',
+    what: 'Partners are independent builders admitted to the guild by its members. You choose one from the list below and agree terms directly.',
     price: 'Their price, paid to them directly. The platform takes nothing.',
     cta: { label: 'See the partners', href: '#partners' },
   },
@@ -75,6 +76,6 @@ export function guildHref(): string {
 
 /** Where "found the guild" goes when there is none yet: the group form, pre-described. */
 export function foundGuildHref(): string {
-  const sentence = `${PARTNER_GUILD.name}: a guild of independent builders who ship with OrangeCat, Loki and Solon. Members are admitted by the members after a course and an assessed portfolio.`;
+  const sentence = `${PARTNER_GUILD.name}: a guild of independent builders who ship with OrangeCat, Loki and Solon. Members are admitted by the members.`;
   return `${ENTITY_REGISTRY.group.createPath}?description=${encodeURIComponent(sentence)}&autofill=1`;
 }

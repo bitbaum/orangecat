@@ -2,6 +2,7 @@
 
 import { Landmark, ArrowUpRight } from 'lucide-react';
 import { ECOSYSTEM } from '@/config/ecosystem';
+import { solonProposalHandoff } from '@/config/neighbour-capabilities';
 import type { EntityType } from '@/config/entity-registry';
 
 /**
@@ -31,20 +32,14 @@ interface SolonGovernCtaProps {
 }
 
 function solonGovernUrl(props: Omit<SolonGovernCtaProps, 'variant'>): string {
-  const url = new URL('/propose', ECOSYSTEM.solon.siteUrl);
-  url.searchParams.set('from', 'orangecat');
-  url.searchParams.set('entity_type', props.entityType);
-  url.searchParams.set('entity_id', props.entityId);
-  url.searchParams.set('source', props.sourcePath);
-  const title = props.draft?.title ?? props.title;
-  if (title) {
-    url.searchParams.set('title', title.slice(0, 120));
-  }
-  if (props.draft) {
-    url.searchParams.set('body', props.draft.body);
-    url.searchParams.set('category', props.draft.category);
-  }
-  return url.toString();
+  return solonProposalHandoff({
+    entityType: props.entityType,
+    entityId: props.entityId,
+    source: props.sourcePath,
+    title: props.draft?.title ?? props.title,
+    body: props.draft?.body,
+    category: props.draft?.category,
+  });
 }
 
 const DEFAULT_COPY = {

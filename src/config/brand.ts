@@ -22,6 +22,14 @@ export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || `https://${APP_DOMAI
 
 export const APP_EMAIL_FROM = `${APP_NAME} <notifications@${APP_DOMAIN}>`;
 
+/**
+ * The one public contact address. Only cato@ is a real mailbox on the
+ * orangecat.ch domain (Infomaniak); mao@, and the hello@/security@/support@/
+ * integrations@ addresses that replaced it on these pages, were never created,
+ * so mail to them bounced. Every public page and legal text uses this.
+ */
+export const CONTACT_EMAIL = `cato@${APP_DOMAIN}`;
+
 /** Warm accent for rare CTAs (matches x.ai public band — defined once in globals `--public-accent`) */
 export const BRAND_ACCENT_HEX = '#ff5c00';
 

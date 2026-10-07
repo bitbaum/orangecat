@@ -2,7 +2,7 @@
   "name": "@orangecat/sdk",
   "version": "0.4.0",
   "description": "Official TypeScript SDK for the OrangeCat platform API (v1).",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "private": false,
   "type": "module",
   "main": "./dist/index.js",
