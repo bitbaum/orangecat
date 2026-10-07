@@ -13,6 +13,9 @@
 -- 'exhibition','festival','retreat','other'])); — after moving any 'concert'
 -- rows to 'other'.
 
+-- migration-safety: contract-ok the new check is a superset of the old one — every
+-- existing row stays valid, and the previous release never writes 'concert',
+-- so a code rollback keeps working against this constraint.
 ALTER TABLE public.events DROP CONSTRAINT IF EXISTS events_event_type_check;
 
 ALTER TABLE public.events
