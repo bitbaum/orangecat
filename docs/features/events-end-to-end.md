@@ -44,7 +44,7 @@ how it was found. The status column is kept current as items land.
 - **P2 — the crew is real people.** ✅ Assign a person to a role; the Door role checks people in; tickets are announced by notification.
 - **P3 — money out.** ✅ One-click crew payouts and refunds through the existing send rail, each leaving a record; a failed send is recorded as failed, never hidden.
 - **P4 — the cover.** ✅ A cover field on the event form; the shared image field finds or generates; the Cat uses the chat photo or the person's own image key.
-- **P5 — record it.** Changelog entries linked to the roadmap milestones they complete, and a write-up.
+- **P5 — record it.** ✅ An "Events, end to end" goal in ROADMAP.md, today's CHANGELOG entries citing its milestones by `{#id}`, both pages linking each other through bip-kit 0.6.0 (`linkDevelopment`), and the write-up: `content/blog/one-night-at-espresso-bar.md`.
 
 ## How it was tested
 
