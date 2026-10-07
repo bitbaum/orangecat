@@ -11,8 +11,11 @@ import { useRouter } from 'next/navigation';
 import { Check } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { formatEventClock } from '@/domain/events/time';
+import RefundTicketButton from './RefundTicketButton';
 
 export interface DoorGuest {
+  /** The attendee row — what a refund names. */
+  id: string;
   code: string;
   name: string;
   count: number;
@@ -26,9 +29,17 @@ interface DoorListProps {
   capacity: number | null;
   /** The event's zone: check-in times read on the venue's clock. */
   zone: string;
+  /** The organizer (not the door crew) can refund a paid ticket. */
+  canRefund?: boolean;
 }
 
-export default function DoorList({ eventId, guests, capacity, zone }: DoorListProps) {
+export default function DoorList({
+  eventId,
+  guests,
+  capacity,
+  zone,
+  canRefund = false,
+}: DoorListProps) {
   const router = useRouter();
   const [query, setQuery] = useState('');
   const [busy, setBusy] = useState<string | null>(null);
@@ -83,7 +94,7 @@ export default function DoorList({ eventId, guests, capacity, zone }: DoorListPr
       ) : (
         <ul className="divide-y divide-default rounded-xl border border-default">
           {shown.map(g => (
-            <li key={g.code} className="flex items-center justify-between gap-3 p-3">
+            <li key={g.code} className="flex flex-wrap items-center justify-between gap-3 p-3">
               <div className="min-w-0">
                 <div className="break-words font-medium text-fg-primary">
                   {g.name}
@@ -94,6 +105,9 @@ export default function DoorList({ eventId, guests, capacity, zone }: DoorListPr
                   {g.checkedInAt ? ` · in at ${formatEventClock(g.checkedInAt, zone)}` : ''}
                 </div>
               </div>
+              {canRefund && g.paid && !g.checkedInAt && (
+                <RefundTicketButton eventId={eventId} attendeeId={g.id} guestName={g.name} />
+              )}
               {g.checkedInAt ? (
                 <Check className="h-5 w-5 shrink-0 text-status-positive" aria-label="Checked in" />
               ) : (

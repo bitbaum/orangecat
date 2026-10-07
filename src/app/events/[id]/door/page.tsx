@@ -102,6 +102,7 @@ export default async function DoorPage({ params, searchParams }: PageProps) {
   const guests: DoorGuest[] = tickets
     .filter(t => t.status !== 'cancelled')
     .map(t => ({
+      id: t.id,
       code: t.ticket_code,
       name: nameOf.get(t.user_id) ?? 'Guest',
       count: t.ticket_count,
@@ -144,6 +145,7 @@ export default async function DoorPage({ params, searchParams }: PageProps) {
         guests={guests}
         capacity={event.max_attendees ?? null}
         zone={eventZone(event)}
+        canRefund={event.user_id === user.id}
       />
     </main>
   );

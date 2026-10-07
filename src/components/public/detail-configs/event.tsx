@@ -291,6 +291,7 @@ export const eventDetailConfig: EntityDetailConfig = {
           organizerUserId={(entity.user_id as string) ?? null}
           isOwner={isOwner}
           isSignedIn={isSignedIn}
+          currency={(entity.currency as string) || 'CHF'}
         />
       </>
     );

@@ -30,8 +30,8 @@ how it was found. The status column is kept current as items land.
 | --- | --- | --- |
 | Door staff cannot check people in — only the organizer's account. | A crew role can be **given to a person**; whoever holds the Door role can check people in. | Done — P2 |
 | Crew roles have no person on them. | Roles hold people (up to the head-count), set by the organizer by @username; each is notified. | Done — P2 |
-| Paying the crew. | **One click per person, by the organizer**, from the organizer's own connected wallet, recorded on the role. Not automatic: OrangeCat does not hold money, and an automatic payout would need it to. | Planned — P3 |
-| Refunds. | The organizer cancels a paid ticket (seat freed, ticket marked refunded) and sends the money back with one click through the same rail. | Planned — P3 |
+| Paying the crew. | **One click per person, by the organizer**, from the organizer's own connected wallet — or recorded as paid another way (Twint, cash). Each payout is on the event's record (`event_payouts`), at most once per person per role. Not automatic: OrangeCat does not hold money, and an automatic payout would need it to. | Done — P3 |
+| Refunds. | From the door list, the organizer refunds a paid ticket: what the buyer paid goes back through the same rail (or is recorded as given back another way), the ticket is cancelled, the seat freed, the order marked refunded. | Done — P3 |
 | Ticket reaches the guest only on the page. | A notification with the ticket link when a ticket is issued (paid or free). | Done — P2 |
 | Cover pictures. | The Cat can set an event's cover from a photo sent in chat, or generate one when the person has an image-capable key; otherwise it says where to add one. | Planned — P4 |
 | Venue in the manual form was a UUID text box. | A picker of the venues you run. | Done |
@@ -42,7 +42,7 @@ how it was found. The status column is kept current as items land.
 
 - **P1 — correctness first.** ✅ Event times in the event's own timezone everywhere (page, lists, door, venue page, Cat); the Cat sends venue-local wall-clock times and the server converts them; a place's timezone comes from its coordinates. Geolocation errors say which kind they are.
 - **P2 — the crew is real people.** ✅ Assign a person to a role; the Door role checks people in; tickets are announced by notification.
-- **P3 — money out.** One-click crew payouts and refunds through the existing send rail, each leaving a record.
+- **P3 — money out.** ✅ One-click crew payouts and refunds through the existing send rail, each leaving a record; a failed send is recorded as failed, never hidden.
 - **P4 — the cover.** From a chat photo or a generated image.
 - **P5 — record it.** Changelog entries linked to the roadmap milestones they complete, and a write-up.
 

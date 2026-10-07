@@ -1,5 +1,5 @@
 /**
- * PATCH  /api/event-roles/[id] { status } | { assign: '@username' } | { unassign: userId }
+ * PATCH  /api/event-roles/[id] { status } | { assign: '@username' } | { unassign: userId } | { fee_amount }
  * DELETE /api/event-roles/[id]
  * Event owner only — RLS returns no row for anyone else, answered as 404.
  */
@@ -14,6 +14,7 @@ import {
   assignToRole,
   removeEventRole,
   setEventRoleStatus,
+  setRoleFee,
   unassignFromRole,
 } from '@/domain/events/crew';
 import { notifyCrewAssigned } from '@/domain/events/notify';
@@ -65,6 +66,16 @@ export async function PATCH(request: NextRequest, { params }: Ctx) {
         checksIn: role.can_check_in,
       });
       return apiSuccess({ role });
+    }
+
+    // The fee for one person in the role, in the event's currency: { fee_amount }
+    if ('fee_amount' in body) {
+      const fee =
+        body.fee_amount === null || body.fee_amount === '' ? null : Number(body.fee_amount);
+      if (fee !== null && !(Number.isFinite(fee) && fee >= 0)) {
+        return apiError('A fee is a number, zero or more', 'VALIDATION', 400);
+      }
+      return apiSuccess({ role: await setRoleFee(auth.supabase, id, fee) });
     }
 
     // Take someone off: { unassign: "<user id>" }

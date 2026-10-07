@@ -204,3 +204,21 @@ export async function canCheckInAt(
   });
   return data === true;
 }
+
+/** The fee one person in the role is paid, in the event's currency (null: unpaid). */
+export async function setRoleFee(
+  supabase: AnySupabaseClient,
+  roleId: string,
+  fee: number | null
+): Promise<EventRole> {
+  const { data, error } = await supabase
+    .from(DATABASE_TABLES.EVENT_ROLES)
+    .update({ fee_amount: fee })
+    .eq('id', roleId)
+    .select(SELECT)
+    .maybeSingle();
+  if (error || !data) {
+    throw new CrewAssignError(error?.message ?? 'Only the organizer can set a fee');
+  }
+  return data as EventRole;
+}

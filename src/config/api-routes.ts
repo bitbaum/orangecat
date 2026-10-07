@@ -241,6 +241,8 @@ export const API_ROUTES = {
     CHECK_IN: (eventId: string) => `${ENTITY_REGISTRY['event'].apiEndpoint}/${eventId}/check-in`,
     ROLES: (eventId: string) => `${ENTITY_REGISTRY['event'].apiEndpoint}/${eventId}/roles`,
     ROLE: (roleId: string) => `/api/event-roles/${roleId}`,
+    PAY_CREW: (roleId: string) => `/api/event-roles/${roleId}/pay`,
+    REFUNDS: (eventId: string) => `${ENTITY_REGISTRY['event'].apiEndpoint}/${eventId}/refunds`,
     /** Venue pages the signed-in person can list events at. */
     MY_PLACES: '/api/places/mine',
   },

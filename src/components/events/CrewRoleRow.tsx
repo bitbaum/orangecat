@@ -24,6 +24,9 @@ interface CrewRoleRowProps {
   onUnassign: (role: EventRole, userId: string) => void;
   onStatus: (role: EventRole, status: 'open' | 'filled') => void;
   onRemove: (role: EventRole) => void;
+  onFee: (role: EventRole, fee: number | null) => void;
+  /** The event's currency, which fees are set in. */
+  currency: string;
   renderPersonAction?: (role: EventRole, userId: string) => React.ReactNode;
 }
 
@@ -37,9 +40,12 @@ export default function CrewRoleRow({
   onUnassign,
   onStatus,
   onRemove,
+  onFee,
+  currency,
   renderPersonAction,
 }: CrewRoleRowProps) {
   const [who, setWho] = useState('');
+  const [fee, setFee] = useState(role.fee_amount === null ? '' : String(role.fee_amount));
   const room = role.quantity - role.assignee_user_ids.length;
 
   return (
@@ -90,6 +96,25 @@ export default function CrewRoleRow({
           </Button>
         </div>
       </div>
+
+      <label className="flex items-center gap-2 text-sm text-fg-secondary">
+        Fee per person
+        <input
+          value={fee}
+          inputMode="decimal"
+          onChange={e => setFee(e.target.value)}
+          onBlur={() => {
+            const next = fee.trim() === '' ? null : Number(fee);
+            if (next !== role.fee_amount && (next === null || Number.isFinite(next))) {
+              onFee(role, next);
+            }
+          }}
+          placeholder="—"
+          aria-label={`Fee per ${role.role_title}, in ${currency}`}
+          className="min-h-11 w-24 rounded-md border border-default bg-surface-base px-3 text-sm text-fg-primary"
+        />
+        {currency}
+      </label>
 
       {role.assignee_user_ids.length > 0 && (
         <ul className="space-y-1">

@@ -18,6 +18,7 @@ import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { logger } from '@/utils/logger';
 import EventCrewManager from './EventCrewManager';
 import type { CrewPerson } from './CrewRoleRow';
+import { listPayouts, type EventPayout } from '@/domain/events/payouts';
 import { DATABASE_TABLES } from '@/config/database-tables';
 
 interface EventCrewCardProps {
@@ -27,6 +28,8 @@ interface EventCrewCardProps {
   organizerUserId: string | null;
   isOwner: boolean;
   isSignedIn: boolean;
+  /** The event's currency — crew fees are set in it. */
+  currency: string;
 }
 
 /** "2× Bartender" — or "1 more Bartender" once some places are taken. */
@@ -66,10 +69,12 @@ export default async function EventCrewCard({
   organizerUserId,
   isOwner,
   isSignedIn,
+  currency,
 }: EventCrewCardProps) {
   let roles: EventRole[] = [];
   let viewerId: string | null = null;
   let people: Record<string, CrewPerson> = {};
+  let payouts: EventPayout[] = [];
   try {
     const supabase = (await createServerClient()) as unknown as AnySupabaseClient;
     const [list, auth] = await Promise.all([
@@ -79,14 +84,25 @@ export default async function EventCrewCard({
     roles = list;
     viewerId = auth.data.user?.id ?? null;
     if (isOwner) {
-      people = await crewNames(supabase, roles);
+      [people, payouts] = await Promise.all([
+        crewNames(supabase, roles),
+        listPayouts(supabase, eventId),
+      ]);
     }
   } catch (error) {
     logger.warn('Could not load event crew', { eventId, error: String(error) }, 'EventRoles');
   }
 
   if (isOwner) {
-    return <EventCrewManager eventId={eventId} initialRoles={roles} initialPeople={people} />;
+    return (
+      <EventCrewManager
+        eventId={eventId}
+        initialRoles={roles}
+        initialPeople={people}
+        initialPayouts={payouts}
+        currency={currency}
+      />
+    );
   }
 
   const mine = viewerId ? roles.filter(r => r.assignee_user_ids.includes(viewerId)) : [];

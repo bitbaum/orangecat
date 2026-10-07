@@ -14,21 +14,29 @@ import Button from '@/components/ui/Button';
 import { type RoleStatus } from '@/config/project-roles';
 import type { EventRole } from '@/domain/events/crew';
 import CrewRoleRow, { type CrewPerson } from './CrewRoleRow';
+import CrewPayButton from './CrewPayButton';
+import type { EventPayout } from '@/domain/events/payouts';
 
 interface EventCrewManagerProps {
   eventId: string;
   initialRoles: EventRole[];
   /** Names of the people already in roles, by user id. */
   initialPeople: Record<string, CrewPerson>;
+  /** What has already been paid out of the event. */
+  initialPayouts: EventPayout[];
+  /** The event's currency — fees are set in it. */
+  currency: string;
 }
 
-const label = (r: EventRole) => (r.quantity > 1 ? `${r.quantity}× ${r.role_title}` : r.role_title);
 
 export default function EventCrewManager({
   eventId,
   initialRoles,
   initialPeople,
+  initialPayouts,
+  currency,
 }: EventCrewManagerProps) {
+  const [payouts, setPayouts] = useState(initialPayouts);
   const [roles, setRoles] = useState(initialRoles);
   const [people, setPeople] = useState(initialPeople);
   const [draft, setDraft] = useState('');
@@ -103,6 +111,25 @@ export default function EventCrewManager({
     }
   }
 
+  async function setFee(role: EventRole, fee: number | null) {
+    const data = await call(API_ROUTES.EVENTS.ROLE(role.id), {
+      method: 'PATCH',
+      body: JSON.stringify({ fee_amount: fee }),
+    });
+    if (data?.role) {
+      replace(data.role as EventRole);
+    }
+  }
+
+  const paidTo = (roleId: string, userId: string) =>
+    payouts.find(
+      p =>
+        p.kind === 'crew' &&
+        p.role_id === roleId &&
+        p.recipient_user_id === userId &&
+        p.status === 'sent'
+    ) ?? null;
+
   async function unassign(role: EventRole, userId: string) {
     const data = await call(API_ROUTES.EVENTS.ROLE(role.id), {
       method: 'PATCH',
@@ -146,6 +173,17 @@ export default function EventCrewManager({
                 onUnassign={unassign}
                 onStatus={setStatus}
                 onRemove={remove}
+                onFee={setFee}
+                currency={currency}
+                renderPersonAction={(r, userId) => (
+                  <CrewPayButton
+                    roleId={r.id}
+                    userId={userId}
+                    feeLabel={r.fee_amount ? `${r.fee_amount} ${currency}` : null}
+                    paid={paidTo(r.id, userId)}
+                    onPaid={p => setPayouts(prev => [p, ...prev])}
+                  />
+                )}
               />
             ))}
           </ul>
