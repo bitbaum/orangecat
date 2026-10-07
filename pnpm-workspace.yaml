@@ -24,7 +24,12 @@ overrides:
   # npm's override said `$sharp` (follow the direct dep); pnpm 11 deprecates
   # that reference syntax, so the range is spelled out — keep in sync with the
   # sharp entry in package.json optionalDependencies.
-  sharp: ^0.35.4
+  # 0.35.5 closes the librsvg advisory (GHSA-wq5f-xc86-pv6w, high), 2026-10.
+  sharp: ^0.35.5
+  # 1.31.0 stops the OAuth client sending credentials to an authorization
+  # server the MCP server picks (GHSA-6qxp-vccf-f47h, high), 2026-10. Pinned
+  # here as well as in package.json so a transitive copy cannot stay behind.
+  '@modelcontextprotocol/sdk@1': ^1.31.0
   '@babel/core': ^7.29.6
   hono: ^4.12.27
   js-yaml: ^4.3.2
