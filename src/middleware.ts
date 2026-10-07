@@ -24,6 +24,10 @@ const REQUIRES_AUTH_PREFIXES = [
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+  // Where sign-in returns to, query included: `/dashboard/cat?q=…` is a
+  // sentence someone already typed, and dropping `?q=` sent them back to an
+  // empty chat after signing in.
+  const returnPath = pathname + request.nextUrl.search;
   const url = request.nextUrl;
 
   // Early return for static assets and API routes (handled by matcher, but double-check)
@@ -103,7 +107,7 @@ export async function middleware(request: NextRequest) {
       // Misconfigured deployment — bounce to auth rather than crash.
       const redirectUrl = new URL('/auth', request.url);
       redirectUrl.searchParams.set('mode', 'login');
-      redirectUrl.searchParams.set('from', pathname);
+      redirectUrl.searchParams.set('from', returnPath);
       return NextResponse.redirect(redirectUrl);
     }
 
@@ -131,7 +135,7 @@ export async function middleware(request: NextRequest) {
     if (!user) {
       const redirectUrl = new URL('/auth', request.url);
       redirectUrl.searchParams.set('mode', 'login');
-      redirectUrl.searchParams.set('from', pathname);
+      redirectUrl.searchParams.set('from', returnPath);
       return NextResponse.redirect(redirectUrl);
     }
   }
