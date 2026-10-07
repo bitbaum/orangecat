@@ -17,6 +17,13 @@ import { extractFieldDescriptions, formatFieldsForPrompt } from './schema-to-pro
 import { getSystemPrompt, getUserPrompt, parseAIResponse } from './prompts/form-prefill';
 import { sanitizeAiFields } from './sanitize-ai-fields';
 import type { AiAssistTarget } from './assist-target';
+import {
+  EVENT_FACT_KEYS,
+  eventFactsFromWords,
+  titleFromWords,
+  withEventDayContext,
+  type EventDraftContext,
+} from '@/services/cat/event-draft';
 
 /**
  * Configuration for the form prefill service
@@ -39,6 +46,12 @@ export interface FormPrefillRequest {
   intent?: AiAssistIntent;
   /** Generation overrides */
   config?: FormPrefillConfig;
+  /**
+   * The person's day, zone and currency. For an event form the words are
+   * read for their facts (when, where, what it costs) before any model
+   * runs — see event-draft.ts — and the model is told what day it is.
+   */
+  context?: EventDraftContext;
 }
 
 /**
@@ -96,12 +109,44 @@ function valuesEqual(a: unknown, b: unknown): boolean {
  *
  * This should be called from an API route, not directly from the client.
  */
+/** The notice a partial fill carries: the form works, the prose is missing. */
+export const FACTS_ONLY_NOTICE =
+  'Filled the date, place and price from your words. The AI did not answer for a title and description, so those are your words for now — try Fill again for a better draft, or edit them.';
+
+/**
+ * What the words alone say, when the model says nothing. A fill that fails
+ * used to leave the whole form empty behind an error — the date, the price
+ * and the place the person had just typed included. Only on a fill: a
+ * refinement with no model has nothing to apply.
+ */
+function factsOnlyFill(
+  description: string,
+  facts: Record<string, unknown>,
+  existingData: Record<string, unknown> | undefined,
+  intent: AiAssistIntent
+): AIPrefillResponse | null {
+  const said = ['start_date', 'ticket_price', 'venue_name', 'is_free'].some(k => k in facts);
+  if (intent !== 'fill' || !said) {
+    return null;
+  }
+  const aiData = { title: titleFromWords(description), description, ...facts };
+  const { data, changedFields } = mergePrefillResult(aiData, existingData, intent);
+  return {
+    success: true,
+    data,
+    changedFields,
+    confidence: Object.fromEntries(changedFields.map(f => [f, f in facts ? 1 : 0.5])),
+    notice: FACTS_ONLY_NOTICE,
+  };
+}
+
 export async function generateFormPrefill({
   target,
   description,
   existingData,
   intent = 'fill',
   config,
+  context,
 }: FormPrefillRequest): Promise<AIPrefillResponse> {
   // Same per-intent floor as the API schema (AI_ASSIST_MIN_INPUT_LENGTH) — a
   // hardcoded 10 here used to reject the short refine instructions ("shorter")
@@ -119,6 +164,15 @@ export async function generateFormPrefill({
     };
   }
 
+  // An event's facts come from the words, not the model: "19:00", "1 CHF",
+  // "in der Roten Fabrik" are read here, deterministically, and win over
+  // whatever the model returns for the same fields. The model's job is the
+  // prose. It is also told what day it is, or "today" means nothing to it.
+  const isEvent = target.id === 'event' && Boolean(context);
+  const facts = isEvent ? eventFactsFromWords(description, context!) : {};
+  const modelDescription =
+    isEvent && intent === 'fill' ? withEventDayContext(description, context!) : description;
+
   try {
     // Describe the declared fields for the prompt
     const fieldDescriptions = extractFieldDescriptions(target.fields);
@@ -129,7 +183,7 @@ export async function generateFormPrefill({
     const systemPrompt = getSystemPrompt(target.name, intent);
     const userPrompt = getUserPrompt(
       target.name,
-      description,
+      modelDescription,
       fieldsPrompt,
       specialInstructions,
       existingData,
@@ -165,6 +219,15 @@ export async function generateFormPrefill({
     });
 
     if (!aiContent) {
+      const partial = factsOnlyFill(description, facts, existingData, intent);
+      if (partial) {
+        logger.warn(
+          'Form prefill: model silent, filled from the words',
+          { target: target.id },
+          'AI'
+        );
+        return partial;
+      }
       return {
         success: false,
         data: {},
@@ -177,6 +240,10 @@ export async function generateFormPrefill({
     // Parse the AI response
     const parsed = parseAIResponse(aiContent);
     if (!parsed) {
+      const partial = factsOnlyFill(description, facts, existingData, intent);
+      if (partial) {
+        return partial;
+      }
       return {
         success: false,
         data: {},
@@ -189,6 +256,11 @@ export async function generateFormPrefill({
     // Enforce declared field types before merging — the prompt asks for option
     // values / numbers / ISO dates, the sanitizer guarantees them.
     const aiData = sanitizeAiFields(parsed.data, target.fields, description);
+    for (const key of EVENT_FACT_KEYS) {
+      if (facts[key] !== undefined) {
+        aiData[key] = facts[key];
+      }
+    }
 
     const { data, changedFields } = mergePrefillResult(aiData, existingData, intent);
 

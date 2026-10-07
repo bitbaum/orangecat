@@ -15,7 +15,12 @@
 import Link from 'next/link';
 import { X, ArrowRight, MessageSquareWarning } from 'lucide-react';
 import { useState, type MouseEvent } from 'react';
-import { describeAiError, type AiErrorCode, type AiErrorContext } from '@/config/ai-errors';
+import {
+  describeAiError,
+  type AiErrorCode,
+  type AiErrorContext,
+  type ResolvedAiError,
+} from '@/config/ai-errors';
 import { reportToLoki } from '@/lib/feedback/report';
 import { ROUTES } from '@/config/routes';
 import { cn } from '@/lib/utils';
@@ -26,6 +31,14 @@ interface AiErrorNoticeProps {
   /** Prefix naming what failed, e.g. "Product". Kept short — the title carries the meaning. */
   subject?: string;
   className?: string;
+}
+
+/** The bug report as text: what the person saw, then what the product knows. */
+export function reportText(error: ResolvedAiError): string {
+  const facts = Object.entries(error.diagnostics)
+    .filter(([, v]) => v)
+    .map(([k, v]) => `${k}: ${v}`);
+  return facts.length ? `${error.reportMessage}\n\n${facts.join('\n')}` : error.reportMessage;
 }
 
 export function AiErrorNotice({ code, context, subject, className }: AiErrorNoticeProps) {
@@ -77,7 +90,12 @@ export function AiErrorNotice({ code, context, subject, className }: AiErrorNoti
           <span className="text-muted-foreground">Thanks — reported.</span>
         ) : (
           <Link
-            href={ROUTES.FEEDBACK}
+            // The report is written before the person arrives: the error in
+            // their terms plus the diagnostics a triager needs. On /feedback
+            // the box is already full and Send is one tap — the fallback used
+            // to land on an empty form and ask them to describe, by typing,
+            // the failure the product had just watched happen.
+            href={`${ROUTES.FEEDBACK}?message=${encodeURIComponent(reportText(error))}`}
             onClick={handleReport}
             className="inline-flex items-center gap-1 text-muted-foreground underline underline-offset-2 hover:no-underline"
           >

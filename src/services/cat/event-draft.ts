@@ -184,7 +184,7 @@ const EVENT_TYPE_VALUES = new Set<string>(EVENT_TYPES.map(t => t.value));
 const KIND_WORDS: Array<[RegExp, { event_type: EventType; category?: string }]> = [
   [
     /\b(concert|konzert|gig|live music|show|dj set|jam)\b/i,
-    { event_type: 'other', category: 'Music' },
+    { event_type: 'concert', category: 'Music' },
   ],
   [/\b(meetup|meet-up|gathering|treffen)\b/i, { event_type: 'meetup' }],
   [/\b(conference|summit|konferenz)\b/i, { event_type: 'conference' }],
@@ -278,4 +278,114 @@ export function withEventDayContext(description: string, ctx: EventDraftContext)
     p.wd
   ];
   return `${description}\n\n(Context: today is ${weekday} ${p.y}-${pad(p.m)}-${pad(p.d)} in ${zone}; prices are in ${ctx.currency}. Write start_date as YYYY-MM-DDTHH:mm, wall-clock at the venue.)`;
+}
+
+/* ── Facts from the words, with no model at all ───────────────────────────── */
+
+const CURRENCY_WORDS: Array<[RegExp, string]> = [
+  [/^(chf|fr\.?|sfr|franken|francs?|rappen)$/i, 'CHF'],
+  [/^(eur|€|euros?)$/i, 'EUR'],
+  [/^(usd|\$|dollars?)$/i, 'USD'],
+  [/^(gbp|£|pounds?)$/i, 'GBP'],
+  [/^(btc|bitcoin|sats?)$/i, 'BTC'],
+];
+
+const UNIT = '(chf|eur|usd|gbp|btc|fr\\.?|sfr|franken|francs?|euros?|dollars?|pounds?|€|\\$|£)';
+const PRICE_AFTER = new RegExp(`(\\d+(?:[.,]\\d{1,2})?)\\s*${UNIT}(?![a-z])`, 'i');
+const PRICE_BEFORE = new RegExp(`${UNIT}\\s*(\\d+(?:[.,]\\d{1,2})?)`, 'i');
+
+/** "1 CHF", "CHF 1", "Eintritt: 1 Fr.", "€5". A bare "20.-" has no unit and is not read. */
+export function readPrice(text: string): { amount: number; currency: string | null } | null {
+  const a = PRICE_AFTER.exec(text);
+  const b = PRICE_BEFORE.exec(text);
+  const hit =
+    a && (!b || a.index <= b.index) ? { n: a[1], u: a[2] } : b ? { n: b[2], u: b[1] } : null;
+  if (!hit) {
+    return null;
+  }
+  const amount = parseFloat(hit.n.replace(',', '.'));
+  if (!Number.isFinite(amount)) {
+    return null;
+  }
+  const currency = CURRENCY_WORDS.find(([re]) => re.test(hit.u))?.[1] ?? null;
+  return { amount, currency };
+}
+
+const VENUE_RE =
+  /\b(?:in der|in dem|im|in the|at the|at|bei|beim|@)\s+([A-ZÄÖÜ][^.,;:!?\n]*?)(?=\s*(?:[.,;:!?\n]|$)|\s+(?:um|ab|at|from|von|beginn|start|doors|tickets?|eintritt|preis|price)\b)/i;
+
+/**
+ * "in der Roten Fabrik", "at Rote Fabrik, Zürich", "im Kaufleuten", "@ Hive".
+ * A name starts with a capital and runs to the next punctuation or time word.
+ * Nothing is geocoded here; the venue code does that when the form is saved.
+ */
+export function readVenue(text: string): string | null {
+  const m = VENUE_RE.exec(text);
+  if (!m) {
+    return null;
+  }
+  const name = m[1].trim().replace(/\s+/g, ' ');
+  // "at 7pm" is not a place.
+  return /^\d/.test(name) || name.length < 3 ? null : name;
+}
+
+/** Words a person uses to say nobody pays. */
+const FREE_RE = /\b(free|gratis|kostenlos|frei|umsonst|no charge|free entry|eintritt frei)\b/i;
+
+/**
+ * Everything the words alone can state about an event, as form fields: when,
+ * where, what it costs, what kind. The model adds the prose (a title, a
+ * description); it never has to be the one that reads "19:00" or "1 CHF",
+ * and when it does not answer at all the form still fills with the facts.
+ * Only what the words say: a sentence with no time sets no start_date.
+ */
+export function eventFactsFromWords(text: string, ctx: EventDraftContext): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  const venue = readVenue(text);
+  if (venue) {
+    out.venue_name = venue;
+  }
+  const zone = [guessTimezone(text), ctx.zone].find(isValidTimeZone) ?? 'UTC';
+  const start = parseEventWords(text, { now: ctx.now, zone });
+  if (start) {
+    out.start_date = start;
+    out.timezone = zone;
+  }
+  const price = readPrice(text);
+  if (price && price.amount > 0) {
+    out.ticket_price = price.amount;
+    out.is_free = false;
+    out.currency = price.currency ?? ctx.currency;
+  } else if (FREE_RE.test(text) || (price && price.amount === 0)) {
+    out.is_free = true;
+  }
+  const kind = classifyEvent(text);
+  out.event_type = kind.event_type;
+  if (kind.category) {
+    out.category = kind.category;
+  }
+  return out;
+}
+
+/** The keys the words decide. A model's guess never overrides a stated fact. */
+export const EVENT_FACT_KEYS = [
+  'start_date',
+  'timezone',
+  'ticket_price',
+  'is_free',
+  'currency',
+  'event_type',
+  'category',
+  'venue_name',
+] as const;
+
+/** The first clause of the words, capped — a title the person edits, not one
+ *  invented for them. Mirrors the draft card's fallback. */
+export function titleFromWords(text: string): string {
+  const first =
+    text
+      .trim()
+      .split(/[.!?\n]/)[0]
+      ?.trim() ?? '';
+  return first.length > 70 ? `${first.slice(0, 70).trimEnd()}…` : first;
 }
