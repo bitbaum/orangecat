@@ -17,6 +17,7 @@
  */
 import { EVENT_TYPES, type EventType } from '@/config/events';
 import { isValidTimeZone } from '@/utils/timezone';
+import { APP_LOCALE } from '@/utils/locale';
 import type { CurrencyCode } from '@/config/currencies';
 
 export type EventDraftContext = {
@@ -32,7 +33,7 @@ export const looksLikeIsoDate = (text: string): boolean => /^\d{4}-\d{2}-\d{2}/.
 type Parts = { y: number; m: number; d: number; wd: number };
 
 function todayIn(instant: Date, zone: string): Parts {
-  const f = new Intl.DateTimeFormat('en-US', {
+  const f = new Intl.DateTimeFormat(APP_LOCALE, {
     timeZone: zone,
     year: 'numeric',
     month: '2-digit',
