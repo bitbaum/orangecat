@@ -261,11 +261,9 @@ export default function GroupSettingsPage() {
           )}
 
           <div className="flex justify-end gap-2 pt-1">
-            <Link href={backHref}>
-              <Button variant="ghost" disabled={saving}>
-                Cancel
-              </Button>
-            </Link>
+            <Button href={backHref} variant="ghost" disabled={saving}>
+              Cancel
+            </Button>
             <Button onClick={handleSave} disabled={saving || !canSaveDirectly}>
               {saving ? (
                 <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />

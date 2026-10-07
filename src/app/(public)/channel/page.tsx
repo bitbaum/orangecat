@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { ROUTES } from '@/config/routes';
 import { API_ROUTES } from '@/config/api-routes';
@@ -151,11 +150,9 @@ export default function ChannelComingSoonPage() {
                 </form>
               </div>
               <div className="flex flex-col-reverse sm:flex-row items-center gap-2 relative">
-                <Link href={ROUTES.DASHBOARD.PEOPLE}>
-                  <Button variant="outline">
-                    <Users className="w-4 h-4 mr-2" /> Discover People
-                  </Button>
-                </Link>
+                <Button href={ROUTES.DASHBOARD.PEOPLE} variant="outline">
+                  <Users className="w-4 h-4 mr-2" /> Discover People
+                </Button>
                 <div className="relative">
                   <Button variant="accent" onClick={() => setShowShare(!showShare)}>
                     <Share2 className="w-4 h-4 mr-2" /> Share My Profile

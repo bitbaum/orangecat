@@ -4,7 +4,6 @@ import { useRouter } from 'next/navigation';
 import EntityDetailLayout from '@/components/entity/EntityDetailLayout';
 import { Button } from '@/components/ui/Button';
 import { Settings } from 'lucide-react';
-import Link from 'next/link';
 import { useGroupDetail } from './useGroupDetail';
 import { GroupDetailSidebar } from './GroupDetailSidebar';
 import { GroupDetailTabs } from './GroupDetailTabs';
@@ -61,12 +60,10 @@ export function GroupDetail({ groupSlug }: GroupDetailProps) {
   // SSOT edit convention: createPath?edit=<id> (the old
   // /groups/[slug]/settings route never existed — dead link).
   const headerActions = isOwner ? (
-    <Link href={`${ENTITY_REGISTRY['group'].createPath}?edit=${group.id}`}>
-      <Button variant="outline">
-        <Settings className="h-4 w-4 mr-2" />
-        Edit Group
-      </Button>
-    </Link>
+    <Button href={`${ENTITY_REGISTRY['group'].createPath}?edit=${group.id}`} variant="outline">
+      <Settings className="h-4 w-4 mr-2" />
+      Edit Group
+    </Button>
   ) : null;
 
   return (

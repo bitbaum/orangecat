@@ -14,7 +14,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/Button';
 import { Calendar, MapPin, Users, Clock } from 'lucide-react';
-import Link from 'next/link';
 import type { GroupEvent } from '@/services/groups/types';
 import { STATUS } from '@/config/database-constants';
 import { formatShortTime } from '@/utils/dates';
@@ -92,11 +91,13 @@ export function EventCard({ event, groupSlug, onUpdate: _onUpdate }: EventCardPr
           {event.is_public && <Badge variant="secondary">Public</Badge>}
         </div>
 
-        <Link href={`${ENTITY_REGISTRY['group'].publicBasePath}/${groupSlug}/events/${event.id}`}>
-          <Button variant="outline" className="w-full mt-2">
-            View Details
-          </Button>
-        </Link>
+        <Button
+          href={`${ENTITY_REGISTRY['group'].publicBasePath}/${groupSlug}/events/${event.id}`}
+          variant="outline"
+          className="w-full mt-2"
+        >
+          View Details
+        </Button>
       </CardContent>
     </Card>
   );

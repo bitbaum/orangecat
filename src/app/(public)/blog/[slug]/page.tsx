@@ -109,12 +109,10 @@ export default async function BlogPost({ params }: PageProps) {
           <div className="mx-auto max-w-6xl">
             {/* Back to Blog */}
             <div className="mb-8">
-              <Link href={ROUTES.BLOG}>
-                <Button variant="outline" className="mb-4">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Blog
-                </Button>
-              </Link>
+              <Button href={ROUTES.BLOG} variant="outline" className="mb-4">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Blog
+              </Button>
             </div>
 
             {/* Article Header */}
@@ -180,12 +178,10 @@ export default async function BlogPost({ params }: PageProps) {
               {/* Share and Navigation */}
               <div className="mt-16 pt-8 border-t border-default">
                 <div className="flex flex-col sm:flex-row justify-between items-center">
-                  <Link href={ROUTES.BLOG}>
-                    <Button variant="outline">
-                      <ArrowLeft className="w-4 h-4 mr-2" />
-                      Back to Blog
-                    </Button>
-                  </Link>
+                  <Button href={ROUTES.BLOG} variant="outline">
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back to Blog
+                  </Button>
                   <div className="mt-4 sm:mt-0 flex flex-col items-center gap-3">
                     <BlogShareButton
                       title={post.title}
@@ -206,16 +202,12 @@ export default async function BlogPost({ params }: PageProps) {
                   Discover more insights about Bitcoin, security, and building in public.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Link href={ROUTES.BLOG}>
-                    <Button size="lg" className={GRADIENTS.btnOrange}>
-                      Read More Articles
-                    </Button>
-                  </Link>
-                  <Link href={ROUTES.AUTH_REGISTER}>
-                    <Button variant="outline" size="lg">
-                      Join {APP_NAME}
-                    </Button>
-                  </Link>
+                  <Button href={ROUTES.BLOG} size="lg" className={GRADIENTS.btnOrange}>
+                    Read More Articles
+                  </Button>
+                  <Button href={ROUTES.AUTH_REGISTER} variant="outline" size="lg">
+                    Join {APP_NAME}
+                  </Button>
                 </div>
               </div>
             </div>

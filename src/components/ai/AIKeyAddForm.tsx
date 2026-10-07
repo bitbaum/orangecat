@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import {
   Key,
   AlertCircle,
@@ -127,12 +126,10 @@ export function AIKeyAddForm({ onAdd, onCancel, onFieldFocus }: AIKeyAddFormProp
             <Button variant="ghost" size="sm" onClick={() => resetForm()}>
               Add another key
             </Button>
-            <Link href={ROUTES.DASHBOARD.CAT}>
-              <Button variant="accent" size="sm">
-                <Sparkles className="mr-2 h-4 w-4" />
-                Start chatting
-              </Button>
-            </Link>
+            <Button href={ROUTES.DASHBOARD.CAT} variant="accent" size="sm">
+              <Sparkles className="mr-2 h-4 w-4" />
+              Start chatting
+            </Button>
           </div>
         </CardContent>
       </Card>

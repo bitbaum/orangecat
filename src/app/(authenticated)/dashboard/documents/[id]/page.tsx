@@ -143,12 +143,14 @@ export default async function DocumentDetailPage({ params }: PageProps) {
         </div>
 
         <div className="flex items-center gap-2">
-          <Link href={`${ROUTES.DASHBOARD.DOCUMENTS_CREATE}?edit=${id}`}>
-            <Button variant="outline" size="sm">
-              <Edit className="h-4 w-4 mr-2" />
-              Edit
-            </Button>
-          </Link>
+          <Button
+            href={`${ROUTES.DASHBOARD.DOCUMENTS_CREATE}?edit=${id}`}
+            variant="outline"
+            size="sm"
+          >
+            <Edit className="h-4 w-4 mr-2" />
+            Edit
+          </Button>
           <DeleteDocumentButton documentId={id} documentTitle={doc.title} />
         </div>
       </div>

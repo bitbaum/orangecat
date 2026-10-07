@@ -164,11 +164,9 @@ export default function DomainsPage() {
               No preview links, no cold starts — a running site with a real address, set up and
               managed for you. Tell me what you need and I&apos;ll quote it first.
             </p>
-            <Link href={WEBSITE_BUILD_SERVICE_URL}>
-              <Button variant="accent" size="lg">
-                Get your site built
-              </Button>
-            </Link>
+            <Button href={WEBSITE_BUILD_SERVICE_URL} variant="accent" size="lg">
+              Get your site built
+            </Button>
           </div>
         </div>
       </div>

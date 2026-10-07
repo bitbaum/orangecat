@@ -210,12 +210,14 @@ export function buildWishlistDetailConfig(items: WishlistDetailItem[]): EntityDe
               Items{items.length > 0 && ` (${items.length})`}
             </h2>
             {isOwner && (
-              <Link href={`${WISHLIST_BASE_PATH}/items/new?wishlist_id=${entity.id}`}>
-                <Button size="sm" variant="outline">
-                  <Plus className="w-4 h-4 mr-1" />
-                  Add Item
-                </Button>
-              </Link>
+              <Button
+                href={`${WISHLIST_BASE_PATH}/items/new?wishlist_id=${entity.id}`}
+                size="sm"
+                variant="outline"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Add Item
+              </Button>
             )}
           </div>
 
@@ -225,12 +227,13 @@ export function buildWishlistDetailConfig(items: WishlistDetailItem[]): EntityDe
                 <Gift className="w-8 h-8 mx-auto mb-2 text-fg-tertiary dark:text-fg-secondary/50" />
                 <p className="mb-3">No items in this wishlist yet.</p>
                 {isOwner && (
-                  <Link href={`${WISHLIST_BASE_PATH}/items/new?wishlist_id=${entity.id}`}>
-                    <Button size="sm">
-                      <Plus className="w-4 h-4 mr-1" />
-                      Add First Item
-                    </Button>
-                  </Link>
+                  <Button
+                    href={`${WISHLIST_BASE_PATH}/items/new?wishlist_id=${entity.id}`}
+                    size="sm"
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Add First Item
+                  </Button>
                 )}
               </CardContent>
             </Card>

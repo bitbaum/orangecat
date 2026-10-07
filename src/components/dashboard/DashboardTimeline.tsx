@@ -113,18 +113,23 @@ export function DashboardTimeline({
               Posts from your network land here. Share an update on the timeline to get started.
             </p>
             <div className="flex flex-col justify-center gap-2 sm:flex-row sm:gap-3">
-              <Link href={`${ROUTES.TIMELINE}?compose=true`}>
-                <Button size="sm" className="w-full sm:w-auto">
-                  <MessageSquare className="mr-2 h-4 w-4" />
-                  Share your first post
-                </Button>
-              </Link>
-              <Link href={ROUTES.DISCOVER}>
-                <Button variant="outline" size="sm" className="w-full sm:w-auto">
-                  <Compass className="mr-2 h-4 w-4" />
-                  Explore community
-                </Button>
-              </Link>
+              <Button
+                href={`${ROUTES.TIMELINE}?compose=true`}
+                size="sm"
+                className="w-full sm:w-auto"
+              >
+                <MessageSquare className="mr-2 h-4 w-4" />
+                Share your first post
+              </Button>
+              <Button
+                href={ROUTES.DISCOVER}
+                variant="outline"
+                size="sm"
+                className="w-full sm:w-auto"
+              >
+                <Compass className="mr-2 h-4 w-4" />
+                Explore community
+              </Button>
             </div>
           </div>
         )}

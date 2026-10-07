@@ -1,5 +1,4 @@
 import React from 'react';
-import Link from 'next/link';
 import { Metadata } from 'next';
 import { Zap, TreePine, Cat } from 'lucide-react';
 import Button from '@/components/ui/Button';
@@ -94,11 +93,9 @@ export default function AboutPage() {
               Exchange, fund, lend, invest, and govern — with your AI agent, under any identity, in
               Bitcoin.
             </p>
-            <Link href={`${ROUTES.AUTH}?mode=register`}>
-              <Button variant="accent" size="lg">
-                Get Started Free
-              </Button>
-            </Link>
+            <Button href={`${ROUTES.AUTH}?mode=register`} variant="accent" size="lg">
+              Get Started Free
+            </Button>
           </div>
         </div>
       </div>

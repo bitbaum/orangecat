@@ -8,7 +8,6 @@
  */
 
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { Link2, ShieldCheck, UserX } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { SITE_URL } from '@/config/brand';
@@ -60,16 +59,12 @@ export default function PayLandingPage() {
 
         <div className="flex flex-col items-center gap-4 text-center">
           <div className="flex flex-col gap-4 sm:flex-row">
-            <Link href={ROUTES.AUTH_REGISTER}>
-              <Button size="lg" variant="accent">
-                {PAY_LANDING_COPY.ctaOwn}
-              </Button>
-            </Link>
-            <Link href={ROUTES.DISCOVER}>
-              <Button size="lg" variant="outline">
-                {PAY_LANDING_COPY.ctaFind}
-              </Button>
-            </Link>
+            <Button href={ROUTES.AUTH_REGISTER} size="lg" variant="accent">
+              {PAY_LANDING_COPY.ctaOwn}
+            </Button>
+            <Button href={ROUTES.DISCOVER} size="lg" variant="outline">
+              {PAY_LANDING_COPY.ctaFind}
+            </Button>
           </div>
           <p className="text-sm text-fg-tertiary">{PAY_LANDING_COPY.ctaOwnHint}</p>
         </div>

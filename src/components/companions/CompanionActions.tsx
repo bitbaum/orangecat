@@ -73,11 +73,9 @@ export function CompanionActions({
             {cloning ? copy.cloning : copy.clone}
           </Button>
         ) : (
-          <Link href={signInHref}>
-            <Button variant="outline" title={copy.cloneHint}>
-              {copy.clone}
-            </Button>
-          </Link>
+          <Button href={signInHref} variant="outline" title={copy.cloneHint}>
+            {copy.clone}
+          </Button>
         )}
         {isOwner && (
           <Link href={editHref}>

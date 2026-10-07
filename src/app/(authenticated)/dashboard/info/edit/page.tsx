@@ -6,7 +6,6 @@ import { cn } from '@/lib/utils';
 import { GRADIENTS } from '@/config/gradients';
 import ModernProfileEditor from '@/components/profile/ModernProfileEditor';
 import Button from '@/components/ui/Button';
-import Link from 'next/link';
 import { ROUTES } from '@/config/routes';
 import { useProfileEdit } from './useProfileEdit';
 import { ProfileSidebarPanel } from './ProfileSidebarPanel';
@@ -52,12 +51,15 @@ export default function DashboardInfoEditPage() {
 
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-3">
-            <Link href={ROUTES.DASHBOARD.INFO}>
-              <Button variant="ghost" size="sm" className="mr-2 min-h-11">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to View
-              </Button>
-            </Link>
+            <Button
+              href={ROUTES.DASHBOARD.INFO}
+              variant="ghost"
+              size="sm"
+              className="mr-2 min-h-11"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to View
+            </Button>
             <div className="p-2 bg-surface-raised rounded-lg">
               <Edit className="w-5 h-5 text-fg-primary" />
             </div>

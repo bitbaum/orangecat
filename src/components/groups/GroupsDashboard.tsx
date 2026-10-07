@@ -24,7 +24,6 @@ import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
 import { GroupList } from './GroupList';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import EntityListShell from '@/components/entity/EntityListShell';
 import Loading from '@/components/Loading';
 import { ROUTES } from '@/config/routes';
@@ -96,12 +95,10 @@ export function GroupsDashboard() {
   const hasAnyGroups = myGroups.length + availableGroups.length > 0;
 
   const headerActions = (
-    <Link href={ROUTES.DASHBOARD.GROUPS_CREATE}>
-      <Button variant="accent" className="gap-2">
-        <Plus className="h-4 w-4" />
-        Create Group
-      </Button>
-    </Link>
+    <Button href={ROUTES.DASHBOARD.GROUPS_CREATE} variant="accent" className="gap-2">
+      <Plus className="h-4 w-4" />
+      Create Group
+    </Button>
   );
 
   return (
@@ -143,12 +140,10 @@ export function GroupsDashboard() {
             <div className="text-center py-12 px-4 bg-surface-base rounded-lg border dark:border-default">
               <h3 className="text-lg font-semibold mb-2">No groups yet</h3>
               <p className="text-fg-secondary mb-6">Create your first group to get started</p>
-              <Link href={ROUTES.DASHBOARD.GROUPS_CREATE}>
-                <Button className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  Create Group
-                </Button>
-              </Link>
+              <Button href={ROUTES.DASHBOARD.GROUPS_CREATE} className="gap-2">
+                <Plus className="h-4 w-4" />
+                Create Group
+              </Button>
             </div>
           ) : filteredMyGroups.length === 0 ? (
             <div className="text-center py-12 px-4 bg-surface-base rounded-lg border dark:border-default">
@@ -169,12 +164,10 @@ export function GroupsDashboard() {
             <div className="text-center py-12 px-4 bg-surface-base rounded-lg border dark:border-default">
               <h3 className="text-lg font-semibold mb-2">No groups available</h3>
               <p className="text-fg-secondary mb-6">Be the first to create a group!</p>
-              <Link href={ROUTES.DASHBOARD.GROUPS_CREATE}>
-                <Button className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  Create Group
-                </Button>
-              </Link>
+              <Button href={ROUTES.DASHBOARD.GROUPS_CREATE} className="gap-2">
+                <Plus className="h-4 w-4" />
+                Create Group
+              </Button>
             </div>
           ) : filteredAvailable.length === 0 ? (
             <div className="text-center py-12 px-4 bg-surface-base rounded-lg border dark:border-default">

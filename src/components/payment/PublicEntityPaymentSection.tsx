@@ -9,7 +9,6 @@
 
 'use client';
 
-import Link from 'next/link';
 import { LogIn } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -145,16 +144,19 @@ export function PublicEntityPaymentSection({
             </p>
           ) : (
             <>
-              <Link href={`${ROUTES.AUTH}?mode=login&from=${signInRedirect}`} className="block">
-                <Button className="w-full gap-2 min-h-11">
-                  <LogIn className="w-4 h-4" />
-                  {isTicket ? 'Sign in to buy a ticket' : 'Sign in to purchase'}
-                </Button>
-              </Link>
+              <Button
+                href={`${ROUTES.AUTH}?mode=login&from=${signInRedirect}`}
+                className="w-full gap-2 min-h-11"
+              >
+                <LogIn className="w-4 h-4" />
+                {isTicket ? 'Sign in to buy a ticket' : 'Sign in to purchase'}
+              </Button>
               <p className="text-xs text-fg-secondary text-center">
                 {isTicket
                   ? 'Your ticket and its QR code for the door are kept in your account.'
-                  : 'Sign in to get a Lightning invoice for this purchase.'}
+                  : // Not 'a Lightning invoice': for an xpub wallet the request is a fresh
+                    // on-chain address.
+                    'You get a payment request straight from the seller’s wallet.'}
               </p>
               <PaymentExpectationNote />
             </>
