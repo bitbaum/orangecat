@@ -1,42 +1,20 @@
+import type { ReactNode } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import type { EntityDetailConfig } from '@/components/public/PublicEntityDetailPage';
 import { ROUTES } from '@/config/routes';
-import {
-  eventZone,
-  formatEventClockRange,
-  formatEventDate,
-  formatEventDay,
-  zoneLabel,
-} from '@/domain/events/time';
-import {
-  Calendar as CalendarIcon,
-  MapPin,
-  Users,
-  Video,
-  Clock,
-  Repeat,
-  Film,
-  Music,
-  Sparkles,
-} from 'lucide-react';
+import { eventZone, formatEventDate } from '@/domain/events/time';
+import { eventPlaceText } from '@/domain/events/place';
+import { Users, Clock, Repeat, Film, Music, Sparkles } from 'lucide-react';
 import { safeHref } from '@/lib/security/safeHref';
 import { formatRecurrence } from '@/lib/recurrence';
 import EventCrewCard from '@/components/events/EventCrewCard';
 import EventTicketCard from '@/components/events/EventTicketCard';
 import EventVenueCard from '@/components/events/EventVenueCard';
+import EventEssentials from '@/components/events/EventEssentials';
 import { EVENT_PUBLIC_STATUSES } from '@/config/events';
 
-/**
- * One line naming the place: venue + city when known. Shared by the page
- * metadata and the JSON-LD. Events have no `location` column — reading one
- * made every event page's metadata query fail into "Event Not Found".
- */
-export const eventPlaceLine = (entity: Record<string, unknown>): string | null => {
-  const parts = [entity.venue_name, entity.venue_address, entity.venue_city].filter(
-    (p): p is string => typeof p === 'string' && p.trim().length > 0
-  );
-  return parts.length > 0 ? parts.join(', ') : null;
-};
+/** One line naming the place — shared with the calendar entry and the ticket. */
+export const eventPlaceLine = eventPlaceText;
 
 /** The selected columns the page metadata reads — SSOT for both callers. */
 export const EVENT_METADATA_SELECT =
@@ -58,16 +36,6 @@ const ticketOf = (entity: Record<string, unknown>) => {
     : null;
 };
 
-/** The structured venue fields, in postal order, as display lines. */
-const addressLines = (entity: Record<string, unknown>): string[] => {
-  const cityLine = [entity.venue_postal_code, entity.venue_city]
-    .filter(part => typeof part === 'string' && part.trim())
-    .join(' ');
-  return [entity.venue_name, entity.venue_address, cityLine, entity.venue_country]
-    .filter((part): part is string => typeof part === 'string' && part.trim().length > 0)
-    .map(part => part.trim());
-};
-
 /** SSOT for the event detail page — shared by the public + owner dashboard routes. */
 export const eventDetailConfig: EntityDetailConfig = {
   entityType: 'event',
@@ -80,6 +48,25 @@ export const eventDetailConfig: EntityDetailConfig = {
   visibilityFilter: { column: 'status', value: EVENT_PUBLIC_STATUSES },
   metadataSelect: EVENT_METADATA_SELECT,
   getPrice: ticketOf,
+  // A free event has nothing to pay: the section only told its guests "Sign
+  // in to buy a ticket" or "hasn't connected a wallet yet".
+  paymentSectionFor: entity => ticketOf(entity) !== null,
+  // "Published" is the organizer's word. A visitor needs to hear only what
+  // changes their plans.
+  statusBadge: (entity, isOwner) =>
+    isOwner ? (entity.status as string) : (VISITOR_STATUS[entity.status as string] ?? null),
+  // A free ticket is in the first screen already (renderLead); a paid one is
+  // bought in the pay panel, which on a phone sits at the very bottom.
+  mobileStickyCTA: entity =>
+    ticketOf(entity) && entity.status !== 'full' ? { href: '#pay', label: 'Buy a ticket' } : null,
+  renderLead: (entity, isOwner) => (
+    <>
+      <EventEssentials event={entity} />
+      <div id="ticket" className="scroll-mt-24">
+        <EventTicketCard event={entity} isOwner={isOwner} />
+      </div>
+    </>
+  ),
   renderSidebarExtra: entity =>
     typeof entity.asset_id === 'string' && entity.asset_id ? (
       <EventVenueCard assetId={entity.asset_id} />
@@ -116,138 +103,51 @@ export const eventDetailConfig: EntityDetailConfig = {
       eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
     };
   },
-  renderHeaderExtra: entity =>
-    entity.start_date ? (
-      <span className="text-fg-secondary text-sm">
-        {formatEventDay(entity.start_date as string, eventZone(entity))}
-      </span>
-    ) : null,
   renderDetails: (entity, _payable, isOwner, isSignedIn) => {
-    const address = addressLines(entity);
+    // When, where and joining online lead the page (EventEssentials); this
+    // card keeps the rest, and is left out when there is no rest.
     const genres = genresOf(entity);
     const vibe = typeof entity.vibe === 'string' && entity.vibe.trim() ? entity.vibe.trim() : null;
-    const hasPin = hasMapPin(entity);
-    const mapHref = hasPin
-      ? `https://www.openstreetmap.org/?mlat=${entity.latitude}&mlon=${entity.longitude}#map=17/${entity.latitude}/${entity.longitude}`
-      : null;
-    const joinUrl = safeHref(entity.online_url);
     const videoUrl = safeHref(entity.video_url);
     const recurrence = formatRecurrence(entity.is_recurring, entity.recurrence_pattern);
+    const capacity = typeof entity.max_attendees === 'number' ? entity.max_attendees : null;
+    const rsvpBy =
+      typeof entity.rsvp_deadline === 'string'
+        ? formatEventDate(entity.rsvp_deadline, eventZone(entity))
+        : null;
+    const hasMore = !!(recurrence || genres.length || vibe || videoUrl || capacity || rsvpBy);
     return (
       <>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Event Details</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {entity.start_date && (
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-surface-raised/40">
-                  <CalendarIcon className="h-5 w-5 text-fg-primary" />
-                </div>
-                <div>
-                  <div className="font-medium">
-                    {formatEventDay(entity.start_date as string, eventZone(entity))}
+        {hasMore && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Event Details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* A repeating event used to render identically to a one-off — the
+                whole recurrence rule was collected and shown nowhere. */}
+              {recurrence && (
+                <DetailRow icon={Repeat}>
+                  <span className="font-medium">{recurrence}</span>
+                </DetailRow>
+              )}
+              {genres.length > 0 && (
+                <DetailRow icon={Music}>
+                  <div className="flex flex-wrap gap-2">
+                    {genres.map(genre => (
+                      <span
+                        key={genre}
+                        className="rounded-full border border-default px-3 py-1 text-sm text-fg-primary"
+                      >
+                        {genre}
+                      </span>
+                    ))}
                   </div>
-                  <div className="text-sm text-fg-secondary">
-                    {entity.is_all_day
-                      ? 'All day'
-                      : `${formatEventClockRange(
-                          entity.start_date as string,
-                          entity.end_date as string | null,
-                          eventZone(entity)
-                        )} · ${zoneLabel(eventZone(entity))}`}
-                  </div>
-                </div>
-              </div>
-            )}
-            {/* A repeating event used to render identically to a one-off — the
-              whole recurrence rule was collected and shown nowhere. */}
-            {recurrence && (
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-surface-raised/40">
-                  <Repeat className="h-5 w-5 text-fg-primary" />
-                </div>
-                <div className="min-w-0">
-                  <div className="break-words font-medium">{recurrence}</div>
-                </div>
-              </div>
-            )}
-            {address.length > 0 && (
-              <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-surface-raised/40">
-                  <MapPin className="h-5 w-5 text-fg-primary" />
-                </div>
-                <div className="min-w-0">
-                  <div className="break-words font-medium">{address[0]}</div>
-                  {address.slice(1).map(line => (
-                    <div key={line} className="break-words text-sm text-fg-secondary">
-                      {line}
-                    </div>
-                  ))}
-                  {mapHref && (
-                    <a
-                      href={mapHref}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm underline underline-offset-4"
-                    >
-                      Open in map
-                    </a>
-                  )}
-                </div>
-              </div>
-            )}
-            {genres.length > 0 && (
-              <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-surface-raised/40">
-                  <Music className="h-5 w-5 text-fg-primary" />
-                </div>
-                <div className="flex min-w-0 flex-wrap gap-2 pt-2">
-                  {genres.map(genre => (
-                    <span
-                      key={genre}
-                      className="rounded-full border border-default px-3 py-1 text-sm text-fg-primary"
-                    >
-                      {genre}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-            {vibe && (
-              <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-surface-raised/40">
-                  <Sparkles className="h-5 w-5 text-fg-primary" />
-                </div>
-                <div className="min-w-0 pt-2">
-                  <div className="break-words">{vibe}</div>
-                </div>
-              </div>
-            )}
-            {joinUrl && (
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-surface-raised/40">
-                  <Video className="h-5 w-5 text-fg-primary" />
-                </div>
-                <div className="min-w-0">
-                  <a
-                    href={joinUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="break-all font-medium underline underline-offset-4"
-                  >
-                    Join online
-                  </a>
-                </div>
-              </div>
-            )}
-            {videoUrl && (
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-surface-raised/40">
-                  <Film className="h-5 w-5 text-fg-primary" />
-                </div>
-                <div className="min-w-0">
+                </DetailRow>
+              )}
+              {vibe && <DetailRow icon={Sparkles}>{vibe}</DetailRow>}
+              {videoUrl && (
+                <DetailRow icon={Film}>
                   <a
                     href={videoUrl}
                     target="_blank"
@@ -256,34 +156,21 @@ export const eventDetailConfig: EntityDetailConfig = {
                   >
                     Watch the video
                   </a>
-                </div>
-              </div>
-            )}
-            {entity.max_attendees && (
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-surface-raised/40">
-                  <Users className="h-5 w-5 text-fg-primary" />
-                </div>
-                <div>
-                  <div className="font-medium">Max {entity.max_attendees as number} attendees</div>
-                </div>
-              </div>
-            )}
-            {entity.rsvp_deadline && (
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-surface-raised/40">
-                  <Clock className="h-5 w-5 text-fg-primary" />
-                </div>
-                <div>
-                  <div className="font-medium">
-                    RSVP by {formatEventDate(entity.rsvp_deadline as string, eventZone(entity))}
-                  </div>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-        <EventTicketCard event={entity} isOwner={isOwner} />
+                </DetailRow>
+              )}
+              {capacity && (
+                <DetailRow icon={Users}>
+                  <span className="font-medium">Max {capacity} attendees</span>
+                </DetailRow>
+              )}
+              {rsvpBy && (
+                <DetailRow icon={Clock}>
+                  <span className="font-medium">RSVP by {rsvpBy}</span>
+                </DetailRow>
+              )}
+            </CardContent>
+          </Card>
+        )}
         <EventCrewCard
           eventId={entity.id as string}
           eventTitle={entity.title as string}
@@ -297,3 +184,20 @@ export const eventDetailConfig: EntityDetailConfig = {
     );
   },
 };
+
+/** What a visitor is told about the event's state — only what changes their plans. */
+const VISITOR_STATUS: Record<string, string> = {
+  full: 'Full',
+  ongoing: 'Happening now',
+};
+
+function DetailRow({ icon: Icon, children }: { icon: typeof Music; children: ReactNode }) {
+  return (
+    <div className="flex items-start gap-3">
+      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-surface-raised/40">
+        <Icon className="h-5 w-5 text-fg-primary" />
+      </div>
+      <div className="min-w-0 break-words pt-2">{children}</div>
+    </div>
+  );
+}

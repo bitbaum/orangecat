@@ -101,6 +101,24 @@ export interface EntityDetailConfig {
   /** Whether to show the payment section in the sidebar (default: true) */
   showPaymentSection?: boolean;
   /**
+   * Per-entity override of the above: false hides the payment section for
+   * THIS entity. A free event has nothing to pay, and the section told its
+   * guests "Sign in to buy a ticket" or "hasn't connected a wallet yet".
+   */
+  paymentSectionFor?: (entity: EntityData) => boolean;
+  /**
+   * What a visitor needs before anything else, rendered first in the main
+   * column — above the description. An event's guest arrives from a link in a
+   * group chat to learn when, where, and to get in; a paragraph of prose ahead
+   * of that pushed all three below the first screen of a phone.
+   */
+  renderLead?: (entity: EntityData, isOwner: boolean, isSignedIn: boolean) => ReactNode;
+  /**
+   * The header's status badge. Default: the raw status. Return null to show
+   * none — "Published" tells a visitor nothing; "Full" tells them everything.
+   */
+  statusBadge?: (entity: EntityData, isOwner: boolean) => string | null;
+  /**
    * Mobile-only sticky bottom CTA. On <md the page renders a fixed
    * bottom bar so the primary visitor action is one tap from any scroll
    * position. When omitted: defaults to a "Support" button anchored to

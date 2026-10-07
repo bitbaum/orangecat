@@ -249,6 +249,8 @@ export const API_ROUTES = {
     ROLE: (roleId: string) => `/api/event-roles/${roleId}`,
     PAY_CREW: (roleId: string) => `/api/event-roles/${roleId}/pay`,
     REFUNDS: (eventId: string) => `${ENTITY_REGISTRY['event'].apiEndpoint}/${eventId}/refunds`,
+    /** The event as an .ics file — what "Add to calendar" opens. */
+    CALENDAR: (eventId: string) => `${ENTITY_REGISTRY['event'].apiEndpoint}/${eventId}/calendar`,
     /** Venue pages the signed-in person can list events at. */
     MY_PLACES: '/api/places/mine',
   },

@@ -13,6 +13,11 @@ to the map, sub-bullets stay here for the human reader.
 
 ### Added
 
+- **An event page built for whoever opens it.** Most people arrive from a link in a group chat, on a phone, wanting three answers: when, where, am I in. Those now come first — the day and time on the venue's clock, the place, and the ticket — ahead of the description, which used to push them below the first screen.
+  - "Add to calendar" opens the phone's own calendar (Google Calendar on Android, the calendar file everywhere else), and "Directions" opens the map at the pin or the address. Both are on the guest's ticket page too, the page they open on the night.
+  - Visitors no longer see "Published"; they see "Full" or "Happening now" when that is true. A free event no longer shows a payment box that said "Sign in to buy a ticket" or "This creator hasn't connected a wallet yet".
+  - The host sees how many are coming and one button to send the invite link (the share sheet on a phone, copy on a computer); a draft says it takes no tickets yet, and the bar at the top now has **Publish** instead of telling you to go and find it — for every kind of listing, not only events.
+  - At the door, each scan says how to take the next guest.
 - **Guests don't need an account.** On a free event, "Get a free ticket" asks only for a name — no sign-up, no email. The page it opens is the ticket: the QR for the door, the night's time and place, and "Can't make it" to give the place back. The door list shows guests by the name they gave. So the link a host sends to the group chat works for everyone in it. {#event-rsvp-guests}
   - Paid tickets still need an account; paying without one waits on the other payment rails.
   - The Cat now tells the host to publish the page before sharing it, because a draft takes no tickets.

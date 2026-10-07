@@ -145,6 +145,9 @@ export default async function DoorPage({ params, searchParams }: PageProps) {
                   {verdictCount > 1 ? ` · ${verdictCount} people` : ''}
                 </div>
               )}
+              <div className="mt-1 text-sm text-fg-secondary">
+                Next guest: scan their code with your camera again.
+              </div>
             </div>
           </CardContent>
         </Card>

@@ -101,15 +101,21 @@ describe('event detail config', () => {
     rsvp_deadline: '2026-08-28T18:00:00Z',
   };
 
+  // When, where and joining online lead the page now (renderLead →
+  // EventEssentials): a guest from a group-chat link needs those first.
+  const lead = (e: Record<string, unknown>) => (
+    <div>{eventDetailConfig.renderLead?.(e, false, false)}</div>
+  );
+
   it('shows the postal address, not just the free-text location', () => {
-    render(<div>{eventDetailConfig.renderDetails?.(event)}</div>);
+    render(lead(event));
 
     expect(screen.getByText('Bahnhofstrasse 1')).toBeInTheDocument();
     expect(screen.getByText('8001 Zurich')).toBeInTheDocument();
     expect(screen.getByText('Switzerland')).toBeInTheDocument();
   });
 
-  it('shows the music and the vibe, and links the pin to a map', () => {
+  it('shows the music and the vibe', () => {
     render(
       <div>
         {eventDetailConfig.renderDetails?.({
@@ -124,9 +130,27 @@ describe('event detail config', () => {
     expect(screen.getByText('House')).toBeInTheDocument();
     expect(screen.getByText('Disco')).toBeInTheDocument();
     expect(screen.getByText('Sunset into a warehouse night')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Open in map' })).toHaveAttribute(
+  });
+
+  it('gives directions to the pin, or to the address when there is no pin', () => {
+    const { unmount } = render(lead({ ...event, latitude: 47.3779, longitude: 8.5265 }));
+    expect(screen.getByRole('link', { name: 'Directions' })).toHaveAttribute(
       'href',
       expect.stringContaining('mlat=47.3779&mlon=8.5265')
+    );
+    unmount();
+    render(lead(event));
+    expect(screen.getByRole('link', { name: 'Directions' })).toHaveAttribute(
+      'href',
+      expect.stringContaining(encodeURIComponent('Community Center, Bahnhofstrasse 1, Zurich'))
+    );
+  });
+
+  it('offers to put the event in the guest’s calendar', () => {
+    render(lead(event));
+    expect(screen.getByRole('link', { name: 'Add to calendar' })).toHaveAttribute(
+      'href',
+      '/api/events/event-1/calendar'
     );
   });
 
@@ -138,10 +162,11 @@ describe('event detail config', () => {
   it('links an online event to its join URL', () => {
     render(
       <div>
-        {eventDetailConfig.renderDetails?.({
-          ...event,
-          online_url: 'https://meet.jit.si/BitcoinZurich',
-        })}
+        {eventDetailConfig.renderLead?.(
+          { ...event, online_url: 'https://meet.jit.si/BitcoinZurich' },
+          false,
+          false
+        )}
       </div>
     );
     expect(screen.getByRole('link', { name: 'Join online' })).toHaveAttribute(
@@ -150,14 +175,48 @@ describe('event detail config', () => {
     );
   });
 
+  it('tells a visitor only the states that change their plans', () => {
+    const badge = eventDetailConfig.statusBadge!;
+    expect(badge({ status: 'published' }, false)).toBeNull();
+    expect(badge({ status: 'open' }, false)).toBeNull();
+    expect(badge({ status: 'full' }, false)).toBe('Full');
+    expect(badge({ status: 'ongoing' }, false)).toBe('Happening now');
+    expect(badge({ status: 'draft' }, true)).toBe('draft');
+  });
+
+  it('shows the pay panel only when there is a price to pay', () => {
+    const show = eventDetailConfig.paymentSectionFor!;
+    expect(show({ is_free: true })).toBe(false);
+    expect(show({ is_free: false, ticket_price: 0 })).toBe(false);
+    expect(show({ is_free: false, ticket_price: 20, currency: 'CHF' })).toBe(true);
+  });
+
+  it('pins "Buy a ticket" on phones only for a paid event with seats', () => {
+    const cta = eventDetailConfig.mobileStickyCTA as (e: Record<string, unknown>) => unknown;
+    expect(cta({ is_free: true, status: 'published' })).toBeNull();
+    expect(cta({ is_free: false, ticket_price: 20, status: 'full' })).toBeNull();
+    expect(cta({ is_free: false, ticket_price: 20, status: 'published' })).toEqual({
+      href: '#pay',
+      label: 'Buy a ticket',
+    });
+  });
+
+  it('leaves the details card out when there is nothing beyond when and where', () => {
+    const { container } = render(
+      <div>{eventDetailConfig.renderDetails?.({ id: 'e', start_date: event.start_date })}</div>
+    );
+    expect(container.textContent).not.toContain('Event Details');
+  });
+
   it('drops a join URL carrying a script scheme instead of linking it', () => {
     render(
       <div>
-        {eventDetailConfig.renderDetails?.({
-          ...event,
+        {eventDetailConfig.renderLead?.(
           // eslint-disable-next-line no-script-url
-          online_url: 'javascript:alert(1)',
-        })}
+          { ...event, online_url: 'javascript:alert(1)' },
+          false,
+          false
+        )}
       </div>
     );
     expect(screen.queryByRole('link', { name: 'Join online' })).not.toBeInTheDocument();

@@ -147,7 +147,12 @@ export default async function PublicEntityDetailPage({
   let sellerReceive: SellerReceiveInfo | null = null;
   let sharedWalletUsage: SharedWalletUsage | null = null;
   let priceAmountBtc: number | undefined;
-  const hasPaymentSurface = config.showPaymentSection !== false || meta.canReceiveSupport;
+  const hasPaymentSurface =
+    (config.showPaymentSection !== false || meta.canReceiveSupport) &&
+    config.paymentSectionFor?.(entity) !== false;
+  const statusBadge = config.statusBadge
+    ? config.statusBadge(entity, isOwner)
+    : (entity.status as string | null);
   if (hasPaymentSurface) {
     sellerReceive = await resolveSellerReceiveInfo(config.entityType, id);
     // Address-reuse disclosure — only worth resolving when an address will
@@ -209,9 +214,9 @@ export default async function PublicEntityDetailPage({
                     {entity.title}
                   </h1>
                   <div className="mt-2 flex flex-wrap items-center gap-2 sm:gap-3">
-                    {entity.status && (
+                    {statusBadge && (
                       <Badge variant="default" className="capitalize">
-                        {entity.status}
+                        {statusBadge}
                       </Badge>
                     )}
                     {entity.category && (
@@ -240,6 +245,7 @@ export default async function PublicEntityDetailPage({
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
+              {config.renderLead?.(entity, isOwner, !!user)}
               {entity.description && (
                 <Card>
                   <CardHeader>
@@ -319,7 +325,7 @@ export default async function PublicEntityDetailPage({
         {/* Mobile sticky bottom CTA — keeps the primary action one tap
             away from any scroll position. Hidden on >=md where the
             sidebar payment section is naturally visible. */}
-        <MobileStickyCTA config={config} entity={entity} payable={!!sellerReceive} />
+        {!isOwner && <MobileStickyCTA config={config} entity={entity} payable={!!sellerReceive} />}
       </div>
     </>
   );

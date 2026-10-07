@@ -11,6 +11,7 @@ import { WalletVisibilityToggle } from '@/components/wallets/WalletVisibilityTog
 import { type WalletVisibility } from '@/config/wallet-visibility';
 import type { EntityType } from '@/config/entity-registry';
 import { DeleteEntityButton } from '@/components/entity/DeleteEntityButton';
+import { PublishNowButton } from './PublishNowButton';
 
 export function PublicEntityOwnerBar({
   isOwnerPreview,
@@ -41,13 +42,16 @@ export function PublicEntityOwnerBar({
               <>
                 Preview — this {entityName.toLowerCase()} is{' '}
                 <span className="font-medium capitalize text-fg-primary">{entityStatus}</span> and
-                only visible to you. Publish it to go live.
+                only visible to you.
               </>
             ) : (
               <>This is your live {entityName.toLowerCase()} as buyers see it.</>
             )}
           </span>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {isOwnerPreview && entityStatus === 'draft' && (
+              <PublishNowButton entityType={entityType} entityId={entityId} />
+            )}
             <Link href={editHref}>
               <Button variant="outline" size="sm" className="gap-1.5">
                 <Pencil className="h-3.5 w-3.5" />
