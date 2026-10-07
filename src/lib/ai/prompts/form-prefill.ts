@@ -10,6 +10,7 @@
  * why refinement used to be a no-op.
  */
 
+import { parseAssistResponse } from '@bitbaum/ai-kit/forms';
 import { USER_OVERRIDABLE_FIELDS, type AiAssistIntent } from '@/config/ai-form-assist';
 import { logger } from '@/utils/logger';
 
@@ -155,80 +156,66 @@ Extract the relevant field values from my description. Output ONLY valid JSON wi
 }
 
 /**
- * Parse the AI response and extract data with confidence scores
+ * Parse the AI response and extract data with confidence scores.
+ *
+ * Finding the JSON is the fleet's job (`parseAssistResponse`: bare, fenced
+ * or wrapped in prose). The envelope is OrangeCat's: `{ data, confidence }`,
+ * because the form highlights what the AI wrote by how sure it was. A reply
+ * in the package's own `{ values }` shape is read too.
  */
 export function parseAIResponse(
   response: string
 ): { data: Record<string, unknown>; confidence: Record<string, number> } | null {
-  try {
-    // Try to extract JSON from the response
-    // Sometimes AI might wrap it in markdown code blocks
-    let jsonStr = response.trim();
-
-    // Remove markdown code blocks if present
-    if (jsonStr.startsWith('```json')) {
-      jsonStr = jsonStr.slice(7);
-    } else if (jsonStr.startsWith('```')) {
-      jsonStr = jsonStr.slice(3);
-    }
-    if (jsonStr.endsWith('```')) {
-      jsonStr = jsonStr.slice(0, -3);
-    }
-    jsonStr = jsonStr.trim();
-
-    const parsed = JSON.parse(jsonStr);
-
-    // Validate structure
-    if (!parsed.data || typeof parsed.data !== 'object') {
-      logger.error('AI response missing "data" object', undefined, 'AI');
-      return null;
-    }
-
-    // Ensure confidence object exists
-    const confidence = parsed.confidence || {};
-
-    // Add default confidence for fields without explicit confidence
-    for (const key of Object.keys(parsed.data)) {
-      if (!(key in confidence)) {
-        confidence[key] = 0.7; // Default confidence
-      }
-    }
-
-    // Coerce numeric fields — LLMs sometimes return numbers as strings.
-    // No fields end in _sats anymore (BTC is canonical per CLAUDE.md);
-    // pattern dropped in 2026-06-05 SATS sweep.
-    const numericFieldPatterns = [
-      /_btc$/,
-      /_usd$/,
-      /^price/,
-      /^amount/,
-      /^rate/,
-      /^hourly_rate$/,
-      /^fixed_price$/,
-      /^duration/,
-      /^inventory/,
-      /^count/,
-      /^quantity/,
-      /^target_amount/,
-      /^minimum_investment/,
-      /^funding_goal/,
-    ];
-    const coercedData: Record<string, unknown> = {};
-    for (const [key, val] of Object.entries(parsed.data)) {
-      if (typeof val === 'string' && numericFieldPatterns.some(p => p.test(key))) {
-        const num = Number(val);
-        coercedData[key] = isNaN(num) ? val : num;
-      } else {
-        coercedData[key] = val;
-      }
-    }
-
-    return {
-      data: coercedData,
-      confidence,
-    };
-  } catch (error) {
-    logger.error('Failed to parse AI response', error, 'AI');
+  const parsed = parseAssistResponse(response);
+  if (!parsed || parsed.values === null || typeof parsed.values !== 'object') {
+    logger.error('Failed to parse AI response', undefined, 'AI');
     return null;
   }
+  const envelope = parsed.values as Record<string, unknown>;
+  const data = envelope.data ?? (parsed.message ? envelope : undefined);
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    logger.error('AI response missing "data" object', undefined, 'AI');
+    return null;
+  }
+
+  const confidence: Record<string, number> =
+    envelope.confidence && typeof envelope.confidence === 'object'
+      ? { ...(envelope.confidence as Record<string, number>) }
+      : {};
+  for (const key of Object.keys(data)) {
+    if (!(key in confidence)) {
+      confidence[key] = 0.7;
+    }
+  }
+
+  // Coerce numeric fields — LLMs sometimes return numbers as strings, and a
+  // companion field the form does not declare (so the sanitizer never sees
+  // it) still has to arrive as a number.
+  const numericFieldPatterns = [
+    /_btc$/,
+    /_usd$/,
+    /^price/,
+    /^amount/,
+    /^rate/,
+    /^hourly_rate$/,
+    /^fixed_price$/,
+    /^duration/,
+    /^inventory/,
+    /^count/,
+    /^quantity/,
+    /^target_amount/,
+    /^minimum_investment/,
+    /^funding_goal/,
+  ];
+  const coercedData: Record<string, unknown> = {};
+  for (const [key, val] of Object.entries(data as Record<string, unknown>)) {
+    if (typeof val === 'string' && numericFieldPatterns.some(p => p.test(key))) {
+      const num = Number(val);
+      coercedData[key] = isNaN(num) ? val : num;
+    } else {
+      coercedData[key] = val;
+    }
+  }
+
+  return { data: coercedData, confidence };
 }

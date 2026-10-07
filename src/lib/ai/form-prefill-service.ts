@@ -5,6 +5,7 @@
  * Processes natural language descriptions and generates structured form data.
  */
 
+import { describeFields, mergeValues } from '@bitbaum/ai-kit/forms';
 import type { AIPrefillResponse } from '@/components/create/types';
 import { callPlatformJson, hasPlatformProviders } from '@/services/cat/platform-llm';
 import {
@@ -13,7 +14,7 @@ import {
   type AiAssistIntent,
 } from '@/config/ai-form-assist';
 import { logger } from '@/utils/logger';
-import { extractFieldDescriptions, formatFieldsForPrompt } from './schema-to-prompt';
+import { toFieldSpecs } from './field-spec';
 import { getSystemPrompt, getUserPrompt, parseAIResponse } from './prompts/form-prefill';
 import { sanitizeAiFields } from './sanitize-ai-fields';
 import type { AiAssistTarget } from './assist-target';
@@ -57,51 +58,28 @@ export interface FormPrefillRequest {
 /**
  * Decide the final form values, and report which fields actually changed.
  *
- * This is the SSOT for "who wins on conflict", and it is why refinement used
- * to silently do nothing: existing values unconditionally overwrote the AI's
- * output, so a request to rewrite a non-empty description could never take
- * effect.
- *
- * - `fill`   — the user's own input is protected; the AI only lands in gaps
- *   (plus the price/currency fields, which carry template defaults rather than
- *   user intent — see USER_OVERRIDABLE_FIELDS).
- * - `refine` — the AI wins for the fields it returns, since changing them is
- *   the entire request. Fields it omits keep their current values.
+ * The rule is the fleet's (`mergeValues` in ai-forms): under `fill` the
+ * person's own input is protected and the model only lands in gaps, plus the
+ * price/currency fields, which carry template defaults rather than intent
+ * (USER_OVERRIDABLE_FIELDS); under `refine` the model wins for the fields it
+ * returns, since changing them is the entire request, and the rest keep
+ * their values. OrangeCat had its own copy of exactly this — and before that
+ * a version where existing values always won, so a refinement could never
+ * change anything. One implementation now.
  */
 export function mergePrefillResult(
   aiData: Record<string, unknown>,
   existingData: Record<string, unknown> | undefined,
   intent: AiAssistIntent
 ): { data: Record<string, unknown>; changedFields: string[] } {
-  const existing = existingData ?? {};
-
-  if (intent === 'refine') {
-    const changedFields = Object.keys(aiData).filter(
-      key => !valuesEqual(aiData[key], existing[key])
-    );
-    return { data: { ...existing, ...aiData }, changedFields };
-  }
-
-  const data: Record<string, unknown> = { ...aiData };
-  for (const [key, value] of Object.entries(existing)) {
-    const userProvided = value !== '' && value !== null && value !== undefined;
-    if (userProvided && !USER_OVERRIDABLE_FIELDS.includes(key)) {
-      data[key] = value;
-    }
-  }
-  const changedFields = Object.keys(aiData).filter(key => !valuesEqual(data[key], existing[key]));
-  return { data, changedFields };
-}
-
-/** Structural equality good enough for form values (scalars, arrays, plain objects). */
-function valuesEqual(a: unknown, b: unknown): boolean {
-  if (a === b) {
-    return true;
-  }
-  if (typeof a === 'object' && typeof b === 'object' && a !== null && b !== null) {
-    return JSON.stringify(a) === JSON.stringify(b);
-  }
-  return false;
+  const overridable = USER_OVERRIDABLE_FIELDS.map(name => ({
+    name,
+    label: name,
+    type: 'text' as const,
+    overridable: true,
+  }));
+  const { values, changed } = mergeValues(aiData, existingData, intent, overridable);
+  return { data: values, changedFields: changed };
 }
 
 /**
@@ -174,9 +152,8 @@ export async function generateFormPrefill({
     isEvent && intent === 'fill' ? withEventDayContext(description, context!) : description;
 
   try {
-    // Describe the declared fields for the prompt
-    const fieldDescriptions = extractFieldDescriptions(target.fields);
-    const fieldsPrompt = formatFieldsForPrompt(fieldDescriptions);
+    // The field list, in the words the fleet's form filler uses everywhere.
+    const fieldsPrompt = describeFields(toFieldSpecs(target.fields));
     const specialInstructions = target.instructions.join('\n');
 
     // Build prompts
