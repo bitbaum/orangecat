@@ -158,7 +158,7 @@ export function instantToWallTime(value: string, zone: string): string {
     return '';
   }
   const parts = Object.fromEntries(
-    new Intl.DateTimeFormat('en-CA', {
+    new Intl.DateTimeFormat(APP_LOCALE, {
       timeZone: isValidTimeZone(zone) ? zone : 'UTC',
       year: 'numeric',
       month: '2-digit',
