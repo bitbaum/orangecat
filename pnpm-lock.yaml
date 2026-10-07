@@ -536,7 +536,7 @@ packages:
         optional: true
 
   '@bitbaum/geo-kit@https://codeload.github.com/bitbaum/geo-kit/tar.gz/a337aec928cf7804fecf459c308d366b90f4b2fa':
-    resolution: {gitHosted: true, integrity: sha512-eTSZsATaUI/BDgRPKJK8LVqbuEe3Kf75TmdS68n8dgMowVL1AygIvK3UsFLPCERQCaOvTZab+G094Xv/J+pt8w==, tarball: https://codeload.github.com/bitbaum/geo-kit/tar.gz/a337aec928cf7804fecf459c308d366b90f4b2fa}
+    resolution: {gitHosted: true, tarball: https://codeload.github.com/bitbaum/geo-kit/tar.gz/a337aec928cf7804fecf459c308d366b90f4b2fa}
     version: 0.1.1
     engines: {node: '>=20'}
 
@@ -4526,7 +4526,7 @@ packages:
     hasBin: true
 
   listkit@https://codeload.github.com/bitbaum/listkit/tar.gz/c519d389b99d22f74bf9c092a603fe27061857cc:
-    resolution: {gitHosted: true, integrity: sha512-B2p2SoJL/7nGJ4kNcZHKWxY6s+++7AIj26cP9tgVL4Ao6GSvyIQ5nG2984QqUAmb+nL/SH0sAetZFkdI2Ipssg==, tarball: https://codeload.github.com/bitbaum/listkit/tar.gz/c519d389b99d22f74bf9c092a603fe27061857cc}
+    resolution: {gitHosted: true, tarball: https://codeload.github.com/bitbaum/listkit/tar.gz/c519d389b99d22f74bf9c092a603fe27061857cc}
     version: 0.2.0
     engines: {node: '>=20'}
 
