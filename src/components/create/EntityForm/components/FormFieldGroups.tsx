@@ -34,8 +34,12 @@ export function FormFieldGroups<T extends Record<string, unknown>>({
 
         if (group.customComponent) {
           const CustomComponent = group.customComponent;
+          // Custom sections get the same heading as every other section. They
+          // used to render bare, so the wallet picker read as part of whatever
+          // section came before it ("Pay into" under "Profile Visibility").
           return (
             <div key={group.id} className="space-y-4">
+              <GroupHeading group={group} />
               <CustomComponent
                 formData={formState.data as Record<string, unknown>}
                 onFieldChange={(field, value) => handleFieldChange(field as keyof T, value)}
@@ -47,12 +51,7 @@ export function FormFieldGroups<T extends Record<string, unknown>>({
 
         return (
           <div key={group.id} className="space-y-4">
-            <div>
-              <h3 className="text-lg font-semibold text-fg-primary">{group.title}</h3>
-              {group.description && (
-                <p className="text-base text-fg-secondary mt-1">{group.description}</p>
-              )}
-            </div>
+            <GroupHeading group={group} />
 
             {group.fields && group.fields.length > 0 && (
               // Single-column, full-width fields. A 2-up grid halved every input
@@ -105,5 +104,18 @@ export function FormFieldGroups<T extends Record<string, unknown>>({
         );
       })}
     </>
+  );
+}
+
+/** A section's title and one line on what it is for. Nothing when untitled. */
+function GroupHeading({ group }: { group: FieldGroup }) {
+  if (!group.title) {
+    return null;
+  }
+  return (
+    <div>
+      <h3 className="text-lg font-semibold text-fg-primary">{group.title}</h3>
+      {group.description && <p className="text-base text-fg-secondary mt-1">{group.description}</p>}
+    </div>
   );
 }

@@ -3,9 +3,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { detectWalletType, type Wallet } from '@/types/wallet';
+import { type Wallet } from '@/types/wallet';
 import { PAY_DESTINATION_COPY } from '@/config/pay-destination';
 import { WalletCard } from './WalletCard';
+import { reuseIsPublicOnChain, sameDestinationAs } from './wallet-display';
 import { WalletPasteField } from './WalletPasteField';
 import { applyWalletSelection } from './applyWalletSelection';
 import { API_ROUTES } from '@/config/api-routes';
@@ -102,16 +103,18 @@ export function WalletSelectorField({
   // makes those pages publicly linkable on-chain. Warn at the moment of
   // attachment — including the silent auto-preselect above — so reuse is a
   // choice, not an accident. Best-effort: a failed lookup shows no warning.
-  const [reuseInfo, setReuseInfo] = useState<{ count: number; isXpubWallet: boolean } | null>(null);
+  const [reuseInfo, setReuseInfo] = useState<{ count: number; publicOnChain: boolean } | null>(
+    null
+  );
   useEffect(() => {
     if (!selectedWalletId) {
       setReuseInfo(null);
       return;
     }
-    const wallet = wallets.find(w => w.id === selectedWalletId);
-    const isXpubWallet = wallet?.address_or_xpub
-      ? detectWalletType(wallet.address_or_xpub) === 'xpub'
-      : false;
+    // Only a plain on-chain address makes reuse visible on the blockchain. The
+    // warning used to fire for Lightning-only wallets too, telling people their
+    // pages were linkable "on the blockchain" when nothing there touches it.
+    const publicOnChain = reuseIsPublicOnChain(wallets.find(w => w.id === selectedWalletId));
     let cancelled = false;
     fetch(`${API_ROUTES.ENTITY_WALLETS}?wallet_id=${selectedWalletId}`)
       .then(res => (res.ok ? res.json() : null))
@@ -123,7 +126,7 @@ export function WalletSelectorField({
         // In edit mode the entity's own existing link must not count as reuse.
         const currentEntityId = formData.id as string | undefined;
         const count = rows.filter(r => r.entity_id !== currentEntityId).length;
-        setReuseInfo({ count, isXpubWallet });
+        setReuseInfo({ count, publicOnChain });
       })
       .catch(() => {
         if (!cancelled) {
@@ -135,6 +138,8 @@ export function WalletSelectorField({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- formData.id is stable per form
   }, [selectedWalletId, wallets]);
+
+  const sameAs = sameDestinationAs(wallets);
 
   const handleSelectWallet = (wallet: Wallet) => {
     setSelectedWalletId(wallet.id);
@@ -163,7 +168,9 @@ export function WalletSelectorField({
     <div className="space-y-4">
       {mode === 'select' && wallets.length > 0 && (
         <>
-          <p className="text-sm font-medium text-fg-primary">{PAY_DESTINATION_COPY.payInto}</p>
+          {/* The section heading ("Pay into") is the form's; this says where
+              the money actually goes, which is the question people have. */}
+          <p className="text-sm text-fg-secondary">{PAY_DESTINATION_COPY.straightToWallet}</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {wallets.map(wallet => (
               <WalletCard
@@ -172,10 +179,11 @@ export function WalletSelectorField({
                 selected={selectedWalletId === wallet.id}
                 onSelect={() => handleSelectWallet(wallet)}
                 disabled={disabled}
+                sameAs={sameAs.get(wallet.id)}
               />
             ))}
           </div>
-          {reuseInfo && reuseInfo.count > 0 && !reuseInfo.isXpubWallet && (
+          {reuseInfo && reuseInfo.count > 0 && reuseInfo.publicOnChain && (
             <p className="rounded-lg border border-status-warning/40 bg-status-warning-subtle px-3 py-2 text-xs text-fg-secondary">
               This wallet already receives funds for {reuseInfo.count} other{' '}
               {reuseInfo.count === 1 ? 'page' : 'pages'}. On-chain payments to the same address are
@@ -184,11 +192,10 @@ export function WalletSelectorField({
               payment.
             </p>
           )}
-          {reuseInfo && reuseInfo.count > 0 && reuseInfo.isXpubWallet && (
-            <p className="text-xs text-fg-secondary">
-              This wallet collects for {reuseInfo.count} other{' '}
-              {reuseInfo.count === 1 ? 'page' : 'pages'}, but it derives a fresh address per payment
-              — payments aren&apos;t linkable on-chain.
+          {reuseInfo && reuseInfo.count > 0 && !reuseInfo.publicOnChain && (
+            <p className="text-xs text-fg-tertiary">
+              Also linked to {reuseInfo.count} other {reuseInfo.count === 1 ? 'page' : 'pages'}.
+              That is fine — payments here don&apos;t publish a shared address on the blockchain.
             </p>
           )}
           <button
