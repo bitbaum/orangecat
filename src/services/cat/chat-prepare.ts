@@ -16,8 +16,7 @@ import {
   type ActionsVia,
 } from '@/services/cat/system-prompt';
 import {
-  composeCatMessages,
-  fitCatPromptToBudget,
+  fitOrSendWhole,
   type BudgetReport,
   type CatPromptParts,
 } from '@/services/cat/prompt-budget';
@@ -57,6 +56,16 @@ export interface CatChatPrepareOpts {
    * Omitted = the whole prompt, for links without such a cap.
    */
   tokenBudget?: number;
+  /**
+   * When even the shrunk prompt cannot fit `tokenBudget`, send the WHOLE
+   * prompt instead. Set when the chain holds a link without that cap: the
+   * capped link is skipped for an overflowing prompt anyway (preflight in
+   * chat-orchestrator), so shrinking only took the turn's own instructions
+   * away from the model that does answer. Measured 2026-10-07: "Throw a party
+   * on Saturday" in prose mode lost twelve sections — its own event playbook
+   * among them — still did not fit, and Gemini answered from what was left.
+   */
+  wholePromptIfItCannotFit?: boolean;
 }
 
 export interface PreparedCatChat {
@@ -195,13 +204,7 @@ export async function prepareCatChat(
     history: historyMessages,
     message,
   };
-  const fitted =
-    opts.tokenBudget !== undefined
-      ? fitCatPromptToBudget(parts, opts.tokenBudget)
-      : {
-          messages: composeCatMessages(parts, { history: historyMessages, includeFewShot: true }),
-          report: null,
-        };
+  const fitted = fitOrSendWhole(parts, opts.tokenBudget, !!opts.wholePromptIfItCannotFit);
   const systemPrompt = fitted.messages[0]?.content ?? '';
 
   return {

@@ -284,6 +284,18 @@ export async function orchestrateCatChat(
  * user's chain. A BYOK chain, or one with no Groq link, gets the whole
  * prompt: their limits are their own and usually far higher.
  */
+/**
+ * Whether some link in the chain is not bound by the platform-Groq cap. When
+ * one is, a prompt that cannot be shrunk to fit is better sent whole: the
+ * capped link is skipped for it anyway, and the link that answers can take it.
+ */
+function hasLinkWithoutGroqCap(resolved: ResolvedTurnProvider): boolean {
+  const { provider, hasByok, fallbacks } = resolved;
+  return [{ provider, hasByok }, ...fallbacks].some(
+    link => link.provider !== 'groq' || link.hasByok
+  );
+}
+
 function promptTokenBudget(resolved: ResolvedTurnProvider): number | undefined {
   const { provider, hasByok, modelToUse, fallbacks } = resolved;
   const platformGroqModels = [
@@ -361,6 +373,7 @@ async function prepareTurn(
     pageExcerpt: body.pageExcerpt,
     actionsVia,
     tokenBudget: promptTokenBudget(resolved),
+    wholePromptIfItCannotFit: hasLinkWithoutGroqCap(resolved),
   });
   // What fitting the budget cost, when it cost anything. Logged rather than
   // silent: a prompt that reaches the model without the user's context is a
