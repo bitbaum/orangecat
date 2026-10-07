@@ -18,7 +18,8 @@ export function DashboardJourney() {
   // maxTasks=2 above the fold; "Show N more" is already wired inside
   // TasksSection. Five tasks on a mobile viewport train the eye to
   // skim past — two is the readable limit.
-  return <TasksSection showQuestions={true} maxTasks={2} />;
+  // quietWhenDone: once setup is complete this renders nothing at all.
+  return <TasksSection showQuestions={true} maxTasks={2} quietWhenDone />;
 }
 
 export default DashboardJourney;

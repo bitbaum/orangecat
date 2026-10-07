@@ -2,6 +2,7 @@
   "name": "orangecat",
   "version": "0.1.2",
   "private": true,
+  "license": "MIT",
   "workspaces": [
     "packages/*"
   ],
@@ -125,7 +126,7 @@
     "@hono/node-server": "^2.1.1",
     "@hookform/resolvers": "^5.9.1",
     "@marsidev/react-turnstile": "^1.6.0",
-    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@modelcontextprotocol/sdk": "^1.31.0",
     "@noble/hashes": "^2.3.0",
     "@noble/secp256k1": "^2.3.0",
     "@octokit/rest": "^22.0.0",
@@ -166,6 +167,7 @@
     "jose": "^6.2.12",
     "jsqr": "^1.4.0",
     "limitkit": "^0.2.0",
+    "listkit": "github:bitbaum/listkit#c519d389b99d22f74bf9c092a603fe27061857cc",
     "lodash": "^4.17.23",
     "lucide-react": "^1.41.0",
     "mermaid": "^11.17.2",
@@ -229,7 +231,7 @@
     "ws": "^8.21.3"
   },
   "optionalDependencies": {
-    "sharp": "^0.35.4"
+    "sharp": "^0.35.5"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [

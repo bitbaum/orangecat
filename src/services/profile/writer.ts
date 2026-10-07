@@ -13,6 +13,7 @@ import { ProfileMapper } from './mapper';
 import type { ScalableProfile, ScalableProfileFormData, ProfileServiceResponse } from './types';
 import { DATABASE_TABLES, OWN_PROFILE_VIEW } from '@/config/database-tables';
 import { STATUS } from '@/config/database-constants';
+import type { TablesInsert } from '@/types/database.generated';
 
 // =====================================================================
 // ✏️ PROFILE WRITE OPERATIONS
@@ -153,7 +154,7 @@ export class ProfileWriter {
       const { error } = await supabase
         .from(DATABASE_TABLES.PROFILES)
 
-        .insert(insertData as any);
+        .insert(insertData as unknown as TablesInsert<'profiles'>);
 
       const { data } = error
         ? { data: null }

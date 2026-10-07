@@ -7,6 +7,7 @@ import type { EntityType } from '@/config/entity-registry';
 import type { Article } from '@/services/articles/types';
 import type { PublicEconomicProfile } from '@/services/cat/economic-profile';
 import type { PublicCivicSplit } from '@/components/profile/ProfileCivicSplit';
+import type { TrackRecord } from '@/domain/reputation/track-record';
 
 interface ProfilePageClientProps {
   profile: ScalableProfile;
@@ -16,6 +17,8 @@ interface ProfilePageClientProps {
   economicProfile?: PublicEconomicProfile | null;
   /** Their declared civic split, only when they made it public. */
   civicSplit?: PublicCivicSplit | null;
+  /** Observed deals and revealed reviews; null hides the section. */
+  trackRecord?: TrackRecord | null;
   stats: {
     projectCount: number;
     totalRaised: number;
@@ -33,6 +36,7 @@ export default function ProfilePageClient({
   isOwnProfile,
   economicProfile,
   civicSplit,
+  trackRecord,
   stats,
 }: ProfilePageClientProps) {
   return (
@@ -44,6 +48,7 @@ export default function ProfilePageClient({
       serverIsOwnProfile={isOwnProfile}
       economicProfile={economicProfile}
       civicSplit={civicSplit}
+      trackRecord={trackRecord}
     />
   );
 }

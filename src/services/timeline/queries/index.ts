@@ -31,4 +31,4 @@ export { getEventById, getReplies, searchPosts, getThreadPosts } from './eventQu
 // Constants and helpers
 export { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, TIMELINE_TABLES } from './constants';
 
-export { getCurrentUserId, transformEnrichedEventToDisplay } from './helpers';
+export { getCurrentUserId, transformEnrichedEventToDisplay, displayEventsFromView } from './helpers';

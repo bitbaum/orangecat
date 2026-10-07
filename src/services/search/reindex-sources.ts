@@ -8,6 +8,7 @@
  */
 
 import { DATABASE_TABLES } from '@/config/database-tables';
+import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { ENTITY_STATUS } from '@/config/database-constants';
 import { getEntityMetadata, type EntityType } from '@/config/entity-registry';
 import { clamp01, recency, isVerified, profileQuality, causeQuality } from './reindex-scoring';
@@ -24,12 +25,26 @@ export interface IndexItem {
 }
 
 /**
+ * The columns read from an ENTITY_CFG table. The select string is chosen at
+ * runtime (causes add the funding pair), so the client cannot infer this.
+ */
+export interface IndexableEntityRow {
+  id: string;
+  title: string | null;
+  description: string | null;
+  status?: string | null;
+  updated_at: string | null;
+  total_raised?: number | string | null;
+  goal_amount?: number | string | null;
+}
+
+/**
  * A wishlist's "need" text = its own title/description PLUS its items' — the
  * real demand detail usually lives in the items, not the thin container. This
  * is what gets embedded so a need can be matched to the supply that meets it.
  */
 export async function buildWishlistText(
-  supabase: any,
+  supabase: AnySupabaseClient,
   w: { id: string; title?: string | null; description?: string | null }
 ): Promise<string> {
   const parts: string[] = [w.title, w.description].filter(Boolean) as string[];
@@ -68,7 +83,10 @@ export const INDEXABLE_ENTITY_TYPES = [
  * corpus was the sharpest gap: a topic search for a scientific subject could
  * not surface the research entity about that exact subject.
  */
-export const PUBLIC_FLAG_ENTITY_TYPES = ['research', 'ai_assistant'] as const satisfies readonly EntityType[];
+export const PUBLIC_FLAG_ENTITY_TYPES = [
+  'research',
+  'ai_assistant',
+] as const satisfies readonly EntityType[];
 
 /** Events are published through a multi-state gate rather than status='active'. */
 export const EVENT_PUBLIC_STATUSES = ['published', 'open', 'ongoing'];
@@ -80,7 +98,7 @@ export const ENTITY_CFG: Record<string, { table: string; basePath: string }> = O
   })
 );
 
-export async function buildCorpus(supabase: any): Promise<IndexItem[]> {
+export async function buildCorpus(supabase: AnySupabaseClient): Promise<IndexItem[]> {
   const items: IndexItem[] = [];
 
   // Follower counts (one query) → per-profile connection signal.
@@ -128,7 +146,7 @@ export async function buildCorpus(supabase: any): Promise<IndexItem[]> {
       .select('id, title, description, updated_at')
       .eq('is_public', true)
       .eq('status', ENTITY_STATUS.ACTIVE);
-    for (const e of data ?? []) {
+    for (const e of (data ?? []) as unknown as IndexableEntityRow[]) {
       const text = [e.title, e.description].filter(Boolean).join('. ').trim();
       if (text) {
         items.push({
@@ -150,7 +168,7 @@ export async function buildCorpus(supabase: any): Promise<IndexItem[]> {
       .from(meta.tableName)
       .select('id, title, description, updated_at')
       .in('status', EVENT_PUBLIC_STATUSES);
-    for (const e of data ?? []) {
+    for (const e of (data ?? []) as unknown as IndexableEntityRow[]) {
       const text = [e.title, e.description].filter(Boolean).join('. ').trim();
       if (text) {
         items.push({
@@ -173,7 +191,7 @@ export async function buildCorpus(supabase: any): Promise<IndexItem[]> {
         ? 'id, title, description, updated_at, total_raised, goal_amount'
         : 'id, title, description, updated_at';
     const { data } = await supabase.from(table).select(cols).eq('status', ENTITY_STATUS.ACTIVE);
-    for (const e of data ?? []) {
+    for (const e of (data ?? []) as unknown as IndexableEntityRow[]) {
       const text = [e.title, e.description].filter(Boolean).join('. ').trim();
       if (!text) {
         continue;

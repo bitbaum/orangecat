@@ -25,12 +25,19 @@ interface TasksSectionProps {
   className?: string;
   maxTasks?: number;
   showQuestions?: boolean;
+  /**
+   * Render nothing unless there is setup left to do: no spinner card while
+   * loading, no "all caught up" card, no 100% bar. The dashboard uses this —
+   * a finished checklist is not a reason to spend a screen.
+   */
+  quietWhenDone?: boolean;
 }
 
 export default function TasksSection({
   className,
   maxTasks = 4,
   showQuestions = true,
+  quietWhenDone = false,
 }: TasksSectionProps) {
   const { user, profile } = useAuth();
   // `userToggled` tracks whether the viewer has clicked the expand/collapse
@@ -74,6 +81,9 @@ export default function TasksSection({
   }
 
   if (isLoading) {
+    if (quietWhenDone) {
+      return null;
+    }
     return (
       <Card className={className}>
         <CardContent className="p-6 flex items-center justify-center">
@@ -133,6 +143,9 @@ export default function TasksSection({
   }
 
   if (tasks.length === 0) {
+    if (quietWhenDone) {
+      return null;
+    }
     return (
       <div className={className}>
         <Card>
@@ -173,6 +186,9 @@ export default function TasksSection({
   // "Setup complete" claim. Hide medium/low polish tasks instead of
   // promoting them next to a 100% bar — they get their own surface
   // elsewhere (smart questions panel + entity-create CTAs).
+  if (quietWhenDone && setupTasksRemaining === 0) {
+    return null;
+  }
   const taskPool = setupTasksRemaining === 0 ? setupTasks : tasks;
   const visibleTasks = taskPool.slice(0, maxTasks);
   const hiddenCount = Math.max(0, taskPool.length - maxTasks);

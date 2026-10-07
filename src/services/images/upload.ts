@@ -92,30 +92,44 @@ export async function shrinkToFit(
   }
 }
 
-export async function uploadUserImage(
-  userId: string,
+export type PreparedImage =
+  | { ok: true; payload: Blob; contentType: string; ext: string }
+  | { ok: false; error: string };
+
+/**
+ * The ONE rule for turning a picked image into something a bucket will accept:
+ * type-check it, shrink it if it is over the bucket's limit, and name it by
+ * what it now IS. Every upload goes through here.
+ *
+ * It exists because three services each wrote their own. Avatars — the most
+ * uploaded image — had the strictest: a hard 5MB refusal, no resize, so an
+ * ordinary phone photo failed while the same photo worked as an article cover.
+ * And the extension came from the file NAME, so a re-encoded photo, or a
+ * "photo.HEIC" renamed by the OS, was stored under a lie.
+ */
+export async function prepareImageForUpload(
   file: File,
-  prefix: string
-): Promise<FileUploadResult> {
+  { maxBytes = MAX_UPLOAD_BYTES }: { maxBytes?: number } = {}
+): Promise<PreparedImage> {
   const validation = validateImageFile(file);
   if (!validation.valid) {
-    return { success: false, error: validation.error };
+    return { ok: false, error: validation.error ?? 'Unsupported image.' };
   }
 
   let payload: Blob = file;
   let contentType = file.type;
 
-  if (file.size > MAX_UPLOAD_BYTES) {
+  if (file.size > maxBytes) {
     if (file.type === 'image/gif') {
       return {
-        success: false,
-        error: `That GIF is over ${IMAGE_UPLOAD_MAX_MB}MB and resizing would break the animation — please pick a smaller one.`,
+        ok: false,
+        error: `That GIF is over ${maxBytes / 1024 / 1024}MB and resizing would break the animation — please pick a smaller one.`,
       };
     }
-    const shrunk = await shrinkToFit(file);
+    const shrunk = await shrinkToFit(file, { maxBytes });
     if (!shrunk) {
       return {
-        success: false,
+        ok: false,
         error: 'Could not resize that image in your browser. Please try a smaller file.',
       };
     }
@@ -123,8 +137,21 @@ export async function uploadUserImage(
     contentType = shrunk.type;
   }
 
+  return { ok: true, payload, contentType, ext: EXT_BY_TYPE[contentType] ?? 'jpg' };
+}
+
+export async function uploadUserImage(
+  userId: string,
+  file: File,
+  prefix: string
+): Promise<FileUploadResult> {
+  const prepared = await prepareImageForUpload(file);
+  if (!prepared.ok) {
+    return { success: false, error: prepared.error };
+  }
+  const { payload, contentType, ext } = prepared;
+
   try {
-    const ext = EXT_BY_TYPE[contentType] ?? 'jpg';
     // userId first segment namespaces each user's uploads (same convention as
     // avatars/banners). Timestamp keeps successive uploads from colliding.
     const fileName = `${userId}/${prefix}_${Date.now()}.${ext}`;

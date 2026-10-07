@@ -12,6 +12,7 @@ import { generateInvoice } from '@/domain/payments/invoiceGenerationService';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { decrypt, isEncryptionConfigured } from '@/domain/payments/encryptionService';
 import { NWCClient } from '@/lib/nostr/nwc';
+import { auditLog } from '@/lib/api/auditLog';
 
 import type { Mock } from 'vitest';
 
@@ -26,6 +27,10 @@ vi.mock('@/domain/payments/encryptionService', () => ({
 vi.mock('@/domain/payments/walletResolutionService', () => ({ resolveUserWallet: vi.fn() }));
 vi.mock('@/domain/payments/invoiceGenerationService', () => ({ generateInvoice: vi.fn() }));
 vi.mock('@/lib/nostr/nwc', () => ({ NWCClient: vi.fn() }));
+vi.mock('@/lib/api/auditLog', () => ({
+  auditLog: vi.fn(),
+  AUDIT_ACTIONS: { PAYMENT_SENT: 'PAYMENT_SENT', PAYMENT_SEND_FAILED: 'PAYMENT_SEND_FAILED' },
+}));
 
 const adminMock = getAdminClient as Mock;
 const decryptMock = decrypt as Mock;
@@ -33,6 +38,7 @@ const isEncryptionConfiguredMock = isEncryptionConfigured as Mock;
 const resolveWalletMock = resolveUserWallet as Mock;
 const generateInvoiceMock = generateInvoice as Mock;
 const NWCClientMock = NWCClient as unknown as Mock;
+const auditLogMock = auditLog as Mock;
 
 const MAINNET_INVOICE = 'lnbc100u1pabcdef';
 const payInvoiceSpy = vi.fn();
@@ -211,5 +217,67 @@ describe('sendToRecipient', () => {
     const result = await sendToRecipient('user-1', 'alice@getalby.com', 0.0001);
     expect(result).toMatchObject({ ok: false, reason: 'invoice_failed' });
     expect(payInvoiceSpy).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * A successful send used to write nothing anywhere: our server moved a user's
+ * money and could not later say it had. These pin the trace — and pin that it
+ * is written through the admin client, because the Cat calls this path too and
+ * auditLog swallows a failed write, so a session-bound write could vanish.
+ */
+describe('the trace a send leaves', () => {
+  it('records a paid invoice as an audit row of our action', async () => {
+    mockAdmin({ nwc: 'enc' });
+    await payInvoice('user-1', MAINNET_INVOICE);
+
+    expect(auditLogMock).toHaveBeenCalledTimes(1);
+    const [entry, client] = auditLogMock.mock.calls[0];
+    expect(entry).toMatchObject({
+      action: 'PAYMENT_SENT',
+      userId: 'user-1',
+      entityType: 'payment',
+      entityId: 'hash-1',
+      metadata: { rail: 'lightning', amountBtc: 0.0001, destination: 'invoice' },
+    });
+    expect(client).toBe(adminMock.mock.results[0].value);
+  });
+
+  it('records who was paid when paying a person', async () => {
+    mockAdmin({ nwc: 'enc' });
+    generateInvoiceMock.mockResolvedValue({ bolt11: MAINNET_INVOICE });
+    await sendToRecipient('user-1', 'alice@getalby.com', 0.0002);
+
+    expect(auditLogMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'PAYMENT_SENT',
+        metadata: expect.objectContaining({ amountBtc: 0.0002, destination: 'alice@getalby.com' }),
+      }),
+      expect.anything()
+    );
+  });
+
+  it('records a refused payment too — an attempt to move money is worth a trace', async () => {
+    mockAdmin({ nwc: 'enc' });
+    payInvoiceSpy.mockRejectedValue(new Error('insufficient balance'));
+    const result = await payInvoice('user-1', MAINNET_INVOICE);
+
+    expect(result).toMatchObject({ ok: false, reason: 'payment_failed' });
+    expect(auditLogMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'PAYMENT_SEND_FAILED',
+        userId: 'user-1',
+        success: false,
+        errorMessage: expect.stringContaining('insufficient balance'),
+      }),
+      expect.anything()
+    );
+  });
+
+  it('writes nothing when the request is refused before any wallet is contacted', async () => {
+    mockAdmin({ nwc: 'enc' });
+    await payInvoice('user-1', 'lnbc1pabc'); // zero-amount: refused, nothing sent
+    await sendToRecipient('user-1', 'lena', 0); // non-positive amount
+    expect(auditLogMock).not.toHaveBeenCalled();
   });
 });

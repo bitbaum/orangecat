@@ -3,7 +3,8 @@
  * the way ChatGPT/Claude/Grok consolidate it.
  *
  * Only real capabilities are listed:
- *   - Add photos or text files  → attached to this message (see ../attachments)
+ *   - Take a photo / Photo library / Files → attached to this message; one
+ *     input per source (see ATTACH_SOURCES in ../attachments for why)
  *   - Add one of your things    → a reference to a listing or note you own
  *   - Context documents         → notes the Cat reads on EVERY message
  *   - Connections & keys        → your AI keys and what the Cat may do
@@ -13,13 +14,28 @@
 
 import { useRef, useState } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, FolderOpen, Package, Paperclip, Plug, Plus } from 'lucide-react';
+import {
+  Camera,
+  ChevronLeft,
+  FileUp,
+  FolderOpen,
+  Image as ImageIcon,
+  Package,
+  Plug,
+  Plus,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDropdown } from '@/hooks/useDropdown';
 import { CAT_HUB_TAB_HREFS } from '@/config/cat-hub';
 import { ENTITY_REGISTRY, type EntityType } from '@/config/entity-registry';
 import type { CatReference } from '@/config/cat-prompts';
-import { ATTACHMENT_ACCEPT } from '../attachments';
+import { ATTACH_SOURCES, type AttachSource } from '../attachments';
+
+const SOURCE_ICONS: Record<AttachSource, typeof Camera> = {
+  camera: Camera,
+  photos: ImageIcon,
+  files: FileUp,
+};
 
 interface ComposerAddMenuProps {
   attachable: CatReference[];
@@ -39,7 +55,7 @@ export function ComposerAddMenu({
 }: ComposerAddMenuProps) {
   const { isOpen, toggle, close, dropdownRef, buttonRef } = useDropdown();
   const [view, setView] = useState<'main' | 'things'>('main');
-  const fileRef = useRef<HTMLInputElement>(null);
+  const inputs = useRef<Partial<Record<AttachSource, HTMLInputElement | null>>>({});
 
   const itemClass =
     'flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm text-fg-primary transition-colors hover:bg-surface-raised focus-visible:bg-surface-raised focus-visible:outline-none';
@@ -72,20 +88,25 @@ export function ComposerAddMenu({
         <Plus className={cn('h-5 w-5 transition-transform', isOpen && 'rotate-45')} />
       </button>
 
-      <input
-        ref={fileRef}
-        type="file"
-        multiple
-        accept={ATTACHMENT_ACCEPT}
-        className="hidden"
-        onChange={e => {
-          if (e.target.files && e.target.files.length > 0) {
-            onFiles(e.target.files);
-          }
-          // Reset so picking the same file twice still fires onChange.
-          e.target.value = '';
-        }}
-      />
+      {ATTACH_SOURCES.map(source => (
+        <input
+          key={source.id}
+          ref={el => {
+            inputs.current[source.id] = el;
+          }}
+          type="file"
+          data-attach-source={source.id}
+          {...source.input}
+          className="hidden"
+          onChange={e => {
+            if (e.target.files && e.target.files.length > 0) {
+              onFiles(e.target.files);
+            }
+            // Reset so picking the same file twice still fires onChange.
+            e.target.value = '';
+          }}
+        />
+      ))}
 
       {isOpen && (
         <div
@@ -102,19 +123,27 @@ export function ComposerAddMenu({
         >
           {view === 'main' ? (
             <>
-              <button
-                type="button"
-                role="menuitem"
-                className={itemClass}
-                onClick={() => {
-                  closeMenu();
-                  fileRef.current?.click();
-                }}
-              >
-                <Paperclip className="h-4 w-4 text-fg-secondary" />
-                <span className="flex-1">Add photos or files</span>
-                <span className="text-xs text-fg-tertiary">photo · text</span>
-              </button>
+              {ATTACH_SOURCES.map(source => {
+                const Icon = SOURCE_ICONS[source.id];
+                return (
+                  <button
+                    key={source.id}
+                    type="button"
+                    role="menuitem"
+                    className={itemClass}
+                    onClick={() => {
+                      closeMenu();
+                      inputs.current[source.id]?.click();
+                    }}
+                  >
+                    <Icon className="h-4 w-4 text-fg-secondary" />
+                    <span className="flex-1">{source.label}</span>
+                    {source.id === 'files' && (
+                      <span className="text-xs text-fg-tertiary">photo · text</span>
+                    )}
+                  </button>
+                );
+              })}
               <button
                 type="button"
                 role="menuitem"

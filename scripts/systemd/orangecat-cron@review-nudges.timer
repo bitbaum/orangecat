@@ -1,0 +1,14 @@
+# SSOT: repo scripts/systemd/ — installed by deploy-selfhost.sh.
+# Instance of the generic orangecat-cron@.service template (curls
+# /api/cron/review-nudges with CRON_SECRET). Asks people to review their deals
+# (ADR-0010). Deterministic; spends no AI key.
+[Unit]
+Description=OrangeCat review nudges (hourly)
+
+[Timer]
+OnCalendar=hourly
+RandomizedDelaySec=300
+Persistent=true
+
+[Install]
+WantedBy=timers.target

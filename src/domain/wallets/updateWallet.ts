@@ -24,7 +24,7 @@ type WalletWithRelations = Wallet & {
   projects?: { user_id: string } | null;
 };
 
-type AnyResponse = NextResponse<any>;
+type AnyResponse = NextResponse<unknown>;
 
 interface FetchResult {
   wallet: WalletWithRelations;

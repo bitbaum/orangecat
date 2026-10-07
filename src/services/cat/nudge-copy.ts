@@ -56,7 +56,10 @@ export interface NudgeCopy {
   /** Localized entity noun (falls back to the registry display name). */
   entityNoun(type: EntityType): string;
   completionBio: CopyBlock;
-  publishDraft(title: string): CopyBlock;
+  /** `others`: how many more drafts have sat as long — said once, not as more cards. */
+  publishDraft(title: string, others: number): CopyBlock;
+  /** People searched for what this listing offers. Good news, so it ranks first. */
+  demandMatch(args: { query: string; count: number; title: string; noun: string }): CopyBlock;
   growthSkill(args: {
     skill: string;
     noun: string;
@@ -64,6 +67,8 @@ export interface NudgeCopy {
     wanted: boolean;
   }): CopyBlock;
   growthAsset(args: { asset: string; wanted: boolean }): CopyBlock;
+  /** A paid deal the person has not reviewed yet. `others`: more open ones, counted once. */
+  reviewDeal(args: { who: string | null; title: string; others: number }): CopyBlock;
 }
 
 const NOUN_DE: Partial<Record<EntityType, string>> = {
@@ -85,10 +90,26 @@ export const NUDGE_COPY: Record<NudgeLanguage, NudgeCopy> = {
       body: 'A few lines about what you do lets the Cat match you to the right people, work, and opportunities.',
       cta: 'Add your bio',
     },
-    publishDraft: title => ({
-      title: `Publish your draft "${title}"`,
-      body: `It's still a draft, so no one can find it yet. A couple of clicks makes it live.`,
-      cta: 'Review & publish',
+    publishDraft: (title, others) => ({
+      title: `"${title}" has waited a few days as a draft`,
+      body:
+        others > 0
+          ? `Nobody can find a draft, and you have ${others} more like it. Publishing takes a couple of clicks — or ask your Cat to tidy them up.`
+          : `Nobody can find it while it's a draft. Publishing takes a couple of clicks.`,
+      cta: others > 0 ? 'Review your drafts' : 'Review & publish',
+    }),
+    reviewDeal: ({ who, title, others }) => ({
+      title: who ? `How did "${title}" go with ${who}?` : `How did "${title}" go?`,
+      body:
+        others > 0
+          ? `Your answer helps the next person decide, and ${others} more of your deals are waiting for one. Reviews stay hidden until both sides have written.`
+          : 'Your answer helps the next person decide. It stays hidden until both of you have written.',
+      cta: others > 0 || !who ? 'Review your deals' : `Review ${who}`,
+    }),
+    demandMatch: ({ query, count, title, noun }) => ({
+      title: `People are looking for what you offer`,
+      body: `"${query}" was searched ${count} times in the last two weeks, and your ${noun} "${title}" matches. Sharing its link puts it in front of them.`,
+      cta: `Open "${title}"`,
     }),
     growthSkill: ({ skill, noun, kind, wanted }) => ({
       title: `Turn "${skill}" into a ${noun}`,
@@ -115,10 +136,26 @@ export const NUDGE_COPY: Record<NudgeLanguage, NudgeCopy> = {
       body: 'Ein paar Zeilen darüber, was du machst, lassen die Cat dich mit den richtigen Menschen, Aufträgen und Chancen zusammenbringen.',
       cta: 'Bio hinzufügen',
     },
-    publishDraft: title => ({
-      title: `Veröffentliche deinen Entwurf „${title}“`,
-      body: 'Er ist noch ein Entwurf — niemand kann ihn finden. Zwei Klicks machen ihn live.',
-      cta: 'Prüfen & veröffentlichen',
+    publishDraft: (title, others) => ({
+      title: `„${title}“ wartet seit ein paar Tagen als Entwurf`,
+      body:
+        others > 0
+          ? `Einen Entwurf findet niemand, und du hast noch ${others} weitere. Veröffentlichen sind zwei Klicks — oder bitte deine Cat, sie aufzuräumen.`
+          : 'Solange er ein Entwurf ist, findet ihn niemand. Veröffentlichen sind zwei Klicks.',
+      cta: others > 0 ? 'Entwürfe ansehen' : 'Prüfen & veröffentlichen',
+    }),
+    reviewDeal: ({ who, title, others }) => ({
+      title: who ? `Wie lief „${title}“ mit ${who}?` : `Wie lief „${title}“?`,
+      body:
+        others > 0
+          ? `Deine Antwort hilft der nächsten Person bei der Entscheidung, und ${others} weitere deiner Deals warten noch darauf. Bewertungen bleiben verborgen, bis beide Seiten geschrieben haben.`
+          : 'Deine Antwort hilft der nächsten Person bei der Entscheidung. Sie bleibt verborgen, bis ihr beide geschrieben habt.',
+      cta: others > 0 || !who ? 'Deals bewerten' : `${who} bewerten`,
+    }),
+    demandMatch: ({ query, count, title, noun }) => ({
+      title: 'Jemand sucht, was du anbietest',
+      body: `„${query}“ wurde in den letzten zwei Wochen ${count}-mal gesucht, und dein Angebot „${title}“ (${noun}) passt. Teile den Link, damit sie es finden.`,
+      cta: `„${title}“ öffnen`,
     }),
     growthSkill: ({ skill, noun, kind, wanted }) => ({
       title: `Biete „${skill}“ als ${noun} an`,

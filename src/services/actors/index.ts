@@ -32,7 +32,7 @@ function pickClient(client?: AnySupabaseClient): AnySupabaseClient {
 export async function getActor(actorId: string, client?: AnySupabaseClient): Promise<Actor | null> {
   const supabase = pickClient(client);
   try {
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from(DATABASE_TABLES.ACTORS)
       .select('*')
       .eq('id', actorId)
@@ -59,7 +59,7 @@ export async function getActorByGroup(
 ): Promise<Actor | null> {
   const supabase = pickClient(client);
   try {
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from(DATABASE_TABLES.ACTORS)
       .select('*')
       .eq('actor_type', 'group')
@@ -104,7 +104,7 @@ export async function checkOwnership(
 
     // If actor is a group, check membership
     if (actor.actor_type === 'group') {
-      const { data: membership } = await (supabase as any)
+      const { data: membership } = await supabase
         .from(DATABASE_TABLES.GROUP_MEMBERS)
         .select('role')
         .eq('group_id', actor.group_id!)
@@ -130,7 +130,7 @@ export async function getActorDisplayName(
 ): Promise<string> {
   const supabase = pickClient(client);
   try {
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from(DATABASE_TABLES.ACTORS)
       .select(
         `
@@ -147,7 +147,11 @@ export async function getActorDisplayName(
       return 'Unknown';
     }
 
-    const actor = data as any;
+    const actor = data as unknown as {
+      actor_type: string;
+      profiles: { name: string | null; username: string | null } | null;
+      groups: { name: string | null } | null;
+    };
     if (actor.actor_type === 'user') {
       return actor.profiles?.name || actor.profiles?.username || 'Unknown';
     }

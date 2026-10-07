@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 /**
- * Home page composition: hero plus the three first moves.
- * Long-form marketing sections live on /how-it-works, not here.
+ * Home page composition: hero, the three first moves, then "What it solves".
+ * Long-form marketing sections (steps, comparison) live on /how-it-works.
  */
 
 import React from 'react';
@@ -24,13 +24,20 @@ vi.mock('@/components/home/sections/FirstMoveSection', () => ({
   },
 }));
 
+vi.mock('@/components/home/sections/ProblemsSection', () => ({
+  default: function MockProblemsSection() {
+    return <div data-testid="problems-section" />;
+  },
+}));
+
 import HomePublic from '@/components/home/HomePublic';
 
 describe('HomePublic', () => {
-  it('renders the hero and the three first moves', () => {
+  it('renders the hero, the three first moves and what it solves', () => {
     render(<HomePublic />);
     expect(screen.getByTestId('hero-section')).toBeInTheDocument();
     expect(screen.getByTestId('first-move-section')).toBeInTheDocument();
+    expect(screen.getByTestId('problems-section')).toBeInTheDocument();
     expect(
       screen.getByRole('heading', { name: /turn who you are into income/i })
     ).toBeInTheDocument();

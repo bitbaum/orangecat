@@ -142,8 +142,16 @@ export function Header({
               </div>
             )}
 
-            {/* Messages Button - Always visible for authenticated users regardless of route */}
-            {authStatus.authenticated && <MessagesButton />}
+            {/* Messages — md and up. Below md the bottom tab bar already carries
+                Messages, and this duplicate is what pushed the right cluster
+                past the edge on a zoomed phone (~314px CSS): a fixed header
+                wider than the viewport widens the layout viewport on Android,
+                so every card, the tab bar and the Cat button were clipped. */}
+            {authStatus.authenticated && (
+              <div className="hidden md:block">
+                <MessagesButton />
+              </div>
+            )}
 
             {/* Notifications - Always visible for authenticated users regardless of route */}
             {authStatus.authenticated && (

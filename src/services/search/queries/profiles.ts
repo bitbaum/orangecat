@@ -45,20 +45,23 @@ export async function searchProfiles(
         p_lat: filters.lat,
         p_lng: filters.lng,
         p_radius_km: filters.radius_km,
-        p_query: query || null,
+        // NULL means "no text filter" in SQL; the generated Args type omits that it is nullable.
+        p_query: (query || null) as string | undefined,
         p_limit: limit,
         p_offset: offset,
-      } as any);
+      });
 
       if (!error && Array.isArray(data) && data.length > 0) {
         // Apply additional location filters if needed
         let results = data as RawSearchProfile[];
         results = applyLocationFilters(results, filters);
 
-        return publicProfiles(results.map(p => ({
-          ...p,
-          name: p.name,
-        })));
+        return publicProfiles(
+          results.map(p => ({
+            ...p,
+            name: p.name,
+          }))
+        );
       }
     } catch (rpcError) {
       // Fall back to bounding box if RPC not available
@@ -73,7 +76,7 @@ export async function searchProfiles(
         p_query: query,
         p_limit: limit,
         p_offset: offset,
-      } as any);
+      });
 
       if (!error && Array.isArray(data) && data.length > 0) {
         // Apply location filters to RPC results if needed
@@ -82,10 +85,12 @@ export async function searchProfiles(
           results = applyLocationFilters(results, filters);
         }
 
-        return publicProfiles(results.map(p => ({
-          ...p,
-          name: p.name,
-        })));
+        return publicProfiles(
+          results.map(p => ({
+            ...p,
+            name: p.name,
+          }))
+        );
       }
     } catch (rpcError) {
       // Fall back to ILIKE if RPC function doesn't exist yet

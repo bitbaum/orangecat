@@ -1,17 +1,20 @@
 import type { NextRequest } from 'next/server';
 import type { NextResponse } from 'next/server';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- ctx is an open bag each middleware extends (requestId, zod body) on top of the route context; typing it needs an accumulating compose
 export type Handler<Ctx = any> = (
   req: NextRequest,
   ctx: Ctx
 ) => Promise<NextResponse> | NextResponse;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- see Handler above
 export type Middleware<Ctx = any> = (
   req: NextRequest,
   ctx: Ctx,
   next: Handler<Ctx>
 ) => Promise<NextResponse> | NextResponse;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- see Handler above
 export function compose<Ctx = any>(...middlewares: Middleware<Ctx>[]) {
   return function wrap(handler: Handler<Ctx>): Handler<Ctx> {
     return async function composed(req: NextRequest, ctx: Ctx): Promise<NextResponse> {

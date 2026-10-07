@@ -12,19 +12,14 @@ import { logger } from '@/utils/logger';
 import { STORAGE_BUCKETS } from '@/config/database-tables';
 import type { FileUploadResult, FileUploadProgress } from '@/types/storage';
 import type { ServiceResult } from '@/types/common';
+import { prepareImageForUpload } from '@/services/images/upload';
 
 export type { FileUploadResult, FileUploadProgress };
 
 export class ProofStorageService {
   private static readonly BUCKET_NAME = STORAGE_BUCKETS.PROOFS;
-  private static readonly MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB for proof images
-  private static readonly ALLOWED_TYPES = [
-    'image/jpeg',
-    'image/jpg',
-    'image/png',
-    'image/webp',
-    'image/gif',
-  ];
+  // The proofs bucket's limit. Bigger photos are shrunk to fit, not refused.
+  private static readonly MAX_FILE_SIZE = 10 * 1024 * 1024;
 
   /**
    * Upload proof image (receipt or screenshot)
@@ -52,15 +47,16 @@ export class ProofStorageService {
     onProgress?: (progress: FileUploadProgress) => void
   ): Promise<FileUploadResult> {
     try {
-      // Validate file
-      const validation = this.validateFile(file);
-      if (!validation.valid) {
-        return { success: false, error: validation.error };
+      if (!file) {
+        return { success: false, error: 'No file provided' };
       }
-
-      // Generate unique filename with timestamp to avoid collisions
-      const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-      const fileName = `${path}_${Date.now()}.${fileExt}`;
+      const prepared = await prepareImageForUpload(file, { maxBytes: this.MAX_FILE_SIZE });
+      if (!prepared.ok) {
+        return { success: false, error: prepared.error };
+      }
+      const { payload, contentType, ext } = prepared;
+      // Timestamp keeps successive proofs from colliding.
+      const fileName = `${path}_${Date.now()}.${ext}`;
 
       // Start progress simulation for UX feedback
       let progressInterval: NodeJS.Timeout | null = null;
@@ -69,8 +65,8 @@ export class ProofStorageService {
         progressInterval = setInterval(() => {
           progress += 15;
           onProgress({
-            loaded: (progress / 100) * file.size,
-            total: file.size,
+            loaded: (progress / 100) * payload.size,
+            total: payload.size,
             percentage: Math.min(progress, 85),
           });
           if (progress >= 85 && progressInterval) {
@@ -80,7 +76,8 @@ export class ProofStorageService {
       }
 
       // Upload to Supabase Storage
-      const { error } = await supabase.storage.from(this.BUCKET_NAME).upload(fileName, file, {
+      const { error } = await supabase.storage.from(this.BUCKET_NAME).upload(fileName, payload, {
+        contentType,
         cacheControl: '31536000', // 1 year cache
         upsert: false, // Don't overwrite - each proof is unique
       });
@@ -101,8 +98,8 @@ export class ProofStorageService {
       // Complete progress
       if (onProgress) {
         onProgress({
-          loaded: file.size,
-          total: file.size,
+          loaded: payload.size,
+          total: payload.size,
           percentage: 100,
         });
       }
@@ -129,37 +126,6 @@ export class ProofStorageService {
         error: message,
       };
     }
-  }
-
-  /**
-   * Validate file before upload
-   */
-  private static validateFile(file: File): { valid: boolean; error?: string } {
-    // Check file exists
-    if (!file) {
-      return {
-        valid: false,
-        error: 'No file provided',
-      };
-    }
-
-    // Check file size
-    if (file.size > this.MAX_FILE_SIZE) {
-      return {
-        valid: false,
-        error: `File size must be less than ${this.MAX_FILE_SIZE / 1024 / 1024}MB`,
-      };
-    }
-
-    // Check file type
-    if (!this.ALLOWED_TYPES.includes(file.type)) {
-      return {
-        valid: false,
-        error: `File type must be one of: JPEG, PNG, WebP, or GIF`,
-      };
-    }
-
-    return { valid: true };
   }
 
   /**

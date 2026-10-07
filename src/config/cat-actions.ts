@@ -42,6 +42,8 @@ import { API_ROUTES } from '@/config/api-routes';
 import { RESEARCH_FIELDS } from '@/config/research';
 import { RESEARCH_LICENSE_VALUES, REVIEW_VERDICT_VALUES } from '@/config/open-science';
 import { getApiEndpoint } from '@/config/entity-registry';
+import { EVENT_TYPES } from '@/config/events';
+import { PROPOSAL_TYPES } from '@/config/proposal-constants';
 
 // ==================== ACTION TYPES ====================
 
@@ -174,10 +176,14 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
       { name: 'title', type: 'string', required: true, description: 'Project title' },
       { name: 'description', type: 'string', required: false, description: 'Project description' },
       {
+        // Optional, like create_project_for_person's: a required goal made the
+        // model invent a number to get past validation, against the rule that
+        // amounts come only from the user. The handler stores null and the
+        // owner sets the goal when they know it.
         name: 'goal_btc',
         type: 'btc',
-        required: true,
-        description: 'Funding goal in BTC (e.g., 0.1)',
+        required: false,
+        description: 'Funding goal in BTC — ONLY if the user named an amount; never invent one',
       },
       { name: 'category', type: 'string', required: false, description: 'Project category' },
       {
@@ -238,7 +244,39 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
       { name: 'title', type: 'string', required: true, description: 'Event title' },
       { name: 'description', type: 'string', required: false, description: 'Event description' },
       { name: 'start_date', type: 'string', required: true, description: 'Event start date/time' },
-      { name: 'location', type: 'string', required: true, description: 'Event location' },
+      { name: 'end_date', type: 'string', required: false, description: 'Event end date/time' },
+      {
+        name: 'location',
+        type: 'string',
+        required: false,
+        description: 'Where it happens — omit when still to be announced',
+      },
+      {
+        name: 'event_type',
+        type: 'string',
+        required: false,
+        description: `One of: ${EVENT_TYPES.map(t => t.value).join(', ')} (default: meetup)`,
+        default: 'meetup',
+      },
+      {
+        name: 'is_free',
+        type: 'boolean',
+        required: false,
+        description: 'Free entry (default: true unless ticket_price_btc is set)',
+        default: true,
+      },
+      {
+        name: 'ticket_price_btc',
+        type: 'btc',
+        required: false,
+        description: 'Ticket price in BTC, for a ticketed event',
+      },
+      {
+        name: 'max_attendees',
+        type: 'number',
+        required: false,
+        description: 'How many people fit',
+      },
       {
         name: 'publish',
         type: 'boolean',
@@ -249,6 +287,8 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
     ],
     examples: [
       'Create a Bitcoin meetup',
+      'Throw a birthday party on Saturday',
+      'Run a ticketed conference in Basel',
       'Set up a conference event',
       'Organize a community gathering',
     ],
@@ -1481,6 +1521,57 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
       },
     ],
     examples: ['Propose raising your daily spending ceiling to 0.002 BTC'],
+    enabled: true,
+  },
+
+  /**
+   * Put a decision about a group's shared money to the group. The OrangeCat
+   * group vote by default; when the group governs with Solon, a prefilled
+   * Solon proposal link instead — Solon holds no money and has no agent
+   * surface, so filing there is the members' act, not the Cat's.
+   */
+  propose_to_group: {
+    id: 'propose_to_group',
+    name: 'Propose to Group',
+    description: 'Put a shared-money decision to a group vote (here, or prefilled for Solon)',
+    category: 'organization',
+    icon: Landmark,
+    riskLevel: 'medium',
+    requiresConfirmation: true,
+    parameters: [
+      {
+        name: 'group_id',
+        type: 'entity_id',
+        required: true,
+        description: 'Group id, shown as "(id: ...)" in "Group Memberships" context',
+      },
+      { name: 'title', type: 'string', required: true, description: 'What is being decided' },
+      {
+        name: 'description',
+        type: 'string',
+        required: true,
+        description: 'What, why, and how much — shown to the members who vote',
+      },
+      {
+        name: 'proposal_type',
+        type: 'string',
+        required: false,
+        description: `One of: ${Object.values(PROPOSAL_TYPES).join(', ')} (default: treasury)`,
+        default: PROPOSAL_TYPES.TREASURY,
+      },
+      {
+        name: 'decide_on',
+        type: 'string',
+        required: false,
+        description:
+          'orangecat (default — the group votes here) | solon (the group is a Verein/co-op that governs with Solon)',
+        default: 'orangecat',
+      },
+    ],
+    examples: [
+      'Ask the flat whether we use the shared purse for the party',
+      'Put the summer party budget to the Verein',
+    ],
     enabled: true,
   },
 

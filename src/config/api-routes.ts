@@ -40,6 +40,8 @@ export const API_ROUTES = {
   SEARCH: {
     LOG: '/api/search/log',
   },
+  /** Everything the signed-in person made or joined (My things). */
+  THINGS: '/api/things',
   // Public feedback + Ask Cat (no auth required)
   FEEDBACK: '/api/feedback',
   NEWSLETTER_SUBSCRIBE: '/api/newsletter/subscribe',
@@ -296,6 +298,16 @@ export const API_ROUTES = {
     PREVIEW: (token: string) => `/api/profile-claims/token/${token}`,
     CLAIM: (token: string) => `/api/profile-claims/token/${token}/claim`,
     DECLINE: (token: string) => `/api/profile-claims/token/${token}/decline`,
+  },
+  /** Reputation (ADR-0010): your deals, reviewing one, and anyone's public track record. */
+  DEALS: {
+    BASE: '/api/deals',
+    REVIEWS: (dealId: string) => `/api/deals/${dealId}/reviews`,
+    TRACK_RECORD: (actorId: string) => `/api/actors/${actorId}/track-record`,
+    /** The seller's one reply to a public review about them. */
+    REVIEW_REPLY: (reviewId: string) => `/api/deal-reviews/${reviewId}/reply`,
+    /** Anyone signed in can report a public review to the operator. */
+    REVIEW_REPORT: (reviewId: string) => `/api/deal-reviews/${reviewId}/reports`,
   },
 } as const;
 
