@@ -19,6 +19,10 @@ import { eventZone, formatEventDay, formatEventClock, zoneLabel } from '@/domain
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import TicketQr from '@/components/events/TicketQr';
 import GuestTicketGiveBack from '@/components/events/GuestTicketGiveBack';
+import CalendarAndDirections from '@/components/events/CalendarAndDirections';
+import { SITE_URL } from '@/config/brand';
+import { directionsHref, googleCalendarHref } from '@/domain/events/calendar';
+import { eventPlaceText } from '@/domain/events/place';
 
 // A ticket link is a key: never indexed, never shared by a crawler.
 export const metadata: Metadata = { title: 'Your ticket', robots: { index: false } };
@@ -51,6 +55,16 @@ export default async function GuestTicketPage({ params }: PageProps) {
   const eventPath = ROUTES.EVENTS.VIEW(event.id);
   const place = event.venue_name || event.venue_address;
   const live = ticket.status === 'registered' || ticket.status === 'attended';
+  const googleHref = event.start_date
+    ? googleCalendarHref({
+        id: event.id,
+        title: event.title,
+        start_date: event.start_date,
+        timezone: zone,
+        place: eventPlaceText(event),
+        url: `${SITE_URL}${eventPath}`,
+      })
+    : null;
 
   return (
     <main className="mx-auto max-w-md space-y-6 px-4 py-8">
@@ -100,6 +114,14 @@ export default async function GuestTicketPage({ params }: PageProps) {
           )}
         </CardContent>
       </Card>
+
+      {live && (
+        <CalendarAndDirections
+          eventId={event.id}
+          googleHref={googleHref}
+          directions={directionsHref(event)}
+        />
+      )}
     </main>
   );
 }

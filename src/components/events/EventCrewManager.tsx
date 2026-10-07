@@ -28,7 +28,6 @@ interface EventCrewManagerProps {
   currency: string;
 }
 
-
 export default function EventCrewManager({
   eventId,
   initialRoles,

@@ -12,6 +12,7 @@
 
 import Link from 'next/link';
 import { DoorOpen, Ticket } from 'lucide-react';
+import { SITE_URL } from '@/config/brand';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { createServerClient } from '@/lib/supabase/server';
 import { ROUTES } from '@/config/routes';
@@ -27,6 +28,7 @@ import { logger } from '@/utils/logger';
 import TicketQr from './TicketQr';
 import ClaimTicketButton from './ClaimTicketButton';
 import GuestTicketForm from './GuestTicketForm';
+import InviteLinkButton from './InviteLinkButton';
 
 const OPEN_FOR_TICKETS = new Set(['published', 'open', 'full', 'ongoing']);
 
@@ -74,6 +76,21 @@ export default async function EventTicketCard({ event, isOwner }: EventTicketCar
             {going} {going === 1 ? 'ticket' : 'tickets'}
             {max ? ` of ${max}` : ''}
           </p>
+          {OPEN_FOR_TICKETS.has(String(event.status)) ? (
+            <>
+              <InviteLinkButton url={`${SITE_URL}${eventPath}`} title={String(event.title ?? '')} />
+              {isFree && (
+                <p className="text-sm text-fg-secondary">
+                  Anyone with the link gets a ticket with just their name — no account needed.
+                </p>
+              )}
+            </>
+          ) : (
+            <p className="text-sm text-fg-secondary">
+              This is still a draft, so nobody can get a ticket yet. Publish it from the bar at the
+              top, then send the link.
+            </p>
+          )}
           <Link
             href={`${eventPath}/door`}
             className="flex min-h-11 items-center justify-center gap-2 rounded-md border border-default px-4 text-sm font-medium text-fg-primary transition-colors hover:bg-surface-raised"
