@@ -61,16 +61,18 @@ export function RoadmapSteps({ goal }: { goal: LinkedGoal }) {
 
 /** "Worked on 2026-10-03 → 2026-10-07 · 6 changes" — the goal's record, linked. */
 export function GoalRecord({ goal }: { goal: LinkedGoal }) {
-  if (!goal.firstDate) {
+  if (!goal.firstDate || !goal.deliveredIn.length) {
     return null;
   }
   const n = goal.deliveredIn.length;
+  const first = goal.deliveredIn[0];
+  const last = goal.deliveredIn[n - 1];
   const days = byDay(goal.deliveredIn).length;
   return (
     <p className="text-xs text-fg-tertiary">
       In the changelog{' '}
       <a
-        href={`${ROUTES.CHANGELOG}#${goal.deliveredIn[0].anchor}`}
+        href={`${ROUTES.CHANGELOG}#${first?.anchor ?? ''}`}
         className="font-mono text-fg-secondary underline-offset-4 hover:text-fg-primary hover:underline"
       >
         {goal.firstDate}
@@ -79,7 +81,7 @@ export function GoalRecord({ goal }: { goal: LinkedGoal }) {
         <>
           {' → '}
           <a
-            href={`${ROUTES.CHANGELOG}#${goal.deliveredIn[n - 1].anchor}`}
+            href={`${ROUTES.CHANGELOG}#${last?.anchor ?? ''}`}
             className="font-mono text-fg-secondary underline-offset-4 hover:text-fg-primary hover:underline"
           >
             {goal.lastDate}

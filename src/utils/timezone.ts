@@ -65,7 +65,7 @@ export function timeZoneForPlace(place: {
       zone = name;
     }
   }
-  return zone ?? bands[0][1];
+  return zone ?? bands[0]?.[1] ?? null;
 }
 
 /** Whether an ISO string already says which instant it means. */
@@ -112,7 +112,7 @@ export function wallTimeToUtc(value: string, zone: string): string | null {
   if (!m) {
     return null;
   }
-  const [, y, mo, d, h = '0', mi = '0', s = '0'] = m;
+  const [, y = '', mo = '', d = '', h = '0', mi = '0', s = '0'] = m;
   const naive = Date.UTC(+y, +mo - 1, +d, +h, +mi, +s);
   if (Number.isNaN(naive)) {
     return null;

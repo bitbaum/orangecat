@@ -60,5 +60,5 @@ export function matchVenueByName(places: Venue[], name: string): Venue | null {
     const shorter = have.length < wanted.length ? have : wanted;
     return shorter.length >= 5 && (have.includes(wanted) || wanted.includes(have));
   });
-  return close.length === 1 ? close[0] : null;
+  return close.length === 1 ? (close[0] ?? null) : null;
 }

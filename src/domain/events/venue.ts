@@ -159,6 +159,7 @@ export async function venueFromText(
       longitude: null,
     };
   }
+  const zone = zoneFor(undefined, hit);
   return {
     venue_name: hit.venue_name,
     venue_address: hit.venue_address ?? raw,
@@ -167,6 +168,6 @@ export async function venueFromText(
     venue_country: hit.venue_country,
     latitude: hit.latitude,
     longitude: hit.longitude,
-    timezone: zoneFor(undefined, hit),
+    ...(zone && { timezone: zone }),
   };
 }

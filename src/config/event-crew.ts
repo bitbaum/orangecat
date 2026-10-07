@@ -166,7 +166,7 @@ export function parseCrewRole(raw: string): ParsedCrewRole | null {
   }
   const match = text.match(/^(\d{1,3})\s*[x×]?\s+(.+)$/i) ?? text.match(/^(\d{1,3})[x×](.+)$/i);
   const quantity = match ? Math.min(Math.max(Number(match[1]), 1), MAX_ROLE_QUANTITY) : 1;
-  const name = (match ? match[2] : text).trim();
+  const name = (match?.[2] ?? text).trim();
   if (!name) {
     return null;
   }

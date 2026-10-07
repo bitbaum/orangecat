@@ -20,7 +20,7 @@ interface ImageFieldProps {
   label: string;
   disabled?: boolean;
   /** The entity so far: the picker searches for it, not for the field's name. */
-  subject?: { title?: string; description?: string };
+  subject?: { title?: string; description?: string } | undefined;
 }
 
 export function ImageField({ value, onChange, label, disabled, subject }: ImageFieldProps) {

@@ -74,7 +74,7 @@ export function resolveEventTimes<T extends Record<string, unknown>>(
 ): T & { timezone: string } {
   const asked = isValidTimeZone(fields.timezone) ? (fields.timezone as string) : null;
   const fromPlace = timeZoneForPlace({
-    countryCode: place.countryCode,
+    countryCode: place.countryCode ?? null,
     latitude: typeof place.latitude === 'number' ? place.latitude : Number(place.latitude ?? NaN),
     longitude:
       typeof place.longitude === 'number' ? place.longitude : Number(place.longitude ?? NaN),

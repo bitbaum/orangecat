@@ -286,7 +286,7 @@ export interface FormFieldProps {
   currency?: string;
   disabled?: boolean;
   /** What the entity is so far — lets a picture field search for the right thing. */
-  subject?: { title?: string; description?: string };
+  subject?: { title?: string; description?: string } | undefined;
 }
 
 export interface GuidancePanelProps {

@@ -74,7 +74,7 @@ export default function EventsNearYou() {
     setStatus('Finding you…');
     navigator.geolocation.getCurrentPosition(
       pos => search({ lat: pos.coords.latitude, lng: pos.coords.longitude, label: 'you' }),
-      err => setStatus(GEO_ERRORS[err.code] ?? GEO_ERRORS[0]),
+      err => setStatus(GEO_ERRORS[err.code] ?? GEO_ERRORS[0] ?? null),
       { timeout: 10000, maximumAge: 300000 }
     );
   }

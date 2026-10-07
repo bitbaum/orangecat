@@ -135,7 +135,7 @@ function Stop({
 }: {
   stop: LinkedGoal;
   here?: boolean;
-  anchor?: string;
+  anchor?: string | undefined;
 }) {
   return (
     <li
