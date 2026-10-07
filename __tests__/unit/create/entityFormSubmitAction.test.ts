@@ -15,7 +15,7 @@ import type { EntityConfig } from '@/components/create/types';
 import type { Mock } from 'vitest';
 
 vi.mock('sonner', () => ({
-  toast: { success: vi.fn(), error: vi.fn() },
+  toast: { success: vi.fn(), error: vi.fn(), warning: vi.fn() },
 }));
 vi.mock('@/lib/analytics', () => ({
   entityEvents: { created: vi.fn() },
@@ -267,7 +267,9 @@ describe('executeEntityFormSubmit', () => {
 
       expect(global.fetch).not.toHaveBeenCalled();
       expect(params.setErrors).toHaveBeenCalledWith(
-        expect.objectContaining({ _form: expect.stringContaining('name') })
+        // 'general' is what the form renders; '_form' was rendered nowhere, so
+        // tapping Create with no name did nothing visible (audit 2026-10-07).
+        expect.objectContaining({ general: expect.stringContaining('name') })
       );
     });
 
@@ -281,6 +283,58 @@ describe('executeEntityFormSubmit', () => {
 
       const body = JSON.parse((global.fetch as Mock).mock.calls[0][1].body);
       expect(body.actor_id).toBeUndefined();
+    });
+  });
+
+  describe('wallet link (audit 2026-10-07)', () => {
+    function fetchSequence(...responses: Array<{ ok: boolean; status: number; data?: unknown }>) {
+      const fn = vi.fn();
+      for (const r of responses) {
+        fn.mockResolvedValueOnce({
+          ok: r.ok,
+          status: r.status,
+          json: () => Promise.resolve({ success: r.ok, data: r.data }),
+          clone() {
+            return this;
+          },
+        });
+      }
+      return fn;
+    }
+
+    it('never removes the old link when the new one fails, and says so', async () => {
+      const { toast } = await import('sonner');
+      global.fetch = fetchSequence(
+        { ok: true, status: 200, data: { id: 'e1', title: 'T' } }, // PUT entity
+        { ok: false, status: 500 } // POST link fails
+      );
+      const params = makeParams({
+        mode: 'edit',
+        entityId: 'e1',
+        formStateData: { title: 'T', _wallet_id: 'w-new' },
+        existingWalletLinkIdRef: { current: 'link-old' },
+      });
+      await executeEntityFormSubmit(params);
+      const calls = (global.fetch as Mock).mock.calls.map(c => `${c[1]?.method} ${c[0]}`);
+      expect(calls.some(c => c.startsWith('DELETE'))).toBe(false);
+      expect(toast.warning).toHaveBeenCalled();
+    });
+
+    it('adds the new link first, then retires the old one', async () => {
+      global.fetch = fetchSequence(
+        { ok: true, status: 200, data: { id: 'e1', title: 'T' } },
+        { ok: true, status: 201 },
+        { ok: true, status: 200 }
+      );
+      const params = makeParams({
+        mode: 'edit',
+        entityId: 'e1',
+        formStateData: { title: 'T', _wallet_id: 'w-new' },
+        existingWalletLinkIdRef: { current: 'link-old' },
+      });
+      await executeEntityFormSubmit(params);
+      const calls = (global.fetch as Mock).mock.calls.map(c => `${c[1]?.method} ${c[0]}`);
+      expect(calls.slice(1)).toEqual(['POST /api/entity-wallets', 'DELETE /api/entity-wallets/link-old']);
     });
   });
 });

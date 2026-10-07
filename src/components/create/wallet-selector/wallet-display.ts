@@ -16,13 +16,19 @@ export function walletRail(wallet: Pick<Wallet, 'address_or_xpub' | 'lightning_a
   rail: WalletRail;
   destination: string;
 } {
+  // Same order payments resolve in (walletResolutionService: NWC, then
+  // Lightning, then on-chain): a wallet with both a Lightning address and an
+  // on-chain address is paid over Lightning, so that is what the card says.
+  if (wallet.lightning_address) {
+    return { rail: 'lightning', destination: wallet.lightning_address };
+  }
   if (wallet.address_or_xpub) {
     const xpub = detectWalletType(wallet.address_or_xpub) === 'xpub';
     return xpub
       ? { rail: 'xpub', destination: 'a new address for every payment' }
       : { rail: 'onchain', destination: truncateAddress(wallet.address_or_xpub) };
   }
-  return { rail: 'lightning', destination: wallet.lightning_address || 'connected wallet' };
+  return { rail: 'lightning', destination: 'connected wallet' };
 }
 
 export const RAIL_LABEL: Record<WalletRail, string> = {

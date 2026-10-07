@@ -7,7 +7,16 @@ import type { SharedWalletUsage } from '@/domain/wallets/walletUsage';
  * walletUsage.ts for why). Renders nothing when there is nothing to disclose
  * or when payments derive a fresh address each time (xpub wallets).
  */
-export function SharedWalletNotice({ usage }: { usage: SharedWalletUsage | null }) {
+export function SharedWalletNotice({
+  usage,
+  method,
+}: {
+  usage: SharedWalletUsage | null;
+  /** The rail the address belongs to. Linkability is an on-chain property: a
+   *  Lightning address shows no payment on a public ledger, so the warning
+   *  used to tell Lightning payers something untrue. */
+  method: 'onchain' | 'lightning_address';
+}) {
   if (!usage || usage.fresh_address_per_payment) {
     return null;
   }
@@ -26,8 +35,9 @@ export function SharedWalletNotice({ usage }: { usage: SharedWalletUsage | null 
     <p className="flex items-start gap-1.5 text-xs text-fg-secondary">
       <Info className="w-3.5 h-3.5 mt-0.5 shrink-0" aria-hidden />
       <span>
-        {sharedLine} On-chain payments to a shared address are publicly linkable on the
-        blockchain.
+        {sharedLine}
+        {method === 'onchain' &&
+          ' Payments to a shared on-chain address are publicly linkable on the blockchain.'}
       </span>
     </p>
   );

@@ -8,6 +8,7 @@ import { ModernChatPanel } from '@/components/ai-chat/ModernChatPanel/index';
 import { describePageForCat } from '@/config/cat-page-context';
 import { ROUTES } from '@/config/routes';
 import { cn } from '@/lib/utils';
+import { useSoftKeyboard } from '@/hooks/useSoftKeyboard';
 
 /**
  * Global Cat launcher — a floating button on every app page that opens Cat as a
@@ -35,6 +36,10 @@ export default function GlobalCatLauncher() {
   const [conversationId, setConversationId] = useState<string | null>(null);
 
   const page = describePageForCat(pathname);
+
+  // Out of the way while typing: the keyboard pushes the field being typed
+  // into right up to where this button floats.
+  const typing = useSoftKeyboard();
 
   // Out of the way while the page is moving; back when it settles.
   const [scrolling, setScrolling] = useState(false);
@@ -73,7 +78,7 @@ export default function GlobalCatLauncher() {
     <>
       {/* Floating launcher — anchored clear of the bottom nav and the home
           indicator (.app-fab-anchor), and faded while the page scrolls. */}
-      {!open && (
+      {!open && !typing && (
         <button
           type="button"
           onClick={() => setOpen(true)}

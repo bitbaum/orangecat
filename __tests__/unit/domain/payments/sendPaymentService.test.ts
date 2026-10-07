@@ -159,6 +159,14 @@ describe('payInvoice', () => {
     const result = await payInvoice('user-1', MAINNET_INVOICE);
     expect(result).toMatchObject({ ok: false, reason: 'payment_failed' });
   });
+
+  it('a timeout is unconfirmed, never "failed" — a retry would pay twice', async () => {
+    mockAdmin({ nwc: 'enc' });
+    payInvoiceSpy.mockRejectedValue(new Error('NWC request timed out: pay_invoice'));
+    const result = await payInvoice('user-1', MAINNET_INVOICE);
+    expect(result).toMatchObject({ ok: false, reason: 'payment_unconfirmed' });
+    expect((result as { message: string }).message).toMatch(/check your wallet/i);
+  });
 });
 
 describe('sendToRecipient', () => {

@@ -9,7 +9,7 @@
 
 'use client';
 
-import { HelpCircle } from 'lucide-react';
+import { FieldHelpButton } from '@/components/ui/FieldHelpButton';
 import { DynamicSidebar } from '@/components/create/DynamicSidebar';
 import {
   walletGuidanceContent,
@@ -34,14 +34,7 @@ export function WalletsMobileGuidance({
 
   return (
     <>
-      {/* Floating Help Button */}
-      <button
-        onClick={() => onShowMobileGuidance(true)}
-        className="fixed bottom-6 right-6 z-50 rounded-full bg-fg-primary hover:bg-fg-primary/90 p-4 text-fg-inverted transition-colors duration-200 lg:hidden"
-        aria-label="Get help with this field"
-      >
-        <HelpCircle className="w-6 h-6" />
-      </button>
+      <FieldHelpButton onClick={() => onShowMobileGuidance(true)} />
 
       {/* Guidance Modal */}
       {showMobileGuidance && (

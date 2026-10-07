@@ -16,6 +16,7 @@ import { logger } from '@/utils/logger';
 import { countUnreadNotifications } from '@/services/notifications/unread-count';
 import { exploreTopicByVector } from './discovery-match';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
+import { displayBTC } from '@/services/currency/formatting';
 
 const LOG_SOURCE = 'CatProactive';
 
@@ -39,10 +40,6 @@ function todayStartIso(): string {
   const d = new Date();
   d.setUTCHours(0, 0, 0, 0);
   return d.toISOString();
-}
-
-function formatBtc(amount: number): string {
-  return `${Number(amount.toFixed(8))} BTC`;
 }
 
 // ─── Daily brief ─────────────────────────────────────────────────────────────
@@ -121,7 +118,7 @@ export async function composeDailyBrief(
   if (sales.length > 0) {
     const total = sales.reduce((n, s) => n + (s.amount_btc || 0), 0);
     parts.push(
-      `${sales.length} sale${sales.length === 1 ? '' : 's'} (${formatBtc(total)}) in the last 24h`
+      `${sales.length} sale${sales.length === 1 ? '' : 's'} (${displayBTC(total)}) in the last 24h`
     );
   }
   if (bookings.length > 0) {

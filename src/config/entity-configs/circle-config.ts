@@ -63,7 +63,7 @@ const fieldGroups: FieldGroup[] = [
         name: 'tags',
         label: 'Tags',
         type: 'tags',
-        placeholder: 'Add tags (press Enter after each)',
+        placeholder: 'Add tags, separated by commas',
         colSpan: 2,
       },
     ],

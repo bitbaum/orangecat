@@ -12,6 +12,7 @@
  */
 
 import { Input } from '@/components/ui/Input';
+import { TagsField } from './fields/TagsField';
 import { Textarea } from '@/components/ui/Textarea';
 import { CurrencyInput } from '@/components/ui/CurrencyInput';
 import { useUserCurrency } from '@/hooks/useUserCurrency';
@@ -157,7 +158,7 @@ export function FormField({
 
       case 'checkbox':
         return (
-          <label className="flex items-center gap-3 cursor-pointer">
+          <label className="flex min-h-11 items-center gap-3 cursor-pointer">
             <input
               type="checkbox"
               id={name}
@@ -204,20 +205,13 @@ export function FormField({
 
       case 'tags':
         return (
-          <Input
+          <TagsField
             id={name}
-            type="text"
-            value={Array.isArray(value) ? (value as string[]).join(', ') : (value as string) || ''}
-            onChange={e => {
-              const tags = e.target.value
-                .split(',')
-                .map(t => t.trim())
-                .filter(Boolean);
-              onChange(tags);
-            }}
+            value={value}
+            onChange={onChange}
             onFocus={onFocus}
             onBlur={onBlur}
-            placeholder={placeholder || 'Enter tags separated by commas'}
+            placeholder={placeholder}
             disabled={disabled}
             className={baseInputClass}
           />
@@ -252,6 +246,9 @@ export function FormField({
     return (
       <div>
         {renderInput()}
+        {/* The hint is what a checkbox like "Private" actually does — 23 of
+            them had one, and none was ever shown. */}
+        {hint && !error && <p className="text-xs text-fg-secondary mt-1 ml-7">{hint}</p>}
         {error && (
           <p role="alert" className="text-status-negative text-sm mt-1">
             {error}

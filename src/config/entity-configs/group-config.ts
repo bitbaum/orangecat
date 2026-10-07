@@ -30,7 +30,7 @@ const fieldGroups: FieldGroup[] = [
     fields: [
       {
         name: 'label',
-        label: 'Group Label *',
+        label: 'Group Label',
         type: 'select',
         required: true,
         options: getGroupLabelsArray().map(label => ({
@@ -48,7 +48,7 @@ const fieldGroups: FieldGroup[] = [
     fields: [
       {
         name: 'name',
-        label: 'Group Name *',
+        label: 'Group Name',
         type: 'text',
         placeholder: 'e.g., Bitcoin Investment Club, Ossetia Network State',
         required: true,

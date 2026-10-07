@@ -90,7 +90,7 @@ export async function initiatePayment(
       entity_type,
       entity_id,
       amount_btc: amountBtc,
-      payment_method: wallet.method,
+      payment_method: invoice.method, // the rail that minted it — see GeneratedInvoice
       intent_kind: meta.paymentPattern === 'fixed_price' ? 'purchase' : 'support',
       receiving_wallet_id: wallet.wallet_id,
       bolt11: invoice.bolt11,
@@ -102,7 +102,7 @@ export async function initiatePayment(
           ? STATUS.PAYMENT_INTENTS.INVOICE_READY
           : STATUS.PAYMENT_INTENTS.CREATED,
       description,
-      expires_at: resolveIntentExpiry(wallet.method, invoice.expires_at),
+      expires_at: resolveIntentExpiry(invoice.method, invoice.expires_at),
     })
     .select()
     .single();
@@ -169,7 +169,7 @@ export async function initiatePayment(
     order,
     contribution,
     qr_data: invoice.qr_data,
-    method_label: METHOD_LABELS[wallet.method] || wallet.method,
+    method_label: METHOD_LABELS[invoice.method] || invoice.method,
     expires_in_seconds: expiresInSeconds,
   };
 }
@@ -214,7 +214,7 @@ export async function initiatePublicSupport(
   const description = `Support: ${entityTitle}`;
   const invoice = await generateInvoice(wallet, amountBtc, description);
   const token = randomBytes(32).toString('base64url');
-  const expiresAt = resolveIntentExpiry(wallet.method, invoice.expires_at);
+  const expiresAt = resolveIntentExpiry(invoice.method, invoice.expires_at);
   const admin = getAdminClient() as unknown as SupabaseClient;
 
   const { data: paymentIntent, error: paymentError } = await admin
@@ -225,7 +225,7 @@ export async function initiatePublicSupport(
       entity_type: entityType,
       entity_id: entityId,
       amount_btc: amountBtc,
-      payment_method: wallet.method,
+      payment_method: invoice.method, // the rail that minted it — see GeneratedInvoice
       intent_kind: 'support',
       receiving_wallet_id: wallet.wallet_id,
       bolt11: invoice.bolt11,
@@ -278,7 +278,7 @@ export async function initiatePublicSupport(
     },
     status_token: token,
     qr_data: invoice.qr_data,
-    method_label: METHOD_LABELS[wallet.method] || wallet.method,
+    method_label: METHOD_LABELS[invoice.method] || invoice.method,
     expires_in_seconds: expiresInSeconds,
   } as InitiatePublicSupportResult;
 }
@@ -299,7 +299,7 @@ export async function initiateTip(input: InitiateTipInput): Promise<InitiatePubl
   const description = `Tip for ${recipientName}`;
   const invoice = await generateInvoice(wallet, amountBtc, description);
   const token = randomBytes(32).toString('base64url');
-  const expiresAt = resolveIntentExpiry(wallet.method, invoice.expires_at);
+  const expiresAt = resolveIntentExpiry(invoice.method, invoice.expires_at);
   const admin = getAdminClient() as unknown as SupabaseClient;
 
   const { data: paymentIntent, error: paymentError } = await admin
@@ -310,7 +310,7 @@ export async function initiateTip(input: InitiateTipInput): Promise<InitiatePubl
       entity_type: null,
       entity_id: null,
       amount_btc: amountBtc,
-      payment_method: wallet.method,
+      payment_method: invoice.method, // the rail that minted it — see GeneratedInvoice
       intent_kind: 'tip',
       receiving_wallet_id: wallet.wallet_id,
       bolt11: invoice.bolt11,
@@ -349,7 +349,7 @@ export async function initiateTip(input: InitiateTipInput): Promise<InitiatePubl
     },
     status_token: token,
     qr_data: invoice.qr_data,
-    method_label: METHOD_LABELS[wallet.method] || wallet.method,
+    method_label: METHOD_LABELS[invoice.method] || invoice.method,
     expires_in_seconds: expiresInSeconds,
   } as InitiatePublicSupportResult;
 }

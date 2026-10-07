@@ -12,9 +12,7 @@ export function useCurrencyInput(
   onCurrencyChange: ((currency: Currency) => void) | undefined,
   defaultCurrency: Currency = PLATFORM_DEFAULT_CURRENCY,
   userCurrency: Currency | undefined,
-  showBreakdown: boolean,
-  min: number | undefined,
-  max: number | undefined
+  showBreakdown: boolean
 ) {
   const [inputCurrency, setInputCurrency] = useState<Currency>(
     propCurrency || userCurrency || defaultCurrency
@@ -65,20 +63,15 @@ export function useCurrencyInput(
       return;
     }
 
-    let constrainedAmount = parsed;
-    if (min !== undefined && parsed < min) {
-      constrainedAmount = min;
-    }
-    if (max !== undefined && parsed > max) {
-      constrainedAmount = max;
-    }
-
-    if (value !== null && value !== undefined && inputCurrency !== propCurrency) {
-      const converted = convert(value, propCurrency, inputCurrency);
-      onChange(converted);
-    } else {
-      onChange(constrainedAmount);
-    }
+    // What was typed is what is sent. This used to clamp to `min`/`max` on
+    // every keystroke: with min 1 on a price, typing 0.0005 BTC stored 1 BTC
+    // and the field jumped to "1" on blur. Limits belong to validation, which
+    // can say so, not to the keyboard, which silently rewrites the amount.
+    //
+    // A typed number is in the input's currency; the form stores the field's.
+    // When they differ (the switch was used without onCurrencyChange), convert
+    // the TYPED amount — it used to send a conversion of the old value instead.
+    onChange(inputCurrency !== propCurrency ? convert(parsed, inputCurrency, propCurrency) : parsed);
   };
 
   const handleCurrencyChange = (newCurrency: Currency) => {

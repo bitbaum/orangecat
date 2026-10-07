@@ -50,8 +50,10 @@ export function GroupWalletCard({
   };
 
   const handleCopyAddress = (address: string) => {
-    navigator.clipboard.writeText(address);
-    toast.success('Address copied to clipboard');
+    navigator.clipboard.writeText(address).then(
+      () => toast.success('Address copied to clipboard'),
+      () => toast.error('Could not copy — select the address and copy it by hand')
+    );
   };
 
   return (
@@ -81,12 +83,13 @@ export function GroupWalletCard({
           <div className="space-y-1">
             <div className="text-sm text-fg-secondary">Bitcoin Address</div>
             <div className="flex items-center gap-2">
-              <code className="flex-1 font-mono text-xs break-all text-sm bg-surface-raised p-2 rounded">
+              <code className="min-w-0 flex-1 break-all rounded bg-surface-raised p-2 font-mono text-xs">
                 {wallet.bitcoin_address}
               </code>
               <Button
                 size="sm"
                 variant="ghost"
+                aria-label="Copy Bitcoin address"
                 onClick={() => handleCopyAddress(wallet.bitcoin_address!)}
               >
                 <Copy className="h-4 w-4" />
@@ -94,6 +97,7 @@ export function GroupWalletCard({
               <Button
                 size="sm"
                 variant="ghost"
+                aria-label="View address on a block explorer"
                 onClick={() =>
                   window.open(
                     `https://blockstream.info/address/${wallet.bitcoin_address}`,
@@ -111,12 +115,13 @@ export function GroupWalletCard({
           <div className="space-y-1">
             <div className="text-sm text-fg-secondary">Lightning Address</div>
             <div className="flex items-center gap-2">
-              <code className="flex-1 font-mono text-xs bg-surface-raised p-2 rounded">
+              <code className="min-w-0 flex-1 break-all rounded bg-surface-raised p-2 font-mono text-xs">
                 {wallet.lightning_address}
               </code>
               <Button
                 size="sm"
                 variant="ghost"
+                aria-label="Copy Lightning address"
                 onClick={() => handleCopyAddress(wallet.lightning_address!)}
               >
                 <Copy className="h-4 w-4" />

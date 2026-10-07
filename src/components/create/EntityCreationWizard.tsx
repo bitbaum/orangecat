@@ -184,33 +184,37 @@ export function EntityCreationWizard<T extends Record<string, unknown>>({
               </Card>
             </motion.div>
           </AnimatePresence>
-        ) : (
-          <Card className="mb-6">
-            <CardHeader>
-              <div>
-                <CardTitle>{currentStepConfig.title}</CardTitle>
-                <CardDescription>{currentStepConfig.description}</CardDescription>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <EntityForm
-                config={config}
-                initialValues={formInitialValues}
-                onSuccess={onSuccess}
-                owner={owner}
-                wizardMode={{
-                  currentStep,
-                  totalSteps: wizardSteps.length,
-                  visibleFields: currentStepConfig.fields,
-                  onNext: !isLastStep ? handleNext : undefined,
-                  onPrevious: currentStep > 0 ? handlePrevious : undefined,
-                  onSkip: currentStepConfig.optional ? handleSkip : undefined,
-                  isLastStep,
-                }}
-              />
-            </CardContent>
-          </Card>
-        )}
+        ) : null}
+        {/* Mounted from the start and only hidden on the template step:
+            going back to change the template used to unmount the form and
+            throw away everything typed so far. */}
+        <Card className={isTemplateStep ? 'hidden' : 'mb-6'}>
+          <CardHeader>
+            <div>
+              <CardTitle>{currentStepConfig.title}</CardTitle>
+              <CardDescription>{currentStepConfig.description}</CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <EntityForm
+              config={config}
+              initialValues={formInitialValues}
+              onSuccess={onSuccess}
+              owner={owner}
+              wizardMode={{
+                currentStep,
+                totalSteps: wizardSteps.length,
+                visibleFields: currentStepConfig.fields,
+                onNext: !isLastStep ? handleNext : undefined,
+                onPrevious: currentStep > 0 ? handlePrevious : undefined,
+                // Skip means "next step": on the last one there is none, and the
+                // button did nothing beside "Create".
+                onSkip: currentStepConfig.optional && !isLastStep ? handleSkip : undefined,
+                isLastStep,
+              }}
+            />
+          </CardContent>
+        </Card>
 
         {isTemplateStep && (
           <div className="flex justify-between items-center">

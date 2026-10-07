@@ -10,7 +10,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { GuidancePanel } from '../GuidancePanel';
 import { AIPrefillBar } from '../AIPrefillBar';
 import type { EntityConfig } from '../types';
-import { FORM_THEME } from '@/config/theme-colors';
 
 import { EntityCreationSuccess } from '../EntityCreationSuccess';
 import { useEntityFormState } from './hooks/useEntityFormState';
@@ -169,7 +168,6 @@ export function EntityForm<T extends Record<string, unknown>>({
   }
 
   const Icon = config.icon;
-  const theme = FORM_THEME[config.colorTheme];
 
   /**
    * FORM WIDTH SSOT
@@ -186,7 +184,10 @@ export function EntityForm<T extends Record<string, unknown>>({
    *   form card takes 2/3 (~3xl of fields) and the GuidancePanel 1/3.
    */
   const formElement = (
-    <form onSubmit={handleSubmit} className="space-y-8">
+    // noValidate: the schema validates, in words. The browser's own number
+    // checks rejected valid amounts (step=1 from min 0.00001 refused 0.01 BTC;
+    // step 0.1 refused a 4.75% rate) with a native bubble the form never saw.
+    <form onSubmit={handleSubmit} noValidate className="space-y-8">
       {/* Cat-powered prefill on EVERY form — create and edit alike — so
                     users can describe what they want (or the change they want)
                     and have the fields filled instead of typing each one. On edit
@@ -228,7 +229,6 @@ export function EntityForm<T extends Record<string, unknown>>({
         mode={mode}
         entityName={config.name}
         backUrl={config.backUrl}
-        theme={theme}
         wizardMode={wizardMode}
         lastSavedAt={lastSavedAt}
         formatRelativeTime={formatRelativeTime}
@@ -243,7 +243,7 @@ export function EntityForm<T extends Record<string, unknown>>({
   }
 
   return (
-    <div className={`min-h-screen ${theme.pageSurface} p-4 sm:p-6 lg:p-8 pb-24 md:pb-8`}>
+    <div className={`min-h-screen bg-surface-page p-4 sm:p-6 lg:p-8 pb-24 md:pb-8`}>
       <FormHeader
         icon={Icon}
         colorTheme={config.colorTheme}
