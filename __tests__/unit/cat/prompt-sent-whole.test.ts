@@ -39,6 +39,13 @@ describe('a prompt the budget cannot hold', () => {
     expect(system(r)).toContain('## Tappable Answers');
   });
 
+  it('keeps the whole prompt beside a shrunk one, for a link without the cap', () => {
+    const r = fitOrSendWhole(parts, IMPOSSIBLE, false);
+    expect(r.wholeSystemPrompt).toContain(`## ${HOLD_AN_EVENT.heading}`);
+    expect(r.wholeSystemPrompt).toContain('## Tappable Answers');
+    expect(fitOrSendWhole(parts, IMPOSSIBLE, true).wholeSystemPrompt).toBeNull();
+  });
+
   it('is still shrunk when the capped link is the only one', () => {
     const r = fitOrSendWhole(parts, IMPOSSIBLE, false);
     expect(r.report?.sentWhole).toBeUndefined();

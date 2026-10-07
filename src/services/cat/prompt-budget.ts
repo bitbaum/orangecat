@@ -356,13 +356,21 @@ export function fitOrSendWhole(
   parts: CatPromptParts,
   budgetTokens: number | undefined,
   wholeIfItCannotFit: boolean
-): { messages: ChatMessage[]; report: BudgetReport | null } {
+): { messages: ChatMessage[]; report: BudgetReport | null; wholeSystemPrompt: string | null } {
   const whole = () => composeCatMessages(parts, { history: parts.history, includeFewShot: true });
   if (budgetTokens === undefined) {
-    return { messages: whole(), report: null };
+    return { messages: whole(), report: null, wholeSystemPrompt: null };
   }
   const fitted = fitCatPromptToBudget(parts, budgetTokens);
-  return !fitted.report.fits && wholeIfItCannotFit
-    ? { messages: whole(), report: { ...fitted.report, sentWhole: true } }
-    : fitted;
+  if (!fitted.report.fits && wholeIfItCannotFit) {
+    return {
+      messages: whole(),
+      report: { ...fitted.report, sentWhole: true },
+      wholeSystemPrompt: null,
+    };
+  }
+  // The shrunk prompt is for the capped link. Any other link that ends up
+  // answering — a fallback after Groq's 429, or an uncapped primary — gets
+  // the whole system prompt back (chat-orchestrator, systemPromptFor).
+  return { ...fitted, wholeSystemPrompt: String(whole()[0]?.content ?? '') };
 }

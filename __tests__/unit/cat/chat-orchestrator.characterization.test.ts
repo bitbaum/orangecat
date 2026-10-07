@@ -753,6 +753,37 @@ describe('streaming', () => {
     expect(sideEffects().served).toMatchInlineSnapshot(`[]`);
   });
 
+  // Measured 2026-10-07: every "Throw a party" turn Groq rate-limited reached
+  // Gemini with the Groq-sized prompt — no event playbook, no quick replies —
+  // and drafted an empty event.
+  it('a link without the Groq cap gets the whole system prompt; Groq keeps the shrunk one', async () => {
+    (prepareCatChat as Mock).mockImplementation(async () => ({
+      conversationId: CONV,
+      messages: [{ role: 'system', content: 'SHRUNK' }, ...BASE_MESSAGES.slice(1)],
+      wholeSystemPrompt: 'WHOLE',
+      grounding: { evidence: ['E1'], subjects: ['S1'] },
+      budget: null,
+    }));
+    const g = service('G', { throws: rateLimitErr() });
+    const m = service('M', {
+      chunks: [{ content: 'from M' }, { usage: { totalTokens: 9 }, done: true }],
+    });
+    (resolveProvider as Mock).mockResolvedValue(
+      resolved({ provider: 'groq', modelToUse: 'g-a', aiService: g }, [
+        { provider: 'google', modelToUse: 'gem', aiService: m },
+      ])
+    );
+    await frames(await run({ stream: true }));
+    const systemOf = (svc: ReturnType<typeof service>) =>
+      (
+        svc.streamChatCompletion.mock.calls[0][0] as {
+          messages: Array<{ role: string; content: string }>;
+        }
+      ).messages[0].content;
+    expect(systemOf(g)).toBe('SHRUNK');
+    expect(systemOf(m)).toBe('WHOLE');
+  });
+
   it('primary rate-limited before streaming: falls back, marks the platform link down', async () => {
     const a = service('A', { throws: rateLimitErr() });
     const b = service('B', {
