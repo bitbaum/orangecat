@@ -93,6 +93,15 @@ describe('holding an event', () => {
     expect(byAction.create_event?.conditional).toBeFalsy();
   });
 
+  // Measured live 2026-10-07: "Throw a party on Saturday" got one question
+  // and a "Create Event: Saturday Gathering" button — the reply's general
+  // entity-suggestion rule won over "ask first". The playbook says it outright.
+  it('asks every question first, in one reply, with no Create button', () => {
+    const section = playbookSection(HOLD_AN_EVENT);
+    expect(section).toMatch(/FIRST reply asks all of these together/);
+    expect(section).toMatch(/NO `action` block/);
+  });
+
   it('sizes itself from a party to a conference with one playbook', () => {
     for (const s of ['throw a party for my 30th', 'organise a conference', 'a meetup in zürich']) {
       expect(HOLD_AN_EVENT.trigger.test(s)).toBe(true);
