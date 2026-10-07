@@ -96,10 +96,16 @@ describe('holding an event', () => {
   // Measured live 2026-10-07: "Throw a party on Saturday" got one question
   // and a "Create Event: Saturday Gathering" button — the reply's general
   // entity-suggestion rule won over "ask first". The playbook says it outright.
-  it('asks every question first, in one reply, with no Create button', () => {
+  // Re-run after that: no button, but still one question and "here is a
+  // draft" with nothing drafted — the core rule "at most ONE question" won.
+  // The playbook names itself as the exception, asks in one sentence, and
+  // offers a one-tap way past the questions.
+  it('asks every question first, in one sentence, with no Create button and no phantom draft', () => {
     const section = playbookSection(HOLD_AN_EVENT);
-    expect(section).toMatch(/FIRST reply asks all of these together/);
-    expect(section).toMatch(/NO `action` block/);
+    expect(section).toMatch(/the one exception to "at most ONE question"/);
+    expect(section).toMatch(/ONE short sentence \(not a list\)/);
+    expect(section).toMatch(/"Use sensible defaults"/);
+    expect(section).toMatch(/NO `action` block and never says a draft exists/);
   });
 
   it('sizes itself from a party to a conference with one playbook', () => {
