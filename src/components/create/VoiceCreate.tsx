@@ -23,7 +23,8 @@ import { useRouter } from 'next/navigation';
 import { Mic, Square, Loader2, AlertCircle } from 'lucide-react';
 import { API_ROUTES } from '@/config/api-routes';
 import { ENTITY_REGISTRY, type EntityType } from '@/config/entity-registry';
-import { useDictation, type DictationError } from '@/hooks/useDictation';
+import { useDictation } from '@/hooks/useDictation';
+import { dictationErrorMessage } from '@/config/dictation-copy';
 import { unwrapApiResponse } from '@/lib/api/client-response';
 import { logger } from '@/utils/logger';
 import { cn } from '@/lib/utils';
@@ -34,13 +35,6 @@ interface VoiceCreateProps {
   onNavigate?: () => void;
   className?: string;
 }
-
-const ERROR_COPY: Record<DictationError, string> = {
-  permission_denied: 'Microphone blocked — allow mic access for this site, then try again.',
-  no_microphone: 'No microphone available on this device.',
-  transcription_failed: 'Could not hear that — check your connection and try again.',
-  no_speech: 'Did not catch any speech — try speaking a little closer.',
-};
 
 export function VoiceCreate({ onNavigate, className }: VoiceCreateProps) {
   const router = useRouter();
@@ -92,7 +86,7 @@ export function VoiceCreate({ onNavigate, className }: VoiceCreateProps) {
   const { supported, isRecording, isTranscribing, toggle } = useDictation({
     endpoint: API_ROUTES.CAT.TRANSCRIBE,
     onTranscript: handleTranscript,
-    onError: error => setMessage(ERROR_COPY[error]),
+    onError: (error, { detail }) => setMessage(dictationErrorMessage(error, detail)),
   });
 
   // One flag governs every voice surface, so they can never disagree about

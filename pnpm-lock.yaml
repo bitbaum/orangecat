@@ -30,6 +30,9 @@ importers:
       '@bitbaum/ai-kit':
         specifier: ^1.18.0
         version: 1.18.0(react@19.2.8)
+      '@bitbaum/chatkit':
+        specifier: github:bitbaum/chatkit#6995036fd75565dd31547373a77c84b06672de9b
+        version: https://codeload.github.com/bitbaum/chatkit/tar.gz/6995036fd75565dd31547373a77c84b06672de9b(react@19.2.8)
       '@bitbaum/collective-kinds':
         specifier: workspace:*
         version: link:packages/collective-kinds
@@ -534,6 +537,13 @@ packages:
     peerDependenciesMeta:
       react:
         optional: true
+
+  '@bitbaum/chatkit@https://codeload.github.com/bitbaum/chatkit/tar.gz/6995036fd75565dd31547373a77c84b06672de9b':
+    resolution: {gitHosted: true, tarball: https://codeload.github.com/bitbaum/chatkit/tar.gz/6995036fd75565dd31547373a77c84b06672de9b}
+    version: 0.3.2
+    engines: {node: '>=20'}
+    peerDependencies:
+      react: '>=18'
 
   '@bitbaum/geo-kit@https://codeload.github.com/bitbaum/geo-kit/tar.gz/a337aec928cf7804fecf459c308d366b90f4b2fa':
     resolution: {gitHosted: true, tarball: https://codeload.github.com/bitbaum/geo-kit/tar.gz/a337aec928cf7804fecf459c308d366b90f4b2fa}
@@ -6363,6 +6373,10 @@ snapshots:
     dependencies:
       ai-forms: 0.1.2(react@19.2.8)
     optionalDependencies:
+      react: 19.2.8
+
+  '@bitbaum/chatkit@https://codeload.github.com/bitbaum/chatkit/tar.gz/6995036fd75565dd31547373a77c84b06672de9b(react@19.2.8)':
+    dependencies:
       react: 19.2.8
 
   '@bitbaum/geo-kit@https://codeload.github.com/bitbaum/geo-kit/tar.gz/a337aec928cf7804fecf459c308d366b90f4b2fa': {}

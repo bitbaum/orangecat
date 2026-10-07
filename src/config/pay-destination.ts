@@ -9,6 +9,7 @@ export const PAY_DESTINATION_COPY = {
   whyBody:
     'OrangeCat does not hold your money. Paste a destination from your own Bitcoin app so people can pay you there.',
   payInto: 'Pay into',
+  straightToWallet: 'Payments go straight to the wallet you pick. OrangeCat never holds the money.',
   differentDestination: 'Use a different destination',
   back: 'Back',
   onchainHint: 'Payments here use regular Bitcoin. They work, and they are not instant.',
