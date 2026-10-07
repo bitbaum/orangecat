@@ -58,7 +58,7 @@ describe('the brief carries each playbook, and only when it is wanted', () => {
     expect(selectPromptSections(sentence).has(heading)).toBe(true);
   });
 
-  it('loads for people who do not write in English (ADR-0010 D7)', () => {
+  it('loads for people who do not write in English (ADR-0011 D7)', () => {
     // A non-ASCII example per playbook is a crude proxy, and enough: an
     // English-only trigger is the failure, and every one of them is ASCII.
     for (const p of CAT_PLAYBOOKS) {

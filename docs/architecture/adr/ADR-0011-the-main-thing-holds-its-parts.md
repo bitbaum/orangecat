@@ -1,4 +1,4 @@
-# ADR-0010: The Main Thing Holds Its Parts
+# ADR-0011: The Main Thing Holds Its Parts
 
 Date: 2026-10-05
 Status: Proposed (D1 shipped as `src/config/cat-playbooks.ts`; D2–D7 not started)
