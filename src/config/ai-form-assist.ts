@@ -16,6 +16,7 @@
  * are one config entry, not a new `case`.
  */
 
+import { MIN_INSTRUCTION_LENGTH, type AssistIntent } from '@bitbaum/ai-kit/forms';
 import { ENTITY_REGISTRY, isValidEntityType, type EntityType } from '@/config/entity-registry';
 import { getAssistFormConfig } from '@/config/ai-assist-forms';
 import type { FieldConfig, FieldInputType } from '@/components/create/types';
@@ -34,7 +35,7 @@ import type { FieldConfig, FieldInputType } from '@/components/create/types';
  * request can never change anything, since every field it wants to rewrite is
  * already non-empty.
  */
-export type AiAssistIntent = 'fill' | 'refine';
+export type AiAssistIntent = AssistIntent;
 
 /**
  * Fields the AI may overwrite even under intent `fill`.
@@ -60,14 +61,12 @@ export const USER_OVERRIDABLE_FIELDS: readonly string[] = [
  * full — and "shorter", "longer" and "in german" are all perfectly clear at
  * well under ten characters.
  *
- * One number per intent, in one place: the button and the API used to disagree
- * (enabled at 3, rejected under 10), so the most natural way to ask for a small
- * change failed with "Description must be at least 10 characters".
+ * The numbers are the fleet's (`MIN_INSTRUCTION_LENGTH` in ai-forms), named
+ * once: the button and the API used to disagree (enabled at 3, rejected under
+ * 10), so the most natural way to ask for a small change failed with
+ * "Description must be at least 10 characters".
  */
-export const AI_ASSIST_MIN_INPUT_LENGTH: Record<AiAssistIntent, number> = {
-  fill: 10,
-  refine: 3,
-};
+export const AI_ASSIST_MIN_INPUT_LENGTH: Record<AiAssistIntent, number> = MIN_INSTRUCTION_LENGTH;
 
 // ==================== ADJUSTMENTS ====================
 
