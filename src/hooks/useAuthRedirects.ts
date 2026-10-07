@@ -1,9 +1,10 @@
 'use client';
 
 import { useAuthStore } from '@/stores/auth';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { isAuthenticatedRoute, getRouteContext, ROUTES } from '@/config/routes';
+import { safeReturnPath } from '@/lib/oauth/handoff';
 
 /**
  * Hydration ceiling. If the auth store hasn't resolved after this long,
@@ -146,6 +147,11 @@ export function useRedirectIfAuthenticated() {
   const [_isConsistent, setIsConsistent] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
+  // Where the person was going when they were sent to sign in. This hook and
+  // the auth page's own `from` redirect both fire the moment a session
+  // appears; when this one pushed the dashboard unconditionally it won the
+  // race, and a link like /dashboard/cat?q=<sentence> lost its sentence.
+  const returnTo = safeReturnPath(useSearchParams()?.get('from')) ?? ROUTES.DASHBOARD.HOME;
 
   useEffect(() => {
     if (hydrated && !isLoading) {
@@ -179,9 +185,9 @@ export function useRedirectIfAuthenticated() {
       getRouteContext(pathname) !== 'public' &&
       getRouteContext(pathname) !== 'universal'
     ) {
-      router.push(ROUTES.DASHBOARD.HOME);
+      router.push(returnTo);
     }
-  }, [user, session, isLoading, hydrated, router, pathname, profile]);
+  }, [user, session, isLoading, hydrated, router, pathname, profile, returnTo]);
 
   return {
     isLoading: isLoading || !hydrated,
