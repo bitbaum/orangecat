@@ -27,8 +27,10 @@ const POLL_INTERVALS: Record<PaymentMethod, number> = {
 type PaymentFlowState =
   | { phase: 'idle' }
   | { phase: 'initiating' }
-  | { phase: 'awaiting_payment'; data: InitiatePaymentResult }
+  | { phase: 'awaiting_payment'; data: InitiatePaymentResult; notice?: string }
   | { phase: 'success'; data: InitiatePaymentResult }
+  /** The buyer said "I've paid"; nothing has verified it. The seller confirms. */
+  | { phase: 'claimed'; data: InitiatePaymentResult }
   | { phase: 'expired' }
   | { phase: 'error'; message: string };
 
@@ -75,8 +77,10 @@ export function usePaymentFlow() {
             stopPolling();
             setState({ phase: 'expired' });
           } else if (status === 'buyer_confirmed') {
+            // A claim, not a verification: "Payment successful" here told the
+            // buyer something the server does not know (audit 2026-10-07).
             stopPolling();
-            setState({ phase: 'success', data });
+            setState({ phase: 'claimed', data });
           }
         } catch {
           // Silently ignore poll errors — will retry on next interval
@@ -105,12 +109,13 @@ export function usePaymentFlow() {
           body: JSON.stringify(params),
         });
 
-        const json = await res.json();
+        // An HTML error page (a 502) must not surface as "Unexpected token '<'".
+        const json = await res.json().catch(() => null);
 
-        if (!res.ok || !json.success) {
+        if (!res.ok || !json?.success) {
           setState({
             phase: 'error',
-            message: json.error?.message || 'Failed to initiate payment',
+            message: json?.error?.message || 'Could not start the payment. Please try again.',
           });
           return;
         }
@@ -121,10 +126,10 @@ export function usePaymentFlow() {
         // Start polling for payment confirmation
         const method = data.payment_intent.payment_method as PaymentMethod;
         startPolling(data.payment_intent.id, method, data);
-      } catch (error) {
+      } catch {
         setState({
           phase: 'error',
-          message: error instanceof Error ? error.message : 'Network error',
+          message: 'Could not reach OrangeCat. Check your connection and try again.',
         });
       }
     },
@@ -145,22 +150,21 @@ export function usePaymentFlow() {
         body: JSON.stringify({ action: 'buyer_confirm' }),
       });
 
-      const json = await res.json();
+      const json = await res.json().catch(() => null);
 
-      if (res.ok && json.success) {
+      if (res.ok && json?.success) {
         stopPolling();
-        setState({ phase: 'success', data: state.data });
+        setState({ phase: 'claimed', data: state.data });
       } else {
+        // Keep the invoice on screen. The error phase's "Try again" minted a
+        // NEW invoice — an invitation to pay twice for someone who already had.
         setState({
-          phase: 'error',
-          message: json.error?.message || 'Failed to confirm payment. Please try again.',
+          ...state,
+          notice: json?.error?.message || 'Could not record that just now. Tap again in a moment.',
         });
       }
     } catch {
-      setState({
-        phase: 'error',
-        message: 'Network error confirming payment. Please try again.',
-      });
+      setState({ ...state, notice: 'Could not reach OrangeCat. Tap again in a moment.' });
     }
   }, [state, stopPolling]);
 
