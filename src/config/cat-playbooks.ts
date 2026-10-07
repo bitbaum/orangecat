@@ -153,3 +153,32 @@ export function playbookSections(): string {
 }
 
 export const PLAYBOOK_HEADINGS: readonly string[] = CAT_PLAYBOOKS.map(p => p.heading);
+
+/**
+ * What the TOOL-ROUTING step is told when a turn matches a playbook.
+ *
+ * Before the Cat writes its reply, a separate step decides which tools to call,
+ * on a slim prompt that carries none of the sections above. Measured on
+ * production 2026-10-07: "Throw a party on Saturday" went to that step, which
+ * knew only "a dated gathering = event" and called prefill_entity_form at once
+ * — an empty "Party on Saturday" card, no date, no place, no questions. The
+ * reply never got to ask, because the routing step had already acted.
+ *
+ * So the routing step hears the one rule that matters at its stage: the
+ * questions come first, then the plan. Derived from the playbook itself, so
+ * the questions it holds out for are the questions the reply asks.
+ */
+export function playbookRoutingNote(message: string): string {
+  const said = message.toLowerCase();
+  return CAT_PLAYBOOKS.filter(p => p.trigger.test(said))
+    .map(p => {
+      const actions = [...new Set(p.steps.map(s => s.action))].join(', ');
+      return (
+        `\n- PLAYBOOK "${p.heading}": this request is a whole plan, not one draft. ` +
+        `Until the conversation has answered these — ${p.questions.join(' / ')} — call NO tool: ` +
+        `the reply asks them together, in one message. Once they are answered, carry the plan out ` +
+        `with the ACTION tools (${actions}), not prefill_entity_form.`
+      );
+    })
+    .join('');
+}

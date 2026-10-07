@@ -68,7 +68,7 @@ export class ToolTurnState {
           (this.pending
             ? `The outcome of ${this.pending.function.name} is unconfirmed; it may still finish. Do not claim success or failure, or retry a write without checking its status. `
             : '') +
-          'Explain what was verified and what remains unfinished. Do not invent missing results.',
+          'In plain conversational words, say what you did and what is still unfinished — no headings, no report format. Do not invent missing results.',
       },
     ];
   }

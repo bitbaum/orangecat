@@ -29,6 +29,7 @@ import { uniqueToolDefinitions } from './tool-definitions';
 import { executeToolCall } from './tool-executor';
 import { WebTurnContext } from './web-research';
 import { extractHttpUrls, isUrlOnlyMessage } from './website-analysis';
+import { playbookRoutingNote } from '@/config/cat-playbooks';
 import type {
   ToolAugmentedMessage,
   ToolCallAssistantMessage,
@@ -347,7 +348,8 @@ async function runToolLoop(args: {
         '- find_events_near: when the user asks what is on, or for events/parties/gigs, around a place ("anything near Langstrasse tonight?"). Pass genre only if they named music.\n' +
         '- check_my_track_record: when the user asks what YOU did for them or how it went (e.g. "what have you done for me?", "did any of your ideas work?", "why should I trust you?"), or before you propose another thing of a kind you may already have proposed. It is about YOUR actions and their outcomes, not the user\'s own numbers (that is query_my_data). Takes no arguments.\n' +
         'You may also call any ACTION tool (create_project, update_entity, …) when the user clearly asks you to DO that thing — not to explore it. An action WRITES, so call it only on a clear instruction; its result comes back to you before you reply, so never claim something is done until you have seen that result.\n' +
-        'NEVER call search_platform for a create/sell/offer intent — describing your own thing to list is prefill_entity_form, not a search. If neither clearly applies, call no tool. Only decide and call tools — do not write a chat reply.',
+        'NEVER call search_platform for a create/sell/offer intent — describing your own thing to list is prefill_entity_form, not a search. If neither clearly applies, call no tool. Only decide and call tools — do not write a chat reply.' +
+        playbookRoutingNote(userMessage),
     },
     ...toolRoutingHistory(messages, userMessage),
     { role: 'user' as const, content: userMessage },
