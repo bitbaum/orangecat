@@ -74,6 +74,10 @@ const paymentClaimLimiter = slidingWindow({ limit: 10, windowMs: 60 * 60_000 });
 // the general limiter. 8 per 5 min is plenty for a real person having a
 // conversation, and starves a script.
 const askCatLimiter = slidingWindow({ limit: 8, windowMs: 5 * 60_000 });
+// A free event ticket without an account, per IP. A household on one connection
+// answers a party invitation a few times; a script filling the guest list with
+// invented names is what this stops (capacity is enforced in the database).
+const guestTicketLimiter = slidingWindow({ limit: 10, windowMs: 60 * 60_000 });
 // Public, keyless domain search. One inbound request fans out to as many as
 // MAX_CANDIDATES (24) outbound RDAP lookups against third-party registries, and
 // varying the query defeats the result cache. The cost of abuse is therefore not
@@ -218,6 +222,14 @@ export async function rateLimitL402Verify(paymentIntentId: string): Promise<Rate
  */
 export async function rateLimitAskCat(request: RequestLike): Promise<RateLimitResult> {
   return toRateLimitResult(askCatLimiter.check(`ask-cat:${clientIpKey(request)}`));
+}
+
+/**
+ * Rate limit claiming a free event ticket without an account.
+ * 10 per hour per IP
+ */
+export async function rateLimitGuestTicket(request: RequestLike): Promise<RateLimitResult> {
+  return toRateLimitResult(guestTicketLimiter.check(`guest-ticket:${clientIpKey(request)}`));
 }
 
 /**

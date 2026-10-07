@@ -90,7 +90,7 @@ export const HOLD_AN_EVENT: Playbook = {
     },
     {
       title: 'The invitations',
-      how: 'Message each named OrangeCat guest or speaker with the event page. For anyone not on OrangeCat, hand them the page link to share.',
+      how: 'Message each named OrangeCat guest or speaker with the event page. For everyone else, hand the host the page link to share: on a free event anyone gets a ticket with just their name, no account. The link takes tickets only once the page is published, so offer publish_entity before they share it.',
       action: 'send_message',
     },
     {

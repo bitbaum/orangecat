@@ -1,6 +1,10 @@
 import {
   TicketError,
   claimFreeTicket,
+  claimGuestTicket,
+  getGuestTicket,
+  guestTicketPath,
+  ticketHolderName,
   checkInTicket,
   getSeatsLeft,
   isLiveTicket,
@@ -49,5 +53,37 @@ describe('event tickets', () => {
       'code'
     ).catch(e => e);
     expect(err.code).toBe('forbidden');
+  });
+
+  it('opens a guest ticket at its own page, the code being the key', () => {
+    expect(guestTicketPath('ev-1', 'ab cd')).toBe('/events/ev-1/ticket/ab%20cd');
+  });
+
+  it('claims a guest ticket with the name, and reports a full event as "full"', async () => {
+    const supabase = rpcReturning({ ticket_code: 'c0de' });
+    await claimGuestTicket(supabase, 'ev-1', 'Anna');
+    expect((supabase as unknown as { rpc: ReturnType<typeof vi.fn> }).rpc).toHaveBeenCalledWith(
+      'claim_guest_ticket',
+      { p_event_id: 'ev-1', p_name: 'Anna' }
+    );
+    const err = await claimGuestTicket(
+      rpcReturning(null, { message: 'This event is full', code: '23P01' }),
+      'ev-1',
+      'Ben'
+    ).catch(e => e);
+    expect(err.code).toBe('full');
+  });
+
+  it('reads no guest ticket for an unknown code', async () => {
+    expect(await getGuestTicket(rpcReturning(null), 'nope')).toBeNull();
+  });
+
+  it('names a guest on the door list by the name they gave', () => {
+    const names = new Map([['u-1', 'Ada']]);
+    expect(ticketHolderName({ user_id: 'u-1', guest_name: null }, id => names.get(id))).toBe('Ada');
+    expect(ticketHolderName({ user_id: null, guest_name: 'Anna' }, () => undefined)).toBe(
+      'Anna (guest)'
+    );
+    expect(ticketHolderName({ user_id: 'u-2', guest_name: null }, () => undefined)).toBe('Guest');
   });
 });

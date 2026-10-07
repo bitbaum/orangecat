@@ -58,7 +58,7 @@ OrangeCat still holds no money. Every payout leaves the organizer's own wallet t
 
 ## What is not built
 
-- **Guests need an account** for a ticket, free or paid. The ticket has to live somewhere. Tickets for people without one are next.
+- **Paid tickets need an account.** The ticket has to live somewhere, and paying without one needs the rails above. Free tickets no longer do: since the evening this was written, a guest gives their name and the ticket's own page is the ticket.
 - **No Twint, bank or PayPal checkout.** Those need business accounts, identity checks and reconciliation. Until then, "paid another way" records it honestly instead of faking a rail.
 - **Generating a cover needs your own image key.** The platform does not pay for pixels. Without one, the Cat makes the event and tells you where to add a picture.
 - **The Cat was tested handler by handler, not against the live model.** That check happens on production after the deploy.
