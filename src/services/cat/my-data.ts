@@ -19,14 +19,10 @@ import type { MyDataTopic } from './my-data-topics';
 import { listInterests } from './interests';
 import { ledgerSection } from './my-data-ledger';
 import { countUnreadNotifications } from '@/services/notifications/unread-count';
+import { displayBTC } from '@/services/currency/formatting';
 
 const DEFAULT_WINDOW_DAYS = 30;
 const MAX_ROWS_PER_TYPE = 8;
-
-function formatBtc(amount: number): string {
-  // Trim trailing zeros but keep BTC precision meaningful.
-  return `${Number(amount.toFixed(8))} BTC`;
-}
 
 function sinceIso(days: number): string {
   return new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
@@ -155,12 +151,12 @@ async function earningsSection(
     if (orderRows.length > 0) {
       const top = orderRows
         .slice(0, 5)
-        .map(o => `"${o.entity_title}" ${formatBtc(o.amount_btc)}`)
+        .map(o => `"${o.entity_title}" ${displayBTC(o.amount_btc)}`)
         .join(', ');
-      parts.push(`- ${orderRows.length} paid order(s) totaling ${formatBtc(orderTotal)}: ${top}`);
+      parts.push(`- ${orderRows.length} paid order(s) totaling ${displayBTC(orderTotal)}: ${top}`);
     }
     for (const [kind, agg] of byKind) {
-      parts.push(`- ${agg.count} settled ${kind} payment(s) totaling ${formatBtc(agg.total)}`);
+      parts.push(`- ${agg.count} settled ${kind} payment(s) totaling ${displayBTC(agg.total)}`);
     }
     return parts.join('\n');
   } catch {
@@ -251,7 +247,7 @@ async function walletsSection(supabase: AnySupabaseClient, userId: string): Prom
       const bits = [
         `- "${w.label}"${w.is_primary ? ' (primary)' : ''}`,
         typeof w.balance_btc === 'number'
-          ? `balance ${formatBtc(w.balance_btc)}`
+          ? `balance ${displayBTC(w.balance_btc)}`
           : 'balance unknown',
       ];
       if (typeof w.goal_amount === 'number') {
@@ -260,7 +256,7 @@ async function walletsSection(supabase: AnySupabaseClient, userId: string): Prom
         );
       }
       if (typeof w.budget_amount === 'number') {
-        bits.push(`budget ${formatBtc(w.budget_amount)}/${w.budget_period ?? 'period'}`);
+        bits.push(`budget ${displayBTC(w.budget_amount)}/${w.budget_period ?? 'period'}`);
       }
       return bits.join(', ');
     });

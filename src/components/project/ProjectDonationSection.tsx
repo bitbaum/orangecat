@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Bitcoin, Heart, Copy, ShieldCheck, ExternalLink } from 'lucide-react';
+import { Bitcoin, Heart, Copy, ExternalLink } from 'lucide-react';
 import BitcoinPaymentButton from '@/components/bitcoin/BitcoinPaymentButton';
 import Button from '@/components/ui/Button';
 import { QRCodeSVG } from 'qrcode.react';
@@ -184,10 +184,6 @@ export function ProjectDonationSection({
                     <Copy className="w-4 h-4" />
                   </Button>
                 </div>
-              </div>
-              <div className="flex items-center gap-2 mt-3 text-sm text-fg-secondary">
-                <ShieldCheck className="w-4 h-4 text-status-positive" aria-hidden="true" />
-                <span>Address verified and monitored</span>
               </div>
             </div>
           </div>

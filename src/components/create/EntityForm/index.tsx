@@ -10,7 +10,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { GuidancePanel } from '../GuidancePanel';
 import { AIPrefillBar } from '../AIPrefillBar';
 import type { EntityConfig } from '../types';
-import { FORM_THEME } from '@/config/theme-colors';
 
 import { EntityCreationSuccess } from '../EntityCreationSuccess';
 import { useEntityFormState } from './hooks/useEntityFormState';
@@ -169,7 +168,6 @@ export function EntityForm<T extends Record<string, unknown>>({
   }
 
   const Icon = config.icon;
-  const theme = FORM_THEME[config.colorTheme];
 
   /**
    * FORM WIDTH SSOT
@@ -231,7 +229,6 @@ export function EntityForm<T extends Record<string, unknown>>({
         mode={mode}
         entityName={config.name}
         backUrl={config.backUrl}
-        theme={theme}
         wizardMode={wizardMode}
         lastSavedAt={lastSavedAt}
         formatRelativeTime={formatRelativeTime}
@@ -246,7 +243,7 @@ export function EntityForm<T extends Record<string, unknown>>({
   }
 
   return (
-    <div className={`min-h-screen ${theme.pageSurface} p-4 sm:p-6 lg:p-8 pb-24 md:pb-8`}>
+    <div className={`min-h-screen bg-surface-page p-4 sm:p-6 lg:p-8 pb-24 md:pb-8`}>
       <FormHeader
         icon={Icon}
         colorTheme={config.colorTheme}

@@ -3,7 +3,6 @@
  * Submit/cancel buttons with wizard mode support
  */
 
-import Link from 'next/link';
 import { Save } from 'lucide-react';
 import Button from '@/components/ui/Button';
 
@@ -22,7 +21,6 @@ interface FormActionsProps {
   mode: 'create' | 'edit';
   entityName: string;
   backUrl: string;
-  theme: { btnGradient: string };
   wizardMode?: WizardMode;
   lastSavedAt?: Date | null;
   formatRelativeTime?: (timestamp: string) => string;
@@ -33,7 +31,6 @@ export function FormActions({
   mode,
   entityName,
   backUrl,
-  theme,
   wizardMode,
   lastSavedAt,
   formatRelativeTime,
@@ -53,7 +50,6 @@ export function FormActions({
           wizardMode={wizardMode}
           isSubmitting={isSubmitting}
           entityName={entityName}
-          theme={theme}
         />
       ) : (
         <StandardActions
@@ -61,7 +57,6 @@ export function FormActions({
           mode={mode}
           entityName={entityName}
           backUrl={backUrl}
-          theme={theme}
         />
       )}
     </div>
@@ -72,12 +67,10 @@ function WizardNavigation({
   wizardMode,
   isSubmitting,
   entityName,
-  theme,
 }: {
   wizardMode: WizardMode;
   isSubmitting: boolean;
   entityName: string;
-  theme: { btnGradient: string };
 }) {
   return (
     <div className="flex justify-between">
@@ -102,7 +95,7 @@ function WizardNavigation({
             Next
           </Button>
         ) : wizardMode.isLastStep ? (
-          <Button type="submit" disabled={isSubmitting} className={theme.btnGradient}>
+          <Button type="submit" disabled={isSubmitting}>
             {isSubmitting ? 'Creating...' : `Create ${entityName}`}
           </Button>
         ) : null}
@@ -116,26 +109,24 @@ function StandardActions({
   mode,
   entityName,
   backUrl,
-  theme,
 }: {
   isSubmitting: boolean;
   mode: 'create' | 'edit';
   entityName: string;
   backUrl: string;
-  theme: { btnGradient: string };
 }) {
   return (
     <div className="flex gap-4">
-      <Button type="submit" disabled={isSubmitting} className={theme.btnGradient}>
+      <Button type="submit" disabled={isSubmitting}>
         {isSubmitting
           ? `${mode === 'create' ? 'Creating' : 'Saving'}...`
           : `${mode === 'create' ? 'Create' : 'Save'} ${entityName}`}
       </Button>
-      <Link href={backUrl}>
-        <Button variant="outline" disabled={isSubmitting}>
-          Cancel
-        </Button>
-      </Link>
+      {/* Button renders the link itself — a <button> inside an <a> is
+          invalid HTML and two tab stops for one control. */}
+      <Button href={backUrl} variant="outline" disabled={isSubmitting}>
+        Cancel
+      </Button>
     </div>
   );
 }

@@ -70,7 +70,7 @@ entity-registry.ts   → Entity create/nav SSOT (Cat action buttons)
 ### Hooks
 
 - `useChatMessages`, `useSuggestions`, `usePendingActionsManager` — chat state
-- `useCatContext`, `useCatPermissions` — secondary panels
+- `useCatPermissions` — secondary panels
 - `useAISettings` — keys/tiers (shared with `/settings/ai`)
 
 ---
