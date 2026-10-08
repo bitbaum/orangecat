@@ -12,6 +12,7 @@ import { classifyWalletInput, validateAddressOrXpub } from '@/types/wallet';
 import { isValidLightningAddress } from '@/lib/validation/base';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/utils/logger';
+import { ratesAtReceiptOrNull } from '@/services/currency/rates.server';
 import type { ActionHandler } from './types';
 
 export const paymentHandlers: Record<string, ActionHandler> = {
@@ -386,6 +387,8 @@ export const paymentHandlers: Record<string, ActionHandler> = {
           status: STATUS.PAYMENT_INTENTS.PAID,
           description,
           paid_at: new Date().toISOString(),
+          // What it was worth when it moved — same fact settlement records.
+          rates_at_paid: await ratesAtReceiptOrNull(),
         })
         .select('id')
         .single();

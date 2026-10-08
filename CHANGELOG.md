@@ -17,11 +17,15 @@ to the map, sub-bullets stay here for the human reader.
 
 ### Added
 
+- **Wallets for taxes and for paying back debt.** Two new purposes when you add a wallet: _Taxes_ — money set aside for the tax you owe — and _Debt repayment_ — money going back to someone you owe. Like rent or medical wallets, they appear on your profile with their purpose.
+- **Every payment remembers what it was worth when it arrived.** When a payment to you is confirmed, OrangeCat now records the Bitcoin price at that moment in Swiss francs, euros, dollars and pounds. If no trustworthy price is available at that moment, it records nothing rather than a guess.
+
 - **An investor room on every project.** The owner of a project now has a private page for the investors they choose: a headline, the story in sections (the problem, what was built, proof, market, business model, team, roadmap, the ask), dated numbers with how to check each, the deck, documents, and the project's build record from Loki. Each person gets their own link — no account, no password — that says who it is for, and the owner sees, per person, when they opened the room and what they opened inside it. A link can be switched off at any time; its history stays. Open it with "Investor room" in the bar at the top of your project's page. {#room-links}
 - **Who opened what, counted honestly.** The first time each person opens their link to an investor room, the owner gets a notification (and an email, which can be turned off). Link previews don't count: pasting a link into WhatsApp, Telegram, Slack or iMessage makes the app fetch the page for its preview card, and those fetches are no longer counted as someone opening it — in investor rooms and on profile claim links, where they were. Nor is the owner's own preview. {#room-opens}
 
 ### Fixed
 
+- **"Came in" on Your money counts each sale once, at what it was worth.** From the first sale, a sale would have been counted twice — once as the payment and once as the order — and a year of income converted at today's Bitcoin price, so the income and the tax estimate built on it would both have been off. Each payment now counts once, valued at the price recorded when it arrived. A payment that arrived before prices were recorded is valued at today's rate, and the page says how many were.
 - **A payment that timed out is no longer recorded as failed.** When your wallet doesn't answer in time, the Send screen already tells you the payment may still go through. OrangeCat's private record of the send now says the same: "unconfirmed", not "failed", because the money may have moved.
 
 ## 2026-10-07

@@ -28,6 +28,33 @@ export function getRenderRates(): {
   return snapshot;
 }
 
+/**
+ * The BTC price in every currency we price in, as it stands now — for recording
+ * what a payment was worth WHEN it arrived (income is valued on the day it is
+ * received, not on the day someone reads it).
+ *
+ * Null when there is no rate we can stand behind, never a placeholder: a
+ * payment's value at receipt is a tax fact, and a guessed one is worse than an
+ * honest blank. Never throws — the payment it describes has already happened.
+ */
+export async function ratesAtReceiptOrNull(): Promise<Record<string, number> | null> {
+  try {
+    const snapshot = await getRateSnapshot();
+    if (!snapshot) {
+      return null;
+    }
+    const rates: Record<string, number> = {};
+    for (const [code, value] of Object.entries(snapshot.rates)) {
+      if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+        rates[code.toUpperCase()] = value;
+      }
+    }
+    return Object.keys(rates).length > 0 ? rates : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Rates, fetching if needed. For callers that must not guess. */
 export async function loadServerRates(): Promise<boolean> {
   const snapshot = await getRateSnapshot();
