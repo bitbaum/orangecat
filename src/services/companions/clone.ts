@@ -45,6 +45,13 @@ interface DefinitionRow {
   temperature: number | null;
 }
 
+const TITLE_MAX = 100;
+const COPY_SUFFIX = ' (copy)';
+
+export function cloneTitle(title: string): string {
+  return `${title.slice(0, TITLE_MAX - COPY_SUFFIX.length).trimEnd()}${COPY_SUFFIX}`;
+}
+
 export type CloneResult =
   | { ok: true; data: Record<string, unknown> }
   | { ok: false; notFound: true }
@@ -72,7 +79,9 @@ export async function cloneCompanion(
   // Through the schema so every default the create route applies applies here
   // too; the clone starts private and free regardless of the source's pricing.
   const input = aiAssistantSchema.parse({
-    title: source.title,
+    // Two companions with one name in the same list cannot be told apart —
+    // the clone says what it is, within the 100-character title limit.
+    title: cloneTitle(source.title),
     description: source.description ?? undefined,
     category: source.category ?? undefined,
     tags: source.tags ?? [],

@@ -37,11 +37,10 @@ export const MAX_MEMORIES_PER_PAIR = 300;
 /** Trim any single memory to this length before storing. */
 export const MAX_MEMORY_CHARS = 240;
 
-/**
- * A line the companion writes with one of these prefixes is a memory it
- * chose to keep, stored verbatim. The healer persona's method log uses them.
- */
-export const STATED_MEMORY_PREFIXES = ['Method log |', 'Do not |', 'About |'] as const;
+// What a stated memory line IS lives in memory-lines.ts — shared with the
+// talk room, which hides these lines from the reader.
+import { statedMemoryLines } from './memory-lines';
+export { STATED_MEMORY_PREFIXES, statedMemoryLines } from './memory-lines';
 
 export interface CompanionMemory {
   id: string;
@@ -250,14 +249,6 @@ export async function deleteAllCompanionMemories(
 }
 
 // ─── Post-turn extraction ─────────────────────────────────────────────────────
-
-/** Lines the companion wrote that it chose to remember, verbatim. */
-export function statedMemoryLines(assistantMessage: string): string[] {
-  return assistantMessage
-    .split('\n')
-    .map(l => l.replace(/^[\s>*-]+/, '').trim())
-    .filter(l => STATED_MEMORY_PREFIXES.some(p => l.startsWith(p)));
-}
 
 const DISTILL_SYSTEM = `You are the memory of a companion. From one exchange, extract durable facts about the PERSON talking to the companion that will still be true next week: identity, preferences, relationships, goals, constraints, what they are going through.
 

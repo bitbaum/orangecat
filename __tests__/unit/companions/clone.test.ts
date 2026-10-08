@@ -69,7 +69,7 @@ describe('cloneCompanion', () => {
     expect(ownerId).toBe('user-2');
     expect(origin).toEqual({ clonedFrom: 'src-1' });
     expect(input).toMatchObject({
-      title: 'Mira',
+      title: 'Mira (copy)',
       system_prompt: source.system_prompt,
       welcome_message: 'Take your time.',
       personality_traits: ['direct'],
