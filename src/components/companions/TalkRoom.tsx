@@ -21,6 +21,7 @@ import Button from '@/components/ui/Button';
 import { MessageBubble } from '@/components/ai-chat/ModernChatPanel/components/MessageBubble';
 import { ChatInput } from '@/components/ai-chat/ModernChatPanel/components/ChatInput';
 import type { Message } from '@/components/ai-chat/ModernChatPanel/types';
+import { visibleReply } from '@/services/companions/memory-lines';
 import { useCompanionTalk, type TalkThreadSummary, type TalkMessage } from './useCompanionTalk';
 
 export interface TalkRoomProps {
@@ -39,7 +40,9 @@ function asMessage(m: TalkMessage): Message {
   return {
     id: m.id,
     role: m.role,
-    content: m.content,
+    // The companion's own log lines are kept in the stored reply (it reads them
+    // back next time) but are bookkeeping, not part of what it says to you.
+    content: m.role === 'assistant' ? visibleReply(m.content) : m.content,
     timestamp: new Date(m.created_at),
   };
 }
