@@ -62,7 +62,7 @@ const EMAIL_ENABLED_TYPES: Record<string, boolean> = {
  * type belongs here, not in EMAIL_ENABLED_TYPES. Each must be registered in
  * NOTIFICATION_CONFIG with a template.
  */
-const PREFERENCE_AWARE_EMAIL_TYPES = new Set(['deal_review']);
+const PREFERENCE_AWARE_EMAIL_TYPES = new Set(['deal_review', 'room_opened']);
 
 // =====================================================================
 // TYPES

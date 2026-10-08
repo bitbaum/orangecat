@@ -35,6 +35,18 @@ Run a real night on OrangeCat — "electronic music night at Espresso Bar in Lan
 - [x] Guests without an account get a free ticket with just their name. {#event-rsvp-guests}
 - [ ] Tickets paid with Twint, bank or PayPal, and paid tickets without an account (waits on "More rails"). {#event-fiat-tickets}
 
+### Investor rooms {#investor-rooms}
+
+A project's private page for the investors its owner chooses: the pitch, the deck, the documents and the build record, each person on their own link, and the owner sees who opened what. The room is a part of the project, not a new kind of thing. Decision: `docs/architecture/adr/ADR-0012-a-project-has-a-room-for-its-investors.md`.
+
+- [x] A room on every project, one link per person, no account or password needed, links that can be switched off. {#room-links}
+- [x] Who opened what — the room, the deck, each document — and a notice the first time each person opens it; link previews in chat apps are not counted. {#room-opens}
+- [ ] A product's own website as the door: its /investors page hands its visitors into the same room. {#room-door}
+- [ ] Live, verifiable numbers in the room, read from the project's build record instead of typed in. {#room-live-numbers}
+- [ ] Documents uploaded to private storage, opened through expiring links. {#room-files}
+- [ ] The room shows the project's investment offering, when it has one. {#room-offering}
+- [ ] "Send Anna a link to the Heidi room" to the Cat. {#room-cat}
+
 ## Next
 
 ### Fund-to-build

@@ -39,6 +39,7 @@ import {
 } from '@/lib/email/templates/group-activity';
 import { reengagementTemplate, type ReengagementStage } from '@/lib/email/templates/reengagement';
 import { dealReviewTemplate } from '@/lib/email/templates/deal-review';
+import { roomOpenedTemplate } from '@/lib/email/templates/room-opened';
 import { logger } from '@/utils/logger';
 
 const LOG_SOURCE = 'NotificationEmailService';
@@ -436,16 +437,16 @@ export class NotificationEmailService {
       });
     }
 
-    // --- Deal review prompts (ADR-0010) ---
-    if (type === 'deal_review') {
-      const actionUrl = (data.actionUrl as string) || '/dashboard/deals';
-      return dealReviewTemplate({
-        displayName,
-        title: (data.title as string) || 'How did your deal go?',
-        message: (data.message as string) || '',
-        dealsUrl: actionUrl.startsWith('http') ? actionUrl : `${APP_URL}${actionUrl}`,
-        unsubscribeUrl,
-      });
+    // --- One notice, one button: deal reviews (ADR-0010), investor rooms (ADR-0012) ---
+    if (type === 'deal_review' || type === 'room_opened') {
+      const isDeal = type === 'deal_review';
+      const path = (data.actionUrl as string) || (isDeal ? '/dashboard/deals' : '/dashboard');
+      const url = path.startsWith('http') ? path : `${APP_URL}${path}`;
+      const title = (data.title as string) || NOTIFICATION_CONFIG[type].subject(data);
+      const message = (data.message as string) || '';
+      return isDeal
+        ? dealReviewTemplate({ displayName, title, message, dealsUrl: url, unsubscribeUrl })
+        : roomOpenedTemplate({ displayName, title, message, roomUrl: url, unsubscribeUrl });
     }
 
     // No matching template

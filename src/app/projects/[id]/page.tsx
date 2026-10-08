@@ -15,6 +15,7 @@ import { buildProjectStructuredData } from './structuredData';
 import { SetUpBy } from '@/components/claim/SetUpBy';
 import { ROUTES } from '@/config/routes';
 import { PublicEntityOwnerBar } from '@/components/public/PublicEntityOwnerBar';
+import { RoomOwnerAction } from '@/components/room/RoomOwnerAction';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { isProjectPubliclyVisible } from '@/config/project-statuses';
 import { DATABASE_TABLES } from '@/config/database-tables';
@@ -279,6 +280,7 @@ export default async function PublicProjectPage({ params }: PageProps) {
           entityType="project"
           entityId={id}
           entityTitle={project.title}
+          ownerActions={<RoomOwnerAction projectId={id} />}
         />
       )}
       <ProjectPageClient

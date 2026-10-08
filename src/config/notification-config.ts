@@ -193,6 +193,22 @@ export const NOTIFICATION_CONFIG: Record<string, NotificationTypeConfig> = {
     description: 'Asking you to review people you bought from or sold to',
   },
 
+  room_opened: {
+    type: 'room_opened',
+    category: 'economic',
+    emailEnabled: true,
+    emailDefaultOn: true,
+    canOptOut: true,
+    // Once per link, ever (first open only) — the cap guards a burst of new links.
+    frequencyCap: { maxPerHour: 10 },
+    batchable: false,
+    subject: data =>
+      (typeof data.title === 'string' && data.title) || 'Someone opened your investor room',
+    catVoice: false,
+    label: 'Investor room opened',
+    description: 'The first time each person opens a project’s investor room',
+  },
+
   goal_reached: {
     type: 'goal_reached',
     category: 'economic',

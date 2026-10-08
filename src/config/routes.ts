@@ -359,6 +359,8 @@ export const ROUTES = {
     CREATE: ENTITY_REGISTRY['project'].createPath,
     VIEW: (id: string) => `${ENTITY_REGISTRY['project'].publicBasePath}/${id}`,
     EDIT: (id: string) => `${ENTITY_REGISTRY['project'].createPath}?edit=${id}`,
+    /** The owner's side of the investor room (ADR-0012). */
+    ROOM: (id: string) => `${ENTITY_REGISTRY['project'].publicBasePath}/${id}/room`,
   },
 
   // Public entity routes
@@ -495,6 +497,11 @@ export const ROUTES = {
   // Takes the claim TOKEN, not the row id: the id addresses a claim for its
   // creator, the token is the credential that travels in the link.
   CLAIM: (claimToken: string) => `/claim/${encodeURIComponent(claimToken)}`,
+  /** An investor room, as the person it was sent to opens it (ADR-0012). */
+  ROOM: (token: string) => `/room/${encodeURIComponent(token)}`,
+  /** Something inside a room, followed through the room so the open is seen. */
+  ROOM_OPEN: (token: string, what: string, index?: number) =>
+    `/room/${encodeURIComponent(token)}/open/${what}${index === undefined ? '' : `?n=${index}`}`,
 
   // Timeline routes
   TIMELINE: '/timeline',

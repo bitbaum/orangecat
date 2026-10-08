@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
+import { isLinkPreviewBot } from '@/lib/link-preview-bots';
 import { getProfileClaimPreview } from '@/domain/profileClaims/service';
 import ClaimPageClient from '@/components/claim/ClaimPageClient';
 import { APP_NAME } from '@/config/brand';
@@ -26,8 +28,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function ClaimPage({ params }: PageProps) {
   const { token } = await params;
   // The one place a visit is counted — `generateMetadata` above deliberately
-  // does not, or every page load would register as two views.
-  const result = await getProfileClaimPreview(token, { countView: true });
+  // does not, or every page load would register as two views. Nor does a
+  // messenger drawing the link's preview card: otherwise "opened" is true the
+  // moment the creator sends the link.
+  const userAgent = (await headers()).get('user-agent');
+  const result = await getProfileClaimPreview(token, { countView: !isLinkPreviewBot(userAgent) });
 
   if (!result.ok) {
     notFound();
