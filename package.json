@@ -125,7 +125,7 @@
     "@bitbaum/geo-kit": "github:bitbaum/geo-kit#a337aec928cf7804fecf459c308d366b90f4b2fa",
     "@bitbaum/mail-kit": "^0.1.1",
     "@bitbaum/tax-model": "workspace:*",
-    "@bitbaum/whenkit": "github:bitbaum/whenkit#v0.3.0",
+    "@bitbaum/whenkit": "github:bitbaum/whenkit#v0.3.1",
     "@hono/node-server": "^2.1.1",
     "@hookform/resolvers": "^5.9.1",
     "@marsidev/react-turnstile": "^1.6.0",
