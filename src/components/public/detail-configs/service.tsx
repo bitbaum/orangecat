@@ -5,6 +5,7 @@ import { safeHrefs, hrefLabel } from '@/lib/security/safeHref';
 import type { EntityDetailConfig } from '@/components/public/PublicEntityDetailPage';
 import { ROUTES } from '@/config/routes';
 import { BookEntityButton } from '@/components/bookings/BookEntityButton';
+import { serviceBookingShape } from '@/domain/bookings/shape';
 import { hasAvailability, formatAvailabilityLines } from '@/lib/availability';
 import { formatDurationMinutes } from '@/utils/dates';
 import { SERVICE_LOCATION_TYPES } from '@/config/services';
@@ -144,7 +145,7 @@ export const serviceDetailConfig: EntityDetailConfig = {
               bookableTitle={(entity.title as string) || 'this service'}
               priceBtc={amount > 0 ? amount : undefined}
               priceCurrency={currency}
-              durationMinutes={durationMinutes}
+              shape={serviceBookingShape(entity)}
             />
           </CardContent>
         </Card>

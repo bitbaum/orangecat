@@ -45,6 +45,9 @@ importers:
       '@bitbaum/tax-model':
         specifier: workspace:*
         version: link:packages/tax-model
+      '@bitbaum/whenkit':
+        specifier: github:bitbaum/whenkit#v0.2.1
+        version: https://codeload.github.com/bitbaum/whenkit/tar.gz/ad4c1ed6f6a17dc049c6baa83407e75389f9c68e(react@19.2.8)
       '@hono/node-server':
         specifier: ^2.1.1
         version: 2.1.1(hono@4.13.5)
@@ -554,6 +557,13 @@ packages:
   '@bitbaum/mail-kit@0.1.1':
     resolution: {integrity: sha512-3JfaeuwkI+8TVGeSDrr8/esaWkv2d7UAcNg1Xu5HHu6k3cBzuSaLGhuzHp0KlAJgGa2QEQIqtE7W1+PosKFOjw==}
     engines: {node: '>=20'}
+
+  '@bitbaum/whenkit@https://codeload.github.com/bitbaum/whenkit/tar.gz/ad4c1ed6f6a17dc049c6baa83407e75389f9c68e':
+    resolution: {gitHosted: true, integrity: sha512-34F4WVwrEX9o6XQbbT77Pr3mrb1IVYPqGrlION76UKXbp+SXEIn9SiYX2PfeMuK/Cv6xMkMgTR04ig93yphVQQ==, tarball: https://codeload.github.com/bitbaum/whenkit/tar.gz/ad4c1ed6f6a17dc049c6baa83407e75389f9c68e}
+    version: 0.2.1
+    engines: {node: '>=20'}
+    peerDependencies:
+      react: '>=18'
 
   '@braintree/sanitize-url@7.1.2':
     resolution: {integrity: sha512-jigsZK+sMF/cuiB7sERuo9V7N9jx+dhmHHnQyDSVdpZwVutaBu7WvNYqMDLSgFgfB30n452TP3vjDAvFC973mA==}
@@ -6383,6 +6393,10 @@ snapshots:
   '@bitbaum/geo-kit@https://codeload.github.com/bitbaum/geo-kit/tar.gz/a337aec928cf7804fecf459c308d366b90f4b2fa': {}
 
   '@bitbaum/mail-kit@0.1.1': {}
+
+  '@bitbaum/whenkit@https://codeload.github.com/bitbaum/whenkit/tar.gz/ad4c1ed6f6a17dc049c6baa83407e75389f9c68e(react@19.2.8)':
+    dependencies:
+      react: 19.2.8
 
   '@braintree/sanitize-url@7.1.2': {}
 

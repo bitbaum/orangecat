@@ -11,6 +11,7 @@ import {
   ASSET_RENTAL_PERIOD_LABELS,
 } from '@/config/assets';
 import { BookEntityButton } from '@/components/bookings/BookEntityButton';
+import { assetBookingShape } from '@/domain/bookings/shape';
 import { AssetEventsCard } from './AssetEventsCard';
 
 /**
@@ -156,6 +157,7 @@ export const assetDetailConfig: EntityDetailConfig = {
                 label="Book this rental"
                 isSignedIn={isSignedIn}
                 bookableType="asset"
+                shape={assetBookingShape(entity)}
                 bookableId={entity.id as string}
                 bookableTitle={(entity.title as string) || 'this asset'}
                 priceBtc={
