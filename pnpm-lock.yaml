@@ -66,7 +66,7 @@ importers:
         version: 1.6.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       '@modelcontextprotocol/sdk':
         specifier: ^1.31.0
-        version: 1.32.1(supports-color@10.2.2)(zod@4.5.4)
+        version: 1.32.0(supports-color@10.2.2)(zod@4.5.4)
       '@noble/hashes':
         specifier: ^2.3.0
         version: 2.3.0
@@ -261,8 +261,8 @@ importers:
         version: 5.0.15(@types/react@19.2.18)(react@19.2.8)
     devDependencies:
       '@next/bundle-analyzer':
-        specifier: ^16.3.5
-        version: 16.3.5
+        specifier: ^16.3.8
+        version: 16.3.8
       '@playwright/mcp':
         specifier: ^0.0.80
         version: 0.0.80
@@ -1039,8 +1039,8 @@ packages:
   '@mermaid-js/parser@1.2.1':
     resolution: {integrity: sha512-n12NohV3mrUyUL2o93IgG/ifeW9FTyeJn3zDxkhwa8MJ9Fxg3HQMlA3RiGmD/3UnJvheztkjjQAjA2T4LmUcpw==}
 
-  '@modelcontextprotocol/sdk@1.32.1':
-    resolution: {integrity: sha512-2DdE+SJDtzLEEWzY1ZjY7Q+VcPhcV1KisD3zI4u0XZyktsjHum1mwbMI+JaulUBi2OZk+KJAi2uPXzxichPkdw==}
+  '@modelcontextprotocol/sdk@1.32.0':
+    resolution: {integrity: sha512-8BviX/hK4Gd2eL1KdTwm0gfl4d3wdoErW0Jd00h6nomUAtk6IJk5vwQJc6kfWtJTzN5OEV/lgIiJKI8fiDGAlA==}
     engines: {node: '>=18'}
     peerDependencies:
       '@cfworker/json-schema': ^4.1.1
@@ -1052,8 +1052,8 @@ packages:
   '@napi-rs/wasm-runtime@0.2.12':
     resolution: {integrity: sha512-ZVWUcfwY4E/yPitQJl481FjFo3K22D6qF0DuFH6Y/nbnE11GY5uguDxZMGXPQ8WQ0128MXQD7TnfHyK4oWoIJQ==}
 
-  '@next/bundle-analyzer@16.3.5':
-    resolution: {integrity: sha512-EbKlv1DkII5+BGl8qweNtrX+7Ot+QOCsSpUve43W8XsOQz7am0T45pCdm6W3kbBwWtEbIEKNhAknje1gjXyyLw==}
+  '@next/bundle-analyzer@16.3.8':
+    resolution: {integrity: sha512-8VBk5/pjANz7fxbQZrDwUMTAs598Vckb4PE7BSYrDIPthJskKCXEHOK+WEMgDD6X2xWlKjrXPo2r41N/G1azSw==}
 
   '@next/env@16.3.8':
     resolution: {integrity: sha512-Al9zqHVV7TJv0eFuOU4U7Lvv74PTih4Ch63sk2xCIpSTkE3udFnaOcnzP2lQVymiL7yS9Cj2iClUXlR3EQ5sEw==}
@@ -6722,7 +6722,7 @@ snapshots:
     dependencies:
       '@chevrotain/types': 11.1.2
 
-  '@modelcontextprotocol/sdk@1.32.1(supports-color@10.2.2)(zod@3.25.76)':
+  '@modelcontextprotocol/sdk@1.32.0(supports-color@10.2.2)(zod@3.25.76)':
     dependencies:
       '@hono/node-server': 2.1.1(hono@4.13.13)
       ajv: 8.18.0
@@ -6744,7 +6744,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@modelcontextprotocol/sdk@1.32.1(supports-color@10.2.2)(zod@4.5.4)':
+  '@modelcontextprotocol/sdk@1.32.0(supports-color@10.2.2)(zod@4.5.4)':
     dependencies:
       '@hono/node-server': 2.1.1(hono@4.13.13)
       ajv: 8.18.0
@@ -6773,7 +6773,7 @@ snapshots:
       '@tybys/wasm-util': 0.10.3
     optional: true
 
-  '@next/bundle-analyzer@16.3.5':
+  '@next/bundle-analyzer@16.3.8':
     dependencies:
       webpack-bundle-analyzer: 4.10.1
     transitivePeerDependencies:
@@ -11179,7 +11179,7 @@ snapshots:
       '@babel/plugin-transform-typescript': 7.28.5(@babel/core@7.29.7(supports-color@10.2.2))(supports-color@10.2.2)
       '@babel/preset-typescript': 7.28.5(@babel/core@7.29.7(supports-color@10.2.2))(supports-color@10.2.2)
       '@dotenvx/dotenvx': 1.51.1
-      '@modelcontextprotocol/sdk': 1.32.1(supports-color@10.2.2)(zod@3.25.76)
+      '@modelcontextprotocol/sdk': 1.32.0(supports-color@10.2.2)(zod@3.25.76)
       '@types/validate-npm-package-name': 4.0.2
       browserslist: 4.28.8
       cn: 0.2.5
