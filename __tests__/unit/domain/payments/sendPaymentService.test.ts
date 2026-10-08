@@ -29,7 +29,11 @@ vi.mock('@/domain/payments/invoiceGenerationService', () => ({ generateInvoice: 
 vi.mock('@/lib/nostr/nwc', () => ({ NWCClient: vi.fn() }));
 vi.mock('@/lib/api/auditLog', () => ({
   auditLog: vi.fn(),
-  AUDIT_ACTIONS: { PAYMENT_SENT: 'PAYMENT_SENT', PAYMENT_SEND_FAILED: 'PAYMENT_SEND_FAILED' },
+  AUDIT_ACTIONS: {
+    PAYMENT_SENT: 'PAYMENT_SENT',
+    PAYMENT_SEND_FAILED: 'PAYMENT_SEND_FAILED',
+    PAYMENT_SEND_UNCONFIRMED: 'PAYMENT_SEND_UNCONFIRMED',
+  },
 }));
 
 const adminMock = getAdminClient as Mock;
@@ -280,6 +284,19 @@ describe('the trace a send leaves', () => {
       }),
       expect.anything()
     );
+  });
+
+  it('records a timed-out send as unconfirmed — the record may no more say "failed" than the screen', async () => {
+    mockAdmin({ nwc: 'enc' });
+    payInvoiceSpy.mockRejectedValue(new Error('NWC request timed out: pay_invoice'));
+    const result = await payInvoice('user-1', MAINNET_INVOICE);
+
+    expect(result).toMatchObject({ ok: false, reason: 'payment_unconfirmed' });
+    expect(auditLogMock).toHaveBeenCalledTimes(1);
+    const [entry] = auditLogMock.mock.calls[0];
+    expect(entry).toMatchObject({ action: 'PAYMENT_SEND_UNCONFIRMED', userId: 'user-1' });
+    // Unknown is its own state: neither false (it may have paid) nor true.
+    expect(entry.success).toBeNull();
   });
 
   it('writes nothing when the request is refused before any wallet is contacted', async () => {

@@ -68,6 +68,8 @@ export const AUDIT_ACTIONS = {
   // Payments — money leaving a user's own wallet through our server
   PAYMENT_SENT: 'PAYMENT_SENT',
   PAYMENT_SEND_FAILED: 'PAYMENT_SEND_FAILED',
+  /** The wallet did not answer in time — the money may still have moved. */
+  PAYMENT_SEND_UNCONFIRMED: 'PAYMENT_SEND_UNCONFIRMED',
 
   // Admin
   ADMIN_ACTION: 'ADMIN_ACTION',
@@ -95,7 +97,8 @@ interface AuditLogEntry {
   metadata?: Record<string, unknown>;
   ipAddress?: string;
   userAgent?: string;
-  success?: boolean;
+  /** Omitted means it succeeded. `null` means nobody knows — kept as null, never read as either. */
+  success?: boolean | null;
   errorMessage?: string;
 }
 
@@ -132,7 +135,8 @@ export async function auditLog(entry: AuditLogEntry, client?: AnySupabaseClient)
       metadata: entry.metadata || {},
       ip_address: entry.ipAddress,
       user_agent: entry.userAgent,
-      success: entry.success ?? true,
+      // Not `??`: that would turn an explicit null ("unknown") into true.
+      success: entry.success === undefined ? true : entry.success,
       error_message: entry.errorMessage,
       created_at: new Date().toISOString(),
     });
