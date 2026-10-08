@@ -53,8 +53,8 @@ importers:
         specifier: workspace:*
         version: link:packages/tax-model
       '@bitbaum/whenkit':
-        specifier: github:bitbaum/whenkit#v0.2.1
-        version: https://codeload.github.com/bitbaum/whenkit/tar.gz/ad4c1ed6f6a17dc049c6baa83407e75389f9c68e(react@19.2.8)
+        specifier: github:bitbaum/whenkit#v0.3.0
+        version: https://codeload.github.com/bitbaum/whenkit/tar.gz/0173ac305ccafc754008ad9ace85a6aa6d30a218(react@19.2.8)
       '@hono/node-server':
         specifier: ^2.1.1
         version: 2.1.1(hono@4.13.13)
@@ -565,9 +565,9 @@ packages:
     resolution: {integrity: sha512-3JfaeuwkI+8TVGeSDrr8/esaWkv2d7UAcNg1Xu5HHu6k3cBzuSaLGhuzHp0KlAJgGa2QEQIqtE7W1+PosKFOjw==}
     engines: {node: '>=20'}
 
-  '@bitbaum/whenkit@https://codeload.github.com/bitbaum/whenkit/tar.gz/ad4c1ed6f6a17dc049c6baa83407e75389f9c68e':
-    resolution: {gitHosted: true, integrity: sha512-34F4WVwrEX9o6XQbbT77Pr3mrb1IVYPqGrlION76UKXbp+SXEIn9SiYX2PfeMuK/Cv6xMkMgTR04ig93yphVQQ==, tarball: https://codeload.github.com/bitbaum/whenkit/tar.gz/ad4c1ed6f6a17dc049c6baa83407e75389f9c68e}
-    version: 0.2.1
+  '@bitbaum/whenkit@https://codeload.github.com/bitbaum/whenkit/tar.gz/0173ac305ccafc754008ad9ace85a6aa6d30a218':
+    resolution: {gitHosted: true, integrity: sha512-Tt/dsr+/phtTwzNO2vxSUvo/K+0pPx/4z5Y1ez3JSQJBXnNPAIWhfIX/RlVGjLk/JJCno/2VQzPt4GpSuDoucQ==, tarball: https://codeload.github.com/bitbaum/whenkit/tar.gz/0173ac305ccafc754008ad9ace85a6aa6d30a218}
+    version: 0.3.0
     engines: {node: '>=20'}
     peerDependencies:
       react: '>=18'
@@ -6402,7 +6402,7 @@ snapshots:
 
   '@bitbaum/mail-kit@0.1.1': {}
 
-  '@bitbaum/whenkit@https://codeload.github.com/bitbaum/whenkit/tar.gz/ad4c1ed6f6a17dc049c6baa83407e75389f9c68e(react@19.2.8)':
+  '@bitbaum/whenkit@https://codeload.github.com/bitbaum/whenkit/tar.gz/0173ac305ccafc754008ad9ace85a6aa6d30a218(react@19.2.8)':
     dependencies:
       react: 19.2.8
 
