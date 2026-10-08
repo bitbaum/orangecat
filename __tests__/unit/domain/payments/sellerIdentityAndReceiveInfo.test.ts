@@ -15,8 +15,8 @@
 import {
   resolveSellerReceiveInfo,
   getSellerUserId,
-  materializeOnchainAddress,
 } from '@/domain/payments/walletResolutionService';
+import { materializeOnchainAddress } from '@/domain/payments/onchainAddressMaterialization';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { getEntityMetadata } from '@/config/entity-registry';
 import { createFakeSupabase, type Row } from '../../../../test-utils/fakeSupabase';

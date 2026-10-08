@@ -19,6 +19,8 @@ No fiat, privacy-coin, or smart-contract controls are presented as if they work 
 - [ ] Consistent share controls and link previews across public entity pages.
 - [x] Open accounting: a wallet can publish its balance, its transactions, and the owner’s note on each one — for owners who turn it on.
 - [x] A transparency score computed from what is observable in that ledger, never from what anyone claims about themselves.
+- [x] Decide where money paid to you goes, in order — a share for taxes first, then a debt, rent or insurance — with each payment landing in the first wallet still behind. {#money-routes}
+- [ ] The tax line suggested from Solon's tax figures for your own commune, instead of a percentage you type.
 
 ### Events, end to end {#events}
 

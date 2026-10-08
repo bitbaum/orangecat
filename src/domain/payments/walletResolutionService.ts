@@ -12,7 +12,6 @@ import { DATABASE_TABLES } from '@/config/database-tables';
 import { getEntityMetadata, type EntityType } from '@/config/entity-registry';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { decrypt } from './encryptionService';
-import { deriveOnchainAddress } from './addressDerivation';
 import { detectWalletType } from '@/types/wallet';
 import { nwcResolved, type ResolvedWallet } from './types';
 import { logger } from '@/utils/logger';
@@ -274,46 +273,6 @@ function pickMethodFromWallet(wallet: WalletRow): ResolvedWallet | null {
   }
 
   return onchainResolution(wallet.id, wallet.address_or_xpub);
-}
-
-/**
- * Turn a resolved on-chain wallet into one carrying a concrete, payable,
- * NEVER-REUSED address. Call this at invoice creation — and only there.
- *
- * For an xpub wallet this atomically claims the next derivation index
- * (`allocate_derivation_index`, service-role RPC) and derives external-chain
- * address 0/index. Uniqueness per intent is what makes on-chain settlement
- * detection sound: (address, amount, window) matching can only be trusted when
- * nobody else ever pays that address — the reused-address false-settle of
- * 2026-07-31 is the counterexample.
- *
- * Throws rather than degrades: an invoice we cannot mint an address for must
- * fail loudly, not fall back to something unpayable or ambiguous.
- */
-export async function materializeOnchainAddress(wallet: ResolvedWallet): Promise<ResolvedWallet> {
-  if (wallet.method !== 'onchain' || wallet.onchain_address) {
-    return wallet;
-  }
-  if (!wallet.onchain_xpub) {
-    throw new Error('On-chain wallet has neither an address nor an extended public key');
-  }
-
-  const admin = getAdminClient() as unknown as SupabaseClient;
-  const { data: index, error } = await admin.rpc('allocate_derivation_index', {
-    p_wallet_id: wallet.wallet_id,
-  });
-  if (error || typeof index !== 'number') {
-    logger.error('Failed to allocate derivation index', { walletId: wallet.wallet_id, error });
-    throw new Error('Failed to allocate a receiving address');
-  }
-
-  const address = deriveOnchainAddress(wallet.onchain_xpub, index);
-  logger.info(
-    'Derived per-invoice on-chain address',
-    { walletId: wallet.wallet_id, index },
-    'addressDerivation'
-  );
-  return { ...wallet, onchain_address: address };
 }
 
 /**
