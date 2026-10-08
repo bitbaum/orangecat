@@ -88,8 +88,14 @@ export async function initiatePayment(
   const description = `${meta.name}: ${entityTitle}`;
   const invoice = await generateInvoice(wallet, amountBtc, description);
 
-  // 6. Create payment intent
-  const { data: paymentIntent, error: piError } = await supabase
+  // 6. Create payment intent.
+  //
+  // Money records are written by the server only. The buyer's own session
+  // checked visibility above; everything written below — buyer, seller, amount,
+  // status — comes from this server's own resolution, so it goes through the
+  // server's client too, like every other payment path in this file.
+  const admin = getAdminClient() as unknown as SupabaseClient;
+  const { data: paymentIntent, error: piError } = await admin
     .from(DATABASE_TABLES.PAYMENT_INTENTS)
     .insert({
       buyer_id: buyerId,
@@ -124,7 +130,7 @@ export async function initiatePayment(
   let contribution;
 
   if (meta.paymentPattern === 'fixed_price') {
-    const { data, error } = await supabase
+    const { data, error } = await admin
       .from(DATABASE_TABLES.ORDERS)
       .insert({
         payment_intent_id: paymentIntent.id,
@@ -147,7 +153,7 @@ export async function initiatePayment(
     }
     order = data;
   } else if (meta.paymentPattern === 'contribution') {
-    const { data, error } = await supabase
+    const { data, error } = await admin
       .from(DATABASE_TABLES.CONTRIBUTIONS)
       .insert({
         payment_intent_id: paymentIntent.id,

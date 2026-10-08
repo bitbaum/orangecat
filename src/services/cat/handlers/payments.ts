@@ -11,6 +11,7 @@ import { encrypt, isEncryptionConfigured } from '@/domain/payments/encryptionSer
 import { classifyWalletInput, validateAddressOrXpub } from '@/types/wallet';
 import { isValidLightningAddress } from '@/lib/validation/base';
 import { getAdminClient } from '@/lib/supabase/admin';
+import { logger } from '@/utils/logger';
 import type { ActionHandler } from './types';
 
 export const paymentHandlers: Record<string, ActionHandler> = {
@@ -364,8 +365,9 @@ export const paymentHandlers: Record<string, ActionHandler> = {
         projectId
       );
 
-      // 7. Record payment intent as paid
-      const { data: pi } = await supabase
+      // 7. Record payment intent as paid — through the admin client: money
+      // records are written by the server only (see paymentInitiation step 6).
+      const { data: pi, error: piError } = await admin
         .from(DATABASE_TABLES.PAYMENT_INTENTS)
         .insert({
           buyer_id: userId,
@@ -374,6 +376,10 @@ export const paymentHandlers: Record<string, ActionHandler> = {
           entity_id: projectId,
           amount_btc: amountBtc,
           payment_method: invoice.method,
+          // Funding a project is support, not a purchase (the column defaults
+          // to 'purchase'); initiatePayment labels the same act 'support'.
+          intent_kind: 'support',
+          receiving_wallet_id: projectWallet.wallet_id,
           bolt11: invoice.bolt11,
           payment_hash: payResult.payment_hash ?? null,
           onchain_address: null,
@@ -384,17 +390,37 @@ export const paymentHandlers: Record<string, ActionHandler> = {
         .select('id')
         .single();
 
-      // 8. Record contribution (fire-and-forget; payment is already confirmed)
+      // The money has already moved, so a failed record must not fail the
+      // reply — but it must not vanish either: it is the only trace of a real
+      // payment.
+      if (piError || !pi) {
+        logger.error(
+          'Cat funded a project but the payment record was not written',
+          { userId, projectId, amountBtc, paymentHash: payResult.payment_hash, error: piError },
+          'CatPayments'
+        );
+      }
+
+      // 8. Record contribution (payment is already confirmed)
       if (pi) {
-        await supabase.from(DATABASE_TABLES.CONTRIBUTIONS).insert({
-          payment_intent_id: pi.id,
-          contributor_id: userId,
-          entity_type: 'project',
-          entity_id: projectId,
-          amount_btc: amountBtc,
-          message: message ?? null,
-          is_anonymous: false,
-        });
+        const { error: contributionError } = await admin
+          .from(DATABASE_TABLES.CONTRIBUTIONS)
+          .insert({
+            payment_intent_id: pi.id,
+            contributor_id: userId,
+            entity_type: 'project',
+            entity_id: projectId,
+            amount_btc: amountBtc,
+            message: message ?? null,
+            is_anonymous: false,
+          });
+        if (contributionError) {
+          logger.error(
+            'Cat funded a project but the contribution was not recorded',
+            { userId, projectId, paymentIntentId: pi.id, error: contributionError },
+            'CatPayments'
+          );
+        }
       }
 
       const projectTitle = project?.title ?? 'the project';
