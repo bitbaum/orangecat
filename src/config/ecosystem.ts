@@ -47,6 +47,12 @@ export const ECOSYSTEM = {
     title: 'bitbaum',
     siteUrl: 'https://bitbaum.orangecat.ch/',
     hireUrl: 'https://bitbaum.orangecat.ch/hire/',
+    /**
+     * Partners live on bitbaum: independent engineers the studio approves, who
+     * watch over Loki's work. Its directory is the one list — OrangeCat's
+     * /partners redirects here rather than keeping a second definition.
+     */
+    partnersUrl: 'https://bitbaum.orangecat.ch/partners/',
   },
   support: {
     // Was orangecat@getalby.com, which 404s — the Alby account behind it no
