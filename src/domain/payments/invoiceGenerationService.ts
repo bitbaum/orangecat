@@ -8,7 +8,7 @@
  */
 
 import { NWCClient } from '@/lib/nostr/nwc';
-import { materializeOnchainAddress } from './walletResolutionService';
+import { materializeOnchainAddress } from './onchainAddressMaterialization';
 import type { PaymentMethod, ResolvedWallet } from './types';
 import { logger } from '@/utils/logger';
 import { bitcoinToSats } from '@/services/currency';

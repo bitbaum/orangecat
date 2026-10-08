@@ -11,10 +11,8 @@
  * recipient wallet's gap limit.
  */
 
-import {
-  resolveUserWallet,
-  materializeOnchainAddress,
-} from '@/domain/payments/walletResolutionService';
+import { resolveUserWallet } from '@/domain/payments/walletResolutionService';
+import { materializeOnchainAddress } from '@/domain/payments/onchainAddressMaterialization';
 import type { ResolvedWallet } from '@/domain/payments/types';
 import type { SupabaseClient } from '@supabase/supabase-js';
 

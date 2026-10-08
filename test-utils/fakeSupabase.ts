@@ -144,6 +144,21 @@ export function createFakeSupabase(
         predicates.push(r => vals.includes(r[col] as never));
         return builder;
       },
+      // Range filter as Postgres applies it: a NULL never satisfies it. Values
+      // compare as strings when both are strings (ISO timestamps sort that way),
+      // otherwise as numbers.
+      gte: (col: string, val: unknown) => {
+        predicates.push(r => {
+          const v = r[col];
+          if (v === null || v === undefined) {
+            return false;
+          }
+          return typeof v === 'string' && typeof val === 'string'
+            ? v >= val
+            : Number(v) >= Number(val);
+        });
+        return builder;
+      },
       order: (col: string, opts?: { ascending?: boolean }) => {
         orders.push([col, opts?.ascending !== false]);
         return builder;
