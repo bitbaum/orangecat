@@ -14,7 +14,7 @@ export const metadata: Metadata = {
  * /company/careers — the ways in. It used to list four full-time openings with
  * salaries, health cover and unlimited PTO, none of which existed, under
  * buttons that went nowhere. The true doors are the open repository, the
- * partners' guild and backing in Bitcoin, so those are what it lists.
+ * partners (on bitbaum) and backing in Bitcoin, so those are what it lists.
  */
 export default function CareersPage() {
   const ways = [
@@ -30,7 +30,7 @@ export default function CareersPage() {
       icon: <Handshake className="w-6 h-6" />,
       title: 'Build for others as a partner',
       description:
-        'Partners are independent builders in one guild, admitted by its members, who take on projects at their own price. The guild is not founded yet; the partners page shows how the first partner starts it.',
+        'Partners are independent engineers who watch over projects built with Loki and move them forward, at their own price. You apply on bitbaum; the studio approves who is listed.',
       href: ROUTES.PARTNERS,
       label: 'See the partners',
     },
