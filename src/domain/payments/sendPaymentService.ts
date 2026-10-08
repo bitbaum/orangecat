@@ -160,22 +160,26 @@ async function payOverNwc(
     return { ok: true, paymentHash: result.payment_hash, amountBtc, destination };
   } catch (error) {
     logger.warn('Lightning send failed', { error: String(error) }, 'SendPayment');
+    // A timeout is not a "no". The NWC request gives up after 30s while the
+    // wallet and the network may still be paying; calling that a failure sent
+    // people straight back to the filled-in form, and a retry mints a NEW
+    // invoice — a second real payment (audit, 2026-10-07). The record must not
+    // say "failed" either, so it is classified before it is written.
+    const unconfirmed = isTimeout(error);
     await auditLog(
       {
-        action: AUDIT_ACTIONS.PAYMENT_SEND_FAILED,
+        action: unconfirmed
+          ? AUDIT_ACTIONS.PAYMENT_SEND_UNCONFIRMED
+          : AUDIT_ACTIONS.PAYMENT_SEND_FAILED,
         userId,
         entityType: 'payment',
         metadata: { rail: 'lightning', amountBtc, destination },
-        success: false,
+        success: unconfirmed ? null : false,
         errorMessage: String(error).slice(0, 500),
       },
       auditClient
     );
-    // A timeout is not a "no". The NWC request gives up after 30s while the
-    // wallet and the network may still be paying; calling that a failure sent
-    // people straight back to the filled-in form, and a retry mints a NEW
-    // invoice — a second real payment (audit, 2026-10-07).
-    if (isTimeout(error)) {
+    if (unconfirmed) {
       return fail(
         'payment_unconfirmed',
         "We couldn't confirm this payment in time — it may still go through. Check your wallet's history before trying again."

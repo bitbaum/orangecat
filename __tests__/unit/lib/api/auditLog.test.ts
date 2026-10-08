@@ -53,6 +53,21 @@ describe('auditLog', () => {
     expect(insert).toHaveBeenCalledTimes(1);
   });
 
+  it('keeps an explicit null as unknown — it must not become "succeeded"', async () => {
+    const { client, insert } = clientRecordingInserts();
+    await auditLog(
+      { action: AUDIT_ACTIONS.PAYMENT_SEND_UNCONFIRMED, userId: 'u1', success: null },
+      client as never
+    );
+    expect(insert).toHaveBeenCalledWith(expect.objectContaining({ success: null }));
+  });
+
+  it('still records an omitted outcome as a success', async () => {
+    const { client, insert } = clientRecordingInserts();
+    await auditLog({ action: AUDIT_ACTIONS.WALLET_CREATED, userId: 'u1' }, client as never);
+    expect(insert).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+  });
+
   it('never throws, even when the write itself blows up', async () => {
     const client = {
       from: vi.fn(() => {

@@ -9,6 +9,12 @@ reads, and [orangecat.ch/changelog](https://orangecat.ch/changelog) renders
 it from there. One `## YYYY-MM-DD` heading per day; bullets under it travel
 to the map, sub-bullets stay here for the human reader.
 
+## 2026-10-08
+
+### Fixed
+
+- **A payment that timed out is no longer recorded as failed.** When your wallet doesn't answer in time, the Send screen already tells you the payment may still go through. OrangeCat's private record of the send now says the same: "unconfirmed", not "failed", because the money may have moved.
+
 ## 2026-10-07
 
 ### Added
