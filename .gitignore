@@ -3,6 +3,7 @@
 # Dependencies
 /node_modules
 mcp-servers/node_modules
+packages/*/node_modules
 /.pnp
 .pnp.js
 .yarn/install-state.gz

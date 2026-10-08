@@ -13,6 +13,7 @@ import { resolveOpenTarget } from '@/domain/projectRooms/content';
 import { getRoomByToken, recordRoomOpen } from '@/domain/projectRooms/open';
 import { getLokiProjectLink } from '@/services/loki/project-link';
 import { countsAsOpen } from '@/domain/projectRooms/counts';
+import { loadRoomDeck } from '@/domain/projectRooms/deck';
 
 interface RouteContext {
   params: Promise<{ token: string; what: string }>;
@@ -30,6 +31,12 @@ export async function GET(request: NextRequest, context: RouteContext) {
   const room = await getRoomByToken(token);
   if (!room.ok) {
     return back;
+  }
+
+  // A deck made in the room is presented in the room; its page records the
+  // open itself (so a deep link to slide 3 counts too) — no record here.
+  if (what === 'deck' && (await loadRoomDeck(room.data.project.id))) {
+    return NextResponse.redirect(new URL(ROUTES.ROOM_DECK(token), request.url));
   }
 
   const n = request.nextUrl.searchParams.get('n');

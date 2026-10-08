@@ -33,6 +33,7 @@ interface RoomViewProps {
   ownerName: string;
   isShared: boolean;
   hasBuildRecord: boolean;
+  hasDeck: boolean;
 }
 
 function formatAsOf(date: string): string {
@@ -57,6 +58,7 @@ export function RoomView({
   ownerName,
   isShared,
   hasBuildRecord,
+  hasDeck,
 }: RoomViewProps) {
   const { content } = room;
   const { fleet, pace, facts } = evidence;
@@ -80,7 +82,13 @@ export function RoomView({
   return (
     <div className="min-h-[calc(100svh-4rem)] bg-surface-page">
       <article className="mx-auto max-w-3xl px-4 py-10 sm:px-6 sm:py-16">
-        <RoomHero token={token} room={room} isShared={isShared} hasBuildRecord={hasBuildRecord} />
+        <RoomHero
+          token={token}
+          room={room}
+          isShared={isShared}
+          hasBuildRecord={hasBuildRecord}
+          hasDeck={hasDeck}
+        />
         <RoomFacts facts={facts} />
 
         {index.length > 1 && (

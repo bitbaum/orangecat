@@ -225,6 +225,7 @@ export const API_ROUTES = {
     FAVORITES: `${ENTITY_REGISTRY['project'].apiEndpoint}/favorites`,
     ROOM: (id: string) => `${ENTITY_REGISTRY['project'].apiEndpoint}/${id}/room`,
     ROOM_LINKS: (id: string) => `${ENTITY_REGISTRY['project'].apiEndpoint}/${id}/room/links`,
+    ROOM_DECK: (id: string) => `${ENTITY_REGISTRY['project'].apiEndpoint}/${id}/room/deck`,
     ROOM_LINK: (id: string, linkId: string) =>
       `${ENTITY_REGISTRY['project'].apiEndpoint}/${id}/room/links/${linkId}`,
   },
