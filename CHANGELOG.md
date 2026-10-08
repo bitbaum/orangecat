@@ -11,6 +11,10 @@ to the map, sub-bullets stay here for the human reader.
 
 ## 2026-10-08
 
+### Changed
+
+- **Partners now have one home: bitbaum.** OrangeCat's partners page listed an OrangeCat guild that was never founded, so it showed an empty list while bitbaum had the real one. It now takes you straight to [bitbaum's partners](https://bitbaum.orangecat.ch/partners/), where independent engineers apply and the studio approves who is listed.
+
 ### Added
 
 - **An investor room on every project.** The owner of a project now has a private page for the investors they choose: a headline, the story in sections (the problem, what was built, proof, market, business model, team, roadmap, the ask), dated numbers with how to check each, the deck, documents, and the project's build record from Loki. Each person gets their own link — no account, no password — that says who it is for, and the owner sees, per person, when they opened the room and what they opened inside it. A link can be switched off at any time; its history stays. Open it with "Investor room" in the bar at the top of your project's page. {#room-links}

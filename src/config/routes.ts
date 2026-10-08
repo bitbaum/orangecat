@@ -323,7 +323,7 @@ export const ROUTES = {
   HOW_IT_WORKS: '/how-it-works',
   /** The map: every capability in the visitor's words, with a Start on each. */
   WHAT_YOU_CAN_DO: '/what-you-can-do',
-  /** The studio / a partner / yourself, and the partners listed from the guild. */
+  /** Redirects to bitbaum's partner directory — partners live there (ECOSYSTEM.studio.partnersUrl). */
   PARTNERS: '/partners',
   BLOG: '/blog',
   RSS: '/rss.xml',
