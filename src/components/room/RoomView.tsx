@@ -12,6 +12,7 @@ import Button from '@/components/ui/Button';
 import { roomParagraphs } from '@/config/project-room';
 import { ROUTES } from '@/config/routes';
 import { APP_NAME } from '@/config/brand';
+import { APP_LOCALE } from '@/utils/locale';
 import { visibleSections } from '@/domain/projectRooms/content';
 import type { VisitorRoom } from '@/domain/projectRooms/types';
 
@@ -32,7 +33,8 @@ function hostOf(url: string): string {
 }
 
 function formatAsOf(date: string): string {
-  return new Date(`${date}T12:00:00Z`).toLocaleDateString('en-GB', {
+  // Noon UTC, so a date-only value is the same day everywhere.
+  return new Date(`${date}T12:00:00Z`).toLocaleDateString(APP_LOCALE, {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
