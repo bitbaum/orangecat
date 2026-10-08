@@ -145,14 +145,21 @@ jobs:
           else
             # Scheduled reconciliation/manual recovery uses the latest verified
             # main SHA. Re-use its CI artifact when available instead of rebuilding.
+            #
+            # Ask for a successful run OF THE TIP, not for "the newest successful
+            # run" and then compare. Every merge gets two CI runs for one commit
+            # and one of them is cancelled; the newest-run question also depends
+            # on the order the run list happens to come back in. Asked that way,
+            # this refused a tip that had a green run (2026-10-07, four times in
+            # one evening), leaving a red CD run behind each merge.
+            main_sha=$(gh_api "repos/$REPO/commits/main" --jq '.sha')
             run=$(gh_api \
-              "repos/$REPO/actions/workflows/ci.yml/runs?branch=main&status=success&per_page=1" \
+              "repos/$REPO/actions/workflows/ci.yml/runs?branch=main&head_sha=$main_sha&status=success&per_page=1" \
               --jq '.workflow_runs[0] | [.head_sha, .head_branch, .conclusion, (.id | tostring)] | @tsv')
             IFS=$'\t' read -r sha branch conclusion run_id <<< "$run"
-            main_sha=$(gh_api "repos/$REPO/commits/main" --jq '.sha')
-            if [ -z "$sha" ] || [ "$branch" != 'main' ] \
-               || [ "$conclusion" != 'success' ] || [ "$sha" != "$main_sha" ]; then
-              echo '::error::No successful CI run verifies the current main SHA; refusing to deploy'
+            if [ -z "$main_sha" ] || [ "$sha" != "$main_sha" ] || [ "$branch" != 'main' ] \
+               || [ "$conclusion" != 'success' ]; then
+              echo "::error::No successful CI run verifies the current main SHA (${main_sha:-unknown}); refusing to deploy"
               exit 1
             fi
             # Reconciliation is the recovery path, so an expired/missing
