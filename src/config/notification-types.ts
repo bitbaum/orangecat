@@ -38,6 +38,8 @@ export const IN_APP_NOTIFICATION_TYPES = [
   'crew',
   // Someone invited you to a group; the group page asks you to accept.
   'group_invite',
+  // Someone opened a project's investor room for the first time (ADR-0012).
+  'room_opened',
 ] as const;
 
 export type InAppNotificationType = (typeof IN_APP_NOTIFICATION_TYPES)[number];

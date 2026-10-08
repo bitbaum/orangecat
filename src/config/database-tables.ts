@@ -34,6 +34,10 @@ export const DATABASE_TABLES = {
   PROJECT_SUPPORT: 'project_support',
   PROJECT_SUPPORT_STATS: 'project_support_stats',
   PROJECT_DRAFTS: 'project_drafts',
+  // The investor room (ADR-0012) — service-role only.
+  PROJECT_ROOMS: 'project_rooms',
+  PROJECT_ROOM_LINKS: 'project_room_links',
+  PROJECT_ROOM_OPENS: 'project_room_opens',
 
   // Groups
   GROUPS: 'groups',

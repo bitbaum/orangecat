@@ -4,6 +4,7 @@
  * Extracted from PublicEntityDetailPage.tsx to keep it under 300 lines.
  * Rendered only when the viewer owns the entity.
  */
+import type { ReactNode } from 'react';
 import { Pencil } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { WalletVisibilityToggle } from '@/components/wallets/WalletVisibilityToggle';
@@ -21,8 +22,11 @@ export function PublicEntityOwnerBar({
   entityType,
   entityId,
   entityTitle,
+  ownerActions,
 }: {
   entityTitle: string;
+  /** Owner-only actions a type adds beside Edit, e.g. a project's investor room. */
+  ownerActions?: ReactNode;
   isOwnerPreview: boolean;
   /** Human label for the entity type, e.g. meta.name ("Product"). */
   entityName: string;
@@ -51,6 +55,7 @@ export function PublicEntityOwnerBar({
             {isOwnerPreview && entityStatus === 'draft' && (
               <PublishNowButton entityType={entityType} entityId={entityId} />
             )}
+            {ownerActions}
             <Button href={editHref} variant="outline" size="sm" className="gap-1.5">
               <Pencil className="h-3.5 w-3.5" />
               Edit

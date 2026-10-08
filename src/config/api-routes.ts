@@ -223,6 +223,10 @@ export const API_ROUTES = {
     UPDATES: (id: string) => `${ENTITY_REGISTRY['project'].apiEndpoint}/${id}/updates`,
     FAVORITE: (id: string) => `${ENTITY_REGISTRY['project'].apiEndpoint}/${id}/favorite`,
     FAVORITES: `${ENTITY_REGISTRY['project'].apiEndpoint}/favorites`,
+    ROOM: (id: string) => `${ENTITY_REGISTRY['project'].apiEndpoint}/${id}/room`,
+    ROOM_LINKS: (id: string) => `${ENTITY_REGISTRY['project'].apiEndpoint}/${id}/room/links`,
+    ROOM_LINK: (id: string, linkId: string) =>
+      `${ENTITY_REGISTRY['project'].apiEndpoint}/${id}/room/links/${linkId}`,
   },
   PROJECT_ROLES: {
     BASE: '/api/project-roles',
