@@ -122,7 +122,12 @@ describe('routeVoiceIntent', () => {
     modelReplies({ entityType: 'product', description: 'a bike', confidence: 0.9 });
     await routeVoiceIntent(SENTENCE);
 
-    const body = JSON.parse((fetchMock.mock.calls[0][1] as { body: string }).body);
+    // The first COMPLETION: building the serving chain first looks up
+    // OpenRouter's free-model catalogue, which carries no body.
+    const [, init] = fetchMock.mock.calls.find(([url]) =>
+      String(url).endsWith('/chat/completions')
+    ) as [unknown, { body: string }];
+    const body = JSON.parse(init.body);
     expect(body.temperature).toBeLessThanOrEqual(0.2);
     // This used to assert response_format: json_object on every call. Groq's
     // gpt-oss-120b — the leader here — answers 400 json_validate_failed for

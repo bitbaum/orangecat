@@ -27,9 +27,15 @@ import { servingChain } from '@/services/cat/provider-catalog';
  * starts rejecting the flag costs one failure rather than every call until
  * somebody reads the logs.
  */
-// Seeded with the one refusal measured live; any other model that refuses the
-// flag is learned on first contact by the onLinkFailure hook below.
-const JSON_MODE_UNSUPPORTED = new Set<string>(['groq:openai/gpt-oss-120b']);
+// Seeded with the refusal measured live (gpt-oss-120b) and its sibling the
+// serving chain now leads with (gpt-oss-20b) — same family, same json_validate
+// path, so the flag is withheld rather than spent on a near-certain 400 in
+// front of a user. Any other refusal is learned on first contact by the
+// onLinkFailure hook below.
+const JSON_MODE_UNSUPPORTED = new Set<string>([
+  'groq:openai/gpt-oss-120b',
+  'groq:openai/gpt-oss-20b',
+]);
 
 function linkKey(link: Link): string {
   return `${link.provider.id}:${link.model}`;
