@@ -31,7 +31,8 @@ overrides:
   # here as well as in package.json so a transitive copy cannot stay behind.
   '@modelcontextprotocol/sdk@1': ^1.31.0
   '@babel/core': ^7.29.6
-  hono: ^4.12.27
+  # 4.13.7: hono/jsx left plain strings unescaped in boundary components (2026-10).
+  hono: ^4.13.7
   js-yaml: ^4.3.2
   # qs: first_patched_version, bounded to its major (2026-09-25).
   qs@6: ^6.16.0
@@ -41,13 +42,28 @@ overrides:
   tar: ^7.5.8
   postcss: ^8.5.10
   uuid: ^14.0.0
-  shell-quote: ^1.8.4
+  # 1.11.0: quote() command injection via a line terminator (critical, 2026-10).
+  shell-quote@1: ^1.11.0
   # Transitive-only advisories, published 2026-10 (pnpm audit --prod blocks on
   # them). First patched version, bounded to its major like qs.
   # proxy-addr: IPv4-mapped IP spoofing (critical), via @modelcontextprotocol/sdk > express.
   proxy-addr@2: ^2.0.8
   # source-map-js: event-loop DoS (high), via postcss.
   source-map-js@1: ^1.2.2
+  # Dependabot alerts open on 2026-10-08, each at its first patched version and
+  # bounded to the major the tree already uses (an unbounded `>=` once shipped a
+  # surprise major). Dependabot cannot open these itself: they are transitive.
+  undici@7: ^7.29.1 # TLS certificate validation bypass (high) + 5 lower, dev-only via jsdom
+  brace-expansion@1: ^1.1.21 # quadratic expansion of `{a},b}` (the @5 pin above does not reach major 1)
+  fast-uri@3: ^3.1.8 # inconsistent host case normalization
+  ip-address@10: ^10.7.1 # isInSubnet/link-local/NAT64 misclassification, parse-diagnostic DoS
+  joi@18: ^18.2.9 # prototype replacement through message compilation
+  postcss-selector-parser@7: ^7.1.6 # quadratic selector parsing
+  # katex: prototype-pollution trust bypass (low). mermaid — even 12.x — still
+  # declares ^0.16, so this lifts it one minor past what mermaid asks for.
+  # renderToString, the one call mermaid and bip-kit make, is unchanged across
+  # 0.16→0.18; __tests__/unit/lib/katex-renders.test.ts pins that.
+  katex@0: ^0.18.2
 
 # pnpm refuses packages published within its minimum-release-age window — a
 # supply-chain guard against a compromised release being installed before
