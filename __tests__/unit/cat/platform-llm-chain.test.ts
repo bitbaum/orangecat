@@ -22,6 +22,32 @@ vi.mock('@/utils/logger', () => ({
   logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 
+// These cases are about how a chain is WALKED, so they pin the chain itself:
+// Groq's model that refuses the JSON flag, then one OpenRouter free model —
+// the shape this file was written against. Which vendors make up the real
+// chain is servingChain()'s job, and the last describe block checks that this
+// file actually uses it. Pinning it here also keeps the free-pool catalogue
+// lookup (a fetch to OpenRouter's /models) out of every call count below.
+vi.mock('@/services/cat/provider-catalog', () => ({
+  servingChain: () => [
+    {
+      id: 'groq',
+      baseUrl: 'https://api.groq.com/openai/v1',
+      keyEnv: 'GROQ_API_KEY',
+      models: ['openai/gpt-oss-120b'],
+      dailyTokens: 0,
+    },
+    {
+      id: 'openrouter',
+      baseUrl: 'https://openrouter.ai/api/v1',
+      keyEnv: 'OPENROUTER_API_KEY',
+      models: ['test/free-model:free'],
+      dailyTokens: 0,
+      routed: true,
+    },
+  ],
+}));
+
 const ORIGINAL_ENV = { ...process.env };
 
 /** Built PER CALL: one Response body can be read only once. */
@@ -286,3 +312,19 @@ describe('callPlatformJson records which link answered', () => {
     expect(payloads).not.toContain('ok');
   });
 });
+
+describe('which chain it walks', () => {
+  /**
+   * This file used to build its own two-link chain — Groq, then OpenRouter's
+   * shared free pool — beside the one the Cat serves from, and it drifted: no
+   * Gemini, which holds this platform's own quota. It must walk servingChain().
+   */
+  it('builds its chain from servingChain(), not a list of its own', async () => {
+    const { readFileSync } = await import('node:fs');
+    const src = readFileSync('src/services/cat/platform-llm.ts', 'utf8');
+    expect(src).toMatch(/usableChain\(\s*servingChain\(/);
+    expect(src).not.toMatch(/process\.env\.(GROQ|OPENROUTER)_API_KEY/);
+    expect(src).not.toMatch(/keyEnv:\s*'/);
+  });
+});
+

@@ -249,7 +249,14 @@ describe('generateFormPrefill — survives one provider failing (the 2026-08-25 
     // was chain-wide. JSON mode is a per-model capability now, so each link is
     // asked once, with the flag only if that model accepts it. A second pass
     // happens only when a model rejects the flag for the first time.
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    // Counted on completions only (building the chain first looks up
+    // OpenRouter's free-model catalogue), and per MODEL rather than as a total:
+    // the serving chain's length depends on which vendor keys are set.
+    const asked = fetchMock.mock.calls
+      .filter(([url]) => String(url).endsWith('/chat/completions'))
+      .map(([url, init]) => `${url} ${JSON.parse((init as { body: string }).body).model}`);
+    expect(asked.length).toBeGreaterThan(0);
+    expect(new Set(asked).size).toBe(asked.length);
     expect(result.success).toBe(false);
     expect(result.code).toBe('provider_unavailable');
     expect(result.error).toBe('AI service temporarily unavailable. Please try again.');

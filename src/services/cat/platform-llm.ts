@@ -1,43 +1,16 @@
 /**
- * Shared platform-LLM call for structured (JSON) Cat features. Mirrors the
- * provider selection the offer-engine established (Groq preferred for short/fast
- * work, OpenRouter free pool for long-form) and returns the raw model content
- * string, or null on any failure so callers degrade gracefully.
+ * Shared platform-LLM call for structured (JSON) Cat features. Walks the
+ * platform's ONE serving chain (`servingChain()`, the same one the Cat answers
+ * from) and returns the raw model content string, or null on any failure so
+ * callers degrade gracefully.
  *
- * Free-pool only — needs GROQ_API_KEY and/or OPENROUTER_API_KEY on the box
- * (already set; platform Cat runs on them). Never touches Cat Credits / NWC.
+ * Free-pool only — uses whichever vendor keys are set on the box. Never touches
+ * Cat Credits / NWC.
  */
 
-import { complete, linkId, ChainExhaustedError, type Link } from '@bitbaum/ai-kit';
+import { complete, linkId, usableChain, ChainExhaustedError, type Link } from '@bitbaum/ai-kit';
 import { logger } from '@/utils/logger';
-import { PROVIDER_BASE_URLS } from '@/config/ai-provider-runtime';
-import { DEFAULT_FREE_MODEL_ID } from '@/config/ai-models';
-
-// Capable, JSON-reliable defaults. Groq is fast + cheap for short work; the
-// registry's free OpenRouter default is the fallback. Free model ids rot —
-// the pinned llama-4-maverick:free this file once carried 404'd too. The
-// registry is now the one place ids live, guarded by the free-model catalog
-// probe (health-probes.ts), so drift is detected there instead of re-pinned
-// here.
-/**
- * Groq's general-purpose model.
- *
- * `llama-3.3-70b-versatile` was pinned here and STOPPED BEING SERVED. Groq
- * answered 404 for it, every callPlatformJson caller returned null, and because
- * the failure was logged at warn and swallowed by callers that "degrade
- * gracefully", eight features degraded gracefully into doing nothing: the offer
- * engine, both writing engines, prompt suggestions, platform feedback, image
- * suggestions, the voice intent router, and the Cat's replies. Verified against
- * the live API on 2026-08-26 — Groq served 14 models and that was not among
- * them.
- *
- * Model ids rot. This is the fifth time in this fleet, and the comment below
- * already said so about OpenRouter. The durable answer is not a better id, it
- * is the failover underneath and `npm run check:ai-models`, which asks each
- * provider whether it still serves what we pinned.
- */
-const GROQ_MODEL = 'openai/gpt-oss-120b';
-const OPENROUTER_MODEL = DEFAULT_FREE_MODEL_ID;
+import { servingChain } from '@/services/cat/provider-catalog';
 
 /**
  * Models that reject `response_format: { type: 'json_object' }` outright.
@@ -54,7 +27,15 @@ const OPENROUTER_MODEL = DEFAULT_FREE_MODEL_ID;
  * starts rejecting the flag costs one failure rather than every call until
  * somebody reads the logs.
  */
-const JSON_MODE_UNSUPPORTED = new Set<string>([`groq:${GROQ_MODEL}`]);
+// Seeded with the refusal measured live (gpt-oss-120b) and its sibling the
+// serving chain now leads with (gpt-oss-20b) — same family, same json_validate
+// path, so the flag is withheld rather than spent on a near-certain 400 in
+// front of a user. Any other refusal is learned on first contact by the
+// onLinkFailure hook below.
+const JSON_MODE_UNSUPPORTED = new Set<string>([
+  'groq:openai/gpt-oss-120b',
+  'groq:openai/gpt-oss-20b',
+]);
 
 function linkKey(link: Link): string {
   return `${link.provider.id}:${link.model}`;
@@ -135,61 +116,28 @@ export interface PlatformJsonOpts {
 }
 
 /**
- * The two links, in `ai-kit`'s shape, built from THIS repo's model registry.
+ * The platform's serving chain, as links, with the keys they need.
  *
- * Deliberately not `freeChain()`. The ids above come from `@/config/ai-models`,
- * which the free-model catalog probe in health-probes.ts watches, and this repo
- * keeps its own registry on purpose. The engine is adopted for the REQUEST, not
- * to take over which models orangecat serves.
+ * This used to build its OWN two-link chain — Groq, then OpenRouter — beside
+ * the one the Cat serves from. It drifted the way a second copy does: no
+ * Gemini, which holds this platform's own quota, and OpenRouter's free pool
+ * (50 requests a day shared by every app on the box) as the only fallback, so
+ * the ~9 JSON features behind this file went quiet whenever Groq did. The same
+ * defect was fixed for companions in #1238. `servingChain()` is built from this
+ * repo's own model registry (the thing this file once kept separate on purpose)
+ * and is the one the rot check watches, so there is nothing left to keep apart.
  *
- * Groq first — fast, and handles long-form JSON inside the free TPM budget.
- * OpenRouter after it, and that ORDERING IS NOT THE POINT: what matters is that
- * there is a second entry at all. This used to return the FIRST provider whose
- * key existed and stop, so when Groq's pinned model stopped being served there
- * was no path out — a dead id took every platform-LLM feature down with it and
- * OpenRouter sat there configured and unused.
+ * `prompt` lets the chain order OpenRouter's free pool by what fits.
  */
-function resolveChain(): { chain: Link[]; env: Record<string, string> } {
-  const chain: Link[] = [];
+function resolveChain(prompt = ''): { chain: Link[]; env: Record<string, string> } {
+  const chain = usableChain(servingChain(prompt || undefined));
   const env: Record<string, string> = {};
-
-  const groqKey = process.env.GROQ_API_KEY;
-  const openRouterKey = process.env.OPENROUTER_API_KEY;
-
-  if (groqKey) {
-    env.GROQ_API_KEY = groqKey;
-    chain.push({
-      provider: {
-        id: 'groq',
-        baseUrl: PROVIDER_BASE_URLS.groq,
-        keyEnv: 'GROQ_API_KEY',
-        models: [GROQ_MODEL],
-        // Only feeds ai-kit's rationing helpers, which this file does not call.
-        // Stated low rather than invented: a generous guess produces the exact
-        // wall the rationing exists to prevent.
-        dailyTokens: 0,
-      },
-      model: GROQ_MODEL,
-    });
+  for (const link of chain) {
+    const key = process.env[link.provider.keyEnv]?.trim();
+    if (key) {
+      env[link.provider.keyEnv] = key;
+    }
   }
-
-  if (openRouterKey) {
-    env.OPENROUTER_API_KEY = openRouterKey;
-    chain.push({
-      provider: {
-        id: 'openrouter',
-        baseUrl: PROVIDER_BASE_URLS.openrouter,
-        keyEnv: 'OPENROUTER_API_KEY',
-        models: [OPENROUTER_MODEL],
-        dailyTokens: 0,
-        // Routed ids: `:free` is the difference between free routing and a
-        // per-call charge.
-        routed: true,
-      },
-      model: OPENROUTER_MODEL,
-    });
-  }
-
   return { chain, env };
 }
 
@@ -235,7 +183,7 @@ export async function callPlatformJson(
   user: string,
   opts: PlatformJsonOpts = {}
 ): Promise<string | null> {
-  const { chain, env } = resolveChain();
+  const { chain, env } = resolveChain(user);
   if (chain.length === 0) {
     logger.warn('platform-llm: no platform AI key configured', {}, 'PlatformLLM');
     return null;

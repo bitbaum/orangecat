@@ -93,7 +93,12 @@ describe('GET /api/health/ai', () => {
     expect(res.status).toBe(200);
     expect(body.answer).toContain('blue');
     // Groq is this chain's first link — the probe went down the real path.
-    expect(String(fetchMock.mock.calls[0][0])).toContain('groq');
+    // The first COMPLETION, not the first fetch: building the serving chain
+    // looks up OpenRouter's free-model catalogue before anything is asked.
+    const completions = fetchMock.mock.calls
+      .map(([url]: [unknown]) => String(url))
+      .filter((url: string) => url.endsWith('/chat/completions'));
+    expect(completions[0]).toContain('groq');
   });
 
   it('a dead chain is 503 — the silence eight features degrade into', async () => {
