@@ -18,6 +18,15 @@ updates:
       bitbaum:
         patterns:
           - '@bitbaum/*'
+      # React refuses to run when react and react-dom differ. Grouped only as
+      # react + @types/react, #1176 moved react to 19.3.0 with react-dom still
+      # on 19.2.8, and every component test failed to load. The four move as one.
+      react:
+        patterns:
+          - 'react'
+          - 'react-dom'
+          - '@types/react'
+          - '@types/react-dom'
 
   # GitHub Actions
   - package-ecosystem: 'github-actions'
