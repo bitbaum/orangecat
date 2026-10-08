@@ -210,6 +210,7 @@ export const DATABASE_TABLES = {
   // between locality / region / nation (src/config/civic-split.ts).
   CIVIC_SPLITS: 'civic_splits',
   CIVIC_SPLITS_PUBLIC: 'civic_splits_public',
+  MONEY_ROUTES: 'money_routes',
   SOLON_TRUSTED_KEYS: 'solon_trusted_keys',
 
   // OAuth provider ("Login with OrangeCat")

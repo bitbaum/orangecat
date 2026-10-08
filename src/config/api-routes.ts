@@ -300,6 +300,8 @@ export const API_ROUTES = {
     BY_ID: (id: string) => `/api/bookings/${id}`,
     RECEIVE_INFO: (id: string) => `/api/bookings/${id}/receive-info`,
   },
+  /** The signed-in person's rule for where money paid to them lands. */
+  MONEY_ROUTES: '/api/money-routes',
   CIVIC_SPLIT: {
     BASE: '/api/civic-split',
     /** Public: mean split per locality for a country (+ optional region). */

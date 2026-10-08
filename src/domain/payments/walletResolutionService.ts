@@ -16,6 +16,7 @@ import { deriveOnchainAddress } from './addressDerivation';
 import { detectWalletType } from '@/types/wallet';
 import { nwcResolved, type ResolvedWallet } from './types';
 import { logger } from '@/utils/logger';
+import { routedWalletId } from '@/domain/money-routes/service';
 
 /**
  * Resolve the best payment method for a given entity's seller.
@@ -376,6 +377,24 @@ export async function resolveUserWallet(
 
   if (!wallets || wallets.length === 0) {
     return null;
+  }
+
+  // The person's own rule decides first (money_routes: taxes first, then a
+  // debt, rent…). It names one of these wallets; within it, the usual
+  // NWC > Lightning > on-chain order applies. A missing rule, a satisfied one,
+  // an unreadable one or a destination that cannot receive all fall through to
+  // the choice below — a rule must never make a person unpayable.
+  const routedId = await routedWalletId(
+    supabase,
+    userId,
+    wallets.map(w => w.id)
+  );
+  if (routedId) {
+    const routedWallet = wallets.find(w => w.id === routedId);
+    const routed = routedWallet ? pickMethodFromWallet(routedWallet as WalletRow) : null;
+    if (routed) {
+      return routed;
+    }
   }
 
   // Check for NWC
