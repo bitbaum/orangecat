@@ -6,6 +6,7 @@ import { getRoomByToken, recordRoomOpen } from '@/domain/projectRooms/open';
 import { isLinkPreviewBot, isPrefetchRequest } from '@/lib/link-preview-bots';
 import { checkOwnership, getActorDisplayName } from '@/services/actors';
 import { getLokiProjectLink } from '@/services/loki/project-link';
+import { getRoomEvidence } from '@/domain/projectRooms/evidence';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { createServerClient } from '@/lib/supabase/server';
 
@@ -65,17 +66,19 @@ export default async function RoomPage({ params }: PageProps) {
     await recordRoomOpen(room.data, 'room');
   }
 
-  const [ownerName, build] = await Promise.all([
+  const [ownerName, build, evidence] = await Promise.all([
     project.actor_id
       ? getActorDisplayName(project.actor_id, getAdminClient())
       : Promise.resolve('The owner'),
     getLokiProjectLink(project.id),
+    getRoomEvidence(project.id),
   ]);
 
   return (
     <RoomView
       token={token}
       room={room.data}
+      evidence={evidence}
       ownerName={ownerName}
       isShared={room.data.link.is_shared}
       hasBuildRecord={build.linked}

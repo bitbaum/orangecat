@@ -146,8 +146,19 @@ describe('isPrefetchRequest', () => {
  * clicked. Anything that goes through /open must be a plain <a>.
  */
 describe('the room links through /open without prefetching', () => {
-  const source = readFileSync(join(process.cwd(), 'src/components/room/RoomView.tsx'), 'utf8');
-  it('uses neither next/link nor <Button href>', () => {
+  // Every component the READER's page renders. The owner's (RoomManager,
+  // RoomLinks, editors) may use Links: nothing there records an open.
+  const READER = [
+    'RoomView',
+    'RoomHero',
+    'RoomFacts',
+    'RoomEvidence',
+    'RoomPaceChart',
+    'RoomSection',
+    'RoomFooter',
+  ];
+  it.each(READER)('%s uses neither next/link nor the ui Button', name => {
+    const source = readFileSync(join(process.cwd(), `src/components/room/${name}.tsx`), 'utf8');
     expect(source).not.toMatch(/from 'next\/link'/);
     expect(source).not.toMatch(/<Button\b/);
   });

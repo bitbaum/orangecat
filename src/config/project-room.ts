@@ -85,6 +85,8 @@ export const ROOM_OUTLINE: readonly RoomSection[] = [
   { title: 'Business model', body: '' },
   { title: 'Team', body: '' },
   { title: 'Roadmap', body: '' },
+  // An investor trusts a page that names its risks more than one that has none.
+  { title: 'Risks', body: '' },
   { title: 'The ask', body: '' },
 ];
 
