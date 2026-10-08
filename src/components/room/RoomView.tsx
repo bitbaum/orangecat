@@ -8,7 +8,8 @@
  */
 
 import { ArrowUpRight, FileText, Hammer, Mail, Presentation } from 'lucide-react';
-import Button from '@/components/ui/Button';
+import { COMPONENT_STYLES } from '@/config/design-system';
+import { cn } from '@/lib/utils';
 import { roomParagraphs } from '@/config/project-room';
 import { ROUTES } from '@/config/routes';
 import { APP_NAME } from '@/config/brand';
@@ -30,6 +31,34 @@ function hostOf(url: string): string {
   } catch {
     return url;
   }
+}
+
+/**
+ * A plain <a> styled as a button — deliberately not the ui Button with an
+ * href, which renders a Next Link and PREFETCHES: every room view would fetch
+ * /open/deck and /open/build and record opens nobody clicked.
+ */
+function RoomAction({
+  href,
+  variant,
+  children,
+}: {
+  href: string;
+  variant: 'accent' | 'outline' | 'ghost';
+  children: React.ReactNode;
+}) {
+  return (
+    <a
+      href={href}
+      className={cn(
+        COMPONENT_STYLES.button.base,
+        COMPONENT_STYLES.button.variants[variant],
+        COMPONENT_STYLES.button.sizes.lg
+      )}
+    >
+      {children}
+    </a>
+  );
 }
 
 function formatAsOf(date: string): string {
@@ -91,29 +120,29 @@ export function RoomView({ token, room, ownerName, isShared, hasBuildRecord }: R
         {(content.deck_url || hasBuildRecord || content.contact_email) && (
           <div className="mt-8 flex flex-wrap gap-3">
             {content.deck_url && (
-              <Button variant="accent" size="lg" href={ROUTES.ROOM_OPEN(token, 'deck')}>
+              <RoomAction variant="accent" href={ROUTES.ROOM_OPEN(token, 'deck')}>
                 <Presentation className="h-4 w-4" aria-hidden />
                 Open the deck
-              </Button>
+              </RoomAction>
             )}
             {hasBuildRecord && (
-              <Button variant="outline" size="lg" href={ROUTES.ROOM_OPEN(token, 'build')}>
+              <RoomAction variant="outline" href={ROUTES.ROOM_OPEN(token, 'build')}>
                 <Hammer className="h-4 w-4" aria-hidden />
                 Build record
-              </Button>
+              </RoomAction>
             )}
             {content.contact_email && (
-              <Button variant="ghost" size="lg" href={`mailto:${content.contact_email}`}>
+              <RoomAction variant="ghost" href={`mailto:${content.contact_email}`}>
                 <Mail className="h-4 w-4" aria-hidden />
                 {content.contact_email}
-              </Button>
+              </RoomAction>
             )}
           </div>
         )}
 
         {content.metrics.length > 0 && (
           <section className="mt-12 border-t border-border-subtle pt-8" aria-label="The numbers">
-            <ul className="grid gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
+            <ul className="grid grid-cols-2 gap-x-6 gap-y-5 lg:grid-cols-3">
               {content.metrics.map(metric => (
                 <li key={metric.label}>
                   <p className="text-xs font-medium uppercase tracking-caps text-fg-muted">

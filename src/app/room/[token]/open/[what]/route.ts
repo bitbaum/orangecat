@@ -12,7 +12,7 @@ import { ROUTES } from '@/config/routes';
 import { resolveOpenTarget } from '@/domain/projectRooms/content';
 import { getRoomByToken, recordRoomOpen } from '@/domain/projectRooms/open';
 import { getLokiProjectLink } from '@/services/loki/project-link';
-import { isLinkPreviewBot } from '@/lib/link-preview-bots';
+import { isLinkPreviewBot, isPrefetchRequest } from '@/lib/link-preview-bots';
 
 interface RouteContext {
   params: Promise<{ token: string; what: string }>;
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     return back;
   }
 
-  if (!isLinkPreviewBot(request.headers.get('user-agent'))) {
+  if (!isLinkPreviewBot(request.headers.get('user-agent')) && !isPrefetchRequest(request.headers)) {
     await recordRoomOpen(room.data, what as 'deck' | 'document' | 'build', target.target);
   }
   return NextResponse.redirect(target.url);

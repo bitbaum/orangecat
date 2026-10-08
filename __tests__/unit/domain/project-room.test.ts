@@ -12,7 +12,9 @@ import {
 } from '@/domain/projectRooms/content';
 import { isSameVisit } from '@/domain/projectRooms/open';
 import { roomContentSchema, roomParagraphs, ROOM_VISIT_WINDOW_MS } from '@/config/project-room';
-import { isLinkPreviewBot } from '@/lib/link-preview-bots';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { isLinkPreviewBot, isPrefetchRequest } from '@/lib/link-preview-bots';
 import { summariseOpens } from '@/components/room/RoomLinkRow';
 
 vi.mock('@/lib/supabase/admin', () => ({ getAdminClient: vi.fn() }));
@@ -121,6 +123,33 @@ describe('isLinkPreviewBot', () => {
     'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Mobile Safari/537.36 [FBAN/FB4A;FBAV/480.0]',
   ])('a person: %s', ua => {
     expect(isLinkPreviewBot(ua)).toBe(false);
+  });
+});
+
+describe('isPrefetchRequest', () => {
+  const h = (init: Record<string, string>) => new Headers(init);
+  it('recognises a fetch ahead of a click', () => {
+    expect(isPrefetchRequest(h({ 'next-router-prefetch': '1' }))).toBe(true);
+    expect(isPrefetchRequest(h({ purpose: 'prefetch' }))).toBe(true);
+    expect(isPrefetchRequest(h({ 'sec-purpose': 'prefetch;prerender' }))).toBe(true);
+  });
+  it('lets the click itself through', () => {
+    expect(isPrefetchRequest(h({}))).toBe(false);
+    expect(isPrefetchRequest(h({ accept: 'text/html' }))).toBe(false);
+  });
+});
+
+/**
+ * Found live 2026-10-08: the room's deck and build buttons were <Button href>,
+ * which renders a Next <Link>, which PREFETCHES — so every view of a room
+ * fetched /open/deck and /open/build and would have recorded opens nobody
+ * clicked. Anything that goes through /open must be a plain <a>.
+ */
+describe('the room links through /open without prefetching', () => {
+  const source = readFileSync(join(process.cwd(), 'src/components/room/RoomView.tsx'), 'utf8');
+  it('uses neither next/link nor <Button href>', () => {
+    expect(source).not.toMatch(/from 'next\/link'/);
+    expect(source).not.toMatch(/<Button\b/);
   });
 });
 

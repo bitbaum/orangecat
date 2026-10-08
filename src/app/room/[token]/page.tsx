@@ -3,7 +3,7 @@ import { headers } from 'next/headers';
 import { RoomView } from '@/components/room/RoomView';
 import { ROOM_COPY } from '@/config/project-room';
 import { getRoomByToken, recordRoomOpen } from '@/domain/projectRooms/open';
-import { isLinkPreviewBot } from '@/lib/link-preview-bots';
+import { isLinkPreviewBot, isPrefetchRequest } from '@/lib/link-preview-bots';
 import { checkOwnership, getActorDisplayName } from '@/services/actors';
 import { getLokiProjectLink } from '@/services/loki/project-link';
 import { getAdminClient } from '@/lib/supabase/admin';
@@ -56,8 +56,12 @@ export default async function RoomPage({ params }: PageProps) {
   // never for a messenger drawing the link's preview card or for the owner
   // previewing their own room.
   const { project } = room.data;
-  const userAgent = (await headers()).get('user-agent');
-  if (!isLinkPreviewBot(userAgent) && !(await viewerOwns(project.actor_id))) {
+  const requestHeaders = await headers();
+  if (
+    !isLinkPreviewBot(requestHeaders.get('user-agent')) &&
+    !isPrefetchRequest(requestHeaders) &&
+    !(await viewerOwns(project.actor_id))
+  ) {
     await recordRoomOpen(room.data, 'room');
   }
 

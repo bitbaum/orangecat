@@ -53,6 +53,17 @@ const PREVIEW_AGENTS = [
   'headlesschrome',
 ];
 
+/**
+ * Is this request the browser fetching AHEAD of a click — Next's `<Link>`
+ * prefetch, or a speculative/prefetch hint — rather than the click itself?
+ * A `<Link>` to a route that records an open would record one on every page
+ * view, for something nobody clicked.
+ */
+export function isPrefetchRequest(headers: Pick<Headers, 'get'>): boolean {
+  const purpose = `${headers.get('purpose') ?? ''} ${headers.get('sec-purpose') ?? ''}`;
+  return headers.get('next-router-prefetch') !== null || /prefetch|prerender/i.test(purpose);
+}
+
 export function isLinkPreviewBot(userAgent: string | null | undefined): boolean {
   if (!userAgent || !userAgent.trim()) {
     return true;
