@@ -34,7 +34,7 @@ export function PersonalFinances({ finances }: { finances: Finances }) {
   return (
     <div className="grid gap-4 md:grid-cols-2">
       <Block title={FINANCES_PAGE.income.title}>
-        {income.paidOrders + income.settledPayments === 0 ? (
+        {income.payments === 0 ? (
           <p className="text-sm text-fg-secondary">{FINANCES_PAGE.income.empty}</p>
         ) : (
           <>
@@ -44,6 +44,11 @@ export function PersonalFinances({ finances }: { finances: Finances }) {
             <p className="mt-1 text-sm text-fg-tertiary">
               {FINANCES_PAGE.income.hint(income.windowDays)} {income.totalBtc.toFixed(8)} BTC.
             </p>
+            {income.valuedAtToday > 0 && (
+              <p className="mt-1 text-sm text-fg-tertiary">
+                {FINANCES_PAGE.income.valuedAtToday(income.valuedAtToday)}
+              </p>
+            )}
           </>
         )}
       </Block>

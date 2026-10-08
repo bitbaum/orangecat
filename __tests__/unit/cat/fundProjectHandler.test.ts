@@ -29,6 +29,10 @@ vi.mock('@/domain/payments/walletResolutionService', () => ({
 vi.mock('@/domain/payments/invoiceGenerationService', () => ({ generateInvoice: vi.fn() }));
 vi.mock('@/lib/supabase/admin', () => ({ getAdminClient: vi.fn() }));
 vi.mock('@/lib/nostr/nwc', () => ({ NWCClient: vi.fn() }));
+// No network in tests: the price at payment time comes from a stub.
+vi.mock('@/services/currency/rates.server', () => ({
+  ratesAtReceiptOrNull: vi.fn().mockResolvedValue({ CHF: 52199 }),
+}));
 
 /** The user's session: must never write a money record. */
 const userClient = {
@@ -105,6 +109,7 @@ describe('fund_project records the payment through the server', () => {
       intent_kind: 'support',
       receiving_wallet_id: 'project-wallet',
       status: 'paid',
+      rates_at_paid: { CHF: 52199 },
     });
     expect(userClient.from).not.toHaveBeenCalled();
   });

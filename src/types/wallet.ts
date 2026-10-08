@@ -42,6 +42,8 @@ export const WALLET_CATEGORY_VALUES = [
   'projects',
   'legal',
   'entertainment',
+  'tax',
+  'debt',
   'custom',
 ] as const;
 export type WalletCategory = (typeof WALLET_CATEGORY_VALUES)[number];
@@ -108,6 +110,16 @@ export const WALLET_CATEGORIES: Record<
     icon: '🎭',
     description: 'Arts, entertainment, and creative projects',
   },
+  tax: {
+    label: 'Taxes',
+    icon: '🧾',
+    description: 'Set aside for the tax that is owed',
+  },
+  debt: {
+    label: 'Debt repayment',
+    icon: '🤝',
+    description: 'Paying back what is owed',
+  },
   custom: {
     label: 'Other',
     icon: '📦',
@@ -128,6 +140,8 @@ export const ALLOWED_CATEGORY_ICONS = [
   '🚀',
   '⚖️',
   '🎭',
+  '🧾',
+  '🤝',
   '📦',
 ] as const;
 

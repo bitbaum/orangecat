@@ -40,6 +40,12 @@ export interface PaymentIntent {
   description: string | null;
   expires_at: string | null;
   paid_at: string | null;
+  /**
+   * The BTC price at the moment it was paid, per currency code (`{ CHF: …,
+   * EUR: … }`). Null = unknown (no trustworthy rate then, or paid before this
+   * was recorded) — value it at today's rate only if you SAY so.
+   */
+  rates_at_paid?: Record<string, number> | null;
   created_at: string;
   updated_at: string;
   public_status_token_hash: string | null;

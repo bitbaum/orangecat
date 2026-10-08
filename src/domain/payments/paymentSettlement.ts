@@ -23,6 +23,7 @@ import {
 } from '@/services/loki/entitlement-notify';
 import { grantSupporterPlan } from '@/services/supporter/grant';
 import { enqueuePaymentSettledWebhook } from '@/services/webhooks/paymentSettledWebhook';
+import { ratesAtReceiptOrNull } from '@/services/currency/rates.server';
 
 /**
  * Claim the transition to `paid`, exactly once.
@@ -49,9 +50,19 @@ async function claimPaidTransition(paymentIntentId: string): Promise<boolean> {
   // — indistinguishable from "another observer won the race" — so a recipient's
   // confirmation skipped every side-effect while the API reported paid.
   const admin = getAdminClient() as unknown as SupabaseClient;
+  // What the payment was worth when it arrived, in every currency we price in.
+  // Fetched BEFORE the lock so the lock stays one statement, and written in the
+  // same update so value and paid_at can never disagree. An unavailable rate
+  // stores null ("unknown") — never a guess, and never a reason to fail a
+  // payment that has already happened.
+  const ratesAtPaid = await ratesAtReceiptOrNull();
   const { data, error } = await admin
     .from(DATABASE_TABLES.PAYMENT_INTENTS)
-    .update({ status: STATUS.PAYMENT_INTENTS.PAID, paid_at: new Date().toISOString() })
+    .update({
+      status: STATUS.PAYMENT_INTENTS.PAID,
+      paid_at: new Date().toISOString(),
+      rates_at_paid: ratesAtPaid,
+    })
     .eq('id', paymentIntentId)
     .neq('status', STATUS.PAYMENT_INTENTS.PAID)
     .select('id');

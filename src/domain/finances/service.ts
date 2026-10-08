@@ -2,8 +2,9 @@
  * One person's money picture: what came in, what is owed, what they said
  * about where their public money should go, and what the public would take.
  *
- * Reads only what already exists — paid orders and settled payment intents
- * (income), loan entities with a remaining balance (debts), the civic split
+ * Reads only what already exists — settled payment intents, each valued at the
+ * price recorded when it arrived (income), loan entities with a remaining
+ * balance (debts), the civic split
  * (the declared split and the place) — and converts to the person's currency
  * server-side. Nothing here is a filing; the tax figure is an estimate and is
  * labelled as one wherever it is rendered.
@@ -21,11 +22,19 @@ export const INCOME_WINDOW_DAYS = 365;
 
 export interface IncomeSummary {
   windowDays: number;
-  paidOrders: number;
-  settledPayments: number;
+  /** Settled payments counted — each sale once. */
+  payments: number;
   totalBtc: number;
-  /** In the display currency, or null when no rate is available. */
+  /**
+   * In the display currency, each payment at the price when IT arrived. Null
+   * when some payment has no recorded price and no current rate exists either.
+   */
   total: number | null;
+  /**
+   * Payments with no price recorded at arrival, valued at today's rate instead.
+   * 0 means every figure is as received; anything else must be SAID.
+   */
+  valuedAtToday: number;
 }
 
 export interface Debt {
@@ -56,36 +65,71 @@ async function incomeOf(
   userId: string,
   currency: string
 ): Promise<IncomeSummary> {
-  const since = sinceIso(INCOME_WINDOW_DAYS);
-  const [orders, intents] = await Promise.all([
-    supabase
-      .from(DATABASE_TABLES.ORDERS)
-      .select('amount_btc')
-      .eq('seller_id', userId)
-      .eq('status', STATUS.ORDERS.PAID)
-      .gte('created_at', since)
-      .limit(1000),
-    supabase
-      .from(DATABASE_TABLES.PAYMENT_INTENTS)
-      .select('amount_btc')
-      .eq('seller_id', userId)
-      .eq('status', STATUS.PAYMENT_INTENTS.PAID)
-      .gte('created_at', since)
-      .limit(1000),
-  ]);
-  const sum = (rows: unknown) =>
-    ((rows as Array<{ amount_btc: number | null }> | null) ?? []).reduce(
-      (n, r) => n + (r.amount_btc ?? 0),
-      0
-    );
-  const totalBtc = sum(orders.data) + sum(intents.data);
+  // Every inflow is a payment intent — purchases, support, tips, requests — so
+  // intents ARE the income. Paid orders are not added on top: a purchase writes
+  // both an intent and an order and settlement marks both paid, so summing the
+  // two counted every sale twice, and the tax estimate built on it with it.
+  // Windowed on paid_at: income belongs to the day it arrived.
+  const { data } = await supabase
+    .from(DATABASE_TABLES.PAYMENT_INTENTS)
+    .select('amount_btc, rates_at_paid')
+    .eq('seller_id', userId)
+    .eq('status', STATUS.PAYMENT_INTENTS.PAID)
+    .gte('paid_at', sinceIso(INCOME_WINDOW_DAYS))
+    .limit(1000);
+  const rows = (data as IncomeRow[] | null) ?? [];
+  const valued = valueIncome(rows, currency);
+  const today = valued.unvaluedBtc > 0 ? await convertBtcToOrNull(valued.unvaluedBtc, currency) : 0;
   return {
     windowDays: INCOME_WINDOW_DAYS,
-    paidOrders: orders.data?.length ?? 0,
-    settledPayments: intents.data?.length ?? 0,
-    totalBtc,
-    total: totalBtc > 0 ? await convertBtcToOrNull(totalBtc, currency) : 0,
+    payments: rows.length,
+    totalBtc: valued.totalBtc,
+    // A figure that silently omitted some payments would understate income;
+    // when today's rate is missing too, there is no honest total to give.
+    total: today === null ? null : valued.atReceipt + today,
+    valuedAtToday: valued.unvaluedCount,
   };
+}
+
+export interface IncomeRow {
+  amount_btc: number | null;
+  rates_at_paid: Record<string, number> | null;
+}
+
+/**
+ * Value each payment at the price recorded when it arrived. Pure: payments with
+ * no recorded price for `currency` are returned unvalued (with their count) for
+ * the caller to price at today's rate — and to say that it did.
+ */
+export function valueIncome(
+  rows: readonly IncomeRow[],
+  currency: string
+): { totalBtc: number; atReceipt: number; unvaluedBtc: number; unvaluedCount: number } {
+  const code = currency.toUpperCase();
+  let totalBtc = 0;
+  let atReceipt = 0;
+  let unvaluedBtc = 0;
+  let unvaluedCount = 0;
+  for (const row of rows) {
+    const btc = row.amount_btc ?? 0;
+    totalBtc += btc;
+    // BTC and sats are not priced: their "value at receipt" is the amount.
+    if (code === 'BTC' || code === 'SATS') {
+      continue;
+    }
+    const rate = row.rates_at_paid?.[code];
+    if (typeof rate === 'number' && Number.isFinite(rate) && rate > 0) {
+      atReceipt += btc * rate;
+    } else {
+      unvaluedBtc += btc;
+      unvaluedCount += 1;
+    }
+  }
+  if (code === 'BTC' || code === 'SATS') {
+    // Exact, no rate involved: hand the whole amount to the caller's converter.
+    return { totalBtc, atReceipt: 0, unvaluedBtc: totalBtc, unvaluedCount: 0 };
+  }
+  return { totalBtc, atReceipt, unvaluedBtc, unvaluedCount };
 }
 
 async function debtsOf(supabase: AnySupabaseClient, actorIds: string[]): Promise<Debt[]> {

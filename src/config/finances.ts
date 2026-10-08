@@ -4,7 +4,12 @@ export const FINANCES_PAGE = {
   lede: 'What came in, what you owe, where you said your public money should go, and what the public would take. Estimates are marked as estimates.',
   income: {
     title: 'Came in',
-    hint: (days: number) => `Paid orders and settled payments in the last ${days} days.`,
+    hint: (days: number) =>
+      `Settled payments in the last ${days} days, each valued at the price when it arrived.`,
+    valuedAtToday: (n: number) =>
+      n === 1
+        ? '1 payment had no price recorded when it arrived and is valued at today’s rate.'
+        : `${n} payments had no price recorded when they arrived and are valued at today’s rate.`,
     empty: 'Nothing has come in yet. Sell something, offer a service, or get paid by link.',
   },
   debts: {
