@@ -3,21 +3,22 @@
 /**
  * BookEntityDialog
  *
- * Opens a date/time picker over a service or asset detail page and POSTs
- * to /api/bookings to create a pending booking. The provider then sees
- * the booking under /dashboard/bookings → Incoming and can confirm or
- * reject via the existing PUT endpoint.
+ * A booking request over a service or asset page, POSTed to /api/bookings as
+ * a pending booking the provider confirms or rejects (/dashboard/bookings →
+ * Incoming).
  *
- * Scope notes:
- * - For services with a `duration_minutes`, `ends_at` is computed from
- *   `starts_at + duration`. The user only picks a start time.
- * - For services without a duration (or for assets — wired in a follow-up
- *   commit), the user picks both start and end. End must be > start; the
- *   server enforces this too.
- * - All times are sent to the server as ISO strings in UTC. The native
- *   `datetime-local` input gives local-wall-clock; we convert via Date.
- * - On success we toast + close. We deliberately do NOT redirect to
- *   /dashboard/bookings — the user is browsing a listing, not managing.
+ * It used to be two raw datetime-local fields — start AND end — for everyone,
+ * showing the browser's placeholder ("tt.mm.jjjj, --:--"), including for a
+ * studio rented by the day. Now the listing decides what is asked
+ * (domain/bookings/shape) and @bitbaum/whenkit asks it in taps:
+ *  - rented by the day/week/month → pick a day or a range, no times;
+ *  - hourly → a day, a start inside opening hours, a length (or the
+ *    service's fixed duration). Nobody types an end time;
+ *  - "I'm flexible" → at most a preferred day; the provider proposes a time.
+ *
+ * Instants come from whenkit's resolveRequest in the listing's zone when it
+ * states one, else the booker's — the same clock that is sent as `timezone`.
+ * On success we toast + close; the user is browsing, not managing.
  */
 
 import { useState } from 'react';
@@ -33,9 +34,16 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import Button from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
+import { BookingRequestPicker } from '@bitbaum/whenkit/react';
+import { resolveRequest, todayIn, type BookingChoice } from '@bitbaum/whenkit';
+import '@bitbaum/whenkit/styles.css';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { browserTimeZone } from '@/utils/timezone';
+import { APP_LOCALE } from '@/utils/locale';
+import type { BookingShape } from '@/domain/bookings/shape';
+
+/** Leads the note of a flexible request, so the provider reads the window as a wish. */
+export const FLEXIBLE_NOTE = 'Flexible — please suggest a time.';
 
 export interface BookEntityDialogProps {
   isOpen: boolean;
@@ -50,20 +58,8 @@ export interface BookEntityDialogProps {
   /** Currency `priceBtc` is denominated in. Omitted/'BTC' → render as BTC; otherwise
    *  render as that fiat currency (services price in their own currency, not BTC). */
   priceCurrency?: string;
-  /** When set, dialog renders a single start input and derives ends_at. */
-  durationMinutes?: number;
-}
-
-function toIsoUtc(localValue: string): string {
-  // `datetime-local` returns "YYYY-MM-DDTHH:mm" without timezone. Treat as
-  // the user's local wall clock and convert to UTC ISO for the server.
-  return new Date(localValue).toISOString();
-}
-
-function addMinutesIso(localValue: string, minutes: number): string {
-  const d = new Date(localValue);
-  d.setMinutes(d.getMinutes() + minutes);
-  return d.toISOString();
+  /** What to ask for — from serviceBookingShape / assetBookingShape. */
+  shape: BookingShape;
 }
 
 export function BookEntityDialog({
@@ -74,19 +70,19 @@ export function BookEntityDialog({
   bookableTitle,
   priceBtc,
   priceCurrency,
-  durationMinutes,
+  shape,
 }: BookEntityDialogProps) {
   const { formatPrice } = useDisplayCurrency();
-  const [startsAtLocal, setStartsAtLocal] = useState('');
-  const [endsAtLocal, setEndsAtLocal] = useState('');
+  const [choice, setChoice] = useState<BookingChoice | null>(null);
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  const hasDuration = Boolean(durationMinutes && durationMinutes > 0);
+  const zone = shape.zone ?? browserTimeZone();
+  const request = resolveRequest(choice, { zone, today: todayIn(zone) });
+  const fixedLength = shape.lengths?.length === 1 ? shape.lengths[0] : null;
 
   const reset = () => {
-    setStartsAtLocal('');
-    setEndsAtLocal('');
+    setChoice(null);
     setNotes('');
     setSubmitting(false);
   };
@@ -100,24 +96,13 @@ export function BookEntityDialog({
   };
 
   const handleSubmit = async () => {
-    if (!startsAtLocal) {
-      toast.error('Pick a start time');
+    if (!request) {
+      toast.error(shape.unit === 'day' ? 'Pick a day' : 'Pick a day and a start time');
       return;
     }
-    if (!hasDuration && !endsAtLocal) {
-      toast.error('Pick an end time');
-      return;
-    }
-
-    const starts_at = toIsoUtc(startsAtLocal);
-    const ends_at = hasDuration
-      ? addMinutesIso(startsAtLocal, durationMinutes!)
-      : toIsoUtc(endsAtLocal);
-
-    if (new Date(ends_at) <= new Date(starts_at)) {
-      toast.error('End time must be after start time');
-      return;
-    }
+    const customerNotes = request.flexible
+      ? [FLEXIBLE_NOTE, notes.trim()].filter(Boolean).join('\n\n')
+      : notes.trim();
 
     setSubmitting(true);
     try {
@@ -127,12 +112,12 @@ export function BookEntityDialog({
         body: JSON.stringify({
           bookable_type: bookableType,
           bookable_id: bookableId,
-          starts_at,
-          ends_at,
-          // The instants are exact already; the zone is the clock the booker
-          // read them on, so the provider sees "14:00 Zurich time", not UTC.
-          timezone: browserTimeZone(),
-          customer_notes: notes || undefined,
+          starts_at: request.startsAt,
+          ends_at: request.endsAt,
+          // The clock the request was made on, so the provider sees
+          // "14:00 Zurich time", not UTC.
+          timezone: zone,
+          customer_notes: customerNotes || undefined,
         }),
       });
       const body = await res.json().catch(() => null);
@@ -166,54 +151,32 @@ export function BookEntityDialog({
                 <span className="font-medium text-fg-primary">
                   {formatPrice(priceBtc, priceCurrency)}
                 </span>
-                {hasDuration && ` · ${durationMinutes} min`}
+                {fixedLength && ` · ${fixedLength} min`}
               </span>
             )}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
-          <div>
-            <label
-              className="mb-1 block text-sm font-medium text-fg-primary"
-              htmlFor="booking-start"
-            >
-              Start time
-            </label>
-            <Input
-              id="booking-start"
-              type="datetime-local"
-              value={startsAtLocal}
-              onChange={e => setStartsAtLocal(e.target.value)}
-              disabled={submitting}
-            />
-          </div>
-
-          {!hasDuration && (
-            <div>
-              <label
-                className="mb-1 block text-sm font-medium text-fg-primary"
-                htmlFor="booking-end"
-              >
-                End time
-              </label>
-              <Input
-                id="booking-end"
-                type="datetime-local"
-                value={endsAtLocal}
-                onChange={e => setEndsAtLocal(e.target.value)}
-                disabled={submitting}
-              />
-            </div>
-          )}
+          <BookingRequestPicker
+            unit={shape.unit}
+            zone={zone}
+            locale={APP_LOCALE}
+            hours={shape.hours}
+            openWeekdays={shape.openWeekdays}
+            lengths={shape.lengths}
+            value={choice}
+            onChange={setChoice}
+          />
 
           <div>
             <label
               className="mb-1 block text-sm font-medium text-fg-primary"
               htmlFor="booking-notes"
             >
-              Notes (optional)
+              Note to the provider (optional)
             </label>
+            {/* 16px on phones: below it iOS zooms the page when the box is focused. */}
             <textarea
               id="booking-notes"
               value={notes}
@@ -221,8 +184,12 @@ export function BookEntityDialog({
               disabled={submitting}
               rows={3}
               maxLength={1000}
-              placeholder="Anything the provider should know"
-              className="w-full rounded-md border border-strong bg-surface-base px-3 py-2 text-sm text-fg-primary placeholder:text-fg-tertiary focus:outline-none focus:ring-2 focus:ring-ring"
+              placeholder={
+                choice?.kind === 'flexible'
+                  ? 'When suits you — e.g. weekday evenings'
+                  : 'Anything the provider should know'
+              }
+              className="w-full rounded-md border border-strong bg-surface-base px-3 py-2 text-base text-fg-primary placeholder:text-fg-tertiary focus:outline-none focus:ring-2 focus:ring-ring sm:text-sm"
             />
           </div>
         </div>
@@ -231,7 +198,7 @@ export function BookEntityDialog({
           <Button variant="outline" onClick={handleClose} disabled={submitting}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={submitting || !startsAtLocal}>
+          <Button onClick={handleSubmit} disabled={submitting || !request}>
             {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Send booking request
           </Button>
