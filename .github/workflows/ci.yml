@@ -83,7 +83,19 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: node scripts/ci/check-workflow-refs.mjs
 
+      - name: Already verified? (main only — this exact tree passed on its PR)
+        id: already
+        if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY_ID: ${{ github.repository_id }}
+        run: bash scripts/ci/already-verified.sh
+
       - name: Verify (docs + type-check + routes + lint + unit — same as local)
+        # Skipped ONLY when the step above found this exact tree already verified
+        # on its pull request (see scripts/ci/already-verified.sh). Everything
+        # after it — build, smoke tests, the artifact CD ships — still runs.
+        if: steps.already.outputs.verified != 'true'
         # SSOT for "green": the pre-build gate is defined ONCE as the `verify`
         # npm script and called verbatim here, so `npm run verify` locally and CI
         # can never drift. The chain (in order): ci:docs → type-check →
@@ -100,6 +112,21 @@ jobs:
         # (Playwright/E2E stays a separate post-build gate below — it needs a
         # running server + secrets, so it isn't part of the static verify bundle.)
         run: pnpm run verify
+
+      - name: Name the verified tree (pull requests from this repository only)
+        id: tree
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          git rev-parse 'HEAD^{tree}' > "$RUNNER_TEMP/verified-tree.txt"
+          echo "sha=$(cat "$RUNNER_TEMP/verified-tree.txt")" >> "$GITHUB_OUTPUT"
+
+      - name: Record it, so main does not re-verify identical code
+        if: steps.tree.outputs.sha != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: verified-tree-${{ steps.tree.outputs.sha }}
+          path: ${{ runner.temp }}/verified-tree.txt
+          retention-days: 3
 
       - name: Cache Playwright Chromium
         uses: actions/cache@v6
