@@ -1,7 +1,9 @@
-import { InputHTMLAttributes, forwardRef, useId } from 'react';
+import { ComponentProps, InputHTMLAttributes, forwardRef, useId } from 'react';
 import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { COMPONENT_STYLES } from '@/config/design-system';
+import { DateInput } from '@bitbaum/whenkit/react';
+import '@bitbaum/whenkit/styles.css';
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -34,6 +36,25 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     const inputId = id || generatedId;
     const errorId = `${inputId}-error`;
     const descriptionId = `${inputId}-description`;
+    const controlClass = cn(
+      COMPONENT_STYLES.field.control,
+      'block h-10 px-3 text-sm',
+      error && COMPONENT_STYLES.field.errorControl,
+      Icon && 'pl-10',
+      className
+    );
+    const controlProps = {
+      id: inputId,
+      required,
+      'aria-describedby': cn(error && errorId, description && descriptionId),
+      'aria-invalid': error ? ('true' as const) : ('false' as const),
+    };
+    // A date is picked, not typed: the value reads in words ("Sat, 11 Oct 2026
+    // · 14:00") in this same control styling, and the platform picker still
+    // opens on tap (@bitbaum/whenkit). Every date field in the app comes
+    // through here — the entity forms, group events, proposals — so one
+    // branch replaces the browser's bare "tt.mm.jjjj" field everywhere.
+    const isDate = props.type === 'date' || props.type === 'datetime-local';
 
     return (
       <div className="space-y-2">
@@ -52,21 +73,17 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
               />
             </div>
           )}
-          <input
-            id={inputId}
-            required={required}
-            className={cn(
-              COMPONENT_STYLES.field.control,
-              'block h-10 px-3 text-sm',
-              error && COMPONENT_STYLES.field.errorControl,
-              Icon && 'pl-10',
-              className
-            )}
-            aria-describedby={cn(error && errorId, description && descriptionId)}
-            aria-invalid={error ? 'true' : 'false'}
-            ref={ref}
-            {...props}
-          />
+          {isDate ? (
+            <DateInput
+              {...controlProps}
+              {...(props as ComponentProps<typeof DateInput>)}
+              type={props.type as 'date' | 'datetime-local'}
+              className={controlClass}
+              ref={ref}
+            />
+          ) : (
+            <input {...controlProps} className={controlClass} ref={ref} {...props} />
+          )}
         </div>
         {description && !error && (
           <p id={descriptionId} className={COMPONENT_STYLES.field.description}>
