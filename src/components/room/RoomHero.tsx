@@ -45,10 +45,12 @@ interface RoomHeroProps {
   room: VisitorRoom;
   isShared: boolean;
   hasBuildRecord: boolean;
+  /** A deck made in the room (deckkit), as opposed to a link to one elsewhere. */
+  hasDeck: boolean;
 }
 
 /** What it is, whose link this is, and the three things a reader can do first. */
-export function RoomHero({ token, room, isShared, hasBuildRecord }: RoomHeroProps) {
+export function RoomHero({ token, room, isShared, hasBuildRecord, hasDeck }: RoomHeroProps) {
   const { project, content, linkLabel } = room;
   return (
     <header>
@@ -83,9 +85,9 @@ export function RoomHero({ token, room, isShared, hasBuildRecord }: RoomHeroProp
         </a>
       )}
 
-      {(content.deck_url || hasBuildRecord || content.contact_email) && (
+      {(content.deck_url || hasDeck || hasBuildRecord || content.contact_email) && (
         <div className="mt-6 flex flex-wrap gap-3">
-          {content.deck_url && (
+          {(content.deck_url || hasDeck) && (
             <RoomAction variant="accent" href={ROUTES.ROOM_OPEN(token, 'deck')}>
               <Presentation className="h-4 w-4" aria-hidden />
               Open the deck

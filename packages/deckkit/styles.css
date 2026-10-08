@@ -1,0 +1,464 @@
+/**
+ * deckkit/styles.css — the look of every deck, once.
+ *
+ * Contract: every colour and font is a --dk-* custom property. An app maps them
+ * to its own tokens; a deck's theme (dark | light + one accent) is data, set on
+ * the frame. Rules below never hardcode a colour outside the token blocks.
+ *
+ * Scale: a slide is a CSS size container, and every length inside it is in
+ * container units (1cqw = 1% of the slide's width). So a slide is IDENTICAL at
+ * every size — full screen, a phone, a 160px thumbnail in an editor — which is
+ * what one fixed 16:9 frame should mean. Type sizes follow the scale evig's
+ * decks converged on (h1 ≈ 8.4% of slide height, body ≈ 2.5%).
+ */
+
+.dk-frame {
+  --dk-font: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --dk-mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+  --dk-accent: #ff5c00;
+  container-type: size;
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  background: var(--dk-bg);
+  color: var(--dk-fg);
+  font-family: var(--dk-font);
+  -webkit-font-smoothing: antialiased;
+}
+
+.dk-frame.dk-dark {
+  --dk-bg: #0a0a0a;
+  --dk-surface: #141414;
+  --dk-fg: #f5f5f5;
+  --dk-muted: #a3a3a3;
+  --dk-faint: #6b6b6b;
+  --dk-line: rgba(255, 255, 255, 0.1);
+}
+
+.dk-frame.dk-light {
+  --dk-bg: #fbfaf7;
+  --dk-surface: #f1efe9;
+  --dk-fg: #17181a;
+  --dk-muted: #5f5b54;
+  --dk-faint: #8f8a80;
+  --dk-line: #e4e0d6;
+}
+
+/* ── The slide ─────────────────────────────────────────────────────────── */
+
+.dk-slide {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 6cqw 7cqw;
+  gap: 1.6cqw;
+}
+
+.dk-kicker {
+  display: flex;
+  align-items: center;
+  gap: 1cqw;
+  margin: 0;
+  font-family: var(--dk-mono);
+  font-size: 1.05cqw;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--dk-muted);
+}
+.dk-kicker::before {
+  content: '';
+  width: 1.9cqw;
+  height: 1px;
+  background: var(--dk-accent);
+}
+
+.dk-title {
+  margin: 0;
+  font-size: 3.2cqw;
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+  max-width: 34ch;
+  text-wrap: balance;
+}
+.dk-accent {
+  color: var(--dk-accent);
+}
+
+.dk-body {
+  margin: 0;
+  font-size: 1.75cqw;
+  line-height: 1.45;
+  color: var(--dk-muted);
+  max-width: 52ch;
+  text-wrap: pretty;
+}
+
+.dk-sources {
+  position: absolute;
+  left: 7cqw;
+  right: 7cqw;
+  bottom: 3cqw;
+  margin: 0;
+  font-family: var(--dk-mono);
+  font-size: 0.85cqw;
+  color: var(--dk-faint);
+}
+
+/* Cover and closing: the big type. */
+.dk-layout-cover .dk-title,
+.dk-layout-closing .dk-title {
+  font-size: 5.6cqw;
+  line-height: 1;
+  letter-spacing: -0.035em;
+  max-width: 18ch;
+}
+.dk-layout-cover .dk-body,
+.dk-layout-closing .dk-body {
+  font-size: 1.9cqw;
+  max-width: 46ch;
+}
+.dk-layout-statement .dk-title {
+  font-size: 4.1cqw;
+  max-width: 24ch;
+}
+
+.dk-action {
+  align-self: flex-start;
+  margin-top: 1cqw;
+  padding: 1cqw 2cqw;
+  border-radius: 999px;
+  background: var(--dk-accent);
+  color: #fff;
+  font-size: 1.3cqw;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* points */
+.dk-points {
+  list-style: none;
+  margin: 1cqw 0 0;
+  padding: 0;
+  display: grid;
+  gap: 1.4cqw 4cqw;
+  max-width: 100%;
+}
+.dk-points.dk-two {
+  grid-template-columns: 1fr 1fr;
+}
+.dk-points li {
+  position: relative;
+  padding-left: 2cqw;
+  font-size: 1.45cqw;
+  line-height: 1.4;
+  color: var(--dk-muted);
+  max-width: 44ch;
+}
+.dk-points li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  width: 0.8cqw;
+  height: 1px;
+  background: var(--dk-accent);
+}
+.dk-points b {
+  color: var(--dk-fg);
+  font-weight: 600;
+}
+
+/* numbers */
+.dk-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin-top: 1.5cqw;
+  border-top: 1px solid var(--dk-line);
+}
+.dk-stats.dk-n2,
+.dk-stats.dk-n4 {
+  grid-template-columns: repeat(2, 1fr);
+}
+.dk-stat {
+  padding: 1.8cqw 2cqw 1.8cqw 0;
+  border-bottom: 1px solid var(--dk-line);
+}
+.dk-stat-value {
+  margin: 0;
+  font-size: 3.4cqw;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.dk-stat-label {
+  margin: 0.4cqw 0 0;
+  font-family: var(--dk-mono);
+  font-size: 0.9cqw;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--dk-muted);
+}
+
+/* chart: one series, thin bars, a 2px gap, rounded data-ends, selective labels */
+.dk-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.35cqw;
+  height: 22cqw;
+  margin-top: 2cqw;
+  border-bottom: 1px solid var(--dk-line);
+}
+.dk-bar {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+}
+.dk-bar-fill {
+  width: 100%;
+  max-width: 4cqw;
+  border-radius: 0.4cqw 0.4cqw 0 0;
+  background: var(--dk-accent);
+}
+.dk-bar-value {
+  margin-bottom: 0.5cqw;
+  font-size: 1.1cqw;
+  font-variant-numeric: tabular-nums;
+  color: var(--dk-muted);
+}
+.dk-bar-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.6cqw;
+  font-family: var(--dk-mono);
+  font-size: 0.85cqw;
+  color: var(--dk-faint);
+}
+
+/* compare + columns */
+.dk-columns {
+  display: grid;
+  gap: 2cqw;
+  margin-top: 1.5cqw;
+}
+.dk-columns.dk-n2 {
+  grid-template-columns: 1fr 1fr;
+}
+.dk-columns.dk-n3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+.dk-columns.dk-n4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+.dk-column {
+  padding: 1.8cqw;
+  border: 1px solid var(--dk-line);
+  border-radius: 1cqw;
+  background: var(--dk-surface);
+}
+.dk-layout-compare .dk-column:last-child {
+  border-color: var(--dk-accent);
+}
+.dk-column h3 {
+  margin: 0 0 1cqw;
+  font-family: var(--dk-mono);
+  font-size: 0.95cqw;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--dk-muted);
+}
+.dk-column ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.9cqw;
+}
+.dk-column li {
+  font-size: 1.3cqw;
+  line-height: 1.35;
+}
+
+/* image: claim on the left, the product in a browser frame on the right */
+.dk-layout-image {
+  display: grid;
+  grid-template-columns: 1fr 1.25fr;
+  align-items: center;
+  gap: 4cqw;
+}
+.dk-layout-image > div {
+  display: flex;
+  flex-direction: column;
+  gap: 1.6cqw;
+}
+.dk-browser {
+  border: 1px solid var(--dk-line);
+  border-radius: 1.2cqw;
+  overflow: hidden;
+  background: var(--dk-surface);
+  box-shadow: 0 2cqw 5cqw rgba(0, 0, 0, 0.35);
+}
+.dk-browser-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5cqw;
+  padding: 0.8cqw 1.2cqw;
+  border-bottom: 1px solid var(--dk-line);
+  font-family: var(--dk-mono);
+  font-size: 0.85cqw;
+  color: var(--dk-faint);
+}
+.dk-browser-bar i {
+  width: 0.7cqw;
+  height: 0.7cqw;
+  border-radius: 50%;
+  background: var(--dk-line);
+}
+.dk-browser img {
+  display: block;
+  width: 100%;
+  max-height: 30cqw;
+  object-fit: cover;
+  object-position: top;
+}
+
+/* Motion: the active slide's parts rise in, staggered. Never when asked not to. */
+@keyframes dk-rise {
+  from {
+    opacity: 0;
+    transform: translateY(1cqw);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.dk-animate > * {
+  animation: dk-rise 0.55s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.dk-animate > *:nth-child(2) {
+  animation-delay: 80ms;
+}
+.dk-animate > *:nth-child(3) {
+  animation-delay: 160ms;
+}
+.dk-animate > *:nth-child(4) {
+  animation-delay: 240ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  .dk-animate > * {
+    animation: none;
+  }
+}
+
+/* ── The presenter ─────────────────────────────────────────────────────── */
+
+.dk-presenter {
+  position: fixed;
+  inset: 0;
+  /* Above the host app's header and floating widgets: a deck is the whole screen. */
+  z-index: 2147483000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  color: #f5f5f5;
+  touch-action: pan-y;
+}
+.dk-stage {
+  width: min(100vw, calc(100dvh * 16 / 9));
+}
+.dk-chrome {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  font: 12px/1 ui-monospace, 'SF Mono', Menlo, monospace;
+  color: #a3a3a3;
+}
+.dk-chrome button,
+.dk-chrome a {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.dk-chrome button:hover,
+.dk-chrome a:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+.dk-progress {
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 3px;
+  background: var(--dk-accent, #ff5c00);
+  transition: width 0.3s ease;
+}
+.dk-notes {
+  position: fixed;
+  left: 50%;
+  bottom: 64px;
+  transform: translateX(-50%);
+  width: min(720px, 92vw);
+  max-height: 30vh;
+  overflow: auto;
+  padding: 16px 20px;
+  border-radius: 12px;
+  background: rgba(20, 20, 20, 0.95);
+  font: 15px/1.5 ui-sans-serif, system-ui, sans-serif;
+  white-space: pre-line;
+}
+
+/* Print / Save as PDF: every slide, one landscape page each, real text. */
+@media print {
+  @page {
+    size: 1600px 900px;
+    margin: 0;
+  }
+  .dk-presenter {
+    position: static;
+    display: block;
+    background: none;
+  }
+  .dk-chrome,
+  .dk-progress,
+  .dk-notes {
+    display: none !important;
+  }
+  .dk-stage {
+    width: 1600px;
+  }
+  .dk-print-all > .dk-frame {
+    display: block !important;
+    break-after: page;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .dk-animate > * {
+    animation: none;
+  }
+}
