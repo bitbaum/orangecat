@@ -3,12 +3,11 @@ import { headers } from 'next/headers';
 import { RoomView } from '@/components/room/RoomView';
 import { ROOM_COPY } from '@/config/project-room';
 import { getRoomByToken, recordRoomOpen } from '@/domain/projectRooms/open';
-import { isLinkPreviewBot, isPrefetchRequest } from '@/lib/link-preview-bots';
-import { checkOwnership, getActorDisplayName } from '@/services/actors';
+import { countsAsOpen } from '@/domain/projectRooms/counts';
+import { getActorDisplayName } from '@/services/actors';
 import { getLokiProjectLink } from '@/services/loki/project-link';
 import { getRoomEvidence } from '@/domain/projectRooms/evidence';
 import { getAdminClient } from '@/lib/supabase/admin';
-import { createServerClient } from '@/lib/supabase/server';
 
 interface PageProps {
   params: Promise<{ token: string }>;
@@ -25,14 +24,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     description: 'A private investor room.',
     robots: { index: false, follow: false },
   };
-}
-
-async function viewerOwns(actorId: string | null): Promise<boolean> {
-  const supabase = await createServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return !!user && (await checkOwnership({ actor_id: actorId }, user.id, supabase));
 }
 
 function Closed({ message }: { message: string }) {
@@ -53,16 +44,10 @@ export default async function RoomPage({ params }: PageProps) {
     return <Closed message={room.code === 'revoked' ? ROOM_COPY.revokedNotice : room.message} />;
   }
 
-  // The one place a visit to the page is counted (metadata above does not), and
-  // never for a messenger drawing the link's preview card or for the owner
-  // previewing their own room.
+  // The one place a visit to the page is counted (metadata above does not) —
+  // by the same rule as every open inside the room (countsAsOpen).
   const { project } = room.data;
-  const requestHeaders = await headers();
-  if (
-    !isLinkPreviewBot(requestHeaders.get('user-agent')) &&
-    !isPrefetchRequest(requestHeaders) &&
-    !(await viewerOwns(project.actor_id))
-  ) {
+  if (await countsAsOpen(await headers(), project.actor_id)) {
     await recordRoomOpen(room.data, 'room');
   }
 
