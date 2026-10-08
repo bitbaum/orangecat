@@ -11,7 +11,7 @@
 
 import { bindDeck } from './bind';
 import { normalizeDeck, newSlideId } from './normalize';
-import { firstSentence, paragraphs } from './text';
+import { firstSentence, paragraphs, sentences } from './text';
 import {
   DECK_VERSION,
   DEFAULT_THEME,
@@ -39,13 +39,13 @@ export interface DeckSource {
 
 /** Statement slide from a paragraph: first sentence as the claim, the next one or two as body. */
 function statement(kicker: string, text: string): Slide {
-  const sentences = text.replace(/\s+/g, ' ').match(/[^.!?]+[.!?]+(?=\s|$)/g) ?? [text];
+  const parts = sentences(text);
   return {
     id: newSlideId(),
     layout: 'statement',
     kicker,
-    title: firstSentence(sentences[0] ?? text, 140),
-    body: sentences.slice(1, 3).join(' ').trim().slice(0, 400) || undefined,
+    title: firstSentence(parts[0] ?? text, 140),
+    body: parts.slice(1, 3).join(' ').trim().slice(0, 400) || undefined,
   };
 }
 

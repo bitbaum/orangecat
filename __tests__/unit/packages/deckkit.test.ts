@@ -9,6 +9,7 @@ import {
   firstSentence,
   generateDeck,
   leadParts,
+  sentences,
   LIMITS,
   normalizeDeck,
   type DeckData,
@@ -79,6 +80,26 @@ describe('text', () => {
       rest: 'free, with an account',
     });
     expect(leadParts('No lead here')).toEqual({ rest: 'No lead here' });
+  });
+
+  it('splits sentences and leads without a backtracking pattern — fast on hostile input', () => {
+    expect(sentences('One.  Two!\nThree? four')).toEqual(['One.', 'Two!', 'Three?', 'four']);
+    expect(sentences('v1.2 is out. Yes.')).toEqual(['v1.2 is out.', 'Yes.']);
+    expect(leadParts('a: b')).toEqual({ rest: 'a: b' });
+    expect(leadParts('Lead:no space')).toEqual({ rest: 'Lead:no space' });
+    const hostile = [
+      ' '.repeat(50_000) + 'x',
+      '\t\t'.repeat(25_000),
+      '.'.repeat(50_000) + 'a',
+      ', '.repeat(25_000),
+    ];
+    const t0 = performance.now();
+    for (const s of hostile) {
+      sentences(s);
+      firstSentence(s, 180);
+      leadParts(s);
+    }
+    expect(performance.now() - t0).toBeLessThan(500);
   });
 
   it('takes the first sentence and cuts at a word', () => {
