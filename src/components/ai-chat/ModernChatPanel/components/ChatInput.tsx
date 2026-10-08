@@ -1,9 +1,20 @@
+'use client';
+
 /**
- * CHAT INPUT — the one composer the whole app uses.
+ * CHAT INPUT — the one composer the whole app uses, on the fleet's composer.
  *
- * One integrated control, laid out the way ChatGPT/Claude/Grok taught people to
- * read it: the text on top, attachments under it, and a single control row —
- * "+" and the model on the left, dictation and send on the right.
+ * The box itself is `@bitbaum/chatkit`'s `Composer`: auto-growing input, Enter
+ * sends and Shift+Enter breaks the line, Stop in the send slot while a turn
+ * runs, 16px text so a phone never zooms, and a microphone that never goes
+ * dead. Those were written here once and fixed in chatkit separately; every
+ * fix to them now lands in one place for every product.
+ *
+ * What stays here is OrangeCat's own, in chatkit's slots: the "+" menu that
+ * attaches the person's own things (a project, an offer) or a file, the
+ * attachment previews, the model picker, and Clear. OrangeCat keeps its
+ * attachments itself — chatkit has no model for "a reference to my project" —
+ * and tells the composer how many it holds (`heldAttachments`), so a message
+ * that is only a photo or a reference can still be sent.
  *
  * `placement` decides where it lives, not how it looks: `bottom` pins it under
  * the thread; `inline` drops the pinning chrome so the Cat's empty state can
@@ -13,12 +24,15 @@
  * and the Cat share this file: no `onAttachmentsChange`, no "+" menu.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
+import { Trash2 } from 'lucide-react';
+import { Composer } from '@bitbaum/chatkit/react';
+import '@bitbaum/chatkit/styles.css';
 import { cn } from '@/lib/utils';
-import { Send, Square, Trash2 } from 'lucide-react';
 import { CAT_HUB_COPY } from '@/config/cat-hub';
 import { CHAT_CONTENT_MAX_WIDTH_CLASS } from '@/config/layout-chrome';
-import { DictationButton } from '@/components/ui/DictationButton';
+import { API_ROUTES } from '@/config/api-routes';
+import { transcribeWithRoute } from '@/hooks/useDictation';
 import type { CatReference } from '@/config/cat-prompts';
 import { ModelSelector } from './ModelSelector';
 import { ComposerAddMenu } from './ComposerAddMenu';
@@ -57,6 +71,9 @@ interface ChatInputProps {
 
 const newId = () => Math.random().toString(36).slice(2, 10);
 
+/** One transcription route for every microphone in the app; see useDictation. */
+const transcribe = transcribeWithRoute(API_ROUTES.CAT.TRANSCRIBE);
+
 export function ChatInput({
   value,
   onChange,
@@ -74,47 +91,10 @@ export function ChatInput({
   attachable = [],
   placeholder = CAT_HUB_COPY.composerPlaceholder,
 }: ChatInputProps) {
-  const inputRef = useRef<HTMLTextAreaElement>(null);
   const [attachError, setAttachError] = useState<string | null>(null);
   const isFocus = variant === 'focus';
   const isInline = placement === 'inline';
   const showModelSelector = isFocus && !!onModelSelect && !!selectedModel;
-
-  // Keyed on `value` (not the onChange event) so the textarea also resizes
-  // when it changes programmatically — cleared after send, or grown after a
-  // dictated transcript is inserted — not just while the user is typing.
-  useEffect(() => {
-    const el = inputRef.current;
-    if (!el) {
-      return;
-    }
-    el.style.height = 'auto';
-    el.style.height = `${Math.min(el.scrollHeight, 200)}px`;
-  }, [value]);
-
-  // The centred composer IS the page's call to action — put the cursor in it.
-  useEffect(() => {
-    if (isInline) {
-      inputRef.current?.focus({ preventScroll: true });
-    }
-  }, [isInline]);
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      onSend();
-    }
-  };
-
-  // Dictation appends to whatever is already typed, so voice + keyboard mix.
-  const handleTranscript = (text: string) => {
-    const trimmed = text.trim();
-    if (!trimmed) {
-      return;
-    }
-    onChange(value.trim() ? `${value.trim()} ${trimmed}` : trimmed);
-    inputRef.current?.focus();
-  };
 
   const handleFiles = async (files: FileList) => {
     if (!onAttachmentsChange) {
@@ -154,7 +134,6 @@ export function ChatInput({
     }
     if (added.length > 0) {
       onAttachmentsChange([...attachments, ...added]);
-      inputRef.current?.focus();
     }
   };
 
@@ -168,14 +147,11 @@ export function ChatInput({
     if (!already) {
       onAttachmentsChange([...attachments, { kind: 'ref', id: newId(), ref }]);
     }
-    inputRef.current?.focus();
   };
 
   const removeAttachment = (id: string) => {
     onAttachmentsChange?.(attachments.filter(a => a.id !== id));
   };
-
-  const canSend = (!!value.trim() || attachments.length > 0) && !isLoading;
 
   return (
     <div
@@ -184,22 +160,28 @@ export function ChatInput({
       )}
     >
       <div className={cn('mx-auto w-full', !isInline && CHAT_CONTENT_MAX_WIDTH_CLASS)}>
-        <div className={cn('oc-chat-composer', !isFocus && 'rounded-md')}>
-          <textarea
-            ref={inputRef}
-            value={value}
-            onChange={e => onChange(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={placeholder}
-            rows={isInline ? 2 : 1}
-            className="oc-chat-composer-input"
-            aria-label={placeholder}
-          />
-
-          <ComposerAttachments attachments={attachments} onRemove={removeAttachment} />
-
-          <div className="oc-chat-composer-controls">
-            <div className="flex min-w-0 items-center gap-0.5">
+        <Composer
+          value={value}
+          onValueChange={onChange}
+          // The page owns the draft and the attachments; it reads both when told.
+          onSend={() => onSend()}
+          placeholder={placeholder}
+          ariaLabel={placeholder}
+          sending={isLoading}
+          onStop={onStop}
+          autoFocus={isInline}
+          // OrangeCat's own attachments, shown in `header`. Counted so a message
+          // that is only a photo or a reference can still be sent.
+          heldAttachments={attachments.length}
+          attachmentOnlyText="(attached)"
+          voice={{ prefer: 'server', transcribe }}
+          header={
+            attachments.length > 0 ? (
+              <ComposerAttachments attachments={attachments} onRemove={removeAttachment} />
+            ) : undefined
+          }
+          tools={
+            <>
               {onAttachmentsChange && (
                 <ComposerAddMenu
                   attachable={attachable}
@@ -217,56 +199,23 @@ export function ChatInput({
                   subtle
                 />
               )}
-            </div>
-
-            <div className="flex flex-shrink-0 items-center gap-0.5">
-              {isFocus && !!onClearChat && hasMessages && (
-                <button
-                  type="button"
-                  onClick={onClearChat}
-                  className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg text-fg-tertiary transition-colors hover:bg-surface-raised hover:text-fg-primary"
-                  aria-label="Clear chat"
-                  title="Clear chat"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              )}
-              <DictationButton
-                onTranscript={handleTranscript}
-                size="sm"
-                disabled={isLoading}
-                ariaLabel="Dictate your message"
-              />
-              {isLoading && onStop ? (
-                <button
-                  type="button"
-                  onClick={onStop}
-                  className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-fg-primary text-fg-inverted transition-opacity hover:opacity-90"
-                  aria-label="Stop generating"
-                  title="Stop generating"
-                >
-                  <Square className="h-3.5 w-3.5 fill-current" />
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={onSend}
-                  disabled={!canSend}
-                  className={cn(
-                    'flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full transition-colors',
-                    canSend
-                      ? 'bg-fg-primary text-fg-inverted hover:opacity-90'
-                      : 'cursor-not-allowed bg-surface-raised text-fg-tertiary'
-                  )}
-                  aria-label="Send message"
-                  title="Send message (Enter)"
-                >
-                  <Send className="h-4 w-4" />
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
+            </>
+          }
+          trailing={
+            isFocus && !!onClearChat && hasMessages ? (
+              <button
+                type="button"
+                onClick={onClearChat}
+                className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg text-fg-tertiary transition-colors hover:bg-surface-raised hover:text-fg-primary"
+                aria-label="Clear chat"
+                title="Clear chat"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            ) : undefined
+          }
+          labels={{ send: 'Send message', stop: 'Stop generating', voice: 'Dictate your message' }}
+        />
 
         {attachError && (
           <p className="mt-2 px-1 text-xs text-status-negative" role="alert">

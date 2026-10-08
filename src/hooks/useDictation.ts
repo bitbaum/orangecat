@@ -17,7 +17,7 @@
  * German sentence on an English page would come back as English nonsense.
  */
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { TranscriptionError, reasonFromBody } from '@bitbaum/chatkit';
 import { useDictation as useChatkitDictation } from '@bitbaum/chatkit/react';
 
@@ -66,17 +66,23 @@ async function postToRoute(endpoint: string, audio: Blob, lang: string | undefin
   return typeof text === 'string' ? text : '';
 }
 
+/**
+ * OrangeCat's transcription, in the shape chatkit asks for. Shared by this hook
+ * and the chat composer (chatkit's `Composer`, voice option `transcribe`), so
+ * there is one way speech becomes text here, not one per microphone.
+ */
+export function transcribeWithRoute(endpoint: string, lang?: string) {
+  // Only the primary subtag; without a hint Whisper detects the language.
+  return (audio: Blob) => postToRoute(endpoint, audio, lang?.split('-')[0]);
+}
+
 export function useDictation({ endpoint, lang, onTranscript, onError }: UseDictationOptions) {
   const onErrorRef = useRef(onError);
   useEffect(() => {
     onErrorRef.current = onError;
   });
 
-  const transcribe = useCallback(
-    // Only the primary subtag; without a hint Whisper detects the language.
-    (audio: Blob) => postToRoute(endpoint, audio, lang?.split('-')[0]),
-    [endpoint, lang]
-  );
+  const transcribe = useMemo(() => transcribeWithRoute(endpoint, lang), [endpoint, lang]);
 
   const d = useChatkitDictation({
     onText: onTranscript,
