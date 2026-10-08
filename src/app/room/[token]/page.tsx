@@ -7,6 +7,7 @@ import { countsAsOpen } from '@/domain/projectRooms/counts';
 import { getActorDisplayName } from '@/services/actors';
 import { getLokiProjectLink } from '@/services/loki/project-link';
 import { getRoomEvidence } from '@/domain/projectRooms/evidence';
+import { loadRoomDeck } from '@/domain/projectRooms/deck';
 import { getAdminClient } from '@/lib/supabase/admin';
 
 interface PageProps {
@@ -51,12 +52,13 @@ export default async function RoomPage({ params }: PageProps) {
     await recordRoomOpen(room.data, 'room');
   }
 
-  const [ownerName, build, evidence] = await Promise.all([
+  const [ownerName, build, evidence, deck] = await Promise.all([
     project.actor_id
       ? getActorDisplayName(project.actor_id, getAdminClient())
       : Promise.resolve('The owner'),
     getLokiProjectLink(project.id),
     getRoomEvidence(project.id),
+    loadRoomDeck(project.id),
   ]);
 
   return (
@@ -67,6 +69,7 @@ export default async function RoomPage({ params }: PageProps) {
       ownerName={ownerName}
       isShared={room.data.link.is_shared}
       hasBuildRecord={build.linked}
+      hasDeck={deck !== null}
     />
   );
 }

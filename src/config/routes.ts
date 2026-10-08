@@ -361,6 +361,8 @@ export const ROUTES = {
     EDIT: (id: string) => `${ENTITY_REGISTRY['project'].createPath}?edit=${id}`,
     /** The owner's side of the investor room (ADR-0012). */
     ROOM: (id: string) => `${ENTITY_REGISTRY['project'].publicBasePath}/${id}/room`,
+    /** The owner's deck editor (@bitbaum/deckkit). */
+    ROOM_DECK: (id: string) => `${ENTITY_REGISTRY['project'].publicBasePath}/${id}/room/deck`,
   },
 
   // Public entity routes
@@ -499,6 +501,8 @@ export const ROUTES = {
   CLAIM: (claimToken: string) => `/claim/${encodeURIComponent(claimToken)}`,
   /** An investor room, as the person it was sent to opens it (ADR-0012). */
   ROOM: (token: string) => `/room/${encodeURIComponent(token)}`,
+  /** The room's deck, presented, as the person the link was sent to sees it. */
+  ROOM_DECK: (token: string) => `/room/${encodeURIComponent(token)}/deck`,
   /** Something inside a room, followed through the room so the open is seen. */
   ROOM_OPEN: (token: string, what: string, index?: number) =>
     `/room/${encodeURIComponent(token)}/open/${what}${index === undefined ? '' : `?n=${index}`}`,

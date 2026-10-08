@@ -75,6 +75,30 @@ of its own and may move out of OrangeCat into its own app reading the same
 sources; the code is kept in `src/domain/projectRooms` and
 `src/components/room` so that move is a lift, not a rewrite.
 
+## The deck (shipped 2026-10-08)
+
+A room can hold a deck made in the room, built on `@bitbaum/deckkit`
+(`packages/deckkit`; its README has the writing rules). Decisions, from first
+principles and from what evig's hand-written decks taught:
+
+- **A deck is data, not HTML.** Slides are a layout plus a few fields; one
+  renderer draws them. Anyone can edit one; nobody can make one ugly; any app
+  can show one. (Evig's decks could only be changed by a developer and each
+  carried its own drifting copy of the engine.)
+- **Generated first, then owned.** "Generate a first draft" builds the investor
+  arc from the room and the product record — every word comes from there. The
+  owner edits from that.
+- **Live where it can be.** Proof slides (`bind: facts | pace | roadmap`) read
+  the room's evidence whenever the deck is opened.
+- **One frame.** 16:9 at every size via container units, so the editor's
+  thumbnails, the preview and full screen are the same slide.
+- **Linkable, printable, measured.** `#3` opens slide 3; "PDF" prints every
+  slide as a page with real text; opening the deck is an open in the room.
+- Next: comments per slide (anchored to the slide's stable id, which evig's
+  index-anchored comments lacked), screenshots uploaded instead of linked,
+  per-slide reading time, and an optional "tighten this slide" with AI, on
+  request only.
+
 ## Not in scope
 
 An "invest" button (securities; waits on legal work and Solon — ADR-0012 D5).

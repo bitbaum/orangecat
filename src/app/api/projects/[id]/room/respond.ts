@@ -3,6 +3,7 @@ import {
   apiInternalError,
   apiNotFound,
   apiSuccess,
+  apiValidationError,
 } from '@/lib/api/standardResponse';
 import type { RoomResult } from '@/domain/projectRooms/types';
 
@@ -12,6 +13,8 @@ export function roomResponse<T>(result: RoomResult<T>, status = 200) {
     return apiSuccess(result.data, { status });
   }
   switch (result.code) {
+    case 'invalid':
+      return apiValidationError(result.message);
     case 'forbidden':
       return apiForbidden(result.message);
     case 'not_found':

@@ -2,7 +2,11 @@ import type { RoomContent, RoomOpenKind } from '@/config/project-room';
 
 export type RoomResult<T> =
   | { ok: true; data: T }
-  | { ok: false; code: 'not_found' | 'forbidden' | 'revoked' | 'db_error'; message: string };
+  | {
+      ok: false;
+      code: 'not_found' | 'forbidden' | 'revoked' | 'invalid' | 'db_error';
+      message: string;
+    };
 
 /** The project a room belongs to — only what the room shows or needs. */
 export interface RoomProject {

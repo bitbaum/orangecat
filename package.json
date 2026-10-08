@@ -122,6 +122,7 @@
     "@bitbaum/ai-kit": "^1.20.1",
     "@bitbaum/chatkit": "github:bitbaum/chatkit#70824785e86189704aeb7cc92c33bc198ad17cda",
     "@bitbaum/collective-kinds": "workspace:*",
+    "@bitbaum/deckkit": "workspace:*",
     "@bitbaum/geo-kit": "github:bitbaum/geo-kit#a337aec928cf7804fecf459c308d366b90f4b2fa",
     "@bitbaum/mail-kit": "^0.1.1",
     "@bitbaum/tax-model": "workspace:*",

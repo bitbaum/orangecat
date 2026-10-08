@@ -43,6 +43,7 @@ One link an investor can judge a project from, without a call or anyone's word: 
 - [x] Who opened what — the room, the deck, each document — and a notice the first time each person opens it; link previews in chat apps are not counted. {#room-opens}
 - [x] A product's own website as the door: its /investors page hands its visitors into the same room. {#room-door}
 - [x] Evidence the room generates: key facts, weekly shipping pace from the public repository, what shipped, the roadmap and why the product exists — from the product's own records, each with its source. {#room-evidence}
+- [x] A deck made in the room: a first draft generated from the room and the product's record (nothing invented), every slide editable, proof slides bound to live data, presented full screen, linkable per slide, printable to PDF. {#room-deck}
 - [ ] Traction: people using the product, coming back and paying, from a public metrics endpoint each product serves. {#room-live-numbers}
 - [ ] Questions in the room: a reader asks, the owner answers, everyone with a link sees the answer. {#room-questions}
 - [ ] Investor updates: a dated feed in the room. {#room-updates}

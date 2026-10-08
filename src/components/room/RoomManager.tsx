@@ -7,7 +7,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Eye } from 'lucide-react';
+import { ArrowLeft, Eye, Presentation } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { ROUTES } from '@/config/routes';
 import type { OwnerRoom, RoomLink } from '@/domain/projectRooms/types';
@@ -45,12 +45,18 @@ export function RoomManager({ initial, buildRecordUrl }: RoomManagerProps) {
               account, no password — and you see what they opened. Switch a link off at any time.
             </p>
           </div>
-          {previewLink && (
-            <Button variant="outline" href={ROUTES.ROOM(previewLink.token)}>
-              <Eye className="h-4 w-4" aria-hidden />
-              Preview
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" href={ROUTES.PROJECTS.ROOM_DECK(project.id)}>
+              <Presentation className="h-4 w-4" aria-hidden />
+              Deck
             </Button>
-          )}
+            {previewLink && (
+              <Button variant="outline" href={ROUTES.ROOM(previewLink.token)}>
+                <Eye className="h-4 w-4" aria-hidden />
+                Preview
+              </Button>
+            )}
+          </div>
         </header>
 
         <RoomLinks
