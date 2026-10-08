@@ -90,6 +90,16 @@ describe('one chat surface', () => {
     expect(offenders, `These re-implement the message turn:\n${offenders.join('\n')}`).toEqual([]);
   });
 
+  it("is the fleet's composer underneath — chatkit's Composer, not a local fork", () => {
+    // The box, Enter-to-send, Stop, the 16px input and the microphone live in
+    // @bitbaum/chatkit, where a fix reaches every product. A textarea written
+    // here again is how the 13 diverging chats happened.
+    const composer = readFileSync(SHARED_COMPOSER, 'utf8');
+    expect(composer).toMatch(/import \{[^}]*\bComposer\b[^}]*\} from '@bitbaum\/chatkit\/react'/);
+    expect(composer).toMatch(/<Composer\b/);
+    expect(composer).not.toMatch(/<textarea/);
+  });
+
   it('keeps the shared pair reusable — Cat-only controls stay optional', () => {
     const composer = readFileSync(SHARED_COMPOSER, 'utf8');
     for (const prop of ['onStop', 'onClearChat', 'selectedModel', 'onModelSelect', 'placeholder']) {

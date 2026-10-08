@@ -5,8 +5,9 @@
  * keystrokes — so a *programmatic* value change left the box stuck at
  * whatever height it last had: still expanded after a message sent (value
  * cleared with no keystroke), and never grown when a dictated transcript
- * was inserted (DictationButton calls onChange directly). Visitors reported
- * both as the composer "sticking" and the mic button "doing nothing".
+ * was inserted (dictation sets the value directly). Visitors reported both as
+ * the composer "sticking" and the mic button "doing nothing". The box is now
+ * chatkit's Composer, which grows on the value itself; this pins that here.
  *
  * jsdom performs no layout, so `scrollHeight` never reflects real content —
  * each case stubs it to the value a real browser would report, then checks
@@ -15,18 +16,6 @@
 
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ChatInput } from '@/components/ai-chat/ModernChatPanel/components/ChatInput';
-
-vi.mock('@/components/ui/DictationButton', () => ({
-  DictationButton: ({ onTranscript }: { onTranscript: (t: string) => void }) => (
-    <button
-      type="button"
-      aria-label="Dictate your message"
-      onClick={() => onTranscript('a dictated sentence that is reasonably long')}
-    >
-      mic
-    </button>
-  ),
-}));
 
 function setup() {
   let value = '';
@@ -60,13 +49,13 @@ describe('Cat chat composer resize', () => {
     expect(textarea.style.height).toBe('36px');
   });
 
-  it('grows when a dictated transcript is inserted programmatically', () => {
-    setup();
+  it('grows when text arrives without a keystroke (a dictated transcript)', () => {
+    const { rerenderWith } = setup();
     const textarea = screen.getByPlaceholderText(/./i) as HTMLTextAreaElement;
 
-    // Dictation calls the parent's onChange directly, not a DOM change event.
+    // Dictation fills the draft directly, not through a DOM change event.
     Object.defineProperty(textarea, 'scrollHeight', { configurable: true, value: 96 });
-    fireEvent.click(screen.getByLabelText('Dictate your message'));
+    rerenderWith('a dictated sentence that is reasonably long');
 
     expect(textarea.value).toContain('a dictated sentence');
     expect(textarea.style.height).toBe('96px');
