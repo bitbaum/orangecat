@@ -119,13 +119,13 @@
   },
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^9.1.0",
-    "@bitbaum/ai-kit": "^1.18.0",
+    "@bitbaum/ai-kit": "^1.20.1",
     "@bitbaum/chatkit": "github:bitbaum/chatkit#70824785e86189704aeb7cc92c33bc198ad17cda",
     "@bitbaum/collective-kinds": "workspace:*",
     "@bitbaum/geo-kit": "github:bitbaum/geo-kit#a337aec928cf7804fecf459c308d366b90f4b2fa",
     "@bitbaum/mail-kit": "^0.1.1",
     "@bitbaum/tax-model": "workspace:*",
-    "@bitbaum/whenkit": "github:bitbaum/whenkit#v0.2.1",
+    "@bitbaum/whenkit": "github:bitbaum/whenkit#v0.3.1",
     "@hono/node-server": "^2.1.1",
     "@hookform/resolvers": "^5.9.1",
     "@marsidev/react-turnstile": "^1.6.0",
@@ -196,7 +196,7 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
-    "@next/bundle-analyzer": "^16.3.5",
+    "@next/bundle-analyzer": "^16.3.8",
     "@playwright/mcp": "^0.0.80",
     "@playwright/test": "^1.62.1",
     "@swc/core": "^1.16.2",
@@ -213,7 +213,7 @@
     "@vitest/coverage-v8": "^4.1.11",
     "chalk": "^6.0.0",
     "concurrently": "^10.0.5",
-    "eslint": "^10.10.0",
+    "eslint": "^10.12.0",
     "eslint-config-next": "^16.3.5",
     "eslint-plugin-jsdoc": "^64.3.9",
     "eslint-plugin-unused-imports": "^4.4.1",

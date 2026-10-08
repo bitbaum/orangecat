@@ -91,6 +91,8 @@ export const LOKI_ENDPOINTS = {
   projectLink: '/api/orangecat/project-link',
   /** "What is happening to this person's projects?" — signed, per actor (Cat). */
   actorStatus: '/api/orangecat/actor-status',
+  /** Every studio project: identity, roadmap, changelog, links — public, cached 5 min. */
+  fleetMap: '/api/fleet/map',
 } as const;
 
 export const ECOSYSTEM_LINKS = {
