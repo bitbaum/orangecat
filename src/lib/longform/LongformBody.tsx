@@ -1,6 +1,7 @@
 import { ArticleBody, setHighlighterLoader } from 'bip-kit/react';
 import { MermaidBlock } from 'bip-kit/react/mermaid';
 import type { ContentBlock } from 'bip-kit';
+import { DeepBlock, toSegments } from './DeepBlock';
 
 /**
  * The server-side long-form body renderer — bip-kit's reference renderer
@@ -20,5 +21,17 @@ import type { ContentBlock } from 'bip-kit';
 setHighlighterLoader(() => import('shiki'));
 
 export default function LongformBody({ blocks }: { blocks: ContentBlock[] }) {
-  return <ArticleBody blocks={blocks} components={{ mermaid: MermaidBlock }} />;
+  return (
+    <>
+      {toSegments(blocks).map((segment, i) =>
+        segment.kind === 'article' ? (
+          <ArticleBody key={i} blocks={segment.blocks} components={{ mermaid: MermaidBlock }} />
+        ) : (
+          <div key={i} className="bp-article">
+            <DeepBlock title={segment.title} blocks={segment.blocks} />
+          </div>
+        )
+      )}
+    </>
+  );
 }
