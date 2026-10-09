@@ -56,6 +56,25 @@ Loki Thoughts: the block in `docs/thoughts-style-guide.md` (`summary`,
 - Numbers are the ones in the code or the commits; never rounded up.
 - Pseudonymous: never the founder's real name.
 
+## 3b. Anyone first, depth on request (stated 2026-10-09)
+
+The prose is for anyone: a reader with no technical background follows it
+start to end and finds it interesting. The technical depth — files,
+functions, regexes, the exact numbers — goes into closed sections the reader
+opens on purpose:
+
+````md
+```deep Under the hood: the grammar
+Any markdown: paragraphs, tables, mermaid, code.
+```
+````
+
+Both sites render that fence as a native `<details>` (Loki
+`components/thoughts/DeepBlock.tsx`, OrangeCat `lib/longform/DeepBlock.tsx`).
+Rules: the piece must read whole with every deep section closed; two to four
+deep sections per piece, each titled "Under the hood: <topic>"; a stats block
+or a diagram stays in the open prose, a seam table goes inside.
+
 ## 4. Media rule
 
 A piece that compares systems, lists seams or describes a pipeline carries at
@@ -92,3 +111,11 @@ a merged PR is not live until the deploy has run — confirm the URL returns
   the narrative of what the records say.
 - When something does not work, say so in the piece — the record of being
   wrong is part of the product.
+- Easy and interesting for anyone, with the extremely technical parts behind
+  `deep` sections (3b). Progressive disclosure, not a wall of text and not a
+  wall of code.
+- Phone first, including diagrams: a Mermaid flowchart goes top-down (`TD`),
+  not left-right — six nodes side by side are unreadable at 390px. Check the
+  rendered page on a phone, not only in the build.
+- Blog and marketing pages are products too: if the index buries the first
+  post under filters, fix the index in the same PR.
