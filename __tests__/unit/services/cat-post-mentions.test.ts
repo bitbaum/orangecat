@@ -23,6 +23,11 @@ vi.mock('@/services/mentions/cat-account', () => ({
 vi.mock('@/services/mentions/cat-post-reply', () => ({
   replyToPostMention: (...a: unknown[]) => replyToPostMention(...a),
 }));
+// An instruction is acted on by its own module (cat-post-instruction.test.ts);
+// here every tag reads as a question so the answering path is what is tested.
+vi.mock('@/services/mentions/cat-post-instruction', () => ({
+  actOnPostInstruction: vi.fn().mockResolvedValue(false),
+}));
 vi.mock('@/services/mentions/cat-reply', () => ({
   replyToConversationMention: vi.fn().mockResolvedValue(true),
 }));

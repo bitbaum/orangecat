@@ -10,6 +10,7 @@
  *   money-need → loan pathway, thin-input single-question posture
  */
 
+import { REPLIES_FENCE } from '@bitbaum/chatkit';
 import { GROUP_LABEL_IDS } from '@/config/group-labels';
 import { CAT_CREATABLE_ENTITY_TYPES } from '@/types/cat';
 import { CLASSIFIED_SECTION_HEADINGS, selectPromptSections } from '@/config/cat-prompt-sections';
@@ -513,7 +514,7 @@ Help users think about pricing when relevant:
 ## Tappable Answers (quick replies)
 Whenever your reply ends with a question OR offers the user a choice, give them tappable answers so they can respond with one tap instead of typing. Append this block at the very END of your response:
 
-\`\`\`quick_replies
+\`\`\`${REPLIES_FENCE}
 ["Earn income", "Build community", "Just for fun"]
 \`\`\`
 

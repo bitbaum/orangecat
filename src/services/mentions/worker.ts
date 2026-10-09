@@ -10,6 +10,7 @@
 import { ensureCatAccount } from '@/services/mentions/cat-account';
 import { replyToConversationMention } from '@/services/mentions/cat-reply';
 import { replyToPostMention } from '@/services/mentions/cat-post-reply';
+import { actOnPostInstruction } from '@/services/mentions/cat-post-instruction';
 import { resolveMentions } from '@/services/mentions/resolve';
 import { notifyMentionedPeople } from '@/services/mentions/notify-mentions';
 import { DATABASE_TABLES } from '@/config/database-tables';
@@ -71,11 +72,7 @@ export async function runCatMentions(
         result.failed += 1;
       }
     } catch (error) {
-      await failMention(
-        admin,
-        mention,
-        error instanceof Error ? error.message : String(error)
-      );
+      await failMention(admin, mention, error instanceof Error ? error.message : String(error));
       result.failed += 1;
     }
   }
@@ -153,5 +150,12 @@ async function processPostMentions(
   if (!mentionsCat) {
     return true;
   }
-  return replyToPostMention(admin, { eventId, catId });
+  // "@cat watch this for me" is done by the tagger's own Cat, then answered;
+  // anything that is not an instruction is answered as before.
+  const acted = await actOnPostInstruction(admin, {
+    eventId,
+    catId,
+    requesterId: mention.requester_id,
+  });
+  return acted || replyToPostMention(admin, { eventId, catId });
 }

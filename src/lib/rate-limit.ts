@@ -103,6 +103,11 @@ const oauthRegistrationLimiter = slidingWindow({ limit: 10, windowMs: 60 * 60_00
 // Writes are additionally held to the ordinary per-user write limit, because
 // they run through the /api/v1 handlers.
 const mcpLimiter = slidingWindow({ limit: 120, windowMs: 60_000 });
+// "@cat <instruction>" under a post: the Cat ACTS for the tagger. Each one is a
+// platform LLM call plus a write in their name, triggered from a public surface,
+// so a person gets a handful per ten minutes — plenty for real use, flat for a
+// script (or a thread trying to make someone's Cat do a hundred things).
+const catPostInstructionLimiter = slidingWindow({ limit: 10, windowMs: 10 * 60_000 });
 
 // ==================== RATE LIMIT FUNCTIONS ====================
 //
@@ -258,6 +263,11 @@ export async function rateLimitOAuthRegistration(request: RequestLike): Promise<
 /** MCP requests per signed-in person: 120 per minute. */
 export async function rateLimitMcp(userId: string): Promise<RateLimitResult> {
   return toRateLimitResult(mcpLimiter.check(`mcp:${userId}`));
+}
+
+/** "@cat <instruction>" actions taken from posts, per tagger: 10 per 10 minutes. */
+export async function rateLimitCatPostInstruction(userId: string): Promise<RateLimitResult> {
+  return toRateLimitResult(catPostInstructionLimiter.check(`cat-post-instruction:${userId}`));
 }
 
 /** Sign-in code requests per recipient address: 3 per 15 minutes, whatever the IP. */

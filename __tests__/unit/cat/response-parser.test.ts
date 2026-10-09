@@ -250,11 +250,21 @@ describe('parseActionsFromResponse — quick_replies', () => {
     expect(quickReplies).toBeUndefined();
   });
 
-  it('drops a malformed quick_replies block silently (no chips, no throw)', () => {
-    const content = 'Question?\n\n```quick_replies\nnot json\n```';
+  it('never shows the block as text, even when it is not a JSON array', () => {
+    // chatkit's extractReplies reads one reply per line when the model skips
+    // the JSON — the block is still removed from the message either way.
+    const content = 'Question?\n\n```quick_replies\n- Yes\n- Not now\n```';
     expect(() => parseActionsFromResponse(content)).not.toThrow();
     const { quickReplies, message } = parseActionsFromResponse(content);
-    expect(quickReplies).toBeUndefined();
+    expect(quickReplies).toEqual(['Yes', 'Not now']);
     expect(message).toBe('Question?');
+  });
+
+  it('hides a block that is still streaming in (unclosed fence)', () => {
+    const { quickReplies, message } = parseActionsFromResponse(
+      'Want a draft?\n\n```quick_replies\n["Yes, d'
+    );
+    expect(quickReplies).toBeUndefined();
+    expect(message).toBe('Want a draft?');
   });
 });
