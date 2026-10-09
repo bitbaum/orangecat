@@ -29,7 +29,7 @@ const SYSTEM_PROMPT = [
   'Respond as JSON: {"reply": "<your message>"}',
 ].join('\n');
 
-interface ThreadEvent {
+export interface ThreadEvent {
   id: string;
   actor_id: string;
   title: string | null;
@@ -37,6 +37,9 @@ interface ThreadEvent {
   parent_event_id: string | null;
   thread_id: string | null;
   created_at: string;
+  /** What the post is about (a project, a profile …) — how the Cat resolves "this". */
+  subject_type?: string | null;
+  subject_id?: string | null;
 }
 
 /**
@@ -45,13 +48,16 @@ interface ThreadEvent {
  * Falls back to the tagged post alone when it starts a thread of its own — a
  * top-level post has no ancestors, and that is not a failure.
  */
+const THREAD_COLUMNS =
+  'id, actor_id, title, description, parent_event_id, thread_id, created_at, subject_type, subject_id';
+
 export async function loadThreadContext(
   admin: SupabaseClient,
   eventId: string
 ): Promise<ThreadEvent[]> {
   const { data: tagged } = await admin
     .from(DATABASE_TABLES.TIMELINE_EVENTS)
-    .select('id, actor_id, title, description, parent_event_id, thread_id, created_at')
+    .select(THREAD_COLUMNS)
     .eq('id', eventId)
     .maybeSingle();
 
@@ -63,7 +69,7 @@ export async function loadThreadContext(
 
   const { data: thread } = await admin
     .from(DATABASE_TABLES.TIMELINE_EVENTS)
-    .select('id, actor_id, title, description, parent_event_id, thread_id, created_at')
+    .select(THREAD_COLUMNS)
     .or(`id.eq.${threadId},thread_id.eq.${threadId}`)
     .eq('is_deleted', false)
     .order('created_at', { ascending: true })
@@ -81,9 +87,12 @@ export function buildThreadPrompt(events: ThreadEvent[], taggedId: string): stri
     const marker = e.id === taggedId ? ' <- tagged you here' : '';
     return `- ${body}${marker}`;
   });
-  return ['Thread (oldest first):', lines.join('\n'), '', 'Reply to the post that tagged you.'].join(
-    '\n'
-  );
+  return [
+    'Thread (oldest first):',
+    lines.join('\n'),
+    '',
+    'Reply to the post that tagged you.',
+  ].join('\n');
 }
 
 /**

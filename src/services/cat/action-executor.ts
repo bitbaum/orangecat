@@ -12,7 +12,7 @@ import { STATUS } from '@/config/database-constants';
 import { logger } from '@/utils/logger';
 import { ACTION_HANDLERS } from './handlers';
 import { generateActionDescription } from './action-descriptions';
-import { findIdenticalPending } from './pending-dedupe';
+import { createPendingAction } from './pending-actions';
 import { extractBtcAmount, getActionHistory, logDeniedAction, updateActionLog } from './action-log';
 
 // Re-export parseReminderDate for back-compat (legacy tests import from here).
@@ -93,13 +93,12 @@ export class CatActionExecutor {
     const permission = await this.permissionService.checkPermission(userId, actionId);
 
     if (!permission.allowed && canGrantOnConfirm(action, permission.code)) {
-      const pendingAction = await this.createPendingAction(
+      const pendingAction = await createPendingAction(
+        this.supabase,
         userId,
         action,
         validatedParameters,
-        conversationId,
-        messageId,
-        { grantOnConfirm: true }
+        { conversationId, messageId, grantOnConfirm: true }
       );
       return {
         success: true,
@@ -163,12 +162,12 @@ export class CatActionExecutor {
 
     // 3. If confirmation required, create pending action
     if (permission.requiresConfirmation) {
-      const pendingAction = await this.createPendingAction(
+      const pendingAction = await createPendingAction(
+        this.supabase,
         userId,
         action,
         validatedParameters,
-        conversationId,
-        messageId
+        { conversationId, messageId }
       );
 
       return {
@@ -433,53 +432,6 @@ export class CatActionExecutor {
         logId: logEntry?.id,
       };
     }
-  }
-
-  private async createPendingAction(
-    userId: string,
-    action: CatAction,
-    parameters: Record<string, unknown>,
-    conversationId?: string,
-    messageId?: string,
-    options: { grantOnConfirm?: boolean } = {}
-  ): Promise<PendingAction> {
-    const description = generateActionDescription(action, parameters);
-
-    // One consent card per identical request — see findIdenticalPending.
-    const same = await findIdenticalPending(this.supabase, userId, action.id, parameters);
-    if (same) {
-      return same;
-    }
-
-    const { data, error } = await this.supabase
-      .from(DATABASE_TABLES.CAT_PENDING_ACTIONS)
-      .insert({
-        user_id: userId,
-        action_id: action.id,
-        category: action.category,
-        parameters,
-        description,
-        conversation_id: conversationId || null,
-        message_id: messageId || null,
-        grant_on_confirm: options.grantOnConfirm === true,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      throw new Error(`Failed to create pending action: ${error.message}`);
-    }
-
-    return {
-      id: data.id,
-      actionId: data.action_id,
-      category: data.category,
-      parameters: data.parameters,
-      description: data.description,
-      conversationId: data.conversation_id,
-      expiresAt: data.expires_at,
-      grantOnConfirm: data.grant_on_confirm === true,
-    };
   }
 }
 

@@ -4,6 +4,8 @@
  */
 
 import { useMemo } from 'react';
+import { extractReplies } from '@bitbaum/chatkit';
+import { ChatReplies } from '@bitbaum/chatkit/react';
 import { cn } from '@/lib/utils';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { Cat, User, Copy, Check, Clock } from 'lucide-react';
@@ -176,11 +178,14 @@ export function MessageBubble({
   const isFocus = variant === 'focus';
   const { copied, copy } = useCopyToClipboard();
 
-  // Clean the message content by removing action, exec_action, and quick_replies
-  // blocks for display (quick_replies render as chips below, never as raw text).
-  const stripped = message.content
-    .replace(/```(?:action|exec_action|quick_replies)[\s\S]*?```/g, '')
-    .trim();
+  // Clean the message content for display: action and exec_action blocks are
+  // cards, and the suggested-replies block is buttons below — never raw text.
+  // The replies block goes through chatkit's extractReplies (the one parser for
+  // that fence), which also hides a block that is still STREAMING in, so a
+  // reader never watches `["Yes", "No"` type itself out under an answer.
+  // Only an answer can carry one; a person's own text is shown as typed.
+  const withoutCards = message.content.replace(/```(?:action|exec_action)[\s\S]*?```/g, '');
+  const stripped = (isUser ? withoutCards : extractReplies(withoutCards).text).trim();
   // A user turn may carry attached files/things (see ../attachments): show the
   // typed text, and the attachments as chips — never a wall of file contents.
   const attached = isUser ? parseUserMessage(stripped) : null;
@@ -282,18 +287,7 @@ export function MessageBubble({
         {/* Tappable answers — only on the latest assistant turn (older turns'
             chips would be stale). Tap sends the label as the next message. */}
         {!isUser && isLast && message.quickReplies && message.quickReplies.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-2">
-            {message.quickReplies.map((reply, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => onQuickReply?.(reply)}
-                className="oc-chat-reply"
-              >
-                {reply}
-              </button>
-            ))}
-          </div>
+          <ChatReplies replies={message.quickReplies} onPick={text => onQuickReply?.(text)} />
         )}
 
         {/* Action buttons. When a prefill card is also present for an entity draft,

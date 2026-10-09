@@ -9,6 +9,7 @@
  * Last Modified Summary: Added suggest_wallet action parsing
  */
 
+import { extractReplies } from '@bitbaum/chatkit';
 import {
   CAT_CREATABLE_ENTITY_TYPES,
   type SuggestedAction,
@@ -32,30 +33,14 @@ interface ParsedResponse {
   quickReplies?: string[];
 }
 
-// Quick replies: ```quick_replies ["...", "..."]``` — tappable answers rendered
-// as chips below the message. Best-effort: a malformed or oversized block is
-// dropped silently (no chips), never shown as raw text.
-const QUICK_REPLIES_REGEX = /```quick_replies\s*([\s\S]*?)```/i;
-
-function parseQuickReplies(content: string): string[] {
-  const m = QUICK_REPLIES_REGEX.exec(content);
-  if (!m) {
-    return [];
-  }
-  try {
-    const raw = JSON.parse(m[1].trim());
-    if (!Array.isArray(raw)) {
-      return [];
-    }
-    return raw
-      .filter((s): s is string => typeof s === 'string')
-      .map(s => s.trim())
-      .filter(s => s.length > 0 && s.length <= 40)
-      .slice(0, 4);
-  } catch {
-    return [];
-  }
-}
+/**
+ * Suggested replies ("quick replies") are chatkit's format now — the fence, the
+ * parser and the streaming-safe hiding all live in `@bitbaum/chatkit`'s
+ * `extractReplies`, the one place every product reads them from. This file
+ * used to carry its own regex; two parsers for one fence is how they drift.
+ * The Cat's limits stay its own: four chips, forty characters.
+ */
+export const CAT_REPLY_LIMITS = { max: 4, maxLength: 40 } as const;
 
 /**
  * Parse action blocks from AI response.
@@ -136,8 +121,9 @@ export function parseActionsFromResponse(content: string): ParsedResponse {
 
   // Quick replies are parsed + stripped after action blocks (the action regex
   // never matches `quick_replies`, so the block survives the loop above).
-  const quickReplies = parseQuickReplies(cleanedMessage);
-  cleanedMessage = cleanedMessage.replace(QUICK_REPLIES_REGEX, '').trim();
+  const extracted = extractReplies(cleanedMessage, CAT_REPLY_LIMITS);
+  const quickReplies = extracted.replies;
+  cleanedMessage = extracted.text.trim();
 
   return {
     message: cleanedMessage,
