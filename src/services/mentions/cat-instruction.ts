@@ -328,7 +328,17 @@ const DONE: Record<string, (o: { parameters: Record<string, unknown>; data?: unk
       return when ? `Done — I'll remind you on ${when}.` : 'Done — I’ll remind you.';
     },
     create_task: () => 'Done — it’s on your list.',
-    create_watch: () => 'Done — I’m watching this and will tell you when it happens.',
+    create_watch: o => {
+      // Only the handle the tagger typed or replied under — never the keyword
+      // or label, which may be private to them.
+      if (o.parameters.kind === 'person_posts' && o.parameters.username) {
+        return `Done — I’ll tell you when @${handle(o.parameters.username)} posts.`;
+      }
+      if (o.parameters.kind === 'following_topic') {
+        return 'Done — I’ll tell you when people you follow post about this.';
+      }
+      return 'Done — I’m watching this and will tell you when it happens.';
+    },
     watch_topic: () => 'Done — I’ll tell you when someone new shows up for this.',
     follow_user: o => `Done — you’re following @${handle(o.parameters.username)}.`,
     unfollow_user: () => 'Done.',

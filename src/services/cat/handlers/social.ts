@@ -14,7 +14,7 @@ import type { AnySupabaseClient } from '@/lib/supabase/types';
 import type { ActionHandler } from './types';
 
 /** Resolve "@alice" / "alice" to a profile id + display bits. */
-async function resolveProfileByUsername(
+export async function resolveProfileByUsername(
   supabase: AnySupabaseClient,
   raw: string
 ): Promise<{ id: string; username: string; name: string | null } | null> {
@@ -237,9 +237,8 @@ export const socialHandlers: Record<string, ActionHandler> = {
     const ownerLabel = owner?.name || (owner?.username ? `@${owner.username}` : 'them');
 
     // Lazy import: messaging helpers pull the notification/email stack.
-    const { openOrCreateConversation } = await import(
-      '@/features/messaging/lib/conversation-helpers'
-    );
+    const { openOrCreateConversation } =
+      await import('@/features/messaging/lib/conversation-helpers');
     const convo = await openOrCreateConversation(userId, [ownerUserId]);
     const conversationId =
       (convo as { conversationId?: string; id?: string }).conversationId ??

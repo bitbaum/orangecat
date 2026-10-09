@@ -15,6 +15,7 @@ import { NotificationService } from '@/lib/services/notifications';
 import { logger } from '@/utils/logger';
 import { countUnreadNotifications } from '@/services/notifications/unread-count';
 import { exploreTopicByVector } from './discovery-match';
+import { evaluateSocialWatches, isSocialWatchKind, type SocialWatchRow } from './social-watches';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { displayBTC } from '@/services/currency/formatting';
 
@@ -205,7 +206,12 @@ export async function runDailyBrief(admin: SupabaseClient, limit: number): Promi
 interface WatchRow {
   id: string;
   user_id: string;
-  kind: 'funding_reached' | 'sale_received' | 'booking_received' | 'topic_match';
+  kind:
+    | 'funding_reached'
+    | 'sale_received'
+    | 'booking_received'
+    | 'topic_match'
+    | SocialWatchRow['kind'];
   label: string;
   entity_type: string | null;
   entity_id: string | null;
@@ -213,6 +219,8 @@ interface WatchRow {
   topic: string | null;
   /** Stored when the user created the watch — the timer never embeds. */
   topic_embedding: string | number[] | null;
+  subject_user_id: string | null;
+  last_seen_at: string | null;
   created_at: string;
 }
 
@@ -287,7 +295,11 @@ async function watchConditionMet(admin: SupabaseClient, watch: WatchRow): Promis
     return Array.isArray(data) && data.length > 0;
   }
 
-  // booking_received
+  // booking_received — named, not a fall-through: an unknown kind must never
+  // fire as if it were a booking.
+  if (watch.kind !== 'booking_received') {
+    return false;
+  }
   const { data: actors } = await admin
     .from(DATABASE_TABLES.ACTORS)
     .select('id')
@@ -316,7 +328,7 @@ export async function runWatchEvaluation(admin: SupabaseClient): Promise<WatchRu
   const { data, error } = await admin
     .from(DATABASE_TABLES.CAT_WATCHES)
     .select(
-      'id, user_id, kind, label, entity_type, entity_id, target_btc, topic, topic_embedding, created_at'
+      'id, user_id, kind, label, entity_type, entity_id, target_btc, topic, topic_embedding, subject_user_id, last_seen_at, created_at'
     )
     .eq('status', 'active')
     .order('created_at', { ascending: true })
@@ -326,9 +338,17 @@ export async function runWatchEvaluation(admin: SupabaseClient): Promise<WatchRu
     return { watchesChecked: 0, fired: 0, errors: 1 };
   }
 
-  const watches = (data ?? []) as WatchRow[];
+  const all = (data ?? []) as WatchRow[];
   const notifications = new NotificationService(admin);
-  const result: WatchRunResult = { watchesChecked: watches.length, fired: 0, errors: 0 };
+  const result: WatchRunResult = { watchesChecked: all.length, fired: 0, errors: 0 };
+
+  // Watches on people are standing and cursor-based, and evaluated in one
+  // batch (./social-watches); the rest fire once and are judged one by one.
+  const social = all.filter((w): w is WatchRow & SocialWatchRow => isSocialWatchKind(w.kind));
+  const watches = all.filter(w => !isSocialWatchKind(w.kind));
+  const socialResult = await evaluateSocialWatches(admin, social, notifications);
+  result.fired += socialResult.fired;
+  result.errors += socialResult.errors;
 
   for (const watch of watches) {
     try {

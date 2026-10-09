@@ -10,6 +10,7 @@
 
 import { isValidEntityType, type EntityType } from '@/config/entity-registry';
 import { MY_DATA_TOPICS, type MyDataTopic } from './my-data-topics';
+import { isFollowingScope, type FollowingSearchOptions } from './following-scope';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import type {
   ToolResultMessage,
@@ -31,74 +32,91 @@ export async function handleExploreTopic(
   // profile carries a bio). Read-only; the introduction is a separate,
   // confirmed action.
 
-    const parsedArgs = (() => {
-      try {
-        return JSON.parse(toolCall.function.arguments ?? '{}') as {
-          topic?: string;
-          entityType?: string;
-        };
-      } catch {
-        return {} as { topic?: string; entityType?: string };
-      }
-    })();
-    const topic = (parsedArgs.topic ?? '').trim();
-    if (!topic) {
-      onToolCall?.({ id: toolCall.id, name: toolName, status: 'failed', error: 'no_topic' });
-      return {
-        role: 'tool',
-        tool_call_id: toolCall.id,
-        content: 'No topic was provided. Ask the user what subject they want to explore.',
-      };
-    }
-
-    onToolCall?.({ id: toolCall.id, name: toolName, status: 'running', args: { query: topic } });
+  const parsedArgs = (() => {
     try {
-      const { exploreTopic, formatDiscoveryForModel } = await import('./discovery');
-      const result = await exploreTopic(supabase, userId, topic, {
-        entityType:
-          parsedArgs.entityType && isValidEntityType(parsedArgs.entityType)
-            ? (parsedArgs.entityType as EntityType)
-            : undefined,
-      });
-
-      const refs: ToolCallResultRef[] = [
-        ...result.hits.map(h => ({ url: h.url, type: h.entityType as string, title: h.title })),
-        ...result.people
-          .filter(p => p.profileUrl)
-          .map(p => ({ url: p.profileUrl!, type: 'person', title: p.displayName })),
-      ].slice(0, 10);
-
-      if (refs.length > 0) {
-        onToolCall?.({
-          id: toolCall.id,
-          name: toolName,
-          status: 'completed',
-          resultCount: refs.length,
-          results: refs,
-        });
-      } else {
-        onToolCall?.({ id: toolCall.id, name: toolName, status: 'no_results' });
-      }
-
-      return {
-        role: 'tool',
-        tool_call_id: toolCall.id,
-        content: formatDiscoveryForModel(result),
+      return JSON.parse(toolCall.function.arguments ?? '{}') as {
+        topic?: string;
+        entityType?: string;
+        scope?: string;
+        days?: number;
       };
-    } catch (err) {
+    } catch {
+      return {} as { topic?: string; entityType?: string; scope?: string; days?: number };
+    }
+  })();
+  const topic = (parsedArgs.topic ?? '').trim();
+  const entityType =
+    parsedArgs.entityType && isValidEntityType(parsedArgs.entityType)
+      ? (parsedArgs.entityType as EntityType)
+      : undefined;
+  // Scoped to the user's follows: a keyword pass over their circle, no
+  // embedding needed — and an empty topic is a fine "what's new with them".
+  if (isFollowingScope(parsedArgs.scope)) {
+    return handleFollowingSearch(
+      supabase,
+      userId,
+      toolCall,
+      toolName,
+      topic,
+      {
+        entityType,
+        days: parsedArgs.days,
+      },
+      onToolCall
+    );
+  }
+  if (!topic) {
+    onToolCall?.({ id: toolCall.id, name: toolName, status: 'failed', error: 'no_topic' });
+    return {
+      role: 'tool',
+      tool_call_id: toolCall.id,
+      content: 'No topic was provided. Ask the user what subject they want to explore.',
+    };
+  }
+
+  onToolCall?.({ id: toolCall.id, name: toolName, status: 'running', args: { query: topic } });
+  try {
+    const { exploreTopic, formatDiscoveryForModel } = await import('./discovery');
+    const result = await exploreTopic(supabase, userId, topic, { entityType });
+
+    const refs: ToolCallResultRef[] = [
+      ...result.hits.map(h => ({ url: h.url, type: h.entityType as string, title: h.title })),
+      ...result.people
+        .filter(p => p.profileUrl)
+        .map(p => ({ url: p.profileUrl!, type: 'person', title: p.displayName })),
+    ].slice(0, 10);
+
+    if (refs.length > 0) {
       onToolCall?.({
         id: toolCall.id,
         name: toolName,
-        status: 'failed',
-        error: err instanceof Error ? err.message : 'unknown',
+        status: 'completed',
+        resultCount: refs.length,
+        results: refs,
       });
-      return {
-        role: 'tool',
-        tool_call_id: toolCall.id,
-        content:
-          'Exploring that topic failed. Tell the user honestly that the search did not run — do NOT say the platform has nothing on it.',
-      };
+    } else {
+      onToolCall?.({ id: toolCall.id, name: toolName, status: 'no_results' });
     }
+
+    return {
+      role: 'tool',
+      tool_call_id: toolCall.id,
+      content: formatDiscoveryForModel(result),
+    };
+  } catch (err) {
+    onToolCall?.({
+      id: toolCall.id,
+      name: toolName,
+      status: 'failed',
+      error: err instanceof Error ? err.message : 'unknown',
+    });
+    return {
+      role: 'tool',
+      tool_call_id: toolCall.id,
+      content:
+        'Exploring that topic failed. Tell the user honestly that the search did not run — do NOT say the platform has nothing on it.',
+    };
+  }
 }
 
 export async function handleQueryMyData(
@@ -114,50 +132,50 @@ export async function handleQueryMyData(
   // nothing — and it returns prose, not JSON, so weak models paraphrase
   // instead of echoing raw structures.
 
-    const parsedArgs = (() => {
-      try {
-        return JSON.parse(toolCall.function.arguments ?? '{}') as {
-          topic?: string;
-          days?: number;
-        };
-      } catch {
-        return {} as { topic?: string; days?: number };
-      }
-    })();
-    const topic = (
-      MY_DATA_TOPICS.includes(parsedArgs.topic as MyDataTopic) ? parsedArgs.topic : 'overview'
-    ) as MyDataTopic;
-
-    onToolCall?.({ id: toolCall.id, name: toolName, status: 'running', args: { topic } });
+  const parsedArgs = (() => {
     try {
-      const { queryMyData } = await import('./my-data');
-      const report = await queryMyData(supabase, userId, topic, { days: parsedArgs.days });
-      onToolCall?.({
-        id: toolCall.id,
-        name: toolName,
-        status: 'completed',
-        resultCount: 1,
-        results: [],
-      });
-      return {
-        role: 'tool',
-        tool_call_id: toolCall.id,
-        content: `LIVE DATA (the user's own, just read):\n${report}\n\nAnswer the user's question from THIS data only. Amounts are BTC; present them in the user's display currency style when natural. If a section says it could not be read, say so honestly for that part — never fill gaps with guesses.`,
+      return JSON.parse(toolCall.function.arguments ?? '{}') as {
+        topic?: string;
+        days?: number;
       };
-    } catch (err) {
-      onToolCall?.({
-        id: toolCall.id,
-        name: toolName,
-        status: 'failed',
-        error: err instanceof Error ? err.message : 'unknown',
-      });
-      return {
-        role: 'tool',
-        tool_call_id: toolCall.id,
-        content:
-          'Reading the data failed — tell the user honestly that you could not read their live data right now, and that their dashboard shows the authoritative numbers.',
-      };
+    } catch {
+      return {} as { topic?: string; days?: number };
     }
+  })();
+  const topic = (
+    MY_DATA_TOPICS.includes(parsedArgs.topic as MyDataTopic) ? parsedArgs.topic : 'overview'
+  ) as MyDataTopic;
+
+  onToolCall?.({ id: toolCall.id, name: toolName, status: 'running', args: { topic } });
+  try {
+    const { queryMyData } = await import('./my-data');
+    const report = await queryMyData(supabase, userId, topic, { days: parsedArgs.days });
+    onToolCall?.({
+      id: toolCall.id,
+      name: toolName,
+      status: 'completed',
+      resultCount: 1,
+      results: [],
+    });
+    return {
+      role: 'tool',
+      tool_call_id: toolCall.id,
+      content: `LIVE DATA (the user's own, just read):\n${report}\n\nAnswer the user's question from THIS data only. Amounts are BTC; present them in the user's display currency style when natural. If a section says it could not be read, say so honestly for that part — never fill gaps with guesses.`,
+    };
+  } catch (err) {
+    onToolCall?.({
+      id: toolCall.id,
+      name: toolName,
+      status: 'failed',
+      error: err instanceof Error ? err.message : 'unknown',
+    });
+    return {
+      role: 'tool',
+      tool_call_id: toolCall.id,
+      content:
+        'Reading the data failed — tell the user honestly that you could not read their live data right now, and that their dashboard shows the authoritative numbers.',
+    };
+  }
 }
 
 export async function handleCheckMyTrackRecord(
@@ -202,6 +220,72 @@ export async function handleCheckMyTrackRecord(
       tool_call_id: toolCall.id,
       content:
         'Reading your own track record failed — tell the user honestly that you cannot see your history right now, and do not reconstruct it from memory.',
+    };
+  }
+}
+
+/**
+ * search_platform / explore_topic with scope "following": only what the people
+ * the user follows have published, public only. Shared by both tools so the
+ * scope means one thing whichever the model picked.
+ */
+export async function handleFollowingSearch(
+  supabase: AnySupabaseClient,
+  userId: string,
+  toolCall: RawToolCall,
+  toolName: string,
+  query: string,
+  opts: FollowingSearchOptions,
+  onToolCall?: OnToolCall
+): Promise<ToolResultMessage> {
+  onToolCall?.({
+    id: toolCall.id,
+    name: toolName,
+    status: 'running',
+    args: { query, scope: 'following' },
+  });
+  try {
+    const { searchFollowing, formatFollowingForModel } = await import('./following-scope');
+    const result = await searchFollowing(supabase, userId, query, opts);
+    const refs: ToolCallResultRef[] = [
+      ...result.posts.map(p => ({
+        url: p.url,
+        type: 'post',
+        title: `${p.author}: ${p.text.slice(0, 60)}`,
+      })),
+      ...result.entities.map(e => ({ url: e.url, type: e.entityType as string, title: e.title })),
+      ...result.people
+        .filter(p => p.username)
+        .map(p => ({
+          url: `/profiles/${p.username}`,
+          type: 'person',
+          title: p.name ?? p.username!,
+        })),
+    ].slice(0, 10);
+    if (refs.length > 0) {
+      onToolCall?.({
+        id: toolCall.id,
+        name: toolName,
+        status: 'completed',
+        resultCount: refs.length,
+        results: refs,
+      });
+    } else {
+      onToolCall?.({ id: toolCall.id, name: toolName, status: 'no_results' });
+    }
+    return { role: 'tool', tool_call_id: toolCall.id, content: formatFollowingForModel(result) };
+  } catch (err) {
+    onToolCall?.({
+      id: toolCall.id,
+      name: toolName,
+      status: 'failed',
+      error: err instanceof Error ? err.message : 'unknown',
+    });
+    return {
+      role: 'tool',
+      tool_call_id: toolCall.id,
+      content:
+        'Searching the people the user follows failed. Tell them honestly the search did not run — do NOT say their follows posted nothing.',
     };
   }
 }

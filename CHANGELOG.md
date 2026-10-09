@@ -9,6 +9,13 @@ reads, and [orangecat.ch/changelog](https://orangecat.ch/changelog) renders
 it from there. One `## YYYY-MM-DD` heading per day; bullets under it travel
 to the map, sub-bullets stay here for the human reader.
 
+## 2026-10-09
+
+### Added
+
+- **Ask your Cat about the people you follow.** "What did people I follow post about Lightning this week?" now searches only the people you follow — their public posts and listings, newest first — instead of all of OrangeCat. Nothing they keep private is ever included. {#search-following}
+- **Watch a person, or a topic among the people you follow.** Tell your Cat "tell me when @alice posts" (optionally "…about Lightning"), or "tell me when anyone I follow posts about Bitcoin education", and you get a notification for each new public post until you cancel it — never twice for the same post. It works under a post too: "@cat watch her posts for me". {#watch-people}
+
 ## 2026-10-08
 
 ### Changed

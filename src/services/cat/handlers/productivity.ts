@@ -2,9 +2,12 @@ import { DATABASE_TABLES } from '@/config/database-tables';
 import { TASK_STATUSES } from '@/config/tasks';
 import { parseReminderDate } from './date-utils';
 import type { ActionHandler } from './types';
+import { createSocialWatch } from './social-watch-create';
+import { SOCIAL_WATCH_KINDS, isSocialWatchKind } from '../social-watches';
 import { APP_LOCALE } from '@/utils/locale';
 
-const WATCH_KINDS = ['funding_reached', 'sale_received', 'booking_received'] as const;
+const CONDITION_WATCH_KINDS = ['funding_reached', 'sale_received', 'booking_received'] as const;
+const WATCH_KINDS = [...CONDITION_WATCH_KINDS, ...SOCIAL_WATCH_KINDS] as const;
 type WatchKind = (typeof WATCH_KINDS)[number];
 
 export const productivityHandlers: Record<string, ActionHandler> = {
@@ -24,6 +27,9 @@ export const productivityHandlers: Record<string, ActionHandler> = {
         success: false,
         error: 'Pass "label" — what to tell the user when the watch fires.',
       };
+    }
+    if (isSocialWatchKind(kind)) {
+      return createSocialWatch(supabase, userId, kind, label, params);
     }
     const targetBtc = typeof params.target_btc === 'number' ? params.target_btc : null;
     const entityId = typeof params.entity_id === 'string' ? params.entity_id : null;

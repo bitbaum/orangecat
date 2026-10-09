@@ -14,7 +14,9 @@ import {
   handleExploreTopic,
   handleQueryMyData,
   handleCheckMyTrackRecord,
+  handleFollowingSearch,
 } from './tool-handlers-lookup';
+import { isFollowingScope } from './following-scope';
 import { handleFindEventsNear } from './tool-handler-events-near';
 import { handlePrefillEntityForm } from './tool-handler-prefill';
 import { fetchWebsiteText, resolveRequestedUrl } from './website-analysis';
@@ -343,11 +345,27 @@ Explain this to the user in plain language: which provider is healthy, degraded,
   if (toolName === 'search_platform') {
     const parsedArgs = (() => {
       try {
-        return JSON.parse(toolCall.function.arguments ?? '{}') as { query?: string; type?: string };
+        return JSON.parse(toolCall.function.arguments ?? '{}') as {
+          query?: string;
+          type?: string;
+          scope?: string;
+          days?: number;
+        };
       } catch {
-        return {} as { query?: string; type?: string };
+        return {} as { query?: string; type?: string; scope?: string; days?: number };
       }
     })();
+    if (isFollowingScope(parsedArgs.scope)) {
+      return handleFollowingSearch(
+        supabase,
+        userId,
+        toolCall,
+        toolName,
+        parsedArgs.query ?? '',
+        { searchType: parsedArgs.type ?? 'all', days: parsedArgs.days },
+        onToolCall
+      );
+    }
 
     onToolCall?.({
       id: toolCall.id,
