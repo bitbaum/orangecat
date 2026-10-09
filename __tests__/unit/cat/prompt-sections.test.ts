@@ -215,7 +215,14 @@ describe('selection is worth doing', () => {
     // Both landed on the same action in parallel; merged, the prompt measures
     // 4,927 (4,650 + the venue, music, vibe, crew, currency and cover
     // parameters and create_venue), so the ceiling is 4,930.
-    expect(remaining).toBeLessThanOrEqual(4_930);
+    //
+    // Raised 4,930 -> 5,030 for "search and watch the people I follow":
+    // search_platform's scope/days and create_watch's person_posts /
+    // following_topic kinds (two parameter names, and the description was
+    // rewritten SHORTER than before while covering five kinds). ~95
+    // characters; the examples and the rules live in the tool definitions and
+    // in code (services/cat/following-scope.ts, social-watches.ts).
+    expect(remaining).toBeLessThanOrEqual(5_030);
   });
 
   it('selects by default now, and still sends everything when told to', async () => {

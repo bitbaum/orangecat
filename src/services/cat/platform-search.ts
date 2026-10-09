@@ -15,6 +15,7 @@ import { DATABASE_TABLES } from '@/config/database-tables';
 import { ENTITY_STATUS } from '@/config/database-constants';
 import { embeddingsEnabled, embedText } from '@/services/ai/embeddings';
 import { logger } from '@/utils/logger';
+import { ilikeOrConditions, searchTokens } from './search-tokens';
 
 /** What public search can be narrowed to — the list /api/v1/search and the MCP tool accept. */
 export const SEARCH_TYPES = [
@@ -77,21 +78,7 @@ export async function searchPlatform(
   // Tokenize: match ANY significant word (OR), not the whole phrase. A model
   // query like "tattoo artist collaboration" must match a bio that says
   // "Tattoo artist based in Berlin" — a single %phrase% ILIKE never would.
-  // (Recall-first; pgvector semantic ranking is the next slice.) Split on
-  // non-alphanumerics so tokens are safe to embed in PostgREST .or() strings.
-  let tokens = q
-    .toLowerCase()
-    .split(/[^a-z0-9]+/i)
-    .filter(t => t.length >= 3 && !SEARCH_STOPWORDS.has(t))
-    .slice(0, 6);
-  if (tokens.length === 0) {
-    tokens = [
-      q
-        .toLowerCase()
-        .replace(/[^a-z0-9 ]+/g, '')
-        .trim(),
-    ].filter(Boolean);
-  }
+  const tokens = searchTokens(q);
   if (tokens.length === 0) {
     return [];
   }
@@ -140,45 +127,6 @@ export async function searchPlatform(
   ]);
 
   return results;
-}
-
-/** Query-framing words that add noise to matchmaking searches, not signal. */
-const SEARCH_STOPWORDS = new Set([
-  'the',
-  'and',
-  'for',
-  'with',
-  'that',
-  'this',
-  'you',
-  'your',
-  'who',
-  'whom',
-  'find',
-  'need',
-  'want',
-  'looking',
-  'someone',
-  'anyone',
-  'somebody',
-  'collaborate',
-  'collaboration',
-  'collaborator',
-  'partner',
-  'platform',
-  'orangecat',
-  'people',
-  'person',
-  'can',
-  'help',
-  'near',
-  'about',
-]);
-
-/** Build a PostgREST `.or()` string: any token, in any field (tokens are
- *  alphanumeric-only so they're safe to interpolate). */
-function ilikeOrConditions(fields: string[], tokens: string[]): string {
-  return tokens.flatMap(t => fields.map(f => `${f}.ilike.%${t}%`)).join(',');
 }
 
 // ─── Semantic search (pgvector) ──────────────────────────────────────────────

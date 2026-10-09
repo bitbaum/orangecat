@@ -42,7 +42,7 @@ interface MatchRow {
  * enrich it. The index can lag a row going private, so this is the gate that
  * actually decides what a user sees.
  */
-function applyPublicGate(query: unknown, type: EntityType): unknown {
+export function applyPublicGate(query: unknown, type: EntityType): unknown {
   const q = query as {
     eq: (c: string, v: unknown) => unknown;
     in: (c: string, v: unknown[]) => unknown;

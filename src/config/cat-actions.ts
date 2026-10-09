@@ -1991,7 +1991,7 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
     id: 'create_watch',
     name: 'Create Watch',
     description:
-      'Watch a condition and notify the user when it becomes true: funding_reached (an entity\'s settled funding hits target_btc), sale_received (their next paid sale), or booking_received (their next incoming booking). Use when the user says "tell me when…" about money/sales/bookings. Checked every 15 minutes.',
+      'Notify the user when something happens. Once: funding_reached (funding hits target_btc), sale_received, booking_received. Per new public post until cancelled: person_posts (username posts; topic optional) or following_topic (anyone they follow posts about topic). Checked every 15 min.',
     category: 'context',
     icon: Bell,
     riskLevel: 'low',
@@ -2001,7 +2001,8 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
         name: 'kind',
         type: 'string',
         required: true,
-        description: 'funding_reached | sale_received | booking_received',
+        description:
+          'funding_reached | sale_received | booking_received | person_posts | following_topic',
       },
       {
         name: 'label',
@@ -2028,11 +2029,28 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
         required: false,
         description: 'Funding target in BTC (required for funding_reached)',
       },
+      {
+        name: 'username',
+        type: 'string',
+        required: false,
+        description:
+          'person_posts: the @username whose posts to watch — a post author in context or a handle the user typed, never a guess',
+      },
+      {
+        name: 'topic',
+        type: 'string',
+        required: false,
+        description:
+          'following_topic: what the people they follow should be posting about (required). person_posts: optional keyword to narrow to',
+      },
     ],
     examples: [
       'Tell me when my project reaches 0.05 BTC',
       'Let me know when someone books me',
       'Notify me on my next sale',
+      'Watch her posts for me',
+      'Tell me when @alice posts about Lightning',
+      'Let me know when anyone I follow posts about Bitcoin education',
     ],
     enabled: true,
   },

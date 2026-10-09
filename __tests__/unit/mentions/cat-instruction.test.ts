@@ -250,3 +250,54 @@ describe('publicReplyFor', () => {
     expect(publicReplyFor({ status: 'denied' })).toContain('settings');
   });
 });
+
+describe('"@cat watch her posts for me" — person watches from a post', () => {
+  const tagger = '@cat watch her posts for me';
+  const asked = (username: string) =>
+    verdict({
+      kind: 'instruction',
+      action_id: 'create_watch',
+      parameters: { kind: 'person_posts', label: 'She posted', username },
+      quote: 'watch her posts for me',
+    });
+
+  it('runs when "her" is someone in the thread', () => {
+    expect(parseInstructionDecision(asked('alice'), grounding(tagger))).toEqual({
+      kind: 'execute',
+      actionId: 'create_watch',
+      parameters: expect.objectContaining({ kind: 'person_posts', username: 'alice' }),
+    });
+  });
+
+  it('refuses a username nobody in the thread wrote — the model cannot pick a target', () => {
+    expect(parseInstructionDecision(asked('mallory'), grounding(tagger))).toEqual({
+      kind: 'unclear',
+      reason: 'ungrounded username',
+    });
+  });
+
+  it('a following_topic watch needs no handle and runs', () => {
+    const raw = verdict({
+      kind: 'instruction',
+      action_id: 'create_watch',
+      parameters: { kind: 'following_topic', label: 'Lightning news', topic: 'Lightning' },
+      quote: 'tell me when people I follow post about Lightning',
+    });
+    expect(
+      parseInstructionDecision(
+        raw,
+        grounding('@cat tell me when people I follow post about Lightning')
+      ).kind
+    ).toBe('execute');
+  });
+
+  it('the public reply names only the handle, never the private label', () => {
+    const reply = publicReplyFor({
+      status: 'done',
+      actionId: 'create_watch',
+      parameters: { kind: 'person_posts', username: '@Alice', label: 'my crush posted' },
+    });
+    expect(reply).toBe('Done — I’ll tell you when @alice posts.');
+    expect(reply).not.toContain('crush');
+  });
+});
