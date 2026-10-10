@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, Share2 } from 'lucide-react';
+import { Cat, Check, Share2 } from 'lucide-react';
+import { shareIntentUrl } from '@/config/share';
+import { SITE_URL } from '@/config/brand';
 
 /**
  * Share affordances for an article — a prefilled post-on-X intent link plus the
@@ -56,6 +58,15 @@ export default function ShareButton({ title, url }: { title: string; url: string
 
   return (
     <span className="inline-flex items-center gap-2">
+      <a
+        // Our own network first: the composer, prefilled, on this account.
+        href={shareIntentUrl(SITE_URL, { url, title })}
+        aria-label={`Share "${title}" on OrangeCat`}
+        className={buttonClass}
+      >
+        <Cat className="h-3.5 w-3.5" />
+        OrangeCat
+      </a>
       <a
         href={intentHref}
         target="_blank"
