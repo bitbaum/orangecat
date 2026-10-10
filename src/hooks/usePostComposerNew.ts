@@ -20,6 +20,13 @@ export interface PostComposerOptions {
   maxLength?: number;
   /** Parent event ID for replies/comments */
   parentEventId?: string;
+  /**
+   * What the composer opens with — a share intent (config/share.ts) or any
+   * caller that already knows the first line. Drafts are off while it is
+   * set: a saved draft loading over it would replace the thing the reader
+   * came to post with whatever they left half-typed last week.
+   */
+  initialContent?: string;
 }
 
 interface PostComposerState {
@@ -59,13 +66,14 @@ export function usePostComposer(options: PostComposerOptions = {}): PostComposer
     onSuccess,
     onOptimisticUpdate,
     debounceMs = 300,
-    enableDrafts = true,
+    initialContent,
+    enableDrafts = initialContent === undefined,
     enableRetry = true,
     maxLength = TIMELINE_CONTENT_LIMITS.post,
     parentEventId,
   } = options;
 
-  const [content, setContent] = useState('');
+  const [content, setContent] = useState(initialContent ?? '');
   const [visibility, setVisibility] = useState<TimelineVisibility>(defaultVisibility || 'public');
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const [image, setImage] = useState<PostImageMeta | null>(null);

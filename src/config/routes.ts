@@ -150,6 +150,8 @@ const APP_SURFACES = [
   '/receive',
   '/send',
   '/requests',
+  // Share on OrangeCat: the composer, prefilled from another page's link.
+  '/share',
 ] as const;
 
 const AUTH_SURFACES = ['/auth'] as const;
@@ -509,6 +511,8 @@ export const ROUTES = {
 
   // Timeline routes
   TIMELINE: '/timeline',
+  /** Share on OrangeCat — the composer, prefilled from ?url&title&text (config/share.ts). */
+  SHARE: '/share',
   /** Owner's "get paid" screen — one tap to a scannable QR. */
   RECEIVE: '/receive',
   /** Public, account-free page a payer lands on. The shareable half of RECEIVE. */

@@ -1,12 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { Share2, Mail, Copy, Check, X } from 'lucide-react';
+import { Share2, Mail, Copy, Check, X, Cat } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { GRADIENTS } from '@/config/gradients';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { APP_NAME } from '@/config/brand';
+import { shareIntentUrl } from '@/config/share';
 
 // Real brand marks. lucide-react dropped brand icons in 0.400+ and the
 // replacement here was `const Facebook = Globe; const Linkedin = Globe;` — two
@@ -24,6 +25,22 @@ export interface SharePlatform {
 }
 
 export const SHARE_PLATFORMS: SharePlatform[] = [
+  // Our own network first. A share panel on an OrangeCat page that offered X,
+  // Facebook and LinkedIn and not OrangeCat was the platform forgetting it is
+  // one (operator, 2026-10-10). Same door Loki's Thoughts and every fleet site
+  // use: /share?url&title opens the composer prefilled.
+  {
+    name: APP_NAME,
+    icon: Cat,
+    color: 'text-fg-primary',
+    bgColor: 'bg-surface-raised hover:bg-surface-raised/80',
+    action: (shareUrl, shareTitle) => {
+      window.location.href = shareIntentUrl(window.location.origin, {
+        url: shareUrl,
+        title: shareTitle,
+      });
+    },
+  },
   {
     name: 'X',
     icon: XBrandIcon,
