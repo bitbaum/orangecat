@@ -26,6 +26,7 @@ import type {
 import { NotificationDispatcher } from '@/services/notifications/dispatcher';
 import { hashPublicStatusToken, updatePaymentStatus } from './paymentFlowHelpers';
 import { handlePaymentConfirmed } from './paymentSettlement';
+import { findTicketForPayment, guestTicketPath } from '@/domain/events/tickets';
 
 /**
  * Check payment status. For NWC, does active lookup; for others, returns DB status.
@@ -74,7 +75,21 @@ export async function checkPublicPaymentStatus(
   return {
     ...result,
     requires_recipient_confirmation: result.status === STATUS.PAYMENT_INTENTS.BUYER_CONFIRMED,
+    ...(await guestTicketLink(admin, pi as PaymentIntent, result.status)),
   };
+}
+
+/** A guest who paid for a ticket is sent to it: the status poll carries the link. */
+async function guestTicketLink(
+  admin: SupabaseClient,
+  pi: PaymentIntent,
+  status: string
+): Promise<{ guest_ticket_path?: string }> {
+  if (status !== STATUS.PAYMENT_INTENTS.PAID || pi.entity_type !== 'event' || !pi.guest_name) {
+    return {};
+  }
+  const ticket = await findTicketForPayment(admin, pi.entity_id, pi.id);
+  return ticket ? { guest_ticket_path: guestTicketPath(pi.entity_id, ticket.ticket_code) } : {};
 }
 
 /**

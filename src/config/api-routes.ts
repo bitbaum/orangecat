@@ -249,6 +249,9 @@ export const API_ROUTES = {
   EVENTS: {
     NEARBY: `${ENTITY_REGISTRY['event'].apiEndpoint}/nearby`,
     TICKET: (eventId: string) => `${ENTITY_REGISTRY['event'].apiEndpoint}/${eventId}/ticket`,
+    /** A paid ticket without an account: name in, Bitcoin invoice out. */
+    TICKET_PURCHASE: (eventId: string) =>
+      `${ENTITY_REGISTRY['event'].apiEndpoint}/${eventId}/ticket/purchase`,
     CHECK_IN: (eventId: string) => `${ENTITY_REGISTRY['event'].apiEndpoint}/${eventId}/check-in`,
     ROLES: (eventId: string) => `${ENTITY_REGISTRY['event'].apiEndpoint}/${eventId}/roles`,
     ROLE: (roleId: string) => `/api/event-roles/${roleId}`,

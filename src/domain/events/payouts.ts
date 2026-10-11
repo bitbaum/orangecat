@@ -39,7 +39,8 @@ export interface EventPayout {
   kind: 'crew' | 'refund';
   role_id: string | null;
   attendee_id: string | null;
-  recipient_user_id: string;
+  /** Null for a refund to a guest, who has no account. */
+  recipient_user_id: string | null;
   amount: number | null;
   currency: string | null;
   amount_btc: number | null;
@@ -211,23 +212,37 @@ export async function refundTicket(
   const event = await organizerEvent(ctx, params.eventId);
   const { data: ticket } = await ctx.supabase
     .from(DATABASE_TABLES.EVENT_ATTENDEES)
-    .select('id, user_id, payment_status')
+    .select('id, user_id, payment_status, transaction_id')
     .eq('id', params.attendeeId)
     .eq('event_id', event.id)
     .maybeSingle();
   if (!ticket || ticket.payment_status !== 'paid') {
     throw new PayoutError('No paid ticket to refund', 'not_found');
   }
-  const buyerId = ticket.user_id as string;
+  // A guest bought without an account: no wallet on record to send to, and no
+  // one to notify. The refund is recorded as given back another way.
+  const buyerId = (ticket.user_id as string | null) ?? null;
+  if (!buyerId && params.method === 'lightning') {
+    throw new PayoutError(
+      'A guest has no wallet on record — give the money back another way and record it here',
+      'invalid'
+    );
+  }
 
-  // What they paid: every settled ticket payment for this event by this buyer.
-  const { data: intents } = await ctx.admin
+  // What they paid: every settled ticket payment for this event by this buyer,
+  // or, for a guest, the one payment that issued this ticket.
+  const settled = ctx.admin
     .from(DATABASE_TABLES.PAYMENT_INTENTS)
     .select('id, amount_btc')
     .eq('entity_type', 'event')
     .eq('entity_id', event.id)
-    .eq('buyer_id', buyerId)
     .eq('status', STATUS.PAYMENT_INTENTS.PAID);
+  const guestIntentId = (ticket.transaction_id as string | null) ?? null;
+  const { data: intents } = buyerId
+    ? await settled.eq('buyer_id', buyerId)
+    : guestIntentId
+      ? await settled.eq('id', guestIntentId).is('buyer_id', null)
+      : { data: [] };
   const paid = (intents ?? []) as Array<{ id: string; amount_btc: number }>;
   const amountBtc = paid.reduce((sum, p) => sum + Number(p.amount_btc || 0), 0);
 
@@ -250,7 +265,7 @@ export async function refundTicket(
         'invalid'
       );
     }
-    const username = await usernameOf(ctx.admin, buyerId);
+    const username = await usernameOf(ctx.admin, buyerId as string);
     const sent = await sendToRecipient(
       ctx.organizerId,
       username,
@@ -308,7 +323,9 @@ export async function refundTicket(
     status: 'sent',
     payment_hash: paymentHash,
   });
-  await notifyPaid(buyerId, event, 'refund', params.method === 'lightning' ? 'sent' : 'recorded');
+  if (buyerId) {
+    await notifyPaid(buyerId, event, 'refund', params.method === 'lightning' ? 'sent' : 'recorded');
+  }
   return row;
 }
 

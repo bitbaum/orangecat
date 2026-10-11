@@ -33,7 +33,7 @@ function fakeClient(reads: Rows, lists: Rows = {}, rpcError: unknown = null) {
   const from = vi.fn((table: string) => {
     let inserted: Record<string, unknown> | null = null;
     const chain: Record<string, unknown> = {};
-    for (const m of ['select', 'eq', 'in', 'order']) {
+    for (const m of ['select', 'eq', 'is', 'in', 'order']) {
       chain[m] = vi.fn(() => chain);
     }
     chain.insert = vi.fn((row: Record<string, unknown>) => {
@@ -206,6 +206,35 @@ describe('refunding a ticket', () => {
       refundTicket(ctx, { eventId: 'e1', attendeeId: 'a1', method: 'lightning' })
     ).rejects.toThrow(/refund it another way/);
     expect(sendToRecipient).not.toHaveBeenCalled();
+  });
+
+  describe('a guest who bought without an account', () => {
+    const GUEST = { id: 'a1', user_id: null, payment_status: 'paid', transaction_id: 'pi9' };
+
+    it('is refunded another way: recorded with what they paid, no one to notify', async () => {
+      const { user, admin, ctx } = refundCtx(GUEST, [{ id: 'pi9', amount_btc: 0.0003 }]);
+      const payout = await refundTicket(ctx, { eventId: 'e1', attendeeId: 'a1', method: 'other' });
+      expect(user.rpc).toHaveBeenCalledWith('refund_ticket', {
+        p_event_id: 'e1',
+        p_attendee_id: 'a1',
+      });
+      expect(admin.inserts[0].row).toMatchObject({
+        recipient_user_id: null,
+        amount_btc: 0.0003,
+        method: 'other',
+      });
+      expect(payout).toMatchObject({ kind: 'refund' });
+      expect(dispatch).not.toHaveBeenCalled();
+    });
+
+    it('cannot be sent Bitcoin: there is no wallet on record', async () => {
+      const { user, ctx } = refundCtx(GUEST, [{ id: 'pi9', amount_btc: 0.0003 }]);
+      await expect(
+        refundTicket(ctx, { eventId: 'e1', attendeeId: 'a1', method: 'lightning' })
+      ).rejects.toThrow(/no wallet on record/);
+      expect(sendToRecipient).not.toHaveBeenCalled();
+      expect(user.rpc).not.toHaveBeenCalled();
+    });
   });
 
   it('keeps a record when the money went back but the ticket could not be cancelled', async () => {

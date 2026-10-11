@@ -138,6 +138,43 @@ export async function issuePaidTicket(
   return data as EventTicket;
 }
 
+/**
+ * Settlement's half of a guest's paid ticket: the payment is confirmed, so the
+ * name it was bought for goes on the door list. Idempotent on the intent.
+ */
+export async function issuePaidGuestTicket(
+  admin: AnySupabaseClient,
+  eventId: string,
+  paymentIntentId: string,
+  name: string
+): Promise<EventTicket> {
+  const { data, error } = await admin.rpc('issue_paid_guest_ticket', {
+    p_event_id: eventId,
+    p_payment_intent_id: paymentIntentId,
+    p_name: name,
+  });
+  if (error) {
+    throw toTicketError(error);
+  }
+  return data as EventTicket;
+}
+
+/** The ticket a guest's payment issued, once settlement has run; null before. */
+export async function findTicketForPayment(
+  admin: AnySupabaseClient,
+  eventId: string,
+  paymentIntentId: string
+): Promise<Pick<EventTicket, 'ticket_code'> | null> {
+  const { data } = await admin
+    .from(DATABASE_TABLES.EVENT_ATTENDEES)
+    .select('ticket_code')
+    .eq('event_id', eventId)
+    .eq('transaction_id', paymentIntentId)
+    .is('user_id', null)
+    .maybeSingle();
+  return (data as Pick<EventTicket, 'ticket_code'> | null) ?? null;
+}
+
 export async function checkInTicket(
   supabase: AnySupabaseClient,
   eventId: string,
@@ -199,7 +236,13 @@ export async function claimGuestTicket(
 export interface GuestTicketView {
   ticket: Pick<
     EventTicket,
-    'event_id' | 'guest_name' | 'status' | 'ticket_count' | 'ticket_code' | 'checked_in_at'
+    | 'event_id'
+    | 'guest_name'
+    | 'status'
+    | 'ticket_count'
+    | 'ticket_code'
+    | 'checked_in_at'
+    | 'payment_status'
   >;
   event: {
     id: string;

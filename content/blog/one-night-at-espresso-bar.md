@@ -52,13 +52,13 @@ The time zone one is the instructive kind. Nothing crashed. A Landquart night si
 - **The door.** Scan the QR with any phone camera and the door page says, in one glance: in, already in, or not a ticket for this event. Whoever holds the Door role can do this from their own phone, not the organizer's.
 - **The crew.** Put people on roles by username. They are told, and see "You're on the crew."
 - **Money out.** Next to each person, "Pay" sends their fee in Bitcoin from your own connected wallet, or records that you paid them another way, because a lot of crews are paid in Twint and cash, and a record that pretends otherwise is wrong. Refunds work the same two ways from the door list. Nobody is paid twice for a role, and a send that fails is recorded as failed.
+- **Guests without an account.** Since this was first written, nobody needs to sign up. On a free night a guest gives their name and the page that opens is the ticket. On a paid night they give their name and pay in Bitcoin, straight to the organizer, and the same kind of page opens when the payment lands.
 - **The cover.** Send the Cat a photo, or ask it to make one with your own AI key. Every picture field on OrangeCat can now also find an openly licensed photo.
 
 OrangeCat still holds no money. Every payout leaves the organizer's own wallet through the same path as the Send screen; the event keeps the record of who was paid what.
 
 ## What is not built
 
-- **Paid tickets need an account.** The ticket has to live somewhere, and paying without one needs the rails above. Free tickets no longer do: since the evening this was written, a guest gives their name and the ticket's own page is the ticket.
 - **No Twint, bank or PayPal checkout.** Those need business accounts, identity checks and reconciliation. Until then, "paid another way" records it honestly instead of faking a rail.
 - **Generating a cover needs your own image key.** The platform does not pay for pixels. Without one, the Cat makes the event and tells you where to add a picture.
 - **The Cat was tested handler by handler, not against the live model.** That check happens on production after the deploy.

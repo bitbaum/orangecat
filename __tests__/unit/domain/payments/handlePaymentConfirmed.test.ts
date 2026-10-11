@@ -197,6 +197,36 @@ describe('handlePaymentConfirmed — event ticket', () => {
     );
   });
 
+  it('issues a guest the ticket to the name they bought it for', async () => {
+    const guestIntent = { ...ticketIntent, buyer_id: null, guest_name: 'Ana' };
+    const res = await checkPaymentStatus(makeSupabase(null, guestIntent), PI_ID, SELLER);
+    expect(res.status).toBe(STATUS.PAYMENT_INTENTS.PAID);
+    expect(adminRpc()).toHaveBeenCalledWith('issue_paid_guest_ticket', {
+      p_event_id: 'event-1',
+      p_payment_intent_id: PI_ID,
+      p_name: 'Ana',
+    });
+    expect(adminRpc()).not.toHaveBeenCalledWith('issue_paid_ticket', expect.anything());
+  });
+
+  it('still reports PAID, and logs for reconciliation, when a guest ticket cannot be issued', async () => {
+    const guestIntent = { ...ticketIntent, buyer_id: null, guest_name: 'Ana' };
+    const supabase = makeSupabase(null, guestIntent);
+    adminRpc().mockImplementation((fn: string) =>
+      Promise.resolve(
+        fn === 'issue_paid_guest_ticket'
+          ? { data: null, error: { message: 'db down' } }
+          : { error: null }
+      )
+    );
+    const res = await checkPaymentStatus(supabase, PI_ID, SELLER);
+    expect(res.status).toBe(STATUS.PAYMENT_INTENTS.PAID);
+    expect(errorMock).toHaveBeenCalledWith(
+      expect.stringContaining('Guest ticket issue failed'),
+      expect.objectContaining({ paymentIntentId: PI_ID, entityId: 'event-1' })
+    );
+  });
+
   it('issues no ticket for a product', async () => {
     await checkPaymentStatus(makeSupabase(null), PI_ID, BUYER);
     expect(adminRpc()).not.toHaveBeenCalledWith('issue_paid_ticket', expect.anything());

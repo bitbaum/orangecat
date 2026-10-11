@@ -5,7 +5,8 @@
  *   has one   → the ticket: a QR the door scans, the seat count, its code
  *   free      → "Get a free ticket" (seats left, when limited); signed out, a
  *               name is enough — no account (GuestTicketForm)
- *   paid      → where the ticket will appear once paid (the pay panel does the paying)
+ *   paid      → where the ticket will appear once paid (the pay panel does the
+ *               paying; signed out, GuestTicketPurchase sells it by name)
  *
  * Async server component: reads the viewer's own row under RLS.
  */
@@ -79,11 +80,11 @@ export default async function EventTicketCard({ event, isOwner }: EventTicketCar
           {OPEN_FOR_TICKETS.has(String(event.status)) ? (
             <>
               <InviteLinkButton url={`${SITE_URL}${eventPath}`} title={String(event.title ?? '')} />
-              {isFree && (
-                <p className="text-sm text-fg-secondary">
-                  Anyone with the link gets a ticket with just their name — no account needed.
-                </p>
-              )}
+              <p className="text-sm text-fg-secondary">
+                {isFree
+                  ? 'Anyone with the link gets a ticket with just their name — no account needed.'
+                  : 'Anyone with the link can buy a ticket with their name and Bitcoin — no account needed.'}
+              </p>
             </>
           ) : (
             <p className="text-sm text-fg-secondary">
@@ -166,8 +167,9 @@ export default async function EventTicketCard({ event, isOwner }: EventTicketCar
               )
             ) : (
               <p className="text-sm text-fg-secondary">
-                Pay below — your ticket, with a QR code for the door, appears here as soon as the
-                payment lands.
+                {signedIn
+                  ? 'Pay below — your ticket, with a QR code for the door, appears here as soon as the payment lands.'
+                  : 'Pay below with your name, no account needed. Your ticket opens as its own page, with a QR code for the door.'}
               </p>
             )}
           </>

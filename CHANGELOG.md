@@ -11,8 +11,14 @@ to the map, sub-bullets stay here for the human reader.
 
 ## 2026-10-11
 
+### Added
+
+- **Buy a paid ticket without an account.** On a paid event, a visitor who isn't signed in types their name and pays in Bitcoin, straight to the organizer's wallet. When the payment lands, the page that opens is the ticket: the QR for the door, the time and place. Close the tab before paying and coming back shows the same request, not a new one. The door list shows them by name; a paid ticket can't be given back from its page, and the organizer refunds it another way and records it, since there is no wallet on record to send Bitcoin back to. {#event-paid-guests}
+  - Twint, bank and PayPal tickets are still not built; they need business accounts.
+
 ### Fixed
 
+- **Listing pages open again on phones.** Since earlier today, a public product, service or event page with a "Buy" bar at the bottom loaded and then switched to "Something went wrong". The bar asked the browser for something while the page was still being built on the server; it now waits until it reaches the browser.
 - **A seller can no longer hide their own reviews, and a buyer can no longer smuggle words past moderation.** Writing to the database directly, a seller could create a back-dated account record that took over their profile and showed an empty track record; a buyer could put arbitrary text where only yes/no answers belong, where hiding the review could not reach it. The server now sets when an account record was created, accepts only the questions OrangeCat asks, and computes each review's and reply's fingerprint itself.
 - **Track records count cancellations.** A seller's track record said "N paid deals" including ones later cancelled, without saying so. It now lists cancelled deals next to refunded ones.
 
