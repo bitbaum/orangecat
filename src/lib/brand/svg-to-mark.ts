@@ -216,28 +216,68 @@ function readViewBox(attrs: Style): [number, number, number, number] {
   throw new MarkImportError('the <svg> has no usable viewBox, width or height');
 }
 
+/** Elements whose contents are never drawn: skipped whole, children and all. */
+const SKIPPED_BLOCKS = ['defs', 'title', 'desc', 'metadata', 'style'];
+
+/**
+ * The SVG with comments, processing instructions, doctypes, CDATA and the
+ * never-drawn blocks removed — in ONE forward scan that skips by position and
+ * never re-reads what it has emitted. That matters: regex removal leaves a
+ * fresh `<!--` behind for input like `<!<!--x-->--`, however often it runs.
+ * Safety does not rest on this either way — every path is checked against
+ * PATH_DATA before it can reach a file.
+ */
+export function withoutIgnoredMarkup(svg: string): string {
+  const lower = svg.toLowerCase();
+  const skipPast = (from: number, terminator: string) => {
+    const end = lower.indexOf(terminator, from);
+    return end < 0 ? svg.length : end + terminator.length;
+  };
+
+  let out = '';
+  let i = 0;
+  while (i < svg.length) {
+    const lt = svg.indexOf('<', i);
+    if (lt < 0) {
+      out += svg.slice(i);
+      break;
+    }
+    out += svg.slice(i, lt);
+
+    if (lower.startsWith('<!--', lt)) {
+      i = skipPast(lt + 4, '-->');
+    } else if (lower.startsWith('<![cdata[', lt)) {
+      i = skipPast(lt + 9, ']]>');
+    } else if (lower.startsWith('<?', lt)) {
+      i = skipPast(lt + 2, '?>');
+    } else if (lower.startsWith('<!', lt)) {
+      i = skipPast(lt + 2, '>');
+    } else {
+      const block = SKIPPED_BLOCKS.find(
+        name =>
+          lower.startsWith(`<${name}`, lt) && !/[\w:.-]/.test(lower.charAt(lt + 1 + name.length))
+      );
+      if (block) {
+        const tagEnd = skipPast(lt, '>');
+        i = svg.charAt(tagEnd - 2) === '/' ? tagEnd : skipPast(skipPast(tagEnd, `</${block}`), '>');
+      } else {
+        out += '<';
+        i = lt + 1;
+      }
+    }
+  }
+  return out;
+}
+
 export function svgToMark(svg: string): ImportResult {
   const warnings: string[] = [];
 
   const css = Array.from(svg.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi))
-    .map(m => m[1].replace(/<!\[CDATA\[|\]\]>/g, ''))
+    .map(m => m[1].split('<![CDATA[').join('').split(']]>').join(''))
     .join('\n');
   const classes = parseClassRules(css, warnings);
 
-  // Strip until nothing changes: one pass over `<!<!---->--` leaves a fresh
-  // `<!--` behind. Safety does not rest on this — every path is checked
-  // against PATH_DATA below before it can reach a file — but a half-stripped
-  // comment would otherwise be read as markup.
-  let cleaned = svg;
-  for (let previous = ''; previous !== cleaned;) {
-    previous = cleaned;
-    cleaned = cleaned
-      .replace(/<!--[\s\S]*?-->/g, '')
-      .replace(/<\?[\s\S]*?\?>/g, '')
-      .replace(/<!DOCTYPE[^>]*>/gi, '')
-      .replace(/<(defs|title|desc|metadata|style)\b[\s\S]*?<\/\1\s*>/gi, '')
-      .replace(/<(defs|title|desc|metadata|style)\b[^>]*\/>/gi, '');
-  }
+  const cleaned = withoutIgnoredMarkup(svg);
 
   const tagRe =
     /<(\/?)([a-zA-Z][\w:.-]*)((?:\s+[^\s=>/]+(?:\s*=\s*(?:"[^"]*"|'[^']*'))?)*)\s*(\/?)>/g;

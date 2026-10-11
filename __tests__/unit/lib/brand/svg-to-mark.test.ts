@@ -7,7 +7,7 @@
  * wrong rather than produce a mark that is quietly off.
  */
 
-import { MarkImportError, svgToMark } from '@/lib/brand/svg-to-mark';
+import { MarkImportError, svgToMark, withoutIgnoredMarkup } from '@/lib/brand/svg-to-mark';
 import { markIdentifier, markModuleSource, marksIndexSource } from '@/lib/brand/mark-sources';
 import { markSvg, squareViewBox } from '@/lib/brand/mark-svg';
 import type { MarkDefinition } from '@/config/marks/types';
@@ -113,9 +113,23 @@ describe('svgToMark', () => {
     expect(() => svgToMark(svg(body))).toThrow(message);
   });
 
-  it('strips nested comments completely rather than leaving a fresh one behind', () => {
-    const { shapes } = svgToMark(svg('<!<!--x-->-- <path d="M9 9h1"/> --><path d="M0 0h1"/>'));
+  it('never imports what a comment or a never-drawn block holds', () => {
+    const { shapes } = svgToMark(
+      svg(
+        '<!-- <path d="M9 9h1"/> --><defs><path d="M8 8h1"/></defs><title>T</title>' +
+          '<metadata/><path d="M0 0h1"/>'
+      )
+    );
     expect(shapes).toEqual([{ paint: 'fill', d: 'M0 0h1' }]);
+  });
+
+  it('reads tangled comments in one pass and still emits only path data', () => {
+    // Regex removal leaves a fresh "<!--" behind here, however often it runs.
+    const { shapes } = svgToMark(svg('<!<!--x-->-- <path d="M9 9h1"/> --><path d="M0 0h1"/>'));
+    for (const shape of shapes) {
+      expect(shape.d).toMatch(/^[MmLlHhVvCcSsQqTtAaZz0-9eE.,+\-\s]+$/);
+    }
+    expect(withoutIgnoredMarkup('a<!--b-->c<![CDATA[d]]>e<?f?>g<!DOCTYPE h>i')).toBe('acegi');
   });
 });
 
