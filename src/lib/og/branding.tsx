@@ -11,7 +11,7 @@
  * Created: 2026-06-03
  */
 
-import { BRAND_MARK, catCoilPathD } from '@/config/brand-mark';
+import { BRAND_MARK } from '@/config/brand-mark';
 
 export const OG_SIZE = { width: 1200, height: 630 } as const;
 export const OG_CONTENT_TYPE = 'image/png' as const;
@@ -45,27 +45,43 @@ export const OG_COLOR = {
 } as const;
 
 /**
- * The brand mark — the coil that is a cat, from the SSOT in
- * src/config/brand-mark.ts. Inline SVG so satori renders it without a font
- * or an external asset. This used to draw its own "window with ears", a
- * third mark that only share cards ever showed.
+ * The brand mark on share cards — BRAND_MARK, whichever file
+ * src/config/marks/<APP_SLUG>.ts holds, drawn shape by shape. Inline SVG so
+ * satori renders it without a font or an external asset. This used to draw
+ * its own "window with ears", a third mark that only share cards ever showed.
  */
 export function BrandMarkSvg({ size = 56 }: { size?: number }) {
+  const mark = BRAND_MARK;
   return (
     <svg
       width={size}
       height={size}
-      viewBox={`0 0 ${BRAND_MARK.viewBox} ${BRAND_MARK.viewBox}`}
+      viewBox={mark.viewBox.join(' ')}
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <path
-        d={catCoilPathD()}
-        stroke={OG_COLOR.text}
-        strokeWidth={BRAND_MARK.strokeWidth}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      {mark.shapes.map((shape, i) =>
+        shape.paint === 'stroke' ? (
+          <path
+            key={i}
+            d={shape.d}
+            fill="none"
+            stroke={OG_COLOR.text}
+            strokeWidth={shape.strokeWidth ?? mark.strokeWidth}
+            strokeLinecap={shape.linecap}
+            strokeLinejoin={shape.linejoin}
+            opacity={shape.opacity}
+          />
+        ) : (
+          <path
+            key={i}
+            d={shape.d}
+            fill={OG_COLOR.text}
+            fillRule={shape.fillRule}
+            opacity={shape.opacity}
+          />
+        )
+      )}
     </svg>
   );
 }

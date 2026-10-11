@@ -1,13 +1,13 @@
 import Link from 'next/link';
 import { ArrowUpRight } from 'lucide-react';
 import { formatRelativeTime } from '@/utils/dates';
-import { PillarMark } from './PillarMark';
+import { ProjectMark } from '@/components/brand/ProjectMark';
 import { LAYER_LABELS, type FleetTile } from './studio-fleet';
 
 /**
- * The fleet as tiles: a mark (the product's own for the three pillars, a
- * monogram for the rest), a name, one line on what it is, and whether it is
- * live. Each tile is one link — to the project's page here when it has one,
+ * The fleet as tiles: a mark (the project's own from the registry, else its
+ * initial — see <ProjectMark>), a name, one line on what it is, and whether
+ * it is live. Each tile is one link — to the project's page here when it has one,
  * else to its live site.
  */
 export function StudioFleetGrid({ tiles }: { tiles: FleetTile[] }) {
@@ -30,20 +30,13 @@ function FleetTileCard({ tile }: { tile: FleetTile }) {
     <>
       <div className="flex items-start gap-3">
         <span className="oc-studio-mark" aria-hidden="true">
-          {tile.pillar ? (
-            <PillarMark pillar={tile.pillar} size={26} />
-          ) : (
-            <span className="oc-studio-monogram">{tile.name.charAt(0).toUpperCase()}</span>
-          )}
+          <ProjectMark slug={tile.slug} name={tile.name} size={26} />
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <h3 className="truncate text-base font-semibold text-fg-primary">{tile.name}</h3>
             {tile.external && tile.href && (
-              <ArrowUpRight
-                className="h-3.5 w-3.5 shrink-0 text-fg-tertiary"
-                aria-hidden="true"
-              />
+              <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-fg-tertiary" aria-hidden="true" />
             )}
           </div>
           <p className="oc-studio-layer">

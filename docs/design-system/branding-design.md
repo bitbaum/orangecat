@@ -2,7 +2,7 @@
 
 created_date: 2026-06-03  
 last_modified_date: 2026-10-11  
-last_modified_summary: The coil mark — one geometry for every asset, generated; the public fold rebuilt to Loki's and Solon's standard; the studio on the front page and on every studio project's page
+last_modified_summary: Every mark is one file, replaced with one command (brand:import); the coil mark; the public fold rebuilt to Loki's and Solon's standard; the studio on the front page and on every studio project's page
 
 ## Direction
 
@@ -28,30 +28,70 @@ served as `image/x-icon`, so the tab icon had been broken in every browser that 
 The PWA's 144px icon was one byte. Three marks, one of them not an image, and nothing that
 could notice.
 
-**Geometry is code, never a pasted path.** `src/config/brand-mark.ts` is the only source;
-everything else renders or generates from it:
+## Replacing a mark
 
-| Surface                                     | How it gets the mark                                               |
-| ------------------------------------------- | ------------------------------------------------------------------ |
-| In-app (`BrandMark`, `Logo`, auth, about)   | `BrandMarkIcon` renders `catCoilPathD()` with `currentColor`       |
-| Share cards (`src/lib/og/branding.tsx`)     | `BrandMarkSvg` renders the same path with `OG_COLOR.text`          |
-| `public/favicon.svg`, `orange-cat-logo.svg` | written by `pnpm run generate:brand`                               |
-| `public/favicon.ico` (16/32/48, PNG-ICO)    | written by `pnpm run generate:brand`                               |
-| `public/apple-icon.png`, `public/icons/*`   | written by `pnpm run generate:brand`                               |
-| The sync gate                               | `__tests__/unit/config/brand-mark.test.ts` fails on any drift      |
+**Every mark is one file, and replacing it is one command.**
 
-Change the mark by changing the parameters in `brand-mark.ts`, running the generator, and
-committing what it wrote. Do not hand-edit an SVG, and do not add a mark anywhere that is not
-in the table.
+```bash
+pnpm run brand:import orangecat path/to/logo.svg      # this app's own mark
+pnpm run brand:import loki path/to/loki.svg           # a sibling's
+pnpm run brand:import heidi path/to/heidi.svg         # any studio project, by fleet slug
+```
 
-**Animation.** `BrandMarkIcon animated` draws the coil in from its tail once, then breathes —
-the hero treatment only (`.oc-brand-coil-animated` in `globals.css`). Chrome-sized marks stay
-still: a 22px glyph that moves reads as noise, not brand. Reduced motion disables both.
+Options: `--name "Display name"`, `--motion draw|spin|none` (how it moves in a hero).
 
-**The siblings.** `src/config/sibling-marks.ts` mirrors Loki's coil geometry (from
-bitbaum/loki `src/config/brand-mark.ts`, kept in step by hand) and `PillarMark` draws each
-pillar with its real face — OrangeCat's coil, Loki's coil, Solon's scales — wherever the stack
-is presented. Never a generic icon standing in for a product that has a mark of its own.
+That command:
+
+1. converts the SVG to a mark (`src/lib/brand/svg-to-mark.ts`) — geometry kept, colours
+   dropped, a full-size background rectangle dropped, every shape stroked or filled with the
+   colour the surface hands it;
+2. writes `src/config/marks/<slug>.ts`, replacing the old one;
+3. rebuilds the registry `src/config/marks/index.ts`;
+4. for this app's own slug, regenerates every static icon (`favicon.svg`, `favicon.ico`,
+   `apple-icon.png`, the PWA icons, `orange-cat-logo.svg`).
+
+Commit what it wrote. Nothing else changes: the header, the hero, the auth page, share cards,
+the studio tiles, the pillars and every studio project's banner render from the registry and
+know nothing about which drawing they are showing. A studio project with no mark shows its
+initial; giving it a mark is the same command with its fleet slug.
+
+The SVG can come from Figma, Illustrator, Inkscape or an icon set. The importer reads path,
+circle, ellipse, rect, line, polyline and polygon; paint from attributes, `style="…"` or simple
+`.class` rules; inheritance through groups. It refuses — with a message saying what to do —
+transforms, clip paths, masks, `<use>`, `<text>` and `<image>`, because converting those
+faithfully needs a real SVG engine and a mark that comes out quietly wrong is worse than a clear
+"flatten this first". Exporting as _plain SVG with outlined text and flattened transforms_ always
+works.
+
+**Where things live.**
+
+| Piece                       | File                                                             |
+| --------------------------- | ---------------------------------------------------------------- |
+| What a mark is (data shape) | `src/config/marks/types.ts`                                      |
+| One file per mark           | `src/config/marks/<slug>.ts`                                     |
+| The registry (generated)    | `src/config/marks/index.ts` — `MARKS`, `markFor(slug)`           |
+| Marks drawn by code         | `src/config/marks/generators/` (cat coil, Archimedean coil)      |
+| This app's own mark         | `src/config/brand-mark.ts` → `MARKS[APP_SLUG]`                   |
+| React                       | `<Mark>`, `<ProjectMark slug>`, `BrandMarkIcon`                  |
+| Share cards                 | `BrandMarkSvg` in `src/lib/og/branding.tsx`                      |
+| SVG markup + icon style     | `src/lib/brand/mark-svg.ts` (`markSvg`, `iconSvg`, `ICON_STYLE`) |
+| Static icons                | `pnpm run generate:brand` (`scripts/generate-brand.mjs`)         |
+| The gate                    | `__tests__/unit/config/brand-mark.test.ts`                       |
+
+The gate fails when a mark file is missing from the registry, a mark is not drawable, or a
+static icon no longer matches what the generator would write. It is written against _any_ mark,
+so replacing the drawing never means rewriting the test.
+
+**Motion.** A mark's file names how it moves when a surface asks (`animated`): `draw` (strokes
+draw themselves in, fills fade in, then a slow breath), `spin` (a slow turn — Loki's), or
+`none`. Only heroes and showcases ask; chrome-sized marks never move. Reduced motion stills
+everything. The classes are `.oc-mark-*` in `globals.css`.
+
+**Generated marks.** OrangeCat's coil and Loki's coil are drawn by functions in
+`generators/`, and their mark files call them. Tune one by changing its parameters, then run
+`pnpm run generate:brand`. Loki's mirrors bitbaum/loki `src/config/brand-mark.ts` and is kept
+in step by hand. Replacing either with a drawn logo leaves its generator in place, ready to
+come back.
 
 ## The public fold
 
@@ -80,22 +120,21 @@ page fails.
 
 ## Brand SSOT
 
-| Layer                    | File                                                                   |
-| ------------------------ | ---------------------------------------------------------------------- |
-| Name, tagline, URLs      | `src/config/brand.ts`                                                  |
-| Mark geometry            | `src/config/brand-mark.ts`                                             |
-| Mark (React)             | `src/components/shell/BrandMarkIcon.tsx`                               |
-| Mark + wordmark          | `src/components/shell/BrandMark.tsx`                                   |
-| Header entry             | `src/components/layout/Logo.tsx` → `BrandMark`                         |
-| Static assets            | generated by `scripts/generate-brand.mjs` (`pnpm run generate:brand`)  |
-| Sibling marks            | `src/config/sibling-marks.ts`, `src/components/ecosystem/PillarMark`   |
-| Public fold              | `globals.css` `.oc-public-*`, `src/components/home/sections/`          |
-| Studio surfaces          | `src/components/ecosystem/`, `src/components/project/StudioProjectBanner` |
-| Cat copy/tabs            | `src/config/cat-hub.ts`                                                |
-| Shell layout heights     | `src/config/layout-chrome.ts`                                          |
-| Chat surfaces            | `globals.css` `.oc-chat-*`                                             |
-| Page surfaces            | `globals.css` `.oc-page*`, `.oc-surface*`                              |
-| TS button/field recipes  | `src/config/design-system.ts`                                          |
+| Layer                   | File                                                                      |
+| ----------------------- | ------------------------------------------------------------------------- |
+| Name, tagline, URLs     | `src/config/brand.ts`                                                     |
+| Marks (one file each)   | `src/config/marks/` — see "Replacing a mark"                              |
+| Mark (React)            | `src/components/brand/Mark.tsx`, `ProjectMark.tsx`, `BrandMarkIcon.tsx`   |
+| Mark + wordmark         | `src/components/shell/BrandMark.tsx`                                      |
+| Header entry            | `src/components/layout/Logo.tsx` → `BrandMark`                            |
+| Static assets           | `pnpm run generate:brand`; `pnpm run brand:import` runs it for you        |
+| Public fold             | `globals.css` `.oc-public-*`, `src/components/home/sections/`             |
+| Studio surfaces         | `src/components/ecosystem/`, `src/components/project/StudioProjectBanner` |
+| Cat copy/tabs           | `src/config/cat-hub.ts`                                                   |
+| Shell layout heights    | `src/config/layout-chrome.ts`                                             |
+| Chat surfaces           | `globals.css` `.oc-chat-*`                                                |
+| Page surfaces           | `globals.css` `.oc-page*`, `.oc-surface*`                                 |
+| TS button/field recipes | `src/config/design-system.ts`                                             |
 
 Do not reintroduce the pirate-hat cat, the kawaii favicon, the cat face, the window-with-ears,
 or a filled orange circle.
@@ -112,7 +151,7 @@ Loki uses OKLCH throughout; OrangeCat still uses HSL in `:root` but primary is n
 
 ## Checklist
 
-- [x] `brand.ts` + `brand-mark.ts` + `BrandMark` + generated static assets + sync test
+- [x] One file per mark, one command to replace it, generated static assets, sync test
 - [x] Logo/header uses monochrome wordmark
 - [x] Share cards render the same mark as the app
 - [x] Public fold: dark-grade depth, display type, live numbers — parity with Loki

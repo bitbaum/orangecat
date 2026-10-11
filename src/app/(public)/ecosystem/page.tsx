@@ -12,7 +12,7 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, ExternalLink, FileSignature, ShieldCheck } from 'lucide-react';
-import { PillarMark } from '@/components/ecosystem/PillarMark';
+import { ProjectMark } from '@/components/brand/ProjectMark';
 import { StudioFleetGrid } from '@/components/ecosystem/StudioFleetGrid';
 import { LAYER_LABELS, groupFleetByLayer } from '@/components/ecosystem/studio-fleet';
 import {
@@ -92,7 +92,7 @@ export default async function EcosystemPage() {
                   className="flex flex-col rounded-lg border border-default bg-surface-base p-6"
                 >
                   <span className="oc-studio-pillar-mark" aria-hidden="true">
-                    <PillarMark pillar={pillar.key} size={44} animated />
+                    <ProjectMark slug={pillar.key} name={pillar.title} size={44} animated />
                   </span>
                   <h2 className="mt-4 font-heading text-xl font-semibold text-fg-primary">
                     {pillar.title}

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
-import { PillarMark } from '@/components/ecosystem/PillarMark';
+import { ProjectMark } from '@/components/brand/ProjectMark';
 import { StudioFleetGrid } from '@/components/ecosystem/StudioFleetGrid';
 import { selectHomeFleet } from '@/components/ecosystem/studio-fleet';
 import { ECOSYSTEM, ECOSYSTEM_PILLARS } from '@/config/ecosystem';
@@ -46,7 +46,7 @@ export default async function StudioSection() {
                 {...(pillar.isSelf ? {} : { target: '_blank', rel: 'noopener noreferrer' })}
               >
                 <span className="oc-studio-pillar-mark" aria-hidden="true">
-                  <PillarMark pillar={pillar.key} size={44} animated />
+                  <ProjectMark slug={pillar.key} name={pillar.title} size={44} animated />
                 </span>
                 <span className="font-heading text-xl font-semibold text-fg-primary">
                   {pillar.title}
