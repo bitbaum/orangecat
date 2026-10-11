@@ -12,7 +12,6 @@
  */
 
 import { EntityConfig } from '@/types/entity';
-import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import { convert, formatCurrency } from '@/services/currency';
 import { PLATFORM_DEFAULT_CURRENCY } from '@/config/currencies';
@@ -162,9 +161,9 @@ export const projectEntityConfig: EntityConfig<ProjectListItem> = {
     description:
       'Create your first project to start accepting Bitcoin funding and building support for your cause.',
     action: (
-      <Link href={ROUTES.DASHBOARD.PROJECTS_CREATE}>
-        <Button className={GRADIENTS.brandOrangeDark}>Create Project</Button>
-      </Link>
+      <Button href={ROUTES.DASHBOARD.PROJECTS_CREATE} className={GRADIENTS.brandOrangeDark}>
+        Create Project
+      </Button>
     ),
   },
 

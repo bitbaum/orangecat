@@ -159,11 +159,9 @@ export function TalkRoom({ companion }: TalkRoomProps) {
                 {room.notEnoughCredits} You need {formatAmountBtc(talk.creditsNeeded.required)} and
                 have {formatAmountBtc(talk.creditsNeeded.balance)}.
               </p>
-              <Link href={ROUTES.SETTINGS_AI} className="mt-2 inline-block">
-                <Button variant="accent" size="sm">
-                  {room.topUp}
-                </Button>
-              </Link>
+              <Button href={ROUTES.SETTINGS_AI} variant="accent" size="sm" className="mt-2">
+                {room.topUp}
+              </Button>
             </div>
           )}
           {talk.error && <p className="mb-4 text-sm text-status-negative">{room.sendFailed}</p>}

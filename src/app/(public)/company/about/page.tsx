@@ -1,5 +1,4 @@
 import React from 'react';
-import Link from 'next/link';
 import { Metadata } from 'next';
 import { Users, Heart, Zap, TreePine, Target, Award } from 'lucide-react';
 import BitBaumLogo from '@/components/layout/BitBaumLogo';
@@ -246,11 +245,9 @@ export default function BitBaumAboutPage() {
             The code is open source under the MIT licence. Read it, open an issue, send a pull
             request, or build for others as a partner.
           </p>
-          <Link href="/company/careers">
-            <Button variant="accent" size="lg">
-              Ways in
-            </Button>
-          </Link>
+          <Button href="/company/careers" variant="accent" size="lg">
+            Ways in
+          </Button>
         </div>
       </div>
     </div>

@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import WalletRecommendationCards from '@/components/wallets/WalletRecommendationCards';
 import { ROUTES } from '@/config/routes';
@@ -44,9 +43,7 @@ export default function WalletsPage() {
 
       {/* CTA */}
       <div className="mt-6 text-center">
-        <Link href={ROUTES.CREATE}>
-          <Button>Get started</Button>
-        </Link>
+        <Button href={ROUTES.CREATE}>Get started</Button>
       </div>
     </div>
   );

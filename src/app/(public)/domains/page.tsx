@@ -128,11 +128,9 @@ export default function DomainsPage() {
                 <li>Cancel anytime; your site returns to its free address</li>
               </ul>
               <div className="mt-6">
-                <Link href={DOMAINS_SERVICE_URL}>
-                  <Button variant="accent" size="lg">
-                    Connect your domain
-                  </Button>
-                </Link>
+                <Button href={DOMAINS_SERVICE_URL} variant="accent" size="lg">
+                  Connect your domain
+                </Button>
               </div>
             </div>
           </div>

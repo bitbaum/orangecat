@@ -1,7 +1,6 @@
 import { EntityConfig } from '@/types/entity';
 import { ResearchEntity } from '@/types/research';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
-import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import { GRADIENTS } from '@/config/gradients';
 
@@ -35,9 +34,9 @@ export const researchEntityConfig: EntityConfig<ResearchEntity> = {
     title: 'No research entities yet',
     description: 'Start your first research project with decentralized funding.',
     action: (
-      <Link href={ENTITY_REGISTRY['research'].createPath}>
-        <Button className={GRADIENTS.brandTiffany}>Create Research</Button>
-      </Link>
+      <Button href={ENTITY_REGISTRY['research'].createPath} className={GRADIENTS.brandTiffany}>
+        Create Research
+      </Button>
     ),
   },
 

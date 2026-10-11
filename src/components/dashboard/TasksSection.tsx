@@ -12,7 +12,6 @@ import {
   AlertCircle,
   RefreshCw,
 } from 'lucide-react';
-import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { useAuth } from '@/hooks/useAuth';
@@ -160,14 +159,12 @@ export default function TasksSection({
               </p>
             </div>
             <div className="flex gap-2">
-              <Link href={ROUTES.DASHBOARD.CAT}>
-                <Button size="sm">Ask Cat</Button>
-              </Link>
-              <Link href={ROUTES.DISCOVER}>
-                <Button size="sm" variant="outline">
-                  Discover
-                </Button>
-              </Link>
+              <Button href={ROUTES.DASHBOARD.CAT} size="sm">
+                Ask Cat
+              </Button>
+              <Button href={ROUTES.DISCOVER} size="sm" variant="outline">
+                Discover
+              </Button>
             </div>
           </CardContent>
         </Card>

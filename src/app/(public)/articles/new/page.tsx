@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useRequireAuth } from '@/hooks/useAuthRedirects';
 import { ROUTES } from '@/config/routes';
 import Button from '@/components/ui/Button';
@@ -21,9 +20,9 @@ export default function NewArticlePage() {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-surface-page px-6 text-center">
         <p className="text-fg-secondary">Sign in to write an article.</p>
-        <Link href={`${ROUTES.AUTH}?mode=login`}>
-          <Button variant="accent">Sign in</Button>
-        </Link>
+        <Button href={`${ROUTES.AUTH}?mode=login`} variant="accent">
+          Sign in
+        </Button>
       </div>
     );
   }

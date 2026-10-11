@@ -1,5 +1,4 @@
 import React from 'react';
-import Link from 'next/link';
 import { Check, Sparkles, Cat as CatIcon } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { PageHeading } from '@/components/layout/PageHeading';
@@ -177,11 +176,9 @@ function PlanCard({ plan }: { plan: CatPlan }) {
         ))}
       </ul>
 
-      <Link href={plan.cta.href} className="block">
-        <Button variant={plan.cta.variant} size="md" className="w-full">
-          {plan.cta.label}
-        </Button>
-      </Link>
+      <Button href={plan.cta.href} variant={plan.cta.variant} size="md" className="w-full">
+        {plan.cta.label}
+      </Button>
     </div>
   );
 }

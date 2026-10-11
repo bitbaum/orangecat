@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import { ArrowLeft, FileQuestion } from 'lucide-react';
@@ -23,9 +22,7 @@ export default function LoanNotFound() {
             <Button href={ROUTES.HOME} variant="outline">
               <ArrowLeft className="mr-2 h-4 w-4" /> Go Home
             </Button>
-            <Link href={ROUTES.DISCOVER}>
-              <Button>Discover</Button>
-            </Link>
+            <Button href={ROUTES.DISCOVER}>Discover</Button>
           </div>
         </CardContent>
       </Card>

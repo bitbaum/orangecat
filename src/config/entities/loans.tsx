@@ -8,7 +8,6 @@
 
 import { EntityConfig } from '@/types/entity';
 import { Loan } from '@/types/loans';
-import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import { PLATFORM_DEFAULT_CURRENCY } from '@/config/currencies';
 import { formatCurrency } from '@/services/currency';
@@ -82,9 +81,9 @@ export const loanEntityConfig: EntityConfig<Loan> = {
     title: 'No loans yet',
     description: 'Add your first loan to start receiving refinancing offers from the community.',
     action: (
-      <Link href={ROUTES.DASHBOARD.LOANS_CREATE}>
-        <Button className={GRADIENTS.brandTiffanyDark}>Create Loan</Button>
-      </Link>
+      <Button href={ROUTES.DASHBOARD.LOANS_CREATE} className={GRADIENTS.brandTiffanyDark}>
+        Create Loan
+      </Button>
     ),
   },
 

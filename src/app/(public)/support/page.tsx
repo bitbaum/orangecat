@@ -171,12 +171,15 @@ export default function SupportPage() {
                 </p>
               </div>
             </div>
-            <Link href={ROUTES.SETTINGS_AI} className="flex-shrink-0">
-              <Button variant="accent" size="lg" className="gap-2">
-                Add your key
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
+            <Button
+              href={ROUTES.SETTINGS_AI}
+              variant="accent"
+              size="lg"
+              className="gap-2 flex-shrink-0"
+            >
+              Add your key
+              <ArrowRight className="h-4 w-4" />
+            </Button>
           </div>
         </section>
 

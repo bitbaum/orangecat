@@ -8,7 +8,6 @@
 
 import { EntityConfig } from '@/types/entity';
 import { UserCause } from '@/types/database';
-import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import { convert, formatCurrency } from '@/services/currency';
 import { PLATFORM_DEFAULT_CURRENCY } from '@/config/currencies';
@@ -94,9 +93,9 @@ export const causeEntityConfig: EntityConfig<UserCause> = {
     title: 'No causes yet',
     description: 'Start making a difference by creating your first cause or fundraiser.',
     action: (
-      <Link href={ROUTES.DASHBOARD.CAUSES_CREATE}>
-        <Button className={GRADIENTS.brandOrangeDark}>Create Cause</Button>
-      </Link>
+      <Button href={ROUTES.DASHBOARD.CAUSES_CREATE} className={GRADIENTS.brandOrangeDark}>
+        Create Cause
+      </Button>
     ),
   },
 

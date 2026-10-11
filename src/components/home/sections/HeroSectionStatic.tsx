@@ -40,19 +40,25 @@ export default function HeroSectionStatic() {
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-              <Link href={ROUTES.AUTH} className="w-full sm:w-auto">
-                <Button variant="accent" size="lg" className="w-full sm:w-auto">
-                  <Cat className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                  {CTA_LABELS.primaryAction}
-                  <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
-                </Button>
-              </Link>
-              <Link href={ROUTES.DISCOVER} className="w-full sm:w-auto">
-                <Button variant="outline" size="lg" className="w-full sm:w-auto">
-                  <Globe className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                  {CTA_LABELS.discoverAction}
-                </Button>
-              </Link>
+              <Button
+                href={ROUTES.AUTH}
+                variant="accent"
+                size="lg"
+                className="w-full sm:w-auto w-full sm:w-auto"
+              >
+                <Cat className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                {CTA_LABELS.primaryAction}
+                <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
+              </Button>
+              <Button
+                href={ROUTES.DISCOVER}
+                variant="outline"
+                size="lg"
+                className="w-full sm:w-auto w-full sm:w-auto"
+              >
+                <Globe className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                {CTA_LABELS.discoverAction}
+              </Button>
             </div>
           </div>
 

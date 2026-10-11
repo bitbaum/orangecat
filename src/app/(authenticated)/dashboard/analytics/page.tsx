@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { useRequireAuth } from '@/hooks/useAuth';
 import { useProjectStore } from '@/stores/projectStore';
 import { Breadcrumb } from '@/components/ui/Breadcrumb';
@@ -72,9 +71,9 @@ export default function AnalyticsPage() {
           title="No activity to analyze yet"
           description="Create your first project and its funding performance will show up here."
           action={
-            <Link href={ROUTES.DASHBOARD.PROJECTS_CREATE}>
-              <Button variant="outline">Create a project</Button>
-            </Link>
+            <Button href={ROUTES.DASHBOARD.PROJECTS_CREATE} variant="outline">
+              Create a project
+            </Button>
           }
         />
       </div>

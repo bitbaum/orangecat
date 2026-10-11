@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { LoanOffer } from '@/types/loans';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/badge';
@@ -26,9 +25,9 @@ export function LoanOffersList({ offers, onOfferUpdated: _onOfferUpdated }: Loan
         title="No offers yet"
         description="Offers you make on community loans will appear here."
         action={
-          <Link href={ROUTES.DISCOVER_TYPE('loans')}>
-            <Button variant="outline">Browse loans</Button>
-          </Link>
+          <Button href={ROUTES.DISCOVER_TYPE('loans')} variant="outline">
+            Browse loans
+          </Button>
         }
         className="py-8"
       />

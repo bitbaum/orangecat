@@ -60,9 +60,9 @@ export function CompanionActions({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
-        <Link href={isSignedIn ? talkHref : signInHref}>
-          <Button variant="accent">{copy.talk}</Button>
-        </Link>
+        <Button href={isSignedIn ? talkHref : signInHref} variant="accent">
+          {copy.talk}
+        </Button>
         {isSignedIn ? (
           <Button
             variant="outline"
@@ -78,9 +78,9 @@ export function CompanionActions({
           </Button>
         )}
         {isOwner && (
-          <Link href={editHref}>
-            <Button variant="ghost">{copy.edit}</Button>
-          </Link>
+          <Button href={editHref} variant="ghost">
+            {copy.edit}
+          </Button>
         )}
       </div>
       <p className="text-xs text-fg-tertiary">

@@ -6,7 +6,6 @@
 
 import { EntityConfig } from '@/types/entity';
 import { Investment } from '@/types/investments';
-import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import { PLATFORM_DEFAULT_CURRENCY } from '@/config/currencies';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
@@ -80,9 +79,9 @@ export const investmentEntityConfig: EntityConfig<Investment> = {
     title: 'No investments yet',
     description: 'Create your first investment opportunity to connect with potential investors.',
     action: (
-      <Link href={ROUTES.DASHBOARD.INVESTMENTS_CREATE}>
-        <Button className={GRADIENTS.brandGreen}>Create Investment</Button>
-      </Link>
+      <Button href={ROUTES.DASHBOARD.INVESTMENTS_CREATE} className={GRADIENTS.brandGreen}>
+        Create Investment
+      </Button>
     ),
   },
 
