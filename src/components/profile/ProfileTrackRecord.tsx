@@ -29,6 +29,7 @@ export default function ProfileTrackRecord({
   const facts = [
     `${record.dealsProvided} paid ${record.dealsProvided === 1 ? 'deal' : 'deals'} with ${record.distinctCustomers} ${record.distinctCustomers === 1 ? 'person' : 'different people'}`,
     record.refunded > 0 && `${record.refunded} refunded`,
+    record.cancelled > 0 && `${record.cancelled} cancelled`,
     record.firstDealAt && `since ${formatDate(record.firstDealAt)}`,
   ].filter((f): f is string => Boolean(f));
 

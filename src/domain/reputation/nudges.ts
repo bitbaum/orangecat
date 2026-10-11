@@ -157,6 +157,9 @@ export async function notifyCounterpartReviewed(
 }
 
 const BATCH = 500;
+/** 30-day windows bound open deals; this only stops a runaway loop. */
+const MAX_PAGES = 40;
+const ID_CHUNK = 150;
 
 export interface NudgeRunResult {
   due: number;
@@ -170,36 +173,62 @@ export async function runReviewNudges(
   now: Date = new Date()
 ): Promise<NudgeRunResult> {
   const settledBefore = new Date(now.getTime() - REVIEW_NUDGES.ask.afterSettledMs).toISOString();
-  const { data: deals, error } = (await fromTable(admin, DATABASE_TABLES.DEALS)
-    .select('id, title, status, settled_at, review_closes_at, provider_actor_id, customer_actor_id')
-    .gt('review_closes_at', now.toISOString())
-    .lte('settled_at', settledBefore)
-    .neq('status', 'cancelled')
-    .order('review_closes_at', { ascending: true })
-    .limit(BATCH)) as { data: NudgeDeal[] | null; error: unknown };
-  if (error) {
-    throw error;
+  // Every open deal, page by page. A single capped read let deals that were
+  // already reviewed or nudged fill the batch, so past it a newer deal never got
+  // its first ask.
+  const rows: NudgeDeal[] = [];
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const { data: deals, error } = (await fromTable(admin, DATABASE_TABLES.DEALS)
+      .select(
+        'id, title, status, settled_at, review_closes_at, provider_actor_id, customer_actor_id'
+      )
+      .gt('review_closes_at', now.toISOString())
+      .lte('settled_at', settledBefore)
+      .neq('status', 'cancelled')
+      .order('review_closes_at', { ascending: true })
+      .order('id', { ascending: true })
+      .range(page * BATCH, (page + 1) * BATCH - 1)) as {
+      data: NudgeDeal[] | null;
+      error: unknown;
+    };
+    if (error) {
+      throw error;
+    }
+    rows.push(...(deals ?? []));
+    if ((deals ?? []).length < BATCH) {
+      break;
+    }
   }
-  const rows = deals ?? [];
   if (rows.length === 0) {
     return { due: 0, sent: 0, skipped: 0 };
   }
-  const ids = rows.map(d => d.id);
-  const [{ data: reviews }, { data: nudges }] = (await Promise.all([
-    fromTable(admin, DATABASE_TABLES.DEAL_REVIEWS)
-      .select('deal_id, reviewer_role')
-      .in('deal_id', ids),
-    fromTable(admin, DATABASE_TABLES.DEAL_REVIEW_NUDGES)
-      .select('deal_id, role, kind')
-      .in('deal_id', ids),
-  ])) as [
-    { data: Array<{ deal_id: string; reviewer_role: ReviewerRole }> | null },
-    { data: Array<{ deal_id: string; role: ReviewerRole; kind: ReviewNudgeKind }> | null },
-  ];
+  const reviews: Array<{ deal_id: string; reviewer_role: ReviewerRole }> = [];
+  const nudges: Array<{ deal_id: string; role: ReviewerRole; kind: ReviewNudgeKind }> = [];
+  // Ids travel in the URL, so read them in chunks a proxy will accept.
+  for (let i = 0; i < rows.length; i += ID_CHUNK) {
+    const ids = rows.slice(i, i + ID_CHUNK).map(d => d.id);
+    const [r, n] = (await Promise.all([
+      fromTable(admin, DATABASE_TABLES.DEAL_REVIEWS)
+        .select('deal_id, reviewer_role')
+        .in('deal_id', ids),
+      fromTable(admin, DATABASE_TABLES.DEAL_REVIEW_NUDGES)
+        .select('deal_id, role, kind')
+        .in('deal_id', ids),
+    ])) as [
+      { data: typeof reviews | null; error: unknown },
+      { data: typeof nudges | null; error: unknown },
+    ];
+    // An unread nudge log would re-send nudges already sent, so fail the run.
+    if (r.error || n.error) {
+      throw r.error ?? n.error;
+    }
+    reviews.push(...(r.data ?? []));
+    nudges.push(...(n.data ?? []));
+  }
   const due = dueNudges(
     rows,
-    new Set((reviews ?? []).map(r => sideKey(r.deal_id, r.reviewer_role))),
-    new Set((nudges ?? []).map(n => nudgeKey(n.deal_id, n.role, n.kind))),
+    new Set(reviews.map(r => sideKey(r.deal_id, r.reviewer_role))),
+    new Set(nudges.map(n => nudgeKey(n.deal_id, n.role, n.kind))),
     now
   );
   if (due.length === 0) {

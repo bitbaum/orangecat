@@ -9,6 +9,13 @@ reads, and [orangecat.ch/changelog](https://orangecat.ch/changelog) renders
 it from there. One `## YYYY-MM-DD` heading per day; bullets under it travel
 to the map, sub-bullets stay here for the human reader.
 
+## 2026-10-11
+
+### Fixed
+
+- **A seller can no longer hide their own reviews, and a buyer can no longer smuggle words past moderation.** Writing to the database directly, a seller could create a back-dated account record that took over their profile and showed an empty track record; a buyer could put arbitrary text where only yes/no answers belong, where hiding the review could not reach it. The server now sets when an account record was created, accepts only the questions OrangeCat asks, and computes each review's and reply's fingerprint itself.
+- **Track records count cancellations.** A seller's track record said "N paid deals" including ones later cancelled, without saying so. It now lists cancelled deals next to refunded ones.
+
 ## 2026-10-09
 
 ### Added
