@@ -20,7 +20,7 @@ export function WalletsPageHeader() {
       <Breadcrumb items={[{ label: 'Wallets' }]} className="mb-4" />
       <div className="flex items-center justify-between gap-3 mb-2">
         <div className="flex items-center gap-3">
-          <WalletIcon className="w-8 h-8 text-bitcoinOrange" />
+          <WalletIcon className="w-8 h-8 text-fg-secondary" />
           <h1 className="text-2xl lg:text-3xl font-bold text-fg-primary">Manage Wallets</h1>
         </div>
         <Button variant="accent" size="sm" href={ROUTES.RECEIVE}>

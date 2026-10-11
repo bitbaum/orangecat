@@ -19,17 +19,26 @@ import { Zap, Copy, Check, AlertTriangle } from 'lucide-react';
 import { API_ROUTES } from '@/config/api-routes';
 import { RECEIVE_COPY } from '@/config/receive';
 import type { ReceiveStatus } from '@/app/(authenticated)/dashboard/wallets/hooks/useReceiveStatus';
+import Button from '@/components/ui/Button';
 
 interface LightningAddressCardProps {
   status: ReceiveStatus | null;
   isLoading: boolean;
+  /** The check failed — say so instead of showing nothing. */
+  failed?: boolean;
+  onRetry?: () => void;
 }
 
 type TestResult = { ok: true } | { ok: false; reason: string } | null;
 
 const TEST_AMOUNT_MSAT = 1000; // 1 sat — the minimum a payer could send.
 
-export function LightningAddressCard({ status, isLoading }: LightningAddressCardProps) {
+export function LightningAddressCard({
+  status,
+  isLoading,
+  failed,
+  onRetry,
+}: LightningAddressCardProps) {
   const [copied, setCopied] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<TestResult>(null);
@@ -43,7 +52,24 @@ export function LightningAddressCard({ status, isLoading }: LightningAddressCard
     );
   }
 
-  // No status (request failed) or no username yet: claim nothing at all.
+  // The check failed: claim nothing about the address, but don't make it
+  // vanish without a word either — that read as "you have no address".
+  if (failed) {
+    return (
+      <div className="oc-error-surface flex flex-wrap items-center justify-between gap-3 rounded-lg p-4">
+        <p className="text-sm text-fg-primary">
+          Couldn&apos;t check your Lightning address right now.
+        </p>
+        {onRetry && (
+          <Button variant="outline" size="sm" onClick={onRetry}>
+            Try again
+          </Button>
+        )}
+      </div>
+    );
+  }
+
+  // No username yet: there is no address to claim.
   if (!status?.lightningAddress) {
     return null;
   }

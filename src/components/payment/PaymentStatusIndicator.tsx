@@ -17,7 +17,7 @@ const STATUS_CONFIG: Record<
 > = {
   initiating: {
     icon: Loader2,
-    label: 'Creating invoice...',
+    label: 'Creating payment request…',
     color: 'text-fg-secondary',
     animate: true,
   },
@@ -38,14 +38,16 @@ const STATUS_CONFIG: Record<
     label: 'Payment confirmed!',
     color: 'text-status-positive',
   },
+  // The payer said "I've paid" — nothing has checked it yet. A green
+  // "Payment sent!" here read as a confirmation that had not happened.
   buyer_confirmed: {
-    icon: CheckCircle2,
-    label: 'Payment sent!',
-    color: 'text-status-positive',
+    icon: Clock,
+    label: 'Waiting for the recipient to confirm',
+    color: 'text-fg-secondary',
   },
   expired: {
     icon: XCircle,
-    label: 'Invoice expired',
+    label: 'Payment request expired',
     color: 'text-status-negative',
   },
   failed: {

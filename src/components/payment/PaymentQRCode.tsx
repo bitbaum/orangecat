@@ -102,7 +102,9 @@ export function PaymentQRCode({
           }`}
         >
           <Timer className="h-3 w-3" />
-          {secondsLeft <= 0 ? 'Invoice expired' : `Expires in ${formatCountdownClock(secondsLeft)}`}
+          {secondsLeft <= 0
+            ? 'Payment request expired'
+            : `Expires in ${formatCountdownClock(secondsLeft)}`}
         </p>
       )}
 

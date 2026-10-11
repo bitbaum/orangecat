@@ -23,9 +23,14 @@ export const CONTRIBUTION_QUICK_AMOUNTS_FIAT = [1, 5, 10, 20, 50] as const;
 /** Default contribution when the payer hasn't chosen an amount yet. */
 export const DEFAULT_CONTRIBUTION_BTC = 0.0001;
 
-/** Labeled support tiers for public pay panels and project donation sections. */
+/**
+ * Labeled support tiers for public pay panels. Roughly 10 / 50 / 200 in USD at
+ * 100k per BTC. They were 0.001 / 0.005 / 0.01 — about 100 / 500 / 1,000 —
+ * which made "Small" a hundred dollars, and the larger two more than a new
+ * Lightning wallet can comfortably receive.
+ */
 export const LABELED_SUPPORT_AMOUNTS_BTC = [
-  { btc: 0.001, label: 'Small' },
-  { btc: 0.005, label: 'Medium' },
-  { btc: 0.01, label: 'Large' },
+  { btc: 0.0001, label: 'Small' },
+  { btc: 0.0005, label: 'Medium' },
+  { btc: 0.002, label: 'Large' },
 ] as const;

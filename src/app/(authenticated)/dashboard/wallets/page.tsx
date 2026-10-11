@@ -76,10 +76,12 @@ export default function DashboardWalletsPage() {
     .filter(w => w.is_active)
     .map(w => w.id)
     .join(',');
-  const { status: receiveStatus, isLoading: receiveStatusLoading } = useReceiveStatus(
-    walletsSignature,
-    !!user?.id
-  );
+  const {
+    status: receiveStatus,
+    isLoading: receiveStatusLoading,
+    failed: receiveStatusFailed,
+    refresh: refreshReceiveStatus,
+  } = useReceiveStatus(walletsSignature, !!user?.id);
 
   // Loading state with timeout protection
   if (authLoading || isLoading) {
@@ -117,7 +119,12 @@ export default function DashboardWalletsPage() {
             {/* The user's <username>@orangecat.ch Lightning address — shown
                 first so people actually learn they have one. */}
             <div className="mb-6">
-              <LightningAddressCard status={receiveStatus} isLoading={receiveStatusLoading} />
+              <LightningAddressCard
+                status={receiveStatus}
+                isLoading={receiveStatusLoading}
+                failed={receiveStatusFailed}
+                onRetry={() => void refreshReceiveStatus()}
+              />
             </div>
 
             <div className="bg-surface-base rounded-lg shadow-sm border border-default p-4 sm:p-6">

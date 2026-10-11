@@ -190,7 +190,7 @@ export function PaymentDialog({
           {state.phase === 'initiating' && (
             <div className="flex flex-col items-center gap-4 py-8">
               <Loader2 className="h-8 w-8 animate-spin text-fg-tertiary" />
-              <p className="text-sm text-fg-secondary">Creating invoice...</p>
+              <p className="text-sm text-fg-secondary">Creating payment request…</p>
             </div>
           )}
 

@@ -11,6 +11,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { QRCodeSVG } from 'qrcode.react';
 import { Copy, Check, QrCode, Wallet, Loader2, ShieldCheck } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -66,6 +67,7 @@ export function OwnerCollectPanel({
   const [shareUrl, setShareUrl] = useState('');
   const [showQr, setShowQr] = useState(false);
   const [info, setInfo] = useState<ReceiveInfo | null>(null);
+  const [infoFailed, setInfoFailed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [confirmations, setConfirmations] = useState<RecipientConfirmation[]>([]);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
@@ -85,11 +87,13 @@ export function OwnerCollectPanel({
       .then(body => {
         if (!cancelled) {
           setInfo((body?.data as ReceiveInfo) ?? null);
+          setInfoFailed(body === null);
         }
       })
       .catch(() => {
         if (!cancelled) {
           setInfo(null);
+          setInfoFailed(true);
         }
       })
       .finally(() => {
@@ -120,6 +124,9 @@ export function OwnerCollectPanel({
     });
     if (response.ok) {
       setConfirmations(current => current.filter(item => item.id !== id));
+    } else {
+      // It used to fail without a word: the row stayed and nothing said why.
+      toast.error('Couldn’t record that payment as received. Try again.');
     }
     setConfirmingId(null);
   };
@@ -169,7 +176,11 @@ export function OwnerCollectPanel({
             </div>
           ) : (
             <p className="text-sm font-medium text-fg-primary">
-              {info?.method ? METHOD_LABELS[info.method] : 'Connected wallet'}
+              {info?.method
+                ? METHOD_LABELS[info.method]
+                : infoFailed
+                  ? 'Couldn’t check your receiving wallet — reload to try again.'
+                  : 'Connected wallet'}
             </p>
           )}
         </div>

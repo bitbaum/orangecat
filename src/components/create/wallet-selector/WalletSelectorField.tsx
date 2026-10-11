@@ -10,6 +10,7 @@ import { reuseIsPublicOnChain, sameDestinationAs } from './wallet-display';
 import { WalletPasteField } from './WalletPasteField';
 import { applyWalletSelection } from './applyWalletSelection';
 import { API_ROUTES } from '@/config/api-routes';
+import Button from '@/components/ui/Button';
 
 interface WalletSelectorFieldProps {
   formData: Record<string, unknown>;
@@ -61,12 +62,12 @@ export function WalletSelectorField({
           setMode('paste');
         }
       } else {
-        setFetchError('Could not load wallets');
-        setMode('paste');
+        // Not "you have no wallets": switching to the paste box on a failed
+        // load invited a duplicate of a wallet the person already has.
+        setFetchError('Could not load your wallets.');
       }
     } catch {
-      setFetchError('Could not load wallets');
-      setMode('paste');
+      setFetchError('Could not load your wallets.');
     } finally {
       setIsLoading(false);
     }
@@ -188,14 +189,15 @@ export function WalletSelectorField({
               This wallet already receives funds for {reuseInfo.count} other{' '}
               {reuseInfo.count === 1 ? 'page' : 'pages'}. On-chain payments to the same address are
               publicly linkable — anyone can connect these pages on the blockchain. For separate
-              identities, pick a different wallet, or use an xpub wallet to get a fresh address per
-              payment.
+              identities, pick a different wallet, or use a wallet set up with an extended key so
+              each payer gets a fresh address.
             </p>
           )}
           {reuseInfo && reuseInfo.count > 0 && !reuseInfo.publicOnChain && (
             <p className="text-xs text-fg-tertiary">
               Also linked to {reuseInfo.count} other {reuseInfo.count === 1 ? 'page' : 'pages'}.
-              That is fine — payments here don&apos;t publish a shared address on the blockchain.
+              Visitors can see these pages share a Lightning address, but the payments don&apos;t
+              appear on the blockchain.
             </p>
           )}
           <button
@@ -221,7 +223,25 @@ export function WalletSelectorField({
       )}
 
       {fetchError && wallets.length === 0 && (
-        <p className="text-xs text-fg-secondary">{fetchError}</p>
+        <div className="oc-error-surface flex flex-wrap items-center justify-between gap-2 rounded-md p-3">
+          <p className="text-sm text-fg-primary">{fetchError}</p>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setFetchError(null);
+                void fetchWallets();
+              }}
+            >
+              Try again
+            </Button>
+            <Button type="button" variant="ghost" size="sm" onClick={() => setMode('paste')}>
+              Paste a new one
+            </Button>
+          </div>
+        </div>
       )}
     </div>
   );

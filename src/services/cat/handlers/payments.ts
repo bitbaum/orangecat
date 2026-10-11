@@ -115,6 +115,17 @@ export const paymentHandlers: Record<string, ActionHandler> = {
     const status = await getOwnerReceiveStatus(userId);
     const walletName = target?.label ?? label;
 
+    // Saved, but the check itself failed: neither "works" nor "doesn't".
+    if (status.checkFailed) {
+      return {
+        success: true,
+        data: {
+          rail: null,
+          displayMessage: `💾 Saved to "${walletName}". I couldn't check just now whether payments reach it — tell the user it is stored and suggest a look at their wallets page in a minute.`,
+        },
+      };
+    }
+
     // The write landed but the payment path still resolves nothing — say so.
     // Telling someone they can be paid when they cannot is the one outcome
     // worse than not helping at all.
