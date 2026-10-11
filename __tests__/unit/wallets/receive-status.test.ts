@@ -49,6 +49,17 @@ describe('getOwnerReceiveStatus', () => {
       lightningAddressActive: true,
       unusableConnectionWalletIds: [],
       arrivesAt: null,
+      checkFailed: false,
+    });
+  });
+
+  it('says the check failed instead of "cannot receive" when the lookup throws', async () => {
+    // A null rail on an error used to read as "not set up", and the receive
+    // screen asked people who already had a wallet to paste one again.
+    mockResolve.mockRejectedValue(new Error('db down'));
+    await expect(getOwnerReceiveStatus('u1')).resolves.toMatchObject({
+      rail: null,
+      checkFailed: true,
     });
   });
 

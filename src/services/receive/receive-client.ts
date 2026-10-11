@@ -26,6 +26,8 @@ export interface OwnerReceiveOverview {
   lightningAddressActive: boolean;
   /** The wallet a payment settles into, when we can name it. */
   arrivesAt: string | null;
+  /** The lookup failed: `rail` null means "unknown", not "not set up". */
+  checkFailed?: boolean;
 }
 
 export interface ReceiveWalletOption {

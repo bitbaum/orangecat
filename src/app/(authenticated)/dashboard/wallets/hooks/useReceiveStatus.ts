@@ -18,11 +18,13 @@ export interface ReceiveStatus {
   lightningAddressActive: boolean;
   unusableConnectionWalletIds: string[];
   arrivesAt: string | null;
+  checkFailed?: boolean;
 }
 
 export function useReceiveStatus(walletsSignature: string, enabled: boolean) {
   const [status, setStatus] = useState<ReceiveStatus | null>(null);
   const [isLoading, setIsLoading] = useState(enabled);
+  const [failed, setFailed] = useState(false);
 
   const refresh = useCallback(async () => {
     if (!enabled) {
@@ -35,10 +37,13 @@ export function useReceiveStatus(walletsSignature: string, enabled: boolean) {
       }
       const body = (await res.json()) as { data?: ReceiveStatus };
       setStatus(body.data ?? null);
+      setFailed(Boolean(body.data?.checkFailed));
     } catch (error) {
-      // Fail closed: no status means the card claims nothing.
+      // Fail closed: no status means the card claims nothing — but says it
+      // could not check, rather than vanishing.
       logger.warn('Could not load receive status', { error }, 'Wallets');
       setStatus(null);
+      setFailed(true);
     } finally {
       setIsLoading(false);
     }
@@ -48,5 +53,5 @@ export function useReceiveStatus(walletsSignature: string, enabled: boolean) {
     void refresh();
   }, [refresh, walletsSignature]);
 
-  return { status, isLoading, refresh };
+  return { status, isLoading, failed, refresh };
 }

@@ -56,8 +56,9 @@ export const COMPONENT_STYLES = {
       accent: 'bg-accent-warm text-on-accent hover:bg-accent-warm-hover',
     },
     sizes: {
-      sm: 'h-9 min-h-9 px-3 text-sm min-w-16',
-      md: 'h-10 min-h-10 px-4 text-sm min-w-24',
+      // Touch screens get the 44px minimum; desktop keeps its density.
+      sm: 'h-9 min-h-9 px-3 text-sm min-w-16 pointer-coarse:h-11 pointer-coarse:min-h-11',
+      md: 'h-10 min-h-10 px-4 text-sm min-w-24 pointer-coarse:h-11 pointer-coarse:min-h-11',
       lg: 'h-11 min-h-11 px-5 text-base min-w-28',
       xl: 'h-12 min-h-12 px-6 text-base min-w-32',
     },

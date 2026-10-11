@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Mail, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { resendConfirmationEmail } from '@/services/supabase/auth';
@@ -33,6 +33,27 @@ export function EmailConfirmationBanner({
 }: EmailConfirmationBannerProps) {
   const [dismissed, setDismissed] = useState(true); // Start hidden to avoid flash
   const [resending, setResending] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const visible = !emailConfirmedAt && !dismissed;
+
+  // Tell the page how tall the banner is, so content and sticky bars sit
+  // below it instead of under it (globals.css: --header-banner-height).
+  useEffect(() => {
+    const html = document.documentElement;
+    const el = rootRef.current;
+    if (!visible || !el) {
+      html.style.removeProperty('--header-banner-height');
+      return;
+    }
+    const publish = () => html.style.setProperty('--header-banner-height', `${el.offsetHeight}px`);
+    publish();
+    const observer = new ResizeObserver(publish);
+    observer.observe(el);
+    return () => {
+      observer.disconnect();
+      html.style.removeProperty('--header-banner-height');
+    };
+  }, [visible]);
 
   // Check if already dismissed this session
   useEffect(() => {
@@ -80,6 +101,7 @@ export function EmailConfirmationBanner({
 
   return (
     <div
+      ref={rootRef}
       className={cn('bg-status-warning-subtle border-b border-status-warning/20', className)}
       role="alert"
       aria-live="polite"
@@ -95,7 +117,7 @@ export function EmailConfirmationBanner({
             <button
               onClick={handleResend}
               disabled={resending}
-              className="font-medium text-status-warning hover:text-status-warning/80 underline underline-offset-2 disabled:opacity-50 disabled:cursor-wait"
+              className="-my-3 inline-flex min-h-11 items-center px-1 font-medium text-status-warning hover:text-status-warning/80 underline underline-offset-2 disabled:opacity-50 disabled:cursor-wait"
             >
               {resending ? 'Sending...' : 'Resend'}
             </button>

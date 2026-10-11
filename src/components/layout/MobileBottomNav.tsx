@@ -86,6 +86,7 @@ const MobileBottomNav = React.memo(function MobileBottomNav() {
   return (
     <>
       <div
+        data-fc-avoid=""
         className={cn(
           'md:hidden fixed bottom-0 left-0 right-0 border-t border-default',
           'transition-all duration-300 ease-in-out',

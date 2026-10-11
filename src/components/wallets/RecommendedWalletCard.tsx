@@ -29,11 +29,11 @@ export function RecommendedWalletCard({ wallet }: RecommendedWalletCardProps) {
     <Card
       className={cn(
         'p-6 relative overflow-hidden transition-all duration-300',
-        wallet.recommended && 'ring-2 ring-bitcoinOrange/40 border-strong'
+        wallet.recommended && 'ring-2 ring-fg-primary/20 border-strong'
       )}
     >
       {wallet.recommended && (
-        <div className="absolute top-0 right-0 bg-bitcoinOrange text-white text-xs font-semibold px-3 py-1 rounded-bl-lg">
+        <div className="absolute top-0 right-0 bg-fg-primary text-fg-inverted text-xs font-semibold px-3 py-1 rounded-bl-lg">
           Recommended
         </div>
       )}
@@ -84,13 +84,17 @@ export function RecommendedWalletCard({ wallet }: RecommendedWalletCardProps) {
             </Badge>
           )}
 
-          <Badge
-            variant="outline"
-            className="text-xs bg-surface-raised text-fg-primary border-default"
-          >
-            <Shield className="w-3 h-3 mr-1" />
-            Non-custodial
-          </Badge>
+          {/* From the provider's custody, not assumed: a hard-coded badge lies the
+              day a custodial wallet joins the list. */}
+          {!wallet.custodial && (
+            <Badge
+              variant="outline"
+              className="text-xs bg-surface-raised text-fg-primary border-default"
+            >
+              <Shield className="w-3 h-3 mr-1" />
+              Non-custodial
+            </Badge>
+          )}
         </div>
 
         {wallet.downloadLinks && (wallet.downloadLinks.ios || wallet.downloadLinks.android) && (
@@ -126,7 +130,7 @@ export function RecommendedWalletCard({ wallet }: RecommendedWalletCardProps) {
           href={wallet.website}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 text-sm text-bitcoinOrange hover:text-bitcoinOrange font-medium transition-colors"
+          className="inline-flex items-center gap-2 text-sm text-fg-primary hover:underline font-medium transition-colors"
         >
           Visit website
           <ExternalLink className="w-4 h-4" />

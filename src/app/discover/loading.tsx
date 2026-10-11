@@ -6,7 +6,7 @@ export default function DiscoverLoading() {
       {/* Hero / search bar skeleton */}
       <div className="space-y-4 text-center py-8">
         <Skeleton className="h-10 w-64 mx-auto" />
-        <Skeleton className="h-4 w-96 mx-auto" />
+        <Skeleton className="h-4 w-full max-w-96 mx-auto" />
         <Skeleton className="h-12 w-full max-w-lg mx-auto rounded-full" />
       </div>
 

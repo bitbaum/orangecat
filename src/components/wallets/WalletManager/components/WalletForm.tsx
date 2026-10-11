@@ -134,7 +134,9 @@ export function WalletForm({
       formData.nwc_connection_uri?.trim() &&
       !formData.nwc_connection_uri.trim().startsWith('nostr+walletconnect://')
     ) {
-      setError('NWC connection must start with nostr+walletconnect://');
+      setError(
+        'That doesn’t look like a wallet connection link — copy it again from your wallet’s “Connect” screen.'
+      );
       return;
     }
 
@@ -189,7 +191,7 @@ export function WalletForm({
       {/* Smart "paste anything" input — auto-routes Lightning / on-chain / NWC. */}
       <div className="mb-4">
         <label className="mb-2 flex items-center gap-1.5 text-sm font-medium text-fg-primary">
-          <Wallet className="h-4 w-4 text-bitcoinOrange" />
+          <Wallet className="h-4 w-4 text-fg-secondary" />
           Your wallet
         </label>
         {/* Paste or scan. The scanner is lazy — its decoder is only fetched if
@@ -276,6 +278,7 @@ export function WalletForm({
               >
                 <span>
                   <strong>{provider.name}</strong> — {provider.oneLiner}
+                  {provider.custody === 'custodial' && ' (the app holds the funds for you)'}
                 </span>
                 <ExternalLink className="h-3 w-3 flex-shrink-0 text-fg-tertiary" />
               </a>
@@ -307,17 +310,17 @@ export function WalletForm({
               value={formData.address_or_xpub ?? ''}
               onChange={e => setFormData({ ...formData, address_or_xpub: e.target.value })}
               onFocus={() => onFieldFocus?.('addressOrXpub')}
-              placeholder="bc1q…  or  zpub…"
+              placeholder="bc1q…"
             />
             <p className="mt-1.5 text-xs text-fg-secondary">
-              Slower (~10 min to confirm), better for larger amounts. An extended key
-              (xpub/ypub/zpub) auto-tracks new addresses; a single address also works.
+              Slower (~10 min to confirm), better for larger amounts. An extended key from your
+              wallet&apos;s settings gives each payer a fresh address; a single address also works.
             </p>
           </div>
 
           <div>
             <label className="mb-2 block text-sm font-medium text-fg-primary">
-              Nostr Wallet Connect
+              Wallet connection link
             </label>
             <Input
               type="password"
@@ -387,7 +390,7 @@ export function WalletForm({
                     }}
                     className={`rounded-lg border p-3 text-left transition-colors ${
                       formData.category === cat
-                        ? 'border-bitcoinOrange bg-bitcoinOrange/5'
+                        ? 'border-interactive bg-surface-raised'
                         : 'border-strong hover:border-strong'
                     }`}
                   >
@@ -429,16 +432,16 @@ export function WalletForm({
           </div>
 
           {/* Primary wallet toggle (only meaningful when more than one exists) */}
-          {initialData?.address_or_xpub && (
+          {initialData && (
             <div>
               <label className="flex cursor-pointer items-center gap-2">
                 <input
                   type="checkbox"
                   checked={formData.is_primary || false}
                   onChange={e => setFormData({ ...formData, is_primary: e.target.checked })}
-                  className="h-4 w-4 rounded border-strong text-bitcoinOrange focus:ring-ring"
+                  className="h-4 w-4 rounded border-strong text-fg-primary focus:ring-ring"
                 />
-                <span className="text-sm font-medium">Show this one on my profile</span>
+                <span className="text-sm font-medium">Make this my primary wallet</span>
               </label>
               <p className="ml-6 mt-1 text-xs text-fg-secondary">
                 The primary wallet is the one shown prominently on your profile.
@@ -452,14 +455,16 @@ export function WalletForm({
                 type="checkbox"
                 checked={formData.open_accounting || false}
                 onChange={e => setFormData({ ...formData, open_accounting: e.target.checked })}
-                className="h-4 w-4 rounded border-strong text-bitcoinOrange focus:ring-ring"
+                className="h-4 w-4 rounded border-strong text-fg-primary focus:ring-ring"
               />
               <span className="text-sm font-medium">Publish this wallet&apos;s ledger</span>
             </label>
             <p className="ml-6 mt-1 text-xs text-fg-secondary">
               Open accounting: anyone visiting this wallet&apos;s page sees its balance, its recent
-              transactions and your note on each one. Your extended public key is never published.
-              Off by default, and turning it off hides everything again.
+              transactions and your note on each one. Your extended key itself is not shown, but
+              each listed transaction (and its addresses) is public on the blockchain. Off by
+              default; turning it off removes the ledger from OrangeCat, not what the blockchain
+              already shows.
             </p>
           </div>
         </div>

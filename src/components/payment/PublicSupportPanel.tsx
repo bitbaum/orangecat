@@ -35,26 +35,14 @@ interface PublicIntent {
 }
 
 type Phase =
-  | 'choose'
-  | 'creating'
-  | 'awaiting'
-  | 'recipient_confirmation'
-  | 'paid'
-  | 'expired'
-  | 'error';
+  'choose' | 'creating' | 'awaiting' | 'recipient_confirmation' | 'paid' | 'expired' | 'error';
 
 async function readError(response: Response): Promise<string> {
-  const body = (await response.json().catch(() => null)) as
-    | { error?: { message?: string } }
-    | null;
+  const body = (await response.json().catch(() => null)) as { error?: { message?: string } } | null;
   return body?.error?.message || 'Could not create the payment request.';
 }
 
-export function PublicSupportPanel({
-  entityType,
-  entityId,
-  entityTitle,
-}: PublicSupportPanelProps) {
+export function PublicSupportPanel({ entityType, entityId, entityTitle }: PublicSupportPanelProps) {
   const [amountBtc, setAmountBtc] = useState<number>(DEFAULT_CONTRIBUTION_BTC);
   const [phase, setPhase] = useState<Phase>('choose');
   const [intent, setIntent] = useState<PublicIntent | null>(null);
@@ -67,10 +55,13 @@ export function PublicSupportPanel({
 
     let stopped = false;
     const check = async () => {
-      const response = await fetch(`${PUBLIC_API_BASE}/payments/public/${intent.payment_intent.id}`, {
-        headers: { 'x-payment-token': intent.status_token },
-        cache: 'no-store',
-      });
+      const response = await fetch(
+        `${PUBLIC_API_BASE}/payments/public/${intent.payment_intent.id}`,
+        {
+          headers: { 'x-payment-token': intent.status_token },
+          cache: 'no-store',
+        }
+      );
       if (!response.ok || stopped) {
         return;
       }
@@ -82,8 +73,14 @@ export function PublicSupportPanel({
       };
       if (body.data.status === 'paid') {
         setPhase('paid');
-      } else if (body.data.status === 'expired' || body.data.status === 'failed') {
+      } else if (body.data.status === 'expired') {
         setPhase('expired');
+      } else if (body.data.status === 'failed') {
+        // Not "expired": a failed payment is a different thing to be told.
+        setError(
+          'This payment didn’t go through. If your wallet shows it as sent, check its history before trying again.'
+        );
+        setPhase('error');
       } else if (body.data.requires_recipient_confirmation) {
         setPhase('recipient_confirmation');
       }
@@ -171,13 +168,15 @@ export function PublicSupportPanel({
             />
             <Button
               onClick={createIntent}
-              disabled={!Number.isFinite(amountBtc) || amountBtc < PAY_MIN_BTC || amountBtc > PAY_MAX_BTC}
+              disabled={
+                !Number.isFinite(amountBtc) || amountBtc < PAY_MIN_BTC || amountBtc > PAY_MAX_BTC
+              }
               className="w-full min-h-11"
             >
               Create Bitcoin request
             </Button>
             <p className="text-center text-xs text-fg-tertiary">
-              Non-custodial. OrangeCat records only confirmed Bitcoin settlement.
+              OrangeCat never holds the money. It goes straight to {entityTitle}&apos;s wallet.
             </p>
           </>
         )}

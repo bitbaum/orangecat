@@ -104,7 +104,7 @@ export function EmptyState({
               <button
                 type="button"
                 onClick={() => onDismissOpener(opener.key)}
-                className="-mr-1 -mt-1 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md text-fg-tertiary transition-colors hover:bg-surface-raised hover:text-fg-primary"
+                className="-mr-1 -mt-1 flex h-8 w-8 pointer-coarse:h-11 pointer-coarse:w-11 flex-shrink-0 items-center justify-center rounded-md text-fg-tertiary transition-colors hover:bg-surface-raised hover:text-fg-primary"
                 aria-label="Not now"
                 title="Not now"
               >

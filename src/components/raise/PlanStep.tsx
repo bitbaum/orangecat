@@ -74,7 +74,7 @@ export function PlanStep({ flow }: { flow: RaiseFlow }) {
       </div>
 
       {/* Phones: the one action stays under the thumb at any scroll position. */}
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-default bg-surface-page/95 p-3 backdrop-blur lg:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-default bg-surface-page/95 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] backdrop-blur lg:hidden">
         <PublishButton flow={flow} publishing={publishing} />
       </div>
     </div>

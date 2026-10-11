@@ -139,7 +139,7 @@ export function PublicPayPanel({
                     )}
                   >
                     <span className="block text-sm font-semibold text-fg-primary">
-                      {displayBTC(btc)}
+                      {formatAmountBtc(btc)}
                     </span>
                     <span className="block text-xs">{label}</span>
                   </button>
@@ -148,8 +148,8 @@ export function PublicPayPanel({
             </div>
             {selectedBtc !== null && !isOnchain && (
               <p className="text-xs text-fg-tertiary">
-                Lightning wallets ask for the amount — enter {displayBTC(selectedBtc)} when
-                prompted.
+                Lightning wallets ask for the amount — enter{' '}
+                {`${formatAmountBtc(selectedBtc)} (${displayBTC(selectedBtc)})`} when prompted.
               </p>
             )}
           </div>

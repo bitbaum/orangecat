@@ -32,7 +32,7 @@ function Block({ title, children }: { title: string; children: React.ReactNode }
 export function PersonalFinances({ finances }: { finances: Finances }) {
   const { currency, income, debts, civicSplit, tax } = finances;
   return (
-    <div className="grid gap-4 md:grid-cols-2">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
       <Block title={FINANCES_PAGE.income.title}>
         {income.payments === 0 ? (
           <p className="text-sm text-fg-secondary">{FINANCES_PAGE.income.empty}</p>

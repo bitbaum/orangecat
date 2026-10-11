@@ -23,8 +23,12 @@ export interface WalletVisibilityOption {
 export const WALLET_VISIBILITY_OPTIONS: readonly WalletVisibilityOption[] = [
   {
     value: 'private',
-    label: 'Private',
-    description: 'Only you and members see the address, total, and supporters.',
+    label: 'Hide total and supporters',
+    // Not "Private": the receiving address is shown to every payer (it has to
+    // be, to be paid), and on-chain payments are public on the blockchain.
+    // What this setting hides is OrangeCat's own running total and list.
+    description:
+      'OrangeCat won’t show your running total or who gave. Payers still see your receiving address, and on-chain payments are always public on the blockchain.',
   },
   {
     value: 'total',

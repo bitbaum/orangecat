@@ -373,7 +373,7 @@ export function MessageBubble({
             <button
               type="button"
               onClick={handleCopy}
-              className="rounded p-2 text-fg-tertiary transition-colors hover:text-fg-primary"
+              className="inline-flex items-center justify-center rounded p-2 pointer-coarse:min-h-11 pointer-coarse:min-w-11 text-fg-tertiary transition-colors hover:text-fg-primary"
               aria-label={copied ? 'Response copied' : 'Copy response'}
               title="Copy response"
             >

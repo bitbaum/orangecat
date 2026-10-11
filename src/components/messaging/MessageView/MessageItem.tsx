@@ -174,7 +174,7 @@ export default function MessageItem({
                   value={editDraft}
                   onChange={e => setEditDraft(e.target.value)}
                   onKeyDown={handleEditKeyDown}
-                  className="w-full min-w-[200px] bg-surface-base text-fg-primary text-sm rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="w-full min-w-0 sm:min-w-[200px] bg-surface-base text-fg-primary text-sm rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-ring"
                   rows={Math.min(6, editDraft.split('\n').length + 1)}
                   autoFocus
                 />
@@ -182,7 +182,7 @@ export default function MessageItem({
                   <button
                     type="button"
                     onClick={onEditCancel}
-                    className="text-sm px-3 py-1.5 min-h-9 rounded text-fg-inverted/80 hover:text-fg-inverted"
+                    className="text-sm px-3 py-1.5 min-h-9 pointer-coarse:min-h-11 rounded text-fg-inverted/80 hover:text-fg-inverted"
                   >
                     Cancel
                   </button>
@@ -196,7 +196,7 @@ export default function MessageItem({
                         onEditCancel?.();
                       }
                     }}
-                    className="text-sm px-3 py-1.5 min-h-9 rounded bg-surface-base text-fg-primary font-medium hover:bg-surface-base/90 dark:hover:bg-surface-base/90"
+                    className="text-sm px-3 py-1.5 min-h-9 pointer-coarse:min-h-11 rounded bg-surface-base text-fg-primary font-medium hover:bg-surface-base/90 dark:hover:bg-surface-base/90"
                   >
                     Save
                   </button>

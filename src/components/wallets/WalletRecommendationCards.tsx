@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import Button from '@/components/ui/Button';
-import { WALLET_PROVIDERS } from '@/config/wallet-providers';
+import { LIGHTNING_ADDRESS_PROVIDERS, WALLET_PROVIDERS } from '@/config/wallet-providers';
 import { RecommendedWalletCard } from './RecommendedWalletCard';
 import { WalletRecommendationFilterBar } from './WalletRecommendationFilterBar';
 import type { RecommendedWallet } from './RecommendedWalletCard';
@@ -23,7 +23,7 @@ const CARD_EDITORIAL: Array<{
 }> = [
   {
     providerId: 'bluewallet',
-    description: 'Best all-around mobile wallet with easy Lightning and on-chain support',
+    description: 'Simple, Bitcoin-only mobile wallet for on-chain payments',
     level: 'beginner',
     downloadLinks: {
       ios: 'https://apps.apple.com/app/bluewallet-bitcoin-wallet/id1376878040',
@@ -149,6 +149,13 @@ export default function WalletRecommendationCards() {
         <p className="text-fg-secondary">
           All recommendations are self-custodial — you hold your keys. Payments go straight to your
           wallet; OrangeCat never holds them.
+        </p>
+        {/* The form calls a Lightning address "the easiest way to get paid", and
+            none of these wallets gives one. Say so, and say where one comes from. */}
+        <p className="mt-2 text-sm text-fg-secondary">
+          None of these gives you a Lightning address. For the one-minute option, use{' '}
+          {LIGHTNING_ADDRESS_PROVIDERS.map(p => p.name).join(' or ')} — the app holds the funds for
+          you.
         </p>
       </div>
 

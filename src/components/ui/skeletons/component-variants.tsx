@@ -111,7 +111,7 @@ export function PageHeaderSkeleton() {
   return (
     <div className="space-y-4">
       <Skeleton className="h-10 w-64" />
-      <Skeleton className="h-4 w-96" />
+      <Skeleton className="h-4 w-full max-w-96" />
     </div>
   );
 }

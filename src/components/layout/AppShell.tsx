@@ -139,8 +139,9 @@ export function AppShell({ children }: AppShellProps) {
         variant="default"
       />
 
-      {/* Main Layout Container - pt-14 for mobile header (56px), pt-16 for desktop (64px) */}
-      <div className="flex flex-1 pt-14 sm:pt-16">
+      {/* Main Layout Container — clears the fixed header (56px / 64px) plus
+          the email banner inside it, when shown (globals.css). */}
+      <div className="flex flex-1 app-header-offset">
         {/* Sidebar - Only for authenticated routes when auth is ready */}
         {shouldShowSidebar && (
           <Sidebar

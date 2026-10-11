@@ -263,9 +263,10 @@
      * above the mobile bottom nav (sticky action bars, bulk-select
      * toolbars, etc.). Use the .oc-above-mobile-nav utility instead
      * of hand-positioning bottom-14 / bottom-16. */
-    /* The bar is min-h-16 (64px) plus its 8px spacer and border — ~73px.
-     * At 56px every sticky action bar covered the top of the tab bar. */
-    --mobile-nav-height: 4.5rem;
+    /* Measured, not estimated: 8px spacer + 16px padding + 56px items +
+     * 1px border = 81px at full size (the compact bar is shorter, so this
+     * is the safe value). 4.5rem left every sticky bar over the tabs. */
+    --mobile-nav-height: 5.0625rem;
     --mobile-nav-clearance: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px));
   }
   .dark {
@@ -1012,8 +1013,15 @@
 .app-fab-anchor {
   bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
 }
+/* A sticky action bar (Fund, bulk actions, a public entity's CTA) sits on
+   top of the nav and sets html[data-mobile-action-bar]; the Cat button rises
+   above it instead of being drawn underneath. */
+html[data-mobile-action-bar] .app-fab-anchor {
+  bottom: calc(var(--mobile-nav-clearance) + 6rem);
+}
 @media (min-width: 768px) {
-  .app-fab-anchor {
+  .app-fab-anchor,
+  html[data-mobile-action-bar] .app-fab-anchor {
     bottom: 1.5rem;
   }
 }
@@ -1023,12 +1031,23 @@
    header's height alone left an empty band where the header had been. */
 .sticky-below-header {
   position: sticky;
-  top: 3.5rem;
+  top: calc(3.5rem + var(--header-banner-height, 0px));
   transition: top 200ms ease;
 }
 @media (min-width: 640px) {
   .sticky-below-header {
-    top: 4rem;
+    top: calc(4rem + var(--header-banner-height, 0px));
+  }
+}
+
+/* Room under the fixed header for page content: the header row plus the
+   email banner it may carry (EmailConfirmationBanner sets the variable). */
+.app-header-offset {
+  padding-top: calc(3.5rem + var(--header-banner-height, 0px));
+}
+@media (min-width: 640px) {
+  .app-header-offset {
+    padding-top: calc(4rem + var(--header-banner-height, 0px));
   }
 }
 html[data-header-hidden='true'] .sticky-below-header {
@@ -1045,11 +1064,11 @@ html[data-header-hidden='true'] .sticky-below-header {
      shrinks when the soft keyboard opens; 100dvh does not, and sizing against
      it left the composer behind the keyboard. The fallback keeps first paint
      correct, before the effect has run. */
-  height: calc(var(--app-viewport-height, 100dvh) - 3.5rem);
+  height: calc(var(--app-viewport-height, 100dvh) - 3.5rem - var(--header-banner-height, 0px));
 }
 @media (min-width: 640px) {
   .app-content-height {
-    height: calc(var(--app-viewport-height, 100dvh) - 4rem);
+    height: calc(var(--app-viewport-height, 100dvh) - 4rem - var(--header-banner-height, 0px));
   }
 }
 

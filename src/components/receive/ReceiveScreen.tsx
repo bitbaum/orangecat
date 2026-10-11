@@ -16,18 +16,24 @@ import { MoneyLoading, MoneyPage } from '@/components/money/MoneyPage';
 import { useRequireAuth } from '@/hooks/useAuth';
 import { fetchReceiveOverview, type OwnerReceiveOverview } from '@/services/receive/receive-client';
 import { RECEIVE_COPY } from '@/config/receive';
+import Button from '@/components/ui/Button';
 
 export function ReceiveScreen() {
   const { user, profile, isLoading: authLoading } = useRequireAuth();
 
   const [loading, setLoading] = useState(true);
   const [overview, setOverview] = useState<OwnerReceiveOverview | null>(null);
+  // A failed load is not "nothing set up": showing the setup screen on an
+  // error asked people who already receive payments to paste a wallet again.
+  const [failed, setFailed] = useState(false);
 
   const reload = useCallback(async () => {
     if (!user?.id) {
       return;
     }
-    setOverview(await fetchReceiveOverview());
+    const next = await fetchReceiveOverview();
+    setOverview(next);
+    setFailed(Boolean(next.checkFailed));
   }, [user?.id]);
 
   useEffect(() => {
@@ -38,7 +44,7 @@ export function ReceiveScreen() {
     reload()
       .catch(() => {
         if (active) {
-          setOverview(null);
+          setFailed(true);
         }
       })
       .finally(() => {
@@ -55,12 +61,34 @@ export function ReceiveScreen() {
     return <MoneyLoading />;
   }
 
+  if (failed) {
+    return (
+      <MoneyPage title={RECEIVE_COPY.title} subtitle={RECEIVE_COPY.subtitle}>
+        <div className="oc-error-surface space-y-3 rounded-lg p-4 text-center">
+          <p className="text-sm text-fg-primary">Couldn&apos;t load your receiving setup.</p>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setLoading(true);
+              setFailed(false);
+              void reload()
+                .catch(() => setFailed(true))
+                .finally(() => setLoading(false));
+            }}
+          >
+            Try again
+          </Button>
+        </div>
+      </MoneyPage>
+    );
+  }
+
   if (!overview?.rail) {
     return (
       <ReceiveSetup
         profileId={profile?.id ?? user?.id}
         onConnected={() => {
-          void reload().catch(() => setOverview(null));
+          void reload().catch(() => setFailed(true));
         }}
       />
     );

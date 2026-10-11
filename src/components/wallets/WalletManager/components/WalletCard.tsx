@@ -10,7 +10,6 @@ import { WalletForm } from './WalletForm';
 import { WalletTransactions } from './WalletTransactions';
 import type { WalletCardProps } from '../types';
 import { truncateAddress } from '@/utils/string';
-import { displayBTC } from '@/services/currency/formatting';
 import { getWalletReceiveHandle } from '@/lib/wallet-receive-handle';
 import { computeWalletGoalProgress } from '@/lib/wallet-goal';
 import { useCurrencyConversion } from '@/hooks/useCurrencyConversion';
@@ -31,7 +30,7 @@ export function WalletCard({
 }: WalletCardProps) {
   // Before the edit-mode early return: hooks must run on every render.
   const { convertFromBTC } = useCurrencyConversion();
-  const { formatPrice } = useDisplayCurrency();
+  const { formatPrice, formatAmountBtc } = useDisplayCurrency();
 
   if (isEditing && isOwner) {
     return (
@@ -132,7 +131,7 @@ export function WalletCard({
             <div className="flex items-center gap-2 flex-wrap">
               <h4 className="font-semibold text-base sm:text-lg truncate">{wallet.label}</h4>
               {wallet.is_primary && (
-                <span className="text-xs bg-bitcoinOrange/10 text-bitcoinOrange px-2 py-0.5 rounded-full flex items-center gap-1 flex-shrink-0">
+                <span className="text-xs bg-surface-raised text-fg-primary px-2 py-0.5 rounded-full flex items-center gap-1 flex-shrink-0">
                   <Star className="w-3 h-3 fill-fg-primary" />
                   Primary
                 </span>
@@ -151,7 +150,7 @@ export function WalletCard({
             {!wallet.is_primary && (
               <button
                 onClick={handleSetPrimary}
-                className="p-2 rounded-lg hover:bg-bitcoinOrange/10 text-bitcoinOrange transition-colors min-h-11 min-w-11 flex items-center justify-center"
+                className="p-2 rounded-lg hover:bg-surface-raised text-fg-primary transition-colors min-h-11 min-w-11 flex items-center justify-center"
                 title="Set as primary wallet"
                 aria-label="Set as primary wallet"
               >
@@ -209,7 +208,7 @@ export function WalletCard({
               wallet.balance_updated_at ? 'text-bitcoinOrange' : 'text-fg-tertiary'
             }`}
           >
-            {wallet.balance_updated_at ? displayBTC(wallet.balance_btc) : '—'}
+            {wallet.balance_updated_at ? formatAmountBtc(wallet.balance_btc) : '—'}
           </div>
           <div className="text-xs text-fg-secondary mt-2">
             {wallet.balance_updated_at ? (
@@ -254,7 +253,7 @@ export function WalletCard({
             <>
               <div className="w-full bg-surface-raised rounded-full h-2.5 mb-1">
                 <div
-                  className="bg-bitcoinOrange h-2.5 rounded-full transition-all"
+                  className="bg-fg-primary h-2.5 rounded-full transition-all"
                   style={{ width: `${Math.min(goal.percent, 100)}%` }}
                 />
               </div>
@@ -280,7 +279,7 @@ export function WalletCard({
           {receiveHandle.copyValue && (
             <button
               onClick={handleCopy}
-              className="p-1.5 rounded-md hover:bg-surface-raised text-fg-secondary hover:text-bitcoinOrange transition-colors flex items-center gap-1 min-h-11"
+              className="p-1.5 rounded-md hover:bg-surface-raised text-fg-secondary hover:text-fg-primary transition-colors flex items-center gap-1 min-h-11"
               title="Copy"
               aria-label="Copy"
             >

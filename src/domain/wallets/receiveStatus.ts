@@ -39,6 +39,12 @@ export interface OwnerReceiveStatus {
    * Never a connection secret, and never an address derived from the username.
    */
   arrivesAt: string | null;
+  /**
+   * The wallet lookup itself failed. `rail` is then null for want of an
+   * answer, not because nothing is set up — a screen that reads null as "set
+   * up a wallet" asked people who had one to paste it again.
+   */
+  checkFailed: boolean;
 }
 
 /**
@@ -50,8 +56,12 @@ export interface OwnerReceiveStatus {
 export async function getOwnerReceiveStatus(userId: string): Promise<OwnerReceiveStatus> {
   const admin = getAdminClient() as unknown as SupabaseClient;
 
+  let checkFailed = false;
   const [wallet, unusableConnectionWalletIds] = await Promise.all([
-    resolveUserWallet(admin, userId).catch(() => null),
+    resolveUserWallet(admin, userId).catch(() => {
+      checkFailed = true;
+      return null;
+    }),
     findUnusableConnections(admin, userId),
   ]);
 
@@ -60,6 +70,7 @@ export async function getOwnerReceiveStatus(userId: string): Promise<OwnerReceiv
     lightningAddressActive: isLightningCapable(wallet),
     unusableConnectionWalletIds,
     arrivesAt: publicDestination(wallet),
+    checkFailed,
   };
 }
 

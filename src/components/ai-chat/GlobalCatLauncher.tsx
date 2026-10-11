@@ -83,6 +83,9 @@ export default function GlobalCatLauncher() {
           type="button"
           onClick={() => setOpen(true)}
           aria-label="Ask Cat about this page"
+          // The Loki feedback widget also lives bottom-right; this tells it
+          // never to sit on the Cat (its host contract, widget/host-scan.ts).
+          data-fc-avoid=""
           className={cn(
             'app-fab-anchor fixed right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-accent-warm text-on-accent shadow-lg md:right-6',
             'transition-all duration-200 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-warm focus-visible:ring-offset-2',
@@ -129,7 +132,7 @@ export default function GlobalCatLauncher() {
                 <Link
                   href={ROUTES.DASHBOARD.CAT}
                   onClick={() => setOpen(false)}
-                  className="flex h-8 w-8 items-center justify-center rounded-md text-fg-secondary transition-colors hover:bg-surface-raised hover:text-fg-primary"
+                  className="flex h-8 w-8 items-center justify-center pointer-coarse:h-11 pointer-coarse:w-11 rounded-md text-fg-secondary transition-colors hover:bg-surface-raised hover:text-fg-primary"
                   title="Open the full Cat"
                   aria-label="Open the full Cat page"
                 >
@@ -138,7 +141,7 @@ export default function GlobalCatLauncher() {
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="flex h-8 w-8 items-center justify-center rounded-md text-fg-secondary transition-colors hover:bg-surface-raised hover:text-fg-primary"
+                  className="flex h-8 w-8 items-center justify-center pointer-coarse:h-11 pointer-coarse:w-11 rounded-md text-fg-secondary transition-colors hover:bg-surface-raised hover:text-fg-primary"
                   aria-label="Close Cat"
                 >
                   <X className="h-4 w-4" />

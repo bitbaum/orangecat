@@ -43,7 +43,7 @@ export function AvailableLoans({ loans, onOfferMade }: AvailableLoansProps) {
 
   return (
     <>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {loans.map(loan => {
           const progress = calculateProgress(loan.original_amount, loan.remaining_balance);
 
@@ -72,7 +72,9 @@ export function AvailableLoans({ loans, onOfferMade }: AvailableLoansProps) {
                   <Progress value={progress} className="h-1.5" />
                   <div className="flex justify-between text-xs text-fg-secondary">
                     <span>{progress.toFixed(0)}% paid</span>
-                    <span>{formatLoanAmount(loan.original_amount, loan.currency ?? undefined)} total</span>
+                    <span>
+                      {formatLoanAmount(loan.original_amount, loan.currency ?? undefined)} total
+                    </span>
                   </div>
                 </div>
 

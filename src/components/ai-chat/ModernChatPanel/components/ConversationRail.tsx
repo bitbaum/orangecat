@@ -147,7 +147,7 @@ export function ConversationRail({
               <button
                 type="button"
                 onClick={() => setMobileOpen(false)}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-fg-secondary hover:bg-surface-raised"
+                className="flex h-8 w-8 pointer-coarse:h-11 pointer-coarse:w-11 items-center justify-center rounded-lg text-fg-secondary hover:bg-surface-raised"
                 aria-label="Close"
               >
                 <X className="h-4 w-4" />

@@ -106,7 +106,7 @@ export function ProfileActions({
           // client — responsive classes say the same thing without a mismatch.
           <div
             ref={shareDropdownRef}
-            className="fixed bottom-5 left-1/2 z-modal -translate-x-1/2 sm:absolute sm:bottom-auto sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:translate-x-0"
+            className="fixed inset-x-3 bottom-[calc(var(--mobile-nav-clearance)+0.5rem)] z-modal sm:absolute sm:inset-x-auto sm:bottom-auto sm:right-0 sm:top-full sm:mt-2"
           >
             <ProfileShare
               username={profile.username || ''}

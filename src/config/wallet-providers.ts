@@ -109,9 +109,11 @@ export const WALLET_PROVIDERS: Record<string, WalletProvider> = {
     formFactor: 'mobile',
     platforms: ['iOS', 'Android'],
     custody: 'self',
-    lightning: true,
+    // BlueWallet's built-in Lightning was a hosted (LNDHub) service it has
+    // since shut down; what remains is a self-custody on-chain wallet.
+    lightning: false,
     lightningAddress: false,
-    oneLiner: 'Bitcoin-only mobile wallet with both on-chain and Lightning support.',
+    oneLiner: 'Simple, Bitcoin-only mobile wallet for on-chain payments.',
   },
   phoenix: {
     id: 'phoenix',

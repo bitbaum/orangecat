@@ -90,24 +90,20 @@ export const walletGuidanceContent: Record<NonNullable<WalletFieldType>, FieldGu
       'Payments arrive instantly — great for tips and everyday support',
       'Paste it exactly as your wallet app shows it',
     ],
-    examples: ['you@primal.net', 'you@coinos.io', 'you@getalby.com'],
+    examples: ['you@primal.net', 'you@coinos.io'],
   },
   addressOrXpub: {
     icon: React.createElement(KeyRound, { className: 'w-5 h-5 text-fg-primary' }),
     title: 'Bitcoin Address or Extended Public Key',
     description:
-      'This is where the Bitcoin actually goes. We recommend using an extended public key (xpub/ypub/zpub) for automatic tracking of all addresses and transactions.',
+      'This is where the Bitcoin actually goes: a Bitcoin address from your wallet’s Receive screen. An extended key from your wallet’s settings is the private-er option — each payer gets a fresh address.',
     tips: [
       'Always paste from your wallet app – never type it manually',
-      'Extended public keys (xpub/ypub/zpub) automatically track all addresses your wallet generates',
-      'Bitcoin wallets create new addresses after each transaction – xpub tracks them all',
-      'Single addresses work but only track that one address, missing change addresses',
+      'A single address works, but every payment to it is publicly linked on the blockchain',
+      'An extended key gives each payer a fresh address, so payments are not linked to each other',
       'Never paste your recovery seed here – only public addresses or public keys',
     ],
-    examples: [
-      'zpub6qgZc... (recommended – tracks all addresses)',
-      'bc1qxy2kg... (single address – simpler but limited)',
-    ],
+    examples: ['bc1qxy2kg... (a Bitcoin address from your wallet’s Receive screen)'],
   },
   goalAmount: {
     icon: React.createElement(PiggyBank, { className: 'w-5 h-5 text-fg-primary' }),
@@ -125,11 +121,11 @@ export const walletGuidanceContent: Record<NonNullable<WalletFieldType>, FieldGu
     icon: React.createElement(Coins, { className: 'w-5 h-5 text-fg-primary' }),
     title: 'Goal Currency',
     description:
-      'The currency is only for display – all funding still arrives in Bitcoin, but you can explain your goal in CHF, EUR, USD, BTC, or SATS.',
+      'The currency is only for display – all funding still arrives in Bitcoin, but you can explain your goal in CHF, EUR, USD, or BTC.',
     tips: [
       'Use CHF if your real‑world costs are in Switzerland',
       'Use EUR or USD if that better matches your situation',
-      'BTC or SATS are useful if you think mainly in Bitcoin',
+      'BTC is useful if you think mainly in Bitcoin',
     ],
     examples: ['1200 CHF rent', '0.01 BTC savings goal', '250 EUR monthly groceries'],
   },
@@ -150,7 +146,7 @@ export const walletDefaultContent: DefaultContent = {
     },
     {
       icon: React.createElement(Shield, { className: 'w-4 h-4 text-fg-primary' }),
-      text: 'Non‑custodial by design – you always stay in control of your funds',
+      text: 'OrangeCat never holds your money — payments go straight to the wallet you choose',
     },
     {
       icon: React.createElement(RefreshCcw, { className: 'w-4 h-4 text-fg-primary' }),

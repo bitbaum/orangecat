@@ -3,17 +3,16 @@
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import Button from '@/components/ui/Button';
-import { ArrowLeft, Bitcoin } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { ROUTES } from '@/config/routes';
-import { useState, useEffect } from 'react';
-import { formatCurrency } from '@/services/currency';
+import { useState } from 'react';
 import { getStatusInfo } from '@/config/status-config';
 import { PublicEntityPaymentSection } from '@/components/payment';
-import { Z_INDEX_CLASSES } from '@/constants/z-index';
 import type { SellerReceiveInfo } from '@/domain/payments';
 import type { LokiProjectLink } from '@/services/loki/project-link';
 import { WishlistDonationTiers } from '@/components/wishlist/WishlistDonationTiers';
+import { ProjectMobileFundBar, useMobileFundBar } from './ProjectMobileFundBar';
 
 const MissingWalletBanner = dynamic(() => import('@/components/project/MissingWalletBanner'));
 const ProjectShare = dynamic(() => import('@/components/sharing/ProjectShare'));
@@ -97,39 +96,18 @@ export default function ProjectPageClient({
   const router = useRouter();
   const { user } = useAuth();
   const [showShareDialog, setShowShareDialog] = useState(false);
-  const [showFloatingCTA, setShowFloatingCTA] = useState(false);
 
   const isOwner = canManage ?? project.user_id === user?.id;
   const projectId = project.id;
 
-  // Show floating CTA on mobile after scrolling past 300px
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowFloatingCTA(window.scrollY > 300);
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  // Scroll to support section
-  const scrollToSupport = () => {
-    // The payment section. This used to target #bitcoin-support-section, which
-    // only existed on projects with a legacy address — on every other project
-    // the floating "Support" button did nothing.
-    const supportSection = document.getElementById('pay');
-    if (supportSection) {
-      supportSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  };
-
-  // Calculate progress for mobile CTA
-  const progressPercentage = project.goal_amount
-    ? Math.min(((project.raised_amount || 0) / project.goal_amount) * 100, 100)
-    : 0;
+  const showMobileFundBar = useMobileFundBar(!isOwner && !!sellerReceive);
 
   return (
-    <div className="bg-surface-page min-h-screen">
+    // While the Fund bar shows, the page needs the room under it too — nav
+    // clearance alone left the last content behind the bar.
+    <div
+      className={`bg-surface-page min-h-screen ${showMobileFundBar ? 'oc-mobile-action-stack-padding' : ''}`}
+    >
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Header with Back Button */}
         <div className="mb-6">
@@ -260,40 +238,7 @@ export default function ProjectPageClient({
 
       {/* Floating CTA - Mobile Only. Position + z sourced from SSOT
           so this bar consistently sits above MobileBottomNav. */}
-      {!isOwner && sellerReceive && showFloatingCTA && (
-        <div
-          className={`lg:hidden fixed inset-x-0 oc-above-mobile-nav ${Z_INDEX_CLASSES.MOBILE_ACTION_BAR} bg-surface-base border-t border-default shadow-sm transition-transform duration-300 ${
-            showFloatingCTA ? 'translate-y-0' : 'translate-y-full'
-          }`}
-        >
-          <div className="max-w-lg mx-auto px-4 py-3">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex-1 min-w-0">
-                <div className="text-xs text-fg-secondary">
-                  Goal: {formatCurrency(project.goal_amount ?? 0, project.currency)}
-                </div>
-                <div className="text-lg font-bold text-fg-primary truncate">
-                  {formatCurrency(project.raised_amount ?? 0, project.currency)}
-                </div>
-                <div className="h-1.5 bg-surface-raised rounded-full mt-1">
-                  <div
-                    className="h-1.5 bg-bitcoinOrange rounded-full transition-all duration-300"
-                    style={{ width: `${progressPercentage}%` }}
-                  />
-                </div>
-              </div>
-              <Button
-                onClick={scrollToSupport}
-                variant="accent"
-                className="flex-shrink-0 px-6 py-3 shadow-sm"
-              >
-                <Bitcoin className="w-4 h-4 mr-2" aria-hidden="true" />
-                Fund
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      {showMobileFundBar && <ProjectMobileFundBar project={project} />}
     </div>
   );
 }
