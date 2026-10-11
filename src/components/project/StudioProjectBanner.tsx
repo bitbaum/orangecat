@@ -16,7 +16,9 @@ import { formatRelativeTime } from '@/utils/dates';
  */
 export default function StudioProjectBanner({ studio }: { studio: FleetTile }) {
   const siblings = ECOSYSTEM_PILLARS.filter(p => p.key !== studio.pillar);
-  const door = studio.external ? studio.href : null;
+  // The product's own site. Not the tile's link: for a project funded here that
+  // link is this very page, which left Loki's banner with no way to open Loki.
+  const door = studio.liveUrl;
 
   return (
     <aside className="oc-surface mb-6 p-4 sm:p-5" aria-label={`${studio.name} in the studio`}>

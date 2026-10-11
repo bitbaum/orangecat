@@ -14,9 +14,15 @@ export interface ProjectMarkProps {
 
 /** The monogram's type size, from the box it stands in for. */
 function monogramSize(size: number): string {
-  if (size >= 40) return 'text-3xl';
-  if (size >= 32) return 'text-2xl';
-  if (size >= 24) return 'text-lg';
+  if (size >= 40) {
+    return 'text-3xl';
+  }
+  if (size >= 32) {
+    return 'text-2xl';
+  }
+  if (size >= 24) {
+    return 'text-lg';
+  }
   return 'text-sm';
 }
 

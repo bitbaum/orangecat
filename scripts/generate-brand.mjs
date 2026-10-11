@@ -57,7 +57,9 @@ async function loadChromium() {
   } catch {
     // A sandbox without the repo's node_modules can point at any Playwright install.
     const alt = process.env.PLAYWRIGHT_MODULE;
-    if (!alt) throw new Error('@playwright/test is not installed and PLAYWRIGHT_MODULE is not set');
+    if (!alt) {
+      throw new Error('@playwright/test is not installed and PLAYWRIGHT_MODULE is not set');
+    }
     return (await import(pathToFileURL(alt).href)).chromium;
   }
 }

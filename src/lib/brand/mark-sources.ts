@@ -18,11 +18,21 @@ const objectKey = (slug: string) => (/^[A-Za-z_$][\w$]*$/.test(slug) ? slug : qu
 
 function shapeSource(shape: MarkShape): string {
   const fields: string[] = [`paint: ${quote(shape.paint)}`];
-  if (shape.strokeWidth !== undefined) fields.push(`strokeWidth: ${shape.strokeWidth}`);
-  if (shape.linecap) fields.push(`linecap: ${quote(shape.linecap)}`);
-  if (shape.linejoin) fields.push(`linejoin: ${quote(shape.linejoin)}`);
-  if (shape.fillRule) fields.push(`fillRule: ${quote(shape.fillRule)}`);
-  if (shape.opacity !== undefined) fields.push(`opacity: ${shape.opacity}`);
+  if (shape.strokeWidth !== undefined) {
+    fields.push(`strokeWidth: ${shape.strokeWidth}`);
+  }
+  if (shape.linecap) {
+    fields.push(`linecap: ${quote(shape.linecap)}`);
+  }
+  if (shape.linejoin) {
+    fields.push(`linejoin: ${quote(shape.linejoin)}`);
+  }
+  if (shape.fillRule) {
+    fields.push(`fillRule: ${quote(shape.fillRule)}`);
+  }
+  if (shape.opacity !== undefined) {
+    fields.push(`opacity: ${shape.opacity}`);
+  }
   return `    {\n      ${fields.join(',\n      ')},\n      d: ${quote(shape.d)},\n    },`;
 }
 

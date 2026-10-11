@@ -57,7 +57,9 @@ const REFUSED: Record<string, string> = {
 };
 
 const num = (value: string | undefined, fallback = 0): number => {
-  if (value === undefined) return fallback;
+  if (value === undefined) {
+    return fallback;
+  }
   const parsed = Number.parseFloat(value);
   return Number.isFinite(parsed) ? parsed : fallback;
 };
@@ -77,7 +79,9 @@ function parseDeclarations(source: string): Style {
   const style: Style = {};
   for (const part of source.split(';')) {
     const i = part.indexOf(':');
-    if (i > 0) style[part.slice(0, i).trim().toLowerCase()] = part.slice(i + 1).trim();
+    if (i > 0) {
+      style[part.slice(0, i).trim().toLowerCase()] = part.slice(i + 1).trim();
+    }
   }
   return style;
 }
@@ -103,12 +107,16 @@ function parseClassRules(css: string, warnings: string[]): Map<string, Style> {
 function ownStyle(attrs: Style, classes: Map<string, Style>): Style {
   const style: Style = {};
   for (const prop of PAINT_PROPS) {
-    if (attrs[prop] !== undefined) style[prop] = attrs[prop];
+    if (attrs[prop] !== undefined) {
+      style[prop] = attrs[prop];
+    }
   }
   for (const name of (attrs.class ?? '').split(/\s+/).filter(Boolean)) {
     Object.assign(style, classes.get(name));
   }
-  if (attrs.style) Object.assign(style, parseDeclarations(attrs.style));
+  if (attrs.style) {
+    Object.assign(style, parseDeclarations(attrs.style));
+  }
   return style;
 }
 
@@ -119,7 +127,9 @@ function points(value: string): number[][] {
     .filter(Boolean)
     .map(v => Number.parseFloat(v));
   const pairs: number[][] = [];
-  for (let i = 0; i + 1 < values.length; i += 2) pairs.push([values[i], values[i + 1]]);
+  for (let i = 0; i + 1 < values.length; i += 2) {
+    pairs.push([values[i], values[i + 1]]);
+  }
   return pairs;
 }
 
@@ -133,7 +143,9 @@ function shapePath(tag: string, a: Style): string | null {
       const cy = num(a.cy);
       const rx = tag === 'circle' ? num(a.r) : num(a.rx);
       const ry = tag === 'circle' ? num(a.r) : num(a.ry);
-      if (rx <= 0 || ry <= 0) return null;
+      if (rx <= 0 || ry <= 0) {
+        return null;
+      }
       return (
         `M${f(cx - rx)} ${f(cy)}A${f(rx)} ${f(ry)} 0 1 0 ${f(cx + rx)} ${f(cy)}` +
         `A${f(rx)} ${f(ry)} 0 1 0 ${f(cx - rx)} ${f(cy)}Z`
@@ -144,12 +156,16 @@ function shapePath(tag: string, a: Style): string | null {
       const y = num(a.y);
       const w = num(a.width);
       const h = num(a.height);
-      if (w <= 0 || h <= 0) return null;
+      if (w <= 0 || h <= 0) {
+        return null;
+      }
       let rx = a.rx !== undefined ? num(a.rx) : num(a.ry);
       let ry = a.ry !== undefined ? num(a.ry) : rx;
       rx = Math.min(rx, w / 2);
       ry = Math.min(ry, h / 2);
-      if (rx <= 0 || ry <= 0) return `M${f(x)} ${f(y)}H${f(x + w)}V${f(y + h)}H${f(x)}Z`;
+      if (rx <= 0 || ry <= 0) {
+        return `M${f(x)} ${f(y)}H${f(x + w)}V${f(y + h)}H${f(x)}Z`;
+      }
       const arc = (ex: number, ey: number) => `A${f(rx)} ${f(ry)} 0 0 1 ${f(ex)} ${f(ey)}`;
       return (
         `M${f(x + rx)} ${f(y)}H${f(x + w - rx)}${arc(x + w, y + ry)}V${f(y + h - ry)}` +
@@ -161,7 +177,9 @@ function shapePath(tag: string, a: Style): string | null {
     case 'polyline':
     case 'polygon': {
       const pts = points(a.points ?? '');
-      if (pts.length < 2) return null;
+      if (pts.length < 2) {
+        return null;
+      }
       const d = pts.map(([px, py], i) => `${i === 0 ? 'M' : 'L'}${f(px)} ${f(py)}`).join('');
       return tag === 'polygon' ? `${d}Z` : d;
     }
@@ -185,7 +203,9 @@ function readViewBox(attrs: Style): [number, number, number, number] {
   }
   const w = num(attrs.width);
   const h = num(attrs.height);
-  if (w > 0 && h > 0) return [0, 0, w, h];
+  if (w > 0 && h > 0) {
+    return [0, 0, w, h];
+  }
   throw new MarkImportError('the <svg> has no usable viewBox, width or height');
 }
 
@@ -218,11 +238,15 @@ export function svgToMark(svg: string): ImportResult {
 
     if (closing) {
       const i = stack.map(e => e.tag).lastIndexOf(tag);
-      if (i >= 0) stack.length = i;
+      if (i >= 0) {
+        stack.length = i;
+      }
       continue;
     }
 
-    if (REFUSED[tag]) throw new MarkImportError(REFUSED[tag]);
+    if (REFUSED[tag]) {
+      throw new MarkImportError(REFUSED[tag]);
+    }
 
     const attrs = parseAttributes(attrSource);
     const parent = stack[stack.length - 1];
@@ -245,7 +269,9 @@ export function svgToMark(svg: string): ImportResult {
     const style: Style = {};
     for (const prop of INHERITED) {
       const value = own[prop] ?? parent?.style[prop];
-      if (value !== undefined) style[prop] = value;
+      if (value !== undefined) {
+        style[prop] = value;
+      }
     }
     const opacity = (parent?.opacity ?? 1) * num(own.opacity, 1);
     const hidden = own.display === 'none' || style.visibility === 'hidden';
@@ -255,7 +281,9 @@ export function svgToMark(svg: string): ImportResult {
     }
 
     if (SHAPES.has(tag) && !hidden) {
-      if (!viewBox) throw new MarkImportError(`found <${tag}> outside an <svg> element`);
+      if (!viewBox) {
+        throw new MarkImportError(`found <${tag}> outside an <svg> element`);
+      }
       const d = shapePath(tag, attrs);
       if (d) {
         const fill = style.fill ?? 'black';
@@ -276,17 +304,24 @@ export function svgToMark(svg: string): ImportResult {
         } else {
           // A <line> has no inside, so SVG never fills it, whatever `fill` says.
           if (tag !== 'line' && isPaint(fill)) {
-            if (fill.startsWith('url(')) warnings.push(`a gradient or pattern fill became solid`);
+            if (fill.startsWith('url(')) {
+              warnings.push(`a gradient or pattern fill became solid`);
+            }
             colours.add(fill.toLowerCase());
             const shape: MarkShape = { paint: 'fill', d };
-            if (style['fill-rule'] === 'evenodd') shape.fillRule = 'evenodd';
+            if (style['fill-rule'] === 'evenodd') {
+              shape.fillRule = 'evenodd';
+            }
             const o = opacity * num(style['fill-opacity'], 1);
-            if (o < 1) shape.opacity = Number(o.toFixed(3));
+            if (o < 1) {
+              shape.opacity = Number(o.toFixed(3));
+            }
             shapes.push(shape);
           }
           if (stroke !== undefined && isPaint(stroke)) {
-            if (stroke.startsWith('url('))
+            if (stroke.startsWith('url(')) {
               warnings.push(`a gradient or pattern stroke became solid`);
+            }
             colours.add(stroke.toLowerCase());
             const shape: MarkShape = {
               paint: 'stroke',
@@ -294,11 +329,17 @@ export function svgToMark(svg: string): ImportResult {
               strokeWidth: num(style['stroke-width'], 1),
             };
             const cap = style['stroke-linecap'];
-            if (cap === 'butt' || cap === 'round' || cap === 'square') shape.linecap = cap;
+            if (cap === 'butt' || cap === 'round' || cap === 'square') {
+              shape.linecap = cap;
+            }
             const join = style['stroke-linejoin'];
-            if (join === 'miter' || join === 'round' || join === 'bevel') shape.linejoin = join;
+            if (join === 'miter' || join === 'round' || join === 'bevel') {
+              shape.linejoin = join;
+            }
             const o = opacity * num(style['stroke-opacity'], 1);
-            if (o < 1) shape.opacity = Number(o.toFixed(3));
+            if (o < 1) {
+              shape.opacity = Number(o.toFixed(3));
+            }
             shapes.push(shape);
           }
         }
@@ -313,11 +354,17 @@ export function svgToMark(svg: string): ImportResult {
       warnings.push(`ignored <${tag}>`);
     }
 
-    if (!selfClosing) stack.push({ tag, style, opacity });
+    if (!selfClosing) {
+      stack.push({ tag, style, opacity });
+    }
   }
 
-  if (!viewBox) throw new MarkImportError('this file has no <svg> element');
-  if (shapes.length === 0) throw new MarkImportError('found nothing to draw in this SVG');
+  if (!viewBox) {
+    throw new MarkImportError('this file has no <svg> element');
+  }
+  if (shapes.length === 0) {
+    throw new MarkImportError('found nothing to draw in this SVG');
+  }
 
   colours.delete('currentcolor');
   if (colours.size > 1) {
@@ -336,7 +383,9 @@ export function svgToMark(svg: string): ImportResult {
   const strokeWidth =
     Array.from(widths.entries()).sort((a, b) => b[1] - a[1] || a[0] - b[0])[0]?.[0] ?? 1;
   for (const s of shapes) {
-    if (s.strokeWidth === strokeWidth) delete s.strokeWidth;
+    if (s.strokeWidth === strokeWidth) {
+      delete s.strokeWidth;
+    }
   }
 
   return { viewBox, strokeWidth, shapes, warnings };

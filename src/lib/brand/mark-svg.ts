@@ -46,13 +46,21 @@ export function shapeAttributes(mark: MarkDefinition, shape: MarkShape, color: s
       `stroke="${color}"`,
       `stroke-width="${n(shape.strokeWidth ?? mark.strokeWidth)}"`
     );
-    if (shape.linecap) attrs.push(`stroke-linecap="${shape.linecap}"`);
-    if (shape.linejoin) attrs.push(`stroke-linejoin="${shape.linejoin}"`);
+    if (shape.linecap) {
+      attrs.push(`stroke-linecap="${shape.linecap}"`);
+    }
+    if (shape.linejoin) {
+      attrs.push(`stroke-linejoin="${shape.linejoin}"`);
+    }
   } else {
     attrs.push(`fill="${color}"`);
-    if (shape.fillRule) attrs.push(`fill-rule="${shape.fillRule}"`);
+    if (shape.fillRule) {
+      attrs.push(`fill-rule="${shape.fillRule}"`);
+    }
   }
-  if (shape.opacity !== undefined && shape.opacity < 1) attrs.push(`opacity="${n(shape.opacity)}"`);
+  if (shape.opacity !== undefined && shape.opacity < 1) {
+    attrs.push(`opacity="${n(shape.opacity)}"`);
+  }
   return attrs.join(' ');
 }
 

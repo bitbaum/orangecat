@@ -69,7 +69,9 @@ async function writeIndex() {
 }
 
 const args = process.argv.slice(2).filter((arg, i, all) => {
-  if (arg.startsWith('--')) return false;
+  if (arg.startsWith('--')) {
+    return false;
+  }
   const previous = all[i - 1];
   return !(previous === '--name' || previous === '--motion');
 });
@@ -103,7 +105,9 @@ let geometry;
 try {
   geometry = svgToMark(svg);
 } catch (error) {
-  if (error instanceof MarkImportError) fail(`${basename(file)}: ${error.message}`);
+  if (error instanceof MarkImportError) {
+    fail(`${basename(file)}: ${error.message}`);
+  }
   throw error;
 }
 
@@ -133,7 +137,9 @@ await format(modulePath);
 console.log(
   `wrote src/config/marks/${slug}.ts (${mark.shapes.length} shapes, viewBox ${mark.viewBox.join(' ')})`
 );
-for (const warning of geometry.warnings) console.warn(`  ! ${warning}`);
+for (const warning of geometry.warnings) {
+  console.warn(`  ! ${warning}`);
+}
 
 await writeIndex();
 

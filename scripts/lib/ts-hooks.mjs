@@ -30,7 +30,9 @@ export async function resolve(specifier, context, nextResolve) {
     const base = mapped.startsWith('file:') ? mapped : new URL(mapped, context.parentURL).href;
     if (!isFile(base)) {
       for (const ext of CANDIDATES) {
-        if (isFile(base + ext)) return nextResolve(base + ext, context);
+        if (isFile(base + ext)) {
+          return nextResolve(base + ext, context);
+        }
       }
     }
     return nextResolve(base, context);

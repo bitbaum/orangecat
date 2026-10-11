@@ -38,6 +38,8 @@ export interface FleetTile {
   /** Same-origin path when the project has a page here, else its live site. */
   href: string | null;
   external: boolean;
+  /** The product itself, when it is live somewhere — its own door, not a page about it. */
+  liveUrl: string | null;
   /** When the project last moved, as the map records it (YYYY-MM-DD). */
   lastMovedOn: string | null;
 }
@@ -73,7 +75,9 @@ export function projectHref(project: Pick<StudioMapProject, 'urls'>): {
       // fall through to the live site
     }
   }
-  return project.urls.live ? { href: project.urls.live, external: true } : { href: null, external: false };
+  return project.urls.live
+    ? { href: project.urls.live, external: true }
+    : { href: null, external: false };
 }
 
 export function toTile(project: StudioMapProject): FleetTile {
@@ -88,6 +92,7 @@ export function toTile(project: StudioMapProject): FleetTile {
     live: project.status === 'live',
     href,
     external,
+    liveUrl: project.urls.live,
     lastMovedOn: project.now?.lastLog?.date ?? null,
   };
 }
@@ -103,7 +108,9 @@ function byLayerThenName(a: FleetTile, b: FleetTile): number {
  * to their owners and stay off the front page.
  */
 export function selectHomeFleet(map: StudioMapSummary | null): FleetTile[] {
-  if (!map) return [];
+  if (!map) {
+    return [];
+  }
   return map.projects
     .filter(p => p.status === 'live' && STUDIO_LAYERS.includes(p.layer))
     .map(toTile)
@@ -115,7 +122,9 @@ export function groupFleetByLayer(map: StudioMapSummary | null): Array<{
   layer: string;
   tiles: FleetTile[];
 }> {
-  if (!map) return [];
+  if (!map) {
+    return [];
+  }
   const groups = new Map<string, FleetTile[]>();
   for (const tile of map.projects.map(toTile).sort(byLayerThenName)) {
     const list = groups.get(tile.layer) ?? [];
