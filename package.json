@@ -103,6 +103,7 @@
     "docs:frontmatter:check": "node scripts/docs-frontmatter-check.js",
     "ci:docs": "pnpm run docs:slop-scan && pnpm run docs:frontmatter:check",
     "design:check": "node scripts/design-system-check.js",
+    "generate:brand": "node --no-warnings scripts/generate-brand.mjs",
     "check:accent-ink": "node scripts/check-accent-ink.mjs",
     "bundle:analyze": "ANALYZE=true pnpm run build",
     "bundle:monitor": "node scripts/bundle-size-monitor.js",

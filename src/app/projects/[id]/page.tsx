@@ -11,6 +11,7 @@ import {
 } from '@/domain/profileClaims/unclaimed';
 import { getEntityStewardUserId } from '@/domain/profileClaims/stewardship';
 import { getLokiProjectLink } from '@/services/loki/project-link';
+import { getStudioProject } from '@/services/loki/studio-project';
 import { buildProjectStructuredData } from './structuredData';
 import { SetUpBy } from '@/components/claim/SetUpBy';
 import { ROUTES } from '@/config/routes';
@@ -233,6 +234,8 @@ export default async function PublicProjectPage({ params }: PageProps) {
   // back to "not linked" on any failure: a neighbouring product being slow
   // must never cost this page a render.
   const lokiBuild = await getLokiProjectLink(id);
+  // Is this one of the studio's own products? Then the page wears its face.
+  const studio = await getStudioProject(id);
   // Where the money went, beside what was built: the receiving wallet's
   // public ledger, when both the link and the wallet are published.
   const openLedgerWalletId = await getEntityOpenLedgerWalletId('project', id);
@@ -288,6 +291,7 @@ export default async function PublicProjectPage({ params }: PageProps) {
         sellerReceive={sellerReceive}
         canManage={canManage}
         lokiBuild={lokiBuild}
+        studio={studio}
         openLedgerWalletId={openLedgerWalletId}
       />
     </>

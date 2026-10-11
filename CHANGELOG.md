@@ -16,6 +16,13 @@ to the map, sub-bullets stay here for the human reader.
 - **Buy a paid ticket without an account.** On a paid event, a visitor who isn't signed in types their name and pays in Bitcoin, straight to the organizer's wallet. When the payment lands, the page that opens is the ticket: the QR for the door, the time and place. Close the tab before paying and coming back shows the same request, not a new one. The door list shows them by name; a paid ticket can't be given back from its page, and the organizer refunds it another way and records it, since there is no wallet on record to send Bitcoin back to. {#event-paid-guests}
   - Twint, bank and PayPal tickets are still not built; they need business accounts.
 
+### Changed
+
+- **OrangeCat has one mark now, and it is a cat made of one line.** A coil wound inward, two ears on its outer turn — Loki's spiral wearing the cat. It is the same mark in the header, in the browser tab, on the home screen when you install the app, and on every link preview. Until today those were three different drawings, and the tab icon was not an image at all: the file behind it was a web page, so most browsers showed nothing.
+- **The front page opens like a product, not a pricing page.** One statement, the mark drawing itself above it, two actions, and real numbers underneath — how many projects are raising, how many people are here, how many studio products are live — counted the same way the directory counts them.
+- **The studio is on the front page.** OrangeCat, Loki and Solon with their own faces, and under them every product built on this stack that is live, each one a door to its page. The same list, grouped by layer, now closes the stack page at /ecosystem.
+- **A studio product's own page looks like that product.** Loki's project page wears Loki's mark, says it is live, when it last moved, opens its site, and leads to its sibling products.
+
 ### Fixed
 
 - **Listing pages open again on phones.** Since earlier today, a public product, service or event page with a "Buy" bar at the bottom loaded and then switched to "Something went wrong". The bar asked the browser for something while the page was still being built on the server; it now waits until it reaches the browser.

@@ -1,13 +1,14 @@
 /**
  * OrangeCat brand SSOT (TypeScript)
  *
- * Visual mark: agent window + minimal cat ears — see BrandMark.tsx.
- * public/favicon.svg and public/images/orange-cat-logo.svg must stay
- * pixel-identical (scaled). Never introduce a third mark.
+ * Visual mark: the coil that is a cat — geometry in src/config/brand-mark.ts,
+ * rendered by BrandMarkIcon.tsx. Every static asset (favicon.svg, favicon.ico,
+ * orange-cat-logo.svg, the PWA icons, the share cards) is generated from that
+ * one file by `pnpm run generate:brand`. Never introduce a second mark.
  *
  * created_date: 2026-06-03
- * last_modified_date: 2026-06-03
- * last_modified_summary: x.ai-adjacent identity; replaces mascot pirate-cat mark
+ * last_modified_date: 2026-10-11
+ * last_modified_summary: the coil mark replaces the cat face / window-with-ears pair
  */
 
 export const APP_NAME = 'OrangeCat';
@@ -34,4 +35,4 @@ export const CONTACT_EMAIL = `cato@${APP_DOMAIN}`;
 export const BRAND_ACCENT_HEX = '#ff5c00';
 
 export const BRAND_MARK_DESCRIPTION =
-  'Minimal cat — round head, triangular ears, dot eyes, soft smile. Geometric but warm; recognizable as a cat at 16px favicon and 24px chrome.';
+  'A coil that is a cat: one continuous stroke wound inward, two ears on its outer turn. Loki’s spiral, wearing the cat. Reads as a cat at a 16px favicon and as a hypnotic coil at 220px.';
