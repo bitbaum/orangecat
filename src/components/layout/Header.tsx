@@ -170,23 +170,26 @@ export function Header({
             </div>
           </div>
         </div>
+        {/* Email Confirmation Banner — inside the header, so it hides with it on
+            scroll and sits below the notch like it. It used to be fixed at
+            top-14 on its own: under the header on notched phones, left behind
+            when the header hid, and laid over the top of every page. It
+            publishes its height (--header-banner-height) so the page and
+            sticky bars make room. Only on in-app surfaces. Hiding it on
+            marketing/auth pages avoids pushing the sign-in form down. Also
+            hide for anonymous users (signInAnonymously) — they have no email
+            to confirm, so the banner is nonsensical and just adds noise to
+            the "Try it anonymously" upgrade-anytime flow. */}
+        {isAuthRoute &&
+          authStatus.authenticated &&
+          authState.user &&
+          !authState.user.is_anonymous && (
+            <EmailConfirmationBanner
+              emailConfirmedAt={authState.user.email_confirmed_at}
+              userId={authState.user.id}
+            />
+          )}
       </header>
-
-      {/* Email Confirmation Banner — only on in-app surfaces. Hiding it on
-          marketing/auth pages avoids pushing the sign-in form down. Also
-          hide for anonymous users (signInAnonymously) — they have no email
-          to confirm, so the banner is nonsensical and just adds noise to
-          the "Try it anonymously" upgrade-anytime flow. */}
-      {isAuthRoute &&
-        authStatus.authenticated &&
-        authState.user &&
-        !authState.user.is_anonymous && (
-          <EmailConfirmationBanner
-            emailConfirmedAt={authState.user.email_confirmed_at}
-            userId={authState.user.id}
-            className={`fixed ${HEADER_DIMENSIONS.TOP_OFFSET_MOBILE} ${HEADER_DIMENSIONS.TOP_OFFSET_DESKTOP} left-0 right-0 z-40`}
-          />
-        )}
 
       {/* Mobile search now uses the CommandPalette — no separate modal. */}
 

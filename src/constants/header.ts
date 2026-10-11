@@ -19,10 +19,6 @@ export const HEADER_DIMENSIONS = {
   HEIGHT_MOBILE_PX: 56,
   /** Desktop height in pixels (for calculations) */
   HEIGHT_DESKTOP_PX: 64,
-  /** Top position for components below header */
-  TOP_OFFSET_MOBILE: 'top-14',
-  /** Top position for components below header (desktop) */
-  TOP_OFFSET_DESKTOP: 'sm:top-16',
 } as const;
 
 /**
