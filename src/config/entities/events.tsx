@@ -7,7 +7,6 @@
  */
 
 import { EntityConfig } from '@/types/entity';
-import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import { convert, formatCurrency } from '@/services/currency';
 import { PLATFORM_DEFAULT_CURRENCY } from '@/config/currencies';
@@ -146,9 +145,9 @@ export const eventEntityConfig: EntityConfig<Event> = {
     description:
       'Organize your first in-person gathering or meetup with Bitcoin-powered ticketing.',
     action: (
-      <Link href={ROUTES.DASHBOARD.EVENTS_CREATE}>
-        <Button className={GRADIENTS.brandBlue}>Create Event</Button>
-      </Link>
+      <Button href={ROUTES.DASHBOARD.EVENTS_CREATE} className={GRADIENTS.brandBlue}>
+        Create Event
+      </Button>
     ),
   },
 

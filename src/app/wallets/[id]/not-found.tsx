@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import { ROUTES } from '@/config/routes';
 
@@ -15,9 +14,9 @@ export default function WalletNotFound() {
       <p className="text-fg-secondary mt-3">
         This wallet doesn’t exist, or its owner is no longer accepting payments to it.
       </p>
-      <Link href={ROUTES.HOME} className="inline-block mt-8">
-        <Button variant="outline">Back to OrangeCat</Button>
-      </Link>
+      <Button href={ROUTES.HOME} variant="outline" className="mt-8">
+        Back to OrangeCat
+      </Button>
     </main>
   );
 }

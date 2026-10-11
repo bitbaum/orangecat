@@ -12,7 +12,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
 import { Wallet, AlertCircle, X, ExternalLink } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { ROUTES } from '@/config/routes';
@@ -78,15 +77,15 @@ export default function MissingWalletBanner({
               Add Wallet Address
             </Button>
 
-            <Link href={ROUTES.WALLETS.LIST} target="_blank">
-              <Button
-                variant="outline"
-                className="border-bitcoinOrange/40 text-bitcoinOrange hover:bg-bitcoinOrange/5"
-              >
-                <ExternalLink className="w-4 h-4 mr-2" />
-                Get a Wallet First
-              </Button>
-            </Link>
+            <Button
+              href={ROUTES.WALLETS.LIST}
+              target="_blank"
+              variant="outline"
+              className="border-bitcoinOrange/40 text-bitcoinOrange hover:bg-bitcoinOrange/5"
+            >
+              <ExternalLink className="w-4 h-4 mr-2" />
+              Get a Wallet First
+            </Button>
           </div>
 
           {/* Info */}

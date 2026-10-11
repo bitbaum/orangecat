@@ -19,7 +19,6 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import Link from 'next/link';
 import { Bell, Check, Loader2, LogIn } from 'lucide-react';
 import { useRequireAuth } from '@/hooks/useAuth';
 import { API_ROUTES } from '@/config/api-routes';
@@ -191,12 +190,10 @@ export default function NotificationSettingsPage() {
         <p className="mt-2 text-sm text-fg-secondary">
           Pick which emails you receive and how often you get the digest.
         </p>
-        <Link href={returnTo} className="mt-6 inline-block">
-          <Button>
-            <LogIn className="mr-1.5 h-4 w-4" />
-            Sign in
-          </Button>
-        </Link>
+        <Button href={returnTo} className="mt-6">
+          <LogIn className="mr-1.5 h-4 w-4" />
+          Sign in
+        </Button>
       </div>
     );
   }

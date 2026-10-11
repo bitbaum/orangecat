@@ -7,7 +7,6 @@ import { PostCard } from '@/components/timeline/PostCard';
 import TimelineComposer from '@/components/timeline/TimelineComposer';
 import { useAuth } from '@/hooks/useAuth';
 import Button from '@/components/ui/Button';
-import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { ROUTES } from '@/config/routes';
 import { TimelineDisplayEvent } from '@/types/timeline';
@@ -112,9 +111,7 @@ export default function PostPage() {
           <p className="text-fg-secondary mb-4">
             It may have been deleted or the link is incorrect.
           </p>
-          <Link href={ROUTES.TIMELINE}>
-            <Button>Go to Timeline</Button>
-          </Link>
+          <Button href={ROUTES.TIMELINE}>Go to Timeline</Button>
         </div>
       </div>
     );

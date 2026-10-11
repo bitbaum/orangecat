@@ -63,12 +63,15 @@ export function DashboardTimeline({
             Latest posts and updates from your network
           </CardDescription>
         </div>
-        <Link href={ROUTES.TIMELINE} className="shrink-0">
-          <Button variant="outline" size="sm" className="w-full sm:w-auto">
-            View full timeline
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        </Link>
+        <Button
+          href={ROUTES.TIMELINE}
+          variant="outline"
+          size="sm"
+          className="w-full sm:w-auto shrink-0"
+        >
+          View full timeline
+          <ArrowRight className="ml-2 h-4 w-4" />
+        </Button>
       </div>
 
       <div className="p-0">

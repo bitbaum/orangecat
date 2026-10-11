@@ -8,7 +8,6 @@
 
 import { EntityConfig } from '@/types/entity';
 import { UserService } from '@/types/database';
-import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import { convert, formatCurrency } from '@/services/currency';
 import { PLATFORM_DEFAULT_CURRENCY } from '@/config/currencies';
@@ -94,9 +93,9 @@ export const serviceEntityConfig: EntityConfig<UserService> = {
     title: 'No services yet',
     description: 'Start offering your expertise to the community by creating your first service.',
     action: (
-      <Link href={ROUTES.DASHBOARD.SERVICES_CREATE}>
-        <Button className={GRADIENTS.brandOrangeDark}>Create Service</Button>
-      </Link>
+      <Button href={ROUTES.DASHBOARD.SERVICES_CREATE} className={GRADIENTS.brandOrangeDark}>
+        Create Service
+      </Button>
     ),
   },
 

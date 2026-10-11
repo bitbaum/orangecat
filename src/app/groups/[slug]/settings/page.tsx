@@ -105,12 +105,10 @@ export default function GroupSettingsPage() {
         <p className="mt-2 text-sm text-fg-secondary">
           Only the group’s founder or admins can change settings.
         </p>
-        <Link href={backHref} className="mt-6 inline-block">
-          <Button variant="outline">
-            <ArrowLeft className="mr-1.5 h-4 w-4" />
-            Back to group
-          </Button>
-        </Link>
+        <Button href={backHref} variant="outline" className="mt-6">
+          <ArrowLeft className="mr-1.5 h-4 w-4" />
+          Back to group
+        </Button>
       </div>
     );
   }

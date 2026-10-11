@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import { ArrowLeft, FileQuestion } from 'lucide-react';
@@ -23,9 +22,7 @@ export default function ProjectNotFound() {
             <Button href={ROUTES.HOME} variant="outline">
               <ArrowLeft className="mr-2 h-4 w-4" /> Go Home
             </Button>
-            <Link href={ROUTES.PROJECTS.LIST}>
-              <Button>Browse Projects</Button>
-            </Link>
+            <Button href={ROUTES.PROJECTS.LIST}>Browse Projects</Button>
           </div>
         </CardContent>
       </Card>

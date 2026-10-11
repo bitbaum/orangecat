@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import UserProfileDropdown from '@/components/ui/UserProfileDropdown';
 import { useAuth } from '@/hooks/useAuth';
@@ -81,30 +80,31 @@ function UnauthenticatedButtons({
       className={`flex items-center ${isMobileNav ? 'flex-col space-y-2 w-full' : 'space-x-2'} ${className}`}
     >
       {/* Mobile: Single prominent login button — warm accent (top-of-funnel) */}
-      <Link href={getStarted.href} className="sm:hidden">
-        <Button variant="accent" size="sm" className="min-h-9 min-w-18 text-sm font-medium">
-          Login
-        </Button>
-      </Link>
+      <Button
+        href={getStarted.href}
+        variant="accent"
+        size="sm"
+        className="min-h-9 min-w-18 text-sm font-medium sm:hidden"
+      >
+        Login
+      </Button>
       {/* Desktop: Both sign in and get started buttons */}
-      <Link href={signIn.href} className={`hidden sm:block ${isMobileNav ? 'w-full' : ''}`}>
-        <Button
-          variant="ghost"
-          size="sm"
-          className={`${isMobileNav ? 'w-full justify-center' : ''} min-h-9 text-sm`}
-        >
-          {signIn.name}
-        </Button>
-      </Link>
-      <Link href={getStarted.href} className={`hidden sm:block ${isMobileNav ? 'w-full' : ''}`}>
-        <Button
-          variant="accent"
-          size="sm"
-          className={`${isMobileNav ? 'w-full justify-center' : ''} min-h-9 text-sm`}
-        >
-          {getStarted.name}
-        </Button>
-      </Link>
+      <Button
+        href={signIn.href}
+        variant="ghost"
+        size="sm"
+        className={`hidden sm:inline-flex min-h-9 text-sm ${isMobileNav ? 'w-full justify-center' : ''}`}
+      >
+        {signIn.name}
+      </Button>
+      <Button
+        href={getStarted.href}
+        variant="accent"
+        size="sm"
+        className={`hidden sm:inline-flex min-h-9 text-sm ${isMobileNav ? 'w-full justify-center' : ''}`}
+      >
+        {getStarted.name}
+      </Button>
     </div>
   );
 }

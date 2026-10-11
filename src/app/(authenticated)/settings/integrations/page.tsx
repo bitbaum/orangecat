@@ -48,12 +48,10 @@ export default function IntegrationsPage() {
           Integration keys and webhook endpoints both bind to a specific actor. Sign in to mint,
           view, or revoke them.
         </p>
-        <Link href={returnTo} className="mt-6 inline-block">
-          <Button>
-            <LogIn className="mr-1.5 h-4 w-4" />
-            Sign in
-          </Button>
-        </Link>
+        <Button href={returnTo} className="mt-6">
+          <LogIn className="mr-1.5 h-4 w-4" />
+          Sign in
+        </Button>
         <Link href={ROUTES.HOME} className="mt-3 text-xs text-fg-secondary hover:text-fg-primary">
           ← Back to home
         </Link>

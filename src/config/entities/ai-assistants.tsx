@@ -8,7 +8,6 @@
 
 import { EntityConfig } from '@/types/entity';
 import { AIAssistant } from '@/types/database';
-import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import { formatCurrency } from '@/services/currency';
 import { PLATFORM_DEFAULT_CURRENCY } from '@/config/currencies';
@@ -96,9 +95,9 @@ export const aiAssistantEntityConfig: EntityConfig<AIAssistant> = {
     title: 'No companions yet',
     description: 'Create your first companion: a being with its own voice that remembers you.',
     action: (
-      <Link href={ROUTES.DASHBOARD.AI_ASSISTANTS_CREATE}>
-        <Button className={GRADIENTS.brandTiffany}>Create a companion</Button>
-      </Link>
+      <Button href={ROUTES.DASHBOARD.AI_ASSISTANTS_CREATE} className={GRADIENTS.brandTiffany}>
+        Create a companion
+      </Button>
     ),
   },
 

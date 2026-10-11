@@ -13,7 +13,6 @@
 
 import { EntityConfig } from '@/types/entity';
 import { Asset } from '@/types/asset';
-import Link from 'next/link';
 import Button from '@/components/ui/Button';
 import { PLATFORM_DEFAULT_CURRENCY } from '@/config/currencies';
 import { formatCurrency } from '@/services/currency';
@@ -92,9 +91,9 @@ export const assetEntityConfig: EntityConfig<Asset> = {
     description:
       'Create your first asset to use as collateral for loans or to track your portfolio.',
     action: (
-      <Link href={ROUTES.DASHBOARD.ASSETS_CREATE}>
-        <Button className={GRADIENTS.brandGreen}>Create Asset</Button>
-      </Link>
+      <Button href={ROUTES.DASHBOARD.ASSETS_CREATE} className={GRADIENTS.brandGreen}>
+        Create Asset
+      </Button>
     ),
   },
 

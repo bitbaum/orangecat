@@ -65,12 +65,15 @@ export default function ProblemsSection() {
             Don’t see your problem? Describe it to your Cat. It will tell you which of these fits,
             and set it up.
           </p>
-          <Link href={ROUTES.AUTH} className="w-full sm:w-auto">
-            <Button variant="accent" size="lg" className="w-full sm:w-auto">
-              <Cat className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-              {CTA_LABELS.primaryAction}
-            </Button>
-          </Link>
+          <Button
+            href={ROUTES.AUTH}
+            variant="accent"
+            size="lg"
+            className="w-full sm:w-auto w-full sm:w-auto"
+          >
+            <Cat className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+            {CTA_LABELS.primaryAction}
+          </Button>
         </div>
       </div>
     </section>

@@ -9,6 +9,8 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   size?: 'sm' | 'md' | 'lg' | 'xl';
   isLoading?: boolean;
   href?: string;
+  /** Link mode only: open elsewhere (`_blank` also gets rel="noopener"). */
+  target?: string;
 }
 
 /** Only used when a loading button has no label of its own to keep showing. */
@@ -44,6 +46,8 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           tabIndex={disabled ? -1 : undefined}
           title={props.title}
           id={props.id}
+          target={props.target}
+          rel={props.target === '_blank' ? 'noopener noreferrer' : undefined}
           onClick={
             disabled
               ? e => e.preventDefault()
