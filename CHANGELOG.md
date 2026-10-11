@@ -11,6 +11,13 @@ to the map, sub-bullets stay here for the human reader.
 
 ## 2026-10-11
 
+### Changed
+
+- **OrangeCat has one mark now, and it is a cat made of one line.** A coil wound inward, two ears on its outer turn — Loki's spiral wearing the cat. It is the same mark in the header, in the browser tab, on the home screen when you install the app, and on every link preview. Until today those were three different drawings, and the tab icon was not an image at all: the file behind it was a web page, so most browsers showed nothing.
+- **The front page opens like a product, not a pricing page.** One statement, the mark drawing itself above it, two actions, and real numbers underneath — how many projects are raising, how many people are here, how many studio products are live — counted the same way the directory counts them.
+- **The studio is on the front page.** OrangeCat, Loki and Solon with their own faces, and under them every product built on this stack that is live, each one a door to its page. The same list, grouped by layer, now closes the stack page at /ecosystem.
+- **A studio product's own page looks like that product.** Loki's project page wears Loki's mark, says it is live, when it last moved, opens its site, and leads to its sibling products.
+
 ### Fixed
 
 - **A seller can no longer hide their own reviews, and a buyer can no longer smuggle words past moderation.** Writing to the database directly, a seller could create a back-dated account record that took over their profile and showed an empty track record; a buyer could put arbitrary text where only yes/no answers belong, where hiding the review could not reach it. The server now sets when an account record was created, accepts only the questions OrangeCat asks, and computes each review's and reply's fingerprint itself.

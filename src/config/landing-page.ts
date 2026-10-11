@@ -78,7 +78,7 @@ export const HOW_IT_WORKS_STEPS: HowItWorksStep[] = [
 
 /**
  * Fee-related marketing claims. These were previously hardcoded in 5+
- * places (HeroSectionStatic, events/page.tsx, how-it-works, technology,
+ * places (HeroSection, events/page.tsx, how-it-works, technology,
  * inline `0% fees` badges). Keeping them here means one edit covers every
  * surface the moment the claim stops being true — and prevents drift like
  * "100% to creator" on one page and "100% reaches the recipient" on another.
@@ -252,42 +252,17 @@ export const CTA_LABELS = {
   browseAll: 'Browse All',
 } as const;
 
-/** First-fold copy. One sentence, then the two actions. */
+/**
+ * First-fold copy. One statement in two tones — the lead at full ink, the
+ * consequence a step down — then the two actions.
+ */
 export const HERO_COPY = {
   badgeLead: 'Your AI economic agent',
   badgeIdentity: 'Any identity',
-  headline: 'Turn who you are into income.',
+  headlineLead: 'Turn who you are',
+  headlineTail: 'into income.',
   lede: 'Your Cat sets up ways to earn. Bitcoin settles. You stay in charge.',
 } as const;
-
-/**
- * The three first moves a visitor can take. Everything else on the old
- * homepage (category grid, example personas, four-step explainer, comparison
- * table) lives on /how-it-works or /discover.
- */
-export const FIRST_MOVES = [
-  {
-    id: 'cat',
-    title: 'Meet your Cat',
-    body: 'It interviews you and sets up offerings from what you already have.',
-    href: '/auth',
-    cta: 'Start',
-  },
-  {
-    id: 'discover',
-    title: 'See what exists',
-    body: 'Real projects, products, and people already settling in Bitcoin.',
-    href: '/discover',
-    cta: 'Discover',
-  },
-  {
-    id: 'learn',
-    title: 'How it works',
-    body: 'Four short steps if you want the picture before you start.',
-    href: '/how-it-works',
-    cta: 'Read',
-  },
-] as const;
 
 // ==================== SECTION HEADERS ====================
 

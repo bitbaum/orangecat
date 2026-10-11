@@ -12,6 +12,9 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight, ExternalLink, FileSignature, ShieldCheck } from 'lucide-react';
+import { PillarMark } from '@/components/ecosystem/PillarMark';
+import { StudioFleetGrid } from '@/components/ecosystem/StudioFleetGrid';
+import { LAYER_LABELS, groupFleetByLayer } from '@/components/ecosystem/studio-fleet';
 import {
   ECOSYSTEM,
   ECOSYSTEM_LINKS,
@@ -20,6 +23,7 @@ import {
 } from '@/config/ecosystem';
 import { ROUTES } from '@/config/routes';
 import { SOLON_BASE_URL_DEFAULT } from '@/config/solon';
+import { fetchStudioMapForCat } from '@/services/ai/studio-map-fetcher';
 
 export const metadata: Metadata = {
   title: 'The stack',
@@ -54,7 +58,11 @@ const SEAMS = [
   },
 ] as const;
 
-export default function EcosystemPage() {
+export default async function EcosystemPage() {
+  // Every project in the studio, grouped by layer, from Loki's fleet map —
+  // the one list, never a copy kept here. Absent when the map is unreachable.
+  const fleet = groupFleetByLayer(await fetchStudioMapForCat());
+
   return (
     <div className="min-h-screen bg-surface-page">
       {/* Hero */}
@@ -78,13 +86,14 @@ export default function EcosystemPage() {
         <section>
           <div className="grid gap-4 md:grid-cols-3">
             {ECOSYSTEM_PILLARS.map(pillar => {
-              const Icon = pillar.icon;
               return (
                 <div
                   key={pillar.key}
                   className="flex flex-col rounded-lg border border-default bg-surface-base p-6"
                 >
-                  <Icon className="h-5 w-5 text-fg-secondary" aria-hidden />
+                  <span className="oc-studio-pillar-mark" aria-hidden="true">
+                    <PillarMark pillar={pillar.key} size={44} animated />
+                  </span>
                   <h2 className="mt-4 font-heading text-xl font-semibold text-fg-primary">
                     {pillar.title}
                     {pillar.isSelf && (
@@ -145,6 +154,30 @@ export default function EcosystemPage() {
             })}
           </div>
         </section>
+
+        {/* Everything on the stack — the fleet, with its real faces */}
+        {fleet.length > 0 && (
+          <section className="mt-16" aria-labelledby="fleet-heading">
+            <h2
+              id="fleet-heading"
+              className="font-heading text-2xl font-bold tracking-display text-fg-primary"
+            >
+              Everything built on it
+            </h2>
+            <p className="mt-3 max-w-2xl text-fg-secondary">
+              Every project in the studio, as Loki&apos;s fleet map records it — what it is, whether
+              it is live, and when it last moved. Each one is a door.
+            </p>
+            {fleet.map(group => (
+              <div key={group.layer} className="mt-8">
+                <h3 className="mb-3 text-sm font-medium uppercase tracking-caps text-fg-tertiary">
+                  {LAYER_LABELS[group.layer] ?? group.layer}
+                </h3>
+                <StudioFleetGrid tiles={group.tiles} />
+              </div>
+            ))}
+          </section>
+        )}
 
         {/* Verify it — the claims above are links, not assertions */}
         <section className="mt-16 border-t border-subtle pt-10">

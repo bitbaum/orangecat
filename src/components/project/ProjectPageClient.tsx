@@ -11,6 +11,7 @@ import { getStatusInfo } from '@/config/status-config';
 import { PublicEntityPaymentSection } from '@/components/payment';
 import type { SellerReceiveInfo } from '@/domain/payments';
 import type { LokiProjectLink } from '@/services/loki/project-link';
+import type { FleetTile } from '@/components/ecosystem/studio-fleet';
 import { WishlistDonationTiers } from '@/components/wishlist/WishlistDonationTiers';
 import { ProjectMobileFundBar, useMobileFundBar } from './ProjectMobileFundBar';
 
@@ -22,6 +23,7 @@ const ProjectHeader = dynamic(() => import('@/components/project/ProjectHeader')
 const ProjectContent = dynamic(() => import('@/components/project/ProjectContent'));
 const ProjectTimeline = dynamic(() => import('@/components/project/ProjectTimeline'));
 const ProjectEvidence = dynamic(() => import('@/components/project/ProjectEvidence'));
+const StudioProjectBanner = dynamic(() => import('@/components/project/StudioProjectBanner'));
 
 interface Project {
   id: string;
@@ -76,6 +78,8 @@ interface ProjectPageClientProps {
   canManage?: boolean;
   /** What Loki says about this project, resolved on the server. */
   lokiBuild?: LokiProjectLink | null;
+  /** The studio product this project IS, when the fleet map knows it. */
+  studio?: FleetTile | null;
   /** The receiving wallet whose ledger is public, if any (services/wallets/entityOpenLedger). */
   openLedgerWalletId?: string | null;
 }
@@ -91,6 +95,7 @@ export default function ProjectPageClient({
   sellerReceive,
   canManage,
   lokiBuild,
+  studio,
   openLedgerWalletId,
 }: ProjectPageClientProps) {
   const router = useRouter();
@@ -132,6 +137,9 @@ export default function ProjectPageClient({
         {/* Layout: main + rail */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
+            {/* One of the studio's own products wears its face first */}
+            {studio && <StudioProjectBanner studio={studio} />}
+
             {/* Project Header */}
             <ProjectHeader
               project={project}

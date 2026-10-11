@@ -99,8 +99,12 @@ export const metadata: Metadata = {
   },
   manifest: '/manifest.json',
   icons: {
-    icon: [{ url: '/favicon.ico' }, { url: '/images/orange-cat-logo.svg', type: 'image/svg+xml' }],
-    apple: '/favicon.svg',
+    // All generated from src/config/brand-mark.ts by `pnpm run generate:brand`.
+    icon: [
+      { url: '/favicon.ico', sizes: '48x48', type: 'image/x-icon' },
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+    ],
+    apple: '/apple-icon.png',
   },
   appleWebApp: {
     capable: true,

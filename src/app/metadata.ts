@@ -10,25 +10,28 @@ export const metadata: Metadata = {
   keywords: ['bitcoin', 'ai', 'economic agent', 'funding', 'lightning', 'blockchain'],
   authors: [{ name: APP_NAME }],
   icons: {
+    // All generated from src/config/brand-mark.ts by `pnpm run generate:brand`.
     icon: [
       {
-        url: '/images/orange-cat-logo.svg',
-        type: 'image/svg+xml',
+        url: '/favicon.ico',
+        sizes: '48x48',
+        type: 'image/x-icon',
       },
       {
-        url: '/favicon.ico',
-        sizes: '32x32',
-        type: 'image/x-icon',
+        url: '/favicon.svg',
+        type: 'image/svg+xml',
       },
     ],
     apple: {
-      url: '/images/orange-cat-logo.svg',
-      type: 'image/svg+xml',
+      url: '/apple-icon.png',
+      sizes: '180x180',
+      type: 'image/png',
     },
   },
   openGraph: {
     title: `${siteName} - Your AI Economic Agent`,
-    description: 'Exchange, fund, lend, invest, and govern — with any identity, settled in Bitcoin.',
+    description:
+      'Exchange, fund, lend, invest, and govern — with any identity, settled in Bitcoin.',
     type: 'website',
     locale: 'en_US',
     siteName: siteName,
@@ -37,7 +40,8 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: `${siteName} - Your AI Economic Agent`,
-    description: 'Exchange, fund, lend, invest, and govern — with any identity, settled in Bitcoin.',
+    description:
+      'Exchange, fund, lend, invest, and govern — with any identity, settled in Bitcoin.',
   },
   robots: {
     index: true,

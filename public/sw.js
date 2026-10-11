@@ -3,7 +3,7 @@
  * Provides offline functionality, caching, and push notifications
  */
 
-const CACHE_NAME = 'orangecat-v1.1.0';
+const CACHE_NAME = 'orangecat-v1.2.0';
 
 // Static assets to cache immediately
 // `/offline` removed — no offline page route exists in the app (only the
