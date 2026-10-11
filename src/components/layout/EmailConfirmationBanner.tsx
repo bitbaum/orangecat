@@ -95,7 +95,7 @@ export function EmailConfirmationBanner({
             <button
               onClick={handleResend}
               disabled={resending}
-              className="font-medium text-status-warning hover:text-status-warning/80 underline underline-offset-2 disabled:opacity-50 disabled:cursor-wait"
+              className="-my-3 inline-flex min-h-11 items-center px-1 font-medium text-status-warning hover:text-status-warning/80 underline underline-offset-2 disabled:opacity-50 disabled:cursor-wait"
             >
               {resending ? 'Sending...' : 'Resend'}
             </button>

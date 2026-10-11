@@ -101,7 +101,7 @@ export function EntityCardActions({
           <button
             type="button"
             onClick={e => e.stopPropagation()}
-            className="flex h-9 w-9 items-center justify-center rounded-md opacity-100 transition-opacity hover:bg-surface-raised sm:opacity-0 sm:group-hover:opacity-100"
+            className="flex h-9 w-9 items-center justify-center rounded-md pointer-coarse:h-11 pointer-coarse:w-11 opacity-100 transition-opacity hover:bg-surface-raised sm:opacity-0 sm:group-hover:opacity-100"
             aria-label="Actions"
           >
             <MoreHorizontal className="h-4 w-4 text-fg-secondary" />

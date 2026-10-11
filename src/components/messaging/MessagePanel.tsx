@@ -94,7 +94,13 @@ export default function MessagePanel({
         <div className="flex items-center justify-between border-b border-subtle bg-surface-page p-4">
           <div className="flex items-center gap-2">
             {!fullPage && (
-              <Button variant="ghost" size="sm" onClick={onClose} className="-ml-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onClose}
+                className="-ml-2 min-w-11 px-0"
+                aria-label="Back to conversations"
+              >
                 <ArrowLeft className="w-5 h-5" />
               </Button>
             )}

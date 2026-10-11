@@ -4,6 +4,7 @@ import { Trash2, Eye, EyeOff } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
 import { Z_INDEX_CLASSES } from '@/constants/z-index';
+import { useMobileActionBar } from '@/hooks/useMobileActionBar';
 
 interface BulkActionsBarProps {
   selectedCount: number;
@@ -39,6 +40,7 @@ export default function BulkActionsBar({
   onHideFromProfile,
   isUpdatingVisibility = false,
 }: BulkActionsBarProps) {
+  useMobileActionBar(selectedCount > 0);
   if (selectedCount === 0) {
     return null;
   }
@@ -53,10 +55,13 @@ export default function BulkActionsBar({
         // from the design SSOT (.oc-above-mobile-nav + MOBILE_ACTION_BAR).
         'fixed inset-x-0 md:bottom-0 border-t border-default bg-surface-base shadow-none oc-above-mobile-nav',
         Z_INDEX_CLASSES.MOBILE_ACTION_BAR,
-        'pb-safe', // Safe area on hardware notch
+        // On phones .oc-above-mobile-nav already clears the home indicator
+        // (it sits on top of the nav); padding for it again made the bar a
+        // home-indicator taller than it needed to be. On md+ the bar is the
+        // bottom edge itself, so the inset belongs there.
+        'md:pb-[max(1rem,env(safe-area-inset-bottom))]',
         className
       )}
-      style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div className="flex items-center justify-between gap-4">

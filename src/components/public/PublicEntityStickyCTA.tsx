@@ -6,6 +6,7 @@
 import { getEntityPrimaryCta } from '@/config/entity-cta';
 import { Z_INDEX_CLASSES } from '@/constants/z-index';
 import type { EntityDetailConfig, EntityData } from './public-entity-detail-config';
+import { useMobileActionBar } from '@/hooks/useMobileActionBar';
 
 export function MobileStickyCTA({
   config,
@@ -48,6 +49,7 @@ export function MobileStickyCTA({
 }
 
 function StickyBar({ href, label }: { href: string; label: string }) {
+  useMobileActionBar(true);
   // Position + z-index sourced from SSOT:
   //   .oc-above-mobile-nav  → globals.css (--mobile-nav-clearance)
   //   Z_INDEX_CLASSES.MOBILE_ACTION_BAR → src/constants/z-index.ts

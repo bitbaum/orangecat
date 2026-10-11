@@ -206,7 +206,7 @@ export function ChatInput({
               <button
                 type="button"
                 onClick={onClearChat}
-                className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg text-fg-tertiary transition-colors hover:bg-surface-raised hover:text-fg-primary"
+                className="flex h-9 w-9 flex-shrink-0 pointer-coarse:h-11 pointer-coarse:w-11 items-center justify-center rounded-lg text-fg-tertiary transition-colors hover:bg-surface-raised hover:text-fg-primary"
                 aria-label="Clear chat"
                 title="Clear chat"
               >

@@ -122,7 +122,7 @@ export default function TasksSection({
           <CardContent className="p-6 text-center relative">
             <button
               onClick={dismissCelebration}
-              className="absolute right-3 top-3 rounded-md p-1.5 text-fg-tertiary transition-colors hover:bg-surface-raised hover:text-fg-primary"
+              className="absolute right-3 top-3 inline-flex items-center justify-center rounded-md p-1.5 pointer-coarse:min-h-11 pointer-coarse:min-w-11 text-fg-tertiary transition-colors hover:bg-surface-raised hover:text-fg-primary"
               aria-label="Dismiss"
             >
               <X className="w-4 h-4" />

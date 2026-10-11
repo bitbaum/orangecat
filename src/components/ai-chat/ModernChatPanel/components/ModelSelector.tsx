@@ -359,7 +359,7 @@ export function ModelSelector({
                         onClick={applyCustom}
                         disabled={!customModel.trim()}
                         aria-label="Use custom model"
-                        className="flex h-8 w-8 items-center justify-center rounded-md border border-subtle text-fg-secondary hover:bg-surface-raised disabled:opacity-40"
+                        className="flex h-8 w-8 pointer-coarse:h-11 pointer-coarse:w-11 items-center justify-center rounded-md border border-subtle text-fg-secondary hover:bg-surface-raised disabled:opacity-40"
                       >
                         <ArrowRight className="h-4 w-4" />
                       </button>
