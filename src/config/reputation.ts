@@ -192,13 +192,17 @@ export const COUNTERPART_REVIEWED_COPY = ({ who, title }: { who: string; title: 
   message: `${who} has reviewed "${title}". Their review stays hidden until you write yours, or until the window closes.`,
 });
 
-/** The label for one question id, whichever side asked it. Falls back to the id. */
-export function questionLabel(id: string): string {
+/**
+ * The label for one question id, whichever side asked it, or null for an id we
+ * never asked. Never fall back to the id itself: a key is text the reviewer
+ * chose, and printing it would publish words moderation cannot hide.
+ */
+export function questionLabel(id: string): string | null {
   for (const role of REVIEWER_ROLES) {
     const q = REVIEW_QUESTIONS[role].find(x => x.id === id);
     if (q) {
       return q.label;
     }
   }
-  return id;
+  return null;
 }

@@ -12,9 +12,9 @@ export function ReviewAnswers({
   answers: Record<string, boolean>;
   body: string | null;
 }) {
-  const ids = Object.keys(answers).sort((a, b) =>
-    a === HEADLINE_QUESTION ? -1 : b === HEADLINE_QUESTION ? 1 : 0
-  );
+  const ids = Object.keys(answers)
+    .filter(id => questionLabel(id) !== null)
+    .sort((a, b) => (a === HEADLINE_QUESTION ? -1 : b === HEADLINE_QUESTION ? 1 : 0));
   return (
     <div className="space-y-2">
       <ul className="space-y-1">

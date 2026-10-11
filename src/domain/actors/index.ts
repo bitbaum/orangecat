@@ -51,7 +51,8 @@ export async function lookupUserActor(
     .select('id')
     .eq('user_id', userId)
     .eq('actor_type', 'user')
-    .order('created_at', { ascending: true })) as {
+    .order('created_at', { ascending: true })
+    .order('id', { ascending: true })) as {
     data: Array<{ id: string }> | null;
     error: { message?: string } | null;
   };

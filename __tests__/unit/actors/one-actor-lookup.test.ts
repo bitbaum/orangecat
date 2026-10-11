@@ -22,10 +22,12 @@ import type { AnySupabaseClient } from '@/lib/supabase/types';
 
 /** A client whose ACTORS query returns whatever this test wants. */
 function client(result: { data?: Array<{ id: string }> | null; error?: unknown }) {
+  const settled = Promise.resolve({ data: result.data ?? null, error: result.error ?? null });
   const chain = {
     select: () => chain,
     eq: () => chain,
-    order: () => Promise.resolve({ data: result.data ?? null, error: result.error ?? null }),
+    order: () => chain,
+    then: settled.then.bind(settled),
   };
   return { from: () => chain } as unknown as AnySupabaseClient;
 }
@@ -68,16 +70,23 @@ describe('several actors are survivable, and deterministic', () => {
     expect(r.ok && r.actorIds).toEqual(['oldest', 'newer', 'newest']);
   });
 
-  it('asks for them oldest-first rather than hoping', async () => {
-    const order = vi.fn().mockResolvedValue({ data: [{ id: 'a1' }], error: null });
+  it('asks for them oldest-first rather than hoping, ties broken the way SQL breaks them', async () => {
+    const settled = Promise.resolve({ data: [{ id: 'a1' }], error: null });
     const chain: Record<string, unknown> = {};
+    const order = vi.fn(() => chain);
     chain.select = () => chain;
     chain.eq = () => chain;
     chain.order = order;
+    chain.then = settled.then.bind(settled);
     const c = { from: () => chain } as unknown as AnySupabaseClient;
 
     await lookupUserActor(c, 'u1');
-    expect(order).toHaveBeenCalledWith('created_at', { ascending: true });
+    // primary_user_actor() orders by created_at, id — the two must agree, or a
+    // person's deals and their profile land on different actors.
+    expect(order.mock.calls).toEqual([
+      ['created_at', { ascending: true }],
+      ['id', { ascending: true }],
+    ]);
   });
 
   it('filters actor_type rather than relying on a constraint it never names', async () => {
@@ -88,7 +97,9 @@ describe('several actors are survivable, and deterministic', () => {
       eq(...args);
       return chain;
     };
-    chain.order = () => Promise.resolve({ data: [{ id: 'a1' }], error: null });
+    const settled = Promise.resolve({ data: [{ id: 'a1' }], error: null });
+    chain.order = () => chain;
+    chain.then = settled.then.bind(settled);
     const c = { from: () => chain } as unknown as AnySupabaseClient;
 
     await lookupUserActor(c, 'u1');

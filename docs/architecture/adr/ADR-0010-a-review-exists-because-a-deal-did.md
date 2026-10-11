@@ -108,6 +108,26 @@ removed and the person reviewed could not answer. Migration
   `NotificationEmailService` (opt-out under "Progress & digests", at most two a
   day), and the cron sends one message per person per run.
 
+## Revisited 2026-10-11: the record cannot be bent from outside the app
+
+The app validated what people wrote; the database did not, and anyone signed in
+can write to it directly. Migration `20261011120000_reputation_cannot_be_gamed.sql`:
+
+- **D15 — The server dates actors.** `actors.created_at` is set by the server for
+  anyone writing through the API, because "oldest actor wins" (D2) otherwise lets
+  a seller back-date a fresh actor and bury their record. The app breaks ties
+  the way `primary_user_actor()` does (`created_at`, then `id`).
+- **D16 — Only the questions we ask.** `deal_review_question_ids()` mirrors
+  `REVIEW_QUESTIONS` (a unit test pins them together); a review with any other
+  key, or without the headline, is refused, and the UI never prints a key it
+  did not ask. Hiding text (D13) covers everything a reviewer can write.
+- **D17 — The database computes the hash** of a review body and a reply, so the
+  stored SHA-256 (D5) proves something.
+
+Reports are still once per actor, not per person; a person with several actors
+can report a review more than once. Reports hide nothing on their own (D13), so
+this is left until it matters.
+
 ## Consequences
 
 - A fake review now costs a real, settled payment to yourself through a second
