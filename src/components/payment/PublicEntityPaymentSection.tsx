@@ -2,7 +2,8 @@
  * PublicEntityPaymentSection — Replaces static PublicEntityCTA on entity pages
  *
  * Shows contextual UI based on auth/ownership state:
- * - Not logged in: "Sign in to buy/support" CTA
+ * - Not logged in: pay without an account (support, or a ticket bought by name),
+ *   else "Sign in to purchase"
  * - Logged in, IS the seller: SellerWalletBanner (prompt to connect wallet)
  * - Logged in, NOT the seller: PaymentButton (opens PaymentDialog)
  */
@@ -21,6 +22,7 @@ import { OwnerCollectPanel } from './OwnerCollectPanel';
 import { PublicPayPanel } from './PublicPayPanel';
 import { PublicSupportPanel } from './PublicSupportPanel';
 import { SharedWalletNotice } from './SharedWalletNotice';
+import GuestTicketPurchase from '@/components/events/GuestTicketPurchase';
 import type { SharedWalletUsage } from '@/domain/wallets/walletUsage';
 import { getEntityMetadata, type EntityType } from '@/config/entity-registry';
 import { ROUTES } from '@/config/routes';
@@ -71,9 +73,10 @@ export function PublicEntityPaymentSection({
   // Use sellerUserId (auth.users ID) for wallet lookup — wallets are keyed by profile_id = auth user ID
   // sellerProfileId may be an actor ID for actor-owned entities, which won't match wallet.profile_id
   const { hasWallet, loading: walletLoading } = useSellerPaymentMethods(sellerUserId);
-  // A ticket is issued to an account so the door can scan it. Paying the
-  // organizer's bare address without one would take the money and leave no
-  // ticket, so a priced event always goes through sign-in.
+  // A ticket needs a holder the door can scan. Paying the organizer's bare
+  // address would take the money and leave no ticket, so a priced event never
+  // shows it: signed out, the guest buys by name (the invoice carries it and
+  // settlement issues the ticket); signed in, the ticket lands in the account.
   const isTicket = entityType === 'event' && !!priceAmount;
 
   // Auth still hydrating — show skeleton to avoid flash
@@ -135,6 +138,21 @@ export function PublicEntityPaymentSection({
       );
     }
 
+    if (isTicket && sellerReceive) {
+      return (
+        <div className="space-y-4">
+          <GuestTicketPurchase eventId={entityId} eventPath={ROUTES.EVENTS.VIEW(entityId)} />
+          {meta.canReceiveSupport && (
+            <PublicSupportPanel
+              entityType={entityType}
+              entityId={entityId}
+              entityTitle={entityTitle}
+            />
+          )}
+        </div>
+      );
+    }
+
     const purchaseFallback = (
       <Card>
         <CardContent className="pt-6 space-y-3">
@@ -149,14 +167,14 @@ export function PublicEntityPaymentSection({
                 className="w-full gap-2 min-h-11"
               >
                 <LogIn className="w-4 h-4" />
-                {isTicket ? 'Sign in to buy a ticket' : 'Sign in to purchase'}
+                Sign in to purchase
               </Button>
               <p className="text-xs text-fg-secondary text-center">
-                {isTicket
-                  ? 'Your ticket and its QR code for the door are kept in your account.'
-                  : // Not 'a Lightning invoice': for an xpub wallet the request is a fresh
-                    // on-chain address.
-                    'You get a payment request straight from the seller’s wallet.'}
+                {
+                  // Not 'a Lightning invoice': for an xpub wallet the request is a fresh
+                  // on-chain address.
+                  'You get a payment request straight from the seller’s wallet.'
+                }
               </p>
               <PaymentExpectationNote />
             </>

@@ -67,6 +67,9 @@ const AUTH_ALLOWLIST: Record<string, string> = {
   // token (x-payment-token) instead of an account.
   'v1/payments/public/route.ts': 'anonymous public-support initiation by design',
   'v1/payments/public/[id]/route.ts': 'payment-token-gated claim action by design',
+  // The same flow for a ticket: a guest buys by name, no account; limited per
+  // IP and per event, and the invoice pays the organizer's own wallet.
+  'events/[id]/ticket/purchase/route.ts': 'anonymous ticket purchase by name by design',
   // Machine-to-machine webhook: HMAC-verified (SOLON_WEBHOOK_SECRET, timing
   // safe) rather than session-authed, and a doorbell only — the decision is
   // re-fetched and every signature re-verified before anything activates.

@@ -140,6 +140,11 @@ export function createFakeSupabase(
         predicates.push(r => r[col] !== val);
         return builder;
       },
+      // `is(col, null)` as Postgres reads it: a missing column is NULL too.
+      is: (col: string, val: unknown) => {
+        predicates.push(r => (r[col] ?? null) === val);
+        return builder;
+      },
       in: (col: string, vals: unknown[]) => {
         predicates.push(r => vals.includes(r[col] as never));
         return builder;

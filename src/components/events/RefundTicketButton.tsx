@@ -17,12 +17,15 @@ interface RefundTicketButtonProps {
   eventId: string;
   attendeeId: string;
   guestName: string;
+  /** A guest without an account has no wallet on record: only "another way". */
+  canSendBitcoin: boolean;
 }
 
 export default function RefundTicketButton({
   eventId,
   attendeeId,
   guestName,
+  canSendBitcoin,
 }: RefundTicketButtonProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -64,15 +67,22 @@ export default function RefundTicketButton({
       <p className="text-sm text-fg-secondary">
         Refund {guestName}? Their ticket is cancelled and the seat freed.
       </p>
-      <Button
-        variant="outline"
-        size="sm"
-        isLoading={busy}
-        disabled={busy}
-        onClick={() => refund('lightning')}
-      >
-        Send it back in Bitcoin from my wallet
-      </Button>
+      {canSendBitcoin ? (
+        <Button
+          variant="outline"
+          size="sm"
+          isLoading={busy}
+          disabled={busy}
+          onClick={() => refund('lightning')}
+        >
+          Send it back in Bitcoin from my wallet
+        </Button>
+      ) : (
+        <p className="text-sm text-fg-secondary">
+          They bought without an account, so there is no wallet to send it back to. Give it back in
+          person or by their Lightning address, then record it.
+        </p>
+      )}
       <Button variant="ghost" size="sm" disabled={busy} onClick={() => refund('other')}>
         I gave it back another way (Twint, cash)
       </Button>

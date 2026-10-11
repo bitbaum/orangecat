@@ -112,6 +112,7 @@ export default async function DoorPage({ params, searchParams }: PageProps) {
       name: ticketHolderName(t, uid => nameOf.get(uid)),
       count: t.ticket_count,
       paid: t.payment_status === 'paid',
+      hasAccount: !!t.user_id,
       checkedInAt: t.checked_in_at,
     }));
 
