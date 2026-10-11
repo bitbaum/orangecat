@@ -1,16 +1,18 @@
 #!/usr/bin/env node
 /**
- * Generate EVERY static brand asset from the one SSOT, src/config/brand-mark.ts.
+ * Generate EVERY static brand asset from the one SSOT, src/config/brand-mark.ts
+ * (which is src/config/marks/<APP_SLUG>.ts).
  *
- *   public/favicon.svg                 the coil on a dark rounded square (crisp source of truth)
+ *   public/favicon.svg                 the mark on a dark rounded square (crisp source of truth)
  *   public/images/orange-cat-logo.svg  identical — the manifest and the service worker point here
  *   public/favicon.ico                 16 / 32 / 48 px, PNG-encoded ICO (every browser since Vista)
  *   public/apple-icon.png              180 px
  *   public/icons/icon-192.png          192 px, purpose "any"
  *   public/icons/icon-512.png          512 px, purpose "any"
- *   public/icons/icon-512-maskable.png 512 px, coil inset to the maskable safe zone
+ *   public/icons/icon-512-maskable.png 512 px, mark inset to the maskable safe zone
  *
- * Run: pnpm run generate:brand
+ * Run: pnpm run generate:brand   (pnpm run brand:import runs it for you when
+ * the mark it imports is this app's own)
  *
  * Why this exists: on 2026-10-11 public/favicon.ico was a 155 KB fav.farm HTML
  * page served as image/x-icon — the tab icon had been broken in every browser
@@ -24,29 +26,20 @@
  * (type stripping is on by default in the Node this repo pins).
  */
 
+import './lib/register-ts.mjs';
+
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
-const { brandMarkSvg } = await import(pathToFileURL(join(ROOT, 'src/config/brand-mark.ts')).href);
+// Whatever mark src/config/marks/<APP_SLUG>.ts holds — generated or imported.
+const { BRAND_MARK } = await import('../src/config/brand-mark.ts');
+const { iconSvg } = await import('../src/lib/brand/mark-svg.ts');
 
-/** Ink and canvas of the icons — the dark-theme text and page tokens, as hex. */
-const INK = '#ededed';
-const CANVAS = '#0a0a0a';
-
-/** Icons breathe a little inside their tile; the maskable one keeps the ears inside the safe zone. */
-const ICON_INSET = 0.84;
-const MASKABLE_INSET = 0.68;
-
-const tileSvg = brandMarkSvg({ stroke: INK, background: CANVAS, radius: 22, inset: ICON_INSET });
-const maskableSvg = brandMarkSvg({
-  stroke: INK,
-  background: CANVAS,
-  radius: 0,
-  inset: MASKABLE_INSET,
-});
+const tileSvg = iconSvg(BRAND_MARK);
+const maskableSvg = iconSvg(BRAND_MARK, { maskable: true });
 
 function write(rel, data) {
   const out = join(ROOT, rel);
@@ -64,7 +57,9 @@ async function loadChromium() {
   } catch {
     // A sandbox without the repo's node_modules can point at any Playwright install.
     const alt = process.env.PLAYWRIGHT_MODULE;
-    if (!alt) throw new Error('@playwright/test is not installed and PLAYWRIGHT_MODULE is not set');
+    if (!alt) {
+      throw new Error('@playwright/test is not installed and PLAYWRIGHT_MODULE is not set');
+    }
     return (await import(pathToFileURL(alt).href)).chromium;
   }
 }
@@ -81,7 +76,7 @@ async function png(svg, size) {
     viewport: { width: size, height: size },
     deviceScaleFactor: 1,
   });
-  const scaled = svg.replace(/width="\d+" height="\d+"/, `width="${size}" height="${size}"`);
+  const scaled = svg.replace('<svg ', `<svg width="${size}" height="${size}" `);
   await page.setContent(
     `<!doctype html><html><body style="margin:0;background:transparent">${scaled}</body></html>`
   );

@@ -28,16 +28,22 @@ export default function HeroSection() {
         </div>
 
         <p className="oc-public-hero-badge">
+          {/* One line at every width: on a phone the badge carries the lead
+              alone — the three-part version ran off a 390px screen. */}
           <span>{HERO_COPY.badgeLead}</span>
-          <span aria-hidden="true">·</span>
-          <span>{HERO_COPY.badgeIdentity}</span>
-          <span aria-hidden="true">·</span>
-          <span>{FEE_CLAIMS.feeBadgeLabel}</span>
+          <span className="hidden sm:inline" aria-hidden="true">
+            ·
+          </span>
+          <span className="hidden sm:inline">{HERO_COPY.badgeIdentity}</span>
+          <span className="hidden sm:inline" aria-hidden="true">
+            ·
+          </span>
+          <span className="hidden sm:inline">{FEE_CLAIMS.feeBadgeLabel}</span>
         </p>
 
         <h1 id="hero-heading" className="oc-public-hero-title">
           {HERO_COPY.headlineLead}{' '}
-          <span className="oc-public-hero-title-dim">{HERO_COPY.headlineTail}</span>
+          <span className="oc-public-hero-title-dim sm:block">{HERO_COPY.headlineTail}</span>
         </h1>
 
         <p className="oc-public-hero-lede">{HERO_COPY.lede}</p>

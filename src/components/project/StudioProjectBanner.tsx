@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { ArrowUpRight } from 'lucide-react';
-import { PillarMark } from '@/components/ecosystem/PillarMark';
+import { ProjectMark } from '@/components/brand/ProjectMark';
 import { LAYER_LABELS, type FleetTile } from '@/components/ecosystem/studio-fleet';
 import { ECOSYSTEM, ECOSYSTEM_PILLARS } from '@/config/ecosystem';
 import { ROUTES } from '@/config/routes';
@@ -16,19 +16,15 @@ import { formatRelativeTime } from '@/utils/dates';
  */
 export default function StudioProjectBanner({ studio }: { studio: FleetTile }) {
   const siblings = ECOSYSTEM_PILLARS.filter(p => p.key !== studio.pillar);
-  const door = studio.external ? studio.href : null;
+  // The product's own site. Not the tile's link: for a project funded here that
+  // link is this very page, which left Loki's banner with no way to open Loki.
+  const door = studio.liveUrl;
 
   return (
     <aside className="oc-surface mb-6 p-4 sm:p-5" aria-label={`${studio.name} in the studio`}>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
         <span className="oc-studio-pillar-mark mb-0 h-14 w-14 shrink-0" aria-hidden="true">
-          {studio.pillar ? (
-            <PillarMark pillar={studio.pillar} size={38} animated />
-          ) : (
-            <span className="oc-studio-monogram text-2xl">
-              {studio.name.charAt(0).toUpperCase()}
-            </span>
-          )}
+          <ProjectMark slug={studio.slug} name={studio.name} size={38} animated />
         </span>
         <div className="min-w-0 flex-1">
           <p className="ui-kicker">
@@ -37,9 +33,8 @@ export default function StudioProjectBanner({ studio }: { studio: FleetTile }) {
           <p className="mt-1 text-sm text-fg-secondary">
             <span className="font-medium text-fg-primary">{studio.name}</span>
             {studio.live ? ' is live' : ` is ${studio.status}`}
-            {studio.lastMovedOn
-              ? `, last moved ${formatRelativeTime(studio.lastMovedOn)}`
-              : ''}. Built in the open on this stack, funded here.
+            {studio.lastMovedOn ? `, last moved ${formatRelativeTime(studio.lastMovedOn)}` : ''}.
+            Built in the open on this stack, funded here.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -63,7 +58,7 @@ export default function StudioProjectBanner({ studio }: { studio: FleetTile }) {
                   aria-label={`${pillar.title} — ${pillar.role}`}
                   {...(pillar.isSelf ? {} : { target: '_blank', rel: 'noopener noreferrer' })}
                 >
-                  <PillarMark pillar={pillar.key} size={22} />
+                  <ProjectMark slug={pillar.key} name={pillar.title} size={22} />
                 </Link>
               </li>
             ))}

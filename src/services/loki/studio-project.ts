@@ -24,7 +24,9 @@ export async function getStudioProject(projectId: string): Promise<FleetTile | n
   const suffix = `/projects/${projectId}`;
   const project = map.projects.find(p => {
     const own = p.urls.orangecat;
-    if (!own) return false;
+    if (!own) {
+      return false;
+    }
     try {
       return new URL(own).pathname.replace(/\/$/, '') === suffix;
     } catch {

@@ -25,6 +25,7 @@ to the map, sub-bullets stay here for the human reader.
 
 ### Fixed
 
+- **The front page fits a phone, and a studio product's page opens the product.** The line above the headline ran off the right edge of a phone screen; it now shows one phrase there. Loki's page here showed Loki's face but no way to open Loki; it now has the button.
 - **Listing pages open again on phones.** Since earlier today, a public product, service or event page with a "Buy" bar at the bottom loaded and then switched to "Something went wrong". The bar asked the browser for something while the page was still being built on the server; it now waits until it reaches the browser.
 - **A seller can no longer hide their own reviews, and a buyer can no longer smuggle words past moderation.** Writing to the database directly, a seller could create a back-dated account record that took over their profile and showed an empty track record; a buyer could put arbitrary text where only yes/no answers belong, where hiding the review could not reach it. The server now sets when an account record was created, accepts only the questions OrangeCat asks, and computes each review's and reply's fingerprint itself.
 - **Track records count cancellations.** A seller's track record said "N paid deals" including ones later cancelled, without saying so. It now lists cancelled deals next to refunded ones.

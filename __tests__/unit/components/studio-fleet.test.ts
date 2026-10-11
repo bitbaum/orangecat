@@ -127,6 +127,18 @@ describe('toTile', () => {
       })
     );
     expect(tile.lastMovedOn).toBe('2026-10-09');
+  });
+
+  it('keeps the live site even when the tile links to the page here', () => {
+    const own = `${ECOSYSTEM.orangeCat.siteUrl.replace(/\/$/, '')}/projects/abc`;
+    const tile = toTile(
+      project({
+        slug: 'loki',
+        urls: { live: 'https://loki.orangecat.ch', repo: null, orangecat: own, solon: null },
+      })
+    );
+    expect(tile.href).toBe('/projects/abc');
+    expect(tile.liveUrl).toBe('https://loki.orangecat.ch');
     expect(tile.live).toBe(true);
   });
 });

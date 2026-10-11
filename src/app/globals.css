@@ -537,41 +537,66 @@
   .ui-kicker {
     @apply text-[10px] font-medium uppercase tracking-[0.14em] text-fg-secondary sm:text-xs;
   }
-  /* The coil glyph itself (BrandMarkIcon). Stroked with currentColor so it
-     inherits text colour and theme. The animated variant — hero only — draws
-     the coil in from its tail to its centre once, then breathes a soft glow.
-     The path carries pathLength="1", which is what lets a dash of 1 be "the
-     whole stroke" without measuring it. Chrome-sized marks stay still. */
-  .oc-brand-coil {
+  /* Any mark from the registry (<Mark>, src/config/marks/). Painted with
+     currentColor so it inherits text colour and theme. A surface that asks
+     for motion gets the one the mark's file names:
+       draw — strokes draw themselves in (pathLength="1" is what lets a dash of
+              1 mean "the whole stroke"), fills fade in, then a slow breath;
+       spin — a slow turn with a soft glow (Loki's coil).
+     Chrome-sized marks never ask. Reduced motion stills both. */
+  .oc-mark {
     display: block;
     flex-shrink: 0;
   }
-  .oc-brand-coil-animated {
-    animation: oc-coil-breathe 7s ease-in-out 2s infinite;
+  .oc-mark-draw {
+    animation: oc-mark-breathe 7s ease-in-out 2s infinite;
     filter: drop-shadow(0 0 10px hsl(var(--text-primary) / 0.28));
   }
-  .oc-brand-coil-animated path {
+  .oc-mark-draw [data-paint='stroke'] {
     stroke-dasharray: 1;
     stroke-dashoffset: 1;
-    animation: oc-coil-draw 2.2s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards;
+    animation: oc-mark-draw-in 2.2s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards;
   }
-  @keyframes oc-coil-draw {
+  .oc-mark-draw [data-paint='fill'] {
+    animation: oc-mark-fade-in 1.2s ease-out 0.4s both;
+  }
+  .oc-mark-spin {
+    animation: oc-mark-spin 28s linear infinite;
+    filter: drop-shadow(0 0 4px hsl(var(--text-primary) / 0.3));
+    transform-origin: 50% 50%;
+  }
+  /* A project with no mark yet stands in with its initial (<ProjectMark>). */
+  .oc-mark-monogram {
+    @apply font-heading font-bold leading-none tracking-display;
+  }
+  @keyframes oc-mark-draw-in {
     to {
       stroke-dashoffset: 0;
     }
   }
-  @keyframes oc-coil-breathe {
+  @keyframes oc-mark-fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes oc-mark-breathe {
     50% {
       transform: scale(1.025);
       filter: drop-shadow(0 0 18px hsl(var(--text-primary) / 0.38));
     }
   }
+  @keyframes oc-mark-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
   @media (prefers-reduced-motion: reduce) {
-    .oc-brand-coil-animated {
+    .oc-mark-draw,
+    .oc-mark-spin,
+    .oc-mark-draw [data-paint] {
       animation: none;
     }
-    .oc-brand-coil-animated path {
-      animation: none;
+    .oc-mark-draw [data-paint='stroke'] {
       stroke-dashoffset: 0;
     }
   }
@@ -708,21 +733,6 @@
   .oc-studio-pillar-mark {
     @apply mb-4 flex h-16 w-16 items-center justify-center rounded-md border border-border-subtle bg-surface-raised/40 text-fg-primary;
   }
-  /* Loki's coil, as its own header draws it: a slow turn and a soft glow. */
-  .oc-sibling-coil {
-    display: block;
-    flex-shrink: 0;
-  }
-  .oc-sibling-coil-animated {
-    animation: oc-sibling-spin 28s linear infinite;
-    filter: drop-shadow(0 0 4px hsl(var(--text-primary) / 0.3));
-    transform-origin: 50% 50%;
-  }
-  @keyframes oc-sibling-spin {
-    to {
-      transform: rotate(360deg);
-    }
-  }
   .oc-studio-grid {
     @apply grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3;
   }
@@ -731,9 +741,6 @@
   }
   .oc-studio-mark {
     @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-border-subtle bg-surface-raised/40 text-fg-primary;
-  }
-  .oc-studio-monogram {
-    @apply font-heading text-lg font-bold leading-none tracking-display;
   }
   .oc-studio-layer {
     @apply mt-0.5 flex items-center gap-1.5 text-xs text-fg-tertiary;
@@ -753,11 +760,6 @@
   }
   .oc-studio-moved {
     @apply mt-auto pt-3 font-mono text-2xs uppercase tracking-caps text-fg-tertiary;
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .oc-sibling-coil-animated {
-      animation: none;
-    }
   }
   @media (prefers-reduced-motion: reduce) {
     .oc-public-hero-mark,
