@@ -188,6 +188,13 @@ function shapePath(tag: string, a: Style): string | null {
   }
 }
 
+/**
+ * What SVG path data may contain: commands, numbers, separators. A mark's
+ * path is written verbatim into public files (favicon.svg, the share cards),
+ * so anything else — a quote, an angle bracket — is refused, never escaped.
+ */
+const PATH_DATA = /^[MmLlHhVvCcSsQqTtAaZz0-9eE.,+\-\s]+$/;
+
 const isPaint = (value: string | undefined) =>
   value !== undefined && value !== 'none' && value !== 'transparent';
 
@@ -217,12 +224,20 @@ export function svgToMark(svg: string): ImportResult {
     .join('\n');
   const classes = parseClassRules(css, warnings);
 
-  const cleaned = svg
-    .replace(/<!--[\s\S]*?-->/g, '')
-    .replace(/<\?[\s\S]*?\?>/g, '')
-    .replace(/<!DOCTYPE[^>]*>/gi, '')
-    .replace(/<(defs|title|desc|metadata|style)\b[\s\S]*?<\/\1\s*>/gi, '')
-    .replace(/<(defs|title|desc|metadata|style)\b[^>]*\/>/gi, '');
+  // Strip until nothing changes: one pass over `<!<!---->--` leaves a fresh
+  // `<!--` behind. Safety does not rest on this — every path is checked
+  // against PATH_DATA below before it can reach a file — but a half-stripped
+  // comment would otherwise be read as markup.
+  let cleaned = svg;
+  for (let previous = ''; previous !== cleaned;) {
+    previous = cleaned;
+    cleaned = cleaned
+      .replace(/<!--[\s\S]*?-->/g, '')
+      .replace(/<\?[\s\S]*?\?>/g, '')
+      .replace(/<!DOCTYPE[^>]*>/gi, '')
+      .replace(/<(defs|title|desc|metadata|style)\b[\s\S]*?<\/\1\s*>/gi, '')
+      .replace(/<(defs|title|desc|metadata|style)\b[^>]*\/>/gi, '');
+  }
 
   const tagRe =
     /<(\/?)([a-zA-Z][\w:.-]*)((?:\s+[^\s=>/]+(?:\s*=\s*(?:"[^"]*"|'[^']*'))?)*)\s*(\/?)>/g;
@@ -285,6 +300,11 @@ export function svgToMark(svg: string): ImportResult {
         throw new MarkImportError(`found <${tag}> outside an <svg> element`);
       }
       const d = shapePath(tag, attrs);
+      if (d && !PATH_DATA.test(d)) {
+        throw new MarkImportError(
+          `<${tag}> has path data that is not path data (only commands, numbers and separators are allowed)`
+        );
+      }
       if (d) {
         const fill = style.fill ?? 'black';
         const stroke = style.stroke;

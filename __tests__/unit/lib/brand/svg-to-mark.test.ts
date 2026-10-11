@@ -107,9 +107,15 @@ describe('svgToMark', () => {
     ['text', '<text>Hi</text>', /outlines/],
     ['a <use>', '<use href="#a"/>', /expand it/],
     ['nothing to draw', '<g></g>', /nothing to draw/],
+    ['markup smuggled into path data', `<path d='M0 0"/><script>x</script>'/>`, /not path data/],
   ])('refuses %s with a way forward', (_label, body, message) => {
     expect(() => svgToMark(svg(body))).toThrow(MarkImportError);
     expect(() => svgToMark(svg(body))).toThrow(message);
+  });
+
+  it('strips nested comments completely rather than leaving a fresh one behind', () => {
+    const { shapes } = svgToMark(svg('<!<!--x-->-- <path d="M9 9h1"/> --><path d="M0 0h1"/>'));
+    expect(shapes).toEqual([{ paint: 'fill', d: 'M0 0h1' }]);
   });
 });
 
