@@ -129,6 +129,37 @@ describe('the token is the authorisation', () => {
   });
 });
 
+describe('a guest who paid for a ticket is sent to it', () => {
+  const paidGuest = intent({
+    entity_type: 'event',
+    entity_id: 'event-1',
+    guest_name: 'Ana',
+    status: STATUS.PAYMENT_INTENTS.PAID,
+    paid_at: '2026-10-11T20:00:00Z',
+  });
+
+  it('returns the ticket page once settlement issued it', async () => {
+    const fake = createFakeSupabase({
+      [DATABASE_TABLES.PAYMENT_INTENTS]: [paidGuest],
+      [DATABASE_TABLES.EVENT_ATTENDEES]: [
+        { event_id: 'event-1', user_id: null, transaction_id: PI_ID, ticket_code: 'code-1' },
+      ],
+    });
+    getAdminClientMock.mockReturnValue(fake.client);
+
+    const result = await checkPublicPaymentStatus(PI_ID, TOKEN);
+    expect(result.guest_ticket_path).toBe('/events/event-1/ticket/code-1');
+  });
+
+  it('names no ticket before one exists, or for a payment that is not a guest ticket', async () => {
+    world(paidGuest);
+    expect((await checkPublicPaymentStatus(PI_ID, TOKEN)).guest_ticket_path).toBeUndefined();
+
+    world(intent({ status: STATUS.PAYMENT_INTENTS.PAID }));
+    expect((await checkPublicPaymentStatus(PI_ID, TOKEN)).guest_ticket_path).toBeUndefined();
+  });
+});
+
 describe('a claim is only accepted where no rail can answer', () => {
   it('records the claim for a bare Lightning address', async () => {
     const fake = world(intent());

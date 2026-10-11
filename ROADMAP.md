@@ -35,7 +35,8 @@ Run a real night on OrangeCat — "electronic music night at Espresso Bar in Lan
 - [x] Pay the crew and refund tickets from the organizer's wallet, on the event's record. {#event-payouts}
 - [x] Cover pictures: upload, find, generate, or the photo sent to the Cat. {#event-cover}
 - [x] Guests without an account get a free ticket with just their name. {#event-rsvp-guests}
-- [ ] Tickets paid with Twint, bank or PayPal, and paid tickets without an account (waits on "More rails"). {#event-fiat-tickets}
+- [x] Guests without an account buy a paid ticket with their name and Bitcoin. {#event-paid-guests}
+- [ ] Tickets paid with Twint, bank or PayPal (waits on "More rails"). {#event-fiat-tickets}
 
 ### The investor portal {#investor-rooms}
 

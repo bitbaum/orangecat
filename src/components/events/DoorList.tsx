@@ -20,6 +20,8 @@ export interface DoorGuest {
   name: string;
   count: number;
   paid: boolean;
+  /** False for a guest ticket: no wallet on record to refund to in Bitcoin. */
+  hasAccount: boolean;
   checkedInAt: string | null;
 }
 
@@ -106,7 +108,12 @@ export default function DoorList({
                 </div>
               </div>
               {canRefund && g.paid && !g.checkedInAt && (
-                <RefundTicketButton eventId={eventId} attendeeId={g.id} guestName={g.name} />
+                <RefundTicketButton
+                  eventId={eventId}
+                  attendeeId={g.id}
+                  guestName={g.name}
+                  canSendBitcoin={g.hasAccount}
+                />
               )}
               {g.checkedInAt ? (
                 <Check className="h-5 w-5 shrink-0 text-status-positive" aria-label="Checked in" />

@@ -13,7 +13,7 @@ import { getEntityMetadata, type EntityType } from '@/config/entity-registry';
 import { getAdminClient } from '@/lib/supabase/admin';
 import type { PaymentIntent } from './types';
 import { logger } from '@/utils/logger';
-import { issuePaidTicket } from '@/domain/events/tickets';
+import { issuePaidGuestTicket, issuePaidTicket } from '@/domain/events/tickets';
 import { notifyTicketIssued } from '@/domain/events/notify';
 import { sendSellerPaymentNotification } from '@/lib/email/send-seller-notification';
 import { NotificationDispatcher } from '@/services/notifications/dispatcher';
@@ -219,6 +219,18 @@ export async function handlePaymentConfirmed(paymentIntent: PaymentIntent): Prom
             error: error instanceof Error ? error.message : String(error),
           })
         );
+    }
+
+    // A guest paid without an account: the ticket goes to the name they gave,
+    // and its own page is the ticket (the status poll hands them the link).
+    if (entityType === 'event' && !paymentIntent.buyer_id && paymentIntent.guest_name) {
+      await issuePaidGuestTicket(admin, entityId, piId, paymentIntent.guest_name).catch(error =>
+        logger.error('Guest ticket issue failed after confirmed payment — needs reconciliation', {
+          paymentIntentId: piId,
+          entityId,
+          error: error instanceof Error ? error.message : String(error),
+        })
+      );
     }
 
     // Decrement inventory (atomic — prevents overselling)

@@ -100,13 +100,16 @@ export default async function GuestTicketPage({ params }: PageProps) {
                   ? 'Checked in — enjoy it.'
                   : 'Show this at the door. Keep this page, or take a screenshot of the code.'}
               </p>
-              {!ticket.checked_in_at && (
+              {/* A paid ticket is not given back here: that is a refund, the organizer's call. */}
+              {!ticket.checked_in_at && ticket.payment_status === 'free' && (
                 <GuestTicketGiveBack eventId={event.id} code={ticket.ticket_code} />
               )}
             </>
           ) : (
             <p className="text-fg-secondary">
-              You gave this place back.{' '}
+              {ticket.payment_status === 'refunded'
+                ? 'The organizer refunded this ticket.'
+                : 'You gave this place back.'}{' '}
               <Link href={eventPath} className="underline underline-offset-4">
                 Back to the event
               </Link>

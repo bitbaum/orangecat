@@ -49,6 +49,8 @@ export interface PaymentIntent {
   created_at: string;
   updated_at: string;
   public_status_token_hash: string | null;
+  /** The name a guest bought an event ticket for, without an account. */
+  guest_name?: string | null;
 }
 
 // =====================================================================
@@ -149,6 +151,8 @@ export interface InitiatePublicSupportResult {
 
 export interface PublicPaymentStatusResult extends PaymentStatusResult {
   requires_recipient_confirmation: boolean;
+  /** A guest's paid event ticket, once settlement issued it: the page that is the ticket. */
+  guest_ticket_path?: string;
 }
 
 export interface InitiateTipInput {
