@@ -177,6 +177,18 @@ const CLIENT_SPECS: Record<string, ClientSpec> = {
     is_confidential: true,
     is_trusted: true,
   },
+  // Causius (legal matters worked by an agent) needs IDENTITY and nothing
+  // else. It keeps no users table: the signed `sub` is the only key it stores,
+  // and a person's display name is sealed inside their matters, never kept in
+  // the clear. It holds legal letters, so it must not be able to read or act
+  // on anything else here. Paying helpers will widen this deliberately, here.
+  causius: {
+    name: 'Causius',
+    origins: ['https://causius.orangecat.ch'],
+    scopes: 'openid profile email',
+    is_confidential: true, // has a server (Auth.js v5) — keeps a secret
+    is_trusted: true, // first-party — skips the consent screen after first grant
+  },
 };
 
 const spec = CLIENT_SPECS[clientId];
