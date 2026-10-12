@@ -786,6 +786,125 @@
   .oc-studio-moved {
     @apply mt-auto pt-3 font-mono text-2xs uppercase tracking-caps text-fg-tertiary;
   }
+  /* ── Discover (/discover) ──────────────────────────────────────────────
+     One search field, one row of kinds, then rails of equal cards that end.
+     A card is one link with the same parts in the same places: picture (or
+     initial), kind, title, two lines, one fact. */
+  .oc-discover {
+    @apply mx-auto w-full max-w-7xl px-4 pb-20 pt-8 sm:px-6 sm:pt-12 lg:px-8;
+  }
+  .oc-discover-head {
+    @apply mb-10 sm:mb-12;
+  }
+  .oc-discover-h1 {
+    @apply font-heading text-4xl font-bold tracking-display text-fg-primary sm:text-5xl;
+  }
+  .oc-discover-lede {
+    @apply mt-3 max-w-2xl text-base leading-relaxed text-fg-secondary sm:text-lg;
+  }
+  .oc-discover-search {
+    @apply mt-6 flex min-h-14 w-full max-w-2xl items-center gap-3 rounded-md border border-default bg-surface-base pl-4 pr-1 transition-colors focus-within:border-fg-primary;
+  }
+  .oc-discover-search-input {
+    @apply min-w-0 flex-1 border-0 bg-transparent py-3 text-base text-fg-primary placeholder:text-fg-tertiary focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 sm:text-lg;
+  }
+  .oc-discover-search-input::-webkit-search-cancel-button {
+    display: none;
+  }
+  .oc-discover-chips {
+    @apply -mx-4 mt-5 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0;
+  }
+  .oc-discover-chip {
+    @apply inline-flex min-h-11 flex-shrink-0 items-center gap-2 rounded-md border border-border-subtle bg-surface-base px-3.5 text-sm font-medium text-fg-secondary transition-colors hover:border-border-strong hover:text-fg-primary;
+  }
+  .oc-discover-chip-active {
+    @apply border-fg-primary bg-fg-primary text-fg-inverted hover:text-fg-inverted;
+  }
+  .oc-discover-chip-count {
+    @apply font-mono text-xs tabular-nums opacity-60;
+  }
+  .oc-discover-rail {
+    @apply mt-10 first:mt-0 sm:mt-14;
+  }
+  .oc-discover-rail-head {
+    @apply mb-4 flex items-baseline justify-between gap-4;
+  }
+  .oc-discover-rail-title {
+    @apply font-heading text-xl font-semibold text-fg-primary sm:text-2xl;
+  }
+  .oc-discover-see-all {
+    @apply inline-flex min-h-11 flex-shrink-0 items-center gap-1 text-sm font-medium text-fg-secondary transition-colors hover:text-fg-primary;
+  }
+  .oc-discover-rail-track {
+    @apply -mx-4 grid snap-x snap-mandatory scroll-px-4 auto-cols-[78%] grid-flow-col gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:auto-cols-auto sm:grid-flow-row sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:px-0 lg:grid-cols-4;
+    scrollbar-width: none;
+  }
+  .oc-discover-rail-track::-webkit-scrollbar {
+    display: none;
+  }
+  .oc-discover-rail-item {
+    @apply min-w-0 snap-start;
+  }
+  /* A phone scrolls the whole rail; from sm up it shows four and the rest
+     sit behind "See all", so the shelf stays a page you can finish. */
+  .oc-discover-rail-item:nth-child(n + 5) {
+    @apply sm:hidden;
+  }
+  .oc-discover-grid {
+    @apply grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 sm:gap-4 lg:grid-cols-4;
+  }
+  .oc-discover-card {
+    @apply flex h-full min-w-0 flex-col overflow-hidden rounded-md border border-border-subtle bg-surface-base transition-colors hover:border-border-strong;
+  }
+  .oc-discover-media {
+    @apply relative flex aspect-video w-full items-center justify-center overflow-hidden border-b border-border-subtle bg-surface-raised/40;
+  }
+  .oc-discover-body {
+    @apply flex flex-1 flex-col p-4;
+  }
+  .oc-discover-kind {
+    @apply font-mono text-2xs uppercase tracking-caps text-fg-tertiary;
+  }
+  .oc-discover-title {
+    @apply mt-1.5 text-base font-semibold leading-snug text-fg-primary;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .oc-discover-snippet {
+    @apply mt-1.5 text-sm leading-relaxed text-fg-secondary;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .oc-discover-fact {
+    @apply mt-auto truncate pt-3 text-sm text-fg-secondary;
+  }
+  .oc-discover-status {
+    @apply mb-4 text-sm text-fg-secondary;
+  }
+  .oc-discover-more {
+    @apply inline-flex min-h-11 items-center gap-2 rounded-md border border-default px-5 text-sm font-semibold text-fg-primary transition-colors hover:border-fg-primary;
+  }
+  .oc-discover-also {
+    @apply mt-10 text-sm text-fg-secondary;
+  }
+  .oc-discover-inline-link {
+    @apply font-medium text-fg-primary underline decoration-border-strong underline-offset-4 hover:decoration-fg-primary;
+  }
+  .oc-discover-end {
+    @apply mt-16 border-t border-border-subtle pt-10 text-center;
+  }
+  .oc-discover-empty {
+    @apply mb-12 rounded-md border border-border-subtle bg-surface-raised/30 p-6 sm:p-8;
+  }
+  /* A searched-for word inside a result: weight, not colour. */
+  .oc-search-mark {
+    @apply bg-transparent font-semibold text-fg-primary underline decoration-accent-warm/60 decoration-2 underline-offset-2;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .oc-public-hero-mark,
     .oc-public-hero-badge,

@@ -1,3 +1,4 @@
+import { Badge } from '@/components/ui/badge';
 import FundingProgress from '@/components/public/FundingProgress';
 import EntityLedgerTotal from '@/components/public/EntityLedgerTotal';
 import EntityOpenLedger from '@/components/public/EntityOpenLedger';
@@ -20,6 +21,12 @@ export const causeDetailConfig: EntityDetailConfig = {
   descriptionTitle: 'About this Cause',
   metadataSelect: 'title, description',
   getViewRoute: id => ROUTES.CAUSES.VIEW(id),
+  // What the cause is for ("Education", "Animal Welfare"). Discover's old
+  // cards were the only place it showed; the cause's own page is where it belongs.
+  renderHeaderExtra: entity =>
+    entity.cause_category ? (
+      <Badge variant="outline">{entity.cause_category as string}</Badge>
+    ) : null,
   getJsonLdExtra: entity => {
     const { goal, currency } = causeFunding(entity);
     return goal > 0

@@ -13,8 +13,7 @@ describe('OrangeCat → Loki build handoff', () => {
   const originalSecret = process.env.LOKI_BUILD_INTENT_SECRET;
 
   beforeEach(() => {
-    process.env.LOKI_BUILD_INTENT_SECRET =
-      'test-secret-that-is-at-least-thirty-two-characters';
+    process.env.LOKI_BUILD_INTENT_SECRET = 'test-secret-that-is-at-least-thirty-two-characters';
   });
 
   afterAll(() => {
@@ -42,9 +41,7 @@ describe('OrangeCat → Loki build handoff', () => {
     const expected = createHmac('sha256', process.env.LOKI_BUILD_INTENT_SECRET as string)
       .update(`${header}.${body}`)
       .digest('base64url');
-    const payload = JSON.parse(
-      Buffer.from(body, 'base64url').toString('utf8')
-    ) as LokiBuildIntent;
+    const payload = JSON.parse(Buffer.from(body, 'base64url').toString('utf8')) as LokiBuildIntent;
 
     expect(signature).toBe(expected);
     expect(payload.iss).toBe('orangecat');

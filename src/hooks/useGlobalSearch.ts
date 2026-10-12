@@ -1,29 +1,36 @@
 import { useEffect, useRef, useState } from 'react';
-import { getGlobalSearchResults, type GlobalSearchHit } from '@/services/search';
+import supabase from '@/lib/supabase/browser';
+import { searchPublic, type PublicHit } from '@/services/search/public-search';
 
 interface UseGlobalSearchResult {
-  results: GlobalSearchHit[];
+  results: PublicHit[];
+  /** How many public rows match in all — the palette shows a handful. */
+  total: number;
   loading: boolean;
 }
 
 /**
- * Debounced, ranked, cross-entity search for instant-jump surfaces (⌘K palette).
- * Backed by the global_search RPC (typo-tolerant, accent-insensitive). A
- * monotonic request id ensures a slow earlier query can't overwrite a newer one.
+ * Debounced, ranked, cross-entity search for the ⌘K palette. The same engine
+ * as /discover (search_public), capped per type so one kind of thing cannot
+ * fill the list. A monotonic request id keeps a slow earlier query from
+ * overwriting a newer one.
  */
 export function useGlobalSearch(
   query: string,
   enabled: boolean = true,
-  limit: number = 8,
-  debounceMs: number = 250
+  limit: number = 12,
+  debounceMs: number = 200
 ): UseGlobalSearchResult {
-  const [results, setResults] = useState<GlobalSearchHit[]>([]);
+  const [results, setResults] = useState<PublicHit[]>([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const requestIdRef = useRef(0);
 
   useEffect(() => {
     if (!enabled || query.trim().length < 2) {
+      requestIdRef.current++;
       setResults([]);
+      setTotal(0);
       setLoading(false);
       return;
     }
@@ -31,24 +38,16 @@ export function useGlobalSearch(
     const requestId = ++requestIdRef.current;
     setLoading(true);
     const timer = setTimeout(async () => {
-      try {
-        const hits = await getGlobalSearchResults(query, limit);
-        if (requestId === requestIdRef.current) {
-          setResults(hits);
-        }
-      } catch {
-        if (requestId === requestIdRef.current) {
-          setResults([]);
-        }
-      } finally {
-        if (requestId === requestIdRef.current) {
-          setLoading(false);
-        }
+      const page = await searchPublic(supabase, { query, limit, perType: 4 });
+      if (requestId === requestIdRef.current) {
+        setResults(page.hits);
+        setTotal(page.total);
+        setLoading(false);
       }
     }, debounceMs);
 
     return () => clearTimeout(timer);
   }, [query, enabled, limit, debounceMs]);
 
-  return { results, loading };
+  return { results, total, loading };
 }

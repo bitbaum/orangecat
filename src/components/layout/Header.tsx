@@ -13,7 +13,7 @@ import { HEADER_DIMENSIONS, HEADER_SPACING } from '@/constants/header';
 import Logo from './Logo';
 import AuthButtons from './AuthButtons';
 import { HeaderCreateButton } from '@/components/dashboard/HeaderCreateButton';
-import { SearchTrigger } from '@/components/search/SearchTrigger';
+import { CommandPaletteHost, SearchTrigger } from '@/components/search/SearchTrigger';
 import NotificationCenter from '@/components/notifications/NotificationCenter';
 import { EmailConfirmationBanner } from './EmailConfirmationBanner';
 import { MessagesButton, NotificationsButton } from './HeaderActions';
@@ -191,7 +191,8 @@ export function Header({
           )}
       </header>
 
-      {/* Mobile search now uses the CommandPalette — no separate modal. */}
+      {/* One palette for both triggers above (and ⌘K / "/" anywhere). */}
+      {showSearch && <CommandPaletteHost />}
 
       {/* Notification Center */}
       {showNotifications && (

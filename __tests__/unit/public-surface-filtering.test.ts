@@ -4,14 +4,18 @@
  * /api/v1/demand, /api/v1/search and /api/discover/counts serve the public
  * internet through the ADMIN client (RLS bypassed) — the ONLY thing keeping
  * private rows off the wire is the service-level filtering inside
- * getOpenDemand, searchPlatform and fetchDiscoverCounts. These tests pin those
- * predicates via query-builder inspection: if someone removes a filter, the
+ * getOpenDemand, searchPlatform and public_documents() (the SQL behind search,
+ * Discover and its counts). These tests pin those predicates — by query-builder
+ * inspection, or by reading the migration — so if someone removes a filter, the
  * failing assertion names the exposure.
  */
 
 import { getOpenDemand } from '@/services/platform/demand';
 import { searchPlatform } from '@/services/cat/platform-search';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { fetchDiscoverCounts } from '@/services/search/discoverCounts';
+import { FIXTURE_RPC_ARGS } from '@/services/search/public-search';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { getTableName } from '@/config/entity-registry';
 import { STATUS, ENTITY_STATUS } from '@/config/database-constants';
@@ -115,77 +119,105 @@ describe('searchPlatform (public /api/v1/search)', () => {
   });
 });
 
-describe('fetchDiscoverCounts (public /api/discover/counts)', () => {
-  // The public predicate set per entity table, mirroring the tab views
-  // (discoverGenericFetcher.ts). Profiles are intentionally absent: the profile
-  // directory is public by design (public SELECT policy on profiles).
-  const EXPECTED: Array<{ table: string; predicates: Array<[string, unknown[]]> }> = [
-    { table: getTableName('project'), predicates: [['eq', ['status', ENTITY_STATUS.ACTIVE]]] },
+describe('public_documents (search, Discover and /api/discover/counts)', () => {
+  // Since 20261012120000 the public rules for search, Discover and the counts
+  // live in ONE SQL function, run by SECURITY DEFINER callers — RLS is
+  // bypassed, so these predicates are all that keeps private rows out. They
+  // are pinned against the newest migration that defines the function.
+  const sql = (() => {
+    const dir = join(process.cwd(), 'supabase', 'migrations');
+    const file = readdirSync(dir)
+      .filter(f => f.endsWith('.sql'))
+      .sort()
+      .filter(f =>
+        readFileSync(join(dir, f), 'utf8').includes('FUNCTION public.public_documents()')
+      )
+      .pop();
+    const text = readFileSync(join(dir, file as string), 'utf8');
+    const start = text.indexOf('FUNCTION public.public_documents()');
+    return text.slice(start, text.indexOf('$$;', start));
+  })();
+
+  const branch = (table: string): string => {
+    const part = sql.split('UNION ALL').find(b => b.includes(`FROM public.${table} `));
+    return (part ?? '').replace(/\s+/g, ' ');
+  };
+
+  const EXPECTED: Array<{ table: string; predicates: string[] }> = [
+    {
+      table: getTableName('project'),
+      predicates: ["x.status IN ('active','paused')", 'x.is_test IS NOT TRUE'],
+    },
     {
       table: getTableName('loan'),
-      predicates: [
-        ['eq', ['is_public', true]],
-        ['eq', ['status', ENTITY_STATUS.ACTIVE]],
-      ],
+      predicates: ['x.is_public', "x.status = 'active'", 'x.is_test IS NOT TRUE'],
     },
-    { table: getTableName('investment'), predicates: [['eq', ['is_public', true]]] },
-    { table: getTableName('asset'), predicates: [['eq', ['status', ENTITY_STATUS.ACTIVE]]] },
-    { table: getTableName('cause'), predicates: [['eq', ['status', STATUS.CAUSES.ACTIVE]]] },
+    { table: getTableName('investment'), predicates: ['x.is_public', 'x.is_test IS NOT TRUE'] },
+    { table: getTableName('asset'), predicates: ["x.status = 'active'", 'x.is_test IS NOT TRUE'] },
+    { table: getTableName('cause'), predicates: ["x.status = 'active'", 'x.is_test IS NOT TRUE'] },
     {
       table: getTableName('event'),
-      predicates: [
-        ['in', ['status', [STATUS.EVENTS.PUBLISHED, STATUS.EVENTS.OPEN, STATUS.EVENTS.ONGOING]]],
-      ],
+      predicates: ["x.status IN ('published','open','full','ongoing')"],
     },
-    { table: getTableName('product'), predicates: [['eq', ['status', STATUS.PRODUCTS.ACTIVE]]] },
-    { table: getTableName('service'), predicates: [['eq', ['status', STATUS.SERVICES.ACTIVE]]] },
-    { table: getTableName('group'), predicates: [['eq', ['is_public', true]]] },
+    {
+      table: getTableName('product'),
+      predicates: ["x.status = 'active'", 'x.is_test IS NOT TRUE'],
+    },
+    {
+      table: getTableName('service'),
+      predicates: ["x.status = 'active'", 'x.is_test IS NOT TRUE'],
+    },
+    { table: getTableName('group'), predicates: ['x.is_public IS TRUE'] },
     {
       table: getTableName('circle'),
-      predicates: [
-        ['eq', ['visibility', 'public']],
-        ['eq', ['status', ENTITY_STATUS.ACTIVE]],
-      ],
+      predicates: ["x.visibility = 'public'", "x.status = 'active'"],
     },
     {
       table: getTableName('wishlist'),
-      predicates: [
-        ['eq', ['visibility', 'public']],
-        ['eq', ['is_active', true]],
-      ],
+      predicates: ["x.visibility = 'public'", 'x.is_active IS TRUE'],
     },
     {
       table: getTableName('research'),
-      predicates: [
-        ['eq', ['is_public', true]],
-        ['eq', ['status', ENTITY_STATUS.ACTIVE]],
-      ],
+      predicates: ['x.is_public IS TRUE', "NOT IN ('draft','cancelled')"],
     },
     {
       table: getTableName('ai_assistant'),
-      predicates: [
-        ['eq', ['is_public', true]],
-        ['eq', ['status', STATUS.AI_ASSISTANTS.ACTIVE]],
-      ],
+      predicates: ['x.is_public IS TRUE', "x.status = 'active'"],
     },
   ];
 
-  it('counts only public/active rows for every entity tab', async () => {
-    const { client, queries } = recordingClient();
-    await fetchDiscoverCounts(client);
-
-    for (const { table, predicates } of EXPECTED) {
-      const [query] = queriesOn(queries, table);
-      expect(query).toBeDefined();
-      for (const [method, args] of predicates) {
-        // Failure here means the count for `table` now includes non-public rows.
-        expect({ table, method, args, ok: hasPredicate(query, method, args) }).toEqual({
-          table,
-          method,
-          args,
-          ok: true,
-        });
-      }
+  it.each(EXPECTED)('$table returns only public rows', ({ table, predicates }) => {
+    const where = branch(table);
+    expect(where).not.toBe('');
+    for (const predicate of predicates) {
+      // Failure here means search and Discover now return non-public rows of `table`.
+      expect({ table, predicate, present: where.includes(predicate) }).toEqual({
+        table,
+        predicate,
+        present: true,
+      });
     }
+  });
+
+  it('every public entity type has a branch, and nothing else does', () => {
+    const tables = [...sql.matchAll(/FROM public\.(\w+) /g)].map(m => m[1]).sort();
+    expect(tables).toEqual([...EXPECTED.map(e => e.table), DATABASE_TABLES.PROFILES].sort());
+  });
+});
+
+describe('fetchDiscoverCounts', () => {
+  it('counts through public_counts with the fixture filters, per type', async () => {
+    const rpc = vi.fn().mockResolvedValue({
+      data: [
+        { entity_type: 'project', n: '4' },
+        { entity_type: 'profile', n: 9 },
+      ],
+      error: null,
+    });
+    const counts = await fetchDiscoverCounts({ rpc } as never);
+    expect(rpc).toHaveBeenCalledWith('public_counts', FIXTURE_RPC_ARGS);
+    expect(counts.totalProjectsCount).toBe(4);
+    expect(counts.totalProfilesCount).toBe(9);
+    expect(counts.totalEventsCount).toBe(0);
   });
 });

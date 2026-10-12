@@ -109,9 +109,10 @@ describe('webhook signature verification — the app and the SDK must agree', ()
       reason: 'unknown_scheme',
     });
     // An unknown scheme version must not be treated as v1.
-    expect(
-      bothAgree(BODY, `t=${Math.floor(NOW.getTime() / 1000)},v2=${'a'.repeat(64)}`)
-    ).toEqual({ valid: false, reason: 'unknown_scheme' });
+    expect(bothAgree(BODY, `t=${Math.floor(NOW.getTime() / 1000)},v2=${'a'.repeat(64)}`)).toEqual({
+      valid: false,
+      reason: 'unknown_scheme',
+    });
   });
 
   it('rejects a non-hex signature of the right length rather than throwing', () => {
