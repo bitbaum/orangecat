@@ -1,20 +1,15 @@
 /**
- * Public entity counts for /discover (tab badges).
+ * Public entity counts for /discover's chips, the home pulse and
+ * /api/discover/counts.
  *
- * Filter shapes mirror discoverGenericFetcher.ts so badge totals match the
- * entity-tab views. Runs on the server (admin client) so anonymous visitors
- * see the same real, public-only-filtered numbers as signed-in users.
+ * Read from public_counts(), which counts the same rows search_public()
+ * returns (see services/search/public-search.ts) — so a chip can never promise
+ * a card the list does not show. This used to be fourteen hand-written count
+ * queries whose public rules had already drifted from the lists they badged
+ * (projects counted active only while the list showed paused ones too).
  */
-import { getTableName } from '@/config/entity-registry';
-import { DATABASE_TABLES } from '@/config/database-tables';
-import { STATUS, ENTITY_STATUS } from '@/config/database-constants';
-import {
-  FIXTURE_USERNAME_ILIKE_PATTERNS,
-  EXACT_FIXTURE_USERNAMES,
-  withoutFixtureTitles,
-  type NotFilterable,
-} from '@/config/public-directory';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
+import { countPublic, type PublicHitType } from './public-search';
 
 export interface DiscoverCounts {
   totalProjectsCount: number;
@@ -50,146 +45,29 @@ export const ZERO_DISCOVER_COUNTS: DiscoverCounts = {
   totalAiAssistantsCount: 0,
 };
 
+/** Which count field each engine type fills. */
+const COUNT_FIELD: Record<Exclude<PublicHitType, 'wallet' | 'document'>, keyof DiscoverCounts> = {
+  profile: 'totalProfilesCount',
+  project: 'totalProjectsCount',
+  loan: 'totalLoansCount',
+  investment: 'totalInvestmentsCount',
+  asset: 'totalAssetsCount',
+  cause: 'totalCausesCount',
+  event: 'totalEventsCount',
+  product: 'totalProductsCount',
+  service: 'totalServicesCount',
+  group: 'totalGroupsCount',
+  circle: 'totalCirclesCount',
+  wishlist: 'totalWishlistsCount',
+  research: 'totalResearchCount',
+  ai_assistant: 'totalAiAssistantsCount',
+};
+
 export async function fetchDiscoverCounts(supabase: AnySupabaseClient): Promise<DiscoverCounts> {
-  const head = (q: unknown) => q as Promise<{ count: number | null }>;
-  // Every entity count leaves out self-declared test listings, the same rule
-  // the lists apply — otherwise a badge promises a card the tab never shows.
-  const entity = <Q extends NotFilterable<Q>>(q: Q, titleColumn = 'title') =>
-    head(withoutFixtureTitles(q, titleColumn));
-
-  // Same fixture exclusion the profiles list/search query applies (SSOT:
-  // config/public-directory.ts) — kept in sync explicitly so this badge
-  // count can't drift from what the People tab actually lists again.
-  let profilesQuery = supabase
-    .from(DATABASE_TABLES.PROFILES)
-    .select('*', { count: 'exact', head: true });
-  for (const prefix of FIXTURE_USERNAME_ILIKE_PATTERNS) {
-    profilesQuery = profilesQuery.not('username', 'ilike', prefix);
+  const byType = await countPublic(supabase);
+  const counts: DiscoverCounts = { ...ZERO_DISCOVER_COUNTS };
+  for (const [type, field] of Object.entries(COUNT_FIELD)) {
+    counts[field] = byType[type as PublicHitType] ?? 0;
   }
-  for (const name of EXACT_FIXTURE_USERNAMES) {
-    profilesQuery = profilesQuery.neq('username', name);
-  }
-
-  const [
-    projectsRes,
-    profilesRes,
-    loansRes,
-    investmentsRes,
-    assetsRes,
-    causesRes,
-    eventsRes,
-    productsRes,
-    servicesRes,
-    groupsRes,
-    circlesRes,
-    wishlistsRes,
-    researchRes,
-    aiAssistantsRes,
-  ] = await Promise.all([
-    entity(
-      supabase
-        .from(getTableName('project'))
-        .select('*', { count: 'exact', head: true })
-        .eq('status', ENTITY_STATUS.ACTIVE)
-    ),
-    head(profilesQuery),
-    entity(
-      supabase
-        .from(getTableName('loan'))
-        .select('*', { count: 'exact', head: true })
-        .eq('is_public', true)
-        .eq('status', ENTITY_STATUS.ACTIVE)
-    ),
-    entity(
-      supabase
-        .from(getTableName('investment'))
-        .select('*', { count: 'exact', head: true })
-        .eq('is_public', true)
-    ),
-    entity(
-      supabase
-        .from(getTableName('asset'))
-        .select('*', { count: 'exact', head: true })
-        // Assets are public when active (status-driven, like products). The
-        // public_visibility flag is created false and never set, so gating on it
-        // hid every asset — see 20260618000006.
-        .eq('status', ENTITY_STATUS.ACTIVE)
-    ),
-    entity(
-      supabase
-        .from(getTableName('cause'))
-        .select('*', { count: 'exact', head: true })
-        .eq('status', STATUS.CAUSES.ACTIVE)
-    ),
-    entity(
-      supabase
-        .from(getTableName('event'))
-        .select('*', { count: 'exact', head: true })
-        .in('status', [STATUS.EVENTS.PUBLISHED, STATUS.EVENTS.OPEN, STATUS.EVENTS.ONGOING])
-    ),
-    entity(
-      supabase
-        .from(getTableName('product'))
-        .select('*', { count: 'exact', head: true })
-        .eq('status', STATUS.PRODUCTS.ACTIVE)
-    ),
-    entity(
-      supabase
-        .from(getTableName('service'))
-        .select('*', { count: 'exact', head: true })
-        .eq('status', STATUS.SERVICES.ACTIVE)
-    ),
-    entity(
-      supabase
-        .from(getTableName('group'))
-        .select('*', { count: 'exact', head: true })
-        .eq('is_public', true),
-      'name'
-    ),
-    entity(
-      supabase
-        .from(getTableName('circle'))
-        .select('*', { count: 'exact', head: true })
-        .eq('visibility', 'public')
-        .eq('status', ENTITY_STATUS.ACTIVE)
-    ),
-    entity(
-      supabase
-        .from(getTableName('wishlist'))
-        .select('*', { count: 'exact', head: true })
-        .eq('visibility', 'public')
-        .eq('is_active', true)
-    ),
-    entity(
-      supabase
-        .from(getTableName('research'))
-        .select('*', { count: 'exact', head: true })
-        .eq('is_public', true)
-        .eq('status', ENTITY_STATUS.ACTIVE)
-    ),
-    entity(
-      supabase
-        .from(getTableName('ai_assistant'))
-        .select('*', { count: 'exact', head: true })
-        .eq('is_public', true)
-        .eq('status', STATUS.AI_ASSISTANTS.ACTIVE)
-    ),
-  ]);
-
-  return {
-    totalProjectsCount: projectsRes.count ?? 0,
-    totalProfilesCount: profilesRes.count ?? 0,
-    totalLoansCount: loansRes.count ?? 0,
-    totalInvestmentsCount: investmentsRes.count ?? 0,
-    totalAssetsCount: assetsRes.count ?? 0,
-    totalCausesCount: causesRes.count ?? 0,
-    totalEventsCount: eventsRes.count ?? 0,
-    totalProductsCount: productsRes.count ?? 0,
-    totalServicesCount: servicesRes.count ?? 0,
-    totalGroupsCount: groupsRes.count ?? 0,
-    totalCirclesCount: circlesRes.count ?? 0,
-    totalWishlistsCount: wishlistsRes.count ?? 0,
-    totalResearchCount: researchRes.count ?? 0,
-    totalAiAssistantsCount: aiAssistantsRes.count ?? 0,
-  };
+  return counts;
 }

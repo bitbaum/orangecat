@@ -2,11 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
   buildCreateItems,
   buildPages,
-  hrefForHit,
+  groupHits,
   rankItems,
   thingItems,
+  typeHeading,
 } from '@/components/search/command-palette-items';
-import type { GlobalSearchHit } from '@/services/search';
+import { publicHref, type PublicHit } from '@/services/search/public-search';
 import { ENTITY_REGISTRY, ENTITY_TYPES } from '@/config/entity-registry';
 import type { Thing } from '@/domain/things/service';
 
@@ -66,25 +67,22 @@ describe('command palette items', () => {
   });
 
   it('links every search hit to its public page, by id or by its path key', () => {
-    const hit = (entity_type: string, over: Partial<GlobalSearchHit> = {}): GlobalSearchHit => ({
-      entity_type,
-      id: 'abc',
-      title: 't',
-      subtitle: null,
-      image_url: null,
-      rank: 1,
-      path_key: null,
-      ...over,
-    });
     for (const type of ENTITY_TYPES.filter(t => t !== 'group')) {
-      expect(hrefForHit(hit(type))).toBe(`${ENTITY_REGISTRY[type].publicBasePath}/abc`);
+      expect(publicHref(type, 'abc', null)).toBe(`${ENTITY_REGISTRY[type].publicBasePath}/abc`);
     }
-    // Organisations are routed by slug, never by id.
-    expect(hrefForHit(hit('group', { path_key: 'zurich-btc' }))).toBe('/groups/zurich-btc');
-    expect(hrefForHit(hit('profile', { path_key: 'cato' }))).toBe('/profiles/cato');
-    // Before the migration lands there is no path_key; the old subtitle still works.
-    expect(hrefForHit(hit('profile', { subtitle: '@cato', path_key: undefined as never }))).toBe(
-      '/profiles/cato'
-    );
+    // Organisations are routed by slug, never by id; people by username.
+    expect(publicHref('group', 'abc', 'zurich-btc')).toBe('/groups/zurich-btc');
+    expect(publicHref('profile', 'abc', 'cato')).toBe('/profiles/cato');
+  });
+
+  it("groups hits by kind, in the order of each kind's best hit", () => {
+    const hit = (type: string, id: string) => ({ type, id }) as PublicHit;
+    const groups = groupHits([hit('project', '1'), hit('profile', '2'), hit('project', '3')]);
+    expect(groups.map(g => [g.type, g.hits.map(h => h.id)])).toEqual([
+      ['project', ['1', '3']],
+      ['profile', ['2']],
+    ]);
+    expect(typeHeading('profile')).toBe('People');
+    expect(typeHeading('project')).toBe(ENTITY_REGISTRY.project.namePlural);
   });
 });

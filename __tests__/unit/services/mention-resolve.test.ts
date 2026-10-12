@@ -19,7 +19,11 @@ function clientReturning(rows: Array<{ id: string; username: string }>) {
           captured.column = column;
           captured.values = values;
           return {
-            limit: () => Promise.resolve({ data: rows.filter(r => values.includes(r.username.toLowerCase())), error: null }),
+            limit: () =>
+              Promise.resolve({
+                data: rows.filter(r => values.includes(r.username.toLowerCase())),
+                error: null,
+              }),
           };
         },
       }),

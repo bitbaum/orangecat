@@ -13,6 +13,12 @@ to the map, sub-bullets stay here for the human reader.
 
 ### Changed
 
+- **Discover is a page you can finish.** One search field and one row of kinds — each with how many there are — then what was just listed, then a row of each kind: projects, things to buy, services, events, causes, people. Every card has the same parts in the same places: picture or initial, what kind of thing it is, the name, two lines, and the one fact that matters (the price, the goal, the date and place). It ends with the count of everything here and a way to list yours. It used to open on fifteen tabs and a sidebar of filters, several of which never filtered anything.
+  - The page is rendered on the server and every state is a link — a search, a kind, "Show more" — so it can be shared, bookmarked and gone back to.
+- **Search finds what you meant.** Type two letters and it finds names that start with them ("lo" finds Loki); get a letter wrong and it still finds it ("lokii", "bitcon"); accents don't matter ("zurich" finds Zürich). Exact and leading title matches come first. The words you typed are marked in every result.
+  - The ⌘K search and Discover now use the same search, so "See all results" shows what the quick search just showed. They used to be two different searches, and Discover threw the ranking away and sorted newest first.
+  - The quick search groups results by kind, shows what you searched for and opened lately when it opens empty, fills the screen on a phone, and when nothing public matches, offers to ask your Cat.
+- **A project with nothing raised yet says "Be the first to back this"** on profiles, instead of a bold "No funds yet".
 - **"What it solves" asks which problem is yours instead of listing all twelve.** Pick For you or For everyone, then the problem that sounds like you; its answer and the one thing to do next appear beside it (under it, on a phone). The same twelve answers, a sixth of the reading at a time.
 - **Signing in looks like the front page.** The same mark drawing itself, the same depth behind it.
 - **A project without a picture shows its initial,** not a generic target icon, on profiles.
@@ -22,6 +28,9 @@ to the map, sub-bullets stay here for the human reader.
 - **Settings → Usage only says what it knows.** The free-pool card said "nothing used yet — full allowance available" when it simply had no reading — next to a counter showing you had already sent a message. It now says "No reading yet", shows when each number was read, and says "Used up" when a provider has refused for the day, even if its headers still look healthy. Plans that can't be bought yet say "Not open yet" instead of "Activating", the Cat Credits card no longer points you to a top-up that is closed, and the explanations no longer credit Supporters who can't exist yet or give a reason for the midnight-UTC reset that isn't true.
   - The memory paragraph appeared twice and its button squeezed its caption into a one-word column off the edge of the card; it now appears once, with its link, in "What these numbers mean", which is folded at the foot of the page. "This week" is now "Last 7 days", which is what it counts. A message Cat could not answer is now stated to be free, which it always was.
 - **A shared project link shows the project.** It used to preview as the creator's face — Loki's page showed Cato — or as a broken image when the creator had none. Now the card carries the project's own mark or initial, its name, one line on what it is, and who is behind it.
+- **One keystroke opens one search box.** The header carries the search twice (a bar on wide screens, an icon on phones), and each answered ⌘K, so two dialogs opened on top of each other.
+- **Listings made with a test integration key stay off every public list.**
+- **A listing with a broken picture shows its initial** instead of breaking the page.
 - **Test listings no longer appear on Discover.** The first card there was a listing titled "TEST Session — TEST fixture — safe to delete". Listings whose title marks them as tests are now left out of Discover, its counts, search and the sitemap.
 
 ## 2026-10-11

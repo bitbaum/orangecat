@@ -1,23 +1,18 @@
 'use client';
 
 /**
- * SearchTrigger — replaces the inline EnhancedSearchBar in the header.
- *
- * Shows as a search-icon button with a placeholder and ⌘K kbd hint
- * (matches Linear / Stripe). Click OR press ⌘K anywhere in
- * the app opens the CommandPalette. The "/" hotkey also opens it when
- * focus isn't already in an input (Slack/GitHub-style).
- *
- * Two states:
- *   - Inline (default header use) — full-width pill with placeholder
- *   - Icon-only (compact prop) — single button for tight header rails
+ * SearchTrigger — the header's "Search or jump to…" pill (or, compact, an
+ * icon). It only opens the palette; CommandPaletteHost renders the one
+ * palette and owns the ⌘K / Ctrl+K and "/" hotkeys, so a header that shows a
+ * trigger twice (pill from md up, icon below) still opens one dialog.
  *
  * Created: 2026-06-03
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Search } from 'lucide-react';
 import { CommandPalette } from './CommandPalette';
+import { setPaletteOpen, usePaletteOpen } from './palette-store';
 import { HeaderIconButton } from '@/components/layout/HeaderIconButton';
 import { cn } from '@/lib/utils';
 
@@ -28,15 +23,16 @@ interface SearchTriggerProps {
 
 const PLACEHOLDER = 'Search or jump to…';
 
-export function SearchTrigger({ compact = false, className }: SearchTriggerProps) {
-  const [open, setOpen] = useState(false);
+/** The one palette on the page, and the keys that open it. Mount once. */
+export function CommandPaletteHost() {
+  const open = usePaletteOpen();
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      // ⌘K / Ctrl+K from anywhere.
+      // ⌘K / Ctrl+K from anywhere; the same keys close it.
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
-        setOpen(prev => !prev);
+        setPaletteOpen(prev => !prev);
         return;
       }
       // "/" hotkey when focus isn't already in an input. Read the composed-path
@@ -46,12 +42,18 @@ export function SearchTrigger({ compact = false, className }: SearchTriggerProps
       // "not typing" and the palette steals the keystroke mid-sentence.
       if (e.key === '/' && !isTypingTarget(e.composedPath()[0] ?? e.target)) {
         e.preventDefault();
-        setOpen(true);
+        setPaletteOpen(true);
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, []);
+
+  return <CommandPalette open={open} onOpenChange={setPaletteOpen} />;
+}
+
+export function SearchTrigger({ compact = false, className }: SearchTriggerProps) {
+  const setOpen = (value: boolean) => setPaletteOpen(value);
 
   return (
     <>
@@ -85,7 +87,6 @@ export function SearchTrigger({ compact = false, className }: SearchTriggerProps
           </kbd>
         </button>
       )}
-      <CommandPalette open={open} onOpenChange={setOpen} />
     </>
   );
 }

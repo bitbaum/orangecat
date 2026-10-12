@@ -24,8 +24,7 @@ const admin = {
   from: () => ({
     select: () => ({
       eq: () => ({
-        maybeSingle: () =>
-          Promise.resolve({ data: { name: 'Cato', username: 'g' }, error: null }),
+        maybeSingle: () => Promise.resolve({ data: { name: 'Cato', username: 'g' }, error: null }),
       }),
     }),
   }),

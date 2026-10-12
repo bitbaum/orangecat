@@ -29,7 +29,7 @@ import { execSync } from 'node:child_process';
  * 14 → 13 on 2026-08-29: the timeline's post body moved from `text-[15px]` to
  * the named `text-post` token.
  */
-const BASELINE = 12;
+const BASELINE = 10;
 
 const ARBITRARY_SIZE = /\btext-\[[0-9]/;
 

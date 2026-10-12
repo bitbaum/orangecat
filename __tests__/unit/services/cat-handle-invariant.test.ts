@@ -17,10 +17,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { CAT_USERNAME } from '@/config/cat-identity';
 
-const script = readFileSync(
-  join(process.cwd(), 'scripts/check-data-invariants.mjs'),
-  'utf8'
-);
+const script = readFileSync(join(process.cwd(), 'scripts/check-data-invariants.mjs'), 'utf8');
 
 describe('the invariant gate and the Cat agree on the handle', () => {
   it('checks the handle the Cat actually answers to', () => {

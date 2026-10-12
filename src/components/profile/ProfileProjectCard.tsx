@@ -129,19 +129,21 @@ export default function ProfileProjectCard({ project }: { project: ProfileProjec
                   </span>
                 </div>
               </div>
-            ) : (
+            ) : balanceBTC > 0 || raisedAmount > 0 ? (
               <div className="flex items-center gap-2">
                 <Bitcoin className="h-4 w-4 text-bitcoinOrange" />
                 <span className="text-sm font-semibold text-fg-primary">
                   {balanceBTC > 0 ? (
                     formatBitcoinDisplay(balanceBTC)
-                  ) : raisedAmount > 0 ? (
-                    <CurrencyDisplay amount={raisedAmount} currency={currency} size="sm" />
                   ) : (
-                    'No funds yet'
+                    <CurrencyDisplay amount={raisedAmount} currency={currency} size="sm" />
                   )}
                 </span>
               </div>
+            ) : (
+              // Nothing raised yet reads as an invitation, not a verdict:
+              // "No funds yet" in bold told a visitor the project was dead.
+              <p className="text-sm text-fg-secondary">Be the first to back this</p>
             )}
           </div>
         </div>

@@ -15,9 +15,8 @@ import { User } from 'lucide-react';
 import { applyQuery, emptyQuery, type ListSpec } from 'listkit';
 import { ENTITY_REGISTRY, ENTITY_TYPES } from '@/config/entity-registry';
 import { sidebarSections, type NavigationItem } from '@/config/navigation';
-import { ROUTES } from '@/config/routes';
 import type { Thing } from '@/domain/things/service';
-import type { GlobalSearchHit } from '@/services/search';
+import type { PublicHit } from '@/services/search/public-search';
 
 export interface PaletteItem {
   id: string;
@@ -29,34 +28,30 @@ export interface PaletteItem {
   href: string;
 }
 
-/**
- * Public page for a global-search hit. Entity types come from the registry —
- * every type global_search returns has a `publicBasePath` keyed by id — so a
- * type added to the RPC links correctly without a new case here. Two keys are
- * not the id: a profile's username and a group's slug, both sent as
- * `path_key` (a profile also carries "@username" in its subtitle, the older
- * channel, kept as the fallback).
- */
-export function hrefForHit(hit: GlobalSearchHit): string {
-  if (hit.entity_type === 'profile') {
-    const username = hit.path_key || (hit.subtitle ?? '').replace(/^@/, '');
-    return ROUTES.PROFILES.VIEW(username || hit.id);
-  }
-  if (hit.entity_type === 'group') {
-    return hit.path_key ? ROUTES.GROUPS.VIEW(hit.path_key) : ROUTES.GROUPS.LIST;
-  }
-  const meta = (ENTITY_REGISTRY as Partial<Record<string, { publicBasePath: string }>>)[
-    hit.entity_type
-  ];
-  return meta ? `${meta.publicBasePath}/${hit.id}` : ROUTES.DISCOVER;
+/** Icon for a kind of result: the registry's, else the person icon for people. */
+export function iconForType(type: string): PaletteItem['icon'] {
+  const meta = (ENTITY_REGISTRY as Partial<Record<string, { icon: PaletteItem['icon'] }>>)[type];
+  return meta?.icon ?? User;
 }
 
-/** Icon for a global-search hit: the registry's, else the person icon for a profile. */
-export function iconForHit(hit: GlobalSearchHit): PaletteItem['icon'] {
-  const meta = (ENTITY_REGISTRY as Partial<Record<string, { icon: PaletteItem['icon'] }>>)[
-    hit.entity_type
-  ];
-  return meta?.icon ?? User;
+/** What a group of results of one kind is called: "Projects", "People". */
+export function typeHeading(type: string): string {
+  const meta = (ENTITY_REGISTRY as Partial<Record<string, { namePlural: string }>>)[type];
+  return meta?.namePlural ?? 'People';
+}
+
+/**
+ * Results grouped by kind, groups ordered by their best hit — the engine
+ * already ranked them, so the first group is the one most likely meant.
+ */
+export function groupHits(hits: PublicHit[]): Array<{ type: string; hits: PublicHit[] }> {
+  const groups = new Map<string, PublicHit[]>();
+  for (const hit of hits) {
+    const list = groups.get(hit.type) ?? [];
+    list.push(hit);
+    groups.set(hit.type, list);
+  }
+  return Array.from(groups, ([type, list]) => ({ type, hits: list }));
 }
 
 /** "Sell something", "Raise money for a goal" … one per entity type, from the registry. */

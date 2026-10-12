@@ -63,9 +63,7 @@ describe('getTimeAgo', () => {
   it('keeps the year on older posts so they cannot read as recent', () => {
     const twoYearsAgo = new Date();
     twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
-    expect(getTimeAgo(twoYearsAgo.toISOString())).toMatch(
-      String(twoYearsAgo.getFullYear())
-    );
+    expect(getTimeAgo(twoYearsAgo.toISOString())).toMatch(String(twoYearsAgo.getFullYear()));
   });
 
   it('drops the year within the current year', () => {
