@@ -36,6 +36,7 @@ describe('searchPublic', () => {
       p_offset: 0,
       p_per_type: 4,
       ...FIXTURE_RPC_ARGS,
+      p_terms: null,
     });
     expect(FIXTURE_RPC_ARGS.p_exclude_title_like).toEqual([...FIXTURE_TITLE_LIKE_PATTERNS]);
     expect(FIXTURE_RPC_ARGS.p_exclude_handles).toEqual([...EXACT_FIXTURE_USERNAMES]);

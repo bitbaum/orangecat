@@ -60,6 +60,11 @@ export interface PublicSearchOptions {
   offset?: number;
   /** At most this many hits of any one type — keeps one type from filling a list. */
   perType?: number;
+  /**
+   * Collection words the typed words could mean (typo corrections from
+   * searchkit). Any one of them makes a row a candidate.
+   */
+  terms?: string[];
 }
 
 interface SearchRow {
@@ -151,7 +156,7 @@ export function toPublicHit(row: SearchRow): PublicHit {
 /** Search (or, with no query, browse) everything public. Never throws. */
 export async function searchPublic(
   client: AnySupabaseClient,
-  { query = '', types, limit = 24, offset = 0, perType }: PublicSearchOptions = {}
+  { query = '', types, limit = 24, offset = 0, perType, terms }: PublicSearchOptions = {}
 ): Promise<PublicSearchPage> {
   try {
     const { data, error } = await client.rpc('search_public', {
@@ -161,6 +166,7 @@ export async function searchPublic(
       p_offset: offset,
       p_per_type: perType ?? null,
       ...FIXTURE_RPC_ARGS,
+      p_terms: terms && terms.length > 0 ? terms : null,
     } as never);
     if (error) {
       logger.warn('search_public failed', error, 'Search');
@@ -195,5 +201,24 @@ export async function countPublic(
   } catch (error) {
     logger.warn('public_counts threw', error, 'Search');
     return {};
+  }
+}
+
+/** Every public title and handle — the text the search vocabulary is built from. */
+export async function publicSearchText(client: AnySupabaseClient): Promise<string[]> {
+  try {
+    const { data, error } = await client.rpc('public_search_text', FIXTURE_RPC_ARGS as never);
+    if (error) {
+      logger.warn('public_search_text failed', error, 'Search');
+      return [];
+    }
+    // A function with one output column returns SETOF text, which PostgREST
+    // serves as plain strings; accept the object form too.
+    return ((data as Array<string | { text: string }> | null) ?? [])
+      .map(row => (typeof row === 'string' ? row : row?.text))
+      .filter((text): text is string => typeof text === 'string');
+  } catch (error) {
+    logger.warn('public_search_text threw', error, 'Search');
+    return [];
   }
 }

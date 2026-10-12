@@ -51,7 +51,9 @@ export function DiscoverCardMedia({
           decoding="async"
           className={cn(
             'object-cover transition-transform duration-300',
-            round ? 'h-18 w-18 rounded-full' : 'absolute inset-0 h-full w-full group-hover:scale-[1.03]'
+            round
+              ? 'h-18 w-18 rounded-full'
+              : 'absolute inset-0 h-full w-full group-hover:scale-[1.03]'
           )}
           onError={() => setFailed(true)}
         />

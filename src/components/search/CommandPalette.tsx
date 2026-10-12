@@ -116,7 +116,13 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   const shownPages = rankItems(pages, typed, GROUP_LIMIT.pages);
   const shownCreates = rankItems(creates, typed, GROUP_LIMIT.create);
   const groups = searching ? groupHits(hits) : [];
-  const nothingPublic = searching && !loading && hits.length === 0;
+  // Said only when nothing at all matched: a page or your own thing found by
+  // the same words is an answer, not "nothing".
+  const nothingPublic =
+    searching &&
+    !loading &&
+    hits.length === 0 &&
+    shownThings.length + shownPages.length + shownCreates.length === 0;
 
   if (!open) {
     return null;
@@ -207,6 +213,8 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
                 label={hit.title}
                 hint={hit.handle ? `@${hit.handle}` : hit.snippet}
                 query={typed}
+                labelRanges={hit.marks.title}
+                hintRanges={hit.handle ? undefined : hit.marks.snippet}
                 onSelect={() =>
                   navigateTo(hit.href, {
                     kind: 'hit',
@@ -223,6 +231,8 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
         {searching && loading && hits.length === 0 && (
           <div className="px-3 py-2 text-xs text-fg-tertiary">Searching…</div>
         )}
+        <PaletteGroup heading="Jump to" items={shownPages} query={typed} onPick={navigateTo} />
+
         {nothingPublic && (
           <p className="px-3 py-3 text-sm text-fg-secondary">
             Nothing public matches “{typed}” yet. Your Cat can look further, or set it up.
@@ -231,7 +241,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
 
         {typed && (
           <Command.Group heading="More" className={GROUP_HEADING}>
-            {!nothingPublic && (
+            {hits.length > 0 && (
               <PaletteRow
                 icon={Search}
                 label={total > hits.length ? `See all ${total} results` : 'See all results'}
@@ -254,7 +264,6 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
           </Command.Group>
         )}
 
-        <PaletteGroup heading="Jump to" items={shownPages} query={typed} onPick={navigateTo} />
         <PaletteGroup heading="Create" items={shownCreates} query={typed} onPick={navigateTo} />
       </Command.List>
     </Command.Dialog>

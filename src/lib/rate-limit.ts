@@ -85,6 +85,10 @@ const guestTicketLimiter = slidingWindow({ limit: 10, windowMs: 60 * 60_000 });
 // depend on. Same reasoning as ask-cat: an expensive downstream call on behalf
 // of an anonymous caller gets its own tight budget on top of the general limiter.
 const domainSearchLimiter = slidingWindow({ limit: 10, windowMs: 5 * 60_000 });
+// Search as you type: one request per pause in typing, so a person searching
+// for a minute sends dozens. 120 a minute per IP is far past a human and
+// stops a scraper walking the directory through the search box.
+const searchLimiter = slidingWindow({ limit: 120, windowMs: 60_000 });
 // Sign-in codes by email (/api/auth/email-code). Each request mails a real
 // inbox and replaces that account's pending code, so the limits guard two
 // things: someone flooding a stranger's inbox (per email, whatever the IP), and
@@ -246,6 +250,11 @@ export async function rateLimitGuestTicket(request: RequestLike): Promise<RateLi
  */
 export async function rateLimitDomainSearch(request: RequestLike): Promise<RateLimitResult> {
   return toRateLimitResult(domainSearchLimiter.check(`domain-search:${clientIpKey(request)}`));
+}
+
+/** Public search (/api/search) per caller IP: 120 a minute. */
+export async function rateLimitSearch(request: RequestLike): Promise<RateLimitResult> {
+  return toRateLimitResult(searchLimiter.check(`search:${clientIpKey(request)}`));
 }
 
 /** Sign-in code requests per caller IP: 10 per hour. */

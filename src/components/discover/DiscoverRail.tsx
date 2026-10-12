@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { DiscoverCard } from './DiscoverCard';
+import type { Range } from '@bitbaum/searchkit';
 import type { PublicHit } from '@/services/search/public-search';
 
 /**
@@ -43,7 +44,13 @@ export function DiscoverRail({
 }
 
 /** Cards in a plain grid — one kind, or search results. */
-export function DiscoverGrid({ hits, query = '' }: { hits: PublicHit[]; query?: string }) {
+export function DiscoverGrid({
+  hits,
+  query = '',
+}: {
+  hits: Array<PublicHit & { marks?: { title: Range[]; snippet: Range[] } }>;
+  query?: string;
+}) {
   return (
     <ul className="oc-discover-grid">
       {hits.map(hit => (

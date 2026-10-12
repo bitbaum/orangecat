@@ -4,8 +4,10 @@
  *   no query, no type  → the shelf: what was just listed, then one rail per
  *                        kind of thing, then the rest as chips. It ends.
  *   a type             → that kind, newest first, a page at a time.
- *   a query            → everything public that matches, ranked, with how
- *                        many of each kind matched; a type narrows it.
+ *   a query            → everything public that matches, typo-tolerant and
+ *                        ranked (services/search/find.ts, the same search
+ *                        as ⌘K), with how many of each kind matched; a type
+ *                        narrows it.
  *
  * Every mode reads the one search engine (services/search/public-search.ts),
  * so what the ⌘K palette found is what "See all results" shows. The shelf and
@@ -27,6 +29,7 @@ import {
   type PublicHit,
   type PublicHitType,
 } from '@/services/search/public-search';
+import { findPublic, type FoundHit } from '@/services/search/find';
 import type { DiscoverParams } from './params';
 
 export type TypeCounts = Partial<Record<PublicHitType, number>>;
@@ -58,13 +61,15 @@ export type DiscoverView =
       mode: 'search';
       /** Matches per kind, for this query. */
       counts: TypeCounts;
-      hits: PublicHit[];
+      hits: FoundHit[];
       total: number;
       hasMore: boolean;
       /** More matched than were fetched; totals are a floor. */
       capped: boolean;
       /** When nothing matched: what was just listed, so the page is never empty. */
       fallback: PublicHit[];
+      /** When nothing matched: the closest query of words that exist. */
+      suggestion: string | null;
     };
 
 /** The kinds present in `counts`, in the order a visitor meets them. */
@@ -124,10 +129,7 @@ export async function loadDiscoverView({ q, type, page }: DiscoverParams): Promi
   const shown = DISCOVER_PAGE_SIZE * page;
 
   if (q) {
-    const { hits, total } = await searchPublic(getAdminClient(), {
-      query: q,
-      limit: DISCOVER_SEARCH_DEPTH,
-    });
+    const { hits, total, suggestion } = await findPublic(q, { limit: DISCOVER_SEARCH_DEPTH });
     const counts: TypeCounts = {};
     for (const hit of hits) {
       counts[hit.type] = (counts[hit.type] ?? 0) + 1;
@@ -142,6 +144,7 @@ export async function loadDiscoverView({ q, type, page }: DiscoverParams): Promi
       hasMore: matching.length > shown,
       capped: total > hits.length,
       fallback,
+      suggestion,
     };
   }
 
