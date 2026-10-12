@@ -46,6 +46,7 @@
     "node_modules",
     ".next",
     "dist",
+    "packages/searchkit",
     "build",
     "coverage",
     "cypress",

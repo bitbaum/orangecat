@@ -9,9 +9,9 @@
  * And when nothing matched: `didYouMean` names the closest query made of
  * words that exist, to offer as a one-tap fix.
  */
-import { tokenize } from './normalize';
-import { DEFAULT_TYPO_POLICY, type TypoPolicy } from './typo';
-import { candidates, type Candidate, type Vocabulary } from './vocabulary';
+import { tokenize } from './normalize.ts';
+import { DEFAULT_TYPO_POLICY, type TypoPolicy } from './typo.ts';
+import { candidates, type Candidate, type Vocabulary } from './vocabulary.ts';
 
 export interface ExpandedWord {
   /** The word as typed, folded. */

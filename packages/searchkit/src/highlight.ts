@@ -10,8 +10,8 @@
  * Plain parts, never HTML: the caller renders them, so a result's own text can
  * never be injected as markup.
  */
-import { tokenize } from './normalize';
-import type { Range } from './engine';
+import { tokenize } from './normalize.ts';
+import type { Range } from './engine.ts';
 
 export interface HighlightPart {
   text: string;

@@ -18,15 +18,19 @@ repository (the session that built it could not create one). It is written to
 move as is: no imports outside itself, its own README and tests
 (`orangecat/__tests__/unit/packages/searchkit/`).
 
-A Next.js site in the fleet adopts it with pnpm's git subdirectory form and
-transpiles it (it ships TypeScript source, like `@bitbaum/deckkit`):
+A site in the fleet adopts it with pnpm's git subdirectory form, pinned to a
+commit on orangecat's `main`:
 
 ```jsonc
 // package.json
 "@bitbaum/searchkit": "github:bitbaum/orangecat#<commit>&path:packages/searchkit"
-// next.config.js
-transpilePackages: ["@bitbaum/searchkit"]
 ```
+
+It ships compiled JavaScript in `dist/`, committed beside the source the way
+`@bitbaum/whenkit` does, so nothing has to transpile it: Next.js, Vitest, and
+Node's own test runner (`--experimental-strip-types`, which refuses TypeScript
+inside `node_modules`) all load it as is. After changing `src/`, run
+`pnpm --filter @bitbaum/searchkit build`; a test fails while `dist/` is stale.
 
 **Every search box in the fleet should go through it.** The first adopter,
 OrangeCat, runs it in three places: the ⌘K palette's own lists (pages, your

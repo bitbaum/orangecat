@@ -7,7 +7,12 @@
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "skipLibCheck": true,
-    "noEmit": true,
+    "rewriteRelativeImportExtensions": true,
+    "declaration": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    "newLine": "lf",
+    "removeComments": false,
     "lib": ["ES2022", "DOM"],
     "types": []
   },

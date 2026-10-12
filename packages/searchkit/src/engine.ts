@@ -30,9 +30,9 @@
  * It is Algolia's published default order, adjusted for short titles and
  * names, which is what people search a site for.
  */
-import { joinedPairs, tokenize, umlautSpelling, type Token } from './normalize';
-import { DEFAULT_TYPO_POLICY, type TypoPolicy } from './typo';
-import { candidates, createVocabulary, type Vocabulary } from './vocabulary';
+import { joinedPairs, tokenize, umlautSpelling, type Token } from './normalize.ts';
+import { DEFAULT_TYPO_POLICY, type TypoPolicy } from './typo.ts';
+import { candidates, createVocabulary, type Vocabulary } from './vocabulary.ts';
 
 export interface SearchField<T> {
   /** For your own debugging and for `Hit.matches`. */

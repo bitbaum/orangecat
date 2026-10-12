@@ -3,8 +3,8 @@
  * result is there. Optional — the core has no React in it.
  */
 import { createElement, Fragment, useEffect, useRef, useState, type ReactNode } from 'react';
-import { highlightQuery, highlightRanges, type HighlightPart } from '../highlight';
-import type { Range } from '../engine';
+import { highlightQuery, highlightRanges, type HighlightPart } from '../highlight.ts';
+import type { Range } from '../engine.ts';
 
 export interface SearchAsYouTypeOptions {
   /**

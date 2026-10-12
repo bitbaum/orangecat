@@ -9,7 +9,7 @@
  * becomes a failing test the day it stops being true, instead of a complaint
  * from someone who could not find an artist.
  */
-import { typoBudget, DEFAULT_TYPO_POLICY, type TypoPolicy } from './typo';
+import { typoBudget, DEFAULT_TYPO_POLICY, type TypoPolicy } from './typo.ts';
 
 /** Physical neighbours on QWERTY and QWERTZ (y and z both neighbour t/u/a/s/x). */
 const NEIGHBOURS: Record<string, string> = {
