@@ -134,3 +134,40 @@ export function isEmailDerivedHandle(profile: {
   const localPart = email.split('@')[0];
   return !!localPart && (profile.username ?? '').trim().toLowerCase() === localPart;
 }
+
+/**
+ * Listings that announce themselves as test data.
+ *
+ * The username rules above catch fixtures minted by CI. They miss the ones
+ * made by hand on the live site from a real account: on 2026-10-12 the first
+ * card on /discover was "TEST Session (60 min) — TEST fixture — safe to
+ * delete", because its owner is a person, not a fixture user. The title is
+ * where such a listing says what it is.
+ *
+ * SQL `like` patterns, case-SENSITIVE on purpose: a shouted "TEST " or "E2E "
+ * prefix is a marker; "Test prep tutoring" is a real service and stays.
+ * `withoutFixtureTitles()` applies them to a query, `isFixtureTitle()` is the
+ * same rule for rows already fetched — one list, so the two cannot drift.
+ */
+export const FIXTURE_TITLE_LIKE_PATTERNS = ['TEST %', 'TEST:%', 'E2E %', 'E2E:%'] as const;
+
+const FIXTURE_TITLE_PREFIXES = FIXTURE_TITLE_LIKE_PATTERNS.map(pattern => pattern.slice(0, -1));
+
+export function isFixtureTitle(title: string | null | undefined): boolean {
+  const t = (title ?? '').trim();
+  return FIXTURE_TITLE_PREFIXES.some(prefix => t.startsWith(prefix));
+}
+
+/** Anything with PostgREST's `.not(column, operator, value)`. */
+export interface NotFilterable<Q> {
+  not(column: string, operator: string, value: unknown): Q;
+}
+
+/** Exclude self-declared test listings from a query on `column` (the title). */
+export function withoutFixtureTitles<Q extends NotFilterable<Q>>(query: Q, column = 'title'): Q {
+  let q = query;
+  for (const pattern of FIXTURE_TITLE_LIKE_PATTERNS) {
+    q = q.not(column, 'like', pattern);
+  }
+  return q;
+}

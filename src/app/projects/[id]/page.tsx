@@ -108,7 +108,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const description =
     project.description ||
     `Support ${project.title} on ${APP_NAME}. ${progress > 0 ? `${progress}% funded. ` : ''}Community-funded project by ${creatorName}.`;
-  const image = creatorProfile?.avatar_url || '/images/og-default.png';
+  // The project's own share card — never the creator's avatar (see the route).
+  const image = `${SITE_URL}/api/og/project/${id}`;
   const url = `${SITE_URL}${ROUTES.PROJECTS.VIEW(id)}`;
 
   return {

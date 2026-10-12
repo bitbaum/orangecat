@@ -6,6 +6,7 @@
  */
 
 import supabase from '@/lib/supabase/browser';
+import { withoutFixtureTitles } from '@/config/public-directory';
 import type { FilterChain } from '@/lib/supabase/untyped';
 import { logger } from '@/utils/logger';
 import { PROJECT_STATUS, PUBLIC_SEARCH_STATUSES } from '@/config/project-statuses';
@@ -28,12 +29,14 @@ export async function searchFundingPages(
   offset: number = 0
 ): Promise<SearchFundingPage[]> {
   // Only select necessary columns to reduce payload
-  let projectQuery = supabase.from(getTableName('project')).select(
-    `
+  let projectQuery = withoutFixtureTitles(
+    supabase.from(getTableName('project')).select(
+      `
       id, user_id, title, description, bitcoin_address,
       created_at, updated_at, category, status, goal_amount, currency, raised_amount,
       cover_image_url
     `
+    )
   );
 
   // Priority 1: If radius is specified, use PostGIS RPC (handles both query and radius)

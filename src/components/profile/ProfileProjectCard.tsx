@@ -12,7 +12,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { Target, Bitcoin } from 'lucide-react';
+import { Bitcoin } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { ROUTES } from '@/config/routes';
 import { CurrencyDisplay } from '@/components/ui/CurrencyDisplay';
@@ -70,8 +70,12 @@ export default function ProfileProjectCard({ project }: { project: ProfileProjec
                 className="object-cover transition-transform duration-300 group-hover:scale-105"
               />
             ) : (
+              // No image yet: the project's initial, in the display face —
+              // a name to recognise beats a generic target icon on every card.
               <div className="flex h-full w-full items-center justify-center">
-                <Target className="h-12 w-12 text-fg-secondary" />
+                <span className="oc-mark-monogram text-5xl text-fg-secondary" aria-hidden="true">
+                  {project.title.trim().charAt(0).toUpperCase()}
+                </span>
               </div>
             )}
             {project.category && (

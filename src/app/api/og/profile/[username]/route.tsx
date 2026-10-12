@@ -2,9 +2,8 @@
  * GET /api/og/profile/[username] — share card for a user profile.
  *
  * Returns 1200×630 PNG designed for WhatsApp / Slack / Telegram / X /
- * LinkedIn link previews. Shows the actor's avatar, name, bio snippet,
- * and a couple of "live" stats so the preview tells the reader who this
- * is and why they should care, not just "OrangeCat link."
+ * LinkedIn link previews. Shows the actor's avatar, name and bio snippet,
+ * so the preview tells the reader who this is, not just "OrangeCat link."
  *
  * Public, unauthenticated — share cards must render for whoever opens
  * the link, including users not logged into OrangeCat.
@@ -19,7 +18,7 @@ import { ImageResponse } from 'next/og';
 import { createServerClient } from '@/lib/supabase/server';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { APP_NAME, APP_KICKER } from '@/config/brand';
-import { OG_SIZE, OG_COLOR, Avatar, BrandFooter, StatPill } from '@/lib/og/branding';
+import { OG_SIZE, OG_COLOR, Avatar, BrandFooter } from '@/lib/og/branding';
 
 // Must be a string literal — Next.js static-analyzes `runtime` at build
 // time and cannot resolve imported identifiers.
@@ -111,10 +110,8 @@ export async function GET(_req: Request, { params }: RouteContext) {
           )}
         </div>
       </div>
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', gap: 16 }}>
-          <StatPill label="Profile" value="public" />
-        </div>
+      {/* A "public / Profile" pill sat here, telling the reader nothing. */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
         <BrandFooter wordmark={APP_NAME} tagline={APP_KICKER} />
       </div>
     </div>,

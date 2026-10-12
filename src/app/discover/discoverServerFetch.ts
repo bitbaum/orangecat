@@ -14,6 +14,7 @@
  */
 
 import { createAdminClient } from '@/lib/supabase/admin';
+import { withoutFixtureTitles } from '@/config/public-directory';
 import { getTableName, ENTITY_REGISTRY, type EntityType } from '@/config/entity-registry';
 import { STATUS } from '@/config/database-constants';
 import { logger } from '@/utils/logger';
@@ -55,10 +56,12 @@ export async function fetchDiscoverFeatured(): Promise<FeaturedEntity[]> {
 
     const perType = await Promise.all(
       SOURCES.map(async ({ type, statuses }) => {
-        const { data } = (await supabase
-          .from(getTableName(type))
-          .select('id, title, description, created_at')
-          .in('status', statuses)
+        const { data } = (await withoutFixtureTitles(
+          supabase
+            .from(getTableName(type))
+            .select('id, title, description, created_at')
+            .in('status', statuses)
+        )
           .order('created_at', { ascending: false })
           .limit(PER_TYPE)) as { data: Row[] | null };
 
