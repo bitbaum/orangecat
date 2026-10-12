@@ -63,6 +63,13 @@ export interface CandidateOptions {
   policy?: TypoPolicy;
   /** At most this many, best first. Default 50. */
   limit?: number;
+  /**
+   * How many letters the word had as written, when a site spelling rule
+   * (`SearchSpec.normalize`) shortened it: the typo budget is the written
+   * word's. Heidi reads doubled letters as one, so "vill" arrives as "vil" —
+   * and a three-letter word would get no typo at all.
+   */
+  writtenLength?: number;
 }
 
 /**
@@ -75,7 +82,7 @@ export function candidates(
   typed: string,
   options: CandidateOptions = {}
 ): Candidate[] {
-  const { prefix = true, policy = DEFAULT_TYPO_POLICY, limit = 50 } = options;
+  const { prefix = true, policy = DEFAULT_TYPO_POLICY, limit = 50, writtenLength } = options;
   if (!typed) {
     return [];
   }
@@ -103,13 +110,14 @@ export function candidates(
   }
 
   const length = Array.from(typed).length;
-  let budget = typoBudget(length, policy);
+  const budgetLength = Math.max(length, writtenLength ?? 0);
+  let budget = typoBudget(budgetLength, policy);
   // The budget belongs to the word that was MEANT. Drop a letter from "Loki"
   // and what was typed ("lki") is too short for a typo — so when a short word
   // matches nothing at all, it may still be one slip from a word long enough
   // to be allowed one. Only then: "cat" must stay "cat" when "cat" exists.
   let minTermLength = 0;
-  if (budget === 0 && found.size === 0 && length >= policy.oneTypoFrom - 1) {
+  if (budget === 0 && found.size === 0 && budgetLength >= policy.oneTypoFrom - 1) {
     budget = 1;
     minTermLength = policy.oneTypoFrom;
   }

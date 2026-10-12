@@ -30,7 +30,7 @@
  * It is Algolia's published default order, adjusted for short titles and
  * names, which is what people search a site for.
  */
-import { joinedPairs, tokenize, umlautSpelling } from "./normalize.js";
+import { joinedPairs, tokenize, umlautSpelling, writtenLengths } from "./normalize.js";
 import { DEFAULT_TYPO_POLICY } from "./typo.js";
 import { candidates, createVocabulary } from "./vocabulary.js";
 function fieldTexts(field, item) {
@@ -123,9 +123,13 @@ export function createSearch(items, spec) {
     const index = buildIndex(items, spec);
     const policy = spec.typos ?? DEFAULT_TYPO_POLICY;
     const prefixMode = spec.prefix ?? 'all';
+    // Letters each typed word had before `normalize`, for the typo budget; set
+    // per search (searching is synchronous).
+    let written = new Map();
     function landingsFor(typed, allowPrefix) {
         const best = new Map();
-        for (const c of candidates(index.vocab, typed, { prefix: allowPrefix, policy, limit: 200 })) {
+        const options = { prefix: allowPrefix, policy, limit: 200, writtenLength: written.get(typed) };
+        for (const c of candidates(index.vocab, typed, options)) {
             for (const p of index.postings.get(c.term) ?? []) {
                 const typedLength = Array.from(typed).length;
                 const firstSlip = c.typos > 0 && Array.from(c.term)[0] !== Array.from(typed)[0];
@@ -215,8 +219,8 @@ export function createSearch(items, spec) {
         vocabulary: index.vocab,
         search(query, options = {}) {
             const { limit = Infinity, relax = true } = options;
-            const n = spec.normalize ?? ((w) => w);
-            const terms = [...new Set(tokenize(query).map(t => n(t.term)))];
+            written = writtenLengths(query, spec.normalize);
+            const terms = [...written.keys()];
             if (terms.length === 0) {
                 return [];
             }

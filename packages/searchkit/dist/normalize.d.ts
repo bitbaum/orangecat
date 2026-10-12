@@ -41,3 +41,5 @@ export declare function umlautSpelling(original: string): string | null;
  * the name typed with it.
  */
 export declare function joinedPairs(terms: string[]): string[];
+/** Each typed word after the site's spelling rule, with how long it was as written. */
+export declare function writtenLengths(query: string, normalize: ((word: string) => string) | undefined): Map<string, number>;

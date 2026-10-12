@@ -9,16 +9,16 @@
  * And when nothing matched: `didYouMean` names the closest query made of
  * words that exist, to offer as a one-tap fix.
  */
-import { tokenize } from "./normalize.js";
+import { tokenize, writtenLengths } from "./normalize.js";
 import { DEFAULT_TYPO_POLICY } from "./typo.js";
 import { candidates } from "./vocabulary.js";
 /** Every typed word with the collection's words it could mean. */
 export function expandQuery(query, vocab, options = {}) {
     const { policy = DEFAULT_TYPO_POLICY, perWord = 5, normalize = (w) => w } = options;
-    const typed = [...new Set(tokenize(query).map(t => normalize(t.term)))];
-    return typed.map(word => ({
+    const typed = writtenLengths(query, normalize);
+    return [...typed].map(([word, writtenLength]) => ({
         typed: word,
-        candidates: candidates(vocab, word, { prefix: true, policy, limit: 100 })
+        candidates: candidates(vocab, word, { prefix: true, policy, limit: 100, writtenLength })
             .filter(c => c.typos > 0 || !c.prefix || c.term === word)
             .slice(0, perWord),
     }));
