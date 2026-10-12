@@ -8,11 +8,13 @@
  * GET /api/cat/quota (resetInSeconds, dailyRequests, expiresAt) and
  * GET /api/cat/credits (balanceBtc) — it just was never rendered anywhere,
  * leaving the tiny chat-toolbar chip as the only quota surface. This page
- * composes those two existing endpoints; no new backend.
+ * composes those endpoints, plus GET /api/cat/usage for what the numbers
+ * mean (UsageMeaningCard).
  */
 
 import Link from 'next/link';
 import { SharedCapacityCard } from '@/components/ai/SharedCapacityCard';
+import { UsageMeaningCard } from '@/components/ai/UsageMeaningCard';
 import { Gauge, KeyRound, Sparkles, Wallet } from 'lucide-react';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { useCatQuota } from '@/components/ai-chat/ModernChatPanel/hooks/useCatQuota';
@@ -133,34 +135,13 @@ export default function UsageSettingsPage() {
         </div>
       </section>
 
-      <SharedCapacityCard />
+      {/* What the numbers above MEAN — pace, the week, what Cat remembers, the
+          levers that are really open — and, below it, every number explained.
+          The explanations replaced the old "What counts" list and keep each of
+          its facts (pinned by usage-meaning.test.ts). */}
+      <UsageMeaningCard />
 
-      {/* ── What counts ────────────────────────────────────────────────── */}
-      <section className="rounded-lg border border-default bg-surface-base p-6">
-        <h2 className="font-heading text-base font-semibold text-fg-primary">What counts</h2>
-        <ul className="mt-3 space-y-2 text-sm text-fg-secondary">
-          <li>• Every message you send to Cat on the free or Supporter plan counts as 1.</li>
-          <li>
-            • Messages sent through your own API key don&apos;t touch this budget — your provider
-            bills you directly.
-          </li>
-          <li>
-            • Frontier-model messages paid with Cat Credits are metered per message from your credit
-            balance, not from the daily budget.
-          </li>
-          {/* "Free" was wrong in the way that matters: image generation does
-              not touch this DAILY MESSAGE budget, but it is billed to Cat
-              Credits like any other frontier call. A user reading "free" and
-              watching their balance fall has been misled about money. */}
-          <li>
-            • Image generation doesn&apos;t use your daily messages — it&apos;s billed to Cat
-            Credits instead.
-          </li>
-          <li>
-            • The counter resets every day at midnight UTC. Unused messages don&apos;t roll over.
-          </li>
-        </ul>
-      </section>
+      <SharedCapacityCard />
 
       {/* ── Cat Credits ────────────────────────────────────────────────── */}
       <section className="rounded-lg border border-default bg-surface-base p-6">

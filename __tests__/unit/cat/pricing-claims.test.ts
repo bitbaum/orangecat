@@ -61,6 +61,12 @@ describe('image generation is described honestly', () => {
     const usage = read('src/app/(authenticated)/settings/usage/page.tsx');
     expect(usage).not.toMatch(/Image generation is free/i);
     expect(usage).toMatch(/Cat\s*\n?\s*Credits/);
+    // The page's explanations are written once in usage-meaning.ts (they
+    // replaced its inline "What counts" list), so the claim is checked where
+    // the sentence now lives, not only where it used to.
+    const meaning = read('src/services/cat/usage-meaning.ts');
+    expect(meaning).not.toMatch(/Image generation is free/i);
+    expect(meaning).toMatch(/Image generation is billed to Cat Credits/);
   });
 });
 

@@ -30,6 +30,7 @@ export const API_ROUTES = {
     INTERESTS: '/api/cat/interests',
     DIAGNOSE: '/api/cat/diagnose',
     CAPACITY: '/api/cat/capacity',
+    USAGE: '/api/cat/usage',
     NUDGES: '/api/cat/nudges',
     CONVERSATIONS: '/api/cat/conversations',
     CONVERSATION: (id: string) => `/api/cat/conversations/${id}`,
