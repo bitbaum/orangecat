@@ -27,7 +27,7 @@ vi.mock('@/lib/supabase/admin', () => ({
   })),
 }));
 
-import { profileClaims } from '@/services/auth/oauthProvider';
+import { profileClaims } from '@/services/auth/oidcProfileClaims';
 
 beforeEach(() => {
   profile = { username: 'cato', name: 'Cato', avatar_url: null, email: null };

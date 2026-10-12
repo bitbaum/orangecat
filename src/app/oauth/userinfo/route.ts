@@ -7,7 +7,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAccessToken } from '@/lib/oauth/keys';
-import { profileClaims } from '@/services/auth/oauthProvider';
+import { profileClaims } from '@/services/auth/oidcProfileClaims';
 
 export const dynamic = 'force-dynamic';
 
