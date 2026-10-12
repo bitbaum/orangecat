@@ -52,6 +52,13 @@ export interface SearchSpec<T> {
    * typed. "none": whole words only.
    */
   prefix?: 'all' | 'last' | 'none';
+  /**
+   * A site's own spelling rule, applied to every word on both sides after
+   * the standard folding: Swiss German written as people type it ("ie" and
+   * "i", doubled letters), a product's abbreviations. Keep it to how a word
+   * is SPELT; meaning belongs elsewhere.
+   */
+  normalize?: (word: string) => string;
 }
 
 /** Where a typed word landed in one field, as offsets into the original text. */
@@ -114,6 +121,7 @@ function fieldTexts<T>(field: SearchField<T>, item: T): string[] {
 }
 
 function buildIndex<T>(items: readonly T[], spec: SearchSpec<T>): Indexed {
+  const n = spec.normalize ?? ((w: string) => w);
   const postings = new Map<string, Posting[]>();
   const words: string[] = [];
   const fieldTerms: string[][][] = [];
@@ -138,7 +146,8 @@ function buildIndex<T>(items: readonly T[], spec: SearchSpec<T>): Indexed {
         const base = part * 1000;
         const whole = tokens.length === 1;
         for (const t of tokens) {
-          post(t.term, {
+          const term = n(t.term);
+          post(term, {
             doc,
             field: f,
             position: base + t.index,
@@ -147,9 +156,10 @@ function buildIndex<T>(items: readonly T[], spec: SearchSpec<T>): Indexed {
             alternate: false,
             whole,
           });
-          terms.push(t.term);
-          const other = umlautSpelling(text.slice(t.start, t.end));
-          if (other && other !== t.term) {
+          terms.push(term);
+          const spelt = umlautSpelling(text.slice(t.start, t.end));
+          const other = spelt ? n(spelt) : null;
+          if (other && other !== term) {
             post(other, {
               doc,
               field: f,
@@ -161,7 +171,7 @@ function buildIndex<T>(items: readonly T[], spec: SearchSpec<T>): Indexed {
             });
           }
         }
-        joinedPairs(tokens.map(t => t.term)).forEach((term, i) => {
+        joinedPairs(tokens.map(t => n(t.term))).forEach((term, i) => {
           const a = tokens[i]!;
           const b = tokens[i + 1]!;
           post(term, {
@@ -321,7 +331,8 @@ export function createSearch<T>(items: readonly T[], spec: SearchSpec<T>): Searc
     vocabulary: index.vocab,
     search(query, options = {}) {
       const { limit = Infinity, relax = true } = options;
-      const terms = [...new Set(tokenize(query).map(t => t.term))];
+      const n = spec.normalize ?? ((w: string) => w);
+      const terms = [...new Set(tokenize(query).map(t => n(t.term)))];
       if (terms.length === 0) {
         return [];
       }
@@ -405,4 +416,23 @@ export function search<T>(
   options?: SearchOptions
 ): Hit<T>[] {
   return createSearch(items, spec).search(query, options);
+}
+
+/**
+ * Rank rows another engine already found — a database, an API — by what was
+ * typed. Rows the ranker cannot place (they matched on a field you did not
+ * pass, or through stemming) keep their original order after the ranked
+ * ones: still results, just later ones.
+ */
+export function rerank<T>(
+  rows: readonly T[],
+  spec: SearchSpec<T>,
+  query: string
+): Array<{ item: T; hit: Hit<T> | null }> {
+  const hits = createSearch(rows, spec).search(query);
+  const placed = new Set(hits.map(h => h.index));
+  return [
+    ...hits.map(hit => ({ item: hit.item, hit })),
+    ...rows.filter((_, i) => !placed.has(i)).map(item => ({ item, hit: null })),
+  ];
 }

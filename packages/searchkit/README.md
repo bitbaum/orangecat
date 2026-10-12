@@ -97,12 +97,29 @@ Why not do it in Postgres: `pg_trgm` scores `kanye`/`kayne` at 0.2 and
 `levenshtein` counts a swap as two edits. Use trigrams for recall at a low
 threshold if you like; decide typos here.
 
+### Your own spelling rule — `normalize`
+
+`SearchSpec.normalize(word)` runs on every word, both sides, after the
+standard folding. Heidi reads Swiss German as people type it: "ie" as "i",
+doubled letters as one, so `gruzi mittenand` finds "Grüezi mitenand". Keep it
+to spelling; meaning belongs elsewhere. `expandQuery`/`corrections` take the
+same function so a vocabulary agrees with the index.
+
+### Rows a database already found — `rerank`
+
+`rerank(rows, spec, query)` ranks them by what was typed and keeps the rows
+it cannot place (matched on a field you did not pass, or by stemming) after
+the ranked ones, in their original order. OrangeCat's `/api/search` ranks
+Postgres candidates this way.
+
 ### Highlighting
 
 `hit.matches[field]` holds ranges into the original text (a typo match marks
 the whole word; a prefix only what was typed). `highlightQuery(text, q)` marks
 words that start with a typed word, for text that was not searched. Both
-return plain parts — never HTML.
+return plain parts — never HTML. `snippet(text, ranges, { maxLength })` cuts
+a long description to the window around its first match, at word
+boundaries, with "…" where it was cut, and re-bases the ranges onto it.
 
 ### React (`@bitbaum/searchkit/react`)
 

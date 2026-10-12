@@ -19,9 +19,9 @@
 import { unstable_cache } from 'next/cache';
 import {
   corrections,
-  createSearch,
   createVocabulary,
   didYouMean,
+  rerank,
   words,
   type Range,
   type Vocabulary,
@@ -84,27 +84,24 @@ async function vocabulary(): Promise<Vocabulary> {
 
 /** Rank database candidates by searchkit; anything it cannot place keeps its database order after. */
 export function rankFound(query: string, hits: PublicHit[]): FoundHit[] {
-  const ranked = createSearch(hits, {
-    fields: [
-      { name: 'title', get: h => h.title },
-      { name: 'handle', get: h => h.handle },
-      { name: 'snippet', get: h => h.snippet },
-    ],
-    rank: h => h.rank,
-  }).search(query);
-  const placed = new Set(ranked.map(r => r.index));
-  return [
-    ...ranked.map(r => ({
-      ...r.item,
-      marks: { title: r.matches.title ?? [], snippet: r.matches.snippet ?? [] },
-      typos: r.typos,
-    })),
-    // Matched by the database for a reason the ranker does not see (a word
-    // past the snippet, a stemmed form): still a result, just a later one.
-    ...hits
-      .filter((_, i) => !placed.has(i))
-      .map(h => ({ ...h, marks: { title: [], snippet: [] }, typos: null })),
-  ];
+  // Rows matched by the database for a reason the ranker does not see (a
+  // word past the snippet, a stemmed form) come back after, unmarked.
+  return rerank(
+    hits,
+    {
+      fields: [
+        { name: 'title', get: h => h.title },
+        { name: 'handle', get: h => h.handle },
+        { name: 'snippet', get: h => h.snippet },
+      ],
+      rank: h => h.rank,
+    },
+    query
+  ).map(({ item, hit }) => ({
+    ...item,
+    marks: { title: hit?.matches.title ?? [], snippet: hit?.matches.snippet ?? [] },
+    typos: hit ? hit.typos : null,
+  }));
 }
 
 export async function findPublic(

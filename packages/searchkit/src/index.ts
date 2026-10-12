@@ -12,6 +12,7 @@ export {
   createSearch,
   search,
   compareHits,
+  rerank,
   type Hit,
   type Range,
   type SearchField,
@@ -19,7 +20,13 @@ export {
   type SearchSpec,
   type Searcher,
 } from './engine';
-export { highlightRanges, highlightQuery, type HighlightPart } from './highlight';
+export {
+  highlightRanges,
+  highlightQuery,
+  snippet,
+  type HighlightPart,
+  type Snippet,
+} from './highlight';
 export {
   expandQuery,
   corrections,
