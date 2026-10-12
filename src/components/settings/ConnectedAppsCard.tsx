@@ -193,6 +193,9 @@ export default function ConnectedAppsCard() {
                   </label>
                 ))}
               </div>
+              <p className="text-xs text-fg-tertiary">
+                Applies the next time you sign in to {app.name}.
+              </p>
             </fieldset>
           )}
         </li>

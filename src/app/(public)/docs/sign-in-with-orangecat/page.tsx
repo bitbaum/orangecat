@@ -118,7 +118,9 @@ export default function SignInWithOrangeCatPage() {
               </strong>{' '}
               People choose what each app is shown and can change it later. A missing claim means
               &ldquo;not given to you&rdquo;, so show nothing and do not ask again; only{' '}
-              <code>sub</code> is always there, and it is the one key to store.
+              <code>sub</code> is always there, and it is the one key to store. A change applies the
+              next time they sign in to you, so read the claims from every sign-in and clear what is
+              no longer sent.
             </li>
           </ul>
         </Section>
