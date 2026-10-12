@@ -6,7 +6,7 @@ import { ENTITY_REGISTRY, type EntityType } from '@/config/entity-registry';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { ENTITY_STATUS } from '@/config/database-constants';
 import { PUBLIC_VISIBILITY } from '@/config/public-visibility';
-import { isFixtureUsername } from '@/config/public-directory';
+import { isFixtureUsername, withoutFixtureTitles } from '@/config/public-directory';
 import { getPublishedPosts } from '@/lib/blog';
 import { listPublicArticleRefs } from '@/services/articles/get-article';
 import { logger } from '@/utils/logger';
@@ -214,10 +214,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }));
 
     for (const { table, publicBasePath, visible } of entityTables) {
-      const { data: entities } = (await supabase
-        .from(table)
-        .select('id, updated_at')
-        .eq(visible.column, visible.value)) as { data: SitemapEntity[] | null };
+      // Self-declared test listings stay out of search engines too.
+      const { data: entities } = (await withoutFixtureTitles(
+        supabase.from(table).select('id, updated_at').eq(visible.column, visible.value)
+      )) as { data: SitemapEntity[] | null };
 
       if (entities) {
         const entityPages: MetadataRoute.Sitemap = entities.map(entity => ({

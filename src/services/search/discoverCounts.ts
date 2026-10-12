@@ -11,6 +11,8 @@ import { STATUS, ENTITY_STATUS } from '@/config/database-constants';
 import {
   FIXTURE_USERNAME_ILIKE_PATTERNS,
   EXACT_FIXTURE_USERNAMES,
+  withoutFixtureTitles,
+  type NotFilterable,
 } from '@/config/public-directory';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 
@@ -50,6 +52,10 @@ export const ZERO_DISCOVER_COUNTS: DiscoverCounts = {
 
 export async function fetchDiscoverCounts(supabase: AnySupabaseClient): Promise<DiscoverCounts> {
   const head = (q: unknown) => q as Promise<{ count: number | null }>;
+  // Every entity count leaves out self-declared test listings, the same rule
+  // the lists apply — otherwise a badge promises a card the tab never shows.
+  const entity = <Q extends NotFilterable<Q>>(q: Q, titleColumn = 'title') =>
+    head(withoutFixtureTitles(q, titleColumn));
 
   // Same fixture exclusion the profiles list/search query applies (SSOT:
   // config/public-directory.ts) — kept in sync explicitly so this badge
@@ -80,27 +86,27 @@ export async function fetchDiscoverCounts(supabase: AnySupabaseClient): Promise<
     researchRes,
     aiAssistantsRes,
   ] = await Promise.all([
-    head(
+    entity(
       supabase
         .from(getTableName('project'))
         .select('*', { count: 'exact', head: true })
         .eq('status', ENTITY_STATUS.ACTIVE)
     ),
     head(profilesQuery),
-    head(
+    entity(
       supabase
         .from(getTableName('loan'))
         .select('*', { count: 'exact', head: true })
         .eq('is_public', true)
         .eq('status', ENTITY_STATUS.ACTIVE)
     ),
-    head(
+    entity(
       supabase
         .from(getTableName('investment'))
         .select('*', { count: 'exact', head: true })
         .eq('is_public', true)
     ),
-    head(
+    entity(
       supabase
         .from(getTableName('asset'))
         .select('*', { count: 'exact', head: true })
@@ -109,58 +115,59 @@ export async function fetchDiscoverCounts(supabase: AnySupabaseClient): Promise<
         // hid every asset — see 20260618000006.
         .eq('status', ENTITY_STATUS.ACTIVE)
     ),
-    head(
+    entity(
       supabase
         .from(getTableName('cause'))
         .select('*', { count: 'exact', head: true })
         .eq('status', STATUS.CAUSES.ACTIVE)
     ),
-    head(
+    entity(
       supabase
         .from(getTableName('event'))
         .select('*', { count: 'exact', head: true })
         .in('status', [STATUS.EVENTS.PUBLISHED, STATUS.EVENTS.OPEN, STATUS.EVENTS.ONGOING])
     ),
-    head(
+    entity(
       supabase
         .from(getTableName('product'))
         .select('*', { count: 'exact', head: true })
         .eq('status', STATUS.PRODUCTS.ACTIVE)
     ),
-    head(
+    entity(
       supabase
         .from(getTableName('service'))
         .select('*', { count: 'exact', head: true })
         .eq('status', STATUS.SERVICES.ACTIVE)
     ),
-    head(
+    entity(
       supabase
         .from(getTableName('group'))
         .select('*', { count: 'exact', head: true })
-        .eq('is_public', true)
+        .eq('is_public', true),
+      'name'
     ),
-    head(
+    entity(
       supabase
         .from(getTableName('circle'))
         .select('*', { count: 'exact', head: true })
         .eq('visibility', 'public')
         .eq('status', ENTITY_STATUS.ACTIVE)
     ),
-    head(
+    entity(
       supabase
         .from(getTableName('wishlist'))
         .select('*', { count: 'exact', head: true })
         .eq('visibility', 'public')
         .eq('is_active', true)
     ),
-    head(
+    entity(
       supabase
         .from(getTableName('research'))
         .select('*', { count: 'exact', head: true })
         .eq('is_public', true)
         .eq('status', ENTITY_STATUS.ACTIVE)
     ),
-    head(
+    entity(
       supabase
         .from(getTableName('ai_assistant'))
         .select('*', { count: 'exact', head: true })

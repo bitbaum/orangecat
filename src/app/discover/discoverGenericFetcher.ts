@@ -1,5 +1,6 @@
 import { logger } from '@/utils/logger';
 import supabase from '@/lib/supabase/browser';
+import { withoutFixtureTitles } from '@/config/public-directory';
 import type { FilterChain } from '@/lib/supabase/untyped';
 import { getTableName } from '@/config/entity-registry';
 import { STATUS, ENTITY_STATUS } from '@/config/database-constants';
@@ -72,7 +73,8 @@ export async function fetchDiscoverGenericData(
     tabLimit: number,
     searchFields = 'title,description'
   ) => {
-    let q = base
+    // The title column is the first search field ('name' for groups).
+    let q = withoutFixtureTitles(base, searchFields.split(',')[0])
       .order('created_at', { ascending: false })
       .limit(activeTab === tab ? limit : tabLimit);
     if (searchTerm) {
