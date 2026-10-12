@@ -5,6 +5,7 @@ import {
   evaluate,
   highlightQuery,
   highlightRanges,
+  snippet,
   typoCases,
   typoVariants,
 } from '@bitbaum/searchkit';
@@ -54,4 +55,16 @@ test('a generated typo suite over real-looking names passes in full', async () =
   assert.equal(report.zeroResults, 0, JSON.stringify(report.misses.slice(0, 5)));
   assert.equal(report.successAt3, 1, JSON.stringify(report.misses.slice(0, 5)));
   assert.ok(report.successAt1 > 0.97, String(report.successAt1));
+});
+
+test('a snippet shows the match inside a long text, cut at words, with ellipses', () => {
+  const text =
+    "I'm Alisa, an independent artist creating Bitcoin-themed illustrations and paintings. " +
+    'I need funds to cover canvas, paint supplies and studio time. The series ends with a ' +
+    'large piece about the settings of a quiet morning, sold as a limited print.';
+  const at = text.indexOf('settings');
+  const { text: cut, ranges } = snippet(text, [{ start: at, end: at + 8 }], { maxLength: 80 });
+  assert.ok(cut.startsWith('…') && cut.length <= 82, cut);
+  assert.equal(cut.slice(ranges[0].start, ranges[0].end), 'settings');
+  assert.equal(snippet('short', []).text, 'short');
 });

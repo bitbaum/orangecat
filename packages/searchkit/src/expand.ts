@@ -9,9 +9,9 @@
  * And when nothing matched: `didYouMean` names the closest query made of
  * words that exist, to offer as a one-tap fix.
  */
-import { tokenize } from './normalize';
-import { DEFAULT_TYPO_POLICY, type TypoPolicy } from './typo';
-import { candidates, type Candidate, type Vocabulary } from './vocabulary';
+import { tokenize } from './normalize.ts';
+import { DEFAULT_TYPO_POLICY, type TypoPolicy } from './typo.ts';
+import { candidates, type Candidate, type Vocabulary } from './vocabulary.ts';
 
 export interface ExpandedWord {
   /** The word as typed, folded. */
@@ -24,6 +24,8 @@ export interface ExpandOptions {
   policy?: TypoPolicy;
   /** Per typed word, at most this many corrected spellings. Default 5. */
   perWord?: number;
+  /** The same site spelling rule the vocabulary was built with (`SearchSpec.normalize`). */
+  normalize?: (word: string) => string;
 }
 
 /** Every typed word with the collection's words it could mean. */
@@ -32,8 +34,8 @@ export function expandQuery(
   vocab: Vocabulary,
   options: ExpandOptions = {}
 ): ExpandedWord[] {
-  const { policy = DEFAULT_TYPO_POLICY, perWord = 5 } = options;
-  const typed = [...new Set(tokenize(query).map(t => t.term))];
+  const { policy = DEFAULT_TYPO_POLICY, perWord = 5, normalize = (w: string) => w } = options;
+  const typed = [...new Set(tokenize(query).map(t => normalize(t.term)))];
   return typed.map(word => ({
     typed: word,
     candidates: candidates(vocab, word, { prefix: true, policy, limit: 100 })

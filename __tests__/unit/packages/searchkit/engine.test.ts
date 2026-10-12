@@ -1,6 +1,13 @@
 import { test } from 'vitest';
 import assert from 'node:assert/strict';
-import { createSearch, didYouMean, corrections, createVocabulary, words } from '@bitbaum/searchkit';
+import {
+  createSearch,
+  didYouMean,
+  corrections,
+  createVocabulary,
+  rerank,
+  words,
+} from '@bitbaum/searchkit';
 
 const people = [
   { id: 'cato', name: 'Cato', bio: 'Builds the studio' },
@@ -139,4 +146,26 @@ test('a name typed whole outranks a longer name that only starts with it', () =>
   for (const q of ['lki', 'loki', 'lok', 'koki']) {
     assert.equal(s.search(q)[0].item.id, 'loki', q);
   }
+});
+
+test("a site's own spelling rule applies to both sides", () => {
+  // Swiss German as typed: "ie" read as "i", doubled letters as single.
+  const swiss = w => w.replace(/ie/g, 'i').replace(/(.)\1/g, '$1');
+  const s = createSearch(
+    [
+      { id: 'chuchichaestli', name: 'Chuchichäschtli' },
+      { id: 'gruezi', name: 'Grüezi mitenand' },
+    ],
+    { fields: [{ name: 'name', get: r => r.name }], normalize: swiss }
+  );
+  assert.equal(s.search('gruzi mittenand')[0].item.id, 'gruezi');
+  assert.equal(s.search('chuchichaschtli')[0].item.id, 'chuchichaestli');
+});
+
+test('rerank orders found rows and keeps the ones it cannot place, after', () => {
+  const rows = [{ t: 'Bridge loan' }, { t: 'Something else' }, { t: 'Loki' }];
+  const out = rerank(rows, { fields: [{ name: 't', get: r => r.t }] }, 'lki');
+  assert.equal(out[0].item.t, 'Loki');
+  assert.equal(out.length, 3);
+  assert.equal(out[out.length - 1].hit, null);
 });

@@ -10,8 +10,8 @@
  * Plain parts, never HTML: the caller renders them, so a result's own text can
  * never be injected as markup.
  */
-import { tokenize } from './normalize';
-import type { Range } from './engine';
+import { tokenize } from './normalize.ts';
+import type { Range } from './engine.ts';
 
 export interface HighlightPart {
   text: string;
@@ -69,4 +69,47 @@ export function highlightQuery(text: string, query: string): HighlightPart[] {
     }
   }
   return highlightRanges(text, ranges);
+}
+
+export interface Snippet {
+  /** The excerpt, with "…" where text was cut. */
+  text: string;
+  /** The ranges that fall inside it, re-based onto `text`. */
+  ranges: Range[];
+}
+
+/**
+ * The part of a long text worth showing for a match: a window that starts a
+ * little before the first matched word, cut at word boundaries, with "…"
+ * where it was cut. Without a match it is the text's beginning. For a
+ * description whose third paragraph is what matched.
+ */
+export function snippet(
+  text: string,
+  ranges: readonly Range[],
+  { maxLength = 160, lead = 40 }: { maxLength?: number; lead?: number } = {}
+): Snippet {
+  if (text.length <= maxLength) {
+    return { text, ranges: [...ranges] };
+  }
+  const first = ranges.reduce((min, r) => Math.min(min, r.start), Infinity);
+  let start = Number.isFinite(first) ? Math.max(0, first - lead) : 0;
+  if (start > 0) {
+    const space = text.indexOf(' ', start);
+    start = space >= 0 && space < first ? space + 1 : start;
+  }
+  let end = Math.min(text.length, start + maxLength);
+  if (end < text.length) {
+    const space = text.lastIndexOf(' ', end);
+    end = space > start ? space : end;
+  }
+  const before = start > 0 ? '…' : '';
+  const after = end < text.length ? '…' : '';
+  const shift = before.length - start;
+  return {
+    text: before + text.slice(start, end) + after,
+    ranges: ranges
+      .filter(r => r.end > start && r.start < end)
+      .map(r => ({ start: Math.max(r.start, start) + shift, end: Math.min(r.end, end) + shift })),
+  };
 }

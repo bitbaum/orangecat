@@ -1,32 +1,39 @@
-export { fold, tokenize, words, umlautSpelling, joinedPairs, type Token } from './normalize';
-export { editDistance, prefixDistance } from './distance';
-export { typoBudget, DEFAULT_TYPO_POLICY, type TypoPolicy } from './typo';
+export { fold, tokenize, words, umlautSpelling, joinedPairs, type Token } from './normalize.ts';
+export { editDistance, prefixDistance } from './distance.ts';
+export { typoBudget, DEFAULT_TYPO_POLICY, type TypoPolicy } from './typo.ts';
 export {
   createVocabulary,
   candidates,
   type Candidate,
   type CandidateOptions,
   type Vocabulary,
-} from './vocabulary';
+} from './vocabulary.ts';
 export {
   createSearch,
   search,
   compareHits,
+  rerank,
   type Hit,
   type Range,
   type SearchField,
   type SearchOptions,
   type SearchSpec,
   type Searcher,
-} from './engine';
-export { highlightRanges, highlightQuery, type HighlightPart } from './highlight';
+} from './engine.ts';
+export {
+  highlightRanges,
+  highlightQuery,
+  snippet,
+  type HighlightPart,
+  type Snippet,
+} from './highlight.ts';
 export {
   expandQuery,
   corrections,
   didYouMean,
   type ExpandedWord,
   type ExpandOptions,
-} from './expand';
+} from './expand.ts';
 export {
   typoVariants,
   typoCases,
@@ -34,4 +41,4 @@ export {
   type TypoKind,
   type EvalCase,
   type EvalReport,
-} from './evaluate';
+} from './evaluate.ts';

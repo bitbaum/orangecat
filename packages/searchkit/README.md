@@ -18,15 +18,19 @@ repository (the session that built it could not create one). It is written to
 move as is: no imports outside itself, its own README and tests
 (`orangecat/__tests__/unit/packages/searchkit/`).
 
-A Next.js site in the fleet adopts it with pnpm's git subdirectory form and
-transpiles it (it ships TypeScript source, like `@bitbaum/deckkit`):
+A site in the fleet adopts it with pnpm's git subdirectory form, pinned to a
+commit on orangecat's `main`:
 
 ```jsonc
 // package.json
 "@bitbaum/searchkit": "github:bitbaum/orangecat#<commit>&path:packages/searchkit"
-// next.config.js
-transpilePackages: ["@bitbaum/searchkit"]
 ```
+
+It ships compiled JavaScript in `dist/`, committed beside the source the way
+`@bitbaum/whenkit` does, so nothing has to transpile it: Next.js, Vitest, and
+Node's own test runner (`--experimental-strip-types`, which refuses TypeScript
+inside `node_modules`) all load it as is. After changing `src/`, run
+`pnpm --filter @bitbaum/searchkit build`; a test fails while `dist/` is stale.
 
 **Every search box in the fleet should go through it.** The first adopter,
 OrangeCat, runs it in three places: the ⌘K palette's own lists (pages, your
@@ -97,12 +101,29 @@ Why not do it in Postgres: `pg_trgm` scores `kanye`/`kayne` at 0.2 and
 `levenshtein` counts a swap as two edits. Use trigrams for recall at a low
 threshold if you like; decide typos here.
 
+### Your own spelling rule — `normalize`
+
+`SearchSpec.normalize(word)` runs on every word, both sides, after the
+standard folding. Heidi reads Swiss German as people type it: "ie" as "i",
+doubled letters as one, so `gruzi mittenand` finds "Grüezi mitenand". Keep it
+to spelling; meaning belongs elsewhere. `expandQuery`/`corrections` take the
+same function so a vocabulary agrees with the index.
+
+### Rows a database already found — `rerank`
+
+`rerank(rows, spec, query)` ranks them by what was typed and keeps the rows
+it cannot place (matched on a field you did not pass, or by stemming) after
+the ranked ones, in their original order. OrangeCat's `/api/search` ranks
+Postgres candidates this way.
+
 ### Highlighting
 
 `hit.matches[field]` holds ranges into the original text (a typo match marks
 the whole word; a prefix only what was typed). `highlightQuery(text, q)` marks
 words that start with a typed word, for text that was not searched. Both
-return plain parts — never HTML.
+return plain parts — never HTML. `snippet(text, ranges, { maxLength })` cuts
+a long description to the window around its first match, at word
+boundaries, with "…" where it was cut, and re-bases the ranges onto it.
 
 ### React (`@bitbaum/searchkit/react`)
 

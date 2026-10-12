@@ -8,8 +8,8 @@
  * typo tolerance have it: expand the typed words into the vocabulary words
  * they could mean (`expandQuery`), and send those.
  */
-import { editDistance, prefixDistance } from './distance';
-import { DEFAULT_TYPO_POLICY, typoBudget, type TypoPolicy } from './typo';
+import { editDistance, prefixDistance } from './distance.ts';
+import { DEFAULT_TYPO_POLICY, typoBudget, type TypoPolicy } from './typo.ts';
 
 /** How a vocabulary word answers a typed word. */
 export interface Candidate {
