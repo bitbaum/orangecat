@@ -9,6 +9,7 @@
  * becomes a failing test the day it stops being true, instead of a complaint
  * from someone who could not find an artist.
  */
+import { words as foldWords } from './normalize.ts';
 import { typoBudget, DEFAULT_TYPO_POLICY, type TypoPolicy } from './typo.ts';
 
 /** Physical neighbours on QWERTY and QWERTZ (y and z both neighbour t/u/a/s/x). */
@@ -144,7 +145,9 @@ export function typoCases(
   const { policy = DEFAULT_TYPO_POLICY, perWord = Infinity, fold } = options;
   const cases: EvalCase[] = [];
   for (const { id, name } of names) {
-    const words = fold ? fold(name) : name.toLowerCase().split(/\s+/).filter(Boolean);
+    // The search's own words by default: "No-screen" is two words to it, so
+    // a slip in "no" must not be generated as "bo-screen".
+    const words = fold ? fold(name) : foldWords(name);
     words.forEach((word, i) => {
       if (typoBudget(Array.from(word).length, policy) < 1) {
         return;

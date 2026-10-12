@@ -57,6 +57,15 @@ test('a generated typo suite over real-looking names passes in full', async () =
   assert.ok(report.successAt1 > 0.97, String(report.successAt1));
 });
 
+test('typoCases splits names into the words the search sees', () => {
+  const queries = typoCases([{ id: 'n', name: 'No-screen Sunday' }]).map(c => c.query);
+  assert.ok(queries.length > 0);
+  assert.ok(
+    queries.every(q => !q.includes('-')),
+    queries.find(q => q.includes('-'))
+  );
+});
+
 test('a snippet shows the match inside a long text, cut at words, with ellipses', () => {
   const text =
     "I'm Alisa, an independent artist creating Bitcoin-themed illustrations and paintings. " +

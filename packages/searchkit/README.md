@@ -56,16 +56,17 @@ people.search('kayne wset'); // → Kanye West, with ranges to mark
 
 ### Matching — what counts as the same word
 
-| typed                     | finds                 | how                                                                    |
-| ------------------------- | --------------------- | ---------------------------------------------------------------------- |
-| `cqto`                    | Cato                  | one wrong letter (budget: 0 typos under 4 letters, 1 from 4, 2 from 8) |
-| `kayne`                   | Kanye                 | a swap is ONE typo (optimal string alignment)                          |
-| `koki`                    | Loki                  | a wrong first letter still matches — ranked as two typos               |
-| `lo`                      | Loki                  | the start of a word, while typing                                      |
-| `bitcon`                  | Bitcoin               | a typo in the start of a word                                          |
-| `zurich`, `mueller`       | Zürich, Müller        | accents folded; umlauts also indexed spelled out                       |
-| `orangecat`, `orange cat` | OrangeCat, Orange Cat | camelCase and separators split; adjacent words also indexed joined     |
-| `cato xylophone`          | Cato                  | a word that matches nothing is set aside, not fatal                    |
+| typed                     | finds                 | how                                                                                                                                                     |
+| ------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cqto`                    | Cato                  | one wrong letter (budget: 0 typos under 4 letters, 1 from 4, 2 from 8)                                                                                  |
+| `kayne`                   | Kanye                 | a swap is ONE typo (optimal string alignment)                                                                                                           |
+| `koki`                    | Loki                  | a wrong first letter still matches — ranked as two typos                                                                                                |
+| `lo`                      | Loki                  | the start of a word, while typing                                                                                                                       |
+| `bitcon`                  | Bitcoin               | a typo in the start of a word                                                                                                                           |
+| `zurich`, `mueller`       | Zürich, Müller        | accents folded; umlauts also indexed spelled out                                                                                                        |
+| `orangecat`, `orange cat` | OrangeCat, Orange Cat | camelCase and separators split; adjacent words also indexed joined (ranked as a typo when the text wrote them apart, so `catto` still finds Cato first) |
+| `cato xylophone`          | Cato                  | a word that matches nothing is set aside, not fatal                                                                                                     |
+| `jon smith`               | Jon Snow, John Smith  | when no item has every word, the most words any item has are kept — whichever words they are                                                            |
 
 The budget is the one Algolia and Typesense use. Meilisearch's (one typo from
 5 letters, a first-letter typo costs two) cannot find a mistyped 4-letter name

@@ -1,14 +1,3 @@
-/**
- * Prove it: the misspellings people make, generated, and a score for whether
- * search still finds the thing.
- *
- * A typo-tolerance claim is only as good as the test set behind it. This
- * builds that set mechanically from your own titles — every wrong letter that
- * sits next to the right one on a keyboard, every dropped letter, every
- * doubled letter, every swapped pair — so "one slip in a name still finds it"
- * becomes a failing test the day it stops being true, instead of a complaint
- * from someone who could not find an artist.
- */
 import { type TypoPolicy } from './typo.ts';
 export type TypoKind = 'neighbour' | 'drop' | 'double' | 'swap';
 /**
