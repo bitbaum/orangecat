@@ -13,19 +13,16 @@
  * here used to be operator telemetry read aloud: "no request seen since the
  * last restart" (whose restart?), and a token-budget line quoting an 8.0k TPM
  * window and a 6.8k prompt cap, neither of which a user can act on.
+ *
+ * What each tile says is decided in services/cat/free-pool-status.ts (pure,
+ * tested); this component fetches and renders. It no longer repeats "your own
+ * allowance resets in …": the budget card above it on both pages says so.
  */
 import { useCallback, useEffect, useState } from 'react';
 import { Gauge, RefreshCw } from 'lucide-react';
 import { API_ROUTES } from '@/config/api-routes';
 import type { CatCapacityResponse } from '@/app/api/cat/capacity/route';
-import { formatCountdownShort } from '@/utils/countdown';
-
-function compact(n: number | null): string {
-  if (n === null) {
-    return '—';
-  }
-  return n >= 1000 ? `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}k` : String(n);
-}
+import { freePoolTiles } from '@/services/cat/free-pool-status';
 
 export function SharedCapacityCard() {
   const [data, setData] = useState<CatCapacityResponse | null>(null);
@@ -55,104 +52,61 @@ export function SharedCapacityCard() {
     return () => clearInterval(timer);
   }, [load]);
 
-  const groq = data?.groq.models.find(m => m.model === data.promptBudget.model) ?? null;
-  const obs = groq?.observation ?? null;
+  const tiles = data ? freePoolTiles(data) : null;
 
   return (
     <section
       aria-labelledby="shared-capacity"
       className="rounded-lg border border-default bg-surface-base p-6"
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-start gap-3">
-          <div className="rounded-md bg-surface-raised p-2">
-            <Gauge className="h-5 w-5 text-fg-primary" />
-          </div>
-          <div>
-            <h2 id="shared-capacity" className="text-lg font-semibold text-fg-primary">
+      <div className="flex items-start gap-3">
+        <div className="rounded-md bg-surface-raised p-2">
+          <Gauge className="h-5 w-5 text-fg-secondary" aria-hidden="true" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-3">
+            <h2
+              id="shared-capacity"
+              className="font-heading text-base font-semibold text-fg-primary"
+            >
               Free pool right now
             </h2>
-            <p className="mt-1 text-sm text-fg-secondary">
-              Shared by everyone on OrangeCat&apos;s own keys. Your own daily allowance is separate;
-              your own key is never counted here.
-            </p>
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={() => void load()}
-          disabled={loading}
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-fg-secondary hover:text-fg-primary disabled:opacity-60"
-          aria-label="Refresh capacity"
-        >
-          <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
-        </button>
-      </div>
-
-      {error && !data && <p className="mt-4 text-sm text-status-warning">{error}</p>}
-
-      {data && (
-        <dl className="mt-5 grid gap-4 sm:grid-cols-3">
-          <div className="rounded-md border border-default p-4">
-            <dt className="text-xs font-semibold uppercase tracking-caps text-fg-tertiary">
-              Groq · today
-            </dt>
-            <dd className="mt-1 text-lg font-semibold text-fg-primary">
-              {obs ? `${compact(obs.remainingRequests)} / ${compact(obs.limitRequests)}` : '—'}
-            </dd>
-            <dd className="text-xs text-fg-tertiary">
-              {obs
-                ? `requests left · resets in ${formatCountdownShort(obs.resetRequestsSeconds)}`
-                : data.groq.configured
-                  ? 'nothing used yet — full allowance available'
-                  : 'not configured'}
-            </dd>
-          </div>
-          <div className="rounded-md border border-default p-4">
-            <dt className="text-xs font-semibold uppercase tracking-caps text-fg-tertiary">
-              Groq · this minute
-            </dt>
-            <dd className="mt-1 text-lg font-semibold text-fg-primary">
-              {obs ? `${compact(obs.remainingTokens)} / ${compact(obs.limitTokens)}` : '—'}
-            </dd>
-            <dd
-              className="text-xs text-fg-tertiary"
-              title={`Per-minute token window: ${compact(data.promptBudget.tpmLimit)}. Cat trims its prompt to ${compact(data.promptBudget.budgetTokens)} so a reply always fits.`}
+            <button
+              type="button"
+              onClick={() => void load()}
+              disabled={loading}
+              className="-my-2 inline-flex min-h-11 shrink-0 items-center gap-1.5 text-xs font-medium text-fg-secondary hover:text-fg-primary disabled:opacity-60"
+              aria-label="Refresh capacity"
             >
-              tokens left this minute — a long conversation uses more of it
-            </dd>
+              <RefreshCw
+                className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`}
+                aria-hidden="true"
+              />
+              Refresh
+            </button>
           </div>
-          <div className="rounded-md border border-default p-4">
-            <dt className="text-xs font-semibold uppercase tracking-caps text-fg-tertiary">
-              OpenRouter · free models
-            </dt>
-            <dd className="mt-1 text-lg font-semibold text-fg-primary">
-              {!data.openrouter.configured
-                ? '—'
-                : data.openrouter.freeDailyCapHitAt
-                  ? 'Daily cap hit'
-                  : 'Available'}
-            </dd>
-            <dd className="text-xs text-fg-tertiary">
-              {data.openrouter.freeResetsAt
-                ? `resets ${new Date(data.openrouter.freeResetsAt).toUTCString().slice(17, 22)} UTC`
-                : data.openrouter.configured
-                  ? 'the fallback when Groq is out'
-                  : 'not configured'}
-            </dd>
-          </div>
-        </dl>
-      )}
+          <p className="mt-1 text-sm text-fg-secondary">
+            The providers behind the free models, shared by everyone. Your own daily messages are
+            counted separately, and your own key never draws on this.
+          </p>
 
-      {/* Deliberately NOT repeating "N of M messages left today" — AiUsageStrip
-          says that at the top of this same page, and it was on screen twice in
-          two different wordings. What this card can add is the reset. */}
-      {data && (
-        <p className="mt-4 text-xs text-fg-tertiary">
-          Your own allowance resets in {formatCountdownShort(data.quota.resetInSeconds)}.
-        </p>
-      )}
+          {error && !data && <p className="mt-4 text-sm text-status-warning">{error}</p>}
+
+          {tiles && (
+            <dl className="mt-4 grid gap-3 sm:grid-cols-2">
+              {tiles.map(tile => (
+                <div key={tile.id} className="rounded-md border border-default p-4">
+                  <dt className="text-xs font-semibold uppercase tracking-caps text-fg-tertiary">
+                    {tile.label}
+                  </dt>
+                  <dd className="mt-1 text-base font-semibold text-fg-primary">{tile.value}</dd>
+                  <dd className="text-xs text-fg-tertiary">{tile.detail}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
+        </div>
+      </div>
     </section>
   );
 }

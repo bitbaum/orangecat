@@ -19,6 +19,8 @@ to the map, sub-bullets stay here for the human reader.
 
 ### Fixed
 
+- **Settings → Usage only says what it knows.** The free-pool card said "nothing used yet — full allowance available" when it simply had no reading — next to a counter showing you had already sent a message. It now says "No reading yet", shows when each number was read, and says "Used up" when a provider has refused for the day, even if its headers still look healthy. Plans that can't be bought yet say "Not open yet" instead of "Activating", the Cat Credits card no longer points you to a top-up that is closed, and the explanations no longer credit Supporters who can't exist yet or give a reason for the midnight-UTC reset that isn't true.
+  - The memory paragraph appeared twice and its button squeezed its caption into a one-word column off the edge of the card; it now appears once, with its link, in "What these numbers mean", which is folded at the foot of the page. "This week" is now "Last 7 days", which is what it counts. A message Cat could not answer is now stated to be free, which it always was.
 - **A shared project link shows the project.** It used to preview as the creator's face — Loki's page showed Cato — or as a broken image when the creator had none. Now the card carries the project's own mark or initial, its name, one line on what it is, and who is behind it.
 - **Test listings no longer appear on Discover.** The first card there was a listing titled "TEST Session — TEST fixture — safe to delete". Listings whose title marks them as tests are now left out of Discover, its counts, search and the sitemap.
 

@@ -71,7 +71,7 @@ describe('catUsageMeaning — week', () => {
     const m = catUsageMeaning(input({ week: week([10, 0, 4, 10, 2, 0, 3]) })).week;
     expect(m).toMatchObject({ messages: 29, activeDays: 5, cappedDays: 2 });
     expect(m?.line).toBe(
-      'This week: 29 messages over 5 days. You reached the daily cap on 2 days — the cap, not your work, decided when you stopped.'
+      'Last 7 days: 29 messages on 5 days. You reached the daily cap on 2 days — the cap, not your work, decided when you stopped.'
     );
   });
 
@@ -88,23 +88,23 @@ describe('catUsageMeaning — week', () => {
 describe('catUsageMeaning — levers', () => {
   const ids = (m: ReturnType<typeof catUsageMeaning>) => m.actions.map(a => a.id);
 
-  it('a relaxed day offers only Memory', () => {
-    expect(ids(catUsageMeaning(input({ used: 1 })))).toEqual(['memory']);
+  it('a relaxed day offers nothing — there is nothing to change', () => {
+    expect(ids(catUsageMeaning(input({ used: 1 })))).toEqual([]);
   });
 
   it('a capped day leads with when it refills, then the plans that are really open', () => {
     const m = catUsageMeaning(input({ used: 10, resetInSeconds: 9 * 3600 }));
     expect(m.actions[0]).toMatchObject({ id: 'wait', label: 'Back in 9 hours' });
-    expect(ids(m)).toEqual(['wait', ...OPEN_UPGRADES, 'memory']);
+    expect(ids(m)).toEqual(['wait', ...OPEN_UPGRADES]);
   });
 
   it('a pace that will hit the cap offers the way past it before it happens', () => {
-    expect(ids(catUsageMeaning(input({ used: 5 })))).toEqual([...OPEN_UPGRADES, 'memory']);
+    expect(ids(catUsageMeaning(input({ used: 5 })))).toEqual([...OPEN_UPGRADES]);
   });
 
   it('a week of capped days offers it even on a quiet morning', () => {
     const m = catUsageMeaning(input({ used: 0, week: [{ day: '2026-10-10', requests: 10 }] }));
-    expect(ids(m)).toEqual([...OPEN_UPGRADES, 'memory']);
+    expect(ids(m)).toEqual([...OPEN_UPGRADES]);
   });
 
   it('never offers the plan they are on, or one still activating', () => {
@@ -118,9 +118,10 @@ describe('catUsageMeaning — levers', () => {
     }
   });
 
-  it('memory links to where memories are kept', () => {
-    const memory = catUsageMeaning(input()).actions.find(a => a.id === 'memory');
-    expect(memory?.href).toBe(ROUTES.SETTINGS_MEMORY);
+  it('memory is explained once, with a link to where memories are kept', () => {
+    const m = catUsageMeaning(input());
+    const memory = m.explain.find(e => e.title === 'What Cat remembers');
+    expect(memory?.link?.href).toBe(ROUTES.SETTINGS_MEMORY);
   });
 });
 
@@ -148,6 +149,32 @@ describe('catUsageMeaning — explanations', () => {
     expect(text).toMatch(/never touch the daily cap/);
     expect(text).toMatch(/Image generation is billed to Cat Credits/);
     expect(text).toMatch(/Unused messages don't roll over/);
+  });
+
+  it('does not give a reason for the reset that is false of Groq', () => {
+    const text = catUsageMeaning(input())
+      .explain.map(e => e.body)
+      .join(' ');
+    expect(text).not.toMatch(/free allowances refill/);
+    expect(text).toMatch(/per UTC day/);
+  });
+
+  it('describes a plan nobody can buy yet as planned, never as something people do', () => {
+    const body = (title: string) =>
+      catUsageMeaning(input()).explain.find(e => e.title === title)?.body ?? '';
+    const supporterOpen = CAT_PLANS.find(p => p.id === 'supporter')?.status === 'available';
+    expect(body('Why there is a daily cap')).toMatch(
+      supporterOpen ? /Supporters fund that pool/ : /not open yet/
+    );
+    const creditsOpen = CAT_PLANS.find(p => p.id === 'credits')?.status === 'available';
+    if (!creditsOpen) {
+      expect(body('Cat Credits')).toMatch(/Top-ups are closed for now/);
+    }
+  });
+
+  it('says a failed reply does not count', () => {
+    const body = catUsageMeaning(input()).explain.find(e => e.title === 'What a message is')?.body;
+    expect(body).toMatch(/could not answer doesn't count/);
   });
 
   it('frontier spend this week appears only when there was some', () => {
