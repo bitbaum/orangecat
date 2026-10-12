@@ -55,6 +55,7 @@ import {
   listConnectedApps,
   revokeAllConnectedApps,
   revokeConnectedApp,
+  setWithheldClaims,
 } from '@/services/auth/connectedApps';
 
 const USER = 'user-1';
@@ -89,6 +90,7 @@ describe('listConnectedApps', () => {
         registeredVia: 'admin',
         trusted: true,
         scopes: ['openid', 'profile'],
+        withheldClaims: [],
         grantedAt: '2026-09-01',
         lastUsedAt: '2026-09-28T10:00:00Z',
         liveSessions: 2,
@@ -104,6 +106,19 @@ describe('listConnectedApps', () => {
     const apps = await listConnectedApps(USER);
     expect(apps).toHaveLength(1);
     expect(apps[0]).toMatchObject({ name: 'Some AI app', registeredVia: 'dcr', liveSessions: 1 });
+  });
+
+  it('reports the claims withheld from each app, known ones only', async () => {
+    grants = [
+      {
+        client_id: 'solon',
+        scopes: ['openid', 'profile'],
+        withheld_claims: ['picture', 'bogus'],
+        granted_at: '2026-09-01',
+      },
+    ];
+    clients = [{ client_id: 'solon', name: 'Solon', registered_via: 'admin', is_trusted: true }];
+    expect((await listConnectedApps(USER))[0].withheldClaims).toEqual(['picture']);
   });
 
   it('returns nothing, and queries no clients, when nothing is connected', async () => {
@@ -179,5 +194,35 @@ describe('revokeAllConnectedApps', () => {
     const del = calls.find(c => c.op === 'delete');
     expect(del?.table).toBe('oauth_user_grants');
     expect(del?.filters).toEqual([['user_id', USER]]);
+  });
+});
+
+describe('setWithheldClaims', () => {
+  it('stores only known claims, scoped to this user and this app', async () => {
+    revokedRows = [{ client_id: 'solon' }];
+    const result = await setWithheldClaims(USER, 'solon', ['picture', 'email', 'picture']);
+    expect(result).toEqual({ updated: true, withheldClaims: ['picture'] });
+    const upd = calls.find(c => c.op === 'update');
+    expect(upd?.table).toBe('oauth_user_grants');
+    expect(upd?.patch).toEqual({ withheld_claims: ['picture'] });
+    expect(upd?.filters).toEqual(
+      expect.arrayContaining([
+        ['user_id', USER],
+        ['client_id', 'solon'],
+      ])
+    );
+  });
+
+  it('says so, and changes nothing, when this person never consented to the app', async () => {
+    revokedRows = [];
+    expect(await setWithheldClaims(USER, 'nobody', ['name'])).toEqual({
+      updated: false,
+      withheldClaims: ['name'],
+    });
+  });
+
+  it('treats a non-list as "withhold nothing", never as a crash', async () => {
+    revokedRows = [{ client_id: 'solon' }];
+    expect((await setWithheldClaims(USER, 'solon', 'picture')).withheldClaims).toEqual([]);
   });
 });

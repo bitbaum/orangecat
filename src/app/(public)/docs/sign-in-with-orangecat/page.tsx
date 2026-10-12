@@ -111,6 +111,15 @@ export default function SignInWithOrangeCatPage() {
               {meta.claims_supported.join(', ')}. Scope <code>{SIGN_IN_SCOPE}</code> is all a
               sign-in needs.
             </li>
+            <li>
+              <strong className="text-fg-primary">
+                <code>name</code>, <code>preferred_username</code> and <code>picture</code> can be
+                missing.
+              </strong>{' '}
+              People choose what each app is shown and can change it later. A missing claim means
+              &ldquo;not given to you&rdquo;, so show nothing and do not ask again; only{' '}
+              <code>sub</code> is always there, and it is the one key to store.
+            </li>
           </ul>
         </Section>
 

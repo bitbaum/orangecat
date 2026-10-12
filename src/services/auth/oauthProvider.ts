@@ -20,10 +20,12 @@ import {
   OAUTH_ISSUER,
   OAUTH_SIGNING_ALG,
   OAUTH_TTL,
+  cleanWithheldClaims,
   parseAndValidateScopes,
   scopesForResource,
   type OAuthClientOrigin,
   type OAuthResource,
+  type ProfileClaim,
 } from '@/lib/oauth/config';
 import { logger } from '@/utils/logger';
 
@@ -224,9 +226,30 @@ export interface TokenResponse {
   scope: string;
 }
 
+/**
+ * The profile claims this person has chosen not to show this app (Connected
+ * apps, or the consent screen). Empty for an app with no remembered grant, so
+ * a first sign-in shows everything the scopes allow until the person says
+ * otherwise.
+ */
+async function withheldClaimsFor(userId: string, clientId: string): Promise<ProfileClaim[]> {
+  const { data } = await adminDb()
+    .from(DATABASE_TABLES.OAUTH_USER_GRANTS)
+    .select('withheld_claims')
+    .eq('user_id', userId)
+    .eq('client_id', clientId)
+    .maybeSingle();
+  return cleanWithheldClaims(data?.withheld_claims);
+}
+
+/**
+ * `clientId` names the app the claims are FOR. Without it nothing is withheld,
+ * which is only right for callers that are not an app (none today).
+ */
 export async function profileClaims(
   userId: string,
-  scopes: string[]
+  scopes: string[],
+  clientId?: string
 ): Promise<Record<string, unknown>> {
   if (!scopes.includes('profile') && !scopes.includes('email')) {
     return {};
@@ -241,9 +264,19 @@ export async function profileClaims(
   }
   const claims: Record<string, unknown> = {};
   if (scopes.includes('profile')) {
-    claims.name = profile.name ?? null;
-    claims.preferred_username = profile.username ?? null;
-    claims.picture = profile.avatar_url ?? null;
+    // A withheld claim is ABSENT, not null: null says "this person has no
+    // picture", absent says "this app was not given one". Apps must treat both
+    // as "show nothing" (docs/sign-in-with-orangecat says so).
+    const withheld = new Set<string>(clientId ? await withheldClaimsFor(userId, clientId) : []);
+    if (!withheld.has('name')) {
+      claims.name = profile.name ?? null;
+    }
+    if (!withheld.has('preferred_username')) {
+      claims.preferred_username = profile.username ?? null;
+    }
+    if (!withheld.has('picture')) {
+      claims.picture = profile.avatar_url ?? null;
+    }
   }
   if (scopes.includes('email')) {
     // The account holds the email. profiles.email is a copy taken at sign-up
@@ -293,7 +326,7 @@ export async function issueTokens(params: {
     .sign(privateKey);
 
   // ID token: OIDC identity claims (+ profile/email when scoped).
-  const idClaims = await profileClaims(params.userId, params.scopes);
+  const idClaims = await profileClaims(params.userId, params.scopes, params.client.client_id);
   const idToken = await new SignJWT({
     ...idClaims,
     uid: params.userId,
@@ -450,15 +483,27 @@ export async function hasRememberedGrant(
   return scopes.every(s => granted.has(s));
 }
 
+/**
+ * `withheld` is what the person chose on the consent screen. Left undefined,
+ * the stored choice is kept (a re-consent for more scopes must not quietly
+ * re-show a picture someone had hidden).
+ */
 export async function recordGrant(
   userId: string,
   clientId: string,
-  scopes: string[]
+  scopes: string[],
+  withheld?: ProfileClaim[]
 ): Promise<void> {
   await adminDb()
     .from(DATABASE_TABLES.OAUTH_USER_GRANTS)
     .upsert(
-      { user_id: userId, client_id: clientId, scopes, granted_at: new Date().toISOString() },
+      {
+        user_id: userId,
+        client_id: clientId,
+        scopes,
+        granted_at: new Date().toISOString(),
+        ...(withheld ? { withheld_claims: withheld } : {}),
+      },
       { onConflict: 'user_id,client_id' }
     );
 }

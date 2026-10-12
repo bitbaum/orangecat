@@ -14,7 +14,7 @@ import { AppWindow, ShieldAlert, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { FormattedDate } from '@/components/ui/FormattedDate';
 import { API_ROUTES } from '@/config/api-routes';
-import { OAUTH_CLIENT_ORIGINS } from '@/lib/oauth/config';
+import { OAUTH_CLIENT_ORIGINS, PROFILE_CLAIMS, type ProfileClaim } from '@/lib/oauth/config';
 import type { ConnectedApp } from '@/services/auth/connectedApps';
 import { logger } from '@/utils/logger';
 
@@ -23,6 +23,7 @@ export default function ConnectedAppsCard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [revoking, setRevoking] = useState<string | null>(null);
+  const [saving, setSaving] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -74,6 +75,34 @@ export default function ConnectedAppsCard() {
       toast.error(err instanceof Error ? err.message : 'Could not disconnect. Try again.');
     } finally {
       setRevoking(null);
+    }
+  }
+
+  // Optimistic: the box flips at once and snaps back, with a message, if the
+  // server says no — a privacy switch that lags reads as one that did not work.
+  async function handleToggleClaim(app: ConnectedApp, claim: ProfileClaim, shown: boolean) {
+    const before = app.withheldClaims;
+    const next = shown ? before.filter(c => c !== claim) : [...before, claim];
+    const apply = (withheldClaims: ProfileClaim[]) =>
+      setApps(prev => prev.map(a => (a.clientId === app.clientId ? { ...a, withheldClaims } : a)));
+    apply(next);
+    setSaving(app.clientId);
+    try {
+      const res = await fetch(API_ROUTES.CONNECTED_APPS.BY_CLIENT(app.clientId), {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ withheld: next }),
+      });
+      if (!res.ok) {
+        throw new Error(`Could not save (${res.status})`);
+      }
+    } catch (err) {
+      logger.error('Failed to update what a connected app sees', { err });
+      apply(before);
+      toast.error('Could not save that. Try again.');
+    } finally {
+      setSaving(null);
     }
   }
 
@@ -144,6 +173,28 @@ export default function ConnectedAppsCard() {
             <Trash2 className="h-3.5 w-3.5" />
             {revoking === app.clientId ? 'Disconnecting…' : 'Disconnect'}
           </button>
+          {app.scopes.includes('profile') && (
+            <fieldset className="basis-full">
+              <legend className="text-xs text-fg-secondary">Shown to {app.name}</legend>
+              <div className="flex flex-wrap gap-x-5">
+                {PROFILE_CLAIMS.map(c => (
+                  <label
+                    key={c.claim}
+                    className="flex min-h-11 items-center gap-2 text-sm text-fg-primary"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={!app.withheldClaims.includes(c.claim)}
+                      disabled={saving === app.clientId}
+                      onChange={e => handleToggleClaim(app, c.claim, e.target.checked)}
+                      className="h-4 w-4 accent-accent-warm"
+                    />
+                    {c.label}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          )}
         </li>
       ))}
     </ul>

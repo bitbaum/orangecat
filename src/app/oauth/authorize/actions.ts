@@ -11,7 +11,7 @@
 import { redirect } from 'next/navigation';
 import { createServerClient } from '@/lib/supabase/server';
 import { getOrCreateUserActor } from '@/services/actors/getOrCreateUserActor';
-import { OAUTH_PATHS, findOAuthResource } from '@/lib/oauth/config';
+import { OAUTH_PATHS, findOAuthResource, withheldFromChoices } from '@/lib/oauth/config';
 import { authHandoffUrl } from '@/lib/oauth/handoff';
 import {
   getClient,
@@ -80,7 +80,14 @@ export async function approveAuthorization(formData: FormData): Promise<void> {
   let target: string;
   try {
     const actor = await getOrCreateUserActor(user!.id);
-    await recordGrant(user!.id, clientId, scopes);
+    // The choice only exists when the screen offered it (`shares_offered`) and
+    // the profile scope is being granted. A form without the marker — an older
+    // page, a replay — keeps whatever was stored instead of hiding everything.
+    const withheld =
+      f('shares_offered') === '1' && scopes.includes('profile')
+        ? withheldFromChoices(formData.getAll('share'))
+        : undefined;
+    await recordGrant(user!.id, clientId, scopes, withheld);
     const code = await createAuthCode({
       clientId,
       actorId: actor.id,
