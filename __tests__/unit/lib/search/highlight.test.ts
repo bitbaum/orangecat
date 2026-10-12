@@ -12,8 +12,10 @@ describe('highlightParts', () => {
     expect(marked('Loki loki', 'LOKI')).toEqual(['Loki', 'loki']);
   });
 
-  it('marks a prefix the way the engine matches one', () => {
+  it('marks a prefix the way the engine matches one, and only at a word start', () => {
     expect(marked('Bitcoin hardware wallet', 'bit')).toEqual(['Bit']);
+    expect(marked('the technological local loop', 'lo')).toEqual(['lo', 'lo']);
+    expect(marked('Fix My Velo', 'lo')).toEqual([]);
   });
 
   it('keeps the original text intact, in order', () => {

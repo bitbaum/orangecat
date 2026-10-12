@@ -1,9 +1,12 @@
 /**
  * Which parts of a result match what was typed — so a search result shows WHY
  * it is there. Accent- and case-insensitive like the engine ("zurich" marks
- * "Zürich"), every typed word marked wherever it occurs. Returns plain text
+ * "Zürich"), and only at the start of a word, as the engine matches: "lo"
+ * marks "Loki" and "local", never the middle of "technological". Returns plain text
  * parts; the caller renders them, so nothing here is ever injected as HTML.
  */
+
+const WORD_CHAR = /[\p{L}\p{N}]/u;
 
 export interface HighlightPart {
   text: string;
@@ -41,10 +44,12 @@ export function highlightParts(text: string, query: string): HighlightPart[] {
   for (const word of words) {
     let from = folded.indexOf(word);
     while (from !== -1) {
-      for (let k = from; k < from + word.length; k++) {
-        marked[origin[k]] = true;
+      if (from === 0 || !WORD_CHAR.test(folded[from - 1])) {
+        for (let k = from; k < from + word.length; k++) {
+          marked[origin[k]] = true;
+        }
       }
-      from = folded.indexOf(word, from + word.length);
+      from = folded.indexOf(word, from + 1);
     }
   }
 
