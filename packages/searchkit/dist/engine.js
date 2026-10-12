@@ -180,8 +180,7 @@ export function createSearch(items, spec) {
             // every typed word landed there: for "gallium ch", "ch" alone covering
             // a title "Chalco" (gallium only in its description) is not the name.
             const fieldLength = index.fieldTerms[doc][field].length;
-            const coversField = ls.every(l => l.field === field) &&
-                new Set(ls.map(l => l.position)).size >= fieldLength;
+            const coversField = ls.every(l => l.field === field) && new Set(ls.map(l => l.position)).size >= fieldLength;
             let proximity = 0;
             for (let i = 1; i < ls.length; i++) {
                 const a = ls[i - 1];
