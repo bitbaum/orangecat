@@ -18,8 +18,14 @@ import { messageLabel } from '@/lib/chat/attachment-tags';
 
 // Type alias that accepts any typed Supabase client (avoids schema mismatch errors)
 
-/** Max messages to inject into LLM context (10 turns = 20 messages) */
-const HISTORY_INJECTION_LIMIT = 20;
+/**
+ * Max messages to inject into LLM context (10 turns = 20 messages).
+ *
+ * Exported so /settings/usage can SAY it: this is the number a person meets
+ * as "Cat forgot what I said earlier", and a limit that is stated can be
+ * planned around (save it as a memory) while an unstated one is a bug report.
+ */
+export const HISTORY_INJECTION_LIMIT = 20;
 
 /** Max messages to return for UI history display */
 const HISTORY_DISPLAY_LIMIT = 50;
