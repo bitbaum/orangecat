@@ -22,6 +22,7 @@ import {
   getGroqObservations,
   getGroqTpmLimit,
   getOpenRouterFreeStatus,
+  isGroqDailyPoolSpent,
   type GroqRateLimitObservation,
 } from '@/services/ai/groq-capacity';
 import { secondsUntilUtcMidnight } from '@/services/cat/quota-helpers';
@@ -34,6 +35,12 @@ export interface CatCapacityResponse {
       /** Tokens per minute this key may spend on one request, as learned. */
       tpmLimit: number;
       observation: GroqRateLimitObservation | null;
+      /**
+       * A Groq refusal named the tokens-per-DAY pool, which no header reports —
+       * the headers can read healthy while every call is refused. True means
+       * Cat has stopped dialling this model until the reset that refusal named.
+       */
+      dailyPoolSpent: boolean;
     }>;
   };
   openrouter: {
@@ -69,6 +76,7 @@ export const GET = withAuth(async (request: AuthenticatedRequest) => {
         model,
         tpmLimit: getGroqTpmLimit(model),
         observation: byModel.get(model) ?? null,
+        dailyPoolSpent: isGroqDailyPoolSpent(model),
       })),
     },
     openrouter: {

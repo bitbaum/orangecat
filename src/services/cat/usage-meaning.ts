@@ -20,6 +20,7 @@
  */
 
 import { CAT_PLANS, PLAN_ID_BY_QUOTA_TIER, type CatPlanId } from '@/config/cat-plans';
+import { COMMERCE_CLOSED } from '@/config/commerce';
 import { ROUTES } from '@/config/routes';
 import type { CatTier } from '@/services/cat/quota-helpers';
 import { formatNumber } from '@/utils/locale';
@@ -42,7 +43,7 @@ export interface UsageMeaningInput {
 }
 
 export interface UsageAction {
-  id: CatPlanId | 'wait' | 'memory';
+  id: CatPlanId | 'wait';
   label: string;
   /** The consequence, so a button is never a bare verb. */
   why: string;
@@ -62,7 +63,8 @@ export interface UsageMeaning {
   /** BTC is formatted by the page through useDisplayCurrency, never here. */
   creditsWeek: { messages: number; btc: number } | null;
   memory: string;
-  explain: { title: string; body: string }[];
+  /** Reference text; `link` is where the person acts on that fact. */
+  explain: { title: string; body: string; link?: { label: string; href: string } }[];
   actions: UsageAction[];
 }
 
@@ -145,7 +147,9 @@ function weekOf(input: UsageMeaningInput): UsageMeaning['week'] {
     messages,
     activeDays,
     cappedDays,
-    line: `This week: ${plural(messages, 'message')} over ${plural(activeDays, 'day')}.${capped}`,
+    // The read is the last seven UTC days, today included — not a calendar
+    // week, so it does not say "this week".
+    line: `Last 7 days: ${plural(messages, 'message')} on ${plural(activeDays, 'day')}.${capped}`,
   };
 }
 
@@ -194,25 +198,39 @@ export function catUsageMeaning(input: UsageMeaningInput): UsageMeaning {
     `longer sees. What should outlast that belongs in Memory — Cat recalls the relevant ` +
     `memories in every chat.`;
 
+  // Plan facts decide tense: a plan nobody can buy yet is described as
+  // planned, never as something people already do.
+  const isOpen = (id: CatPlanId) => CAT_PLANS.find(p => p.id === id)?.status === 'available';
+
   const explain: UsageMeaning['explain'] = [
     {
       title: 'What a message is',
+      // The counter is incremented after a reply is produced (chat-orchestrator:
+      // incrementPlatformUsage runs once per answered turn), so a failed reply
+      // is free — worth saying, because people retry.
       body:
-        'Every message you send to Cat on the free or Supporter plan counts as one, however long it ' +
-        'is and however much Cat has to look up to answer it.',
+        'Every message Cat answers on the free or Supporter plan counts as one, however long it ' +
+        'is and however much Cat has to look up to answer it. A message Cat could not answer ' +
+        "doesn't count.",
     },
     {
       title: 'Why there is a daily cap',
       body:
         'The free models run on a pool OrangeCat provides for everyone. A cap per person is what ' +
-        'keeps it free and keeps it there for whoever arrives later in the day. Supporters fund ' +
-        'that pool.',
+        'keeps it free and keeps it there for whoever arrives later in the day.' +
+        (isOpen('supporter')
+          ? ' Supporters fund that pool.'
+          : ' A Supporter plan that funds the pool is planned; it is not open yet.'),
     },
     {
+      // The counter is one row per UTC date (platform_api_usage.usage_date =
+      // CURRENT_DATE on a UTC database). It used to give a reason — "that is
+      // when the providers' free allowances refill" — which is not true of
+      // Groq, whose limits refill on their own rolling clock.
       title: 'Resets at midnight UTC',
       body:
-        "Because that is when the model providers' free allowances refill, so the counter follows " +
-        "their clock, not yours. Unused messages don't roll over.",
+        'Your count is kept per UTC day, so it resets at the same moment for everyone, wherever ' +
+        "they are. Unused messages don't roll over.",
     },
     {
       title: 'Your own key',
@@ -224,19 +242,20 @@ export function catUsageMeaning(input: UsageMeaningInput): UsageMeaning {
       title: 'Cat Credits',
       body:
         'Frontier models paid with Cat Credits are metered per message from your balance, not ' +
-        'from the daily cap. Image generation is billed to Cat Credits too.',
+        'from the daily cap. Image generation is billed to Cat Credits too.' +
+        (isOpen('credits') ? '' : ` Top-ups are closed for now — ${COMMERCE_CLOSED.short}`),
     },
-    { title: 'What Cat remembers', body: memory },
+    {
+      title: 'What Cat remembers',
+      body: memory,
+      link: { label: 'See what Cat remembers', href: ROUTES.SETTINGS_MEMORY },
+    },
   ];
 
   const pace = paceOf(input);
+  // Levers only: what changes the cap. Memory is not a lever on the cap, and
+  // offering it on every visit put the same paragraph on the page twice.
   const actions = actionsFor(input, week, pace);
-  actions.push({
-    id: 'memory',
-    label: 'See what Cat remembers',
-    why: 'Facts saved there outlast a long conversation.',
-    href: ROUTES.SETTINGS_MEMORY,
-  });
 
   return {
     pace: pace?.line ?? null,
