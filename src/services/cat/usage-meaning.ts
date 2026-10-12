@@ -22,6 +22,7 @@
 import { CAT_PLANS, PLAN_ID_BY_QUOTA_TIER, type CatPlanId } from '@/config/cat-plans';
 import { ROUTES } from '@/config/routes';
 import type { CatTier } from '@/services/cat/quota-helpers';
+import { formatNumber } from '@/utils/locale';
 
 export interface UsageMeaningInput {
   now: Date;
@@ -69,7 +70,7 @@ export interface UsageMeaning {
 const PACE_MIN_MESSAGES = 2;
 const PACE_MIN_DAY_FRACTION = 0.05;
 
-const count = (n: number) => n.toLocaleString('en-US');
+const count = (n: number) => formatNumber(n);
 const plural = (n: number, word: string) => `${count(n)} ${word}${n === 1 ? '' : 's'}`;
 
 function dayFraction(now: Date): number {
