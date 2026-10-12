@@ -12,6 +12,7 @@
  */
 
 import { BRAND_MARK } from '@/config/brand-mark';
+import type { MarkDefinition } from '@/config/marks/types';
 
 export const OG_SIZE = { width: 1200, height: 630 } as const;
 export const OG_CONTENT_TYPE = 'image/png' as const;
@@ -46,12 +47,24 @@ export const OG_COLOR = {
 
 /**
  * The brand mark on share cards — BRAND_MARK, whichever file
- * src/config/marks/<APP_SLUG>.ts holds, drawn shape by shape. Inline SVG so
- * satori renders it without a font or an external asset. This used to draw
- * its own "window with ears", a third mark that only share cards ever showed.
+ * src/config/marks/<APP_SLUG>.ts holds. Inline SVG so satori renders it
+ * without a font or an external asset. This used to draw its own "window
+ * with ears", a third mark that only share cards ever showed.
  */
 export function BrandMarkSvg({ size = 56 }: { size?: number }) {
-  const mark = BRAND_MARK;
+  return <MarkSvg mark={BRAND_MARK} size={size} />;
+}
+
+/** Any mark from the registry, drawn shape by shape for satori. */
+export function MarkSvg({
+  mark,
+  size = 56,
+  color = OG_COLOR.text,
+}: {
+  mark: MarkDefinition;
+  size?: number;
+  color?: string;
+}) {
   return (
     <svg
       width={size}
@@ -66,7 +79,7 @@ export function BrandMarkSvg({ size = 56 }: { size?: number }) {
             key={i}
             d={shape.d}
             fill="none"
-            stroke={OG_COLOR.text}
+            stroke={color}
             strokeWidth={shape.strokeWidth ?? mark.strokeWidth}
             strokeLinecap={shape.linecap}
             strokeLinejoin={shape.linejoin}
@@ -76,7 +89,7 @@ export function BrandMarkSvg({ size = 56 }: { size?: number }) {
           <path
             key={i}
             d={shape.d}
-            fill={OG_COLOR.text}
+            fill={color}
             fillRule={shape.fillRule}
             opacity={shape.opacity}
           />

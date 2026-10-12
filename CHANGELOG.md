@@ -19,6 +19,7 @@ to the map, sub-bullets stay here for the human reader.
 
 ### Fixed
 
+- **A shared project link shows the project.** It used to preview as the creator's face — Loki's page showed Cato — or as a broken image when the creator had none. Now the card carries the project's own mark or initial, its name, one line on what it is, and who is behind it.
 - **Test listings no longer appear on Discover.** The first card there was a listing titled "TEST Session — TEST fixture — safe to delete". Listings whose title marks them as tests are now left out of Discover, its counts, search and the sitemap.
 
 ## 2026-10-11
