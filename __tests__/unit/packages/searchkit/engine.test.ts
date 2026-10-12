@@ -197,6 +197,35 @@ test('a field counts as covered only when every typed word landed in it', () => 
   assert.equal(s.search('gallium ch')[0]?.item.id, 'gallium');
 });
 
+test('when no item has every word, the words some item has are kept, whichever they are', () => {
+  const s = createSearch(
+    [
+      { id: 'snow', name: 'Jon Snow' },
+      { id: 'smith', name: 'John Smith' },
+    ],
+    { fields: [{ name: 'name', get: r => r.name }] }
+  );
+  const ids = s.search('jon smith').map(h => h.item.id);
+  assert.ok(ids.includes('smith'), ids.join());
+  assert.ok(ids.includes('snow'), ids.join());
+});
+
+test('two words written apart, matched as one, rank below a real word one slip away', () => {
+  const s = createSearch(
+    [
+      { id: 'switch', name: 'Switch OrangeCat to Claude' },
+      { id: 'cato', name: 'Cato' },
+      { id: 'apart', name: 'Orange Cat' },
+    ],
+    { fields: [{ name: 'name', get: r => r.name }] }
+  );
+  assert.equal(s.search('catto')[0]?.item.id, 'cato');
+  // Still found: "orangecat" for "Orange Cat", and the camelCase word itself.
+  const ids = s.search('orangecat').map(h => h.item.id);
+  assert.ok(ids.includes('apart'), ids.join());
+  assert.equal(ids[0], 'switch');
+});
+
 test('rerank orders found rows and keeps the ones it cannot place, after', () => {
   const rows = [{ t: 'Bridge loan' }, { t: 'Something else' }, { t: 'Loki' }];
   const out = rerank(rows, { fields: [{ name: 't', get: r => r.t }] }, 'lki');

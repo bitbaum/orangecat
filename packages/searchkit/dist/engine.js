@@ -102,6 +102,7 @@ function buildIndex(items, spec) {
                         end: b.end,
                         alternate: true,
                         whole: tokens.length === 2,
+                        bridged: a.end < b.start,
                     });
                 });
             });
@@ -135,7 +136,7 @@ export function createSearch(items, spec) {
                 const firstSlip = c.typos > 0 && Array.from(c.term)[0] !== Array.from(typed)[0];
                 const landing = {
                     typos: c.typos,
-                    rankTypos: c.typos + (firstSlip ? 1 : 0),
+                    rankTypos: c.typos + (firstSlip ? 1 : 0) + (p.bridged ? 1 : 0),
                     field: p.field,
                     position: p.position,
                     prefix: c.prefix,
@@ -241,14 +242,48 @@ export function createSearch(items, spec) {
                     hits = run(split, typingLast, relax);
                 }
             }
+            // No item has every word: keep as many as some item has, whichever
+            // they are. "jon smith" finds both Jon Snow and John Smith; dropping
+            // only the LAST word would lose John Smith.
             if (relax) {
                 for (let keep = terms.length - 1; hits.length === 0 && keep >= 1; keep--) {
-                    hits = run(terms.slice(0, keep), false, relax);
+                    const best = new Map();
+                    for (const subset of combinations(terms.length, keep)) {
+                        const typing = typingLast && subset[subset.length - 1] === terms.length - 1;
+                        for (const hit of run(subset.map(i => terms[i]), typing, relax)) {
+                            const seen = best.get(hit.index);
+                            if (!seen || compareHits(hit, seen) < 0) {
+                                best.set(hit.index, hit);
+                            }
+                        }
+                    }
+                    hits = [...best.values()];
                 }
             }
             return hits.sort(compareHits).slice(0, limit);
         },
     };
+}
+/**
+ * Index sets of size k from 0..n-1, in order; past 8 words only the leading
+ * ones (a pasted sentence is not worth 2^n searches).
+ */
+function combinations(n, k) {
+    if (n > 8) {
+        return [Array.from({ length: k }, (_, i) => i)];
+    }
+    const out = [];
+    const pick = (start, chosen) => {
+        if (chosen.length === k) {
+            out.push(chosen);
+            return;
+        }
+        for (let i = start; i <= n - (k - chosen.length); i++) {
+            pick(i + 1, [...chosen, i]);
+        }
+    };
+    pick(0, []);
+    return out;
 }
 /** Join each adjacent pair the vocabulary knows as one word. */
 function joinAdjacent(terms, vocab) {
