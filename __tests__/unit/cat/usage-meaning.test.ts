@@ -53,7 +53,7 @@ describe('catUsageMeaning — pace', () => {
   it('names the hour the cap is reached when it does not', () => {
     // 5 by 06:00 → 10 reached at 12:00 UTC.
     expect(catUsageMeaning(input({ used: 5 })).pace).toBe(
-      "At today's pace you reach today's 10 around 12:00 UTC, then Cat waits until midnight UTC."
+      "At today's pace your 10 messages run out around 12:00 UTC, then Cat waits until midnight UTC."
     );
   });
 
@@ -126,9 +126,10 @@ describe('catUsageMeaning — levers', () => {
 });
 
 describe('catUsageMeaning — explanations', () => {
-  it('states the history window in messages and back-and-forths', () => {
-    expect(catUsageMeaning(input()).memory).toMatch(
-      /last 20 messages \(about 10 back-and-forths\)/
+  it('states the history window, and where lasting facts go', () => {
+    expect(catUsageMeaning(input()).memory).toBe(
+      'In a conversation Cat reads your last 20 messages; anything older it no longer sees. ' +
+        'What should outlast that belongs in Memory, which Cat recalls in every chat.'
     );
   });
 
