@@ -32,6 +32,11 @@ describe('the Discover shelf', () => {
     expect(shelf.more).toEqual([]);
   });
 
+  it('fills "Just listed" with listings, not new accounts', () => {
+    const hits = [hit('profile', 'new-person', '2026-10-12'), hit('product', 'x', '2026-01-01')];
+    expect(buildShelf(hits, { profile: 1, product: 1 }).fresh.map(h => h.id)).toEqual(['x']);
+  });
+
   it('caps the rails and offers the remaining kinds as links', () => {
     const types = [
       'project',

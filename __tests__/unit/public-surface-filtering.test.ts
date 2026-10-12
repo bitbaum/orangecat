@@ -199,6 +199,14 @@ describe('public_documents (search, Discover and /api/discover/counts)', () => {
     }
   });
 
+  it('lists only people who have said something about themselves', () => {
+    const people = branch(DATABASE_TABLES.PROFILES);
+    for (const field of ['p.bio', 'p.avatar_url', 'p.name']) {
+      expect(people).toContain(field);
+    }
+    expect(people).toContain('<> lower(coalesce(p.username');
+  });
+
   it('every public entity type has a branch, and nothing else does', () => {
     const tables = [...sql.matchAll(/FROM public\.(\w+) /g)].map(m => m[1]).sort();
     expect(tables).toEqual([...EXPECTED.map(e => e.table), DATABASE_TABLES.PROFILES].sort());

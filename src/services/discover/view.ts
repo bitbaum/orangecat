@@ -74,9 +74,7 @@ export function presentTypes(counts: TypeCounts): PublicHitType[] {
 
 /** Newest first across kinds. */
 function newest(hits: PublicHit[], n: number): PublicHit[] {
-  return [...hits]
-    .sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''))
-    .slice(0, n);
+  return [...hits].sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? '')).slice(0, n);
 }
 
 /**
@@ -91,7 +89,12 @@ export function buildShelf(hits: PublicHit[], counts: TypeCounts) {
   }
   const types = presentTypes(counts).filter(type => byType.has(type));
   return {
-    fresh: newest(hits, DISCOVER_RAIL_SIZE),
+    // Things listed, not people joining: a new account is not a listing,
+    // and sign-ups outnumber listings, so they would fill the row.
+    fresh: newest(
+      hits.filter(hit => hit.type !== 'profile'),
+      DISCOVER_RAIL_SIZE
+    ),
     rails: types.slice(0, DISCOVER_MAX_RAILS).map(type => ({
       type,
       hits: byType.get(type) ?? [],
@@ -130,7 +133,7 @@ export async function loadDiscoverView({ q, type, page }: DiscoverParams): Promi
       counts[hit.type] = (counts[hit.type] ?? 0) + 1;
     }
     const matching = type ? hits.filter(hit => hit.type === type) : hits;
-    const fallback = hits.length === 0 ? newest(await cachedShelfHits(), DISCOVER_RAIL_SIZE) : [];
+    const fallback = hits.length === 0 ? buildShelf(await cachedShelfHits(), {}).fresh : [];
     return {
       mode: 'search',
       counts,
