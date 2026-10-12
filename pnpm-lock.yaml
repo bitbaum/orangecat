@@ -52,6 +52,9 @@ importers:
       '@bitbaum/mail-kit':
         specifier: ^0.1.1
         version: 0.1.1
+      '@bitbaum/searchkit':
+        specifier: workspace:*
+        version: link:packages/searchkit
       '@bitbaum/tax-model':
         specifier: workspace:*
         version: link:packages/tax-model
@@ -379,6 +382,12 @@ importers:
   packages/collective-kinds: {}
 
   packages/deckkit:
+    dependencies:
+      react:
+        specifier: '>=18'
+        version: 19.3.0
+
+  packages/searchkit:
     dependencies:
       react:
         specifier: '>=18'

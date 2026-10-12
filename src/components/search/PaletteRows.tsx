@@ -3,7 +3,8 @@
 import { Command } from 'cmdk';
 import { ArrowRight } from 'lucide-react';
 import { Highlight } from './Highlight';
-import type { PaletteItem } from './command-palette-items';
+import type { PaletteItem, RankedItem } from './command-palette-items';
+import type { Range } from '@bitbaum/searchkit';
 import { cn } from '@/lib/utils';
 
 // Styles the HEADING only. On the group itself the uppercase was inherited by
@@ -18,7 +19,7 @@ export function PaletteGroup({
   onPick,
 }: {
   heading: string;
-  items: PaletteItem[];
+  items: RankedItem[];
   query: string;
   onPick: (href: string) => void;
 }) {
@@ -35,6 +36,8 @@ export function PaletteGroup({
           label={item.label}
           hint={item.hint}
           query={query}
+          labelRanges={item.labelRanges}
+          hintRanges={item.hintRanges}
           onSelect={() => onPick(item.href)}
         />
       ))}
@@ -48,6 +51,9 @@ interface PaletteRowProps {
   label: string;
   hint?: string;
   query?: string;
+  /** What matched, from a ranked search; typo matches included. */
+  labelRanges?: readonly Range[];
+  hintRanges?: readonly Range[];
   muted?: boolean;
   onSelect: () => void;
 }
@@ -58,6 +64,8 @@ export function PaletteRow({
   label,
   hint,
   query = '',
+  labelRanges,
+  hintRanges,
   muted,
   onSelect,
 }: PaletteRowProps) {
@@ -73,11 +81,11 @@ export function PaletteRow({
     >
       <Icon className="h-4 w-4 flex-shrink-0" />
       <span className={cn('min-w-0 truncate', muted ? 'text-fg-tertiary' : 'text-fg-primary')}>
-        <Highlight text={label} query={query} />
+        <Highlight text={label} query={query} ranges={labelRanges} />
       </span>
       {hint && (
         <span className="hidden min-w-0 flex-1 truncate text-xs text-fg-tertiary sm:inline">
-          <Highlight text={hint} query={query} />
+          <Highlight text={hint} query={query} ranges={hintRanges} />
         </span>
       )}
       <ArrowRight className="ml-auto h-3.5 w-3.5 flex-shrink-0 opacity-0 group-aria-selected:opacity-100" />

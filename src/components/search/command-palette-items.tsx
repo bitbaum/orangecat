@@ -7,12 +7,14 @@
  * drifted: no organisations, circles, research, companions or "Your money",
  * and no way to find something you had made.
  *
- * Ranking is listkit's: every word must match in any order, accents fold
- * ("zurich" finds "Zürich"), and a hit in the label beats a hit in a keyword.
+ * Ranking is @bitbaum/searchkit's: every word must match in any order, one
+ * slip per word is forgiven from four letters ("setings" finds Settings),
+ * accents fold ("zurich" finds "Zürich"), and a hit in the label beats a hit
+ * in a keyword.
  */
 import type { ComponentType } from 'react';
 import { User } from 'lucide-react';
-import { applyQuery, emptyQuery, type ListSpec } from 'listkit';
+import { createSearch, type Range, type SearchSpec } from '@bitbaum/searchkit';
 import { ENTITY_REGISTRY, ENTITY_TYPES } from '@/config/entity-registry';
 import { sidebarSections, type NavigationItem } from '@/config/navigation';
 import type { Thing } from '@/domain/things/service';
@@ -44,8 +46,8 @@ export function typeHeading(type: string): string {
  * Results grouped by kind, groups ordered by their best hit — the engine
  * already ranked them, so the first group is the one most likely meant.
  */
-export function groupHits(hits: PublicHit[]): Array<{ type: string; hits: PublicHit[] }> {
-  const groups = new Map<string, PublicHit[]>();
+export function groupHits<H extends PublicHit>(hits: H[]): Array<{ type: string; hits: H[] }> {
+  const groups = new Map<string, H[]>();
   for (const hit of hits) {
     const list = groups.get(hit.type) ?? [];
     list.push(hit);
@@ -127,19 +129,33 @@ export function thingItems(things: Thing[]): PaletteItem[] {
   });
 }
 
-/** Label first, so a word in the label outranks the same word in a keyword. */
-const PALETTE_SPEC: ListSpec<PaletteItem> = {
-  facets: [],
-  search: { text: item => [item.label, item.hint, item.keywords] },
-  sorts: [{ key: 'given', by: [] }],
-  defaultSort: 'given',
+/** A palette row as ranked: what matched, for marking. */
+export interface RankedItem extends PaletteItem {
+  labelRanges?: Range[];
+  hintRanges?: Range[];
+}
+
+const PALETTE_FIELDS: SearchSpec<PaletteItem> = {
+  // Label first, so a word in the label outranks the same word in a keyword.
+  fields: [
+    { name: 'label', get: item => item.label },
+    { name: 'hint', get: item => item.hint },
+    { name: 'keywords', get: item => item.keywords },
+  ],
 };
 
 /**
- * The best `limit` items for what was typed, best first. With nothing typed,
- * the first `limit` in their given order — the sidebar's order is a decision.
+ * The best `limit` items for what was typed, best first — typo-tolerant
+ * (@bitbaum/searchkit: "setings" finds Settings). With nothing typed, the
+ * first `limit` in their given order — the sidebar's order is a decision.
  */
-export function rankItems(items: PaletteItem[], typed: string, limit: number): PaletteItem[] {
-  const query = { ...emptyQuery(PALETTE_SPEC), q: typed.trim(), pageSize: limit };
-  return applyQuery(items, PALETTE_SPEC, query).rows;
+export function rankItems(items: PaletteItem[], typed: string, limit: number): RankedItem[] {
+  if (!typed.trim()) {
+    return items.slice(0, limit);
+  }
+  // A palette row is found by what was typed or not at all: a word that
+  // matches nothing must not be quietly dropped to find SOMETHING.
+  return createSearch(items, PALETTE_FIELDS)
+    .search(typed, { limit, relax: false })
+    .map(hit => ({ ...hit.item, labelRanges: hit.matches.label, hintRanges: hit.matches.hint }));
 }

@@ -39,6 +39,8 @@ export const API_ROUTES = {
     ATTACHMENT: (path: string) => `/api/cat/attachments?path=${encodeURIComponent(path)}`,
   },
   SEARCH: {
+    /** Everything public, typo-tolerant and ranked: ⌘K and Discover. */
+    FIND: '/api/search',
     LOG: '/api/search/log',
   },
   /** Everything the signed-in person made or joined (My things). */

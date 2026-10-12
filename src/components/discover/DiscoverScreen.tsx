@@ -76,15 +76,37 @@ function Shelf({ view }: { view: Extract<DiscoverView, { mode: 'shelf' }> }) {
   );
 }
 
-function NothingFound({ params, view }: { params: DiscoverParams; view: Extract<DiscoverView, { mode: 'search' }> }) {
+function NothingFound({
+  params,
+  view,
+}: {
+  params: DiscoverParams;
+  view: Extract<DiscoverView, { mode: 'search' }>;
+}) {
   const elsewhere = params.type ? sum(view.counts) : 0;
-  const create = params.type && params.type !== 'profile' ? ENTITY_REGISTRY[params.type].createPath : ROUTES.CREATE;
+  const create =
+    params.type && params.type !== 'profile'
+      ? ENTITY_REGISTRY[params.type].createPath
+      : ROUTES.CREATE;
   return (
     <>
       <div className="oc-discover-empty">
         <p className="font-heading text-xl font-semibold text-fg-primary">
-          Nothing public matches “{params.q}”{params.type ? ` in ${pluralLabel(params.type).toLowerCase()}` : ''} yet.
+          Nothing public matches “{params.q}”
+          {params.type ? ` in ${pluralLabel(params.type).toLowerCase()}` : ''} yet.
         </p>
+        {view.suggestion && (
+          <p className="mt-2 text-fg-secondary">
+            Did you mean{' '}
+            <Link
+              href={discoverHref({ q: view.suggestion, type: params.type })}
+              className="oc-discover-inline-link"
+            >
+              {view.suggestion}
+            </Link>
+            ?
+          </p>
+        )}
         {elsewhere > 0 ? (
           <p className="mt-2 text-fg-secondary">
             <Link href={discoverHref({ q: params.q })} className="oc-discover-inline-link">
@@ -145,8 +167,8 @@ export function DiscoverScreen({ params, view }: { params: DiscoverParams; view:
         ) : (
           <section aria-label={`Results for ${params.q}`}>
             <p className="oc-discover-status" aria-live="polite">
-              {view.total}{' '}
-              {view.total === 1 ? 'result' : 'results'} for “{params.q}”, best match first
+              {view.total} {view.total === 1 ? 'result' : 'results'} for “{params.q}”, best match
+              first
             </p>
             <DiscoverGrid hits={view.hits} query={params.q} />
             <ShowMore params={params} hasMore={view.hasMore} />
