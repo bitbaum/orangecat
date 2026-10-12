@@ -63,6 +63,35 @@ export interface OAuthScope {
   sensitive?: boolean;
 }
 
+/**
+ * The profile claims a person can withhold from ONE app. `sub` (the actor id)
+ * is never on this list: it is the key the app needs to recognise the same
+ * person next time, and carries no name, picture or handle. The email has its
+ * own scope, so declining it is the consent screen's job, not this list's.
+ *
+ * This is how someone uses Solon or Loki without an OrangeCat face: the app
+ * still gets a stable identity, and shows whatever the person chose to give it.
+ */
+export const PROFILE_CLAIMS = [
+  { claim: 'name', label: 'Name' },
+  { claim: 'preferred_username', label: 'Username' },
+  { claim: 'picture', label: 'Picture' },
+] as const;
+
+export type ProfileClaim = (typeof PROFILE_CLAIMS)[number]['claim'];
+
+/** What the consent screen leaves out: every claim the person did NOT tick. */
+export function withheldFromChoices(shared: readonly unknown[]): ProfileClaim[] {
+  const kept = new Set(shared);
+  return PROFILE_CLAIMS.map(c => c.claim).filter(claim => !kept.has(claim));
+}
+
+/** Keep only known claims, once each, in list order. Anything else is dropped. */
+export function cleanWithheldClaims(input: unknown): ProfileClaim[] {
+  const asked = new Set(Array.isArray(input) ? input : []);
+  return PROFILE_CLAIMS.map(c => c.claim).filter(claim => asked.has(claim));
+}
+
 export const OAUTH_SCOPES: readonly OAuthScope[] = [
   { name: 'openid', description: 'Sign you in with your OrangeCat identity', standard: true },
   {

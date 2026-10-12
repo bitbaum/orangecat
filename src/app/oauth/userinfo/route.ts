@@ -7,7 +7,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAccessToken } from '@/lib/oauth/keys';
-import { profileClaims } from '@/services/auth/oauthProvider';
+import { profileClaims } from '@/services/auth/oidcProfileClaims';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,9 +39,13 @@ export async function GET(req: NextRequest) {
     typeof payload.scope === 'string' ? payload.scope.split(/\s+/).filter(Boolean) : [];
   const userId = typeof payload.uid === 'string' ? payload.uid : '';
 
+  // `client_id` (RFC 9068) names the app the token was issued to, so what the
+  // person withheld from THAT app stays withheld here too.
+  const clientId = typeof payload.client_id === 'string' ? payload.client_id : undefined;
+
   const claims: Record<string, unknown> = { sub: payload.sub };
   if (userId) {
-    Object.assign(claims, await profileClaims(userId, scopes));
+    Object.assign(claims, await profileClaims(userId, scopes, clientId));
   }
 
   return NextResponse.json(claims, { headers: { 'Cache-Control': 'no-store' } });

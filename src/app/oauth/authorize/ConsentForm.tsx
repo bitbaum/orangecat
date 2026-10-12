@@ -10,6 +10,7 @@
 import Link from 'next/link';
 import { AlertTriangle, Check } from 'lucide-react';
 import { ROUTES } from '@/config/routes';
+import { PROFILE_CLAIMS } from '@/lib/oauth/config';
 import { approveAuthorization, denyAuthorization, switchAccount } from './actions';
 
 interface ScopeRow {
@@ -142,6 +143,36 @@ export function ConsentForm({
             ))}
           </ul>
         </section>
+      )}
+
+      {scopes.some(s => s.name === 'profile') && (
+        <fieldset className="mt-5 rounded-card border border-border-default px-3 py-3">
+          <legend className="px-1 text-xs font-medium uppercase tracking-wide text-fg-tertiary">
+            Show {clientName}
+          </legend>
+          <input type="hidden" name="shares_offered" value="1" />
+          <div className="flex flex-wrap gap-x-5 gap-y-1">
+            {PROFILE_CLAIMS.map(c => (
+              <label
+                key={c.claim}
+                className="flex min-h-11 items-center gap-2 text-sm text-fg-primary"
+              >
+                <input
+                  type="checkbox"
+                  name="share"
+                  value={c.claim}
+                  defaultChecked
+                  className="h-4 w-4 accent-accent-warm"
+                />
+                {c.label}
+              </label>
+            ))}
+          </div>
+          <p className="mt-1 text-xs text-fg-secondary">
+            Untick what {clientName} should not see. It still recognises you next time; you can
+            change this any time in Settings → Connected apps.
+          </p>
+        </fieldset>
       )}
 
       <p className="mt-5 text-xs text-fg-secondary">
