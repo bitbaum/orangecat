@@ -48,7 +48,9 @@ describe('withoutFixtureTitles', () => {
 
   it('agrees with isFixtureTitle on every pattern', () => {
     for (const pattern of FIXTURE_TITLE_LIKE_PATTERNS) {
-      expect(isFixtureTitle(pattern.replace('%', 'anything'))).toBe(true);
+      // Every pattern is a prefix followed by one trailing `%`.
+      expect(pattern.endsWith('%')).toBe(true);
+      expect(isFixtureTitle(`${pattern.slice(0, -1)}anything`)).toBe(true);
     }
   });
 });
