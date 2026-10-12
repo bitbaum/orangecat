@@ -1,4 +1,4 @@
-export { fold, tokenize, words, umlautSpelling, joinedPairs } from "./normalize.js";
+export { fold, tokenize, words, umlautSpelling, joinedPairs, writtenLengths, } from "./normalize.js";
 export { editDistance, prefixDistance } from "./distance.js";
 export { typoBudget, DEFAULT_TYPO_POLICY } from "./typo.js";
 export { createVocabulary, candidates, } from "./vocabulary.js";

@@ -1,6 +1,6 @@
 {
   "name": "@bitbaum/searchkit",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Search that finds what was meant: typo budgets by word length, prefix while typing, German spellings without umlauts, joined and split words, Algolia-order tie-break ranking, highlight ranges, query expansion for any database, and a generated typo regression suite. Zero dependencies; React optional.",
   "license": "MIT",
   "repository": {

@@ -162,6 +162,41 @@ test("a site's own spelling rule applies to both sides", () => {
   assert.equal(s.search('chuchichaschtli')[0].item.id, 'chuchichaestli');
 });
 
+test("the typo budget is the written word's, not the spelling rule's", () => {
+  // The rule turns "vill" into "vil" on both sides; a slip in what was
+  // TYPED ("cill", four letters) still gets the four-letter word's one typo.
+  const swiss = (w: string) => w.replace(/ie/g, 'i').replace(/(.)\1/g, '$1');
+  const s = createSearch(
+    [
+      { id: 'vill', name: 'vill' },
+      { id: 'gaell', name: 'gäll' },
+    ],
+    { fields: [{ name: 'name', get: r => r.name }], normalize: swiss }
+  );
+  assert.equal(s.search('cill')[0]?.item.id, 'vill');
+  assert.equal(s.search('gell')[0]?.item.id, 'gaell');
+  // Three letters as written stay exact: the rule does not lengthen anything.
+  assert.equal(s.search('cil').length, 0);
+  const vocab = createVocabulary(['vil']);
+  assert.deepEqual(corrections('cill', vocab, { normalize: swiss }), ['vil']);
+});
+
+test('a field counts as covered only when every typed word landed in it', () => {
+  const s = createSearch(
+    [
+      { id: 'chalco', title: 'Chalco', body: 'Aluminium and gallium producer' },
+      { id: 'gallium', title: 'Gallium: a chokepoint in chips', body: 'Who refines it' },
+    ],
+    {
+      fields: [
+        { name: 'title', get: r => r.title },
+        { name: 'body', get: r => r.body },
+      ],
+    }
+  );
+  assert.equal(s.search('gallium ch')[0]?.item.id, 'gallium');
+});
+
 test('rerank orders found rows and keeps the ones it cannot place, after', () => {
   const rows = [{ t: 'Bridge loan' }, { t: 'Something else' }, { t: 'Loki' }];
   const out = rerank(rows, { fields: [{ name: 't', get: r => r.t }] }, 'lki');

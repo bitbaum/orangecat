@@ -22,6 +22,13 @@ export interface CandidateOptions {
     policy?: TypoPolicy;
     /** At most this many, best first. Default 50. */
     limit?: number;
+    /**
+     * How many letters the word had as written, when a site spelling rule
+     * (`SearchSpec.normalize`) shortened it: the typo budget is the written
+     * word's. Heidi reads doubled letters as one, so "vill" arrives as "vil" —
+     * and a three-letter word would get no typo at all.
+     */
+    writtenLength?: number;
 }
 /**
  * The vocabulary words a typed (folded) word could mean, best first: exact,

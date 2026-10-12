@@ -30,7 +30,7 @@
  * It is Algolia's published default order, adjusted for short titles and
  * names, which is what people search a site for.
  */
-import { joinedPairs, tokenize, umlautSpelling, type Token } from './normalize.ts';
+import { joinedPairs, tokenize, umlautSpelling, writtenLengths, type Token } from './normalize.ts';
 import { DEFAULT_TYPO_POLICY, type TypoPolicy } from './typo.ts';
 import { candidates, createVocabulary, type Vocabulary } from './vocabulary.ts';
 
@@ -228,9 +228,14 @@ export function createSearch<T>(items: readonly T[], spec: SearchSpec<T>): Searc
   const policy = spec.typos ?? DEFAULT_TYPO_POLICY;
   const prefixMode = spec.prefix ?? 'all';
 
+  // Letters each typed word had before `normalize`, for the typo budget; set
+  // per search (searching is synchronous).
+  let written = new Map<string, number>();
+
   function landingsFor(typed: string, allowPrefix: boolean): Map<number, Landing> {
     const best = new Map<number, Landing>();
-    for (const c of candidates(index.vocab, typed, { prefix: allowPrefix, policy, limit: 200 })) {
+    const options = { prefix: allowPrefix, policy, limit: 200, writtenLength: written.get(typed) };
+    for (const c of candidates(index.vocab, typed, options)) {
       for (const p of index.postings.get(c.term) ?? []) {
         const typedLength = Array.from(typed).length;
         const firstSlip = c.typos > 0 && Array.from(c.term)[0] !== Array.from(typed)[0];
@@ -286,10 +291,12 @@ export function createSearch<T>(items: readonly T[], spec: SearchSpec<T>): Searc
       );
       const exactWords = ls.filter(l => !l.prefix && l.typos === 0).length;
       // Every word of the matched field was matched: "lki" is the WHOLE of
-      // "Loki", but only the first word of "Loki — Capability Layer".
+      // "Loki", but only the first word of "Loki — Capability Layer". And
+      // every typed word landed there: for "gallium ch", "ch" alone covering
+      // a title "Chalco" (gallium only in its description) is not the name.
       const fieldLength = index.fieldTerms[doc]![field]!.length;
       const coversField =
-        new Set(ls.filter(l => l.field === field).map(l => l.position)).size >= fieldLength;
+        ls.every(l => l.field === field) && new Set(ls.map(l => l.position)).size >= fieldLength;
       let proximity = 0;
       for (let i = 1; i < ls.length; i++) {
         const a = ls[i - 1]!;
@@ -331,8 +338,8 @@ export function createSearch<T>(items: readonly T[], spec: SearchSpec<T>): Searc
     vocabulary: index.vocab,
     search(query, options = {}) {
       const { limit = Infinity, relax = true } = options;
-      const n = spec.normalize ?? ((w: string) => w);
-      const terms = [...new Set(tokenize(query).map(t => n(t.term)))];
+      written = writtenLengths(query, spec.normalize);
+      const terms = [...written.keys()];
       if (terms.length === 0) {
         return [];
       }

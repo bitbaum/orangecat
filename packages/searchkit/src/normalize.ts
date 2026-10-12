@@ -110,3 +110,18 @@ export function joinedPairs(terms: string[]): string[] {
   }
   return out;
 }
+
+/** Each typed word after the site's spelling rule, with how long it was as written. */
+export function writtenLengths(
+  query: string,
+  normalize: ((word: string) => string) | undefined
+): Map<string, number> {
+  const out = new Map<string, number>();
+  for (const t of tokenize(query)) {
+    const term = normalize ? normalize(t.term) : t.term;
+    if (term) {
+      out.set(term, Math.max(out.get(term) ?? 0, Array.from(t.term).length));
+    }
+  }
+  return out;
+}

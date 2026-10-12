@@ -90,3 +90,14 @@ export function joinedPairs(terms) {
     }
     return out;
 }
+/** Each typed word after the site's spelling rule, with how long it was as written. */
+export function writtenLengths(query, normalize) {
+    const out = new Map();
+    for (const t of tokenize(query)) {
+        const term = normalize ? normalize(t.term) : t.term;
+        if (term) {
+            out.set(term, Math.max(out.get(term) ?? 0, Array.from(t.term).length));
+        }
+    }
+    return out;
+}

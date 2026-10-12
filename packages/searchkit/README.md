@@ -107,7 +107,9 @@ threshold if you like; decide typos here.
 standard folding. Heidi reads Swiss German as people type it: "ie" as "i",
 doubled letters as one, so `gruzi mittenand` finds "Grüezi mitenand". Keep it
 to spelling; meaning belongs elsewhere. `expandQuery`/`corrections` take the
-same function so a vocabulary agrees with the index.
+same function so a vocabulary agrees with the index. The typo budget stays the
+WRITTEN word's: the rule turns "vill" into "vil", and a slip in "vill" is
+still forgiven as in any four-letter word.
 
 ### Rows a database already found — `rerank`
 

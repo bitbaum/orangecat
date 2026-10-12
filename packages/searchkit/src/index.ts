@@ -1,4 +1,12 @@
-export { fold, tokenize, words, umlautSpelling, joinedPairs, type Token } from './normalize.ts';
+export {
+  fold,
+  tokenize,
+  words,
+  umlautSpelling,
+  joinedPairs,
+  writtenLengths,
+  type Token,
+} from './normalize.ts';
 export { editDistance, prefixDistance } from './distance.ts';
 export { typoBudget, DEFAULT_TYPO_POLICY, type TypoPolicy } from './typo.ts';
 export {
