@@ -52,28 +52,26 @@ export function AuthHeroPanel({ client = null }: { client?: AuthHeroClient | nul
   const highlights = client ? clientHighlights(client.name) : HIGHLIGHTS;
   return (
     <div className="relative hidden flex-1 flex-col justify-between border-r border-default bg-surface-base p-10 lg:flex lg:p-12">
+      {/* The home fold's depth, so signing in feels like the same place. */}
+      <div className="oc-public-backdrop" aria-hidden="true" />
       <Link
         href={client?.home ?? ROUTES.HOME}
-        className="inline-flex items-center gap-1.5 text-sm text-fg-secondary transition-colors hover:text-fg-primary"
+        className="relative inline-flex items-center gap-1.5 text-sm text-fg-secondary transition-colors hover:text-fg-primary"
       >
         <ArrowLeft className="h-4 w-4" />
         {client?.home ? `Back to ${client.name}` : 'Back to home'}
       </Link>
 
-      <div className="max-w-lg">
-        <div className="mb-8 flex items-center gap-3">
-          <div className="ui-brand-mark ui-brand-mark-default text-fg-primary">
-            <BrandMarkIcon size={24} />
-          </div>
-          <div>
-            <p className="ui-kicker">{client ? 'Your account' : APP_KICKER}</p>
-            <span className="block text-lg font-medium tracking-tight text-fg-primary">
-              {APP_NAME}
-            </span>
-          </div>
+      <div className="relative max-w-lg">
+        <div className="mb-8 text-fg-primary">
+          <BrandMarkIcon size={88} animated />
+          <p className="ui-kicker mt-6">{client ? 'Your account' : APP_KICKER}</p>
+          <span className="block text-lg font-medium tracking-tight text-fg-primary">
+            {APP_NAME}
+          </span>
         </div>
 
-        <h1 className="mb-5 text-4xl font-bold leading-tight tracking-tight text-fg-primary lg:text-5xl">
+        <h1 className="mb-5 font-heading text-4xl font-bold leading-tight tracking-display text-fg-primary lg:text-5xl">
           {client ? `Continue to ${client.name}` : APP_TAGLINE}
         </h1>
 

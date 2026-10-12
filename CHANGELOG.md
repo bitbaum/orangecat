@@ -9,6 +9,18 @@ reads, and [orangecat.ch/changelog](https://orangecat.ch/changelog) renders
 it from there. One `## YYYY-MM-DD` heading per day; bullets under it travel
 to the map, sub-bullets stay here for the human reader.
 
+## 2026-10-12
+
+### Changed
+
+- **"What it solves" asks which problem is yours instead of listing all twelve.** Pick For you or For everyone, then the problem that sounds like you; its answer and the one thing to do next appear beside it (under it, on a phone). The same twelve answers, a sixth of the reading at a time.
+- **Signing in looks like the front page.** The same mark drawing itself, the same depth behind it.
+- **A project without a picture shows its initial,** not a generic target icon, on profiles.
+
+### Fixed
+
+- **Test listings no longer appear on Discover.** The first card there was a listing titled "TEST Session — TEST fixture — safe to delete". Listings whose title marks them as tests are now left out of Discover, its counts, search and the sitemap.
+
 ## 2026-10-11
 
 ### Added
