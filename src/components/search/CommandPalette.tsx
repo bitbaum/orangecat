@@ -30,6 +30,7 @@ import {
   buildCreateItems,
   buildPages,
   groupHits,
+  pagesFirst,
   iconForType,
   rankItems,
   thingItems,
@@ -116,6 +117,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   const shownPages = rankItems(pages, typed, GROUP_LIMIT.pages);
   const shownCreates = rankItems(creates, typed, GROUP_LIMIT.create);
   const groups = searching ? groupHits(hits) : [];
+  const pagesLead = Boolean(typed) && pagesFirst(shownPages, hits);
   // Said only when nothing at all matched: a page or your own thing found by
   // the same words is an answer, not "nothing".
   const nothingPublic =
@@ -199,6 +201,10 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
 
         <PaletteGroup heading="Your things" items={shownThings} query={typed} onPick={navigateTo} />
 
+        {pagesLead && (
+          <PaletteGroup heading="Jump to" items={shownPages} query={typed} onPick={navigateTo} />
+        )}
+
         {groups.map(group => (
           <Command.Group
             key={group.type}
@@ -231,7 +237,9 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
         {searching && loading && hits.length === 0 && (
           <div className="px-3 py-2 text-xs text-fg-tertiary">Searching…</div>
         )}
-        <PaletteGroup heading="Jump to" items={shownPages} query={typed} onPick={navigateTo} />
+        {!pagesLead && (
+          <PaletteGroup heading="Jump to" items={shownPages} query={typed} onPick={navigateTo} />
+        )}
 
         {nothingPublic && (
           <p className="px-3 py-3 text-sm text-fg-secondary">

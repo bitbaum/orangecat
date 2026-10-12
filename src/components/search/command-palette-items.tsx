@@ -133,6 +133,8 @@ export function thingItems(things: Thing[]): PaletteItem[] {
 export interface RankedItem extends PaletteItem {
   labelRanges?: Range[];
   hintRanges?: Range[];
+  /** Typos it took to match what was typed. */
+  typos?: number;
 }
 
 const PALETTE_FIELDS: SearchSpec<PaletteItem> = {
@@ -157,5 +159,28 @@ export function rankItems(items: PaletteItem[], typed: string, limit: number): R
   // matches nothing must not be quietly dropped to find SOMETHING.
   return createSearch(items, PALETTE_FIELDS)
     .search(typed, { limit, relax: false })
-    .map(hit => ({ ...hit.item, labelRanges: hit.matches.label, hintRanges: hit.matches.hint }));
+    .map(hit => ({
+      ...hit.item,
+      labelRanges: hit.matches.label,
+      hintRanges: hit.matches.hint,
+      typos: hit.typos,
+    }));
+}
+
+/**
+ * Whether a page found by the typed words should sit above everyone's
+ * results: when it matched with no more typos than the best of them, or they
+ * matched only somewhere the reader cannot see. Enter takes the first row, so
+ * "setings" must open Settings, not a listing that mentions settings.
+ */
+export function pagesFirst(
+  pages: RankedItem[],
+  hits: ReadonlyArray<{ typos: number | null }>
+): boolean {
+  const page = pages[0];
+  if (!page) {
+    return false;
+  }
+  const best = hits[0];
+  return !best || best.typos === null || (page.typos ?? 0) <= best.typos;
 }

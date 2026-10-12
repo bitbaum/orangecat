@@ -37,6 +37,8 @@ import {
 export interface FoundHit extends PublicHit {
   /** What matched, as ranges into `title` and `snippet`. */
   marks: { title: Range[]; snippet: Range[] };
+  /** Typos it took to match, or null when matched only by the database (a word past the snippet). */
+  typos: number | null;
 }
 
 export interface FindResult {
@@ -95,12 +97,13 @@ export function rankFound(query: string, hits: PublicHit[]): FoundHit[] {
     ...ranked.map(r => ({
       ...r.item,
       marks: { title: r.matches.title ?? [], snippet: r.matches.snippet ?? [] },
+      typos: r.typos,
     })),
     // Matched by the database for a reason the ranker does not see (a word
     // past the snippet, a stemmed form): still a result, just a later one.
     ...hits
       .filter((_, i) => !placed.has(i))
-      .map(h => ({ ...h, marks: { title: [], snippet: [] } })),
+      .map(h => ({ ...h, marks: { title: [], snippet: [] }, typos: null })),
   ];
 }
 

@@ -19,8 +19,9 @@
  *   2. words      — more of the typed words matched (differs only once the
  *                   query has been relaxed)
  *   3. attribute  — matched in a more important field (the order you list them)
- *   4. exact      — the whole field typed exactly, then whole words, then
- *                   prefixes
+ *   4. exact      — the whole field typed exactly; then the whole field
+ *                   matched (typos and prefixes allowed: "lki" is all of
+ *                   "Loki"); then whole words over prefixes
  *   5. proximity  — the matched words sit closer together, in order
  *   6. position   — the match is nearer the start of the field
  *   7. custom     — your own `rank` (popularity, recency), higher first
@@ -274,6 +275,11 @@ export function createSearch<T>(items: readonly T[], spec: SearchSpec<T>): Searc
           fieldWords.length === terms.length && fieldWords.every((w, i) => w === terms[i])
       );
       const exactWords = ls.filter(l => !l.prefix && l.typos === 0).length;
+      // Every word of the matched field was matched: "lki" is the WHOLE of
+      // "Loki", but only the first word of "Loki — Capability Layer".
+      const fieldLength = index.fieldTerms[doc]![field]!.length;
+      const coversField =
+        new Set(ls.filter(l => l.field === field).map(l => l.position)).size >= fieldLength;
       let proximity = 0;
       for (let i = 1; i < ls.length; i++) {
         const a = ls[i - 1]!;
@@ -299,11 +305,11 @@ export function createSearch<T>(items: readonly T[], spec: SearchSpec<T>): Searc
           rankTypos,
           -terms.length,
           field,
-          typedWhole ? -1000 : -exactWords,
+          typedWhole ? -1000 : coversField ? -500 - exactWords : -exactWords,
           proximity,
           position,
           -(spec.rank?.(item) ?? 0),
-          index.fieldTerms[doc]![field]!.length,
+          fieldLength,
           doc,
         ],
       });
