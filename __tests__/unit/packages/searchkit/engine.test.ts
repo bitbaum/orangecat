@@ -181,6 +181,22 @@ test("the typo budget is the written word's, not the spelling rule's", () => {
   assert.deepEqual(corrections('cill', vocab, { normalize: swiss }), ['vil']);
 });
 
+test('a field counts as covered only when every typed word landed in it', () => {
+  const s = createSearch(
+    [
+      { id: 'chalco', title: 'Chalco', body: 'Aluminium and gallium producer' },
+      { id: 'gallium', title: 'Gallium: a chokepoint in chips', body: 'Who refines it' },
+    ],
+    {
+      fields: [
+        { name: 'title', get: r => r.title },
+        { name: 'body', get: r => r.body },
+      ],
+    }
+  );
+  assert.equal(s.search('gallium ch')[0]?.item.id, 'gallium');
+});
+
 test('rerank orders found rows and keeps the ones it cannot place, after', () => {
   const rows = [{ t: 'Bridge loan' }, { t: 'Something else' }, { t: 'Loki' }];
   const out = rerank(rows, { fields: [{ name: 't', get: r => r.t }] }, 'lki');

@@ -291,10 +291,13 @@ export function createSearch<T>(items: readonly T[], spec: SearchSpec<T>): Searc
       );
       const exactWords = ls.filter(l => !l.prefix && l.typos === 0).length;
       // Every word of the matched field was matched: "lki" is the WHOLE of
-      // "Loki", but only the first word of "Loki — Capability Layer".
+      // "Loki", but only the first word of "Loki — Capability Layer". And
+      // every typed word landed there: for "gallium ch", "ch" alone covering
+      // a title "Chalco" (gallium only in its description) is not the name.
       const fieldLength = index.fieldTerms[doc]![field]!.length;
       const coversField =
-        new Set(ls.filter(l => l.field === field).map(l => l.position)).size >= fieldLength;
+        ls.every(l => l.field === field) &&
+        new Set(ls.map(l => l.position)).size >= fieldLength;
       let proximity = 0;
       for (let i = 1; i < ls.length; i++) {
         const a = ls[i - 1]!;
