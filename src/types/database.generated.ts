@@ -3343,6 +3343,7 @@ export type Database = {
           id: string;
           scopes: string[];
           user_id: string;
+          withheld_claims: string[];
         };
         Insert: {
           client_id: string;
@@ -3350,6 +3351,7 @@ export type Database = {
           id?: string;
           scopes?: string[];
           user_id: string;
+          withheld_claims?: string[];
         };
         Update: {
           client_id?: string;
@@ -3357,6 +3359,7 @@ export type Database = {
           id?: string;
           scopes?: string[];
           user_id?: string;
+          withheld_claims?: string[];
         };
         Relationships: [];
       };

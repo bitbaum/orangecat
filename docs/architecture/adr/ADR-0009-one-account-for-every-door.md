@@ -163,5 +163,10 @@ require earlier ones to be undone.
   — a relying party's session ends on `invalid_grant` (#203, #145)
 - `bitbaum/solon` `src/lib/domain/member-identity.ts` — a seat shows the
   person's OrangeCat picture and handle, never a second copy of the name (#204)
+- `src/lib/oauth/config.ts` (`PROFILE_CLAIMS`) and `oauth_user_grants.withheld_claims`
+  — what each app is shown (name, username, picture) is the person's choice,
+  per app, set on the consent screen and in Connected apps; a withheld claim is
+  absent from the tokens and userinfo, and `sub` never is. This is how someone
+  is on Solon or Loki without an OrangeCat face.
 - `bitbaum/evig` `src/lib/auth/orangecat.ts` — the rules for an OrangeCat
   identity meeting an evig account (never linked by email)

@@ -8,16 +8,29 @@
  * GET /api/cat/quota (resetInSeconds, dailyRequests, expiresAt) and
  * GET /api/cat/credits (balanceBtc) — it just was never rendered anywhere,
  * leaving the tiny chat-toolbar chip as the only quota surface. This page
- * composes those two existing endpoints; no new backend.
+ * composes those endpoints, plus GET /api/cat/usage for what the numbers
+ * mean (UsageMeaningCard).
  */
 
 import Link from 'next/link';
 import { SharedCapacityCard } from '@/components/ai/SharedCapacityCard';
+import {
+  UsageExplainer,
+  UsageMeaningCard,
+  useUsageSummary,
+} from '@/components/ai/UsageMeaningCard';
 import { Gauge, KeyRound, Sparkles, Wallet } from 'lucide-react';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { useCatQuota } from '@/components/ai-chat/ModernChatPanel/hooks/useCatQuota';
 import { ROUTES } from '@/config/routes';
-import { CAT_PLANS, PLAN_ID_BY_QUOTA_TIER, type CatPlanId } from '@/config/cat-plans';
+import {
+  CAT_PLANS,
+  PLAN_ID_BY_QUOTA_TIER,
+  getCatPlan,
+  SETTINGS_AI_ANCHORS,
+  type CatPlanId,
+} from '@/config/cat-plans';
+import { COMMERCE_CLOSED } from '@/config/commerce';
 import { formatCountdownCoarse } from '@/utils/countdown';
 import { useCreditBalance } from './useCreditBalance';
 import { APP_LOCALE } from '@/utils/locale';
@@ -26,6 +39,8 @@ export default function UsageSettingsPage() {
   const { quota, isLoading: quotaLoading } = useCatQuota();
   const { balanceBtc, error: creditError, retry: retryCredits } = useCreditBalance();
   const { formatAmountBtc } = useDisplayCurrency();
+  const usageSummary = useUsageSummary();
+  const creditsOpen = getCatPlan('credits').status === 'available';
 
   /** Which CAT_PLANS card is the user's current reality — via the SSOT map. */
   const activePlanId: CatPlanId | null = quota ? PLAN_ID_BY_QUOTA_TIER[quota.tier] : null;
@@ -133,34 +148,11 @@ export default function UsageSettingsPage() {
         </div>
       </section>
 
-      <SharedCapacityCard />
+      {/* What the numbers above MEAN — pace, the last 7 days, the levers that
+          are really open. Drawn only when there is something to say. */}
+      <UsageMeaningCard {...usageSummary} />
 
-      {/* ── What counts ────────────────────────────────────────────────── */}
-      <section className="rounded-lg border border-default bg-surface-base p-6">
-        <h2 className="font-heading text-base font-semibold text-fg-primary">What counts</h2>
-        <ul className="mt-3 space-y-2 text-sm text-fg-secondary">
-          <li>• Every message you send to Cat on the free or Supporter plan counts as 1.</li>
-          <li>
-            • Messages sent through your own API key don&apos;t touch this budget — your provider
-            bills you directly.
-          </li>
-          <li>
-            • Frontier-model messages paid with Cat Credits are metered per message from your credit
-            balance, not from the daily budget.
-          </li>
-          {/* "Free" was wrong in the way that matters: image generation does
-              not touch this DAILY MESSAGE budget, but it is billed to Cat
-              Credits like any other frontier call. A user reading "free" and
-              watching their balance fall has been misled about money. */}
-          <li>
-            • Image generation doesn&apos;t use your daily messages — it&apos;s billed to Cat
-            Credits instead.
-          </li>
-          <li>
-            • The counter resets every day at midnight UTC. Unused messages don&apos;t roll over.
-          </li>
-        </ul>
-      </section>
+      <SharedCapacityCard />
 
       {/* ── Cat Credits ────────────────────────────────────────────────── */}
       <section className="rounded-lg border border-default bg-surface-base p-6">
@@ -195,9 +187,13 @@ export default function UsageSettingsPage() {
                 )}
               </p>
             )}
+            {/* Credits cannot be bought until OrangeCat may take payments
+                (config/commerce.ts). "Top up in AI settings" sent people to a
+                till that was shut. */}
             <p className="mt-1 text-sm text-fg-tertiary">
-              Top up and see the per-message ledger in{' '}
-              <Link href={ROUTES.SETTINGS_AI} className="underline underline-offset-2">
+              {creditsOpen ? 'Top up and see' : `${COMMERCE_CLOSED.short} See`} the per-message
+              ledger in{' '}
+              <Link href={SETTINGS_AI_ANCHORS.credits} className="underline underline-offset-2">
                 AI settings
               </Link>
               .
@@ -233,9 +229,12 @@ export default function UsageSettingsPage() {
                     Your plan
                   </span>
                 )}
-                {plan.status === 'coming-soon' && (
+                {/* The badge text is the plan's own (cat-plans.ts). This said
+                    "Activating" — a promise of "any moment now" for plans with
+                    no price and a closed till. */}
+                {plan.status === 'coming-soon' && plan.badge && (
                   <span className="rounded-full bg-surface-raised px-2 py-0.5 text-xs text-fg-tertiary">
-                    Activating
+                    {plan.badge}
                   </span>
                 )}
                 <span className="w-full text-sm text-fg-tertiary sm:w-auto sm:flex-1">
@@ -254,6 +253,9 @@ export default function UsageSettingsPage() {
           })}
         </ul>
       </section>
+
+      {/* Reference, folded, last: every number on the page explained. */}
+      <UsageExplainer data={usageSummary.data} />
     </div>
   );
 }

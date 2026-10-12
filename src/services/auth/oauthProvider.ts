@@ -24,7 +24,9 @@ import {
   scopesForResource,
   type OAuthClientOrigin,
   type OAuthResource,
+  type ProfileClaim,
 } from '@/lib/oauth/config';
+import { profileClaims } from '@/services/auth/oidcProfileClaims';
 import { logger } from '@/utils/logger';
 
 function adminDb(): AnySupabaseClient {
@@ -224,39 +226,6 @@ export interface TokenResponse {
   scope: string;
 }
 
-export async function profileClaims(
-  userId: string,
-  scopes: string[]
-): Promise<Record<string, unknown>> {
-  if (!scopes.includes('profile') && !scopes.includes('email')) {
-    return {};
-  }
-  const { data: profile } = await adminDb()
-    .from(DATABASE_TABLES.PROFILES)
-    .select('username, name, avatar_url, email')
-    .eq('id', userId)
-    .maybeSingle();
-  if (!profile) {
-    return {};
-  }
-  const claims: Record<string, unknown> = {};
-  if (scopes.includes('profile')) {
-    claims.name = profile.name ?? null;
-    claims.preferred_username = profile.username ?? null;
-    claims.picture = profile.avatar_url ?? null;
-  }
-  if (scopes.includes('email')) {
-    // The account holds the email. profiles.email is a copy taken at sign-up
-    // and never follows a later add or change (an anonymous account adding its
-    // email, a changed address), so it is only the fallback.
-    const { data: account } = await adminDb().auth.admin.getUserById(userId);
-    const accountEmail = account?.user?.email || null;
-    claims.email = accountEmail ?? profile.email ?? null;
-    claims.email_verified = accountEmail !== null && Boolean(account?.user?.email_confirmed_at);
-  }
-  return claims;
-}
-
 export async function issueTokens(params: {
   client: OAuthClient;
   actorId: string;
@@ -293,7 +262,7 @@ export async function issueTokens(params: {
     .sign(privateKey);
 
   // ID token: OIDC identity claims (+ profile/email when scoped).
-  const idClaims = await profileClaims(params.userId, params.scopes);
+  const idClaims = await profileClaims(params.userId, params.scopes, params.client.client_id);
   const idToken = await new SignJWT({
     ...idClaims,
     uid: params.userId,
@@ -450,15 +419,27 @@ export async function hasRememberedGrant(
   return scopes.every(s => granted.has(s));
 }
 
+/**
+ * `withheld` is what the person chose on the consent screen. Left undefined,
+ * the stored choice is kept (a re-consent for more scopes must not quietly
+ * re-show a picture someone had hidden).
+ */
 export async function recordGrant(
   userId: string,
   clientId: string,
-  scopes: string[]
+  scopes: string[],
+  withheld?: ProfileClaim[]
 ): Promise<void> {
   await adminDb()
     .from(DATABASE_TABLES.OAUTH_USER_GRANTS)
     .upsert(
-      { user_id: userId, client_id: clientId, scopes, granted_at: new Date().toISOString() },
+      {
+        user_id: userId,
+        client_id: clientId,
+        scopes,
+        granted_at: new Date().toISOString(),
+        ...(withheld ? { withheld_claims: withheld } : {}),
+      },
       { onConflict: 'user_id,client_id' }
     );
 }

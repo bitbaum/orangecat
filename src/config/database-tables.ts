@@ -170,6 +170,8 @@ export const DATABASE_TABLES = {
   USER_ECONOMIC_PROFILE: 'user_economic_profile',
   USER_ECONOMIC_PROFILE_PUBLIC: 'user_economic_profile_public',
   CAT_CREDIT_ENTRIES: 'cat_credit_entries',
+  /** One row per (user, UTC day): the free/Supporter message counter. Users read their own (RLS). */
+  PLATFORM_API_USAGE: 'platform_api_usage',
   CAT_CREDIT_TOPUPS: 'cat_credit_topups',
 
   // Public feedback + Ask Cat (server-only writes; see /api/feedback)

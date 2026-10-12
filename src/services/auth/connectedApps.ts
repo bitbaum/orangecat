@@ -19,7 +19,12 @@
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { createAdminClient } from '@/lib/supabase/admin';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
-import { OAUTH_CLIENT_ORIGINS, type OAuthClientOrigin } from '@/lib/oauth/config';
+import {
+  OAUTH_CLIENT_ORIGINS,
+  cleanWithheldClaims,
+  type OAuthClientOrigin,
+  type ProfileClaim,
+} from '@/lib/oauth/config';
 import { logger } from '@/utils/logger';
 
 function adminDb(): AnySupabaseClient {
@@ -34,6 +39,8 @@ export interface ConnectedApp {
   /** First-party (Loki, Solon…): consent remembered and screen skipped. */
   trusted: boolean;
   scopes: string[];
+  /** Profile claims (name, username, picture) this person keeps back from the app. */
+  withheldClaims: ProfileClaim[];
   grantedAt: string;
   /** Most recent use of any live refresh token, or null if never refreshed. */
   lastUsedAt: string | null;
@@ -44,6 +51,7 @@ export interface ConnectedApp {
 interface GrantRow {
   client_id: string;
   scopes: string[] | null;
+  withheld_claims: string[] | null;
   granted_at: string;
 }
 
@@ -66,7 +74,7 @@ export async function listConnectedApps(userId: string): Promise<ConnectedApp[]>
   const [grants, tokens] = await Promise.all([
     db
       .from(DATABASE_TABLES.OAUTH_USER_GRANTS)
-      .select('client_id, scopes, granted_at')
+      .select('client_id, scopes, withheld_claims, granted_at')
       .eq('user_id', userId)
       .order('granted_at', { ascending: false }),
     db
@@ -125,6 +133,7 @@ export async function listConnectedApps(userId: string): Promise<ConnectedApp[]>
       registeredVia: client?.registered_via ?? OAUTH_CLIENT_ORIGINS.admin,
       trusted: client?.is_trusted ?? false,
       scopes: grant?.scopes ?? [],
+      withheldClaims: cleanWithheldClaims(grant?.withheld_claims),
       grantedAt: grant?.granted_at ?? live[0]?.expires_at ?? new Date(0).toISOString(),
       lastUsedAt: lastUsed ?? null,
       liveSessions: live.length,
@@ -203,4 +212,29 @@ export async function revokeAllConnectedApps(
     }
   }
   return { tokensRevoked: tokens.data?.length ?? 0 };
+}
+
+/**
+ * Change which profile claims one app receives. Takes effect the next time the
+ * app asks for a token or the userinfo (an hour at most, since access tokens
+ * run out on their own); nothing is revoked. Returns false if this person has
+ * no remembered consent for the app, so there is nothing to set.
+ */
+export async function setWithheldClaims(
+  userId: string,
+  clientId: string,
+  claims: unknown
+): Promise<{ updated: boolean; withheldClaims: ProfileClaim[] }> {
+  const withheldClaims = cleanWithheldClaims(claims);
+  const { data, error } = await adminDb()
+    .from(DATABASE_TABLES.OAUTH_USER_GRANTS)
+    .update({ withheld_claims: withheldClaims })
+    .eq('user_id', userId)
+    .eq('client_id', clientId)
+    .select('client_id');
+  if (error) {
+    logger.error('setWithheldClaims failed', { error, userId, clientId });
+    throw error;
+  }
+  return { updated: (data ?? []).length > 0, withheldClaims };
 }
