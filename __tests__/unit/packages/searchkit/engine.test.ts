@@ -127,3 +127,16 @@ test('a dropped letter in a 4-letter name still finds it, and a real 3-letter wo
     ['cat']
   );
 });
+
+test('a name typed whole outranks a longer name that only starts with it', () => {
+  const s = createSearch(
+    [
+      { id: 'long', name: 'Loki — Capability Layer for a Permissionless Economy' },
+      { id: 'loki', name: 'Loki' },
+    ],
+    { fields: [{ name: 'name', get: r => r.name }] }
+  );
+  for (const q of ['lki', 'loki', 'lok', 'koki']) {
+    assert.equal(s.search(q)[0].item.id, 'loki', q);
+  }
+});

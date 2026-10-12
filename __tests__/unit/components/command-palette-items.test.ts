@@ -3,6 +3,7 @@ import {
   buildCreateItems,
   buildPages,
   groupHits,
+  pagesFirst,
   rankItems,
   thingItems,
   typeHeading,
@@ -84,5 +85,14 @@ describe('command palette items', () => {
     ]);
     expect(typeHeading('profile')).toBe('People');
     expect(typeHeading('project')).toBe(ENTITY_REGISTRY.project.namePlural);
+  });
+
+  it("puts a page first when it matched with no more typos than everyone's best", () => {
+    const settings = rankItems(buildPages(), 'setings', 1);
+    expect(settings[0]?.typos).toBe(1);
+    expect(pagesFirst(settings, [{ typos: null }])).toBe(true);
+    expect(pagesFirst(settings, [{ typos: 1 }])).toBe(true);
+    expect(pagesFirst(settings, [{ typos: 0 }])).toBe(false);
+    expect(pagesFirst([], [{ typos: 0 }])).toBe(false);
   });
 });
