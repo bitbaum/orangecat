@@ -114,7 +114,7 @@ const eslintConfig = [
       'out/**',
       'dist/**',
       // Compiled by tsc and committed (the fleet installs it from git);
-      // __tests__/unit/packages/searchkit/dist.test.ts keeps it in step with src.
+      // packages/searchkit/test/dist.test.ts keeps it in step with src.
       'packages/searchkit/dist/**',
       'build/**',
       'node_modules/**',

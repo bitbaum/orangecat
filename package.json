@@ -58,6 +58,7 @@
     "test:ci": "vitest run --coverage",
     "test:security": "vitest run security ssrf crypto signing idempotency --passWithNoTests",
     "test:unit": "vitest run __tests__/unit __tests__/smoke __tests__/create tests/unit tests/env.test.ts",
+    "test:packages": "node --test packages/searchkit/test/*.test.ts",
     "test:auth": "vitest run auth",
     "test:integration": "vitest run __tests__/integration --passWithNoTests",
     "test:performance": "vitest run performance --passWithNoTests",

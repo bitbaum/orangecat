@@ -37,6 +37,8 @@
   },
   "scripts": {
     "build": "rm -rf dist && tsc -p tsconfig.json",
-    "type-check": "tsc --noEmit -p tsconfig.json"
+    "type-check": "tsc --noEmit -p tsconfig.json",
+    "test": "node --test test/*.test.ts",
+    "verify": "npm run type-check && npm run build && npm test"
   }
 }

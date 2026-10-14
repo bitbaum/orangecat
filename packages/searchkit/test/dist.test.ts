@@ -4,15 +4,16 @@
  * other site while OrangeCat's own tests passed. Rebuild into a scratch
  * directory and require it to match, file for file.
  */
-import { test } from 'vitest';
+import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { createRequire } from 'node:module';
 import { join, relative } from 'node:path';
 
-const pkg = join(__dirname, '../../../../packages/searchkit');
-const tsc = join(__dirname, '../../../../node_modules/typescript/bin/tsc');
+const pkg = join(import.meta.dirname, '..');
+const tsc = createRequire(import.meta.url).resolve('typescript/bin/tsc');
 
 function files(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap(entry =>
@@ -20,7 +21,7 @@ function files(dir: string): string[] {
   );
 }
 
-test('dist/ is the build of src/ (run `pnpm --filter @bitbaum/searchkit build`)', () => {
+test('dist/ is the build of src/ (run `pnpm run build`)', { timeout: 60_000 }, () => {
   const out = mkdtempSync(join(tmpdir(), 'searchkit-dist-'));
   try {
     execFileSync(process.execPath, [tsc, '-p', join(pkg, 'tsconfig.json'), '--outDir', out]);
@@ -41,4 +42,4 @@ test('dist/ is the build of src/ (run `pnpm --filter @bitbaum/searchkit build`)'
   } finally {
     rmSync(out, { recursive: true, force: true });
   }
-}, 60_000);
+});
