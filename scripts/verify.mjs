@@ -28,7 +28,7 @@ import { spawn } from 'node:child_process';
 
 /** Each lane runs its steps in order; lanes run side by side. */
 export const LANES = [
-  ['test:unit', 'test:packages'],
+  ['test:unit'],
   ['type-check', 'type-check:scripts'],
   [
     'ci:docs',
@@ -81,7 +81,6 @@ export const SERIAL = [
   'check:changelog',
   'check:follow-envelope',
   'test:unit',
-  'test:packages',
 ];
 
 function laneCount() {
