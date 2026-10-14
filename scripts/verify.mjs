@@ -28,7 +28,7 @@ import { spawn } from 'node:child_process';
 
 /** Each lane runs its steps in order; lanes run side by side. */
 export const LANES = [
-  ['test:unit'],
+  ['test:unit', 'test:packages'],
   ['type-check', 'type-check:scripts'],
   [
     'ci:docs',
@@ -81,6 +81,7 @@ export const SERIAL = [
   'check:changelog',
   'check:follow-envelope',
   'test:unit',
+  'test:packages',
 ];
 
 function laneCount() {
@@ -105,7 +106,12 @@ function run(step, live) {
       child.stderr.on('data', c => chunks.push(c));
     }
     child.on('close', code => {
-      resolve({ step, ok: code === 0, seconds: (Date.now() - started) / 1000, output: Buffer.concat(chunks).toString() });
+      resolve({
+        step,
+        ok: code === 0,
+        seconds: (Date.now() - started) / 1000,
+        output: Buffer.concat(chunks).toString(),
+      });
     });
   });
 }

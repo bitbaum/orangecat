@@ -13,24 +13,21 @@ ranking, a few without escaping `%`. Every new site would have written a 26th.
 
 ## Where it lives, and how a site adopts it
 
-In `bitbaum/orangecat` under `packages/searchkit` until it has its own
-repository (the session that built it could not create one). It is written to
-move as is: no imports outside itself, its own README and tests
-(`orangecat/__tests__/unit/packages/searchkit/`).
-
-A site in the fleet adopts it with pnpm's git subdirectory form, pinned to a
-commit on orangecat's `main`:
+Its home is `bitbaum/searchkit`, created from this folder by bitbaum/fleet's
+`package-repos` workflow (declared in `registers/package-repos.json`). Until
+that repository exists the source is `bitbaum/orangecat` `packages/searchkit`.
+A site installs a release tag, which Dependabot moves forward on its own:
 
 ```jsonc
 // package.json
-"@bitbaum/searchkit": "github:bitbaum/orangecat#<commit>&path:packages/searchkit"
+"@bitbaum/searchkit": "github:bitbaum/searchkit#v0.2.2"
 ```
 
 It ships compiled JavaScript in `dist/`, committed beside the source the way
 `@bitbaum/whenkit` does, so nothing has to transpile it: Next.js, Vitest, and
-Node's own test runner (`--experimental-strip-types`, which refuses TypeScript
-inside `node_modules`) all load it as is. After changing `src/`, run
-`pnpm --filter @bitbaum/searchkit build`; a test fails while `dist/` is stale.
+Node's own test runner (which refuses TypeScript inside `node_modules`) all
+load it as is. Its tests are in `test/` and run with plain Node (`npm test`);
+one of them fails while `dist/` is not the build of `src/` (`npm run build`).
 
 **Every search box in the fleet should go through it.** The first adopter,
 OrangeCat, runs it in three places: the ⌘K palette's own lists (pages, your
