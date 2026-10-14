@@ -5,7 +5,6 @@ packages:
   - 'packages/collective-kinds'
   - 'packages/tax-model'
   - 'packages/deckkit'
-  - 'packages/searchkit'
 
 allowBuilds:
   # Ours (bitbaum/listkit), GitHub-hosted with no committed dist: its `prepare`
