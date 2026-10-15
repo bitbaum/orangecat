@@ -9,16 +9,27 @@
  *
  * Pure: no DB, no HTTP, no clock beyond `now`. The reads live in
  * usage-summary.ts and the page only renders, so every sentence here is
- * tested with plain numbers. The same shape exists in Loki
- * (lib/ai/budget-view.ts → `meaning`); both are candidates for
- * @bitbaum/ai-kit once the wording settles, so every product phrases a
- * budget the same way.
+ * tested with plain numbers. The product-neutral half — the pace forecast,
+ * the seven-day summary, refill wording, the history-window sentence, the
+ * reset explanation and the action type — is @bitbaum/ai-kit's, shared with
+ * Loki, so every app phrases a budget the same way. What stays here is
+ * OrangeCat's: plans, the cap's reason, credits, and the levers.
  *
  * Plan facts are imported, never typed: the levers are CAT_PLANS rows the
  * person is not on and can actually buy today, so a plan that is still
  * "activating" is never offered as a button.
  */
 
+import {
+  countOf,
+  historyWindowLine,
+  paceForecast,
+  paceLine,
+  refillsIn,
+  utcResetExplanation,
+  weekSummary,
+  type UsageAction as KitUsageAction,
+} from '@bitbaum/ai-kit';
 import { CAT_PLANS, PLAN_ID_BY_QUOTA_TIER, type CatPlanId } from '@/config/cat-plans';
 import { COMMERCE_CLOSED } from '@/config/commerce';
 import { ROUTES } from '@/config/routes';
@@ -42,13 +53,8 @@ export interface UsageMeaningInput {
   historyMessages: number;
 }
 
-export interface UsageAction {
-  id: CatPlanId | 'wait';
-  label: string;
-  /** The consequence, so a button is never a bare verb. */
-  why: string;
-  href?: string;
-}
+/** A lever and its consequence — the shared shape, with OrangeCat's ids. */
+export type UsageAction = KitUsageAction<CatPlanId | 'wait'>;
 
 export interface UsageMeaning {
   /** "At today's pace you reach your 10 around 15:00 UTC." Null when there is no rate to speak of. */
@@ -68,88 +74,44 @@ export interface UsageMeaning {
   actions: UsageAction[];
 }
 
-/** A rate needs more than one message and a sliver of the day before it is a forecast. */
-const PACE_MIN_MESSAGES = 2;
-const PACE_MIN_DAY_FRACTION = 0.05;
-
 const count = (n: number) => formatNumber(n);
-const plural = (n: number, word: string) => `${count(n)} ${word}${n === 1 ? '' : 's'}`;
-
-function dayFraction(now: Date): number {
-  const start = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-  return Math.min(1, Math.max(0, (now.getTime() - start) / 86_400_000));
-}
-
-/** "15:00 UTC" for a fraction of the day. */
-function clockAt(fraction: number): string {
-  const mins = Math.round(Math.min(1, Math.max(0, fraction)) * 24 * 60);
-  const h = Math.floor(mins / 60) % 24;
-  const m = mins % 60;
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')} UTC`;
-}
-
-/** "in 9 hours", "in 40 minutes" — coarse on purpose; the page shows the exact countdown. */
-function resetWords(seconds: number): string {
-  const mins = Math.max(1, Math.round(seconds / 60));
-  if (mins < 60) {
-    return `in ${plural(mins, 'minute')}`;
-  }
-  return `in ${plural(Math.round(mins / 60), 'hour')}`;
-}
+const plural = (n: number, word: string) => countOf(n, word, { format: count });
 
 /** Today's forecast, and whether it runs into the cap — the second half drives the levers. */
 function paceOf(input: UsageMeaningInput): { line: string; reachesCap: boolean } | null {
-  if (input.tier === 'byok' || input.limit <= 0) {
+  if (input.tier === 'byok') {
     return null;
   }
-  const remaining = input.limit - input.used;
-  if (remaining <= 0) {
-    return null;
-  }
-  const elapsed = dayFraction(input.now);
-  if (input.used < PACE_MIN_MESSAGES || elapsed < PACE_MIN_DAY_FRACTION) {
-    return null;
-  }
-  const projected = input.used / elapsed;
-  if (projected <= input.limit) {
-    return {
-      line: `At today's pace your ${count(input.limit)} messages last the whole day.`,
-      reachesCap: false,
-    };
-  }
-  const reachAt = (input.limit / input.used) * elapsed;
-  return {
-    line: `At today's pace you reach today's ${count(input.limit)} around ${clockAt(reachAt)}, then Cat waits until midnight UTC.`,
-    reachesCap: true,
-  };
+  const forecast = paceForecast({ used: input.used, limit: input.limit, now: input.now });
+  const line = paceLine(forecast, {
+    subject: `your ${count(input.limit)} messages`,
+    plural: true,
+    then: ', then Cat waits until midnight UTC',
+  });
+  return forecast && line ? { line, reachesCap: !forecast.lastsTheDay } : null;
 }
 
 function weekOf(input: UsageMeaningInput): UsageMeaning['week'] {
-  if (!input.week) {
-    return null;
-  }
-  const messages = input.week.reduce((n, d) => n + Math.max(0, d.requests), 0);
-  if (messages === 0) {
-    return null;
-  }
-  const activeDays = input.week.filter(d => d.requests > 0).length;
   // Measured against TODAY's cap: a day spent on the free tier before a
   // Supporter upgrade would otherwise read as capped at the higher number.
-  const cappedDays =
-    input.tier === 'byok' || input.limit <= 0
-      ? 0
-      : input.week.filter(d => d.requests >= input.limit).length;
+  const summary = weekSummary(
+    input.week?.map(d => ({ used: d.requests })) ?? null,
+    input.tier === 'byok' ? null : input.limit
+  );
+  if (!summary) {
+    return null;
+  }
   const capped =
-    cappedDays > 0
-      ? ` You reached the daily cap on ${plural(cappedDays, 'day')} — the cap, not your work, decided when you stopped.`
+    summary.cappedDays > 0
+      ? ` You reached the daily cap on ${plural(summary.cappedDays, 'day')} — the cap, not your work, decided when you stopped.`
       : '';
   return {
-    messages,
-    activeDays,
-    cappedDays,
+    messages: summary.total,
+    activeDays: summary.activeDays,
+    cappedDays: summary.cappedDays,
     // The read is the last seven UTC days, today included — not a calendar
     // week, so it does not say "this week".
-    line: `Last 7 days: ${plural(messages, 'message')} on ${plural(activeDays, 'day')}.${capped}`,
+    line: `Last 7 days: ${plural(summary.total, 'message')} on ${plural(summary.activeDays, 'day')}.${capped}`,
   };
 }
 
@@ -168,7 +130,7 @@ function actionsFor(
   if (capped) {
     actions.push({
       id: 'wait',
-      label: `Back ${resetWords(input.resetInSeconds)}`,
+      label: `Back ${refillsIn(input.now.getTime() + input.resetInSeconds * 1000, input.now.getTime()) ?? 'at midnight UTC'}`,
       why: 'Your messages refill at midnight UTC — nothing to do if that is soon enough.',
     });
   }
@@ -192,11 +154,13 @@ function actionsFor(
 
 export function catUsageMeaning(input: UsageMeaningInput): UsageMeaning {
   const week = weekOf(input);
-  const memory =
-    `In a conversation Cat reads your last ${count(input.historyMessages)} messages ` +
-    `(about ${count(Math.floor(input.historyMessages / 2))} back-and-forths); anything older it no ` +
-    `longer sees. What should outlast that belongs in Memory — Cat recalls the relevant ` +
-    `memories in every chat.`;
+  const memory = historyWindowLine({
+    assistant: 'Cat',
+    items: input.historyMessages,
+    unit: 'message',
+    memory: 'Memory',
+    format: count,
+  });
 
   // Plan facts decide tense: a plan nobody can buy yet is described as
   // planned, never as something people already do.
@@ -222,16 +186,10 @@ export function catUsageMeaning(input: UsageMeaningInput): UsageMeaning {
           ? ' Supporters fund that pool.'
           : ' A Supporter plan that funds the pool is planned; it is not open yet.'),
     },
-    {
-      // The counter is one row per UTC date (platform_api_usage.usage_date =
-      // CURRENT_DATE on a UTC database). It used to give a reason — "that is
-      // when the providers' free allowances refill" — which is not true of
-      // Groq, whose limits refill on their own rolling clock.
-      title: 'Resets at midnight UTC',
-      body:
-        'Your count is kept per UTC day, so it resets at the same moment for everyone, wherever ' +
-        "they are. Unused messages don't roll over.",
-    },
+    // The counter is one row per UTC date (platform_api_usage.usage_date =
+    // CURRENT_DATE on a UTC database). The shared sentence states only that,
+    // with no reason: "the providers refill at midnight" is false of Groq.
+    utcResetExplanation('messages'),
     {
       title: 'Your own key',
       body:

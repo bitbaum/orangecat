@@ -35,8 +35,8 @@ importers:
         specifier: ^9.1.0
         version: 9.1.0(zod@4.5.4)
       '@bitbaum/ai-kit':
-        specifier: ^1.20.1
-        version: 1.20.1(react@19.3.0)
+        specifier: ^1.21.0
+        version: 1.21.0(react@19.3.0)
       '@bitbaum/chatkit':
         specifier: github:bitbaum/chatkit#163c879163d22c6eb633314b3bd4e25712a01899
         version: https://codeload.github.com/bitbaum/chatkit/tar.gz/163c879163d22c6eb633314b3bd4e25712a01899(react@19.3.0)
@@ -551,8 +551,8 @@ packages:
     resolution: {integrity: sha512-6zABk/ECA/QYSCQ1NGiVwwbQerUCZ+TQbp64Q3AgmfNvurHH0j8TtXa1qbShXA6qqkpAj4V5W8pP6mLe1mcMqA==}
     engines: {node: '>=18'}
 
-  '@bitbaum/ai-kit@1.20.1':
-    resolution: {integrity: sha512-mdYcA562q7eWbaWd2jwPlYZTTbWwSTK/XrexiIkG3mW2OiNDihMG8DmnFFlRf7lRcHiBOXHey1E28XCGb43Fsg==}
+  '@bitbaum/ai-kit@1.21.0':
+    resolution: {integrity: sha512-eWOsNrv4nyURMOxA9AoUfAZpj2ajuCSG3IK0z94vpPgAbcbkPviNOXGQpV9e01PRfMBP3EBVIrTa0wLN9gT9pQ==}
     engines: {node: '>=20'}
     peerDependencies:
       react: '>=18'
@@ -2684,9 +2684,9 @@ packages:
     resolution: {integrity: sha512-RZNwNclF7+MS/8bDg70amg32dyeZGZxiDuQmZxKLAlQjr3jGyLx+4Kkk58UO7D2QdgFIQCovuSuZESne6RG6XQ==}
     engines: {node: '>= 6.0.0'}
 
-  ai-forms@0.1.2:
-    resolution: {integrity: sha512-agadca4pN0iGlZTlNy1Vo2SmnQB+0dNkrQSDE3wCJYeaVxKDs5KaxiwGj5+GL6mVYcI1xZ8pwnT9kL9WcxnBHA==}
-    engines: {node: '>=18'}
+  ai-forms@0.1.3:
+    resolution: {integrity: sha512-jpewuXsyiI7/356qcNCkeiDl6E8ua+5ZjpMxpA+e4XiEcNrjUE9XsUC1bKMr2j0ikzGNDp7/MuQIssKeYVaRhQ==}
+    engines: {node: '>=20'}
     peerDependencies:
       react: '>=18'
     peerDependenciesMeta:
@@ -6463,9 +6463,9 @@ snapshots:
 
   '@bcoe/v8-coverage@1.0.2': {}
 
-  '@bitbaum/ai-kit@1.20.1(react@19.3.0)':
+  '@bitbaum/ai-kit@1.21.0(react@19.3.0)':
     dependencies:
-      ai-forms: 0.1.2(react@19.3.0)
+      ai-forms: 0.1.3(react@19.3.0)
     optionalDependencies:
       react: 19.3.0
 
@@ -8400,7 +8400,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  ai-forms@0.1.2(react@19.3.0):
+  ai-forms@0.1.3(react@19.3.0):
     optionalDependencies:
       react: 19.3.0
 
