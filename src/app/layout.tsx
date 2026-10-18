@@ -196,7 +196,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Loki feedback widget — OrangeCat is customer #2 of the sibling
             product's embeddable feedback loop (visitor points at the broken
             element → Loki per-project inbox → one-click agent dispatch).
-            Env-gated like GA; data-fc-bottom clears the mobile bottom nav.
+            Env-gated like GA. No data-fc-bottom: the widget steps around the
+            mobile bottom nav by itself, and a fixed offset made the launcher
+            sit higher here than on every other fleet site.
             afterInteractive, not lazyOnload: busy pages (Cat chat streams and
             polls) can keep the browser from going idle, so lazyOnload left the
             FAB unmounted for minutes — a feedback button that isn't there when
@@ -206,7 +208,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             src={new URL('/widget.js', ECOSYSTEM.loki.siteUrl).toString()}
             strategy="afterInteractive"
             data-fc-project={process.env.LOKI_FEEDBACK_TOKEN}
-            data-fc-bottom="80"
           />
         )}
         {gaId && (
