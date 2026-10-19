@@ -10,7 +10,7 @@ Completed: 2026-09-05 — remaining work implemented via `limitkit@0.2.0` (see a
 Two rate limiting implementations existed:
 
 - `src/lib/rate-limit.ts` (Upstash + in-memory fallback, exported helpers)
-- `src/lib/api/rateLimiting.ts` (richer API with strategies, cleanup, status)
+- `src/lib/api/rateLimiting.ts` (richer API with strategies, cleanup, status; since removed, see below)
 
 ## What actually happened between Proposed and Accepted
 
@@ -20,7 +20,7 @@ Worth recording, because almost none of the original plan survived contact:
   independently of this ADR. The duplication this document was written about
   resolved itself without the migration plan below ever being executed.
 - **A different duplicate appeared in the meantime**, which this ADR never named:
-  `src/features/messaging/lib/rate-limiter.ts`, a sync in-memory limiter with its
+  `src/features/messaging/lib/rate-limiter.ts` (since deleted, see Decision), a sync in-memory limiter with its
   own `Map`, reached through the `features/messaging/lib` barrel by the two
   `/api/messages` routes. So for seven months the count in this document was
   wrong in both directions — it named a file that was gone and missed the one

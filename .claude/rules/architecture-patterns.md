@@ -337,7 +337,7 @@ const serviceConfig = {
 
 **Purpose**: Contain business logic separate from HTTP/UI concerns
 
-**Location**: `src/domain/[domain]/service.ts`
+**Location**: `src/domain/<domain>/service.ts` (e.g. `src/domain/commerce/service.ts`)
 
 ```typescript
 // src/domain/commerce/service.ts

@@ -215,7 +215,7 @@ Your profiles table was missing several expected columns:
 
 ### Solution Applied
 
-Run the migration in `supabase/migrations/20250525000000_fix_profiles_schema.sql` to:
+The fix was a 2025 migration. The per-feature migrations of that era were squashed into the replayable baseline `supabase/migrations/20240101000001_baseline_public_schema.sql`, so there is nothing separate to run today. It did this:
 
 1. Add all missing columns
 2. Create proper constraints and indexes

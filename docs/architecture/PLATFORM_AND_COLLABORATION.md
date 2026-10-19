@@ -139,7 +139,7 @@ Converge to one team model later, if/when the apps merge.
 Rendering the same concern in two UIs is where duplication creeps back. The naive
 fix — a shared `@oc/collab-ui` React package — is the **wrong** call here: the
 stacks diverge (Loki = Next 16 / Tailwind v4 / Drizzle / a four-layer `ui-*`
-design system; OrangeCat = Next 15 / Supabase). A shared component package means
+design system; OrangeCat = Next 16 / Supabase). A shared component package means
 ongoing build-pipeline coupling + version lock.
 
 **Instead — embeddable OC widget routes.** OrangeCat exposes self-contained widget

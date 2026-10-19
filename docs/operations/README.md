@@ -1,49 +1,43 @@
-# 📊 Operations Documentation
+# Operations Documentation
 
-## 🎯 Overview
-Operational documentation for running and maintaining OrangeCat in production.
+Running and maintaining OrangeCat in production: self-hosted on the Hetzner box
+(`bitbaum`) behind Caddy, with a self-hosted Supabase at `supabase.orangecat.ch`.
+How code reaches production is "Shipping" in the root [`CLAUDE.md`](../../CLAUDE.md).
 
----
+## Deployment
 
-## 📚 Operations Guide
+- [Deployment Process](deployment/DEPLOYMENT_PROCESS.md) - How a merge becomes a deploy
+- [Deployment Checklist](DEPLOYMENT_CHECKLIST.md) and [Integration Deploy Checklist](INTEGRATION_DEPLOY_CHECKLIST.md)
+- [Enabling / operating CD](enable-cd.md)
+- [CI/CD Pipeline](devops/ci-cd.md) and [Infrastructure](devops/infrastructure.md)
+- [Environment Variables](ENVIRONMENT.md)
 
-### **🚀 Deployment**
-- [Deployment Guide](../DEPLOYMENT.md) - Production deployment
-- [Environment Setup](environment-setup.md) - Environment config
-- [CI/CD Pipeline](cicd.md) - Automated deployment
+## Database & Storage
 
-### **📊 Monitoring**
-- [Application Monitoring](monitoring.md) - Performance monitoring
-- [Troubleshooting](troubleshooting.md) - Common issues
-- [Port Management](port-management.md) - Development ports
+- [Self-Hosted Supabase](REMOTE_ONLY_SUPABASE.md) - The SSOT
+- [Database Migrations](MIGRATIONS.md) and [Supabase guides](supabase/)
+- [Media on Cloudflare R2](STORAGE_R2_BACKEND.md)
 
-### **🔧 Maintenance**
-- [Regular Maintenance](maintenance.md) - Scheduled tasks
-- [Database Maintenance](database-maintenance.md) - DB optimization
-- [Backup & Recovery](backup-recovery.md) - Data protection
+## Reliability & Recovery
 
----
+- [Disaster Recovery](DISASTER_RECOVERY.md) and [Restore Drill](RESTORE_DRILL.md)
+- [Resilience](RESILIENCE.md) and [Agent Reliability](agent-reliability.md)
+- [Observability](devops/observability.md)
+- [Troubleshooting](troubleshooting.md)
+- [Account Recovery](account-recovery.md)
 
-## 🚨 Emergency Procedures
+## Features that need operating
 
-1. **System Down**: Check monitoring dashboard
-2. **Performance Issues**: Follow troubleshooting guide
-3. **Security Incident**: Execute incident response
-4. **Data Loss**: Initiate backup recovery
+- [Platform Lightning Wallet](PLATFORM_WALLET_RUNBOOK.md)
+- [Cat Credits activation](credits-activation.md)
+- [OAuth Social Login](oauth-social-login.md) and [Passkeys](passkeys.md)
 
----
+## Local development
 
-## 📈 Performance Targets
+- [Port Management](port-management.md) - Freeing stuck dev-server ports
 
-- **Page Load**: < 2 seconds
-- **API Response**: < 200ms  
-- **Uptime**: 99.9%
-- **Error Rate**: < 0.1%
+## Related Documentation
 
----
-
-## 📚 Related Documentation
-
-- [Security Guidelines](../SECURITY.md) - Security procedures
-- [Development Setup](../SETUP.md) - Local environment
-- [Architecture](../ARCHITECTURE.md) - System design 
+- [Security](../security/README.md)
+- [Development Setup](../development/SETUP.md)
+- [Architecture](../architecture/ARCHITECTURE.md)

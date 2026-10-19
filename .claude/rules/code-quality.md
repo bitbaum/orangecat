@@ -509,9 +509,9 @@ done.
 
 ### Post-Edit Hooks (Claude)
 
-The scripts live in `.claude/hooks/` (`pre-edit.sh`, `post-edit.sh`). This repo
-ships no `.claude/settings.json` wiring them, so they run only where a local or
-user-level Claude config registers them. The block below is a sketch; read the
+The scripts live in `.claude/hooks/` (`pre-edit.sh`, `post-edit.sh`).
+There is no `.claude/settings.json` in this repo wiring them, so they run only
+where a local or user-level Claude config registers them. The block below is a sketch; read the
 script for what it actually does.
 
 ```bash

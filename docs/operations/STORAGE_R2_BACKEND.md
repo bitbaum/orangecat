@@ -18,7 +18,7 @@ storage-api, which now reads from R2. Existing DB URLs stayed valid.
 
 - **storage-api version:** `supabase/storage-api:v1.60.4`.
 - **Compose project:** `supabase`, single file `/opt/supabase/docker/docker-compose.yml`
-  (the `docker-compose.override.yml` is NOT loaded — don't put changes there).
+  (`/opt/supabase/docker/docker-compose.override.yml` is NOT loaded — don't put changes there).
 - **Object key layout:** `{TENANT_ID}/{bucket}/{object}` → with `TENANT_ID=stub`, keys are
   `stub/avatars/…`, `stub/project-media/…`, etc. **TENANT_ID must stay `stub`.**
 - **On-disk source path** (host): `/opt/supabase/docker/volumes/storage/stub/` — its contents

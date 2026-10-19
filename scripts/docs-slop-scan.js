@@ -4,7 +4,7 @@
   Scans production code (src/, app/) for sloppy placeholder phrases.
 
   Why src/ + app/ only: docs/ legitimately contains "TODO" (in
-  forward-looking/ROADMAP.md status markers, TASK_QUEUE.md, etc.) and
+  archived roadmap status markers, TASK_QUEUE.md, etc.) and
   "TBD" (sprint planning), which are intentional authoring, not slop.
   This script's job is to catch slop that would ship to a USER —
   lorem-ipsum copy, lazy "TBD" labels, half-written feature stubs.

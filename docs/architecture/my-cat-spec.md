@@ -122,6 +122,6 @@ Make creation on Orangecat conversational. Users describe what they want (voice 
 
 ## 13) References
 
-- Implementation guide: `docs/my-cat-voice-and-local-models.md`
+- Implementation guide: `docs/architecture/my-cat-voice-and-local-models.md`
 - Entities & workflow: `src/components/create/`, `src/config/entity-registry.ts`
 - Models & providers: `src/config/ai-models.ts`, `src/services/ai/openrouter.ts`

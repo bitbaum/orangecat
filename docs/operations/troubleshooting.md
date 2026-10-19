@@ -355,7 +355,7 @@ export async function trackApiPerformance(endpoint: string, duration: number) {
 - **[Debugging Guide](../development/debugging.md)** - Development debugging
 - **[Performance Guide](../development/performance-debugging.md)** - Performance optimization
 - **[Error Handling](../development/error-handling.md)** - Error management
-- **[Monitoring Guide](../operations/monitoring.md)** - Production monitoring
+- **[Observability](devops/observability.md)** - Production monitoring
 
 ### **External Resources**
 

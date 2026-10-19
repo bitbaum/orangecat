@@ -2,14 +2,17 @@
 
 Health
 
-- `GET /api/health` returns overall status and dependency checks (Supabase, Redis), 200 when healthy/degraded, 503 when unhealthy.
+- `GET /api/health` (`src/app/api/health/route.ts`, checks in `src/lib/health.ts`)
+  returns `status` (`healthy` / `unhealthy`), a per-service status map (website,
+  API, database, authentication, Bitcoin integration) and box resource pressure
+  (`host`, from `src/lib/host-metrics.ts`) for the off-box uptime monitor. 200
+  when every service is operational, 503 otherwise.
 
 Metrics (Prometheus)
 
-- `GET /api/metrics` (enable with `METRICS_ENABLED=true`; optional bearer `METRICS_TOKEN`).
-- Default Node metrics + `orangecat_app_up` gauge.
-- Prometheus scrape configured in `deployment/production/monitoring/prometheus.yml`.
-- HTTP request metrics: `http_requests_total` and `http_request_duration_seconds` via a lightweight wrapper (`src/lib/api/withMetrics.ts`). Example usage wired into `/api/health`.
+- There is no `/api/metrics` route in the app today. The `orangecat-web` job in
+  `deployment/production/monitoring/prometheus.yml` still scrapes that path, so it
+  finds nothing until a metrics route is added.
 
 Logs (Loki + Promtail)
 
@@ -18,6 +21,5 @@ Logs (Loki + Promtail)
 
 CSP Reporting
 
-- Enforced CSP with optional report-only mirror to `/api/csp-report`.
-- Review CSP reports periodically and tighten sources.
-- Toggle report-only via `CSP_REPORT_ONLY=true` in the build environment.
+- There is no `/api/csp-report` route and no report-only CSP toggle in the app
+  today; CSP violations are not collected.

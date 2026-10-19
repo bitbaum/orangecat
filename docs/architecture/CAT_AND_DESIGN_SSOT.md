@@ -101,7 +101,7 @@ entity-registry.ts   → Entity create/nav SSOT (Cat action buttons)
 
 1. **Two model registries**
    - `config/ai-models.ts` — used by Cat `ModernChatPanel/ModelSelector`, auto-router, settings
-   - `config/model-registry.ts` — used by `ai-chat/ModelSelector.tsx` for **public AI assistants** (`AIChatPanel`)
+   - `config/model-registry.ts` — used by `ai-chat/ModelSelector.tsx` for **public AI assistants** (`AIChatPanel`). Both have since been removed: `ai-models.ts` is now the one registry.
    - **Risk:** Different model lists, labels (“Auto (Best Free)” vs “Auto (Best for task)”), divergent IDs.
    - **Fix:** One registry (`ai-models.ts`); assistant UI imports shared `components/ai/ModelSelector` built on it; deprecate `model-registry.ts` or make it a thin view over `ai-models`.
 
@@ -146,7 +146,7 @@ entity-registry.ts   → Entity create/nav SSOT (Cat action buttons)
 
 ## 7. Recommended consolidation roadmap
 
-**Recommended (do first):** Unify model registry + shared `ModelSelector` + export chat primitives from `components/ai-chat/primitives/` used by both Cat and assistants.
+**Recommended (do first):** Unify model registry + shared `ModelSelector` + export chat primitives from a shared `primitives` folder under `components/ai-chat` (not yet created) used by both Cat and assistants.
 
 **Alternative A:** Keep two panels but enforce a `ChatShell` wrapper (toolbar slot, scroll region, composer slot) — less migration, still DRY layout.
 
@@ -165,6 +165,6 @@ entity-registry.ts   → Entity create/nav SSOT (Cat action buttons)
 
 ## 9. Related docs
 
-- `docs/my-cat-spec.md` — product behavior, privacy
-- `docs/adr/ADR-0001-my-cat-conversational-entry.md` — architectural decision
-- `docs/AUDIT_REPORT.md` — prior note on duplicate chat panels
+- `docs/architecture/my-cat-spec.md` — product behavior, privacy
+- `docs/architecture/adr/ADR-0001-my-cat-conversational-entry.md` — architectural decision
+- `docs/archive/AUDIT_REPORT.md` — prior note on duplicate chat panels

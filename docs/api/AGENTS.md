@@ -121,4 +121,4 @@ respect its expiry). Challenge creation is rate limited per IP.
 - **Sandbox**: keys minted with the test flag (`ock_test_…`) create
   sandbox-flagged entities; live payment flows use live keys.
 - **Conventions** (error envelope, versioning): see
-  [`CONVENTIONS.md`](CONVENTIONS.md).
+  [`CONVENTIONS.md`](../reference/api/CONVENTIONS.md).

@@ -34,8 +34,8 @@ Sometimes Node.js development servers don't terminate properly when you stop the
 
 ### **📜 Batch Scripts**
 
-- `scripts/kill-dev-processes.bat` - Interactive script to kill Node.js processes
-- `scripts/dev-with-cleanup.bat` - Automatically cleans up and starts dev server
+- `scripts/dev/kill-dev-processes.bat` - Interactive script to kill Node.js processes
+- `scripts/dev/dev-with-cleanup.bat` - Automatically cleans up and starts dev server
 
 ---
 
@@ -82,6 +82,5 @@ Sometimes Node.js development servers don't terminate properly when you stop the
 
 ## 📚 Related Documentation
 
-- [Development Setup](../SETUP.md) - Complete development environment setup
+- [Development Setup](../development/SETUP.md) - Complete development environment setup
 - [Troubleshooting](troubleshooting.md) - Common development issues
-- [Maintenance](maintenance.md) - Regular maintenance procedures

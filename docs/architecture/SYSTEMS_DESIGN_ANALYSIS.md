@@ -712,8 +712,8 @@ latencyHistogram.record(duration, { method: 'GET', endpoint: '/api/events' });
 
 - [Engineering Principles](../development/ENGINEERING_PRINCIPLES.md)
 - [Modularity Philosophy](./MODULARITY_PHILOSOPHY.md)
-- [Senior Engineering Review](./SENIOR_ENG_REVIEW.md)
-- [Database Improvements Roadmap](./database/improvements-roadmap.md)
+- [Senior Engineering Review](../archive/architecture/SENIOR_ENG_REVIEW.md) (archived)
+- [Database Improvements Roadmap](../archive/architecture/database/improvements-roadmap.md) (archived)
 
 ---
 

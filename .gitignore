@@ -87,7 +87,6 @@ lerna-debug.log*
 .vscode/
 .cursor/
 .agents/
-# Note: .ai-guides/ moved to docs/guides/ai/ for better visibility
 *.swp
 *.swo
 *~

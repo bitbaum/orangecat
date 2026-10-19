@@ -6,7 +6,7 @@ internal automation that lives outside the OrangeCat Next.js app.
 
 > Authoritative machine-readable contract: **https://orangecat.ch/api/v1/openapi.json**
 > Conventions (versioning, errors, idempotency, rate limits):
-> [`docs/api/CONVENTIONS.md`](../../docs/api/CONVENTIONS.md) in the OrangeCat repo.
+> [`docs/reference/api/CONVENTIONS.md`](../../docs/reference/api/CONVENTIONS.md) in the OrangeCat repo.
 
 ## Install
 
@@ -110,7 +110,7 @@ try {
 }
 ```
 
-Error codes mirror `docs/api/CONVENTIONS.md` §3:
+Error codes mirror `docs/reference/api/CONVENTIONS.md` §3:
 `unauthorized` `forbidden` `validation_error` `not_found` `conflict`
 `rate_limited` `internal_error` `network_error` `timeout` `unknown`.
 

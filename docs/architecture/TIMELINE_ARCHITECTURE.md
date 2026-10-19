@@ -426,10 +426,9 @@ CREATE POLICY "Anyone can view public timeline events"
 
 ## Related Documentation
 
-- [Timeline Types Reference](/docs/timeline-types.md)
-- [Database Schema](/docs/database-schema.md)
-- [API Reference](/docs/api-reference.md)
-- [Component Props](/docs/component-props.md)
+- Timeline types: `src/types/timeline.ts`
+- [Database Schema](database-schema.md)
+- [API Reference](../reference/api/README.md)
 
 ---
 

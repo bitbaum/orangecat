@@ -43,7 +43,7 @@ last_modified_summary: Brief description of changes
 
 ## Using the Template
 
-1. Copy the template from `docs/templates/documentation_template.md`
+1. Copy the template from `docs/development/templates/documentation_template.md`
 2. Fill in the required frontmatter fields
 3. Follow the template structure for consistency
 

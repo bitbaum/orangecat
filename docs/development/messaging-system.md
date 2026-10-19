@@ -9,7 +9,7 @@ last_modified_summary: Link avatars/names in DM list and header to profiles
 - New migration `20251208_grant_messaging_permissions.sql` grants authenticated users access to messaging views/functions.
 - Removed console logging in the new conversation modal to keep production logs clean.
 - Validate after deploy: open `/messages`, start a new conversation, and send/receive replies between two users.
-- Next.js 15+ requires awaiting route `params`; `messages/[conversationId]` handlers now await `params` to avoid runtime errors.
+- Next.js 16 (like 15 before it) requires awaiting route `params`; `messages/[conversationId]` handlers now await `params` to avoid runtime errors.
 - Dev-only auto-migration call to `/api/admin/apply-messaging-migrations` now records failed attempts to prevent repeated 500s when `SUPABASE_ACCESS_TOKEN` is missing; run the migrations manually when credentials are unavailable.
 - Auth state changes post to `/api/auth/callback` and also prime the current session on mount so Supabase cookies stay in sync and `/api/messages` handlers don’t return 401 on first load.
 - Conversation fetch now trusts `get_user_conversations` scoping for auth, and if that fails, falls back to any participant row (even inactive) plus a minimal conversation fetch to avoid false 403s that were triggering the new-conversation modal.

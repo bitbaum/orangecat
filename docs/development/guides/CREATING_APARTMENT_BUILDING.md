@@ -484,7 +484,7 @@ Click **"Create Asset"**
 - ❌ Vote on proposals (database exists, but no service/API/UI)
 - ❌ Execute proposals (automatic fund release)
 
-**See:** `docs/development/GROUP_FEATURES_IMPLEMENTATION_STATUS.md` for full status
+**See:** `docs/archive/development/GROUP_FEATURES_IMPLEMENTATION_STATUS.md` for the status as of 2025-12-30 (archived; re-verify)
 
 ---
 

@@ -10,7 +10,7 @@ This document outlines the standards for handling dates and times in the OrangeC
 
 ## Available Scripts
 
-### Node.js Script (`scripts/get_current_datetime.js`)
+### Node.js Script (`scripts/dev/get_current_datetime.js`)
 
 This script provides the current date and time in various formats and can be used in Node.js applications.
 
@@ -26,7 +26,7 @@ console.log(datetime.iso); // ISO format
 console.log(datetime.unixTimestamp); // Unix timestamp
 ```
 
-### Shell Script (`scripts/get_current_datetime.sh`)
+### Shell Script (`scripts/dev/get_current_datetime.sh`)
 
 This script provides the current date and time in various formats and can be used in shell scripts.
 

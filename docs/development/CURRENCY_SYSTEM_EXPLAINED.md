@@ -373,7 +373,7 @@ All see the same satoshi amount, displayed in their preferred currency
 - **Conversion:** `src/services/currency/index.ts` - Conversion functions
 - **Input:** `src/components/ui/CurrencyInput.tsx` - Currency input component
 - **API:** `src/app/api/events/route.ts` - Uses user preference
-- **Database:** `supabase/migrations/20260105000000_unify_currency_constraints.sql` - Constraints
+- **Database:** the `*_currency_check` constraints in the squashed baseline `supabase/migrations/20240101000001_baseline_public_schema.sql`
 
 ## Testing
 

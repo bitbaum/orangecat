@@ -10,9 +10,9 @@ Environment
 
 Runtime Clients
 
-- Browser: `src/services/supabase/client.ts` (uses anon key, lazy validates env).
-- Server: `src/services/supabase/server.ts` (SSR client using anon key + cookies for session handling).
-- Admin: `src/services/supabase/admin.ts` (service-role client; falls back to a dummy that throws if missing to avoid unsafe usage).
+- Browser: `src/lib/supabase/browser.ts` (uses anon key, lazy validates env).
+- Server: `src/lib/supabase/server.ts` (SSR client using anon key + cookies for session handling).
+- Admin: `src/lib/supabase/admin.ts` (service-role client; falls back to a dummy that throws if missing to avoid unsafe usage).
 
 Health Check
 
