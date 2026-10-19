@@ -1,5 +1,10 @@
 # Supabase Edge Functions
 
+> **Status (checked 2026-10-19).** Nothing in `src/` reads `NEXT_PUBLIC_CORS_PROXY_URL`,
+> `scripts/deploy-cors-proxy.sh` no longer exists, and the managed Supabase Cloud
+> project the steps below deploy to was retired 2026-06. The function source is kept
+> in `supabase/functions/cors-proxy/`; treat the deploy steps as historical.
+
 This directory contains Supabase Edge Functions to help with various aspects of the application.
 
 ## CORS Proxy

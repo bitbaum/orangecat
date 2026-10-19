@@ -2,7 +2,7 @@
 
 **Purpose**: API design, database patterns, and backend architecture for OrangeCat
 
-**Last Updated**: 2026-09-04
+**Last Updated**: 2026-10-19
 
 ---
 
@@ -26,12 +26,20 @@ DELETE /api/products/:id      # Delete product
 // app/api/services/[id]/route.ts (189 lines - duplicated!)
 // app/api/causes/[id]/route.ts (186 lines - duplicated!)
 
-// ✅ Use generic handler factory
-import { createEntityCrudHandlers } from '@/lib/api/entityHandler';
+// ✅ Use the generic handler factories (src/lib/api/entity*Handler.ts)
+import { createEntityCrudHandlers } from '@/lib/api/entityCrudHandler';
 
-const { GET, POST, PUT, DELETE } = createEntityCrudHandlers('product');
+// app/api/<entity>/[id]/route.ts — GET / PUT / DELETE by id
+const { GET, PUT, DELETE } = createEntityCrudHandlers({
+  entityType: 'product',
+  schema: userProductSchema,
+  buildUpdatePayload: data => ({ title: data.title /* ... */ }),
+});
 
-export { GET, POST, PUT, DELETE };
+export { GET, PUT, DELETE };
+
+// app/api/<entity>/route.ts — list + create:
+// createEntityListHandler (entityListHandler.ts), createEntityPostHandler (entityPostHandler.ts)
 ```
 
 **Benefits**:
@@ -47,40 +55,38 @@ export { GET, POST, PUT, DELETE };
 
 ```typescript
 import { compose } from '@/lib/api/compose';
-import { withAuth, withRequestId, withRateLimit, withCache } from '@/lib/api/middleware';
+import { withRequestId } from '@/lib/api/withRequestId';
+import { withRateLimit } from '@/lib/api/withRateLimit';
+import { withZodBody } from '@/lib/api/withZod';
 
-// ✅ Build complex handlers from simple pieces
+// ✅ Build complex handlers from simple pieces (see src/app/api/projects/route.ts)
 export const GET = compose(
-  withAuth(), // Require authentication
   withRequestId(), // Add request tracking
-  withRateLimit('read'), // Rate limiting (lenient for reads)
-  withCache({ ttl: 60 }) // Cache for 60 seconds
-)(async (request, context) => {
-  // Handler logic here
-  const products = await getProducts(context.user.id);
-  return apiSuccess({ data: products });
+  withRateLimit('read') // Rate limiting (lenient for reads)
+)(async request => {
+  const products = await getProducts();
+  return apiSuccess(products);
 });
 
 export const POST = compose(
-  withAuth(), // Require authentication
-  withRequestId(), // Add request tracking
+  withRequestId(),
   withRateLimit('write'), // Stricter rate limit for writes
-  withValidation(createProductSchema) // Validate input
+  withZodBody(createProductSchema) // Validate input
 )(async (request, context) => {
-  const product = await createProduct(context.validData, context.user.id);
-  return apiSuccess({ data: product }, 201);
+  // ...
 });
 ```
 
-**Available Middleware**:
+**Available Middleware** (each its own file in `src/lib/api/`):
 
-- `withAuth()` - Require authentication
-- `withRateLimit(type)` - Rate limiting ('read' | 'write')
-- `withValidation(schema)` - Zod validation
-- `withCache(options)` - Response caching
-- `withRequestId()` - Request tracking
-- `withLogging()` - Structured logging
-- `withCors()` - CORS headers
+- `withRequestId()` (`withRequestId.ts`) - Request tracking
+- `withRateLimit(mode)` (`withRateLimit.ts`) - Rate limiting (`'read'` | `'write'`)
+- `withZodBody(schema)` (`withZod.ts`) - Zod body validation
+- `withAuth(handler)` / `withOptionalAuth(handler)` / `withRole(role, handler)`
+  (`withAuth.ts`) - auth WRAPPERS around a handler, not `compose` middleware
+
+There is no `withCache`, `withLogging` or `withCors` — caching headers come from
+`getCacheControl` (`src/lib/api/helpers.ts`) and `src/lib/api/cache-policy.ts`.
 
 ---
 
@@ -89,7 +95,7 @@ export const POST = compose(
 **Use standardized response helpers**:
 
 ```typescript
-import { apiSuccess, apiError, apiValidationError, apiNotFound } from '@/lib/api/responses';
+import { apiSuccess, apiError, apiValidationError, apiNotFound } from '@/lib/api/standardResponse';
 
 // ✅ Success response
 return apiSuccess({
@@ -461,13 +467,13 @@ const userActorId = await getUserActorId(user.id);
 ```typescript
 // ✅ Apply rate limits based on operation type
 export const GET = compose(
-  withAuth(),
-  withRateLimit('read') // 100 requests/minute
+  withRequestId(),
+  withRateLimit('read') // per-IP general budget (src/lib/rate-limit.ts)
 )(handler);
 
 export const POST = compose(
-  withAuth(),
-  withRateLimit('write') // 20 requests/minute (stricter)
+  withRequestId(),
+  withRateLimit('write') // 30/min per user (src/lib/rate-limit.ts)
 )(handler);
 ```
 
@@ -508,12 +514,12 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
 ```bash
 # Public (safe to expose to browser)
-NEXT_PUBLIC_SUPABASE_URL=https://project.supabase.co
+NEXT_PUBLIC_SUPABASE_URL=https://supabase.orangecat.ch
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
 
 # Private (server-only)
 SUPABASE_SERVICE_ROLE_KEY=eyJ...
-DATABASE_URL=postgresql://...
+POSTGRES_URL=postgresql://...  # local tunnel 127.0.0.1:5433, normally not running
 
 # Never commit .env.local to git!
 ```
@@ -524,24 +530,17 @@ DATABASE_URL=postgresql://...
 
 ### Caching Strategy
 
-```typescript
-// ✅ Cache GET requests
-export const GET = compose(
-  withCache({
-    ttl: 60, // Cache for 60 seconds
-    key: req => `products-${req.url}`, // Cache key
-    vary: ['Authorization'], // Vary by auth
-  })
-)(async request => {
-  const products = await getProducts();
-  return apiSuccess({ data: products });
-});
+Caching is HTTP `Cache-Control`, not a middleware. Name a preset from
+`CACHE_PRESETS` (`src/lib/api/cache-policy.ts`, the SSOT); do not retype the
+seconds. `getCacheControl(isUserSpecific)` (`src/lib/api/helpers.ts`) picks
+`private, no-cache` for per-user responses and the `SHORT` public preset
+otherwise.
 
-// ✅ Invalidate cache on mutation
-export const POST = compose(withCacheInvalidation(['products-*']))(async request => {
-  const product = await createProduct(data);
-  // Cache automatically invalidated
-  return apiSuccess({ data: product }, 201);
+```typescript
+import { getCacheControl } from '@/lib/api/helpers';
+
+return apiSuccess(products, {
+  headers: { 'Cache-Control': getCacheControl(false) },
 });
 ```
 
@@ -811,7 +810,7 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 - **API Utilities**: `src/lib/api/`
 - **Supabase Client**: `src/lib/supabase/server.ts`
-- **Validation Schemas**: `src/lib/validation.ts`
+- **Validation Schemas**: `src/lib/validation/` (barrel `index.ts`)
 - **Entity Registry**: `src/config/entity-registry.ts`
 - **Engineering Principles**: `docs/development/ENGINEERING_PRINCIPLES.md`
 - **Remote Supabase Setup**: `docs/operations/REMOTE_ONLY_SUPABASE.md`

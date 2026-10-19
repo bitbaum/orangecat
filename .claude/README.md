@@ -13,7 +13,6 @@
 ├── CLAUDE.md                       # Main guide (auto-discovered)
 ├── README.md                       # This file
 ├── QUICK_REFERENCE.md              # ⚡ One-page lookup (READ FIRST)
-├── CREDENTIALS.md                  # 🔐 Where credentials are & tool access
 ├── ERROR_RECOVERY.md               # 🚨 Common errors & fixes
 ├── RULES.md                        # 🛡️ Critical .env.local protection
 ├── rules/                          # Modular best practices (6 files)
@@ -26,10 +25,12 @@
 ├── hooks/                          # Automated guardrails (2 scripts)
 │   ├── pre-edit.sh                    # Prevent destructive changes
 │   └── post-edit.sh                   # Self-correction after edits
-└── commands/                       # Custom commands (3 scripts)
+└── commands/                       # Custom commands (5 scripts)
     ├── audit.sh                       # Comprehensive health check
     ├── db-check.sh                    # Database verification
-    └── deploy-check.sh                # Pre-deployment checklist
+    ├── deploy-check.sh                # Pre-deployment checklist
+    ├── ship.sh                        # Test, fix and ship workflow
+    └── quick-ship.sh                  # Quick ship with fewer checks
 ```
 
 ---
@@ -271,7 +272,7 @@ h  # Create handoff document
 
 - **Agentic**: Uses tools autonomously, chains operations
 - **Guardian**: Enforces principles, prevents tech debt
-- **Tool-driven**: Supabase MCP, browser automation, Context7
+- **Tool-driven**: PostgREST reads, browser automation, Context7 (the Supabase MCP is retired)
 - **Self-correcting**: Hooks catch errors, Claude fixes immediately
 - **Collaborative**: Handoff system for multi-agent work
 

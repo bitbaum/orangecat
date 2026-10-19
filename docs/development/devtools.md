@@ -150,7 +150,7 @@ console.log('Auth state:', {
 ```javascript
 // Monitor Supabase queries
 // 1. Open Network tab
-// 2. Filter by "supabase.co"
+// 2. Filter by "supabase.orangecat.ch"
 // 3. Check query performance and responses
 // 4. Look for N+1 query problems
 ```

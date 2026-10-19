@@ -137,7 +137,7 @@ export const ENTITY_REGISTRY = {
 # Create src/config/entity-configs/event.ts
 
 # 3. Create validation schema
-# Add to src/lib/validation.ts
+# Add to src/lib/validation/ (barrel: src/lib/validation/index.ts)
 export const eventSchema = baseEntitySchema.extend({
   start_date: z.date(),
   end_date: z.date(),
@@ -197,6 +197,11 @@ const serviceConfig = createEntityConfig('service');
 ```
 
 ### CRUD Handler Factory
+
+A sketch of the pattern. The real factories are `src/lib/api/entityCrudHandler.ts`
+(`createEntityCrudHandlers(config)` → GET/PUT/DELETE by id),
+`entityListHandler.ts` and `entityPostHandler.ts`; each takes a config object
+(`entityType`, `schema`, …), not a bare type.
 
 ```typescript
 // Generate complete CRUD handlers for any entity
@@ -680,9 +685,9 @@ function ContextSwitcher({ context }: Props) {
 ## References
 
 - **Entity Registry**: `src/config/entity-registry.ts`
-- **Factory Functions**: `src/lib/factories/`
+- **Handler Factories**: `src/lib/api/entityCrudHandler.ts`, `entityListHandler.ts`, `entityPostHandler.ts`
 - **Domain Services**: `src/domain/*/service.ts`
-- **Middleware**: `src/lib/api/middleware.ts`
+- **Middleware**: `src/lib/api/compose.ts` + `withRequestId.ts`, `withRateLimit.ts`, `withZod.ts`, `withAuth.ts`
 - **Modularity Philosophy**: `docs/architecture/MODULARITY_PHILOSOPHY.md`
 - **Engineering Principles**: `docs/development/ENGINEERING_PRINCIPLES.md`
 

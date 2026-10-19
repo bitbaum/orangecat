@@ -371,9 +371,9 @@ pnpm exec supabase migration new feature_name
 - `auth_system.md` - Authentication system details
 - `celebrity-impersonation-prevention.md` - Anti-impersonation measures
 
-#### **Deployment** (`docs/deployment/`)
+#### **Deployment** (`docs/operations/deployment/`)
 
-- `production-readiness-2025-06-08.md` - Deployment checklist
+- `DEPLOYMENT_PROCESS.md` - How a merge reaches production
 - Infrastructure and DevOps guides
 
 #### **Features** (`docs/features/`)
@@ -484,7 +484,7 @@ pnpm exec supabase migration new feature_name
 | **Update database**    | Migrations guide     | `docs/supabase/migrations-guide.md` |
 | **Add API route**      | API templates        | `docs/templates/api-endpoint.md`    |
 | **Write tests**        | Testing guide        | `docs/testing/test-guide.md`        |
-| **Deploy**             | Deployment docs      | `docs/deployment/`                  |
+| **Deploy**             | Deployment docs      | `docs/operations/deployment/`                  |
 | **Security check**     | Security docs        | `docs/security/`                    |
 
 ### **Search Tips**

@@ -152,7 +152,7 @@ their own shop, rendered well.
   it needs no words.
 - **What is wrong with the current one, measured.** Not adjectives — the load
   time, the contrast failures, the missing phone link, no HTTPS, unusable on a
-  phone. `dotfiles/scripts/ci/ui-defect-audit.mjs` already renders live sites and
+  phone. `bitbaum/fleet` `scripts/ci/ui-defect-audit.mjs` already renders live sites and
   finds AA contrast failures and misaligned stacks; the assessment step is that
   tool pointed outward.
 - **What we could not find out about you.** The empty fields, shown as empty.
@@ -219,7 +219,7 @@ excuse.
 to be a property of what it emits, checkable by the machinery that already
 polices this fleet:
 
-- **The generated repo ships the golden CI** from `dotfiles/templates/ci/` and a
+- **The generated repo ships the golden CI** from `bitbaum/fleet` `templates/ci/` and a
   real `verify` — lint, typecheck, test. It passes `verify-floor-audit.sh` on the
   same terms as any repo we own. A site we hand over is a repo we would accept.
 - **Token architecture, not token values.** It inherits the _shape_ of
@@ -228,7 +228,7 @@ polices this fleet:
   **not** import the fleet's values: those make things look like OrangeCat, and a
   bakery has to look like itself. Uniform system, divergent aesthetics.
 - **Before/after is two audit runs, not two adjectives.**
-  `dotfiles/scripts/ci/ui-defect-audit.mjs` renders live sites and finds AA
+  `bitbaum/fleet` `scripts/ci/ui-defect-audit.mjs` renders live sites and finds AA
   contrast failures and misaligned stacks. Run it on their current site and on
   ours. The improvement becomes a measurement the prospect can check, and the new
   site's score is held there by CI rather than by whoever reviewed it.

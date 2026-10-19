@@ -119,7 +119,7 @@ src/
 │   ├── api/              # API middleware, responses
 │   ├── bitcoin/          # Lightning, sats formatting
 │   ├── supabase/         # Client creation
-│   └── validation.ts     # Zod schemas
+│   └── validation/       # Zod schemas (barrel index.ts)
 └── hooks/                 # Data fetching hooks
 ```
 
@@ -147,7 +147,7 @@ describes. See "What an entity IS" above for the test a new type must pass.
 **Adding New Entity**:
 
 1. Add to `src/config/entity-registry.ts`
-2. Create schema in `src/lib/validation.ts`
+2. Create schema in `src/lib/validation/`
 3. Add a migration file under `supabase/migrations/` — the deploy applies it
    (see "Self-Hosted Supabase" below). Never apply it by hand, and never via the
    retired Supabase MCP.
@@ -297,11 +297,16 @@ export async function POST(request: Request) {
 
 ## Design System
 
-| Element | Value                            |
-| ------- | -------------------------------- |
-| Primary | Tiffany Blue `#0ABAB5`           |
-| Accent  | Orange `#FF6B35`                 |
-| Bitcoin | Orange `#F7931A` (Bitcoin-only!) |
+Tokens are SSOT in `src/app/globals.css`; the migration direction is in the
+root `CLAUDE.md` → "Design System". In short:
+
+| Element  | Value                                                                  |
+| -------- | ---------------------------------------------------------------------- |
+| Surfaces | Monochromatic semantic tier (`bg-surface-*`, `text-fg-*`)              |
+| Accent   | Warm accent `#ff5c00` (`bg-accent-warm`) — top-of-funnel CTAs only     |
+| Bitcoin  | Bitcoin Orange `#f7931a` (`bg-bitcoinOrange`) — Bitcoin-only!          |
+| Status   | `bg-status-*` — only for actual status                                 |
+| Legacy   | Tiffany `#0ABAB5` / `orange-*` palette — being dropped, no new uses    |
 
 ---
 
@@ -320,7 +325,6 @@ export async function POST(request: Request) {
 | File                         | Purpose               |
 | ---------------------------- | --------------------- |
 | `.claude/QUICK_REFERENCE.md` | Common operations     |
-| `.claude/CREDENTIALS.md`     | Where credentials are |
 | `.claude/rules/`             | All best practices    |
 | `.claude/skills/publish-article/SKILL.md` | How to publish an article (voice, frontmatter, checks, shipping) |
 

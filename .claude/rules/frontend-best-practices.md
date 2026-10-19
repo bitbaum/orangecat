@@ -2,7 +2,7 @@
 
 **Purpose**: Design system compliance and UX patterns for OrangeCat
 
-**Last Updated**: 2026-01-06
+**Last Updated**: 2026-10-19
 
 ---
 
@@ -10,59 +10,59 @@
 
 ### Colors
 
-**Use design tokens, NEVER hex codes directly**
+**Use design tokens, NEVER hex codes directly.** Every colour is a CSS custom
+property in `src/app/globals.css` (the token SSOT); `tailwind.config.ts` only
+maps utility classes onto those vars. See the "Design System" section of the
+root `CLAUDE.md` for the migration direction.
 
 ```tsx
 // ❌ Wrong - hardcoded colors
-<div className="bg-[#0ABAB5]">
+<div className="bg-[#ff5c00]">
 
-// ✅ Correct - design tokens
-<div className="bg-tiffany">
+// ✅ Correct - semantic tokens
+<div className="bg-accent-warm text-on-accent">
 ```
 
 #### Color Palette
 
-**Primary Colors**:
+**Semantic tier (use in new code)**:
 
-- **Tiffany Blue**: `bg-tiffany` / `#0ABAB5`
-  - Main CTAs, brand elements
-  - Light variant: `bg-tiffany-light` / `#E6F7F7`
-  - Dark variant: `bg-tiffany-dark` / `#089B96`
+- Text: `text-fg-primary` / `text-fg-secondary` / `text-fg-tertiary` / `text-fg-muted` / `text-fg-inverted`
+- Surfaces: `bg-surface-page` / `bg-surface-base` / `bg-surface-raised` / `bg-surface-overlay` (also `-modal`, `-drawer`, `-public`)
+- Warm accent: `bg-accent-warm` (`--accent-primary` → `#ff5c00`), hover `bg-accent-warm-hover`;
+  text on it is `text-on-accent` (`text-white` on the accent fails AA)
+  - Top-of-funnel conversion only (the `accent` Button variant). Use sparingly.
+- Status: `bg-status-positive` / `-warning` / `-negative` / `-neutral` (+ `-subtle`) — only for actual status
 
-- **Orange**: `bg-orange` / `#FF6B35`
-  - Accent color (use sparingly)
-  - Light: `bg-orange-light` / `#FFF0EB`
-  - Dark: `bg-orange-dark` / `#E65A2F`
+**Bitcoin Orange**: `bg-bitcoinOrange` / `text-bitcoinOrange` (`--bitcoin-orange: #f7931a`)
 
-- **Bitcoin Orange**: `bg-bitcoin-orange` / `#F7931A`
-  - **ONLY for Bitcoin-related features**
-  - Never use for non-Bitcoin elements
+- **ONLY for Bitcoin-related features**
+- Never use for non-Bitcoin elements
+- There is no `bitcoin-orange` utility class — `text-bitcoin-orange` renders nothing
 
-**Neutral Colors**:
+**Legacy tier (still in use, migrate as touched)**:
 
-- Text: `text-gray-900` / `#1A1A1A`
-- Secondary text: `text-gray-600` / `#4A4A4A`
-- Tertiary text: `text-gray-400` / `#8A8A8A`
-- Borders: `border-gray-200` / `#E5E5E5`
-- Background: `bg-gray-50` / `#F5F5F5`
+- shadcn-style HSL tokens: `bg-card`, `text-foreground`, `bg-primary`, `text-muted-foreground`, `border-border`
+- Brand palette `tiffany-{50..900}` (`bg-tiffany` = `tiffany-500` = `#0ABAB5`, plus
+  `bg-tiffany-light` / `bg-tiffany-dark`) and `orange-{50..900}` (no `bg-orange`
+  DEFAULT). Being dropped from new code — do not add new uses.
 
 ---
 
 ### Typography
 
-**Font Family**: Inter (system font stack)
+**Font families** (self-hosted in `src/fonts/`, wired in `src/app/layout.tsx`):
+
+- `font-sans` — Inter (body, the default)
+- `font-heading` — Space Grotesk (display / headings)
+- `font-mono` — IBM Plex Mono (code)
+
+**Font Sizes** (`tailwind.config.ts` → `fontSize`):
 
 ```tsx
-// Already configured in Tailwind - just use
-<h1 className="font-sans">Title</h1>
-```
-
-**Font Sizes** (use Tailwind classes):
-
-```tsx
-<h1 className="text-3xl">48px heading</h1>
-<h2 className="text-2xl">36px heading</h2>
-<h3 className="text-xl">24px heading</h3>
+<h1 className="text-4xl">36px hero</h1>
+<h2 className="text-3xl">30px heading</h2>
+<h3 className="text-2xl">24px heading</h3>
 <p className="text-base">16px body</p>
 <small className="text-sm">14px small</small>
 ```
@@ -119,30 +119,34 @@
 #### Buttons
 
 ```tsx
-import { Button } from '@/components/ui/button';
+import Button from '@/components/ui/Button';
 
-// Primary CTA
-<Button variant="default">Create Product</Button>
+// Primary CTA (the default variant)
+<Button variant="primary">Create Product</Button>
+
+// Top-of-funnel conversion CTA (warm accent)
+<Button variant="accent">Get started</Button>
 
 // Secondary action
 <Button variant="outline">Cancel</Button>
 
 // Destructive action
-<Button variant="destructive">Delete</Button>
+<Button variant="danger">Delete</Button>
 
 // Ghost (subtle)
 <Button variant="ghost">View Details</Button>
 
 // Sizes
+<Button size="xl">Extra large</Button>
 <Button size="lg">Large</Button>
-<Button size="default">Default</Button>
+<Button size="md">Default</Button>
 <Button size="sm">Small</Button>
 ```
 
 #### Cards
 
 ```tsx
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/Card';
 
 <Card className="p-6">
   <CardHeader>
@@ -164,7 +168,7 @@ import {
   FormControl,
   FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
+import Input from '@/components/ui/Input';
 
 <Form {...form}>
   <FormField
@@ -298,7 +302,7 @@ return <Sidebar items={navigation} />;
   <p className="text-base text-muted-foreground">Description text</p>
 
   {/* Size + Color: Primary action */}
-  <Button size="lg" variant="default">
+  <Button size="lg" variant="primary">
     Primary Action
   </Button>
 
@@ -320,12 +324,12 @@ return <Sidebar items={navigation} />;
 - Recovery path
 
 ```tsx
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription } from '@/components/ui/Alert';
 import { AlertCircle } from 'lucide-react';
 
 <Alert variant="destructive">
   <AlertCircle className="h-4 w-4" />
-  <AlertTitle>Error</AlertTitle>
+  <p className="font-semibold">Error</p>
   <AlertDescription>
     Failed to create product. Check your connection and try again.
   </AlertDescription>
@@ -363,7 +367,7 @@ import { AlertCircle } from 'lucide-react';
 
 ```tsx
 // ✅ Skeleton loading
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 {isLoading ? (
   <Skeleton className="h-24 w-full" />
@@ -631,7 +635,7 @@ export function ProductCard({ product, onEdit, onDelete }: ProductCardProps) {
             </Button>
           )}
           {onDelete && (
-            <Button variant="destructive" onClick={onDelete}>
+            <Button variant="danger" onClick={onDelete}>
               Delete
             </Button>
           )}
@@ -719,7 +723,7 @@ const form = useForm<FormData>({
 (await mcp_cursor) -
   ide -
   browser_browser_navigate({
-    url: 'http://localhost:3001/dashboard/store/create',
+    url: 'http://localhost:3020/dashboard/store/create',
   });
 
 // 2. Snapshot to verify layout

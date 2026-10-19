@@ -236,7 +236,7 @@ console.error('[API Error] Failed to create product', {
   userId: user.id,
   productData: body,
   requestId: req.headers.get('x-request-id'),
-  timestamp: new Date().toISO String(),
+  timestamp: new Date().toISOString(),
 });
 
 // ❌ Minimal logs
@@ -318,7 +318,7 @@ describe('POST /api/products', () => {
 ```javascript
 // Test product creation flow
 test('user can create product', async () => {
-  await navigate({ url: 'http://localhost:3001/dashboard/store' });
+  await navigate({ url: 'http://localhost:3020/dashboard/store' });
   await click({ element: 'Create button', ref: 'a[href*="/create"]' });
 
   await type({ element: 'Title', ref: 'input[name="title"]', text: 'Test Product' });
@@ -497,21 +497,22 @@ Closes #456
 
 ### Pre-Commit Hooks
 
-```bash
-#!/bin/bash
-# .husky/pre-commit
+`.husky/pre-commit` runs `pnpm exec lint-staged` (config in `package.json`:
+`eslint --fix` + `prettier --write` on staged JS/TS, `prettier --write` on
+staged JSON/MD/YAML). Only when lint-staged is unavailable does it fall back to
+`pnpm run lint`, `pnpm run type-check` and `pnpm run test:unit`.
 
-# Type check
-pnpm run type-check || exit 1
-
-# Lint
-pnpm run lint || exit 1
-
-# Tests (only affected)
-pnpm run test:changed || exit 1
-```
+`.husky/pre-push` runs `pnpm run type-check`, `check:sizes`, `audit:routes` and
+`test:unit` (plus fast E2E when an OrangeCat dev server is up) before a push.
+Neither hook is the gate — CI is. Run `pnpm run verify` before declaring work
+done.
 
 ### Post-Edit Hooks (Claude)
+
+The scripts live in `.claude/hooks/` (`pre-edit.sh`, `post-edit.sh`). This repo
+ships no `.claude/settings.json` wiring them, so they run only where a local or
+user-level Claude config registers them. The block below is a sketch; read the
+script for what it actually does.
 
 ```bash
 #!/bin/bash
@@ -558,13 +559,13 @@ echo "✅ All quality checks passed"
 ```bash
 # Lighthouse CI
 pnpm run build
-pnpm dlx lighthouse http://localhost:3001 --view
+pnpm dlx lighthouse http://localhost:3020 --view
 
 # Bundle analysis
 pnpm run analyze
 
 # Check specific metrics
-pnpm dlx web-vitals-measure http://localhost:3001
+pnpm dlx web-vitals-measure http://localhost:3020
 ```
 
 ### Performance Budget
@@ -644,7 +645,7 @@ export function calculateBulkPrice(
 
 ## References
 
-- **ESLint Config**: `.eslintrc.json`
+- **ESLint Config**: `eslint.config.mjs`
 - **TypeScript Config**: `tsconfig.json`
 - **Test Setup**: `vitest.config.ts`
 - **Prettier Config**: `.prettierrc`

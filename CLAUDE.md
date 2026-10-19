@@ -47,7 +47,7 @@ Multi-commit migration in progress:
 - ✅ Semantic token tier added (eff99bad) + exposed via Tailwind utility classes (71c88988)
 - ✅ Warm-accent Button variant; landing + auth + about + header CTAs all use `variant="accent"` (ff9f2ce5, 2cdb0907)
 - ⏳ Drop chromatic brand palette (tiffany, orange) from new code; migrate existing classes to semantic tier (`bg-card → bg-surface-base`, `text-foreground → text-fg-primary`)
-- ⏳ Display typography (Space Grotesk for headings, IBM Plex Mono for code) replacing Inter-only
+- ✅ Display typography: Space Grotesk (`font-heading`) for headings, IBM Plex Mono (`font-mono`) for code, Inter (`font-sans`) for body — self-hosted in `src/fonts/`, wired in `src/app/layout.tsx`
 - ✅ Tailwind v4 (package on 4.x — this line previously claimed 3.3 long after main had moved, which misled agents; keep this table honest)
 - ⏳ OKLCH color space for the token tier
 
@@ -58,7 +58,7 @@ End state: monochromatic surfaces + one warm accent (`#ff5c00`) for top-of-funne
 ```bash
 # Find arbitrary hex violations in className props
 grep -rn '\[#' src/
-# Current count: 0 (clean)
+# Current count: 0 in className props (the two hits are regex literals in src/config/articles.ts)
 
 # Find inline style hex violations
 grep -rn "style={{.*#" src/
@@ -87,7 +87,8 @@ push branch → open PR → CI green → auto-merge.yml squash-merges it
 
 `.github/workflows/auto-merge.yml` calls the fleet's canonical sweep — the
 policy no longer lives in this repo. It is defined once in
-`bitbaum/dotfiles`, `scripts/ci/auto-merge-sweep.sh`, and a fix made to a
+`bitbaum/fleet`, `scripts/ci/auto-merge-sweep.sh` (called as the reusable
+workflow `bitbaum/fleet/.github/workflows/auto-merge-sweep.yml@main`), and a fix made to a
 local copy here would reach nobody. The sweep merges **one** PR per sweep, and
 only when: it is not a draft, carries no hold label, every check has finished
 green, GitHub calls it cleanly mergeable, and main's own CI is currently green. One car per sweep is deliberate — a PR's
@@ -103,7 +104,9 @@ would not want deployed. If work needs to land in a specific order, keep the
 later PRs as drafts until the earlier ones are on main.
 
 **Two explicit hand-offs keep this chain alive. Never remove either.** Both
-exist because `GITHUB_TOKEN` is deliberately inert:
+exist because `GITHUB_TOKEN` is deliberately inert (auto-merge.yml passes the
+`FLEET_PAT` org secret to the sweep when it exists, but falls back to
+`GITHUB_TOKEN`, so the chain must work without it):
 
 1. **The CI re-arm** at the end of the canonical sweep (configured here via
    `rearm_workflows` in auto-merge.yml). A push made with the default
@@ -115,10 +118,12 @@ exist because `GITHUB_TOKEN` is deliberately inert:
    shipped by the next sweep rather than stranded.
 2. **The `post-main` job** in `ci.yml`. GitHub also suppresses the `workflow_run`
    event for a run that was itself created with `GITHUB_TOKEN` — so the CI run
-   the re-arm just started chains to _nothing_. CD and Main Red Alert both hang
-   off `workflow_run`, and both are therefore dead on the automated path unless
-   the dispatched run hands off itself. It does: file/close the red-main issue,
-   then dispatch CD, and fail if no CD run appears.
+   the re-arm just started chains to _nothing_. Main Red Alert hangs off
+   `workflow_run`, and `cd.yml` is `workflow_dispatch`-only, so neither runs on
+   the automated path unless the dispatched run hands off itself. It does:
+   file/close the red-main issue (`scripts/ci/main-red-alert.sh`), then
+   dispatch CD with this run's ID and SHA (`scripts/ci/arm-cd.sh`), and fail
+   if no CD run appears.
 
 Failure mode if either is dropped: **CI is green, no check is red, and nothing
 deploys.** On 2026-08-04 that stranded 14 verified commits on main for eight

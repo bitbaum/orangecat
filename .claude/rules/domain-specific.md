@@ -2,7 +2,7 @@
 
 **Purpose**: Project-specific patterns, terminology, and integration requirements
 
-**Last Updated**: 2026-09-04
+**Last Updated**: 2026-10-19
 
 ---
 
@@ -95,35 +95,22 @@ function PriceDisplay({ price_btc }: Props) {
 
 ### Lightning Network
 
-**Use LNURL for payments**:
+Payments are **non-custodial**: OrangeCat never holds, routes or touches funds.
+Invoices are minted by the recipient's OWN wallet (NWC `make_invoice`, or a
+proxied request to their existing Lightning-address provider).
 
-```typescript
-import { generateLNURL, decodeLNURL } from '@/lib/bitcoin/lightning';
+Where the code lives:
 
-// ✅ Generate payment request
-const lnurl = generateLNURL({
-  amount_btc: 0.00001, // BTC amount; library converts to protocol units internally
-  description: 'Coffee purchase',
-  callback_url: `${baseUrl}/api/payments/callback`,
-  metadata: {
-    product_id: productId,
-    user_id: userId,
-  },
-});
+- `src/domain/payments/` — the payment domain; public API in `index.ts`
+  (`initiatePayment`, `checkPaymentStatus`, …; invoice minting in
+  `invoiceGenerationService.ts`)
+- `src/domain/lightning-address/lnurl-service.ts` — LUD-16 Lightning address
+  `<username>@orangecat.ch` (serves the LNURL-pay discovery document + callback)
+- `src/lib/nostr/nwc.ts` — Nostr Wallet Connect
+- `src/lib/bitcoin/bolt11.ts` — BOLT11 parsing (`parseBolt11`, `isPayableBolt11`)
 
-// ✅ Decode incoming LNURL
-const decoded = decodeLNURL(lnurlString);
-const { amount_btc, description } = decoded;
-```
-
-**Payment Flow**:
-
-1. User initiates payment
-2. Generate LNURL
-3. Show QR code
-4. User scans with Lightning wallet
-5. Callback receives payment confirmation
-6. Update order status
+Amounts cross into protocol units (millisats) only at that boundary; everywhere
+else they are BTC.
 
 ---
 
@@ -309,10 +296,20 @@ pnpm exec supabase start
 **Use Instead**:
 
 ```bash
-# ✅ Talk to the self-hosted DB directly
-psql "$POSTGRES_URL" -c 'select 1;'
-# ✅ Schema changes = a new file in supabase/migrations/ applied to the self-host
+# ✅ Read through PostgREST with the keys in .env.local (works from a sandbox)
+curl -s -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+     -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+     "$NEXT_PUBLIC_SUPABASE_URL/rest/v1/projects?select=id,title&limit=5"
+# ✅ DDL / anything PostgREST cannot express: via the box
+ssh ubuntu@167.233.22.31 \
+  'docker exec supabase-db psql -U postgres -d postgres -c "\d+ projects"'
+# ✅ Schema changes = a new file in supabase/migrations/, applied on deploy
+#    by scripts/apply-migrations.sh — never by hand
 ```
+
+`psql "$POSTGRES_URL"` needs a local tunnel on `127.0.0.1:5433` that is
+normally NOT running; a failure there is a missing tunnel, not a missing
+permission. See "Self-Hosted Supabase" in `.claude/CLAUDE.md`.
 
 ---
 
@@ -422,7 +419,7 @@ main branch → deployed to bitbaum via .github/workflows/cd.yml
 - [ ] Build succeeds locally (`SELF_HOST=1 pnpm run build`)
 - [ ] No console.logs remaining
 - [ ] Production env set in `/opt/orangecat/app/.env`
-- [ ] Database migrations applied
+- [ ] New migrations are files in `supabase/migrations/` (the deploy applies them)
 - [ ] No breaking changes without communication
 
 **Deployment Flow**:
@@ -438,8 +435,8 @@ git commit -m "feat: add warranty field"
 git push origin feature/add-warranty
 # GitHub Actions run type-check / lint / tests / build
 
-# 4. Merge to main
-# 5. cd.yml deploys to the box (or run scripts/deploy-selfhost.sh)
+# 4. CI green → auto-merge.yml merges it (nobody merges by hand; see CLAUDE.md "Shipping")
+# 5. CI on main → cd.yml deploys to the box (migrations apply on deploy)
 # 6. Verify https://orangecat.ch/api/health
 ```
 
@@ -528,37 +525,17 @@ const wallet = await createWallet({
 
 ### Entity Search
 
-**Search is unified across entity types**:
+**One search behind the ⌘K palette and Discover**: `src/services/search/find.ts`.
+Org rule: search goes through `@bitbaum/searchkit` — never a hand-rolled ranker.
 
-```typescript
-// Search all entities
-const results = await searchEntities({
-  query: 'coffee',
-  entityTypes: ['product', 'service', 'project'],
-  filters: {
-    status: 'active',
-    price_range: [0, 100000],
-  },
-  sort: 'relevance',
-  page: 1,
-  pageSize: 20,
-});
-```
+- The vocabulary (every word of every public title and handle) is built once and cached
+- Typed words are expanded within searchkit's typo budget, so "cqto" also asks for "cato"
+- The `search_public` database function returns candidates (exact + prefix matches)
+- searchkit reranks them and returns the matched ranges for highlighting
+- No match → `suggestion` ("Did you mean …?")
 
-**Search Fields**:
-
-- Title (weighted heavily)
-- Description
-- Tags
-- Category
-- Actor username
-
-**Search Optimizations**:
-
-- PostgreSQL full-text search
-- Trigram similarity for fuzzy matching
-- Cached popular searches
-- Indexed for performance
+Semantic matching uses `content_embeddings`, kept in sync by
+`src/services/search/reindexService.ts`.
 
 ---
 
@@ -566,29 +543,19 @@ const results = await searchEntities({
 
 ### API Rate Limits
 
-**Per User**:
+The limits are SSOT in `src/lib/rate-limit.ts` — read them there; do not copy
+numbers into docs. At the time of writing:
 
-- Read operations: 100 requests/minute
-- Write operations: 20 requests/minute
-- Authenticated: 200 requests/minute
-- Anonymous: 20 requests/minute
-
-**Per IP** (fallback):
-
-- 60 requests/minute
+- `withRateLimit('read')` → general per-IP budget: 100 requests per 15 minutes
+- `withRateLimit('write')` → 30 writes/minute per user (per-IP general budget when no user is on the context)
+- Purpose-specific limiters (search, social, payments, email codes, MCP, the Cat, …) live in the same file
 
 **Implementation**:
 
 ```typescript
-export const GET = compose(
-  withAuth(),
-  withRateLimit('read') // 100/min for authenticated
-)(handler);
+export const GET = compose(withRequestId(), withRateLimit('read'))(handler);
 
-export const POST = compose(
-  withAuth(),
-  withRateLimit('write') // 20/min for authenticated
-)(handler);
+export const POST = compose(withRequestId(), withRateLimit('write'))(handler);
 ```
 
 ---
@@ -633,11 +600,10 @@ console.error('[Error]', {
 ## References
 
 - **Bitcoin Utils**: `src/lib/bitcoin/`
-- **Actor System**: `src/lib/actors/`
+- **Actor System**: `src/services/actors/`
 - **Entity Registry**: `src/config/entity-registry.ts`
 - **Remote Supabase**: `docs/operations/REMOTE_ONLY_SUPABASE.md`
 - **Deployment**: `docs/operations/deployment/DEPLOYMENT_PROCESS.md`
-- **Terminology Guide**: `docs/design/TERMINOLOGY.md`
 
 ---
 
