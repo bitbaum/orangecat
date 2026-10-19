@@ -25,6 +25,14 @@ import { ROUTES } from '@/config/routes';
 import { SOLON_BASE_URL_DEFAULT } from '@/config/solon';
 import { fetchStudioMapForCat } from '@/services/ai/studio-map-fetcher';
 
+/**
+ * The studio list is Loki's fleet map, which is itself cached five minutes.
+ * Without this the page was prerendered once per OrangeCat deploy and served
+ * that copy for a year: on 2026-10-19 it kept naming a retired host for over an
+ * hour after the map had been corrected, until something else was deployed.
+ */
+export const revalidate = 300;
+
 export const metadata: Metadata = {
   title: 'The stack',
   description: `OrangeCat, Loki, and Solon are one stack and three products: ${ECOSYSTEM_STACK_LINE}.`,
