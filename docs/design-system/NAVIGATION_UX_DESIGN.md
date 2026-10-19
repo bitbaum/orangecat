@@ -3,6 +3,23 @@
 **Created:** 2025-12-30  
 **Purpose:** Comprehensive navigation design for individual vs organization context, following best practices from GitHub, Slack, Notion, Linear
 
+> **Status (checked 2026-10-19).** This is the 2025 design. Part of it shipped
+> and part did not, so read the code before the sketches below:
+>
+> - **Shipped:** the context switcher in the sidebar header
+>   (`src/components/sidebar/ContextSwitcher.tsx`), backed by
+>   `src/hooks/useNavigationContext.ts` (URL-derived context, the user's groups,
+>   persisted choice). The sidebar is `src/components/sidebar/Sidebar.tsx`; its
+>   sections are SSOT in `src/config/navigation.ts`.
+> - **Not built:** a separate group navigation config. The sidebar sections do
+>   not swap by context, and there is no `AdaptiveSidebar` component.
+> - **Group routes** are `/groups/[slug]` (with `events`, `proposals`,
+>   `settings`) and `/dashboard/groups/[slug]`, not the per-entity
+>   `/groups/[slug]/products` tree sketched below. Binding governance votes
+>   belong to Solon (see `ECOSYSTEM_PILLARS` in `src/config/ecosystem.ts`).
+>
+> The code blocks below are the original sketches, not the implementation.
+
 ---
 
 ## 🎯 Core Problem
@@ -91,7 +108,7 @@ interface NavigationContextData {
 **Implementation:**
 
 ```typescript
-// src/components/navigation/ContextSwitcher.tsx
+// Sketch. Real component: src/components/sidebar/ContextSwitcher.tsx
 export function ContextSwitcher() {
   const { context, switchContext } = useNavigationContext();
   const { userGroups } = useUserGroups();
@@ -383,7 +400,7 @@ Zurich Bar Collective > Products
 ### 1. Navigation Context Hook
 
 ```typescript
-// src/hooks/useNavigationContext.ts
+// Sketch. Real hook: src/hooks/useNavigationContext.ts
 export function useNavigationContext() {
   const pathname = usePathname();
   const [context, setContext] = useState<NavigationContextData>({
@@ -425,7 +442,7 @@ export function useNavigationContext() {
 ### 2. Adaptive Sidebar Component
 
 ```typescript
-// src/components/sidebar/AdaptiveSidebar.tsx
+// Sketch only. Not built; the sidebar is src/components/sidebar/Sidebar.tsx
 export function AdaptiveSidebar() {
   const { context } = useNavigationContext();
   const navigation = context.type === 'individual'
@@ -686,10 +703,10 @@ const filteredNavigation = navigation.map(section => ({
 
 ### Phase 1: Foundation
 
-- [ ] Create `NavigationContext` type and hook
-- [ ] Create `ContextSwitcher` component
+- [x] Create `NavigationContext` type and hook (`src/hooks/useNavigationContext.ts`)
+- [x] Create `ContextSwitcher` component (`src/components/sidebar/ContextSwitcher.tsx`)
 - [ ] Update `Sidebar` to be adaptive
-- [ ] Create individual navigation config
+- [x] Create individual navigation config (`src/config/navigation.ts`)
 - [ ] Create group navigation config
 
 ### Phase 2: Routing
@@ -741,4 +758,4 @@ const filteredNavigation = navigation.map(section => ({
 
 ---
 
-**Last Updated:** 2025-12-30
+**Last Updated:** 2025-12-30 (status note added 2026-10-19)

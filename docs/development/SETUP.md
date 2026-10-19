@@ -246,7 +246,7 @@ sudo chown -R $(whoami) node_modules/
 ## 📚 Related Documentation
 
 - **[Development Workflow](./README.md)** - Complete development guide
-- **[Architecture Overview](../architecture/overview.md)** - System design
+- **[Architecture Overview](../architecture/ARCHITECTURE.md)** - System design
 - **[Testing Guide](../testing/README.md)** - Testing strategies
 - **[Deployment Guide](../operations/deployment/DEPLOYMENT_PROCESS.md)** - Production deployment
 

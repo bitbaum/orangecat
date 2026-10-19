@@ -144,5 +144,5 @@ Authorization: Bearer {token}
 ## 📚 Related Documentation
 
 - [Authentication System](../../security/auth_system.md) - Complete auth flow
-- [Security Guidelines](../../security/SECURITY.md) - Security best practices
+- [Security Policy](../../../SECURITY.md) - Reporting vulnerabilities
 - [Development Setup](../../development/SETUP.md) - Local API development

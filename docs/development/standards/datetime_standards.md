@@ -16,7 +16,7 @@ This script provides the current date and time in various formats and can be use
 
 ```javascript
 // Import the datetime utilities
-const datetime = require('./scripts/get_current_datetime.js');
+const datetime = require('./scripts/dev/get_current_datetime.js');
 
 // Use the exported values
 console.log(datetime.dateOnly); // YYYY-MM-DD
@@ -32,7 +32,7 @@ This script provides the current date and time in various formats and can be use
 
 ```bash
 # Source the script to get the variables
-source ./scripts/get_current_datetime.sh
+source ./scripts/dev/get_current_datetime.sh
 
 # Use the exported variables
 echo $DATE_ONLY     # YYYY-MM-DD
@@ -108,7 +108,7 @@ When working with dates in code:
 1. **JavaScript/TypeScript**
 
    ```typescript
-   import { dateOnly, timeOnly } from './scripts/get_current_datetime.js';
+   import { dateOnly, timeOnly } from './scripts/dev/get_current_datetime.js';
 
    // Use the imported values
    const createdAt = dateOnly;
@@ -118,7 +118,7 @@ When working with dates in code:
 2. **Shell Scripts**
 
    ```bash
-   source ./scripts/get_current_datetime.sh
+   source ./scripts/dev/get_current_datetime.sh
 
    # Use the exported variables
    echo "Created: $DATE_ONLY"

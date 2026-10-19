@@ -123,7 +123,7 @@ zpub6r4GZg1BLgZU8YBvxz7E3...
 
 ### Documentation
 
-- `docs/architecture/WALLET_SYSTEM.md` - Full documentation
+- `docs/archive/architecture/WALLET_SYSTEM.md` - the 2025 design (historical)
 - `docs/architecture/WALLET_SYSTEM_SUMMARY.md` - This file
 
 ---
@@ -197,4 +197,4 @@ No breaking changes!
 
 ## Questions?
 
-See full documentation: `docs/architecture/WALLET_SYSTEM.md`
+The 2025 design document is archived at `docs/archive/architecture/WALLET_SYSTEM.md`; the code and `src/config/entity-registry.ts` are the current truth.
