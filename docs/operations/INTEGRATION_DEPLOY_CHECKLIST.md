@@ -20,7 +20,7 @@ step has the exact command, a verification, and a rollback if it fails.
 [ ] 3. Set customer-side env vars
        (ORANGECAT_API_KEY + ORANGECAT_API_BASE + WEBHOOK_SECRET)
 [ ] 4. Run customer-side DB migrations
-       (e.g. cd ~/dev/loki && pnpm run migrate)
+       (Loki: merge the drizzle migration; Loki's deploy applies it)
 [ ] 5. Repack the SDK tarball into the customer's vendor/ folder
 [ ] 6. (Optional) pnpm publish --access public on @orangecat/sdk
 [ ] 7. Set CRON_SECRET in OrangeCat prod env (/opt/orangecat/app/.env)
@@ -105,13 +105,12 @@ call (401 from OrangeCat).
 
 For Loki specifically:
 
-```bash
-cd ~/dev/loki
-pnpm run migrate
-# Applies drizzle/0021_subscriptions_orangecat_service_id.sql which
-# adds subscriptions.orangecat_service_id (nullable uuid) so the
-# "OC ✓" badge has somewhere to persist its link.
-```
+The migration is `drizzle/0021_subscriptions_orangecat_service_id.sql` in the loki repo,
+which adds `subscriptions.orangecat_service_id` (nullable uuid) so the
+"OC ✓" badge has somewhere to persist its link. Loki has no `migrate`
+script: its deploy applies pending drizzle migrations forward-only
+(`scripts/hetzner/apply-schema.sh` in the loki repo), so merging the
+migration there is the whole step.
 
 For other customers: whatever DB changes their side of the integration
 needs.

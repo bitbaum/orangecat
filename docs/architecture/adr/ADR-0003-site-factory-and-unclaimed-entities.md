@@ -372,7 +372,7 @@ doing exactly its job.
 ## Related Documents
 
 - `supabase/migrations/20260818130000_profile_claims.sql`
-- `src/domain/profileClaims/service.ts`, `src/app/claim/[id]/page.tsx`
+- `src/domain/profileClaims/service.ts`, `src/app/claim/[token]/page.tsx`
 - `substrata/config/site-content.ts`
 - `camille-boulangerie/HANDOVER.md`
 - [ADR-0001: My Cat Conversational Entry Layer](ADR-0001-my-cat-conversational-entry.md)

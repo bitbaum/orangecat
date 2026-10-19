@@ -234,7 +234,6 @@ h  # Create handoff document
 ## 📚 References
 
 - **Main Guide**: `.claude/CLAUDE.md`
-- **Common Patterns**: `docs/development/guides/ai/COMMON.md`
 - **Engineering Principles**: `docs/development/ENGINEERING_PRINCIPLES.md`
 - **Design System**: `docs/design-system/README.md`
 - **Entity Registry**: `src/config/entity-registry.ts`

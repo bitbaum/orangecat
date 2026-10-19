@@ -515,10 +515,9 @@ describe('API Response Standards', () => {
 
 ## Related Documentation
 
-- [Rate Limiting Guide](./rate-limiting.md)
-- [Authentication](./authentication.md)
-- [Error Handling](./error-handling.md)
-- [API Changelog](./CHANGELOG.md)
+- [Public API Conventions](./CONVENTIONS.md) - versioning, error codes, rate limits
+- [Error Handling](../../development/error-handling.md)
+- Rate limits: `src/lib/rate-limit.ts`
 
 ---
 

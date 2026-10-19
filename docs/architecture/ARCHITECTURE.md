@@ -11,6 +11,7 @@ last_modified_summary: Added documentation standards including creation and modi
 ### Previous Architecture (Flask + SQLite)
 
 #### Why We Started With Flask
+
 - **Initial Benefits**:
   - Python's simplicity and readability
   - Large ecosystem of libraries
@@ -18,6 +19,7 @@ last_modified_summary: Added documentation standards including creation and modi
   - Familiar to many developers
 
 #### Challenges We Faced
+
 1. **Database Management**:
    - SQLite file locking issues
    - Difficult to scale
@@ -39,6 +41,7 @@ last_modified_summary: Added documentation standards including creation and modi
 ### Current Architecture (Next.js + Supabase)
 
 #### Why We Chose Next.js API Routes
+
 1. **Unified Codebase**:
    - Single language (TypeScript)
    - Shared types and utilities
@@ -58,6 +61,7 @@ last_modified_summary: Added documentation standards including creation and modi
    - Better error handling
 
 #### Why We Chose Supabase
+
 1. **Database Features**:
    - PostgreSQL under the hood
    - Real-time subscriptions
@@ -70,7 +74,7 @@ last_modified_summary: Added documentation standards including creation and modi
    - Secure session management
    - JWT support
 
-   Our application utilizes Supabase Auth for user sign-up, login, and session management. Custom user profile data, extending beyond the basic `auth.users` table, is stored in a dedicated `public.profiles` table. Client-side state is managed by Zustand, and route protection is handled by Next.js middleware and client-side hooks. For a comprehensive guide on the authentication flow, profile management, database interactions (including `profiles` table schema and RLS), and the cascading delete setup for user profiles, please refer to the [Authentication System Detailed Guide](./auth_system.md).
+   Our application utilizes Supabase Auth for user sign-up, login, and session management. Custom user profile data, extending beyond the basic `auth.users` table, is stored in a dedicated `public.profiles` table. Client-side state is managed by Zustand, and route protection is handled by Next.js middleware and client-side hooks. For a comprehensive guide on the authentication flow, profile management, database interactions (including `profiles` table schema and RLS), and the cascading delete setup for user profiles, please refer to the [Authentication System Detailed Guide](../security/auth_system.md).
 
 3. **Storage**:
    - File storage with CDN
@@ -83,51 +87,59 @@ last_modified_summary: Added documentation standards including creation and modi
 ### Backend Frameworks
 
 ```markdown
-Feature              Flask              Next.js API Routes
-------------------  -----------------  -------------------
-Language            Python             TypeScript
-Deployment          Server Required    Serverless
-Scaling             Manual             Automatic
-Cold Start          None              Possible
-Development         Separate           Integrated
-Type Safety         Optional          Built-in
-Testing             External          Built-in
+Feature Flask Next.js API Routes
+
+---
+
+Language Python TypeScript
+Deployment Server Required Serverless
+Scaling Manual Automatic
+Cold Start None Possible
+Development Separate Integrated
+Type Safety Optional Built-in
+Testing External Built-in
 ```
 
 ### Database Solutions
 
 ```markdown
-Feature              SQLite            Supabase
-------------------  -----------------  -------------------
-Scalability         Limited           Excellent
-Backups             Manual            Automatic
-Real-time           No                Yes
-Security            Basic             Advanced
-Management          File-based        Cloud-based
-Cost                Free              Usage-based
+Feature SQLite Supabase
+
+---
+
+Scalability Limited Excellent
+Backups Manual Automatic
+Real-time No Yes
+Security Basic Advanced
+Management File-based Cloud-based
+Cost Free Usage-based
 ```
 
 ## Migration Process
 
 ### Phase 1: Assessment
+
 1. Identify Flask endpoints
 2. Map to Next.js API routes
 3. Plan database migration
 4. Create migration scripts
 
 ### Phase 2: Implementation
+
 1. Create Next.js API routes
 2. Set up Supabase project
 3. Migrate data
 4. Update frontend
 
 ### Phase 3: Testing
+
 1. Unit tests
 2. Integration tests
 3. Performance testing
 4. Security audit
 
 ### Phase 4: Deployment
+
 1. Staging environment
 2. Production deployment
 3. Monitoring setup
@@ -136,12 +148,14 @@ Cost                Free              Usage-based
 ## Security Considerations
 
 ### Flask Security
+
 - File system access
 - Database file permissions
 - Server hardening
 - Manual SSL setup
 
 ### Next.js + Supabase Security
+
 - Automatic HTTPS
 - Row-level security
 - JWT validation
@@ -150,12 +164,14 @@ Cost                Free              Usage-based
 ## Performance Comparison
 
 ### Flask Performance
+
 - Server-based
 - Manual scaling
 - File I/O dependent
 - Connection pooling required
 
 ### Next.js Performance
+
 - Serverless
 - Automatic scaling
 - CDN caching
@@ -164,12 +180,14 @@ Cost                Free              Usage-based
 ## Cost Analysis
 
 ### Flask Costs
+
 - Server hosting
 - Database management
 - SSL certificates
 - Backup solutions
 
 ### Next.js + Supabase Costs
+
 - Usage-based pricing
 - Included SSL
 - Automatic backups
@@ -250,4 +268,4 @@ fi
 ### Removed Components
 
 - Flask App: Removed as it was not being used and we're focusing on Next.js API routes
-- Screen Recorder: Planned for future implementation to enhance transparency 
+- Screen Recorder: Planned for future implementation to enhance transparency

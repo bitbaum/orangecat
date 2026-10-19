@@ -9,9 +9,10 @@ security score.
 - [Security policy](../../SECURITY.md) - how to report a vulnerability
 - [Security notes](SECURITY.md) - security practices for this codebase
 - [Authentication system](auth_system.md) - how sign-in and sessions work
+- [Password reset system](password-reset-system.md) - how account recovery by email works
 - [Password reset](password-reset-system.md) - the reset flow and its email template
 - [Celebrity impersonation prevention](celebrity-impersonation-prevention.md) - protected usernames
-- [Audit report](audit-report.md) - an internal review dated June 2025, not an external audit
+- [Audit report](../archive/security/audit-report.md) - an internal review dated June 2025, not an external audit (archived)
 
 ## Reporting a vulnerability
 

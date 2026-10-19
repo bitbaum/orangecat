@@ -8,11 +8,13 @@
 ## 🎯 Quick Answer
 
 ### Adding a New Group Label (e.g., "Building") = **VERY EASY** ⚡
+
 **Time:** ~5 minutes  
 **Files to change:** 1 file  
 **Code changes:** ~15 lines
 
 ### Adding a New Entity Type (e.g., "Building" as separate entity) = **MODERATE** 📝
+
 **Time:** ~2-4 hours  
 **Files to create/change:** ~8-10 files  
 **Code changes:** ~500-800 lines
@@ -22,7 +24,9 @@
 ## 📋 Scenario: Adding "Building" as a Group Type
 
 ### What You Want
+
 A new group label called "Building" for people living together in the same building. They might want:
+
 - Shared expenses (utilities, maintenance)
 - Building governance (consensus or democratic)
 - Private visibility (only residents can see)
@@ -58,19 +62,20 @@ import {
 
 export const GROUP_LABELS = {
   // ... existing labels ...
-  
-  building: {  // ← Just add this entry
+
+  building: {
+    // ← Just add this entry
     id: 'building',
     name: 'Building',
     description: 'Residential building with shared governance',
-    icon: Building,  // Lucide icon
+    icon: Building, // Lucide icon
     color: 'slate',
     defaults: {
       is_public: false,
-      visibility: 'private',  // Only residents can see
+      visibility: 'private', // Only residents can see
     },
-    suggestedFeatures: ['shared_wallet', 'events'],  // Shared expenses, building meetings
-    defaultGovernance: 'consensus',  // Residents decide together
+    suggestedFeatures: ['shared_wallet', 'events'], // Shared expenses, building meetings
+    defaultGovernance: 'consensus', // Residents decide together
   },
 } as const satisfies Record<string, GroupLabelConfig>;
 ```
@@ -78,6 +83,7 @@ export const GROUP_LABELS = {
 **That's it!** ✅
 
 The system automatically:
+
 - ✅ Shows it in the label selector dropdown
 - ✅ Applies the defaults when selected
 - ✅ Validates it (enum includes it)
@@ -149,44 +155,46 @@ Once you add the label to `GROUP_LABELS`, these all work automatically:
 
 ### Adding "Building" as a Group Label
 
-| Aspect | Effort | Files Changed |
-|--------|--------|--------------|
-| **Config** | 1 file, ~15 lines | `group-labels.ts` |
-| **Templates** | Optional, 1 file, ~15 lines | `group-templates.ts` |
-| **Guidance** | Optional, 1 file, ~5 lines | `group-guidance.ts` |
-| **Validation** | ✅ Automatic | None (uses enum) |
-| **Database** | ✅ No migration | None |
-| **API** | ✅ Works automatically | None |
-| **Components** | ✅ Work automatically | None |
-| **Total Time** | **~5-10 minutes** | **1-3 files** |
+| Aspect         | Effort                      | Files Changed        |
+| -------------- | --------------------------- | -------------------- |
+| **Config**     | 1 file, ~15 lines           | `group-labels.ts`    |
+| **Templates**  | Optional, 1 file, ~15 lines | `group-templates.ts` |
+| **Guidance**   | Optional, 1 file, ~5 lines  | `group-guidance.ts`  |
+| **Validation** | ✅ Automatic                | None (uses enum)     |
+| **Database**   | ✅ No migration             | None                 |
+| **API**        | ✅ Works automatically      | None                 |
+| **Components** | ✅ Work automatically       | None                 |
+| **Total Time** | **~5-10 minutes**           | **1-3 files**        |
 
 ### Adding "Building" as a New Entity Type
 
-| Aspect | Effort | Files Created/Changed |
-|--------|--------|----------------------|
-| **Entity Config** | 1 file, ~150 lines | `building-config.ts` |
-| **Guidance** | 1 file, ~200 lines | `building-guidance.ts` |
-| **Templates** | 1 file, ~100 lines | `building-templates.ts` |
-| **Validation Schema** | 1 file, ~50 lines | `building-validation.ts` |
-| **API Routes** | 1 file, ~200 lines | `api/buildings/route.ts` |
-| **Database Migration** | 1 file, ~100 lines | `create_buildings.sql` |
-| **Entity Registry** | 1 file, ~20 lines | `entity-registry.ts` |
-| **Service Layer** | 3-4 files, ~400 lines | `services/buildings/` |
-| **Components** | 2-3 files, ~300 lines | `components/buildings/` |
-| **Page Routes** | 1 file, ~30 lines | `app/buildings/create/page.tsx` |
-| **Total Time** | **~2-4 hours** | **~10-12 files** |
+| Aspect                 | Effort                | Files Created/Changed             |
+| ---------------------- | --------------------- | --------------------------------- |
+| **Entity Config**      | 1 file, ~150 lines    | `building-config.ts`              |
+| **Guidance**           | 1 file, ~200 lines    | `building-guidance.ts`            |
+| **Templates**          | 1 file, ~100 lines    | `building-templates.ts`           |
+| **Validation Schema**  | 1 file, ~50 lines     | `building-validation.ts`          |
+| **API Routes**         | 1 file, ~200 lines    | `api/buildings/route.ts`          |
+| **Database Migration** | 1 file, ~100 lines    | `create_buildings.sql`            |
+| **Entity Registry**    | 1 file, ~20 lines     | `entity-registry.ts`              |
+| **Service Layer**      | 3-4 files, ~400 lines | `src/services/<type>/`            |
+| **Components**         | 2-3 files, ~300 lines | `src/components/<type>/`          |
+| **Page Routes**        | 1 file, ~30 lines     | `src/app/<route>/create/page.tsx` |
+| **Total Time**         | **~2-4 hours**        | **~10-12 files**                  |
 
 ---
 
 ## 🎯 When to Use Group Label vs Entity Type
 
 ### Use Group Label When:
+
 - ✅ It's a **type of group/organization**
 - ✅ It shares the same core features (members, governance, treasury)
 - ✅ It just needs different defaults/identity
 - ✅ Examples: Building, Neighborhood, HOA, Condo Association
 
 ### Use Entity Type When:
+
 - ✅ It has **fundamentally different data structure**
 - ✅ It needs **different features** (not just defaults)
 - ✅ It has **different relationships** (e.g., buildings have units, floors)
@@ -208,7 +216,7 @@ import {
 
 export const GROUP_LABELS = {
   // ... existing labels ...
-  
+
   building: {
     id: 'building',
     name: 'Building',
@@ -303,12 +311,14 @@ const validLabels = Object.keys(GROUP_LABELS) as readonly string[];
 ## 📝 Summary: Extensibility Score
 
 ### Group Labels: ⭐⭐⭐⭐⭐ (5/5)
+
 - **Effort:** Minimal (~5-10 minutes)
 - **Files:** 1-3 files
 - **Risk:** Very low (just config)
 - **Maintainability:** Excellent (SSOT pattern)
 
 ### Entity Types: ⭐⭐⭐ (3/5)
+
 - **Effort:** Moderate (2-4 hours)
 - **Files:** 10-12 files
 - **Risk:** Medium (more moving parts)
@@ -341,12 +351,14 @@ const validLabels = Object.keys(GROUP_LABELS) as readonly string[];
 **For "Building" use case:** Use **Group Label** ✅
 
 **Why:**
+
 - Buildings are groups of people (residents)
 - They need governance, treasury, events
 - They just need different defaults (private, consensus)
 - Takes 5 minutes vs 4 hours
 
 **Only use Entity Type if:**
+
 - Buildings need fundamentally different data (units, floors, addresses)
 - Buildings have different relationships (units → residents)
 - Buildings need building-specific features (maintenance requests, etc.)
@@ -354,4 +366,3 @@ const validLabels = Object.keys(GROUP_LABELS) as readonly string[];
 ---
 
 **Last Updated:** 2025-12-30
-

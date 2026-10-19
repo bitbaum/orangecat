@@ -42,7 +42,7 @@ npm run test:auth
 
 ## Test Configuration
 
-- `jest.config.js` - Jest configuration
+- `vitest.config.ts` (repo root) - Vitest configuration
 - `playwright.config.ts` - Playwright E2E configuration
 - `setup.ts` - Global test setup
 - `TestWrapper.tsx` - React testing utilities

@@ -25,6 +25,7 @@ The Entity List System is a modular, reusable architecture for displaying lists 
 A flexible, responsive card component for displaying individual entities.
 
 **Features:**
+
 - Responsive design (mobile-first)
 - Image with proper aspect ratio handling
 - Status badges with variants
@@ -34,6 +35,7 @@ A flexible, responsive card component for displaying individual entities.
 - Support for edit button overlay
 
 **Props:**
+
 ```typescript
 interface EntityCardProps {
   id: string;
@@ -61,18 +63,22 @@ interface EntityCardProps {
 A grid-based list component that renders multiple EntityCards with loading and empty states.
 
 **Features:**
+
 - Responsive grid (configurable columns for mobile/tablet/desktop)
 - Skeleton loading states
 - Empty state handling
 - Type-safe with generics
 
 **Props:**
+
 ```typescript
 interface EntityListProps<T extends EntityItem> {
   items: T[];
   isLoading?: boolean;
   makeHref: (item: T) => string;
-  makeCardProps: (item: T) => Omit<EntityCardProps, 'id' | 'title' | 'description' | 'thumbnailUrl' | 'href'>;
+  makeCardProps: (
+    item: T
+  ) => Omit<EntityCardProps, 'id' | 'title' | 'description' | 'thumbnailUrl' | 'href'>;
   emptyState?: { title: string; description?: string; action?: ReactNode };
   className?: string;
   gridCols?: { mobile?: number; tablet?: number; desktop?: number };
@@ -89,22 +95,16 @@ interface EntityListProps<T extends EntityItem> {
 A reusable hook for fetching and managing entity lists with pagination.
 
 **Features:**
+
 - Automatic pagination
 - Loading and error states
 - Type-safe
 - Configurable API endpoint and query parameters
 
 **Usage:**
+
 ```typescript
-const {
-  items,
-  loading,
-  error,
-  page,
-  total,
-  setPage,
-  refresh,
-} = useEntityList<EntityType>({
+const { items, loading, error, page, total, setPage, refresh } = useEntityList<EntityType>({
   apiEndpoint: '/api/entities',
   userId: user?.id,
   limit: 12,
@@ -120,7 +120,7 @@ const {
 
 Entity configurations define how entities are rendered. Each entity type has its own configuration file.
 
-**Example:** `src/config/entities/services.ts`
+**Example:** `src/config/entities/services.tsx`
 
 ```typescript
 export const serviceEntityConfig: EntityConfig<UserService> = {
@@ -154,7 +154,7 @@ export const serviceEntityConfig: EntityConfig<UserService> = {
 ```typescript
 export default function ServicesDashboardPage() {
   const { user, isLoading, hydrated } = useAuth();
-  
+
   const {
     items: services,
     loading,
@@ -205,7 +205,7 @@ export default function ServicesDashboardPage() {
 
 ## Adding a New Entity Type
 
-1. Create entity configuration in `src/config/entities/[entity-name].ts`
+1. Create entity configuration in `src/config/entities/<entity-name>.tsx`
 2. Use `useEntityList` hook in your page component
 3. Render with `EntityList` component
 4. That's it! The system handles the rest.
@@ -259,4 +259,3 @@ export default function ServicesDashboardPage() {
 - [ ] List/Grid view toggle
 - [ ] Advanced search
 - [ ] Export functionality
-

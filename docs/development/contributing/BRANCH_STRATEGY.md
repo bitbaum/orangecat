@@ -222,9 +222,9 @@ A: No. Even hotfixes go through PR (but can be fast-tracked with 1 approval).
 ## Resources
 
 - [Contributing Guide](./CONTRIBUTING.md)
-- [Code Review Guidelines](./CODE_REVIEW.md)
-- [Deployment Documentation](../operations/DEPLOYMENT.md)
-- [Database Migrations Guide](../../architecture/database/README.md)
+- [Code Review Guidelines](../code-review.md)
+- [Deployment Documentation](../../operations/deployment/DEPLOYMENT_PROCESS.md)
+- [Database Migrations Guide](../../operations/MIGRATIONS.md)
 
 ---
 

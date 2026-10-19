@@ -15,6 +15,7 @@ Generic API handlers eliminate duplication across entity routes, following our m
 Handles pagination, filtering, draft visibility, and caching for entity list endpoints.
 
 **Usage:**
+
 ```typescript
 import { createEntityListHandler } from '@/lib/api/entityListHandler';
 
@@ -32,6 +33,7 @@ export const GET = createEntityListHandler({
 ```
 
 **Configuration Options:**
+
 - `entityType` - Entity type from registry (required)
 - `tableName` - Override table name (optional, uses registry)
 - `publicStatuses` - Status values for public listings (default: `['active']`)
@@ -42,6 +44,7 @@ export const GET = createEntityListHandler({
 - `useListHelper` - Use `listEntitiesPage` for commerce entities (default: `false`)
 
 **What It Handles Automatically:**
+
 - ✅ Pagination (limit/offset from query params)
 - ✅ Category filtering
 - ✅ User filtering
@@ -55,6 +58,7 @@ export const GET = createEntityListHandler({
 Handles auth, rate limiting, validation, and database insertion for entity creation.
 
 **Usage:**
+
 ```typescript
 import { createEntityPostHandler } from '@/lib/api/entityPostHandler';
 import { eventSchema } from '@/lib/validation';
@@ -65,9 +69,8 @@ export const POST = createEntityPostHandler({
   transformData: (data, userId) => ({
     ...data,
     user_id: userId,
-    start_date: typeof data.start_date === 'string' 
-      ? data.start_date 
-      : data.start_date?.toISOString(),
+    start_date:
+      typeof data.start_date === 'string' ? data.start_date : data.start_date?.toISOString(),
   }),
   defaultFields: {
     current_attendees: 0,
@@ -76,6 +79,7 @@ export const POST = createEntityPostHandler({
 ```
 
 **Configuration Options:**
+
 - `entityType` - Entity type from registry (required)
 - `schema` - Zod validation schema (required)
 - `tableName` - Override table name (optional, uses registry)
@@ -84,6 +88,7 @@ export const POST = createEntityPostHandler({
 - `defaultFields` - Additional fields to set on insert (optional)
 
 **What It Handles Automatically:**
+
 - ✅ Authentication check
 - ✅ Rate limiting
 - ✅ Zod validation
@@ -92,6 +97,7 @@ export const POST = createEntityPostHandler({
 - ✅ Logging
 
 **For Entities Using Domain Services:**
+
 ```typescript
 export const POST = createEntityPostHandler({
   entityType: 'product',
@@ -107,6 +113,7 @@ export const POST = createEntityPostHandler({
 Handles GET, PUT, DELETE for individual entity endpoints. (Already exists)
 
 **Usage:**
+
 ```typescript
 import { createEntityCrudHandlers } from '@/lib/api/entityCrudHandler';
 import { createUpdatePayloadBuilder } from '@/lib/api/buildUpdatePayload';
@@ -131,6 +138,7 @@ export { GET, PUT, DELETE };
 ### Before Generic Handlers
 
 **Events Route:**
+
 - GET: ~70 lines
 - POST: ~60 lines
 - **Total: ~130 lines**
@@ -138,6 +146,7 @@ export { GET, PUT, DELETE };
 ### After Generic Handlers
 
 **Events Route:**
+
 - GET: ~10 lines (configuration)
 - POST: ~20 lines (configuration + transform)
 - **Total: ~30 lines**
@@ -147,12 +156,14 @@ export { GET, PUT, DELETE };
 ## 🎯 When to Use
 
 ### Use Generic Handlers When:
+
 - ✅ Entity follows standard patterns
 - ✅ Standard pagination/filtering needed
 - ✅ Standard auth/rate limiting needed
 - ✅ Standard validation needed
 
 ### Use Custom Handlers When:
+
 - ❌ Entity has complex business logic
 - ❌ Entity needs special query patterns
 - ❌ Entity has non-standard validation
@@ -161,26 +172,32 @@ export { GET, PUT, DELETE };
 ## 🔄 Migration Guide
 
 ### Step 1: Identify the Pattern
+
 Look at your current route - does it follow the standard pattern?
 
 ### Step 2: Choose the Handler
+
 - List endpoint? → `createEntityListHandler`
 - Create endpoint? → `createEntityPostHandler`
 - Detail/Update/Delete? → `createEntityCrudHandlers`
 
 ### Step 3: Extract Configuration
+
 - What's entity-specific? → Configuration
 - What's standard? → Handled automatically
 
 ### Step 4: Refactor
+
 Replace the route implementation with handler configuration.
 
 ### Step 5: Test
+
 Verify the route works the same way.
 
 ## 📝 Examples
 
 ### Example 1: Simple Entity (Events)
+
 ```typescript
 // GET - Simple list
 export const GET = createEntityListHandler({
@@ -202,6 +219,7 @@ export const POST = createEntityPostHandler({
 ```
 
 ### Example 2: Commerce Entity (Products)
+
 ```typescript
 // GET - Uses listEntitiesPage helper
 export const GET = createEntityListHandler({
@@ -220,12 +238,13 @@ export const POST = createEntityPostHandler({
 ```
 
 ### Example 3: Entity with Custom Filters
+
 ```typescript
 export const GET = createEntityListHandler({
   entityType: 'event',
   additionalFilters: {
     event_type: 'event_type', // ?event_type=meetup → WHERE event_type = 'meetup'
-    venue_city: 'city',        // ?city=Zurich → WHERE venue_city = 'Zurich'
+    venue_city: 'city', // ?city=Zurich → WHERE venue_city = 'Zurich'
   },
 });
 ```
@@ -240,9 +259,6 @@ export const GET = createEntityListHandler({
 
 ## 🔗 Related
 
-- [Entity Registry](../architecture/ENTITY_REGISTRY.md)
+- Entity Registry: `src/config/entity-registry.ts`
 - [Modularity Philosophy](../architecture/MODULARITY_PHILOSOPHY.md)
 - [Engineering Principles](./ENGINEERING_PRINCIPLES.md)
-
-
-

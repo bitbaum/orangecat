@@ -23,7 +23,7 @@ Many users come to OrangeCat wanting to create projects or profiles but get stuc
 ### Page Location
 
 - **URL**: `/bitcoin-wallet-guide`
-- **File**: `src/app/bitcoin-wallet-guide/page.tsx`
+- **File**: `src/app/(public)/bitcoin-wallet-guide/page.tsx` (wallet data in `config.ts` beside it)
 
 ### Integration Points
 
@@ -46,7 +46,7 @@ The guide is linked from three key locations where Bitcoin addresses are request
 The page follows OrangeCat's design system:
 
 - Uses **Bitcoin Orange** (#F7931A) for all Bitcoin-related elements
-- Implements the centralized theme system from `src/lib/theme.ts`
+- Implements the centralized theme system from `src/config/theme.ts`
 - Uses `BitcoinBadge` component for consistent Bitcoin branding
 - Follows responsive design patterns with mobile-first approach
 
@@ -212,8 +212,7 @@ import { componentColors, getColorClasses } from '@/lib/theme';
 
 - [Design System Guide](../design-system/README.md)
 - [Color System Developer Guide](../development/color-system-guide.md)
-- [Component Documentation](../development/components/README.md)
-- [User Onboarding Flow](../user-experience/onboarding.md)
+- [Component Architecture](../development/components/component-architecture.md)
 
 ## Support
 

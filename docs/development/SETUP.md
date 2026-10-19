@@ -48,7 +48,7 @@ cp config/production.env.template .env.local
 OrangeCat uses a **self-hosted Supabase instance at `https://supabase.orangecat.ch`** (Hetzner box).
 
 - Point `.env.local` at the self-hosted instance (URL + keys)
-- Migrations are SQL files in `supabase/migrations/`, applied via `psql` on the box (see `docs/supabase/migrations-guide.md`)
+- Migrations are SQL files in `supabase/migrations/`, applied via `psql` on the box (see `docs/operations/supabase/migrations-guide.md`)
 
 ### 5. Start Development Server
 
@@ -72,7 +72,7 @@ pnpm run dev:clean
 
 - **Development & Production**: Uses the self-hosted Supabase instance at `https://supabase.orangecat.ch` (Hetzner box)
 - **No Local Database**: Single self-hosted instance for consistency
-- **Migrations**: SQL files in `supabase/migrations/` applied via `psql` (see `docs/supabase/migrations-guide.md`)
+- **Migrations**: SQL files in `supabase/migrations/` applied via `psql` (see `docs/operations/supabase/migrations-guide.md`)
 
 ### VS Code Extensions (Recommended)
 
@@ -248,7 +248,7 @@ sudo chown -R $(whoami) node_modules/
 - **[Development Workflow](./README.md)** - Complete development guide
 - **[Architecture Overview](../architecture/overview.md)** - System design
 - **[Testing Guide](../testing/README.md)** - Testing strategies
-- **[Deployment Guide](../deployment/README.md)** - Production deployment
+- **[Deployment Guide](../operations/deployment/DEPLOYMENT_PROCESS.md)** - Production deployment
 
 ## 🆘 Getting Help
 

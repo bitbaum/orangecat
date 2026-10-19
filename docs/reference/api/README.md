@@ -35,21 +35,12 @@ headers: {
 
 ## 📚 API Sections
 
-### **🔐 Authentication Endpoints**
+### **📜 Public API (`/api/v1/`)**
 
-- [Authentication API](authentication.md) - Login, register, password reset
-
-### **👤 Profile Management**
-
-- [Profile API](profiles.md) - User profile CRUD operations
-
-### **💰 Campaign Management**
-
-- [Campaign API](projects.md) - Fundraising project operations
-
-### **📁 File Upload**
-
-- [Upload API](uploads.md) - Avatar and banner image uploads
+- [Public API Conventions](CONVENTIONS.md) - Versioning, error codes, idempotency, rate limits
+- Route tree and contract: `src/app/api/v1/README.md`
+- [Buying on OrangeCat as a machine](../../api/AGENTS.md) - Paying entities over HTTP
+- [Response Standards](response-standards.md) - The `{ success, data }` envelope
 
 ### **🤖 AI Chat**
 
@@ -152,6 +143,6 @@ Authorization: Bearer {token}
 
 ## 📚 Related Documentation
 
-- [Authentication System](../auth_system.md) - Complete auth flow
-- [Security Guidelines](../SECURITY.md) - Security best practices
-- [Development Setup](../SETUP.md) - Local API development
+- [Authentication System](../../security/auth_system.md) - Complete auth flow
+- [Security Guidelines](../../security/SECURITY.md) - Security best practices
+- [Development Setup](../../development/SETUP.md) - Local API development

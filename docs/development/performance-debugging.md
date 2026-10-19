@@ -450,8 +450,8 @@ lhci autorun
 
 - **[Development Setup](./SETUP.md)** - Environment configuration
 - **[Testing Guide](../testing/README.md)** - Testing strategies
-- **[Monitoring Guide](../operations/monitoring.md)** - Production monitoring
-- **[Bundle Analysis](../development/bundle-analysis.md)** - Bundle optimization
+- **[Observability](../operations/devops/observability.md)** - Production monitoring
+- **Bundle Analysis** - `pnpm run analyze` and the tools in `scripts/analysis/`
 
 ## 🆘 Getting Performance Help
 

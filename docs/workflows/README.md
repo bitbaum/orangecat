@@ -9,7 +9,7 @@ Operational procedures for common development tasks.
 Production runs **self-hosted on the Hetzner box** (`bitbaum`, behind Caddy)
 since 2026-06-12. CI (GitHub Actions) gates merges but does **not** deploy.
 
-→ See [`../deployment/DEPLOYMENT_PROCESS.md`](../operations/deployment/DEPLOYMENT_PROCESS.md).
+→ See [`../operations/deployment/DEPLOYMENT_PROCESS.md`](../operations/deployment/DEPLOYMENT_PROCESS.md).
 
 ## Database migrations
 

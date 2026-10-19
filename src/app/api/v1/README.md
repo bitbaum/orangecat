@@ -49,7 +49,7 @@ landing the internal change.
 ## Machine-readable contract
 
 - **OpenAPI 3.1 spec**: `GET /api/v1/openapi.json` (live, generated from the Zod schemas the server actually validates against — no drift possible).
-- **Conventions** (versioning, error codes, idempotency, rate limits): [`docs/api/CONVENTIONS.md`](../../../docs/api/CONVENTIONS.md).
+- **Conventions** (versioning, error codes, idempotency, rate limits): [`docs/reference/api/CONVENTIONS.md`](../../../../docs/reference/api/CONVENTIONS.md).
 
 ## What's exposed today
 
@@ -81,7 +81,7 @@ handlers currently require a session).
 
 Together with entity list/get and `/api/v1/search`, this closes the agent
 buy loop: **discover → quote → pay → verify**. The full walkthrough with
-curl examples lives in [`docs/api/AGENTS.md`](../../../docs/api/AGENTS.md).
+curl examples lives in [`docs/api/AGENTS.md`](../../../../docs/api/AGENTS.md).
 
 ### Publish bus
 

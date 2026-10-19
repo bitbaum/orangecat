@@ -150,7 +150,7 @@ graphql-codegen --config codegen.yml
 
 ### 4. **ESLint Rules**
 
-**Add to `.eslintrc.js`:**
+**Add to `eslint.config.mjs`:**
 
 ```javascript
 {

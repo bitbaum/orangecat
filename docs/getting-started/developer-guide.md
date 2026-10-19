@@ -141,7 +141,7 @@ pnpm run dev
 
 - **UI Components**: `src/components/ui/` - Buttons, forms, cards, etc.
 - **Layout Components**: `src/components/layout/` - Header, footer, navigation
-- **Feature Components**: `src/components/[feature]/` - Profile, wallet, funding, etc.
+- **Feature Components**: `src/components/<feature>/` - Profile, wallet, funding, etc.
 
 ### 🔧 **Business Logic**
 
@@ -157,14 +157,14 @@ pnpm run dev
 ### 🗄️ **Data & Configuration**
 
 - **Blog Posts**: `content/blog/` - MDX blog posts
-- **Dashboard Configs**: `src/config/dashboard/` - Feature configurations
+- **Entity Registry**: `src/config/entity-registry.ts` - SSOT for every entity type
 - **Demo Data**: `src/data/` - Mock data for development
 
 ### 🧪 **Testing**
 
-- **Unit Tests**: `src/__tests__/` and component-specific tests
+- **Unit Tests**: `__tests__/` (repo root, Vitest)
 - **E2E Tests**: `tests/e2e/` - Playwright tests
-- **Integration Tests**: `src/services/__tests__/`
+- **Smoke Tests**: `__tests__/smoke/`
 
 ---
 
@@ -359,7 +359,6 @@ pnpm exec supabase migration new feature_name
 #### **Development** (`docs/development/`)
 
 - `BEST_PRACTICES.md` - Code standards and patterns
-- `codebase-organization.md` - File structure guide
 - `hooks-guide.md` - Custom hook patterns
 - `types-guide.md` - TypeScript usage guide
 - `utils-guide.md` - Utility function patterns
@@ -367,8 +366,8 @@ pnpm exec supabase migration new feature_name
 #### **Security** (`docs/security/`)
 
 - `SECURITY.md` - Security overview and policies
-- `audit-report.md` - Security audit results
 - `auth_system.md` - Authentication system details
+- `password-reset-system.md` - Account recovery by email
 - `celebrity-impersonation-prevention.md` - Anti-impersonation measures
 
 #### **Deployment** (`docs/operations/deployment/`)
@@ -380,21 +379,21 @@ pnpm exec supabase migration new feature_name
 
 - Feature-specific documentation and guides
 
-#### **Standards** (`docs/standards/`)
+#### **Standards** (`docs/development/standards/`)
 
 - `documentation_standards.md` - Documentation guidelines
 - `datetime_standards.md` - Date/time handling standards
 
 ### 📋 **Key Documentation Files**
 
-| Topic                | File                                        | Purpose                        |
-| -------------------- | ------------------------------------------- | ------------------------------ |
-| **Project Overview** | `README.md`                                 | High-level project description |
-| **Setup Guide**      | `docs/development/README.md`                | Getting started instructions   |
-| **Architecture**     | `docs/architecture/ARCHITECTURE.md`         | System design overview         |
-| **Security**         | `docs/security/SECURITY.md`                 | Security policies and measures |
-| **Standards**        | `docs/standards/documentation_standards.md` | Documentation guidelines       |
-| **Contributing**     | `docs/contributing/CONTRIBUTING.md`         | Contribution guidelines        |
+| Topic                | File                                                    | Purpose                        |
+| -------------------- | ------------------------------------------------------- | ------------------------------ |
+| **Project Overview** | `README.md`                                             | High-level project description |
+| **Setup Guide**      | `docs/development/README.md`                            | Getting started instructions   |
+| **Architecture**     | `docs/architecture/ARCHITECTURE.md`                     | System design overview         |
+| **Security**         | `docs/security/SECURITY.md`                             | Security policies and measures |
+| **Standards**        | `docs/development/standards/documentation_standards.md` | Documentation guidelines       |
+| **Contributing**     | `docs/development/contributing/CONTRIBUTING.md`         | Contribution guidelines        |
 
 ---
 
@@ -477,15 +476,15 @@ pnpm exec supabase migration new feature_name
 
 ### **Quick Reference**
 
-| I Need To...           | Look In...           | File/Path                           |
-| ---------------------- | -------------------- | ----------------------------------- |
-| **Create a component** | Component templates  | `docs/templates/component.md`       |
-| **Add validation**     | Validation utilities | `src/utils/validation.ts`           |
-| **Update database**    | Migrations guide     | `docs/supabase/migrations-guide.md` |
-| **Add API route**      | API templates        | `docs/templates/api-endpoint.md`    |
-| **Write tests**        | Testing guide        | `docs/testing/test-guide.md`        |
-| **Deploy**             | Deployment docs      | `docs/operations/deployment/`       |
-| **Security check**     | Security docs        | `docs/security/`                    |
+| I Need To...           | Look In...           | File/Path                                      |
+| ---------------------- | -------------------- | ---------------------------------------------- |
+| **Create a component** | Component templates  | `docs/development/templates/component.md`      |
+| **Add validation**     | Validation utilities | `src/lib/validation/`                          |
+| **Update database**    | Migrations guide     | `docs/operations/supabase/migrations-guide.md` |
+| **Add API route**      | API templates        | `docs/development/templates/api-endpoint.md`   |
+| **Write tests**        | Testing guide        | `docs/testing/test-guide.md`                   |
+| **Deploy**             | Deployment docs      | `docs/operations/deployment/`                  |
+| **Security check**     | Security docs        | `docs/security/`                               |
 
 ### **Search Tips**
 
@@ -543,7 +542,7 @@ pnpm exec supabase migration new feature_name
 - **Architecture Docs**: `docs/architecture/` - System design
 - **Development Guide**: `docs/development/` - Day-to-day development
 - **Security Guide**: `docs/security/` - Security policies
-- **Standards**: `docs/standards/` - Coding standards
+- **Standards**: `docs/development/standards/` - Coding standards
 
 ### **Community**
 

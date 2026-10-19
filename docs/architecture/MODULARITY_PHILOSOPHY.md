@@ -77,6 +77,7 @@ Back to Modularity (refine based on learnings)
 ### 1. Single Source of Truth (SSOT)
 
 **Example:** Entity Registry
+
 - One place defines all entity types
 - All components derive from this
 - Change once, update everywhere
@@ -86,6 +87,7 @@ Back to Modularity (refine based on learnings)
 ### 2. Configuration Over Code
 
 **Example:** Entity Configs
+
 - Form structure = configuration
 - Validation = schema
 - Behavior = config object
@@ -95,6 +97,7 @@ Back to Modularity (refine based on learnings)
 ### 3. Factory Patterns
 
 **Example:** `createEntityConfig`, `createEntityCrudHandlers`
+
 - Generate implementations from config
 - Consistent structure
 - Less boilerplate
@@ -104,6 +107,7 @@ Back to Modularity (refine based on learnings)
 ### 4. Composition Over Inheritance
 
 **Example:** `EntityForm` + `FormField` + `GuidancePanel`
+
 - Small, focused components
 - Compose into larger features
 - Reuse across contexts
@@ -113,6 +117,7 @@ Back to Modularity (refine based on learnings)
 ### 5. Progressive Disclosure
 
 **Example:** `CreateEntityWorkflow`
+
 - Show templates first
 - Then show form
 - Advanced features hidden until needed
@@ -124,6 +129,7 @@ Back to Modularity (refine based on learnings)
 ### Before Modularity (Hypothetical)
 
 **Adding a new entity type:**
+
 - Custom form component: ~500 lines
 - Custom validation: ~200 lines
 - Custom API routes: ~300 lines
@@ -136,6 +142,7 @@ Back to Modularity (refine based on learnings)
 ### After Modularity (Current)
 
 **Adding a new entity type:**
+
 - Entity config: ~300 lines
 - Validation schema: ~100 lines
 - Migration: ~150 lines
@@ -146,6 +153,7 @@ Back to Modularity (refine based on learnings)
 - **Risk: Low (mostly configuration)**
 
 **Reduction:**
+
 - **~500 lines of code** (37% reduction)
 - **~75% time savings**
 - **Much lower maintenance burden**
@@ -155,12 +163,14 @@ Back to Modularity (refine based on learnings)
 ### Consistency Creates Confidence
 
 When users see the same patterns:
+
 - Same form structure
 - Same validation behavior
 - Same success flows
 - Same error handling
 
 They develop:
+
 - **Mental models** that transfer
 - **Muscle memory** for common tasks
 - **Confidence** to explore
@@ -169,12 +179,14 @@ They develop:
 ### Example: Entity Creation Flow
 
 **User learns once:**
+
 1. See templates
 2. Select or start from scratch
 3. Fill form with guidance
 4. Submit and see success
 
 **Applies to:**
+
 - Products ✅
 - Services ✅
 - Events ✅
@@ -191,21 +203,25 @@ They develop:
 ## 🚀 Future Opportunities
 
 ### 1. Generic List Pages
+
 - All entity lists use same component
 - Same pagination, filtering, sorting
 - User learns once, applies everywhere
 
 ### 2. Generic Detail Pages
+
 - Same layout structure
 - Same edit/delete patterns
 - Same metadata display
 
 ### 3. Generic Search
+
 - Same search interface
 - Same result display
 - Same filtering options
 
 ### 4. Generic Actions
+
 - Same edit flow
 - Same delete confirmation
 - Same status changes
@@ -235,12 +251,14 @@ They develop:
 ## 🎯 Success Metrics
 
 ### Developer Metrics
+
 - Lines of code per feature (decreasing)
 - Time to add new entity type (decreasing)
 - Number of reusable components (increasing)
 - Code duplication (decreasing)
 
 ### User Metrics
+
 - Time to complete first entity creation (decreasing)
 - Error rate (decreasing)
 - Feature discovery (increasing)
@@ -251,6 +269,7 @@ They develop:
 ### The Event Entity Example
 
 **What we did:**
+
 - Used existing `EntityForm`
 - Used existing `createEntityConfig` factory
 - Used existing template system
@@ -258,17 +277,20 @@ They develop:
 - Used existing API handlers
 
 **What we created:**
+
 - Configuration files (not components)
 - Schema definitions (not validation logic)
 - Data structures (not UI code)
 
 **Result:**
+
 - Fully functional entity in ~1,000 lines
 - 90% of code is configuration
 - 10% is actual implementation
 - Consistent with all other entities
 
 **User experience:**
+
 - Same flow as products/services
 - No learning curve
 - Immediate productivity
@@ -276,6 +298,7 @@ They develop:
 ## 🔮 Vision
 
 A system where:
+
 - **Adding features** = Writing configuration
 - **Fixing bugs** = Fixing once, fixing everywhere
 - **Onboarding users** = Teaching patterns, not features
@@ -284,13 +307,9 @@ A system where:
 
 ## 📚 Related Documents
 
-- [Entity Creation System](../development/ENTITY_CREATION_SYSTEM.md)
-- [Modularity Improvements Plan](../development/MODULARITY_IMPROVEMENTS.md)
-- [Entity Registry Documentation](../architecture/ENTITY_REGISTRY.md)
+- [CLI Entity Creation](../development/CLI_ENTITY_CREATION.md)
+- Entity Registry: `src/config/entity-registry.ts`
 
 ---
 
 **Remember:** Every line of code we write is a line we have to maintain. Every pattern we establish is a pattern users learn. Make both count.
-
-
-

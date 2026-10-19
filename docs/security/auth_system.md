@@ -21,11 +21,11 @@ This document provides a comprehensive overview of the authentication and user p
 ### 2.1. User Sign-Up
 
 1.  User provides email and password.
-2.  The `signUp` method in `src/store/auth.ts` is called.
+2.  The `signUp` method in `src/stores/auth.ts` is called.
 3.  `supabase.auth.signUp()` is invoked:
     - Creates a new user in the `auth.users` table.
     - Sends a confirmation email (if email confirmations are enabled in Supabase).
-4.  **Profile Creation:** Immediately after successful sign-up in `auth.users`, the `signUp` method in `src/store/auth.ts` also:
+4.  **Profile Creation:** Immediately after successful sign-up in `auth.users`, the `signUp` method in `src/stores/auth.ts` also:
     - Constructs a new profile object.
     - Populates initial fields:
       - `id`: Matches the `auth.users.id`.
@@ -36,15 +36,15 @@ This document provides a comprehensive overview of the authentication and user p
       - `bitcoin_address`: `null` by default.
       - `created_at` & `updated_at`: Current timestamp.
     - Inserts this new record into the `public.profiles` table.
-5.  The `onAuthStateChange` listener in `src/store/auth.ts` will eventually fire with a `SIGNED_IN` event (or `USER_ADDED` depending on Supabase config), triggering a profile fetch and state update.
+5.  The `onAuthStateChange` listener in `src/stores/auth.ts` will eventually fire with a `SIGNED_IN` event (or `USER_ADDED` depending on Supabase config), triggering a profile fetch and state update.
 
 ### 2.2. User Log-In
 
 1.  User provides email and password.
-2.  The `signIn` method in `src/store/auth.ts` is called.
+2.  The `signIn` method in `src/stores/auth.ts` is called.
 3.  `supabase.auth.signInWithPassword()` is invoked.
 4.  Supabase validates credentials and, if successful, establishes a session and issues a JWT.
-5.  The `onAuthStateChange` listener in `src/store/auth.ts` fires with a `SIGNED_IN` event.
+5.  The `onAuthStateChange` listener in `src/stores/auth.ts` fires with a `SIGNED_IN` event.
 6.  The listener updates the Zustand store with the `user` and `session` objects.
 7.  It then asynchronously fetches the user's corresponding profile from the `public.profiles` table using the `user.id`.
 8.  The fetched `profile` data is also updated in the Zustand store.
@@ -53,10 +53,10 @@ This document provides a comprehensive overview of the authentication and user p
 ### 2.3. User Log-Out
 
 1.  User initiates logout (e.g., clicks a logout button).
-2.  The `signOut` method in `src/store/auth.ts` is called.
+2.  The `signOut` method in `src/stores/auth.ts` is called.
 3.  `supabase.auth.signOut()` is invoked.
 4.  Supabase invalidates the current session and clears relevant auth cookies/storage.
-5.  The `onAuthStateChange` listener in `src/store/auth.ts` fires with a `SIGNED_OUT` event.
+5.  The `onAuthStateChange` listener in `src/stores/auth.ts` fires with a `SIGNED_OUT` event.
 6.  The listener clears `user`, `session`, and `profile` data in the Zustand store.
 7.  UI reacts, typically redirecting to a public page (e.g., homepage or login page).
 
@@ -102,7 +102,7 @@ Configuration requirements (Production):
   - If `redirectTo` is not exactly on the allow-list, Supabase will reject it and fall back to `site_url` with error parameters, causing a redirect to the homepage.
   - Browsers do not send URL hash fragments to the server. Our client page reads both query and hash; middleware can only act on query params.
 
-## 3. State Management (`src/store/auth.ts`)
+## 3. State Management (`src/stores/auth.ts`)
 
 - **`useAuthStore` (Zustand):** Single source of truth for client-side authentication state.
   - `user: User | null`: The Supabase `User` object.
@@ -143,10 +143,10 @@ export interface Profile {
 
 ### 4.3. Profile Creation and Updates
 
-- **Creation:** As detailed in the "User Sign-Up" flow, a profile is automatically created in `public.profiles` when a new user signs up via `src/store/auth.ts`.
+- **Creation:** As detailed in the "User Sign-Up" flow, a profile is automatically created in `public.profiles` when a new user signs up via `src/stores/auth.ts`.
 - **Updates:**
   - Users can update their profile information through UI elements.
-  - The `updateProfile` method in `src/store/auth.ts` is called.
+  - The `updateProfile` method in `src/stores/auth.ts` is called.
   - This method, in turn, may call `ProfileService.updateProfile` (or directly use the Supabase client as it currently does).
   - The service/store updates the relevant row in the `public.profiles` table using the user's ID.
   - After a successful update, the local `profile` state in the Zustand store is also updated.
@@ -195,14 +195,13 @@ To enable automatic cascading deletes:
 
 ## 6. Key Files & Responsibilities
 
-- **`src/store/auth.ts`:** Central Zustand store for auth state, sign-in/up/out methods, `onAuthStateChange` listener.
+- **`src/stores/auth.ts`:** Central Zustand store for auth state, sign-in/up/out methods, `onAuthStateChange` listener.
 - **`src/types/database.ts`:** Defines the `Profile` interface (and `ProfileFormData`). Single source of truth for profile structure.
 - **`src/hooks/useAuth.ts`:** Provides convenient hooks (`useAuth`, `useRequireAuth`, `useRedirectIfAuthenticated`) for accessing auth state and managing route protection on the client side.
 - **`src/middleware.ts`:** Next.js middleware for edge-based route protection.
-- **`src/services/profileService.ts`:** Class-based service for profile-related database operations (though some operations are currently direct in the store).
-- **`src/services/supabase/client.ts`:** Exports the Supabase browser client instance and some helper functions.
-- **`src/services/supabase/profiles.ts`:** Contains additional direct Supabase query functions for profiles.
-- **`docs/auth_system.md` (this file):** Detailed documentation.
+- **`src/services/profile/`:** Profile reads (`reader.ts`) and writes (`writer.ts`); some operations are still direct in the store.
+- **`src/lib/supabase/browser.ts`:** The Supabase browser client.
+- **`docs/security/auth_system.md` (this file):** Detailed documentation.
 
 ## 7. Maintainability & Best Practices
 

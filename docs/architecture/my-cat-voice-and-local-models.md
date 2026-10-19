@@ -24,7 +24,7 @@ Key Files
 
 - Navigation: `src/config/navigation.ts` (adds “My Cat” under Home).
 - Private chat API: `src/app/api/cat/chat/route.ts` (OpenRouter; BYOK; free-tier enforcement; ephemeral, no persistence).
-- UI panel: `src/components/ai-chat/CatChatPanel.tsx` (voice input, local/remote model selection, entity CTA).
+- UI panel: `src/components/ai-chat/ModernChatPanel/` (it replaced the earlier `CatChatPanel`; voice input is in `components/ChatInput.tsx`).
 - Service prefill: `src/app/(authenticated)/dashboard/services/create/page.tsx` (reads `service_prefill` from localStorage into CreateEntityWorkflow).
 
 Architecture
@@ -111,7 +111,7 @@ Roadmap
 
 Developer Notes
 
-- UI: `src/components/ai-chat/CatChatPanel.tsx` includes local settings, voice input, and CTA.
+- UI: `src/components/ai-chat/ModernChatPanel/` holds the chat panel, including voice input.
 - API: `src/app/api/cat/chat/route.ts` uses OpenRouter services, auto-router, and platform usage.
 - Prefill: `src/app/(authenticated)/dashboard/services/create/page.tsx` reads and clears `service_prefill`.
 - Navigation: `src/config/navigation.ts` adds “My Cat”.
