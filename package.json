@@ -200,7 +200,7 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
-    "@next/bundle-analyzer": "^16.4.0",
+    "@next/bundle-analyzer": "^16.4.2",
     "@playwright/mcp": "^0.0.80",
     "@playwright/test": "^1.62.1",
     "@swc/core": "^1.16.13",
