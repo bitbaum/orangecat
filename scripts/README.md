@@ -38,6 +38,6 @@ bash scripts/deployment/script-name.sh
 ## Important Scripts
 
 - `scripts/dev/dev-start.js` - Main development server starter
-- `scripts/deployment/browser-verify.js` - Post-deploy browser smoke test (deploys themselves happen on the box — see docs/deployment/DEPLOYMENT_PROCESS.md)
-- `scripts/db/apply-migrations.ts` - Database migrations
+- `scripts/deployment/browser-verify.js` - Post-deploy browser smoke test (deploys run from `.github/workflows/cd.yml` via `scripts/deploy-selfhost.sh` — see docs/operations/deployment/DEPLOYMENT_PROCESS.md)
+- `scripts/apply-migrations.sh` - Applies pending `supabase/migrations/*.sql` on every deploy (run by `scripts/deploy-selfhost.sh`). `scripts/db/apply-migrations.ts` is a legacy script, not the deploy path.
 - `scripts/maintenance/cleanup-console-logs.ts` - Remove console.log statements

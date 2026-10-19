@@ -1,10 +1,17 @@
 ---
 created_date: 2025-12-27
-last_modified_date: 2025-12-27
-last_modified_summary: Documentation for CLI entity creation utility
+last_modified_date: 2026-10-19
+last_modified_summary: Flagged organization type and SATS fields as out of date
 ---
 
 # CLI Entity Creation
+
+> **Out of date (noted 2026-10-19).** This page and `scripts/cli/create-entity.js`
+> still describe an `organization` type and `*_sats` / `SATS` fields. Neither
+> exists: the entity types are `ENTITY_TYPES` in `src/config/entity-registry.ts`
+> (companies are the `group` type, shown to people as "Organization"), amounts are BTC (`price_btc`), and SATS is not a
+> currency code. Check the registry and `src/lib/validation/` before relying on
+> the examples below.
 
 OrangeCat supports creating entities (products, services, organizations, etc.) from the command line, just like using the GUI.
 

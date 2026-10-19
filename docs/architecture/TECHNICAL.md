@@ -3,7 +3,7 @@
 > **⚠️ Note (2026-06-15):** This document predates the 2026-06 self-host migration.
 > Current infrastructure is **self-hosted Supabase** (`https://supabase.orangecat.ch`)
 > with the app running on **Hetzner** (not Vercel). For the authoritative infra picture,
-> see `docs/devops/infrastructure.md`. Sections below describing Vercel/cloud Supabase
+> see `docs/operations/devops/infrastructure.md`. Sections below describing Vercel/cloud Supabase
 > are historical.
 
 **Last Updated**: June 6, 2025  

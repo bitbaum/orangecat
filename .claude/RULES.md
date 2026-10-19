@@ -61,16 +61,20 @@ This rule applies to:
 
 **NEVER push to production without testing first.**
 
-### Before ANY push to main branch:
+Nobody pushes to `main` directly: a green, non-draft PR merges and deploys
+itself (see "Shipping" in the root `CLAUDE.md`). So opening a non-draft PR IS
+the decision to ship.
+
+### Before opening a non-draft PR:
 
 1. Run the dev server locally (`pnpm run dev -p 3020`)
 2. Test the feature/page manually in browser
 3. Verify it works with real authentication
 4. Check responsive design on mobile sizes
 
-### After pushing to main:
+### After it merges:
 
-1. CI deploys to the Hetzner box (`bitbaum`) via `.github/workflows/cd.yml` (or run `scripts/deploy-selfhost.sh`)
+1. CI on main hands off to `.github/workflows/cd.yml`, which deploys to the Hetzner box (`bitbaum`)
 2. Verify the deploy finished and the app is serving
 3. Check `https://orangecat.ch/api/health`
 4. Test on orangecat.ch before considering the task complete
@@ -79,4 +83,4 @@ This rule applies to:
 
 - orangecat.ch is a live product with real users
 - Broken production = damaged reputation
-- Preview deployments don't auto-promote to production
+- There are no preview deployments: a merge goes straight to production

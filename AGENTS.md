@@ -13,8 +13,8 @@ currency). Bitcoin/Lightning native.
 
 | Layer      | Technology                                                              |
 | ---------- | ----------------------------------------------------------------------- |
-| Framework  | Next.js 15 (App Router), TypeScript 5.8                                 |
-| Styling    | Tailwind CSS 3.3 (tokens are CSS vars in `src/app/globals.css`)         |
+| Framework  | Next.js 16 (App Router), React 19, TypeScript 6                         |
+| Styling    | Tailwind CSS 4 (tokens are CSS vars in `src/app/globals.css`)           |
 | Database   | Self-hosted Supabase (Postgres + Auth + RLS) at `supabase.orangecat.ch` |
 | Bitcoin    | Lightning Network, BTCPay, NWC                                          |
 | Deployment | Self-hosted on Hetzner (`bitbaum`, behind Caddy) — no Vercel            |
@@ -22,20 +22,21 @@ currency). Bitcoin/Lightning native.
 ## Run it
 
 ```bash
-npm ci                 # install
-npm run dev -- -p 3020 # dev server on :3020 (avoids conflicts)
+pnpm install --frozen-lockfile # install (pnpm only — never write a package-lock.json)
+pnpm run dev -p 3020           # dev server on :3020 (avoids conflicts)
 ```
 
 ## Verify before you commit (single source of truth)
 
 ```bash
-npm run verify
+pnpm run verify
 ```
 
-`verify` is the ONE gate. It runs, in order: `ci:docs` → `type-check` →
-`audit:routes` → `lint` → `test:unit`. CI (`.github/workflows/ci.yml`,
-`build-and-smoke` job) calls `npm run verify` verbatim, so green locally ⇒ green
-CI. Add or remove a check in the `verify` script only — never re-list checks
+`verify` is the ONE gate. `scripts/verify.mjs` is the list of what it runs
+(type-check, lint, `audit:routes`, `test:unit` and the `check:*` guards, in
+parallel lanes) — read it there rather than a copy. CI
+(`.github/workflows/ci.yml`, `build-and-smoke` job) calls `pnpm run verify`
+verbatim, so green locally ⇒ green CI. Add or remove a check in the `verify` script only — never re-list checks
 inline in the workflow. (E2E/Playwright is a separate post-build gate; it needs a
 running server + secrets and is not part of `verify`.)
 
@@ -48,9 +49,14 @@ running server + secrets and is not part of `verify`.)
 
 ## Deploy path
 
-`main` → CI (`ci.yml`) must go green → CD (`cd.yml`) ships the exact CI-built
+Nobody merges by hand: a green, non-draft PR is squash-merged by
+`.github/workflows/auto-merge.yml` (the fleet sweep in `bitbaum/fleet`,
+`scripts/ci/auto-merge-sweep.sh`). Then `main` → CI (`ci.yml`) must go green →
+its `post-main` job dispatches CD (`cd.yml`), which ships the exact CI-built
 standalone artifact to `bitbaum` via `scripts/deploy-selfhost.sh` (atomic swap +
-rollback). CD is dormant until `SELFHOST_SSH_KEY` is set. No Vercel.
+rollback; pending `supabase/migrations/*.sql` are applied on the way). CD stays a
+no-op if the `SELFHOST_SSH_KEY` secret is missing. No Vercel. Hold work back
+with a draft PR or a `hold` label. Full detail: `CLAUDE.md` → "Shipping".
 
 ## Core conventions (don't fight these)
 

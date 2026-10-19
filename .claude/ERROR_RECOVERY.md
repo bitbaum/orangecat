@@ -12,7 +12,7 @@
 
 **Symptoms**:
 
-- `db-check.sh` cannot read the credentials
+- `.claude/commands/db-check.sh` cannot read the credentials
 - Supabase connection errors
 - "Cannot find module" errors for env vars
 
@@ -62,7 +62,7 @@ export interface Product {
 }
 
 # Option B: Add to Zod schema (if derived from schema)
-# src/lib/validation.ts
+# src/lib/validation/<domain>.ts
 export const productSchema = baseEntitySchema.extend({
   // ... existing fields
   warranty_period: z.number().optional(),  // Add this
@@ -203,10 +203,10 @@ const { data } = await supabase
 
 ```typescript
 // 1. Verify dev server running
-// Check: lsof -i :3001
+// Check: lsof -i :3020
 
 // 2. Start dev server if needed
-// pnpm run dev
+// pnpm run dev -p 3020
 
 // 3. Increase timeouts
 (await mcp_cursor) -
@@ -399,7 +399,7 @@ ssh ubuntu@167.233.22.31 'docker ps | grep supabase'
 
 - **Main Guide**: `.claude/CLAUDE.md`
 - **Quick Reference**: `.claude/QUICK_REFERENCE.md`
-- **Credentials**: `.claude/CREDENTIALS.md`
+- **Credentials**: `.env.local` (see `.claude/CLAUDE.md` → "Self-Hosted Supabase")
 - **Protection Rules**: `.claude/RULES.md`
 
 ---

@@ -10,7 +10,7 @@
 
 ```bash
 1. Update src/config/entity-registry.ts
-2. Create validation schema in src/lib/validation.ts
+2. Create validation schema in src/lib/validation/
 3. Add supabase/migrations/YYYYMMDDHHMMSS_create_user_newtype.sql (applies on deploy)
 4. Test with browser automation
 ```
@@ -40,7 +40,7 @@ ON user_products(new_field);
 
 ```javascript
 // Navigate
-mcp_cursor - ide - browser_browser_navigate({ url: 'http://localhost:3001/page' });
+mcp_cursor - ide - browser_browser_navigate({ url: 'http://localhost:3020/page' });
 
 // Snapshot
 mcp_cursor - ide - browser_browser_snapshot();
@@ -135,7 +135,7 @@ ssh ubuntu@167.233.22.31 \
 mcp_cursor -
   ide -
   browser_browser_navigate({
-    url: 'http://localhost:3001/dashboard',
+    url: 'http://localhost:3020/dashboard',
   });
 
 // Snapshot (better than screenshot)
@@ -192,23 +192,26 @@ mcp_context7_query -
 ### API Route (Generic Handler)
 
 ```typescript
-// app/api/products/route.ts
-import { createEntityCrudHandlers } from '@/lib/api/entityHandler';
+// app/api/<entity>/[id]/route.ts — see src/app/api/circles/[id]/route.ts
+import { createEntityCrudHandlers } from '@/lib/api/entityCrudHandler';
 
-const { GET, POST, PUT, DELETE } = createEntityCrudHandlers('product');
-export { GET, POST, PUT, DELETE };
+const { GET, PUT, DELETE } = createEntityCrudHandlers({ entityType: 'product', schema /* ... */ });
+export { GET, PUT, DELETE };
+// list + create: createEntityListHandler / createEntityPostHandler (src/lib/api/)
 ```
 
 ### API Route (Custom)
 
 ```typescript
 import { compose } from '@/lib/api/compose';
-import { withAuth, withRateLimit, withValidation } from '@/lib/api/middleware';
+import { withRequestId } from '@/lib/api/withRequestId';
+import { withRateLimit } from '@/lib/api/withRateLimit';
+import { withZodBody } from '@/lib/api/withZod';
 
 export const POST = compose(
-  withAuth(),
+  withRequestId(),
   withRateLimit('write'),
-  withValidation(schema)
+  withZodBody(schema)
 )(async (request, context) => {
   const service = new Service(context.supabase);
   const result = await service.doSomething(context.validData);
@@ -438,7 +441,7 @@ const lnurl = generateLNURL({
 edit src/config/entity-registry.ts
 
 # 2. Create validation schema
-edit src/lib/validation.ts
+edit src/lib/validation/<domain>.ts
 
 # 3. Add migration file supabase/migrations/YYYYMMDDHHMMSS_create_user_newentity.sql
 #    (applied automatically on deploy)
@@ -468,7 +471,7 @@ const lnurl = generateLNURL({
 **Required Variables**:
 
 ```bash
-NEXT_PUBLIC_SUPABASE_URL=https://project.supabase.co
+NEXT_PUBLIC_SUPABASE_URL=https://supabase.orangecat.ch
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
 SUPABASE_SERVICE_ROLE_KEY=eyJ...
 ```

@@ -18,11 +18,11 @@ Documentation for the OrangeCat platform. Start with the area you need.
 | [non-public/](non-public/)           | Internal-only material                                                                                                  |
 | [archive/](archive/)                 | Frozen historical docs (incl. the retired managed-cloud era)                                                            |
 
-## Ground truth (2026-06)
+## Ground truth (checked 2026-10)
 
-- **Database** — self-hosted Supabase at `supabase.orangecat.ch` on the Hetzner box (`bitbaum`). The managed Supabase Cloud was retired 2026-06. Schema = SQL files in [`../supabase/migrations/`](../supabase/migrations/) applied via `psql`. See [operations/supabase/](operations/supabase/).
-- **Deployment** — self-hosted on Hetzner behind Caddy; GitHub Actions CI gates merges but does not deploy. See [operations/deployment/](operations/deployment/).
-- **Bitcoin** — BTC is the canonical stored unit (`NUMERIC(18,8)`); satoshis are display-only.
+- **Database** — self-hosted Supabase at `supabase.orangecat.ch` on the Hetzner box (`bitbaum`). The managed Supabase Cloud was retired 2026-06. Schema = SQL files in [`../supabase/migrations/`](../supabase/migrations/), applied automatically on every deploy by `scripts/apply-migrations.sh` — never by hand. See [operations/supabase/](operations/supabase/).
+- **Deployment** — self-hosted on Hetzner behind Caddy. A green PR is merged by `.github/workflows/auto-merge.yml`; CI on `main` then hands off to `.github/workflows/cd.yml`, which deploys. See [operations/deployment/](operations/deployment/) and "Shipping" in [`../CLAUDE.md`](../CLAUDE.md).
+- **Bitcoin** — BTC is the canonical stored unit (`NUMERIC(18,8)`) and the only Bitcoin unit; SATS is not a currency code.
 
 ## Conventions
 

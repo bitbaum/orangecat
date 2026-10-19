@@ -4,7 +4,7 @@ Your AI economic agent — and the platform where it operates.
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-6-blue.svg)](https://www.typescriptlang.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black.svg)](https://nextjs.org/)
-[![Live](https://img.shields.io/badge/Live-orangecat.ch-orange.svg)](https://orangecat.ch)
+[![Beta](https://img.shields.io/badge/Beta-orangecat.ch-orange.svg)](https://orangecat.ch)
 [![Bitcoin](https://img.shields.io/badge/Bitcoin-Native-F7931A.svg)](https://bitcoin.org)
 
 ## The Problem
@@ -13,19 +13,19 @@ Economic participation still requires gatekeepers. To sell, fund, lend, invest, 
 
 ## The Solution
 
-OrangeCat is an AI-native platform for universal economic participation. The live wedge is a Bitcoin Lightning pay link. "My Cat" — an AI agent across exchanging, funding, lending, investing, and governing — is **roadmap**, not what ships today.
+OrangeCat is an AI-native platform for universal economic participation. The wedge today is a Bitcoin Lightning pay link. "My Cat" — an AI agent across exchanging, funding, lending, investing, and governing — is **roadmap**, not what ships today.
 
 - **Any identity**: Human, pseudonymous, or AI — all are first-class economic participants
 - **Bitcoin now, broader rails later**: Lightning and on-chain Bitcoin are the only live settlement rails. Fiat and privacy rails remain roadmap work because they do not provide the same shared public audit trail.
 - **Full economic spectrum (roadmap beyond the pay link)**: From gifts (no strings) to loans (some strings) to investments (more strings)
-- **Private where needed, transparent where chosen**: E2E encrypted messaging, on-chain transparency when appropriate
+- **Private where needed, transparent where chosen**: on-chain transparency when appropriate; E2E-encrypted messaging is roadmap — direct messages are stored as plaintext today (realtime, but server-readable)
 
 ## What Works Today
 
 - **Pay link (the wedge)**: every user gets `orangecat.ch/pay/<username>` for Bitcoin Lightning payments.
-- **Live site**: [orangecat.ch](https://orangecat.ch)
-- **Shipped surfaces**: product/service listings, groups, events, documents, and related entity types exist on the live site. Funding, lending, and investing sit on the roadmap.
-- **Loki dogfood**: Loki (live at [loki.orangecat.ch](https://loki.orangecat.ch)) uses OrangeCat as a sibling product — typed stakeholder edges, shared BTC wallet, profiles as projects. Sibling-product integration: typed stakeholder edges, shared BTC wallet, profiles as projects.
+- **Site (beta)**: [orangecat.ch](https://orangecat.ch)
+- **Shipped surfaces**: product/service listings, groups, events, documents, and related entity types exist on the site. Funding, lending, and investing sit on the roadmap.
+- **Loki dogfood**: Loki, the execution layer (deployed at [loki.orangecat.ch](https://loki.orangecat.ch)), uses OrangeCat as a sibling product — typed stakeholder edges, shared BTC wallet, profiles as projects.
 
 ## Roadmap
 
@@ -52,7 +52,7 @@ Users and groups both have actors. All entities reference `actor_id`. One owners
 ### Middleware Composition
 
 ```typescript
-export default compose(withAuth(), withRateLimit('write'), withValidation(schema))(handler);
+export const POST = compose(withRequestId(), withRateLimit('write'), withZodBody(schema))(handler);
 ```
 
 Functional composition replaces inheritance. Each middleware does one thing.
@@ -61,7 +61,7 @@ Functional composition replaces inheritance. Each middleware does one thing.
 
 - Row Level Security (RLS) at the database level — bugs in app code can't bypass authorization
 - Zod schemas as SSOT — TypeScript types derived from schemas, never separate
-- Structured API responses across all 40+ routes
+- Structured API responses (`src/lib/api/standardResponse.ts`) across the API routes
 
 </details>
 
@@ -70,11 +70,11 @@ Functional composition replaces inheritance. Each middleware does one thing.
 | Layer      | Technology                                                                               |
 | ---------- | ---------------------------------------------------------------------------------------- |
 | Framework  | Next.js 16, React 19, TypeScript 6                                                       |
-| Styling    | Tailwind CSS, shadcn/ui                                                                  |
+| Styling    | Tailwind CSS 4, shadcn/ui                                                                |
 | Database   | Self-hosted Supabase (PostgreSQL + Auth + RLS) on Hetzner                                |
 | Bitcoin    | Lightning Network, LNURL, bitcoinjs-lib                                                  |
 | Auth       | Supabase Auth, JWT, Row Level Security                                                   |
-| Deployment | Self-hosted on Hetzner (bitbaum, behind Caddy); GitHub Actions CI (gate only, no deploy) |
+| Deployment | Self-hosted on Hetzner (bitbaum, behind Caddy); GitHub Actions CI, then `cd.yml` deploys |
 
 <details>
 <summary><strong>Quick Start</strong></summary>
@@ -139,14 +139,14 @@ src/
   lib/api/                    -- Middleware composition, generic CRUD
   domain/                     -- Business logic (no HTTP, no UI)
   services/                   -- Currency, search, notifications, groups
-  features/                   -- Messaging, auth
+  features/                   -- Messaging
   app/api/                    -- API routes (thin, composed from middleware)
   components/                 -- UI components (shadcn/ui based)
 ```
 
 ## Testing
 
-2648 unit tests across 282 files (CI as of 2026-09-02). Pre-push hooks run type-check, lint, and the full test suite before any code reaches the remote.
+2648 unit tests across 282 files (CI as of 2026-09-02). The pre-push hook runs type-check, file-size and route checks, and the unit tests before code reaches the remote; CI (`pnpm run verify`) is the gate.
 
 ## Security
 
@@ -165,7 +165,7 @@ like. You don't need to ask, book a call or sign a CLA. Just keep the
 [LICENSE](LICENSE) with your copy.
 
 ```bash
-npx degit bitbaum/orangecat my-orangecat   # a clean copy without our git history
+pnpm dlx degit bitbaum/orangecat my-orangecat   # a clean copy without our git history
 cd my-orangecat && pnpm install
 ```
 

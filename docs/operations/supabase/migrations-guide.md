@@ -17,7 +17,7 @@ This directory contains SQL migration files that define the database schema and 
 ## Migration Process
 
 1. Each migration file is named with a timestamp prefix (YYYYMMDDHHMMSS) to ensure they are applied in the correct order.
-2. Migrations are applied using the Supabase CLI or through direct SQL execution.
+2. Migrations are applied automatically on every deploy: `scripts/deploy-selfhost.sh` runs `scripts/apply-migrations.sh`, which applies pending files in filename order (each in one transaction) and records them in `public.schema_migrations`. Never apply one by hand.
 3. Once a migration is applied, it should not be modified to maintain database consistency.
 
 ## Current Schema
@@ -46,7 +46,7 @@ To add new pieces of profile data (for example, new fields in the “Info / Cont
 
 1. **Create a migration** that adds a nullable column to `public.profiles` (e.g. `ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS contact_email TEXT;`).
 2. **Update TypeScript types** in `src/types/database.ts`, `src/types/profile.ts`, and any related social/contact types.
-3. **Update validation and normalization** in `src/lib/validation.ts` (add the field to `profileSchema` and, if needed, to `normalizeProfileData`).
+3. **Update validation and normalization** in `src/lib/validation/` (add the field to `profileSchema` and, if needed, to `normalizeProfileData`).
 4. **Wire UI components** (e.g. `ModernProfileEditor`, `ProfileInfoTab`, `ProfileOverviewTab`) to read/write the new field.
 5. **Document the new field** briefly in this guide (what it is used for, and whether it is public or private).
 
@@ -58,15 +58,9 @@ To add new pieces of profile data (for example, new fields in the “Info / Cont
 
 ## Usage
 
-To apply migrations:
-
-```bash
-# Using Supabase CLI
-npx supabase db push
-
-# Or run the migration script directly
-npx tsx src/scripts/apply-migrations.ts
-```
+To apply migrations: add the file under `supabase/migrations/` and merge the PR.
+The deploy applies it (see "Migration Process" above). `supabase db push` and the
+retired managed-cloud project are not part of the workflow.
 
 ## Best Practices
 

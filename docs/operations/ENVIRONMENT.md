@@ -54,7 +54,7 @@ BITCOIN_NETWORK=mainnet
 
 Production env lives in the app's `.env` on the Hetzner box. Edit it
 there directly and restart the `orangecat-app` service after changes. See
-`docs/deployment/DEPLOYMENT_PROCESS.md`.
+`docs/operations/deployment/DEPLOYMENT_PROCESS.md`.
 
 ## Security Notes
 
@@ -70,7 +70,7 @@ Since the 2026-06-12 Hetzner migration there is no env-sync tooling:
 - **Local development**: `.env.local` (developer-owned, never committed).
 - **Production**: `/opt/orangecat/app/.env` on the box (bitbaum), edited there
   directly; restart `orangecat-app` after changes. See
-  `docs/deployment/DEPLOYMENT_PROCESS.md`.
+  `docs/operations/deployment/DEPLOYMENT_PROCESS.md`.
 - **CI**: dummy values baked into the workflows; real secrets only as GitHub
   Actions secrets (E2E credentials).
 

@@ -20,7 +20,7 @@
 // services/[id]/route.ts - 189 lines (95% identical)
 
 // ✅ DO: Create generic handler
-// lib/api/entityHandler.ts
+// lib/api/entityCrudHandler.ts (sketch — the real factory takes a config object)
 export function createEntityCrudHandlers(entityType: EntityType) {
   const meta = ENTITY_REGISTRY[entityType];
   return {
@@ -66,7 +66,7 @@ const table = 'user_products'; // VIOLATION!
 const endpoint = '/api/products'; // VIOLATION!
 ```
 
-**Validation Schemas**: `src/lib/validation.ts`
+**Validation Schemas**: `src/lib/validation/` (barrel `index.ts`)
 
 ```typescript
 // ✅ Schema is source
@@ -78,9 +78,7 @@ const userProductSchema = baseEntitySchema.extend({
 type UserProduct = z.infer<typeof userProductSchema>;
 
 // ❌ Don't define type separately
-type UserProduct = {
-  /* manual definition */
-}; // VIOLATION!
+type UserProduct = {/* manual definition */}; // VIOLATION!
 ```
 
 **Navigation**: `src/config/navigation.ts`
@@ -403,7 +401,7 @@ router.push(meta.createPath);
 # Create src/config/entity-configs/new-entity.ts
 
 # 3. Create schema
-# Add to src/lib/validation.ts
+# Add to src/lib/validation/ (barrel: src/lib/validation/index.ts)
 
 # 4. Create migration: add supabase/migrations/YYYYMMDDHHMMSS_create_user_newentity_table.sql
 #    (applied automatically on deploy by scripts/apply-migrations.sh)
@@ -537,7 +535,7 @@ fi
 ## References
 
 - **Entity Registry**: `src/config/entity-registry.ts`
-- **Validation**: `src/lib/validation.ts`
+- **Validation**: `src/lib/validation/`
 - **API Middleware**: `src/lib/api/compose.ts`
 - **Commerce Service**: `src/domain/commerce/service.ts`
 - **Full Engineering Principles**: `docs/development/ENGINEERING_PRINCIPLES.md`
