@@ -1,1 +1,0 @@
-../docs/guides/ai/claude.md
