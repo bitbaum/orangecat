@@ -211,7 +211,7 @@ import { componentColors, getColorClasses } from '@/lib/theme';
 ## Related Documentation
 
 - [Design System Guide](../design-system/README.md)
-- [Color System Developer Guide](../development/color-system-guide.md)
+- [Design System](../design-system/README.md)
 - [Component Architecture](../development/components/component-architecture.md)
 
 ## Support

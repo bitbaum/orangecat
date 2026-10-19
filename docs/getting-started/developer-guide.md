@@ -352,9 +352,8 @@ pnpm exec supabase migration new feature_name
 #### **Architecture** (`docs/architecture/`)
 
 - `ARCHITECTURE.md` - High-level system overview
-- `database-schema.md` - Database design and relationships
+- `SUPABASE_SCHEMA_GUIDE.md` - Database tables and conventions
 - `services-architecture.md` - Service layer design
-- `TECHNICAL.md` - Technical specifications
 
 #### **Development** (`docs/development/`)
 
@@ -365,9 +364,7 @@ pnpm exec supabase migration new feature_name
 
 #### **Security** (`docs/security/`)
 
-- `SECURITY.md` - Security overview and policies
 - `auth_system.md` - Authentication system details
-- `password-reset-system.md` - Account recovery by email
 - `celebrity-impersonation-prevention.md` - Anti-impersonation measures
 
 #### **Deployment** (`docs/operations/deployment/`)
@@ -391,7 +388,7 @@ pnpm exec supabase migration new feature_name
 | **Project Overview** | `README.md`                                             | High-level project description |
 | **Setup Guide**      | `docs/development/README.md`                            | Getting started instructions   |
 | **Architecture**     | `docs/architecture/ARCHITECTURE.md`                     | System design overview         |
-| **Security**         | `docs/security/SECURITY.md`                             | Security policies and measures |
+| **Security**         | `SECURITY.md`                                           | Reporting vulnerabilities      |
 | **Standards**        | `docs/development/standards/documentation_standards.md` | Documentation guidelines       |
 | **Contributing**     | `docs/development/contributing/CONTRIBUTING.md`         | Contribution guidelines        |
 

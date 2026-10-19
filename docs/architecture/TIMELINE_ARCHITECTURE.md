@@ -427,7 +427,7 @@ CREATE POLICY "Anyone can view public timeline events"
 ## Related Documentation
 
 - Timeline types: `src/types/timeline.ts`
-- [Database Schema](database-schema.md)
+- [Supabase Schema Guide](SUPABASE_SCHEMA_GUIDE.md)
 - [API Reference](../reference/api/README.md)
 
 ---

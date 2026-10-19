@@ -42,6 +42,10 @@ export const GET = createEntityListHandler({
 - `orderDirection` - `'asc'` or `'desc'` (default: `'desc'`)
 - `additionalFilters` - Map query params to fields (optional)
 - `useListHelper` - Use `listEntitiesPage` for commerce entities (default: `false`)
+- `userIdField` - Override the ownership column (default: the registry's `userIdField`)
+- `publicFilters` - Extra filters for public listings (e.g. `{ is_public: true }`)
+- `requireAuth` - Require a signed-in user (default: `false`)
+- `selectColumns` - Columns to select (default: `'*'`)
 
 **What It Handles Automatically:**
 

@@ -1,6 +1,6 @@
 # OrangeCat × Loki — Master Plan (July 2026)
 
-**Status:** Proposed — supersedes `strategic-plan.md` (Dec 2025) where they conflict
+**Status:** Proposed — supersedes `strategic-plan.md` (Dec 2025, now in `docs/archive/business/executive/`) where they conflict
 **Basis:** Full-codebase inspection (OC + FC repos), docs/blog audit, live-site outsider audit, and production DB ground truth, all conducted 2026-07-02.
 
 ---
@@ -44,8 +44,8 @@
 | **Completed payments, ever**     | **0** (1 expired intent, 1 stuck at `invoice_ready`, both a single April test) |
 | Cat conversations / messages     | 12 / 36                                                                        |
 | DMs                              | 176 across 110 conversations                                                   |
-| OAuth clients                    | 1 (Loki)                                                                 |
-| Stakeholder edges                | 1 (Loki = customer)                                                      |
+| OAuth clients                    | 1 (Loki)                                                                       |
+| Stakeholder edges                | 1 (Loki = customer)                                                            |
 
 ### Technology (what actually works)
 
@@ -240,7 +240,7 @@ provider is live). Remaining work is mostly FC-side:
 
 | #   | Item                                                                                                                                                                                                           | Where   |
 | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| 1.1 | "Login with OrangeCat" in Loki: custom Auth.js OIDC provider against orangecat.ch, `users.orangecatActorId` column, account-linking UI; surface the button on FC's sign-in                               | FC      |
+| 1.1 | "Login with OrangeCat" in Loki: custom Auth.js OIDC provider against orangecat.ch, `users.orangecatActorId` column, account-linking UI; surface the button on FC's sign-in                                     | FC      |
 | 1.2 | One-consent capability grant: authorize flow mints actor-bound `ock_` key, replacing the shared service-account key                                                                                            | FC + OC |
 | 1.3 | "Publish to OrangeCat" per FC project → creates/links OC project entity (`user_projects.orangecatProjectId`)                                                                                                   | FC      |
 | 1.4 | FC emit half of the publish bus: config-driven promote step → `POST /api/v1/timeline/publish` (OC ingest already live; async, idempotent `dedupe_key`)                                                         | FC      |
@@ -256,7 +256,7 @@ build events, and a Loki user signs in with OrangeCat.
 | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 2.1 | Wire Cat Credit **`'usage'` metering** into `chat-orchestrator.ts`: frontier-tier requests debit the ledger; free tier stays on platform quota. The pay-Bitcoin-for-AI loop closes                                                      |
 | 2.2 | First live top-up test (founder, real sats) — Cat Credits Phase 2 exit criterion                                                                                                                                                        |
-| 2.3 | Define Free/Supporter in `user_plans` + pricing page on orangecat.ch; Loki publishes its pricing page (currently none — a trust gap)                                                                                              |
+| 2.3 | Define Free/Supporter in `user_plans` + pricing page on orangecat.ch; Loki publishes its pricing page (currently none — a trust gap)                                                                                                    |
 | 2.4 | Rewrite `strategic-plan.md` §Business Model to this document's §3.3; delete the transaction-fee claim; align legal doc (credits = prepaid service, not payment processing)                                                              |
 | 2.5 | Founder decision: engage a Swiss attorney on (a) credits/prepaid model, (b) the **loans** feature vs Consumer Credit Act — consider unlisting P2P loans publicly until reviewed, (c) BitBaum AG — register it or scrub the public claim |
 
