@@ -484,7 +484,7 @@ pnpm exec supabase migration new feature_name
 | **Update database**    | Migrations guide     | `docs/supabase/migrations-guide.md` |
 | **Add API route**      | API templates        | `docs/templates/api-endpoint.md`    |
 | **Write tests**        | Testing guide        | `docs/testing/test-guide.md`        |
-| **Deploy**             | Deployment docs      | `docs/operations/deployment/`                  |
+| **Deploy**             | Deployment docs      | `docs/operations/deployment/`       |
 | **Security check**     | Security docs        | `docs/security/`                    |
 
 ### **Search Tips**

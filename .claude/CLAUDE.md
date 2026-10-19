@@ -4,7 +4,6 @@
 
 Org rules are [bitbaum/fleet AGENTS.md](https://github.com/bitbaum/fleet/blob/main/AGENTS.md): packages by default (say why if you skip one), search through `@bitbaum/searchkit`, chat through `@bitbaum/chatkit`, shared names and the identity contract. Read that file. Do not restate it here.
 
-
 ---
 
 ## Mission & Vision
@@ -300,13 +299,13 @@ export async function POST(request: Request) {
 Tokens are SSOT in `src/app/globals.css`; the migration direction is in the
 root `CLAUDE.md` → "Design System". In short:
 
-| Element  | Value                                                                  |
-| -------- | ---------------------------------------------------------------------- |
-| Surfaces | Monochromatic semantic tier (`bg-surface-*`, `text-fg-*`)              |
-| Accent   | Warm accent `#ff5c00` (`bg-accent-warm`) — top-of-funnel CTAs only     |
-| Bitcoin  | Bitcoin Orange `#f7931a` (`bg-bitcoinOrange`) — Bitcoin-only!          |
-| Status   | `bg-status-*` — only for actual status                                 |
-| Legacy   | Tiffany `#0ABAB5` / `orange-*` palette — being dropped, no new uses    |
+| Element  | Value                                                               |
+| -------- | ------------------------------------------------------------------- |
+| Surfaces | Monochromatic semantic tier (`bg-surface-*`, `text-fg-*`)           |
+| Accent   | Warm accent `#ff5c00` (`bg-accent-warm`) — top-of-funnel CTAs only  |
+| Bitcoin  | Bitcoin Orange `#f7931a` (`bg-bitcoinOrange`) — Bitcoin-only!       |
+| Status   | `bg-status-*` — only for actual status                              |
+| Legacy   | Tiffany `#0ABAB5` / `orange-*` palette — being dropped, no new uses |
 
 ---
 
@@ -322,10 +321,10 @@ root `CLAUDE.md` → "Design System". In short:
 
 ## Quick Reference
 
-| File                         | Purpose               |
-| ---------------------------- | --------------------- |
-| `.claude/QUICK_REFERENCE.md` | Common operations     |
-| `.claude/rules/`             | All best practices    |
+| File                                      | Purpose                                                          |
+| ----------------------------------------- | ---------------------------------------------------------------- |
+| `.claude/QUICK_REFERENCE.md`              | Common operations                                                |
+| `.claude/rules/`                          | All best practices                                               |
 | `.claude/skills/publish-article/SKILL.md` | How to publish an article (voice, frontmatter, checks, shipping) |
 
 ---

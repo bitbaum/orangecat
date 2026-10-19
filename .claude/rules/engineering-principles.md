@@ -78,9 +78,7 @@ const userProductSchema = baseEntitySchema.extend({
 type UserProduct = z.infer<typeof userProductSchema>;
 
 // ❌ Don't define type separately
-type UserProduct = {
-  /* manual definition */
-}; // VIOLATION!
+type UserProduct = {/* manual definition */}; // VIOLATION!
 ```
 
 **Navigation**: `src/config/navigation.ts`

@@ -9,6 +9,7 @@
 ## 🔍 Essential DevTools Tabs
 
 ### 1. **Console Tab** - JavaScript Debugging
+
 ```javascript
 // Check for errors
 console.error('Debug message');
@@ -29,30 +30,35 @@ console.groupEnd();
 ```
 
 ### 2. **Network Tab** - HTTP Request Monitoring
+
 - **Monitor API calls** - See all network requests
 - **Check response times** - Identify slow endpoints
 - **Inspect payloads** - View request/response data
 - **Check headers** - Verify authentication and caching
 
 ### 3. **Elements Tab** - DOM Inspection
+
 - **Inspect HTML structure** - See rendered DOM
 - **Check CSS styles** - View computed styles
 - **Test responsive design** - Toggle device simulation
 - **Edit elements** - Modify HTML/CSS live
 
 ### 4. **Sources Tab** - Code Debugging
+
 - **Set breakpoints** - Pause execution at specific lines
 - **Step through code** - Debug function execution
 - **View call stack** - Understand execution flow
 - **Watch variables** - Monitor variable changes
 
 ### 5. **Performance Tab** - Performance Analysis
+
 - **Record profiles** - Capture performance data
 - **Analyze flame graphs** - Identify bottlenecks
 - **Check Core Web Vitals** - Monitor user experience metrics
 - **Memory analysis** - Detect memory leaks
 
 ### 6. **Application Tab** - Storage & State
+
 - **Local/Session storage** - View stored data
 - **Cookies** - Inspect authentication tokens
 - **Cache** - Check cached resources
@@ -61,6 +67,7 @@ console.groupEnd();
 ## 🚀 Quick Start Workflow
 
 ### 1. **Basic Debugging**
+
 ```javascript
 // 1. Open DevTools (F12 or Ctrl+Shift+I)
 // 2. Go to Console tab
@@ -70,6 +77,7 @@ console.groupEnd();
 ```
 
 ### 2. **Performance Investigation**
+
 ```javascript
 // 1. Go to Performance tab
 // 2. Click "Record" button
@@ -79,6 +87,7 @@ console.groupEnd();
 ```
 
 ### 3. **Network Debugging**
+
 ```javascript
 // 1. Go to Network tab
 // 2. Perform the action that makes API calls
@@ -90,9 +99,10 @@ console.groupEnd();
 ## 🛠️ Advanced DevTools Techniques
 
 ### Custom Console Commands
+
 ```javascript
 // Add helper functions to console
-window.debugUser = (userId) => {
+window.debugUser = userId => {
   console.log('User data:', getUser(userId));
   console.log('User permissions:', getUserPermissions(userId));
 };
@@ -101,9 +111,10 @@ window.debugUser = (userId) => {
 ```
 
 ### Performance Monitoring
+
 ```javascript
 // Monitor Core Web Vitals
-const observer = new PerformanceObserver((list) => {
+const observer = new PerformanceObserver(list => {
   for (const entry of list.getEntries()) {
     console.log(`${entry.name}: ${entry.value}`);
   }
@@ -113,6 +124,7 @@ observer.observe({ entryTypes: ['measure', 'navigation', 'paint'] });
 ```
 
 ### Memory Leak Detection
+
 ```javascript
 // Check for memory leaks
 // 1. Go to Memory tab
@@ -123,6 +135,7 @@ observer.observe({ entryTypes: ['measure', 'navigation', 'paint'] });
 ```
 
 ### Network Request Inspection
+
 ```javascript
 // Intercept and modify requests
 // 1. Go to Network tab
@@ -133,11 +146,12 @@ observer.observe({ entryTypes: ['measure', 'navigation', 'paint'] });
 ## 🔧 OrangeCat-Specific Debugging
 
 ### Authentication Debugging
+
 ```javascript
 // Check auth state
 console.log('Auth state:', {
   user: window.__NEXT_DATA__?.props?.pageProps?.user,
-  session: localStorage.getItem('supabase.auth.token')
+  session: localStorage.getItem('supabase.auth.token'),
 });
 
 // Debug login flow
@@ -147,6 +161,7 @@ console.log('Auth state:', {
 ```
 
 ### Database Query Debugging
+
 ```javascript
 // Monitor Supabase queries
 // 1. Open Network tab
@@ -156,6 +171,7 @@ console.log('Auth state:', {
 ```
 
 ### Bitcoin Integration Debugging
+
 ```javascript
 // Debug Bitcoin operations
 console.log('Bitcoin address validation:', isValidBitcoinAddress(address));
@@ -170,6 +186,7 @@ console.log('Lightning address validation:', isValidLightningAddress(address));
 ## 📊 Performance Optimization
 
 ### Bundle Analysis
+
 ```javascript
 // Check bundle size impact
 // 1. Go to Network tab
@@ -179,6 +196,7 @@ console.log('Lightning address validation:', isValidLightningAddress(address));
 ```
 
 ### React Performance Profiling
+
 ```javascript
 // Use React DevTools Profiler
 // 1. Install React DevTools extension
@@ -188,6 +206,7 @@ console.log('Lightning address validation:', isValidLightningAddress(address));
 ```
 
 ### Image Optimization
+
 ```javascript
 // Check image loading performance
 // 1. Go to Network tab
@@ -199,6 +218,7 @@ console.log('Lightning address validation:', isValidLightningAddress(address));
 ## 🐛 Common Issues & Solutions
 
 ### Console Errors
+
 ```javascript
 // Check for React errors
 // 1. Look for red error messages in Console
@@ -208,6 +228,7 @@ console.log('Lightning address validation:', isValidLightningAddress(address));
 ```
 
 ### Network Issues
+
 ```javascript
 // Debug API failures
 // 1. Check request status codes
@@ -217,6 +238,7 @@ console.log('Lightning address validation:', isValidLightningAddress(address));
 ```
 
 ### Performance Issues
+
 ```javascript
 // Identify performance bottlenecks
 // 1. Use Performance tab to record profiles
@@ -226,6 +248,7 @@ console.log('Lightning address validation:', isValidLightningAddress(address));
 ```
 
 ### State Management Issues
+
 ```javascript
 // Debug state problems
 // 1. Check React DevTools for state changes
@@ -237,6 +260,7 @@ console.log('Lightning address validation:', isValidLightningAddress(address));
 ## 🔧 DevTools Setup & Configuration
 
 ### Chrome DevTools Settings
+
 ```javascript
 // Recommended settings
 // 1. Enable "Preserve log" in Console
@@ -246,6 +270,7 @@ console.log('Lightning address validation:', isValidLightningAddress(address));
 ```
 
 ### VS Code Integration
+
 ```json
 // .vscode/settings.json
 {
@@ -256,6 +281,7 @@ console.log('Lightning address validation:', isValidLightningAddress(address));
 ```
 
 ### Custom DevTools Snippets
+
 ```javascript
 // Create reusable debug snippets
 // 1. Go to Sources → Snippets
@@ -266,16 +292,19 @@ console.log('Lightning address validation:', isValidLightningAddress(address));
 ## 📚 DevTools Resources
 
 ### Official Documentation
+
 - **[Chrome DevTools](https://developer.chrome.com/docs/devtools/)** - Complete guide
 - **[Firefox DevTools](https://firefox-source-docs.mozilla.org/devtools-user/)** - Firefox debugging
 - **[Safari DevTools](https://webkit.org/web-inspector/)** - Safari debugging
 
 ### Advanced Tools
+
 - **[React DevTools](https://react.dev/learn/react-developer-tools)** - React component debugging
 - **[Redux DevTools](https://github.com/reduxjs/redux-devtools)** - State management debugging
 - **[Apollo DevTools](https://www.apollographql.com/docs/devtools/)** - GraphQL debugging
 
 ### Performance Tools
+
 - **[Lighthouse](https://developers.google.com/web/tools/lighthouse)** - Performance auditing
 - **[WebPageTest](https://www.webpagetest.org/)** - Detailed performance analysis
 - **[Bundle Analyzer](https://github.com/webpack-contrib/webpack-bundle-analyzer)** - Bundle size analysis
@@ -283,12 +312,14 @@ console.log('Lightning address validation:', isValidLightningAddress(address));
 ## 🆘 Getting Help with DevTools
 
 ### **Common Issues**
+
 - **DevTools not opening**: Try F12, Ctrl+Shift+I, or right-click → Inspect
 - **Console not showing**: Check if "Console" tab is selected
 - **Performance tab missing**: Make sure you're in Chrome (not other browsers)
 - **Extensions interfering**: Try incognito mode or disable extensions
 
 ### **Learning Resources**
+
 - **Chrome DevTools YouTube Series** - Official video tutorials
 - **DevTools Tips & Tricks** - Blog posts and articles
 - **Performance Debugging Course** - Free online courses

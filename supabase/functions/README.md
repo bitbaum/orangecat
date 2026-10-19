@@ -23,26 +23,31 @@ Some Supabase endpoints may respond with a wildcard, causing CORS errors.
 ### How to deploy
 
 1. Make sure you have the Supabase CLI installed:
+
    ```
    npm install -g supabase
    ```
 
 2. Log in to Supabase CLI:
+
    ```
    supabase login
    ```
 
 3. Deploy the function (from the project root):
+
    ```
    ./scripts/deploy-cors-proxy.sh
    ```
 
    Or manually:
+
    ```
    supabase functions deploy cors-proxy --project-ref your-project-ref
    ```
 
 4. Set the required environment variables:
+
    ```
    supabase secrets set SUPABASE_URL="your-supabase-url" SUPABASE_ANON_KEY="your-supabase-anon-key" --project-ref your-project-ref
    ```
@@ -66,4 +71,4 @@ You can test the CORS proxy with:
 
 ```
 curl -X GET "https://your-project-ref.supabase.co/functions/v1/cors-proxy?path=/rest/v1/health"
-``` 
+```
