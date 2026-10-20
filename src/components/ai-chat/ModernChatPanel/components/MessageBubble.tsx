@@ -5,14 +5,19 @@
 
 import { useMemo } from 'react';
 import { extractReplies } from '@bitbaum/chatkit';
-import { ChatReplies } from '@bitbaum/chatkit/react';
+import Link from 'next/link';
+import {
+  ChatReplies,
+  Markdown,
+  type CitationMap as AnswerCitations,
+  type RenderLink,
+} from '@bitbaum/chatkit/react';
 import { cn } from '@/lib/utils';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { Cat, User, Copy, Check, Clock } from 'lucide-react';
 import { getModelDisplayName } from '@/config/ai-models';
 import { formatShortTime } from '@/utils/dates';
 import { getModelCapabilities } from '@/config/model-capability';
-import { renderChatMarkdown } from '@/utils/markdown';
 import { ActionButton } from './ActionButton';
 import { linkifyCitations, citationsFromToolCalls } from '@/lib/chat/citations';
 import { ToolCallChip } from './ToolCallChip';
@@ -158,6 +163,27 @@ function ExecResultChip({ result }: { result: ExecActionResult }) {
   );
 }
 
+function hostOf(url: string): string {
+  try {
+    return new URL(url).host;
+  } catch {
+    return url;
+  }
+}
+
+/** An in-app route navigates in place — a new tab strands the reader outside
+ *  the app they are already in. Everything else opens beside it. */
+const renderAnswerLink: RenderLink = ({ href, internal, className, children }) =>
+  internal ? (
+    <Link href={href} className={className}>
+      {children}
+    </Link>
+  ) : (
+    <a href={href} className={className} target="_blank" rel="noopener noreferrer">
+      {children}
+    </a>
+  );
+
 interface MessageBubbleProps {
   message: Message;
   isLast: boolean;
@@ -203,6 +229,16 @@ export function MessageBubble({
   );
 
   const handleCopy = () => void copy(linkedContent);
+  // The same sources for the renderer: `[F1]` becomes a small mark in the
+  // text and the answer ends with one chip per source, linked. The label is
+  // the page's title, or its host when the search gave none.
+  const answerCitations = useMemo<AnswerCitations>(() => {
+    const map: AnswerCitations = {};
+    for (const [id, source] of citations) {
+      map[id] = { label: source.title ?? hostOf(source.url), detail: source.url, href: source.url };
+    }
+    return map;
+  }, [citations]);
 
   return (
     <div
@@ -254,7 +290,15 @@ export function MessageBubble({
           )}
         >
           <div className={cn('break-words', isUser && 'whitespace-pre-wrap')}>
-            {isUser ? displayContent : renderChatMarkdown(linkedContent)}
+            {isUser ? (
+              displayContent
+            ) : (
+              <Markdown
+                text={displayContent}
+                citations={answerCitations}
+                renderLink={renderAnswerLink}
+              />
+            )}
             {isLast && !isUser && !displayContent && (
               // Three unlabelled dots at the left edge of a blank screen do not
               // say who is doing what, and a screen reader announced nothing at
