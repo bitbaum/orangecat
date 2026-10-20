@@ -7,7 +7,9 @@
  * `focus` variant is the default Cat hub experience (full-height, minimal chrome).
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { ArrowDown } from 'lucide-react';
+import { ChatScreen, useStickToBottom } from '@bitbaum/chatkit/react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { CAT_SEND_EVENT } from '@/lib/chat/cat-send-event';
@@ -57,6 +59,12 @@ interface ModernChatPanelProps {
   onConversationCreated?: (id: string) => void;
   /** Current page the user is on (global overlay) so Cat is page-aware. */
   pageContext?: import('@/config/cat-page-context').CatPageDescriptor | null;
+  /**
+   * Floats over the top of the conversation (focus variant): the hub's
+   * toolbar. The words scroll under it and fade — nothing takes a strip of
+   * the screen away from the reading.
+   */
+  header?: ReactNode;
   className?: string;
 }
 
@@ -72,6 +80,7 @@ export function ModernChatPanel({
   onConversationStarted,
   onConversationCreated,
   pageContext,
+  header,
   className,
 }: ModernChatPanelProps = {}) {
   const router = useRouter();
@@ -251,6 +260,21 @@ export function ModernChatPanel({
     [router]
   );
 
+  // Follows new turns only while the reader is at the bottom, and stays
+  // pinned through size changes — the floating composer growing, its height
+  // measured after the first paint — with a way back down otherwise.
+  const { scrollRef, endRef, following, onScroll, jumpToBottom } = useStickToBottom(
+    [messages.length, isLoadingHistory],
+    messages.length
+  );
+  const setEnd = useCallback(
+    (el: HTMLDivElement | null) => {
+      endRef.current = el;
+      messagesEndRef.current = el;
+    },
+    [endRef, messagesEndRef]
+  );
+
   const isEmpty = !isLoadingHistory && messages.length === 0;
   // Centred in the empty state (focus variant), pinned below the thread otherwise.
   const composerInline = isFocus && isEmpty;
@@ -273,86 +297,119 @@ export function ModernChatPanel({
     />
   );
 
+  const thread = (
+    <div ref={scrollRef} className="oc-chat-scroll" onScroll={onScroll}>
+      {isLoadingHistory ? (
+        <div className="flex h-full items-center justify-center">
+          <p className="text-sm text-fg-secondary">Loading conversation…</p>
+        </div>
+      ) : messages.length === 0 ? (
+        <EmptyState
+          opener={opener}
+          chips={chips}
+          isLoadingSuggestions={isLoadingSuggestions}
+          onSuggestionClick={handleSuggestionClick}
+          onDismissOpener={dismissOpener}
+          isNewUser={isNewUser}
+          variant={variant}
+          composer={composerInline ? composer : undefined}
+        />
+      ) : (
+        <div className="oc-chat-thread">
+          {messages.map((msg, i) => (
+            <MessageBubble
+              key={msg.id}
+              message={msg}
+              isLast={i === messages.length - 1 && pendingActions.length === 0}
+              onActionClick={handleActionClick}
+              onQuickReply={handleSuggestionClick}
+              variant={variant}
+            />
+          ))}
+
+          {pendingActions.length > 0 && (
+            <div className="space-y-3">
+              {pendingActions.map(action => (
+                <PendingActionsCard
+                  key={action.id}
+                  action={action}
+                  onConfirm={handleConfirmAction}
+                  onReject={handleRejectAction}
+                />
+              ))}
+            </div>
+          )}
+
+          <MemoryNoteCard notes={memoryNotes} onUndo={undoNote} onDismiss={dismissNote} />
+
+          <div ref={setEnd} />
+        </div>
+      )}
+    </div>
+  );
+  const errorDisplay = error && (
+    <ErrorDisplay
+      error={error}
+      code={errorCode}
+      onRetry={handleRetry}
+      onDismiss={handleDismissError}
+    />
+  );
+
+  if (isFocus) {
+    // The whole display is the conversation; the toolbar and the composer
+    // float over it (chatkit's ChatScreen). While the chat is empty the
+    // composer sits in the centred column instead, so the dock is hidden.
+    return (
+      <div className={cn('oc-chat-layout', className)}>
+        <ChatScreen
+          header={header}
+          composer={
+            <>
+              {errorDisplay}
+              {!composerInline && composer}
+            </>
+          }
+          className={composerInline ? 'oc-chat-screen-empty' : undefined}
+        >
+          {thread}
+          {!following && !isEmpty && (
+            <button
+              type="button"
+              className="ck-jump"
+              onClick={jumpToBottom}
+              aria-label="Jump to the latest message"
+              title="Jump to the latest message"
+            >
+              <ArrowDown className="h-4 w-4" />
+            </button>
+          )}
+        </ChatScreen>
+      </div>
+    );
+  }
+
   return (
     <div
       className={cn(
-        'oc-chat-layout',
-        !isFocus && 'min-h-[34rem] rounded-md border border-subtle',
-        !isFocus && 'h-[calc(100dvh_-_15.5rem)] sm:h-[calc(100dvh_-_13rem)]',
+        'oc-chat-layout min-h-[34rem] rounded-md border border-subtle',
+        'h-[calc(100dvh_-_15.5rem)] sm:h-[calc(100dvh_-_13rem)]',
         className
       )}
     >
-      {!isFocus && (
-        <ChatHeader
-          selectedModel={selectedModel}
-          onModelSelect={setSelectedModel}
-          isLoading={isLoading}
-          hasMessages={messages.length > 0}
-          onClearChat={clearChat}
-          quota={quota}
-        />
-      )}
+      <ChatHeader
+        selectedModel={selectedModel}
+        onModelSelect={setSelectedModel}
+        isLoading={isLoading}
+        hasMessages={messages.length > 0}
+        onClearChat={clearChat}
+        quota={quota}
+      />
 
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <div className="oc-chat-scroll">
-          {isLoadingHistory ? (
-            <div className="flex h-full items-center justify-center">
-              <p className="text-sm text-fg-secondary">Loading conversation…</p>
-            </div>
-          ) : messages.length === 0 ? (
-            <EmptyState
-              opener={opener}
-              chips={chips}
-              isLoadingSuggestions={isLoadingSuggestions}
-              onSuggestionClick={handleSuggestionClick}
-              onDismissOpener={dismissOpener}
-              isNewUser={isNewUser}
-              variant={variant}
-              composer={composerInline ? composer : undefined}
-            />
-          ) : (
-            <div className="oc-chat-thread">
-              {messages.map((msg, i) => (
-                <MessageBubble
-                  key={msg.id}
-                  message={msg}
-                  isLast={i === messages.length - 1 && pendingActions.length === 0}
-                  onActionClick={handleActionClick}
-                  onQuickReply={handleSuggestionClick}
-                  variant={variant}
-                />
-              ))}
-
-              {pendingActions.length > 0 && (
-                <div className="space-y-3">
-                  {pendingActions.map(action => (
-                    <PendingActionsCard
-                      key={action.id}
-                      action={action}
-                      onConfirm={handleConfirmAction}
-                      onReject={handleRejectAction}
-                    />
-                  ))}
-                </div>
-              )}
-
-              <MemoryNoteCard notes={memoryNotes} onUndo={undoNote} onDismiss={dismissNote} />
-
-              <div ref={messagesEndRef} />
-            </div>
-          )}
-        </div>
-
-        {error && (
-          <ErrorDisplay
-            error={error}
-            code={errorCode}
-            onRetry={handleRetry}
-            onDismiss={handleDismissError}
-          />
-        )}
-
-        {!composerInline && composer}
+        {thread}
+        {errorDisplay}
+        {composer}
       </div>
     </div>
   );

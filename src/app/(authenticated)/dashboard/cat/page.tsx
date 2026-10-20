@@ -76,9 +76,9 @@ export default function CatHubPage() {
         onMobileOpenChange={setRailOpen}
       />
       <div className="oc-chat-layout min-h-0 min-w-0 flex-1">
-        <CatChatToolbar quota={quota} onOpenConversations={() => setRailOpen(true)} />
         <ModernChatPanel
           variant="focus"
+          header={<CatChatToolbar quota={quota} onOpenConversations={() => setRailOpen(true)} />}
           conversationId={activeId}
           onConversationCreated={adoptConversation}
           onConversationStarted={refreshConversations}

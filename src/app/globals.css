@@ -1726,3 +1726,53 @@ html[data-header-hidden='true'] .sticky-below-header {
     transition: none;
   }
 }
+
+/*
+ * The Cat chat as the whole screen (chatkit's ChatScreen). UNLAYERED on
+ * purpose: chatkit's stylesheet is imported unlayered (ChatInput.tsx) and
+ * unlayered CSS beats anything inside @layer components, so an override
+ * written up there silently does nothing. The conversation runs edge to
+ * edge; the hub's toolbar and the composer float over it, and the words fade
+ * as they pass under each (owner, 2026-10-20: "the whole display is used").
+ */
+.oc-chat-layout > .ck-screen {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+  background: transparent;
+}
+.ck-screen .oc-chat-scroll {
+  padding-top: var(--ck-top-inset, 0px);
+  padding-bottom: var(--ck-bottom-inset, 0px);
+  scroll-padding-top: var(--ck-top-inset, 0px);
+  scroll-padding-bottom: var(--ck-bottom-inset, 0px);
+}
+/* The toolbar in the floating header: no bar of its own, its controls
+   frosted pills like chatkit's ck-glass. */
+.ck-screen-header .oc-chat-toolbar {
+  flex: 1;
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+.ck-screen-header .oc-chat-toolbar :is(a, button) {
+  border: 1px solid hsl(var(--border-default) / 0.6);
+  border-radius: 999px;
+  background: hsl(var(--surface-base) / 0.7);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  backdrop-filter: blur(16px) saturate(1.4);
+  color: hsl(var(--text-primary));
+}
+/* The composer in the dock: ChatScreen owns the gutter and the safe area. */
+.ck-screen-dock .oc-chat-composer-wrap {
+  padding: 0;
+  background: transparent;
+}
+/* Empty chat: the composer sits in the centred column, so there is no dock;
+   the greeting keeps clear of the floating toolbar. */
+.oc-chat-screen-empty .ck-screen-dock {
+  display: none;
+}
+.oc-chat-screen-empty .oc-chat-scroll {
+  padding-top: calc(var(--ck-top-inset, 0px) + 0.5rem);
+}
