@@ -31,7 +31,11 @@ describe('every domain create that rebuilds its payload carries the resolved act
       if (file.endsWith('/loans/obligation.ts')) continue;
       const src = readFileSync(file, 'utf8');
       // createEntity('type', user, {   or   createEntity(\n 'type',\n user,\n {
-      const calls = src.matchAll(/createEntity\(\s*'[a-z_]+',\s*\w+,\s*(\{|withResolvedActor\()/g);
+      // — with or without a type argument: createEntity<Row>( hid four of these
+      // (product, service, cause, document) from the first version of this check.
+      const calls = src.matchAll(
+        /createEntity(?:<[^>]+>)?\(\s*'[a-z_]+',\s*\w+,\s*(\{|withResolvedActor\()/g
+      );
       for (const m of calls) {
         if (m[1] === '{') offenders.push(file.replace(process.cwd() + '/', ''));
       }

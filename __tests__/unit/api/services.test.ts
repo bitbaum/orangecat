@@ -249,3 +249,35 @@ describe('Service Creation', () => {
     });
   });
 });
+
+describe('createService — live at once, owned by whom the API layer resolved', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (createAdminClient as Mock).mockReturnValue(mockSupabase);
+    mockSupabase.single.mockResolvedValue({ data: { id: 's1' }, error: null });
+  });
+  const fee = { title: 'Build the booking page', category: 'human_task', fixed_price: 500 };
+  const lastRow = () =>
+    (mockSupabase.insert as Mock).mock.calls.at(-1)![0] as Record<string, unknown>;
+
+  it('goes live when the validated body says active — a fee Loki lists has nobody to press Publish', async () => {
+    await createService('user-1', { ...fee, status: 'active' });
+    expect(lastRow().status).toBe('active');
+  });
+
+  it('is a draft by default, and paused or unavailable cannot be created', async () => {
+    await createService('user-1', fee);
+    expect(lastRow().status).toBe('draft');
+    await createService('user-1', { ...fee, status: 'paused' });
+    expect(lastRow().status).toBe('draft');
+  });
+
+  it('belongs to the actor the API layer resolved, never to whoever called', async () => {
+    await createService('user-1', {
+      ...fee,
+      _resolved_actor_id: 'group-9',
+    } as unknown as Parameters<typeof createService>[1]);
+    expect(lastRow().actor_id).toBe('group-9');
+    expect(lastRow()).not.toHaveProperty('_resolved_actor_id');
+  });
+});

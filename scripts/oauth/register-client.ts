@@ -4,7 +4,7 @@
  * OrangeCat is the platform's OAuth2/OIDC authorization server ("Login with
  * OrangeCat"). The provider code (slices 1a–1c) is inert until a client row
  * exists; this script creates / updates that row. Registered relying parties
- * live in CLIENT_SPECS below — one least-privilege SSOT per client.
+ * live in CLIENT_SPECS (scripts/oauth/client-specs.ts) — one least-privilege SSOT per client.
  *
  * Secrets are NEVER committed: the client secret is read from env (or generated)
  * and only its sha256 hash is stored — mirroring integration_keys and the
@@ -38,6 +38,7 @@ import { die, requireOwnerAdminClient } from '../lib/owner-gate';
 import { createHash, randomBytes } from 'node:crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { parseAndValidateScopes } from '../../src/lib/oauth/config';
+import { CALLBACK_PATH, CLIENT_SPECS } from './client-specs';
 
 const admin = requireOwnerAdminClient();
 
@@ -45,151 +46,6 @@ const rotate = process.argv.includes('--rotate');
 const clientArgIdx = process.argv.indexOf('--client');
 const clientId = (clientArgIdx !== -1 && process.argv[clientArgIdx + 1]) || 'loki';
 const sha256 = (s: string): string => createHash('sha256').update(s).digest('hex');
-
-/** Auth.js v5 callback path — identical for every relying party we register. */
-const CALLBACK_PATH = '/api/auth/callback/orangecat';
-
-interface ClientSpec {
-  name: string;
-  /** Production origins; the callback path is appended to each. */
-  origins: string[];
-  /** Space-separated scope ceiling — validated against the scope registry. */
-  scopes: string;
-  is_confidential: boolean;
-  is_trusted: boolean;
-  /**
-   * The app's own privacy policy / terms, linked from the consent screen.
-   * Only a page that exists — the screen says "none published" otherwise.
-   */
-  policy_uri?: string;
-  tos_uri?: string;
-}
-
-/**
- * The registered relying parties — one least-privilege SSOT per client.
- *
- * - scopes: only what the client actually needs today. NOT the full supported
- *   set — `effectiveScopes()` narrows per-request, but the *ceiling* stays
- *   minimal so a token can never be minted for a capability the client
- *   shouldn't have. Widen here intentionally (and re-run) when one needs a
- *   new capability.
- * - origins: exact-match redirect enforcement (no wildcards). Append
- *   dev/preview origins via <ID>_REDIRECT_URIS when needed.
- */
-const CLIENT_SPECS: Record<string, ClientSpec> = {
-  // Mirrors the row first registered + go-live-verified on 2026-06-17; the
-  // secret already lives in Loki's env.
-  loki: {
-    name: 'Loki',
-    origins: ['https://loki.orangecat.ch'], // production origin (PLATFORM_AND_COLLABORATION.md)
-    policy_uri: 'https://loki.orangecat.ch/privacy',
-    tos_uri: 'https://loki.orangecat.ch/terms',
-    scopes: 'openid profile email project.read project.write timeline.write wallet.read',
-    is_confidential: true, // has a server (Auth.js v5) — keeps a secret
-    is_trusted: true, // first-party — skips the consent screen after first grant
-  },
-  // Solon needs IDENTITY and nothing else: login links a Solon member to an
-  // OrangeCat actor (Member.ocActorId). It never acts on OrangeCat's behalf —
-  // governance authority flows the other way, through Bitcoin-signed votes
-  // that OrangeCat re-verifies (src/services/solon/decision-verify.ts).
-  solon: {
-    name: 'Solon',
-    origins: ['https://solon.orangecat.ch'],
-    scopes: 'openid profile email',
-    is_confidential: true,
-    is_trusted: true,
-  },
-  // Heidi needs IDENTITY and nothing else, for the same reason Solon does.
-  // Heidi teaches Swiss German; its portal has learners, tutors who can be
-  // paid, and study groups — and each of those is something OrangeCat already
-  // owns (identity, economy, public presence). So Heidi keeps NO users table
-  // and acts on nobody's behalf: it reads who you are and stops there.
-  // Widen this ceiling deliberately, here, if tutor payouts later need a
-  // wallet scope — never by letting the client ask for more at request time.
-  heidi: {
-    name: 'Heidi',
-    origins: ['https://heidi.orangecat.ch'],
-    policy_uri: 'https://heidi.orangecat.ch/privacy', // no terms page yet
-    scopes: 'openid profile email',
-    is_confidential: true, // has a server (Auth.js v5) — keeps a secret
-    is_trusted: true, // first-party — skips the consent screen after first grant
-  },
-  // Skif (safety: bookable Protectors, safety assessments) needs IDENTITY and
-  // nothing else. It keeps no users table — `sub` is the only key it stores —
-  // and it holds some of the most sensitive data in the fleet (bookings,
-  // incident reports, a person's stated safety limits), which is exactly why
-  // it must not be able to read or act on anything else at OrangeCat.
-  skif: {
-    name: 'Skif',
-    origins: ['https://skif.orangecat.ch'],
-    scopes: 'openid profile email',
-    is_confidential: true, // has a server (Auth.js v5) — keeps a secret
-    is_trusted: true, // first-party — skips the consent screen after first grant
-  },
-  // Substrata (research on physical chokepoints) needs IDENTITY and nothing
-  // else: the signed `sub` keys a reader's desk settings and marks. It was
-  // registered by hand before this entry existed, so a re-run would have had
-  // nothing to refresh. Two origins: it moves to substrata.ch and the
-  // orangecat.ch address keeps working, so sign-in must be accepted on both.
-  substrata: {
-    name: 'Substrata',
-    origins: ['https://substrata.ch', 'https://substrata.orangecat.ch'],
-    scopes: 'openid profile email',
-    is_confidential: true, // has a server (Auth.js v5) — keeps a secret
-    is_trusted: true, // first-party — skips the consent screen after first grant
-  },
-  // 2026-10-02 — George: "move all our own products to sign in with
-  // orangecat". These four ran their own email/password logins, so a new
-  // person had no Google or GitHub and an OrangeCat account bought them
-  // nothing. IDENTITY only, like heidi and skif: each keys its users on
-  // `sub` and links no account by email (email_verified cannot be trusted
-  // while GoTrue auto-confirms sign-ups). policy_uri/tos_uri only where the
-  // page exists — curl-checked the same day.
-  evig: {
-    name: 'evig',
-    // Serves both names; sign-in must be accepted on either.
-    origins: ['https://evig.orangecat.ch', 'https://revampit.orangecat.ch'],
-    policy_uri: 'https://evig.orangecat.ch/datenschutz',
-    tos_uri: 'https://evig.orangecat.ch/agb',
-    scopes: 'openid profile email',
-    is_confidential: true,
-    is_trusted: true,
-  },
-  petvity: {
-    name: 'Petvity',
-    origins: ['https://petvity.orangecat.ch'],
-    scopes: 'openid profile email',
-    is_confidential: true,
-    is_trusted: true,
-  },
-  'surf-your-life': {
-    name: 'Surf Your Life',
-    origins: ['https://surf-your-life.orangecat.ch'],
-    policy_uri: 'https://surf-your-life.orangecat.ch/de/privacy',
-    scopes: 'openid profile email',
-    is_confidential: true,
-    is_trusted: true,
-  },
-  datacat: {
-    name: 'Datacat',
-    origins: ['https://datacat.orangecat.ch'],
-    scopes: 'openid profile email',
-    is_confidential: true,
-    is_trusted: true,
-  },
-  // Causius (legal matters worked by an agent) needs IDENTITY and nothing
-  // else. It keeps no users table: the signed `sub` is the only key it stores,
-  // and a person's display name is sealed inside their matters, never kept in
-  // the clear. It holds legal letters, so it must not be able to read or act
-  // on anything else here. Paying helpers will widen this deliberately, here.
-  causius: {
-    name: 'Causius',
-    origins: ['https://causius.orangecat.ch'],
-    scopes: 'openid profile email',
-    is_confidential: true, // has a server (Auth.js v5) — keeps a secret
-    is_trusted: true, // first-party — skips the consent screen after first grant
-  },
-};
 
 const spec = CLIENT_SPECS[clientId];
 if (!spec) {

@@ -4,7 +4,7 @@ import { looseClient } from '@/lib/supabase/untyped';
 import type { UserProduct, UserService, UserCause } from '@/types/database';
 import { STATUS } from '@/config/database-constants';
 import { getOrCreateUserActor } from '@/services/actors/getOrCreateUserActor';
-import { createEntity } from '@/domain/base/entityService';
+import { createEntity, withResolvedActor } from '@/domain/base/entityService';
 import { PLATFORM_DEFAULT_CURRENCY } from '@/config/currencies';
 
 // Table type - using entity registry table names
@@ -146,6 +146,12 @@ interface CreateServiceInput {
   images?: string[];
   portfolio_links?: string[];
   show_on_profile?: boolean;
+  /**
+   * `active` lists it at once; anything else is a draft. A builder's fee is
+   * listed by Loki with the builder's token the moment they are booked, and
+   * nobody is there to press Publish on a row they never see.
+   */
+  status?: string | null;
 }
 
 export async function createProduct(
@@ -161,7 +167,7 @@ export async function createProduct(
   return createEntity<UserProduct>(
     'product',
     userId,
-    {
+    withResolvedActor(input, {
       user_id: userId,
       status: STATUS.PRODUCTS.DRAFT as typeof STATUS.PRODUCTS.DRAFT,
       currency: input.currency ?? PLATFORM_DEFAULT_CURRENCY,
@@ -179,7 +185,7 @@ export async function createProduct(
       title: input.title,
       description: input.description ?? null,
       price: input.price,
-    },
+    }),
     {
       client: createAdminClient(),
     }
@@ -193,7 +199,7 @@ export async function createService(
   return createEntity<UserService>(
     'service',
     userId,
-    {
+    withResolvedActor(input, {
       user_id: userId,
       title: input.title,
       description: input.description ?? null,
@@ -211,8 +217,11 @@ export async function createService(
       // already carries it, but this insert previously omitted it → DB default
       // true always won).
       show_on_profile: input.show_on_profile ?? true,
-      status: STATUS.SERVICES.DRAFT as typeof STATUS.SERVICES.DRAFT,
-    },
+      status:
+        input.status === STATUS.SERVICES.ACTIVE
+          ? (STATUS.SERVICES.ACTIVE as typeof STATUS.SERVICES.ACTIVE)
+          : (STATUS.SERVICES.DRAFT as typeof STATUS.SERVICES.DRAFT),
+    }),
     {
       client: createAdminClient(),
     }
@@ -250,7 +259,7 @@ export async function createCause(userId: string, input: CreateCauseInput): Prom
   return createEntity<UserCause>(
     'cause',
     userId,
-    {
+    withResolvedActor(input, {
       user_id: userId,
       title: input.title,
       description: input.description ?? null,
@@ -266,7 +275,7 @@ export async function createCause(userId: string, input: CreateCauseInput): Prom
       // Respect the form's profile-visibility toggle; DB default (true) would
       // otherwise always win and ignore an unchecked box.
       show_on_profile: input.show_on_profile ?? true,
-    },
+    }),
     {
       client: createAdminClient(),
     }

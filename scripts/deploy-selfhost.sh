@@ -130,6 +130,18 @@ OC_BOX="$OC_BOX" bash scripts/apply-migrations.sh || {
   exit 1
 }
 
+echo "=== OAuth client scope ceilings (scripts/oauth/client-specs.ts → box) ==="
+# A client's allowed_scopes are derived from CLIENT_SPECS. Until 2026-10-20 a
+# scope widened there reached the live sign-in only when someone re-ran
+# register-client.ts on the box by hand; now every deploy refreshes the rows
+# that EXIST. Nothing is created here — creating a client mints a secret and
+# prints it once, which is register-client.ts's job, by hand. Non-fatal: a
+# stale ceiling narrows one app's token; it does not break the site.
+if ! npx -y tsx scripts/oauth/client-scopes-sql.ts \
+  | ssh "${SSH_OPTS[@]}" "$OC_BOX" "docker exec -i ${OC_DB_CONTAINER:-supabase-db} psql -U postgres -d postgres -v ON_ERROR_STOP=1"; then
+  echo "WARN: OAuth client scope refresh failed (non-fatal) — run scripts/oauth/register-client.ts on the box" >&2
+fi
+
 echo "=== schema-drift gate (deployed code vs LIVE box schema) ==="
 # Migrations applying is necessary but not sufficient: the box can still lack an
 # object the code needs — e.g. a migration that was backfilled-as-applied but never
