@@ -47,7 +47,12 @@ export async function notifyLokiProjectFunding(pi: PaymentIntent): Promise<void>
     return;
   }
   const meta = getEntityMetadata(pi.entity_type as EntityType);
-  if (pi.intent_kind !== 'support' || !meta.canReceiveSupport) {
+  // Funding on a project, or a service bought outright: a builder booked
+  // through Loki is paid through a service in their own name, and the
+  // assignment is marked paid from this signal, never from a claim.
+  const funded = pi.intent_kind === 'support' && meta.canReceiveSupport;
+  const serviceBought = pi.intent_kind === 'purchase' && pi.entity_type === 'service';
+  if (!funded && !serviceBought) {
     return;
   }
 

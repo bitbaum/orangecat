@@ -111,6 +111,12 @@ export const OAUTH_SCOPES: readonly OAuthScope[] = [
     sensitive: true,
     description: 'Post updates to your wall on your behalf',
   },
+  {
+    name: 'service.write',
+    sensitive: true,
+    description:
+      'List services you offer, in your name (a client pays you for agreed work through one)',
+  },
   { name: 'stakeholders.read', description: 'Read stakeholder relationships on your projects' },
   {
     name: 'stakeholders.write',

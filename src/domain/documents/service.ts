@@ -10,6 +10,7 @@
  */
 
 import {
+  withResolvedActor,
   listEntityPage,
   getEntity as baseGetEntity,
   createEntity,
@@ -74,13 +75,17 @@ export async function getDocument(id: string): Promise<Document | null> {
  * Create a new document
  */
 export async function createDocument(userId: string, data: DocumentFormData): Promise<Document> {
-  return createEntity<Document>('document', userId, {
-    title: data.title,
-    content: data.content,
-    document_type: data.document_type || 'notes',
-    visibility: data.visibility || 'cat_visible',
-    tags: data.tags || [],
-  });
+  return createEntity<Document>(
+    'document',
+    userId,
+    withResolvedActor(data, {
+      title: data.title,
+      content: data.content,
+      document_type: data.document_type || 'notes',
+      visibility: data.visibility || 'cat_visible',
+      tags: data.tags || [],
+    })
+  );
 }
 
 /**

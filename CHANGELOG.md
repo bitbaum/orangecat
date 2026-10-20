@@ -9,6 +9,17 @@ reads, and [orangecat.ch/changelog](https://orangecat.ch/changelog) renders
 it from there. One `## YYYY-MM-DD` heading per day; bullets under it travel
 to the map, sub-bullets stay here for the human reader.
 
+## 2026-10-20
+
+### Added
+
+- **An app you sign into with OrangeCat can list a service in your name.** It asks for that on the consent screen, marked as acting for you, like posting to your wall. A service listed through an app can be live at once instead of waiting as a draft, and when a client pays for it, Loki hears about it the way it already hears about project funding. This is how a builder booked through Loki gets paid: the fee is a service in the builder's own name, paid to the builder's own wallet, and the booking is marked paid from the payment itself.
+  - The scope is `service.write`. Each app's ceiling of scopes now follows the code on every deploy: a widened ceiling used to reach the live sign-in only when someone re-ran the registration by hand.
+
+### Fixed
+
+- **A product, service, cause or document created for a group now belongs to the group.** The API layer worked out who the thing was for, but these four create paths rebuilt their row and dropped that, so the row fell to the person who clicked. The check that pins the carrier on every create path saw past them because of a type argument; it no longer does.
+
 ## 2026-10-12
 
 ### Changed
