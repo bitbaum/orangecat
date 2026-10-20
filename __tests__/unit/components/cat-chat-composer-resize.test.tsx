@@ -41,12 +41,16 @@ describe('Cat chat composer resize', () => {
     fireEvent.change(textarea, { target: { value: 'line1\nline2\nline3\nline4' } });
     expect(textarea.style.height).toBe('150px');
 
-    // handleSend clears the controlled value with no DOM change event.
+    // handleSend clears the controlled value with no DOM change event. An
+    // EMPTY box is always one line: chatkit (0.7+) leaves its height `auto`
+    // rather than measuring, because Chromium counts the placeholder in
+    // scrollHeight and a box measured while narrow locked at its maximum
+    // with nothing typed.
     Object.defineProperty(textarea, 'scrollHeight', { configurable: true, value: 36 });
     rerenderWith('');
 
     expect(textarea.value).toBe('');
-    expect(textarea.style.height).toBe('36px');
+    expect(textarea.style.height).toBe('auto');
   });
 
   it('grows when text arrives without a keystroke (a dictated transcript)', () => {
