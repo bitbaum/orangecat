@@ -1432,6 +1432,16 @@ html[data-mobile-action-bar] .app-fab-anchor {
 html[data-header-hidden='true'] .sticky-below-header {
   top: 0;
 }
+/* A chat that owns the phone (getRouteChrome().immersiveChat): no header
+   above it, so nothing to clear, and the content region is the viewport. */
+@media (max-width: 767px) {
+  .app-immersive-chat.app-header-offset {
+    padding-top: 0;
+  }
+  .app-immersive-chat .app-content-height {
+    height: var(--app-viewport-height, 100dvh);
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .sticky-below-header {
     transition: none;
@@ -1768,11 +1778,21 @@ html[data-header-hidden='true'] .sticky-below-header {
   padding: 0;
   background: transparent;
 }
-/* Empty chat: the composer sits in the centred column, so there is no dock;
-   the greeting keeps clear of the floating toolbar. */
+/* Empty chat, from sm up: the composer sits in the centred column, so there
+   is no dock; the greeting keeps clear of the floating toolbar. */
 .oc-chat-screen-empty .ck-screen-dock {
   display: none;
 }
 .oc-chat-screen-empty .oc-chat-scroll {
   padding-top: calc(var(--ck-top-inset, 0px) + 0.5rem);
+}
+/* Empty chat on a phone: the composer floats at the bottom as in a thread,
+   and the greeting, the Cat's opener and the chips gather just above it,
+   where the thumb is — the ChatGPT app's one pinned suggestion over the
+   box, with the screen above left quiet. */
+@media (max-width: 639px) {
+  .ck-screen .oc-chat-empty {
+    justify-content: flex-end;
+    padding-bottom: 0.25rem;
+  }
 }

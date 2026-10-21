@@ -188,6 +188,14 @@ export interface RouteChrome {
   preferCollapsedSidebar: boolean;
   /** The floating Cat launcher. Hidden where a conversation IS the page. */
   hideGlobalCat: boolean;
+  /**
+   * On a phone the chat is the whole screen: no app header above it (its
+   * own toolbar floats over the conversation and carries the way home), the
+   * content height is the viewport. The ChatGPT and Claude apps' layout
+   * (owner, 2026-10-21: the Cat page still wore the app header and a second
+   * toolbar row). From md up the shell stays.
+   */
+  immersiveChat: boolean;
 }
 
 /** True when the pathname is the Cat hub (or a sub-route of it). SSOT — do
@@ -214,6 +222,7 @@ export function getRouteChrome(pathname: string): RouteChrome {
     // The floating button over it was a second Cat on the same screen, and it
     // sat on the right edge of the inputs and the submit row.
     hideGlobalCat: focus || isEntityFormPath(pathname),
+    immersiveChat: isCatHubPath(pathname),
   };
 }
 

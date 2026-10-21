@@ -12,6 +12,7 @@ import { ArrowDown } from 'lucide-react';
 import { ChatScreen, useStickToBottom } from '@bitbaum/chatkit/react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { CAT_SEND_EVENT } from '@/lib/chat/cat-send-event';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 
@@ -276,8 +277,12 @@ export function ModernChatPanel({
   );
 
   const isEmpty = !isLoadingHistory && messages.length === 0;
-  // Centred in the empty state (focus variant), pinned below the thread otherwise.
-  const composerInline = isFocus && isEmpty;
+  // Centred in the empty state (focus variant) from sm up; on a phone it
+  // floats at the bottom as in a thread, where the thumb is, and the empty
+  // state gathers above it (globals.css, .oc-chat-empty). Pinned below the
+  // thread otherwise.
+  const phone = useMediaQuery('(max-width: 639px)');
+  const composerInline = isFocus && isEmpty && !phone;
   const composer = (
     <ChatInput
       value={input}
