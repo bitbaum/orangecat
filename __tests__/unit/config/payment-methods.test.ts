@@ -81,12 +81,14 @@ describe('paymentMethodUrl', () => {
     expect(paymentMethodUrl('venmo', 'lena', { value: 7.5, currency: 'USD' })).toBe(
       'https://venmo.com/lena?txn=pay&amount=7.50'
     );
-    expect(paymentMethodUrl('upi', 'lena@upi', { value: 500, currency: 'INR' })).toBe(
-      'upi://pay?pa=lena%40upi&cu=INR&am=500.00'
+    expect(paymentMethodUrl('upi', 'lena@upi', { value: 500, currency: 'INR' }, 'Lena')).toBe(
+      'upi://pay?pa=lena%40upi&pn=Lena&cu=INR&am=500.00'
     );
-    expect(paymentMethodUrl('upi', 'lena@upi', { value: 5, currency: 'CHF' })).toBe(
-      'upi://pay?pa=lena%40upi&cu=INR'
+    expect(paymentMethodUrl('upi', 'lena@upi', { value: 5, currency: 'CHF' }, 'Lena')).toBe(
+      'upi://pay?pa=lena%40upi&pn=Lena&cu=INR'
     );
+    const zec = 't1' + 'A'.repeat(33);
+    expect(paymentMethodUrl('zcash', zec)).toBe(`zcash:${zec}`);
   });
 
   it('has no link for a handle that is copied into an app', () => {

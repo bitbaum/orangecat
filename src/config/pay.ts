@@ -111,7 +111,7 @@ export const PAY_COPY = {
   copiedLink: 'Link copied',
   generate: 'Show the code',
   generating: 'Preparing…',
-  scan: 'Scan with any Bitcoin wallet.',
+  scan: 'Waiting for the payment…',
   again: 'Change amount',
   paidTitle: 'Paid',
   paidBody: (name: string) => `Paid straight to ${name}'s wallet.`,

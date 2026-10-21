@@ -75,6 +75,9 @@ export default function WalletQrScanner({
   const streamRef = useRef<MediaStream | null>(null);
   const liveRef = useRef(true);
   const [phase, setPhase] = useState<Phase>({ kind: 'starting' });
+  // Bumped by "Try again": a declined permission is often allowed a moment
+  // later, and the way back must be on the same card as the refusal.
+  const [attempt, setAttempt] = useState(0);
 
   const stop = useCallback(() => {
     liveRef.current = false;
@@ -118,7 +121,7 @@ export default function WalletQrScanner({
             ? {
                 kind: 'blocked',
                 reason: 'Camera access was declined',
-                hint: 'Allow the camera in your browser’s address bar, or paste the address instead.',
+                hint: 'Tap the lock or shield icon beside the address, allow Camera, then try again. Or paste instead.',
               }
             : name === 'NotFoundError'
               ? {
@@ -178,7 +181,7 @@ export default function WalletQrScanner({
     })();
 
     return stop;
-  }, [onScanned, stop]);
+  }, [onScanned, stop, attempt]);
 
   return (
     <div
@@ -207,15 +210,28 @@ export default function WalletQrScanner({
             <AlertCircle className="mx-auto mb-3 h-8 w-8 text-fg-tertiary" aria-hidden="true" />
             <p className="text-sm font-medium text-fg-primary">{phase.reason}</p>
             <p className="mt-1 text-sm text-fg-secondary">{phase.hint}</p>
-            <button
-              onClick={() => {
-                stop();
-                onClose();
-              }}
-              className="mt-5 min-h-11 rounded-lg border border-default px-4 text-sm font-medium text-fg-primary"
-            >
-              Paste instead
-            </button>
+            <div className="mt-5 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  stop();
+                  onClose();
+                }}
+                className="min-h-11 rounded-lg border border-default px-4 text-sm font-medium text-fg-primary"
+              >
+                Paste instead
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setPhase({ kind: 'starting' });
+                  setAttempt(n => n + 1);
+                }}
+                className="min-h-11 rounded-lg bg-fg-primary px-4 text-sm font-medium text-fg-inverted"
+              >
+                Try again
+              </button>
+            </div>
           </div>
         ) : (
           <>

@@ -15,11 +15,11 @@ a currency is the unit one ledger counts in.
 Every ledger has rules about three things, and those three are the whole
 difference between one way of being paid and another:
 
-| Axis         | The question                                               | Why it is the payer's business                                 |
-| ------------ | ---------------------------------------------------------- | -------------------------------------------------------------- |
-| **Identity** | What does the payer learn about you when they pay?         | Fiat ledgers are identity-bound by law. Bitcoin's is not.      |
-| **Custody**  | Who holds the entry the moment it lands?                   | A provider can freeze, reverse, or close it. You cannot be.    |
-| **Reach**    | Where is this ledger used, and what unit does it count in? | A Twint number is useless in Lagos; M-Pesa is useless in Bern. |
+| Axis         | The question                                               | Why it is the payer's business                                         |
+| ------------ | ---------------------------------------------------------- | ---------------------------------------------------------------------- |
+| **Identity** | What does the payer learn about you when they pay?         | Fiat ledgers are identity-bound by law. Bitcoin's and Zcash's are not. |
+| **Custody**  | Who holds the entry the moment it lands?                   | A provider can freeze, reverse, or close it. You cannot be.            |
+| **Reach**    | Where is this ledger used, and what unit does it count in? | A Twint number is useless in Lagos; M-Pesa is useless in Bern.         |
 
 Everything else about a rail — its logo, whether it has a deep link, whether
 it needs a phone number — is a consequence of one of these three.

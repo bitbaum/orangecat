@@ -8,7 +8,7 @@
  *   identity — what the payer learns about you at the moment of paying.
  *              Fiat rails are identity-bound by law: the payer's app shows
  *              your registered name, and many need your phone number. Bitcoin
- *              and Monero show a handle and nothing else.
+ *              and Zcash show a handle and nothing else.
  *   custody  — who holds the money the moment it lands: you, or a provider.
  *   reach    — where in the world people use it, and what it moves.
  *
@@ -34,7 +34,7 @@ export const PAYMENT_METHOD_IDS = [
   'revolut',
   'wise',
   'bank',
-  'monero',
+  'zcash',
   'other',
   // Europe
   'twint',
@@ -79,7 +79,7 @@ export type HandleKind =
   | 'vpa' // UPI id, name@bank
   | 'key' // PIX key: phone, email, CPF/CNPJ or a random key
   | 'id' // a service's own id: WeChat ID, Alipay account, PayNow
-  | 'address' // a Monero address
+  | 'address' // a Zcash address
   | 'link';
 
 /** A fact about you the payer's app shows them. */
@@ -115,9 +115,10 @@ export interface PaymentMethodKind {
   /**
    * The link a tap opens, when the service has one. Receives the amount only
    * when it is in a currency the service takes — a Cash App link with CHF in
-   * it would be a number the payer did not choose.
+   * it would be a number the payer did not choose — and the recipient's name
+   * for the schemes that require one (UPI).
    */
-  payUrl?: (handle: string, amount?: PayAmount) => string;
+  payUrl?: (handle: string, amount?: PayAmount, payee?: string) => string;
 }
 
 const money = (amount: PayAmount) => amount.value.toFixed(2);
@@ -178,18 +179,18 @@ export const PAYMENT_METHODS: Record<PaymentMethodId, PaymentMethodKind> = {
     reveals: ['name', 'bank_account'],
     custody: 'provider',
   },
-  monero: {
-    id: 'monero',
-    name: 'Monero',
+  zcash: {
+    id: 'zcash',
+    name: 'Zcash',
     region: 'worldwide',
     handleKind: 'address',
-    handleLabel: 'Monero address',
-    handlePlaceholder: '4…',
-    stripPrefixes: ['monero:'],
-    currencies: ['XMR'],
+    handleLabel: 'Zcash address',
+    handlePlaceholder: 'u1… or t1…',
+    stripPrefixes: ['zcash:'],
+    currencies: ['ZEC'],
     reveals: ['handle_only'],
     custody: 'self',
-    payUrl: handle => `monero:${handle}`,
+    payUrl: handle => `zcash:${handle}`,
   },
   other: {
     id: 'other',
@@ -358,8 +359,9 @@ export const PAYMENT_METHODS: Record<PaymentMethodId, PaymentMethodKind> = {
     currencies: ['INR'],
     reveals: ['name'],
     custody: 'provider',
-    payUrl: (handle, amount) =>
-      `upi://pay?pa=${encodeURIComponent(handle)}&cu=INR${amount ? `&am=${money(amount)}` : ''}`,
+    // `pn` (payee name) is required by most UPI apps; without it the link is refused.
+    payUrl: (handle, amount, payee) =>
+      `upi://pay?pa=${encodeURIComponent(handle)}&pn=${encodeURIComponent(payee ?? handle)}&cu=INR${amount ? `&am=${money(amount)}` : ''}`,
   },
   alipay: {
     id: 'alipay',
@@ -457,7 +459,8 @@ export function isPaymentVisibility(value: string): value is PaymentVisibility {
 export function paymentMethodUrl(
   method: PaymentMethodId,
   handle: string,
-  amount?: PayAmount
+  amount?: PayAmount,
+  payee?: string
 ): string {
   const kind = PAYMENT_METHODS[method];
   if (!kind.payUrl) {
@@ -467,7 +470,7 @@ export function paymentMethodUrl(
     amount &&
     amount.value > 0 &&
     (kind.currencies === 'any' || kind.currencies.includes(amount.currency));
-  return kind.payUrl(handle, takesCurrency ? amount : undefined);
+  return kind.payUrl(handle, takesCurrency ? amount : undefined, payee);
 }
 
 const FACT_WORDS: Record<RevealedFact, string> = {

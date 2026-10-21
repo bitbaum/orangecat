@@ -76,7 +76,9 @@ export function OtherWaysToPay({
         {methods.map(row => {
           const kind = PAYMENT_METHODS[row.method];
           const shown = row.handle ? formatPaymentHandle(row.method, row.handle) : null;
-          const url = row.handle ? paymentMethodUrl(row.method, row.handle, amount) : '';
+          const url = row.handle
+            ? paymentMethodUrl(row.method, row.handle, amount, recipientName)
+            : '';
           return (
             <li key={row.id} className="flex items-center justify-between gap-3 px-4 py-3">
               <div className="min-w-0">
