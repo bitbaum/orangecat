@@ -25,9 +25,7 @@ import { Camera, X, AlertCircle, Loader2 } from 'lucide-react';
 import { normalizePastedHandle } from '@/lib/wallets/pastedHandle';
 
 type Phase =
-  | { kind: 'starting' }
-  | { kind: 'scanning' }
-  | { kind: 'blocked'; reason: string; hint: string };
+  { kind: 'starting' } | { kind: 'scanning' } | { kind: 'blocked'; reason: string; hint: string };
 
 interface BarcodeDetectorLike {
   detect: (source: CanvasImageSource) => Promise<Array<{ rawValue: string }>>;
@@ -65,9 +63,12 @@ async function readFrame(
 export default function WalletQrScanner({
   onScanned,
   onClose,
+  title = 'Scan your wallet’s QR code',
 }: {
   onScanned: (handle: string) => void;
   onClose: () => void;
+  /** What the dialog is for, in the words of the screen that opened it. */
+  title?: string;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -146,8 +147,9 @@ export default function WalletQrScanner({
       }
       setPhase({ kind: 'scanning' });
 
-      const Detector = (window as unknown as { BarcodeDetector?: new (o: object) => BarcodeDetectorLike })
-        .BarcodeDetector;
+      const Detector = (
+        window as unknown as { BarcodeDetector?: new (o: object) => BarcodeDetectorLike }
+      ).BarcodeDetector;
       let detector: BarcodeDetectorLike | null = null;
       if (Detector) {
         try {
@@ -183,11 +185,11 @@ export default function WalletQrScanner({
       className="fixed inset-0 z-modal flex items-center justify-center bg-black/80 p-4"
       role="dialog"
       aria-modal="true"
-      aria-label="Scan a wallet QR code"
+      aria-label={title}
     >
       <div className="w-full max-w-sm overflow-hidden rounded-2xl bg-surface-base">
         <div className="flex items-center justify-between border-b border-default px-4 py-3">
-          <span className="text-sm font-medium text-fg-primary">Scan your wallet’s QR code</span>
+          <span className="text-sm font-medium text-fg-primary">{title}</span>
           <button
             onClick={() => {
               stop();
@@ -218,12 +220,7 @@ export default function WalletQrScanner({
         ) : (
           <>
             <div className="relative aspect-square bg-black">
-              <video
-                ref={videoRef}
-                playsInline
-                muted
-                className="h-full w-full object-cover"
-              />
+              <video ref={videoRef} playsInline muted className="h-full w-full object-cover" />
               {/* A viewfinder, so it is obvious where to aim. */}
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
                 <div className="h-2/3 w-2/3 rounded-xl border-2 border-white/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]" />

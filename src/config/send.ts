@@ -9,15 +9,15 @@
 export const SEND_NOTE_MAX_LENGTH = 120;
 
 export const SEND_COPY = {
-  title: 'Send Bitcoin',
-  subtitle: 'Pay a person, or an invoice someone gave you.',
+  title: 'Send',
+  subtitle: 'Pay a person, an address, or an invoice. From your own wallet.',
 
-  personTab: 'To a person',
-  invoiceTab: 'Paste invoice',
-
-  recipientLabel: 'Username or Lightning address',
-  recipientPlaceholder: 'lena or lena@orangecat.ch',
-  memoLabel: 'Note (optional)',
+  recipientLabel: 'To',
+  recipientPlaceholder: 'Username, lena@wallet.com or an invoice',
+  scan: 'Scan a code',
+  scanTitle: 'Scan a code to pay',
+  memoLabel: 'Note',
+  memoAdd: 'Add a note',
   memoPlaceholder: "What's it for?",
 
   /** Live recipient resolution — a wrong name must fail loudly, before sending. */
@@ -28,8 +28,6 @@ export const SEND_COPY = {
   recipientNotFound: (handle: string) => `Nobody on OrangeCat goes by @${handle}.`,
   recipientCannotReceive: (name: string) => `${name} can't receive Bitcoin yet.`,
 
-  invoiceLabel: 'Lightning invoice',
-  invoicePlaceholder: 'Paste an invoice starting with lnbc…',
   /** Shown once we have read the invoice — consent before spending. */
   invoiceReads: (amount: string) => `This invoice is for ${amount}.`,
   invoiceUnreadable: "We can't read an amount from that invoice.",

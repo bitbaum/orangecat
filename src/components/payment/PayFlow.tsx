@@ -68,6 +68,8 @@ interface PayFlowProps {
   beforeActionSlot?: React.ReactNode;
   /** Shown alongside the confirmation — lets a modal offer "Done". */
   renderDone?: (reset: () => void) => React.ReactNode;
+  /** The amount as the payer types it, so a page can offer other ways to pay it. */
+  onAmountChange?: (amountBtc: number) => void;
   /** Defaults to tip wording. The public pay page passes its own. */
   words?: PayWords;
 }
@@ -81,6 +83,7 @@ export function PayFlow({
   noteSlot,
   beforeActionSlot,
   renderDone,
+  onAmountChange,
   words = TIP_COPY,
 }: PayFlowProps) {
   const knownUpFront = initialCanReceive !== undefined;
@@ -242,7 +245,15 @@ export function PayFlow({
   return (
     <div className="space-y-4">
       {noteSlot}
-      <AmountField value={amount} onChange={setAmount} minBtc={TIP_MIN_BTC} maxBtc={TIP_MAX_BTC} />
+      <AmountField
+        value={amount}
+        onChange={next => {
+          setAmount(next);
+          onAmountChange?.(next);
+        }}
+        minBtc={TIP_MIN_BTC}
+        maxBtc={TIP_MAX_BTC}
+      />
       {beforeActionSlot}
       {error && <p className="text-sm text-status-negative">{error}</p>}
       <p className="text-center text-xs text-fg-tertiary">{words.disclaimer}</p>

@@ -52,8 +52,9 @@ export function AvailabilityEditor({ value, onChange }: AvailabilityEditorProps)
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap gap-2">
-        {WEEKDAYS.map(({ key, short }) => {
+      {/* Seven equal cells in one row — a week never wraps into 5 + 2. */}
+      <div className="grid grid-cols-7 gap-1.5">
+        {WEEKDAYS.map(({ key, label, short }) => {
           const on = selectedDays.has(key);
           return (
             <button
@@ -61,7 +62,8 @@ export function AvailabilityEditor({ value, onChange }: AvailabilityEditorProps)
               type="button"
               onClick={() => toggleDay(key, !on)}
               aria-pressed={on}
-              className={`rounded-md border px-3 py-1.5 text-sm transition-colors ${
+              aria-label={label}
+              className={`min-h-11 min-w-0 rounded-md border px-1 text-sm transition-colors ${
                 on
                   ? 'border-interactive/60 bg-surface-raised/60 text-fg-primary'
                   : 'border-subtle text-fg-secondary hover:bg-surface-raised/30'

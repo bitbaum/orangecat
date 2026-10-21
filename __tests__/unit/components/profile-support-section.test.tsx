@@ -19,8 +19,8 @@ vi.mock('@/components/tips/TipButton', () => ({
   __esModule: true,
   default: ({ username }: { username: string }) => <button>tip:{username}</button>,
 }));
-vi.mock('@/components/receive/SharePayLink', () => ({
-  SharePayLink: ({ username }: { username: string }) => <div>share:{username}</div>,
+vi.mock('@/components/receive/ReceiveCode', () => ({
+  ReceiveCode: ({ username }: { username: string }) => <div>share:{username}</div>,
 }));
 
 const receiveInfoMock = fetchTipReceiveInfo as Mock;

@@ -16,13 +16,14 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { HandCoins, Inbox, Send } from 'lucide-react';
+import { Inbox, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { MoneyLoading, MoneyPage } from '@/components/money/MoneyPage';
 import { MoneyReceipt } from '@/components/money/MoneyReceipt';
 import { AmountField } from '@/components/money/AmountField';
+import { OptionalNoteField } from '@/components/money/OptionalNoteField';
 import { RequestList } from '@/components/requests/RequestList';
 import { PayerStatus, isRequestablePayer } from '@/components/requests/PayerStatus';
 import { useRecipientCheck } from '@/components/send/useRecipientCheck';
@@ -125,7 +126,7 @@ export function RequestsScreen() {
 
   if (sent) {
     return (
-      <MoneyPage title={REQUEST_COPY.title} subtitle={REQUEST_COPY.subtitle} icon={HandCoins}>
+      <MoneyPage title={REQUEST_COPY.title} subtitle={REQUEST_COPY.subtitle}>
         <MoneyReceipt
           title={REQUEST_COPY.sent}
           amountBtc={sent.amountBtc}
@@ -143,7 +144,7 @@ export function RequestsScreen() {
   }
 
   return (
-    <MoneyPage title={REQUEST_COPY.title} subtitle={REQUEST_COPY.subtitle} icon={HandCoins}>
+    <MoneyPage title={REQUEST_COPY.title} subtitle={REQUEST_COPY.subtitle}>
       <div className="space-y-4">
         <Input
           label={REQUEST_COPY.payerLabel}
@@ -166,20 +167,14 @@ export function RequestsScreen() {
               minBtc={PAY_MIN_BTC}
               maxBtc={PAY_MAX_BTC}
             />
-            <details className="rounded-lg border border-subtle">
-              <summary className="flex min-h-11 cursor-pointer list-none items-center px-3 text-sm text-fg-secondary [&::-webkit-details-marker]:hidden">
-                {REQUEST_COPY.noteLabel}
-              </summary>
-              <div className="px-3 pb-3">
-                <Input
-                  label={REQUEST_COPY.noteLabel}
-                  value={note}
-                  onChange={e => setNote(e.target.value.slice(0, REQUEST_NOTE_MAX_LENGTH))}
-                  placeholder={REQUEST_COPY.notePlaceholder}
-                  className="min-h-11"
-                />
-              </div>
-            </details>
+            <OptionalNoteField
+              value={note}
+              onChange={setNote}
+              maxLength={REQUEST_NOTE_MAX_LENGTH}
+              label={REQUEST_COPY.noteLabel}
+              addLabel={REQUEST_COPY.noteAdd}
+              placeholder={REQUEST_COPY.notePlaceholder}
+            />
           </>
         )}
 
@@ -187,7 +182,7 @@ export function RequestsScreen() {
         <p className="text-center text-xs text-fg-tertiary">{REQUEST_COPY.disclaimer}</p>
 
         <Button
-          variant="accent"
+          variant="primary"
           className="w-full"
           onClick={handleSubmit}
           disabled={submitting || !isRequestablePayer(payerCheck) || amount <= 0}

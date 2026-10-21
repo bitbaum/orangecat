@@ -175,9 +175,12 @@ describe('suggestions are exact', () => {
     // by looking at the rendered page.
     setup({ presetsBtc: undefined });
 
-    for (const label of ['CHF 1', 'CHF 5', 'CHF 10', 'CHF 20', 'CHF 50']) {
+    for (const label of ['CHF 5', 'CHF 10', 'CHF 20', 'CHF 50']) {
       expect(screen.getByRole('button', { name: label })).toBeInTheDocument();
     }
+    // One row of four equal cells, never pills that wrap wherever the words
+    // run out — so the smallest rung is the one left off, not the largest.
+    expect(screen.queryByRole('button', { name: 'CHF 1' })).not.toBeInTheDocument();
   });
 
   it('spaces an alphabetic currency code but not a symbol glyph', () => {

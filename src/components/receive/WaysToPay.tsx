@@ -1,0 +1,111 @@
+'use client';
+
+/**
+ * Every door this account accepts money through, as one list.
+ *
+ * The first row is Bitcoin — the rail OrangeCat runs itself: the link and the
+ * Lightning name are the same door, and the coins land in the wallet the owner
+ * connected. The rows after it are the other apps the owner is paid in; they
+ * settle outside OrangeCat, which the line under the list says.
+ *
+ * Every row has the same shape: what it is, the handle under it, one action on
+ * the right of the same size. Adding one is the last row, not a button
+ * somewhere else.
+ */
+
+import { Plus } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { PAYMENT_METHODS, PAYMENT_METHODS_COPY } from '@/config/payment-methods';
+import { RECEIVE_COPY } from '@/config/receive';
+import { ROUTES } from '@/config/routes';
+import { formatPaymentHandle } from '@/lib/payments/payment-handle';
+import type { PaymentMethodRow } from '@/services/payment-methods/payment-methods-client';
+
+interface WaysToPayProps {
+  bitcoin: {
+    /** <username>@orangecat.ch when it mints invoices, else null. */
+    address: string | null;
+    /** The wallet the coins settle into, when we can name it. */
+    arrivesAt: string | null;
+    /** Whether any Bitcoin rail is set up at all. */
+    active: boolean;
+  };
+  methods: PaymentMethodRow[];
+  onAdd: () => void;
+  onRemove: (id: string) => void;
+  removingId?: string | null;
+}
+
+const ROW = 'flex items-center justify-between gap-3 px-4 py-3';
+const ACTION = 'shrink-0';
+
+export function WaysToPay({ bitcoin, methods, onAdd, onRemove, removingId }: WaysToPayProps) {
+  const bitcoinLine = !bitcoin.active
+    ? PAYMENT_METHODS_COPY.bitcoinNotSetUp
+    : bitcoin.arrivesAt
+      ? PAYMENT_METHODS_COPY.bitcoinArrives(bitcoin.arrivesAt)
+      : PAYMENT_METHODS_COPY.bitcoinArrivesInApp;
+
+  return (
+    <section className="mt-8">
+      <h2 className="mb-2 text-sm font-semibold uppercase tracking-caps text-fg-tertiary">
+        {PAYMENT_METHODS_COPY.heading}
+      </h2>
+
+      <ul className="divide-y divide-subtle rounded-lg border border-subtle bg-surface-base">
+        <li className={ROW}>
+          <div className="min-w-0">
+            <p className="font-medium text-fg-primary">{PAYMENT_METHODS_COPY.bitcoinRow}</p>
+            {bitcoin.address && (
+              <p className="truncate font-mono text-sm text-fg-secondary">{bitcoin.address}</p>
+            )}
+            <p className="truncate text-sm text-fg-tertiary">{bitcoinLine}</p>
+          </div>
+          <Button variant="ghost" size="sm" href={ROUTES.DASHBOARD.WALLETS} className={ACTION}>
+            {bitcoin.active ? RECEIVE_COPY.manageBitcoin : RECEIVE_COPY.setUpBitcoin}
+          </Button>
+        </li>
+
+        {methods.map(row => {
+          const kind = PAYMENT_METHODS[row.method];
+          return (
+            <li key={row.id} className={ROW}>
+              <div className="min-w-0">
+                <p className="font-medium text-fg-primary">
+                  {kind.name}
+                  {row.label && <span className="text-fg-secondary"> · {row.label}</span>}
+                </p>
+                <p className="truncate font-mono text-sm text-fg-secondary">
+                  {formatPaymentHandle(row.method, row.handle)}
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={ACTION}
+                onClick={() => onRemove(row.id)}
+                isLoading={removingId === row.id}
+                aria-label={`${PAYMENT_METHODS_COPY.remove} ${kind.name}`}
+              >
+                {PAYMENT_METHODS_COPY.remove}
+              </Button>
+            </li>
+          );
+        })}
+
+        <li>
+          <button
+            type="button"
+            onClick={onAdd}
+            className="flex min-h-12 w-full items-center gap-2 px-4 text-sm font-medium text-fg-primary hover:bg-surface-raised"
+          >
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            {PAYMENT_METHODS_COPY.add}
+          </button>
+        </li>
+      </ul>
+
+      <p className="mt-2 text-sm text-fg-tertiary">{PAYMENT_METHODS_COPY.outsideNote}</p>
+    </section>
+  );
+}

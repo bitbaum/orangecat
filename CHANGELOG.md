@@ -9,6 +9,15 @@ reads, and [orangecat.ch/changelog](https://orangecat.ch/changelog) renders
 it from there. One `## YYYY-MM-DD` heading per day; bullets under it travel
 to the map, sub-bullets stay here for the human reader.
 
+## 2026-10-21
+
+### Changed
+
+- **Receive opens on a code people can scan.** The QR slot in the bottom bar now shows a QR of your pay link, with your name on it, the link under it, and Copy link · Share as two equal buttons. Add an amount and the code and the link carry it. Under the code, every way you are paid, in one list: Bitcoin first (your `name@orangecat.ch` and the wallet it lands in), then any other app you add.
+  - Receive, Send and Request now share one frame — the same title shape, one line under it, the same tabs — and in-app buttons are monochrome; the orange stays on the public pages.
+- **You can be paid in whatever people have.** Add Twint, PayPal, Revolut, Cash App, Venmo, Wise, a bank account or any link as a way to be paid. Your pay page shows each one with the one thing it supports: a tap that opens the app with the amount filled in, or the handle to copy. These settle in those apps, straight to you; OrangeCat shows them and never holds the money. A page with no Bitcoin wallet but a Twint number is still a page someone can pay.
+- **Send reads what you give it.** One field takes a username, a Lightning address, an invoice, or a code from the camera — someone's Receive QR included, with the amount they asked for already filled in. The "To a person / Paste invoice" switch is gone; the text says which it is.
+
 ## 2026-10-20
 
 ### Added

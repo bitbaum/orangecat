@@ -84,7 +84,7 @@ describe('the scanner tells you which dead end you are in', () => {
   it('is announced as a dialog, and closable', async () => {
     setCamera(undefined);
     render(<WalletQrScanner onScanned={noop} onClose={noop} />);
-    expect(screen.getByRole('dialog', { name: /scan a wallet qr code/i })).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: /scan your wallet’s qr code/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/close scanner/i)).toBeInTheDocument();
   });
 });
