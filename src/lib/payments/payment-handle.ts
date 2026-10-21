@@ -2,14 +2,17 @@
  * What a person types for a payment handle, turned into what we store.
  *
  * People paste the whole thing: `https://paypal.me/lena`, `@lena`, `$lena`,
- * an IBAN with its spaces. The sheet says "PayPal.me name", and rejecting the
- * pasted link would be the form quizzing them on which part it meant. So the
- * packaging comes off here and the rule stays simple: one method, one handle.
+ * an IBAN with its spaces, `upi://pay?pa=lena@upi`. The sheet names the part
+ * it wants, and rejecting the pasted whole would be the form quizzing them on
+ * which part it meant. So the packaging comes off here, and the check is by
+ * HANDLE KIND (phone, username, IBAN, …), not by service — a new rail in the
+ * registry gets its validation for free.
  */
 
 import {
   PAYMENT_HANDLE_MAX_LENGTH,
   PAYMENT_METHODS,
+  type HandleKind,
   type PaymentMethodId,
 } from '@/config/payment-methods';
 
@@ -19,6 +22,16 @@ const IBAN_SHAPE = /^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/;
 const PHONE_SHAPE = /^\+?\d{8,15}$/;
 /** A service username: what the services themselves accept. */
 const USERNAME_SHAPE = /^[A-Za-z0-9._-]{1,64}$/;
+const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+/** UPI: name@bank. */
+const VPA_SHAPE = /^[A-Za-z0-9._-]{2,}@[A-Za-z]{2,}$/;
+/** A service's own id — no spaces, no quotes. */
+const ID_SHAPE = /^[A-Za-z0-9._@+-]{2,64}$/;
+/** Monero standard address: 95 characters starting with 4 or 8. */
+const MONERO_SHAPE = /^[48][0-9A-Za-z]{94}$/;
+/** Pix: a CPF (11 digits), a CNPJ (14 digits) or a random key (UUID). */
+const PIX_TAX_ID = /^\d{11}$|^\d{14}$/;
+const UUID_SHAPE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** The mod-97 check every real IBAN passes; a typo fails it. */
 export function isValidIban(iban: string): boolean {
@@ -36,37 +49,72 @@ export function isValidIban(iban: string): boolean {
   return remainder === 1;
 }
 
+const phoneDigits = (raw: string) => raw.replace(/[\s.\-()]/g, '');
+
+/** Clean and check one handle by its kind. Null when nothing usable is left. */
+export function normalizeHandleOfKind(kind: HandleKind, handle: string): string | null {
+  switch (kind) {
+    case 'iban': {
+      const iban = handle.replace(/\s+/g, '').toUpperCase();
+      return isValidIban(iban) ? iban : null;
+    }
+    case 'phone': {
+      const digits = phoneDigits(handle);
+      return PHONE_SHAPE.test(digits) ? digits : null;
+    }
+    case 'email':
+      return EMAIL_SHAPE.test(handle) ? handle.toLowerCase() : null;
+    case 'contact': {
+      if (EMAIL_SHAPE.test(handle)) {
+        return handle.toLowerCase();
+      }
+      const digits = phoneDigits(handle);
+      return PHONE_SHAPE.test(digits) ? digits : null;
+    }
+    case 'vpa':
+      return VPA_SHAPE.test(handle) ? handle.toLowerCase() : null;
+    case 'key': {
+      if (EMAIL_SHAPE.test(handle) || UUID_SHAPE.test(handle)) {
+        return handle.toLowerCase();
+      }
+      const digits = phoneDigits(handle);
+      return PHONE_SHAPE.test(digits) || PIX_TAX_ID.test(digits) ? digits : null;
+    }
+    case 'id':
+      return ID_SHAPE.test(handle)
+        ? handle
+        : PHONE_SHAPE.test(phoneDigits(handle))
+          ? phoneDigits(handle)
+          : null;
+    case 'address':
+      return MONERO_SHAPE.test(handle) ? handle : null;
+    case 'link':
+      return handle.length <= PAYMENT_HANDLE_MAX_LENGTH && !/\s/.test(handle) ? handle : null;
+    case 'username':
+      return USERNAME_SHAPE.test(handle) ? handle : null;
+  }
+}
+
 /**
- * Strip the packaging and say whether what is left is a handle of this kind.
- * Returns the clean handle, or null when nothing usable is left.
+ * Strip the packaging and say whether what is left is a handle of this
+ * method's kind. Returns the clean handle, or null when nothing usable is left.
  */
 export function normalizePaymentHandle(method: PaymentMethodId, raw: string): string | null {
   let handle = (raw ?? '').trim();
   if (!handle) {
     return null;
   }
-
-  for (const prefix of PAYMENT_METHODS[method].stripPrefixes) {
+  const kind = PAYMENT_METHODS[method];
+  for (const prefix of kind.stripPrefixes) {
     if (handle.toLowerCase().startsWith(prefix)) {
       handle = handle.slice(prefix.length);
     }
   }
   handle = handle.replace(/\/+$/, '').trim();
-
-  switch (method) {
-    case 'bank': {
-      const iban = handle.replace(/\s+/g, '').toUpperCase();
-      return isValidIban(iban) ? iban : null;
-    }
-    case 'twint': {
-      const digits = handle.replace(/[\s.\-()]/g, '');
-      return PHONE_SHAPE.test(digits) ? digits : null;
-    }
-    case 'other':
-      return handle.length <= PAYMENT_HANDLE_MAX_LENGTH && !/[\s]/.test(handle) ? handle : null;
-    default:
-      return USERNAME_SHAPE.test(handle) ? handle : null;
+  if (!handle || handle.length > PAYMENT_HANDLE_MAX_LENGTH) {
+    return null;
   }
+  return normalizeHandleOfKind(kind.handleKind, handle);
 }
 
 /** The handle as a person reads it: an IBAN in groups of four, the rest as is. */
@@ -79,6 +127,9 @@ export function formatPaymentHandle(method: PaymentMethodId, handle: string): st
   }
   if (method === 'venmo') {
     return `@${handle}`;
+  }
+  if (method === 'monero') {
+    return `${handle.slice(0, 8)}…${handle.slice(-6)}`;
   }
   return handle;
 }

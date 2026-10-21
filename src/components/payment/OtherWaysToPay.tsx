@@ -1,17 +1,19 @@
 'use client';
 
 /**
- * The payer's side of "ways to be paid": every app the recipient listed,
+ * The payer's side of "ways to be paid": every rail the recipient listed,
  * one row each, one action each.
  *
- * A service with a pay link opens it, with the amount filled in when that
+ * A rail with a pay link opens it, with the amount filled in when that
  * service takes the payer's currency. One without a link (Twint, a bank) is a
- * handle to copy into the app. These settle outside OrangeCat and the note
- * under the list says so — the page never claims to have seen them land.
+ * handle to copy into the app. One shared on request has no handle here at
+ * all — the server never sent it — and its action is Ask, which opens a
+ * message to the recipient. These settle outside OrangeCat and the note under
+ * the list says so; the page never claims to have seen them land.
  */
 
 import { useState } from 'react';
-import { Check, Copy, ExternalLink } from 'lucide-react';
+import { Check, Copy, ExternalLink, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { useCurrencyConversion } from '@/hooks/useCurrencyConversion';
@@ -22,11 +24,14 @@ import {
   paymentMethodUrl,
   type PayAmount,
 } from '@/config/payment-methods';
+import { ROUTES } from '@/config/routes';
 import { formatPaymentHandle } from '@/lib/payments/payment-handle';
 import type { PublicPaymentMethod } from '@/domain/payments/paymentMethodsService';
 
 interface OtherWaysToPayProps {
   recipientName: string;
+  /** Where an Ask lands: the recipient's profile id. */
+  recipientId: string;
   methods: PublicPaymentMethod[];
   /** The amount the payer typed, in BTC (the canonical unit); 0 when none. */
   amountBtc: number;
@@ -34,8 +39,11 @@ interface OtherWaysToPayProps {
   afterBitcoin: boolean;
 }
 
+const ACTION = 'shrink-0';
+
 export function OtherWaysToPay({
   recipientName,
+  recipientId,
   methods,
   amountBtc,
   afterBitcoin,
@@ -67,8 +75,8 @@ export function OtherWaysToPay({
       <ul className="divide-y divide-subtle rounded-lg border border-subtle bg-surface-base">
         {methods.map(row => {
           const kind = PAYMENT_METHODS[row.method];
-          const url = paymentMethodUrl(row.method, row.handle, amount);
-          const shown = formatPaymentHandle(row.method, row.handle);
+          const shown = row.handle ? formatPaymentHandle(row.method, row.handle) : null;
+          const url = row.handle ? paymentMethodUrl(row.method, row.handle, amount) : '';
           return (
             <li key={row.id} className="flex items-center justify-between gap-3 px-4 py-3">
               <div className="min-w-0">
@@ -76,10 +84,26 @@ export function OtherWaysToPay({
                   {kind.name}
                   {row.label && <span className="text-fg-secondary"> · {row.label}</span>}
                 </p>
-                <p className="truncate font-mono text-sm text-fg-secondary">{shown}</p>
+                {shown ? (
+                  <p className="truncate font-mono text-sm text-fg-secondary">{shown}</p>
+                ) : (
+                  <p className="text-sm text-fg-secondary">
+                    {PAYMENT_METHODS_COPY.sharedOnRequest(recipientName)}
+                  </p>
+                )}
               </div>
-              {url ? (
-                <Button variant="outline" size="sm" href={url} target="_blank" className="shrink-0">
+              {!row.handle ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  href={ROUTES.MESSAGES_TO(recipientId)}
+                  className={ACTION}
+                >
+                  <MessageSquare className="h-4 w-4" aria-hidden="true" />
+                  {PAYMENT_METHODS_COPY.ask}
+                </Button>
+              ) : url ? (
+                <Button variant="outline" size="sm" href={url} target="_blank" className={ACTION}>
                   <ExternalLink className="h-4 w-4" aria-hidden="true" />
                   {PAYMENT_METHODS_COPY.open}
                 </Button>
@@ -87,10 +111,10 @@ export function OtherWaysToPay({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="shrink-0"
+                  className={ACTION}
                   onClick={() => {
                     setLastCopiedId(row.id);
-                    void copy(shown);
+                    void copy(shown ?? '');
                   }}
                 >
                   {copiedId === row.id ? (

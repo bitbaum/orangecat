@@ -541,6 +541,8 @@ export const ROUTES = {
   MESSAGE_CONVERSATION: (conversationId: string) => `/messages/${conversationId}`,
   // Same conversation via query param (keeps the split-pane list view mounted)
   MESSAGES_WITH_CONVERSATION: (conversationId: string) => `/messages?id=${conversationId}`,
+  /** Open (or start) the conversation with one person — the profile's Message button and the pay page's Ask. */
+  MESSAGES_TO: (profileId: string) => `/messages?to=${encodeURIComponent(profileId)}`,
 
   // Settings routes
   SETTINGS: '/settings',

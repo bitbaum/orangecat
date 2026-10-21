@@ -93,6 +93,7 @@ export default async function PayPage({ params, searchParams }: PageProps) {
         <PayPageClient
           username={recipient.username}
           recipientName={recipient.displayName}
+          recipientId={recipient.userId}
           canReceive={!!receiveInfo?.canReceive}
           methods={methods}
         />

@@ -27,6 +27,8 @@ import type { PublicPaymentMethod } from '@/domain/payments/paymentMethodsServic
 interface PayPageClientProps {
   username: string;
   recipientName: string;
+  /** Where an Ask about an on-request rail lands. */
+  recipientId: string;
   /** Resolved on the server so the amount field is there on the first paint. */
   canReceive: boolean;
   /** The recipient's other ways to be paid, resolved on the server. */
@@ -36,6 +38,7 @@ interface PayPageClientProps {
 export function PayPageClient({
   username,
   recipientName,
+  recipientId,
   canReceive,
   methods,
 }: PayPageClientProps) {
@@ -59,6 +62,7 @@ export function PayPageClient({
   const otherWays = (
     <OtherWaysToPay
       recipientName={recipientName}
+      recipientId={recipientId}
       methods={methods}
       amountBtc={amountBtc}
       afterBitcoin={canReceive}

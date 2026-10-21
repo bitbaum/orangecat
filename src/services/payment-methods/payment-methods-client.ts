@@ -5,7 +5,7 @@
 import { API_ROUTES } from '@/config/api-routes';
 import { unwrapApiResponse } from '@/lib/api/client-response';
 import type { PaymentMethodRow } from '@/domain/payments/paymentMethodsService';
-import type { PaymentMethodId } from '@/config/payment-methods';
+import type { PaymentMethodId, PaymentVisibility } from '@/config/payment-methods';
 
 export type { PaymentMethodRow };
 
@@ -22,6 +22,7 @@ export async function addPaymentMethod(input: {
   method: PaymentMethodId;
   handle: string;
   label?: string;
+  visibility: PaymentVisibility;
 }): Promise<PaymentMethodRow> {
   const res = await fetch(API_ROUTES.PAYMENT_METHODS.BASE, {
     method: 'POST',

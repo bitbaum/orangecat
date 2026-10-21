@@ -142,6 +142,7 @@ export function ReceiveScreen() {
         bitcoin={{
           active: Boolean(overview?.rail),
           address: overview?.lightningAddressActive ? overview.lightningAddress : null,
+          handle: username ? `@${username}` : 'your name',
           arrivesAt: overview?.arrivesAt ?? null,
         }}
         methods={methods}

@@ -169,7 +169,7 @@ const price_btc = 0.001; // ✅ BTC is the canonical unit
 
 ### Payment Methods Are Universal
 
-Bitcoin/Lightning is native and preferred, but the platform supports any payment method. Use `payment_methods` concepts (not just "wallet") where possible.
+Bitcoin/Lightning is native and preferred, but the platform supports any payment method. Use `payment_methods` concepts (not just "wallet") where possible. The list of rails is SSOT in `src/config/payment-methods.ts`, built on three axes — identity, custody, reach — explained once in `docs/architecture/MONEY_RAILS.md`. Listing a fiat rail is the opt-in to real identity; the surface says so, and a handle can be `on_request` instead of printed.
 
 ### Bitcoin Orange (#F7931A)
 
