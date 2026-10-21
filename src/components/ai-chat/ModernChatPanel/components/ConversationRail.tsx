@@ -17,7 +17,8 @@
  */
 
 import { cn } from '@/lib/utils';
-import { Plus, MessageSquare, Trash2, X } from 'lucide-react';
+import { Ghost, Plus, MessageSquare, Trash2, X } from 'lucide-react';
+import { TEMPORARY_CHAT_LABEL, TEMPORARY_CHAT_NOTE } from '@/lib/chat/temporary-chat';
 import { readableTitle } from '@/lib/chat/attachment-tags';
 import type { ConversationSummary } from '../hooks/useConversations';
 
@@ -29,6 +30,10 @@ interface ConversationRailProps {
   isLoading?: boolean;
   onSelect: (id: string) => void;
   onNew: () => void;
+  /** Start a temporary chat: never listed, gone when the person leaves it. */
+  onNewTemporary: () => void;
+  /** The draft or the open chat is temporary (src/lib/chat/temporary-chat.ts). */
+  temporary: boolean;
   onDelete: (id: string) => void;
 }
 
@@ -48,22 +53,42 @@ function RailBody({
   isLoading,
   onSelect,
   onNew,
+  onNewTemporary,
+  temporary,
   onDelete,
 }: ConversationRailProps) {
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="p-2">
+      <div className="space-y-1 p-2">
         <button
           type="button"
           onClick={onNew}
           className={cn(
             'flex w-full items-center gap-2 rounded-lg border border-subtle px-3 py-2 text-sm font-medium text-fg-primary transition-colors hover:bg-surface-raised',
             // Draft state (no active conversation) = "New chat" is where you are.
-            activeId === null ? 'bg-surface-raised' : 'bg-surface-base'
+            activeId === null && !temporary ? 'bg-surface-raised' : 'bg-surface-base'
           )}
         >
           <Plus className="h-4 w-4" />
           New chat
+        </button>
+        <button
+          type="button"
+          onClick={onNewTemporary}
+          className={cn(
+            'flex w-full items-center gap-2 rounded-lg border border-subtle px-3 py-2 text-left text-sm text-fg-primary transition-colors hover:bg-surface-raised',
+            temporary ? 'bg-surface-raised' : 'bg-surface-base'
+          )}
+          aria-pressed={temporary}
+          title={TEMPORARY_CHAT_NOTE}
+        >
+          <Ghost className="h-4 w-4" />
+          <span className="min-w-0 flex-1">
+            {TEMPORARY_CHAT_LABEL}
+            <span className="block truncate text-xs font-normal text-fg-tertiary">
+              {TEMPORARY_CHAT_NOTE}
+            </span>
+          </span>
         </button>
       </div>
 
@@ -162,6 +187,10 @@ export function ConversationRail({
                 }}
                 onNew={() => {
                   props.onNew();
+                  setMobileOpen(false);
+                }}
+                onNewTemporary={() => {
+                  props.onNewTemporary();
                   setMobileOpen(false);
                 }}
               />

@@ -859,16 +859,19 @@ async function settleStreamedTurn(
       logger.error('Failed to persist streaming messages', { err }, 'cat/chat');
     });
     // Learn durable facts from this exchange for future turns. Fully
-    // best-effort and detached — never blocks or fails the response.
-    void extractAndStoreMemories(
-      supabase,
-      user.id,
-      conversationId,
-      turn.body.message,
-      fullContent,
-      activeService,
-      activeModel
-    );
+    // best-effort and detached — never blocks or fails the response. Never
+    // from a temporary chat: nothing said there is kept.
+    if (!turn.prepared.ephemeral) {
+      void extractAndStoreMemories(
+        supabase,
+        user.id,
+        conversationId,
+        turn.body.message,
+        fullContent,
+        activeService,
+        activeModel
+      );
+    }
     // Reliably populate the economic-profile store from the same exchange —
     // deterministic, not dependent on the chat model emitting an action.
     void extractAndStoreEconomicProfile(
@@ -1173,16 +1176,19 @@ async function answerCatChat(turn: CatTurn, rl: RateLimitResult): Promise<Respon
     ]).catch((err: unknown) => {
       logger.error('Failed to persist messages', { err }, 'cat/chat');
     });
-    // Learn durable facts from this exchange (best-effort, detached).
-    void extractAndStoreMemories(
-      supabase,
-      user.id,
-      conversationId,
-      message,
-      cleanedMessage,
-      fellBackTo?.aiService ?? aiService,
-      fellBackTo?.modelToUse ?? modelToUse
-    );
+    // Learn durable facts from this exchange (best-effort, detached) — never
+    // from a temporary chat.
+    if (!turn.prepared.ephemeral) {
+      void extractAndStoreMemories(
+        supabase,
+        user.id,
+        conversationId,
+        message,
+        cleanedMessage,
+        fellBackTo?.aiService ?? aiService,
+        fellBackTo?.modelToUse ?? modelToUse
+      );
+    }
     void extractAndStoreEconomicProfile(
       supabase,
       user.id,

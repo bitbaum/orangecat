@@ -73,6 +73,8 @@ function readLocale(): string {
 }
 
 interface UseChatMessagesOptions {
+  /** The next conversation this hook creates is a temporary chat. */
+  temporary?: boolean;
   selectedModel: string;
   /** Active conversation. Omitted/null → fresh draft; a conversation is created on first send. */
   conversationId?: string | null;
@@ -102,9 +104,13 @@ interface UseChatMessagesOptions {
 }
 
 /** Create a conversation row on the server; null on failure (send falls back to default). */
-async function createConversationOnServer(): Promise<string | null> {
+async function createConversationOnServer(ephemeral: boolean): Promise<string | null> {
   try {
-    const res = await fetch(API_ROUTES.CAT.CONVERSATIONS, { method: 'POST' });
+    const res = await fetch(API_ROUTES.CAT.CONVERSATIONS, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ephemeral }),
+    });
     if (!res.ok) {
       return null;
     }
@@ -124,6 +130,7 @@ export function useChatMessages({
   onConversationStarted,
   onConversationCreated,
   pageContext,
+  temporary = false,
 }: UseChatMessagesOptions) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -139,6 +146,8 @@ export function useChatMessages({
   onConversationStartedRef.current = onConversationStarted;
   const onConversationCreatedRef = useRef(onConversationCreated);
   onConversationCreatedRef.current = onConversationCreated;
+  const temporaryRef = useRef(temporary);
+  temporaryRef.current = temporary;
   // Live page context — read at send time so navigating with Cat open stays current.
   const pageContextRef = useRef(pageContext);
   pageContextRef.current = pageContext;
@@ -210,7 +219,7 @@ export function useChatMessages({
       // failure we send without an id and the server falls back to default.
       let activeConversationId = conversationId ?? pendingConversationIdRef.current;
       if (!activeConversationId) {
-        const created = await createConversationOnServer();
+        const created = await createConversationOnServer(temporaryRef.current);
         if (created) {
           pendingConversationIdRef.current = created;
           justCreatedConversationIdRef.current = created;

@@ -9,7 +9,8 @@
  */
 
 import Link from 'next/link';
-import { House, PanelLeft, Settings2 } from 'lucide-react';
+import { Ghost, House, PanelLeft, Settings2 } from 'lucide-react';
+import { TEMPORARY_CHAT_LABEL, TEMPORARY_CHAT_NOTE } from '@/lib/chat/temporary-chat';
 import { ROUTES } from '@/config/routes';
 import { cn } from '@/lib/utils';
 import { LokiChip } from './LokiChip';
@@ -25,12 +26,15 @@ interface CatChatToolbarProps {
    * over this row, which covered the quota chip — it belongs IN the row.
    */
   onOpenConversations?: () => void;
+  /** The chat on screen is temporary: say so where the person is looking. */
+  temporary?: boolean;
 }
 
 export function CatChatToolbar({
   className,
   quota = null,
   onOpenConversations,
+  temporary = false,
 }: CatChatToolbarProps) {
   return (
     <div className={cn('oc-chat-toolbar', className)}>
@@ -65,6 +69,15 @@ export function CatChatToolbar({
           two panel links stay fixed — they're the controls that must remain
           tappable. */}
       <div className="ml-auto flex min-w-0 items-center gap-1 sm:gap-2">
+        {temporary && (
+          <span
+            className="inline-flex min-h-10 items-center gap-1.5 rounded-full px-3 text-sm text-fg-secondary"
+            title={TEMPORARY_CHAT_NOTE}
+          >
+            <Ghost className="h-4 w-4" aria-hidden />
+            {TEMPORARY_CHAT_LABEL}
+          </span>
+        )}
         {isQuotaWorthShowing(quota) && <QuotaMeter quota={quota} className="min-w-0" />}
         <div className="flex flex-shrink-0 items-center gap-1 sm:gap-2">
           {/* Loki is one of the Cat's hands — visible here, where you ask,

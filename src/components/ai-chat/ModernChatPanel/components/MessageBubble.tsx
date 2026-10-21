@@ -387,11 +387,6 @@ export function MessageBubble({
                 </>
               )}
 
-              {/* Under every answer, the fleet's row: Copy, Listen (the phone's
-            voice), Share (the system sheet, where one exists). */}
-              {!isUser && displayContent && (
-                <AnswerActions text={linkedContent} share={{ title: CAT_AGENT.name }} />
-              )}
               <span title={message.modelUsed}>{getModelDisplayName(message.modelUsed)}</span>
               {(() => {
                 const cap = getModelCapabilities(message.modelUsed);
@@ -420,6 +415,14 @@ export function MessageBubble({
               )}
             </span>
           </div>
+        )}
+
+        {/* Under every answer, the fleet's row: Copy, Listen (the phone's
+            voice), Share (the system sheet, where one exists). It sat inside
+            the provenance line for one release (#1373) — CodeQL caught the
+            always-true guard that the misplacement produced. */}
+        {!isUser && displayContent && (
+          <AnswerActions text={linkedContent} share={{ title: CAT_AGENT.name }} />
         )}
 
         {/* Fallback notice — shown when primary provider rate-limited and the

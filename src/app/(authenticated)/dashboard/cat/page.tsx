@@ -37,6 +37,9 @@ export default function CatHubPage() {
     refresh: refreshConversations,
     selectConversation,
     newConversation,
+    newTemporaryConversation,
+    temporaryArmed,
+    temporaryActive,
     adoptConversation,
     deleteConversation,
   } = useConversations();
@@ -71,6 +74,8 @@ export default function CatHubPage() {
         isLoading={isLoadingConversations}
         onSelect={selectConversation}
         onNew={newConversation}
+        onNewTemporary={newTemporaryConversation}
+        temporary={temporaryArmed || temporaryActive}
         onDelete={deleteConversation}
         mobileOpen={railOpen}
         onMobileOpenChange={setRailOpen}
@@ -78,8 +83,15 @@ export default function CatHubPage() {
       <div className="oc-chat-layout min-h-0 min-w-0 flex-1">
         <ModernChatPanel
           variant="focus"
-          header={<CatChatToolbar quota={quota} onOpenConversations={() => setRailOpen(true)} />}
+          header={
+            <CatChatToolbar
+              quota={quota}
+              onOpenConversations={() => setRailOpen(true)}
+              temporary={temporaryArmed || temporaryActive}
+            />
+          }
           conversationId={activeId}
+          temporary={temporaryArmed}
           onConversationCreated={adoptConversation}
           onConversationStarted={refreshConversations}
           initialMessage={initialMessage}
