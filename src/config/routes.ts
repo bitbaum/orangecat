@@ -257,6 +257,35 @@ export function getRouteContext(pathname: string): RouteContext {
 }
 
 /**
+ * In-app routes that make no sense signed out: the edge middleware sends a
+ * signed-out visitor to sign in before the page renders. Every other 'app'
+ * surface (discover, products, events, /collaborate's open-roles board…)
+ * stays browsable signed out and gates its own actions.
+ *
+ * Prefix match, so `/profile/` (trailing slash) is the own-profile editor and
+ * leaves the public `/profiles` alone.
+ */
+export const SIGN_IN_REQUIRED_PREFIXES = [
+  '/dashboard',
+  '/settings',
+  '/timeline',
+  '/messages',
+  '/post',
+  '/ai-chat',
+  '/profile/',
+  // The "Following" feed: signed out it can only say "Please sign in".
+  '/home',
+] as const;
+
+/** True when the middleware must see a signed-in user before the page renders. */
+export function requiresSignIn(pathname: string): boolean {
+  return (
+    getRouteSurface(pathname) === 'app' &&
+    SIGN_IN_REQUIRED_PREFIXES.some(route => pathname.startsWith(route))
+  );
+}
+
+/**
  * True for in-app surfaces. Prefer `getRouteSurface(p) === 'app'`.
  */
 export function isAuthenticatedRoute(pathname: string): boolean {

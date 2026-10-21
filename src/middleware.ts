@@ -1,26 +1,12 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
-import { getRouteSurface, ROUTES } from '@/config/routes';
+import { requiresSignIn, ROUTES } from '@/config/routes';
 
 // Edge middleware route classification reads from the SAME SSOT used by
 // AppShell / MobileBottomNav / Footer / Header (src/config/routes.ts).
-// Never keep a parallel list here — they will drift.
-//
-// Routes whose surface is 'app' AND which are not also accessible
-// signed-out (i.e. require a logged-in user to make any sense) get the
-// token validation pass below. Hybrid in-app surfaces like /discover,
-// /products, /services, /events stay open to anonymous users and the
-// per-page auth gate handles redirect when needed.
-const REQUIRES_AUTH_PREFIXES = [
-  '/dashboard',
-  '/settings',
-  '/timeline',
-  '/messages',
-  '/post',
-  '/ai-chat',
-  '/profile/', // own profile (note trailing slash — public is at /profiles)
-];
+// Never keep a parallel list here — they will drift. Which in-app routes need
+// a signed-in user is `requiresSignIn` / SIGN_IN_REQUIRED_PREFIXES there.
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
@@ -83,12 +69,10 @@ export async function middleware(request: NextRequest) {
 
   // Skip token validation on 'public' and 'auth' surfaces — those are
   // intentionally open. Hybrid in-app surfaces (discover, products, …)
-  // resolve as 'app' but aren't in REQUIRES_AUTH_PREFIXES, so they also
+  // resolve as 'app' but aren't in SIGN_IN_REQUIRED_PREFIXES (config/routes.ts), so they also
   // pass through. Only routes that require a logged-in user to make any
   // sense get the cookie-token validation pass.
-  const isAppSurface = getRouteSurface(pathname) === 'app';
-  const isProtectedRoute =
-    isAppSurface && REQUIRES_AUTH_PREFIXES.some(route => pathname.startsWith(route));
+  const isProtectedRoute = requiresSignIn(pathname);
 
   if (isProtectedRoute) {
     // Validate session with @supabase/ssr — same pattern as
