@@ -95,6 +95,22 @@ export async function listOwnPaymentMethods(
   return knownRows(data);
 }
 
+/**
+ * A rail whose handle is a phone number is shared on request, whatever the
+ * caller asked for. The add sheet already picks this, but the API is the
+ * boundary: a phone number never becomes public by omission or by a client
+ * that sends `public`. Every other rail keeps the caller's choice.
+ */
+export function visibilityFor(
+  method: PaymentMethodId,
+  requested: PaymentVisibility | undefined
+): PaymentVisibility {
+  if (PAYMENT_METHODS[method].reveals.includes('phone')) {
+    return 'on_request';
+  }
+  return requested ?? 'public';
+}
+
 export async function addPaymentMethod(
   supabase: SupabaseClient,
   profileId: string,
@@ -127,7 +143,7 @@ export async function addPaymentMethod(
       method: input.method,
       handle,
       label: input.label?.trim().slice(0, PAYMENT_LABEL_MAX_LENGTH) || null,
-      visibility: input.visibility ?? 'public',
+      visibility: visibilityFor(input.method, input.visibility),
       display_order: existing.length,
     })
     .select(COLUMNS)
