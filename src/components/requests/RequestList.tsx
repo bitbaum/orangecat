@@ -76,7 +76,7 @@ export function RequestList({
                         stays editable, exactly like a shared pay link. */}
                     {direction === 'incoming' && row.counterparty_username && (
                       <Button
-                        variant="accent"
+                        variant="primary"
                         size="sm"
                         href={buildPayUrl(payLinkOrigin(), row.counterparty_username, {
                           amountBtc: row.amount_btc,

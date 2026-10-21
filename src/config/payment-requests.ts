@@ -10,8 +10,8 @@ export const REQUEST_NOTE_MAX_LENGTH = 80;
 
 export const REQUEST_COPY = {
   tab: 'Request',
-  title: 'Request from someone',
-  subtitle: 'Ask another OrangeCat account for Bitcoin. They can pay or decline.',
+  title: 'Request',
+  subtitle: 'Ask someone on OrangeCat. They can pay or decline.',
 
   payerLabel: 'From',
   payerPlaceholder: 'Their username',
@@ -22,7 +22,8 @@ export const REQUEST_COPY = {
   payerNotFound: (handle: string) => `Nobody on OrangeCat goes by @${handle}.`,
   payerExternal:
     'A request goes to an OrangeCat account. A Lightning address can be paid, but not asked.',
-  noteLabel: "What's it for? (optional)",
+  noteLabel: 'Note',
+  noteAdd: 'Add a note',
   notePlaceholder: 'Dinner, rent, tickets…',
 
   submit: 'Send request',

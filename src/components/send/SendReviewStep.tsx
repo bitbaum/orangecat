@@ -52,17 +52,11 @@ export function SendReviewStep({
       {error && <p className="text-sm text-status-negative">{error}</p>}
       <p className="text-center text-xs text-fg-tertiary">{SEND_COPY.disclaimer}</p>
 
-      <div className="flex gap-3">
-        <Button variant="outline" className="flex-1" onClick={onBack} disabled={sending}>
+      <div className="grid grid-cols-2 gap-3">
+        <Button variant="outline" onClick={onBack} disabled={sending}>
           {SEND_COPY.back}
         </Button>
-        <Button
-          variant="accent"
-          className="flex-1"
-          onClick={onConfirm}
-          disabled={sending}
-          isLoading={sending}
-        >
+        <Button variant="primary" onClick={onConfirm} disabled={sending} isLoading={sending}>
           {sending ? SEND_COPY.sending : SEND_COPY.confirm}
         </Button>
       </div>

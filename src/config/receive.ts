@@ -45,50 +45,31 @@ export function walletAppUrl(destination: string): string | null {
 
 export const RECEIVE_SHARE_COPY = {
   heading: 'Your pay link',
-  /** Why a link and not only a QR: a QR is useless inside a chat thread. */
-  hint: 'Anyone with this link can pay you. They need a Bitcoin wallet, not an OrangeCat account.',
   copy: 'Copy link',
   copied: 'Link copied',
   share: 'Share',
-  withAmount: 'Include the amount',
+  /** The one QR on the screen: the pay link, so any camera opens it. */
+  qrTitle: (name: string) => `QR code to pay ${name}`,
+  addAmount: 'Add an amount',
+  removeAmount: 'Remove the amount',
+  amountFor: 'This code asks for',
 } as const;
 
 export const RECEIVE_COPY = {
   title: 'Receive',
-  subtitle: 'Anyone with a Bitcoin wallet can pay you.',
-  addressLabel: 'Your name',
+  subtitle: 'Anyone can pay you, in any currency you accept.',
   addressHint:
     'The same door, for a wallet app. A rename changes the name we show. The old name still pays.',
   arrivesAt: (destination: string) =>
     `The money arrives at ${destination}. Open that wallet to see the balance.`,
   arrivesInApp:
     'Payments arrive in the wallet app you connected. OrangeCat cannot open that app or show its balance.',
-  exactHeading: 'One amount',
-  exactHint:
-    'A code for a specific amount, for someone with you. To ask one person by name, use Request.',
-  addressCaption: (address: string) => address,
-  requestHint: 'Exact amount — you’ll see it the moment it’s paid.',
-  amountLabel: 'Amount',
-  walletLabel: 'Receive with',
-  /** The default choice in the wallet switcher — "whichever wallet is primary". */
-  primaryWallet: 'Primary',
-  generate: 'Show payment QR',
-  generating: 'Creating…',
-  scan: 'Waiting for payment…',
-  paidTitle: 'Paid!',
-  paidBody: 'The payment reached your wallet.',
-  expiredTitle: 'Request expired',
-  expiredBody: 'No payment was detected before the invoice expired. Create a new one.',
-  again: 'New request',
-  share: 'Share',
-  copied: 'Copied',
-  copy: 'Copy',
   onchainNote: 'On-chain payments need block confirmations — not ideal for in-person speed.',
-  onchainSeen: 'Payment seen — waiting for confirmation…',
-  undetectableNote:
-    'This wallet can’t report payments automatically — confirm receipt in your wallet app.',
   noWalletTitle: 'How should people pay you?',
   noWalletBody:
     'Paste whatever your Bitcoin app shows when you tap Receive. If you do not have one yet, get a free one below and paste what it gives you. You can skip this and come back later.',
   notNow: 'Not now',
+  /** The Bitcoin row's right-hand action. */
+  manageBitcoin: 'Change',
+  setUpBitcoin: 'Set up',
 } as const;

@@ -109,6 +109,11 @@ export const API_ROUTES = {
     BASE: '/api/payment-requests',
     BY_ID: (id: string) => `/api/payment-requests/${id}`,
   },
+  /** Ways the signed-in person is paid other than Bitcoin — Twint, PayPal, a bank. */
+  PAYMENT_METHODS: {
+    BASE: '/api/payment-methods',
+    BY_ID: (id: string) => `/api/payment-methods/${id}`,
+  },
   NOTIFICATIONS: {
     BASE: '/api/notifications',
     UNREAD: '/api/notifications/unread',

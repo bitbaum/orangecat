@@ -65,6 +65,52 @@ grep -rn "style={{.*#" src/
 
 ---
 
+## Design discipline: one shape per kind
+
+The rule is fleet-wide and stated once, in
+[bitbaum/fleet AGENTS.md → "One shape per kind"](https://github.com/bitbaum/fleet/blob/main/AGENTS.md).
+Read it before building any screen. What follows is this repo's instances
+and gates — the owner wrote the rule's words about THESE screens (2026-10-21:
+"Frankenstein elements … not aligned, look different, asymmetrical, with
+labels that don't say anything"), and should never have to again.
+
+**The reference implementation is the money surface** (`/receive`, `/send`,
+`/requests`, `/pay/<username>`):
+
+| Rule                                                     | Where it lives                                                                 |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Siblings share one frame: title, one line, tabs, content | `src/components/money/MoneyPage.tsx` — no `icon` prop, on purpose              |
+| Pick one of a few → equal cells in one row               | `src/components/ui/SegmentedControl.tsx`                                       |
+| A few suggestions → an even grid                         | `AmountField` presets: `grid grid-cols-4`, four rungs                          |
+| Two actions together → two equal cells                   | `ReceiveCode`: Copy link · Share in `grid-cols-2`                              |
+| Rows of one list have one anatomy                        | `WaysToPay`, `OtherWaysToPay`, `RequestList`: name, detail, one action right   |
+| Closed-until-wanted is a button that says so             | `src/components/money/OptionalNoteField.tsx` ("Add a note")                    |
+| One primary action, monochrome in-app                    | `variant="primary"`; `variant="accent"` only on public, top-of-funnel surfaces |
+| The icon promises the screen                             | the bottom bar's QR slot opens on a QR (`ReceiveCode`)                         |
+
+**Gates** (all in `pnpm run verify`):
+
+```bash
+pnpm run check:choice-rows   # a wrapping box of choices (aria-pressed / radio / tab)
+pnpm run check:accent-ink    # white text on the warm accent
+pnpm run check:type-scale    # arbitrary font sizes
+grep -rn '\[#' src/          # raw hex in a class
+```
+
+**Before you open a PR with a screen in it**, in this order, every time:
+
+1. Open it at 390px. No sideways scroll; every target 44px; the committing
+   action reachable without scrolling past what the person came for.
+2. Put it beside its siblings. Same frame, same button variant, same row
+   anatomy, same gap between cards.
+3. Read every label aloud. Each says what happens when it is tapped.
+4. Count the primary buttons. One.
+5. Run the gates above.
+6. Ask the owner's question yourself: is any element here a Frankenstein
+   element? Fix it now, not after he says so.
+
+---
+
 ## Shipping: nobody merges by hand
 
 **Finished work ships without asking.** The owner steers by saying what to

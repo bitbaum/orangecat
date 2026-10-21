@@ -19,6 +19,7 @@ import { getAdminClient } from '@/lib/supabase/admin';
 import { SITE_URL } from '@/config/brand';
 import { PAY_COPY, renamedPayHref } from '@/config/pay';
 import { resolveLnurlRecipient } from '@/domain/lightning-address/lnurl-service';
+import { listPublicPaymentMethods } from '@/domain/payments/paymentMethodsService';
 import { getTipReceiveInfo } from '@/domain/tips/tip-service';
 import { PayPageClient } from './PayPageClient';
 
@@ -67,7 +68,10 @@ export default async function PayPage({ params, searchParams }: PageProps) {
   // the one thing standing between arriving and being able to type an amount,
   // and asking for it client-side meant a pay link opened on a spinner — on the
   // one surface whose entire job is to be handed to someone else.
-  const receiveInfo = await getTipReceiveInfo(getAdminClient(), recipient.username);
+  const [receiveInfo, methods] = await Promise.all([
+    getTipReceiveInfo(getAdminClient(), recipient.username),
+    listPublicPaymentMethods(recipient.userId),
+  ]);
 
   return (
     <div className="mx-auto w-full max-w-md px-4 py-10">
@@ -90,6 +94,7 @@ export default async function PayPage({ params, searchParams }: PageProps) {
           username={recipient.username}
           recipientName={recipient.displayName}
           canReceive={!!receiveInfo?.canReceive}
+          methods={methods}
         />
       </Suspense>
     </div>

@@ -99,7 +99,8 @@ export function ProfileStatusSection({ control }: ProfileStatusSectionProps) {
                 How can others help?
               </FormLabel>
               <FormControl>
-                <div className="flex flex-wrap gap-2">
+                {/* Two equal columns — never pills that wrap wherever the words run out. */}
+                <div className="grid grid-cols-2 gap-2">
                   {helpWantedSelectOptions.map(option => {
                     const isSelected = selected.includes(option.value);
                     return (
@@ -109,7 +110,7 @@ export function ProfileStatusSection({ control }: ProfileStatusSectionProps) {
                         aria-pressed={isSelected}
                         onClick={() => toggle(option.value)}
                         className={cn(
-                          'rounded-full border px-3 py-1.5 text-xs font-medium transition-colors',
+                          'min-h-11 min-w-0 truncate rounded-md border px-3 text-sm font-medium transition-colors',
                           isSelected
                             ? 'border-transparent bg-fg-primary text-fg-inverted'
                             : 'border-default text-fg-secondary hover:bg-surface-raised'

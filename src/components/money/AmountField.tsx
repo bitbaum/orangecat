@@ -60,6 +60,9 @@ interface AmountFieldProps {
 
 const BTC_DECIMALS = CURRENCY_METADATA.BTC.precision;
 
+/** Suggestions are one row of equal cells; four is what a phone fits readably. */
+const PRESET_CELLS = 4;
+
 /**
  * "CHF 5" but "$5" — an alphabetic code is a word and takes a space, a glyph
  * hugs its number. Getting this backwards is the kind of small wrongness that
@@ -97,7 +100,8 @@ export function AmountField({
   const { formatAmountBtc } = useDisplayCurrency();
 
   // Rule 2: no rate, no fiat entry. Also lets a Bitcoin-native user opt in.
-  const ratesUsable = !isLoading && displayCurrency !== 'BTC' && convertFromBTC(1, displayCurrency) > 0;
+  const ratesUsable =
+    !isLoading && displayCurrency !== 'BTC' && convertFromBTC(1, displayCurrency) > 0;
   const [preferBtcEntry, setPreferBtcEntry] = useState(false);
   const inBtc = preferBtcEntry || !ratesUsable;
 
@@ -168,20 +172,24 @@ export function AmountField({
    * itself in its own unit; only a caller-supplied BTC ladder is formatted.
    */
   const presets = useMemo(() => {
-    if (presetsBtc) {
-      return presetsBtc
-        .filter(btc => btc > 0 && btc >= minBtc && btc <= maxBtc)
-        .map(btc => ({ btc, label: inBtc ? `${toDraft(btc, BTC_DECIMALS)} BTC` : formatAmountBtc(btc) }));
-    }
-    if (inBtc) {
-      return CONTRIBUTION_QUICK_AMOUNTS_BTC.filter(btc => btc >= minBtc && btc <= maxBtc).map(
-        btc => ({ btc, label: `${toDraft(btc, BTC_DECIMALS)} BTC` })
-      );
-    }
-    return CONTRIBUTION_QUICK_AMOUNTS_FIAT.map(fiat => ({
-      btc: convertToBTC(fiat, displayCurrency),
-      label: `${symbol}${ALPHABETIC_SYMBOL.test(symbol) ? ' ' : ''}${fiat}`,
-    })).filter(p => p.btc > 0 && p.btc >= minBtc && p.btc <= maxBtc);
+    const ladder = presetsBtc
+      ? presetsBtc
+          .filter(btc => btc > 0 && btc >= minBtc && btc <= maxBtc)
+          .map(btc => ({
+            btc,
+            label: inBtc ? `${toDraft(btc, BTC_DECIMALS)} BTC` : formatAmountBtc(btc),
+          }))
+      : inBtc
+        ? CONTRIBUTION_QUICK_AMOUNTS_BTC.filter(btc => btc >= minBtc && btc <= maxBtc).map(btc => ({
+            btc,
+            label: `${toDraft(btc, BTC_DECIMALS)} BTC`,
+          }))
+        : CONTRIBUTION_QUICK_AMOUNTS_FIAT.map(fiat => ({
+            btc: convertToBTC(fiat, displayCurrency),
+            label: `${symbol}${ALPHABETIC_SYMBOL.test(symbol) ? ' ' : ''}${fiat}`,
+          })).filter(p => p.btc > 0 && p.btc >= minBtc && p.btc <= maxBtc);
+    // The row is four equal cells; the largest rungs are the ones people pick.
+    return ladder.slice(-PRESET_CELLS);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [presetsBtc, inBtc, displayCurrency, symbol, minBtc, maxBtc]);
 
@@ -250,7 +258,9 @@ export function AmountField({
       )}
 
       {presets.length > 0 && (
-        <div className="flex flex-wrap gap-2">
+        // Equal cells in one row, never pills that wrap wherever the words run
+        // out — a row of choices is one row (CLAUDE.md → "Design discipline").
+        <div className="grid grid-cols-4 gap-2">
           {presets.map(({ btc, label }) => (
             <button
               key={label}
@@ -258,9 +268,9 @@ export function AmountField({
               onClick={() => choosePreset(btc)}
               aria-pressed={Math.abs(value - btc) < btc * 0.001}
               className={cn(
-                'min-h-11 rounded-full border px-4 text-sm tabular-nums transition-colors',
+                'min-h-11 min-w-0 truncate rounded-md border px-2 text-sm tabular-nums transition-colors',
                 Math.abs(value - btc) < btc * 0.001
-                  ? 'border-accent-primary bg-accent-primary/10 text-fg-primary'
+                  ? 'border-interactive bg-surface-raised text-fg-primary'
                   : 'border-default text-fg-secondary hover:text-fg-primary'
               )}
             >

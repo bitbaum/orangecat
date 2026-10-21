@@ -63,6 +63,8 @@ export const DATABASE_TABLES = {
   // Payments & Orders
   PAYMENT_INTENTS: 'payment_intents',
   PAYMENT_REQUESTS: 'payment_requests',
+  /** Ways an account is paid other than Bitcoin — Twint, PayPal, a bank. */
+  PAYMENT_METHODS: 'payment_methods',
   ORDERS: 'orders',
   CONTRIBUTIONS: 'contributions',
 

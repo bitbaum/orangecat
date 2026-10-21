@@ -106,6 +106,7 @@
     "generate:brand": "node --no-warnings scripts/generate-brand.mjs",
     "brand:import": "node --no-warnings scripts/brand-import-mark.mjs",
     "check:accent-ink": "node scripts/check-accent-ink.mjs",
+    "check:choice-rows": "node scripts/check-choice-rows.mjs",
     "bundle:analyze": "ANALYZE=true pnpm run build",
     "bundle:monitor": "node scripts/bundle-size-monitor.js",
     "bundle:check": "pnpm run build && pnpm run bundle:monitor",

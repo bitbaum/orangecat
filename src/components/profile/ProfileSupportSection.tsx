@@ -17,7 +17,7 @@
 import { Zap } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/Card';
 import TipButton from '@/components/tips/TipButton';
-import { SharePayLink } from '@/components/receive/SharePayLink';
+import { ReceiveCode } from '@/components/receive/ReceiveCode';
 import { useCanReceive } from './useCanReceive';
 import { PAY_COPY } from '@/config/pay';
 
@@ -53,7 +53,7 @@ export function ProfileSupportSection({
           <TipButton username={username} recipientName={displayName} />
         </div>
 
-        {isOwner && <SharePayLink username={username} />}
+        {isOwner && <ReceiveCode username={username} />}
       </CardContent>
     </Card>
   );
