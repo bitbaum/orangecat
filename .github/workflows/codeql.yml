@@ -7,8 +7,7 @@ name: CodeQL
 # query updates against unchanged code.
 
 on:
-  push:
-    branches: [main]
+  # No push-to-main run: the PR scan already covered the merged code (CI audit 2026-10-21).
   pull_request:
     branches: [main]
   schedule:
