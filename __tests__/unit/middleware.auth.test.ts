@@ -100,6 +100,27 @@ describe('middleware auth protection', () => {
     expect(res?.headers.get('location')).toContain('from=%2Fdashboard');
   });
 
+  it('sends a signed-out visitor on /home to sign in (the Following feed)', async () => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
+    setMockUser(null);
+
+    const res = await middleware(buildRequest('/home') as any);
+
+    expect(res?.status).toBe(307);
+    expect(res?.headers.get('location')).toContain('from=%2Fhome');
+  });
+
+  it('leaves /collaborate open signed out — the open-roles board is browsable', async () => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
+    setMockUser(null);
+
+    const res = await middleware(buildRequest('/collaborate') as any);
+
+    expect(res?.status).toBeUndefined();
+  });
+
   it('keeps the query when sending a signed-out visitor to sign in', async () => {
     process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
