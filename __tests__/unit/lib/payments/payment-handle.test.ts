@@ -50,9 +50,10 @@ describe('normalizePaymentHandle', () => {
     expect(normalizePaymentHandle('mpesa', '0712 345 678')).toBe('0712345678');
     expect(normalizePaymentHandle('wechat', 'lena_wx')).toBe('lena_wx');
     expect(normalizePaymentHandle('wechat', 'lena wx')).toBeNull();
-    const xmr = '4' + 'A'.repeat(94);
-    expect(normalizePaymentHandle('monero', `monero:${xmr}`)).toBe(xmr);
-    expect(normalizePaymentHandle('monero', '4ABC')).toBeNull();
+    const zec = 't1' + 'A'.repeat(33);
+    expect(normalizePaymentHandle('zcash', `zcash:${zec}`)).toBe(zec);
+    expect(normalizePaymentHandle('zcash', 'u1' + 'q'.repeat(60))).toBe('u1' + 'q'.repeat(60));
+    expect(normalizePaymentHandle('zcash', 't1ABC')).toBeNull();
   });
 
   it('refuses a username the service would refuse', () => {
@@ -67,6 +68,6 @@ describe('formatPaymentHandle', () => {
     expect(formatPaymentHandle('cashapp', 'lena')).toBe('$lena');
     expect(formatPaymentHandle('venmo', 'lena')).toBe('@lena');
     expect(formatPaymentHandle('twint', '+41791234567')).toBe('+41791234567');
-    expect(formatPaymentHandle('monero', '4' + 'A'.repeat(94))).toBe('4AAAAAAA…AAAAAA');
+    expect(formatPaymentHandle('zcash', 't1' + 'A'.repeat(33))).toBe('t1AAAAAA…AAAAAA');
   });
 });

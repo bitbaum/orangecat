@@ -27,8 +27,8 @@ const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const VPA_SHAPE = /^[A-Za-z0-9._-]{2,}@[A-Za-z]{2,}$/;
 /** A service's own id — no spaces, no quotes. */
 const ID_SHAPE = /^[A-Za-z0-9._@+-]{2,64}$/;
-/** Monero standard address: 95 characters starting with 4 or 8. */
-const MONERO_SHAPE = /^[48][0-9A-Za-z]{94}$/;
+/** Zcash: a unified (u1…), transparent (t1…/t3…) or Sapling (zs1…) address. */
+const ZCASH_SHAPE = /^(u1[0-9a-z]{20,}|t[13][0-9A-Za-z]{33}|zs1[0-9a-z]{75})$/;
 /** Pix: a CPF (11 digits), a CNPJ (14 digits) or a random key (UUID). */
 const PIX_TAX_ID = /^\d{11}$|^\d{14}$/;
 const UUID_SHAPE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -87,7 +87,7 @@ export function normalizeHandleOfKind(kind: HandleKind, handle: string): string 
           ? phoneDigits(handle)
           : null;
     case 'address':
-      return MONERO_SHAPE.test(handle) ? handle : null;
+      return ZCASH_SHAPE.test(handle) ? handle : null;
     case 'link':
       return handle.length <= PAYMENT_HANDLE_MAX_LENGTH && !/\s/.test(handle) ? handle : null;
     case 'username':
@@ -128,7 +128,7 @@ export function formatPaymentHandle(method: PaymentMethodId, handle: string): st
   if (method === 'venmo') {
     return `@${handle}`;
   }
-  if (method === 'monero') {
+  if (method === 'zcash') {
     return `${handle.slice(0, 8)}…${handle.slice(-6)}`;
   }
   return handle;

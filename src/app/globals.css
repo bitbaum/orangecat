@@ -175,17 +175,18 @@
     /* x.ai-adjacent: neutral primary; tiffany/orange reserved for sparse accents */
     --primary: 0 0% 9%;
     --primary-foreground: 0 0% 98%;
-    --public-accent: #ff5c00;
+    /* ONE orange. The accent is Bitcoin orange (owner, 2026-10-21: "I don't
+       really like this orange color. I prefer Bitcoin orange"). It means two
+       things and only two — Bitcoin, and the one action that brings someone
+       in — so --public-accent and --bitcoin-orange are the same value on
+       purpose. Loki and Solon keep the fleet token (#ff5c00) until that
+       package follows. */
+    --public-accent: var(--bitcoin-orange);
     /* The label colour for text sitting ON --public-accent. White on this
-       orange is 3.10:1, below the 4.5 AA floor — which put "Get Started" and
-       "Meet your Cat" under it, along with every other bg-accent-warm button.
-       Near-black is 6.10:1. Declared identically in BOTH theme blocks because
-       the accent itself is theme-independent: a label that flipped with the
-       theme would be unreadable in one of them.
-       Mirrors --on-accent in @fleet/design-tokens v1.1.0, which is the SSOT
-       for Solon and Loki. OrangeCat still declares its ramp locally
-       rather than consuming that package; until it does, this value has to be
-       kept in step by hand. */
+       orange is about 2.3:1, far below the 4.5 AA floor; near-black is over
+       7:1. Declared identically in BOTH theme blocks because the accent
+       itself is theme-independent: a label that flipped with the theme would
+       be unreadable in one of them. */
     --on-accent: 0 0% 8%;
     --secondary: var(--surface-raised);
     --secondary-foreground: var(--text-primary);
@@ -241,7 +242,7 @@
     --border-interactive: 0 0% 30%;
     /* Accent — single warm color for download-tier CTAs; rest is monochrome */
     --accent-primary: var(--public-accent);
-    --accent-hover: #e44d00;
+    --accent-hover: var(--bitcoin-orange-dark);
     --accent-muted: 0 0% 10%;
     --accent-text: 0 0% 10%;
     /* Status — only chromatic colors permitted outside accent */
@@ -278,17 +279,18 @@
     --popover-foreground: var(--text-primary);
     --primary: 0 0% 93%;
     --primary-foreground: 0 0% 9%;
-    --public-accent: #ff5c00;
+    /* ONE orange. The accent is Bitcoin orange (owner, 2026-10-21: "I don't
+       really like this orange color. I prefer Bitcoin orange"). It means two
+       things and only two — Bitcoin, and the one action that brings someone
+       in — so --public-accent and --bitcoin-orange are the same value on
+       purpose. Loki and Solon keep the fleet token (#ff5c00) until that
+       package follows. */
+    --public-accent: var(--bitcoin-orange);
     /* The label colour for text sitting ON --public-accent. White on this
-       orange is 3.10:1, below the 4.5 AA floor — which put "Get Started" and
-       "Meet your Cat" under it, along with every other bg-accent-warm button.
-       Near-black is 6.10:1. Declared identically in BOTH theme blocks because
-       the accent itself is theme-independent: a label that flipped with the
-       theme would be unreadable in one of them.
-       Mirrors --on-accent in @fleet/design-tokens v1.1.0, which is the SSOT
-       for Solon and Loki. OrangeCat still declares its ramp locally
-       rather than consuming that package; until it does, this value has to be
-       kept in step by hand. */
+       orange is about 2.3:1, far below the 4.5 AA floor; near-black is over
+       7:1. Declared identically in BOTH theme blocks because the accent
+       itself is theme-independent: a label that flipped with the theme would
+       be unreadable in one of them. */
     --on-accent: 0 0% 8%;
     --secondary: var(--surface-raised);
     --secondary-foreground: var(--text-primary);
@@ -334,7 +336,7 @@
     --border-default: 0 0% 20%;
     --border-interactive: 0 0% 60%;
     --accent-primary: var(--public-accent);
-    --accent-hover: #ff7a33;
+    --accent-hover: #f9a640;
     --accent-muted: 0 0% 92% / 0.08;
     --accent-text: 0 0% 92%;
     --status-positive: 145 55% 50%;

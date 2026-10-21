@@ -31,13 +31,22 @@ The design system runs in **two concentric layers**:
 
 1. **Legacy layer** (in active use): shadcn/ui-style `--background`, `--foreground`, `--card`, `--primary`, etc. as HSL channel values; brand palette `--tiffany-{50..900}`, `--orange-{50..900}`, `--bitcoin-orange` as RGB channels. Utility classes: `bg-card`, `text-foreground`, `bg-tiffany-500`, `bg-bitcoinOrange` etc.
 
-2. **Loki-aligned semantic tier** (migration target, added in commit eff99bad): `--text-primary/secondary/tertiary/muted/inverted`, `--surface-page/base/raised/overlay/modal/drawer/public`, `--border-default/interactive`, `--accent-primary/hover` (→ `#ff5c00`), `--status-positive/warning/negative/neutral` with `-subtle` variants, `--tracking-display/label/caps`, `--shell-max`. Utility classes (commit 71c88988): `text-fg-primary`, `bg-surface-base`, `bg-accent-warm`, `bg-status-positive`, `tracking-display`, `max-w-shell`.
+2. **Loki-aligned semantic tier** (migration target, added in commit eff99bad): `--text-primary/secondary/tertiary/muted/inverted`, `--surface-page/base/raised/overlay/modal/drawer/public`, `--border-default/interactive`, `--accent-primary/hover` (→ `--bitcoin-orange`, `#f7931a`), `--status-positive/warning/negative/neutral` with `-subtle` variants, `--tracking-display/label/caps`, `--shell-max`. Utility classes (commit 71c88988): `text-fg-primary`, `bg-surface-base`, `bg-accent-warm`, `bg-status-positive`, `tracking-display`, `max-w-shell`.
 
 New components should use the semantic tier. Existing components migrate as touched.
 
-### Bitcoin Orange Rule
+### One orange
 
-`--bitcoin-orange: #f7931a` (utility `bg-bitcoinOrange`) is **only for Bitcoin-related UI** — balances, Lightning indicators, Bitcoin icons. Never for general brand elements.
+The accent IS Bitcoin orange: `--public-accent` resolves to `--bitcoin-orange`
+(`#f7931a`), so `bg-accent-warm` and `bg-bitcoinOrange` are one colour (owner,
+2026-10-21: "I don't really like this orange color. I prefer Bitcoin orange";
+the `#ff5c00` warm accent is gone from this repo). Orange means exactly two
+things: **Bitcoin** (balances, Lightning, Bitcoin icons — `bg-bitcoinOrange`)
+and **the one action that brings someone in** (the `accent` Button variant on
+public, top-of-funnel surfaces). Inside the app, actions are monochrome
+`primary`. Orange is never decoration, never a second button on a screen, never
+a disabled state someone has to look at. Ink on it is `text-on-accent`;
+`check:accent-ink` fails white.
 
 ### Migration direction (x.ai-quality, Loki-aligned)
 
@@ -50,7 +59,7 @@ Multi-commit migration in progress:
 - ✅ Tailwind v4 (package on 4.x — this line previously claimed 3.3 long after main had moved, which misled agents; keep this table honest)
 - ⏳ OKLCH color space for the token tier
 
-End state: monochromatic surfaces + one warm accent (`#ff5c00`) for top-of-funnel conversion + Bitcoin Orange for Bitcoin-specific UI + status colors only for actual status. Everything else stays achromatic.
+End state: monochromatic surfaces + one orange (Bitcoin orange, `#f7931a`) for Bitcoin and for top-of-funnel conversion + status colors only for actual status. Everything else stays achromatic.
 
 **Audit commands:**
 

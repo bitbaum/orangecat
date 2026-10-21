@@ -31,8 +31,8 @@ export const APP_EMAIL_FROM = `${APP_NAME} <notifications@${APP_DOMAIN}>`;
  */
 export const CONTACT_EMAIL = `cato@${APP_DOMAIN}`;
 
-/** Warm accent for rare CTAs (matches x.ai public band — defined once in globals `--public-accent`) */
-export const BRAND_ACCENT_HEX = '#ff5c00';
+/** The one orange: Bitcoin orange, the accent (globals `--public-accent` → `--bitcoin-orange`). */
+export const BRAND_ACCENT_HEX = '#f7931a';
 
 export const BRAND_MARK_DESCRIPTION =
   'A coil that is a cat: one continuous stroke wound inward, two ears on its outer turn. Loki’s spiral, wearing the cat. Reads as a cat at a 16px favicon and as a hypnotic coil at 220px.';

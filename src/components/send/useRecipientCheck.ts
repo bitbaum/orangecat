@@ -20,14 +20,10 @@
 
 import { useEffect, useState } from 'react';
 import { fetchTipReceiveInfo } from '@/services/tips/tip-client';
+import { USERNAME_MIN_LENGTH } from '@/config/usernames';
 
 export type RecipientState =
-  | 'idle'
-  | 'checking'
-  | 'ok'
-  | 'external'
-  | 'cannot_receive'
-  | 'not_found';
+  'idle' | 'checking' | 'ok' | 'external' | 'cannot_receive' | 'not_found';
 
 export interface RecipientCheck {
   state: RecipientState;
@@ -60,6 +56,13 @@ export function useRecipientCheck(recipient: string): RecipientCheck {
     // a claim we can't support.
     if (trimmed.includes('@')) {
       setCheck({ state: 'external', name: trimmed, payable: true });
+      return;
+    }
+
+    // No username is this short, so there is nothing to look up yet — and
+    // "Nobody goes by @m" after one keystroke is noise, not a finding.
+    if (trimmed.length < USERNAME_MIN_LENGTH) {
+      setCheck({ state: 'idle', name: null, payable: false });
       return;
     }
 

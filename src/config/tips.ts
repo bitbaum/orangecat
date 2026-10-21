@@ -31,7 +31,7 @@ export const TIP_COPY = {
   custom: 'Custom',
   generate: 'Show tip QR',
   generating: 'Preparing…',
-  scan: 'Scan with any Bitcoin wallet to send your tip.',
+  scan: 'Waiting for the tip…',
   noWallet: (name: string) => `${name} hasn't set up a wallet to receive Bitcoin tips yet.`,
   /** The honesty line — non-custodial, zero fee. */
   disclaimer: 'Paid directly to them. OrangeCat takes 0% and never touches your funds.',

@@ -17,7 +17,7 @@ root `CLAUDE.md` for the migration direction.
 
 ```tsx
 // ❌ Wrong - hardcoded colors
-<div className="bg-[#ff5c00]">
+<div className="bg-[#f7931a]">
 
 // ✅ Correct - semantic tokens
 <div className="bg-accent-warm text-on-accent">
@@ -29,16 +29,15 @@ root `CLAUDE.md` for the migration direction.
 
 - Text: `text-fg-primary` / `text-fg-secondary` / `text-fg-tertiary` / `text-fg-muted` / `text-fg-inverted`
 - Surfaces: `bg-surface-page` / `bg-surface-base` / `bg-surface-raised` / `bg-surface-overlay` (also `-modal`, `-drawer`, `-public`)
-- Warm accent: `bg-accent-warm` (`--accent-primary` → `#ff5c00`), hover `bg-accent-warm-hover`;
+- Accent: `bg-accent-warm` (`--accent-primary` → `--bitcoin-orange`, `#f7931a`), hover `bg-accent-warm-hover`;
   text on it is `text-on-accent` (`text-white` on the accent fails AA)
-  - Top-of-funnel conversion only (the `accent` Button variant). Use sparingly.
+  - Top-of-funnel conversion only (the `accent` Button variant). In-app actions are `primary`.
 - Status: `bg-status-positive` / `-warning` / `-negative` / `-neutral` (+ `-subtle`) — only for actual status
 
-**Bitcoin Orange**: `bg-bitcoinOrange` / `text-bitcoinOrange` (`--bitcoin-orange: #f7931a`)
-
-- **ONLY for Bitcoin-related features**
-- Never use for non-Bitcoin elements
-- There is no `bitcoin-orange` utility class — `text-bitcoin-orange` renders nothing
+**One orange**: the accent and Bitcoin orange are the same colour (root `CLAUDE.md` → "One orange").
+`bg-bitcoinOrange` / `text-bitcoinOrange` say _Bitcoin_ (balances, Lightning, icons);
+`bg-accent-warm` says _the action that brings someone in_. Nothing else is orange.
+There is no `bitcoin-orange` utility class — `text-bitcoin-orange` renders nothing.
 
 **Legacy tier (still in use, migrate as touched)**:
 
