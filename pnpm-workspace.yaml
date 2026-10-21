@@ -86,3 +86,5 @@ minimumReleaseAgeExclude:
   - 'threadkit'
   # Ours (bitbaum/bip-kit); each release is inside the window when adopted.
   - 'bip-kit'
+
+  - "@bitbaum/chatkit"

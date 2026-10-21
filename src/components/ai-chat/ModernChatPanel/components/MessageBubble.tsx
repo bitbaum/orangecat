@@ -294,6 +294,7 @@ export function MessageBubble({
             ) : (
               <Markdown
                 text={displayContent}
+                onReply={isLast ? onQuickReply : undefined}
                 citations={answerCitations}
                 renderLink={renderAnswerLink}
               />
