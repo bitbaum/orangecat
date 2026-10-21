@@ -29,6 +29,7 @@ import { getCatFewShotExamplesText } from '@/services/cat/few-shot-examples';
 import {
   resolveConversationIdOrDefault,
   getMessagesForContext,
+  isEphemeralConversation,
 } from '@/services/cat/conversation-history';
 import { recallMemories } from '@/services/cat/memory';
 import { fetchFullContextForCat, buildFullContextString } from '@/services/ai/document-context';
@@ -74,6 +75,8 @@ export interface PreparedCatChat {
   /** system + history + the user's message — ready for any chat-completions API. */
   messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>;
   conversationId: string | null;
+  /** A temporary chat: nothing learned from it is kept (memory is skipped). */
+  ephemeral: boolean;
   /** What the token budget cost this turn; null when no budget applied. */
   budget: BudgetReport | null;
   /**
@@ -182,6 +185,7 @@ export async function prepareCatChat(
   // orientation sections fire on `first-message`), and it must be a fact read
   // from the conversation, not inferred from the wording.
   let conversationId: string | null = null;
+  let ephemeral = false;
   let historyMessages: Array<{ role: 'user' | 'assistant'; content: string }> = [];
   try {
     conversationId = await resolveConversationIdOrDefault(
@@ -189,7 +193,10 @@ export async function prepareCatChat(
       userId,
       requestedConversationId
     );
-    historyMessages = await getMessagesForContext(supabase, userId, conversationId);
+    [historyMessages, ephemeral] = await Promise.all([
+      getMessagesForContext(supabase, userId, conversationId),
+      isEphemeralConversation(supabase, userId, conversationId),
+    ]);
   } catch {
     /* Non-fatal — continue without history */
   }
@@ -224,6 +231,7 @@ export async function prepareCatChat(
     budget: fitted.report,
     wholeSystemPrompt: fitted.wholeSystemPrompt,
     conversationId,
+    ephemeral,
     grounding: {
       // History counts as evidence: a name Cat established two turns ago is
       // fair to reuse, and treating it as novel would flag every follow-up.

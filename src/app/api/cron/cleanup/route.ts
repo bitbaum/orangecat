@@ -22,76 +22,26 @@
  *     within a day. A connector that finished sign-in holds a grant
  *     and is kept; the rest are abandoned registrations or probes.
  *
- * When you add another expirable plumbing table, add a new task to the
- * `tasks` array and the response will widen automatically.
+ *   - cat_conversations (ephemeral only): temporary chats older than a
+ *     day — the client deletes one when the person leaves it; this takes
+ *     the ones a closed tab or a dead phone left behind.
+ *
+ * When you add another expirable plumbing table, add a task to
+ * `CLEANUP_TASKS` (services/maintenance/cleanup-tasks.ts) and the response
+ * will widen automatically.
  *
  * Created: 2026-06-03
  */
 
-import { createAdminClient } from '@/lib/supabase/admin';
-import { DATABASE_TABLES } from '@/config/database-tables';
 import { logger } from '@/utils/logger';
 import { apiSuccess, apiError, apiUnauthorized } from '@/lib/api/standardResponse';
 import { verifyCronSecret } from '@/lib/api/cronAuth';
-import { pruneDeliveredWebhookDeliveries } from '@/services/webhooks/deliveryService';
-import { pruneAbandonedDcrClients } from '@/services/auth/oauthRegistration';
+import { CLEANUP_TASKS } from '@/services/maintenance/cleanup-tasks';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 const LOG_SOURCE = 'CronCleanup';
-
-interface CleanupResult {
-  task: string;
-  deleted: number;
-  error?: string;
-}
-
-async function pruneOldDeliveredWebhooks(): Promise<CleanupResult> {
-  try {
-    const deleted = await pruneDeliveredWebhookDeliveries();
-    return { task: 'webhook_deliveries_delivered', deleted };
-  } catch (error) {
-    return {
-      task: 'webhook_deliveries_delivered',
-      deleted: 0,
-      error: error instanceof Error ? error.message : String(error),
-    };
-  }
-}
-
-async function pruneAbandonedSelfRegisteredClients(): Promise<CleanupResult> {
-  try {
-    const deleted = await pruneAbandonedDcrClients();
-    return { task: 'oauth_clients_dcr_abandoned', deleted };
-  } catch (error) {
-    return {
-      task: 'oauth_clients_dcr_abandoned',
-      deleted: 0,
-      error: error instanceof Error ? error.message : String(error),
-    };
-  }
-}
-
-async function pruneExpiredIdempotencyResults(): Promise<CleanupResult> {
-  const admin = createAdminClient();
-  const nowIso = new Date().toISOString();
-
-  const { count, error } = await admin
-    .from(DATABASE_TABLES.IDEMPOTENCY_RESULTS)
-    .delete({ count: 'exact' })
-    .lt('expires_at', nowIso);
-
-  if (error) {
-    return {
-      task: 'idempotency_results',
-      deleted: 0,
-      error: error.message,
-    };
-  }
-
-  return { task: 'idempotency_results', deleted: count ?? 0 };
-}
 
 export async function GET(request: Request) {
   if (!verifyCronSecret(request)) {
@@ -99,13 +49,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const tasks: Array<() => Promise<CleanupResult>> = [
-      pruneExpiredIdempotencyResults,
-      pruneOldDeliveredWebhooks,
-      pruneAbandonedSelfRegisteredClients,
-    ];
-
-    const results = await Promise.all(tasks.map(task => task()));
+    const results = await Promise.all(CLEANUP_TASKS.map(task => task()));
 
     const summary = results.reduce<Record<string, number | string>>((acc, r) => {
       acc[r.task] = r.error ? `error: ${r.error}` : r.deleted;

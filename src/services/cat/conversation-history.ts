@@ -128,25 +128,69 @@ export async function listConversations(
     .from(DATABASE_TABLES.CAT_CONVERSATIONS)
     .select('id, title, is_default, updated_at')
     .eq('user_id', userId)
+    // A temporary chat is never in the list: that is what temporary means.
+    .eq('ephemeral', false)
     .order('updated_at', { ascending: false });
   return (data as ConversationSummary[]) ?? [];
 }
 
-/** Create a fresh (non-default) conversation and return its id. */
+/** Create a fresh (non-default) conversation and return its id. `ephemeral`
+ *  makes it a temporary chat (src/lib/chat/temporary-chat.ts). */
 export async function createConversation(
   supabase: AnySupabaseClient,
   userId: string,
-  title?: string | null
+  title?: string | null,
+  opts: { ephemeral?: boolean } = {}
 ): Promise<string> {
   const { data, error } = await supabase
     .from(DATABASE_TABLES.CAT_CONVERSATIONS)
-    .insert({ user_id: userId, is_default: false, title: title ?? null })
+    .insert({
+      user_id: userId,
+      is_default: false,
+      title: title ?? null,
+      ephemeral: opts.ephemeral === true,
+    })
     .select('id')
     .single();
   if (error || !data) {
     throw new Error(`Failed to create conversation: ${error?.message}`);
   }
   return data.id;
+}
+
+/** Is this conversation a temporary chat? False for a missing or foreign one. */
+export async function isEphemeralConversation(
+  supabase: AnySupabaseClient,
+  userId: string,
+  conversationId: string | null
+): Promise<boolean> {
+  if (!conversationId) {
+    return false;
+  }
+  const { data } = await supabase
+    .from(DATABASE_TABLES.CAT_CONVERSATIONS)
+    .select('ephemeral')
+    .eq('id', conversationId)
+    .eq('user_id', userId)
+    .maybeSingle();
+  return data?.ephemeral === true;
+}
+
+/** The daily sweep: a temporary chat nobody came back to leave is gone within
+ *  a day regardless. Messages cascade with the row. Returns how many went. */
+export async function deleteStaleEphemeralConversations(
+  supabase: AnySupabaseClient,
+  before: Date
+): Promise<number> {
+  const { count, error } = await supabase
+    .from(DATABASE_TABLES.CAT_CONVERSATIONS)
+    .delete({ count: 'exact' })
+    .eq('ephemeral', true)
+    .lt('updated_at', before.toISOString());
+  if (error) {
+    throw new Error(`Failed to sweep temporary chats: ${error.message}`);
+  }
+  return count ?? 0;
 }
 
 /** Delete a conversation (and its messages) the user owns. Returns success. */

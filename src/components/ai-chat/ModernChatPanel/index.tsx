@@ -58,6 +58,8 @@ interface ModernChatPanelProps {
   onConversationStarted?: () => void;
   /** Fires when the first send of a fresh draft created a conversation — adopt it. */
   onConversationCreated?: (id: string) => void;
+  /** The conversation the first send creates is a temporary chat. */
+  temporary?: boolean;
   /** Current page the user is on (global overlay) so Cat is page-aware. */
   pageContext?: import('@/config/cat-page-context').CatPageDescriptor | null;
   /**
@@ -80,6 +82,7 @@ export function ModernChatPanel({
   conversationId,
   onConversationStarted,
   onConversationCreated,
+  temporary,
   pageContext,
   header,
   className,
@@ -133,6 +136,7 @@ export function ModernChatPanel({
   } = useChatMessages({
     selectedModel,
     conversationId,
+    temporary,
     onPendingResult: () => refreshPendingActionsRef.current?.(),
     onMessageSent: () => {
       refreshQuota();
