@@ -2,8 +2,9 @@ name: E2E Auth (Playwright)
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
+  # Daily instead of every push to main (CI audit 2026-10-21).
+  schedule:
+    - cron: '29 4 * * *'
 
 jobs:
   e2e:
