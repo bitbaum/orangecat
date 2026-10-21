@@ -132,16 +132,24 @@ export function AppShell({ children }: AppShellProps) {
       <ViewportHeightSync />
 
       {/* Header - Always visible on non-auth surfaces */}
+      {/* Where the chat is the whole phone screen (routeChrome.immersiveChat)
+          the header steps aside below md; the page's own floating toolbar
+          carries the way home. */}
       <Header
         showSidebarToggle={!!shouldShowSidebar}
         onToggleSidebar={toggleSidebar}
         showSearch={true}
         variant="default"
+        className={routeChrome.immersiveChat ? 'max-md:hidden' : undefined}
       />
 
       {/* Main Layout Container — clears the fixed header (56px / 64px) plus
           the email banner inside it, when shown (globals.css). */}
-      <div className="flex flex-1 app-header-offset">
+      <div
+        className={`flex flex-1 app-header-offset ${
+          routeChrome.immersiveChat ? 'app-immersive-chat' : ''
+        }`}
+      >
         {/* Sidebar - Only for authenticated routes when auth is ready */}
         {shouldShowSidebar && (
           <Sidebar

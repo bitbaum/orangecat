@@ -21,11 +21,14 @@ describe('companion room chrome', () => {
       hideMobileBottomNav: true,
       preferCollapsedSidebar: true,
       hideGlobalCat: true,
+      // The room keeps the app header: its way back is in that header.
+      immersiveChat: false,
     });
     expect(getRouteChrome('/companions/abc')).toEqual({
       hideMobileBottomNav: false,
       preferCollapsedSidebar: false,
       hideGlobalCat: false,
+      immersiveChat: false,
     });
   });
 
@@ -34,6 +37,8 @@ describe('companion room chrome', () => {
       hideMobileBottomNav: true,
       preferCollapsedSidebar: true,
       hideGlobalCat: true,
+      // The Cat hub owns the phone: its toolbar floats and carries Home.
+      immersiveChat: true,
     });
   });
 

@@ -1,13 +1,15 @@
 'use client';
 
 /**
- * Minimal toolbar for the Cat chat: the conversations trigger (phones), the
- * quota chip when it matters, and ONE way into Cat settings — which replaced
- * the separate Context and Controls tabs.
+ * Minimal toolbar for the Cat chat: the conversations trigger and the way home
+ * (phones, where this row is the only chrome — the app header steps aside,
+ * getRouteChrome().immersiveChat), the quota chip when it matters, and ONE
+ * way into Cat settings — which replaced the separate Context and Controls
+ * tabs. It floats over the conversation (chatkit's ChatScreen).
  */
 
 import Link from 'next/link';
-import { PanelLeft, Settings2 } from 'lucide-react';
+import { House, PanelLeft, Settings2 } from 'lucide-react';
 import { ROUTES } from '@/config/routes';
 import { cn } from '@/lib/utils';
 import { LokiChip } from './LokiChip';
@@ -46,6 +48,16 @@ export function CatChatToolbar({
           <PanelLeft className="h-4 w-4" />
         </button>
       )}
+      {/* Home, phones only: with the app header gone from over the chat,
+          this is the one tap back to the rest of OrangeCat. */}
+      <Link
+        href={ROUTES.DASHBOARD.HOME}
+        className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg text-fg-secondary transition-colors hover:bg-surface-raised hover:text-fg-primary md:hidden"
+        aria-label="Home"
+        title="Home"
+      >
+        <House className="h-4 w-4" />
+      </Link>
 
       {/* min-w-0 (not flex-shrink-0): the quota chip must be allowed to shrink
           and truncate. Pinned at its natural width it overflowed the toolbar
