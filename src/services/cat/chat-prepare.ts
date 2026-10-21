@@ -213,7 +213,7 @@ export async function prepareCatChat(
     // writes 2–4 of them, best first, in the same turn. In the base, not the
     // few-shot block, so a tight budget never drops the thing that makes the
     // chat usable with a thumb.
-    base: `${buildCatSystemPrompt({ actionsVia: opts.actionsVia, turnDescriptor, proactivity })}\n\n${RICH_ANSWERS_INSTRUCTION}\n\n${REPLIES_INSTRUCTION}`,
+    base: `${buildCatSystemPrompt({ actionsVia: opts.actionsVia, turnDescriptor, proactivity })}\n\n${RICH_ANSWERS_INSTRUCTION}\n\nCreative work: /studio turns a feeling into an instrumental sketch, lyrics, poetry, fiction, visual direction or a film treatment. Images use the person's own provider key. It does not yet generate vocal recordings or rendered films. Offer this link when relevant; never invent playable song URLs.\n\n${REPLIES_INSTRUCTION}`,
     standingInstructions: buildStandingInstructionsBlock(customInstructions),
     userContext: contextString,
     groundingRules,

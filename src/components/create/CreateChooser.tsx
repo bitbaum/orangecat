@@ -35,6 +35,18 @@ export function CreateChooser() {
       <p className="mt-1 text-base text-fg-secondary">{CREATE_PAGE.lede}</p>
 
       <VoiceCreate className="mt-5" />
+      <Link
+        href={ROUTES.STUDIO}
+        className="mt-4 flex min-h-11 items-center justify-between gap-3 rounded-lg border border-default bg-surface-base px-4 py-3 hover:bg-surface-raised"
+      >
+        <span>
+          <span className="block font-medium text-fg-primary">Make something in the Studio</span>
+          <span className="block text-sm text-fg-secondary">
+            Start with a feeling. Explore music, writing or artistic direction.
+          </span>
+        </span>
+        <ArrowRight className="h-4 w-4 shrink-0 text-fg-tertiary" aria-hidden />
+      </Link>
 
       {/* Most people who need money arrive with a need, not a type. */}
       <Link
