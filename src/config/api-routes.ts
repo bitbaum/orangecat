@@ -158,6 +158,7 @@ export const API_ROUTES = {
   CAPITAL: (slug: string) => `/api/capital/${slug}`,
   AI: {
     FORM_PREFILL: '/api/ai/form-prefill',
+    CREATIVE: '/api/ai/creative',
     IMAGES_GENERATE: '/api/ai/images/generate',
     IMAGES_SUGGEST: '/api/ai/images/suggest',
     WRITING: {

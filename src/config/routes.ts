@@ -35,6 +35,7 @@ export const ROUTE_CONTEXTS = {
    */
   public: [
     '/',
+    '/studio',
     '/discover',
     '/community',
     '/channel',
@@ -317,6 +318,7 @@ export const ROUTES = {
   AUTH_SIGNOUT: '/auth/signout',
   DISCOVER: '/discover',
   CREATE: '/create',
+  STUDIO: '/studio',
   /** Say what you need; the Cat prices it and drafts the page. */
   RAISE: '/raise',
   STUDY_BITCOIN: '/study-bitcoin',
