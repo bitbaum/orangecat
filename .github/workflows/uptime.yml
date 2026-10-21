@@ -11,7 +11,7 @@ name: Uptime
 
 on:
   schedule:
-    - cron: '*/10 * * * *' # every ~10 min (GitHub minimum is 5; it may run late)
+    - cron: '7 * * * *' # hourly (was every 10 min; CI audit 2026-10-21 — move to box/uptime service later)
   workflow_dispatch: {}
 
 permissions:
