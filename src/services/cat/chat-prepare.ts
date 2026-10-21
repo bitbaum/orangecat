@@ -24,6 +24,7 @@ import { buildTurnDescriptor } from '@/services/cat/turn-descriptor';
 import { getCustomInstructions } from '@/services/cat/custom-instructions';
 import { proactivityEnabled } from '@/services/cat/proactivity';
 import { buildReplyLanguageDirective } from '@/services/cat/reply-language';
+import { REPLIES_INSTRUCTION } from '@bitbaum/chatkit';
 import { getCatFewShotExamplesText } from '@/services/cat/few-shot-examples';
 import {
   resolveConversationIdOrDefault,
@@ -201,7 +202,11 @@ export async function prepareCatChat(
   });
 
   const parts: CatPromptParts = {
-    base: buildCatSystemPrompt({ actionsVia: opts.actionsVia, turnDescriptor, proactivity }),
+    // The replies under every answer are chatkit's contract: the model
+    // writes 2–4 of them, best first, in the same turn. In the base, not the
+    // few-shot block, so a tight budget never drops the thing that makes the
+    // chat usable with a thumb.
+    base: `${buildCatSystemPrompt({ actionsVia: opts.actionsVia, turnDescriptor, proactivity })}\n\n${REPLIES_INSTRUCTION}`,
     standingInstructions: buildStandingInstructionsBlock(customInstructions),
     userContext: contextString,
     groundingRules,
