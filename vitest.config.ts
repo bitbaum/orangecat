@@ -1,6 +1,12 @@
 import path from 'node:path';
 import { defineConfig } from 'vitest/config';
 
+// Every test runs on UTC, as CI does. Date math in local time (setDate,
+// setHours) shifts by an hour across a DST change, so a suite run on a laptop
+// in Europe/Zurich the week before 25 Oct failed where CI passed. Set here,
+// before the workers start, so each one inherits it.
+process.env.TZ = 'UTC';
+
 const r = (p: string) => path.resolve(__dirname, p);
 
 export default defineConfig({
