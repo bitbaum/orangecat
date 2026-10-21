@@ -119,7 +119,7 @@ export function CreativeStudio() {
           </Button>
           <p className="text-sm text-fg-tertiary">
             AI creation needs sign-in. Your brief is sent when you create. Work stays in this tab
-            until you download it; nothing is published.
+            until you download it. No work is posted to your profile.
           </p>
           <Button
             type="button"
@@ -187,8 +187,8 @@ export function CreativeStudio() {
                     Generate image with my provider credits
                   </Button>
                   <p className="text-sm text-fg-secondary">
-                    Uses your own image-provider key in{' '}
-                    <Link href="/settings/ai" className="underline">
+                    Images are stored at a public URL. Uses your own image-provider key in{' '}
+                    <Link href={ROUTES.SETTINGS_AI} className="underline">
                       AI settings
                     </Link>
                     .

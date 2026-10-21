@@ -12,7 +12,9 @@ a mastered production in any requested genre. The morning example is a
 composed fixture, labelled separately from AI drafts. Writing produces text;
 fiction produces an opening scene, film a treatment. Artwork first produces a
 prompt; a separate explicit action uses the existing BYOK image generator.
-Nothing is published, commissioned or paid automatically. Drafts live in the
+No work is posted to a profile or commissioned automatically. The explicit
+image-generation action uses provider credits and stores an image at a public
+URL, as explained beside the control. Drafts live in the
 tab and can be exported with their brief and score. AI creation uses the
 existing authenticated, rate-limited platform model chain.
 
