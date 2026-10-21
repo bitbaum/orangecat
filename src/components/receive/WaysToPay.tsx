@@ -8,14 +8,20 @@
  * connected. The rows after it are the other apps the owner is paid in; they
  * settle outside OrangeCat, which the line under the list says.
  *
- * Every row has the same shape: what it is, the handle under it, one action on
- * the right of the same size. Adding one is the last row, not a button
- * somewhere else.
+ * Every row has the same shape: what it is, the handle under it, then who
+ * sees it and what a payer learns — the identity cost, in the same words on
+ * the Bitcoin row as on a Twint row — and one action on the right of the same
+ * size. Adding one is the last row, not a button somewhere else.
  */
 
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { PAYMENT_METHODS, PAYMENT_METHODS_COPY } from '@/config/payment-methods';
+import {
+  BITCOIN_RAIL,
+  PAYMENT_METHODS,
+  PAYMENT_METHODS_COPY,
+  payerLearns,
+} from '@/config/payment-methods';
 import { RECEIVE_COPY } from '@/config/receive';
 import { ROUTES } from '@/config/routes';
 import { formatPaymentHandle } from '@/lib/payments/payment-handle';
@@ -25,6 +31,8 @@ interface WaysToPayProps {
   bitcoin: {
     /** <username>@orangecat.ch when it mints invoices, else null. */
     address: string | null;
+    /** The handle a payer learns and nothing else: "@cato". */
+    handle: string;
     /** The wallet the coins settle into, when we can name it. */
     arrivesAt: string | null;
     /** Whether any Bitcoin rail is set up at all. */
@@ -55,11 +63,14 @@ export function WaysToPay({ bitcoin, methods, onAdd, onRemove, removingId }: Way
       <ul className="divide-y divide-subtle rounded-lg border border-subtle bg-surface-base">
         <li className={ROW}>
           <div className="min-w-0">
-            <p className="font-medium text-fg-primary">{PAYMENT_METHODS_COPY.bitcoinRow}</p>
+            <p className="font-medium text-fg-primary">{BITCOIN_RAIL.name}</p>
             {bitcoin.address && (
               <p className="truncate font-mono text-sm text-fg-secondary">{bitcoin.address}</p>
             )}
-            <p className="truncate text-sm text-fg-tertiary">{bitcoinLine}</p>
+            <p className="text-sm text-fg-tertiary">
+              {bitcoinLine}
+              {bitcoin.active && ` · ${payerLearns(BITCOIN_RAIL.reveals, bitcoin.handle)}`}
+            </p>
           </div>
           <Button variant="ghost" size="sm" href={ROUTES.DASHBOARD.WALLETS} className={ACTION}>
             {bitcoin.active ? RECEIVE_COPY.manageBitcoin : RECEIVE_COPY.setUpBitcoin}
@@ -77,6 +88,10 @@ export function WaysToPay({ bitcoin, methods, onAdd, onRemove, removingId }: Way
                 </p>
                 <p className="truncate font-mono text-sm text-fg-secondary">
                   {formatPaymentHandle(row.method, row.handle)}
+                </p>
+                <p className="text-sm text-fg-tertiary">
+                  {PAYMENT_METHODS_COPY.visibilityWord[row.visibility]} ·{' '}
+                  {payerLearns(kind.reveals)}
                 </p>
               </div>
               <Button

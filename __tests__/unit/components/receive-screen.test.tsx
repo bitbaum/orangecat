@@ -38,6 +38,7 @@ vi.mock('@/services/payment-methods/payment-methods-client', () => ({
       method: 'twint',
       handle: '+41791234567',
       label: null,
+      visibility: 'public',
       display_order: 0,
       is_active: true,
     },
@@ -68,9 +69,14 @@ describe('ReceiveScreen', () => {
     expect(screen.getByText('Ways to pay you')).toBeTruthy();
     expect(screen.getByText('Bitcoin')).toBeTruthy();
     expect(screen.getByText('catomean@orangecat.ch')).toBeTruthy();
-    expect(screen.getByText('Arrives at orangecat@coinos.io')).toBeTruthy();
+    expect(screen.getByText(/Lands in orangecat@coinos.io/)).toBeTruthy();
     expect(screen.getByText('Twint')).toBeTruthy();
     expect(screen.getByText('+41791234567')).toBeTruthy();
+    // The identity cost, in the same words on every row.
+    expect(screen.getByText(/A payer learns only @catomean\./)).toBeTruthy();
+    expect(
+      screen.getByText(/On your page · A payer learns your name and your phone number\./)
+    ).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Remove Twint' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Add a way to be paid' })).toBeTruthy();
 

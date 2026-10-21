@@ -22,6 +22,7 @@ import {
   PAYMENT_METHODS_MAX_PER_ACCOUNT,
   isPaymentMethodId,
   type PaymentMethodId,
+  type PaymentVisibility,
 } from '@/config/payment-methods';
 import { normalizePaymentHandle } from '@/lib/payments/payment-handle';
 import { logger } from '@/utils/logger';
@@ -31,12 +32,33 @@ export interface PaymentMethodRow {
   method: PaymentMethodId;
   handle: string;
   label: string | null;
+  visibility: PaymentVisibility;
   display_order: number;
   is_active: boolean;
 }
 
-/** What a payer sees: the method and its handle, nothing about the owner's account. */
-export type PublicPaymentMethod = Pick<PaymentMethodRow, 'id' | 'method' | 'handle' | 'label'>;
+/**
+ * What a payer sees. An `on_request` row's handle is null HERE, on the
+ * server — the page shows the name and an Ask button, and the number or IBAN
+ * never travels to a public reader at all.
+ */
+export interface PublicPaymentMethod {
+  id: string;
+  method: PaymentMethodId;
+  handle: string | null;
+  label: string | null;
+  visibility: PaymentVisibility;
+}
+
+export function toPublicPaymentMethod(row: PaymentMethodRow): PublicPaymentMethod {
+  return {
+    id: row.id,
+    method: row.method,
+    handle: row.visibility === 'public' ? row.handle : null,
+    label: row.label,
+    visibility: row.visibility,
+  };
+}
 
 export interface PaymentMethodFailure {
   ok: false;
@@ -44,7 +66,7 @@ export interface PaymentMethodFailure {
   message: string;
 }
 
-const COLUMNS = 'id, method, handle, label, display_order, is_active';
+const COLUMNS = 'id, method, handle, label, visibility, display_order, is_active';
 
 const fail = (reason: PaymentMethodFailure['reason'], message: string): PaymentMethodFailure => ({
   ok: false,
@@ -76,7 +98,12 @@ export async function listOwnPaymentMethods(
 export async function addPaymentMethod(
   supabase: SupabaseClient,
   profileId: string,
-  input: { method: string; handle: string; label?: string | null }
+  input: {
+    method: string;
+    handle: string;
+    label?: string | null;
+    visibility?: PaymentVisibility;
+  }
 ): Promise<{ ok: true; row: PaymentMethodRow } | PaymentMethodFailure> {
   if (!isPaymentMethodId(input.method)) {
     return fail('invalid_method', 'That is not a payment method we know.');
@@ -100,6 +127,7 @@ export async function addPaymentMethod(
       method: input.method,
       handle,
       label: input.label?.trim().slice(0, PAYMENT_LABEL_MAX_LENGTH) || null,
+      visibility: input.visibility ?? 'public',
       display_order: existing.length,
     })
     .select(COLUMNS)
@@ -145,5 +173,5 @@ export async function listPublicPaymentMethods(profileId: string): Promise<Publi
     logger.warn('public payment methods lookup failed', { error, profileId }, 'PaymentMethods');
     return [];
   }
-  return knownRows(data).map(({ id, method, handle, label }) => ({ id, method, handle, label }));
+  return knownRows(data).map(toPublicPaymentMethod);
 }

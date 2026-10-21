@@ -61,7 +61,7 @@ export function ProfileActions({
         <>
           {profile.id && (
             <Button
-              href={`${ROUTES.MESSAGES}?to=${encodeURIComponent(profile.id)}`}
+              href={ROUTES.MESSAGES_TO(profile.id)}
               variant="outline"
               size="sm"
               className={ACTION}

@@ -22,6 +22,7 @@ import {
   PAYMENT_HANDLE_MAX_LENGTH,
   PAYMENT_LABEL_MAX_LENGTH,
   PAYMENT_METHOD_IDS,
+  PAYMENT_VISIBILITIES,
 } from '@/config/payment-methods';
 import { logger } from '@/utils/logger';
 
@@ -32,6 +33,7 @@ const createSchema = z.object({
     .min(1)
     .max(PAYMENT_HANDLE_MAX_LENGTH + 40),
   label: z.string().max(PAYMENT_LABEL_MAX_LENGTH).optional(),
+  visibility: z.enum(PAYMENT_VISIBILITIES).optional(),
 });
 
 export const GET = withAuth(async (request: AuthenticatedRequest) => {

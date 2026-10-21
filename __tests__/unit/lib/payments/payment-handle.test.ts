@@ -37,6 +37,24 @@ describe('normalizePaymentHandle', () => {
     expect(isValidIban('DE89370400440532013001')).toBe(false);
   });
 
+  it('reads the handles the rest of the world uses', () => {
+    expect(normalizePaymentHandle('upi', 'upi://pay?pa=Lena@UPI')).toBe('lena@upi');
+    expect(normalizePaymentHandle('upi', 'lena')).toBeNull();
+    expect(normalizePaymentHandle('pix', 'lena@example.com')).toBe('lena@example.com');
+    expect(normalizePaymentHandle('pix', '123.456.789-09')).toBe('12345678909');
+    expect(normalizePaymentHandle('pix', 'b6f1c3e2-9a7d-4c2b-8f1e-2a3b4c5d6e7f')).toBe(
+      'b6f1c3e2-9a7d-4c2b-8f1e-2a3b4c5d6e7f'
+    );
+    expect(normalizePaymentHandle('zelle', '+1 (415) 555-0100')).toBe('+14155550100');
+    expect(normalizePaymentHandle('zelle', 'Lena@Example.com')).toBe('lena@example.com');
+    expect(normalizePaymentHandle('mpesa', '0712 345 678')).toBe('0712345678');
+    expect(normalizePaymentHandle('wechat', 'lena_wx')).toBe('lena_wx');
+    expect(normalizePaymentHandle('wechat', 'lena wx')).toBeNull();
+    const xmr = '4' + 'A'.repeat(94);
+    expect(normalizePaymentHandle('monero', `monero:${xmr}`)).toBe(xmr);
+    expect(normalizePaymentHandle('monero', '4ABC')).toBeNull();
+  });
+
   it('refuses a username the service would refuse', () => {
     expect(normalizePaymentHandle('revolut', 'lena smith')).toBeNull();
     expect(normalizePaymentHandle('venmo', '')).toBeNull();
@@ -49,5 +67,6 @@ describe('formatPaymentHandle', () => {
     expect(formatPaymentHandle('cashapp', 'lena')).toBe('$lena');
     expect(formatPaymentHandle('venmo', 'lena')).toBe('@lena');
     expect(formatPaymentHandle('twint', '+41791234567')).toBe('+41791234567');
+    expect(formatPaymentHandle('monero', '4' + 'A'.repeat(94))).toBe('4AAAAAAA…AAAAAA');
   });
 });
