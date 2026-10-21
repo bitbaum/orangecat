@@ -6,10 +6,11 @@
  * unbounded — invisible until someone notices the deliveries drawer
  * takes ages to render or pg_stat_activity flags table bloat.
  *
- * The route fans out to two tasks (pruneExpiredIdempotencyResults +
- * pruneDeliveredWebhookDeliveries). Each is independent — one
- * failing doesn't stop the other — and the response summarises per
- * task so server logs are diagnosable.
+ * The route fans out to the tasks in services/maintenance/cleanup-tasks.ts
+ * (idempotency results, delivered webhooks, abandoned OAuth clients,
+ * temporary chats). Each is independent — one failing doesn't stop the
+ * others — and the response summarises per task so server logs are
+ * diagnosable.
  *
  * Created: 2026-06-04
  */
@@ -27,6 +28,8 @@ vi.mock('@/lib/supabase/admin', () => ({
     from: () => ({
       delete: () => ({
         lt: () => Promise.resolve(adminDeleteResult),
+        // The temporary-chat sweep: .eq('ephemeral', true).lt('updated_at', …)
+        eq: () => ({ lt: () => Promise.resolve(adminDeleteResult) }),
       }),
     }),
   }),
@@ -126,6 +129,7 @@ describe('GET /api/cron/cleanup', () => {
         idempotency_results: 42,
         webhook_deliveries_delivered: 7,
         oauth_clients_dcr_abandoned: 0,
+        cat_conversations_temporary: 42,
       });
       expect(typeof res.data.ranAt).toBe('string');
       expect(pruneDeliveredWebhookDeliveries).toHaveBeenCalledTimes(1);
@@ -144,6 +148,7 @@ describe('GET /api/cron/cleanup', () => {
         idempotency_results: 0,
         webhook_deliveries_delivered: 0,
         oauth_clients_dcr_abandoned: 0,
+        cat_conversations_temporary: 0,
       });
     });
 
