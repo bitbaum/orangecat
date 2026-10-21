@@ -7,14 +7,14 @@ import { useMemo } from 'react';
 import { extractReplies } from '@bitbaum/chatkit';
 import Link from 'next/link';
 import {
+  AnswerActions,
   ChatReplies,
   Markdown,
   type CitationMap as AnswerCitations,
   type RenderLink,
 } from '@bitbaum/chatkit/react';
 import { cn } from '@/lib/utils';
-import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
-import { Cat, User, Copy, Check, Clock } from 'lucide-react';
+import { Cat, User, Check, Clock } from 'lucide-react';
 import { getModelDisplayName } from '@/config/ai-models';
 import { formatShortTime } from '@/utils/dates';
 import { getModelCapabilities } from '@/config/model-capability';
@@ -33,6 +33,7 @@ import type {
 } from '../types';
 import { ENTITY_REGISTRY, ENTITY_TYPES } from '@/config/entity-registry';
 import { CAT_ACTIONS } from '@/config/cat-actions';
+import { CAT_AGENT } from '@/config/cat-hub';
 import { AiErrorNotice } from '@/components/ai/AiErrorNotice';
 
 const PROVIDER_LABELS: Record<string, string> = {
@@ -202,7 +203,6 @@ export function MessageBubble({
 }: MessageBubbleProps) {
   const isUser = message.role === 'user';
   const isFocus = variant === 'focus';
-  const { copied, copy } = useCopyToClipboard();
 
   // Clean the message content for display: action and exec_action blocks are
   // cards, and the suggested-replies block is buttons below — never raw text.
@@ -228,7 +228,6 @@ export function MessageBubble({
     [displayContent, citations]
   );
 
-  const handleCopy = () => void copy(linkedContent);
   // The same sources for the renderer: `[F1]` becomes a small mark in the
   // text and the answer ends with one chip per source, linked. The label is
   // the page's title, or its host when the search gave none.
@@ -375,7 +374,7 @@ export function MessageBubble({
           </div>
         )}
 
-        {/* Provider · model indicator + copy button — provenance is honest */}
+        {/* Provider · model indicator — provenance is honest */}
         {!isUser && message.modelUsed && displayContent && (
           <div className="flex items-center justify-between text-xs text-fg-tertiary mt-1">
             <span>
@@ -386,6 +385,12 @@ export function MessageBubble({
                   </span>
                   <span aria-hidden> · </span>
                 </>
+              )}
+
+              {/* Under every answer, the fleet's row: Copy, Listen (the phone's
+            voice), Share (the system sheet, where one exists). */}
+              {!isUser && displayContent && (
+                <AnswerActions text={linkedContent} share={{ title: CAT_AGENT.name }} />
               )}
               <span title={message.modelUsed}>{getModelDisplayName(message.modelUsed)}</span>
               {(() => {
@@ -414,19 +419,6 @@ export function MessageBubble({
                 </>
               )}
             </span>
-            <button
-              type="button"
-              onClick={handleCopy}
-              className="inline-flex items-center justify-center rounded p-2 pointer-coarse:min-h-11 pointer-coarse:min-w-11 text-fg-tertiary transition-colors hover:text-fg-primary"
-              aria-label={copied ? 'Response copied' : 'Copy response'}
-              title="Copy response"
-            >
-              {copied ? (
-                <Check className="h-3.5 w-3.5 text-status-positive" />
-              ) : (
-                <Copy className="h-3.5 w-3.5" />
-              )}
-            </button>
           </div>
         )}
 

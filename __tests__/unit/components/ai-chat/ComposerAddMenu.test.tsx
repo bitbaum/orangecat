@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 /**
- * The Cat's "+" menu, rendered: one file input per source.
+ * The Cat's "+" menu, rendered: chatkit's attach sheet with one file input per
+ * source, and OrangeCat's own rows under the three sources.
  *
  * A single input with a mixed accept (image/* plus text extensions) is what an
  * Android phone answers with a chooser of capture apps — Camera, Recorder,
@@ -8,13 +9,30 @@
  * was effectively impossible (2026-10-05).
  */
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { ComposerAddMenu } from '@/components/ai-chat/ModernChatPanel/components/ComposerAddMenu';
 
 vi.mock('next/navigation', () => ({
   usePathname: () => '/',
   useRouter: () => ({ push: vi.fn() }),
 }));
+
+// jsdom has no top layer: the sheet's <dialog> opens by attribute here.
+beforeAll(() => {
+  const proto = HTMLDialogElement.prototype as HTMLDialogElement & {
+    showModal?: () => void;
+    close?: () => void;
+  };
+  if (typeof proto.showModal !== 'function') {
+    proto.showModal = function (this: HTMLDialogElement) {
+      this.setAttribute('open', '');
+    };
+    proto.close = function (this: HTMLDialogElement) {
+      this.removeAttribute('open');
+      this.dispatchEvent(new Event('close'));
+    };
+  }
+});
 
 afterEach(cleanup);
 
@@ -25,7 +43,7 @@ describe('ComposerAddMenu', () => {
   it('renders three inputs, none with a mixed accept', () => {
     const { container } = renderMenu();
     const inputs = Array.from(container.querySelectorAll('input[type="file"]'));
-    const by = Object.fromEntries(inputs.map(i => [i.getAttribute('data-attach-source'), i]));
+    const by = Object.fromEntries(inputs.map(i => [i.getAttribute('data-ck-source'), i]));
     expect(Object.keys(by)).toEqual(['camera', 'photos', 'files']);
     expect(by.camera.getAttribute('accept')).toBe('image/*');
     expect(by.camera.getAttribute('capture')).toBe('environment');
@@ -33,16 +51,19 @@ describe('ComposerAddMenu', () => {
     expect(by.files.hasAttribute('accept')).toBe(false);
   });
 
-  it('each menu item opens its own picker, and a pick reaches onFiles', () => {
+  it('opens a sheet with the sources and the Cat rows; a pick reaches onFiles', () => {
     const onFiles = vi.fn();
     const { container } = renderMenu(onFiles);
-    const files = container.querySelector('input[data-attach-source="files"]') as HTMLInputElement;
+    const files = container.querySelector('input[data-ck-source="files"]') as HTMLInputElement;
     const click = vi.spyOn(files, 'click');
     fireEvent.click(screen.getByRole('button', { name: 'Add files and more' }));
+    expect(container.querySelector('dialog[open]')).toBeTruthy();
     for (const label of ['Take a photo', 'Photo library', 'Files']) {
-      expect(screen.getByRole('menuitem', { name: new RegExp(label) })).toBeTruthy();
+      expect(screen.getByRole('button', { name: new RegExp(label) })).toBeTruthy();
     }
-    fireEvent.click(screen.getByRole('menuitem', { name: /Files/ }));
+    expect(screen.getByRole('link', { name: /Context documents/ })).toBeTruthy();
+    expect(screen.getByRole('link', { name: /Connections/ })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /^Files$/ }));
     expect(click).toHaveBeenCalledOnce();
     const file = new File(['hello'], 'notes.md', { type: 'text/markdown' });
     fireEvent.change(files, { target: { files: [file] } });
