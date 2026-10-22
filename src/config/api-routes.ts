@@ -336,6 +336,11 @@ export const API_ROUTES = {
     CLAIM: (token: string) => `/api/profile-claims/token/${token}/claim`,
     DECLINE: (token: string) => `/api/profile-claims/token/${token}/decline`,
   },
+  /** The answer feedback loop: thumbs under every Cat answer, and the day's transcripts for the fleet's reviewer. */
+  CHAT: {
+    FEEDBACK: '/api/chat/feedback',
+    REVIEW_EXPORT: '/api/chat/review-export',
+  },
   /** Reputation (ADR-0010): your deals, reviewing one, and anyone's public track record. */
   DEALS: {
     BASE: '/api/deals',

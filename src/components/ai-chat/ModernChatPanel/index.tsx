@@ -14,6 +14,8 @@ import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { CAT_SEND_EVENT } from '@/lib/chat/cat-send-event';
+import { postChatFeedback } from '@/lib/chat/feedback';
+import type { AnswerFeedback } from '@bitbaum/chatkit';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 
 import {
@@ -146,9 +148,29 @@ export function ModernChatPanel({
       onMessageSent?.();
     },
     onConversationStarted,
-    onConversationCreated,
+    onConversationCreated: (id: string) => {
+      setCreatedConversationId(id);
+      onConversationCreated?.(id);
+    },
     pageContext,
   });
+
+  // The conversation a thumb belongs to: the one we were given, or the one
+  // the first send of a fresh draft just created. Reset with the prop so a
+  // "New chat" never posts to the thread before it.
+  const [createdConversationId, setCreatedConversationId] = useState<string | null>(null);
+  useEffect(() => {
+    setCreatedConversationId(null);
+  }, [conversationId]);
+  const handleFeedback = useCallback(
+    (feedback: AnswerFeedback) => {
+      const id = conversationId ?? createdConversationId;
+      if (id) {
+        void postChatFeedback(id, feedback);
+      }
+    },
+    [conversationId, createdConversationId]
+  );
 
   const { opener, chips, attachable, dismissOpener, isLoadingSuggestions } = useSuggestions();
 
@@ -332,6 +354,7 @@ export function ModernChatPanel({
               isLast={i === messages.length - 1 && pendingActions.length === 0}
               onActionClick={handleActionClick}
               onQuickReply={handleSuggestionClick}
+              onFeedback={handleFeedback}
               variant={variant}
             />
           ))}

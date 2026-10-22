@@ -234,10 +234,16 @@ const eslintConfig = [
     // Envelope gate (never-twice): API routes speak the standard envelope via
     // apiSuccess/apiError & friends (src/lib/api/standardResponse.ts) — raw
     // NextResponse.json drifts payload shapes and skips error logging. The only
-    // wire-format exceptions are LNURL (protocol-fixed JSON) and the OpenAPI
-    // spec document, carved out below.
+    // wire-format exceptions are LNURL (protocol-fixed JSON), the OpenAPI
+    // spec document, and the fleet chat-review export (chatkit 0.14's
+    // `{product, scope, transcripts}`, read by Loki from every product in
+    // one shape), carved out below.
     files: ['src/app/api/**/*.{ts,tsx}'],
-    ignores: ['src/app/api/lnurlp/**', 'src/app/api/v1/openapi.json/**'],
+    ignores: [
+      'src/app/api/lnurlp/**',
+      'src/app/api/v1/openapi.json/**',
+      'src/app/api/chat/review-export/**',
+    ],
     rules: {
       'no-restricted-syntax': [
         'error',
@@ -246,7 +252,7 @@ const eslintConfig = [
           selector:
             "CallExpression[callee.object.name='NextResponse'][callee.property.name='json']",
           message:
-            "Raw NextResponse.json in an API route — use apiSuccess/apiError (and friends) from '@/lib/api/standardResponse' so every endpoint speaks the standard envelope. Only lnurlp/** and v1/openapi.json/** (fixed wire formats) are exempt.",
+            "Raw NextResponse.json in an API route — use apiSuccess/apiError (and friends) from '@/lib/api/standardResponse' so every endpoint speaks the standard envelope. Only lnurlp/**, v1/openapi.json/** and chat/review-export/** (fixed wire formats) are exempt.",
         },
       ],
     },
