@@ -11,6 +11,8 @@ to the map, sub-bullets stay here for the human reader.
 
 ## 2026-10-22
 
+- **Draft switching protects unsaved writing.** If device storage cannot save, your current draft stays open for retry. Clearing a draft also clears its saved text instead of restoring an older version after navigation.
+
 - **Messages work with keyboard and touch.** New Message closes with Escape and restores focus, the Unread filter says what it shows, and conversation search tolerates typing slips. Failed inquiries offer Retry. The composer clears the mobile bar without a second blank band; shared fields are readable on phones and required textareas enforce validation. A slow session-sync request no longer sends a signed-in reader back to sign-in.
 - **Your articles remain yours to open and edit.** Private article reads, edit/delete controls and profile article lists now use the same author identity as publishing. Followers-only articles check the follow relationship. Writing uses a focused application workspace; published readers remain public.
 
