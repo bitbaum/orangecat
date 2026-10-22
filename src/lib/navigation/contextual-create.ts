@@ -54,14 +54,10 @@ const ROUTE_TO_ENTITY = buildRouteToEntityMap();
  * @returns ContextualCreateAction with type, href, and label
  */
 export function getContextualCreateAction(pathname: string): ContextualCreateAction {
-  // Timeline/Dashboard home - create a post
+  // The global plus always offers writing choices on home and timeline.
+  // A post-only shortcut hides the existing article editor from mobile users.
   if (pathname === ROUTES.TIMELINE || pathname === ROUTES.DASHBOARD.HOME) {
-    return {
-      type: 'post',
-      href: COMPOSE_HREF,
-      label: 'Post',
-      openComposer: true,
-    };
+    return { type: 'menu', href: ROUTES.CREATE, label: 'Create' };
   }
 
   // Check if we're on an entity management page

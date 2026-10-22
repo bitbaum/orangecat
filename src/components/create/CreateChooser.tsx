@@ -35,6 +35,44 @@ export function CreateChooser() {
       <p className="mt-1 text-base text-fg-secondary">{CREATE_PAGE.lede}</p>
 
       <VoiceCreate className="mt-5" />
+      <div className="mt-6 space-y-6">
+        {groups.map(group => (
+          <section key={group.category} aria-labelledby={`create-${group.category}`}>
+            <h2
+              id={`create-${group.category}`}
+              className="mb-2 text-xs font-semibold uppercase tracking-wider text-fg-secondary"
+            >
+              {CREATE_CATEGORY_LABELS[group.category]}
+            </h2>
+            <ul className="divide-y divide-subtle rounded-lg border border-default bg-surface-base">
+              {group.items.map(option => {
+                const Icon = option.icon;
+                return (
+                  <li key={option.href}>
+                    <Link
+                      href={option.href}
+                      className="flex min-h-14 items-center gap-3 px-3 py-3 hover:bg-surface-raised"
+                    >
+                      <span
+                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-md ${option.bgColor}`}
+                      >
+                        <Icon className={`h-5 w-5 ${option.color}`} />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block font-medium text-fg-primary">{option.name}</span>
+                        <span className="block text-sm text-fg-secondary">
+                          {option.description}
+                        </span>
+                      </span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        ))}
+      </div>
+
       <Link
         href={ROUTES.STUDIO}
         className="mt-4 flex min-h-11 items-center justify-between gap-3 rounded-lg border border-default bg-surface-base px-4 py-3 hover:bg-surface-raised"
@@ -61,44 +99,6 @@ export function CreateChooser() {
         </span>
         <ArrowRight className="h-4 w-4 shrink-0 text-fg-tertiary" aria-hidden />
       </Link>
-
-      <div className="mt-6 space-y-6">
-        {groups.map(group => (
-          <section key={group.category} aria-labelledby={`create-${group.category}`}>
-            <h2
-              id={`create-${group.category}`}
-              className="mb-2 text-xs font-semibold uppercase tracking-wider text-fg-secondary"
-            >
-              {CREATE_CATEGORY_LABELS[group.category]}
-            </h2>
-            <ul className="divide-y divide-subtle rounded-lg border border-default bg-surface-base">
-              {group.items.map(option => {
-                const Icon = option.icon;
-                return (
-                  <li key={option.href}>
-                    <Link
-                      href={option.href}
-                      className="flex min-h-14 items-center gap-3 px-3 py-3 hover:bg-surface-raised"
-                    >
-                      <span
-                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-md ${option.bgColor}`}
-                      >
-                        <Icon className={`h-5 w-5 ${option.color}`} />
-                      </span>
-                      <span className="min-w-0">
-                        <span className="block font-medium text-fg-primary">{option.name}</span>
-                        <span className="block truncate text-sm text-fg-secondary">
-                          {option.description}
-                        </span>
-                      </span>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-        ))}
-      </div>
 
       <p className="mt-8 text-sm text-fg-secondary">
         <Link

@@ -1,3 +1,4 @@
+import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
 /**
  * EMPTY STATE — the Cat's turn, before the first message.
  *
@@ -18,7 +19,7 @@
  */
 
 import type { ReactNode } from 'react';
-import { Cat, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CAT_AGENT, CAT_HUB_COPY } from '@/config/cat-hub';
 import { useAuth } from '@/hooks/useAuth';
@@ -79,7 +80,7 @@ export function EmptyState({
           opener && (
             <div className="oc-chat-opener" aria-live="polite">
               <span className="oc-chat-opener-mark" aria-hidden="true">
-                <Cat className="h-4 w-4" />
+                <BrandMarkIcon size={16} />
               </span>
               <div className="min-w-0 flex-1">
                 <p className="text-sm leading-relaxed text-fg-primary">

@@ -2,11 +2,15 @@
 
 ## Evidence and limits
 
-The initial source inventory contains 194 page entrypoints. This is a source audit, not proof that every page works in production. The reported unresponsive plus tap still needs reproduction on the affected mobile browser. The supplied screenshots establish incorrect writing guidance, not the button failure's cause.
+The initial source inventory contains 194 page entrypoints. This is a source audit, not proof that every page works in production. Follow-up screenshots show that the mobile home plus opens the short-post composer directly, hiding the article choice; the contextual create mapper confirms this behavior. Other unresponsive tap reports still need reproduction on the affected mobile browser. The supplied screenshots establish incorrect writing guidance, not the button failure's cause.
 
 ## First repair
 
 The existing article composer supports Markdown, preview, local draft recovery, and AI controls. Article was absent from `buildCreateOptions`, which supplies the header, mobile sheet and create page. Restore it there rather than creating another editor. Replace the header's custom positioning and unconnected keyboard item refs with the existing portalled Radix menu primitive. Give Cat the actual writing routes, without requiring an economic entity.
+
+## Follow-up: installed branding and mobile Create
+
+The mark registry and asset generator already exist, but Cat chrome bypassed them with generic cat icons. The install manifest carried the retired accent and unversioned icon URLs; the service worker used cache-first for images indefinitely. Use the existing BrandMarkIcon in Cat chrome and navigation, generate manifest metadata and icon version URLs with the static assets, and refresh stable brand paths from the network. Home and timeline's plus now open the shared creation catalog. Installed OS launcher artwork may update on the browser's schedule; changing the manifest does not force a launcher refresh immediately.
 
 ## Redesign sequence
 

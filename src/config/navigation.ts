@@ -15,6 +15,7 @@
  */
 
 import { ComponentType, SVGProps } from 'react';
+import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
 import { ROUTES } from './routes';
 import { XBrandIcon, GitHubIcon } from '@/components/icons/BrandIcons';
 import {
@@ -34,7 +35,6 @@ import {
   Info,
   HelpCircle,
   Search,
-  Cat,
   ClipboardList,
   BarChart3,
   Handshake,
@@ -237,7 +237,7 @@ const simplifiedSections: NavSection[] = [
       {
         name: 'Cat',
         href: ROUTES.DASHBOARD.CAT,
-        icon: Cat,
+        icon: BrandMarkIcon,
         description: 'Your AI agent',
         requiresAuth: true,
       },
@@ -426,7 +426,7 @@ export interface MobileTabItem {
 }
 
 export const mobileTabBar: MobileTabItem[] = [
-  { name: 'Cat', href: ROUTES.DASHBOARD.CAT, icon: Cat },
+  { name: 'Cat', href: ROUTES.DASHBOARD.CAT, icon: BrandMarkIcon },
   { name: 'Home', href: ROUTES.DASHBOARD.HOME, icon: Home },
   { name: 'Receive', href: ROUTES.RECEIVE, icon: QrCode, primary: true },
   { name: 'Create', href: ROUTES.CREATE, icon: Plus, opensCreate: true },

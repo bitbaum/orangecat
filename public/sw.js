@@ -3,7 +3,7 @@
  * Provides offline functionality, caching, and push notifications
  */
 
-const CACHE_NAME = 'orangecat-v1.2.0';
+const CACHE_NAME = 'orangecat-v1.3.0';
 
 // Static assets to cache immediately
 // `/offline` removed — no offline page route exists in the app (only the
@@ -77,7 +77,7 @@ self.addEventListener('activate', event => {
       const cacheNames = await caches.keys();
       await Promise.all(
         cacheNames
-          .filter(cacheName => cacheName !== CACHE_NAME)
+          .filter(cacheName => cacheName.startsWith('orangecat-') && cacheName !== CACHE_NAME)
           .map(cacheName => {
             console.log('[SW] Deleting old cache:', cacheName);
             return caches.delete(cacheName);
@@ -125,6 +125,21 @@ async function handleRequest(request) {
   const url = new URL(request.url);
 
   try {
+    // Brand files keep stable paths across releases. Never pin an old logo
+    // in cache-first storage; the manifest carries content-versioned icon URLs.
+    if (
+      [
+        '/manifest.json',
+        '/favicon.svg',
+        '/favicon.ico',
+        '/apple-icon.png',
+        '/images/orange-cat-logo.svg',
+      ].includes(url.pathname) ||
+      url.pathname.startsWith('/icons/')
+    ) {
+      return await networkFirst(request);
+    }
+
     // 1. Network-first strategy (APIs, auth)
     if (NETWORK_FIRST_PATTERNS.some(pattern => pattern.test(url.pathname))) {
       return await networkFirst(request);

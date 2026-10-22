@@ -1,3 +1,4 @@
+import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
 /**
  * MESSAGE BUBBLE COMPONENT
  * Displays a single chat message with avatar and actions
@@ -14,7 +15,7 @@ import {
   type RenderLink,
 } from '@bitbaum/chatkit/react';
 import { cn } from '@/lib/utils';
-import { Cat, User, Check, Clock } from 'lucide-react';
+import { User, Check, Clock } from 'lucide-react';
 import { getModelDisplayName } from '@/config/ai-models';
 import { formatShortTime } from '@/utils/dates';
 import { getModelCapabilities } from '@/config/model-capability';
@@ -257,7 +258,7 @@ export function MessageBubble({
           {isUser ? (
             <User className="h-4 w-4 text-fg-secondary" />
           ) : (
-            <Cat className="h-4 w-4 text-fg-primary" />
+            <BrandMarkIcon size={16} className="text-fg-primary" />
           )}
         </div>
       )}
