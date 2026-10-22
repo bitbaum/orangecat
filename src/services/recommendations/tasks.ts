@@ -121,8 +121,8 @@ export const TASK_DEFINITIONS: TaskDefinition[] = [
   {
     id: 'add-wallet',
     title: 'Add Bitcoin Wallet',
-    description: 'Connect a wallet to receive Bitcoin payments and funding',
-    priority: 'critical',
+    description: 'Connect a wallet when you want to receive Bitcoin payments or funding',
+    priority: 'medium',
     category: 'setup',
     action: { label: 'Manage Wallets', href: ENTITY_REGISTRY['wallet'].basePath },
     icon: Wallet,

@@ -1,6 +1,8 @@
 'use client';
 
 import Link from 'next/link';
+import type { RefObject } from 'react';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { CREATE_OPTIONS, type CreateOption } from '@/config/create-options';
 import { VoiceCreate } from '@/components/create/VoiceCreate';
@@ -12,6 +14,7 @@ interface MobileCreateSheetProps {
   onClose: () => void;
   /** Optional callback when an option is selected (before navigation) */
   onSelect?: (option: CreateOption) => void;
+  returnFocusRef?: RefObject<HTMLButtonElement | null>;
 }
 
 /**
@@ -20,32 +23,38 @@ interface MobileCreateSheetProps {
  * A bottom sheet that displays all create options for mobile users.
  * Used by MobileBottomNav when the "+" button triggers a menu.
  */
-export function MobileCreateSheet({ isOpen, onClose, onSelect }: MobileCreateSheetProps) {
-  if (!isOpen) {
-    return null;
-  }
-
+export function MobileCreateSheet({
+  isOpen,
+  onClose,
+  onSelect,
+  returnFocusRef,
+}: MobileCreateSheetProps) {
   const handleSelect = (option: CreateOption) => {
     onSelect?.(option);
     onClose();
   };
 
   return (
-    <div className="fixed inset-0 z-50" onClick={onClose}>
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200" />
-
-      {/* Sheet */}
-      <div
-        className="absolute bottom-0 left-0 right-0 max-h-[85vh] overflow-y-auto rounded-t-md border-t border-subtle bg-surface-page p-4 pb-8 animate-in slide-in-from-bottom duration-300"
-        onClick={e => e.stopPropagation()}
+    <Dialog
+      open={isOpen}
+      onOpenChange={open => {
+        if (!open) {
+          onClose();
+        }
+      }}
+    >
+      <DialogContent
+        aria-describedby={undefined}
+        className="oc-interface bottom-0 left-0 top-auto z-modal max-h-[85dvh] max-w-none translate-x-0 translate-y-0 gap-3 rounded-t-lg p-4 pb-8 sm:max-w-none sm:rounded-b-none"
         style={{ paddingBottom: 'max(2rem, env(safe-area-inset-bottom))' }}
+        onCloseAutoFocus={event => {
+          if (returnFocusRef?.current) {
+            event.preventDefault();
+            returnFocusRef.current.focus();
+          }
+        }}
       >
-        {/* Handle indicator */}
-        <div className="mx-auto mb-4 h-1 w-12 rounded-sm bg-fg-secondary/20" />
-
-        {/* Header */}
-        <h3 className="text-lg font-semibold text-fg-primary mb-4 px-2">Create New</h3>
+        <DialogTitle className="flex min-h-11 items-center pr-12">Create</DialogTitle>
 
         {/* Speaking beats picking a type you don't know the name of yet. Above
             the grid because it's the faster path, not an afterthought. */}
@@ -67,8 +76,8 @@ export function MobileCreateSheet({ isOpen, onClose, onSelect }: MobileCreateShe
             </Link>
           ))}
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 

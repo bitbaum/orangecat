@@ -1,48 +1,19 @@
 'use client';
 
 /**
- * A single recommended-task row + its priority styling. Extracted from
+ * A single recommended-task row. Extracted from
  * TasksSection.tsx to keep that component under 300 lines. Presentational:
  * the parent owns task state and passes complete/incomplete handlers.
  */
 import { CheckCircle2, Circle, ArrowRight, Target } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { TASK_DEFINITIONS } from '@/services/recommendations/tasks';
-import type { RecommendedTask, TaskPriority } from '@/services/recommendations/types';
+import type { RecommendedTask } from '@/services/recommendations/types';
 import type { LucideIcon } from 'lucide-react';
 
 const TASK_ICON_MAP: Record<string, LucideIcon> = Object.fromEntries(
   TASK_DEFINITIONS.map(task => [task.id, task.icon])
 );
-
-export function getPriorityColor(priority: TaskPriority): string {
-  // Loki semantic tier (migration 6/N): critical + high get
-  // chromatic status tokens; medium + low fade into neutral so the eye
-  // is drawn to actual urgency.
-  switch (priority) {
-    case 'critical':
-      return 'border-status-negative/30 bg-status-negative-subtle text-status-negative';
-    case 'high':
-      return 'border-status-warning/30 bg-status-warning-subtle text-status-warning';
-    case 'medium':
-      return 'border-subtle bg-surface-raised text-fg-secondary';
-    case 'low':
-      return 'border-subtle bg-surface-raised/60 text-fg-tertiary';
-  }
-}
-
-export function getPriorityLabel(priority: TaskPriority): string {
-  switch (priority) {
-    case 'critical':
-      return 'Critical';
-    case 'high':
-      return 'Important';
-    case 'medium':
-      return 'Suggested';
-    case 'low':
-      return 'Optional';
-  }
-}
 
 export function TaskCard({
   task,
@@ -64,8 +35,9 @@ export function TaskCard({
     >
       <button
         onClick={onComplete}
-        className="mt-0.5 flex-shrink-0 text-fg-tertiary transition-colors hover:text-fg-primary"
-        aria-label={isCompleted ? 'Mark as incomplete' : 'Mark as complete'}
+        type="button"
+        className="inline-flex min-h-11 min-w-11 flex-shrink-0 items-center justify-center rounded-md text-fg-tertiary transition-colors hover:bg-surface-raised hover:text-fg-primary"
+        aria-label={`${isCompleted ? 'Mark as incomplete' : 'Mark as complete'}: ${task.title}`}
       >
         {isCompleted ? (
           <CheckCircle2 className="w-5 h-5 text-status-positive" />
@@ -84,11 +56,6 @@ export function TaskCard({
               >
                 {task.title}
               </h4>
-              <span
-                className={`rounded-sm border px-2 py-0.5 text-xs ${getPriorityColor(task.priority)}`}
-              >
-                {getPriorityLabel(task.priority)}
-              </span>
             </div>
 
             <p className="text-sm text-fg-secondary mb-3">{task.description}</p>
