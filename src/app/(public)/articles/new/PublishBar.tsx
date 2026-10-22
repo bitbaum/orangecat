@@ -1,8 +1,8 @@
 'use client';
 
 import Button from '@/components/ui/Button';
-import { cn } from '@/lib/utils';
-import { TIMELINE_SURFACE, TIMELINE_VISIBILITY_OPTIONS } from '@/config/timeline';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
+import { TIMELINE_VISIBILITY_OPTIONS } from '@/config/timeline';
 import { ARTICLE_COPY } from '@/config/articles';
 import type { TimelineVisibility } from '@/types/timeline';
 
@@ -26,27 +26,21 @@ export default function PublishBar({
   onPublish: () => void;
 }) {
   return (
-    <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-subtle pt-4">
-      <div className="flex items-center gap-2">
-        {TIMELINE_VISIBILITY_OPTIONS.map(option => {
-          const Icon = option.Icon;
-          const active = visibility === option.key;
-          return (
-            <button
-              key={option.key}
-              type="button"
-              onClick={() => setVisibility(option.key)}
-              disabled={publishing}
-              className={cn(TIMELINE_SURFACE.chip, active && TIMELINE_SURFACE.chipActive)}
-              title={option.description}
-            >
-              <Icon className="h-4 w-4" />
-              {option.label}
-            </button>
-          );
-        })}
-      </div>
-      <Button variant="accent" onClick={onPublish} disabled={!canPublish} isLoading={publishing}>
+    <div className="mt-6 grid items-end gap-3 border-t border-subtle pt-4 sm:grid-cols-[1fr_auto]">
+      <fieldset disabled={publishing} className="min-w-0">
+        <legend className="mb-2 text-sm font-medium text-fg-primary">Who can read this?</legend>
+        <SegmentedControl
+          label="Article visibility"
+          value={visibility}
+          onChange={setVisibility}
+          items={TIMELINE_VISIBILITY_OPTIONS.map(option => ({
+            value: option.key,
+            label: option.label,
+            icon: option.Icon,
+          }))}
+        />
+      </fieldset>
+      <Button variant="primary" onClick={onPublish} disabled={!canPublish} isLoading={publishing}>
         {isEditing
           ? publishing
             ? ARTICLE_COPY.edit.saving

@@ -116,3 +116,12 @@ describe('local article drafts', () => {
     expect(newDraftId()).not.toBe(newDraftId());
   });
 });
+
+it('keeps the legacy draft when migration cannot write storage', () => {
+  localStorage.setItem(LEGACY_KEY, JSON.stringify({ title: 'Only copy', body: 'Keep it' }));
+  vi.mocked(localStorage.setItem).mockImplementationOnce(() => {
+    throw new Error('Quota exceeded');
+  });
+  expect(listLocalDrafts()).toEqual([]);
+  expect(localStorage.getItem(LEGACY_KEY)).not.toBeNull();
+});
