@@ -1385,6 +1385,14 @@
   }
 }
 
+/* Fixed-height messaging reserves the same bottom bar inside its frame.
+   A second clearance in AppShell or the composer would create a blank band. */
+@media (max-width: 767px) {
+  .app-chat-nav-clearance {
+    padding-bottom: var(--mobile-nav-clearance);
+  }
+}
+
 /*
  * Resting place for the floating Cat launcher on phones: clear of the bottom
  * nav AND of the home indicator. `bottom-20` was measured against the old

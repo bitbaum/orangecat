@@ -11,6 +11,8 @@ to the map, sub-bullets stay here for the human reader.
 
 ## 2026-10-22
 
+- **Messages work with keyboard and touch.** New Message closes with Escape and restores focus, the Unread filter says what it shows, and conversation search tolerates typing slips. Failed inquiries offer Retry. The composer clears the mobile bar without a second blank band; shared fields are readable on phones and required textareas enforce validation. A slow session-sync request no longer sends a signed-in reader back to sign-in.
+
 - **Request and Send start from your people.** Under From and To, before you type, the people you follow, who follow you and whoever you have asked or been asked by — each row saying why they are there. From the first letter the list narrows, and every account with a handle is found, not only the ones that wrote a bio: the person you followed this morning was invisible to the shared search, which lists a profile only once it has said something about itself. While the list has rows, "nobody goes by @me" stays quiet.
 - **Receive is your code, nothing else.** "Add an amount" is gone from under the QR: the code says who you are, the payer types what they owe on the page it opens, and a figure you want from a particular person is a Request. The link under the code no longer wraps a raw BTC decimal across two lines.
 - Wallets: the in-app Receive button is monochrome like every in-app action, the page is called Wallets, and every wallet carries the same mark instead of an emoji.

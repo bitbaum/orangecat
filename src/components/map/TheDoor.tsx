@@ -1,6 +1,9 @@
 /**
  * The door — one sentence in, the right thing out.
  *
+ * Not a search box: this submits an intent to Cat, so searchkit does not apply.
+ * Uses the shared field tokens and Button while retaining native GET submission.
+ *
  * A plain GET form to the Cat: no JavaScript needed, works before sign-in
  * (the middleware sends the visitor through login and back to the Cat with
  * the sentence intact), and the Cat page already auto-sends `?q=` into an
@@ -11,6 +14,8 @@ import { ArrowRight } from 'lucide-react';
 import { ROUTES } from '@/config/routes';
 import { CAT_QUERY_PARAM } from '@/config/cat-door';
 import { cn } from '@/lib/utils';
+import { COMPONENT_STYLES } from '@/config/design-system';
+import Button from '@/components/ui/Button';
 
 interface TheDoorProps {
   /** The question above the box. Defaults to the platform's. */
@@ -26,7 +31,6 @@ export function TheDoor({ prompt, placeholder, className, examples }: TheDoorPro
     <form
       action={ROUTES.DASHBOARD.CAT}
       method="get"
-      role="search"
       aria-label="Tell your Cat what you want to do"
       className={cn('w-full', className)}
     >
@@ -43,15 +47,12 @@ export function TheDoor({ prompt, placeholder, className, examples }: TheDoorPro
           minLength={3}
           maxLength={500}
           placeholder={placeholder ?? 'Describe what you want to do…'}
-          className="min-h-12 min-w-0 flex-1 rounded-md border border-default bg-surface-base px-3 text-base text-fg-primary placeholder:text-fg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className={cn(COMPONENT_STYLES.field.control, 'min-h-12 min-w-0 flex-1 px-3 text-base')}
         />
-        <button
-          type="submit"
-          className="inline-flex min-h-12 items-center justify-center gap-1.5 rounded-md bg-fg-primary px-4 text-sm font-semibold text-fg-inverted hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
+        <Button type="submit" className="min-h-12 gap-1.5">
           Ask Cat
           <ArrowRight className="h-4 w-4" aria-hidden="true" />
-        </button>
+        </Button>
       </div>
       {examples && examples.length > 0 && (
         <ul className="mt-2 flex flex-wrap gap-2" aria-label="Examples">

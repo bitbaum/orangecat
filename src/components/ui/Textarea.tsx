@@ -28,12 +28,13 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           id={textareaId}
           className={cn(
             COMPONENT_STYLES.field.control,
-            'flex min-h-20 px-3 py-2 text-sm',
+            'flex min-h-20 px-3 py-2 text-base sm:text-sm',
             error && COMPONENT_STYLES.field.errorControl,
             className
           )}
           aria-describedby={cn(error && errorId, description && descriptionId)}
           aria-invalid={error ? 'true' : 'false'}
+          required={required}
           ref={ref}
           {...props}
         />

@@ -1,75 +1,14 @@
 'use client';
 
-import Link from 'next/link';
 import { formatRelativeTime } from '@/utils/dates';
 import { Users, MessageSquare, Trash2 } from 'lucide-react';
 import AvatarLink from '@/components/ui/AvatarLink';
 import { cn } from '@/lib/utils';
+import {
+  getConversationDisplayName,
+  getOtherParticipants,
+} from '@/features/messaging/lib/conversation-display';
 import type { Conversation } from '@/features/messaging/types';
-
-function buildProfileHref(participant?: Conversation['participants'][number]): string | null {
-  if (!participant) {
-    return null;
-  }
-  if (
-    participant.username &&
-    typeof participant.username === 'string' &&
-    participant.username.trim()
-  ) {
-    return `/profiles/${encodeURIComponent(participant.username.trim())}`;
-  }
-  if (
-    participant.user_id &&
-    typeof participant.user_id === 'string' &&
-    participant.user_id.trim()
-  ) {
-    return `/profiles/${encodeURIComponent(participant.user_id.trim())}`;
-  }
-  return null;
-}
-
-function getOtherParticipants(
-  conversation: Conversation,
-  currentUserId: string | undefined
-): Conversation['participants'] {
-  return (conversation.participants || []).filter(
-    p => p && p.is_active && p.user_id !== currentUserId
-  );
-}
-
-function getConversationDisplayName(
-  conversation: Conversation,
-  currentUserId: string | undefined
-): string {
-  if (conversation.title) {
-    return conversation.title;
-  }
-  const others = getOtherParticipants(conversation, currentUserId);
-  if (others.length === 1) {
-    return others[0].name || others[0].username || 'Unknown User';
-  }
-  if (others.length === 0) {
-    return 'Notes to Self';
-  }
-  return (
-    others
-      .slice(0, 3)
-      .map(p => p.name || p.username || 'Unknown')
-      .filter(Boolean)
-      .join(', ') + (others.length > 3 ? ` +${others.length - 3}` : '')
-  );
-}
-
-function getConversationProfileHref(
-  conversation: Conversation,
-  currentUserId: string | undefined
-): string | null {
-  if (conversation.is_group) {
-    return null;
-  }
-  const primary = getOtherParticipants(conversation, currentUserId)[0];
-  return buildProfileHref(primary);
-}
 
 function getConversationAvatar(
   conversation: Conversation,
@@ -134,15 +73,22 @@ export function ConversationListItem({
   onDeleteRequest,
 }: ConversationListItemProps) {
   const displayName = getConversationDisplayName(conversation, currentUserId);
-  const profileHref = getConversationProfileHref(conversation, currentUserId);
 
   return (
     <div
-      onPointerDown={onPointerDown}
+      onPointerDown={event => {
+        if (!(event.target as Element).closest('a,button,input')) {
+          onPointerDown(event);
+        }
+      }}
       onPointerEnter={onPointerEnter}
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
-      onClick={onClick}
+      onClick={event => {
+        if (!(event.target as Element).closest('a,button,input')) {
+          onClick();
+        }
+      }}
       className={cn(
         'group flex cursor-pointer items-start gap-3 p-3 transition-colors duration-150 hover:bg-surface-raised/50 sm:p-4',
         isActiveConversation && 'border-l-2 border-fg-primary bg-surface-raised',
@@ -166,36 +112,34 @@ export function ConversationListItem({
         <div className="flex items-start gap-2">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <h3 className="font-medium text-fg-primary truncate">
-                {profileHref ? (
-                  <Link href={profileHref} className="hover:underline">
-                    {displayName}
-                  </Link>
-                ) : (
-                  displayName
-                )}
-              </h3>
+              <button
+                type="button"
+                onClick={onClick}
+                aria-label={`${selectionMode ? 'Select' : 'Open'} conversation with ${displayName}`}
+                aria-current={isActiveConversation ? 'page' : undefined}
+                className="min-h-11 min-w-0 flex-1 break-words rounded-md text-left text-base font-semibold text-fg-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                {displayName}
+              </button>
               {conversation.unread_count > 0 && (
-                <span className="rounded-sm bg-fg-primary px-2 py-0.5 text-[11px] leading-4 text-fg-inverted">
+                <span
+                  aria-label={`${conversation.unread_count} unread messages`}
+                  className="rounded-sm bg-fg-primary px-2 py-0.5 text-[11px] leading-4 text-fg-inverted"
+                >
                   {conversation.unread_count > 99 ? '99+' : conversation.unread_count}
                 </span>
               )}
             </div>
-            <p className="text-sm text-fg-secondary truncate">
+            <p className="line-clamp-2 text-sm text-fg-secondary">
               {conversation.last_message_preview || 'No messages yet'}
             </p>
-            <div className="flex items-center gap-2 text-xs text-fg-secondary">
+            <div className="mt-1 flex items-center gap-2 text-xs text-fg-tertiary">
               <span>
                 {conversation.last_message_at
                   ? formatRelativeTime(conversation.last_message_at)
                   : 'No messages'}
               </span>
-              <span className="h-1 w-1 rounded-sm bg-fg-secondary/40" />
-              <span>
-                {conversation.is_group
-                  ? `${conversation.participants.length} members`
-                  : 'Direct message'}
-              </span>
+              {conversation.is_group && <span>{conversation.participants.length} members</span>}
             </div>
           </div>
           {!selectionMode && (

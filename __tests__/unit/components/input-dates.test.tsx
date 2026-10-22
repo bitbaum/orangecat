@@ -29,7 +29,7 @@ describe('Input with a date type', () => {
     const html = renderToString(
       <Input type="datetime-local" value="2026-10-11T14:30" onChange={() => {}} className="mine" />
     );
-    expect(html).toMatch(/<span class="wk-input [^"]*h-10[^"]*mine"/);
+    expect(html).toMatch(/<span class="wk-input [^"]*min-h-11[^"]*mine"/);
     expect(html).toMatch(/14:30|2:30/);
   });
 

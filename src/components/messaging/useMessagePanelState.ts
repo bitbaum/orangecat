@@ -26,7 +26,7 @@ export function useMessagePanelState({
   const [hasInitializedFromUrl, setHasInitializedFromUrl] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showNewModal, setShowNewModal] = useState(false);
-  const [activeTab, setActiveTab] = useState<'all' | 'requests'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'unread'>('all');
   const [convSelectionMode, setConvSelectionMode] = useState(false);
   const {
     selectedIds: selectedConvIds,
