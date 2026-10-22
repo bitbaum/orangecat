@@ -14,6 +14,10 @@ import { loginE2EUser } from './helpers/login';
 const BASE_URL = process.env.E2E_BASE_URL || process.env.BASE_URL || 'http://localhost:3000';
 const { email: EMAIL, password: PASSWORD } = getE2ECredentials();
 
+// These flows exercise sign-in themselves. Reusing global setup's signed-in
+// state redirects away from the login form as soon as session hydration ends.
+test.use({ storageState: { cookies: [], origins: [] } });
+
 async function login(page: Page) {
   if (!EMAIL || !PASSWORD) {
     test.skip(true, 'Missing E2E_USER_EMAIL/E2E_USER_PASSWORD for authenticated P0 checks');
@@ -29,7 +33,7 @@ test.describe('workflow matrix', () => {
 
   test('@p0 unauthenticated user is redirected from protected dashboard', async ({ page }) => {
     await page.goto(`${BASE_URL}/dashboard`);
-    await expect(page).toHaveURL(/auth|login|signin|dashboard/);
+    await expect(page).toHaveURL(/auth|login|signin/);
   });
 
   test('@p0 auth login works with configured fixture user', async ({ page }) => {

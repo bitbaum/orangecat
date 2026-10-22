@@ -11,7 +11,18 @@ function isTextEntry(el: Element | null): boolean {
     return !el.readOnly && !el.disabled;
   }
   if (el instanceof HTMLInputElement) {
-    const nonText = ['button', 'checkbox', 'radio', 'range', 'color', 'file', 'submit', 'reset', 'image', 'hidden'];
+    const nonText = [
+      'button',
+      'checkbox',
+      'radio',
+      'range',
+      'color',
+      'file',
+      'submit',
+      'reset',
+      'image',
+      'hidden',
+    ];
     return !nonText.includes(el.type) && !el.readOnly && !el.disabled;
   }
   return (el as HTMLElement).isContentEditable === true;
@@ -44,13 +55,24 @@ export function useSoftKeyboard(): boolean {
     }
     const vv = window.visualViewport;
     let tallest = vv?.height ?? window.innerHeight;
+    let pointerHeld = false;
+    let lastOpen = false;
+    let blurTimer: ReturnType<typeof setTimeout> | undefined;
+    let releaseFrame: number | undefined;
 
     const update = () => {
       const height = vv?.height ?? window.innerHeight;
       // Rotation or browser-chrome changes legitimately grow the viewport.
       tallest = Math.max(tallest, height);
       const shrunk = tallest - height > SHRINK_THRESHOLD_PX;
-      setOpen(shrunk || isTextEntry(document.activeElement));
+      const next = shrunk || isTextEntry(document.activeElement);
+      // Blurring a text field happens on pointerdown, before the button's
+      // click. Keep chrome out of the way until that tap has completed.
+      if (pointerHeld && lastOpen && !next) {
+        return;
+      }
+      lastOpen = next;
+      setOpen(next);
     };
     const onOrientation = () => {
       tallest = 0;
@@ -58,13 +80,42 @@ export function useSoftKeyboard(): boolean {
     };
 
     document.addEventListener('focusin', update);
-    // focusout fires before the next element takes focus — re-check after.
-    const onFocusOut = () => setTimeout(update, 0);
+    const onPointerDown = () => {
+      if (releaseFrame !== undefined) {
+        cancelAnimationFrame(releaseFrame);
+      }
+      pointerHeld = true;
+    };
+    const onPointerEnd = () => {
+      if (releaseFrame !== undefined) {
+        cancelAnimationFrame(releaseFrame);
+      }
+      releaseFrame = requestAnimationFrame(() => {
+        releaseFrame = undefined;
+        pointerHeld = false;
+        update();
+      });
+    };
+    // Keyboard-only focus changes still settle on the next task.
+    const onFocusOut = () => {
+      clearTimeout(blurTimer);
+      blurTimer = setTimeout(update, 0);
+    };
+    document.addEventListener('pointerdown', onPointerDown, true);
+    document.addEventListener('pointerup', onPointerEnd, true);
+    document.addEventListener('pointercancel', onPointerEnd, true);
     document.addEventListener('focusout', onFocusOut);
     vv?.addEventListener('resize', update);
     window.addEventListener('orientationchange', onOrientation);
     update();
     return () => {
+      clearTimeout(blurTimer);
+      if (releaseFrame !== undefined) {
+        cancelAnimationFrame(releaseFrame);
+      }
+      document.removeEventListener('pointerdown', onPointerDown, true);
+      document.removeEventListener('pointerup', onPointerEnd, true);
+      document.removeEventListener('pointercancel', onPointerEnd, true);
       document.removeEventListener('focusin', update);
       document.removeEventListener('focusout', onFocusOut);
       vv?.removeEventListener('resize', update);

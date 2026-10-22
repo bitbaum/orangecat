@@ -14,6 +14,8 @@ The supplied conversation-list and message-view screenshots are evidence of inco
 - The messaging frame owns mobile-navigation clearance once, using the shell token and the same soft-keyboard hook as the bottom bar. When typing hides the bar, its clearance is released too. AppShell delegates that space, and the composer no longer adds a hardcoded four-rem blank band on both phone and desktop. Long participant headers can shrink inside the frame.
 - Shared textareas enforce native `required`, rather than only drawing an asterisk. Shared inputs and textareas use 16px phone text and appropriate control heights. The Cat intent form uses shared field tokens and Button; it retains native GET submission and is not mislabeled as search.
 - AuthProvider accepts Supabase's session event without waiting on a redundant server-sync POST. The existing cookie adapter already persists sessions for browser and server. Sign-out clears visible state immediately while offline-queue cleanup runs in the background; cross-tab sign-out also clears that tab's queue.
+- A real project-wizard tap exposed the bottom bar returning between pointerdown and click after a field blurred. The shared soft-keyboard hook now holds chrome hidden through the tap. Chromium confirmed that Next submits and advances to Funding; timing tests also cover keyboard-only blur.
+- The release workflow matrix starts with empty browser storage because its flows explicitly sign in. Reusing global setup's signed-in session redirected away from the login form during fast hydration. The signed-out dashboard case now requires an actual sign-in redirect.
 
 ## Checks and limits
 
