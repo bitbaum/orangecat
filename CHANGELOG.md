@@ -11,6 +11,7 @@ to the map, sub-bullets stay here for the human reader.
 
 ## 2026-10-22
 
+- **A person who cannot receive Bitcoin is no longer a dead end on Send.** The note now says why — they have not added a Bitcoin wallet, so a payment has nowhere to land — and under it, one line: "Message Marco to suggest adding one". It opens your conversation with them with a short, friendly message already written, including a link that shows how to get a wallet. Nothing is sent until you press send, and you can change the words.
 - **Draft switching protects unsaved writing.** If device storage cannot save, your current draft stays open for retry. Clearing a draft also clears its saved text instead of restoring an older version after navigation.
 - **Cat's editor suggestions open the editor.** Recognized Open shortcuts go directly to real creation pages. Automatic memory skips one-off writing requests and routine app praise, checks duplicates within each batch, and respects unavailable memory controls. Several new notes stay compact; failed Undo is visible and memories have a direct review link.
 

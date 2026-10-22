@@ -26,7 +26,11 @@ export const SEND_COPY = {
   recipientExternal:
     "Lightning address — we'll pay it directly. Check the spelling: we can't tell you who owns it.",
   recipientNotFound: (handle: string) => `Nobody on OrangeCat goes by @${handle}.`,
-  recipientCannotReceive: (name: string) => `${name} can't receive Bitcoin yet.`,
+  /** Why: OrangeCat pays into the recipient's own wallet, and they have not connected one. */
+  recipientCannotReceive: (name: string) =>
+    `${name} hasn't added a Bitcoin wallet yet, so a payment has nowhere to land.`,
+  /** The way forward, one line: a message is written for you, you decide whether to send it. */
+  recipientNudge: (name: string) => `Message ${name} to suggest adding one`,
 
   /** Shown once we have read the invoice — consent before spending. */
   invoiceReads: (amount: string) => `This invoice is for ${amount}.`,

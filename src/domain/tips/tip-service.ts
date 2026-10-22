@@ -60,6 +60,8 @@ async function resolveRecipient(
 export interface TipReceiveInfo {
   canReceive: boolean;
   recipientName: string;
+  /** The profile's id — public already (search, follow lists) — so a screen can open a message to them. */
+  recipientId: string;
   methodLabel?: string;
 }
 
@@ -120,6 +122,7 @@ export async function getTipReceiveInfo(
   return {
     canReceive: !!wallet,
     recipientName: recipient.displayName,
+    recipientId: recipient.userId,
     methodLabel: wallet ? METHOD_LABELS[wallet.method] : undefined,
   };
 }
