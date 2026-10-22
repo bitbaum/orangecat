@@ -11,6 +11,8 @@ to the map, sub-bullets stay here for the human reader.
 
 ## 2026-10-22
 
+- **Request and Send find the person as you type.** The field used to resolve an exact username after a pause, so "m" produced "Nobody goes by @m". Now a list of people appears under the field from the same typo-tolerant search as ⌘K; tap one and the handle is filled in.
+
 - **One Cat mark across the app.** Cat's launcher, navigation and chat now use the same mark as the header. Install icons are versioned from that mark, and the app refreshes brand files instead of keeping old images indefinitely. The mobile Create button offers both Article and Post.
 
 - **Write an article from Create.** Article appears alongside Post in the header menu, mobile sheet and Create page. Cat links directly to the article editor without requiring a project. The header menu now supports keyboard navigation and keeps its choices within the available screen space.

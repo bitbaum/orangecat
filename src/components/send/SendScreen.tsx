@@ -190,6 +190,7 @@ export function SendScreen() {
               setRaw(next);
               setError(null);
             }}
+            suggestPeople={destination.kind === 'username' && !/^https?:/i.test(raw)}
           />
 
           {isInvoice ? (

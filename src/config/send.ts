@@ -13,7 +13,7 @@ export const SEND_COPY = {
   subtitle: 'Pay a person, an address, or an invoice. From your own wallet.',
 
   recipientLabel: 'To',
-  recipientPlaceholder: 'Username, lena@wallet.com or an invoice',
+  recipientPlaceholder: 'Name, lena@wallet.com or an invoice',
   scan: 'Scan a code',
   scanTitle: 'Scan a code to pay',
   memoLabel: 'Note',

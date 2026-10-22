@@ -23,6 +23,7 @@ import { Input } from '@/components/ui/Input';
 import { MoneyLoading, MoneyPage } from '@/components/money/MoneyPage';
 import { MoneyReceipt } from '@/components/money/MoneyReceipt';
 import { AmountField } from '@/components/money/AmountField';
+import { PeopleSuggestions } from '@/components/money/PeopleSuggestions';
 import { OptionalNoteField } from '@/components/money/OptionalNoteField';
 import { RequestList } from '@/components/requests/RequestList';
 import { PayerStatus, isRequestablePayer } from '@/components/requests/PayerStatus';
@@ -52,6 +53,8 @@ export function RequestsScreen() {
   const [outgoing, setOutgoing] = useState<PaymentRequestRow[]>([]);
 
   const [payer, setPayer] = useState('');
+  // True once a suggestion was tapped: the list steps aside until they type again.
+  const [picked, setPicked] = useState(false);
   const payerCheck = useRecipientCheck(payer);
   // Empty until typed. An ask for a number the person did not choose is not an ask.
   const [amount, setAmount] = useState(0);
@@ -87,6 +90,7 @@ export function RequestsScreen() {
         note: note || null,
       });
       setPayer('');
+      setPicked(false);
       setNote('');
       load();
     } catch (e) {
@@ -149,12 +153,24 @@ export function RequestsScreen() {
         <Input
           label={REQUEST_COPY.payerLabel}
           value={payer}
-          onChange={e => setPayer(e.target.value)}
+          onChange={e => {
+            setPayer(e.target.value);
+            setPicked(false);
+          }}
           placeholder={REQUEST_COPY.payerPlaceholder}
           autoCapitalize="none"
           autoCorrect="off"
           spellCheck={false}
           className="min-h-11"
+        />
+
+        <PeopleSuggestions
+          query={payer}
+          enabled={!picked && !payer.includes('@')}
+          onPick={handle => {
+            setPayer(handle);
+            setPicked(true);
+          }}
         />
 
         <PayerStatus check={payerCheck} handle={payer} />
