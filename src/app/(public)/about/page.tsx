@@ -1,6 +1,7 @@
+import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
 import React from 'react';
 import { Metadata } from 'next';
-import { Zap, TreePine, Cat } from 'lucide-react';
+import { Zap, TreePine } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { ROUTES } from '@/config/routes';
 
@@ -68,7 +69,7 @@ export default function AboutPage() {
 
             <div className="text-center">
               <div className="w-16 h-16 bg-surface-raised border border-subtle rounded-full flex items-center justify-center mx-auto mb-4">
-                <Cat className="w-8 h-8 text-fg-secondary" />
+                <BrandMarkIcon className="w-8 h-8 text-fg-secondary" />
               </div>
               <h3 className="text-lg font-semibold text-fg-primary mb-2">
                 The Cat is the Interface

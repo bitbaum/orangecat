@@ -1,4 +1,5 @@
-import { Bot, Cat, Landmark } from 'lucide-react';
+import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
+import { Bot, Landmark } from 'lucide-react';
 import type { ComponentType, SVGProps } from 'react';
 import { publicProfilePath } from './public-profile-path';
 import { SOLON_BASE_URL_DEFAULT } from './solon';
@@ -170,7 +171,7 @@ export const ECOSYSTEM_PILLARS: readonly EcosystemPillar[] = [
     fundingUrl: ECOSYSTEM_LINKS.orangeCat,
     fundingBody:
       'Fund the public economic layer for people, projects, groups, products, and services.',
-    icon: Cat,
+    icon: BrandMarkIcon,
     isSelf: true,
   },
   {

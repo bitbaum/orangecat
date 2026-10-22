@@ -1,7 +1,8 @@
 'use client';
 
+import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
 import { useState } from 'react';
-import { Cat, Check, Share2 } from 'lucide-react';
+import { Check, Share2 } from 'lucide-react';
 import { shareIntentUrl } from '@/config/share';
 import { SITE_URL } from '@/config/brand';
 
@@ -64,7 +65,7 @@ export default function ShareButton({ title, url }: { title: string; url: string
         aria-label={`Share "${title}" on OrangeCat`}
         className={buttonClass}
       >
-        <Cat className="h-3.5 w-3.5" />
+        <BrandMarkIcon className="h-3.5 w-3.5" />
         OrangeCat
       </a>
       <a

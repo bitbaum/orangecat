@@ -3,6 +3,8 @@
  * Generate EVERY static brand asset from the one SSOT, src/config/brand-mark.ts
  * (which is src/config/marks/<APP_SLUG>.ts).
  *
+ *   public/manifest.json              brand metadata and versioned install icons
+ *   src/config/brand-assets.json      the same versioned URLs for page metadata
  *   public/favicon.svg                 the mark on a dark rounded square (crisp source of truth)
  *   public/images/orange-cat-logo.svg  identical — the manifest and the service worker point here
  *   public/favicon.ico                 16 / 32 / 48 px, PNG-encoded ICO (every browser since Vista)

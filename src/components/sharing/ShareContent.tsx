@@ -1,7 +1,8 @@
 'use client';
 
+import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
 import { useState } from 'react';
-import { Share2, Mail, Copy, Check, X, Cat } from 'lucide-react';
+import { Share2, Mail, Copy, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { GRADIENTS } from '@/config/gradients';
@@ -31,7 +32,7 @@ export const SHARE_PLATFORMS: SharePlatform[] = [
   // use: /share?url&title opens the composer prefilled.
   {
     name: APP_NAME,
-    icon: Cat,
+    icon: BrandMarkIcon,
     color: 'text-fg-primary',
     bgColor: 'bg-surface-raised hover:bg-surface-raised/80',
     action: (shareUrl, shareTitle) => {
