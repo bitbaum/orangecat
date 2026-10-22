@@ -24,7 +24,11 @@ const LEGACY_KEY = 'oc:draft:article';
 export const MAX_LOCAL_DRAFTS = 20;
 
 function hasStorage(): boolean {
-  return typeof window !== 'undefined' && !!window.localStorage;
+  try {
+    return typeof window !== 'undefined' && !!window.localStorage;
+  } catch {
+    return false;
+  }
 }
 
 function readStore(): LocalArticleDraft[] {
@@ -52,14 +56,15 @@ function readStore(): LocalArticleDraft[] {
   }
 }
 
-function writeStore(drafts: LocalArticleDraft[]): void {
+function writeStore(drafts: LocalArticleDraft[]): boolean {
   if (!hasStorage()) {
-    return;
+    return false;
   }
   try {
     localStorage.setItem(STORE_KEY, JSON.stringify(drafts));
+    return true;
   } catch {
-    /* storage full / disabled — autosave is best-effort */
+    return false;
   }
 }
 
@@ -75,7 +80,7 @@ function migrateLegacyDraft(): void {
     }
     const d = JSON.parse(raw) as Partial<LocalArticleDraft>;
     if (d.title || d.body) {
-      saveLocalDraft({
+      const saved = saveLocalDraft({
         id: newDraftId(),
         title: d.title ?? '',
         excerpt: d.excerpt ?? '',
@@ -84,6 +89,9 @@ function migrateLegacyDraft(): void {
         visibility: d.visibility ?? 'public',
         updatedAt: Date.now(),
       });
+      if (!saved) {
+        return;
+      }
     }
     localStorage.removeItem(LEGACY_KEY);
   } catch {
@@ -105,10 +113,12 @@ export function listLocalDrafts(): LocalArticleDraft[] {
 }
 
 /** Upsert by id; trims the store to MAX_LOCAL_DRAFTS (oldest dropped). */
-export function saveLocalDraft(draft: LocalArticleDraft): void {
+export function saveLocalDraft(draft: LocalArticleDraft): boolean {
   const rest = readStore().filter(d => d.id !== draft.id);
-  const next = [draft, ...rest].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, MAX_LOCAL_DRAFTS);
-  writeStore(next);
+  const next = [draft, ...rest]
+    .sort((a, b) => b.updatedAt - a.updatedAt)
+    .slice(0, MAX_LOCAL_DRAFTS);
+  return writeStore(next);
 }
 
 export function deleteLocalDraft(id: string): void {

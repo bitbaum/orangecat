@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import Button from '@/components/ui/Button';
 import { PenLine } from 'lucide-react';
 import { listPublishedArticles } from '@/services/articles/get-article';
 import ArticleList from '@/components/articles/ArticleList';
@@ -19,22 +20,19 @@ export default async function ArticlesIndexPage() {
   const articles = await listPublishedArticles();
 
   return (
-    <div className="min-h-screen bg-surface-page pt-20 pb-24 text-fg-primary">
+    <div className="min-h-screen bg-surface-page pt-8 pb-24 text-fg-primary">
       <div className="mx-auto w-full max-w-2xl px-5">
-        <header className="mb-10 flex items-end justify-between gap-4">
+        <header className="mb-8 flex items-start justify-between gap-3">
           <div>
             <h1 className="text-3xl font-semibold tracking-display text-fg-primary">
               {ARTICLE_COPY.index.heading}
             </h1>
             <p className="mt-2 text-fg-secondary">{ARTICLE_COPY.index.subheading}</p>
           </div>
-          <Link
-            href={ROUTES.ARTICLES_NEW}
-            className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-md bg-accent-warm px-3.5 py-2 text-sm font-semibold text-on-accent transition-colors hover:bg-accent-warm-hover"
-          >
-            <PenLine className="h-4 w-4" />
-            <span className="hidden sm:inline">{ARTICLE_COPY.index.write}</span>
-          </Link>
+          <Button href={ROUTES.ARTICLES_NEW} variant="primary" className="shrink-0">
+            <PenLine className="mr-2 h-4 w-4" aria-hidden="true" />
+            Write
+          </Button>
         </header>
 
         {articles.length === 0 ? (
@@ -42,7 +40,7 @@ export default async function ArticlesIndexPage() {
             <p className="text-fg-secondary">{ARTICLE_COPY.index.empty}</p>
             <Link
               href={ROUTES.ARTICLES_NEW}
-              className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-accent-warm hover:underline"
+              className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-fg-primary hover:underline"
             >
               <PenLine className="h-4 w-4" />
               {ARTICLE_COPY.index.write}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { TimelineVisibility } from '@/types/timeline';
 import {
   deleteLocalDraft,
@@ -29,7 +29,7 @@ interface DraftSetters {
 /**
  * Local-draft persistence for the article composer: restore-on-mount,
  * debounced autosave, explicit flush (Cmd+S), and draft switching/deletion.
- * Extracted from ArticleComposer.tsx (pure move — behavior unchanged).
+ * Flushes pending edits on navigation and when the page is hidden.
  */
 export function useLocalArticleDrafts(
   isEditing: boolean,
@@ -39,6 +39,8 @@ export function useLocalArticleDrafts(
   const { title, excerpt, coverImage, body, visibility } = fields;
   const { setTitle, setExcerpt, setCoverImage, setBody, setVisibility } = setters;
 
+  const pending = useRef<LocalArticleDraft | null>(null);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [restored, setRestored] = useState(false);
   const [draftId, setDraftId] = useState(() => newDraftId());
   const [otherDrafts, setOtherDrafts] = useState<LocalArticleDraft[]>([]);
@@ -65,46 +67,71 @@ export function useLocalArticleDrafts(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditing]);
 
-  // Autosave (debounced) whenever content changes (new articles only).
-  useEffect(() => {
-    if (isEditing) {
-      return;
-    }
-    if (!title && !body && !excerpt && !coverImage) {
-      return;
-    }
-    const id = setTimeout(() => {
-      saveLocalDraft({
-        id: draftId,
-        title,
-        excerpt,
-        coverImage,
-        body,
-        visibility,
-        updatedAt: Date.now(),
-      });
-    }, 600);
-    return () => clearTimeout(id);
+  // Keep the latest committed edit available to pagehide and unmount, even
+  // when the debounce has not fired. Do not persist during render.
+  useLayoutEffect(() => {
+    pending.current =
+      !isEditing && (title || body || excerpt || coverImage)
+        ? { id: draftId, title, excerpt, coverImage, body, visibility, updatedAt: Date.now() }
+        : null;
   }, [isEditing, draftId, title, excerpt, coverImage, body, visibility]);
 
-  /** Persist the current draft immediately (Cmd/Ctrl+S), bypassing the debounce. */
-  function flushDraftNow() {
-    if (!isEditing && (title || body || excerpt || coverImage)) {
-      saveLocalDraft({
-        id: draftId,
-        title,
-        excerpt,
-        coverImage,
-        body,
-        visibility,
-        updatedAt: Date.now(),
-      });
+  const persistPending = useCallback(() => {
+    const draft = pending.current;
+    if (!draft) {
+      return null;
     }
+    const saved = saveLocalDraft(draft);
+    if (saved) {
+      pending.current = null;
+    }
+    return saved;
+  }, []);
+
+  const flushDraftNow = useCallback(() => {
+    const saved = persistPending();
+    if (saved !== null) {
+      setSaveStatus(saved ? 'saved' : 'error');
+    }
+  }, [persistPending]);
+
+  useEffect(() => {
+    if (!pending.current) {
+      setSaveStatus('idle');
+      return;
+    }
+    setSaveStatus('saving');
+    const timer = setTimeout(flushDraftNow, 600);
+    return () => clearTimeout(timer);
+  }, [isEditing, draftId, title, excerpt, coverImage, body, visibility, flushDraftNow]);
+
+  useEffect(() => {
+    const flush = () => {
+      flushDraftNow();
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') {
+        flush();
+      }
+    };
+    window.addEventListener('pagehide', flush);
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      persistPending();
+      window.removeEventListener('pagehide', flush);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [persistPending, flushDraftNow]);
+
+  // Publishing/discarding must not be resurrected by the unmount flush.
+  function completeDraft() {
+    pending.current = null;
+    deleteLocalDraft(draftId);
   }
 
   /** Delete the current draft and reset to a blank one; other drafts survive. */
   function discardCurrentDraft() {
-    deleteLocalDraft(draftId);
+    completeDraft();
     setTitle('');
     setExcerpt('');
     setCoverImage('');
@@ -117,6 +144,7 @@ export function useLocalArticleDrafts(
 
   /** Switch to another saved draft; the current one is already autosaved. */
   function loadDraft(draft: LocalArticleDraft) {
+    flushDraftNow();
     setTitle(draft.title);
     setExcerpt(draft.excerpt);
     setCoverImage(draft.coverImage);
@@ -134,6 +162,8 @@ export function useLocalArticleDrafts(
 
   return {
     draftId,
+    saveStatus,
+    completeDraft,
     restored,
     setRestored,
     otherDrafts,
