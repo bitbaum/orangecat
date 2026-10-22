@@ -3,7 +3,7 @@
  * Displays a single wallet with balance, actions, and address
  */
 
-import { Pencil, Trash2, Star, RefreshCw, Copy, AlertTriangle } from 'lucide-react';
+import { Pencil, Trash2, Star, RefreshCw, Copy, AlertTriangle, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
 import { WALLET_CATEGORIES } from '@/types/wallet';
 import { WalletForm } from './WalletForm';
@@ -124,8 +124,11 @@ export function WalletCard({
       {/* Header with icon, title, and action buttons */}
       <div className="flex items-start justify-between gap-3 mb-4">
         <div className="flex items-start gap-3 flex-1 min-w-0">
-          <span className="text-3xl sm:text-4xl flex-shrink-0">
-            {wallet.category_icon || categoryInfo.icon}
+          {/* One mark for every wallet: the category is the line under the name.
+              The emoji that sat here was the one coloured picture on a
+              monochrome screen. */}
+          <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-surface-raised text-fg-secondary">
+            <Wallet className="h-5 w-5" aria-hidden="true" />
           </span>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">

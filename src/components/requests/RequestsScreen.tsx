@@ -23,12 +23,13 @@ import { Input } from '@/components/ui/Input';
 import { MoneyLoading, MoneyPage } from '@/components/money/MoneyPage';
 import { MoneyReceipt } from '@/components/money/MoneyReceipt';
 import { AmountField } from '@/components/money/AmountField';
-import { PeopleSuggestions } from '@/components/money/PeopleSuggestions';
+import { PeoplePicker } from '@/components/money/PeoplePicker';
 import { OptionalNoteField } from '@/components/money/OptionalNoteField';
 import { RequestList } from '@/components/requests/RequestList';
 import { PayerStatus, isRequestablePayer } from '@/components/requests/PayerStatus';
 import { useRecipientCheck } from '@/components/send/useRecipientCheck';
 import { useRequireAuth } from '@/hooks/useAuth';
+import { usePeopleFinder } from '@/hooks/usePeopleFinder';
 import {
   createRequest,
   closeRequest,
@@ -56,6 +57,14 @@ export function RequestsScreen() {
   // True once a suggestion was tapped: the list steps aside until they type again.
   const [picked, setPicked] = useState(false);
   const payerCheck = useRecipientCheck(payer);
+  // Your people before you type; everyone with a handle from the first letter.
+  const { people } = usePeopleFinder(payer, !picked && !payer.includes('@'));
+  // While the list has rows, "nobody goes by @me" is a verdict on a half-typed
+  // name; the rows ARE the answer. A found person still reads back.
+  const listAnswers =
+    !picked &&
+    people.length > 0 &&
+    (payerCheck.state === 'checking' || payerCheck.state === 'not_found');
   // Empty until typed. An ask for a number the person did not choose is not an ask.
   const [amount, setAmount] = useState(0);
   const [note, setNote] = useState('');
@@ -164,16 +173,17 @@ export function RequestsScreen() {
           className="min-h-11"
         />
 
-        <PeopleSuggestions
-          query={payer}
-          enabled={!picked && !payer.includes('@')}
-          onPick={handle => {
-            setPayer(handle);
-            setPicked(true);
-          }}
-        />
+        {!picked && (
+          <PeoplePicker
+            people={people}
+            onPick={handle => {
+              setPayer(handle);
+              setPicked(true);
+            }}
+          />
+        )}
 
-        <PayerStatus check={payerCheck} handle={payer} />
+        {!listAnswers && <PayerStatus check={payerCheck} handle={payer} />}
 
         {isRequestablePayer(payerCheck) && (
           <>

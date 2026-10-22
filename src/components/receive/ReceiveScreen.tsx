@@ -131,7 +131,6 @@ export function ReceiveScreen() {
           username={username}
           name={profile?.name ?? username}
           avatarUrl={profile?.avatar_url}
-          withAmount
         />
       )}
       {overview?.rail === 'onchain' && (

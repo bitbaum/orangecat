@@ -11,7 +11,12 @@ to the map, sub-bullets stay here for the human reader.
 
 ## 2026-10-22
 
+- **Request and Send start from your people.** Under From and To, before you type, the people you follow, who follow you and whoever you have asked or been asked by — each row saying why they are there. From the first letter the list narrows, and every account with a handle is found, not only the ones that wrote a bio: the person you followed this morning was invisible to the shared search, which lists a profile only once it has said something about itself. While the list has rows, "nobody goes by @me" stays quiet.
+- **Receive is your code, nothing else.** "Add an amount" is gone from under the QR: the code says who you are, the payer types what they owe on the page it opens, and a figure you want from a particular person is a Request. The link under the code no longer wraps a raw BTC decimal across two lines.
+- Wallets: the in-app Receive button is monochrome like every in-app action, the page is called Wallets, and every wallet carries the same mark instead of an emoji.
+
 - **Home is easier to read on a phone.** Long suggestion and project names wrap, recent activity shares the dashboard's section layout, and the Cat tab replaces the floating button on mobile pages with a bottom bar. Project updates keep their source and full text behind “Read update”. Draft counts stay current; status copy describes Cat approvals rather than claiming nothing is waiting. Failed suggestion dismissals are reported, and cached suggestions no longer propose listing bitcoin as a rentable item.
+
 - **Request and Send find the person as you type.** The field used to resolve an exact username after a pause, so "m" produced "Nobody goes by @m". Now a list of people appears under the field from the same typo-tolerant search as ⌘K; tap one and the handle is filled in.
 
 - **One Cat mark across the app.** Cat's launcher, navigation and chat now use the same mark as the header. Install icons are versioned from that mark, and the app refreshes brand files instead of keeping old images indefinitely. The mobile Create button offers both Article and Post.
