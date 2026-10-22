@@ -1,5 +1,6 @@
+import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
 import Link from 'next/link';
-import { Cat, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { DiscoverChips, pluralLabel } from './DiscoverChips';
 import { DiscoverGrid, DiscoverRail } from './DiscoverRail';
 import { DiscoverSearchBox } from './DiscoverSearchBox';
@@ -124,7 +125,7 @@ function NothingFound({
             href={`${ROUTES.DASHBOARD.CAT}?${CAT_QUERY_PARAM}=${encodeURIComponent(params.q)}`}
             className="oc-problem-action mt-0"
           >
-            <Cat className="h-4 w-4" aria-hidden />
+            <BrandMarkIcon className="h-4 w-4" aria-hidden />
             Ask your Cat
           </Link>
           <Link href={create} className="oc-discover-more">

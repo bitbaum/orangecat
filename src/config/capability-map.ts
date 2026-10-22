@@ -13,8 +13,8 @@
  * fails when a registry type is missing from it, when an intent heading has
  * nothing under it, or when copy uses a word the platform does not use.
  */
+import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
 import {
-  Cat,
   ArrowDownToLine,
   ArrowUpFromLine,
   HandCoins,
@@ -28,7 +28,7 @@ import { ROUTES } from '@/config/routes';
 export interface Capability extends PlainCopy {
   /** Stable id: the entity type, or a feature key. */
   id: string;
-  icon: LucideIcon;
+  icon: LucideIcon | typeof BrandMarkIcon;
   /** Where "Start" goes. */
   startHref: string;
   /** Where "See yours" goes, when the capability produces things of yours. */
@@ -108,7 +108,7 @@ export const FEATURE_CAPABILITIES: readonly Capability[] = [
   {
     id: 'cat',
     intent: 'cat',
-    icon: Cat,
+    icon: BrandMarkIcon,
     verb: 'Ask your Cat to do it',
     what: 'Say what you want in a sentence; the Cat proposes the one thing, you confirm. Every action shows you a card before it happens.',
     example: '"Help me raise money for the school roof."',

@@ -5,8 +5,9 @@
  * The Cat chat remains the way through when that chain fails.
  */
 
+import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
 import { useState } from 'react';
-import { Cat, ArrowLeft, Sparkles } from 'lucide-react';
+import { ArrowLeft, Sparkles } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { OnboardingOffers } from '@/components/onboarding/OnboardingOffers';
 import { OnboardingPay } from '@/components/onboarding/OnboardingPay';
@@ -145,7 +146,7 @@ export default function IntelligentOnboarding() {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-md border border-subtle bg-surface-raised">
-            <Cat className="h-8 w-8 text-fg-primary" />
+            <BrandMarkIcon className="h-8 w-8 text-fg-primary" />
           </div>
           {offers ? (
             <>

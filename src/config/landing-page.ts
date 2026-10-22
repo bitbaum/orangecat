@@ -14,7 +14,8 @@
  * Last updated: 2026-03-01 — Aligned with vision: Cat-centric, universal payments, pseudonymous-by-default
  */
 
-import { LucideIcon, Globe, Lock, Wallet, Cat, TrendingUp } from 'lucide-react';
+import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
+import { LucideIcon, Globe, Lock, Wallet, TrendingUp } from 'lucide-react';
 import { GRADIENTS } from '@/config/gradients';
 
 // The "what you can do" grid used to be a hand-written list here, a second
@@ -29,7 +30,7 @@ import { GRADIENTS } from '@/config/gradients';
  */
 interface HowItWorksStep {
   number: string;
-  icon: LucideIcon;
+  icon: LucideIcon | typeof BrandMarkIcon;
   title: string;
   description: string;
   iconGradient: string;
@@ -47,7 +48,7 @@ export const HOW_IT_WORKS_STEPS: HowItWorksStep[] = [
   },
   {
     number: '2',
-    icon: Cat,
+    icon: BrandMarkIcon,
     title: 'Meet Your Cat',
     description:
       'Your AI economic agent is ready. Tell it what you want to do — sell, fund, lend, invest, or coordinate.',
@@ -136,14 +137,14 @@ export const PLATFORM_COMPARISON: ComparisonRow[] = [
  * Key benefits of using OrangeCat
  */
 interface PlatformBenefit {
-  icon: LucideIcon;
+  icon: LucideIcon | typeof BrandMarkIcon;
   title: string;
   description: string;
 }
 
 export const PLATFORM_BENEFITS: PlatformBenefit[] = [
   {
-    icon: Cat,
+    icon: BrandMarkIcon,
     title: 'Your AI Cat',
     description:
       'Cat is your personal economic agent. It sets up entities, manages activity, and acts on your behalf.',

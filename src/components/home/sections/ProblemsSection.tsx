@@ -1,4 +1,4 @@
-import { Cat } from 'lucide-react';
+import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
 import Button from '@/components/ui/Button';
 import { CTA_LABELS } from '@/config/landing-page';
 import { PROBLEMS_SECTION } from '@/config/problems-we-solve';
@@ -41,7 +41,7 @@ export default function ProblemsSection() {
             size="lg"
             className="w-full sm:w-auto w-full sm:w-auto"
           >
-            <Cat className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+            <BrandMarkIcon className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
             {CTA_LABELS.primaryAction}
           </Button>
         </div>

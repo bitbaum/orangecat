@@ -1,8 +1,8 @@
 'use client';
 
+import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
 import EntityDashboardPage from '@/components/entity/EntityDashboardPage';
 import { documentEntityConfig, type DocumentListItem } from '@/config/entities/documents';
-import { Cat } from 'lucide-react';
 
 /**
  * Documents Dashboard Page
@@ -19,7 +19,7 @@ function CatInfoBanner() {
     <div className="mb-4 rounded-md border border-subtle bg-surface-raised/30 p-4">
       <div className="flex items-start gap-3">
         <div className="rounded-md border border-subtle bg-surface-page p-2">
-          <Cat className="h-5 w-5 text-fg-primary" />
+          <BrandMarkIcon className="h-5 w-5 text-fg-primary" />
         </div>
         <div>
           <h3 className="font-medium text-fg-primary">Help your Cat understand you</h3>

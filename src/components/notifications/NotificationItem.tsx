@@ -1,9 +1,9 @@
 'use client';
 
+import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
 import {
   Bell,
   Calendar,
-  Cat,
   Check,
   Bitcoin,
   Users,
@@ -98,7 +98,7 @@ export function NotificationItem({
                   className="flex min-h-11 min-w-11 items-center justify-center rounded-md p-1 hover:bg-surface-page"
                   title="Ask the Cat about this"
                 >
-                  <Cat className="w-3 h-3 text-fg-primary" />
+                  <BrandMarkIcon className="w-3 h-3 text-fg-primary" />
                 </button>
               )}
               {!notification.is_read && (

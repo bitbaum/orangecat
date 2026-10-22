@@ -222,7 +222,10 @@ describe('selection is worth doing', () => {
     // rewritten SHORTER than before while covering five kinds). ~95
     // characters; the examples and the rules live in the tool definitions and
     // in code (services/cat/following-scope.ts, social-watches.ts).
-    expect(remaining).toBeLessThanOrEqual(5_030);
+    // +220 for writing routes: the article editor must remain discoverable even
+    // when section selection misses a writing intent. These are capabilities,
+    // not entity proposals; the paths come from ROUTES.
+    expect(remaining).toBeLessThanOrEqual(5_250);
   });
 
   it('selects by default now, and still sends everything when told to', async () => {

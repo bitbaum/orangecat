@@ -196,6 +196,18 @@ const nextConfig = {
     const isDevelopment = process.env.NODE_ENV !== 'production';
 
     return [
+      ...[
+        '/manifest.json',
+        '/sw.js',
+        '/favicon.svg',
+        '/favicon.ico',
+        '/apple-icon.png',
+        '/images/orange-cat-logo.svg',
+        '/icons/:path*',
+      ].map(source => ({
+        source,
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=0, must-revalidate' }],
+      })),
       {
         source: '/(.*)',
         headers: [

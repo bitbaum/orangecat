@@ -1,4 +1,5 @@
-import { MessageSquare, type LucideIcon } from 'lucide-react';
+import { FileText, MessageSquare, type LucideIcon } from 'lucide-react';
+import { ROUTES } from '@/config/routes';
 import {
   COLOR_CLASSES,
   getEntitiesForCreateMenu,
@@ -20,7 +21,7 @@ export interface CreateOption {
 
 export const CREATE_PAGE = {
   title: 'Create',
-  lede: 'Say it, or pick a type.',
+  lede: 'Write an article, share an update, or start something new.',
   /** The way out for the person the list does not answer: the map. */
   browseAll: 'Not sure which one? See everything you can do, explained.',
 } as const;
@@ -51,13 +52,22 @@ export function buildCreateOptions(): CreateOption[] {
   const post: CreateOption = {
     name: 'Post',
     description: 'Share an update on your timeline',
-    href: '/timeline?compose=true',
+    href: `${ROUTES.TIMELINE}?compose=true`,
     icon: MessageSquare,
     color: 'text-fg-primary',
     bgColor: 'bg-surface-raised',
     category: 'content',
   };
-  return [post, ...getEntitiesForCreateMenu().map(optionFromEntity)];
+  const article: CreateOption = {
+    name: 'Article',
+    description: 'Write a long-form article with drafts and preview',
+    href: ROUTES.ARTICLES_NEW,
+    icon: FileText,
+    color: 'text-fg-primary',
+    bgColor: 'bg-surface-raised',
+    category: 'content',
+  };
+  return [article, post, ...getEntitiesForCreateMenu().map(optionFromEntity)];
 }
 
 export const CREATE_OPTIONS = buildCreateOptions();

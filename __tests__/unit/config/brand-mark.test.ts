@@ -19,7 +19,8 @@
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { APP_SLUG } from '@/config/brand';
+import { createHash } from 'node:crypto';
+import { APP_NAME, APP_DESCRIPTION, BRAND_ACCENT_HEX, APP_SLUG } from '@/config/brand';
 import { BRAND_MARK } from '@/config/brand-mark';
 import { MARKS, markFor } from '@/config/marks';
 import { CAT_COIL, catCoilPathD } from '@/config/marks/generators/cat-coil';
@@ -110,7 +111,7 @@ describe('the static brand assets are generated from the brand mark', () => {
     };
     expect(manifest.icons.length).toBeGreaterThan(0);
     for (const icon of manifest.icons) {
-      const rel = join('public', icon.src);
+      const rel = join('public', icon.src.split('?')[0]);
       expect(existsSync(join(ROOT, rel))).toBe(true);
       const bytes = read(rel);
       if (icon.type === 'image/png') {
@@ -145,4 +146,53 @@ describe('the cat coil generator', () => {
     expect(Math.abs(left.y - right.y)).toBeLessThan(0.5);
     expect(Math.abs(CAT_COIL.cx - left.x - (right.x - CAT_COIL.cx))).toBeLessThan(0.5);
   });
+});
+
+describe('installed brand freshness', () => {
+  it('versions every install icon from the canonical mark and uses brand metadata', () => {
+    const manifest = JSON.parse(read('public/manifest.json').toString());
+    const version = createHash('sha256')
+      .update(iconSvg(BRAND_MARK) + iconSvg(BRAND_MARK, { maskable: true }))
+      .digest('hex')
+      .slice(0, 12);
+    expect(manifest.short_name).toBe(APP_NAME);
+    expect(manifest.description).toBe(APP_DESCRIPTION);
+    expect(manifest.theme_color).toBe(BRAND_ACCENT_HEX);
+    for (const icon of manifest.icons) expect(icon.src).toContain(`?v=${version}`);
+    const assets = JSON.parse(read('src/config/brand-assets.json').toString());
+    for (const url of Object.values(assets)) expect(url).toContain(`?v=${version}`);
+  });
+});
+
+it.each([
+  ['public/apple-icon.png', 180],
+  ['public/icons/icon-192.png', 192],
+  ['public/icons/icon-512.png', 512],
+  ['public/icons/icon-512-maskable.png', 512],
+] as const)('%s has a visible mark at its declared size', async (file, size) => {
+  const { default: sharp } = await import('sharp');
+  const image = sharp(read(file));
+  const metadata = await image.metadata();
+  expect([metadata.width, metadata.height]).toEqual([size, size]);
+  // Compare the shipped raster to an independent render of the canonical SVG.
+  // Allow renderer antialiasing differences, but reject an old or blank logo.
+  const actual = await image.clone().ensureAlpha().raw().toBuffer();
+  const expected = await sharp(
+    Buffer.from(iconSvg(BRAND_MARK, { maskable: file.includes('maskable') }))
+  )
+    .resize(size, size)
+    .ensureAlpha()
+    .raw()
+    .toBuffer();
+  let difference = 0;
+  for (let index = 0; index < actual.length; index++) {
+    difference += Math.abs(actual[index] - expected[index]);
+  }
+  expect(difference / actual.length).toBeLessThan(4);
+  const { channels } = await image.stats();
+  for (const channel of channels.slice(0, 3)) {
+    expect(channel.max).toBeGreaterThan(200);
+    expect(channel.mean).toBeGreaterThan(15);
+    expect(channel.mean).toBeLessThan(200);
+  }
 });

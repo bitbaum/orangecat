@@ -1,3 +1,4 @@
+import brandAssets from '@/config/brand-assets.json';
 import localFont from 'next/font/local';
 import { ECOSYSTEM } from '@/config/ecosystem';
 
@@ -101,10 +102,10 @@ export const metadata: Metadata = {
   icons: {
     // All generated from src/config/brand-mark.ts by `pnpm run generate:brand`.
     icon: [
-      { url: '/favicon.ico', sizes: '48x48', type: 'image/x-icon' },
-      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: brandAssets.ico, sizes: '48x48', type: 'image/x-icon' },
+      { url: brandAssets.favicon, type: 'image/svg+xml' },
     ],
-    apple: '/apple-icon.png',
+    apple: brandAssets.apple,
   },
   appleWebApp: {
     capable: true,

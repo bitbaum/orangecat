@@ -3,6 +3,8 @@
  * Generate EVERY static brand asset from the one SSOT, src/config/brand-mark.ts
  * (which is src/config/marks/<APP_SLUG>.ts).
  *
+ *   public/manifest.json              brand metadata and versioned install icons
+ *   src/config/brand-assets.json      the same versioned URLs for page metadata
  *   public/favicon.svg                 the mark on a dark rounded square (crisp source of truth)
  *   public/images/orange-cat-logo.svg  identical — the manifest and the service worker point here
  *   public/favicon.ico                 16 / 32 / 48 px, PNG-encoded ICO (every browser since Vista)
@@ -28,18 +30,55 @@
 
 import './lib/register-ts.mjs';
 
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 // Whatever mark src/config/marks/<APP_SLUG>.ts holds — generated or imported.
+const { APP_NAME, APP_DESCRIPTION, APP_TAGLINE, BRAND_ACCENT_HEX } =
+  await import('../src/config/brand.ts');
+const { ICON_STYLE } = await import('../src/lib/brand/mark-svg.ts');
 const { BRAND_MARK } = await import('../src/config/brand-mark.ts');
 const { iconSvg } = await import('../src/lib/brand/mark-svg.ts');
 
 const tileSvg = iconSvg(BRAND_MARK);
 const maskableSvg = iconSvg(BRAND_MARK, { maskable: true });
+const version = createHash('sha256')
+  .update(tileSvg + maskableSvg)
+  .digest('hex')
+  .slice(0, 12);
+const assetUrl = path => `${path}?v=${version}`;
+const assets = {
+  favicon: assetUrl('/favicon.svg'),
+  ico: assetUrl('/favicon.ico'),
+  apple: assetUrl('/apple-icon.png'),
+};
+const manifest = JSON.parse(readFileSync(join(ROOT, 'public/manifest.json'), 'utf8'));
+Object.assign(manifest, {
+  name: `${APP_NAME} — ${APP_TAGLINE}`,
+  short_name: APP_NAME,
+  description: APP_DESCRIPTION,
+  theme_color: BRAND_ACCENT_HEX,
+  background_color: ICON_STYLE.canvas,
+  icons: [
+    { src: assets.favicon, sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
+    ...[192, 512].map(size => ({
+      src: assetUrl(`/icons/icon-${size}.png`),
+      sizes: `${size}x${size}`,
+      type: 'image/png',
+      purpose: 'any',
+    })),
+    {
+      src: assetUrl('/icons/icon-512-maskable.png'),
+      sizes: '512x512',
+      type: 'image/png',
+      purpose: 'maskable',
+    },
+  ],
+});
 
 function write(rel, data) {
   const out = join(ROOT, rel);
@@ -119,3 +158,5 @@ write('public/icons/icon-512.png', await png(tileSvg, 512));
 write('public/icons/icon-512-maskable.png', await png(maskableSvg, 512));
 
 await browser.close();
+write('src/config/brand-assets.json', `${JSON.stringify(assets, null, 2)}\n`);
+write('public/manifest.json', `${JSON.stringify(manifest, null, 2)}\n`);

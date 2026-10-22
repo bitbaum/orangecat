@@ -4,7 +4,8 @@
  */
 
 import { useRouter } from 'next/navigation';
-import { Cat, Trash2, Settings2 } from 'lucide-react';
+import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
+import { Trash2, Settings2 } from 'lucide-react';
 import { ROUTES } from '@/config/routes';
 import { ModelSelector } from './ModelSelector';
 import { QuotaMeter } from './QuotaMeter';
@@ -33,7 +34,7 @@ export function ChatHeader({
     <div className="flex items-center justify-between px-4 py-3 border-b border-subtle">
       <div className="flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-md border border-subtle bg-surface-raised">
-          <Cat className="h-5 w-5 text-fg-primary" />
+          <BrandMarkIcon size={20} className="text-fg-primary" />
         </div>
         <div>
           <h1 className="font-semibold text-fg-primary">Cat</h1>

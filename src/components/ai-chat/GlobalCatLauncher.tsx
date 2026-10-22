@@ -3,10 +3,11 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Cat, X, Maximize2 } from 'lucide-react';
+import { X, Maximize2 } from 'lucide-react';
 import { ModernChatPanel } from '@/components/ai-chat/ModernChatPanel/index';
 import { describePageForCat } from '@/config/cat-page-context';
 import { ROUTES } from '@/config/routes';
+import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
 import { cn } from '@/lib/utils';
 import { useSoftKeyboard } from '@/hooks/useSoftKeyboard';
 
@@ -87,15 +88,15 @@ export default function GlobalCatLauncher() {
           // never to sit on the Cat (its host contract, widget/host-scan.ts).
           data-fc-avoid=""
           className={cn(
-            'app-fab-anchor fixed right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-accent-warm text-on-accent shadow-lg md:right-6',
-            'transition-all duration-200 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-warm focus-visible:ring-offset-2',
+            'app-fab-anchor fixed right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-fg-primary text-fg-inverted shadow-lg md:right-6',
+            'transition-all duration-200 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
             // Still focusable while faded: a keyboard user never triggers the
             // scroll state, and hiding it from them would be a regression.
             scrolling && 'pointer-events-none opacity-0 focus-visible:opacity-100'
           )}
           title="Ask Cat about this page"
         >
-          <Cat className="h-6 w-6" />
+          <BrandMarkIcon size={24} />
         </button>
       )}
 
@@ -118,8 +119,8 @@ export default function GlobalCatLauncher() {
           >
             <header className="flex items-center justify-between border-b border-default px-4 py-3">
               <div className="flex min-w-0 items-center gap-2">
-                <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md bg-accent-warm/10 text-accent-warm">
-                  <Cat className="h-4 w-4" />
+                <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md bg-surface-raised text-fg-primary">
+                  <BrandMarkIcon size={16} />
                 </span>
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-fg-primary">Cat</p>

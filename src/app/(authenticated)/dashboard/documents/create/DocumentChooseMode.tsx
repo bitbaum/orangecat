@@ -1,7 +1,8 @@
 'use client';
 
+import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
 import Link from 'next/link';
-import { ArrowLeft, Upload, PenLine, Cat, FileText, Sparkles } from 'lucide-react';
+import { ArrowLeft, Upload, PenLine, FileText, Sparkles } from 'lucide-react';
 import { ROUTES } from '@/config/routes';
 
 interface Props {
@@ -22,7 +23,7 @@ export function DocumentChooseMode({ onUpload, onWrite }: Props) {
         </Link>
         <div className="flex items-center gap-3 mb-2">
           <div className="rounded-md border border-subtle bg-surface-raised p-2">
-            <Cat className="h-6 w-6 text-fg-primary" />
+            <BrandMarkIcon className="h-6 w-6 text-fg-primary" />
           </div>
           <h1 className="text-3xl font-bold text-fg-primary">Create Cat Context</h1>
         </div>
