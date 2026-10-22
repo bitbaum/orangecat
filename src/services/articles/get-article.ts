@@ -8,12 +8,12 @@ import { cache } from 'react';
 import { createServerClient } from '@/lib/supabase/server';
 import { looseClient } from '@/lib/supabase/untyped';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
-import { getUserActorId } from '@/domain/actors';
+import { DATABASE_TABLES } from '@/config/database-tables';
 import { logger } from '@/utils/logger';
 import { ARTICLE_METADATA_FLAG } from '@/config/articles';
 import type { Article, ArticleMetadataPayload } from './types';
 
-interface ActorData {
+interface AuthorProfileData {
   id: string;
   username?: string;
   display_name?: string;
@@ -28,11 +28,11 @@ interface EnrichedArticleRow {
   event_timestamp: string;
   is_deleted: boolean | null;
   actor_id: string;
-  actor_data: ActorData | null;
+  actor_data: AuthorProfileData | null;
   metadata: { is_article?: boolean; article?: ArticleMetadataPayload } | null;
 }
 
-const ENRICHED_VIEW = 'enriched_timeline_events';
+const ENRICHED_VIEW = DATABASE_TABLES.ENRICHED_TIMELINE_EVENTS;
 
 /** Columns needed to render an article — never `select('*')`. */
 const ARTICLE_COLUMNS =
@@ -40,11 +40,15 @@ const ARTICLE_COLUMNS =
 
 function rowToArticle(row: EnrichedArticleRow): Article | null {
   const payload = row.metadata?.article;
-  if (!payload?.slug || typeof payload.body !== 'string') {
+  if (
+    !payload?.slug ||
+    typeof payload.body !== 'string' ||
+    !['public', 'followers', 'private'].includes(row.visibility ?? '')
+  ) {
     return null;
   }
 
-  const actor = row.actor_data;
+  const profile = row.actor_data;
   return {
     id: row.id,
     slug: payload.slug,
@@ -53,21 +57,21 @@ function rowToArticle(row: EnrichedArticleRow): Article | null {
     body: payload.body,
     coverImage: payload.cover_image || undefined,
     readingTime: payload.reading_time ?? 1,
-    visibility: (row.visibility as Article['visibility']) ?? 'public',
+    visibility: row.visibility as Article['visibility'],
     publishedAt: row.event_timestamp,
     author: {
-      id: actor?.id ?? row.actor_id,
-      name: actor?.display_name || actor?.username || 'Unknown',
-      username: actor?.username,
-      avatarUrl: actor?.avatar_url,
+      id: profile?.id ?? row.actor_id,
+      name: profile?.display_name || profile?.username || 'Unknown',
+      username: profile?.username,
+      avatarUrl: profile?.avatar_url,
     },
-    authorActorId: row.actor_id,
+    authorProfileId: row.actor_id,
   };
 }
 
 /**
  * Fetch a single article by slug. Non-public articles are returned only to their
- * author (the server client carries the viewer's session cookies), otherwise null.
+ * author or an eligible follower (the server client carries session cookies).
  *
  * React cache(): generateMetadata and the page body both call this with the
  * same slug in one request — without dedupe the DB round-trip (plus two auth
@@ -94,17 +98,28 @@ export const getArticleBySlug = cache(async (slug: string): Promise<Article | nu
     }
 
     if (article.visibility !== 'public') {
-      // Non-public articles are visible only to their author. Compare via actor
-      // id (author.id / user.id are different id spaces).
       const {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) {
         return null;
       }
-      const viewerActorId = await getUserActorId(supabase, user.id);
-      if (!viewerActorId || viewerActorId !== article.authorActorId) {
-        return null;
+      // This legacy timeline FK references profiles(id), not actors(id).
+      // Match the same profile identity that the writer and RLS policies use.
+      if (user.id !== article.authorProfileId) {
+        if (article.visibility !== 'followers') {
+          return null;
+        }
+        const { data: follow, error: followError } = await supabase
+          .from(DATABASE_TABLES.FOLLOWS)
+          .select('follower_id')
+          .eq('follower_id', user.id)
+          .eq('following_id', article.authorProfileId)
+          .limit(1)
+          .maybeSingle();
+        if (followError || !follow) {
+          return null;
+        }
       }
     }
 
@@ -115,22 +130,14 @@ export const getArticleBySlug = cache(async (slug: string): Promise<Article | nu
   }
 });
 
-/**
- * Whether the current (session) viewer is the article's author. Compares actor
- * ids (author.id / user.id are different id spaces). Used to gate owner-only
- * edit/delete affordances — the mutations are independently RLS-protected.
- */
-export async function isCurrentUserArticleAuthor(authorActorId: string): Promise<boolean> {
+/** Timeline authors are profile IDs, as defined by the table FK and RLS. */
+export async function isCurrentUserArticleAuthor(authorProfileId: string): Promise<boolean> {
   try {
     const supabase = await createServerClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) {
-      return false;
-    }
-    const viewerActorId = await getUserActorId(supabase, user.id);
-    return !!viewerActorId && viewerActorId === authorActorId;
+    return !!user && user.id === authorProfileId;
   } catch {
     return false;
   }
@@ -202,7 +209,7 @@ export async function listPublicArticleRefs(
  * List one author's articles, newest first. Public articles are visible to
  * everyone; non-public (followers/private) ones are included only when the
  * viewer is the author (`includeNonPublic`). `authorUserId` is an auth user id —
- * resolved to the owning actor id to match the article rows.
+ * the profile id referenced by timeline_events.actor_id.
  */
 export async function listArticlesByAuthor(
   authorUserId: string,
@@ -211,21 +218,21 @@ export async function listArticlesByAuthor(
   const { includeNonPublic = false, limit = 50 } = options;
   try {
     const supabase = await createServerClient();
-    const actorId = await getUserActorId(supabase, authorUserId);
-    if (!actorId) {
-      return [];
-    }
+    const {
+      data: { user },
+    } = includeNonPublic ? await supabase.auth.getUser() : { data: { user: null } };
+    const canIncludeNonPublic = includeNonPublic && user?.id === authorUserId;
 
     let query = supabase
       .from(ENRICHED_VIEW)
       .select(ARTICLE_COLUMNS)
       .eq(`metadata->>${ARTICLE_METADATA_FLAG}`, 'true')
-      .eq('actor_id', actorId)
+      .eq('actor_id', authorUserId)
       .eq('is_deleted', false)
       .order('event_timestamp', { ascending: false })
       .limit(limit);
 
-    if (!includeNonPublic) {
+    if (!canIncludeNonPublic) {
       query = query.eq('visibility', 'public');
     }
 

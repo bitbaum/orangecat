@@ -85,7 +85,7 @@ export default async function ArticlePage({ params }: PageProps) {
   // exists, so there is nothing to sanitize away.
   const { blocks, toc } = parseLongform(article.body);
 
-  const isOwner = await isCurrentUserArticleAuthor(article.authorActorId);
+  const isOwner = await isCurrentUserArticleAuthor(article.authorProfileId);
 
   const jsonLd = {
     '@context': 'https://schema.org',

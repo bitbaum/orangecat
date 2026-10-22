@@ -24,10 +24,9 @@ export interface Article {
   visibility: 'public' | 'followers' | 'private';
   publishedAt: string;
   author: ArticleAuthor;
-  /** The owning actor id (timeline_events.actor_id) — for ownership checks.
-   *  NOTE: this is an actor id, not an auth user id; resolve the viewer's actor
-   *  via getUserActorId before comparing. */
-  authorActorId: string;
+  /** Profile ID from timeline_events.actor_id (FK to profiles.id).
+   * This legacy column is not an ID from the actors table. */
+  authorProfileId: string;
 }
 
 /** The payload persisted at `metadata.article`. */
