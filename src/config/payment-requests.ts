@@ -14,7 +14,7 @@ export const REQUEST_COPY = {
   subtitle: 'Ask someone on OrangeCat. They can pay or decline.',
 
   payerLabel: 'From',
-  payerPlaceholder: 'Their username',
+  payerPlaceholder: 'Name or username',
 
   /** Live payer resolution — see PayerStatus for why these differ from /send. */
   payerChecking: 'Looking them up…',
