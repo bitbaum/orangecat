@@ -1,86 +1,61 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
-import { useDropdown } from '@/hooks/useDropdown';
 import { cn } from '@/lib/utils';
 import { HeaderIconButton } from '@/components/layout/HeaderIconButton';
 import { CREATE_OPTIONS, shouldShowDivider } from '@/config/create-options';
 import { VoiceCreate } from '@/components/create/VoiceCreate';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 
 export function HeaderCreateButton() {
-  const { isOpen, dropdownRef, buttonRef, toggle, close } = useDropdown({
-    closeOnRouteChange: true,
-    keyboardNavigation: true,
-    itemCount: CREATE_OPTIONS.length,
-  });
+  const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="relative" ref={dropdownRef}>
-      <HeaderIconButton
-        ref={buttonRef}
-        icon={Plus}
-        label="Create new"
-        variant="inverse"
-        active={isOpen}
-        onClick={toggle}
-        aria-expanded={isOpen}
-        aria-haspopup="true"
-        iconClassName={cn('transition-transform duration-200', isOpen && 'rotate-45')}
-      />
-
-      {isOpen && (
-        <div
-          className="fixed z-50 overflow-hidden rounded-md border border-subtle bg-surface-base shadow-none animate-in fade-in slide-in-from-top-2 zoom-in-95 duration-200 origin-top-right"
-          style={{
-            top: buttonRef.current ? buttonRef.current.getBoundingClientRect().bottom + 12 : 'auto',
-            right: buttonRef.current
-              ? Math.max(16, window.innerWidth - buttonRef.current.getBoundingClientRect().right)
-              : 'auto',
-            width: Math.min(320, window.innerWidth - 32),
-          }}
-          role="menu"
-          aria-orientation="vertical"
-          aria-label="Create new"
-        >
-          <div className="p-2 max-h-[70vh] overflow-y-auto">
-            <div className="px-3 py-2 text-xs font-semibold text-fg-secondary uppercase tracking-wider">
-              Create New
-            </div>
-            {/* First row, styled as a row: naming the thing out loud is faster
-                than finding it in a list of fourteen, and doesn't require
-                knowing our vocabulary for it. It reads as part of the menu
-                rather than a panel bolted on top of one. */}
-            <div className="space-y-0.5">
-              <VoiceCreate onNavigate={close} />
-              {CREATE_OPTIONS.map((option, index) => (
-                <div key={option.name}>
-                  <Link
-                    href={option.href}
-                    onClick={close}
-                    className="group flex items-center gap-3 rounded-md px-3 py-2.5 transition-colors hover:bg-surface-raised"
-                    role="menuitem"
-                    tabIndex={isOpen ? 0 : -1}
-                  >
-                    <div className="oc-icon-tile h-9 w-9">
-                      <option.icon className={cn('w-4 h-4', option.color)} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-fg-primary transition-colors group-hover:text-fg-primary">
-                        {option.name}
-                      </div>
-                      <div className="text-xs text-fg-secondary truncate">{option.description}</div>
-                    </div>
-                  </Link>
-                  {shouldShowDivider(option, CREATE_OPTIONS[index + 1]) && (
-                    <div className="my-1.5 mx-3 border-t border-subtle" />
-                  )}
+    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+      <DropdownMenuTrigger asChild>
+        <HeaderIconButton
+          icon={Plus}
+          label="Create new"
+          variant="inverse"
+          active={isOpen}
+          iconClassName={cn('transition-transform duration-200', isOpen && 'rotate-45')}
+        />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="end"
+        sideOffset={12}
+        collisionPadding={16}
+        className="w-80 max-w-[calc(100vw-2rem)] max-h-[var(--radix-dropdown-menu-content-available-height)] overflow-y-auto p-2"
+        aria-label="Create new"
+      >
+        <DropdownMenuLabel>Create new</DropdownMenuLabel>
+        <VoiceCreate onNavigate={() => setIsOpen(false)} />
+        {CREATE_OPTIONS.map((option, index) => (
+          <div key={option.href}>
+            <DropdownMenuItem asChild className="min-h-11 gap-3 px-3 py-2.5">
+              <Link href={option.href}>
+                <div className="oc-icon-tile h-9 w-9 shrink-0">
+                  <option.icon className={cn('h-4 w-4', option.color)} aria-hidden />
                 </div>
-              ))}
-            </div>
+                <div className="min-w-0 flex-1">
+                  <div className="font-medium text-fg-primary">{option.name}</div>
+                  <div className="text-xs text-fg-secondary">{option.description}</div>
+                </div>
+              </Link>
+            </DropdownMenuItem>
+            {shouldShowDivider(option, CREATE_OPTIONS[index + 1]) && <DropdownMenuSeparator />}
           </div>
-        </div>
-      )}
-    </div>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

@@ -9,6 +9,10 @@ reads, and [orangecat.ch/changelog](https://orangecat.ch/changelog) renders
 it from there. One `## YYYY-MM-DD` heading per day; bullets under it travel
 to the map, sub-bullets stay here for the human reader.
 
+## 2026-10-22
+
+- **Write an article from Create.** Article appears alongside Post in the header menu, mobile sheet and Create page. Cat links directly to the article editor without requiring a project. The header menu now supports keyboard navigation and keeps its choices within the available screen space.
+
 ## 2026-10-21
 
 ### Changed
