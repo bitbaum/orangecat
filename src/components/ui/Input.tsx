@@ -38,7 +38,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     const descriptionId = `${inputId}-description`;
     const controlClass = cn(
       COMPONENT_STYLES.field.control,
-      'block h-10 px-3 text-sm',
+      'block min-h-11 px-3 text-base sm:text-sm',
       error && COMPONENT_STYLES.field.errorControl,
       Icon && 'pl-10',
       className

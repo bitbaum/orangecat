@@ -9,6 +9,7 @@ import { useRealtimeSubscription } from './useRealtimeSubscription';
 import { useConversationsFetcher } from './useConversationsFetcher';
 import { API_ROUTES } from '@/config/api-routes';
 import { DATABASE_TABLES } from '@/config/database-tables';
+import { createConversationSearch } from '../lib/conversation-search';
 
 export function useConversations(searchQuery: string, selectedConversationId?: string | null) {
   const { user, hydrated, isLoading: authLoading, isAuthenticated } = useAuth();
@@ -115,24 +116,16 @@ export function useConversations(searchQuery: string, selectedConversationId?: s
     enabled: isAuthReady && !!user,
   });
 
+  const searcher = useMemo(
+    () => createConversationSearch(Array.isArray(conversations) ? conversations : [], user?.id),
+    [conversations, user?.id]
+  );
   const filtered = useMemo(() => {
-    const q = (searchQuery || '').toLowerCase();
-    if (!q) {
+    if (!searchQuery?.trim()) {
       return Array.isArray(conversations) ? conversations : [];
     }
-    if (!Array.isArray(conversations)) {
-      return [];
-    }
-    return conversations.filter(c => {
-      if (c.title && c.title.toLowerCase().includes(q)) {
-        return true;
-      }
-      return (c.participants || []).some(
-        p =>
-          (p.name || '').toLowerCase().includes(q) || (p.username || '').toLowerCase().includes(q)
-      );
-    });
-  }, [conversations, searchQuery]);
+    return searcher.search(searchQuery, { relax: false }).map(hit => hit.item);
+  }, [conversations, searchQuery, searcher]);
 
   const removeLocal = useCallback(
     (ids: string[]) => {

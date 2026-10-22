@@ -186,6 +186,8 @@ export function getRouteSurface(pathname: string): RouteSurface {
 /** Shell chrome overrides for routes that need a focused, low-distraction layout. */
 export interface RouteChrome {
   hideMobileBottomNav: boolean;
+  /** Fixed-height messaging reserves the bottom bar inside its own frame. */
+  ownsMobileNavClearance: boolean;
   preferCollapsedSidebar: boolean;
   /** The floating Cat launcher. Hidden where a conversation IS the page. */
   hideGlobalCat: boolean;
@@ -218,6 +220,7 @@ export function getRouteChrome(pathname: string): RouteChrome {
   const focus = isCatHubPath(pathname) || isCompanionTalkPath(pathname);
   return {
     hideMobileBottomNav: focus,
+    ownsMobileNavClearance: matchesPrefix(pathname, [ROUTES.MESSAGES]),
     preferCollapsedSidebar: focus,
     // A create/edit form has its own Cat (the "Fill with AI" bar at the top).
     // The floating button over it was a second Cat on the same screen, and it

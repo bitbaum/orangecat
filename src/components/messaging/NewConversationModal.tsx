@@ -4,10 +4,11 @@ import { logger } from '@/utils/logger';
 import { API_ROUTES } from '@/config/api-routes';
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { X, Search, MessageSquare, Loader2 } from 'lucide-react';
-import Button from '@/components/ui/Button';
+import { Search, MessageSquare, Loader2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import { apiErrorMessage } from '@/lib/api/errorMessage';
+import Input from '@/components/ui/Input';
+import { openConversationFor } from '@/features/messaging/open-conversation.client';
 
 type ProfileLite = {
   id: string;
@@ -23,6 +24,7 @@ interface NewConversationModalProps {
   onCreated: (conversationId: string) => void;
   /** Pre-fill with a specific user to message */
   initialUserId?: string;
+  returnFocusRef?: React.RefObject<HTMLButtonElement | null>;
 }
 
 export default function NewConversationModal({
@@ -30,6 +32,7 @@ export default function NewConversationModal({
   onClose,
   onCreated,
   initialUserId,
+  returnFocusRef,
 }: NewConversationModalProps) {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
@@ -41,14 +44,12 @@ export default function NewConversationModal({
   const abortRef = useRef<AbortController | null>(null);
 
   const fetchProfiles = useCallback(async (q: string) => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
     try {
       setLoading(true);
       setError(null);
-      if (abortRef.current) {
-        abortRef.current.abort();
-      }
-      const controller = new AbortController();
-      abortRef.current = controller;
       const url = q
         ? `${API_ROUTES.PROFILES.BASE}?limit=20&search=${encodeURIComponent(q)}`
         : `${API_ROUTES.PROFILES.BASE}?limit=20`;
@@ -63,8 +64,13 @@ export default function NewConversationModal({
         : Array.isArray(data.data?.data)
           ? data.data.data
           : [];
-      setProfiles(arr);
+      if (!controller.signal.aborted) {
+        setProfiles(arr);
+      }
     } catch (e) {
+      if (controller.signal.aborted) {
+        return;
+      }
       interface ErrorWithName {
         name?: string;
       }
@@ -74,7 +80,9 @@ export default function NewConversationModal({
       }
       setError(e instanceof Error ? e.message : 'Failed to load people');
     } finally {
-      setLoading(false);
+      if (abortRef.current === controller && !controller.signal.aborted) {
+        setLoading(false);
+      }
     }
   }, []);
 
@@ -84,39 +92,7 @@ export default function NewConversationModal({
         setCreatingId(profileId);
         setError(null);
 
-        // Use /api/messages/open which handles self / direct / group cases
-        const res = await fetch(API_ROUTES.MESSAGES.OPEN, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'same-origin',
-          body: JSON.stringify({ participantIds: [profileId] }),
-        });
-
-        const data = await res.json();
-
-        // Handle wrapped response format from apiSuccess
-        const conversationId = data.data?.conversationId || data.conversationId;
-
-        if (!res.ok || !conversationId) {
-          // This chain was a hand-rolled apiErrorMessage that got the first
-          // link wrong: `data.error` is the envelope's `{ code, message }`
-          // object, so it won the `||` and the thrown Error read
-          // "[object Object]". The remaining links are this endpoint's extra
-          // postgrest detail, kept as a fallback behind the shared reader.
-          const errorMessage = apiErrorMessage(
-            data,
-            data.details || data.hint || 'Failed to create conversation'
-          );
-          logger.error('Failed to create conversation:', {
-            status: res.status,
-            error: data.error,
-            details: data.details,
-            code: data.code,
-            hint: data.hint,
-            responseData: data,
-          });
-          throw new Error(errorMessage);
-        }
+        const conversationId = await openConversationFor([profileId]);
         // Note: onCreated handler in parent already closes the modal via setShowNewModal(false)
         onCreated(conversationId);
       } catch (e) {
@@ -131,14 +107,15 @@ export default function NewConversationModal({
 
   useEffect(() => {
     if (isOpen) {
-      fetchProfiles('');
-      // Focus search input when modal opens
-      setTimeout(() => inputRef.current?.focus(), 100);
+      setSearch('');
+      setProfiles([]);
+      void fetchProfiles('');
     }
     return () => {
       if (timeoutRef.current) {
         window.clearTimeout(timeoutRef.current);
       }
+      abortRef.current?.abort();
     };
   }, [isOpen, fetchProfiles]);
 
@@ -162,49 +139,50 @@ export default function NewConversationModal({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-modal bg-black/50 flex items-center justify-center p-0 md:p-4"
-      onClick={e => {
-        if (e.target === e.currentTarget) {
+    <Dialog
+      open={isOpen}
+      onOpenChange={open => {
+        if (!open) {
           onClose();
         }
       }}
     >
-      {/* Full-screen below md: a centered card left the bottom search rows
-          sharing screen space with the fixed mobile nav / Ask Cat FAB corner
-          on short phones — a full-bleed sheet removes that shared corridor
-          entirely instead of relying on winning a z-index fight every time. */}
-      <div className="flex h-full w-full flex-col overflow-hidden bg-surface-page animate-in fade-in duration-200 md:h-auto md:w-full md:max-w-md md:zoom-in-95 md:rounded-md md:border md:border-subtle">
-        {/* Header */}
-        <div className="p-4 border-b border-subtle flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-fg-primary">New Message</h3>
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            className="flex min-h-11 min-w-11 items-center justify-center rounded-md p-2 transition-colors hover:bg-surface-raised hover:text-fg-primary"
-          >
-            <X className="w-5 h-5 text-fg-secondary" />
-          </button>
+      <DialogContent
+        aria-describedby={undefined}
+        className="oc-interface left-0 top-0 z-modal flex h-[var(--app-viewport-height,100dvh)] max-h-none max-w-none translate-x-0 translate-y-0 flex-col gap-0 rounded-none border-0 p-0 md:left-1/2 md:top-1/2 md:h-auto md:max-h-[90vh] md:max-w-md md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-md md:border"
+        onOpenAutoFocus={event => {
+          event.preventDefault();
+          inputRef.current?.focus();
+        }}
+        onCloseAutoFocus={event => {
+          if (returnFocusRef?.current) {
+            event.preventDefault();
+            returnFocusRef.current.focus();
+          }
+        }}
+      >
+        <div className="border-b border-subtle p-4 pr-16">
+          <DialogTitle className="flex min-h-11 items-center text-lg">New message</DialogTitle>
         </div>
-
-        {/* Search */}
-        <div className="p-4 border-b border-subtle">
-          <div className="relative">
-            <Search className="w-5 h-5 text-fg-tertiary absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              ref={inputRef}
-              value={search}
-              onChange={e => handleChange(e.target.value)}
-              placeholder="Search by name or @username"
-              className="w-full rounded-md border border-subtle bg-surface-raised py-3 pl-11 pr-4 text-sm text-fg-primary placeholder:text-fg-secondary transition-colors focus:bg-surface-page focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-          </div>
+        <div className="border-b border-subtle p-4">
+          <Input
+            ref={inputRef}
+            type="search"
+            icon={Search}
+            label="Find a person"
+            aria-label="Find a person to message"
+            value={search}
+            onChange={event => handleChange(event.target.value)}
+            placeholder="Name or @username"
+          />
         </div>
 
         {/* Error message */}
         {error && (
           <div className="border-b border-status-negative/20 bg-status-negative/10 px-4 py-3">
-            <p className="text-sm text-status-negative">{error}</p>
+            <p role="alert" className="text-sm text-status-negative">
+              {error}
+            </p>
           </div>
         )}
 
@@ -229,67 +207,45 @@ export default function NewConversationModal({
           ) : (
             <div className="py-2">
               {profiles.map(p => (
-                <div
+                <button
+                  type="button"
                   key={p.id}
-                  role="button"
-                  tabIndex={0}
-                  aria-disabled={!!creatingId}
+                  disabled={!!creatingId}
                   className={cn(
-                    'flex w-full items-center gap-3 rounded-md px-4 py-3 text-left transition-colors hover:bg-surface-raised',
+                    'flex w-full items-center gap-3 rounded-md px-4 py-3 text-left transition-colors hover:bg-surface-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60',
                     creatingId === p.id && 'opacity-60'
                   )}
-                  onClick={() => {
-                    if (!creatingId) {
-                      startConversation(p.id);
-                    }
-                  }}
-                  onKeyDown={e => {
-                    if (creatingId) {
-                      return;
-                    }
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      startConversation(p.id);
-                    }
-                  }}
+                  onClick={() => startConversation(p.id)}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element -- avatar_url is a free-form user URL (any host); next/image would throw for hosts outside images.remotePatterns */}
                   <img
                     src={p.avatar_url || '/default-avatar.svg'}
                     alt={p.name || p.username || 'User'}
-                    className="h-11 w-11 rounded-md bg-surface-raised object-cover"
+                    className="h-11 w-11 shrink-0 rounded-md bg-surface-raised object-cover"
                   />
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-fg-primary truncate">
+                  <span className="min-w-0 flex-1">
+                    <span className="block break-words font-medium text-fg-primary">
                       {p.name || p.username || 'User'}
-                    </div>
+                    </span>
                     {/* Only when the handle adds information beyond the title above —
                         a profile with no name already shows its handle there, so
                         repeating "@handle" underneath is pure noise, worse on
                         narrow screens where both lines truncate. */}
                     {p.username && p.name && p.name !== p.username && (
-                      <div className="text-sm text-fg-secondary truncate">@{p.username}</div>
+                      <span className="block break-words text-sm text-fg-secondary">
+                        @{p.username}
+                      </span>
                     )}
-                  </div>
-                  <Button
-                    size="sm"
-                    disabled={!!creatingId && creatingId !== p.id}
-                    className="flex-shrink-0 bg-fg-primary text-fg-inverted hover:bg-fg-primary/90"
-                    onClick={e => {
-                      e.stopPropagation();
-                      if (!creatingId) {
-                        startConversation(p.id);
-                      }
-                    }}
-                  >
-                    {creatingId === p.id ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Message'}
-                  </Button>
-                </div>
+                  </span>
+                  <span className="shrink-0 text-sm text-fg-secondary">
+                    {creatingId === p.id ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Message'}
+                  </span>
+                </button>
               ))}
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

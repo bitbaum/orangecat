@@ -13,7 +13,7 @@ interface ConversationListProps {
   searchQuery: string;
   selectedConversationId: string | null;
   onSelectConversation: (conversationId: string) => void;
-  filterTab?: 'all' | 'requests';
+  filterTab?: 'all' | 'unread';
   selectionMode?: boolean;
   selectedIds?: Set<string>;
   onToggleSelect?: (id: string) => void;
@@ -136,7 +136,7 @@ export default function ConversationList({
   const conversationsArray = Array.isArray(conversations) ? conversations : [];
 
   const filteredConversations = conversationsArray.filter(conversation => {
-    if (filterTab === 'requests') {
+    if (filterTab === 'unread') {
       return conversation.unread_count > 0;
     }
     if (!searchQuery) {
@@ -187,14 +187,18 @@ export default function ConversationList({
 
   return (
     <>
-      <div className="divide-y divide-fg-tertiary">
+      <div className="divide-y divide-subtle">
         {filteredConversations.length === 0 ? (
           <div className="p-10 text-center text-fg-secondary">
             <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-60" />
             <p className="text-sm font-medium">
-              {searchQuery ? 'No conversations match your search' : 'No conversations yet'}
+              {searchQuery
+                ? 'No conversations match your search'
+                : filterTab === 'unread'
+                  ? 'No unread conversations'
+                  : 'No conversations yet'}
             </p>
-            {!searchQuery && (
+            {!searchQuery && filterTab !== 'unread' && (
               <>
                 <p className="mt-1 text-xs text-fg-tertiary">
                   Start a new conversation to get started.

@@ -60,12 +60,7 @@ export default function MessageComposer({
   };
 
   return (
-    <div
-      className="border-t border-subtle bg-surface-page p-3 pb-safe sm:p-4 md:pb-4"
-      style={{
-        paddingBottom: 'max(0.75rem, calc(0.75rem + env(safe-area-inset-bottom, 0px) + 4rem))',
-      }}
-    >
+    <div className="shrink-0 border-t border-subtle bg-surface-page p-3 sm:p-4">
       {showActorSelector && selectedActor && (
         <MessageActorSelector
           selectedActor={selectedActor}
@@ -100,9 +95,10 @@ export default function MessageComposer({
             aria-activedescendant={
               mentions.open ? `dm-mention-option-${mentions.activeIndex}` : undefined
             }
+            aria-label="Message"
             placeholder="Type a message..."
             className={cn(
-              'w-full resize-none rounded-md border border-subtle py-2.5 pl-3 pr-3 text-sm sm:py-3 sm:pl-4 sm:pr-4 sm:text-base',
+              'w-full resize-none rounded-md border border-subtle py-2.5 pl-3 pr-3 text-base sm:py-3 sm:pl-4 sm:pr-4 sm:text-base',
               'bg-surface-page text-fg-primary',
               'focus:outline-none focus:ring-2 focus:ring-ring focus:border-interactive',
               'max-h-32 min-h-11',

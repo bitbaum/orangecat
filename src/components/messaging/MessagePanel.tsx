@@ -1,8 +1,11 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useRef } from 'react';
 import { MessageSquare, Search, Plus, ArrowLeft } from 'lucide-react';
 import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import ConversationList from './ConversationList';
@@ -16,6 +19,7 @@ import { APP_CONTENT_HEIGHT_CLASS } from '@/config/layout-chrome';
 import { useRealtimeManager } from '@/hooks/useRealtimeManager';
 import { ConnectionStatusIndicator } from './ConnectionStatusIndicator';
 import { useMessagePanelState } from './useMessagePanelState';
+import { useSoftKeyboard } from '@/hooks/useSoftKeyboard';
 import { MessagePanelLoading } from './MessagePanelLoading';
 
 interface MessagePanelProps {
@@ -34,6 +38,8 @@ export default function MessagePanel({
   fullPage = false,
 }: MessagePanelProps) {
   const router = useRouter();
+  const keyboardOpen = useSoftKeyboard();
+  const newConversationRef = useRef<HTMLButtonElement>(null);
   const { user, hydrated, isLoading } = useAuth();
   useRealtimeManager();
 
@@ -79,7 +85,7 @@ export default function MessagePanel({
   const content = (
     <div
       className={cn(
-        'relative flex h-full flex-col overflow-hidden bg-surface-page md:flex-row',
+        'oc-interface relative flex h-full min-h-0 flex-col overflow-hidden bg-surface-page md:flex-row',
         fullPage ? 'w-full rounded-none' : 'w-full max-w-5xl rounded-md border border-subtle'
       )}
     >
@@ -91,7 +97,7 @@ export default function MessagePanel({
           fullPage && 'w-full md:w-[23rem]'
         )}
       >
-        <div className="flex items-center justify-between border-b border-subtle bg-surface-page p-4">
+        <div className="flex flex-col gap-3 border-b border-subtle bg-surface-page p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
             {!fullPage && (
               <Button
@@ -143,6 +149,7 @@ export default function MessagePanel({
               </>
             )}
             <Button
+              ref={newConversationRef}
               size="sm"
               onClick={() => setShowNewModal(true)}
               className="bg-fg-primary text-fg-inverted hover:bg-fg-primary/90"
@@ -154,32 +161,23 @@ export default function MessagePanel({
         </div>
 
         <div className="space-y-3 border-b border-subtle bg-surface-page p-4">
-          <div className="flex items-center gap-2">
-            {(['all', 'requests'] as const).map(tab => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={cn(
-                  'rounded-md border px-3 py-1.5 text-sm font-medium transition-colors',
-                  activeTab === tab
-                    ? 'border-strong bg-surface-raised text-fg-primary'
-                    : 'border-subtle bg-surface-page text-fg-secondary hover:bg-surface-raised'
-                )}
-              >
-                {tab === 'all' ? 'All' : 'Requests'}
-              </button>
-            ))}
-          </div>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-fg-tertiary" />
-            <input
-              type="text"
-              placeholder="Search conversations"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className="w-full rounded-md border border-subtle bg-surface-page py-3 pl-10 pr-4 text-sm text-fg-primary placeholder:text-fg-tertiary transition-colors focus:border-interactive focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-          </div>
+          <SegmentedControl
+            label="Conversation filter"
+            items={[
+              { value: 'all', label: 'All' },
+              { value: 'unread', label: 'Unread' },
+            ]}
+            value={activeTab}
+            onChange={setActiveTab}
+          />
+          <Input
+            type="search"
+            label="Search conversations"
+            icon={Search}
+            placeholder="Name or message"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+          />
         </div>
 
         <div className="flex-1 overflow-y-auto">
@@ -260,6 +258,7 @@ export default function MessagePanel({
       />
 
       <NewConversationModal
+        returnFocusRef={newConversationRef}
         isOpen={showNewModal}
         onClose={() => setShowNewModal(false)}
         onCreated={convId => {
@@ -273,7 +272,17 @@ export default function MessagePanel({
   );
 
   if (fullPage) {
-    return <div className={cn(APP_CONTENT_HEIGHT_CLASS, className)}>{content}</div>;
+    return (
+      <div
+        className={cn(
+          APP_CONTENT_HEIGHT_CLASS,
+          !keyboardOpen && 'app-chat-nav-clearance',
+          className
+        )}
+      >
+        {content}
+      </div>
+    );
   }
 
   return (

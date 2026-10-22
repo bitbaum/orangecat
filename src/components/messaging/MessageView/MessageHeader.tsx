@@ -11,45 +11,15 @@
 import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Users } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { GRADIENTS } from '@/config/gradients';
 import Button from '@/components/ui/Button';
 import AvatarLink from '@/components/ui/AvatarLink';
+import { getConversationDisplayName } from '@/features/messaging/lib/conversation-display';
 import type { Conversation, Participant } from '@/features/messaging/types';
 
 interface MessageHeaderProps {
   conversation: Conversation;
   currentUserId: string | undefined;
   onBack: () => void;
-}
-
-/**
- * Get the display name for a conversation
- */
-function getDisplayName(conversation: Conversation, currentUserId: string | undefined): string {
-  if (conversation.title) {
-    return conversation.title;
-  }
-
-  const participants = conversation.participants || [];
-  const otherParticipants = participants.filter(
-    p => p && p.is_active && p.user_id !== currentUserId
-  );
-
-  if (otherParticipants.length === 1) {
-    return otherParticipants[0].name || otherParticipants[0].username || 'Unknown User';
-  }
-
-  if (otherParticipants.length === 0) {
-    return 'Notes to Self';
-  }
-
-  return (
-    otherParticipants
-      .slice(0, 3)
-      .map(p => p.name || p.username)
-      .join(', ') + (otherParticipants.length > 3 ? ` +${otherParticipants.length - 3}` : '')
-  );
 }
 
 /**
@@ -68,7 +38,7 @@ function getPrimaryParticipant(
 }
 
 export default function MessageHeader({ conversation, currentUserId, onBack }: MessageHeaderProps) {
-  const displayName = getDisplayName(conversation, currentUserId);
+  const displayName = getConversationDisplayName(conversation, currentUserId);
   const primaryParticipant = getPrimaryParticipant(conversation, currentUserId);
 
   const subtitle = conversation.is_group
@@ -77,7 +47,7 @@ export default function MessageHeader({ conversation, currentUserId, onBack }: M
 
   return (
     <div className="flex items-center justify-between p-4 border-b border-default bg-surface-base">
-      <div className="flex items-center gap-3">
+      <div className="flex min-w-0 flex-1 items-center gap-3">
         <Button
           variant="ghost"
           size="sm"
@@ -98,12 +68,7 @@ export default function MessageHeader({ conversation, currentUserId, onBack }: M
             className="flex-shrink-0"
           />
         ) : conversation.is_group ? (
-          <div
-            className={cn(
-              GRADIENTS.brandTiffanyBr,
-              'w-10 h-10 rounded-full flex items-center justify-center text-white'
-            )}
-          >
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-raised text-fg-primary">
             <Users className="w-5 h-5" />
           </div>
         ) : null}
@@ -120,10 +85,10 @@ export default function MessageHeader({ conversation, currentUserId, onBack }: M
               }
               className="hover:underline"
             >
-              <h2 className="truncate font-semibold text-fg-primary">{displayName}</h2>
+              <h2 className="break-words text-base font-semibold text-fg-primary">{displayName}</h2>
             </Link>
           ) : (
-            <h2 className="truncate font-semibold text-fg-primary">{displayName}</h2>
+            <h2 className="break-words text-base font-semibold text-fg-primary">{displayName}</h2>
           )}
           <p className="truncate text-sm text-fg-secondary">{subtitle}</p>
         </div>

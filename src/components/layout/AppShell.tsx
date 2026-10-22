@@ -180,7 +180,7 @@ export function AppShell({ children }: AppShellProps) {
                 ? 'lg:ml-16'
                 : 'lg:ml-64'
               : 'ml-0'
-          } ${showsMobileBottomNav ? 'app-bottom-nav-clearance' : ''}`}
+          } ${showsMobileBottomNav && !routeChrome.ownsMobileNavClearance ? 'app-bottom-nav-clearance' : ''}`}
         >
           {children}
         </main>

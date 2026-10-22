@@ -18,6 +18,7 @@ describe('companion room chrome', () => {
 
   it('strips the chrome in the room, keeps it on the profile', () => {
     expect(getRouteChrome('/companions/abc/talk')).toEqual({
+      ownsMobileNavClearance: false,
       hideMobileBottomNav: true,
       preferCollapsedSidebar: true,
       hideGlobalCat: true,
@@ -25,6 +26,7 @@ describe('companion room chrome', () => {
       immersiveChat: false,
     });
     expect(getRouteChrome('/companions/abc')).toEqual({
+      ownsMobileNavClearance: false,
       hideMobileBottomNav: false,
       preferCollapsedSidebar: false,
       hideGlobalCat: false,
@@ -34,6 +36,7 @@ describe('companion room chrome', () => {
 
   it('keeps the Cat hub exactly as it was', () => {
     expect(getRouteChrome('/dashboard/cat')).toEqual({
+      ownsMobileNavClearance: false,
       hideMobileBottomNav: true,
       preferCollapsedSidebar: true,
       hideGlobalCat: true,
@@ -45,4 +48,10 @@ describe('companion room chrome', () => {
   it('is an app surface, so the room renders inside the shell', () => {
     expect(getRouteSurface('/companions/abc/talk')).toBe('app');
   });
+});
+
+it('delegates bottom-nav clearance to the fixed-height messaging frame only', () => {
+  expect(getRouteChrome('/messages').ownsMobileNavClearance).toBe(true);
+  expect(getRouteChrome('/messages/legacy-id').ownsMobileNavClearance).toBe(true);
+  expect(getRouteChrome('/dashboard').ownsMobileNavClearance).toBe(false);
 });
