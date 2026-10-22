@@ -13,6 +13,7 @@ import { useState } from 'react';
 import { ScanLine } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { PeopleSuggestions } from '@/components/money/PeopleSuggestions';
 import { COMPONENT_STYLES } from '@/config/design-system';
 import { SEND_COPY } from '@/config/send';
 
@@ -24,10 +25,18 @@ const WalletQrScanner = dynamic(() => import('@/components/wallets/WalletQrScann
 interface SendDestinationFieldProps {
   value: string;
   onChange: (value: string) => void;
+  /** True while the text reads as a name (not an address, invoice or link), so people are suggested. */
+  suggestPeople: boolean;
 }
 
-export function SendDestinationField({ value, onChange }: SendDestinationFieldProps) {
+export function SendDestinationField({
+  value,
+  onChange,
+  suggestPeople,
+}: SendDestinationFieldProps) {
   const [scanning, setScanning] = useState(false);
+  // True once a suggestion was tapped: the list steps aside until they type again.
+  const [picked, setPicked] = useState(false);
 
   return (
     <div className="space-y-2">
@@ -37,7 +46,10 @@ export function SendDestinationField({ value, onChange }: SendDestinationFieldPr
           <Input
             aria-label={SEND_COPY.recipientLabel}
             value={value}
-            onChange={e => onChange(e.target.value)}
+            onChange={e => {
+              onChange(e.target.value);
+              setPicked(false);
+            }}
             placeholder={SEND_COPY.recipientPlaceholder}
             autoCapitalize="none"
             autoCorrect="off"
@@ -56,6 +68,15 @@ export function SendDestinationField({ value, onChange }: SendDestinationFieldPr
           <ScanLine className="h-5 w-5" aria-hidden="true" />
         </Button>
       </div>
+
+      <PeopleSuggestions
+        query={value}
+        enabled={suggestPeople && !picked}
+        onPick={handle => {
+          onChange(handle);
+          setPicked(true);
+        }}
+      />
 
       {scanning && (
         <WalletQrScanner
