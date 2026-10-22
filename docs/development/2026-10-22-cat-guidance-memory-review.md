@@ -1,0 +1,11 @@
+# Cat guidance and memory review
+
+A live guest asked how to open the article editor. Cat returned the correct route but rendered Open /articles/new as a quick reply. The shared click handler sent that text back to Cat instead of opening the editor. It also described an absent New Article homepage button and tags. Recognized Open route suggestions now navigate only to destinations in the shared create catalog; unknown routes and ordinary replies remain conversational. The prompt names Create → Article and the editor's actual fields.
+
+The supplied memory screenshots show transient writing intent, repeated paraphrases and first-party product praise. Passive extraction now excludes those writing-task and routine platform-use patterns while preserving ongoing writing habits and developer identity. Explicit remember commands retain their existing behavior. Distillation and candidate policy live in focused modules; storage, suppression and ownership stay in the memory service.
+
+Candidate vectors are compared within their uninserted batch as well as against stored memories. Different amounts and opposite statements remain distinct, and normalization preserves decimal points. A failed existing-memory check skips automatic insertion. Missing preference rows keep the existing product default; failed preference or suppression reads skip optional extraction rather than override a possible opt-out or relearn forgotten facts. These changes do not delete or rewrite existing owner memories, or claim to serialize simultaneous extraction in separate server processes.
+
+Multiple memory notices use a native disclosure. Each fact retains Undo and dismiss, shared touch-sized controls and a direct Review memories link. Failed Undo remains visible with a retry message; concurrent requests track each row separately.
+
+Fifty-two focused regression cases pass, including the screenshot fact patterns, preserved explicit memory, batch paraphrases, failed suppression lookup, safe navigation destinations, disclosure and Undo failures/concurrency. Full repository verification passed (1,532 seconds), along with 47 prompt/background-AI integration cases and a tracked-module safety recheck. Deployed browser verification remains pending CI/CD.

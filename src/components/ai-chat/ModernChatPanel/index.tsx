@@ -14,6 +14,7 @@ import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { CAT_SEND_EVENT } from '@/lib/chat/cat-send-event';
+import { getCreateSuggestionHref } from '@/config/cat-create-suggestions';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 
 import {
@@ -212,9 +213,14 @@ export function ModernChatPanel({
 
   const handleSuggestionClick = useCallback(
     (suggestion: string) => {
+      const href = getCreateSuggestionHref(suggestion);
+      if (href) {
+        router.push(href);
+        return;
+      }
       void sendMessage(suggestion);
     },
-    [sendMessage]
+    [sendMessage, router]
   );
 
   // Words sent from beside the panel (lib/chat/cat-send-event) go through the

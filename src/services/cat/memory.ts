@@ -28,7 +28,23 @@ import {
   significantStems,
   stemOverlapMatches,
 } from './memory-matching';
+import { distillMemories } from './memory-extraction';
+import {
+  MAX_FACT_CHARS,
+  MEMORY_DEDUP_SIMILARITY as DEDUP_SIMILARITY,
+  areMemoryCandidatesEquivalent,
+  type MemoryCandidate,
+} from './memory-facts';
 import { parseImportedMemories } from './memory-import-parse';
+
+/** Minimal Ai service shape used for extraction (matches the chat provider). */
+export interface MemoryAiService {
+  chatCompletion(opts: {
+    model: string;
+    messages: Array<{ role: string; content: string }>;
+    temperature: number;
+  }): Promise<{ content: string }>;
+}
 
 export { containsWholeWords } from './memory-matching';
 export { parseImportedMemories } from './memory-import-parse';
@@ -45,23 +61,8 @@ export interface CatMemory {
 const RECALL_COUNT = 6;
 /** Relevance floor for recall — below this a memory isn't worth injecting. */
 const RECALL_MIN_SIMILARITY = 0.3;
-/** A candidate fact this close to an existing one is treated as already known. */
-const DEDUP_SIMILARITY = 0.88;
-/** Cap facts distilled from a single exchange — keeps extraction cheap + focused. */
-const MAX_FACTS_PER_TURN = 3;
 /** Soft cap per user; oldest beyond this are pruned on write. */
 const MAX_MEMORIES_PER_USER = 300;
-/** Trim any single fact to this length before storing. */
-const MAX_FACT_CHARS = 240;
-
-/** Minimal Ai service shape used for extraction (matches the chat provider). */
-export interface MemoryAiService {
-  chatCompletion(opts: {
-    model: string;
-    messages: Array<{ role: string; content: string }>;
-    temperature: number;
-  }): Promise<{ content: string }>;
-}
 
 // ─── Recall ───────────────────────────────────────────────────────────────────
 
@@ -354,17 +355,16 @@ async function loadForgottenContents(
   supabase: AnySupabaseClient,
   userId: string
 ): Promise<string[]> {
-  try {
-    const { data } = await supabase
-      .from(DATABASE_TABLES.CAT_FORGOTTEN_FACTS)
-      .select('content')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(MAX_FORGOTTEN_PER_USER);
-    return ((data ?? []) as Array<{ content: string }>).map(r => r.content);
-  } catch {
-    return [];
+  const { data, error } = await supabase
+    .from(DATABASE_TABLES.CAT_FORGOTTEN_FACTS)
+    .select('content')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(MAX_FORGOTTEN_PER_USER);
+  if (error) {
+    throw new Error('Could not read forgotten-memory preferences');
   }
+  return ((data ?? []) as Array<{ content: string }>).map(r => r.content);
 }
 
 /**
@@ -380,22 +380,26 @@ export async function isSuppressedFact(
   forgottenContents?: string[]
 ): Promise<boolean> {
   const contents = forgottenContents ?? (await loadForgottenContents(supabase, userId));
+  if (contents.length === 0) {
+    return false;
+  }
   if (contents.some(c => phrasesOverlap(fact, c) || phrasesOverlap(c, fact))) {
     return true;
   }
   if (vec) {
     try {
-      const { data: near } = await supabase.rpc('match_cat_forgotten_facts', {
+      const { data: near, error } = await supabase.rpc('match_cat_forgotten_facts', {
         p_user_id: userId,
         query_embedding: JSON.stringify(vec),
         match_count: 1,
         min_similarity: SUPPRESS_SIMILARITY,
       });
-      if (Array.isArray(near) && near.length > 0) {
+      if (error || !Array.isArray(near) || near.length > 0) {
         return true;
       }
     } catch (err) {
       logger.warn('suppression RPC failed', { err }, 'CatMemory');
+      return true;
     }
   }
   return false;
@@ -572,46 +576,10 @@ export async function editMemoryMatching(
 // tests keep importing it from here.
 export { looksLikeSelfDisclosure };
 
-const EXTRACTION_SYSTEM = `You extract durable, user-specific facts worth remembering long-term about a person, from one chat exchange.
-
-Return ONLY a JSON array of short factual statements written in the third person, e.g.:
-["Prefers Lightning over on-chain payments", "Building Loki, a life-OS for builders", "Based in Zürich"]
-
-Include ONLY stable facts: preferences, identity, goals, skills, relationships, or constraints that will still be true next week.
-EXCLUDE: one-off requests, questions, the assistant's suggestions, transient state, and anything trivial or already obvious.
-If there is nothing durable worth remembering, return exactly [].
-Return at most ${MAX_FACTS_PER_TURN} facts. No prose, no markdown — just the JSON array.`;
-
-/** Parse the model's reply into a clean list of fact strings (defensive). */
-function parseFacts(raw: string): string[] {
-  if (!raw) {
-    return [];
-  }
-  // Strip code fences and grab the first JSON array if the model wrapped it.
-  const cleaned = raw.replace(/```(?:json)?/gi, '').trim();
-  const match = cleaned.match(/\[[\s\S]*\]/);
-  if (!match) {
-    return [];
-  }
-  try {
-    const arr = JSON.parse(match[0]);
-    if (!Array.isArray(arr)) {
-      return [];
-    }
-    return arr
-      .filter((x): x is string => typeof x === 'string')
-      .map(s => s.trim().slice(0, MAX_FACT_CHARS))
-      .filter(s => s.length >= 3)
-      .slice(0, MAX_FACTS_PER_TURN);
-  } catch {
-    return [];
-  }
-}
-
 /**
  * Consent gate: has this user turned memory off? Reads
- * user_ai_preferences.memory_enabled (default true — a missing row or a
- * failed read must never silently disable memory). Only consulted after the
+ * user_ai_preferences.memory_enabled (default true for a missing row;
+ * failed reads skip optional extraction rather than override a possible opt-out). Only consulted after the
  * cheap guards pass, so it costs one indexed lookup per self-disclosure turn.
  */
 export async function memoryConsentGranted(
@@ -619,14 +587,17 @@ export async function memoryConsentGranted(
   userId: string
 ): Promise<boolean> {
   try {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from(DATABASE_TABLES.USER_AI_PREFERENCES)
       .select('memory_enabled')
       .eq('user_id', userId)
       .maybeSingle();
+    if (error) {
+      return false;
+    }
     return (data as { memory_enabled?: boolean } | null)?.memory_enabled !== false;
   } catch {
-    return true;
+    return false;
   }
 }
 
@@ -653,48 +624,35 @@ export async function extractAndStoreMemories(
     return;
   }
   try {
-    const { content } = await aiService.chatCompletion({
-      model,
-      temperature: 0,
-      messages: [
-        { role: 'system', content: EXTRACTION_SYSTEM },
-        {
-          role: 'user',
-          content: `User said: "${userMessage}"\n\nAssistant replied: "${assistantMessage.slice(0, 800)}"\n\nExtract durable facts about the user as a JSON array.`,
-        },
-      ],
-    });
-
-    const facts = parseFacts(content);
-    if (facts.length === 0) {
+    const candidates = await distillMemories(userMessage, assistantMessage, aiService, model);
+    if (candidates.length === 0) {
       return;
     }
-
-    // Embed all candidates in one batch, then dedupe each against what we know.
-    const vectors = await embedTexts(facts);
     // One suppression-list read for the whole batch (not per candidate).
     const forgottenContents = await loadForgottenContents(supabase, userId);
     const toInsert: Array<{ content: string; embedding: string }> = [];
-    for (let i = 0; i < facts.length; i++) {
-      const vec = vectors[i];
-      if (!vec) {
+    const accepted: MemoryCandidate[] = [];
+    for (const candidate of candidates) {
+      const { content: fact, vector: vec } = candidate;
+      if (accepted.some(known => areMemoryCandidatesEquivalent(candidate, known))) {
         continue;
       }
       // A fact the user explicitly forgot must not be re-learned from old
       // context — that's the suppression contract of forget_memories.
-      if (await isSuppressedFact(supabase, userId, facts[i], vec, forgottenContents)) {
+      if (await isSuppressedFact(supabase, userId, fact, vec, forgottenContents)) {
         continue;
       }
-      const { data: near } = await supabase.rpc('match_cat_memories', {
+      const { data: near, error: matchError } = await supabase.rpc('match_cat_memories', {
         p_user_id: userId,
         query_embedding: JSON.stringify(vec),
         match_count: 1,
         min_similarity: DEDUP_SIMILARITY,
       });
-      if (Array.isArray(near) && near.length > 0) {
-        continue; // already remember something equivalent
+      if (matchError || !Array.isArray(near) || near.length > 0) {
+        continue; // A new fact needs a successful, empty match.
       }
-      toInsert.push({ content: facts[i], embedding: JSON.stringify(vec) });
+      toInsert.push({ content: fact, embedding: JSON.stringify(vec) });
+      accepted.push(candidate);
     }
 
     if (toInsert.length === 0) {
@@ -920,7 +878,7 @@ export async function importMemories(
       });
       if (Array.isArray(near) && near.length > 0) {
         result.skipped++;
-        continue; // already remember something equivalent
+        continue; // A new fact needs a successful, empty match.
       }
     }
     // Guard against exact dupes within this same paste when embeddings are off.

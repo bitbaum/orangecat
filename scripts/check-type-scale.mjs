@@ -29,7 +29,7 @@ import { execSync } from 'node:child_process';
  * 14 → 13 on 2026-08-29: the timeline's post body moved from `text-[15px]` to
  * the named `text-post` token.
  */
-const BASELINE = 10;
+const BASELINE = 9;
 
 const ARBITRARY_SIZE = /\btext-\[[0-9]/;
 
@@ -49,9 +49,7 @@ for (const file of files) {
 }
 
 if (hits.length > BASELINE) {
-  console.error(
-    `✗ Arbitrary font sizes rose to ${hits.length} (baseline ${BASELINE}).\n`
-  );
+  console.error(`✗ Arbitrary font sizes rose to ${hits.length} (baseline ${BASELINE}).\n`);
   for (const h of hits) {
     console.error(`  ${h.file}:${h.line}`);
     console.error(`    ${h.text}`);
