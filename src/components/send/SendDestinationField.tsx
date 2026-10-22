@@ -13,7 +13,8 @@ import { useState } from 'react';
 import { ScanLine } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { PeopleSuggestions } from '@/components/money/PeopleSuggestions';
+import { PeoplePicker } from '@/components/money/PeoplePicker';
+import type { FoundPerson } from '@/domain/people/rankPeople';
 import { COMPONENT_STYLES } from '@/config/design-system';
 import { SEND_COPY } from '@/config/send';
 
@@ -25,18 +26,18 @@ const WalletQrScanner = dynamic(() => import('@/components/wallets/WalletQrScann
 interface SendDestinationFieldProps {
   value: string;
   onChange: (value: string) => void;
-  /** True while the text reads as a name (not an address, invoice or link), so people are suggested. */
-  suggestPeople: boolean;
+  /** Who to offer under the field — the screen decides when (usePeopleFinder). */
+  people: readonly FoundPerson[];
+  onPick: (handle: string) => void;
 }
 
 export function SendDestinationField({
   value,
   onChange,
-  suggestPeople,
+  people,
+  onPick,
 }: SendDestinationFieldProps) {
   const [scanning, setScanning] = useState(false);
-  // True once a suggestion was tapped: the list steps aside until they type again.
-  const [picked, setPicked] = useState(false);
 
   return (
     <div className="space-y-2">
@@ -46,10 +47,7 @@ export function SendDestinationField({
           <Input
             aria-label={SEND_COPY.recipientLabel}
             value={value}
-            onChange={e => {
-              onChange(e.target.value);
-              setPicked(false);
-            }}
+            onChange={e => onChange(e.target.value)}
             placeholder={SEND_COPY.recipientPlaceholder}
             autoCapitalize="none"
             autoCorrect="off"
@@ -69,14 +67,7 @@ export function SendDestinationField({
         </Button>
       </div>
 
-      <PeopleSuggestions
-        query={value}
-        enabled={suggestPeople && !picked}
-        onPick={handle => {
-          onChange(handle);
-          setPicked(true);
-        }}
-      />
+      <PeoplePicker people={people} onPick={onPick} />
 
       {scanning && (
         <WalletQrScanner

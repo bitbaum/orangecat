@@ -32,6 +32,7 @@ import { SendDestinationField } from '@/components/send/SendDestinationField';
 import { SendReviewStep } from '@/components/send/SendReviewStep';
 import { useRecipientCheck } from '@/components/send/useRecipientCheck';
 import { useRequireAuth } from '@/hooks/useAuth';
+import { usePeopleFinder } from '@/hooks/usePeopleFinder';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import {
   sendInvoice,
@@ -52,6 +53,8 @@ export function SendScreen() {
   const { formatAmountBtc } = useDisplayCurrency();
 
   const [raw, setRaw] = useState('');
+  // True once a listed person was tapped: the list steps aside until they type again.
+  const [picked, setPicked] = useState(false);
   // Empty until typed. A prefilled amount is a payment the person did not choose —
   // unless it came in a code they scanned, which is the other person's ask.
   const [amount, setAmount] = useState(0);
@@ -80,6 +83,18 @@ export function SendScreen() {
         ? destination.address
         : '';
   const recipientCheck = useRecipientCheck(recipientHandle);
+  // Your people before you type; everyone with a handle from the first letter.
+  // An address, an invoice or a pasted link is not a name, so no list then.
+  const { people } = usePeopleFinder(
+    raw,
+    !picked && (destination.kind === 'empty' || destination.kind === 'username')
+  );
+  // While the list has rows, "nobody goes by @me" is a verdict on a half-typed
+  // name; the rows ARE the answer. A found person still reads back.
+  const listAnswers =
+    !picked &&
+    people.length > 0 &&
+    (recipientCheck.state === 'checking' || recipientCheck.state === 'not_found');
 
   // A scanned pay link carries what the other person asked for.
   useEffect(() => {
@@ -102,6 +117,7 @@ export function SendScreen() {
     setOutcome(null);
     setError(null);
     setRaw('');
+    setPicked(false);
     setMemo('');
     setAmount(0);
     setReviewing(false);
@@ -188,9 +204,15 @@ export function SendScreen() {
             value={raw}
             onChange={next => {
               setRaw(next);
+              setPicked(false);
               setError(null);
             }}
-            suggestPeople={destination.kind === 'username' && !/^https?:/i.test(raw)}
+            people={people}
+            onPick={handle => {
+              setRaw(handle);
+              setPicked(true);
+              setError(null);
+            }}
           />
 
           {isInvoice ? (
@@ -202,7 +224,7 @@ export function SendScreen() {
                   : SEND_COPY.invoiceUnreadable}
             </StatusNote>
           ) : (
-            <RecipientStatus check={recipientCheck} handle={recipientHandle} />
+            !listAnswers && <RecipientStatus check={recipientCheck} handle={recipientHandle} />
           )}
 
           {!isInvoice && recipientCheck.payable && (

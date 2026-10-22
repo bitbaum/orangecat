@@ -45,6 +45,8 @@ export const API_ROUTES = {
   },
   /** Everything the signed-in person made or joined (My things). */
   THINGS: '/api/things',
+  /** People the signed-in person can pay or ask: their circle first, then everyone with a handle. */
+  PEOPLE: '/api/people',
   // Public feedback + Ask Cat (no auth required)
   FEEDBACK: '/api/feedback',
   NEWSLETTER_SUBSCRIBE: '/api/newsletter/subscribe',
