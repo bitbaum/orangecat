@@ -13,6 +13,7 @@ import { updateArticle } from '@/services/articles/update';
 import type { TimelineVisibility } from '@/types/timeline';
 import type { ArticleDraft } from '@/services/cat/writing-types';
 import { type LocalArticleDraft } from '@/services/articles/local-drafts';
+import { handleArticleKeyDown } from '@/components/articles/article-keyboard-shortcuts';
 import { useMarkdownTextarea } from '@/components/articles/useMarkdownTextarea';
 import AiWriterPanel from '@/components/articles/AiWriterPanel';
 import type { StockImage } from '@/services/images/types';
@@ -117,28 +118,8 @@ export default function ArticleComposer({
   }
 
   function loadDraft(draft: LocalArticleDraft) {
-    drafts.loadDraft(draft);
-    setTab('write');
-  }
-
-  function handleBodyKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (!(e.metaKey || e.ctrlKey)) {
-      return;
-    }
-    const k = e.key.toLowerCase();
-    if (k === 'b') {
-      e.preventDefault();
-      md.wrap('**', '**', 'bold');
-    } else if (k === 'i') {
-      e.preventDefault();
-      md.wrap('*', '*', 'italic');
-    } else if (k === 'k') {
-      e.preventDefault();
-      md.insertLink();
-    } else if (k === 's') {
-      // Flush the draft now instead of letting the browser offer to save the page.
-      e.preventDefault();
-      drafts.flushDraftNow();
+    if (drafts.loadDraft(draft)) {
+      setTab('write');
     }
   }
 
@@ -256,7 +237,7 @@ export default function ArticleComposer({
             imagePicker={imagePicker}
             setImagePicker={setImagePicker}
             onPickImage={handlePickImage}
-            onBodyKeyDown={handleBodyKeyDown}
+            onBodyKeyDown={event => handleArticleKeyDown(event, md, drafts.flushDraftNow)}
           />
         ) : (
           <ArticlePreview title={title} excerpt={excerpt} coverImage={coverImage} body={body} />

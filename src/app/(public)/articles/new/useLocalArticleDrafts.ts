@@ -40,6 +40,7 @@ export function useLocalArticleDrafts(
   const { setTitle, setExcerpt, setCoverImage, setBody, setVisibility } = setters;
 
   const pending = useRef<LocalArticleDraft | null>(null);
+  const startedDraftId = useRef<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [restored, setRestored] = useState(false);
   const [draftId, setDraftId] = useState(() => newDraftId());
@@ -70,8 +71,11 @@ export function useLocalArticleDrafts(
   // Keep the latest committed edit available to pagehide and unmount, even
   // when the debounce has not fired. Do not persist during render.
   useLayoutEffect(() => {
+    if (title || body || excerpt || coverImage) {
+      startedDraftId.current = draftId;
+    }
     pending.current =
-      !isEditing && (title || body || excerpt || coverImage)
+      !isEditing && startedDraftId.current === draftId
         ? { id: draftId, title, excerpt, coverImage, body, visibility, updatedAt: Date.now() }
         : null;
   }, [isEditing, draftId, title, excerpt, coverImage, body, visibility]);
@@ -93,6 +97,7 @@ export function useLocalArticleDrafts(
     if (saved !== null) {
       setSaveStatus(saved ? 'saved' : 'error');
     }
+    return saved;
   }, [persistPending]);
 
   useEffect(() => {
@@ -142,9 +147,11 @@ export function useLocalArticleDrafts(
     setOtherDrafts(listLocalDrafts());
   }
 
-  /** Switch to another saved draft; the current one is already autosaved. */
+  /** Preserve the current writing before replacing the fields. */
   function loadDraft(draft: LocalArticleDraft) {
-    flushDraftNow();
+    if (flushDraftNow() === false) {
+      return false;
+    }
     setTitle(draft.title);
     setExcerpt(draft.excerpt);
     setCoverImage(draft.coverImage);
@@ -153,6 +160,7 @@ export function useLocalArticleDrafts(
     setDraftId(draft.id);
     setRestored(true);
     setOtherDrafts(listLocalDrafts().filter(d => d.id !== draft.id));
+    return true;
   }
 
   function deleteOtherDraft(id: string) {
