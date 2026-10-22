@@ -17,9 +17,17 @@ interface ThingRowProps {
   status?: string | null;
   /** The line under the title. Defaults to the type's name. */
   subtitle?: ReactNode;
+  showTypeLabel?: boolean;
 }
 
-export function ThingRow({ type, title, href, status, subtitle }: ThingRowProps) {
+export function ThingRow({
+  type,
+  title,
+  href,
+  status,
+  subtitle,
+  showTypeLabel = true,
+}: ThingRowProps) {
   const meta = ENTITY_REGISTRY[type];
   const Icon = meta.icon;
   const badge = status ? getStatusInfo(status, type) : null;
@@ -33,11 +41,13 @@ export function ThingRow({ type, title, href, status, subtitle }: ThingRowProps)
           <Icon className="h-5 w-5 text-fg-secondary" aria-hidden="true" />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate font-medium text-fg-primary">{title}</span>
-          <span className="block truncate text-xs text-fg-tertiary">{subtitle ?? meta.name}</span>
+          <span className="block break-words font-medium text-fg-primary">{title}</span>
+          {(subtitle || showTypeLabel) && (
+            <span className="block text-xs text-fg-tertiary">{subtitle ?? meta.name}</span>
+          )}
         </span>
         {badge && (
-          <Badge variant="outline" className={`shrink-0 ${badge.className}`}>
+          <Badge variant="outline" className={`shrink-0 text-xs ${badge.className}`}>
             {badge.label}
           </Badge>
         )}

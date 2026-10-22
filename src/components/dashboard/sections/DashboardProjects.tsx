@@ -53,7 +53,7 @@ export function DashboardProjects({ projects, stats }: DashboardProjectsProps) {
     <DashboardSection
       id="dashboard-projects"
       title="Your projects"
-      action={{ label: `All ${projects.length}`, href: meta.basePath }}
+      action={{ label: `View all ${projects.length}`, href: meta.basePath }}
       note={
         hasNumbers ? (
           <>
@@ -73,6 +73,7 @@ export function DashboardProjects({ projects, stats }: DashboardProjectsProps) {
           <ThingRow
             key={project.id}
             type="project"
+            showTypeLabel={false}
             title={project.title}
             href={`${meta.publicBasePath}/${project.id}`}
             status={project.status ?? ENTITY_STATUS.DRAFT}

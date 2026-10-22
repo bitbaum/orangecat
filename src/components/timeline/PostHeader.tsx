@@ -86,14 +86,15 @@ export function PostHeader({
   const isEdited = updatedTimestamp && updatedTimestamp !== timestamp;
 
   return (
-    <div className="flex items-center gap-1 flex-wrap">
+    <div className="flex items-center gap-2">
       {/* User Info - X-style inline */}
       <Link
         href={`/profiles/${displayAuthor.username}`}
-        className="font-bold text-sm text-fg-primary hover:underline"
+        className="flex min-h-11 min-w-0 flex-1 flex-wrap items-center gap-x-1 text-sm text-fg-primary hover:underline"
         onClick={e => e.stopPropagation()}
       >
-        {displayAuthor.name}
+        <span className="break-words font-semibold">{displayAuthor.name}</span>
+        <span className="break-all text-fg-secondary">@{displayAuthor.username}</span>
       </Link>
 
       {/* Written by the platform's agent, said out loud.
@@ -106,35 +107,15 @@ export function PostHeader({
           (this was written by the agent); the metadata flag is honoured too so
           a reply stays marked even if it is ever re-attributed. */}
       {isCatAuthored && (
-        <span className="flex-shrink-0 rounded-sm bg-accent-warm px-1.5 py-0.5 text-2xs font-medium uppercase tracking-caps text-on-accent">
+        <span className="flex-shrink-0 rounded-sm bg-surface-raised px-1.5 py-0.5 text-2xs font-medium uppercase tracking-caps text-fg-secondary">
           AI
         </span>
       )}
 
-      <Link
-        href={`/profiles/${displayAuthor.username}`}
-        className="text-fg-secondary text-sm"
-        onClick={e => e.stopPropagation()}
-      >
-        @{displayAuthor.username}
-      </Link>
-
-      {/*
-        `text-sm` is load-bearing, not decoration. With no size class this span
-        inherits the 16px base while every other item on the line — the name,
-        the handle, the timestamp — is 14px. The result is a separator dot
-        rendered LARGER than the things it separates, on every post in the
-        feed. Measured in production: 16px/400 among 14px siblings, the only
-        16px text anywhere in the timeline.
-      */}
-      <span className="text-fg-secondary text-sm" aria-hidden="true">
-        ·
-      </span>
-
       {/* Timestamp */}
       <time
         dateTime={timestamp}
-        className="text-fg-secondary text-sm hover:underline"
+        className="shrink-0 whitespace-nowrap text-xs text-fg-secondary"
         title={timestamp ? formatDateTime(timestamp) : undefined}
       >
         {timestamp ? getTimeAgo(timestamp) : ''}

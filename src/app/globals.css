@@ -359,6 +359,12 @@
    * These classes are the visual SSOT for app pages: neutral surfaces, thin
    * borders, tight spacing, and restrained OrangeCat accents.
    */
+  /* Interface sections own their spacing through gap/space utilities.
+     Prose defaults must not add a second margin inside rows and status lines. */
+  .oc-interface :where(h1, h2, h3, h4, h5, h6, p) {
+    margin: 0;
+  }
+
   .oc-page {
     @apply min-h-screen bg-surface-page text-fg-primary;
   }

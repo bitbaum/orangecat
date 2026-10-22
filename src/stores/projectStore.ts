@@ -36,10 +36,6 @@ export interface ProjectState {
   isLoading: boolean;
   error: string | null;
 
-  // COMPUTED
-  drafts: Project[];
-  activeProjects: Project[];
-
   // ACTIONS
   loadProjects: (userId: string) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
@@ -51,6 +47,13 @@ export interface ProjectState {
   reset: () => void;
 }
 
+// Derived views stay outside Zustand state: merging a state update evaluates
+// JavaScript getters once and turns them into stale array snapshots.
+export const selectDraftProjects = (state: Pick<ProjectState, 'projects'>) =>
+  state.projects.filter(project => project.isDraft);
+export const selectActiveProjects = (state: Pick<ProjectState, 'projects'>) =>
+  state.projects.filter(project => project.isActive && !project.isDraft);
+
 export const useProjectStore = create<ProjectState>((set, get) => ({
   // DATA
   projects: [],
@@ -58,15 +61,6 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   // STATUS
   isLoading: false,
   error: null,
-
-  // COMPUTED
-  get drafts() {
-    return get().projects.filter(p => p.isDraft);
-  },
-
-  get activeProjects() {
-    return get().projects.filter(p => p.isActive && !p.isDraft);
-  },
 
   // ACTIONS
   loadProjects: async (userId: string) => {
@@ -211,7 +205,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     const state = get();
     return {
       totalProjects: state.projects.length,
-      totalActive: state.activeProjects.length,
+      totalActive: selectActiveProjects(state).length,
     };
   },
 

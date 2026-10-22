@@ -11,6 +11,7 @@ to the map, sub-bullets stay here for the human reader.
 
 ## 2026-10-22
 
+- **Home is easier to read on a phone.** Long suggestion and project names wrap, recent activity shares the dashboard's section layout, and the Cat tab replaces the floating button on mobile pages with a bottom bar. Project updates keep their source and full text behind “Read update”. Draft counts stay current; status copy describes Cat approvals rather than claiming nothing is waiting. Failed suggestion dismissals are reported, and cached suggestions no longer propose listing bitcoin as a rentable item.
 - **Request and Send find the person as you type.** The field used to resolve an exact username after a pause, so "m" produced "Nobody goes by @m". Now a list of people appears under the field from the same typo-tolerant search as ⌘K; tap one and the handle is filled in.
 
 - **One Cat mark across the app.** Cat's launcher, navigation and chat now use the same mark as the header. Install icons are versioned from that mark, and the app refreshes brand files instead of keeping old images indefinitely. The mobile Create button offers both Article and Post.

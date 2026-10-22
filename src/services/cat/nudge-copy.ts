@@ -118,13 +118,13 @@ export const NUDGE_COPY: Record<NudgeLanguage, NudgeCopy> = {
         : kind === 'product'
           ? `You make ${skill}, but it isn't listed yet — people here can only buy what they can see. Drafting it takes one tap.`
           : `You can do ${skill}, but it isn't listed yet — people here can only hire you for what they can see. Drafting it takes one tap.`,
-      cta: `Draft a ${skill} ${noun}`,
+      cta: 'Create draft',
     }),
     growthAsset: ({ asset, wanted }) => ({
       title: `Put your ${asset} to work`,
       body: wanted
-        ? `People here are looking for things like ${asset} — and yours mostly sits idle. Listed as an asset, it can earn.`
-        : `Your ${asset} mostly sits idle. Listed as an asset, it can earn while you're not using it.`,
+        ? `Requests or searches on OrangeCat mention ${asset}. You can decide whether to create a listing.`
+        : `You mentioned ${asset}. Create a listing if you would like to offer it here.`,
       cta: `List your ${asset}`,
     }),
   },
@@ -167,11 +167,11 @@ export const NUDGE_COPY: Record<NudgeLanguage, NudgeCopy> = {
       cta: `Entwurf anlegen: ${skill}`,
     }),
     growthAsset: ({ asset, wanted }) => ({
-      title: `Lass „${asset}“ für dich arbeiten`,
+      title: `Möchtest du „${asset}“ anbieten?`,
       body: wanted
-        ? `Genau so etwas wie ${asset} wird hier gesucht — und deins liegt meist ungenutzt. Als Asset gelistet kann es verdienen.`
-        : `Dein ${asset} liegt meist ungenutzt. Als Asset gelistet kann es verdienen, während du es nicht brauchst.`,
-      cta: `„${asset}“ listen`,
+        ? `Anfragen oder Suchanfragen auf OrangeCat erwähnen ${asset}. Du entscheidest, ob du es anbieten möchtest.`
+        : `Du hast ${asset} erwähnt. Erstelle ein Angebot, wenn du es hier anbieten möchtest.`,
+      cta: 'Angebot erstellen',
     }),
   },
 };

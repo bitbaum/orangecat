@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { X, ArrowRight } from 'lucide-react';
 import { DashboardSection } from '@/components/dashboard/sections/DashboardSection';
+import { NUDGE_POLICY } from '@/services/cat/nudge-policy';
 import { API_ROUTES } from '@/config/api-routes';
 
 interface Nudge {
@@ -25,12 +26,11 @@ interface Nudge {
 // kind, never a dismissed one, and fewer of a kind you keep dismissing. Four
 // full cards used to fill two phone screens, which is how a suggestion
 // becomes wallpaper.
-const DASHBOARD_NUDGE_CAP = 3;
 
 export function CatNudges() {
   const [nudges, setNudges] = useState<Nudge[] | null>(null);
   // A quiet acknowledgement after a hide, so dismissing reads as being heard.
-  const [heard, setHeard] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
     let on = true;
@@ -38,7 +38,7 @@ export function CatNudges() {
       .then(r => (r.ok ? r.json() : null))
       .then(d => {
         if (on && d?.success) {
-          setNudges((d.data?.nudges || []).slice(0, DASHBOARD_NUDGE_CAP));
+          setNudges((d.data?.nudges || []).slice(0, NUDGE_POLICY.maxShown));
         }
       })
       .catch(() => {
@@ -54,9 +54,10 @@ export function CatNudges() {
   const dismiss = (id: string) => {
     // Optimistically remove, but restore on failure so the nudge doesn't silently
     // reappear on next load (the dismissal wasn't persisted).
-    const prev = nudges;
+    const removed = nudges?.find(nudge => nudge.id === id);
+    const index = nudges?.findIndex(nudge => nudge.id === id) ?? 0;
     setNudges(n => n?.filter(x => x.id !== id) ?? null);
-    setHeard(true);
+    setNotice(null);
     fetch(API_ROUTES.CAT.NUDGES, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -66,17 +67,27 @@ export function CatNudges() {
         if (!res.ok) {
           throw new Error(`Failed to dismiss (${res.status})`);
         }
+        setNotice('Suggestion hidden.');
       })
       .catch(() => {
-        setNudges(prev);
-        setHeard(false);
+        if (removed) {
+          setNudges(current => {
+            if (current?.some(nudge => nudge.id === removed.id)) {
+              return current;
+            }
+            const restored = [...(current ?? [])];
+            restored.splice(Math.min(index, restored.length), 0, removed);
+            return restored;
+          });
+        }
+        setNotice("Couldn't hide this suggestion. Try again.");
       });
   };
 
   if (!nudges || nudges.length === 0) {
-    return heard ? (
+    return notice ? (
       <p className="text-sm text-fg-tertiary" role="status">
-        Got it. You won't see that one again.
+        {notice}
       </p>
     ) : null;
   }
@@ -87,14 +98,14 @@ export function CatNudges() {
         {nudges.map(n => (
           <li key={n.id} className="flex items-start gap-2 p-3">
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-fg-primary">{n.title}</p>
-              <p className="mt-0.5 line-clamp-2 text-sm text-fg-secondary">{n.body}</p>
+              <p className="break-words text-sm font-medium text-fg-primary">{n.title}</p>
+              <p className="mt-1 break-words text-sm text-fg-secondary">{n.body}</p>
               {n.cta_url && n.cta_label && (
                 <Link
                   href={n.cta_url}
-                  className="mt-1 inline-flex min-h-9 max-w-full items-center gap-1 text-sm font-semibold text-fg-primary hover:underline"
+                  className="mt-1 inline-flex min-h-11 max-w-full items-center gap-1 text-sm font-semibold text-fg-primary hover:underline"
                 >
-                  <span className="truncate">{n.cta_label}</span>
+                  <span className="break-words text-left">{n.cta_label}</span>
                   <ArrowRight className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                 </Link>
               )}
@@ -104,16 +115,16 @@ export function CatNudges() {
               onClick={() => dismiss(n.id)}
               aria-label={`Hide: ${n.title}`}
               title="Hide. Hide two of a kind and your Cat stops suggesting it for a month."
-              className="-mr-1 -mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-fg-tertiary hover:bg-surface-raised hover:text-fg-primary"
+              className="-mr-1 -mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-fg-tertiary hover:bg-surface-raised hover:text-fg-primary"
             >
               <X className="h-4 w-4" />
             </button>
           </li>
         ))}
       </ul>
-      {heard && (
+      {notice && (
         <p className="mt-1 text-xs text-fg-tertiary" role="status">
-          Got it. You won't see that one again.
+          {notice}
         </p>
       )}
     </DashboardSection>

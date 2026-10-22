@@ -27,15 +27,17 @@ function isPlaceholderName(name?: string | null, username?: string | null): bool
 }
 
 /** The one line under the greeting: what is waiting on the person, if anything. */
-export function dashboardStatusLine(waiting: number, drafts: number): string {
+export function dashboardStatusLine(waiting: number | undefined, drafts: number): string {
   const parts: string[] = [];
-  if (waiting > 0) {
-    parts.push(`${waiting} ${waiting === 1 ? 'thing needs' : 'things need'} you`);
+  if (waiting === undefined) {
+    parts.push('Checking Cat approvals…');
+  } else if (waiting > 0) {
+    parts.push(`${waiting} pending Cat ${waiting === 1 ? 'approval' : 'approvals'}`);
   }
   if (drafts > 0) {
     parts.push(`${drafts} unpublished ${drafts === 1 ? 'draft' : 'drafts'}`);
   }
-  return parts.length > 0 ? parts.join(' · ') : 'Nothing is waiting on you.';
+  return parts.length > 0 ? parts.join(' · ') : 'No pending Cat approvals.';
 }
 
 interface DashboardHeaderProps {
@@ -44,7 +46,7 @@ interface DashboardHeaderProps {
     username?: string | null;
   } | null;
   /** Actions the Cat proposed that wait for a yes or no. */
-  waiting: number;
+  waiting: number | undefined;
   totalDrafts: number;
 }
 

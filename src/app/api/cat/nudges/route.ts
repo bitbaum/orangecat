@@ -9,9 +9,15 @@
 
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { withAuth, type AuthenticatedRequest } from '@/lib/api/withAuth';
-import { apiSuccess, apiBadRequest, apiRateLimited } from '@/lib/api/standardResponse';
+import {
+  apiSuccess,
+  apiBadRequest,
+  apiRateLimited,
+  apiInternalError,
+} from '@/lib/api/standardResponse';
 import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { isEligibleNudge } from '@/services/cat/nudge-eligibility';
 import { generateNudges } from '@/services/cat/nudges';
 import { selectNudges, type DismissedNudge } from '@/services/cat/nudge-policy';
 import { logger } from '@/utils/logger';
@@ -31,7 +37,7 @@ export const GET = withAuth(async (req: AuthenticatedRequest) => {
 
   const { data: existing } = await db
     .from(DATABASE_TABLES.USER_NUDGES)
-    .select('id, nudge_type, title, body, cta_label, cta_url, score, generated_at')
+    .select('id, nudge_type, title, body, cta_label, cta_url, score, generated_at, dedupe_key')
     .eq('user_id', user.id)
     .eq('status', 'active')
     .order('score', { ascending: false });
@@ -52,7 +58,7 @@ export const GET = withAuth(async (req: AuthenticatedRequest) => {
   }
 
   if (!stale) {
-    return apiSuccess({ nudges: existing, cached: true });
+    return apiSuccess({ nudges: existing?.filter(isEligibleNudge) ?? [], cached: true });
   }
 
   // Regenerate.
@@ -92,14 +98,14 @@ export const GET = withAuth(async (req: AuthenticatedRequest) => {
 
     const { data: stored } = await db
       .from(DATABASE_TABLES.USER_NUDGES)
-      .select('id, nudge_type, title, body, cta_label, cta_url, score, generated_at')
+      .select('id, nudge_type, title, body, cta_label, cta_url, score, generated_at, dedupe_key')
       .eq('user_id', user.id)
       .eq('status', 'active')
       .order('score', { ascending: false });
     return apiSuccess({ nudges: stored ?? [], cached: false });
   } catch (err) {
     logger.error('nudges generation failed', { err }, 'Nudges');
-    return apiSuccess({ nudges: existing ?? [], cached: true });
+    return apiSuccess({ nudges: existing?.filter(isEligibleNudge) ?? [], cached: true });
   }
 });
 
@@ -116,10 +122,14 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
   // Admin client kept on purpose: user_nudges has no RLS policies, so a session
   // client has no owner scoping to lean on — the user_id filter below is the guard.
   const db = createAdminClient();
-  await db
+  const { error } = await db
     .from(DATABASE_TABLES.USER_NUDGES)
     .update({ status: 'dismissed', dismissed_at: new Date().toISOString() })
     .eq('user_id', user.id)
     .eq('id', body.id);
+  if (error) {
+    logger.error('Could not dismiss nudge', { error }, 'Nudges');
+    return apiInternalError('Could not hide this suggestion');
+  }
   return apiSuccess({ dismissed: true });
 });

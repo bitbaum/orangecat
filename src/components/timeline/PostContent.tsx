@@ -83,6 +83,36 @@ export function PostContent({ event }: PostContentProps) {
       )}
       {/* Titles removed for fluid, threads-like design */}
 
+      {/* External-publish attribution: status pill + deep-link to the source. */}
+      {attribution && (
+        <div className="flex flex-wrap items-center gap-2 pt-0.5">
+          <span className="inline-flex items-center rounded-full bg-surface-raised px-2 py-0.5 text-xs font-medium text-fg-secondary">
+            {event.displayType}
+          </span>
+          {event.subject?.url && !event.target && (
+            <Link
+              href={event.subject.url}
+              className="inline-flex min-h-11 items-center text-xs font-medium text-fg-primary hover:underline"
+            >
+              {event.subject.name}
+            </Link>
+          )}
+          {attribution.url ? (
+            <a
+              href={attribution.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs text-fg-secondary hover:text-fg-primary hover:underline underline-offset-4"
+            >
+              via {attribution.sourceLabel}
+              <ExternalLink className="h-3 w-3" aria-hidden="true" />
+            </a>
+          ) : (
+            <span className="text-xs text-fg-secondary">via {attribution.sourceLabel}</span>
+          )}
+        </div>
+      )}
+
       {/* Article card: title + excerpt + link to the full reader */}
       {articleSlug && (
         <Link
@@ -123,33 +153,27 @@ export function PostContent({ event }: PostContentProps) {
         kept for QUOTE reposts, where there genuinely are two posts and two
         authors to tell apart.
       */}
-      {!articleSlug && displayContent && (
-        <div className="text-fg-primary text-post whitespace-pre-line break-words">
-          {renderMarkdownToReact(displayContent)}
-        </div>
-      )}
-
-      {/* External-publish attribution: status pill + deep-link to the source. */}
-      {attribution && (
-        <div className="flex flex-wrap items-center gap-2 pt-0.5">
-          <span className="inline-flex items-center rounded-full bg-surface-raised px-2 py-0.5 text-xs font-medium text-fg-secondary">
-            {event.displayType}
-          </span>
-          {attribution.url ? (
-            <a
-              href={attribution.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-xs text-fg-secondary hover:text-fg-primary hover:underline underline-offset-4"
-            >
-              via {attribution.sourceLabel}
-              <ExternalLink className="h-3 w-3" aria-hidden="true" />
-            </a>
-          ) : (
-            <span className="text-xs text-fg-secondary">via {attribution.sourceLabel}</span>
-          )}
-        </div>
-      )}
+      {!articleSlug &&
+        displayContent &&
+        (attribution ? (
+          <div className="space-y-1">
+            <p className="break-words text-sm font-medium text-fg-primary">
+              {event.title || event.displayType}
+            </p>
+            <details onClick={e => e.stopPropagation()}>
+              <summary className="min-h-11 cursor-pointer py-3 text-sm font-medium text-fg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                Read update
+              </summary>
+              <div className="whitespace-pre-line break-words pb-2 text-sm leading-relaxed text-fg-primary">
+                {renderMarkdownToReact(displayContent)}
+              </div>
+            </details>
+          </div>
+        ) : (
+          <div className="text-fg-primary text-post whitespace-pre-line break-words">
+            {renderMarkdownToReact(displayContent)}
+          </div>
+        ))}
 
       {/*
         Subject/Target Links.
@@ -167,27 +191,30 @@ export function PostContent({ event }: PostContentProps) {
         `isRepost` here costs nothing for target links; it only ever
         suppresses the self-referential subject.
       */}
-      {!isRepost && (event.subject || event.target) && event.metadata?.is_user_post !== true && (
-        <div className="flex gap-2">
-          {event.subject && event.subject.url && (
-            <Link
-              href={event.subject.url}
-              className="text-fg-primary hover:underline underline-offset-4 text-sm font-medium"
-            >
-              {event.subject.name}
-            </Link>
-          )}
-          {event.target && <span className="text-fg-tertiary">→</span>}
-          {event.target && event.target.url && (
-            <Link
-              href={event.target.url}
-              className="text-fg-primary hover:underline underline-offset-4 text-sm font-medium"
-            >
-              {event.target.name}
-            </Link>
-          )}
-        </div>
-      )}
+      {!isRepost &&
+        (event.subject || event.target) &&
+        (!attribution || event.target) &&
+        event.metadata?.is_user_post !== true && (
+          <div className="flex gap-2">
+            {event.subject && event.subject.url && (
+              <Link
+                href={event.subject.url}
+                className="text-fg-primary hover:underline underline-offset-4 text-sm font-medium"
+              >
+                {event.subject.name}
+              </Link>
+            )}
+            {event.target && <span className="text-fg-tertiary">→</span>}
+            {event.target && event.target.url && (
+              <Link
+                href={event.target.url}
+                className="text-fg-primary hover:underline underline-offset-4 text-sm font-medium"
+              >
+                {event.target.name}
+              </Link>
+            )}
+          </div>
+        )}
 
       {/* Quoted Original Post (for quote reposts) */}
       {isQuoteRepost && originalEventId && (
