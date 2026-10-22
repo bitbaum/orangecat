@@ -1,6 +1,5 @@
 import { notFound, redirect } from 'next/navigation';
 import { createServerClient } from '@/lib/supabase/server';
-import { getUserActorId } from '@/domain/actors';
 import { getArticleBySlug } from '@/services/articles/get-article';
 import { ROUTES } from '@/config/routes';
 import ArticleComposer from '../../new/ArticleComposer';
@@ -22,13 +21,10 @@ export default async function EditArticlePage({ params }: PageProps) {
     redirect(`${ROUTES.AUTH}?mode=login&from=${encodeURIComponent(`/articles/${slug}/edit`)}`);
   }
 
-  const [article, actorId] = await Promise.all([
-    getArticleBySlug(slug),
-    getUserActorId(supabase, user.id),
-  ]);
+  const article = await getArticleBySlug(slug);
 
   // Only the author may edit (mutations are RLS-protected regardless).
-  if (!article || !actorId || actorId !== article.authorActorId) {
+  if (!article || user.id !== article.authorProfileId) {
     notFound();
   }
 

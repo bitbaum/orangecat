@@ -169,6 +169,15 @@ function matchesPrefix(pathname: string, routes: readonly string[]): boolean {
   return false;
 }
 
+/** Writing requires the application shell; the article index and reader stay public. */
+export function isArticleEditorPath(pathname: string): boolean {
+  return (
+    pathname === ROUTES.ARTICLES_NEW ||
+    pathname === `${ROUTES.ARTICLES_NEW}/` ||
+    /^\/articles\/[^/]+\/edit\/?$/.test(pathname)
+  );
+}
+
 /**
  * Single SSOT for shell-related route classification. Sidebar, mobile nav,
  * header variant, and footer must all derive from this.
@@ -177,7 +186,7 @@ export function getRouteSurface(pathname: string): RouteSurface {
   if (matchesPrefix(pathname, AUTH_SURFACES)) {
     return 'auth';
   }
-  if (matchesPrefix(pathname, APP_SURFACES)) {
+  if (isArticleEditorPath(pathname) || matchesPrefix(pathname, APP_SURFACES)) {
     return 'app';
   }
   return 'public';
@@ -217,7 +226,8 @@ export function isCompanionTalkPath(pathname: string): boolean {
  * must derive from this — do not branch on pathname in layout components.
  */
 export function getRouteChrome(pathname: string): RouteChrome {
-  const focus = isCatHubPath(pathname) || isCompanionTalkPath(pathname);
+  const focus =
+    isCatHubPath(pathname) || isCompanionTalkPath(pathname) || isArticleEditorPath(pathname);
   return {
     hideMobileBottomNav: focus,
     ownsMobileNavClearance: matchesPrefix(pathname, [ROUTES.MESSAGES]),
