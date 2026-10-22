@@ -54,11 +54,17 @@ describe('useRecipientCheck', () => {
   });
 
   it('refuses to mark a walletless recipient payable', async () => {
-    fetchMock.mockResolvedValue({ canReceive: false, recipientName: 'Marco' });
+    fetchMock.mockResolvedValue({
+      canReceive: false,
+      recipientName: 'Marco',
+      recipientId: 'p-marco',
+    });
     const { result } = renderHook(() => useRecipientCheck('marco'));
 
     await waitFor(() => expect(result.current.state).toBe('cannot_receive'));
     expect(result.current.payable).toBe(false);
+    // Kept, so the screen can offer a message to them instead of a dead end.
+    expect(result.current.recipientId).toBe('p-marco');
   });
 
   it('blocks the send when nobody by that name exists', async () => {
