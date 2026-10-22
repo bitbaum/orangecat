@@ -41,6 +41,7 @@ export default function DashboardPage() {
     timelineLoading,
     timelineError,
     pendingActions,
+    pendingActionsLoaded,
     safeProjects,
     totalDrafts,
     projectStats,
@@ -78,13 +79,13 @@ export default function DashboardPage() {
   // times, three tiles said 0, a finished checklist kept its 100% bar, and
   // each project took a whole phone screen to show its first letter.
   return (
-    <div className="oc-page">
+    <div className="oc-page oc-interface">
       <div className="oc-page-container pb-20 sm:pb-8">
         <div className="mx-auto max-w-2xl space-y-8">
           <div className="space-y-5">
             <DashboardHeader
               profile={profile}
-              waiting={pendingActions.length}
+              waiting={pendingActionsLoaded ? pendingActions.length : undefined}
               totalDrafts={totalDrafts}
             />
             {/* The door: one sentence in, the right thing out. The Cat answers
@@ -119,8 +120,6 @@ export default function DashboardPage() {
             isLoading={timelineLoading}
             error={timelineError}
             onRefresh={reloadTimeline}
-            onPostSuccess={reloadTimeline}
-            userId={user?.id}
           />
 
           <DashboardInviteCTA profile={profile} userId={user.id} />

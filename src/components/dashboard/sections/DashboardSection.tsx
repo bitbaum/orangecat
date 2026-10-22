@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 interface DashboardSectionProps {
   id: string;
   title: string;
-  /** One link at the right of the heading — "All 18", never a button. */
+  /** One link at the right of the heading — "View all 18", never a button. */
   action?: { label: string; href: string };
   /** A short line under the heading, for a number worth knowing. */
   note?: ReactNode;
@@ -20,14 +20,14 @@ interface DashboardSectionProps {
 export function DashboardSection({ id, title, action, note, children }: DashboardSectionProps) {
   return (
     <section aria-labelledby={id} className="min-w-0">
-      <div className="mb-2 flex items-baseline justify-between gap-3">
+      <div className="mb-2 flex items-center justify-between gap-3">
         <h2 id={id} className="text-xs font-semibold uppercase tracking-wider text-fg-secondary">
           {title}
         </h2>
         {action && (
           <Link
             href={action.href}
-            className="shrink-0 text-xs text-fg-tertiary hover:text-fg-primary hover:underline"
+            className="inline-flex min-h-11 shrink-0 items-center text-sm text-fg-secondary hover:text-fg-primary hover:underline"
           >
             {action.label}
           </Link>

@@ -30,6 +30,7 @@
  * already offers, that is the most useful thing the Cat can say.
  */
 
+import { canSuggestAssetListing } from './nudge-eligibility';
 import { searchMatches, searchTerms } from 'listkit';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { DATABASE_TABLES } from '@/config/database-tables';
@@ -428,7 +429,9 @@ async function growthNudges(
     });
   }
 
-  const uncoveredAssets = econ.assets.map(a => a.name).filter(n => n && !covered(n));
+  const uncoveredAssets = econ.assets
+    .map(a => a.name)
+    .filter(n => canSuggestAssetListing(n) && !covered(n));
   const asset = uncoveredAssets.find(wanted) ?? uncoveredAssets[0];
   if (asset) {
     const isWanted = wanted(asset);

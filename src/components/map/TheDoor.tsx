@@ -33,7 +33,7 @@ export function TheDoor({ prompt, placeholder, className, examples }: TheDoorPro
       <label htmlFor="the-door" className="block font-heading text-lg text-fg-primary">
         {prompt ?? 'What do you want to do?'}
       </label>
-      <div className="mt-2 flex items-stretch gap-2 rounded-lg border border-default bg-surface-base p-1.5 focus-within:border-interactive">
+      <div className="mt-2 flex flex-col gap-2 sm:flex-row">
         <input
           id="the-door"
           name={CAT_QUERY_PARAM}
@@ -42,14 +42,12 @@ export function TheDoor({ prompt, placeholder, className, examples }: TheDoorPro
           required
           minLength={3}
           maxLength={500}
-          placeholder={
-            placeholder ?? 'Sell my old bike · raise money for the school roof · lend a friend 500'
-          }
-          className="min-h-11 min-w-0 flex-1 bg-transparent px-3 text-base text-fg-primary placeholder:text-fg-muted focus:outline-none"
+          placeholder={placeholder ?? 'Describe what you want to do…'}
+          className="min-h-12 min-w-0 flex-1 rounded-md border border-default bg-surface-base px-3 text-base text-fg-primary placeholder:text-fg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
         <button
           type="submit"
-          className="inline-flex min-h-11 items-center gap-1.5 rounded-md bg-accent-warm px-4 text-sm font-semibold text-on-accent"
+          className="inline-flex min-h-12 items-center justify-center gap-1.5 rounded-md bg-fg-primary px-4 text-sm font-semibold text-fg-inverted hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           Ask Cat
           <ArrowRight className="h-4 w-4" aria-hidden="true" />

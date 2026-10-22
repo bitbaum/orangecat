@@ -27,6 +27,7 @@ interface TimelineComponentProps {
   isLoadingMore?: boolean;
   showFilters?: boolean;
   compact?: boolean;
+  showEndMessage?: boolean;
   enableMultiSelect?: boolean;
 }
 
@@ -38,6 +39,7 @@ export const TimelineComponent: React.FC<TimelineComponentProps> = ({
   isLoadingMore = false,
   showFilters: _showFilters = true,
   compact = false,
+  showEndMessage = true,
   enableMultiSelect = false,
 }) => {
   const [events, setEvents] = useState(feed.events);
@@ -182,7 +184,7 @@ export const TimelineComponent: React.FC<TimelineComponentProps> = ({
   }
 
   return (
-    <div className="space-y-0">
+    <div className="oc-interface space-y-0">
       {/* Multi-Select Controls */}
       {enableMultiSelect && (
         <>
@@ -232,7 +234,7 @@ export const TimelineComponent: React.FC<TimelineComponentProps> = ({
       )}
 
       {/* Events List */}
-      <div className="space-y-0">
+      <div className="oc-interface space-y-0">
         {visibleEvents.map(event => (
           <PostCard
             key={event.id}
@@ -264,7 +266,7 @@ export const TimelineComponent: React.FC<TimelineComponentProps> = ({
       )}
 
       {/* End of feed indicator */}
-      {!feed.pagination.hasNext && events.length > 0 && (
+      {showEndMessage && !feed.pagination.hasNext && events.length > 0 && (
         <div className="text-center py-6">
           <span className="text-sm text-fg-tertiary">You've reached the end</span>
         </div>

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useRequireAuth } from '@/hooks/useAuth';
-import { useProjectStore } from '@/stores/projectStore';
+import { selectDraftProjects, useProjectStore } from '@/stores/projectStore';
 import { useTimelineEvents } from '@/hooks/useTimelineEvents';
 import { logger } from '@/utils/logger';
 import { toast } from 'sonner';
@@ -12,7 +12,7 @@ import { useDashboardTimeline } from './useDashboardTimeline';
 
 export function useDashboard() {
   const { user, profile, isLoading, hydrated } = useRequireAuth();
-  const { projects, drafts, loadProjects } = useProjectStore();
+  const { projects, loadProjects } = useProjectStore();
   useTimelineEvents();
   const { getPendingActions, confirmAction, rejectAction } = usePendingActions();
 
@@ -111,7 +111,7 @@ export function useDashboard() {
   );
 
   const safeProjects = useMemo(() => (Array.isArray(projects) ? projects : []), [projects]);
-  const safeDrafts = useMemo(() => (Array.isArray(drafts) ? drafts : []), [drafts]);
+  const safeDrafts = useMemo(() => selectDraftProjects({ projects: safeProjects }), [safeProjects]);
   const totalDrafts = safeDrafts.length;
 
   const fundingByCurrency = useMemo(
