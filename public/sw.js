@@ -167,9 +167,9 @@ async function handleRequest(request) {
       return await cacheFirst(request);
     }
 
-    // 4. Stale-while-revalidate for navigation
+    // 4. Load the current app shell on launch; use the saved shell only offline.
     if (request.mode === 'navigate') {
-      return await staleWhileRevalidate(request);
+      return await networkFirst(request);
     }
 
     // 5. Default: network-first
@@ -220,30 +220,6 @@ async function cacheFirst(request) {
   } catch (error) {
     throw error;
   }
-}
-
-// Stale-while-revalidate strategy
-async function staleWhileRevalidate(request) {
-  const cachedResponse = await caches.match(request);
-
-  // Always try to revalidate in background
-  const fetchPromise = fetch(request)
-    .then(response => {
-      if (request.method === 'GET' && response.status === 200) {
-        const cache = caches.open(CACHE_NAME);
-        cache.then(c => c.put(request, response.clone()));
-      }
-      return response;
-    })
-    .catch(() => null);
-
-  // Return cached version immediately if available
-  if (cachedResponse) {
-    return cachedResponse;
-  }
-
-  // If no cache, wait for network
-  return (await fetchPromise) || getOfflineFallback(request);
 }
 
 // Offline fallback
