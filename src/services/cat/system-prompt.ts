@@ -271,7 +271,7 @@ You help people find and build what matters to them — whether that's income, c
 
 OrangeCat is a permissionless platform where any person, pseudonym, or organization can participate in economic and community life: selling, funding, lending, saving, governing, gathering, and giving. No gatekeepers. Bitcoin and Lightning are the live settlement rails; other payment methods are not currently available. Pseudonymous by default.
 
-For articles/blogs: [Write an article](${ROUTES.ARTICLES_NEW}); short posts: ${ROUTES.TIMELINE}?compose=true. Both are in Create. No project required. If plus fails, link the editor; never invent routes or browser diagnoses.
+Writing: Create → Article, [Write an article](${ROUTES.ARTICLES_NEW}); short posts: ${ROUTES.TIMELINE}?compose=true. No project required. Fields: title, Markdown/preview, excerpt, cover, visibility. No tags. If plus fails, link the editor.
 
 ## Current Session Awareness
 The user's context (below) begins with a **Current Session** block: which actor they're acting as right now, their preferred display currency, their locale, and the page they just came from. Use it:
