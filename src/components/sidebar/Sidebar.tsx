@@ -17,6 +17,7 @@
 'use client';
 
 import { X, PanelLeftClose, PanelLeft } from 'lucide-react';
+import { useEffect } from 'react';
 import FocusLock from 'react-focus-lock';
 import { ContextSwitcher } from './ContextSwitcher';
 import { SidebarNavigation } from './SidebarNavigation';
@@ -71,6 +72,21 @@ export function Sidebar({
   // Mobile: w-64 full-width drawer when open, hidden when closed
   // Using useIsDesktop hook (SSR-safe, reactive to window resizing)
   const isDesktop = useIsDesktop();
+  const mobileDrawerOpen = !isDesktop && navigationState.isSidebarOpen;
+
+  useEffect(() => {
+    if (!mobileDrawerOpen) {
+      return;
+    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        toggleSidebar();
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [mobileDrawerOpen, toggleSidebar]);
 
   // Desktop sidebar is always visible, mobile sidebar slides in/out
   const sidebarTranslate = navigationState.isSidebarOpen
@@ -98,11 +114,13 @@ export function Sidebar({
 
       {/* Focus trap for mobile drawer (accessibility) */}
       {/* Disabled on desktop where sidebar is always visible */}
-      <FocusLock disabled={!navigationState.isSidebarOpen || isDesktop}>
+      <FocusLock disabled={!mobileDrawerOpen} returnFocus>
         {/* Desktop: w-64 (full width) or w-16 (collapsed, icons only) based on user preference
             Mobile: w-64 drawer when open
             Using literal class names for Tailwind JIT compatibility */}
         <aside
+          inert={!isDesktop && !navigationState.isSidebarOpen}
+          aria-hidden={!isDesktop && !navigationState.isSidebarOpen}
           className={`fixed bottom-0 left-0 ${SIDEBAR_Z_INDEX.SIDEBAR} flex flex-col ${SIDEBAR_COLORS.BACKGROUND} border-r ${SIDEBAR_COLORS.BORDER} ${sidebarTranslate} overflow-hidden transition-all ${SIDEBAR_TRANSITIONS.DURATION} ${SIDEBAR_TRANSITIONS.EASING} ${sidebarWidth}`}
           style={{
             paddingBottom: 'env(safe-area-inset-bottom, 0px)',

@@ -1,7 +1,6 @@
 import { FileText, MessageSquare, type LucideIcon } from 'lucide-react';
 import { ROUTES } from '@/config/routes';
 import {
-  COLOR_CLASSES,
   getEntitiesForCreateMenu,
   type EntityCategory,
   type EntityMetadata,
@@ -35,15 +34,18 @@ export const CREATE_CATEGORY_LABELS: Record<CreateOptionCategory, string> = {
   personal: 'For you',
 };
 
+const CREATE_OPTION_ICON_STYLE = {
+  color: 'text-fg-primary',
+  bgColor: 'bg-surface-raised',
+} as const;
+
 function optionFromEntity(entity: EntityMetadata): CreateOption {
-  const colors = COLOR_CLASSES[entity.colorTheme];
   return {
     name: entity.name,
     description: entity.createActionLabel,
     href: entity.createPath,
     icon: entity.icon,
-    color: colors.text,
-    bgColor: colors.bg,
+    ...CREATE_OPTION_ICON_STYLE,
     category: entity.category,
   };
 }
@@ -54,8 +56,7 @@ export function buildCreateOptions(): CreateOption[] {
     description: 'Share an update on your timeline',
     href: `${ROUTES.TIMELINE}?compose=true`,
     icon: MessageSquare,
-    color: 'text-fg-primary',
-    bgColor: 'bg-surface-raised',
+    ...CREATE_OPTION_ICON_STYLE,
     category: 'content',
   };
   const article: CreateOption = {
@@ -63,8 +64,7 @@ export function buildCreateOptions(): CreateOption[] {
     description: 'Write a long-form article with drafts and preview',
     href: ROUTES.ARTICLES_NEW,
     icon: FileText,
-    color: 'text-fg-primary',
-    bgColor: 'bg-surface-raised',
+    ...CREATE_OPTION_ICON_STYLE,
     category: 'content',
   };
   return [article, post, ...getEntitiesForCreateMenu().map(optionFromEntity)];

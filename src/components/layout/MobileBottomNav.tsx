@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useBottomNavScroll } from '@/hooks/useHeaderScroll';
@@ -26,6 +26,7 @@ const MobileBottomNav = React.memo(function MobileBottomNav() {
   const { isCompact } = useBottomNavScroll();
   const { openComposer } = useComposer();
   const [showCreateSheet, setShowCreateSheet] = useState(false);
+  const createTriggerRef = useRef<HTMLButtonElement>(null);
   // Shared with the floating Cat button: both step aside while typing.
   const keyboardOpen = useSoftKeyboard();
 
@@ -130,6 +131,7 @@ const MobileBottomNav = React.memo(function MobileBottomNav() {
             return (
               <button
                 key={`${item.href}-${index}`}
+                ref={item.opensCreate ? createTriggerRef : undefined}
                 onClick={e => {
                   e.preventDefault();
                   if (item.opensCreate) {
@@ -219,7 +221,11 @@ const MobileBottomNav = React.memo(function MobileBottomNav() {
       </div>
 
       {/* Mobile Create Sheet - shown when "+" triggers menu action */}
-      <MobileCreateSheet isOpen={showCreateSheet} onClose={() => setShowCreateSheet(false)} />
+      <MobileCreateSheet
+        isOpen={showCreateSheet}
+        onClose={() => setShowCreateSheet(false)}
+        returnFocusRef={createTriggerRef}
+      />
     </>
   );
 });

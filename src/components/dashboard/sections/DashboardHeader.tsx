@@ -1,5 +1,7 @@
 'use client';
 
+import { isMintedHandle } from '@/config/usernames';
+
 // Usernames are stored lowercase; display names from `profile.name` may already
 // be properly cased. Capitalize the first character so the greeting reads
 // "Welcome back, Mao" rather than "Welcome back, mao".
@@ -17,10 +19,13 @@ function capitalizeName(name: string): string {
 // that the platform doesn't actually know who you are. Detect the
 // placeholder pattern and skip the comma+name instead.
 function isPlaceholderName(name?: string | null, username?: string | null): boolean {
+  if (name?.trim() && name !== 'User') {
+    return false;
+  }
   if (name === 'User') {
     return true;
   }
-  if (username && /^user_[0-9a-f]{8}$/.test(username)) {
+  if (isMintedHandle(username)) {
     return true;
   }
   return false;
