@@ -12,7 +12,7 @@ import { publishArticle } from '@/services/articles/create';
 import { updateArticle } from '@/services/articles/update';
 import type { TimelineVisibility } from '@/types/timeline';
 import type { ArticleDraft } from '@/services/cat/writing-types';
-import { deleteLocalDraft, type LocalArticleDraft } from '@/services/articles/local-drafts';
+import { type LocalArticleDraft } from '@/services/articles/local-drafts';
 import { useMarkdownTextarea } from '@/components/articles/useMarkdownTextarea';
 import AiWriterPanel from '@/components/articles/AiWriterPanel';
 import type { StockImage } from '@/services/images/types';
@@ -174,12 +174,12 @@ export default function ArticleComposer({
       setPublishing(false);
       return;
     }
-    deleteLocalDraft(drafts.draftId);
+    drafts.completeDraft();
     router.push(ROUTES.ARTICLE(result.slug));
   }
 
   return (
-    <div className="min-h-screen bg-surface-page pt-20 pb-24 text-fg-primary">
+    <div className="min-h-screen bg-surface-page pt-8 pb-24 text-fg-primary">
       <div className="mx-auto w-full max-w-[720px] px-5">
         <Link
           href={isEditing ? ROUTES.ARTICLE(initial!.slug) : ROUTES.ARTICLES}
@@ -199,9 +199,12 @@ export default function ArticleComposer({
         </header>
 
         {!isEditing && (
-          <div className="mb-5">
+          <details className="mb-5 rounded-md border border-default">
+            <summary className="min-h-11 cursor-pointer px-3 py-2.5 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              Writing assistance
+            </summary>
             <AiWriterPanel title={title} onApplyDraft={applyDraft} disabled={publishing} />
-          </div>
+          </details>
         )}
 
         <DraftsPanel
@@ -262,6 +265,24 @@ export default function ArticleComposer({
         {error && (
           <p className="mt-4 rounded-md border border-status-negative/25 bg-status-negative/10 px-3 py-2 text-sm text-status-negative">
             {error}
+          </p>
+        )}
+
+        {!isEditing && (
+          <p
+            role="status"
+            className={cn(
+              'mt-4 text-sm',
+              drafts.saveStatus === 'error' ? 'text-status-negative' : 'text-fg-secondary'
+            )}
+          >
+            {drafts.saveStatus === 'error'
+              ? "Couldn't save on this device. Keep this page open and copy your draft before leaving."
+              : drafts.saveStatus === 'saved'
+                ? 'Draft saved on this device.'
+                : drafts.saveStatus === 'saving'
+                  ? 'Saving draft…'
+                  : 'Drafts are saved on this device as you write.'}
           </p>
         )}
 
