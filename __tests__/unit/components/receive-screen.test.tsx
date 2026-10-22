@@ -63,7 +63,8 @@ describe('ReceiveScreen', () => {
     expect(screen.getByText(/\/pay\/catomean$/)).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Copy link' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Share' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Add an amount' })).toBeTruthy();
+    // The code says who you are; the amount is the payer's or Request's.
+    expect(screen.queryByRole('button', { name: 'Add an amount' })).toBeNull();
 
     // The ways: Bitcoin first, then the others, then add.
     expect(screen.getByText('Ways to pay you')).toBeTruthy();

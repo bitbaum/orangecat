@@ -1,10 +1,11 @@
 /**
  * Receive — SSOT for the owner-side "get paid" surface (/receive).
  *
- * One question on screen: the pay link, with Copy (and Share) right under it.
- * "Where this goes" opens the Lightning name and the wallet the coins settle
- * in. This page does not mint an invoice and does not ask which wallet — the
- * payer types the amount on the link. Asking a named account is Request.
+ * One thing on screen: the code that pays you, with Copy and Share right
+ * under it, then every way you are paid. This page does not mint an invoice,
+ * does not ask which wallet and does not ask for an amount — the payer types
+ * what they owe on the page the code opens. Asking someone for a figure is
+ * Request.
  *
  * OrangeCat never holds the funds. The link and the Lightning name are the
  * same door; the coins land in the wallet the owner connected.
@@ -50,9 +51,6 @@ export const RECEIVE_SHARE_COPY = {
   share: 'Share',
   /** The one QR on the screen: the pay link, so any camera opens it. */
   qrTitle: (name: string) => `QR code to pay ${name}`,
-  addAmount: 'Add an amount',
-  removeAmount: 'Remove the amount',
-  amountFor: 'This code asks for',
 } as const;
 
 export const RECEIVE_COPY = {

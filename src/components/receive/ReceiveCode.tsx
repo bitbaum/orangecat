@@ -9,53 +9,42 @@
  * tomorrow. The pay page on the far side offers every way this person is paid.
  *
  * The QR, Copy and Share all render the SAME string from buildPayUrl, so the
- * three cannot disagree about the amount. The symbol stays black on white in
- * both themes — a camera reads it, not a person (config/payment-qr).
+ * three cannot disagree. The symbol stays black on white in both themes — a
+ * camera reads it, not a person (config/payment-qr).
+ *
+ * No amount here. The code says who you are; the payer types what they owe
+ * on the page it opens, or you ask a named person for a figure on Request.
+ * "Add an amount" under the code made the owner ask what receiving had to do
+ * with choosing a number (2026-10-22), and the link it produced wrapped a raw
+ * BTC decimal across two lines.
  */
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 import { Check, Copy, Share2 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/Button';
-import { AmountField } from '@/components/money/AmountField';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
-import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
-import { buildPayUrl, payLinkOrigin, PAY_COPY, PAY_MAX_BTC, PAY_MIN_BTC } from '@/config/pay';
+import { buildPayUrl, payLinkOrigin, PAY_COPY } from '@/config/pay';
 import { QR_RENDER } from '@/config/payment-qr';
 import { RECEIVE_SHARE_COPY } from '@/config/receive';
 import { getInitial } from '@/utils/string';
-import { cn } from '@/lib/utils';
 
 interface ReceiveCodeProps {
   username: string;
   /** Who the code pays, shown above it. Omit where the page already says. */
   name?: string | null;
   avatarUrl?: string | null;
-  /** Offer "Add an amount"; the link and the code then carry it. */
-  withAmount?: boolean;
   className?: string;
 }
 
 const QR_SIZE = 200;
 
-export function ReceiveCode({
-  username,
-  name,
-  avatarUrl,
-  withAmount,
-  className,
-}: ReceiveCodeProps) {
+export function ReceiveCode({ username, name, avatarUrl, className }: ReceiveCodeProps) {
   const { copied, copy } = useCopyToClipboard();
-  const { formatAmountBtc } = useDisplayCurrency();
-  const [amountOpen, setAmountOpen] = useState(false);
-  const [amountBtc, setAmountBtc] = useState(0);
 
   const origin = payLinkOrigin();
-  const url = useMemo(
-    () => buildPayUrl(origin, username, { amountBtc: amountOpen ? amountBtc : undefined }),
-    [origin, username, amountOpen, amountBtc]
-  );
+  const url = useMemo(() => buildPayUrl(origin, username), [origin, username]);
   const shown = url.replace(/^https?:\/\//, '');
   const who = name || username;
 
@@ -105,13 +94,6 @@ export function ReceiveCode({
             />
           </div>
 
-          {amountOpen && amountBtc > 0 && (
-            <p className="text-sm text-fg-secondary">
-              {RECEIVE_SHARE_COPY.amountFor}{' '}
-              <span className="font-medium text-fg-primary">{formatAmountBtc(amountBtc)}</span>
-            </p>
-          )}
-
           <p className="break-all font-mono text-sm text-fg-secondary">{shown}</p>
         </div>
 
@@ -126,38 +108,6 @@ export function ReceiveCode({
           </Button>
         </div>
       </section>
-
-      {withAmount && (
-        <div className="mt-4">
-          {amountOpen ? (
-            <div className="space-y-3">
-              <AmountField
-                value={amountBtc}
-                onChange={setAmountBtc}
-                minBtc={PAY_MIN_BTC}
-                maxBtc={PAY_MAX_BTC}
-                autoFocus
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  setAmountOpen(false);
-                  setAmountBtc(0);
-                }}
-                className={cn(
-                  'flex min-h-11 w-full items-center justify-center text-sm text-fg-secondary hover:text-fg-primary'
-                )}
-              >
-                {RECEIVE_SHARE_COPY.removeAmount}
-              </button>
-            </div>
-          ) : (
-            <Button variant="outline" className="w-full" onClick={() => setAmountOpen(true)}>
-              {RECEIVE_SHARE_COPY.addAmount}
-            </Button>
-          )}
-        </div>
-      )}
     </div>
   );
 }
