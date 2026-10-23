@@ -67,6 +67,10 @@ export const RECEIVE_COPY = {
   noWalletBody:
     'Paste whatever your Bitcoin app shows when you tap Receive. If you do not have one yet, get a free one below and paste what it gives you. You can skip this and come back later.',
   notNow: 'Not now',
+  /** The moment a payment arrives while the code is on screen. */
+  receivedTitle: 'Received',
+  receivedFrom: 'From',
+  receivedDone: 'Done',
   /** The Bitcoin row's right-hand action. */
   manageBitcoin: 'Change',
   setUpBitcoin: 'Set up',

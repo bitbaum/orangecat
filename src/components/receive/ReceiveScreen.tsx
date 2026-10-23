@@ -23,6 +23,8 @@ import { ReceiveSetup } from '@/components/receive/ReceiveSetup';
 import { WaysToPay } from '@/components/receive/WaysToPay';
 import { MoneyLoading, MoneyPage } from '@/components/money/MoneyPage';
 import { useRequireAuth } from '@/hooks/useAuth';
+import { useIncomingPayment } from '@/hooks/useIncomingPayment';
+import { MoneyReceipt } from '@/components/money/MoneyReceipt';
 import { fetchReceiveOverview, type OwnerReceiveOverview } from '@/services/receive/receive-client';
 import {
   fetchPaymentMethods,
@@ -43,6 +45,8 @@ export function ReceiveScreen() {
   const [failed, setFailed] = useState(false);
   const [adding, setAdding] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  // A payment landing while this screen is open replaces the code with a receipt.
+  const { payment, dismiss } = useIncomingPayment();
 
   const reload = useCallback(async () => {
     if (!user?.id) {
@@ -123,6 +127,24 @@ export function ReceiveScreen() {
   }
 
   const username = overview?.username ?? profile?.username ?? null;
+
+  if (payment) {
+    return (
+      <MoneyPage title={RECEIVE_COPY.title} subtitle={RECEIVE_COPY.subtitle}>
+        <MoneyReceipt
+          title={RECEIVE_COPY.receivedTitle}
+          amountBtc={payment.amountBtc}
+          counterparty={payment.from}
+          counterpartyLabel={RECEIVE_COPY.receivedFrom}
+          note={payment.note}
+        >
+          <Button variant="primary" onClick={dismiss}>
+            {RECEIVE_COPY.receivedDone}
+          </Button>
+        </MoneyReceipt>
+      </MoneyPage>
+    );
+  }
 
   return (
     <MoneyPage title={RECEIVE_COPY.title} subtitle={RECEIVE_COPY.subtitle}>

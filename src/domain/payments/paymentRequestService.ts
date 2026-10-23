@@ -348,6 +348,9 @@ export async function settlePaymentRequest(intent: PaymentIntent): Promise<boole
         requestId: request.id,
         paymentIntentId: intent.id,
         amount_btc: Number(intent.amount_btc),
+        // The live Receive screen reads these to say who paid and what for.
+        payerName: name,
+        note: request.note,
       },
       actionUrl: '/requests',
     });

@@ -11,6 +11,8 @@ to the map, sub-bullets stay here for the human reader.
 
 ## 2026-10-23
 
+- **Receive tells you when you were paid.** Show your code, and when the payment lands the screen turns into a receipt — the amount in your currency, who paid and what for when that is known — with a Done to return to the code. It appears as soon as the payment is confirmed: within seconds while the payer's page stays open, and when the background check sees it if they close it. Payments sent straight to `you@orangecat.ch` are not seen by us and do not appear here.
+
 - **The money screens are set like they matter.** The amount is now a figure: the number large and centred, the currency small beside it, what actually moves (the Bitcoin amount) quietly beneath — on Send, Request, the pay page, the receipt and every request row. Receive is a poster rather than a box in a box: your name, then the code, with the Cat in its middle (it still scans), then Copy link · Share. Every way to be paid carries a round mark, and the Bitcoin one is the only orange. A confirmation draws its ring and tick instead of dropping in. People with no name show their handle once instead of twice. Underneath: stacked lines no longer carry a hidden 12px gap.
 
 - **Bookings distinguish an empty list from a failed load.** Retry restores a failed request, view choices share one control, and history filters cannot hide incoming or confirmed bookings.

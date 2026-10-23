@@ -6,7 +6,7 @@
  * No invoice form, no wallet menu, no summary that looks like a button.
  */
 
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 
 vi.mock('@/hooks/useAuth', () => ({
   useRequireAuth: () => ({
@@ -19,6 +19,17 @@ vi.mock('@/hooks/useAuth', () => ({
     },
     isLoading: false,
   }),
+}));
+
+// The live arrival of a payment. Null = nothing has arrived since the screen opened.
+let arrived: { id: string; amountBtc: number; from: string | null; note: string | null } | null =
+  null;
+const dismissMock = vi.fn();
+vi.mock('@/hooks/useIncomingPayment', () => ({
+  useIncomingPayment: () => ({ payment: arrived, dismiss: dismissMock }),
+}));
+vi.mock('@/hooks/useDisplayCurrency', () => ({
+  useDisplayCurrency: () => ({ formatAmountBtc: (n: number) => `${n} BTC` }),
 }));
 
 vi.mock('@/services/receive/receive-client', () => ({
@@ -91,5 +102,23 @@ describe('ReceiveScreen', () => {
   it('does not turn an unknown wallet host into a link', () => {
     expect(walletAppUrl('me@getalby.com')).toBeNull();
     expect(walletAppUrl('orangecat@coinos.io')).toBe('https://coinos.io');
+  });
+
+  it('turns the code into a receipt when a payment arrives, and back on Done', async () => {
+    arrived = { id: 'n1', amountBtc: 0.0002, from: 'Marco', note: 'dinner' };
+    try {
+      render(<ReceiveScreen />);
+
+      expect(await screen.findByText('Received')).toBeTruthy();
+      expect(screen.getByText('Marco')).toBeTruthy();
+      expect(screen.getByText('dinner')).toBeTruthy();
+      // The code is out of the way while the moment is on screen.
+      expect(screen.queryByTitle('QR code to pay Cato')).toBeNull();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+      expect(dismissMock).toHaveBeenCalled();
+    } finally {
+      arrived = null;
+    }
   });
 });
