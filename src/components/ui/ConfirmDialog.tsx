@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useRef } from 'react';
 import { Loader2 } from 'lucide-react';
 import {
   Dialog,
@@ -37,13 +37,29 @@ export function ConfirmDialog({
   icon,
   children,
 }: ConfirmDialogProps) {
+  const openerRef = useRef<HTMLElement | null>(null);
+
   const handleConfirm = async () => {
     await onConfirm();
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-      <DialogContent className="max-w-sm">
+      <DialogContent
+        className="max-w-sm"
+        onOpenAutoFocus={() => {
+          openerRef.current =
+            document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        }}
+        onCloseAutoFocus={event => {
+          const opener = openerRef.current;
+          if (opener?.isConnected && opener !== document.body) {
+            event.preventDefault();
+            opener.focus();
+          }
+          openerRef.current = null;
+        }}
+      >
         <DialogHeader>
           {icon && <div className="mx-auto mb-2">{icon}</div>}
           <DialogTitle>{title}</DialogTitle>
