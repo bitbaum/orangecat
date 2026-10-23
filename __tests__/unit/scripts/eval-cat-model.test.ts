@@ -30,7 +30,9 @@ describe('eval-cat.mjs pinned model', () => {
   it('pins a model the registry actually marks free — a paid pin means every probe 402s', () => {
     const match = source.match(/EVAL_PROVIDER === 'groq'\s*\?\s*'[^']+'\s*:\s*'([^']+)'/);
     const pinned = match![1];
-    const entry = (AI_MODEL_REGISTRY as Record<string, { isFree?: boolean; tier?: string }>)[pinned];
+    const entry = (AI_MODEL_REGISTRY as Record<string, { isFree?: boolean; tier?: string }>)[
+      pinned
+    ];
     expect(entry).toBeDefined();
     expect(entry.isFree === true || entry.tier === 'free').toBe(true);
   });

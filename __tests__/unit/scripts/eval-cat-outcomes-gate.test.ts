@@ -45,7 +45,12 @@ describe('eval-cat-outcomes gate predicate', () => {
     const out = execFileSync(
       process.execPath,
       ['--input-type=module', '-e', `await import('${MODULE_URL}'); console.log('imported');`],
-      { cwd: process.cwd(), encoding: 'utf8', timeout: 30_000, env: { ...process.env, NODE_OPTIONS: '' } }
+      {
+        cwd: process.cwd(),
+        encoding: 'utf8',
+        timeout: 30_000,
+        env: { ...process.env, NODE_OPTIONS: '' },
+      }
     );
     expect(out).toContain('imported');
     expect(out).not.toContain('Cat outcome funnel');

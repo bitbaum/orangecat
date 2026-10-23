@@ -13,8 +13,7 @@ import { scoreLedger, FRESH_WINDOW_DAYS } from '@/services/wallets/transparency'
 import type { PublicLedgerEntry } from '@/services/wallets/publicLedger';
 
 const NOW = new Date('2026-09-17T12:00:00.000Z');
-const daysAgo = (n: number) =>
-  new Date(NOW.getTime() - n * 24 * 60 * 60 * 1000).toISOString();
+const daysAgo = (n: number) => new Date(NOW.getTime() - n * 24 * 60 * 60 * 1000).toISOString();
 
 function entry(note: string | null, txid = Math.random().toString(16).slice(2)): PublicLedgerEntry {
   return {

@@ -94,7 +94,9 @@ describe('researchEntitySchema — funding_goal_btc is BTC, not satoshis', () =>
   });
 
   it('accepts a tiny BTC goal (0.00001 BTC — domain default)', () => {
-    expect(researchEntitySchema.safeParse({ ...base, funding_goal_btc: 0.00001 }).success).toBe(true);
+    expect(researchEntitySchema.safeParse({ ...base, funding_goal_btc: 0.00001 }).success).toBe(
+      true
+    );
   });
 
   it('rejects zero funding_goal_btc', () => {

@@ -90,7 +90,7 @@ describe('no surface may invent its own return-path param', () => {
     const read = new Set<string>();
     for (const file of walk(join(ROOT, 'src/app/auth'))) {
       for (const m of readFileSync(file, 'utf8').matchAll(
-        /searchParams\??\.?get\('([a-zA-Z_]+)'\)/g,
+        /searchParams\??\.?get\('([a-zA-Z_]+)'\)/g
       )) {
         read.add(m[1]);
       }

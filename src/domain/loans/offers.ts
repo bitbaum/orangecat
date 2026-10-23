@@ -16,12 +16,7 @@ type OfferResult =
   | {
       ok: false;
       reason:
-        | 'loan_not_found'
-        | 'forbidden'
-        | 'below_minimum'
-        | 'not_found'
-        | 'invalid_state'
-        | 'error';
+        'loan_not_found' | 'forbidden' | 'below_minimum' | 'not_found' | 'invalid_state' | 'error';
       message: string;
     };
 

@@ -51,6 +51,8 @@ export interface PaymentIntent {
   public_status_token_hash: string | null;
   /** The name a guest bought an event ticket for, without an account. */
   guest_name?: string | null;
+  /** The person-to-person request this payment answers, when it came from one. */
+  payment_request_id?: string | null;
 }
 
 // =====================================================================
@@ -163,6 +165,8 @@ export interface InitiateTipInput {
   /** The recipient's own resolved wallet — funds go straight here. */
   wallet: ResolvedWallet;
   amountBtc: number;
+  /** A pending request this payment answers — already checked against the recipient. */
+  paymentRequestId?: string | null;
 }
 
 /** Resolved wallet info for a seller */

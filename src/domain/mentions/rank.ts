@@ -181,9 +181,7 @@ export function rankMentionSuggestions(
     // row a human can act on.
     .sort(
       (a, b) =>
-        a.rank - b.rank ||
-        Number(a.s.isAnonymous) - Number(b.s.isAnonymous) ||
-        a.index - b.index
+        a.rank - b.rank || Number(a.s.isAnonymous) - Number(b.s.isAnonymous) || a.index - b.index
     )
     .map(entry => entry.s);
 

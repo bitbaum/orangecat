@@ -34,6 +34,31 @@ describe('RecipientStatus — cannot receive', () => {
   });
 });
 
+describe('RecipientStatus — the two refusals Send used to make late', () => {
+  it('names the self case', () => {
+    render(
+      <RecipientStatus
+        check={{ state: 'self', name: null, payable: false, recipientId: null }}
+        handle="cato"
+      />
+    );
+    expect(screen.getByText("That's you. Pick someone else to pay.")).toBeTruthy();
+  });
+
+  it('sends an on-chain-only recipient to the page that can pay them', () => {
+    render(
+      <RecipientStatus
+        check={{ state: 'onchain_only', name: 'Ines', payable: false, recipientId: 'p-ines' }}
+        handle="ines"
+      />
+    );
+    expect(screen.getByText(/Ines receives on-chain only/)).toBeTruthy();
+    expect(screen.getByRole('link', { name: "Open Ines's pay page" }).getAttribute('href')).toBe(
+      '/pay/ines'
+    );
+  });
+});
+
 describe('named message drafts', () => {
   it('knows its keys and nothing a URL could invent', () => {
     expect(isMessageDraftKey('add-wallet')).toBe(true);

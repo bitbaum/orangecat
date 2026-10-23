@@ -58,11 +58,7 @@ export async function scanUsedAddresses<T>(
 
   for (const chain of SCANNED_CHAINS) {
     let consecutiveEmpty = 0;
-    for (
-      let index = 0;
-      index < MAX_SCAN_PER_CHAIN && consecutiveEmpty < GAP_LIMIT;
-      index += 1
-    ) {
+    for (let index = 0; index < MAX_SCAN_PER_CHAIN && consecutiveEmpty < GAP_LIMIT; index += 1) {
       const address = deriveChainAddress(extendedKey, chain, index);
       const result = await probe(address);
       if (result.used) {

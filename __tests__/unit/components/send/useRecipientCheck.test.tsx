@@ -16,10 +16,18 @@ import type { Mock } from 'vitest';
 
 vi.mock('@/services/tips/tip-client', () => ({ fetchTipReceiveInfo: vi.fn() }));
 
+// Whose account this is, for the "that's you" case. Null = signed out of the store.
+let ownUsername: string | null = null;
+vi.mock('@/stores/auth', () => ({
+  useAuthStore: (select: (s: { profile: { username: string } | null }) => unknown) =>
+    select({ profile: ownUsername ? { username: ownUsername } : null }),
+}));
+
 const fetchMock = fetchTipReceiveInfo as Mock;
 
 beforeEach(() => {
   vi.clearAllMocks();
+  ownUsername = null;
 });
 
 describe('useRecipientCheck', () => {
@@ -93,5 +101,27 @@ describe('useRecipientCheck', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock).toHaveBeenCalledWith('lena');
     vi.useRealTimers();
+  });
+
+  it('says so when the name is your own, without looking anything up', () => {
+    ownUsername = 'Cato';
+    const { result } = renderHook(() => useRecipientCheck('@cato'));
+    expect(result.current.state).toBe('self');
+    expect(result.current.payable).toBe(false);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('flags a recipient who can only be paid on-chain before the amount is asked', async () => {
+    fetchMock.mockResolvedValue({
+      canReceive: true,
+      recipientName: 'Ines',
+      recipientId: 'p-ines',
+      method: 'onchain',
+    });
+    const { result } = renderHook(() => useRecipientCheck('ines'));
+
+    await waitFor(() => expect(result.current.state).toBe('onchain_only'));
+    expect(result.current.payable).toBe(false);
+    expect(result.current.name).toBe('Ines');
   });
 });

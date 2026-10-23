@@ -162,9 +162,6 @@ describe('xpub balance is scanned, never assumed', () => {
       address_or_xpub: 'zpubDEADBEEF',
     });
 
-    expect((res as { wallet: Record<string, unknown> }).wallet.balance_btc).toBeCloseTo(
-      0.00075,
-      8
-    );
+    expect((res as { wallet: Record<string, unknown> }).wallet.balance_btc).toBeCloseTo(0.00075, 8);
   });
 });

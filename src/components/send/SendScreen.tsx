@@ -20,6 +20,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Clock } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { MoneyLoading, MoneyPage } from '@/components/money/MoneyPage';
 import { MoneyReceipt } from '@/components/money/MoneyReceipt';
@@ -35,6 +36,7 @@ import { useRequireAuth } from '@/hooks/useAuth';
 import { usePeopleFinder } from '@/hooks/usePeopleFinder';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import {
+  SendError,
   sendInvoice,
   sendToPerson,
   fetchSendCapability,
@@ -65,6 +67,9 @@ export function SendScreen() {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [outcome, setOutcome] = useState<SendOutcome | null>(null);
+  // A send that timed out. Not an error to retry from the primed form: the
+  // wallet may still be paying, and a second tap would be a second payment.
+  const [unconfirmed, setUnconfirmed] = useState(false);
 
   // Asked once, before the form is offered — see fetchSendCapability.
   useEffect(() => {
@@ -115,6 +120,7 @@ export function SendScreen() {
 
   const reset = useCallback(() => {
     setOutcome(null);
+    setUnconfirmed(false);
     setError(null);
     setRaw('');
     setPicked(false);
@@ -133,9 +139,15 @@ export function SendScreen() {
           : await sendToPerson(recipientHandle, amount, memo || undefined)
       );
     } catch (e) {
-      haptic('error');
-      setReviewing(false);
-      setError(e instanceof Error ? e.message : 'The payment did not go through.');
+      if (e instanceof SendError && e.reason === 'payment_unconfirmed') {
+        haptic('error');
+        setReviewing(false);
+        setUnconfirmed(true);
+      } else {
+        haptic('error');
+        setReviewing(false);
+        setError(e instanceof Error ? e.message : 'The payment did not go through.');
+      }
     } finally {
       setSending(false);
     }
@@ -161,6 +173,27 @@ export function SendScreen() {
             {SEND_COPY.noWalletCta}
           </Button>
         )}
+      </MoneyPage>
+    );
+  }
+
+  if (unconfirmed) {
+    return (
+      <MoneyPage title={SEND_COPY.title} subtitle={SEND_COPY.subtitle}>
+        <div className="flex flex-col items-center gap-4 py-10 text-center">
+          <Clock className="h-14 w-14 text-status-warning" aria-hidden="true" />
+          <div className="space-y-1">
+            <p className="font-heading tracking-display text-2xl font-bold text-fg-primary">
+              {SEND_COPY.unconfirmedTitle}
+            </p>
+            <p className="mx-auto max-w-xs text-sm text-fg-secondary">
+              {SEND_COPY.unconfirmedBody}
+            </p>
+          </div>
+          <Button variant="primary" onClick={reset}>
+            {SEND_COPY.unconfirmedDone}
+          </Button>
+        </div>
       </MoneyPage>
     );
   }

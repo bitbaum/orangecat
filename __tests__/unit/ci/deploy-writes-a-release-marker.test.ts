@@ -24,10 +24,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const SCRIPT = readFileSync(
-  join(__dirname, '../../../scripts/deploy-selfhost.sh'),
-  'utf8'
-);
+const SCRIPT = readFileSync(join(__dirname, '../../../scripts/deploy-selfhost.sh'), 'utf8');
 
 describe('the deploy records which commit is serving', () => {
   it('writes a .release marker', () => {

@@ -21,7 +21,10 @@ const BANNED = ['donate', 'donation', 'tip', 'crypto', 'campaign', 'charity'];
 
 describe('entity primary CTA terminology', () => {
   it.each(Object.entries(ENTITY_PRIMARY_CTA))('%s: "%s" avoids banned wording', (_type, label) => {
-    const words = label.toLowerCase().split(/[^a-z]+/).filter(Boolean);
+    const words = label
+      .toLowerCase()
+      .split(/[^a-z]+/)
+      .filter(Boolean);
     for (const banned of BANNED) {
       expect(words).not.toContain(banned);
     }

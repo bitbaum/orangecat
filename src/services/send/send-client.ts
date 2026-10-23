@@ -11,6 +11,17 @@ export interface SendOutcome {
   destination: string;
 }
 
+/** A failed send with the server's reason, so the screen can tell a "no" from a "maybe". */
+export class SendError extends Error {
+  constructor(
+    message: string,
+    readonly reason?: string
+  ) {
+    super(message);
+    this.name = 'SendError';
+  }
+}
+
 async function post(body: unknown): Promise<SendOutcome> {
   const res = await fetch(API_ROUTES.SEND, {
     method: 'POST',
@@ -23,7 +34,8 @@ async function post(body: unknown): Promise<SendOutcome> {
     const message =
       (typeof err === 'string' ? err : (err as { message?: string })?.message) ||
       'The payment did not go through.';
-    throw new Error(message);
+    const reason = (err as { details?: { reason?: unknown } } | undefined)?.details?.reason;
+    throw new SendError(message, typeof reason === 'string' ? reason : undefined);
   }
   return json.data as SendOutcome;
 }

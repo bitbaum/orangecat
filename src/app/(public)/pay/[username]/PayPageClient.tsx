@@ -17,7 +17,8 @@
 
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { AddWalletNudge } from '@/components/money/AddWalletNudge';
 import { AmountField } from '@/components/money/AmountField';
 import { OtherWaysToPay } from '@/components/payment/OtherWaysToPay';
 import { PayFlow } from '@/components/payment/PayFlow';
@@ -33,6 +34,8 @@ interface PayPageClientProps {
   canReceive: boolean;
   /** The recipient's other ways to be paid, resolved on the server. */
   methods: PublicPaymentMethod[];
+  /** The link came from a request that already has its payment. */
+  requestPaid?: boolean;
 }
 
 export function PayPageClient({
@@ -41,6 +44,7 @@ export function PayPageClient({
   recipientId,
   canReceive,
   methods,
+  requestPaid = false,
 }: PayPageClientProps) {
   const searchParams = useSearchParams();
   const prefill = useMemo(() => parsePayPrefill(searchParams), [searchParams]);
@@ -58,6 +62,32 @@ export function PayPageClient({
       <span>{prefill.amountError}</span>
     </p>
   ) : null;
+
+  // Nothing to pay with, anywhere: say why, and let the payer ask them.
+  if (!canReceive && methods.length === 0) {
+    return (
+      <div className="rounded-md border border-subtle bg-surface-raised/40 px-4 py-5 text-center text-sm text-fg-secondary">
+        <p>{PAY_COPY.noWallet(recipientName)}</p>
+        <div className="flex justify-center">
+          <AddWalletNudge name={recipientName} recipientId={recipientId} />
+        </div>
+      </div>
+    );
+  }
+
+  if (requestPaid) {
+    return (
+      <div className="flex flex-col items-center gap-3 py-8 text-center">
+        <CheckCircle2 className="h-12 w-12 text-status-positive" aria-hidden="true" />
+        <p className="font-heading text-xl font-semibold tracking-display text-fg-primary">
+          {PAY_COPY.requestPaidTitle}
+        </p>
+        <p className="max-w-xs text-sm text-fg-secondary">
+          {PAY_COPY.requestPaidBody(recipientName)}
+        </p>
+      </div>
+    );
+  }
 
   const otherWays = (
     <OtherWaysToPay
@@ -92,6 +122,7 @@ export function PayPageClient({
         recipientName={recipientName}
         initialCanReceive={canReceive}
         initialAmountBtc={prefill.amountBtc ?? 0}
+        requestId={prefill.requestId}
         onAmountChange={setAmountBtc}
         words={PAY_COPY}
         noteSlot={noteSlot}
