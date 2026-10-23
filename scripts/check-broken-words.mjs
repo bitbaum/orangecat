@@ -9,8 +9,8 @@
  * real glyphs in a real font at a real width. So this gate opens the screens
  * the owner looks at most in a real browser, at a phone's narrowest width, the
  * reference phone and a desktop, and measures every word. The measurement is
- * `@bitbaum/chatkit/audit` → `findBrokenWords`, the fleet's one definition of a
- * cut word (words beside - / . @ : _ and over 24 characters are exempt — a URL
+ * `@bitbaum/chatkit/audit` → `findBrokenWords` (handed to Playwright as a
+ * function, never as source text), the fleet's one definition of a cut word (words beside - / . @ : _ and over 24 characters are exempt — a URL
  * or an identifier has to break somewhere).
  *
  * Screens: the landing page, the Cat chat page (the chatkit surface) and the
@@ -33,7 +33,7 @@
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
-import { BROKEN_WORDS_SOURCE } from '@bitbaum/chatkit/audit';
+import { findBrokenWords } from '@bitbaum/chatkit/audit';
 
 const BASE_URL = (process.env.BASE_URL ?? 'http://localhost:3000').replace(/\/$/, '');
 const WIDTHS = [320, 390, 1440];
@@ -95,7 +95,7 @@ async function audit(context, path, width) {
     if (landed.startsWith('/auth')) {
       return { error: `bounced to sign-in (${landed})` };
     }
-    const words = await page.evaluate(`(${BROKEN_WORDS_SOURCE})(document.body)`);
+    const words = await page.evaluate(findBrokenWords);
     if (words.length > 0 && SHOTS) {
       mkdirSync(SHOT_DIR, { recursive: true });
       const slug = path.replace(/^\//, '').replace(/[^a-z0-9]+/gi, '-') || 'landing';
