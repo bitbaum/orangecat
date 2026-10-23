@@ -16,6 +16,7 @@ to the map, sub-bullets stay here for the human reader.
 - **Send says it before you type an amount.** Your own name now reads "That's you", and someone who can only be paid on-chain gets a link to their pay page instead of a refusal after the review step.
 - **Dead ends say why, and offer a person-to-person way forward.** The pay page for someone with no wallet now reads the same as Send, with the same one-line way to message them.
 - **Notifications count in your currency.** "Lena asked you for CHF 20.00" and "You were paid CHF 5.00" instead of BTC decimals; a request you asked for tells you who paid it.
+- **Ask Cat from Home with the same composer as chat.** Type or dictate your intent, then open Cat with your words intact. Home no longer opens the keyboard automatically; chat actions follow the app’s monochrome button style.
 
 ## 2026-10-22
 

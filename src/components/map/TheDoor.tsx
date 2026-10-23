@@ -12,7 +12,7 @@
  */
 import { ArrowRight } from 'lucide-react';
 import { ROUTES } from '@/config/routes';
-import { CAT_QUERY_PARAM } from '@/config/cat-door';
+import { CAT_DOOR, CAT_QUERY_PARAM } from '@/config/cat-door';
 import { cn } from '@/lib/utils';
 import { COMPONENT_STYLES } from '@/config/design-system';
 import Button from '@/components/ui/Button';
@@ -35,7 +35,7 @@ export function TheDoor({ prompt, placeholder, className, examples }: TheDoorPro
       className={cn('w-full', className)}
     >
       <label htmlFor="the-door" className="block font-heading text-lg text-fg-primary">
-        {prompt ?? 'What do you want to do?'}
+        {prompt ?? CAT_DOOR.prompt}
       </label>
       <div className="mt-2 flex flex-col gap-2 sm:flex-row">
         <input
@@ -44,13 +44,13 @@ export function TheDoor({ prompt, placeholder, className, examples }: TheDoorPro
           type="text"
           autoComplete="off"
           required
-          minLength={3}
-          maxLength={500}
-          placeholder={placeholder ?? 'Describe what you want to do…'}
+          minLength={CAT_DOOR.minLength}
+          maxLength={CAT_DOOR.maxLength}
+          placeholder={placeholder ?? CAT_DOOR.placeholder}
           className={cn(COMPONENT_STYLES.field.control, 'min-h-12 min-w-0 flex-1 px-3 text-base')}
         />
         <Button type="submit" className="min-h-12 gap-1.5">
-          Ask Cat
+          {CAT_DOOR.submit}
           <ArrowRight className="h-4 w-4" aria-hidden="true" />
         </Button>
       </div>
