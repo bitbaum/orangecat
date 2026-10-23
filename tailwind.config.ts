@@ -46,6 +46,10 @@ const config: Config = {
         '2xl': ['1.5rem', { lineHeight: '2rem', letterSpacing: '0' }], // 24px - Headings
         '3xl': ['1.875rem', { lineHeight: '2.25rem', letterSpacing: '0' }], // 30px - Large headings
         '4xl': ['2.25rem', { lineHeight: '2.5rem', letterSpacing: '0' }], // 36px - Hero text
+        // 48px - the number in a money figure: the amount being entered, the sum
+        // that was sent. The one place the interface raises its voice, so it is
+        // a named size, not an arbitrary one (see components/money/MoneyFigure).
+        figure: ['3rem', { lineHeight: '1', letterSpacing: '-0.03em' }],
         'fluid-sm': ['0.875rem', { lineHeight: '1.25rem', letterSpacing: '0' }],
         'fluid-base': ['1rem', { lineHeight: '1.5rem', letterSpacing: '0' }],
         'fluid-lg': ['1.125rem', { lineHeight: '1.75rem', letterSpacing: '0' }],

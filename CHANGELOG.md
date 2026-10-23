@@ -11,6 +11,8 @@ to the map, sub-bullets stay here for the human reader.
 
 ## 2026-10-23
 
+- **The money screens are set like they matter.** The amount is now a figure: the number large and centred, the currency small beside it, what actually moves (the Bitcoin amount) quietly beneath — on Send, Request, the pay page, the receipt and every request row. Receive is a poster rather than a box in a box: your name, then the code, with the Cat in its middle (it still scans), then Copy link · Share. Every way to be paid carries a round mark, and the Bitcoin one is the only orange. A confirmation draws its ring and tick instead of dropping in. People with no name show their handle once instead of twice. Underneath: stacked lines no longer carry a hidden 12px gap.
+
 - **Bookings distinguish an empty list from a failed load.** Retry restores a failed request, view choices share one control, and history filters cannot hide incoming or confirmed bookings.
 
 - **A request you paid now says Paid.** Until now a request stayed Pending, with a Pay button, for both people — even after the money had moved, which invited paying twice. The pay link from a request now names it, so the payment answers it: the request turns Paid, the person who asked is told who paid and for what, and opening the old link shows "This request is already paid" instead of an empty form. A payment smaller than the ask leaves it open.

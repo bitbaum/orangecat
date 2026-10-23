@@ -22,8 +22,8 @@ describe('PeoplePicker', () => {
     expect(screen.getByText('Lena Meier')).toBeTruthy();
     expect(screen.getByText('@lena_m')).toBeTruthy();
     expect(screen.getByText('Following')).toBeTruthy();
-    // No name yet: the handle stands in, and a stranger carries no label.
-    expect(screen.getAllByText('@fresh')).toHaveLength(2);
+    // No name yet: the handle stands in, said once, and a stranger carries no label.
+    expect(screen.getAllByText('@fresh')).toHaveLength(1);
 
     fireEvent.click(screen.getByRole('button', { name: /Lena Meier/ }));
     expect(onPick).toHaveBeenCalledWith('lena_m');

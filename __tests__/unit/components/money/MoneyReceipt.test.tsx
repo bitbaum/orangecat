@@ -29,7 +29,9 @@ describe('MoneyReceipt', () => {
     render(<MoneyReceipt title="Sent" amountBtc={0.0005} counterparty="Lena Brunner" />);
 
     expect(screen.getByText('Sent')).toBeInTheDocument();
-    expect(screen.getByText('0.0005 BTC')).toBeInTheDocument();
+    // The figure is set in two voices — the number big, the unit beside it.
+    expect(screen.getByText('0.0005')).toBeInTheDocument();
+    expect(screen.getByText('BTC')).toBeInTheDocument();
     expect(screen.getByText('Lena Brunner')).toBeInTheDocument();
   });
 
