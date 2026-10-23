@@ -14,10 +14,10 @@ The other 61 patterns comprise 59 dynamic routes and two stateful entrypoints (o
 - The writing screen placed a large AI panel and optional cover controls before the body. The repair leads with title/body, discloses optional assistance/metadata, uses shared controls, and exposes local-save status.
 - On phones the article-index write link hid its entire text and had no explicit accessible name. The repair keeps a visible Write label.
 - New Message used a custom overlay without dialog semantics or Escape. PR #1389 shipped the shared dialog, focus handling and truthful Unread filter; the live phone flow passed.
-- Conversation rows are pointer-only; the search fields and several form controls rely on placeholders rather than associated labels. These need per-flow fixes using shared primitives.
+- The initial discovery pass flagged conversation-row keyboard access. Source review found an existing named native Open/Select action, so pointer-only is not a confirmed defect. Populated-list keyboard navigation still needs browser verification. Several form controls also need per-flow label review.
 - The global mobile Cat launcher overlaps inputs/feed content. The dashboard/timeline batch removes it on routes that already provide the Cat tab.
 - A representative product describes a digital download but its stored type renders Physical. That is a data/contract inconsistency; do not silently infer or alter owners’ product data from description text.
-- Article drafts currently share a device-wide storage namespace. Account-scoping needs a deliberate legacy-draft recovery path; silently moving or dropping existing drafts would be another data-loss bug.
+- Article drafts originally shared a device-wide storage namespace. The deployed account-scoped library now requires explicit recovery of older unowned drafts; switching and immediate navigation were verified with two own drafts.
 
 ## Verified follow-up flows
 
@@ -33,9 +33,19 @@ The deployed device-draft library retained two drafts across switching and immed
 
 Deployed notification settings recovered from one injected GET failure through Retry. Category and digest controls stayed disabled during a held save; the separate test account's preference saved and was restored. Cat instructions had a visible accessible label and 16px phone text, with no horizontal overflow.
 
-The Tasks review reproduced an ignored type filter (`type` emitted, `task_type` expected) and found the corresponding archive-key mismatch. A repaired preview passed named controls, both expected query keys and Clear filters resetting both choices. This remains preview validation until its PR deploys. No existing task was mutated.
+The Tasks review reproduced an ignored type filter (`type` emitted, `task_type` expected) and found the corresponding archive-key mismatch. The deployed phone flow passed named controls, both expected query keys, Clear filters resetting both choices, failed-load Retry and keyboard navigation to a task. No existing task was mutated.
 
-The dashboard's package composer passed the full repository gate and a deployed 390px handoff twice. Both requests reached Cat exactly once, including a request containing an ampersand and a return after an earlier conversation; Home did not focus the field automatically. Cat's earlier actual article-location answer was “Not in your data”; the navigation-grounding follow-up now correctly names the route but leaves it as plain text with non-navigating named chips. The deployed editor-opening journey still fails; its destination-link adapter passed a 390px preview using an actual production-backend answer: the editor opened without another chat POST. The adapter still needs full verification and deployment verification before this is considered repaired.
+The dashboard's package composer passed the full repository gate and a deployed 390px handoff twice. Both requests reached Cat exactly once, including a request containing an ampersand and a return after an earlier conversation; Home did not focus the field automatically. Cat's earlier article-location answer was “Not in your data”; the subsequent correct plain-text route still lacked an editor action. After the destination-link adapter deployed, the real production phone flow offered a native Article editor link and opened the editor without another chat POST. The one-off request left the test account's passive-memory count unchanged (zero).
+
+The deployed Bookings flow recovered an injected failed load through Retry. History filtering did not hide Confirmed bookings; selected view semantics and 390px overflow checks passed. No booking was created or modified.
+
+The short-post composer lost text on immediate close before its save timer. Its account/context-scoped repair passed a real phone preview for immediate close, cleared text, storage-failure retention, retry and explicit private recovery of older writing. Its full repository gate passed; PR #1417 is in CI and deployment remains pending.
+
+A real touch gesture on the deployed project picker dismissed the sheet while swiping its body. A shared-sheet repair restricts dismissal to the handle and resets cancelled gestures; its real phone touch preview and full repository gate passed; deployment remains pending.
+
+A controlled populated inbox passed keyboard entry into its thread, long-heading wrapping, composer clearance and no horizontal overflow. Every messaging write was intercepted; this does not certify delivery. Cancelling deletion lost focus after the transition; a shared-confirmation repair passed nine focused tests and the controlled phone preview, with its full gate still running.
+
+The PWA metadata cleanup deployed. All four advertised versioned icons returned 200, and missing screenshots and dead protocol routes are no longer advertised. Android launcher and splash behavior remains unverified.
 
 ## Route capture ledger
 
