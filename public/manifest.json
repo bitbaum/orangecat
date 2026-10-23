@@ -40,7 +40,7 @@
     {
       "name": "Create",
       "short_name": "Create",
-      "description": "Start a new entity — project, product, service, cause, loan, and more",
+      "description": "Open creation tools",
       "url": "/create"
     },
     {
@@ -56,29 +56,6 @@
       "url": "/dashboard"
     }
   ],
-  "screenshots": [
-    {
-      "src": "/screenshots/mobile-homepage.png",
-      "sizes": "390x844",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Homepage - Mobile View"
-    },
-    {
-      "src": "/screenshots/mobile-discover.png",
-      "sizes": "390x844",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Discover - Mobile View"
-    },
-    {
-      "src": "/screenshots/desktop-homepage.png",
-      "sizes": "1920x1080",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Homepage - Desktop View"
-    }
-  ],
   "edge_side_panel": {
     "preferred_width": 400
   },
@@ -86,24 +63,5 @@
     "client_mode": "focus-existing"
   },
   "related_applications": [],
-  "prefer_related_applications": false,
-  "protocol_handlers": [
-    {
-      "protocol": "web+bitcoin",
-      "url": "/payment?address=%s"
-    },
-    {
-      "protocol": "web+lightning",
-      "url": "/payment?invoice=%s"
-    }
-  ],
-  "file_handlers": [
-    {
-      "action": "/create",
-      "accept": {
-        "image/*": [".png", ".jpg", ".jpeg", ".gif", ".webp"],
-        "video/*": [".mp4", ".webm", ".mov"]
-      }
-    }
-  ]
+  "prefer_related_applications": false
 }
