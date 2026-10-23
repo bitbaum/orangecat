@@ -11,6 +11,8 @@ to the map, sub-bullets stay here for the human reader.
 
 ## 2026-10-23
 
+- **Bookings distinguish an empty list from a failed load.** Retry restores a failed request, view choices share one control, and history filters cannot hide incoming or confirmed bookings.
+
 - **A request you paid now says Paid.** Until now a request stayed Pending, with a Pay button, for both people — even after the money had moved, which invited paying twice. The pay link from a request now names it, so the payment answers it: the request turns Paid, the person who asked is told who paid and for what, and opening the old link shows "This request is already paid" instead of an empty form. A payment smaller than the ask leaves it open.
 - **A send that times out no longer invites a second payment.** Lightning has no cancel, so a timeout can still go through. Send used to drop you back on the filled-in form with the button live; it now stops on "Not confirmed yet", asks you to check your wallet, and starts clean.
 - **Send says it before you type an amount.** Your own name now reads "That's you", and someone who can only be paid on-chain gets a link to their pay page instead of a refusal after the review step.
