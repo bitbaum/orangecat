@@ -44,6 +44,31 @@ export function sendToPerson(recipient: string, amountBtc: number, memo?: string
   return post({ recipient, amount_btc: amountBtc, ...(memo ? { memo } : {}) });
 }
 
+/**
+ * Pay the invoice a pay page just minted, from the signed-in payer's own
+ * wallet. The amount comes from the invoice on the server, not from here.
+ */
+export async function payIntentFromWallet(
+  intentId: string,
+  statusToken: string
+): Promise<{ paymentHash: string }> {
+  const res = await fetch(API_ROUTES.TIPS.PAY, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ intentId, statusToken }),
+  });
+  const json = (await res.json().catch(() => null)) ?? {};
+  if (!res.ok || !json.success) {
+    const err = json.error;
+    const message =
+      (typeof err === 'string' ? err : (err as { message?: string })?.message) ||
+      'The payment did not go through.';
+    const reason = (err as { details?: { reason?: unknown } } | undefined)?.details?.reason;
+    throw new SendError(message, typeof reason === 'string' ? reason : undefined);
+  }
+  return json.data as { paymentHash: string };
+}
+
 export function sendInvoice(invoice: string) {
   return post({ invoice });
 }
@@ -64,6 +89,10 @@ export interface SendCapability {
 export async function fetchSendCapability(): Promise<SendCapability> {
   try {
     const res = await fetch(API_ROUTES.SEND, { method: 'GET' });
+    // Signed out is a definite no, not "probably fine".
+    if (res.status === 401) {
+      return { canSend: false, reason: 'signed_out' };
+    }
     const json = await res.json();
     return json?.success ? (json.data as SendCapability) : { canSend: true };
   } catch {
