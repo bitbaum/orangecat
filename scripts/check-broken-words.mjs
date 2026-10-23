@@ -28,16 +28,18 @@
  *   BASE_URL=http://localhost:3020 pnpm run check:broken-words
  * Options: PAY_USERNAME (default cato), CHROMIUM_PATH (an executable to use
  * instead of Playwright's own download), BROKEN_WORDS_SCREENSHOTS=1 (writes
- * .tmp/broken-words/<page>-<width>.png for every failure).
+ * .tmp/broken-words/page-<n>-<width>.png, n = the page's place in PAGES for every failure).
  */
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { findBrokenWords } from '@bitbaum/chatkit/audit';
 
-const BASE_URL = (process.env.BASE_URL ?? 'http://localhost:3000').replace(/\/$/, '');
+const BASE_URL = new URL(process.env.BASE_URL ?? 'http://localhost:3000').origin;
 const WIDTHS = [320, 390, 1440];
-const PAY_USERNAME = process.env.PAY_USERNAME ?? 'cato';
+const PAY_USERNAME = /^[a-z0-9_-]{1,40}$/i.test(process.env.PAY_USERNAME ?? '')
+  ? process.env.PAY_USERNAME
+  : 'cato';
 const EMAIL = process.env.E2E_USER_EMAIL ?? process.env.E2E_TEST_USER_EMAIL;
 const PASSWORD = process.env.E2E_USER_PASSWORD ?? process.env.E2E_TEST_USER_PASSWORD;
 const SHOTS = process.env.BROKEN_WORDS_SCREENSHOTS === '1';
@@ -78,7 +80,7 @@ async function signIn(context) {
   await page.close();
 }
 
-async function audit(context, path, width) {
+async function audit(context, path, width, shotName) {
   const page = await context.newPage();
   await page.setViewportSize({ width, height: width < 600 ? 844 : 900 });
   try {
@@ -98,8 +100,7 @@ async function audit(context, path, width) {
     const words = await page.evaluate(findBrokenWords);
     if (words.length > 0 && SHOTS) {
       mkdirSync(SHOT_DIR, { recursive: true });
-      const slug = path.replace(/^\//, '').replace(/[^a-z0-9]+/gi, '-') || 'landing';
-      await page.screenshot({ path: join(SHOT_DIR, `${slug}-${width}.png`), fullPage: true });
+      await page.screenshot({ path: join(SHOT_DIR, `${shotName}-${width}.png`), fullPage: true });
     }
     return { words };
   } finally {
@@ -120,13 +121,13 @@ async function main() {
     if (canSignIn) {
       await signIn(context);
     }
-    for (const { path, signedIn } of PAGES) {
+    for (const [index, { path, signedIn }] of PAGES.entries()) {
       if (signedIn && !canSignIn) {
         skipped.push(path);
         continue;
       }
       for (const width of WIDTHS) {
-        const result = await audit(context, path, width);
+        const result = await audit(context, path, width, `page-${index}`);
         audited += 1;
         if (result.error) {
           failures.push(`${path} @ ${width}px: ${result.error}`);
