@@ -10,9 +10,12 @@
  * only one of those is a somewhere we can name.
  */
 
+import Link from 'next/link';
 import { AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';
+import { AddWalletNudge } from '@/components/money/AddWalletNudge';
 import { StatusNote } from '@/components/money/StatusNote';
 import type { RecipientCheck } from '@/components/send/useRecipientCheck';
+import { ROUTES } from '@/config/routes';
 import { SEND_COPY } from '@/config/send';
 
 export function RecipientStatus({ check, handle }: { check: RecipientCheck; handle: string }) {
@@ -46,12 +49,33 @@ export function RecipientStatus({ check, handle }: { check: RecipientCheck; hand
         </StatusNote>
       );
 
-    case 'cannot_receive':
+    case 'cannot_receive': {
+      const who = check.name ?? `@${cleanHandle}`;
       return (
         <StatusNote tone="warning">
-          {SEND_COPY.recipientCannotReceive(check.name ?? `@${cleanHandle}`)}
+          {SEND_COPY.recipientCannotReceive(who)}
+          {check.recipientId && <AddWalletNudge name={who} recipientId={check.recipientId} />}
         </StatusNote>
       );
+    }
+
+    case 'self':
+      return <StatusNote tone="warning">{SEND_COPY.recipientSelf}</StatusNote>;
+
+    case 'onchain_only': {
+      const who = check.name ?? `@${cleanHandle}`;
+      return (
+        <StatusNote tone="warning">
+          {SEND_COPY.recipientOnchainOnly(who)}
+          <Link
+            href={ROUTES.PAY(cleanHandle)}
+            className="mt-1 flex min-h-11 items-center text-fg-primary underline underline-offset-2"
+          >
+            {SEND_COPY.recipientOnchainLink(who)}
+          </Link>
+        </StatusNote>
+      );
+    }
 
     case 'not_found':
       return <StatusNote tone="warning">{SEND_COPY.recipientNotFound(cleanHandle)}</StatusNote>;

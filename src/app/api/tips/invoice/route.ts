@@ -19,6 +19,8 @@ import { logger } from '@/utils/logger';
 const bodySchema = z.object({
   username: z.string().trim().min(1).max(60),
   amountBtc: z.number().positive().min(TIP_MIN_BTC).max(TIP_MAX_BTC),
+  /** The payment request a pay link came from, when it came from one. */
+  requestId: z.string().uuid().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -41,7 +43,12 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = await createServerClient();
-    const result = await initiateTip(supabase, parsed.data.username, parsed.data.amountBtc);
+    const result = await initiateTip(
+      supabase,
+      parsed.data.username,
+      parsed.data.amountBtc,
+      parsed.data.requestId
+    );
     if (!result.ok) {
       return apiError(result.error, 'TIP_UNAVAILABLE', 400);
     }

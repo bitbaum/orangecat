@@ -13,11 +13,29 @@ The other 61 patterns comprise 59 dynamic routes and two stateful entrypoints (o
 - A title changed just before leaving the article editor restored its older value. The 600 ms save timer was cancelled without flushing. The writing repair flushes on route unmount, pagehide and visibility change, preserves failed writes for retry, and avoids resurrecting published/discarded drafts.
 - The writing screen placed a large AI panel and optional cover controls before the body. The repair leads with title/body, discloses optional assistance/metadata, uses shared controls, and exposes local-save status.
 - On phones the article-index write link hid its entire text and had no explicit accessible name. The repair keeps a visible Write label.
-- New Message is a custom overlay: no dialog semantics, Escape does not close it. The inbox Requests tab actually filters unread counts. Messaging repairs are next.
+- New Message used a custom overlay without dialog semantics or Escape. PR #1389 shipped the shared dialog, focus handling and truthful Unread filter; the live phone flow passed.
 - Conversation rows are pointer-only; the search fields and several form controls rely on placeholders rather than associated labels. These need per-flow fixes using shared primitives.
 - The global mobile Cat launcher overlaps inputs/feed content. The dashboard/timeline batch removes it on routes that already provide the Cat tab.
 - A representative product describes a digital download but its stored type renders Physical. That is a data/contract inconsistency; do not silently infer or alter owners’ product data from description text.
 - Article drafts currently share a device-wide storage namespace. Account-scoping needs a deliberate legacy-draft recovery path; silently moving or dropping existing drafts would be another data-loss bug.
+
+## Verified follow-up flows
+
+The live Create → Article → immediate Back → Article flow restored the newest local title. New Message focused its named search, closed with Escape and returned focus to New, without a redundant session-sync POST. A phone project wizard advanced by pointer, saved an own draft with profile visibility off, and deleted it through the card's owner confirmation.
+
+After PR #1395 deployed, a new private article was readable by its author and returned 404 without its title to a signed-out reader. Owner editing preserved the URL. Deleting through owner controls was verified by a subsequent 404 for that owner. These new project/article fixtures were removed. The earlier private article from the first guest session remains private; that session's temporary credentials were lost during the workspace restart, so its cleanup is still outstanding.
+
+The browser checks used a separate guest and its own records. They do not certify the remaining record-dependent routes or the owner's private data. The route table below retains its original discovery states; capture is still distinct from a completed interaction review.
+
+## Follow-up verification — 23 October 2026
+
+The deployed device-draft library retained two drafts across switching and immediate navigation. Cancelling discard restored its opener focus; deleting the last draft moved focus to New draft. Both test drafts were removed, and the 390px viewport had no horizontal overflow.
+
+Deployed notification settings recovered from one injected GET failure through Retry. Category and digest controls stayed disabled during a held save; the separate test account's preference saved and was restored. Cat instructions had a visible accessible label and 16px phone text, with no horizontal overflow.
+
+The Tasks review reproduced an ignored type filter (`type` emitted, `task_type` expected) and found the corresponding archive-key mismatch. A repaired preview passed named controls, both expected query keys and Clear filters resetting both choices. This remains preview validation until its PR deploys. No existing task was mutated.
+
+The dashboard's package composer passed the full repository gate and a deployed 390px handoff twice. Both requests reached Cat exactly once, including a request containing an ampersand and a return after an earlier conversation; Home did not focus the field automatically. Cat's earlier actual article-location answer was “Not in your data”; the navigation-grounding follow-up now correctly names the route but leaves it as plain text with non-navigating named chips. The deployed editor-opening journey still fails; its destination-link adapter passed a 390px preview using an actual production-backend answer: the editor opened without another chat POST. The adapter still needs full verification and deployment verification before this is considered repaired.
 
 ## Route capture ledger
 

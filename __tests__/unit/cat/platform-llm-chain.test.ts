@@ -327,4 +327,3 @@ describe('which chain it walks', () => {
     expect(src).not.toMatch(/keyEnv:\s*'/);
   });
 });
-

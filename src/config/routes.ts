@@ -11,6 +11,8 @@
 
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { publicProfilePath } from '@/config/public-profile-path';
+// Type only: message-drafts reads ROUTES, so a value import would be a cycle.
+import type { MessageDraftKey } from '@/config/message-drafts';
 
 /**
  * Route contexts categorize routes by their accessibility and purpose
@@ -586,7 +588,8 @@ export const ROUTES = {
   // Same conversation via query param (keeps the split-pane list view mounted)
   MESSAGES_WITH_CONVERSATION: (conversationId: string) => `/messages?id=${conversationId}`,
   /** Open (or start) the conversation with one person — the profile's Message button and the pay page's Ask. */
-  MESSAGES_TO: (profileId: string) => `/messages?to=${encodeURIComponent(profileId)}`,
+  MESSAGES_TO: (profileId: string, draft?: MessageDraftKey) =>
+    `/messages?to=${encodeURIComponent(profileId)}${draft ? `&draft=${draft}` : ''}`,
 
   // Settings routes
   SETTINGS: '/settings',

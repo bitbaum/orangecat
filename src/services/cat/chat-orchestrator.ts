@@ -19,7 +19,6 @@ import { applyRateLimitHeaders, type RateLimitResult } from '@/lib/rate-limit';
 import { prepareCatChat } from '@/services/cat/chat-prepare';
 import { enforceGrounding } from '@/services/cat/grounding';
 import { parseActionsFromResponse } from '@/services/cat/response-parser';
-import { messageMightNeedTools } from '@/services/cat/tool-use-detection';
 import { saveMessages } from '@/services/cat/conversation-history';
 import { buildFailedTurnMessages } from '@/services/cat/failed-turn';
 import { alertCatChatFailure } from '@/services/cat/failure-alert';
@@ -35,7 +34,6 @@ import {
   type ToolCallEvent,
   type PrefillProposal,
 } from '@/services/cat/tool-use';
-import { isAgenticModel } from '@/config/model-capability';
 import { runExecActions } from '@/services/cat/exec-actions';
 import { getUserActorId } from '@/domain/actors';
 import { AI_MESSAGE_MAX_CHARS } from '@/lib/validation/ai';
@@ -230,8 +228,6 @@ interface CatTurn {
   actorId: string | null;
   prepared: Awaited<ReturnType<typeof prepareCatChat>>;
   conversationId: string | null;
-  /** Advisory: drives the `suggestUpgrade` hint only. */
-  wantsAgentic: boolean;
   baseMessages: ToolAugmentedMessage[];
   /** Puts the turn's draft photo, if any, on a prefill proposal. */
   withDraftPhoto: (proposal: PrefillProposal) => PrefillProposal;
@@ -394,15 +390,6 @@ async function prepareTurn(
     );
   }
 
-  // Does this message want more than chat (discovery, creation, multi-step)?
-  // If so AND the answering model isn't agentic (frontier), we flag the
-  // response so the UI can gently suggest upgrading to a more powerful model.
-  // Uses the same signal that gates tool use — one source of truth.
-  // Advisory ONLY: drives the `suggestUpgrade` hint in the done event. This
-  // is no longer a gate on tools (ADR-0006 D3) — it just guesses whether the
-  // user would benefit from an agentic model, and a wrong guess costs a hint.
-  const wantsAgentic = messageMightNeedTools(message);
-
   const baseMessages: ToolAugmentedMessage[] = prepared.messages;
 
   // The photo a draft listing should carry: this turn's, else the latest one
@@ -430,7 +417,6 @@ async function prepareTurn(
     actorId,
     prepared,
     conversationId: prepared.conversationId,
-    wantsAgentic,
     baseMessages,
     withDraftPhoto,
   };
@@ -650,7 +636,8 @@ async function emitDone(
     actions: actions.length > 0 ? actions : undefined,
     execResults: execResults.length > 0 ? execResults : undefined,
     quickReplies,
-    suggestUpgrade: turn.wantsAgentic && !isAgenticModel(state.activeModel),
+    // A broad intent guess is not evidence that the selected model failed.
+    suggestUpgrade: false,
     grounding: {
       ok: groundingCheck.ok,
       unsupported: groundingCheck.violations.map(v => v.text).slice(0, 8),
@@ -1210,7 +1197,7 @@ async function answerCatChat(turn: CatTurn, rl: RateLimitResult): Promise<Respon
         collectedPrefillProposals.length > 0 ? collectedPrefillProposals : undefined,
       modelUsed: result.model,
       provider: activeProvider,
-      suggestUpgrade: turn.wantsAgentic && !isAgenticModel(fellBackTo?.modelToUse ?? modelToUse),
+      suggestUpgrade: false,
       fallback: fellBackTo
         ? {
             from: provider,

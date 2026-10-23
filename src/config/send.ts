@@ -26,7 +26,15 @@ export const SEND_COPY = {
   recipientExternal:
     "Lightning address — we'll pay it directly. Check the spelling: we can't tell you who owns it.",
   recipientNotFound: (handle: string) => `Nobody on OrangeCat goes by @${handle}.`,
-  recipientCannotReceive: (name: string) => `${name} can't receive Bitcoin yet.`,
+  /** Why: OrangeCat pays into the recipient's own wallet, and they have not connected one. */
+  recipientCannotReceive: (name: string) =>
+    `${name} hasn't added a Bitcoin wallet yet, so a payment has nowhere to land.`,
+  recipientSelf: "That's you. Pick someone else to pay.",
+  recipientOnchainOnly: (name: string) =>
+    `${name} receives on-chain only, which Send can't pay yet. Their pay page can.`,
+  recipientOnchainLink: (name: string) => `Open ${name}'s pay page`,
+  /** The way forward, one line: a message is written for you, you decide whether to send it. */
+  recipientNudge: (name: string) => `Message ${name} to suggest adding one`,
 
   /** Shown once we have read the invoice — consent before spending. */
   invoiceReads: (amount: string) => `This invoice is for ${amount}.`,
@@ -42,6 +50,12 @@ export const SEND_COPY = {
   back: 'Back',
   confirm: 'Send payment',
   sending: 'Sending…',
+
+  /** A send that timed out is not a "no": the wallet may still be paying. */
+  unconfirmedTitle: 'Not confirmed yet',
+  unconfirmedBody:
+    "We couldn't confirm this payment in time, so it may still go through. Check your wallet's history before paying again.",
+  unconfirmedDone: 'Back to Send',
 
   sentTitle: 'Sent',
   sentFallback: 'The payment went through.',

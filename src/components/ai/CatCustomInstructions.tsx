@@ -13,6 +13,7 @@ import { useEffect, useState } from 'react';
 import { Loader2, SlidersHorizontal } from 'lucide-react';
 import { toast } from 'sonner';
 import Button from '@/components/ui/Button';
+import Textarea from '@/components/ui/Textarea';
 import { MAX_CUSTOM_INSTRUCTIONS_LENGTH } from '@/services/cat/custom-instructions';
 
 interface Props {
@@ -62,13 +63,14 @@ export function CatCustomInstructions({ value, onSave, isLoading }: Props) {
           </p>
         </div>
       </div>
-      <textarea
+      <Textarea
+        label="Instructions for Cat"
+        maxLength={MAX_CUSTOM_INSTRUCTIONS_LENGTH}
         value={draft}
         onChange={e => setDraft(e.target.value.slice(0, MAX_CUSTOM_INSTRUCTIONS_LENGTH))}
         disabled={isLoading || isSaving}
         rows={4}
         placeholder="e.g. Answer in German. Prices in CHF. I only offer services, never physical products."
-        className="w-full rounded-md border border-default bg-surface-page p-3 text-sm text-fg-primary placeholder:text-fg-tertiary focus:border-interactive focus:outline-none disabled:opacity-60"
       />
       <div className="mt-2 flex items-center justify-between gap-3">
         <span className="text-xs text-fg-tertiary">

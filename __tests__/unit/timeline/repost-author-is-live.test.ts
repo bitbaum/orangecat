@@ -8,7 +8,12 @@ import { join } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const profiles = vi.hoisted(() => ({
-  rows: [] as Array<{ id: string; name: string | null; username: string | null; avatar_url: string | null }>,
+  rows: [] as Array<{
+    id: string;
+    name: string | null;
+    username: string | null;
+    avatar_url: string | null;
+  }>,
   queried: [] as string[][],
 }));
 

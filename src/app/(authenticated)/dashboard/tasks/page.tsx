@@ -1,16 +1,6 @@
 'use client';
 
-/**
- * Tasks Page
- *
- * Main task management view for staff members
- * Features: List, filter, complete, request, flag tasks
- *
- * Created: 2026-02-05
- */
-
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useRequireAuth } from '@/hooks/useAuth';
 import Loading from '@/components/Loading';
 import { ROUTES } from '@/config/routes';
@@ -57,8 +47,8 @@ interface TaskWithRelations extends Task {
 
 export default function TasksPage() {
   const { user, isLoading: authLoading, hydrated } = useRequireAuth();
-  const router = useRouter();
 
+  const requestVersion = useRef(0);
   const [tasks, setTasks] = useState<TaskWithRelations[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -73,6 +63,7 @@ export default function TasksPage() {
     if (!user?.id) {
       return;
     }
+    const version = ++requestVersion.current;
     setLoading(true);
     setError(null);
     try {
@@ -84,10 +75,10 @@ export default function TasksPage() {
         params.set('status', statusFilter);
       }
       if (typeFilter) {
-        params.set('type', typeFilter);
+        params.set('task_type', typeFilter);
       }
       if (showArchived) {
-        params.set('archived', 'true');
+        params.set('is_archived', 'true');
       }
 
       const response = await fetch(`${API_ROUTES.TASKS.BASE}?${params.toString()}`);
@@ -95,14 +86,21 @@ export default function TasksPage() {
       if (!response.ok) {
         throw new Error(apiErrorMessage(data, 'Failed to load tasks'));
       }
-      setTasks(data.data?.tasks || []);
+      if (version === requestVersion.current) {
+        setTasks(data.data?.tasks || []);
+      }
     } catch (err) {
+      if (version !== requestVersion.current) {
+        return;
+      }
       const message = err instanceof Error ? err.message : 'Failed to load tasks';
       logger.error('Failed to load tasks', { error: err }, 'TasksPage');
       setError(message);
       toast.error(message);
     } finally {
-      setLoading(false);
+      if (version === requestVersion.current) {
+        setLoading(false);
+      }
     }
   }, [user?.id, categoryFilter, statusFilter, typeFilter, showArchived]);
 
@@ -110,6 +108,9 @@ export default function TasksPage() {
     if (hydrated && !authLoading && user) {
       loadTasks();
     }
+    return () => {
+      requestVersion.current += 1;
+    };
   }, [hydrated, authLoading, user, loadTasks]);
 
   const taskCounts = useMemo(
@@ -174,17 +175,19 @@ export default function TasksPage() {
         size="sm"
         className="flex items-center gap-2"
       >
-        <BarChart3 className="h-4 w-4" />
-        <span className="hidden sm:inline">Analytics</span>
+        <BarChart3 className="h-4 w-4" aria-hidden="true" />
+        <span>Analytics</span>
       </Button>
       <Button
         onClick={() => setShowFilters(!showFilters)}
+        aria-expanded={showFilters}
+        aria-controls="task-filters"
         variant="outline"
         size="sm"
         className="flex items-center gap-2"
       >
         <Filter className="h-4 w-4" />
-        <span className="hidden sm:inline">Filter</span>
+        <span>Filter</span>
         {showFilters ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
       </Button>
       <Button
@@ -205,25 +208,14 @@ export default function TasksPage() {
     >
       {/* Quick Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-        <QuickStatCard
-          icon={ClipboardList}
-          label="Total"
-          value={taskCounts.total}
-          color="neutral"
-        />
-        <QuickStatCard icon={Clock} label="Ready" value={taskCounts.idle} color="info" />
+        <QuickStatCard icon={ClipboardList} label="Total" value={taskCounts.total} />
+        <QuickStatCard icon={Clock} label="Ready" value={taskCounts.idle} />
         <QuickStatCard
           icon={AlertTriangle}
           label="Needs attention"
           value={taskCounts.needsAttention}
-          color="amber"
         />
-        <QuickStatCard
-          icon={Play}
-          label="In progress"
-          value={taskCounts.inProgress}
-          color="success"
-        />
+        <QuickStatCard icon={Play} label="In progress" value={taskCounts.inProgress} />
       </div>
 
       {showFilters && (
@@ -241,7 +233,15 @@ export default function TasksPage() {
 
       {/* Task List */}
       {error ? (
-        <div className="rounded-lg border bg-surface-base p-6 text-status-negative">{error}</div>
+        <div
+          role="alert"
+          className="rounded-lg border border-default bg-surface-base p-6 space-y-3"
+        >
+          <p className="text-status-negative">{error}</p>
+          <Button variant="outline" onClick={loadTasks}>
+            Retry loading tasks
+          </Button>
+        </div>
       ) : loading ? (
         <div className="space-y-4">
           {[1, 2, 3].map(i => (
@@ -263,10 +263,19 @@ export default function TasksPage() {
               ? 'Try different filter settings'
               : 'Create your first task'}
           </p>
-          <Button href={ROUTES.DASHBOARD.TASKS_NEW} className="inline-flex">
-            <Plus className="h-4 w-4 mr-2" />
-            Create Task
-          </Button>
+          {(categoryFilter || statusFilter || typeFilter || showArchived) && (
+            <Button
+              variant="outline"
+              onClick={() => {
+                setCategoryFilter('');
+                setStatusFilter('');
+                setTypeFilter('');
+                setShowArchived(false);
+              }}
+            >
+              Clear filters
+            </Button>
+          )}
         </div>
       ) : (
         <div className="space-y-3">
@@ -276,7 +285,6 @@ export default function TasksPage() {
               task={task}
               onComplete={() => handleComplete(task.id)}
               onFlagAttention={() => handleFlagAttention(task.id)}
-              onClick={() => router.push(ROUTES.DASHBOARD.TASKS_VIEW(task.id))}
             />
           ))}
         </div>

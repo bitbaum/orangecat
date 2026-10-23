@@ -26,8 +26,10 @@ function relativeImports(file: string): string[] {
 }
 
 describe('eval scripts reach the box together', () => {
-  const deploy = readFileSync(join(ROOT, 'scripts/deploy-selfhost.sh'), 'utf8')
-    .replace(/^[ \t]*#.*$/gm, ''); // comments must not satisfy this
+  const deploy = readFileSync(join(ROOT, 'scripts/deploy-selfhost.sh'), 'utf8').replace(
+    /^[ \t]*#.*$/gm,
+    ''
+  ); // comments must not satisfy this
 
   it('deploys every eval-*.mjs by glob, not by a hand-written list', () => {
     expect(deploy).toContain('scripts/eval-*.mjs');
@@ -42,9 +44,10 @@ describe('eval scripts reach the box together', () => {
     for (const imported of relativeImports(file)) {
       // Must be a sibling in scripts/ AND named so the glob picks it up.
       expect(evalScripts, `${file} imports ./${imported}`).toContain(imported);
-      expect(imported, `${file} imports ./${imported}, which scripts/eval-*.mjs does not cover`).toMatch(
-        /^eval-.*\.mjs$/
-      );
+      expect(
+        imported,
+        `${file} imports ./${imported}, which scripts/eval-*.mjs does not cover`
+      ).toMatch(/^eval-.*\.mjs$/);
     }
   });
 });

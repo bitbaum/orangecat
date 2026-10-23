@@ -46,18 +46,27 @@ export default function TasksSection({
   const [userToggled, setUserToggled] = useState(false);
   const [userExpanded, setUserExpanded] = useState(true);
   const [celebrationDismissed, setCelebrationDismissed] = useState(false);
+  const [showAllTasks, setShowAllTasks] = useState(false);
 
   useEffect(() => {
     if (user?.id) {
-      setCelebrationDismissed(
-        localStorage.getItem(`oc_celebration_dismissed_${user.id}`) === 'true'
-      );
+      let dismissed = false;
+      try {
+        dismissed = localStorage.getItem(`oc_celebration_dismissed_${user.id}`) === 'true';
+      } catch {
+        // A device preference must not prevent the dashboard from opening.
+      }
+      setCelebrationDismissed(dismissed);
     }
   }, [user?.id]);
 
   const dismissCelebration = () => {
     if (user?.id) {
-      localStorage.setItem(`oc_celebration_dismissed_${user.id}`, 'true');
+      try {
+        localStorage.setItem(`oc_celebration_dismissed_${user.id}`, 'true');
+      } catch {
+        // Dismiss for this visit even when browser storage is unavailable.
+      }
     }
     setCelebrationDismissed(true);
   };
@@ -187,8 +196,8 @@ export default function TasksSection({
     return null;
   }
   const taskPool = setupTasksRemaining === 0 ? setupTasks : tasks;
-  const visibleTasks = taskPool.slice(0, maxTasks);
-  const hiddenCount = Math.max(0, taskPool.length - maxTasks);
+  const visibleTasks = showAllTasks ? taskPool : taskPool.slice(0, maxTasks);
+  const hiddenCount = Math.max(0, taskPool.length - visibleTasks.length);
   const isExpanded = userToggled ? userExpanded : setupTasksRemaining > 0;
   const toggleExpanded = () => {
     setUserToggled(true);
@@ -199,14 +208,14 @@ export default function TasksSection({
     <div className={className}>
       <Card>
         <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0 flex-1 basis-48">
               <CardTitle className="flex items-center gap-2">
                 <Target className="w-5 h-5 text-fg-secondary" />
-                Recommended Next Steps
+                Set up your profile
               </CardTitle>
               <p className="text-sm text-fg-secondary mt-1">
-                Complete these to get the most out of OrangeCat
+                Choose what to add. You can start using OrangeCat now.
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -220,8 +229,9 @@ export default function TasksSection({
               </div>
               <button
                 onClick={toggleExpanded}
-                className="rounded-md p-2 transition-colors hover:bg-surface-raised"
+                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md p-2 transition-colors hover:bg-surface-raised"
                 aria-label={isExpanded ? 'Collapse tasks' : 'Expand tasks'}
+                aria-expanded={isExpanded}
               >
                 {isExpanded ? (
                   <ChevronUp className="w-4 h-4" />
@@ -260,6 +270,7 @@ export default function TasksSection({
                     onClick={() => {
                       setUserToggled(true);
                       setUserExpanded(true);
+                      setShowAllTasks(true);
                     }}
                   >
                     Show {hiddenCount} more task{hiddenCount !== 1 ? 's' : ''}

@@ -75,10 +75,9 @@ describe('one cache policy', () => {
           }
         });
     }
-    expect(
-      offenders,
-      `Name the preset instead of retyping it:\n${offenders.join('\n')}`
-    ).toEqual([]);
+    expect(offenders, `Name the preset instead of retyping it:\n${offenders.join('\n')}`).toEqual(
+      []
+    );
   });
 
   it('no CDN policy is spelled out in two different files', () => {

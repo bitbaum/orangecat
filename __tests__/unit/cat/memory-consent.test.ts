@@ -6,10 +6,9 @@ import type { AnySupabaseClient } from '@/lib/supabase/types';
  * Data-controls P0: the memory consent toggle and delete-all conversations.
  *
  * memoryConsentGranted gates extractAndStoreMemories — its failure semantics
- * matter: a missing preferences row or a failed read must default to TRUE
- * (memory on), because silently disabling memory on a transient DB error would
- * be a worse bug than the one the toggle solves. Only an explicit
- * memory_enabled=false may turn it off.
+ * matter: a missing row uses the product default, while a failed read cannot
+ * establish whether the person opted out. Optional extraction skips that turn
+ * and retries the preference read next time.
  */
 
 function supabaseReturning(row: unknown, error: unknown = null): AnySupabaseClient {
@@ -35,19 +34,25 @@ describe('memoryConsentGranted', () => {
     );
   });
 
-  it('is false ONLY on explicit memory_enabled=false', async () => {
+  it('is false on explicit memory_enabled=false', async () => {
     expect(await memoryConsentGranted(supabaseReturning({ memory_enabled: false }), 'u1')).toBe(
       false
     );
   });
 
-  it('defaults to true when the read throws (never silently disable on error)', async () => {
+  it('skips extraction when the read throws', async () => {
     const throwing = {
       from: () => {
         throw new Error('db down');
       },
     } as unknown as AnySupabaseClient;
-    expect(await memoryConsentGranted(throwing, 'u1')).toBe(true);
+    expect(await memoryConsentGranted(throwing, 'u1')).toBe(false);
+  });
+
+  it('skips extraction when the preference query reports an error', async () => {
+    expect(await memoryConsentGranted(supabaseReturning(null, { code: 'DB_DOWN' }), 'u1')).toBe(
+      false
+    );
   });
 });
 

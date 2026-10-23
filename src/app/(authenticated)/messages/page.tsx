@@ -8,6 +8,7 @@ import Loading from '@/components/Loading';
 import Button from '@/components/ui/Button';
 import { openConversationFor } from '@/features/messaging/open-conversation.client';
 import { ROUTES } from '@/config/routes';
+import { MESSAGE_DRAFTS, isMessageDraftKey } from '@/config/message-drafts';
 import { inquiryDraft, stashMessageDraft } from '@/features/messaging/lib/draft';
 
 function MessagesContent() {
@@ -18,6 +19,9 @@ function MessagesContent() {
   // "Ask about this" on a listing: its title and path, turned into a draft.
   const aboutTitle = searchParams?.get('about') || undefined;
   const aboutPath = searchParams?.get('ref') || undefined;
+  // A named draft (config/message-drafts), never free text from the URL.
+  const draftParam = searchParams?.get('draft');
+  const draftKey = isMessageDraftKey(draftParam) ? draftParam : undefined;
   const [openedId, setOpenedId] = useState<string | undefined>(undefined);
   const [opening, setOpening] = useState(Boolean(toUserId && !idFromUrl));
   const [openError, setOpenError] = useState<string | null>(null);
@@ -49,6 +53,9 @@ function MessagesContent() {
               inquiryDraft(aboutTitle.slice(0, 120), `${window.location.origin}${path}`)
             );
           }
+          if (draftKey) {
+            stashMessageDraft(conversationId, MESSAGE_DRAFTS[draftKey](window.location.origin));
+          }
           setOpenedId(conversationId);
           router.replace(ROUTES.MESSAGES_WITH_CONVERSATION(conversationId));
         }
@@ -67,7 +74,7 @@ function MessagesContent() {
       cancelled = true;
       controller.abort();
     };
-  }, [isAuthenticated, toUserId, idFromUrl, router, aboutTitle, aboutPath, attempt]);
+  }, [isAuthenticated, toUserId, idFromUrl, router, aboutTitle, aboutPath, draftKey, attempt]);
 
   const id = idFromUrl || openedId;
 

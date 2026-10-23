@@ -9,11 +9,37 @@ reads, and [orangecat.ch/changelog](https://orangecat.ch/changelog) renders
 it from there. One `## YYYY-MM-DD` heading per day; bullets under it travel
 to the map, sub-bullets stay here for the human reader.
 
+## 2026-10-23
+
+- **Bookings distinguish an empty list from a failed load.** Retry restores a failed request, view choices share one control, and history filters cannot hide incoming or confirmed bookings.
+- **Cat’s editor directions open the editor.** Known creation paths and named editor suggestions become direct links, including answers that show a path as plain text. Duplicate editor suggestions collapse into one action.
+
+- **Ask Cat without an automatic upgrade pitch.** Writing, creating or using another language no longer triggers a model promotion just because of keywords. Model choices remain available in AI settings.
+
+- **A request you paid now says Paid.** Until now a request stayed Pending, with a Pay button, for both people — even after the money had moved, which invited paying twice. The pay link from a request now names it, so the payment answers it: the request turns Paid, the person who asked is told who paid and for what, and opening the old link shows "This request is already paid" instead of an empty form. A payment smaller than the ask leaves it open.
+- **A send that times out no longer invites a second payment.** Lightning has no cancel, so a timeout can still go through. Send used to drop you back on the filled-in form with the button live; it now stops on "Not confirmed yet", asks you to check your wallet, and starts clean.
+- **Send says it before you type an amount.** Your own name now reads "That's you", and someone who can only be paid on-chain gets a link to their pay page instead of a refusal after the review step.
+- **Dead ends say why, and offer a person-to-person way forward.** The pay page for someone with no wallet now reads the same as Send, with the same one-line way to message them.
+- **Notifications count in your currency.** "Lena asked you for CHF 20.00" and "You were paid CHF 5.00" instead of BTC decimals; a request you asked for tells you who paid it.
+- **Ask Cat from Home with the same composer as chat.** Type or dictate your intent, then open Cat with your words intact. Home no longer opens the keyboard automatically; chat actions follow the app’s monochrome button style.
+- **Task filters apply what you choose.** Type and archived choices now reach the API. Filter controls have labels, phone actions keep their names, tasks open with keyboard-accessible links, and a failed list offers Retry.
+
 ## 2026-10-22
+
+- **A person who cannot receive Bitcoin is no longer a dead end on Send.** The note now says why — they have not added a Bitcoin wallet, so a payment has nowhere to land — and under it, one line: "Message Marco to suggest adding one". It opens your conversation with them with a short, friendly message already written, including a link that shows how to get a wallet. Nothing is sent until you press send, and you can change the words.
+- **Keep more than one piece of writing in progress.** New draft preserves your current article, device drafts stay with the signed-in account, and the draft limit no longer silently removes older writing. Recover older unowned device drafts only when they are yours; failed saves and deletions keep your writing available for retry.
+- **Notification settings explain what you change.** Each toggle names its email category, saves cannot overwrite one another in flight, and a failed initial load offers Retry. Cat instructions use a labeled field that stays readable on phones.
+- **Cat can distinguish app help from personal data.** Writing destinations come from the Create catalog and count as verified application facts even for a new account. Answer repair preserves valid editor links while retaining checks against invented claims about your records.
+
+- **Draft switching protects unsaved writing.** If device storage cannot save, your current draft stays open for retry. Clearing a draft also clears its saved text instead of restoring an older version after navigation.
+- **Cat's editor suggestions open the editor.** Recognized Open shortcuts go directly to real creation pages. Automatic memory skips one-off writing requests and routine app praise, checks duplicates within each batch, and respects unavailable memory controls. Several new notes stay compact; failed Undo is visible and memories have a direct review link.
 
 - **Messages work with keyboard and touch.** New Message closes with Escape and restores focus, the Unread filter says what it shows, and conversation search tolerates typing slips. Failed inquiries offer Retry. The composer clears the mobile bar without a second blank band; shared fields are readable on phones and required textareas enforce validation. A slow session-sync request no longer sends a signed-in reader back to sign-in.
 - **Your articles remain yours to open and edit.** Private article reads, edit/delete controls and profile article lists now use the same author identity as publishing. Followers-only articles check the follow relationship. Writing uses a focused application workspace; published readers remain public.
 - **Tell Cat when an answer missed.** Under every answer, beside Copy and Listen, a thumb up and a thumb down. The thumb down asks why in one tap — wrong, gave up instead of looking, too vague, misread, too long, hard to read — and takes a few words. What you say stays with the conversation, and each night the fleet's reviewer reads the day's conversations beside what Cat was actually able to do, so a wall or a wrong tool is found and fixed without you having to report it twice.
+- **Profile setup is a choice.** Wallet connection is suggested when you need payments, without a Critical badge. Setup controls fit smaller screens, and Show more actually reveals the remaining tasks. Generated identifiers stay out of the welcome heading. The mobile menu and Create sheet support keyboard dismissal and focus management.
+- **Posts require your own signed-in identity.** The older post writer now checks authorship inside the database function, including requests made directly to its API.
+
 - **Request and Send start from your people.** Under From and To, before you type, the people you follow, who follow you and whoever you have asked or been asked by — each row saying why they are there. From the first letter the list narrows, and every account with a handle is found, not only the ones that wrote a bio: the person you followed this morning was invisible to the shared search, which lists a profile only once it has said something about itself. While the list has rows, "nobody goes by @me" stays quiet.
 - **Receive is your code, nothing else.** "Add an amount" is gone from under the QR: the code says who you are, the payer types what they owe on the page it opens, and a figure you want from a particular person is a Request. The link under the code no longer wraps a raw BTC decimal across two lines.
 - Wallets: the in-app Receive button is monochrome like every in-app action, the page is called Wallets, and every wallet carries the same mark instead of an emoji.

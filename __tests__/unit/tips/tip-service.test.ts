@@ -77,7 +77,12 @@ describe('getTipReceiveInfo', () => {
       supabaseWith({ id: 'u1', username: 'alice', display_name: 'Alice' }),
       'alice'
     );
-    expect(info).toEqual({ canReceive: false, recipientName: 'Alice', methodLabel: undefined });
+    expect(info).toEqual({
+      canReceive: false,
+      recipientName: 'Alice',
+      recipientId: 'u1',
+      methodLabel: undefined,
+    });
   });
 
   it('notifies the would-be recipient of a tip dead end (fire-and-forget)', async () => {
@@ -130,7 +135,9 @@ describe('getTipReceiveInfo', () => {
     expect(info).toEqual({
       canReceive: true,
       recipientName: 'Bob',
+      recipientId: 'u1',
       methodLabel: 'On-chain Bitcoin',
+      method: 'onchain',
     });
   });
 });

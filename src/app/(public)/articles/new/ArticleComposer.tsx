@@ -13,6 +13,7 @@ import { updateArticle } from '@/services/articles/update';
 import type { TimelineVisibility } from '@/types/timeline';
 import type { ArticleDraft } from '@/services/cat/writing-types';
 import { type LocalArticleDraft } from '@/services/articles/local-drafts';
+import { handleArticleKeyDown } from '@/components/articles/article-keyboard-shortcuts';
 import { useMarkdownTextarea } from '@/components/articles/useMarkdownTextarea';
 import AiWriterPanel from '@/components/articles/AiWriterPanel';
 import type { StockImage } from '@/services/images/types';
@@ -55,6 +56,7 @@ export default function ArticleComposer({
   const [imagePicker, setImagePicker] = useState<null | 'cover' | 'inline'>(null);
 
   const drafts = useLocalArticleDrafts(
+    user.id,
     isEditing,
     { title, excerpt, coverImage, body, visibility },
     { setTitle, setExcerpt, setCoverImage, setBody, setVisibility }
@@ -117,28 +119,8 @@ export default function ArticleComposer({
   }
 
   function loadDraft(draft: LocalArticleDraft) {
-    drafts.loadDraft(draft);
-    setTab('write');
-  }
-
-  function handleBodyKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (!(e.metaKey || e.ctrlKey)) {
-      return;
-    }
-    const k = e.key.toLowerCase();
-    if (k === 'b') {
-      e.preventDefault();
-      md.wrap('**', '**', 'bold');
-    } else if (k === 'i') {
-      e.preventDefault();
-      md.wrap('*', '*', 'italic');
-    } else if (k === 'k') {
-      e.preventDefault();
-      md.insertLink();
-    } else if (k === 's') {
-      // Flush the draft now instead of letting the browser offer to save the page.
-      e.preventDefault();
-      drafts.flushDraftNow();
+    if (drafts.loadDraft(draft)) {
+      setTab('write');
     }
   }
 
@@ -207,13 +189,18 @@ export default function ArticleComposer({
           </details>
         )}
 
-        <DraftsPanel
-          restored={drafts.restored}
-          otherDrafts={drafts.otherDrafts}
-          onDiscard={drafts.discardCurrentDraft}
-          onLoad={loadDraft}
-          onDelete={drafts.deleteOtherDraft}
-        />
+        {!isEditing && (
+          <DraftsPanel
+            onNew={drafts.startNewDraft}
+            hasOlderDrafts={drafts.hasOlderDrafts}
+            onRecover={drafts.recoverOlderDrafts}
+            restored={drafts.restored}
+            otherDrafts={drafts.otherDrafts}
+            onDiscard={drafts.discardCurrentDraft}
+            onLoad={loadDraft}
+            onDelete={drafts.deleteOtherDraft}
+          />
+        )}
 
         {/* Write / Preview tabs */}
         <div className="mb-3 flex items-center gap-2">
@@ -256,7 +243,7 @@ export default function ArticleComposer({
             imagePicker={imagePicker}
             setImagePicker={setImagePicker}
             onPickImage={handlePickImage}
-            onBodyKeyDown={handleBodyKeyDown}
+            onBodyKeyDown={event => handleArticleKeyDown(event, md, drafts.flushDraftNow)}
           />
         ) : (
           <ArticlePreview title={title} excerpt={excerpt} coverImage={coverImage} body={body} />
@@ -277,7 +264,7 @@ export default function ArticleComposer({
             )}
           >
             {drafts.saveStatus === 'error'
-              ? "Couldn't save on this device. Keep this page open and copy your draft before leaving."
+              ? "Couldn't update drafts on this device. Keep this page open and copy your writing before leaving. Storage may be full; remove an unneeded saved draft and retry."
               : drafts.saveStatus === 'saved'
                 ? 'Draft saved on this device.'
                 : drafts.saveStatus === 'saving'

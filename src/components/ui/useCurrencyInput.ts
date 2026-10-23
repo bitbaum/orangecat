@@ -71,7 +71,9 @@ export function useCurrencyInput(
     // A typed number is in the input's currency; the form stores the field's.
     // When they differ (the switch was used without onCurrencyChange), convert
     // the TYPED amount — it used to send a conversion of the old value instead.
-    onChange(inputCurrency !== propCurrency ? convert(parsed, inputCurrency, propCurrency) : parsed);
+    onChange(
+      inputCurrency !== propCurrency ? convert(parsed, inputCurrency, propCurrency) : parsed
+    );
   };
 
   const handleCurrencyChange = (newCurrency: Currency) => {

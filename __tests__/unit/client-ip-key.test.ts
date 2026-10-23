@@ -26,9 +26,9 @@ describe('clientIpKey', () => {
     // The bypass itself: three requests from the same client, three forged
     // prefixes. Before the fix these produced three keys and no bucket filled.
     const keys = new Set(
-      ['1.1.1.1', '2.2.2.2', 'not-even-an-ip'].map((spoof) =>
-        clientIpKey(req({ 'x-forwarded-for': `${spoof}, 203.0.113.7` })),
-      ),
+      ['1.1.1.1', '2.2.2.2', 'not-even-an-ip'].map(spoof =>
+        clientIpKey(req({ 'x-forwarded-for': `${spoof}, 203.0.113.7` }))
+      )
     );
     expect([...keys]).toEqual(['203.0.113.7']);
   });
@@ -51,6 +51,6 @@ describe('clientIpKey', () => {
     // worse, produce the key "l402:" and look like a real identity.
     expect(clientIpKey(req({ 'x-forwarded-for': '' }))).toBe('anonymous');
     expect(clientIpKey(req({ 'x-forwarded-for': ' , , ' }))).toBe('anonymous');
-    expect(clientIpKey(req({ 'x-forwarded-for': ',' , 'x-real-ip': '8.8.8.8' }))).toBe('8.8.8.8');
+    expect(clientIpKey(req({ 'x-forwarded-for': ',', 'x-real-ip': '8.8.8.8' }))).toBe('8.8.8.8');
   });
 });

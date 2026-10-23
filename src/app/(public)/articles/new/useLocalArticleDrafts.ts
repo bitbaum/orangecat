@@ -4,6 +4,8 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import type { TimelineVisibility } from '@/types/timeline';
 import {
   deleteLocalDraft,
+  hasOlderDeviceDrafts,
+  recoverOlderDeviceDrafts,
   listLocalDrafts,
   newDraftId,
   saveLocalDraft,
@@ -32,6 +34,7 @@ interface DraftSetters {
  * Flushes pending edits on navigation and when the page is hidden.
  */
 export function useLocalArticleDrafts(
+  ownerId: string,
   isEditing: boolean,
   fields: DraftFields,
   setters: DraftSetters
@@ -39,7 +42,9 @@ export function useLocalArticleDrafts(
   const { title, excerpt, coverImage, body, visibility } = fields;
   const { setTitle, setExcerpt, setCoverImage, setBody, setVisibility } = setters;
 
+  const [hasOlderDrafts, setHasOlderDrafts] = useState(false);
   const pending = useRef<LocalArticleDraft | null>(null);
+  const startedDraftId = useRef<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [restored, setRestored] = useState(false);
   const [draftId, setDraftId] = useState(() => newDraftId());
@@ -52,7 +57,8 @@ export function useLocalArticleDrafts(
     if (isEditing) {
       return;
     }
-    const drafts = listLocalDrafts();
+    setHasOlderDrafts(hasOlderDeviceDrafts());
+    const drafts = listLocalDrafts(ownerId);
     const [latest, ...rest] = drafts;
     if (latest) {
       setTitle(latest.title);
@@ -70,8 +76,11 @@ export function useLocalArticleDrafts(
   // Keep the latest committed edit available to pagehide and unmount, even
   // when the debounce has not fired. Do not persist during render.
   useLayoutEffect(() => {
+    if (title || body || excerpt || coverImage) {
+      startedDraftId.current = draftId;
+    }
     pending.current =
-      !isEditing && (title || body || excerpt || coverImage)
+      !isEditing && startedDraftId.current === draftId
         ? { id: draftId, title, excerpt, coverImage, body, visibility, updatedAt: Date.now() }
         : null;
   }, [isEditing, draftId, title, excerpt, coverImage, body, visibility]);
@@ -81,18 +90,19 @@ export function useLocalArticleDrafts(
     if (!draft) {
       return null;
     }
-    const saved = saveLocalDraft(draft);
+    const saved = saveLocalDraft(ownerId, draft);
     if (saved) {
       pending.current = null;
     }
     return saved;
-  }, []);
+  }, [ownerId]);
 
   const flushDraftNow = useCallback(() => {
     const saved = persistPending();
     if (saved !== null) {
       setSaveStatus(saved ? 'saved' : 'error');
     }
+    return saved;
   }, [persistPending]);
 
   useEffect(() => {
@@ -126,12 +136,23 @@ export function useLocalArticleDrafts(
   // Publishing/discarding must not be resurrected by the unmount flush.
   function completeDraft() {
     pending.current = null;
-    deleteLocalDraft(draftId);
+    deleteLocalDraft(ownerId, draftId);
   }
 
   /** Delete the current draft and reset to a blank one; other drafts survive. */
   function discardCurrentDraft() {
-    completeDraft();
+    if (!deleteLocalDraft(ownerId, draftId)) {
+      setSaveStatus('error');
+      return false;
+    }
+    pending.current = null;
+    resetFields();
+    return true;
+  }
+
+  function resetFields() {
+    startedDraftId.current = null;
+    setSaveStatus('idle');
     setTitle('');
     setExcerpt('');
     setCoverImage('');
@@ -139,12 +160,14 @@ export function useLocalArticleDrafts(
     setVisibility('public');
     setDraftId(newDraftId());
     setRestored(false);
-    setOtherDrafts(listLocalDrafts());
+    setOtherDrafts(listLocalDrafts(ownerId));
   }
 
-  /** Switch to another saved draft; the current one is already autosaved. */
+  /** Preserve the current writing before replacing the fields. */
   function loadDraft(draft: LocalArticleDraft) {
-    flushDraftNow();
+    if (flushDraftNow() === false) {
+      return false;
+    }
     setTitle(draft.title);
     setExcerpt(draft.excerpt);
     setCoverImage(draft.coverImage);
@@ -152,15 +175,40 @@ export function useLocalArticleDrafts(
     setVisibility(draft.visibility);
     setDraftId(draft.id);
     setRestored(true);
-    setOtherDrafts(listLocalDrafts().filter(d => d.id !== draft.id));
+    setOtherDrafts(listLocalDrafts(ownerId).filter(d => d.id !== draft.id));
+    return true;
   }
 
   function deleteOtherDraft(id: string) {
-    deleteLocalDraft(id);
+    if (!deleteLocalDraft(ownerId, id)) {
+      setSaveStatus('error');
+      return false;
+    }
     setOtherDrafts(prev => prev.filter(d => d.id !== id));
+    return true;
+  }
+
+  function startNewDraft() {
+    if (flushDraftNow() === false) {
+      return false;
+    }
+    resetFields();
+    return true;
+  }
+
+  function recoverOlderDrafts() {
+    if (flushDraftNow() === false || !recoverOlderDeviceDrafts(ownerId)) {
+      setSaveStatus('error');
+      return;
+    }
+    setHasOlderDrafts(hasOlderDeviceDrafts());
+    setOtherDrafts(listLocalDrafts(ownerId).filter(d => d.id !== draftId));
   }
 
   return {
+    startNewDraft,
+    hasOlderDrafts,
+    recoverOlderDrafts,
     draftId,
     saveStatus,
     completeDraft,

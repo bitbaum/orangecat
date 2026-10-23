@@ -44,7 +44,7 @@ function toColumnSet(list: string): Set<string> {
   return new Set(
     list
       .split(',')
-      .map((c) => c.trim())
+      .map(c => c.trim())
       .filter(Boolean)
   );
 }
@@ -73,7 +73,7 @@ export function addedColumns(sql: string): string[] {
   return found;
 }
 
-const migrationFiles = readdirSync(MIGRATIONS_DIR).filter((f) => f.endsWith('.sql'));
+const migrationFiles = readdirSync(MIGRATIONS_DIR).filter(f => f.endsWith('.sql'));
 const readMigration = (f: string) => readFileSync(join(MIGRATIONS_DIR, f), 'utf8');
 
 /**
@@ -102,8 +102,8 @@ describe('wallet column grants', () => {
     // would make this whole test a green light over an unchecked invariant.
     expect(granted.size).toBeGreaterThan(0);
 
-    const grantedOnly = [...granted].filter((c) => !inCode.has(c)).sort();
-    const codeOnly = [...inCode].filter((c) => !granted.has(c)).sort();
+    const grantedOnly = [...granted].filter(c => !inCode.has(c)).sort();
+    const codeOnly = [...inCode].filter(c => !granted.has(c)).sort();
 
     expect({ grantedOnly, codeOnly }).toEqual({ grantedOnly: [], codeOnly: [] });
   });
@@ -162,7 +162,9 @@ describe('the parsers actually parse', () => {
 
   it('spots an added column, with or without IF NOT EXISTS', () => {
     expect(addedColumns('ALTER TABLE public.wallets ADD COLUMN foo text;')).toEqual(['foo']);
-    expect(addedColumns('ALTER TABLE wallets ADD COLUMN IF NOT EXISTS "bar" int;')).toEqual(['bar']);
+    expect(addedColumns('ALTER TABLE wallets ADD COLUMN IF NOT EXISTS "bar" int;')).toEqual([
+      'bar',
+    ]);
   });
 
   it('ignores a column added to another table', () => {

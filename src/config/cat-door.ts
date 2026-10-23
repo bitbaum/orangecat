@@ -15,3 +15,12 @@ export const DOOR_EXAMPLES = [
   'Start a fund for Witikon',
   'Throw a party on Saturday',
 ] as const;
+
+/** Shared copy and constraints for native and chatkit intent entry. */
+export const CAT_DOOR = {
+  prompt: 'What do you want to do?',
+  placeholder: 'Describe what you want to do…',
+  submit: 'Ask Cat',
+  minLength: 3,
+  maxLength: 500,
+} as const;

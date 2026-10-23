@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Calendar, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import Button from '@/components/ui/Button';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 import EmptyState from '@/components/ui/EmptyState';
 import EntityListShell from '@/components/entity/EntityListShell';
 import { logger } from '@/utils/logger';
@@ -20,16 +22,21 @@ export default function BookingsDashboardPage() {
   const router = useRouter();
   const { formatAmountBtc } = useDisplayCurrency();
   const [activeTab, setActiveTab] = useState<TabType>('incoming');
+  const selectedTab = useRef(activeTab);
+  const requestVersion = useRef(0);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
   const [processingId, setProcessingId] = useState<string | null>(null);
 
   const loadBookings = useCallback(async () => {
+    const version = ++requestVersion.current;
     setIsLoading(true);
+    setLoadError(null);
     try {
       let status = '';
-      switch (activeTab) {
+      switch (selectedTab.current) {
         case 'incoming':
           status = STATUS.BOOKINGS.PENDING;
           break;
@@ -43,20 +50,32 @@ export default function BookingsDashboardPage() {
 
       const response = await fetch(`${API_ROUTES.BOOKINGS.BASE}?role=provider&status=${status}`);
       const data = await response.json();
-      if (data.success) {
+      if (!response.ok || !data.success) {
+        throw new Error(apiErrorMessage(data, 'Failed to load bookings'));
+      }
+      if (version === requestVersion.current) {
         setBookings(data.data || []);
       }
     } catch (error) {
+      if (version !== requestVersion.current) {
+        return;
+      }
+      setLoadError(error instanceof Error ? error.message : 'Failed to load bookings');
       logger.error('Error loading bookings', error, 'Booking');
-      toast.error('Failed to load bookings');
     } finally {
-      setIsLoading(false);
+      if (version === requestVersion.current) {
+        setIsLoading(false);
+      }
     }
-  }, [activeTab]);
+  }, []);
 
   useEffect(() => {
+    selectedTab.current = activeTab;
     loadBookings();
-  }, [loadBookings]);
+    return () => {
+      requestVersion.current += 1;
+    };
+  }, [activeTab, loadBookings]);
 
   const handleAction = async (
     bookingId: string,
@@ -94,7 +113,7 @@ export default function BookingsDashboardPage() {
   };
 
   const filteredBookings = bookings.filter(booking => {
-    if (filterStatus === 'all') {
+    if (activeTab !== 'history' || filterStatus === 'all') {
       return true;
     }
     return booking.status === filterStatus;
@@ -118,7 +137,7 @@ export default function BookingsDashboardPage() {
 
   return (
     <EntityListShell
-      title="Manage Bookings"
+      title="Bookings"
       description="Review and manage booking requests for your services"
     >
       <BookingTabs
@@ -130,7 +149,14 @@ export default function BookingsDashboardPage() {
       />
 
       {/* Bookings List */}
-      {isLoading ? (
+      {loadError ? (
+        <div role="alert" className="oc-surface p-6 space-y-3">
+          <p className="text-status-negative">{loadError}</p>
+          <Button variant="outline" onClick={loadBookings}>
+            Retry loading bookings
+          </Button>
+        </div>
+      ) : isLoading ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-fg-tertiary" />
         </div>
