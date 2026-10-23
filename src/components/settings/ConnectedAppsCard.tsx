@@ -17,19 +17,32 @@ import { API_ROUTES } from '@/config/api-routes';
 import { OAUTH_CLIENT_ORIGINS, PROFILE_CLAIMS, type ProfileClaim } from '@/lib/oauth/config';
 import type { ConnectedApp } from '@/services/auth/connectedApps';
 import { logger } from '@/utils/logger';
+import Button from '@/components/ui/Button';
 
 export default function ConnectedAppsCard() {
   const [apps, setApps] = useState<ConnectedApp[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [revoking, setRevoking] = useState<string | null>(null);
-  const [saving, setSaving] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
+  const [pending, setPending] = useState<Record<string, 'saving' | 'revoking'>>({});
+  const finish = (id: string) =>
+    setPending(previous => {
+      const next = { ...previous };
+      delete next[id];
+      return next;
+    });
 
   useEffect(() => {
     let cancelled = false;
+    const controller = new AbortController();
+    setLoading(true);
+    setError(null);
     (async () => {
       try {
-        const res = await fetch(API_ROUTES.CONNECTED_APPS.BASE, { credentials: 'include' });
+        const res = await fetch(API_ROUTES.CONNECTED_APPS.BASE, {
+          credentials: 'include',
+          signal: controller.signal,
+        });
         if (!res.ok) {
           throw new Error(`Failed to load connected apps (${res.status})`);
         }
@@ -39,8 +52,8 @@ export default function ConnectedAppsCard() {
           setLoading(false);
         }
       } catch (err) {
-        logger.error('Failed to load connected apps', { err });
         if (!cancelled) {
+          logger.error('Failed to load connected apps', { err });
           setError(err instanceof Error ? err.message : 'Failed to load connected apps');
           setLoading(false);
         }
@@ -48,10 +61,14 @@ export default function ConnectedAppsCard() {
     })();
     return () => {
       cancelled = true;
+      controller.abort();
     };
-  }, []);
+  }, [attempt]);
 
   async function handleRevoke(app: ConnectedApp) {
+    if (pending[app.clientId]) {
+      return;
+    }
     if (
       !window.confirm(
         `Disconnect ${app.name}? It will have to ask for your permission again before it can act as you.`
@@ -59,7 +76,7 @@ export default function ConnectedAppsCard() {
     ) {
       return;
     }
-    setRevoking(app.clientId);
+    setPending(previous => ({ ...previous, [app.clientId]: 'revoking' }));
     try {
       const res = await fetch(API_ROUTES.CONNECTED_APPS.BY_CLIENT(app.clientId), {
         method: 'DELETE',
@@ -74,19 +91,22 @@ export default function ConnectedAppsCard() {
       logger.error('Failed to revoke connected app', { err });
       toast.error(err instanceof Error ? err.message : 'Could not disconnect. Try again.');
     } finally {
-      setRevoking(null);
+      finish(app.clientId);
     }
   }
 
   // Optimistic: the box flips at once and snaps back, with a message, if the
   // server says no — a privacy switch that lags reads as one that did not work.
   async function handleToggleClaim(app: ConnectedApp, claim: ProfileClaim, shown: boolean) {
+    if (pending[app.clientId]) {
+      return;
+    }
     const before = app.withheldClaims;
     const next = shown ? before.filter(c => c !== claim) : [...before, claim];
     const apply = (withheldClaims: ProfileClaim[]) =>
       setApps(prev => prev.map(a => (a.clientId === app.clientId ? { ...a, withheldClaims } : a)));
     apply(next);
-    setSaving(app.clientId);
+    setPending(previous => ({ ...previous, [app.clientId]: 'saving' }));
     try {
       const res = await fetch(API_ROUTES.CONNECTED_APPS.BY_CLIENT(app.clientId), {
         method: 'PATCH',
@@ -102,7 +122,7 @@ export default function ConnectedAppsCard() {
       apply(before);
       toast.error('Could not save that. Try again.');
     } finally {
-      setSaving(null);
+      finish(app.clientId);
     }
   }
 
@@ -110,7 +130,16 @@ export default function ConnectedAppsCard() {
     return <p className="text-sm text-fg-secondary">Loading connected apps…</p>;
   }
   if (error) {
-    return <p className="text-sm text-status-negative">{error}</p>;
+    return (
+      <div className="space-y-3 rounded-lg border border-default p-4">
+        <p role="alert" className="text-sm text-status-negative">
+          {error}
+        </p>
+        <Button variant="outline" onClick={() => setAttempt(value => value + 1)}>
+          Retry loading connected apps
+        </Button>
+      </div>
+    );
   }
   if (apps.length === 0) {
     return (
@@ -167,11 +196,11 @@ export default function ConnectedAppsCard() {
           <button
             type="button"
             onClick={() => handleRevoke(app)}
-            disabled={revoking === app.clientId}
+            disabled={Boolean(pending[app.clientId])}
             className="inline-flex min-h-11 items-center gap-1 rounded-md border border-subtle px-2.5 py-1.5 text-xs text-fg-secondary hover:bg-surface-raised/60 hover:text-status-negative disabled:opacity-50"
           >
             <Trash2 className="h-3.5 w-3.5" />
-            {revoking === app.clientId ? 'Disconnecting…' : 'Disconnect'}
+            {pending[app.clientId] === 'revoking' ? 'Disconnecting…' : 'Disconnect'}
           </button>
           {app.scopes.includes('profile') && (
             <fieldset className="basis-full">
@@ -185,7 +214,7 @@ export default function ConnectedAppsCard() {
                     <input
                       type="checkbox"
                       checked={!app.withheldClaims.includes(c.claim)}
-                      disabled={saving === app.clientId}
+                      disabled={Boolean(pending[app.clientId])}
                       onChange={e => handleToggleClaim(app, c.claim, e.target.checked)}
                       className="h-4 w-4 accent-accent-warm"
                     />

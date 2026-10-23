@@ -107,9 +107,13 @@ export default function IntegrationKeysCard({ actors, defaultActorId }: Props) {
     };
   }, []);
 
+  const validActorId = actors.some(actor => actor.actor_id === selectedActorId)
+    ? selectedActorId
+    : null;
+
   async function handleMint(e: React.FormEvent) {
     e.preventDefault();
-    if (!selectedActorId || !name.trim()) {
+    if (!validActorId || !name.trim()) {
       return;
     }
     if (restrictPermissions && selectedScopes.size === 0) {
@@ -121,7 +125,7 @@ export default function IntegrationKeysCard({ actors, defaultActorId }: Props) {
     try {
       const body: { name: string; actor_id: string; scopes?: string[]; is_test?: boolean } = {
         name: name.trim(),
-        actor_id: selectedActorId,
+        actor_id: validActorId,
       };
       if (restrictPermissions) {
         body.scopes = Array.from(selectedScopes);
@@ -217,7 +221,7 @@ export default function IntegrationKeysCard({ actors, defaultActorId }: Props) {
         actors={actors}
         name={name}
         onNameChange={setName}
-        selectedActorId={selectedActorId}
+        selectedActorId={validActorId}
         onActorChange={setSelectedActorId}
         isTest={isTest}
         onIsTestChange={setIsTest}

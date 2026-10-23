@@ -96,9 +96,13 @@ export default function WebhookEndpointsCard({ actors, defaultActorId }: Props) 
     };
   }, []);
 
+  const validActorId = actors.some(actor => actor.actor_id === selectedActorId)
+    ? selectedActorId
+    : null;
+
   async function handleMint(e: React.FormEvent) {
     e.preventDefault();
-    if (!selectedActorId || !name.trim() || !url.trim()) {
+    if (!validActorId || !name.trim() || !url.trim()) {
       return;
     }
     setMinting(true);
@@ -107,7 +111,7 @@ export default function WebhookEndpointsCard({ actors, defaultActorId }: Props) 
       const body: { name: string; url: string; actor_id: string; event_types?: string[] } = {
         name: name.trim(),
         url: url.trim(),
-        actor_id: selectedActorId,
+        actor_id: validActorId,
       };
       if (selectedEvents.size > 0) {
         body.event_types = Array.from(selectedEvents);
@@ -171,7 +175,7 @@ export default function WebhookEndpointsCard({ actors, defaultActorId }: Props) 
         onNameChange={setName}
         url={url}
         onUrlChange={setUrl}
-        selectedActorId={selectedActorId}
+        selectedActorId={validActorId}
         onActorChange={setSelectedActorId}
         selectedEvents={selectedEvents}
         onToggleEvent={toggleEvent}
