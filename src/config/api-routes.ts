@@ -212,6 +212,8 @@ export const API_ROUTES = {
     RECEIVE_INFO: '/api/tips/receive-info',
     INVOICE: '/api/tips/invoice',
     STATUS: '/api/tips/status',
+    /** Pay an invoice this page minted from the signed-in payer's own wallet. */
+    PAY: '/api/tips/pay',
   },
   INTEGRATIONS: {
     LOKI_BUILD_INTENTS: '/api/integrations/loki/build-intents',

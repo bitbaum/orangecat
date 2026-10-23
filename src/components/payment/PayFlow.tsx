@@ -9,29 +9,25 @@
  * is the last thing that should exist twice, and a second copy would inevitably
  * drift on the parts that matter (bounds, polling, expiry handling).
  *
+ * A payer who is signed in with a wallet connected gets one more door into the
+ * same flow: "Pay from my wallet" pays the invoice without leaving. The state
+ * lives in usePayFlow; this file only draws it.
+ *
  * Non-custodial throughout: the invoice is minted from the recipient's wallet
  * and the funds never touch OrangeCat.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
 import { Clock, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { MoneyReceipt } from '@/components/money/MoneyReceipt';
 import { PaymentQRCode } from '@/components/payment/PaymentQRCode';
 import { AmountField } from '@/components/money/AmountField';
-import {
-  fetchTipInvoice,
-  fetchTipReceiveInfo,
-  fetchTipStatus,
-  type TipInvoice,
-} from '@/services/tips/tip-client';
-import {
-  DEFAULT_TIP_BTC,
-  TIP_COPY,
-  TIP_MAX_BTC,
-  TIP_MIN_BTC,
-  TIP_POLL_INTERVAL_MS,
-} from '@/config/tips';
+import { usePayFlow } from '@/components/payment/usePayFlow';
+import { useSendCapability } from '@/hooks/useSendCapability';
+import { SEND_COPY } from '@/config/send';
+import { TIP_COPY, TIP_MAX_BTC, TIP_MIN_BTC } from '@/config/tips';
+
+export type { PayFlowState } from '@/components/payment/usePayFlow';
 
 /** The words around the one pay machine. Tips and the public page are not the same sentence. */
 interface PayWords {
@@ -45,9 +41,12 @@ interface PayWords {
   disclaimer: string;
   generating: string;
   generate: string;
+  payFromWallet: string;
+  payFromWalletNote: string;
+  payingFromWallet: string;
+  confirming: string;
+  walletDeclined: (reason: string) => string;
 }
-
-export type PayFlowState = 'pending' | 'paid' | 'expired';
 
 interface PayFlowProps {
   username: string;
@@ -76,6 +75,15 @@ interface PayFlowProps {
   words?: PayWords;
 }
 
+function Waiting({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col items-center gap-3 py-10 text-center">
+      <Loader2 className="h-8 w-8 animate-spin text-fg-tertiary" aria-hidden="true" />
+      <p className="text-sm text-fg-secondary">{children}</p>
+    </div>
+  );
+}
+
 export function PayFlow({
   username,
   recipientName,
@@ -89,97 +97,18 @@ export function PayFlow({
   onAmountChange,
   words = TIP_COPY,
 }: PayFlowProps) {
-  const knownUpFront = initialCanReceive !== undefined;
-  const [amount, setAmount] = useState(initialAmountBtc ?? DEFAULT_TIP_BTC);
-  const [checkingWallet, setCheckingWallet] = useState(!knownUpFront);
-  const [canReceive, setCanReceive] = useState<boolean | null>(initialCanReceive ?? null);
-  const [invoice, setInvoice] = useState<TipInvoice | null>(null);
-  const [settleState, setSettleState] = useState<PayFlowState>('pending');
-  const [generating, setGenerating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const flow = usePayFlow({
+    username,
+    active,
+    initialCanReceive,
+    initialAmountBtc,
+    requestId,
+    onAmountChange,
+  });
+  const canPayFromWallet = useSendCapability();
+  const { invoice, settleState, reset } = flow;
 
-  // Asking again for what the server already told us would put the spinner back
-  // on screen for the length of a round trip — the exact flash this prop exists
-  // to remove. Only the first pass is skipped; reopening a modal still rechecks,
-  // because a wallet can be connected between visits.
-  const skipFirstCheck = useRef(knownUpFront);
-  useEffect(() => {
-    if (!active) {
-      return;
-    }
-    if (skipFirstCheck.current) {
-      skipFirstCheck.current = false;
-      return;
-    }
-    let live = true;
-    setInvoice(null);
-    setSettleState('pending');
-    setError(null);
-    setAmount(initialAmountBtc ?? DEFAULT_TIP_BTC);
-    setCheckingWallet(true);
-    setCanReceive(null);
-    fetchTipReceiveInfo(username)
-      .then(info => live && setCanReceive(info.canReceive))
-      .catch(() => live && setCanReceive(false))
-      .finally(() => live && setCheckingWallet(false));
-    return () => {
-      live = false;
-    };
-  }, [active, username, initialAmountBtc]);
-
-  // Poll while an unpaid invoice is on screen — Lightning settles in seconds,
-  // so the payer should see confirmation without refreshing anything.
-  const invoiceRef = useRef(invoice);
-  invoiceRef.current = invoice;
-  useEffect(() => {
-    if (!invoice || settleState !== 'pending') {
-      return;
-    }
-    let live = true;
-    const id = setInterval(async () => {
-      const current = invoiceRef.current;
-      if (!current) {
-        return;
-      }
-      try {
-        const { status } = await fetchTipStatus(current.intentId, current.statusToken);
-        if (!live) {
-          return;
-        }
-        if (status === 'paid') {
-          setSettleState('paid');
-        } else if (status === 'expired' || status === 'failed') {
-          setSettleState('expired');
-        }
-      } catch {
-        // Transient — keep polling; the interval clears on settle or unmount.
-      }
-    }, TIP_POLL_INTERVAL_MS);
-    return () => {
-      live = false;
-      clearInterval(id);
-    };
-  }, [invoice, settleState]);
-
-  const reset = useCallback(() => {
-    setInvoice(null);
-    setSettleState('pending');
-  }, []);
-
-  const handleGenerate = useCallback(async () => {
-    setGenerating(true);
-    setError(null);
-    try {
-      setInvoice(await fetchTipInvoice(username, amount, requestId));
-      setSettleState('pending');
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not create a payment request.');
-    } finally {
-      setGenerating(false);
-    }
-  }, [username, amount, requestId]);
-
-  if (checkingWallet) {
+  if (flow.checkingWallet) {
     return (
       <div className="flex items-center justify-center py-10">
         <Loader2 className="h-6 w-6 animate-spin text-fg-tertiary" />
@@ -187,7 +116,7 @@ export function PayFlow({
     );
   }
 
-  if (canReceive === false) {
+  if (flow.canReceive === false) {
     return (
       <p className="rounded-md border border-subtle bg-surface-raised/40 px-4 py-6 text-center text-sm text-fg-secondary">
         {words.noWallet(recipientName)}
@@ -221,9 +150,43 @@ export function PayFlow({
     );
   }
 
+  // The wallet is paying, or has paid and settlement is being confirmed. The
+  // code would only flash past here, so it stays out of sight.
+  if (flow.paying) {
+    return <Waiting>{words.payingFromWallet}</Waiting>;
+  }
+  if (flow.paidFromWallet) {
+    return <Waiting>{words.confirming}</Waiting>;
+  }
+
+  // A timeout is not a "no": the wallet may still be paying THIS invoice. It
+  // stays watched, and nothing here offers a second payment — a retry would
+  // mint a new invoice and be one. If it settles the receipt appears; if it
+  // never does, the invoice expires and the screen above offers a fresh start.
+  if (invoice && flow.unconfirmed) {
+    return (
+      <div className="flex flex-col items-center gap-3 py-8 text-center">
+        <Clock className="h-12 w-12 text-status-warning" aria-hidden="true" />
+        <p className="font-heading text-xl font-semibold tracking-display text-fg-primary">
+          {SEND_COPY.unconfirmedTitle}
+        </p>
+        <p className="max-w-xs text-sm text-fg-secondary">{SEND_COPY.unconfirmedBody}</p>
+        <p className="flex items-center gap-2 text-xs text-fg-tertiary">
+          <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
+          {words.scan}
+        </p>
+      </div>
+    );
+  }
+
   if (invoice) {
     return (
       <div className="space-y-4">
+        {flow.walletNote && (
+          <p className="rounded-md border border-status-warning/40 bg-status-warning-subtle px-3 py-2 text-sm text-fg-secondary">
+            {words.walletDeclined(flow.walletNote)}
+          </p>
+        )}
         <PaymentQRCode
           qrData={invoice.qrData}
           methodLabel={invoice.methodLabel}
@@ -249,26 +212,48 @@ export function PayFlow({
     <div className="space-y-4">
       {noteSlot}
       <AmountField
-        value={amount}
-        onChange={next => {
-          setAmount(next);
-          onAmountChange?.(next);
-        }}
+        value={flow.amount}
+        onChange={flow.changeAmount}
         minBtc={TIP_MIN_BTC}
         maxBtc={TIP_MAX_BTC}
       />
       {beforeActionSlot}
-      {error && <p className="text-sm text-status-negative">{error}</p>}
+      {flow.error && <p className="text-sm text-status-negative">{flow.error}</p>}
       <p className="text-center text-xs text-fg-tertiary">{words.disclaimer}</p>
-      <Button
-        variant="accent"
-        className="w-full"
-        onClick={handleGenerate}
-        disabled={generating || amount <= 0}
-        isLoading={generating}
-      >
-        {generating ? words.generating : words.generate}
-      </Button>
+      {canPayFromWallet ? (
+        // One primary action: paying from the wallet in hand. The code is the
+        // other way, for a different wallet — quiet, but one tap away.
+        <>
+          <Button
+            variant="primary"
+            className="w-full"
+            onClick={flow.payFromWallet}
+            disabled={flow.generating || flow.amount <= 0}
+          >
+            {words.payFromWallet}
+          </Button>
+          <p className="-mt-2 text-center text-xs text-fg-tertiary">{words.payFromWalletNote}</p>
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={flow.generate}
+            disabled={flow.generating || flow.amount <= 0}
+            isLoading={flow.generating}
+          >
+            {flow.generating ? words.generating : words.generate}
+          </Button>
+        </>
+      ) : (
+        <Button
+          variant="accent"
+          className="w-full"
+          onClick={flow.generate}
+          disabled={flow.generating || flow.amount <= 0}
+          isLoading={flow.generating}
+        >
+          {flow.generating ? words.generating : words.generate}
+        </Button>
+      )}
     </div>
   );
 }

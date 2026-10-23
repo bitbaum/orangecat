@@ -129,6 +129,14 @@ export const PAY_COPY = {
   paidBody: (name: string) => `Paid straight to ${name}'s wallet.`,
   expiredTitle: 'This code expired',
   expiredBody: 'Nothing was sent. You can make another.',
+  /** For a payer who is signed in with a wallet connected: pay without leaving. */
+  payFromWallet: 'Pay from my wallet',
+  payFromWalletNote: "They'll see it was you.",
+  payingFromWallet: 'Paying from your wallet…',
+  confirming: 'Paid. Confirming…',
+  /** The wallet said no: the code is still there, so there is no dead end. */
+  walletDeclined: (reason: string) =>
+    `Your wallet couldn't pay this: ${reason} You can pay the code below from another wallet.`,
   /** A request that already has its payment: say so instead of offering to pay it again. */
   requestPaidTitle: 'This request is already paid',
   requestPaidBody: (name: string) => `${name} has been paid for it. Nothing more to send.`,

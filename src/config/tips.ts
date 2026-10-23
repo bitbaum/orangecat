@@ -42,6 +42,12 @@ export const TIP_COPY = {
   paidBody: (name: string) => `Paid straight to ${name}'s wallet. Zero fee, zero middleman.`,
   expiredTitle: 'This tip request expired',
   expiredBody: 'No Bitcoin was sent. You can start a new tip anytime.',
+  payFromWallet: 'Tip from my wallet',
+  payFromWalletNote: "They'll see it was you.",
+  payingFromWallet: 'Sending from your wallet…',
+  confirming: 'Sent. Confirming…',
+  walletDeclined: (reason: string) =>
+    `Your wallet couldn't send this: ${reason} You can pay the code below from another wallet.`,
 } as const;
 
 /** How often the dialog polls for tip settlement, in milliseconds. */

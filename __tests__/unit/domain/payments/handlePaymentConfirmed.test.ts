@@ -9,6 +9,7 @@
 
 import { checkPaymentStatus } from '@/domain/payments/paymentFlowService';
 import { settlePaymentRequest } from '@/domain/payments/paymentRequestService';
+import { payerLabel } from '@/domain/payments/payerLabel';
 import { STATUS } from '@/config/database-constants';
 import { logger } from '@/utils/logger';
 import { checkOnchainPaymentStatus } from '@/domain/payments/paymentStatusService';
@@ -29,6 +30,7 @@ vi.mock('@/domain/payments/paymentStatusService', () => ({
 }));
 vi.mock('@/lib/supabase/admin', () => ({ getAdminClient: vi.fn() }));
 // Whether a payment answers a request is its own test (settlePaymentRequest.test.ts).
+vi.mock('@/domain/payments/payerLabel', () => ({ payerLabel: vi.fn().mockResolvedValue(null) }));
 vi.mock('@/domain/payments/paymentRequestService', () => ({
   settlePaymentRequest: vi.fn().mockResolvedValue(false),
 }));
@@ -168,6 +170,19 @@ describe('handlePaymentConfirmed — tip branch', () => {
     );
     // No reconciliation error path — a tip has no order to get stuck.
     expect(errorMock).not.toHaveBeenCalled();
+  });
+
+  it('names the payer when they paid from their own wallet', async () => {
+    (payerLabel as Mock).mockResolvedValueOnce('Lena');
+    const supabase = makeSupabaseReturning({ ...tipIntent, buyer_id: BUYER });
+    await checkPaymentStatus(supabase, PI_ID, SELLER);
+
+    expect(dispatchMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: expect.stringContaining('Lena paid you'),
+        data: expect.objectContaining({ payerName: 'Lena' }),
+      })
+    );
   });
 
   it('leaves the anonymous "you were paid" out when the payment answered a request', async () => {

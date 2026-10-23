@@ -11,6 +11,8 @@ to the map, sub-bullets stay here for the human reader.
 
 ## 2026-10-23
 
+- **Pay from your own wallet in one tap.** If you are signed in with a wallet connected, a pay link now offers **Pay from my wallet**: it pays the invoice without leaving the page, and the receipt appears as before — the request turns Paid, and the person who was paid is told it was you by name. Paying from a wallet this way is the one case where they see who paid; scanning the code with any other wallet stays anonymous, and the page says so under the button. If your wallet says no, the code is still there to pay from another wallet. If it times out, the page keeps watching the same invoice and offers no second payment: Lightning has no cancel, so a retry could pay twice.
+
 - **Receive tells you when you were paid.** Show your code, and when the payment lands the screen turns into a receipt — the amount in your currency, who paid and what for when that is known — with a Done to return to the code. It appears as soon as the payment is confirmed: within seconds while the payer's page stays open, and when the background check sees it if they close it. Payments sent straight to `you@orangecat.ch` are not seen by us and do not appear here.
 - **Mobile sheets keep content scrolling separate from dismissal.** Swipe the handle to close; scrolling the body no longer dismisses the sheet. Cancelled gestures reset, and simultaneous sheets have distinct accessible names.
 

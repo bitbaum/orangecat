@@ -135,7 +135,7 @@ export async function resolveSenderNwcUri(userId: string): Promise<string | Send
  * cookie session is not guaranteed and auditLog swallows its own failures. The
  * user id is the one the caller already authenticated; it never comes from input.
  */
-async function payOverNwc(
+export async function payOverNwc(
   userId: string,
   nwcUri: string,
   bolt11: string,

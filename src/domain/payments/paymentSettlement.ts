@@ -25,6 +25,7 @@ import { grantSupporterPlan } from '@/services/supporter/grant';
 import { enqueuePaymentSettledWebhook } from '@/services/webhooks/paymentSettledWebhook';
 import { formatBtcForUser } from '@/services/currency/format-for-user.server';
 import { settlePaymentRequest } from './paymentRequestService';
+import { payerLabel } from './payerLabel';
 import { ratesAtReceiptOrNull } from '@/services/currency/rates.server';
 
 /**
@@ -170,12 +171,15 @@ export async function handlePaymentConfirmed(paymentIntent: PaymentIntent): Prom
     const answeredRequest = await settlePaymentRequest(paymentIntent);
     if (!answeredRequest) {
       const amountLabel = await formatBtcForUser(admin, paymentIntent.seller_id, tipAmount);
+      // Known only when the payer paid from their own OrangeCat wallet (that is
+      // the one path that records them); anyone else stays anonymous.
+      const who = paymentIntent.buyer_id ? await payerLabel(admin, paymentIntent.buyer_id) : null;
       void NotificationDispatcher.dispatch({
         userId: paymentIntent.seller_id,
         type: 'payment',
-        title: `You were paid ${amountLabel}`,
-        message: `Someone paid you ${amountLabel} through your pay link — straight to your wallet.`,
-        data: { paymentIntentId: piId, amount_btc: tipAmount, kind: 'tip' },
+        title: who ? `${who} paid you ${amountLabel}` : `You were paid ${amountLabel}`,
+        message: `${who ?? 'Someone'} paid you ${amountLabel} through your pay link — straight to your wallet.`,
+        data: { paymentIntentId: piId, amount_btc: tipAmount, kind: 'tip', payerName: who },
         actionUrl: '/dashboard',
       });
     }
