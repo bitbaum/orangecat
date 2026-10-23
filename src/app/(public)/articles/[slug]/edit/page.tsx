@@ -30,6 +30,7 @@ export default async function EditArticlePage({ params }: PageProps) {
 
   return (
     <ArticleComposer
+      key={`${user.id}:${article.id}`}
       user={{ id: user.id }}
       initial={{
         id: article.id,

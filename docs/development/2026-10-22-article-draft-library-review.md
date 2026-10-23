@@ -1,0 +1,11 @@
+# Article draft library review
+
+The real 390px browser reached `/articles/new` and found no New draft control. The existing multi-draft store restored the latest writing but offered no way to start another while retaining it. Evidence: `/workspace/orangecat-review-evidence/writing-library-audit.json` and `writing-library-phone.png`.
+
+The library now offers New draft, saves the current piece before switching, and blocks replacement when the save fails. Drafts are scoped to the signed-in profile. The new-article composer remounts when the profile changes, flushing the old profile's pending writing into its own collection. These are device-local drafts, not an encrypted vault or cross-device synchronization.
+
+Old global and single-slot collections have no recorded author. They remain untouched on ordinary reads; an explicit recovery disclosure asks the user to identify them as theirs. Recovery writes the complete collection before removing old sources, preserves writing above the new-draft limit, and uses stable IDs so a failed source cleanup can be retried. Unreadable sources remain intact.
+
+The twenty-draft limit now rejects new saves rather than deleting the oldest writing. Existing drafts remain editable at capacity. Deletion uses the shared dialog and touch-sized Button primitive, requires confirmation, and keeps failed deletions visible for retry. The existing Markdown package remains the writing engine; this change reuses the app's shared controls rather than adding another editor or storage dependency.
+
+Focused regression tests cover account separation, save and delete failure, recovery failure and retry, capacity, new-draft preservation and confirmation controls. The 390px real preview preserved two drafts through switching and immediate navigation, restored dialog focus on cancellation and deleted both own fixtures through confirmation controls, with no viewport overflow. Management stays in a closed disclosure so writing remains prominent. Both cancellation and deletion restore focus to a useful control; the five control tests cover these cases. Twenty-four focused cases pass across the library controls, navigation and storage. Full repository verification passed in 1,118.5 seconds. CI/CD and a deployed browser check follow submission. The broad route review remains incomplete.
