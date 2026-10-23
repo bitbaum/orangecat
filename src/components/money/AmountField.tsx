@@ -31,17 +31,15 @@
  * Europe types.
  */
 
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { useUserCurrency } from '@/hooks/useUserCurrency';
 import { useCurrencyConversion } from '@/hooks/useCurrencyConversion';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { CURRENCY_METADATA, type CurrencyCode } from '@/config/currencies';
-import {
-  CONTRIBUTION_QUICK_AMOUNTS_BTC,
-  CONTRIBUTION_QUICK_AMOUNTS_FIAT,
-} from '@/config/payment-presets';
 import { cn } from '@/lib/utils';
 import { haptic } from '@/lib/haptics';
+import { AmountPresets } from './AmountPresets';
+import { BTC_DECIMALS, sanitize, toDraft } from './amount-draft';
 
 interface AmountFieldProps {
   /** The amount in BTC — the canonical unit, whatever the field is showing. */
@@ -58,33 +56,6 @@ interface AmountFieldProps {
   autoFocus?: boolean;
 }
 
-const BTC_DECIMALS = CURRENCY_METADATA.BTC.precision;
-
-/** Suggestions are one row of equal cells; four is what a phone fits readably. */
-const PRESET_CELLS = 4;
-
-/**
- * "CHF 5" but "$5" — an alphabetic code is a word and takes a space, a glyph
- * hugs its number. Getting this backwards is the kind of small wrongness that
- * makes a payment screen feel machine-generated.
- */
-const ALPHABETIC_SYMBOL = /^[A-Za-z]+$/;
-
-/** A value the input can hold: plain digits, no thousands separators. */
-function toDraft(amount: number, decimals: number): string {
-  if (!Number.isFinite(amount) || amount <= 0) {
-    return '';
-  }
-  return amount.toFixed(decimals).replace(/\.?0+$/, '');
-}
-
-/** Accept what a European keyboard produces; keep one separator, digits only. */
-function sanitize(raw: string): string {
-  const unified = raw.replace(',', '.').replace(/[^\d.]/g, '');
-  const [head, ...rest] = unified.split('.');
-  return rest.length > 0 ? `${head}.${rest.join('')}` : head;
-}
-
 export function AmountField({
   value,
   onChange,
@@ -95,6 +66,7 @@ export function AmountField({
   autoFocus = false,
 }: AmountFieldProps) {
   const inputId = useId();
+  const inputRef = useRef<HTMLInputElement>(null);
   const displayCurrency = useUserCurrency() as CurrencyCode;
   const { convertToBTC, convertFromBTC, isLoading } = useCurrencyConversion();
   const { formatAmountBtc } = useDisplayCurrency();
@@ -162,37 +134,6 @@ export function AmountField({
     emit(btc);
   };
 
-  /**
-   * Suggestions, each carrying the label it was round in.
-   *
-   * A ladder rung is chosen because it is a round number, so it has to READ as
-   * one. Converting the fiat rung to BTC and formatting it back gives
-   * "CHF 5.00" at best and "CHF 4.99" at worst — the trailing zeros are noise
-   * and the drift makes a deliberate number look accidental. The rung labels
-   * itself in its own unit; only a caller-supplied BTC ladder is formatted.
-   */
-  const presets = useMemo(() => {
-    const ladder = presetsBtc
-      ? presetsBtc
-          .filter(btc => btc > 0 && btc >= minBtc && btc <= maxBtc)
-          .map(btc => ({
-            btc,
-            label: inBtc ? `${toDraft(btc, BTC_DECIMALS)} BTC` : formatAmountBtc(btc),
-          }))
-      : inBtc
-        ? CONTRIBUTION_QUICK_AMOUNTS_BTC.filter(btc => btc >= minBtc && btc <= maxBtc).map(btc => ({
-            btc,
-            label: `${toDraft(btc, BTC_DECIMALS)} BTC`,
-          }))
-        : CONTRIBUTION_QUICK_AMOUNTS_FIAT.map(fiat => ({
-            btc: convertToBTC(fiat, displayCurrency),
-            label: `${symbol}${ALPHABETIC_SYMBOL.test(symbol) ? ' ' : ''}${fiat}`,
-          })).filter(p => p.btc > 0 && p.btc >= minBtc && p.btc <= maxBtc);
-    // The row is four equal cells; the largest rungs are the ones people pick.
-    return ladder.slice(-PRESET_CELLS);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [presetsBtc, inBtc, displayCurrency, symbol, minBtc, maxBtc]);
-
   const tooSmall = value > 0 && value < minBtc;
   const tooLarge = value > maxBtc;
   const secondary = inBtc
@@ -201,48 +142,75 @@ export function AmountField({
       : null
     : `${toDraft(value, BTC_DECIMALS) || '0'} BTC`;
 
+  // A long figure steps down a size rather than overflow a phone. The input
+  // carries .oc-figure-input, the one exemption from the 16px pin globals.css
+  // puts on every text input (which silently flattened any size set here).
+  const figureSize =
+    draft.length <= 7 ? 'text-figure' : draft.length <= 10 ? 'text-4xl' : 'text-3xl';
+
   return (
     <div className="space-y-3">
-      <label htmlFor={inputId} className="block text-sm font-medium text-fg-primary">
+      <label htmlFor={inputId} className="sr-only">
         {label}
       </label>
 
+      {/*
+        The amount is the point of the screen, so it is set like one: centred,
+        large, on a surface of its own, with what actually moves (the BTC
+        figure) and the unit switch tucked under it. Tapping anywhere on the
+        surface puts the cursor in the number.
+      */}
       <div
+        onClick={() => inputRef.current?.focus()}
         className={cn(
-          'flex items-baseline gap-2 rounded-lg border bg-surface-base px-4 py-3 transition-colors',
-          'focus-within:border-accent-primary',
-          tooSmall || tooLarge ? 'border-status-negative' : 'border-default'
+          'cursor-text rounded-xl border bg-surface-base px-4 pb-4 pt-6 text-center transition-colors',
+          'focus-within:border-interactive',
+          tooSmall || tooLarge ? 'border-status-negative' : 'border-subtle'
         )}
       >
-        <span className="text-lg font-medium text-fg-tertiary">{symbol}</span>
-        <input
-          id={inputId}
-          // The plain number pad, and a comma-tolerant field. See the note above.
-          inputMode="decimal"
-          type="text"
-          autoFocus={autoFocus}
-          value={draft}
-          onChange={e => handleDraft(e.target.value)}
-          // The field arrives pre-filled with a suggestion, so the first
-          // keystroke has to REPLACE it. Without this, tapping in and typing
-          // "27.50" over a suggested "5.18" yields "27.51850" — a number the
-          // payer never chose and might not read before confirming.
-          onFocus={e => e.target.select()}
-          placeholder="0"
-          aria-label={`${label} in ${unit}`}
-          aria-invalid={tooSmall || tooLarge}
-          className="min-h-11 w-full bg-transparent text-3xl font-semibold tabular-nums text-fg-primary outline-none placeholder:text-fg-tertiary"
-        />
-      </div>
+        <div className="flex items-baseline justify-center gap-1.5">
+          <span className="text-2xl font-medium text-fg-tertiary">{symbol}</span>
+          <input
+            ref={inputRef}
+            id={inputId}
+            // The plain number pad, and a comma-tolerant field. See the note above.
+            inputMode="decimal"
+            type="text"
+            autoFocus={autoFocus}
+            value={draft}
+            onChange={e => handleDraft(e.target.value)}
+            // The field arrives pre-filled with a suggestion, so the first
+            // keystroke has to REPLACE it. Without this, tapping in and typing
+            // "27.50" over a suggested "5.18" yields "27.51850" — a number the
+            // payer never chose and might not read before confirming.
+            onFocus={e => e.target.select()}
+            placeholder="0"
+            maxLength={12}
+            aria-label={`${label} in ${unit}`}
+            aria-invalid={tooSmall || tooLarge}
+            // Width follows the digits (tabular, so one ch each), which keeps
+            // the figure and its symbol centred as a single group.
+            style={{ width: `${Math.max(draft.length, 1)}ch` }}
+            className={cn(
+              'oc-figure-input min-w-[1ch] max-w-full bg-transparent p-0 font-heading font-semibold tabular-nums tracking-display text-fg-primary outline-none',
+              'placeholder:text-fg-muted',
+              figureSize
+            )}
+          />
+        </div>
 
-      <div className="flex min-h-5 items-center justify-between gap-3 text-xs">
-        {/* Rule 1: what actually moves, always on screen. */}
-        <span className="tabular-nums text-fg-tertiary">{value > 0 ? secondary : null}</span>
+        <div className="mt-2 flex min-h-5 flex-col items-center gap-1 text-xs">
+          {/* Rule 1: what actually moves, always on screen. */}
+          <span className="tabular-nums text-fg-tertiary">{value > 0 ? secondary : null}</span>
+        </div>
         {ratesUsable && (
           <button
             type="button"
-            onClick={() => setPreferBtcEntry(v => !v)}
-            className="shrink-0 underline underline-offset-2 text-fg-tertiary hover:text-fg-secondary"
+            onClick={e => {
+              e.stopPropagation();
+              setPreferBtcEntry(v => !v);
+            }}
+            className="mt-1 inline-flex min-h-11 items-center px-3 text-xs text-fg-tertiary underline underline-offset-2 hover:text-fg-secondary"
           >
             {inBtc ? `Enter in ${displayCurrency}` : 'Enter in BTC'}
           </button>
@@ -257,28 +225,14 @@ export function AmountField({
         </p>
       )}
 
-      {presets.length > 0 && (
-        // Equal cells in one row, never pills that wrap wherever the words run
-        // out — a row of choices is one row (CLAUDE.md → "Design discipline").
-        <div className="grid grid-cols-4 gap-2">
-          {presets.map(({ btc, label }) => (
-            <button
-              key={label}
-              type="button"
-              onClick={() => choosePreset(btc)}
-              aria-pressed={Math.abs(value - btc) < btc * 0.001}
-              className={cn(
-                'min-h-11 min-w-0 truncate rounded-md border px-2 text-sm tabular-nums transition-colors',
-                Math.abs(value - btc) < btc * 0.001
-                  ? 'border-interactive bg-surface-raised text-fg-primary'
-                  : 'border-default text-fg-secondary hover:text-fg-primary'
-              )}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      )}
+      <AmountPresets
+        value={value}
+        onPick={choosePreset}
+        inBtc={inBtc}
+        minBtc={minBtc}
+        maxBtc={maxBtc}
+        presetsBtc={presetsBtc}
+      />
     </div>
   );
 }

@@ -57,8 +57,11 @@
     min-height: -webkit-fill-available;
   }
 
-  /* Prevent zoom on mobile inputs */
-  input[type='text'],
+  /* Prevent zoom on mobile inputs. The one exemption is .oc-figure-input — the
+     amount, set at 48px: iOS only zooms text SMALLER than 16px, so a bigger
+     size is safe, and an !important here cannot be out-ranked by any utility
+     class (important declarations in an earlier layer beat later ones). */
+  input[type='text']:not(.oc-figure-input),
   input[type='email'],
   input[type='password'],
   input[type='number'],
@@ -572,6 +575,26 @@
   }
   @keyframes oc-mark-draw-in {
     to {
+      stroke-dashoffset: 0;
+    }
+  }
+  /* The confirmation mark draws itself: the ring first, then the tick. Both
+     paths are 1 long (pathLength="1"), so one keyframe serves them. */
+  .oc-receipt-ring,
+  .oc-receipt-check {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+  }
+  .oc-receipt-ring {
+    animation: oc-mark-draw-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.05s forwards;
+  }
+  .oc-receipt-check {
+    animation: oc-mark-draw-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.55s forwards;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .oc-receipt-ring,
+    .oc-receipt-check {
+      animation: none;
       stroke-dashoffset: 0;
     }
   }

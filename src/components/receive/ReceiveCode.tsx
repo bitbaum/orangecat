@@ -22,6 +22,7 @@
 import { useCallback, useMemo } from 'react';
 import { Check, Copy, Share2 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
+import brandAssets from '@/config/brand-assets.json';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/Button';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
@@ -29,6 +30,7 @@ import { buildPayUrl, payLinkOrigin, PAY_COPY } from '@/config/pay';
 import { QR_RENDER } from '@/config/payment-qr';
 import { RECEIVE_SHARE_COPY } from '@/config/receive';
 import { getInitial } from '@/utils/string';
+import { cn } from '@/lib/utils';
 
 interface ReceiveCodeProps {
   username: string;
@@ -38,7 +40,9 @@ interface ReceiveCodeProps {
   className?: string;
 }
 
-const QR_SIZE = 200;
+const QR_SIZE = 248;
+/** The Cat's tile, a fifth of the code's width. Centred modules are the ones error correction can best spare. */
+const QR_MARK_SIZE = Math.round(QR_SIZE * 0.2);
 
 export function ReceiveCode({ username, name, avatarUrl, className }: ReceiveCodeProps) {
   const { copied, copy } = useCopyToClipboard();
@@ -61,53 +65,61 @@ export function ReceiveCode({ username, name, avatarUrl, className }: ReceiveCod
   }, [url, copy]);
 
   return (
-    <div className={className}>
-      <section className="overflow-hidden rounded-lg border border-subtle bg-surface-base">
-        <div className="flex flex-col items-center gap-4 px-5 pb-5 pt-6 text-center">
-          <h2 className="sr-only">{RECEIVE_SHARE_COPY.heading}</h2>
-          {name && (
-            <div className="flex flex-col items-center gap-2">
-              <Avatar className="h-14 w-14">
-                {avatarUrl && <AvatarImage src={avatarUrl} alt="" />}
-                <AvatarFallback className="text-lg font-semibold text-fg-secondary">
-                  {getInitial(name)}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="font-heading text-lg font-semibold tracking-display text-fg-primary">
-                  {name}
-                </p>
-                <p className="text-sm text-fg-secondary">@{username}</p>
-              </div>
-            </div>
-          )}
+    <div className={cn('flex flex-col items-center text-center', className)}>
+      <h2 className="sr-only">{RECEIVE_SHARE_COPY.heading}</h2>
 
-          <div className="overflow-hidden rounded-md border border-subtle">
-            <QRCodeSVG
-              value={url}
-              size={QR_SIZE}
-              level={QR_RENDER.level}
-              includeMargin
-              bgColor={QR_RENDER.bgColor}
-              fgColor={QR_RENDER.fgColor}
-              title={RECEIVE_SHARE_COPY.qrTitle(who)}
-            />
-          </div>
-
-          <p className="break-all font-mono text-sm text-fg-secondary">{shown}</p>
+      {/*
+        No box around the whole thing: a card around a card around a code is
+        three borders competing for one object. The person and the code sit on
+        the page itself; the code is the only thing with a surface.
+      */}
+      {name && (
+        <div className="flex flex-col items-center">
+          <Avatar className="h-12 w-12">
+            {avatarUrl && <AvatarImage src={avatarUrl} alt="" />}
+            <AvatarFallback className="text-lg font-semibold text-fg-secondary">
+              {getInitial(name)}
+            </AvatarFallback>
+          </Avatar>
+          <p className="mb-0 mt-3 font-heading text-xl font-semibold leading-tight tracking-display text-fg-primary">
+            {name}
+          </p>
+          <p className="mb-0 text-sm text-fg-secondary">@{username}</p>
         </div>
+      )}
 
-        <div className="grid grid-cols-2 gap-2 border-t border-subtle p-4">
-          <Button variant="primary" onClick={() => void copy(url)}>
-            {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-            {copied ? RECEIVE_SHARE_COPY.copied : RECEIVE_SHARE_COPY.copy}
-          </Button>
-          <Button variant="outline" onClick={handleShare}>
-            <Share2 className="h-4 w-4" />
-            {RECEIVE_SHARE_COPY.share}
-          </Button>
-        </div>
-      </section>
+      {/* The Cat sits in the middle of the code: the symbol is recognisably ours
+          before it is read, and it costs the scanner ~4% of the modules. */}
+      <div className={cn('overflow-hidden rounded-2xl border border-subtle', name && 'mt-6')}>
+        <QRCodeSVG
+          value={url}
+          size={QR_SIZE}
+          level={QR_RENDER.level}
+          includeMargin
+          bgColor={QR_RENDER.bgColor}
+          fgColor={QR_RENDER.fgColor}
+          title={RECEIVE_SHARE_COPY.qrTitle(who)}
+          imageSettings={{
+            src: brandAssets.favicon,
+            width: QR_MARK_SIZE,
+            height: QR_MARK_SIZE,
+            excavate: true,
+          }}
+        />
+      </div>
+
+      <p className="mb-0 mt-4 break-all font-mono text-sm text-fg-secondary">{shown}</p>
+
+      <div className="mt-6 grid w-full grid-cols-2 gap-2">
+        <Button variant="primary" onClick={() => void copy(url)}>
+          {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+          {copied ? RECEIVE_SHARE_COPY.copied : RECEIVE_SHARE_COPY.copy}
+        </Button>
+        <Button variant="outline" onClick={handleShare}>
+          <Share2 className="h-4 w-4" />
+          {RECEIVE_SHARE_COPY.share}
+        </Button>
+      </div>
     </div>
   );
 }

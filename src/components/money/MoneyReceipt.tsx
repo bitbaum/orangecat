@@ -19,8 +19,8 @@
  */
 
 import { useEffect, useState } from 'react';
-import { CheckCircle2 } from 'lucide-react';
 import { MoneyDetailList } from '@/components/money/MoneyDetailList';
+import { MoneyFigure } from '@/components/money/MoneyFigure';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { haptic } from '@/lib/haptics';
 import { APP_LOCALE } from '@/utils/locale';
@@ -70,17 +70,37 @@ export function MoneyReceipt({
 
   const hasDetail = (amountBtc ?? null) !== null || !!counterparty;
 
-  return (
-    <div className="flex flex-col items-center gap-4 py-10 text-center">
-      <CheckCircle2
-        className="h-16 w-16 animate-scale-in text-status-positive"
-        aria-hidden="true"
-      />
+  const hasAmount = amountBtc !== null && amountBtc !== undefined;
 
-      <div className="space-y-1">
-        <p className="font-heading tracking-display text-2xl font-bold text-fg-primary">{title}</p>
-        {amountBtc !== null && amountBtc !== undefined && (
-          <p className="text-lg text-fg-secondary">{formatAmountBtc(amountBtc)}</p>
+  return (
+    <div className="flex flex-col items-center gap-5 py-10 text-center">
+      {/* Drawn, not dropped in: the ring closes, then the tick lands. */}
+      <svg
+        viewBox="0 0 64 64"
+        className="h-16 w-16 text-status-positive"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <circle className="oc-receipt-ring" cx="32" cy="32" r="29" pathLength="1" />
+        <path className="oc-receipt-check" d="M20 33l8 8 16-17" pathLength="1" />
+      </svg>
+
+      {/* With an amount, the amount is the headline and the outcome a quiet line
+          above it; without one, the outcome is all there is to say. */}
+      <div className="space-y-2">
+        {hasAmount ? (
+          <>
+            <p className="mb-0 text-base font-medium text-fg-secondary">{title}</p>
+            <MoneyFigure label={formatAmountBtc(amountBtc as number)} size="hero" />
+          </>
+        ) : (
+          <p className="mb-0 font-heading tracking-display text-2xl font-bold text-fg-primary">
+            {title}
+          </p>
         )}
       </div>
 
@@ -94,7 +114,7 @@ export function MoneyReceipt({
           ]}
         />
       ) : (
-        fallbackBody && <p className="max-w-xs text-sm text-fg-secondary">{fallbackBody}</p>
+        fallbackBody && <p className="mb-0 max-w-xs text-sm text-fg-secondary">{fallbackBody}</p>
       )}
 
       {children && <div className="flex flex-wrap justify-center gap-3 pt-1">{children}</div>}
