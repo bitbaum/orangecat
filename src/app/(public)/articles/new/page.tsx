@@ -27,5 +27,5 @@ export default function NewArticlePage() {
     );
   }
 
-  return <ArticleComposer user={{ id: user.id }} />;
+  return <ArticleComposer key={user.id} user={{ id: user.id }} />;
 }

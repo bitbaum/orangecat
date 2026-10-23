@@ -20,13 +20,15 @@ function authenticatedTopLevelRoutes(): string[] {
   if (!existsSync(dir)) {
     return [];
   }
-  return readdirSync(dir, { withFileTypes: true })
-    .filter(e => e.isDirectory())
-    // Route groups "(x)" and private folders "_x" don't contribute URL segments.
-    .filter(e => !e.name.startsWith('(') && !e.name.startsWith('_'))
-    // Dynamic segments can't be classified as a literal prefix.
-    .filter(e => !e.name.startsWith('['))
-    .map(e => `/${e.name}`);
+  return (
+    readdirSync(dir, { withFileTypes: true })
+      .filter(e => e.isDirectory())
+      // Route groups "(x)" and private folders "_x" don't contribute URL segments.
+      .filter(e => !e.name.startsWith('(') && !e.name.startsWith('_'))
+      // Dynamic segments can't be classified as a literal prefix.
+      .filter(e => !e.name.startsWith('['))
+      .map(e => `/${e.name}`)
+  );
 }
 
 describe('route surface classification', () => {

@@ -22,6 +22,7 @@ import {
 } from '@/domain/payments/paymentFlowService';
 import { METHOD_LABELS } from '@/domain/payments/paymentFlowHelpers';
 import type { ResolvedWallet } from '@/domain/payments/types';
+import { findOpenRequestFor } from '@/domain/payments/paymentRequestService';
 import { logger } from '@/utils/logger';
 
 /**
@@ -63,6 +64,11 @@ export interface TipReceiveInfo {
   /** The profile's id — public already (search, follow lists) — so a screen can open a message to them. */
   recipientId: string;
   methodLabel?: string;
+  /**
+   * The rail a payment would settle on. Send pays only Lightning, so it needs
+   * this before the payer has typed an amount, not after they confirm one.
+   */
+  method?: ResolvedWallet['method'];
 }
 
 /**
@@ -124,6 +130,7 @@ export async function getTipReceiveInfo(
     recipientName: recipient.displayName,
     recipientId: recipient.userId,
     methodLabel: wallet ? METHOD_LABELS[wallet.method] : undefined,
+    method: wallet?.method,
   };
 }
 
@@ -149,7 +156,8 @@ type TipInvoiceResult = { ok: true; invoice: TipInvoice } | { ok: false; error: 
 export async function initiateTip(
   supabase: AnySupabaseClient,
   username: string,
-  amountBtc: number
+  amountBtc: number,
+  requestId?: string
 ): Promise<TipInvoiceResult> {
   const recipient = await resolveRecipient(supabase, username);
   if (!recipient) {
@@ -165,11 +173,16 @@ export async function initiateTip(
   }
 
   try {
+    // A link from a request names it; it counts only while it is still open
+    // and addressed to THIS recipient. Anything else is an ordinary payment —
+    // the payer is never refused over a request that has moved on.
+    const request = requestId ? await findOpenRequestFor(recipient.userId, requestId) : null;
     const res = await initiateTipPayment({
       recipientUserId: recipient.userId,
       recipientName: recipient.displayName,
       wallet,
       amountBtc,
+      paymentRequestId: request?.id ?? null,
     });
     return {
       ok: true,

@@ -1,0 +1,9 @@
+# Account settings browser review
+
+A real authenticated guest opened Settings, Notifications, AI, Memory, Usage, Integrations and Wallets in Chromium at 390×844. Each route returned 200, rendered its heading, fit the viewport and produced no browser exception. This is a viewport/navigation check, not certification of every mutation. Evidence is retained in `/workspace/orangecat-review-evidence/account-pages-audit.json` and the corresponding account screenshots.
+
+The notification checkboxes were all named On rather than their category. Each now names its category and describes its purpose. Controls offer touch-sized labels and visible radio focus, and saving is announced. A synchronous in-flight guard plus disabled controls prevents overlapping whole-preference requests from reverting a newer choice. A failed initial load offers Retry instead of continuing to display Loading indefinitely.
+
+The standing-instructions textarea had no accessible name. It now uses the shared Textarea with a visible label, existing length limit and the shared phone typography. Existing native checkbox/radio behavior and shared Button controls are retained; no additional forms package is needed for these controls.
+
+Focused notification tests cover named controls, in-flight save exclusion and failed-load retry. Full repository verification passed in 1,525.5 seconds. The 390px preview recovered from an injected load failure, blocked overlapping preference edits, saved and restored the own test preference, and rendered the named instructions field at 16px with no viewport overflow. The preview used the deployed API through its authenticated browser for the own test account; its local server has no admin credential. CI/CD and a deployed interface check follow submission. Other settings functionality remains part of the continuing review.

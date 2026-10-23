@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from 'zod';
 
 const AssetSchema = z.object({
   title: z.string().min(3).max(100),
@@ -8,7 +8,7 @@ const AssetSchema = z.object({
   estimated_value: z.number().positive().optional().nullable(),
   currency: z.string().min(3).max(6).default('USD'),
   documents: z.array(z.string().url()).optional().nullable(),
-})
+});
 
 describe('AssetSchema', () => {
   it('accepts valid payload', () => {
@@ -19,12 +19,11 @@ describe('AssetSchema', () => {
       location: 'Zurich, CH',
       estimated_value: 250000,
       currency: 'CHF',
-    })
-    expect(result.success).toBe(true)
-  })
+    });
+    expect(result.success).toBe(true);
+  });
 
   it('rejects invalid title and type', () => {
-    expect(AssetSchema.safeParse({ title: 'a', type: 'x' }).success).toBe(false)
-  })
-})
-
+    expect(AssetSchema.safeParse({ title: 'a', type: 'x' }).success).toBe(false);
+  });
+});

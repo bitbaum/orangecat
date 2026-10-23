@@ -20,6 +20,7 @@ import {
   type Violation,
   NO_BASIS,
 } from '@bitbaum/ai-kit/grounding';
+import { supportedCreateLinksIn } from './platform-navigation';
 import { parseActionsFromResponse } from '@/services/cat/response-parser';
 import type { AiService } from '@/services/ai/types';
 
@@ -72,7 +73,7 @@ export async function enforceGrounding(input: {
         {
           role: 'system',
           content:
-            'You edit an assistant reply to remove claims its source data does not support. Return ONLY the corrected reply — no preamble, no explanation of what you changed. Preserve everything that was supported, verbatim, including any code or action blocks.',
+            'You edit an assistant reply to remove claims its source data does not support. Return ONLY the corrected reply — no preamble, no explanation of what you changed. Preserve everything supported, verbatim, including code, action blocks and navigation links. Verified application capabilities in the source data do not require a user record.',
         },
         {
           role: 'user',
@@ -131,14 +132,21 @@ export async function enforceGrounding(input: {
   const remaining = parseActionsFromResponse(repaired).actions.length;
   const keptActions = remaining >= before;
 
-  if (!fewerViolations || inventedSomethingNew || !keptActions) {
+  const repairedLinks = supportedCreateLinksIn(repaired);
+  const keptNavigation = [...supportedCreateLinksIn(input.content)].every(href =>
+    repairedLinks.has(href)
+  );
+
+  if (!fewerViolations || inventedSomethingNew || !keptActions || !keptNavigation) {
     console.warn('[cat] grounding repair REJECTED', {
       userId: input.userId,
       reason: inventedSomethingNew
         ? 'introduced a NEW unsupported claim'
         : !fewerViolations
           ? 'did not reduce violations'
-          : 'dropped an action block',
+          : !keptActions
+            ? 'dropped an action block'
+            : 'dropped a supported navigation link',
       beforeViolations: check.violations.length,
       afterViolations: after.violations.length,
       beforeActions: before,

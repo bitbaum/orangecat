@@ -22,7 +22,7 @@ import { REQUEST_COPY } from '@/config/payment-requests';
 /** Whether this input names someone a request can actually be sent to. */
 export function isRequestablePayer(check: RecipientCheck): boolean {
   // 'cannot_receive' still means we found the account — see above.
-  return check.state === 'ok' || check.state === 'cannot_receive';
+  return check.state === 'ok' || check.state === 'cannot_receive' || check.state === 'onchain_only';
 }
 
 export function PayerStatus({ check, handle }: { check: RecipientCheck; handle: string }) {
@@ -40,8 +40,12 @@ export function PayerStatus({ check, handle }: { check: RecipientCheck; handle: 
         </p>
       );
 
+    case 'self':
+      return <StatusNote tone="warning">{REQUEST_COPY.payerSelf}</StatusNote>;
+
     case 'ok':
     case 'cannot_receive':
+    case 'onchain_only':
       return (
         <StatusNote tone="positive">
           <CheckCircle2 className="mr-1.5 inline h-4 w-4 text-status-positive" aria-hidden="true" />

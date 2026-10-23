@@ -26,7 +26,9 @@ describe('useCurrencyInput', () => {
       useCurrencyInput('CHF', 5, onChange, undefined, 'CHF', 'CHF', false)
     );
     act(() => {
-      result.current.handleInputChange({ target: { value: '' } } as React.ChangeEvent<HTMLInputElement>);
+      result.current.handleInputChange({
+        target: { value: '' },
+      } as React.ChangeEvent<HTMLInputElement>);
     });
     expect(onChange).toHaveBeenLastCalledWith(null);
   });

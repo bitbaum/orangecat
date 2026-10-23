@@ -9,9 +9,22 @@ reads, and [orangecat.ch/changelog](https://orangecat.ch/changelog) renders
 it from there. One `## YYYY-MM-DD` heading per day; bullets under it travel
 to the map, sub-bullets stay here for the human reader.
 
+## 2026-10-23
+
+- **A request you paid now says Paid.** Until now a request stayed Pending, with a Pay button, for both people — even after the money had moved, which invited paying twice. The pay link from a request now names it, so the payment answers it: the request turns Paid, the person who asked is told who paid and for what, and opening the old link shows "This request is already paid" instead of an empty form. A payment smaller than the ask leaves it open.
+- **A send that times out no longer invites a second payment.** Lightning has no cancel, so a timeout can still go through. Send used to drop you back on the filled-in form with the button live; it now stops on "Not confirmed yet", asks you to check your wallet, and starts clean.
+- **Send says it before you type an amount.** Your own name now reads "That's you", and someone who can only be paid on-chain gets a link to their pay page instead of a refusal after the review step.
+- **Dead ends say why, and offer a person-to-person way forward.** The pay page for someone with no wallet now reads the same as Send, with the same one-line way to message them.
+- **Notifications count in your currency.** "Lena asked you for CHF 20.00" and "You were paid CHF 5.00" instead of BTC decimals; a request you asked for tells you who paid it.
+- **Ask Cat from Home with the same composer as chat.** Type or dictate your intent, then open Cat with your words intact. Home no longer opens the keyboard automatically; chat actions follow the app’s monochrome button style.
+
 ## 2026-10-22
 
 - **A person who cannot receive Bitcoin is no longer a dead end on Send.** The note now says why — they have not added a Bitcoin wallet, so a payment has nowhere to land — and under it, one line: "Message Marco to suggest adding one". It opens your conversation with them with a short, friendly message already written, including a link that shows how to get a wallet. Nothing is sent until you press send, and you can change the words.
+- **Keep more than one piece of writing in progress.** New draft preserves your current article, device drafts stay with the signed-in account, and the draft limit no longer silently removes older writing. Recover older unowned device drafts only when they are yours; failed saves and deletions keep your writing available for retry.
+- **Notification settings explain what you change.** Each toggle names its email category, saves cannot overwrite one another in flight, and a failed initial load offers Retry. Cat instructions use a labeled field that stays readable on phones.
+- **Cat can distinguish app help from personal data.** Writing destinations come from the Create catalog and count as verified application facts even for a new account. Answer repair preserves valid editor links while retaining checks against invented claims about your records.
+
 - **Draft switching protects unsaved writing.** If device storage cannot save, your current draft stays open for retry. Clearing a draft also clears its saved text instead of restoring an older version after navigation.
 - **Cat's editor suggestions open the editor.** Recognized Open shortcuts go directly to real creation pages. Automatic memory skips one-off writing requests and routine app praise, checks duplicates within each batch, and respects unavailable memory controls. Several new notes stay compact; failed Undo is visible and memories have a direct review link.
 

@@ -9,12 +9,7 @@
  * If the tag format, the plan set, or a price ever drifts, this fails before a
  * dormant rail ships.
  */
-import {
-  LOKI_PASSES,
-  LOKI_PLANS,
-  parseLokiPass,
-  passTags,
-} from '@/config/loki-passes';
+import { LOKI_PASSES, LOKI_PLANS, parseLokiPass, passTags } from '@/config/loki-passes';
 
 describe('Loki passes — tag/parse contract', () => {
   it('every catalogued pass round-trips through parseLokiPass', () => {

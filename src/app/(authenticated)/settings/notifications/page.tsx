@@ -18,7 +18,7 @@
  * Created: 2026-06-04
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Bell, Check, Loader2, LogIn } from 'lucide-react';
 import { useRequireAuth } from '@/hooks/useAuth';
 import { API_ROUTES } from '@/config/api-routes';
@@ -27,42 +27,8 @@ import Loading from '@/components/Loading';
 import Button from '@/components/ui/Button';
 import { logger } from '@/utils/logger';
 import type { DigestFrequency, NotificationPreferences } from '@/types/notification-preferences';
+import { CATEGORIES, DIGEST_OPTIONS } from '@/config/notification-settings';
 import { formatClockTime } from '@/utils/locale';
-
-const CATEGORIES: Array<{
-  key: keyof Pick<
-    NotificationPreferences,
-    'economic_emails' | 'social_emails' | 'group_emails' | 'progress_emails' | 'reengagement_emails'
-  >;
-  label: string;
-  description: string;
-}> = [
-  {
-    key: 'economic_emails',
-    label: 'Payments & orders',
-    description: 'Receipts, contribution confirmations, order status changes.',
-  },
-  {
-    key: 'social_emails',
-    label: 'Social',
-    description: 'Follows, mentions, comments, direct messages.',
-  },
-  {
-    key: 'group_emails',
-    label: 'Organizations',
-    description: 'Proposals, votes, members joining, treasury activity.',
-  },
-  {
-    key: 'progress_emails',
-    label: 'Progress & digests',
-    description: 'Onboarding tips, milestones, review reminders, the periodic digest.',
-  },
-  {
-    key: 'reengagement_emails',
-    label: 'Re-engagement',
-    description: 'Outreach when you have not signed in for a while.',
-  },
-];
 
 /**
  * "Daily" is not offered, because nothing sends a daily digest: the only job
@@ -77,13 +43,10 @@ function displayedDigest(value: DigestFrequency): DigestFrequency {
   return value === 'daily' ? 'weekly' : value;
 }
 
-const DIGEST_OPTIONS: Array<{ value: DigestFrequency; label: string }> = [
-  { value: 'weekly', label: 'Weekly' },
-  { value: 'never', label: 'Never' },
-];
-
 export default function NotificationSettingsPage() {
   const { user, isLoading: authLoading } = useRequireAuth();
+  const savingRef = useRef(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [prefs, setPrefs] = useState<NotificationPreferences | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -94,6 +57,8 @@ export default function NotificationSettingsPage() {
     if (!user) {
       return;
     }
+    setLoading(true);
+    setError(null);
     let cancelled = false;
     (async () => {
       try {
@@ -119,12 +84,16 @@ export default function NotificationSettingsPage() {
     return () => {
       cancelled = true;
     };
-  }, [user]);
+  }, [user, loadAttempt]);
 
   // Auto-save on every change — optimistic, reverting if the server rejects.
   // No "Save" button to forget (the old flow silently lost unsaved toggles).
   const persist = useCallback(
     async (next: NotificationPreferences, prev: NotificationPreferences) => {
+      if (savingRef.current) {
+        return;
+      }
+      savingRef.current = true;
       setPrefs(next); // optimistic
       setSaving(true);
       setError(null);
@@ -155,6 +124,7 @@ export default function NotificationSettingsPage() {
         setError(err instanceof Error ? err.message : 'Failed to save');
         setPrefs(prev); // revert so the UI never lies about what's saved
       } finally {
+        savingRef.current = false;
         setSaving(false);
       }
     },
@@ -205,16 +175,29 @@ export default function NotificationSettingsPage() {
       </p>
 
       {error && (
-        <div className="rounded-md border border-status-negative/30 bg-status-negative/5 px-3 py-2 text-sm text-status-negative">
+        <div
+          role="alert"
+          className="rounded-md border border-status-negative/30 bg-status-negative/5 px-3 py-2 text-sm text-status-negative"
+        >
           {error}
+          {!prefs && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setLoadAttempt(n => n + 1)}
+            >
+              Retry loading preferences
+            </Button>
+          )}
         </div>
       )}
 
-      {loading || !prefs ? (
+      {loading ? (
         <div className="rounded-lg border border-subtle p-6 text-sm text-fg-secondary">
           Loading your preferences…
         </div>
-      ) : (
+      ) : prefs ? (
         <>
           <section className="rounded-lg border border-subtle">
             <div className="border-b border-subtle px-4 py-3">
@@ -227,12 +210,25 @@ export default function NotificationSettingsPage() {
               {CATEGORIES.map(cat => (
                 <li key={cat.key} className="flex items-start justify-between gap-3 p-4">
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium text-fg-primary">{cat.label}</div>
-                    <p className="mt-0.5 text-xs text-fg-secondary">{cat.description}</p>
+                    <div
+                      id={`notification-${cat.key}-label`}
+                      className="text-sm font-medium text-fg-primary"
+                    >
+                      {cat.label}
+                    </div>
+                    <p
+                      id={`notification-${cat.key}-description`}
+                      className="mt-0.5 text-xs text-fg-secondary"
+                    >
+                      {cat.description}
+                    </p>
                   </div>
-                  <label className="inline-flex cursor-pointer items-center gap-2 text-xs text-fg-secondary">
+                  <label className="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-end gap-2 text-sm text-fg-secondary">
                     <input
                       type="checkbox"
+                      aria-labelledby={`notification-${cat.key}-label`}
+                      aria-describedby={`notification-${cat.key}-description`}
+                      disabled={saving}
                       checked={prefs[cat.key]}
                       onChange={e => setToggle(cat.key, e.target.checked)}
                       className="h-4 w-4"
@@ -249,11 +245,15 @@ export default function NotificationSettingsPage() {
             <p className="mt-0.5 text-xs text-fg-secondary">
               How often to receive a summary of activity you missed.
             </p>
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div
+              role="radiogroup"
+              aria-label="Digest frequency"
+              className="mt-3 flex flex-wrap gap-2"
+            >
               {DIGEST_OPTIONS.map(opt => (
                 <label
                   key={opt.value}
-                  className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs ${
+                  className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-3 py-2.5 text-sm min-h-11 focus-within:ring-2 focus-within:ring-ring ${
                     displayedDigest(prefs.digest_frequency) === opt.value
                       ? 'border-interactive/60 bg-surface-raised/40 text-fg-primary'
                       : 'border-subtle text-fg-secondary hover:bg-surface-raised/20'
@@ -261,6 +261,7 @@ export default function NotificationSettingsPage() {
                 >
                   <input
                     type="radio"
+                    disabled={saving}
                     name="digest"
                     value={opt.value}
                     checked={displayedDigest(prefs.digest_frequency) === opt.value}
@@ -273,7 +274,10 @@ export default function NotificationSettingsPage() {
             </div>
           </section>
 
-          <div className="flex items-center justify-end gap-2 text-xs text-fg-secondary">
+          <div
+            role="status"
+            className="flex items-center justify-end gap-2 text-sm text-fg-secondary"
+          >
             {saving ? (
               <>
                 <Loader2 className="h-3.5 w-3.5 animate-spin" /> Saving…
@@ -287,7 +291,7 @@ export default function NotificationSettingsPage() {
             )}
           </div>
         </>
-      )}
+      ) : null}
     </div>
   );
 }

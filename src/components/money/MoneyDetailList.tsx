@@ -22,7 +22,9 @@ export function MoneyDetailList({
   rows: readonly MoneyDetailRow[];
   className?: string;
 }) {
-  const visible = rows.filter(row => row.value !== null && row.value !== undefined && row.value !== '');
+  const visible = rows.filter(
+    row => row.value !== null && row.value !== undefined && row.value !== ''
+  );
   if (visible.length === 0) {
     return null;
   }

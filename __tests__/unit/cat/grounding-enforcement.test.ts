@@ -7,6 +7,7 @@
  * fails in the direction nobody is watching, and would be worse than the
  * observe-only behaviour it replaces.
  */
+import { buildPlatformNavigationContext } from '@/services/cat/platform-navigation';
 import { enforceGrounding } from '@/services/cat/grounding';
 import type { AiService } from '@/services/ai/types';
 
@@ -131,4 +132,27 @@ describe('enforceGrounding', () => {
     expect(r.ok).toBe(true);
     expect(r.corrected).toBeUndefined();
   });
+});
+
+it('rejects repair that deletes a supported editor link while removing a fabrication', async () => {
+  const link = '[Write an article](/articles/new)';
+  const r = await enforceGrounding({
+    ...base,
+    grounding: { ...base.grounding, evidence: [buildPlatformNavigationContext(), ...EVIDENCE] },
+    content: `${FABRICATION}\n\n${link}`,
+    service: stubService(CLEAN),
+  });
+  expect(r.corrected).toBeUndefined();
+  expect(r.ok).toBe(false);
+});
+it('accepts repair that preserves supported navigation and removes the unsupported claim', async () => {
+  const link = '[Write an article](/articles/new)';
+  const r = await enforceGrounding({
+    ...base,
+    grounding: { ...base.grounding, evidence: [buildPlatformNavigationContext(), ...EVIDENCE] },
+    content: `${FABRICATION}\n\n${link}`,
+    service: stubService(`${CLEAN}\n\n${link}`),
+  });
+  expect(r.corrected).toBe(`${CLEAN}\n\n${link}`);
+  expect(r.ok).toBe(true);
 });

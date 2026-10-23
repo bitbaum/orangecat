@@ -5,123 +5,94 @@ import {
   MAX_LOCAL_DRAFTS,
   newDraftId,
   saveLocalDraft,
+  hasOlderDeviceDrafts,
+  recoverOlderDeviceDrafts,
   type LocalArticleDraft,
 } from '@/services/articles/local-drafts';
-
-const STORE_KEY = 'oc:drafts:articles';
-const LEGACY_KEY = 'oc:draft:article';
-
-function makeDraft(overrides: Partial<LocalArticleDraft> = {}): LocalArticleDraft {
-  return {
-    id: newDraftId(),
-    title: 'Title',
-    excerpt: '',
-    coverImage: '',
-    body: 'Body',
-    visibility: 'public',
-    updatedAt: Date.now(),
-    ...overrides,
-  };
-}
-
-beforeEach(() => {
-  localStorage.clear();
+const makeDraft = (overrides: Partial<LocalArticleDraft> = {}): LocalArticleDraft => ({
+  id: newDraftId(),
+  title: 'Title',
+  excerpt: '',
+  coverImage: '',
+  body: 'Body',
+  visibility: 'private',
+  updatedAt: Date.now(),
+  ...overrides,
 });
+beforeEach(() => localStorage.clear());
+afterEach(() => vi.restoreAllMocks());
 
-describe('local article drafts', () => {
-  it('round-trips a draft through save and list', () => {
-    const draft = makeDraft({ title: 'My draft' });
-    saveLocalDraft(draft);
-    expect(listLocalDrafts()).toEqual([draft]);
-  });
-
-  it('lists drafts most recently touched first', () => {
-    const old = makeDraft({ title: 'old', updatedAt: 1000 });
-    const fresh = makeDraft({ title: 'fresh', updatedAt: 2000 });
-    saveLocalDraft(old);
-    saveLocalDraft(fresh);
-    expect(listLocalDrafts().map(d => d.title)).toEqual(['fresh', 'old']);
-  });
-
-  it('upserts by id instead of duplicating', () => {
-    const draft = makeDraft({ title: 'v1' });
-    saveLocalDraft(draft);
-    saveLocalDraft({ ...draft, title: 'v2', updatedAt: draft.updatedAt + 1 });
-    const drafts = listLocalDrafts();
-    expect(drafts).toHaveLength(1);
-    expect(drafts[0].title).toBe('v2');
-  });
-
-  it('deletes only the targeted draft', () => {
-    const keep = makeDraft({ title: 'keep' });
-    const drop = makeDraft({ title: 'drop' });
-    saveLocalDraft(keep);
-    saveLocalDraft(drop);
-    deleteLocalDraft(drop.id);
-    expect(listLocalDrafts().map(d => d.title)).toEqual(['keep']);
-  });
-
-  it('trims the store to MAX_LOCAL_DRAFTS, dropping the oldest', () => {
-    for (let i = 0; i < MAX_LOCAL_DRAFTS + 3; i++) {
-      saveLocalDraft(makeDraft({ title: `d${i}`, updatedAt: i }));
-    }
-    const drafts = listLocalDrafts();
-    expect(drafts).toHaveLength(MAX_LOCAL_DRAFTS);
-    // The oldest three (d0..d2) were dropped; the newest survives.
-    expect(drafts[0].title).toBe(`d${MAX_LOCAL_DRAFTS + 2}`);
-    expect(drafts.some(d => d.title === 'd0')).toBe(false);
-  });
-
-  it('migrates the legacy single-slot draft and removes the old key', () => {
-    localStorage.setItem(
-      LEGACY_KEY,
-      JSON.stringify({
-        title: 'Legacy',
-        excerpt: '',
-        coverImage: '',
-        body: 'old body',
-        visibility: 'followers',
-      })
-    );
-    const drafts = listLocalDrafts();
-    expect(drafts).toHaveLength(1);
-    expect(drafts[0]).toMatchObject({ title: 'Legacy', body: 'old body', visibility: 'followers' });
-    expect(localStorage.getItem(LEGACY_KEY)).toBeNull();
-  });
-
-  it('ignores an empty legacy slot without creating a draft', () => {
-    localStorage.setItem(
-      LEGACY_KEY,
-      JSON.stringify({ title: '', excerpt: '', coverImage: '', body: '', visibility: 'public' })
-    );
-    expect(listLocalDrafts()).toEqual([]);
-    expect(localStorage.getItem(LEGACY_KEY)).toBeNull();
-  });
-
-  it('survives a corrupt store by treating it as empty', () => {
-    localStorage.setItem(STORE_KEY, 'not-json{');
-    expect(listLocalDrafts()).toEqual([]);
-    const draft = makeDraft();
-    saveLocalDraft(draft);
-    expect(listLocalDrafts()).toEqual([draft]);
-  });
-
-  it('filters malformed entries out of the store', () => {
-    const good = makeDraft({ title: 'good' });
-    localStorage.setItem(STORE_KEY, JSON.stringify([good, { nonsense: true }, null]));
-    expect(listLocalDrafts()).toEqual([good]);
-  });
-
-  it('generates unique draft ids', () => {
-    expect(newDraftId()).not.toBe(newDraftId());
-  });
+it('isolates account reads, updates and deletions even when draft IDs match', () => {
+  const a = makeDraft({ id: 'same', title: 'Account A' });
+  const b = makeDraft({ id: 'same', title: 'Account B' });
+  expect(saveLocalDraft('a', a)).toBe(true);
+  expect(listLocalDrafts('b')).toEqual([]);
+  expect(saveLocalDraft('b', b)).toBe(true);
+  expect(deleteLocalDraft('b', b.id)).toBe(true);
+  expect(listLocalDrafts('a')).toEqual([a]);
 });
-
-it('keeps the legacy draft when migration cannot write storage', () => {
-  localStorage.setItem(LEGACY_KEY, JSON.stringify({ title: 'Only copy', body: 'Keep it' }));
+it('upserts and orders by last edit', () => {
+  const a = makeDraft({ updatedAt: 1 });
+  const b = makeDraft({ updatedAt: 2 });
+  saveLocalDraft('a', a);
+  saveLocalDraft('a', b);
+  saveLocalDraft('a', { ...a, title: 'Edited', updatedAt: 3 });
+  expect(listLocalDrafts('a').map(d => d.title)).toEqual(['Edited', 'Title']);
+});
+it('rejects a new draft at capacity without evicting older writing, but still saves edits', () => {
+  for (let i = 0; i < MAX_LOCAL_DRAFTS; i++) {
+    expect(saveLocalDraft('a', makeDraft({ id: `${i}`, updatedAt: i }))).toBe(true);
+  }
+  const before = listLocalDrafts('a');
+  expect(saveLocalDraft('a', makeDraft())).toBe(false);
+  expect(listLocalDrafts('a')).toEqual(before);
+  expect(saveLocalDraft('a', { ...before[0], body: 'Edited' })).toBe(true);
+});
+it('keeps unreadable storage intact rather than overwriting it', () => {
+  localStorage.setItem('oc:drafts:articles:profile:a', 'broken-json');
+  expect(listLocalDrafts('a')).toEqual([]);
+  expect(saveLocalDraft('a', makeDraft())).toBe(false);
+  expect(deleteLocalDraft('a', 'x')).toBe(false);
+  expect(localStorage.getItem('oc:drafts:articles:profile:a')).toBe('broken-json');
+});
+it('does not automatically assign old device writing to the next account', () => {
+  localStorage.setItem('oc:drafts:articles', JSON.stringify([makeDraft()]));
+  localStorage.setItem('oc:draft:article', JSON.stringify({ title: 'Older', body: 'Writing' }));
+  expect(hasOlderDeviceDrafts()).toBe(true);
+  expect(listLocalDrafts('a')).toEqual([]);
+  expect(listLocalDrafts('b')).toEqual([]);
+  expect(recoverOlderDeviceDrafts('a')).toBe(true);
+  expect(listLocalDrafts('a')).toHaveLength(2);
+  expect(listLocalDrafts('b')).toEqual([]);
+  expect(hasOlderDeviceDrafts()).toBe(false);
+});
+it('keeps every old source when recovery cannot save', () => {
+  const raw = JSON.stringify([makeDraft()]);
+  localStorage.setItem('oc:drafts:articles', raw);
   vi.mocked(localStorage.setItem).mockImplementationOnce(() => {
-    throw new Error('Quota exceeded');
+    throw Error('Quota');
   });
-  expect(listLocalDrafts()).toEqual([]);
-  expect(localStorage.getItem(LEGACY_KEY)).not.toBeNull();
+  expect(recoverOlderDeviceDrafts('a')).toBe(false);
+  expect(localStorage.getItem('oc:drafts:articles')).toBe(raw);
+  expect(listLocalDrafts('a')).toEqual([]);
+});
+it('makes recovery retries idempotent when source removal fails', () => {
+  localStorage.setItem('oc:drafts:articles', JSON.stringify([makeDraft()]));
+  vi.mocked(localStorage.removeItem).mockImplementationOnce(() => {
+    throw Error('Blocked');
+  });
+  expect(recoverOlderDeviceDrafts('a')).toBe(false);
+  expect(recoverOlderDeviceDrafts('a')).toBe(true);
+  expect(listLocalDrafts('a')).toHaveLength(1);
+});
+it('leaves unparseable old drafts untouched', () => {
+  localStorage.setItem('oc:draft:article', 'broken');
+  expect(recoverOlderDeviceDrafts('a')).toBe(false);
+  expect(localStorage.getItem('oc:draft:article')).toBe('broken');
+});
+it('preserves recovered writing above the new-draft limit', () => {
+  const drafts = Array.from({ length: MAX_LOCAL_DRAFTS + 2 }, () => makeDraft());
+  localStorage.setItem('oc:drafts:articles', JSON.stringify(drafts));
+  expect(recoverOlderDeviceDrafts('a')).toBe(true);
+  expect(listLocalDrafts('a')).toHaveLength(drafts.length);
 });

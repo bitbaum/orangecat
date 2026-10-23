@@ -56,6 +56,7 @@ export default function ArticleComposer({
   const [imagePicker, setImagePicker] = useState<null | 'cover' | 'inline'>(null);
 
   const drafts = useLocalArticleDrafts(
+    user.id,
     isEditing,
     { title, excerpt, coverImage, body, visibility },
     { setTitle, setExcerpt, setCoverImage, setBody, setVisibility }
@@ -188,13 +189,18 @@ export default function ArticleComposer({
           </details>
         )}
 
-        <DraftsPanel
-          restored={drafts.restored}
-          otherDrafts={drafts.otherDrafts}
-          onDiscard={drafts.discardCurrentDraft}
-          onLoad={loadDraft}
-          onDelete={drafts.deleteOtherDraft}
-        />
+        {!isEditing && (
+          <DraftsPanel
+            onNew={drafts.startNewDraft}
+            hasOlderDrafts={drafts.hasOlderDrafts}
+            onRecover={drafts.recoverOlderDrafts}
+            restored={drafts.restored}
+            otherDrafts={drafts.otherDrafts}
+            onDiscard={drafts.discardCurrentDraft}
+            onLoad={loadDraft}
+            onDelete={drafts.deleteOtherDraft}
+          />
+        )}
 
         {/* Write / Preview tabs */}
         <div className="mb-3 flex items-center gap-2">
@@ -258,7 +264,7 @@ export default function ArticleComposer({
             )}
           >
             {drafts.saveStatus === 'error'
-              ? "Couldn't save on this device. Keep this page open and copy your draft before leaving."
+              ? "Couldn't update drafts on this device. Keep this page open and copy your writing before leaving. Storage may be full; remove an unneeded saved draft and retry."
               : drafts.saveStatus === 'saved'
                 ? 'Draft saved on this device.'
                 : drafts.saveStatus === 'saving'

@@ -20,6 +20,8 @@ import { SITE_URL } from '@/config/brand';
 import { PAY_COPY, renamedPayHref } from '@/config/pay';
 import { resolveLnurlRecipient } from '@/domain/lightning-address/lnurl-service';
 import { listPublicPaymentMethods } from '@/domain/payments/paymentMethodsService';
+import { getRequestStatusFor } from '@/domain/payments/paymentRequestService';
+import { parsePayPrefill } from '@/config/pay';
 import { getTipReceiveInfo } from '@/domain/tips/tip-service';
 import { PayPageClient } from './PayPageClient';
 
@@ -59,10 +61,17 @@ export default async function PayPage({ params, searchParams }: PageProps) {
   if (!recipient) {
     notFound();
   }
-  const href = renamedPayHref(username, recipient.username, await searchParams);
+  const search = await searchParams;
+  const href = renamedPayHref(username, recipient.username, search);
   if (href) {
     permanentRedirect(href);
   }
+  // A link that came from a request opens on its answer: a request that has
+  // its payment says so instead of offering to pay it a second time.
+  const { requestId } = parsePayPrefill({
+    get: name => (typeof search[name] === 'string' ? (search[name] as string) : null),
+  });
+  const requestStatus = requestId ? await getRequestStatusFor(recipient.userId, requestId) : null;
 
   // Resolve "can this person receive?" here rather than from the browser. It is
   // the one thing standing between arriving and being able to type an amount,
@@ -95,6 +104,7 @@ export default async function PayPage({ params, searchParams }: PageProps) {
           recipientName={recipient.displayName}
           recipientId={recipient.userId}
           canReceive={!!receiveInfo?.canReceive}
+          requestPaid={requestStatus === 'paid'}
           methods={methods}
         />
       </Suspense>

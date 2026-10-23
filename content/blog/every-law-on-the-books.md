@@ -1,6 +1,6 @@
 ---
 title: 'Every Law on the Books'
-excerpt: 'Switzerland and Liechtenstein publish their laws well, in about forty places. We are putting every one of them in one open register, as the publisher wrote it, with a hash to prove the copy. Here is the size of it, measured, and the order we will do it in.'
+excerpt: 'Switzerland and Liechtenstein publish their laws well, in about forty places. We are putting every one of them in one open register, as the publisher wrote it, with a hash to prove the copy. Here is the size of it, measured, what is already in, and what is not.'
 date: '2026-10-22'
 tags: ['Governance', 'Solon', 'Building in Public', 'Under the Hood']
 featured: false
@@ -20,31 +20,42 @@ Tax law came first, as a model of how a place taxes income. That is a model of o
 
 ## How big it is
 
-We counted on 22 October 2026, from LexFind's own statistics.
+We counted on 23 October 2026, from the registers themselves.
 
-| Authority | Active texts |
-| --- | ---: |
-| Confederation | 5,339 |
-| The 26 cantons together | 16,389 |
-| **Switzerland, federal and cantonal** | **21,728** |
-| Liechtenstein | not counted yet |
-| About 2,100 communes | not counted |
+| Authority | Acts in force | Listed in Solon |
+| --- | ---: | --- |
+| Confederation | 5,339 | yes |
+| The 26 cantons and the intercantonal agreements | 16,708 | yes |
+| Liechtenstein | 3,407 | yes |
+| About 2,100 communes | not counted | no |
 
-Counting repealed texts, the total is 33,105. Fedlex's own register lists 13,257 entries, against LexFind's 6,771 federal ones including repealed. We do not yet know why the numbers differ, so neither is the target until we do.
+That is 25,454 acts in force, and 11,394 more that the Swiss registers list as no longer in force. The number to watch is the live one on [Solon's coverage page](https://solon.orangecat.ch/en/law/coverage), counted from the data, not typed into this post.
 
-## Order of work
+Earlier we reported Fedlex's own register as 13,257 entries against 6,771 federal acts including repealed ones, and did not know why. Reading it properly explains part of it: Fedlex also lists the Official Compilation's entries under the same numbers as the consolidated acts, and those are not acts in force. For the day we read it, the consolidated acts applying number 5,331, against the 5,339 the register says are in force, and every one of them is in the register.
+
+## Where it stands
 
 ```mermaid
 flowchart TD
-  L0["Register of what exists<br/>no text yet"] --> L1["Federal text"]
-  L1 --> L2["Liechtenstein"]
-  L2 --> L3["Cantons, one publisher at a time"]
+  L0["Register of what exists<br/>done: 36,848 acts"] --> L1["Federal text<br/>5,330 acts loaded"]
+  L1 --> L2["Liechtenstein text<br/>loading"]
+  L2 --> L3["Cantons, one publisher at a time<br/>Zürich has its own reader"]
   L3 --> L4["History: any date"]
   L4 --> L5["Communes"]
-  L1 --> L6["Causius reads it from Solon"]
+  L1 --> L6["Causius reads it from Solon<br/>done for federal acts"]
 ```
 
-Each step ships alone and its coverage is a number on a page. Nothing is described as covered that the page does not count. None of it is built yet; the first step is the register.
+| Step | State today |
+| --- | --- |
+| Register of what exists | Done for the Confederation, the cantons and Liechtenstein |
+| Federal text | Loaded, article by article, with the publisher's page and a hash for each |
+| Liechtenstein text | Loading; Lilex does not say when a version took effect, so each is dated by the day we read it, and says so |
+| Cantonal text | A first pass by document is built; Zürich now reads the canton's own collection with the canton's dates; the other 25 cantons need theirs |
+| History | Not built |
+| Communes | Not started, and not yet decided |
+| Causius reads it | Federal acts and Liechtenstein's common ones, with the publisher as fallback |
+
+Each step ships alone and its coverage is a number on a page. Nothing is described as covered that the page does not count.
 
 ## What it will not do
 

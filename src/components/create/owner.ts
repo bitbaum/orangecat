@@ -29,9 +29,7 @@ import type { EntityType } from '@/config/entity-registry';
 type ConfigEntityType = EntityType | 'organization';
 
 export type CreateOwner =
-  | { kind: 'me' }
-  | { kind: 'group'; actorId: string }
-  | { kind: 'someone-else'; name: string };
+  { kind: 'me' } | { kind: 'group'; actorId: string } | { kind: 'someone-else'; name: string };
 
 export const OWNER_ME: CreateOwner = { kind: 'me' };
 
