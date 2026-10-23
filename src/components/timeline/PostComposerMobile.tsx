@@ -13,6 +13,7 @@ import { sanitizeHtml } from '@/lib/validation';
 import { TextFormatToolbar, ComposerMessages, CharacterCounter } from './ComposerShared';
 import { PostComposerFullScreenHeader } from './PostComposerFullScreenHeader';
 import { PostComposerInlineControls } from './PostComposerInlineControls';
+import { PostDraftNotice } from './PostDraftNotice';
 import MentionSuggestions from '@/components/mentions/MentionSuggestions';
 import { useContentEditableMentions } from '@/components/mentions/useContentEditableMentions';
 import {
@@ -66,13 +67,18 @@ const PostComposerMobile: React.FC<PostComposerMobileProps> = ({
   });
 
   const [isOptionsSheetOpen, setIsOptionsSheetOpen] = useState(false);
+  const closeSafely = () => {
+    if (composer.draft.flushDraft()) {
+      (onClose || onCancel)?.();
+    }
+  };
 
   const { editorRef, handleInput, handlePaste, handleKeyDown, handleFormat } =
     useContentEditableEditor({
       content: composer.content,
       onContentChange: composer.setContent,
       onSubmit: composer.handlePost,
-      onCancel: onCancel || (fullScreen ? onClose : undefined),
+      onCancel: fullScreen ? closeSafely : onCancel,
       maxHeight: fullScreen ? 480 : 320,
       disabled: composer.isPosting,
       sanitizer: sanitizeHtml,
@@ -99,8 +105,8 @@ const PostComposerMobile: React.FC<PostComposerMobileProps> = ({
           buttonText={buttonText}
           isPosting={composer.isPosting}
           canPost={composer.canPost}
-          onClose={onClose}
-          onCancel={onCancel}
+          onClose={closeSafely}
+          onCancel={fullScreen ? closeSafely : onCancel}
           onPost={composer.handlePost}
         />
       )}
@@ -214,6 +220,8 @@ const PostComposerMobile: React.FC<PostComposerMobileProps> = ({
         />
       )}
 
+      <PostDraftNotice draft={composer.draft} />
+
       <ComposerMessages
         error={composer.error}
         success={composer.postSuccess}
@@ -246,7 +254,7 @@ const PostComposerMobile: React.FC<PostComposerMobileProps> = ({
           selectedProjectCount={composer.selectedProjects.length}
           showOptionsButton={showProjectSelection || showVisibilityToggle}
           onPost={composer.handlePost}
-          onCancel={onCancel}
+          onCancel={fullScreen ? closeSafely : onCancel}
           onShowOptions={() => setIsOptionsSheetOpen(true)}
         />
       )}
@@ -257,7 +265,7 @@ const PostComposerMobile: React.FC<PostComposerMobileProps> = ({
     return (
       <BottomSheet
         isOpen={isOpen !== undefined ? isOpen : true}
-        onClose={onClose || onCancel || (() => {})}
+        onClose={closeSafely}
         maxHeight="100dvh"
         showCloseButton={false}
         closeOnOverlayClick={true}
