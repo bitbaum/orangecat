@@ -9,7 +9,6 @@ import { extractReplies } from '@bitbaum/chatkit';
 import Link from 'next/link';
 import {
   AnswerActions,
-  ChatReplies,
   Markdown,
   type CitationMap as AnswerCitations,
   type RenderLink,
@@ -19,6 +18,7 @@ import { User, Check, Clock } from 'lucide-react';
 import { getModelDisplayName } from '@/config/ai-models';
 import { formatShortTime } from '@/utils/dates';
 import { getModelCapabilities } from '@/config/model-capability';
+import { CreateNavigation } from './CreateNavigation';
 import { ActionButton } from './ActionButton';
 import { linkifyCitations, citationsFromToolCalls } from '@/lib/chat/citations';
 import { ToolCallChip } from './ToolCallChip';
@@ -330,9 +330,13 @@ export function MessageBubble({
         </div>
 
         {/* Tappable answers — only on the latest assistant turn (older turns'
-            chips would be stale). Tap sends the label as the next message. */}
-        {!isUser && isLast && message.quickReplies && message.quickReplies.length > 0 && (
-          <ChatReplies replies={message.quickReplies} onPick={text => onQuickReply?.(text)} />
+            chips would be stale). Known destinations open directly; other chips reply. */}
+        {!isUser && isLast && (
+          <CreateNavigation
+            content={displayContent}
+            replies={message.quickReplies}
+            onQuickReply={onQuickReply}
+          />
         )}
 
         {/* Action buttons. When a prefill card is also present for an entity draft,

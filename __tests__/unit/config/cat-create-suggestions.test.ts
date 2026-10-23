@@ -15,3 +15,13 @@ it.each([
 ])('leaves unrecognized suggestions as conversation: %s', text => {
   expect(getCreateSuggestionHref(text)).toBeNull();
 });
+
+it.each([
+  'Open article editor',
+  'Open the article editor',
+  'Show me article editor',
+  'Start new article',
+  'Start a new article',
+])('opens the named catalog editor: %s', text => {
+  expect(getCreateSuggestionHref(text)).toBe('/articles/new');
+});
