@@ -5,7 +5,7 @@ import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
  */
 
 import { useMemo } from 'react';
-import { extractReplies } from '@bitbaum/chatkit';
+import { extractReplies, type AnswerFeedback } from '@bitbaum/chatkit';
 import Link from 'next/link';
 import {
   AnswerActions,
@@ -192,6 +192,8 @@ interface MessageBubbleProps {
   onActionClick?: (action: CatAction) => void;
   /** Tap a quick-reply chip → send it as the next user message. */
   onQuickReply?: (text: string) => void;
+  /** A thumb under this answer (chatkit's feedback loop) → the app stores it. */
+  onFeedback?: (feedback: AnswerFeedback) => void;
   variant?: 'default' | 'focus';
 }
 
@@ -200,6 +202,7 @@ export function MessageBubble({
   isLast,
   onActionClick,
   onQuickReply,
+  onFeedback,
   variant = 'focus',
 }: MessageBubbleProps) {
   const isUser = message.role === 'user';
@@ -424,11 +427,18 @@ export function MessageBubble({
         )}
 
         {/* Under every answer, the fleet's row: Copy, Listen (the phone's
-            voice), Share (the system sheet, where one exists). It sat inside
-            the provenance line for one release (#1373) — CodeQL caught the
-            always-true guard that the misplacement produced. */}
+            voice), Share (the system sheet, where one exists), and with
+            `onFeedback` a thumb up and a thumb down — chatkit's own, so a
+            bad answer is reported the same way in every product. It sat
+            inside the provenance line for one release (#1373) — CodeQL
+            caught the always-true guard that the misplacement produced. */}
         {!isUser && displayContent && (
-          <AnswerActions text={linkedContent} share={{ title: CAT_AGENT.name }} />
+          <AnswerActions
+            text={linkedContent}
+            share={{ title: CAT_AGENT.name }}
+            messageId={message.id}
+            onFeedback={onFeedback}
+          />
         )}
 
         {/* Fallback notice — shown when primary provider rate-limited and the

@@ -1,8 +1,8 @@
 # My Cat Chat API
 
 **Created**: 2025-12-09
-**Last Modified**: 2026-07-08
-**Last Modified Summary**: Rewrote to document the current authenticated `POST /api/cat/chat` endpoint (provider chain, streaming SSE, Cat Credits metering) — the old public `/api/chat` Gemini widget no longer exists.
+**Last Modified**: 2026-10-22
+**Last Modified Summary**: Added the answer feedback loop — thumbs posted to `POST /api/chat/feedback`, the day's transcripts served to the fleet's reviewer by `GET /api/chat/review-export`.
 
 ## Overview
 
@@ -13,6 +13,25 @@ Model metadata is sourced from `src/config/ai-models.ts` (`AI_MODEL_REGISTRY`).
 
 The ephemeral path does **not** persist conversation content; when a
 `conversationId` is supplied, messages are saved to the user's conversation.
+
+## The answer feedback loop
+
+Under every Cat answer sit chatkit's thumbs (`@bitbaum/chatkit` 0.14,
+"The feedback loop"). A thumb up, or a thumb down with a reason and a few
+words, is posted to `POST /api/chat/feedback` (`{conversationId, messageId,
+verdict, reason?, text?}`, signed in, rate limited) and kept in `chat_feedback`
+beside the conversation — insert-only for the person, no read through the API
+keys. Each night Loki fetches `GET /api/chat/review-export?since=<ISO>&limit=50`
+with `Authorization: Bearer <CHAT_REVIEW_TOKEN>` (the one value shared across
+the fleet's apps on the box; 401 on a wrong token, 503 while it is unset) and
+receives `{ product: "orangecat", scope, transcripts }`: the scope is derived
+from Cat's own system prompt and tool list (`src/services/cat/chat-review-export.ts`,
+never typed twice), and the transcripts are the conversations updated in the
+window — never temporary chats — newest first, at most 50, each at most 30
+turns of at most 4000 characters with the tool steps Cat took, a `failed`
+flag on a turn that died, and the thumbs. No names, emails, user or actor ids
+leave with them. Loki judges every answer against the scope and files each
+gap into its feedback inbox, where the fix is built.
 
 ## Authentication
 

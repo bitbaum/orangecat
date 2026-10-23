@@ -16,7 +16,7 @@
 export const TRUNCATED_REPLY_SUFFIX = '\n\n[This reply was cut off by a connection error.]';
 
 /** Last-resort text if a caller somehow has no error copy to store. */
-const UNKNOWN_FAILURE_NOTE = "Cat couldn't complete this reply.";
+export const UNKNOWN_FAILURE_NOTE = "Cat couldn't complete this reply.";
 
 export interface FailedTurnMessage {
   role: 'user' | 'assistant';
