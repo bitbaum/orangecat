@@ -60,9 +60,7 @@ describe('the second Groq link is a second meter', () => {
     process.env.PLATFORM_GROQ_FALLBACK_MODEL = PLATFORM_GROQ_MODEL;
     vi.resetModules();
 
-    const { buildPlatformProviders: build } = await import(
-      '@/services/ai/platform-providers'
-    );
+    const { buildPlatformProviders: build } = await import('@/services/ai/platform-providers');
     const groq = build('hello').filter(p => p.providerId === 'groq');
     expect(groq.map(p => p.defaultModel)).toEqual([PLATFORM_GROQ_MODEL]);
   });

@@ -38,7 +38,6 @@ export const CurrencyDisplay: React.FC<CurrencyDisplayProps> = ({
     xl: 'text-xl font-semibold',
   };
 
-
   return (
     <span
       className={cn(currencyColorClass, sizeClasses[size], 'font-mono tabular-nums', className)}

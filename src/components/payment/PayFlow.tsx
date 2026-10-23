@@ -62,6 +62,8 @@ interface PayFlowProps {
   initialCanReceive?: boolean;
   /** Suggested amount from a pay link — the payer can still change it. */
   initialAmountBtc?: number;
+  /** The payment request this link came from, so the payment can answer it. */
+  requestId?: string;
   /** Rendered above the amount input; the "what is this for" from the link. */
   noteSlot?: React.ReactNode;
   /** Extra content under the amount input (e.g. a link-prefill warning). */
@@ -80,6 +82,7 @@ export function PayFlow({
   active = true,
   initialCanReceive,
   initialAmountBtc,
+  requestId,
   noteSlot,
   beforeActionSlot,
   renderDone,
@@ -167,14 +170,14 @@ export function PayFlow({
     setGenerating(true);
     setError(null);
     try {
-      setInvoice(await fetchTipInvoice(username, amount));
+      setInvoice(await fetchTipInvoice(username, amount, requestId));
       setSettleState('pending');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not create a payment request.');
     } finally {
       setGenerating(false);
     }
-  }, [username, amount]);
+  }, [username, amount, requestId]);
 
   if (checkingWallet) {
     return (

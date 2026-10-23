@@ -22,6 +22,8 @@ import { resolveLnurlRecipient } from '@/domain/lightning-address/lnurl-service'
 import { buildPayUrl } from '@/config/pay';
 import { SITE_URL } from '@/config/brand';
 import { PAY_MAX_BTC, PAY_MIN_BTC } from '@/config/pay';
+import { formatBtcForUser } from '@/services/currency/format-for-user.server';
+import type { PaymentIntent } from '@/domain/payments/types';
 import { logger } from '@/utils/logger';
 
 export type PaymentRequestStatus = 'pending' | 'paid' | 'declined' | 'cancelled';
@@ -145,18 +147,22 @@ async function notifyPayer(request: PaymentRequestRow, requesterId: string): Pro
     const row = requester as { username?: string; display_name?: string } | null;
     const name = row?.display_name || row?.username || 'Someone';
     const forNote = request.note ? ` for ${request.note}` : '';
+    // In the payer's own currency: "CHF 20.00", not "0.00023 BTC".
+    const amount = await formatBtcForUser(admin, request.payer_id, request.amount_btc);
 
     await NotificationDispatcher.dispatch({
       userId: request.payer_id,
       type: 'payment',
-      title: `${name} requested ${request.amount_btc} BTC`,
-      message: `${name} asked you for ${request.amount_btc} BTC${forNote}. Pay it from any Bitcoin wallet, or decline.`,
+      title: `${name} asked you for ${amount}`,
+      message: `${name} asked you for ${amount}${forNote}. Pay it in one tap, or decline.`,
       // Deep-links to the pay page with the ask pre-filled — still editable,
-      // because a request is a suggestion and the payer stays in control.
+      // because a request is a suggestion and the payer stays in control. It
+      // names the request, so the payment that follows can answer it.
       actionUrl: row?.username
         ? buildPayUrl(SITE_URL, row.username, {
             amountBtc: request.amount_btc,
             note: request.note ?? undefined,
+            requestId: request.id,
           })
         : undefined,
       data: { kind: 'payment_request', requestId: request.id },
@@ -231,4 +237,128 @@ export async function closePaymentRequest(
     return fail('not_pending', 'That request is no longer open.');
   }
   return { ok: true };
+}
+
+/** What a payment may fall short of an ask by before it stops counting as the answer. */
+const REQUEST_PAID_TOLERANCE = 0.999;
+
+/**
+ * The open request a pay link names, if it really is open and really is
+ * addressed to this recipient (they are the one being paid). Anything else
+ * returns null and the payment simply is not tied to a request.
+ */
+export async function findOpenRequestFor(
+  recipientId: string,
+  requestId: string
+): Promise<{ id: string; amount_btc: number } | null> {
+  const { data } = await fromTable(getAdminClient(), DATABASE_TABLES.PAYMENT_REQUESTS)
+    .select('id, amount_btc')
+    .eq('id', requestId)
+    .eq('requester_id', recipientId)
+    .eq('status', 'pending')
+    .maybeSingle();
+  const row = data as { id: string; amount_btc: number | string } | null;
+  return row ? { id: row.id, amount_btc: Number(row.amount_btc) } : null;
+}
+
+/**
+ * Where a request stands, as the person being paid sees it — for the pay page
+ * a request link opens on. Read with the admin client: the link holds an
+ * unguessable id, and only the status leaves this function.
+ */
+export async function getRequestStatusFor(
+  recipientId: string,
+  requestId: string
+): Promise<PaymentRequestStatus | null> {
+  const { data } = await fromTable(getAdminClient(), DATABASE_TABLES.PAYMENT_REQUESTS)
+    .select('status')
+    .eq('id', requestId)
+    .eq('requester_id', recipientId)
+    .maybeSingle();
+  return (data as { status: PaymentRequestStatus } | null)?.status ?? null;
+}
+
+/**
+ * Settlement found a payment that was minted for a request: if it covers the
+ * ask, mark the request paid (the system write the table was designed for) and
+ * tell the person who asked, by name, in their own currency.
+ *
+ * A payment that falls short leaves the request open — the payer chose a
+ * smaller number on a link that only suggested one, and "paid" must mean the
+ * ask was met. Returns true when the request was settled, so the caller can
+ * skip the generic "you were paid" note in favour of this one.
+ */
+export async function settlePaymentRequest(intent: PaymentIntent): Promise<boolean> {
+  const requestId = intent.payment_request_id;
+  if (!requestId) {
+    return false;
+  }
+  try {
+    const admin = getAdminClient();
+    const { data: found } = await fromTable(admin, DATABASE_TABLES.PAYMENT_REQUESTS)
+      .select('id, payer_id, amount_btc, note')
+      .eq('id', requestId)
+      .eq('requester_id', intent.seller_id)
+      .eq('status', 'pending')
+      .maybeSingle();
+    const request = found as {
+      id: string;
+      payer_id: string;
+      amount_btc: number | string;
+      note: string | null;
+    } | null;
+    if (
+      !request ||
+      Number(intent.amount_btc) < Number(request.amount_btc) * REQUEST_PAID_TOLERANCE
+    ) {
+      return false;
+    }
+
+    // The status is the lock: only one observer moves it, so only one tells the asker.
+    const { data: moved } = await fromTable(admin, DATABASE_TABLES.PAYMENT_REQUESTS)
+      .update({
+        status: 'paid',
+        paid_intent_id: intent.id,
+        paid_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', request.id)
+      .eq('status', 'pending')
+      .select('id');
+    if (!moved || moved.length === 0) {
+      return true;
+    }
+
+    const { data: payer } = await fromTable(admin, DATABASE_TABLES.PROFILES)
+      .select('username, display_name:name')
+      .eq('id', request.payer_id)
+      .maybeSingle();
+    const who = payer as { username?: string; display_name?: string } | null;
+    const name = who?.display_name || who?.username || 'Someone';
+    const amount = await formatBtcForUser(admin, intent.seller_id, Number(intent.amount_btc));
+    const forNote = request.note ? ` for ${request.note}` : '';
+
+    void NotificationDispatcher.dispatch({
+      userId: intent.seller_id,
+      type: 'payment',
+      title: `${name} paid you ${amount}`,
+      message: `${name} paid your request${forNote} — ${amount}, straight to your wallet.`,
+      data: {
+        kind: 'payment_request_paid',
+        requestId: request.id,
+        paymentIntentId: intent.id,
+        amount_btc: Number(intent.amount_btc),
+      },
+      actionUrl: '/requests',
+    });
+    return true;
+  } catch (error) {
+    // The payment has happened; a request that fails to flip is logged, never thrown.
+    logger.error(
+      'Could not settle the payment request for a paid intent',
+      { error: String(error), paymentIntentId: intent.id },
+      'PaymentRequest'
+    );
+    return false;
+  }
 }

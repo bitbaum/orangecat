@@ -9,7 +9,13 @@ import { HelpCircle } from 'lucide-react';
  * very form being typed into. Now one compact neutral pill, tucked into the
  * corner, the same everywhere.
  */
-export function FieldHelpButton({ onClick, label = 'Help' }: { onClick: () => void; label?: string }) {
+export function FieldHelpButton({
+  onClick,
+  label = 'Help',
+}: {
+  onClick: () => void;
+  label?: string;
+}) {
   return (
     <button
       type="button"

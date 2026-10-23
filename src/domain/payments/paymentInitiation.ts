@@ -308,7 +308,7 @@ export async function initiatePublicSupport(
  * anonymous tipper polls with.
  */
 export async function initiateTip(input: InitiateTipInput): Promise<InitiatePublicSupportResult> {
-  const { recipientUserId, recipientName, wallet, amountBtc } = input;
+  const { recipientUserId, recipientName, wallet, amountBtc, paymentRequestId } = input;
   const description = `Tip for ${recipientName}`;
   const invoice = await generateInvoice(wallet, amountBtc, description);
   const token = randomBytes(32).toString('base64url');
@@ -325,6 +325,7 @@ export async function initiateTip(input: InitiateTipInput): Promise<InitiatePubl
       amount_btc: amountBtc,
       payment_method: invoice.method, // the rail that minted it — see GeneratedInvoice
       intent_kind: 'tip',
+      payment_request_id: paymentRequestId ?? null,
       receiving_wallet_id: wallet.wallet_id,
       bolt11: invoice.bolt11,
       payment_hash: invoice.payment_hash,

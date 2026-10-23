@@ -92,7 +92,7 @@ describe('eval-cat.mjs PostgREST retry', () => {
 
   it('does not retry a 4xx — that is a verdict about the request, not a blip', () => {
     const { calls, error } = probe(
-      harness([{ status: 400, body: '{"message":"malformed filter"}' }]),
+      harness([{ status: 400, body: '{"message":"malformed filter"}' }])
     );
 
     expect(calls).toBe(1);

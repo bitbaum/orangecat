@@ -8,6 +8,7 @@
  */
 
 import { checkPaymentStatus } from '@/domain/payments/paymentFlowService';
+import { settlePaymentRequest } from '@/domain/payments/paymentRequestService';
 import { STATUS } from '@/config/database-constants';
 import { logger } from '@/utils/logger';
 import { checkOnchainPaymentStatus } from '@/domain/payments/paymentStatusService';
@@ -27,6 +28,10 @@ vi.mock('@/domain/payments/paymentStatusService', () => ({
   checkOnchainPaymentStatus: vi.fn(),
 }));
 vi.mock('@/lib/supabase/admin', () => ({ getAdminClient: vi.fn() }));
+// Whether a payment answers a request is its own test (settlePaymentRequest.test.ts).
+vi.mock('@/domain/payments/paymentRequestService', () => ({
+  settlePaymentRequest: vi.fn().mockResolvedValue(false),
+}));
 vi.mock('@/services/webhooks/paymentSettledWebhook', () => ({
   enqueuePaymentSettledWebhook: vi.fn().mockResolvedValue(undefined),
 }));
@@ -157,12 +162,26 @@ describe('handlePaymentConfirmed — tip branch', () => {
       expect.objectContaining({
         userId: SELLER,
         type: 'payment',
-        title: expect.stringContaining('tip'),
+        title: expect.stringContaining('You were paid'),
         data: expect.objectContaining({ kind: 'tip', amount_btc: 0.0005 }),
       })
     );
     // No reconciliation error path — a tip has no order to get stuck.
     expect(errorMock).not.toHaveBeenCalled();
+  });
+
+  it('leaves the anonymous "you were paid" out when the payment answered a request', async () => {
+    // The request's own note (who paid, which ask) replaces it — never both.
+    (settlePaymentRequest as Mock).mockResolvedValueOnce(true);
+    const supabase = makeSupabaseReturning({ ...tipIntent, payment_request_id: 'r1' });
+    await checkPaymentStatus(supabase, PI_ID, SELLER);
+
+    expect(settlePaymentRequest).toHaveBeenCalledWith(
+      expect.objectContaining({ id: PI_ID, payment_request_id: 'r1' })
+    );
+    expect(dispatchMock).not.toHaveBeenCalledWith(
+      expect.objectContaining({ title: expect.stringContaining('You were paid') })
+    );
   });
 });
 

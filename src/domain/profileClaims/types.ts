@@ -71,11 +71,7 @@ export interface ProfileClaimPreview {
 }
 
 export type ProfileClaimErrorCode =
-  | 'not_found'
-  | 'expired'
-  | 'already_claimed'
-  | 'revoked'
-  | 'declined';
+  'not_found' | 'expired' | 'already_claimed' | 'revoked' | 'declined';
 
 export type ProfileClaimResult<T> =
   | { ok: true; data: T }

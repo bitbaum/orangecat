@@ -81,6 +81,7 @@ export function RequestList({
                         href={buildPayUrl(payLinkOrigin(), row.counterparty_username, {
                           amountBtc: row.amount_btc,
                           note: row.note ?? undefined,
+                          requestId: row.id,
                         })}
                       >
                         {REQUEST_COPY.pay}

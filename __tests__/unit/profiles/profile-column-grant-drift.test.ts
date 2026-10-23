@@ -51,9 +51,7 @@ const readMigration = (f: string) => readFileSync(join(MIGRATIONS_DIR, f), 'utf8
  * lockdown migrations use.
  */
 export function declaredPrivateColumns(sql: string): Set<string> {
-  const block = sql.match(
-    /INSERT\s+INTO\s+private_profile_columns[^;]*?VALUES([\s\S]*?);/i
-  );
+  const block = sql.match(/INSERT\s+INTO\s+private_profile_columns[^;]*?VALUES([\s\S]*?);/i);
   if (!block) return new Set<string>();
   return new Set([...block[1]!.matchAll(/'([a-z0-9_]+)'/gi)].map(m => m[1]!));
 }
@@ -68,7 +66,10 @@ export function grantedProfileColumns(sql: string): Set<string> {
     const roles = m[2]!.toLowerCase();
     // service_role is meant to read everything; only client roles matter here.
     if (!/\banon\b|\bauthenticated\b/.test(roles)) continue;
-    for (const c of m[1]!.split(',').map(s => s.trim().replace(/"/g, '')).filter(Boolean)) {
+    for (const c of m[1]!
+      .split(',')
+      .map(s => s.trim().replace(/"/g, ''))
+      .filter(Boolean)) {
       out.add(c);
     }
   }
@@ -118,7 +119,8 @@ function usesAdminClient(text: string): boolean {
  */
 export function privateProfileReads(text: string): string[] {
   const findings: string[] = [];
-  const from = /(?:\.from\(\s*DATABASE_TABLES\.PROFILES\s*\)|fromTable\([^,]+,\s*DATABASE_TABLES\.PROFILES\s*\))/g;
+  const from =
+    /(?:\.from\(\s*DATABASE_TABLES\.PROFILES\s*\)|fromTable\([^,]+,\s*DATABASE_TABLES\.PROFILES\s*\))/g;
   let m: RegExpExecArray | null;
   while ((m = from.exec(text)) !== null) {
     // Bound the chain at the end of the STATEMENT. Slicing a fixed window
@@ -154,9 +156,7 @@ export function privateProfileReads(text: string): string[] {
 describe('profiles private columns', () => {
   it('the TS list and every lockdown migration name the same columns', () => {
     const inCode = new Set<string>(PRIVATE_PROFILE_COLUMNS);
-    const lockdowns = migrationFiles.filter(
-      f => declaredPrivateColumns(readMigration(f)).size > 0
-    );
+    const lockdowns = migrationFiles.filter(f => declaredPrivateColumns(readMigration(f)).size > 0);
 
     // Non-empty guards the parser: a regex that silently matched nothing would
     // turn this whole file into a green light over an unchecked invariant.
@@ -246,14 +246,24 @@ describe('the parsers actually parse', () => {
   });
 
   it('reads a GRANT list for a client role, and ignores service_role', () => {
-    expect([...grantedProfileColumns('GRANT SELECT (id, username) ON TABLE public.profiles TO anon;')].sort()).toEqual(['id', 'username']);
-    expect(grantedProfileColumns('GRANT SELECT (email) ON public.profiles TO service_role;').size).toBe(0);
+    expect(
+      [
+        ...grantedProfileColumns('GRANT SELECT (id, username) ON TABLE public.profiles TO anon;'),
+      ].sort()
+    ).toEqual(['id', 'username']);
+    expect(
+      grantedProfileColumns('GRANT SELECT (email) ON public.profiles TO service_role;').size
+    ).toBe(0);
     expect(grantedProfileColumns('GRANT SELECT (id) ON public.wallets TO anon;').size).toBe(0);
   });
 
   it('spots a column added to profiles, and only to profiles', () => {
-    expect(addedProfileColumns('ALTER TABLE public.profiles ADD COLUMN foo text;')).toEqual(['foo']);
-    expect(addedProfileColumns('ALTER TABLE profiles ADD COLUMN IF NOT EXISTS "bar" int;')).toEqual(['bar']);
+    expect(addedProfileColumns('ALTER TABLE public.profiles ADD COLUMN foo text;')).toEqual([
+      'foo',
+    ]);
+    expect(addedProfileColumns('ALTER TABLE profiles ADD COLUMN IF NOT EXISTS "bar" int;')).toEqual(
+      ['bar']
+    );
     expect(addedProfileColumns('ALTER TABLE public.wallets ADD COLUMN foo text;')).toEqual([]);
   });
 

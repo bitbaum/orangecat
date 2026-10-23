@@ -23,11 +23,15 @@ export const PAY_MAX_BTC = TIP_MAX_BTC;
 /** Matches what a payment note is for: a reason, not a message thread. */
 export const PAY_NOTE_MAX_LENGTH = 80;
 
-export const PAY_PARAMS = { amount: 'amount', note: 'for' } as const;
+export const PAY_PARAMS = { amount: 'amount', note: 'for', request: 'request' } as const;
+
+const REQUEST_ID_SHAPE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export interface PayPrefill {
   amountBtc?: number;
   note?: string;
+  /** The payment request this link answers, when it came from one (src/domain/payments/paymentRequestService). */
+  requestId?: string;
   /** Set when the link carried an amount we could not honour — shown, not swallowed. */
   amountError?: string;
 }
@@ -51,7 +55,7 @@ export function payLinkOrigin(): string {
 export function buildPayUrl(
   origin: string,
   username: string,
-  options: { amountBtc?: number; note?: string } = {}
+  options: { amountBtc?: number; note?: string; requestId?: string } = {}
 ): string {
   const url = new URL(`/pay/${encodeURIComponent(username)}`, origin);
   if (options.amountBtc && options.amountBtc > 0) {
@@ -60,6 +64,9 @@ export function buildPayUrl(
   }
   if (options.note?.trim()) {
     url.searchParams.set(PAY_PARAMS.note, options.note.trim().slice(0, PAY_NOTE_MAX_LENGTH));
+  }
+  if (options.requestId) {
+    url.searchParams.set(PAY_PARAMS.request, options.requestId);
   }
   return url.toString();
 }
@@ -74,6 +81,11 @@ export function parsePayPrefill(params: { get(name: string): string | null }): P
   const note = params.get(PAY_PARAMS.note)?.trim();
   if (note) {
     prefill.note = note.slice(0, PAY_NOTE_MAX_LENGTH);
+  }
+
+  const requestId = params.get(PAY_PARAMS.request)?.trim();
+  if (requestId && REQUEST_ID_SHAPE.test(requestId)) {
+    prefill.requestId = requestId.toLowerCase();
   }
 
   const rawAmount = params.get(PAY_PARAMS.amount);
@@ -100,7 +112,7 @@ export const PAY_COPY = {
   subtitle: 'Bitcoin, straight to their wallet.',
   requestedFor: (note: string) => `For: ${note}`,
   noWallet: (name: string) =>
-    `${name} can't receive Bitcoin payments right now. Nothing was charged — check back later, or let them know.`,
+    `${name} hasn't added a Bitcoin wallet yet, so a payment has nowhere to land. Nothing was charged.`,
   notFound: "We couldn't find that OrangeCat account.",
   /** Honesty line — the whole point of the alias is that we never hold funds. */
   disclaimer: 'Paid directly to them. OrangeCat takes 0% and never touches your funds.',
@@ -117,6 +129,9 @@ export const PAY_COPY = {
   paidBody: (name: string) => `Paid straight to ${name}'s wallet.`,
   expiredTitle: 'This code expired',
   expiredBody: 'Nothing was sent. You can make another.',
+  /** A request that already has its payment: say so instead of offering to pay it again. */
+  requestPaidTitle: 'This request is already paid',
+  requestPaidBody: (name: string) => `${name} has been paid for it. Nothing more to send.`,
 } as const;
 
 /**

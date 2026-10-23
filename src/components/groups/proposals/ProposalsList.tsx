@@ -82,12 +82,10 @@ export function ProposalsList({
       }
       if (data.success) {
         setProposals(
-          (data.data?.proposals || []).map(
-            (p: Proposal): ProposalWithSlug => ({
-              ...p,
-              groupSlug,
-            })
-          )
+          (data.data?.proposals || []).map((p: Proposal): ProposalWithSlug => ({
+            ...p,
+            groupSlug,
+          }))
         );
       } else {
         throw new Error(apiErrorMessage(data, 'Failed to load proposals'));

@@ -137,6 +137,7 @@ describe('getTipReceiveInfo', () => {
       recipientName: 'Bob',
       recipientId: 'u1',
       methodLabel: 'On-chain Bitcoin',
+      method: 'onchain',
     });
   });
 });

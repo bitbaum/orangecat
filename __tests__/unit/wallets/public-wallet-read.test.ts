@@ -96,7 +96,11 @@ describe('readPublicWallets', () => {
 
   it('nulls an extended public key but passes a plain address through', async () => {
     rows = [
-      { id: 'a', address_or_xpub: 'zpub6rFR7y4Q2AijBEqTUquhVz398htDFrtymD9xYYfG1m4wAcvPhXNfE3EfH1r1ADqtfSdVCToUG868RvUUkgDKf31mGDtKsAYz2oz2AGutZYs' },
+      {
+        id: 'a',
+        address_or_xpub:
+          'zpub6rFR7y4Q2AijBEqTUquhVz398htDFrtymD9xYYfG1m4wAcvPhXNfE3EfH1r1ADqtfSdVCToUG868RvUUkgDKf31mGDtKsAYz2oz2AGutZYs',
+      },
       { id: 'b', address_or_xpub: 'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4' },
     ];
 

@@ -23,6 +23,8 @@ import {
 } from '@/services/loki/entitlement-notify';
 import { grantSupporterPlan } from '@/services/supporter/grant';
 import { enqueuePaymentSettledWebhook } from '@/services/webhooks/paymentSettledWebhook';
+import { formatBtcForUser } from '@/services/currency/format-for-user.server';
+import { settlePaymentRequest } from './paymentRequestService';
 import { ratesAtReceiptOrNull } from '@/services/currency/rates.server';
 
 /**
@@ -163,14 +165,20 @@ export async function handlePaymentConfirmed(paymentIntent: PaymentIntent): Prom
   // Notify the recipient and fan the settlement out to their webhooks, then stop.
   if (paymentIntent.intent_kind === 'tip') {
     const tipAmount = paymentIntent.amount_btc;
-    void NotificationDispatcher.dispatch({
-      userId: paymentIntent.seller_id,
-      type: 'payment',
-      title: `You received a tip: ${tipAmount} BTC`,
-      message: `Someone sent you a ${tipAmount} BTC tip — paid straight to your wallet.`,
-      data: { paymentIntentId: piId, amount_btc: tipAmount, kind: 'tip' },
-      actionUrl: '/dashboard',
-    });
+    // A payment that answers a request tells the asker who paid and which ask;
+    // only a payment that did not gets the anonymous "you were paid".
+    const answeredRequest = await settlePaymentRequest(paymentIntent);
+    if (!answeredRequest) {
+      const amountLabel = await formatBtcForUser(admin, paymentIntent.seller_id, tipAmount);
+      void NotificationDispatcher.dispatch({
+        userId: paymentIntent.seller_id,
+        type: 'payment',
+        title: `You were paid ${amountLabel}`,
+        message: `Someone paid you ${amountLabel} through your pay link — straight to your wallet.`,
+        data: { paymentIntentId: piId, amount_btc: tipAmount, kind: 'tip' },
+        actionUrl: '/dashboard',
+      });
+    }
     void enqueuePaymentSettledWebhook(paymentIntent).catch(err =>
       logger.warn('payment.settled webhook enqueue failed (tip)', { err }, 'paymentFlowService')
     );

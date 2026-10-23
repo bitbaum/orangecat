@@ -234,7 +234,9 @@ export function RepostModal({
               <span
                 className={cn(
                   'tabular-nums',
-                  remainingCharacters <= 20 ? 'text-status-warning font-semibold' : 'text-fg-tertiary'
+                  remainingCharacters <= 20
+                    ? 'text-status-warning font-semibold'
+                    : 'text-fg-tertiary'
                 )}
               >
                 {remainingCharacters <= 20 ? `${remainingCharacters} left` : ''}

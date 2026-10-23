@@ -20,6 +20,7 @@ export const REQUEST_COPY = {
   payerChecking: 'Looking them up…',
   payerReady: (name: string) => `Asking ${name}.`,
   payerNotFound: (handle: string) => `Nobody on OrangeCat goes by @${handle}.`,
+  payerSelf: "That's you. A request goes to someone else.",
   payerExternal:
     'A request goes to an OrangeCat account. A Lightning address can be paid, but not asked.',
   noteLabel: 'Note',

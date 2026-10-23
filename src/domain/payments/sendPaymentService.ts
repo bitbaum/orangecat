@@ -38,6 +38,8 @@ export type SendFailureReason =
   | 'sending_unavailable'
   | 'recipient_not_found'
   | 'recipient_cannot_receive'
+  /** Paying yourself moves nothing and reads as a failure — say what it is. */
+  | 'self_send'
   | 'invalid_invoice'
   | 'invoice_failed'
   | 'payment_failed'
@@ -257,6 +259,9 @@ export async function sendToRecipient(
     const recipient = await resolveLnurlRecipient(trimmed);
     if (!recipient) {
       return fail('recipient_not_found', `We couldn't find @${trimmed} on OrangeCat.`);
+    }
+    if (recipient.userId === userId) {
+      return fail('self_send', "That's you. Pick someone else to pay.");
     }
 
     wallet = await resolveUserWallet(admin, recipient.userId);

@@ -121,3 +121,18 @@ describe('parsePayPrefill', () => {
     expect(prefill.note).toHaveLength(PAY_NOTE_MAX_LENGTH);
   });
 });
+
+describe('a link that came from a request', () => {
+  const id = '3f6c1a52-8b0e-4f4a-9a0c-2d7e5b9c1a10';
+
+  it('carries the request, so the payment can answer it', () => {
+    const url = buildPayUrl('https://orangecat.ch', 'lena', { amountBtc: 0.0002, requestId: id });
+    expect(url).toContain(`request=${id}`);
+    expect(parsePayPrefill(new URL(url).searchParams).requestId).toBe(id);
+  });
+
+  it('reads nothing from a request that is not an id', () => {
+    const params = new URLSearchParams({ request: 'not-a-uuid' });
+    expect(parsePayPrefill(params).requestId).toBeUndefined();
+  });
+});

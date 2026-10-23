@@ -12,9 +12,7 @@ describe('escapeHtml', () => {
   });
 
   it('neutralises a script tag', () => {
-    expect(escapeHtml('<script>alert(1)</script>')).toBe(
-      '&lt;script&gt;alert(1)&lt;/script&gt;'
-    );
+    expect(escapeHtml('<script>alert(1)</script>')).toBe('&lt;script&gt;alert(1)&lt;/script&gt;');
   });
 
   it('escapes the ampersand first, so an escape cannot be double-decoded', () => {

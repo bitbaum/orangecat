@@ -16,7 +16,10 @@ const TREE = 'a'.repeat(40);
 function run(ghBehaviour: string, env: Record<string, string> = {}) {
   const dir = mkdtempSync(join(tmpdir(), 'already-verified-'));
   writeFileSync(join(dir, 'git'), `#!/usr/bin/env bash\necho ${TREE}\n`);
-  writeFileSync(join(dir, 'gh'), `#!/usr/bin/env bash\necho "$*" >> "${dir}/gh.log"\n${ghBehaviour}\n`);
+  writeFileSync(
+    join(dir, 'gh'),
+    `#!/usr/bin/env bash\necho "$*" >> "${dir}/gh.log"\n${ghBehaviour}\n`
+  );
   chmodSync(join(dir, 'git'), 0o755);
   chmodSync(join(dir, 'gh'), 0o755);
   const out = join(dir, 'out');
@@ -79,7 +82,9 @@ describe('ci.yml wiring', () => {
   const ci = readFileSync('.github/workflows/ci.yml', 'utf8');
 
   it('skips Verify only on the already-verified answer', () => {
-    expect(ci).toMatch(/- name: Verify \(docs[^\n]*\n(?:\s+#[^\n]*\n)*\s+if: steps\.already\.outputs\.verified != 'true'/);
+    expect(ci).toMatch(
+      /- name: Verify \(docs[^\n]*\n(?:\s+#[^\n]*\n)*\s+if: steps\.already\.outputs\.verified != 'true'/
+    );
   });
 
   it('records a tree only for pull requests from this repository, never a fork', () => {

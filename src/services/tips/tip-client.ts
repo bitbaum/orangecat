@@ -10,17 +10,26 @@ import type { TipInvoice, TipReceiveInfo, TipStatusResult } from '@/domain/tips/
 export type { TipInvoice, TipReceiveInfo, TipStatusResult } from '@/domain/tips/tip-service';
 
 export async function fetchTipReceiveInfo(username: string): Promise<TipReceiveInfo> {
-  const res = await fetch(`${API_ROUTES.TIPS.RECEIVE_INFO}?username=${encodeURIComponent(username)}`);
+  const res = await fetch(
+    `${API_ROUTES.TIPS.RECEIVE_INFO}?username=${encodeURIComponent(username)}`
+  );
   return unwrapApiResponse<TipReceiveInfo>(res, 'Could not load tip info.');
 }
 
-export async function fetchTipInvoice(username: string, amountBtc: number): Promise<TipInvoice> {
+export async function fetchTipInvoice(
+  username: string,
+  amountBtc: number,
+  requestId?: string
+): Promise<TipInvoice> {
   const res = await fetch(API_ROUTES.TIPS.INVOICE, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, amountBtc }),
+    body: JSON.stringify({ username, amountBtc, ...(requestId ? { requestId } : {}) }),
   });
-  const { invoice } = await unwrapApiResponse<{ invoice: TipInvoice }>(res, 'Could not create a tip request.');
+  const { invoice } = await unwrapApiResponse<{ invoice: TipInvoice }>(
+    res,
+    'Could not create a tip request.'
+  );
   return invoice;
 }
 

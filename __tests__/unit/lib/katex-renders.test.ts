@@ -20,7 +20,7 @@ describe('katex as mermaid and bip-kit call it', () => {
     expect(major === 0 && minor >= 18).toBe(true);
   });
 
-  it("renders the way mermaid calls it (display, throwOnError, MathML output)", () => {
+  it('renders the way mermaid calls it (display, throwOnError, MathML output)', () => {
     for (const output of ['htmlAndMathml', 'mathml'] as const) {
       const html = katex.renderToString('\\frac{a}{b} = \\sqrt{x^2 + 1}', {
         throwOnError: true,
@@ -32,10 +32,10 @@ describe('katex as mermaid and bip-kit call it', () => {
     }
   });
 
-  it("renders the way bip-kit calls it, and never throws on bad input", () => {
-    expect(katex.renderToString('e^{i\\pi} + 1 = 0', { displayMode: false, throwOnError: false })).toContain(
-      'katex'
-    );
+  it('renders the way bip-kit calls it, and never throws on bad input', () => {
+    expect(
+      katex.renderToString('e^{i\\pi} + 1 = 0', { displayMode: false, throwOnError: false })
+    ).toContain('katex');
     expect(() =>
       katex.renderToString('\\frac{', { displayMode: true, throwOnError: false })
     ).not.toThrow();
