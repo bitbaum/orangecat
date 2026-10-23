@@ -10,7 +10,7 @@ import {
   DashboardSection,
 } from '@/components/dashboard/sections';
 import { CatNudges } from '@/components/dashboard/CatNudges';
-import { TheDoor } from '@/components/map/TheDoor';
+import { DashboardIntent } from '@/components/dashboard/DashboardIntent';
 import { PendingActionsCard } from '@/components/ai-chat/PendingActionsCard';
 import { useDashboard } from './useDashboard';
 
@@ -91,7 +91,7 @@ export default function DashboardPage() {
             {/* The door: one sentence in, the right thing out. The Cat answers
                 with a draft card, so this is the fastest route from wanting to
                 having. */}
-            <TheDoor />
+            <DashboardIntent />
           </div>
 
           {pendingActions.length > 0 && (

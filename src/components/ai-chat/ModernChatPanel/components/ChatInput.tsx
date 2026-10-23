@@ -27,6 +27,7 @@
 import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { Composer } from '@bitbaum/chatkit/react';
+import type { ComposerSendResult } from '@bitbaum/chatkit';
 import '@bitbaum/chatkit/styles.css';
 import { cn } from '@/lib/utils';
 import { CAT_HUB_COPY } from '@/config/cat-hub';
@@ -49,7 +50,7 @@ import { CHAT_IMAGE_MAX_COUNT } from '@/services/cat/chat-images';
 interface ChatInputProps {
   value: string;
   onChange: (value: string) => void;
-  onSend: () => void;
+  onSend: () => ComposerSendResult | Promise<ComposerSendResult>;
   isLoading: boolean;
   onStop?: () => void;
   variant?: 'default' | 'focus';
@@ -67,6 +68,10 @@ interface ChatInputProps {
   attachable?: CatReference[];
   /** Prompt text. Defaults to Cat's. */
   placeholder?: string;
+  ariaLabel?: string;
+  sendLabel?: string;
+  autoFocus?: boolean;
+  sendBlockedReason?: string | null;
 }
 
 const newId = () => Math.random().toString(36).slice(2, 10);
@@ -90,6 +95,10 @@ export function ChatInput({
   onAttachmentsChange,
   attachable = [],
   placeholder = CAT_HUB_COPY.composerPlaceholder,
+  ariaLabel = placeholder,
+  sendLabel = 'Send message',
+  autoFocus,
+  sendBlockedReason,
 }: ChatInputProps) {
   const [attachError, setAttachError] = useState<string | null>(null);
   const isFocus = variant === 'focus';
@@ -156,6 +165,7 @@ export function ChatInput({
   return (
     <div
       className={cn(
+        '[--ck-accent:hsl(var(--text-primary))] [--ck-on-accent:hsl(var(--text-inverted))]',
         isInline ? 'w-full' : isFocus ? 'oc-chat-composer-wrap' : 'border-t border-subtle p-4'
       )}
     >
@@ -166,10 +176,11 @@ export function ChatInput({
           // The page owns the draft and the attachments; it reads both when told.
           onSend={() => onSend()}
           placeholder={placeholder}
-          ariaLabel={placeholder}
+          ariaLabel={ariaLabel}
+          sendBlockedReason={sendBlockedReason}
           sending={isLoading}
           onStop={onStop}
-          autoFocus={isInline}
+          autoFocus={autoFocus ?? isInline}
           // OrangeCat's own attachments, shown in `header`. Counted so a message
           // that is only a photo or a reference can still be sent.
           heldAttachments={attachments.length}
@@ -214,7 +225,7 @@ export function ChatInput({
               </button>
             ) : undefined
           }
-          labels={{ send: 'Send message', stop: 'Stop generating', voice: 'Dictate your message' }}
+          labels={{ send: sendLabel, stop: 'Stop generating', voice: 'Dictate your message' }}
         />
 
         {attachError && (
