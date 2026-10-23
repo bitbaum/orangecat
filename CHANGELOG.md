@@ -17,6 +17,7 @@ to the map, sub-bullets stay here for the human reader.
 - **Dead ends say why, and offer a person-to-person way forward.** The pay page for someone with no wallet now reads the same as Send, with the same one-line way to message them.
 - **Notifications count in your currency.** "Lena asked you for CHF 20.00" and "You were paid CHF 5.00" instead of BTC decimals; a request you asked for tells you who paid it.
 - **Ask Cat from Home with the same composer as chat.** Type or dictate your intent, then open Cat with your words intact. Home no longer opens the keyboard automatically; chat actions follow the app’s monochrome button style.
+- **Task filters apply what you choose.** Type and archived choices now reach the API. Filter controls have labels, phone actions keep their names, tasks open with keyboard-accessible links, and a failed list offers Retry.
 
 ## 2026-10-22
 
