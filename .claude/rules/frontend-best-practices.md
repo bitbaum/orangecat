@@ -78,6 +78,26 @@ There is no `bitcoin-orange` utility class — `text-bitcoin-orange` renders not
 
 ---
 
+### Two global rules that quietly fight your classes
+
+Both live in `src/app/globals.css` and both cost an afternoon to find. Read
+them before you wonder why a screen "looks loose" or a size "does nothing".
+
+- **Every `<p>` has `margin-bottom: 0.75rem`** (1rem from `sm:`). A stack of
+  paragraphs — a name over a handle over a sentence — comes out with 12px gaps
+  nobody asked for, and a list looks like a form. In any stacked group, give the
+  paragraphs `mb-0` (or use `<span className="block">`) and let the parent set
+  the rhythm with `gap-*` / `space-y-*`.
+- **Every text `<input>` is pinned to `font-size: 16px !important`**, so iOS
+  does not zoom on focus. A `text-3xl` on an input is silently ignored — and no
+  utility class can win, because an important rule in an earlier cascade layer
+  beats an important rule in a later one. iOS only zooms text _smaller_ than
+  16px, so a larger input is safe: add the `oc-figure-input` class, the one
+  exemption written into the rule (the amount field uses it).
+
+Verify layout the way the owner sees it: at 390px, in light and dark, in a
+real browser. Reading the classes finds neither of the above.
+
 ### Spacing
 
 **Use Tailwind spacing scale (4px base)**:

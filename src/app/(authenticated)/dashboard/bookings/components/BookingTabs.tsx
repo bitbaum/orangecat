@@ -1,9 +1,9 @@
-import { Filter } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
+import { COMPONENT_STYLES } from '@/config/design-system';
 import { STATUS } from '@/config/database-constants';
 
 type TabType = 'incoming' | 'confirmed' | 'history';
-type FilterStatus = 'all' | 'pending' | 'confirmed' | 'completed' | 'cancelled';
+type FilterStatus = 'all' | 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'rejected';
 
 interface TabConfig {
   id: TabType;
@@ -28,48 +28,32 @@ export default function BookingTabs({
 }: BookingTabsProps) {
   return (
     <>
-      <div className="border-b border-default mb-6">
-        <nav className="-mb-px flex space-x-8">
-          {tabs.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => onTabChange(tab.id)}
-              className={cn(
-                'py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap',
-                activeTab === tab.id
-                  ? 'border-fg-primary text-fg-primary'
-                  : 'border-transparent text-fg-secondary hover:text-fg-primary hover:border-strong dark:hover:border-default'
-              )}
-            >
-              {tab.label}
-              {tab.count !== undefined && tab.count > 0 && (
-                <span
-                  className={cn(
-                    'ml-2 py-0.5 px-2 rounded-full text-xs',
-                    activeTab === tab.id
-                      ? 'bg-surface-raised text-fg-primary'
-                      : 'bg-surface-raised text-fg-secondary'
-                  )}
-                >
-                  {tab.count}
-                </span>
-              )}
-            </button>
-          ))}
-        </nav>
-      </div>
+      <SegmentedControl
+        label="Booking view"
+        items={tabs.map(tab => ({
+          value: tab.id,
+          label: tab.count ? `${tab.label} (${tab.count})` : tab.label,
+        }))}
+        value={activeTab}
+        onChange={onTabChange}
+        className="mb-6"
+      />
 
       {activeTab === 'history' && (
         <div className="mb-6 flex items-center gap-2">
-          <Filter className="h-4 w-4 text-fg-secondary" />
+          <label htmlFor="booking-history-status" className="text-sm text-fg-secondary">
+            Status
+          </label>
           <select
+            id="booking-history-status"
             value={filterStatus}
             onChange={e => onFilterChange(e.target.value as FilterStatus)}
-            className="text-sm border border-strong dark:bg-surface-raised dark:text-fg-primary rounded-md px-3 py-1.5"
+            className={COMPONENT_STYLES.field.control + ' min-h-11 px-3 py-2 text-base'}
           >
             <option value="all">All</option>
             <option value={STATUS.BOOKINGS.COMPLETED}>Completed</option>
             <option value={STATUS.BOOKINGS.CANCELLED}>Cancelled</option>
+            <option value={STATUS.BOOKINGS.REJECTED}>Rejected</option>
           </select>
         </div>
       )}

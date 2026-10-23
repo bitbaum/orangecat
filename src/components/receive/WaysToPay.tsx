@@ -15,6 +15,7 @@
  */
 
 import { Plus } from 'lucide-react';
+import { RailGlyph } from '@/components/payment/RailGlyph';
 import { Button } from '@/components/ui/Button';
 import {
   BITCOIN_RAIL,
@@ -44,7 +45,7 @@ interface WaysToPayProps {
   removingId?: string | null;
 }
 
-const ROW = 'flex items-center justify-between gap-3 px-4 py-3';
+const ROW = 'flex items-center gap-3 px-4 py-4';
 const ACTION = 'shrink-0';
 
 export function WaysToPay({ bitcoin, methods, onAdd, onRemove, removingId }: WaysToPayProps) {
@@ -62,12 +63,13 @@ export function WaysToPay({ bitcoin, methods, onAdd, onRemove, removingId }: Way
 
       <ul className="divide-y divide-subtle rounded-lg border border-subtle bg-surface-base">
         <li className={ROW}>
-          <div className="min-w-0">
-            <p className="font-medium text-fg-primary">{BITCOIN_RAIL.name}</p>
+          <RailGlyph kind="bitcoin" className="self-start" />
+          <div className="min-w-0 flex-1">
+            <p className="mb-0 font-medium text-fg-primary">{BITCOIN_RAIL.name}</p>
             {bitcoin.address && (
-              <p className="truncate font-mono text-sm text-fg-secondary">{bitcoin.address}</p>
+              <p className="mb-0 truncate font-mono text-sm text-fg-secondary">{bitcoin.address}</p>
             )}
-            <p className="text-sm text-fg-tertiary">
+            <p className="mb-0 text-xs text-fg-tertiary">
               {bitcoinLine}
               {bitcoin.active && ` · ${payerLearns(BITCOIN_RAIL.reveals, bitcoin.handle)}`}
             </p>
@@ -81,15 +83,16 @@ export function WaysToPay({ bitcoin, methods, onAdd, onRemove, removingId }: Way
           const kind = PAYMENT_METHODS[row.method];
           return (
             <li key={row.id} className={ROW}>
-              <div className="min-w-0">
-                <p className="font-medium text-fg-primary">
+              <RailGlyph kind={kind.handleKind} className="self-start" />
+              <div className="min-w-0 flex-1">
+                <p className="mb-0 font-medium text-fg-primary">
                   {kind.name}
                   {row.label && <span className="text-fg-secondary"> · {row.label}</span>}
                 </p>
-                <p className="truncate font-mono text-sm text-fg-secondary">
+                <p className="mb-0 truncate font-mono text-sm text-fg-secondary">
                   {formatPaymentHandle(row.method, row.handle)}
                 </p>
-                <p className="text-sm text-fg-tertiary">
+                <p className="mb-0 text-xs text-fg-tertiary">
                   {PAYMENT_METHODS_COPY.visibilityWord[row.visibility]} ·{' '}
                   {payerLearns(kind.reveals)}
                 </p>
@@ -120,7 +123,7 @@ export function WaysToPay({ bitcoin, methods, onAdd, onRemove, removingId }: Way
         </li>
       </ul>
 
-      <p className="mt-2 text-sm text-fg-tertiary">{PAYMENT_METHODS_COPY.outsideNote}</p>
+      <p className="mb-0 mt-2 text-sm text-fg-tertiary">{PAYMENT_METHODS_COPY.outsideNote}</p>
     </section>
   );
 }

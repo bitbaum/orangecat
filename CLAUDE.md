@@ -86,16 +86,19 @@ labels that don't say anything"), and should never have to again.
 **The reference implementation is the money surface** (`/receive`, `/send`,
 `/requests`, `/pay/<username>`):
 
-| Rule                                                     | Where it lives                                                                 |
-| -------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| Siblings share one frame: title, one line, tabs, content | `src/components/money/MoneyPage.tsx` — no `icon` prop, on purpose              |
-| Pick one of a few → equal cells in one row               | `src/components/ui/SegmentedControl.tsx`                                       |
-| A few suggestions → an even grid                         | `AmountField` presets: `grid grid-cols-4`, four rungs                          |
-| Two actions together → two equal cells                   | `ReceiveCode`: Copy link · Share in `grid-cols-2`                              |
-| Rows of one list have one anatomy                        | `WaysToPay`, `OtherWaysToPay`, `RequestList`: name, detail, one action right   |
-| Closed-until-wanted is a button that says so             | `src/components/money/OptionalNoteField.tsx` ("Add a note")                    |
-| One primary action, monochrome in-app                    | `variant="primary"`; `variant="accent"` only on public, top-of-funnel surfaces |
-| The icon promises the screen                             | the bottom bar's QR slot opens on a QR (`ReceiveCode`)                         |
+| Rule                                                     | Where it lives                                                                                   |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Siblings share one frame: title, one line, tabs, content | `src/components/money/MoneyPage.tsx` — no `icon` prop, on purpose                                |
+| Pick one of a few → equal cells in one row               | `src/components/ui/SegmentedControl.tsx`                                                         |
+| A few suggestions → an even grid                         | `AmountField` presets: `grid grid-cols-4`, four rungs                                            |
+| Two actions together → two equal cells                   | `ReceiveCode`: Copy link · Share in `grid-cols-2`                                                |
+| Rows of one list have one anatomy                        | `WaysToPay`, `OtherWaysToPay`, `RequestList`: name, detail, one action right                     |
+| Closed-until-wanted is a button that says so             | `src/components/money/OptionalNoteField.tsx` ("Add a note")                                      |
+| One primary action, monochrome in-app                    | `variant="primary"`; `variant="accent"` only on public, top-of-funnel surfaces                   |
+| The icon promises the screen                             | the bottom bar's QR slot opens on a QR (`ReceiveCode`)                                           |
+| An amount is a figure: number large, unit small          | `src/components/money/MoneyFigure.tsx`; the amount being typed is `text-figure` in `AmountField` |
+| The object gets the surface, not the page around it      | `ReceiveCode`: person and code sit on the page; only the QR is a plate, the Cat in its middle    |
+| A row of a list has a face                               | `RailGlyph` leads every way to be paid; only the Bitcoin tile is orange                          |
 
 **Gates** (all in `pnpm run verify`, except the last, which needs a browser
 and a running server — CI runs it against the standalone build):

@@ -11,12 +11,20 @@ to the map, sub-bullets stay here for the human reader.
 
 ## 2026-10-23
 
+- **The money screens are set like they matter.** The amount is now a figure: the number large and centred, the currency small beside it, what actually moves (the Bitcoin amount) quietly beneath — on Send, Request, the pay page, the receipt and every request row. Receive is a poster rather than a box in a box: your name, then the code, with the Cat in its middle (it still scans), then Copy link · Share. Every way to be paid carries a round mark, and the Bitcoin one is the only orange. A confirmation draws its ring and tick instead of dropping in. People with no name show their handle once instead of twice. Underneath: stacked lines no longer carry a hidden 12px gap.
+
+- **Bookings distinguish an empty list from a failed load.** Retry restores a failed request, view choices share one control, and history filters cannot hide incoming or confirmed bookings.
+- **Cat’s editor directions open the editor.** Known creation paths and named editor suggestions become direct links, including answers that show a path as plain text. Duplicate editor suggestions collapse into one action.
+
+- **Ask Cat without an automatic upgrade pitch.** Writing, creating or using another language no longer triggers a model promotion just because of keywords. Model choices remain available in AI settings.
+
 - **A request you paid now says Paid.** Until now a request stayed Pending, with a Pay button, for both people — even after the money had moved, which invited paying twice. The pay link from a request now names it, so the payment answers it: the request turns Paid, the person who asked is told who paid and for what, and opening the old link shows "This request is already paid" instead of an empty form. A payment smaller than the ask leaves it open.
 - **A send that times out no longer invites a second payment.** Lightning has no cancel, so a timeout can still go through. Send used to drop you back on the filled-in form with the button live; it now stops on "Not confirmed yet", asks you to check your wallet, and starts clean.
 - **Send says it before you type an amount.** Your own name now reads "That's you", and someone who can only be paid on-chain gets a link to their pay page instead of a refusal after the review step.
 - **Dead ends say why, and offer a person-to-person way forward.** The pay page for someone with no wallet now reads the same as Send, with the same one-line way to message them.
 - **Notifications count in your currency.** "Lena asked you for CHF 20.00" and "You were paid CHF 5.00" instead of BTC decimals; a request you asked for tells you who paid it.
 - **Ask Cat from Home with the same composer as chat.** Type or dictate your intent, then open Cat with your words intact. Home no longer opens the keyboard automatically; chat actions follow the app’s monochrome button style.
+- **Task filters apply what you choose.** Type and archived choices now reach the API. Filter controls have labels, phone actions keep their names, tasks open with keyboard-accessible links, and a failed list offers Retry.
 
 ## 2026-10-22
 
@@ -30,6 +38,7 @@ to the map, sub-bullets stay here for the human reader.
 
 - **Messages work with keyboard and touch.** New Message closes with Escape and restores focus, the Unread filter says what it shows, and conversation search tolerates typing slips. Failed inquiries offer Retry. The composer clears the mobile bar without a second blank band; shared fields are readable on phones and required textareas enforce validation. A slow session-sync request no longer sends a signed-in reader back to sign-in.
 - **Your articles remain yours to open and edit.** Private article reads, edit/delete controls and profile article lists now use the same author identity as publishing. Followers-only articles check the follow relationship. Writing uses a focused application workspace; published readers remain public.
+- **Tell Cat when an answer missed.** Under every answer, beside Copy and Listen, a thumb up and a thumb down. The thumb down asks why in one tap — wrong, gave up instead of looking, too vague, misread, too long, hard to read — and takes a few words. What you say stays with the conversation, and each night the fleet's reviewer reads the day's conversations beside what Cat was actually able to do, so a wall or a wrong tool is found and fixed without you having to report it twice.
 - **Profile setup is a choice.** Wallet connection is suggested when you need payments, without a Critical badge. Setup controls fit smaller screens, and Show more actually reveals the remaining tasks. Generated identifiers stay out of the welcome heading. The mobile menu and Create sheet support keyboard dismissal and focus management.
 - **Posts require your own signed-in identity.** The older post writer now checks authorship inside the database function, including requests made directly to its API.
 

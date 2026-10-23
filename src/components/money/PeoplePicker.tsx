@@ -34,24 +34,30 @@ export function PeoplePicker({ people, onPick }: PeoplePickerProps) {
       className="divide-y divide-subtle overflow-hidden rounded-lg border border-subtle bg-surface-base"
     >
       {people.map(person => {
-        const shown = person.name ?? `@${person.username}`;
         const why = PEOPLE_COPY.relation[person.relation];
         return (
           <li key={person.id}>
             <button
               type="button"
               onClick={() => onPick(person.username)}
-              className="flex min-h-12 w-full items-center gap-3 px-3 text-left hover:bg-surface-raised"
+              className="flex min-h-14 w-full items-center gap-3 px-3 py-2 text-left hover:bg-surface-raised"
             >
-              <Avatar className="h-8 w-8">
+              <Avatar className="h-9 w-9">
                 {person.avatarUrl && <AvatarImage src={person.avatarUrl} alt="" />}
                 <AvatarFallback className="text-sm font-medium text-fg-secondary">
                   {getInitial(person.name ?? person.username)}
                 </AvatarFallback>
               </Avatar>
               <span className="min-w-0 flex-1">
-                <span className="block truncate font-medium text-fg-primary">{shown}</span>
-                <span className="block truncate text-sm text-fg-secondary">@{person.username}</span>
+                {/* A person with no name yet has only their handle: say it once. */}
+                <span className="block truncate font-medium leading-tight text-fg-primary">
+                  {person.name ?? `@${person.username}`}
+                </span>
+                {person.name && (
+                  <span className="mt-0.5 block truncate text-sm leading-tight text-fg-secondary">
+                    @{person.username}
+                  </span>
+                )}
               </span>
               {why && <span className="shrink-0 text-xs text-fg-tertiary">{why}</span>}
             </button>

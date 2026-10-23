@@ -14,6 +14,7 @@
 
 import { useState } from 'react';
 import { Check, Copy, ExternalLink, MessageSquare } from 'lucide-react';
+import { RailGlyph } from '@/components/payment/RailGlyph';
 import { Button } from '@/components/ui/Button';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { useCurrencyConversion } from '@/hooks/useCurrencyConversion';
@@ -80,16 +81,17 @@ export function OtherWaysToPay({
             ? paymentMethodUrl(row.method, row.handle, amount, recipientName)
             : '';
           return (
-            <li key={row.id} className="flex items-center justify-between gap-3 px-4 py-3">
-              <div className="min-w-0">
-                <p className="font-medium text-fg-primary">
+            <li key={row.id} className="flex items-center gap-3 px-4 py-4">
+              <RailGlyph kind={kind.handleKind} className="self-start" />
+              <div className="min-w-0 flex-1">
+                <p className="mb-0 font-medium text-fg-primary">
                   {kind.name}
                   {row.label && <span className="text-fg-secondary"> · {row.label}</span>}
                 </p>
                 {shown ? (
-                  <p className="truncate font-mono text-sm text-fg-secondary">{shown}</p>
+                  <p className="mb-0 truncate font-mono text-sm text-fg-secondary">{shown}</p>
                 ) : (
-                  <p className="text-sm text-fg-secondary">
+                  <p className="mb-0 text-sm text-fg-secondary">
                     {PAYMENT_METHODS_COPY.sharedOnRequest(recipientName)}
                   </p>
                 )}
@@ -131,7 +133,7 @@ export function OtherWaysToPay({
           );
         })}
       </ul>
-      <p className="mt-2 text-center text-xs text-fg-tertiary">
+      <p className="mb-0 mt-2 text-center text-xs text-fg-tertiary">
         {PAYMENT_METHODS_COPY.publicNote(recipientName)}
       </p>
     </section>

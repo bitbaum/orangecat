@@ -92,7 +92,7 @@ export function PaymentQRCode({
   return (
     <div className="space-y-4">
       <div className="text-center">
-        <p className="font-heading text-3xl font-semibold tracking-display text-fg-primary">
+        <p className="mb-0 font-heading text-3xl font-semibold tracking-display text-fg-primary">
           {formatAmountBtc(amountBtc)}
         </p>
         <p className={cn('mt-1 text-sm', urgent ? 'text-status-negative' : 'text-fg-secondary')}>
