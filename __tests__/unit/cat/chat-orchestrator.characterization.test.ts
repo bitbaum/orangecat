@@ -1346,19 +1346,25 @@ describe('streaming', () => {
     expect(extractAndStoreMemories).not.toHaveBeenCalled();
   });
 
-  it('suggests an upgrade when the message wants tools and the model is not agentic', async () => {
-    const a = service('A', { chunks: [{ content: 'x', done: true }] });
-    (resolveProvider as Mock).mockResolvedValue(
-      resolved({ provider: 'groq', modelToUse: 'llama-x', aiService: a })
-    );
-    const res = await run({
-      stream: true,
-      message: 'Create a project for my bakery and find investors',
-    });
-    expect(
-      ((await frames(res)).at(-1) as { suggestUpgrade: boolean }).suggestUpgrade
-    ).toMatchInlineSnapshot(`true`);
-  });
+  it.each([
+    { stream: true, message: 'Create a project for my bakery and find investors' },
+    { stream: true, message: 'I want to write an article. Where is the article editor?' },
+    { stream: true, message: 'я хочу написать статью' },
+    { stream: false, message: 'I want to write an article. Where is the article editor?' },
+  ])(
+    'does not upsell a broad intent guess: $message (stream=$stream)',
+    async ({ stream, message }) => {
+      const a = service('A', { chunks: [{ content: 'x', done: true }] }, result('x', 'llama-x'));
+      (resolveProvider as Mock).mockResolvedValue(
+        resolved({ provider: 'groq', modelToUse: 'llama-x', aiService: a })
+      );
+      const res = await run({ stream, message });
+      const response = stream
+        ? ((await frames(res)).at(-1) as { suggestUpgrade: boolean })
+        : ((await res.json()) as { data: { suggestUpgrade: boolean } }).data;
+      expect(response.suggestUpgrade).toBe(false);
+    }
+  );
 });
 
 // ==================== non-streaming ====================

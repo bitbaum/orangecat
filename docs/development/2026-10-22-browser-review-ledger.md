@@ -27,6 +27,16 @@ After PR #1395 deployed, a new private article was readable by its author and re
 
 The browser checks used a separate guest and its own records. They do not certify the remaining record-dependent routes or the owner's private data. The route table below retains its original discovery states; capture is still distinct from a completed interaction review.
 
+## Follow-up verification — 23 October 2026
+
+The deployed device-draft library retained two drafts across switching and immediate navigation. Cancelling discard restored its opener focus; deleting the last draft moved focus to New draft. Both test drafts were removed, and the 390px viewport had no horizontal overflow.
+
+Deployed notification settings recovered from one injected GET failure through Retry. Category and digest controls stayed disabled during a held save; the separate test account's preference saved and was restored. Cat instructions had a visible accessible label and 16px phone text, with no horizontal overflow.
+
+The Tasks review reproduced an ignored type filter (`type` emitted, `task_type` expected) and found the corresponding archive-key mismatch. A repaired preview passed named controls, both expected query keys and Clear filters resetting both choices. This remains preview validation until its PR deploys. No existing task was mutated.
+
+The dashboard's package composer passed the full repository gate and a deployed 390px handoff twice. Both requests reached Cat exactly once, including a request containing an ampersand and a return after an earlier conversation; Home did not focus the field automatically. Cat's earlier actual article-location answer was “Not in your data”; the navigation-grounding follow-up now correctly names the route but leaves it as plain text with non-navigating named chips. The deployed editor-opening journey still fails; its destination-link adapter passed a 390px preview using an actual production-backend answer: the editor opened without another chat POST. The adapter still needs full verification and deployment verification before this is considered repaired.
+
 ## Route capture ledger
 
 “Captured” only means a phone browser capture exists in this session. Dynamic coverage is representative, not all records.
