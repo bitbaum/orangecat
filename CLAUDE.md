@@ -97,13 +97,20 @@ labels that don't say anything"), and should never have to again.
 | One primary action, monochrome in-app                    | `variant="primary"`; `variant="accent"` only on public, top-of-funnel surfaces |
 | The icon promises the screen                             | the bottom bar's QR slot opens on a QR (`ReceiveCode`)                         |
 
-**Gates** (all in `pnpm run verify`):
+**Gates** (all in `pnpm run verify`, except the last, which needs a browser
+and a running server — CI runs it against the standalone build):
 
 ```bash
 pnpm run check:choice-rows   # a wrapping box of choices (aria-pressed / radio / tab)
 pnpm run check:accent-ink    # white text on the warm accent
 pnpm run check:type-scale    # arbitrary font sizes
 grep -rn '\[#' src/          # raw hex in a class
+BASE_URL=http://localhost:3020 pnpm run check:broken-words
+                             # a word drawn across two lines ("Te / rm") on the
+                             # landing page, the Cat chat and the money surface
+                             # at 320/390/1440 — @bitbaum/chatkit/audit, measured
+                             # in Chromium; E2E_USER_EMAIL/PASSWORD open the
+                             # signed-in pages
 ```
 
 **Before you open a PR with a screen in it**, in this order, every time:

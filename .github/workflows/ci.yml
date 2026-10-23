@@ -222,6 +222,17 @@ jobs:
           PORT=3000 node .next/standalone/server.js &
           pnpm exec wait-on http://localhost:3000
 
+      - name: No word cut across two lines (landing, Cat chat, money surface at 320/390/1440)
+        # A layout fact, measured in a real browser — reading the CSS finds none
+        # of it (scripts/check-broken-words.mjs). With the E2E secrets the
+        # signed-in pages open too; without them the script names the pages it
+        # could not open rather than passing them.
+        env:
+          BASE_URL: http://localhost:3000
+          E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
+          E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
+        run: pnpm run check:broken-words
+
       - name: Validate required P0 E2E env
         id: check-secrets
         env:
