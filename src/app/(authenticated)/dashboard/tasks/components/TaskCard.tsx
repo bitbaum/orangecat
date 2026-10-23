@@ -1,3 +1,6 @@
+import Link from 'next/link';
+import Button from '@/components/ui/Button';
+import { ROUTES } from '@/config/routes';
 import {
   TASK_CATEGORY_LABELS,
   TASK_TYPE_LABELS,
@@ -26,7 +29,6 @@ interface TaskCardProps {
   task: TaskWithRelations;
   onComplete: () => void;
   onFlagAttention: () => void;
-  onClick: () => void;
 }
 
 function formatDueDate(dueDate: string): string {
@@ -50,17 +52,16 @@ function formatDueDate(dueDate: string): string {
   return date.toLocaleDateString(APP_LOCALE, { month: 'short', day: 'numeric' });
 }
 
-export default function TaskCard({ task, onComplete, onFlagAttention, onClick }: TaskCardProps) {
+export default function TaskCard({ task, onComplete, onFlagAttention }: TaskCardProps) {
   const statusInfo = getTaskStatusInfo(task.current_status);
   const priorityInfo = getPriorityInfo(task.priority);
   const isOverdue = task.due_date && new Date(task.due_date) < new Date();
 
   return (
     <div
-      className={`oc-surface oc-card-link cursor-pointer p-4 ${
+      className={`oc-surface relative p-4 ${
         isOverdue ? 'border-status-negative/25 bg-status-negative/10' : 'border-default'
       }`}
-      onClick={onClick}
     >
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
@@ -68,7 +69,14 @@ export default function TaskCard({ task, onComplete, onFlagAttention, onClick }:
             {task.is_reminder && (
               <Bell className="h-3.5 w-3.5 text-fg-primary flex-shrink-0" aria-label="Reminder" />
             )}
-            <h3 className="text-base font-semibold text-fg-primary truncate">{task.title}</h3>
+            <h3 className="text-base font-semibold text-fg-primary break-words">
+              <Link
+                href={ROUTES.DASHBOARD.TASKS_VIEW(task.id)}
+                className="after:absolute after:inset-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
+              >
+                {task.title}
+              </Link>
+            </h3>
             <span
               className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusInfo.className}`}
             >
@@ -85,7 +93,7 @@ export default function TaskCard({ task, onComplete, onFlagAttention, onClick }:
           {task.description && (
             <p className="text-sm text-fg-secondary line-clamp-2 mb-2">{task.description}</p>
           )}
-          <div className="flex items-center gap-3 text-xs text-fg-secondary">
+          <div className="flex flex-wrap items-center gap-3 text-xs text-fg-secondary">
             <span>{TASK_CATEGORY_LABELS[task.category as keyof typeof TASK_CATEGORY_LABELS]}</span>
             <span>&bull;</span>
             <span>{TASK_TYPE_LABELS[task.task_type as keyof typeof TASK_TYPE_LABELS]}</span>
@@ -108,23 +116,29 @@ export default function TaskCard({ task, onComplete, onFlagAttention, onClick }:
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+        <div className="relative z-10 flex items-center gap-2">
           {task.current_status !== TASK_STATUSES.NEEDS_ATTENTION && (
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
               onClick={onFlagAttention}
-              className="p-2 text-status-warning hover:bg-status-warning-subtle rounded-lg transition-colors"
-              title="Flag as needs attention"
+              className="h-11 w-11 p-0 text-status-warning"
+              aria-label={`Flag ${task.title} as needs attention`}
             >
               <AlertTriangle className="h-5 w-5" />
-            </button>
+            </Button>
           )}
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
             onClick={onComplete}
-            className="p-2 text-status-positive hover:bg-status-positive-subtle rounded-lg transition-colors"
-            title="Mark as complete"
+            className="h-11 w-11 p-0 text-status-positive"
+            aria-label={`Mark ${task.title} as complete`}
           >
             <CheckCircle className="h-5 w-5" />
-          </button>
+          </Button>
         </div>
       </div>
     </div>
