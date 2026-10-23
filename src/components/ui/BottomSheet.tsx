@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import FocusTrap from 'focus-trap-react';
@@ -40,6 +40,7 @@ export default function BottomSheet({
   closeOnEscape = true,
 }: BottomSheetProps) {
   const sheetRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
   const startY = useRef(0);
   const currentY = useRef(0);
   const isDragging = useRef(false);
@@ -76,6 +77,7 @@ export default function BottomSheet({
   // Touch handlers for swipe-to-dismiss
   const handleTouchStart = (e: React.TouchEvent) => {
     startY.current = e.touches[0].clientY;
+    currentY.current = startY.current;
     isDragging.current = true;
   };
 
@@ -100,15 +102,14 @@ export default function BottomSheet({
 
     const diff = currentY.current - startY.current;
 
-    // If swiped down more than 100px, close
-    if (diff > 100) {
-      onClose();
-    } else if (sheetRef.current) {
-      // Otherwise, snap back
+    // Snap back even when the caller keeps the sheet open after a failed save.
+    if (sheetRef.current) {
       sheetRef.current.style.transform = 'translateY(0)';
     }
-
     isDragging.current = false;
+    if (diff > 100) {
+      onClose();
+    }
   };
 
   if (!isOpen) {
@@ -122,7 +123,7 @@ export default function BottomSheet({
         className="fixed inset-0 z-50 flex items-end justify-center"
         role="dialog"
         aria-modal="true"
-        aria-labelledby={title ? 'bottom-sheet-title' : undefined}
+        aria-labelledby={title ? titleId : undefined}
       >
         {/* Backdrop */}
         <div
@@ -139,19 +140,28 @@ export default function BottomSheet({
             maxHeight,
             transform: isOpen ? 'translateY(0)' : 'translateY(100%)',
           }}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
         >
           {/* Drag handle */}
-          <div className="flex justify-center pt-3 pb-2">
+          <div
+            className="flex min-h-11 justify-center pt-3 pb-2 touch-none"
+            data-sheet-drag-handle
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onTouchCancel={() => {
+              isDragging.current = false;
+              if (sheetRef.current) {
+                sheetRef.current.style.transform = 'translateY(0)';
+              }
+            }}
+          >
             <div className="w-12 h-1.5 bg-muted rounded-full" aria-hidden="true" />
           </div>
 
           {/* Header */}
           {(title || showCloseButton) && (
             <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-              <h2 id="bottom-sheet-title" className="text-lg font-semibold text-fg-primary">
+              <h2 id={titleId} className="text-lg font-semibold text-fg-primary">
                 {title || ''}
               </h2>
 
