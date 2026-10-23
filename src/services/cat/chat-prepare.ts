@@ -33,6 +33,7 @@ import {
 } from '@/services/cat/conversation-history';
 import { recallMemories } from '@/services/cat/memory';
 import { fetchFullContextForCat, buildFullContextString } from '@/services/ai/document-context';
+import { buildPlatformNavigationContext } from './platform-navigation';
 import { buildAssistantRules } from '@bitbaum/ai-kit/grounding';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 
@@ -171,8 +172,9 @@ export async function prepareCatChat(
   // able to explain Lightning or Twint. The restriction is on inventing facts
   // about THIS user's people and entities, which is the failure that actually
   // costs trust. See @bitbaum/ai-kit/grounding (the packaged harness).
+  const platformNavigation = buildPlatformNavigationContext();
   const groundingRules = contextString
-    ? `\n\n${buildAssistantRules({ subjectNoun: 'profile, entities, contacts and transactions' })}`
+    ? `\n\n${buildAssistantRules({ subjectNoun: 'profile, entities, contacts and transactions' })}\n\n${platformNavigation}`
     : '';
 
   // Examples are appended as labeled text (not injected as fake conversation
@@ -235,7 +237,9 @@ export async function prepareCatChat(
     grounding: {
       // History counts as evidence: a name Cat established two turns ago is
       // fair to reuse, and treating it as novel would flag every follow-up.
-      evidence: [contextString, ...historyMessages.map(m => m.content)].filter(Boolean),
+      evidence: [platformNavigation, contextString, ...historyMessages.map(m => m.content)].filter(
+        Boolean
+      ),
       subjects: collectSubjects(userContext),
     },
   };
