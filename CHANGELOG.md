@@ -20,6 +20,7 @@ to the map, sub-bullets stay here for the human reader.
 
 - **Ask Cat without an automatic upgrade pitch.** Writing, creating or using another language no longer triggers a model promotion just because of keywords. Model choices remain available in AI settings.
 - **Install metadata points to supported app resources.** The manifest no longer advertises missing screenshots, dead payment-protocol pages or an unimplemented file-opening flow. Generated icon files stay unchanged, and duplicate metadata has been removed.
+- **Short-post drafts keep your latest words.** Closing the composer saves immediately. Drafts are separated by account and reply, storage errors offer Retry save, and older device-wide writing requires consent before private recovery.
 
 - **A request you paid now says Paid.** Until now a request stayed Pending, with a Pay button, for both people — even after the money had moved, which invited paying twice. The pay link from a request now names it, so the payment answers it: the request turns Paid, the person who asked is told who paid and for what, and opening the old link shows "This request is already paid" instead of an empty form. A payment smaller than the ask leaves it open.
 - **A send that times out no longer invites a second payment.** Lightning has no cancel, so a timeout can still go through. Send used to drop you back on the filled-in form with the button live; it now stops on "Not confirmed yet", asks you to check your wallet, and starts clean.

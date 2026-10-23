@@ -32,6 +32,7 @@ import {
   ComposerImageChip,
   useComposerImage,
 } from './ComposerImageAttachment';
+import { PostDraftNotice } from './PostDraftNotice';
 import MentionSuggestions from '@/components/mentions/MentionSuggestions';
 import { useContentEditableMentions } from '@/components/mentions/useContentEditableMentions';
 
@@ -246,6 +247,8 @@ const TimelineComposer = React.memo(function TimelineComposer({
               suppressContentEditableWarning
             />
           </div>
+
+          <PostDraftNotice draft={postComposer.draft} />
 
           {showProjects && allowProjectSelection && (
             <ProjectSelectionPanel

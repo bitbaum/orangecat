@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useMemo } from 'react';
 import { logger } from '@/utils/logger';
 import { useAuth } from '@/hooks/useAuth';
 import type { TimelineVisibility, TimelineDisplayEvent, PostImageMeta } from '@/types/timeline';
-import { usePostDraft } from '@/hooks/usePostDraft';
+import { usePostDraft, type PostDraftController } from '@/hooks/usePostDraft';
 import { fetchUserProjects, type UserProject } from '@/services/timeline/utils/post-composer';
 import { usePostSubmission } from './usePostSubmission';
 import { TIMELINE_CONTENT_LIMITS } from '@/config/timeline';
@@ -30,6 +30,7 @@ export interface PostComposerOptions {
 }
 
 interface PostComposerState {
+  draft: PostDraftController;
   content: string;
   setContent: (content: string) => void;
   visibility: TimelineVisibility;
@@ -81,11 +82,20 @@ export function usePostComposer(options: PostComposerOptions = {}): PostComposer
   const [loadingProjects, setLoadingProjects] = useState(false);
 
   const draftSetters = useMemo(() => ({ setContent, setVisibility, setSelectedProjects }), []);
-  const { clearDraft } = usePostDraft(
-    { subjectType, subjectId, enableDrafts, debounceMs, defaultVisibility },
+  const draft = usePostDraft(
+    {
+      ownerId: authUser?.id,
+      subjectType,
+      subjectId,
+      parentEventId,
+      enableDrafts,
+      debounceMs,
+      defaultVisibility,
+    },
     { content, visibility, selectedProjects },
     draftSetters
   );
+  const { clearDraft } = draft;
 
   useEffect(() => {
     if (!allowProjectSelection || !user?.id) {
@@ -185,6 +195,7 @@ export function usePostComposer(options: PostComposerOptions = {}): PostComposer
   }, []);
 
   return {
+    draft,
     content,
     setContent: handleSetContent,
     visibility,
