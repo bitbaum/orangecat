@@ -1,12 +1,8 @@
 /**
- * GET /api/v1/search?q=...&type=all — public semantic search over the economy.
- *
- * The bridge that lets Loki (or any client) query OrangeCat's economy by
- * MEANING without sharing its vector space: send plain query text, OrangeCat
- * embeds it server-side with its own model, runs the same match_content the Cat
- * uses, and returns meaning-ranked matches (needs, supply, projects, people).
- * Public — searches only already-public entities, so no auth (like /api/v1/demand).
+ * Public economy search shared with Cat: ranked lexical results, typo
+ * correction, and optional semantic candidates checked against current public rows.
  */
+import { createRateLimitResponse, rateLimitSearch } from '@/lib/rate-limit';
 import { NextRequest } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { apiSuccess, apiError } from '@/lib/api/standardResponse';
@@ -16,14 +12,21 @@ import { logger } from '@/utils/logger';
 const VALID_TYPES: readonly SearchType[] = SEARCH_TYPES;
 
 export async function GET(request: NextRequest) {
+  const limited = await rateLimitSearch(request);
+  if (!limited.success) {
+    return createRateLimitResponse(limited);
+  }
   try {
     const url = new URL(request.url);
-    const q = (url.searchParams.get('q') ?? '').trim();
+    const q = (url.searchParams.get('q') ?? '').trim().slice(0, 120);
     if (q.length < 2) {
       return apiError('Query "q" (min 2 chars) is required', 'BAD_REQUEST', 400);
     }
     const typeParam = url.searchParams.get('type') as SearchType | null;
-    const type: SearchType = typeParam && VALID_TYPES.includes(typeParam) ? typeParam : 'all';
+    if (typeParam && !VALID_TYPES.includes(typeParam)) {
+      return apiError('Unknown public search type', 'BAD_REQUEST', 400);
+    }
+    const type: SearchType = typeParam ?? 'all';
 
     const results = await searchPlatform(createAdminClient(), q, type);
     return apiSuccess({ query: q, type, results });

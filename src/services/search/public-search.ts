@@ -54,6 +54,8 @@ export interface PublicSearchPage {
 }
 
 export interface PublicSearchOptions {
+  /** Search callers must distinguish a failed engine from no matches. */
+  throwOnError?: boolean;
   query?: string;
   types?: PublicHitType[];
   limit?: number;
@@ -67,7 +69,7 @@ export interface PublicSearchOptions {
   terms?: string[];
 }
 
-interface SearchRow {
+export interface SearchRow {
   entity_type: string;
   id: string;
   title: string | null;
@@ -106,7 +108,7 @@ export function publicHref(type: string, id: string, pathKey: string | null): st
   return meta ? `${meta.publicBasePath}/${id}` : ROUTES.DISCOVER;
 }
 
-function isFixtureHit(row: SearchRow): boolean {
+export function isFixtureHit(row: SearchRow): boolean {
   if (row.entity_type === 'group') {
     return isFixtureGroupTitle(row.title);
   }
@@ -153,10 +155,18 @@ export function toPublicHit(row: SearchRow): PublicHit {
   };
 }
 
-/** Search (or, with no query, browse) everything public. Never throws. */
+/** Search public rows; interactive callers opt into explicit failure reporting. */
 export async function searchPublic(
   client: AnySupabaseClient,
-  { query = '', types, limit = 24, offset = 0, perType, terms }: PublicSearchOptions = {}
+  {
+    query = '',
+    types,
+    limit = 24,
+    offset = 0,
+    perType,
+    terms,
+    throwOnError = false,
+  }: PublicSearchOptions = {}
 ): Promise<PublicSearchPage> {
   try {
     const { data, error } = await client.rpc('search_public', {
@@ -169,8 +179,7 @@ export async function searchPublic(
       p_terms: terms && terms.length > 0 ? terms : null,
     } as never);
     if (error) {
-      logger.warn('search_public failed', error, 'Search');
-      return { hits: [], total: 0 };
+      throw new Error('Public search is unavailable');
     }
     const rows = (data as SearchRow[] | null) ?? [];
     return {
@@ -179,6 +188,9 @@ export async function searchPublic(
     };
   } catch (error) {
     logger.warn('search_public threw', error, 'Search');
+    if (throwOnError) {
+      throw error;
+    }
     return { hits: [], total: 0 };
   }
 }
@@ -205,12 +217,14 @@ export async function countPublic(
 }
 
 /** Every public title and handle — the text the search vocabulary is built from. */
-export async function publicSearchText(client: AnySupabaseClient): Promise<string[]> {
+export async function publicSearchText(
+  client: AnySupabaseClient,
+  { throwOnError = false }: { throwOnError?: boolean } = {}
+): Promise<string[]> {
   try {
     const { data, error } = await client.rpc('public_search_text', FIXTURE_RPC_ARGS as never);
     if (error) {
-      logger.warn('public_search_text failed', error, 'Search');
-      return [];
+      throw new Error('Search vocabulary is unavailable');
     }
     // A function with one output column returns SETOF text, which PostgREST
     // serves as plain strings; accept the object form too.
@@ -219,6 +233,9 @@ export async function publicSearchText(client: AnySupabaseClient): Promise<strin
       .filter((text): text is string => typeof text === 'string');
   } catch (error) {
     logger.warn('public_search_text threw', error, 'Search');
+    if (throwOnError) {
+      throw error;
+    }
     return [];
   }
 }

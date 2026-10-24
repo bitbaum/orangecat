@@ -5,6 +5,7 @@
  */
 
 import { CAT_CREATABLE_ENTITY_TYPES } from '@/types/cat';
+import { SEARCH_TYPES } from '@/config/public-search-types';
 import { MY_DATA_TOPICS } from './my-data-topics';
 import { SEARCH_SCOPES } from './following-scope';
 
@@ -40,7 +41,7 @@ export const PLATFORM_TOOL_DEFINITION = [
     function: {
       name: 'search_platform',
       description:
-        'Search OrangeCat for people, projects, products, services, events, or causes. Use when the user wants to find, connect with, or discover someone or something on the platform. With scope "following" it searches ONLY the people the user follows — their public timeline posts and listings, newest first — for "what did people I follow post about X?", "anything from my follows this week?", "search the people I follow".',
+        'Search every public kind on OrangeCat: people, projects, products, services, events, causes, organisations, research, wishlists, loans, investments, assets and AI assistants. Use when the user wants to find, connect with, or discover someone or something on the platform. With scope "following" it searches ONLY the people the user follows — their public timeline posts and listings, newest first — for "what did people I follow post about X?", "anything from my follows this week?", "search the people I follow".',
       parameters: {
         type: 'object',
         properties: {
@@ -51,7 +52,7 @@ export const PLATFORM_TOOL_DEFINITION = [
           },
           type: {
             type: 'string',
-            enum: ['all', 'people', 'projects', 'products', 'services', 'events', 'causes'],
+            enum: [...SEARCH_TYPES],
             description: 'Type of content to search. Use "all" when unsure.',
           },
           scope: SCOPE_PARAMETER,
