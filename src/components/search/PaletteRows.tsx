@@ -1,7 +1,7 @@
 'use client';
 
 import { Command } from 'cmdk';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, RefreshCw } from 'lucide-react';
 import { Highlight } from './Highlight';
 import type { PaletteItem, RankedItem } from './command-palette-items';
 import type { Range } from '@bitbaum/searchkit';
@@ -90,5 +90,24 @@ export function PaletteRow({
       )}
       <ArrowRight className="ml-auto h-3.5 w-3.5 flex-shrink-0 opacity-0 group-aria-selected:opacity-100" />
     </Command.Item>
+  );
+}
+
+export function PaletteSearchFailure({
+  message,
+  label,
+  onRetry,
+}: {
+  message: string;
+  label: string;
+  onRetry: () => void;
+}) {
+  return (
+    <Command.Group heading="Search unavailable" className={GROUP_HEADING}>
+      <p role="alert" className="px-3 py-2 text-sm text-fg-secondary">
+        {message}
+      </p>
+      <PaletteRow icon={RefreshCw} label={label} value={label} onSelect={onRetry} />
+    </Command.Group>
   );
 }

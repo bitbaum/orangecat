@@ -56,6 +56,7 @@ export async function embedTexts(inputs: string[]): Promise<(number[] | null)[]>
   try {
     const res = await fetch(`${baseUrl()}/embeddings`, {
       method: 'POST',
+      signal: AbortSignal.timeout(10_000),
       headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ model: model(), input: payloadInput }),
     });
@@ -74,7 +75,18 @@ export async function embedTexts(inputs: string[]): Promise<(number[] | null)[]>
     const out: (number[] | null)[] = inputs.map(() => null);
     for (const row of data.data ?? []) {
       // null out the placeholder rows whose source was empty
-      out[row.index] = cleaned[row.index].length > 0 ? row.embedding : null;
+      if (
+        row &&
+        Number.isInteger(row.index) &&
+        row.index >= 0 &&
+        row.index < cleaned.length &&
+        cleaned[row.index].length > 0 &&
+        Array.isArray(row.embedding) &&
+        row.embedding.length === EMBEDDINGS_DIM &&
+        row.embedding.every(Number.isFinite)
+      ) {
+        out[row.index] = row.embedding;
+      }
     }
     return out;
   } catch (err) {

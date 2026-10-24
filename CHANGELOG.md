@@ -12,6 +12,7 @@ to the map, sub-bullets stay here for the human reader.
 ## 2026-10-23
 
 - **Request validation uses patched parsers.** Updated runtime validation and compressed-body parsing dependencies to close denial-of-service advisories.
+- **Cat searches the same public directory as Discover.** Typo corrections and supported categories now carry through to Cat and the public search API. Semantic candidates use current public records; failed search offers Retry, and private suggestions clear when you change accounts.
 
 - **Pay from your own wallet in one tap.** If you are signed in with a wallet connected, a pay link now offers **Pay from my wallet**: it pays the invoice without leaving the page, and the receipt appears as before — the request turns Paid, and the person who was paid is told it was you by name. Paying from a wallet this way is the one case where they see who paid; scanning the code with any other wallet stays anonymous, and the page says so under the button. If your wallet says no, the code is still there to pay from another wallet. If it times out, the page keeps watching the same invoice and offers no second payment: Lightning has no cancel, so a retry could pay twice.
 
