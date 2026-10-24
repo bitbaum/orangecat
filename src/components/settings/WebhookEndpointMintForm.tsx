@@ -17,6 +17,7 @@
  */
 
 import Button from '@/components/ui/Button';
+import { IntegrationCreateForm } from './IntegrationCreateForm';
 import { Plus } from 'lucide-react';
 import { PUBLIC_API_WEBHOOK_EVENTS } from '@/config/public-api';
 
@@ -53,12 +54,7 @@ export default function WebhookEndpointMintForm({
   onSubmit,
 }: Props) {
   return (
-    <form
-      onSubmit={onSubmit}
-      className="space-y-3 rounded-lg border border-subtle bg-surface-raised/20 p-4"
-    >
-      <h3 className="text-sm font-medium text-fg-primary">Create a new endpoint</h3>
-
+    <IntegrationCreateForm title="Create a new endpoint" disabled={minting} onSubmit={onSubmit}>
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="text-xs text-fg-secondary sm:col-span-1">
           Name
@@ -75,10 +71,15 @@ export default function WebhookEndpointMintForm({
         <label className="text-xs text-fg-secondary sm:col-span-1">
           Acts as
           <select
+            required
+            disabled={actors.length === 0}
             value={selectedActorId ?? ''}
             onChange={e => onActorChange(e.target.value || null)}
             className="mt-1 w-full rounded-md border border-subtle bg-surface-page px-3 py-2 text-sm text-fg-primary focus:border-interactive/50 focus:outline-none"
           >
+            <option value="" disabled>
+              Choose an identity
+            </option>
             {actors.map(actor => (
               <option key={actor.actor_id} value={actor.actor_id}>
                 {actor.label}
@@ -111,14 +112,14 @@ export default function WebhookEndpointMintForm({
           {PUBLIC_API_WEBHOOK_EVENTS.map(eventName => (
             <label
               key={eventName}
-              className="flex items-center gap-1.5 text-[11px] text-fg-primary"
+              className="flex min-h-11 min-w-0 items-center gap-2 rounded-md px-2 text-sm text-fg-primary"
             >
               <input
                 type="checkbox"
                 checked={selectedEvents.has(eventName)}
                 onChange={() => onToggleEvent(eventName)}
               />
-              <code className="rounded bg-surface-raised px-1 text-2xs">{eventName}</code>
+              <code className="break-all text-xs">{eventName}</code>
             </label>
           ))}
         </div>
@@ -128,6 +129,6 @@ export default function WebhookEndpointMintForm({
         <Plus className="mr-1 h-4 w-4" />
         {minting ? 'Creating…' : 'Create endpoint'}
       </Button>
-    </form>
+    </IntegrationCreateForm>
   );
 }

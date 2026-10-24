@@ -16,6 +16,7 @@
  */
 
 import Button from '@/components/ui/Button';
+import { IntegrationCreateForm } from './IntegrationCreateForm';
 import { Plus } from 'lucide-react';
 import { PUBLIC_API_ENTITY_TYPES, PUBLIC_API_SCOPE_TOKENS } from '@/config/public-api';
 
@@ -34,25 +35,29 @@ interface ScopeRowProps {
 
 function ScopeRow({ label, readToken, writeToken, selectedScopes, onToggle }: ScopeRowProps) {
   return (
-    <>
-      <span className="capitalize text-fg-primary">{label}</span>
-      <label className="flex items-center gap-1.5 text-fg-primary">
-        <input
-          type="checkbox"
-          checked={selectedScopes.has(readToken)}
-          onChange={() => onToggle(readToken)}
-        />
-        <code className="rounded bg-surface-raised px-1 text-2xs">{readToken}</code>
-      </label>
-      <label className="flex items-center gap-1.5 text-fg-primary">
-        <input
-          type="checkbox"
-          checked={selectedScopes.has(writeToken)}
-          onChange={() => onToggle(writeToken)}
-        />
-        <code className="rounded bg-surface-raised px-1 text-2xs">{writeToken}</code>
-      </label>
-    </>
+    <fieldset className="min-w-0 rounded-md border border-subtle p-2">
+      <legend className="px-1 text-sm font-medium capitalize text-fg-primary">{label}</legend>
+      <div className="grid grid-cols-2 gap-2">
+        <label className="flex min-h-11 min-w-0 items-center gap-2 rounded-md px-2 text-fg-primary">
+          <input
+            type="checkbox"
+            aria-label={`Read ${label}`}
+            checked={selectedScopes.has(readToken)}
+            onChange={() => onToggle(readToken)}
+          />
+          <span className="text-sm">Read</span>
+        </label>
+        <label className="flex min-h-11 min-w-0 items-center gap-2 rounded-md px-2 text-fg-primary">
+          <input
+            type="checkbox"
+            aria-label={`Write ${label}`}
+            checked={selectedScopes.has(writeToken)}
+            onChange={() => onToggle(writeToken)}
+          />
+          <span className="text-sm">Write</span>
+        </label>
+      </div>
+    </fieldset>
   );
 }
 
@@ -90,12 +95,7 @@ export default function IntegrationKeyMintForm({
   onSubmit,
 }: Props) {
   return (
-    <form
-      onSubmit={onSubmit}
-      className="space-y-3 rounded-lg border border-subtle bg-surface-raised/20 p-4"
-    >
-      <h3 className="text-sm font-medium text-fg-primary">Create a new key</h3>
-
+    <IntegrationCreateForm title="Create a new key" disabled={minting} onSubmit={onSubmit}>
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="text-xs text-fg-secondary">
           Name
@@ -112,10 +112,15 @@ export default function IntegrationKeyMintForm({
         <label className="text-xs text-fg-secondary">
           Acts as
           <select
+            required
+            disabled={actors.length === 0}
             value={selectedActorId ?? ''}
             onChange={e => onActorChange(e.target.value || null)}
             className="mt-1 w-full rounded-md border border-subtle bg-surface-page px-3 py-2 text-sm text-fg-primary focus:border-interactive/50 focus:outline-none"
           >
+            <option value="" disabled>
+              Choose an identity
+            </option>
             {actors.map(actor => (
               <option key={actor.actor_id} value={actor.actor_id}>
                 {actor.label}
@@ -127,21 +132,24 @@ export default function IntegrationKeyMintForm({
 
       <fieldset className="space-y-2 rounded-md border border-subtle bg-surface-page/40 p-3">
         <legend className="px-1 text-xs text-fg-secondary">Environment</legend>
-        <label className="flex items-center gap-2 text-xs text-fg-primary">
+        <label className="flex min-h-11 items-start gap-2 text-sm text-fg-primary">
           <input
             type="checkbox"
             checked={isTest}
             onChange={e => onIsTestChange(e.target.checked)}
+            className="mt-1 shrink-0"
           />
-          Sandbox key (prefix <code className="rounded bg-surface-raised px-1">ock_test_</code>) —
-          only reads and writes test entities. Use for integration testing without touching
-          production data.
+          <span>
+            Sandbox key (prefix <code className="rounded bg-surface-raised px-1">ock_test_</code>) —
+            only reads and writes test entities. Use for integration testing without touching
+            production data.
+          </span>
         </label>
       </fieldset>
 
       <fieldset className="space-y-2 rounded-md border border-subtle bg-surface-page/40 p-3">
         <legend className="px-1 text-xs text-fg-secondary">Permissions</legend>
-        <label className="flex items-center gap-2 text-xs text-fg-primary">
+        <label className="flex min-h-11 items-center gap-2 text-sm text-fg-primary">
           <input
             type="radio"
             name="permissions"
@@ -153,7 +161,7 @@ export default function IntegrationKeyMintForm({
           />
           Full access (wildcard) — the key can call every public endpoint on its actor.
         </label>
-        <label className="flex items-center gap-2 text-xs text-fg-primary">
+        <label className="flex min-h-11 items-center gap-2 text-sm text-fg-primary">
           <input
             type="radio"
             name="permissions"
@@ -164,10 +172,7 @@ export default function IntegrationKeyMintForm({
         </label>
         {restrictPermissions && (
           <div className="mt-2 rounded-md border border-subtle bg-surface-raised/20 p-3">
-            <div className="grid grid-cols-[auto,1fr,1fr] items-center gap-x-3 gap-y-1.5 text-xs">
-              <span className="text-fg-secondary" />
-              <span className="text-fg-secondary">Read</span>
-              <span className="text-fg-secondary">Write</span>
+            <div className="grid gap-2 sm:grid-cols-2">
               {PUBLIC_API_ENTITY_TYPES.map(entity => (
                 <ScopeRow
                   key={entity}
@@ -192,6 +197,6 @@ export default function IntegrationKeyMintForm({
         <Plus className="mr-1 h-4 w-4" />
         {minting ? 'Creating…' : 'Create key'}
       </Button>
-    </form>
+    </IntegrationCreateForm>
   );
 }

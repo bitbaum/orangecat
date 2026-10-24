@@ -30,7 +30,13 @@ import ConnectedAppsCard from '@/components/settings/ConnectedAppsCard';
 
 export default function IntegrationsPage() {
   const { user, isLoading: authLoading } = useRequireAuth();
-  const { personalActor, groupActors } = useMessagingActors();
+  const {
+    personalActor,
+    groupActors,
+    isLoading: actorsLoading,
+    error: actorsError,
+    retry: retryActors,
+  } = useMessagingActors();
 
   if (authLoading) {
     return <Loading fullScreen message="Loading integrations..." />;
@@ -69,6 +75,21 @@ export default function IntegrationsPage() {
 
   return (
     <div className="space-y-10">
+      {actorsLoading && (
+        <p role="status" className="text-sm text-fg-secondary">
+          Loading integration identities…
+        </p>
+      )}
+      {actorsError && (
+        <div className="space-y-3 rounded-lg border border-default p-4">
+          <p role="alert" className="text-sm text-status-negative">
+            Could not load who your integrations act as.
+          </p>
+          <Button variant="outline" onClick={retryActors}>
+            Retry loading identities
+          </Button>
+        </div>
+      )}
       <div>
         <p className="text-sm text-fg-secondary">
           See which apps can act as you, let external services authenticate to OrangeCat, and

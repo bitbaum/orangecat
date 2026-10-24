@@ -4,7 +4,7 @@
  * @module features/messaging/hooks/useMessagingActors
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { logger } from '@/utils/logger';
 import { API_ROUTES } from '@/config/api-routes';
@@ -23,18 +23,25 @@ interface UseMessagingActorsResult {
   error: string | null;
   personalActor: MessagingActor | null;
   groupActors: MessagingActor[];
+  retry: () => void;
 }
 
 export function useMessagingActors(): UseMessagingActorsResult {
   const { user } = useAuth();
+  const userId = user?.id;
   const [actors, setActors] = useState<MessagingActor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
+  const retry = useCallback(() => setAttempt(value => value + 1), []);
 
   useEffect(() => {
-    if (!user) {
-      setActors([]);
+    let cancelled = false;
+    const controller = new AbortController();
+    setActors([]);
+    if (!userId) {
       setIsLoading(false);
+      setError(null);
       return;
     }
 
@@ -45,6 +52,7 @@ export function useMessagingActors(): UseMessagingActorsResult {
       try {
         const response = await fetch(API_ROUTES.MESSAGES.ACTORS, {
           credentials: 'include',
+          signal: controller.signal,
         });
 
         if (!response.ok) {
@@ -52,19 +60,32 @@ export function useMessagingActors(): UseMessagingActorsResult {
         }
 
         const data = await response.json();
-        setActors(data.actors || []);
+        if (!Array.isArray(data.data?.actors)) {
+          throw new Error('The identities response was incomplete');
+        }
+        if (!cancelled) {
+          setActors(data.data.actors);
+        }
       } catch (err) {
+        if (cancelled) {
+          return;
+        }
         logger.error('Failed to fetch messaging actors', { error: err }, 'MessagingActors');
         setError(err instanceof Error ? err.message : 'Unknown error');
         setActors([]);
       } finally {
-        setIsLoading(false);
+        if (!cancelled) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchActors();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [userId, attempt]);
 
   const personalActor = actors.find(a => a.is_personal) || null;
   const groupActors = actors.filter(a => !a.is_personal);
@@ -75,5 +96,6 @@ export function useMessagingActors(): UseMessagingActorsResult {
     error,
     personalActor,
     groupActors,
+    retry,
   };
 }
