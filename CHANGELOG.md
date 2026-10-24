@@ -9,6 +9,10 @@ reads, and [orangecat.ch/changelog](https://orangecat.ch/changelog) renders
 it from there. One `## YYYY-MM-DD` heading per day; bullets under it travel
 to the map, sub-bullets stay here for the human reader.
 
+## 2026-10-24
+
+- **A request for CHF 20 stays CHF 20.** When you ask someone for money in a currency, the request is held in that currency until it is paid. The person asked sees "CHF 20.00" in their notification and in the list, and the pay page opens on what CHF 20 comes to in Bitcoin that day, not on the Bitcoin figure frozen into the link when you asked. The request turns Paid when the payment covers the ask at that day's rate, with two percent of room for the rate moving between the invoice and the payment. Requests made in BTC work as before. If we have no rate for your currency, the request is not sent, and the screen says so rather than guessing a figure.
+
 ## 2026-10-23
 
 - **Request validation uses patched parsers.** Updated runtime validation and compressed-body parsing dependencies to close denial-of-service advisories.

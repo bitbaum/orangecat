@@ -18,6 +18,12 @@ vi.mock('@/services/currency/format-for-user.server', () => ({
   formatBtcForUser: vi.fn(async () => 'CHF 20.00'),
 }));
 
+// 1 CHF = 0.00001 BTC, unless a test says there is no rate.
+const rateOf = vi.fn(async (amount: number): Promise<number | null> => amount * 0.00001);
+vi.mock('@/services/currency/rates.server', () => ({
+  convertToBtcOrNull: (amount: number) => rateOf(amount),
+}));
+
 interface Recorded {
   table: string;
   values: Record<string, unknown>;
@@ -62,6 +68,7 @@ const dispatch = NotificationDispatcher.dispatch as ReturnType<typeof vi.fn>;
 beforeEach(() => {
   vi.clearAllMocks();
   updates.length = 0;
+  rateOf.mockImplementation(async (amount: number) => amount * 0.00001);
   requestRow = { id: 'r1', payer_id: 'marco', amount_btc: 0.0002, note: 'dinner' };
   moved = [{ id: 'r1' }];
 });
@@ -106,5 +113,43 @@ describe('settlePaymentRequest', () => {
     moved = [];
     expect(await settlePaymentRequest(intent())).toBe(true);
     expect(dispatch).not.toHaveBeenCalled();
+  });
+
+  describe('a request asked for in a currency', () => {
+    // CHF 20 was 0.0002 BTC when asked; Bitcoin has since gone up, so CHF 20
+    // is now only 0.00016 BTC (1 CHF = 0.000008 BTC).
+    beforeEach(() => {
+      requestRow = {
+        id: 'r1',
+        payer_id: 'marco',
+        amount_btc: 0.0002,
+        ask_amount: 20,
+        ask_currency: 'CHF',
+        note: 'dinner',
+      };
+      rateOf.mockImplementation(async (amount: number) => amount * 0.000008);
+    });
+
+    it('is met by what the currency buys today, not by the Bitcoin it was worth when asked', async () => {
+      expect(await settlePaymentRequest(intent({ amount_btc: 0.00016 }))).toBe(true);
+      expect(updates.find(u => u.table === 'payment_requests')?.values).toMatchObject({
+        status: 'paid',
+      });
+    });
+
+    it('forgives the rate moving a little between the invoice and the payment', async () => {
+      expect(await settlePaymentRequest(intent({ amount_btc: 0.000158 }))).toBe(true);
+    });
+
+    it('still stays open when the payment is a smaller number', async () => {
+      expect(await settlePaymentRequest(intent({ amount_btc: 0.00012 }))).toBe(false);
+      expect(updates).toHaveLength(0);
+    });
+
+    it('falls back to the Bitcoin it was worth when asked if there is no rate', async () => {
+      rateOf.mockResolvedValue(null);
+      expect(await settlePaymentRequest(intent({ amount_btc: 0.00016 }))).toBe(false);
+      expect(await settlePaymentRequest(intent({ amount_btc: 0.0002 }))).toBe(true);
+    });
   });
 });

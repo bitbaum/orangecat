@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/Button';
 import { MoneyFigure } from '@/components/money/MoneyFigure';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import type { PaymentRequestRow } from '@/services/payment-requests/request-client';
+import { requestAmountLabel } from '@/components/requests/request-amount';
 import { REQUEST_COPY } from '@/config/payment-requests';
 import { buildPayUrl, payLinkOrigin } from '@/config/pay';
 
@@ -62,7 +63,7 @@ export function RequestList({
               <li key={row.id} className="flex items-center justify-between gap-3 px-3 py-3">
                 <div className="min-w-0">
                   <MoneyFigure
-                    label={formatAmountBtc(row.amount_btc)}
+                    label={requestAmountLabel(row, formatAmountBtc)}
                     size="md"
                     className="justify-start"
                   />

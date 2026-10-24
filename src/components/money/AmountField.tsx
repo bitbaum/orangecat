@@ -54,6 +54,12 @@ interface AmountFieldProps {
   presetsBtc?: readonly number[];
   label?: string;
   autoFocus?: boolean;
+  /**
+   * What is typed, in the currency it is typed in — null while entering in BTC.
+   * For a screen that keeps the ask in that currency (a request for CHF 20 stays
+   * CHF 20); the BTC in onChange is only what it is worth now.
+   */
+  onEntry?: (entry: { amount: number; currency: CurrencyCode } | null) => void;
 }
 
 export function AmountField({
@@ -64,6 +70,7 @@ export function AmountField({
   presetsBtc,
   label = 'Amount',
   autoFocus = false,
+  onEntry,
 }: AmountFieldProps) {
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -119,6 +126,19 @@ export function AmountField({
     setDraft(toDraft(fromBtc(emitted.current), decimals));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [unit]);
+
+  // Every path that changes the number — typing, a suggestion, a value from
+  // outside, a unit switch — lands in `draft`, so the entry is read from there.
+  const onEntryRef = useRef(onEntry);
+  onEntryRef.current = onEntry;
+  useEffect(() => {
+    const typed = parseFloat(draft);
+    onEntryRef.current?.(
+      !inBtc && Number.isFinite(typed) && typed > 0
+        ? { amount: typed, currency: displayCurrency }
+        : null
+    );
+  }, [draft, inBtc, displayCurrency]);
 
   const handleDraft = (raw: string) => {
     const next = sanitize(raw);

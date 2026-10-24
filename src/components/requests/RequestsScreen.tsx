@@ -28,7 +28,9 @@ import { OptionalNoteField } from '@/components/money/OptionalNoteField';
 import { RequestList } from '@/components/requests/RequestList';
 import { PayerStatus, isRequestablePayer } from '@/components/requests/PayerStatus';
 import { useRecipientCheck } from '@/components/send/useRecipientCheck';
+import { requestAmountLabel } from '@/components/requests/request-amount';
 import { useRequireAuth } from '@/hooks/useAuth';
+import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { usePeopleFinder } from '@/hooks/usePeopleFinder';
 import {
   createRequest,
@@ -42,12 +44,14 @@ import { haptic } from '@/lib/haptics';
 
 interface SentRequest {
   name: string;
-  amountBtc: number;
+  /** Worded as it was asked: "CHF 20.00" for an ask in francs. */
+  amountLabel: string;
   note: string | null;
 }
 
 export function RequestsScreen() {
   const { user, isLoading: authLoading } = useRequireAuth();
+  const { formatAmountBtc } = useDisplayCurrency();
 
   const [loading, setLoading] = useState(true);
   const [incoming, setIncoming] = useState<PaymentRequestRow[]>([]);
@@ -67,6 +71,8 @@ export function RequestsScreen() {
     (payerCheck.state === 'checking' || payerCheck.state === 'not_found');
   // Empty until typed. An ask for a number the person did not choose is not an ask.
   const [amount, setAmount] = useState(0);
+  // What was typed, when it was typed in a currency: the request keeps it.
+  const [entry, setEntry] = useState<{ amount: number; currency: string } | null>(null);
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -92,10 +98,10 @@ export function RequestsScreen() {
     setSubmitting(true);
     setError(null);
     try {
-      const request = await createRequest(payer, amount, note || undefined);
+      const request = await createRequest(payer, amount, note || undefined, entry);
       setSent({
         name: request.counterparty_name ?? `@${payer.replace(/^@/, '')}`,
-        amountBtc: amount,
+        amountLabel: requestAmountLabel(request, formatAmountBtc),
         note: note || null,
       });
       setPayer('');
@@ -108,7 +114,7 @@ export function RequestsScreen() {
     } finally {
       setSubmitting(false);
     }
-  }, [payer, amount, note, load]);
+  }, [payer, amount, entry, note, load, formatAmountBtc]);
 
   const handleClose = useCallback(
     async (id: string, status: 'cancelled' | 'declined') => {
@@ -142,7 +148,7 @@ export function RequestsScreen() {
       <MoneyPage title={REQUEST_COPY.title} subtitle={REQUEST_COPY.subtitle}>
         <MoneyReceipt
           title={REQUEST_COPY.sent}
-          amountBtc={sent.amountBtc}
+          amountLabel={sent.amountLabel}
           counterparty={sent.name}
           counterpartyLabel="From"
           note={sent.note}
@@ -190,6 +196,7 @@ export function RequestsScreen() {
             <AmountField
               value={amount}
               onChange={setAmount}
+              onEntry={setEntry}
               minBtc={PAY_MIN_BTC}
               maxBtc={PAY_MAX_BTC}
             />

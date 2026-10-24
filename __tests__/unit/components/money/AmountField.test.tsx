@@ -258,3 +258,35 @@ describe('switching the entry unit re-expresses, never re-values', () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 });
+
+describe('what was typed is reported in the currency it was typed in', () => {
+  it('reports the figure, not the Bitcoin it converts to', () => {
+    const onEntry = vi.fn();
+    const { input } = setup({ onEntry });
+
+    fireEvent.change(input, { target: { value: '20' } });
+
+    expect(onEntry).toHaveBeenLastCalledWith({ amount: 20, currency: 'CHF' });
+  });
+
+  it('reports a suggestion as the round number it is', () => {
+    const onEntry = vi.fn();
+    setup({ onEntry });
+
+    fireEvent.click(screen.getByRole('button', { name: 'CHF 10.00' }));
+
+    expect(onEntry).toHaveBeenLastCalledWith({ amount: 10, currency: 'CHF' });
+  });
+
+  it('reports nothing once the amount is entered in BTC, or emptied', () => {
+    const onEntry = vi.fn();
+    const { input } = setup({ onEntry, value: 0.0002 });
+    expect(onEntry).toHaveBeenLastCalledWith({ amount: 20, currency: 'CHF' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Enter in BTC' }));
+    expect(onEntry).toHaveBeenLastCalledWith(null);
+
+    fireEvent.change(input, { target: { value: '' } });
+    expect(onEntry).toHaveBeenLastCalledWith(null);
+  });
+});

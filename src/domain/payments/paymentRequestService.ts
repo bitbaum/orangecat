@@ -23,6 +23,14 @@ import { buildPayUrl } from '@/config/pay';
 import { SITE_URL } from '@/config/brand';
 import { PAY_MAX_BTC, PAY_MIN_BTC } from '@/config/pay';
 import { formatBtcForUser } from '@/services/currency/format-for-user.server';
+import { formatCurrency } from '@/services/currency/formatting';
+import {
+  askToBtcOrNull,
+  FIAT_ASK_TOLERANCE,
+  isAskCurrency,
+  roundAsk,
+  type RequestAsk,
+} from '@/domain/payments/requestAsk';
 import type { PaymentIntent } from '@/domain/payments/types';
 import { logger } from '@/utils/logger';
 
@@ -33,6 +41,9 @@ export interface PaymentRequestRow {
   requester_id: string;
   payer_id: string;
   amount_btc: number;
+  /** Set when the ask was made in a currency; amount_btc is then only what it was worth when asked. */
+  ask_amount: number | null;
+  ask_currency: string | null;
   note: string | null;
   status: PaymentRequestStatus;
   created_at: string;
@@ -62,6 +73,7 @@ export type RequestFailureReason =
   | 'payer_not_found'
   | 'self_request'
   | 'invalid_amount'
+  | 'no_rate'
   | 'requester_cannot_receive'
   | 'not_found'
   | 'not_pending';
@@ -88,9 +100,34 @@ const fail = (reason: RequestFailureReason, message: string): RequestFailure => 
 export async function createPaymentRequest(
   supabase: SupabaseClient,
   requesterId: string,
-  input: { payerUsername: string; amountBtc: number; note?: string }
+  input: {
+    payerUsername: string;
+    amountBtc?: number;
+    ask?: { amount: number; currency: string };
+    note?: string;
+  }
 ): Promise<{ ok: true; request: PaymentRequestRow } | RequestFailure> {
-  const { payerUsername, amountBtc, note } = input;
+  const { payerUsername, note } = input;
+
+  // An ask in a currency is held in that currency. The BTC beside it is worked
+  // out HERE from our own rate, never taken from the browser: it is what the
+  // bounds are checked against and what the lists fall back on.
+  let ask: RequestAsk | null = null;
+  let amountBtc = input.amountBtc ?? NaN;
+  if (input.ask) {
+    if (!isAskCurrency(input.ask.currency) || !(input.ask.amount > 0)) {
+      return fail('invalid_amount', 'Enter an amount we can actually request.');
+    }
+    ask = { amount: roundAsk(input.ask.amount, input.ask.currency), currency: input.ask.currency };
+    const priced = await askToBtcOrNull(ask);
+    if (priced === null) {
+      return fail(
+        'no_rate',
+        `We can't price ${ask.currency} right now. Enter the amount in BTC, or try again in a minute.`
+      );
+    }
+    amountBtc = priced;
+  }
 
   if (!Number.isFinite(amountBtc) || amountBtc < PAY_MIN_BTC || amountBtc > PAY_MAX_BTC) {
     return fail('invalid_amount', 'Enter an amount we can actually request.');
@@ -112,9 +149,13 @@ export async function createPaymentRequest(
       requester_id: requesterId,
       payer_id: payer.userId,
       amount_btc: amountBtc,
+      ask_amount: ask?.amount ?? null,
+      ask_currency: ask?.currency ?? null,
       note: note?.trim() || null,
     })
-    .select('id, requester_id, payer_id, amount_btc, note, status, created_at, paid_at')
+    .select(
+      'id, requester_id, payer_id, amount_btc, ask_amount, ask_currency, note, status, created_at, paid_at'
+    )
     .single();
 
   if (error || !data) {
@@ -147,8 +188,12 @@ async function notifyPayer(request: PaymentRequestRow, requesterId: string): Pro
     const row = requester as { username?: string; display_name?: string } | null;
     const name = row?.display_name || row?.username || 'Someone';
     const forNote = request.note ? ` for ${request.note}` : '';
-    // In the payer's own currency: "CHF 20.00", not "0.00023 BTC".
-    const amount = await formatBtcForUser(admin, request.payer_id, request.amount_btc);
+    // What was asked, in the words it was asked in: "CHF 20.00" for an ask in
+    // francs; otherwise the BTC in the payer's own currency, not "0.00023 BTC".
+    const amount =
+      request.ask_amount && request.ask_currency
+        ? formatCurrency(Number(request.ask_amount), request.ask_currency)
+        : await formatBtcForUser(admin, request.payer_id, request.amount_btc);
 
     await NotificationDispatcher.dispatch({
       userId: request.payer_id,
@@ -184,7 +229,7 @@ export async function listPaymentRequests(
   // profiles, so each embed names its constraint — PostgREST cannot guess.
   const { data } = await fromTable(supabase, DATABASE_TABLES.PAYMENT_REQUESTS)
     .select(
-      `id, requester_id, payer_id, amount_btc, note, status, created_at, paid_at,
+      `id, requester_id, payer_id, amount_btc, ask_amount, ask_currency, note, status, created_at, paid_at,
        requester:profiles!payment_requests_requester_id_fkey(username, name),
        payer:profiles!payment_requests_payer_id_fkey(username, name)`
     )
@@ -279,6 +324,30 @@ export async function getRequestStatusFor(
 }
 
 /**
+ * What an open request asked in a currency comes to in Bitcoin TODAY — for the
+ * pay page, which would otherwise show the number frozen into the link when the
+ * ask was made. Null for a request made in BTC (the link's number is already
+ * exact), for one that is not open, or when there is no rate: the page then
+ * falls back to the link, which is still a suggestion the payer can change.
+ */
+export async function getOpenAskBtcNow(
+  recipientId: string,
+  requestId: string
+): Promise<number | null> {
+  const { data } = await fromTable(getAdminClient(), DATABASE_TABLES.PAYMENT_REQUESTS)
+    .select('ask_amount, ask_currency')
+    .eq('id', requestId)
+    .eq('requester_id', recipientId)
+    .eq('status', 'pending')
+    .maybeSingle();
+  const row = data as { ask_amount: number | string | null; ask_currency: string | null } | null;
+  if (!row?.ask_amount || !isAskCurrency(row.ask_currency)) {
+    return null;
+  }
+  return askToBtcOrNull({ amount: Number(row.ask_amount), currency: row.ask_currency });
+}
+
+/**
  * Settlement found a payment that was minted for a request: if it covers the
  * ask, mark the request paid (the system write the table was designed for) and
  * tell the person who asked, by name, in their own currency.
@@ -296,7 +365,7 @@ export async function settlePaymentRequest(intent: PaymentIntent): Promise<boole
   try {
     const admin = getAdminClient();
     const { data: found } = await fromTable(admin, DATABASE_TABLES.PAYMENT_REQUESTS)
-      .select('id, payer_id, amount_btc, note')
+      .select('id, payer_id, amount_btc, ask_amount, ask_currency, note')
       .eq('id', requestId)
       .eq('requester_id', intent.seller_id)
       .eq('status', 'pending')
@@ -305,12 +374,26 @@ export async function settlePaymentRequest(intent: PaymentIntent): Promise<boole
       id: string;
       payer_id: string;
       amount_btc: number | string;
+      ask_amount: number | string | null;
+      ask_currency: string | null;
       note: string | null;
     } | null;
-    if (
-      !request ||
-      Number(intent.amount_btc) < Number(request.amount_btc) * REQUEST_PAID_TOLERANCE
-    ) {
+    if (!request) {
+      return false;
+    }
+
+    // An ask in a currency is met by what that currency buys today; the stored
+    // BTC is only the fallback when there is no rate to ask.
+    const priced =
+      request.ask_amount && isAskCurrency(request.ask_currency)
+        ? await askToBtcOrNull({
+            amount: Number(request.ask_amount),
+            currency: request.ask_currency,
+          })
+        : null;
+    const required = priced ?? Number(request.amount_btc);
+    const tolerance = request.ask_amount ? FIAT_ASK_TOLERANCE : REQUEST_PAID_TOLERANCE;
+    if (Number(intent.amount_btc) < required * tolerance) {
       return false;
     }
 

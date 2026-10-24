@@ -36,6 +36,8 @@ interface PayPageClientProps {
   methods: PublicPaymentMethod[];
   /** The link came from a request that already has its payment. */
   requestPaid?: boolean;
+  /** An open request asked in a currency, worth this much Bitcoin today. Beats the link's number. */
+  requestAmountBtc?: number | null;
 }
 
 export function PayPageClient({
@@ -45,10 +47,11 @@ export function PayPageClient({
   canReceive,
   methods,
   requestPaid = false,
+  requestAmountBtc = null,
 }: PayPageClientProps) {
   const searchParams = useSearchParams();
   const prefill = useMemo(() => parsePayPrefill(searchParams), [searchParams]);
-  const [amountBtc, setAmountBtc] = useState(prefill.amountBtc ?? 0);
+  const [amountBtc, setAmountBtc] = useState(requestAmountBtc ?? prefill.amountBtc ?? 0);
 
   const noteSlot = prefill.note ? (
     <p className="rounded-md border border-subtle bg-surface-raised/40 px-3 py-2 text-center text-sm text-fg-secondary">
