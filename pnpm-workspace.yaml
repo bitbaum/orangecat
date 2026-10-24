@@ -58,7 +58,7 @@ overrides:
   # surprise major). Dependabot cannot open these itself: they are transitive.
   undici@7: ^7.29.1 # TLS certificate validation bypass (high) + 5 lower, dev-only via jsdom
   brace-expansion@1: ^1.1.21 # quadratic expansion of `{a},b}` (the @5 pin above does not reach major 1)
-  fast-uri@3: ^3.1.8 # inconsistent host case normalization
+  fast-uri@3: ^3.1.9 # inconsistent host case normalization
   ip-address@10: ^10.7.4 # isInSubnet/link-local/NAT64 misclassification, parse-diagnostic DoS
   joi@18: ^18.2.9 # prototype replacement through message compilation
   postcss-selector-parser@7: ^7.1.6 # quadratic selector parsing
