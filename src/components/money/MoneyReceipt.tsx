@@ -30,6 +30,8 @@ interface MoneyReceiptProps {
   title: string;
   /** Omitted when we genuinely don't know it — never guessed. */
   amountBtc?: number | null;
+  /** The amount worded as it was asked, when that is not a BTC figure ("CHF 20.00"). */
+  amountLabel?: string | null;
   /** Who the money moved between, already formatted for display. */
   counterparty?: string | null;
   /** Preposition-style label for the counterparty row: "To", "From". */
@@ -45,6 +47,7 @@ interface MoneyReceiptProps {
 export function MoneyReceipt({
   title,
   amountBtc,
+  amountLabel,
   counterparty,
   counterpartyLabel = 'To',
   note,
@@ -68,9 +71,8 @@ export function MoneyReceipt({
     haptic('success');
   }, []);
 
-  const hasDetail = (amountBtc ?? null) !== null || !!counterparty;
-
-  const hasAmount = amountBtc !== null && amountBtc !== undefined;
+  const hasAmount = !!amountLabel || (amountBtc !== null && amountBtc !== undefined);
+  const hasDetail = hasAmount || !!counterparty;
 
   return (
     <div className="flex flex-col items-center gap-5 py-10 text-center">
@@ -95,7 +97,7 @@ export function MoneyReceipt({
         {hasAmount ? (
           <>
             <p className="mb-0 text-base font-medium text-fg-secondary">{title}</p>
-            <MoneyFigure label={formatAmountBtc(amountBtc as number)} size="hero" />
+            <MoneyFigure label={amountLabel || formatAmountBtc(amountBtc as number)} size="hero" />
           </>
         ) : (
           <p className="mb-0 font-heading tracking-display text-2xl font-bold text-fg-primary">

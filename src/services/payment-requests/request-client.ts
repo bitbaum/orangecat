@@ -22,7 +22,9 @@ export async function fetchPaymentRequests(): Promise<{
 export async function createRequest(
   payerUsername: string,
   amountBtc: number,
-  note?: string
+  note?: string,
+  /** Set when the amount was typed in a currency: the request is held in it. */
+  ask?: { amount: number; currency: string } | null
 ): Promise<PaymentRequestRow> {
   const res = await fetch(API_ROUTES.PAYMENT_REQUESTS.BASE, {
     method: 'POST',
@@ -30,6 +32,7 @@ export async function createRequest(
     body: JSON.stringify({
       payer_username: payerUsername,
       amount_btc: amountBtc,
+      ...(ask ? { ask } : {}),
       ...(note ? { note } : {}),
     }),
   });

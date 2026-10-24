@@ -29,6 +29,12 @@ vi.mock('@/services/notifications/dispatcher', () => ({
   NotificationDispatcher: { dispatch: vi.fn().mockResolvedValue(undefined) },
 }));
 
+// 1 CHF = 0.00001 BTC; a test can say there is no rate.
+const priceMock = vi.fn(async (amount: number): Promise<number | null> => amount * 0.00001);
+vi.mock('@/services/currency/rates.server', () => ({
+  convertToBtcOrNull: (amount: number) => priceMock(amount),
+}));
+
 const adminMock = getAdminClient as Mock;
 const dispatchMock = NotificationDispatcher.dispatch as Mock;
 
@@ -69,7 +75,77 @@ function makeCallerClient(inserted: Record<string, unknown>[]) {
   } as unknown as SupabaseClient;
 }
 
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+  vi.clearAllMocks();
+  priceMock.mockImplementation(async (amount: number) => amount * 0.00001);
+});
+
+describe('createPaymentRequest — asked for in a currency', () => {
+  it('keeps the ask in its currency and prices the Bitcoin itself', async () => {
+    mockAdmin({ id: PAYER, username: 'marco' });
+    const inserted: Record<string, unknown>[] = [];
+    const result = await createPaymentRequest(makeCallerClient(inserted), REQUESTER, {
+      payerUsername: 'marco',
+      // The browser's BTC is ignored: the server's rate is the one that counts.
+      amountBtc: 9,
+      ask: { amount: 20, currency: 'CHF' },
+    });
+    expect(result.ok).toBe(true);
+    expect(inserted[0]).toMatchObject({
+      ask_amount: 20,
+      ask_currency: 'CHF',
+      amount_btc: 0.0002,
+    });
+    expect(dispatchMock).toHaveBeenCalledWith(
+      expect.objectContaining({ title: expect.stringContaining('CHF 20.00') })
+    );
+  });
+
+  it('asks in BTC when no currency is named', async () => {
+    mockAdmin({ id: PAYER, username: 'marco' });
+    const inserted: Record<string, unknown>[] = [];
+    await createPaymentRequest(makeCallerClient(inserted), REQUESTER, {
+      payerUsername: 'marco',
+      amountBtc: 0.0005,
+    });
+    expect(inserted[0]).toMatchObject({ ask_amount: null, ask_currency: null });
+  });
+
+  it('refuses a currency we do not price in, and BTC dressed as a currency', async () => {
+    mockAdmin({ id: PAYER, username: 'marco' });
+    for (const currency of ['XYZ', 'BTC']) {
+      const inserted: Record<string, unknown>[] = [];
+      const result = await createPaymentRequest(makeCallerClient(inserted), REQUESTER, {
+        payerUsername: 'marco',
+        ask: { amount: 20, currency },
+      });
+      expect(result).toMatchObject({ ok: false, reason: 'invalid_amount' });
+      expect(inserted).toHaveLength(0);
+    }
+  });
+
+  it('does not ask when there is no rate to stand behind', async () => {
+    mockAdmin({ id: PAYER, username: 'marco' });
+    priceMock.mockResolvedValue(null);
+    const inserted: Record<string, unknown>[] = [];
+    const result = await createPaymentRequest(makeCallerClient(inserted), REQUESTER, {
+      payerUsername: 'marco',
+      ask: { amount: 20, currency: 'CHF' },
+    });
+    expect(result).toMatchObject({ ok: false, reason: 'no_rate' });
+    expect(inserted).toHaveLength(0);
+    expect(dispatchMock).not.toHaveBeenCalled();
+  });
+
+  it('refuses an ask whose Bitcoin is outside what a pay link can carry', async () => {
+    mockAdmin({ id: PAYER, username: 'marco' });
+    const result = await createPaymentRequest(makeCallerClient([]), REQUESTER, {
+      payerUsername: 'marco',
+      ask: { amount: 100_000_000, currency: 'CHF' },
+    });
+    expect(result).toMatchObject({ ok: false, reason: 'invalid_amount' });
+  });
+});
 
 describe('createPaymentRequest', () => {
   it('writes through the caller client so RLS enforces authorship', async () => {

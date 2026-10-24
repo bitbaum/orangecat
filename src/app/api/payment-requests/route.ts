@@ -18,19 +18,24 @@ import {
   apiRateLimited,
 } from '@/lib/api/standardResponse';
 import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
-import {
-  createPaymentRequest,
-  listPaymentRequests,
-} from '@/domain/payments/paymentRequestService';
+import { createPaymentRequest, listPaymentRequests } from '@/domain/payments/paymentRequestService';
 import { PAY_MAX_BTC, PAY_MIN_BTC } from '@/config/pay';
 import { REQUEST_NOTE_MAX_LENGTH } from '@/config/payment-requests';
 import { logger } from '@/utils/logger';
 
-const createSchema = z.object({
-  payer_username: z.string().min(1).max(64),
-  amount_btc: z.number().positive().min(PAY_MIN_BTC).max(PAY_MAX_BTC),
-  note: z.string().max(REQUEST_NOTE_MAX_LENGTH).optional(),
-});
+const createSchema = z
+  .object({
+    payer_username: z.string().min(1).max(64),
+    // A request is asked for in BTC, or in a currency (which the server prices itself).
+    amount_btc: z.number().positive().min(PAY_MIN_BTC).max(PAY_MAX_BTC).optional(),
+    ask: z
+      .object({ amount: z.number().positive().max(1_000_000_000), currency: z.string().length(3) })
+      .optional(),
+    note: z.string().max(REQUEST_NOTE_MAX_LENGTH).optional(),
+  })
+  .refine(body => body.amount_btc !== undefined || body.ask !== undefined, {
+    message: 'Enter an amount.',
+  });
 
 export const GET = withAuth(async (request: AuthenticatedRequest) => {
   try {
@@ -59,6 +64,7 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
     const result = await createPaymentRequest(supabase, user.id, {
       payerUsername: parsed.data.payer_username,
       amountBtc: parsed.data.amount_btc,
+      ask: parsed.data.ask,
       note: parsed.data.note,
     });
 

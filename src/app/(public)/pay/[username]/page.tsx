@@ -20,7 +20,7 @@ import { SITE_URL } from '@/config/brand';
 import { PAY_COPY, renamedPayHref } from '@/config/pay';
 import { resolveLnurlRecipient } from '@/domain/lightning-address/lnurl-service';
 import { listPublicPaymentMethods } from '@/domain/payments/paymentMethodsService';
-import { getRequestStatusFor } from '@/domain/payments/paymentRequestService';
+import { getOpenAskBtcNow, getRequestStatusFor } from '@/domain/payments/paymentRequestService';
 import { parsePayPrefill } from '@/config/pay';
 import { getTipReceiveInfo } from '@/domain/tips/tip-service';
 import { PayPageClient } from './PayPageClient';
@@ -71,7 +71,14 @@ export default async function PayPage({ params, searchParams }: PageProps) {
   const { requestId } = parsePayPrefill({
     get: name => (typeof search[name] === 'string' ? (search[name] as string) : null),
   });
-  const requestStatus = requestId ? await getRequestStatusFor(recipient.userId, requestId) : null;
+  const [requestStatus, requestAmountBtc] = requestId
+    ? await Promise.all([
+        getRequestStatusFor(recipient.userId, requestId),
+        // An ask made in a currency is worth today's Bitcoin, not the Bitcoin
+        // frozen into a link that may be days old.
+        getOpenAskBtcNow(recipient.userId, requestId),
+      ])
+    : [null, null];
 
   // Resolve "can this person receive?" here rather than from the browser. It is
   // the one thing standing between arriving and being able to type an amount,
@@ -105,6 +112,7 @@ export default async function PayPage({ params, searchParams }: PageProps) {
           recipientId={recipient.userId}
           canReceive={!!receiveInfo?.canReceive}
           requestPaid={requestStatus === 'paid'}
+          requestAmountBtc={requestAmountBtc}
           methods={methods}
         />
       </Suspense>
