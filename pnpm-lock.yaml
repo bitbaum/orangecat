@@ -39,8 +39,8 @@ importers:
         specifier: ^1.21.0
         version: 1.21.0(react@19.3.1)
       '@bitbaum/chatkit':
-        specifier: ^0.14.2
-        version: 0.14.2(react@19.3.1)
+        specifier: ^0.15.2
+        version: 0.15.2(react@19.3.1)
       '@bitbaum/collective-kinds':
         specifier: workspace:*
         version: link:packages/collective-kinds
@@ -561,8 +561,8 @@ packages:
       react:
         optional: true
 
-  '@bitbaum/chatkit@0.14.2':
-    resolution: {integrity: sha512-r3t4PyxMLNIh4HIVrA/NNKP2Z5y93CVAqNUyM/tKzZFcPILHBNwie5pMhoQddtAsvmNkpZ1rC6Hhf7MKv6b/eg==}
+  '@bitbaum/chatkit@0.15.2':
+    resolution: {integrity: sha512-40H3i+Ny6Ze6P2ksU7DG3DQCjR1MGSK0x6iNwyFTM/D2JZWTeRm7GmnKIJm5yOt0r9J2XMZRg0sf8Ks1LbrXyw==}
     engines: {node: '>=20'}
     hasBin: true
     peerDependencies:
@@ -6636,7 +6636,7 @@ snapshots:
     optionalDependencies:
       react: 19.3.1
 
-  '@bitbaum/chatkit@0.14.2(react@19.3.1)':
+  '@bitbaum/chatkit@0.15.2(react@19.3.1)':
     dependencies:
       react: 19.3.1
 
