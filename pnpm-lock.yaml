@@ -54,8 +54,8 @@ importers:
         specifier: ^0.2.0
         version: 0.2.0
       '@bitbaum/paykit':
-        specifier: ^0.1.0
-        version: 0.1.0
+        specifier: github:bitbaum/paykit#d3038e303e6fe9e97a171131c7001637d104fd77
+        version: https://codeload.github.com/bitbaum/paykit/tar.gz/d3038e303e6fe9e97a171131c7001637d104fd77
       '@bitbaum/searchkit':
         specifier: github:bitbaum/searchkit#v0.2.2
         version: git+https://github.com/bitbaum/searchkit.git#09532b1974c7cb92f38c98decaeed334f3ffea72(react@19.3.1)
@@ -583,8 +583,9 @@ packages:
     resolution: {integrity: sha512-YkgMFRQ6HuzIB0q/Ao4FB4zb/YxVc0iKyVdRkFe2psJ4CQJvGxBfDlURomZMkgQfpBQox4QiT/iN9IGRz6SeTg==}
     engines: {node: '>=20'}
 
-  '@bitbaum/paykit@0.1.0':
-    resolution: {integrity: sha512-VuYvJwBcHwT6LUN74rzGrhdjlixppYye3FbV3H6PSSfs5lDhNKkPM2d8RGhX+cxI73tPRk3LAx0lF1Dx70HJQg==}
+  '@bitbaum/paykit@https://codeload.github.com/bitbaum/paykit/tar.gz/d3038e303e6fe9e97a171131c7001637d104fd77':
+    resolution: {gitHosted: true, integrity: sha512-P2TDJWZmgPiY3WrYDq9gRX9+e+mUvH8mz3mJV0VLLFlqEHjPFRTY2kZ/sdT338R1GPtProQXrrBXIu/2+Q+pWA==, tarball: https://codeload.github.com/bitbaum/paykit/tar.gz/d3038e303e6fe9e97a171131c7001637d104fd77}
+    version: 0.1.1
     engines: {node: '>=20'}
 
   '@bitbaum/searchkit@git+https://github.com/bitbaum/searchkit.git#09532b1974c7cb92f38c98decaeed334f3ffea72':
@@ -6718,7 +6719,7 @@ snapshots:
 
   '@bitbaum/mail-kit@0.2.0': {}
 
-  '@bitbaum/paykit@0.1.0': {}
+  '@bitbaum/paykit@https://codeload.github.com/bitbaum/paykit/tar.gz/d3038e303e6fe9e97a171131c7001637d104fd77': {}
 
   '@bitbaum/searchkit@git+https://github.com/bitbaum/searchkit.git#09532b1974c7cb92f38c98decaeed334f3ffea72(react@19.3.1)':
     optionalDependencies:
