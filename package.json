@@ -128,7 +128,7 @@
     "@bitbaum/collective-kinds": "workspace:*",
     "@bitbaum/deckkit": "workspace:*",
     "@bitbaum/geo-kit": "github:bitbaum/geo-kit#a337aec928cf7804fecf459c308d366b90f4b2fa",
-    "@bitbaum/mail-kit": "^0.1.1",
+    "@bitbaum/mail-kit": "^0.2.0",
     "@bitbaum/searchkit": "github:bitbaum/searchkit#v0.2.2",
     "@bitbaum/tax-model": "workspace:*",
     "@bitbaum/whenkit": "github:bitbaum/whenkit#v0.3.2",
