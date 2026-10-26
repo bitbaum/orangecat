@@ -1,0 +1,17 @@
+{
+  "blocks": {
+    "payments": {
+      "package": "@bitbaum/paykit",
+      "bindings": [
+        {
+          "file": "src/lib/wallets/pastedHandle.ts",
+          "symbols": ["paykitNormalizePastedHandle"]
+        },
+        {
+          "file": "src/types/wallet.ts",
+          "symbols": ["classifyPaste"]
+        }
+      ]
+    }
+  }
+}

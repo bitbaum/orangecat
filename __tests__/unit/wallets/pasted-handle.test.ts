@@ -69,6 +69,12 @@ describe('normalizePastedHandle', () => {
     );
   });
 
+  it('does not throw on malformed URI escapes and safely rejects them', () => {
+    expect(() => normalizePastedHandle('bitcoin:?lightning=%E0%A4%A')).not.toThrow();
+    expect(normalizePastedHandle('bitcoin:?lightning=%E0%A4%A')).toBe('');
+    expect(classifyWalletInput('bitcoin:?lightning=%E0%A4%A')).toBe('unknown');
+  });
+
   it('hands anything unrecognised straight through, trimmed', () => {
     // An unknown format must still reach the validator and produce the
     // validator's own error, rather than being silently mangled into something
@@ -103,5 +109,9 @@ describe('the four forms a person actually has on their clipboard', () => {
     expect(classifyWalletInput(ZPUB)).toBe('xpub');
     expect(classifyWalletInput(NWC)).toBe('nwc');
     expect(classifyWalletInput('alice@wallet.com')).toBe('lightning');
+  });
+
+  it('uses shared classification but rejects an invalid address checksum', () => {
+    expect(classifyWalletInput('1BoatSLRHtKNngkdXEeobR76b53LETtpy1')).toBe('unknown');
   });
 });
