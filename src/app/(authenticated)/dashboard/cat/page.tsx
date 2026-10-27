@@ -9,7 +9,7 @@
 
 'use client';
 
-import { useCallback, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useRequireAuth } from '@/hooks/useAuth';
 import Loading from '@/components/Loading';
@@ -35,13 +35,6 @@ export default function CatHubPage() {
     }
   }, [forwardTo, router]);
 
-  // The words came in the link once; a reload must not send them again.
-  const dropQuery = useCallback(() => {
-    const url = new URL(window.location.href);
-    url.searchParams.delete(CAT_QUERY_PARAM);
-    window.history.replaceState(window.history.state, '', url);
-  }, []);
-
   if (isLoading || forwardTo) {
     return <Loading fullScreen message="Loading..." />;
   }
@@ -59,8 +52,7 @@ export default function CatHubPage() {
         className="min-h-0 min-w-0 flex-1"
         headerStart={<CatHeaderStart />}
         headerEnd={<CatHeaderEnd quota={quota} />}
-        initialMessage={searchParams?.get(CAT_QUERY_PARAM) || undefined}
-        onInitialMessageSent={dropQuery}
+        deepLinkParam={CAT_QUERY_PARAM}
         isNewUser={searchParams?.get('welcome') === 'true'}
         onTurnSettled={refreshQuota}
       />

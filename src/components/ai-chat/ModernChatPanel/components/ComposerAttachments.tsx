@@ -8,7 +8,7 @@
 
 import { Package, X } from 'lucide-react';
 import type { CatReference } from '@/config/cat-prompts';
-import { referenceLabel } from './ComposerAddMenu';
+import { referenceLabel } from './YourThings';
 
 interface ComposerAttachmentsProps {
   references: CatReference[];

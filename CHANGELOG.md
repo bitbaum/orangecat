@@ -11,6 +11,8 @@ to the map, sub-bullets stay here for the human reader.
 
 ## 2026-10-27
 
+- **Your things go in from the same sheet as photos, and stay on your message.** The paperclip now opens one sheet: Camera · Photos · Files, then One of your things, Context documents and Connections & keys — there is no second button beside it. A listing or note you add shows on your message the moment you send it, not only after a reload. When a turn fails, it says why in its own bubble, and Retry sends its photos again. Links to create something and the "sharper on a frontier model" note show under the latest answer only. A sentence handed to the Cat from the door, the search palette or an "ask about this" link is sent in a new chat as before.
+
 - **The Cat chat is the fleet's chat app.** The list of your chats now has search, Today / Yesterday / Earlier, and Rename beside Delete; on a phone it opens from the left, on a wide screen it stays beside the chat. Reloading the page reopens the chat you were in instead of a blank one. You can type your next message while the Cat is still answering — it waits above the box and goes when the answer lands. Photos and files attach from Camera · Photos · Files and show in your message after it is sent; your own listings and notes are under the box's "Your things". Temporary chat is in the "…" menu, and still leaves nothing behind.
 
 ## 2026-10-24

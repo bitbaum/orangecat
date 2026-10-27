@@ -13,22 +13,28 @@
  * What is the Cat's own, and stays here:
  *   - the transport (useCatTransport): its routes, models, page context
  *   - the store (catConversationStore): its signed-in server rows
- *   - "Your things" and the model picker in the composer
- *   - what it did, under each answer (CatAnswerFooter)
+ *   - "Your things" as rows of chatkit's attach sheet (`attachExtras`), shown
+ *     on the sent message (`chipsFor`), and the model picker
+ *   - what it did, under each answer (CatAnswerFooter); "what next" only under
+ *     the latest (`isLatest`)
  *   - actions waiting for a confirmation and memories it just noted, over
- *     the composer, where the person is looking
+ *     the composer: they belong to the person, not to one chat, so they show
+ *     on a new chat too (`thread.after` draws only inside a thread)
  *   - its greeting and opener over the starters
+ *
+ * Words from outside the composer (`?q=` and the Loki sheet's `askCat`) go
+ * through ChatApp's own handle and deep link, the same path as typing.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ChatApp, type RenderLink } from '@bitbaum/chatkit/react';
+import { ChatApp, type ChatAppHandle, type RenderLink } from '@bitbaum/chatkit/react';
 import '@bitbaum/chatkit/styles.css';
 import { CAT_SEND_EVENT } from '@/lib/chat/cat-send-event';
 import { postChatFeedback } from '@/lib/chat/feedback';
 import { catConversationStore } from '@/lib/chat/cat-conversation-store';
-import type { CatMessage } from '@/lib/chat/cat-messages';
+import { refChip, type CatMessage } from '@/lib/chat/cat-messages';
 import { API_ROUTES } from '@/config/api-routes';
 import { CAT_AGENT, CAT_HUB_COPY } from '@/config/cat-hub';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
@@ -39,9 +45,9 @@ import { cn } from '@/lib/utils';
 import { useSuggestions, usePendingActionsManager, useMemoryNotes } from './hooks';
 import { useCatTransport } from './hooks/useCatTransport';
 import { CatAnswerFooter } from './components/CatAnswerFooter';
-import { ComposerAddMenu } from './components/ComposerAddMenu';
 import { ComposerAttachments } from './components/ComposerAttachments';
 import { EmptyState, catStarters } from './components/EmptyState';
+import { YourThingsSheet, yourThingsRows } from './components/YourThings';
 import { MemoryNoteCard } from './components/MemoryNoteCard';
 import { ModelSelector } from './components/ModelSelector';
 import { PendingActionsCard } from '../PendingActionsCard';
@@ -66,17 +72,10 @@ const renderAnswerLink: RenderLink = ({ href, internal, className, children }) =
     </a>
   );
 
-/** Mounted with the empty chat: whatever was on screen before was left. */
-function OnEmpty({ run }: { run: () => void }) {
-  useEffect(run, [run]);
-  return null;
-}
-
 interface ModernChatPanelProps {
-  /** Sent as the first message of a new chat once the panel is ready (`?q=`). */
-  initialMessage?: string;
-  /** Fires once `initialMessage` has gone, so the page can drop it from its URL. */
-  onInitialMessageSent?: () => void;
+  /** The query parameter whose words are sent as a new chat's first message
+   *  and taken off the address (the hub's `?q=`; never on the launcher). */
+  deepLinkParam?: string;
   /** A first-time visitor: the welcome greeting instead of the time of day. */
   isNewUser?: boolean;
   /** The page behind the Cat, when it runs over one (GlobalCatLauncher). */
@@ -99,8 +98,7 @@ interface ModernChatPanelProps {
 }
 
 export function ModernChatPanel({
-  initialMessage,
-  onInitialMessageSent,
+  deepLinkParam,
   isNewUser,
   pageContext,
   conversationId,
@@ -140,6 +138,7 @@ export function ModernChatPanel({
   const [references, setReferences] = useState<CatReference[]>([]);
   const referencesRef = useRef(references);
   referencesRef.current = references;
+  const [thingsOpen, setThingsOpen] = useState(false);
   const takeReferences = useCallback(() => {
     const taken = referencesRef.current;
     if (taken.length) {
@@ -174,7 +173,7 @@ export function ModernChatPanel({
 
   const settledRef = useRef(onTurnSettled);
   settledRef.current = onTurnSettled;
-  const { transport, failure, leaveTemporary } = useCatTransport({
+  const { transport, endTemporary } = useCatTransport({
     model,
     pageContext,
     takeReferences,
@@ -189,59 +188,26 @@ export function ModernChatPanel({
 
   const store = useMemo(() => catConversationStore(), []);
 
-  // Words sent from outside the composer — the page's `?q=` and the Loki
-  // sheet (lib/chat/cat-send-event) — go through the composer's own Send, so
-  // they take exactly the path typing does (new chat, queue, Stop).
-  const rootRef = useRef<HTMLDivElement>(null);
-  const [draft, setDraft] = useState('');
-  const [outgoing, setOutgoing] = useState<string | null>(null);
-  const sendFromOutside = useCallback((text: string) => {
-    setDraft(text);
-    setOutgoing(text);
-  }, []);
-  useEffect(() => {
-    if (outgoing === null || draft !== outgoing) {
-      return;
-    }
-    const send = rootRef.current?.querySelector<HTMLButtonElement>(
-      'button.ck-send:not(.ck-send-stop)'
-    );
-    if (send && !send.disabled) {
-      send.click();
-    }
-    setOutgoing(null);
-  }, [outgoing, draft]);
-
+  // Words sent from outside the composer — the Loki sheet
+  // (lib/chat/cat-send-event) — go through ChatApp's own send, so they take
+  // exactly the path typing does (new chat, queue, Stop).
+  const chatRef = useRef<ChatAppHandle>(null);
   useEffect(() => {
     const onSend = (e: Event) => {
       const text = (e as CustomEvent<string>).detail;
       if (typeof text === 'string' && text.trim()) {
-        sendFromOutside(text);
+        // Its staged things go with it, so they show on it as they would typed.
+        void chatRef.current?.send(text, [], { chips: referencesRef.current.map(refChip) });
       }
     };
     window.addEventListener(CAT_SEND_EVENT, onSend);
     return () => window.removeEventListener(CAT_SEND_EVENT, onSend);
-  }, [sendFromOutside]);
+  }, []);
 
-  // `?q=` opens a NEW chat with those words, never the one open before.
-  const firstRef = useRef(initialMessage);
-  useState(() => {
-    if (firstRef.current && rememberKey && typeof window !== 'undefined') {
-      try {
-        localStorage.removeItem(rememberKey);
-      } catch {
-        // nothing remembered, nothing to forget
-      }
-    }
-  });
-  useEffect(() => {
-    const first = firstRef.current;
-    if (first) {
-      firstRef.current = undefined;
-      sendFromOutside(first);
-      onInitialMessageSent?.();
-    }
-  }, [sendFromOutside, onInitialMessageSent]);
+  const attachExtras = useMemo(
+    () => yourThingsRows({ openThings: () => setThingsOpen(true), go: href => router.push(href) }),
+    [router]
+  );
 
   const onAction = useCallback(
     (action: CatAction) => {
@@ -311,42 +277,40 @@ export function ModernChatPanel({
     ) : undefined;
 
   return (
-    <div ref={rootRef} className={cn('oc-chat-app', className)}>
+    <div className={cn('oc-chat-app', className)}>
       <ChatApp
+        ref={chatRef}
         name={CAT_AGENT.name}
         transport={transport}
         store={store}
         fill="parent"
         rememberKey={rememberKey}
         conversationId={conversationId}
-        onConversationChange={id => {
-          if (id) {
-            leaveTemporary();
-          }
-          onConversationChange?.(id);
-        }}
+        onConversationChange={onConversationChange}
+        onTemporaryEnd={endTemporary}
+        deepLinkParam={deepLinkParam}
+        // The door, the palette and "ask about this" links send what they
+        // carry: the person already said it once, where they came from.
+        deepLinkAutoSend={!!deepLinkParam}
+        chipsFor={() => referencesRef.current.map(refChip)}
         railQuery={railQuery}
         placeholder={CAT_HUB_COPY.composerPlaceholder}
         starters={catStarters(opener, chips)}
         startersTitle={
-          <>
-            <OnEmpty run={leaveTemporary} />
-            <EmptyState
-              opener={opener}
-              chips={chips}
-              isLoadingSuggestions={isLoadingSuggestions}
-              onDismissOpener={dismissOpener}
-              isNewUser={isNewUser}
-            />
-          </>
+          <EmptyState
+            opener={opener}
+            chips={chips}
+            isLoadingSuggestions={isLoadingSuggestions}
+            onDismissOpener={dismissOpener}
+            isNewUser={isNewUser}
+          />
         }
         headerStart={headerStart}
         headerEnd={headerEnd}
         footnote={footnote}
         composer={{
-          value: draft,
-          onValueChange: setDraft,
           attach: CAT_ATTACH_LIMITS,
+          attachExtras,
           attachmentOnlyText: CAT_HUB_COPY.attachmentOnly,
           heldAttachments: references.length,
           voice: { prefer: 'server', transcribe },
@@ -358,19 +322,7 @@ export function ModernChatPanel({
                 onRemove={ref => setReferences(list => list.filter(r => r !== ref))}
               />
             ) : undefined,
-          tools: (
-            <>
-              <ComposerAddMenu
-                attachable={attachable}
-                onReference={ref =>
-                  setReferences(list =>
-                    list.some(r => r.id === ref.id && r.type === ref.type) ? list : [...list, ref]
-                  )
-                }
-              />
-              <ModelSelector selectedModel={model} onSelect={pickModel} openUp subtle />
-            </>
-          ),
+          tools: <ModelSelector selectedModel={model} onSelect={pickModel} openUp subtle />,
           labels: {
             voice: 'Dictate your message',
             attachNotes: { wrongType: () => ATTACHMENT_UNSUPPORTED_COPY },
@@ -385,16 +337,26 @@ export function ModernChatPanel({
               void postChatFeedback(id, feedback);
             }
           },
-          renderFooter: m =>
+          renderFooter: (m, { isLatest }) =>
             m.role === 'assistant' ? (
               <CatAnswerFooter
                 message={m as CatMessage}
-                failure={failure}
+                isLatest={isLatest}
                 onAction={onAction}
                 answered={answered}
               />
             ) : null,
         }}
+      />
+      <YourThingsSheet
+        open={thingsOpen}
+        onClose={() => setThingsOpen(false)}
+        attachable={attachable}
+        onReference={ref =>
+          setReferences(list =>
+            list.some(r => r.id === ref.id && r.type === ref.type) ? list : [...list, ref]
+          )
+        }
       />
     </div>
   );

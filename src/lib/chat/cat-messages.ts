@@ -12,7 +12,11 @@
  */
 
 import { extractReplies, type MessageAttachment } from '@bitbaum/chatkit';
-import type { ChatMessageData, CitationMap as AnswerCitations } from '@bitbaum/chatkit/react';
+import type {
+  ChatMessageData,
+  CitationMap as AnswerCitations,
+  MessageChip,
+} from '@bitbaum/chatkit/react';
 import { getCreateSuggestionHref } from '@/config/cat-create-suggestions';
 import { citationsFromToolCalls } from '@/lib/chat/citations';
 import { parseUserMessage } from '@/lib/chat/attachment-tags';
@@ -95,19 +99,34 @@ export function catAnswer(
 }
 
 /**
- * A person's turn read back from the server: the typed words, and what went
- * with them (photos, files, their own things) as the thread's attachment
- * chips. The tags are markup for the model; on screen they were never text.
- * A photo comes back by name only — its pixels are not kept in the thread.
+ * One of the person's own things (a listing, a note) on their message: the
+ * same chip whether it was just sent (ChatApp's `chipsFor`) or read back from
+ * the server.
  */
-export function catUserTurn(content: string): Pick<CatMessage, 'content' | 'attachments'> {
+export function refChip(ref: { type: string; title: string }): MessageChip {
+  return { label: ref.title, kind: ref.type };
+}
+
+/**
+ * A person's turn read back from the server: the typed words, what went with
+ * them (photos, files) as the thread's attachment chips, and their own things
+ * as message chips. The tags are markup for the model; on screen they were
+ * never text. A photo comes back by name only — its pixels are not kept.
+ */
+export function catUserTurn(
+  content: string
+): Pick<CatMessage, 'content' | 'attachments' | 'chips'> {
   const parsed = parseUserMessage(content);
   const attachments: MessageAttachment[] = [
     ...parsed.images.map(i => ({ kind: 'image' as const, name: i.name })),
     ...parsed.files.map(f => ({ kind: 'text' as const, name: f.name })),
-    ...parsed.refs.map(r => ({ kind: 'text' as const, name: r.title })),
   ];
-  return { content: parsed.text, ...(attachments.length > 0 ? { attachments } : {}) };
+  const chips = parsed.refs.map(refChip);
+  return {
+    content: parsed.text,
+    ...(attachments.length > 0 ? { attachments } : {}),
+    ...(chips.length > 0 ? { chips } : {}),
+  };
 }
 
 /** One row of `GET /api/cat/conversations/{id}`. */

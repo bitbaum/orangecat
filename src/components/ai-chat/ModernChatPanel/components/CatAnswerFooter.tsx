@@ -3,24 +3,25 @@
  * did, and what the person can do next.
  *
  *   tool chips      — what it looked up or ran, with their results
- *   destinations    — replies that open a page, as links
+ *   destinations    — replies that open a page, as links (latest answer only)
  *   actions         — suggested next steps that open a form
  *   action results  — done, waiting for a confirmation, or failed (with a fix)
  *   drafts          — forms it filled in, to review before they open
  *   provenance      — provider · model · capability · time, honestly
  *   fallback        — another model answered, and which
  *   upgrade nudge   — this would have been sharper on a frontier model
+ *                     (latest answer only)
  *
- * The words, the reply buttons, Copy · Listen · Share and the thumbs are
- * chatkit's own, above this. A failed turn shows the server's reason and the
- * links that fix it.
+ * "What next" belongs under the newest answer (chatkit's `isLatest`); what
+ * the Cat DID stays under every answer. The words, the reply buttons, Copy ·
+ * Listen · Share and the thumbs are chatkit's own, above this. A failed turn
+ * shows the links that fix it (its reason is in the bubble).
  */
 
 import { getModelDisplayName } from '@/config/ai-models';
 import { getModelCapabilities } from '@/config/model-capability';
 import { formatShortTime } from '@/utils/dates';
 import type { CatMessage, FallbackNotice } from '@/lib/chat/cat-messages';
-import type { CatTurnFailure } from '../hooks/useCatTransport';
 import type { CatAction, ToolCallEvent } from '../types';
 import { ActionButton } from './ActionButton';
 import { CreateNavigation } from './CreateNavigation';
@@ -126,16 +127,16 @@ function settled(
 
 interface CatAnswerFooterProps {
   message: CatMessage;
-  /** Why the latest turn failed (shown under a failed turn). */
-  failure: CatTurnFailure | null;
+  /** The newest answer in the thread (chatkit's `FooterInfo.isLatest`). */
+  isLatest: boolean;
   onAction: (action: CatAction) => void;
   /** Pending actions the person answered since, by pending-action id. */
   answered: Readonly<Record<string, 'completed' | 'declined'>>;
 }
 
-export function CatAnswerFooter({ message, failure, onAction, answered }: CatAnswerFooterProps) {
+export function CatAnswerFooter({ message, isLatest, onAction, answered }: CatAnswerFooterProps) {
   if (message.failed) {
-    return failure ? <TurnFailure failure={failure} /> : null;
+    return <TurnFailure failure={message.failure ?? {}} />;
   }
   // A draft card is the richer way to create the same thing: no second button.
   const hasDraft = !!message.prefillProposals?.length;
@@ -151,7 +152,7 @@ export function CatAnswerFooter({ message, failure, onAction, answered }: CatAns
           ))}
         </div>
       )}
-      {message.destinations && (
+      {isLatest && message.destinations && (
         <CreateNavigation content={message.content} replies={message.destinations} />
       )}
       {actions.length > 0 && (
@@ -177,7 +178,7 @@ export function CatAnswerFooter({ message, failure, onAction, answered }: CatAns
       )}
       {hasWords && <Provenance message={message} />}
       {hasWords && message.fallback && <ProviderFallbackNotice {...message.fallback} />}
-      {hasWords && message.suggestUpgrade && <UpgradeNudge />}
+      {isLatest && hasWords && message.suggestUpgrade && <UpgradeNudge />}
     </>
   );
 }
