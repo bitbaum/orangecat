@@ -18,8 +18,10 @@
  * services/cat/chat-images.ts) and the server routes the turn to a model that
  * can see. The tag stays in the text so the thread shows what was sent.
  *
- * PDFs are still refused: no model on the free chain reads one without an
- * extraction step this app does not have yet.
+ * PDFs never travel as PDFs (no model on the free chain reads one). They are
+ * read in the browser by @bitbaum/chatkit/pdf: a PDF with text becomes an
+ * <attached_file>, one of slide pictures becomes photos of its pages, four to
+ * a sheet — see pdfAttachments.ts.
  */
 
 import { AI_MESSAGE_MAX_CHARS } from '@/lib/validation/ai';
@@ -61,7 +63,7 @@ export const CAT_ATTACH_LIMITS = {
 } as const;
 
 export const ATTACHMENT_UNSUPPORTED_COPY =
-  'Cat can read photos and text files (.txt, .md, .csv, .json, code). PDFs are not supported yet — paste the text instead.';
+  'Cat can read photos, PDFs and text files (.txt, .md, .csv, .json, code). This kind of file it cannot open yet — export it as a PDF or paste the text.';
 
 /** Prevents file text from closing its own block early. */
 const escapeBody = (v: string): string => v.replace(/<\/attached_file>/gi, '</ attached_file>');
