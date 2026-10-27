@@ -26,8 +26,13 @@ async function signIn(page: Page) {
   await page.waitForURL(/\/(dashboard|timeline|onboarding)/, { timeout: 20000 });
 }
 
+/** The session global-setup saved, or a fresh sign-in when there is none. */
 async function openCat(page: Page) {
   await page.goto(`${baseURL}/dashboard/cat`, { waitUntil: 'domcontentloaded' });
+  if (/\/auth/.test(page.url())) {
+    await signIn(page);
+    await page.goto(`${baseURL}/dashboard/cat`, { waitUntil: 'domcontentloaded' });
+  }
   await expect(page.locator('input[data-ck-source="files"]').first()).toBeAttached({
     timeout: 20000,
   });
@@ -38,8 +43,6 @@ async function openCat(page: Page) {
 const chips = (page: Page) => page.locator('.ck-attach-item');
 
 test.describe('Cat reads PDFs (live)', () => {
-  test.use({ storageState: { cookies: [], origins: [] } });
-
   test('pdf.js runtime files are served', async ({ request }) => {
     const worker = await request.get(`${baseURL}/pdfjs/pdf.worker.min.mjs`);
     expect(worker.status()).toBe(200);
@@ -49,19 +52,27 @@ test.describe('Cat reads PDFs (live)', () => {
     console.log('pdfjs:', (await (await request.get(`${baseURL}/pdfjs/VERSION`)).text()).trim());
   });
 
-  test('a deck of slide pictures attaches as drawn page sheets', async ({ page }) => {
-    await signIn(page);
+  // The login is rate limited: reuse global-setup's session, and test both
+  // PDFs in one signed-in chat.
+  test('a slide deck attaches as drawn page sheets, a text PDF as a file', async ({ page }) => {
     await openCat(page);
-    await page
-      .locator('input[data-ck-source="files"]')
-      .first()
-      .setInputFiles(fixture('slides-jpx.pdf'));
+    const attachError = page.locator('.ck-note');
+    const files = page.locator('input[data-ck-source="files"]').first();
 
+    // Files must ask for documents, never "anything": an empty accept is what
+    // Brave on Android answered with a camera/recorder chooser and no file
+    // browser (2026-10-27). setInputFiles below skips the chooser, so this
+    // line is the check for it.
+    const accept = (await files.getAttribute('accept')) ?? '';
+    expect(accept).toContain('application/pdf');
+    expect(accept).not.toMatch(/image|audio|video|\*\/\*/);
+
+    await files.setInputFiles(fixture('slides-jpx.pdf'));
     const sheet = chips(page).filter({
       has: page.locator('img[alt="slides-jpx.pdf · pages 1–2"]'),
     });
     await expect(sheet).toHaveCount(1, { timeout: 30000 });
-    await expect(page.locator('.ck-note')).toHaveCount(0);
+    await expect(attachError).toHaveCount(0);
 
     // Ink on the thumbnail: a page whose JPEG 2000 failed to decode is plain white.
     const ink = await sheet.locator('img').evaluate(async (img: HTMLImageElement) => {
@@ -78,13 +89,9 @@ test.describe('Cat reads PDFs (live)', () => {
     });
     console.log('sheet ink share:', ink.toFixed(2));
     expect(ink).toBeGreaterThan(0.3);
-  });
 
-  test('a PDF with text attaches as a file', async ({ page }) => {
-    await signIn(page);
-    await openCat(page);
-    await page.locator('input[data-ck-source="files"]').first().setInputFiles(fixture('text.pdf'));
-    await expect(chips(page).filter({ hasText: 'text.pdf' })).toHaveCount(1, { timeout: 30000 });
-    await expect(page.locator('.ck-note')).toHaveCount(0);
+    await files.setInputFiles(fixture('text.pdf'));
+    await expect(chips(page).filter({ hasText: /^text\.pdf$/ })).toHaveCount(1, { timeout: 30000 });
+    await expect(attachError).toHaveCount(0);
   });
 });
