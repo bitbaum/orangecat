@@ -52,8 +52,9 @@ export const MAX_ATTACHMENT_CHARS = 512 * 1024;
  * What chatkit's attach button may stage for the Cat (ChatApp `composer.attach`):
  * photos up to the chat route's count, shrunk in the browser to the edge a
  * vision model reads; text files up to what the message can carry. chatkit
- * owns the pickers (Camera · Photos · Files, one input each) and refuses a
- * PDF with ATTACHMENT_UNSUPPORTED_COPY before anything is read.
+ * owns the pickers (Camera · Photos · Files, one input each) and refuses any
+ * other kind of file with ATTACHMENT_UNSUPPORTED_COPY before anything is read.
+ * A PDF never reaches that refusal: `readFile` (pdfAttachments.ts) reads it.
  */
 export const CAT_ATTACH_LIMITS = {
   maxFiles: CHAT_IMAGE_MAX_COUNT,

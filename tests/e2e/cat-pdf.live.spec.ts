@@ -33,7 +33,9 @@ async function openCat(page: Page) {
   });
 }
 
-const chips = (page: Page) => page.locator('ul[aria-label="Attached"] li');
+// chatkit's staged strip: a file is a chip with its name, a picture is a thumbnail
+// whose alt is its name. A refusal is chatkit's `.ck-note` under the strip.
+const chips = (page: Page) => page.locator('.ck-attach-item');
 
 test.describe('Cat reads PDFs (live)', () => {
   test.use({ storageState: { cookies: [], origins: [] } });
@@ -55,9 +57,11 @@ test.describe('Cat reads PDFs (live)', () => {
       .first()
       .setInputFiles(fixture('slides-jpx.pdf'));
 
-    const sheet = chips(page).filter({ hasText: 'slides-jpx.pdf · pages 1–2' });
+    const sheet = chips(page).filter({
+      has: page.locator('img[alt="slides-jpx.pdf · pages 1–2"]'),
+    });
     await expect(sheet).toHaveCount(1, { timeout: 30000 });
-    await expect(page.getByRole('alert')).toHaveCount(0);
+    await expect(page.locator('.ck-note')).toHaveCount(0);
 
     // Ink on the thumbnail: a page whose JPEG 2000 failed to decode is plain white.
     const ink = await sheet.locator('img').evaluate(async (img: HTMLImageElement) => {
@@ -81,6 +85,6 @@ test.describe('Cat reads PDFs (live)', () => {
     await openCat(page);
     await page.locator('input[data-ck-source="files"]').first().setInputFiles(fixture('text.pdf'));
     await expect(chips(page).filter({ hasText: 'text.pdf' })).toHaveCount(1, { timeout: 30000 });
-    await expect(page.getByRole('alert')).toHaveCount(0);
+    await expect(page.locator('.ck-note')).toHaveCount(0);
   });
 });
