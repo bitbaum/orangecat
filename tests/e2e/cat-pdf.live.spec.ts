@@ -47,17 +47,19 @@ test.describe('Cat reads PDFs (live)', () => {
     console.log('pdfjs:', (await (await request.get(`${baseURL}/pdfjs/VERSION`)).text()).trim());
   });
 
-  test('a deck of slide pictures attaches as drawn page sheets', async ({ page }) => {
+  // One sign-in per browser: the login is rate limited, and every step below
+  // needs the same signed-in Cat chat.
+  test('a slide deck attaches as drawn page sheets, a text PDF as a file', async ({ page }) => {
     await signIn(page);
     await openCat(page);
-    await page
-      .locator('input[data-ck-source="files"]')
-      .first()
-      .setInputFiles(fixture('slides-jpx.pdf'));
+    // The composer's own error line (Next's route announcer is also role=alert).
+    const attachError = page.locator('p[role="alert"]');
+    const files = page.locator('input[data-ck-source="files"]').first();
 
+    await files.setInputFiles(fixture('slides-jpx.pdf'));
     const sheet = chips(page).filter({ hasText: 'slides-jpx.pdf · pages 1–2' });
     await expect(sheet).toHaveCount(1, { timeout: 30000 });
-    await expect(page.getByRole('alert')).toHaveCount(0);
+    await expect(attachError).toHaveCount(0);
 
     // Ink on the thumbnail: a page whose JPEG 2000 failed to decode is plain white.
     const ink = await sheet.locator('img').evaluate(async (img: HTMLImageElement) => {
@@ -74,13 +76,9 @@ test.describe('Cat reads PDFs (live)', () => {
     });
     console.log('sheet ink share:', ink.toFixed(2));
     expect(ink).toBeGreaterThan(0.3);
-  });
 
-  test('a PDF with text attaches as a file', async ({ page }) => {
-    await signIn(page);
-    await openCat(page);
-    await page.locator('input[data-ck-source="files"]').first().setInputFiles(fixture('text.pdf'));
-    await expect(chips(page).filter({ hasText: 'text.pdf' })).toHaveCount(1, { timeout: 30000 });
-    await expect(page.getByRole('alert')).toHaveCount(0);
+    await files.setInputFiles(fixture('text.pdf'));
+    await expect(chips(page).filter({ hasText: /^text\.pdf$/ })).toHaveCount(1, { timeout: 30000 });
+    await expect(attachError).toHaveCount(0);
   });
 });
