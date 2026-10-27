@@ -1,12 +1,8 @@
 // @vitest-environment jsdom
 /**
- * The Cat's "+" menu, rendered: chatkit's attach sheet with one file input per
- * source, and OrangeCat's own rows under the three sources.
- *
- * A single input with a mixed accept (image/* plus text extensions) is what an
- * Android phone answers with a chooser of capture apps — Camera, Recorder,
- * "Photos & Videos" — and no file browser. Attaching a screenshot from a phone
- * was effectively impossible (2026-10-05).
+ * The Cat's "Your things", rendered: chatkit's sheet with the person's own
+ * things and the Cat rows. Camera · Photos · Files are chatkit's own attach
+ * button in ChatApp's composer (one input per source, never a mixed accept).
  */
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -36,37 +32,28 @@ beforeAll(() => {
 
 afterEach(cleanup);
 
-const renderMenu = (onFiles = vi.fn()) =>
-  render(<ComposerAddMenu attachable={[]} onFiles={onFiles} onReference={vi.fn()} />);
+const renderMenu = (onReference = vi.fn()) =>
+  render(
+    <ComposerAddMenu
+      attachable={[{ type: 'product', id: 'p1', title: 'Loki Pro' }]}
+      onReference={onReference}
+    />
+  );
 
 describe('ComposerAddMenu', () => {
-  it('renders three inputs, none with a mixed accept', () => {
+  it("holds only what is OrangeCat's: no file inputs (pictures and files are chatkit's)", () => {
     const { container } = renderMenu();
-    const inputs = Array.from(container.querySelectorAll('input[type="file"]'));
-    const by = Object.fromEntries(inputs.map(i => [i.getAttribute('data-ck-source'), i]));
-    expect(Object.keys(by)).toEqual(['camera', 'photos', 'files']);
-    expect(by.camera.getAttribute('accept')).toBe('image/*');
-    expect(by.camera.getAttribute('capture')).toBe('environment');
-    expect(by.photos.getAttribute('accept')).toBe('image/*');
-    expect(by.files.hasAttribute('accept')).toBe(false);
+    expect(container.querySelectorAll('input[type="file"]')).toHaveLength(0);
   });
 
-  it('opens a sheet with the sources and the Cat rows; a pick reaches onFiles', () => {
-    const onFiles = vi.fn();
-    const { container } = renderMenu(onFiles);
-    const files = container.querySelector('input[data-ck-source="files"]') as HTMLInputElement;
-    const click = vi.spyOn(files, 'click');
-    fireEvent.click(screen.getByRole('button', { name: 'Add files and more' }));
-    expect(container.querySelector('dialog[open]')).toBeTruthy();
-    for (const label of ['Take a photo', 'Photo library', 'Files']) {
-      expect(screen.getByRole('button', { name: new RegExp(label) })).toBeTruthy();
-    }
+  it('opens a sheet of your things and the Cat rows; a pick reaches onReference', () => {
+    const onReference = vi.fn();
+    renderMenu(onReference);
+    fireEvent.click(screen.getByRole('button', { name: 'Add one of your things' }));
+    expect(document.querySelector('dialog[open]')).toBeTruthy();
     expect(screen.getByRole('link', { name: /Context documents/ })).toBeTruthy();
     expect(screen.getByRole('link', { name: /Connections/ })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: /^Files$/ }));
-    expect(click).toHaveBeenCalledOnce();
-    const file = new File(['hello'], 'notes.md', { type: 'text/markdown' });
-    fireEvent.change(files, { target: { files: [file] } });
-    expect(onFiles).toHaveBeenCalledOnce();
+    fireEvent.click(screen.getByRole('button', { name: /Loki Pro/ }));
+    expect(onReference).toHaveBeenCalledWith({ type: 'product', id: 'p1', title: 'Loki Pro' });
   });
 });

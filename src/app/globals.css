@@ -447,16 +447,8 @@
     @apply flex min-h-0 flex-col overflow-hidden bg-surface-page;
   }
 
-  .oc-chat-toolbar {
-    @apply flex flex-shrink-0 items-center justify-between gap-3 border-b border-border-subtle px-3 py-2 sm:px-4;
-  }
-
   .oc-chat-scroll {
     @apply flex-1 overflow-y-auto overscroll-contain;
-  }
-
-  .oc-chat-thread {
-    @apply mx-auto w-full max-w-3xl space-y-6 px-4 py-6 sm:px-6;
   }
 
   /* Bottom-anchored, so it must clear the home indicator / gesture bar on
@@ -471,31 +463,9 @@
     }
   }
 
-  .oc-chat-composer {
-    @apply relative flex w-full flex-col gap-1 rounded-2xl border border-border-subtle bg-surface-raised/30 px-3 py-2 shadow-sm;
-    @apply focus-within:border-ring/40 focus-within:ring-2 focus-within:ring-ring/15;
-  }
-
-  /* Bottom control row inside the composer box: model picker + clear on the
-     left, dictation + send on the right — one cohesive control. */
-  .oc-chat-composer-controls {
-    @apply flex items-center justify-between gap-2;
-  }
-
-  .oc-chat-composer-input {
-    @apply max-h-[200px] min-h-[2.25rem] w-full resize-none border-0 bg-transparent px-1 py-1.5 text-sm leading-relaxed text-fg-primary shadow-none;
-    /* The composer box shows focus (focus-within); the global form-field
-       ring drew a second box inside it. */
-    @apply placeholder:text-fg-secondary focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0;
-  }
-
-  /* Empty chat: one centred column — greeting, the Cat's opener, the
-     composer, then chips. Vertically centred, but scrolls on short screens. */
-  .oc-chat-empty {
-    @apply flex min-h-full flex-col items-center justify-center px-4 py-8;
-  }
+  /* Empty chat: the greeting and the Cat's opener over chatkit's starters. */
   .oc-chat-home {
-    @apply flex w-full max-w-2xl flex-col gap-5;
+    @apply flex w-full max-w-2xl flex-col gap-5 text-left;
   }
 
   /* The Cat speaking first: its mark, what it noticed, the replies. */
@@ -504,22 +474,6 @@
   }
   .oc-chat-opener-mark {
     @apply flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-fg-primary text-fg-inverted;
-  }
-
-  /* A reply the user can tap — Cat's quick replies and the opener's actions. */
-  .oc-chat-reply {
-    @apply rounded-full border border-border-subtle bg-surface-page px-3 py-1.5 text-left text-sm text-fg-primary transition-colors;
-    @apply hover:border-border-strong hover:bg-surface-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
-  }
-
-  /* Starter chips under the composer. ONE line each, always: a chip that
-     wraps is a card that hasn't noticed yet. On phones they stack. */
-  .oc-chat-chips {
-    @apply flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-center;
-  }
-  .oc-chat-chip {
-    @apply min-h-10 truncate rounded-full border border-border-subtle px-3.5 py-2 text-left text-sm text-fg-secondary transition-colors sm:max-w-[24rem];
-    @apply hover:bg-surface-raised hover:text-fg-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring;
   }
 
   /* An attached file or thing: in the composer, and on the sent message. */
@@ -1770,61 +1724,46 @@ html[data-header-hidden='true'] .sticky-below-header {
 }
 
 /*
- * The Cat chat as the whole screen (chatkit's ChatScreen). UNLAYERED on
- * purpose: chatkit's stylesheet is imported unlayered (ChatInput.tsx) and
- * unlayered CSS beats anything inside @layer components, so an override
- * written up there silently does nothing. The conversation runs edge to
- * edge; the hub's toolbar and the composer float over it, and the words fade
- * as they pass under each (owner, 2026-10-20: "the whole display is used").
+ * The Cat chat (chatkit's ChatApp). UNLAYERED on purpose: chatkit's
+ * stylesheet is imported unlayered and unlayered CSS beats anything inside
+ * @layer components, so an override written up there silently does nothing.
  */
-.oc-chat-layout > .ck-screen {
-  flex: 1;
-  height: auto;
+.oc-chat-app {
+  display: flex;
   min-height: 0;
-  background: transparent;
+  /* In-app actions are monochrome; orange is Bitcoin's. */
+  --ck-accent: hsl(var(--text-primary));
+  --ck-on-accent: hsl(var(--text-inverted));
 }
-.ck-screen .oc-chat-scroll {
-  padding-top: var(--ck-top-inset, 0px);
-  padding-bottom: var(--ck-bottom-inset, 0px);
-  scroll-padding-top: var(--ck-top-inset, 0px);
-  scroll-padding-bottom: var(--ck-bottom-inset, 0px);
-}
-/* The toolbar in the floating header: no bar of its own, its controls
-   frosted pills like chatkit's ck-glass. */
-.ck-screen-header .oc-chat-toolbar {
+.oc-chat-app > .ck-app {
   flex: 1;
-  border: 0;
-  padding: 0;
-  background: transparent;
 }
-.ck-screen-header .oc-chat-toolbar :is(a, button) {
-  border: 1px solid hsl(var(--border-default) / 0.6);
-  border-radius: 999px;
-  background: hsl(var(--surface-base) / 0.7);
-  -webkit-backdrop-filter: blur(16px) saturate(1.4);
-  backdrop-filter: blur(16px) saturate(1.4);
-  color: hsl(var(--text-primary));
+/* The Cat's own header controls sit in ChatApp's row as its own pills. */
+.oc-chat-header-end {
+  display: flex;
+  flex: none;
+  min-width: 0;
+  align-items: center;
+  gap: 0.5rem;
 }
-/* The composer in the dock: ChatScreen owns the gutter and the safe area. */
-.ck-screen-dock .oc-chat-composer-wrap {
-  padding: 0;
-  background: transparent;
+/* Over the composer: actions waiting for a yes, what one just did, what the
+   Cat noted — where the person is looking, never under the fold. */
+.oc-chat-above {
+  display: flex;
+  max-height: 40vh;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow-y: auto;
+  margin-bottom: 0.5rem;
 }
-/* Empty chat, from sm up: the composer sits in the centred column, so there
-   is no dock; the greeting keeps clear of the floating toolbar. */
-.oc-chat-screen-empty .ck-screen-dock {
-  display: none;
-}
-.oc-chat-screen-empty .oc-chat-scroll {
-  padding-top: calc(var(--ck-top-inset, 0px) + 0.5rem);
-}
-/* Empty chat on a phone: the composer floats at the bottom as in a thread,
-   and the greeting, the Cat's opener and the chips gather just above it,
-   where the thumb is — the ChatGPT app's one pinned suggestion over the
-   box, with the screen above left quiet. */
-@media (max-width: 639px) {
-  .ck-screen .oc-chat-empty {
-    justify-content: flex-end;
-    padding-bottom: 0.25rem;
-  }
+.oc-chat-outcome {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  border: 1px solid hsl(var(--border-default));
+  border-radius: 1rem;
+  background: hsl(var(--surface-base));
+  padding: 0 0 0 0.75rem;
+  font-size: 0.875rem;
 }

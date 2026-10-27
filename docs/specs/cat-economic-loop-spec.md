@@ -20,7 +20,7 @@
 The loop works; it just isn't what users land on. Two options:
 
 - **Option A (cheapest, ~1 line):** always `router.replace(ROUTES.DASHBOARD.CAT)` from `/dashboard` (drop the `isTrulyEmpty` guard at `dashboard/page.tsx:59-82`). Ship this first — it's reversible and instantly makes OC feel Cat-first.
-- **Option B (better, more layout):** embed `ModernChatPanel` as the hero of `/dashboard`, dashboard sections secondary. `ModernChatPanel` is already reusable (`variant`, `conversationId`, callbacks).
+- **Option B (better, more layout):** embed `ModernChatPanel` as the hero of `/dashboard`, dashboard sections secondary. `ModernChatPanel` is already reusable (`conversationId`, `headerStart`/`headerEnd`, callbacks).
   **Recommendation:** ship A this week; consider B next week. **Decision needed from founder:** redirect (A) vs hero-embed (B)?
 
 ### C-2 — Close the wallet-at-publish dead-end ⭐ demo-critical

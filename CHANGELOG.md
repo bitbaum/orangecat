@@ -9,6 +9,10 @@ reads, and [orangecat.ch/changelog](https://orangecat.ch/changelog) renders
 it from there. One `## YYYY-MM-DD` heading per day; bullets under it travel
 to the map, sub-bullets stay here for the human reader.
 
+## 2026-10-27
+
+- **The Cat chat is the fleet's chat app.** The list of your chats now has search, Today / Yesterday / Earlier, and Rename beside Delete; on a phone it opens from the left, on a wide screen it stays beside the chat. Reloading the page reopens the chat you were in instead of a blank one. You can type your next message while the Cat is still answering — it waits above the box and goes when the answer lands. Photos and files attach from Camera · Photos · Files and show in your message after it is sent; your own listings and notes are under the box's "Your things". Temporary chat is in the "…" menu, and still leaves nothing behind.
+
 ## 2026-10-24
 
 - **A request for CHF 20 stays CHF 20.** When you ask someone for money in a currency, the request is held in that currency until it is paid. The person asked sees "CHF 20.00" in their notification and in the list, and the pay page opens on what CHF 20 comes to in Bitcoin that day, not on the Bitcoin figure frozen into the link when you asked. The request turns Paid when the payment covers the ask at that day's rate, with two percent of room for the rate moving between the invoice and the payment. Requests made in BTC work as before. If we have no rate for your currency, the request is not sent, and the screen says so rather than guessing a figure.

@@ -11,13 +11,12 @@ import { join } from 'node:path';
  * every Cat-specific control behind an optional prop. Two pairs were deleted.
  *
  * A fourth is cheap to add and invisible in review, so the rule is a test: if
- * a file renders its own chat textarea or its own message-turn layout, it has
- * to be the shared one. Reuse ChatInput / MessageBubble and pass only what you
- * need — that is what their `variant` and optional props are for.
+ * a file renders its own chat textarea it has to be the shared one, and no
+ * file lays out a message turn at all — the turns are @bitbaum/chatkit's
+ * (`ChatApp` for the Cat, `ChatMessage` for a companion room).
  */
 
 const SHARED_COMPOSER = 'src/components/ai-chat/ModernChatPanel/components/ChatInput.tsx';
-const SHARED_BUBBLE = 'src/components/ai-chat/ModernChatPanel/components/MessageBubble.tsx';
 
 /**
  * Enter-to-send textareas that are deliberately NOT the chat composer. Each
@@ -78,11 +77,8 @@ describe('one chat surface', () => {
     }
   });
 
-  it('has exactly one message renderer: no second turn layout', () => {
+  it("has no message renderer of its own: the turns are chatkit's", () => {
     const offenders = components.filter(path => {
-      if (path === SHARED_BUBBLE) {
-        return false;
-      }
       const src = readFileSync(path, 'utf8');
       // Branching a turn's layout on who spoke is what a message renderer does.
       return /role\s*===\s*'user'/.test(src) && /className=/.test(src);
@@ -100,16 +96,9 @@ describe('one chat surface', () => {
     expect(composer).not.toMatch(/<textarea/);
   });
 
-  it('keeps the shared pair reusable — Cat-only controls stay optional', () => {
-    const composer = readFileSync(SHARED_COMPOSER, 'utf8');
-    for (const prop of ['onStop', 'onClearChat', 'selectedModel', 'onModelSelect', 'placeholder']) {
-      expect(composer, `${prop} must stay optional or the composer stops being shareable`).toMatch(
-        new RegExp(`${prop}\\?:`)
-      );
-    }
-    const bubble = readFileSync(SHARED_BUBBLE, 'utf8');
-    for (const prop of ['onActionClick', 'onQuickReply']) {
-      expect(bubble).toMatch(new RegExp(`${prop}\\?:`));
-    }
+  it("the Cat chat is chatkit's ChatApp, not an app assembled here", () => {
+    const panel = readFileSync('src/components/ai-chat/ModernChatPanel/index.tsx', 'utf8');
+    expect(panel).toMatch(/import \{[^}]*\bChatApp\b[^}]*\} from '@bitbaum\/chatkit\/react'/);
+    expect(panel).toMatch(/<ChatApp\b/);
   });
 });

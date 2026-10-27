@@ -3,10 +3,9 @@
 /**
  * The room: a companion's conversation as the page.
  *
- * A conversation looks the same everywhere in this app. The turns and the
- * composer are Cat's own components — every Cat-specific control in them
- * (actions, quick replies, model picker, clear, stop) is an optional prop, so
- * a companion simply passes none of them. This file is only the ROOM: full
+ * A conversation looks the same everywhere in this app. The turns are
+ * chatkit's own (`ChatMessage`, the same turn the Cat's thread draws) and the
+ * composer is the app's shared ChatInput. This file is only the ROOM: full
  * height, a one-line header, past conversations, and the credits notice.
  */
 
@@ -18,9 +17,8 @@ import { ROUTES } from '@/config/routes';
 import { APP_LOCALE } from '@/utils/locale';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import Button from '@/components/ui/Button';
-import { MessageBubble } from '@/components/ai-chat/ModernChatPanel/components/MessageBubble';
+import { ChatMessage, type ChatMessageData } from '@bitbaum/chatkit/react';
 import { ChatInput } from '@/components/ai-chat/ModernChatPanel/components/ChatInput';
-import type { Message } from '@/components/ai-chat/ModernChatPanel/types';
 import { visibleReply } from '@/services/companions/memory-lines';
 import { useCompanionTalk, type TalkThreadSummary, type TalkMessage } from './useCompanionTalk';
 
@@ -32,18 +30,14 @@ export interface TalkRoomProps {
   };
 }
 
-/**
- * A companion turn as the shared chat surface wants it. Everything beyond
- * these four fields on `Message` is Cat machinery and stays undefined.
- */
-function asMessage(m: TalkMessage): Message {
+/** A companion turn as chatkit's thread draws it. */
+function asMessage(m: Pick<TalkMessage, 'id' | 'role' | 'content'>): ChatMessageData {
   return {
     id: m.id,
     role: m.role,
     // The companion's own log lines are kept in the stored reply (it reads them
     // back next time) but are bookkeeping, not part of what it says to you.
     content: m.role === 'assistant' ? visibleReply(m.content) : m.content,
-    timestamp: new Date(m.created_at),
   };
 }
 
@@ -126,23 +120,22 @@ export function TalkRoom({ companion }: TalkRoomProps) {
             <p className="pt-2 text-xs text-fg-muted">{COMPANION_COPY.disclosure(name)}</p>
           )}
           {!talk.loading && (
-            <>
+            <div className="ck-thread-inner py-4">
               {talk.messages.length === 0 && companion.welcome_message && (
-                <MessageBubble
+                <ChatMessage
                   message={asMessage({
                     id: 'opening',
                     role: 'assistant',
                     content: companion.welcome_message,
-                    created_at: new Date().toISOString(),
                   })}
-                  isLast
+                  last
                 />
               )}
               {talk.messages.map((m, i) => (
-                <MessageBubble
+                <ChatMessage
                   key={m.id}
                   message={asMessage(m)}
-                  isLast={i === talk.messages.length - 1}
+                  last={i === talk.messages.length - 1}
                 />
               ))}
               {talk.sending && (
@@ -151,7 +144,7 @@ export function TalkRoom({ companion }: TalkRoomProps) {
                   <span className="sr-only">{room.thinking(name)}</span>
                 </div>
               )}
-            </>
+            </div>
           )}
           {talk.creditsNeeded && (
             <div className="mb-4 rounded-md border border-subtle bg-surface-raised p-3 text-sm">

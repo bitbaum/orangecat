@@ -44,7 +44,6 @@ const EXCEPTIONS = [
   'src/app/(authenticated)/dashboard/analytics/components/AnalyticsInsights.tsx',
   'src/components/ai-chat/ModernChatPanel/index.tsx',
   'src/app/(public)/docs/page.tsx',
-  'src/components/ai-chat/ModernChatPanel/components/MessageBubble.tsx',
   // Services > 500
   'src/services/cat/system-prompt.ts',
   'src/services/ai/context-sections.ts',
