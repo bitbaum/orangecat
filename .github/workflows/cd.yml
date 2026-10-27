@@ -338,7 +338,7 @@ jobs:
           producer="$RUNNER_TEMP/fleet-receipt-producer"
           git init --quiet "$producer"
           git -C "$producer" remote add origin https://github.com/bitbaum/fleet.git
-          git -C "$producer" fetch --quiet --depth 1 origin 5da9886a5211dc74dc6b7c8f5eade60c460cea6c
+          git -C "$producer" fetch --quiet --depth 1 origin 6295eecab6effadefac4c66723da2196fcd8b300
           git -C "$producer" checkout --quiet --detach FETCH_HEAD
           node "$producer/scripts/ci/release-receipt.mjs" --public \
             --root "$GITHUB_WORKSPACE" --repo "$GITHUB_REPOSITORY" \
