@@ -52,6 +52,7 @@ import { MemoryNoteCard } from './components/MemoryNoteCard';
 import { ModelSelector } from './components/ModelSelector';
 import { PendingActionsCard } from '../PendingActionsCard';
 import { ATTACHMENT_UNSUPPORTED_COPY, CAT_ATTACH_LIMITS } from './attachments';
+import { readCatFile } from './pdfAttachments';
 import type { CatAction } from './types';
 
 /** One transcription route for every microphone in the app; see useDictation. */
@@ -309,7 +310,7 @@ export function ModernChatPanel({
         headerEnd={headerEnd}
         footnote={footnote}
         composer={{
-          attach: CAT_ATTACH_LIMITS,
+          attach: { ...CAT_ATTACH_LIMITS, readFile: readCatFile },
           attachExtras,
           attachmentOnlyText: CAT_HUB_COPY.attachmentOnly,
           heldAttachments: references.length,
