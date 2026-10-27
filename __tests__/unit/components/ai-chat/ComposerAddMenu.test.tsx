@@ -8,6 +8,7 @@
  * "Photos & Videos" — and no file browser. Attaching a screenshot from a phone
  * was effectively impossible (2026-10-05).
  */
+import { acceptFamilies } from '@bitbaum/chatkit';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { ComposerAddMenu } from '@/components/ai-chat/ModernChatPanel/components/ComposerAddMenu';
@@ -48,7 +49,11 @@ describe('ComposerAddMenu', () => {
     expect(by.camera.getAttribute('accept')).toBe('image/*');
     expect(by.camera.getAttribute('capture')).toBe('environment');
     expect(by.photos.getAttribute('accept')).toBe('image/*');
-    expect(by.files.hasAttribute('accept')).toBe(false);
+    // Files asks for documents (or, before chatkit 0.20.1, for nothing) — never
+    // for pictures or sound, which is what puts the camera chooser in front
+    // of the file browser on Android.
+    const filesAccept = by.files.getAttribute('accept') ?? '';
+    expect(acceptFamilies(filesAccept).filter(f => f !== 'document')).toEqual([]);
   });
 
   it('opens a sheet with the sources and the Cat rows; a pick reaches onFiles', () => {

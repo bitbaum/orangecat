@@ -4,6 +4,7 @@
  * API's limit, and that the thread shows chips instead of the file's text.
  */
 
+import { acceptFamilies } from '@bitbaum/chatkit';
 import {
   composeMessage,
   parseUserMessage,
@@ -111,8 +112,10 @@ describe('photos', () => {
     expect(Object.keys(byId)).toEqual(['camera', 'photos', 'files']);
     expect(byId.camera).toMatchObject({ accept: 'image/*', capture: 'environment' });
     expect(byId.photos).toMatchObject({ accept: 'image/*' });
-    expect(byId.files.accept).toBeUndefined();
-    for (const s of ATTACH_SOURCES) expect(s.input.accept ?? '').not.toContain(',');
+    // Files: documents only (chatkit 0.20.1) or nothing (before) — never media.
+    expect(acceptFamilies(byId.files.accept ?? '').filter(f => f !== 'document')).toEqual([]);
+    for (const s of ATTACH_SOURCES)
+      expect(acceptFamilies(s.input.accept ?? '').length).toBeLessThanOrEqual(1);
     expect(isImageFile({ type: 'image/heic' })).toBe(true);
   });
 
