@@ -11,14 +11,24 @@
  * Temporary chats: ChatApp keeps them off the store and sends
  * `conversationId: null`. The server still needs a thread to read the turn's
  * history from, so a temporary chat gets an unlisted row (`ephemeral`, never
- * read into memory, swept after a day by the cleanup cron) that is deleted
- * the moment the person leaves it — `leaveTemporary`, called by the panel —
- * or the page.
+ * read into memory, swept after a day by the cleanup cron), keyed by the
+ * chat's page id (`turn.chatId`). ChatApp says when that chat ends — left,
+ * page hidden, unmounted — through `onTemporaryEnd`, and `endTemporary`
+ * deletes its row then (or when its running turn settles).
+ *
+ * A failed turn throws chatkit's `ChatTurnError`: the bubble shows the
+ * server's words and `failure.kind` carries its code for the fix links
+ * (TurnFailure).
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef } from 'react';
 import type { Attachment } from '@bitbaum/chatkit';
-import type { ChatTransport, ChatTurn, ChatTurnResult } from '@bitbaum/chatkit/react';
+import {
+  ChatTurnError,
+  type ChatTransport,
+  type ChatTurn,
+  type ChatTurnResult,
+} from '@bitbaum/chatkit/react';
 import { readEventStream } from '@/lib/sse';
 import { logger } from '@/utils/logger';
 import { API_ROUTES } from '@/config/api-routes';
@@ -34,19 +44,9 @@ import { catAnswer, type CatTurnExtras, type FallbackNotice } from '@/lib/chat/c
 import { composeMessage, imagesOf, type ChatAttachment } from '../attachments';
 import type { CatAction, ExecActionResult, PrefillProposal, ToolCallEvent } from '../types';
 
-/** Why the last turn failed, in the server's words, with its code (drives the fix links). */
-export interface CatTurnFailure {
-  message: string;
-  code: string | null;
-}
-
-class CatChatError extends Error {
-  code?: string;
-  constructor(message: string, code?: string) {
-    super(message);
-    this.code = code;
-  }
-}
+/** A failed turn in the server's words; its code rides as `failure.kind`. */
+const failed = (message: string, code?: string) =>
+  new ChatTurnError(message, code ? { kind: code } : undefined);
 
 const STREAM_TIMEOUT_MS = 60_000;
 const TIMED_OUT = 'Response timed out. Try again or rephrase your question.';
@@ -164,7 +164,6 @@ export function useCatTransport({
   onPendingConfirmation,
 }: UseCatTransportOptions) {
   const preferredCurrency = useUserCurrency();
-  const [failure, setFailure] = useState<CatTurnFailure | null>(null);
 
   // Read at send time, so a turn always uses what is on screen now.
   const live = useRef({
@@ -184,59 +183,73 @@ export function useCatTransport({
     onPendingConfirmation,
   };
 
-  // The open temporary chat's unlisted server row, and whether a turn of it
-  // is running (a row is never deleted under its own turn).
-  const temporary = useRef<{ id: string | null; running: boolean }>({ id: null, running: false });
+  // Each temporary chat's unlisted server row, by the chat's page id, and
+  // whether a turn of it is running (a row is never deleted under its turn).
+  const temporary = useRef(
+    new Map<string, { row: string | null; running: boolean; ended: boolean }>()
+  );
 
-  const leaveTemporary = useCallback(() => {
-    const { id, running } = temporary.current;
-    if (!id || running) {
-      return;
-    }
-    temporary.current.id = null;
+  const dropRow = (row: string) => {
     // keepalive: a closing tab still gets it out; the daily sweep is the net.
-    void fetch(API_ROUTES.CAT.CONVERSATION(id), { method: 'DELETE', keepalive: true }).catch(
+    void fetch(API_ROUTES.CAT.CONVERSATION(row), { method: 'DELETE', keepalive: true }).catch(
       () => undefined
     );
-  }, []);
+  };
 
-  useEffect(() => {
-    window.addEventListener('pagehide', leaveTemporary);
-    return () => {
-      window.removeEventListener('pagehide', leaveTemporary);
-      leaveTemporary();
-    };
-  }, [leaveTemporary]);
+  /** ChatApp's `onTemporaryEnd`: the chat is over, so is its row. */
+  const endTemporary = useCallback((chatId: string) => {
+    const chat = temporary.current.get(chatId);
+    if (!chat) {
+      return;
+    }
+    if (chat.running) {
+      chat.ended = true; // deleted when its turn settles
+      return;
+    }
+    temporary.current.delete(chatId);
+    if (chat.row) {
+      dropRow(chat.row);
+    }
+  }, []);
 
   /** The server thread this turn belongs to (null = the server's default). */
   const threadFor = async (turn: ChatTurn): Promise<string | null> => {
     if (!turn.temporary) {
-      leaveTemporary();
       return turn.conversationId;
     }
-    if (turn.history.length === 0 || !temporary.current.id) {
-      // A new temporary chat (or its first turn again, after a failure).
-      leaveTemporary();
-      const id = await createServerConversation(true);
-      if (!id) {
-        // Never fall back to the default thread: that would keep it.
-        throw new CatChatError('The temporary chat could not start. Try again.', 'STREAM_ERROR');
-      }
-      temporary.current.id = id;
+    const chat = temporary.current.get(turn.chatId);
+    if (chat?.row && turn.history.length > 0) {
+      return chat.row;
     }
-    return temporary.current.id;
+    // A new temporary chat (or its first turn again, after a failure).
+    if (chat?.row) {
+      dropRow(chat.row);
+      chat.row = null;
+    }
+    const row = await createServerConversation(true);
+    if (!row) {
+      // Never fall back to the default thread: that would keep it.
+      throw failed('The temporary chat could not start. Try again.', 'STREAM_ERROR');
+    }
+    // The transport registered this chat before asking for its thread.
+    temporary.current.get(turn.chatId)!.row = row;
+    return row;
   };
 
   const transport: ChatTransport = useCallback(async (turn: ChatTurn): Promise<ChatTurnResult> => {
     const now = live.current;
-    setFailure(null);
     const timeout = new AbortController();
     const timer = setTimeout(() => timeout.abort(), STREAM_TIMEOUT_MS);
     // Stop (ChatApp's signal) or the timeout, whichever comes first.
     turn.signal.addEventListener('abort', () => timeout.abort(), { once: true });
     const signal = timeout.signal;
     if (turn.temporary) {
-      temporary.current.running = true;
+      const chat = temporary.current.get(turn.chatId);
+      if (chat) {
+        chat.running = true;
+      } else {
+        temporary.current.set(turn.chatId, { row: null, running: true, ended: false });
+      }
     }
 
     let text = '';
@@ -266,7 +279,7 @@ export function useCatTransport({
         if (images.length) {
           // The local path sends text only; dropping the photo silently would
           // get an answer about nothing.
-          throw new CatChatError(
+          throw failed(
             'Your local model can’t see photos. Switch to Auto to send a photo, or describe it in words.',
             'NO_VISION_MODEL'
           );
@@ -288,7 +301,7 @@ export function useCatTransport({
             ).data
           : undefined;
         if (!prepared?.messages?.length) {
-          throw new CatChatError('Could not prepare your conversation. Try again.', 'STREAM_ERROR');
+          throw failed('Could not prepare your conversation. Try again.', 'STREAM_ERROR');
         }
         let result;
         try {
@@ -319,7 +332,7 @@ export function useCatTransport({
             throw localErr;
           }
           const runtimeName = getLocalRuntime(local.runtimeId)?.name ?? local.runtimeId;
-          throw new CatChatError(
+          throw failed(
             `Cat can't reach ${runtimeName} on this computer. Make sure it's running with OrangeCat allowed (Settings → AI → Run locally shows the exact command), then try again.`,
             'LOCAL_UNREACHABLE'
           );
@@ -364,7 +377,7 @@ export function useCatTransport({
             msg;
           code = data?.code || data?.error?.code;
         } catch {}
-        throw new CatChatError(msg, code);
+        throw failed(msg, code);
       }
 
       const extras: CatTurnExtras = { modelUsed: now.model };
@@ -388,7 +401,7 @@ export function useCatTransport({
           code?: string;
         };
         if (event?.error) {
-          throw new CatChatError(event.error, event.code);
+          throw failed(event.error, event.code);
         }
         if (event?.content) {
           text += event.content;
@@ -451,18 +464,19 @@ export function useCatTransport({
           // A slow answer that got somewhere is kept, not thrown away.
           return catAnswer({ content: text, toolCalls: toolCalls.length ? toolCalls : undefined });
         }
-        setFailure({ message: TIMED_OUT, code: null });
-        throw e;
+        throw failed(TIMED_OUT, 'TIMEOUT');
       }
-      setFailure({
-        message: e instanceof Error ? e.message : 'Something went wrong',
-        code: e instanceof CatChatError ? (e.code ?? null) : null,
-      });
+      // A ChatTurnError keeps its words; anything else (a dropped network)
+      // shows chatkit's "failed" line, never a raw TypeError.
       throw e;
     } finally {
       clearTimeout(timer);
-      if (turn.temporary) {
-        temporary.current.running = false;
+      const chat = turn.temporary ? temporary.current.get(turn.chatId) : undefined;
+      if (chat) {
+        chat.running = false;
+        if (chat.ended) {
+          endTemporary(turn.chatId);
+        }
       }
       live.current.onSettled?.();
     }
@@ -470,5 +484,5 @@ export function useCatTransport({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return { transport, failure, leaveTemporary };
+  return { transport, endTemporary };
 }

@@ -55,7 +55,7 @@ export function CatStatusButton() {
         type="button"
         onClick={() => void probe()}
         disabled={isProbing}
-        className="inline-flex items-center gap-1.5 text-xs font-medium text-fg-secondary underline-offset-4 hover:text-fg-primary hover:underline disabled:opacity-60"
+        className="inline-flex min-h-11 items-center gap-1.5 text-xs font-medium text-fg-secondary underline-offset-4 hover:text-fg-primary hover:underline disabled:opacity-60"
       >
         {isProbing ? (
           <Loader2 className="h-3.5 w-3.5 animate-spin" />

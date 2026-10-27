@@ -9,7 +9,7 @@ import {
   imagesOf,
   type ChatAttachment,
 } from '@/components/ai-chat/ModernChatPanel/attachments';
-import { catUserTurn } from '@/lib/chat/cat-messages';
+import { catUserTurn, refChip } from '@/lib/chat/cat-messages';
 import {
   imageRefsIn,
   parseUserMessage,
@@ -112,6 +112,15 @@ describe('photos', () => {
       content: 'What is this?',
       attachments: [{ kind: 'image', name: 'IMG_2231.jpg' }],
     });
+  });
+
+  it('one of your things comes back as the same chip it was sent with', () => {
+    const ref = { type: 'product', id: 'p1', title: 'Loki Pro' };
+    expect(catUserTurn(composeMessage('Price this', [{ kind: 'ref', id: 'r', ref }]))).toEqual({
+      content: 'Price this',
+      chips: [refChip(ref)],
+    });
+    expect(refChip(ref)).toEqual({ label: 'Loki Pro', kind: 'product' });
   });
 
   it('the server writes each stored photo path into its tag, and it reads back', () => {
