@@ -46,6 +46,8 @@ import {
   type ChatAttachment,
 } from '../attachments';
 import { CHAT_IMAGE_MAX_COUNT } from '@/services/cat/chat-images';
+import { isPdfFile } from '@bitbaum/chatkit/pdf';
+import { attachPdf } from '../pdfAttachments';
 
 interface ChatInputProps {
   value: string;
@@ -101,6 +103,7 @@ export function ChatInput({
   sendBlockedReason,
 }: ChatInputProps) {
   const [attachError, setAttachError] = useState<string | null>(null);
+  const [attachNotice, setAttachNotice] = useState<string | null>(null);
   const isFocus = variant === 'focus';
   const isInline = placement === 'inline';
   const showModelSelector = isFocus && !!onModelSelect && !!selectedModel;
@@ -110,6 +113,7 @@ export function ChatInput({
       return;
     }
     setAttachError(null);
+    setAttachNotice(null);
     const added: ChatAttachment[] = [];
     let photos = attachments.filter(a => a.kind === 'image').length;
     for (const file of Array.from(files)) {
@@ -125,6 +129,17 @@ export function ChatInput({
         }
         added.push({ kind: 'image', id: newId(), name: file.name, dataUrl });
         photos += 1;
+        continue;
+      }
+      if (isPdfFile(file)) {
+        setAttachNotice(`Reading "${file.name}"…`);
+        const pdf = await attachPdf(file, CHAT_IMAGE_MAX_COUNT - photos, newId);
+        setAttachNotice(pdf.notice);
+        if (pdf.error) {
+          setAttachError(pdf.error);
+        }
+        added.push(...pdf.added);
+        photos += pdf.added.filter(a => a.kind === 'image').length;
         continue;
       }
       if (!isReadableTextFile(file)) {
@@ -228,6 +243,11 @@ export function ChatInput({
           labels={{ send: sendLabel, stop: 'Stop generating', voice: 'Dictate your message' }}
         />
 
+        {attachNotice && !attachError && (
+          <p className="mt-2 px-1 text-xs text-fg-tertiary" role="status">
+            {attachNotice}
+          </p>
+        )}
         {attachError && (
           <p className="mt-2 px-1 text-xs text-status-negative" role="alert">
             {attachError}
