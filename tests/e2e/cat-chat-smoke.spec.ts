@@ -6,11 +6,32 @@
  */
 import { expect, test, type Page } from '@playwright/test';
 
+async function describePage(page: Page): Promise<string> {
+  const dialogs = await page.locator('[role="dialog"], [aria-modal="true"]').allInnerTexts();
+  const boxes = await page
+    .locator('textarea')
+    .evaluateAll(els =>
+      els.map(e => `${e.getAttribute('aria-label')}|${e.getAttribute('placeholder')}`)
+    );
+  const body = (
+    await page
+      .locator('body')
+      .innerText()
+      .catch(() => '')
+  ).slice(0, 400);
+  return `url=${page.url()} dialogs=${JSON.stringify(dialogs).slice(0, 300)} textareas=${JSON.stringify(boxes)} body=${JSON.stringify(body)}`;
+}
+
 async function inspectChat(page: Page, width: number) {
   await page.setViewportSize({ width, height: 844 });
   await page.goto('/dashboard/cat', { waitUntil: 'domcontentloaded' });
   const composer = page.getByRole('textbox', { name: 'Message Cat…' });
-  await expect(composer).toBeVisible({ timeout: 30000 });
+  try {
+    await expect(composer).toBeVisible({ timeout: 25000 });
+  } catch (error) {
+    // Name what the page showed instead of a bare "element(s) not found".
+    throw new Error(`${(error as Error).message}\n${await describePage(page)}`);
+  }
   await composer.fill('Check the chat composer layout.');
   await expect(page.getByRole('button', { name: /^send$/i })).toBeEnabled();
   await expect(page.locator('input[data-ck-source="files"]').first()).toBeAttached();
