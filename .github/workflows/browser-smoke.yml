@@ -1,0 +1,66 @@
+name: Browser smoke
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+concurrency:
+  group: browser-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  cat-chat:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL != '' && secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://dummy-project.supabase.co' }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY != '' && secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'dummy' }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY != '' && secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'dummy' }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SECRET_KEY != '' && secrets.SUPABASE_SECRET_KEY || '' }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY != '' && secrets.SUPABASE_SECRET_KEY || '' }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: Build the standalone production app
+        env:
+          SELF_HOST: '1'
+          NODE_ENV: production
+          NEXT_PUBLIC_LIGHTNING_ADDRESS: ${{ vars.NEXT_PUBLIC_LIGHTNING_ADDRESS }}
+          NEXT_PUBLIC_BITCOIN_ADDRESS: ${{ vars.NEXT_PUBLIC_BITCOIN_ADDRESS }}
+          NEXT_PUBLIC_CAT_CREDITS_LIVE: ${{ vars.NEXT_PUBLIC_CAT_CREDITS_LIVE }}
+          NEXT_PUBLIC_FEATURE_VOICE_INPUT: ${{ vars.NEXT_PUBLIC_FEATURE_VOICE_INPUT }}
+          LOKI_FEEDBACK_TOKEN: ${{ vars.LOKI_FEEDBACK_TOKEN }}
+          NEXT_PUBLIC_PAID_PLANS_OPEN: ${{ vars.NEXT_PUBLIC_PAID_PLANS_OPEN }}
+        run: |
+          pnpm run build
+          cp -r .next/static .next/standalone/.next/static
+          [ -d public ] && cp -r public .next/standalone/public || true
+          [ -d content ] && cp -r content .next/standalone/content || true
+      - name: Require the authenticated browser fixture
+        env:
+          E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
+          E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
+        run: |
+          test -n "$E2E_USER_EMAIL" && test -n "$E2E_USER_PASSWORD" || {
+            echo 'Browser smoke requires the configured E2E fixture account.' >&2
+            exit 1
+          }
+      - name: Check the Cat chat composer and PDF attaching at phone and desktop widths
+        env:
+          PORT: 3000
+          E2E_BASE_URL: http://localhost:3000
+          E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
+          E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
+        run: |
+          node .next/standalone/server.js &
+          pnpm exec wait-on http://localhost:3000
+          pnpm exec playwright test tests/e2e/cat-chat-smoke.spec.ts tests/e2e/cat-pdf.live.spec.ts --project=chromium --reporter=line

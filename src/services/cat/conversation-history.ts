@@ -147,7 +147,7 @@ export async function createConversation(
     .insert({
       user_id: userId,
       is_default: false,
-      title: title ?? null,
+      title: storedTitle(title),
       ephemeral: opts.ephemeral === true,
     })
     .select('id')
@@ -191,6 +191,34 @@ export async function deleteStaleEphemeralConversations(
     throw new Error(`Failed to sweep temporary chats: ${error.message}`);
   }
   return count ?? 0;
+}
+
+/** A title as stored: one line, cut to TITLE_MAX_LENGTH. Empty → null. */
+export function storedTitle(title: string | null | undefined): string | null {
+  const line = title?.replace(/\s+/g, ' ').trim();
+  if (!line) {
+    return null;
+  }
+  return line.length > TITLE_MAX_LENGTH ? `${line.slice(0, TITLE_MAX_LENGTH).trimEnd()}…` : line;
+}
+
+/** Rename a conversation the user owns. Returns false when it is not theirs. */
+export async function renameConversation(
+  supabase: AnySupabaseClient,
+  userId: string,
+  conversationId: string,
+  title: string
+): Promise<boolean> {
+  const owned = await resolveOwnedConversationId(supabase, userId, conversationId);
+  if (!owned) {
+    return false;
+  }
+  const { error } = await supabase
+    .from(DATABASE_TABLES.CAT_CONVERSATIONS)
+    .update({ title: storedTitle(title) })
+    .eq('id', owned)
+    .eq('user_id', userId);
+  return !error;
 }
 
 /** Delete a conversation (and its messages) the user owns. Returns success. */
@@ -316,8 +344,7 @@ export async function bumpConversation(
       .eq('id', conversationId)
       .single();
     if (row && !row.title) {
-      patch.title =
-        title.length > TITLE_MAX_LENGTH ? `${title.slice(0, TITLE_MAX_LENGTH).trimEnd()}…` : title;
+      patch.title = storedTitle(title);
     }
   }
   await supabase.from(DATABASE_TABLES.CAT_CONVERSATIONS).update(patch).eq('id', conversationId);

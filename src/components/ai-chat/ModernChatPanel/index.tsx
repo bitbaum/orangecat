@@ -1,454 +1,402 @@
 'use client';
 
 /**
- * MODERN CHAT PANEL
+ * THE CAT CHAT — chatkit's ChatApp with the Cat's transport and words.
  *
- * Modular chat component for Cat conversations.
- * `focus` variant is the default Cat hub experience (full-height, minimal chrome).
+ * ChatApp is the whole app around a conversation, the same in every fleet
+ * product: the header (Chats · title · New chat · "…" with Temporary chat,
+ * Rename, Delete), the chat list (a drawer on a phone, a rail from 64rem)
+ * with search and Today / Yesterday / Earlier, reopening the open chat after
+ * a reload, the composer with Camera · Photos · Files and the microphone,
+ * queueing a message typed while an answer runs, Stop and Retry.
+ *
+ * What is the Cat's own, and stays here:
+ *   - the transport (useCatTransport): its routes, models, page context
+ *   - the store (catConversationStore): its signed-in server rows
+ *   - "Your things" and the model picker in the composer
+ *   - what it did, under each answer (CatAnswerFooter)
+ *   - actions waiting for a confirmation and memories it just noted, over
+ *     the composer, where the person is looking
+ *   - its greeting and opener over the starters
  */
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { ArrowDown } from 'lucide-react';
-import { ChatScreen, useStickToBottom } from '@bitbaum/chatkit/react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { cn } from '@/lib/utils';
-import { useMediaQuery } from '@/hooks/useMediaQuery';
+import Link from 'next/link';
+import { ChatApp, type RenderLink } from '@bitbaum/chatkit/react';
+import '@bitbaum/chatkit/styles.css';
 import { CAT_SEND_EVENT } from '@/lib/chat/cat-send-event';
 import { postChatFeedback } from '@/lib/chat/feedback';
-import type { AnswerFeedback } from '@bitbaum/chatkit';
-import { getCreateSuggestionHref } from '@/config/cat-create-suggestions';
+import { catConversationStore } from '@/lib/chat/cat-conversation-store';
+import type { CatMessage } from '@/lib/chat/cat-messages';
+import { API_ROUTES } from '@/config/api-routes';
+import { CAT_AGENT, CAT_HUB_COPY } from '@/config/cat-hub';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
-
-import {
-  useChatMessages,
-  useSuggestions,
-  usePendingActionsManager,
-  useCatQuota,
-  useMemoryNotes,
-} from './hooks';
-import { ChatHeader, ChatInput, EmptyState, ErrorDisplay, MessageBubble } from './components';
+import type { CatPageDescriptor } from '@/config/cat-page-context';
+import type { CatReference } from '@/config/cat-prompts';
+import { transcribeWithRoute } from '@/hooks/useDictation';
+import { cn } from '@/lib/utils';
+import { useSuggestions, usePendingActionsManager, useMemoryNotes } from './hooks';
+import { useCatTransport } from './hooks/useCatTransport';
+import { CatAnswerFooter } from './components/CatAnswerFooter';
+import { ComposerAddMenu } from './components/ComposerAddMenu';
+import { ComposerAttachments } from './components/ComposerAttachments';
+import { EmptyState, catStarters } from './components/EmptyState';
 import { MemoryNoteCard } from './components/MemoryNoteCard';
+import { ModelSelector } from './components/ModelSelector';
 import { PendingActionsCard } from '../PendingActionsCard';
-import { composeMessage, imagesOf, type ChatAttachment } from './attachments';
-import type { ChatImage } from '@/services/cat/chat-images';
+import { ATTACHMENT_UNSUPPORTED_COPY, CAT_ATTACH_LIMITS } from './attachments';
+import { readCatFile } from './pdfAttachments';
 import type { CatAction } from './types';
 
+/** One transcription route for every microphone in the app; see useDictation. */
+const transcribe = transcribeWithRoute(API_ROUTES.CAT.TRANSCRIBE);
+
+/** Which chat was open, so a reload reopens it (device storage: an id, nothing else). */
+export const CAT_OPEN_CHAT_KEY = 'oc-cat:open-chat';
+
+/** An in-app route navigates in place; everything else opens beside it. */
+const renderAnswerLink: RenderLink = ({ href, internal, className, children }) =>
+  internal ? (
+    <Link href={href} className={className}>
+      {children}
+    </Link>
+  ) : (
+    <a href={href} className={className} target="_blank" rel="noopener noreferrer">
+      {children}
+    </a>
+  );
+
+/** Mounted with the empty chat: whatever was on screen before was left. */
+function OnEmpty({ run }: { run: () => void }) {
+  useEffect(run, [run]);
+  return null;
+}
+
 interface ModernChatPanelProps {
-  /**
-   * If provided, this message is automatically sent as the user's first message
-   * once chat history finishes loading and the conversation is empty.
-   */
+  /** Sent as the first message of a new chat once the panel is ready (`?q=`). */
   initialMessage?: string;
-  /** When true, shows an onboarding welcome in the empty state for first-time users. */
+  /** Fires once `initialMessage` has gone, so the page can drop it from its URL. */
+  onInitialMessageSent?: () => void;
+  /** A first-time visitor: the welcome greeting instead of the time of day. */
   isNewUser?: boolean;
-  /** `focus` = full-height Cat hub (toolbar lives in parent). */
-  variant?: 'default' | 'focus';
-  selectedModel?: string;
-  onModelSelect?: (model: string) => void;
-  onLoadingChange?: (loading: boolean) => void;
-  /**
-   * Fires after every send attempt (success, abort, or error). The hub uses
-   * this to refresh its lifted quota meter so the chip ticks down without a
-   * page reload. Composed alongside the internal post-send wiring.
-   */
-  onMessageSent?: () => void;
-  /**
-   * Active conversation to load/send to. Omitted/null → fresh new-chat draft:
-   * nothing is loaded and a conversation is created lazily on the first send.
-   */
+  /** The page behind the Cat, when it runs over one (GlobalCatLauncher). */
+  pageContext?: CatPageDescriptor | null;
+  /** The open chat, when the owner keeps it; `null` = a new chat. */
   conversationId?: string | null;
-  /** Fires after each send so the conversation rail can refresh title + order. */
-  onConversationStarted?: () => void;
-  /** Fires when the first send of a fresh draft created a conversation — adopt it. */
-  onConversationCreated?: (id: string) => void;
-  /** The conversation the first send creates is a temporary chat. */
-  temporary?: boolean;
-  /** Current page the user is on (global overlay) so Cat is page-aware. */
-  pageContext?: import('@/config/cat-page-context').CatPageDescriptor | null;
-  /**
-   * Floats over the top of the conversation (focus variant): the hub's
-   * toolbar. The words scroll under it and fade — nothing takes a strip of
-   * the screen away from the reading.
-   */
-  header?: ReactNode;
+  onConversationChange?: (id: string | null) => void;
+  /** Device key that reopens the open chat after a reload; `null` = never. */
+  rememberKey?: string | null;
+  /** When the chat list stays beside the chat instead of in a drawer. */
+  railQuery?: string;
+  /** The page's controls in the header. */
+  headerStart?: ReactNode;
+  headerEnd?: ReactNode;
+  /** One quiet line under the composer. */
+  footnote?: ReactNode;
+  /** After every turn, answered or not (the page's quota meter). */
+  onTurnSettled?: () => void;
   className?: string;
 }
 
 export function ModernChatPanel({
   initialMessage,
+  onInitialMessageSent,
   isNewUser,
-  variant = 'focus',
-  selectedModel: selectedModelProp,
-  onModelSelect,
-  onLoadingChange,
-  onMessageSent,
-  conversationId,
-  onConversationStarted,
-  onConversationCreated,
-  temporary,
   pageContext,
-  header,
+  conversationId,
+  onConversationChange,
+  rememberKey = CAT_OPEN_CHAT_KEY,
+  railQuery,
+  headerStart,
+  headerEnd,
+  footnote,
+  onTurnSettled,
   className,
-}: ModernChatPanelProps = {}) {
+}: ModernChatPanelProps) {
   const router = useRouter();
-  const [input, setInput] = useState('');
-  const [attachments, setAttachments] = useState<ChatAttachment[]>([]);
-  const [internalModel, setInternalModel] = useState('auto');
-  // Remember the user's model choice (incl. custom ids) across reloads.
+
+  // The model picked in the composer, remembered across reloads (incl. custom ids).
+  const [model, setModel] = useState('auto');
   useEffect(() => {
     try {
       const saved = localStorage.getItem('cat:model');
       if (saved) {
-        setInternalModel(saved);
+        setModel(saved);
       }
     } catch {
-      // localStorage unavailable — fall back to the in-memory default.
+      // Storage unavailable — the in-memory default stands.
     }
   }, []);
-  const persistModel = useCallback((m: string) => {
-    setInternalModel(m);
+  const pickModel = useCallback((m: string) => {
+    setModel(m);
     try {
       localStorage.setItem('cat:model', m);
     } catch {
       // ignore persistence failures
     }
   }, []);
-  const selectedModel = selectedModelProp ?? internalModel;
-  const setSelectedModel = onModelSelect ?? persistModel;
-  const lastUserMessageRef = useRef<{ content: string; images: ChatImage[] } | null>(null);
-  const initialMessageSentRef = useRef(false);
-  const refreshPendingActionsRef = useRef<(() => Promise<void>) | undefined>(undefined);
-  const isFocus = variant === 'focus';
 
-  const { quota, refresh: refreshQuota } = useCatQuota();
+  // The person's own things for the next message, taken by the send.
+  const [references, setReferences] = useState<CatReference[]>([]);
+  const referencesRef = useRef(references);
+  referencesRef.current = references;
+  const takeReferences = useCallback(() => {
+    const taken = referencesRef.current;
+    if (taken.length) {
+      setReferences([]);
+    }
+    return taken;
+  }, []);
+
   const { memoryNotes, checkAfterSend, undoNote, dismissNote } = useMemoryNotes();
-
-  const {
-    messages,
-    isLoading,
-    isLoadingHistory,
-    error,
-    errorCode,
-    messagesEndRef,
-    sendMessage,
-    stopGeneration,
-    clearChat,
-    setError,
-    addSystemMessage,
-    resolvePendingChip,
-  } = useChatMessages({
-    selectedModel,
-    conversationId,
-    temporary,
-    onPendingResult: () => refreshPendingActionsRef.current?.(),
-    onMessageSent: () => {
-      refreshQuota();
-      // New memories land a few seconds after the reply (detached extraction);
-      // poll so they surface as an undoable "Cat noted" card, never silently.
-      checkAfterSend();
-      onMessageSent?.();
-    },
-    onConversationStarted,
-    onConversationCreated: (id: string) => {
-      setCreatedConversationId(id);
-      onConversationCreated?.(id);
-    },
-    pageContext,
-  });
-
-  // The conversation a thumb belongs to: the one we were given, or the one
-  // the first send of a fresh draft just created. Reset with the prop so a
-  // "New chat" never posts to the thread before it.
-  const [createdConversationId, setCreatedConversationId] = useState<string | null>(null);
-  useEffect(() => {
-    setCreatedConversationId(null);
-  }, [conversationId]);
-  const handleFeedback = useCallback(
-    (feedback: AnswerFeedback) => {
-      const id = conversationId ?? createdConversationId;
-      if (id) {
-        void postChatFeedback(id, feedback);
-      }
-    },
-    [conversationId, createdConversationId]
-  );
-
   const { opener, chips, attachable, dismissOpener, isLoadingSuggestions } = useSuggestions();
 
+  // Pending actions the person answered since their turn ended: the chip
+  // under that turn settles, and what the handler said (with its one link)
+  // stays over the composer until dismissed.
+  const [answered, setAnswered] = useState<Record<string, 'completed' | 'declined'>>({});
+  const [outcomes, setOutcomes] = useState<{ id: string; text: string; url?: string }[]>([]);
   const { pendingActions, handleConfirmAction, handleRejectAction, refreshPendingActions } =
     usePendingActionsManager({
       onActionConfirmed: (action, outcome) => {
-        // The handler's own words first ("set up for Annushka — send her the
-        // link"), and the link itself: a completed handoff or claim used to
-        // end in the card's description, with the one URL the user needed next
-        // nowhere on screen (seen live 2026-09-10).
-        const line = `✅ ${outcome.message ?? `Action completed: ${action.description}`}`;
-        addSystemMessage(outcome.url ? `${line}\n\n[Open](${outcome.url})` : line);
-        // The chip above the card was still saying "needs your confirmation".
-        // The tool_call stream closed when the turn ended and the confirm route
-        // emits no events, so nothing ever told it the answer had arrived.
-        resolvePendingChip(action.id, { status: 'completed' });
+        setAnswered(a => ({ ...a, [action.id]: 'completed' }));
+        setOutcomes(o => [
+          ...o,
+          {
+            id: action.id,
+            text: outcome.message ?? `Done: ${action.description}`,
+            url: outcome.url,
+          },
+        ]);
       },
-      onActionRejected: actionId => resolvePendingChip(actionId, { status: 'declined' }),
+      onActionRejected: id => setAnswered(a => ({ ...a, [id]: 'declined' })),
     });
 
-  refreshPendingActionsRef.current = refreshPendingActions;
-
-  useEffect(() => {
-    onLoadingChange?.(isLoading);
-  }, [isLoading, onLoadingChange]);
-
-  useEffect(() => {
-    if (
-      initialMessage &&
-      !isLoadingHistory &&
-      messages.length === 0 &&
-      !isLoading &&
-      !initialMessageSentRef.current
-    ) {
-      initialMessageSentRef.current = true;
-      void sendMessage(initialMessage);
-    }
-  }, [initialMessage, isLoadingHistory, messages.length, isLoading, sendMessage]);
-
-  const handleSend = useCallback(() => {
-    const content = composeMessage(input, attachments);
-    if (content) {
-      const images = imagesOf(attachments);
-      lastUserMessageRef.current = { content, images };
-      setInput('');
-      setAttachments([]);
-      void sendMessage(content, images);
-    }
-  }, [input, attachments, sendMessage]);
-
-  const handleRetry = useCallback(() => {
-    if (lastUserMessageRef.current) {
-      setError(null);
-      void sendMessage(lastUserMessageRef.current.content, lastUserMessageRef.current.images);
-    }
-  }, [sendMessage, setError]);
-
-  const handleDismissError = useCallback(() => {
-    setError(null);
-  }, [setError]);
-
-  const handleSuggestionClick = useCallback(
-    (suggestion: string) => {
-      const href = getCreateSuggestionHref(suggestion);
-      if (href) {
-        router.push(href);
-        return;
-      }
-      void sendMessage(suggestion);
+  const settledRef = useRef(onTurnSettled);
+  settledRef.current = onTurnSettled;
+  const { transport, failure, leaveTemporary } = useCatTransport({
+    model,
+    pageContext,
+    takeReferences,
+    onSettled: () => {
+      // New memories land a few seconds after the reply (detached
+      // extraction): poll so they surface as an undoable card, never silently.
+      checkAfterSend();
+      settledRef.current?.();
     },
-    [sendMessage, router]
-  );
+    onPendingConfirmation: () => void refreshPendingActions(),
+  });
 
-  // Words sent from beside the panel (lib/chat/cat-send-event) go through the
-  // same send as a suggestion chip.
+  const store = useMemo(() => catConversationStore(), []);
+
+  // Words sent from outside the composer — the page's `?q=` and the Loki
+  // sheet (lib/chat/cat-send-event) — go through the composer's own Send, so
+  // they take exactly the path typing does (new chat, queue, Stop).
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [draft, setDraft] = useState('');
+  const [outgoing, setOutgoing] = useState<string | null>(null);
+  const sendFromOutside = useCallback((text: string) => {
+    setDraft(text);
+    setOutgoing(text);
+  }, []);
+  useEffect(() => {
+    if (outgoing === null || draft !== outgoing) {
+      return;
+    }
+    const send = rootRef.current?.querySelector<HTMLButtonElement>(
+      'button.ck-send:not(.ck-send-stop)'
+    );
+    if (send && !send.disabled) {
+      send.click();
+    }
+    setOutgoing(null);
+  }, [outgoing, draft]);
+
   useEffect(() => {
     const onSend = (e: Event) => {
       const text = (e as CustomEvent<string>).detail;
       if (typeof text === 'string' && text.trim()) {
-        void sendMessage(text);
+        sendFromOutside(text);
       }
     };
     window.addEventListener(CAT_SEND_EVENT, onSend);
     return () => window.removeEventListener(CAT_SEND_EVENT, onSend);
-  }, [sendMessage]);
+  }, [sendFromOutside]);
 
-  const handleActionClick = useCallback(
+  // `?q=` opens a NEW chat with those words, never the one open before.
+  const firstRef = useRef(initialMessage);
+  useState(() => {
+    if (firstRef.current && rememberKey && typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem(rememberKey);
+      } catch {
+        // nothing remembered, nothing to forget
+      }
+    }
+  });
+  useEffect(() => {
+    const first = firstRef.current;
+    if (first) {
+      firstRef.current = undefined;
+      sendFromOutside(first);
+      onInitialMessageSent?.();
+    }
+  }, [sendFromOutside, onInitialMessageSent]);
+
+  const onAction = useCallback(
     (action: CatAction) => {
+      const prefill = (values: Record<string, unknown>) => {
+        const params = new URLSearchParams();
+        for (const [key, value] of Object.entries(values)) {
+          if (value !== null && value !== undefined && value !== '') {
+            params.set(key, String(value));
+          }
+        }
+        return params.toString();
+      };
       if (action.type === 'create_entity') {
-        const entityMeta = ENTITY_REGISTRY[action.entityType];
-        if (entityMeta?.createPath) {
-          const prefillParams = new URLSearchParams();
-          Object.entries(action.prefill).forEach(([key, value]) => {
-            if (value !== null && value !== undefined && value !== '') {
-              prefillParams.set(key, String(value));
-            }
-          });
-          router.push(`${entityMeta.createPath}?${prefillParams.toString()}`);
+        const meta = ENTITY_REGISTRY[action.entityType];
+        if (meta?.createPath) {
+          router.push(`${meta.createPath}?${prefill(action.prefill)}`);
         }
       } else if (action.type === 'update_entity' || action.type === 'publish_entity') {
-        const entityMeta = ENTITY_REGISTRY[action.entityType];
-        // Entities are edited via their create page in edit mode (?edit=<id>) —
-        // EntityCreateEditPage reads it. There is no /{basePath}/{id}/edit route
-        // for most types, so the old path 404'd for everything but causes/tasks.
-        if (entityMeta?.createPath) {
-          router.push(`${entityMeta.createPath}?edit=${action.entityId}`);
+        // Entities are edited on their create page in edit mode (?edit=<id>).
+        const meta = ENTITY_REGISTRY[action.entityType];
+        if (meta?.createPath) {
+          router.push(`${meta.createPath}?edit=${action.entityId}`);
         }
       } else if (action.type === 'suggest_wallet') {
-        const walletMeta = ENTITY_REGISTRY.wallet;
-        const prefillParams = new URLSearchParams();
-        Object.entries(action.prefill).forEach(([key, value]) => {
-          if (value !== null && value !== undefined && value !== '') {
-            prefillParams.set(key, String(value));
-          }
-        });
-        router.push(`${walletMeta.basePath}?${prefillParams.toString()}`);
+        router.push(`${ENTITY_REGISTRY.wallet.basePath}?${prefill(action.prefill)}`);
       }
     },
     [router]
   );
 
-  // Follows new turns only while the reader is at the bottom, and stays
-  // pinned through size changes — the floating composer growing, its height
-  // measured after the first paint — with a way back down otherwise.
-  const { scrollRef, endRef, following, onScroll, jumpToBottom } = useStickToBottom(
-    [messages.length, isLoadingHistory],
-    messages.length
-  );
-  const setEnd = useCallback(
-    (el: HTMLDivElement | null) => {
-      endRef.current = el;
-      messagesEndRef.current = el;
-    },
-    [endRef, messagesEndRef]
-  );
-
-  const isEmpty = !isLoadingHistory && messages.length === 0;
-  // Centred in the empty state (focus variant) from sm up; on a phone it
-  // floats at the bottom as in a thread, where the thumb is, and the empty
-  // state gathers above it (globals.css, .oc-chat-empty). Pinned below the
-  // thread otherwise.
-  const phone = useMediaQuery('(max-width: 639px)');
-  const composerInline = isFocus && isEmpty && !phone;
-  const composer = (
-    <ChatInput
-      value={input}
-      onChange={setInput}
-      onSend={handleSend}
-      isLoading={isLoading}
-      onStop={stopGeneration}
-      variant={variant}
-      placement={composerInline ? 'inline' : 'bottom'}
-      hasMessages={messages.length > 0}
-      onClearChat={clearChat}
-      selectedModel={selectedModel}
-      onModelSelect={setSelectedModel}
-      attachments={attachments}
-      onAttachmentsChange={setAttachments}
-      attachable={attachable}
-    />
-  );
-
-  const thread = (
-    <div ref={scrollRef} className="oc-chat-scroll" onScroll={onScroll}>
-      {isLoadingHistory ? (
-        <div className="flex h-full items-center justify-center">
-          <p className="text-sm text-fg-secondary">Loading conversation…</p>
-        </div>
-      ) : messages.length === 0 ? (
-        <EmptyState
-          opener={opener}
-          chips={chips}
-          isLoadingSuggestions={isLoadingSuggestions}
-          onSuggestionClick={handleSuggestionClick}
-          onDismissOpener={dismissOpener}
-          isNewUser={isNewUser}
-          variant={variant}
-          composer={composerInline ? composer : undefined}
-        />
-      ) : (
-        <div className="oc-chat-thread">
-          {messages.map((msg, i) => (
-            <MessageBubble
-              key={msg.id}
-              message={msg}
-              isLast={i === messages.length - 1 && pendingActions.length === 0}
-              onActionClick={handleActionClick}
-              onQuickReply={handleSuggestionClick}
-              onFeedback={handleFeedback}
-              variant={variant}
-            />
-          ))}
-
-          {pendingActions.length > 0 && (
-            <div className="space-y-3">
-              {pendingActions.map(action => (
-                <PendingActionsCard
-                  key={action.id}
-                  action={action}
-                  onConfirm={handleConfirmAction}
-                  onReject={handleRejectAction}
-                />
-              ))}
-            </div>
-          )}
-
-          <MemoryNoteCard notes={memoryNotes} onUndo={undoNote} onDismiss={dismissNote} />
-
-          <div ref={setEnd} />
-        </div>
-      )}
-    </div>
-  );
-  const errorDisplay = error && (
-    <ErrorDisplay
-      error={error}
-      code={errorCode}
-      onRetry={handleRetry}
-      onDismiss={handleDismissError}
-    />
-  );
-
-  if (isFocus) {
-    // The whole display is the conversation; the toolbar and the composer
-    // float over it (chatkit's ChatScreen). While the chat is empty the
-    // composer sits in the centred column instead, so the dock is hidden.
-    return (
-      <div className={cn('oc-chat-layout', className)}>
-        <ChatScreen
-          header={header}
-          composer={
-            <>
-              {errorDisplay}
-              {!composerInline && composer}
-            </>
-          }
-          className={composerInline ? 'oc-chat-screen-empty' : undefined}
-        >
-          {thread}
-          {!following && !isEmpty && (
+  const above =
+    pendingActions.length > 0 || outcomes.length > 0 || memoryNotes.length > 0 ? (
+      <div className="oc-chat-above">
+        {pendingActions.map(action => (
+          <PendingActionsCard
+            key={action.id}
+            action={action}
+            onConfirm={handleConfirmAction}
+            onReject={handleRejectAction}
+          />
+        ))}
+        {outcomes.map(o => (
+          <p key={o.id} className="oc-chat-outcome" role="status">
+            <span className="min-w-0 flex-1">
+              {o.text}
+              {o.url && (
+                <>
+                  {' '}
+                  <Link href={o.url} className="underline underline-offset-2">
+                    Open
+                  </Link>
+                </>
+              )}
+            </span>
             <button
               type="button"
-              className="ck-jump"
-              onClick={jumpToBottom}
-              aria-label="Jump to the latest message"
-              title="Jump to the latest message"
+              className="ck-icon-btn"
+              aria-label="Dismiss"
+              onClick={() => setOutcomes(list => list.filter(x => x.id !== o.id))}
             >
-              <ArrowDown className="h-4 w-4" />
+              ×
             </button>
-          )}
-        </ChatScreen>
+          </p>
+        ))}
+        <MemoryNoteCard notes={memoryNotes} onUndo={undoNote} onDismiss={dismissNote} />
       </div>
-    );
-  }
+    ) : undefined;
 
   return (
-    <div
-      className={cn(
-        'oc-chat-layout min-h-[34rem] rounded-md border border-subtle',
-        'h-[calc(100dvh_-_15.5rem)] sm:h-[calc(100dvh_-_13rem)]',
-        className
-      )}
-    >
-      <ChatHeader
-        selectedModel={selectedModel}
-        onModelSelect={setSelectedModel}
-        isLoading={isLoading}
-        hasMessages={messages.length > 0}
-        onClearChat={clearChat}
-        quota={quota}
+    <div ref={rootRef} className={cn('oc-chat-app', className)}>
+      <ChatApp
+        name={CAT_AGENT.name}
+        transport={transport}
+        store={store}
+        fill="parent"
+        rememberKey={rememberKey}
+        conversationId={conversationId}
+        onConversationChange={id => {
+          if (id) {
+            leaveTemporary();
+          }
+          onConversationChange?.(id);
+        }}
+        railQuery={railQuery}
+        placeholder={CAT_HUB_COPY.composerPlaceholder}
+        starters={catStarters(opener, chips)}
+        startersTitle={
+          <>
+            <OnEmpty run={leaveTemporary} />
+            <EmptyState
+              opener={opener}
+              chips={chips}
+              isLoadingSuggestions={isLoadingSuggestions}
+              onDismissOpener={dismissOpener}
+              isNewUser={isNewUser}
+            />
+          </>
+        }
+        headerStart={headerStart}
+        headerEnd={headerEnd}
+        footnote={footnote}
+        composer={{
+          value: draft,
+          onValueChange: setDraft,
+          attach: { ...CAT_ATTACH_LIMITS, readFile: readCatFile },
+          attachmentOnlyText: CAT_HUB_COPY.attachmentOnly,
+          heldAttachments: references.length,
+          voice: { prefer: 'server', transcribe },
+          above,
+          header:
+            references.length > 0 ? (
+              <ComposerAttachments
+                references={references}
+                onRemove={ref => setReferences(list => list.filter(r => r !== ref))}
+              />
+            ) : undefined,
+          tools: (
+            <>
+              <ComposerAddMenu
+                attachable={attachable}
+                onReference={ref =>
+                  setReferences(list =>
+                    list.some(r => r.id === ref.id && r.type === ref.type) ? list : [...list, ref]
+                  )
+                }
+              />
+              <ModelSelector selectedModel={model} onSelect={pickModel} openUp subtle />
+            </>
+          ),
+          labels: {
+            voice: 'Dictate your message',
+            attachNotes: { wrongType: () => ATTACHMENT_UNSUPPORTED_COPY },
+          },
+        }}
+        thread={{
+          renderLink: renderAnswerLink,
+          share: { title: CAT_AGENT.name },
+          labels: { working: CAT_HUB_COPY.thinking },
+          onFeedback: ({ conversationId: id, ...feedback }) => {
+            if (id) {
+              void postChatFeedback(id, feedback);
+            }
+          },
+          renderFooter: m =>
+            m.role === 'assistant' ? (
+              <CatAnswerFooter
+                message={m as CatMessage}
+                failure={failure}
+                onAction={onAction}
+                answered={answered}
+              />
+            ) : null,
+        }}
       />
-
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        {thread}
-        {errorDisplay}
-        {composer}
-      </div>
     </div>
   );
 }

@@ -6,7 +6,15 @@
  * /public/pdfjs by `pnpm run pdf-assets`, which dev and build run first.
  */
 
-import { PDF_MAX_BYTES, readPdf, sheetName, type PdfReading } from '@bitbaum/chatkit/pdf';
+import type { AttachmentReader, StagedAttachment } from '@bitbaum/chatkit';
+import {
+  PDF_MAX_BYTES,
+  isPdfFile,
+  readPdf,
+  sheetName,
+  type PdfReading,
+} from '@bitbaum/chatkit/pdf';
+import { CHAT_IMAGE_MAX_COUNT } from '@/services/cat/chat-images';
 import type { ChatAttachment } from './attachments';
 
 export interface PdfAttachResult {
@@ -83,3 +91,40 @@ export async function attachPdf(
     error: null,
   };
 }
+
+/**
+ * The Cat's reader for chatkit's attach button (`composer.attach.readFile`):
+ * a PDF is read here, anything else is left to chatkit. Photos and the text
+ * of a PDF stage as chatkit attachments; the transport turns them back into
+ * the Cat's own (useCatTransport). The limits are the same as before ChatApp:
+ * pictures per message are CHAT_IMAGE_MAX_COUNT, shared with the photos
+ * already staged, and what could not go is said under the box.
+ */
+export const readCatFile: AttachmentReader = async (file, ctx) => {
+  if (!isPdfFile(file)) {
+    return undefined;
+  }
+  ctx.progress(`Reading "${file.name}"…`);
+  let n = 0;
+  const pdf = await attachPdf(
+    file,
+    Math.min(CHAT_IMAGE_MAX_COUNT - ctx.images, ctx.room),
+    () => `pdf-${++n}`
+  );
+  const attachments: StagedAttachment[] = [];
+  for (const a of pdf.added) {
+    if (a.kind === 'image') {
+      attachments.push({
+        kind: 'image',
+        name: a.name,
+        mimeType: /^data:([^;,]+)/.exec(a.dataUrl)?.[1] ?? 'image/jpeg',
+        dataBase64: a.dataUrl.slice(a.dataUrl.indexOf(',') + 1),
+        previewUrl: a.dataUrl,
+      });
+    } else if (a.kind === 'file') {
+      attachments.push({ kind: 'text', name: a.name, content: a.content });
+    }
+  }
+  const note = pdf.error ?? pdf.notice;
+  return { attachments, ...(note ? { note } : {}) };
+};

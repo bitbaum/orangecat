@@ -1,5 +1,6 @@
 /**
- * COMPOSER ATTACHMENTS — what the "+" menu adds to a message, and how it
+ * COMPOSER ATTACHMENTS — what goes with a message (chatkit's staged photos
+ * and files, and the person's own things from "Your things"), and how it
  * travels.
  *
  * The chat API takes one text message (catChatBodySchema), so an attachment is
@@ -25,9 +26,12 @@
 
 import { AI_MESSAGE_MAX_CHARS } from '@/lib/validation/ai';
 import type { CatReference } from '@/config/cat-prompts';
-import type { ChatImage } from '@/services/cat/chat-images';
+import {
+  CHAT_IMAGE_MAX_COUNT,
+  CHAT_IMAGE_MAX_EDGE_PX,
+  type ChatImage,
+} from '@/services/cat/chat-images';
 import { fileBlockOpen, imageTag, refTag } from '@/lib/chat/attachment-tags';
-import { ATTACH_SOURCE_INPUT, type AttachSource } from '@bitbaum/chatkit';
 
 export type ChatAttachment =
   | { kind: 'file'; id: string; name: string; content: string }
@@ -41,79 +45,26 @@ export function imagesOf(attachments: ChatAttachment[]): ChatImage[] {
     .map(a => ({ name: a.name, dataUrl: a.dataUrl }));
 }
 
-export function isImageFile(file: { type: string }): boolean {
-  return file.type.startsWith('image/');
-}
-
-/** Extensions the Cat can read as text. `accept` for the file input. */
-export const TEXT_FILE_EXTENSIONS = [
-  '.txt',
-  '.md',
-  '.markdown',
-  '.csv',
-  '.tsv',
-  '.json',
-  '.yaml',
-  '.yml',
-  '.xml',
-  '.html',
-  '.css',
-  '.js',
-  '.ts',
-  '.tsx',
-  '.jsx',
-  '.py',
-  '.rb',
-  '.go',
-  '.rs',
-  '.java',
-  '.sql',
-  '.sh',
-  '.log',
-  '.ini',
-  '.toml',
-  '.env.example',
-] as const;
+/** Characters of one text file the Cat reads (inlined into the message). */
+export const MAX_ATTACHMENT_CHARS = 512 * 1024;
 
 /**
- * Where an attachment comes from: one file input per source, never one input
- * with a mixed `accept` (a phone answers that with a chooser of capture apps
- * and no file browser — 2026-10-05). The rule itself is @bitbaum/chatkit's
- * `ATTACH_SOURCE_INPUT`, the one definition every product reads; only the
- * menu's own words live here. CI runs `chatkit-check-file-inputs`.
+ * What chatkit's attach button may stage for the Cat (ChatApp `composer.attach`):
+ * photos up to the chat route's count, shrunk in the browser to the edge a
+ * vision model reads; text files up to what the message can carry. chatkit
+ * owns the pickers (Camera · Photos · Files, one input each) and refuses any
+ * other kind of file with ATTACHMENT_UNSUPPORTED_COPY before anything is read.
+ * A PDF never reaches that refusal: `readFile` (pdfAttachments.ts) reads it.
  */
-export type { AttachSource };
-
-const SOURCE_LABELS: Record<AttachSource, string> = {
-  camera: 'Take a photo',
-  photos: 'Photo library',
-  files: 'Files',
-};
-
-export const ATTACH_SOURCES: readonly {
-  id: AttachSource;
-  label: string;
-  input: { accept?: string; capture?: 'environment'; multiple: boolean };
-}[] = (['camera', 'photos', 'files'] as const).map(id => ({
-  id,
-  label: SOURCE_LABELS[id],
-  // One photo from the camera; several from the library or the file browser.
-  input: { ...ATTACH_SOURCE_INPUT[id], multiple: id !== 'camera' },
-}));
-
-/** Refuse before reading: a file this large cannot fit the message anyway. */
-export const MAX_ATTACHMENT_BYTES = 512 * 1024;
+export const CAT_ATTACH_LIMITS = {
+  maxFiles: CHAT_IMAGE_MAX_COUNT,
+  maxTextChars: MAX_ATTACHMENT_CHARS,
+  maxImageBytes: 1.5 * 1024 * 1024,
+  maxImageEdge: CHAT_IMAGE_MAX_EDGE_PX,
+} as const;
 
 export const ATTACHMENT_UNSUPPORTED_COPY =
   'Cat can read photos, PDFs and text files (.txt, .md, .csv, .json, code). This kind of file it cannot open yet — export it as a PDF or paste the text.';
-
-export function isReadableTextFile(file: { name: string; type: string }): boolean {
-  const name = file.name.toLowerCase();
-  if (TEXT_FILE_EXTENSIONS.some(ext => name.endsWith(ext))) {
-    return true;
-  }
-  return file.type.startsWith('text/') || file.type === 'application/json';
-}
 
 /** Prevents file text from closing its own block early. */
 const escapeBody = (v: string): string => v.replace(/<\/attached_file>/gi, '</ attached_file>');
@@ -160,5 +111,3 @@ export function composeMessage(
   });
   return [head, ...blocks].filter(Boolean).join('\n\n');
 }
-
-export { parseUserMessage, type ParsedUserMessage } from '@/lib/chat/attachment-tags';

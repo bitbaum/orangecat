@@ -99,7 +99,7 @@ export function ToolCallChip({ event }: ToolCallChipProps) {
         onClick={() => expandable && setExpanded(v => !v)}
         disabled={!expandable}
         className={cn(
-          'inline-flex items-center gap-1.5 rounded-sm border px-2 py-1 text-xs',
+          'inline-flex items-center gap-1.5 rounded-sm border px-2 py-1 text-xs pointer-coarse:min-h-11',
           badgeClass,
           expandable ? 'cursor-pointer hover:opacity-80' : 'cursor-default'
         )}

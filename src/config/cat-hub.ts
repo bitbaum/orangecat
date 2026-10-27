@@ -25,6 +25,10 @@ export const CAT_HUB_COPY = {
   /** The personal greeting ("Good evening, Cato") is built in EmptyState. */
   greetingNewUser: 'Tell Cat what you want to do',
   composerPlaceholder: 'Message Cat…',
+  /** What a message of only a photo or one of your things says. */
+  attachmentOnly: 'Have a look at this.',
+  /** While an answer has no words yet. */
+  thinking: 'Cat is thinking…',
 } as const;
 
 /**

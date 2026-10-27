@@ -3,7 +3,7 @@
  * Re-export all hooks
  */
 
-export { useChatMessages } from './useChatMessages';
+export { useCatTransport, type CatTurnFailure } from './useCatTransport';
 export { useSuggestions } from './useSuggestions';
 export { usePendingActionsManager } from './usePendingActionsManager';
 export { useCatQuota, type CatQuota, type CatQuotaTier } from './useCatQuota';

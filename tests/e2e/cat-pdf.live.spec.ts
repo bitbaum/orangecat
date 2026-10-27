@@ -38,7 +38,9 @@ async function openCat(page: Page) {
   });
 }
 
-const chips = (page: Page) => page.locator('ul[aria-label="Attached"] li');
+// chatkit's staged strip: a file is a chip with its name, a picture is a thumbnail
+// whose alt is its name. A refusal is chatkit's `.ck-note` under the strip.
+const chips = (page: Page) => page.locator('.ck-attach-item');
 
 test.describe('Cat reads PDFs (live)', () => {
   test('pdf.js runtime files are served', async ({ request }) => {
@@ -54,8 +56,7 @@ test.describe('Cat reads PDFs (live)', () => {
   // PDFs in one signed-in chat.
   test('a slide deck attaches as drawn page sheets, a text PDF as a file', async ({ page }) => {
     await openCat(page);
-    // The composer's own error line (Next's route announcer is also role=alert).
-    const attachError = page.locator('p[role="alert"]');
+    const attachError = page.locator('.ck-note');
     const files = page.locator('input[data-ck-source="files"]').first();
 
     // Files must ask for documents, never "anything": an empty accept is what
@@ -67,7 +68,9 @@ test.describe('Cat reads PDFs (live)', () => {
     expect(accept).not.toMatch(/image|audio|video|\*\/\*/);
 
     await files.setInputFiles(fixture('slides-jpx.pdf'));
-    const sheet = chips(page).filter({ hasText: 'slides-jpx.pdf · pages 1–2' });
+    const sheet = chips(page).filter({
+      has: page.locator('img[alt="slides-jpx.pdf · pages 1–2"]'),
+    });
     await expect(sheet).toHaveCount(1, { timeout: 30000 });
     await expect(attachError).toHaveCount(0);
 

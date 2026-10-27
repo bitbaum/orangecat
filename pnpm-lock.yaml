@@ -39,8 +39,8 @@ importers:
         specifier: ^1.21.0
         version: 1.21.0(react@19.3.1)
       '@bitbaum/chatkit':
-        specifier: ^0.20.1
-        version: 0.20.1(react@19.3.1)
+        specifier: ^0.21.0
+        version: 0.21.0(react@19.3.1)
       '@bitbaum/collective-kinds':
         specifier: workspace:*
         version: link:packages/collective-kinds
@@ -561,8 +561,8 @@ packages:
       react:
         optional: true
 
-  '@bitbaum/chatkit@0.20.1':
-    resolution: {integrity: sha512-4TFeWKJfqUNCkSZkUHNvcf/VCgFrmnGsIsO5NTqnU3DIsOyMYpVkrGGXWl8cPkdqcNAhL/UhFGtuL01gBWQmUg==}
+  '@bitbaum/chatkit@0.21.0':
+    resolution: {integrity: sha512-vOA8OvBXSnYQPJ9gt4txEhpRUvY7GiKJdzyIZio6vy1qHOnP3RDYu6vR/Nu9irgdIkqQ1UKREDLlNlld8IbiXA==}
     engines: {node: '>=20'}
     hasBin: true
     peerDependencies:
@@ -6715,7 +6715,7 @@ snapshots:
     optionalDependencies:
       react: 19.3.1
 
-  '@bitbaum/chatkit@0.20.1(react@19.3.1)':
+  '@bitbaum/chatkit@0.21.0(react@19.3.1)':
     dependencies:
       pdfjs-dist: 6.4.299
       react: 19.3.1

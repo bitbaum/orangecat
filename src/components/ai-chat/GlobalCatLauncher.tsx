@@ -119,48 +119,40 @@ export default function GlobalCatLauncher() {
               'sm:w-[420px] sm:border-l sm:border-default'
             )}
           >
-            <header className="flex items-center justify-between border-b border-default px-4 py-3">
-              <div className="flex min-w-0 items-center gap-2">
-                <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md bg-surface-raised text-fg-primary">
-                  <BrandMarkIcon size={16} />
-                </span>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-fg-primary">Cat</p>
-                  {page?.label && (
-                    <p className="truncate text-xs text-fg-tertiary">Looking at {page.label}</p>
-                  )}
-                </div>
-              </div>
-              <div className="flex items-center gap-1">
+            <ModernChatPanel
+              className="min-h-0 flex-1"
+              conversationId={conversationId}
+              onConversationChange={setConversationId}
+              // The panel is 420px wide whatever the window is: the chat list
+              // is always a drawer here, and a reload starts on a new chat
+              // about the page then on screen.
+              railQuery="not all"
+              rememberKey={null}
+              pageContext={page}
+              footnote={page?.label ? `Looking at ${page.label}` : undefined}
+              headerStart={
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="ck-glass ck-app-icon"
+                  aria-label="Close Cat"
+                  title="Close Cat"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              }
+              headerEnd={
                 <Link
                   href={ROUTES.DASHBOARD.CAT}
                   onClick={() => setOpen(false)}
-                  className="flex h-8 w-8 items-center justify-center pointer-coarse:h-11 pointer-coarse:w-11 rounded-md text-fg-secondary transition-colors hover:bg-surface-raised hover:text-fg-primary"
+                  className="ck-glass ck-app-icon"
                   title="Open the full Cat"
                   aria-label="Open the full Cat page"
                 >
                   <Maximize2 className="h-4 w-4" />
                 </Link>
-                <button
-                  type="button"
-                  onClick={() => setOpen(false)}
-                  className="flex h-8 w-8 items-center justify-center pointer-coarse:h-11 pointer-coarse:w-11 rounded-md text-fg-secondary transition-colors hover:bg-surface-raised hover:text-fg-primary"
-                  aria-label="Close Cat"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            </header>
-
-            <div className="oc-chat-layout min-h-0 flex-1">
-              <ModernChatPanel
-                variant="focus"
-                conversationId={conversationId}
-                onConversationCreated={setConversationId}
-                pageContext={page}
-                className="min-h-0 flex-1"
-              />
-            </div>
+              }
+            />
           </aside>
         </>
       )}
