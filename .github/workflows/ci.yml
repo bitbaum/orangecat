@@ -222,6 +222,13 @@ jobs:
           PORT=3000 node .next/standalone/server.js &
           pnpm exec wait-on http://localhost:3000
 
+      - name: Route contract (signed out — public pages, legacy redirects, sign-in gates)
+        # Read-only GETs; needs no test account. Before this step the same
+        # checks sat in six specs that no job ran, and they drifted for months.
+        env:
+          E2E_BASE_URL: http://localhost:3000
+        run: pnpm exec playwright test tests/e2e/route-contract.spec.ts --project=chromium --reporter=line
+
       - name: No word cut across two lines (landing, Cat chat, money surface at 320/390/1440)
         # A layout fact, measured in a real browser — reading the CSS finds none
         # of it (scripts/check-broken-words.mjs). With the E2E secrets the
