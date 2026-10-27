@@ -14,7 +14,7 @@
   },
   "scripts": {
     "d": "node scripts/dev/dev-start.js",
-    "dev": "next dev",
+    "dev": "pnpm run pdf-assets && next dev",
     "dev:clean": "bash scripts/dev.sh",
     "dev:nuke": "bash scripts/dev/nuke-cache.sh",
     "dev:win": "scripts/dev.bat",
@@ -23,7 +23,7 @@
     "fresh:start": "pnpm run kill:node && pnpm run clear:cache && pnpm run dev",
     "dev:port": "next dev -p 3020",
     "kill-ports": "powershell \"Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force\"",
-    "build": "next build",
+    "build": "pnpm run pdf-assets && next build",
     "build:production": "NODE_ENV=production next build && pnpm run analyze",
     "build:analyze": "ANALYZE=true pnpm run build",
     "analyze": "node scripts/analysis/analyze-bundle.js",
@@ -119,12 +119,13 @@
     "db:audit": "node scripts/db-audit.mjs",
     "eval:voice": "node scripts/eval-voice-routing.mjs",
     "check:migration-versions": "node scripts/check-migration-versions.mjs",
-    "type-check:scripts": "tsc --noEmit --skipLibCheck -p tsconfig.scripts.json"
+    "type-check:scripts": "tsc --noEmit --skipLibCheck -p tsconfig.scripts.json",
+    "pdf-assets": "chatkit-copy-pdf-assets public/pdfjs"
   },
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^9.1.0",
     "@bitbaum/ai-kit": "^1.21.0",
-    "@bitbaum/chatkit": "^0.17.0",
+    "@bitbaum/chatkit": "^0.20.0",
     "@bitbaum/collective-kinds": "workspace:*",
     "@bitbaum/deckkit": "workspace:*",
     "@bitbaum/geo-kit": "github:bitbaum/geo-kit#a337aec928cf7804fecf459c308d366b90f4b2fa",
