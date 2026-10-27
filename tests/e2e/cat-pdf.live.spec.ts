@@ -26,8 +26,13 @@ async function signIn(page: Page) {
   await page.waitForURL(/\/(dashboard|timeline|onboarding)/, { timeout: 20000 });
 }
 
+/** The session global-setup saved, or a fresh sign-in when there is none. */
 async function openCat(page: Page) {
   await page.goto(`${baseURL}/dashboard/cat`, { waitUntil: 'domcontentloaded' });
+  if (/\/auth/.test(page.url())) {
+    await signIn(page);
+    await page.goto(`${baseURL}/dashboard/cat`, { waitUntil: 'domcontentloaded' });
+  }
   await expect(page.locator('input[data-ck-source="files"]').first()).toBeAttached({
     timeout: 20000,
   });
@@ -36,8 +41,6 @@ async function openCat(page: Page) {
 const chips = (page: Page) => page.locator('ul[aria-label="Attached"] li');
 
 test.describe('Cat reads PDFs (live)', () => {
-  test.use({ storageState: { cookies: [], origins: [] } });
-
   test('pdf.js runtime files are served', async ({ request }) => {
     const worker = await request.get(`${baseURL}/pdfjs/pdf.worker.min.mjs`);
     expect(worker.status()).toBe(200);
@@ -47,10 +50,9 @@ test.describe('Cat reads PDFs (live)', () => {
     console.log('pdfjs:', (await (await request.get(`${baseURL}/pdfjs/VERSION`)).text()).trim());
   });
 
-  // One sign-in per browser: the login is rate limited, and every step below
-  // needs the same signed-in Cat chat.
+  // The login is rate limited: reuse global-setup's session, and test both
+  // PDFs in one signed-in chat.
   test('a slide deck attaches as drawn page sheets, a text PDF as a file', async ({ page }) => {
-    await signIn(page);
     await openCat(page);
     // The composer's own error line (Next's route announcer is also role=alert).
     const attachError = page.locator('p[role="alert"]');
