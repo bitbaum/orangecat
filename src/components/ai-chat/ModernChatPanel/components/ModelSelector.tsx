@@ -160,14 +160,19 @@ export function ModelSelector({
         className={cn(
           'flex items-center gap-1.5 rounded-md text-sm transition-colors',
           subtle
-            ? 'px-2 py-1 text-fg-secondary hover:bg-surface-raised hover:text-fg-primary'
+            ? 'min-h-11 px-2 py-1 text-fg-secondary hover:bg-surface-raised hover:text-fg-primary'
             : 'border border-subtle bg-surface-raised px-3 py-1.5 hover:bg-surface-raised/80',
           disabled && 'opacity-50 cursor-not-allowed'
         )}
       >
         <Sparkles className="h-4 w-4 text-fg-secondary" />
         <span
-          className={cn('max-w-[120px] truncate', subtle ? 'text-fg-secondary' : 'text-fg-primary')}
+          // In the composer on a phone the name would push the tools onto a
+          // second row; the icon and the label (aria) say what it is.
+          className={cn(
+            'max-w-[120px] truncate',
+            subtle ? 'hidden text-fg-secondary sm:inline' : 'text-fg-primary'
+          )}
         >
           {selectedName}
         </span>
