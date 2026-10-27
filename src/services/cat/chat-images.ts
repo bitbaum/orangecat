@@ -15,8 +15,13 @@
 import { z } from 'zod';
 import type { ContentPart } from '@bitbaum/ai-kit';
 
-/** Photos per message. A handful is a question; more is an album. */
-export const CHAT_IMAGE_MAX_COUNT = 3;
+/**
+ * Pictures per message. A handful is a question; more is an album. Five, not
+ * three, since a PDF without text arrives as sheets of four pages each: five
+ * sheets read a 20-page deck whole (2026-10-27). Five is also the most the
+ * free chain's vision links accept in one request.
+ */
+export const CHAT_IMAGE_MAX_COUNT = 5;
 
 /** Long edge the client scales to before sending — readable, and small. */
 export const CHAT_IMAGE_MAX_EDGE_PX = 1568;
