@@ -60,7 +60,10 @@ echo "=== assemble standalone (static + public) ==="
 # assembles normally. The artifact is ALWAYS pre-assembled before upload, so a
 # skipped copy here never means missing assets.
 [ -d "$REPO_ROOT/.next/static" ] && cp -r "$REPO_ROOT/.next/static" "$ST/.next/static"
-[ -d "$REPO_ROOT/public" ] && cp -r "$REPO_ROOT/public" "$ST/public"
+if [ -d "$REPO_ROOT/public" ]; then
+  mkdir -p "$ST/public"
+  cp -a "$REPO_ROOT/public/." "$ST/public/"
+fi
 
 # ── shiki top-level link ──────────────────────────────────────────────────────
 # Next auto-externalizes shiki, and bip-kit's ArticleBody loads it with plain

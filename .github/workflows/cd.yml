@@ -284,7 +284,7 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           name: standalone-${{ steps.ci.outputs.sha }}
-          path: artifact
+          path: ${{ runner.temp }}/orangecat-ci-artifact
           run-id: ${{ steps.ci.outputs.run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -299,12 +299,12 @@ jobs:
         # a green deploy and leave the artifact path broken forever.
         if: steps.live.outputs.needed == 'true' && steps.ci.outputs.run_id != ''
         run: |
-          test -f artifact/standalone.tar.gz || {
+          test -f "$RUNNER_TEMP/orangecat-ci-artifact/standalone.tar.gz" || {
             echo '::error::CI artifact download returned no standalone.tar.gz'
             exit 1
           }
           mkdir -p .next/standalone
-          tar -xzf artifact/standalone.tar.gz -C .next/standalone
+          tar -xzf "$RUNNER_TEMP/orangecat-ci-artifact/standalone.tar.gz" -C .next/standalone
           links=$(find .next/standalone/node_modules -type l 2>/dev/null | wc -l)
           echo "symlinks preserved: $links"
           [ "$links" -gt 0 ] || {
@@ -327,6 +327,26 @@ jobs:
             pnpm run build
           fi
 
+      - name: Stage exact public package receipt
+        if: steps.live.outputs.needed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # No public receipt may disclose a private repository's package inventory.
+          test "$(gh api "repos/$GITHUB_REPOSITORY" --jq .private)" = false
+          producer="$RUNNER_TEMP/fleet-receipt-producer"
+          git init --quiet "$producer"
+          git -C "$producer" remote add origin https://github.com/bitbaum/fleet.git
+          git -C "$producer" fetch --quiet --depth 1 origin 5da9886a5211dc74dc6b7c8f5eade60c460cea6c
+          git -C "$producer" checkout --quiet --detach FETCH_HEAD
+          node "$producer/scripts/ci/release-receipt.mjs" --public \
+            --root "$GITHUB_WORKSPACE" --repo "$GITHUB_REPOSITORY" \
+            --output "$RUNNER_TEMP/orangecat-release.json"
+          # This source public directory is assembled into standalone by the deploy verb.
+          mkdir -p public/.well-known
+          cp "$RUNNER_TEMP/orangecat-release.json" public/.well-known/fleet-release.json
+
       - name: Deploy (atomic swap + rollback)
         if: steps.live.outputs.needed == 'true'
         env:
@@ -335,3 +355,10 @@ jobs:
           eval "$(ssh-agent -s)"
           ssh-add ~/.ssh/id_deploy
           bash scripts/deploy-selfhost.sh --no-build
+
+      - name: Verify the served package receipt
+        if: steps.live.outputs.needed == 'true'
+        run: |
+          node "$RUNNER_TEMP/fleet-receipt-producer/scripts/ci/verify-live-release-receipt.mjs" \
+            --url https://orangecat.ch/.well-known/fleet-release.json \
+            --expected "$RUNNER_TEMP/orangecat-release.json"
