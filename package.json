@@ -126,7 +126,7 @@
     "@bitbaum/accountkit": "^0.9.1",
     "@asteasolutions/zod-to-openapi": "^9.1.0",
     "@bitbaum/ai-kit": "^1.21.4",
-    "@bitbaum/chatkit": "github:bitbaum/chatkit#378430bdaa52f11d56bf91880977980c707b86f0",
+    "@bitbaum/chatkit": "^0.21.2",
     "@bitbaum/collective-kinds": "workspace:*",
     "@bitbaum/deckkit": "workspace:*",
     "@bitbaum/geo-kit": "^0.1.2",
