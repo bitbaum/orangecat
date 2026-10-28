@@ -99,12 +99,10 @@ function validatePassword(password: string): ValidationResult {
 
   if (!password) {
     errors.push('Password is required');
-  } else if (password.length < 8) {
-    errors.push('Password must be at least 8 characters');
-  } else if (!/[A-Z]/.test(password)) {
-    errors.push('Password must contain at least one uppercase letter');
-  } else if (!/[0-9]/.test(password)) {
-    errors.push('Password must contain at least one number');
+  } else if (password.length > 128) {
+    // The one bitbaum password rule: not empty, at most 128. Use passwordProblem()
+    // from @bitbaum/accountkit/auth/password in real code; no other rules.
+    errors.push('Password is too long');
   }
 
   return {
