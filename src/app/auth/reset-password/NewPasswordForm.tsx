@@ -8,35 +8,7 @@ import Input from '@/components/ui/Input';
 import Card from '@/components/ui/Card';
 import supabase from '@/lib/supabase/browser';
 import { ROUTES } from '@/config/routes';
-
-// Mirrors the register form's policy — the two surfaces must never drift.
-const RULES: { label: string; test: (pw: string) => boolean; error: string }[] = [
-  {
-    label: 'At least 8 characters long',
-    test: pw => pw.length >= 8,
-    error: 'Password must be at least 8 characters long',
-  },
-  {
-    label: 'One lowercase letter',
-    test: pw => /(?=.*[a-z])/.test(pw),
-    error: 'Password must contain at least one lowercase letter',
-  },
-  {
-    label: 'One uppercase letter',
-    test: pw => /(?=.*[A-Z])/.test(pw),
-    error: 'Password must contain at least one uppercase letter',
-  },
-  {
-    label: 'One number',
-    test: pw => /(?=.*\d)/.test(pw),
-    error: 'Password must contain at least one number',
-  },
-  {
-    label: 'One special character',
-    test: pw => /(?=.*[^a-zA-Z0-9])/.test(pw),
-    error: 'Password must contain at least one special character',
-  },
-];
+import { passwordProblem } from '@bitbaum/accountkit/auth/password';
 
 /** The set-a-new-password form, shown once a recovery session exists. */
 export function NewPasswordForm({ onSuccess }: { onSuccess: () => void }) {
@@ -56,9 +28,9 @@ export function NewPasswordForm({ onSuccess }: { onSuccess: () => void }) {
       if (password !== confirmPassword) {
         throw new Error('Passwords do not match');
       }
-      const failed = RULES.find(rule => !rule.test(password));
-      if (failed) {
-        throw new Error(failed.error);
+      const problem = passwordProblem(password);
+      if (problem) {
+        throw new Error(problem === 'empty' ? 'Enter a password.' : 'That password is too long.');
       }
 
       const { error } = await supabase.auth.updateUser({ password });
@@ -134,17 +106,6 @@ export function NewPasswordForm({ onSuccess }: { onSuccess: () => void }) {
           >
             {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
-        </div>
-
-        <div className="bg-surface-raised rounded-lg p-4">
-          <h3 className="text-sm font-medium text-fg-primary mb-2">Password Requirements:</h3>
-          <ul className="text-xs text-fg-secondary space-y-1">
-            {RULES.map(rule => (
-              <li key={rule.label} className={rule.test(password) ? 'text-status-positive' : ''}>
-                • {rule.label}
-              </li>
-            ))}
-          </ul>
         </div>
 
         <Button

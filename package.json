@@ -123,6 +123,7 @@
     "pdf-assets": "chatkit-copy-pdf-assets public/pdfjs"
   },
   "dependencies": {
+    "@bitbaum/accountkit": "^0.9.0",
     "@asteasolutions/zod-to-openapi": "^9.1.0",
     "@bitbaum/ai-kit": "^1.21.4",
     "@bitbaum/chatkit": "^0.21.1",

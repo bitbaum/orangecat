@@ -76,12 +76,6 @@ export function useAuthSubmission({
       }
 
       if (mode === 'register') {
-        const { validatePasswordStrength } = await import('@/lib/validation/password');
-        const passwordValidation = validatePasswordStrength(formData.password);
-        if (!passwordValidation.valid) {
-          throw new Error(passwordValidation.errors[0] || 'Password does not meet requirements');
-        }
-
         if (captchaEnabled && !captchaToken) {
           throw new Error('Please complete the CAPTCHA verification');
         }
