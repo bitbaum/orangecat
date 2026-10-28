@@ -79,7 +79,6 @@ export function useAuthForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
-  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
   const [showMFAVerify, setShowMFAVerify] = useState(false);
 
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
@@ -243,8 +242,6 @@ export function useAuthForm() {
     success,
     rememberMe,
     setRememberMe,
-    isPasswordFocused,
-    setIsPasswordFocused,
     showMFAVerify,
     setShowMFAVerify,
     handoff,
