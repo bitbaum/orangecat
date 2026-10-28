@@ -4,7 +4,6 @@ AI-native platform for universal economic and governance participation — "My C
 
 Loki (rebranded from Cockpit) is a live customer project (see "Loki" and "OrangeCat" projects under Cato on this platform). Typed "customer" stakeholder edge + shared BTC wallet. Integration is real: Loki production layer + OrangeCat economic layer. Changes here (e.g. stakeholder_relationships, project profiles) directly improve UX for Loki (the customer) and all future customers.
 
-@~/.claude/CLAUDE.md
 @.claude/CLAUDE.md
 
 Org rules are [bitbaum/fleet AGENTS.md](https://github.com/bitbaum/fleet/blob/main/AGENTS.md): packages by default (say why if you skip one), search through `@bitbaum/searchkit`, chat through `@bitbaum/chatkit`, shared names and the identity contract. Read that file. Do not restate it here.
