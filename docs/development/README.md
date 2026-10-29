@@ -2,7 +2,7 @@
 
 Guides for working in the OrangeCat codebase. The rules an agent must follow
 live in [`../../.claude/`](../../.claude/) and the root
-[`CLAUDE.md`](../../CLAUDE.md); this folder holds the longer explanations
+[`AGENTS.md`](../../AGENTS.md); this folder holds the longer explanations
 behind them. Point-in-time status reports, trackers, handoffs and 2025 design plans
 that used to sit here are in [`../archive/`](../archive/).
 

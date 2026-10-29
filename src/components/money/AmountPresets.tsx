@@ -87,7 +87,7 @@ export function AmountPresets({
 
   return (
     // Equal cells in one row, never pills that wrap wherever the words run
-    // out — a row of choices is one row (CLAUDE.md → "Design discipline").
+    // out — a row of choices is one row (AGENTS.md → "One shape per kind, here").
     <div className="grid grid-cols-4 gap-2">
       {presets.map(({ btc, label }) => {
         const chosen = Math.abs(value - btc) < btc * 0.001;
