@@ -33,7 +33,7 @@ Nobody merges by hand: a green, non-draft PR is squash-merged by
   `cd.yml` itself, so a missed hand-off is retried.
 - `e2e-auth.yml` — Playwright login test against production (`www.orangecat.ch`).
 
-See "Shipping" in the root `CLAUDE.md` for why both hand-offs exist.
+See "Deploy path" in the root `AGENTS.md` for why both hand-offs exist.
 
 ## Post-deploy verification
 

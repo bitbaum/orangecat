@@ -9,7 +9,7 @@
  * stop ("Frankenstein elements … not sized, not symmetrical", 2026-10-19 on
  * Loki; the same words about OrangeCat's payment screens on 2026-10-21).
  *
- * The shapes that hold at any width (CLAUDE.md → "Design discipline"):
+ * The shapes that hold at any width (AGENTS.md → "One shape per kind, here"):
  *   • pick one of a few  → SegmentedControl: equal cells in one row
  *   • a few suggestions  → an even grid (`grid grid-cols-N`)
  *   • many filters       → one line that scrolls sideways
