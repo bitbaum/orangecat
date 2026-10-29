@@ -80,7 +80,7 @@ minimumReleaseAgeExclude:
   - '@bitbaum/ai-kit'
   - '@bitbaum/mail-kit'
   - 'limitkit'
-  - '@bitbaum/accountkit@0.9.0 || 0.9.1'
+  - '@bitbaum/accountkit@0.9.0 || 0.9.1 || 0.10.0'
   # Ours, and recent enough to still be inside the window. Its absence failed
   # BOTH CI jobs at `pnpm install --frozen-lockfile`, before a line of code ran
   # — which surfaces as a bare "exit code 1" with no annotation, so it reads
