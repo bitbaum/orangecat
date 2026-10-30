@@ -18,6 +18,7 @@ to the map, sub-bullets stay here for the human reader.
 - **Attach a photo, a PDF or a text file in any companions chat.** The paperclip is the Cat’s: Camera · Photos · Files, the same limits, the same PDF reading. A companion sees the photo and reads the file, in a one-to-one chat and in a group chat; Diplodoctor and Causius read an attached document (a photo stays on their own sites, and the box says so).
 - **The fleet’s agents wear their own marks.** Diplodoctor and Causius show the face their own site shows, not one made up here; the first screen is one line and a way into the product, and it no longer sits under the header.
 - **Companions is in the sidebar, beside Cat.** In a group chat every line reads "Name · job", the box says which group you are writing to, and the details sheet lists the members with Add member as the last row and Remove on each while the group keeps two.
+- **Partners are now called builders.** The independent people bitbaum's studio approves on their shipped work, who watch over projects built with Loki at their own price, are builders: "Builders" in the footer, orangecat.ch/builders, and [bitbaum's builders](https://bitbaum.orangecat.ch/builders/). "Partner" read like a share in the business, which it never was. orangecat.ch/partners still works and lands in the same place.
 
 ## 2026-10-27
 

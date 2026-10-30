@@ -28,11 +28,11 @@ export default function CareersPage() {
     },
     {
       icon: <Handshake className="w-6 h-6" />,
-      title: 'Build for others as a partner',
+      title: 'Build for others as a builder',
       description:
-        'Partners are independent engineers who watch over projects built with Loki and move them forward, at their own price. You apply on bitbaum; the studio approves who is listed.',
-      href: ROUTES.PARTNERS,
-      label: 'See the partners',
+        'Builders are independent people, approved on their shipped work, who watch over projects built with Loki and move them forward, at their own price. You apply on bitbaum; the studio approves who is listed.',
+      href: ROUTES.BUILDERS,
+      label: 'See the builders',
     },
     {
       icon: <Bitcoin className="w-6 h-6" />,
