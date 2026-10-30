@@ -247,8 +247,8 @@ describe('divisor', () => {
     expect(modelProblems({ ...SPLIT, schemaVersion: 1 })).toEqual([
       'component "local" has a divisor, which needs schemaVersion 2',
     ]);
-    expect(modelProblems({ ...SPLIT, schemaVersion: 8 as 7 })).toEqual([
-      'schemaVersion 8 is not supported',
+    expect(modelProblems({ ...SPLIT, schemaVersion: 9 as 8 })).toEqual([
+      'schemaVersion 9 is not supported',
     ]);
     expect(referencedLevels(SPLIT)).toEqual(['realm', 'shire', 'guild', 'temple']);
   });
@@ -458,6 +458,54 @@ describe('a base of its own and fixed amounts', () => {
         { values: { income: 1 }, variant: 'alone' }
       )
     ).toThrow(/needs schemaVersion 7/);
+  });
+});
+
+describe('a multiplier scaled by another fact', () => {
+  const SCALED: TaxModel = {
+    ...MODEL,
+    schemaVersion: 8,
+    components: [
+      {
+        key: 'temple',
+        tariff: { level: 'realm', metric: 'tariff.basic' },
+        multipliers: [
+          {
+            level: 'temple',
+            metric: 'multiplier',
+            scaledBy: { level: 'realm', metric: 'multiplier', optional: true },
+          },
+        ],
+      },
+    ],
+  };
+  const at = (facts: Fact[]) =>
+    evaluate(SCALED, facts, { values: { income: 100_000 }, variant: 'alone' });
+
+  it('multiplies the multiplier by the scale, and by 1 where an optional scale is missing', () => {
+    // 5,000 basic tax; the temple's 10 % of the realm's 80 % of it.
+    expect(at(FACTS).total).toBeCloseTo(400);
+    expect(
+      at(FACTS.filter(f => !(f.level === 'realm' && f.metric === 'multiplier'))).total
+    ).toBeCloseTo(500);
+  });
+
+  it('needs schemaVersion 8, counts the scale among the facts read, and refuses a negative one', () => {
+    expect(modelProblems(SCALED)).toEqual([]);
+    expect(modelProblems({ ...SCALED, schemaVersion: 7 })).toEqual([
+      'component "temple" has a scaled multiplier, which needs schemaVersion 8',
+    ]);
+    expect(componentRefs(SCALED.components[0]!).at(-1)).toEqual({
+      level: 'realm',
+      metric: 'multiplier',
+      optional: true,
+    });
+    expect(() =>
+      at([
+        ...FACTS.filter(f => !(f.level === 'realm' && f.metric === 'multiplier')),
+        { level: 'realm', metric: 'multiplier', value: -1 },
+      ])
+    ).toThrow(/non-negative/);
   });
 });
 

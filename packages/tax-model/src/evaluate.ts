@@ -244,7 +244,20 @@ export function evaluate(model: TaxModel, facts: readonly Fact[], input: Evaluat
             reduction = share;
           }
         }
-        multiplier += value * (1 - reduction);
+        let scale = 1;
+        if (m.scaledBy !== undefined) {
+          const factor = lookup(m.scaledBy);
+          if (factor === undefined) {
+            if (!m.scaledBy.optional) {
+              missing.push(ref(m.scaledBy));
+            }
+          } else if (typeof factor !== 'number' || !(factor >= 0) || !Number.isFinite(factor)) {
+            throw new Error(`${describe(m.scaledBy)}: a scale must be a non-negative number`);
+          } else {
+            scale = factor;
+          }
+        }
+        multiplier += value * scale * (1 - reduction);
       }
     }
 
