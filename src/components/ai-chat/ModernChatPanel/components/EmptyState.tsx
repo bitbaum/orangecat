@@ -67,7 +67,10 @@ export function EmptyState({
 
       {isLoadingSuggestions ? (
         <div className="oc-chat-opener" aria-hidden="true">
-          <span className="oc-chat-opener-mark" />
+          {/* The Cat is thinking: its rings turn while the opener loads. */}
+          <span className="oc-chat-opener-mark">
+            <BrandMarkIcon size={16} animated />
+          </span>
           <div className="flex-1 space-y-2 py-1">
             <div className="h-3.5 w-4/5 animate-pulse rounded bg-surface-raised" />
             <div className="h-3.5 w-2/5 animate-pulse rounded bg-surface-raised" />
