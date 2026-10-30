@@ -310,6 +310,23 @@ export const API_ROUTES = {
       `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/${assistantId}/conversations/${conversationId}/messages`,
     CLONE: (id: string) => `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/${id}/clone`,
     MEMORIES: (id: string) => `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/${id}/memories`,
+    /** The talk home (companions, group chats, fleet bots in one list) and a companion made in a minute. */
+    TALK: `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/talk`,
+    /** Group chats between the person and two to six companions. */
+    ROOMS: `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/rooms`,
+    ROOM: (roomId: string) => `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/rooms/${roomId}`,
+    ROOM_MESSAGES: (roomId: string) =>
+      `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/rooms/${roomId}/messages`,
+    ROOM_TURN: (roomId: string) =>
+      `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/rooms/${roomId}/turn`,
+    ROOM_MEMBERS: (roomId: string) =>
+      `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/rooms/${roomId}/members`,
+    ROOM_MEMBER: (roomId: string, memberId: string) =>
+      `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/rooms/${roomId}/members/${memberId}`,
+    /** The fleet's own bots that can sit in a room, and a line from one of them. */
+    FLEET: `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/fleet`,
+    FLEET_ASK: (slug: string) =>
+      `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/fleet/${encodeURIComponent(slug)}/ask`,
   },
   TRANSACTIONS: '/api/transactions',
   BOOKINGS: {
