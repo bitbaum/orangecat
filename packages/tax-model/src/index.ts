@@ -19,6 +19,7 @@ export {
   type Piece,
   type RatePoint,
   type ReductionRef,
+  type ScaleRef,
   type Rounding,
   type ShareLimit,
   type Step,

@@ -247,8 +247,8 @@ describe('divisor', () => {
     expect(modelProblems({ ...SPLIT, schemaVersion: 1 })).toEqual([
       'component "local" has a divisor, which needs schemaVersion 2',
     ]);
-    expect(modelProblems({ ...SPLIT, schemaVersion: 8 as 7 })).toEqual([
-      'schemaVersion 8 is not supported',
+    expect(modelProblems({ ...SPLIT, schemaVersion: 9 as 8 })).toEqual([
+      'schemaVersion 9 is not supported',
     ]);
     expect(referencedLevels(SPLIT)).toEqual(['realm', 'shire', 'guild', 'temple']);
   });
@@ -412,10 +412,22 @@ describe('a base of its own and fixed amounts', () => {
     expect(estimate.components.find(c => c.key === 'wealth')!.amount).toBeCloseTo(1_200);
     expect(estimate.total).toBeCloseTo(14_000 + 10_000 + 1_200 + 24);
     expect(estimate.effectiveRate).toBeCloseTo(0.24);
-    // No wealth entered: nothing is levied on it, and nothing is missing.
+    // No wealth entered: the component does not apply, and asks for none of its facts.
     const none = at({ income: 100_000 });
-    expect(none.components.find(c => c.key === 'wealth')!.amount).toBe(0);
-    expect(none.complete).toBe(true);
+    expect(none.components.find(c => c.key === 'wealth')).toMatchObject({
+      applies: false,
+      amount: 0,
+    });
+    const untariffed = evaluate(
+      WITH_WEALTH,
+      WEALTH_FACTS.filter(f => f.metric !== 'wealth.tariff'),
+      { values: { income: 100_000 }, variant: 'alone' }
+    );
+    expect(untariffed.complete).toBe(true);
+    // Entered, even as 0, it applies and needs its tariff.
+    expect(
+      at({ income: 100_000, wealth: 0 }).components.find(c => c.key === 'wealth')
+    ).toMatchObject({ applies: true, amount: 0 });
   });
 
   it('levies a fixed amount whatever the base', () => {
@@ -446,6 +458,54 @@ describe('a base of its own and fixed amounts', () => {
         { values: { income: 1 }, variant: 'alone' }
       )
     ).toThrow(/needs schemaVersion 7/);
+  });
+});
+
+describe('a multiplier scaled by another fact', () => {
+  const SCALED: TaxModel = {
+    ...MODEL,
+    schemaVersion: 8,
+    components: [
+      {
+        key: 'temple',
+        tariff: { level: 'realm', metric: 'tariff.basic' },
+        multipliers: [
+          {
+            level: 'temple',
+            metric: 'multiplier',
+            scaledBy: { level: 'realm', metric: 'multiplier', optional: true },
+          },
+        ],
+      },
+    ],
+  };
+  const at = (facts: Fact[]) =>
+    evaluate(SCALED, facts, { values: { income: 100_000 }, variant: 'alone' });
+
+  it('multiplies the multiplier by the scale, and by 1 where an optional scale is missing', () => {
+    // 5,000 basic tax; the temple's 10 % of the realm's 80 % of it.
+    expect(at(FACTS).total).toBeCloseTo(400);
+    expect(
+      at(FACTS.filter(f => !(f.level === 'realm' && f.metric === 'multiplier'))).total
+    ).toBeCloseTo(500);
+  });
+
+  it('needs schemaVersion 8, counts the scale among the facts read, and refuses a negative one', () => {
+    expect(modelProblems(SCALED)).toEqual([]);
+    expect(modelProblems({ ...SCALED, schemaVersion: 7 })).toEqual([
+      'component "temple" has a scaled multiplier, which needs schemaVersion 8',
+    ]);
+    expect(componentRefs(SCALED.components[0]!).at(-1)).toEqual({
+      level: 'realm',
+      metric: 'multiplier',
+      optional: true,
+    });
+    expect(() =>
+      at([
+        ...FACTS.filter(f => !(f.level === 'realm' && f.metric === 'multiplier')),
+        { level: 'realm', metric: 'multiplier', value: -1 },
+      ])
+    ).toThrow(/non-negative/);
   });
 });
 

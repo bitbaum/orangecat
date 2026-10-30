@@ -154,7 +154,13 @@ export function evaluate(model: TaxModel, facts: readonly Fact[], input: Evaluat
 
   let currency: string | null = null;
   const components: ComponentResult[] = model.components.map(component => {
-    if (!isTrue(component.when)) {
+    // A component on a base of its own applies once that input is given: a
+    // wealth tax asks nothing of a reader who entered no wealth.
+    const ownBaseMissing =
+      component.base !== undefined &&
+      component.base !== model.base &&
+      input.values[component.base] === undefined;
+    if (!isTrue(component.when) || ownBaseMissing) {
       return {
         key: component.key,
         applies: false,
@@ -238,7 +244,20 @@ export function evaluate(model: TaxModel, facts: readonly Fact[], input: Evaluat
             reduction = share;
           }
         }
-        multiplier += value * (1 - reduction);
+        let scale = 1;
+        if (m.scaledBy !== undefined) {
+          const factor = lookup(m.scaledBy);
+          if (factor === undefined) {
+            if (!m.scaledBy.optional) {
+              missing.push(ref(m.scaledBy));
+            }
+          } else if (typeof factor !== 'number' || !(factor >= 0) || !Number.isFinite(factor)) {
+            throw new Error(`${describe(m.scaledBy)}: a scale must be a non-negative number`);
+          } else {
+            scale = factor;
+          }
+        }
+        multiplier += value * scale * (1 - reduction);
       }
     }
 
