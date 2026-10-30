@@ -18,13 +18,14 @@
  * 4 adds a tariff's `rounding` and a multiplier's `reducedBy`; 5 adds the
  * `logarithmic` tariff and a tariff's `minimum`; 6 adds the model's `limits`;
  * 7 adds a component's own `base` and the `fixed` tariff; 8 adds a multiplier's
- * `scaledBy`.
+ * `scaledBy`; 9 adds a divisor's `scaledBy` and a component's `rebate` and
+ * `floor`.
  * A model says
  * which version it needs, so an evaluator that predates a feature refuses the
  * model instead of ignoring it.
  */
-export const TAX_MODEL_SCHEMA_VERSION = 8;
-const SUPPORTED_SCHEMA_VERSIONS: readonly number[] = [1, 2, 3, 4, 5, 6, 7, 8];
+export const TAX_MODEL_SCHEMA_VERSION = 9;
+const SUPPORTED_SCHEMA_VERSIONS: readonly number[] = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
 /** Where a component reads a number: the fact a level publishes under a metric key. */
 export interface FactRef {
@@ -61,6 +62,27 @@ export interface ScaleRef extends FactRef {
 export interface DivisorRef extends FactRef {
   /** When the fact is missing, divide by 1 instead of making the estimate incomplete. */
   optional?: boolean;
+  /**
+   * A fact the divisor is multiplied by: an index by which a level moves its
+   * tariff to higher incomes, as a canton or a commune that offsets inflation
+   * does on its own schedule. Positive. Optional: missing, nothing is scaled.
+   * Needs `schemaVersion` 9.
+   */
+  scaledBy?: ScaleRef;
+}
+
+/**
+ * A share of the component's amount taken off it, bounded below and above by
+ * amounts: a couple's 35 %, at least CHF 680 and at most CHF 4,900. Never
+ * more than the amount. Read per variant, so a single person's rebate is
+ * simply not recorded. Needs `schemaVersion` 9.
+ */
+export interface RebateRef {
+  share: ReductionRef;
+  /** The least rebate, in the tariff's currency. */
+  least?: LimitRef;
+  /** The most rebate, in the tariff's currency. */
+  most?: LimitRef;
 }
 
 export interface ReductionRef extends FactRef {
@@ -108,10 +130,17 @@ export interface TaxComponent {
    * facts are not required of an estimate without it. Needs `schemaVersion` 7.
    */
   base?: string;
+  /** Taken off the amount after its multipliers. Needs `schemaVersion` 9. */
+  rebate?: RebateRef;
+  /**
+   * The least this component levies once it applies, after any rebate: a
+   * minimum tax owed even on no income. Needs `schemaVersion` 9.
+   */
+  floor?: LimitRef;
 }
 
 export interface TaxModel {
-  schemaVersion: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+  schemaVersion: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
   /** The input the tariffs are applied to. Must be listed in `inputs`. */
   base: string;
   /** Every input the model reads: the base amount and any boolean conditions. */
@@ -227,16 +256,28 @@ export interface Fact {
   value: Tariff | number;
 }
 
-/** Every fact a component reads: its tariff, its divisor, then its multipliers, their reductions and scales. */
+/**
+ * Every fact a component reads: its tariff, its divisor and its scale, then
+ * its multipliers, their reductions and scales, then its rebate and floor.
+ */
 export function componentRefs(component: TaxComponent): FactRef[] {
+  const { divisor, rebate, floor } = component;
   return [
     component.tariff,
-    ...(component.divisor ? [component.divisor] : []),
+    ...(divisor ? [divisor, ...(divisor.scaledBy ? [divisor.scaledBy] : [])] : []),
     ...(component.multipliers ?? []).flatMap(m => [
       m,
       ...(m.reducedBy ? [m.reducedBy] : []),
       ...(m.scaledBy ? [m.scaledBy] : []),
     ]),
+    ...(rebate
+      ? [
+          rebate.share,
+          ...(rebate.least ? [rebate.least] : []),
+          ...(rebate.most ? [rebate.most] : []),
+        ]
+      : []),
+    ...(floor ? [floor] : []),
   ];
 }
 
@@ -281,6 +322,17 @@ export function modelProblems(model: TaxModel): string[] {
       if (!model.inputs.includes(component.base)) {
         problems.push(`component "${component.key}" reads undeclared base "${component.base}"`);
       }
+    }
+    if (component.divisor?.scaledBy !== undefined && model.schemaVersion < 9) {
+      problems.push(
+        `component "${component.key}" has a scaled divisor, which needs schemaVersion 9`
+      );
+    }
+    if (component.rebate !== undefined && model.schemaVersion < 9) {
+      problems.push(`component "${component.key}" has a rebate, which needs schemaVersion 9`);
+    }
+    if (component.floor !== undefined && model.schemaVersion < 9) {
+      problems.push(`component "${component.key}" has a floor, which needs schemaVersion 9`);
     }
     if (component.multipliers?.some(m => m.scaledBy !== undefined) && model.schemaVersion < 8) {
       problems.push(

@@ -18,6 +18,7 @@ export {
   type MultiplierRef,
   type Piece,
   type RatePoint,
+  type RebateRef,
   type ReductionRef,
   type ScaleRef,
   type Rounding,
