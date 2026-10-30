@@ -91,7 +91,8 @@ export interface TaxComponent {
   /**
    * The input this component's tariff is applied to, when it is not the
    * model's `base`: a wealth tax beside an income tax. Must be listed in
-   * `inputs`. Needs `schemaVersion` 7.
+   * `inputs`. The component applies only when that input is given, so its
+   * facts are not required of an estimate without it. Needs `schemaVersion` 7.
    */
   base?: string;
 }
