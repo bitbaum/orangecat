@@ -41,7 +41,7 @@ import type { CatReference } from '@/config/cat-prompts';
 import { runLocalTurn } from '@/services/ai/local-turn';
 import { labelForTool } from '@/lib/chat/tool-labels';
 import { catAnswer, type CatTurnExtras, type FallbackNotice } from '@/lib/chat/cat-messages';
-import { composeMessage, imagesOf, type ChatAttachment } from '../attachments';
+import { composeMessage, fromComposer, imagesOf, type ChatAttachment } from '../attachments';
 import type { CatAction, ExecActionResult, PrefillProposal, ToolCallEvent } from '../types';
 
 /** A failed turn in the server's words; its code rides as `failure.kind`. */
@@ -86,16 +86,7 @@ function readLocale(): string {
  *  text files and the person's own things inside it (see ../attachments). */
 function toCatAttachments(list: Attachment[], refs: CatReference[]): ChatAttachment[] {
   return [
-    ...list.map((a, i): ChatAttachment =>
-      a.kind === 'image'
-        ? {
-            kind: 'image',
-            id: `img-${i}`,
-            name: a.name,
-            dataUrl: `data:${a.mimeType};base64,${a.dataBase64}`,
-          }
-        : { kind: 'file', id: `file-${i}`, name: a.name, content: a.content }
-    ),
+    ...fromComposer(list),
     ...refs.map((ref, i): ChatAttachment => ({ kind: 'ref', id: `ref-${i}`, ref })),
   ];
 }

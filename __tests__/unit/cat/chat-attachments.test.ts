@@ -16,6 +16,7 @@ import {
   messageLabel,
   readableTitle,
   withImageRefs,
+  fileBlocksIn,
 } from '@/lib/chat/attachment-tags';
 
 const file = (name: string, content: string): ChatAttachment => ({
@@ -140,5 +141,17 @@ describe('photos', () => {
     expect(readableTitle('i want to sell this photo <attached_image name="gyeti.jpg"/…')).toBe(
       'i want to sell this photo'
     );
+  });
+});
+
+describe('fileBlocksIn', () => {
+  it('returns each attached file with its name and text, and nothing for a plain message', () => {
+    const content =
+      'Read these\n\n<attached_file name="a.md">\n# A\n</attached_file>\n\n<attached_file name="b.txt">\nb\n</attached_file>';
+    expect(fileBlocksIn(content)).toEqual([
+      { name: 'a.md', body: '# A' },
+      { name: 'b.txt', body: 'b' },
+    ]);
+    expect(fileBlocksIn('just words')).toEqual([]);
   });
 });

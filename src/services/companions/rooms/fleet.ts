@@ -7,12 +7,14 @@
  * be stale, the rail says the fleet is unreachable just now.
  */
 
+import { fileBlocksIn } from '@/lib/chat/attachment-tags';
+import { API_ROUTES } from '@/config/api-routes';
 import {
   FLEET_BOTS,
   FLEET_BOT_LOCALE,
+  FLEET_BOT_ASK_CAPS,
   FLEET_BOT_TIMEOUT_MS,
   fleetBotAskUrl,
-  fleetBotMarkUrl,
   isFleetBotSlug,
 } from '@/config/fleet-bots';
 import { fetchStudioMapForCat, type StudioMapProject } from '@/services/ai/studio-map-fetcher';
@@ -42,6 +44,15 @@ export function firstSentence(text: string | null | undefined): string | null {
   return (m ? m[1] : clean).slice(0, 160);
 }
 
+/**
+ * The one word under the name, in the map's own phrasing: "The health layer
+ * of the fleet: …" → "health". Any other phrasing keeps its first sentence.
+ */
+export function jobLine(what: string | null | undefined): string | null {
+  const m = /^The (\w+) layer of the fleet\b/i.exec((what ?? '').trim());
+  return m ? m[1].toLowerCase() : firstSentence(what);
+}
+
 /** The display name: the map's `name`, with a bare slug capitalised ("loki" → "Loki"). */
 export function displayName(project: Pick<StudioMapProject, 'slug' | 'name'>): string {
   const name = project.name?.trim();
@@ -66,9 +77,9 @@ export function fleetBotsFromMap(
       slug,
       name: displayName(project),
       what: project.what,
-      job: firstSentence(project.what),
+      job: jobLine(project.what),
       url: url.replace(/\/+$/, ''),
-      mark: fleetBotMarkUrl(url),
+      mark: API_ROUTES.AI_ASSISTANTS.FLEET_MARK(slug),
     });
   }
   return bots;
@@ -96,6 +107,41 @@ export interface FleetAnswer {
 }
 
 /** One line from a fleet bot, over the shared contract. */
+/**
+ * The request as the contract takes it. A file the person attached travels
+ * as `context` (the product reads it between its own file tags), not inside
+ * a 4,000-character line; the newest files win when several would not fit.
+ */
+export function fleetAskBody(
+  messages: ReadonlyArray<{ role: 'user' | 'assistant'; content: string }>,
+  locale: string
+): {
+  messages: Array<{ role: 'user' | 'assistant'; content: string }>;
+  context: string;
+  locale: string;
+} {
+  const kept = messages.slice(-FLEET_BOT_ASK_CAPS.turns);
+  const blocks = kept.flatMap(m => (m.role === 'user' ? fileBlocksIn(m.content) : []));
+  let context = '';
+  for (const b of blocks.reverse()) {
+    const piece = `--- ${b.name} ---\n${b.body}\n\n`;
+    if (context.length + piece.length > FLEET_BOT_ASK_CAPS.contextChars) {
+      break;
+    }
+    context = piece + context;
+  }
+  const stripped = kept.map(m => {
+    const text = fileBlocksIn(m.content).length
+      ? m.content.replace(/<attached_file name="[^"]*">[\s\S]*?<\/attached_file>/g, '').trim()
+      : m.content;
+    return {
+      role: m.role,
+      content: (text || '(see the attached file)').slice(0, FLEET_BOT_ASK_CAPS.messageChars),
+    };
+  });
+  return { messages: stripped, context: context.trim(), locale };
+}
+
 export async function askFleetBot(
   bot: FleetBot,
   messages: ReadonlyArray<{ role: 'user' | 'assistant'; content: string }>,
@@ -109,7 +155,7 @@ export async function askFleetBot(
     const res = await fetchImpl(fleetBotAskUrl(bot.url), {
       method: 'POST',
       headers: { 'content-type': 'application/json', accept: 'application/json' },
-      body: JSON.stringify({ messages, locale }),
+      body: JSON.stringify(fleetAskBody(messages, locale)),
       signal: options.signal ?? AbortSignal.timeout(FLEET_BOT_TIMEOUT_MS),
     });
     if (res.status === 429) {

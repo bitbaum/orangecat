@@ -325,6 +325,8 @@ export const API_ROUTES = {
       `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/rooms/${roomId}/members/${memberId}`,
     /** The fleet's own bots that can sit in a room, and a line from one of them. */
     FLEET: `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/fleet`,
+    FLEET_MARK: (slug: string) =>
+      `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/fleet/${slug}/mark`,
     FLEET_ASK: (slug: string) =>
       `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/fleet/${encodeURIComponent(slug)}/ask`,
   },

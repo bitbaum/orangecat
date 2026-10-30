@@ -4,6 +4,8 @@ import {
   askFleetBot,
   displayName,
   firstSentence,
+  fleetAskBody,
+  jobLine,
   fleetBotsFromMap,
   type FleetBot,
 } from '@/services/companions/rooms/fleet';
@@ -35,9 +37,9 @@ describe('fleet bots from the map', () => {
     expect(bots.map(b => b.slug)).toEqual(['diplodoctor']);
     expect(bots[0]).toMatchObject({
       name: 'Diplodoctor',
-      job: 'The health layer of the fleet: an agent that reads a medical report with you.',
+      job: 'health',
       url: 'https://diplodoctor.example',
-      mark: 'https://diplodoctor.example/icon.svg',
+      mark: '/api/ai-assistants/fleet/diplodoctor/mark',
     });
   });
 
@@ -48,6 +50,12 @@ describe('fleet bots from the map', () => {
   it('capitalises a bare slug and keeps a real name', () => {
     expect(displayName({ slug: 'causius', name: 'causius' })).toBe('Causius');
     expect(displayName({ slug: 'biaslens', name: 'BiasLens' })).toBe('BiasLens');
+  });
+
+  it('takes the layer word as the job line, else the first sentence', () => {
+    expect(jobLine('The legal layer of the fleet: an agent that does legal work.')).toBe('legal');
+    expect(jobLine('Builds things. Beta.')).toBe('Builds things.');
+    expect(jobLine(null)).toBeNull();
   });
 
   it('takes the first sentence as the job line', () => {
@@ -79,7 +87,7 @@ describe('askFleetBot', () => {
     const fetchImpl = vi.fn(async (url: string | URL | Request, init?: RequestInit) => {
       expect(String(url)).toBe(fleetBotAskUrl('https://diplodoctor.example/'));
       expect(String(url)).toBe('https://diplodoctor.example/api/ask');
-      expect(JSON.parse(String(init?.body))).toEqual({ messages, locale: 'en' });
+      expect(JSON.parse(String(init?.body))).toEqual({ messages, context: '', locale: 'en' });
       return new Response(JSON.stringify({ text: 'Iron stores.', replies: ['Thanks', 7] }), {
         status: 200,
         headers: { 'content-type': 'application/json' },
@@ -113,5 +121,45 @@ describe('askFleetBot', () => {
       }) as unknown as typeof fetch,
     });
     expect(dead).toMatchObject({ error: { code: 'AI_ERROR' } });
+  });
+});
+
+describe('fleetAskBody', () => {
+  const file = (name: string, body: string) =>
+    `<attached_file name="${name}">\n${body}\n</attached_file>`;
+
+  it('moves an attached file out of the line and into context', () => {
+    const body = fleetAskBody(
+      [
+        {
+          role: 'user',
+          content: `What does this say?\n\n${file('lease.txt', 'Rent is due monthly.')}`,
+        },
+      ],
+      'en'
+    );
+    expect(body.messages).toEqual([{ role: 'user', content: 'What does this say?' }]);
+    expect(body.context).toBe('--- lease.txt ---\nRent is due monthly.');
+    expect(body.locale).toBe('en');
+  });
+
+  it('cuts a line to the contract and keeps the newest files when they would not fit', () => {
+    const long = 'x'.repeat(30_000);
+    const body = fleetAskBody(
+      [
+        { role: 'user', content: file('old.txt', long) },
+        { role: 'assistant', content: 'Noted.' },
+        { role: 'user', content: `${'y'.repeat(5_000)} ${file('new.txt', 'short')}` },
+      ],
+      'de'
+    );
+    expect(body.context).toBe('--- new.txt ---\nshort');
+    expect(body.messages[0].content).toBe('(see the attached file)');
+    expect(body.messages[2].content.length).toBe(4_000);
+  });
+
+  it('leaves a plain conversation alone', () => {
+    const turns = [{ role: 'user' as const, content: 'Hello' }];
+    expect(fleetAskBody(turns, 'fr')).toEqual({ messages: turns, context: '', locale: 'fr' });
   });
 });

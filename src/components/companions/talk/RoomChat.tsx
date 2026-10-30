@@ -12,6 +12,7 @@ import type { ChatMessageData } from '@bitbaum/chatkit/react';
 import { COMPANION_COPY } from '@/config/companions';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+import { outgoing, shownTurn } from './attachments';
 import { ChatFrame } from './ChatFrame';
 import { Face, GroupFaces } from './CompanionFace';
 import { RoomMembers } from './RoomMembers';
@@ -43,7 +44,7 @@ export function RoomChat({
   const messages: ChatMessageData[] = talk.lines.map(l => ({
     id: l.id,
     role: l.role,
-    content: l.content,
+    ...shownTurn(l.role, l.content),
     speaker:
       l.role === 'assistant' && l.speaker
         ? {
@@ -67,12 +68,12 @@ export function RoomChat({
         live={talk.writing !== null ? { status: copy.working(talk.writing || '…') } : null}
         sending={talk.writing !== null}
         loading={talk.loading}
-        onSend={text => {
-          const clean = text.trim();
-          if (!clean) {
+        onSend={(text, attachments) => {
+          if (!text.trim() && attachments.length === 0) {
             return false;
           }
-          void talk.send(clean).then(onActivity);
+          const { content, images } = outgoing(text.trim(), attachments);
+          void talk.send(content, images).then(onActivity);
           return true;
         }}
         onStop={talk.stop}

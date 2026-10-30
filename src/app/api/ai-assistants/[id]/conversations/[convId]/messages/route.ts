@@ -24,6 +24,7 @@ import { validateUUID, getValidationError } from '@/lib/api/validation';
 import { sendAiMessage } from '@/services/ai/sendMessage';
 import { withAuth, type AuthenticatedRequest } from '@/lib/api/withAuth';
 import { AI_MESSAGE_MAX_CHARS } from '@/lib/validation/ai';
+import { CHAT_IMAGE_MAX_COUNT, chatImageSchema } from '@/services/cat/chat-images';
 
 interface RouteContext {
   params: Promise<{ id: string; convId: string }>;
@@ -32,6 +33,7 @@ interface RouteContext {
 const sendMessageSchema = z.object({
   content: z.string().min(1).max(AI_MESSAGE_MAX_CHARS),
   model: z.string().optional(),
+  images: z.array(chatImageSchema).max(CHAT_IMAGE_MAX_COUNT).optional(),
 });
 
 export const POST = withAuth(async (request: AuthenticatedRequest, context: RouteContext) => {
@@ -68,7 +70,8 @@ export const POST = withAuth(async (request: AuthenticatedRequest, context: Rout
       assistantId,
       convId,
       parsed.data.content,
-      parsed.data.model
+      parsed.data.model,
+      parsed.data.images
     );
 
     // Map service errors to HTTP responses

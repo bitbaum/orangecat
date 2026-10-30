@@ -4,6 +4,7 @@
  * copy of the switch.
  */
 
+import { CHAT_IMAGE_MAX_COUNT, chatImageSchema } from '@/services/cat/chat-images';
 import { z } from 'zod';
 import type { NextResponse } from 'next/server';
 import { isFleetBotSlug } from '@/config/fleet-bots';
@@ -48,6 +49,8 @@ export const roundStateSchema = z.object({
 
 export const roomMessageSchema = z.object({
   content: z.string().trim().min(1).max(AI_MESSAGE_MAX_CHARS),
+  /** Photos on this line — the Cat's wire shape (services/cat/chat-images.ts). */
+  images: z.array(chatImageSchema).max(CHAT_IMAGE_MAX_COUNT).optional(),
 });
 
 export const roomTurnSchema = z.object({ round: roundStateSchema });

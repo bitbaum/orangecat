@@ -9,6 +9,7 @@
 
 import type { ReactNode } from 'react';
 import { ChevronLeft, MoreHorizontal } from 'lucide-react';
+import type { Attachment, AttachOptions } from '@bitbaum/chatkit';
 import {
   ChatScreen,
   ChatThread,
@@ -22,6 +23,8 @@ import { ChatStarters } from '@bitbaum/chatkit/react';
 import { API_ROUTES } from '@/config/api-routes';
 import { COMPANION_COPY } from '@/config/companions';
 import { transcribeWithRoute } from '@/hooks/useDictation';
+import { ATTACHMENT_UNSUPPORTED_COPY } from '@/components/ai-chat/ModernChatPanel/attachments';
+import { COMPANION_ATTACH } from './attachments';
 
 /** One transcription route for every microphone in the app; see useDictation. */
 const transcribe = transcribeWithRoute(API_ROUTES.CAT.TRANSCRIBE);
@@ -44,6 +47,7 @@ export function ChatFrame({
   aboveComposer,
   footnote,
   loading,
+  attach = COMPANION_ATTACH,
 }: {
   title: string;
   face: ReactNode;
@@ -53,8 +57,10 @@ export function ChatFrame({
   messages: ChatMessageData[];
   live: LiveTurn | null;
   sending: boolean;
-  onSend: (text: string) => boolean | Promise<boolean>;
+  onSend: (text: string, attachments: Attachment[]) => boolean | Promise<boolean>;
   onStop?: () => void;
+  /** The paperclip: the Cat's limits and PDF reader unless a chat says otherwise. */
+  attach?: AttachOptions;
   onRetry?: () => void;
   starters?: readonly Starter[];
   startersTitle?: ReactNode;
@@ -96,12 +102,14 @@ export function ChatFrame({
         <>
           {aboveComposer}
           <Composer
-            onSend={text => onSend(text)}
+            onSend={onSend}
             placeholder={placeholder}
             sending={sending}
             onStop={onStop}
             voice={{ transcribe }}
-            attach={false}
+            attach={attach}
+            attachmentOnlyText={copy.attach.only}
+            labels={{ attachNotes: { wrongType: () => ATTACHMENT_UNSUPPORTED_COPY } }}
           />
         </>
       }
@@ -113,7 +121,7 @@ export function ChatFrame({
         loading={loading}
         onStop={onStop}
         onRetry={onRetry}
-        onReply={text => void onSend(text)}
+        onReply={text => void onSend(text, [])}
         showSpeakers={showSpeakers}
         share={false}
         empty={
@@ -125,7 +133,7 @@ export function ChatFrame({
           >
             {startersTitle}
             {starters && starters.length > 0 && (
-              <ChatStarters starters={starters} onPick={text => void onSend(text)} />
+              <ChatStarters starters={starters} onPick={text => void onSend(text, [])} />
             )}
           </div>
         }
