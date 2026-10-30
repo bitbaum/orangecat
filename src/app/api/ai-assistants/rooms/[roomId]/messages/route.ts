@@ -7,6 +7,8 @@
  * services/companions/rooms/round.ts.
  */
 
+import { storeChatImages } from '@/services/cat/chat-image-store';
+import { withImageRefs } from '@/lib/chat/attachment-tags';
 import type { NextRequest } from 'next/server';
 import { withAuth, type AuthenticatedRequest } from '@/lib/api/withAuth';
 import {
@@ -50,9 +52,15 @@ export const POST = withAuth(async (request: AuthenticatedRequest, context: Rout
     if (!room) {
       return apiNotFound('Group chat not found');
     }
+    // A photo's pixels are stored once and read back by each member's turn.
+    const { content, images } = parsed.data;
+    const refs = images?.length ? await storeChatImages(user.id, images) : [];
     const userMessage = await appendRoomMessage(supabase, room.id, {
       role: 'user',
-      content: parsed.data.content,
+      content: withImageRefs(
+        content,
+        refs.filter((r): r is string => Boolean(r))
+      ),
     });
     room.messages.push(userMessage);
     const opened = await openRound(room, parsed.data.content);

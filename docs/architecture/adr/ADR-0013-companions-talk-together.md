@@ -114,6 +114,15 @@ that exists.
 aloud; a full-screen call with a chosen voice and speed is a chatkit feature
 to ask for there, so every product gets it at once.
 
+**Attachments are the Cat's, not the page's.** The paperclip in every chat
+here is chatkit's composer with the Cat's limits and PDF reader
+(`ModernChatPanel/attachments.ts`, `pdfAttachments.ts`); a file travels
+inside the message as the Cat's tagged blocks and a photo beside it, stored
+in the Cat's private photo store so a group chat's later turns can read it
+again. A fleet bot's contract takes an attached document as `context` and no
+pixels, so a photo is turned away at the box with the reason. Nothing about
+attaching was written twice.
+
 **Seen and not built.** Beyond D6–D8 the screens show a model picker (Auto /
 Fast / Expert / Heavy / Build), a library of the files and links shared in
 chats, a kids mode, and bot settings where risky actions are checked against

@@ -13,6 +13,7 @@ import { COMPANION_COPY } from '@/config/companions';
 import type { RoundState } from '@/services/companions/rooms/plan';
 import type { NewRoomMember, RoomMessage, RoomView } from '@/services/companions/rooms/types';
 import { logger } from '@/utils/logger';
+import type { ChatImage } from '@/services/cat/chat-images';
 
 interface Envelope<T> {
   success: boolean;
@@ -134,7 +135,7 @@ export function useRoomTalk(roomId: string | null) {
   );
 
   const send = useCallback(
-    async (content: string): Promise<boolean> => {
+    async (content: string, images?: ChatImage[]): Promise<boolean> => {
       if (!roomId || writing !== null) {
         return false;
       }
@@ -154,7 +155,7 @@ export function useRoomTalk(roomId: string | null) {
       try {
         const first = await post<TurnReply>(
           API_ROUTES.AI_ASSISTANTS.ROOM_MESSAGES(roomId),
-          { content },
+          { content, images },
           controller.signal
         );
         setLines(prev => [...prev.filter(l => l.id !== optimistic.id), ...first.messages]);

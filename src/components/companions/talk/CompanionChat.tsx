@@ -17,6 +17,7 @@ import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { visibleReply } from '@/services/companions/memory-lines';
 import type { CompanionRow } from '@/services/companions/talk-home';
 import { useCompanionTalk } from '../useCompanionTalk';
+import { outgoing, shownUserTurn } from './attachments';
 import { ChatFrame } from './ChatFrame';
 import { Face } from './CompanionFace';
 import { DetailRow, TalkDetailsSheet } from './TalkDetailsSheet';
@@ -42,7 +43,7 @@ export function CompanionChat({
   const messages: ChatMessageData[] = talk.messages.map(m => ({
     id: m.id,
     role: m.role,
-    content: m.role === 'assistant' ? visibleReply(m.content) : m.content,
+    ...(m.role === 'assistant' ? { content: visibleReply(m.content) } : shownUserTurn(m.content)),
   }));
   if (messages.length === 0 && row?.welcomeMessage && !talk.loading) {
     messages.unshift({ id: 'opening', role: 'assistant', content: row.welcomeMessage });
@@ -61,12 +62,12 @@ export function CompanionChat({
         live={talk.sending ? { status: copy.companion.working(name) } : null}
         sending={talk.sending}
         loading={talk.loading}
-        onSend={text => {
-          const clean = text.trim();
-          if (!clean || talk.sending) {
+        onSend={(text, attachments) => {
+          if ((!text.trim() && attachments.length === 0) || talk.sending) {
             return false;
           }
-          void talk.send(clean).then(onActivity);
+          const { content, images } = outgoing(text.trim(), attachments);
+          void talk.send(content, images).then(onActivity);
           return true;
         }}
         starters={fresh ? copy.starters.firstOptions : undefined}

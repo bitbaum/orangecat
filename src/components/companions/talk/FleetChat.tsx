@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react';
 import { ArrowUpRight } from 'lucide-react';
 import { COMPANION_COPY } from '@/config/companions';
 import type { FleetBot } from '@/services/companions/rooms/fleet';
+import { fleetAttach, outgoing, shownTurn } from './attachments';
 import { ChatFrame } from './ChatFrame';
 import { Face } from './CompanionFace';
 import { DetailRow, TalkDetailsSheet } from './TalkDetailsSheet';
@@ -46,10 +47,11 @@ export function FleetChat({
         onBack={onBack}
         onDetails={() => setDetails(true)}
         placeholder={copy.fleet.placeholder(name)}
-        messages={talk.messages}
+        messages={talk.messages.map(m => ({ ...m, ...shownTurn(m.role, m.content) }))}
         live={talk.sending ? { status: copy.fleet.working(name) } : null}
         sending={talk.sending}
-        onSend={talk.send}
+        onSend={(text, attachments) => talk.send(outgoing(text, attachments).content)}
+        attach={fleetAttach(name)}
         onStop={talk.stop}
         onRetry={talk.retry}
         startersTitle={

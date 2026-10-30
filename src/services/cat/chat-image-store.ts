@@ -65,6 +65,29 @@ export async function storeChatImages(
   );
 }
 
+/**
+ * The owner's stored photos back as data URLs, for a turn that runs after
+ * the request that carried the pixels (a group chat answers one member per
+ * request). Paths that are not the owner's, or gone, are skipped.
+ */
+export async function loadChatImages(userId: string, paths: string[]): Promise<ChatImage[]> {
+  const admin = getAdminClient();
+  const loaded = await Promise.all(
+    paths
+      .filter(p => isOwnChatImagePath(p, userId))
+      .map(async path => {
+        const { data: blob, error } = await admin.storage.from(PRIVATE_BUCKET).download(path);
+        if (error || !blob) {
+          return null;
+        }
+        const type = blob.type || 'image/jpeg';
+        const base64 = Buffer.from(await blob.arrayBuffer()).toString('base64');
+        return { name: path.split('/').pop() ?? path, dataUrl: `data:${type};base64,${base64}` };
+      })
+  );
+  return loaded.filter((img): img is ChatImage => img !== null);
+}
+
 /** A short-lived URL for the owner to view a stored photo. */
 export async function signedChatImageUrl(path: string): Promise<string | null> {
   const { data, error } = await getAdminClient()

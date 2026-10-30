@@ -84,6 +84,11 @@ export const COMPANION_COPY = {
       members: 'In this chat',
       open: 'Open',
     },
+    attach: {
+      only: 'Sent with an attachment',
+      noPhotos: (name: string) =>
+        `${name} reads a photo on its own site; here it takes text and PDFs.`,
+    },
     fleet: {
       placeholder: (name: string) => `Ask ${name}`,
       open: (name: string) => `Open ${name}`,

@@ -48,6 +48,14 @@ export const FLEET_BOTS: Readonly<Record<string, FleetBotContract>> = {
 export const FLEET_BOT_LOCALE = 'en';
 
 /**
+ * What one request to `/api/ask` may carry, as the products' own schemas cap
+ * it (diplodoctor `lib/ask.ts`, causius `lib/ask.ts`): twenty turns of up to
+ * 4,000 characters, and an attached file as `context` of up to 20,000. A
+ * longer line is cut here rather than refused there.
+ */
+export const FLEET_BOT_ASK_CAPS = { turns: 20, messageChars: 4_000, contextChars: 20_000 } as const;
+
+/**
  * A product's own mark: Next.js serves `app/icon.svg` at this path, and every
  * product in the contract ships one. The fleet's agents wear their own face
  * here, never one made up for them.

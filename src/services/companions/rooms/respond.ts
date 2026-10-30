@@ -12,6 +12,8 @@
  * between one person and one companion (see the migration).
  */
 
+import { loadChatImages } from '@/services/cat/chat-image-store';
+import { imageRefsIn } from '@/lib/chat/attachment-tags';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { createApiKeyService } from '@/services/ai/api-key-service';
@@ -157,11 +159,17 @@ async function companionLine(args: {
   }
 
   const { history, content } = splitForModel(transcript);
+  // The photos on the person's newest line, read back from the store: this
+  // member's turn runs in its own request, after the one that carried them.
+  const newest = [...room.messages].reverse().find(m => m.role === 'user');
+  const refs = newest ? imageRefsIn([newest.content]) : [];
+  const images = refs.length ? await loadChatImages(userId, refs) : undefined;
   const reply = await generateReply({
     hasByok,
     userKey,
     requestedModel: undefined,
     assistant,
+    images,
     systemPrompt: buildRoomPrompt({
       speaker: member,
       members: room.members,

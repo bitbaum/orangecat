@@ -12,6 +12,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { API_ROUTES } from '@/config/api-routes';
 import { logger } from '@/utils/logger';
+import type { ChatImage } from '@/services/cat/chat-images';
 
 export interface TalkMessage {
   id: string;
@@ -126,7 +127,7 @@ export function useCompanionTalk(assistantId: string) {
   }, [assistantId, activeId]);
 
   const send = useCallback(
-    async (content: string) => {
+    async (content: string, images?: ChatImage[]) => {
       setError(null);
       setCreditsNeeded(null);
       const optimistic: TalkMessage = {
@@ -144,7 +145,7 @@ export function useCompanionTalk(assistantId: string) {
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ content }),
+            body: JSON.stringify({ content, images }),
           }
         );
         const json = (await res.json()) as ApiEnvelope<{
