@@ -114,6 +114,20 @@ that exists.
 aloud; a full-screen call with a chosen voice and speed is a chatkit feature
 to ask for there, so every product gets it at once.
 
+**A round goes on while the work is unfinished.** Tested on the live site
+(2026-10-30, two fleet bots on one cross-domain problem; two companions,
+a builder and a skeptic, on a launch plan): each member answered once and
+well, but nobody answered anyone, and a bot asked to "discuss" staged both
+voices inside its own line. Three rules fix that, all bounded by the round's
+six lines. A companion's memories of the person come into the room with it
+(the job it was given in its own thread). A line that stages another member's
+voice is cut where that voice begins and the member answers for itself
+(`cutImpersonation`; one line addressed to a member is a question and stays).
+And when a line addresses nobody but turns remain, one small router call
+(`pickNext`) says whether the exchange is over or who speaks next: the
+person asked for a discussion that is not finished, a question is open, or a
+disagreement stands.
+
 **The room travels as the contract's `scene`.** A companion's room rules sit
 under its own definition in the system prompt; a fleet bot's prompt lives on
 its site, so the same section goes with the request as `scene` (up to 1,000

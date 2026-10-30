@@ -79,6 +79,49 @@ export function nextQueue(args: {
 }
 
 /**
+ * A bot that stages a conversation instead of having one ("Causius: …",
+ * "Diplodoctor: …", "Causius: …" inside ONE line) is cut where the first
+ * other voice begins, and that member is handed the floor, so the exchange
+ * becomes real. One line addressed to another member ("Diplodoctor: what
+ * must the note contain?") is a question, not a staged answer, and is kept:
+ * a staging has either a line in the speaker's own voice or two other voices.
+ */
+export function cutImpersonation(
+  reply: string,
+  speaker: RoomMember,
+  members: readonly RoomMember[]
+): { text: string; handoff: RoomMember | null } {
+  const lines = reply.split('\n');
+  const voices: Array<{ line: number; member: RoomMember }> = [];
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]
+      .replace(/^[\s>*\-•#]+/, '')
+      .replace(/\*\*/g, '')
+      .trimStart();
+    const low = line.toLowerCase();
+    for (const m of members) {
+      const name = m.name.trim().toLowerCase();
+      const start = low.startsWith(`@${name}`)
+        ? name.length + 1
+        : low.startsWith(name)
+          ? name.length
+          : -1;
+      if (start >= 0 && /^\s*[:：]|^\s+[—–-]\s/.test(line.slice(start))) {
+        voices.push({ line: i, member: m });
+        break;
+      }
+    }
+  }
+  const others = voices.filter(v => v.member.id !== speaker.id);
+  const staged = voices.some(v => v.member.id === speaker.id) || others.length >= 2;
+  const first = others[0];
+  if (!staged || !first || first.line === 0) {
+    return { text: reply, handoff: null };
+  }
+  return { text: lines.slice(0, first.line).join('\n').trim(), handoff: first.member };
+}
+
+/**
  * A queue that arrived from the client, made safe: only real members, no
  * repeats, never longer than the turns left, never more turns than a round has.
  */

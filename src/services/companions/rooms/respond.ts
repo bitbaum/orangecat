@@ -26,11 +26,15 @@ import { fetchAssistant, generateReply } from '@/services/ai/sendMessage-interna
 import type { SendMessageError } from '@/services/ai/sendMessage-types';
 import { decideConversationAccess } from '../access';
 import { askFleetBot, fleetBot } from './fleet';
+import { recallCompanionMemories } from '../memory';
+import { buildCompanionSystemPrompt } from '../system-prompt';
+import { cutImpersonation } from './plan';
 import { buildRoomPrompt, roomScene, splitForModel, transcriptFor } from './prompt';
 import { appendRoomMessage } from './store';
 import type { RoomMember, RoomMessage, RoomTurnError, RoomView } from './types';
 
-export type RoomTurnOutcome = { message: RoomMessage } | { error: RoomTurnError };
+export type RoomTurnOutcome =
+  { message: RoomMessage; handoff: RoomMember | null } | { error: RoomTurnError };
 
 const RATE_LIMITED = 'Daily limit reached. Add your own OpenRouter API key for unlimited usage.';
 
@@ -49,16 +53,17 @@ export async function speakInRoom(args: {
   if ('error' in spoken) {
     return spoken;
   }
+  const cut = cutImpersonation(spoken.content, member, room.members);
   const message = await appendRoomMessage(supabase, room.id, {
     role: 'assistant',
     memberId: member.id,
     speaker: member.name,
-    content: spoken.content,
+    content: cut.text || spoken.content,
   });
   if (spoken.settle) {
     await spoken.settle(message.id);
   }
-  return { message };
+  return { message, handoff: cut.text ? cut.handoff : null };
 }
 
 /** The one-to-one pipeline's errors, in the room's vocabulary (a paused thread is not a room concept). */
@@ -164,6 +169,17 @@ async function companionLine(args: {
   }
 
   const { history, content } = splitForModel(transcript);
+  // What this companion knows about this person (its job, told in their own
+  // thread) comes with it into the room, as it does one to one.
+  const recalled = await recallCompanionMemories(
+    supabase,
+    { assistantId: assistant.id, userId },
+    content
+  );
+  const definition = buildCompanionSystemPrompt({
+    definition: assistant.system_prompt,
+    memories: recalled.map(m => m.content),
+  });
   // The photos on the person's newest line, read back from the store: this
   // member's turn runs in its own request, after the one that carried them.
   const newest = [...room.messages].reverse().find(m => m.role === 'user');
@@ -178,7 +194,7 @@ async function companionLine(args: {
     systemPrompt: buildRoomPrompt({
       speaker: member,
       members: room.members,
-      definition: assistant.system_prompt,
+      definition,
     }),
     history,
     content,

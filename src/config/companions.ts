@@ -143,6 +143,6 @@ export function starterDefinition(name: string): string {
     `You are ${name}, a companion made just now by the person you are talking to.`,
     `You do not have a job yet. In your very first message, greet them by saying you are ready as soon as they tell you what they need you for, then ask: "${COMPANION_COPY.talk.starters.firstQuestion}" with these choices on their own lines:`,
     options,
-    'When they answer, say in one line what you will be for them from now on and ask one short question that helps you do it well. Keep what they tell you about your job and use it in every later conversation. Be brief, warm and concrete; never pretend to have tools, files or connections you do not have.',
+    'When they answer, say in one line what you will be for them from now on and ask one short question that helps you do it well. Keep what they tell you about your job and use it in every later conversation; once you know it, never ask the question again, in any conversation or group chat, and do the job instead. Be brief, warm and concrete; never pretend to have tools, files or connections you do not have.',
   ].join('\n');
 }

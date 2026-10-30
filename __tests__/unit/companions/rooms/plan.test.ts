@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   MAX_BOT_TURNS,
+  cutImpersonation,
   deriveRoomTitle,
   nextQueue,
   planResponders,
@@ -124,5 +125,34 @@ describe('deriveRoomTitle', () => {
     expect(deriveRoomTitle(['Ada', 'Lex'])).toBe('Ada & Lex');
     expect(deriveRoomTitle(['Ada'])).toBe('Ada');
     expect(deriveRoomTitle([])).toBe('Group chat');
+  });
+});
+
+describe('cutImpersonation', () => {
+  const [a, b] = members;
+  it('cuts a staged dialogue where the other voice begins and hands over', () => {
+    const reply = [
+      'The client cannot keep the invoice.',
+      '',
+      'Discussion',
+      `- **${b.name}:** From a medical standpoint the certificates suffice.`,
+      `- **${a.name}:** I agree, a summary is enough.`,
+      'Agreed plan: …',
+    ].join('\n');
+    const cut = cutImpersonation(reply, a, members);
+    expect(cut.text).toBe('The client cannot keep the invoice.\n\nDiscussion');
+    expect(cut.handoff?.id).toBe(b.id);
+  });
+
+  it('keeps one line addressed to another member: that is a question, not a staging', () => {
+    const reply = `My view is X.\n${b.name}: what must the note contain?`;
+    expect(cutImpersonation(reply, a, members)).toEqual({ text: reply, handoff: null });
+  });
+
+  it('leaves a name in the middle of a sentence, and a reply that opens in another voice, alone', () => {
+    const mid = `As ${b.name} said, the note matters.\nI agree with ${b.name}: keep it short.`;
+    expect(cutImpersonation(mid, a, members).handoff).toBeNull();
+    const opens = `${b.name}: hello\n${a.name}: hi`;
+    expect(cutImpersonation(opens, a, members)).toEqual({ text: opens, handoff: null });
   });
 });

@@ -12,7 +12,7 @@
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { nextQueue, planResponders, type RoundState } from './plan';
 import { speakInRoom } from './respond';
-import { pickResponders } from './router';
+import { pickNext, pickResponders } from './router';
 import { parseMentions } from './mentions';
 import type { RoomMessage, RoomTurnError, RoomView } from './types';
 
@@ -64,5 +64,27 @@ export async function stepRound(args: {
     reply: outcome.message.content,
     members: room.members,
   });
+  // A line cut where another member's voice began: that member answers next.
+  if (outcome.handoff && next.turnsLeft > 0 && !next.queue.includes(outcome.handoff.id)) {
+    next.queue.unshift(outcome.handoff.id);
+  }
+  // Nobody addressed and turns left: ask whether the exchange is really over
+  // (the person asked for a discussion, a question is open, a disagreement
+  // stands). One small call, and only where the round would otherwise end.
+  if (next.queue.length === 0 && next.turnsLeft > 0 && room.members.length > 1) {
+    let at = room.messages.length - 1;
+    while (at >= 0 && room.messages[at].role !== 'user') {
+      at--;
+    }
+    const request = at >= 0 ? room.messages[at].content : '';
+    const lines = [...room.messages.slice(at + 1), outcome.message].map(m => ({
+      speaker: m.speaker ?? 'companion',
+      content: m.content,
+    }));
+    const who = await pickNext({ request, lines, speaker, members: room.members });
+    if (who) {
+      next.queue.push(who.id);
+    }
+  }
   return { message: outcome.message, failed: null, state: next };
 }
