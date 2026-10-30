@@ -45,6 +45,67 @@ export function parseRouterPick(raw: string, members: readonly RoomMember[]): Ro
   return picks;
 }
 
+/**
+ * After a bot line, with nobody addressed: is the exchange over, or should
+ * another member speak? "done" unless the person asked the members to work
+ * something out together and they have not, a member was asked something,
+ * or a member disagreed with what was just said.
+ */
+export function continuationPrompt(members: readonly RoomMember[]): string {
+  const roster = members.map(m => `- ${handleOf(m.name)}${m.job ? `: ${m.job}` : ''}`).join('\n');
+  return [
+    'You watch a group chat between a person and these members:',
+    roster,
+    "The person's latest request and the latest lines follow. Decide whether another member should speak next, without being asked by name.",
+    'Answer with exactly one handle when: the person asked the members to discuss, compare, challenge or agree on something and they have not finished; or the last line asked a member something; or the last line disagreed with another member who has not answered.',
+    'Otherwise answer "done". One word, nothing else. Never name the member who just spoke.',
+  ].join('\n');
+}
+
+export function parseContinuation(
+  raw: string,
+  speaker: RoomMember,
+  members: readonly RoomMember[]
+): RoomMember | null {
+  const token = foldName(
+    raw
+      .trim()
+      .split(/[\s:,.]/)[0]
+      ?.replace(/^[\s\-*@]+/, '') ?? ''
+  );
+  if (!token || token === 'done') {
+    return null;
+  }
+  const hit = members.find(m => foldName(m.name) === token);
+  return hit && hit.id !== speaker.id ? hit : null;
+}
+
+export async function pickNext(args: {
+  request: string;
+  lines: ReadonlyArray<{ speaker: string; content: string }>;
+  speaker: RoomMember;
+  members: readonly RoomMember[];
+}): Promise<RoomMember | null> {
+  const { request, lines, speaker, members } = args;
+  if (members.length <= 1) {
+    return null;
+  }
+  const transcript = lines.map(l => `${l.speaker}: ${l.content}`).join('\n\n');
+  const text = `The person asked:\n${request}\n\nLatest lines:\n${transcript}`;
+  try {
+    const { result } = await completeOnPlatform(text, {
+      systemPrompt: continuationPrompt(members),
+      messages: [{ role: 'user', content: text }],
+      temperature: 0,
+      maxTokens: 16,
+    });
+    return parseContinuation(result.content, speaker, members);
+  } catch (error) {
+    logger.warn('room continuation router failed; the round ends', { error }, 'CompanionRooms');
+    return null;
+  }
+}
+
 export async function pickResponders(
   text: string,
   members: readonly RoomMember[]
