@@ -17,15 +17,15 @@ export const ROOM_SECTION_HEADING = '## The room';
 /** Lines of transcript a member is shown. */
 export const ROOM_HISTORY = 30;
 
-export function buildRoomPrompt(args: {
-  speaker: RoomMember;
-  members: readonly RoomMember[];
-  definition: string | null | undefined;
-}): string {
-  const { speaker, members, definition } = args;
+/**
+ * The room as one member sees it: who else is there and how to speak. A
+ * companion gets it under its own definition (buildRoomPrompt); a fleet bot,
+ * whose rules live on its own site, gets it as the contract's `scene`.
+ */
+export function roomScene(speaker: RoomMember, members: readonly RoomMember[]): string {
   const others = members.filter(m => m.id !== speaker.id);
   const roster = others.map(m => `- @${handleOf(m.name)}${m.job ? ` — ${m.job}` : ''}`).join('\n');
-  const section = [
+  return [
     ROOM_SECTION_HEADING,
     `You are ${speaker.name}, in a group chat with the person and these companions:`,
     roster || '- (nobody else yet)',
@@ -34,6 +34,15 @@ export function buildRoomPrompt(args: {
     'When you need something from another companion, address it once with its @handle and it will answer next. Do not @ anyone just to be polite.',
     'Keep it to a few sentences: this is a conversation, not a report.',
   ].join('\n');
+}
+
+export function buildRoomPrompt(args: {
+  speaker: RoomMember;
+  members: readonly RoomMember[];
+  definition: string | null | undefined;
+}): string {
+  const { speaker, members, definition } = args;
+  const section = roomScene(speaker, members);
   const base = definition?.trim() ?? '';
   return base ? `${base}\n\n${section}` : section;
 }

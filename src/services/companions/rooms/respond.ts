@@ -26,7 +26,7 @@ import { fetchAssistant, generateReply } from '@/services/ai/sendMessage-interna
 import type { SendMessageError } from '@/services/ai/sendMessage-types';
 import { decideConversationAccess } from '../access';
 import { askFleetBot, fleetBot } from './fleet';
-import { buildRoomPrompt, splitForModel, transcriptFor } from './prompt';
+import { buildRoomPrompt, roomScene, splitForModel, transcriptFor } from './prompt';
 import { appendRoomMessage } from './store';
 import type { RoomMember, RoomMessage, RoomTurnError, RoomView } from './types';
 
@@ -44,7 +44,7 @@ export async function speakInRoom(args: {
   const transcript = transcriptFor(room.messages, member);
   const spoken =
     member.kind === 'fleet'
-      ? await fleetLine(member, transcript)
+      ? await fleetLine(member, transcript, room.members)
       : await companionLine({ supabase, userId, room, member, transcript });
   if ('error' in spoken) {
     return spoken;
@@ -73,7 +73,8 @@ type Spoken =
 
 async function fleetLine(
   member: RoomMember,
-  transcript: Array<{ role: 'user' | 'assistant'; content: string }>
+  transcript: Array<{ role: 'user' | 'assistant'; content: string }>,
+  members: readonly RoomMember[]
 ): Promise<Spoken> {
   const bot = member.fleetSlug ? await fleetBot(member.fleetSlug) : null;
   if (!bot) {
@@ -81,7 +82,11 @@ async function fleetLine(
   }
   // The contract wants the conversation to end on the person's line.
   const { history, content } = splitForModel(transcript);
-  const answer = await askFleetBot(bot, [...history, { role: 'user', content }]);
+  // The product's rules live on its site; the room (who else is here, speak
+  // as yourself only) goes with the request as the contract's scene.
+  const answer = await askFleetBot(bot, [...history, { role: 'user', content }], {
+    scene: roomScene(member, members),
+  });
   if ('error' in answer) {
     return answer;
   }

@@ -53,7 +53,13 @@ export const FLEET_BOT_LOCALE = 'en';
  * 4,000 characters, and an attached file as `context` of up to 20,000. A
  * longer line is cut here rather than refused there.
  */
-export const FLEET_BOT_ASK_CAPS = { turns: 20, messageChars: 4_000, contextChars: 20_000 } as const;
+export const FLEET_BOT_ASK_CAPS = {
+  turns: 20,
+  messageChars: 4_000,
+  contextChars: 20_000,
+  /** `scene`: the setting the question is asked in (a group chat's roster and rules). */
+  sceneChars: 1_000,
+} as const;
 
 /**
  * A product's own mark: Next.js serves `app/icon.svg` at this path, and every

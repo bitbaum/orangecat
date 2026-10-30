@@ -114,10 +114,12 @@ export interface FleetAnswer {
  */
 export function fleetAskBody(
   messages: ReadonlyArray<{ role: 'user' | 'assistant'; content: string }>,
-  locale: string
+  locale: string,
+  scene = ''
 ): {
   messages: Array<{ role: 'user' | 'assistant'; content: string }>;
   context: string;
+  scene: string;
   locale: string;
 } {
   const kept = messages.slice(-FLEET_BOT_ASK_CAPS.turns);
@@ -139,13 +141,18 @@ export function fleetAskBody(
       content: (text || '(see the attached file)').slice(0, FLEET_BOT_ASK_CAPS.messageChars),
     };
   });
-  return { messages: stripped, context: context.trim(), locale };
+  return {
+    messages: stripped,
+    context: context.trim(),
+    scene: scene.trim().slice(0, FLEET_BOT_ASK_CAPS.sceneChars),
+    locale,
+  };
 }
 
 export async function askFleetBot(
   bot: FleetBot,
   messages: ReadonlyArray<{ role: 'user' | 'assistant'; content: string }>,
-  options: { fetchImpl?: typeof fetch; signal?: AbortSignal } = {}
+  options: { fetchImpl?: typeof fetch; signal?: AbortSignal; scene?: string } = {}
 ): Promise<FleetAnswer | { error: RoomTurnError }> {
   const locale = FLEET_BOTS[bot.slug]?.locales.includes(FLEET_BOT_LOCALE)
     ? FLEET_BOT_LOCALE
@@ -155,7 +162,7 @@ export async function askFleetBot(
     const res = await fetchImpl(fleetBotAskUrl(bot.url), {
       method: 'POST',
       headers: { 'content-type': 'application/json', accept: 'application/json' },
-      body: JSON.stringify(fleetAskBody(messages, locale)),
+      body: JSON.stringify(fleetAskBody(messages, locale, options.scene)),
       signal: options.signal ?? AbortSignal.timeout(FLEET_BOT_TIMEOUT_MS),
     });
     if (res.status === 429) {
