@@ -47,6 +47,17 @@ export const FLEET_BOTS: Readonly<Record<string, FleetBotContract>> = {
 /** The locale the room asks in: the app is English. */
 export const FLEET_BOT_LOCALE = 'en';
 
+/**
+ * A product's own mark: Next.js serves `app/icon.svg` at this path, and every
+ * product in the contract ships one. The fleet's agents wear their own face
+ * here, never one made up for them.
+ */
+export const FLEET_BOT_MARK_PATH = '/icon.svg';
+
+export function fleetBotMarkUrl(liveUrl: string): string {
+  return `${liveUrl.replace(/\/+$/, '')}${FLEET_BOT_MARK_PATH}`;
+}
+
 export function isFleetBotSlug(slug: string): boolean {
   return Object.prototype.hasOwnProperty.call(FLEET_BOTS, slug);
 }

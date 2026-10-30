@@ -54,7 +54,7 @@ export function memberFromRow(row: MemberRow, fleet: readonly FleetBot[]): RoomM
       fleetSlug: row.fleet_slug,
       name: bot?.name ?? UNAVAILABLE,
       job: bot?.job ?? null,
-      avatarUrl: null,
+      avatarUrl: bot?.mark ?? null,
       position: row.position,
     };
   }

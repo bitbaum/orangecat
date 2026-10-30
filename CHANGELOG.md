@@ -14,6 +14,7 @@ to the map, sub-bullets stay here for the human reader.
 - **Your companions live in one place, and they can talk to each other.** `/companions/talk` is now the home for every companion you made or talk to, your group chats and the fleet's own bots (Diplodoctor for a medical report, Causius for a legal letter), in one list with the last line and when, the chat beside it on a wide screen and in its place on a phone. "+" offers New companion and New group chat. In a group chat of two to six, the companions you address with @ answer in turn, hand the floor to each other with an @, and every line says who said it; a round stops after six lines so nobody talks forever.
 - **A companion in a minute.** New companion asks for a name, a shape and a colour, nothing else; it asks what you need it for in its first message and remembers your answer. The full form is still on the edit page.
 - **A chat with a fleet bot stays in your browser.** Diplodoctor and Causius keep nothing, and neither do we.
+- **The fleet’s agents wear their own marks.** Diplodoctor and Causius show the face their own site shows, not one made up here; the first screen is one line and a way into the product, and it no longer sits under the header.
 - **Companions is in the sidebar, beside Cat.** In a group chat every line reads "Name · job", the box says which group you are writing to, and the details sheet lists the members with Add member as the last row and Remove on each while the group keeps two.
 
 ## 2026-10-27

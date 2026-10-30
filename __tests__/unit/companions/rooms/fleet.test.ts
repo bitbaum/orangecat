@@ -37,6 +37,7 @@ describe('fleet bots from the map', () => {
       name: 'Diplodoctor',
       job: 'The health layer of the fleet: an agent that reads a medical report with you.',
       url: 'https://diplodoctor.example',
+      mark: 'https://diplodoctor.example/icon.svg',
     });
   });
 
