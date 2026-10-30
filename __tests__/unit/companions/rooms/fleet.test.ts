@@ -87,7 +87,12 @@ describe('askFleetBot', () => {
     const fetchImpl = vi.fn(async (url: string | URL | Request, init?: RequestInit) => {
       expect(String(url)).toBe(fleetBotAskUrl('https://diplodoctor.example/'));
       expect(String(url)).toBe('https://diplodoctor.example/api/ask');
-      expect(JSON.parse(String(init?.body))).toEqual({ messages, context: '', locale: 'en' });
+      expect(JSON.parse(String(init?.body))).toEqual({
+        messages,
+        context: '',
+        scene: '',
+        locale: 'en',
+      });
       return new Response(JSON.stringify({ text: 'Iron stores.', replies: ['Thanks', 7] }), {
         status: 200,
         headers: { 'content-type': 'application/json' },
@@ -141,6 +146,7 @@ describe('fleetAskBody', () => {
     expect(body.messages).toEqual([{ role: 'user', content: 'What does this say?' }]);
     expect(body.context).toBe('--- lease.txt ---\nRent is due monthly.');
     expect(body.locale).toBe('en');
+    expect(body.scene).toBe('');
   });
 
   it('cuts a line to the contract and keeps the newest files when they would not fit', () => {
@@ -158,8 +164,15 @@ describe('fleetAskBody', () => {
     expect(body.messages[2].content.length).toBe(4_000);
   });
 
-  it('leaves a plain conversation alone', () => {
+  it('leaves a plain conversation alone, and carries the room as the scene, cut to the cap', () => {
     const turns = [{ role: 'user' as const, content: 'Hello' }];
-    expect(fleetAskBody(turns, 'fr')).toEqual({ messages: turns, context: '', locale: 'fr' });
+    expect(fleetAskBody(turns, 'fr')).toEqual({
+      messages: turns,
+      context: '',
+      scene: '',
+      locale: 'fr',
+    });
+    expect(fleetAskBody(turns, 'fr', ' ## The room ').scene).toBe('## The room');
+    expect(fleetAskBody(turns, 'fr', 'x'.repeat(2_000)).scene.length).toBe(1_000);
   });
 });

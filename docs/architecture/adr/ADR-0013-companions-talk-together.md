@@ -114,6 +114,12 @@ that exists.
 aloud; a full-screen call with a chosen voice and speed is a chatkit feature
 to ask for there, so every product gets it at once.
 
+**The room travels as the contract's `scene`.** A companion's room rules sit
+under its own definition in the system prompt; a fleet bot's prompt lives on
+its site, so the same section goes with the request as `scene` (up to 1,000
+characters), which the product puts after its rules. Found on the live site
+2026-10-30: without it Causius wrote Diplodoctor's answer inside its own line.
+
 **Attachments are the Cat's, not the page's.** The paperclip in every chat
 here is chatkit's composer with the Cat's limits and PDF reader
 (`ModernChatPanel/attachments.ts`, `pdfAttachments.ts`); a file travels
