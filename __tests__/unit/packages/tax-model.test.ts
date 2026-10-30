@@ -247,8 +247,8 @@ describe('divisor', () => {
     expect(modelProblems({ ...SPLIT, schemaVersion: 1 })).toEqual([
       'component "local" has a divisor, which needs schemaVersion 2',
     ]);
-    expect(modelProblems({ ...SPLIT, schemaVersion: 7 as 6 })).toEqual([
-      'schemaVersion 7 is not supported',
+    expect(modelProblems({ ...SPLIT, schemaVersion: 9 as 8 })).toEqual([
+      'schemaVersion 9 is not supported',
     ]);
     expect(referencedLevels(SPLIT)).toEqual(['realm', 'shire', 'guild', 'temple']);
   });
@@ -379,6 +379,133 @@ describe('limits on a share of the base', () => {
       'the limit on limit names unknown component "nowhere"',
     ]);
     expect(modelRefs(LIMITED).at(-1)).toEqual({ level: 'realm', metric: 'limit' });
+  });
+});
+
+describe('a base of its own and fixed amounts', () => {
+  const WITH_WEALTH: TaxModel = {
+    ...MODEL,
+    schemaVersion: 7,
+    inputs: ['income', 'wealth', 'temple_member'],
+    components: [
+      ...MODEL.components,
+      {
+        key: 'wealth',
+        base: 'wealth',
+        tariff: { level: 'realm', metric: 'wealth.tariff' },
+        multipliers: [{ level: 'shire', metric: 'multiplier' }],
+      },
+      { key: 'head', tariff: { level: 'shire', metric: 'head' } },
+    ],
+  };
+  const WEALTH_FACTS: Fact[] = [
+    ...FACTS,
+    { level: 'realm', metric: 'wealth.tariff', value: progressive([[100_000, 0.001]]) },
+    { level: 'shire', metric: 'head', value: { kind: 'fixed', currency: 'XTS', amount: 24 } },
+  ];
+  const at = (values: Record<string, number>) =>
+    evaluate(WITH_WEALTH, WEALTH_FACTS, { values, variant: 'alone' });
+
+  it("applies a component to its own base, and the rate stays a share of the model's", () => {
+    const estimate = at({ income: 100_000, wealth: 1_100_000 });
+    // 1,000,000 above the threshold at 0.1 %, times the shire's 1.2.
+    expect(estimate.components.find(c => c.key === 'wealth')!.amount).toBeCloseTo(1_200);
+    expect(estimate.total).toBeCloseTo(14_000 + 10_000 + 1_200 + 24);
+    expect(estimate.effectiveRate).toBeCloseTo(0.24);
+    // No wealth entered: the component does not apply, and asks for none of its facts.
+    const none = at({ income: 100_000 });
+    expect(none.components.find(c => c.key === 'wealth')).toMatchObject({
+      applies: false,
+      amount: 0,
+    });
+    const untariffed = evaluate(
+      WITH_WEALTH,
+      WEALTH_FACTS.filter(f => f.metric !== 'wealth.tariff'),
+      { values: { income: 100_000 }, variant: 'alone' }
+    );
+    expect(untariffed.complete).toBe(true);
+    // Entered, even as 0, it applies and needs its tariff.
+    expect(
+      at({ income: 100_000, wealth: 0 }).components.find(c => c.key === 'wealth')
+    ).toMatchObject({ applies: true, amount: 0 });
+  });
+
+  it('levies a fixed amount whatever the base', () => {
+    expect(applyTariff(0, { kind: 'fixed', currency: 'XTS', amount: 24 })).toBe(24);
+    expect(applyTariff(1e9, { kind: 'fixed', currency: 'XTS', amount: 24, cap: 10 })).toBe(10);
+    expect(at({ income: 0 }).components.find(c => c.key === 'head')!.amount).toBe(24);
+  });
+
+  it('needs schemaVersion 7 and a declared input, and refuses a negative amount', () => {
+    expect(modelProblems(WITH_WEALTH)).toEqual([]);
+    expect(modelProblems({ ...WITH_WEALTH, schemaVersion: 6, inputs: MODEL.inputs })).toEqual([
+      'component "wealth" has a base of its own, which needs schemaVersion 7',
+      'component "wealth" reads undeclared base "wealth"',
+    ]);
+    expect(tariffSchemaVersion({ kind: 'fixed', currency: 'XTS', amount: 1 })).toBe(7);
+    expect(tariffProblem({ kind: 'fixed', currency: 'XTS', amount: -1 })).toMatch(/amount -1/);
+    expect(() =>
+      evaluate(
+        { ...MODEL, schemaVersion: 6 },
+        [
+          ...FACTS.filter(f => f.metric !== 'tariff'),
+          {
+            level: 'realm',
+            metric: 'tariff',
+            value: { kind: 'fixed', currency: 'XTS', amount: 1 },
+          },
+        ],
+        { values: { income: 1 }, variant: 'alone' }
+      )
+    ).toThrow(/needs schemaVersion 7/);
+  });
+});
+
+describe('a multiplier scaled by another fact', () => {
+  const SCALED: TaxModel = {
+    ...MODEL,
+    schemaVersion: 8,
+    components: [
+      {
+        key: 'temple',
+        tariff: { level: 'realm', metric: 'tariff.basic' },
+        multipliers: [
+          {
+            level: 'temple',
+            metric: 'multiplier',
+            scaledBy: { level: 'realm', metric: 'multiplier', optional: true },
+          },
+        ],
+      },
+    ],
+  };
+  const at = (facts: Fact[]) =>
+    evaluate(SCALED, facts, { values: { income: 100_000 }, variant: 'alone' });
+
+  it('multiplies the multiplier by the scale, and by 1 where an optional scale is missing', () => {
+    // 5,000 basic tax; the temple's 10 % of the realm's 80 % of it.
+    expect(at(FACTS).total).toBeCloseTo(400);
+    expect(
+      at(FACTS.filter(f => !(f.level === 'realm' && f.metric === 'multiplier'))).total
+    ).toBeCloseTo(500);
+  });
+
+  it('needs schemaVersion 8, counts the scale among the facts read, and refuses a negative one', () => {
+    expect(modelProblems(SCALED)).toEqual([]);
+    expect(modelProblems({ ...SCALED, schemaVersion: 7 })).toEqual([
+      'component "temple" has a scaled multiplier, which needs schemaVersion 8',
+    ]);
+    expect(componentRefs(SCALED.components[0]!).at(-1)).toEqual({
+      level: 'realm',
+      metric: 'multiplier',
+      optional: true,
+    });
+    expect(() =>
+      at([
+        ...FACTS.filter(f => !(f.level === 'realm' && f.metric === 'multiplier')),
+        { level: 'realm', metric: 'multiplier', value: -1 },
+      ])
+    ).toThrow(/non-negative/);
   });
 });
 

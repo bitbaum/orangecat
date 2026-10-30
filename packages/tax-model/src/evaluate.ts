@@ -39,7 +39,11 @@ export interface Estimate {
   components: readonly ComponentResult[];
   /** Sum of the components that could be computed. Unrounded: rounding is presentation. */
   total: number;
-  /** total / base, 0 when the base is 0. */
+  /**
+   * The components that read the model's `base`, divided by it; 0 when it is
+   * 0. A component with a base of its own (a wealth tax) is in `total`, not
+   * in this rate.
+   */
   effectiveRate: number;
   /** Null only when no tariff was found at all. */
   currency: string | null;
@@ -75,6 +79,9 @@ const roundDown = (amount: number, step: number | undefined): number =>
   step === undefined ? amount : Math.floor(amount / step) * step;
 
 function amountAt(base: number, tariff: Tariff): number {
+  if (tariff.kind === 'fixed') {
+    return tariff.cap === undefined ? tariff.amount : Math.min(tariff.amount, tariff.cap);
+  }
   if (!(base > 0)) {
     return 0;
   }
@@ -133,18 +140,27 @@ export function evaluate(model: TaxModel, facts: readonly Fact[], input: Evaluat
   if (!model.variants.includes(input.variant)) {
     throw new Error(`variant "${input.variant}" is not one of the model's variants`);
   }
-  const rawBase = input.values[model.base];
-  if (rawBase !== undefined && typeof rawBase !== 'number') {
-    throw new Error(`input "${model.base}" must be a number`);
-  }
-  const base = rawBase !== undefined && rawBase > 0 ? rawBase : 0;
+  const baseOf = (key: string): number => {
+    const raw = input.values[key];
+    if (raw !== undefined && typeof raw !== 'number') {
+      throw new Error(`input "${key}" must be a number`);
+    }
+    return raw !== undefined && raw > 0 ? raw : 0;
+  };
+  const base = baseOf(model.base);
   const lookup = factLookup(facts, input.variant);
   const isTrue = (condition: string | undefined) =>
     condition === undefined || input.values[condition] === true;
 
   let currency: string | null = null;
   const components: ComponentResult[] = model.components.map(component => {
-    if (!isTrue(component.when)) {
+    // A component on a base of its own applies once that input is given: a
+    // wealth tax asks nothing of a reader who entered no wealth.
+    const ownBaseMissing =
+      component.base !== undefined &&
+      component.base !== model.base &&
+      input.values[component.base] === undefined;
+    if (!isTrue(component.when) || ownBaseMissing) {
       return {
         key: component.key,
         applies: false,
@@ -193,8 +209,9 @@ export function evaluate(model: TaxModel, facts: readonly Fact[], input: Evaluat
         throw new Error(`tariffs in ${currency} and ${tariff.currency} cannot be combined`);
       }
       currency = tariff.currency;
+      const own = baseOf(component.base ?? model.base);
       tariffAmount =
-        divisor === null ? applyTariff(base, tariff) : dividedAmount(base, divisor, tariff);
+        divisor === null ? applyTariff(own, tariff) : dividedAmount(own, divisor, tariff);
     }
 
     let multiplier: number | null = null;
@@ -227,7 +244,20 @@ export function evaluate(model: TaxModel, facts: readonly Fact[], input: Evaluat
             reduction = share;
           }
         }
-        multiplier += value * (1 - reduction);
+        let scale = 1;
+        if (m.scaledBy !== undefined) {
+          const factor = lookup(m.scaledBy);
+          if (factor === undefined) {
+            if (!m.scaledBy.optional) {
+              missing.push(ref(m.scaledBy));
+            }
+          } else if (typeof factor !== 'number' || !(factor >= 0) || !Number.isFinite(factor)) {
+            throw new Error(`${describe(m.scaledBy)}: a scale must be a non-negative number`);
+          } else {
+            scale = factor;
+          }
+        }
+        multiplier += value * scale * (1 - reduction);
       }
     }
 
@@ -271,11 +301,14 @@ export function evaluate(model: TaxModel, facts: readonly Fact[], input: Evaluat
   }
 
   const total = components.reduce((sum, c) => sum + (c.amount ?? 0), 0);
+  const onBase = components
+    .filter((_, i) => (model.components[i]!.base ?? model.base) === model.base)
+    .reduce((sum, c) => sum + (c.amount ?? 0), 0);
   const missing = [...components.flatMap(c => c.missing), ...limitsMissing];
   return {
     components,
     total,
-    effectiveRate: base > 0 ? total / base : 0,
+    effectiveRate: base > 0 ? onBase / base : 0,
     currency,
     complete: missing.length === 0,
     missing,

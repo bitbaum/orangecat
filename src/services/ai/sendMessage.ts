@@ -9,6 +9,9 @@
  * sendMessage-internals.ts and the shared types in sendMessage-types.ts.
  */
 
+import type { ChatImage } from '@/services/cat/chat-images';
+import { storeChatImages } from '@/services/cat/chat-image-store';
+import { withImageRefs } from '@/lib/chat/attachment-tags';
 import { fromTable } from '@/lib/supabase/untyped';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { DATABASE_TABLES } from '@/config/database-tables';
@@ -39,7 +42,9 @@ export async function sendAiMessage(
   assistantId: string,
   convId: string,
   content: string,
-  requestedModel?: string
+  requestedModel?: string,
+  /** Photos on this turn (the message carries their tags; see chat-images.ts). */
+  images?: ChatImage[]
 ): Promise<SendMessageResult | SendMessageError> {
   // 1. Verify conversation
   const convResult = await verifyConversation(supabase, convId, assistantId, userId);
@@ -109,8 +114,17 @@ export async function sendAiMessage(
     }
   }
 
-  // 9. Store user message
-  const userMsgResult = await storeUserMessage(supabase, convId, content);
+  // 9. Store user message, with each photo's private path in its tag so a
+  //    reload shows what was sent and a later turn can read it again.
+  const refs = images?.length ? await storeChatImages(userId, images) : [];
+  const userMsgResult = await storeUserMessage(
+    supabase,
+    convId,
+    withImageRefs(
+      content,
+      refs.filter((r): r is string => Boolean(r))
+    )
+  );
   if ('error' in userMsgResult) {
     return userMsgResult.error;
   }
@@ -132,6 +146,7 @@ export async function sendAiMessage(
     systemPrompt: systemPrompt ?? null,
     history,
     content,
+    images,
   });
   if ('error' in aiResult) {
     // Clean up user message on AI failure

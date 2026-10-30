@@ -11,6 +11,13 @@ to the map, sub-bullets stay here for the human reader.
 
 ## 2026-10-30
 
+- **Your companions live in one place, and they can talk to each other.** `/companions/talk` is now the home for every companion you made or talk to, your group chats and the fleet's own bots (Diplodoctor for a medical report, Causius for a legal letter), in one list with the last line and when, the chat beside it on a wide screen and in its place on a phone. "+" offers New companion and New group chat. In a group chat of two to six, the companions you address with @ answer in turn, hand the floor to each other with an @, and every line says who said it; a round stops after six lines so nobody talks forever.
+- **A companion in a minute.** New companion asks for a name, a shape and a colour, nothing else; it asks what you need it for in its first message and remembers your answer. The full form is still on the edit page.
+- **A chat with a fleet bot stays in your browser.** Diplodoctor and Causius keep nothing, and neither do we.
+- **In a group chat, Diplodoctor and Causius know who else is in the room.** Each fleet bot gets the room (the others’ names and jobs, speak as yourself only, @ a companion once when you need it) with every request, so a bot no longer writes another member’s line for it.
+- **Attach a photo, a PDF or a text file in any companions chat.** The paperclip is the Cat’s: Camera · Photos · Files, the same limits, the same PDF reading. A companion sees the photo and reads the file, in a one-to-one chat and in a group chat; Diplodoctor and Causius read an attached document (a photo stays on their own sites, and the box says so).
+- **The fleet’s agents wear their own marks.** Diplodoctor and Causius show the face their own site shows, not one made up here; the first screen is one line and a way into the product, and it no longer sits under the header.
+- **Companions is in the sidebar, beside Cat.** In a group chat every line reads "Name · job", the box says which group you are writing to, and the details sheet lists the members with Add member as the last row and Remove on each while the group keeps two.
 - **Partners are now called builders.** The independent people bitbaum's studio approves on their shipped work, who watch over projects built with Loki at their own price, are builders: "Builders" in the footer, orangecat.ch/builders, and [bitbaum's builders](https://bitbaum.orangecat.ch/builders/). "Partner" read like a share in the business, which it never was. orangecat.ch/partners still works and lands in the same place.
 
 ## 2026-10-27

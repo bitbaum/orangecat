@@ -16,13 +16,15 @@
 /**
  * 2 adds a component's `divisor`; 3 adds the `stepped` and `average` tariffs;
  * 4 adds a tariff's `rounding` and a multiplier's `reducedBy`; 5 adds the
- * `logarithmic` tariff and a tariff's `minimum`; 6 adds the model's `limits`.
+ * `logarithmic` tariff and a tariff's `minimum`; 6 adds the model's `limits`;
+ * 7 adds a component's own `base` and the `fixed` tariff; 8 adds a multiplier's
+ * `scaledBy`.
  * A model says
  * which version it needs, so an evaluator that predates a feature refuses the
  * model instead of ignoring it.
  */
-export const TAX_MODEL_SCHEMA_VERSION = 6;
-const SUPPORTED_SCHEMA_VERSIONS: readonly number[] = [1, 2, 3, 4, 5, 6];
+export const TAX_MODEL_SCHEMA_VERSION = 8;
+const SUPPORTED_SCHEMA_VERSIONS: readonly number[] = [1, 2, 3, 4, 5, 6, 7, 8];
 
 /** Where a component reads a number: the fact a level publishes under a metric key. */
 export interface FactRef {
@@ -42,6 +44,18 @@ export interface MultiplierRef extends FactRef {
    * In [0, 1). Optional: missing, nothing is reduced. Needs `schemaVersion` 4.
    */
   reducedBy?: ReductionRef;
+  /**
+   * A fact this multiplier is multiplied by before it counts: a church rate
+   * levied on the cantonal tax rather than on the basic tax is the church's
+   * rate times the canton's multiplier. Optional: missing, nothing is scaled.
+   * Needs `schemaVersion` 8.
+   */
+  scaledBy?: ScaleRef;
+}
+
+export interface ScaleRef extends FactRef {
+  /** When the fact is missing, scale by 1 instead of making the estimate incomplete. */
+  optional?: boolean;
 }
 
 export interface DivisorRef extends FactRef {
@@ -87,10 +101,17 @@ export interface TaxComponent {
   multipliers?: readonly MultiplierRef[];
   /** A boolean input that must be true for this component to apply at all. */
   when?: string;
+  /**
+   * The input this component's tariff is applied to, when it is not the
+   * model's `base`: a wealth tax beside an income tax. Must be listed in
+   * `inputs`. The component applies only when that input is given, so its
+   * facts are not required of an estimate without it. Needs `schemaVersion` 7.
+   */
+  base?: string;
 }
 
 export interface TaxModel {
-  schemaVersion: 1 | 2 | 3 | 4 | 5 | 6;
+  schemaVersion: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
   /** The input the tariffs are applied to. Must be listed in `inputs`. */
   base: string;
   /** Every input the model reads: the base amount and any boolean conditions. */
@@ -168,17 +189,22 @@ interface TariffBase {
  * amounts hold (needs `schemaVersion` 3). `average`: an average rate on the
  * whole amount, interpolated linearly between points and held beyond the last
  * (needs `schemaVersion` 3). `logarithmic`: the formula of the last piece
- * begun, 0 before the first (needs `schemaVersion` 5).
+ * begun, 0 before the first (needs `schemaVersion` 5). `fixed`: one amount,
+ * whatever the base, as a tax per head (needs `schemaVersion` 7).
  */
 export type Tariff =
   | (TariffBase & { kind: 'progressive'; brackets: readonly Bracket[] })
   | (TariffBase & { kind: 'flat'; rate: number })
   | (TariffBase & { kind: 'stepped'; steps: readonly Step[] })
   | (TariffBase & { kind: 'average'; points: readonly RatePoint[] })
-  | (TariffBase & { kind: 'logarithmic'; pieces: readonly Piece[] });
+  | (TariffBase & { kind: 'logarithmic'; pieces: readonly Piece[] })
+  | (TariffBase & { kind: 'fixed'; amount: number });
 
 /** The schema version a model needs for its facts to carry this tariff. */
 export function tariffSchemaVersion(tariff: Tariff): number {
+  if (tariff.kind === 'fixed') {
+    return 7;
+  }
   if (tariff.kind === 'logarithmic' || tariff.minimum !== undefined) {
     return 5;
   }
@@ -201,12 +227,16 @@ export interface Fact {
   value: Tariff | number;
 }
 
-/** Every fact a component reads: its tariff, its divisor, then its multipliers and their reductions. */
+/** Every fact a component reads: its tariff, its divisor, then its multipliers, their reductions and scales. */
 export function componentRefs(component: TaxComponent): FactRef[] {
   return [
     component.tariff,
     ...(component.divisor ? [component.divisor] : []),
-    ...(component.multipliers ?? []).flatMap(m => (m.reducedBy ? [m, m.reducedBy] : [m])),
+    ...(component.multipliers ?? []).flatMap(m => [
+      m,
+      ...(m.reducedBy ? [m.reducedBy] : []),
+      ...(m.scaledBy ? [m.scaledBy] : []),
+    ]),
   ];
 }
 
@@ -241,6 +271,21 @@ export function modelProblems(model: TaxModel): string[] {
     seen.add(component.key);
     if (component.divisor !== undefined && model.schemaVersion < 2) {
       problems.push(`component "${component.key}" has a divisor, which needs schemaVersion 2`);
+    }
+    if (component.base !== undefined) {
+      if (model.schemaVersion < 7) {
+        problems.push(
+          `component "${component.key}" has a base of its own, which needs schemaVersion 7`
+        );
+      }
+      if (!model.inputs.includes(component.base)) {
+        problems.push(`component "${component.key}" reads undeclared base "${component.base}"`);
+      }
+    }
+    if (component.multipliers?.some(m => m.scaledBy !== undefined) && model.schemaVersion < 8) {
+      problems.push(
+        `component "${component.key}" has a scaled multiplier, which needs schemaVersion 8`
+      );
     }
     if (component.multipliers?.some(m => m.reducedBy !== undefined) && model.schemaVersion < 4) {
       problems.push(
@@ -302,6 +347,10 @@ export function tariffProblem(tariff: Tariff): string | null {
       return rowsProblem('point', tariff.points);
     case 'logarithmic':
       return piecesProblem(tariff.pieces);
+    case 'fixed':
+      return tariff.amount >= 0 && Number.isFinite(tariff.amount)
+        ? null
+        : `amount ${tariff.amount} is not a non-negative number`;
     default:
       return `tariff kind "${(tariff as { kind: unknown }).kind}" is not known`;
   }

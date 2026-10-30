@@ -19,6 +19,7 @@
  * Created: 2026-06-10
  */
 
+import type { ContentPart } from '@bitbaum/ai-kit';
 import { usableChain, linkSeesImages, type Link, type VisionVerdict } from '@bitbaum/ai-kit';
 
 import {
@@ -205,7 +206,7 @@ export async function completeOnPlatform(
   message: string,
   request: {
     systemPrompt?: string | null;
-    messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>;
+    messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string | ContentPart[] }>;
     temperature: number;
     maxTokens?: number;
   },

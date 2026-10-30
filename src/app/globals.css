@@ -519,9 +519,18 @@
     animation: oc-mark-fade-in 1.2s ease-out 0.4s both;
   }
   .oc-mark-spin {
-    animation: oc-mark-spin 28s linear infinite;
+    animation: oc-mark-spin 14s linear infinite;
     filter: drop-shadow(0 0 4px hsl(var(--text-primary) / 0.3));
     transform-origin: 50% 50%;
+  }
+  /* A rotorelief: only the rings turn, about the point the mark names
+     (Mark.tsx sets the origin). Off-centre rings read as a breathing tunnel. */
+  .oc-mark-turn [data-turn] {
+    animation: oc-mark-spin 16s linear infinite;
+  }
+  /* While the Cat's opener loads, the rings turn fast: it is thinking. */
+  .oc-chat-opener-mark .oc-mark-turn [data-turn] {
+    animation-duration: 2.4s;
   }
   /* A project with no mark yet stands in with its initial (<ProjectMark>). */
   .oc-mark-monogram {
@@ -571,6 +580,7 @@
   @media (prefers-reduced-motion: reduce) {
     .oc-mark-draw,
     .oc-mark-spin,
+    .oc-mark-turn [data-turn],
     .oc-mark-draw [data-paint] {
       animation: none;
     }

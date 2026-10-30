@@ -218,9 +218,15 @@ export function isCatHubPath(pathname: string): boolean {
   return pathname === '/dashboard/cat' || pathname.startsWith('/dashboard/cat/');
 }
 
-/** True in a companion's room (/companions/<id>/talk): the conversation is the page. */
+/**
+ * True on the talk home (/companions/talk) and in a companion's old room
+ * address (/companions/<id>/talk, which now forwards there): the conversation
+ * is the page.
+ */
 export function isCompanionTalkPath(pathname: string): boolean {
-  return /^\/companions\/[^/]+\/talk\/?$/.test(pathname);
+  return (
+    /^\/companions\/talk\/?$/.test(pathname) || /^\/companions\/[^/]+\/talk\/?$/.test(pathname)
+  );
 }
 
 /**
@@ -454,6 +460,14 @@ export const ROUTES = {
   },
   AI_ASSISTANTS: {
     VIEW: (id: string) => `${ENTITY_REGISTRY['ai_assistant'].publicBasePath}/${id}`,
+    /** The talk home: every companion, group chat and fleet bot in one list, and the open chat beside it. */
+    TALK: `${ENTITY_REGISTRY['ai_assistant'].publicBasePath}/talk`,
+    TALK_WITH: (id: string) =>
+      `${ENTITY_REGISTRY['ai_assistant'].publicBasePath}/talk?with=${encodeURIComponent(id)}`,
+    TALK_ROOM: (roomId: string) =>
+      `${ENTITY_REGISTRY['ai_assistant'].publicBasePath}/talk?room=${encodeURIComponent(roomId)}`,
+    TALK_FLEET: (slug: string) =>
+      `${ENTITY_REGISTRY['ai_assistant'].publicBasePath}/talk?with=fleet:${encodeURIComponent(slug)}`,
   },
   ASSETS: {
     VIEW: (id: string) => `${ENTITY_REGISTRY['asset'].publicBasePath}/${id}`,

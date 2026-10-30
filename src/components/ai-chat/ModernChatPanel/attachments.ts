@@ -24,6 +24,7 @@
  * a sheet — see pdfAttachments.ts.
  */
 
+import type { Attachment } from '@bitbaum/chatkit';
 import { AI_MESSAGE_MAX_CHARS } from '@/lib/validation/ai';
 import type { CatReference } from '@/config/cat-prompts';
 import {
@@ -37,6 +38,20 @@ export type ChatAttachment =
   | { kind: 'file'; id: string; name: string; content: string }
   | { kind: 'image'; id: string; name: string; dataUrl: string }
   | { kind: 'ref'; id: string; ref: CatReference };
+
+/** What chatkit staged (a photo, a text file), as the chat API's attachments. */
+export function fromComposer(list: readonly Attachment[]): ChatAttachment[] {
+  return list.map((a, i): ChatAttachment =>
+    a.kind === 'image'
+      ? {
+          kind: 'image',
+          id: `img-${i}`,
+          name: a.name,
+          dataUrl: `data:${a.mimeType};base64,${a.dataBase64}`,
+        }
+      : { kind: 'file', id: `file-${i}`, name: a.name, content: a.content }
+  );
+}
 
 /** The photos to send beside the message. */
 export function imagesOf(attachments: ChatAttachment[]): ChatImage[] {
