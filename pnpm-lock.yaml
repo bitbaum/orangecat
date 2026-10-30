@@ -42,8 +42,8 @@ importers:
         specifier: ^1.21.5
         version: 1.21.5(react@19.3.1)
       '@bitbaum/chatkit':
-        specifier: ^0.21.2
-        version: 0.21.2(react@19.3.1)
+        specifier: ^0.21.3
+        version: 0.21.3(react@19.3.1)
       '@bitbaum/collective-kinds':
         specifier: workspace:*
         version: link:packages/collective-kinds
@@ -51,8 +51,8 @@ importers:
         specifier: workspace:*
         version: link:packages/deckkit
       '@bitbaum/geo-kit':
-        specifier: ^0.1.2
-        version: 0.1.2
+        specifier: ^0.3.0
+        version: 0.3.0(d3-geo@3.1.1)
       '@bitbaum/mail-kit':
         specifier: ^0.2.0
         version: 0.2.0
@@ -589,16 +589,24 @@ packages:
       react:
         optional: true
 
-  '@bitbaum/chatkit@0.21.2':
-    resolution: {integrity: sha512-Ygr5GRNBCeIHI4hPGsJrRyV41hqI2i73BteQLQWU/ueSZtsAf2bAKOdyFcTCfMElJK7Nm+MHfuXksu8AhAlkDQ==}
+  '@bitbaum/chatkit@0.21.3':
+    resolution: {integrity: sha512-41WN8SNWXxS5YUaXGWuNexaQ4/LYU012TnLew9fGJt+ogwTrlQ8DOrNH9D7DSgJ9ggPxah/jaWWDMyXxrtI75Q==}
     engines: {node: '>=20'}
     hasBin: true
     peerDependencies:
       react: '>=18'
 
-  '@bitbaum/geo-kit@0.1.2':
-    resolution: {integrity: sha512-0+tvcB3joZ8x9QMMrHfJbi1S3uPs+vqB4emxXJMdL/KxPLYkXcgdPqnKC5k1Ll+dJ2p/N6FCiPNRU/vWObBA1Q==}
+  '@bitbaum/geo-kit@0.3.0':
+    resolution: {integrity: sha512-DWqV+XM9jOXtss2CiHkfq2hMW8ZS1oXPk0SpiDOQoBftATpEjmTlBOAEv8bwjh8jbmi082EZ3RxAIgOVyblMtg==}
     engines: {node: '>=20'}
+    peerDependencies:
+      d3-geo: ^3.1.0
+      topojson-client: ^3.1.0
+    peerDependenciesMeta:
+      d3-geo:
+        optional: true
+      topojson-client:
+        optional: true
 
   '@bitbaum/listkit@0.2.2':
     resolution: {integrity: sha512-MS7SpPodTaxXYccXW565M3sIYaDCHSpWFlJB77FdkE/fM7uktxn0u25p0BSWC97i4U6uCqPedYVt1xV34sGXnQ==}
@@ -6812,12 +6820,14 @@ snapshots:
     transitivePeerDependencies:
       - canvas
 
-  '@bitbaum/chatkit@0.21.2(react@19.3.1)':
+  '@bitbaum/chatkit@0.21.3(react@19.3.1)':
     dependencies:
       pdfjs-dist: 6.4.299
       react: 19.3.1
 
-  '@bitbaum/geo-kit@0.1.2': {}
+  '@bitbaum/geo-kit@0.3.0(d3-geo@3.1.1)':
+    optionalDependencies:
+      d3-geo: 3.1.1
 
   '@bitbaum/listkit@0.2.2': {}
 
