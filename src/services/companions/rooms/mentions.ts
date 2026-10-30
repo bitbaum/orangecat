@@ -34,7 +34,7 @@ export function handleOf(name: string): string {
 }
 
 export function parseMentions(text: string, members: readonly RoomMember[]): Mentions {
-  const found: RoomMember[] = [];
+  const hits: Array<{ at: number; member: RoomMember }> = [];
   let everyone = false;
   // Longest names first, so a member whose name begins with another's name wins.
   const byLength = [...members].sort((a, b) => b.name.length - a.name.length);
@@ -48,11 +48,51 @@ export function parseMentions(text: string, members: readonly RoomMember[]): Men
       continue;
     }
     const hit = byLength.find(member => startsWithName(rest, member.name));
-    if (hit && !found.includes(hit)) {
-      found.push(hit);
+    if (hit) {
+      hits.push({ at: start, member: hit });
+    }
+  }
+  // A name that opens a sentence and is followed by a colon or a comma is
+  // addressing too: "Diplodoctor: what must the note contain?", "Causius,
+  // your turn." People and bots both write it that way without an @.
+  const opens = /(^|\n|[.!?]\s+)\s*(?:[-*•]\s*)?(?:\*\*)?/gu;
+  while ((m = opens.exec(text)) !== null) {
+    if (m[0].length === 0) {
+      // An empty match never moves a global regex on by itself.
+      opens.lastIndex++;
+    }
+    const start = m.index + m[0].length;
+    const rest = text.slice(start);
+    const hit = byLength.find(member => startsWithName(rest, member.name));
+    if (!hit) {
+      continue;
+    }
+    const after = rest.slice(nameSpan(rest, hit.name)).replace(/^\*\*/, '');
+    if (/^\s*[:,]/.test(after)) {
+      hits.push({ at: start, member: hit });
+    }
+  }
+  const found: RoomMember[] = [];
+  for (const h of hits.sort((a, b) => a.at - b.at)) {
+    if (!found.includes(h.member)) {
+      found.push(h.member);
     }
   }
   return { members: found, everyone };
+}
+
+/** How many characters of `rest` the name occupies (spaces inside it included). */
+function nameSpan(rest: string, name: string): number {
+  const target = foldName(name);
+  let consumed = '';
+  let i = 0;
+  for (; i < rest.length && consumed.length < target.length; i++) {
+    const folded = foldName(rest[i]);
+    if (folded) {
+      consumed += folded;
+    }
+  }
+  return i;
 }
 
 /**

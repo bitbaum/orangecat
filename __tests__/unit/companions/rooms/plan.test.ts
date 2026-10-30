@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   MAX_BOT_TURNS,
   cutImpersonation,
+  stripSelfPrefix,
   deriveRoomTitle,
   nextQueue,
   planResponders,
@@ -154,5 +155,15 @@ describe('cutImpersonation', () => {
     expect(cutImpersonation(mid, a, members).handoff).toBeNull();
     const opens = `${b.name}: hello\n${a.name}: hi`;
     expect(cutImpersonation(opens, a, members)).toEqual({ text: opens, handoff: null });
+  });
+});
+
+describe('stripSelfPrefix', () => {
+  const [a] = members;
+  it("drops the speaker's own name used as a label, and nothing else", () => {
+    expect(stripSelfPrefix(`${a.name}: Two flaws.`, a)).toBe('Two flaws.');
+    expect(stripSelfPrefix(`**${a.name}** — Two flaws.`, a)).toBe('Two flaws.');
+    expect(stripSelfPrefix(`${a.name} thinks two flaws.`, a)).toBe(`${a.name} thinks two flaws.`);
+    expect(stripSelfPrefix('Lex: hello', a)).toBe('Lex: hello');
   });
 });
