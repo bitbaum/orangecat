@@ -28,7 +28,7 @@ import { decideConversationAccess } from '../access';
 import { askFleetBot, fleetBot } from './fleet';
 import { recallCompanionMemories } from '../memory';
 import { buildCompanionSystemPrompt } from '../system-prompt';
-import { cutImpersonation } from './plan';
+import { cutImpersonation, stripSelfPrefix } from './plan';
 import { buildRoomPrompt, roomScene, splitForModel, transcriptFor } from './prompt';
 import { appendRoomMessage } from './store';
 import type { RoomMember, RoomMessage, RoomTurnError, RoomView } from './types';
@@ -53,7 +53,7 @@ export async function speakInRoom(args: {
   if ('error' in spoken) {
     return spoken;
   }
-  const cut = cutImpersonation(spoken.content, member, room.members);
+  const cut = cutImpersonation(stripSelfPrefix(spoken.content, member), member, room.members);
   const message = await appendRoomMessage(supabase, room.id, {
     role: 'assistant',
     memberId: member.id,

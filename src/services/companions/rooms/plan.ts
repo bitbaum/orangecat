@@ -79,6 +79,16 @@ export function nextQueue(args: {
 }
 
 /**
+ * A bot that opens with its own name ("Skeptic: Two flaws…", "**Builder**
+ * — …") is labelling a line the thread already labels. The prefix goes.
+ */
+export function stripSelfPrefix(reply: string, speaker: RoomMember): string {
+  const name = speaker.name.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const re = new RegExp(`^\\s*(?:\\*\\*)?@?${name}(?:\\*\\*)?\\s*(?:[:：]|[—–-]\\s)\\s*`, 'iu');
+  return reply.replace(re, '');
+}
+
+/**
  * A bot that stages a conversation instead of having one ("Causius: …",
  * "Diplodoctor: …", "Causius: …" inside ONE line) is cut where the first
  * other voice begins, and that member is handed the floor, so the exchange

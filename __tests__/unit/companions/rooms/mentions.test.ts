@@ -60,3 +60,19 @@ describe('parseMentions', () => {
     expect(handleOf('Legal eagle')).toBe('Legaleagle');
   });
 });
+
+describe('addressing by name', () => {
+  it('reads a name that opens a sentence, followed by a colon or a comma, as addressing', () => {
+    const r = parseMentions(
+      'Diplodoctor: what must the note contain? Ada, your turn. As Max said, fine.',
+      members
+    );
+    expect(r.members.map(m => m.name)).toEqual(['Diplodoctor', 'Ada']);
+  });
+
+  it('keeps the order of appearance across @ and bare addressing, and ignores a name mid-sentence', () => {
+    const r = parseMentions('@Ada first.\nMax Planck: then you. I like Ada.', members);
+    expect(r.members.map(m => m.name)).toEqual(['Ada', 'Max Planck']);
+    expect(parseMentions('I asked Diplodoctor about it.', members).members).toEqual([]);
+  });
+});
