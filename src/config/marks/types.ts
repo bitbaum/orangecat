@@ -14,8 +14,10 @@
 export type MarkMotion =
   /** Strokes draw themselves in, fills fade in, then the whole mark breathes. */
   | 'draw'
-  /** A slow turn — Loki's coil. */
+  /** A slow turn of the whole mark — Loki's disc. */
   | 'spin'
+  /** Only the shapes marked `turnAbout` turn — the Cat's rings inside a still head. */
+  | 'turn'
   /** Still, even when asked. */
   | 'none';
 
@@ -32,6 +34,8 @@ export interface MarkShape {
   fillRule?: 'nonzero' | 'evenodd';
   /** 0–1. A mark is one colour; opacity is how it shades. */
   opacity?: number;
+  /** For `motion: 'turn'`: the viewBox point this shape turns about. */
+  turnAbout?: readonly [number, number];
 }
 
 export interface MarkDefinition {
@@ -44,6 +48,8 @@ export interface MarkDefinition {
   /** Default stroke width for stroke shapes that do not set their own. */
   strokeWidth: number;
   motion: MarkMotion;
+  /** The colour the mark wears on its icon tile. Defaults to ICON_STYLE.ink. */
+  iconInk?: string;
   /** Where the geometry comes from — shown in docs and the file's header, never on a page. */
   source: string;
   shapes: readonly MarkShape[];

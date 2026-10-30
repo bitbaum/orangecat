@@ -1,26 +1,36 @@
 # OrangeCat Branding & Design System
 
 created_date: 2026-06-03  
-last_modified_date: 2026-10-11  
-last_modified_summary: Every mark is one file, replaced with one command (brand:import); the coil mark; the public fold rebuilt to Loki's and Solon's standard; the studio on the front page and on every studio project's page
+last_modified_date: 2026-10-30  
+last_modified_summary: The rotorelief marks — the Cat's ringed face and Loki's disc, after Duchamp; the manifest lists its PNG icons first
 
 ## Direction
 
 OrangeCat UI follows the same discipline as **Loki**, **Solon** and **x.ai**:
 
 - Near-monochrome surfaces, hairline borders, tight radii
-- **One geometric mark** (stroke-based, `currentColor`) — not a mascot illustration
+- **One geometric mark** (one colour, `currentColor`) — not a mascot illustration
 - Warm orange (`--public-accent`, `#ff5c00`) only for rare CTAs
 - Tiffany/orange utility classes remain for **sparse** semantic accents (Bitcoin, status), not the logo or primary buttons
 
-## The mark — a coil that is a cat
+## The mark — a cat whose face is a rotorelief
 
-One continuous stroke, wound from an outer tail at the bottom inward to the centre, with two
-ears on the outer turn. It is **Loki's coil wearing the cat**: the two products share a
-geometric language (one stroke, one colour, a spiral that pulls the eye in) and differ where
-they differ in purpose. The outer turn holds its radius through both ears so the head is
-symmetric, then tucks inside its own tail. It reads as a cat at a 16px favicon and as a
-hypnotic coil at 220px in the hero.
+After Marcel Duchamp's discs in _Anémic Cinéma_ (1926): rings that each sit a little off
+centre, so that when the disc turns, the flat drawing reads as a tunnel breathing in and out.
+The Cat's head is solid; its face is a round hole filled with such rings. Still, it is an eye.
+Animated (`motion: 'turn'`), only the rings turn, about the face's centre, while the head
+holds still.
+
+Loki's mark is the same idea as a coil — a spiral cut out of a disc, turning as a whole. The
+two products share the language (one colour, a disc that moves by turning) and differ where
+they differ in purpose: Loki keeps building, the Cat holds still at its centre.
+
+On its icon tile the Cat wears Bitcoin orange (`iconInk`), the one orange: it is in the name.
+Everywhere else it is drawn in the current text colour.
+
+On 2026-10-30 it replaced the cat coil, one stroke wound into a spiral with ears, whose
+installed icon showed as a blank black tile on an Android home screen. The manifest listed the
+SVG icon first; it now lists the PNGs first and the SVG last.
 
 What it replaced, on 2026-10-11: a cat face in the header, a different "window with ears" on
 every share card, and — where `favicon.ico` should have been — a 155 KB fav.farm HTML page
@@ -70,7 +80,7 @@ works.
 | What a mark is (data shape) | `src/config/marks/types.ts`                                      |
 | One file per mark           | `src/config/marks/<slug>.ts`                                     |
 | The registry (generated)    | `src/config/marks/index.ts` — `MARKS`, `markFor(slug)`           |
-| Marks drawn by code         | `src/config/marks/generators/` (cat coil, Archimedean coil)      |
+| Marks drawn by code         | `src/config/marks/generators/` (cat rotorelief, rotorelief coil) |
 | This app's own mark         | `src/config/brand-mark.ts` → `MARKS[APP_SLUG]`                   |
 | React                       | `<Mark>`, `<ProjectMark slug>`, `BrandMarkIcon`                  |
 | Share cards                 | `BrandMarkSvg` in `src/lib/og/branding.tsx`                      |
@@ -83,11 +93,12 @@ static icon no longer matches what the generator would write. It is written agai
 so replacing the drawing never means rewriting the test.
 
 **Motion.** A mark's file names how it moves when a surface asks (`animated`): `draw` (strokes
-draw themselves in, fills fade in, then a slow breath), `spin` (a slow turn — Loki's), or
+draw themselves in, fills fade in, then a slow breath), `spin` (the whole mark turns —
+Loki's), `turn` (only the shapes that name a `turnAbout` point turn — the Cat's rings), or
 `none`. Only heroes and showcases ask; chrome-sized marks never move. Reduced motion stills
 everything. The classes are `.oc-mark-*` in `globals.css`.
 
-**Generated marks.** OrangeCat's coil and Loki's coil are drawn by functions in
+**Generated marks.** OrangeCat's rotorelief and Loki's disc are drawn by functions in
 `generators/`, and their mark files call them. Tune one by changing its parameters, then run
 `pnpm run generate:brand`. Loki's mirrors bitbaum/loki `src/config/brand-mark.ts` and is kept
 in step by hand. Replacing either with a drawn logo leaves its generator in place, ready to
