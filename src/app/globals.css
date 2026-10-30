@@ -528,6 +528,10 @@
   .oc-mark-turn [data-turn] {
     animation: oc-mark-spin 16s linear infinite;
   }
+  /* While the Cat's opener loads, the rings turn fast: it is thinking. */
+  .oc-chat-opener-mark .oc-mark-turn [data-turn] {
+    animation-duration: 2.4s;
+  }
   /* A project with no mark yet stands in with its initial (<ProjectMark>). */
   .oc-mark-monogram {
     @apply font-heading font-bold leading-none tracking-display;
