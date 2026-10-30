@@ -9,6 +9,10 @@ reads, and [orangecat.ch/changelog](https://orangecat.ch/changelog) renders
 it from there. One `## YYYY-MM-DD` heading per day; bullets under it travel
 to the map, sub-bullets stay here for the human reader.
 
+## 2026-10-30
+
+- **Partners are now called builders.** The independent people bitbaum's studio approves on their shipped work, who watch over projects built with Loki at their own price, are builders: "Builders" in the footer, orangecat.ch/builders, and [bitbaum's builders](https://bitbaum.orangecat.ch/builders/). "Partner" read like a share in the business, which it never was. orangecat.ch/partners still works and lands in the same place.
+
 ## 2026-10-27
 
 - **Your things go in from the same sheet as photos, and stay on your message.** The paperclip now opens one sheet: Camera · Photos · Files, then One of your things, Context documents and Connections & keys — there is no second button beside it. A listing or note you add shows on your message the moment you send it, not only after a reload. When a turn fails, it says why in its own bubble, and Retry sends its photos again. Links to create something and the "sharper on a frontier model" note show under the latest answer only. A sentence handed to the Cat from the door, the search palette or an "ask about this" link is sent in a new chat as before.

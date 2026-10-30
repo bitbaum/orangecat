@@ -161,7 +161,7 @@ export default function StealPage() {
             Want to build it with us? Show us how you think.
           </h2>
           <p className="mt-4 max-w-2xl text-fg-secondary">
-            We work as engineers in the loop: agents do much of the typing, and people own the
+            We work as builders in the loop: agents do much of the typing, and people own the
             judgement. Copying code is free. What stays scarce once agents and robots write most of
             it is seeing the whole system. Pick one of these, in any of our repos, and open an issue
             or a pull request.
