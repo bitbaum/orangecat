@@ -10,6 +10,7 @@ export {
   modelRefs,
   tariffProblem,
   tariffSchemaVersion,
+  type AddedInput,
   type Bracket,
   type DivisorRef,
   type Fact,

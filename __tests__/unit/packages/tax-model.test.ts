@@ -247,8 +247,8 @@ describe('divisor', () => {
     expect(modelProblems({ ...SPLIT, schemaVersion: 1 })).toEqual([
       'component "local" has a divisor, which needs schemaVersion 2',
     ]);
-    expect(modelProblems({ ...SPLIT, schemaVersion: 10 as 9 })).toEqual([
-      'schemaVersion 10 is not supported',
+    expect(modelProblems({ ...SPLIT, schemaVersion: 11 as 10 })).toEqual([
+      'schemaVersion 11 is not supported',
     ]);
     expect(referencedLevels(SPLIT)).toEqual(['realm', 'shire', 'guild', 'temple']);
   });
@@ -604,6 +604,55 @@ describe('an indexed divisor, a capped rebate and a floor', () => {
     expect(() =>
       at(50_000, 'alone', [...BASE, { level: 'shire', metric: 'index', value: -2 }])
     ).toThrow(/positive/);
+  });
+});
+
+describe('inputs added to the base', () => {
+  const ADDING: TaxModel = {
+    ...MODEL,
+    schemaVersion: 10,
+    inputs: ['income', 'wealth'],
+    components: [
+      {
+        key: 'realm',
+        tariff: { level: 'realm', metric: 'tariff' },
+        adds: [
+          {
+            input: 'wealth',
+            scaledBy: { level: 'realm', metric: 'yield' },
+            rounding: 100,
+          },
+        ],
+      },
+    ],
+  };
+  const YIELD: Fact[] = [...FACTS, { level: 'realm', metric: 'yield', value: 0.04 }];
+  const at = (values: Record<string, number>, facts = YIELD) =>
+    evaluate(ADDING, facts, { values, variant: 'alone' });
+
+  it('taxes the income plus the share of the rounded input on one tariff', () => {
+    // 40,000 + 4 % of 250,000 (250,099 rounded down) = 50,000: 10 % of 40,000.
+    expect(at({ income: 40_000, wealth: 250_099 }).total).toBeCloseTo(4_000);
+    // Without wealth nothing is added, and the yield is not required.
+    expect(at({ income: 40_000 }, FACTS).total).toBeCloseTo(3_000);
+    expect(at({ income: 40_000 }, FACTS).complete).toBe(true);
+  });
+
+  it('needs the share once the input is given', () => {
+    expect(at({ income: 40_000, wealth: 1 }, FACTS).missing).toEqual([
+      { level: 'realm', metric: 'yield' },
+    ]);
+  });
+
+  it('needs schemaVersion 10, declared inputs, and counts the share among the facts read', () => {
+    expect(modelProblems(ADDING)).toEqual([]);
+    expect(modelProblems({ ...ADDING, schemaVersion: 9 })).toEqual([
+      'component "realm" adds inputs, which needs schemaVersion 10',
+    ]);
+    expect(modelProblems({ ...ADDING, inputs: ['income'] })).toEqual([
+      'component "realm" adds undeclared input "wealth"',
+    ]);
+    expect(componentRefs(ADDING.components[0]!).map(r => r.metric)).toEqual(['tariff', 'yield']);
   });
 });
 
