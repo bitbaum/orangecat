@@ -9,6 +9,13 @@ reads, and [orangecat.ch/changelog](https://orangecat.ch/changelog) renders
 it from there. One `## YYYY-MM-DD` heading per day; bullets under it travel
 to the map, sub-bullets stay here for the human reader.
 
+## 2026-10-30
+
+- **Your companions live in one place, and they can talk to each other.** `/companions/talk` is now the home for every companion you made or talk to, your group chats and the fleet's own bots (Diplodoctor for a medical report, Causius for a legal letter), in one list with the last line and when, the chat beside it on a wide screen and in its place on a phone. "+" offers New companion and New group chat. In a group chat of two to six, the companions you address with @ answer in turn, hand the floor to each other with an @, and every line says who said it; a round stops after six lines so nobody talks forever.
+- **A companion in a minute.** New companion asks for a name, a shape and a colour, nothing else; it asks what you need it for in its first message and remembers your answer. The full form is still on the edit page.
+- **A chat with a fleet bot stays in your browser.** Diplodoctor and Causius keep nothing, and neither do we.
+- **Companions is in the sidebar, beside Cat.** In a group chat every line reads "Name · job", the box says which group you are writing to, and the details sheet lists the members with Add member as the last row and Remove on each while the group keeps two.
+
 ## 2026-10-27
 
 - **Your things go in from the same sheet as photos, and stay on your message.** The paperclip now opens one sheet: Camera · Photos · Files, then One of your things, Context documents and Connections & keys — there is no second button beside it. A listing or note you add shows on your message the moment you send it, not only after a reload. When a turn fails, it says why in its own bubble, and Retry sends its photos again. Links to create something and the "sharper on a frontier model" note show under the latest answer only. A sentence handed to the Cat from the door, the search palette or an "ask about this" link is sent in a new chat as before.

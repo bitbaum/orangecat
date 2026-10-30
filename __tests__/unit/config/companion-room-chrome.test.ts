@@ -10,6 +10,8 @@ describe('companion room chrome', () => {
   it('recognises the room and nothing else', () => {
     expect(isCompanionTalkPath('/companions/abc/talk')).toBe(true);
     expect(isCompanionTalkPath('/companions/abc/talk/')).toBe(true);
+    expect(isCompanionTalkPath('/companions/talk')).toBe(true);
+    expect(isCompanionTalkPath('/companions/talk/')).toBe(true);
     expect(isCompanionTalkPath('/companions/abc')).toBe(false);
     expect(isCompanionTalkPath('/companions/abc/memory')).toBe(false);
     expect(isCompanionTalkPath('/companions')).toBe(false);
@@ -47,6 +49,8 @@ describe('companion room chrome', () => {
 
   it('is an app surface, so the room renders inside the shell', () => {
     expect(getRouteSurface('/companions/abc/talk')).toBe('app');
+    expect(getRouteSurface('/companions/talk')).toBe('app');
+    expect(getRouteChrome('/companions/talk').hideMobileBottomNav).toBe(true);
   });
 });
 
