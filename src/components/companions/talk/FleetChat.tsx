@@ -8,6 +8,7 @@
  */
 
 import { useEffect, useState } from 'react';
+import { ArrowUpRight } from 'lucide-react';
 import { COMPANION_COPY } from '@/config/companions';
 import type { FleetBot } from '@/services/companions/rooms/fleet';
 import { ChatFrame } from './ChatFrame';
@@ -41,7 +42,7 @@ export function FleetChat({
     <>
       <ChatFrame
         title={name}
-        face={<Face name={name} size={32} />}
+        face={<Face name={name} avatarUrl={bot?.mark} size={32} />}
         onBack={onBack}
         onDetails={() => setDetails(true)}
         placeholder={copy.fleet.placeholder(name)}
@@ -52,8 +53,19 @@ export function FleetChat({
         onStop={talk.stop}
         onRetry={talk.retry}
         startersTitle={
-          <div className="flex flex-col gap-1">
-            {bot?.what && <p className="mb-0 text-base text-fg-primary">{bot.what}</p>}
+          <div className="flex flex-col gap-2">
+            {bot?.job && <p className="mb-0 text-base text-fg-primary">{bot.job}</p>}
+            {bot && (
+              <a
+                href={bot.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-[44px] items-center gap-1 text-base text-fg-primary underline underline-offset-4"
+              >
+                {copy.fleet.open(name)}
+                <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+              </a>
+            )}
             <p className="mb-0 text-xs text-fg-muted">{copy.fleet.keptHere}</p>
           </div>
         }
@@ -63,7 +75,7 @@ export function FleetChat({
         open={details}
         onClose={() => setDetails(false)}
         title={name}
-        face={<Face name={name} size={96} />}
+        face={<Face name={name} avatarUrl={bot?.mark} size={96} />}
         lines={[
           bot?.what,
           host ? copy.fleetLine(host) : copy.fleetUnreachable,

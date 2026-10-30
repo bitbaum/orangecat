@@ -35,7 +35,7 @@ export function memberPicks(home: TalkHomeData | null): MemberPick[] {
       key: `f:${b.slug}`,
       name: b.name,
       job: b.job,
-      avatarUrl: null,
+      avatarUrl: b.mark,
       member: { fleetSlug: b.slug },
     })),
   ];

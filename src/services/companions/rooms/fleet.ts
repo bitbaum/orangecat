@@ -12,6 +12,7 @@ import {
   FLEET_BOT_LOCALE,
   FLEET_BOT_TIMEOUT_MS,
   fleetBotAskUrl,
+  fleetBotMarkUrl,
   isFleetBotSlug,
 } from '@/config/fleet-bots';
 import { fetchStudioMapForCat, type StudioMapProject } from '@/services/ai/studio-map-fetcher';
@@ -27,6 +28,8 @@ export interface FleetBot {
   job: string | null;
   /** Where it runs — and where the person is sent to use it in full. */
   url: string;
+  /** The product's own mark, served by the product itself. */
+  mark: string;
 }
 
 /** "Reads a report with you. Beta: running, not released." → "Reads a report with you." */
@@ -65,6 +68,7 @@ export function fleetBotsFromMap(
       what: project.what,
       job: firstSentence(project.what),
       url: url.replace(/\/+$/, ''),
+      mark: fleetBotMarkUrl(url),
     });
   }
   return bots;

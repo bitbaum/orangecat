@@ -62,7 +62,7 @@ export function rowsFor(home: TalkHomeData, fleetPreviews: Record<string, string
       job: b.job,
       preview: fleetPreviews[b.slug] ?? null,
       at: null,
-      face: <Face name={b.name} />,
+      face: <Face name={b.name} avatarUrl={b.mark} />,
     });
   }
   return rows.sort((a, b) => {

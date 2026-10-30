@@ -117,14 +117,17 @@ export function ChatFrame({
         showSpeakers={showSpeakers}
         share={false}
         empty={
-          starters && starters.length > 0 ? (
-            <div className="flex flex-col gap-3">
-              {startersTitle}
+          // chatkit renders the empty slot outside its padded scroller, so it
+          // takes the screen's published insets here or sits under the header.
+          <div
+            className="flex flex-col gap-3 px-4"
+            style={{ paddingBlock: 'var(--ck-top-inset, 4rem) var(--ck-bottom-inset, 6rem)' }}
+          >
+            {startersTitle}
+            {starters && starters.length > 0 && (
               <ChatStarters starters={starters} onPick={text => void onSend(text)} />
-            </div>
-          ) : (
-            startersTitle
-          )
+            )}
+          </div>
         }
       />
     </ChatScreen>

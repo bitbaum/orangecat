@@ -49,7 +49,7 @@ export const COMPANION_COPY = {
     noActivityYet: 'Say hello',
     empty: {
       title: 'Nobody here yet',
-      body: 'Make a companion, or open one of the fleet\u2019s own — they all live here.',
+      body: 'The fleet\u2019s agents and your own, one list. Talk to any of them, or put a few in a group chat and set them on one thing together.',
     },
     fleetUnreachable: 'The fleet\u2019s bots are out of reach right now.',
     fleetLine: (host: string) => `Answers from ${host}; nothing here is kept.`,
