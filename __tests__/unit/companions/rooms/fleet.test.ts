@@ -5,6 +5,7 @@ import {
   displayName,
   firstSentence,
   fleetAskBody,
+  jobLine,
   fleetBotsFromMap,
   type FleetBot,
 } from '@/services/companions/rooms/fleet';
@@ -36,9 +37,9 @@ describe('fleet bots from the map', () => {
     expect(bots.map(b => b.slug)).toEqual(['diplodoctor']);
     expect(bots[0]).toMatchObject({
       name: 'Diplodoctor',
-      job: 'The health layer of the fleet: an agent that reads a medical report with you.',
+      job: 'health',
       url: 'https://diplodoctor.example',
-      mark: 'https://diplodoctor.example/icon.svg',
+      mark: '/api/ai-assistants/fleet/diplodoctor/mark',
     });
   });
 
@@ -49,6 +50,12 @@ describe('fleet bots from the map', () => {
   it('capitalises a bare slug and keeps a real name', () => {
     expect(displayName({ slug: 'causius', name: 'causius' })).toBe('Causius');
     expect(displayName({ slug: 'biaslens', name: 'BiasLens' })).toBe('BiasLens');
+  });
+
+  it('takes the layer word as the job line, else the first sentence', () => {
+    expect(jobLine('The legal layer of the fleet: an agent that does legal work.')).toBe('legal');
+    expect(jobLine('Builds things. Beta.')).toBe('Builds things.');
+    expect(jobLine(null)).toBeNull();
   });
 
   it('takes the first sentence as the job line', () => {

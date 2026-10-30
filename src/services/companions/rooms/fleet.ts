@@ -8,13 +8,13 @@
  */
 
 import { fileBlocksIn } from '@/lib/chat/attachment-tags';
+import { API_ROUTES } from '@/config/api-routes';
 import {
   FLEET_BOTS,
   FLEET_BOT_LOCALE,
   FLEET_BOT_ASK_CAPS,
   FLEET_BOT_TIMEOUT_MS,
   fleetBotAskUrl,
-  fleetBotMarkUrl,
   isFleetBotSlug,
 } from '@/config/fleet-bots';
 import { fetchStudioMapForCat, type StudioMapProject } from '@/services/ai/studio-map-fetcher';
@@ -44,6 +44,15 @@ export function firstSentence(text: string | null | undefined): string | null {
   return (m ? m[1] : clean).slice(0, 160);
 }
 
+/**
+ * The one word under the name, in the map's own phrasing: "The health layer
+ * of the fleet: …" → "health". Any other phrasing keeps its first sentence.
+ */
+export function jobLine(what: string | null | undefined): string | null {
+  const m = /^The (\w+) layer of the fleet\b/i.exec((what ?? '').trim());
+  return m ? m[1].toLowerCase() : firstSentence(what);
+}
+
 /** The display name: the map's `name`, with a bare slug capitalised ("loki" → "Loki"). */
 export function displayName(project: Pick<StudioMapProject, 'slug' | 'name'>): string {
   const name = project.name?.trim();
@@ -68,9 +77,9 @@ export function fleetBotsFromMap(
       slug,
       name: displayName(project),
       what: project.what,
-      job: firstSentence(project.what),
+      job: jobLine(project.what),
       url: url.replace(/\/+$/, ''),
-      mark: fleetBotMarkUrl(url),
+      mark: API_ROUTES.AI_ASSISTANTS.FLEET_MARK(slug),
     });
   }
   return bots;
