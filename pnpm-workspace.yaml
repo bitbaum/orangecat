@@ -91,7 +91,7 @@ minimumReleaseAgeExclude:
   - 'bip-kit'
 
   - '@bitbaum/chatkit'
-  - '@bitbaum/geo-kit@0.1.2'
+  - '@bitbaum/geo-kit@0.1.2 || 0.3.0'
   - '@bitbaum/listkit@0.2.2'
   - '@bitbaum/searchkit@0.2.3'
   - '@bitbaum/whenkit@0.3.3'
