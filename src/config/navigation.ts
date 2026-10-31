@@ -16,6 +16,7 @@
 
 import { ComponentType, SVGProps } from 'react';
 import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
+import { COMPANION_COPY } from './companions';
 import { ROUTES } from './routes';
 import { ENTITY_REGISTRY } from './entity-registry';
 import { XBrandIcon, GitHubIcon } from '@/components/icons/BrandIcons';
@@ -330,10 +331,10 @@ const simplifiedSections: NavSection[] = [
     requiresAuth: false,
     items: [
       {
-        name: ENTITY_REGISTRY['ai_assistant'].namePlural,
+        name: COMPANION_COPY.talk.title,
         href: ROUTES.AI_ASSISTANTS.TALK,
         icon: ENTITY_REGISTRY['ai_assistant'].icon,
-        description: 'Talk to your companions, together or one by one',
+        description: 'The Cat, the fleet\u2019s specialists and your own bots, one list',
         requiresAuth: true,
       },
       {

@@ -9,6 +9,7 @@
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { Plus, Search } from 'lucide-react';
+import { CAT_AGENT } from '@/config/cat-hub';
 import { COMPANION_COPY } from '@/config/companions';
 import { ROUTES } from '@/config/routes';
 import { Face, GroupFaces } from './CompanionFace';
@@ -25,10 +26,27 @@ interface Row {
   preview: string | null;
   at: string | null;
   face: React.ReactNode;
+  /** Stays at the top whatever was said last: the one bot that can act here. */
+  pinned?: boolean;
 }
 
+/** The OrangeCat app icon, the Cat's face in the list. */
+const CAT_MARK = '/icons/icon-192.png';
+
 export function rowsFor(home: TalkHomeData, fleetPreviews: Record<string, string | null>): Row[] {
-  const rows: Row[] = [];
+  const rows: Row[] = [
+    {
+      key: 'cat',
+      href: ROUTES.AI_ASSISTANTS.TALK_CAT,
+      target: { kind: 'cat' },
+      title: CAT_AGENT.name,
+      job: COMPANION_COPY.talk.cat.job,
+      preview: COMPANION_COPY.talk.cat.preview,
+      at: null,
+      face: <Face name={CAT_AGENT.name} avatarUrl={CAT_MARK} />,
+      pinned: true,
+    },
+  ];
   for (const c of home.companions) {
     rows.push({
       key: `c:${c.id}`,
@@ -66,6 +84,9 @@ export function rowsFor(home: TalkHomeData, fleetPreviews: Record<string, string
     });
   }
   return rows.sort((a, b) => {
+    if (a.pinned !== b.pinned) {
+      return a.pinned ? -1 : 1;
+    }
     if (a.at && b.at) {
       return b.at.localeCompare(a.at);
     }

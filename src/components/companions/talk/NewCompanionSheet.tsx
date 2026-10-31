@@ -1,10 +1,10 @@
 'use client';
 
 /**
- * Make a companion in a minute: a name, a shape, a colour. Its job is not a
- * field here — it is the first thing the companion asks, and what the person
- * answers is remembered. The full form (definition, price, visibility) stays
- * on the edit page for whoever wants it.
+ * A new bot: the shelf first (a job, a first line, one tap), then a blank
+ * one from a name, a shape and a colour, whose job is the first thing it
+ * asks. The full form (definition, price, visibility) stays on the edit page
+ * for whoever wants it.
  */
 
 import { useState } from 'react';
@@ -12,11 +12,12 @@ import { useRouter } from 'next/navigation';
 import { Sheet } from '@bitbaum/chatkit/react';
 import { API_ROUTES } from '@/config/api-routes';
 import { AVATAR_HUES, AVATAR_SHAPES, faceForName } from '@/config/companion-avatars';
-import { COMPANION_COPY } from '@/config/companions';
+import { COMPANION_COPY, COMPANION_SHELF, type ShelfEntry } from '@/config/companions';
 import { ROUTES } from '@/config/routes';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { logger } from '@/utils/logger';
+import { Face } from './CompanionFace';
 
 export function NewCompanionSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const router = useRouter();
@@ -33,18 +34,23 @@ export function NewCompanionSheet({ open, onClose }: { open: boolean; onClose: (
   const fill = AVATAR_HUES.find(h => h.id === hueId)?.fill ?? AVATAR_HUES[0].fill;
   const path = AVATAR_SHAPES.find(s => s.id === shapeId)?.d ?? AVATAR_SHAPES[0].d;
 
-  async function create() {
-    const title = name.trim();
+  async function create(entry?: ShelfEntry) {
+    const title = entry ? entry.name : name.trim();
     if (!title || busy) {
       return;
     }
     setBusy(true);
     setError(null);
     try {
+      const face = entry ? faceForName(entry.name) : null;
       const res = await fetch(API_ROUTES.AI_ASSISTANTS.TALK, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, shape: shapeId, hue: hueId }),
+        body: JSON.stringify(
+          entry
+            ? { title, starter: entry.id, shape: face?.shape.id, hue: face?.hue.id }
+            : { title, shape: shapeId, hue: hueId }
+        ),
       });
       const json = (await res.json()) as { data?: { id: string }; error?: { message?: string } };
       if (!res.ok || !json.data?.id) {
@@ -63,6 +69,27 @@ export function NewCompanionSheet({ open, onClose }: { open: boolean; onClose: (
 
   return (
     <Sheet open={open} onClose={onClose} title={copy.title} closeLabel={COMPANION_COPY.talk.close}>
+      <div className="flex flex-col gap-1 px-4 pt-4">
+        <p className="mb-0 text-xs uppercase tracking-wide text-fg-tertiary">{copy.shelf}</p>
+        <ul>
+          {COMPANION_SHELF.map(entry => (
+            <li key={entry.id}>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void create(entry)}
+                className="flex min-h-[56px] w-full items-center gap-3 rounded-2xl px-2 text-left hover:bg-surface-hover"
+              >
+                <Face name={entry.name} size={40} />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-base text-fg-primary">{entry.name}</span>
+                  <span className="block truncate text-sm text-fg-secondary">{entry.job}</span>
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
       <form
         className="flex flex-col gap-5 p-4"
         onSubmit={e => {
@@ -70,6 +97,7 @@ export function NewCompanionSheet({ open, onClose }: { open: boolean; onClose: (
           void create();
         }}
       >
+        <p className="mb-0 text-xs uppercase tracking-wide text-fg-tertiary">{copy.blank}</p>
         <div className="flex justify-center">
           <svg viewBox="0 0 100 100" width={128} height={128} aria-hidden="true">
             <path d={path} fill={fill} />

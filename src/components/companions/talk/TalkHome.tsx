@@ -14,6 +14,7 @@ import { APP_CONTENT_HEIGHT_CLASS } from '@/config/layout-chrome';
 import { ROUTES } from '@/config/routes';
 import type { CompanionRow } from '@/services/companions/talk-home';
 import { logger } from '@/utils/logger';
+import { CatChat } from './CatChat';
 import { CompanionChat } from './CompanionChat';
 import { FleetChat } from './FleetChat';
 import { NewCompanionSheet } from './NewCompanionSheet';
@@ -95,7 +96,9 @@ export function TalkHome() {
   );
 
   let conversation: React.ReactNode = null;
-  if (target?.kind === 'companion') {
+  if (target?.kind === 'cat') {
+    conversation = <CatChat onBack={back} />;
+  } else if (target?.kind === 'companion') {
     conversation = (
       <CompanionChat
         key={target.id}

@@ -40,16 +40,16 @@ export const COMPANION_COPY = {
 
   /** The talk home: companions, group chats and the fleet's bots as one list. */
   talk: {
-    title: 'Companions',
+    title: 'Bots',
     search: 'Search',
-    newCompanion: 'New companion',
+    newCompanion: 'New bot',
     newGroup: 'New group chat',
     /** Under a name, when the companion has no description yet. */
     noJob: 'Tell it what it is for',
     noActivityYet: 'Say hello',
     empty: {
       title: 'Nobody here yet',
-      body: 'The fleet\u2019s agents and your own, one list. Talk to any of them, or put a few in a group chat and set them on one thing together.',
+      body: 'The fleet\u2019s specialists, the Cat and your own bots, one list. Talk to any of them, or put a few in a group chat and set them on one thing together.',
     },
     fleetUnreachable: 'The fleet\u2019s bots are out of reach right now.',
     fleetLine: (host: string) => `Answers from ${host}; nothing here is kept.`,
@@ -58,8 +58,10 @@ export const COMPANION_COPY = {
     details: 'Details',
     close: 'Close',
     create: {
-      title: 'New companion',
-      name: 'Give your companion a name',
+      title: 'New bot',
+      shelf: 'Ready to go',
+      blank: 'Or start from a blank name',
+      name: 'Give your bot a name',
       shape: 'Shape',
       colour: 'Colour',
       submit: 'Create',
@@ -69,7 +71,7 @@ export const COMPANION_COPY = {
     room: {
       title: 'New group chat',
       to: 'To:',
-      searchBots: 'Search companions',
+      searchBots: 'Search bots',
       next: 'Start',
       needTwo: 'Pick two to six.',
       placeholder: (title: string) => `Message ${title} — @ a name to hand it the floor`,
@@ -94,6 +96,10 @@ export const COMPANION_COPY = {
       open: (name: string) => `Open ${name}`,
       keptHere: 'This chat stays in this browser.',
       working: (name: string) => `${name} is thinking`,
+    },
+    cat: {
+      job: 'money, pages and your account',
+      preview: 'Say what you want done on OrangeCat',
     },
     companion: {
       placeholder: (name: string) => `Ask ${name}`,
@@ -145,6 +151,96 @@ export const BORN_MAX_TOKENS = 2048;
 /** The sentence every born-with definition opens with: how one is recognised later. */
 export const STARTER_MARK = 'a companion made just now by the person you are talking to';
 
+/**
+ * In every bot's definition. Found on the live site (2026-10-31): a pitch
+ * rewrite opened with "Switzerland has 1M fossil-fuel heating units", a
+ * figure from nowhere, in text meant for an investor.
+ */
+export const COMPANION_HONESTY =
+  'Never invent a number, a name, a date or a source. Where you need one you do not have, write [X] and say what the person should fill in.';
+
+/** The first line in a born companion's chat, written at creation, no model call. */
+export function starterGreeting(name: string): string {
+  return `Hi, I\u2019m ${name}. I\u2019m ready as soon as you tell me what you need me for.`;
+}
+
+/**
+ * The shelf: bots that come with a job, so nobody has to name one and
+ * define it before it is useful. Each opens with a line that proves the job
+ * and takes a file or a paste in the first message. None needs a tool.
+ */
+export interface ShelfEntry {
+  id: string;
+  name: string;
+  /** Under the name, as "Name \u00b7 job"; sixty characters at most. */
+  job: string;
+  /** The job in full, in the definition. */
+  definition: string;
+  /** The first line in the chat, written at creation. */
+  firstLine: string;
+}
+
+export const COMPANION_SHELF: readonly ShelfEntry[] = [
+  {
+    id: 'letter-reader',
+    name: 'Letter Reader',
+    job: 'reads letters, bills and contracts with you',
+    definition:
+      'You read letters, bills, forms and contracts the person attaches or pastes, and say in plain words what each one says, what it asks for, by when, and what the usual next step is. You point at the exact lines that matter. You draft a reply when asked. You say when a question needs a lawyer, a doctor or the sender.',
+    firstLine:
+      'Send me a letter, a bill or a contract, as a photo, a PDF or a paste, and I will tell you what it says and what to do next.',
+  },
+  {
+    id: 'pitch-coach',
+    name: 'Pitch Coach',
+    job: 'sharpens your 60-second pitch',
+    definition:
+      'You coach founders on a 60-second pitch. You are blunt and specific: you quote the exact sentences that are weak and say why, then end with a rewritten pitch of about sixty words that keeps every real number the person gave.',
+    firstLine:
+      'Paste your pitch or attach it. I will say what is weak, sentence by sentence, then rewrite it.',
+  },
+  {
+    id: 'day-planner',
+    name: 'Day Planner',
+    job: 'turns your day into three things',
+    definition:
+      'You turn whatever the person has on, however messy, into the three things that matter today, in order, each with the first concrete step. You ask one question at most before answering. You keep the list to three.',
+    firstLine:
+      'Tell me what is on today. A brain dump is fine. I will give you the three things that matter and the order.',
+  },
+  {
+    id: 'writing-partner',
+    name: 'Writing Partner',
+    job: 'writes and fixes your texts',
+    definition:
+      'You write and fix messages, emails, posts and short texts. You ask who it is for and how it should sound only when the person has not said. You give one finished version, ready to send, and name the one change that made the biggest difference.',
+    firstLine:
+      'Give me the message, email or post you need, or a draft to fix. Say who it is for and how it should sound.',
+  },
+  {
+    id: 'study-buddy',
+    name: 'Study Buddy',
+    job: 'explains anything and quizzes you',
+    definition:
+      'You explain any topic in plain words, with one example, then quiz the person with short questions until they get three in a row right. You correct a wrong answer kindly and explain why.',
+    firstLine:
+      'Name the topic or attach your notes. I explain it in plain words, then quiz you until it sticks.',
+  },
+];
+
+export function shelfEntry(id: string | null | undefined): ShelfEntry | undefined {
+  return id ? COMPANION_SHELF.find(e => e.id === id) : undefined;
+}
+
+/** A shelf bot's definition: its job, and the rules every companion keeps. */
+export function shelfDefinition(entry: ShelfEntry): string {
+  return [
+    `You are ${entry.name}, a companion made by the person you are talking to.`,
+    `Your job: ${entry.definition}`,
+    `Do that job in every conversation and group chat. Be brief, warm and concrete; never pretend to have tools, files or connections you do not have. ${COMPANION_HONESTY}`,
+  ].join('\n');
+}
+
 export function isStarterDefinition(prompt: string | null | undefined): boolean {
   return Boolean(prompt && prompt.includes(STARTER_MARK));
 }
@@ -185,7 +281,7 @@ export function jobDefinition(name: string, answer: string): string {
   return [
     `You are ${name}, a companion made by the person you are talking to.`,
     `Your job, in their own words: ${answer.trim()}`,
-    'Do that job in every conversation and group chat. Never ask again what you are for. Be brief, warm and concrete; never pretend to have tools, files or connections you do not have.',
+    `Do that job in every conversation and group chat. Never ask again what you are for. Be brief, warm and concrete; never pretend to have tools, files or connections you do not have. ${COMPANION_HONESTY}`,
   ].join('\n');
 }
 
@@ -195,8 +291,9 @@ export function starterDefinition(name: string): string {
     .join('\n');
   return [
     `You are ${name}, ${STARTER_MARK}.`,
-    `You do not have a job yet. In your very first message, greet them by saying you are ready as soon as they tell you what they need you for, then ask: "${COMPANION_COPY.talk.starters.firstQuestion}" with these choices on their own lines:`,
+    `You do not have a job yet. The person has already seen your greeting and the question "${COMPANION_COPY.talk.starters.firstQuestion}" with these choices:`,
     options,
-    'When they answer, say in one line what you will be for them from now on and ask one short question that helps you do it well. Keep what they tell you about your job and use it in every later conversation; once you know it, never ask the question again, in any conversation or group chat, and do the job instead. Be brief, warm and concrete; never pretend to have tools, files or connections you do not have.',
+    'If their first message tells you what they need you for, or answers with a choice, do not ask again: say in one line what you will be for them from now on and start on it, or ask one short question that helps you do it well. Only if their first message says nothing about a job, ask the question once, with the choices on their own lines. Keep what they tell you about your job and use it in every later conversation; once you know it, never ask the question again, in any conversation or group chat, and do the job instead.',
+    `Be brief, warm and concrete; never pretend to have tools, files or connections you do not have. ${COMPANION_HONESTY}`,
   ].join('\n');
 }
