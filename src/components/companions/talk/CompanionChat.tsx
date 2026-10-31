@@ -69,8 +69,12 @@ export function CompanionChat({
             return false;
           }
           const { content, images } = outgoing(text.trim(), attachments);
-          void talk.send(content, images).then(onActivity);
-          return true;
+          // A send that did not go through leaves the words in the box: the
+          // person retries with a tap, or takes the way out the chat offers.
+          return talk.send(content, images).then(ok => {
+            onActivity();
+            return ok;
+          });
         }}
         starters={fresh ? copy.starters.firstOptions : undefined}
         startersTitle={
@@ -96,7 +100,18 @@ export function CompanionChat({
               </div>
             )}
             {talk.error && (
-              <p className="mb-2 text-sm text-status-negative">{COMPANION_COPY.room.sendFailed}</p>
+              <div className="mb-2 rounded-2xl border border-subtle bg-surface-raised p-3 text-sm">
+                <p
+                  className={`mb-0 ${talk.limitReached ? 'text-fg-primary' : 'text-status-negative'}`}
+                >
+                  {talk.limitReached ? talk.error : COMPANION_COPY.room.sendFailed}
+                </p>
+                {talk.limitReached && (
+                  <Button href={ROUTES.SETTINGS_AI} variant="primary" size="sm" className="mt-2">
+                    {COMPANION_COPY.room.liftLimit}
+                  </Button>
+                )}
+              </div>
             )}
           </>
         }
