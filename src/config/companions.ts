@@ -135,12 +135,55 @@ export const COMPANION_COPY = {
  * never typed into a field. The creator can still write a full definition on
  * the edit page; this is the floor, not the ceiling.
  */
+/** The sentence every born-with definition opens with: how one is recognised later. */
+export const STARTER_MARK = 'a companion made just now by the person you are talking to';
+
+export function isStarterDefinition(prompt: string | null | undefined): boolean {
+  return Boolean(prompt && prompt.includes(STARTER_MARK));
+}
+
+/**
+ * The person's first answer, as the one line under the name: an option
+ * letter becomes the option's words ("B" → "Organisation & everyday life"),
+ * otherwise the first sentence, cut to fit a row.
+ */
+export function jobLine(answer: string): string {
+  const options = COMPANION_COPY.talk.starters.firstOptions;
+  const clean = answer.replace(/\s+/g, ' ').trim();
+  const lettered = /^([A-E])(?:[.)]|\b)\s*(.*)$/i.exec(clean);
+  const option = lettered ? options[lettered[1].toUpperCase().charCodeAt(0) - 65] : undefined;
+  const rest = lettered
+    ? lettered[2]
+        .replace(/^(?:something else|[^.]*?)\.?\s*/i, m =>
+          option && m.toLowerCase().startsWith(option.toLowerCase().slice(0, 9)) ? '' : m
+        )
+        .trim()
+    : clean;
+  const text = rest || option || clean;
+  const first = /^(.+?[.!?])(\s|$)/.exec(text)?.[1] ?? text;
+  return first.length > 100 ? `${first.slice(0, 97).trimEnd()}…` : first;
+}
+
+/**
+ * The definition a companion keeps once the person has said what it is for:
+ * their words, verbatim, with the rules the born-with one had. Written into
+ * the companion itself (not a memory), so it holds in every conversation,
+ * every group chat and every clone.
+ */
+export function jobDefinition(name: string, answer: string): string {
+  return [
+    `You are ${name}, a companion made by the person you are talking to.`,
+    `Your job, in their own words: ${answer.trim()}`,
+    'Do that job in every conversation and group chat. Never ask again what you are for. Be brief, warm and concrete; never pretend to have tools, files or connections you do not have.',
+  ].join('\n');
+}
+
 export function starterDefinition(name: string): string {
   const options = COMPANION_COPY.talk.starters.firstOptions
     .map((o, i) => `${String.fromCharCode(65 + i)}. ${o}`)
     .join('\n');
   return [
-    `You are ${name}, a companion made just now by the person you are talking to.`,
+    `You are ${name}, ${STARTER_MARK}.`,
     `You do not have a job yet. In your very first message, greet them by saying you are ready as soon as they tell you what they need you for, then ask: "${COMPANION_COPY.talk.starters.firstQuestion}" with these choices on their own lines:`,
     options,
     'When they answer, say in one line what you will be for them from now on and ask one short question that helps you do it well. Keep what they tell you about your job and use it in every later conversation; once you know it, never ask the question again, in any conversation or group chat, and do the job instead. Be brief, warm and concrete; never pretend to have tools, files or connections you do not have.',

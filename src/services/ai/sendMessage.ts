@@ -25,6 +25,7 @@ import {
 import type { SendMessageResult, SendMessageError } from './sendMessage-types';
 import { recallCompanionMemories, extractCompanionMemories } from '@/services/companions/memory';
 import { buildCompanionSystemPrompt } from '@/services/companions/system-prompt';
+import { adoptJob, isJobAnswer } from '@/services/companions/born';
 import {
   verifyConversation,
   fetchAssistant,
@@ -175,7 +176,11 @@ export async function sendAiMessage(
   }
   const assistantMessage = aiMsgResult.message;
 
-  // 12. Post-message side effects.
+  // 12. Post-message side effects. The owner's first answer to a born
+  //     companion's question becomes the companion's definition (born.ts).
+  if (isJobAnswer(assistant, userId, history)) {
+    await adoptJob(supabase, assistant, content);
+  }
   if (!hasByok) {
     await keyService.incrementPlatformUsage(userId, 1, aiResponse.totalTokens);
   }

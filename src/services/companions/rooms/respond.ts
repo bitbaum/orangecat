@@ -53,6 +53,9 @@ export async function speakInRoom(args: {
   if ('error' in spoken) {
     return spoken;
   }
+  if (!spoken.content.trim()) {
+    return { error: { code: 'AI_ERROR', message: `${member.name} answered with nothing.` } };
+  }
   const cut = cutImpersonation(stripSelfPrefix(spoken.content, member), member, room.members);
   const message = await appendRoomMessage(supabase, room.id, {
     role: 'assistant',
