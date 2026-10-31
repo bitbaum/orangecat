@@ -114,6 +114,14 @@ that exists.
 aloud; a full-screen call with a chosen voice and speed is a chatkit feature
 to ask for there, so every product gets it at once.
 
+**The job given in chat is the definition, not a memory.** D5 said a born
+companion asks what it is for and remembers the answer. Remembering was an
+extracted memory, which did not always exist and never reached a group chat
+(2026-10-31: two companions given jobs in their own threads asked again in the
+room). The owner's first answer now rewrites the companion's `system_prompt`
+and `description` (`services/companions/born.ts`), so the job travels
+everywhere the companion does.
+
 **A round goes on while the work is unfinished.** Tested on the live site
 (2026-10-30, two fleet bots on one cross-domain problem; two companions,
 a builder and a skeptic, on a launch plan): each member answered once and

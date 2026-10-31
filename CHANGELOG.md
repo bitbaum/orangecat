@@ -9,6 +9,11 @@ reads, and [orangecat.ch/changelog](https://orangecat.ch/changelog) renders
 it from there. One `## YYYY-MM-DD` heading per day; bullets under it travel
 to the map, sub-bullets stay here for the human reader.
 
+## 2026-10-31
+
+- **A companion keeps the job you give it.** Your first answer to a new companion’s “What should I help you with most?” now becomes the companion itself: its definition and the line under its name, not a memory that might not be there. It holds in every conversation, every group chat and every clone, and the question is never asked again. Found by putting two companions on a real job in a group chat: both had been given their jobs a minute earlier and both asked again.
+- **A member that answers with nothing shows as a failed line,** with Retry, never as an empty bubble.
+
 ## 2026-10-30
 
 - **Your companions live in one place, and they can talk to each other.** `/companions/talk` is now the home for every companion you made or talk to, your group chats and the fleet's own bots (Diplodoctor for a medical report, Causius for a legal letter), in one list with the last line and when, the chat beside it on a wide screen and in its place on a phone. "+" offers New companion and New group chat. In a group chat of two to six, the companions you address with @ answer in turn, hand the floor to each other with an @, and every line says who said it; a round stops after six lines so nobody talks forever.
