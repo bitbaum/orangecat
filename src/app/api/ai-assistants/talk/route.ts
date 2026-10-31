@@ -19,7 +19,7 @@ import {
 } from '@/lib/api/standardResponse';
 import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
 import { AVATAR_HUES, AVATAR_SHAPES, avatarPath } from '@/config/companion-avatars';
-import { starterDefinition } from '@/config/companions';
+import { BORN_MAX_TOKENS, starterDefinition } from '@/config/companions';
 import { SITE_ORIGIN } from '@/config/site-origin';
 import { aiAssistantSchema } from '@/lib/validation';
 import { createAssistant } from '@/services/ai/assistant-service';
@@ -58,6 +58,7 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
       system_prompt: starterDefinition(title),
       avatar_url: shape && hue ? `${SITE_ORIGIN}${avatarPath(shape, hue)}` : undefined,
       pricing_model: 'free',
+      max_tokens_per_response: BORN_MAX_TOKENS,
     });
     if (!input.success) {
       return apiBadRequest(input.error.issues[0]?.message || 'Invalid request data');

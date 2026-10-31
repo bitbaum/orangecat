@@ -12,6 +12,7 @@ to the map, sub-bullets stay here for the human reader.
 ## 2026-10-31
 
 - **A companion keeps the job you give it.** Your first answer to a new companion’s “What should I help you with most?” now becomes the companion itself: its definition and the line under its name, not a memory that might not be there. It holds in every conversation, every group chat and every clone, and the question is never asked again. Found by putting two companions on a real job in a group chat: both had been given their jobs a minute earlier and both asked again.
+- **A model that answers with nothing no longer ends the turn.** On the platform chain an empty answer (a reasoning model that spent its budget thinking) now passes to the next link instead of coming back as a blank. A new companion may also answer at length: its cap is 2,048 tokens, not the table’s 1,000, which cut a three-part proposal mid-sentence.
 - **A member that answers with nothing shows as a failed line,** with Retry, never as an empty bubble.
 
 ## 2026-10-30

@@ -135,6 +135,13 @@ export const COMPANION_COPY = {
  * never typed into a field. The creator can still write a full definition on
  * the edit page; this is the floor, not the ceiling.
  */
+/**
+ * How long a born companion's answer may run. The table default (1,000
+ * tokens) cut a three-part proposal mid-sentence on the live site, and a
+ * reasoning model that spends its budget thinking returned nothing at all.
+ */
+export const BORN_MAX_TOKENS = 2048;
+
 /** The sentence every born-with definition opens with: how one is recognised later. */
 export const STARTER_MARK = 'a companion made just now by the person you are talking to';
 
@@ -143,25 +150,29 @@ export function isStarterDefinition(prompt: string | null | undefined): boolean 
 }
 
 /**
- * The person's first answer, as the one line under the name: an option
- * letter becomes the option's words ("B" → "Organisation & everyday life"),
- * otherwise the first sentence, cut to fit a row.
+ * The person's first answer, as the one line under the name: a label of a
+ * few words, the way "Handler · handle things" reads. An option letter becomes
+ * the option's words ("B" → "Organisation & everyday life"); "You are Skeptic:
+ * find the two biggest flaws…" becomes "find the two biggest flaws"; anything
+ * else is its first clause, cut to fit a row.
  */
 export function jobLine(answer: string): string {
   const options = COMPANION_COPY.talk.starters.firstOptions;
-  const clean = answer.replace(/\s+/g, ' ').trim();
-  const lettered = /^([A-E])(?:[.)]|\b)\s*(.*)$/i.exec(clean);
+  let text = answer.replace(/\s+/g, ' ').trim();
+  const lettered = /^([A-E])(?:[.)]|\b)\s*(.*)$/i.exec(text);
   const option = lettered ? options[lettered[1].toUpperCase().charCodeAt(0) - 65] : undefined;
-  const rest = lettered
-    ? lettered[2]
-        .replace(/^(?:something else|[^.]*?)\.?\s*/i, m =>
-          option && m.toLowerCase().startsWith(option.toLowerCase().slice(0, 9)) ? '' : m
-        )
-        .trim()
-    : clean;
-  const text = rest || option || clean;
-  const first = /^(.+?[.!?])(\s|$)/.exec(text)?.[1] ?? text;
-  return first.length > 100 ? `${first.slice(0, 97).trimEnd()}…` : first;
+  if (lettered) {
+    text = lettered[2].trim();
+    if (option && text.toLowerCase().startsWith(option.toLowerCase())) {
+      text = text.slice(option.length).replace(/^[.,:;\s]+/, '');
+    }
+  }
+  // "You are Skeptic: …", "You're my coach — …": the job is what follows the name.
+  text = text.replace(/^you(?:'re| are)\s+(?:my\s+)?[^.:—–,]{1,40}?\s*[:—–,]\s*/i, '');
+  const clause = /^(.*?)(?:\s[—–]\s|[.:;!?]|$)/.exec(text)?.[1]?.trim() ?? '';
+  const label = clause || option || text;
+  const short = label.length > 60 ? `${label.slice(0, 59).trimEnd()}…` : label;
+  return short.charAt(0).toLowerCase() + short.slice(1);
 }
 
 /**

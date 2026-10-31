@@ -15,16 +15,19 @@ describe('a born companion takes the job it is given', () => {
   });
 
   it('turns the first answer into a job line that fits a row', () => {
-    expect(jobLine('B')).toBe('Organisation & everyday life');
+    expect(jobLine('B')).toBe('organisation & everyday life');
     expect(
       jobLine(
         'E. Something else. You are Skeptic: find the two biggest flaws in any plan. Be brief.'
       )
-    ).toBe('You are Skeptic: find the two biggest flaws in any plan.');
+    ).toBe('find the two biggest flaws in any plan');
     expect(jobLine('Help me think clearly about hard decisions. Ask one question at a time.')).toBe(
-      'Help me think clearly about hard decisions.'
+      'help me think clearly about hard decisions'
     );
-    expect(jobLine('x'.repeat(140)).length).toBeLessThanOrEqual(100);
+    expect(jobLine("You're my coach — keep me honest about the gym.")).toBe(
+      'keep me honest about the gym'
+    );
+    expect(jobLine('x'.repeat(140)).length).toBeLessThanOrEqual(60);
   });
 
   it("keeps the person's words in the definition and forbids asking again", () => {
