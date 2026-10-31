@@ -101,11 +101,19 @@ class FSServer {
           case 'read_file': {
             const file = resolveSafe(args.path);
             const maxBytes = args.maxBytes ?? 500000;
-            const stat = await fs.stat(file);
-            if (stat.size > maxBytes) {
-              throw new Error(`File too large: ${stat.size} bytes > ${maxBytes}`);
+            // Stat and read through one handle, so the size checked is the
+            // size of the file that is read (no stat-then-open race).
+            const handle = await fs.open(file, 'r');
+            let buf;
+            try {
+              const stat = await handle.stat();
+              if (stat.size > maxBytes) {
+                throw new Error(`File too large: ${stat.size} bytes > ${maxBytes}`);
+              }
+              buf = await handle.readFile();
+            } finally {
+              await handle.close();
             }
-            const buf = await fs.readFile(file);
             if ((args.encoding || 'utf-8') === 'base64') {
               return { content: [{ type: 'text', text: buf.toString('base64') }] };
             }
@@ -139,14 +147,19 @@ class FSServer {
           }
           case 'delete_file': {
             const file = resolveSafe(args.path);
-            const st = await fs.stat(file).catch(() => null);
-            if (!st) {
-              return { content: [{ type: 'text', text: 'not_found' }] };
+            // unlink() never removes a directory, so no separate stat (and no
+            // stat-then-unlink race) is needed; map its errors instead.
+            try {
+              await fs.unlink(file);
+            } catch (e) {
+              if (e?.code === 'ENOENT') {
+                return { content: [{ type: 'text', text: 'not_found' }] };
+              }
+              if (e?.code === 'EISDIR' || e?.code === 'EPERM') {
+                throw new Error('Refusing to delete directories');
+              }
+              throw e;
             }
-            if (st.isDirectory()) {
-              throw new Error('Refusing to delete directories');
-            }
-            await fs.unlink(file);
             return { content: [{ type: 'text', text: 'ok' }] };
           }
           default:
