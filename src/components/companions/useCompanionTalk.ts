@@ -67,6 +67,8 @@ export function useCompanionTalk(assistantId: string) {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [creditsNeeded, setCreditsNeeded] = useState<CreditsNeeded | null>(null);
+  /** The day's free messages are spent: the way forward is the person's own key. */
+  const [limitReached, setLimitReached] = useState(false);
 
   const loadThread = useCallback(
     async (threadId: string) => {
@@ -126,10 +128,12 @@ export function useCompanionTalk(assistantId: string) {
     return json.data.id;
   }, [assistantId, activeId]);
 
+  /** True when the message was delivered; false leaves the words in the box. */
   const send = useCallback(
-    async (content: string, images?: ChatImage[]) => {
+    async (content: string, images?: ChatImage[]): Promise<boolean> => {
       setError(null);
       setCreditsNeeded(null);
+      setLimitReached(false);
       const optimistic: TalkMessage = {
         id: `temp-${Date.now()}`,
         role: 'user',
@@ -159,7 +163,14 @@ export function useCompanionTalk(assistantId: string) {
           };
           setCreditsNeeded({ balance: d.currentBalance ?? 0, required: d.requiredAmount ?? 0 });
           setMessages(prev => prev.filter(m => m.id !== optimistic.id));
-          return;
+          return false;
+        }
+        if (res.status === 429) {
+          // Seen live (2026-10-31): the eleventh message of the day came back
+          // as "That did not go through. Try again.", which is not true and
+          // leads nowhere. The server says what happened; show that, and the
+          // way out.
+          setLimitReached(true);
         }
         if (!res.ok || !json.data) {
           throw new Error(json.error?.message || 'Failed to send message');
@@ -169,10 +180,12 @@ export function useCompanionTalk(assistantId: string) {
           json.data!.userMessage,
           json.data!.assistantMessage,
         ]);
+        return true;
       } catch (err) {
         logger.error('Companion send failed', err, 'useCompanionTalk');
         setMessages(prev => prev.filter(m => m.id !== optimistic.id));
         setError(err instanceof Error ? err.message : 'Something went wrong.');
+        return false;
       } finally {
         setSending(false);
       }
@@ -185,6 +198,7 @@ export function useCompanionTalk(assistantId: string) {
     setMessages([]);
     setError(null);
     setCreditsNeeded(null);
+    setLimitReached(false);
   }, []);
 
   return {
@@ -195,6 +209,7 @@ export function useCompanionTalk(assistantId: string) {
     sending,
     error,
     creditsNeeded,
+    limitReached,
     send,
     loadThread,
     startNewThread,
