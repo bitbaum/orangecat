@@ -9,6 +9,7 @@
  * far side keeps nothing), so its last line is the browser's to add.
  */
 
+import { deriveTitle } from '@bitbaum/chatkit';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { fromTable } from '@/lib/supabase/untyped';
 import { DATABASE_TABLES } from '@/config/database-tables';
@@ -55,18 +56,17 @@ interface ConversationRow {
 
 const PREVIEW_CHARS = 140;
 
-/** The last line, trimmed to one breath, with a companion's own bookkeeping taken out. */
+/**
+ * The last line, trimmed to one breath, with a companion's own bookkeeping
+ * taken out and the markdown gone: a row read "**What the clause says**"
+ * with the asterisks (live, 2026-10-31). chatkit's `deriveTitle` is the one
+ * rule for a line of a message as plain words, cut at a word.
+ */
 export function previewOf(content: string | null | undefined, role?: string): string | null {
   if (!content) {
     return null;
   }
-  const clean = (role === 'assistant' ? visibleReply(content) : content)
-    .replace(/\s+/g, ' ')
-    .trim();
-  if (!clean) {
-    return null;
-  }
-  return clean.length > PREVIEW_CHARS ? `${clean.slice(0, PREVIEW_CHARS - 1)}…` : clean;
+  return deriveTitle(role === 'assistant' ? visibleReply(content) : content, PREVIEW_CHARS);
 }
 
 export async function loadTalkHome(supabase: AnySupabaseClient, userId: string): Promise<TalkHome> {
