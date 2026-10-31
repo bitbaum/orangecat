@@ -238,7 +238,7 @@
     "supabase": "^2.120.0",
     "typescript": "^6.0.3",
     "vitest": "^4.1.11",
-    "wait-on": "^9.1.0",
+    "wait-on": "^9.5.1",
     "ws": "^8.22.0"
   },
   "optionalDependencies": {
