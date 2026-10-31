@@ -48,7 +48,9 @@ export function CompanionChat({
   if (messages.length === 0 && row?.welcomeMessage && !talk.loading) {
     messages.unshift({ id: 'opening', role: 'assistant', content: row.welcomeMessage });
   }
-  const fresh = Boolean(row?.mine && !row.description && !row.welcomeMessage);
+  // Still waiting for its job: the starters ask it. A shelf bot has a job
+  // from the start, so it never asks.
+  const fresh = Boolean(row?.mine && !row.description);
 
   return (
     <>

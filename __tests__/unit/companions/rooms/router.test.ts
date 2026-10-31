@@ -38,6 +38,8 @@ describe('parseContinuation', () => {
     const prompt = continuationPrompt(members);
     expect(prompt).toContain('- Diplodoctor: health');
     expect(prompt).toContain('"done"');
+    expect(prompt).toContain('another member’s job and that member has not spoken yet');
+    expect(prompt).toContain('another member’s job and that member has not spoken yet');
   });
 });
 

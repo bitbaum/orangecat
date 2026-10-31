@@ -32,6 +32,7 @@ describe('buildRoomPrompt', () => {
     expect(prompt).toContain('- @Legaleagle — Reads contracts');
     expect(prompt).not.toContain('- @Ada');
     expect(prompt).toContain('Speak as Ada only');
+    expect(prompt).toContain('hand that part over in one sentence with its @handle');
   });
 
   it('stands alone when the companion has no definition (a fleet bot)', () => {

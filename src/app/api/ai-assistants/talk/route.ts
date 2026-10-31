@@ -19,7 +19,14 @@ import {
 } from '@/lib/api/standardResponse';
 import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
 import { AVATAR_HUES, AVATAR_SHAPES, avatarPath } from '@/config/companion-avatars';
-import { BORN_MAX_TOKENS, starterDefinition } from '@/config/companions';
+import {
+  BORN_MAX_TOKENS,
+  COMPANION_SHELF,
+  shelfDefinition,
+  shelfEntry,
+  starterDefinition,
+  starterGreeting,
+} from '@/config/companions';
 import { SITE_ORIGIN } from '@/config/site-origin';
 import { aiAssistantSchema } from '@/lib/validation';
 import { createAssistant } from '@/services/ai/assistant-service';
@@ -30,6 +37,8 @@ const quickCreateSchema = z.object({
   title: z.string().trim().min(1).max(100),
   shape: z.enum(AVATAR_SHAPES.map(s => s.id) as [string, ...string[]]).optional(),
   hue: z.enum(AVATAR_HUES.map(h => h.id) as [string, ...string[]]).optional(),
+  /** A bot from the shelf: it comes with its job and its first line. */
+  starter: z.enum(COMPANION_SHELF.map(e => e.id) as [string, ...string[]]).optional(),
 });
 
 export const GET = withAuth(async (request: AuthenticatedRequest) => {
@@ -53,9 +62,15 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
       return apiBadRequest(parsed.error.issues[0]?.message || 'Invalid request data');
     }
     const { title, shape, hue } = parsed.data;
+    const shelf = shelfEntry(parsed.data.starter);
+    // The first line is written here, at creation, not asked of a model when
+    // the chat opens: the chat is never empty, and the person cannot type
+    // before the bot has said what it is for (seen live 2026-10-31).
     const input = aiAssistantSchema.safeParse({
       title,
-      system_prompt: starterDefinition(title),
+      description: shelf?.job,
+      system_prompt: shelf ? shelfDefinition(shelf) : starterDefinition(title),
+      welcome_message: shelf ? shelf.firstLine : starterGreeting(title),
       avatar_url: shape && hue ? `${SITE_ORIGIN}${avatarPath(shape, hue)}` : undefined,
       pricing_model: 'free',
       max_tokens_per_response: BORN_MAX_TOKENS,

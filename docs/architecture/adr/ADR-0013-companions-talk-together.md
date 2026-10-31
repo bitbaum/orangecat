@@ -5,16 +5,28 @@ Status: Accepted (D1–D5 shipped; D6–D8 on the roadmap)
 
 ## Context
 
-Grok Bot (SpaceX Super Intelligence, August 2026) made a product out of a
-shape the fleet already had in pieces: a messaging app whose contacts are
+Grok Bot (SpaceX Super Intelligence, beta 11 August 2026) made a product out
+of a shape the fleet already had in pieces: a messaging app whose contacts are
 bots. One list, newest first; a face, a name with its job, the last line and
 when; a "+" that offers a new bot or a new group chat; a bot made from a name,
-a shape and a colour, which asks what it is for in its first message; group
-chats of two to six bots that answer in turn and hand work to each other with
-an `@`; a status line that says who is writing; connectors a bot may use; a
-voice call. The owner's brief: have that as part of our offering, for what we
-do, better and simpler, model-agnostic, and from first principles rather than
-a blind copy.
+a shape and a colour, which is told its job in the first message; group
+chats of two to six bots in which the bots decide who answers and hand work to
+each other with an `@`; a status line that says who is writing; connectors a
+bot may use; a voice call. The owner's brief: have that as part of our
+offering, for what we do, better and simpler, model-agnostic, and from first
+principles rather than a blind copy.
+
+What a Grok Bot bot IS, read later and recorded here so the shape is not
+mistaken for the substance (2026-10-31, from
+[x.ai/news/introducing-grok-bot](https://x.ai/news/introducing-grok-bot) and
+[docs.x.ai/grok-bot](https://docs.x.ai/grok-bot/overview)): "a named AI
+teammate with a job and context that persists over time", running on a
+persistent cloud computer hosted by Cursor, with connected apps, browser and
+terminal use, up to fifty scheduled routines, and a separate review model that
+gates risky actions. The messaging screen is its face; the computer is its
+body. OrangeCat's companions have the face and the memory; the body (hands,
+routines, connectors) is the fleet's execution plane, Loki, and is the roadmap
+item this ADR's D6 and D7 name.
 
 OrangeCat already had the bot: an `ai_assistant` ("companion") has a
 creator's definition, a memory of each person it talks to, a clone that

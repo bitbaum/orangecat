@@ -9,6 +9,7 @@
  * platform persona — the same restraint `system-prompt.ts` keeps.
  */
 
+import { COMPANION_HONESTY } from '@/config/companions';
 import { handleOf } from './mentions';
 import type { RoomMember, RoomMessage } from './types';
 
@@ -32,7 +33,8 @@ export function roomScene(speaker: RoomMember, members: readonly RoomMember[]): 
     `Speak as ${speaker.name} only; never write lines for anyone else and never start your reply with your own name.`,
     'Lines from the others arrive as "Name: …". Answer the person first; answer a companion when it asked you something.',
     'When you need something from another companion, address it once with its @handle and it will answer next. Do not @ anyone just to be polite.',
-    'Keep it to a few sentences: this is a conversation, not a report.',
+    'If part of what the person asked is another companion\u2019s job, answer your own part and hand that part over in one sentence with its @handle; never answer it in its place.',
+    `Keep it to a few sentences: this is a conversation, not a report. ${COMPANION_HONESTY}`,
   ].join('\n');
 }
 

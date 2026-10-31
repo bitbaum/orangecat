@@ -1,7 +1,11 @@
 import type { TalkHome } from '@/services/companions/talk-home';
 
-/** What is open: a companion, a fleet bot, a group chat, or nothing. */
+/** The `with=` value that opens the Cat in the list. */
+export const CAT_TARGET = 'cat';
+
+/** What is open: the Cat, a companion, a fleet bot, a group chat, or nothing. */
 export type TalkTarget =
+  | { kind: 'cat' }
   | { kind: 'companion'; id: string }
   | { kind: 'fleet'; slug: string }
   | { kind: 'room'; id: string }
@@ -19,6 +23,9 @@ export function targetFromParams(params: URLSearchParams | null): TalkTarget {
   if (!w) {
     return null;
   }
+  if (w === CAT_TARGET) {
+    return { kind: 'cat' };
+  }
   if (w.startsWith('fleet:')) {
     return { kind: 'fleet', slug: w.slice('fleet:'.length) };
   }
@@ -28,6 +35,9 @@ export function targetFromParams(params: URLSearchParams | null): TalkTarget {
 export function sameTarget(a: TalkTarget, b: TalkTarget): boolean {
   if (!a || !b || a.kind !== b.kind) {
     return a === b;
+  }
+  if (a.kind === 'cat') {
+    return true;
   }
   return a.kind === 'fleet'
     ? a.slug === (b as { slug: string }).slug

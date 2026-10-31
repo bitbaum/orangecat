@@ -22,6 +22,7 @@ export function routerPrompt(members: readonly RoomMember[]): string {
     'Members:',
     roster,
     `Answer with the handles of the one or two members (never more than ${ROUTER_MAX_PICKS}) best placed to answer, one per line, nothing else.`,
+    'When the message has parts that belong to different members\u2019 jobs, name each of those members, the one with the larger part first, so nobody answers in another\u2019s place.',
     'A greeting or a message to the whole group: answer with the first member only.',
   ].join('\n');
 }
@@ -57,7 +58,7 @@ export function continuationPrompt(members: readonly RoomMember[]): string {
     'You watch a group chat between a person and these members:',
     roster,
     "The person's latest request and the latest lines follow. Decide whether another member should speak next, without being asked by name.",
-    'Answer with exactly one handle when: the person asked the members to discuss, compare, challenge or agree on something and they have not finished; or the last line asked a member something; or the last line disagreed with another member who has not answered.',
+    'Answer with exactly one handle when: the person asked the members to discuss, compare, challenge or agree on something and they have not finished; or the last line asked a member something; or the last line disagreed with another member who has not answered; or part of what the person asked is another member\u2019s job and that member has not spoken yet.',
     'Otherwise answer "done". One word, nothing else. Never name the member who just spoke.',
   ].join('\n');
 }

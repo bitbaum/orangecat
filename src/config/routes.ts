@@ -462,6 +462,8 @@ export const ROUTES = {
     VIEW: (id: string) => `${ENTITY_REGISTRY['ai_assistant'].publicBasePath}/${id}`,
     /** The talk home: every companion, group chat and fleet bot in one list, and the open chat beside it. */
     TALK: `${ENTITY_REGISTRY['ai_assistant'].publicBasePath}/talk`,
+    /** The Cat, as the first row of the bots list. */
+    TALK_CAT: `${ENTITY_REGISTRY['ai_assistant'].publicBasePath}/talk?with=cat`,
     TALK_WITH: (id: string) =>
       `${ENTITY_REGISTRY['ai_assistant'].publicBasePath}/talk?with=${encodeURIComponent(id)}`,
     TALK_ROOM: (roomId: string) =>
