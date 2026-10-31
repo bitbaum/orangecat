@@ -398,7 +398,7 @@ Explain this to the user in plain language: which provider is healthy, degraded,
         onToolCall?.({ id: toolCall.id, name: toolName, status: 'no_results' });
       }
     } catch (err) {
-      searchContent = 'Search failed. Please try a different query.';
+      searchContent = 'Search is temporarily unavailable. Please retry the request.';
       onToolCall?.({
         id: toolCall.id,
         name: toolName,
