@@ -5,6 +5,7 @@
 ```bash
 cd mcp-servers
 npm install
+npm run smoke   # starts every server and checks it answers MCP over stdio
 ```
 
 ## 2. GitHub Server

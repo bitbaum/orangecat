@@ -1,17 +1,10 @@
 #!/usr/bin/env node
-/* eslint-disable @typescript-eslint/no-require-imports -- plain CommonJS node
-   script (mcp-servers/ has its own package.json without "type":"module");
-   lint-staged applies the app's TS rules here, where require() is correct. */
-
-const { Server } = require('@modelcontextprotocol/sdk/server/index.js');
-const { StdioServerTransport } = require('@modelcontextprotocol/sdk/server/stdio.js');
-const {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-} = require('@modelcontextprotocol/sdk/types.js');
-const { spawn } = require('child_process');
-const path = require('path');
-const fs = require('fs');
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
+import { spawn } from 'child_process';
+import path from 'path';
+import fs from 'fs';
 
 function resolveCwd(cwd) {
   const root = process.cwd();
@@ -109,7 +102,14 @@ class JestServer {
             const r = await run(this.vitest, args, { cwd });
             return {
               content: [
-                { type: 'json', json: { code: r.code, stdout: r.stdout, stderr: r.stderr } },
+                {
+                  type: 'text',
+                  text: JSON.stringify(
+                    { code: r.code, stdout: r.stdout, stderr: r.stderr },
+                    null,
+                    2
+                  ),
+                },
               ],
             };
           }
@@ -121,7 +121,14 @@ class JestServer {
             const r = await run(this.vitest, args, { cwd });
             return {
               content: [
-                { type: 'json', json: { code: r.code, stdout: r.stdout, stderr: r.stderr } },
+                {
+                  type: 'text',
+                  text: JSON.stringify(
+                    { code: r.code, stdout: r.stdout, stderr: r.stderr },
+                    null,
+                    2
+                  ),
+                },
               ],
             };
           }
