@@ -3,6 +3,7 @@ import {
   continuationPrompt,
   parseContinuation,
   parseRouterPick,
+  routerPrompt,
 } from '@/services/companions/rooms/router';
 import type { RoomMember } from '@/services/companions/rooms/types';
 
@@ -48,5 +49,24 @@ describe('parseRouterPick', () => {
     expect(parseRouterPick('causius\n@Diplodoctor\ncausius\nloki', members).map(m => m.id)).toEqual(
       ['c', 'd']
     );
+  });
+
+  it('reads a verdict per member: yes picks, no skips, in the order written', () => {
+    expect(parseRouterPick('Causius: yes\nDiplodoctor: yes', members).map(m => m.id)).toEqual([
+      'c',
+      'd',
+    ]);
+    expect(parseRouterPick('Diplodoctor: no\nCausius: yes', members).map(m => m.id)).toEqual(['c']);
+    expect(parseRouterPick('- diplodoctor: No.\n- causius: no', members)).toEqual([]);
+    expect(
+      parseRouterPick('Diplodoctor: yes, the cold\nLoki: yes', members).map(m => m.id)
+    ).toEqual(['d']);
+  });
+
+  it('asks for a verdict per member, by name', () => {
+    const prompt = routerPrompt(members);
+    expect(prompt).toContain('Diplodoctor: yes or no');
+    expect(prompt).toContain('Causius: yes or no');
+    expect(prompt).toContain('nobody answers in another’s place');
   });
 });
