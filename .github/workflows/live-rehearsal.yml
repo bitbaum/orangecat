@@ -1,0 +1,43 @@
+name: Live rehearsal
+
+# The five bot demos against the live site, as a brand-new person. Started
+# by a person, never on a schedule: it spends a fresh account's free turns,
+# and a free-tier key is spent only when someone asks (fleet rule 2026-09-25).
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: The site to rehearse against
+        default: https://orangecat.ch
+        required: true
+
+concurrency:
+  group: live-rehearsal
+  cancel-in-progress: false
+
+jobs:
+  rehearse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: Run the five demos as a new person
+        env:
+          E2E_BASE_URL: ${{ inputs.base_url }}
+        run: pnpm exec playwright test tests/e2e/bots-rehearsal.live.spec.ts --project=chromium --reporter=line
+      - name: Keep the screenshots and the report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-rehearsal
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 14
