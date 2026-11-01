@@ -115,12 +115,41 @@ side of this standard: it exposes `/api/mcp` to AI apps. This is a package
 decision (fleet rule: packages first), not an app feature, so it is recorded
 here and built there.
 
+**D9. Hands: a bot proposes, the person taps (2026-11-01).** A companion
+answers on any model, with or without tool calling, so it does not call
+tools: it proposes. The owner's own companion is told what OrangeCat can do
+for them (`services/companions/hands.ts`: the launch set, an event, a
+project, a product, a service, a wishlist, a hand-off to Loki; nothing that
+moves money, nothing high-risk) and ends an answer with one fenced block
+naming the action and its parameters. The server takes the block off the
+words, validates the parameters against the registry, asks the Cat's
+permission service, and writes the Cat's own consent row
+(`hands-server.ts`); the chat shows the Cat's "Do it?" card, and the tap
+runs the Cat's executor. A bot can set nothing in motion that the Cat
+could not, a standing grant given here holds for the Cat too, and nothing
+exists until the tap, so a bot never says a thing is done. Only the owner,
+only in the bot's own chat, never in a group. The boundary test that keeps
+companion code out of the Cat's mind now names what stays forbidden (the
+executor, the loop, the tools, the handlers) and lets the consent plumbing
+through, for the same reason the credits ledger was never on its list.
+
 **D7. Routines and "always on".** A bot that runs on a timer spends a model
 call with nobody asking. The fleet's standing rule (2026-09-25) is that a
 free-tier key is spent only when a person deliberately asks. Routines need a
 budget a person has chosen to spend (their own key, or paid credits) before
 they are a feature; the room engine runs unchanged under a scheduler once
 that exists.
+
+**D6 and D7, decided (2026-11-01).** Both stay out of the app and go
+through the packages. Connectors: `@bitbaum/ai-kit` gains the MCP client
+and a register of servers; a bot's hands (D9) then gain a tool the way they
+gained an action, behind the same "Do it?" and per-tool toggles; nothing is
+pasted into OrangeCat as a 150-card catalogue. Routines: a scheduled bot
+turn spends only a budget the person chose (their own key, or paid
+credits), never the free chain, and its result is a message in the list
+like any other; the room engine runs unchanged under the scheduler. The
+order is hands first (shipped), then connectors, then routines, because a
+routine without hands has nothing to do but talk.
 
 **D8. Voice calls.** chatkit's composer dictates and its answers can be read
 aloud; a full-screen call with a chosen voice and speed is a chatkit feature

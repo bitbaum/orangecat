@@ -12,6 +12,8 @@ export interface CompanionPromptParts {
   definition: string | null | undefined;
   /** Memories recalled for this (companion, person) pair, most relevant first. */
   memories: string[];
+  /** What the companion may set in motion for its owner (hands.ts), if anything. */
+  hands?: string;
 }
 
 /**
@@ -21,19 +23,22 @@ export interface CompanionPromptParts {
 export function buildCompanionSystemPrompt({
   definition,
   memories,
+  hands,
 }: CompanionPromptParts): string | undefined {
   const base = definition?.trim() ?? '';
   const facts = memories.map(m => m.trim()).filter(Boolean);
-  if (!base && facts.length === 0) {
-    return undefined;
+  const parts: string[] = base ? [base] : [];
+  if (facts.length > 0) {
+    parts.push(
+      [
+        MEMORY_SECTION_HEADING,
+        'Use these naturally when they matter; never recite them as a list, and never claim to remember something that is not here.',
+        ...facts.map(f => `- ${f}`),
+      ].join('\n')
+    );
   }
-  if (facts.length === 0) {
-    return base;
+  if (hands?.trim()) {
+    parts.push(hands.trim());
   }
-  const section = [
-    MEMORY_SECTION_HEADING,
-    'Use these naturally when they matter; never recite them as a list, and never claim to remember something that is not here.',
-    ...facts.map(f => `- ${f}`),
-  ].join('\n');
-  return base ? `${base}\n\n${section}` : section;
+  return parts.length > 0 ? parts.join('\n\n') : undefined;
 }

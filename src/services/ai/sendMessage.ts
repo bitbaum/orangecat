@@ -26,6 +26,7 @@ import type { SendMessageResult, SendMessageError } from './sendMessage-types';
 import { recallCompanionMemories, extractCompanionMemories } from '@/services/companions/memory';
 import { buildCompanionSystemPrompt } from '@/services/companions/system-prompt';
 import { adoptJob, isJobAnswer } from '@/services/companions/born';
+import { handsFor, proposeFromReply } from '@/services/companions/hands-server';
 import {
   verifyConversation,
   fetchAssistant,
@@ -135,9 +136,13 @@ export async function sendAiMessage(
   //     this companion remembers about THIS person — nothing else.
   const memoryKey = { assistantId, userId };
   const recalled = await recallCompanionMemories(supabase, memoryKey, content);
+  // Hands: the owner's own companion may propose what OrangeCat can do for
+  // them (hands.ts); anyone else's companion, or a stranger's chat, cannot.
+  const hands = assistant.user_id === userId ? await handsFor(supabase, userId) : null;
   const systemPrompt = buildCompanionSystemPrompt({
     definition: assistant.system_prompt,
     memories: recalled.map(m => m.content),
+    hands: hands?.section,
   });
   const aiResult = await generateReply({
     hasByok,
@@ -157,7 +162,14 @@ export async function sendAiMessage(
       .eq('id', (userMessage as { id: string }).id);
     return aiResult.error;
   }
-  const aiResponse = aiResult.response;
+  // A proposal rides the end of the reply as a fence; it comes off before
+  // the words are stored, spoken or remembered, and becomes a pending action.
+  const proposed = hands
+    ? await proposeFromReply(supabase, userId, hands, aiResult.response.content, convId)
+    : null;
+  const aiResponse = proposed
+    ? { ...aiResult.response, content: proposed.text }
+    : aiResult.response;
 
   // 11. Store AI response
   const apiCostBtc = aiResponse.costBtc;
@@ -221,6 +233,7 @@ export async function sendAiMessage(
       is_free_model: aiResponse.isFreeModel,
       used_byok: hasByok,
     },
+    ...(proposed?.pendingAction ? { pendingAction: proposed.pendingAction } : {}),
     usage: {
       inputTokens: aiResponse.inputTokens,
       outputTokens: aiResponse.outputTokens,

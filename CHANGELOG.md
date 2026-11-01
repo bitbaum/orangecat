@@ -9,6 +9,10 @@ reads, and [orangecat.ch/changelog](https://orangecat.ch/changelog) renders
 it from there. One `## YYYY-MM-DD` heading per day; bullets under it travel
 to the map, sub-bullets stay here for the human reader.
 
+## 2026-11-01
+
+- **Your own bots have hands.** Ask a bot you made to set something up that OrangeCat can do (an event, a project, a product, a service, a wishlist, or handing a thing to Loki to build) and it answers with what it will do and a “Do it?” card, the Cat’s own. Nothing exists until you tap; a bot never says a thing is done. The same permission check, the same consent row and the same standing grant as the Cat’s actions, so a bot can set nothing in motion that the Cat could not. Only your own bots, in their own chat, never in a group.
+
 ## 2026-10-31
 
 - **Companions are now Bots, and the Cat is the first row.** The list at `/companions/talk` is called Bots, in the sidebar and on the page, and the Cat sits at the top of it: the one bot here that acts on OrangeCat (your things, your approvals), the same chat as its own page, so wanting something done never means knowing a second page. “Bot” is the word a messaging app already taught you; “companion” said friend where we meant worker.
