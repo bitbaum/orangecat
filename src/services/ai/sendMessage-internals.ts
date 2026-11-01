@@ -19,6 +19,7 @@ import { createAutoRouter } from '@/services/ai/auto-router';
 import { completeOnPlatform, PlatformChainExhausted } from '@/services/ai/platform-providers';
 import type { AiService } from './types';
 import type { AssistantRecord, SendMessageError } from './sendMessage-types';
+import type { Proposal } from '@/services/companions/hands';
 
 export async function verifyConversation(
   supabase: SupabaseClient,
@@ -296,7 +297,9 @@ export async function storeAssistantMessage(
   assistant: AssistantRecord,
   creatorMarkupBtc: number,
   apiCostBtc: number,
-  hasByok: boolean
+  hasByok: boolean,
+  /** The proposal the reply ended with, when one was queued: kept so the next turn's history shows it. */
+  proposal: Proposal | null = null
 ): Promise<{ message: Record<string, unknown> } | { error: SendMessageError }> {
   const { data, error } = await fromTable(supabase, DATABASE_TABLES.AI_MESSAGES)
     .insert({
@@ -314,6 +317,7 @@ export async function storeAssistantMessage(
         is_free_model: aiResponse.isFreeModel,
         input_tokens: aiResponse.inputTokens,
         output_tokens: aiResponse.outputTokens,
+        ...(proposal ? { proposal } : {}),
       },
     })
     .select()

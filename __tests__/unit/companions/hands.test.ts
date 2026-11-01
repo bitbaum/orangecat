@@ -7,6 +7,8 @@ import {
   extractProposal,
   handsActions,
   handsSection,
+  proposalFromMetadata,
+  withProposal,
 } from '@/services/companions/hands';
 
 /**
@@ -85,5 +87,29 @@ describe('extractProposal', () => {
       extractProposal('x\n```propose\n{"action": "send_to_loki", "parameters": [1]}\n```').proposal
         ?.parameters
     ).toEqual({});
+  });
+});
+
+describe('a proposal in the history', () => {
+  const proposal = { action: 'ask_loki', parameters: { question: 'which sites are live' } };
+
+  it('is written back the way the model wrote it, and reads back the same', () => {
+    const shown = withProposal('I can ask Loki for you.  \n', proposal);
+    expect(shown).toBe(
+      'I can ask Loki for you.\n\n```propose\n{"action":"ask_loki","parameters":{"question":"which sites are live"}}\n```'
+    );
+    expect(extractProposal(shown)).toEqual({ text: 'I can ask Loki for you.', proposal });
+  });
+
+  it('comes out of stored metadata only when well-formed', () => {
+    expect(proposalFromMetadata({ used_byok: false, proposal })).toEqual(proposal);
+    expect(proposalFromMetadata({ proposal: { action: 'ask_loki' } })).toEqual({
+      action: 'ask_loki',
+      parameters: {},
+    });
+    expect(proposalFromMetadata({ proposal: { parameters: {} } })).toBeNull();
+    expect(proposalFromMetadata({ proposal: 'ask_loki' })).toBeNull();
+    expect(proposalFromMetadata(null)).toBeNull();
+    expect(proposalFromMetadata({ used_byok: true })).toBeNull();
   });
 });

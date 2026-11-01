@@ -39,6 +39,43 @@ export interface Proposal {
   parameters: Record<string, unknown>;
 }
 
+/**
+ * The words with the proposal written back on the end, the way the model
+ * wrote them: what the model is shown of its own earlier turns.
+ *
+ * The fence comes off before a reply is stored, so the chat shows words and
+ * a card. Shown its stored turns as plain sentences, the model copies them:
+ * live on 2026-11-01 the second "Ask Loki" in a thread came back as "I can
+ * ask Loki for you." with no fence, no card, and nothing for the person to
+ * tap. A proposal in the history must look like a proposal.
+ */
+export function withProposal(text: string, proposal: Proposal): string {
+  const body = JSON.stringify({ action: proposal.action, parameters: proposal.parameters });
+  return `${text.replace(/\s+$/, '')}\n\n\`\`\`${PROPOSAL_FENCE}\n${body}\n\`\`\``;
+}
+
+/** The proposal a stored message carries in its metadata, if a well-formed one. */
+export function proposalFromMetadata(metadata: unknown): Proposal | null {
+  if (!metadata || typeof metadata !== 'object') {
+    return null;
+  }
+  const raw = (metadata as { proposal?: unknown }).proposal;
+  if (!raw || typeof raw !== 'object') {
+    return null;
+  }
+  const { action, parameters } = raw as { action?: unknown; parameters?: unknown };
+  if (typeof action !== 'string' || !action.trim()) {
+    return null;
+  }
+  return {
+    action,
+    parameters:
+      parameters && typeof parameters === 'object' && !Array.isArray(parameters)
+        ? (parameters as Record<string, unknown>)
+        : {},
+  };
+}
+
 /** The launch set, as actions, in order; an unknown or disabled id is skipped. */
 export function handsActions(ids: readonly string[] = COMPANION_HANDS): CatAction[] {
   return ids.map(id => CAT_ACTIONS[id]).filter((a): a is CatAction => Boolean(a?.enabled));
