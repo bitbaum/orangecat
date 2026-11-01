@@ -90,7 +90,13 @@ export function CompanionChat({
         aboveComposer={
           <>
             {talk.pendingAction && (
-              <DoItCard action={talk.pendingAction} onDone={talk.clearPendingAction} />
+              // Keyed by the action: a second card in the same thread starts
+              // clean instead of inheriting the first one's failure line.
+              <DoItCard
+                key={talk.pendingAction.id}
+                action={talk.pendingAction}
+                onDone={talk.clearPendingAction}
+              />
             )}
             {talk.creditsNeeded && (
               <div className="mb-2 rounded-2xl border border-subtle bg-surface-raised p-3 text-sm">
