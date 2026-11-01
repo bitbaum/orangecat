@@ -26,6 +26,7 @@ import type { SendMessageResult, SendMessageError } from './sendMessage-types';
 import { recallCompanionMemories, extractCompanionMemories } from '@/services/companions/memory';
 import { buildCompanionSystemPrompt } from '@/services/companions/system-prompt';
 import { adoptJob, isJobAnswer } from '@/services/companions/born';
+import { proposalFromMetadata, withProposal } from '@/services/companions/hands';
 import { handsFor, proposeFromReply } from '@/services/companions/hands-server';
 import {
   verifyConversation,
@@ -35,6 +36,8 @@ import {
   storeUserMessage,
   storeAssistantMessage,
 } from './sendMessage-internals';
+
+type HistoryRow = { role: string; content: string; metadata?: unknown };
 
 export type { SendMessageResult, SendMessageError } from './sendMessage-types';
 
@@ -80,14 +83,22 @@ export async function sendAiMessage(
   // 5. Get conversation history
   const { data: historyData } = await supabase
     .from(DATABASE_TABLES.AI_MESSAGES)
-    .select('role, content')
+    .select('role, content, metadata')
     .eq('conversation_id', convId)
     // Legacy threads stored the prompt as a system row; the prompt is composed
     // per turn now (with memory), so a stored copy would only go stale.
     .neq('role', 'system')
     .order('created_at', { ascending: true })
     .limit(20);
-  const history = (historyData || []) as { role: string; content: string }[];
+  // A stored turn is the words the person saw; the model is shown the fence
+  // it wrote too, or it learns from its own history to stop proposing.
+  const history = ((historyData || []) as HistoryRow[]).map(row => {
+    const proposal = row.role === 'assistant' ? proposalFromMetadata(row.metadata) : null;
+    return {
+      role: row.role,
+      content: proposal ? withProposal(row.content, proposal) : row.content,
+    };
+  });
 
   // 6. Free message check
   const freeMessagesPerDay = assistant.free_messages_per_day || 0;
@@ -181,7 +192,8 @@ export async function sendAiMessage(
     assistant,
     creatorCharge,
     apiCostBtc,
-    hasByok
+    hasByok,
+    proposed?.proposal ?? null
   );
   if ('error' in aiMsgResult) {
     return aiMsgResult.error;

@@ -17,7 +17,7 @@ import { canGrantOnConfirm, type PendingAction } from '@/services/cat/action-typ
 import { createPendingAction } from '@/services/cat/pending-actions';
 import { CatPermissionService } from '@/services/cat/permission-service';
 import { logger } from '@/utils/logger';
-import { extractProposal, handsActions, handsSection } from './hands';
+import { extractProposal, handsActions, handsSection, type Proposal } from './hands';
 
 export interface Hands {
   /** The prompt section, or undefined when the person has no hands. */
@@ -50,7 +50,9 @@ export async function handsFor(supabase: AnySupabaseClient, userId: string): Pro
 }
 
 /**
- * The reply with its proposal taken off, and the pending action it became.
+ * The reply with its proposal taken off, and the pending action it became,
+ * with the proposal as queued (validated parameters) so the stored turn can
+ * show the model its own fence next time (hands.ts, withProposal).
  * A proposal for an action the person was not offered, or with parameters
  * the registry refuses, is dropped: the words stay, nothing is queued, and
  * the reason is logged so the prompt can be improved.
@@ -61,10 +63,10 @@ export async function proposeFromReply(
   hands: Hands,
   reply: string,
   conversationId: string
-): Promise<{ text: string; pendingAction: PendingAction | null }> {
+): Promise<{ text: string; pendingAction: PendingAction | null; proposal: Proposal | null }> {
   const { text, proposal } = extractProposal(reply);
   if (!proposal) {
-    return { text, pendingAction: null };
+    return { text, pendingAction: null, proposal: null };
   }
   const offered = hands.allowed.find(a => a.action.id === proposal.action);
   if (!offered) {
@@ -73,7 +75,7 @@ export async function proposeFromReply(
       { actionId: proposal.action },
       'CompanionHands'
     );
-    return { text, pendingAction: null };
+    return { text, pendingAction: null, proposal: null };
   }
   const validation = validateActionParameters(proposal.action, proposal.parameters);
   if (!validation.ok) {
@@ -82,19 +84,17 @@ export async function proposeFromReply(
       { actionId: proposal.action, error: validation.error },
       'CompanionHands'
     );
-    return { text, pendingAction: null };
+    return { text, pendingAction: null, proposal: null };
   }
+  const parameters = validation.data ?? proposal.parameters;
   try {
-    const pendingAction = await createPendingAction(
-      supabase,
-      userId,
-      offered.action,
-      validation.data ?? proposal.parameters,
-      { conversationId, grantOnConfirm: offered.grantOnConfirm }
-    );
-    return { text, pendingAction };
+    const pendingAction = await createPendingAction(supabase, userId, offered.action, parameters, {
+      conversationId,
+      grantOnConfirm: offered.grantOnConfirm,
+    });
+    return { text, pendingAction, proposal: { action: proposal.action, parameters } };
   } catch (error) {
     logger.error('companion proposal could not be queued', error, 'CompanionHands');
-    return { text, pendingAction: null };
+    return { text, pendingAction: null, proposal: null };
   }
 }
