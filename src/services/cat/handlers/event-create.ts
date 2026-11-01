@@ -9,6 +9,7 @@
  */
 
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
+import { ROUTES } from '@/config/routes';
 import { STATUS } from '@/config/database-constants';
 import { EVENT_TYPES } from '@/config/events';
 import { MAX_VIBE_LENGTH, normalizeGenres, parseCrewRoles } from '@/config/event-crew';
@@ -171,6 +172,8 @@ export const createEvent: ActionHandler = async (supabase, userId, actorId, para
 
   return {
     success: true,
-    data: { ...data, roles, displayMessage: lines.join('\n') },
+    // The page, so the outcome line can offer Open (a bot's "Do it?" card
+    // showed "Event created" with nowhere to go, 2026-11-01).
+    data: { ...data, roles, displayMessage: lines.join('\n'), url: ROUTES.EVENTS.VIEW(data.id) },
   };
 };

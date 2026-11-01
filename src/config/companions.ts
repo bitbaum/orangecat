@@ -103,6 +103,21 @@ export const COMPANION_COPY = {
       job: 'money, pages and your account',
       preview: 'Say what you want done on OrangeCat',
     },
+    /** A bot that writes first: the one row in its details. */
+    routine: {
+      row: 'Writes first, every day',
+      set: (time: string) => `Writes first every day at ${time}`,
+      title: 'Every day at',
+      prompt: 'What it is asked',
+      defaultPrompt: 'Good morning. What should I know or do today?',
+      save: 'Save',
+      remove: 'Stop',
+      saving: 'Saving…',
+      needsKey: 'Runs on your own key, which you have not added yet.',
+      addKey: 'Add your key',
+      skipped: 'The last run was skipped: it needs your own key.',
+      failed: 'That did not save. Try again.',
+    },
     /** The "Do it?" card under a bot's answer, and what follows the tap. */
     hands: {
       done: 'Done.',

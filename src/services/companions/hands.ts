@@ -29,6 +29,7 @@ export const COMPANION_HANDS: readonly string[] = [
   'create_service',
   'create_wishlist',
   'send_to_loki',
+  'ask_loki',
 ];
 
 export const HANDS_SECTION_HEADING = '## What you can set in motion';
@@ -63,9 +64,9 @@ export function handsSection(actions: readonly CatAction[]): string | undefined 
   });
   return [
     HANDS_SECTION_HEADING,
-    'OrangeCat can do these for the person, and you may propose one when they ask you to make, create, book or send such a thing:',
+    'OrangeCat can do these for the person, and you may propose one when they ask you to make, create, book or send such a thing, or to ask Loki (the agent that builds and runs their projects):',
     ...lines,
-    `To propose, answer in one or two sentences saying what you will set up, then end with exactly one block:\n\`\`\`${PROPOSAL_FENCE}\n{"action": "<id>", "parameters": {...}}\n\`\`\``,
+    `To propose, first write one sentence that names what you will set up, with its main details (never only "Sure"), then end with exactly one block:\n\`\`\`${PROPOSAL_FENCE}\n{"action": "<id>", "parameters": {...}}\n\`\`\``,
     'The person taps to approve it; until then nothing exists, so never say it is done, created or sent. Propose only what they asked for, with the details they gave; ask for a missing required detail instead of inventing one. Never propose anything in a group chat.',
   ].join('\n');
 }

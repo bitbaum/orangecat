@@ -225,7 +225,15 @@ describe('selection is worth doing', () => {
     // +220 for writing routes: the article editor must remain discoverable even
     // when section selection misses a writing intent. These are capabilities,
     // not entity proposals; the paths come from ROUTES.
-    expect(remaining).toBeLessThanOrEqual(5_250);
+    //
+    // Raised 5,250 -> 5,440 for `ask_loki`, the first connector (ADR-0013
+    // D6): a question to the person's own Loki, answered as them, read-only.
+    // ~190 characters: a one-clause description, one parameter name, and the
+    // "NOT send_task_to_loki" the disambiguation test requires, because both
+    // verbs say "Loki" and only one of them dispatches agents. The rail, the
+    // linked-account check and the read-only turn are code on both sides
+    // (services/loki/ask.ts; Loki's /api/orangecat/ask), not prose here.
+    expect(remaining).toBeLessThanOrEqual(5_440);
   });
 
   it('selects by default now, and still sends everything when told to', async () => {

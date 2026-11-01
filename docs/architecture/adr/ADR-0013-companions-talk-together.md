@@ -1,7 +1,7 @@
 # ADR-0013: Companions Talk Together
 
 Date: 2026-10-30
-Status: Accepted (D1–D5 shipped; D6–D8 on the roadmap)
+Status: Accepted (D1–D7 and D9 shipped; D8 on the roadmap)
 
 ## Context
 
@@ -150,6 +150,30 @@ credits), never the free chain, and its result is a message in the list
 like any other; the room engine runs unchanged under the scheduler. The
 order is hands first (shipped), then connectors, then routines, because a
 routine without hands has nothing to do but talk.
+
+**D6, first connector shipped (2026-11-01).** `@bitbaum/ai-kit/mcp` (1.22.0)
+is the client any product's bots use to reach a vendor's MCP server; it is
+in the package, not here. The first connector a bot reaches is not a vendor
+but the fleet's own execution agent, and it does not go through MCP: Loki's
+MCP door is minted for a person by OAuth, and a bot's server-side turn
+holds no such token. It goes over the rail OrangeCat already has with Loki
+(the signed HMAC body, actor → linked Loki user): Loki `POST
+/api/orangecat/ask` runs a read-only turn as the person, and OrangeCat's
+`ask_loki` action (category communication, low risk, confirmed, in the
+hands launch set) relays the question and shows Loki's own sentence as the
+outcome. Read-only is the design, not a limitation: a relayed question
+cannot dispatch, approve or spend; `send_task_to_loki`, confirmed as high
+risk, remains the one door that does. The MCP client is reserved for
+vendor connectors, whose consent is OAuth and whose tokens the person
+grants on a screen of OrangeCat's.
+
+**D7, shipped (2026-11-01).** A routine is one per person per bot
+(`companion_routines`): a time in their zone and a prompt. A 15-minute
+timer runs the due ones through the same `sendAiMessage` as a typed turn,
+on the person's own OpenRouter key only; without a key the routine is kept,
+shown as waiting, and skipped with the reason. The cron route is a
+registered person-asked timer in the no-background-ai gate, with a check
+that the runner still carries the own-key skip.
 
 **D8. Voice calls.** chatkit's composer dictates and its answers can be read
 aloud; a full-screen call with a chosen voice and speed is a chatkit feature

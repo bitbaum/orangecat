@@ -51,6 +51,16 @@ const CONFUSABLE: ConfusablePair[] = [
     consequence:
       'the model creates an empty savings goal and the user still cannot receive a single payment',
   },
+  {
+    // "ask Loki whether the shop is live" and "send this to Loki" both name
+    // Loki. One is a read-only question answered as the person; the other
+    // dispatches agents into their repositories and is confirmed as high
+    // risk. Picking the dispatch for a question sets agents to work on a
+    // sentence that was never a task.
+    action: 'ask_loki',
+    shadowedBy: 'send_task_to_loki',
+    consequence: "a question becomes a coding task dispatched to the person's projects",
+  },
 ];
 
 describe('confusable Cat verbs stay disambiguated', () => {
