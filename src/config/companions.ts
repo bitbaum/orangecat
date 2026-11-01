@@ -121,6 +121,7 @@ export const COMPANION_COPY = {
     /** The "Do it?" card under a bot's answer, and what follows the tap. */
     hands: {
       done: 'Done.',
+      failed: 'That did not go through.',
       open: 'Open',
       dismiss: 'Dismiss',
     },

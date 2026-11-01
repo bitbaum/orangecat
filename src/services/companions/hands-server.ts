@@ -95,7 +95,13 @@ export async function proposeFromReply(
       conversationId,
       grantOnConfirm: offered.grantOnConfirm,
     });
-    return { text, pendingAction, proposal: { action: proposal.action, parameters } };
+    // A model that wrote only the block leaves no words; the card's own
+    // description stands in, so the bubble above it is never empty.
+    return {
+      text: text || pendingAction.description,
+      pendingAction,
+      proposal: { action: proposal.action, parameters },
+    };
   } catch (error) {
     logger.error('companion proposal could not be queued', error, 'CompanionHands');
     return { text, pendingAction: null, proposal: null };

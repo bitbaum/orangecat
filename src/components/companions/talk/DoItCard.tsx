@@ -50,9 +50,18 @@ export function DoItCard({ action, onDone }: { action: PendingAction; onDone: ()
       <PendingActionsCard
         action={action}
         onConfirm={async id => {
-          const result = await confirmAction(id);
-          setOutcome({ text: result.message ?? copy.done, url: result.url });
-          return result;
+          // A card that ran and failed is finished too: the reason becomes the
+          // outcome line. Left as a card, its Confirm would run an action that
+          // is no longer pending (seen live 2026-11-01, the Loki ask of an
+          // account not linked to Loki).
+          try {
+            const result = await confirmAction(id);
+            setOutcome({ text: result.message ?? copy.done, url: result.url });
+            return result;
+          } catch (error) {
+            setOutcome({ text: error instanceof Error ? error.message : copy.failed });
+            return {};
+          }
         }}
         onReject={async id => {
           await rejectAction(id);
