@@ -6,6 +6,7 @@
 
 import { useCallback } from 'react';
 import { API_ROUTES } from '@/config/api-routes';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 export interface PendingAction {
   id: string;
@@ -37,7 +38,7 @@ export function usePendingActions() {
       });
       const json = await res.json();
       if (!res.ok) {
-        throw new Error(json?.error ?? `Failed to confirm action (${res.status})`);
+        throw new Error(apiErrorMessage(json, `Failed to confirm action (${res.status})`));
       }
       // The route returns the executor's ActionResult; a handler's message and
       // link live one level down, on `result.data`. Reading the top level only
@@ -66,7 +67,7 @@ export function usePendingActions() {
       });
       const json = await res.json();
       if (!res.ok) {
-        throw new Error(json?.error ?? `Failed to reject action (${res.status})`);
+        throw new Error(apiErrorMessage(json, `Failed to reject action (${res.status})`));
       }
       return json;
     },
