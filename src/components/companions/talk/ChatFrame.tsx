@@ -20,14 +20,10 @@ import {
 } from '@bitbaum/chatkit/react';
 import '@bitbaum/chatkit/styles.css';
 import { ChatStarters } from '@bitbaum/chatkit/react';
-import { API_ROUTES } from '@/config/api-routes';
 import { COMPANION_COPY } from '@/config/companions';
-import { transcribeWithRoute } from '@/hooks/useDictation';
+import { CHAT_VOICE } from '@/hooks/useDictation';
 import { ATTACHMENT_UNSUPPORTED_COPY } from '@/components/ai-chat/ModernChatPanel/attachments';
 import { COMPANION_ATTACH } from './attachments';
-
-/** One transcription route for every microphone in the app; see useDictation. */
-const transcribe = transcribeWithRoute(API_ROUTES.CAT.TRANSCRIBE);
 
 export function ChatFrame({
   title,
@@ -106,7 +102,7 @@ export function ChatFrame({
             placeholder={placeholder}
             sending={sending}
             onStop={onStop}
-            voice={{ transcribe }}
+            voice={CHAT_VOICE}
             attach={attach}
             attachmentOnlyText={copy.attach.only}
             labels={{ attachNotes: { wrongType: () => ATTACHMENT_UNSUPPORTED_COPY } }}
