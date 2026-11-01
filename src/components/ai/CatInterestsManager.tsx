@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import Button from '@/components/ui/Button';
 import { logger } from '@/utils/logger';
 import { API_ROUTES } from '@/config/api-routes';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 interface Interest {
   id: string;
@@ -62,7 +63,7 @@ export function CatInterestsManager() {
       });
       const json = await res.json();
       if (!res.ok) {
-        toast.error(json?.error ?? 'Could not add that interest');
+        toast.error(apiErrorMessage(json, 'Could not add that interest'));
         return;
       }
       setDraft('');

@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import Button from '@/components/ui/Button';
 import { logger } from '@/utils/logger';
 import { API_ROUTES } from '@/config/api-routes';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 import { MEMORY_IMPORT_PROMPT } from '@/config/cat-memory-import';
 
 interface CatMemoryImportProps {
@@ -57,7 +58,7 @@ export function CatMemoryImport({ onImported }: CatMemoryImportProps) {
       });
       const json = await res.json().catch(() => null);
       if (!res.ok || !json?.success) {
-        throw new Error(json?.error ?? 'Import failed');
+        throw new Error(apiErrorMessage(json, 'Import failed'));
       }
       const {
         total = 0,
