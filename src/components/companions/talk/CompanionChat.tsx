@@ -17,6 +17,7 @@ import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { visibleReply } from '@/services/companions/memory-lines';
 import type { CompanionRow } from '@/services/companions/talk-home';
 import { useCompanionTalk } from '../useCompanionTalk';
+import { DoItCard } from './DoItCard';
 import { outgoing, shownUserTurn } from './attachments';
 import { ChatFrame } from './ChatFrame';
 import { Face } from './CompanionFace';
@@ -87,6 +88,9 @@ export function CompanionChat({
         }
         aboveComposer={
           <>
+            {talk.pendingAction && (
+              <DoItCard action={talk.pendingAction} onDone={talk.clearPendingAction} />
+            )}
             {talk.creditsNeeded && (
               <div className="mb-2 rounded-2xl border border-subtle bg-surface-raised p-3 text-sm">
                 <p className="mb-2 text-fg-primary">

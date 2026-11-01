@@ -14,7 +14,14 @@ import { dirname, join, resolve } from 'node:path';
  * from the companion entry points and fails on the first crossing.
  *
  * The Cat Credits ledger (services/cat/credits) is money plumbing shared by
- * the whole platform and is deliberately NOT on the list.
+ * the whole platform and is deliberately NOT on the list. Neither are the
+ * consent rows and the permission check (pending-actions, permission-service,
+ * action-types, action-schemas, action-descriptions, action-log): a bot's
+ * hands (companions/hands-server.ts) propose through them, which is how a
+ * companion can set nothing in motion that the Cat could not, and they carry
+ * no knowledge of a person beyond what they were asked to do. What stays
+ * forbidden is the Cat acting or thinking: the executor, the loop, the tools
+ * and the handlers.
  */
 
 const ROOTS = [
@@ -25,7 +32,7 @@ const ROOTS = [
 ];
 
 const FORBIDDEN =
-  /services\/cat\/(memory|economic-profile|offer-engine|interests|discovery|nudges|chat-orchestrator|chat-prepare|action-|tool-|exec-actions|prompt-suggestions|handlers\/)/;
+  /services\/cat\/(memory|economic-profile|offer-engine|interests|discovery|nudges|chat-orchestrator|chat-prepare|action-(?:executor|loop|as-tool)|tool-|exec-actions|prompt-suggestions|handlers\/)/;
 
 const IMPORT_SPECIFIER = /(?:from|import\()\s*['"]([^'"]+)['"]/g;
 

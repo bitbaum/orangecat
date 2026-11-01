@@ -1,3 +1,4 @@
+import type { PendingAction } from '@/services/cat/action-types';
 /**
  * Shared types for the AI assistant message-send pipeline (sendMessage.ts +
  * sendMessage-internals.ts). Kept in their own module so the entry point and the
@@ -26,6 +27,8 @@ export interface AssistantRecord {
 export interface SendMessageResult {
   userMessage: Record<string, unknown>;
   assistantMessage: Record<string, unknown>;
+  /** What the companion proposed to set in motion, waiting for the person's tap (hands.ts). */
+  pendingAction?: PendingAction;
   usage: {
     inputTokens: number;
     outputTokens: number;

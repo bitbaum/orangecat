@@ -12,6 +12,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { API_ROUTES } from '@/config/api-routes';
 import { logger } from '@/utils/logger';
+import type { PendingAction } from '@/components/ai-chat/usePendingActions';
 import type { ChatImage } from '@/services/cat/chat-images';
 
 export interface TalkMessage {
@@ -69,6 +70,8 @@ export function useCompanionTalk(assistantId: string) {
   const [creditsNeeded, setCreditsNeeded] = useState<CreditsNeeded | null>(null);
   /** The day's free messages are spent: the way forward is the person's own key. */
   const [limitReached, setLimitReached] = useState(false);
+  /** What the companion proposed to set in motion, waiting for the person's tap. */
+  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
 
   const loadThread = useCallback(
     async (threadId: string) => {
@@ -155,6 +158,7 @@ export function useCompanionTalk(assistantId: string) {
         const json = (await res.json()) as ApiEnvelope<{
           userMessage: TalkMessage;
           assistantMessage: TalkMessage;
+          pendingAction?: PendingAction;
         }>;
         if (res.status === 402) {
           const d = (json.error?.details ?? {}) as {
@@ -180,6 +184,9 @@ export function useCompanionTalk(assistantId: string) {
           json.data!.userMessage,
           json.data!.assistantMessage,
         ]);
+        if (json.data.pendingAction) {
+          setPendingAction(json.data.pendingAction);
+        }
         return true;
       } catch (err) {
         logger.error('Companion send failed', err, 'useCompanionTalk');
@@ -199,6 +206,7 @@ export function useCompanionTalk(assistantId: string) {
     setError(null);
     setCreditsNeeded(null);
     setLimitReached(false);
+    setPendingAction(null);
   }, []);
 
   return {
@@ -210,6 +218,9 @@ export function useCompanionTalk(assistantId: string) {
     error,
     creditsNeeded,
     limitReached,
+    pendingAction,
+    /** The card is answered or dismissed; the chat shows no card. */
+    clearPendingAction: () => setPendingAction(null),
     send,
     loadThread,
     startNewThread,

@@ -103,6 +103,12 @@ export const COMPANION_COPY = {
       job: 'money, pages and your account',
       preview: 'Say what you want done on OrangeCat',
     },
+    /** The "Do it?" card under a bot's answer, and what follows the tap. */
+    hands: {
+      done: 'Done.',
+      open: 'Open',
+      dismiss: 'Dismiss',
+    },
     companion: {
       placeholder: (name: string) => `Ask ${name}`,
       working: (name: string) => `${name} is thinking`,
