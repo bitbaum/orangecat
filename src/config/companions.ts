@@ -54,7 +54,13 @@ export const COMPANION_COPY = {
       body: 'The fleet\u2019s specialists, the Cat and your own bots, one list. Talk to any of them, or put a few in a group chat and set them on one thing together.',
     },
     fleetUnreachable: 'The fleet\u2019s bots are out of reach right now.',
-    fleetLine: (host: string) => `Answers from ${host}; nothing here is kept.`,
+    /**
+     * Under every fleet chat. It used to end "nothing here is kept" while the
+     * chat itself was saved in the browser (useFleetTalk), and the details
+     * sheet printed both lines together. One true line, one line long from a
+     * 360px phone up (measured in the page's own font).
+     */
+    fleetLine: (host: string) => `From ${host} \u00b7 saved on this device only`,
     groupLine: (n: number) => `${n} in this chat`,
     back: 'Back',
     details: 'Details',
@@ -96,7 +102,6 @@ export const COMPANION_COPY = {
     fleet: {
       placeholder: (name: string) => `Ask ${name}`,
       open: (name: string) => `Open ${name}`,
-      keptHere: 'This chat stays in this browser.',
       working: (name: string) => `${name} is thinking`,
     },
     cat: {
