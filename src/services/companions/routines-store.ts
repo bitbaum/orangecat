@@ -1,0 +1,163 @@
+/**
+ * A bot that writes first: the routine itself, and its rules.
+ *
+ * A routine is one line in a bot's details: every day at a time, in the
+ * person's zone, the bot is asked one thing in its own thread and the reply
+ * lands there like any other message, with a notification. One routine per
+ * bot per person. This module reads and writes the row and knows when the
+ * next run is; it reaches no model, so the API that sets a routine never
+ * does either. The runner (routines.ts) is the one place a turn is sent.
+ *
+ * The budget rule (fleet, 2026-09-25): a key nobody asked to spend is never
+ * spent on a timer. A routine runs only on the person's own key; without one
+ * the due run is skipped and the reason is kept on the row, so the details
+ * can say so and offer the way to lift it.
+ */
+
+import { DATABASE_TABLES } from '@/config/database-tables';
+import type { AnySupabaseClient } from '@/lib/supabase/types';
+import { fromTable } from '@/lib/supabase/untyped';
+import { isValidTimeZone, wallTimeToUtc } from '@/utils/timezone';
+
+export const ROUTINE_PROMPT_MAX = 500;
+
+export interface Routine {
+  id: string;
+  assistantId: string;
+  conversationId: string | null;
+  prompt: string;
+  timeLocal: string;
+  zone: string;
+  enabled: boolean;
+  nextRunAt: string;
+  lastRunAt: string | null;
+  skippedReason: string | null;
+}
+
+export type RoutineInput = { prompt: string; timeLocal: string; zone: string };
+
+/** "HH:MM", 24 hours. */
+export function isTimeLocal(value: unknown): value is string {
+  return typeof value === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
+}
+
+/**
+ * The next instant at which `timeLocal` in `zone` falls strictly after `now`:
+ * today's if it is still ahead, otherwise tomorrow's. Daylight-saving edges
+ * are the wall-time helper's.
+ */
+export function nextRunAt(now: Date, timeLocal: string, zone: string): string {
+  const dayOf = (d: Date) => {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: zone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(d);
+    return parts; // YYYY-MM-DD in the zone
+  };
+  for (let add = 0; add <= 2; add++) {
+    const probe = new Date(now.getTime() + add * 86_400_000);
+    const iso = wallTimeToUtc(`${dayOf(probe)}T${timeLocal}`, zone);
+    if (iso && new Date(iso).getTime() > now.getTime()) {
+      return iso;
+    }
+  }
+  // Unreachable for a valid zone and time; the day after is a safe floor.
+  return new Date(now.getTime() + 86_400_000).toISOString();
+}
+
+export interface RoutineRow {
+  id: string;
+  user_id: string;
+  assistant_id: string;
+  conversation_id: string | null;
+  prompt: string;
+  time_local: string;
+  zone: string;
+  enabled: boolean;
+  next_run_at: string;
+  last_run_at: string | null;
+  skipped_reason: string | null;
+}
+
+export function toRoutine(r: RoutineRow): Routine {
+  return {
+    id: r.id,
+    assistantId: r.assistant_id,
+    conversationId: r.conversation_id,
+    prompt: r.prompt,
+    timeLocal: r.time_local,
+    zone: r.zone,
+    enabled: r.enabled,
+    nextRunAt: r.next_run_at,
+    lastRunAt: r.last_run_at,
+    skippedReason: r.skipped_reason,
+  };
+}
+
+export async function getRoutine(
+  supabase: AnySupabaseClient,
+  userId: string,
+  assistantId: string
+): Promise<Routine | null> {
+  const { data } = await fromTable(supabase, DATABASE_TABLES.COMPANION_ROUTINES)
+    .select('*')
+    .eq('user_id', userId)
+    .eq('assistant_id', assistantId)
+    .maybeSingle();
+  return data ? toRoutine(data as RoutineRow) : null;
+}
+
+/** Set the bot's routine (one per bot per person); the next run is computed from now. */
+export async function upsertRoutine(
+  supabase: AnySupabaseClient,
+  userId: string,
+  assistantId: string,
+  input: RoutineInput,
+  now = new Date()
+): Promise<Routine> {
+  if (!isTimeLocal(input.timeLocal) || !isValidTimeZone(input.zone)) {
+    throw new Error('A routine needs a time of day and a zone');
+  }
+  const { data, error } = await fromTable(supabase, DATABASE_TABLES.COMPANION_ROUTINES)
+    .upsert(
+      {
+        user_id: userId,
+        assistant_id: assistantId,
+        prompt: input.prompt.trim().slice(0, ROUTINE_PROMPT_MAX),
+        time_local: input.timeLocal,
+        zone: input.zone,
+        enabled: true,
+        next_run_at: nextRunAt(now, input.timeLocal, input.zone),
+        skipped_reason: null,
+        updated_at: now.toISOString(),
+      },
+      { onConflict: 'user_id,assistant_id' }
+    )
+    .select('*')
+    .single();
+  if (error) {
+    throw error;
+  }
+  return toRoutine(data as RoutineRow);
+}
+
+export async function deleteRoutine(
+  supabase: AnySupabaseClient,
+  userId: string,
+  assistantId: string
+): Promise<void> {
+  const { error } = await fromTable(supabase, DATABASE_TABLES.COMPANION_ROUTINES)
+    .delete()
+    .eq('user_id', userId)
+    .eq('assistant_id', assistantId);
+  if (error) {
+    throw error;
+  }
+}
+
+/** The reason a due routine does not run, or null when it may. */
+export function skipReason(hasOwnKey: boolean): string | null {
+  return hasOwnKey ? null : 'needs_own_key';
+}

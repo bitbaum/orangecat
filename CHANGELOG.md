@@ -11,7 +11,8 @@ to the map, sub-bullets stay here for the human reader.
 
 ## 2026-11-01
 
-- **Your own bots have hands.** Ask a bot you made to set something up that OrangeCat can do (an event, a project, a product, a service, a wishlist, or handing a thing to Loki to build) and it answers with what it will do and a “Do it?” card, the Cat’s own. Nothing exists until you tap; a bot never says a thing is done. The same permission check, the same consent row and the same standing grant as the Cat’s actions, so a bot can set nothing in motion that the Cat could not. Only your own bots, in their own chat, never in a group.
+- **A bot can write first.** In a bot you made, Details has one row: “Writes first, every day”. Pick a time, say what it should be asked (“Good morning. What should I know or do today?” is the default), and every day at that time the bot writes in its own thread and you get a notification. It runs on your own key only; without one the row says so and offers the way to add it, and nothing is ever spent on a timer you did not choose.
+- **Your own bots have hands.** Ask a bot you made to set something up that OrangeCat can do (an event, a project, a product, a service, a wishlist, or handing a thing to Loki to build) and it answers with what it will do and a “Do it?” card, the Cat’s own. After the tap, an event’s outcome line now links to the event. Nothing exists until you tap; a bot never says a thing is done. The same permission check, the same consent row and the same standing grant as the Cat’s actions, so a bot can set nothing in motion that the Cat could not. Only your own bots, in their own chat, never in a group.
 
 ## 2026-10-31
 

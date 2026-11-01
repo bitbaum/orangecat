@@ -33,9 +33,15 @@
  *     import a sink for a POST or a person-initiated probe, are allowlisted
  *     with the reason a reviewer can check. Adding one is a decision.
  *
- * The cat-mentions worker is the one timer allowed to reach the model, because
- * it only answers a message in which a person addressed @cat — a person asking,
- * delivered by a queue. It is named here so that exception stays one line.
+ * Two timers are allowed to reach the model, and both are a person asking:
+ *   - cat-mentions answers a message in which a person addressed @cat — a
+ *     person asking, delivered by a queue.
+ *   - companion-routines runs a routine the person set on their own bot, at
+ *     the time they chose, and only on the person's OWN key: the runner skips
+ *     a due routine when there is none (services/companions/routines.ts,
+ *     `skipReason`), so the platform's free keys are never spent on it.
+ * Each is named here with the marker its source must keep, so the exception
+ * stays one line and cannot drift into a timer that spends unasked.
  */
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -80,8 +86,11 @@ const MIXED: Record<string, string[]> = {
   ],
 };
 
-/** The one timer that may reach the model — see the header. */
-const PERSON_ASKED_TIMERS = new Set(['src/app/api/cron/cat-mentions/route.ts']);
+/** The timers that may reach the model, each with the marker its source must keep — see the header. */
+const PERSON_ASKED_TIMERS = new Map([
+  ['src/app/api/cron/cat-mentions/route.ts', 'runCatMentions'],
+  ['src/app/api/cron/companion-routines/route.ts', 'runDueRoutines'],
+]);
 
 /** GET routes that import a sink but do not spend on a plain GET. */
 const GET_ALLOWED = new Map([
@@ -255,10 +264,12 @@ describe('no timer spends a key', () => {
     expect(leaks).toEqual([]);
   });
 
-  it('the cat-mentions exception still exists and is still a reply to a mention', () => {
-    for (const r of PERSON_ASKED_TIMERS) {
-      expect(read(r)).toContain('runCatMentions');
+  it('each exception still exists and is still what it was allowed for', () => {
+    for (const [r, marker] of PERSON_ASKED_TIMERS) {
+      expect(read(r), r).toContain(marker);
     }
+    // The routine runner spends nothing without the person's own key.
+    expect(read('src/services/companions/routines.ts')).toContain('skipReason(hasOwnKey)');
   });
 
   it('no timer this repo installs runs a script that calls a model', () => {

@@ -18,6 +18,7 @@ import { visibleReply } from '@/services/companions/memory-lines';
 import type { CompanionRow } from '@/services/companions/talk-home';
 import { useCompanionTalk } from '../useCompanionTalk';
 import { DoItCard } from './DoItCard';
+import { RoutineRow } from './RoutineRow';
 import { outgoing, shownUserTurn } from './attachments';
 import { ChatFrame } from './ChatFrame';
 import { Face } from './CompanionFace';
@@ -137,6 +138,7 @@ export function CompanionChat({
               {copy.companion.edit}
             </DetailRow>
           )}
+          {row?.mine && <RoutineRow assistantId={id} />}
           <DetailRow
             onClick={() => {
               talk.startNewThread();
