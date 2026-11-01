@@ -17,7 +17,7 @@
 import { DATABASE_TABLES } from '@/config/database-tables';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { fromTable } from '@/lib/supabase/untyped';
-import { isValidTimeZone, wallTimeToUtc } from '@/utils/timezone';
+import { instantToWallTime, isValidTimeZone, wallTimeToUtc } from '@/utils/timezone';
 
 export const ROUTINE_PROMPT_MAX = 500;
 
@@ -47,15 +47,8 @@ export function isTimeLocal(value: unknown): value is string {
  * are the wall-time helper's.
  */
 export function nextRunAt(now: Date, timeLocal: string, zone: string): string {
-  const dayOf = (d: Date) => {
-    const parts = new Intl.DateTimeFormat('en-CA', {
-      timeZone: zone,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    }).format(d);
-    return parts; // YYYY-MM-DD in the zone
-  };
+  // YYYY-MM-DD in the zone: the wall-time helper's own rendering, cut at the day.
+  const dayOf = (d: Date) => instantToWallTime(d.toISOString(), zone).slice(0, 10);
   for (let add = 0; add <= 2; add++) {
     const probe = new Date(now.getTime() + add * 86_400_000);
     const iso = wallTimeToUtc(`${dayOf(probe)}T${timeLocal}`, zone);
