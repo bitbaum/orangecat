@@ -161,7 +161,11 @@ export function TalkHome() {
           </div>
         )}
       </section>
-      <NewCompanionSheet open={sheet === 'companion'} onClose={() => setSheet(null)} />
+      <NewCompanionSheet
+        open={sheet === 'companion'}
+        onClose={() => setSheet(null)}
+        companions={home?.companions}
+      />
       <NewRoomSheet open={sheet === 'room'} home={home} onClose={() => setSheet(null)} />
     </div>
   );

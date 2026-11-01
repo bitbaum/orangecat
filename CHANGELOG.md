@@ -11,6 +11,7 @@ to the map, sub-bullets stay here for the human reader.
 
 ## 2026-11-01
 
+- **A shelf bot you already have opens.** Tapping “Writing Partner” on the shelf a second time made a second Writing Partner, and the list showed two rows told apart only by their times. The shelf now says “Open” next to a bot you already made from it, and a tap opens that one. A copy you renamed or gave another job is yours, and the shelf makes a new one beside it.
 - **A bot wears the face you picked.** Every bot made from the shelf, or from a shape and a colour, showed as a black circle in the list and the chat: the face image was built once with no address, so the live site drew the first shape in the first colour for everyone. The face is now drawn from its own shape and colour, the same as on the shelf.
 - **Fleet bots say what to send.** Diplodoctor and Causius opened with one word (“health”, “legal”) and a link. They now open with a line in their own words (“Paste or photograph a lab report…”, “Send me a letter, a contract or a question about Swiss law…”) and three questions to tap.
 - **Chats keep the screen.** The feedback button no longer floats over the last message or a Confirm card in the bots list and the Cat: on those screens it is the slim tab at the edge. The Cat no longer greets you by a handle you never chose (“Good evening, user_2fc1…”); it says “Good evening”. A bot’s details say it “is an AI, not a person”.

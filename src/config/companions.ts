@@ -75,6 +75,8 @@ export const COMPANION_COPY = {
       submit: 'Create',
       creating: 'Creating…',
       failed: 'That did not go through. Try again.',
+      /** On a shelf row the person already has: what a tap does. */
+      openYours: 'Open',
     },
     room: {
       title: 'New group chat',
@@ -262,6 +264,18 @@ export function shelfEntry(id: string | null | undefined): ShelfEntry | undefine
 }
 
 /** A shelf bot's definition: its job, and the rules every companion keeps. */
+/**
+ * The bot this person already made from a shelf entry, if any: theirs, with
+ * the entry's name and job unchanged. Tapping the entry again opens it rather
+ * than making a second one (seen live 2026-11-01: two "Writing Partner" rows,
+ * told apart only by their times). A renamed copy is the person's own bot.
+ */
+export function ownedShelfBot<
+  T extends { mine: boolean; title: string; description: string | null },
+>(entry: Pick<ShelfEntry, 'name' | 'job'>, companions: readonly T[]): T | undefined {
+  return companions.find(c => c.mine && c.title === entry.name && c.description === entry.job);
+}
+
 export function shelfDefinition(entry: ShelfEntry): string {
   return [
     `You are ${entry.name}, a companion made by the person you are talking to.`,
