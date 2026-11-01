@@ -29,6 +29,11 @@ deployed, with the free model chain, from a cold account. The launch gate in
 ADR-0013 ("the five demos run every day on the live site") is this workflow,
 run by a person each day of the rehearsal week.
 
+**A deploy during a run.** The app restarts for a few seconds when main
+deploys; an API call in that window answers 502. The spec retries such a call
+once after five seconds and says so in the log. Two gateway errors in a row
+are a real failure.
+
 **What it does not prove.** Transcript quality beyond the named checks (a
 specialist's exact wording), the routine's own run (it needs the person's own
 key; the runner is covered by its unit tests), and anything in Loki beyond its

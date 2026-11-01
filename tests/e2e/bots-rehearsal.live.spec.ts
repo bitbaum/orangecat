@@ -97,6 +97,25 @@ async function waitForCard(page: Page): Promise<boolean> {
   return false;
 }
 
+/**
+ * One retry on a gateway error. A deploy that lands during a run restarts
+ * the app for a few seconds (seen 2026-11-01 at 16:50Z: one PUT answered
+ * 502 while #1515 rolled out, and 400 a minute later). One retry, logged,
+ * tells that apart from a route that is really down.
+ */
+async function call(
+  label: string,
+  send: () => Promise<{ status(): number }>
+): Promise<{ status(): number }> {
+  const first = await send();
+  if (![502, 503, 504].includes(first.status())) {
+    return first;
+  }
+  console.log(`${label}: ${first.status()} from the gateway, retrying once in 5 s`);
+  await new Promise(r => setTimeout(r, 5000));
+  return send();
+}
+
 async function shot(page: Page, name: string) {
   await test.info().attach(name, {
     body: await page.screenshot(),
@@ -352,19 +371,23 @@ test.describe('bots rehearsal (live)', () => {
     expect(shown).toMatch(/Add your key/);
 
     const id = new URL(page.url()).searchParams.get('with');
-    const got = await api.get(`${baseURL}/api/ai-assistants/${id}/routine`);
-    const json = (await got.json()) as {
+    const got = await call('routine GET', () =>
+      api.get(`${baseURL}/api/ai-assistants/${id}/routine`)
+    );
+    const json = (await (got as import('@playwright/test').APIResponse).json()) as {
       data?: { routine?: { timeLocal?: string }; canRun?: boolean };
     };
     expect(got.status()).toBe(200);
     expect(json.data?.routine?.timeLocal).toBe('08:15');
     expect(json.data?.canRun).toBe(false);
-    const bad = await api.put(`${baseURL}/api/ai-assistants/${id}/routine`, {
-      data: { prompt: 'x', timeLocal: '25:00', zone: 'Europe/Zurich' },
-    });
+    const bad = await call('routine PUT 25:00', () =>
+      api.put(`${baseURL}/api/ai-assistants/${id}/routine`, {
+        data: { prompt: 'x', timeLocal: '25:00', zone: 'Europe/Zurich' },
+      })
+    );
     expect(bad.status()).toBe(400);
-    const foreign = await api.get(
-      `${baseURL}/api/ai-assistants/00000000-0000-4000-8000-000000000000/routine`
+    const foreign = await call('routine GET foreign', () =>
+      api.get(`${baseURL}/api/ai-assistants/00000000-0000-4000-8000-000000000000/routine`)
     );
     expect(foreign.status()).toBe(404);
 
@@ -377,21 +400,25 @@ test.describe('bots rehearsal (live)', () => {
 
   test('7. the edges the API must hold', async () => {
     // A direct call to a bot's hand never answers without the card.
-    const direct = await api.post(`${baseURL}/api/cat/actions/execute`, {
-      data: { actionId: 'ask_loki', parameters: { question: 'x' } },
-    });
+    const direct = await call('execute direct', () =>
+      api.post(`${baseURL}/api/cat/actions/execute`, {
+        data: { actionId: 'ask_loki', parameters: { question: 'x' } },
+      })
+    );
     expect([400, 401, 403, 404, 405]).toContain(direct.status());
     // A room needs two members and known starters, and is nobody else's.
-    const oneMember = await api.post(`${baseURL}/api/ai-assistants/rooms`, {
-      data: { members: [{ fleetSlug: 'causius' }] },
-    });
+    const oneMember = await call('room one member', () =>
+      api.post(`${baseURL}/api/ai-assistants/rooms`, {
+        data: { members: [{ fleetSlug: 'causius' }] },
+      })
+    );
     expect(oneMember.status()).toBe(400);
-    const badStarter = await api.post(`${baseURL}/api/ai-assistants/talk`, {
-      data: { title: 'X', starter: 'nope' },
-    });
+    const badStarter = await call('bad starter', () =>
+      api.post(`${baseURL}/api/ai-assistants/talk`, { data: { title: 'X', starter: 'nope' } })
+    );
     expect(badStarter.status()).toBe(400);
-    const foreignRoom = await api.get(
-      `${baseURL}/api/ai-assistants/rooms/00000000-0000-4000-8000-000000000000`
+    const foreignRoom = await call('foreign room', () =>
+      api.get(`${baseURL}/api/ai-assistants/rooms/00000000-0000-4000-8000-000000000000`)
     );
     expect(foreignRoom.status()).toBe(404);
   });
