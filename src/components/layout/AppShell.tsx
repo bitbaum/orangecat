@@ -172,6 +172,7 @@ export function AppShell({ children }: AppShellProps) {
             blowing layout out wider than the viewport on mobile). */}
         <main
           id="main-content"
+          data-fc-place={routeChrome.feedbackTab ? 'tab' : undefined}
           className={`flex-1 min-w-0 ${
             allowMarginTransition ? 'transition-[margin-left] duration-300 ease-in-out' : ''
           } ${

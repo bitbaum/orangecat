@@ -12,14 +12,29 @@ import { useRouter } from 'next/navigation';
 import { Sheet } from '@bitbaum/chatkit/react';
 import { API_ROUTES } from '@/config/api-routes';
 import { AVATAR_HUES, AVATAR_SHAPES, faceForName } from '@/config/companion-avatars';
-import { COMPANION_COPY, COMPANION_SHELF, type ShelfEntry } from '@/config/companions';
+import {
+  COMPANION_COPY,
+  COMPANION_SHELF,
+  ownedShelfBot,
+  type ShelfEntry,
+} from '@/config/companions';
 import { ROUTES } from '@/config/routes';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+import type { CompanionRow } from '@/services/companions/talk-home';
 import { logger } from '@/utils/logger';
 import { Face } from './CompanionFace';
 
-export function NewCompanionSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function NewCompanionSheet({
+  open,
+  onClose,
+  companions = [],
+}: {
+  open: boolean;
+  onClose: () => void;
+  /** The list's bots, so a shelf entry the person already has opens it. */
+  companions?: readonly CompanionRow[];
+}) {
   const router = useRouter();
   const copy = COMPANION_COPY.talk.create;
   const [name, setName] = useState('');
@@ -72,22 +87,35 @@ export function NewCompanionSheet({ open, onClose }: { open: boolean; onClose: (
       <div className="flex flex-col gap-1 px-4 pt-4">
         <p className="mb-0 text-xs uppercase tracking-wide text-fg-tertiary">{copy.shelf}</p>
         <ul>
-          {COMPANION_SHELF.map(entry => (
-            <li key={entry.id}>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void create(entry)}
-                className="flex min-h-[56px] w-full items-center gap-3 rounded-2xl px-2 text-left hover:bg-surface-hover"
-              >
-                <Face name={entry.name} size={40} />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-base text-fg-primary">{entry.name}</span>
-                  <span className="block truncate text-sm text-fg-secondary">{entry.job}</span>
-                </span>
-              </button>
-            </li>
-          ))}
+          {COMPANION_SHELF.map(entry => {
+            const owned = ownedShelfBot(entry, companions);
+            return (
+              <li key={entry.id}>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => {
+                    if (owned) {
+                      onClose();
+                      router.push(ROUTES.AI_ASSISTANTS.TALK_WITH(owned.id));
+                      return;
+                    }
+                    void create(entry);
+                  }}
+                  className="flex min-h-[56px] w-full items-center gap-3 rounded-2xl px-2 text-left hover:bg-surface-hover"
+                >
+                  <Face name={entry.name} size={40} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-base text-fg-primary">{entry.name}</span>
+                    <span className="block truncate text-sm text-fg-secondary">{entry.job}</span>
+                  </span>
+                  {owned && (
+                    <span className="shrink-0 text-sm text-fg-tertiary">{copy.openYours}</span>
+                  )}
+                </button>
+              </li>
+            );
+          })}
         </ul>
       </div>
       <form

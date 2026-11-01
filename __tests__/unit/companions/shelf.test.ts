@@ -3,6 +3,7 @@ import {
   COMPANION_HONESTY,
   COMPANION_SHELF,
   jobDefinition,
+  ownedShelfBot,
   shelfDefinition,
   shelfEntry,
   starterDefinition,
@@ -63,5 +64,27 @@ describe('the Cat in the list', () => {
     expect(target).toEqual({ kind: 'cat' });
     expect(sameTarget(target, { kind: 'cat' })).toBe(true);
     expect(sameTarget(target, { kind: 'fleet', slug: 'cat' })).toBe(false);
+  });
+});
+
+describe('a shelf entry you already have', () => {
+  const entry = COMPANION_SHELF.find(e => e.id === 'writing-partner')!;
+  const row = (over: Partial<{ mine: boolean; title: string; description: string | null }>) => ({
+    id: 'x',
+    mine: true,
+    title: entry.name,
+    description: entry.job,
+    ...over,
+  });
+
+  it('opens yours instead of making a second (two "Writing Partner" rows, seen live)', () => {
+    expect(ownedShelfBot(entry, [row({})])?.id).toBe('x');
+  });
+
+  it('is not someone else’s, and not one you renamed or gave another job', () => {
+    expect(ownedShelfBot(entry, [row({ mine: false })])).toBeUndefined();
+    expect(ownedShelfBot(entry, [row({ title: 'My writer' })])).toBeUndefined();
+    expect(ownedShelfBot(entry, [row({ description: 'drafts tweets' })])).toBeUndefined();
+    expect(ownedShelfBot(entry, [])).toBeUndefined();
   });
 });

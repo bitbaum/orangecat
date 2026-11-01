@@ -1,13 +1,14 @@
 'use client';
 
 /**
- * A companion's face in the list and the header: its picture when it has
- * one, otherwise the face its name picks (config/companion-avatars.ts). A
+ * A companion's face in the list and the header: the face it was given (drawn
+ * inline when it is one of ours), its picture when it has another, otherwise
+ * the face its name picks (config/companion-avatars.ts). A
  * group chat wears the faces of its first two members, one over the other.
  */
 
 import Image from 'next/image';
-import { faceForName } from '@/config/companion-avatars';
+import { faceForName, findHue, findShape, parseFaceUrl } from '@/config/companion-avatars';
 
 export function Face({
   name,
@@ -20,7 +21,11 @@ export function Face({
   size?: number;
   className?: string;
 }) {
-  if (avatarUrl) {
+  // A face the person picked is drawn here, from its own URL: no request, and
+  // the same shape and colour as on the shelf and in the sheet.
+  const ours = parseFaceUrl(avatarUrl);
+  const picked = ours ? { shape: findShape(ours.shape)!, hue: findHue(ours.hue)! } : null;
+  if (avatarUrl && !picked) {
     return (
       <Image
         src={avatarUrl}
@@ -33,7 +38,7 @@ export function Face({
       />
     );
   }
-  const { shape, hue } = faceForName(name);
+  const { shape, hue } = picked ?? faceForName(name);
   return (
     <svg
       viewBox="0 0 100 100"

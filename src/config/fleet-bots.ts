@@ -37,11 +37,39 @@ export const FLEET_BOT_TIMEOUT_MS = 60_000;
 export interface FleetBotContract {
   /** Languages the product's `/api/ask` accepts; the room asks in the first it shares with the app. */
   locales: readonly string[];
+  /**
+   * How the room opens a one-to-one chat with it: one line that says what to
+   * send, and three questions a person can tap. The map's one-line "what"
+   * describes the product for the fleet; it is a paragraph, not a greeting,
+   * and the job alone ("legal") told nobody what to do (seen live 2026-11-01).
+   * Both are drawn from what the product already does on its own site.
+   */
+  opening: { line: string; starters: readonly string[] };
 }
 
 export const FLEET_BOTS: Readonly<Record<string, FleetBotContract>> = {
-  diplodoctor: { locales: ['en', 'de', 'fr', 'it', 'es'] },
-  causius: { locales: ['en', 'de', 'fr', 'it'] },
+  diplodoctor: {
+    locales: ['en', 'de', 'fr', 'it', 'es'],
+    opening: {
+      line: 'Paste or photograph a lab report and I will go through every value: which are outside their printed range, what they measure, and what to ask your doctor.',
+      starters: [
+        'What does a high CRP mean?',
+        'Do I need to see a doctor for a cold?',
+        'Which blood values should I ask about at a check-up?',
+      ],
+    },
+  },
+  causius: {
+    locales: ['en', 'de', 'fr', 'it'],
+    opening: {
+      line: 'Send me a letter, a contract or a question about Swiss law, and I will say what it means for you and what to do next.',
+      starters: [
+        'My landlord wants to raise the rent. Can they?',
+        'What notice period applies if I quit my job?',
+        'Is the non-compete in my contract valid?',
+      ],
+    },
+  },
 };
 
 /** The locale the room asks in: the app is English. */

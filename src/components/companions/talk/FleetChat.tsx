@@ -10,6 +10,7 @@
 import { useEffect, useState } from 'react';
 import { ArrowUpRight } from 'lucide-react';
 import { COMPANION_COPY } from '@/config/companions';
+import { FLEET_BOTS } from '@/config/fleet-bots';
 import type { FleetBot } from '@/services/companions/rooms/fleet';
 import { fleetAttach, outgoing, shownTurn } from './attachments';
 import { ChatFrame } from './ChatFrame';
@@ -33,6 +34,7 @@ export function FleetChat({
   const copy = COMPANION_COPY.talk;
   const name = bot?.name ?? slug;
   const host = bot ? new URL(bot.url).host : '';
+  const opening = FLEET_BOTS[slug]?.opening;
 
   const last = talk.messages.filter(m => !m.failed).at(-1)?.content ?? null;
   useEffect(() => {
@@ -54,9 +56,12 @@ export function FleetChat({
         attach={fleetAttach(name)}
         onStop={talk.stop}
         onRetry={talk.retry}
+        starters={opening?.starters}
         startersTitle={
           <div className="flex flex-col gap-2">
-            {bot?.job && <p className="mb-0 text-base text-fg-primary">{bot.job}</p>}
+            {(opening?.line || bot?.job) && (
+              <p className="mb-0 text-base text-fg-primary">{opening?.line ?? bot?.job}</p>
+            )}
             {bot && (
               <a
                 href={bot.url}

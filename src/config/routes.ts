@@ -210,6 +210,13 @@ export interface RouteChrome {
    * toolbar row). From md up the shell stays.
    */
   immersiveChat: boolean;
+  /**
+   * The conversation fills the screen and its composer spans the width: the
+   * Loki feedback launcher is drawn as the slim edge tab (its host contract,
+   * `data-fc-place="tab"`), not a round button over the last message or a
+   * Confirm card (seen live 2026-11-01 at 390px).
+   */
+  feedbackTab: boolean;
 }
 
 /** True when the pathname is the Cat hub (or a sub-route of it). SSOT — do
@@ -245,6 +252,7 @@ export function getRouteChrome(pathname: string): RouteChrome {
     // sat on the right edge of the inputs and the submit row.
     hideGlobalCat: focus || isEntityFormPath(pathname),
     immersiveChat: isCatHubPath(pathname),
+    feedbackTab: isCatHubPath(pathname) || isCompanionTalkPath(pathname),
   };
 }
 
