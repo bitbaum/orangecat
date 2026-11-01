@@ -24,7 +24,9 @@ describe('companion room chrome', () => {
       hideMobileBottomNav: true,
       preferCollapsedSidebar: true,
       hideGlobalCat: true,
-      // The room keeps the app header: its way back is in that header.
+      // Not from the path: an open chat hides the header on a phone itself
+      // (IMMERSIVE_CHAT_ATTR, immersive-chat.test.ts); its own back button
+      // returns to the list.
       immersiveChat: false,
     });
     expect(getRouteChrome('/companions/abc')).toEqual({
