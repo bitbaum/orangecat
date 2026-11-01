@@ -14,7 +14,16 @@ import { PendingActionsCard } from '@/components/ai-chat/PendingActionsCard';
 import { usePendingActions, type PendingAction } from '@/components/ai-chat/usePendingActions';
 import { COMPANION_COPY } from '@/config/companions';
 
-export function DoItCard({ action, onDone }: { action: PendingAction; onDone: () => void }) {
+export function DoItCard({
+  action,
+  onDone,
+  onOutcome,
+}: {
+  action: PendingAction;
+  onDone: () => void;
+  /** The action ran (well or not): the thread now holds its outcome line. */
+  onOutcome?: () => void;
+}) {
   const { confirmAction, rejectAction } = usePendingActions();
   const [outcome, setOutcome] = useState<{ text: string; url?: string } | null>(null);
   const copy = COMPANION_COPY.talk.hands;
@@ -61,6 +70,8 @@ export function DoItCard({ action, onDone }: { action: PendingAction; onDone: ()
           } catch (error) {
             setOutcome({ text: error instanceof Error ? error.message : copy.failed });
             return {};
+          } finally {
+            onOutcome?.();
           }
         }}
         onReject={async id => {

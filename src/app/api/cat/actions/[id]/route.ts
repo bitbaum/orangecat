@@ -25,6 +25,7 @@ import { withAuth, type AuthenticatedRequest } from '@/lib/api/withAuth';
 import { validateUUID, getValidationError } from '@/lib/api/validation';
 import { apiNotFound } from '@/lib/api/standardResponse';
 import { getUserActorId } from '@/domain/actors';
+import { recordCardOutcome } from '@/services/companions/outcomes';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -56,6 +57,9 @@ export const POST = withAuth(async (request: AuthenticatedRequest, context: Rout
 
     const executor = createActionExecutor(supabase);
     const result = await executor.confirmPendingAction(user.id, actorId, pendingActionId);
+    // A card proposed in a bot's thread leaves its outcome there, so what
+    // the bot did is readable where it was asked for (never fails the confirm).
+    await recordCardOutcome(supabase, user.id, pendingActionId, result);
 
     if (result.success) {
       return apiSuccess(result);

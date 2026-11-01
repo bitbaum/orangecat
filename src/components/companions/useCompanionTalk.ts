@@ -200,6 +200,23 @@ export function useCompanionTalk(assistantId: string) {
     [assistantId, ensureThread]
   );
 
+  /**
+   * A card ran: the server wrote its outcome into the thread (outcomes.ts).
+   * Re-read the thread so the line shows where it was asked for, and drop
+   * the card. If the re-read fails the card's own outcome line stays.
+   */
+  const showOutcome = useCallback(async () => {
+    if (!activeId) {
+      return;
+    }
+    try {
+      await loadThread(activeId);
+      setPendingAction(null);
+    } catch (err) {
+      logger.warn('thread did not refresh after a card ran', err, 'useCompanionTalk');
+    }
+  }, [activeId, loadThread]);
+
   const startNewThread = useCallback(() => {
     setActiveId(null);
     setMessages([]);
@@ -221,6 +238,7 @@ export function useCompanionTalk(assistantId: string) {
     pendingAction,
     /** The card is answered or dismissed; the chat shows no card. */
     clearPendingAction: () => setPendingAction(null),
+    showOutcome,
     send,
     loadThread,
     startNewThread,
