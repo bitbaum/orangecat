@@ -96,6 +96,7 @@ export function CompanionChat({
                 key={talk.pendingAction.id}
                 action={talk.pendingAction}
                 onDone={talk.clearPendingAction}
+                onOutcome={talk.showOutcome}
               />
             )}
             {talk.creditsNeeded && (

@@ -227,6 +227,9 @@ named in the research index so the next slice is cut from the whole shape.
 - Every chat surface in OrangeCat's companions is chatkit; behaviour cannot
   drift from the Cat's.
 - Adding a fleet bot is one slug, once its product answers at `/api/ask`.
+- The five demos run end to end on the live site as one Playwright spec
+  (`tests/e2e/bots-rehearsal.live.spec.ts`), started by a person from the
+  _Live rehearsal_ workflow; `docs/testing/live-rehearsal.md`.
 - The round engine is pure and tested (`__tests__/unit/companions/rooms/`):
   mentions, planning, handoffs, the cap, and the sanitising of a client-held
   queue.
