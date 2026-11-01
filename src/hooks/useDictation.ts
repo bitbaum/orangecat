@@ -20,6 +20,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { TranscriptionError, reasonFromBody } from '@bitbaum/chatkit';
 import { useDictation as useChatkitDictation } from '@bitbaum/chatkit/react';
+import { API_ROUTES } from '@/config/api-routes';
 
 export type DictationState = 'idle' | 'recording' | 'transcribing';
 
@@ -75,6 +76,19 @@ export function transcribeWithRoute(endpoint: string, lang?: string) {
   // Only the primary subtag; without a hint Whisper detects the language.
   return (audio: Blob) => postToRoute(endpoint, audio, lang?.split('-')[0]);
 }
+
+/**
+ * The microphone every chat composer in OrangeCat uses: the Cat, a companion,
+ * a fleet bot, a group chat. One value, so they cannot drift again. They did:
+ * the Cat said `prefer: 'server'` and the bot chats said nothing, so chatkit
+ * started the bots on Android's recogniser, which ends the take at the first
+ * pause. Speaking to Causius was cut off after a second or two, while the
+ * Cat listened until done (2026-11-01).
+ */
+export const CHAT_VOICE = {
+  prefer: 'server',
+  transcribe: transcribeWithRoute(API_ROUTES.CAT.TRANSCRIBE),
+} as const;
 
 export function useDictation({ endpoint, lang, onTranscript, onError }: UseDictationOptions) {
   const onErrorRef = useRef(onError);

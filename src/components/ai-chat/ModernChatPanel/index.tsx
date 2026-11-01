@@ -35,12 +35,11 @@ import { CAT_SEND_EVENT } from '@/lib/chat/cat-send-event';
 import { postChatFeedback } from '@/lib/chat/feedback';
 import { catConversationStore } from '@/lib/chat/cat-conversation-store';
 import { refChip, type CatMessage } from '@/lib/chat/cat-messages';
-import { API_ROUTES } from '@/config/api-routes';
 import { CAT_AGENT, CAT_HUB_COPY } from '@/config/cat-hub';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import type { CatPageDescriptor } from '@/config/cat-page-context';
 import type { CatReference } from '@/config/cat-prompts';
-import { transcribeWithRoute } from '@/hooks/useDictation';
+import { CHAT_VOICE } from '@/hooks/useDictation';
 import { cn } from '@/lib/utils';
 import { useSuggestions, usePendingActionsManager, useMemoryNotes } from './hooks';
 import { useCatTransport } from './hooks/useCatTransport';
@@ -54,9 +53,6 @@ import { PendingActionsCard } from '../PendingActionsCard';
 import { ATTACHMENT_UNSUPPORTED_COPY, CAT_ATTACH_LIMITS } from './attachments';
 import { readCatFile } from './pdfAttachments';
 import type { CatAction } from './types';
-
-/** One transcription route for every microphone in the app; see useDictation. */
-const transcribe = transcribeWithRoute(API_ROUTES.CAT.TRANSCRIBE);
 
 /** Which chat was open, so a reload reopens it (device storage: an id, nothing else). */
 export const CAT_OPEN_CHAT_KEY = 'oc-cat:open-chat';
@@ -314,7 +310,7 @@ export function ModernChatPanel({
           attachExtras,
           attachmentOnlyText: CAT_HUB_COPY.attachmentOnly,
           heldAttachments: references.length,
-          voice: { prefer: 'server', transcribe },
+          voice: CHAT_VOICE,
           above,
           header:
             references.length > 0 ? (

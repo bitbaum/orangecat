@@ -20,8 +20,7 @@ import '@bitbaum/chatkit/styles.css';
 import { cn } from '@/lib/utils';
 import { CAT_HUB_COPY } from '@/config/cat-hub';
 import { CHAT_CONTENT_MAX_WIDTH_CLASS } from '@/config/layout-chrome';
-import { API_ROUTES } from '@/config/api-routes';
-import { transcribeWithRoute } from '@/hooks/useDictation';
+import { CHAT_VOICE } from '@/hooks/useDictation';
 
 interface ChatInputProps {
   value: string;
@@ -38,9 +37,6 @@ interface ChatInputProps {
   autoFocus?: boolean;
   sendBlockedReason?: string | null;
 }
-
-/** One transcription route for every microphone in the app; see useDictation. */
-const transcribe = transcribeWithRoute(API_ROUTES.CAT.TRANSCRIBE);
 
 export function ChatInput({
   value,
@@ -76,7 +72,7 @@ export function ChatInput({
           sending={isLoading}
           onStop={onStop}
           autoFocus={autoFocus ?? isInline}
-          voice={{ prefer: 'server', transcribe }}
+          voice={CHAT_VOICE}
           labels={{ send: sendLabel, stop: 'Stop generating', voice: 'Dictate your message' }}
         />
       </div>

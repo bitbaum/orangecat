@@ -96,6 +96,20 @@ describe('one chat surface', () => {
     expect(composer).not.toMatch(/<textarea/);
   });
 
+  it('has one microphone: every chat voice option is CHAT_VOICE', () => {
+    // The Cat said `prefer: 'server'` and the bot chats said nothing, so the
+    // bots got Android's recogniser and stopped at the first pause; speaking
+    // to Causius was cut off after a second or two (2026-11-01). A voice
+    // option written inline is how that happened.
+    const offenders = components.filter(path => {
+      const src = readFileSync(path, 'utf8');
+      return /\bvoice(=\{\{|:\s*\{)/.test(src);
+    });
+    expect(offenders, `Use CHAT_VOICE from @/hooks/useDictation:\n${offenders.join('\n')}`).toEqual(
+      []
+    );
+  });
+
   it("the Cat chat is chatkit's ChatApp, not an app assembled here", () => {
     const panel = readFileSync('src/components/ai-chat/ModernChatPanel/index.tsx', 'utf8');
     expect(panel).toMatch(/import \{[^}]*\bChatApp\b[^}]*\} from '@bitbaum\/chatkit\/react'/);
