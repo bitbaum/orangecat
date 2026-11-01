@@ -1428,14 +1428,26 @@ html[data-mobile-action-bar] .app-fab-anchor {
 html[data-header-hidden='true'] .sticky-below-header {
   top: 0;
 }
-/* A chat that owns the phone (getRouteChrome().immersiveChat): no header
-   above it, so nothing to clear, and the content region is the viewport. */
+/* A chat that owns the phone: no header above it, so nothing to clear, and
+   the content region is the viewport. Two ways in, one rule set:
+   - a route that is always a chat (getRouteChrome().immersiveChat: the Cat
+     hub) — AppShell also hides the header there;
+   - a page that is a chat only while one is open (/companions/talk?with=…,
+     where the path alone cannot tell): it marks the open conversation with
+     [data-immersive-chat] (IMMERSIVE_CHAT_ATTR) and the header steps aside
+     here. CSS, not state, so the first paint is already right: no header
+     flashing in and out on the way from the list to a chat. */
 @media (max-width: 767px) {
-  .app-immersive-chat.app-header-offset {
+  .app-immersive-chat.app-header-offset,
+  .app-header-offset:has([data-immersive-chat]) {
     padding-top: 0;
   }
-  .app-immersive-chat .app-content-height {
+  .app-immersive-chat .app-content-height,
+  .app-content-height:has([data-immersive-chat]) {
     height: var(--app-viewport-height, 100dvh);
+  }
+  body:has([data-immersive-chat]) .app-header {
+    display: none;
   }
 }
 @media (prefers-reduced-motion: reduce) {
