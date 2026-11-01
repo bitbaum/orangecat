@@ -10,7 +10,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { API_ROUTES } from '@/config/api-routes';
 import { COMPANION_COPY } from '@/config/companions';
-import { APP_CONTENT_HEIGHT_CLASS } from '@/config/layout-chrome';
+import { APP_CONTENT_HEIGHT_CLASS, IMMERSIVE_CHAT_ATTR } from '@/config/layout-chrome';
 import { ROUTES } from '@/config/routes';
 import type { CompanionRow } from '@/services/companions/talk-home';
 import { logger } from '@/utils/logger';
@@ -147,8 +147,11 @@ export function TalkHome() {
           onNewRoom={() => setSheet('room')}
         />
       </aside>
+      {/* An open chat is the whole phone screen, as the Cat's is: its own
+          floating header carries the way back to this list. */}
       <section
         className={`${target ? 'flex' : 'hidden lg:flex'} relative min-h-0 min-w-0 flex-1 flex-col`}
+        {...(conversation ? { [IMMERSIVE_CHAT_ATTR]: '' } : {})}
       >
         {conversation ?? (
           <div className="flex flex-1 items-center justify-center p-8 text-center">
