@@ -15,7 +15,10 @@ import {
   findShape,
 } from '@/config/companion-avatars';
 
-export const dynamic = 'force-static';
+// Not `force-static`: a static route is built once with no query string, so
+// every face came back as the first shape in the first colour (a black
+// circle) whatever the person picked (seen live 2026-11-01). The response is
+// still cached for a year by the header below: the same URL is the same face.
 
 export function GET(request: Request) {
   const url = new URL(request.url);

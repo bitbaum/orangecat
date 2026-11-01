@@ -9,7 +9,7 @@
 
 export const COMPANION_COPY = {
   /** The one honest line every room shows once: this is software. */
-  disclosure: (name: string) => `${name} is an AI companion, not a person.`,
+  disclosure: (name: string) => `${name} is an AI, not a person.`,
 
   /** The memory page's promise — true by construction (RLS + no owner route). */
   memoryPrivacy: (name: string) =>

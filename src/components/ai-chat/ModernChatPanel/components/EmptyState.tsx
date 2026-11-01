@@ -1,3 +1,4 @@
+import { isMintedHandle } from '@/config/usernames';
 import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
 /**
  * The Cat's turn, before the first message — the words over chatkit's
@@ -26,7 +27,9 @@ export function greetingFor(date: Date, name?: string | null): string {
   const h = date.getHours();
   const part = h < 5 ? 'evening' : h < 12 ? 'morning' : h < 18 ? 'afternoon' : 'evening';
   const first = name?.trim().split(/\s+/)[0];
-  return first ? `Good ${part}, ${first}` : `Good ${part}`;
+  // A minted handle (`user_2fc1…`) is not a name: "Good evening" alone reads
+  // better than greeting someone by their database id (seen live 2026-11-01).
+  return first && !isMintedHandle(first) ? `Good ${part}, ${first}` : `Good ${part}`;
 }
 
 /** The suggestions that SAY something, for chatkit's starter buttons. */

@@ -28,6 +28,7 @@ describe('companion room chrome', () => {
       // (IMMERSIVE_CHAT_ATTR, immersive-chat.test.ts); its own back button
       // returns to the list.
       immersiveChat: false,
+      feedbackTab: true,
     });
     expect(getRouteChrome('/companions/abc')).toEqual({
       ownsMobileNavClearance: false,
@@ -35,6 +36,7 @@ describe('companion room chrome', () => {
       preferCollapsedSidebar: false,
       hideGlobalCat: false,
       immersiveChat: false,
+      feedbackTab: false,
     });
   });
 
@@ -46,6 +48,7 @@ describe('companion room chrome', () => {
       hideGlobalCat: true,
       // The Cat hub owns the phone: its toolbar floats and carries Home.
       immersiveChat: true,
+      feedbackTab: true,
     });
   });
 

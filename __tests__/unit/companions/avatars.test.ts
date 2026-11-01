@@ -41,3 +41,15 @@ describe('companion faces', () => {
     expect(new Set(AVATAR_HUES.map(h => h.id)).size).toBe(AVATAR_HUES.length);
   });
 });
+
+describe('the avatar route', () => {
+  it('serves the face its address names (it was static, and drew every face black)', async () => {
+    const route = await import('@/app/api/ai-assistants/avatar/route');
+    expect((route as { dynamic?: string }).dynamic).not.toBe('force-static');
+    const res = route.GET(
+      new Request('https://orangecat.ch/api/ai-assistants/avatar?shape=star&hue=pink')
+    );
+    const svg = await res.text();
+    expect(svg).toContain('fill="#FF2E9A"');
+  });
+});
