@@ -68,7 +68,6 @@ export function FleetChat({
                 <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
               </a>
             )}
-            <p className="mb-0 text-xs text-fg-muted">{copy.fleet.keptHere}</p>
           </div>
         }
         footnote={host ? copy.fleetLine(host) : copy.fleetUnreachable}
@@ -78,11 +77,7 @@ export function FleetChat({
         onClose={() => setDetails(false)}
         title={name}
         face={<Face name={name} avatarUrl={bot?.mark} size={96} />}
-        lines={[
-          bot?.what,
-          host ? copy.fleetLine(host) : copy.fleetUnreachable,
-          copy.fleet.keptHere,
-        ]}
+        lines={[bot?.what, host ? copy.fleetLine(host) : copy.fleetUnreachable]}
       >
         <div className="flex flex-col">
           {bot && <DetailRow href={bot.url}>{copy.fleet.open(name)}</DetailRow>}
