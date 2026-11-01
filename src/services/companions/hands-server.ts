@@ -64,7 +64,10 @@ export async function proposeFromReply(
   reply: string,
   conversationId: string
 ): Promise<{ text: string; pendingAction: PendingAction | null; proposal: Proposal | null }> {
-  const { text, proposal } = extractProposal(reply);
+  const { text, proposal } = extractProposal(
+    reply,
+    hands.allowed.map(a => a.action)
+  );
   if (!proposal) {
     return { text, pendingAction: null, proposal: null };
   }

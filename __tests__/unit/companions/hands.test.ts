@@ -40,6 +40,10 @@ describe('the prompt section', () => {
     expect(text).toContain('start_date: string');
     expect(text).toContain('description?: string');
     expect(text).toContain('```' + PROPOSAL_FENCE);
+    // A worked example for a real offered action, not a template with <id>.
+    expect(text).toContain('{"action":"create_event","parameters":{');
+    expect(text).toContain('"title":"<title>"');
+    expect(text).not.toContain('<id>');
     expect(text).toContain('never say it is done');
     expect(text).toContain('Never propose anything in a group chat');
   });
@@ -71,11 +75,37 @@ describe('extractProposal', () => {
   it('leaves a fence quoted mid-answer, bad JSON, or no action alone', () => {
     const mid = `${block}\n\nThat is the shape, by the way.`;
     expect(extractProposal(mid)).toEqual({ text: mid, proposal: null });
-    const bad = 'Sure.\n```propose\n{not json}\n```';
-    expect(extractProposal(bad)).toEqual({ text: bad, proposal: null });
     const noAction = 'Sure.\n```propose\n{"parameters": {}}\n```';
     expect(extractProposal(noAction).proposal).toBeNull();
     expect(extractProposal('Plain words.')).toEqual({ text: 'Plain words.', proposal: null });
+  });
+
+  it('reads a json or untagged fence the same way, and names the action from the fields', () => {
+    const offered = handsActions(['create_event', 'ask_loki', 'send_to_loki']);
+    const json =
+      'Here is the query I will send to Loki:\n```json\n{"question":"Which of my sites are live?"}\n```';
+    expect(extractProposal(json, offered)).toEqual({
+      text: 'Here is the query I will send to Loki:',
+      proposal: { action: 'ask_loki', parameters: { question: 'Which of my sites are live?' } },
+    });
+    expect(
+      extractProposal('Ready.\n```\n{"action": "ask_loki", "parameters": {"question": "x"}}\n```')
+        .proposal?.action
+    ).toBe('ask_loki');
+    // No candidates, or fields no single offered action owns: no guess.
+    expect(extractProposal(json).proposal).toBeNull();
+    expect(extractProposal('x\n```json\n{"colour":"blue"}\n```', offered).proposal).toBeNull();
+    // A lone "description" belongs to more than one offered action: no guess either.
+    expect(extractProposal('x\n```json\n{"description":"x"}\n```', offered).proposal).toBeNull();
+  });
+
+  it('takes a propose fence off even when it said nothing usable', () => {
+    expect(extractProposal('Sure.\n```propose\n{not json}\n```')).toEqual({
+      text: 'Sure.',
+      proposal: null,
+    });
+    const json = 'Sure.\n```json\n{not json}\n```';
+    expect(extractProposal(json)).toEqual({ text: json, proposal: null });
   });
 
   it('reads missing or odd parameters as an empty object', () => {
