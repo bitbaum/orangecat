@@ -156,3 +156,18 @@ it('accepts repair that preserves supported navigation and removes the unsupport
   expect(r.corrected).toBe(`${CLEAN}\n\n${link}`);
   expect(r.ok).toBe(true);
 });
+
+it('rejects a repair that replaces an actionable investor-room reply with a refusal', async () => {
+  const link = '[Open investor room](/projects/venture-one/room)';
+  const r = await enforceGrounding({
+    ...base,
+    grounding: {
+      ...base.grounding,
+      evidence: ['Project room: /projects/venture-one/room', ...EVIDENCE],
+    },
+    content: `${FABRICATION}\n\n${link}`,
+    service: stubService('Not in your data.'),
+  });
+  expect(r.corrected).toBeUndefined();
+  expect(r.ok).toBe(false);
+});

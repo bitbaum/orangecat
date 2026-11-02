@@ -132,9 +132,9 @@ export async function enforceGrounding(input: {
   const remaining = parseActionsFromResponse(repaired).actions.length;
   const keptActions = remaining >= before;
 
-  const repairedLinks = supportedCreateLinksIn(repaired);
-  const keptNavigation = [...supportedCreateLinksIn(input.content)].every(href =>
-    repairedLinks.has(href)
+  const repairedLinks = supportedCreateLinksIn(repaired, input.grounding.evidence);
+  const keptNavigation = [...supportedCreateLinksIn(input.content, input.grounding.evidence)].every(
+    href => repairedLinks.has(href)
   );
 
   if (!fewerViolations || inventedSomethingNew || !keptActions || !keptNavigation) {
