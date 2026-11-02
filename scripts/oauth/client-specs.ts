@@ -165,6 +165,89 @@ export const CLIENT_SPECS: Record<string, ClientSpec> = {
     is_confidential: true, // has a server (Auth.js v5) — keeps a secret
     is_trusted: true, // first-party — skips the consent screen after first grant
   },
+  // 2026-11-01 — the owner: every fleet app offers every sign-in method on
+  // every auth page, "Continue with OrangeCat" included. These are the apps
+  // with a sign-in page and no client (bitbaum/fleet
+  // docs/auth-parity-2026-11-01.md). IDENTITY only, like heidi and skif.
+  // Their rows are created by the deploy switched off and with no secret
+  // (clientRowInserts); loki `app-secrets.sh` (kind oc-client) writes the
+  // secret into the app's env and its sha256 here, and switches the row on —
+  // nobody reads or pastes it. Origins are loki apps.conf's. policy_uri only
+  // where the page exists (curl-checked 2026-11-01: kivvi alone).
+  'aoz-begleitung': {
+    name: 'AOZ Begleitung',
+    origins: ['https://aoz.orangecat.ch'],
+    scopes: 'openid profile email',
+    is_confidential: true,
+    is_trusted: true,
+  },
+  biaslens: {
+    name: 'BiasLens',
+    origins: ['https://biaslens.orangecat.ch'],
+    scopes: 'openid profile email',
+    is_confidential: true,
+    is_trusted: true,
+  },
+  botsmann: {
+    name: 'Botsmann',
+    origins: ['https://botsmann.orangecat.ch'],
+    scopes: 'openid profile email',
+    is_confidential: true,
+    is_trusted: true,
+  },
+  diplodoctor: {
+    name: 'Diplodoctor',
+    origins: ['https://diplodoctor.orangecat.ch'],
+    scopes: 'openid profile email',
+    is_confidential: true,
+    is_trusted: true,
+  },
+  // One codebase on two hosts (loki apps.conf revamp-info row); sign-in must be
+  // accepted on either.
+  hirnli: {
+    name: 'hirnli',
+    origins: ['https://hirnli.orangecat.ch', 'https://revamp-info.orangecat.ch'],
+    scopes: 'openid profile email',
+    is_confidential: true,
+    is_trusted: true,
+  },
+  keller: {
+    name: 'Keller',
+    origins: ['https://keller.orangecat.ch'],
+    scopes: 'openid profile email',
+    is_confidential: true,
+    is_trusted: true,
+  },
+  kivvi: {
+    name: 'Kivvi',
+    origins: ['https://kivvi.orangecat.ch'],
+    policy_uri: 'https://kivvi.orangecat.ch/datenschutz',
+    scopes: 'openid profile email',
+    is_confidential: true,
+    is_trusted: true,
+  },
+  printcraft: {
+    name: 'PrintCraft',
+    origins: ['https://printcraft.orangecat.ch'],
+    scopes: 'openid profile email',
+    is_confidential: true,
+    is_trusted: true,
+  },
+  'reparaturbonus-zh': {
+    name: 'Reparaturbonus Zürich',
+    origins: ['https://reparaturbonus.orangecat.ch'],
+    scopes: 'openid profile email',
+    is_confidential: true,
+    is_trusted: true,
+  },
+  // Vita serves vita.orangecat.ch and keeps vitareba.orangecat.ch (apps.conf).
+  vitareba: {
+    name: 'Vita',
+    origins: ['https://vita.orangecat.ch', 'https://vitareba.orangecat.ch'],
+    scopes: 'openid profile email',
+    is_confidential: true,
+    is_trusted: true,
+  },
 };
 
 /** A client's scope ceiling as the registry knows it; unknown names are a bug, not a row. */
@@ -183,9 +266,31 @@ export function clientScopes(clientId: string): string[] {
 const sqlLiteral = (s: string): string => `'${s.replace(/'/g, "''")}'`;
 
 /**
+ * One INSERT per registered client that has no row yet: switched off
+ * (`disabled_at` set) and with no secret, so it can sign nobody in. getClient
+ * reads only enabled rows, and a confidential client with no secret hash fails
+ * verifyClientSecret, twice inert. It exists so that loki `app-secrets.sh`
+ * can give it a secret ON THE BOX, writing the app's env and this row's hash
+ * in one step without printing either; register-client.ts, by hand, remains
+ * the other way. An existing row is never touched here.
+ */
+export function clientRowInserts(): string[] {
+  return Object.entries(CLIENT_SPECS).map(([clientId, spec]) => {
+    const scopes = `ARRAY[${clientScopes(clientId).map(sqlLiteral).join(', ')}]::text[]`;
+    const redirects = `ARRAY[${spec.origins.map(o => sqlLiteral(`${o}${CALLBACK_PATH}`)).join(', ')}]::text[]`;
+    const uri = (u?: string) => (u ? sqlLiteral(u) : 'NULL');
+    return (
+      'INSERT INTO public.oauth_clients (client_id, client_secret_hash, name, redirect_uris, allowed_scopes, is_confidential, is_trusted, policy_uri, tos_uri, disabled_at) ' +
+      `SELECT ${sqlLiteral(clientId)}, NULL, ${sqlLiteral(spec.name)}, ${redirects}, ${scopes}, ${spec.is_confidential}, ${spec.is_trusted}, ${uri(spec.policy_uri)}, ${uri(spec.tos_uri)}, now() ` +
+      `WHERE NOT EXISTS (SELECT 1 FROM public.oauth_clients WHERE client_id = ${sqlLiteral(clientId)});`
+    );
+  });
+}
+
+/**
  * One UPDATE per registered client, each a no-op when the row already matches.
- * Only rows that exist change: an INSERT would mint a client with no secret,
- * which is register-client.ts's job, by hand, with the secret printed once.
+ * Only rows that exist change; a missing row is created by clientRowInserts,
+ * switched off and secretless.
  */
 export function clientScopeUpdates(): string[] {
   return Object.keys(CLIENT_SPECS).map(clientId => {

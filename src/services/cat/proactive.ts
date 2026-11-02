@@ -18,6 +18,7 @@ import { exploreTopicByVector } from './discovery-match';
 import { evaluateSocialWatches, isSocialWatchKind, type SocialWatchRow } from './social-watches';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { displayBTC } from '@/services/currency/formatting';
+import { notifyOwnerViaLoki } from '@/services/loki/notify-owner';
 
 const LOG_SOURCE = 'CatProactive';
 
@@ -190,6 +191,13 @@ export async function runDailyBrief(admin: SupabaseClient, limit: number): Promi
       });
       if (sent.success) {
         result.briefsSent += 1;
+        await notifyOwnerViaLoki(userId, {
+          source: 'cat',
+          title: 'Your Cat daily brief',
+          body: brief,
+          action: { label: 'Open the Cat', path: '/dashboard/cat' },
+          key: `cat-brief:${todayStartIso().slice(0, 10)}`,
+        });
       } else {
         result.errors += 1;
       }
@@ -376,6 +384,12 @@ export async function runWatchEvaluation(admin: SupabaseClient): Promise<WatchRu
       });
       if (sent.success) {
         result.fired += 1;
+        await notifyOwnerViaLoki(watch.user_id, {
+          source: 'cat-watch',
+          title: `Your watch fired: ${watch.label}`,
+          action: { label: 'Open the Cat', path: '/dashboard/cat' },
+          key: `cat-watch:${watch.id}`,
+        });
       } else {
         result.errors += 1;
       }

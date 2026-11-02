@@ -100,7 +100,9 @@ async function run(): Promise<void> {
   // Decide the secret: keep existing unless creating or rotating.
   let newSecret: string | null = null;
   let secretHash: string | null = existing?.client_secret_hash ?? null;
-  if (!existing || rotate) {
+  // A row the deploy created (clientRowInserts) has no secret yet: mint one,
+  // or re-enabling it below would switch on a client nobody can authenticate.
+  if (!existing || rotate || !existing.client_secret_hash) {
     newSecret = process.env[`${ENV_PREFIX}_OAUTH_SECRET`] || randomBytes(32).toString('base64url');
     secretHash = sha256(newSecret);
   }
@@ -125,7 +127,13 @@ async function run(): Promise<void> {
     die(`Failed to upsert oauth_clients: ${upsertErr.message}`);
   }
 
-  const verb = existing ? (rotate ? 'updated + rotated secret for' : 'updated') : 'created';
+  const verb = !existing
+    ? 'created'
+    : rotate
+      ? 'updated + rotated secret for'
+      : newSecret
+        ? 'updated + first secret for'
+        : 'updated';
   console.log(`✓ ${verb} OIDC client "${CLIENT.client_id}" (${CLIENT.name})`);
   console.log(`  redirect_uris : ${CLIENT.redirect_uris.join('\n                  ')}`);
   console.log(`  allowed_scopes: ${CLIENT.allowed_scopes.join(' ')}`);
