@@ -76,13 +76,21 @@ jobs:
             const title = '🔴 orangecat.ch is DOWN';
             const { owner, repo } = context.repo;
             // Fire-and-forget Telegram; never let a notify failure fail the check.
+            // Only with a button (owner, 2026-11-02: nothing on Telegram he
+            // cannot act on in one tap). The box is the failure domain, so the
+            // tap is Loki's Box doctor, which reaches it from GitHub.
+            const DOCTOR = 'https://github.com/bitbaum/loki/actions/workflows/box-doctor.yml';
             const tg = async (text) => {
               const t = process.env.TELEGRAM_BOT_TOKEN, c = process.env.TELEGRAM_CHAT_ID;
               if (!t || !c) return;
               try {
                 await fetch(`https://api.telegram.org/bot${t}/sendMessage`, {
                   method: 'POST', headers: { 'content-type': 'application/json' },
-                  body: JSON.stringify({ chat_id: c, text }),
+                  body: JSON.stringify({
+                    chat_id: c, text,
+                    reply_markup: { inline_keyboard: [[{ text: 'Run Box doctor', url: DOCTOR }]] },
+                    link_preview_options: { is_disabled: true },
+                  }),
                 });
               } catch (e) { core.warning(`telegram send failed: ${e}`); }
             };
@@ -98,13 +106,12 @@ jobs:
                 // First DOWN transition → page Telegram (transition-only: the
                 // absence of an open issue is the "was up" state).
                 await github.rest.issues.create({ owner, repo, title, body, labels: ['uptime'] });
-                await tg(`🔴 orangecat.ch (the bitbaum box) is DOWN as of ${now}. On-box alerts are dark when the box is dead — this is the external check.`);
+                await tg(`orangecat.ch is not answering from outside. The box itself may be down, so on-box alerts cannot speak — Box doctor can still reach it.`);
               }
               core.setFailed('Site is DOWN');
             } else if (open) {
               await github.rest.issues.createComment({ owner, repo, issue_number: open.number, body: `✅ Recovered at ${now} — closing.` });
               await github.rest.issues.update({ owner, repo, issue_number: open.number, state: 'closed' });
-              await tg(`✅ orangecat.ch (bitbaum) RECOVERED at ${now}.`);
             }
 
       # Separate, non-fatal alert: the single box is the whole failure domain, so a

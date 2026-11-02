@@ -74,6 +74,20 @@ export async function alertOps(alert: OpsAlert): Promise<void> {
       return;
     }
 
+    // Also onto Loki's one list, with NO button: an ops alert has no one-tap
+    // answer, so it is recorded there and never rings the phone. Dynamic
+    // import: notify-owner imports this file for OPS_NOTIFY_USER_ID.
+    void import('@/services/loki/notify-owner')
+      .then(m =>
+        m.notifyOwnerViaLoki(OPS_NOTIFY_USER_ID, {
+          source: 'ops',
+          title: alert.code,
+          body: alert.message,
+          key: `ops:${alert.source}:${alert.code}`,
+        })
+      )
+      .catch(() => undefined);
+
     await supabase.from(DATABASE_TABLES.NOTIFICATIONS).insert({
       user_id: OPS_NOTIFY_USER_ID,
       type: 'system',
