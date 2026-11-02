@@ -9,6 +9,10 @@ reads, and [orangecat.ch/changelog](https://orangecat.ch/changelog) renders
 it from there. One `## YYYY-MM-DD` heading per day; bullets under it travel
 to the map, sub-bullets stay here for the human reader.
 
+## 2026-11-02
+
+- **The owner’s bots write to his Telegram.** When a bot of the owner’s writes first (its daily routine), the message also reaches his Telegram through Loki’s one gateway: the bot’s name, the first lines of what it wrote, and one button that opens its chat. Silent, one per routine per day, and under Loki’s rules for the phone (no button, no message; quiet at night). Everyone else still hears through OrangeCat’s own notifications; Loki’s gateway speaks only to its operator.
+
 ## 2026-11-01
 
 - **A shelf bot you already have opens.** Tapping “Writing Partner” on the shelf a second time made a second Writing Partner, and the list showed two rows told apart only by their times. The shelf now says “Open” next to a bot you already made from it, and a tap opens that one. A copy you renamed or gave another job is yours, and the shelf makes a new one beside it.

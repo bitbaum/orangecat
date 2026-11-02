@@ -15,8 +15,10 @@
  */
 
 import { DATABASE_TABLES } from '@/config/database-tables';
+import { ROUTES } from '@/config/routes';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { fromTable } from '@/lib/supabase/untyped';
+import type { OwnerNotice } from '@/services/loki/notify-owner';
 import { instantToWallTime, isValidTimeZone, wallTimeToUtc } from '@/utils/timezone';
 
 export const ROUTINE_PROMPT_MAX = 500;
@@ -153,4 +155,29 @@ export async function deleteRoutine(
 /** The reason a due routine does not run, or null when it may. */
 export function skipReason(hasOwnKey: boolean): string | null {
   return hasOwnKey ? null : 'needs_own_key';
+}
+
+/**
+ * What a routine's message becomes on the owner's Telegram (through Loki's one
+ * gateway, services/loki/notify-owner.ts, which sends only the owner's own
+ * news and decides when). The owner, 2026-11-02: Telegram is "the way for any
+ * bot of mine to contact me", and a message there is read and answered with
+ * one tap. So: the bot's name, the first lines of what it wrote, one button
+ * that opens its chat, silent ("today"), and one message per routine per day.
+ */
+export function routineNotice(input: {
+  routineId: string;
+  assistantId: string;
+  botTitle: string;
+  reply: string;
+  day: string;
+}): OwnerNotice {
+  return {
+    source: 'bots',
+    title: input.botTitle,
+    body: input.reply,
+    action: { label: 'Open the chat', path: ROUTES.AI_ASSISTANTS.TALK_WITH(input.assistantId) },
+    urgency: 'today',
+    key: `routine:${input.routineId}:${input.day}`,
+  };
 }
