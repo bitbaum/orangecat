@@ -95,3 +95,4 @@ minimumReleaseAgeExclude:
   - '@bitbaum/listkit@0.2.2'
   - '@bitbaum/searchkit@0.2.3'
   - '@bitbaum/whenkit@0.3.3'
+  - '@bitbaum/design-tokens@1.4.0'
