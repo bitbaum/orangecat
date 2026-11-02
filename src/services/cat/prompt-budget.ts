@@ -48,6 +48,8 @@ export interface CatPromptParts {
   userContext: string;
   /** Grounding rules; '' when there is no context to ground in. */
   groundingRules: string;
+  /** Application capabilities survive empty or budget-dropped personal context. */
+  platformNavigation?: string;
   fewShot: string;
   languageDirective: string;
   history: ChatMessage[];
@@ -163,7 +165,8 @@ export function composeCatMessages(parts: CatPromptParts, opts: ComposeOptions):
   const head = [base, parts.standingInstructions, context].filter(Boolean).join('\n\n');
   const grounding = context ? parts.groundingRules : '';
   const fewShot = opts.includeFewShot && parts.fewShot ? `\n\n${parts.fewShot}` : '';
-  const systemPrompt = `${head}${grounding}${fewShot}${parts.languageDirective}`;
+  const navigation = parts.platformNavigation ? `\n\n${parts.platformNavigation}` : '';
+  const systemPrompt = `${head}${grounding}${navigation}${fewShot}${parts.languageDirective}`;
   return [
     { role: 'system', content: systemPrompt },
     ...opts.history,

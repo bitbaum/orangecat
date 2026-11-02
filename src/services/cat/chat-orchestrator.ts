@@ -502,10 +502,9 @@ async function runStreamingTurn(turn: CatTurn, out: SseOut): Promise<void> {
   try {
     sendData(out, { model: modelToUse, provider });
 
-    // Everything Cat read from the web this turn, as evidence blocks
-    // labelled with the citation handle that licenses each one. Fed to
-    // the grounding check below so a figure Cat correctly quoted from a
-    // page is recognised as quoted rather than flagged as invented.
+    // Everything Cat actually read this turn: web citations AND completed
+    // tool results. A live-data lookup must ground the answer just as a page
+    // does, or the repair can erase a correct answer as "Not in your data."
     const webEvidence: string[] = [];
     const streamedToolCalls: ToolCallEvent[] = [];
     const messages = await runStreamingToolPhase(turn, out, streamedToolCalls, webEvidence);
@@ -526,7 +525,7 @@ async function runStreamingTurn(turn: CatTurn, out: SseOut): Promise<void> {
  * emit a second event type carrying the structured draft so the UI can render
  * a PrefilledFormCard instead of narrating field values as prose.
  */
-function runStreamingToolPhase(
+async function runStreamingToolPhase(
   turn: CatTurn,
   out: SseOut,
   streamedToolCalls: ToolCallEvent[],
@@ -534,7 +533,7 @@ function runStreamingToolPhase(
 ): Promise<ToolAugmentedMessage[]> {
   const { user, supabase } = turn.request;
   const { provider, modelToUse, toolEndpoint, toolKey, fallbacks } = turn.resolved;
-  return maybeEnrichWithSearchResults(
+  const messages = await maybeEnrichWithSearchResults(
     supabase,
     user.id,
     turn.baseMessages,
@@ -567,6 +566,14 @@ function runStreamingToolPhase(
       },
     }
   );
+  // Only results returned to the answering model count. An unfinished lookup
+  // or a callback from an abandoned tool loop must not license a claim.
+  for (const message of messages) {
+    if (message.role === 'tool' && typeof message.content === 'string' && message.content.trim()) {
+      webEvidence.push(message.content);
+    }
+  }
+  return messages;
 }
 
 /**

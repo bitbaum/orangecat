@@ -1,0 +1,29 @@
+{
+  "scope": "Cat investor-room navigation and prompt evidence; existing application-wide package adoption is not audited by this change.",
+  "blocks": {
+    "chat": {
+      "package": "@bitbaum/chatkit",
+      "bindings": [
+        {
+          "file": "src/components/ai-chat/ModernChatPanel/index.tsx",
+          "symbols": ["ChatApp"]
+        }
+      ],
+      "notes": "Retain the shared chat surface and transport contracts. Investor-room routes and per-user project context are product domain policy."
+    },
+    "grounding": {
+      "package": "@bitbaum/ai-kit",
+      "bindings": [
+        {
+          "file": "src/services/cat/grounding.ts",
+          "symbols": ["verifyAnswer", "buildRepairPrompt"]
+        },
+        {
+          "file": "src/services/cat/chat-prepare.ts",
+          "symbols": ["buildAssistantRules"]
+        }
+      ],
+      "notes": "Reuse packaged verification. The application supplies its verified navigation evidence and protects links to fetched project rooms during repair."
+    }
+  }
+}
