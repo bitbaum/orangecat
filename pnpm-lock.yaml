@@ -36,8 +36,8 @@ importers:
         specifier: ^9.1.0
         version: 9.1.0(zod@4.6.7)
       '@bitbaum/accountkit':
-        specifier: github:bitbaum/accountkit#aa5eefde2749af841115f8cb2807cda011eb0f99
-        version: https://codeload.github.com/bitbaum/accountkit/tar.gz/aa5eefde2749af841115f8cb2807cda011eb0f99(@bitbaum/mail-kit@0.2.0)(next@16.4.1(@babel/core@7.29.7(supports-color@10.2.2))(@playwright/test@1.64.1)(@types/node@26.6.4)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react@19.3.1)
+        specifier: ^0.23.1
+        version: 0.23.1(@bitbaum/mail-kit@0.2.0)(next@16.4.1(@babel/core@7.29.7(supports-color@10.2.2))(@playwright/test@1.64.1)(@types/node@26.6.4)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react@19.3.1)
       '@bitbaum/ai-kit':
         specifier: ^1.22.0
         version: 1.22.0(react@19.3.1)
@@ -558,9 +558,8 @@ packages:
     resolution: {integrity: sha512-6zABk/ECA/QYSCQ1NGiVwwbQerUCZ+TQbp64Q3AgmfNvurHH0j8TtXa1qbShXA6qqkpAj4V5W8pP6mLe1mcMqA==}
     engines: {node: '>=18'}
 
-  '@bitbaum/accountkit@https://codeload.github.com/bitbaum/accountkit/tar.gz/aa5eefde2749af841115f8cb2807cda011eb0f99':
-    resolution: {gitHosted: true, integrity: sha512-C9lpx1a345KkkID6BIMy5db0U+qpOhreLByH/Hz1bsf2tFkWPfrAtiWjjw+d6pmNSUk3BWJACytRbYt8khoKOA==, tarball: https://codeload.github.com/bitbaum/accountkit/tar.gz/aa5eefde2749af841115f8cb2807cda011eb0f99}
-    version: 0.23.0
+  '@bitbaum/accountkit@0.23.1':
+    resolution: {integrity: sha512-wElIAimG0u5mTtS54/04VAXJ81lvMhbuNxwxhl5NNVJIIkESJYlPcdew7UKVhTRvRM8wImJIyXMz7VxfeGKkxQ==}
     engines: {node: '>=20'}
     hasBin: true
     peerDependencies:
@@ -6803,7 +6802,7 @@ snapshots:
 
   '@bcoe/v8-coverage@1.0.2': {}
 
-  '@bitbaum/accountkit@https://codeload.github.com/bitbaum/accountkit/tar.gz/aa5eefde2749af841115f8cb2807cda011eb0f99(@bitbaum/mail-kit@0.2.0)(next@16.4.1(@babel/core@7.29.7(supports-color@10.2.2))(@playwright/test@1.64.1)(@types/node@26.6.4)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react@19.3.1)':
+  '@bitbaum/accountkit@0.23.1(@bitbaum/mail-kit@0.2.0)(next@16.4.1(@babel/core@7.29.7(supports-color@10.2.2))(@playwright/test@1.64.1)(@types/node@26.6.4)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react@19.3.1)':
     dependencies:
       limitkit: 0.2.1
       react: 19.3.1
