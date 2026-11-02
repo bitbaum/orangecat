@@ -414,6 +414,37 @@ describe('before any model is called', () => {
 // ==================== streaming ====================
 
 describe('streaming', () => {
+  it('grounds a live-data answer in the completed tool results shown to the model', async () => {
+    const evidence = 'LIVE DATA: Draft listing Studio mug costs 0.0002 BTC.';
+    const a = service('A', {
+      chunks: [{ content: 'Your Studio mug draft costs 0.0002 BTC.', done: true }],
+    });
+    (maybeEnrichWithSearchResults as Mock).mockImplementationOnce(async (...args: unknown[]) => [
+      ...(args[2] as object[]),
+      {
+        role: 'assistant',
+        content: null,
+        tool_calls: [
+          {
+            id: 'live-lookup',
+            type: 'function',
+            function: { name: 'query_my_data', arguments: '{"topic":"overview"}' },
+          },
+        ],
+      },
+      { role: 'tool', tool_call_id: 'live-lookup', content: evidence },
+    ]);
+    (resolveProvider as Mock).mockResolvedValue(
+      resolved({ provider: 'groq', modelToUse: 'test-model', aiService: a })
+    );
+    await frames(await run({ stream: true }));
+    expect((enforceGrounding as Mock).mock.calls[0][0].grounding.evidence).toContain(evidence);
+    const sent = a.streamChatCompletion.mock.calls[0][0] as {
+      messages: Array<{ content: unknown }>;
+    };
+    expect(sent.messages.some(message => message.content === evidence)).toBe(true);
+  });
+
   it('happy path: frames, persistence, memories, platform usage', async () => {
     const a = service('A', {
       chunks: [

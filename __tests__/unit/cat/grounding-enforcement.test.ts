@@ -47,6 +47,22 @@ const FABRICATION = 'Elena Weber SINGA Switzerland is a Program Manager at Impac
 const CLEAN = 'Elena Weber SINGA Switzerland — whatsapp +41774730093. Her role is not recorded.';
 
 describe('enforceGrounding', () => {
+  it('keeps an attention answer supported by a live-data lookup without asking for a repair', async () => {
+    const reply = 'Your Studio mug is a draft priced at 0.0002 BTC.';
+    const lookup = 'LIVE DATA: Studio mug — draft, 0.0002 BTC.';
+    const repair = vi.fn(stubService('Not in your data.').chatCompletion);
+    const result = await enforceGrounding({
+      ...base,
+      message: 'What needs my attention?',
+      content: reply,
+      grounding: { subjects: ['Studio mug'], evidence: [lookup] },
+      service: { ...stubService('Not in your data.'), chatCompletion: repair },
+    });
+    expect(result.ok).toBe(true);
+    expect(result.corrected).toBeUndefined();
+    expect(repair).not.toHaveBeenCalled();
+  });
+
   it('leaves a clean reply untouched and does not call the model', async () => {
     let called = false;
     const service = stubService('should never be used');
