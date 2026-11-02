@@ -51,8 +51,8 @@ importers:
         specifier: workspace:*
         version: link:packages/deckkit
       '@bitbaum/design-tokens':
-        specifier: ^1.4.0
-        version: 1.4.0
+        specifier: github:bitbaum/design-tokens#8b82accab3775f3e18ed2fc61de41ba2127afae7
+        version: https://codeload.github.com/bitbaum/design-tokens/tar.gz/8b82accab3775f3e18ed2fc61de41ba2127afae7
       '@bitbaum/geo-kit':
         specifier: ^0.3.0
         version: 0.3.0(d3-geo@3.1.1)
@@ -600,8 +600,9 @@ packages:
     peerDependencies:
       react: '>=18'
 
-  '@bitbaum/design-tokens@1.4.0':
-    resolution: {integrity: sha512-ltw8j2Q1GM78O7Y+YxGRAVOrvAtLPwL9LR+F1u1uX7PIuYFNaqGDW4XRe3yL+f7aGcAgGVGuWV7OxHRuFkKRKg==}
+  '@bitbaum/design-tokens@https://codeload.github.com/bitbaum/design-tokens/tar.gz/8b82accab3775f3e18ed2fc61de41ba2127afae7':
+    resolution: {gitHosted: true, tarball: https://codeload.github.com/bitbaum/design-tokens/tar.gz/8b82accab3775f3e18ed2fc61de41ba2127afae7}
+    version: 1.4.0
     engines: {node: '>=20'}
     hasBin: true
 
@@ -6834,7 +6835,7 @@ snapshots:
       pdfjs-dist: 6.4.299
       react: 19.3.1
 
-  '@bitbaum/design-tokens@1.4.0': {}
+  '@bitbaum/design-tokens@https://codeload.github.com/bitbaum/design-tokens/tar.gz/8b82accab3775f3e18ed2fc61de41ba2127afae7': {}
 
   '@bitbaum/geo-kit@0.3.0(d3-geo@3.1.1)':
     optionalDependencies:
