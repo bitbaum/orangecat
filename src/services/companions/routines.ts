@@ -18,8 +18,9 @@ import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { fromTable } from '@/lib/supabase/untyped';
 import { createApiKeyService } from '@/services/ai/api-key-service';
 import { sendAiMessage } from '@/services/ai/sendMessage';
+import { notifyOwnerViaLoki } from '@/services/loki/notify-owner';
 import { logger } from '@/utils/logger';
-import { nextRunAt, skipReason, type RoutineRow } from './routines-store';
+import { nextRunAt, routineNotice, skipReason, type RoutineRow } from './routines-store';
 
 const LOG = 'CompanionRoutines';
 /** Shown in the list and the notification: the first breath of the reply. */
@@ -94,14 +95,27 @@ export async function runDueRoutines(
         .select('title')
         .eq('id', row.assistant_id)
         .maybeSingle();
+      const botTitle = String((bot as { title?: string } | null)?.title ?? 'Your bot');
       await notifications.createNotification({
         recipientUserId: row.user_id,
         type: 'system',
-        title: String((bot as { title?: string } | null)?.title ?? 'Your bot'),
+        title: botTitle,
         message: reply.length > NOTIFY_CHARS ? `${reply.slice(0, NOTIFY_CHARS - 1)}…` : reply,
         actionUrl: ROUTES.AI_ASSISTANTS.TALK_WITH(row.assistant_id),
         metadata: { kind: 'companion_routine', assistantId: row.assistant_id },
       });
+      // The owner's own bots also reach his Telegram, through Loki (a no-op
+      // for anyone else: Loki's gateway speaks only to its operator).
+      await notifyOwnerViaLoki(
+        row.user_id,
+        routineNotice({
+          routineId: row.id,
+          assistantId: row.assistant_id,
+          botTitle,
+          reply,
+          day: now.toISOString().slice(0, 10),
+        })
+      );
       result.ran += 1;
     } catch (error) {
       result.errors += 1;

@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { isTimeLocal, nextRunAt, skipReason } from '@/services/companions/routines-store';
+import {
+  isTimeLocal,
+  nextRunAt,
+  routineNotice,
+  skipReason,
+} from '@/services/companions/routines-store';
+import { ownerNoticeBody } from '@/services/loki/notify-owner';
 
 /**
  * A bot that writes first: the next run is the next time of day in the
@@ -40,5 +46,30 @@ describe('a routine’s rules', () => {
   it('runs only on the person’s own key', () => {
     expect(skipReason(true)).toBeNull();
     expect(skipReason(false)).toBe('needs_own_key');
+  });
+});
+
+describe('a routine on the owner’s Telegram', () => {
+  const notice = routineNotice({
+    routineId: 'r1',
+    assistantId: 'a1',
+    botTitle: 'Day Planner',
+    reply: 'Three things today: the tax form, the landlord, Ana’s present.',
+    day: '2026-11-02',
+  });
+
+  it('is the bot’s words with one tap that opens its chat, silent', () => {
+    const body = ownerNoticeBody(notice, 'https://orangecat.ch');
+    expect(body.title).toBe('Day Planner');
+    expect(body.body).toContain('Three things today');
+    expect(body.actions).toEqual([
+      { label: 'Open the chat', url: 'https://orangecat.ch/companions/talk?with=a1' },
+    ]);
+    expect(body.urgency).toBe('today');
+    expect(body.actions[0].label.length).toBeLessThanOrEqual(24);
+  });
+
+  it('is one message per routine per day', () => {
+    expect(notice.key).toBe('routine:r1:2026-11-02');
   });
 });
