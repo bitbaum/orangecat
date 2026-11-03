@@ -1,5 +1,5 @@
 {
-  "scope": "Cat investor-room navigation and prompt evidence; existing application-wide package adoption is not audited by this change.",
+  "scope": "Cat grounding, per-project investor-room actions and canonical connected product profiles; existing application-wide package adoption is not audited by this change.",
   "blocks": {
     "chat": {
       "package": "@bitbaum/chatkit",
@@ -11,6 +11,13 @@
       ],
       "notes": "Retain the shared chat surface and transport contracts. Investor-room routes and per-user project context are product domain policy."
     },
+    "deck": {
+      "package": "@bitbaum/deckkit",
+      "bindings": [
+        { "file": "src/services/cat/handlers/investor-room.ts", "symbols": ["generateDeck"] }
+      ],
+      "notes": "Chat uses the same generator and ownership-checked deck persistence as the room UI. Product records remain canonical in Loki; the OrangeCat profile and room render them without storing copies."
+    },
     "grounding": {
       "package": "@bitbaum/ai-kit",
       "bindings": [
@@ -21,6 +28,10 @@
         {
           "file": "src/services/cat/chat-prepare.ts",
           "symbols": ["buildAssistantRules"]
+        },
+        {
+          "file": "src/services/cat/chat-orchestrator.ts",
+          "symbols": ["classifyAnswerPrefix"]
         }
       ],
       "notes": "Reuse packaged verification. The application supplies its verified navigation evidence and protects links to fetched project rooms during repair."

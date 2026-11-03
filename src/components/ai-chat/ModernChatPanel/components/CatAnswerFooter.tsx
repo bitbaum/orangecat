@@ -44,7 +44,7 @@ const providerLabel = (id: string): string => PROVIDER_LABELS[id] ?? id;
  * MODEL is what changed, so the model is what the sentence names — "Groq was
  * rate-limited; answered on Groq instead" refuted itself.
  */
-function ProviderFallbackNotice({ from, to, model }: FallbackNotice) {
+function ProviderFallbackNotice({ from, to, model, reason }: FallbackNotice) {
   const sameProvider = from === to;
   const modelName = model ? getModelDisplayName(model) : null;
   return (
@@ -52,7 +52,8 @@ function ProviderFallbackNotice({ from, to, model }: FallbackNotice) {
       ↻{' '}
       {sameProvider ? (
         <>
-          {providerLabel(from)} rate-limited that model
+          {providerLabel(from)}{' '}
+          {reason === 'rate_limit' ? 'rate-limited that model' : 'couldn’t complete that reply'}
           {modelName ? (
             <>; answered on {modelName} instead</>
           ) : (
@@ -61,7 +62,9 @@ function ProviderFallbackNotice({ from, to, model }: FallbackNotice) {
         </>
       ) : (
         <>
-          {providerLabel(from)} was rate-limited; answered on {providerLabel(to)}
+          {providerLabel(from)}{' '}
+          {reason === 'rate_limit' ? 'was rate-limited' : 'couldn’t complete that reply'}; answered
+          on {providerLabel(to)}
           {modelName ? <> ({modelName})</> : null} instead
         </>
       )}{' '}

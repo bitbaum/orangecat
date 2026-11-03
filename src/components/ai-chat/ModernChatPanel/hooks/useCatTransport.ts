@@ -415,6 +415,9 @@ export function useCatTransport({
         }
         if (event?.tool_call) {
           toolCalls = mergeToolCall(toolCalls, event.tool_call);
+          if (event.tool_call.status === 'pending_confirmation') {
+            now.onPendingConfirmation?.();
+          }
           show();
         }
         if (event?.prefill_proposal) {

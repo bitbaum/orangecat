@@ -47,6 +47,7 @@ import { EVENT_COVER_SOURCES, EVENT_TYPES } from '@/config/events';
 import { CURRENCY_CODES } from '@/config/currencies';
 import { GROUP_LABEL_IDS } from '@/config/group-labels';
 import { PROPOSAL_TYPES } from '@/config/proposal-constants';
+import { INVESTOR_ROOM_ACTIONS } from './cat-actions-room';
 
 // ==================== ACTION TYPES ====================
 
@@ -89,6 +90,7 @@ export interface CatAction {
 // ==================== ACTION DEFINITIONS ====================
 
 export const CAT_ACTIONS: Record<string, CatAction> = {
+  ...INVESTOR_ROOM_ACTIONS,
   // ---------- ENTITY ACTIONS ----------
 
   create_product: {

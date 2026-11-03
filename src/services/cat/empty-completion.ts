@@ -47,6 +47,8 @@
  * next link might serve.
  */
 
+import { classifyAnswerPrefix } from '@bitbaum/ai-kit';
+
 /**
  * Did this completion actually say anything?
  *
@@ -54,7 +56,7 @@
  * answered, and passing that on produces a blank bubble rather than a fallback.
  */
 export function hasUsableContent(content: string | null | undefined): boolean {
-  return typeof content === 'string' && content.trim().length > 0;
+  return typeof content === 'string' && classifyAnswerPrefix(content) === 'answer';
 }
 
 /**

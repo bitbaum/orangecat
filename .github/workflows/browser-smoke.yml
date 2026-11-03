@@ -74,7 +74,7 @@ jobs:
   live-conversation:
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.live_conversation }}
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     env:
       E2E_BASE_URL: https://orangecat.ch
       E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
@@ -89,4 +89,4 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
       - name: Exercise the deployed conversation, including its investor-room link
-        run: pnpm exec playwright test tests/e2e/cat-conversation.live.spec.ts --project=chromium --reporter=line
+        run: pnpm exec playwright test tests/e2e/cat-conversation.live.spec.ts tests/e2e/cat-investor-room.live.spec.ts --project=chromium --workers=1 --reporter=line

@@ -5,6 +5,22 @@ import type {
   ToolResultMessage,
 } from './tool-use-types';
 
+export function toolRoutingPageContext(entity?: { type: string; ref: string }): string {
+  return entity
+    ? `Current page entity (a navigation hint, not permission to edit): ${JSON.stringify(entity)}. Use this actual reference for requests about this page; the action's ownership check still decides access.\n`
+    : '';
+}
+
+/** The entity type a draft tool targets; malformed arguments do not name one. */
+export function prefillType(toolCall: RawToolCall): string {
+  try {
+    const args = JSON.parse(toolCall.function?.arguments ?? '{}') as { entityType?: string };
+    return args.entityType ?? '';
+  } catch {
+    return '';
+  }
+}
+
 /** Bounded conversational context for follow-ups, excluding system prompts and tool payloads. */
 export function toolRoutingHistory(messages: ToolAugmentedMessage[], userMessage: string) {
   const dialogue = messages.filter(

@@ -9,7 +9,6 @@ import {
   resolveActorUserId,
   usernameOf,
 } from '@/domain/profileClaims/unclaimed';
-import { getEntityStewardUserId } from '@/domain/profileClaims/stewardship';
 import { getLokiProjectLink } from '@/services/loki/project-link';
 import { getStudioProject } from '@/services/loki/studio-project';
 import { buildProjectStructuredData } from './structuredData';
@@ -17,6 +16,8 @@ import { SetUpBy } from '@/components/claim/SetUpBy';
 import { ROUTES } from '@/config/routes';
 import { PublicEntityOwnerBar } from '@/components/public/PublicEntityOwnerBar';
 import { RoomOwnerAction } from '@/components/room/RoomOwnerAction';
+import { ProjectProductRecord } from './product-record';
+import { canManageProject } from '@/domain/projects/manage-access';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { isProjectPubliclyVisible } from '@/config/project-statuses';
 import { DATABASE_TABLES } from '@/config/database-tables';
@@ -222,11 +223,14 @@ export default async function PublicProjectPage({ params }: PageProps) {
   const {
     data: { user: viewer },
   } = await supabase.auth.getUser();
-  const isOwner = !!viewer && !!ownerUserId && viewer.id === ownerUserId;
-  // The steward of an unclaimed page manages it until the claim (ADR-0005 D5).
-  const isSteward =
-    !!viewer && !!unclaimedOwner && (await getEntityStewardUserId('project', id)) === viewer.id;
-  const canManage = isOwner || isSteward;
+  const canManage = await canManageProject({
+    projectId: id,
+    actorId: project.actor_id,
+    viewerId: viewer?.id ?? null,
+    ownerUserId,
+    unclaimed: !!unclaimedOwner,
+    supabase,
+  });
   const isOwnerPreview = !isProjectPubliclyVisible(project.status);
 
   // Does this project have a public build record in Loki? Resolved here rather
@@ -242,11 +246,6 @@ export default async function PublicProjectPage({ params }: PageProps) {
   const openLedgerWalletId = await getEntityOpenLedgerWalletId('project', id);
 
   // Generate JSON-LD structured data for SEO
-  const creatorName = profile?.name || profile?.username || 'Creator';
-  const _progress = project.goal_amount
-    ? Math.round((Number(settledRaised) / Number(project.goal_amount)) * 100)
-    : 0;
-
   const structuredData = buildProjectStructuredData({
     id,
     title: project.title,
@@ -255,7 +254,7 @@ export default async function PublicProjectPage({ params }: PageProps) {
     currency: project.currency,
     bitcoinAddress: project.bitcoin_address,
     settledRaised: settledRaised === null ? null : Number(settledRaised),
-    creatorName,
+    creatorName: profile?.name || profile?.username || 'Creator',
     creatorUsername: profile?.username ?? null,
   });
 
@@ -293,6 +292,7 @@ export default async function PublicProjectPage({ params }: PageProps) {
         canManage={canManage}
         lokiBuild={lokiBuild}
         studio={studio}
+        productRecord={<ProjectProductRecord projectId={id} />}
         openLedgerWalletId={openLedgerWalletId}
       />
     </>

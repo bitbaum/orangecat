@@ -26,6 +26,46 @@ interface PendingActionsCardProps {
 
 const FALLBACK_ICON = FileText;
 
+/** Show the actual proposed content, including nested room sections and slides. */
+function ProposedValue({ value }: { value: unknown }) {
+  if (Array.isArray(value)) {
+    return (
+      <ol className="list-decimal space-y-2 pl-4">
+        {value.map((item, index) => (
+          <li key={index}>
+            <ProposedValue value={item} />
+          </li>
+        ))}
+      </ol>
+    );
+  }
+  if (value && typeof value === 'object') {
+    return (
+      <dl className="space-y-2">
+        {Object.entries(value).map(([key, item]) => (
+          <div key={key}>
+            <dt className="font-medium">{key.replace(/_/g, ' ')}</dt>
+            <dd className="whitespace-pre-wrap break-words">
+              <ProposedValue value={item} />
+            </dd>
+          </div>
+        ))}
+      </dl>
+    );
+  }
+  return (
+    <span className="whitespace-pre-wrap break-words">
+      {value === null
+        ? 'Clear this field'
+        : value === true
+          ? 'Yes'
+          : value === false
+            ? 'No'
+            : String(value ?? '')}
+    </span>
+  );
+}
+
 function formatTimeLeft(expiresAt: string): string {
   const now = new Date();
   const expires = new Date(expiresAt);
@@ -180,8 +220,7 @@ export function PendingActionsCard({ action, onConfirm, onReject }: PendingActio
               <div key={key} className="contents">
                 <dt className="opacity-70">{key.replace(/_/g, ' ')}</dt>
                 <dd className="min-w-0 break-words">
-                  {String(value).slice(0, 80)}
-                  {String(value).length > 80 ? '…' : ''}
+                  <ProposedValue value={value} />
                 </dd>
               </div>
             ))}

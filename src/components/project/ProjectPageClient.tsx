@@ -6,7 +6,7 @@ import Button from '@/components/ui/Button';
 import { ArrowLeft } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { ROUTES } from '@/config/routes';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { getStatusInfo } from '@/config/status-config';
 import { PublicEntityPaymentSection } from '@/components/payment';
 import type { SellerReceiveInfo } from '@/domain/payments';
@@ -80,6 +80,8 @@ interface ProjectPageClientProps {
   lokiBuild?: LokiProjectLink | null;
   /** The studio product this project IS, when the fleet map knows it. */
   studio?: FleetTile | null;
+  /** Canonical product identity, roadmap and changelog rendered on the server. */
+  productRecord?: ReactNode;
   /** The receiving wallet whose ledger is public, if any (services/wallets/entityOpenLedger). */
   openLedgerWalletId?: string | null;
 }
@@ -96,6 +98,7 @@ export default function ProjectPageClient({
   canManage,
   lokiBuild,
   studio,
+  productRecord,
   openLedgerWalletId,
 }: ProjectPageClientProps) {
   const router = useRouter();
@@ -166,6 +169,8 @@ export default function ProjectPageClient({
                 isOwner,
               }}
             />
+
+            {productRecord}
 
             {/* Project Timeline */}
             <div className="mt-8">
