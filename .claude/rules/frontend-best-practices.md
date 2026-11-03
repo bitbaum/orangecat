@@ -50,7 +50,7 @@ There is no `bitcoin-orange` utility class — `text-bitcoin-orange` renders not
 
 ### Typography
 
-**Font families** (self-hosted in `src/fonts/`, wired in `src/app/layout.tsx`):
+**Font families** (shipped by `@bitbaum/design-tokens`, loaded by the generated `src/app/fonts.ts`, wired in `src/app/layout.tsx`):
 
 - `font-sans` — Inter (body, the default)
 - `font-heading` — Space Grotesk (display / headings)

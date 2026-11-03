@@ -210,8 +210,8 @@ shadcn-style HSL tokens and brand palette (`bg-card`, `text-foreground`,
 `tiffany-*`, `orange-*`), and the semantic tier new code uses
 (`text-fg-*`, `bg-surface-*`, `border-*`, `bg-accent-warm`, `bg-status-*`,
 `tracking-display`, `max-w-shell`). Existing components migrate as touched; no
-new uses of `tiffany` or `orange-*`. Fonts are self-hosted in `src/fonts/`,
-wired in `src/app/layout.tsx`: Space Grotesk (`font-heading`), Inter
+new uses of `tiffany` or `orange-*`. Fonts ship in `@bitbaum/design-tokens`
+(`src/app/fonts.ts` is generated from it), wired in `src/app/layout.tsx`: Space Grotesk (`font-heading`), Inter
 (`font-sans`), IBM Plex Mono (`font-mono`). The end state is monochrome surfaces,
 one orange, and status colours only for status.
 
