@@ -218,7 +218,16 @@ const config: Config = {
         caps: 'var(--tracking-caps)',
       },
       fontFamily: {
-        sans: ['var(--font-inter)'],
+        // The fallbacks --font-inter carried when the layout declared them.
+        sans: [
+          'var(--font-inter)',
+          'system-ui',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          'Segoe UI',
+          'Roboto',
+          'sans-serif',
+        ] as string[],
         // Loki-aligned display stack (migration 7/N)
         heading: [
           'var(--font-heading)',

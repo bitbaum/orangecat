@@ -1,47 +1,11 @@
 import brandAssets from '@/config/brand-assets.json';
-import localFont from 'next/font/local';
 import { ECOSYSTEM } from '@/config/ecosystem';
 
-// Self-hosted fonts (src/fonts/*.woff2) — NO build-time fetch from Google Fonts.
-// Removes a non-sovereign external dependency and the ETIMEDOUT build flakiness;
-// builds are now fully deterministic + offline. Inter & Space Grotesk are variable
-// (one file each, all weights); IBM Plex Mono ships the 3 weights actually used.
-const inter = localFont({
-  src: '../fonts/inter-variable.woff2',
-  variable: '--font-inter',
-  display: 'swap',
-  weight: '100 900',
-  fallback: [
-    'system-ui',
-    '-apple-system',
-    'BlinkMacSystemFont',
-    'Segoe UI',
-    'Roboto',
-    'sans-serif',
-  ],
-  preload: true,
-});
-
-// Loki-aligned display typography: Space Grotesk for display/heading,
-// IBM Plex Mono for code. Body stays Inter.
-const spaceGrotesk = localFont({
-  src: '../fonts/space-grotesk-variable.woff2',
-  variable: '--font-heading',
-  display: 'swap',
-  weight: '300 700',
-  preload: true,
-});
-const ibmPlexMono = localFont({
-  src: [
-    { path: '../fonts/ibm-plex-mono-400.woff2', weight: '400', style: 'normal' },
-    { path: '../fonts/ibm-plex-mono-500.woff2', weight: '500', style: 'normal' },
-    { path: '../fonts/ibm-plex-mono-600.woff2', weight: '600', style: 'normal' },
-  ],
-  variable: '--font-mono',
-  display: 'swap',
-  preload: false,
-  fallback: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
-});
+// Self-hosted fonts — NO build-time fetch from Google Fonts. Inter (body),
+// Space Grotesk (display/heading, Loki-aligned) and IBM Plex Mono (code) ship
+// in @bitbaum/design-tokens; ./fonts is the next/font/local module its
+// design-tokens-next-fonts command writes (latin and hinted, as before).
+import { ibmPlexMono, inter, spaceGrotesk } from './fonts';
 import './globals.css';
 import Script from 'next/script';
 import { AuthProvider } from '@/components/providers/AuthProvider';

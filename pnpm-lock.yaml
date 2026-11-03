@@ -36,11 +36,11 @@ importers:
         specifier: ^9.1.0
         version: 9.1.0(zod@4.6.7)
       '@bitbaum/accountkit':
-        specifier: github:bitbaum/accountkit#aa5eefde2749af841115f8cb2807cda011eb0f99
-        version: https://codeload.github.com/bitbaum/accountkit/tar.gz/aa5eefde2749af841115f8cb2807cda011eb0f99(@bitbaum/mail-kit@0.2.0)(next@16.4.1(@babel/core@7.29.7(supports-color@10.2.2))(@playwright/test@1.64.1)(@types/node@26.6.4)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react@19.3.1)
+        specifier: ^0.27.0
+        version: 0.27.0(@bitbaum/mail-kit@0.2.0)(next@16.4.1(@babel/core@7.29.7(supports-color@10.2.2))(@playwright/test@1.64.1)(@types/node@26.6.4)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react@19.3.1)
       '@bitbaum/ai-kit':
-        specifier: ^1.23.0
-        version: 1.23.0(react@19.3.1)
+        specifier: ^1.24.0
+        version: 1.24.0(react@19.3.1)
       '@bitbaum/chatkit':
         specifier: ^0.22.1
         version: 0.22.1(react@19.3.1)
@@ -50,6 +50,9 @@ importers:
       '@bitbaum/deckkit':
         specifier: workspace:*
         version: link:packages/deckkit
+      '@bitbaum/design-tokens':
+        specifier: ^1.4.0
+        version: 1.4.0
       '@bitbaum/geo-kit':
         specifier: ^0.3.0
         version: 0.3.0(d3-geo@3.1.1)
@@ -558,9 +561,8 @@ packages:
     resolution: {integrity: sha512-6zABk/ECA/QYSCQ1NGiVwwbQerUCZ+TQbp64Q3AgmfNvurHH0j8TtXa1qbShXA6qqkpAj4V5W8pP6mLe1mcMqA==}
     engines: {node: '>=18'}
 
-  '@bitbaum/accountkit@https://codeload.github.com/bitbaum/accountkit/tar.gz/aa5eefde2749af841115f8cb2807cda011eb0f99':
-    resolution: {gitHosted: true, integrity: sha512-C9lpx1a345KkkID6BIMy5db0U+qpOhreLByH/Hz1bsf2tFkWPfrAtiWjjw+d6pmNSUk3BWJACytRbYt8khoKOA==, tarball: https://codeload.github.com/bitbaum/accountkit/tar.gz/aa5eefde2749af841115f8cb2807cda011eb0f99}
-    version: 0.23.0
+  '@bitbaum/accountkit@0.27.0':
+    resolution: {integrity: sha512-5dBGE8va8x6qnZGKTGDPu72w9b3/MqTGZG+BpsynQ05MF1FsEcN3EkYNXQhZshpjW139qyG9CTym/jFLVP8ilA==}
     engines: {node: '>=20'}
     hasBin: true
     peerDependencies:
@@ -582,8 +584,8 @@ packages:
       next:
         optional: true
 
-  '@bitbaum/ai-kit@1.23.0':
-    resolution: {integrity: sha512-PFSdiWYJ3TMsXPlV11yZEMoZBELNvxT39s0EITYX8nJTS3d8PIjitHWNWTbmvpPA1QwEg2L0/WSlsa4tN3wqfg==}
+  '@bitbaum/ai-kit@1.24.0':
+    resolution: {integrity: sha512-fP5PFQijF+XWi8lT8zJEFJfC/Y6/SvzCT/nw04EvI+jXhVDdKdoPq5KKiGlFqR/SvkwiBJLCW35xiKkFysj3dw==}
     engines: {node: '>=20'}
     peerDependencies:
       react: '>=18'
@@ -597,6 +599,11 @@ packages:
     hasBin: true
     peerDependencies:
       react: '>=18'
+
+  '@bitbaum/design-tokens@1.4.0':
+    resolution: {integrity: sha512-ltw8j2Q1GM78O7Y+YxGRAVOrvAtLPwL9LR+F1u1uX7PIuYFNaqGDW4XRe3yL+f7aGcAgGVGuWV7OxHRuFkKRKg==}
+    engines: {node: '>=20'}
+    hasBin: true
 
   '@bitbaum/geo-kit@0.3.0':
     resolution: {integrity: sha512-DWqV+XM9jOXtss2CiHkfq2hMW8ZS1oXPk0SpiDOQoBftATpEjmTlBOAEv8bwjh8jbmi082EZ3RxAIgOVyblMtg==}
@@ -1266,6 +1273,10 @@ packages:
 
   '@noble/curves@2.0.1':
     resolution: {integrity: sha512-vs1Az2OOTBiP4q0pwjW5aF0xp9n4MxVrmkFBxc6EKZc6ddYx5gaZiAsZoq0uRRXWbi3AT/sBqn05eRPtn1JCPw==}
+    engines: {node: '>= 20.19.0'}
+
+  '@noble/curves@2.4.0':
+    resolution: {integrity: sha512-P4/62zrgfH33CneE3Dn4WhJVA22YUU0eR51wKIan4NVRvwsA0YnPTwWGpNbpuacSujmSFLvyzpyuR30+fbq2Ew==}
     engines: {node: '>= 20.19.0'}
 
   '@noble/hashes@1.8.0':
@@ -6231,6 +6242,9 @@ packages:
     peerDependencies:
       browserslist: '>= 4.21.0'
 
+  uqr@0.1.3:
+    resolution: {integrity: sha512-0rjE8iEJe4YmT9TOhwsZtqCMRLc5DXZUI2UEYUUg63ikBkqqE5EYWaI0etFe/5KUcmcYwLih2RND1kq+hrUJXA==}
+
   uri-js@4.4.1:
     resolution: {integrity: sha512-7rKUyy33Q1yc98pQ1DAmLtwX109F7TIfWlW1Ydo8Wl1ii1SeHieeh0HHfPeL2fMXK6z0s8ecKs9frCuLJvndBg==}
 
@@ -6803,16 +6817,19 @@ snapshots:
 
   '@bcoe/v8-coverage@1.0.2': {}
 
-  '@bitbaum/accountkit@https://codeload.github.com/bitbaum/accountkit/tar.gz/aa5eefde2749af841115f8cb2807cda011eb0f99(@bitbaum/mail-kit@0.2.0)(next@16.4.1(@babel/core@7.29.7(supports-color@10.2.2))(@playwright/test@1.64.1)(@types/node@26.6.4)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react@19.3.1)':
+  '@bitbaum/accountkit@0.27.0(@bitbaum/mail-kit@0.2.0)(next@16.4.1(@babel/core@7.29.7(supports-color@10.2.2))(@playwright/test@1.64.1)(@types/node@26.6.4)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react@19.3.1)':
     dependencies:
+      '@noble/curves': 2.4.0
+      '@scure/base': 2.4.0
       limitkit: 0.2.1
       react: 19.3.1
+      uqr: 0.1.3
       zod: 4.6.7
     optionalDependencies:
       '@bitbaum/mail-kit': 0.2.0
       next: 16.4.1(@babel/core@7.29.7(supports-color@10.2.2))(@playwright/test@1.64.1)(@types/node@26.6.4)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
 
-  '@bitbaum/ai-kit@1.23.0(react@19.3.1)':
+  '@bitbaum/ai-kit@1.24.0(react@19.3.1)':
     dependencies:
       '@mozilla/readability': 0.6.0
       ai-forms: 0.1.3(react@19.3.1)
@@ -6826,6 +6843,8 @@ snapshots:
     dependencies:
       pdfjs-dist: 6.4.299
       react: 19.3.1
+
+  '@bitbaum/design-tokens@1.4.0': {}
 
   '@bitbaum/geo-kit@0.3.0(d3-geo@3.1.1)':
     optionalDependencies:
@@ -7341,6 +7360,10 @@ snapshots:
   '@noble/curves@2.0.1':
     dependencies:
       '@noble/hashes': 2.0.1
+
+  '@noble/curves@2.4.0':
+    dependencies:
+      '@noble/hashes': 2.4.0
 
   '@noble/hashes@1.8.0': {}
 
@@ -12499,6 +12522,8 @@ snapshots:
       browserslist: 4.28.9
       escalade: 3.2.0
       picocolors: 1.1.1
+
+  uqr@0.1.3: {}
 
   uri-js@4.4.1:
     dependencies:
