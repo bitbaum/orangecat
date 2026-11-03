@@ -1,3 +1,4 @@
+import { recordCatCompletionSuccess, recordCatCompletionFailure } from './completion-health';
 /**
  * Cat Chat Orchestrator
  *
@@ -199,6 +200,7 @@ export function isAiRateLimitError(error: unknown): boolean {
  * Only the link is recorded. Never the message, never the answer.
  */
 function logServed(provider: string, model: string): void {
+  recordCatCompletionSuccess();
   logger.info('Cat chat: model call served', { link: `${provider}/${model}` }, 'cat/chat', {
     always: true,
   });
@@ -926,7 +928,7 @@ function streamErrorPayload(
     return {
       error: hasByok
         ? 'Your provider returned a rate-limit. Try again in a moment.'
-        : 'Free AI capacity is maxed out right now. Try again in a minute — or add your own free Groq key in Settings → AI for capacity that’s all yours.',
+        : 'The shared AI provider is rate-limiting requests. Try again later, or add your own provider key in Settings → AI.',
       code: 'AI_RATE_LIMITED',
     };
   }
@@ -957,6 +959,7 @@ async function failStreamedTurn(
   const { user, supabase } = turn.request;
   const { hasByok } = turn.resolved;
   const { attemptedFallback, activeProvider, activeModel } = state;
+  recordCatCompletionFailure();
   logger.error(
     'Cat chat stream error',
     { err, attemptedFallback, hasByok, provider: activeProvider, model: activeModel },
@@ -1100,6 +1103,7 @@ async function walkCompletionChain(
   }
   if (!result) {
     markFailedLink(lastTried.platform, lastTried.provider, lastTried.model, lastErr);
+    recordCatCompletionFailure();
     throw lastErr ?? new Error('Cat chat: no AI provider produced a response');
   }
   logServed(lastTried.provider, lastTried.model);

@@ -7,7 +7,7 @@ export function PermissionInfo() {
           <strong>Low risk</strong> actions (like adding context) can run without asking.
         </li>
         <li>
-          <strong>Medium risk</strong> actions (like creating posts) will ask for confirmation.
+          <strong>Medium risk</strong> actions follow the Ask first or Automatic setting you choose.
         </li>
         <li>
           <strong>High risk</strong> actions (like sending Bitcoin) always require confirmation.

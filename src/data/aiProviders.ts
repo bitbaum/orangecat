@@ -157,7 +157,8 @@ export const aiProviders: AIProvider[] = [
     id: 'ollama',
     name: 'Ollama',
     type: 'local',
-    description: 'Run models on your own machine. Nothing leaves the laptop.',
+    description:
+      'Run model inference on your own machine. Conversation storage and actions still use OrangeCat.',
     websiteUrl: 'https://ollama.com',
     apiKeyUrl: 'https://ollama.com/download',
     docsUrl: 'https://github.com/ollama/ollama/blob/main/docs/api.md',

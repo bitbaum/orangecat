@@ -1,5 +1,5 @@
 {
-  "scope": "Cat grounding, per-project investor-room actions and canonical connected product profiles; existing application-wide package adoption is not audited by this change.",
+  "scope": "Cat grounding and investor-room actions, plus the fleet-review repair of provider routing, completion readiness, permission decisions and recovery. Domain permission and action ownership rules remain local to OrangeCat.",
   "blocks": {
     "chat": {
       "package": "@bitbaum/chatkit",
@@ -14,7 +14,10 @@
     "deck": {
       "package": "@bitbaum/deckkit",
       "bindings": [
-        { "file": "src/services/cat/handlers/investor-room.ts", "symbols": ["generateDeck"] }
+        {
+          "file": "src/services/cat/handlers/investor-room.ts",
+          "symbols": ["generateDeck"]
+        }
       ],
       "notes": "Chat uses the same generator and ownership-checked deck persistence as the room UI. Product records remain canonical in Loki; the OrangeCat profile and room render them without storing copies."
     },
@@ -32,6 +35,14 @@
         {
           "file": "src/services/cat/chat-orchestrator.ts",
           "symbols": ["classifyAnswerPrefix"]
+        },
+        {
+          "file": "src/services/ai/platform-providers.ts",
+          "symbols": ["usableChain", "linkSeesImages"]
+        },
+        {
+          "file": "src/services/cat/completion-health.ts",
+          "symbols": ["createHealthTracker"]
         }
       ],
       "notes": "Reuse packaged verification. The application supplies its verified navigation evidence and protects links to fetched project rooms during repair."

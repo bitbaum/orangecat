@@ -43,16 +43,12 @@ export function CanDoSection({ userId }: { userId: string }) {
   return (
     <TooltipProvider>
       <div className="space-y-6">
-        <PermissionPresets
-          categories={summary.categories}
-          saving={p.saving}
-          onToggleCategory={p.toggleCategory}
-        />
+        <PermissionPresets saving={p.saving} onApplyPreset={p.applyPreset} />
 
         {summary.highRiskEnabled && (
           <p className="flex items-start gap-2 rounded-md border border-subtle bg-status-warning-subtle px-4 py-3 text-sm text-fg-primary">
             <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-status-warning" />
-            Cat may send Bitcoin or post publicly — it always asks you first.
+            Some enabled actions are high risk. Cat always asks you to confirm those actions.
           </p>
         )}
 

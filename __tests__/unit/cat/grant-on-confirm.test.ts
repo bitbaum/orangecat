@@ -35,7 +35,9 @@ vi.mock('@/services/cat/handlers', () => ({
 
 function mockSupabase(pendingRow?: Record<string, unknown>) {
   const inserts: Record<string, unknown[]> = {};
+  let claimed = false;
   const from = vi.fn((table: string) => {
+    const filters = new Map<string, unknown>();
     const chain: Record<string, unknown> = {};
     chain.insert = vi.fn((payload: unknown) => {
       (inserts[table] ??= []).push(payload);
@@ -43,7 +45,10 @@ function mockSupabase(pendingRow?: Record<string, unknown>) {
     });
     chain.update = vi.fn().mockReturnThis();
     chain.select = vi.fn().mockReturnThis();
-    chain.eq = vi.fn().mockReturnThis();
+    chain.eq = vi.fn((column: string, value: unknown) => {
+      filters.set(column, value);
+      return chain;
+    });
     chain.single = vi.fn().mockImplementation(async () => {
       if (table === DATABASE_TABLES.CAT_PENDING_ACTIONS && pendingRow) {
         return { data: pendingRow, error: null };
@@ -51,7 +56,12 @@ function mockSupabase(pendingRow?: Record<string, unknown>) {
       const last = inserts[table]?.at(-1) as Record<string, unknown> | undefined;
       return { data: { id: 'row-1', expires_at: '2999-01-01', ...last }, error: null };
     });
-    chain.maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+    chain.maybeSingle = vi.fn().mockImplementation(async () => {
+      if (!pendingRow || (claimed && filters.get('status') === 'pending'))
+        return { data: null, error: null };
+      claimed = true;
+      return { data: { id: pendingRow.id }, error: null };
+    });
     chain.gt = vi.fn().mockReturnThis();
     chain.order = vi.fn().mockReturnThis();
     chain.limit = vi.fn().mockResolvedValue({ data: [], error: null });
@@ -61,7 +71,7 @@ function mockSupabase(pendingRow?: Record<string, unknown>) {
 }
 
 beforeEach(() => {
-  checkPermission.mockReset();
+  checkPermission.mockReset().mockResolvedValue({ allowed: true, requiresConfirmation: true });
   grantCategory.mockReset();
   handler.mockClear();
 });
@@ -157,5 +167,40 @@ describe('an ungranted category becomes a consent card', () => {
     const executor = new CatActionExecutor(supabase);
     await executor.confirmPendingAction('u', 'a', 'pending-2');
     expect(grantCategory).not.toHaveBeenCalled();
+  });
+  it('executes only once when two confirmations read the same pending row', async () => {
+    const { supabase } = mockSupabase({
+      id: 'race',
+      action_id: 'create_project_for_person',
+      category: 'entities',
+      parameters: { person_name: 'A', title: 'B' },
+      status: 'pending',
+      expires_at: '2999-01-01T00:00:00Z',
+      grant_on_confirm: false,
+    });
+    const executor = new CatActionExecutor(supabase);
+    const results = await Promise.all([
+      executor.confirmPendingAction('u', 'a', 'race'),
+      executor.confirmPendingAction('u', 'a', 'race'),
+    ]);
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(results.filter(r => r.success)).toHaveLength(1);
+  });
+
+  it('does not execute a proposal after its permission has been revoked', async () => {
+    checkPermission.mockResolvedValue({ allowed: false, code: 'permission_denied' });
+    const { supabase } = mockSupabase({
+      id: 'revoked',
+      action_id: 'create_project_for_person',
+      category: 'entities',
+      parameters: { person_name: 'A', title: 'B' },
+      status: 'pending',
+      expires_at: '2999-01-01T00:00:00Z',
+      grant_on_confirm: false,
+    });
+    expect(
+      (await new CatActionExecutor(supabase).confirmPendingAction('u', 'a', 'revoked')).status
+    ).toBe('denied');
+    expect(handler).not.toHaveBeenCalled();
   });
 });

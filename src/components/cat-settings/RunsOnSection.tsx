@@ -101,7 +101,10 @@ export function RunsOnSection() {
 
       <section id="local" className={CARD}>
         <CardHead icon={Terminal} title="Your own machine">
-          <p>Cat talks to a model on your computer. Nothing leaves it; free forever.</p>
+          <p>
+            Model inference runs on your computer. OrangeCat still receives conversation data to
+            save replies and carry out approved actions.
+          </p>
         </CardHead>
         <div className="mt-4">
           <LocalRuntimePanel />

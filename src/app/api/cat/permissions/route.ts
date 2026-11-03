@@ -8,14 +8,14 @@
 
 import { NextRequest } from 'next/server';
 import { createPermissionService } from '@/services/cat';
-import { defaultAllowedFor } from '@/services/cat/permission-service';
+import { effectivePermission } from '@/services/cat/effective-permission';
 import {
   CAT_ACTIONS,
   ACTION_CATEGORIES,
   ACTION_CATEGORY_KEYS,
   type ActionCategory,
 } from '@/config/cat-actions';
-import { toAutonomyLevel } from '@/config/cat-autonomy';
+import { toAutonomyLevel, PERMISSION_PRESETS } from '@/config/cat-autonomy';
 import { z } from 'zod';
 import { logger } from '@/utils/logger';
 import {
@@ -48,24 +48,14 @@ export const GET = withAuth(async (request: AuthenticatedRequest) => {
   const { user, supabase } = request;
   try {
     const permissionService = createPermissionService(supabase);
-    const summary = await permissionService.getPermissionSummary(user.id);
-
-    // Resolve each action's EFFECTIVE autonomy level the same way the executor
-    // does (specific row → category row → registry default), so the settings
-    // screen shows what will actually happen, not the shipped defaults.
     const stored = await permissionService.getUserPermissions(user.id);
-    const byAction = new Map(stored.filter(p => p.action_id !== '*').map(p => [p.action_id, p]));
-    const byCategory = new Map(
-      stored.filter(p => p.action_id === '*').map(p => [p.category as string, p])
-    );
+    const summary = await permissionService.getPermissionSummary(user.id, stored);
 
     const availableActions = Object.values(CAT_ACTIONS)
       .filter(a => a.enabled)
       .map(a => {
-        const row = byAction.get(a.id) ?? byCategory.get(a.category);
-        const autonomy = row
-          ? toAutonomyLevel(row.granted, row.requires_confirmation)
-          : toAutonomyLevel(defaultAllowedFor(a.id, a.category), a.requiresConfirmation);
+        const permission = effectivePermission(a.id, stored);
+        const autonomy = toAutonomyLevel(permission.allowed, permission.requiresConfirmation);
         return {
           id: a.id,
           name: a.name,
@@ -99,6 +89,17 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
     }
 
     const body = await (request as NextRequest).json();
+    if (body && typeof body === 'object' && 'preset' in body) {
+      const preset = z
+        .object({ preset: z.enum(PERMISSION_PRESETS) })
+        .strict()
+        .safeParse(body);
+      if (!preset.success) {
+        return apiBadRequest('Invalid permission preset');
+      }
+      await createPermissionService(supabase).applyPreset(user.id, preset.data.preset);
+      return apiSuccess({ applied: true });
+    }
     const parseResult = grantPermissionSchema.safeParse(body);
     if (!parseResult.success) {
       return apiBadRequest('Invalid request', parseResult.error.issues);

@@ -2,34 +2,20 @@
 
 import { Shield, ShieldCheck, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import type { CategorySummary } from './types';
+import type { PermissionPreset } from '@/config/cat-autonomy';
 
 interface PermissionPresetsProps {
-  categories: CategorySummary[];
   saving: string | null;
-  onToggleCategory: (id: string, enabled: boolean) => void;
+  onApplyPreset: (preset: PermissionPreset) => void;
 }
 
-export function PermissionPresets({
-  categories,
-  saving,
-  onToggleCategory,
-}: PermissionPresetsProps) {
-  const applyPreset = (shouldEnable: (categoryId: string) => boolean) => {
-    categories.forEach(cat => {
-      const wanted = shouldEnable(cat.category);
-      if (wanted !== cat.enabled) {
-        onToggleCategory(cat.category, wanted);
-      }
-    });
-  };
-
+export function PermissionPresets({ saving, onApplyPreset }: PermissionPresetsProps) {
   return (
     <div className="mt-8">
       <h3 className="mb-3 text-base font-semibold text-fg-primary">Quick presets</h3>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <button
-          onClick={() => applyPreset(id => id === 'context')}
+          onClick={() => onApplyPreset('minimal')}
           disabled={saving !== null}
           className="rounded-md border border-subtle p-4 text-left transition-colors hover:border-strong hover:bg-surface-raised disabled:opacity-50"
         >
@@ -43,7 +29,7 @@ export function PermissionPresets({
         </button>
 
         <button
-          onClick={() => applyPreset(id => ['entities', 'context', 'communication'].includes(id))}
+          onClick={() => onApplyPreset('creator')}
           disabled={saving !== null}
           className="rounded-md border border-subtle p-4 text-left transition-colors hover:border-strong hover:bg-surface-raised disabled:opacity-50"
         >
@@ -57,7 +43,7 @@ export function PermissionPresets({
         </button>
 
         <button
-          onClick={() => applyPreset(id => id !== 'payments')}
+          onClick={() => onApplyPreset('power')}
           disabled={saving !== null}
           className="rounded-md border border-subtle p-4 text-left transition-colors hover:border-strong hover:bg-surface-raised disabled:opacity-50"
         >
@@ -75,7 +61,7 @@ export function PermissionPresets({
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => applyPreset(() => false)}
+          onClick={() => onApplyPreset('none')}
           disabled={saving !== null}
           className="text-fg-secondary hover:text-status-negative"
         >

@@ -1,6 +1,7 @@
 import { apiSuccess, apiServiceUnavailable } from '@/lib/api/standardResponse';
 import { checkHealth } from '@/lib/health';
 import { getHostMetrics } from '@/lib/host-metrics';
+import { getCatCompletionHealth } from '@/services/cat/completion-health';
 
 const CACHE = 'public, s-maxage=10, stale-while-revalidate=30';
 
@@ -11,7 +12,9 @@ export async function GET() {
 
   const body = {
     status: healthy ? 'healthy' : 'unhealthy',
+    scope: 'liveness',
     timestamp: report.timestamp,
+    ai: getCatCompletionHealth(),
     services: Object.fromEntries(
       report.services.map(s => [s.name.toLowerCase().replace(' ', '_'), s.status])
     ),
