@@ -11,6 +11,7 @@
 
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { CAT_ACTIONS, ACTION_CATEGORIES, type ActionCategory } from '@/config/cat-actions';
+import { presetAllows, type PermissionPreset } from '@/config/cat-autonomy';
 import type { AiErrorCode } from '@/config/ai-errors';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { getActiveAllocationPolicy } from '@/services/solon/allocation-policy';
@@ -72,43 +73,12 @@ interface UserPermissionSummary {
   highRiskEnabled: boolean;
 }
 
-// Default permissions for new users - conservative by default.
-// Exported so any surface that must show the EFFECTIVE level (settings UI via
-// the permissions API) resolves it exactly like checkPermission does.
-export const DEFAULT_PERMISSIONS: Partial<Record<ActionCategory, boolean>> = {
-  context: true, // Can manage their own context
-  entities: false, // Must explicitly enable
-  communication: false,
-  payments: false, // High risk - never default
-  organization: false,
-};
-
-/**
- * Per-action defaults that override the category default.
- *
- * `payments: false` is right for actions that MOVE money, and wrong for the one
- * that decides where the user's own money arrives. Without this override,
- * connect_wallet — the action that makes a profile payable at all — is denied
- * for every new user, and the only way to reach it is to enable the whole
- * payments category, which ALSO unlocks send_payment. Defaulting one harmless
- * action on is strictly safer than pushing people to unlock the harmful ones.
- *
- * The bar for adding a row here: the action moves no funds, writes only the
- * user's own row under RLS, and still requires confirmation. An explicitly
- * stored permission always wins — this is a default, not an override of intent.
- */
-export const DEFAULT_ACTION_PERMISSIONS: Partial<Record<string, boolean>> = {
-  connect_wallet: true,
-  // Moves nothing: writes the owner's own note on their own transaction, under
-  // RLS, after confirmation. Off by default it would sit behind the switch that
-  // also unlocks send_payment.
-  note_transaction: true,
-};
-
-/** Resolve the shipped default for an action: per-action first, then category. */
-export function defaultAllowedFor(actionId: string, category: ActionCategory): boolean {
-  return DEFAULT_ACTION_PERMISSIONS[actionId] ?? DEFAULT_PERMISSIONS[category] ?? false;
-}
+import { effectivePermission, DEFAULT_PERMISSIONS } from './effective-permission';
+export {
+  DEFAULT_PERMISSIONS,
+  DEFAULT_ACTION_PERMISSIONS,
+  defaultAllowedFor,
+} from './effective-permission';
 
 /**
  * Combine caps from the matched permission rows (specific action + category '*').
@@ -155,82 +125,29 @@ export class CatPermissionService {
       };
     }
 
-    // Check for specific action permission first
-    const { data: specificPerm } = await this.supabase
-      .from(DATABASE_TABLES.CAT_PERMISSIONS)
-      .select('*')
-      .eq('user_id', userId)
-      .eq('action_id', actionId)
-      .maybeSingle();
-
-    if (specificPerm) {
-      if (!specificPerm.granted) {
-        return {
-          allowed: false,
-          code: 'permission_denied',
-          reason: 'Permission denied for this action',
-          requiresConfirmation: true,
-        };
-      }
-
-      // Check daily limit
-      if (specificPerm.daily_limit) {
-        const usage = await this.getDailyUsage(userId, actionId);
-        if (usage >= specificPerm.daily_limit) {
-          return {
-            allowed: false,
-            code: 'daily_limit_reached',
-            reason: `Daily limit reached (${usage}/${specificPerm.daily_limit})`,
-            requiresConfirmation: true,
-            dailyUsage: usage,
-            dailyLimit: specificPerm.daily_limit,
-          };
-        }
-      }
-
+    const effective = effectivePermission(actionId, await this.getUserPermissions(userId));
+    if (!effective.allowed) {
       return {
-        allowed: true,
-        requiresConfirmation: specificPerm.requires_confirmation ?? action.requiresConfirmation,
-        dailyUsage: specificPerm.daily_limit
-          ? await this.getDailyUsage(userId, actionId)
-          : undefined,
-        dailyLimit: specificPerm.daily_limit ?? undefined,
+        allowed: false,
+        code: 'permission_denied',
+        reason: 'Permission not granted',
+        requiresConfirmation: true,
       };
     }
-
-    // Check category-wide permission
-    const { data: categoryPerm } = await this.supabase
-      .from(DATABASE_TABLES.CAT_PERMISSIONS)
-      .select('*')
-      .eq('user_id', userId)
-      .eq('action_id', '*')
-      .eq('category', action.category)
-      .maybeSingle();
-
-    if (categoryPerm) {
-      if (!categoryPerm.granted) {
-        return {
-          allowed: false,
-          code: 'permission_denied',
-          reason: `Permission denied for ${action.category} actions`,
-          requiresConfirmation: true,
-        };
-      }
-
+    const dailyUsage = effective.dailyLimit
+      ? await this.getDailyUsage(userId, actionId)
+      : undefined;
+    if (effective.dailyLimit && dailyUsage !== undefined && dailyUsage >= effective.dailyLimit) {
       return {
-        allowed: true,
-        requiresConfirmation: categoryPerm.requires_confirmation ?? action.requiresConfirmation,
+        allowed: false,
+        code: 'daily_limit_reached',
+        reason: `Daily limit reached (${dailyUsage}/${effective.dailyLimit})`,
+        requiresConfirmation: true,
+        dailyUsage,
+        dailyLimit: effective.dailyLimit,
       };
     }
-
-    // Fall back to defaults
-    const defaultAllowed = defaultAllowedFor(action.id, action.category);
-    return {
-      allowed: defaultAllowed,
-      code: defaultAllowed ? undefined : 'permission_denied',
-      reason: defaultAllowed ? undefined : 'Permission not granted',
-      requiresConfirmation: action.requiresConfirmation,
-    };
+    return { ...effective, dailyUsage };
   }
 
   /**
@@ -253,13 +170,16 @@ export class CatPermissionService {
       return { allowed: true };
     }
 
-    const { data: rows } = await this.supabase
+    const { data: rows, error: capsError } = await this.supabase
       .from(DATABASE_TABLES.CAT_PERMISSIONS)
       .select('action_id, max_btc_per_action, max_btc_per_day')
       .eq('user_id', userId)
       .eq('category', action.category)
       .in('action_id', [actionId, '*']);
 
+    if (capsError) {
+      throw new Error(`Could not verify spending caps: ${capsError.message}`);
+    }
     const caps = effectiveSpendCaps(rows ?? []);
 
     if (caps.maxBtcPerAction !== null && amountBtc > caps.maxBtcPerAction) {
@@ -350,7 +270,10 @@ export class CatPermissionService {
       query = query.neq('id', filter.excludeLogId);
     }
 
-    const { data } = await query;
+    const { data, error } = await query;
+    if (error) {
+      throw new Error(`Could not verify spending usage: ${error.message}`);
+    }
 
     return (data ?? []).reduce(
       (sum: number, row: { amount_btc: number | null }) => sum + (row.amount_btc ?? 0),
@@ -362,7 +285,7 @@ export class CatPermissionService {
    * Current spend caps for the payments category (the '*' row — what the UI edits).
    */
   async getSpendCaps(userId: string): Promise<SpendCaps> {
-    const { data } = await this.supabase
+    const { data, error } = await this.supabase
       .from(DATABASE_TABLES.CAT_PERMISSIONS)
       .select('max_btc_per_action, max_btc_per_day')
       .eq('user_id', userId)
@@ -370,6 +293,9 @@ export class CatPermissionService {
       .eq('action_id', '*')
       .maybeSingle();
 
+    if (error) {
+      throw new Error(`Could not verify spending caps: ${error.message}`);
+    }
     return {
       maxBtcPerAction: data?.max_btc_per_action ?? null,
       maxBtcPerDay: data?.max_btc_per_day ?? null,
@@ -383,13 +309,16 @@ export class CatPermissionService {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const { count } = await this.supabase
+    const { count, error } = await this.supabase
       .from(DATABASE_TABLES.CAT_ACTION_LOG)
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId)
       .eq('action_id', actionId)
       .gte('created_at', today.toISOString());
 
+    if (error) {
+      throw new Error(`Could not verify daily usage: ${error.message}`);
+    }
     return count || 0;
   }
 
@@ -481,25 +410,86 @@ export class CatPermissionService {
       maxBtcPerDay?: number | null;
     } = {}
   ): Promise<void> {
-    await this.grantPermission(userId, '*', category, options);
+    // Editing caps changes only the category row, preserving individual caps
+    // and autonomy. A switch without limits applies to every action atomically.
+    if ('dailyLimit' in options || 'maxBtcPerAction' in options || 'maxBtcPerDay' in options) {
+      await this.grantPermission(userId, '*', category, options);
+      return;
+    }
+    const base = {
+      user_id: userId,
+      category,
+      granted: true,
+      requires_confirmation: options.requiresConfirmation ?? true,
+      updated_at: new Date().toISOString(),
+    };
+    const categoryRow: Record<string, unknown> = { ...base, action_id: '*' };
+    const { error } = await this.supabase.from(DATABASE_TABLES.CAT_PERMISSIONS).upsert(
+      [
+        categoryRow,
+        ...Object.values(CAT_ACTIONS)
+          .filter(a => a.enabled && a.category === category)
+          .map(a => ({
+            ...base,
+            action_id: a.id,
+            requires_confirmation: a.riskLevel === 'high' || base.requires_confirmation,
+          })),
+      ],
+      { onConflict: 'user_id,action_id,category', defaultToNull: false }
+    );
+    if (error) {
+      throw new Error(`Failed to grant category: ${error.message}`);
+    }
   }
 
   /**
    * Revoke all permissions for a category
    */
   async revokeCategory(userId: string, category: ActionCategory): Promise<void> {
-    // Remove category-wide permission
-    await this.revokePermission(userId, '*', category);
-
-    // Also revoke all specific actions in this category
-    const { error } = await this.supabase
-      .from(DATABASE_TABLES.CAT_PERMISSIONS)
-      .update({ granted: false, updated_at: new Date().toISOString() })
-      .eq('user_id', userId)
-      .eq('category', category);
-
+    const updated_at = new Date().toISOString();
+    const choices = [
+      '*',
+      ...Object.values(CAT_ACTIONS)
+        .filter(a => a.category === category)
+        .map(a => a.id),
+    ];
+    const { error } = await this.supabase.from(DATABASE_TABLES.CAT_PERMISSIONS).upsert(
+      choices.map(action_id => ({
+        user_id: userId,
+        action_id,
+        category,
+        granted: false,
+        requires_confirmation: true,
+        updated_at,
+      })),
+      { onConflict: 'user_id,action_id,category', defaultToNull: false }
+    );
     if (error) {
       throw new Error(`Failed to revoke category: ${error.message}`);
+    }
+  }
+
+  /** A single upsert is one database statement: no partially applied preset. */
+  async applyPreset(userId: string, preset: PermissionPreset): Promise<void> {
+    const updated_at = new Date().toISOString();
+    const choices = [
+      ...Object.keys(ACTION_CATEGORIES).map(category => ({ action_id: '*', category })),
+      ...Object.values(CAT_ACTIONS)
+        .filter(a => a.enabled)
+        .map(a => ({ action_id: a.id, category: a.category })),
+    ];
+    const { error } = await this.supabase.from(DATABASE_TABLES.CAT_PERMISSIONS).upsert(
+      choices.map(choice => ({
+        ...choice,
+        user_id: userId,
+        granted: presetAllows(preset, choice.category),
+        requires_confirmation: true,
+        updated_at,
+      })),
+      { onConflict: 'user_id,action_id,category', defaultToNull: false }
+    );
+    if (error) {
+      throw new Error(`Failed to apply permission preset: ${error.message}`);
     }
   }
 
@@ -523,62 +513,29 @@ export class CatPermissionService {
   /**
    * Get permission summary for a user (for UI display)
    */
-  async getPermissionSummary(userId: string): Promise<UserPermissionSummary> {
-    const permissions = await this.getUserPermissions(userId);
-    const permissionMap = new Map<string, CatPermission>();
-
-    for (const perm of permissions) {
-      permissionMap.set(`${perm.category}:${perm.action_id}`, perm);
-    }
-
+  async getPermissionSummary(
+    userId: string,
+    stored?: CatPermission[]
+  ): Promise<UserPermissionSummary> {
+    const permissions = stored ?? (await this.getUserPermissions(userId));
+    const enabled = Object.values(CAT_ACTIONS).filter(a => a.enabled);
+    const permitted = enabled.filter(a => effectivePermission(a.id, permissions).allowed);
     const categories = Object.entries(ACTION_CATEGORIES).map(([cat, meta]) => {
       const category = cat as ActionCategory;
-      const actionsInCategory = Object.values(CAT_ACTIONS).filter(
-        a => a.category === category && a.enabled
-      );
-
-      // Check if category is enabled (either specific category grant or all actions granted)
-      const categoryPerm = permissionMap.get(`${category}:*`);
-      const categoryEnabled = categoryPerm?.granted ?? DEFAULT_PERMISSIONS[category] ?? false;
-
-      // Count enabled actions
-      let enabledCount = 0;
-      if (categoryEnabled) {
-        enabledCount = actionsInCategory.length;
-      } else {
-        for (const action of actionsInCategory) {
-          const actionPerm = permissionMap.get(`${category}:${action.id}`);
-          if (actionPerm?.granted) {
-            enabledCount++;
-          }
-        }
-      }
-
+      const actions = enabled.filter(a => a.category === category);
+      const count = permitted.filter(a => a.category === category).length;
       return {
         category,
         name: meta.name,
         description: meta.description,
-        enabled: categoryEnabled || enabledCount > 0,
-        actionCount: actionsInCategory.length,
-        enabledActionCount: categoryEnabled ? actionsInCategory.length : enabledCount,
+        enabled: count > 0,
+        actionCount: actions.length,
+        enabledActionCount: count,
       };
     });
-
-    const totalActions = Object.values(CAT_ACTIONS).filter(a => a.enabled).length;
-    const enabledActions = categories.reduce((sum, c) => sum + c.enabledActionCount, 0);
-
-    // Check if any high-risk actions are enabled
-    const highRiskActions = Object.values(CAT_ACTIONS).filter(
-      a => a.riskLevel === 'high' && a.enabled
-    );
-    let highRiskEnabled = false;
-    for (const action of highRiskActions) {
-      const perm = await this.checkPermission(userId, action.id);
-      if (perm.allowed) {
-        highRiskEnabled = true;
-        break;
-      }
-    }
+    const totalActions = enabled.length;
+    const enabledActions = permitted.length;
+    const highRiskEnabled = permitted.some(a => a.riskLevel === 'high');
 
     return {
       categories,

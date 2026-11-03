@@ -8,6 +8,8 @@
 
 import Button from '@/components/ui/Button';
 import { ROUTES } from '@/config/routes';
+import { PAID_PLANS_OPEN } from '@/config/commerce';
+import { FEATURES } from '@/config/features';
 import { CatStatusButton } from '@/components/ai-chat/CatStatusNote';
 import type { ChatFailure } from '@bitbaum/chatkit/react';
 
@@ -44,9 +46,11 @@ export function TurnFailure({ failure }: { failure: ChatFailure }) {
           <Button href={ROUTES.SETTINGS_AI} variant="primary" size="sm" className="min-h-11">
             Add a free key
           </Button>
-          <Button href={ROUTES.SETTINGS_AI} variant="outline" size="sm" className="min-h-11">
-            Top up Cat Credits
-          </Button>
+          {PAID_PLANS_OPEN && FEATURES.catCreditsLive && (
+            <Button href={ROUTES.SETTINGS_AI} variant="outline" size="sm" className="min-h-11">
+              Top up Cat Credits
+            </Button>
+          )}
         </>
       )}
       <CatStatusButton />

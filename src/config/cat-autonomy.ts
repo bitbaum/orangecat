@@ -71,3 +71,21 @@ export function fromAutonomyLevel(level: AutonomyLevel): {
 export function allowedLevelsForRisk(risk: ActionRiskLevel): AutonomyLevel[] {
   return risk === 'high' ? ['off', 'ask'] : ['off', 'ask', 'auto'];
 }
+
+/** A preset replaces the effective choices, including individual overrides. */
+export const PERMISSION_PRESETS = ['minimal', 'creator', 'power', 'none'] as const;
+export type PermissionPreset = (typeof PERMISSION_PRESETS)[number];
+export function presetAllows(preset: PermissionPreset, category: string): boolean {
+  if (preset === 'none') {
+    return false;
+  }
+  if (preset === 'minimal') {
+    return category === 'context';
+  }
+  if (preset === 'power') {
+    return category !== 'payments';
+  }
+  return ['context', 'entities', 'communication'].includes(category);
+}
+
+export const CAT_PERMISSIONS_CHANGED_EVENT = 'cat-permissions-changed';

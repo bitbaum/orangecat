@@ -1,7 +1,7 @@
 import { createServerClient } from '@/lib/supabase/server';
 import { DATABASE_TABLES } from '@/config/database-tables';
 
-export type ServiceStatus = 'operational' | 'degraded' | 'outage';
+export type ServiceStatus = 'operational' | 'degraded' | 'outage' | 'unknown';
 
 interface ServiceHealth {
   name: string;
@@ -85,7 +85,7 @@ export async function checkHealth(): Promise<HealthReport> {
     { name: 'API', status: 'operational' },
     { name: 'Database', status: dbStatus },
     { name: 'Authentication', status: authStatus },
-    { name: 'Bitcoin Integration', status: 'operational' },
+    { name: 'Bitcoin Integration', status: 'unknown' },
   ];
 
   // The 200/503 that the DEPLOY health-gate and uptime monitor key on reflects

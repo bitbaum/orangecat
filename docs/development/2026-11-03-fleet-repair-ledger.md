@@ -1,0 +1,51 @@
+# Fleet repair ledger
+
+This is the execution plan for the owner's integrated OrangeCat/Loki review.
+One application is active at a time; a merged fix closes only its declared scope.
+
+| Order | Scope                                                                        | Required evidence                                                                    | State                           |
+| ----- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------- |
+| 1     | OrangeCat provider routing, truthful recovery and local-inference disclosure | alternate-provider-only regression, failure UI, existing-account grounded completion | active                          |
+| 2     | Effective permissions, atomic presets and single-claim confirmations         | precedence/default/risk tests, batch failure and concurrent confirmation tests       | active, same correctness change |
+| 3     | OrangeCat activity, integration states and overlay hierarchy                 | error/empty distinction, scoped capability labels, mobile sheets/keyboard            | queued                          |
+| 4     | Loki idle Workbench, in-place start and coherent execution states            | idle → send → queue → session → result in one workspace                              | queued                          |
+| 5     | Identity, independent enrollment and tenant isolation                        | unrelated users/member, guessed IDs, expired/revoked grants, cross-app handoff       | queued                          |
+| 6     | Email and Telegram delivery contracts                                        | accepted/delivered/failed status, user-scoped routing, link/unlink                   | queued                          |
+| 7     | Solon integration and governance                                             | membership, project binding, signed eligible decision                                | queued                          |
+| 8     | Fleet efficiency and remaining review reconciliation                         | measured CI/restarts, package bindings, journey evidence                             | queued                          |
+
+For each change record: source SHA, focused and full checks, PR, deployed SHA,
+and exercised journey. Never record a healthy process as a successful AI answer.
+The reproduced provider failure needs server-side evidence; unused personal
+allowance does not establish available shared capacity. No API keys, account
+passwords, session cookies or private conversation bodies belong in this ledger.
+
+## First OrangeCat correctness change
+
+Implemented, awaiting final checks and deployment:
+
+- Shared effective-permission resolver for execution, summary and action autonomy;
+  high-risk confirmation remains mandatory even for older stored grants.
+- Atomic preset/category writes, with individual spending caps retained; settings
+  readers synchronize from the canonical refreshed snapshot.
+- Conditional pending-action claim before any handler, with permission revocation
+  checked again and failed claims prevented from executing.
+- Failed spending-accounting reads stop execution instead of assuming zero usage.
+- Platform routing uses the actual configured chain, including alternate providers.
+- Recovery omits unavailable credit top-ups and no longer promises a one-minute
+  quota reset. Local inference copy discloses server storage/action traffic.
+- Completion observations are reported separately from process liveness; unprobed
+  Bitcoin integration reads unknown. Activity read errors have a retry state.
+
+Focused regressions cover effective precedence/defaults, mandatory confirmation,
+atomic preset failure, concurrent confirmation, revocation, alternate-provider-only
+routing and closed-credit recovery. The first full check run passed all static
+lanes and 5,603 tests; one snapshot needed the intentional rate-limit copy change.
+The updated orchestrator suite then passed all 45 tests. Final checks and served
+artifact verification remain required before any item above is called deployed.
+
+Still open in this application: the exact existing-account contextual completion
+failure, historical failure rendering, tenant-isolation journeys, integration
+capability labels, modal/widget interaction, and independent email/Telegram delivery
+proof. The runtime environment currently supplies no production host credentials;
+a supported host connection has been requested for server-side diagnosis.

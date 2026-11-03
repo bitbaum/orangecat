@@ -23,7 +23,7 @@ exports[`streaming > error copy: rate limit, platform 1`] = `
 {
   "data": {
     "code": "AI_RATE_LIMITED",
-    "error": "Free AI capacity is maxed out right now. Try again in a minute — or add your own free Groq key in Settings → AI for capacity that’s all yours.",
+    "error": "The shared AI provider is rate-limiting requests. Try again later, or add your own provider key in Settings → AI.",
   },
   "event": "error",
 }

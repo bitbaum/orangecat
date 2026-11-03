@@ -20,7 +20,7 @@ import { APP_LOCALE } from '@/utils/locale';
 
 const ACTIVITY_LIMIT = 20;
 
-type ActionStatus = 'pending' | 'executing' | 'completed' | 'failed' | 'cancelled';
+type ActionStatus = 'pending' | 'executing' | 'completed' | 'failed' | 'cancelled' | 'denied';
 
 interface ActivityRow {
   id: string;
@@ -36,6 +36,7 @@ const STATUS_STYLES: Record<ActionStatus, { label: string; className: string }> 
     label: 'Done',
     className: 'border-status-positive/30 bg-status-positive-subtle text-status-positive',
   },
+  denied: { label: 'Denied', className: 'border-subtle bg-surface-raised text-fg-secondary' },
   failed: {
     label: 'Failed',
     className: 'border-status-negative/30 bg-status-negative/10 text-status-negative',
@@ -55,11 +56,15 @@ const STATUS_STYLES: Record<ActionStatus, { label: string; className: string }> 
 };
 
 export function CatActivityCard({ userId }: { userId: string }) {
+  const [error, setError] = useState(false);
+  const [reload, setReload] = useState(0);
   const [rows, setRows] = useState<ActivityRow[] | null>(null);
   const { formatAmountBtc } = useDisplayCurrency();
 
   useEffect(() => {
     let cancelled = false;
+    setError(false);
+    setRows(null);
     (async () => {
       const { data, error } = await supabase
         .from(DATABASE_TABLES.CAT_ACTION_LOG)
@@ -72,7 +77,7 @@ export function CatActivityCard({ userId }: { userId: string }) {
       }
       if (error) {
         logger.error('Failed to load Cat activity', error, 'CatPermissions');
-        setRows([]);
+        setError(true);
         return;
       }
       setRows((data as ActivityRow[]) ?? []);
@@ -80,7 +85,7 @@ export function CatActivityCard({ userId }: { userId: string }) {
     return () => {
       cancelled = true;
     };
-  }, [userId]);
+  }, [userId, reload]);
 
   return (
     <div className="mt-6 rounded-lg border border-default bg-surface-base p-6">
@@ -89,10 +94,22 @@ export function CatActivityCard({ userId }: { userId: string }) {
         <h3 className="text-base font-semibold text-fg-primary">Recent activity</h3>
       </div>
       <p className="mb-4 text-sm text-fg-secondary">
-        Everything Cat has done on your behalf — the audit trail behind the permissions above.
+        The latest 20 actions Cat requested on your behalf, including pending and unsuccessful
+        actions.
       </p>
 
-      {rows === null ? (
+      {error ? (
+        <div role="alert" className="text-sm text-fg-secondary">
+          <p>Couldn’t load recent actions.</p>
+          <button
+            type="button"
+            className="min-h-11 underline"
+            onClick={() => setReload(n => n + 1)}
+          >
+            Try again
+          </button>
+        </div>
+      ) : rows === null ? (
         <p className="text-sm text-fg-tertiary">Loading…</p>
       ) : rows.length === 0 ? (
         <p className="text-sm text-fg-tertiary">
