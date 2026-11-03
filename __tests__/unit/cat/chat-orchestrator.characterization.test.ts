@@ -605,11 +605,6 @@ describe('streaming', () => {
                 {
                   "id": "t1",
                   "name": "web_search",
-                  "status": "running",
-                },
-                {
-                  "id": "t1",
-                  "name": "web_search",
                   "resultCount": 0,
                   "status": "completed",
                 },
@@ -1239,6 +1234,24 @@ describe('streaming', () => {
     `);
   });
 
+  it('preserves settled tool outcomes when answer generation fails', async () => {
+    const a = service('A', { throwsAfter: { chunks: [], error: serverErr() } });
+    (resolveProvider as Mock).mockResolvedValue(
+      resolved({ provider: 'groq', modelToUse: 'fixture', aiService: a })
+    );
+    (maybeEnrichWithSearchResults as Mock).mockImplementation(async (...args: unknown[]) => {
+      const emit = args[6] as (value: unknown) => void;
+      emit({ id: 'read', name: 'read_live_data', status: 'running' });
+      emit({ id: 'read', name: 'read_live_data', status: 'completed', resultCount: 1 });
+      return args[2];
+    });
+    await frames(await run({ stream: true }));
+    expect((saveMessages as Mock).mock.calls[0][3][1]).toMatchObject({
+      failure: { kind: 'STREAM_ERROR' },
+      tool_calls: [{ id: 'read', name: 'read_live_data', status: 'completed', resultCount: 1 }],
+    });
+  });
+
   it('a failure after content streamed is not retried: error event, failed turn saved, alert', async () => {
     const a = service('A', { throwsAfter: { chunks: [{ content: 'half' }], error: serverErr() } });
     const b = service('B', { chunks: [{ content: 'never', done: true }] });
@@ -1288,6 +1301,10 @@ describe('streaming', () => {
               "content": "half
 
       [This reply was cut off by a connection error.]",
+              "failure": {
+                "kind": "STREAM_ERROR",
+                "message": "Cat couldn’t generate a response. Try again, or add your own key in Settings → AI.",
+              },
               "model_used": "g-a",
               "provider": "groq",
               "role": "assistant",

@@ -119,4 +119,18 @@ describe('catAnswer', () => {
     });
     expect(row).toMatchObject({ id: 'm', role: 'assistant', content: 'Hi', modelUsed: 'auto' });
   });
+  it('reopens a persisted failure as a failed turn, without answer provenance', () => {
+    const failure = { kind: 'AI_RATE_LIMITED', message: 'Please try later' };
+    const message = catMessageFromRow({
+      id: 'failed',
+      role: 'assistant',
+      content: 'Please try later',
+      created_at: '2026-11-03T00:00:00Z',
+      provider: 'fixture',
+      failure,
+    });
+    expect(message).toMatchObject({ failed: true, failure, content: 'Please try later' });
+    expect(message.provider).toBeUndefined();
+    expect(message.replies).toBeUndefined();
+  });
 });

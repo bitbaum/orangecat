@@ -13,6 +13,7 @@
  */
 
 import type { AnySupabaseClient } from '@/lib/supabase/types';
+import { completedHistory, type StoredCatFailure } from './failed-turn';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { messageLabel } from '@/lib/chat/attachment-tags';
 
@@ -41,6 +42,7 @@ interface StoredMessage {
   provider?: string | null;
   token_count?: number | null;
   created_at: string;
+  failure?: StoredCatFailure | null;
 }
 
 export interface ConversationSummary {
@@ -302,7 +304,9 @@ export async function saveMessages(
     token_count?: number;
     /** What Cat did this turn, so a reloaded thread can still show it. */
     tool_calls?: unknown[];
-  }>
+    failure?: StoredCatFailure;
+  }>,
+  options: { requireWrite?: boolean } = {}
 ): Promise<void> {
   const rows = messages.map(m => ({
     conversation_id: conversationId,
@@ -313,10 +317,15 @@ export async function saveMessages(
     provider: m.provider ?? null,
     token_count: m.token_count ?? null,
     tool_calls: trimToolCallsForStorage(m.tool_calls),
+    failure: m.failure ?? null,
   }));
 
-  await supabase.from(DATABASE_TABLES.CAT_MESSAGES).insert(rows);
-  // Ignore errors — history is best-effort, never blocks responses
+  const { error } = await supabase.from(DATABASE_TABLES.CAT_MESSAGES).insert(rows);
+  // Failed-turn persistence must reach its caller’s diagnostic path. Normal
+  // action replies remain best-effort: retrying an executed action is unsafe.
+  if (error && options.requireWrite) {
+    throw new Error('Could not persist failed conversation turn');
+  }
 
   // Keep the conversation fresh for rail ordering, and name an untitled
   // conversation from its first user message (Grok/ChatGPT behaviour).
@@ -369,7 +378,7 @@ export async function getMessagesForContext(
 
   const { data } = await supabase
     .from(DATABASE_TABLES.CAT_MESSAGES)
-    .select('role, content')
+    .select('role, content, failure')
     .eq('conversation_id', conversationId)
     .order('created_at', { ascending: false })
     .limit(limit);
@@ -379,7 +388,15 @@ export async function getMessagesForContext(
   }
 
   // Reverse to get chronological order for LLM
-  return (data as Array<{ role: 'user' | 'assistant'; content: string }>).reverse();
+  return completedHistory(
+    (
+      data as Array<{
+        role: 'user' | 'assistant';
+        content: string;
+        failure?: StoredCatFailure | null;
+      }>
+    ).reverse()
+  ).map(({ role, content }) => ({ role, content }));
 }
 
 /**
@@ -401,7 +418,7 @@ export async function getMessagesForDisplay(
 
   const { data } = await supabase
     .from(DATABASE_TABLES.CAT_MESSAGES)
-    .select('id, role, content, model_used, provider, token_count, tool_calls, created_at')
+    .select('id, role, content, model_used, provider, token_count, tool_calls, failure, created_at')
     .eq('conversation_id', conversationId)
     .order('created_at', { ascending: false })
     .limit(limit);

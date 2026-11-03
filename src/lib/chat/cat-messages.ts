@@ -22,6 +22,7 @@ import { citationsFromToolCalls } from '@/lib/chat/citations';
 import { parseUserMessage } from '@/lib/chat/attachment-tags';
 import type { CatAction, ExecActionResult } from '@/types/cat';
 import type { PrefillProposal, ToolCallEvent } from '@/services/cat/tool-use-types';
+import type { StoredCatFailure } from '@/services/cat/failed-turn';
 
 /**
  * The primary provider rate-limited and the route answered on another model;
@@ -138,6 +139,7 @@ export interface StoredCatRow {
   model_used?: string | null;
   provider?: string | null;
   tool_calls?: ToolCallEvent[] | null;
+  failure?: StoredCatFailure | null;
 }
 
 /** A stored row as a thread message. Rows from before tool calls were kept
@@ -145,6 +147,16 @@ export interface StoredCatRow {
 export function catMessageFromRow(row: StoredCatRow): CatMessage {
   if (row.role === 'user') {
     return { id: row.id, role: 'user', ...catUserTurn(row.content) };
+  }
+  if (row.failure) {
+    return {
+      id: row.id,
+      role: 'assistant',
+      content: row.content,
+      failed: true,
+      failure: row.failure,
+      toolCalls: row.tool_calls ?? undefined,
+    };
   }
   return {
     id: row.id,

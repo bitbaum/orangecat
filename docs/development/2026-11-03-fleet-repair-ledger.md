@@ -49,3 +49,34 @@ failure, historical failure rendering, tenant-isolation journeys, integration
 capability labels, modal/widget interaction, and independent email/Telegram delivery
 proof. The runtime environment currently supplies no production host credentials;
 a supported host connection has been requested for server-side diagnosis.
+
+## Durable failures and safe diagnostics
+
+Prepared after the first correctness change; deployment is not yet verified.
+The additive migration stores a failed turn's structured state, and conservatively
+marks exact historical application errors. Failed replies reopen through ChatKit's
+failure renderer and recovery footer; partial text is retained under a disclosure.
+Failed exchanges are excluded from subsequent model history. A required failure
+history write reaches the logging path on error instead of silently claiming a
+save. Generated live database types are not edited by hand; regenerate them after
+the migration through the documented database-types workflow.
+
+Local evidence: focused history/store/orchestrator tests, migration version and
+schema checks, plus applying the migration/backfill and invalid-JSON checks in
+PGlite. This is PostgreSQL-compatible local evidence, not production migration
+proof or a two-tenant isolation test. The migration replay workflow and deployment
+receipt are still required.
+
+The on-demand Cat diagnostics workflow reuses the existing deployment connection.
+It reads a bounded journal window and publishes only aggregate categories and HTTP
+status codes. Its parser has a regression asserting private log values never reach
+the report. It does not change services, read credentials or send notifications.
+
+Release tracking: the first correctness change is PR
+[1542](https://github.com/bitbaum/orangecat/pull/1542), source commit
+`6efe527`. Local full verification and all PR checks passed, including built-app
+browser smoke and responsive word checks. The fleet sweep has been requested;
+merge and deployed receipt are still to be verified. The durable-failure slice
+also retains final tool outcomes when synthesis fails, rather than losing the
+record of an action that may already have run; intermediate chips are settled by
+ID instead of duplicated.

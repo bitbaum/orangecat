@@ -1,0 +1,45 @@
+name: Cat diagnostics
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      OC_BOX: ${{ vars.OC_BOX || (vars.HETZNER_IP && format('root@{0}', vars.HETZNER_IP)) }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Configure the existing deployment connection
+        env:
+          DEPLOY_KEY: ${{ secrets.SELFHOST_SSH_KEY }}
+          HOST_KEYS: ${{ secrets.SELFHOST_KNOWN_HOSTS }}
+        run: |
+          test -n "$OC_BOX" && test -n "$DEPLOY_KEY"
+          mkdir -p ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          if [ -n "$HOST_KEYS" ]; then
+            printf '%s\n' "$HOST_KEYS" > ~/.ssh/known_hosts
+          else
+            ssh-keyscan -H "${OC_BOX##*@}" >> ~/.ssh/known_hosts 2>/dev/null
+          fi
+      - name: Summarize the last hour without publishing raw journal entries
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Read the service default from its existing producer, rather than
+          # maintaining a second service name in this workflow.
+          unit=$(sed -n 's/^OC_SERVICE=.*:-\([^}]*\)}.*$/\1/p' scripts/deploy-selfhost.sh)
+          test -n "$unit"
+          case "$unit" in *[!a-zA-Z0-9_.@-]*) exit 1 ;; esac
+          ssh -i ~/.ssh/id_deploy -o BatchMode=yes -o ConnectTimeout=10 "$OC_BOX" \
+            "sudo -n journalctl -u '$unit' --since '1 hour ago' -n 1000 --output=cat --no-pager" \
+            | node scripts/diagnose-cat-logs.mjs
