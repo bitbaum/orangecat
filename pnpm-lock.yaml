@@ -39,8 +39,8 @@ importers:
         specifier: github:bitbaum/accountkit#aa5eefde2749af841115f8cb2807cda011eb0f99
         version: https://codeload.github.com/bitbaum/accountkit/tar.gz/aa5eefde2749af841115f8cb2807cda011eb0f99(@bitbaum/mail-kit@0.2.0)(next@16.4.1(@babel/core@7.29.7(supports-color@10.2.2))(@playwright/test@1.64.1)(@types/node@26.6.4)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react@19.3.1)
       '@bitbaum/ai-kit':
-        specifier: ^1.22.0
-        version: 1.22.0(react@19.3.1)
+        specifier: ^1.23.0
+        version: 1.23.0(react@19.3.1)
       '@bitbaum/chatkit':
         specifier: ^0.22.1
         version: 0.22.1(react@19.3.1)
@@ -582,8 +582,8 @@ packages:
       next:
         optional: true
 
-  '@bitbaum/ai-kit@1.22.0':
-    resolution: {integrity: sha512-IfebEXcs+mbpK0jrrGpSJg2WPWq0VKMDuKYRoB5yMni+uZ4wRWfKOwS+DlUmgDfWmVWMAQzXDbQSawANbHbeYg==}
+  '@bitbaum/ai-kit@1.23.0':
+    resolution: {integrity: sha512-PFSdiWYJ3TMsXPlV11yZEMoZBELNvxT39s0EITYX8nJTS3d8PIjitHWNWTbmvpPA1QwEg2L0/WSlsa4tN3wqfg==}
     engines: {node: '>=20'}
     peerDependencies:
       react: '>=18'
@@ -6812,7 +6812,7 @@ snapshots:
       '@bitbaum/mail-kit': 0.2.0
       next: 16.4.1(@babel/core@7.29.7(supports-color@10.2.2))(@playwright/test@1.64.1)(@types/node@26.6.4)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
 
-  '@bitbaum/ai-kit@1.22.0(react@19.3.1)':
+  '@bitbaum/ai-kit@1.23.0(react@19.3.1)':
     dependencies:
       '@mozilla/readability': 0.6.0
       ai-forms: 0.1.3(react@19.3.1)

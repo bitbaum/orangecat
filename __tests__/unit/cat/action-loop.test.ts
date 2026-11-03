@@ -28,6 +28,20 @@ const call = (name: string, args: Record<string, unknown> = {}, id = 'call-1') =
 });
 
 describe('what the model is told', () => {
+  it('returns explicit read context and an actionable URL without exposing arbitrary handler data', () => {
+    const summary = summariseForModel('get_investor_room', {
+      status: 'completed',
+      data: {
+        modelContext: '{"headline":"A sourced story"}',
+        url: '/projects/project-one/room',
+        privateKey: 'never-forward-raw-secret',
+      },
+    });
+    expect(summary).toContain('A sourced story');
+    expect(summary).toContain('/projects/project-one/room');
+    expect(summary).not.toContain('never-forward-raw-secret');
+  });
+
   it('says DONE only when it is done', () => {
     const summary = summariseForModel('create_project', {
       status: 'completed',

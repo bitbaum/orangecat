@@ -233,7 +233,11 @@ describe('selection is worth doing', () => {
     // verbs say "Loki" and only one of them dispatches agents. The rail, the
     // linked-account check and the read-only turn are code on both sides
     // (services/loki/ask.ts; Loki's /api/orangecat/ask), not prose here.
-    expect(remaining).toBeLessThanOrEqual(5_440);
+    // Six investor-room capabilities (read/edit, private recipient links and
+    // decks) add real action IDs and parameters to the prose catalog. Their
+    // descriptions are compact; detailed field schemas stay in tool parameters.
+    // Keep them discoverable rather than dropping capabilities on a regex miss.
+    expect(remaining).toBeLessThanOrEqual(6_400);
   });
 
   it('selects by default now, and still sends everything when told to', async () => {

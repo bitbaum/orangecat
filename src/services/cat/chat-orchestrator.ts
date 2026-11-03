@@ -12,6 +12,7 @@
  */
 
 import { z } from 'zod';
+import { classifyAnswerPrefix } from '@bitbaum/ai-kit';
 import { logger } from '@/utils/logger';
 import { apiSuccess } from '@/lib/api/standardResponse';
 import type { AuthenticatedRequest } from '@/lib/api/withAuth';
@@ -556,6 +557,7 @@ async function runStreamingToolPhase(
     // read-only.
     {
       actorId: turn.actorId,
+      ...(turn.body.currentEntity ? { currentEntity: turn.body.currentEntity } : {}),
       // The active step's own endpoint and key, so a BYOK user's tools
       // reach THEIR vendor rather than being silently dropped.
       toolEndpoint,
@@ -666,6 +668,8 @@ async function consumeStream(
 ): Promise<void> {
   const { activeProvider, activeModel, activeService } = state;
   let doneEmitted = false;
+  let prefix = '';
+  state.usage = undefined;
   for await (const chunk of activeService.streamChatCompletion({
     model: activeModel,
     messages: withImages(messages, turn.body.images),
@@ -675,9 +679,20 @@ async function consumeStream(
       state.usage = chunk.usage;
     }
     if (chunk.content) {
-      state.streamStarted = true;
-      state.fullContent += chunk.content;
-      sendData(out, { content: chunk.content });
+      let content = chunk.content;
+      if (!state.streamStarted) {
+        prefix += content;
+        const kind = classifyAnswerPrefix(prefix);
+        if (kind === 'protocol') {
+          throw new EmptyCompletion(activeProvider, activeModel);
+        }
+        content = kind === 'answer' ? prefix : '';
+      }
+      if (content) {
+        state.streamStarted = true;
+        state.fullContent += content;
+        sendData(out, { content });
+      }
     }
     if (chunk.done) {
       if (!state.streamStarted) {
@@ -1127,7 +1142,13 @@ async function answerCatChat(turn: CatTurn, rl: RateLimitResult): Promise<Respon
       collectedPrefillProposals.push(turn.withDraftPhoto(proposal));
     },
     // Same as the streaming path: an actor is what makes actions callable.
-    { actorId: turn.actorId, toolEndpoint, toolKey, toolFallbacks: fallbacks }
+    {
+      actorId: turn.actorId,
+      toolEndpoint,
+      toolKey,
+      toolFallbacks: fallbacks,
+      ...(turn.body.currentEntity ? { currentEntity: turn.body.currentEntity } : {}),
+    }
   );
   // The non-streaming path runs no grounding check (see below), so there is
   // nothing here to feed web evidence into. Stated rather than left as an

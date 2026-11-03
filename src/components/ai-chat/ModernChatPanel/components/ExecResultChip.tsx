@@ -48,7 +48,8 @@ const ACTION_LABELS: Record<string, string> = {
 };
 
 export function ExecResultChip({ result }: { result: ExecActionResult }) {
-  const noun = ACTION_LABELS[result.actionId] ?? result.actionId;
+  const noun =
+    ACTION_LABELS[result.actionId] ?? CAT_ACTIONS[result.actionId]?.name ?? result.actionId;
 
   if (result.status === 'completed') {
     return (

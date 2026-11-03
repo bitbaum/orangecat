@@ -22,7 +22,10 @@ function stopResponse() {
   } as unknown as Response;
 }
 
-async function routingSystemPrompt(message: string): Promise<string> {
+async function routingSystemPrompt(
+  message: string,
+  currentEntity?: { type: string; ref: string }
+): Promise<string> {
   const fetchMock = vi.fn(async () => stopResponse());
   global.fetch = fetchMock as unknown as typeof fetch;
   await maybeEnrichWithSearchResults(
@@ -37,7 +40,7 @@ async function routingSystemPrompt(message: string): Promise<string> {
     'test-model',
     undefined,
     undefined,
-    { toolEndpoint: 'https://example.test/v1/chat/completions', toolKey: 'k' }
+    { toolEndpoint: 'https://example.test/v1/chat/completions', toolKey: 'k', currentEntity }
   );
   const call = fetchMock.mock.calls.at(0) as unknown as [string, RequestInit] | undefined;
   expect(call, 'the routing model was called').toBeDefined();
@@ -65,6 +68,16 @@ describe('routing a request that is a whole plan', () => {
   it('says nothing of playbooks on a turn about something else', async () => {
     const system = await routingSystemPrompt('how much should I charge for a mug');
     expect(system).not.toContain('PLAYBOOK');
+  });
+
+  it('keeps the room page’s actual project reference in the slim tool-routing prompt', async () => {
+    const system = await routingSystemPrompt('Change the headline here', {
+      type: 'project',
+      ref: 'actual-project',
+    });
+    expect(system).toContain('"ref":"actual-project"');
+    expect(system).toContain('not permission to edit');
+    expect(system).toContain('get_investor_room');
   });
 
   it('once answered, points the plan at the action tools rather than a draft card', () => {

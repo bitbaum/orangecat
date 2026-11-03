@@ -14,8 +14,10 @@ import { lokiAskHandlers } from './loki-ask';
 import { promotionHandlers } from './promotion';
 import { civicSplitHandlers } from './civic-split';
 import type { ActionHandler } from './types';
+import { investorRoomHandlers } from './investor-room';
 
 export const ACTION_HANDLERS: Partial<Record<string, ActionHandler>> = {
+  ...investorRoomHandlers,
   ...socialHandlers,
   ...interestHandlers,
   ...entityHandlers,

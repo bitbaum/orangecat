@@ -414,6 +414,35 @@ describe('before any model is called', () => {
 // ==================== streaming ====================
 
 describe('streaming', () => {
+  it('fails over on an XML tool-call prefix before showing it, without replaying the tool phase', async () => {
+    const a = service('A', {
+      chunks: [
+        { content: '<' },
+        { content: 'tool_' },
+        { content: 'call>' },
+        { content: '<function=search_platform>' },
+        { done: true },
+      ],
+    });
+    const b = service('B', {
+      chunks: [{ content: 'Open your project’s investor room.' }, { done: true }],
+    });
+    (resolveProvider as Mock).mockResolvedValue(
+      resolved({ provider: 'groq', modelToUse: 'test-model', aiService: a }, [
+        { provider: 'openrouter', modelToUse: 'fallback-model', aiService: b },
+      ])
+    );
+    const output = await frames(await run({ stream: true }));
+    expect(output.filter(frame => 'content' in frame).map(frame => frame.content)).toEqual([
+      'Open your project’s investor room.',
+    ]);
+    expect(JSON.stringify(output)).not.toContain('<tool_call>');
+    expect(output.at(-1)).toMatchObject({ done: true, provider: 'openrouter' });
+    expect(maybeEnrichWithSearchResults).toHaveBeenCalledTimes(1);
+    expect(a.streamChatCompletion).toHaveBeenCalledTimes(1);
+    expect(b.streamChatCompletion).toHaveBeenCalledTimes(1);
+  });
+
   it('grounds a live-data answer in the completed tool results shown to the model', async () => {
     const evidence = 'LIVE DATA: Draft listing Studio mug costs 0.0002 BTC.';
     const a = service('A', {
