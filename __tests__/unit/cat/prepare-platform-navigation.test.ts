@@ -1,3 +1,4 @@
+import { getMessagesForContext } from '@/services/cat/conversation-history';
 import { prepareCatChat } from '@/services/cat/chat-prepare';
 import { buildPlatformNavigationContext } from '@/services/cat/platform-navigation';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
@@ -51,4 +52,12 @@ it('carries a real project room into both the model prompt and grounding evidenc
   });
   expect(result.systemPrompt).toContain('/projects/venture-one/room');
   expect(result.grounding.evidence[0]).toContain('/projects/venture-one/room');
+});
+
+it('skips durable learning when history/privacy preparation fails', async () => {
+  vi.mocked(getMessagesForContext).mockRejectedValueOnce(new Error('unavailable'));
+  const result = await prepareCatChat({} as AnySupabaseClient, 'review-guest', {
+    message: 'Hello',
+  });
+  expect(result.ephemeral).toBe(true);
 });

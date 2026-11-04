@@ -169,13 +169,14 @@ export async function isEphemeralConversation(
   if (!conversationId) {
     return false;
   }
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from(DATABASE_TABLES.CAT_CONVERSATIONS)
     .select('ephemeral')
     .eq('id', conversationId)
     .eq('user_id', userId)
     .maybeSingle();
-  return data?.ephemeral === true;
+  // An unreadable/missing owned row cannot authorize durable learning.
+  return !!error || !data || data.ephemeral !== false;
 }
 
 /** The daily sweep: a temporary chat nobody came back to leave is gone within

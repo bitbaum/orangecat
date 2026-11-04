@@ -187,7 +187,8 @@ export async function prepareCatChat(
   // orientation sections fire on `first-message`), and it must be a fact read
   // from the conversation, not inferred from the wording.
   let conversationId: string | null = null;
-  let ephemeral = false;
+  // Skip optional learning until the owned conversation's privacy is known.
+  let ephemeral = true;
   let historyMessages: Array<{ role: 'user' | 'assistant'; content: string }> = [];
   try {
     conversationId = await resolveConversationIdOrDefault(

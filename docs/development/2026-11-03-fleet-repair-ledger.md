@@ -22,7 +22,8 @@ passwords, session cookies or private conversation bodies belong in this ledger.
 
 ## First OrangeCat correctness change
 
-Implemented, awaiting final checks and deployment:
+Deployed as `c3ffe478` through PR #1542; production permission/recovery/health
+checks recorded in [the current handoff](2026-11-04-repair-handoff.md):
 
 - Shared effective-permission resolver for execution, summary and action autonomy;
   high-risk confirmation remains mandatory even for older stored grants.
@@ -47,8 +48,8 @@ artifact verification remain required before any item above is called deployed.
 Still open in this application: the exact existing-account contextual completion
 failure, historical failure rendering, tenant-isolation journeys, integration
 capability labels, modal/widget interaction, and independent email/Telegram delivery
-proof. The runtime environment currently supplies no production host credentials;
-a supported host connection has been requested for server-side diagnosis.
+proof. The existing GitHub Actions deployment connection supports read-only server
+diagnostics; no new host credentials are requested.
 
 ## Durable failures and safe diagnostics
 
@@ -75,8 +76,13 @@ the report. It does not change services, read credentials or send notifications.
 Release tracking: the first correctness change is PR
 [1542](https://github.com/bitbaum/orangecat/pull/1542), source commit
 `6efe527`. Local full verification and all PR checks passed, including built-app
-browser smoke and responsive word checks. The fleet sweep has been requested;
-merge and deployed receipt are still to be verified. The durable-failure slice
+browser smoke and responsive word checks. The deployed receipt was verified in CD run `41619850487`. The durable-failure slice
 also retains final tool outcomes when synthesis fails, rather than losing the
 record of an action that may already have run; intermediate chips are settled by
 ID instead of duplicated.
+
+## Current continuation
+
+See [the 2026-11-04 repair handoff](2026-11-04-repair-handoff.md) for merged
+PR #1543, its deployment gate, the narrow privacy repair and exact remaining
+acceptance criteria. Earlier preparation notes describe their recorded stage.

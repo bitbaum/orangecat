@@ -76,6 +76,7 @@ const MIXED: Record<string, string[]> = {
     'deleteMemory',
     'deleteAllMemories',
     'looksLikeSelfDisclosure',
+    'memoryConsentGranted',
     'selectForgetFacts',
     'MemoryAiService',
   ],
