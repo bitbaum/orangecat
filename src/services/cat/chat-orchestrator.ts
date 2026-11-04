@@ -502,6 +502,7 @@ async function runStreamingTurn(turn: CatTurn, out: SseOut): Promise<void> {
     usage: undefined,
     streamStarted: false,
   };
+  const streamedToolCalls: ToolCallEvent[] = [];
   try {
     sendData(out, { model: modelToUse, provider });
 
@@ -509,13 +510,12 @@ async function runStreamingTurn(turn: CatTurn, out: SseOut): Promise<void> {
     // tool results. A live-data lookup must ground the answer just as a page
     // does, or the repair can erase a correct answer as "Not in your data."
     const webEvidence: string[] = [];
-    const streamedToolCalls: ToolCallEvent[] = [];
     const messages = await runStreamingToolPhase(turn, out, streamedToolCalls, webEvidence);
 
     await walkStreamingChain(turn, out, state, messages, webEvidence);
     await settleStreamedTurn(turn, state, streamedToolCalls);
   } catch (err) {
-    await failStreamedTurn(turn, out, state, err);
+    await failStreamedTurn(turn, out, state, err, streamedToolCalls);
   } finally {
     out.controller.close();
   }
@@ -547,7 +547,12 @@ async function runStreamingToolPhase(
       // Kept as well as sent. The SSE frame reaches the live tab and
       // nothing else; without this copy the chips exist only in that
       // tab's React state and a reload erases what Cat did.
-      streamedToolCalls.push(event);
+      const previous = streamedToolCalls.findIndex(call => call.id === event.id);
+      if (previous >= 0) {
+        streamedToolCalls[previous] = event;
+      } else {
+        streamedToolCalls.push(event);
+      }
       sendData(out, { tool_call: event });
     },
     (proposal: PrefillProposal) => {
@@ -954,7 +959,8 @@ async function failStreamedTurn(
   turn: CatTurn,
   out: SseOut,
   state: StreamState,
-  err: unknown
+  err: unknown,
+  toolCalls: ToolCallEvent[]
 ): Promise<void> {
   const { user, supabase } = turn.request;
   const { hasByok } = turn.resolved;
@@ -987,9 +993,12 @@ async function failStreamedTurn(
         message: turn.storedMessage,
         partialContent: state.fullContent,
         errorText: errPayload.error,
+        errorCode: errPayload.code,
+        toolCalls,
         model: activeModel,
         provider: activeProvider,
-      })
+      }),
+      { requireWrite: true }
     ).catch((persistErr: unknown) => {
       logger.error('Failed to persist failed turn', { persistErr }, 'cat/chat');
     });

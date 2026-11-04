@@ -137,9 +137,39 @@ interface CatAnswerFooterProps {
   answered: Readonly<Record<string, 'completed' | 'declined'>>;
 }
 
+function TurnTools({
+  calls,
+  answered,
+}: {
+  calls?: ToolCallEvent[];
+  answered: CatAnswerFooterProps['answered'];
+}) {
+  if (!calls?.length) {
+    return null;
+  }
+  return (
+    <div className="mt-2 flex flex-wrap gap-1.5">
+      {calls.map(tc => (
+        <ToolCallChip key={tc.id} event={settled(tc, answered)} />
+      ))}
+    </div>
+  );
+}
+
 export function CatAnswerFooter({ message, isLatest, onAction, answered }: CatAnswerFooterProps) {
   if (message.failed) {
-    return <TurnFailure failure={message.failure ?? {}} />;
+    return (
+      <>
+        <TurnFailure failure={message.failure ?? {}} />
+        <TurnTools calls={message.toolCalls} answered={answered} />
+        {message.content && message.content !== message.failure?.message && (
+          <details className="mt-3 text-sm text-fg-secondary">
+            <summary className="min-h-11 cursor-pointer">View partial reply</summary>
+            <p className="whitespace-pre-wrap">{message.content}</p>
+          </details>
+        )}
+      </>
+    );
   }
   // A draft card is the richer way to create the same thing: no second button.
   const hasDraft = !!message.prefillProposals?.length;
@@ -148,13 +178,7 @@ export function CatAnswerFooter({ message, isLatest, onAction, answered }: CatAn
 
   return (
     <>
-      {message.toolCalls && message.toolCalls.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {message.toolCalls.map(tc => (
-            <ToolCallChip key={tc.id} event={settled(tc, answered)} />
-          ))}
-        </div>
-      )}
+      <TurnTools calls={message.toolCalls} answered={answered} />
       {isLatest && message.destinations && (
         <CreateNavigation content={message.content} replies={message.destinations} />
       )}
