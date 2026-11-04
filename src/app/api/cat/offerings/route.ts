@@ -13,7 +13,7 @@ const sharingSchema = z.object({ enabled: z.boolean() }).strict();
 
 export const GET = withAuth(async ({ user, supabase }: AuthenticatedRequest) => {
   try {
-    return apiSuccess(await getOwnOfferings(supabase, user.id));
+    return apiSuccess(await getOwnOfferings(supabase, user.id), { cache: 'NONE' });
   } catch (error) {
     return handleApiError(error);
   }
@@ -31,7 +31,8 @@ export const PATCH = withAuth(async (request: AuthenticatedRequest) => {
       return apiBadRequest('Choose whether to make your offerings public.');
     }
     return apiSuccess(
-      await setOwnOfferingsSharing(request.supabase, request.user.id, parsed.data.enabled)
+      await setOwnOfferingsSharing(request.supabase, request.user.id, parsed.data.enabled),
+      { cache: 'NONE' }
     );
   } catch (error) {
     return handleApiError(error);
