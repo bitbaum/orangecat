@@ -31,19 +31,25 @@ describe('offerings sharing decision', () => {
     });
     expect(screen.getByRole('button', { name: 'Hide offerings' })).toBeTruthy();
   });
-  it('keeps the private state when the sharing write fails', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi
-        .fn()
-        .mockResolvedValueOnce({ ok: true, json: async () => ({ data: privateState }) })
-        .mockResolvedValueOnce({ ok: false })
-    );
+  it('reloads an uncertain sharing decision without repeating the write', async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ data: privateState }) })
+      .mockRejectedValueOnce(new TypeError('response lost after write'))
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: { ...privateState, enabled: true } }),
+      });
+    vi.stubGlobal('fetch', fetcher);
     render(<OwnerProfileOfferings />);
     fireEvent.click(await screen.findByRole('button', { name: 'Make offerings public' }));
     await waitFor(() =>
-      expect(screen.getByRole('alert').textContent).toContain('Sharing was not changed')
+      expect(screen.getByRole('alert').textContent).toContain('Could not confirm')
     );
-    expect(screen.getByText('Your offerings are private')).toBeTruthy();
+    expect(screen.queryByText('Your offerings are private')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    await screen.findByText('Your offerings are public');
+    expect(fetcher.mock.calls.filter(call => call[1]?.method === 'PATCH')).toHaveLength(1);
+    expect(fetcher.mock.calls[2][1]).toEqual({ cache: 'no-store' });
   });
 });

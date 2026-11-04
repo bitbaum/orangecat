@@ -50,7 +50,8 @@ export default function OwnerProfileOfferings() {
       const result = await response.json();
       setState(result.data);
     } catch {
-      setError('Sharing was not changed. Please try again.');
+      setState(null);
+      setError('Could not confirm your sharing choice. Try again to load its current status.');
     } finally {
       inFlight.current = false;
       setBusy(false);
