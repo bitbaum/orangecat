@@ -47,6 +47,10 @@ const ENTITY_PATTERNS: Pattern[] = [
 
 // Non-entity areas worth naming so Cat knows the surface the user is on.
 const AREA_LABELS: Array<{ re: RegExp; label: string }> = [
+  {
+    re: /^\/dashboard\/info\/edit/,
+    label: 'your profile editor (offer to fill it in with update_profile)',
+  },
   { re: /^\/dashboard\/store/, label: 'your store' },
   { re: /^\/dashboard\/wallet/, label: 'your wallet' },
   { re: /^\/dashboard(\/|$)/, label: 'your dashboard' },
