@@ -76,7 +76,12 @@ async function signIn(context) {
   await page.getByLabel('Email address').fill(EMAIL);
   await page.getByRole('textbox', { name: 'Password' }).fill(PASSWORD);
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-  await page.waitForURL(url => !url.pathname.startsWith('/auth'), { timeout: 30_000 });
+  // Authentication is established by leaving /auth. External page assets
+  // must not hold this on the load event; each audited page settles separately.
+  await page.waitForURL(url => !url.pathname.startsWith('/auth'), {
+    timeout: 30_000,
+    waitUntil: 'domcontentloaded',
+  });
   await page.close();
 }
 
