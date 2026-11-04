@@ -131,7 +131,7 @@ export function ContextSwitcher({
                 alt={displayName}
                 width={40}
                 height={40}
-                className="rounded-md object-cover"
+                className="h-10 w-10 rounded-md object-cover"
                 unoptimized={avatarUrl?.includes('supabase.co')}
               />
             ) : isGroupContext ? (

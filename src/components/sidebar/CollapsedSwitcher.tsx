@@ -35,7 +35,7 @@ export function CollapsedSwitcher({
               alt={displayName}
               width={32}
               height={32}
-              className="rounded-md object-cover"
+              className="h-8 w-8 rounded-md object-cover"
               unoptimized={avatarUrl?.includes('supabase.co')}
             />
           ) : (
