@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation';
 import { Handshake, Plus } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import Button from '@/components/ui/Button';
+import { NoRolesYet } from '@/components/collaborate/NoRolesYet';
 import { Card, CardContent } from '@/components/ui/Card';
 import { API_ROUTES } from '@/config/api-routes';
 import { ROUTES } from '@/config/routes';
@@ -223,14 +224,10 @@ export default function CollaboratePage() {
         {loading ? (
           <p className="text-sm text-fg-tertiary">Loading roles…</p>
         ) : roles.length === 0 ? (
-          <Card className="oc-surface-padding text-center">
-            <p className="text-fg-secondary">No open roles yet.</p>
-            <p className="mt-1 text-sm text-fg-tertiary">
-              {myProjects.length > 0
-                ? 'Post one above to find collaborators.'
-                : 'Create a project to post collaborator roles.'}
-            </p>
-          </Card>
+          <NoRolesYet
+            hasProjects={myProjects.length > 0}
+            onCreateProject={() => router.push(ROUTES.DASHBOARD.PROJECTS_CREATE)}
+          />
         ) : (
           <div className="space-y-3">
             {roles.map(role => {

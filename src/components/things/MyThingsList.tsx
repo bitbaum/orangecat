@@ -5,7 +5,8 @@
  */
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
-import { TheDoor } from '@/components/map/TheDoor';
+import { DashboardIntent } from '@/components/dashboard/DashboardIntent';
+import { DOOR_EXAMPLES } from '@/config/cat-door';
 import { ThingRow } from '@/components/things/ThingRow';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { ROUTES } from '@/config/routes';
@@ -17,7 +18,9 @@ function EmptyThings() {
     <div className="rounded-lg border border-default bg-surface-base p-6 sm:p-8">
       <h2 className="font-heading text-xl text-fg-primary">{THINGS_PAGE.empty.title}</h2>
       <p className="mt-1 text-sm text-fg-secondary">{THINGS_PAGE.empty.body}</p>
-      <TheDoor className="mt-5" />
+      <div className="mt-5">
+        <DashboardIntent examples={DOOR_EXAMPLES} />
+      </div>
       <Link
         href={ROUTES.WHAT_YOU_CAN_DO}
         className="mt-4 inline-flex min-h-9 items-center gap-1 text-sm font-semibold text-fg-primary hover:underline"
