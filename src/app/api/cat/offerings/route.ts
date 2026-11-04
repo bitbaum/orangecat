@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { CACHE_PRESETS } from '@/lib/api/cache-policy';
 import { withAuth, type AuthenticatedRequest } from '@/lib/api/withAuth';
 import {
   apiSuccess,
@@ -13,7 +14,7 @@ const sharingSchema = z.object({ enabled: z.boolean() }).strict();
 
 export const GET = withAuth(async ({ user, supabase }: AuthenticatedRequest) => {
   try {
-    return apiSuccess(await getOwnOfferings(supabase, user.id), { cache: 'NONE' });
+    return apiSuccess(await getOwnOfferings(supabase, user.id), { cache: CACHE_PRESETS.NONE });
   } catch (error) {
     return handleApiError(error);
   }
@@ -32,7 +33,7 @@ export const PATCH = withAuth(async (request: AuthenticatedRequest) => {
     }
     return apiSuccess(
       await setOwnOfferingsSharing(request.supabase, request.user.id, parsed.data.enabled),
-      { cache: 'NONE' }
+      { cache: CACHE_PRESETS.NONE }
     );
   } catch (error) {
     return handleApiError(error);
