@@ -10,6 +10,7 @@
 
 'use client';
 
+import EmptyState from '@/components/ui/EmptyState';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -157,23 +158,25 @@ export function EventsList({ groupId, groupSlug, canCreateEvent = false }: Event
 
       {events.length === 0 ? (
         <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Calendar className="h-12 w-12 text-fg-tertiary mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No events yet</h3>
-            <p className="text-fg-secondary text-center mb-4">
-              {statusFilter === 'upcoming'
-                ? 'No upcoming events scheduled.'
+          <EmptyState
+            icon={Calendar}
+            title="No events yet"
+            description={
+              statusFilter === 'upcoming'
+                ? 'Nothing scheduled. Events are meetups, workshops or parties for this group — members get notified and can RSVP.'
                 : statusFilter === 'past'
                   ? 'No past events.'
-                  : 'Create your first event to get started.'}
-            </p>
-            {canCreateEvent && (
-              <Button onClick={() => setCreateDialogOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Create Event
-              </Button>
-            )}
-          </CardContent>
+                  : 'Events are meetups, workshops or parties for this group — members get notified and can RSVP.'
+            }
+            action={
+              canCreateEvent ? (
+                <Button onClick={() => setCreateDialogOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create an event
+                </Button>
+              ) : undefined
+            }
+          />
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
