@@ -28,7 +28,7 @@ test.describe('Messages: login and send', () => {
     expect(conversationId).toBeTruthy()
     await page.goto(`${target}/messages?id=${conversationId}`, { waitUntil: 'networkidle' })
 
-    const composer = page.locator('textarea[placeholder="Type a message..."]')
+    const composer = page.locator('textarea[placeholder="Message — type @cat to bring Cat in"]')
     await composer.waitFor({ state: 'visible', timeout: 15000 })
 
     // 5) Send a message
