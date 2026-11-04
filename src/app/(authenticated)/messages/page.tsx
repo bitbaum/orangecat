@@ -14,7 +14,10 @@ import { inquiryDraft, stashMessageDraft } from '@/features/messaging/lib/draft'
 function MessagesContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const idFromUrl = searchParams?.get('id') || searchParams?.get('c') || undefined;
+  const rawId = searchParams?.get('id') || searchParams?.get('c') || undefined;
+  // A stringified missing id ("undefined"/"null") is no conversation: show the
+  // inbox instead of "Couldn't load messages".
+  const idFromUrl = rawId && rawId !== 'undefined' && rawId !== 'null' ? rawId : undefined;
   const toUserId = searchParams?.get('to') || undefined;
   // "Ask about this" on a listing: its title and path, turned into a draft.
   const aboutTitle = searchParams?.get('about') || undefined;

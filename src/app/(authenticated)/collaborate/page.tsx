@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation';
 import { Handshake, Plus } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import Button from '@/components/ui/Button';
+import EmptyState from '@/components/ui/EmptyState';
 import { Card, CardContent } from '@/components/ui/Card';
 import { API_ROUTES } from '@/config/api-routes';
 import { ROUTES } from '@/config/routes';
@@ -223,13 +224,35 @@ export default function CollaboratePage() {
         {loading ? (
           <p className="text-sm text-fg-tertiary">Loading roles…</p>
         ) : roles.length === 0 ? (
-          <Card className="oc-surface-padding text-center">
-            <p className="text-fg-secondary">No open roles yet.</p>
-            <p className="mt-1 text-sm text-fg-tertiary">
-              {myProjects.length > 0
-                ? 'Post one above to find collaborators.'
-                : 'Create a project to post collaborator roles.'}
-            </p>
+          <Card>
+            <EmptyState
+              icon={Handshake}
+              title="No open roles yet"
+              description={
+                myProjects.length > 0
+                  ? 'Collaborate is where projects ask for help — a designer, a translator, someone with a van. Post a role on one of your projects and people who can help will find it here.'
+                  : 'Collaborate is where projects ask for help — a designer, a translator, someone with a van. Roles belong to a project, so start one first; then post the help you need.'
+              }
+              action={
+                myProjects.length > 0 ? (
+                  <Button
+                    onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                    className="gap-1.5"
+                  >
+                    <Plus className="h-4 w-4" aria-hidden="true" />
+                    Post a role
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={() => router.push(ROUTES.DASHBOARD.PROJECTS_CREATE)}
+                    className="gap-1.5"
+                  >
+                    <Plus className="h-4 w-4" aria-hidden="true" />
+                    Create a project
+                  </Button>
+                )
+              }
+            />
           </Card>
         ) : (
           <div className="space-y-3">
