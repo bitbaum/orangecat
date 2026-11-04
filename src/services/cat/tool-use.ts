@@ -29,13 +29,14 @@ import {
   toolRoutingPageContext,
   prefillType,
 } from './tool-turn-state';
-import { routeWithFallback, type ToolRoutingStep } from './tool-routing-fallback';
+import { routeWithFallback } from './tool-routing-fallback';
 import { uniqueToolDefinitions } from './tool-definitions';
 import { executeToolCall } from './tool-executor';
 import { WebTurnContext } from './web-research';
 import { extractHttpUrls, isUrlOnlyMessage } from './website-analysis';
 import { playbookRoutingNote } from '@/config/cat-playbooks';
 import type {
+  ToolUseOptions,
   ToolAugmentedMessage,
   ToolCallAssistantMessage,
   ToolResultMessage,
@@ -105,34 +106,7 @@ export async function maybeEnrichWithSearchResults(
   modelToUse: string,
   onToolCall?: OnToolCall,
   onPrefillProposal?: OnPrefillProposal,
-  opts?: {
-    timeoutMs?: number;
-    toolFallbacks?: ToolRoutingStep[];
-    actorId?: string | null;
-    /**
-     * Where to POST the tool loop, and with what, for the ACTIVE model.
-     * Supplied by the provider resolver, which is the only place a BYOK key
-     * exists in the raw — `aiService` bakes it in and exposes nothing, and
-     * `AiService.chatCompletion` drops `tool_calls`, so the loop cannot go
-     * through that abstraction either.
-     *
-     * When absent, NO tools are sent. There is deliberately no env fallback:
-     * a guessed endpoint sends a user.s model id to the wrong vendor.
-     */
-    toolEndpoint?: string | null;
-    toolKey?: string | null;
-    /** The page the person opened Cat on; handlers still check ownership. */
-    currentEntity?: { type: string; ref: string };
-    /**
-     * Receives the evidence blocks for everything Cat actually read from the
-     * web this turn, so the caller's grounding check can verify the reply
-     * against them.
-     *
-     * Evidence is returned only for completed exchanges that reach the model,
-     * including partial progress preserved when a later step is interrupted.
-     */
-    onWebEvidence?: (evidence: string[]) => void;
-  }
+  opts?: ToolUseOptions
 ): Promise<ToolAugmentedMessage[]> {
   // WHERE to call is the resolver's answer, never a guess. It builds the step,
   // so it holds the only raw BYOK credential, and it supplies platform steps
@@ -226,6 +200,7 @@ export async function maybeEnrichWithSearchResults(
             onToolCall: guardedOnToolCall,
             onPrefillProposal: guardedOnPrefillProposal,
             actorId: opts?.actorId ?? null,
+            ephemeral: opts?.ephemeral ?? true,
             currentEntity: opts?.currentEntity,
             web,
           })
@@ -285,6 +260,7 @@ async function runToolLoop(args: {
   onPrefillProposal?: OnPrefillProposal;
   /** Present ⇒ the model may CALL actions, not just read tools (ADR-0006 D2). */
   actorId?: string | null;
+  ephemeral: boolean;
   currentEntity?: { type: string; ref: string };
   /** The turn's web state — owned by the caller so it outlives the deadline. */
   web: WebTurnContext;
@@ -301,6 +277,7 @@ async function runToolLoop(args: {
     onToolCall,
     onPrefillProposal,
     actorId,
+    ephemeral,
     currentEntity,
     web,
   } = args;
@@ -397,7 +374,8 @@ async function runToolLoop(args: {
         onToolCall,
         onPrefillProposal,
         actorId,
-        web
+        web,
+        ephemeral
       );
       state.controller.signal.throwIfAborted();
       loopMessages.push(assistantMsg, resultMsg);
@@ -479,7 +457,8 @@ async function runToolLoop(args: {
         onToolCall,
         onPrefillProposal,
         actorId,
-        web
+        web,
+        ephemeral
       );
       state.controller.signal.throwIfAborted();
       loopMessages.push(resultMessage);

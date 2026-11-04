@@ -1,3 +1,26 @@
+# Continuation — temporary-chat tool writes
+
+The earlier consolidated release is now deployed: PR #1558 merged as
+`0b970d0f181e3e9ebd5fdeb6caf4e7aa659b4122`; CD `41863471938` succeeded,
+and the public release receipt reports that commit. Its final-source application,
+browser smoke and migration replay checks passed. This establishes release
+status, not the pending independent-account visibility journeys.
+
+A further privacy gap was found in source: temporary turns skipped passive
+extraction but could still call `remember_fact`, `edit_memory` and
+`save_economic_profile` or save a durable Cat context document (`add_context`). The repair propagates the prepared conversation privacy
+through both reply paths and the existing tool loop. Execution refuses those
+four writes before the action executor can execute or create a confirmation.
+Unknown privacy also refuses writes. Regular chats retain normal action gates;
+forgetting remains available. This does not close memory opt-out policy for
+explicit tools, direct action API review, or tenant-isolation verification.
+
+Focused coverage exercises the four refused actions, normal action execution,
+streaming/non-streaming propagation and tool-loop forwarding. Final full checks
+and deployment evidence must be recorded before claiming the repair shipped.
+
+---
+
 # Current release snapshot — 2026-11-04 15:08 UTC
 
 The remaining unshipped offerings, overlay and responsive-checker changes are

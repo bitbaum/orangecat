@@ -564,6 +564,7 @@ async function runStreamingToolPhase(
     // read-only.
     {
       actorId: turn.actorId,
+      ephemeral: turn.prepared.ephemeral,
       ...(turn.body.currentEntity ? { currentEntity: turn.body.currentEntity } : {}),
       // The active step's own endpoint and key, so a BYOK user's tools
       // reach THEIR vendor rather than being silently dropped.
@@ -1157,6 +1158,7 @@ async function answerCatChat(turn: CatTurn, rl: RateLimitResult): Promise<Respon
     // Same as the streaming path: an actor is what makes actions callable.
     {
       actorId: turn.actorId,
+      ephemeral: turn.prepared.ephemeral,
       toolEndpoint,
       toolKey,
       toolFallbacks: fallbacks,
