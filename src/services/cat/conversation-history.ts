@@ -382,6 +382,9 @@ export async function getMessagesForContext(
     .select('role, content, failure')
     .eq('conversation_id', conversationId)
     .order('created_at', { ascending: false })
+    // Paired inserts share a timestamp. Fetch assistant first so reversing
+    // the newest-first page restores user before assistant for each turn.
+    .order('role', { ascending: true })
     .limit(limit);
 
   if (!data?.length) {
@@ -422,6 +425,9 @@ export async function getMessagesForDisplay(
     .select('id, role, content, model_used, provider, token_count, tool_calls, failure, created_at')
     .eq('conversation_id', conversationId)
     .order('created_at', { ascending: false })
+    // Paired inserts share a timestamp. Fetch assistant first so reversing
+    // the newest-first page restores user before assistant for each turn.
+    .order('role', { ascending: true })
     .limit(limit);
 
   if (!data?.length) {
