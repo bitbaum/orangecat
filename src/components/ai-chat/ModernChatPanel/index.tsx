@@ -274,7 +274,7 @@ export function ModernChatPanel({
     ) : undefined;
 
   return (
-    <div className={cn('oc-chat-app', className)}>
+    <div className={cn('oc-chat-app', className)} data-fc-place="hidden">
       <ChatApp
         ref={chatRef}
         name={CAT_AGENT.name}

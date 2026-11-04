@@ -18,7 +18,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Sparkles, Plus, MinusCircle, Globe, MessageCircle } from 'lucide-react';
+import { Sparkles, Plus, MinusCircle, MessageCircle } from 'lucide-react';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { ROUTES } from '@/config/routes';
 import {
@@ -38,7 +38,7 @@ function askCatHref(question: string): string {
 
 const DISCOVER_QUESTION =
   "Help me work out what I can offer. Ask me what I'm good at, what I own that could earn, " +
-  'and what other people come to me for — then put it on my profile.';
+  'and what other people come to me for — then help me review my offerings.';
 
 // The Cat can remove entries as well as add them (removeFromEconomicProfile),
 // which is the only way to take something off this card. Say so, because a
@@ -240,16 +240,11 @@ export default function ProfileOfferings({ economicProfile, isOwnProfile }: Prof
 
       {isOwnProfile && (
         <div className="mt-4 flex flex-col gap-2 border-t border-subtle pt-3 sm:flex-row sm:items-center sm:justify-between">
-          {/* "Only you see these create shortcuts" was true of the +buttons and
-              easy to read as though it covered the entries themselves. It does
-              not: everything above is on the public profile. Say which is which. */}
-          <p className="flex items-start gap-1.5 text-xs text-fg-tertiary">
-            <Globe className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
-            <span>
-              Visible to everyone.
-              {skills.length > 0 && ' The + shortcuts are yours alone — tap one to list it.'}
-            </span>
-          </p>
+          {skills.length > 0 && (
+            <p className="mb-0 text-xs text-fg-tertiary">
+              Only you see the + shortcuts. Use one to create a listing.
+            </p>
+          )}
           <AskCatLink label="Ask Cat to fix or add to this" question={CORRECT_QUESTION} />
         </div>
       )}

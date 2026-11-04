@@ -10,11 +10,8 @@
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { logger } from '@/utils/logger';
-import type { EconomicSkill, EconomicAsset, PublicEconomicProfile } from './economic-profile';
-
-function asArray<T>(v: unknown): T[] {
-  return Array.isArray(v) ? (v as T[]) : [];
-}
+import type { PublicEconomicProfile } from './economic-profile';
+import { offeringFields } from '@/domain/profile/offerings';
 
 /**
  * The public-facing slice only — served from user_economic_profile_public,
@@ -40,13 +37,7 @@ export async function getPublicEconomicProfile(
     if (!data) {
       return null;
     }
-    const row = data as Record<string, unknown>;
-    return {
-      skills: asArray<EconomicSkill>(row.skills),
-      assets: asArray<EconomicAsset>(row.assets),
-      askedFor: asArray<string>(row.asked_for),
-      notAvailableFor: asArray<string>(row.not_available_for),
-    };
+    return offeringFields(data as Record<string, unknown>);
   } catch (err) {
     logger.warn('getPublicEconomicProfile failed', { err: String(err) }, 'EconomicProfile');
     return null;
