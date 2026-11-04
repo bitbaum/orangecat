@@ -72,12 +72,36 @@ async function settle(page) {
 /** Same steps as tests/e2e/helpers/login.ts, without @playwright/test. */
 async function signIn(context) {
   const page = await context.newPage();
-  await page.goto(`${BASE_URL}/auth?mode=login`, { waitUntil: 'domcontentloaded' });
-  await page.getByLabel('Email address').fill(EMAIL);
-  await page.getByRole('textbox', { name: 'Password' }).fill(PASSWORD);
-  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-  await page.waitForURL(url => !url.pathname.startsWith('/auth'), { timeout: 30_000 });
-  await page.close();
+  const authPostStatuses = [];
+  page.on('response', response => {
+    const path = new URL(response.url()).pathname;
+    if (response.request().method() === 'POST' && /\/(?:api\/)?auth\//.test(path)) {
+      authPostStatuses.push(response.status());
+    }
+  });
+  try {
+    await page.goto(`${BASE_URL}/auth?mode=login`, { waitUntil: 'domcontentloaded' });
+    await page.getByLabel('Email address').fill(EMAIL);
+    await page.getByRole('textbox', { name: 'Password' }).fill(PASSWORD);
+    await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+    // Leaving /auth establishes authentication. Each audited page settles its
+    // own assets: a slow image must not hold this on the full load event.
+    await page.waitForURL(url => !url.pathname.startsWith('/auth'), {
+      timeout: 30_000,
+      waitUntil: 'domcontentloaded',
+    });
+  } catch {
+    // Never include request/response bodies, query strings, email or password.
+    const diagnostic = {
+      path: new URL(page.url()).pathname,
+      readyState: await page.evaluate(() => document.readyState).catch(() => 'unknown'),
+      alertPresent: (await page.getByRole('alert').count().catch(() => 0)) > 0,
+      authPostStatuses: authPostStatuses.slice(-10),
+    };
+    throw new Error(`Sign-in did not reach an authenticated page: ${JSON.stringify(diagnostic)}`);
+  } finally {
+    await page.close();
+  }
 }
 
 async function audit(context, path, width, shotName) {

@@ -14,7 +14,12 @@
  * Resolution runs in the background, so each test drives it deterministically
  * rather than racing a timer.
  */
-import { resolveFreePool, freePoolStatus, __resetFreePool } from '@/services/ai/free-model-pool';
+import {
+  resolveFreePool,
+  freePoolStatus,
+  prepareFreePool,
+  __resetFreePool,
+} from '@/services/ai/free-model-pool';
 import { getFreeModels } from '@/config/ai-models';
 
 const REGISTRY = getFreeModels().map(m => m.id);
@@ -143,9 +148,7 @@ describe('the free pool follows the vendor, not the file', () => {
     }
   });
 
-  it('falls back to the registry rather than returning an empty chain', async () => {
-    // If the vendor lists none of our ids, a 404 we can retry past beats a
-    // chain with nowhere to go.
+  it('uses live alternatives when every registry id has retired', async () => {
     global.fetch = serveCatalogue([
       { id: 'something-entirely-different:free' },
     ]) as unknown as typeof fetch;
@@ -154,7 +157,27 @@ describe('the free pool follows the vendor, not the file', () => {
 
     const got = resolveFreePool(REGISTRY);
     expect(got.length).toBeGreaterThan(0);
-    expect(got).toEqual(expect.arrayContaining(REGISTRY));
+    expect(got).toEqual(['something-entirely-different:free']);
+  });
+
+  it('prepares the first chat chain from the live catalogue, then reuses it', async () => {
+    const [first] = REGISTRY;
+    const fetchSpy = serveCatalogue([{ id: first }]);
+    global.fetch = fetchSpy as unknown as typeof fetch;
+    await prepareFreePool();
+    expect(resolveFreePool(REGISTRY)).toEqual([first]);
+    const calls = fetchSpy.mock.calls.length;
+    await prepareFreePool();
+    expect(fetchSpy).toHaveBeenCalledTimes(calls);
+  });
+
+  it('keeps the registry when the awaited catalogue cannot be read', async () => {
+    global.fetch = vi.fn(async () => {
+      throw new Error('offline');
+    }) as unknown as typeof fetch;
+    await prepareFreePool();
+    expect(resolveFreePool(REGISTRY)).toEqual(REGISTRY);
+    expect(freePoolStatus().resolved).toBe(false);
   });
 
   it('resolves once, not once per message', async () => {
