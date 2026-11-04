@@ -1407,6 +1407,32 @@ describe('streaming', () => {
     expect(keyService.incrementPlatformUsage).not.toHaveBeenCalled();
   });
 
+  it.each([true, false])(
+    'temporary turns do not learn memories or economic facts (stream=%s)',
+    async stream => {
+      (prepareCatChat as Mock).mockResolvedValueOnce({
+        conversationId: CONV,
+        messages: BASE_MESSAGES,
+        grounding: { evidence: [], subjects: [] },
+        budget: null,
+        ephemeral: true,
+      });
+      const a = service(
+        'A',
+        {
+          chunks: [{ content: 'Hello', done: true }],
+        },
+        result('Hello', 'g')
+      );
+      (resolveProvider as Mock).mockResolvedValue(
+        resolved({ provider: 'groq', modelToUse: 'g', aiService: a })
+      );
+      await (await run({ stream })).text();
+      expect(extractAndStoreMemories).not.toHaveBeenCalled();
+      expect(extractAndStoreEconomicProfile).not.toHaveBeenCalled();
+    }
+  );
+
   it('without a conversation, nothing is saved or learned', async () => {
     (prepareCatChat as Mock).mockResolvedValueOnce({
       conversationId: null,

@@ -887,17 +887,17 @@ async function settleStreamedTurn(
         activeService,
         activeModel
       );
+      // Reliably populate the economic-profile store from the same exchange —
+      // deterministic, not dependent on the chat model emitting an action.
+      void extractAndStoreEconomicProfile(
+        supabase,
+        user.id,
+        turn.body.message,
+        fullContent,
+        activeService,
+        activeModel
+      );
     }
-    // Reliably populate the economic-profile store from the same exchange —
-    // deterministic, not dependent on the chat model emitting an action.
-    void extractAndStoreEconomicProfile(
-      supabase,
-      user.id,
-      turn.body.message,
-      fullContent,
-      activeService,
-      activeModel
-    );
   }
   if (metered && turn.meterRef && usage?.totalTokens && activeModel === modelToUse) {
     // Credit-paid frontier exchange: debit the ledger for the model
@@ -1216,15 +1216,15 @@ async function answerCatChat(turn: CatTurn, rl: RateLimitResult): Promise<Respon
         fellBackTo?.aiService ?? aiService,
         fellBackTo?.modelToUse ?? modelToUse
       );
+      void extractAndStoreEconomicProfile(
+        supabase,
+        user.id,
+        message,
+        cleanedMessage,
+        fellBackTo?.aiService ?? aiService,
+        fellBackTo?.modelToUse ?? modelToUse
+      );
     }
-    void extractAndStoreEconomicProfile(
-      supabase,
-      user.id,
-      message,
-      cleanedMessage,
-      fellBackTo?.aiService ?? aiService,
-      fellBackTo?.modelToUse ?? modelToUse
-    );
   }
 
   return applyRateLimitHeaders(

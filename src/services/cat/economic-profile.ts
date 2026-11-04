@@ -15,7 +15,12 @@
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { logger } from '@/utils/logger';
-import { looksLikeSelfDisclosure, selectForgetFacts, type MemoryAiService } from './memory';
+import {
+  looksLikeSelfDisclosure,
+  memoryConsentGranted,
+  selectForgetFacts,
+  type MemoryAiService,
+} from './memory';
 import { ECON_EXTRACTION_SYSTEM } from './economic-profile-prompt';
 import {
   dedupeEntries,
@@ -448,6 +453,9 @@ export async function extractAndStoreEconomicProfile(
     return;
   }
   try {
+    if (!(await memoryConsentGranted(supabase, userId))) {
+      return;
+    }
     const current = await getEconomicProfile(supabase, userId);
     const { content } = await aiService.chatCompletion({
       model,
