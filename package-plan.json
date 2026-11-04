@@ -1,5 +1,5 @@
 {
-  "scope": "Cat grounding and investor-room actions, plus the fleet-review repair of provider routing, completion readiness, permission decisions and recovery. Domain permission and action ownership rules remain local to OrangeCat.",
+  "scope": "Cat grounding and investor-room actions, plus the fleet-review repair of provider routing, completion readiness, permission decisions and recovery. Domain permission and action ownership rules remain local to OrangeCat. Temporary-chat privacy is propagated through the existing tool loop; product memory-write policy stays local.",
   "blocks": {
     "chat": {
       "package": "@bitbaum/chatkit",

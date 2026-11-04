@@ -59,7 +59,7 @@ function stopResponse() {
   } as unknown as Response;
 }
 
-function enrich() {
+function enrich(ephemeral?: boolean) {
   return maybeEnrichWithSearchResults(
     supabase,
     USER_ID,
@@ -78,11 +78,20 @@ function enrich() {
       // which is the point: the loop never guesses a vendor.
       toolEndpoint: 'https://api.groq.com/openai/v1/chat/completions',
       toolKey: 'test-groq-key',
+      ephemeral,
     }
   );
 }
 
 describe('tool loop — cross-step prefill dedupe', () => {
+  it.each([true, false, undefined])('passes privacy state %s to execution', async ephemeral => {
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(toolCallsResponse([prefillCall('call_1', 'service')]))
+      .mockResolvedValue(stopResponse()) as unknown as typeof fetch;
+    await enrich(ephemeral);
+    expect(mockExecuteToolCall.mock.calls[0][8]).toBe(ephemeral ?? true);
+  });
   const originalFetch = global.fetch;
 
   beforeEach(() => {

@@ -39,6 +39,56 @@ beforeEach(() => {
 });
 
 describe('an action called as a tool', () => {
+  it.each(['remember_fact', 'edit_memory', 'save_economic_profile'])(
+    'refuses %s in temporary or unknown conversation privacy before execution',
+    async name => {
+      for (const ephemeral of [true, undefined]) {
+        const onToolCall = vi.fn();
+        const msg = await executeToolCall(
+          supabase,
+          'user-1',
+          call(name),
+          'remember this',
+          onToolCall,
+          undefined,
+          'actor-1',
+          undefined,
+          ephemeral
+        );
+        expect(executeAction).not.toHaveBeenCalled();
+        expect(msg.content).toContain('temporary chat');
+        expect(onToolCall).toHaveBeenLastCalledWith(
+          expect.objectContaining({
+            name,
+            status: 'failed',
+          })
+        );
+      }
+    }
+  );
+
+  it.each(['remember_fact', 'edit_memory', 'save_economic_profile'])(
+    'keeps normal permission checks for %s in a regular chat',
+    async name => {
+      executeAction.mockResolvedValue({ status: 'completed' });
+      await executeToolCall(
+        supabase,
+        'user-1',
+        call(name),
+        'remember this',
+        undefined,
+        undefined,
+        'actor-1',
+        undefined,
+        false
+      );
+      expect(executeAction).toHaveBeenCalledWith('user-1', 'actor-1', {
+        actionId: name,
+        parameters: {},
+      });
+    }
+  );
+
   it('goes through the executor with the caller and their actor', async () => {
     executeAction.mockResolvedValue({ status: 'completed', data: { id: 'p-1' } });
 

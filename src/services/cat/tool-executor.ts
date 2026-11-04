@@ -51,9 +51,18 @@ export async function executeToolCall(
   actorId?: string | null,
   /** The turn's web state. Absent ⇒ the web tools refuse rather than run
    *  without their allow-list. */
-  web?: WebTurnContext
+  web?: WebTurnContext,
+  /** Unknown conversation privacy must not permit durable memory writes. */
+  ephemeral = true
 ): Promise<ToolResultMessage> {
   const toolName = toolCall.function?.name;
+
+  if (ephemeral && ['remember_fact', 'edit_memory', 'save_economic_profile'].includes(toolName)) {
+    const error =
+      'Memory cannot be saved or edited in a temporary chat. Open a regular chat to keep this information.';
+    onToolCall?.({ id: toolCall.id, name: toolName, status: 'failed', error });
+    return { role: 'tool', tool_call_id: toolCall.id, content: error };
+  }
 
   // ── the open web ─── bounded by the turn's URL allow-list, not by the
   // permission service; see tool-handlers-web.ts.

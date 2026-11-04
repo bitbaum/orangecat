@@ -623,6 +623,7 @@ describe('streaming', () => {
     expect((maybeEnrichWithSearchResults as Mock).mock.calls[0][8]).toMatchInlineSnapshot(`
       {
         "actorId": "actor-1",
+        "ephemeral": undefined,
         "onWebEvidence": [Function],
         "toolEndpoint": null,
         "toolFallbacks": [],
@@ -1430,6 +1431,17 @@ describe('streaming', () => {
       await (await run({ stream })).text();
       expect(extractAndStoreMemories).not.toHaveBeenCalled();
       expect(extractAndStoreEconomicProfile).not.toHaveBeenCalled();
+      expect(maybeEnrichWithSearchResults).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        expect.objectContaining({ ephemeral: true })
+      );
     }
   );
 
@@ -1578,6 +1590,7 @@ describe('non-streaming', () => {
     expect((maybeEnrichWithSearchResults as Mock).mock.calls[0][8]).toMatchInlineSnapshot(`
       {
         "actorId": "actor-1",
+        "ephemeral": undefined,
         "toolEndpoint": null,
         "toolFallbacks": [],
         "toolKey": null,
