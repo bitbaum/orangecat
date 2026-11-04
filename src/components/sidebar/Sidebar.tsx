@@ -119,6 +119,7 @@ export function Sidebar({
             Mobile: w-64 drawer when open
             Using literal class names for Tailwind JIT compatibility */}
         <aside
+          data-fc-place={mobileDrawerOpen ? 'hidden' : undefined}
           inert={!isDesktop && !navigationState.isSidebarOpen}
           aria-hidden={!isDesktop && !navigationState.isSidebarOpen}
           className={`fixed bottom-0 left-0 ${SIDEBAR_Z_INDEX.SIDEBAR} flex flex-col ${SIDEBAR_COLORS.BACKGROUND} border-r ${SIDEBAR_COLORS.BORDER} ${sidebarTranslate} overflow-hidden transition-all ${SIDEBAR_TRANSITIONS.DURATION} ${SIDEBAR_TRANSITIONS.EASING} ${sidebarWidth}`}
