@@ -63,3 +63,22 @@ describe('ContextSwitcher — collapsed mode', () => {
     expect(screen.getByText('Personal')).toBeInTheDocument();
   });
 });
+
+describe('ContextSwitcher — expanded mode', () => {
+  it('links the avatar + name to your own public profile', () => {
+    render(<ContextSwitcher profile={profile} isExpanded={true} />);
+    const link = screen.getByRole('link', { name: /view your profile/i });
+    expect(link).toHaveAttribute('href', '/profiles/mao');
+    expect(link).toContainElement(screen.getByAltText('Mao'));
+  });
+
+  it('keeps the context switcher on the chevron, with a View my profile entry', () => {
+    render(<ContextSwitcher profile={profile} isExpanded={true} />);
+    fireEvent.click(screen.getByRole('button', { name: /switch context/i }));
+    expect(screen.getByText('Personal')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /view my profile/i })).toHaveAttribute(
+      'href',
+      '/profiles/mao'
+    );
+  });
+});

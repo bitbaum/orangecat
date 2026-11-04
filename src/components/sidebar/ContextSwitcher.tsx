@@ -16,6 +16,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import Link from 'next/link';
+import { publicProfilePath } from '@/config/public-profile-path';
 import { ChevronDown, User, Users, Plus } from 'lucide-react';
 import { useNavigationContext } from '@/hooks/useNavigationContext';
 import type { GroupContextInfo } from '@/hooks/useNavigationContext';
@@ -24,6 +26,7 @@ import DefaultAvatar from '@/components/ui/DefaultAvatar';
 import type { Profile } from '@/types/database';
 import { ROUTES } from '@/config/routes';
 import { cn } from '@/lib/utils';
+import { CollapsedSwitcher } from './CollapsedSwitcher';
 
 interface ContextSwitcherProps {
   profile: Profile;
@@ -77,14 +80,16 @@ export function ContextSwitcher({
     ? context.group?.name || 'Group'
     : profile.name || profile.username || 'You';
 
+  const selfHref =
+    isGroupContext && context.group?.slug
+      ? ROUTES.GROUPS.VIEW(context.group.slug)
+      : profile.username
+        ? publicProfilePath(profile.username)
+        : '/profile/';
+
   const avatarUrl = isGroupContext ? context.group?.avatar_url : profile.avatar_url;
 
-  // When the user's display name is the same string as their username (common
-  // for users who never set a separate display name — "mao" / "mao"), the
-  // sidebar header used to print both, stacked: "mao" / "@mao". That triple-
-  // ident pattern is what the team-of-experts dashboard review flagged as
-  // "mao mao mao at the top." Only show the @username row when it adds new
-  // information.
+  // Only show @username when it differs from the display name.
   const showSecondaryHandle =
     !isGroupContext &&
     !!profile.username &&
@@ -94,30 +99,48 @@ export function ContextSwitcher({
   // same action it triggers when expanded, one click instead of a dead pixel
   if (!isExpanded) {
     return (
-      <div className={cn('px-2 py-3 border-b border-subtle flex justify-center', className)}>
-        <button
-          onClick={() => {
-            setIsOpen(true);
-            onExpand?.();
-          }}
-          className="rounded-md p-1.5 transition-colors hover:bg-surface-raised"
-          aria-label={`Switch context — ${displayName}`}
-          title={`Switch context — ${displayName}`}
+      <CollapsedSwitcher
+        avatarUrl={avatarUrl}
+        displayName={displayName}
+        isGroupContext={isGroupContext}
+        className={className}
+        onOpen={() => {
+          setIsOpen(true);
+          onExpand?.();
+        }}
+      />
+    );
+  }
+
+  return (
+    <div ref={dropdownRef} className={cn('relative px-2 py-3 border-b border-subtle', className)}>
+      {/* Trigger. The avatar + name open what people expect them to: your own
+          public profile (or the group's page). The chevron alone opens the
+          context switcher — before, the whole row only toggled the menu and
+          there was no way from here to see your profile. */}
+      <div className="flex w-full items-center gap-1 rounded-md">
+        <Link
+          href={selfHref}
+          className="flex min-w-0 flex-1 items-center gap-3 rounded-md p-2 transition-colors hover:bg-surface-raised"
+          aria-label={isGroupContext ? `Open ${displayName}` : 'View your profile'}
         >
-          <div className="relative">
+          <div className="relative flex-shrink-0">
             {avatarUrl ? (
               <Image
                 src={avatarUrl}
                 alt={displayName}
-                width={32}
-                height={32}
+                width={40}
+                height={40}
                 className="rounded-md object-cover"
                 unoptimized={avatarUrl?.includes('supabase.co')}
               />
+            ) : isGroupContext ? (
+              <div className="flex h-10 w-10 items-center justify-center rounded-md bg-surface-raised">
+                <Users className="w-5 h-5 text-fg-primary" />
+              </div>
             ) : (
-              <DefaultAvatar size={32} className="rounded-md" />
+              <DefaultAvatar size={40} className="rounded-md" />
             )}
-            {/* Context indicator dot */}
             <div
               className={cn(
                 'absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-sm border-2 border-surface-page',
@@ -125,61 +148,47 @@ export function ContextSwitcher({
               )}
             />
           </div>
+          <div className="flex-1 min-w-0 text-left">
+            <div className="flex items-center gap-1.5">
+              <p className="text-sm font-semibold text-fg-primary truncate">{displayName}</p>
+              <NWCStatusBadge />
+            </div>
+            {(isGroupContext || showSecondaryHandle) && (
+              <p className="text-xs text-fg-secondary truncate">
+                {isGroupContext ? 'Group' : `@${profile.username}`}
+              </p>
+            )}
+          </div>
+        </Link>
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          aria-label="Switch context"
+          aria-expanded={isOpen}
+          className="flex-shrink-0 rounded-md p-2 transition-colors hover:bg-surface-raised"
+        >
+          <ChevronDown
+            className={cn('w-4 h-4 text-fg-tertiary transition-transform', isOpen && 'rotate-180')}
+          />
         </button>
       </div>
-    );
-  }
-
-  return (
-    <div ref={dropdownRef} className={cn('relative px-2 py-3 border-b border-subtle', className)}>
-      {/* Trigger */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex w-full items-center gap-3 rounded-md p-2 transition-colors hover:bg-surface-raised"
-      >
-        <div className="relative flex-shrink-0">
-          {avatarUrl ? (
-            <Image
-              src={avatarUrl}
-              alt={displayName}
-              width={40}
-              height={40}
-              className="rounded-md object-cover"
-              unoptimized={avatarUrl?.includes('supabase.co')}
-            />
-          ) : isGroupContext ? (
-            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-surface-raised">
-              <Users className="w-5 h-5 text-fg-primary" />
-            </div>
-          ) : (
-            <DefaultAvatar size={40} className="rounded-md" />
-          )}
-          <div
-            className={cn(
-              'absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-sm border-2 border-surface-page',
-              isGroupContext ? 'bg-surface-raised' : 'bg-status-positive'
-            )}
-          />
-        </div>
-        <div className="flex-1 min-w-0 text-left">
-          <div className="flex items-center gap-1.5">
-            <p className="text-sm font-semibold text-fg-primary truncate">{displayName}</p>
-            <NWCStatusBadge />
-          </div>
-          {(isGroupContext || showSecondaryHandle) && (
-            <p className="text-xs text-fg-secondary truncate">
-              {isGroupContext ? 'Group' : `@${profile.username}`}
-            </p>
-          )}
-        </div>
-        <ChevronDown
-          className={cn('w-4 h-4 text-fg-tertiary transition-transform', isOpen && 'rotate-180')}
-        />
-      </button>
 
       {/* Dropdown */}
       {isOpen && (
         <div className="absolute left-2 right-2 top-full z-50 mt-1 max-h-80 overflow-y-auto rounded-md border border-subtle bg-surface-modal py-1 shadow-sm">
+          {profile.username && (
+            <Link
+              href={publicProfilePath(profile.username)}
+              onClick={() => setIsOpen(false)}
+              className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-surface-raised transition-colors"
+            >
+              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-surface-raised">
+                <User className="w-4 h-4 text-fg-secondary" />
+              </div>
+              <p className="text-sm text-fg-primary">View my profile</p>
+            </Link>
+          )}
+          <div className="border-t border-subtle my-1" />
           {/* Individual context option */}
           <button
             onClick={handleSwitchToIndividual}

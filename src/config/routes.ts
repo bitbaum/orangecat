@@ -250,10 +250,18 @@ export function getRouteChrome(pathname: string): RouteChrome {
     // A create/edit form has its own Cat (the "Fill with AI" bar at the top).
     // The floating button over it was a second Cat on the same screen, and it
     // sat on the right edge of the inputs and the submit row.
-    hideGlobalCat: focus || isEntityFormPath(pathname),
+    // The profile editor is the exception: it has no "Fill with AI" bar, and
+    // filling your profile by talking to Cat (update_profile) is the promised
+    // way in — hiding the launcher there left no chat at all.
+    hideGlobalCat: focus || (isEntityFormPath(pathname) && !isProfileEditorPath(pathname)),
     immersiveChat: isCatHubPath(pathname),
     feedbackTab: isCatHubPath(pathname) || isCompanionTalkPath(pathname),
   };
+}
+
+/** The own-profile editor (/dashboard/info/edit). */
+export function isProfileEditorPath(pathname: string): boolean {
+  return /^\/dashboard\/info\/edit\/?$/.test(pathname);
 }
 
 /** A create or edit form: /…/create, /…/<id>/edit. */
