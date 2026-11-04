@@ -11,17 +11,10 @@
  * The vendor publishes the truth continuously. `resolveChain` from ai-kit reads
  * it, so rot can be routed around in the process rather than in a commit.
  *
- * ── Why a cache and not an await ─────────────────────────────────────────────
- * The one caller, `orderedOpenRouterFreeModels`, is synchronous and sits on the
- * hot path of every chat message. Making it async would ripple through the
- * provider builder and the chat route for a value that changes a few times a
- * month. So resolution happens in the BACKGROUND and this module hands back the
- * newest answer it has.
- *
- * The consequence is deliberate and worth stating: the first request after a
- * cold start gets the registry list, exactly as it does today. This is an
- * improvement that arrives a few seconds in, never a dependency the first
- * request can be blocked or broken by.
+ * Resolution is cached. Passive readers may use the last answer immediately;
+ * a person sending a chat awaits one bounded catalogue refresh before building
+ * their chain, so the first turn after deployment can route around retired ids.
+ * No completion or embedding is spent by this catalogue lookup.
  *
  * ── Why the registry still leads ─────────────────────────────────────────────
  * Registry ids carry metadata the auto-router needs to CHOOSE between them, and
@@ -123,6 +116,7 @@ async function refresh(): Promise<void> {
       const [r] = await resolveChain([openRouterProvider()], {
         discover: true,
         maxDiscovered: MAX_DISCOVERED,
+        timeoutMs: 2000,
         // Defaults, stated because they are the money-safety rule: only models
         // the vendor PRICES AT ZERO, that emit text, and that declare tools.
         require: { free: true, textOnly: true, tools: true },
@@ -153,6 +147,16 @@ function refreshIfStale(): void {
   void refresh();
 }
 
+/** Resolve the catalogue before building a person-initiated chat's chain. */
+export async function prepareFreePool(): Promise<void> {
+  if (!process.env.OPENROUTER_API_KEY?.trim()) {
+    return;
+  }
+  if (!pool || Date.now() - pool.at >= TTL_MS) {
+    await refresh();
+  }
+}
+
 /**
  * The free pool to try, best first.
  *
@@ -172,10 +176,10 @@ export function resolveFreePool(registryIds: string[]): string[] {
   const gone = new Set(current.dropped);
   const alive = registryIds.filter(id => !gone.has(id));
 
-  // Never hand back nothing. If resolution somehow contradicts every id the
-  // caller has, the registry list is still the better answer than an empty
-  // chain: a 404 can be retried past, a missing chain cannot.
-  const head = alive.length > 0 ? alive : registryIds;
+  // Live discovered alternatives replace retired declarations when none of
+  // the registry survives. Keep the registry only when there is no live option
+  // at all, rather than restoring known-retired ids ahead of valid fallbacks.
+  const head = alive.length > 0 || current.discovered.length > 0 ? alive : registryIds;
 
   const extra = current.discovered.filter(id => !head.includes(id));
   return [...head, ...extra];
