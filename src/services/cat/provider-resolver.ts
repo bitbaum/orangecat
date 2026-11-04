@@ -26,6 +26,7 @@ import {
 } from '@/config/ai-provider-runtime';
 import { createAutoRouter } from '@/services/ai/auto-router';
 import { modelForDirectKey, peekModelsForKey } from '@/services/cat/key-models';
+import { prepareFreePool } from '@/services/ai/free-model-pool';
 import { buildPlatformProviders } from '@/services/ai/platform-providers';
 import { GROQ_KEY_HEADER, OPENROUTER_KEY_HEADER } from '@/config/http-headers';
 import { ROUTES } from '@/config/routes';
@@ -292,6 +293,9 @@ export async function resolveProvider(
   }
 
   // The free platform default at its saved position (only if env-configured).
+  if (!evalLock) {
+    await prepareFreePool();
+  }
   const platformProviders = evalLock ? [] : buildPlatformProviders(message);
   if (platformProviders.length > 0) {
     const platformPos = await keyService.getPlatformChainPosition(userId);
