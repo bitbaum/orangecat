@@ -57,7 +57,10 @@ export async function executeToolCall(
 ): Promise<ToolResultMessage> {
   const toolName = toolCall.function?.name;
 
-  if (ephemeral && ['remember_fact', 'edit_memory', 'save_economic_profile'].includes(toolName)) {
+  if (
+    ephemeral &&
+    ['remember_fact', 'edit_memory', 'save_economic_profile', 'add_context'].includes(toolName)
+  ) {
     const error =
       'Memory cannot be saved or edited in a temporary chat. Open a regular chat to keep this information.';
     onToolCall?.({ id: toolCall.id, name: toolName, status: 'failed', error });

@@ -39,7 +39,7 @@ beforeEach(() => {
 });
 
 describe('an action called as a tool', () => {
-  it.each(['remember_fact', 'edit_memory', 'save_economic_profile'])(
+  it.each(['remember_fact', 'edit_memory', 'save_economic_profile', 'add_context'])(
     'refuses %s in temporary or unknown conversation privacy before execution',
     async name => {
       for (const ephemeral of [true, undefined]) {
@@ -67,7 +67,7 @@ describe('an action called as a tool', () => {
     }
   );
 
-  it.each(['remember_fact', 'edit_memory', 'save_economic_profile'])(
+  it.each(['remember_fact', 'edit_memory', 'save_economic_profile', 'add_context'])(
     'keeps normal permission checks for %s in a regular chat',
     async name => {
       executeAction.mockResolvedValue({ status: 'completed' });

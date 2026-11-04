@@ -8,14 +8,14 @@ status, not the pending independent-account visibility journeys.
 
 A further privacy gap was found in source: temporary turns skipped passive
 extraction but could still call `remember_fact`, `edit_memory` and
-`save_economic_profile`. The repair propagates the prepared conversation privacy
+`save_economic_profile` or save a durable Cat context document (`add_context`). The repair propagates the prepared conversation privacy
 through both reply paths and the existing tool loop. Execution refuses those
-three writes before the action executor can execute or create a confirmation.
+four writes before the action executor can execute or create a confirmation.
 Unknown privacy also refuses writes. Regular chats retain normal action gates;
 forgetting remains available. This does not close memory opt-out policy for
 explicit tools, direct action API review, or tenant-isolation verification.
 
-Focused coverage exercises the three refused actions, normal action execution,
+Focused coverage exercises the four refused actions, normal action execution,
 streaming/non-streaming propagation and tool-loop forwarding. Final full checks
 and deployment evidence must be recorded before claiming the repair shipped.
 
