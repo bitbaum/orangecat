@@ -42,7 +42,9 @@ export default function ProfileTimelineTab({ profile, isOwnProfile }: ProfileTim
           showFilters={false}
           emptyStateTitle="No posts yet"
           emptyStateDescription={
-            isOwnProfile ? 'Share your first update!' : 'No posts on this timeline yet.'
+            isOwnProfile
+              ? 'Write your first update in the box above — what you are working on, what you need, what you made.'
+              : 'No posts on this timeline yet.'
           }
           onPostCreated={handlePostCreated}
         />
