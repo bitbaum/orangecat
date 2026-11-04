@@ -91,6 +91,54 @@ export default function TimelineView({
     );
   }
 
+  // The composer renders above the empty state too: an empty timeline used to
+  // say "Share your first update!" with nothing to share it with.
+  const composer =
+    showComposer &&
+    (user ? (
+      <TimelineComposer
+        targetOwnerId={ownerId}
+        targetOwnerType={ownerType}
+        allowProjectSelection={feedType === 'profile' || feedType === 'project'}
+        onPostCreated={handlePostCreated}
+        placeholder={
+          feedType === 'profile'
+            ? 'Write on this timeline...'
+            : feedType === 'project'
+              ? 'Share an update about this project...'
+              : TIMELINE_COPY.composePlaceholder
+        }
+        buttonText={TIMELINE_COPY.postButton}
+        showBanner={Boolean(ownerId && ownerId !== user.id)}
+      />
+    ) : (
+      <div className="rounded-md border border-dashed border-subtle bg-surface-page px-4 py-5">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="font-medium text-fg-primary">Sign in to post</p>
+            <p className="text-sm text-fg-secondary">
+              You need to be signed in to write on this timeline.
+            </p>
+          </div>
+          <Button
+            onClick={() => {
+              const redirect =
+                typeof window !== 'undefined'
+                  ? window.location.pathname + window.location.search
+                  : '/profiles/me';
+              // `from` is the param /auth reads (useAuthForm.ts). This said `redirect`,
+              // which nothing reads, so signing in from here always landed on
+              // /dashboard instead of coming back.
+              window.location.href = `/auth?from=${encodeURIComponent(redirect)}`;
+            }}
+            className={TIMELINE_SURFACE.buttonPrimary}
+          >
+            Sign in
+          </Button>
+        </div>
+      </div>
+    ));
+
   if (feed && feed.events.length === 0) {
     const defaultTitle =
       feedType === 'journey'
@@ -107,13 +155,16 @@ export default function TimelineView({
           : 'Be the first to post on this timeline!';
 
     return (
-      <div className="text-center py-16">
-        <h3 className="text-lg font-semibold text-fg-primary mb-2">
-          {emptyStateTitle || defaultTitle}
-        </h3>
-        <p className="text-fg-secondary max-w-md mx-auto">
-          {emptyStateDescription || defaultDescription}
-        </p>
+      <div className="space-y-4">
+        {composer}
+        <div className="text-center py-16">
+          <h3 className="text-lg font-semibold text-fg-primary mb-2">
+            {emptyStateTitle || defaultTitle}
+          </h3>
+          <p className="text-fg-secondary max-w-md mx-auto">
+            {emptyStateDescription || defaultDescription}
+          </p>
+        </div>
       </div>
     );
   }
@@ -121,50 +172,7 @@ export default function TimelineView({
   return (
     <div className="space-y-4">
       {mergedFeed && <FocusScroller />}
-      {showComposer &&
-        (user ? (
-          <TimelineComposer
-            targetOwnerId={ownerId}
-            targetOwnerType={ownerType}
-            allowProjectSelection={feedType === 'profile' || feedType === 'project'}
-            onPostCreated={handlePostCreated}
-            placeholder={
-              feedType === 'profile'
-                ? 'Write on this timeline...'
-                : feedType === 'project'
-                  ? 'Share an update about this project...'
-                  : TIMELINE_COPY.composePlaceholder
-            }
-            buttonText={TIMELINE_COPY.postButton}
-            showBanner={Boolean(ownerId && ownerId !== user.id)}
-          />
-        ) : (
-          <div className="rounded-md border border-dashed border-subtle bg-surface-page px-4 py-5">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="font-medium text-fg-primary">Sign in to post</p>
-                <p className="text-sm text-fg-secondary">
-                  You need to be signed in to write on this timeline.
-                </p>
-              </div>
-              <Button
-                onClick={() => {
-                  const redirect =
-                    typeof window !== 'undefined'
-                      ? window.location.pathname + window.location.search
-                      : '/profiles/me';
-                  // `from` is the param /auth reads (useAuthForm.ts). This said `redirect`,
-                  // which nothing reads, so signing in from here always landed on
-                  // /dashboard instead of coming back.
-                  window.location.href = `/auth?from=${encodeURIComponent(redirect)}`;
-                }}
-                className={TIMELINE_SURFACE.buttonPrimary}
-              >
-                Sign in
-              </Button>
-            </div>
-          </div>
-        ))}
+      {composer}
 
       {mergedFeed && (
         <TimelineComponent

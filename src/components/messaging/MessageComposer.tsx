@@ -7,6 +7,8 @@ import { cn } from '@/lib/utils';
 import type { Message } from '@/features/messaging/types';
 import { useMessageComposer } from './useMessageComposer';
 import { MessageActorSelector } from './MessageActorSelector';
+import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
+import { insertCatMention } from './insert-cat-mention';
 import MentionSuggestions from '@/components/mentions/MentionSuggestions';
 import { textareaSurface } from '@/components/mentions/caret';
 import { useMentionAutocomplete } from '@/hooks/useMentionAutocomplete';
@@ -72,6 +74,19 @@ export default function MessageComposer({
       )}
 
       <form onSubmit={handleSubmit} className="flex items-end gap-2 sm:gap-3">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => insertCatMention(textareaRef.current)}
+          disabled={isSending}
+          className="min-h-11 flex-shrink-0 gap-1.5 px-3"
+          aria-label="Ask Cat in this conversation"
+          title="Bring Cat into this conversation — everyone here sees its answer"
+        >
+          <BrandMarkIcon size={18} />
+          <span className="hidden sm:inline">Ask Cat</span>
+        </Button>
         <div className="relative flex-1 min-w-0">
           <MentionSuggestions
             items={mentions.items}
@@ -96,7 +111,7 @@ export default function MessageComposer({
               mentions.open ? `dm-mention-option-${mentions.activeIndex}` : undefined
             }
             aria-label="Message"
-            placeholder="Type a message..."
+            placeholder="Message — type @cat to bring Cat in"
             className={cn(
               'w-full resize-none rounded-md border border-subtle py-2.5 pl-3 pr-3 text-base sm:py-3 sm:pl-4 sm:pr-4 sm:text-base',
               'bg-surface-page text-fg-primary',

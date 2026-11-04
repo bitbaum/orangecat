@@ -8,13 +8,13 @@
 
 'use client';
 
+import { openConversationFor } from '@/features/messaging/open-conversation.client';
 import { formatRelativeTime } from '@/utils/dates';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Edit, Share2, MessageCircle } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { ROUTES } from '@/config/routes';
-import { API_ROUTES } from '@/config/api-routes';
 import { getUniqueCategories } from '@/utils/project';
 import type { EntityType } from '@/config/entity-registry';
 import { getInitial } from '@/utils/string';
@@ -72,20 +72,10 @@ export default function ProjectHeader({
     }
 
     try {
-      // Create or open conversation with project creator
-      const response = await fetch(API_ROUTES.MESSAGES.BASE, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          participantIds: [project.user_id],
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to start conversation');
-      }
-
-      const { conversationId } = await response.json();
+      // Create or open the conversation through the one shared client helper:
+      // it reads the API's { data: { conversationId } } envelope. Reading a
+      // top-level `conversationId` here sent people to /messages?id=undefined.
+      const conversationId = await openConversationFor([project.user_id]);
       router.push(ROUTES.MESSAGE_CONVERSATION(conversationId));
     } catch {
       toast.error('Failed to start conversation. Please try again.');
