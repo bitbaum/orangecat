@@ -9,6 +9,11 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import Input from '@/components/ui/Input';
 import { openConversationFor } from '@/features/messaging/open-conversation.client';
+import { rankPeopleForPicker } from '@/features/messaging/people-picker';
+import { useAuth } from '@/hooks/useAuth';
+import Link from 'next/link';
+import { ROUTES } from '@/config/routes';
+import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
 
 type ProfileLite = {
   id: string;
@@ -34,6 +39,7 @@ export default function NewConversationModal({
   initialUserId,
   returnFocusRef,
 }: NewConversationModalProps) {
+  const { user } = useAuth();
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [creatingId, setCreatingId] = useState<string | null>(null);
@@ -43,48 +49,51 @@ export default function NewConversationModal({
   const inputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  const fetchProfiles = useCallback(async (q: string) => {
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
-    try {
-      setLoading(true);
-      setError(null);
-      const url = q
-        ? `${API_ROUTES.PROFILES.BASE}?limit=20&search=${encodeURIComponent(q)}`
-        : `${API_ROUTES.PROFILES.BASE}?limit=20`;
-      const res = await fetch(url, { credentials: 'same-origin', signal: controller.signal });
-      if (!res.ok) {
-        throw new Error('Failed to load people');
+  const fetchProfiles = useCallback(
+    async (q: string) => {
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+      try {
+        setLoading(true);
+        setError(null);
+        const url = q
+          ? `${API_ROUTES.PROFILES.BASE}?limit=20&search=${encodeURIComponent(q)}`
+          : `${API_ROUTES.PROFILES.BASE}?limit=20`;
+        const res = await fetch(url, { credentials: 'same-origin', signal: controller.signal });
+        if (!res.ok) {
+          throw new Error('Failed to load people');
+        }
+        const data = await res.json();
+        // API returns { success: true, data: [...] } but older responses nested under data.data
+        const arr = Array.isArray(data.data)
+          ? data.data
+          : Array.isArray(data.data?.data)
+            ? data.data.data
+            : [];
+        if (!controller.signal.aborted) {
+          setProfiles(rankPeopleForPicker(arr, { searching: !!q, selfId: user?.id }));
+        }
+      } catch (e) {
+        if (controller.signal.aborted) {
+          return;
+        }
+        interface ErrorWithName {
+          name?: string;
+        }
+        const errorWithName = e as ErrorWithName;
+        if (errorWithName.name === 'AbortError') {
+          return;
+        }
+        setError(e instanceof Error ? e.message : 'Failed to load people');
+      } finally {
+        if (abortRef.current === controller && !controller.signal.aborted) {
+          setLoading(false);
+        }
       }
-      const data = await res.json();
-      // API returns { success: true, data: [...] } but older responses nested under data.data
-      const arr = Array.isArray(data.data)
-        ? data.data
-        : Array.isArray(data.data?.data)
-          ? data.data.data
-          : [];
-      if (!controller.signal.aborted) {
-        setProfiles(arr);
-      }
-    } catch (e) {
-      if (controller.signal.aborted) {
-        return;
-      }
-      interface ErrorWithName {
-        name?: string;
-      }
-      const errorWithName = e as ErrorWithName;
-      if (errorWithName.name === 'AbortError') {
-        return;
-      }
-      setError(e instanceof Error ? e.message : 'Failed to load people');
-    } finally {
-      if (abortRef.current === controller && !controller.signal.aborted) {
-        setLoading(false);
-      }
-    }
-  }, []);
+    },
+    [user?.id]
+  );
 
   const startConversation = useCallback(
     async (profileId: string) => {
@@ -177,6 +186,24 @@ export default function NewConversationModal({
           />
         </div>
 
+        {!search && (
+          <Link
+            href={ROUTES.DASHBOARD.CAT}
+            onClick={onClose}
+            className="flex items-center gap-3 border-b border-subtle px-4 py-3 hover:bg-surface-raised"
+          >
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-surface-raised">
+              <BrandMarkIcon className="h-6 w-6" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block font-medium text-fg-primary">Talk to Cat</span>
+              <span className="block text-sm text-fg-secondary">
+                Your AI assistant — ask anything, or have it set things up for you
+              </span>
+            </span>
+          </Link>
+        )}
+
         {/* Error message */}
         {error && (
           <div className="border-b border-status-negative/20 bg-status-negative/10 px-4 py-3">
@@ -198,10 +225,12 @@ export default function NewConversationModal({
             <div className="py-12 text-center">
               <MessageSquare className="w-10 h-10 mx-auto mb-3 text-fg-tertiary dark:text-fg-secondary" />
               <p className="text-fg-secondary font-medium">
-                {search ? 'No people found' : 'Search for someone to message'}
+                {search ? 'No people found' : 'Find someone to message'}
               </p>
               <p className="text-sm text-fg-tertiary mt-1">
-                {search ? 'Try a different search term' : 'Type a name or username above'}
+                {search
+                  ? 'Try their display name or @username, or share your profile link with them.'
+                  : 'Type a name or @username above. People you follow or have talked to show up here.'}
               </p>
             </div>
           ) : (

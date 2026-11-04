@@ -127,7 +127,7 @@ test.describe('Messaging Comprehensive E2E Tests', () => {
       const hasConversations =
         (await page.locator('[data-testid="conversation-item"]').count()) > 0;
       const hasEmptyState = await page
-        .locator('text=Select a chat')
+        .locator('text=Your messages')
         .isVisible()
         .catch(() => false);
 
