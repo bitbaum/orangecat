@@ -22,10 +22,14 @@ independent [site handoff](../HANDOFF-2026-11-04.md) and
   tests passed in its normal push checks. Failed replies now persist explicit
   error metadata, retain settled tool outcomes and partial text, reopen with
   recovery controls, and are excluded from subsequent model context.
-- Main CI run `41842072875` failed in `check:broken-words` waiting for signed-in
+- Main CI run `41842072875` initially failed in `check:broken-words` waiting for signed-in
   navigation (30-second timeout); its route contract passed 19 tests, static
-  verification and security passed. Failed jobs were rerun once. Deployment of
-  `702d5593` and its live failed-history journey are NOT yet verified.
+  verification and security passed. Failed jobs were rerun once and passed. CD `41845445046` verified live
+  receipt `702d5593`. A real failed question reloaded with recovery and settled
+  tool outcomes, no unavailable top-up and no normal answer Copy button. The
+  test conversation was deleted. The screenshot also exposed timestamp-tie
+  message ordering (reply above question) and an overlapping floating launcher;
+  these remain explicit follow-up work.
 - Read-only diagnostics run `41842200437` succeeded through the existing deploy
   connection. Last-hour aggregate had zero matching errors. This neither proves
   healthy conversations nor explains yesterday's failure. Reproduce, rerun,
@@ -45,7 +49,9 @@ whole problem to a personal usage allowance or claim the failure is solved.
 
 ## Current narrow privacy change
 
-Branch `fix/cat-context-and-mobile-state`, worktree `/workspace/orangecat-ux`.
+PR #1556, branch `fix/cat-context-and-mobile-state`, source `0977d48`.
+Normal push gates passed all 5,637 tests; all application CI jobs passed. Fleet
+sweep/deployment and live consent verification remain to be recorded.
 The change prevents passive economic-profile learning from temporary turns in
 both streaming and non-streaming completion paths. It uses the existing memory
 consent reader, skipping extraction when memory is disabled or consent cannot
@@ -98,3 +104,16 @@ conversation bodies or screenshots. No generated live DB types were hand-edited.
 
 Distinguish implemented, checked, merged, deployed and exercised. A live process
 or green CI does not close the contextual-conversation acceptance criterion.
+
+## Additional active repairs
+
+Routing PR #1557, source `50a9fb8`, passed normal hooks and 5,631 tests. It awaits
+application CI and deployment. The first chat awaits a bounded live catalogue
+resolution, and live discoveries replace retired registry entries when none of
+the registry survives. No quota availability is promised. See its dated routing
+document on that branch.
+
+Public offerings consent is implemented separately in `fix/cat-offerings-consent`
+with an additive migration, authenticated owner control, public preview and
+local policy/browser tests. See [its evidence and gates](2026-11-04-offerings-consent.md).
+Do not confuse either privacy repair with deployed provider capacity.

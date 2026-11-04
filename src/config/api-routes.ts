@@ -26,6 +26,7 @@ export const API_ROUTES = {
     CREDITS: '/api/cat/credits',
     CREDITS_TOPUP: '/api/cat/credits/topup',
     MEMORIES: '/api/cat/memories',
+    OFFERINGS: '/api/cat/offerings',
     MEMORIES_IMPORT: '/api/cat/memories/import',
     INTERESTS: '/api/cat/interests',
     DIAGNOSE: '/api/cat/diagnose',

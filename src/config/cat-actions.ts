@@ -1728,7 +1728,7 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
     id: 'save_economic_profile',
     name: 'Save Economic Profile',
     description:
-      'Save latent economic value the user reveals — skills, things they own to rent/sell, goals, constraints, what people come to them for, engagement scope they are not taking on, motivation, or stage — into their structured economic profile so Cat can suggest better offers. Skills, asked-for, and not-available-for are shown on their public profile; constraints, motivation, and stage stay private.',
+      'Save latent economic value the user reveals — skills, things they own to rent/sell, goals, constraints, what people come to them for, engagement scope they are not taking on, motivation, or stage — into their structured economic profile so Cat can suggest better offers. Skills, assets, asked-for, and not-available-for stay private unless the owner explicitly enables public offerings on their profile. Saving here never changes that sharing choice. Goals, constraints, motivation, and stage stay private.',
     category: 'context',
     icon: TrendingUp,
     riskLevel: 'low',
