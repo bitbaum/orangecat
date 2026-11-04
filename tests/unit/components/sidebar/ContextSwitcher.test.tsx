@@ -86,18 +86,18 @@ describe('ContextSwitcher avatar is clickable', () => {
     expect(button).toHaveAccessibleName(/Cato/);
   });
 
-  it('wraps the expanded avatar in the switcher trigger', () => {
+  it('links the expanded avatar to your own profile', () => {
     render(<ContextSwitcher profile={profile} isExpanded />);
 
     const avatar = screen.getByAltText('Cato');
-    expect(avatar.closest('button')).toBeInTheDocument();
+    expect(avatar.closest('a')).toHaveAttribute('href', expect.stringMatching(/^\/profiles\//));
   });
 
-  it('opens the switcher when the expanded avatar is clicked', () => {
+  it('opens the switcher from the chevron', () => {
     render(<ContextSwitcher profile={profile} isExpanded />);
 
     expect(screen.queryByText('Personal')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByAltText('Cato').closest('button')!);
+    fireEvent.click(screen.getByRole('button', { name: /switch context/i }));
 
     expect(screen.getByText('Personal')).toBeInTheDocument();
   });
