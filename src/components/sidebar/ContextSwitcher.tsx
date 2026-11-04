@@ -26,6 +26,7 @@ import DefaultAvatar from '@/components/ui/DefaultAvatar';
 import type { Profile } from '@/types/database';
 import { ROUTES } from '@/config/routes';
 import { cn } from '@/lib/utils';
+import { CollapsedSwitcher } from './CollapsedSwitcher';
 
 interface ContextSwitcherProps {
   profile: Profile;
@@ -88,12 +89,7 @@ export function ContextSwitcher({
 
   const avatarUrl = isGroupContext ? context.group?.avatar_url : profile.avatar_url;
 
-  // When the user's display name is the same string as their username (common
-  // for users who never set a separate display name — "mao" / "mao"), the
-  // sidebar header used to print both, stacked: "mao" / "@mao". That triple-
-  // ident pattern is what the team-of-experts dashboard review flagged as
-  // "mao mao mao at the top." Only show the @username row when it adds new
-  // information.
+  // Only show @username when it differs from the display name.
   const showSecondaryHandle =
     !isGroupContext &&
     !!profile.username &&
@@ -103,39 +99,16 @@ export function ContextSwitcher({
   // same action it triggers when expanded, one click instead of a dead pixel
   if (!isExpanded) {
     return (
-      <div className={cn('px-2 py-3 border-b border-subtle flex justify-center', className)}>
-        <button
-          onClick={() => {
-            setIsOpen(true);
-            onExpand?.();
-          }}
-          className="rounded-md p-1.5 transition-colors hover:bg-surface-raised"
-          aria-label={`Switch context — ${displayName}`}
-          title={`Switch context — ${displayName}`}
-        >
-          <div className="relative">
-            {avatarUrl ? (
-              <Image
-                src={avatarUrl}
-                alt={displayName}
-                width={32}
-                height={32}
-                className="rounded-md object-cover"
-                unoptimized={avatarUrl?.includes('supabase.co')}
-              />
-            ) : (
-              <DefaultAvatar size={32} className="rounded-md" />
-            )}
-            {/* Context indicator dot */}
-            <div
-              className={cn(
-                'absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-sm border-2 border-surface-page',
-                isGroupContext ? 'bg-surface-raised' : 'bg-status-positive'
-              )}
-            />
-          </div>
-        </button>
-      </div>
+      <CollapsedSwitcher
+        avatarUrl={avatarUrl}
+        displayName={displayName}
+        isGroupContext={isGroupContext}
+        className={className}
+        onOpen={() => {
+          setIsOpen(true);
+          onExpand?.();
+        }}
+      />
     );
   }
 
