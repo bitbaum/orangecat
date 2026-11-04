@@ -1,3 +1,43 @@
+# Current release snapshot — 2026-11-04 15:08 UTC
+
+The remaining unshipped offerings, overlay and responsive-checker changes are
+consolidated in PR #1558. PRs #1560/#1561 are superseded once the bundle is
+pushed; their commits and tests are preserved. This avoids three serial main
+builds in the fleet's one-main-CI-at-a-time release queue. Hold #1558 until
+migration replay and application checks pass on the consolidated source.
+
+- #1557 is deployed as `a8023c4f`, receipt CD `41850577205`. The original Heidi
+  question completed in 38.8 seconds with about 2,976 answer characters and no
+  stream error. Grounding reported ok with no unsupported claims. Its investor
+  room link opened HTTP 200 at the correct authenticated route, with no mobile
+  overflow. Account metadata confirmed no personal provider keys: this was the
+  shared chain. One successful turn does not establish unlimited quota.
+- #1556 is deployed as `ce4c1e64`, receipt CD `41848964180`; passive learning
+  respects temporary chats and memory opt-out. Tool-triggered memory/economic
+  saves still need explicit review; do not close the wider privacy audit.
+- #1559 merged as `34a96aded`; source is included in this bundle's base. Its
+  deployed receipt and chronological reload verification remain to be recorded.
+- #1558 migration replay passed before consolidation. Its app check twice
+  timed out waiting for the full post-sign-in load event. The bundle keeps the
+  authentication predicate and page audits, waits for DOM readiness, and
+  reports only safe failure metadata (path/readiness/status numbers), never
+  credentials or request/response bodies. Recheck the final-source gates.
+- An isolated QA account registered normally and loaded its own profile. A
+  second registration timed out; its failed context was not retained, so do not
+  claim two fresh enrollments or complete cleanup. Use the retained QA account
+  and an independent approved viewer for visibility tests; preserve identity
+  guards before deleting any test account. Never delete the real member account.
+- Still open: tool-triggered learning policy, independent-account and revoked
+  grant isolation, private API cache policy, native sheets/OS keyboard, accurate
+  capability labels, Loki Workbench, communication delivery and Solon journeys.
+
+The dated notes below describe earlier stages. This snapshot supersedes their
+release status, not their evidence. Private evidence and exact local process
+state are in `/workspace/review-evidence/EXECUTION-STATE.md`; do not commit session
+files, raw responses, generated QA credentials or private screenshots.
+
+---
+
 # Fleet repair handoff — 2026-11-04
 
 This continues the supplied Fleet System Review and mobile screenshots. The
