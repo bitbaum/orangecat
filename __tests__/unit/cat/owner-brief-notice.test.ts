@@ -1,4 +1,4 @@
-import { ownerBriefNotice, type BriefFacts } from '@/services/cat/proactive';
+import { ownerBriefNotice, type BriefFacts } from '@/services/cat/daily-brief';
 
 const none: BriefFacts = {
   salesCount: 0,

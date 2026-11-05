@@ -1,4 +1,5 @@
-import { composeDailyBrief, runDailyBrief, runWatchEvaluation } from '@/services/cat/proactive';
+import { composeDailyBrief, runDailyBrief } from '@/services/cat/daily-brief';
+import { runWatchEvaluation } from '@/services/cat/proactive';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 /**
@@ -137,6 +138,39 @@ describe('runDailyBrief', () => {
     expect(updates).toEqual([
       { table: 'notifications', values: expect.objectContaining({ is_read: true }) },
     ]);
+  });
+
+  it('answers within its budget when a query never returns, counting who it did not reach', async () => {
+    // The incident: the timer's curl gave up at 120s with 0 bytes, so nothing
+    // said how far the run got. A query that hangs forever must not hold the
+    // run past its budget.
+    const { client } = mockAdmin({
+      cat_messages: [{ data: [{ user_id: 'u1' }, { user_id: 'u2' }, { user_id: 'u3' }] }],
+    });
+    const realFrom = client.from.bind(client);
+    (client as unknown as { from: (t: string) => unknown }).from = (table: string) => {
+      if (table !== 'notifications') {
+        return realFrom(table);
+      }
+      const hung: Record<string, unknown> = {};
+      for (const m of ['select', 'eq', 'gte', 'limit']) {
+        hung[m] = () => hung;
+      }
+      hung.then = () => undefined; // never settles
+      return hung;
+    };
+
+    const started = Date.now();
+    const result = await runDailyBrief(client, 50, 50);
+    expect(Date.now() - started).toBeLessThan(2000);
+    expect(result).toEqual({
+      usersConsidered: 3,
+      briefsSent: 0,
+      errors: 0,
+      deferred: 3,
+      outOfTime: true,
+    });
+    expect(createNotificationMock).not.toHaveBeenCalled();
   });
 });
 
