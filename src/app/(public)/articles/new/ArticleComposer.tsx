@@ -20,6 +20,7 @@ import DraftsPanel from './DraftsPanel';
 import ArticlePreview from './ArticlePreview';
 import ComposerEditor from './ComposerEditor';
 import PublishBar from './PublishBar';
+import ImportNotice, { type ArticlePrefill } from './ImportNotice';
 import { formatNumber } from '@/utils/locale';
 
 /** Existing article passed when the composer is opened in edit mode. */
@@ -36,16 +37,18 @@ export interface ArticleInitial {
 export default function ArticleComposer({
   user,
   initial,
+  prefill,
 }: {
   user: { id: string };
   initial?: ArticleInitial;
+  prefill?: ArticlePrefill;
 }) {
   const router = useRouter();
   const isEditing = !!initial;
-  const [title, setTitle] = useState(initial?.title ?? '');
-  const [excerpt, setExcerpt] = useState(initial?.excerpt ?? '');
+  const [title, setTitle] = useState(initial?.title ?? prefill?.title ?? '');
+  const [excerpt, setExcerpt] = useState(initial?.excerpt ?? prefill?.excerpt ?? '');
   const [coverImage, setCoverImage] = useState(initial?.coverImage ?? '');
-  const [body, setBody] = useState(initial?.body ?? '');
+  const [body, setBody] = useState(initial?.body ?? prefill?.body ?? '');
   const [visibility, setVisibility] = useState<TimelineVisibility>(initial?.visibility ?? 'public');
   const [tab, setTab] = useState<'write' | 'preview'>('write');
   const [publishing, setPublishing] = useState(false);
@@ -58,26 +61,17 @@ export default function ArticleComposer({
     user.id,
     isEditing,
     { title, excerpt, coverImage, body, visibility },
-    { setTitle, setExcerpt, setCoverImage, setBody, setVisibility }
+    { setTitle, setExcerpt, setCoverImage, setBody, setVisibility },
+    { restoreLatest: !prefill }
   );
 
+  const [prefillDraftId] = useState(drafts.draftId);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const md = useMarkdownTextarea(bodyRef, body, setBody);
 
-  // Grow the body textarea with its content so the page scrolls, never an inner
-  // box — long-form writing shouldn't happen inside a fixed scroll trap.
-  //
-  // Coalesced into an animation frame, and this is not a micro-optimisation.
-  // Writing `height = 'auto'` invalidates layout and reading `scrollHeight`
-  // immediately forces it to be recomputed — a forced synchronous reflow, twice,
-  // on EVERY keystroke, over an element whose height is the whole document by
-  // construction (`overflow-hidden` + auto-grow). Cost therefore scales with
-  // article length: imperceptible at 200 words, and at ~1,400 words it made the
-  // tab unresponsive for tens of seconds at a time while writing.
-  //
-  // One frame collapses a burst of typing into a single measurement, and
-  // skipping an unchanged write avoids invalidating layout for no reason —
-  // assigning the same px value still dirties it.
+  // Coalesce auto-growth into one frame. A synchronous reset/scrollHeight
+  // read on every keystroke froze long articles. The document should scroll,
+  // rather than trapping the writer inside a fixed-height textarea.
   useEffect(() => {
     const el = bodyRef.current;
     if (!el) {
@@ -201,6 +195,10 @@ export default function ArticleComposer({
             {isEditing ? ARTICLE_COPY.edit.subheading : ARTICLE_COPY.new.subheading}
           </p>
         </header>
+
+        {prefill && !isEditing && drafts.draftId === prefillDraftId && (
+          <ImportNotice host={prefill.host} />
+        )}
 
         {/* Write / Preview tabs */}
         <div className="mb-3 flex items-center gap-2">

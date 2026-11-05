@@ -24,7 +24,7 @@ const bundle = await build({
       import ArticleComposer from './src/app/(public)/articles/new/ArticleComposer';
       const root=createRoot(document.getElementById('app'));
       window.published=[];window.paths=[];
-      window.mount=(id='fixture-account-a')=>root.render(<ArticleComposer key={id} user={{id}}/>);
+      let mountId=0;window.mount=(id='fixture-account-a',prefill)=>root.render(<ArticleComposer key={id+':'+mountId++} user={{id}} prefill={prefill}/>);
       window.mount();`,
   },
   bundle: true,
@@ -260,6 +260,27 @@ try {
       () => document.querySelector('[aria-label="Article title"]')?.value === 'Human article'
     );
     assert.equal(await body.inputValue(), 'Human writing.');
+    await page.evaluate(() =>
+      window.mount('fixture-account-a', {
+        title: 'Imported article',
+        body: 'Imported source text.',
+        host: 'biaslens.orangecat.ch',
+      })
+    );
+    await page.getByText('Brought over from biaslens.orangecat.ch.', { exact: false }).waitFor();
+    await page.getByText('Draft saved on this device.', { exact: true }).waitFor();
+    assert.equal(await title.inputValue(), 'Imported article');
+    assert.equal(await body.inputValue(), 'Imported source text.');
+    await page.getByRole('button', { name: 'Drafts', exact: true }).click();
+    await page.getByRole('button', { name: /^Human article/ }).waitFor();
+    await page.getByRole('button', { name: 'New draft', exact: true }).click();
+    assert.equal(await body.inputValue(), '');
+    assert.equal(await page.getByText('Brought over from', { exact: false }).count(), 0);
+    await page.getByRole('button', { name: 'Drafts', exact: true }).click();
+    await page.getByRole('button', { name: /^Human article/ }).click();
+    assert.equal(await title.inputValue(), 'Human article');
+    assert.equal(await body.inputValue(), 'Human writing.');
+    assert.equal(await page.getByText('Brought over from', { exact: false }).count(), 0);
     await page.evaluate(() => {
       document.activeElement?.blur();
       scrollTo({ top: 0, behavior: 'instant' });

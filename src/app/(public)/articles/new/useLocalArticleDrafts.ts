@@ -37,7 +37,8 @@ export function useLocalArticleDrafts(
   ownerId: string,
   isEditing: boolean,
   fields: DraftFields,
-  setters: DraftSetters
+  setters: DraftSetters,
+  options: { restoreLatest?: boolean } = {}
 ) {
   const { title, excerpt, coverImage, body, visibility } = fields;
   const { setTitle, setExcerpt, setCoverImage, setBody, setVisibility } = setters;
@@ -59,7 +60,11 @@ export function useLocalArticleDrafts(
     }
     setHasOlderDrafts(hasOlderDeviceDrafts());
     const drafts = listLocalDrafts(ownerId);
-    const [latest, ...rest] = drafts;
+    // An article brought over from a sister product must not be replaced by
+    // whatever was last typed here; that draft stays listed instead.
+    const restoreLatest = options.restoreLatest ?? true;
+    const latest = restoreLatest ? drafts[0] : undefined;
+    const rest = restoreLatest ? drafts.slice(1) : drafts;
     if (latest) {
       setTitle(latest.title);
       setExcerpt(latest.excerpt);
