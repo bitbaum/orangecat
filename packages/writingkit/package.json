@@ -1,0 +1,41 @@
+{
+  "name": "@bitbaum/writingkit",
+  "version": "0.1.0",
+  "description": "Revision-safe content operations: coordinate generation and edits without overwriting newer writing.",
+  "license": "MIT",
+  "type": "module",
+  "packageManager": "pnpm@11.25.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bitbaum/orangecat.git",
+    "directory": "packages/writingkit"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.contract.json",
+    "build": "tsc -p tsconfig.json",
+    "test": "node --test test/*.test.js",
+    "verify": "pnpm run build && pnpm run typecheck && pnpm run test"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3"
+  }
+}

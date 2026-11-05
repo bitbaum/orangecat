@@ -50,6 +50,7 @@
     "check:follow-envelope": "node scripts/check-follow-envelope.mjs",
     "check:file-inputs": "chatkit-check-file-inputs src",
     "verify": "node scripts/verify.mjs",
+    "check:writingkit": "pnpm --dir packages/writingkit run verify",
     "audit:schema": "node scripts/db/audit-schema-drift.mjs",
     "audit:routes": "node scripts/audit-routes.mjs",
     "gen:types": "bash scripts/db/gen-types.sh",
