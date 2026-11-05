@@ -6,7 +6,8 @@ import { useRequireAuth } from '@/hooks/useAuthRedirects';
 import { ROUTES } from '@/config/routes';
 import Button from '@/components/ui/Button';
 import { bodyWithAttribution, type ImportedArticle } from '@/services/articles/import-source';
-import ArticleComposer, { type ArticlePrefill } from './ArticleComposer';
+import ArticleComposer from './ArticleComposer';
+import type { ArticlePrefill } from './ImportNotice';
 
 type Import =
   | { state: 'none' }

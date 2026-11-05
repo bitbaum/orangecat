@@ -22,6 +22,7 @@ import DraftsPanel from './DraftsPanel';
 import ArticlePreview from './ArticlePreview';
 import ComposerEditor from './ComposerEditor';
 import PublishBar from './PublishBar';
+import ImportNotice, { type ArticlePrefill } from './ImportNotice';
 import { formatNumber } from '@/utils/locale';
 
 /** Existing article passed when the composer is opened in edit mode. */
@@ -33,15 +34,6 @@ export interface ArticleInitial {
   coverImage?: string;
   body: string;
   visibility: TimelineVisibility;
-}
-
-/** Text handed to a new article by a sister product (`?import=`). */
-export interface ArticlePrefill {
-  title: string;
-  excerpt?: string;
-  body: string;
-  /** The site it came from, named in the notice above the editor. */
-  host: string;
 }
 
 export default function ArticleComposer({
@@ -192,14 +184,7 @@ export default function ArticleComposer({
           </p>
         </header>
 
-        {prefill && !isEditing && (
-          <p
-            role="status"
-            className="mb-5 rounded-md border border-default bg-surface-raised px-3 py-2.5 text-sm text-fg-secondary"
-          >
-            Brought over from {prefill.host}. Change anything you like, then publish it here too.
-          </p>
-        )}
+        {prefill && !isEditing && <ImportNotice host={prefill.host} />}
 
         {!isEditing && (
           <details className="mb-5 rounded-md border border-default">
