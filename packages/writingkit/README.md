@@ -4,9 +4,9 @@ Revision-safe operations for an editing workspace. One coordinator serializes
 generation and editing, captures the requested document revision, and rejects
 late answers after edits, document/account changes, cancellation or disposal.
 
-This is the first extraction slice from OrangeCat's article workflow. BiasLens
-source rewrites and Heidi language-learning adaptations are intended consumers;
-neither is an adopter yet. The package has no runtime dependencies.
+The package supports authoring adapters such as OrangeCat article editing,
+BiasLens source rewrites and Heidi language-learning adaptations. Product
+package plans record actual adoption. The package has no runtime dependencies.
 
 ## Use
 
@@ -69,22 +69,22 @@ its optimistic server revision checks and reconcile its result with server
 history even when the browser outcome is stale or cancelled. Never claim that
 this editing guard rolls back a database change.
 
-## Extraction and verification
+## Verification and ownership
 
-This folder is bootstrap source for a standalone package repository, not an
-application dependency or an installed feature. Register it through Fleet's
-package-repository workflow, publish a verified release, then consume that
-version in OrangeCat before adding another app adapter. Do not create local
-cross-product imports into this folder.
-
-After the standalone repository exists, change the engine there. Retire this
-bootstrap runtime copy and its temporary product verification binding when the
-first consumer adopts the release; preserve the extraction commit as provenance.
+From the package directory, install its declared development dependencies and run:
 
 ```sh
-pnpm --dir packages/writingkit run verify
+pnpm run verify
 ```
 
 The package checks its types, builds its public exports and tests the actual
 exported runtime, including overlapping operations and late responses. Committed
 `dist` must match the build for the standalone package's GitHub install path.
+
+Consumers install a verified package release; they do not import another
+product's source folder. During extraction, Fleet's package-repository workflow
+copies bootstrap source into its standalone repository. After creation, change
+the engine there and retire the bootstrap runtime copy and its temporary product
+verification binding on first adoption. Preserve the extraction commit as
+provenance. Product handoffs record the release/adoption state rather than this
+README claiming an unverified installation.
