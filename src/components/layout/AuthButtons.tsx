@@ -79,14 +79,16 @@ function UnauthenticatedButtons({
     <div
       className={`flex items-center ${isMobileNav ? 'flex-col space-y-2 w-full' : 'space-x-2'} ${className}`}
     >
-      {/* Mobile: Single prominent login button — warm accent (top-of-funnel) */}
+      {/* Mobile: one prominent button — warm accent (top-of-funnel). It opens
+          registration, so it must say so; "Login" sent newcomers to sign-up
+          and returning people to the wrong form. */}
       <Button
         href={getStarted.href}
         variant="accent"
         size="sm"
-        className="min-h-9 min-w-18 text-sm font-medium sm:hidden"
+        className="min-h-9 text-sm font-medium sm:hidden"
       >
-        Login
+        {getStarted.name}
       </Button>
       {/* Desktop: Both sign in and get started buttons */}
       <Button
