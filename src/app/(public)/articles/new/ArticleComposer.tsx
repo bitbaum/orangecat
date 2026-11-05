@@ -35,19 +35,30 @@ export interface ArticleInitial {
   visibility: TimelineVisibility;
 }
 
+/** Text handed to a new article by a sister product (`?import=`). */
+export interface ArticlePrefill {
+  title: string;
+  excerpt?: string;
+  body: string;
+  /** The site it came from, named in the notice above the editor. */
+  host: string;
+}
+
 export default function ArticleComposer({
   user,
   initial,
+  prefill,
 }: {
   user: { id: string };
   initial?: ArticleInitial;
+  prefill?: ArticlePrefill;
 }) {
   const router = useRouter();
   const isEditing = !!initial;
-  const [title, setTitle] = useState(initial?.title ?? '');
-  const [excerpt, setExcerpt] = useState(initial?.excerpt ?? '');
+  const [title, setTitle] = useState(initial?.title ?? prefill?.title ?? '');
+  const [excerpt, setExcerpt] = useState(initial?.excerpt ?? prefill?.excerpt ?? '');
   const [coverImage, setCoverImage] = useState(initial?.coverImage ?? '');
-  const [body, setBody] = useState(initial?.body ?? '');
+  const [body, setBody] = useState(initial?.body ?? prefill?.body ?? '');
   const [visibility, setVisibility] = useState<TimelineVisibility>(initial?.visibility ?? 'public');
   const [tab, setTab] = useState<'write' | 'preview'>('write');
   const [publishing, setPublishing] = useState(false);
@@ -59,7 +70,8 @@ export default function ArticleComposer({
     user.id,
     isEditing,
     { title, excerpt, coverImage, body, visibility },
-    { setTitle, setExcerpt, setCoverImage, setBody, setVisibility }
+    { setTitle, setExcerpt, setCoverImage, setBody, setVisibility },
+    { restoreLatest: !prefill }
   );
 
   const bodyRef = useRef<HTMLTextAreaElement>(null);
@@ -179,6 +191,15 @@ export default function ArticleComposer({
             {isEditing ? ARTICLE_COPY.edit.subheading : ARTICLE_COPY.new.subheading}
           </p>
         </header>
+
+        {prefill && !isEditing && (
+          <p
+            role="status"
+            className="mb-5 rounded-md border border-default bg-surface-raised px-3 py-2.5 text-sm text-fg-secondary"
+          >
+            Brought over from {prefill.host}. Change anything you like, then publish it here too.
+          </p>
+        )}
 
         {!isEditing && (
           <details className="mb-5 rounded-md border border-default">

@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, Clock, Lock, Users } from 'lucide-react';
 import { getArticleBySlug, isCurrentUserArticleAuthor } from '@/services/articles/get-article';
-import { ARTICLE_COPY } from '@/config/articles';
+import { ARTICLE_COPY, deriveExcerpt } from '@/config/articles';
 import { ROUTES } from '@/config/routes';
 import { JsonLdScript } from '@/lib/seo/structured-data';
 import { APP_NAME, SITE_URL } from '@/config/brand';
@@ -87,6 +87,10 @@ export default async function ArticlePage({ params }: PageProps) {
 
   const isOwner = await isCurrentUserArticleAuthor(article.authorProfileId);
 
+  // An excerpt the author did not write is the opening paragraph again; shown
+  // above the body it reads as a duplicate. Feeds and metadata still use it.
+  const showExcerpt = !!article.excerpt && article.excerpt !== deriveExcerpt(article.body);
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Article',
@@ -129,7 +133,7 @@ export default async function ArticlePage({ params }: PageProps) {
             <h1 className="text-4xl font-semibold leading-[1.15] tracking-display text-fg-primary sm:text-5xl">
               {article.title}
             </h1>
-            {article.excerpt && (
+            {showExcerpt && (
               <p className="mt-5 text-xl leading-relaxed text-fg-secondary">{article.excerpt}</p>
             )}
 
