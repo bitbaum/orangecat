@@ -113,7 +113,6 @@ const eslintConfig = [
       '.next/**',
       'out/**',
       'dist/**',
-      'packages/writingkit/dist/**',
       'build/**',
       'node_modules/**',
       'coverage/**',

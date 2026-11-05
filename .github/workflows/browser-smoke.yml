@@ -17,6 +17,30 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  article-writing:
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.live_conversation }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: Check article writing, draft recovery and phone layouts
+        run: pnpm run test:article-writing-browser
+      - name: Retain article editor screenshots
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: article-writing-browser
+          path: test-results/article-writing/
+          retention-days: 14
+          if-no-files-found: warn
+
   cat-chat:
     if: ${{ github.event_name != 'workflow_dispatch' || !inputs.live_conversation }}
     runs-on: ubuntu-latest

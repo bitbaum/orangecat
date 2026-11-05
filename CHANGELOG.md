@@ -9,6 +9,10 @@ reads, and [orangecat.ch/changelog](https://orangecat.ch/changelog) renders
 it from there. One `## YYYY-MM-DD` heading per day; bullets under it travel
 to the map, sub-bullets stay here for the human reader.
 
+## 2026-11-05
+
+- **One place to write an article.** The editor comes first, with a compact draft library and one Ask Cat entry for drafting or editing. Cancel an AI request, review its change and Undo it while your writing still matches the result. Late answers keep newer edits intact, and starting another draft clears the previous draft's AI notices. Drafts remain on this device for the signed-in account.
+
 ## 2026-11-02
 
 - **The owner’s bots write to his Telegram.** When a bot of the owner’s writes first (its daily routine), the message also reaches his Telegram through Loki’s one gateway: the bot’s name, the first lines of what it wrote, and one button that opens its chat. Silent, one per routine per day, and under Loki’s rules for the phone (no button, no message; quiet at night). Everyone else still hears through OrangeCat’s own notifications; Loki’s gateway speaks only to its operator.

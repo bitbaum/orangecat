@@ -26,6 +26,7 @@ const props = () => ({
 it('offers another draft without discarding the current writing', () => {
   const p = props();
   render(<DraftsPanel {...p} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Drafts', exact: true }));
   fireEvent.click(screen.getByRole('button', { name: 'New draft', exact: true }));
   expect(p.onNew).toHaveBeenCalledOnce();
   expect(p.onDiscard).not.toHaveBeenCalled();
@@ -34,7 +35,7 @@ it('requires confirmation and keeps a failed deletion visible for retry', () => 
   const p = props();
   p.onDelete.mockReturnValueOnce(false);
   render(<DraftsPanel {...p} />);
-  fireEvent.click(screen.getByText('Manage drafts'));
+  fireEvent.click(screen.getByRole('button', { name: 'Drafts', exact: true }));
   fireEvent.click(screen.getByRole('button', { name: 'Delete draft: My saved piece' }));
   expect(p.onDelete).not.toHaveBeenCalled();
   expect(screen.getByRole('dialog')).toHaveAccessibleName('Delete My saved piece?');
@@ -42,13 +43,14 @@ it('requires confirmation and keeps a failed deletion visible for retry', () => 
   expect(screen.getByRole('alert')).toHaveTextContent('Your writing is still here');
   expect(screen.getByRole('dialog')).toBeVisible();
   fireEvent.click(screen.getByRole('button', { name: 'Delete draft', exact: true }));
-  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  expect(screen.queryByRole('dialog', { name: 'Delete My saved piece?' })).not.toBeInTheDocument();
+  expect(screen.getByRole('dialog', { name: 'Your drafts' })).toBeVisible();
 });
 it('does not recover ownerless writing merely by displaying the library', () => {
   const p = props();
   render(<DraftsPanel {...p} />);
   expect(p.onRecover).not.toHaveBeenCalled();
-  fireEvent.click(screen.getByText('Manage drafts'));
+  fireEvent.click(screen.getByRole('button', { name: 'Drafts', exact: true }));
   fireEvent.click(screen.getByText('Recover older device drafts'));
   expect(screen.getByText(/only if they belong to you/)).toBeVisible();
   fireEvent.click(screen.getByRole('button', { name: 'These are my drafts — recover' }));
@@ -57,7 +59,7 @@ it('does not recover ownerless writing merely by displaying the library', () => 
 
 it('returns focus to the opener when deletion is cancelled', async () => {
   render(<DraftsPanel {...props()} />);
-  fireEvent.click(screen.getByText('Manage drafts'));
+  fireEvent.click(screen.getByRole('button', { name: 'Drafts', exact: true }));
   const trigger = screen.getByRole('button', { name: 'Discard current draft' });
   trigger.focus();
   fireEvent.click(trigger);
@@ -80,7 +82,7 @@ it('moves focus to New draft when successful deletion removes the opener', async
     );
   }
   render(<Library />);
-  fireEvent.click(screen.getByText('Manage drafts'));
+  fireEvent.click(screen.getByRole('button', { name: 'Drafts', exact: true }));
   fireEvent.click(screen.getByRole('button', { name: 'Discard current draft' }));
   fireEvent.click(screen.getByRole('button', { name: 'Delete draft', exact: true }));
   await waitFor(() =>

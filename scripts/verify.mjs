@@ -31,7 +31,6 @@ export const LANES = [
   ['test:unit'],
   ['type-check', 'type-check:scripts'],
   [
-    'check:writingkit',
     'ci:docs',
     'check:file-inputs',
     'check:accent-ink',
@@ -59,7 +58,6 @@ export const LANES = [
 
 /** The order `verify` has always run in, kept for serial mode. */
 export const SERIAL = [
-  'check:writingkit',
   'ci:docs',
   'check:file-inputs',
   'check:accent-ink',
