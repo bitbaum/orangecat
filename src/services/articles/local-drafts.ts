@@ -62,7 +62,8 @@ export function newDraftId(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
   }
-  return `draft-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  return `draft-${Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('')}`;
 }
 
 export function listLocalDrafts(ownerId: string): LocalArticleDraft[] {
