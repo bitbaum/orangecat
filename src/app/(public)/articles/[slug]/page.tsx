@@ -15,6 +15,7 @@ import LongformBody from '@/lib/longform/LongformBody';
 import ShareButton from './ShareButton';
 import TipButton from '@/components/tips/TipButton';
 import ArticleOwnerActions from './ArticleOwnerActions';
+import ArticleDiscussion from './ArticleDiscussion';
 import { FormattedDate } from '@/components/ui/FormattedDate';
 
 interface PageProps {
@@ -237,6 +238,10 @@ export default async function ArticlePage({ params }: PageProps) {
               </Link>
             </div>
           </footer>
+
+          {article.visibility === 'public' && (
+            <ArticleDiscussion articleId={article.id} authorName={article.author.name} />
+          )}
         </article>
       </div>
     </>
