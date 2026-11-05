@@ -1,13 +1,5 @@
 {
-  "scope": "Cat grounding and investor-room actions, plus the fleet-review repair of provider routing, completion readiness, permission decisions and recovery. Domain permission and action ownership rules remain local to OrangeCat. Temporary-chat privacy is propagated through the existing tool loop; product memory-write policy stays local.",
-  "extractions": {
-    "writing": {
-      "source": "packages/writingkit",
-      "status": "bootstrap-source",
-      "reason": "OrangeCat generation/editing, BiasLens rewrites and Heidi language adaptation need the same revision-safe operation lifecycle. Installed ai-kit owns model execution, chatkit owns conversation and bip-kit owns published reading; none supplies this editing lifecycle.",
-      "adoption": "Register a standalone package through Fleet, publish a verified version, then consume it in the article controller. No app imports this bootstrap folder; publishing and account-owned storage stay local."
-    }
-  },
+  "scope": "Cat grounding and investor-room actions, plus the fleet-review repair of provider routing, completion readiness, permission decisions and recovery. Domain permission and action ownership rules remain local to OrangeCat. Temporary-chat privacy is propagated through the existing tool loop; product memory-write policy stays local. Article writing reuses the existing Markdown editor and writing API backed by the platform model service; one draft-scoped controller owns generation and revision. Article generation and editing consume the verified WritingKit release; the bootstrap runtime copy is retired.",
   "blocks": {
     "chat": {
       "package": "@bitbaum/chatkit",
@@ -54,6 +46,16 @@
         }
       ],
       "notes": "Reuse packaged verification. The application supplies its verified navigation evidence and protects links to fetched project rooms during repair."
+    },
+    "writing": {
+      "package": "@bitbaum/writingkit",
+      "bindings": [
+        {
+          "file": "src/components/articles/useArticleAi.ts",
+          "symbols": ["WritingSession"]
+        }
+      ],
+      "notes": "WritingKit owns operation/revision safety. OrangeCat owns fields, selection, Undo, device/account draft storage, writing context and publishing. ai-kit and the existing article APIs still own model/HTTP execution."
     }
   }
 }

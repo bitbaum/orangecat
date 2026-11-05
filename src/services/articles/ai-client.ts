@@ -14,9 +14,10 @@ import type {
   WritingKind,
 } from '@/services/cat/writing-types';
 
-async function postJson<T>(url: string, body: unknown): Promise<T> {
+async function postJson<T>(url: string, body: unknown, signal?: AbortSignal): Promise<T> {
   const res = await fetch(url, {
     method: 'POST',
+    signal,
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
@@ -32,25 +33,38 @@ async function postJson<T>(url: string, body: unknown): Promise<T> {
   return json.data as T;
 }
 
-export function fetchWritingTopics(opts: {
-  kind?: WritingKind | 'any';
-  count?: number;
-  focus?: string;
-}): Promise<ProposedTopic[]> {
-  return postJson<{ topics: ProposedTopic[] }>(API_ROUTES.AI.WRITING.TOPICS, opts).then(d => d.topics);
+export function fetchWritingTopics(
+  opts: {
+    kind?: WritingKind | 'any';
+    count?: number;
+    focus?: string;
+  },
+  signal?: AbortSignal
+): Promise<ProposedTopic[]> {
+  return postJson<{ topics: ProposedTopic[] }>(API_ROUTES.AI.WRITING.TOPICS, opts, signal).then(
+    d => d.topics
+  );
 }
 
-export function fetchArticleDraft(opts: { topic?: string; focus?: string }): Promise<ArticleDraft> {
-  return postJson<{ draft: ArticleDraft }>(API_ROUTES.AI.WRITING.DRAFT, {
-    mode: 'article',
-    ...opts,
-  }).then(d => d.draft);
+export function fetchArticleDraft(
+  opts: { topic?: string; focus?: string },
+  signal?: AbortSignal
+): Promise<ArticleDraft> {
+  return postJson<{ draft: ArticleDraft }>(
+    API_ROUTES.AI.WRITING.DRAFT,
+    {
+      mode: 'article',
+      ...opts,
+    },
+    signal
+  ).then(d => d.draft);
 }
 
 export function fetchPostDraft(opts: { topic?: string; focus?: string }): Promise<PostDraft> {
-  return postJson<{ draft: PostDraft }>(API_ROUTES.AI.WRITING.DRAFT, { mode: 'post', ...opts }).then(
-    d => d.draft
-  );
+  return postJson<{ draft: PostDraft }>(API_ROUTES.AI.WRITING.DRAFT, {
+    mode: 'post',
+    ...opts,
+  }).then(d => d.draft);
 }
 
 /**
@@ -72,32 +86,49 @@ export function fetchReplyDraft(opts: {
  * Transform the author's own article text (improve / continue / tighten / expand
  * / grammar / tone) or seed an outline. Returns the revised markdown.
  */
-export function reviseArticleText(opts: {
-  action: ReviseAction;
-  text?: string;
-  tone?: TonePreset;
-  title?: string;
-  topic?: string;
-  instruction?: string;
-  /** 'post' for short timeline posts (short + length-clamped); default 'article'. */
-  kind?: 'post' | 'article';
-}): Promise<string> {
-  return postJson<{ result: string }>(API_ROUTES.AI.WRITING.REVISE, opts).then(d => d.result);
+export function reviseArticleText(
+  opts: {
+    action: ReviseAction;
+    text?: string;
+    tone?: TonePreset;
+    title?: string;
+    topic?: string;
+    instruction?: string;
+    /** 'post' for short timeline posts (short + length-clamped); default 'article'. */
+    kind?: 'post' | 'article';
+  },
+  signal?: AbortSignal
+): Promise<string> {
+  return postJson<{ result: string }>(API_ROUTES.AI.WRITING.REVISE, opts, signal).then(
+    d => d.result
+  );
 }
 
 /** Suggest sharper headline options grounded in the article body. */
-export function suggestArticleTitles(body: string): Promise<string[]> {
-  return postJson<{ suggestions: string[] }>(API_ROUTES.AI.WRITING.REVISE, {
-    action: 'title',
-    text: body,
-  }).then(d => d.suggestions);
+export function suggestArticleTitles(body: string, signal?: AbortSignal): Promise<string[]> {
+  return postJson<{ suggestions: string[] }>(
+    API_ROUTES.AI.WRITING.REVISE,
+    {
+      action: 'title',
+      text: body,
+    },
+    signal
+  ).then(d => d.suggestions);
 }
 
 /** Generate a one-line excerpt/hook from the article body. */
-export function generateArticleExcerpt(body: string, title?: string): Promise<string> {
-  return postJson<{ result: string }>(API_ROUTES.AI.WRITING.REVISE, {
-    action: 'excerpt',
-    text: body,
-    title,
-  }).then(d => d.result);
+export function generateArticleExcerpt(
+  body: string,
+  title?: string,
+  signal?: AbortSignal
+): Promise<string> {
+  return postJson<{ result: string }>(
+    API_ROUTES.AI.WRITING.REVISE,
+    {
+      action: 'excerpt',
+      text: body,
+      title,
+    },
+    signal
+  ).then(d => d.result);
 }

@@ -10,8 +10,7 @@ import {
   DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
-import { useArticleAi, type AiBusy } from './useArticleAi';
-import type { MarkdownActions } from './useMarkdownTextarea';
+import type { ArticleAi } from './useArticleAi';
 import type { TonePreset } from '@/services/cat/writing-types';
 
 const TONES: { key: TonePreset; label: string }[] = [
@@ -21,49 +20,24 @@ const TONES: { key: TonePreset; label: string }[] = [
   { key: 'warm', label: 'Warmer' },
 ];
 
-const BUSY_LABEL: Record<AiBusy, string> = {
-  improve: 'Improving',
-  continue: 'Continuing',
-  tighten: 'Tightening',
-  expand: 'Expanding',
-  grammar: 'Fixing grammar',
-  tone: 'Rewriting',
-  outline: 'Outlining',
-  title: 'Finding titles',
-  excerpt: 'Writing excerpt',
-};
-
 /**
  * The in-editor "Ask AI" strip: a single dropdown of writing actions that
  * operate on the current selection (or the whole body), plus whole-article
- * helpers (outline, title, excerpt). Owns its own {@link useArticleAi} state so
- * the composer stays a thin host.
+ * helpers (outline, title, excerpt). Uses the draft-scoped controller shared with article generation.
  */
 export default function ArticleAiControls({
-  md,
-  title,
-  body,
-  setTitle,
-  setExcerpt,
-  setBody,
+  ai,
   disabled,
   onInsertImage,
 }: {
-  md: MarkdownActions;
-  title: string;
-  body: string;
-  setTitle: (v: string) => void;
-  setExcerpt: (v: string) => void;
-  setBody: (v: string) => void;
+  ai: ArticleAi;
   disabled?: boolean;
-  /** When provided, adds an "Insert an image" action that opens the image picker. */
   onInsertImage?: () => void;
 }) {
-  const ai = useArticleAi({ md, title, body, setTitle, setExcerpt, setBody });
   const anyBusy = ai.busy !== null || !!disabled;
 
   const item =
-    'cursor-pointer text-sm text-fg-primary focus:bg-surface-raised focus:text-fg-primary';
+    'min-h-11 cursor-pointer text-sm text-fg-primary focus:bg-surface-raised focus:text-fg-primary';
 
   return (
     <div className="mb-2">
@@ -80,7 +54,7 @@ export default function ArticleAiControls({
               ) : (
                 <Sparkles className="h-4 w-4 text-accent-warm" />
               )}
-              Ask AI
+              Choose an edit
               <ChevronDown className="h-3.5 w-3.5 text-fg-tertiary" />
             </button>
           </DropdownMenuTrigger>
@@ -134,21 +108,7 @@ export default function ArticleAiControls({
             )}
           </DropdownMenuContent>
         </DropdownMenu>
-
-        {ai.busy && (
-          <span className="inline-flex items-center gap-1.5 text-xs text-fg-tertiary">
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            {BUSY_LABEL[ai.busy]}…
-          </span>
-        )}
-        {!ai.busy && (
-          <span className="text-xs text-fg-tertiary">
-            Select text to edit part of it, or run it on the whole draft.
-          </span>
-        )}
       </div>
-
-      {ai.error && <p className="mt-2 text-xs text-status-negative">{ai.error}</p>}
 
       {ai.titleSuggestions && (
         <div className="mt-2 rounded-md border border-subtle bg-surface-raised/25 p-2">
@@ -168,6 +128,7 @@ export default function ArticleAiControls({
               <li key={i}>
                 <button
                   type="button"
+                  disabled={anyBusy}
                   onClick={() => ai.applyTitle(t)}
                   className={cn(
                     'w-full truncate rounded px-2 py-1.5 text-left text-sm text-fg-primary transition-colors hover:bg-surface-raised'

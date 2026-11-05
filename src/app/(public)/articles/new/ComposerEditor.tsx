@@ -6,7 +6,7 @@ import Textarea from '@/components/ui/Textarea';
 import { ARTICLE_COPY, ARTICLE_LIMITS } from '@/config/articles';
 import MarkdownToolbar from '@/components/articles/MarkdownToolbar';
 import type { useMarkdownTextarea } from '@/components/articles/useMarkdownTextarea';
-import ArticleAiControls from '@/components/articles/ArticleAiControls';
+import ArticleWritingTools from '@/components/articles/ArticleWritingTools';
 import CoverImageUpload from '@/components/articles/CoverImageUpload';
 import ImageSuggestPicker from '@/components/images/ImageSuggestPicker';
 import type { StockImage } from '@/services/images/types';
@@ -32,7 +32,13 @@ export default function ComposerEditor({
   setImagePicker,
   onPickImage,
   onBodyKeyDown,
+  onApplied,
+  draftKey,
+  onBusyChange,
 }: {
+  onApplied: () => void;
+  draftKey: string;
+  onBusyChange: (busy: boolean) => void;
   title: string;
   setTitle: (v: string) => void;
   excerpt: string;
@@ -62,21 +68,21 @@ export default function ComposerEditor({
         className="min-h-12 !text-xl !font-semibold"
       />
       <div>
-        <details className="mb-2">
-          <summary className="min-h-11 cursor-pointer py-2.5 text-sm font-medium text-fg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-            Edit with AI
-          </summary>
-          <ArticleAiControls
-            md={md}
-            title={title}
-            body={body}
-            setTitle={setTitle}
-            setExcerpt={setExcerpt}
-            setBody={setBody}
-            disabled={publishing}
-            onInsertImage={() => setImagePicker(imagePicker === 'inline' ? null : 'inline')}
-          />
-        </details>
+        <ArticleWritingTools
+          key={draftKey}
+          md={md}
+          title={title}
+          body={body}
+          excerpt={excerpt}
+          setTitle={setTitle}
+          setBody={setBody}
+          setExcerpt={setExcerpt}
+          disabled={publishing}
+          bodyRef={bodyRef}
+          onApplied={onApplied}
+          onBusyChange={onBusyChange}
+          onInsertImage={() => setImagePicker(imagePicker === 'inline' ? null : 'inline')}
+        />
         {imagePicker === 'inline' && (
           <div className="mb-2">
             <ImageSuggestPicker
@@ -95,7 +101,7 @@ export default function ComposerEditor({
           onChange={e => setBody(e.target.value)}
           onKeyDown={onBodyKeyDown}
           placeholder={ARTICLE_COPY.new.bodyPlaceholder}
-          rows={18}
+          rows={6}
           maxLength={ARTICLE_LIMITS.body}
           label="Article body"
           aria-label="Article body"

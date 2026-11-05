@@ -24,45 +24,59 @@ export default function DraftsPanel({
   onNew,
   hasOlderDrafts,
   onRecover,
+  currentTitle,
+  hasCurrentDraft,
 }: {
   restored: boolean;
   otherDrafts: LocalArticleDraft[];
   onDiscard: () => boolean;
-  onLoad: (draft: LocalArticleDraft) => void;
+  onLoad: (draft: LocalArticleDraft) => boolean;
   onDelete: (id: string) => boolean;
-  onNew: () => void;
+  onNew: () => boolean;
   hasOlderDrafts: boolean;
   onRecover: () => void;
+  currentTitle?: string;
+  hasCurrentDraft?: boolean;
 }) {
   const newDraftRef = useRef<HTMLButtonElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const [libraryOpen, setLibraryOpen] = useState(false);
   const [deleteFailed, setDeleteFailed] = useState(false);
   const [deleting, setDeleting] = useState<LocalArticleDraft | 'current' | null>(null);
   return (
-    <section
-      aria-label="Your device drafts"
-      className="mb-4 space-y-3 rounded-md border border-subtle p-3"
-    >
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm text-fg-secondary">
-          {restored ? 'Restored your saved draft.' : 'Drafts save on this device.'}
-        </p>
-        <Button ref={newDraftRef} type="button" variant="outline" size="sm" onClick={onNew}>
-          <Plus className="h-4 w-4" aria-hidden />
-          New draft
-        </Button>
-      </div>
-      {(restored || otherDrafts.length > 0 || hasOlderDrafts) && (
-        <details>
-          <summary className="min-h-11 cursor-pointer py-3 text-sm text-fg-secondary">
-            Manage drafts
-          </summary>
-          <div className="space-y-3">
-            {restored && (
+    <>
+      <Button type="button" variant="outline" onClick={() => setLibraryOpen(true)}>
+        Drafts
+      </Button>
+      <Dialog open={libraryOpen} onOpenChange={setLibraryOpen}>
+        <DialogContent className="[&_button]:min-h-11 [&_button]:min-w-11">
+          <DialogHeader>
+            <DialogTitle>Your drafts</DialogTitle>
+            <DialogDescription>Drafts save on this device, for this account.</DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[60vh] space-y-3 overflow-y-auto">
+            <Button
+              ref={newDraftRef}
+              type="button"
+              variant="outline"
+              onClick={() => {
+                if (onNew()) {
+                  setLibraryOpen(false);
+                }
+              }}
+            >
+              <Plus className="h-4 w-4" aria-hidden /> New draft
+            </Button>
+            <p className="text-sm text-fg-secondary [overflow-wrap:anywhere]">
+              Current draft: {currentTitle?.trim() || 'Untitled draft'}
+            </p>
+            <Button type="button" variant="ghost" onClick={() => setLibraryOpen(false)}>
+              Return to editor
+            </Button>
+            {(hasCurrentDraft ?? restored) && (
               <Button
                 type="button"
                 variant="ghost"
-                size="sm"
                 onClick={event => {
                   triggerRef.current = event.currentTarget;
                   setDeleteFailed(false);
@@ -78,7 +92,11 @@ export default function DraftsPanel({
                   <li key={draft.id} className="flex items-center gap-2 py-2">
                     <button
                       type="button"
-                      onClick={() => onLoad(draft)}
+                      onClick={() => {
+                        if (onLoad(draft)) {
+                          setLibraryOpen(false);
+                        }
+                      }}
                       className="min-h-11 min-w-0 flex-1 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                       <span className="block break-words text-sm text-fg-primary">
@@ -91,8 +109,7 @@ export default function DraftsPanel({
                     <Button
                       type="button"
                       variant="ghost"
-                      size="sm"
-                      className="w-11 shrink-0 px-0"
+                      className="min-h-11 w-11 shrink-0 px-0"
                       aria-label={`Delete draft: ${draft.title.trim() || 'Untitled draft'}`}
                       onClick={event => {
                         triggerRef.current = event.currentTarget;
@@ -115,14 +132,14 @@ export default function DraftsPanel({
                   Older drafts have no account owner. Recover them into this account only if they
                   belong to you.
                 </p>
-                <Button type="button" variant="outline" size="sm" onClick={onRecover}>
+                <Button type="button" variant="outline" onClick={onRecover}>
                   These are my drafts — recover
                 </Button>
               </details>
             )}
           </div>
-        </details>
-      )}
+        </DialogContent>
+      </Dialog>
       <Dialog
         open={deleting !== null}
         onOpenChange={open => {
@@ -132,13 +149,14 @@ export default function DraftsPanel({
         }}
       >
         <DialogContent
+          className="[&_button]:min-h-11 [&_button]:min-w-11"
           onCloseAutoFocus={event => {
             event.preventDefault();
             (triggerRef.current?.isConnected ? triggerRef.current : newDraftRef.current)?.focus();
           }}
         >
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="pr-10 [overflow-wrap:anywhere]">
               Delete{' '}
               {deleting === 'current'
                 ? 'current draft'
@@ -174,6 +192,6 @@ export default function DraftsPanel({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </section>
+    </>
   );
 }
