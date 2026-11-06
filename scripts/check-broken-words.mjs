@@ -69,14 +69,32 @@ async function settle(page) {
   await page.waitForTimeout(500);
 }
 
-/** Same steps as tests/e2e/helpers/login.ts, without @playwright/test. */
-async function signIn(context) {
+/**
+ * Same steps as tests/e2e/helpers/login.ts, without @playwright/test.
+ *
+ * The diagnostic names what the page did, never what was typed. It records
+ * auth requests that FAILED as well as the ones that answered: on 2026-11-06
+ * main went red twice with `authPostStatuses: []` — the click had sent the
+ * token request and the self-hosted auth never answered it — and "no
+ * response recorded" told nobody whether the form had even submitted. A
+ * request the runner could not complete is the usual cause (the account or
+ * the runner throttled, a box restarting), so it is tried once more after a
+ * pause before the gate gives up.
+ */
+async function signIn(context, attempt = 1) {
   const page = await context.newPage();
   const authPostStatuses = [];
+  const authFailures = [];
+  const isAuth = request =>
+    request.method() === 'POST' && /\/(?:api\/)?auth\//.test(new URL(request.url()).pathname);
   page.on('response', response => {
-    const path = new URL(response.url()).pathname;
-    if (response.request().method() === 'POST' && /\/(?:api\/)?auth\//.test(path)) {
+    if (isAuth(response.request())) {
       authPostStatuses.push(response.status());
+    }
+  });
+  page.on('requestfailed', request => {
+    if (isAuth(request)) {
+      authFailures.push(request.failure()?.errorText ?? 'failed');
     }
   });
   try {
@@ -92,16 +110,30 @@ async function signIn(context) {
     });
   } catch {
     // Never include request/response bodies, query strings, email or password.
+    // The alert's words are the page's own copy ("Too many attempts…"), not input.
+    const alerts = await page
+      .getByRole('alert')
+      .allInnerTexts()
+      .catch(() => []);
     const diagnostic = {
+      attempt,
       path: new URL(page.url()).pathname,
       readyState: await page.evaluate(() => document.readyState).catch(() => 'unknown'),
-      alertPresent: (await page.getByRole('alert').count().catch(() => 0)) > 0,
+      alerts: alerts.map(text => text.trim().slice(0, 160)).filter(Boolean),
       authPostStatuses: authPostStatuses.slice(-10),
+      authFailures: authFailures.slice(-10),
     };
-    throw new Error(`Sign-in did not reach an authenticated page: ${JSON.stringify(diagnostic)}`);
-  } finally {
     await page.close();
+    if (attempt === 1 && authPostStatuses.length === 0) {
+      console.warn(
+        `check:broken-words: sign-in got no answer ${JSON.stringify(diagnostic)}; trying once more in 20s`
+      );
+      await new Promise(resolve => setTimeout(resolve, 20_000));
+      return signIn(context, 2);
+    }
+    throw new Error(`Sign-in did not reach an authenticated page: ${JSON.stringify(diagnostic)}`);
   }
+  await page.close();
 }
 
 async function audit(context, path, width, shotName) {
