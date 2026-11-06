@@ -58,7 +58,7 @@ export default function ShareButton({ title, url }: { title: string; url: string
     'inline-flex items-center gap-1.5 rounded-md border border-default px-3 py-1.5 text-sm font-medium text-fg-secondary transition-colors hover:bg-surface-raised hover:text-fg-primary';
 
   return (
-    <span className="inline-flex items-center gap-2">
+    <span className="flex flex-wrap items-center gap-2">
       <a
         // Our own network first: the composer, prefilled, on this account.
         href={shareIntentUrl(SITE_URL, { url, title })}
