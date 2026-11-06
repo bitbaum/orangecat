@@ -85,16 +85,34 @@ async function signIn(context, attempt = 1) {
   const page = await context.newPage();
   const authPostStatuses = [];
   const authFailures = [];
-  const isAuth = request =>
-    request.method() === 'POST' && /\/(?:api\/)?auth\//.test(new URL(request.url()).pathname);
+  // Requests that were sent and never answered or failed by the time the gate
+  // gave up: a connection the box silently drops looks exactly like this.
+  const authPending = new Map();
+  const isAuthPath = request => /\/(?:api\/)?auth\//.test(new URL(request.url()).pathname);
+  page.on('request', request => {
+    if (isAuthPath(request)) {
+      authPending.set(request, `${request.method()} ${new URL(request.url()).pathname}`);
+    }
+  });
   page.on('response', response => {
-    if (isAuth(response.request())) {
+    authPending.delete(response.request());
+    if (response.request().method() === 'POST' && isAuthPath(response.request())) {
       authPostStatuses.push(response.status());
     }
   });
+  // Every method: a cross-origin POST is preceded by an OPTIONS preflight, and
+  // when THAT fails the POST is never sent — a list that only watched POSTs
+  // read as "no request at all" (2026-11-06, three runs in a row).
   page.on('requestfailed', request => {
-    if (isAuth(request)) {
-      authFailures.push(request.failure()?.errorText ?? 'failed');
+    authPending.delete(request);
+    if (isAuthPath(request)) {
+      authFailures.push(`${request.method()} ${request.failure()?.errorText ?? 'failed'}`);
+    }
+  });
+  page.on('response', response => {
+    const request = response.request();
+    if (request.method() === 'OPTIONS' && isAuthPath(request) && response.status() >= 400) {
+      authFailures.push(`OPTIONS ${response.status()}`);
     }
   });
   try {
@@ -122,6 +140,7 @@ async function signIn(context, attempt = 1) {
       alerts: alerts.map(text => text.trim().slice(0, 160)).filter(Boolean),
       authPostStatuses: authPostStatuses.slice(-10),
       authFailures: authFailures.slice(-10),
+      authPending: [...authPending.values()].slice(-10),
     };
     await page.close();
     if (attempt === 1 && authPostStatuses.length === 0) {
