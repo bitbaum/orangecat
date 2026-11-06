@@ -1,5 +1,5 @@
 import { Check } from 'lucide-react';
-import type { LinkedDevelopment, LinkedGoal } from 'bip-kit';
+import type { LinkedDevelopment, LinkedGoal } from '@bitbaum/bip-kit';
 import { GoalRecord, RoadmapSteps } from './RoadmapSteps';
 
 type Journey = LinkedDevelopment['journey'];

@@ -1,4 +1,4 @@
-import { normalizeMarkdown } from 'bip-kit';
+import { normalizeMarkdown } from '@bitbaum/bip-kit';
 import { parseLongform } from '@/lib/longform/parse';
 import { getBlogPost, getBlogPostSlugs } from '@/lib/blog';
 

@@ -2,7 +2,7 @@ import {
   developmentProfileFromMap,
   loadDevelopmentProfile,
   type DevelopmentProfile,
-} from 'bip-kit';
+} from '@bitbaum/bip-kit';
 
 /**
  * Public development records — roadmap and changelog — are a projection of

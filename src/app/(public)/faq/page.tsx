@@ -1,6 +1,6 @@
 import Link from 'next/link';
-import { Faq } from 'bip-kit/react';
-import 'bip-kit/styles.css';
+import { Faq } from '@bitbaum/bip-kit/react';
+import '@bitbaum/bip-kit/styles.css';
 import '@/lib/longform/longform.css';
 import { PageHeading } from '@/components/layout/PageHeading';
 import { ROUTES } from '@/config/routes';

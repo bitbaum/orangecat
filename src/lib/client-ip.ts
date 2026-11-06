@@ -17,7 +17,7 @@
  * is the one line to change (`trustedProxies: 2`).
  */
 
-import { clientIp } from 'limitkit';
+import { clientIp } from '@bitbaum/limitkit';
 
 type HeadersLike = { get(name: string): string | null };
 type RequestLike = { headers: HeadersLike };

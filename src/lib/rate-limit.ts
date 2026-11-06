@@ -24,7 +24,7 @@
  * nothing, so a hammered key recovers as soon as the traffic stops.
  */
 
-import { slidingWindow, toHeaders, type Limiter, type LimitResult } from 'limitkit';
+import { slidingWindow, toHeaders, type Limiter, type LimitResult } from '@bitbaum/limitkit';
 import { clientIpKey } from '@/lib/client-ip';
 
 // ==================== TYPES ====================

@@ -6,7 +6,7 @@
  */
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { readRefs } from 'bip-kit';
+import { readRefs } from '@bitbaum/bip-kit';
 
 const read = (name: string) => readFileSync(join(process.cwd(), name), 'utf8').split('\n');
 
