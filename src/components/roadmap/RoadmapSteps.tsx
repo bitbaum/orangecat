@@ -1,5 +1,5 @@
 import { Check } from 'lucide-react';
-import type { ChangeRef, LinkedGoal } from 'bip-kit';
+import type { ChangeRef, LinkedGoal } from '@bitbaum/bip-kit';
 import { ROUTES } from '@/config/routes';
 
 /** One link per changelog day, however many of its lines cite the step. */

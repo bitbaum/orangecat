@@ -1,7 +1,7 @@
-import { ArticleBody } from 'bip-kit/react';
-import { MermaidBlock } from 'bip-kit/react/mermaid';
-import { parseContentBlocks, normalizeMarkdown } from 'bip-kit';
-import type { ContentBlock } from 'bip-kit';
+import { ArticleBody } from '@bitbaum/bip-kit/react';
+import { MermaidBlock } from '@bitbaum/bip-kit/react/mermaid';
+import { parseContentBlocks, normalizeMarkdown } from '@bitbaum/bip-kit';
+import type { ContentBlock } from '@bitbaum/bip-kit';
 
 /**
  * A technical section the reader opens if they want it.

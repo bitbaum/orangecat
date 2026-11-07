@@ -77,6 +77,9 @@ overrides:
 # should be deleted. Add lines only for versions we published ourselves —
 # never to hurry along a third-party package.
 minimumReleaseAgeExclude:
+  - '@bitbaum/limitkit@0.2.1'
+  - '@bitbaum/threadkit@0.1.1'
+  - '@bitbaum/bip-kit@0.6.1'
   - '@bitbaum/ai-kit'
   - '@bitbaum/mail-kit'
   - 'limitkit'

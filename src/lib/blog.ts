@@ -1,6 +1,6 @@
 import path from 'path';
-import { readCollection, readEntry, type CollectionEntry } from 'bip-kit/node';
-import type { ContentBlock, TocEntry } from 'bip-kit';
+import { readCollection, readEntry, type CollectionEntry } from '@bitbaum/bip-kit/node';
+import type { ContentBlock, TocEntry } from '@bitbaum/bip-kit';
 
 /**
  * The studio blog: `content/blog/*.md`, read by bip-kit's collection reader

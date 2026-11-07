@@ -6,7 +6,7 @@
  * two degraded states (map unavailable, project recorded but empty).
  */
 import { describe, expect, it } from 'vitest';
-import { linkDevelopment } from 'bip-kit';
+import { linkDevelopment } from '@bitbaum/bip-kit';
 import { orangeCatProfileFromMap } from '@/lib/development/records';
 
 const MAP = {

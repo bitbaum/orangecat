@@ -1,6 +1,6 @@
 'use client';
 
-import 'bip-kit/styles.css';
+import '@bitbaum/bip-kit/styles.css';
 import '@/lib/longform/longform.css';
 import LongformPreviewBody from '@/lib/longform/LongformPreviewBody';
 
