@@ -136,7 +136,7 @@
     "@bitbaum/searchkit": "^0.2.3",
     "@bitbaum/tax-model": "workspace:*",
     "@bitbaum/whenkit": "^0.3.3",
-    "@bitbaum/writingkit": "github:bitbaum/writingkit#b167b55c1cd06e3234a5a1001e98197759ee5d6b",
+    "@bitbaum/writingkit": "^0.2.0",
     "@hono/node-server": "^2.1.1",
     "@hookform/resolvers": "^5.9.1",
     "@marsidev/react-turnstile": "^1.6.1",
