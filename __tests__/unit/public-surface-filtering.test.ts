@@ -24,12 +24,16 @@ vi.mock('@/utils/logger', () => ({
   logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 
-// Force searchPlatform onto its keyword path — the semantic path's guard lives
-// in SQL (match_content), which unit tests can't inspect.
+// Exercise the shared lexical public gate here. Semantic candidates must pass
+// the live public lookup too; that contract has dedicated tests.
 vi.mock('@/services/ai/embeddings', () => ({
   embeddingsEnabled: () => false,
   embedText: vi.fn(),
 }));
+
+const publicRpc = vi.hoisted(() => vi.fn(async () => ({ data: [], error: null })));
+vi.mock('@/lib/supabase/public', () => ({ createPublicClient: () => ({ rpc: publicRpc }) }));
+vi.mock('next/cache', () => ({ unstable_cache: (fn: unknown) => fn }));
 
 type Call = { method: string; args: unknown[] };
 type Query = { table: string; calls: Call[] };
@@ -94,28 +98,30 @@ describe('getOpenDemand (public /api/v1/demand)', () => {
 });
 
 describe('searchPlatform (public /api/v1/search)', () => {
-  it('filters every entity table to ACTIVE rows', async () => {
+  it('uses the shared public RPC and fixture exclusions instead of raw entity tables', async () => {
     const { client, queries } = recordingClient();
     await searchPlatform(client, 'pottery lessons', 'all');
-
-    for (const type of ['project', 'cause', 'product', 'service', 'event'] as const) {
-      const table = getTableName(type);
-      const tableQueries = queriesOn(queries, table);
-      expect(tableQueries.length).toBeGreaterThan(0);
-      for (const q of tableQueries) {
-        expect(hasPredicate(q, 'eq', ['status', ENTITY_STATUS.ACTIVE])).toBe(true);
-      }
-    }
+    expect(queries).toEqual([]);
+    expect(publicRpc).toHaveBeenCalledWith(
+      'search_public',
+      expect.objectContaining({
+        p_query: 'pottery lessons',
+        p_types: null,
+        ...FIXTURE_RPC_ARGS,
+      })
+    );
   });
-
-  it('exposes only public profile columns (username, name, bio)', async () => {
+  it('narrows people through the same public gate, with no raw profile query', async () => {
     const { client, queries } = recordingClient();
     await searchPlatform(client, 'pottery lessons', 'people');
-
-    const [profiles] = queriesOn(queries, DATABASE_TABLES.PROFILES);
-    expect(profiles).toBeDefined();
-    const select = profiles.calls.find(c => c.method === 'select');
-    expect(select?.args[0]).toBe('username, name, bio');
+    expect(queriesOn(queries, DATABASE_TABLES.PROFILES)).toHaveLength(0);
+    expect(publicRpc).toHaveBeenCalledWith(
+      'search_public',
+      expect.objectContaining({
+        p_types: ['profile'],
+        ...FIXTURE_RPC_ARGS,
+      })
+    );
   });
 });
 

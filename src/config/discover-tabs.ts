@@ -21,7 +21,7 @@ export const DISCOVER_HERO = {
  * already shared and linked as `/discover?type=projects` before the page was
  * rebuilt; `people` and `profiles` both mean people.
  */
-export const DISCOVER_TYPE_SLUGS: Record<PublicHitType, string> = {
+export const DISCOVER_TYPE_SLUGS = {
   profile: 'people',
   project: 'projects',
   product: 'products',
@@ -38,7 +38,7 @@ export const DISCOVER_TYPE_SLUGS: Record<PublicHitType, string> = {
   ai_assistant: 'ai_assistants',
   wallet: 'wallets',
   document: 'documents',
-};
+} as const satisfies Record<PublicHitType, string>;
 
 const SLUG_ALIASES: Record<string, PublicHitType> = { profiles: 'profile' };
 
@@ -47,7 +47,7 @@ const SLUG_ALIASES: Record<string, PublicHitType> = { profiles: 'profile' };
  * come to back or buy first, the rarer kinds after. Wallets and documents are
  * not public listings and never appear.
  */
-export const DISCOVER_ORDER: PublicHitType[] = [
+export const DISCOVER_ORDER = [
   'project',
   'product',
   'service',
@@ -62,7 +62,7 @@ export const DISCOVER_ORDER: PublicHitType[] = [
   'investment',
   'asset',
   'ai_assistant',
-];
+] as const satisfies readonly PublicHitType[];
 
 /** The type a `?type=` value names, or null for "everything". */
 export function typeFromSlug(slug: string | null | undefined): PublicHitType | null {
@@ -74,7 +74,7 @@ export function typeFromSlug(slug: string | null | undefined): PublicHitType | n
     ([, value]) => value === s
   );
   const type = found?.[0] ?? SLUG_ALIASES[s] ?? null;
-  return type && DISCOVER_ORDER.includes(type) ? type : null;
+  return type && DISCOVER_ORDER.some(candidate => candidate === type) ? type : null;
 }
 
 /** Cards per page of a grid; "Show more" adds this many. */
