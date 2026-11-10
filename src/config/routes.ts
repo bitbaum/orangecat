@@ -255,7 +255,10 @@ export function getRouteChrome(pathname: string): RouteChrome {
     // way in — hiding the launcher there left no chat at all.
     hideGlobalCat: focus || (isEntityFormPath(pathname) && !isProfileEditorPath(pathname)),
     immersiveChat: isCatHubPath(pathname),
-    feedbackTab: isCatHubPath(pathname) || isCompanionTalkPath(pathname),
+    // Everywhere, not only in chats: at 390px the round launcher sat on profile
+    // headings, the Open Accounting card, My things, /pay and a project's
+    // "Hide the code" (QA 2026-11-10). The edge tab is the host's quiet shape.
+    feedbackTab: true,
   };
 }
 
