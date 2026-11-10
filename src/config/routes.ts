@@ -253,7 +253,13 @@ export function getRouteChrome(pathname: string): RouteChrome {
     // The profile editor is the exception: it has no "Fill with AI" bar, and
     // filling your profile by talking to Cat (update_profile) is the promised
     // way in — hiding the launcher there left no chat at all.
-    hideGlobalCat: focus || (isEntityFormPath(pathname) && !isProfileEditorPath(pathname)),
+    // Messages is a conversation too, and its composer has its own "Ask Cat"
+    // button (and @cat). The floating circle sat on top of Send (seen live
+    // 2026-11-10 at 1366px), so it yields there as well.
+    hideGlobalCat:
+      focus ||
+      matchesPrefix(pathname, [ROUTES.MESSAGES]) ||
+      (isEntityFormPath(pathname) && !isProfileEditorPath(pathname)),
     immersiveChat: isCatHubPath(pathname),
     // Everywhere, not only in chats: at 390px the round launcher sat on profile
     // headings, the Open Accounting card, My things, /pay and a project's
