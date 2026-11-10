@@ -174,6 +174,7 @@ export function buildActionCatalogAppendix(): string {
   });
   return `### Other available actions
 Same envelope as above; required parameters are the ones without "?". To create an entity PREFER prefill_entity_form once the user has given details (they get a reviewable draft card) — use a create_* action only when they want it created immediately.
+Without publish: true a create_* makes a DRAFT: say "saved as a draft", never "published". Unconfirmed = not done. Text they quote or say "exactly" goes in verbatim; keep their currency.
 ${lines.join('\n')}`;
 }
 

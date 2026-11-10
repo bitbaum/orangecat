@@ -20,28 +20,11 @@ import { createEntityConfig } from './base-config-factory';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { WALLET_FIELD_GROUP } from './wallet-field-group';
 import { SERVICE_LOCATION_TYPES } from '@/config/services';
+import { SERVICE_CATEGORIES } from '@/config/service-categories';
 
 // ==================== CONSTANTS ====================
 
-const SERVICE_CATEGORIES = [
-  'Art & Illustration',
-  'Tattoo & Body Art',
-  'Beauty & Wellness',
-  'Photography',
-  'Video & Film',
-  'Music & Audio',
-  'Design',
-  'Writing & Editing',
-  'Consulting',
-  'Coaching & Mentoring',
-  'Teaching & Tutoring',
-  'Development',
-  'Marketing',
-  'Translation',
-  'Legal',
-  'Accounting',
-  'Other',
-];
+// One list for the form and for Cat (src/config/service-categories.ts).
 
 // ==================== FIELD GROUPS ====================
 

@@ -20,6 +20,8 @@ import type { ActionHandler } from './types';
 import { createEvent } from './event-create';
 import { createVenue } from './venue-create';
 import { isAssetType } from '@/config/assets';
+import { toServiceCategory } from '@/config/service-categories';
+import { getProfileCurrency, isCurrencyCode } from '@/services/currency/profileCurrency';
 
 const catOpenScienceSchema = z.object(openScienceFields);
 
@@ -129,14 +131,24 @@ export const entityCreateHandlers: Record<string, ActionHandler> = {
   },
 
   create_service: async (supabase, userId, actorId, params) => {
-    // DB columns are `hourly_rate` and `fixed_price` (no _btc suffix)
-    const priceField = params.hourly_rate
-      ? { hourly_rate: params.hourly_rate as number }
-      : params.fixed_price
-        ? { fixed_price: params.fixed_price as number }
-        : params.hourly_rate_btc
-          ? { hourly_rate: params.hourly_rate_btc }
-          : { fixed_price: params.fixed_price_btc ?? params.price_btc ?? null };
+    // DB columns are `hourly_rate` and `fixed_price` (no _btc suffix), in
+    // `currency`. "30 CHF an hour" is 30 CHF — it used to be stored as 30 BTC,
+    // and with no category the insert failed NOT NULL (QA 2026-11-10).
+    const rate = Number(params.hourly_rate ?? params.hourly_rate_btc);
+    const fixed = Number(params.fixed_price ?? params.fixed_price_btc ?? params.price_btc);
+    const priceField =
+      Number.isFinite(rate) && rate > 0
+        ? { hourly_rate: rate }
+        : Number.isFinite(fixed) && fixed > 0
+          ? { fixed_price: fixed }
+          : {};
+    const usedBtcParam =
+      params.hourly_rate_btc != null || params.fixed_price_btc != null || params.price_btc != null;
+    const currency = isCurrencyCode(params.currency)
+      ? params.currency
+      : usedBtcParam
+        ? 'BTC'
+        : await getProfileCurrency(supabase, userId);
 
     const { data, error } = await supabase
       .from(ENTITY_REGISTRY.service.tableName)
@@ -145,8 +157,9 @@ export const entityCreateHandlers: Record<string, ActionHandler> = {
         actor_id: actorId,
         title: params.title,
         description: params.description || null,
+        category: toServiceCategory(params.category),
         ...priceField,
-        currency: 'BTC',
+        currency,
         duration_minutes: params.duration_minutes || null,
         service_location_type: 'remote',
         images: [],

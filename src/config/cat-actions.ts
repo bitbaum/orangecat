@@ -136,15 +136,27 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
       { name: 'description', type: 'string', required: false, description: 'Service description' },
       {
         name: 'hourly_rate',
-        type: 'btc',
+        type: 'number',
         required: false,
-        description: 'Hourly rate in BTC (e.g., 0.001)',
+        description: 'Hourly rate in `currency`',
       },
       {
         name: 'fixed_price',
-        type: 'btc',
+        type: 'number',
         required: false,
-        description: 'Fixed price in BTC (e.g., 0.005)',
+        description: 'Fixed price in `currency`',
+      },
+      {
+        name: 'currency',
+        type: 'string',
+        required: false,
+        description: `${CURRENCY_CODES.join('/')} (default: the user's)`,
+      },
+      {
+        name: 'category',
+        type: 'string',
+        required: false,
+        description: 'e.g. Teaching & Tutoring, Consulting (default: Other)',
       },
       {
         name: 'duration_minutes',
