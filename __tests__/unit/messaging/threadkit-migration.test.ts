@@ -12,7 +12,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { readersOf } from 'threadkit';
+import { readersOf } from '@bitbaum/threadkit';
 
 import {
   applyStatusToMessages,

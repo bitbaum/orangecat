@@ -1,4 +1,4 @@
-import { blocksToText } from 'bip-kit';
+import { blocksToText } from '@bitbaum/bip-kit';
 import { CAT_FREE_DAILY_LIMIT } from '@/config/cat-plans';
 import { fillFaqPlaceholders, getFaqSections } from '@/lib/faq';
 

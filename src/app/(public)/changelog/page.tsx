@@ -1,4 +1,4 @@
-import { linkDevelopment, type Advance } from 'bip-kit';
+import { linkDevelopment, type Advance } from '@bitbaum/bip-kit';
 import { PageHeading } from '@/components/layout/PageHeading';
 import { FormattedDate } from '@/components/ui/FormattedDate';
 import { ROUTES } from '@/config/routes';

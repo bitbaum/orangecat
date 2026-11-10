@@ -13,7 +13,7 @@ import {
   readersOf,
   type Participant as ThreadParticipant,
   type Thread,
-} from 'threadkit';
+} from '@bitbaum/threadkit';
 import type { Message, Participant } from '../types';
 import { MESSAGE_STATUS, type MessageStatus } from './constants';
 import { CLIENT_ID_METADATA_KEY, clientIdOf, toThreadMessage } from './threadkit-adapter';

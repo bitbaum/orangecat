@@ -7,7 +7,7 @@
 // the MDX pipeline is gone, and an .mdx file would silently never render.
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { parseFrontmatter, parseContentBlocks } from 'bip-kit';
+import { parseFrontmatter, parseContentBlocks } from '@bitbaum/bip-kit';
 
 function contentFiles(dir, ext) {
   return readdirSync(dir).flatMap(name => {
