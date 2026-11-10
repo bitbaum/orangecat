@@ -26,12 +26,27 @@ interface FundBarProject {
  */
 export function useMobileFundBar(eligible: boolean): boolean {
   const [scrolled, setScrolled] = useState(false);
+  // While the payment section itself is on screen the bar is a second Fund
+  // button on top of the first, and it covered the invoice's "Hide the code"
+  // and the funding card (QA 2026-11-10, 390px).
+  const [payInView, setPayInView] = useState(false);
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 300);
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
-  const visible = eligible && scrolled;
+  useEffect(() => {
+    const pay = document.getElementById('pay');
+    if (!pay || typeof IntersectionObserver === 'undefined') {
+      return;
+    }
+    const io = new IntersectionObserver(([entry]) => setPayInView(entry.isIntersecting), {
+      threshold: 0,
+    });
+    io.observe(pay);
+    return () => io.disconnect();
+  }, []);
+  const visible = eligible && scrolled && !payInView;
   useMobileActionBar(visible);
   return visible;
 }
@@ -55,18 +70,29 @@ export function ProjectMobileFundBar({ project }: { project: FundBarProject }) {
       <div className="max-w-lg mx-auto px-4 py-3">
         <div className="flex items-center justify-between gap-3">
           <div className="flex-1 min-w-0">
-            <div className="text-xs text-fg-secondary">
-              Goal: {formatCurrency(project.goal_amount ?? 0, project.currency)}
-            </div>
-            <div className="text-lg font-bold text-fg-primary truncate">
-              {formatCurrency(project.raised_amount ?? 0, project.currency)}
-            </div>
-            <div className="h-1.5 bg-surface-raised rounded-full mt-1">
-              <div
-                className="h-1.5 bg-bitcoinOrange rounded-full transition-all duration-300"
-                style={{ width: `${progressPercentage}%` }}
-              />
-            </div>
+            {/* No goal: no "Goal: CHF 0.00" and no empty bar (QA 2026-11-10). */}
+            {project.goal_amount ? (
+              <>
+                <div className="text-xs text-fg-secondary">
+                  Goal: {formatCurrency(project.goal_amount, project.currency)}
+                </div>
+                <div className="text-lg font-bold text-fg-primary truncate">
+                  {formatCurrency(project.raised_amount ?? 0, project.currency)}
+                </div>
+                <div className="h-1.5 bg-surface-raised rounded-full mt-1">
+                  <div
+                    className="h-1.5 bg-bitcoinOrange rounded-full transition-all duration-300"
+                    style={{ width: `${progressPercentage}%` }}
+                  />
+                </div>
+              </>
+            ) : (
+              <div className="text-sm font-medium text-fg-primary">
+                {project.raised_amount
+                  ? `${formatCurrency(project.raised_amount, project.currency)} raised`
+                  : 'Support this project'}
+              </div>
+            )}
           </div>
           <Button
             onClick={scrollToSupport}

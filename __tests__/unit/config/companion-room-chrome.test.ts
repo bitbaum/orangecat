@@ -36,7 +36,7 @@ describe('companion room chrome', () => {
       preferCollapsedSidebar: false,
       hideGlobalCat: false,
       immersiveChat: false,
-      feedbackTab: false,
+      feedbackTab: true,
     });
   });
 
