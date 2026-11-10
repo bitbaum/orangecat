@@ -7,7 +7,21 @@
  * - On-chain: BIP21 URI
  */
 
-import { NWCClient } from '@/lib/nostr/nwc';
+import { NWCClient, parseNWCUri } from '@/lib/nostr/nwc';
+
+/** How long an invoice request waits for the wallet's relay. */
+export const NWC_INVOICE_TIMEOUT_MS = 12_000;
+
+function nwcLud16(uri: string | null | undefined): string | null {
+  if (!uri) {
+    return null;
+  }
+  try {
+    return parseNWCUri(uri).lud16 ?? null;
+  } catch {
+    return null;
+  }
+}
 import { materializeOnchainAddress } from './onchainAddressMaterialization';
 import type { PaymentMethod, ResolvedWallet } from './types';
 import { logger } from '@/utils/logger';
@@ -76,7 +90,10 @@ async function mintInvoice(
         //
         // A rail that cannot mint an invoice is not a receiving rail. Fall
         // through to one that is, rather than failing the payment.
-        if (!wallet.lightning_address) {
+        // The connection string often names its own lightning address
+        // (`lud16`), so a wallet saved without one still has somewhere to fall.
+        const fallbackAddress = wallet.lightning_address || nwcLud16(wallet.nwc_uri);
+        if (!fallbackAddress) {
           throw error;
         }
         logger.warn(
@@ -84,11 +101,7 @@ async function mintInvoice(
           { walletId: wallet.wallet_id, error }
         );
         return {
-          ...(await generateLightningAddressInvoice(
-            wallet.lightning_address,
-            amountBtc,
-            description
-          )),
+          ...(await generateLightningAddressInvoice(fallbackAddress, amountBtc, description)),
           method: 'lightning_address',
         };
       }
@@ -128,7 +141,10 @@ async function generateNWCInvoice(
   amountBtc: number,
   description: string
 ): Promise<RailInvoice> {
-  const client = new NWCClient(nwcUri);
+  // Minting runs inside the payer's HTTP request: give the relay a bounded
+  // time, leaving room for the lightning-address fallback before the proxy
+  // times out.
+  const client = new NWCClient(nwcUri, { timeoutMs: NWC_INVOICE_TIMEOUT_MS });
   // NWC protocol uses sats
   const amountSats = bitcoinToSats(amountBtc);
 
