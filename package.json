@@ -130,7 +130,7 @@
     "@bitbaum/chatkit": "github:bitbaum/chatkit#6451d3b9d0c3d467011a80f8cf023da90dffe92c",
     "@bitbaum/collective-kinds": "workspace:*",
     "@bitbaum/deckkit": "workspace:*",
-    "@bitbaum/design-tokens": "^1.5.2",
+    "@bitbaum/design-tokens": "^1.6.0",
     "@bitbaum/geo-kit": "^0.3.0",
     "@bitbaum/mail-kit": "^0.2.0",
     "@bitbaum/searchkit": "^0.2.3",

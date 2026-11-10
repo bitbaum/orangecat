@@ -1,8 +1,8 @@
 /**
  * OrangeCat brand SSOT (TypeScript)
  *
- * Visual mark: src/config/marks/<APP_SLUG>.ts, one file, rendered everywhere
- * from the registry. Replace it with `pnpm run brand:import orangecat logo.svg`,
+ * Visual mark: MARKS[APP_SLUG] from @bitbaum/design-tokens/marks, rendered everywhere
+ * from the registry. Replace it there with `pnpm run marks:import orangecat logo.svg`,
  * which also regenerates every static icon. See docs/design-system/
  * branding-design.md → "Replacing a mark". Never draw a mark anywhere else.
  *

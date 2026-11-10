@@ -1,9 +1,9 @@
 /**
  * This app's own mark, wherever the brand appears (header, auth, hero).
  *
- * It renders BRAND_MARK — whichever file src/config/marks/<APP_SLUG>.ts holds
+ * It renders BRAND_MARK — MARKS[APP_SLUG] from @bitbaum/design-tokens/marks
  * — through the generic <Mark>, so replacing the logo never touches this
- * file: `pnpm run brand:import orangecat path/to/logo.svg`.
+ * file: `pnpm run marks:import orangecat path/to/logo.svg` in that package.
  */
 
 import { Mark } from '@/components/brand/Mark';
