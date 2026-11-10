@@ -18,3 +18,21 @@ export function shareLine(description: string | null): string {
   }
   return `${text.slice(0, 140).replace(/\s+\S*$/, '')}…`;
 }
+
+/**
+ * A page's meta / og:description: the whole text when it fits, else cut on a
+ * word boundary with an ellipsis. Search engines and chat apps truncate long
+ * descriptions themselves, mid-word (QA 2026-11-10: Loki's 700-character
+ * description), so the page says where it ends instead.
+ */
+export function metaDescription(description: string | null, max = 160): string {
+  const text = (description ?? '').replace(/\s+/g, ' ').trim();
+  if (text.length <= max) {
+    return text;
+  }
+  const cut = text
+    .slice(0, max - 1)
+    .replace(/\s+\S*$/, '')
+    .replace(/[\s,;:—–-]+$/, '');
+  return `${cut}…`;
+}
