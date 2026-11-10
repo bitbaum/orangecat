@@ -31,6 +31,8 @@ interface ProjectHeaderProps {
     user_id: string;
     category?: string | null;
     tags?: string[] | null;
+    /** The project's own logo, when its owner uploaded one. */
+    logo_url?: string | null;
     profiles?: {
       username: string | null;
       name: string | null;
@@ -86,9 +88,21 @@ export default function ProjectHeader({
     <div className="mb-6">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
         <div className="flex-1 min-w-0">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-fg-primary mb-3 break-words">
-            {project.title}
-          </h1>
+          <div className="mb-3 flex items-center gap-4">
+            {project.logo_url && (
+              // eslint-disable-next-line @next/next/no-img-element -- logo_url is an owner-supplied URL (any host); next/image would throw for hosts outside images.remotePatterns
+              <img
+                src={project.logo_url}
+                alt={`${project.title} logo`}
+                width={64}
+                height={64}
+                className="h-14 w-14 shrink-0 rounded-md border border-subtle bg-surface-base object-contain sm:h-16 sm:w-16"
+              />
+            )}
+            <h1 className="min-w-0 text-2xl sm:text-3xl lg:text-4xl font-bold text-fg-primary break-words">
+              {project.title}
+            </h1>
+          </div>
 
           {/* Categories - Show prominently for quick project understanding */}
           {(project.category || (project.tags && project.tags.length > 0)) && (

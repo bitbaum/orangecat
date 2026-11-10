@@ -4091,6 +4091,7 @@ export type Database = {
           id: string;
           is_test: boolean;
           lightning_address: string | null;
+          logo_url: string | null;
           raised_amount: number | null;
           show_on_profile: boolean | null;
           status: string | null;
@@ -4116,6 +4117,7 @@ export type Database = {
           id?: string;
           is_test?: boolean;
           lightning_address?: string | null;
+          logo_url?: string | null;
           raised_amount?: number | null;
           show_on_profile?: boolean | null;
           status?: string | null;
@@ -4141,6 +4143,7 @@ export type Database = {
           id?: string;
           is_test?: boolean;
           lightning_address?: string | null;
+          logo_url?: string | null;
           raised_amount?: number | null;
           show_on_profile?: boolean | null;
           status?: string | null;

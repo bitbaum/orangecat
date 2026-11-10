@@ -18,6 +18,8 @@ export interface Project {
 
   // Media
   website_url?: string | null;
+  /** The project's own logo (public image URL); studio products show their registry mark instead. */
+  logo_url?: string | null;
   cover_image_url?: string | null;
 
   status: string;
