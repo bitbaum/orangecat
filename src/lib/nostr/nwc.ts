@@ -73,8 +73,13 @@ export class NWCClient {
   private connection: NWCConnection;
   private relay: Relay | null = null;
   private secretKeyBytes: Uint8Array;
+  private timeoutMs: number;
 
-  constructor(connectionUri: string) {
+  /** `timeoutMs` bounds the relay connect and each request (default 30s). A
+   *  caller inside an HTTP request needs less: the reverse proxy gives up
+   *  first and the payer sees a bare 502 (QA 2026-11-10, /pay/cato ~35s). */
+  constructor(connectionUri: string, opts: { timeoutMs?: number } = {}) {
+    this.timeoutMs = opts.timeoutMs ?? NWC_TIMEOUT_MS;
     this.connection = parseNWCUri(connectionUri);
     this.secretKeyBytes = Uint8Array.from(Buffer.from(this.connection.secret, 'hex'));
   }
@@ -86,7 +91,12 @@ export class NWCClient {
     }
 
     try {
-      this.relay = await Relay.connect(this.connection.relayUrl);
+      this.relay = await Promise.race([
+        Relay.connect(this.connection.relayUrl),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('NWC relay connect timed out')), this.timeoutMs)
+        ),
+      ]);
       logger.info('NWC relay connected', { relay: this.connection.relayUrl });
     } catch (error) {
       logger.error('NWC relay connection failed', {
@@ -152,7 +162,7 @@ export class NWCClient {
       const timeout = setTimeout(() => {
         sub.close();
         reject(new Error(`NWC request timed out: ${method}`));
-      }, NWC_TIMEOUT_MS);
+      }, this.timeoutMs);
 
       const sub = relay.subscribe(
         [

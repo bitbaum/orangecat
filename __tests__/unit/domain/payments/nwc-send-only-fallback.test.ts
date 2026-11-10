@@ -25,6 +25,9 @@ vi.mock('@/lib/nostr/nwc', () => ({
     disconnect = disconnect;
     makeInvoice = makeInvoice;
   },
+  parseNWCUri: (uri: string) => ({
+    lud16: new URLSearchParams(uri.split('?')[1] ?? '').get('lud16') ?? undefined,
+  }),
 }));
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -111,5 +114,19 @@ describe('send-only NWC falls back to the lightning address', () => {
         'test'
       )
     ).rejects.toThrow();
+  });
+
+  it('falls back to the lud16 the connection string carries when the wallet has no address', async () => {
+    // A relay that never answers (QA 2026-11-10: /pay/cato 502 after ~35s).
+    makeInvoice.mockRejectedValue(new Error('NWC request timed out: make_invoice'));
+    const wallet: ResolvedWallet = {
+      method: 'nwc',
+      wallet_id: 'w2',
+      nwc_uri: 'nostr+walletconnect://deadbeef?relay=wss://r&secret=00&lud16=cato@coinos.io',
+      lightning_address: null,
+    } as ResolvedWallet;
+    const invoice = await generateInvoice(wallet, 0.0000002, 'test');
+    expect(invoice.bolt11).toBe(LN_INVOICE);
+    expect(invoice.method).toBe('lightning_address');
   });
 });
