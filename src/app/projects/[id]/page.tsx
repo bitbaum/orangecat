@@ -1,3 +1,4 @@
+import { metaDescription } from '@/lib/og/share-line';
 import type { ProjectFull } from './projectFull';
 import { Metadata } from 'next';
 import { createServerClient } from '@/lib/supabase/server';
@@ -98,17 +99,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       creatorProfile = profileData as ProfileSnippet;
     }
   }
-
-  // Calculate progress for description
   const progress = project.goal_amount
     ? Math.round((Number(project.raised_amount || 0) / Number(project.goal_amount)) * 100)
     : 0;
 
   const creatorName = creatorProfile?.name || creatorProfile?.username || 'Creator';
   const title = project.title;
-  const description =
+  const description = metaDescription(
     project.description ||
-    `Support ${project.title} on ${APP_NAME}. ${progress > 0 ? `${progress}% funded. ` : ''}Community-funded project by ${creatorName}.`;
+      `Support ${project.title} on ${APP_NAME}. ${progress > 0 ? `${progress}% funded. ` : ''}Community-funded project by ${creatorName}.`
+  );
   // The project's own share card — never the creator's avatar (see the route).
   const image = `${SITE_URL}/api/og/project/${id}`;
   const url = `${SITE_URL}${ROUTES.PROJECTS.VIEW(id)}`;
