@@ -54,8 +54,8 @@ export function useMessageComposer({
   });
 
   const handleSubmit = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault();
+    async (e?: React.FormEvent) => {
+      e?.preventDefault();
       await sendMessage({
         content,
         isSending,
@@ -86,25 +86,13 @@ export function useMessageComposer({
     ]
   );
 
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        handleSubmit(e as unknown as React.FormEvent);
-      }
-    },
-    [handleSubmit]
-  );
-
-  const handleTextareaChange = useCallback(
-    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      setContent(e.target.value);
-      if (e.target.value.trim()) {
+  // The box is chatkit's Composer: it grows by itself and sends on Enter, so
+  // the hook only keeps the draft and says "typing…" to the other side.
+  const handleTextChange = useCallback(
+    (text: string) => {
+      setContent(text);
+      if (text.trim()) {
         startTyping();
-      }
-      if (textareaRef.current) {
-        textareaRef.current.style.height = 'auto';
-        textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
       }
     },
     [startTyping]
@@ -122,7 +110,6 @@ export function useMessageComposer({
     groupActors,
     typingText,
     handleSubmit,
-    handleKeyDown,
-    handleTextareaChange,
+    handleTextChange,
   };
 }
