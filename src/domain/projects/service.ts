@@ -67,6 +67,7 @@ export async function createProject(
       bitcoin_address: payload.bitcoin_address ?? null,
       lightning_address: payload.lightning_address ?? null,
       website_url: payload.website_url ?? null,
+      logo_url: payload.logo_url || null,
       category: payload.category ?? null,
       tags: payload.tags ?? [],
       // The create wizard asks for both; only the edit route used to save them.

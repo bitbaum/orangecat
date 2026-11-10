@@ -39,6 +39,7 @@ interface ProjectRow {
   description: string | null;
   status: string | null;
   cover_image_url: string | null;
+  logo_url: string | null;
   user_id: string | null;
 }
 
@@ -48,7 +49,7 @@ export async function GET(_req: Request, { params }: RouteContext) {
 
   const { data } = await supabase
     .from(getTableName('project'))
-    .select('title, description, status, cover_image_url, user_id')
+    .select('title, description, status, cover_image_url, logo_url, user_id')
     .eq('id', id)
     .maybeSingle();
   const project = data as ProjectRow | null;
@@ -73,6 +74,7 @@ export async function GET(_req: Request, { params }: RouteContext) {
     title: project.title,
     description: project.description,
     coverImageUrl: project.cover_image_url,
+    logoUrl: project.logo_url,
     creatorName: creator?.name || (creator?.username ? `@${creator.username}` : null),
     mark: studio ? markFor(studio.slug) : null,
     isStudio: Boolean(studio),

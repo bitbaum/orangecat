@@ -87,6 +87,14 @@ const fieldGroups: FieldGroup[] = [
     description: 'Additional information about your project',
     fields: [
       {
+        // Optional. The studio's own products show their mark from the registry instead.
+        name: 'logo_url',
+        label: 'Logo',
+        type: 'image',
+        hint: "Optional: your project's logo, shown on its page and cards",
+        colSpan: 2,
+      },
+      {
         name: 'website_url',
         label: 'Project Website',
         type: 'url',
@@ -199,6 +207,7 @@ export const projectConfig = createEntityConfig<ProjectData>({
     bitcoin_address: '',
     lightning_address: '',
     website_url: '',
+    logo_url: '',
     category: '',
     tags: [],
     start_date: '',
