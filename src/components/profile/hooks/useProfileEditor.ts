@@ -20,6 +20,7 @@ const profileSchema = serverProfileSchema;
 export interface UseProfileEditorOptions {
   profile: Profile;
   userId: string;
+  /** The private sign-in email. Shown owner-only; never copied into a public field. */
   userEmail?: string;
   onSave: (data: ProfileFormData) => Promise<void>;
   onCancel: () => void;
@@ -46,7 +47,6 @@ export interface UseProfileEditorReturn {
 export function useProfileEditor({
   profile,
   userId,
-  userEmail,
   onSave,
   onCancel,
   onFieldFocus: _onFieldFocus,
@@ -93,7 +93,10 @@ export function useProfileEditor({
       banner_url: profile.banner_url || '',
       website: profile.website || '',
       social_links: socialLinks.length > 0 ? { links: socialLinks } : undefined,
-      contact_email: profile.contact_email || userEmail || '',
+      // Never the sign-in email: this field is PUBLIC, and pre-filling it meant
+      // any save of the profile published the login address to every visitor
+      // (QA 2026-11-10). The login email is shown separately, owner-only.
+      contact_email: profile.contact_email || '',
       phone: profile.phone || '',
       bitcoin_address: profile.bitcoin_address || '',
       lightning_address: profile.lightning_address || '',
