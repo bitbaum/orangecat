@@ -21,9 +21,31 @@ import type {
 } from '@/types/timeline';
 import { pageWindow, feedResponse, emptyFeed } from './feed-shape';
 import { getCurrentUserId, displayEventsFromView } from './helpers';
+import { PROJECT_WALL_CONTEXT_LIMIT, projectWallFilter } from './project-wall-filter';
 
 /**
- * Get project timeline feed
+ * Events placed on this project's wall through a `project` visibility context —
+ * the newest ones, bounded (see PROJECT_WALL_CONTEXT_LIMIT). A failed read
+ * leaves the wall showing what was written on it directly.
+ */
+async function getProjectWallEventIds(projectId: string): Promise<string[]> {
+  const { data, error } = await supabase
+    .from(TIMELINE_TABLES.EVENT_VISIBILITY)
+    .select('event_id')
+    .eq('timeline_type', 'project')
+    .eq('timeline_owner_id', projectId)
+    .order('created_at', { ascending: false })
+    .limit(PROJECT_WALL_CONTEXT_LIMIT);
+  if (error) {
+    logger.warn('Failed to read project wall contexts', { projectId, error }, 'Timeline');
+    return [];
+  }
+  return [...new Set((data ?? []).map(row => row.event_id as string))];
+}
+
+/**
+ * Get project timeline feed: what was written on the wall and what its authors
+ * also posted there (see project-wall-filter.ts).
  */
 export async function getProjectFeed(
   projectId: string,
@@ -34,15 +56,7 @@ export async function getProjectFeed(
     const { page, limit, offset } = pageWindow(pagination);
 
     const currentUserId = await getCurrentUserId();
-    // When the visitor is unauthenticated, getCurrentUserId returns null.
-    // Interpolating that into `actor_id.eq.${currentUserId}` produces the
-    // literal string `actor_id.eq.null`, which PostgREST tries to parse as
-    // a UUID and 400s with "invalid input syntax for type uuid: null" —
-    // surfaced as a console error on every public visitor's project page.
-    // Only include the actor branch when we have a real UUID.
-    const orClause = currentUserId
-      ? `visibility.eq.public,actor_id.eq.${currentUserId}`
-      : `visibility.eq.public`;
+    const wallEventIds = await getProjectWallEventIds(projectId);
     const {
       data: events,
       error,
@@ -50,9 +64,7 @@ export async function getProjectFeed(
     } = await supabase
       .from(TIMELINE_TABLES.ENRICHED_VIEW)
       .select('*', { count: 'exact' })
-      .eq('subject_type', 'project')
-      .eq('subject_id', projectId)
-      .or(orClause)
+      .or(projectWallFilter(projectId, wallEventIds, currentUserId))
       .order('event_timestamp', { ascending: false })
       .range(offset, offset + limit - 1);
 

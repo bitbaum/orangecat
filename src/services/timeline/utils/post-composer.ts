@@ -17,6 +17,7 @@ import {
 } from '@/services/timeline/formatters';
 import { apiErrorMessage } from '@/lib/api/errorMessage';
 import { getUserActorId } from '@/domain/actors';
+import { buildTimelineContexts } from './timeline-contexts';
 
 const PROFILE_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 const profileCheckCache = new Map<string, { exists: boolean; timestamp: number }>();
@@ -105,7 +106,8 @@ function createOptimisticEvent(params: CreateOptimisticEventParams): TimelineDis
     user.profile?.username ||
     (typeof user.email === 'string' && user.email.includes('@')
       ? user.email.split('@')[0]
-      : null) || user.id;
+      : null) ||
+    user.id;
 
   return {
     id: optimisticId,
@@ -200,47 +202,6 @@ function truncateToTitle(postContent: string): string {
   return postContent.length <= TIMELINE_CONTENT_LIMITS.title
     ? postContent
     : `${postContent.slice(0, TIMELINE_CONTENT_LIMITS.titleTruncateAt).trimEnd()}...`;
-}
-
-/**
- * Builds timeline visibility context entries for a post.
- */
-function buildTimelineContexts(
-  subjectType: string,
-  subjectId: string | undefined,
-  userId: string,
-  selectedProjects: string[],
-  visibility: TimelineVisibility,
-  parentEventId?: string
-): Array<{
-  timeline_type: 'profile' | 'project' | 'community';
-  timeline_owner_id: string | null;
-}> {
-  const contexts: Array<{
-    timeline_type: 'profile' | 'project' | 'community';
-    timeline_owner_id: string | null;
-  }> = [];
-
-  contexts.push({
-    timeline_type: subjectType as 'profile' | 'project',
-    timeline_owner_id: subjectId || userId,
-  });
-
-  selectedProjects.forEach(projectId => {
-    contexts.push({
-      timeline_type: 'project',
-      timeline_owner_id: projectId,
-    });
-  });
-
-  if (visibility === 'public' && !parentEventId) {
-    contexts.push({
-      timeline_type: 'community',
-      timeline_owner_id: null,
-    });
-  }
-
-  return contexts;
 }
 
 // =============================================================================

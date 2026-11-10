@@ -47,6 +47,13 @@ export const ARTICLE_COPY = {
     publish: 'Publish',
     publishing: 'Publishing…',
     cancel: 'Cancel',
+    /** "Also post on" — the walls of the writer's own projects. */
+    projects: {
+      add: 'Also post on a project',
+      one: (title: string) => `Also posting on ${title}`,
+      many: (count: number) => `Also posting on ${count} projects`,
+      linkNotYours: 'The project in your link is not one of yours, so it is not chosen.',
+    },
   },
   edit: {
     heading: 'Edit article',

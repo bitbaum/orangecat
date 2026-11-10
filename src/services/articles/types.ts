@@ -43,4 +43,9 @@ export interface CreateArticleInput {
   excerpt?: string;
   coverImage?: string;
   visibility: 'public' | 'followers' | 'private';
+  /**
+   * Projects whose walls the article also goes on. Only the writer's own
+   * projects are kept (see `project-walls.ts`); set on publish, not on edit.
+   */
+  projectIds?: string[];
 }
