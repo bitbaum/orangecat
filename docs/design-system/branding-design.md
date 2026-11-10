@@ -46,11 +46,9 @@ their siblings' from it, so a logo is replaced once and every product follows. U
 each product kept its own copy here and in its repository, and Solon's copy here had drifted from
 the mark Solon used.
 
-```bash
-# in bitbaum/design-tokens
-pnpm run marks:import orangecat path/to/logo.svg      # this app's own mark
-pnpm run marks:import heidi path/to/heidi.svg         # any studio project, by fleet slug
-```
+In bitbaum/design-tokens, run its `marks:import` script with a fleet slug and the file:
+`orangecat path/to/logo.svg` for this app's own mark, `heidi path/to/heidi.svg` for any studio
+project.
 
 Options: `--name "Display name"`, `--motion draw|spin|turn|none` (how it moves in a hero).
 Open a pull request there; once merged, run its Release workflow. Then here: raise
