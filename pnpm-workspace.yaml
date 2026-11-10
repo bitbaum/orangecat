@@ -68,31 +68,12 @@ overrides:
   # 0.16→0.18; __tests__/unit/lib/katex-renders.test.ts pins that.
   katex@0: ^0.18.2
 
-# pnpm refuses packages published within its minimum-release-age window — a
-# supply-chain guard against a compromised release being installed before
-# anyone notices. @bitbaum/ai-kit 0.6.2 is our own package, published to npm
-# the day before this commit, so it needs an explicit exemption.
-#
-# Temporary: once 0.6.2 is older than the window this entry is redundant and
-# should be deleted. Add lines only for versions we published ourselves —
-# never to hurry along a third-party package.
+# Our own packages are published by our own tagged workflows; minimumReleaseAge
+# would refuse each fresh publish until it ages. One scope glob covers every
+# @bitbaum package; the four unscoped ones are named (fleet SHARED.md).
 minimumReleaseAgeExclude:
-  - '@bitbaum/ai-kit'
-  - '@bitbaum/mail-kit'
-  - 'limitkit'
-  - '@bitbaum/design-tokens@1.4.0 || 1.5.2'
-  - '@bitbaum/accountkit@0.9.0 || 0.9.1 || 0.10.0 || 0.12.0 || 0.14.0 || 0.15.0 || 0.16.0 || 0.17.0 || 0.18.1 || 0.19.0 || 0.20.0 || 0.23.1 || 0.24.0 || 0.25.0 || 0.27.0'
-  # Ours, and recent enough to still be inside the window. Its absence failed
-  # BOTH CI jobs at `pnpm install --frozen-lockfile`, before a line of code ran
-  # — which surfaces as a bare "exit code 1" with no annotation, so it reads
-  # like a broken build rather than a refused dependency. vitareba needed the
-  # same entry when it adopted this package.
-  - 'threadkit'
-  # Ours (bitbaum/bip-kit); each release is inside the window when adopted.
-  - 'bip-kit'
-
-  - '@bitbaum/chatkit'
-  - '@bitbaum/geo-kit@0.1.2 || 0.3.0'
-  - '@bitbaum/listkit@0.2.2'
-  - '@bitbaum/searchkit@0.2.3'
-  - '@bitbaum/whenkit@0.3.3'
+  - "@bitbaum/*"
+  - limitkit
+  - bip-kit
+  - threadkit
+  - ai-forms
