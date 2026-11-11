@@ -124,9 +124,12 @@ describe('a model the vendor no longer lists is not offered', () => {
     expect(meta?.isAvailable).toBe(false);
   });
 
-  it('still offers the model production actually runs on', () => {
+  it('still offers a free reasoning model that the vendor lists', () => {
     // nvidia/nemotron-3-super-120b-a12b:free served 49 of 55 assistant messages
-    // in 30 days. Confirmed LIVE in the same catalogue read.
-    expect(getFreeModels().map(m => m.id)).toContain('nvidia/nemotron-3-super-120b-a12b:free');
+    // in 30 days, then left OpenRouter's free catalogue (confirmed 2026-11-11,
+    // 469 models read). Its successor in the same family is live there.
+    const offered = getFreeModels().map(m => m.id);
+    expect(offered).not.toContain('nvidia/nemotron-3-super-120b-a12b:free');
+    expect(offered).toContain('nvidia/nemotron-3-ultra-550b-a55b:free');
   });
 });

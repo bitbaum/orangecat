@@ -162,8 +162,8 @@ importers:
         specifier: ^5.0.0
         version: 5.0.1(typescript@6.0.3)
       bitcoinjs-lib:
-        specifier: ^6.1.0
-        version: 6.1.7
+        specifier: ^6.1.10
+        version: 6.1.10
       bs58check:
         specifier: ^4.0.0
         version: 4.0.0
@@ -3336,8 +3336,8 @@ packages:
     resolution: {integrity: sha512-PWlHIAgYCfVhwqNpZyeakHXuLAGyN6rEQZnhxHxKI3BoFJRVWLl26455fhRlHsmbYcV986HqtPnt33Edu5sTCw==}
     engines: {node: '>=18.0.0'}
 
-  bitcoinjs-lib@6.1.7:
-    resolution: {integrity: sha512-tlf/r2DGMbF7ky1MgUqXHzypYHakkEnm0SZP23CJKIqNY/5uNAnMbFhMJdhjrL/7anfb/U8+AlpdjPWjPnAalg==}
+  bitcoinjs-lib@6.1.10:
+    resolution: {integrity: sha512-9KpnS5JKVP0j0yfTsBNFIsNA6+JdBDb7VtL35F20I/pJYobosi3TmZFGtu6qxhJCfb0vubJixr5Zv61/lUYETw==}
     engines: {node: '>=8.0.0'}
 
   body-parser@2.4.0:
@@ -9429,7 +9429,7 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
-  bitcoinjs-lib@6.1.7:
+  bitcoinjs-lib@6.1.10:
     dependencies:
       '@noble/hashes': 1.8.0
       bech32: 2.0.0

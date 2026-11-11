@@ -53,7 +53,7 @@ it('does not greet a guest by a generated identifier', () => {
   render(
     <DashboardHeader profile={{ username: 'user_d35e21b04b6b' }} waiting={0} totalDrafts={0} />
   );
-  expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/^Welcome back$/);
+  expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/^Welcome$/);
 });
 
 it('keeps a chosen display name even while the handle is generated', () => {

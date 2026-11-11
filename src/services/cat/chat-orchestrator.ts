@@ -41,7 +41,7 @@ import { getUserActorId } from '@/domain/actors';
 import { AI_MESSAGE_MAX_CHARS } from '@/lib/validation/ai';
 import { PAGE_EXCERPT_MAX_CHARS } from '@/config/cat-page-context';
 import { markLinkDown } from '@/services/ai/link-health';
-import { isGroqDailyPoolSpent } from '@/services/ai/groq-capacity';
+import { getGroqDailyPoolReturnsAt, isGroqDailyPoolSpent } from '@/services/ai/groq-capacity';
 import { EmptyCompletion, hasUsableContent } from '@/services/cat/empty-completion';
 import { promptFitsGroqOnDemand, GROQ_CHAT_MAX_TOKENS } from '@/services/ai/groq';
 import { getGroqTpmLimit, recordOpenRouterRateLimit } from '@/services/ai/groq-capacity';
@@ -918,6 +918,30 @@ async function settleStreamedTurn(
 }
 
 /**
+ * What a person on the shared free models is told when the whole chain failed.
+ *
+ * "Usually momentary" was the only sentence, and it was untrue on exactly the
+ * days it was read most: with the shared daily pool spent, every retry failed
+ * the same way for the better part of an hour (seen on production 2026-11-11,
+ * a brand-new account's first message). When the pool's return is known, say
+ * when; the code stays ALL_PROVIDERS_DOWN so the chat still offers the key.
+ */
+export function allProvidersDownMessage(now: number = Date.now()): string {
+  const returnsAt = getGroqDailyPoolReturnsAt(now);
+  if (returnsAt === null) {
+    return 'Cat couldn’t reach an AI model just now — this is usually momentary. Try again; if it keeps happening, add your own free Groq key in Settings → AI.';
+  }
+  const minutes = Math.max(1, Math.ceil((returnsAt - now) / 60_000));
+  const wait =
+    minutes < 60
+      ? `about ${minutes} minute${minutes === 1 ? '' : 's'}`
+      : `about ${Math.round(minutes / 60)} hour${Math.round(minutes / 60) === 1 ? '' : 's'}`;
+  // The limit is a rolling day, so the wait is the provider's word for when a
+  // request could fit again, not a promise that the pool is full by then.
+  return `The free shared AI models are used up for now. The provider says to try again in ${wait}. Your message is saved. To keep going right away, add your own free Groq key in Settings → AI.`;
+}
+
+/**
  * Honest error copy. Never echo raw err.message — it can contain API keys
  * (e.g. a malformed Authorization header leaks the credential in the
  * Headers.append error). Log server-side; return a structured, actionable
@@ -945,7 +969,7 @@ function streamErrorPayload(
     return {
       error: hasByok
         ? 'None of your providers could answer just now. Check your keys in Settings → AI, then try again.'
-        : 'Cat couldn’t reach an AI model just now — this is usually momentary. Try again; if it keeps happening, add your own free Groq key in Settings → AI.',
+        : allProvidersDownMessage(),
       code: 'ALL_PROVIDERS_DOWN',
     };
   }

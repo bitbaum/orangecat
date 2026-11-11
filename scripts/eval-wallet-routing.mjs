@@ -66,7 +66,7 @@ const EVAL_PROVIDER = process.env.CAT_EVAL_PROVIDER || 'openrouter';
 // measure the model real users are served, not a better one.
 const EVAL_MODEL =
   process.env.CAT_EVAL_MODEL ||
-  (EVAL_PROVIDER === 'groq' ? 'llama-3.3-70b-versatile' : 'nvidia/nemotron-3-super-120b-a12b:free');
+  (EVAL_PROVIDER === 'groq' ? 'llama-3.3-70b-versatile' : 'nvidia/nemotron-3-ultra-550b-a55b:free');
 
 const PROBE_TIMEOUT_MS = 120_000;
 const INTER_PROBE_DELAY_MS = 8_000;
