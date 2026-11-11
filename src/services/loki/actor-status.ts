@@ -44,15 +44,26 @@ export interface LokiProjectStatus {
   orangecat: Array<{ entityType: string; entityId: string }>;
 }
 
+/** A provider key the person holds on Loki: its name and last characters only. */
+export interface LokiModelKey {
+  /** Loki's vendor id, which matches ours where we know the provider. */
+  vendor: string;
+  /** "…abcd". Never more of the key than that; Loki sends no key at all. */
+  keyHint: string | null;
+}
+
 export interface LokiActorStatus {
   /** False when this person has never signed in to Loki with OrangeCat. */
   linked: boolean;
   projects: LokiProjectStatus[];
+  /** Provider keys held on Loki, by name. Empty when Loki sends none. */
+  modelKeys: LokiModelKey[];
 }
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const FETCH_TIMEOUT_MS = 3000;
 const MAX_PROJECTS = 25;
+const MAX_MODEL_KEYS = 20;
 const MAX_CACHE_ENTRIES = 500;
 
 const cache = new Map<string, { at: number; value: LokiActorStatus | null }>();
@@ -117,12 +128,23 @@ export function parseActorStatus(body: string): LokiActorStatus | null {
   if (!json || typeof json !== 'object' || (json as { ok?: unknown }).ok !== true) {
     return null;
   }
-  const { linked, projects } = json as { linked?: unknown; projects?: unknown };
+  const { linked, projects, modelKeys } = json as {
+    linked?: unknown;
+    projects?: unknown;
+    modelKeys?: unknown;
+  };
   if (linked !== true) {
-    return { linked: false, projects: [] };
+    return { linked: false, projects: [], modelKeys: [] };
   }
   return {
     linked: true,
+    modelKeys: (Array.isArray(modelKeys) ? modelKeys : [])
+      .flatMap(raw => {
+        const k = (raw ?? {}) as Record<string, unknown>;
+        const vendor = str(k.vendor);
+        return vendor ? [{ vendor, keyHint: str(k.keyHint) }] : [];
+      })
+      .slice(0, MAX_MODEL_KEYS),
     projects: (Array.isArray(projects) ? projects : [])
       .map(parseProject)
       .filter((p): p is LokiProjectStatus => !!p)

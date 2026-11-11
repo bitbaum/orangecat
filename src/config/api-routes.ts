@@ -199,6 +199,7 @@ export const API_ROUTES = {
   },
   USER: {
     API_KEYS: '/api/user/api-keys',
+    API_KEYS_ELSEWHERE: '/api/user/api-keys/elsewhere',
     AVAILABLE_MODELS: '/api/user/available-models',
     STATS: '/api/users/me/stats',
   },
