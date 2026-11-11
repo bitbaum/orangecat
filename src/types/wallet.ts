@@ -1,5 +1,6 @@
 // Fixed wallet types with proper validation
 
+import { classifyPaste } from '@bitbaum/paykit';
 import { normalizePastedHandle } from '@/lib/wallets/pastedHandle';
 import { bech32, bech32m } from 'bech32';
 import bs58check from 'bs58check';
@@ -261,21 +262,23 @@ export type WalletInputKind = 'onchain' | 'xpub' | 'lightning' | 'nwc' | 'unknow
  * that they paste WHATEVER their wallet gives them and it just works.
  */
 export function classifyWalletInput(raw: string): WalletInputKind {
-  // Normalised first: a wallet hands you `bitcoin:bc1q…`, not `bc1q…`.
+  // PayKit provides shared shape classification. OrangeCat still performs
+  // strict checksum validation before an on-chain address or xpub is accepted.
   const v = normalizePastedHandle(raw);
-  if (!v) {
+  let kind: ReturnType<typeof classifyPaste>;
+  try {
+    kind = classifyPaste(raw);
+  } catch {
     return 'unknown';
   }
-  if (v.toLowerCase().startsWith('nostr+walletconnect://')) {
-    return 'nwc';
+  if (kind === 'nwc' || kind === 'lightning') {
+    return kind;
   }
-  // Lightning address / LNURL: local@domain.tld
-  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) {
-    return 'lightning';
-  }
-  const res = validateAddressOrXpub(v);
-  if (res.valid) {
-    return res.type === 'xpub' ? 'xpub' : 'onchain';
+  // The host remains the authority on network/checksum correctness and has a
+  // richer extended-key validator than PayKit's deliberately shape-only check.
+  const validation = validateAddressOrXpub(v);
+  if (validation.valid) {
+    return validation.type === 'xpub' ? 'xpub' : 'onchain';
   }
   return 'unknown';
 }
@@ -427,7 +430,9 @@ export function sanitizeWalletInput(data: WalletFormData): WalletFormData {
     description: data.description?.trim().slice(0, MAX_DESCRIPTION_LENGTH) || undefined,
     // Strip BIP-21 packaging server-side too — the API is a paste target as
     // much as the form is, and a URI must not reach the checksum validator.
-    address_or_xpub: data.address_or_xpub ? normalizePastedHandle(data.address_or_xpub) || null : null,
+    address_or_xpub: data.address_or_xpub
+      ? normalizePastedHandle(data.address_or_xpub) || null
+      : null,
     nwc_connection_uri: data.nwc_connection_uri?.trim() || null,
     category_icon: (ALLOWED_CATEGORY_ICONS as readonly string[]).includes(data.category_icon || '')
       ? data.category_icon

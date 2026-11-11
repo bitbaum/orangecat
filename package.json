@@ -135,6 +135,7 @@
     "@bitbaum/geo-kit": "^0.3.0",
     "@bitbaum/limitkit": "^0.2.1",
     "@bitbaum/mail-kit": "^0.2.0",
+    "@bitbaum/paykit": "^0.3.0",
     "@bitbaum/searchkit": "^0.2.3",
     "@bitbaum/tax-model": "workspace:*",
     "@bitbaum/threadkit": "^0.1.1",
