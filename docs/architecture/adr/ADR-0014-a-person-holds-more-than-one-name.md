@@ -119,7 +119,7 @@ self-link, a chain, a holder becoming an identity, a second holder for one
 identity, any update, and a 25th identity; it is unreadable and unwritable to
 `authenticated` and `anon`; it disappears with the identity's profile.
 
-Verified on the live site after deploy (2026-11-11, two scripted walks with
+Verified on the live site after deploy (2026-11-11, three scripted walks with
 throwaway accounts on `example.com`, deleted afterwards):
 
 - Create, the handle refusals (taken, reserved), switch to the identity and
@@ -134,8 +134,9 @@ throwaway accounts on `example.com`, deleted afterwards):
   session on another (`identitiesSignedOut: true`, then 401 there).
 - Deleting an identity removes its page; deleting the holder removes its
   identities with it.
+- D6a: an identity given a password, then entered with that password on
+  another device, sees only itself, is not told who the holder is, and cannot
+  switch into the holder (404), add identities (403) or delete the holder.
 
-Not verified: which exact `amr` method GoTrue stamps on a switched session (it
-is one of the three allowed; the walk could not decode the cookie to say
-which), and D6a's refusal against a real password session on an identity. That
-refusal is covered by unit tests only.
+Not verified: which exact `amr` method GoTrue stamps on a switched session. It
+is one of the three allowed; the walk could not decode the cookie to say which.
