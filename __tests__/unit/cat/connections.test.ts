@@ -77,6 +77,7 @@ describe('parseActorStatus', () => {
     expect(parseActorStatus(JSON.stringify({ ok: true, linked: false, projects: [] }))).toEqual({
       linked: false,
       projects: [],
+      modelKeys: [],
     });
     expect(parseActorStatus('not json')).toBeNull();
     expect(parseActorStatus(JSON.stringify({ ok: false }))).toBeNull();

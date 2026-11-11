@@ -15,6 +15,7 @@ import { PROVIDER_BASE_URLS } from '@/config/ai-provider-runtime';
 import { configuredFreeVendors, vendorModel } from '@/config/free-vendors';
 import { DEFAULT_FREE_MODEL_ID } from '@/config/ai-models';
 import { promptFitsGroqOnDemand, PLATFORM_GROQ_MODEL } from '@/services/ai/groq';
+import { getGroqDailyPoolReturnsAt } from '@/services/ai/groq-capacity';
 import { checkModelRot, type SupersededPin } from './provider-catalog';
 import { webSearch, describeAttempts } from '@bitbaum/ai-kit/web';
 import { buildCatSystemPrompt } from './system-prompt';
@@ -347,7 +348,13 @@ export async function runCatHealthProbes(): Promise<CatHealthReport> {
   const missingGroqModels = byProvider('groq');
   const supersededModels = rot.superseded;
   // Groq being up is not the same as Groq being usable for Cat.
-  const groqUsable = groq.class === 'ok' && groqCanServeCatPrompt();
+  // Nor is it usable once its shared daily pool is spent: the probe is a few
+  // tokens and still fits, while every real message is refused. Production,
+  // 2026-11-11: "Cat is healthy" on a morning when no message was answered.
+  const groqPoolSpent = getGroqDailyPoolReturnsAt() !== null;
+  const groqUsable = groq.class === 'ok' && groqCanServeCatPrompt() && !groqPoolSpent;
+  const groqWhyNot =
+    groq.class !== 'ok' ? groq.class : groqPoolSpent ? 'daily pool spent' : 'prompt too large';
   const drift =
     (missingFreeModels && missingFreeModels.length > 0
       ? ` ⚠️ Registry free models no longer on OpenRouter: ${missingFreeModels.join(', ')} — update src/config/ai-models.ts.`
@@ -362,9 +369,11 @@ export async function runCatHealthProbes(): Promise<CatHealthReport> {
           .join(', ')}.`
       : '');
   const oversized =
-    groq.class === 'ok' && !groqUsable
-      ? ` ⚠️ ${groq.provider} is up but cannot serve Cat: the prompt exceeds its per-minute token limit, so every real message falls through to ${openrouter.provider}.`
-      : '';
+    groq.class === 'ok' && groqPoolSpent
+      ? ` ⚠️ ${groq.provider} is up but its shared daily pool is spent, so real messages are refused until it refills.`
+      : groq.class === 'ok' && !groqUsable
+        ? ` ⚠️ ${groq.provider} is up but cannot serve Cat: the prompt exceeds its per-minute token limit, so every real message falls through to ${openrouter.provider}.`
+        : '';
 
   // Named separately from the model summary because it is a different
   // question with a different fix: a user reads "Cat is healthy" and assumes
@@ -387,8 +396,8 @@ export async function runCatHealthProbes(): Promise<CatHealthReport> {
       (groqUsable
         ? `Cat is healthy: ${groq.provider} probe returned OK.`
         : openrouter.class === 'ok'
-          ? `Primary (${groq.provider}) cannot serve Cat (${groq.class === 'ok' ? 'prompt too large' : groq.class}); fallback (${openrouter.provider}) is healthy.`
-          : `Cat cannot answer: groq=${groq.class === 'ok' ? 'prompt too large' : groq.class}, openrouter=${openrouter.class}.`) +
+          ? `Primary (${groq.provider}) cannot serve Cat (${groqWhyNot}); fallback (${openrouter.provider}) is healthy.`
+          : `Cat cannot answer: groq=${groqWhyNot}, openrouter=${openrouter.class}.`) +
       oversized +
       drift +
       webNote,
