@@ -9,11 +9,13 @@ import { useState } from 'react';
 import { KeyRound, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import Button from '@/components/ui/Button';
-import { browserSupportsPasskeys, signInWithPasskey } from '@/services/supabase/auth';
+import { signInWithPasskey } from '@/services/supabase/auth';
+import { usePasskeysSupported } from '@/hooks/usePasskeysSupported';
 
 export function PasskeySignInButton({ disabled }: { disabled?: boolean }) {
   const [busy, setBusy] = useState(false);
-  if (!browserSupportsPasskeys()) {
+  const supported = usePasskeysSupported();
+  if (!supported) {
     return null;
   }
   return (

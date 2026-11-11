@@ -32,7 +32,9 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps
+        uses: bitbaum/fleet/.github/actions/install-chromium@main
+        with:
+          browsers: ''
 
       - name: Run Playwright tests (production)
         env:

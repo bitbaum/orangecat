@@ -29,7 +29,7 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: bash scripts/ci/install-browser.sh chromium
+      - uses: bitbaum/fleet/.github/actions/install-chromium@main
       - name: Check article writing, draft recovery and phone layouts
         run: pnpm run test:article-writing-browser
       - name: Retain article editor screenshots
@@ -59,7 +59,7 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: bash scripts/ci/install-browser.sh chromium
+      - uses: bitbaum/fleet/.github/actions/install-chromium@main
       - name: Build the standalone production app
         env:
           SELF_HOST: '1'
@@ -111,6 +111,6 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: bash scripts/ci/install-browser.sh chromium
+      - uses: bitbaum/fleet/.github/actions/install-chromium@main
       - name: Exercise the deployed conversation, including its investor-room link
         run: pnpm exec playwright test tests/e2e/cat-conversation.live.spec.ts tests/e2e/cat-investor-room.live.spec.ts --project=chromium --workers=1 --reporter=line

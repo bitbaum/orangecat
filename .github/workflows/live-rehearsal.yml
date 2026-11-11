@@ -28,7 +28,7 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm exec playwright install --with-deps chromium
+      - uses: bitbaum/fleet/.github/actions/install-chromium@main
       - name: Run the five demos as a new person
         env:
           E2E_BASE_URL: ${{ inputs.base_url }}
