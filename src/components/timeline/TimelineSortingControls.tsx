@@ -1,51 +1,37 @@
 /**
- * TimelineSortingControls Component
+ * TimelineSortingControls
  *
- * Renders sorting buttons for timeline feeds.
+ * The feed's sort order: pick one of three, so it is the shared
+ * SegmentedControl (equal cells, 44px tall) rather than three chips, each as
+ * wide as its word, which ran under the page title and off a phone screen.
  */
 
 'use client';
 
-import Button from '@/components/ui/Button';
 import { TrendingUp, Clock, Flame } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { TIMELINE_SURFACE } from '@/config/timeline';
+import { SegmentedControl, type SegmentedItem } from '@/components/ui/SegmentedControl';
+
+export type TimelineSort = 'recent' | 'trending' | 'popular';
+
+const SORT_ITEMS: readonly SegmentedItem<TimelineSort>[] = [
+  { value: 'trending', label: 'Trending', icon: TrendingUp },
+  { value: 'recent', label: 'Recent', icon: Clock },
+  { value: 'popular', label: 'Popular', icon: Flame },
+];
 
 interface TimelineSortingControlsProps {
-  sortBy: 'recent' | 'trending' | 'popular';
-  onSortChange: (sort: 'recent' | 'trending' | 'popular') => void;
+  sortBy: TimelineSort;
+  onSortChange: (sort: TimelineSort) => void;
 }
 
 export function TimelineSortingControls({ sortBy, onSortChange }: TimelineSortingControlsProps) {
   return (
-    <div className="flex gap-1">
-      <Button
-        variant={sortBy === 'trending' ? 'secondary' : 'ghost'}
-        size="sm"
-        onClick={() => onSortChange('trending')}
-        className={cn(TIMELINE_SURFACE.chip, sortBy === 'trending' && TIMELINE_SURFACE.chipActive)}
-      >
-        <TrendingUp className="w-4 h-4 mr-1" />
-        Trending
-      </Button>
-      <Button
-        variant={sortBy === 'recent' ? 'secondary' : 'ghost'}
-        size="sm"
-        onClick={() => onSortChange('recent')}
-        className={cn(TIMELINE_SURFACE.chip, sortBy === 'recent' && TIMELINE_SURFACE.chipActive)}
-      >
-        <Clock className="w-4 h-4 mr-1" />
-        Recent
-      </Button>
-      <Button
-        variant={sortBy === 'popular' ? 'secondary' : 'ghost'}
-        size="sm"
-        onClick={() => onSortChange('popular')}
-        className={cn(TIMELINE_SURFACE.chip, sortBy === 'popular' && TIMELINE_SURFACE.chipActive)}
-      >
-        <Flame className="w-4 h-4 mr-1" />
-        Popular
-      </Button>
-    </div>
+    <SegmentedControl
+      items={SORT_ITEMS}
+      value={sortBy}
+      onChange={onSortChange}
+      label="Sort posts"
+      className="w-full"
+    />
   );
 }

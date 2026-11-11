@@ -20,6 +20,8 @@ export interface TimelineLayoutProps {
   compact?: boolean;
   enableMultiSelect?: boolean; // Enable multi-select mode for bulk operations
   additionalHeaderContent?: React.ReactNode;
+  /** A pick-one row for the feed (its sort order): its own line on a phone. */
+  headerTabs?: React.ReactNode;
   emptyState?: React.ReactNode;
   postComposer?: React.ReactNode;
   inlineComposer?: React.ReactNode;
@@ -42,6 +44,7 @@ export default function TimelineLayout({
   compact = false,
   enableMultiSelect = false,
   additionalHeaderContent,
+  headerTabs,
   emptyState,
   postComposer,
   inlineComposer,
@@ -67,6 +70,7 @@ export default function TimelineLayout({
             {additionalHeaderContent && (
               <div className="flex items-center gap-2">{additionalHeaderContent}</div>
             )}
+            {headerTabs && <div className="w-full sm:w-80">{headerTabs}</div>}
           </div>
 
           {inlineComposer || postComposer}

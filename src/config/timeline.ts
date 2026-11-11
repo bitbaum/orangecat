@@ -83,7 +83,7 @@ export const TIMELINE_SURFACE = {
   rail: 'mx-auto flex w-full max-w-6xl justify-center px-0 sm:px-4 lg:px-8',
   feed: 'w-full max-w-2xl border-x border-subtle bg-surface-page',
   header:
-    'sticky top-0 z-20 flex items-center justify-between border-b border-subtle bg-surface-page/90 px-4 py-3 backdrop-blur-xl sm:px-5',
+    'sticky top-0 z-20 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-subtle bg-surface-page/90 px-4 py-3 backdrop-blur-xl sm:px-5',
   composer: 'border-b border-subtle bg-surface-page px-4 py-4 sm:px-5',
   // `sm:px-5` matches header and composer above. Without it the feed ran on a
   // SECOND grid 4px to the left of them: measured in production, the header

@@ -39,7 +39,9 @@ export const GROQ_TPM_LIMIT_FALLBACK = 12000;
 export const GROQ_CHARS_PER_TOKEN = 3.5;
 
 export function estimateTokens(text: string | null | undefined): number {
-  if (!text) return 0;
+  if (!text) {
+    return 0;
+  }
   return Math.ceil(text.length / GROQ_CHARS_PER_TOKEN);
 }
 
@@ -72,14 +74,18 @@ let openRouterFreeDailyCapHitAt: string | null = null;
 /** "Limit 8000, Requested 8391" → the two numbers, or null. */
 export function parseGroqTooLarge(message: string): { limit: number; requested: number } | null {
   const m = /Limit\s+(\d+),\s*Requested\s+(\d+)/i.exec(message);
-  if (!m) return null;
+  if (!m) {
+    return null;
+  }
   return { limit: Number(m[1]), requested: Number(m[2]) };
 }
 
 /** Record the cap a 413 body names; returns it, or null when the body has none. */
 export function recordGroqTooLarge(model: string, message: string): number | null {
   const parsed = parseGroqTooLarge(message);
-  if (!parsed) return null;
+  if (!parsed) {
+    return null;
+  }
   observedTpmLimit.set(model, parsed.limit);
   return parsed.limit;
 }
@@ -96,9 +102,13 @@ export function getGroqTpmLimit(model: string): number {
 
 /** Groq's reset strings: "7.66s", "2m59.56s", "1h2m3s", "59ms". */
 export function parseGroqResetSeconds(value: string | null | undefined): number | null {
-  if (!value) return null;
+  if (!value) {
+    return null;
+  }
   const v = value.trim();
-  if (!v) return null;
+  if (!v) {
+    return null;
+  }
   let total = 0;
   let matched = false;
   const re = /(\d+(?:\.\d+)?)(ms|h|m|s)/g;
@@ -222,6 +232,24 @@ export function isGroqDailyPoolSpent(model: string, now: number = Date.now()): b
   return true;
 }
 
+/**
+ * When the shared free pool is expected back, as epoch ms; null when no pool
+ * is known to be spent.
+ *
+ * The pool is org-wide, so the first model whose stand-down ends is when a
+ * person can ask again. Read by the sentence a failed turn shows: "try again"
+ * is no help to someone who can be told "back in about 40 minutes".
+ */
+export function getGroqDailyPoolReturnsAt(now: number = Date.now()): number | null {
+  let earliest: number | null = null;
+  for (const until of dailyPoolSpentUntil.values()) {
+    if (until > now && (earliest === null || until < earliest)) {
+      earliest = until;
+    }
+  }
+  return earliest;
+}
+
 /** Test seam: forget every observed refusal. */
 export function resetGroqDailyPool(): void {
   dailyPoolSpentUntil.clear();
@@ -258,7 +286,9 @@ export function getGroqObservations(): GroqRateLimitObservation[] {
 
 /** OpenRouter's free pool is per day, org-wide; a 429 naming it means "until 00:00 UTC". */
 export function recordOpenRouterRateLimit(message: string, now: Date = new Date()): boolean {
-  if (!/free-models-per-day/i.test(message)) return false;
+  if (!/free-models-per-day/i.test(message)) {
+    return false;
+  }
   openRouterFreeDailyCapHitAt = now.toISOString();
   return true;
 }
@@ -267,7 +297,9 @@ export function getOpenRouterFreeStatus(now: Date = new Date()): {
   dailyCapHitAt: string | null;
   resetsAt: string | null;
 } {
-  if (!openRouterFreeDailyCapHitAt) return { dailyCapHitAt: null, resetsAt: null };
+  if (!openRouterFreeDailyCapHitAt) {
+    return { dailyCapHitAt: null, resetsAt: null };
+  }
   const hit = new Date(openRouterFreeDailyCapHitAt);
   const reset = new Date(Date.UTC(hit.getUTCFullYear(), hit.getUTCMonth(), hit.getUTCDate() + 1));
   if (now >= reset) {

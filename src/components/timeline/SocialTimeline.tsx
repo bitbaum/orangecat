@@ -238,30 +238,27 @@ export default function SocialTimeline({
     </div>
   ) : null;
 
+  const headerTabs = showSortingControls ? (
+    <TimelineSortingControls sortBy={sortBy} onSortChange={handleSortChange} />
+  ) : undefined;
+
   const headerContent =
-    showSortingControls || (showShareButton && user) ? (
-      <>
-        {showSortingControls && (
-          <TimelineSortingControls sortBy={sortBy} onSortChange={handleSortChange} />
-        )}
-        {showShareButton && user && (
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => {
-              if (composerRef.current) {
-                const element = composerRef.current;
-                const elementPosition = element.getBoundingClientRect().top + window.scrollY;
-                window.scrollTo({ top: elementPosition - 80, behavior: 'smooth' });
-              }
-            }}
-            className={TIMELINE_SURFACE.chip}
-          >
-            <ShareIcon className="w-4 h-4" />
-            {shareButtonText}
-          </Button>
-        )}
-      </>
+    showShareButton && user ? (
+      <Button
+        size="sm"
+        variant="secondary"
+        onClick={() => {
+          if (composerRef.current) {
+            const element = composerRef.current;
+            const elementPosition = element.getBoundingClientRect().top + window.scrollY;
+            window.scrollTo({ top: elementPosition - 80, behavior: 'smooth' });
+          }
+        }}
+        className={TIMELINE_SURFACE.chip}
+      >
+        <ShareIcon className="w-4 h-4" />
+        {shareButtonText}
+      </Button>
     ) : undefined;
 
   return (
@@ -276,6 +273,7 @@ export default function SocialTimeline({
       compact={false}
       enableMultiSelect={mode === 'timeline'}
       additionalHeaderContent={headerContent}
+      headerTabs={headerTabs}
       emptyState={emptyState}
       inlineComposer={inlineComposer}
       postComposer={postComposer}
