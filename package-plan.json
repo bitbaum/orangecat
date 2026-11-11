@@ -56,6 +56,19 @@
         }
       ],
       "notes": "WritingKit owns operation/revision safety. OrangeCat owns fields, selection, Undo, device/account draft storage, writing context and publishing. ai-kit and the existing article APIs still own model/HTTP execution."
+    },
+    "payments": {
+      "package": "@bitbaum/paykit",
+      "bindings": [
+        {
+          "file": "src/lib/wallets/pastedHandle.ts",
+          "symbols": ["paykitNormalizePastedHandle"]
+        },
+        {
+          "file": "src/types/wallet.ts",
+          "symbols": ["classifyPaste"]
+        }
+      ]
     }
   }
 }
