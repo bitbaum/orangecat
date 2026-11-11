@@ -39,7 +39,8 @@ export const IDENTITIES_COPY = {
   current: 'Signed in',
   main: 'Main account',
   remove: 'Delete',
-  confirmRemove: 'Delete this identity and everything it owns? This cannot be undone.',
+  removeThis: 'Delete this identity',
+  confirmRemove: 'Delete it and everything it owns? This cannot be undone.',
   limitReached: `You hold the maximum of ${MAX_IDENTITIES} identities.`,
   needsEmail:
     'Add an email address to your main account first, so you can always get back into it.',

@@ -13,20 +13,13 @@ import { Loader2, Plus, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { API_ROUTES } from '@/config/api-routes';
 import { IDENTITIES_COPY } from '@/config/identities';
 import { ROUTES } from '@/config/routes';
 import { logger } from '@/utils/logger';
+import { IdentityRow, type IdentityMember } from './IdentityRow';
 
-interface Member {
-  id: string;
-  username: string | null;
-  name: string | null;
-  avatarUrl: string | null;
-  isHolder: boolean;
-  isCurrent: boolean;
-}
+type Member = IdentityMember;
 
 async function readError(res: Response, fallback: string): Promise<string> {
   try {
@@ -159,81 +152,18 @@ export function SettingsIdentitiesSection() {
       ) : (
         <ul className="divide-y divide-border-subtle rounded-md border border-default">
           {members.map(member => (
-            <li key={member.id} className="flex min-h-16 items-center gap-3 px-4 py-3">
-              <Avatar className="h-10 w-10 shrink-0">
-                <AvatarImage src={member.avatarUrl || undefined} alt="" />
-                <AvatarFallback>
-                  {(member.name || member.username || '?').slice(0, 1)}
-                </AvatarFallback>
-              </Avatar>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-medium text-fg-primary">
-                  {member.name || member.username || 'Unnamed'}
-                </span>
-                <span className="block truncate text-sm text-fg-secondary">
-                  {member.username ? `@${member.username}` : ''}
-                  {member.isHolder ? ` · ${IDENTITIES_COPY.main}` : ''}
-                </span>
-              </span>
-              {confirmId === member.id ? (
-                <span className="flex shrink-0 items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setConfirmId(null)}
-                    disabled={busyId === member.id}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="danger"
-                    size="sm"
-                    onClick={() => handleDelete(member.id)}
-                    disabled={busyId === member.id}
-                  >
-                    {busyId === member.id ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Delete'}
-                  </Button>
-                </span>
-              ) : member.isCurrent ? (
-                <span className="shrink-0 text-sm text-fg-secondary">
-                  {IDENTITIES_COPY.current}
-                </span>
-              ) : (
-                <span className="flex shrink-0 items-center gap-2">
-                  {!member.isHolder && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setConfirmId(member.id)}
-                      disabled={busyId !== null}
-                    >
-                      {IDENTITIES_COPY.remove}
-                    </Button>
-                  )}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleSwitch(member.id)}
-                    disabled={busyId !== null}
-                  >
-                    {busyId === member.id ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      IDENTITIES_COPY.switchTo
-                    )}
-                  </Button>
-                </span>
-              )}
-            </li>
+            <IdentityRow
+              key={member.id}
+              member={member}
+              busyId={busyId}
+              confirming={confirmId === member.id}
+              onSwitch={handleSwitch}
+              onDelete={handleDelete}
+              onConfirm={setConfirmId}
+            />
           ))}
         </ul>
       )}
-
-      {confirmId && <p className="mt-3 text-sm text-fg-primary">{IDENTITIES_COPY.confirmRemove}</p>}
 
       {members !== null && atLimit && (
         <p className="mt-4 text-sm text-fg-secondary">{IDENTITIES_COPY.limitReached}</p>
