@@ -936,7 +936,9 @@ export function allProvidersDownMessage(now: number = Date.now()): string {
     minutes < 60
       ? `about ${minutes} minute${minutes === 1 ? '' : 's'}`
       : `about ${Math.round(minutes / 60)} hour${Math.round(minutes / 60) === 1 ? '' : 's'}`;
-  return `The free shared AI models are used up for now and should be back in ${wait}. Your message is saved. To keep going right away, add your own free Groq key in Settings → AI.`;
+  // The limit is a rolling day, so the wait is the provider's word for when a
+  // request could fit again, not a promise that the pool is full by then.
+  return `The free shared AI models are used up for now. The provider says to try again in ${wait}. Your message is saved. To keep going right away, add your own free Groq key in Settings → AI.`;
 }
 
 /**

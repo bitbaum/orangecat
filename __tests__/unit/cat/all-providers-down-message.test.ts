@@ -28,7 +28,7 @@ describe('allProvidersDownMessage', () => {
     recordGroqRefusal('openai/gpt-oss-20b', TPD_REFUSAL, 2840, NOW);
     const message = allProvidersDownMessage(NOW);
     expect(message).not.toContain('momentary');
-    expect(message).toMatch(/back in about 4[78] minutes/);
+    expect(message).toMatch(/try again in about 4[78] minutes/);
     expect(message).toContain('Settings → AI');
   });
 
