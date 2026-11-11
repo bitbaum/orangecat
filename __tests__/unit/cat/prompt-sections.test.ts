@@ -237,7 +237,12 @@ describe('selection is worth doing', () => {
     // decks) add real action IDs and parameters to the prose catalog. Their
     // descriptions are compact; detailed field schemas stay in tool parameters.
     // Keep them discoverable rather than dropping capabilities on a regex miss.
-    expect(remaining).toBeLessThanOrEqual(6_400);
+    //
+    // Raised 6,400 -> 6,550 (QA 2026-11-10): create_service gains `currency`
+    // and `category` (a CHF rate was stored as BTC, and no category failed the
+    // NOT NULL insert), and one line that Cat reports a draft as a draft and
+    // keeps quoted text verbatim — it had said "published" for a draft.
+    expect(remaining).toBeLessThanOrEqual(6_550);
   });
 
   it('selects by default now, and still sends everything when told to', async () => {

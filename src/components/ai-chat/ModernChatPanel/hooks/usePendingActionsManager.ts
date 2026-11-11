@@ -56,7 +56,10 @@ export function usePendingActionsManager({
           { error: e, actionId },
           'usePendingActionsManager'
         );
-        return {};
+        // Rethrow: the card shows the reason and keeps Confirm. Returning {}
+        // here made a 400 read "Action confirmed and executed" while nothing
+        // was created (QA 2026-11-10, create_service).
+        throw e;
       }
     },
     [confirmAction, pendingActions, onActionConfirmed]
@@ -71,6 +74,7 @@ export function usePendingActionsManager({
         onActionRejected?.(actionId);
       } catch (e) {
         logger.error('Failed to reject action', { error: e, actionId }, 'usePendingActionsManager');
+        throw e;
       }
     },
     [rejectAction, onActionRejected]
