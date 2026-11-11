@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * "Your Loki account runs on an xAI key. Add the same key here."
+ * "Loki already has your xAI key. Add the same key here."
  *
  * The two products share one person and did not share what they knew about
  * that person's keys (services/ai/keys-elsewhere). Shown only when Loki holds
@@ -43,8 +43,8 @@ export function KeysOnLokiHint() {
           className="rounded-md border border-default bg-surface-raised p-3 text-sm text-fg-primary"
         >
           <p className="mb-0">
-            Your Loki account runs on a {key.name} key{key.keyHint ? ` (${key.keyHint})` : ''}. Add
-            the same key here and Cat runs on it too, instead of the shared free pool.
+            Loki already has your {key.name} key{key.keyHint ? ` (${key.keyHint})` : ''}. Add the
+            same key here and Cat runs on it too, instead of the shared free pool.
           </p>
           {key.apiKeyUrl && (
             <a
