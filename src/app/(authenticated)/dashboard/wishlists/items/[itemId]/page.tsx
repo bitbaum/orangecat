@@ -13,6 +13,7 @@ import { createServerClient } from '@/lib/supabase/server';
 import { WishlistItemProofSection } from '@/components/wishlist/WishlistItemProofSection';
 import { FormattedAmount } from '@/components/ui/FormattedAmount';
 import { DATABASE_TABLES } from '@/config/database-tables';
+import { userHoldsActor } from '@/domain/actors';
 import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 
@@ -80,7 +81,7 @@ export default async function WishlistItemDetailPage({ params }: PageProps) {
   }
 
   const wishlist = Array.isArray(item.wishlists) ? item.wishlists[0] : item.wishlists;
-  const isOwner = wishlist && wishlist.actor_id === user.id;
+  const isOwner = await userHoldsActor(supabase, user.id, wishlist?.actor_id);
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">

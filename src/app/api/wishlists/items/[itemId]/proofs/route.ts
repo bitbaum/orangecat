@@ -7,6 +7,7 @@
 import { withOptionalAuth } from '@/lib/api/withAuth';
 import { logger } from '@/utils/logger';
 import { DATABASE_TABLES } from '@/config/database-tables';
+import { userHoldsActor } from '@/domain/actors';
 import { apiSuccess, apiNotFound, apiInternalError } from '@/lib/api/standardResponse';
 import { validateUUID, getValidationError } from '@/lib/api/validation';
 
@@ -130,7 +131,7 @@ export const GET = withOptionalAuth(async (request, { params }: RouteParams) => 
 
     return apiSuccess({
       proofs: proofs.map(proof => enrichProof(proof, feedbackMap, user?.id)),
-      can_add_proof: !!(user && wishlist?.actor_id === user.id),
+      can_add_proof: user ? await userHoldsActor(supabase, user.id, wishlist?.actor_id) : false,
     });
   } catch (error) {
     logger.error('Error in GET /api/wishlists/items/[itemId]/proofs:', error);

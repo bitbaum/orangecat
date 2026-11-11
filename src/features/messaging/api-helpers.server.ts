@@ -296,6 +296,12 @@ export async function fetchMessagingActors(userId: string): Promise<MessagingAct
     .select('id, actor_type, user_id, profiles:user_id (name, avatar_url)')
     .eq('user_id', userId)
     .eq('actor_type', 'user')
+    // Oldest first, take one: the same rule as lookupUserActor. maybeSingle()
+    // errors for a person with duplicate actors, and the picker then offered
+    // no way to write as themselves.
+    .order('created_at', { ascending: true })
+    .order('id', { ascending: true })
+    .limit(1)
     .maybeSingle();
 
   if (personalError) {

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { lookupUserActor, getUserActorId } from '@/domain/actors';
+import { lookupUserActor, getUserActorId, userHoldsActor } from '@/domain/actors';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 
 /**
@@ -119,5 +119,22 @@ describe('getUserActorId fails closed', () => {
 
   it('returns the id when there is one', async () => {
     expect(await getUserActorId(client({ data: [{ id: 'a1' }] }), 'u1')).toBe('a1');
+  });
+});
+
+describe('userHoldsActor answers "is this actor mine"', () => {
+  it('is true for any actor the person holds, not only the oldest', async () => {
+    const c = client({ data: [{ id: 'a1' }, { id: 'a2' }] });
+    expect(await userHoldsActor(c, 'u1', 'a1')).toBe(true);
+    expect(await userHoldsActor(c, 'u1', 'a2')).toBe(true);
+  });
+
+  it('is false for the auth user id itself: an actor id is never a user id', async () => {
+    expect(await userHoldsActor(client({ data: [{ id: 'a1' }] }), 'u1', 'u1')).toBe(false);
+  });
+
+  it('is false for a missing actor id and for a failed lookup', async () => {
+    expect(await userHoldsActor(client({ data: [{ id: 'a1' }] }), 'u1', null)).toBe(false);
+    expect(await userHoldsActor(client({ error: { message: 'boom' } }), 'u1', 'a1')).toBe(false);
   });
 });

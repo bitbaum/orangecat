@@ -308,15 +308,10 @@ async function fetchRuntimeContextForCat(
   // that the user is actually a member.
   let currentActor: RuntimeContext['currentActor'] = null;
   try {
-    const { data: actorRow } = await supabase
-      .from(DATABASE_TABLES.ACTORS)
-      .select('id, actor_type')
-      .eq('actor_type', 'user')
-      .eq('user_id', userId)
-      .maybeSingle();
-    if (actorRow?.id) {
+    const actorId = await getUserActorId(supabase, userId);
+    if (actorId) {
       currentActor = {
-        id: actorRow.id,
+        id: actorId,
         type: 'individual',
         name: profile?.name ?? profile?.username ?? null,
       };
