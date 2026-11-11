@@ -36,6 +36,7 @@ export const IDENTITIES_COPY = {
   add: 'Add an identity',
   create: 'Create identity',
   switchTo: 'Switch',
+  switchLabel: 'Switch identity',
   current: 'Signed in',
   main: 'Main account',
   remove: 'Delete',

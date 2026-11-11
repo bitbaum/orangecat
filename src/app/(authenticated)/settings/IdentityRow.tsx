@@ -10,15 +10,7 @@ import { Loader2 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { IDENTITIES_COPY } from '@/config/identities';
-
-export interface IdentityMember {
-  id: string;
-  username: string | null;
-  name: string | null;
-  avatarUrl: string | null;
-  isHolder: boolean;
-  isCurrent: boolean;
-}
+import type { IdentityMember } from '@/lib/identities/client';
 
 interface IdentityRowProps {
   member: IdentityMember;

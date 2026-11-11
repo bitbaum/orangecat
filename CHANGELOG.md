@@ -12,6 +12,7 @@ to the map, sub-bullets stay here for the human reader.
 ## 2026-11-11
 
 - **One person, several identities.** In Settings you can add an identity: a separate account with its own name, page, wallet and inbox, and switch between them without signing out. Nobody else can see that two identities belong to the same person. Sign out everywhere ends all of them, and deleting your main account deletes them with it. You need an email address on your main account first, so you can always get back into it.
+- **Switch identity from the menu.** Your other identities are listed in the menu under your picture; one tap switches. An identity no longer shows a made-up email address under its name.
 - **Your own wishlist knows it is yours.** The owner of a wishlist could rate their own items and never saw "add proof", because the page compared two ids that can never match. A person whose account held duplicate identities also saw zero listings on their profile and could not write messages as themselves. All fixed.
 
 ## 2026-11-05

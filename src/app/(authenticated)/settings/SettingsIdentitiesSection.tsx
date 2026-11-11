@@ -15,21 +15,16 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { API_ROUTES } from '@/config/api-routes';
 import { IDENTITIES_COPY } from '@/config/identities';
-import { ROUTES } from '@/config/routes';
 import { logger } from '@/utils/logger';
-import { IdentityRow, type IdentityMember } from './IdentityRow';
+import {
+  fetchIdentityCircle,
+  readIdentityError,
+  switchToIdentity,
+  type IdentityMember,
+} from '@/lib/identities/client';
+import { IdentityRow } from './IdentityRow';
 
 type Member = IdentityMember;
-
-async function readError(res: Response, fallback: string): Promise<string> {
-  try {
-    const body = (await res.json()) as { error?: string | { message?: string } };
-    const message = typeof body.error === 'string' ? body.error : body.error?.message;
-    return message || fallback;
-  } catch {
-    return fallback;
-  }
-}
 
 export function SettingsIdentitiesSection() {
   const [members, setMembers] = useState<Member[] | null>(null);
@@ -44,13 +39,9 @@ export function SettingsIdentitiesSection() {
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch(API_ROUTES.IDENTITIES.BASE);
-      if (!res.ok) {
-        throw new Error(`list failed (${res.status})`);
-      }
-      const body = (await res.json()) as { data: { members: Member[]; max: number } };
-      setMembers(body.data.members);
-      setMax(body.data.max);
+      const circle = await fetchIdentityCircle();
+      setMembers(circle.members);
+      setMax(circle.max);
     } catch (err) {
       logger.error('Could not load identities', err, 'Settings');
       setMembers([]);
@@ -63,25 +54,9 @@ export function SettingsIdentitiesSection() {
 
   const handleSwitch = useCallback(async (id: string) => {
     setBusyId(id);
-    try {
-      const res = await fetch(API_ROUTES.IDENTITIES.SWITCH, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id }),
-      });
-      if (!res.ok) {
-        toast.error(await readError(res, IDENTITIES_COPY.switchFailed));
-        setBusyId(null);
-        return;
-      }
-      // A full load: every store and cache in the tab belongs to the account
-      // that just stopped being signed in.
-      window.location.assign(ROUTES.DASHBOARD.HOME);
-    } catch (err) {
-      logger.error('Identity switch failed', err, 'Settings');
-      toast.error(IDENTITIES_COPY.switchFailed);
-      setBusyId(null);
-    }
+    // Resolves only on failure; on success the tab reloads as the new identity.
+    toast.error(await switchToIdentity(id));
+    setBusyId(null);
   }, []);
 
   const handleDelete = useCallback(
@@ -90,7 +65,7 @@ export function SettingsIdentitiesSection() {
       try {
         const res = await fetch(API_ROUTES.IDENTITIES.BY_ID(id), { method: 'DELETE' });
         if (!res.ok) {
-          toast.error(await readError(res, IDENTITIES_COPY.removeFailed));
+          toast.error(await readIdentityError(res, IDENTITIES_COPY.removeFailed));
           return;
         }
         setConfirmId(null);
@@ -118,7 +93,7 @@ export function SettingsIdentitiesSection() {
           body: JSON.stringify({ name, username }),
         });
         if (!res.ok) {
-          setFormError(await readError(res, IDENTITIES_COPY.createFailed));
+          setFormError(await readIdentityError(res, IDENTITIES_COPY.createFailed));
           return;
         }
         setName('');

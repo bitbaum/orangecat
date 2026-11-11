@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAuthStore } from '@/stores/auth';
 import { useDropdown } from '@/hooks/useDropdown';
 import { toast } from 'sonner';
+import { isUnreachableEmail } from '@/config/identities';
 import DefaultAvatar from '@/components/ui/DefaultAvatar';
 import { logger } from '@/utils/logger';
 import { UserProfileDropdownPanel } from '@/components/ui/UserProfileDropdownPanel';
@@ -141,7 +142,10 @@ export default function UserProfileDropdown({
 
   // User display logic - always show something immediately, update when profile loads
   const avatarUrl = profile?.avatar_url;
-  const email = user?.email || session?.user?.email || '';
+  // An identity (ADR-0014) sits on an address nobody can read; showing it
+  // under the name would put a made-up mailbox where an email belongs.
+  const accountEmail = user?.email || session?.user?.email || '';
+  const email = isUnreachableEmail(accountEmail) ? '' : accountEmail;
 
   // Only show loading state when we have literally nothing to show
   const isProfileLoading = false; // Never block the UI — always render with best available data
