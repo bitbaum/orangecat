@@ -119,12 +119,23 @@ self-link, a chain, a holder becoming an identity, a second holder for one
 identity, any update, and a 25th identity; it is unreadable and unwritable to
 `authenticated` and `anon`; it disappears with the identity's profile.
 
-Not verified before merge: the two GoTrue calls in sequence against the live
-auth server (`generateLink` then `verifyOtp` for an account on an `.invalid`
-address), and `end_sessions_of` against the real `auth.sessions`. Both are
-exercised by the unit tests only through fakes. Also not verified: the exact
-`amr` method GoTrue stamps on a session made by the switch. The allowlist
-accepts `otp`, `magiclink` and `recovery`; if GoTrue names it otherwise, an
-identity cannot switch back and the person signs in to the main account the
-ordinary way. The live walk reads the method off the session to settle it. The sign-out route reports
-`identitiesSignedOut: false` and logs if the second fails.
+Verified on the live site after deploy (2026-11-11, two scripted walks with
+throwaway accounts on `example.com`, deleted afterwards):
+
+- Create, the handle refusals (taken, reserved), switch to the identity and
+  back, and the same circle seen from both sides. So `generateLink` then
+  `verifyOtp` works for an account on an `.invalid` address, and a switched
+  session carries a sign-in method the D6a allowlist accepts.
+- An identity cannot delete itself or the holder, and a switch to an account
+  outside the circle answers 404.
+- A signed-out visitor gets the identity's public page, and that page names
+  neither the holder's id, handle nor email.
+- Sign out everywhere pressed by the holder on one device ends the identity's
+  session on another (`identitiesSignedOut: true`, then 401 there).
+- Deleting an identity removes its page; deleting the holder removes its
+  identities with it.
+
+Not verified: which exact `amr` method GoTrue stamps on a switched session (it
+is one of the three allowed; the walk could not decode the cookie to say
+which), and D6a's refusal against a real password session on an identity. That
+refusal is covered by unit tests only.
