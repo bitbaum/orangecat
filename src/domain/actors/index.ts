@@ -109,3 +109,23 @@ export async function getUserActorIds(
   const result = await lookupUserActor(supabase, userId);
   return result.ok ? result.actorIds : [];
 }
+
+/**
+ * Whether this actor is one of the person's own user actors.
+ *
+ * An actor id is never an auth user id, so `row.actor_id === user.id` is always
+ * false: an owner check written that way lets a person rate their own wishlist
+ * and hides their own "add proof" button. Ask this instead. False on a failed
+ * lookup, the closed side.
+ */
+export async function userHoldsActor(
+  supabase: AnySupabaseClient,
+  userId: string,
+  actorId: string | null | undefined
+): Promise<boolean> {
+  if (!actorId) {
+    return false;
+  }
+  const ids = await getUserActorIds(supabase, userId);
+  return ids.includes(actorId);
+}

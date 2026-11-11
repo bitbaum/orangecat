@@ -8,6 +8,7 @@ import { withAuth, type AuthenticatedRequest } from '@/lib/api/withAuth';
 import { wishlistFeedbackSchema } from '@/lib/validation';
 import { logger } from '@/utils/logger';
 import { DATABASE_TABLES } from '@/config/database-tables';
+import { userHoldsActor } from '@/domain/actors';
 import {
   apiSuccess,
   apiBadRequest,
@@ -49,7 +50,7 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
     const wishlist = Array.isArray(wishlistItem.wishlists)
       ? wishlistItem.wishlists[0]
       : wishlistItem.wishlists;
-    if (wishlist?.actor_id === user.id) {
+    if (await userHoldsActor(supabase, user.id, wishlist?.actor_id)) {
       return apiForbidden('You cannot provide feedback on your own wishlist items');
     }
 

@@ -17,6 +17,7 @@ import { convertToBtcOrNull } from '@/services/currency/rates.server';
 import type { CurrencyCode } from '@/config/currencies';
 import { APP_LOCALE } from '@/utils/locale';
 import { getActorStewardUserId } from '@/domain/profileClaims/stewardship';
+import { getUserActorIds } from '@/domain/actors';
 import { fetchStewardedProviderBookings } from './stewardBookings';
 
 // Types
@@ -159,17 +160,15 @@ class BookingService {
     const durationMinutes =
       input.bookable_type === 'service' ? ((row.duration_minutes as number | null) ?? null) : null;
 
-    // Resolve customer actor (first one — most users have exactly one)
-    const { data: actors } = await this.supabase
-      .from(DATABASE_TABLES.ACTORS)
-      .select('id')
-      .eq('user_id', customerUserId)
-      .limit(1);
-    const customerActorId = actors?.[0]?.id;
+    // The customer books as their primary actor (oldest wins, the one rule).
+    // "Your own listing" is checked against EVERY actor the person holds: an
+    // unordered limit(1) could pick a duplicate and let them book themselves.
+    const customerActorIds = await getUserActorIds(this.supabase, customerUserId);
+    const customerActorId = customerActorIds[0];
     if (!customerActorId) {
       return { success: false, error: 'No actor found for customer' };
     }
-    if (customerActorId === providerActorId) {
+    if (customerActorIds.includes(providerActorId)) {
       return { success: false, error: 'Cannot book your own listing' };
     }
 

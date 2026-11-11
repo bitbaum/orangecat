@@ -13,7 +13,7 @@
 import { getTableName, type EntityType } from '@/config/entity-registry';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { PROFILE_HIDDEN_STATUS_FILTER } from '@/config/profile-listing-visibility';
-import { DATABASE_TABLES } from '@/config/database-tables';
+import { getUserActorId } from '@/domain/actors';
 
 /**
  * Entity types counted on a public profile, with the column that links the
@@ -58,12 +58,10 @@ export async function fetchProfileListingCounts(
   profileId: string
 ): Promise<ProfileListingCounts> {
   // Read-only: a profile with no actor owns no actor-owned rows.
-  const { data: actor } = await supabase
-    .from(DATABASE_TABLES.ACTORS)
-    .select('id')
-    .eq('user_id', profileId)
-    .maybeSingle();
-  const actorId = (actor as { id: string } | null)?.id ?? null;
+  // The primary actor, by the one rule (oldest wins). maybeSingle() here
+  // errored for a person with duplicate actors, which read as "no actor" and
+  // counted every actor-owned listing as zero.
+  const actorId = await getUserActorId(supabase, profileId);
 
   const results = await Promise.all(
     PROFILE_LISTING_COUNT_CONFIG.map(({ type, userField, publicField }) => {
