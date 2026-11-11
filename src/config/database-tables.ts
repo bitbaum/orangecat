@@ -19,6 +19,7 @@ export const DATABASE_TABLES = {
   // Social
   PROFILES: 'profiles',
   PROFILE_CLAIMS: 'profile_claims',
+  IDENTITY_LINKS: 'identity_links',
   PROFILE_USERNAME_HISTORY: 'profile_username_history',
   FOLLOWS: 'follows',
   ACTORS: 'actors',

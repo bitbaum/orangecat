@@ -9,6 +9,11 @@ reads, and [orangecat.ch/changelog](https://orangecat.ch/changelog) renders
 it from there. One `## YYYY-MM-DD` heading per day; bullets under it travel
 to the map, sub-bullets stay here for the human reader.
 
+## 2026-11-11
+
+- **One person, several identities.** In Settings you can add an identity: a separate account with its own name, page, wallet and inbox, and switch between them without signing out. Nobody else can see that two identities belong to the same person. Sign out everywhere ends all of them, and deleting your main account deletes them with it. You need an email address on your main account first, so you can always get back into it.
+- **Your own wishlist knows it is yours.** The owner of a wishlist could rate their own items and never saw "add proof", because the page compared two ids that can never match. A person whose account held duplicate identities also saw zero listings on their profile and could not write messages as themselves. All fixed.
+
 ## 2026-11-05
 
 - **One place to write an article.** The editor comes first, with a compact draft library and one Ask Cat entry for drafting or editing. Cancel an AI request, review its change and Undo it while your writing still matches the result. Late answers keep newer edits intact, and starting another draft clears the previous draft's AI notices. Drafts remain on this device for the signed-in account.

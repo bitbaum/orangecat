@@ -3,6 +3,7 @@
  * the person chose to keep back from THAT app. Used for the id token and for
  * userinfo, so both always agree.
  */
+import { isUnreachableEmail } from '@/config/identities';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { createAdminClient } from '@/lib/supabase/admin';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
@@ -69,8 +70,12 @@ export async function profileClaims(
     // and never follows a later add or change (an anonymous account adding its
     // email, a changed address), so it is only the fallback.
     const { data: account } = await adminDb().auth.admin.getUserById(userId);
-    const accountEmail = account?.user?.email || null;
-    claims.email = accountEmail ?? profile.email ?? null;
+    // An identity (ADR-0014) and the Cat sit on an address nobody can read.
+    // Handing that to an app would tell it which accounts are identities and
+    // give it a mailbox that bounces; such an account simply has no email.
+    const rawEmail = account?.user?.email || null;
+    const accountEmail = isUnreachableEmail(rawEmail) ? null : rawEmail;
+    claims.email = accountEmail ?? (isUnreachableEmail(rawEmail) ? null : (profile.email ?? null));
     claims.email_verified = accountEmail !== null && Boolean(account?.user?.email_confirmed_at);
   }
   return claims;
