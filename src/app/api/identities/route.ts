@@ -20,14 +20,18 @@ import {
 } from '@/lib/api/standardResponse';
 import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
 import { getAdminClient } from '@/lib/supabase/admin';
+import { sessionMethods } from '@/lib/auth/session-methods';
 import { IDENTITIES_COPY, MAX_IDENTITIES } from '@/config/identities';
-import { createIdentity, getCircle } from '@/domain/identities/service';
+import { circleForCaller, createIdentity } from '@/domain/identities/service';
 
 export const dynamic = 'force-dynamic';
 
 export const GET = withAuth(async (req: AuthenticatedRequest) => {
   try {
-    const circle = await getCircle(getAdminClient(), req.user.id);
+    const circle = await circleForCaller(getAdminClient(), {
+      userId: req.user.id,
+      sessionMethods: await sessionMethods(req.supabase),
+    });
     return apiSuccess({
       members: circle.members.map(m => ({ ...m, isCurrent: m.id === req.user.id })),
       max: MAX_IDENTITIES,
@@ -51,10 +55,14 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
       return apiBadRequest('Invalid request body');
     }
 
-    const result = await createIdentity(getAdminClient(), req.user.id, {
-      name: body.name,
-      username: body.username,
-    });
+    const result = await createIdentity(
+      getAdminClient(),
+      { userId: req.user.id, sessionMethods: await sessionMethods(req.supabase) },
+      {
+        name: body.name,
+        username: body.username,
+      }
+    );
     if (result.ok) {
       return apiCreated(result.data);
     }
@@ -65,6 +73,8 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
         return apiBadRequest(result.message ?? 'That username cannot be used.');
       case 'username_taken':
         return apiConflict(IDENTITIES_COPY.usernameTaken);
+      case 'not_in_circle':
+        return apiForbidden('Sign in to your main account to add an identity.');
       case 'limit_reached':
         return apiForbidden(IDENTITIES_COPY.limitReached);
       case 'holder_needs_email':

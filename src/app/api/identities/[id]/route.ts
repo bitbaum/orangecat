@@ -15,6 +15,7 @@ import {
 import { getValidationError, validateUUID } from '@/lib/api/validation';
 import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
 import { getAdminClient } from '@/lib/supabase/admin';
+import { sessionMethods } from '@/lib/auth/session-methods';
 import { IDENTITIES_COPY } from '@/config/identities';
 import { deleteIdentity } from '@/domain/identities/service';
 import { revokeAllConnectedApps } from '@/services/auth/connectedApps';
@@ -35,9 +36,13 @@ export const DELETE = withAuth(
         return idCheck;
       }
 
-      const result = await deleteIdentity(getAdminClient(), req.user.id, id, identityId =>
-        // The oauth_* rows do not cascade from auth.users (see /api/delete-user).
-        revokeAllConnectedApps(identityId, { forgetConsents: true })
+      const result = await deleteIdentity(
+        getAdminClient(),
+        { userId: req.user.id, sessionMethods: await sessionMethods(req.supabase) },
+        id,
+        identityId =>
+          // The oauth_* rows do not cascade from auth.users (see /api/delete-user).
+          revokeAllConnectedApps(identityId, { forgetConsents: true })
       );
       if (result.ok) {
         return apiSuccess({ deleted: true });

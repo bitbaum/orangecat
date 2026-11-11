@@ -23,6 +23,7 @@ import {
 import { getValidationError, validateUUID } from '@/lib/api/validation';
 import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
 import { getAdminClient } from '@/lib/supabase/admin';
+import { sessionMethods } from '@/lib/auth/session-methods';
 import { IDENTITIES_COPY } from '@/config/identities';
 import { mintSwitchCode } from '@/domain/identities/service';
 import { logger } from '@/utils/logger';
@@ -51,7 +52,11 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
       return apiSuccess({ switched: false });
     }
 
-    const minted = await mintSwitchCode(getAdminClient(), req.user.id, targetId);
+    const minted = await mintSwitchCode(
+      getAdminClient(),
+      { userId: req.user.id, sessionMethods: await sessionMethods(req.supabase) },
+      targetId
+    );
     if (!minted.ok) {
       // One answer for "not yours" and "does not exist": this must not become
       // a way to ask whether an account id is real.

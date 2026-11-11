@@ -14,6 +14,7 @@ import { withAuth, type AuthenticatedRequest } from '@/lib/api/withAuth';
 import { apiRateLimited, apiSuccess, handleApiError } from '@/lib/api/standardResponse';
 import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
 import { getAdminClient } from '@/lib/supabase/admin';
+import { sessionMethods } from '@/lib/auth/session-methods';
 import { callRpc } from '@/lib/supabase/untyped';
 import { otherCircleMemberIds } from '@/domain/identities/service';
 import { revokeAllConnectedApps } from '@/services/auth/connectedApps';
@@ -33,7 +34,10 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
     // person holds (ADR-0014), so stopping at this account would leave a lost
     // device one switch away from all of them. End the others too.
     const admin = getAdminClient();
-    const others = await otherCircleMemberIds(admin, req.user.id);
+    const others = await otherCircleMemberIds(admin, {
+      userId: req.user.id,
+      sessionMethods: await sessionMethods(req.supabase),
+    });
     let identitiesSignedOut = true;
     for (const id of others) {
       await revokeAllConnectedApps(id, { forgetConsents: false });

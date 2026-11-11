@@ -78,6 +78,17 @@ apps of every member, because a session for one is a switch away from all.
 Deleting the holder deletes its identities first and stops if one cannot be
 removed. An identity can be deleted alone, never while signed in as it.
 
+**D6a. An identity with a way in of its own loses the circle.** An identity can
+be given a password, a passkey or a real address from its own settings, and its
+login can then be handed to someone else. That person must not be one request
+away from the holder's main account. So an identity may use its circle only
+while it is still the holder's alone: its address is still unreachable AND the
+session came from a switch (`amr` is a one-time-code method, read from the
+verified access token; `src/lib/auth/session-methods.ts`). Otherwise it stands
+alone: it cannot switch, list, create, delete or sign the others out. The
+holder is never gated. An allowlist, not a denylist: a sign-in method nobody
+thought of fails closed.
+
 ## Not yet (roadmap)
 
 - **D7. One person, one vote in Solon.** Solon counts seats, and a seat is an
@@ -111,5 +122,9 @@ identity, any update, and a 25th identity; it is unreadable and unwritable to
 Not verified before merge: the two GoTrue calls in sequence against the live
 auth server (`generateLink` then `verifyOtp` for an account on an `.invalid`
 address), and `end_sessions_of` against the real `auth.sessions`. Both are
-exercised by the unit tests only through fakes. The sign-out route reports
+exercised by the unit tests only through fakes. Also not verified: the exact
+`amr` method GoTrue stamps on a session made by the switch. The allowlist
+accepts `otp`, `magiclink` and `recovery`; if GoTrue names it otherwise, an
+identity cannot switch back and the person signs in to the main account the
+ordinary way. The live walk reads the method off the session to settle it. The sign-out route reports
 `identitiesSignedOut: false` and logs if the second fails.

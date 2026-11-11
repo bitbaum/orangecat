@@ -42,6 +42,11 @@ export interface Circle {
   holderId: string;
   /** Holder first, then identities oldest first. */
   members: CircleMember[];
+  /**
+   * True when the caller is an identity that may no longer use its circle
+   * (see circleForCaller). It then stands alone, and holds nothing.
+   */
+  withheld?: boolean;
 }
 
 export type IdentityFailure =
@@ -63,6 +68,72 @@ const fail = (reason: IdentityFailure, message?: string): IdentityResult<never> 
   reason,
   message,
 });
+
+/**
+ * Who is asking. `sessionMethods` are the `amr` methods of the caller's own
+ * session (how it was signed in), read from the verified access token.
+ */
+export interface Caller {
+  userId: string;
+  sessionMethods: string[];
+}
+
+/**
+ * The only ways a session for an identity can come to exist while the identity
+ * is still its holder's alone: a switch, which is a server-side exchange of a
+ * one-time code. Refreshing, or adding a second factor, does not change that.
+ */
+const SWITCH_SESSION_METHODS: ReadonlySet<string> = new Set(['otp', 'magiclink', 'recovery']);
+const NEUTRAL_SESSION_METHODS: ReadonlySet<string> = new Set(['token_refresh', 'totp', 'mfa/totp']);
+
+/**
+ * The circle this CALLER may use.
+ *
+ * A holder always has its circle. An identity has it only while it is still
+ * the holder's alone: on its unreachable address, in a session that came from a
+ * switch. An identity can be given a password, a passkey or a real address from
+ * its own settings, and its login can then be handed to someone else. Without
+ * this gate that person would be one request away from the holder's main
+ * account and every other identity. With it, an identity that has a way in of
+ * its own stands alone: it cannot switch, list, create, delete or sign the
+ * others out.
+ */
+export async function circleForCaller(admin: SupabaseClient, caller: Caller): Promise<Circle> {
+  const circle = await getCircle(admin, caller.userId);
+  if (circle.holderId === caller.userId) {
+    return circle;
+  }
+
+  const alone: Circle = {
+    holderId: caller.userId,
+    members: circle.members
+      .filter(m => m.id === caller.userId)
+      .map(m => ({ ...m, isHolder: false })),
+    withheld: true,
+  };
+
+  const methods = caller.sessionMethods.filter(m => !NEUTRAL_SESSION_METHODS.has(m));
+  const fromSwitch = methods.length > 0 && methods.every(m => SWITCH_SESSION_METHODS.has(m));
+  if (!fromSwitch) {
+    logger.warn(
+      'Identity session did not come from a switch; circle withheld',
+      { userId: caller.userId, methods: caller.sessionMethods },
+      'Identities'
+    );
+    return alone;
+  }
+
+  const { data, error } = await admin.auth.admin.getUserById(caller.userId);
+  if (error || !isUnreachableEmail(data?.user?.email)) {
+    logger.warn(
+      'Identity has an address of its own; circle withheld',
+      { userId: caller.userId },
+      'Identities'
+    );
+    return alone;
+  }
+  return circle;
+}
 
 /** The circle `userId` belongs to. A person with no identities is a circle of one. */
 export async function getCircle(admin: SupabaseClient, userId: string): Promise<Circle> {
@@ -126,7 +197,7 @@ async function holderIsReachable(admin: SupabaseClient, holderId: string): Promi
  */
 export async function createIdentity(
   admin: SupabaseClient,
-  userId: string,
+  caller: Caller,
   input: { name: unknown; username: unknown }
 ): Promise<IdentityResult<CircleMember>> {
   const name = typeof input.name === 'string' ? input.name.trim() : '';
@@ -141,7 +212,10 @@ export async function createIdentity(
   }
   const username = parsed.data;
 
-  const circle = await getCircle(admin, userId);
+  const circle = await circleForCaller(admin, caller);
+  if (circle.withheld) {
+    return fail('not_in_circle');
+  }
   if (circle.members.length - 1 >= MAX_IDENTITIES) {
     return fail('limit_reached');
   }
@@ -220,10 +294,11 @@ export async function createIdentity(
  */
 export async function mintSwitchCode(
   admin: SupabaseClient,
-  userId: string,
+  caller: Caller,
   targetId: string
 ): Promise<IdentityResult<{ email: string; code: string }>> {
-  const circle = await getCircle(admin, userId);
+  const userId = caller.userId;
+  const circle = await circleForCaller(admin, caller);
   if (!circle.members.some(m => m.id === targetId)) {
     // Logged: outside the UI this is someone probing for another account.
     logger.warn(
@@ -257,11 +332,12 @@ export async function mintSwitchCode(
  */
 export async function deleteIdentity(
   admin: SupabaseClient,
-  userId: string,
+  caller: Caller,
   targetId: string,
   beforeDelete: (identityId: string) => Promise<unknown>
 ): Promise<IdentityResult<{ id: string }>> {
-  const circle = await getCircle(admin, userId);
+  const userId = caller.userId;
+  const circle = await circleForCaller(admin, caller);
   if (!circle.members.some(m => m.id === targetId)) {
     logger.warn(
       'Identity delete refused: target not in circle',
@@ -295,10 +371,10 @@ export async function deleteIdentity(
  */
 export async function otherCircleMemberIds(
   admin: SupabaseClient,
-  userId: string
+  caller: Caller
 ): Promise<string[]> {
-  const circle = await getCircle(admin, userId);
-  return circle.members.map(m => m.id).filter(id => id !== userId);
+  const circle = await circleForCaller(admin, caller);
+  return circle.members.map(m => m.id).filter(id => id !== caller.userId);
 }
 
 /** The identities a holder's deletion must take with it. Empty for an identity. */
