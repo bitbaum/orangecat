@@ -300,6 +300,12 @@ export const API_ROUTES = {
   JOBS: '/api/jobs',
   ACCOUNT_EXPORT: '/api/account/export',
   DELETE_USER: '/api/delete-user',
+  /** The identities one person holds (ADR-0014): list, create, switch, delete. */
+  IDENTITIES: {
+    BASE: '/api/identities',
+    SWITCH: '/api/identities/switch',
+    BY_ID: (id: string) => `/api/identities/${id}`,
+  },
   WAITLIST: '/api/waitlist',
   AI_ASSISTANTS: {
     BASE: ENTITY_REGISTRY['ai_assistant'].apiEndpoint,
