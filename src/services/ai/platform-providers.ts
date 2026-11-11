@@ -19,6 +19,7 @@
  * Created: 2026-06-10
  */
 
+import type { ContentPart } from '@bitbaum/ai-kit';
 import { usableChain, linkSeesImages, type Link, type VisionVerdict } from '@bitbaum/ai-kit';
 
 import {
@@ -205,7 +206,7 @@ export async function completeOnPlatform(
   message: string,
   request: {
     systemPrompt?: string | null;
-    messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>;
+    messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string | ContentPart[] }>;
     temperature: number;
     maxTokens?: number;
   },
@@ -225,6 +226,18 @@ export async function completeOnPlatform(
         temperature: request.temperature,
         maxTokens: request.maxTokens,
       });
+      // An empty answer is not an answer: a reasoning model that spent its
+      // budget thinking returns a 200 with no text (seen on the live site,
+      // 2026-10-31, as a companion that "answered with nothing"). The next
+      // link gets the turn; the link is not marked down, it is not an outage.
+      if (!result.content?.trim()) {
+        failures.push({
+          provider: provider.providerId,
+          model: provider.defaultModel,
+          error: new Error('empty completion'),
+        });
+        continue;
+      }
       return { result, provider };
     } catch (error) {
       if (!isRequestTooLarge(error)) {

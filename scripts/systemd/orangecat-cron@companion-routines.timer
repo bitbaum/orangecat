@@ -1,0 +1,14 @@
+# SSOT: repo scripts/systemd/ — installed by deploy-selfhost.sh.
+# Instance of the generic orangecat-cron@.service template (curls
+# /api/cron/companion-routines with CRON_SECRET). Bots that write first:
+# every 15 minutes, the routines whose time has come run on their owner's
+# own key.
+[Unit]
+Description=OrangeCat companion routines (every 15 minutes)
+
+[Timer]
+OnCalendar=*-*-* *:00/15:00 UTC
+Persistent=true
+
+[Install]
+WantedBy=timers.target

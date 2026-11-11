@@ -35,6 +35,8 @@ export interface ProjectCardProps {
   title: string;
   description: string | null;
   coverImageUrl: string | null;
+  /** The project's own logo, when its owner uploaded one: shown whole, never cropped. */
+  logoUrl?: string | null;
   creatorName: string | null;
   /** The project's studio mark, when the fleet map knows it. */
   mark: MarkDefinition | null;
@@ -46,6 +48,7 @@ export function projectCardResponse({
   title,
   description,
   coverImageUrl,
+  logoUrl = null,
   creatorName,
   mark,
   isStudio,
@@ -54,6 +57,15 @@ export function projectCardResponse({
   const titleSize = title.length > 48 ? 56 : title.length > 28 ? 68 : 84;
   const face = mark ? (
     <MarkSvg mark={mark} size={150} />
+  ) : logoUrl ? (
+    // eslint-disable-next-line @next/next/no-img-element -- Satori/ImageResponse renders plain elements only
+    <img
+      src={logoUrl}
+      alt=""
+      width={200}
+      height={200}
+      style={{ width: 200, height: 200, objectFit: 'contain' }}
+    />
   ) : coverImageUrl ? (
     // eslint-disable-next-line @next/next/no-img-element -- Satori/ImageResponse renders plain elements only
     <img

@@ -60,7 +60,7 @@ overrides:
   brace-expansion@1: ^1.1.21 # quadratic expansion of `{a},b}` (the @5 pin above does not reach major 1)
   fast-uri@3: ^3.1.9 # inconsistent host case normalization
   ip-address@10: ^10.7.4 # isInSubnet/link-local/NAT64 misclassification, parse-diagnostic DoS
-  joi@18: ^18.2.9 # prototype replacement through message compilation
+  joi@18: ^18.3.1 # prototype replacement through message compilation
   postcss-selector-parser@7: ^7.1.6 # quadratic selector parsing
   # katex: prototype-pollution trust bypass (low). mermaid — even 12.x — still
   # declares ^0.16, so this lifts it one minor past what mermaid asks for.
@@ -68,25 +68,12 @@ overrides:
   # 0.16→0.18; __tests__/unit/lib/katex-renders.test.ts pins that.
   katex@0: ^0.18.2
 
-# pnpm refuses packages published within its minimum-release-age window — a
-# supply-chain guard against a compromised release being installed before
-# anyone notices. @bitbaum/ai-kit 0.6.2 is our own package, published to npm
-# the day before this commit, so it needs an explicit exemption.
-#
-# Temporary: once 0.6.2 is older than the window this entry is redundant and
-# should be deleted. Add lines only for versions we published ourselves —
-# never to hurry along a third-party package.
+# Our own packages are published by our own tagged workflows; minimumReleaseAge
+# would refuse each fresh publish until it ages. One scope glob covers every
+# @bitbaum package; the four unscoped ones are named (fleet SHARED.md).
 minimumReleaseAgeExclude:
-  - '@bitbaum/ai-kit'
-  - '@bitbaum/mail-kit'
-  - 'limitkit'
-  # Ours, and recent enough to still be inside the window. Its absence failed
-  # BOTH CI jobs at `pnpm install --frozen-lockfile`, before a line of code ran
-  # — which surfaces as a bare "exit code 1" with no annotation, so it reads
-  # like a broken build rather than a refused dependency. vitareba needed the
-  # same entry when it adopted this package.
-  - 'threadkit'
-  # Ours (bitbaum/bip-kit); each release is inside the window when adopted.
-  - 'bip-kit'
-
-  - '@bitbaum/chatkit'
+  - "@bitbaum/*"
+  - limitkit
+  - bip-kit
+  - threadkit
+  - ai-forms

@@ -3,8 +3,8 @@
 Deploys are automated. A green, non-draft PR is squash-merged by
 `.github/workflows/auto-merge.yml` (the fleet sweep in `bitbaum/fleet`,
 `scripts/ci/auto-merge-sweep.sh`); CI on `main` then hands off to CD. See
-`docs/operations/deployment/DEPLOYMENT_PROCESS.md` and "Shipping" in the root
-`CLAUDE.md`.
+`docs/operations/deployment/DEPLOYMENT_PROCESS.md` and "Deploy path" in the root
+`AGENTS.md`.
 
 Workflows
 

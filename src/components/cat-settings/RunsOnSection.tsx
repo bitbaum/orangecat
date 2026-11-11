@@ -15,6 +15,7 @@ import { CAT_FRONTIER_MODELS_OR } from '@/config/cat-plans';
 import { useAISettings } from '@/hooks/useAISettings';
 import { SharedCapacityCard } from '@/components/ai/SharedCapacityCard';
 import { AIKeyManager } from '@/components/ai/AIKeyManager';
+import { KeysOnLokiHint } from '@/components/ai/KeysOnLokiHint';
 import { CatCreditsPanel } from '@/components/ai/CatCreditsPanel';
 import { LocalRuntimePanel } from '@/components/ai/LocalRuntimePanel';
 import { AiUsageStrip } from '@/components/ai/AiUsageStrip';
@@ -86,6 +87,7 @@ export function RunsOnSection() {
             bill. Only keys <em>you</em> own appear here.
           </p>
         </CardHead>
+        <KeysOnLokiHint />
         <div className="mt-4">
           <AIKeyManager
             keys={keys}
@@ -101,7 +103,10 @@ export function RunsOnSection() {
 
       <section id="local" className={CARD}>
         <CardHead icon={Terminal} title="Your own machine">
-          <p>Cat talks to a model on your computer. Nothing leaves it; free forever.</p>
+          <p>
+            Model inference runs on your computer. OrangeCat still receives conversation data to
+            save replies and carry out approved actions.
+          </p>
         </CardHead>
         <div className="mt-4">
           <LocalRuntimePanel />

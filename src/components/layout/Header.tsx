@@ -83,7 +83,7 @@ export function Header({
   return (
     <>
       <header
-        className={headerClasses}
+        className={`app-header ${headerClasses}`}
         style={{
           paddingTop: 'env(safe-area-inset-top, 0px)',
         }}

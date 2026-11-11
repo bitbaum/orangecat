@@ -24,7 +24,7 @@ Key Files
 
 - Navigation: `src/config/navigation.ts` (adds “My Cat” under Home).
 - Private chat API: `src/app/api/cat/chat/route.ts` (OpenRouter; BYOK; free-tier enforcement; ephemeral, no persistence).
-- UI panel: `src/components/ai-chat/ModernChatPanel/` (it replaced the earlier `CatChatPanel`; voice input is in `components/ChatInput.tsx`).
+- UI panel: `src/components/ai-chat/ModernChatPanel/` (it replaced the earlier `CatChatPanel`; it is chatkit's `ChatApp`, whose composer carries the microphone, with the transport in `hooks/useCatTransport.ts`).
 - Service prefill: `src/app/(authenticated)/dashboard/services/create/page.tsx` (reads `service_prefill` from localStorage into CreateEntityWorkflow).
 
 Architecture

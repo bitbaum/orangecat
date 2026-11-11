@@ -1,16 +1,9 @@
 #!/usr/bin/env node
-/* eslint-disable @typescript-eslint/no-require-imports -- plain CommonJS node
-   script (mcp-servers/ has its own package.json without "type":"module");
-   lint-staged applies the app's TS rules here, where require() is correct. */
-
-const { Server } = require('@modelcontextprotocol/sdk/server/index.js');
-const { StdioServerTransport } = require('@modelcontextprotocol/sdk/server/stdio.js');
-const {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-} = require('@modelcontextprotocol/sdk/types.js');
-const { spawn } = require('child_process');
-const path = require('path');
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
+import { spawn } from 'child_process';
+import path from 'path';
 
 const ALLOWED = new Set([
   'npm',
@@ -111,8 +104,12 @@ class ShellServer {
             return {
               content: [
                 {
-                  type: 'json',
-                  json: { code: res.code, stdout: res.stdout, stderr: res.stderr, ms: res.ms },
+                  type: 'text',
+                  text: JSON.stringify(
+                    { code: res.code, stdout: res.stdout, stderr: res.stderr, ms: res.ms },
+                    null,
+                    2
+                  ),
                 },
               ],
             };

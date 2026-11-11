@@ -7,6 +7,7 @@
  * they are kept separate to preserve each path's exact behavior.
  */
 
+import { withImages, type ChatImage } from '@/services/cat/chat-images';
 import { fromTable } from '@/lib/supabase/untyped';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { DATABASE_TABLES } from '@/config/database-tables';
@@ -18,6 +19,7 @@ import { createAutoRouter } from '@/services/ai/auto-router';
 import { completeOnPlatform, PlatformChainExhausted } from '@/services/ai/platform-providers';
 import type { AiService } from './types';
 import type { AssistantRecord, SendMessageError } from './sendMessage-types';
+import type { Proposal } from '@/services/companions/hands';
 
 export async function verifyConversation(
   supabase: SupabaseClient,
@@ -175,9 +177,11 @@ export async function generateReply(params: {
   systemPrompt: string | null;
   history: { role: string; content: string }[];
   content: string;
+  /** Photos on this turn; they ride the last user message as image parts. */
+  images?: ChatImage[];
 }): Promise<GeneratedReply | { error: SendMessageError }> {
   const { assistant, systemPrompt, history, content } = params;
-  const messages = buildMessageHistory(history, content);
+  const messages = withImages(buildMessageHistory(history, content), params.images);
   const temperature = assistant.temperature ?? 0.7;
   const maxTokens = assistant.max_tokens_per_response || undefined;
 
@@ -187,7 +191,9 @@ export async function generateReply(params: {
     try {
       const result = await service.chatCompletion({
         model,
-        messages: messages as OpenRouterMessage[],
+        // A photo rides the last turn as image parts; the client serialises
+        // messages as given, and OpenRouter takes OpenAI-style parts.
+        messages: messages as unknown as OpenRouterMessage[],
         systemPrompt: systemPrompt || undefined,
         temperature,
         maxTokens,
@@ -291,7 +297,9 @@ export async function storeAssistantMessage(
   assistant: AssistantRecord,
   creatorMarkupBtc: number,
   apiCostBtc: number,
-  hasByok: boolean
+  hasByok: boolean,
+  /** The proposal the reply ended with, when one was queued: kept so the next turn's history shows it. */
+  proposal: Proposal | null = null
 ): Promise<{ message: Record<string, unknown> } | { error: SendMessageError }> {
   const { data, error } = await fromTable(supabase, DATABASE_TABLES.AI_MESSAGES)
     .insert({
@@ -309,6 +317,7 @@ export async function storeAssistantMessage(
         is_free_model: aiResponse.isFreeModel,
         input_tokens: aiResponse.inputTokens,
         output_tokens: aiResponse.outputTokens,
+        ...(proposal ? { proposal } : {}),
       },
     })
     .select()

@@ -41,6 +41,14 @@ export interface ParsedUserMessage {
   refs: Array<{ type: string; title: string }>;
 }
 
+/** Each attached file's name and text, for a contract that takes files as `context`. */
+export function fileBlocksIn(content: string): Array<{ name: string; body: string }> {
+  return [...content.matchAll(FILE_BLOCK)].map(m => ({
+    name: m[1],
+    body: m[0].slice(m[0].indexOf('>') + 1, -'</attached_file>'.length).trim(),
+  }));
+}
+
 /** The typed text, plus what was attached — for chips, titles and lookups. */
 export function parseUserMessage(content: string): ParsedUserMessage {
   const files = [...content.matchAll(FILE_BLOCK)].map(m => ({ name: m[1] }));

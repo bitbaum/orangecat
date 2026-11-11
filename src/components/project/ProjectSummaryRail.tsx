@@ -128,16 +128,24 @@ export default function ProjectSummaryRail({ project, settledRaisedBtc = 0, isOw
     }
   }, [project.id, project.bitcoin_address]);
 
+  const showRaised = Boolean(project.goal_amount) || amountRaised !== 0;
+
   return (
     <aside className="sticky top-20 rounded-lg border bg-surface-base dark:border-default p-6 space-y-4">
       <div>
         {/* No rate → quote the Bitcoin that actually arrived rather than claim
             "CHF 0 raised", which would be a false statement about the project. */}
-        <div className="text-2xl font-bold">
-          {amountRaised === null
-            ? formatCurrency(settledRaisedBtc, 'BTC')
-            : formatCurrency(amountRaised, goalCurrency)}
-        </div>
+        {/* With no goal and nothing raised yet, a lone "CHF 0.00" over an
+            empty bar says nothing (QA 2026-11-10, Heidi at 390px). */}
+        {showRaised ? (
+          <div className="text-2xl font-bold">
+            {amountRaised === null
+              ? formatCurrency(settledRaisedBtc, 'BTC')
+              : formatCurrency(amountRaised, goalCurrency)}
+          </div>
+        ) : (
+          <div className="text-sm text-fg-secondary">No contributions yet — be the first.</div>
+        )}
         {project.goal_amount && amountRaised !== null && (
           <div className="text-sm text-fg-secondary">
             of {formatCurrency(project.goal_amount, goalCurrency)} goal
@@ -175,9 +183,11 @@ export default function ProjectSummaryRail({ project, settledRaisedBtc = 0, isOw
           </div>
         )}
       </div>
-      <div className="w-full bg-surface-raised rounded-full h-3">
-        <div className="bg-fg-primary h-3 rounded-full" style={{ width: `${progress}%` }} />
-      </div>
+      {project.goal_amount ? (
+        <div className="w-full bg-surface-raised rounded-full h-3">
+          <div className="bg-fg-primary h-3 rounded-full" style={{ width: `${progress}%` }} />
+        </div>
+      ) : null}
 
       {/* When the creator says it will be done. The project form has collected
           this since the entity existed and no surface showed it, so backers

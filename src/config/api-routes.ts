@@ -26,6 +26,7 @@ export const API_ROUTES = {
     CREDITS: '/api/cat/credits',
     CREDITS_TOPUP: '/api/cat/credits/topup',
     MEMORIES: '/api/cat/memories',
+    OFFERINGS: '/api/cat/offerings',
     MEMORIES_IMPORT: '/api/cat/memories/import',
     INTERESTS: '/api/cat/interests',
     DIAGNOSE: '/api/cat/diagnose',
@@ -198,6 +199,7 @@ export const API_ROUTES = {
   },
   USER: {
     API_KEYS: '/api/user/api-keys',
+    API_KEYS_ELSEWHERE: '/api/user/api-keys/elsewhere',
     AVAILABLE_MODELS: '/api/user/available-models',
     STATS: '/api/users/me/stats',
   },
@@ -310,6 +312,27 @@ export const API_ROUTES = {
       `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/${assistantId}/conversations/${conversationId}/messages`,
     CLONE: (id: string) => `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/${id}/clone`,
     MEMORIES: (id: string) => `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/${id}/memories`,
+    /** The bot's routine: when it writes first, and what it is asked. */
+    ROUTINE: (id: string) => `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/${id}/routine`,
+    /** The talk home (companions, group chats, fleet bots in one list) and a companion made in a minute. */
+    TALK: `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/talk`,
+    /** Group chats between the person and two to six companions. */
+    ROOMS: `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/rooms`,
+    ROOM: (roomId: string) => `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/rooms/${roomId}`,
+    ROOM_MESSAGES: (roomId: string) =>
+      `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/rooms/${roomId}/messages`,
+    ROOM_TURN: (roomId: string) =>
+      `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/rooms/${roomId}/turn`,
+    ROOM_MEMBERS: (roomId: string) =>
+      `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/rooms/${roomId}/members`,
+    ROOM_MEMBER: (roomId: string, memberId: string) =>
+      `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/rooms/${roomId}/members/${memberId}`,
+    /** The fleet's own bots that can sit in a room, and a line from one of them. */
+    FLEET: `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/fleet`,
+    FLEET_MARK: (slug: string) =>
+      `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/fleet/${slug}/mark`,
+    FLEET_ASK: (slug: string) =>
+      `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/fleet/${encodeURIComponent(slug)}/ask`,
   },
   TRANSACTIONS: '/api/transactions',
   BOOKINGS: {

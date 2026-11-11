@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { API_ROUTES } from '@/config/api-routes';
 import { ROUTES } from '@/config/routes';
 import { apiErrorMessage } from '@/lib/api/errorMessage';
+import { passwordProblem } from '@bitbaum/accountkit/auth/password';
 import type { User } from '@supabase/supabase-js';
 
 export interface SettingsFormData {
@@ -70,8 +71,8 @@ export function useSettingsForm(user: User | null) {
       toast.error('New passwords do not match.');
       return;
     }
-    if (!formData.newPassword || formData.newPassword.length < 6) {
-      toast.error('Password must be at least 6 characters long.');
+    if (passwordProblem(formData.newPassword)) {
+      toast.error('Enter a password (up to 128 characters).');
       return;
     }
     setIsSubmittingPassword(true);

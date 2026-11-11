@@ -30,6 +30,8 @@ export interface ComponentResult {
   divisor: number | null;
   /** The sum of the multipliers that count. Null when the component has none. */
   multiplier: number | null;
+  /** The amount the component's rebate took off. Null when it has none or none is recorded. */
+  rebate: number | null;
   /** Null when a required fact is missing. Reduced in proportion where a model limit applies. */
   amount: number | null;
   missing: readonly FactRef[];
@@ -39,7 +41,11 @@ export interface Estimate {
   components: readonly ComponentResult[];
   /** Sum of the components that could be computed. Unrounded: rounding is presentation. */
   total: number;
-  /** total / base, 0 when the base is 0. */
+  /**
+   * The components that read the model's `base`, divided by it; 0 when it is
+   * 0. A component with a base of its own (a wealth tax) is in `total`, not
+   * in this rate.
+   */
   effectiveRate: number;
   /** Null only when no tariff was found at all. */
   currency: string | null;
@@ -75,6 +81,9 @@ const roundDown = (amount: number, step: number | undefined): number =>
   step === undefined ? amount : Math.floor(amount / step) * step;
 
 function amountAt(base: number, tariff: Tariff): number {
+  if (tariff.kind === 'fixed') {
+    return tariff.cap === undefined ? tariff.amount : Math.min(tariff.amount, tariff.cap);
+  }
   if (!(base > 0)) {
     return 0;
   }
@@ -133,24 +142,34 @@ export function evaluate(model: TaxModel, facts: readonly Fact[], input: Evaluat
   if (!model.variants.includes(input.variant)) {
     throw new Error(`variant "${input.variant}" is not one of the model's variants`);
   }
-  const rawBase = input.values[model.base];
-  if (rawBase !== undefined && typeof rawBase !== 'number') {
-    throw new Error(`input "${model.base}" must be a number`);
-  }
-  const base = rawBase !== undefined && rawBase > 0 ? rawBase : 0;
+  const baseOf = (key: string): number => {
+    const raw = input.values[key];
+    if (raw !== undefined && typeof raw !== 'number') {
+      throw new Error(`input "${key}" must be a number`);
+    }
+    return raw !== undefined && raw > 0 ? raw : 0;
+  };
+  const base = baseOf(model.base);
   const lookup = factLookup(facts, input.variant);
   const isTrue = (condition: string | undefined) =>
     condition === undefined || input.values[condition] === true;
 
   let currency: string | null = null;
   const components: ComponentResult[] = model.components.map(component => {
-    if (!isTrue(component.when)) {
+    // A component on a base of its own applies once that input is given: a
+    // wealth tax asks nothing of a reader who entered no wealth.
+    const ownBaseMissing =
+      component.base !== undefined &&
+      component.base !== model.base &&
+      input.values[component.base] === undefined;
+    if (!isTrue(component.when) || ownBaseMissing) {
       return {
         key: component.key,
         applies: false,
         tariffAmount: 0,
         divisor: null,
         multiplier: null,
+        rebate: null,
         amount: 0,
         missing: [],
       };
@@ -171,6 +190,19 @@ export function evaluate(model: TaxModel, facts: readonly Fact[], input: Evaluat
         throw new Error(`${describe(component.divisor)}: divisor ${value} is below 1`);
       } else {
         divisor = value;
+      }
+      const scaledBy = component.divisor.scaledBy;
+      if (divisor !== null && scaledBy !== undefined) {
+        const factor = lookup(scaledBy);
+        if (factor === undefined) {
+          if (!scaledBy.optional) {
+            missing.push(ref(scaledBy));
+          }
+        } else if (typeof factor !== 'number' || !(factor > 0) || !Number.isFinite(factor)) {
+          throw new Error(`${describe(scaledBy)}: a divisor's scale must be a positive number`);
+        } else {
+          divisor *= factor;
+        }
       }
     }
     const tariff = lookup(component.tariff);
@@ -193,8 +225,27 @@ export function evaluate(model: TaxModel, facts: readonly Fact[], input: Evaluat
         throw new Error(`tariffs in ${currency} and ${tariff.currency} cannot be combined`);
       }
       currency = tariff.currency;
+      let own = baseOf(component.base ?? model.base);
+      for (const added of component.adds ?? []) {
+        if (input.values[added.input] === undefined) {
+          continue;
+        }
+        const share = lookup(added.scaledBy);
+        if (share === undefined) {
+          if (!added.scaledBy.optional) {
+            missing.push(ref(added.scaledBy));
+          }
+          continue;
+        }
+        if (typeof share !== 'number' || !(share >= 0) || !Number.isFinite(share)) {
+          throw new Error(
+            `${describe(added.scaledBy)}: a share added to the base must be a non-negative number`
+          );
+        }
+        own += roundDown(baseOf(added.input), added.rounding) * share;
+      }
       tariffAmount =
-        divisor === null ? applyTariff(base, tariff) : dividedAmount(base, divisor, tariff);
+        divisor === null ? applyTariff(own, tariff) : dividedAmount(own, divisor, tariff);
     }
 
     let multiplier: number | null = null;
@@ -227,22 +278,73 @@ export function evaluate(model: TaxModel, facts: readonly Fact[], input: Evaluat
             reduction = share;
           }
         }
-        multiplier += value * (1 - reduction);
+        let scale = 1;
+        if (m.scaledBy !== undefined) {
+          const factor = lookup(m.scaledBy);
+          if (factor === undefined) {
+            if (!m.scaledBy.optional) {
+              missing.push(ref(m.scaledBy));
+            }
+          } else if (typeof factor !== 'number' || !(factor >= 0) || !Number.isFinite(factor)) {
+            throw new Error(`${describe(m.scaledBy)}: a scale must be a non-negative number`);
+          } else {
+            scale = factor;
+          }
+        }
+        multiplier += value * scale * (1 - reduction);
       }
     }
 
-    const amount =
+    const amountRead = (r: FactRef & { optional?: boolean }, what: string): number | null => {
+      const value = lookup(r);
+      if (value === undefined) {
+        if (!r.optional) {
+          missing.push(ref(r));
+        }
+        return null;
+      }
+      if (typeof value !== 'number' || !(value >= 0) || !Number.isFinite(value)) {
+        throw new Error(`${describe(r)}: ${what} must be a non-negative number`);
+      }
+      return value;
+    };
+    let rebateShare: number | null = null;
+    let rebateLeast = 0;
+    let rebateMost = Infinity;
+    if (component.rebate !== undefined) {
+      const { share, least, most } = component.rebate;
+      rebateShare = amountRead(share, 'a rebate share');
+      if (rebateShare !== null && !(rebateShare < 1)) {
+        throw new Error(`${describe(share)}: a rebate must be a share in [0, 1)`);
+      }
+      if (rebateShare !== null) {
+        rebateLeast = (least && amountRead(least, 'a least rebate')) ?? 0;
+        rebateMost = (most && amountRead(most, 'a most rebate')) ?? Infinity;
+      }
+    }
+    const floor = component.floor ? amountRead(component.floor, 'a floor') : null;
+
+    let amount =
       missing.length > 0 || tariffAmount === null
         ? null
         : multiplier === null
           ? tariffAmount
           : tariffAmount * multiplier;
+    let rebate: number | null = null;
+    if (amount !== null && rebateShare !== null) {
+      rebate = Math.min(amount, Math.min(rebateMost, Math.max(rebateLeast, amount * rebateShare)));
+      amount -= rebate;
+    }
+    if (amount !== null && floor !== null) {
+      amount = Math.max(amount, floor);
+    }
     return {
       key: component.key,
       applies: true,
       tariffAmount,
       divisor,
       multiplier,
+      rebate,
       amount,
       missing,
     };
@@ -271,11 +373,14 @@ export function evaluate(model: TaxModel, facts: readonly Fact[], input: Evaluat
   }
 
   const total = components.reduce((sum, c) => sum + (c.amount ?? 0), 0);
+  const onBase = components
+    .filter((_, i) => (model.components[i]!.base ?? model.base) === model.base)
+    .reduce((sum, c) => sum + (c.amount ?? 0), 0);
   const missing = [...components.flatMap(c => c.missing), ...limitsMissing];
   return {
     components,
     total,
-    effectiveRate: base > 0 ? total / base : 0,
+    effectiveRate: base > 0 ? onBase / base : 0,
     currency,
     complete: missing.length === 0,
     missing,

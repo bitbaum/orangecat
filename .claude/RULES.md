@@ -81,6 +81,6 @@ the decision to ship.
 
 ### Why this matters:
 
-- orangecat.ch is a live product with real users
+- orangecat.ch is live
 - Broken production = damaged reputation
 - There are no preview deployments: a merge goes straight to production

@@ -5,9 +5,8 @@
 
 export { ModelSelector } from './ModelSelector';
 export { ActionButton } from './ActionButton';
-export { MessageBubble } from './MessageBubble';
+export { CatAnswerFooter } from './CatAnswerFooter';
 export { EmptyState } from './EmptyState';
-export { ChatHeader } from './ChatHeader';
 export { ChatInput } from './ChatInput';
-export { ErrorDisplay } from './ErrorDisplay';
+export { TurnFailure } from './TurnFailure';
 export { QuotaMeter } from './QuotaMeter';

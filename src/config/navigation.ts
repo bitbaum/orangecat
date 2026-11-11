@@ -16,7 +16,9 @@
 
 import { ComponentType, SVGProps } from 'react';
 import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
+import { COMPANION_COPY } from './companions';
 import { ROUTES } from './routes';
+import { ENTITY_REGISTRY } from './entity-registry';
 import { XBrandIcon, GitHubIcon } from '@/components/icons/BrandIcons';
 import {
   Home,
@@ -329,6 +331,13 @@ const simplifiedSections: NavSection[] = [
     requiresAuth: false,
     items: [
       {
+        name: COMPANION_COPY.talk.title,
+        href: ROUTES.AI_ASSISTANTS.TALK,
+        icon: ENTITY_REGISTRY['ai_assistant'].icon,
+        description: 'The Cat, the fleet\u2019s specialists and your own bots, one list',
+        requiresAuth: true,
+      },
+      {
         name: 'Profile',
         href: ROUTES.PROFILES.ME,
         icon: UserIcon,
@@ -458,7 +467,7 @@ export const footerNavigation = {
     { name: 'Get paid', href: ROUTES.PAY_LANDING },
     { name: 'How it works', href: ROUTES.HOW_IT_WORKS },
     { name: 'What you can do', href: ROUTES.WHAT_YOU_CAN_DO },
-    { name: 'Partners', href: ROUTES.PARTNERS },
+    { name: 'Builders', href: ROUTES.BUILDERS },
     { name: 'Roadmap', href: ROUTES.ROADMAP },
     { name: 'Changelog', href: ROUTES.CHANGELOG },
     { name: 'Cat plans', href: ROUTES.PRICING },

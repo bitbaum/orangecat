@@ -1,4 +1,9 @@
-import { buildFailedTurnMessages, TRUNCATED_REPLY_SUFFIX } from '@/services/cat/failed-turn';
+import { saveMessages } from '@/services/cat/conversation-history';
+import {
+  buildFailedTurnMessages,
+  TRUNCATED_REPLY_SUFFIX,
+  completedHistory,
+} from '@/services/cat/failed-turn';
 
 /**
  * A failed Cat turn must still keep the user's message.
@@ -57,5 +62,33 @@ describe('failed Cat turns are still recorded', () => {
     const assistant = rows.find(r => r.role === 'assistant')!;
     expect(assistant.model_used).toBe('llama-3.3-70b');
     expect(assistant.provider).toBe('groq');
+  });
+  it('keeps the failure code and recovery message separately from partial content', () => {
+    const rows = buildFailedTurnMessages({
+      message: 'question',
+      partialContent: 'Partial reply',
+      errorText: ERROR_TEXT,
+      errorCode: 'ALL_PROVIDERS_DOWN',
+    });
+    expect(rows[1].failure).toEqual({ kind: 'ALL_PROVIDERS_DOWN', message: ERROR_TEXT });
+    expect(rows[1].content).toContain('Partial reply');
+    expect(rows[0].failure).toBeUndefined();
+  });
+  it('does not teach the next model that provider errors were its previous advice', () => {
+    const good = [
+      { role: 'user' as const, content: 'first question' },
+      { role: 'assistant' as const, content: 'real answer' },
+    ];
+    const failed = buildFailedTurnMessages({ message: 'failed question', errorText: ERROR_TEXT });
+    expect(completedHistory([...good, ...failed])).toEqual(good);
+  });
+  it('surfaces a failed required history write instead of silently claiming persistence', async () => {
+    const insert = vi.fn().mockResolvedValue({ error: { message: 'database unavailable' } });
+    const supabase = { from: () => ({ insert }) } as never;
+    const rows = buildFailedTurnMessages({ message: 'question', errorText: ERROR_TEXT });
+    await expect(
+      saveMessages(supabase, 'conversation', 'user', rows, { requireWrite: true })
+    ).rejects.toThrow('Could not persist failed conversation turn');
+    expect(insert.mock.calls[0][0][1].failure).toEqual(rows[1].failure);
   });
 });

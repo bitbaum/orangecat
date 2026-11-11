@@ -36,7 +36,8 @@ export const LOCAL_RUNTIMES: LocalRuntime[] = [
     modelsUrl: 'http://localhost:11434/v1/models',
     downloadUrl: 'https://ollama.com/download',
     corsSetup: 'OLLAMA_ORIGINS="https://orangecat.ch" ollama serve',
-    description: 'Run open models on your own machine. Nothing leaves the laptop.',
+    description:
+      'Run open models on your own machine. Conversation storage and actions still use OrangeCat.',
   },
   {
     id: 'lmstudio',

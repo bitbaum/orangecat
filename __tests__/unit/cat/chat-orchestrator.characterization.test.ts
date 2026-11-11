@@ -414,6 +414,66 @@ describe('before any model is called', () => {
 // ==================== streaming ====================
 
 describe('streaming', () => {
+  it('fails over on an XML tool-call prefix before showing it, without replaying the tool phase', async () => {
+    const a = service('A', {
+      chunks: [
+        { content: '<' },
+        { content: 'tool_' },
+        { content: 'call>' },
+        { content: '<function=search_platform>' },
+        { done: true },
+      ],
+    });
+    const b = service('B', {
+      chunks: [{ content: 'Open your project’s investor room.' }, { done: true }],
+    });
+    (resolveProvider as Mock).mockResolvedValue(
+      resolved({ provider: 'groq', modelToUse: 'test-model', aiService: a }, [
+        { provider: 'openrouter', modelToUse: 'fallback-model', aiService: b },
+      ])
+    );
+    const output = await frames(await run({ stream: true }));
+    expect(output.filter(frame => 'content' in frame).map(frame => frame.content)).toEqual([
+      'Open your project’s investor room.',
+    ]);
+    expect(JSON.stringify(output)).not.toContain('<tool_call>');
+    expect(output.at(-1)).toMatchObject({ done: true, provider: 'openrouter' });
+    expect(maybeEnrichWithSearchResults).toHaveBeenCalledTimes(1);
+    expect(a.streamChatCompletion).toHaveBeenCalledTimes(1);
+    expect(b.streamChatCompletion).toHaveBeenCalledTimes(1);
+  });
+
+  it('grounds a live-data answer in the completed tool results shown to the model', async () => {
+    const evidence = 'LIVE DATA: Draft listing Studio mug costs 0.0002 BTC.';
+    const a = service('A', {
+      chunks: [{ content: 'Your Studio mug draft costs 0.0002 BTC.', done: true }],
+    });
+    (maybeEnrichWithSearchResults as Mock).mockImplementationOnce(async (...args: unknown[]) => [
+      ...(args[2] as object[]),
+      {
+        role: 'assistant',
+        content: null,
+        tool_calls: [
+          {
+            id: 'live-lookup',
+            type: 'function',
+            function: { name: 'query_my_data', arguments: '{"topic":"overview"}' },
+          },
+        ],
+      },
+      { role: 'tool', tool_call_id: 'live-lookup', content: evidence },
+    ]);
+    (resolveProvider as Mock).mockResolvedValue(
+      resolved({ provider: 'groq', modelToUse: 'test-model', aiService: a })
+    );
+    await frames(await run({ stream: true }));
+    expect((enforceGrounding as Mock).mock.calls[0][0].grounding.evidence).toContain(evidence);
+    const sent = a.streamChatCompletion.mock.calls[0][0] as {
+      messages: Array<{ content: unknown }>;
+    };
+    expect(sent.messages.some(message => message.content === evidence)).toBe(true);
+  });
+
   it('happy path: frames, persistence, memories, platform usage', async () => {
     const a = service('A', {
       chunks: [
@@ -545,11 +605,6 @@ describe('streaming', () => {
                 {
                   "id": "t1",
                   "name": "web_search",
-                  "status": "running",
-                },
-                {
-                  "id": "t1",
-                  "name": "web_search",
                   "resultCount": 0,
                   "status": "completed",
                 },
@@ -568,6 +623,7 @@ describe('streaming', () => {
     expect((maybeEnrichWithSearchResults as Mock).mock.calls[0][8]).toMatchInlineSnapshot(`
       {
         "actorId": "actor-1",
+        "ephemeral": undefined,
         "onWebEvidence": [Function],
         "toolEndpoint": null,
         "toolFallbacks": [],
@@ -1179,6 +1235,24 @@ describe('streaming', () => {
     `);
   });
 
+  it('preserves settled tool outcomes when answer generation fails', async () => {
+    const a = service('A', { throwsAfter: { chunks: [], error: serverErr() } });
+    (resolveProvider as Mock).mockResolvedValue(
+      resolved({ provider: 'groq', modelToUse: 'fixture', aiService: a })
+    );
+    (maybeEnrichWithSearchResults as Mock).mockImplementation(async (...args: unknown[]) => {
+      const emit = args[6] as (value: unknown) => void;
+      emit({ id: 'read', name: 'read_live_data', status: 'running' });
+      emit({ id: 'read', name: 'read_live_data', status: 'completed', resultCount: 1 });
+      return args[2];
+    });
+    await frames(await run({ stream: true }));
+    expect((saveMessages as Mock).mock.calls[0][3][1]).toMatchObject({
+      failure: { kind: 'STREAM_ERROR' },
+      tool_calls: [{ id: 'read', name: 'read_live_data', status: 'completed', resultCount: 1 }],
+    });
+  });
+
   it('a failure after content streamed is not retried: error event, failed turn saved, alert', async () => {
     const a = service('A', { throwsAfter: { chunks: [{ content: 'half' }], error: serverErr() } });
     const b = service('B', { chunks: [{ content: 'never', done: true }] });
@@ -1228,6 +1302,10 @@ describe('streaming', () => {
               "content": "half
 
       [This reply was cut off by a connection error.]",
+              "failure": {
+                "kind": "STREAM_ERROR",
+                "message": "Cat couldn’t generate a response. Try again, or add your own key in Settings → AI.",
+              },
               "model_used": "g-a",
               "provider": "groq",
               "role": "assistant",
@@ -1329,6 +1407,43 @@ describe('streaming', () => {
     await (await run({ stream: true })).text();
     expect(keyService.incrementPlatformUsage).not.toHaveBeenCalled();
   });
+
+  it.each([true, false])(
+    'temporary turns do not learn memories or economic facts (stream=%s)',
+    async stream => {
+      (prepareCatChat as Mock).mockResolvedValueOnce({
+        conversationId: CONV,
+        messages: BASE_MESSAGES,
+        grounding: { evidence: [], subjects: [] },
+        budget: null,
+        ephemeral: true,
+      });
+      const a = service(
+        'A',
+        {
+          chunks: [{ content: 'Hello', done: true }],
+        },
+        result('Hello', 'g')
+      );
+      (resolveProvider as Mock).mockResolvedValue(
+        resolved({ provider: 'groq', modelToUse: 'g', aiService: a })
+      );
+      await (await run({ stream })).text();
+      expect(extractAndStoreMemories).not.toHaveBeenCalled();
+      expect(extractAndStoreEconomicProfile).not.toHaveBeenCalled();
+      expect(maybeEnrichWithSearchResults).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        expect.objectContaining({ ephemeral: true })
+      );
+    }
+  );
 
   it('without a conversation, nothing is saved or learned', async () => {
     (prepareCatChat as Mock).mockResolvedValueOnce({
@@ -1475,6 +1590,7 @@ describe('non-streaming', () => {
     expect((maybeEnrichWithSearchResults as Mock).mock.calls[0][8]).toMatchInlineSnapshot(`
       {
         "actorId": "actor-1",
+        "ephemeral": undefined,
         "toolEndpoint": null,
         "toolFallbacks": [],
         "toolKey": null,

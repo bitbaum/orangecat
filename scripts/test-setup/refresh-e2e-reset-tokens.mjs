@@ -91,7 +91,22 @@ try {
   console.warn('stale reset-user cleanup skipped:', e?.message ?? e);
 }
 
+// The runner reaches the self-hosted auth server over the internet; one dropped
+// request ("AuthRetryableFetchError: fetch failed", status 0) failed main's CI
+// on 2026-10-27 although nothing was wrong. Only a request that never got an
+// answer is retried; a real refusal (email_exists, a bad key) comes straight back.
 async function createResetUser() {
+  let result;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    result = await createResetUserOnce();
+    if (result.error?.status !== 0) return result;
+    console.warn(`createUser got no answer (attempt ${attempt}/3)`);
+    await new Promise(r => setTimeout(r, attempt * 1500));
+  }
+  return result;
+}
+
+async function createResetUserOnce() {
   return admin.auth.admin.createUser({
     email,
     password: `Reset-${runTag}-Aa1!`,

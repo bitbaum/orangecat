@@ -210,6 +210,13 @@ export interface RouteChrome {
    * toolbar row). From md up the shell stays.
    */
   immersiveChat: boolean;
+  /**
+   * The conversation fills the screen and its composer spans the width: the
+   * Loki feedback launcher is drawn as the slim edge tab (its host contract,
+   * `data-fc-place="tab"`), not a round button over the last message or a
+   * Confirm card (seen live 2026-11-01 at 390px).
+   */
+  feedbackTab: boolean;
 }
 
 /** True when the pathname is the Cat hub (or a sub-route of it). SSOT — do
@@ -218,9 +225,15 @@ export function isCatHubPath(pathname: string): boolean {
   return pathname === '/dashboard/cat' || pathname.startsWith('/dashboard/cat/');
 }
 
-/** True in a companion's room (/companions/<id>/talk): the conversation is the page. */
+/**
+ * True on the talk home (/companions/talk) and in a companion's old room
+ * address (/companions/<id>/talk, which now forwards there): the conversation
+ * is the page.
+ */
 export function isCompanionTalkPath(pathname: string): boolean {
-  return /^\/companions\/[^/]+\/talk\/?$/.test(pathname);
+  return (
+    /^\/companions\/talk\/?$/.test(pathname) || /^\/companions\/[^/]+\/talk\/?$/.test(pathname)
+  );
 }
 
 /**
@@ -237,9 +250,27 @@ export function getRouteChrome(pathname: string): RouteChrome {
     // A create/edit form has its own Cat (the "Fill with AI" bar at the top).
     // The floating button over it was a second Cat on the same screen, and it
     // sat on the right edge of the inputs and the submit row.
-    hideGlobalCat: focus || isEntityFormPath(pathname),
+    // The profile editor is the exception: it has no "Fill with AI" bar, and
+    // filling your profile by talking to Cat (update_profile) is the promised
+    // way in — hiding the launcher there left no chat at all.
+    // Messages is a conversation too, and its composer has its own "Ask Cat"
+    // button (and @cat). The floating circle sat on top of Send (seen live
+    // 2026-11-10 at 1366px), so it yields there as well.
+    hideGlobalCat:
+      focus ||
+      matchesPrefix(pathname, [ROUTES.MESSAGES]) ||
+      (isEntityFormPath(pathname) && !isProfileEditorPath(pathname)),
     immersiveChat: isCatHubPath(pathname),
+    // Everywhere, not only in chats: at 390px the round launcher sat on profile
+    // headings, the Open Accounting card, My things, /pay and a project's
+    // "Hide the code" (QA 2026-11-10). The edge tab is the host's quiet shape.
+    feedbackTab: true,
   };
+}
+
+/** The own-profile editor (/dashboard/info/edit). */
+export function isProfileEditorPath(pathname: string): boolean {
+  return /^\/dashboard\/info\/edit\/?$/.test(pathname);
 }
 
 /** A create or edit form: /…/create, /…/<id>/edit. */
@@ -380,7 +411,9 @@ export const ROUTES = {
   HOW_IT_WORKS: '/how-it-works',
   /** The map: every capability in the visitor's words, with a Start on each. */
   WHAT_YOU_CAN_DO: '/what-you-can-do',
-  /** Redirects to bitbaum's partner directory — partners live there (ECOSYSTEM.studio.partnersUrl). */
+  /** Redirects to bitbaum's builder directory — builders live there (ECOSYSTEM.studio.buildersUrl). */
+  BUILDERS: '/builders',
+  /** The old address of BUILDERS, kept because it was linked; same redirect. */
   PARTNERS: '/partners',
   BLOG: '/blog',
   RSS: '/rss.xml',
@@ -452,6 +485,16 @@ export const ROUTES = {
   },
   AI_ASSISTANTS: {
     VIEW: (id: string) => `${ENTITY_REGISTRY['ai_assistant'].publicBasePath}/${id}`,
+    /** The talk home: every companion, group chat and fleet bot in one list, and the open chat beside it. */
+    TALK: `${ENTITY_REGISTRY['ai_assistant'].publicBasePath}/talk`,
+    /** The Cat, as the first row of the bots list. */
+    TALK_CAT: `${ENTITY_REGISTRY['ai_assistant'].publicBasePath}/talk?with=cat`,
+    TALK_WITH: (id: string) =>
+      `${ENTITY_REGISTRY['ai_assistant'].publicBasePath}/talk?with=${encodeURIComponent(id)}`,
+    TALK_ROOM: (roomId: string) =>
+      `${ENTITY_REGISTRY['ai_assistant'].publicBasePath}/talk?room=${encodeURIComponent(roomId)}`,
+    TALK_FLEET: (slug: string) =>
+      `${ENTITY_REGISTRY['ai_assistant'].publicBasePath}/talk?with=fleet:${encodeURIComponent(slug)}`,
   },
   ASSETS: {
     VIEW: (id: string) => `${ENTITY_REGISTRY['asset'].publicBasePath}/${id}`,

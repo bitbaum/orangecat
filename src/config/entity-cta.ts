@@ -3,7 +3,7 @@
  *
  * Every entity is different, but each has exactly ONE primary action a visitor
  * should take on its detail page — its economic verb, from the entity economic
- * taxonomy (see .claude/CLAUDE.md). That per-entity difference lives here, in one
+ * taxonomy (see AGENTS.md). That per-entity difference lives here, in one
  * place, so detail pages stay generic and adding/retuning an entity touches config,
  * not page code.
  */

@@ -61,6 +61,19 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: MCP servers answer a real MCP exchange (mcp-servers/smoke.mjs)
+        # Six of the seven servers once died on their first line (require() in a
+        # "type": "module" package) and nothing noticed. smoke.mjs starts every
+        # *-server.js, runs initialize + tools/list (+ one read-only tools/call
+        # where there is one) and exits 1 if any server fails to start or answer.
+        # It lives in this job, after the root install, because lint-server's
+        # probe runs the repo's own prettier from node_modules/.bin. mcp-servers
+        # is a separate npm package (own package-lock.json); `npm ci` there takes
+        # about 6s. No network calls and no real credentials: placeholders only.
+        run: |
+          npm ci --prefix mcp-servers --no-audit --no-fund
+          npm run smoke --prefix mcp-servers
+
       - name: Every external `uses:` names a canonical owner, not a redirect
         # Twice in two days an owner rename stopped every merge and every deploy
         # in this repo: `maonakamoto` → `catomean` (2026-08-26), then the move to
@@ -221,6 +234,13 @@ jobs:
         run: |
           PORT=3000 node .next/standalone/server.js &
           pnpm exec wait-on http://localhost:3000
+
+      - name: Route contract (signed out — public pages, legacy redirects, sign-in gates)
+        # Read-only GETs; needs no test account. Before this step the same
+        # checks sat in six specs that no job ran, and they drifted for months.
+        env:
+          E2E_BASE_URL: http://localhost:3000
+        run: pnpm exec playwright test tests/e2e/route-contract.spec.ts --project=chromium --reporter=line
 
       - name: No word cut across two lines (landing, Cat chat, money surface at 320/390/1440)
         # A layout fact, measured in a real browser — reading the CSS finds none

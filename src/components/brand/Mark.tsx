@@ -6,8 +6,8 @@ export interface MarkProps {
   size?: number;
   className?: string;
   /**
-   * Let the mark move the way its file says (`motion`): draw in, spin, or
-   * stay still. Only heroes and showcases ask; chrome-sized marks never do,
+   * Let the mark move the way its file says (`motion`): draw in, spin,
+   * turn its rings, or stay still. Only heroes and showcases ask; chrome-sized marks never do,
    * since a 22px glyph that moves reads as noise.
    */
   animated?: boolean;
@@ -48,6 +48,15 @@ export function Mark({ mark, size = 24, className, animated = false }: MarkProps
             key={i}
             d={shape.d}
             data-paint="fill"
+            data-turn={shape.turnAbout ? '' : undefined}
+            style={
+              shape.turnAbout
+                ? {
+                    transformBox: 'view-box',
+                    transformOrigin: `${shape.turnAbout[0]}px ${shape.turnAbout[1]}px`,
+                  }
+                : undefined
+            }
             fill="currentColor"
             fillRule={shape.fillRule}
             opacity={shape.opacity}

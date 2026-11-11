@@ -4,6 +4,7 @@
  */
 
 import type { OpenRouterMessage } from '@/services/ai/openrouter';
+import type { ToolRoutingStep } from './tool-routing-fallback';
 import type { EntityType } from '@/config/entity-registry';
 
 /** Standard chat message (system/user/assistant) */
@@ -138,3 +139,34 @@ export type RawToolCall = {
   type: string;
   function: { name: string; arguments: string };
 };
+
+/** Configuration for the existing model/tool routing loop. */
+export interface ToolUseOptions {
+  timeoutMs?: number;
+  toolFallbacks?: ToolRoutingStep[];
+  actorId?: string | null;
+  ephemeral?: boolean;
+  /**
+   * Where to POST the tool loop, and with what, for the ACTIVE model.
+   * Supplied by the provider resolver, which is the only place a BYOK key
+   * exists in the raw — `aiService` bakes it in and exposes nothing, and
+   * `AiService.chatCompletion` drops `tool_calls`, so the loop cannot go
+   * through that abstraction either.
+   *
+   * When absent, NO tools are sent. There is deliberately no env fallback:
+   * a guessed endpoint sends a user.s model id to the wrong vendor.
+   */
+  toolEndpoint?: string | null;
+  toolKey?: string | null;
+  /** The page the person opened Cat on; handlers still check ownership. */
+  currentEntity?: { type: string; ref: string };
+  /**
+   * Receives the evidence blocks for everything Cat actually read from the
+   * web this turn, so the caller's grounding check can verify the reply
+   * against them.
+   *
+   * Evidence is returned only for completed exchanges that reach the model,
+   * including partial progress preserved when a later step is interrupted.
+   */
+  onWebEvidence?: (evidence: string[]) => void;
+}

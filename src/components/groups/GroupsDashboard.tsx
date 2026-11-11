@@ -11,6 +11,7 @@
 
 'use client';
 
+import EmptyState from '@/components/ui/EmptyState';
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -137,14 +138,18 @@ export function GroupsDashboard() {
 
         <TabsContent value="my-groups" className="space-y-4">
           {myGroups.length === 0 ? (
-            <div className="text-center py-12 px-4 bg-surface-base rounded-lg border dark:border-default">
-              <h3 className="text-lg font-semibold mb-2">No groups yet</h3>
-              <p className="text-fg-secondary mb-6">Create your first group to get started</p>
-              <Button href={ROUTES.DASHBOARD.GROUPS_CREATE} className="gap-2">
-                <Plus className="h-4 w-4" />
-                Create Group
-              </Button>
-            </div>
+            <EmptyState
+              icon={Users}
+              className="rounded-lg border border-default bg-surface-base px-4"
+              title="No groups yet"
+              description="A group is a shared space for a team, a club, a family or a neighbourhood: members, a shared treasury, events and proposals. Create one and invite people."
+              action={
+                <Button href={ROUTES.DASHBOARD.GROUPS_CREATE} className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Create a group
+                </Button>
+              }
+            />
           ) : filteredMyGroups.length === 0 ? (
             <div className="text-center py-12 px-4 bg-surface-base rounded-lg border dark:border-default">
               <p className="text-fg-secondary">No groups match “{query}”.</p>

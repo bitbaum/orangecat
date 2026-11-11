@@ -10,7 +10,7 @@ import Button from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
 import { ROUTES } from '@/config/routes';
 import { TimelineDisplayEvent } from '@/types/timeline';
-import { usePostThread } from './usePostThread';
+import { usePostThread } from '@/hooks/usePostThread';
 import { useAwaitCatReply } from '@/hooks/useAwaitCatReply';
 import CatIsAnswering from '@/components/timeline/CatIsAnswering';
 

@@ -63,8 +63,9 @@ Object.assign(manifest, {
   description: APP_DESCRIPTION,
   theme_color: BRAND_ACCENT_HEX,
   background_color: ICON_STYLE.canvas,
+  // PNGs first: an Android shortcut install can take the first "any" icon,
+  // and drawing the SVG there gave a blank black tile on the home screen.
   icons: [
-    { src: assets.favicon, sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
     ...[192, 512].map(size => ({
       src: assetUrl(`/icons/icon-${size}.png`),
       sizes: `${size}x${size}`,
@@ -77,6 +78,7 @@ Object.assign(manifest, {
       type: 'image/png',
       purpose: 'maskable',
     },
+    { src: assets.favicon, sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
   ],
 });
 

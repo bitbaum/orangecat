@@ -48,6 +48,15 @@ Rules every row obeys:
 
 ## Phases
 
+The project profile and its room render the product's canonical identity,
+roadmap and changelog from Loki's fleet map. They do not store a second copy.
+Cat's room operations are declared in `src/config/cat-actions-room.ts` and
+implemented by `src/services/cat/handlers/investor-room.ts`, calling the same
+ownership-checked services as the room UI. A read returns the existing room
+and deck; edits preserve omitted fields, and writes use Cat's normal
+confirmation flow. Creating a recipient link returns the link without sending
+an invitation. An existing deck requires an explicit replacement request.
+
 **Phase 1 — the room shows the evidence it can generate.** For a project linked
 in Loki: key facts at the top (live since, shipped in the last 30 days, changes
 to main in the last 12 weeks, roadmap progress), a weekly shipping chart, the

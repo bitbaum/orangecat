@@ -172,9 +172,9 @@ export async function prepareCatChat(
   // able to explain Lightning or Twint. The restriction is on inventing facts
   // about THIS user's people and entities, which is the failure that actually
   // costs trust. See @bitbaum/ai-kit/grounding (the packaged harness).
-  const platformNavigation = buildPlatformNavigationContext();
+  const platformNavigation = buildPlatformNavigationContext(userContext.entities);
   const groundingRules = contextString
-    ? `\n\n${buildAssistantRules({ subjectNoun: 'profile, entities, contacts and transactions' })}\n\n${platformNavigation}`
+    ? `\n\n${buildAssistantRules({ subjectNoun: 'profile, entities, contacts and transactions' })}`
     : '';
 
   // Examples are appended as labeled text (not injected as fake conversation
@@ -187,7 +187,8 @@ export async function prepareCatChat(
   // orientation sections fire on `first-message`), and it must be a fact read
   // from the conversation, not inferred from the wording.
   let conversationId: string | null = null;
-  let ephemeral = false;
+  // Skip optional learning until the owned conversation's privacy is known.
+  let ephemeral = true;
   let historyMessages: Array<{ role: 'user' | 'assistant'; content: string }> = [];
   try {
     conversationId = await resolveConversationIdOrDefault(
@@ -219,6 +220,7 @@ export async function prepareCatChat(
     standingInstructions: buildStandingInstructionsBlock(customInstructions),
     userContext: contextString,
     groundingRules,
+    platformNavigation,
     fewShot: getCatFewShotExamplesText(),
     languageDirective: buildReplyLanguageDirective(message),
     history: historyMessages,

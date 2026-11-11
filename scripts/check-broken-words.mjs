@@ -69,14 +69,89 @@ async function settle(page) {
   await page.waitForTimeout(500);
 }
 
-/** Same steps as tests/e2e/helpers/login.ts, without @playwright/test. */
-async function signIn(context) {
+/**
+ * Same steps as tests/e2e/helpers/login.ts, without @playwright/test.
+ *
+ * The diagnostic names what the page did, never what was typed. It records
+ * auth requests that FAILED as well as the ones that answered: on 2026-11-06
+ * main went red twice with `authPostStatuses: []` — the click had sent the
+ * token request and the self-hosted auth never answered it — and "no
+ * response recorded" told nobody whether the form had even submitted. A
+ * request the runner could not complete is the usual cause (the account or
+ * the runner throttled, a box restarting), so it is tried once more after a
+ * pause before the gate gives up.
+ */
+async function signIn(context, attempt = 1) {
   const page = await context.newPage();
-  await page.goto(`${BASE_URL}/auth?mode=login`, { waitUntil: 'domcontentloaded' });
-  await page.getByLabel('Email address').fill(EMAIL);
-  await page.getByRole('textbox', { name: 'Password' }).fill(PASSWORD);
-  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-  await page.waitForURL(url => !url.pathname.startsWith('/auth'), { timeout: 30_000 });
+  const authPostStatuses = [];
+  const authFailures = [];
+  // Requests that were sent and never answered or failed by the time the gate
+  // gave up: a connection the box silently drops looks exactly like this.
+  const authPending = new Map();
+  const isAuthPath = request => /\/(?:api\/)?auth\//.test(new URL(request.url()).pathname);
+  page.on('request', request => {
+    if (isAuthPath(request)) {
+      authPending.set(request, `${request.method()} ${new URL(request.url()).pathname}`);
+    }
+  });
+  page.on('response', response => {
+    authPending.delete(response.request());
+    if (response.request().method() === 'POST' && isAuthPath(response.request())) {
+      authPostStatuses.push(response.status());
+    }
+  });
+  // Every method: a cross-origin POST is preceded by an OPTIONS preflight, and
+  // when THAT fails the POST is never sent — a list that only watched POSTs
+  // read as "no request at all" (2026-11-06, three runs in a row).
+  page.on('requestfailed', request => {
+    authPending.delete(request);
+    if (isAuthPath(request)) {
+      authFailures.push(`${request.method()} ${request.failure()?.errorText ?? 'failed'}`);
+    }
+  });
+  page.on('response', response => {
+    const request = response.request();
+    if (request.method() === 'OPTIONS' && isAuthPath(request) && response.status() >= 400) {
+      authFailures.push(`OPTIONS ${response.status()}`);
+    }
+  });
+  try {
+    await page.goto(`${BASE_URL}/auth?mode=login`, { waitUntil: 'domcontentloaded' });
+    await page.getByLabel('Email address').fill(EMAIL);
+    await page.getByRole('textbox', { name: 'Password' }).fill(PASSWORD);
+    await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+    // Leaving /auth establishes authentication. Each audited page settles its
+    // own assets: a slow image must not hold this on the full load event.
+    await page.waitForURL(url => !url.pathname.startsWith('/auth'), {
+      timeout: 30_000,
+      waitUntil: 'domcontentloaded',
+    });
+  } catch {
+    // Never include request/response bodies, query strings, email or password.
+    // The alert's words are the page's own copy ("Too many attempts…"), not input.
+    const alerts = await page
+      .getByRole('alert')
+      .allInnerTexts()
+      .catch(() => []);
+    const diagnostic = {
+      attempt,
+      path: new URL(page.url()).pathname,
+      readyState: await page.evaluate(() => document.readyState).catch(() => 'unknown'),
+      alerts: alerts.map(text => text.trim().slice(0, 160)).filter(Boolean),
+      authPostStatuses: authPostStatuses.slice(-10),
+      authFailures: authFailures.slice(-10),
+      authPending: [...authPending.values()].slice(-10),
+    };
+    await page.close();
+    if (attempt === 1 && authPostStatuses.length === 0) {
+      console.warn(
+        `check:broken-words: sign-in got no answer ${JSON.stringify(diagnostic)}; trying once more in 20s`
+      );
+      await new Promise(resolve => setTimeout(resolve, 20_000));
+      return signIn(context, 2);
+    }
+    throw new Error(`Sign-in did not reach an authenticated page: ${JSON.stringify(diagnostic)}`);
+  }
   await page.close();
 }
 

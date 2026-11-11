@@ -6,18 +6,17 @@
 
 import {
   composeMessage,
-  parseUserMessage,
-  isReadableTextFile,
-  isImageFile,
   imagesOf,
-  ATTACH_SOURCES,
   type ChatAttachment,
 } from '@/components/ai-chat/ModernChatPanel/attachments';
+import { catUserTurn, refChip } from '@/lib/chat/cat-messages';
 import {
   imageRefsIn,
+  parseUserMessage,
   messageLabel,
   readableTitle,
   withImageRefs,
+  fileBlocksIn,
 } from '@/lib/chat/attachment-tags';
 
 const file = (name: string, content: string): ChatAttachment => ({
@@ -84,19 +83,6 @@ describe('parseUserMessage', () => {
   });
 });
 
-describe('isReadableTextFile', () => {
-  it('accepts text files by extension or mime type', () => {
-    expect(isReadableTextFile({ name: 'data.csv', type: '' })).toBe(true);
-    expect(isReadableTextFile({ name: 'x', type: 'text/plain' })).toBe(true);
-    expect(isReadableTextFile({ name: 'x.json', type: 'application/json' })).toBe(true);
-  });
-
-  it('refuses what the Cat cannot read yet', () => {
-    expect(isReadableTextFile({ name: 'photo.png', type: 'image/png' })).toBe(false);
-    expect(isReadableTextFile({ name: 'deck.pdf', type: 'application/pdf' })).toBe(false);
-  });
-});
-
 describe('photos', () => {
   const photo: ChatAttachment = {
     kind: 'image',
@@ -104,17 +90,6 @@ describe('photos', () => {
     name: 'IMG_2231.jpg',
     dataUrl: 'data:image/jpeg;base64,AAAA',
   };
-
-  it('offers camera, photo library and files — one input each, never a mixed accept', () => {
-    // A mixed accept is what made Android offer a recorder and no file browser.
-    const byId = Object.fromEntries(ATTACH_SOURCES.map(s => [s.id, s.input]));
-    expect(Object.keys(byId)).toEqual(['camera', 'photos', 'files']);
-    expect(byId.camera).toMatchObject({ accept: 'image/*', capture: 'environment' });
-    expect(byId.photos).toMatchObject({ accept: 'image/*' });
-    expect(byId.files.accept).toBeUndefined();
-    for (const s of ATTACH_SOURCES) expect(s.input.accept ?? '').not.toContain(',');
-    expect(isImageFile({ type: 'image/heic' })).toBe(true);
-  });
 
   it('travels beside the text, leaving only a tag in the message', () => {
     const out = composeMessage('What is this?', [photo]);
@@ -131,6 +106,22 @@ describe('photos', () => {
     const parsed = parseUserMessage(composeMessage('What is this?', [photo]));
     expect(parsed.text).toBe('What is this?');
     expect(parsed.images).toEqual([{ name: 'IMG_2231.jpg', ref: null }]);
+  });
+
+  it('comes back from the server as a named chip — never its pixels', () => {
+    expect(catUserTurn(composeMessage('What is this?', [photo]))).toEqual({
+      content: 'What is this?',
+      attachments: [{ kind: 'image', name: 'IMG_2231.jpg' }],
+    });
+  });
+
+  it('one of your things comes back as the same chip it was sent with', () => {
+    const ref = { type: 'product', id: 'p1', title: 'Loki Pro' };
+    expect(catUserTurn(composeMessage('Price this', [{ kind: 'ref', id: 'r', ref }]))).toEqual({
+      content: 'Price this',
+      chips: [refChip(ref)],
+    });
+    expect(refChip(ref)).toEqual({ label: 'Loki Pro', kind: 'product' });
   });
 
   it('the server writes each stored photo path into its tag, and it reads back', () => {
@@ -150,5 +141,17 @@ describe('photos', () => {
     expect(readableTitle('i want to sell this photo <attached_image name="gyeti.jpg"/…')).toBe(
       'i want to sell this photo'
     );
+  });
+});
+
+describe('fileBlocksIn', () => {
+  it('returns each attached file with its name and text, and nothing for a plain message', () => {
+    const content =
+      'Read these\n\n<attached_file name="a.md">\n# A\n</attached_file>\n\n<attached_file name="b.txt">\nb\n</attached_file>';
+    expect(fileBlocksIn(content)).toEqual([
+      { name: 'a.md', body: '# A' },
+      { name: 'b.txt', body: 'b' },
+    ]);
+    expect(fileBlocksIn('just words')).toEqual([]);
   });
 });

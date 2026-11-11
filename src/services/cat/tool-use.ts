@@ -23,14 +23,20 @@ import { toolPlanForModel, observedToolVerdict, recordToolAttempt } from './tool
 import { offerablePlatformTools } from './capability-gate';
 import { hasCreateIntent, PLATFORM_TOOL_DEFINITION } from './tool-use-detection';
 import { degradedMessages } from './tool-use-degrade';
-import { ToolTurnState, toolRoutingHistory } from './tool-turn-state';
-import { routeWithFallback, type ToolRoutingStep } from './tool-routing-fallback';
+import {
+  ToolTurnState,
+  toolRoutingHistory,
+  toolRoutingPageContext,
+  prefillType,
+} from './tool-turn-state';
+import { routeWithFallback } from './tool-routing-fallback';
 import { uniqueToolDefinitions } from './tool-definitions';
 import { executeToolCall } from './tool-executor';
 import { WebTurnContext } from './web-research';
 import { extractHttpUrls, isUrlOnlyMessage } from './website-analysis';
 import { playbookRoutingNote } from '@/config/cat-playbooks';
 import type {
+  ToolUseOptions,
   ToolAugmentedMessage,
   ToolCallAssistantMessage,
   ToolResultMessage,
@@ -100,32 +106,7 @@ export async function maybeEnrichWithSearchResults(
   modelToUse: string,
   onToolCall?: OnToolCall,
   onPrefillProposal?: OnPrefillProposal,
-  opts?: {
-    timeoutMs?: number;
-    toolFallbacks?: ToolRoutingStep[];
-    actorId?: string | null;
-    /**
-     * Where to POST the tool loop, and with what, for the ACTIVE model.
-     * Supplied by the provider resolver, which is the only place a BYOK key
-     * exists in the raw — `aiService` bakes it in and exposes nothing, and
-     * `AiService.chatCompletion` drops `tool_calls`, so the loop cannot go
-     * through that abstraction either.
-     *
-     * When absent, NO tools are sent. There is deliberately no env fallback:
-     * a guessed endpoint sends a user.s model id to the wrong vendor.
-     */
-    toolEndpoint?: string | null;
-    toolKey?: string | null;
-    /**
-     * Receives the evidence blocks for everything Cat actually read from the
-     * web this turn, so the caller's grounding check can verify the reply
-     * against them.
-     *
-     * Evidence is returned only for completed exchanges that reach the model,
-     * including partial progress preserved when a later step is interrupted.
-     */
-    onWebEvidence?: (evidence: string[]) => void;
-  }
+  opts?: ToolUseOptions
 ): Promise<ToolAugmentedMessage[]> {
   // WHERE to call is the resolver's answer, never a guess. It builds the step,
   // so it holds the only raw BYOK credential, and it supplies platform steps
@@ -219,6 +200,8 @@ export async function maybeEnrichWithSearchResults(
             onToolCall: guardedOnToolCall,
             onPrefillProposal: guardedOnPrefillProposal,
             actorId: opts?.actorId ?? null,
+            ephemeral: opts?.ephemeral ?? true,
+            currentEntity: opts?.currentEntity,
             web,
           })
       ),
@@ -259,16 +242,6 @@ export async function maybeEnrichWithSearchResults(
   }
 }
 
-/** The entityType a prefill_entity_form call targets ('' when unparseable). */
-function prefillType(toolCall: RawToolCall): string {
-  try {
-    const args = JSON.parse(toolCall.function?.arguments ?? '{}') as { entityType?: string };
-    return args.entityType ?? '';
-  } catch {
-    return '';
-  }
-}
-
 /**
  * The bounded agentic loop: the model can call a tool, see the result, and
  * decide its next move — up to MAX_TOOL_STEPS round-trips. May throw or run
@@ -287,6 +260,8 @@ async function runToolLoop(args: {
   onPrefillProposal?: OnPrefillProposal;
   /** Present ⇒ the model may CALL actions, not just read tools (ADR-0006 D2). */
   actorId?: string | null;
+  ephemeral: boolean;
+  currentEntity?: { type: string; ref: string };
   /** The turn's web state — owned by the caller so it outlives the deadline. */
   web: WebTurnContext;
 }): Promise<ToolAugmentedMessage[]> {
@@ -302,6 +277,8 @@ async function runToolLoop(args: {
     onToolCall,
     onPrefillProposal,
     actorId,
+    ephemeral,
+    currentEntity,
     web,
   } = args;
 
@@ -333,6 +310,7 @@ async function runToolLoop(args: {
     {
       role: 'system' as const,
       content:
+        toolRoutingPageContext(currentEntity) +
         'You gather what an OrangeCat chat request needs by calling platform tools. Call ONE tool at a time; after you see its result you may call another tool to refine or follow up, or stop when you have enough.\n' +
         '- prefill_entity_form: when the user describes something THEY want to create / sell / offer / launch / fundraise (e.g. "I make mugs and want to sell them", "I want to start a project"). This is about THEIR own new thing — if it is for ANOTHER person who is not on OrangeCat ("for my friend Maria", "not for me", "she isn\'t registered"), call the ACTION create_project_for_person instead, never prefill_entity_form (a draft would be the user\'s, not hers). Pick entityType by what the thing IS: selling time/skill/labor (even at a fixed price, "haircuts, 40 CHF") = service; a tangible/digital item = product; fundraising a defined outcome = project; open-ended no-strings support = cause; the user NEEDS money and will repay = loan; a dated gathering = event; renting out something owned = asset; a community organizing itself = circle. Call it ONCE per distinct entity — never twice for the same thing.\n' +
         '- THIN INPUT: if the message only says who they are or what they do with nothing specific to put on OrangeCat ("we\'re a bakery", "I\'m a designer", a job title, a bio), call NO tool at all — do not guess three drafts from one noun. The reply will ask ONE focused question. Draft only when they name a concrete thing to sell, offer, fund, lend, rent or host.\n' +
@@ -347,6 +325,7 @@ async function runToolLoop(args: {
         '- check_cat_health: ONLY when the user asks why the Cat/AI is failing, slow, or not answering, or asks about a system notification mentioning provider failures, eval/harness errors, or Cat health (e.g. "why is my Cat not answering?", "what does this eval error notification mean?"). Takes no arguments.\n' +
         '- find_events_near: when the user asks what is on, or for events/parties/gigs, around a place ("anything near Langstrasse tonight?"). Pass genre only if they named music.\n' +
         '- check_my_track_record: when the user asks what YOU did for them or how it went (e.g. "what have you done for me?", "did any of your ideas work?", "why should I trust you?"), or before you propose another thing of a kind you may already have proposed. It is about YOUR actions and their outcomes, not the user\'s own numbers (that is query_my_data). Takes no arguments.\n' +
+        'Investor rooms exist on every project. Resolve the actual project ID, then use get_investor_room to read its room, deck, recipient links and connected build profile. Use the investor-room action tools for explicit edits, deck generation, creating recipient links or switching links off; do not search the marketplace for an investor-room feature. Read existing content before changes and preserve fields or slides the person did not ask to replace. Show the proposed changes before requesting confirmation. Creating a link does not send an invitation.\n' +
         'You may also call any ACTION tool (create_project, update_entity, …) when the user clearly asks you to DO that thing — not to explore it. An action WRITES, so call it only on a clear instruction; its result comes back to you before you reply, so never claim something is done until you have seen that result.\n' +
         'NEVER call search_platform for a create/sell/offer intent — describing your own thing to list is prefill_entity_form, not a search. If neither clearly applies, call no tool. Only decide and call tools — do not write a chat reply.' +
         playbookRoutingNote(userMessage),
@@ -395,7 +374,8 @@ async function runToolLoop(args: {
         onToolCall,
         onPrefillProposal,
         actorId,
-        web
+        web,
+        ephemeral
       );
       state.controller.signal.throwIfAborted();
       loopMessages.push(assistantMsg, resultMsg);
@@ -477,7 +457,8 @@ async function runToolLoop(args: {
         onToolCall,
         onPrefillProposal,
         actorId,
-        web
+        web,
+        ephemeral
       );
       state.controller.signal.throwIfAborted();
       loopMessages.push(resultMessage);

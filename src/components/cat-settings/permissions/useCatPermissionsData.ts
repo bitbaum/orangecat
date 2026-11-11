@@ -6,14 +6,20 @@
  * Behaviour is unchanged: toggles apply instantly and roll back on failure.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import { toast } from 'sonner';
 import { API_ROUTES } from '@/config/api-routes';
 import { apiErrorMessage } from '@/lib/api/errorMessage';
-import { fromAutonomyLevel, type AutonomyLevel } from '@/config/cat-autonomy';
+import {
+  fromAutonomyLevel,
+  CAT_PERMISSIONS_CHANGED_EVENT,
+  type AutonomyLevel,
+  type PermissionPreset,
+} from '@/config/cat-autonomy';
 import type { PermissionData } from './types';
 
 export function useCatPermissionsData(enabled: boolean) {
+  const inFlight = useRef(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
   const [data, setData] = useState<PermissionData | null>(null);
@@ -35,6 +41,15 @@ export function useCatPermissionsData(enabled: boolean) {
       .finally(() => setLoading(false));
   }, [enabled]);
 
+  useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+    const synchronize = (event: Event) => setData((event as CustomEvent<PermissionData>).detail);
+    window.addEventListener(CAT_PERMISSIONS_CHANGED_EVENT, synchronize);
+    return () => window.removeEventListener(CAT_PERMISSIONS_CHANGED_EVENT, synchronize);
+  }, [enabled]);
+
   /** POST grants, DELETE revokes; the server answers with the new summary. */
   const write = useCallback(
     async (
@@ -43,8 +58,13 @@ export function useCatPermissionsData(enabled: boolean) {
       granted: boolean,
       body: Record<string, unknown>
     ) => {
+      if (inFlight.current) {
+        return;
+      }
+      inFlight.current = true;
       setSaving(key);
       const previous = data;
+      let persisted = false;
       setData(prev => (prev ? optimistic(prev) : prev));
       try {
         const res = await fetch(API_ROUTES.CAT.PERMISSIONS, {
@@ -53,16 +73,35 @@ export function useCatPermissionsData(enabled: boolean) {
           body: JSON.stringify(body),
         });
         const json = await res.json();
-        if (json.success && json.data?.summary) {
-          setData(prev => (prev ? { ...prev, summary: json.data.summary } : null));
+        if (res.ok && json.success) {
+          persisted = true;
+          const refreshed = await fetch(API_ROUTES.CAT.PERMISSIONS);
+          const snapshot = await refreshed.json();
+          if (!refreshed.ok || !snapshot.success) {
+            throw new Error('Could not refresh permissions');
+          }
+          setData(snapshot.data);
+          window.dispatchEvent(
+            new CustomEvent(CAT_PERMISSIONS_CHANGED_EVENT, { detail: snapshot.data })
+          );
         } else {
           setData(previous);
           toast.error(json.error?.message || 'Failed to update permission');
         }
       } catch {
-        setData(previous);
-        toast.error('Failed to update permission');
+        setData(persisted ? null : previous);
+        if (persisted) {
+          setError(
+            'Permissions saved, but their current state could not be loaded. Reload to check.'
+          );
+        }
+        toast.error(
+          persisted
+            ? 'Permissions saved; reload to see the current state'
+            : 'Failed to update permission'
+        );
       } finally {
+        inFlight.current = false;
         setSaving(null);
       }
     },
@@ -107,6 +146,8 @@ export function useCatPermissionsData(enabled: boolean) {
     );
   };
 
+  const applyPreset = (preset: PermissionPreset) => write('preset', prev => prev, true, { preset });
+
   const toggleExpanded = (categoryId: string) =>
     setExpanded(prev => {
       const next = new Set(prev);
@@ -126,6 +167,7 @@ export function useCatPermissionsData(enabled: boolean) {
     saving,
     expanded,
     toggleCategory,
+    applyPreset,
     setActionAutonomy,
     toggleExpanded,
   };

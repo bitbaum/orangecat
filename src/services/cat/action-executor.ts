@@ -222,7 +222,9 @@ export class CatActionExecutor {
       await this.supabase
         .from(DATABASE_TABLES.CAT_PENDING_ACTIONS)
         .update({ status: STATUS.CAT_PENDING_ACTIONS.EXPIRED })
-        .eq('id', pendingActionId);
+        .eq('id', pendingActionId)
+        .eq('user_id', userId)
+        .eq('status', STATUS.CAT_PENDING_ACTIONS.PENDING);
 
       return {
         success: false,
@@ -232,22 +234,51 @@ export class CatActionExecutor {
       };
     }
 
-    await this.supabase
+    const action = CAT_ACTIONS[pending.action_id];
+    if (!action?.enabled) {
+      return {
+        success: false,
+        code: 'action_disabled',
+        actionId: pending.action_id,
+        status: 'failed',
+        error: 'Action no longer available',
+      };
+    }
+    const grantsCategory =
+      pending.grant_on_confirm && canGrantOnConfirm(action, 'permission_denied');
+    if (!grantsCategory) {
+      const permission = await this.permissionService.checkPermission(userId, action.id);
+      if (!permission.allowed) {
+        return {
+          success: false,
+          actionId: action.id,
+          status: 'denied',
+          code: permission.code,
+          error: permission.reason ?? 'Permission no longer granted',
+        };
+      }
+    }
+
+    // Only one request may claim the still-pending, unexpired row. A failed
+    // update or losing a race must never reach a side-effect handler.
+    const { data: claimed, error: claimError } = await this.supabase
       .from(DATABASE_TABLES.CAT_PENDING_ACTIONS)
       .update({
         status: STATUS.CAT_PENDING_ACTIONS.CONFIRMED,
         confirmed_at: new Date().toISOString(),
       })
-      .eq('id', pendingActionId);
-
-    const action = CAT_ACTIONS[pending.action_id];
-    if (!action) {
+      .eq('id', pendingActionId)
+      .eq('user_id', userId)
+      .eq('status', STATUS.CAT_PENDING_ACTIONS.PENDING)
+      .gt('expires_at', new Date().toISOString())
+      .select('id')
+      .maybeSingle();
+    if (claimError || !claimed) {
       return {
         success: false,
-        code: 'unknown_action',
-        actionId: pending.action_id,
+        actionId: action.id,
         status: 'failed',
-        error: 'Action no longer available',
+        error: 'Action expired, already processed, or could not be confirmed',
       };
     }
 
@@ -255,7 +286,7 @@ export class CatActionExecutor {
     // before running, and only for the category the card named. Confirmation
     // stays required — the grant widens what Cat may propose, not what it may
     // do unasked.
-    if (pending.grant_on_confirm && canGrantOnConfirm(action, 'permission_denied')) {
+    if (grantsCategory) {
       await this.permissionService.grantCategory(userId, action.category, {
         requiresConfirmation: true,
       });
@@ -287,7 +318,8 @@ export class CatActionExecutor {
         rejection_reason: reason || null,
       })
       .eq('id', pendingActionId)
-      .eq('user_id', userId);
+      .eq('user_id', userId)
+      .eq('status', STATUS.CAT_PENDING_ACTIONS.PENDING);
   }
 
   /**

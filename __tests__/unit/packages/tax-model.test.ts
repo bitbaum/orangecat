@@ -247,8 +247,8 @@ describe('divisor', () => {
     expect(modelProblems({ ...SPLIT, schemaVersion: 1 })).toEqual([
       'component "local" has a divisor, which needs schemaVersion 2',
     ]);
-    expect(modelProblems({ ...SPLIT, schemaVersion: 7 as 6 })).toEqual([
-      'schemaVersion 7 is not supported',
+    expect(modelProblems({ ...SPLIT, schemaVersion: 11 as 10 })).toEqual([
+      'schemaVersion 11 is not supported',
     ]);
     expect(referencedLevels(SPLIT)).toEqual(['realm', 'shire', 'guild', 'temple']);
   });
@@ -379,6 +379,280 @@ describe('limits on a share of the base', () => {
       'the limit on limit names unknown component "nowhere"',
     ]);
     expect(modelRefs(LIMITED).at(-1)).toEqual({ level: 'realm', metric: 'limit' });
+  });
+});
+
+describe('a base of its own and fixed amounts', () => {
+  const WITH_WEALTH: TaxModel = {
+    ...MODEL,
+    schemaVersion: 7,
+    inputs: ['income', 'wealth', 'temple_member'],
+    components: [
+      ...MODEL.components,
+      {
+        key: 'wealth',
+        base: 'wealth',
+        tariff: { level: 'realm', metric: 'wealth.tariff' },
+        multipliers: [{ level: 'shire', metric: 'multiplier' }],
+      },
+      { key: 'head', tariff: { level: 'shire', metric: 'head' } },
+    ],
+  };
+  const WEALTH_FACTS: Fact[] = [
+    ...FACTS,
+    { level: 'realm', metric: 'wealth.tariff', value: progressive([[100_000, 0.001]]) },
+    { level: 'shire', metric: 'head', value: { kind: 'fixed', currency: 'XTS', amount: 24 } },
+  ];
+  const at = (values: Record<string, number>) =>
+    evaluate(WITH_WEALTH, WEALTH_FACTS, { values, variant: 'alone' });
+
+  it("applies a component to its own base, and the rate stays a share of the model's", () => {
+    const estimate = at({ income: 100_000, wealth: 1_100_000 });
+    // 1,000,000 above the threshold at 0.1 %, times the shire's 1.2.
+    expect(estimate.components.find(c => c.key === 'wealth')!.amount).toBeCloseTo(1_200);
+    expect(estimate.total).toBeCloseTo(14_000 + 10_000 + 1_200 + 24);
+    expect(estimate.effectiveRate).toBeCloseTo(0.24);
+    // No wealth entered: the component does not apply, and asks for none of its facts.
+    const none = at({ income: 100_000 });
+    expect(none.components.find(c => c.key === 'wealth')).toMatchObject({
+      applies: false,
+      amount: 0,
+    });
+    const untariffed = evaluate(
+      WITH_WEALTH,
+      WEALTH_FACTS.filter(f => f.metric !== 'wealth.tariff'),
+      { values: { income: 100_000 }, variant: 'alone' }
+    );
+    expect(untariffed.complete).toBe(true);
+    // Entered, even as 0, it applies and needs its tariff.
+    expect(
+      at({ income: 100_000, wealth: 0 }).components.find(c => c.key === 'wealth')
+    ).toMatchObject({ applies: true, amount: 0 });
+  });
+
+  it('levies a fixed amount whatever the base', () => {
+    expect(applyTariff(0, { kind: 'fixed', currency: 'XTS', amount: 24 })).toBe(24);
+    expect(applyTariff(1e9, { kind: 'fixed', currency: 'XTS', amount: 24, cap: 10 })).toBe(10);
+    expect(at({ income: 0 }).components.find(c => c.key === 'head')!.amount).toBe(24);
+  });
+
+  it('needs schemaVersion 7 and a declared input, and refuses a negative amount', () => {
+    expect(modelProblems(WITH_WEALTH)).toEqual([]);
+    expect(modelProblems({ ...WITH_WEALTH, schemaVersion: 6, inputs: MODEL.inputs })).toEqual([
+      'component "wealth" has a base of its own, which needs schemaVersion 7',
+      'component "wealth" reads undeclared base "wealth"',
+    ]);
+    expect(tariffSchemaVersion({ kind: 'fixed', currency: 'XTS', amount: 1 })).toBe(7);
+    expect(tariffProblem({ kind: 'fixed', currency: 'XTS', amount: -1 })).toMatch(/amount -1/);
+    expect(() =>
+      evaluate(
+        { ...MODEL, schemaVersion: 6 },
+        [
+          ...FACTS.filter(f => f.metric !== 'tariff'),
+          {
+            level: 'realm',
+            metric: 'tariff',
+            value: { kind: 'fixed', currency: 'XTS', amount: 1 },
+          },
+        ],
+        { values: { income: 1 }, variant: 'alone' }
+      )
+    ).toThrow(/needs schemaVersion 7/);
+  });
+});
+
+describe('a multiplier scaled by another fact', () => {
+  const SCALED: TaxModel = {
+    ...MODEL,
+    schemaVersion: 8,
+    components: [
+      {
+        key: 'temple',
+        tariff: { level: 'realm', metric: 'tariff.basic' },
+        multipliers: [
+          {
+            level: 'temple',
+            metric: 'multiplier',
+            scaledBy: { level: 'realm', metric: 'multiplier', optional: true },
+          },
+        ],
+      },
+    ],
+  };
+  const at = (facts: Fact[]) =>
+    evaluate(SCALED, facts, { values: { income: 100_000 }, variant: 'alone' });
+
+  it('multiplies the multiplier by the scale, and by 1 where an optional scale is missing', () => {
+    // 5,000 basic tax; the temple's 10 % of the realm's 80 % of it.
+    expect(at(FACTS).total).toBeCloseTo(400);
+    expect(
+      at(FACTS.filter(f => !(f.level === 'realm' && f.metric === 'multiplier'))).total
+    ).toBeCloseTo(500);
+  });
+
+  it('needs schemaVersion 8, counts the scale among the facts read, and refuses a negative one', () => {
+    expect(modelProblems(SCALED)).toEqual([]);
+    expect(modelProblems({ ...SCALED, schemaVersion: 7 })).toEqual([
+      'component "temple" has a scaled multiplier, which needs schemaVersion 8',
+    ]);
+    expect(componentRefs(SCALED.components[0]!).at(-1)).toEqual({
+      level: 'realm',
+      metric: 'multiplier',
+      optional: true,
+    });
+    expect(() =>
+      at([
+        ...FACTS.filter(f => !(f.level === 'realm' && f.metric === 'multiplier')),
+        { level: 'realm', metric: 'multiplier', value: -1 },
+      ])
+    ).toThrow(/non-negative/);
+  });
+});
+
+describe('an indexed divisor, a capped rebate and a floor', () => {
+  const average: Tariff = {
+    kind: 'average',
+    currency: 'XTS',
+    points: [
+      { from: 0, rate: 0.02 },
+      { from: 50_000, rate: 0.1 },
+    ],
+  };
+  const INDEXED: TaxModel = {
+    ...MODEL,
+    schemaVersion: 9,
+    components: [
+      {
+        key: 'shire',
+        tariff: { level: 'realm', metric: 'tariff.average' },
+        divisor: {
+          level: 'realm',
+          metric: 'divisor',
+          scaledBy: { level: 'shire', metric: 'index', optional: true },
+        },
+        multipliers: [{ level: 'shire', metric: 'multiplier' }],
+        rebate: {
+          share: { level: 'realm', metric: 'rebate', optional: true },
+          least: { level: 'realm', metric: 'rebate.least', optional: true },
+          most: { level: 'realm', metric: 'rebate.most', optional: true },
+        },
+        floor: { level: 'realm', metric: 'floor', optional: true },
+      },
+    ],
+  };
+  const BASE: Fact[] = [
+    { level: 'realm', metric: 'tariff.average', value: average },
+    { level: 'realm', metric: 'divisor', value: 1 },
+    { level: 'shire', metric: 'multiplier', value: 1.2 },
+    { level: 'realm', metric: 'rebate', variant: 'together', value: 0.35 },
+    { level: 'realm', metric: 'rebate.least', value: 600 },
+    { level: 'realm', metric: 'rebate.most', value: 4_000 },
+    { level: 'realm', metric: 'floor', value: 10 },
+  ];
+  const at = (income: number, variant: string, facts: Fact[] = BASE) =>
+    evaluate(INDEXED, facts, { values: { income }, variant }).components[0]!;
+
+  it('looks the average rate up at the base divided by the indexed divisor', () => {
+    // Index 2: the rate at 25,000 (6 %) on the whole 50,000, times 1.2.
+    const indexed = at(50_000, 'alone', [...BASE, { level: 'shire', metric: 'index', value: 2 }]);
+    expect(indexed.divisor).toBe(2);
+    expect(indexed.amount).toBeCloseTo(50_000 * 0.06 * 1.2);
+    // Without an index the divisor is the realm's own.
+    expect(at(50_000, 'alone').amount).toBeCloseTo(50_000 * 0.1 * 1.2);
+  });
+
+  it('takes the share off for the variant that records one, between its least and most', () => {
+    // 6,000 × 35 % = 2,100.
+    expect(at(50_000, 'together').rebate).toBeCloseTo(2_100);
+    expect(at(50_000, 'together').amount).toBeCloseTo(3_900);
+    // 120 × 35 % is below the least: 600 is taken, but never more than the amount.
+    expect(at(5_000, 'together').rebate).toBeCloseTo(at(5_000, 'alone').amount!);
+    // 120,000 × 10 % × 1.2 × 35 % is above the most.
+    expect(at(120_000, 'together').rebate).toBe(4_000);
+    expect(at(50_000, 'alone').rebate).toBeNull();
+  });
+
+  it('levies at least the floor once the component applies, after the rebate', () => {
+    expect(at(0, 'alone').amount).toBe(10);
+    expect(at(5_000, 'together').amount).toBe(10);
+    expect(at(50_000, 'alone').amount).toBeGreaterThan(10);
+  });
+
+  it('needs schemaVersion 9, counts what it reads, and refuses a share of 1 or a negative scale', () => {
+    expect(modelProblems(INDEXED)).toEqual([]);
+    expect(modelProblems({ ...INDEXED, schemaVersion: 8 })).toEqual([
+      'component "shire" has a scaled divisor, which needs schemaVersion 9',
+      'component "shire" has a rebate, which needs schemaVersion 9',
+      'component "shire" has a floor, which needs schemaVersion 9',
+    ]);
+    expect(componentRefs(INDEXED.components[0]!).map(r => r.metric)).toEqual([
+      'tariff.average',
+      'divisor',
+      'index',
+      'multiplier',
+      'rebate',
+      'rebate.least',
+      'rebate.most',
+      'floor',
+    ]);
+    expect(() =>
+      at(50_000, 'together', [
+        ...BASE.filter(f => f.metric !== 'rebate'),
+        { level: 'realm', metric: 'rebate', value: 1 },
+      ])
+    ).toThrow(/share in \[0, 1\)/);
+    expect(() =>
+      at(50_000, 'alone', [...BASE, { level: 'shire', metric: 'index', value: -2 }])
+    ).toThrow(/positive/);
+  });
+});
+
+describe('inputs added to the base', () => {
+  const ADDING: TaxModel = {
+    ...MODEL,
+    schemaVersion: 10,
+    inputs: ['income', 'wealth'],
+    components: [
+      {
+        key: 'realm',
+        tariff: { level: 'realm', metric: 'tariff' },
+        adds: [
+          {
+            input: 'wealth',
+            scaledBy: { level: 'realm', metric: 'yield' },
+            rounding: 100,
+          },
+        ],
+      },
+    ],
+  };
+  const YIELD: Fact[] = [...FACTS, { level: 'realm', metric: 'yield', value: 0.04 }];
+  const at = (values: Record<string, number>, facts = YIELD) =>
+    evaluate(ADDING, facts, { values, variant: 'alone' });
+
+  it('taxes the income plus the share of the rounded input on one tariff', () => {
+    // 40,000 + 4 % of 250,000 (250,099 rounded down) = 50,000: 10 % of 40,000.
+    expect(at({ income: 40_000, wealth: 250_099 }).total).toBeCloseTo(4_000);
+    // Without wealth nothing is added, and the yield is not required.
+    expect(at({ income: 40_000 }, FACTS).total).toBeCloseTo(3_000);
+    expect(at({ income: 40_000 }, FACTS).complete).toBe(true);
+  });
+
+  it('needs the share once the input is given', () => {
+    expect(at({ income: 40_000, wealth: 1 }, FACTS).missing).toEqual([
+      { level: 'realm', metric: 'yield' },
+    ]);
+  });
+
+  it('needs schemaVersion 10, declared inputs, and counts the share among the facts read', () => {
+    expect(modelProblems(ADDING)).toEqual([]);
+    expect(modelProblems({ ...ADDING, schemaVersion: 9 })).toEqual([
+      'component "realm" adds inputs, which needs schemaVersion 10',
+    ]);
+    expect(modelProblems({ ...ADDING, inputs: ['income'] })).toEqual([
+      'component "realm" adds undeclared input "wealth"',
+    ]);
+    expect(componentRefs(ADDING.components[0]!).map(r => r.metric)).toEqual(['tariff', 'yield']);
   });
 });
 

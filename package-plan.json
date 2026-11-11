@@ -1,5 +1,62 @@
 {
+  "scope": "Cat grounding and investor-room actions, plus the fleet-review repair of provider routing, completion readiness, permission decisions and recovery. Domain permission and action ownership rules remain local to OrangeCat. Temporary-chat privacy is propagated through the existing tool loop; product memory-write policy stays local. Article writing reuses the existing Markdown editor and writing API backed by the platform model service; one draft-scoped controller owns generation and revision. Article generation and editing consume the verified WritingKit release; the bootstrap runtime copy is retired.",
   "blocks": {
+    "chat": {
+      "package": "@bitbaum/chatkit",
+      "bindings": [
+        {
+          "file": "src/components/ai-chat/ModernChatPanel/index.tsx",
+          "symbols": ["ChatApp"]
+        }
+      ],
+      "notes": "Retain the shared chat surface and transport contracts. Investor-room routes and per-user project context are product domain policy."
+    },
+    "deck": {
+      "package": "@bitbaum/deckkit",
+      "bindings": [
+        {
+          "file": "src/services/cat/handlers/investor-room.ts",
+          "symbols": ["generateDeck"]
+        }
+      ],
+      "notes": "Chat uses the same generator and ownership-checked deck persistence as the room UI. Product records remain canonical in Loki; the OrangeCat profile and room render them without storing copies."
+    },
+    "grounding": {
+      "package": "@bitbaum/ai-kit",
+      "bindings": [
+        {
+          "file": "src/services/cat/grounding.ts",
+          "symbols": ["verifyAnswer", "buildRepairPrompt"]
+        },
+        {
+          "file": "src/services/cat/chat-prepare.ts",
+          "symbols": ["buildAssistantRules"]
+        },
+        {
+          "file": "src/services/cat/chat-orchestrator.ts",
+          "symbols": ["classifyAnswerPrefix"]
+        },
+        {
+          "file": "src/services/ai/platform-providers.ts",
+          "symbols": ["usableChain", "linkSeesImages"]
+        },
+        {
+          "file": "src/services/cat/completion-health.ts",
+          "symbols": ["createHealthTracker"]
+        }
+      ],
+      "notes": "Reuse packaged verification. The application supplies its verified navigation evidence and protects links to fetched project rooms during repair."
+    },
+    "writing": {
+      "package": "@bitbaum/writingkit",
+      "bindings": [
+        {
+          "file": "src/components/articles/useArticleAi.ts",
+          "symbols": ["WritingSession"]
+        }
+      ],
+      "notes": "WritingKit owns operation/revision safety. OrangeCat owns fields, selection, Undo, device/account draft storage, writing context and publishing. ai-kit and the existing article APIs still own model/HTTP execution."
+    },
     "payments": {
       "package": "@bitbaum/paykit",
       "bindings": [

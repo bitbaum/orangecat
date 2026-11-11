@@ -30,3 +30,10 @@ export const APP_CONTENT_HEIGHT_CLASS = 'app-content-height' as const;
 
 /** Max width for chat message columns (ChatGPT-style readable measure) */
 export const CHAT_CONTENT_MAX_WIDTH_CLASS = 'max-w-3xl' as const;
+
+/**
+ * Marks an open conversation that owns the phone screen on a page that is not
+ * always a chat (the talk home with `?with=`). globals.css hides the app
+ * header below md while it is on the page; see "A chat that owns the phone".
+ */
+export const IMMERSIVE_CHAT_ATTR = 'data-immersive-chat' as const;

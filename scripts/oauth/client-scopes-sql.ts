@@ -1,13 +1,14 @@
 /**
- * Print the SQL that brings every registered client's scope ceiling in line
- * with scripts/oauth/client-specs.ts. The deploy pipes it through the box's
- * psql right after the migrations (scripts/deploy-selfhost.sh), so a scope
- * widened in the code is live with the code. Creates nothing; a client that
- * is not registered yet stays that way until register-client.ts runs by hand.
+ * Print the SQL that brings the registered clients in line with
+ * scripts/oauth/client-specs.ts. The deploy pipes it through the box's psql
+ * right after the migrations (scripts/deploy-selfhost.sh), so a scope widened
+ * in the code is live with the code. A client with no row yet gets one,
+ * switched off and without a secret (clientRowInserts): it signs nobody in
+ * until loki app-secrets.sh or register-client.ts gives it a secret.
  *
  *   npx tsx scripts/oauth/client-scopes-sql.ts | psql …
  */
 
-import { clientScopeUpdates } from './client-specs';
+import { clientRowInserts, clientScopeUpdates } from './client-specs';
 
-process.stdout.write(`${clientScopeUpdates().join('\n')}\n`);
+process.stdout.write(`${[...clientRowInserts(), ...clientScopeUpdates()].join('\n')}\n`);

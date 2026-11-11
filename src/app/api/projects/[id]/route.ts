@@ -125,6 +125,7 @@ const buildProjectUpdatePayload = createUpdatePayloadBuilder([
   { from: 'bitcoin_address', transform: entityTransforms.emptyStringToNull },
   { from: 'lightning_address', transform: entityTransforms.emptyStringToNull },
   commonFieldMappings.urlField('website_url'),
+  commonFieldMappings.urlField('logo_url'),
   { from: 'category', transform: entityTransforms.emptyStringToNull },
   commonFieldMappings.arrayField('tags', []),
   commonFieldMappings.dateField('start_date'), // Normalize date fields

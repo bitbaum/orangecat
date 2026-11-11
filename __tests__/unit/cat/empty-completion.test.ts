@@ -11,6 +11,13 @@ describe('what counts as an answer', () => {
   it('accepts real text', () => {
     expect(hasUsableContent('Bitcoin is a payment network.')).toBe(true);
   });
+  it('rejects a narrated tool call instead of showing protocol as an answer', () => {
+    expect(
+      hasUsableContent('<tool_call> <function=search_platform> </function> </tool_call>')
+    ).toBe(false);
+    expect(hasUsableContent('<tool_')).toBe(false);
+    expect(hasUsableContent('```xml\n<tool_call>\n```')).toBe(true);
+  });
 
   it('rejects the empty string — the exact value `??` let through', () => {
     expect(hasUsableContent('')).toBe(false);

@@ -24,6 +24,18 @@ export function generateActionDescription(
       const who = String(parameters.person_name ?? 'them');
       return `Set up "${parameters.title}" for ${who} as a public page, owned by ${who} — you get a link to send; ${who} takes it over by signing up, and nothing can receive money until then`;
     }
+    case 'save_investor_room':
+      return `Update investor room for project ${parameters.project_id}: ${Object.keys((parameters.content ?? {}) as object).join(', ')}`;
+    case 'create_investor_room_link':
+      return `Create a private investor-room link for ${parameters.label} on project ${parameters.project_id}`;
+    case 'revoke_investor_room_link':
+      return `Switch off investor-room link ${parameters.link_id} on project ${parameters.project_id}`;
+    case 'generate_investor_deck':
+      return `${parameters.replace_existing === true ? 'Replace the existing' : 'Generate a first'} investor deck for project ${parameters.project_id}, from its room and product records`;
+    case 'save_investor_deck':
+      return `Save the edited investor deck for project ${parameters.project_id}`;
+    case 'ask_loki':
+      return `Ask Loki: “${parameters.question ?? ''}”`;
     case 'send_to_loki':
       return `Create a Loki handoff link for "${parameters.title ?? parameters.entity_id}" (valid 10 minutes) so AI agents can build it`;
     case 'create_investment': {

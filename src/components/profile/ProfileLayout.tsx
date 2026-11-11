@@ -14,6 +14,7 @@ import ProfileWalletsTab from '@/components/profile/ProfileWalletsTab';
 import ProfileEntityTab from '@/components/profile/ProfileEntityTab';
 import ProfileArticlesTab from '@/components/profile/ProfileArticlesTab';
 import ProfileOfferings from '@/components/profile/ProfileOfferings';
+import OwnerProfileOfferings from '@/components/profile/OwnerProfileOfferings';
 import ProfileCivicSplit, { type PublicCivicSplit } from '@/components/profile/ProfileCivicSplit';
 import ProfileTrackRecord from '@/components/profile/ProfileTrackRecord';
 import type { TrackRecord } from '@/domain/reputation/track-record';
@@ -250,7 +251,11 @@ export default function ProfileLayout({
               </p>
             )}
             <div className="order-2">
-              <ProfileOfferings economicProfile={economicProfile} isOwnProfile={isOwnProfile} />
+              {isOwnProfile ? (
+                <OwnerProfileOfferings />
+              ) : (
+                <ProfileOfferings economicProfile={economicProfile} />
+              )}
             </div>
             {civicSplit && (
               <div className="order-3 mt-4">

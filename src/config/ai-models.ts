@@ -79,6 +79,32 @@ export const AI_MODEL_REGISTRY: Record<string, AIModelMetadata> = {
     capabilities: ['text', 'streaming'],
     tier: 'free',
     recommendedFor: ['complex reasoning', 'coding', 'general chat'],
+    // Gone from OpenRouter's catalogue, confirmed 2026-11-11 against its live
+    // list (469 models) after the health check named it: the id answers 404
+    // "unavailable for free". It was the default, so every free-pool turn began
+    // with a dead link. Kept as an entry so stored conversations that name it
+    // still resolve to a label.
+    isAvailable: false,
+    isFree: true,
+    rateLimit: '50-1000/day',
+  },
+
+  // Added 2026-11-11 from the live OpenRouter catalogue (context and output
+  // limits as listed there, tool calls supported) when Nemotron 3 Super above
+  // stopped being served free. Same family, so it takes over as the free
+  // reasoning model and the default.
+  'nvidia/nemotron-3-ultra-550b-a55b:free': {
+    id: 'nvidia/nemotron-3-ultra-550b-a55b:free',
+    name: 'Nemotron 3 Ultra (Free)',
+    provider: 'NVIDIA',
+    description: 'Free general model for reasoning, coding, and everyday chat',
+    contextWindow: 1000000,
+    maxOutputTokens: 65536,
+    inputCostPer1M: 0,
+    outputCostPer1M: 0,
+    capabilities: ['text', 'function_calling', 'streaming'],
+    tier: 'free',
+    recommendedFor: ['complex reasoning', 'coding', 'general chat'],
     isAvailable: true,
     isFree: true,
     rateLimit: '50-1000/day',
@@ -140,7 +166,7 @@ export const AI_MODEL_REGISTRY: Record<string, AIModelMetadata> = {
     maxOutputTokens: 8192,
     inputCostPer1M: 0,
     outputCostPer1M: 0,
-    capabilities: ['text', 'vision', 'streaming'],
+    capabilities: ['text', 'vision', 'function_calling', 'streaming'],
     tier: 'free',
     recommendedFor: ['vision tasks', 'long context', 'multimodal chat'],
     isAvailable: true,
@@ -430,10 +456,10 @@ export function calculateCostBtc(
 // ==================== CONSTANTS ====================
 
 /** Default model for Auto mode fallback (free model) */
-export const DEFAULT_MODEL_ID = 'nvidia/nemotron-3-super-120b-a12b:free';
+export const DEFAULT_MODEL_ID = 'nvidia/nemotron-3-ultra-550b-a55b:free';
 
 /** Default free model for platform usage */
-export const DEFAULT_FREE_MODEL_ID = 'nvidia/nemotron-3-super-120b-a12b:free';
+export const DEFAULT_FREE_MODEL_ID = 'nvidia/nemotron-3-ultra-550b-a55b:free';
 
 /** Default BTC price for cost calculations (updated periodically) */
 export const DEFAULT_BTC_PRICE_USD = 100000;

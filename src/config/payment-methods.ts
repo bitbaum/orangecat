@@ -19,7 +19,7 @@
  * the app with the amount filled in, or the handle to copy — and they settle
  * OUTSIDE OrangeCat. Nothing here is ever marked paid.
  *
- * Pseudonymous by default (.claude/CLAUDE.md): listing a fiat rail is the
+ * Pseudonymous by default (AGENTS.md → "Principles"): listing a fiat rail is the
  * opt-in to real identity, so the sheet says what a payer learns before Save,
  * and every row can be `on_request` — shown on the page by name only, the
  * handle shared in a message when the owner decides.

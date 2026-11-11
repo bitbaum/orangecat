@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { CURRENCY_CODES } from '@/config/currencies';
-import { lightningAddressSchema, optionalText, webUrl } from './base';
+import { lightningAddressSchema, optionalText, optionalUrl, webUrl } from './base';
 import { VALID_PROJECT_STATUSES } from '@/config/project-statuses';
 
 // Project validation
@@ -51,6 +51,7 @@ export const projectSchema = z.object({
     .optional()
     .nullable()
     .or(z.literal('')),
+  logo_url: optionalUrl(),
   category: optionalText(),
   tags: z
     .array(

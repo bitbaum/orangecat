@@ -90,10 +90,16 @@ export function summariseForModel(
     case 'completed': {
       const display = typeof data?.displayMessage === 'string' ? data.displayMessage : null;
       const id = typeof data?.id === 'string' ? data.id : null;
+      const url = typeof data?.url === 'string' ? data.url : null;
+      // A read action can explicitly return model-facing context. Do not
+      // serialize arbitrary handler data: other actions may carry private keys.
+      const context = typeof data?.modelContext === 'string' ? data.modelContext : null;
       return [
         `${label}: DONE.`,
         display,
         id ? `id=${id}` : null,
+        url ? `Open: ${url}` : null,
+        context,
         'You may now state this as completed.',
       ]
         .filter(Boolean)

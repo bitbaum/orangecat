@@ -12,6 +12,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { API_ROUTES } from '@/config/api-routes';
 import { logger } from '@/utils/logger';
+import type { PendingAction } from '@/components/ai-chat/usePendingActions';
+import type { ChatImage } from '@/services/cat/chat-images';
 
 export interface TalkMessage {
   id: string;
@@ -66,6 +68,10 @@ export function useCompanionTalk(assistantId: string) {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [creditsNeeded, setCreditsNeeded] = useState<CreditsNeeded | null>(null);
+  /** The day's free messages are spent: the way forward is the person's own key. */
+  const [limitReached, setLimitReached] = useState(false);
+  /** What the companion proposed to set in motion, waiting for the person's tap. */
+  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
 
   const loadThread = useCallback(
     async (threadId: string) => {
@@ -125,10 +131,12 @@ export function useCompanionTalk(assistantId: string) {
     return json.data.id;
   }, [assistantId, activeId]);
 
+  /** True when the message was delivered; false leaves the words in the box. */
   const send = useCallback(
-    async (content: string) => {
+    async (content: string, images?: ChatImage[]): Promise<boolean> => {
       setError(null);
       setCreditsNeeded(null);
+      setLimitReached(false);
       const optimistic: TalkMessage = {
         id: `temp-${Date.now()}`,
         role: 'user',
@@ -144,12 +152,13 @@ export function useCompanionTalk(assistantId: string) {
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ content }),
+            body: JSON.stringify({ content, images }),
           }
         );
         const json = (await res.json()) as ApiEnvelope<{
           userMessage: TalkMessage;
           assistantMessage: TalkMessage;
+          pendingAction?: PendingAction;
         }>;
         if (res.status === 402) {
           const d = (json.error?.details ?? {}) as {
@@ -158,7 +167,14 @@ export function useCompanionTalk(assistantId: string) {
           };
           setCreditsNeeded({ balance: d.currentBalance ?? 0, required: d.requiredAmount ?? 0 });
           setMessages(prev => prev.filter(m => m.id !== optimistic.id));
-          return;
+          return false;
+        }
+        if (res.status === 429) {
+          // Seen live (2026-10-31): the eleventh message of the day came back
+          // as "That did not go through. Try again.", which is not true and
+          // leads nowhere. The server says what happened; show that, and the
+          // way out.
+          setLimitReached(true);
         }
         if (!res.ok || !json.data) {
           throw new Error(json.error?.message || 'Failed to send message');
@@ -168,10 +184,15 @@ export function useCompanionTalk(assistantId: string) {
           json.data!.userMessage,
           json.data!.assistantMessage,
         ]);
+        if (json.data.pendingAction) {
+          setPendingAction(json.data.pendingAction);
+        }
+        return true;
       } catch (err) {
         logger.error('Companion send failed', err, 'useCompanionTalk');
         setMessages(prev => prev.filter(m => m.id !== optimistic.id));
         setError(err instanceof Error ? err.message : 'Something went wrong.');
+        return false;
       } finally {
         setSending(false);
       }
@@ -179,11 +200,30 @@ export function useCompanionTalk(assistantId: string) {
     [assistantId, ensureThread]
   );
 
+  /**
+   * A card ran: the server wrote its outcome into the thread (outcomes.ts).
+   * Re-read the thread so the line shows where it was asked for, and drop
+   * the card. If the re-read fails the card's own outcome line stays.
+   */
+  const showOutcome = useCallback(async () => {
+    if (!activeId) {
+      return;
+    }
+    try {
+      await loadThread(activeId);
+      setPendingAction(null);
+    } catch (err) {
+      logger.warn('thread did not refresh after a card ran', err, 'useCompanionTalk');
+    }
+  }, [activeId, loadThread]);
+
   const startNewThread = useCallback(() => {
     setActiveId(null);
     setMessages([]);
     setError(null);
     setCreditsNeeded(null);
+    setLimitReached(false);
+    setPendingAction(null);
   }, []);
 
   return {
@@ -194,6 +234,11 @@ export function useCompanionTalk(assistantId: string) {
     sending,
     error,
     creditsNeeded,
+    limitReached,
+    pendingAction,
+    /** The card is answered or dismissed; the chat shows no card. */
+    clearPendingAction: () => setPendingAction(null),
+    showOutcome,
     send,
     loadThread,
     startNewThread,

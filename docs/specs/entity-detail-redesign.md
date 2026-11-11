@@ -42,7 +42,7 @@ act?"_ — has no answer on the current page. **That is the bug.**
 
 ## 2. The insight: intent is already in the taxonomy
 
-We don't have to guess the action. The entity economic taxonomy (`.claude/CLAUDE.md`)
+We don't have to guess the action. The entity economic taxonomy (`AGENTS.md` → "What an entity is")
 already defines what each entity is _for_ — so each has exactly one primary verb:
 
 | Entity                     | Who lands here | The ONE action             |

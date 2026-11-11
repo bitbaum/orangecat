@@ -70,7 +70,9 @@ export function DashboardHeader({ profile, waiting, totalDrafts }: DashboardHead
   return (
     <header className="min-w-0">
       <h1 className="font-heading text-2xl leading-tight text-fg-primary sm:text-3xl">
-        Welcome back{name ? `, ${name}` : ''}
+        {/* No name yet means we do not know this person: "back" would be a
+            claim about someone who may have arrived ten seconds ago. */}
+        {name ? `Welcome back, ${name}` : 'Welcome'}
       </h1>
       <p className="mt-1 text-sm text-fg-secondary">{dashboardStatusLine(waiting, totalDrafts)}</p>
     </header>

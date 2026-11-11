@@ -26,6 +26,7 @@ import {
 } from '@/config/ai-provider-runtime';
 import { createAutoRouter } from '@/services/ai/auto-router';
 import { modelForDirectKey, peekModelsForKey } from '@/services/cat/key-models';
+import { prepareFreePool } from '@/services/ai/free-model-pool';
 import { buildPlatformProviders } from '@/services/ai/platform-providers';
 import { GROQ_KEY_HEADER, OPENROUTER_KEY_HEADER } from '@/config/http-headers';
 import { ROUTES } from '@/config/routes';
@@ -292,13 +293,16 @@ export async function resolveProvider(
   }
 
   // The free platform default at its saved position (only if env-configured).
-  const platformConfigured = isGroqAvailable() || !!process.env.OPENROUTER_API_KEY;
-  if (!evalLock && platformConfigured) {
+  if (!evalLock) {
+    await prepareFreePool();
+  }
+  const platformProviders = evalLock ? [] : buildPlatformProviders(message);
+  if (platformProviders.length > 0) {
     const platformPos = await keyService.getPlatformChainPosition(userId);
     entries.push({
       order: platformPos,
       build: () =>
-        buildPlatformProviders(message).map(p => ({
+        platformProviders.map(p => ({
           provider: p.providerId as AIProvider,
           modelToUse: p.defaultModel,
           aiService: p.aiService,
@@ -418,7 +422,7 @@ export async function resolveProvider(
           error: 'Daily limit reached',
           code: 'DAILY_LIMIT',
           message:
-            "You've used today's free Cat messages. Top up Cat Credits or add your own key — both remove the daily cap.",
+            "You've used today's free Cat messages. Wait for the daily reset or add your own provider key in Settings → AI.",
           retryAfter: 86400,
           helpUrl: ROUTES.SETTINGS_AI,
         },

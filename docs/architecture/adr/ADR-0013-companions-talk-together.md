@@ -1,0 +1,237 @@
+# ADR-0013: Companions Talk Together
+
+Date: 2026-10-30
+Status: Accepted (D1–D7 and D9 shipped; D8 on the roadmap)
+
+## Context
+
+Grok Bot (SpaceX Super Intelligence, beta 11 August 2026) made a product out
+of a shape the fleet already had in pieces: a messaging app whose contacts are
+bots. One list, newest first; a face, a name with its job, the last line and
+when; a "+" that offers a new bot or a new group chat; a bot made from a name,
+a shape and a colour, which is told its job in the first message; group
+chats of two to six bots in which the bots decide who answers and hand work to
+each other with an `@`; a status line that says who is writing; connectors a
+bot may use; a voice call. The owner's brief: have that as part of our
+offering, for what we do, better and simpler, model-agnostic, and from first
+principles rather than a blind copy.
+
+What a Grok Bot bot IS, read later and recorded here so the shape is not
+mistaken for the substance (2026-10-31, from
+[x.ai/news/introducing-grok-bot](https://x.ai/news/introducing-grok-bot) and
+[docs.x.ai/grok-bot](https://docs.x.ai/grok-bot/overview)): "a named AI
+teammate with a job and context that persists over time", running on a
+persistent cloud computer hosted by Cursor, with connected apps, browser and
+terminal use, up to fifty scheduled routines, and a separate review model that
+gates risky actions. The messaging screen is its face; the computer is its
+body. OrangeCat's companions have the face and the memory; the body (hands,
+routines, connectors) is the fleet's execution plane, Loki, and is the roadmap
+item this ADR's D6 and D7 name.
+
+OrangeCat already had the bot: an `ai_assistant` ("companion") has a
+creator's definition, a memory of each person it talks to, a clone that
+leaves the memories behind, a public profile on Discover, a price per message
+settled in Cat Credits, and its own purse. It answers on the person's own key
+or on the shared free chain, so it is model-agnostic by construction. What it
+lacked was the home (every companion was its own page), group chats, and the
+fleet's own specialist bots (Diplodoctor for a medical report, Causius for a
+legal letter) sitting in the same list.
+
+The screens themselves are kept in
+[`docs/research/grok-bot/`](../../research/grok-bot/README.md), ninety-four
+of them with an index of what each batch shows, so a later reader can look at
+the thing rather than at this description of it.
+
+## Decisions
+
+**D1. One home, one list.** `/companions/talk` is the talk home: the person's
+companions, the companions they talk to, their group chats and the fleet's
+bots in one list ordered by last activity, with the open chat beside it on a
+wide screen and in its place on a phone. `/companions/<id>/talk` forwards
+there. One row anatomy, one chat frame (chatkit's `ChatScreen` · `ChatThread`
+· `Composer`), one details sheet. The old room component is gone.
+
+**D2. A group chat is a room.** Three tables (`companion_rooms`,
+`companion_room_members`, `companion_room_messages`), owner-only under RLS. A
+member is exactly one of: a companion (`assistant_id`) or a fleet bot
+(`fleet_slug`). A line keeps the member it came from and the name it had, so
+the transcript still reads after a rename or a departure. Nothing in a room
+writes `companion_memories`: what is said in a group is not a confidence
+between one person and one companion.
+
+**D3. Who answers is a round, bounded, one line per request.** The person's
+message opens a round: the members addressed with `@Name` (or `@everyone`)
+answer in order; with nobody addressed, one small model call names the one or
+two members whose job it is, and failing that the first member answers, so a
+room never goes silent. A bot that addresses another member queues it next.
+A round is at most `MAX_BOT_TURNS` (6) lines, because two companions can
+thank each other forever and every line is a model call. The API runs ONE
+member per request and hands the rest of the round back to the client, which
+brings it to the next call; the queue is re-checked against the room's real
+members every time, so a forged queue cannot seat a stranger. This keeps
+every request short on a phone, shows each voice as it lands, and lets the
+person stop a round by not asking for the next turn.
+
+**D4. The fleet's bots sit in the room over one contract, and are not
+copied.** Diplodoctor and Causius each have their own rules about what they
+may say, in their own repositories. The room does not restate any of that; it
+asks the product:
+
+    POST <live url>/api/ask  { messages: [{ role, content }], locale }
+    → { text, replies? }
+
+Which products answer at that path is `src/config/fleet-bots.ts`; what each
+product IS (name, one line, live url) comes from the fleet map Loki publishes,
+never typed here (fleet `AGENTS.md`: a page that types the portfolio is a
+copy). Without the map there are no fleet bots on the rail and the rail says
+so. A one-to-one chat with a fleet bot stays in the person's browser: the
+product on the far side keeps nothing, and neither does OrangeCat. To seat
+another product: give it `/api/ask` with that shape and add its slug.
+
+**D5. A companion is made in a minute, and defined in chat.** "New companion"
+asks for a name, a shape and a colour, nothing else. The face is an SVG served
+by `/api/ai-assistants/avatar?shape=…&hue=…` and lives in `avatar_url` like
+any picture; a companion without one wears the face its name picks
+(`config/companion-avatars.ts`). Its definition is a starter that asks, in its
+first message, what it should help with most; what the person answers is
+remembered (companion memory, per person) and used in every later
+conversation. The full form stays on the edit page. This is the one place the
+fleet's chat differs from a form on purpose: the job is said once, to the
+companion, not typed into a field.
+
+## Not decided here, and why
+
+**D6. Connectors ("Apps verbinden").** Grok Bot lists some 150 apps. Read
+closely, every card is a plugin "for Cursor": one MCP server plus one skill
+file, with a "view source" link. Those are published by the vendors themselves
+(Stripe, Notion, Linear, Atlassian, Figma, Supabase and so on ship their own
+MCP servers) or by the community; the marketplace is a catalogue, not 150
+partnerships. The fleet's path is the same open standard: `ai-kit` gains an
+MCP client, a catalogue of servers lives in one register, a companion gets
+per-tool toggles ("the toggle is the honest control; the instruction is a
+hope"), and anything that acts on the world goes through the approval pattern
+the Cat already has (`cat_pending_actions`). OrangeCat is already on the other
+side of this standard: it exposes `/api/mcp` to AI apps. This is a package
+decision (fleet rule: packages first), not an app feature, so it is recorded
+here and built there.
+
+**D9. Hands: a bot proposes, the person taps (2026-11-01).** A companion
+answers on any model, with or without tool calling, so it does not call
+tools: it proposes. The owner's own companion is told what OrangeCat can do
+for them (`services/companions/hands.ts`: the launch set, an event, a
+project, a product, a service, a wishlist, a hand-off to Loki; nothing that
+moves money, nothing high-risk) and ends an answer with one fenced block
+naming the action and its parameters. The server takes the block off the
+words, validates the parameters against the registry, asks the Cat's
+permission service, and writes the Cat's own consent row
+(`hands-server.ts`); the chat shows the Cat's "Do it?" card, and the tap
+runs the Cat's executor. A bot can set nothing in motion that the Cat
+could not, a standing grant given here holds for the Cat too, and nothing
+exists until the tap, so a bot never says a thing is done. Only the owner,
+only in the bot's own chat, never in a group. The boundary test that keeps
+companion code out of the Cat's mind now names what stays forbidden (the
+executor, the loop, the tools, the handlers) and lets the consent plumbing
+through, for the same reason the credits ledger was never on its list.
+
+**D7. Routines and "always on".** A bot that runs on a timer spends a model
+call with nobody asking. The fleet's standing rule (2026-09-25) is that a
+free-tier key is spent only when a person deliberately asks. Routines need a
+budget a person has chosen to spend (their own key, or paid credits) before
+they are a feature; the room engine runs unchanged under a scheduler once
+that exists.
+
+**D6 and D7, decided (2026-11-01).** Both stay out of the app and go
+through the packages. Connectors: `@bitbaum/ai-kit` gains the MCP client
+and a register of servers; a bot's hands (D9) then gain a tool the way they
+gained an action, behind the same "Do it?" and per-tool toggles; nothing is
+pasted into OrangeCat as a 150-card catalogue. Routines: a scheduled bot
+turn spends only a budget the person chose (their own key, or paid
+credits), never the free chain, and its result is a message in the list
+like any other; the room engine runs unchanged under the scheduler. The
+order is hands first (shipped), then connectors, then routines, because a
+routine without hands has nothing to do but talk.
+
+**D6, first connector shipped (2026-11-01).** `@bitbaum/ai-kit/mcp` (1.22.0)
+is the client any product's bots use to reach a vendor's MCP server; it is
+in the package, not here. The first connector a bot reaches is not a vendor
+but the fleet's own execution agent, and it does not go through MCP: Loki's
+MCP door is minted for a person by OAuth, and a bot's server-side turn
+holds no such token. It goes over the rail OrangeCat already has with Loki
+(the signed HMAC body, actor → linked Loki user): Loki `POST
+/api/orangecat/ask` runs a read-only turn as the person, and OrangeCat's
+`ask_loki` action (category communication, low risk, confirmed, in the
+hands launch set) relays the question and shows Loki's own sentence as the
+outcome. Read-only is the design, not a limitation: a relayed question
+cannot dispatch, approve or spend; `send_task_to_loki`, confirmed as high
+risk, remains the one door that does. The MCP client is reserved for
+vendor connectors, whose consent is OAuth and whose tokens the person
+grants on a screen of OrangeCat's.
+
+**D7, shipped (2026-11-01).** A routine is one per person per bot
+(`companion_routines`): a time in their zone and a prompt. A 15-minute
+timer runs the due ones through the same `sendAiMessage` as a typed turn,
+on the person's own OpenRouter key only; without a key the routine is kept,
+shown as waiting, and skipped with the reason. The cron route is a
+registered person-asked timer in the no-background-ai gate, with a check
+that the runner still carries the own-key skip.
+
+**D8. Voice calls.** chatkit's composer dictates and its answers can be read
+aloud; a full-screen call with a chosen voice and speed is a chatkit feature
+to ask for there, so every product gets it at once.
+
+**The job given in chat is the definition, not a memory.** D5 said a born
+companion asks what it is for and remembers the answer. Remembering was an
+extracted memory, which did not always exist and never reached a group chat
+(2026-10-31: two companions given jobs in their own threads asked again in the
+room). The owner's first answer now rewrites the companion's `system_prompt`
+and `description` (`services/companions/born.ts`), so the job travels
+everywhere the companion does.
+
+**A round goes on while the work is unfinished.** Tested on the live site
+(2026-10-30, two fleet bots on one cross-domain problem; two companions,
+a builder and a skeptic, on a launch plan): each member answered once and
+well, but nobody answered anyone, and a bot asked to "discuss" staged both
+voices inside its own line. Three rules fix that, all bounded by the round's
+six lines. A companion's memories of the person come into the room with it
+(the job it was given in its own thread). A line that stages another member's
+voice is cut where that voice begins and the member answers for itself
+(`cutImpersonation`; one line addressed to a member is a question and stays).
+And when a line addresses nobody but turns remain, one small router call
+(`pickNext`) says whether the exchange is over or who speaks next: the
+person asked for a discussion that is not finished, a question is open, or a
+disagreement stands.
+
+**The room travels as the contract's `scene`.** A companion's room rules sit
+under its own definition in the system prompt; a fleet bot's prompt lives on
+its site, so the same section goes with the request as `scene` (up to 1,000
+characters), which the product puts after its rules. Found on the live site
+2026-10-30: without it Causius wrote Diplodoctor's answer inside its own line.
+
+**Attachments are the Cat's, not the page's.** The paperclip in every chat
+here is chatkit's composer with the Cat's limits and PDF reader
+(`ModernChatPanel/attachments.ts`, `pdfAttachments.ts`); a file travels
+inside the message as the Cat's tagged blocks and a photo beside it, stored
+in the Cat's private photo store so a group chat's later turns can read it
+again. A fleet bot's contract takes an attached document as `context` and no
+pixels, so a photo is turned away at the box with the reason. Nothing about
+attaching was written twice.
+
+**Seen and not built.** Beyond D6–D8 the screens show a model picker (Auto /
+Fast / Expert / Heavy / Build), a library of the files and links shared in
+chats, a kids mode, and bot settings where risky actions are checked against
+the person's own written rules before they run. None is in scope here; each is
+named in the research index so the next slice is cut from the whole shape.
+
+## Consequences
+
+- Every chat surface in OrangeCat's companions is chatkit; behaviour cannot
+  drift from the Cat's.
+- Adding a fleet bot is one slug, once its product answers at `/api/ask`.
+- The five demos run end to end on the live site as one Playwright spec
+  (`tests/e2e/bots-rehearsal.live.spec.ts`), started by a person from the
+  _Live rehearsal_ workflow; `docs/testing/live-rehearsal.md`.
+- The round engine is pure and tested (`__tests__/unit/companions/rooms/`):
+  mentions, planning, handoffs, the cap, and the sanitising of a client-held
+  queue.
+- A migration ships with source pins (`rooms/migration.test.ts`) so a later
+  edit cannot quietly open a room to anyone but its owner.

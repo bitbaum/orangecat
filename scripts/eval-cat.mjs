@@ -107,7 +107,7 @@ const EVAL_PROVIDER =
 // the eval measures the model users actually get.
 const EVAL_MODEL =
   process.env.CAT_EVAL_MODEL ||
-  (EVAL_PROVIDER === 'groq' ? 'llama-3.3-70b-versatile' : 'nvidia/nemotron-3-super-120b-a12b:free');
+  (EVAL_PROVIDER === 'groq' ? 'llama-3.3-70b-versatile' : 'nvidia/nemotron-3-ultra-550b-a55b:free');
 const NOTIFY = process.env.CAT_EVAL_NOTIFY === '1';
 const NOTIFY_USER_ID =
   process.env.CAT_EVAL_NOTIFY_USER_ID || 'cec88bc9-557f-452b-92f1-e093092fecd6'; // founder mao
@@ -714,7 +714,7 @@ async function freeModelBudget() {
       method: 'POST',
       headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: EVAL_MODEL.includes(':free') ? EVAL_MODEL : 'nvidia/nemotron-3-super-120b-a12b:free',
+        model: EVAL_MODEL.includes(':free') ? EVAL_MODEL : 'nvidia/nemotron-3-ultra-550b-a55b:free',
         messages: [{ role: 'user', content: 'ping' }],
         max_tokens: 1,
       }),

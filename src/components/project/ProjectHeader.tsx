@@ -8,13 +8,13 @@
 
 'use client';
 
+import { openConversationFor } from '@/features/messaging/open-conversation.client';
 import { formatRelativeTime } from '@/utils/dates';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Edit, Share2, MessageCircle } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { ROUTES } from '@/config/routes';
-import { API_ROUTES } from '@/config/api-routes';
 import { getUniqueCategories } from '@/utils/project';
 import type { EntityType } from '@/config/entity-registry';
 import { getInitial } from '@/utils/string';
@@ -31,6 +31,8 @@ interface ProjectHeaderProps {
     user_id: string;
     category?: string | null;
     tags?: string[] | null;
+    /** The project's own logo, when its owner uploaded one. */
+    logo_url?: string | null;
     profiles?: {
       username: string | null;
       name: string | null;
@@ -72,20 +74,10 @@ export default function ProjectHeader({
     }
 
     try {
-      // Create or open conversation with project creator
-      const response = await fetch(API_ROUTES.MESSAGES.BASE, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          participantIds: [project.user_id],
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to start conversation');
-      }
-
-      const { conversationId } = await response.json();
+      // Create or open the conversation through the one shared client helper:
+      // it reads the API's { data: { conversationId } } envelope. Reading a
+      // top-level `conversationId` here sent people to /messages?id=undefined.
+      const conversationId = await openConversationFor([project.user_id]);
       router.push(ROUTES.MESSAGE_CONVERSATION(conversationId));
     } catch {
       toast.error('Failed to start conversation. Please try again.');
@@ -96,9 +88,21 @@ export default function ProjectHeader({
     <div className="mb-6">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
         <div className="flex-1 min-w-0">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-fg-primary mb-3 break-words">
-            {project.title}
-          </h1>
+          <div className="mb-3 flex items-center gap-4">
+            {project.logo_url && (
+              // eslint-disable-next-line @next/next/no-img-element -- logo_url is an owner-supplied URL (any host); next/image would throw for hosts outside images.remotePatterns
+              <img
+                src={project.logo_url}
+                alt={`${project.title} logo`}
+                width={64}
+                height={64}
+                className="h-14 w-14 shrink-0 rounded-md border border-subtle bg-surface-base object-contain sm:h-16 sm:w-16"
+              />
+            )}
+            <h1 className="min-w-0 text-2xl sm:text-3xl lg:text-4xl font-bold text-fg-primary break-words">
+              {project.title}
+            </h1>
+          </div>
 
           {/* Categories - Show prominently for quick project understanding */}
           {(project.category || (project.tags && project.tags.length > 0)) && (
@@ -144,7 +148,7 @@ export default function ProjectHeader({
                   <p className="text-sm text-fg-secondary">Created by</p>
                   <Link
                     href={creatorProfileUrl}
-                    className="text-sm font-semibold text-fg-primary hover:underline underline-offset-4"
+                    className="-my-3 inline-flex min-h-11 min-w-11 items-center text-sm font-semibold text-fg-primary hover:underline underline-offset-4"
                   >
                     {project.profiles.name ||
                       project.profiles.username ||
@@ -163,7 +167,7 @@ export default function ProjectHeader({
                 <p className="text-sm text-fg-secondary">Created by</p>
                 <Link
                   href={`/profiles/${project.user_id}`}
-                  className="text-sm font-semibold text-fg-primary hover:underline underline-offset-4"
+                  className="-my-3 inline-flex min-h-11 min-w-11 items-center text-sm font-semibold text-fg-primary hover:underline underline-offset-4"
                 >
                   User {project.user_id.substring(0, 8)}
                 </Link>

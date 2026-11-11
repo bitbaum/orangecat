@@ -34,7 +34,7 @@ Please read and follow our [Code of Conduct](./CODE_OF_CONDUCT.md).
    (and add a line to the root `CHANGELOG.md` when the change is visible to people)
 3. Open a non-draft pull request when the work is ready to ship. Nobody merges
    by hand: once CI is green, `.github/workflows/auto-merge.yml` merges it and
-   CD deploys it (see "Shipping" in the root `CLAUDE.md`). Open a draft, or add
+   CD deploys it (see "Deploy path" in the root `AGENTS.md`). Open a draft, or add
    a `hold` label, if it is not ready
 
 ## Style Guide

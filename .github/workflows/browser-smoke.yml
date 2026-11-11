@@ -5,14 +5,44 @@ on:
     branches: [main]
   push:
     branches: [main]
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      live_conversation:
+        description: Send the attention and investor-room requests through deployed Cat (real model calls)
+        type: boolean
+        default: false
 
 concurrency:
   group: browser-smoke-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  article-writing:
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.live_conversation }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: Check article writing, draft recovery and phone layouts
+        run: pnpm run test:article-writing-browser
+      - name: Retain article editor screenshots
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: article-writing-browser
+          path: test-results/article-writing/
+          retention-days: 14
+          if-no-files-found: warn
+
   cat-chat:
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.live_conversation }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -54,7 +84,7 @@ jobs:
             echo 'Browser smoke requires the configured E2E fixture account.' >&2
             exit 1
           }
-      - name: Check the Cat chat composer at phone and desktop widths
+      - name: Check the Cat chat composer and PDF attaching at phone and desktop widths
         env:
           PORT: 3000
           E2E_BASE_URL: http://localhost:3000
@@ -63,4 +93,24 @@ jobs:
         run: |
           node .next/standalone/server.js &
           pnpm exec wait-on http://localhost:3000
-          pnpm exec playwright test tests/e2e/ai-chat-ui.spec.ts --project=chromium --reporter=line
+          pnpm exec playwright test tests/e2e/cat-chat-smoke.spec.ts tests/e2e/cat-pdf.live.spec.ts --project=chromium --reporter=line
+
+  live-conversation:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.live_conversation }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      E2E_BASE_URL: https://orangecat.ch
+      E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
+      E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: Exercise the deployed conversation, including its investor-room link
+        run: pnpm exec playwright test tests/e2e/cat-conversation.live.spec.ts tests/e2e/cat-investor-room.live.spec.ts --project=chromium --workers=1 --reporter=line

@@ -60,7 +60,10 @@ echo "=== assemble standalone (static + public) ==="
 # assembles normally. The artifact is ALWAYS pre-assembled before upload, so a
 # skipped copy here never means missing assets.
 [ -d "$REPO_ROOT/.next/static" ] && cp -r "$REPO_ROOT/.next/static" "$ST/.next/static"
-[ -d "$REPO_ROOT/public" ] && cp -r "$REPO_ROOT/public" "$ST/public"
+if [ -d "$REPO_ROOT/public" ]; then
+  mkdir -p "$ST/public"
+  cp -a "$REPO_ROOT/public/." "$ST/public/"
+fi
 
 # ── shiki top-level link ──────────────────────────────────────────────────────
 # Next auto-externalizes shiki, and bip-kit's ArticleBody loads it with plain
@@ -134,9 +137,11 @@ echo "=== OAuth client scope ceilings (scripts/oauth/client-specs.ts → box) ==
 # A client's allowed_scopes are derived from CLIENT_SPECS. Until 2026-10-20 a
 # scope widened there reached the live sign-in only when someone re-ran
 # register-client.ts on the box by hand; now every deploy refreshes the rows
-# that EXIST. Nothing is created here — creating a client mints a secret and
-# prints it once, which is register-client.ts's job, by hand. Non-fatal: a
-# stale ceiling narrows one app's token; it does not break the site.
+# that EXIST, and creates a missing one switched off and WITHOUT a secret
+# (inert: it signs nobody in). Its secret comes from loki app-secrets.sh
+# (kind oc-client), which writes the app's env and the hash here without
+# printing either, or from register-client.ts by hand. Non-fatal: a stale
+# ceiling narrows one app's token; it does not break the site.
 if ! npx -y tsx scripts/oauth/client-scopes-sql.ts \
   | ssh "${SSH_OPTS[@]}" "$OC_BOX" "docker exec -i ${OC_DB_CONTAINER:-supabase-db} psql -U postgres -d postgres -v ON_ERROR_STOP=1"; then
   echo "WARN: OAuth client scope refresh failed (non-fatal) — run scripts/oauth/register-client.ts on the box" >&2
@@ -361,6 +366,7 @@ echo "=== ship ops scripts + nightly gate timers ==="
     "orangecat-cron@cat-brief.timer"
     "orangecat-cron@cat-watches.timer"
     "orangecat-cron@review-nudges.timer"
+    "orangecat-cron@companion-routines.timer"
   )
   # Units this repo USED to install. Removing a unit from UNITS does not remove
   # it from the box, so each one is disabled and deleted on every deploy until

@@ -44,6 +44,7 @@ export const GET = withOptionalAuth(async (request, context: RouteContext) => {
         raised_amount,
         created_at,
         updated_at,
+        logo_url,
         project_media(id, storage_path, position)
       `
       )
@@ -71,6 +72,7 @@ export const GET = withOptionalAuth(async (request, context: RouteContext) => {
       goal_amount?: number | null;
       currency?: string | null;
       raised_amount?: number | null;
+      logo_url?: string | null;
       bitcoin_balance_btc?: number | null;
       bitcoin_balance_updated_at?: string | null;
       created_at: string;
@@ -100,9 +102,10 @@ export const GET = withOptionalAuth(async (request, context: RouteContext) => {
           project_media: undefined, // Remove nested data
         };
       }
+      // No photo: the project's own logo, when it has one, stands in for it.
       return {
         ...project,
-        thumbnail_url: null,
+        thumbnail_url: project.logo_url ?? null,
         project_media: undefined,
       };
     });

@@ -47,6 +47,7 @@ import { EVENT_COVER_SOURCES, EVENT_TYPES } from '@/config/events';
 import { CURRENCY_CODES } from '@/config/currencies';
 import { GROUP_LABEL_IDS } from '@/config/group-labels';
 import { PROPOSAL_TYPES } from '@/config/proposal-constants';
+import { INVESTOR_ROOM_ACTIONS } from './cat-actions-room';
 
 // ==================== ACTION TYPES ====================
 
@@ -89,6 +90,7 @@ export interface CatAction {
 // ==================== ACTION DEFINITIONS ====================
 
 export const CAT_ACTIONS: Record<string, CatAction> = {
+  ...INVESTOR_ROOM_ACTIONS,
   // ---------- ENTITY ACTIONS ----------
 
   create_product: {
@@ -813,7 +815,7 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
     id: 'send_task_to_loki',
     name: 'Send a Task to Loki',
     description:
-      'Send one coding task to several Loki projects at once. Dispatched, not done: say SENT.',
+      'Send one coding task to several Loki projects at once. Dispatched, not done: say SENT. A question is ask_loki.',
     category: 'entities',
     icon: Hammer,
     riskLevel: 'high',
@@ -836,6 +838,31 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
       'Send this to OrangeCat and Loki: make it so I can post prompts in both',
       'Have the agents on solon and loki fix the shared header',
       'Post this task to my orangecat project',
+    ],
+    enabled: true,
+  },
+
+  ask_loki: {
+    id: 'ask_loki',
+    name: 'Ask Loki',
+    description:
+      "A question to the user's own Loki (what is live, built, queued), answered as them. Read-only, NOT send_task_to_loki.",
+    category: 'communication',
+    icon: Bot,
+    riskLevel: 'low',
+    requiresConfirmation: true,
+    parameters: [
+      {
+        name: 'question',
+        type: 'string',
+        required: true,
+        description: 'In their words',
+      },
+    ],
+    examples: [
+      'Ask Loki what is live on my sites',
+      'What did the agents do on orangecat yesterday?',
+      'Is the build for my shop finished?',
     ],
     enabled: true,
   },
@@ -1701,7 +1728,7 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
     id: 'save_economic_profile',
     name: 'Save Economic Profile',
     description:
-      'Save latent economic value the user reveals — skills, things they own to rent/sell, goals, constraints, what people come to them for, engagement scope they are not taking on, motivation, or stage — into their structured economic profile so Cat can suggest better offers. Skills, asked-for, and not-available-for are shown on their public profile; constraints, motivation, and stage stay private.',
+      'Save latent economic value the user reveals — skills, things they own to rent/sell, goals, constraints, what people come to them for, engagement scope they are not taking on, motivation, or stage — into their structured economic profile so Cat can suggest better offers. Skills, assets, asked-for, and not-available-for stay private unless the owner explicitly enables public offerings on their profile. Saving here never changes that sharing choice. Goals, constraints, motivation, and stage stay private.',
     category: 'context',
     icon: TrendingUp,
     riskLevel: 'low',

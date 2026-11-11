@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { PageHeading } from '@/components/layout/PageHeading';
 import { FLEET_PROFILE_URL, loadOrangeCatProfile } from '@/lib/development/records';
-import { linkDevelopment } from 'bip-kit';
+import { linkDevelopment } from '@bitbaum/bip-kit';
 import { RoadmapJourney } from '@/components/roadmap/RoadmapJourney';
 import { BackTheRoad } from '@/components/capital/BackTheRoad';
 import { loadOpenCapital } from '@/services/capital/open-capital';

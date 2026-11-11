@@ -6,7 +6,6 @@ import { ArrowRight, Eye, EyeOff, Loader2, Mail } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { TurnstileCaptcha } from '@/components/auth/TurnstileCaptcha';
-import { PasswordStrengthIndicator } from '@/components/auth/PasswordStrengthIndicator';
 import type { AuthMode, AuthFormData } from './useAuthForm';
 
 interface AuthFormBodyProps {
@@ -19,8 +18,6 @@ interface AuthFormBodyProps {
   showConfirmPassword: boolean;
   setShowConfirmPassword: (show: boolean) => void;
   loading: boolean;
-  isPasswordFocused: boolean;
-  setIsPasswordFocused: (focused: boolean) => void;
   captchaEnabled: boolean;
   turnstileSiteKey: string | undefined;
   handleCaptchaSuccess: (token: string) => void;
@@ -42,8 +39,6 @@ export function AuthFormBody({
   showConfirmPassword,
   setShowConfirmPassword,
   loading,
-  isPasswordFocused,
-  setIsPasswordFocused,
   captchaEnabled,
   turnstileSiteKey,
   handleCaptchaSuccess,
@@ -84,8 +79,6 @@ export function AuthFormBody({
               type={showPassword ? 'text' : 'password'}
               value={formData.password}
               onChange={e => setFormData({ ...formData, password: e.target.value })}
-              onFocus={() => setIsPasswordFocused(true)}
-              onBlur={() => setIsPasswordFocused(false)}
               disabled={loading}
               placeholder="Enter your password"
               className="w-full h-12 px-4 pr-12 rounded-lg border-strong focus:border-interactive focus:ring-ring bg-surface-base dark:text-fg-primary"
@@ -101,13 +94,6 @@ export function AuthFormBody({
               {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
             </button>
           </div>
-          {mode === 'register' && (
-            <PasswordStrengthIndicator
-              password={formData.password}
-              isFocused={isPasswordFocused}
-              showOnlyWhenFocused={false}
-            />
-          )}
         </div>
       )}
 

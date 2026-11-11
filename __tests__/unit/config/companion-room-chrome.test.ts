@@ -10,6 +10,8 @@ describe('companion room chrome', () => {
   it('recognises the room and nothing else', () => {
     expect(isCompanionTalkPath('/companions/abc/talk')).toBe(true);
     expect(isCompanionTalkPath('/companions/abc/talk/')).toBe(true);
+    expect(isCompanionTalkPath('/companions/talk')).toBe(true);
+    expect(isCompanionTalkPath('/companions/talk/')).toBe(true);
     expect(isCompanionTalkPath('/companions/abc')).toBe(false);
     expect(isCompanionTalkPath('/companions/abc/memory')).toBe(false);
     expect(isCompanionTalkPath('/companions')).toBe(false);
@@ -22,8 +24,11 @@ describe('companion room chrome', () => {
       hideMobileBottomNav: true,
       preferCollapsedSidebar: true,
       hideGlobalCat: true,
-      // The room keeps the app header: its way back is in that header.
+      // Not from the path: an open chat hides the header on a phone itself
+      // (IMMERSIVE_CHAT_ATTR, immersive-chat.test.ts); its own back button
+      // returns to the list.
       immersiveChat: false,
+      feedbackTab: true,
     });
     expect(getRouteChrome('/companions/abc')).toEqual({
       ownsMobileNavClearance: false,
@@ -31,6 +36,7 @@ describe('companion room chrome', () => {
       preferCollapsedSidebar: false,
       hideGlobalCat: false,
       immersiveChat: false,
+      feedbackTab: true,
     });
   });
 
@@ -42,11 +48,14 @@ describe('companion room chrome', () => {
       hideGlobalCat: true,
       // The Cat hub owns the phone: its toolbar floats and carries Home.
       immersiveChat: true,
+      feedbackTab: true,
     });
   });
 
   it('is an app surface, so the room renders inside the shell', () => {
     expect(getRouteSurface('/companions/abc/talk')).toBe('app');
+    expect(getRouteSurface('/companions/talk')).toBe('app');
+    expect(getRouteChrome('/companions/talk').hideMobileBottomNav).toBe(true);
   });
 });
 

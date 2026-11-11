@@ -22,6 +22,21 @@ import { CAT_ACTIONS } from '@/config/cat-actions';
 import { PLATFORM_TOOL_DEFINITION } from '@/services/cat/tool-use-detection';
 import { uniqueToolDefinitions } from '@/services/cat/tool-definitions';
 
+it('does not turn a string false into permission to replace an existing investor deck', () => {
+  const result = validateActionParameters('generate_investor_deck', {
+    project_id: 'project-one',
+    replace_existing: 'false',
+  });
+  expect(result.ok).toBe(true);
+  expect(result.data?.replace_existing).toBe(false);
+  expect(
+    validateActionParameters('generate_investor_deck', {
+      project_id: 'project-one',
+      replace_existing: 'yes',
+    }).ok
+  ).toBe(false);
+});
+
 describe('validateActionParameters', () => {
   it('accepts a well-formed call', () => {
     const result = validateActionParameters('create_product', {

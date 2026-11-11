@@ -1,98 +1,55 @@
 'use client';
 
 /**
- * Minimal toolbar for the Cat chat: the conversations trigger and the way home
- * (phones, where this row is the only chrome — the app header steps aside,
- * getRouteChrome().immersiveChat), the quota chip when it matters, and ONE
- * way into Cat settings — which replaced the separate Context and Controls
- * tabs. It floats over the conversation (chatkit's ChatScreen).
+ * The Cat's own controls in chatkit's ChatApp header. ChatApp draws the rest
+ * of the row — Chats, the chat's title, New chat, and "…" with Temporary
+ * chat, Rename and Delete — so these are only what is OrangeCat's:
+ *
+ *   start — Home, on phones, where the app header steps aside for the chat
+ *           (getRouteChrome().immersiveChat) and this is the way back
+ *   end   — the quota chip when it matters, Loki (one of the Cat's hands,
+ *           visible where you ask), and ONE way into Cat settings
+ *
+ * Every control is ChatApp's own frosted 44px pill (`ck-glass`), so the row
+ * reads as one header, not two toolbars stacked.
  */
 
 import Link from 'next/link';
-import { Ghost, House, PanelLeft, Settings2 } from 'lucide-react';
-import { TEMPORARY_CHAT_LABEL, TEMPORARY_CHAT_NOTE } from '@/lib/chat/temporary-chat';
+import { House, Settings2 } from 'lucide-react';
 import { ROUTES } from '@/config/routes';
-import { cn } from '@/lib/utils';
 import { LokiChip } from './LokiChip';
 import { QuotaMeter, isQuotaWorthShowing } from './ModernChatPanel/components/QuotaMeter';
 import type { CatQuota } from './ModernChatPanel/hooks/useCatQuota';
 
-interface CatChatToolbarProps {
-  className?: string;
-  /** Daily-cap meter; rendered on the chat panel only. */
-  quota?: CatQuota | null;
-  /**
-   * Opens the conversation rail on mobile. The rail used to float this button
-   * over this row, which covered the quota chip — it belongs IN the row.
-   */
-  onOpenConversations?: () => void;
-  /** The chat on screen is temporary: say so where the person is looking. */
-  temporary?: boolean;
+export function CatHeaderStart() {
+  return (
+    <Link
+      href={ROUTES.DASHBOARD.HOME}
+      className="ck-glass ck-app-icon md:!hidden"
+      aria-label="Home"
+      title="Home"
+    >
+      <House className="h-4 w-4" />
+    </Link>
+  );
 }
 
-export function CatChatToolbar({
-  className,
-  quota = null,
-  onOpenConversations,
-  temporary = false,
-}: CatChatToolbarProps) {
+export function CatHeaderEnd({ quota = null }: { quota?: CatQuota | null }) {
   return (
-    <div className={cn('oc-chat-toolbar', className)}>
-      {/* Left: the conversation trigger, phones only (the rail is always
-          visible from md). It used to share the row with a "Cat · Saved ·
-          clear anytime" label that told the user nothing they could act on. */}
-      {onOpenConversations && (
-        <button
-          type="button"
-          onClick={onOpenConversations}
-          className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg text-fg-secondary transition-colors hover:bg-surface-raised hover:text-fg-primary md:hidden"
-          aria-label="Show conversations"
-          title="Show conversations"
-        >
-          <PanelLeft className="h-4 w-4" />
-        </button>
-      )}
-      {/* Home, phones only: with the app header gone from over the chat,
-          this is the one tap back to the rest of OrangeCat. */}
-      <Link
-        href={ROUTES.DASHBOARD.HOME}
-        className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg text-fg-secondary transition-colors hover:bg-surface-raised hover:text-fg-primary md:hidden"
-        aria-label="Home"
-        title="Home"
-      >
-        <House className="h-4 w-4" />
-      </Link>
-
-      {/* min-w-0 (not flex-shrink-0): the quota chip must be allowed to shrink
-          and truncate. Pinned at its natural width it overflowed the toolbar
-          on phones in the capped state and slid under the panel toggle. The
-          two panel links stay fixed — they're the controls that must remain
-          tappable. */}
-      <div className="ml-auto flex min-w-0 items-center gap-1 sm:gap-2">
-        {temporary && (
-          <span
-            className="inline-flex min-h-10 items-center gap-1.5 rounded-full px-3 text-sm text-fg-secondary"
-            title={TEMPORARY_CHAT_NOTE}
-          >
-            <Ghost className="h-4 w-4" aria-hidden />
-            {TEMPORARY_CHAT_LABEL}
-          </span>
-        )}
-        {isQuotaWorthShowing(quota) && <QuotaMeter quota={quota} className="min-w-0" />}
-        <div className="flex flex-shrink-0 items-center gap-1 sm:gap-2">
-          {/* Loki is one of the Cat's hands — visible here, where you ask,
-              not only in settings. */}
-          <LokiChip />
-          <Link
-            href={ROUTES.DASHBOARD.CAT_SETTINGS}
-            className="flex min-h-10 min-w-10 items-center justify-center gap-1.5 rounded-md px-2.5 text-sm text-fg-secondary transition-colors hover:bg-surface-raised/60 hover:text-fg-primary sm:min-w-0 sm:px-3"
-            aria-label="Cat settings"
-          >
-            <Settings2 className="h-4 w-4 flex-shrink-0" />
-            <span className="hidden sm:inline">Settings</span>
-          </Link>
-        </div>
+    <div className="oc-chat-header-end">
+      {/* min-w-0: the chip truncates rather than push the title out. */}
+      {isQuotaWorthShowing(quota) && <QuotaMeter quota={quota} className="min-w-0" />}
+      <div className="hidden sm:block">
+        <LokiChip />
       </div>
+      <Link
+        href={ROUTES.DASHBOARD.CAT_SETTINGS}
+        className="ck-glass ck-app-icon"
+        aria-label="Cat settings"
+        title="Cat settings"
+      >
+        <Settings2 className="h-4 w-4" />
+      </Link>
     </div>
   );
 }

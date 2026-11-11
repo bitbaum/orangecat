@@ -16,8 +16,8 @@
  * single-quoted figure captions that prettier writes on commit).
  */
 
-import { extractToc, normalizeMarkdown, parseContentBlocks, readingTime } from 'bip-kit';
-import type { ContentBlock, TocEntry } from 'bip-kit';
+import { extractToc, normalizeMarkdown, parseContentBlocks, readingTime } from '@bitbaum/bip-kit';
+import type { ContentBlock, TocEntry } from '@bitbaum/bip-kit';
 
 export interface ParsedLongform {
   blocks: ContentBlock[];

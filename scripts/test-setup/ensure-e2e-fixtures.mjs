@@ -23,9 +23,7 @@ const email = (
   'test@orangecat.ch'
 ).trim();
 const password =
-  process.env.E2E_USER_PASSWORD ||
-  process.env.E2E_TEST_USER_PASSWORD ||
-  'TestPassword123!';
+  process.env.E2E_USER_PASSWORD || process.env.E2E_TEST_USER_PASSWORD || 'TestPassword123!';
 
 if (!url || !serviceKey) {
   console.error('Missing Supabase admin env for E2E fixture bootstrap');
@@ -40,17 +38,52 @@ const admin = createClient(url, serviceKey, {
 async function findUserByEmail(targetEmail) {
   for (let page = 1; page <= 10; page++) {
     const { data } = await admin.auth.admin.listUsers({ page, perPage: 100 });
-    const user = data?.users?.find(u => (u.email || '').toLowerCase() === targetEmail.toLowerCase());
+    const user = data?.users?.find(
+      u => (u.email || '').toLowerCase() === targetEmail.toLowerCase()
+    );
     if (user) return user;
     if (!data?.users?.length) break;
   }
   return null;
 }
 
+const anonKey =
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+/**
+ * Whether the shared fixture user already signs in with this password. The
+ * answer decides if the password is written again: GoTrue ends a user's other
+ * sessions when their password is changed, and every CI run (a PR, a push to
+ * main) runs this against the SAME account — so an unconditional write by one
+ * run signed another run's browser out partway through (check:broken-words:
+ * "/send @ 390px: bounced to sign-in", pages before it opened fine).
+ * Unknown (no anon key, network) counts as "no", which keeps the old behaviour.
+ */
+async function passwordAlreadySet(targetEmail) {
+  if (!anonKey) return false;
+  const probe = createClient(url, anonKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+  try {
+    const { data, error } = await probe.auth.signInWithPassword({
+      email: targetEmail,
+      password,
+    });
+    return !error && Boolean(data?.session);
+  } catch {
+    return false;
+  }
+}
+
+async function setPasswordIfChanged(userId, targetEmail) {
+  if (await passwordAlreadySet(targetEmail)) return;
+  await admin.auth.admin.updateUserById(userId, { password });
+}
+
 async function ensureUser(targetEmail) {
   let user = await findUserByEmail(targetEmail);
   if (user) {
-    await admin.auth.admin.updateUserById(user.id, { password });
+    await setPasswordIfChanged(user.id, targetEmail);
     return user;
   }
 
@@ -64,7 +97,7 @@ async function ensureUser(targetEmail) {
   if (error) {
     user = await findUserByEmail(targetEmail);
     if (user) {
-      await admin.auth.admin.updateUserById(user.id, { password });
+      await setPasswordIfChanged(user.id, targetEmail);
       return user;
     }
     throw error;
@@ -128,11 +161,19 @@ async function ensureOwnedProject(userId) {
     return existing.id;
   }
 
-  const { data: actor } = await admin.from('actors').select('id').eq('user_id', userId).maybeSingle();
+  const { data: actor } = await admin
+    .from('actors')
+    .select('id')
+    .eq('user_id', userId)
+    .maybeSingle();
   if (!actor?.id) {
     for (let attempt = 0; attempt < 5; attempt++) {
       await new Promise(resolve => setTimeout(resolve, 500));
-      const { data: retryActor } = await admin.from('actors').select('id').eq('user_id', userId).maybeSingle();
+      const { data: retryActor } = await admin
+        .from('actors')
+        .select('id')
+        .eq('user_id', userId)
+        .maybeSingle();
       if (retryActor?.id) {
         return insertFixtureProject(userId, retryActor.id, fixtureTitle);
       }

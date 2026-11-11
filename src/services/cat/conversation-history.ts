@@ -13,6 +13,7 @@
  */
 
 import type { AnySupabaseClient } from '@/lib/supabase/types';
+import { completedHistory, type StoredCatFailure } from './failed-turn';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { messageLabel } from '@/lib/chat/attachment-tags';
 
@@ -41,6 +42,7 @@ interface StoredMessage {
   provider?: string | null;
   token_count?: number | null;
   created_at: string;
+  failure?: StoredCatFailure | null;
 }
 
 export interface ConversationSummary {
@@ -147,7 +149,7 @@ export async function createConversation(
     .insert({
       user_id: userId,
       is_default: false,
-      title: title ?? null,
+      title: storedTitle(title),
       ephemeral: opts.ephemeral === true,
     })
     .select('id')
@@ -167,13 +169,14 @@ export async function isEphemeralConversation(
   if (!conversationId) {
     return false;
   }
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from(DATABASE_TABLES.CAT_CONVERSATIONS)
     .select('ephemeral')
     .eq('id', conversationId)
     .eq('user_id', userId)
     .maybeSingle();
-  return data?.ephemeral === true;
+  // An unreadable/missing owned row cannot authorize durable learning.
+  return !!error || !data || data.ephemeral !== false;
 }
 
 /** The daily sweep: a temporary chat nobody came back to leave is gone within
@@ -191,6 +194,34 @@ export async function deleteStaleEphemeralConversations(
     throw new Error(`Failed to sweep temporary chats: ${error.message}`);
   }
   return count ?? 0;
+}
+
+/** A title as stored: one line, cut to TITLE_MAX_LENGTH. Empty → null. */
+export function storedTitle(title: string | null | undefined): string | null {
+  const line = title?.replace(/\s+/g, ' ').trim();
+  if (!line) {
+    return null;
+  }
+  return line.length > TITLE_MAX_LENGTH ? `${line.slice(0, TITLE_MAX_LENGTH).trimEnd()}…` : line;
+}
+
+/** Rename a conversation the user owns. Returns false when it is not theirs. */
+export async function renameConversation(
+  supabase: AnySupabaseClient,
+  userId: string,
+  conversationId: string,
+  title: string
+): Promise<boolean> {
+  const owned = await resolveOwnedConversationId(supabase, userId, conversationId);
+  if (!owned) {
+    return false;
+  }
+  const { error } = await supabase
+    .from(DATABASE_TABLES.CAT_CONVERSATIONS)
+    .update({ title: storedTitle(title) })
+    .eq('id', owned)
+    .eq('user_id', userId);
+  return !error;
 }
 
 /** Delete a conversation (and its messages) the user owns. Returns success. */
@@ -274,7 +305,9 @@ export async function saveMessages(
     token_count?: number;
     /** What Cat did this turn, so a reloaded thread can still show it. */
     tool_calls?: unknown[];
-  }>
+    failure?: StoredCatFailure;
+  }>,
+  options: { requireWrite?: boolean } = {}
 ): Promise<void> {
   const rows = messages.map(m => ({
     conversation_id: conversationId,
@@ -285,10 +318,15 @@ export async function saveMessages(
     provider: m.provider ?? null,
     token_count: m.token_count ?? null,
     tool_calls: trimToolCallsForStorage(m.tool_calls),
+    failure: m.failure ?? null,
   }));
 
-  await supabase.from(DATABASE_TABLES.CAT_MESSAGES).insert(rows);
-  // Ignore errors — history is best-effort, never blocks responses
+  const { error } = await supabase.from(DATABASE_TABLES.CAT_MESSAGES).insert(rows);
+  // Failed-turn persistence must reach its caller’s diagnostic path. Normal
+  // action replies remain best-effort: retrying an executed action is unsafe.
+  if (error && options.requireWrite) {
+    throw new Error('Could not persist failed conversation turn');
+  }
 
   // Keep the conversation fresh for rail ordering, and name an untitled
   // conversation from its first user message (Grok/ChatGPT behaviour).
@@ -316,8 +354,7 @@ export async function bumpConversation(
       .eq('id', conversationId)
       .single();
     if (row && !row.title) {
-      patch.title =
-        title.length > TITLE_MAX_LENGTH ? `${title.slice(0, TITLE_MAX_LENGTH).trimEnd()}…` : title;
+      patch.title = storedTitle(title);
     }
   }
   await supabase.from(DATABASE_TABLES.CAT_CONVERSATIONS).update(patch).eq('id', conversationId);
@@ -342,9 +379,12 @@ export async function getMessagesForContext(
 
   const { data } = await supabase
     .from(DATABASE_TABLES.CAT_MESSAGES)
-    .select('role, content')
+    .select('role, content, failure')
     .eq('conversation_id', conversationId)
     .order('created_at', { ascending: false })
+    // Paired inserts share a timestamp. Fetch assistant first so reversing
+    // the newest-first page restores user before assistant for each turn.
+    .order('role', { ascending: true })
     .limit(limit);
 
   if (!data?.length) {
@@ -352,7 +392,15 @@ export async function getMessagesForContext(
   }
 
   // Reverse to get chronological order for LLM
-  return (data as Array<{ role: 'user' | 'assistant'; content: string }>).reverse();
+  return completedHistory(
+    (
+      data as Array<{
+        role: 'user' | 'assistant';
+        content: string;
+        failure?: StoredCatFailure | null;
+      }>
+    ).reverse()
+  ).map(({ role, content }) => ({ role, content }));
 }
 
 /**
@@ -374,9 +422,12 @@ export async function getMessagesForDisplay(
 
   const { data } = await supabase
     .from(DATABASE_TABLES.CAT_MESSAGES)
-    .select('id, role, content, model_used, provider, token_count, tool_calls, created_at')
+    .select('id, role, content, model_used, provider, token_count, tool_calls, failure, created_at')
     .eq('conversation_id', conversationId)
     .order('created_at', { ascending: false })
+    // Paired inserts share a timestamp. Fetch assistant first so reversing
+    // the newest-first page restores user before assistant for each turn.
+    .order('role', { ascending: true })
     .limit(limit);
 
   if (!data?.length) {

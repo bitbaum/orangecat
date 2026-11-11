@@ -29,6 +29,7 @@ import { useSellerPaymentMethods } from '@/hooks/useSellerPaymentMethods';
 import { getEntityConfig } from '@/config/entity-configs/get-config';
 import type { PrefillProposal } from '../types';
 import { DraftPhoto, publishDraftPhoto } from './DraftPhoto';
+import { draftPriceField } from './draft-price-field';
 
 /** First clause of the description, capped — a starting point the user edits. */
 export function fallbackTitle(source: string): string {
@@ -103,13 +104,21 @@ export function PrefilledFormCard({ proposal }: PrefilledFormCardProps) {
   const [description, setDescription] = useState(String(data.description ?? ''));
   // Shown whenever the form HAS a price, not only when the draft found one:
   // a dropped price used to hide the input and publish failed on "price".
+  const priceField = draftPriceField(entityType, data);
   const hasPrice =
+    entityType === 'service' ||
     present(data.price) ||
     present(data.price_btc) ||
     (valid && formHasField(entityType as EntityType, 'price'));
   const [usePhoto, setUsePhoto] = useState(true);
   const [price, setPrice] = useState(
-    present(data.price) ? String(data.price) : present(data.price_btc) ? String(data.price_btc) : ''
+    present(data[priceField])
+      ? String(data[priceField])
+      : present(data.price)
+        ? String(data.price)
+        : present(data.price_btc)
+          ? String(data.price_btc)
+          : ''
   );
   const currency = typeof data.currency === 'string' ? data.currency : undefined;
 
@@ -158,7 +167,10 @@ export function PrefilledFormCard({ proposal }: PrefilledFormCardProps) {
     if (hasPrice) {
       const n = parseFloat(price);
       if (!isNaN(n)) {
-        payload.price = n;
+        if (priceField !== 'price') {
+          delete payload.price;
+        }
+        payload[priceField] = n;
       }
     }
     if (currency) {
@@ -182,7 +194,11 @@ export function PrefilledFormCard({ proposal }: PrefilledFormCardProps) {
       });
       const json = await res.json().catch(() => null);
       if (!res.ok || !json?.success) {
+        const firstDetail = Array.isArray(json?.error?.details)
+          ? (json.error.details[0] as { message?: string } | undefined)?.message
+          : undefined;
         const msg =
+          firstDetail ||
           json?.error?.message ||
           (typeof json?.error === 'string' ? json.error : null) ||
           `Couldn't create this — try "Open full form".`;

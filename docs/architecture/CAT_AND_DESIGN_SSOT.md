@@ -48,15 +48,15 @@ entity-registry.ts   → Entity create/nav SSOT (Cat action buttons)
 
 ### Canonical user path: **My Cat** (`/dashboard/cat`)
 
-| Layer     | Location                                       | Responsibility                                       |
-| --------- | ---------------------------------------------- | ---------------------------------------------------- |
-| Page      | `app/.../dashboard/cat/page.tsx`               | Auth, tab routing, composes toolbar + panel          |
-| Toolbar   | `CatChatToolbar.tsx`                           | Agent identity, model picker, context/controls links |
-| Chat UI   | `ModernChatPanel/`                             | Messages, composer, suggestions, pending actions     |
-| Secondary | `CatSecondaryPanel.tsx`                        | Context & settings full-page views                   |
-| Copy/tabs | `config/cat-hub.ts`                            | Strings, `CAT_HUB_TAB_HREFS`, `CAT_AGENT`            |
-| Layout    | `config/layout-chrome.ts` + `getRouteChrome()` | Full-height below header                             |
-| Styles    | `globals.css` `.oc-chat-*`                     | Chat-specific surfaces                               |
+| Layer     | Location                                       | Responsibility                                                       |
+| --------- | ---------------------------------------------- | -------------------------------------------------------------------- |
+| Page      | `app/.../dashboard/cat/page.tsx`               | Auth, tab routing, composes toolbar + panel                          |
+| Header    | `CatChatToolbar.tsx`                           | The Cat's controls in ChatApp's header (Home, quota, Loki, settings) |
+| Chat UI   | `ModernChatPanel/`                             | chatkit `ChatApp` + the Cat's transport, store, answer footer        |
+| Secondary | `CatSecondaryPanel.tsx`                        | Context & settings full-page views                                   |
+| Copy/tabs | `config/cat-hub.ts`                            | Strings, `CAT_HUB_TAB_HREFS`, `CAT_AGENT`                            |
+| Layout    | `config/layout-chrome.ts` + `getRouteChrome()` | Full-height below header                                             |
+| Styles    | `globals.css` `.oc-chat-*`                     | Chat-specific surfaces                                               |
 
 ### Backend / domain (good separation)
 
@@ -69,7 +69,8 @@ entity-registry.ts   → Entity create/nav SSOT (Cat action buttons)
 
 ### Hooks
 
-- `useChatMessages`, `useSuggestions`, `usePendingActionsManager` — chat state
+- `useCatTransport` (the turn, for chatkit's `ChatApp`), `useSuggestions`, `usePendingActionsManager` — chat state
+- `lib/chat/cat-conversation-store.ts` — the chat list over `API_ROUTES.CAT` (chatkit `ConversationStore`)
 - `useCatPermissions` — secondary panels
 - `useAISettings` — keys/tiers (shared with `/settings/ai`)
 
@@ -77,19 +78,19 @@ entity-registry.ts   → Entity create/nav SSOT (Cat action buttons)
 
 ## 4. Comparison to ChatGPT / Claude / Grok / Cursor
 
-| Pattern                           | Reference products      | OrangeCat Cat today                                      |
-| --------------------------------- | ----------------------- | -------------------------------------------------------- |
-| Default screen = chat only        | ChatGPT, Claude         | ✅ After chat-first refactor                             |
-| Collapsed/hidden chrome in chat   | ChatGPT sidebar, Claude | ✅ Sidebar collapse + no mobile bottom nav on Cat        |
-| Single composer, bottom-fixed     | All                     | ✅ `.oc-chat-composer-wrap`                              |
-| Narrow message column (~48rem)    | All                     | ✅ `.oc-chat-thread` max-w-3xl                           |
-| No duplicate headers in chat      | All                     | ✅ Toolbar only; removed hub header                      |
-| Model picker in header/composer   | ChatGPT, Grok           | ✅ Toolbar                                               |
-| Thread list / history sidebar     | ChatGPT, Cursor         | ❌ Cat is ephemeral per spec; no thread list (by design) |
-| Settings in separate screen       | All                     | ✅ `?tab=settings`                                       |
-| Keyboard-first composer           | Cursor, ChatGPT         | ⚠️ Enter to send; no slash commands palette              |
-| Streaming tokens                  | All                     | ✅ via `useChatMessages`                                 |
-| No nested “dashboard” inside chat | All                     | ✅ Fixed                                                 |
+| Pattern                           | Reference products      | OrangeCat Cat today                                       |
+| --------------------------------- | ----------------------- | --------------------------------------------------------- |
+| Default screen = chat only        | ChatGPT, Claude         | ✅ After chat-first refactor                              |
+| Collapsed/hidden chrome in chat   | ChatGPT sidebar, Claude | ✅ Sidebar collapse + no mobile bottom nav on Cat         |
+| Single composer, bottom-fixed     | All                     | ✅ chatkit `ChatApp`                                      |
+| Narrow message column (~48rem)    | All                     | ✅ chatkit `ChatApp`                                      |
+| No duplicate headers in chat      | All                     | ✅ Toolbar only; removed hub header                       |
+| Model picker in header/composer   | ChatGPT, Grok           | ✅ Toolbar                                                |
+| Thread list / history sidebar     | ChatGPT, Cursor         | ✅ chatkit `ChatApp` (drawer on a phone, rail from 64rem) |
+| Settings in separate screen       | All                     | ✅ `?tab=settings`                                        |
+| Keyboard-first composer           | Cursor, ChatGPT         | ⚠️ Enter to send; no slash commands palette               |
+| Streaming tokens                  | All                     | ✅ via `useCatTransport`                                  |
+| No nested “dashboard” inside chat | All                     | ✅ Fixed                                                  |
 
 **Cursor-specific:** Agent toolbar is minimal; heavy config lives in settings—not in the chat canvas. OrangeCat should keep **permissions/keys out of the default chat view** (current direction is correct).
 
@@ -108,7 +109,7 @@ entity-registry.ts   → Entity create/nav SSOT (Cat action buttons)
 2. **Two chat panels**
    - `ModernChatPanel` — Cat (canonical private agent)
    - `AIChatPanel` + `useAIChatPanel` — monetized assistants (`/ai-chat/...`)
-   - **Acceptable SOC** if they share: `MessageBubble`, `ChatInput`, composer styles, markdown renderer, API client.
+   - **Acceptable SOC** if they share: chatkit's turns, `ChatInput`, composer styles, markdown renderer, API client.
    - **Today:** Partial duplication (separate `AIChatMessage`, `AIChatInput`, `ModelSelector`).
 
 3. **`CatAction` name collision**
@@ -118,7 +119,7 @@ entity-registry.ts   → Entity create/nav SSOT (Cat action buttons)
 
 ### P1 — Consolidate
 
-4. **`ACTION_LABELS` in `MessageBubble.tsx`** duplicates labels from `cat-actions.ts` / `action-descriptions.ts`. Derive display labels from `CAT_ACTIONS[id].name` or executor results only.
+4. **`ACTION_LABELS` in `ExecResultChip.tsx`** duplicates labels from `cat-actions.ts` / `action-descriptions.ts`. Derive display labels from `CAT_ACTIONS[id].name` or executor results only.
 
 5. **Layout height magic numbers** scattered (`100dvh-4rem`, `100dvh-3.5rem`, `15.5rem`). **Partially fixed** via `layout-chrome.ts`; messaging and `ai-chat` routes should adopt `APP_CONTENT_HEIGHT_CLASS`.
 

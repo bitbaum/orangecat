@@ -50,8 +50,6 @@ export default function AuthPageClient({
     success,
     rememberMe,
     setRememberMe,
-    isPasswordFocused,
-    setIsPasswordFocused,
     showMFAVerify,
     setShowMFAVerify,
     handoff,
@@ -231,8 +229,6 @@ export default function AuthPageClient({
                 showConfirmPassword={showConfirmPassword}
                 setShowConfirmPassword={setShowConfirmPassword}
                 loading={loading}
-                isPasswordFocused={isPasswordFocused}
-                setIsPasswordFocused={setIsPasswordFocused}
                 captchaEnabled={captchaEnabled}
                 turnstileSiteKey={turnstileSiteKey}
                 handleCaptchaSuccess={handleCaptchaSuccess}

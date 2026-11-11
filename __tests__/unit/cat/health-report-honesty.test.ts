@@ -15,6 +15,7 @@
  */
 
 import { runCatHealthProbes, groqCanServeCatPrompt } from '@/services/cat/health-probes';
+import { recordGroqRefusal, resetGroqDailyPool } from '@/services/ai/groq-capacity';
 
 const OK = { ok: true, status: 200, json: async () => ({ choices: [] }) };
 const RATE_LIMITED = {
@@ -47,6 +48,7 @@ describe('Cat health report honesty', () => {
   afterEach(() => {
     global.fetch = realFetch;
     process.env = { ...realEnv };
+    resetGroqDailyPool();
   });
 
   it('does not claim Cat can answer when Groq cannot take the prompt and OpenRouter is capped', async () => {
@@ -111,5 +113,24 @@ describe('Cat health report honesty', () => {
       // standing in for a question it never asked.
       expect(report.summary).toMatch(/⚠️/);
     });
+  });
+
+  it('does not claim Cat can answer once the shared daily pool is spent', async () => {
+    // Production, 2026-11-11: the ping fit in the few tokens that were left, so
+    // the report read "Cat is healthy" on a morning no message was answered.
+    recordGroqRefusal(
+      'openai/gpt-oss-20b',
+      'Rate limit reached for model `openai/gpt-oss-20b` in organization `org_01jy` ' +
+        'service tier `on_demand` on tokens per day (TPD): Limit 200000, Used 199773, ' +
+        'Requested 571. Please try again in 47m20s.',
+      2840
+    );
+    const report = await runCatHealthProbes();
+
+    expect(report.probes.groq.class).toBe('ok');
+    expect(report.groqCanServeCatPrompt).toBe(false);
+    expect(report.catCanAnswer).toBe(false);
+    expect(report.summary).toContain('daily pool');
+    expect(report.summary).not.toContain('Cat is healthy');
   });
 });

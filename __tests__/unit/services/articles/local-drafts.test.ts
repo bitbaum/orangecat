@@ -20,7 +20,23 @@ const makeDraft = (overrides: Partial<LocalArticleDraft> = {}): LocalArticleDraf
   ...overrides,
 });
 beforeEach(() => localStorage.clear());
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+});
+
+it('uses secure random bytes when randomUUID is unavailable', () => {
+  const originalCrypto = crypto;
+  const secureRandom = vi.fn((bytes: Uint8Array) => originalCrypto.getRandomValues(bytes));
+  const insecureRandom = vi.spyOn(Math, 'random');
+  vi.stubGlobal('crypto', { getRandomValues: secureRandom });
+  const first = newDraftId();
+  const second = newDraftId();
+  expect(first).toMatch(/^draft-[a-f0-9]{32}$/);
+  expect(second).not.toBe(first);
+  expect(secureRandom).toHaveBeenCalledTimes(2);
+  expect(insecureRandom).not.toHaveBeenCalled();
+});
 
 it('isolates account reads, updates and deletions even when draft IDs match', () => {
   const a = makeDraft({ id: 'same', title: 'Account A' });

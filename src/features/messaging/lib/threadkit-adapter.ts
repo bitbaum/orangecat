@@ -10,7 +10,11 @@
  * They are commented where they happen.
  */
 
-import type { Message as ThreadMessage, Participant as ThreadParticipant, Thread } from 'threadkit';
+import type {
+  Message as ThreadMessage,
+  Participant as ThreadParticipant,
+  Thread,
+} from '@bitbaum/threadkit';
 
 import type { Message, Participant } from '../types';
 

@@ -9,6 +9,9 @@
  * sendMessage-internals.ts and the shared types in sendMessage-types.ts.
  */
 
+import type { ChatImage } from '@/services/cat/chat-images';
+import { storeChatImages } from '@/services/cat/chat-image-store';
+import { withImageRefs } from '@/lib/chat/attachment-tags';
 import { fromTable } from '@/lib/supabase/untyped';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { DATABASE_TABLES } from '@/config/database-tables';
@@ -22,6 +25,9 @@ import {
 import type { SendMessageResult, SendMessageError } from './sendMessage-types';
 import { recallCompanionMemories, extractCompanionMemories } from '@/services/companions/memory';
 import { buildCompanionSystemPrompt } from '@/services/companions/system-prompt';
+import { adoptJob, isJobAnswer } from '@/services/companions/born';
+import { proposalFromMetadata, withProposal } from '@/services/companions/hands';
+import { handsFor, proposeFromReply } from '@/services/companions/hands-server';
 import {
   verifyConversation,
   fetchAssistant,
@@ -31,6 +37,8 @@ import {
   storeAssistantMessage,
 } from './sendMessage-internals';
 
+type HistoryRow = { role: string; content: string; metadata?: unknown };
+
 export type { SendMessageResult, SendMessageError } from './sendMessage-types';
 
 export async function sendAiMessage(
@@ -39,7 +47,9 @@ export async function sendAiMessage(
   assistantId: string,
   convId: string,
   content: string,
-  requestedModel?: string
+  requestedModel?: string,
+  /** Photos on this turn (the message carries their tags; see chat-images.ts). */
+  images?: ChatImage[]
 ): Promise<SendMessageResult | SendMessageError> {
   // 1. Verify conversation
   const convResult = await verifyConversation(supabase, convId, assistantId, userId);
@@ -73,14 +83,22 @@ export async function sendAiMessage(
   // 5. Get conversation history
   const { data: historyData } = await supabase
     .from(DATABASE_TABLES.AI_MESSAGES)
-    .select('role, content')
+    .select('role, content, metadata')
     .eq('conversation_id', convId)
     // Legacy threads stored the prompt as a system row; the prompt is composed
     // per turn now (with memory), so a stored copy would only go stale.
     .neq('role', 'system')
     .order('created_at', { ascending: true })
     .limit(20);
-  const history = (historyData || []) as { role: string; content: string }[];
+  // A stored turn is the words the person saw; the model is shown the fence
+  // it wrote too, or it learns from its own history to stop proposing.
+  const history = ((historyData || []) as HistoryRow[]).map(row => {
+    const proposal = row.role === 'assistant' ? proposalFromMetadata(row.metadata) : null;
+    return {
+      role: row.role,
+      content: proposal ? withProposal(row.content, proposal) : row.content,
+    };
+  });
 
   // 6. Free message check
   const freeMessagesPerDay = assistant.free_messages_per_day || 0;
@@ -109,8 +127,17 @@ export async function sendAiMessage(
     }
   }
 
-  // 9. Store user message
-  const userMsgResult = await storeUserMessage(supabase, convId, content);
+  // 9. Store user message, with each photo's private path in its tag so a
+  //    reload shows what was sent and a later turn can read it again.
+  const refs = images?.length ? await storeChatImages(userId, images) : [];
+  const userMsgResult = await storeUserMessage(
+    supabase,
+    convId,
+    withImageRefs(
+      content,
+      refs.filter((r): r is string => Boolean(r))
+    )
+  );
   if ('error' in userMsgResult) {
     return userMsgResult.error;
   }
@@ -120,9 +147,13 @@ export async function sendAiMessage(
   //     this companion remembers about THIS person — nothing else.
   const memoryKey = { assistantId, userId };
   const recalled = await recallCompanionMemories(supabase, memoryKey, content);
+  // Hands: the owner's own companion may propose what OrangeCat can do for
+  // them (hands.ts); anyone else's companion, or a stranger's chat, cannot.
+  const hands = assistant.user_id === userId ? await handsFor(supabase, userId) : null;
   const systemPrompt = buildCompanionSystemPrompt({
     definition: assistant.system_prompt,
     memories: recalled.map(m => m.content),
+    hands: hands?.section,
   });
   const aiResult = await generateReply({
     hasByok,
@@ -132,6 +163,7 @@ export async function sendAiMessage(
     systemPrompt: systemPrompt ?? null,
     history,
     content,
+    images,
   });
   if ('error' in aiResult) {
     // Clean up user message on AI failure
@@ -141,7 +173,14 @@ export async function sendAiMessage(
       .eq('id', (userMessage as { id: string }).id);
     return aiResult.error;
   }
-  const aiResponse = aiResult.response;
+  // A proposal rides the end of the reply as a fence; it comes off before
+  // the words are stored, spoken or remembered, and becomes a pending action.
+  const proposed = hands
+    ? await proposeFromReply(supabase, userId, hands, aiResult.response.content, convId)
+    : null;
+  const aiResponse = proposed
+    ? { ...aiResult.response, content: proposed.text }
+    : aiResult.response;
 
   // 11. Store AI response
   const apiCostBtc = aiResponse.costBtc;
@@ -153,14 +192,19 @@ export async function sendAiMessage(
     assistant,
     creatorCharge,
     apiCostBtc,
-    hasByok
+    hasByok,
+    proposed?.proposal ?? null
   );
   if ('error' in aiMsgResult) {
     return aiMsgResult.error;
   }
   const assistantMessage = aiMsgResult.message;
 
-  // 12. Post-message side effects.
+  // 12. Post-message side effects. The owner's first answer to a born
+  //     companion's question becomes the companion's definition (born.ts).
+  if (isJobAnswer(assistant, userId, history)) {
+    await adoptJob(supabase, assistant, content);
+  }
   if (!hasByok) {
     await keyService.incrementPlatformUsage(userId, 1, aiResponse.totalTokens);
   }
@@ -201,6 +245,7 @@ export async function sendAiMessage(
       is_free_model: aiResponse.isFreeModel,
       used_byok: hasByok,
     },
+    ...(proposed?.pendingAction ? { pendingAction: proposed.pendingAction } : {}),
     usage: {
       inputTokens: aiResponse.inputTokens,
       outputTokens: aiResponse.outputTokens,

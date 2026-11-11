@@ -23,7 +23,11 @@ import { createHash } from 'node:crypto';
 import { APP_NAME, APP_DESCRIPTION, BRAND_ACCENT_HEX, APP_SLUG } from '@/config/brand';
 import { BRAND_MARK } from '@/config/brand-mark';
 import { MARKS, markFor } from '@/config/marks';
-import { CAT_COIL, catCoilPathD } from '@/config/marks/generators/cat-coil';
+import {
+  CAT_ROTORELIEF,
+  catHeadPathD,
+  catRingsPathD,
+} from '@/config/marks/generators/cat-rotorelief';
 import type { MarkDefinition } from '@/config/marks/types';
 import { iconSvg } from '@/lib/brand/mark-svg';
 
@@ -123,28 +127,49 @@ describe('the static brand assets are generated from the brand mark', () => {
   });
 });
 
-describe('the cat coil generator', () => {
-  const coords = catCoilPathD().replace(/[ML]/g, '').trim().split(/\s+/).map(Number);
+describe('the cat rotorelief generator', () => {
+  const numbers = (d: string) => (d.match(/-?\d+(?:\.\d+)?/g) ?? []).map(Number);
 
-  it('is one continuous stroke inside its box, stroke included', () => {
-    expect(catCoilPathD().match(/M/g)).toHaveLength(1);
-    const margin = CAT_COIL.strokeWidth / 2;
-    for (const value of coords) {
-      expect(value).toBeGreaterThanOrEqual(margin);
-      expect(value).toBeLessThanOrEqual(CAT_COIL.viewBox - margin);
+  it('keeps the head inside its box', () => {
+    // Absolute commands only in the outline (M/L/Q/A): every pair is a point,
+    // arc radii included, and those are smaller than the box too.
+    const outline = catHeadPathD().split('Z')[0];
+    for (const value of numbers(outline)) {
+      expect(value).toBeGreaterThanOrEqual(0);
+      expect(value).toBeLessThanOrEqual(CAT_ROTORELIEF.viewBox);
     }
   });
 
   it('wears both ears at the same height, mirrored about the centre', () => {
-    let left = { x: 0, y: Infinity };
-    let right = { x: 0, y: Infinity };
-    for (let i = 0; i < coords.length; i += 2) {
-      const [x, y] = [coords[i], coords[i + 1]];
-      if (x < CAT_COIL.cx && y < left.y) left = { x, y };
-      if (x > CAT_COIL.cx && y < right.y) right = { x, y };
-    }
-    expect(Math.abs(left.y - right.y)).toBeLessThan(0.5);
-    expect(Math.abs(CAT_COIL.cx - left.x - (right.x - CAT_COIL.cx))).toBeLessThan(0.5);
+    const outline = catHeadPathD().split('Z')[0];
+    const q = [...outline.matchAll(/Q(-?[\d.]+) (-?[\d.]+)/g)].map(m => [
+      Number(m[1]),
+      Number(m[2]),
+    ]);
+    expect(q).toHaveLength(2);
+    const [[lx, ly], [rx, ry]] = q;
+    expect(ly).toBeCloseTo(ry, 5);
+    expect(CAT_ROTORELIEF.cx - lx).toBeCloseTo(rx - CAT_ROTORELIEF.cx, 5);
+  });
+
+  it('nests every ring inside the one before, so evenodd alternates cleanly', () => {
+    const rings = catRingsPathD()
+      .split('Z')
+      .filter(Boolean)
+      .map(d => {
+        const [x, y, r] = numbers(d);
+        return { cx: x + r, cy: y, r };
+      });
+    const face = {
+      cx: CAT_ROTORELIEF.cx,
+      cy: CAT_ROTORELIEF.cy,
+      r: CAT_ROTORELIEF.headRadius * CAT_ROTORELIEF.faceShare,
+    };
+    [face, ...rings].reduce((outer, inner) => {
+      const gap = outer.r - inner.r - Math.hypot(outer.cx - inner.cx, outer.cy - inner.cy);
+      expect(gap).toBeGreaterThan(0.5);
+      return inner;
+    });
   });
 });
 
@@ -189,10 +214,12 @@ it.each([
     difference += Math.abs(actual[index] - expected[index]);
   }
   expect(difference / actual.length).toBeLessThan(4);
+  // The mark's ink need not be white (OrangeCat's is orange): some channel
+  // is bright, and the tile is neither blank nor solid ink.
   const { channels } = await image.stats();
-  for (const channel of channels.slice(0, 3)) {
-    expect(channel.max).toBeGreaterThan(200);
-    expect(channel.mean).toBeGreaterThan(15);
-    expect(channel.mean).toBeLessThan(200);
-  }
+  const rgb = channels.slice(0, 3);
+  expect(Math.max(...rgb.map(c => c.max))).toBeGreaterThan(200);
+  const mean = rgb.reduce((sum, c) => sum + c.mean, 0) / rgb.length;
+  expect(mean).toBeGreaterThan(15);
+  expect(mean).toBeLessThan(200);
 });

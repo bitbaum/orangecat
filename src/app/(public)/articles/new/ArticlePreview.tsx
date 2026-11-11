@@ -1,6 +1,6 @@
 'use client';
 
-import 'bip-kit/styles.css';
+import '@bitbaum/bip-kit/styles.css';
 import '@/lib/longform/longform.css';
 import LongformPreviewBody from '@/lib/longform/LongformPreviewBody';
 
@@ -21,7 +21,7 @@ export default function ArticlePreview({
   body: string;
 }) {
   return (
-    <div className="rounded-lg border border-subtle bg-surface-page p-6">
+    <div className="min-w-0 rounded-lg border border-subtle bg-surface-page p-6 [overflow-wrap:anywhere]">
       {coverImage && (
         // eslint-disable-next-line @next/next/no-img-element -- cover image is a free-form URL (Openverse, AI generation, or user upload) on any host; next/image would throw for hosts outside images.remotePatterns
         <img

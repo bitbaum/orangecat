@@ -1,8 +1,7 @@
 import { loginSchema, registerSchema } from '@/lib/validation/auth';
 
-// A password that satisfies passwordSchema requirements:
-// min 8 chars, uppercase, lowercase, number, special char, not a common password
-const VALID_PASSWORD = 'Secure@1pass';
+// The one bitbaum password rule: not empty, at most 128 characters.
+const VALID_PASSWORD = 'x';
 
 describe('loginSchema', () => {
   describe('valid inputs', () => {
@@ -41,16 +40,6 @@ describe('loginSchema', () => {
   });
 
   describe('password validation', () => {
-    it('rejects a password shorter than 6 characters', () => {
-      const result = loginSchema.safeParse({ email: 'user@example.com', password: 'abc' });
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        const passwordErrors = result.error.flatten().fieldErrors.password;
-        expect(passwordErrors).toBeDefined();
-        expect(passwordErrors![0]).toMatch(/at least 6 characters/i);
-      }
-    });
-
     it('rejects an empty password', () => {
       const result = loginSchema.safeParse({ email: 'user@example.com', password: '' });
       expect(result.success).toBe(false);
@@ -155,5 +144,23 @@ describe('registerSchema', () => {
       const result = registerSchema.safeParse(validPayload);
       expect(result.success).toBe(true);
     });
+  });
+});
+
+describe('the one password rule', () => {
+  const base = { email: 'user@example.com', username: 'valid_user', confirmPassword: '' };
+
+  it('refuses an empty password and one longer than 128 characters', () => {
+    for (const password of ['', 'x'.repeat(129)]) {
+      const result = registerSchema.safeParse({ ...base, password, confirmPassword: password });
+      expect(result.success).toBe(false);
+    }
+  });
+
+  it('accepts any other password, however short and plain', () => {
+    for (const password of ['x', 'password', 'x'.repeat(128)]) {
+      const result = registerSchema.safeParse({ ...base, password, confirmPassword: password });
+      expect(result.success).toBe(true);
+    }
   });
 });

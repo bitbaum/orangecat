@@ -178,3 +178,6 @@ post-*.png
 # The existing `*.backup` rule does not match `*-backup-*.json`.
 .claude/*backup*.json
 .claude/*dump*.json
+
+# pdf.js runtime files, copied from @bitbaum/chatkit on dev/build (chatkit-copy-pdf-assets)
+/public/pdfjs/

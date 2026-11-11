@@ -1,3 +1,4 @@
+import { recordCatCompletionSuccess, recordCatCompletionFailure } from './completion-health';
 /**
  * Cat Chat Orchestrator
  *
@@ -12,6 +13,7 @@
  */
 
 import { z } from 'zod';
+import { classifyAnswerPrefix } from '@bitbaum/ai-kit';
 import { logger } from '@/utils/logger';
 import { apiSuccess } from '@/lib/api/standardResponse';
 import type { AuthenticatedRequest } from '@/lib/api/withAuth';
@@ -39,7 +41,7 @@ import { getUserActorId } from '@/domain/actors';
 import { AI_MESSAGE_MAX_CHARS } from '@/lib/validation/ai';
 import { PAGE_EXCERPT_MAX_CHARS } from '@/config/cat-page-context';
 import { markLinkDown } from '@/services/ai/link-health';
-import { isGroqDailyPoolSpent } from '@/services/ai/groq-capacity';
+import { getGroqDailyPoolReturnsAt, isGroqDailyPoolSpent } from '@/services/ai/groq-capacity';
 import { EmptyCompletion, hasUsableContent } from '@/services/cat/empty-completion';
 import { promptFitsGroqOnDemand, GROQ_CHAT_MAX_TOKENS } from '@/services/ai/groq';
 import { getGroqTpmLimit, recordOpenRouterRateLimit } from '@/services/ai/groq-capacity';
@@ -198,6 +200,7 @@ export function isAiRateLimitError(error: unknown): boolean {
  * Only the link is recorded. Never the message, never the answer.
  */
 function logServed(provider: string, model: string): void {
+  recordCatCompletionSuccess();
   logger.info('Cat chat: model call served', { link: `${provider}/${model}` }, 'cat/chat', {
     always: true,
   });
@@ -499,21 +502,20 @@ async function runStreamingTurn(turn: CatTurn, out: SseOut): Promise<void> {
     usage: undefined,
     streamStarted: false,
   };
+  const streamedToolCalls: ToolCallEvent[] = [];
   try {
     sendData(out, { model: modelToUse, provider });
 
-    // Everything Cat read from the web this turn, as evidence blocks
-    // labelled with the citation handle that licenses each one. Fed to
-    // the grounding check below so a figure Cat correctly quoted from a
-    // page is recognised as quoted rather than flagged as invented.
+    // Everything Cat actually read this turn: web citations AND completed
+    // tool results. A live-data lookup must ground the answer just as a page
+    // does, or the repair can erase a correct answer as "Not in your data."
     const webEvidence: string[] = [];
-    const streamedToolCalls: ToolCallEvent[] = [];
     const messages = await runStreamingToolPhase(turn, out, streamedToolCalls, webEvidence);
 
     await walkStreamingChain(turn, out, state, messages, webEvidence);
     await settleStreamedTurn(turn, state, streamedToolCalls);
   } catch (err) {
-    await failStreamedTurn(turn, out, state, err);
+    await failStreamedTurn(turn, out, state, err, streamedToolCalls);
   } finally {
     out.controller.close();
   }
@@ -526,7 +528,7 @@ async function runStreamingTurn(turn: CatTurn, out: SseOut): Promise<void> {
  * emit a second event type carrying the structured draft so the UI can render
  * a PrefilledFormCard instead of narrating field values as prose.
  */
-function runStreamingToolPhase(
+async function runStreamingToolPhase(
   turn: CatTurn,
   out: SseOut,
   streamedToolCalls: ToolCallEvent[],
@@ -534,7 +536,7 @@ function runStreamingToolPhase(
 ): Promise<ToolAugmentedMessage[]> {
   const { user, supabase } = turn.request;
   const { provider, modelToUse, toolEndpoint, toolKey, fallbacks } = turn.resolved;
-  return maybeEnrichWithSearchResults(
+  const messages = await maybeEnrichWithSearchResults(
     supabase,
     user.id,
     turn.baseMessages,
@@ -545,7 +547,12 @@ function runStreamingToolPhase(
       // Kept as well as sent. The SSE frame reaches the live tab and
       // nothing else; without this copy the chips exist only in that
       // tab's React state and a reload erases what Cat did.
-      streamedToolCalls.push(event);
+      const previous = streamedToolCalls.findIndex(call => call.id === event.id);
+      if (previous >= 0) {
+        streamedToolCalls[previous] = event;
+      } else {
+        streamedToolCalls.push(event);
+      }
       sendData(out, { tool_call: event });
     },
     (proposal: PrefillProposal) => {
@@ -557,6 +564,8 @@ function runStreamingToolPhase(
     // read-only.
     {
       actorId: turn.actorId,
+      ephemeral: turn.prepared.ephemeral,
+      ...(turn.body.currentEntity ? { currentEntity: turn.body.currentEntity } : {}),
       // The active step's own endpoint and key, so a BYOK user's tools
       // reach THEIR vendor rather than being silently dropped.
       toolEndpoint,
@@ -567,6 +576,14 @@ function runStreamingToolPhase(
       },
     }
   );
+  // Only results returned to the answering model count. An unfinished lookup
+  // or a callback from an abandoned tool loop must not license a claim.
+  for (const message of messages) {
+    if (message.role === 'tool' && typeof message.content === 'string' && message.content.trim()) {
+      webEvidence.push(message.content);
+    }
+  }
+  return messages;
 }
 
 /**
@@ -659,6 +676,8 @@ async function consumeStream(
 ): Promise<void> {
   const { activeProvider, activeModel, activeService } = state;
   let doneEmitted = false;
+  let prefix = '';
+  state.usage = undefined;
   for await (const chunk of activeService.streamChatCompletion({
     model: activeModel,
     messages: withImages(messages, turn.body.images),
@@ -668,9 +687,20 @@ async function consumeStream(
       state.usage = chunk.usage;
     }
     if (chunk.content) {
-      state.streamStarted = true;
-      state.fullContent += chunk.content;
-      sendData(out, { content: chunk.content });
+      let content = chunk.content;
+      if (!state.streamStarted) {
+        prefix += content;
+        const kind = classifyAnswerPrefix(prefix);
+        if (kind === 'protocol') {
+          throw new EmptyCompletion(activeProvider, activeModel);
+        }
+        content = kind === 'answer' ? prefix : '';
+      }
+      if (content) {
+        state.streamStarted = true;
+        state.fullContent += content;
+        sendData(out, { content });
+      }
     }
     if (chunk.done) {
       if (!state.streamStarted) {
@@ -858,17 +888,17 @@ async function settleStreamedTurn(
         activeService,
         activeModel
       );
+      // Reliably populate the economic-profile store from the same exchange —
+      // deterministic, not dependent on the chat model emitting an action.
+      void extractAndStoreEconomicProfile(
+        supabase,
+        user.id,
+        turn.body.message,
+        fullContent,
+        activeService,
+        activeModel
+      );
     }
-    // Reliably populate the economic-profile store from the same exchange —
-    // deterministic, not dependent on the chat model emitting an action.
-    void extractAndStoreEconomicProfile(
-      supabase,
-      user.id,
-      turn.body.message,
-      fullContent,
-      activeService,
-      activeModel
-    );
   }
   if (metered && turn.meterRef && usage?.totalTokens && activeModel === modelToUse) {
     // Credit-paid frontier exchange: debit the ledger for the model
@@ -888,6 +918,30 @@ async function settleStreamedTurn(
 }
 
 /**
+ * What a person on the shared free models is told when the whole chain failed.
+ *
+ * "Usually momentary" was the only sentence, and it was untrue on exactly the
+ * days it was read most: with the shared daily pool spent, every retry failed
+ * the same way for the better part of an hour (seen on production 2026-11-11,
+ * a brand-new account's first message). When the pool's return is known, say
+ * when; the code stays ALL_PROVIDERS_DOWN so the chat still offers the key.
+ */
+export function allProvidersDownMessage(now: number = Date.now()): string {
+  const returnsAt = getGroqDailyPoolReturnsAt(now);
+  if (returnsAt === null) {
+    return 'Cat couldn’t reach an AI model just now — this is usually momentary. Try again; if it keeps happening, add your own free Groq key in Settings → AI.';
+  }
+  const minutes = Math.max(1, Math.ceil((returnsAt - now) / 60_000));
+  const wait =
+    minutes < 60
+      ? `about ${minutes} minute${minutes === 1 ? '' : 's'}`
+      : `about ${Math.round(minutes / 60)} hour${Math.round(minutes / 60) === 1 ? '' : 's'}`;
+  // The limit is a rolling day, so the wait is the provider's word for when a
+  // request could fit again, not a promise that the pool is full by then.
+  return `The free shared AI models are used up for now. The provider says to try again in ${wait}. Your message is saved. To keep going right away, add your own free Groq key in Settings → AI.`;
+}
+
+/**
  * Honest error copy. Never echo raw err.message — it can contain API keys
  * (e.g. a malformed Authorization header leaks the credential in the
  * Headers.append error). Log server-side; return a structured, actionable
@@ -904,7 +958,7 @@ function streamErrorPayload(
     return {
       error: hasByok
         ? 'Your provider returned a rate-limit. Try again in a moment.'
-        : 'Free AI capacity is maxed out right now. Try again in a minute — or add your own free Groq key in Settings → AI for capacity that’s all yours.',
+        : 'The shared AI provider is rate-limiting requests. Try again later, or add your own provider key in Settings → AI.',
       code: 'AI_RATE_LIMITED',
     };
   }
@@ -915,7 +969,7 @@ function streamErrorPayload(
     return {
       error: hasByok
         ? 'None of your providers could answer just now. Check your keys in Settings → AI, then try again.'
-        : 'Cat couldn’t reach an AI model just now — this is usually momentary. Try again; if it keeps happening, add your own free Groq key in Settings → AI.',
+        : allProvidersDownMessage(),
       code: 'ALL_PROVIDERS_DOWN',
     };
   }
@@ -930,11 +984,13 @@ async function failStreamedTurn(
   turn: CatTurn,
   out: SseOut,
   state: StreamState,
-  err: unknown
+  err: unknown,
+  toolCalls: ToolCallEvent[]
 ): Promise<void> {
   const { user, supabase } = turn.request;
   const { hasByok } = turn.resolved;
   const { attemptedFallback, activeProvider, activeModel } = state;
+  recordCatCompletionFailure();
   logger.error(
     'Cat chat stream error',
     { err, attemptedFallback, hasByok, provider: activeProvider, model: activeModel },
@@ -962,9 +1018,12 @@ async function failStreamedTurn(
         message: turn.storedMessage,
         partialContent: state.fullContent,
         errorText: errPayload.error,
+        errorCode: errPayload.code,
+        toolCalls,
         model: activeModel,
         provider: activeProvider,
-      })
+      }),
+      { requireWrite: true }
     ).catch((persistErr: unknown) => {
       logger.error('Failed to persist failed turn', { persistErr }, 'cat/chat');
     });
@@ -1078,6 +1137,7 @@ async function walkCompletionChain(
   }
   if (!result) {
     markFailedLink(lastTried.platform, lastTried.provider, lastTried.model, lastErr);
+    recordCatCompletionFailure();
     throw lastErr ?? new Error('Cat chat: no AI provider produced a response');
   }
   logServed(lastTried.provider, lastTried.model);
@@ -1120,7 +1180,14 @@ async function answerCatChat(turn: CatTurn, rl: RateLimitResult): Promise<Respon
       collectedPrefillProposals.push(turn.withDraftPhoto(proposal));
     },
     // Same as the streaming path: an actor is what makes actions callable.
-    { actorId: turn.actorId, toolEndpoint, toolKey, toolFallbacks: fallbacks }
+    {
+      actorId: turn.actorId,
+      ephemeral: turn.prepared.ephemeral,
+      toolEndpoint,
+      toolKey,
+      toolFallbacks: fallbacks,
+      ...(turn.body.currentEntity ? { currentEntity: turn.body.currentEntity } : {}),
+    }
   );
   // The non-streaming path runs no grounding check (see below), so there is
   // nothing here to feed web evidence into. Stated rather than left as an
@@ -1175,15 +1242,15 @@ async function answerCatChat(turn: CatTurn, rl: RateLimitResult): Promise<Respon
         fellBackTo?.aiService ?? aiService,
         fellBackTo?.modelToUse ?? modelToUse
       );
+      void extractAndStoreEconomicProfile(
+        supabase,
+        user.id,
+        message,
+        cleanedMessage,
+        fellBackTo?.aiService ?? aiService,
+        fellBackTo?.modelToUse ?? modelToUse
+      );
     }
-    void extractAndStoreEconomicProfile(
-      supabase,
-      user.id,
-      message,
-      cleanedMessage,
-      fellBackTo?.aiService ?? aiService,
-      fellBackTo?.modelToUse ?? modelToUse
-    );
   }
 
   return applyRateLimitHeaders(

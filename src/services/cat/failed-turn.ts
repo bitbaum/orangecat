@@ -1,3 +1,8 @@
+import type { ToolCallEvent } from './tool-use-types';
+import type { ChatFailure } from '@bitbaum/chatkit/react';
+
+export type StoredCatFailure = Required<ChatFailure>;
+
 /**
  * What to store when a Cat turn fails.
  *
@@ -23,6 +28,8 @@ export interface FailedTurnMessage {
   content: string;
   model_used?: string;
   provider?: string;
+  failure?: StoredCatFailure;
+  tool_calls?: ToolCallEvent[];
 }
 
 export function buildFailedTurnMessages(params: {
@@ -32,6 +39,8 @@ export function buildFailedTurnMessages(params: {
   partialContent?: string;
   /** The sentence the client was shown, so the thread reads back honestly. */
   errorText?: string;
+  errorCode?: string;
+  toolCalls?: ToolCallEvent[];
   model?: string;
   provider?: string;
 }): FailedTurnMessage[] {
@@ -47,6 +56,34 @@ export function buildFailedTurnMessages(params: {
   // turns back to back — a shape strict providers reject outright.
   return [
     { role: 'user', content: message },
-    { role: 'assistant', content: assistantContent, model_used: model, provider },
+    {
+      role: 'assistant',
+      content: assistantContent,
+      model_used: model,
+      provider,
+      ...(params.toolCalls?.length ? { tool_calls: params.toolCalls } : {}),
+      failure: {
+        kind: params.errorCode ?? 'STREAM_ERROR',
+        message: errorText.trim() || UNKNOWN_FAILURE_NOTE,
+      },
+    },
   ];
+}
+
+/** Failed attempts are displayed, but are not previous model answers. Remove
+ * their adjacent user turn too, preserving provider-required alternation. */
+export function completedHistory<
+  T extends { role: 'user' | 'assistant'; content: string; failure?: StoredCatFailure | null },
+>(rows: T[]): T[] {
+  const result: T[] = [];
+  for (const row of rows) {
+    if (row.role === 'assistant' && row.failure) {
+      if (result.at(-1)?.role === 'user') {
+        result.pop();
+      }
+    } else {
+      result.push(row);
+    }
+  }
+  return result;
 }

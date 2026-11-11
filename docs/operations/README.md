@@ -2,7 +2,7 @@
 
 Running and maintaining OrangeCat in production: self-hosted on the Hetzner box
 (`bitbaum`) behind Caddy, with a self-hosted Supabase at `supabase.orangecat.ch`.
-How code reaches production is "Shipping" in the root [`CLAUDE.md`](../../CLAUDE.md).
+How code reaches production is "Deploy path" in the root [`AGENTS.md`](../../AGENTS.md).
 
 ## Deployment
 

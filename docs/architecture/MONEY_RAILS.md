@@ -32,7 +32,7 @@ lands in the owner's own wallet. Every other door is a handle the owner
 writes down and the pay page shows — Twint, PayPal, UPI, Pix, M-Pesa. They
 settle in their own apps. OrangeCat shows them and never claims to have seen
 them land. The surface is currency-agnostic by principle
-(`.claude/CLAUDE.md` → "Any currency") and this is where the principle is a
+(`AGENTS.md` → "Principles", "Any currency") and this is where the principle is a
 list rather than a sentence.
 
 **Identity is stated, never discovered.** Listing a fiat rail is the opt-in

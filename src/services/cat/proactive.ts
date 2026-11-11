@@ -18,6 +18,7 @@ import { exploreTopicByVector } from './discovery-match';
 import { evaluateSocialWatches, isSocialWatchKind, type SocialWatchRow } from './social-watches';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { displayBTC } from '@/services/currency/formatting';
+import { notifyOwnerViaLoki, type OwnerNotice } from '@/services/loki/notify-owner';
 
 const LOG_SOURCE = 'CatProactive';
 
@@ -76,10 +77,19 @@ async function briefAlreadySentToday(admin: SupabaseClient, userId: string): Pro
  * Compose the brief for one user from live data. Returns null when there is
  * nothing worth saying — an empty brief is spam, not proactivity.
  */
-export async function composeDailyBrief(
+/** What the brief is made of — the same facts for the in-app line and the owner's phone. */
+export interface BriefFacts {
+  salesCount: number;
+  salesBtc: number;
+  bookingsCount: number;
+  overdueTitles: string[];
+  unread: number;
+}
+
+export async function collectBriefFacts(
   admin: SupabaseClient,
   userId: string
-): Promise<string | null> {
+): Promise<BriefFacts> {
   const [actorRows, salesRes, tasksRes, unread] = await Promise.all([
     admin.from(DATABASE_TABLES.ACTORS).select('id').eq('user_id', userId),
     admin
@@ -112,32 +122,83 @@ export async function composeDailyBrief(
       : { data: [] };
 
   const sales = (salesRes.data ?? []) as Array<{ amount_btc: number }>;
-  const overdue = (tasksRes.data ?? []) as Array<{ title: string }>;
-  const bookings = (bookingsRes.data ?? []) as Array<{ starts_at: string }>;
+  return {
+    salesCount: sales.length,
+    salesBtc: sales.reduce((n, s) => n + (s.amount_btc || 0), 0),
+    bookingsCount: ((bookingsRes.data ?? []) as unknown[]).length,
+    overdueTitles: ((tasksRes.data ?? []) as Array<{ title: string }>).map(t => t.title),
+    unread,
+  };
+}
 
+/** The in-app brief line, or null when there is nothing to say. */
+export function briefText(f: BriefFacts): string | null {
   const parts: string[] = [];
-  if (sales.length > 0) {
-    const total = sales.reduce((n, s) => n + (s.amount_btc || 0), 0);
+  if (f.salesCount > 0) {
     parts.push(
-      `${sales.length} sale${sales.length === 1 ? '' : 's'} (${displayBTC(total)}) in the last 24h`
+      `${f.salesCount} sale${f.salesCount === 1 ? '' : 's'} (${displayBTC(f.salesBtc)}) in the last 24h`
     );
   }
-  if (bookings.length > 0) {
-    parts.push(`${bookings.length} booking${bookings.length === 1 ? '' : 's'} in the next 48h`);
+  if (f.bookingsCount > 0) {
+    parts.push(`${f.bookingsCount} booking${f.bookingsCount === 1 ? '' : 's'} in the next 48h`);
   }
-  if (overdue.length > 0) {
+  if (f.overdueTitles.length > 0) {
     parts.push(
-      `${overdue.length} task${overdue.length === 1 ? '' : 's'} overdue (first: "${overdue[0].title}")`
+      `${f.overdueTitles.length} task${f.overdueTitles.length === 1 ? '' : 's'} overdue (first: "${f.overdueTitles[0]}")`
     );
   }
-  if (unread > 0) {
-    parts.push(`${unread} unread notification${unread === 1 ? '' : 's'}`);
+  if (f.unread > 0) {
+    parts.push(`${f.unread} unread notification${f.unread === 1 ? '' : 's'}`);
   }
-
   if (parts.length === 0) {
     return null;
   }
   return `☀️ Daily brief: ${parts.join(' · ')}. Ask your Cat for details or next steps.`;
+}
+
+/**
+ * The owner's brief as a Telegram notice — or null, which is the usual answer.
+ *
+ * The owner, 2026-11-02, under "Daily brief: 33 unread notifications. Ask
+ * your Cat for details": a message must be answerable with one tap. A count
+ * of unread notifications is not, so it never goes to the phone. Only a thing
+ * he can act on does, and the button opens that thing: the overdue task, the
+ * upcoming booking, the sale.
+ */
+export function ownerBriefNotice(f: BriefFacts): OwnerNotice | null {
+  if (f.overdueTitles.length > 0) {
+    const more = f.overdueTitles.length - 1;
+    return {
+      source: 'cat',
+      title: `Overdue: ${f.overdueTitles[0]}${more > 0 ? ` (+${more} more)` : ''}`,
+      action: { label: 'Open tasks', path: '/dashboard/tasks' },
+      key: 'cat-brief:overdue',
+    };
+  }
+  if (f.bookingsCount > 0) {
+    return {
+      source: 'cat',
+      title: `${f.bookingsCount} booking${f.bookingsCount === 1 ? '' : 's'} in the next 48 hours`,
+      action: { label: 'See bookings', path: '/dashboard/bookings' },
+      key: 'cat-brief:bookings',
+    };
+  }
+  if (f.salesCount > 0) {
+    return {
+      source: 'cat',
+      title: `${f.salesCount} sale${f.salesCount === 1 ? '' : 's'} yesterday (${displayBTC(f.salesBtc)})`,
+      action: { label: 'See sales', path: '/dashboard/store' },
+      key: 'cat-brief:sales',
+    };
+  }
+  return null;
+}
+
+export async function composeDailyBrief(
+  admin: SupabaseClient,
+  userId: string
+): Promise<string | null> {
+  return briefText(await collectBriefFacts(admin, userId));
 }
 
 export interface BriefRunResult {
@@ -176,7 +237,8 @@ export async function runDailyBrief(admin: SupabaseClient, limit: number): Promi
         continue;
       }
       await supersedeOldBriefs(admin, userId);
-      const brief = await composeDailyBrief(admin, userId);
+      const facts = await collectBriefFacts(admin, userId);
+      const brief = briefText(facts);
       if (!brief) {
         continue;
       }
@@ -190,6 +252,10 @@ export async function runDailyBrief(admin: SupabaseClient, limit: number): Promi
       });
       if (sent.success) {
         result.briefsSent += 1;
+        const notice = ownerBriefNotice(facts);
+        if (notice) {
+          await notifyOwnerViaLoki(userId, notice);
+        }
       } else {
         result.errors += 1;
       }
@@ -376,6 +442,12 @@ export async function runWatchEvaluation(admin: SupabaseClient): Promise<WatchRu
       });
       if (sent.success) {
         result.fired += 1;
+        await notifyOwnerViaLoki(watch.user_id, {
+          source: 'cat-watch',
+          title: `Your watch fired: ${watch.label}`,
+          action: { label: 'Open the Cat', path: '/dashboard/cat' },
+          key: `cat-watch:${watch.id}`,
+        });
       } else {
         result.errors += 1;
       }

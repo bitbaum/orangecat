@@ -1,15 +1,18 @@
 'use client';
 
-import React from 'react';
-import { Send } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { Composer } from '@bitbaum/chatkit/react';
+import '@bitbaum/chatkit/styles/chat.css';
 import Button from '@/components/ui/Button';
-import { cn } from '@/lib/utils';
 import type { Message } from '@/features/messaging/types';
 import { useMessageComposer } from './useMessageComposer';
 import { MessageActorSelector } from './MessageActorSelector';
+import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
+import { insertCatMention } from './insert-cat-mention';
 import MentionSuggestions from '@/components/mentions/MentionSuggestions';
 import { textareaSurface } from '@/components/mentions/caret';
 import { useMentionAutocomplete } from '@/hooks/useMentionAutocomplete';
+import { CHAT_VOICE } from '@/hooks/useDictation';
 
 interface MessageComposerProps {
   conversationId: string;
@@ -18,6 +21,14 @@ interface MessageComposerProps {
   onMessageConfirmed?: (tempId: string, realMessage: Message) => void;
 }
 
+/**
+ * The box under a conversation. It is `@bitbaum/chatkit`'s `Composer` — the
+ * same box as the Cat's — so a direct message gets the microphone (speak,
+ * and the words land in the box), Enter-to-send and auto-grow from the
+ * package instead of a hand-made `<textarea>` (owner, 2026-11-04: "no way to
+ * send a voice message"). What stays here is what only Messages has: the
+ * @mention menu, "Ask Cat", and sending as one of your groups.
+ */
 export default function MessageComposer({
   conversationId,
   onMessageSent,
@@ -36,8 +47,7 @@ export default function MessageComposer({
     groupActors,
     typingText,
     handleSubmit,
-    handleKeyDown,
-    handleTextareaChange,
+    handleTextChange,
   } = useMessageComposer({ conversationId, onMessageSent, onMessageFailed, onMessageConfirmed });
 
   const mentions = useMentionAutocomplete({
@@ -45,17 +55,34 @@ export default function MessageComposer({
     disabled: isSending,
   });
 
-  // Order matters: the menu sees the key first, because Enter means "pick this
-  // person" while it is open and "send the message" the rest of the time.
-  const onKeyDown = (event: React.KeyboardEvent) => {
-    if (mentions.handleKeyDown(event)) {
+  // The mention menu is a combobox on the box chatkit renders.
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) {
       return;
     }
-    handleKeyDown(event);
+    el.setAttribute('role', 'combobox');
+    el.setAttribute('aria-autocomplete', 'list');
+    el.setAttribute('aria-controls', 'dm-mention-listbox');
+    el.setAttribute('aria-expanded', String(mentions.open));
+    if (mentions.open) {
+      el.setAttribute('aria-activedescendant', `dm-mention-option-${mentions.activeIndex}`);
+    } else {
+      el.removeAttribute('aria-activedescendant');
+    }
+  }, [textareaRef, mentions.open, mentions.activeIndex]);
+
+  // Order matters: the menu sees the key first, because Enter means "pick this
+  // person" while it is open and "send the message" the rest of the time. The
+  // capture phase runs before the Composer's own Enter-to-send.
+  const onKeyDownCapture = (event: React.KeyboardEvent) => {
+    if (mentions.handleKeyDown(event)) {
+      event.stopPropagation();
+    }
   };
 
-  const onChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    handleTextareaChange(event);
+  const onValueChange = (text: string) => {
+    handleTextChange(text);
     mentions.refresh();
   };
 
@@ -71,64 +98,50 @@ export default function MessageComposer({
         />
       )}
 
-      <form onSubmit={handleSubmit} className="flex items-end gap-2 sm:gap-3">
-        <div className="relative flex-1 min-w-0">
-          <MentionSuggestions
-            items={mentions.items}
-            activeIndex={mentions.activeIndex}
-            onPick={mentions.pick}
-            onHover={mentions.setActiveIndex}
-            placement="above"
-            idPrefix="dm-mention"
-          />
-          <textarea
-            ref={textareaRef}
-            value={content}
-            onChange={onChange}
-            onKeyDown={onKeyDown}
-            onClick={mentions.refresh}
-            onBlur={mentions.close}
-            role="combobox"
-            aria-expanded={mentions.open}
-            aria-controls="dm-mention-listbox"
-            aria-autocomplete="list"
-            aria-activedescendant={
-              mentions.open ? `dm-mention-option-${mentions.activeIndex}` : undefined
-            }
-            aria-label="Message"
-            placeholder="Type a message..."
-            className={cn(
-              'w-full resize-none rounded-md border border-subtle py-2.5 pl-3 pr-3 text-base sm:py-3 sm:pl-4 sm:pr-4 sm:text-base',
-              'bg-surface-page text-fg-primary',
-              'focus:outline-none focus:ring-2 focus:ring-ring focus:border-interactive',
-              'max-h-32 min-h-11',
-              'placeholder:text-fg-tertiary',
-              isSending && 'opacity-50 cursor-not-allowed'
-            )}
-            rows={1}
-            disabled={isSending}
-          />
-        </div>
-
-        <Button
-          type="submit"
-          size="sm"
-          className={cn(
-            'rounded-md bg-fg-primary px-3 py-2.5 text-fg-inverted hover:bg-fg-primary/90 sm:px-4 sm:py-3',
-            'disabled:opacity-50 disabled:cursor-not-allowed',
-            'transition-colors duration-200 flex-shrink-0',
-            'min-w-11 sm:min-w-[auto]'
-          )}
-          disabled={!content.trim() || isSending}
-          aria-label="Send message"
-        >
-          {isSending ? (
-            <div className="h-4 w-4 animate-spin rounded-sm border-2 border-surface-page border-t-transparent sm:h-5 sm:w-5" />
-          ) : (
-            <Send className="w-4 h-4 sm:w-5 sm:h-5" />
-          )}
-        </Button>
-      </form>
+      <div
+        className="relative [--ck-accent:hsl(var(--text-primary))] [--ck-on-accent:hsl(var(--text-inverted))]"
+        onKeyDownCapture={onKeyDownCapture}
+        onClickCapture={mentions.refresh}
+        onBlurCapture={mentions.close}
+      >
+        <MentionSuggestions
+          items={mentions.items}
+          activeIndex={mentions.activeIndex}
+          onPick={mentions.pick}
+          onHover={mentions.setActiveIndex}
+          placement="above"
+          idPrefix="dm-mention"
+        />
+        <Composer
+          value={content}
+          onValueChange={onValueChange}
+          inputRef={textareaRef}
+          onSend={async () => {
+            await handleSubmit();
+          }}
+          placeholder="Message — type @cat to bring Cat in"
+          ariaLabel="Message"
+          sending={isSending}
+          density="compact"
+          voice={CHAT_VOICE}
+          labels={{ send: 'Send message', voice: 'Speak your message' }}
+          tools={
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => insertCatMention(textareaRef.current)}
+              disabled={isSending}
+              className="min-h-9 flex-shrink-0 gap-1.5 px-3"
+              aria-label="Ask Cat in this conversation"
+              title="Bring Cat into this conversation — everyone here sees its answer"
+            >
+              <BrandMarkIcon size={18} />
+              <span className="hidden sm:inline">Ask Cat</span>
+            </Button>
+          }
+        />
+      </div>
 
       {typingText && (
         <div className="mt-2 text-xs text-fg-secondary flex items-center gap-1">

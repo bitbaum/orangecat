@@ -11,7 +11,7 @@ import * as espree from 'espree';
 // Ceiling for `max-lines-per-function` (code lines, blanks and comments not
 // counted). A ratchet: it may only go down. 600 -> 490 when orchestrateCatChat
 // (587) was split; the longest left is registerV1Routes (481), then
-// useChatMessages (449) and executeToolCall (386).
+// executeToolCall (386).
 const MAX_LINES_PER_FUNCTION = 490;
 
 // Shared no-restricted-syntax selectors. Flat config REPLACES (not merges) a

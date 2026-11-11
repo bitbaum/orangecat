@@ -112,7 +112,7 @@ export function markSvg(mark: MarkDefinition, options: MarkSvgOptions = {}): str
 /** The brand icon tile, exactly as the static assets carry it. */
 export function iconSvg(mark: MarkDefinition, options: { maskable?: boolean } = {}): string {
   return markSvg(mark, {
-    color: ICON_STYLE.ink,
+    color: mark.iconInk ?? ICON_STYLE.ink,
     background: ICON_STYLE.canvas,
     radius: options.maskable ? 0 : ICON_STYLE.radius,
     inset: options.maskable ? ICON_STYLE.maskableInset : ICON_STYLE.inset,

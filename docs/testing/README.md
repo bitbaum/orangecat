@@ -45,3 +45,5 @@ pnpm run verify             # the real merge gate
 1. Prefer extending an existing contract test over a new file.
 2. If a create handler learns a new money column name, add one row to the column contract table — not a new describe block with three variants.
 3. Run `pnpm exec vitest run __tests__/unit/cat` before push.
+
+- [Live rehearsal](live-rehearsal.md): the five bot demos against the live site, started by a person, never on a timer.

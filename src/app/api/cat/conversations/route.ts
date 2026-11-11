@@ -3,7 +3,8 @@
  *
  * GET    /api/cat/conversations           - List the user's conversations (rail)
  * POST   /api/cat/conversations           - Start a new conversation, returns { id }
- *                                            ({ ephemeral: true } for a temporary chat)
+ *                                            ({ title } names it; { ephemeral: true }
+ *                                            makes a temporary chat)
  * DELETE /api/cat/conversations?all=true  - Delete ALL conversations (data controls)
  */
 
@@ -36,9 +37,13 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
 
   try {
     // The body is optional: a bare POST is an ordinary chat. `ephemeral`
-    // makes a temporary one (src/lib/chat/temporary-chat.ts).
-    const body = (await request.json().catch(() => null)) as { ephemeral?: unknown } | null;
-    const id = await createConversation(supabase, user.id, null, {
+    // makes a temporary one (useCatTransport).
+    const body = (await request.json().catch(() => null)) as {
+      ephemeral?: unknown;
+      title?: unknown;
+    } | null;
+    const title = typeof body?.title === 'string' ? body.title : null;
+    const id = await createConversation(supabase, user.id, title, {
       ephemeral: body?.ephemeral === true,
     });
     return apiSuccess({ id });
