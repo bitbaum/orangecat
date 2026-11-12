@@ -25,6 +25,14 @@ interface NotificationBadgeProps {
 /**
  * Notification badge for displaying unread counts
  *
+ * The ink is text-fg-inverted, not white: dark mode's red is light
+ * (--status-negative 0 75% 60%), and white on it was 3.8:1 at 10px. The
+ * inverted ink flips with it (4.6:1 dark, 4.8:1 light), as on the
+ * notification centre's own count. The control holding the badge names the
+ * count in its own label ("Notifications (3 unread)"), so the badge carries
+ * none: an aria-label is not allowed on a plain span, and the control's own
+ * label replaces whatever is inside it.
+ *
  * @example
  * <NotificationBadge count={5} />
  * <NotificationBadge count={150} /> // Shows "99+"
@@ -37,10 +45,9 @@ export function NotificationBadge({ count, maxDisplay = 99, className }: Notific
   return (
     <span
       className={cn(
-        'absolute top-1 right-1 bg-status-negative text-white text-2xs rounded-full h-4 min-w-4 px-1 flex items-center justify-center font-semibold leading-none',
+        'absolute top-1 right-1 bg-status-negative text-fg-inverted text-2xs rounded-full h-4 min-w-4 px-1 flex items-center justify-center font-semibold leading-none',
         className
       )}
-      aria-label={`${count} unread`}
     >
       {count > maxDisplay ? `${maxDisplay}+` : count}
     </span>

@@ -809,8 +809,14 @@
   .oc-discover-search-input::-webkit-search-cancel-button {
     display: none;
   }
+  /* On a phone the chips and each rail scroll sideways, and a scroller clips
+     on both axes (overflow-x: auto makes overflow-y auto) — the focus ring,
+     4px outside a chip or card, lost its top and bottom. So each scroller
+     keeps 4px of padding where the ring would be cut and gives it back in
+     margin, so nothing moves. From sm neither scrolls: the chips wrap and
+     the rail is a grid, so both stop clipping. */
   .oc-discover-chips {
-    @apply -mx-4 mt-5 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0;
+    @apply -mx-4 -mb-1 mt-4 flex gap-2 overflow-x-auto px-4 py-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0;
   }
   .oc-discover-chip {
     @apply inline-flex min-h-11 flex-shrink-0 items-center gap-2 rounded-md border border-border-subtle bg-surface-base px-3.5 text-sm font-medium text-fg-secondary transition-colors hover:border-border-strong hover:text-fg-primary;
@@ -818,8 +824,10 @@
   .oc-discover-chip-active {
     @apply border-fg-primary bg-fg-primary text-fg-inverted hover:text-fg-inverted;
   }
+  /* The chip's own ink: dimmed with opacity it fell below AA (2.5:1 light,
+     3.4:1 dark). Mono and a size down already set it apart from the label. */
   .oc-discover-chip-count {
-    @apply font-mono text-xs tabular-nums opacity-60;
+    @apply font-mono text-xs tabular-nums;
   }
   .oc-discover-rail {
     @apply mt-10 first:mt-0 sm:mt-14;
@@ -834,7 +842,7 @@
     @apply inline-flex min-h-11 flex-shrink-0 items-center gap-1 text-sm font-medium text-fg-secondary transition-colors hover:text-fg-primary;
   }
   .oc-discover-rail-track {
-    @apply -mx-4 grid snap-x snap-mandatory scroll-px-4 auto-cols-[78%] grid-flow-col gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:auto-cols-auto sm:grid-flow-row sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:px-0 lg:grid-cols-4;
+    @apply -mx-4 -mt-1 grid snap-x snap-mandatory scroll-px-4 auto-cols-[78%] grid-flow-col gap-3 overflow-x-auto px-4 pb-2 pt-1 sm:mx-0 sm:mt-0 sm:auto-cols-auto sm:grid-flow-row sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:px-0 sm:pt-0 lg:grid-cols-4;
     scrollbar-width: none;
   }
   .oc-discover-rail-track::-webkit-scrollbar {
