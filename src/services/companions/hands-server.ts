@@ -29,23 +29,37 @@ export interface Hands {
 /** The launch set narrowed to what this person has granted or may grant by confirming. */
 export async function handsFor(supabase: AnySupabaseClient, userId: string): Promise<Hands> {
   const permissions = new CatPermissionService(supabase);
-  const allowed: Hands['allowed'] = [];
-  for (const action of handsActions()) {
-    try {
-      const check = await permissions.checkPermission(userId, action.id);
-      if (check.allowed) {
-        allowed.push({ action, grantOnConfirm: false });
-      } else if (canGrantOnConfirm(action, check.code)) {
-        allowed.push({ action, grantOnConfirm: true });
-      }
-    } catch (error) {
-      logger.warn(
-        'hands permission check failed',
-        { error, actionId: action.id },
-        'CompanionHands'
-      );
-    }
+  // The grants are read once and every hand is checked against that copy, at
+  // the same time. One read per hand, one after another, was a dozen round
+  // trips to the database before the model was even asked: most of the wait
+  // on a bare "Hi" (the set grew with every hand added).
+  const stored = await permissions.getUserPermissions(userId).catch(error => {
+    logger.warn('hands permissions could not be read', { error }, 'CompanionHands');
+    return null;
+  });
+  if (!stored) {
+    return { section: undefined, allowed: [] };
   }
+  const checked = await Promise.all(
+    handsActions().map(async (action): Promise<Hands['allowed'][number] | null> => {
+      try {
+        const check = await permissions.checkPermission(userId, action.id, stored);
+        if (check.allowed) {
+          return { action, grantOnConfirm: false };
+        }
+        return canGrantOnConfirm(action, check.code) ? { action, grantOnConfirm: true } : null;
+      } catch (error) {
+        logger.warn(
+          'hands permission check failed',
+          { error, actionId: action.id },
+          'CompanionHands'
+        );
+        return null;
+      }
+    })
+  );
+  // Promise.all keeps the order of handsActions(), which is the listed order.
+  const allowed = checked.filter((a): a is Hands['allowed'][number] => a !== null);
   return { section: handsSection(allowed.map(a => a.action)), allowed };
 }
 
