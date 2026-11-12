@@ -51,7 +51,7 @@ export function ThingRow({
             {badge.label}
           </Badge>
         )}
-        <ArrowRight className="h-4 w-4 shrink-0 text-fg-muted" aria-hidden="true" />
+        <ArrowRight className="h-4 w-4 shrink-0 text-fg-tertiary" aria-hidden="true" />
       </Link>
     </li>
   );

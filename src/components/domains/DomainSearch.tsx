@@ -100,7 +100,7 @@ export function DomainSearch() {
           onChange={event => setQuery(event.target.value)}
           placeholder="yourname"
           autoComplete="off"
-          className="min-h-11 flex-1 rounded-lg border border-subtle bg-surface-base px-4 py-2.5 text-fg-primary placeholder:text-fg-muted focus-visible:border-interactive focus-visible:outline-none"
+          className="min-h-11 flex-1 rounded-lg border border-subtle bg-surface-base px-4 py-2.5 text-fg-primary placeholder:text-fg-tertiary focus-visible:border-interactive focus-visible:outline-none"
         />
         <Button type="submit" variant="accent" disabled={isSearching} className="min-h-11">
           {isSearching ? (
@@ -130,7 +130,7 @@ export function DomainSearch() {
               >
                 <span className="font-mono text-sm text-fg-primary">{result.domain}</span>
                 <span className="flex items-center gap-3">
-                  <span className="text-xs text-fg-muted sm:max-w-md sm:text-right">
+                  <span className="text-xs text-fg-tertiary sm:max-w-md sm:text-right">
                     {result.reason}
                   </span>
                   <span
@@ -159,8 +159,10 @@ export function DomainSearch() {
               </li>
             ))}
           </ul>
-          {disclaimer && <p className="mt-3 text-xs leading-relaxed text-fg-muted">{disclaimer}</p>}
-          <p className="mt-2 text-xs leading-relaxed text-fg-muted">
+          {disclaimer && (
+            <p className="mt-3 text-xs leading-relaxed text-fg-tertiary">{disclaimer}</p>
+          )}
+          <p className="mt-2 text-xs leading-relaxed text-fg-tertiary">
             Registration happens at {REGISTRARS.map(r => r.name).join(' or ')} — they become your
             registrar and your counterparty for the domain. OrangeCat is not a registrar, takes no
             commission on this, and never sees your payment.

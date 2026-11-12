@@ -1,0 +1,561 @@
+# UX/UI audit — 2026-11-12
+
+A measured audit of OrangeCat's public site and signed-in app, the fixes that
+shipped from it, and what is still open. Screens were opened in a real browser
+(Chromium through Playwright) at 390px and 1440px, in dark and in light, and
+every finding below was re-checked by a second reviewer before anything was
+changed.
+
+## Summary
+
+- **Measured:** 99 pages at phone and desktop width, in dark and light. No page
+  scrolled sideways. 1,729 elements were below the 4.5:1 contrast minimum,
+  1,438 tap targets on a phone were under 44px, and some text could not be
+  read at all in the default dark theme.
+- **Found:** 140 problems across ten areas. A second reviewer re-checked each
+  one: 60 stood as written, 80 were corrected, none were thrown out.
+- **Shipped:** [#1634](https://github.com/bitbaum/orangecat/pull/1634) fixes the causes that touch every page. Measured again on
+  the branch: 0 elements below 4.5:1, 119 small tap targets, every page with
+  one `h1`. 32 findings are fixed and 9 partly fixed. Some of those were
+  fixed on `main` by other changes while this was in review (#1625, #1629,
+  #1630, #1631), and this change was merged over them.
+- **Open:** 108 findings, each with its cause and a checked fix, in one
+  file per area beside this one.
+- **For the owner:** five things below need a decision rather than a fix.
+
+## How it was measured
+
+- **Pages.** 99 routes: 59 public pages (landing, sign-in, Discover and every
+  public listing, detail pages, content and legal pages, the 404) and 40
+  signed-in pages (dashboard, Cat, money, messages, create and manage,
+  settings, profile).
+- **Captures.** Each page at 390×844 and 1440×900, in dark and light: 396
+  captures of the local app, plus 24 of production for the pages a sandbox
+  cannot serve without the server key (`/pay/<username>`, project detail,
+  Discover search).
+- **Signed-in pages** were opened as a brand-new pseudonymous account made
+  with the product's own "Start instantly — no email" button, so they show
+  the first-run experience. Nothing was posted, saved or paid.
+- **Measurements per capture:** horizontal overflow, interactive elements
+  under 44×44px, axe-core WCAG 2.x AA violations with computed colours, text
+  under 12px, heading structure, console errors and failed requests.
+- **Review.** Ten areas, one reviewer each, judged against `AGENTS.md`
+  ("Design system", "One shape per kind, here") and the fleet rules ("No dead
+  ends", "One shape per kind"). A second reviewer then tried to refute every
+  finding by opening the same evidence and the code, and corrected severity,
+  cause and fix where they were off. Of 140 findings, 60 were confirmed as
+  written, 80 were corrected, none were thrown out.
+
+The default theme is dark (`ThemeProvider` sets `defaultTheme="dark"`), so
+dark is what a first-time visitor sees. Light was held to the same bar.
+
+## Baseline
+
+Measured before any change, on `main` at `0275875`:
+
+| Measure                                  | Dark 390 | Dark 1440 | Light 390 | Light 1440 |
+| ---------------------------------------- | -------: | --------: | --------: | ---------: |
+| Pages captured                           |       99 |        99 |        99 |         99 |
+| Pages with sideways scroll               |        0 |         0 |         0 |          0 |
+| Text below 4.5:1 contrast (elements)     |      372 |       479 |       385 |        493 |
+| Pages with at least one contrast failure |       44 |        97 |        42 |         97 |
+| Interactive elements under 44px          |    1,438 |       n/a |     1,438 |        n/a |
+| Buttons with no accessible name          |       22 |        22 |        22 |         22 |
+| Pages with no `h1`                       |        9 |         6 |         9 |          6 |
+
+Three causes explain most of it:
+
+1. **One text token.** `--text-tertiary` measured 4.36:1 on the page and
+   3.97:1 on a card in dark, and 2.83:1 and 3.03:1 in light. It is used in 486
+   places and caused 81% of all contrast failures.
+2. **Ink that does not follow its fill.** White text written by hand on fills
+   that flip with the theme (the "Step" badges on How it works: white on
+   near-white, 1.19:1), theme-following ink on a band that is always dark
+   (the closing banner on About, Docs, Security and Domains: 1.08–1.13:1),
+   and white on orange (2.3:1), which the `check:accent-ink` gate could not
+   see because it only matched one spelling of the orange class.
+3. **Three shared lines.** Footer links at 36px, the header logo link and
+   "Back to top" accounted for 82% of the small tap targets.
+
+## What shipped
+
+One pull request, [#1634](https://github.com/bitbaum/orangecat/pull/1634): the causes that touch every page, each with a
+gate so the class of bug stays closed.
+
+### Measured before and after
+
+The same 99 pages, captured again on the branch:
+
+| Measure                                                                    |                Before |         After |
+| -------------------------------------------------------------------------- | --------------------: | ------------: |
+| Text below 4.5:1, elements (dark 390 / dark 1440 / light 390 / light 1440) | 372 / 479 / 385 / 493 | 0 / 0 / 0 / 0 |
+| Pages with at least one contrast failure (same order)                      |     44 / 97 / 42 / 97 | 0 / 0 / 0 / 0 |
+| Interactive elements under 44px at 390                                     |                 1,438 |           119 |
+| Buttons with no accessible name                                            |                    22 |             0 |
+| Links in a sentence told apart by colour alone                             |                     6 |             0 |
+| Pages with no `h1` at 390                                                  |                     9 |             0 |
+| Tab strips pointing at panels that do not exist                            |                     1 |             0 |
+| Progress bars with no name                                                 |                     1 |             0 |
+| Pages with sideways scroll                                                 |                     0 |             0 |
+
+Measured at commit `a8979af`, before the last merge of `main`. Of the 119
+remaining small targets, 43 are the 40×44px actions under a post on the
+dashboard, timeline and community feeds, 17 are switches (the box is 44×24,
+the hit area is 44×44), and 12 are native checkboxes and radio buttons.
+Unchanged and open: two `aria-hidden-focus` on `/builders` and `/partners`,
+and three scrolling code lines without a tab stop.
+
+### Colour
+
+- **Text ramp.** Secondary and tertiary text moved (light 40% → 30% and
+  58% → 42%; dark 65% → 72% and 48% → 58%), so each clears 4.5:1 on every
+  surface in both themes. Primary is unchanged. The hero's second tone uses
+  tertiary so the two-tone headline keeps its step.
+- **Status colours as words.** The status tokens are tuned to be read as
+  text, on a card and on their own tint. Fills read separate `-fill` tokens
+  (`bg-status-*` in `tailwind.config.ts`), so a danger button stays red and a
+  warning bar stays amber. Ink on a fill: `text-fg-inverted` on positive and
+  negative, `text-warning-foreground` on warning.
+- **`text-on-public`.** The band that is near-black in both themes has its own
+  ink. `text-fg-inverted` flips, and vanished on it in dark.
+- **Ink follows its fill.** Fills that flip with the theme carry
+  `text-fg-inverted` instead of a hand-written white; orange fills carry
+  `text-on-accent`. The How it works steps are one neutral shape.
+- **No dimmed copy.** `text-fg-muted` and resting alpha on text are gone from
+  words (65 lines); article and FAQ links are ink with a full-strength
+  underline.
+
+![How it works in dark: the step badges and icons were white on near-white](2026-11-12-ux-ui/01-how-it-works-dark.jpg)
+
+![About in dark: the closing banner showed only its button](2026-11-12-ux-ui/02-about-band-dark.jpg)
+
+![Requests in light: helper lines, section labels and empty rows](2026-11-12-ux-ui/03-requests-light.jpg)
+
+### Structure and touch
+
+- **Footer.** Links are 44px on a touch screen, the phone footer is two
+  columns and about a third shorter, and the bottom bar that repeated four
+  links is gone.
+- **Switch.** A 44×44 hit area; off is an outline and on is a fill, so the
+  state does not rest on the thumb's position. The Cat permission switches
+  and their expanders have names.
+- **Send.** "Review payment" sat underneath the phone tab bar after a person
+  and an amount were chosen. It stays above the bar now, and returns to the
+  bottom edge while the keyboard is up.
+- **Headings and landmarks.** One `h1` on sign-in at phone width, the Cat
+  chat and route errors; empty states and footer columns are `h2`; no nested
+  `<main>`; one home link in the header.
+- **Controls.** Select and dropdown rows, tabs and the icon button are 44px
+  on touch. Entity list tabs that pointed at panels which do not exist are a
+  segmented control, and its selected cell has an edge in dark. Progress bars
+  announce a value.
+
+![Cat permissions: the off state of a switch](2026-11-12-ux-ui/04-switches.jpg)
+
+![Send on a phone: the committing button and the tab bar](2026-11-12-ux-ui/05-send-button.jpg)
+
+![The phone footer](2026-11-12-ux-ui/06-footer.jpg)
+
+### Motion, focus and type
+
+- A focus outline in forced-colours mode, where the ring (a box-shadow) is
+  removed by the browser.
+- Smooth scrolling only without `prefers-reduced-motion`, in the stylesheet
+  and at every scripted scroll (`src/lib/scroll-behavior.ts`).
+- Headings no longer auto-hyphenate ("permission-less", "al-ready").
+- 10px text on phones is 12px.
+
+### Fixed on main while this was in review
+
+Four changes from another session landed first, and this one was merged over
+them rather than replacing them:
+
+- #1629 moved tertiary text to 44% and 55%, which clears 4.5:1 on page, base
+  and raised. This change keeps 42% and 58%, which also clears it on
+  `surface-overlay`, and moves secondary so the two tones stay apart.
+- #1630 removed the "Bitcoin Integration: Outage" row that nothing measured
+  from the status page. Its version stands.
+- #1631 gave the pay card dark ink on orange. Its buttons on the wallet guide
+  and Study Bitcoin stay orange.
+- #1625 gave every not-found page one `h1` from a shared view. Its version
+  stands.
+
+### Gates added
+
+| Gate                         | Holds                                                                                                                                                                                      |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `check:token-contrast`       | 124 text, status and ink pairs at 4.5:1 in both themes, read from `globals.css`                                                                                                            |
+| `check:accent-ink` (widened) | no light ink on orange, no white on a flipping or status fill, the right ink on the warning fill, no accent class that draws nothing, no dimmed copy; also across a multi-line `cn()` call |
+| `check:tap-targets`          | a compact `min-h` on a raw link or button carries `pointer-coarse:min-h-11`                                                                                                                |
+| `check:type-scale` (widened) | reads `.css` as well, and ratchets `text-2xs`                                                                                                                                              |
+
+Seven public pages were added to `check:broken-words` and taken out again
+before merge: with 39 screens in place of 18 the step ran for 20 minutes
+without finishing, and its CI job stops at 25. The hyphenation rule is held
+by a unit test on `globals.css` instead.
+
+### Reviewed before shipping
+
+Five reviewers read the diff (code, public screens, signed-in screens,
+accessibility, design rules). Their findings that were acted on: the status
+tokens were doing double duty as text and fill (danger buttons had turned
+salmon in dark and warning bars brown in light), the switch's off state had
+become a solid pill, the example prompts under "What do you want to do?"
+read as input fields, the selected segment was weaker in dark than the tab
+it replaced, and the changelog claimed more than the change held. The
+accessibility reviewer and two second-pass checks did not run (the account's
+usage limit was reached), so the accessibility result rests on the
+measurements above, not on a separate review.
+
+## Needs the owner's decision
+
+Found during the audit, not changed by it. Each is a product or data decision
+rather than a design fix.
+
+1. **Tasks are visible across accounts.** A brand-new account opens
+   `/dashboard/tasks` and sees another account's task, with a working
+   "complete" control. `GET /api/tasks` returns it because the `tasks_select`
+   and `tasks_update` policies in the baseline migration let any signed-in
+   person read and update every non-archived task, and
+   `src/app/api/tasks/route.ts` adds no owner filter. The fix is a new
+   migration that scopes both policies to `created_by`. The task review of
+   2026-10-23 left visibility unchanged on purpose, so this waits for a
+   decision. Production holds one task, a test row.
+2. **Saving a Cat spending cap turns payment actions on.** Traced in code, not
+   executed. `SpendCapsCard` posts `actionId: '*'` for the payments category;
+   the caps branch of `grantCategory` in
+   `src/services/cat/permission-service.ts` upserts that row with
+   `granted: true`, and `effectivePermission` falls back to the `*` row for
+   every action without its own row. On an account that never chose, Send
+   Payment, Fund Project and four more move from Off to "Ask first". The Cat
+   still asks before each payment. The fix is to write each action's current
+   permission as its own row in the same upsert, with a unit test for "saving
+   a cap leaves `send_payment` off".
+3. **QA listings lead the public Discover shelf.** "QA test product", "QA Test
+   Project", "QA Test Service" and the account "QA Grok A" are the first cards
+   under "Just listed" and lead their own rails. They were created without
+   `is_test` and without the `TEST ` title prefix the filter in
+   `src/config/public-directory.ts` looks for. They need `is_test = true` or
+   deleting on production. Widening the title filter would hide real listings
+   ("Test prep tutoring" is a fixture in its own test).
+4. **The home page order.** On a phone, 4,112px of studio products sit between
+   the hero and "What it solves". `HomePublic.tsx` documents the current order
+   as a decision ("one fold, then the studio behind it, then what it
+   solves"), so the order was left alone. Swapping the two sections would put
+   "What it solves" at 922px.
+5. **The shared token package.** `@bitbaum/design-tokens#62` sets tertiary
+   text to 44% and 55%. OrangeCat now uses 42% and 58%, with secondary at 30%
+   and 72%. The difference is that 44% and 55% read 4.33:1 and 4.22:1 on
+   `surface-overlay`. Either the package follows, or OrangeCat goes back to
+   the package's values and the overlay pair is left out of
+   `check:token-contrast`.
+
+## Findings by area
+
+Severity is the second reviewer's. "Corrected on re-check" means the finding was real and its severity, cause or fix was wrong as first written. The cause and fix for every open finding are in the per-area files:
+
+- [Landing page and marketing funnel](2026-11-12-ux-ui-findings-funnel.md): 11 open of 14
+- [Sign-in, sign-up and the first five minutes](2026-11-12-ux-ui-findings-auth-firstrun.md): 13 open of 14
+- [Global chrome and interaction states](2026-11-12-ux-ui-findings-chrome.md): 12 open of 14
+- [Discover, public listings and public detail pages](2026-11-12-ux-ui-findings-discover.md): 13 open of 14
+- [Money surface: pay, receive, send, requests, wallets, finances](2026-11-12-ux-ui-findings-money.md): 12 open of 14
+- [Signed-in shell, dashboard and social surfaces](2026-11-12-ux-ui-findings-app-shell.md): 13 open of 14
+- [Create and manage flows](2026-11-12-ux-ui-findings-create-manage.md): 12 open of 14
+- [Profile and settings](2026-11-12-ux-ui-findings-profile-settings.md): 12 open of 14
+- [Content and long-tail public pages](2026-11-12-ux-ui-findings-content.md): 8 open of 14
+- [Systemic accessibility and design-system issues (measurement-driven)](2026-11-12-ux-ui-findings-systemic.md): 2 open of 14
+
+### Landing page and marketing funnel
+
+The first screen is strong: one statement, one warm action, a real mark, readable in both themes at 390px, and no page in this surface overflows sideways, has a console error or lacks a visible focus ring. After that screen the funnel loses the visitor. Two sibling pages have content that cannot be read in the default dark theme, the home page puts 4,112px of other studio products between the hero and what OrangeCat does for the visitor, and the hero button and every public "Start" greet a first-time visitor with "Welcome back, sign in". The six sibling pages each have their own header frame, their own name for the sign-up action and their own closing band; three exceed 11,000px on a phone, largely through repetition. Fix first: (1) the invisible content in dark, namely the step badges on /how-it-works (also confirmed on production) and the closing band on /about; (2) the path, so that hero and Start links open the register form and "What it solves" comes directly after the hero; (3) the grey text tokens that fail AA on 32 to 67 nodes per page.
+
+| #         | Severity | Finding                                                                                                                                 | Where                                        | Status                                                                               |
+| --------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------ |
+| funnel#0  | high     | How it works: step numbers and step icons are invisible in the default dark theme                                                       | /how-it-works                                | Fixed (#1634)                                                                        |
+| funnel#1  | high     | About: the closing call to action has no readable heading or sentence in dark                                                           | /about                                       | Fixed (#1634)                                                                        |
+| funnel#5  | high     | Readable sentences are set in text-fg-tertiary and text-fg-muted, which fail AA in both themes (corrected on re-check)                  | /, /what-you-can-do, /ecosystem, …           | Fixed (#1634)                                                                        |
+| funnel#2  | medium   | A first-time visitor who taps the hero action or any 'Start' is greeted with 'Welcome back, sign in' (corrected on re-check)            | /, /what-you-can-do, /how-it-works, …        | Open                                                                                 |
+| funnel#3  | medium   | Home on a phone: 4,112px of other studio products sit between the hero and what OrangeCat does for you (corrected on re-check)          | /                                            | Open                                                                                 |
+| funnel#4  | medium   | 'How it works' never says how it works, and half of it repeats another page (corrected on re-check)                                     | /how-it-works                                | Open                                                                                 |
+| funnel#6  | medium   | Pricing: orange is a border, a 'not open yet' badge and three buttons, and the warm action is on the wrong plan (corrected on re-check) | /pricing                                     | Partly (#1634): the card and badge are neutral; the action on the wrong plan is open |
+| funnel#7  | medium   | Six sibling pages, six page-header frames (corrected on re-check)                                                                       | /how-it-works, /what-you-can-do, /pricing, … | Open                                                                                 |
+| funnel#8  | medium   | One action, six names; closing bands differ and one page ends by sending the visitor to another product (corrected on re-check)         | /, /how-it-works, /what-you-can-do, …        | Open                                                                                 |
+| funnel#9  | medium   | What you can do: two identical rows of wrapping pills do different things, and their labels sit off-centre                              | /what-you-can-do                             | Open                                                                                 |
+| funnel#10 | medium   | Capability cards: the action is a 51x36 text link, and 'See yours' is offered to people who have nothing yet                            | /what-you-can-do, /how-it-works              | Open                                                                                 |
+| funnel#11 | medium   | The stack page publishes internal scratch entries as products                                                                           | /ecosystem, /                                | Open                                                                                 |
+| funnel#12 | low      | The public 'What do you want to do?' box has no microphone; the signed-in one does (corrected on re-check)                              | /what-you-can-do                             | Open                                                                                 |
+| funnel#13 | low      | About does not say who builds OrangeCat or how to check (corrected on re-check)                                                         | /about                                       | Open                                                                                 |
+
+Keep: Home hero (src/components/home/sections/HeroSection.tsx, .oc-public-hero* in globals.css): one statement, one accent action with dark text-on-accent ink, full-width 48px buttons on a phone, and everything through the two actions visible in The 'What it solves' picker (ProblemsExplorer.tsx): problems in the person's own words, one answer open at a time, the action label and href read from the entity registry, 44px targets, correct tab semantics. The pulse under the hero shows server-counted numbers and omits any it cannot fetch (HomePulse.tsx). Context survives sign-in: the middleware carries the full path and the typed sentence (?q=) in from= through /auth, and useAuthForm.ts honours it for email, OAuth and the anonymous start.
+
+### Sign-in, sign-up and the first five minutes
+
+Sign-in and the first five minutes are solid underneath (no horizontal overflow, visible focus, 44-48px main buttons, no dead buttons, a pseudonymous way in), but the path is not designed as one path. The sign-in screen shows two orange primaries and six ways in, and the first orange one creates a new account under the heading "Welcome back". A new person then lands on one of three different first screens depending on the button they used, and the only real onboarding form is reached by accident and has a visibly broken main field. The first-run dashboard and Cat chat speak to someone who already has things ("No pending Cat approvals.", "56% Setup", registry-noun starters). Small grey text fails AA in both themes on every auth mode. A top-tier team would fix first: (1) one primary per auth mode, with the anonymous entry demoted on sign-in; (2) one first-run destination for every way in, with the onboarding field, examples and button repaired; (3) first-run copy and checklist on the dashboard and Cat, together with the tertiary-text contrast. Screenshots cited below are in (subfolders before, live, detail, extra/auth-firstrun); scripts are in
+
+| #                | Severity | Finding                                                                                                                                           | Where                                                            | Status                                             |
+| ---------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- | -------------------------------------------------- |
+| auth-firstrun#0  | high     | Sign-in shows two orange primaries, and the first one creates a new account (corrected on re-check)                                               | /auth, /auth?mode=register, https://orangecat.ch/auth            | Open                                               |
+| auth-firstrun#1  | high     | A new person's first screen depends on which button they used; the lead button leads to the weakest one (corrected on re-check)                   | /auth, /dashboard, /dashboard/cat?welcome=true, …                | Open                                               |
+| auth-firstrun#2  | medium   | Onboarding: the main field is 241px wide in a 308/462px column and unlabelled; examples are cut mid-word                                          | /onboarding/intelligent                                          | Open                                               |
+| auth-firstrun#3  | medium   | First-run dashboard copy talks to someone who already has things (corrected on re-check)                                                          | /dashboard                                                       | Open                                               |
+| auth-firstrun#4  | medium   | Small grey text fails AA in both themes; light-theme dividers are struck through by their own line                                                | /auth, /auth?mode=register, /onboarding/intelligent, …           | Partly (#1634): contrast; the divider line is open |
+| auth-firstrun#6  | medium   | Setup checklist: three rows open the same form, the best row is hidden, row titles outrank the card title (corrected on re-check)                 | /dashboard                                                       | Open                                               |
+| auth-firstrun#7  | medium   | Orange on in-app and recovery actions, including disabled orange                                                                                  | /onboarding/intelligent, /dashboard/things, /auth?mode=forgot, … | Open                                               |
+| auth-firstrun#8  | medium   | Sign in versus create account: the switch is a 24px text link below the fold (corrected on re-check)                                              | /auth, /auth?mode=register, https://orangecat.ch/auth            | Open                                               |
+| auth-firstrun#9  | medium   | Social buttons lose their labels from 640px up and have no visible outline in light                                                               | /auth, /auth?mode=register, https://orangecat.ch/auth            | Open                                               |
+| auth-firstrun#11 | medium   | No h1 on phone sign-in or on the Cat page; on desktop the h1 is the marketing line                                                                | /auth, /auth?mode=register, /dashboard/cat, …                    | Fixed (#1634)                                      |
+| auth-firstrun#12 | medium   | The 'What do you want to do?' door is built twice; on 'What you can do' it has no microphone and the app shell disappears (corrected on re-check) | /what-you-can-do, /dashboard/things, /dashboard                  | Open                                               |
+| auth-firstrun#13 | medium   | Password recovery is three screens in three different frames, with unlabelled inputs and 'Login' beside 'Sign in'                                 | /auth?mode=forgot, /auth/reset-password, /auth/cant-get-email    | Open                                               |
+| auth-firstrun#5  | low      | Cat chat first-run empty state: a greeting and three registry nouns in a wrapping pill box (corrected on re-check)                                | /dashboard/cat, /dashboard/cat?welcome=true, /dashboard          | Open                                               |
+| auth-firstrun#10 | low      | Auth errors: browser bubbles, a banner with a pointless 'Try Again', and operator jargon (corrected on re-check)                                  | /auth, /auth?mode=register                                       | Open                                               |
+
+Keep: Pseudonymous entry with no email, explained in one plain sentence; No dead buttons: OAuth providers, emailed code and passkey are rendered only where the server can serve them (useEnabledOAuthProviders, isEmailConfigured, arePasskeysEnabled). /auth/cant-get-email is a model of 'no dead ends': four ways back in plus support, each with its own link, plain language. Keyboard and touch basics hold: a visible focus ring on every control when tabbing (extra/auth-firstrun/auth-focus-startinstantly-390-dark.png), a skip link, 44px show-password buttons with aria-labels, 44-48px primary buttons, and zero hor
+
+### Global chrome and interaction states
+
+The chrome has good bones: one icon-button primitive, a skip link, a visible two-ring focus style, an opaque labelled tab bar, zero sideways scroll in every state I opened at 390 and 1440, and strict use of the one orange. What lets it down is what a signed-out person meets first: the phone menu, the header's labels and the search box. The phone menu offers no Sign in, drops both header groups, lists 27 footer links instead, and cannot be reached by keyboard. The header calls a fundraising page "Support" and files company pages under "Product". "Search or jump to" finds no public page at all ("pricing" returns nothing). Keyboard focus is the second cluster: the auto-hiding header takes focus off-screen, and search, notifications and the Cat panel drop focus when closed. The three things to fix first: (1) rebuild the visitor phone menu (Sign in and Get started, the real groups, a focus trap and a close row); (2) rename and regroup the header navigation so one route has one name; (3) make the palette find public pages and stop sending visitors to the sign-in form. Note: the local checkout is one merged pull request behind main (#1611). That PR already fixed the solid white active-tab icon and the 36px logo link, so neither is reported; it also introduced finding 7, which I measured on production.
+
+| #         | Severity | Finding                                                                                                                                          | Where                                     | Status        |
+| --------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------- | ------------- |
+| chrome#0  | high     | Visitor phone menu: no Sign in, both header groups missing, 27 footer links in their place                                                       | /, /pricing, /blog, …                     | Open          |
+| chrome#3  | high     | The visitor menu cannot be reached with the keyboard, has no close control and does not dim the page                                             | /, /pricing, /blog, …                     | Open          |
+| chrome#4  | high     | The auto-hiding header takes keyboard focus off-screen and leaves a 64px gap above the desktop sidebar                                           | /, /dashboard, /discover, …               | Open          |
+| chrome#1  | medium   | Header navigation: "Product" holds company pages, "Support" is a fundraising page, and one route has several names (corrected on re-check)       | /, /pricing, /blog, …                     | Open          |
+| chrome#2  | medium   | "Search or jump to" finds no public page, and for a visitor every default row leads to the sign-in form (corrected on re-check)                  | /, /discover, /pricing, …                 | Open          |
+| chrome#5  | medium   | Closing search, notifications or the Cat panel drops keyboard focus to the top of the page                                                       | /, /dashboard, every page with the header | Open          |
+| chrome#6  | medium   | A second, invisible logo link in the header: on production an empty 44px focus box that pushes the logo 44px right                               | /, /discover, /dashboard, …               | Fixed (#1634) |
+| chrome#7  | medium   | A signed-out visitor on Discover gets the app's chrome: no site navigation, no footer, and Create as the loudest control (corrected on re-check) | /discover, /events, /loans, …             | Open          |
+| chrome#8  | medium   | The bottom of the signed-in phone drawer is hidden under the tab bar, including its Close button                                                 | /dashboard, /messages, /discover, …       | Open          |
+| chrome#9  | medium   | Phone footer is 2.4 screens tall with 31 links at 36px, and a bottom bar that repeats links and wraps                                            | /, /pricing, /about, …                    | Fixed (#1634) |
+| chrome#10 | medium   | In light theme hover, open and selected states are invisible, and no button has a pressed state (corrected on re-check)                          | /, /dashboard, every page                 | Open          |
+| chrome#11 | medium   | Notifications panel shows an error and "No notifications found" together, and its filter row runs off a phone screen                             | /dashboard, every signed-in page          | Open          |
+| chrome#12 | low      | One destination, several names: Money / Receive, Create / Post, Home / Dashboard, My things / My Projects (corrected on re-check)                | /dashboard, /messages, /receive, …        | Open          |
+| chrome#13 | low      | The feedback tab is a 24px-wide black sliver on a near-black page, marked only with a spiral (corrected on re-check)                             | /, /discover, every page on production    | Open          |
+
+Keep: Skip link is the first tab stop on every page and becomes a visible 187x44 button on focus (src/app/layout.tsx:128-133). One global :focus-visible rule (src/app/globals.css:81-83) draws a two-ring focus indicator that is clearly visible on every header control in dark and light; HeaderIconButton is a single primitive: every header control measured 44x44 at 390 and 40x40 at 1440, with one icon size and one hover treatment. Button sizes use pointer-coarse:h-11, so touch screens get 44px without bloating desktop density.
+
+### Discover, public listings and public detail pages
+
+Discover itself is soundly built: server-rendered, URL-driven, one card anatomy, no sideways scroll on any captured page, a visible focus ring and a good nothing-found state. What lets it down on arrival is the content of the card: on production 42 of the 43 shelf cards have no picture, so the page is a wall of grey plates with single letters, led by QA fixtures, with the kind label and counts under AA contrast in both themes. The larger losses are one tap further in. On product, service, project and group pages the action a person came for is either missing (a priced listing whose seller has no wallet ends in one sentence with no button; a group shows no Join until the Members tab is opened, and signed out it answers with an error toast) or is said four times in two colours, with a sticky bar that lands on a different action than its label. /events is an organiser pitch where every sibling URL is a listing, and several inbound links (/projects, breadcrumb Home, category tiles, empty kinds) land on the wrong, an empty, or a sign-in page. Fix first: (1) every public detail page gets exactly one primary action, with the price, inside the first phone viewport, including the no-wallet and signed-out cases; (2) make the Discover card honest when there is no picture (compact plate, readable kind and price) and keep fixtures off the shelf; (3) make every listing URL land on a named, filtered Discover view that explains itself when empty. My extra captures are in and the scripts that made them in (11 public GET loads of production in total, nothing submitted).
+
+| #           | Severity | Finding                                                                                                                                                                                                              | Where                                             | Status        |
+| ----------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- | ------------- |
+| discover#1  | high     | Product and service pages: price and action are below the first phone viewport, the same goal has four buttons in two colours, and the sticky bar lands on a different action than its label (corrected on re-check) | product-detail, service-detail                    | Open          |
+| discover#2  | high     | A group page offers no Join where people land; signed out, the hidden Join answers with an error toast; the overview is the owner's settings                                                                         | group-detail                                      | Open          |
+| discover#4  | high     | 42 of 43 Discover cards are a single letter on a grey plate that takes half the card (corrected on re-check)                                                                                                         | discover, projects, products, …                   | Open          |
+| discover#5  | high     | QA fixtures lead the production shelf (corrected on re-check)                                                                                                                                                        | discover                                          | Open          |
+| discover#12 | high     | Prices are set three ways, and two of them are wrong on screen: 'CHF 20.00 ≈ CHF 20.00' in the pay panel and an orphaned '/ hr' (corrected on re-check)                                                              | discover, products, services, …                   | Open          |
+| discover#0  | medium   | A priced listing whose seller has no wallet shows a price and stock, then no way to act (corrected on re-check)                                                                                                      | product-detail, service-detail, project-detail    | Open          |
+| discover#3  | medium   | /events is an organiser sales page, not the list of events its siblings are (corrected on re-check)                                                                                                                  | events                                            | Open          |
+| discover#6  | medium   | The kind label, the chip counts and Bitcoin prices on Discover fail AA contrast in both themes                                                                                                                       | discover, projects, products, …                   | Fixed (#1634) |
+| discover#7  | medium   | A kind's page does not say which kind it is, and an empty kind or a failed search says nothing useful (corrected on re-check)                                                                                        | products, services, groups, …                     | Open          |
+| discover#8  | medium   | The breadcrumb's 'Home' on public listing pages leads a signed-out visitor to the sign-in form                                                                                                                       | product-detail, service-detail                    | Open          |
+| discover#9  | medium   | Links into Discover use parameters it does not answer: /projects shows everything, category tiles land on 'Nothing public matches'                                                                                   | projects, categories, discover                    | Open          |
+| discover#10 | medium   | On desktop, rails hide cards five to eight with no 'See all' (corrected on re-check)                                                                                                                                 | discover                                          | Open          |
+| discover#11 | medium   | The row of kinds wraps to 10 + 3 on desktop, and the shelf repeats six kinds as 17px text links (corrected on re-check)                                                                                              | discover, products, services, …                   | Open          |
+| discover#13 | medium   | Three frames for one kind of page: product, project and group detail pages each open differently                                                                                                                     | product-detail, service-detail, project-detail, … | Open          |
+
+Keep: Discover is rendered on the server from its URL (q, type, page in src/services/discover/params.ts): every state is a link, Back works, and the search box is a plain GET form that still works without JavaScript. One card component (src/components/discover/DiscoverCard.tsx) for every kind: the whole card is one link, same parts in the same order, kind chips are 44px tall, and phone rails snap with the next card peeking at 78% width so a row reads as The nothing-found state is a model empty state: it names the query, offers a did-you-mean, gives two actions (Ask your Cat, List it yourself) and still shows a 'Just listed' rail (seen in No horizontal overflow at 390 or 1440 on any page of this surface, and exactly one h1 on every listing page (digest).
+
+### Money surface: pay, receive, send, requests, wallets, finances
+
+The money surface is the strongest part of the app when it is in its settled state: the configured Receive screen, the amount field, the review step and the honest error and prefill states are at the standard the "One shape per kind" table claims. It falls short at the edges a real person meets first: on a phone the Send button is pinned underneath the bottom tab bar, the public pay page never shows who is being paid beyond a display name and labels its one action "Show the code", and the first-run states of Receive and Send drop the shared frame and fall back to the legacy wallet form with orange links and 16px targets. The trust lines and section labels that carry the non-custodial promise are set in a token that fails AA in both themes (2.83:1 in light). Wallets and Finances are visibly a different, older product. A top-tier team would fix first: (1) Send's committing button hidden under the tab bar (one class in MoneyActionBar); (2) the pay page as a stranger sees it: payee identity, a verb on the button, no dimmed-orange slab under a brighter "Get Started"; (3) the first-run path: Receive setup and "Connect a wallet to send" inside the shared frame with a form that follows the rules, plus the tertiary-text contrast token.
+
+| #        | Severity | Finding                                                                                                                                                               | Where                               | Status        |
+| -------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- | ------------- |
+| money#0  | high     | Send: the committing button is pinned underneath the bottom tab bar on phones (corrected on re-check)                                                                 | /send                               | Fixed (#1634) |
+| money#1  | high     | Pay page does not show who is being paid beyond a display name                                                                                                        | /pay/[username]                     | Open          |
+| money#3  | high     | Trust lines, section labels and empty states are set in a text token that fails AA in both themes (corrected on re-check)                                             | /pay/[username], /receive, /send, … | Fixed (#1634) |
+| money#4  | high     | First-run Send sends you to a page about receiving, in different words, to find a field hidden under 'Other ways to get paid (advanced)' (corrected on re-check)      | /send, /dashboard/wallets           | Open          |
+| money#5  | high     | The first-run wallet form breaks the surface's own rules: orange text links, 16px tap targets, '(optional)' labels, a card around the field                           | /receive, /dashboard/wallets        | Open          |
+| money#2  | medium   | The pay page's one action says 'Show the code' and arrives as a dimmed orange slab under a brighter 'Get Started' (corrected on re-check)                             | /pay/[username]                     | Open          |
+| money#6  | medium   | The three tabs do not share one frame in four states: first-run, no-wallet, loading, and Send's two-line subtitle                                                     | /receive, /send, /requests          | Open          |
+| money#7  | medium   | 'Ask' on a non-Bitcoin way to pay drops a signed-out payer on 'Welcome back' with no explanation and an empty message (corrected on re-check)                         | /pay/[username], /auth              | Open          |
+| money#8  | medium   | An amount outside the limits shows an error but leaves the committing button live                                                                                     | /pay/[username], /send, /requests   | Open          |
+| money#9  | medium   | A focus rectangle is drawn around the digits inside the amount plate (corrected on re-check)                                                                          | /pay/[username], /send, /requests   | Open          |
+| money#10 | medium   | In BTC entry the four suggested amounts are cut off (corrected on re-check)                                                                                           | /pay/[username], /send, /requests   | Open          |
+| money#11 | medium   | Request rows: two actions squeeze the detail to 'Dinn…', the status line carries a stray margin, and the commit button is not where Send's is (corrected on re-check) | /requests                           | Open          |
+| money#12 | medium   | Finances: first-run cards name actions that are not links, and 'Add a wallet' opens a page where no wallet can be added (corrected on re-check)                       | /dashboard/finances                 | Open          |
+| money#13 | medium   | Wallets reads as a different product from the money tabs it is linked from (corrected on re-check)                                                                    | /dashboard/wallets                  | Open          |
+
+Keep: Configured Receive screen (extra/money/receive-390-dark-code.png): avatar, name, @handle, one QR plate with the brand mark, the link in mono, then Copy link and Share as two equal cells. AmountField in fiat mode: the figure is the headline (CHF small, number large), the BTC that actually moves sits under it ('0.00032682 BTC'), four presets are equal cells with a clear chosen state, and an out-of-range amount is explained in MoneyTabs via SegmentedControl: three equal 44px segments, real links with aria-current, same control and same content width (358px at 390) on all three tabs; Honest states that keep a way forward: a bad link amount is reported in place ('"abc" isn't an amount we can read.
+
+### Signed-in shell, dashboard and social surfaces
+
+The signed-in shell has the right ideas (one "What do you want to do?" door, a plain-verb command palette, a labelled five-slot tab bar, restrained monochrome chrome with visible focus rings and good light/dark parity) but the navigation around them is not yet trustworthy. On a phone the hamburger drawer stays open after you pick a destination, reopens after a reload, and its Close button sits under the tab bar; on desktop one visit to the Cat (where sign-in lands) silently collapses the sidebar for good and hides the PEOPLE / WORK / MORE groups. The information architecture says the same thing with different words and icons in each place (Home / Dashboard / Welcome, Money / Receive / Your money, Create / Post / Organization, 17 nouns in the plus menu versus verbs in the palette), and active states go dark on Send, Request and every entity list. Signed-in pages do not share one frame: six h1 sizes, two typefaces and content widths from 416 to 1312px at 1440, with orange primary buttons and two or three primaries per screen on My things, Groups, Messages and People. The three things a top-tier team would fix first: (1) the two shell state bugs, drawer close/persist and the Cat-forced sidebar collapse, both small changes in AppShell; (2) the first-run dashboard and the Create surfaces, so a new person sees examples and plain verbs instead of a profile checklist and 17 entity nouns; (3) one navigation vocabulary with agreeing active states, then one PageHeader frame and content width for every signed-in page. Capture scripts are in (desk.cjs, phone.cjs, misc.cjs, misc2.cjs, misc3.cjs) and new images in Sandbox artefacts (0 users on People, 0 listings on Discover, notification error) were not reported as data bugs, only as states.
+
+| #            | Severity | Finding                                                                                                                                                                  | Where                                        | Status                                                                         |
+| ------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------- | ------------------------------------------------------------------------------ |
+| app-shell#0  | high     | Phone drawer stays open after you pick a destination, reopens after reload, and its Close button is under the tab bar                                                    | app-dashboard, app-things, app-home, …       | Open                                                                           |
+| app-shell#1  | high     | Visiting the Cat permanently collapses the desktop sidebar and hides the PEOPLE, WORK and MORE groups (corrected on re-check)                                            | app-dashboard, app-home, app-things, …       | Open                                                                           |
+| app-shell#2  | medium   | First-run dashboard leads with a profile checklist and jargon instead of the door and its examples (corrected on re-check)                                               | app-dashboard                                | Open                                                                           |
+| app-shell#3  | medium   | Create is a list of 17 entity nouns in the header menu and the phone sheet, while the palette says the same things in plain verbs (corrected on re-check)                | app-dashboard, app-things, app-discover, …   | Open                                                                           |
+| app-shell#4  | medium   | The tab bar's plus changes its name and what it does from page to page; on Messages it opens the public post composer (corrected on re-check)                            | app-messages, app-groups, app-dashboard, …   | Open                                                                           |
+| app-shell#5  | medium   | Navigation vocabulary: the same place has different names and icons in the sidebar, the user menu and the tab bar, and MORE is a ten-item drawer (corrected on re-check) | app-dashboard, app-discover, app-timeline, … | Open                                                                           |
+| app-shell#6  | medium   | Three places are called Home and four screens show the same feed under different names (corrected on re-check)                                                           | app-home, app-timeline, app-community, …     | Open                                                                           |
+| app-shell#8  | medium   | Orange primary buttons inside the app, and two or three primary buttons for one action on Messages, People, Groups and Timeline                                          | app-things, app-groups, app-collaborate, …   | Partly (#1634): profile claims; Messages, People, Groups and Timeline are open |
+| app-shell#9  | medium   | Signed-in pages do not share one header frame or content width: six h1 sizes, two typefaces, widths from 416 to 1312px (corrected on re-check)                           | app-dashboard, app-home, app-things, …       | Open                                                                           |
+| app-shell#10 | medium   | People at 390: the invite card's buttons run off the screen ('Copy Link' is unreachable) and the three tabs wrap to two lines                                            | app-people                                   | Open                                                                           |
+| app-shell#12 | medium   | Shell text below AA contrast and shell controls under 44px on a phone (corrected on re-check)                                                                            | app-dashboard, app-home, app-things, …       | Partly (#1634): contrast and the icon button; other shell controls are open    |
+| app-shell#7  | low      | Active states go dark on Send, Request and every entity list; the tab bar calls Money 'Receive' (corrected on re-check)                                                  | app-dashboard, app-things, app-groups, …     | Open                                                                           |
+| app-shell#11 | low      | Load failures are shown as confident empty states, and the following feed's empty state gives the wrong advice (corrected on re-check)                                   | app-people, app-discover, app-home, …        | Open                                                                           |
+| app-shell#13 | low      | Search icon is painted underneath its input on Groups and People, and example prompt pills have their label stuck to the top                                             | app-groups, app-people, app-things           | Fixed (#1634)                                                                  |
+
+Keep: The door: DashboardIntent (src/components/dashboard/DashboardIntent.tsx) is one sentence in, built on the chatkit Composer with a microphone, and is reused on the dashboard and in the My things empty state. Command palette (desk-palette-dark.png, desk-palette-typed-dark.png): Jump to + Create in plain verbs from the registry ('Sell something', 'Raise money for a goal'), typo-tolerant matches, and an 'Ask your Cat' fallback row so a search neve Empty states on Collaborate, My Groups and My things state the purpose, give a concrete example ('a designer, a translator, someone with a van') and one monochrome primary action. Phone tab bar basics are right: opaque surface, five labelled slots measured 75x56px each, safe-area padding, hides with the soft keyboard, raised Receive slot is labelled, aria-current set on the active slot.
+
+### Create and manage flows
+
+The create and manage surface has a sound skeleton: one list shell with an empty state that owns the call to action, monochrome in-app buttons, no sideways scroll on any of the 13 pages at 390 or 1440, inline validation written in words, and a Cat prefill panel at the top of every form. What lets it down is the path between "I want to make something" and the first field. The chooser asks for a type name and explains it with a tautology ("Companion: Create a companion"), the phone's Create tab opens a names-only tile grid, and ten entity types then put a template gallery in front of the form with "Start from scratch" already ticked and no Continue button (50 cards, 7,977px, for an asset on a phone). Inside the forms, the committing button sits about four screens down under a wider filled "Save" that belongs to the wallet box, the wizard repeats the AI panel on every step so the step's own fields start below the fold, and help text leaks implementation ("Use -1 for unlimited stock", "Currency selector is included in this field"). Accessibility is broadly fine in dark but orange help links measure 2.1 to 2.3:1 in light and upcoming wizard step labels are 10px at 2.06 to 2.8:1. The three things to fix first: (1) remove the template gallery as a gate and make every chooser use the registry's plain-language copy in one shared row list; (2) make "Create X" the only filled button in a form, keep it reachable on a phone, and stop repeating the AI panel per wizard step; (3) fix the first-run states that strand or mislead: Wishlists and Bookings with no action, Projects with "Open Loki" above the hidden Create button, and the Tasks page showing a brand-new account someone else's test task.
+
+| #                | Severity | Finding                                                                                                                                                                                                      | Where                                                                                    | Status        |
+| ---------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- | ------------- |
+| create-manage#1  | high     | Three create choosers with three anatomies, none using the registry's plain copy; the phone's Create tab opens the weakest one                                                                               | app-create, mobile Create sheet (bottom tab on /dashboard), header Create menu (desktop) | Open          |
+| create-manage#2  | high     | A wider filled "Save" sits directly above "Create Product": two primary buttons, and the committing pair is unequal and 40px tall (corrected on re-check)                                                    | app-create-product, app-create-project, /dashboard/loans/create, …                       | Open          |
+| create-manage#3  | high     | The Tasks page shows a brand-new account someone else's task, with a complete button                                                                                                                         | app-tasks                                                                                | Open          |
+| create-manage#0  | medium   | A template gallery blocks ten create forms: "Start from scratch" is pre-ticked, there is no Continue, and a phone gets up to 50 full-height cards (corrected on re-check)                                    | app-create-product, /dashboard/services/create, /dashboard/events/create, …              | Open          |
+| create-manage#4  | medium   | Orange help links fail contrast in light (2.1 to 2.3:1) and upcoming wizard step labels are 10px at 2.06 to 2.8:1; orange is also used as decoration (corrected on re-check)                                 | app-create-product, app-create-project, app-projects, …                                  | Fixed (#1634) |
+| create-manage#5  | medium   | The project wizard repeats the "Fill with AI" panel on every step, so each step's own fields start below the fold on a phone (corrected on re-check)                                                         | app-create-project                                                                       | Open          |
+| create-manage#6  | medium   | My Projects on a phone: "Open Loki" is the only button on arrival and "Create Project" is hidden behind the tab bar (corrected on re-check)                                                                  | app-projects                                                                             | Open          |
+| create-manage#7  | medium   | Empty states that tell people to create something and give no way to do it: Wishlists and Bookings                                                                                                           | app-wishlists, app-bookings                                                              | Open          |
+| create-manage#8  | medium   | Help text and defaults leak the implementation: "-1 for unlimited", "Currency selector is included in this field", two currency controls, Bitcoin-scale placeholders in franc fields (corrected on re-check) | app-create-product, app-create-project, /dashboard/investments/create, …                 | Open          |
+| create-manage#9  | medium   | A phone form with two required fields is 3,755px long, and a failed submit leaves the person at the bottom, 2,000px from the fields in error (corrected on re-check)                                         | app-create-product, /dashboard/loans/create, /dashboard/investments/create               | Open          |
+| create-manage#10 | medium   | Create and manage pages are not one frame: three create headers, two title typefaces, a forked Loans page with two primary buttons, and names that change between chooser and page                           | app-create-product, app-create-project, app-loans, …                                     | Open          |
+| create-manage#11 | medium   | The wizard's template step has three buttons where two do the same thing, the way forward is 1,300px down, and every step shows its heading twice                                                            | app-create-project                                                                       | Open          |
+| create-manage#12 | medium   | The wizard progress bar is announced as indeterminate and unnamed                                                                                                                                            | app-create-project                                                                       | Fixed (#1634) |
+| create-manage#13 | low      | Small craft breaks in forms: the Tags "Add" button is cut off on a phone, task actions are in reverse order, and radios and checkboxes are 13px browser-blue natives                                         | /dashboard/tasks/new, app-create-product, app-create-project                             | Open          |
+
+Keep: One list shell for most manage pages (src/components/entity/EntityDashboardPage.tsx): Store, Services and Events are pixel-identical frames at 390 and 1440, and when the list is empty the header Create button, search and status filter are s In-app primary actions are monochrome everywhere on this surface (Create Product, Create Task, Next, Fill form); No horizontal overflow and exactly one h1 on all 13 pages at 390 and 1440 in both themes (digest: overflowX 0, h1 count 1 on every row). The /create page rows are a good list anatomy: min-h-14 rows, 40px icon tile, name plus one line, grouped under headings, with a clearly visible keyboard focus ring (create-focus-1440-dark.png) and two ways out for someone who cannot choose
+
+### Profile and settings
+
+The public profile is the strongest part of this surface: a stranger sees who this is, one orange Pay button that only appears when money can land, equal 44px Message and Follow cells, and sign-in detours that keep their destination. The signed-in half is weakest exactly where trust is decided: the Cat permissions page prints the model's own tool instructions as its explanations and tells a brand-new account that Payments is on. Two controls are invisible or unreadable because of class names that resolve to nothing or to white on near-white (the 'Let Cat bring things up' switch in both themes; the share sheet's 'Share via…' on phones in dark). The first-run surfaces (own profile, Settings for an account with no email, Edit profile on a phone) were written for an established user, and Settings → Account, though honestly worded section by section, is one 6,930px card with three save behaviours. No capture overflows sideways, focus rings are visible, and light and dark match apart from the token bugs listed. Fix first: (1) rewrite the Cat permission rows in the person's words and make the category switches and the first-run banner say what is actually on; (2) repair the broken colour pairs (share-sheet button, proactivity switch, tertiary and warning text) and put each behind a gate; (3) make first run fit a pseudonymous newcomer: an owner empty state with next steps, 'Add an email' in Settings, and a pinned Save on Edit profile.
+
+| #                   | Severity | Finding                                                                                                                                         | Where                                                                                       | Status                                                                                       |
+| ------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| profile-settings#0  | high     | Cat permission rows show the model's tool instructions instead of words for the person                                                          | /dashboard/cat/permissions, /dashboard/cat/settings#can-do                                  | Open                                                                                         |
+| profile-settings#1  | high     | A brand-new account is told Payments is on ('Send Bitcoin and fund projects') and that something high-risk is enabled (corrected on re-check)   | /dashboard/cat/permissions, /dashboard/cat/settings#can-do                                  | Open                                                                                         |
+| profile-settings#2  | high     | Share sheet on a phone: the 'Share via…' label is white on near-white in dark, and the sheet has two close buttons                              | /profiles/[username], /profile, every ShareContent consumer (project, entity, blog, /share) | Partly (#1634): the label is readable; the two close buttons are open                        |
+| profile-settings#3  | high     | 'Let Cat bring things up' is on by default and its switch is invisible; the selected theme has no selected frame                                | /dashboard/cat/settings, /settings/memory, /settings                                        | Fixed (#1634)                                                                                |
+| profile-settings#4  | high     | Settings does not recognise an account with no email: 'the email associated with your account' sits above an empty field                        | /settings, /profile?tab=info                                                                | Open                                                                                         |
+| profile-settings#6  | high     | Edit profile on a phone: no field in the first screen, Save 3,771px down and not pinned (corrected on re-check)                                 | /dashboard/info/edit                                                                        | Open                                                                                         |
+| profile-settings#5  | medium   | Own profile on first run: the Overview panel is blank and the only filled button publishes an empty card (corrected on re-check)                | /profile, /dashboard/info, /profiles/[username] (owner view)                                | Open                                                                                         |
+| profile-settings#7  | medium   | Permission presets apply on one tap, replace every individual choice, and never show which one is active                                        | /dashboard/cat/permissions, /dashboard/cat/settings#can-do                                  | Open                                                                                         |
+| profile-settings#8  | medium   | Settings → Account is one 6,930px card titled 'Account & Security' holding 13 sections and three save behaviours (corrected on re-check)        | /settings                                                                                   | Open                                                                                         |
+| profile-settings#9  | medium   | Cat's spending caps must be typed as a Bitcoin decimal by people who see every other amount in CHF (corrected on re-check)                      | /dashboard/cat/permissions, /dashboard/cat/settings#can-do                                  | Open                                                                                         |
+| profile-settings#10 | medium   | On/off rows come in five shapes; several have no name, a 20px target, or a label where ON means hidden                                          | /dashboard/cat/permissions, /dashboard/cat/settings, /dashboard/info/edit, …                | Partly (#1634): shared switch, names and sizes; the five row shapes are open                 |
+| profile-settings#11 | medium   | Explanatory and warning text fails AA in both themes (tertiary grey 2.8 to 4.4:1; the lock-out warning 1.95:1 in light) (corrected on re-check) | /dashboard/cat/settings, /dashboard/cat/permissions, /settings, …                           | Fixed (#1634)                                                                                |
+| profile-settings#12 | medium   | Orange marks the selected settings tab, the theme tick, profile progress, the civic sliders and a disabled button                               | /settings, /settings/notifications, /settings/ai, …                                         | Partly (#1634): settings tab and theme tick; profile progress and the civic sliders are open |
+| profile-settings#13 | medium   | Edit profile: four of the eight 'How can others help?' options are cut off at 390px                                                             | /dashboard/info/edit                                                                        | Open                                                                                         |
+
+Keep: Public profile header (src/components/profile/ProfileLayout.tsx, ProfileActions.tsx): nothing sits on the banner; No dead end for a signed-out stranger: Message lands on /auth?mode=login&from=/messages?to=<id> (measured on production) and Follow routes to sign-in with the profile path preserved (useProfileActions.ts:64-70). Visitors only see tabs that have content (production: Overview, Timeline, Projects 11, Services 5, People 3, Wallets 3) and Overview no longer repeats the bio; Cat settings is organised as four plain questions (What Cat knows, can see, can do, How Cat runs) with a pinned summary row that carries live state ('1 of 4 connected', '19 of 70 actions') and tracks the section being read.
+
+### Content and long-tail public pages
+
+The content surface holds up structurally: none of the 30 pages overflows sideways at 390 or 1440 in either theme, the copy is plain and honest, and the document pages (privacy, terms, whitepaper, changelog) already have a good reading column. Underneath that it is thirty hand-built pages rather than one system: 24 measured pages use 5 content widths, 4 H1 sizes, 2 alignments and 2 title typefaces, and the same building blocks (closing band, filter row, text link, date) are re-typed per page and drift. Two of those drifts are real defects in the default dark theme and on production. A top-tier team would fix first: (1) the closing call-to-action band on /docs, /security and /domains, whose heading, text and second button are near-black on near-black in dark (1.13:1, confirmed on orangecat.ch); (2) /status, which says "All Systems Operational" above a permanent red "Bitcoin Integration: Outage" on production; (3) the tertiary text token, which puts every date, eyebrow, byline and footnote on these pages under AA in both themes (4.36:1 dark, 2.83:1 light). After that: one page frame, and the blog index and changelog, which bury their content. Evidence paths: screenshot names starting before/ and extra/content/ are under ; measurements I took are in (scripts measure.cjs, extra1.cjs, live.cjs, live2.cjs beside it). Production was loaded four times (GET /status, /governance, /docs, /support). Not reported because they are sandbox artefacts: the "governance record is currently unreachable" and "Founding support opens shortly" states (both render real content on production).
+
+| #          | Severity | Finding                                                                                                                                             | Where                                              | Status                                                                                  |
+| ---------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| content#0  | high     | Closing call-to-action band is unreadable in the default dark theme                                                                                 | /docs, /security, /domains, …                      | Fixed (#1634)                                                                           |
+| content#1  | high     | Status page says 'All Systems Operational' above a permanent red 'Bitcoin Integration: Outage'                                                      | /status                                            | Fixed on main by #1630                                                                  |
+| content#2  | high     | Dates, eyebrows, bylines and footnotes fail AA in both themes (corrected on re-check)                                                               | /articles, /changelog, /roadmap, …                 | Fixed (#1634)                                                                           |
+| content#3  | medium   | Blog index: a wall of 71 filter pills comes before the first post on desktop (corrected on re-check)                                                | /blog, /study-bitcoin, /studio                     | Open                                                                                    |
+| content#4  | medium   | A blog post and a community article are the same kind of page with two frames, and the title does not line up with its text (corrected on re-check) | /blog/orangecat-vision-future, /blog, /articles, … | Open                                                                                    |
+| content#5  | medium   | Changelog loses every entry's headline and is 50 phone screens of grey paragraphs (corrected on re-check)                                           | /changelog                                         | Open                                                                                    |
+| content#6  | medium   | No shared page frame: 5 content widths, 4 title sizes, 2 alignments and 2 title typefaces across 24 sibling pages                                   | /docs, /security, /status, …                       | Open                                                                                    |
+| content#7  | medium   | On a phone the page title is the same size as the section headings under it (corrected on re-check)                                                 | /docs, /security, /status, …                       | Open                                                                                    |
+| content#8  | medium   | The three public 'say it in one box' entry points have no microphone and a washed-out orange disabled button (corrected on re-check)                | /raise, /feedback, /studio                         | Open                                                                                    |
+| content#10 | medium   | The Bitcoin guide pages use orange as decoration and put white text on it (2.29:1) (corrected on re-check)                                          | /bitcoin-wallet-guide, /study-bitcoin              | Fixed (#1634)                                                                           |
+| content#11 | medium   | Headings break words with automatic hyphens: 'permission-less', 'al-ready', 'prema-ture', 'multi-ple'                                               | /support, /domains, /whitepaper, …                 | Fixed (#1634)                                                                           |
+| content#9  | low      | Links inside running text are invisible or styled three ways, and the legal pages end without a single link (corrected on re-check)                 | /changelog, /roadmap, /governance, …               | Partly (#1634): links in sentences are underlined; legal pages still end without a link |
+| content#12 | low      | The 404 page shows a search icon but offers no search, has no H1 and mislabels its second button (corrected on re-check)                            | /this-page-does-not-exist-xyz                      | Fixed on main by #1625                                                                  |
+| content#13 | low      | Placeholder and duplicate pages are still reachable, and two footer links mislead (corrected on re-check)                                           | /channel, /pages, /technology, …                   | Open                                                                                    |
+
+Keep: No horizontal overflow on any of the 30 pages at 390 or 1440, dark or light (digest overflowX is 0 in every row), and exactly one H1 on 29 of 30 pages. The document frame used by /privacy, /terms, /whitepaper and /changelog: a left-aligned 768px column, 16px text at 26-28px line height, 62-86 characters per line at desktop (measure.json). The community article page (/articles/<slug>): 680px column, author byline linked to the profile, long-form date, share, 'Write your own' and a discussion under it. On a phone the blog index keeps its filters behind one 'Filter posts' button, so the first post is on the first screen (before/blog-390-dark-fold.png).
+
+### Systemic accessibility and design-system issues (measurement-driven)
+
+Measured, not eyeballed: I re-ran axe-core with every node kept (99 pages x 390/1440 x dark/light = 396 captures; data in extra shots in The system is in better shape than the raw violation count suggests, because the failures are concentrated: of 1,723 failing text nodes, 1,398 (81%) are one token (--text-tertiary) and another 164 are --text-muted; of 1,438 sub-44px targets at 390px, 1,176 (82%) come from three lines in Footer.tsx and BrandMark.tsx. What is genuinely broken is theme-fixed ink on theme-flipping fills (and the reverse): in the default dark theme the closing CTA band on /about, /docs, /security and /domains is 1.08-1.13:1, and the How-it-works step badges are white on near-white. Light is the weaker theme for small text (tertiary 2.78-3.03:1, warning text 1.95:1), dark is the one with invisible content. Fix first: (1) the fixed-ink pairings (surface-public band, white on bg-fg-primary, white/inverted on orange including "Open in wallet") and widen check:accent-ink so they stay fixed; (2) the text and status token values in globals.css with a computed check:token-contrast gate; (3) the footer/logo/switch target sizes and the unnamed permission switches.
+
+| #           | Severity | Finding                                                                                                                                          | Where                                                                                     | Status                                                                                                          |
+| ----------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| systemic#0  | high     | Closing CTA band is near-black text on near-black in the default dark theme (1.08-1.13:1)                                                        | /about, /docs, /security, …                                                               | Fixed (#1634)                                                                                                   |
+| systemic#1  | high     | --text-tertiary is below 4.5:1 on every surface in both themes and causes 81% of all contrast failures                                           | 97 of 99 captured pages at 1440 (44 at 390), /, /auth, …                                  | Fixed (#1634; #1629 on main fixed tertiary on three surfaces first)                                             |
+| systemic#2  | high     | Orange fills carry white or theme-flipping ink (2.2-2.3:1), including 'Open in wallet', and check:accent-ink cannot see them                     | /pay/<username>, /profiles/<username> wallet section, /pricing, …                         | Fixed (#1634; #1631 on main fixed the pay card first)                                                           |
+| systemic#6  | high     | Shared Switch, Tabs and Select: 20-40px targets, an off state at 1.35:1, and permission switches with no accessible name (corrected on re-check) | /dashboard/cat/permissions, /dashboard/cat/settings, /dashboard/info/edit, …              | Fixed (#1634)                                                                                                   |
+| systemic#3  | medium   | White ink hard-coded on fills that flip with the theme: step badges and icons are white on near-white in dark (1.19:1)                           | /how-it-works, share dialog (ShareContent), wallet stats card (BitcoinWalletStatsCompact) | Fixed (#1634)                                                                                                   |
+| systemic#4  | medium   | Status colours fail as text (warning 1.95:1 in light, red 3.95-4.49:1 in dark) and status fills carry white ink                                  | /settings, /status, /study-bitcoin, …                                                     | Fixed (#1634)                                                                                                   |
+| systemic#5  | medium   | 1,438 tap targets under 44px at 390px; three shared lines cause 82% of them (corrected on re-check)                                              | all 35 public pages with the footer, all 91 pages with the header, /what-you-can-do, …    | Fixed (#1634)                                                                                                   |
+| systemic#7  | medium   | text-fg-muted and alpha-dimmed text are used for real copy (1.98-3.39:1) (corrected on re-check)                                                 | /what-you-can-do, /raise, /discover, …                                                    | Fixed (#1634)                                                                                                   |
+| systemic#8  | medium   | Header renders two home links; the hidden one keeps a tab stop with zero size                                                                    | every page with the header (91 of 99)                                                     | Fixed (#1634)                                                                                                   |
+| systemic#9  | medium   | Sign-in on a phone, the Cat chat, the 404 and the error state have no h1; six pages nest two <main>; shared pieces skip h1 to h3                 | /auth, /auth?mode=register, /dashboard/cat, …                                             | Fixed (#1634, and #1625 for the not-found pages); the dashboard checklist heading is open                       |
+| systemic#10 | medium   | In forced-colors mode no control shows keyboard focus (0 of 67 tab stops); smooth scroll ignores reduced motion                                  | all                                                                                       | Fixed (#1634)                                                                                                   |
+| systemic#11 | medium   | Orange is used as decoration and as text outside its two meanings; as text it is 2.0-2.3:1 in light (corrected on re-check)                      | /settings, /collaborate, /pricing, …                                                      | Partly (#1634): settings, collaborate, consent, pricing, profile claims, in-text links; the wider sweep is open |
+| systemic#12 | low      | 10px text (text-2xs) carries the tagline and timestamps on phones, the small end of the scale reversed                                           | /, /ecosystem, /discover, …                                                               | Fixed (#1634)                                                                                                   |
+| systemic#13 | low      | At 320px the footer's last row is clipped on both sides (corrected on re-check)                                                                  | all 35 public pages with the footer                                                       | Open                                                                                                            |
+
+Keep: Keyboard focus is one global rule and it works: 179 of 179 tab stops per theme on /, /auth, /discover, /dashboard, /settings, /send and /dashboard/cat/permissions show a solid 2px ring with a 2px page-coloured offset (#999 on #121212 = 6.58 The top-of-funnel accent is correctly inked everywhere it uses the Button accent variant: every 'Get Started' / 'Meet your Cat' CTA measured rgb(20,20,20) on #f7931a = 8.02:1, and the --on-accent token plus check:accent-ink is exactly the r The core signed-in screens are clean: /dashboard, /dashboard/cat, /receive and /dashboard/wallets have zero AA contrast violations at 390px in both themes, and no page of the 99 has horizontal overflow at 390px. Semantics are mostly in place: skip link present with a valid #main-content target on all 99 pages, html lang set, zero images without alt, axe 'label' rule clean (77 of 83 visible inputs have an explicit label), nav landmarks are named ('M
+
+## What to do next
+
+108 findings are open. In the order a product team would take them, with the
+finding ids that carry the cause and the checked fix:
+
+1. **The first five minutes.** A failed sign-in lands on the password-reset
+   form with no message (`auth-firstrun` re-check note 1: the middleware
+   redirects any `?error=` to `/auth/reset-password`). Sign-in shows two
+   orange primaries, and the first creates a new account (`auth-firstrun#0`).
+   The hero's "Meet your Cat" opens "Welcome back" (`funnel#2`). Social
+   buttons lose their labels from 640px (`auth-firstrun#9`).
+2. **Navigation on a phone.** The visitor menu has no Sign in, drops both
+   header groups, lists 27 footer links and cannot be reached by keyboard
+   (`chrome#0`, `chrome#3`). The signed-in drawer stays open after a
+   destination is picked and reopens after reload (`app-shell#0`). Visiting
+   the Cat collapses the desktop sidebar for good (`app-shell#1`).
+3. **The money path.** An amount outside the limits shows an error and
+   leaves the committing button live (`money#8`). The pay page names the
+   payee by display name only (`money#1`). A pay panel reads "CHF 20.00 ≈
+   CHF 20.00" (`discover#12`).
+4. **Dead ends.** Wishlists and Bookings say "create one" and offer no way to
+   (`create-manage#7`). `/jobs` ends in a wall (`discover` re-check note 3).
+   The breadcrumb's "Home" on a public listing sends a signed-out visitor to
+   sign-in (`discover#8`). Links into Discover use a parameter it does not
+   read (`discover#9`). People at 390px: "Copy Link" is off the screen
+   (`app-shell#10`).
+5. **One frame per kind.** 24 public pages use 5 content widths and 4 title
+   sizes (`content#6`); the six marketing pages, the signed-in pages and the
+   create pages each have their own header frame (`funnel#7`, `app-shell#9`,
+   `create-manage#10`); product, project and group pages open three ways
+   (`discover#13`).
+6. **Settings and the Cat's permissions.** Permission rows show the model's
+   tool instructions instead of words for the person (`profile-settings#0`);
+   a new account is told Payments is on (`profile-settings#1`); Account is
+   one 6,930px card with three save behaviours (`profile-settings#8`); edit
+   profile's Save is 3,771px down on a phone (`profile-settings#6`).
+7. **The rest of the orange.** About 45 in-app buttons still use the accent
+   variant, and a few orange words remain (`systemic#11`). A ratchet in the
+   style of `check:type-scale` would let the count fall without a sweep.
+
+## How to repeat the measurement
+
+The captures were taken with a Playwright script kept outside the repository.
+What it does, so it can be rebuilt or folded into `scripts/`:
+
+- For each page, width (390×844 with a touch pointer, 1440×900) and theme
+  (`localStorage['orangecat-theme']`, with the matching `colorScheme`): load,
+  wait for the network to go quiet and fonts to load, then measure before any
+  screenshot.
+- Measure: `scrollWidth - clientWidth`; every visible link, button, input,
+  select, tab and summary under 44px in either dimension (links inside a
+  sentence are exempt); axe-core with the tags `wcag2a`, `wcag2aa`,
+  `wcag21aa`, `wcag22aa`; text under 12px; the heading list; console errors;
+  responses of 400 and above.
+- Take the viewport screenshot first. In Chromium a full-page screenshot
+  switches `(pointer: coarse)` off, so anything taken after it shows desktop
+  density for `pointer-coarse:` classes.
+- Signed-in pages need a session. A sandbox without the server key can open
+  them with the public key and an account made through "Start instantly — no
+  email"; pages that need the admin client (`/pay/<username>`, project
+  detail, Discover counts) have to be captured from production.
+
+`pnpm run verify` now runs the gates listed above. `check:broken-words` still
+needs a running server and is run by CI against the standalone build.

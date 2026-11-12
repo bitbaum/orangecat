@@ -1,10 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Bitcoin, ArrowLeft, AlertTriangle } from 'lucide-react';
-import { BitcoinBadge } from '@/components/ui/BitcoinBadge';
+import { Bitcoin, AlertTriangle } from 'lucide-react';
 import { walletOptions } from './config';
 import { ProgressSteps } from './ProgressSteps';
 import { WalletCard } from './WalletCard';
@@ -20,22 +18,6 @@ export default function BitcoinWalletGuidePage() {
 
   return (
     <div className="min-h-screen bg-surface-page">
-      {/* Header */}
-      <div className="bg-surface-base border-b border-subtle">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <Link
-              href="/"
-              className="flex items-center gap-2 text-fg-secondary hover:text-fg-primary transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              Back to OrangeCat
-            </Link>
-            <BitcoinBadge variant="outline">Bitcoin Wallet Guide</BitcoinBadge>
-          </div>
-        </div>
-      </div>
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Hero */}
         <motion.div

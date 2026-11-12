@@ -17,6 +17,7 @@ import { DATABASE_TABLES } from '@/config/database-tables';
 import { STATUS } from '@/config/database-constants';
 import { checkGroupPermission } from '../permissions';
 import { getCurrentUserId } from '../utils/helpers';
+import { groupContentIsOpen } from '../utils/visibility';
 import { fromTable, type AnySupabaseClient } from '../db-helpers';
 
 interface MemberRow {
@@ -54,15 +55,15 @@ export async function getGroupMembers(
         return { success: false, error: 'Cannot view group members' };
       }
     } else {
-      // Check if group is public
+      // Signed out: only a group whose content is open shows its members.
       const { data: groupData } = await fromTable(sb, DATABASE_TABLES.GROUPS)
-        .select('is_public')
+        .select('is_public, visibility')
         .eq('id', groupId)
         .single();
 
-      const group = groupData as { is_public: boolean } | null;
+      const group = groupData as { is_public: boolean; visibility: string | null } | null;
 
-      if (!group?.is_public) {
+      if (!group || !groupContentIsOpen(group)) {
         return { success: false, error: 'Cannot view group members' };
       }
     }

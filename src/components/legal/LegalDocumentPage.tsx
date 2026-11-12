@@ -7,7 +7,7 @@ import { LEGAL_DRAFT_NOTICE, type LegalDocument } from '@/config/legal-content';
  */
 export function LegalDocumentPage({ document }: { document: LegalDocument }) {
   return (
-    <main className="min-h-screen bg-surface-page">
+    <div className="min-h-screen bg-surface-page">
       <article className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
         <header className="border-b border-default pb-8">
           <h1 className="font-heading tracking-display text-3xl font-bold text-fg-primary sm:text-4xl">
@@ -55,6 +55,6 @@ export function LegalDocumentPage({ document }: { document: LegalDocument }) {
           ))}
         </div>
       </article>
-    </main>
+    </div>
   );
 }

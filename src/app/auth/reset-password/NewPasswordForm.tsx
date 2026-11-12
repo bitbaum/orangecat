@@ -1,23 +1,36 @@
 'use client';
 
-import { useState } from 'react';
-import { AlertCircle, Loader2, Key, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { useId, useState } from 'react';
+import { AlertCircle, Loader2, Key, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
 import Card from '@/components/ui/Card';
 import supabase from '@/lib/supabase/browser';
+import { COMPONENT_STYLES } from '@/config/design-system';
 import { ROUTES } from '@/config/routes';
+import { cn } from '@/lib/utils';
 import { passwordProblem } from '@bitbaum/accountkit/auth/password';
+import { PasswordField } from '@bitbaum/accountkit/auth/password-field';
+
+/**
+ * accountkit's one new-password field (autocomplete, the show/hide eye inside
+ * the box) dressed in this app's field styles, since its stylesheet is not
+ * loaded here.
+ */
+const PASSWORD_FIELD_CLASSES = {
+  inputWrap: 'relative',
+  input: cn(COMPONENT_STYLES.field.control, 'block min-h-11 px-3 pr-12 text-base sm:text-sm'),
+  reveal:
+    'absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-md text-fg-tertiary hover:text-fg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:hover:text-fg-primary',
+};
 
 /** The set-a-new-password form, shown once a recovery session exists. */
 export function NewPasswordForm({ onSuccess }: { onSuccess: () => void }) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const fieldId = useId();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,44 +81,30 @@ export function NewPasswordForm({ onSuccess }: { onSuccess: () => void }) {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <Input
-            type={showPassword ? 'text' : 'password'}
-            required
+        <div className="space-y-2">
+          <label htmlFor={`${fieldId}-new`} className={COMPONENT_STYLES.field.label}>
+            New password
+          </label>
+          <PasswordField
+            id={`${fieldId}-new`}
             value={password}
-            onChange={e => setPassword(e.target.value)}
-            placeholder="New password"
+            onChange={setPassword}
             disabled={isLoading}
-            className="w-full"
+            classes={PASSWORD_FIELD_CLASSES}
           />
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="min-h-11 min-w-11 inline-flex items-center justify-center text-fg-tertiary hover:text-fg-secondary dark:hover:text-fg-primary"
-            aria-label={showPassword ? 'Hide password' : 'Show password'}
-          >
-            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          </button>
         </div>
 
-        <div>
-          <Input
-            type={showConfirmPassword ? 'text' : 'password'}
-            required
+        <div className="space-y-2">
+          <label htmlFor={`${fieldId}-confirm`} className={COMPONENT_STYLES.field.label}>
+            Confirm new password
+          </label>
+          <PasswordField
+            id={`${fieldId}-confirm`}
             value={confirmPassword}
-            onChange={e => setConfirmPassword(e.target.value)}
-            placeholder="Confirm new password"
+            onChange={setConfirmPassword}
             disabled={isLoading}
-            className="w-full"
+            classes={PASSWORD_FIELD_CLASSES}
           />
-          <button
-            type="button"
-            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            className="min-h-11 min-w-11 inline-flex items-center justify-center text-fg-tertiary hover:text-fg-secondary dark:hover:text-fg-primary"
-            aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
-          >
-            {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          </button>
         </div>
 
         <Button

@@ -97,7 +97,7 @@ export function RoomView({
               <a
                 key={item.href}
                 href={item.href}
-                className="inline-flex min-h-9 items-center rounded-full border border-border-subtle px-3 text-sm text-fg-secondary hover:border-fg-muted hover:text-fg-primary"
+                className="inline-flex min-h-9 pointer-coarse:min-h-11 items-center rounded-full border border-border-subtle px-3 text-sm text-fg-secondary hover:border-fg-muted hover:text-fg-primary"
               >
                 {item.label}
               </a>
@@ -148,14 +148,14 @@ export function RoomView({
             <ul className="grid grid-cols-2 gap-x-6 gap-y-5 lg:grid-cols-3">
               {content.metrics.map(metric => (
                 <li key={metric.label} className="min-w-0">
-                  <p className="text-xs font-medium uppercase tracking-caps text-fg-muted">
+                  <p className="text-xs font-medium uppercase tracking-caps text-fg-tertiary">
                     {metric.label}
                   </p>
                   <p className="mt-0.5 font-heading text-lg font-semibold tracking-display text-fg-primary">
                     {metric.value}
                   </p>
                   {metric.verify && (
-                    <p className="break-words text-xs text-fg-muted">{metric.verify}</p>
+                    <p className="break-words text-xs text-fg-tertiary">{metric.verify}</p>
                   )}
                 </li>
               ))}
@@ -175,9 +175,9 @@ export function RoomView({
                     href={ROUTES.ROOM_OPEN(token, 'document', i)}
                     className="flex min-h-11 items-center gap-3 px-4 py-3 text-sm text-fg-primary hover:bg-surface-raised"
                   >
-                    <FileText className="h-4 w-4 shrink-0 text-fg-muted" aria-hidden />
+                    <FileText className="h-4 w-4 shrink-0 text-fg-tertiary" aria-hidden />
                     <span className="flex-1">{doc.title}</span>
-                    <ArrowUpRight className="h-4 w-4 shrink-0 text-fg-muted" aria-hidden />
+                    <ArrowUpRight className="h-4 w-4 shrink-0 text-fg-tertiary" aria-hidden />
                   </a>
                 </li>
               ))}

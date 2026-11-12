@@ -38,7 +38,7 @@ export default async function GuestTicketPage({ params }: PageProps) {
 
   if (!view || view.ticket.event_id !== id) {
     return (
-      <main className="mx-auto max-w-md px-4 py-12 text-center">
+      <div className="mx-auto max-w-md px-4 py-12 text-center">
         <h1 className="mb-3 text-xl font-semibold text-fg-primary">No ticket at this link</h1>
         <p className="mb-6 text-fg-secondary">
           The link may be incomplete. Open it again from where you saved it.
@@ -46,7 +46,7 @@ export default async function GuestTicketPage({ params }: PageProps) {
         <Link href={ENTITY_REGISTRY.event.publicBasePath} className="underline underline-offset-4">
           See what&apos;s on
         </Link>
-      </main>
+      </div>
     );
   }
 
@@ -67,7 +67,7 @@ export default async function GuestTicketPage({ params }: PageProps) {
     : null;
 
   return (
-    <main className="mx-auto max-w-md space-y-6 px-4 py-8">
+    <div className="mx-auto max-w-md space-y-6 px-4 py-8">
       <div>
         <Link href={eventPath} className="text-sm text-fg-secondary underline underline-offset-4">
           {event.title}
@@ -125,6 +125,6 @@ export default async function GuestTicketPage({ params }: PageProps) {
           directions={directionsHref(event)}
         />
       )}
-    </main>
+    </div>
   );
 }

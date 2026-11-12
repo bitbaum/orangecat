@@ -83,6 +83,7 @@ export function SocialLinkForm({
           {initialLink ? 'Edit Link' : 'Add Social Link'}
         </h4>
         <Button
+          type="button"
           onClick={onCancel}
           variant="ghost"
           size="sm"
@@ -94,7 +95,7 @@ export function SocialLinkForm({
       </div>
 
       {error && (
-        <div className="oc-error-surface text-status-negative/80 px-3 py-2 rounded text-sm">
+        <div className="oc-error-surface text-status-negative px-3 py-2 rounded text-sm">
           {error}
         </div>
       )}
@@ -167,7 +168,7 @@ export function SocialLinkForm({
         </label>
         <div className="relative">
           {platformConfig && (
-            <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
+            <div className="pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2">
               <Icon className="w-4 h-4 text-fg-tertiary" />
             </div>
           )}
@@ -188,10 +189,10 @@ export function SocialLinkForm({
       </div>
 
       <div className="flex gap-2">
-        <Button onClick={handleSubmit} className="flex-1">
+        <Button type="button" onClick={handleSubmit} className="flex-1">
           {initialLink ? 'Save Changes' : 'Add Link'}
         </Button>
-        <Button onClick={onCancel} variant="outline">
+        <Button type="button" onClick={onCancel} variant="outline">
           Cancel
         </Button>
       </div>

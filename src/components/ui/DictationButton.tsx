@@ -70,7 +70,8 @@ export function DictationButton({
       title={isRecording ? 'Stop & transcribe' : 'Dictate'}
       className={cn(
         'inline-flex items-center justify-center rounded-lg transition-colors',
-        size === 'sm' ? 'p-2' : 'p-3',
+        // sm is 32px with a mouse; a finger still gets 44px (md is 44px already).
+        size === 'sm' ? 'p-2 pointer-coarse:min-h-11 pointer-coarse:min-w-11' : 'p-3',
         disabled || isTranscribing ? 'opacity-60' : 'hover:bg-surface-raised',
         isRecording && 'bg-status-negative-subtle',
         className

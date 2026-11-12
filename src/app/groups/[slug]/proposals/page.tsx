@@ -40,21 +40,28 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function ProposalsPage({ params }: PageProps) {
   const { slug } = await params;
+  // The group services fall back to the browser client when given none, and
+  // that client cannot run on the server: the group would read as missing.
+  const supabase = await createServerClient();
 
-  const groupResult = await getGroupBySlug(slug);
+  const groupResult = await getGroupBySlug(slug, supabase);
   if (!groupResult.success || !groupResult.group) {
     notFound();
   }
 
   const group = groupResult.group;
-  const supabase = await createServerClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   let canCreateProposal = false;
   if (user) {
-    canCreateProposal = await checkGroupPermission(group.id, user.id, 'canCreateProposals');
+    canCreateProposal = await checkGroupPermission(
+      group.id,
+      user.id,
+      'canCreateProposals',
+      supabase
+    );
   }
 
   return (
