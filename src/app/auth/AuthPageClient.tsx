@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { AlertCircle, ArrowLeft, CheckCircle2, Loader2, RefreshCw, Sparkles } from 'lucide-react';
 import { ROUTES } from '@/config/routes';
@@ -12,6 +12,7 @@ import { AuthFormBody } from './AuthFormBody';
 import { AuthSocialLogin } from './AuthSocialLogin';
 import { useAuthForm } from './useAuthForm';
 import { EmailCodeSignIn } from './EmailCodeSignIn';
+import { clearPendingEmailCode, readPendingEmailCode } from './pendingEmailCode';
 import { PasskeySignInButton } from './PasskeySignInButton';
 import { APP_NAME } from '@/config/brand';
 
@@ -36,6 +37,14 @@ export default function AuthPageClient({
   passkeysAvailable?: boolean;
 }) {
   const [codeMode, setCodeMode] = useState(false);
+  // Back from the mail app after the browser discarded the tab: reopen the
+  // code step that was waiting. In an effect, not initial state, so the first
+  // client render still matches the server's.
+  useEffect(() => {
+    if (emailCodeAvailable && readPendingEmailCode()) {
+      setCodeMode(true);
+    }
+  }, [emailCodeAvailable]);
   const {
     mode,
     setMode,
@@ -214,7 +223,10 @@ export default function AuthPageClient({
               initialEmail={formData.email}
               clientId={handoff.client ?? null}
               captchaSiteKey={captchaEnabled ? turnstileSiteKey : undefined}
-              onBack={() => setCodeMode(false)}
+              onBack={() => {
+                clearPendingEmailCode();
+                setCodeMode(false);
+              }}
               onNeedsSecondFactor={() => setShowMFAVerify(true)}
             />
           ) : (

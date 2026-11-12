@@ -1,5 +1,10 @@
 import { vi } from 'vitest';
-import { normalizeEmail, sendSignInCode, type EmailCodeDeps } from '@/services/auth/emailCode';
+import {
+  CODE_RATE_LIMITED,
+  normalizeEmail,
+  sendSignInCode,
+  type EmailCodeDeps,
+} from '@/services/auth/emailCode';
 import { signInCodeTemplate } from '@/lib/email/templates/sign-in-code';
 
 function deps(overrides: Partial<EmailCodeDeps> = {}) {
@@ -58,6 +63,14 @@ describe('sendSignInCode', () => {
         status: 'failed',
       });
     }
+  });
+
+  it('says so, and mails nothing, when the auth server throttles the address', async () => {
+    const { d, sent } = deps({ generateCode: async () => CODE_RATE_LIMITED });
+    await expect(sendSignInCode({ email: 'ana@example.org' }, d)).resolves.toEqual({
+      status: 'rate_limited',
+    });
+    expect(sent).toHaveLength(0);
   });
 
   it('never mails something that is not a numeric code', async () => {
