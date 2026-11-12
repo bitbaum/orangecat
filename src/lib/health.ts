@@ -73,6 +73,11 @@ async function probeAuth(): Promise<ServiceStatus> {
 // MemoryStore) since the Upstash path — never configured in production — was
 // deleted with the limitkit adoption. There is no cache dependency to probe,
 // and a hard-coded "operational" row would be a fake metric.
+//
+// No Bitcoin row either: nothing probes one (payments are non-custodial; the
+// payee's own wallet mints the invoice). The hard-coded 'unknown' row that
+// stood here rendered as a red "Outage" on /status under "All Systems
+// Operational".
 
 export async function checkHealth(): Promise<HealthReport> {
   const timestamp = new Date().toISOString();
@@ -85,7 +90,6 @@ export async function checkHealth(): Promise<HealthReport> {
     { name: 'API', status: 'operational' },
     { name: 'Database', status: dbStatus },
     { name: 'Authentication', status: authStatus },
-    { name: 'Bitcoin Integration', status: 'unknown' },
   ];
 
   // The 200/503 that the DEPLOY health-gate and uptime monitor key on reflects
