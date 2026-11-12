@@ -135,21 +135,13 @@ export default function ConversationList({
 
   const conversationsArray = Array.isArray(conversations) ? conversations : [];
 
-  const filteredConversations = conversationsArray.filter(conversation => {
-    if (filterTab === 'unread') {
-      return conversation.unread_count > 0;
-    }
-    if (!searchQuery) {
-      return true;
-    }
-    const q = searchQuery.toLowerCase();
-    if (conversation.title?.toLowerCase().includes(q)) {
-      return true;
-    }
-    return conversation.participants.some(
-      p => p.name?.toLowerCase().includes(q) || p.username?.toLowerCase().includes(q)
-    );
-  });
+  // The search already ran once, in useConversations (searchkit over name,
+  // people and last message, typo-tolerant). Filtering its hits again by raw
+  // substring would drop every message-text and typo match.
+  const filteredConversations =
+    filterTab === 'unread'
+      ? conversationsArray.filter(conversation => conversation.unread_count > 0)
+      : conversationsArray;
 
   if (loading) {
     return (
