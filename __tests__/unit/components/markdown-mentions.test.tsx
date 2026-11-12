@@ -46,10 +46,10 @@ describe('rendering mentions in a post', () => {
   });
 
   it('links a handle with a plus sign, as signup can mint', () => {
-    renderText('ping @butaeff+ocauth2');
-    expect(screen.getByRole('link', { name: '@butaeff+ocauth2' })).toHaveAttribute(
+    renderText('ping @ana+test2');
+    expect(screen.getByRole('link', { name: '@ana+test2' })).toHaveAttribute(
       'href',
-      '/profiles/butaeff+ocauth2'
+      '/profiles/ana+test2'
     );
   });
 

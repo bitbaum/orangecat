@@ -84,7 +84,9 @@ function TimelineContent() {
         title="My Timeline"
         icon={BookOpen}
         mode="timeline"
-        showShareButton={true}
+        // The composer sits directly under the title, with its own Share
+        // Update button. A second one in the header only scrolled to it.
+        showShareButton={showComposer}
         shareButtonText={TIMELINE_COPY.shareUpdateButton}
         shareButtonIcon={Plus}
         defaultSort="recent"

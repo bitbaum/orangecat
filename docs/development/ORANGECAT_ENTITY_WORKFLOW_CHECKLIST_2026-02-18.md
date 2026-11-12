@@ -19,7 +19,7 @@ Status legend: ☐ TODO · ◐ IN PROGRESS · ☑ DONE · ⚠ BLOCKED · ✗ FAI
 
 - ☑ Unauthenticated protected-route redirect behavior validated
 - ☑ Invalid login behavior validated
-- ☑ Valid login for orangecat env (credential pair confirmed: butaeff@gmail.com / Asdfgh11!)
+- ☑ Valid login for orangecat env (credentials: the `E2E_USER_EMAIL` / `E2E_USER_PASSWORD` secrets)
 - ◐ Session persistence for orangecat env in progress (local host instability intermittently blocks full replay)
 
 ## Active defect fixes

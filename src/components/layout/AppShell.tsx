@@ -115,7 +115,9 @@ export function AppShell({ children }: AppShellProps) {
     return (
       <div className="min-h-screen bg-surface-page">
         <MessageSyncManagerInitializer />
-        <main id="main-content" className="min-h-screen">
+        {/* The feedback launcher is the edge tab here too: the round button
+            sat on the "Sign in" button at 390px (seen live 2026-11-12). */}
+        <main id="main-content" data-fc-place="tab" className="min-h-screen">
           {children}
         </main>
       </div>

@@ -19,6 +19,7 @@
  */
 
 import { getModelDisplayName } from '@/config/ai-models';
+import { getAIProvider } from '@/data/aiProviders';
 import { getModelCapabilities } from '@/config/model-capability';
 import { formatShortTime } from '@/utils/dates';
 import type { CatMessage, FallbackNotice } from '@/lib/chat/cat-messages';
@@ -31,12 +32,9 @@ import { ToolCallChip } from './ToolCallChip';
 import { TurnFailure } from './TurnFailure';
 import { UpgradeNudge } from './UpgradeNudge';
 
-const PROVIDER_LABELS: Record<string, string> = {
-  groq: 'Groq',
-  openrouter: 'OpenRouter',
-};
-
-const providerLabel = (id: string): string => PROVIDER_LABELS[id] ?? id;
+// Names come from the one provider list. A local two-entry map here printed
+// "answered on google" the day the fallback was Gemini (2026-11-12).
+const providerLabel = (id: string): string => getAIProvider(id)?.name ?? id;
 
 /**
  * "X was rate-limited; answered on Y instead." When the provider is the same
@@ -78,7 +76,7 @@ function Provenance({ message }: { message: CatMessage }) {
     return null;
   }
   const cap = getModelCapabilities(message.modelUsed);
-  const provider = message.provider ? PROVIDER_LABELS[message.provider] : undefined;
+  const provider = message.provider ? getAIProvider(message.provider)?.name : undefined;
   return (
     <p className="mb-0 mt-1 text-xs text-fg-tertiary">
       {provider && (

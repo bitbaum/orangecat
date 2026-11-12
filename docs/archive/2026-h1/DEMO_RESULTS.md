@@ -27,7 +27,7 @@ All screenshots are saved in `demo-screenshots/` directory:
 ### 1. Authentication Flow
 
 - ✅ Navigated to auth page
-- ✅ Filled email: butaeff@gmail.com
+- ✅ Filled email: the E2E test account
 - ✅ Filled password
 - ✅ Clicked sign in
 - ✅ Successfully logged in

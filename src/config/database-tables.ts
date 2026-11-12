@@ -173,6 +173,7 @@ export const DATABASE_TABLES = {
   COMPANION_ROOMS: 'companion_rooms',
   /** A bot that writes first: one routine per bot per person (companion_routines migration). */
   COMPANION_ROUTINES: 'companion_routines',
+  COMPANION_HAND_GRANTS: 'companion_hand_grants',
   COMPANION_ROOM_MEMBERS: 'companion_room_members',
   COMPANION_ROOM_MESSAGES: 'companion_room_messages',
   CAT_WATCHES: 'cat_watches',

@@ -35,7 +35,7 @@ export class HandleLookupError extends Error {
  *
  * Goes through an RPC rather than a PostgREST filter. PostgREST reads `+` in a
  * query string as a space and supabase-js sends the character raw, so
- * `.eq('old_username', 'butaeff+ocauth2')` searched for "butaeff ocauth2" and
+ * `.eq('old_username', 'ana+test2')` searched for "ana test2" and
  * found nothing — measured against production, on two live profiles whose
  * legacy handles contain '+'. For those the profile redirect 404'd and a
  * Lightning payment could not find its owner, which is the precise failure

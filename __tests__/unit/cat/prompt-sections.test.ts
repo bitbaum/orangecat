@@ -252,7 +252,15 @@ describe('selection is worth doing', () => {
     // `loki_finding_status`. ~245 characters: two one-clause descriptions and
     // five parameter names. Loki resolves the project, the seat and the
     // replay rule; none of it is prose here.
-    expect(remaining).toBeLessThanOrEqual(6_930);
+    //
+    // Raised 6,930 -> 7,080 for `project_status` (every Loki project of the
+    // person in one read: its work, latest run and PR, inbox, and whether
+    // its live site answers now) and `fresh_session` on send_task_to_loki (a
+    // one-off question gets its own session instead of being folded into
+    // the open run). ~150 characters: one clause and two parameter names.
+    // The three sources and the live check are code
+    // (services/loki/project-status.ts), not prose here.
+    expect(remaining).toBeLessThanOrEqual(7_080);
   });
 
   it('selects by default now, and still sends everything when told to', async () => {

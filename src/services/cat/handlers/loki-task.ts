@@ -2,49 +2,14 @@
  * `send_task_to_loki` — the user writes a task once in Cat and it goes to
  * several of their Loki projects at the same time.
  *
- * The honesty rule is the one build_site already lives by: Loki answers when
- * the task is dispatched, not when it is done, so the data handed back says
- * "sent" and names any project that did not get it.
+ * The body is services/loki/hands.ts, shared with a bot's own work loop, so
+ * a task sent by a tap and one sent by a bot its owner pre-approved are the
+ * same task with the same words.
  */
-import { parseProjectList, sendTaskToLoki } from '@/services/loki/task-dispatch';
+import { LOKI_HANDS } from '@/services/loki/hands';
 import type { ActionHandler } from './types';
 
 export const lokiTaskHandlers: Record<string, ActionHandler> = {
-  send_task_to_loki: async (_supabase, _userId, actorId, params) => {
-    const task = typeof params.task === 'string' ? params.task : '';
-    const projects = parseProjectList(params.projects);
-
-    const builder =
-      params.builder === 'cloud' || params.builder === 'local' ? params.builder : undefined;
-
-    const queueIfBusy = params.queue_if_busy === true || params.queue_if_busy === 'true';
-
-    const outcome = await sendTaskToLoki({
-      actorId,
-      task,
-      projects,
-      ...(builder ? { builder } : {}),
-      ...(queueIfBusy ? { queueIfBusy } : {}),
-    });
-    if (!outcome.ok) {
-      return {
-        success: false,
-        error: outcome.available?.length
-          ? `${outcome.reason} Ask the user which of these they meant.`
-          : outcome.reason,
-      };
-    }
-    const anySent = outcome.results.some(r => r.ok);
-    return {
-      success: anySent,
-      ...(anySent ? {} : { error: outcome.summary }),
-      // The summary is the line the thread keeps (companions/outcomes.ts): the
-      // runId in it is what a bot reads the run back with.
-      data: {
-        results: outcome.results,
-        status: outcome.summary,
-        ...(anySent ? { displayMessage: outcome.summary } : {}),
-      },
-    };
-  },
+  send_task_to_loki: (_supabase, _userId, actorId, params) =>
+    LOKI_HANDS.send_task_to_loki(actorId, params),
 };
