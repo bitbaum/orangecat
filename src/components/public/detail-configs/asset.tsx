@@ -8,7 +8,8 @@ import {
   ASSET_TYPE_LABELS,
   ASSET_VERIFICATION_COLORS,
   ASSET_VERIFICATION_LABELS,
-  ASSET_RENTAL_PERIOD_LABELS,
+  formatRentalPeriods,
+  rentalPeriodUnit,
 } from '@/config/assets';
 import { BookEntityButton } from '@/components/bookings/BookEntityButton';
 import { assetBookingShape } from '@/domain/bookings/shape';
@@ -117,25 +118,21 @@ export const assetDetailConfig: EntityDetailConfig = {
                     <span className="text-sm text-fg-secondary">Rental Price</span>
                     <span className="font-bold text-fg-primary">
                       {displayBTC(Number(entity.rental_price_btc))} /{' '}
-                      {ASSET_RENTAL_PERIOD_LABELS[entity.rental_period_type as string] ?? 'period'}
+                      {rentalPeriodUnit(entity.rental_period_type)}
                     </span>
                   </div>
                 )}
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-fg-secondary">Minimum Period</span>
                   <span className="font-medium">
-                    {entity.min_rental_period}{' '}
-                    {ASSET_RENTAL_PERIOD_LABELS[entity.rental_period_type as string] ?? 'period'}
-                    {Number(entity.min_rental_period) !== 1 ? 's' : ''}
+                    {formatRentalPeriods(entity.min_rental_period, entity.rental_period_type)}
                   </span>
                 </div>
                 {entity.max_rental_period !== null && entity.max_rental_period !== undefined && (
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-fg-secondary">Maximum Period</span>
                     <span className="font-medium">
-                      {entity.max_rental_period}{' '}
-                      {ASSET_RENTAL_PERIOD_LABELS[entity.rental_period_type as string] ?? 'period'}
-                      {Number(entity.max_rental_period) !== 1 ? 's' : ''}
+                      {formatRentalPeriods(entity.max_rental_period, entity.rental_period_type)}
                     </span>
                   </div>
                 )}
