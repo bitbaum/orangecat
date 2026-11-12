@@ -2,6 +2,7 @@ import { MetadataRoute } from 'next';
 import { SITE_ORIGIN } from '@/config/site-origin';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { looseClient } from '@/lib/supabase/untyped';
+import { withinDbBudget } from '@/lib/supabase/within-budget';
 import { ENTITY_REGISTRY, type EntityType } from '@/config/entity-registry';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { ENTITY_STATUS } from '@/config/database-constants';
@@ -18,23 +19,6 @@ const BASE_URL = SITE_ORIGIN;
 // which is exactly how profiles/entities silently vanished from prod. Hourly
 // revalidation regenerates the sitemap on the box, where the env exists.
 export const revalidate = 3600;
-
-// A database that does not answer costs this generation its DB-backed URLs,
-// never the build: Next gives a prerendered route 60 s, three times, then fails
-// the whole export. On 2026-11-12, with the box out of memory, every CI build
-// died on /sitemap.xml this way. Hourly revalidation fills the URLs back in.
-const DB_BUDGET_MS = 15_000;
-
-function withinDbBudget<T>(work: Promise<T>): Promise<T> {
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const late = new Promise<never>((_, reject) => {
-    timer = setTimeout(
-      () => reject(new Error(`the database gave no answer within ${DB_BUDGET_MS / 1000} s`)),
-      DB_BUDGET_MS
-    );
-  });
-  return Promise.race([work, late]).finally(() => clearTimeout(timer));
-}
 
 interface SitemapProfile {
   username: string | null;

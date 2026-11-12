@@ -5,6 +5,8 @@ import { linkDevelopment } from '@bitbaum/bip-kit';
 import { RoadmapJourney } from '@/components/roadmap/RoadmapJourney';
 import { BackTheRoad } from '@/components/capital/BackTheRoad';
 import { loadOpenCapital } from '@/services/capital/open-capital';
+import { withinDbBudget } from '@/lib/supabase/within-budget';
+import { logger } from '@/utils/logger';
 
 /** The capital figures are live; the fleet map is itself cached five minutes. */
 export const revalidate = 300;
@@ -23,7 +25,16 @@ export const metadata: Metadata = {
 export default async function RoadmapPage() {
   const [profile, capital] = await Promise.all([
     loadOrangeCatProfile(),
-    loadOpenCapital('orangecat'),
+    // Prerendered: a database that does not answer drops the capital card
+    // for this render instead of failing the build (withinDbBudget).
+    withinDbBudget(loadOpenCapital('orangecat')).catch(error => {
+      logger.warn(
+        'Roadmap: capital not read — card omitted this render',
+        { error: error instanceof Error ? error.message : String(error) },
+        'Roadmap'
+      );
+      return null;
+    }),
   ]);
 
   return (
