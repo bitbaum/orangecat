@@ -152,7 +152,7 @@ describe('the daily spending cap on a platform key', () => {
     );
     const search = readFileSync('src/services/cat/web-research.ts', 'utf8');
     expect(search.indexOf('await reserveServiceCall(CAPPED_SERVICES.webSearch);')).toBeLessThan(
-      search.indexOf('outcome = await webSearch(query, {')
+      search.indexOf('outcome = await webSearch(')
     );
     // The per-person daily limit refuses when its count cannot be read.
     expect(readFileSync('src/services/ai/api-key-service.ts', 'utf8')).toMatch(
