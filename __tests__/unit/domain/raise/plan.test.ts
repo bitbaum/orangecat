@@ -120,6 +120,23 @@ describe('planToEntityRequest', () => {
     expect(payload.description).toContain('Total: CHF 4000');
   });
 
+  it('fund in BTC → the project keeps its goal, decimals and all', () => {
+    const { payload } = planToEntityRequest(
+      {
+        ...base,
+        currency: 'BTC',
+        lines: [
+          { label: 'Node', amount: 0.3 },
+          { label: 'Antenna', amount: 0.2 },
+        ],
+      },
+      fmt
+    );
+    expect(payload.goal_amount).toBe(0.5);
+    expect(payload.currency).toBe('BTC');
+    expect(projectSchema.safeParse(payload).success).toBe(true);
+  });
+
   it('lend → a public loan with the terms written out', () => {
     const { entityType, payload } = planToEntityRequest({ ...base, rail: 'lend' }, fmt);
     expect(entityType).toBe('loan');

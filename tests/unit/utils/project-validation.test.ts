@@ -200,15 +200,16 @@ describe('🛠️ Project Validation Tests', () => {
     });
 
     test('handles very large numbers', () => {
-      const projectWithLargeNumber = {
-        title: 'Valid Title',
-        description: 'Valid description',
-        goal_amount: Number.MAX_SAFE_INTEGER,
-      };
+      const project = { title: 'Valid Title', description: 'Valid description' };
 
-      const result = projectSchema.safeParse(projectWithLargeNumber);
-      // goal_amount only has positive() constraint, no max - large numbers are accepted
-      expect(result.success).toBe(true);
+      const atCap = projectSchema.safeParse({ ...project, goal_amount: 1_000_000_000 });
+      expect(atCap.success).toBe(true);
+
+      // Beyond the cap the schema says so, instead of passing on a number the
+      // numeric(20,8) column cannot hold and letting the database refuse it.
+      const result = projectSchema.safeParse({ ...project, goal_amount: Number.MAX_SAFE_INTEGER });
+      expect(result.success).toBe(false);
+      expect(result.error?.issues[0]?.message).toBe('Funding goal is too large');
     });
   });
 
