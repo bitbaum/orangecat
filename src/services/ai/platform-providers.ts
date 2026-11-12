@@ -209,6 +209,8 @@ export async function completeOnPlatform(
     messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string | ContentPart[] }>;
     temperature: number;
     maxTokens?: number;
+    /** The cap for one link, when a vendor needs its own (Groq's per-minute budget). */
+    maxTokensFor?: (providerId: string) => number | undefined;
   },
   /** The chain to walk. Defaults to the real one; injectable so the walk can be tested. */
   chain: PlatformProvider[] = buildPlatformProviders(message)
@@ -224,7 +226,9 @@ export async function completeOnPlatform(
         model: provider.defaultModel,
         messages,
         temperature: request.temperature,
-        maxTokens: request.maxTokens,
+        maxTokens: request.maxTokensFor
+          ? request.maxTokensFor(provider.providerId)
+          : request.maxTokens,
       });
       // An empty answer is not an answer: a reasoning model that spent its
       // budget thinking returns a 200 with no text (seen on the live site,

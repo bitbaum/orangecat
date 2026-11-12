@@ -164,6 +164,7 @@ export async function sendAiMessage(
     history,
     content,
     images,
+    ownerTurn: assistant.user_id === userId,
   });
   if ('error' in aiResult) {
     // Clean up user message on AI failure

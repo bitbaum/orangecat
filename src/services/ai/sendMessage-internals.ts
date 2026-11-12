@@ -20,6 +20,14 @@ import { completeOnPlatform, PlatformChainExhausted } from '@/services/ai/platfo
 import type { AiService } from './types';
 import type { AssistantRecord, SendMessageError } from './sendMessage-types';
 import type { Proposal } from '@/services/companions/hands';
+import { GROQ_CHAT_MAX_TOKENS } from '@/services/ai/groq-models';
+import {
+  CONTINUE_INSTRUCTION,
+  closeCutOff,
+  joinContinuation,
+  replyTokenCap,
+  wasCutOff,
+} from './reply-continuation';
 
 export async function verifyConversation(
   supabase: SupabaseClient,
@@ -179,11 +187,13 @@ export async function generateReply(params: {
   content: string;
   /** Photos on this turn; they ride the last user message as image parts. */
   images?: ChatImage[];
+  /** The bot's owner is the one talking: room for a long answer (reply-continuation.ts). */
+  ownerTurn?: boolean;
 }): Promise<GeneratedReply | { error: SendMessageError }> {
   const { assistant, systemPrompt, history, content } = params;
   const messages = withImages(buildMessageHistory(history, content), params.images);
   const temperature = assistant.temperature ?? 0.7;
-  const maxTokens = assistant.max_tokens_per_response || undefined;
+  const maxTokens = replyTokenCap(assistant.max_tokens_per_response, params.ownerTurn === true);
 
   if (params.hasByok && params.userKey) {
     const model = selectByokModel(params.requestedModel, assistant, history, content);
@@ -198,8 +208,20 @@ export async function generateReply(params: {
         temperature,
         maxTokens,
       });
+      const whole = await finishCutOffReply(
+        result,
+        more =>
+          service.chatCompletion({
+            model,
+            messages: more as unknown as OpenRouterMessage[],
+            systemPrompt: systemPrompt || undefined,
+            temperature,
+            maxTokens,
+          }),
+        messages
+      );
       return {
-        response: { ...result, costBtc: result.costBtc ?? 0 },
+        response: { ...whole, costBtc: whole.costBtc ?? 0 },
         chatService: service as unknown as AiService,
         modelLabel: getModelMetadata(model)?.name || model,
       };
@@ -220,12 +242,28 @@ export async function generateReply(params: {
   }
 
   try {
-    const { result, provider } = await completeOnPlatform(content, {
+    // Groq's per-minute budget counts the reserved output, so its cap stays
+    // where the chain was measured to fit; every other link gets the full room.
+    const capFor = (providerId: string) =>
+      providerId === 'groq' && maxTokens ? Math.min(maxTokens, GROQ_CHAT_MAX_TOKENS) : maxTokens;
+    const { result: first, provider } = await completeOnPlatform(content, {
       systemPrompt,
       messages,
       temperature,
       maxTokens,
+      maxTokensFor: capFor,
     });
+    const result = await finishCutOffReply(
+      first,
+      more =>
+        provider.aiService.chatCompletion({
+          model: provider.defaultModel,
+          messages: systemPrompt ? [{ role: 'system', content: systemPrompt }, ...more] : more,
+          temperature,
+          maxTokens: capFor(provider.providerId),
+        }),
+      messages
+    );
     return {
       response: { ...result, costBtc: 0 },
       chatService: provider.aiService,
@@ -246,6 +284,60 @@ export async function generateReply(params: {
           },
     };
   }
+}
+
+type Completion = Awaited<ReturnType<AiService['chatCompletion']>>;
+
+/**
+ * A reply the output cap cut is continued once on the model that wrote it,
+ * and the halves joined; one that is still cut ends at its last finished
+ * sentence with the way to get the rest (reply-continuation.ts). A failed
+ * continuation never fails the turn: the first half is closed the same way.
+ */
+export async function finishCutOffReply<M extends { role: string; content: unknown }>(
+  first: Completion,
+  complete: (
+    messages: Array<M | { role: 'assistant' | 'user'; content: string }>
+  ) => Promise<Completion>,
+  messages: M[]
+): Promise<Completion> {
+  if (!wasCutOff(first.finishReason) || !first.content.trim()) {
+    return first;
+  }
+  let rest: Completion | null = null;
+  try {
+    rest = await complete([
+      ...messages,
+      { role: 'assistant', content: first.content },
+      { role: 'user', content: CONTINUE_INSTRUCTION },
+    ]);
+  } catch (error) {
+    logger.warn('reply continuation failed', { error }, 'AIMessagesService');
+  }
+  if (!rest || !rest.content.trim()) {
+    return { ...first, content: closeCutOff(first.content), finishReason: 'length' };
+  }
+  const joined = joinContinuation(first.content, rest.content);
+  const stillCut = wasCutOff(rest.finishReason);
+  logger.info(
+    'reply continued after the output cap',
+    {
+      model: first.model,
+      firstTokens: first.outputTokens,
+      restTokens: rest.outputTokens,
+      stillCut,
+    },
+    'AIMessagesService'
+  );
+  return {
+    ...first,
+    content: stillCut ? closeCutOff(joined) : joined,
+    inputTokens: first.inputTokens + rest.inputTokens,
+    outputTokens: first.outputTokens + rest.outputTokens,
+    totalTokens: first.totalTokens + rest.totalTokens,
+    costBtc: (first.costBtc ?? 0) + (rest.costBtc ?? 0),
+    finishReason: stillCut ? 'length' : 'stop',
+  };
 }
 
 /** Detect provider rate-limit errors (OpenRouter 429 / Groq TPM) across error shapes. */
