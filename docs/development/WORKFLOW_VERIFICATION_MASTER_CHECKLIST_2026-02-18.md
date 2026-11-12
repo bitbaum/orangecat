@@ -30,7 +30,7 @@ Objective: verify **all critical workflows** in Orangecat one by one, capture ev
 
 ## Phase 1 — Authentication & Access Control (P0)
 
-- ☑ Login (valid credentials) — production Mao session verified 2026-07-04 (`butaeff@gmail.com`)
+- ☑ Login (valid credentials) — production Mao session verified 2026-07-04 (the E2E test account)
 - ☑ Login (invalid credentials handling) — managed browser verified (`/auth/login` shows "Ungültige E-Mail-Adresse oder Passwort")
 - ☑ Logout — `POST /auth/signout` → 200; protected API → 401; `/dashboard` redirects to login (2026-07-04)
 - ☑ Protected route redirect for unauthenticated user (matrix p0 passed + managed browser `/dashboard` redirects to login)

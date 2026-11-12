@@ -10,10 +10,10 @@
  * The obvious approach is one pattern matching a legal username. It does not
  * work here, because real usernames contain characters the tokenizer must not
  * match greedily in prose. Measured on production 2026-08-26: 91 profiles, of
- * which four real accounts are `dacota-plaettli`, `m.schaupensteiner`,
- * `butaeff+ocauth2` and `georgy.butaev+ocauth1` — dots and plus signs that the
- * username validator does not even allow, because signup derives handles from
- * email addresses and bypasses it.
+ * which four real accounts are `dacota-plaettli`, `m.schaupensteiner` and two
+ * plus-addressed aliases shaped like `name+test2` — dots and plus signs that the
+ * username validator does not even allow, because signup derived handles from
+ * email addresses and bypassed it.
  *
  * So a mention of `@m.schaupensteiner` must match a dotted handle, while
  * `@bob.` at the end of a sentence must mean `bob`, and `ask @alice.` must not

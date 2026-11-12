@@ -3,7 +3,7 @@
  *
  * The cases that matter are the ones a single "username regex" gets wrong.
  * Production has four real accounts whose handles contain dots and plus signs
- * (`m.schaupensteiner`, `butaeff+ocauth2`, …) because signup derives handles
+ * (`m.schaupensteiner`, `ana+test2`, …) because signup derives handles
  * from email addresses and bypasses the username validator. So the parser has
  * to offer dotted handles as candidates — while still reading `@alice.` at the
  * end of a sentence as `alice`, and never turning an email address into a
@@ -36,7 +36,7 @@ describe('mention candidates', () => {
   });
 
   it('handles the plus-sign handles signup generates', () => {
-    expect(first('@butaeff+ocauth2 hi')?.candidates).toEqual(['butaeff+ocauth2', 'butaeff']);
+    expect(first('@ana+test2 hi')?.candidates).toEqual(['ana+test2', 'ana']);
   });
 
   it('cuts only at separators, not at every character', () => {
