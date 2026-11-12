@@ -9,6 +9,7 @@ import { SettingsPasswordSection } from './SettingsPasswordSection';
 import { SettingsSecuritySection } from './SettingsSecuritySection';
 import { SettingsDangerSection } from './SettingsDangerSection';
 import { SettingsDataSection } from './SettingsDataSection';
+import { SettingsIdentitiesSection } from './SettingsIdentitiesSection';
 import { SettingsPreferencesSection } from './SettingsPreferencesSection';
 import { SettingsAppearanceSection } from './SettingsAppearanceSection';
 import { SettingsModals } from './SettingsModals';
@@ -81,6 +82,8 @@ export default function SettingsPage() {
             onEnableMFA={() => setShowMFASetup(true)}
             onMFADisableComplete={refreshMFAStatus}
           />
+          <SettingsIdentitiesSection />
+
           <SettingsPreferencesSection />
 
           <SettingsAppearanceSection />

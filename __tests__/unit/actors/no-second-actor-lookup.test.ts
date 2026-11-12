@@ -79,4 +79,37 @@ describe('only one module asks which actor a user is', () => {
         'copy reads "several actors" as "no actor" and locks that person out.'
     ).toEqual([]);
   });
+
+  it('finds no ACTORS query by user_id that expects exactly one row', () => {
+    // The rule above keys on `select('id')` plus the actor_type filter, and four
+    // copies got past it by differing in one of those: a profile join, a second
+    // selected column, no actor_type filter at all. What they shared is the part
+    // that breaks: filter by user_id, then single()/maybeSingle() with nothing
+    // limiting the result to one row.
+    const offenders: Array<{ file: string; line: number }> = [];
+
+    for (const file of files) {
+      const text = readFileSync(file, 'utf8');
+      let from = 0;
+      for (;;) {
+        const at = text.indexOf('DATABASE_TABLES.ACTORS', from);
+        if (at === -1) break;
+        const window = text.slice(at, at + 500).split(';')[0] ?? '';
+        const byUser = /eq\(\s*'user_id'/.test(window);
+        const expectsOne = /\.(maybeSingle|single)\(\)/.test(window);
+        const limited = /\.limit\(\s*1\s*\)/.test(window);
+        // Naming the actor's own id as well can only ever match one row.
+        const byId = /eq\(\s*'id'/.test(window);
+        if (byUser && expectsOne && !limited && !byId) {
+          offenders.push({ file, line: text.slice(0, at).split('\n').length });
+        }
+        from = at + 1;
+      }
+    }
+
+    expect(
+      offenders,
+      'A person can hold several actors. Order and limit(1), or ask @/domain/actors.'
+    ).toEqual([]);
+  });
 });

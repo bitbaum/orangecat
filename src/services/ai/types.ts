@@ -30,5 +30,7 @@ export interface AiService {
     isFreeModel: boolean;
     usedByok: boolean;
     costBtc?: number;
+    /** Why the model stopped: "stop", or "length" when the output cap cut it. */
+    finishReason?: string;
   }>;
 }

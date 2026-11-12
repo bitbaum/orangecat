@@ -27,11 +27,7 @@ export function SettingsAppearanceSection() {
       <p className="mb-6 text-fg-secondary">
         Choose how OrangeCat looks. Your choice follows you to any device you sign in on.
       </p>
-      <div
-        role="radiogroup"
-        aria-label="Theme"
-        className="grid max-w-2xl gap-3 sm:grid-cols-3"
-      >
+      <div role="radiogroup" aria-label="Theme" className="grid max-w-2xl gap-3 sm:grid-cols-3">
         {THEME_MODES.map(({ value, label, description, icon: Icon }) => {
           const active = mounted && mode === value;
           return (

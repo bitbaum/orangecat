@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { LogOut, ExternalLink } from 'lucide-react';
 import DefaultAvatar from '@/components/ui/DefaultAvatar';
+import { IdentitySwitcherRows } from '@/components/ui/IdentitySwitcherRows';
 import { ThemeModeRow } from '@/components/ui/ThemeModeRow';
 import type { MutableRefObject } from 'react';
 import { ROUTES } from '@/config/routes';
@@ -151,6 +152,8 @@ export function UserProfileDropdownPanel({
           );
         })}
       </div>
+
+      <IdentitySwitcherRows />
 
       <div className="border-t border-border-subtle my-1" />
 

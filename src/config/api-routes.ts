@@ -300,6 +300,12 @@ export const API_ROUTES = {
   JOBS: '/api/jobs',
   ACCOUNT_EXPORT: '/api/account/export',
   DELETE_USER: '/api/delete-user',
+  /** The identities one person holds (ADR-0014): list, create, switch, delete. */
+  IDENTITIES: {
+    BASE: '/api/identities',
+    SWITCH: '/api/identities/switch',
+    BY_ID: (id: string) => `/api/identities/${id}`,
+  },
   WAITLIST: '/api/waitlist',
   AI_ASSISTANTS: {
     BASE: ENTITY_REGISTRY['ai_assistant'].apiEndpoint,
@@ -314,6 +320,7 @@ export const API_ROUTES = {
     MEMORIES: (id: string) => `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/${id}/memories`,
     /** The bot's routine: when it writes first, and what it is asked. */
     ROUTINE: (id: string) => `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/${id}/routine`,
+    HANDS: (id: string) => `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/${id}/hands`,
     /** The talk home (companions, group chats, fleet bots in one list) and a companion made in a minute. */
     TALK: `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/talk`,
     /** Group chats between the person and two to six companions. */

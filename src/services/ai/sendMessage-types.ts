@@ -29,6 +29,8 @@ export interface SendMessageResult {
   assistantMessage: Record<string, unknown>;
   /** What the companion proposed to set in motion, waiting for the person's tap (hands.ts). */
   pendingAction?: PendingAction;
+  /** How many hands the bot ran on its own this turn; their lines are in the thread. */
+  steps?: number;
   usage: {
     inputTokens: number;
     outputTokens: number;

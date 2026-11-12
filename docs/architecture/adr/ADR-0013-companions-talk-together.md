@@ -140,6 +140,24 @@ budget a person has chosen to spend (their own key, or paid credits) before
 they are a feature; the room engine runs unchanged under a scheduler once
 that exists.
 
+**D10. A bot works on its own in the owner's Loki (2026-11-12).** D9's rule
+stands for everything a bot makes on OrangeCat: a card, and a tap. For the
+hands that work in the owner's own Loki (ask it, read its sessions and runs,
+send a task to an agent session) the owner can switch each one, per bot, to
+"on its own" (`companion_hand_grants`, `services/companions/hand-grants.ts`;
+the switch is the row "What it can do" in the bot's details). Such a hand
+queues no card: it runs at once as the Loki account linked to the owner, the
+result is written into the thread and handed back to the bot, and the bot
+takes the next step, up to six steps or two and a half minutes a turn
+(`work-loop.ts`). A task it sends is followed in code: the run is waited for
+and the session's conversation read, so the bot reports the agent's answer
+and not only "sent" (`services/loki/follow-run.ts`). A routine runs the same
+turn, so a scheduled bot can do a job unattended. The boundary test is
+unchanged: a step calls the Loki rail's own function for the hand
+(`services/loki/hands.ts`, the body the Cat's card also runs), never the
+Cat's executor or handlers. A high-risk hand (sending a task) can be
+switched on only where the owner already holds its permission.
+
 **D6 and D7, decided (2026-11-01).** Both stay out of the app and go
 through the packages. Connectors: `@bitbaum/ai-kit` gains the MCP client
 and a register of servers; a bot's hands (D9) then gain a tool the way they

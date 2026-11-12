@@ -146,7 +146,7 @@ export function AuthFormBody({
 
       {mode === 'login' && (
         <div className="flex items-center justify-between">
-          <label className="flex items-center gap-2 cursor-pointer select-none">
+          <label className="flex min-h-11 items-center gap-2 cursor-pointer select-none">
             <input
               type="checkbox"
               checked={rememberMe}
@@ -159,7 +159,7 @@ export function AuthFormBody({
           <button
             type="button"
             onClick={() => setMode('forgot')}
-            className="text-sm text-fg-primary hover:text-fg-primary font-medium transition-colors"
+            className="min-h-11 text-sm text-fg-primary hover:text-fg-primary font-medium transition-colors"
           >
             Forgot password?
           </button>
