@@ -28,6 +28,8 @@ export interface LokiTaskInput {
   actorId: string;
   task: string;
   projects: string[];
+  /** Prefer this builder ("cloud" = the always-on runner) where the project allows it. */
+  builder?: 'cloud' | 'local';
   originUrl?: string;
 }
 
@@ -35,6 +37,10 @@ export type LokiTaskProjectResult = {
   project: string;
   ok: boolean;
   mode?: 'direct' | 'queued';
+  /** The run Loki opened for this project; read it with loki_run_status. */
+  runId?: string;
+  /** Where the run is followed in Loki. */
+  statusUrl?: string;
   message?: string;
 };
 
@@ -96,6 +102,7 @@ export async function sendTaskToLoki(input: LokiTaskInput): Promise<LokiTaskOutc
     actorId: input.actorId,
     task,
     projects: input.projects,
+    ...(input.builder ? { builderChannel: input.builder } : {}),
     ...(input.originUrl ? { originUrl: input.originUrl } : {}),
   });
 
@@ -140,6 +147,10 @@ export async function sendTaskToLoki(input: LokiTaskInput): Promise<LokiTaskOutc
         project: row.project,
         ok: row.ok === true,
         mode: row.mode === 'queued' ? 'queued' : row.mode === 'direct' ? 'direct' : undefined,
+        ...(typeof row.runId === 'string' && row.runId ? { runId: row.runId } : {}),
+        ...(typeof row.statusUrl === 'string' && /^https?:\/\//i.test(row.statusUrl)
+          ? { statusUrl: row.statusUrl }
+          : {}),
         message: typeof row.message === 'string' ? row.message : undefined,
       },
     ];
@@ -158,6 +169,10 @@ export function summarise(results: LokiTaskProjectResult[]): string {
       `The task was SENT to ${sent.map(r => r.project).join(', ')} in Loki. Agents are starting on it; nothing has been changed yet.`
     );
   }
+  const runs = sent.filter(r => r.runId);
+  if (runs.length > 0) {
+    parts.push(`Run ${runs.map(r => `${r.project}: ${r.runId}`).join(', ')}.`);
+  }
   if (queued.length > 0) {
     parts.push(
       `${queued.join(', ')} ${queued.length === 1 ? 'is' : 'are'} queued until a builder picks it up.`
@@ -169,7 +184,7 @@ export function summarise(results: LokiTaskProjectResult[]): string {
     );
   }
   parts.push(
-    'Progress shows in Loki → Control, and the outcome is announced when each agent finishes.'
+    'Progress shows in Loki → Control, and the outcome is announced when each agent finishes. To read a run, use loki_run_status with its runId; to read what the agent said, loki_sessions with the project.'
   );
   return parts.join(' ');
 }

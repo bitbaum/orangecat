@@ -36,6 +36,19 @@ export function generateActionDescription(
       return `Save the edited investor deck for project ${parameters.project_id}`;
     case 'ask_loki':
       return `Ask Loki: “${parameters.question ?? ''}”`;
+    case 'loki_sessions':
+      return parameters.project
+        ? `Read what the agent on ${parameters.project} is doing in Loki, and what it last said`
+        : 'Read what your Loki sessions are doing';
+    case 'loki_run_status':
+      return `Read where Loki run ${String(parameters.run_id ?? '').slice(0, 8)} is`;
+    case 'send_task_to_loki': {
+      const projects = Array.isArray(parameters.projects)
+        ? parameters.projects.join(', ')
+        : String(parameters.projects ?? '');
+      const where = parameters.builder === 'cloud' ? ' on the cloud runner' : '';
+      return `Send this task to the agents on ${projects} in Loki${where}: “${String(parameters.task ?? '').slice(0, 300)}”`;
+    }
     case 'send_to_loki':
       return `Create a Loki handoff link for "${parameters.title ?? parameters.entity_id}" (valid 10 minutes) so AI agents can build it`;
     case 'create_investment': {

@@ -102,6 +102,53 @@ describe('sendTaskToLoki', () => {
   });
 });
 
+describe('the run a task opened', () => {
+  it('carries the builder to Loki and the runId back, in the summary and the thread line', async () => {
+    let sent: Record<string, unknown> = {};
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) => {
+      sent = JSON.parse(String((init as RequestInit).body));
+      return jsonResponse(200, {
+        ok: true,
+        results: [
+          {
+            project: 'orangecat',
+            ok: true,
+            mode: 'queued',
+            runId: '11111111-1111-4111-8111-111111111111',
+            statusUrl: 'javascript:alert(1)',
+          },
+        ],
+      });
+    });
+    const res = await lokiTaskHandlers.send_task_to_loki({} as AnySupabaseClient, 'user-1', ACTOR, {
+      task: 'git status',
+      projects: ['orangecat'],
+      builder: 'cloud',
+    });
+    expect(sent.builderChannel).toBe('cloud');
+    expect(res.success).toBe(true);
+    const data = res.data as { displayMessage: string; results: Array<Record<string, unknown>> };
+    expect(data.displayMessage).toContain('Run orangecat: 11111111-1111-4111-8111-111111111111');
+    expect(data.displayMessage).toContain('loki_run_status');
+    expect(data.results[0].runId).toBe('11111111-1111-4111-8111-111111111111');
+    expect(data.results[0].statusUrl).toBeUndefined();
+  });
+
+  it('sends no builder unless one of the two real ones is named', async () => {
+    let sent: Record<string, unknown> = {};
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) => {
+      sent = JSON.parse(String((init as RequestInit).body));
+      return jsonResponse(200, { ok: true, results: [{ project: 'loki', ok: true }] });
+    });
+    await lokiTaskHandlers.send_task_to_loki({} as AnySupabaseClient, 'user-1', ACTOR, {
+      task: 'x',
+      projects: ['loki'],
+      builder: 'the moon',
+    });
+    expect('builderChannel' in sent).toBe(false);
+  });
+});
+
 describe('summarise', () => {
   it('names every project that did not get the task', () => {
     const s = summarise([

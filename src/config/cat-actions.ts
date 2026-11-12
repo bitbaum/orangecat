@@ -833,6 +833,12 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
         required: true,
         description: 'Loki project names',
       },
+      {
+        name: 'builder',
+        type: 'string',
+        required: false,
+        description: '"cloud" = the always-on runner',
+      },
     ],
     examples: [
       'Send this to OrangeCat and Loki: make it so I can post prompts in both',
@@ -864,6 +870,51 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
       'What did the agents do on orangecat yesterday?',
       'Is the build for my shop finished?',
     ],
+    enabled: true,
+  },
+
+  loki_sessions: {
+    id: 'loki_sessions',
+    name: 'Read Loki Sessions',
+    description:
+      "Read the user's Loki agent sessions: state, task, run, PR. With project: what its agent last said. Read-only.",
+    category: 'communication',
+    icon: Bot,
+    riskLevel: 'low',
+    requiresConfirmation: true,
+    parameters: [
+      {
+        name: 'project',
+        type: 'string',
+        required: false,
+        description: 'One project, to read its transcript',
+      },
+    ],
+    examples: [
+      'What are my Loki sessions doing?',
+      'Read what the agent on orangecat answered',
+      'Which of my projects is waiting on me in Loki?',
+    ],
+    enabled: true,
+  },
+
+  loki_run_status: {
+    id: 'loki_run_status',
+    name: 'Read a Loki Run',
+    description: 'Where one Loki run is: working, PR, merged, live. Read-only.',
+    category: 'communication',
+    icon: Bot,
+    riskLevel: 'low',
+    requiresConfirmation: true,
+    parameters: [
+      {
+        name: 'run_id',
+        type: 'string',
+        required: true,
+        description: 'The runId a sent task returned',
+      },
+    ],
+    examples: ['Where is run 70d1a78d?', 'Did that task open a pull request yet?'],
     enabled: true,
   },
 
