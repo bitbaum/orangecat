@@ -45,7 +45,7 @@ export function UnclaimedBand({
                 Set up by{' '}
                 <Link
                   href={ROUTES.PROFILES.VIEW(stewardUsername)}
-                  className="font-medium text-fg-primary underline underline-offset-2"
+                  className="-my-3 inline-flex min-h-11 items-center font-medium text-fg-primary underline underline-offset-2"
                 >
                   @{stewardUsername}
                 </Link>{' '}

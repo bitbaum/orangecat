@@ -148,6 +148,7 @@ export async function fetchInboundActivityForCat(
             .from(DATABASE_TABLES.BOOKINGS)
             .select(
               `
+              id,
               starts_at,
               ends_at,
               status,
@@ -183,6 +184,7 @@ export async function fetchInboundActivityForCat(
 
     const upcomingBookings: BookingRecord[] = (bookingsResult.data ?? []).map(
       (b: {
+        id: string;
         starts_at: string;
         ends_at: string | null;
         status: string;
@@ -194,6 +196,7 @@ export async function fetchInboundActivityForCat(
       }) => {
         const customer = Array.isArray(b.customer) ? b.customer[0] : b.customer;
         return {
+          id: b.id,
           starts_at: b.starts_at,
           ends_at: b.ends_at,
           status: b.status,
