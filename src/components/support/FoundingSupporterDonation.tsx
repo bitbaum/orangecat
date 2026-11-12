@@ -14,7 +14,7 @@
  */
 
 import { useState } from 'react';
-import { QRCodeSVG } from 'qrcode.react';
+import { ScanCode } from '@/components/ui/ScanCode';
 import { Bitcoin, Zap, Copy, Check, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -71,7 +71,7 @@ function AddressTile({ kind, qrValue, display, label, sub }: TileProps) {
       </div>
 
       <div className="mb-4 rounded-lg border border-default bg-white p-3">
-        <QRCodeSVG value={qrValue} size={196} level="M" includeMargin={false} />
+        <ScanCode value={qrValue} size={196} />
       </div>
 
       <button

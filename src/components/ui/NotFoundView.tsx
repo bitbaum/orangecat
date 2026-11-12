@@ -1,69 +1,64 @@
-'use client';
-
-import { useSyncExternalStore } from 'react';
-import Link from 'next/link';
+import type { LucideIcon } from 'lucide-react';
 import Button from '@/components/ui/Button';
-import { PageHeading } from '@/components/layout/PageHeading';
-import { SearchTrigger } from '@/components/search/SearchTrigger';
-import { ROUTES } from '@/config/routes';
-import { useAuth } from '@/hooks/useAuth';
+
+export interface NotFoundAction {
+  href: string;
+  label: string;
+  icon?: LucideIcon;
+  /** The one action that matters most; every other one is quieter. */
+  primary?: boolean;
+}
 
 /**
- * The body of the root 404 (src/app/not-found.tsx, a server file so it can
- * set the document title).
+ * The one shape every "not found" page takes: an icon, a title that is the
+ * page's only <h1>, one sentence, and the ways onward.
  *
- * The search is the header's own palette, opened through SearchTrigger: a
- * second search box here would be a second search. The first action is one
- * the visitor can use — the dashboard only when signed in, since an anonymous
- * visitor sent there is bounced through /auth for a mistyped address.
- *
- * The failed address is read in the browser only. The production build
- * prerenders this page once, as `/_not-found`, and serves that HTML for every
- * unmatched address, so a path read during the server render would print
- * `/_not-found` and then mismatch on hydration.
+ * There were six: the site-wide page and five entity copies (project, profile,
+ * loan, cause, investment) that differed only in their noun and icon, used a
+ * card title (<h3>) as the page's only heading, and looked unlike the site-wide
+ * one.
  */
-const subscribe = () => () => {};
-const readPath = () => window.location.pathname;
-const noPath = () => null;
-
-export function NotFoundView() {
-  const pathname = useSyncExternalStore(subscribe, readPath, noPath);
-  const { user, hydrated } = useAuth();
-  const signedIn = hydrated && !!user;
-
+export function NotFoundView({
+  icon: Icon,
+  title,
+  message,
+  actions,
+  children,
+}: {
+  icon: LucideIcon;
+  title: string;
+  message: string;
+  actions: NotFoundAction[];
+  children?: React.ReactNode;
+}) {
   return (
-    <div className="oc-page flex items-center justify-center px-4">
-      <div className="oc-surface w-full max-w-lg space-y-6 p-6">
-        <div>
-          <PageHeading className="text-balance text-center">This page doesn’t exist</PageHeading>
-          {pathname && (
-            <p className="mb-0 mt-3 break-all text-center text-sm text-fg-secondary">{pathname}</p>
-          )}
+    <div className="oc-page flex items-center justify-center px-4 py-8">
+      <div className="oc-surface w-full max-w-lg space-y-8 p-6">
+        <div className="oc-icon-tile mx-auto h-16 w-16">
+          <Icon className="h-8 w-8" aria-hidden />
         </div>
 
-        <SearchTrigger className="h-11" />
-
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Button href={signedIn ? ROUTES.DASHBOARD.HOME : ROUTES.HOME} variant="primary">
-            {signedIn ? 'Go to dashboard' : 'Go to home'}
-          </Button>
-          <Button href={ROUTES.DISCOVER} variant="outline">
-            Browse Discover
-          </Button>
+        <div className="text-center">
+          <h1 className="text-2xl font-semibold text-fg-primary">{title}</h1>
+          <p className="mb-0 mt-3 text-base text-fg-secondary">{message}</p>
         </div>
 
-        <p className="mb-0 border-t border-default pt-4 text-center text-sm">
-          <Link
-            href={
-              pathname
-                ? `${ROUTES.FEEDBACK}?message=${encodeURIComponent(`Broken link: ${pathname}`)}`
-                : ROUTES.FEEDBACK
-            }
-            className="inline-flex min-h-11 items-center font-medium text-fg-primary underline underline-offset-4"
-          >
-            Tell us what you were looking for
-          </Link>
-        </p>
+        <div className="flex flex-col gap-3">
+          {actions.map(({ href, label, icon: ActionIcon, primary }) => (
+            <Button
+              key={href + label}
+              href={href}
+              variant={primary ? 'primary' : 'outline'}
+              size="lg"
+              className="w-full"
+            >
+              {ActionIcon && <ActionIcon className="mr-2 h-4 w-4" aria-hidden />}
+              {label}
+            </Button>
+          ))}
+        </div>
+
+        {children}
       </div>
     </div>
   );

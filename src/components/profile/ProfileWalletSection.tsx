@@ -7,7 +7,7 @@ import { truncateAddress } from '@/utils/string';
 import Button from '@/components/ui/Button';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 
-import { QRCodeSVG } from 'qrcode.react';
+import { ScanCode } from '@/components/ui/ScanCode';
 import { Wallet, WALLET_CATEGORIES } from '@/types/wallet';
 import BitcoinDonationCard from '@/components/bitcoin/BitcoinDonationCard';
 import BitcoinWalletStatsCompact from '@/components/bitcoin/BitcoinWalletStatsCompact';
@@ -164,12 +164,7 @@ export default function ProfileWalletSection({
                 {handle.qrValue && (
                   <div className="mb-4 flex justify-center">
                     <div className="bg-surface-base p-3 rounded-lg border-2 border-default shadow-sm">
-                      <QRCodeSVG
-                        value={handle.qrValue}
-                        size={120}
-                        level="H"
-                        includeMargin={false}
-                      />
+                      <ScanCode value={handle.qrValue} size={120} />
                     </div>
                   </div>
                 )}

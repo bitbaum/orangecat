@@ -44,13 +44,29 @@ describe('replyTokenCap', () => {
 });
 
 describe('joinContinuation', () => {
-  it('joins the halves with exactly one seam', () => {
+  it('joins on the repeated words, mending a word cut in half', () => {
+    expect(joinContinuation('so the agents will contin', 'agents will continue the work.')).toBe(
+      'so the agents will continue the work.'
+    );
+    expect(joinContinuation('If you treat me as a', 'treat me as a colleague, I will.')).toBe(
+      'If you treat me as a colleague, I will.'
+    );
+  });
+
+  it('without an overlap, joins on exactly one seam and keeps a paragraph break', () => {
     expect(joinContinuation('If you treat me', 'as a colleague, I will.')).toBe(
       'If you treat me as a colleague, I will.'
     );
-    expect(joinContinuation('First line.\n', '\n\nSecond line.')).toBe('First line.\nSecond line.');
+    expect(joinContinuation('First line.\n', '\n\nSecond line.')).toBe(
+      'First line.\n\nSecond line.'
+    );
+    expect(joinContinuation('First line.', '\nSecond line.')).toBe('First line.\nSecond line.');
     expect(joinContinuation('It works', ', mostly.')).toBe('It works, mostly.');
     expect(joinContinuation('Done.', '   ')).toBe('Done.');
+  });
+
+  it('asks the model to repeat its last words, so the halves can overlap', () => {
+    expect(CONTINUE_INSTRUCTION).toContain('repeating, exactly, the last five or so words');
   });
 });
 

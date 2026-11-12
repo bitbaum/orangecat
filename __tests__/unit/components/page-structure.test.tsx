@@ -12,20 +12,13 @@
 import { readdirSync, readFileSync } from 'fs';
 import { join, relative } from 'path';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { renderToString } from 'react-dom/server';
 
 vi.mock('@/hooks/useAuth', () => ({ useAuth: () => ({ user: null, hydrated: true }) }));
-vi.mock('@/components/search/SearchTrigger', () => ({
-  SearchTrigger: () => <button type="button">Open search</button>,
-}));
 vi.mock('@/lib/errors/report-client-error', () => ({ reportClientError: vi.fn() }));
 
 import EmptyState from '@/components/ui/EmptyState';
 import Footer from '@/components/layout/Footer';
-import { NotFoundView } from '@/components/ui/NotFoundView';
 import { RouteError } from '@/components/ui/RouteError';
-import { metadata as notFoundMetadata } from '@/app/not-found';
-import { ROUTES } from '@/config/routes';
 
 function sourceFiles(dir: string, files: string[] = []): string[] {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -75,33 +68,6 @@ describe('page structure', () => {
     expect(scrollTo).toHaveBeenLastCalledWith({ top: 0, behavior: 'smooth' });
 
     vi.unstubAllGlobals();
-  });
-
-  it('the 404 has an h1, names the address, and its second action says where it goes', () => {
-    // vitest.setup.ts replaces window.location with a plain object.
-    window.location.pathname = '/an-old-link';
-    render(<NotFoundView />);
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('This page doesn’t exist');
-    expect(screen.getByText('/an-old-link')).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Go to home' }).getAttribute('href')).toBe(ROUTES.HOME);
-    expect(screen.getByRole('link', { name: 'Browse Discover' }).getAttribute('href')).toBe(
-      ROUTES.DISCOVER
-    );
-    expect(
-      screen.getByRole('link', { name: 'Tell us what you were looking for' }).getAttribute('href')
-    ).toBe(`${ROUTES.FEEDBACK}?message=${encodeURIComponent('Broken link: /an-old-link')}`);
-    window.location.pathname = '/';
-  });
-
-  it('the 404 prints no address on the server, where every unmatched path is /_not-found', () => {
-    const html = renderToString(<NotFoundView />);
-    expect(html).toContain('This page doesn’t exist');
-    expect(html).not.toContain('_not-found');
-    expect(html).not.toContain('Broken link');
-  });
-
-  it('the 404 has its own document title', () => {
-    expect(notFoundMetadata.title).toBe('Page not found');
   });
 
   it('a route error has an h1', () => {

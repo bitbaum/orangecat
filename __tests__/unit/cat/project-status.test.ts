@@ -39,41 +39,52 @@ afterEach(() => {
 });
 
 describe('probeLive', () => {
-  const publicUrl = async () => ({ ok: true as const });
-
-  it('never asks an address that is not public', async () => {
-    const fetchImpl = vi.fn();
-    const out = await probeLive('http://169.254.169.254/latest', {
-      fetchImpl: fetchImpl as unknown as typeof fetch,
-      check: async () => ({ ok: false, reason: 'IP address is private or reserved' }),
-    });
+  it('says why a site it may not ask was not checked, and asks nothing', async () => {
+    const out = await probeLive('http://169.254.169.254/latest');
     expect(out).toEqual({ state: 'not_checked', reason: 'IP address is private or reserved' });
-    expect(fetchImpl).not.toHaveBeenCalled();
+    expect(await probeLive('https://example.com:8080/')).toEqual({
+      state: 'not_checked',
+      reason: 'only the default port is asked',
+    });
+    expect(await probeLive('ftp://example.com/')).toMatchObject({ state: 'not_checked' });
   });
 
-  it('counts an answer below 500 as up, without following a redirect', async () => {
-    const fetchImpl = vi.fn(async () => new Response(null, { status: 302 }));
+  it('a name that resolves to a private address is not checked', async () => {
+    const send = async () => {
+      throw Object.assign(new Error('x'), { code: 'EPRIVATEADDR' });
+    };
+    expect(await probeLive('https://rebind.example', { send })).toEqual({
+      state: 'not_checked',
+      reason: 'it resolves to a private or reserved address',
+    });
+  });
+
+  it('counts an answer below 500 as up, with the time it took', async () => {
+    let t = 0;
     const out = await probeLive('https://orangecat.ch', {
-      fetchImpl: fetchImpl as unknown as typeof fetch,
-      check: publicUrl,
+      send: async () => 302,
+      now: () => (t += 120),
     });
-    expect(out).toMatchObject({ state: 'up', status: 302 });
-    expect(fetchImpl.mock.calls[0][1]).toMatchObject({ redirect: 'manual', method: 'GET' });
+    expect(out).toEqual({ state: 'up', status: 302, ms: 120 });
   });
 
-  it('counts a server error or silence as down, in words', async () => {
-    const bad = await probeLive('https://x.example', {
-      fetchImpl: (async () => new Response(null, { status: 502 })) as unknown as typeof fetch,
-      check: publicUrl,
+  it('counts a server error, silence or a name that does not resolve as down, in words', async () => {
+    expect(await probeLive('https://x.example', { send: async () => 502 })).toEqual({
+      state: 'down',
+      reason: 'it answered 502',
     });
-    expect(bad).toEqual({ state: 'down', reason: 'it answered 502' });
     const silent = await probeLive('https://x.example', {
-      fetchImpl: (async () => {
+      send: async () => {
         throw Object.assign(new Error('t'), { name: 'TimeoutError' });
-      }) as unknown as typeof fetch,
-      check: publicUrl,
+      },
     });
     expect(silent).toEqual({ state: 'down', reason: 'no answer in 6 seconds' });
+    const gone = await probeLive('https://gone.example', {
+      send: async () => {
+        throw Object.assign(new Error('n'), { code: 'ENOTFOUND' });
+      },
+    });
+    expect(gone).toEqual({ state: 'down', reason: 'its name does not resolve' });
   });
 });
 
@@ -144,14 +155,22 @@ describe('what is said', () => {
   });
 
   it('never calls an unchecked site up', () => {
-    const line = projectLine(row({ state: 'not_checked', reason: 'hostname does not resolve' }));
-    expect(line).toContain('not checked: hostname does not resolve');
+    const line = projectLine(
+      row({ state: 'not_checked', reason: 'only the default port is asked' })
+    );
+    expect(line).toContain('not checked: only the default port is asked');
+    expect(
+      projectStatusMessage({
+        ok: true,
+        projects: [row({ state: 'not_checked', reason: 'x' })],
+      }).startsWith('No live site was checked. 1 not checked.')
+    ).toBe(true);
     expect(line).not.toMatch(/\bup\b|answered/);
     const text = projectStatusMessage({
       ok: true,
       projects: [row({ state: 'up', status: 200, ms: 120 })],
     });
-    expect(text).toContain('Every live site that was checked answered.');
+    expect(text).toContain('All 1 live site checked answered.');
     expect(text).toContain('answered 200 in 120 ms');
   });
 });
