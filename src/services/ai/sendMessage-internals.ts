@@ -22,6 +22,7 @@ import {
   SHARED_POOL_DOWN_MESSAGE,
   chainFailureSummary,
 } from '@/services/ai/chain-failure-summary';
+import { directKeyService, type OwnKey } from './own-key';
 import type { AiService } from './types';
 import type { AssistantRecord, SendMessageError } from './sendMessage-types';
 import type { Proposal } from '@/services/companions/hands';
@@ -162,6 +163,16 @@ export interface GeneratedReply {
   modelLabel: string;
 }
 
+/** What a turn on the person's own key says when that key's provider fails. */
+function ownKeyError(aiError: unknown): SendMessageError {
+  return isAiRateLimitError(aiError)
+    ? { code: 'RATE_LIMITED', message: 'Your own API key is rate-limited. Try again shortly.' }
+    : {
+        code: 'AI_ERROR',
+        message: aiError instanceof Error ? aiError.message : 'AI service error',
+      };
+}
+
 const RATE_LIMITED_MESSAGE =
   'The free AI tier is busy right now. Try again shortly, or add your own API key in Settings → AI for unlimited use.';
 
@@ -194,6 +205,8 @@ export async function generateReply(params: {
   images?: ChatImage[];
   /** The bot's owner is the one talking: room for a long answer (reply-continuation.ts). */
   ownerTurn?: boolean;
+  /** The person's own key from a provider other than OpenRouter (own-key.ts). */
+  directKey?: OwnKey | null;
 }): Promise<GeneratedReply | { error: SendMessageError }> {
   const { assistant, systemPrompt, history, content } = params;
   const messages = withImages(buildMessageHistory(history, content), params.images);
@@ -232,17 +245,41 @@ export async function generateReply(params: {
       };
     } catch (aiError: unknown) {
       logger.error('AI API error (own key)', aiError, 'AIMessagesService');
+      return { error: ownKeyError(aiError) };
+    }
+  }
+
+  const direct = params.directKey ? directKeyService(params.directKey) : null;
+  if (direct) {
+    // Their own key at their own provider. The system prompt travels as the
+    // first message, as on the platform chain: every OpenAI-compatible vendor
+    // accepts that, and not every client takes a separate field.
+    const withSystem = systemPrompt
+      ? [{ role: 'system' as const, content: systemPrompt }, ...messages]
+      : messages;
+    const ask = (turns: typeof withSystem) =>
+      direct.service.chatCompletion({
+        model: direct.model,
+        messages: turns,
+        temperature,
+        maxTokens,
+      });
+    try {
+      const first = await ask(withSystem);
+      const whole = await finishCutOffReply(
+        first,
+        more =>
+          ask(systemPrompt ? [{ role: 'system' as const, content: systemPrompt }, ...more] : more),
+        messages
+      );
       return {
-        error: isAiRateLimitError(aiError)
-          ? {
-              code: 'RATE_LIMITED',
-              message: 'Your own API key is rate-limited. Try again shortly.',
-            }
-          : {
-              code: 'AI_ERROR',
-              message: aiError instanceof Error ? aiError.message : 'AI service error',
-            },
+        response: { ...whole, costBtc: whole.costBtc ?? 0 },
+        chatService: direct.service,
+        modelLabel: getModelMetadata(direct.model)?.name || direct.model,
       };
+    } catch (aiError: unknown) {
+      logger.error('AI API error (own key)', aiError, 'AIMessagesService');
+      return { error: ownKeyError(aiError) };
     }
   }
 
