@@ -38,20 +38,54 @@ export function replyTokenCap(
   return Math.max(own ?? 0, OWNER_REPLY_MAX_TOKENS);
 }
 
-/** What the model is told to do with its own unfinished answer. */
+/**
+ * What the model is told to do with its own unfinished answer. It repeats
+ * the last few words first, so the two halves can be joined where they
+ * overlap: a cut in the middle of a word cannot be told apart from a cut
+ * between words from the text alone (a chat reply never starts with a space).
+ */
 export const CONTINUE_INSTRUCTION =
-  'Your answer was cut off by the length limit. Continue it from exactly where it stopped: do not repeat anything already written, do not start over, do not apologise. Finish it.';
+  'Your answer was cut off by the length limit. Continue it: begin by repeating, exactly, the last five or so words you wrote, then go straight on from there. Do not start over, do not apologise. Finish it.';
 
-/** The first half and the rest, as one text: no doubled or missing space at the seam. */
+/** The shortest overlap trusted as the repeated words, and the longest looked for. */
+const OVERLAP_MIN = 8;
+const OVERLAP_MAX = 240;
+
+/** The break between two halves that did not overlap: the larger of what either side had. */
+function seamBetween(tail: string, lead: string, next: string): string {
+  const ws = tail + lead;
+  if (/\n\s*\n/.test(ws)) {
+    return '\n\n';
+  }
+  if (ws.includes('\n')) {
+    return '\n';
+  }
+  if (ws) {
+    return ' ';
+  }
+  return /^[,.;:!?)\]]/.test(next) ? '' : ' ';
+}
+
+/**
+ * The first half and the rest, as one text. Where the rest starts with the
+ * words the first half ended in (CONTINUE_INSTRUCTION asks for that), they
+ * are joined on that overlap, which also mends a word cut in half. Otherwise
+ * on one seam: a paragraph break stays a paragraph break.
+ */
 export function joinContinuation(first: string, rest: string): string {
-  const more = rest.replace(/^\s+/, '');
-  if (!more) {
+  const next = rest.replace(/^\s+/, '');
+  if (!next) {
     return first;
   }
-  // Cut mid-word or mid-sentence, the model resumes with the next characters;
-  // after whitespace or a newline it resumes with a fresh word.
-  const seam = /\s$/.test(first) || /^[,.;:!?)\]]/.test(more) ? '' : ' ';
-  return `${first}${seam}${more}`;
+  const head = first.replace(/\s+$/, '');
+  for (let k = Math.min(OVERLAP_MAX, next.length, head.length); k >= OVERLAP_MIN; k--) {
+    if (head.endsWith(next.slice(0, k))) {
+      return head + next.slice(k);
+    }
+  }
+  const tail = first.slice(head.length);
+  const lead = rest.slice(0, rest.length - next.length);
+  return `${head}${seamBetween(tail, lead, next)}${next}`;
 }
 
 /** The line a still-unfinished reply ends with. */

@@ -31,6 +31,8 @@ interface PublicEntityPaymentSectionProps {
   entityType: EntityType;
   entityId: string;
   entityTitle: string;
+  /** Who receives the money (the owner's name), for the support card's words. */
+  recipientName?: string | null;
   /** Price amount in the entity's own currency (for fixed_price entities) */
   priceAmount?: number;
   /** Currency the price is denominated in (e.g. 'CHF'); 'BTC'/omitted → BTC */
@@ -59,6 +61,7 @@ export function PublicEntityPaymentSection({
   entityType,
   entityId,
   entityTitle,
+  recipientName = null,
   priceAmount,
   priceCurrency,
   sellerProfileId,
@@ -97,7 +100,12 @@ export function PublicEntityPaymentSection({
   if (!isAuthenticated) {
     if (meta.canReceiveSupport && meta.paymentPattern !== 'fixed_price') {
       return sellerReceive ? (
-        <PublicSupportPanel entityType={entityType} entityId={entityId} entityTitle={entityTitle} />
+        <PublicSupportPanel
+          entityType={entityType}
+          entityId={entityId}
+          entityTitle={entityTitle}
+          recipientName={recipientName}
+        />
       ) : (
         <Card>
           <CardContent className="pt-6">
@@ -132,6 +140,7 @@ export function PublicEntityPaymentSection({
               entityType={entityType}
               entityId={entityId}
               entityTitle={entityTitle}
+              recipientName={recipientName}
             />
           )}
         </div>
@@ -147,6 +156,7 @@ export function PublicEntityPaymentSection({
               entityType={entityType}
               entityId={entityId}
               entityTitle={entityTitle}
+              recipientName={recipientName}
             />
           )}
         </div>
@@ -185,7 +195,12 @@ export function PublicEntityPaymentSection({
     return sellerReceive && meta.canReceiveSupport && meta.paymentPattern === 'fixed_price' ? (
       <div className="space-y-4">
         {purchaseFallback}
-        <PublicSupportPanel entityType={entityType} entityId={entityId} entityTitle={entityTitle} />
+        <PublicSupportPanel
+          entityType={entityType}
+          entityId={entityId}
+          entityTitle={entityTitle}
+          recipientName={recipientName}
+        />
       </div>
     ) : (
       purchaseFallback
@@ -239,7 +254,12 @@ export function PublicEntityPaymentSection({
 
   if (meta.paymentPattern === 'none') {
     return meta.canReceiveSupport ? (
-      <PublicSupportPanel entityType={entityType} entityId={entityId} entityTitle={entityTitle} />
+      <PublicSupportPanel
+        entityType={entityType}
+        entityId={entityId}
+        entityTitle={entityTitle}
+        recipientName={recipientName}
+      />
     ) : null;
   }
 
@@ -262,7 +282,12 @@ export function PublicEntityPaymentSection({
         </CardContent>
       </Card>
       {meta.canReceiveSupport && meta.paymentPattern === 'fixed_price' && (
-        <PublicSupportPanel entityType={entityType} entityId={entityId} entityTitle={entityTitle} />
+        <PublicSupportPanel
+          entityType={entityType}
+          entityId={entityId}
+          entityTitle={entityTitle}
+          recipientName={recipientName}
+        />
       )}
     </div>
   );

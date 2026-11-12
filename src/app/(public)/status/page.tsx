@@ -1,9 +1,10 @@
-import { CheckCircle, AlertTriangle, XCircle, Clock } from 'lucide-react';
+import { CheckCircle, AlertTriangle, XCircle, Clock, CircleHelp } from 'lucide-react';
 import Link from 'next/link';
 import { checkHealth } from '@/lib/health';
 import { PageHeading } from '@/components/layout/PageHeading';
 import { ROUTES } from '@/config/routes';
 import { CONTACT_EMAIL } from '@/config/brand';
+import type { LucideIcon } from 'lucide-react';
 import type { ServiceStatus } from '@/lib/health';
 import { APP_LOCALE } from '@/utils/locale';
 
@@ -15,37 +16,54 @@ export const metadata = {
 // Revalidate every 30 seconds so stale data doesn't persist
 export const revalidate = 30;
 
+// One entry per ServiceStatus, so a status with no entry is a type error rather
+// than a fall-through: the old if-chains drew every unmatched status, 'unknown'
+// included, as a red "Outage". 'unknown' means nothing probed it, so it is neutral.
+const STATUS_DISPLAY: Record<
+  ServiceStatus,
+  { label: string; Icon: LucideIcon; tone: string; badgeSurface: string }
+> = {
+  operational: {
+    label: 'Operational',
+    Icon: CheckCircle,
+    tone: 'text-status-positive',
+    badgeSurface: 'bg-status-positive-subtle',
+  },
+  degraded: {
+    label: 'Degraded',
+    Icon: AlertTriangle,
+    tone: 'text-status-warning',
+    badgeSurface: 'bg-status-warning-subtle',
+  },
+  outage: {
+    label: 'Outage',
+    Icon: XCircle,
+    tone: 'text-status-negative',
+    badgeSurface: 'bg-status-negative-subtle',
+  },
+  unknown: {
+    label: 'Not checked',
+    Icon: CircleHelp,
+    tone: 'text-fg-secondary',
+    badgeSurface: 'bg-surface-raised',
+  },
+};
+
 function StatusBadge({ status }: { status: ServiceStatus }) {
-  if (status === 'operational') {
-    return (
-      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-status-positive bg-status-positive-subtle">
-        Operational
-      </span>
-    );
-  }
-  if (status === 'degraded') {
-    return (
-      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-status-warning bg-status-warning-subtle">
-        Degraded
-      </span>
-    );
-  }
+  const { label, tone, badgeSurface } = STATUS_DISPLAY[status];
   return (
-    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-status-negative bg-status-negative-subtle">
-      Outage
+    <span
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${tone} ${badgeSurface}`}
+    >
+      {label}
     </span>
   );
 }
 
 function StatusIcon({ status, size = 'sm' }: { status: ServiceStatus; size?: 'sm' | 'lg' }) {
   const cls = size === 'lg' ? 'w-8 h-8' : 'w-5 h-5';
-  if (status === 'operational') {
-    return <CheckCircle className={`${cls} text-status-positive`} />;
-  }
-  if (status === 'degraded') {
-    return <AlertTriangle className={`${cls} text-status-warning`} />;
-  }
-  return <XCircle className={`${cls} text-status-negative`} />;
+  const { Icon, tone } = STATUS_DISPLAY[status];
+  return <Icon className={`${cls} ${tone}`} />;
 }
 
 function overallMessage(status: ServiceStatus) {
