@@ -26,7 +26,14 @@ import type { SendMessageResult, SendMessageError } from './sendMessage-types';
 import { recallCompanionMemories, extractCompanionMemories } from '@/services/companions/memory';
 import { buildCompanionSystemPrompt } from '@/services/companions/system-prompt';
 import { adoptJob, isJobAnswer } from '@/services/companions/born';
-import { proposalFromMetadata, withProposal } from '@/services/companions/hands';
+import {
+  proposalFromMetadata,
+  stepResultMessage,
+  withProposal,
+  type Proposal,
+} from '@/services/companions/hands';
+import { getUserActorId } from '@/domain/actors';
+import { mayTakeStep, runAutoStep } from '@/services/companions/work-loop';
 import { handsFor, proposeFromReply } from '@/services/companions/hands-server';
 import { logger } from '@/utils/logger';
 import { turnTimer } from './turn-timer';
@@ -155,7 +162,7 @@ export async function sendAiMessage(
   // them (hands.ts); anyone else's companion, or a stranger's chat, cannot.
   const [recalled, hands] = await Promise.all([
     recallCompanionMemories(supabase, memoryKey, content),
-    assistant.user_id === userId ? handsFor(supabase, userId) : Promise.resolve(null),
+    assistant.user_id === userId ? handsFor(supabase, userId, assistantId) : Promise.resolve(null),
   ]);
   timer.mark('context');
   const systemPrompt = buildCompanionSystemPrompt({
@@ -210,7 +217,74 @@ export async function sendAiMessage(
   if ('error' in aiMsgResult) {
     return aiMsgResult.error;
   }
-  const assistantMessage = aiMsgResult.message;
+  let assistantMessage = aiMsgResult.message;
+  let lastResponse = aiResponse;
+  let lastPending = proposed?.pendingAction ?? null;
+
+  // 11b. The work loop. A hand the owner switched to "on its own" for this
+  //      bot runs now, and the bot is handed the result to carry on with,
+  //      step by step, until it has nothing more to run or the turn's budget
+  //      is spent (work-loop.ts). Every step is a stored line of the thread.
+  let steps = 0;
+  if (hands && proposed?.auto && proposed.proposal) {
+    const actorId = await getUserActorId(supabase, userId);
+    const loopHistory = [
+      ...history,
+      { role: 'user', content },
+      { role: 'assistant', content: withProposal(proposed.text, proposed.proposal) },
+    ];
+    let step: Proposal | null = actorId ? proposed.proposal : null;
+    while (step && actorId && mayTakeStep(steps, timer.elapsedMs())) {
+      steps += 1;
+      const ran = await runAutoStep(supabase, actorId, convId, step);
+      const resultMessage = stepResultMessage(step.action, ran.text);
+      const next = await generateReply({
+        hasByok,
+        userKey: userOpenRouterKey,
+        requestedModel,
+        assistant,
+        systemPrompt: systemPrompt ?? null,
+        history: loopHistory,
+        content: resultMessage,
+        ownerTurn: true,
+      });
+      if ('error' in next) {
+        // What ran has run and is in the thread; the turn ends on that line.
+        logger.warn('work loop stopped: no reply', { steps }, 'AIMessagesService');
+        break;
+      }
+      const again = await proposeFromReply(supabase, userId, hands, next.response.content, convId);
+      const nextResponse = { ...next.response, content: again.text };
+      const stored = await storeAssistantMessage(
+        supabase,
+        convId,
+        nextResponse,
+        assistant,
+        0,
+        nextResponse.costBtc,
+        hasByok,
+        again.proposal
+      );
+      if ('error' in stored) {
+        break;
+      }
+      assistantMessage = stored.message;
+      lastResponse = nextResponse;
+      lastPending = again.pendingAction;
+      if (!hasByok) {
+        await keyService.incrementPlatformUsage(userId, 1, nextResponse.totalTokens);
+      }
+      loopHistory.push(
+        { role: 'user', content: resultMessage },
+        {
+          role: 'assistant',
+          content: again.proposal ? withProposal(again.text, again.proposal) : again.text,
+        }
+      );
+      step = again.auto ? again.proposal : null;
+    }
+    timer.mark('steps');
+  }
 
   // 12. Post-message side effects. The owner's first answer to a born
   //     companion's question becomes the companion's definition (born.ts).
@@ -240,7 +314,7 @@ export async function sendAiMessage(
     ...memoryKey,
     conversationId: convId,
     userMessage: content,
-    assistantMessage: aiResponse.content,
+    assistantMessage: lastResponse.content,
     aiService: aiResult.chatService,
     model: aiResponse.model,
   });
@@ -259,6 +333,7 @@ export async function sendAiMessage(
       outputTokens: aiResponse.outputTokens,
       promptChars: systemPrompt?.length ?? 0,
       hands: hands?.allowed.length ?? 0,
+      steps,
     },
     'AIMessagesService'
   );
@@ -271,7 +346,10 @@ export async function sendAiMessage(
       is_free_model: aiResponse.isFreeModel,
       used_byok: hasByok,
     },
-    ...(proposed?.pendingAction ? { pendingAction: proposed.pendingAction } : {}),
+    ...(lastPending ? { pendingAction: lastPending } : {}),
+    // Steps the bot ran on its own this turn: the client re-reads the thread
+    // to show each one where it happened.
+    ...(steps > 0 ? { steps } : {}),
     usage: {
       inputTokens: aiResponse.inputTokens,
       outputTokens: aiResponse.outputTokens,
