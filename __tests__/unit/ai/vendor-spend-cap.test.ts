@@ -169,7 +169,7 @@ describe('the daily spending cap on a platform key', () => {
       ).toContain(keyEnv);
     }
     const sql = readFileSync(
-      'supabase/migrations/20261112200000_platform_vendor_daily_cap.sql',
+      'supabase/migrations/20261112206000_platform_vendor_daily_cap.sql',
       'utf8'
     );
     expect(sql).toMatch(/WHERE day = v_day AND vendor = p_vendor AND calls < p_cap/);
