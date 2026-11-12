@@ -14,6 +14,7 @@ import { withAuth, type AuthenticatedRequest } from '@/lib/api/withAuth';
 import { wishlistFulfillmentProofSchema } from '@/lib/validation';
 import { logger } from '@/utils/logger';
 import { DATABASE_TABLES } from '@/config/database-tables';
+import { userHoldsActor } from '@/domain/actors';
 import {
   apiBadRequest,
   apiNotFound,
@@ -58,7 +59,8 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
     const wishlist = Array.isArray(wishlistItem.wishlists)
       ? wishlistItem.wishlists[0]
       : wishlistItem.wishlists;
-    if (!wishlist || wishlist.actor_id !== user.id) {
+    // An actor id is never a user id: ask whether this actor is one of theirs.
+    if (!wishlist || !(await userHoldsActor(supabase, user.id, wishlist.actor_id))) {
       return apiForbidden('You can only add proofs to your own wishlists');
     }
 

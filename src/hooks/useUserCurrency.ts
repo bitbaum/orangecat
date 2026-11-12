@@ -25,8 +25,7 @@ export function useUserCurrency(): Currency {
   // Check if profile has a currency setting
   // Note: currency might be in profile or in settings depending on implementation
   const profileCurrency = (profile as Record<string, unknown> | null)?.currency as
-    | string
-    | undefined;
+    string | undefined;
 
   // SATS is a Lightning protocol unit, not a user-facing display currency — we
   // never display amounts in sats. Honor any legacy SATS preference as the
