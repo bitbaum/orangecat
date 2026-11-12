@@ -13,10 +13,15 @@
  * in a keyword.
  */
 import type { ComponentType } from 'react';
-import { User } from 'lucide-react';
+import { FileText, User } from 'lucide-react';
 import { createSearch, type Range, type SearchSpec } from '@bitbaum/searchkit';
 import { ENTITY_REGISTRY, ENTITY_TYPES } from '@/config/entity-registry';
-import { sidebarSections, type NavigationItem } from '@/config/navigation';
+import {
+  footerNavigation,
+  getHeaderNavigationItems,
+  sidebarSections,
+  type NavigationItem,
+} from '@/config/navigation';
 import type { Thing } from '@/domain/things/service';
 import type { PublicHit } from '@/services/search/public-search';
 
@@ -29,6 +34,13 @@ export interface PaletteItem {
   keywords?: string;
   href: string;
 }
+
+/** cmdk values of the palette's own rows, and of one of everyone's results. */
+export const ROW_VALUE = {
+  seeAll: 'search-discover',
+  askCat: 'ask-cat',
+  hit: (hit: { type: string; id: string }) => `hit-${hit.type}-${hit.id}`,
+} as const;
 
 /** Icon for a kind of result: the registry's, else the person icon for people. */
 export function iconForType(type: string): PaletteItem['icon'] {
@@ -75,8 +87,14 @@ function flatten(items: NavigationItem[]): NavigationItem[] {
   return items.flatMap(item => [item, ...flatten(item.children ?? [])]);
 }
 
-/** Every page in the sidebar, plus each entity type's own list. */
-export function buildPages(): PaletteItem[] {
+/**
+ * Every page the reader can open: the sidebar's, each entity type's own list,
+ * then the public site's own pages (Docs, Blog, Pricing, Privacy …) from the
+ * header and footer navigation. Signed out, the pages that only bounce to
+ * sign-in are left out: visitors were offered Cat, Money and Messages, and
+ * could not find Docs or Privacy at all.
+ */
+export function buildPages(signedIn: boolean): PaletteItem[] {
   const seen = new Set<string>();
   const out: PaletteItem[] = [];
   const add = (item: PaletteItem) => {
@@ -91,6 +109,9 @@ export function buildPages(): PaletteItem[] {
       if (!item.href || item.external || item.comingSoon || !item.icon) {
         continue;
       }
+      if (!signedIn && (section.requiresAuth || item.requiresAuth)) {
+        continue;
+      }
       add({
         id: `page-${item.href}`,
         label: item.name,
@@ -101,7 +122,7 @@ export function buildPages(): PaletteItem[] {
       });
     }
   }
-  for (const type of ENTITY_TYPES) {
+  for (const type of signedIn ? ENTITY_TYPES : []) {
     const meta = ENTITY_REGISTRY[type];
     add({
       id: `page-${meta.basePath}`,
@@ -110,6 +131,28 @@ export function buildPages(): PaletteItem[] {
       keywords: `${meta.name} ${meta.namePlural} my list manage`,
       href: meta.basePath,
     });
+  }
+  // The header's names first ("Pricing", with its description), then every
+  // footer column. Off-site links (sibling products, socials) stay out.
+  const publicLinks: Array<{ name: string; href?: string; description?: string; group: string }> = [
+    ...flatten(getHeaderNavigationItems()).map(item => ({ ...item, group: '' })),
+    ...Object.entries(footerNavigation).flatMap(([group, items]) =>
+      items.map(item => ({ name: item.name, href: item.href, group }))
+    ),
+  ];
+  for (const link of publicLinks) {
+    if (link.href?.startsWith('/')) {
+      add({
+        id: `page-${link.href}`,
+        label: link.name,
+        hint: link.description,
+        icon: FileText,
+        // Found by its address too ("feedback" finds "Ask the Cat"), and by
+        // its footer column ("legal" finds Privacy and Terms).
+        keywords: `${link.group} ${link.href.replace(/[/-]/g, ' ')}`,
+        href: link.href,
+      });
+    }
   }
   return out;
 }

@@ -10,6 +10,8 @@ import {
 } from '@/components/search/command-palette-items';
 import { publicHref, type PublicHit } from '@/services/search/public-search';
 import { ENTITY_REGISTRY, ENTITY_TYPES } from '@/config/entity-registry';
+import { sidebarSections } from '@/config/navigation';
+import { ROUTES } from '@/config/routes';
 import type { Thing } from '@/domain/things/service';
 
 // The palette's lists are derived, so a new entity type or sidebar page shows
@@ -22,12 +24,48 @@ describe('command palette items', () => {
   });
 
   it('can jump to every type list and every sidebar page, once each', () => {
-    const pages = buildPages();
+    const pages = buildPages(true);
     const hrefs = pages.map(p => p.href);
     expect(new Set(hrefs).size).toBe(hrefs.length);
     for (const t of ENTITY_TYPES) {
       expect(hrefs).toContain(ENTITY_REGISTRY[t].basePath);
     }
+  });
+
+  // Signed out on orangecat.ch (2026-11-12), the palette offered Cat, Home,
+  // Money and Messages — each a 307 to sign-in — and "docs", "blog",
+  // "pricing", "privacy" and "roadmap" found none of the public pages.
+  it("finds the public site's own pages, for visitors and members alike", () => {
+    const expected = {
+      docs: ROUTES.DOCS,
+      blog: ROUTES.BLOG,
+      pricing: ROUTES.PRICING,
+      privacy: ROUTES.PRIVACY,
+      roadmap: ROUTES.ROADMAP,
+    };
+    for (const signedIn of [false, true]) {
+      const pages = buildPages(signedIn);
+      for (const [typed, href] of Object.entries(expected)) {
+        expect(rankItems(pages, typed, 1)[0]?.href, `${typed}, signed in: ${signedIn}`).toBe(href);
+      }
+    }
+  });
+
+  it('offers a visitor no page that only bounces to sign-in', () => {
+    const visitor = buildPages(false).map(p => p.href);
+    const membersOnly = sidebarSections.flatMap(section =>
+      section.items.filter(item => section.requiresAuth || item.requiresAuth).map(item => item.href)
+    );
+    expect(membersOnly).toContain(ROUTES.DASHBOARD.CAT);
+    for (const href of membersOnly) {
+      expect(visitor).not.toContain(href);
+    }
+    for (const t of ENTITY_TYPES) {
+      expect(visitor).not.toContain(ENTITY_REGISTRY[t].basePath);
+    }
+    expect(visitor.every(href => href.startsWith('/') && !href.startsWith('/dashboard'))).toBe(
+      true
+    );
   });
 
   it('finds your own things by any word, accents folded, best match first', () => {
@@ -63,7 +101,7 @@ describe('command palette items', () => {
   });
 
   it('keeps the given order when nothing is typed, and caps the group', () => {
-    const pages = buildPages();
+    const pages = buildPages(true);
     expect(rankItems(pages, '', 3)).toEqual(pages.slice(0, 3));
   });
 
@@ -88,7 +126,7 @@ describe('command palette items', () => {
   });
 
   it("puts a page first when it matched with no more typos than everyone's best", () => {
-    const settings = rankItems(buildPages(), 'setings', 1);
+    const settings = rankItems(buildPages(true), 'setings', 1);
     expect(settings[0]?.typos).toBe(1);
     expect(pagesFirst(settings, [{ typos: null }])).toBe(true);
     expect(pagesFirst(settings, [{ typos: 1 }])).toBe(true);
