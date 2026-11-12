@@ -1,7 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import {
+  CAPPED_SERVICES,
   CAPPED_VENDORS,
+  reserveServiceCall,
   VendorCapReached,
   capFor,
   cappedService,
@@ -101,6 +103,14 @@ describe('the daily spending cap on a platform key', () => {
     expect(reserve).not.toHaveBeenCalled();
   });
 
+  it('counts a named service and refuses once its day is spent', async () => {
+    const reserve = vi.fn(async () => false);
+    await expect(reserveServiceCall(CAPPED_SERVICES.webSearch, {}, reserve)).rejects.toBeInstanceOf(
+      VendorCapReached
+    );
+    expect(reserve).toHaveBeenCalledWith('web-search', 1000);
+  });
+
   it('reads as a rate limit, so the chain moves to the next link', () => {
     const e = new VendorCapReached('google');
     expect(e.status).toBe(429);
@@ -119,6 +129,34 @@ describe('the daily spending cap on a platform key', () => {
     const probe = readFileSync('src/services/cat/health-probes.ts', 'utf8');
     expect(probe.indexOf('await reservePlatformCall(clean);')).toBeLessThan(
       probe.indexOf('const res = await fetch(endpoint, {')
+    );
+    // Every vendor key the chain can dial on the platform's account is capped:
+    // the free vendors, and the chain's own Groq, OpenRouter and Together links.
+    for (const keyEnv of ['GROQ_API_KEY', 'OPENROUTER_API_KEY', 'TOGETHER_API_KEY']) {
+      expect(
+        CAPPED_VENDORS.map(v => v.keyEnv),
+        keyEnv
+      ).toContain(keyEnv);
+    }
+    expect(readFileSync('src/services/cat/provider-catalog.ts', 'utf8')).toMatch(
+      /keyEnv: 'TOGETHER_API_KEY'/
+    );
+    // Embeddings on a paid host and every web search are counted too.
+    const embeddings = readFileSync('src/services/ai/embeddings.ts', 'utf8');
+    expect(embeddings.indexOf('await reservePlatformCall(key);')).toBeGreaterThan(0);
+    expect(embeddings.indexOf('await reservePlatformCall(key);')).toBeLessThan(
+      embeddings.indexOf('const res = await fetch(`${baseUrl()}/embeddings`')
+    );
+    expect(CAPPED_VENDORS.map(v => v.keyEnv)).toEqual(
+      expect.arrayContaining(['EMBEDDINGS_API_KEY', 'OPENAI_API_KEY'])
+    );
+    const search = readFileSync('src/services/cat/web-research.ts', 'utf8');
+    expect(search.indexOf('await reserveServiceCall(CAPPED_SERVICES.webSearch);')).toBeLessThan(
+      search.indexOf('outcome = await webSearch(query, {')
+    );
+    // The per-person daily limit refuses when its count cannot be read.
+    expect(readFileSync('src/services/ai/api-key-service.ts', 'utf8')).toMatch(
+      /requests_remaining: 0,\s*can_use_platform: false,/
     );
     // Every vendor key the chain can dial on the platform's account is capped.
     const chainKeys = [

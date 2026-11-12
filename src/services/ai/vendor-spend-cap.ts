@@ -37,7 +37,47 @@ export interface CappedVendor {
 /** Every vendor the platform pays for. A vendor not here is free or not ours. */
 export const CAPPED_VENDORS: readonly CappedVendor[] = [
   { vendor: 'google', keyEnv: 'GEMINI_API_KEY', capEnv: 'GEMINI_DAILY_CALL_CAP', defaultCap: 300 },
+  // Free tiers today, but a free key bills the day its account is upgraded,
+  // and OpenRouter's key also serves paid models against Cat Credits. A cap
+  // on each, so no upgrade or credit balance can turn into unbounded spend.
+  { vendor: 'groq', keyEnv: 'GROQ_API_KEY', capEnv: 'GROQ_DAILY_CALL_CAP', defaultCap: 3000 },
+  {
+    vendor: 'openrouter',
+    keyEnv: 'OPENROUTER_API_KEY',
+    capEnv: 'OPENROUTER_DAILY_CALL_CAP',
+    defaultCap: 1000,
+  },
+  {
+    vendor: 'together',
+    keyEnv: 'TOGETHER_API_KEY',
+    capEnv: 'TOGETHER_DAILY_CALL_CAP',
+    defaultCap: 300,
+  },
+  // Embeddings (memory recall, search) on a paid host. A self-hosted
+  // embeddings server is not counted (embeddings.ts).
+  {
+    vendor: 'embeddings',
+    keyEnv: 'EMBEDDINGS_API_KEY',
+    capEnv: 'EMBEDDINGS_DAILY_CALL_CAP',
+    defaultCap: 5000,
+  },
+  {
+    vendor: 'openai',
+    keyEnv: 'OPENAI_API_KEY',
+    capEnv: 'OPENAI_DAILY_CALL_CAP',
+    defaultCap: 5000,
+  },
 ];
+
+/**
+ * Metered services called through a package that picks the backend itself,
+ * so the call cannot be matched to a key: counted by name. Web search tries
+ * the self-hosted SearXNG first and the paid Brave or Tavily after it; every
+ * search is counted, the free ones too, which errs on the strict side.
+ */
+export const CAPPED_SERVICES = {
+  webSearch: { vendor: 'web-search', capEnv: 'WEB_SEARCH_DAILY_CALL_CAP', defaultCap: 1000 },
+} as const;
 
 /** Pure: the day's cap from the environment, or the default. 0 turns it off. */
 export function capFor(v: CappedVendor, env: Record<string, string | undefined>): number {
@@ -116,6 +156,19 @@ export async function reservePlatformCall(
   }
   if (!(await reserve(v.vendor, capFor(v, env)))) {
     throw new VendorCapReached(v.vendor);
+  }
+}
+
+/** Take one call from a named service's daily allowance (CAPPED_SERVICES),
+ *  or throw VendorCapReached. */
+export async function reserveServiceCall(
+  service: (typeof CAPPED_SERVICES)[keyof typeof CAPPED_SERVICES],
+  env: Record<string, string | undefined> = process.env,
+  reserve: Reserve = reserveInDatabase
+): Promise<void> {
+  const cap = capFor({ ...service, keyEnv: '' }, env);
+  if (!(await reserve(service.vendor, cap))) {
+    throw new VendorCapReached(service.vendor);
   }
 }
 
