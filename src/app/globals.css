@@ -228,7 +228,9 @@
     /* Text */
     --text-primary: 0 0% 10%;
     --text-secondary: 0 0% 40%;
-    --text-tertiary: 0 0% 58%;
+    /* AA (4.5:1) on page, base and raised — @bitbaum/design-tokens#62. Was
+       58%: 2.8:1 on the page. */
+    --text-tertiary: 0 0% 44%;
     --text-muted: 0 0% 72%;
     --text-inverted: 0 0% 98%;
     /* Surfaces — page < base < raised < overlay < modal < drawer */
@@ -326,7 +328,7 @@
     /* ─── Loki-aligned semantic tier (dark) ────────────────────────── */
     --text-primary: 0 0% 92%;
     --text-secondary: 0 0% 65%;
-    --text-tertiary: 0 0% 48%;
+    --text-tertiary: 0 0% 55%; /* was 48%: 3.6:1 on raised */
     --text-muted: 0 0% 32%;
     --text-inverted: 0 0% 10%;
     --surface-page: 0 0% 7%;
@@ -474,6 +476,14 @@
   }
   .oc-chat-opener-mark {
     @apply flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-fg-primary text-fg-inverted;
+  }
+
+  /* What needs the person today: rows that are each the link that acts. */
+  .oc-chat-today {
+    @apply flex flex-col rounded-2xl border border-border-subtle bg-surface-raised/40 p-1.5 text-left;
+  }
+  .oc-chat-today-row {
+    @apply flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm leading-snug text-fg-primary transition-colors hover:bg-surface-raised;
   }
 
   /* An attached file or thing: in the composer, and on the sent message. */

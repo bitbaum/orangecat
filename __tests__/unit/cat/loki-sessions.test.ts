@@ -128,6 +128,59 @@ describe('readLokiSessions', () => {
   });
 });
 
+describe('reading one run', () => {
+  it("asks for that run's own session, a watch, and parses the handoff", async () => {
+    let sent: Record<string, unknown> = {};
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) => {
+      sent = JSON.parse(String((init as RequestInit).body));
+      return jsonResponse(200, {
+        ok: true,
+        linked: true,
+        sessions: [
+          {
+            ...session,
+            state: 'done',
+            handoff: { done: ['Branch main', 7], checked: 'git log -1', next: [] },
+          },
+        ],
+        transcript: {
+          project: 'orangecat',
+          at: null,
+          live: true,
+          items: [{ kind: 'assistant', text: 'main' }],
+        },
+      });
+    });
+    const out = await readLokiSessions({ actorId: ACTOR, runId: RUN, items: 5, watch: 999 });
+    expect(sent).toMatchObject({ runId: RUN, items: 5, watch: 300 });
+    expect('project' in sent).toBe(false);
+    expect(out.ok).toBe(true);
+    if (out.ok) {
+      expect(out.sessions[0].handoff).toEqual({
+        done: ['Branch main'],
+        checked: 'git log -1',
+        next: [],
+      });
+      expect(out.transcript?.live).toBe(true);
+      const text = sessionsMessage(out);
+      expect(text).toContain('The agent reported: Branch main · Checked: git log -1');
+      expect(text).toContain('> **Agent:** main');
+    }
+  });
+
+  it('without items it reads the row only, and sends no watch unless asked', async () => {
+    let sent: Record<string, unknown> = {};
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) => {
+      sent = JSON.parse(String((init as RequestInit).body));
+      return jsonResponse(200, { ok: true, linked: true, sessions: [session] });
+    });
+    const out = await readLokiSessions({ actorId: ACTOR, runId: RUN });
+    expect(sent).toEqual({ actorId: ACTOR, issuedAt: sent.issuedAt, runId: RUN });
+    expect(out.ok && out.transcript).toBeUndefined();
+    expect(out.ok && out.sessions[0].handoff).toBeNull();
+  });
+});
+
 describe('sessionsMessage', () => {
   it('says so when Loki holds no conversation, instead of quoting nothing', () => {
     const text = sessionsMessage({ ok: true, sessions: [session as never], transcript: null });

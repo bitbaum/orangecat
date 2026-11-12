@@ -30,16 +30,20 @@ function sourceFiles(dir: string): string[] {
   });
 }
 
+// Listed once and shared by both tests rather than walked twice.
+let listed: string[] | null = null;
+const scanned = (): string[] => (listed ??= sourceFiles(SRC));
+
 describe('Tailwind v4', () => {
   it('is actually looking at the source tree it claims to scan', () => {
     expect(statSync(SRC).isDirectory()).toBe(true);
-    expect(sourceFiles(SRC).length).toBeGreaterThan(100);
+    expect(scanned().length).toBeGreaterThan(100);
   });
 
   it('has no *-opacity-* utilities left — v4 dropped them silently', () => {
     const offenders: string[] = [];
 
-    for (const file of sourceFiles(SRC)) {
+    for (const file of scanned()) {
       const source = readFileSync(file, 'utf8');
       source.split('\n').forEach((line, index) => {
         for (const [, utility] of line.matchAll(DEAD_UTILITY)) {

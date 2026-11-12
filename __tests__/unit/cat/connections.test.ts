@@ -16,7 +16,7 @@ import {
   type LokiProjectStatus,
 } from '@/services/loki/actor-status';
 import { renderLokiProjects } from '@/services/ai/context-sections';
-import { detectOpeners } from '@/services/cat/prompt-suggestions';
+import { todayCandidates } from '@/services/cat/today-lines';
 import type { FullUserContext } from '@/services/ai/document-context';
 
 const SECRET = 'x'.repeat(40);
@@ -29,6 +29,7 @@ const project = (over: Partial<LokiProjectStatus> = {}): LokiProjectStatus => ({
   liveUrl: 'https://ceramics.example',
   status: 'idle',
   blockReason: null,
+  needsYou: null,
   queueDepth: 0,
   currentWork: null,
   recentOutcomes: ['success'],
@@ -78,6 +79,7 @@ describe('parseActorStatus', () => {
       linked: false,
       projects: [],
       modelKeys: [],
+      needsYou: [],
     });
     expect(parseActorStatus('not json')).toBeNull();
     expect(parseActorStatus(JSON.stringify({ ok: false }))).toBeNull();
@@ -94,6 +96,35 @@ describe('parseActorStatus', () => {
     expect(out?.projects).toHaveLength(1);
     expect(out?.projects[0].liveUrl).toBeNull();
     expect(out?.projects[0].status).toBe('idle');
+  });
+
+  it("reads Loki's needs-you lines and per-project sentence, and drops unlinked ones", () => {
+    const out = parseActorStatus(
+      JSON.stringify({
+        ok: true,
+        linked: true,
+        projects: [project({ needsYou: 'Approve the new pricing copy' })],
+        needsYou: [
+          {
+            key: 'approval:a1',
+            label: 'Email Anna',
+            reason: 'Waiting for your approval',
+            href: 'https://loki.orangecat.ch/approvals',
+            urgent: false,
+          },
+          { key: 'alert:x', label: 'No link', href: '/relative' },
+          { key: 'alert:y', label: 'Bad link', href: 'javascript:alert(1)' },
+        ],
+      })
+    );
+    expect(out?.projects[0].needsYou).toBe('Approve the new pricing copy');
+    expect(out?.needsYou.map(n => n.key)).toEqual(['approval:a1']);
+  });
+
+  it('reads an older Loki that sends no needs-you as none, not as a failure', () => {
+    const out = parseActorStatus(okBody([project()]));
+    expect(out?.needsYou).toEqual([]);
+    expect(out?.projects[0].needsYou).toBeNull();
   });
 });
 
@@ -145,13 +176,31 @@ describe('renderLokiProjects', () => {
     expect(out).toContain('2 new feedback');
   });
 
+  it("carries Loki's own words for what it needs, what waits in Loki, and the day's link", () => {
+    const out = renderLokiProjects(
+      [project({ status: 'blocked', blockReason: 'awaiting_user', needsYou: 'Pick a domain' })],
+      [
+        {
+          key: 'approval:a1',
+          label: 'Email Anna',
+          reason: null,
+          href: 'https://loki.orangecat.ch/approvals',
+          urgent: false,
+        },
+      ]
+    );
+    expect(out).toContain('waiting on the user: "Pick a domain"');
+    expect(out).toContain('Email Anna (https://loki.orangecat.ch/approvals)');
+    expect(out).toMatch(/\/today/);
+  });
+
   it('renders nothing without projects', () => {
     expect(renderLokiProjects(null)).toBeNull();
     expect(renderLokiProjects([])).toBeNull();
   });
 });
 
-describe('Loki openers', () => {
+describe('Loki in the Cat home: actions with their link, never counts', () => {
   const ctx = (lokiProjects: LokiProjectStatus[]) =>
     ({
       profile: { name: 'Lena', bio: 'Ceramicist' },
@@ -163,23 +212,36 @@ describe('Loki openers', () => {
       lokiProjects,
     }) as unknown as FullUserContext;
 
-  it('leads with a build that is waiting on its owner', () => {
-    const [top] = detectOpeners(
-      ctx([project({ status: 'blocked', blockReason: 'awaiting_user' })])
+  it("leads with a build waiting on its owner, in Loki's words, linked to the project", () => {
+    const [top] = todayCandidates(
+      ctx([project({ status: 'blocked', blockReason: 'awaiting_user', needsYou: 'Pick a domain' })])
     );
-    expect(top.key).toMatch(/^loki-waiting:p1/);
-    expect(top.say).toContain('Ceramics site');
+    expect(top.text).toBe('Ceramics site: Pick a domain');
+    expect(top.href).toBe('https://loki.orangecat.ch/projects/p1');
   });
 
-  it('brings up new visitor feedback, without promising a summary it cannot see', () => {
-    const openers = detectOpeners(ctx([project({ feedback: { new: 3, open: 3 } })]));
-    const o = openers.find(x => x.key.startsWith('loki-feedback:'));
-    expect(o?.say).toContain('3 new pieces');
-    expect(o?.replies.join(' ')).not.toMatch(/summar/i);
+  it('still offers an action when an older Loki sends no sentence, or prose after the code', () => {
+    const [top] = todayCandidates(
+      ctx([
+        project({
+          status: 'blocked',
+          blockReason: 'awaiting_user — no high-impact work remains',
+        }),
+      ])
+    );
+    expect(top.text).toBe('Answer Loki on Ceramics site');
+  });
+
+  it('links new visitor feedback to the feedback tab, without a count', () => {
+    const line = todayCandidates(ctx([project({ feedback: { new: 3, open: 3 } })])).find(l =>
+      l.key.startsWith('loki-feedback:')
+    );
+    expect(line?.text).toBe('Read the new feedback on Ceramics site');
+    expect(line?.text).not.toMatch(/\d/);
+    expect(line?.href).toBe('https://loki.orangecat.ch/projects/p1#feedback');
   });
 
   it('stays quiet about a project that needs nothing', () => {
-    const openers = detectOpeners(ctx([project()]));
-    expect(openers.some(o => o.key.startsWith('loki-'))).toBe(false);
+    expect(todayCandidates(ctx([project()]))).toEqual([]);
   });
 });
