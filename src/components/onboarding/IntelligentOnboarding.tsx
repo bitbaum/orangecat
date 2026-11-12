@@ -24,16 +24,10 @@ import { ROUTES } from '@/config/routes';
 import { FEATURES } from '@/config/features';
 import { ONBOARDING_METHOD } from '@/config/onboarding';
 import { useCatHealth } from '@/hooks/useCatHealth';
+import { backStaysInApp } from '@/lib/navigation/backStaysInApp';
+import { OnboardingExamples } from '@/components/onboarding/OnboardingExamples';
+import { OnboardingSkip } from '@/components/onboarding/OnboardingSkip';
 import type { ProposedOffer } from '@/services/cat/offer-engine';
-
-const EXAMPLE_PROMPTS = [
-  "I'm a freelance graphic designer looking to find clients and sell design templates",
-  'I run a small community garden and want to raise funds for seeds and equipment',
-  'I make handmade jewellery and want to start selling online',
-  "I'm a musician who wants to fund an album and connect with fans",
-  'I teach yoga and want to offer online classes and workshops',
-  'My neighbourhood needs a community space — I want to fundraise and organise it',
-];
 
 export default function IntelligentOnboarding() {
   const router = useRouter();
@@ -121,27 +115,38 @@ export default function IntelligentOnboarding() {
     router.push(`${ROUTES.DASHBOARD.CAT}?${params.toString()}`);
   };
 
+  const handleBack = () => {
+    if (offers) {
+      setOffers(null);
+      return;
+    }
+    if (askPay) {
+      setAskPay(false);
+      return;
+    }
+    // Opened fresh (a new tab, orangecat.ch typed in), there is nothing of
+    // ours behind this page and the browser's back would leave the site.
+    if (backStaysInApp()) {
+      router.back();
+    } else {
+      router.push(ROUTES.DASHBOARD.CAT);
+    }
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-surface-page p-4">
       <div className="w-full max-w-lg">
-        {/* Back navigation */}
-        <button
-          onClick={() => {
-            if (offers) {
-              setOffers(null);
-              return;
-            }
-            if (askPay) {
-              setAskPay(false);
-              return;
-            }
-            router.back();
-          }}
-          className="mb-6 flex min-h-11 items-center gap-1.5 text-sm text-fg-secondary transition-colors hover:text-fg-primary"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back
-        </button>
+        <div className="mb-6 flex items-center justify-between gap-4">
+          <button
+            type="button"
+            onClick={handleBack}
+            className="flex min-h-11 items-center gap-1.5 text-sm text-fg-secondary transition-colors hover:text-fg-primary"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </button>
+          {!offers && !askPay && <OnboardingSkip userId={user?.id} />}
+        </div>
 
         {/* Header */}
         <div className="text-center mb-8">
@@ -154,8 +159,8 @@ export default function IntelligentOnboarding() {
                 Here&apos;s what you could offer
               </h1>
               <p className="text-fg-secondary">
-                Your Cat turned what you told it into ways to earn. Create any of them in one click
-                — or refine them in a chat.
+                Your Cat turned what you told it into ways to earn. Open one with its description
+                already written and fill in the rest, or refine them in a chat.
               </p>
             </>
           ) : askPay ? (
@@ -173,8 +178,8 @@ export default function IntelligentOnboarding() {
             <>
               <h1 className="text-2xl font-bold text-fg-primary mb-2">Tell Cat who you are</h1>
               <p className="text-fg-secondary">
-                Paste your bio, background, or a few lines about what you do. Cat will propose
-                concrete ways to earn — and set them up.
+                Paste your bio, background, or a few lines about what you do. Cat will suggest
+                concrete ways to earn and write a first description for each.
               </p>
             </>
           )}
@@ -238,23 +243,7 @@ export default function IntelligentOnboarding() {
               )}
             </div>
 
-            {/* Example prompts */}
-            <div className="space-y-1">
-              <p className="text-xs text-fg-tertiary font-medium uppercase tracking-wide">
-                Examples
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {EXAMPLE_PROMPTS.map(prompt => (
-                  <button
-                    key={prompt}
-                    onClick={() => setDescription(prompt)}
-                    className="rounded-sm border border-subtle px-3 py-1.5 text-left text-xs text-fg-secondary transition-colors hover:border-strong hover:bg-surface-raised hover:text-fg-primary"
-                  >
-                    {prompt.length > 50 ? prompt.slice(0, 50) + '…' : prompt}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <OnboardingExamples onPick={setDescription} />
 
             {genError && <p className="text-sm text-status-negative">{genError}</p>}
 
