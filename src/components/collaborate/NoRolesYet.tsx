@@ -4,6 +4,7 @@ import { Handshake, Plus } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import EmptyState from '@/components/ui/EmptyState';
+import { scrollBehavior } from '@/lib/scroll-behavior';
 
 const WHAT =
   'Collaborate is where projects ask for help — a designer, a translator, someone with a van.';
@@ -29,7 +30,9 @@ export function NoRolesYet({
         action={
           <Button
             onClick={
-              hasProjects ? () => window.scrollTo({ top: 0, behavior: 'smooth' }) : onCreateProject
+              hasProjects
+                ? () => window.scrollTo({ top: 0, behavior: scrollBehavior() })
+                : onCreateProject
             }
             className="gap-1.5"
           >

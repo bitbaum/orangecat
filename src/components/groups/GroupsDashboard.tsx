@@ -110,14 +110,13 @@ export function GroupsDashboard() {
     >
       {/* Search across both tabs (only when there's something to search) */}
       {hasAnyGroups && (
-        <div className="relative mb-6">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-secondary" />
+        <div className="mb-6">
           <Input
             type="search"
+            icon={Search}
             value={query}
             onChange={e => setQuery(e.target.value)}
             placeholder="Search groups by name or description…"
-            className="pl-9"
             aria-label="Search groups"
           />
         </div>

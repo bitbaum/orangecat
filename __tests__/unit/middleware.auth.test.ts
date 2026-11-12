@@ -68,6 +68,43 @@ function buildRequest(path: string, cookies: Record<string, string> = {}) {
   };
 }
 
+describe('middleware: only a recovery link goes to the reset page', () => {
+  // Every ?error= used to be sent to /auth/reset-password, so a cancelled
+  // Google sign-in or /auth's own error landed on "Enter Your Reset Code" and
+  // the error was never shown (production, 2026-11-12).
+  beforeEach(() => {
+    vi.resetModules();
+    setMockUser(null);
+  });
+
+  it.each([
+    '/auth/callback?error=access_denied&error_code=access_denied&error_description=The+user+denied+the+request',
+    '/auth?error=failed',
+    '/auth?mode=login&error=link_expired&showResend=true',
+  ])('lets a sign-in error reach its own page: %s', async path => {
+    const res = await middleware(buildRequest(path) as any);
+    expect(res?.headers.get('location') ?? '').not.toContain('/auth/reset-password');
+  });
+
+  it('still sends a recovery link with its tokens to the reset page', async () => {
+    const res = await middleware(
+      buildRequest('/?type=recovery&access_token=a&refresh_token=b') as any
+    );
+    expect(res?.status).toBe(307);
+    expect(res?.headers.get('location')).toContain('/auth/reset-password');
+    expect(res?.headers.get('location')).toContain('access_token=a');
+  });
+
+  it('still sends an expired recovery link to the reset page, error and all', async () => {
+    const res = await middleware(
+      buildRequest('/?type=recovery&error=access_denied&error_code=otp_expired') as any
+    );
+    expect(res?.status).toBe(307);
+    expect(res?.headers.get('location')).toContain('/auth/reset-password');
+    expect(res?.headers.get('location')).toContain('error_code=otp_expired');
+  });
+});
+
 describe('middleware auth protection', () => {
   const realEnv = process.env;
 

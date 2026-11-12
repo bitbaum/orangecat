@@ -212,7 +212,7 @@ export function PendingActionsCard({ action, onConfirm, onReject }: PendingActio
 
       {details.length > 0 && (
         <details className="text-xs text-fg-secondary">
-          <summary className="min-h-9 cursor-pointer select-none py-2 font-medium text-fg-primary">
+          <summary className="min-h-9 pointer-coarse:min-h-11 cursor-pointer select-none py-2 pointer-coarse:py-3.5 font-medium text-fg-primary">
             Details
           </summary>
           <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 rounded-md bg-surface-raised p-3">

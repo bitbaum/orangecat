@@ -10,7 +10,7 @@ export const metadata = {
     'What’s new on OrangeCat — every update that shipped, newest first. Bitcoin-native funding, discovery, and the sovereign personal economy, in the open.',
 };
 
-const LINK = 'text-fg-secondary underline-offset-4 hover:text-fg-primary hover:underline';
+const LINK = 'text-fg-secondary underline underline-offset-4 hover:text-fg-primary';
 
 /** Under a line: the roadmap milestone it delivered, linked to its place on /roadmap. */
 function Advances({ advances }: { advances: Advance[] }) {

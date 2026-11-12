@@ -69,7 +69,7 @@ export function AvailableLoans({ loans, onOfferMade }: AvailableLoansProps) {
                       {formatLoanAmount(loan.remaining_balance, loan.currency ?? undefined)}
                     </span>
                   </div>
-                  <Progress value={progress} className="h-1.5" />
+                  <Progress value={progress} aria-label="Repayment progress" className="h-1.5" />
                   <div className="flex justify-between text-xs text-fg-secondary">
                     <span>{progress.toFixed(0)}% paid</span>
                     <span>

@@ -64,23 +64,22 @@ export default async function DoorPage({ params, searchParams }: PageProps) {
     .eq('id', id)
     .maybeSingle();
   if (!event) {
-    // A plain message, not a 404 call: this page streams behind events/[id]/loading.tsx, so a
-    // 404 status could not be sent anyway (see scripts/audit-routes.mjs §5).
-    // It is reachable only when signed in, where the words matter more.
+    // A plain message, not a 404 call: this page is reachable only when signed
+    // in, where the words matter more than the status.
     return (
-      <main className="mx-auto max-w-md px-4 py-12 text-center">
+      <div className="mx-auto max-w-md px-4 py-12 text-center">
         <h1 className="mb-3 text-xl font-semibold text-fg-primary">No such event</h1>
         <Link href={ENTITY_REGISTRY.event.publicBasePath} className="underline underline-offset-4">
           See what&apos;s on
         </Link>
-      </main>
+      </div>
     );
   }
 
   if (!(await canCheckInAt(supabase, id, user.id))) {
     // Usually the guest opening their own ticket's QR.
     return (
-      <main className="mx-auto max-w-md px-4 py-12 text-center">
+      <div className="mx-auto max-w-md px-4 py-12 text-center">
         <h1 className="mb-3 text-xl font-semibold text-fg-primary">This is a ticket</h1>
         <p className="mb-6 text-fg-secondary">
           Show it at the door of {event.title}. The organizer and the door crew check people in.
@@ -88,7 +87,7 @@ export default async function DoorPage({ params, searchParams }: PageProps) {
         <Link href={eventPath} className="underline underline-offset-4">
           Back to the event
         </Link>
-      </main>
+      </div>
     );
   }
 
@@ -126,7 +125,7 @@ export default async function DoorPage({ params, searchParams }: PageProps) {
   const verdictCount = checkIn && 'ticket_count' in checkIn ? checkIn.ticket_count : 1;
 
   return (
-    <main className="mx-auto max-w-2xl space-y-6 px-4 py-8">
+    <div className="mx-auto max-w-2xl space-y-6 px-4 py-8">
       <div>
         <Link href={eventPath} className="text-sm text-fg-secondary underline underline-offset-4">
           {event.title}
@@ -161,6 +160,6 @@ export default async function DoorPage({ params, searchParams }: PageProps) {
         zone={eventZone(event)}
         canRefund={event.user_id === user.id}
       />
-    </main>
+    </div>
   );
 }
