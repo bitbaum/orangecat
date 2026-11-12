@@ -76,6 +76,7 @@ export function OtpForm({
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
+          label="Email address"
           type="email"
           required
           value={email}
@@ -86,6 +87,7 @@ export function OtpForm({
           autoComplete="email"
         />
         <Input
+          label="Reset code"
           type="text"
           required
           value={code}
