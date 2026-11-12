@@ -83,6 +83,8 @@ function viewAs(userId: string | null, activeTab = 'overview') {
     LabelIcon: () => null,
     isOwner: userId === 'founder',
     hasGovernanceFeatures: false,
+    // The real hook: a listed, public group's content is open to anyone (#1661).
+    canSeeContent: true,
   };
   return setActiveTab;
 }
