@@ -128,7 +128,7 @@ export function AttentionModal({ actionLoading, onClose, onFlag }: AttentionModa
             <Button
               onClick={handleSubmit}
               isLoading={actionLoading}
-              className="bg-status-warning hover:bg-status-warning/90 text-white"
+              className="bg-status-warning hover:bg-status-warning/90 text-warning-foreground"
             >
               Flag
             </Button>

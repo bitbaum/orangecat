@@ -23,7 +23,7 @@ export function BrandMark({
   const iconSize = compact ? 22 : 24;
 
   const content = (
-    <div className={cn('flex min-w-0 items-center gap-2.5 sm:gap-3', className)}>
+    <div className={cn('flex min-w-0 items-center gap-2.5 sm:gap-3', !href && className)}>
       <div
         className={cn(
           'ui-brand-mark text-fg-primary transition-transform hover:scale-[1.02] active:scale-[0.985]',
@@ -47,7 +47,10 @@ export function BrandMark({
   return (
     <Link
       href={href}
-      className="group inline-flex min-h-11 min-w-11 items-center rounded-md py-1.5 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      className={cn(
+        'group inline-flex min-h-11 min-w-11 items-center justify-center rounded-md outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+        className
+      )}
       aria-label={`${APP_NAME} — home`}
     >
       {content}

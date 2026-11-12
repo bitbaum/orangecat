@@ -300,10 +300,10 @@ export default function DocsPage() {
         {/* Getting Started — public-surface near-black band per Loki pattern */}
         <section className="mb-10">
           <div className="bg-surface-public border border-subtle rounded-lg p-8 text-center">
-            <h2 className="font-heading tracking-display text-2xl font-bold text-fg-inverted mb-3">
+            <h2 className="font-heading tracking-display text-2xl font-bold text-on-public mb-3">
               Ready to get started?
             </h2>
-            <p className="text-fg-inverted/70 mb-6 max-w-xl mx-auto">
+            <p className="text-on-public/70 mb-6 max-w-xl mx-auto">
               Create an account, set up your profile and payment methods, then ask your Cat to help
               you launch your first entity.
             </p>
@@ -313,12 +313,12 @@ export default function DocsPage() {
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
               <Link href={ROUTES.FAQ}>
-                {/* Outline inverted for the dark band — the default outline
-                    (dark text/border) is invisible on bg-surface-public. */}
+                {/* The default outline (text-fg-primary, border-strong) is for
+                    themed surfaces; this band is dark in both themes. */}
                 <Button
                   variant="outline"
                   size="lg"
-                  className="border-fg-inverted/40 text-fg-inverted hover:bg-fg-inverted/10"
+                  className="border-on-public/40 text-on-public hover:bg-on-public/10"
                 >
                   View FAQ
                 </Button>

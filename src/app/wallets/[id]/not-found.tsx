@@ -9,7 +9,7 @@ import { ROUTES } from '@/config/routes';
  */
 export default function WalletNotFound() {
   return (
-    <main className="mx-auto max-w-lg px-4 py-24 text-center">
+    <div className="mx-auto max-w-lg px-4 py-24 text-center">
       <h1 className="text-2xl font-semibold text-fg-primary">Wallet not available</h1>
       <p className="text-fg-secondary mt-3">
         This wallet doesn’t exist, or its owner is no longer accepting payments to it.
@@ -17,6 +17,6 @@ export default function WalletNotFound() {
       <Button href={ROUTES.HOME} variant="outline" className="mt-8">
         Back to OrangeCat
       </Button>
-    </main>
+    </div>
   );
 }

@@ -158,17 +158,14 @@ export function InviteMemberDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-secondary" />
-            <Input
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Search people…"
-              className="pl-9"
-              autoFocus
-              aria-label="Search people to invite"
-            />
-          </div>
+          <Input
+            icon={Search}
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search people…"
+            autoFocus
+            aria-label="Search people to invite"
+          />
           <div className="max-h-72 space-y-1 overflow-y-auto">
             {loading ? (
               <div className="flex items-center justify-center py-8 text-fg-secondary">

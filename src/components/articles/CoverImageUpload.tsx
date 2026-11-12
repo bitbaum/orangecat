@@ -161,7 +161,7 @@ export default function CoverImageUpload({
             type="button"
             onClick={onSuggest}
             disabled={disabled}
-            className="inline-flex items-center gap-1 text-xs font-medium text-accent-warm hover:text-accent-warm-hover disabled:opacity-50"
+            className="inline-flex items-center gap-1 text-xs font-medium text-fg-primary underline underline-offset-4 hover:text-fg-secondary disabled:opacity-50"
           >
             <Sparkles className="h-3.5 w-3.5" /> Generate or find with AI
           </button>

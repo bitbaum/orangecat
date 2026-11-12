@@ -17,7 +17,8 @@ import {
  * hand-rolled headers). Sections come from the SETTINGS_SECTIONS SSOT.
  *
  * Tabs are a horizontal, scrollable rail: identical on mobile and desktop,
- * 44px touch targets, active tab underlined with the warm accent.
+ * 44px touch targets, active tab underlined in ink. Not the accent: orange
+ * means Bitcoin or the one way in, never "you are here".
  */
 export default function SettingsShell({ children }: { children: ReactNode }) {
   const pathname = usePathname() ?? '';
@@ -53,7 +54,7 @@ export default function SettingsShell({ children }: { children: ReactNode }) {
                   className={cn(
                     'flex min-h-11 items-center gap-2 border-b-2 px-3 py-2.5 text-sm font-medium transition-colors',
                     isActive
-                      ? 'border-accent-warm text-fg-primary'
+                      ? 'border-fg-primary text-fg-primary'
                       : 'border-transparent text-fg-secondary hover:border-default hover:text-fg-primary'
                   )}
                 >

@@ -203,7 +203,7 @@ export default function ShareContent({
             <div
               className={`w-8 h-8 rounded-full ${GRADIENTS.brandOrange} flex items-center justify-center`}
             >
-              <Share2 className="w-4 h-4 text-white" />
+              <Share2 className="w-4 h-4" />
             </div>
             {titleText}
           </h3>
@@ -223,7 +223,7 @@ export default function ShareContent({
       {hasNativeShare && (
         <button
           onClick={handleNativeShare}
-          className={`w-full mb-5 flex items-center justify-center gap-3 p-4 rounded-lg ${GRADIENTS.btnOrange} text-white font-semibold transition-all touch-manipulation active:scale-95 shadow-sm`}
+          className={`w-full mb-5 flex items-center justify-center gap-3 p-4 rounded-lg ${GRADIENTS.btnOrange} font-semibold transition-all touch-manipulation active:scale-95 shadow-sm`}
         >
           <Share2 className="w-5 h-5" />
           <span>Share via...</span>
