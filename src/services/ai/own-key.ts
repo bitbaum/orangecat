@@ -11,12 +11,14 @@
  *
  * The rule is the Cat's own (cat/provider-resolver): the person's valid keys
  * in the order they saved them, the first one this app can call.
+ *
+ * This file only LOOKS a key up. It imports no model client, because a page
+ * load reads it (the routine's settings row asks whether the bot can run),
+ * and no GET may be able to reach a model (__tests__/unit/ci/no-background-ai).
+ * The client for a key is built in own-key-service.ts, by the turn alone.
  */
 import { getProviderRuntime, PROVIDER_BASE_URLS } from '@/config/ai-provider-runtime';
-import { createOpenAICompatibleServiceWithByok } from '@/services/ai/openai-compat';
 import { PLATFORM_GROQ_MODEL } from '@/services/ai/groq-models';
-
-import type { AiService } from './types';
 
 export interface OwnKey {
   provider: string;
@@ -26,7 +28,7 @@ export interface OwnKey {
 /** Where a key of this provider is called and with which model, or null when
  *  this app has no client for it. OpenRouter is not here: it keeps its own
  *  routed client and model choice (sendMessage-internals). */
-function directRuntime(provider: string): { baseUrl: string; model: string } | null {
+export function directRuntime(provider: string): { baseUrl: string; model: string } | null {
   if (provider === 'groq') {
     return { baseUrl: PROVIDER_BASE_URLS.groq, model: PLATFORM_GROQ_MODEL };
   }
@@ -43,18 +45,19 @@ export function pickOwnKey(keys: ReadonlyArray<OwnKey>): OwnKey | null {
   );
 }
 
-/** The client and model for a key that is not OpenRouter's. */
-export function directKeyService(own: OwnKey): { service: AiService; model: string } | null {
-  const runtime = directRuntime(own.provider);
-  if (!runtime) {
-    return null;
-  }
+/**
+ * What every bot turn needs to know about the person's own key, read once.
+ * One reader for the one-to-one turn, the group chat and the routine, so the
+ * three cannot disagree about whether a person has a key.
+ */
+export async function readOwnKey(
+  keys: { listDecryptedKeysOrdered(userId: string): Promise<OwnKey[]> },
+  userId: string
+): Promise<{ hasByok: boolean; userKey: string | null; directKey: OwnKey | null }> {
+  const own = pickOwnKey(await keys.listDecryptedKeysOrdered(userId));
   return {
-    service: createOpenAICompatibleServiceWithByok({
-      apiKey: own.key,
-      baseUrl: runtime.baseUrl,
-      providerId: own.provider,
-    }),
-    model: runtime.model,
+    hasByok: !!own,
+    userKey: own?.provider === 'openrouter' ? own.key : null,
+    directKey: own && own.provider !== 'openrouter' ? own : null,
   };
 }

@@ -16,7 +16,7 @@ import { fromTable } from '@/lib/supabase/untyped';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { createApiKeyService } from './api-key-service';
-import { pickOwnKey } from './own-key';
+import { readOwnKey } from './own-key';
 import { getAdminClient } from '@/lib/supabase/admin';
 import {
   computeCreatorChargeBtc,
@@ -91,10 +91,7 @@ export async function sendAiMessage(
   const keyService = createApiKeyService(supabase);
   // The person's own key, whichever provider it is from (own-key.ts): asked
   // first, so their bots answer whatever the shared pool does.
-  const ownKey = pickOwnKey(await keyService.listDecryptedKeysOrdered(userId));
-  const userOpenRouterKey = ownKey?.provider === 'openrouter' ? ownKey.key : null;
-  const directKey = ownKey && ownKey.provider !== 'openrouter' ? ownKey : null;
-  const hasByok = !!ownKey;
+  const { hasByok, userKey: userOpenRouterKey, directKey } = await readOwnKey(keyService, userId);
 
   // 4. Check platform usage limits (non-BYOK users)
   if (!hasByok) {

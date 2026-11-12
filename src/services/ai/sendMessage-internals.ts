@@ -22,7 +22,8 @@ import {
   SHARED_POOL_DOWN_MESSAGE,
   chainFailureSummary,
 } from '@/services/ai/chain-failure-summary';
-import { directKeyService, type OwnKey } from './own-key';
+import { directKeyService } from './own-key-service';
+import type { OwnKey } from './own-key';
 import type { AiService } from './types';
 import type { AssistantRecord, SendMessageError } from './sendMessage-types';
 import type { Proposal } from '@/services/companions/hands';
