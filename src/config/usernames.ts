@@ -72,6 +72,11 @@ export function normalizeUsername(username: string): string {
     .replace(/[_\-.]/g, '');
 }
 
+/** Whether a handle is the Cat's own — compared the way a mention resolves it. */
+export function isCatUsername(username: string | null | undefined): boolean {
+  return !!username && normalizeUsername(username) === normalizeUsername(CAT_USERNAME);
+}
+
 /** @returns the reason a handle is reserved, or null if it is free to take. */
 export function reservedReason(username: string): string | null {
   const normalized = normalizeUsername(username);

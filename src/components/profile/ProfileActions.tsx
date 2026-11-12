@@ -4,6 +4,7 @@ import { Share2, UserPlus, UserCheck, Pencil, Bitcoin, MessageSquare } from 'luc
 import Button from '@/components/ui/Button';
 import ProfileShare from '@/components/sharing/ProfileShare';
 import { ROUTES } from '@/config/routes';
+import { isCatUsername } from '@/config/usernames';
 import { cn } from '@/lib/utils';
 import { useCanReceive } from './useCanReceive';
 import type { ScalableProfile } from '@/services/profile/types';
@@ -42,6 +43,14 @@ export function ProfileActions({
   const displayName = profile.name || profile.username || 'User';
   // Pay only when a payment would land — the same check the pay flow runs.
   const canReceive = useCanReceive(profile.username);
+  // A direct message to the Cat's account is answered only when it tags @cat,
+  // so "Message" on its profile opened a thread that stayed silent. The Cat
+  // answers in its own chat, where the New message picker's "Talk to Cat" leads.
+  const message = isCatUsername(profile.username)
+    ? { href: ROUTES.DASHBOARD.CAT, label: 'Talk to Cat' }
+    : profile.id
+      ? { href: ROUTES.MESSAGES_TO(profile.id), label: 'Message' }
+      : null;
 
   return (
     <div className={cn('flex items-center gap-2', className)}>
@@ -59,15 +68,10 @@ export function ProfileActions({
         </Button>
       ) : (
         <>
-          {profile.id && (
-            <Button
-              href={ROUTES.MESSAGES_TO(profile.id)}
-              variant="outline"
-              size="sm"
-              className={ACTION}
-            >
+          {message && (
+            <Button href={message.href} variant="outline" size="sm" className={ACTION}>
               <MessageSquare className="mr-1.5 hidden h-4 w-4 sm:block" aria-hidden />
-              Message
+              {message.label}
             </Button>
           )}
           <Button

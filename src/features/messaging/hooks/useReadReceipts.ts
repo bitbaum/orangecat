@@ -4,10 +4,18 @@ import { fromTable } from '@/lib/supabase/untyped';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import supabase from '@/lib/supabase/browser';
 import { DATABASE_TABLES } from '@/config/database-tables';
-import type { Message, Participant } from '../types';
+import { isCatUsername } from '@/config/usernames';
+import type { Message } from '../types';
 import { TIMING, debugLog } from '../lib/constants';
 import { applyStatusToMessages } from '../lib/message-utils';
 import { useRealtimeSubscription } from './useRealtimeSubscription';
+
+/** A participant as read for receipts: how far they have read, and who they are. */
+interface ParticipantReadRow {
+  user_id: string;
+  last_read_at: string | null;
+  profiles: { username: string | null } | null;
+}
 
 interface UseReadReceiptsReturn {
   participantReadTimes: Map<string, Date | null>;
@@ -25,6 +33,9 @@ export function useReadReceipts(
     new Map()
   );
   const participantReadTimesRef = useRef<Map<string, Date | null>>(participantReadTimes);
+  // The Cat's seat, so a read mark that moves only when the Cat writes does not
+  // decide whether a person has read your message.
+  const agentIdsRef = useRef<ReadonlySet<string>>(new Set());
   const [readReceiptsError, setReadReceiptsError] = useState(false);
 
   useEffect(() => {
@@ -41,7 +52,7 @@ export function useReadReceipts(
         supabase,
         DATABASE_TABLES.CONVERSATION_PARTICIPANTS
       )
-        .select('user_id, last_read_at')
+        .select('user_id, last_read_at, profiles:user_id (username)')
         .eq('conversation_id', conversationId)
         .eq('is_active', true);
 
@@ -62,9 +73,16 @@ export function useReadReceipts(
       }
 
       const newMap = new Map<string, Date | null>();
-      (participants || []).forEach((p: Participant) => {
+      const agents = new Set<string>();
+      (participants || []).forEach((p: ParticipantReadRow) => {
         newMap.set(p.user_id, p.last_read_at ? new Date(p.last_read_at) : null);
+        if (isCatUsername(p.profiles?.username)) {
+          agents.add(p.user_id);
+        }
       });
+      // Set before the map, so the statuses recomputed for the new read times
+      // already know which seat is the Cat's.
+      agentIdsRef.current = agents;
       setParticipantReadTimes(newMap);
     } catch (err) {
       debugLog('Error in fetchParticipantReadTimes:', err);
@@ -79,7 +97,7 @@ export function useReadReceipts(
   // Stable wrapper: reads from ref so callers don't need to re-subscribe on every receipt change
   const applyReadStatus = useCallback(
     (messages: Message[]): Message[] =>
-      applyStatusToMessages(messages, userId, participantReadTimesRef.current),
+      applyStatusToMessages(messages, userId, participantReadTimesRef.current, agentIdsRef.current),
     [userId]
   );
 

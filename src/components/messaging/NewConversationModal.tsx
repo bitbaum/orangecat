@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import Input from '@/components/ui/Input';
 import { openConversationFor } from '@/features/messaging/open-conversation.client';
-import { rankPeopleForPicker } from '@/features/messaging/people-picker';
+import { pickerOffersCat, rankPeopleForPicker } from '@/features/messaging/people-picker';
 import { useAuth } from '@/hooks/useAuth';
 import Link from 'next/link';
 import { ROUTES } from '@/config/routes';
@@ -186,7 +186,7 @@ export default function NewConversationModal({
           />
         </div>
 
-        {!search && (
+        {pickerOffersCat(search) && (
           <Link
             href={ROUTES.DASHBOARD.CAT}
             onClick={onClose}

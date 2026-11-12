@@ -29,6 +29,8 @@ interface _ParticipantReadTime {
   lastReadAt: Date | null;
 }
 
+const NO_AGENTS: ReadonlySet<string> = new Set();
+
 /**
  * Calculate the delivery/read status of a message
  *
@@ -44,12 +46,14 @@ interface _ParticipantReadTime {
  * @param message - The message to calculate status for
  * @param currentUserId - The current user's ID
  * @param participantReadTimes - Map of participant IDs to their last_read_at times
+ * @param agentIds - Participants that are the Cat rather than a person
  * @returns The calculated message status
  */
 export function calculateMessageStatus(
   message: Message,
   currentUserId: string | undefined,
-  participantReadTimes: Map<string, Date | null>
+  participantReadTimes: Map<string, Date | null>,
+  agentIds: ReadonlySet<string> = NO_AGENTS
 ): MessageStatus {
   if (!currentUserId) {
     return MESSAGE_STATUS.SENT;
@@ -74,14 +78,23 @@ export function calculateMessageStatus(
   // caught up. In a two-person conversation that is the same answer. In a group
   // it told you your message had been read when two of three recipients had not
   // seen it — a claim the UI made on your behalf that simply was not true.
+  //
+  // The people are who count. The Cat stays in a conversation once it has
+  // answered there, but its read mark moves only when it writes, so counting it
+  // held every later message at "Delivered" after everyone had read it. When
+  // the Cat is the only other participant, its read is the one that counts.
   if (message.sender_id === currentUserId) {
-    const thread = threadFromReadTimes(participantReadTimes);
-    const recipients = thread.participants.filter(p => p.actorId !== currentUserId);
-    if (recipients.length === 0) {
+    const thread = threadFromReadTimes(participantReadTimes, agentIds);
+    const others = thread.participants.filter(p => p.actorId !== currentUserId);
+    const people = others.filter(p => p.kind === 'human');
+    const recipients = new Set((people.length > 0 ? people : others).map(p => p.actorId));
+    if (recipients.size === 0) {
       return MESSAGE_STATUS.DELIVERED;
     }
-    const seenBy = readersOf(thread, toThreadMessage(message));
-    return seenBy.length === recipients.length ? MESSAGE_STATUS.READ : MESSAGE_STATUS.DELIVERED;
+    const seenBy = readersOf(thread, toThreadMessage(message)).filter(p =>
+      recipients.has(p.actorId)
+    );
+    return seenBy.length === recipients.size ? MESSAGE_STATUS.READ : MESSAGE_STATUS.DELIVERED;
   }
 
   // For messages TO the current user - check if current user has caught up.
@@ -116,11 +129,14 @@ export function readerCount(
  * `joinedAt` is unused when `visibleFrom` is set, so the epoch is honest filler
  * rather than a guess with consequences.
  */
-function threadFromReadTimes(participantReadTimes: Map<string, Date | null>): Thread {
+function threadFromReadTimes(
+  participantReadTimes: Map<string, Date | null>,
+  agentIds: ReadonlySet<string> = NO_AGENTS
+): Thread {
   const participants: ThreadParticipant[] = [...participantReadTimes.entries()].map(
     ([actorId, lastReadAt]) => ({
       actorId,
-      kind: 'human' as const,
+      kind: agentIds.has(actorId) ? ('ai' as const) : ('human' as const),
       joinedAt: new Date(0),
       visibleFrom: 'thread-start' as const,
       lastReadAt,
@@ -135,15 +151,17 @@ function threadFromReadTimes(participantReadTimes: Map<string, Date | null>): Th
  * @param messages - Array of messages to process
  * @param currentUserId - The current user's ID
  * @param participantReadTimes - Map of participant IDs to their last_read_at times
+ * @param agentIds - Participants that are the Cat rather than a person
  * @returns Messages with status fields populated
  */
 export function applyStatusToMessages(
   messages: Message[],
   currentUserId: string | undefined,
-  participantReadTimes: Map<string, Date | null>
+  participantReadTimes: Map<string, Date | null>,
+  agentIds: ReadonlySet<string> = NO_AGENTS
 ): Message[] {
   return messages.map(msg => {
-    const status = calculateMessageStatus(msg, currentUserId, participantReadTimes);
+    const status = calculateMessageStatus(msg, currentUserId, participantReadTimes, agentIds);
     return {
       ...msg,
       status,
