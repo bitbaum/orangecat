@@ -18,6 +18,7 @@ import {
   findingStatusMessage,
   readLokiFindingStatus,
 } from './findings';
+import { projectStatusMessage, readProjectStatus } from './project-status';
 import { readLokiSessions, sessionsMessage } from './sessions';
 import { parseProjectList, sendTaskToLoki } from './task-dispatch';
 
@@ -63,6 +64,19 @@ export const LOKI_HANDS: Readonly<Record<string, LokiHand>> = {
     };
   },
 
+  /** Every project: what it is doing, its latest run and PR, and whether its live site answers. Read-only. */
+  project_status: async (actorId, params) => {
+    const project = typeof params.project === 'string' ? params.project.trim() : '';
+    const outcome = await readProjectStatus(actorId, project ? { project } : {});
+    if (!outcome.ok) {
+      return { success: false, error: outcome.reason };
+    }
+    return {
+      success: true,
+      data: { projects: outcome.projects, displayMessage: projectStatusMessage(outcome) },
+    };
+  },
+
   /** One run on its way to live, by its full runId. Read-only. */
   loki_run_status: async (actorId, params) => {
     const runId = typeof params.run_id === 'string' ? params.run_id.trim() : '';
@@ -94,6 +108,7 @@ export const LOKI_HANDS: Readonly<Record<string, LokiHand>> = {
     const builder =
       params.builder === 'cloud' || params.builder === 'local' ? params.builder : undefined;
     const queueIfBusy = params.queue_if_busy === true || params.queue_if_busy === 'true';
+    const freshSession = params.fresh_session === true || params.fresh_session === 'true';
 
     const outcome = await sendTaskToLoki({
       actorId,
@@ -101,6 +116,7 @@ export const LOKI_HANDS: Readonly<Record<string, LokiHand>> = {
       projects,
       ...(builder ? { builder } : {}),
       ...(queueIfBusy ? { queueIfBusy } : {}),
+      ...(freshSession ? { separateSession: true } : {}),
     });
     if (!outcome.ok) {
       return {
