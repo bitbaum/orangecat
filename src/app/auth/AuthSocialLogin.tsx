@@ -1,6 +1,7 @@
 'use client';
 
 import Button from '@/components/ui/Button';
+import { AuthDivider } from './AuthDivider';
 import { OAUTH_PROVIDERS } from './OAuthIcons';
 import { useEnabledOAuthProviders } from './oauthProviders';
 import type { AuthMode, OAuthProvider } from './useAuthForm';
@@ -48,16 +49,7 @@ export function AuthSocialLogin({ mode, setMode, loading, onOAuthSignIn }: AuthS
             working options (email + anonymous). */}
         {providers.length > 0 && (
           <>
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-default" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase tracking-wider">
-                <span className="bg-surface-raised/40 dark:bg-surface-page px-3 text-fg-tertiary">
-                  Or continue with
-                </span>
-              </div>
-            </div>
+            <AuthDivider label="Or continue with" />
 
             <div
               className={

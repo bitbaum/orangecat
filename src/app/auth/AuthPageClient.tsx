@@ -8,6 +8,7 @@ import Button from '@/components/ui/Button';
 import Loading from '@/components/Loading';
 import { MFAVerify } from '@/components/auth/MFAVerify';
 import { AuthHeroPanel } from './AuthHeroPanel';
+import { AuthDivider } from './AuthDivider';
 import { AuthFormBody } from './AuthFormBody';
 import { AuthSocialLogin } from './AuthSocialLogin';
 import { useAuthForm } from './useAuthForm';
@@ -205,16 +206,10 @@ export default function AuthPageClient({
               <p className="mt-2 text-center text-xs text-fg-tertiary">
                 Explore pseudonymously. Add an email anytime to secure your account.
               </p>
-              <div className="relative mt-5">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-default" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase tracking-wider">
-                  <span className="bg-surface-raised/40 dark:bg-surface-page px-3 text-fg-tertiary">
-                    or {mode === 'login' ? 'sign in' : 'sign up'} with email
-                  </span>
-                </div>
-              </div>
+              <AuthDivider
+                label={`or ${mode === 'login' ? 'sign in' : 'sign up'} with email`}
+                className="mt-5"
+              />
             </div>
           )}
 

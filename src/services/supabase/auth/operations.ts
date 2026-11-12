@@ -15,16 +15,32 @@ import type {
 } from '../types';
 import { handleAuthError } from './errors';
 
+/**
+ * The one clock a slow auth call has. Settles with `work`, or rejects with
+ * `message` (which handleAuthError reads as a timeout) after `ms`. The sign-in
+ * form keeps no timer of its own: this rejection is what ends its spinner.
+ */
+async function withTimeout<T>(work: Promise<T>, ms: number, message: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(message)), ms);
+  });
+  try {
+    return await Promise.race([work, timeout]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export async function signIn({ email, password }: SignInRequest): Promise<AuthResponse> {
   try {
     logger.auth('Attempting to sign in user', { email });
 
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error('Authentication request timed out')), 20000);
-    });
-
-    const authPromise = supabase.auth.signInWithPassword({ email, password });
-    const { data, error } = await Promise.race([authPromise, timeoutPromise]);
+    const { data, error } = await withTimeout(
+      supabase.auth.signInWithPassword({ email, password }),
+      20000,
+      'Authentication request timed out'
+    );
 
     if (error) {
       const enhancedError = handleAuthError(error, 'sign in');
@@ -53,21 +69,19 @@ export async function signUp({
   try {
     logger.auth('Attempting to sign up user', { email });
 
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error('Registration request timed out')), 25000);
-    });
-
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.orangecat.ch';
 
-    const authPromise = supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: emailRedirectTo || `${siteUrl}/auth/callback`,
-      },
-    });
-
-    const { data, error } = await Promise.race([authPromise, timeoutPromise]);
+    const { data, error } = await withTimeout(
+      supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: emailRedirectTo || `${siteUrl}/auth/callback`,
+        },
+      }),
+      25000,
+      'Registration request timed out'
+    );
 
     if (error) {
       const enhancedError = handleAuthError(error, 'sign up');
@@ -134,21 +148,24 @@ export async function resetPassword({
 
     logger.auth('Using redirect URL for password reset', { redirectUrl });
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: redirectUrl,
-    });
+    const { error } = await withTimeout(
+      supabase.auth.resetPasswordForEmail(email, { redirectTo: redirectUrl }),
+      20000,
+      'Password reset request timed out'
+    );
 
     if (error) {
-      logger.auth('Password reset failed', { email, error: error.message });
-      return { error };
+      const enhancedError = handleAuthError(error, 'password reset');
+      logger.auth('Password reset failed', { email, error: enhancedError.message });
+      return { error: enhancedError };
     }
 
     logger.auth('Password reset email sent successfully', { email, redirectUrl });
     return { error: null };
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error('Unexpected error during password reset', { error: errorMessage, email });
-    return { error: { message: errorMessage, name: 'ResetError' } as AuthError };
+    const enhancedError = handleAuthError(error, 'password reset');
+    logger.error('Unexpected error during password reset', { error: enhancedError.message, email });
+    return { error: enhancedError };
   }
 }
 
