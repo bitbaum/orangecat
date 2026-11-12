@@ -157,7 +157,7 @@ export function MFAVerify({ onVerificationComplete, onCancel }: MFAVerifyProps) 
           {error && (
             <div className="flex items-center gap-2 p-3 oc-error-surface rounded-lg">
               <AlertCircle className="h-4 w-4 text-status-negative flex-shrink-0" />
-              <p className="text-sm text-status-negative/80">{error}</p>
+              <p className="text-sm text-status-negative">{error}</p>
             </div>
           )}
 

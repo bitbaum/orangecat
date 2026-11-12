@@ -23,6 +23,7 @@
 
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
+import { findSoftNotFoundPages } from './lib/soft-status.mjs';
 
 const ROOT = new URL('..', import.meta.url).pathname;
 const SRC = join(ROOT, 'src');
@@ -526,6 +527,22 @@ const STREAMING_ALLOW = new Map([
   // the creator of a claim cannot be enumerated, and nothing outside the
   // session ever sees the status.
   ['(authenticated)/dashboard/profile-claims/[id]/share', 'auth-gated; 404 hides another user’s claim'],
+  // The owner's dashboard view of a listing renders the same
+  // PublicEntityDetailPage as the public route, under the dashboard skeleton.
+  // Signed out, these redirect to /auth before any page renders.
+  ...[
+    'assets',
+    'causes',
+    'circles',
+    'companions',
+    'events',
+    'investments',
+    'loans',
+    'research',
+    'services',
+    'store',
+    'wishlists',
+  ].map(s => [`(authenticated)/dashboard/${s}/[id]`, 'auth-gated owner view; skeleton kept']),
 ]);
 
 const streamingFailures = [];
@@ -545,39 +562,21 @@ for (const layout of appFiles.filter(f => f.endsWith('/layout.tsx'))) {
   }
 }
 
-// A page that calls notFound() must not sit under a loading.tsx.
-for (const page of appFiles.filter(f => f.endsWith('/page.tsx'))) {
-  const src = readFileSync(page, 'utf8');
-  if (!/\bnotFound\(\)/.test(src)) {
-    continue;
-  }
-  const segment = relative(APP_DIR, page).replace(/\/page\.tsx$/, '');
-  if (STREAMING_ALLOW.has(segment)) {
-    continue;
-  }
-  // Walk up from the page's own directory to src/app looking for loading.tsx.
-  let dir = join(APP_DIR, segment);
-  const boundaries = [];
-  for (;;) {
-    try {
-      statSync(join(dir, 'loading.tsx'));
-      boundaries.push(relative(ROOT, join(dir, 'loading.tsx')));
-    } catch {
-      /* no boundary at this level */
-    }
-    if (dir === APP_DIR) {
-      break;
-    }
-    dir = join(dir, '..');
-  }
-  if (boundaries.length > 0) {
-    streamingFailures.push({
-      category: 'soft-404',
-      path: `/${segment}`,
-      source: relative(ROOT, page),
-      note: `streams behind ${boundaries.join(', ')} — notFound() will answer 200`,
-    });
-  }
+// A page that calls notFound() — itself, or through a component it renders —
+// must not sit under a loading.tsx. The rule lives in lib/soft-status.mjs.
+for (const { segment, page, checkedIn, boundaries } of findSoftNotFoundPages({
+  appDir: APP_DIR,
+  srcDir: SRC,
+  allow: STREAMING_ALLOW,
+})) {
+  const streamsBehind = boundaries.map(b => relative(ROOT, b)).join(', ');
+  const via = checkedIn === page ? '' : ` (in ${relative(ROOT, checkedIn)})`;
+  streamingFailures.push({
+    category: 'soft-404',
+    path: `/${segment}`,
+    source: relative(ROOT, page),
+    note: `streams behind ${streamsBehind} — notFound()${via} will answer 200`,
+  });
 }
 
 function printTable(title, rows) {

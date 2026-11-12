@@ -18,7 +18,7 @@ export function GetStartedCTA({ onGetWallet }: GetStartedCTAProps) {
       transition={{ delay: 0.4 }}
       className="mt-16 text-center"
     >
-      <Card className="max-w-2xl mx-auto bg-bitcoinOrange/10 text-bitcoinOrange border-bitcoinOrange/20 border-bitcoinOrange/30">
+      <Card className="max-w-2xl mx-auto">
         <CardContent className="p-8">
           <Bitcoin className="w-16 h-16 text-bitcoinOrange mx-auto mb-4" />
           <h2 className="text-2xl font-semibold text-fg-primary mb-4">Ready to Get Started?</h2>
@@ -34,11 +34,7 @@ export function GetStartedCTA({ onGetWallet }: GetStartedCTAProps) {
               <Download className="w-4 h-4 mr-2" />
               Get a Wallet Now
             </Button>
-            <Button
-              href={ROUTES.PROFILES.ME}
-              variant="outline"
-              className="border-bitcoinOrange text-bitcoinOrange hover:bg-bitcoinOrange/10"
-            >
+            <Button href={ROUTES.PROFILES.ME} variant="outline">
               <Bitcoin className="w-4 h-4 mr-2" />
               Complete Profile Setup
             </Button>

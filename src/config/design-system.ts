@@ -27,7 +27,7 @@ export const UI_TOKENS = {
     raised: 'shadow-none',
   },
   focus:
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+    'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
   transition: 'transition-colors duration-150',
 } as const;
 
@@ -65,7 +65,7 @@ export const COMPONENT_STYLES = {
   },
   iconButton: {
     base: [
-      'inline-flex h-10 w-10 min-h-10 min-w-10 items-center justify-center',
+      'inline-flex h-10 w-10 min-h-10 min-w-10 items-center justify-center pointer-coarse:h-11 pointer-coarse:w-11 pointer-coarse:min-h-11 pointer-coarse:min-w-11',
       UI_TOKENS.radius.control,
       UI_TOKENS.transition,
       UI_TOKENS.focus,
@@ -101,7 +101,7 @@ export const COMPONENT_STYLES = {
       UI_TOKENS.radius.control,
       'placeholder:text-fg-tertiary',
       UI_TOKENS.transition,
-      'focus:border-interactive focus:outline-none focus:ring-2 focus:ring-ring/20',
+      'focus:border-interactive focus:outline-hidden focus:ring-2 focus:ring-ring/20',
       'disabled:cursor-not-allowed disabled:opacity-50',
     ].join(' '),
     errorControl:

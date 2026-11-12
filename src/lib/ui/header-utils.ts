@@ -29,7 +29,10 @@ export function getHeaderClasses(
     isScrolled
       ? 'bg-surface-page/95 backdrop-blur-xl shadow-sm border-b border-default'
       : 'bg-surface-page/95 backdrop-blur-lg border-b border-default',
-    isHidden ? '-translate-y-full' : 'translate-y-0',
+    // Hidden on scroll-down, but never while keyboard focus is inside it: past
+    // the last control on a page, Tab wraps to the header's own controls, and
+    // they took focus off-screen at y=-51 (WCAG 2.4.11).
+    isHidden ? '-translate-y-full has-focus-visible:translate-y-0' : 'translate-y-0',
     className
   );
 }

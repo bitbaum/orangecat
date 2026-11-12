@@ -2,7 +2,7 @@
 
 **Purpose**: Design system compliance and UX patterns for OrangeCat
 
-**Last Updated**: 2026-10-19
+**Last Updated**: 2026-11-12
 
 ---
 
@@ -27,7 +27,9 @@ root `CLAUDE.md` for the migration direction.
 
 **Semantic tier (use in new code)**:
 
-- Text: `text-fg-primary` / `text-fg-secondary` / `text-fg-tertiary` / `text-fg-muted` / `text-fg-inverted`
+- Text: `text-fg-primary` / `text-fg-secondary` / `text-fg-tertiary` are all copy, each 4.5:1 on every surface.
+  `text-fg-muted` is for dots and hairlines, never words. Ink on a fill: `text-fg-inverted` on ink and on the
+  positive and negative fills, `text-warning-foreground` on the warning fill, `text-on-public` on `bg-surface-public`
 - Surfaces: `bg-surface-page` / `bg-surface-base` / `bg-surface-raised` / `bg-surface-overlay` (also `-modal`, `-drawer`, `-public`)
 - Accent: `bg-accent-warm` (`--accent-primary` → `--bitcoin-orange`, `#f7931a`), hover `bg-accent-warm-hover`;
   text on it is `text-on-accent` (`text-white` on the accent fails AA)

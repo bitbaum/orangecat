@@ -131,14 +131,9 @@ function PlanCard({ plan }: { plan: CatPlan }) {
   const hasBadge = !!plan.badge;
 
   return (
-    <div
-      className={cn(
-        'relative flex flex-col rounded-lg border bg-surface-base p-6 shadow-sm',
-        hasBadge ? 'border-accent-warm' : 'border-default'
-      )}
-    >
+    <div className="relative flex flex-col rounded-lg border border-default bg-surface-base p-6 shadow-sm">
       {hasBadge && (
-        <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-accent-warm px-3 py-1 text-xs font-medium uppercase tracking-caps text-fg-inverted">
+        <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-default bg-surface-raised px-3 py-1 text-xs font-medium uppercase tracking-caps text-fg-secondary">
           {plan.badge}
         </span>
       )}
@@ -151,14 +146,7 @@ function PlanCard({ plan }: { plan: CatPlan }) {
       </div>
 
       <div className="mb-6">
-        <p
-          className={cn(
-            'text-lg font-semibold',
-            isComingSoon ? 'text-fg-primary' : 'text-fg-primary'
-          )}
-        >
-          {plan.priceCopy}
-        </p>
+        <p className="text-lg font-semibold text-fg-primary">{plan.priceCopy}</p>
       </div>
 
       <ul className="mb-8 flex-1 space-y-3">

@@ -52,12 +52,12 @@ export default function ProfileTrackRecord({
               {Math.round((yes / of) * 100)}%
             </span>{' '}
             of customers would deal with them again{' '}
-            <span className="text-fg-muted">
+            <span className="text-fg-tertiary">
               ({yes} of {of})
             </span>
           </>
         ) : (
-          <span className="text-fg-muted">No reviews public yet.</span>
+          <span className="text-fg-tertiary">No reviews public yet.</span>
         )}
       </p>
       {record.recentReviews.length > 0 && (
@@ -72,7 +72,7 @@ export default function ProfileTrackRecord({
           ))}
         </ul>
       )}
-      <p className="mt-3 text-xs text-fg-muted">
+      <p className="mt-3 text-xs text-fg-tertiary">
         Only customers who paid can review, and each review stays hidden until both sides have
         written or the review window closes. Reviewers are anonymous unless they chose to be named.
       </p>

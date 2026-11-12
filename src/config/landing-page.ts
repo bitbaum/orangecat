@@ -16,7 +16,6 @@
 
 import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
 import { LucideIcon, Globe, Lock, Wallet, TrendingUp } from 'lucide-react';
-import { GRADIENTS } from '@/config/gradients';
 
 // The "what you can do" grid used to be a hand-written list here, a second
 // copy of the entity registry that drifted from it. The capability map
@@ -33,8 +32,6 @@ interface HowItWorksStep {
   icon: LucideIcon | typeof BrandMarkIcon;
   title: string;
   description: string;
-  iconGradient: string;
-  bgColor: string;
 }
 
 export const HOW_IT_WORKS_STEPS: HowItWorksStep[] = [
@@ -43,8 +40,6 @@ export const HOW_IT_WORKS_STEPS: HowItWorksStep[] = [
     icon: Lock,
     title: 'Choose Your Identity',
     description: 'Use your real name, a handle, or anything in between. Your identity, your rules.',
-    iconGradient: GRADIENTS.iconTiffany,
-    bgColor: 'bg-surface-raised',
   },
   {
     number: '2',
@@ -52,8 +47,6 @@ export const HOW_IT_WORKS_STEPS: HowItWorksStep[] = [
     title: 'Meet Your Cat',
     description:
       'Your AI economic agent is ready. Tell it what you want to do — sell, fund, lend, invest, or coordinate.',
-    iconGradient: GRADIENTS.iconTiffany,
-    bgColor: 'bg-surface-raised',
   },
   {
     number: '3',
@@ -61,8 +54,6 @@ export const HOW_IT_WORKS_STEPS: HowItWorksStep[] = [
     title: 'Pick Your Currency',
     description:
       'Price your work in any display currency. Payments settle natively in Bitcoin and Lightning: global, non-custodial, and independently verifiable.',
-    iconGradient: GRADIENTS.iconOrange,
-    bgColor: 'bg-surface-raised',
   },
   {
     number: '4',
@@ -70,8 +61,6 @@ export const HOW_IT_WORKS_STEPS: HowItWorksStep[] = [
     title: 'Economic Activity Begins',
     description:
       'Buy, sell, fund, lend, invest, or coordinate. Your Cat keeps track, surfaces insights, and acts on your behalf.',
-    iconGradient: GRADIENTS.iconGreen,
-    bgColor: 'bg-surface-raised',
   },
 ];
 
