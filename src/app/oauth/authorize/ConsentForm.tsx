@@ -11,7 +11,13 @@ import Link from 'next/link';
 import { AlertTriangle, Check } from 'lucide-react';
 import { ROUTES } from '@/config/routes';
 import { PROFILE_CLAIMS } from '@/lib/oauth/config';
-import { approveAuthorization, denyAuthorization, switchAccount } from './actions';
+import { IDENTITIES_COPY } from '@/config/identities';
+import {
+  approveAuthorization,
+  continueAsIdentity,
+  denyAuthorization,
+  switchAccount,
+} from './actions';
 
 interface ScopeRow {
   name: string;
@@ -26,6 +32,14 @@ export interface ConsentAccount {
   email: string | null;
 }
 
+/** Another identity the signed-in person holds (ADR-0014). */
+export interface ConsentIdentity {
+  id: string;
+  name: string | null;
+  username: string | null;
+  isMain: boolean;
+}
+
 const linkClass = 'underline underline-offset-2 hover:text-fg-primary';
 
 export function ConsentForm({
@@ -33,6 +47,7 @@ export function ConsentForm({
   selfRegistered,
   redirectHost,
   account,
+  otherIdentities = [],
   policyUri,
   tosUri,
   resourceName,
@@ -46,6 +61,8 @@ export function ConsentForm({
   redirectHost: string;
   /** The OrangeCat account that is about to be shared. */
   account: ConsentAccount;
+  /** The person's other identities; choosing one reloads this screen as it. */
+  otherIdentities?: ConsentIdentity[];
   /** The app's own privacy policy / terms (https, from oauth_clients). */
   policyUri: string | null;
   tosUri: string | null;
@@ -84,6 +101,40 @@ export function ConsentForm({
           Not you?
         </button>
       </div>
+
+      {otherIdentities.length > 0 && (
+        <section className="mb-5 border-b border-border-default pb-4">
+          <h2 className="text-xs font-medium uppercase tracking-wide text-fg-tertiary">
+            {IDENTITIES_COPY.continueAs}
+          </h2>
+          <ul className="mt-2 space-y-2">
+            {otherIdentities.map(identity => (
+              <li key={identity.id}>
+                <button
+                  type="submit"
+                  formAction={continueAsIdentity.bind(null, identity.id)}
+                  className="flex min-h-11 w-full items-center justify-between gap-3 rounded-btn border border-border-default px-3 py-2 text-left text-sm hover:bg-surface-raised"
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate font-medium text-fg-primary">
+                      {identity.name || (identity.username ? `@${identity.username}` : 'Unnamed')}
+                    </span>
+                    <span className="block truncate text-xs text-fg-tertiary">
+                      {[
+                        identity.isMain ? IDENTITIES_COPY.main : null,
+                        identity.name && identity.username ? `@${identity.username}` : null,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </span>
+                  </span>
+                  <span className="shrink-0 text-fg-secondary">{IDENTITIES_COPY.switchTo}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <h1 className="text-xl font-semibold text-fg-primary">
         Allow <span className="text-accent-warm">{clientName}</span> to use your OrangeCat account?

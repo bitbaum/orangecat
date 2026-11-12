@@ -9,6 +9,10 @@ reads, and [orangecat.ch/changelog](https://orangecat.ch/changelog) renders
 it from there. One `## YYYY-MM-DD` heading per day; bullets under it travel
 to the map, sub-bullets stay here for the human reader.
 
+## 2026-11-12
+
+- **Choose which identity signs in to an app.** When Loki, Solon or another app sends you to OrangeCat to sign in, the screen that asks "Allow …?" now lists your other identities under "Or continue as". Tap one and the same screen comes back as that identity; nothing is shared with the app until you press Allow. An identity no longer shows a made-up email address there.
+
 ## 2026-11-11
 
 - **One person, several identities.** In Settings you can add an identity: a separate account with its own name, page, wallet and inbox, and switch between them without signing out. Nobody else can see that two identities belong to the same person. Sign out everywhere ends all of them, and deleting your main account deletes them with it. You need an email address on your main account first, so you can always get back into it.

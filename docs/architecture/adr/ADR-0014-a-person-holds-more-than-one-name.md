@@ -89,6 +89,14 @@ alone: it cannot switch, list, create, delete or sign the others out. The
 holder is never gated. An allowlist, not a denylist: a sign-in method nobody
 thought of fails closed.
 
+**D6b. Which identity signs in to an app is chosen where it is asked.** The
+consent screen (`/oauth/authorize`) lists the person's other identities under
+"Or continue as"; choosing one switches and reloads the same authorize request
+as that identity. Nothing is granted by the choice. The switch itself is
+`switchSessionTo`, the one function the API route and this screen both call.
+A trusted app with a remembered grant still skips the screen, as before, and
+signs in whichever identity is current.
+
 ## Not yet (roadmap)
 
 - **D7. One person, one vote in Solon.** Solon counts seats, and a seat is an

@@ -324,6 +324,46 @@ export async function mintSwitchCode(
   return { ok: true, data: { email, code } };
 }
 
+/** What the caller's cookie-bound client must be able to do for a switch. */
+interface SessionClient {
+  auth: {
+    verifyOtp(params: {
+      email: string;
+      token: string;
+      type: 'email';
+    }): Promise<{ error: { code?: string; message?: string } | null }>;
+  };
+}
+
+/**
+ * Replace the caller's session with one for `targetId`, if their circle
+ * contains it. The one place a switch happens: the API route and the consent
+ * screen's "Continue as" both call this, so neither can skip the circle check
+ * or exchange a code on its own.
+ */
+export async function switchSessionTo(
+  admin: SupabaseClient,
+  session: SessionClient,
+  caller: Caller,
+  targetId: string
+): Promise<IdentityResult<{ id: string }>> {
+  const minted = await mintSwitchCode(admin, caller, targetId);
+  if (!minted.ok) {
+    return minted;
+  }
+  const { error } = await session.auth.verifyOtp({
+    email: minted.data.email,
+    token: minted.data.code,
+    type: 'email',
+  });
+  if (error) {
+    logger.error('Identity switch exchange failed', { code: error.code, targetId }, 'Identities');
+    return fail('failed');
+  }
+  logger.info('Identity switched', { from: caller.userId, to: targetId }, 'Identities');
+  return { ok: true, data: { id: targetId } };
+}
+
 /**
  * Delete an identity and everything it owns. Only identities: the holder's own
  * account is deleted through the account-deletion flow, which removes its
