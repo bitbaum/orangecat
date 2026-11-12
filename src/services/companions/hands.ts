@@ -10,10 +10,24 @@
  * "Do it?" card. Nothing runs until the person taps; a bot never says a
  * thing is done.
  *
- * Only the owner's own companions get hands, only the launch set below
- * (entities the person makes for themselves; nothing that moves money or
- * is high risk), and only the actions the person has granted or may grant
- * by confirming (the Cat's grant-on-confirm rule).
+ * One exception, and only by the owner's own switch per bot
+ * (hand-grants.ts): a hand that works in the owner's Loki can be set to run
+ * "on its own". Then the block runs at once, no card is queued, and the bot
+ * is handed the result to carry on with (work-loop.ts). A hand that makes
+ * something on OrangeCat can never be set that way.
+ *
+ * Only the owner's own companions get hands, and only the set below: the
+ * entities the person makes for themselves, and their own Loki (read its
+ * sessions and runs, ask it, send its agents a task). Nothing moves money.
+ * The set is the platform's, not one bot's: every bot of the owner is
+ * offered the same hands, and Loki answers each one as the Loki account
+ * linked to the owner, so a bot never reaches anyone else's projects.
+ *
+ * A hand is offered when the person has granted it, or may grant it by
+ * confirming (the Cat's grant-on-confirm rule). The one high-risk hand,
+ * send_task_to_loki, is never granted by a tap: it is offered only where the
+ * person already holds that permission, and it still waits for a tap every
+ * time.
  */
 
 import { CAT_ACTIONS, type CatAction } from '@/config/cat-actions';
@@ -30,7 +44,16 @@ export const COMPANION_HANDS: readonly string[] = [
   'create_wishlist',
   'send_to_loki',
   'ask_loki',
+  'project_status',
+  'loki_sessions',
+  'loki_run_status',
+  'send_task_to_loki',
+  'file_loki_finding',
+  'loki_finding_status',
 ];
+
+/** The hands that start work in the person's repositories. Always confirmed. */
+export const ACT_HANDS: readonly string[] = ['send_task_to_loki'];
 
 export const HANDS_SECTION_HEADING = '## What you can set in motion';
 
@@ -86,7 +109,11 @@ export function handsActions(ids: readonly string[] = COMPANION_HANDS): CatActio
  * with its parameters, then the one way to use them. Short on purpose: it
  * rides every turn of every chat with the owner.
  */
-export function handsSection(actions: readonly CatAction[]): string | undefined {
+export function handsSection(
+  actions: readonly CatAction[],
+  /** Ids the owner let this bot run without a tap. */
+  autoIds: readonly string[] = []
+): string | undefined {
   if (actions.length === 0) {
     return undefined;
   }
@@ -99,13 +126,29 @@ export function handsSection(actions: readonly CatAction[]): string | undefined 
       .join('; ');
     return `- ${a.id} — ${a.description}. Parameters: ${params}`;
   });
+  const own = actions.filter(a => autoIds.includes(a.id)).map(a => a.id);
   return [
     HANDS_SECTION_HEADING,
-    'OrangeCat can do these for the person, and you may propose one when they ask you to make, create, book or send such a thing, or to ask Loki (the agent that builds and runs their projects):',
+    'OrangeCat can do these for the person, and you may propose one when they ask you to make, create, book or send such a thing, or to ask, read or task Loki (the agent system that builds and runs their projects; a task starts a coding agent session there, and its answer is read back with loki_sessions; a defect on a live app is filed with file_loki_finding):',
     ...lines,
     `To propose, first write one sentence that names what you will set up, with its main details (never only "Sure"), then end with exactly one block, the proposal itself (not a query to show, not an example):\n${exampleBlock(actions[0])}`,
     '"action" is one id from the list above, exactly as written; "parameters" holds only that action\'s fields. Write no other code block. The person taps to approve it; until then nothing exists, so never say it is done, created or sent. Propose only what they asked for, with the details they gave; ask for a missing required detail instead of inventing one. Never propose anything in a group chat.',
+    ...(own.length > 0 ? [ownSentence(own)] : []),
   ].join('\n');
+}
+
+/**
+ * What changes for the hands the owner switched to "on its own": the block
+ * runs at once and the result comes back as the next message, so the bot
+ * works through a job step by step instead of stopping at the first card.
+ */
+export function ownSentence(ids: readonly string[]): string {
+  return `Your owner lets you run these yourself, with no tap: ${ids.join(', ')}. For these the block runs at once, and its result is given to you as the next message. Then carry on: propose the next step if one is needed, one block at a time, or tell the person what came of it, quoting the result. Never run the same step twice, and never say a result you were not given.`;
+}
+
+/** What the model is told when a hand it proposed has run on its own. */
+export function stepResultMessage(actionId: string, line: string): string {
+  return `[OrangeCat ran ${actionId}. Result:]\n${line}\n\n[Carry on with what the person asked. If another step is needed, propose it; if it is finished, tell them what came of it, quoting the result where it matters.]`;
 }
 
 /**

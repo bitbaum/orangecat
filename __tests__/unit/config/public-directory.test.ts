@@ -56,13 +56,11 @@ describe('public-directory', () => {
   it('flags a handle that still republishes its owner email', () => {
     expect(
       isEmailDerivedHandle({
-        username: 'georgy.butaev+ocauth1',
-        email: 'georgy.butaev+ocauth1@gmail.com',
+        username: 'jo.doe+test1',
+        email: 'jo.doe+test1@example.org',
       })
     ).toBe(true);
-    expect(isEmailDerivedHandle({ username: 'mao', email: 'georgy.butaev@orangecat.ch' })).toBe(
-      false
-    );
+    expect(isEmailDerivedHandle({ username: 'mao', email: 'jo.doe@orangecat.ch' })).toBe(false);
   });
 
   it('is case-insensitive, since email and username casing can drift independently', () => {

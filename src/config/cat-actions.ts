@@ -833,6 +833,24 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
         required: true,
         description: 'Loki project names',
       },
+      {
+        name: 'builder',
+        type: 'string',
+        required: false,
+        description: '"cloud" = the always-on runner',
+      },
+      {
+        name: 'queue_if_busy',
+        type: 'boolean',
+        required: false,
+        description: 'Queue behind a running session',
+      },
+      {
+        name: 'fresh_session',
+        type: 'boolean',
+        required: false,
+        description: 'Separate session for a one-off',
+      },
     ],
     examples: [
       'Send this to OrangeCat and Loki: make it so I can post prompts in both',
@@ -864,6 +882,104 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
       'What did the agents do on orangecat yesterday?',
       'Is the build for my shop finished?',
     ],
+    enabled: true,
+  },
+
+  loki_sessions: {
+    id: 'loki_sessions',
+    name: 'Read Loki Sessions',
+    description:
+      "Read the user's Loki agent sessions: state, task, run, PR. With project: what its agent last said. Read-only.",
+    category: 'communication',
+    icon: Bot,
+    riskLevel: 'low',
+    requiresConfirmation: true,
+    parameters: [
+      {
+        name: 'project',
+        type: 'string',
+        required: false,
+        description: 'One project, to read its transcript',
+      },
+    ],
+    examples: [
+      'What are my Loki sessions doing?',
+      'Read what the agent on orangecat answered',
+      'Which of my projects is waiting on me in Loki?',
+    ],
+    enabled: true,
+  },
+
+  project_status: {
+    id: 'project_status',
+    name: 'Read Project Status',
+    description:
+      "User's Loki projects: work, latest run and PR, inbox, live site up or down. Read-only.",
+    category: 'communication',
+    icon: Bot,
+    riskLevel: 'low',
+    requiresConfirmation: true,
+    parameters: [
+      { name: 'project', type: 'string', required: false, description: 'Only this one' },
+    ],
+    examples: ['How are my projects doing?', 'Is anything down?', 'What is orangecat working on?'],
+    enabled: true,
+  },
+
+  loki_run_status: {
+    id: 'loki_run_status',
+    name: 'Read a Loki Run',
+    description: 'Where one Loki run is: working, PR, merged, live. Read-only.',
+    category: 'communication',
+    icon: Bot,
+    riskLevel: 'low',
+    requiresConfirmation: true,
+    parameters: [
+      {
+        name: 'run_id',
+        type: 'string',
+        required: true,
+        description: 'The runId a sent task returned',
+      },
+    ],
+    examples: ['Where is run 70d1a78d?', 'Did that task open a pull request yet?'],
+    enabled: true,
+  },
+
+  file_loki_finding: {
+    id: 'file_loki_finding',
+    name: 'File a Finding in Loki',
+    description:
+      "File a defect found on a live app into that Loki project's feedback inbox. Filed, not fixed.",
+    category: 'communication',
+    icon: Bot,
+    riskLevel: 'medium',
+    requiresConfirmation: true,
+    parameters: [
+      { name: 'project', type: 'string', required: true, description: 'Loki project name' },
+      { name: 'finding', type: 'string', required: true, description: 'What is wrong, and where' },
+      { name: 'url', type: 'string', required: false, description: 'The page' },
+      { name: 'filed_by', type: 'string', required: false, description: 'Your own name' },
+    ],
+    examples: [
+      'File that broken link on orangecat as a finding in Loki',
+      'Report this to the loki project inbox',
+    ],
+    enabled: true,
+  },
+
+  loki_finding_status: {
+    id: 'loki_finding_status',
+    name: 'Read a Loki Finding',
+    description: 'Where one filed finding is: waiting, working, done. Read-only.',
+    category: 'communication',
+    icon: Bot,
+    riskLevel: 'low',
+    requiresConfirmation: true,
+    parameters: [
+      { name: 'report_id', type: 'string', required: true, description: 'The id filing returned' },
+    ],
+    examples: ['What happened to the finding I filed?'],
     enabled: true,
   },
 

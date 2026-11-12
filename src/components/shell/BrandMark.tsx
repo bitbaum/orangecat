@@ -47,7 +47,7 @@ export function BrandMark({
   return (
     <Link
       href={href}
-      className="group min-h-11 rounded-md py-1.5 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      className="group inline-flex min-h-11 min-w-11 items-center rounded-md py-1.5 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       aria-label={`${APP_NAME} — home`}
     >
       {content}

@@ -105,7 +105,12 @@ export class CatPermissionService {
   /**
    * Check if a user has permission to execute an action
    */
-  async checkPermission(userId: string, actionId: string): Promise<PermissionCheck> {
+  async checkPermission(
+    userId: string,
+    actionId: string,
+    /** The person's stored grants, when the caller already read them (several checks in one turn). */
+    stored?: CatPermission[]
+  ): Promise<PermissionCheck> {
     const action = CAT_ACTIONS[actionId];
     if (!action) {
       return {
@@ -125,7 +130,10 @@ export class CatPermissionService {
       };
     }
 
-    const effective = effectivePermission(actionId, await this.getUserPermissions(userId));
+    const effective = effectivePermission(
+      actionId,
+      stored ?? (await this.getUserPermissions(userId))
+    );
     if (!effective.allowed) {
       return {
         allowed: false,

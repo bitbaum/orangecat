@@ -25,8 +25,8 @@ async function quickCheck() {
 
     // Login
     await page.goto('http://localhost:3000/auth');
-    await page.fill('input[type="email"]', 'butaeff@gmail.com');
-    await page.fill('input[type="password"]', 'Asdfgh11!');
+    await page.fill('input[type="email"]', process.env.E2E_USER_EMAIL);
+    await page.fill('input[type="password"]', process.env.E2E_USER_PASSWORD);
     await page.click('button[type="submit"]');
     await page.waitForURL('**/dashboard**', { timeout: 15000 });
     await page.waitForTimeout(2000);
@@ -100,6 +100,3 @@ async function quickCheck() {
 }
 
 quickCheck();
-
-
-
