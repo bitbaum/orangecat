@@ -199,7 +199,11 @@ const MobileBottomNav = React.memo(function MobileBottomNav() {
                       className={cn(
                         'transition-all duration-300',
                         isCompact ? 'w-5 h-5' : 'w-6 h-6',
-                        isActive && 'fill-current scale-110'
+                        // Never `fill-current`: these are stroke icons, and a
+                        // fill in the stroke's colour swallows every inner
+                        // line. The active Explore tab showed a blank white
+                        // disc instead of a compass (production, 2026-11-12).
+                        isActive && 'scale-110'
                       )}
                       strokeWidth={isActive ? 2.5 : 2}
                     />
