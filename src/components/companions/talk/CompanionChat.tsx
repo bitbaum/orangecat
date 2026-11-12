@@ -19,6 +19,7 @@ import type { CompanionRow } from '@/services/companions/talk-home';
 import { useCompanionTalk } from '../useCompanionTalk';
 import { DoItCard } from './DoItCard';
 import { RoutineRow } from './RoutineRow';
+import { AbilitiesRow } from './AbilitiesRow';
 import { outgoing, shownUserTurn } from './attachments';
 import { ChatFrame } from './ChatFrame';
 import { Face } from './CompanionFace';
@@ -146,6 +147,7 @@ export function CompanionChat({
             </DetailRow>
           )}
           {row?.mine && <RoutineRow assistantId={id} />}
+          {row?.mine && <AbilitiesRow assistantId={id} />}
           <DetailRow
             onClick={() => {
               talk.startNewThread();

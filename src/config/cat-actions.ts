@@ -845,6 +845,12 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
         required: false,
         description: 'Queue behind a running session',
       },
+      {
+        name: 'fresh_session',
+        type: 'boolean',
+        required: false,
+        description: 'Separate session for a one-off',
+      },
     ],
     examples: [
       'Send this to OrangeCat and Loki: make it so I can post prompts in both',
@@ -901,6 +907,22 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
       'Read what the agent on orangecat answered',
       'Which of my projects is waiting on me in Loki?',
     ],
+    enabled: true,
+  },
+
+  project_status: {
+    id: 'project_status',
+    name: 'Read Project Status',
+    description:
+      "User's Loki projects: work, latest run and PR, inbox, live site up or down. Read-only.",
+    category: 'communication',
+    icon: Bot,
+    riskLevel: 'low',
+    requiresConfirmation: true,
+    parameters: [
+      { name: 'project', type: 'string', required: false, description: 'Only this one' },
+    ],
+    examples: ['How are my projects doing?', 'Is anything down?', 'What is orangecat working on?'],
     enabled: true,
   },
 

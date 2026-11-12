@@ -47,12 +47,12 @@ async function robustDemo() {
     // Fill email
     const emailInput = page.locator('#email').or(page.locator('input[type="email"]').first());
     await emailInput.waitFor({ timeout: 10000 });
-    await emailInput.fill('butaeff@gmail.com');
+    await emailInput.fill(process.env.E2E_USER_EMAIL);
     await page.waitForTimeout(1000);
 
     // Fill password
     const passwordInput = page.locator('input[type="password"]').first();
-    await passwordInput.fill('Asdfgh11!');
+    await passwordInput.fill(process.env.E2E_USER_PASSWORD);
     await page.waitForTimeout(1000);
 
     await page.screenshot({ path: `${screenshotsDir}/02-auth-filled.png`, fullPage: true });
@@ -164,6 +164,3 @@ async function robustDemo() {
 }
 
 robustDemo().catch(console.error);
-
-
-

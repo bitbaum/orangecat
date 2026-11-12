@@ -13,6 +13,10 @@ import path from 'path';
  */
 
 test.describe('Profile Info Workflow', () => {
+  test.skip(
+    !process.env.E2E_USER_EMAIL || !process.env.E2E_USER_PASSWORD,
+    'Needs E2E_USER_EMAIL / E2E_USER_PASSWORD for the test account'
+  );
   const screenshotsDir = path.join(process.cwd(), 'tests', 'screenshots', 'profile-info-workflow');
 
   test.beforeEach(async ({ page }) => {
@@ -34,8 +38,8 @@ test.describe('Profile Info Workflow', () => {
       const passwordInput = page.getByPlaceholder(/password/i).first();
 
       if (await emailInput.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await emailInput.fill('butaeff@gmail.com');
-        await passwordInput.fill('Asdfgh11!');
+        await emailInput.fill(process.env.E2E_USER_EMAIL ?? '');
+        await passwordInput.fill(process.env.E2E_USER_PASSWORD ?? '');
 
         const submitButton = page.getByRole('button', { name: /sign in/i });
         await submitButton.click();
@@ -323,18 +327,3 @@ test.describe('Profile Info Workflow', () => {
     await expect(manageWalletsButton).toBeVisible();
   });
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

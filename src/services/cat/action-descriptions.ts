@@ -44,6 +44,10 @@ export function generateActionDescription(
       return `File this finding in ${parameters.project}'s feedback inbox in Loki: “${String(parameters.finding ?? '').slice(0, 300)}”`;
     case 'loki_finding_status':
       return `Read where Loki report ${String(parameters.report_id ?? '').slice(0, 8)} is`;
+    case 'project_status':
+      return parameters.project
+        ? `Read how ${parameters.project} is doing: its work, latest run, and whether its live site answers`
+        : 'Read how all your projects are doing, and whether each live site answers';
     case 'loki_run_status':
       return `Read where Loki run ${String(parameters.run_id ?? '').slice(0, 8)} is`;
     case 'send_task_to_loki': {

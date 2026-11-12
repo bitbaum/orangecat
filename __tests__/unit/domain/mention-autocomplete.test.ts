@@ -44,9 +44,9 @@ describe('activeMention', () => {
 
   it('handles the dotted and plus-signed handles that really exist', () => {
     // Signup derives handles from email addresses and bypasses the username
-    // validator, so `m.schaupensteiner` and `butaeff+ocauth2` are real rows.
+    // validator, so `m.schaupensteiner` and `ana+test2` are real rows.
     expect(activeMention('ping @m.schaupen')).toEqual({ start: 5, query: 'm.schaupen' });
-    expect(activeMention('ping @butaeff+oc')).toEqual({ start: 5, query: 'butaeff+oc' });
+    expect(activeMention('ping @ana+te')).toEqual({ start: 5, query: 'ana+te' });
   });
 
   it('ignores text after the caret', () => {

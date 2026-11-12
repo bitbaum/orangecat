@@ -159,6 +159,8 @@ export function useCompanionTalk(assistantId: string) {
           userMessage: TalkMessage;
           assistantMessage: TalkMessage;
           pendingAction?: PendingAction;
+          /** Hands the bot ran on its own this turn; their lines are in the thread. */
+          steps?: number;
         }>;
         if (res.status === 402) {
           const d = (json.error?.details ?? {}) as {
@@ -187,6 +189,14 @@ export function useCompanionTalk(assistantId: string) {
         if (json.data.pendingAction) {
           setPendingAction(json.data.pendingAction);
         }
+        if (json.data.steps) {
+          // The bot worked through steps of its own: each is a stored line.
+          // Re-read the thread so they show in order; if that fails, the
+          // first and last lines above are still true.
+          await loadThread(threadId).catch(err =>
+            logger.error('Thread re-read after steps failed', err, 'useCompanionTalk')
+          );
+        }
         return true;
       } catch (err) {
         logger.error('Companion send failed', err, 'useCompanionTalk');
@@ -197,7 +207,7 @@ export function useCompanionTalk(assistantId: string) {
         setSending(false);
       }
     },
-    [assistantId, ensureThread]
+    [assistantId, ensureThread, loadThread]
   );
 
   /**

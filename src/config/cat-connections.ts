@@ -67,6 +67,7 @@ export const CAT_CONNECTIONS: readonly CatConnection[] = [
       'ask_loki',
       'loki_sessions',
       'loki_run_status',
+      'project_status',
       'file_loki_finding',
       'loki_finding_status',
     ],

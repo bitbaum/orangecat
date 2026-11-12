@@ -6,47 +6,95 @@
  * the Cat could not: the permission service says granted, grantable on
  * confirmation, or no; the parameters are validated against the registry;
  * the consent row is the Cat's. The executor itself is not called here, on
- * purpose: a granted action would run at once, and a bot's proposal always
- * waits for the tap.
+ * purpose: a granted action would run at once, and a bot's proposal waits
+ * for the tap. A hand its owner switched to "on its own" for this bot queues
+ * no card at all: it is marked `auto` and the work loop runs it over the
+ * Loki rail (work-loop.ts), still without the Cat's executor.
  */
 
 import type { CatAction } from '@/config/cat-actions';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { validateActionParameters } from '@/services/cat/action-schemas';
 import { canGrantOnConfirm, type PendingAction } from '@/services/cat/action-types';
+import { generateActionDescription } from '@/services/cat/action-descriptions';
 import { createPendingAction } from '@/services/cat/pending-actions';
 import { CatPermissionService } from '@/services/cat/permission-service';
 import { logger } from '@/utils/logger';
+import { canRunOnItsOwn, getHandGrants, handMode } from './hand-grants';
 import { extractProposal, handsActions, handsSection, type Proposal } from './hands';
 
 export interface Hands {
   /** The prompt section, or undefined when the person has no hands. */
   section: string | undefined;
-  /** Actions the person may be offered, with whether a tap also grants them. */
-  allowed: Array<{ action: CatAction; grantOnConfirm: boolean }>;
+  /**
+   * Actions the person may be offered, with whether a tap also grants them,
+   * and whether the owner let THIS bot run it without a tap (hand-grants.ts).
+   */
+  allowed: Array<{ action: CatAction; grantOnConfirm: boolean; auto: boolean }>;
 }
 
-/** The launch set narrowed to what this person has granted or may grant by confirming. */
-export async function handsFor(supabase: AnySupabaseClient, userId: string): Promise<Hands> {
+/**
+ * The launch set narrowed to what this person has granted or may grant by
+ * confirming, and, for one bot, to what its owner left switched on.
+ */
+export async function handsFor(
+  supabase: AnySupabaseClient,
+  userId: string,
+  assistantId?: string
+): Promise<Hands> {
   const permissions = new CatPermissionService(supabase);
-  const allowed: Hands['allowed'] = [];
-  for (const action of handsActions()) {
-    try {
-      const check = await permissions.checkPermission(userId, action.id);
-      if (check.allowed) {
-        allowed.push({ action, grantOnConfirm: false });
-      } else if (canGrantOnConfirm(action, check.code)) {
-        allowed.push({ action, grantOnConfirm: true });
-      }
-    } catch (error) {
-      logger.warn(
-        'hands permission check failed',
-        { error, actionId: action.id },
-        'CompanionHands'
-      );
-    }
+  // The grants are read once and every hand is checked against that copy, at
+  // the same time. One read per hand, one after another, was a dozen round
+  // trips to the database before the model was even asked: most of the wait
+  // on a bare "Hi" (the set grew with every hand added).
+  const [stored, grants] = await Promise.all([
+    permissions.getUserPermissions(userId).catch(error => {
+      logger.warn('hands permissions could not be read', { error }, 'CompanionHands');
+      return null;
+    }),
+    assistantId ? getHandGrants(supabase, userId, assistantId) : Promise.resolve(null),
+  ]);
+  if (!stored) {
+    return { section: undefined, allowed: [] };
   }
-  return { section: handsSection(allowed.map(a => a.action)), allowed };
+  const checked = await Promise.all(
+    handsActions().map(async (action): Promise<Hands['allowed'][number] | null> => {
+      const mode = handMode(grants, action.id);
+      if (mode === 'off') {
+        return null;
+      }
+      // Only a hand that can run on its own ever does, whatever is stored.
+      const auto = mode === 'auto' && canRunOnItsOwn(action.id);
+      try {
+        const check = await permissions.checkPermission(userId, action.id, stored);
+        if (check.allowed) {
+          return { action, grantOnConfirm: false, auto };
+        }
+        // Switching a hand to "on its own" is the owner's consent for that
+        // hand, so it grants what a tap would have granted, and no more: a
+        // high-risk hand is never granted this way (canGrantOnConfirm).
+        return canGrantOnConfirm(action, check.code)
+          ? { action, grantOnConfirm: true, auto }
+          : null;
+      } catch (error) {
+        logger.warn(
+          'hands permission check failed',
+          { error, actionId: action.id },
+          'CompanionHands'
+        );
+        return null;
+      }
+    })
+  );
+  // Promise.all keeps the order of handsActions(), which is the listed order.
+  const allowed = checked.filter((a): a is Hands['allowed'][number] => a !== null);
+  return {
+    section: handsSection(
+      allowed.map(a => a.action),
+      allowed.filter(a => a.auto).map(a => a.action.id)
+    ),
+    allowed,
+  };
 }
 
 /**
@@ -63,13 +111,19 @@ export async function proposeFromReply(
   hands: Hands,
   reply: string,
   conversationId: string
-): Promise<{ text: string; pendingAction: PendingAction | null; proposal: Proposal | null }> {
+): Promise<{
+  text: string;
+  pendingAction: PendingAction | null;
+  proposal: Proposal | null;
+  /** The owner let this bot run this hand without a tap. */
+  auto: boolean;
+}> {
   const { text, proposal } = extractProposal(
     reply,
     hands.allowed.map(a => a.action)
   );
   if (!proposal) {
-    return { text, pendingAction: null, proposal: null };
+    return { text, pendingAction: null, proposal: null, auto: false };
   }
   const offered = hands.allowed.find(a => a.action.id === proposal.action);
   if (!offered) {
@@ -78,7 +132,7 @@ export async function proposeFromReply(
       { actionId: proposal.action },
       'CompanionHands'
     );
-    return { text, pendingAction: null, proposal: null };
+    return { text, pendingAction: null, proposal: null, auto: false };
   }
   const validation = validateActionParameters(proposal.action, proposal.parameters);
   if (!validation.ok) {
@@ -87,9 +141,19 @@ export async function proposeFromReply(
       { actionId: proposal.action, error: validation.error },
       'CompanionHands'
     );
-    return { text, pendingAction: null, proposal: null };
+    return { text, pendingAction: null, proposal: null, auto: false };
   }
   const parameters = validation.data ?? proposal.parameters;
+  if (offered.auto) {
+    // The owner let this bot run this hand itself: no card is queued. The
+    // work loop runs it and writes what happened into the thread.
+    return {
+      text: text || generateActionDescription(offered.action, parameters),
+      pendingAction: null,
+      proposal: { action: proposal.action, parameters },
+      auto: true,
+    };
+  }
   try {
     const pendingAction = await createPendingAction(supabase, userId, offered.action, parameters, {
       conversationId,
@@ -101,9 +165,10 @@ export async function proposeFromReply(
       text: text || pendingAction.description,
       pendingAction,
       proposal: { action: proposal.action, parameters },
+      auto: false,
     };
   } catch (error) {
     logger.error('companion proposal could not be queued', error, 'CompanionHands');
-    return { text, pendingAction: null, proposal: null };
+    return { text, pendingAction: null, proposal: null, auto: false };
   }
 }
