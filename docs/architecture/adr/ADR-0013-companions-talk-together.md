@@ -148,7 +148,9 @@ send a task to an agent session) the owner can switch each one, per bot, to
 the switch is the row "What it can do" in the bot's details). Such a hand
 queues no card: it runs at once as the Loki account linked to the owner, the
 result is written into the thread and handed back to the bot, and the bot
-takes the next step, up to six steps or two and a half minutes a turn
+takes the next step: up to six steps a turn, and no new step starts once
+two and a half minutes have passed (a step already started finishes, so a
+followed task can add up to a minute and a half)
 (`work-loop.ts`). A task it sends is followed in code: the run is waited for
 and the session's conversation read, so the bot reports the agent's answer
 and not only "sent" (`services/loki/follow-run.ts`). A routine runs the same

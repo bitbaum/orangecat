@@ -78,7 +78,7 @@ beforeEach(() => {
 });
 
 describe('composeDailyBrief', () => {
-  it('summarizes sales, bookings, overdue tasks, and unread notifications', async () => {
+  it('says the one thing to act on, never a count of unread notifications', async () => {
     const { client } = mockAdmin({
       actors: [{ data: [{ id: 'a1' }] }],
       orders: [{ data: [{ amount_btc: 0.001 }, { amount_btc: 0.002 }] }],
@@ -87,10 +87,17 @@ describe('composeDailyBrief', () => {
       bookings: [{ data: [{ starts_at: '2099-01-01' }] }],
     });
     const brief = await composeDailyBrief(client, 'u1');
-    expect(brief).toContain('2 sales (0.003 BTC)');
-    expect(brief).toContain('1 booking in the next 48h');
-    expect(brief).toContain('1 task overdue (first: "Ship the mug")');
-    expect(brief).toContain('4 unread notifications');
+    // An overdue task is the most actionable thing here: it leads, by name.
+    expect(brief).toBe('Overdue: Ship the mug');
+    expect(brief).not.toMatch(/unread/);
+  });
+
+  it('stays silent when only unread notifications would fill it', async () => {
+    const { client } = mockAdmin({
+      actors: [{ data: [] }],
+      notifications: [{ data: [], count: 33 }],
+    });
+    expect(await composeDailyBrief(client, 'u1')).toBeNull();
   });
 
   it('returns null when there is nothing to say (no spam)', async () => {
@@ -129,7 +136,8 @@ describe('runDailyBrief', () => {
     expect(createNotificationMock).toHaveBeenCalledWith(
       expect.objectContaining({
         recipientUserId: 'u1',
-        actionUrl: '/dashboard/cat',
+        // The notification opens what it names: a sale opens the store.
+        actionUrl: '/dashboard/store',
         metadata: { kind: 'cat_brief' },
       })
     );

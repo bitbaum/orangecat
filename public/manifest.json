@@ -38,6 +38,12 @@
   ],
   "shortcuts": [
     {
+      "name": "Your bots",
+      "short_name": "Bots",
+      "description": "Talk to your bots, and see what they are doing for you",
+      "url": "/companions/talk"
+    },
+    {
       "name": "Create",
       "short_name": "Create",
       "description": "Open creation tools",
