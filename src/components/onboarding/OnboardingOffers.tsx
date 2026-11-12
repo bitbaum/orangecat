@@ -14,7 +14,11 @@ interface OnboardingOffersProps {
   onChat: () => void;
 }
 
-/** The offerings Cat proposed from the bio. One click creates each one. */
+/**
+ * The offerings Cat proposed from the bio. Each opens its create form with
+ * Cat's description filled in; the person fills in the rest and saves it.
+ * Nothing is created until they do.
+ */
 export function OnboardingOffers({ offers, health, isRedirecting, onChat }: OnboardingOffersProps) {
   if (offers.length === 0) {
     return (
@@ -70,7 +74,7 @@ export function OnboardingOffers({ offers, health, isRedirecting, onChat }: Onbo
               data-testid="offer-create"
             >
               <Plus className="mr-2 h-4 w-4" />
-              Create this
+              Fill in the rest
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </div>

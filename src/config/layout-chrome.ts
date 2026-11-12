@@ -24,7 +24,8 @@ export const APP_HEADER_HEIGHT_DESKTOP = '4rem' as const;
  * strings referenced only from this .ts const, so an `h-[calc(...)]` here never
  * generated a rule — the height silently didn't apply and chat surfaces collapsed
  * to content height (composer floated, whole page scrolled). The globals.css
- * utility is always present and handles the responsive header offset (56/64px).
+ * utility is always present and handles the responsive header offset (56/64px,
+ * plus the status-bar inset in an iPhone home-screen app: --app-header-height).
  */
 export const APP_CONTENT_HEIGHT_CLASS = 'app-content-height' as const;
 

@@ -208,7 +208,7 @@ export function useAuthForm() {
 
   const handleAnonymousSignIn = async () => {
     try {
-      const result = await signInAnonymously();
+      const result = await signInAnonymously(captchaToken);
       if (result.error) {
         throw new Error(apiErrorMessage(result.error, 'Anonymous sign-in failed'));
       }

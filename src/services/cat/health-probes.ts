@@ -11,6 +11,7 @@
  * result is safe to surface to an authenticated user (and to the model).
  */
 
+import { reservePlatformCall } from '@/services/ai/vendor-spend-cap';
 import { PROVIDER_BASE_URLS } from '@/config/ai-provider-runtime';
 import { configuredFreeVendors, vendorModel } from '@/config/free-vendors';
 import { DEFAULT_FREE_MODEL_ID } from '@/config/ai-models';
@@ -119,6 +120,8 @@ async function probeProvider(
   }
   const { clean, hadJunk } = sanitizeApiKeyChecked(raw);
   try {
+    // A probe on a paid platform key is a call like any other.
+    await reservePlatformCall(clean);
     const res = await fetch(endpoint, {
       method: 'POST',
       headers: { Authorization: `Bearer ${clean}`, 'Content-Type': 'application/json' },

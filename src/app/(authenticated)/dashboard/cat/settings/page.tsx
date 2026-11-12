@@ -84,7 +84,7 @@ export default function CatSettingsPage() {
       <header className="space-y-3">
         <Link
           href={ROUTES.DASHBOARD.CAT}
-          className="inline-flex min-h-10 items-center gap-1.5 text-sm text-fg-secondary hover:text-fg-primary"
+          className="inline-flex min-h-10 pointer-coarse:min-h-11 items-center gap-1.5 text-sm text-fg-secondary hover:text-fg-primary"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to chat

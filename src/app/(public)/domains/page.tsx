@@ -155,10 +155,10 @@ export default function DomainsPage() {
               self-serve provisioning behind a signup button, and a button that
               implies one sends people to a dead end wearing a welcome mat. */}
           <div className="text-center">
-            <h2 className="font-heading tracking-display text-3xl sm:text-4xl font-bold text-fg-inverted mb-4">
+            <h2 className="font-heading tracking-display text-3xl sm:text-4xl font-bold text-on-public mb-4">
               Start with a site that already works
             </h2>
-            <p className="text-xl text-fg-inverted/70 mb-8">
+            <p className="text-xl text-on-public/70 mb-8">
               No preview links, no cold starts — a running site with a real address, set up and
               managed for you. Tell me what you need and I&apos;ll quote it first.
             </p>

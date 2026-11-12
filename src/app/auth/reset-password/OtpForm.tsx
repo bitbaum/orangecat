@@ -76,6 +76,7 @@ export function OtpForm({
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
+          label="Email address"
           type="email"
           required
           value={email}
@@ -86,6 +87,7 @@ export function OtpForm({
           autoComplete="email"
         />
         <Input
+          label="Reset code"
           type="text"
           required
           value={code}
@@ -120,7 +122,7 @@ export function OtpForm({
         <div className="text-center">
           <Link
             href={ROUTES.AUTH_NO_EMAIL}
-            className="text-sm text-fg-secondary underline hover:text-fg-primary"
+            className="inline-flex min-h-11 items-center text-sm text-fg-secondary underline hover:text-fg-primary"
           >
             Can&apos;t get to your email?
           </Link>

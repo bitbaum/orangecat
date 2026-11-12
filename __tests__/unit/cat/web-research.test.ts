@@ -16,6 +16,15 @@
  */
 import { WebTurnContext, searchTheWeb, readTheWeb } from '@/services/cat/web-research';
 
+// This file is not about spending caps, and with no database here the cap
+// refuses every call. The cap has its own tests
+// (__tests__/unit/ai/vendor-spend-cap.test.ts).
+vi.mock('@/services/ai/vendor-spend-cap', async importOriginal => ({
+  ...(await importOriginal<typeof import('@/services/ai/vendor-spend-cap')>()),
+  reservePlatformCall: async () => {},
+  reserveServiceCall: async () => {},
+}));
+
 const mocks = vi.hoisted(() => ({
   webSearch: vi.fn(),
   readPage: vi.fn(),

@@ -213,7 +213,7 @@ export function AmountField({
             style={{ width: `${Math.max(draft.length, 1)}ch` }}
             className={cn(
               'oc-figure-input min-w-[1ch] max-w-full bg-transparent p-0 font-heading font-semibold tabular-nums tracking-display text-fg-primary outline-none',
-              'placeholder:text-fg-muted',
+              'placeholder:text-fg-tertiary',
               figureSize
             )}
           />

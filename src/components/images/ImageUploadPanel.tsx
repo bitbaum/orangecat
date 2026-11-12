@@ -99,7 +99,7 @@ export default function ImageUploadPanel({ onPick }: { onPick: (image: StockImag
       <span className="text-sm font-medium text-fg-primary">
         {busy ? 'Uploading…' : 'Choose a photo'}
       </span>
-      <span className="text-2xs text-fg-tertiary">
+      <span className="text-xs text-fg-secondary">
         Click, drag & drop, or paste · large photos are resized automatically
       </span>
       {error && <p className="px-4 text-xs text-status-negative">{error}</p>}

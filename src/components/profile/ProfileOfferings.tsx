@@ -71,7 +71,7 @@ function MoreToggle({
       type="button"
       onClick={onToggle}
       aria-expanded={expanded}
-      className="inline-flex min-h-7 items-center rounded-full px-2.5 py-0.5 text-xs font-medium text-fg-secondary underline-offset-2 hover:text-fg-primary hover:underline"
+      className="inline-flex min-h-7 items-center rounded-full px-2.5 py-0.5 text-xs font-medium text-fg-secondary pointer-coarse:min-h-11 underline-offset-2 hover:text-fg-primary hover:underline"
     >
       {expanded ? 'Show less' : `+${hidden} more`}
     </button>
