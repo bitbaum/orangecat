@@ -153,7 +153,10 @@ export async function loadDiscoverView({ q, type, page }: DiscoverParams): Promi
       cachedCounts(),
       searchPublic(getAdminClient(), { types: [type], limit: shown }),
     ]);
-    return { mode: 'browse', counts, type, hits, total, hasMore: total > hits.length };
+    // More exist only past the rows this page asked for. Comparing with the
+    // hits kept would offer "Show more" for ever whenever a row is dropped
+    // after the query: the next page asks again and drops the same row.
+    return { mode: 'browse', counts, type, hits, total, hasMore: total > shown };
   }
 
   const [counts, hits] = await Promise.all([cachedCounts(), cachedShelfHits()]);

@@ -28,14 +28,19 @@ export function GroupCard({ group, onClick, className }: GroupCardProps) {
   const labelConfig = GROUP_LABELS[group.label as GroupLabel];
   const _Icon = labelConfig?.icon || Users;
 
-  // Build metadata - use member_count from GroupWithRelations if available
+  // A group always has its founder, so 0 means the members are not visible to
+  // this reader (or were not counted): say nothing rather than "0 members".
   const memberCount = 'member_count' in group ? group.member_count : undefined;
   const metadata = (
     <div className="flex items-center gap-4 text-sm text-fg-secondary">
-      <div className="flex items-center gap-1">
-        <Users className="h-4 w-4" />
-        <span>{memberCount ?? 0} members</span>
-      </div>
+      {memberCount !== undefined && memberCount > 0 && (
+        <div className="flex items-center gap-1">
+          <Users className="h-4 w-4" />
+          <span>
+            {memberCount} {memberCount === 1 ? 'member' : 'members'}
+          </span>
+        </div>
+      )}
       {group.tags && group.tags.length > 0 && <span className="text-xs">{group.tags[0]}</span>}
     </div>
   );

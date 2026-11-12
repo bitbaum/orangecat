@@ -56,20 +56,33 @@ export const EXACT_FIXTURE_USERNAMES = [
 const EXACT_FIXTURE_USERNAME_SET = new Set<string>(EXACT_FIXTURE_USERNAMES);
 
 const FIXTURE_DISPLAY_NAME = /^(e2e reset user|user)$/i;
-const FIXTURE_GROUP_TITLE = /^(audit\s+wf|ephemeral\s+verify|workflow\s+audit)/i;
 
 /**
- * The named prefixes above are an allow-list of shapes we happened to have seen,
- * and audits keep inventing new ones: "Audit Group 1783191071580" survived the
- * list above and sat in a live account's context switcher.
+ * Names CI and workflow audits give the groups they mint, as POSIX regular
+ * expressions matched case-insensitively, written in the subset JavaScript and
+ * PostgreSQL read alike (no `\b`: Postgres spells a word boundary `\y`, so the
+ * edge of a word is `[^a-z0-9_]`). The same strings filter a groups query
+ * (`withoutFixtureGroups`, PostgREST `imatch`), travel to the search RPCs as
+ * `p_exclude_group_names`, and test a row already fetched
+ * (`isFixtureGroupTitle`) — so Discover's count, its list and the dashboard's
+ * Discover tab cannot disagree about what is a fixture.
  *
- * So also match the *generating* signature rather than the wording — an
- * audit-ish first word followed by the millisecond epoch the fixture appends to
- * keep names unique. Keying on the timestamp is what keeps a real group safe: a
- * governance product will one day have an "Audit Committee", and it will not be
- * called "Audit Committee 1783191071580".
+ * 1. The named prefixes audits have used.
+ * 2. Those are an allow-list of shapes we happened to have seen, and audits keep
+ *    inventing new ones: "Audit Group 1783191071580" survived the list and sat
+ *    in a live account's context switcher. So also match the *generating*
+ *    signature rather than the wording — an audit-ish first word, and the
+ *    millisecond epoch the fixture appends to keep names unique as the last
+ *    word. Keying on the timestamp is what keeps a real group safe: a
+ *    governance product will one day have an "Audit Committee", and it will
+ *    not be called "Audit Committee 1783191071580".
  */
-const FIXTURE_GROUP_STAMPED = /^(audit|ephemeral|workflow|e2e|wf\d)\b.*\b\d{10,}$/i;
+export const FIXTURE_GROUP_NAME_PATTERNS = [
+  '^\\s*(audit\\s+wf|ephemeral\\s+verify|workflow\\s+audit)',
+  '^\\s*(audit|ephemeral|workflow|e2e|wf[0-9])([^a-z0-9_]|[^a-z0-9_].*[^a-z0-9_])[0-9]{10,}\\s*$',
+] as const;
+
+const FIXTURE_GROUP_NAMES = FIXTURE_GROUP_NAME_PATTERNS.map(pattern => new RegExp(pattern, 'i'));
 
 export function isFixtureUsername(username: string | null | undefined): boolean {
   const u = (username ?? '').trim();
@@ -104,8 +117,8 @@ export function isFixtureProfile(profile: {
 }
 
 export function isFixtureGroupTitle(title: string | null | undefined): boolean {
-  const t = (title ?? '').trim();
-  return FIXTURE_GROUP_TITLE.test(t) || FIXTURE_GROUP_STAMPED.test(t);
+  const t = title ?? '';
+  return FIXTURE_GROUP_NAMES.some(name => name.test(t));
 }
 
 /**
@@ -168,6 +181,15 @@ export function withoutFixtureTitles<Q extends NotFilterable<Q>>(query: Q, colum
   let q = query;
   for (const pattern of FIXTURE_TITLE_LIKE_PATTERNS) {
     q = q.not(column, 'like', pattern);
+  }
+  return q;
+}
+
+/** Exclude CI/audit fixture groups from a query on `column` (the group's name). */
+export function withoutFixtureGroups<Q extends NotFilterable<Q>>(query: Q, column = 'name'): Q {
+  let q = query;
+  for (const pattern of FIXTURE_GROUP_NAME_PATTERNS) {
+    q = q.not(column, 'imatch', pattern);
   }
   return q;
 }
