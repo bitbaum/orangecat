@@ -139,7 +139,7 @@ export function ProposalFormFields({
               <div className="space-y-0.5">
                 <FormLabel>Public Proposal</FormLabel>
                 <FormDescription>
-                  Make this proposal visible to non-members (for job postings)
+                  Non-members see it when the group itself is public (for job postings)
                 </FormDescription>
               </div>
               <FormControl>
