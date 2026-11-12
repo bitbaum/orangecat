@@ -1,6 +1,11 @@
 import Card from '@/components/ui/Card';
 import { Shield, Zap, Eye, Sparkles } from 'lucide-react';
-import { HOW_IT_WORKS_STEPS, SECTION_HEADERS, FEE_CLAIMS } from '@/config/landing-page';
+import {
+  HOW_IT_WORKS_STEPS,
+  SECTION_HEADERS,
+  FEE_CLAIMS,
+  SETTLEMENT_TRANSPARENCY_CLAIM,
+} from '@/config/landing-page';
 import { INTENT_LIST } from '@/config/intents';
 import { ROUTES } from '@/config/routes';
 import { PUBLIC_PAGE_WIDTH, PublicPageHeader } from '@/components/layout/PublicPageHeader';
@@ -20,8 +25,7 @@ const whyBitcoin = [
   {
     icon: Shield,
     title: 'Trustless & Secure',
-    description:
-      "Bitcoin's blockchain ensures every transaction is permanent, transparent, and immutable. No chargebacks.",
+    description: 'A settled Bitcoin or Lightning payment is final. No chargebacks.',
   },
   {
     icon: Zap,
@@ -31,9 +35,8 @@ const whyBitcoin = [
   },
   {
     icon: Eye,
-    title: 'Complete Transparency',
-    description:
-      'Every transaction is publicly verifiable on the Bitcoin blockchain. Build trust through radical transparency.',
+    title: 'Transparent On-Chain',
+    description: SETTLEMENT_TRANSPARENCY_CLAIM,
   },
   {
     icon: Sparkles,

@@ -83,6 +83,15 @@ export const FEE_CLAIMS = {
   passthroughClaim: '100% reaches the recipient — no middleman, no processing costs.',
 } as const;
 
+/**
+ * What a payment leaves in public, by rail. /how-it-works and /security each
+ * promised public blockchain verification for every payment —
+ * untrue for Lightning, the default rail, which settles off-chain (the privacy
+ * policy in legal-content.ts says so). One sentence, used as is.
+ */
+export const SETTLEMENT_TRANSPARENCY_CLAIM =
+  'On-chain Bitcoin payments can be verified by anyone on the public blockchain; Lightning payments settle off-chain and do not appear there.';
+
 // ==================== PLATFORM COMPARISON ====================
 
 /**
