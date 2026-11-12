@@ -245,7 +245,14 @@ describe('selection is worth doing', () => {
     // characters: two one-clause descriptions and four parameter names. A bot that can send
     // a task but not read the answer reports nothing; the state, track and
     // transcript are Loki's own (services/loki/sessions.ts), never prose here.
-    expect(remaining).toBeLessThanOrEqual(6_680);
+    //
+    // Raised 6,680 -> 6,930 for findings: `file_loki_finding` (a defect a bot
+    // found on a live app goes into that project's feedback inbox in Loki,
+    // the same inbox and contract a QA seat files into) and
+    // `loki_finding_status`. ~245 characters: two one-clause descriptions and
+    // five parameter names. Loki resolves the project, the seat and the
+    // replay rule; none of it is prose here.
+    expect(remaining).toBeLessThanOrEqual(6_930);
   });
 
   it('selects by default now, and still sends everything when told to', async () => {
