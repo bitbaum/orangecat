@@ -6,7 +6,7 @@
  * `email.split('@')[0]`, which published 77 people's email local parts as
  * crawlable identifiers — reported through OrangeCat's own feedback widget.
  */
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { neutralUsernameFor } from '@/lib/profile/neutral-username';
 import { isValidUsername } from '@/lib/validation/base';
@@ -45,10 +45,12 @@ describe('no code derives a public handle from an email', () => {
   const ALLOWED = join('lib', 'profile', 'neutral-username.ts'); // documents the bug in prose
 
   function sourceFiles(dir: string, out: string[] = []): string[] {
-    for (const name of readdirSync(dir)) {
-      const full = join(dir, name);
-      if (statSync(full).isDirectory()) sourceFiles(full, out);
-      else if (/\.tsx?$/.test(name)) out.push(full);
+    // The directory entry already says what it is; a stat per file doubled
+    // the syscalls on a slow filesystem.
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) sourceFiles(full, out);
+      else if (/\.tsx?$/.test(entry.name)) out.push(full);
     }
     return out;
   }
@@ -69,5 +71,7 @@ describe('no code derives a public handle from an email', () => {
         });
     }
     expect(offenders).toEqual([]);
-  });
+    // Reads every file under src/ once — a full-tree read cannot get cheaper
+    // than that, and under the whole suite's parallel I/O it outran 30s.
+  }, 120_000);
 });

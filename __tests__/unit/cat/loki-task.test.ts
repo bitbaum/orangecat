@@ -84,9 +84,12 @@ describe('sendTaskToLoki', () => {
     });
     expect(sent).toEqual({
       actorId: ACTOR,
+      issuedAt: sent.issuedAt,
       task: 'make prompts postable',
       projects: ['orangecat', 'loki'],
     });
+    // Signed and dated, so Loki can refuse a captured request replayed later.
+    expect(Math.abs(Date.now() - Date.parse(String(sent.issuedAt)))).toBeLessThan(60_000);
     expect(out.ok).toBe(true);
     if (out.ok) {
       expect(out.summary).toContain('SENT to orangecat, loki');
@@ -133,7 +136,7 @@ describe('the run a task opened', () => {
     expect(res.success).toBe(true);
     const data = res.data as { displayMessage: string; results: Array<Record<string, unknown>> };
     expect(data.displayMessage).toContain('Run orangecat: 11111111-1111-4111-8111-111111111111');
-    expect(data.displayMessage).toContain('loki_run_status');
+    expect(data.displayMessage).not.toContain('loki_run_status');
     expect(data.results[0].runId).toBe('11111111-1111-4111-8111-111111111111');
     expect(data.results[0].statusUrl).toBeUndefined();
   });

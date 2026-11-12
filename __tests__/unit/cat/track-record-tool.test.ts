@@ -177,7 +177,9 @@ describe('the executor runs it end to end', () => {
     expect(result.content).toContain('cause "Trees" — status draft');
     expect(events.map(e => e.status)).toEqual(['running', 'completed']);
     expect(events[1].resultCount).toBe(1);
-  });
+    // Not a scan: resetModules makes this import the whole tool executor fresh,
+    // ~7s alone on the box, which outran 30s under the full suite.
+  }, 120_000);
 
   it('fails honestly when the record cannot be derived', async () => {
     vi.doMock('@/services/cat/track-record', async () => {

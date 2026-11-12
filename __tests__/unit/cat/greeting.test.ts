@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { greetingFor } from '@/components/ai-chat/ModernChatPanel/components/EmptyState';
+import { greetingFor, dateLine } from '@/components/ai-chat/ModernChatPanel/components/EmptyState';
 
 /** The Cat greets a person by name, never by the handle the platform minted. */
 describe('greetingFor', () => {
@@ -16,5 +16,12 @@ describe('greetingFor', () => {
 
   it('keeps a handle the person chose', () => {
     expect(greetingFor(evening, 'cato')).toBe('Good evening, cato');
+  });
+});
+
+/** Under the greeting: what today is, in the reader's own date order. */
+describe('dateLine', () => {
+  it('names the weekday, the date and the time', () => {
+    expect(dateLine(new Date(2026, 10, 12, 6, 5), 'en-GB')).toBe('Thursday 12 November · 06:05');
   });
 });

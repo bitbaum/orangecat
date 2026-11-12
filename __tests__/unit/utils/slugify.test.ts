@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { slugify, transliterate } from '@/utils/string';
 import { slugifyTitle } from '@/config/articles';
@@ -100,11 +100,13 @@ describe('the other slug helpers delegate rather than re-derive', () => {
   it('no file re-implements the strip-and-dash chain', () => {
     const files: string[] = [];
     const walk = (dir: string) => {
-      for (const name of readdirSync(dir)) {
-        const p = join(dir, name);
-        if (statSync(p).isDirectory()) {
+      // The directory entry already says what it is; a stat per file doubled
+      // the syscalls on a slow filesystem.
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        const p = join(dir, entry.name);
+        if (entry.isDirectory()) {
           walk(p);
-        } else if (/\.tsx?$/.test(name)) {
+        } else if (/\.tsx?$/.test(entry.name)) {
           files.push(p);
         }
       }
@@ -118,7 +120,9 @@ describe('the other slug helpers delegate rather than re-derive', () => {
         /replace\(\/\[\^a-z0-9[^)]*\]\+?\/g, '-'\)/.test(readFileSync(f, 'utf8'))
     );
     expect(rivals, `Call slugify() from @/utils/string instead:\n${rivals.join('\n')}`).toEqual([]);
-  });
+    // Reads every file under src/ once — a full-tree read cannot get cheaper
+    // than that, and under the whole suite's parallel I/O it outran 30s.
+  }, 120_000);
 });
 
 describe('transliterate', () => {
