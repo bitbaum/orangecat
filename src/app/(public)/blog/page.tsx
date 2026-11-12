@@ -46,7 +46,7 @@ export default function BlogPage() {
           </p>
           <Link
             href={ROUTES.RSS}
-            className="mt-4 inline-flex min-h-9 items-center gap-1.5 text-sm text-fg-secondary transition-colors hover:text-fg-primary"
+            className="mt-4 inline-flex min-h-11 items-center gap-1.5 text-sm text-fg-secondary transition-colors hover:text-fg-primary"
           >
             <Rss className="h-4 w-4" />
             Subscribe via RSS

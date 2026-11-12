@@ -5,15 +5,22 @@ import { BookOpen, Wallet, Target } from 'lucide-react';
 import { PageLayout, PageSection } from '@/components/layout/PageLayout';
 import { PageHeading } from '@/components/layout/PageHeading';
 import Button from '@/components/ui/Button';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { LEARNING_PATHS, QUICK_RESOURCES, WHY_LEARN_BENEFITS } from './config';
 import { ROUTES } from '@/config/routes';
 import { LearningPathCard } from './LearningPathCard';
 import { ResourceCard } from './ResourceCard';
 
 const LEVEL_FILTERS = ['all', 'beginner', 'intermediate', 'advanced'] as const;
+type LevelFilter = (typeof LEVEL_FILTERS)[number];
+
+const LEVEL_ITEMS = LEVEL_FILTERS.map(level => ({
+  value: level,
+  label: level.charAt(0).toUpperCase() + level.slice(1),
+}));
 
 export default function StudyBitcoinPage() {
-  const [selectedLevel, setSelectedLevel] = useState<string>('all');
+  const [selectedLevel, setSelectedLevel] = useState<LevelFilter>('all');
 
   const filteredPaths =
     selectedLevel === 'all'
@@ -63,23 +70,15 @@ export default function StudyBitcoinPage() {
         <div id="learning-paths" className="text-center mb-12 scroll-mt-24">
           <h2 className="text-2xl font-semibold text-fg-primary mb-4">Learning Paths</h2>
           <p className="text-lg text-fg-secondary max-w-3xl mx-auto mb-8">
-            Structured courses designed to take you from beginner to Bitcoin expert
+            Start with wallets; the other paths are still being written
           </p>
-          <div className="flex flex-wrap justify-center gap-2">
-            {LEVEL_FILTERS.map(level => (
-              <button
-                key={level}
-                onClick={() => setSelectedLevel(level)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  selectedLevel === level
-                    ? 'bg-fg-primary text-fg-inverted'
-                    : 'bg-surface-raised text-fg-primary hover:bg-surface-raised/80 dark:hover:bg-surface-raised/80'
-                }`}
-              >
-                {level.charAt(0).toUpperCase() + level.slice(1)}
-              </button>
-            ))}
-          </div>
+          <SegmentedControl
+            items={LEVEL_ITEMS}
+            value={selectedLevel}
+            onChange={setSelectedLevel}
+            label="Level"
+            className="mx-auto max-w-md"
+          />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredPaths.map(path => (

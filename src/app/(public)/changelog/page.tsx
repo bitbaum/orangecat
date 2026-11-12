@@ -75,7 +75,10 @@ export default async function ChangelogPage() {
                   aria-hidden
                   className="absolute -left-[calc(0.25rem+1px)] top-1.5 h-2 w-2 -translate-x-1/2 rounded-full bg-accent-warm ring-4 ring-surface-page sm:-left-[calc(0.5rem+1px)]"
                 />
-                <a href={`#${change.anchor}`} className="font-mono text-xs text-fg-tertiary">
+                <a
+                  href={`#${change.anchor}`}
+                  className="-my-3 inline-flex min-h-11 items-center font-mono text-xs text-fg-tertiary"
+                >
                   <time dateTime={change.date}>
                     <FormattedDate value={change.date} mode="isoDay" />
                   </time>

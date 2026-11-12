@@ -32,7 +32,7 @@ export function ResourceCard({ resource, featured = false }: ResourceCardProps) 
               <p className="text-fg-secondary mb-4 leading-relaxed">{resource.description}</p>
               <Link
                 href={resource.href}
-                className="inline-flex items-center text-bitcoinOrange font-medium hover:underline underline-offset-4"
+                className="inline-flex items-center text-fg-primary font-semibold hover:underline underline-offset-4"
                 {...externalProps}
               >
                 Get Started
@@ -63,7 +63,7 @@ export function ResourceCard({ resource, featured = false }: ResourceCardProps) 
             <p className="text-sm text-fg-secondary mb-3 leading-relaxed">{resource.description}</p>
             <Link
               href={resource.href}
-              className="inline-flex items-center text-sm text-bitcoinOrange font-medium hover:underline underline-offset-4"
+              className="inline-flex items-center text-sm text-fg-primary font-semibold hover:underline underline-offset-4"
               {...externalProps}
             >
               {resource.type === 'external' ? 'Visit' : 'Read'}
