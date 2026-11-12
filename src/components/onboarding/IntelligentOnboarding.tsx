@@ -282,7 +282,7 @@ export default function IntelligentOnboarding() {
               data-testid="onboarding-start-chat"
               onClick={handleStartChat}
               disabled={!canSubmit || isRedirecting}
-              className="w-full text-center text-sm text-fg-secondary hover:text-fg-primary transition-colors py-1 disabled:opacity-50"
+              className="w-full min-h-11 text-center text-sm text-fg-secondary hover:text-fg-primary transition-colors disabled:opacity-50"
             >
               Or just chat with your Cat instead →
             </button>

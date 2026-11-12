@@ -119,7 +119,7 @@ export function EntityCreationWizard<T extends Record<string, unknown>>({
         <div className="flex flex-wrap items-center gap-3 mb-1">
           <button
             onClick={handleCancel}
-            className="inline-flex items-center text-fg-secondary hover:text-fg-primary transition-colors shrink-0"
+            className="inline-flex items-center text-fg-secondary hover:text-fg-primary transition-colors shrink-0 pointer-coarse:min-h-11"
           >
             <ArrowLeft className="w-4 h-4 mr-1" />
             Cancel
