@@ -17,11 +17,7 @@ import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { getOrCreateUserActor } from '@/services/actors/getOrCreateUserActor';
 import { getUnclaimedOwner } from '@/domain/profileClaims/unclaimed';
 import { resolveManagementRole, type ManagementRole } from '@/domain/profileClaims/stewardship';
-import {
-  signLokiBuildIntent,
-  suggestedHandoffFor,
-  type LokiBuildIntent,
-} from './build-intent';
+import { signLokiBuildIntent, suggestedHandoffFor, type LokiBuildIntent } from './build-intent';
 
 /** Entity types that have nothing for a builder to build. */
 export const NON_BUILDABLE_ENTITY_TYPES: ReadonlySet<string> = new Set(['wallet', 'document']);

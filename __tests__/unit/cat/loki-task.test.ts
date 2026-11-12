@@ -125,7 +125,9 @@ describe('the run a task opened', () => {
       projects: ['orangecat'],
       builder: 'cloud',
       queue_if_busy: true,
+      fresh_session: true,
     });
+    expect(sent.separateSession).toBe(true);
     expect(sent.builderChannel).toBe('cloud');
     expect(sent.queueIfBusy).toBe(true);
     expect(res.success).toBe(true);
@@ -149,6 +151,7 @@ describe('the run a task opened', () => {
     });
     expect('builderChannel' in sent).toBe(false);
     expect('queueIfBusy' in sent).toBe(false);
+    expect('separateSession' in sent).toBe(false);
   });
 
   it("relays Loki's sentence when a project is busy, and sends nothing", async () => {

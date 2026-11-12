@@ -32,6 +32,12 @@ export interface LokiTaskInput {
   builder?: 'cloud' | 'local';
   /** Queue behind a project's open run. Without it Loki refuses a busy project, in words. */
   queueIfBusy?: boolean;
+  /**
+   * A busy project starts a separate agent session for this task, in its own
+   * worktree: for a one-off question that should neither wait for the open
+   * run nor be folded into it.
+   */
+  separateSession?: boolean;
   originUrl?: string;
 }
 
@@ -106,6 +112,7 @@ export async function sendTaskToLoki(input: LokiTaskInput): Promise<LokiTaskOutc
     projects: input.projects,
     ...(input.builder ? { builderChannel: input.builder } : {}),
     ...(input.queueIfBusy ? { queueIfBusy: true } : {}),
+    ...(input.separateSession ? { separateSession: true } : {}),
     ...(input.originUrl ? { originUrl: input.originUrl } : {}),
   });
 
