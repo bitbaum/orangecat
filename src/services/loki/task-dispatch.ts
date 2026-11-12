@@ -108,6 +108,9 @@ export async function sendTaskToLoki(input: LokiTaskInput): Promise<LokiTaskOutc
 
   const result = await postSignedToLoki(TASK_URL, {
     actorId: input.actorId,
+    // Loki refuses a signed task older than five minutes, so a captured
+    // request cannot be replayed to start sessions later.
+    issuedAt: new Date().toISOString(),
     task,
     projects: input.projects,
     ...(input.builder ? { builderChannel: input.builder } : {}),
@@ -194,7 +197,7 @@ export function summarise(results: LokiTaskProjectResult[]): string {
     );
   }
   parts.push(
-    'Progress shows in Loki → Control, and the outcome is announced when each agent finishes. To read a run, use loki_run_status with its runId; to read what the agent said, loki_sessions with the project.'
+    'Progress shows in Loki → Control, and the outcome is announced when each agent finishes.'
   );
   return parts.join(' ');
 }

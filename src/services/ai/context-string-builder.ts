@@ -51,7 +51,7 @@ export function buildFullContextString(context: FullUserContext): string {
     renderSocialGraph(context.socialGraph),
     renderProjectActivity(context.projectActivity),
     renderStakeholders(context.stakeholders),
-    renderLokiProjects(context.lokiProjects),
+    renderLokiProjects(context.lokiProjects, context.lokiNeedsYou),
     renderGithubRepos(context.githubRepos),
     renderGithubWork(context.githubWork),
     renderStudioMap(context.studioMap),
