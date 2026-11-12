@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import groupsService from '@/services/groups';
+import { isGroupMember } from '@/services/groups/utils/helpers';
+import { canSeeGroupContent } from '@/services/groups/utils/visibility';
 import type { Group, GroupMember } from '@/types/group';
 import { GROUP_LABELS, type GroupLabel } from '@/config/group-labels';
 import { GOVERNANCE_PRESETS, type GovernancePreset } from '@/config/governance-presets';
@@ -19,6 +21,7 @@ export function useGroupDetail(groupSlug: string) {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [canCreateProposal, setCanCreateProposal] = useState(false);
+  const [canSeeContent, setCanSeeContent] = useState(false);
 
   const loadGroupData = useCallback(async () => {
     try {
@@ -32,6 +35,21 @@ export function useGroupDetail(groupSlug: string) {
       }
 
       setGroup(groupResult.group);
+
+      // A members-only or private group shows an outsider its name and label
+      // and nothing else, so nothing else is asked for.
+      const isMember = user
+        ? user.id === groupResult.group.created_by ||
+          (await isGroupMember(groupResult.group.id, user.id))
+        : false;
+      const contentVisible = canSeeGroupContent(groupResult.group, isMember);
+      setCanSeeContent(contentVisible);
+      if (!contentVisible) {
+        setMembers([]);
+        setWallets([]);
+        setCanCreateProposal(false);
+        return;
+      }
 
       const membersResult = await groupsService.getGroupMembers(groupResult.group.id);
       if (membersResult.success) {
@@ -89,6 +107,7 @@ export function useGroupDetail(groupSlug: string) {
     activeTab,
     setActiveTab,
     canCreateProposal,
+    canSeeContent,
     loadGroupData,
     labelConfig,
     governanceConfig,
