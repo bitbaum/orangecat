@@ -107,7 +107,7 @@ export function RoomEditor({ projectId, initial, saved, buildRecordUrl }: RoomEd
             onChange={e => update({ contact_email: e.target.value })}
           />
         </div>
-        <p className="text-xs text-fg-muted">
+        <p className="text-xs text-fg-tertiary">
           {buildRecordUrl
             ? 'The room links to this project’s build record on Loki — what was built, and when.'
             : 'Link this project in Loki and the room shows its build record too.'}

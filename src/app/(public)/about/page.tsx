@@ -87,10 +87,10 @@ export default function AboutPage() {
       <div className="bg-surface-public">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center">
-            <h2 className="font-heading tracking-display text-3xl sm:text-4xl font-bold text-fg-inverted mb-4">
+            <h2 className="font-heading tracking-display text-3xl sm:text-4xl font-bold text-on-public mb-4">
               Join the Open Economy
             </h2>
-            <p className="text-xl text-fg-inverted/70 mb-8">
+            <p className="text-xl text-on-public/70 mb-8">
               Exchange, fund, lend, invest, and govern — with your AI agent, under any identity, in
               Bitcoin.
             </p>

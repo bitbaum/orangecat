@@ -136,7 +136,7 @@ export function EditPostModal({
           {error && (
             <div
               role="alert"
-              className="mb-3 p-3 oc-error-surface rounded-lg text-sm text-status-negative/80"
+              className="mb-3 p-3 oc-error-surface rounded-lg text-sm text-status-negative"
             >
               {error}
             </div>

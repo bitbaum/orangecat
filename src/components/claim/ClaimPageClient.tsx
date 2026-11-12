@@ -89,7 +89,7 @@ export default function ClaimPageClient({ preview }: ClaimPageClientProps) {
   return (
     <div className="min-h-[calc(100svh-4rem)] bg-surface-page">
       <div className="mx-auto max-w-xl px-4 py-16 sm:py-24">
-        <p className="text-center text-xs font-medium uppercase tracking-caps text-fg-muted">
+        <p className="text-center text-xs font-medium uppercase tracking-caps text-fg-tertiary">
           A profile is waiting for you on {APP_NAME}
         </p>
 
@@ -167,7 +167,7 @@ export default function ClaimPageClient({ preview }: ClaimPageClientProps) {
                 <Button variant="accent" size="lg" className="w-full" href={registerHref}>
                   Create an account &amp; claim it
                 </Button>
-                <p className="text-center text-xs text-fg-muted">
+                <p className="text-center text-xs text-fg-tertiary">
                   Already have an account?{' '}
                   <a href={loginHref} className="font-medium text-fg-primary underline">
                     Log in to claim it
@@ -177,7 +177,7 @@ export default function ClaimPageClient({ preview }: ClaimPageClientProps) {
             )}
 
             {!hasDeclined && !isExpired && (
-              <p className="mt-4 text-center text-xs text-fg-muted">
+              <p className="mt-4 text-center text-xs text-fg-tertiary">
                 Not you, or don’t want this?{' '}
                 <button
                   type="button"

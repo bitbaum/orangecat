@@ -208,7 +208,7 @@ export default function NewProfileClaimPage() {
           </CardContent>
         </Card>
 
-        <Button type="submit" variant="accent" size="lg" isLoading={isSubmitting}>
+        <Button type="submit" size="lg" isLoading={isSubmitting}>
           Create claim link
         </Button>
       </form>

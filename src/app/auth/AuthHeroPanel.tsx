@@ -71,9 +71,11 @@ export function AuthHeroPanel({ client = null }: { client?: AuthHeroClient | nul
           </span>
         </div>
 
-        <h1 className="mb-5 font-heading text-4xl font-bold leading-tight tracking-display text-fg-primary lg:text-5xl">
+        {/* A paragraph, not a heading: the page's h1 is the form title beside
+            it, the only one a phone renders. */}
+        <p className="mb-5 font-heading text-4xl font-bold leading-tight tracking-display text-fg-primary lg:text-5xl">
           {client ? `Continue to ${client.name}` : APP_TAGLINE}
-        </h1>
+        </p>
 
         <p className="mb-10 text-lg leading-relaxed text-fg-secondary">
           {client

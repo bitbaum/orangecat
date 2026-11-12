@@ -11,6 +11,7 @@ import {
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
 import { partitionTabs } from './profileTabLayout';
+import { scrollBehavior } from '@/lib/scroll-behavior';
 
 export interface ProfileTab {
   id: string;
@@ -102,9 +103,9 @@ export default function ProfileViewTabs({
 
         // Scroll if button is outside visible area
         if (buttonLeft < scrollLeft) {
-          nav.scrollTo({ left: buttonLeft - 16, behavior: 'smooth' });
+          nav.scrollTo({ left: buttonLeft - 16, behavior: scrollBehavior() });
         } else if (buttonRight > scrollLeft + navWidth) {
-          nav.scrollTo({ left: buttonRight - navWidth + 16, behavior: 'smooth' });
+          nav.scrollTo({ left: buttonRight - navWidth + 16, behavior: scrollBehavior() });
         }
       }
 
@@ -163,7 +164,7 @@ export default function ProfileViewTabs({
         <nav
           ref={navRef}
           onScroll={updateScrollIndicators}
-          className="-mb-px flex space-x-0 sm:space-x-3 md:space-x-6 lg:space-x-8 overflow-x-auto scrollbar-hide scroll-smooth touch-pan-x"
+          className="-mb-px flex space-x-0 sm:space-x-3 md:space-x-6 lg:space-x-8 overflow-x-auto scrollbar-hide motion-safe:scroll-smooth touch-pan-x"
           aria-label="Tabs"
           style={{
             WebkitOverflowScrolling: 'touch',
@@ -202,7 +203,7 @@ export default function ProfileViewTabs({
                 {tab.badge !== undefined && (
                   <span
                     className={cn(
-                      'ml-1.5 sm:ml-2 py-0.5 px-1.5 sm:px-2 rounded-full text-2xs sm:text-xs font-medium flex-shrink-0',
+                      'ml-1.5 sm:ml-2 py-0.5 px-1.5 sm:px-2 rounded-full text-xs font-medium flex-shrink-0',
                       isActive
                         ? 'bg-fg-primary text-fg-inverted'
                         : 'bg-surface-raised text-fg-secondary'
@@ -251,7 +252,7 @@ export default function ProfileViewTabs({
                       )}
                       <span className="flex-1 truncate">{tab.label}</span>
                       {tab.badge !== undefined && (
-                        <span className="ml-auto py-0.5 px-1.5 rounded-full text-2xs font-medium bg-surface-raised text-fg-secondary flex-shrink-0">
+                        <span className="ml-auto py-0.5 px-1.5 rounded-full text-xs font-medium bg-surface-raised text-fg-secondary flex-shrink-0">
                           {tab.badge}
                         </span>
                       )}
