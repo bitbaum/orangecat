@@ -3,10 +3,11 @@
 import React, { useEffect } from 'react';
 import TimelineComponent from './TimelineComponent';
 import TimelineComposer from './TimelineComposer';
+import SignInToPost from './SignInToPost';
 import Button from '@/components/ui/Button';
 import { useTimelineView } from './useTimelineView';
 import type { TimelineDisplayEvent } from '@/types/timeline';
-import { TIMELINE_COPY, TIMELINE_SURFACE } from '@/config/timeline';
+import { TIMELINE_COPY } from '@/config/timeline';
 
 export interface TimelineViewProps {
   feedType: 'journey' | 'community' | 'profile' | 'project';
@@ -48,7 +49,9 @@ export default function TimelineView({
     handleOptimisticEvent,
   } = useTimelineView({ feedType, ownerId, onPostCreated, onOptimisticEvent });
 
-  if (hydrated && !authLoading && !user && (feedType === 'journey' || feedType === 'community')) {
+  // Only the reader's own journey needs a reader. The community feed is public
+  // (see feedNeedsSignIn in useSocialTimeline.ts), like a profile's or project's.
+  if (hydrated && !authLoading && !user && feedType === 'journey') {
     return (
       <div className="text-center py-16">
         <h2 className="text-2xl font-semibold text-fg-primary mb-4">Please sign in</h2>
@@ -112,31 +115,7 @@ export default function TimelineView({
         showBanner={Boolean(ownerId && ownerId !== user.id)}
       />
     ) : (
-      <div className="rounded-md border border-dashed border-subtle bg-surface-page px-4 py-5">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="font-medium text-fg-primary">Sign in to post</p>
-            <p className="text-sm text-fg-secondary">
-              You need to be signed in to write on this timeline.
-            </p>
-          </div>
-          <Button
-            onClick={() => {
-              const redirect =
-                typeof window !== 'undefined'
-                  ? window.location.pathname + window.location.search
-                  : '/profiles/me';
-              // `from` is the param /auth reads (useAuthForm.ts). This said `redirect`,
-              // which nothing reads, so signing in from here always landed on
-              // /dashboard instead of coming back.
-              window.location.href = `/auth?from=${encodeURIComponent(redirect)}`;
-            }}
-            className={TIMELINE_SURFACE.buttonPrimary}
-          >
-            Sign in
-          </Button>
-        </div>
-      </div>
+      <SignInToPost />
     ));
 
   if (feed && feed.events.length === 0) {

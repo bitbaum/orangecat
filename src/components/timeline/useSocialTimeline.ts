@@ -9,8 +9,21 @@ import { filterOptimisticEvents } from '@/utils/timeline';
 import { useInvalidateTimeline } from '@/hooks/useTimelineQuery';
 import { useSocialTimelineSearch } from './useSocialTimelineSearch';
 
+export type SocialTimelineMode = 'timeline' | 'community' | 'following';
+
+/**
+ * Whether a feed needs a signed-in reader. `timeline` and `following` are the
+ * reader's own feeds. The community feed reads `community_timeline_no_duplicates`
+ * — public posts only, granted to anon — and /community is a public route the
+ * footer links to, so a signed-out visitor reads it too; only posting waits for
+ * sign-in. It used to bounce them to a "Please sign in" wall instead.
+ */
+export function feedNeedsSignIn(mode: SocialTimelineMode): boolean {
+  return mode !== 'community';
+}
+
 export interface UseSocialTimelineProps {
-  mode: 'timeline' | 'community' | 'following';
+  mode: SocialTimelineMode;
   defaultSort?: 'recent' | 'trending' | 'popular';
   onOptimisticUpdate?: (event: TimelineDisplayEvent) => void;
 }
@@ -58,7 +71,7 @@ export function useSocialTimeline({
 
   const loadTimelineFeed = useCallback(
     async (sort: string = defaultSort, page: number = 1) => {
-      if (!user?.id) {
+      if (feedNeedsSignIn(mode) && !user?.id) {
         return;
       }
 
@@ -71,15 +84,17 @@ export function useSocialTimeline({
         setError(null);
 
         let feed: TimelineFeedResponse;
-        if (mode === 'timeline') {
-          feed = await timelineService.getEnrichedUserFeed(user.id, {}, { page, limit: 20 });
-        } else if (mode === 'following') {
-          feed = await timelineService.getEnrichedFollowingFeed(user.id, {}, { page, limit: 20 });
-        } else {
+        if (mode === 'community') {
           feed = await timelineService.getCommunityFeed(
             { sortBy: sort as 'recent' | 'trending' | 'popular' },
             { page, limit: 20 }
           );
+        } else if (!user?.id) {
+          return;
+        } else if (mode === 'timeline') {
+          feed = await timelineService.getEnrichedUserFeed(user.id, {}, { page, limit: 20 });
+        } else {
+          feed = await timelineService.getEnrichedFollowingFeed(user.id, {}, { page, limit: 20 });
         }
 
         if (page === 1) {
@@ -145,11 +160,15 @@ export function useSocialTimeline({
     loadTimelineFeed(sortBy, timelineFeed.pagination.page + 1);
   }, [timelineFeed, sortBy, loadTimelineFeed, search.searchResults]);
 
+  // Signed out, wait for the auth check to finish: starting before it would
+  // load the community feed twice when a session turns up a moment later.
+  const canLoad = Boolean(user?.id) || (!feedNeedsSignIn(mode) && authCheckComplete);
+
   useEffect(() => {
-    if (hydrated && user?.id) {
+    if (hydrated && canLoad) {
       loadTimelineFeed();
     }
-  }, [hydrated, user?.id, loadTimelineFeed]);
+  }, [hydrated, canLoad, loadTimelineFeed]);
 
   return {
     user,
