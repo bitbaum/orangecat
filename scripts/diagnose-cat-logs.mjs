@@ -5,12 +5,32 @@ import { pathToFileURL } from 'node:url';
  * provider error messages, prompts, identifiers, headers or credentials. */
 export function summarizeCatJournal(input) {
   const counts = new Map();
+  // A bot turn the shared pool could not answer, per vendor and status
+  // (services/ai/chain-failure-summary.ts writes exactly those two).
+  const botLinks = new Map();
+  let botTurns = 0;
   let matched = 0;
   for (const line of input.split('\n')) {
     let row;
     try {
       row = JSON.parse(line);
     } catch {
+      continue;
+    }
+    if (row?.source === 'companions/chat' && Array.isArray(row.data?.links)) {
+      botTurns++;
+      for (const link of row.data.links) {
+        const provider =
+          typeof link?.provider === 'string' && /^[a-z0-9_-]{1,40}$/.test(link.provider)
+            ? link.provider
+            : 'unknown';
+        const status =
+          Number.isInteger(link?.status) && link.status >= 400 && link.status <= 599
+            ? link.status
+            : 'unknown';
+        const key = `${provider}:${status}`;
+        botLinks.set(key, (botLinks.get(key) ?? 0) + 1);
+      }
       continue;
     }
     if (row?.source !== 'cat/chat' || !['warn', 'error'].includes(row.level)) continue;
@@ -44,6 +64,13 @@ export function summarizeCatJournal(input) {
     failures: [...counts]
       .sort()
       .map(([key, count]) => ({ category: key.split(':')[0], status: key.split(':')[1], count })),
+    // Bot sends no link of the shared pool answered, and how each link failed.
+    bots: {
+      unanswered: botTurns,
+      links: [...botLinks]
+        .sort()
+        .map(([key, count]) => ({ provider: key.split(':')[0], status: key.split(':')[1], count })),
+    },
   };
 }
 

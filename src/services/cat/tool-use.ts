@@ -17,6 +17,7 @@
  * these into the SSE stream so the user sees what the Cat is actually doing.
  */
 
+import { reservePlatformCall } from '@/services/ai/vendor-spend-cap';
 import { actionToolDefinitions } from './action-schemas';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { toolPlanForModel, observedToolVerdict, recordToolAttempt } from './tool-capability';
@@ -385,6 +386,9 @@ async function runToolLoop(args: {
 
   for (let step = 0; step < MAX_TOOL_STEPS; step++) {
     state.controller.signal.throwIfAborted();
+    // Every step is a call: on the platform's paid key it is counted against
+    // the vendor's daily cap first, and refused once it is spent.
+    await reservePlatformCall(toolKey);
     const res = await fetch(toolEndpoint, {
       method: 'POST',
       headers: { Authorization: `Bearer ${toolKey}`, 'Content-Type': 'application/json' },
