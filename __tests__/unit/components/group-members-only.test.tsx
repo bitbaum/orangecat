@@ -20,7 +20,9 @@ const service = vi.hoisted(() => ({
   getGroupMembers: vi.fn(async () => ({ success: true, members: [] })),
   getGroupWallets: vi.fn(async () => ({ success: true, wallets: [] })),
 }));
-const membership = vi.hoisted(() => ({ isGroupMember: vi.fn(async () => false) }));
+const membership = vi.hoisted(() => ({
+  getUserRole: vi.fn(async (): Promise<'founder' | 'admin' | 'member' | null> => null),
+}));
 const detail = vi.hoisted(() => ({ state: {} as Record<string, unknown> }));
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
@@ -67,7 +69,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   auth.user = null;
   auth.hydrated = true;
-  membership.isGroupMember.mockResolvedValue(false);
+  membership.getUserRole.mockResolvedValue(null);
 });
 
 describe('useGroupDetail while auth is still arriving', () => {
@@ -87,7 +89,7 @@ describe('useGroupDetail while auth is still arriving', () => {
 
     auth.hydrated = true;
     auth.user = { id: 'member' };
-    membership.isGroupMember.mockResolvedValue(true);
+    membership.getUserRole.mockResolvedValue('member');
     rerender();
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.canSeeContent).toBe(true);
@@ -104,7 +106,7 @@ describe('useGroupDetail while auth is still arriving', () => {
     const { result, rerender } = renderHook(() => useGroupDetail(membersOnlyGroup.slug));
 
     auth.user = { id: 'member' };
-    membership.isGroupMember.mockResolvedValue(true);
+    membership.getUserRole.mockResolvedValue('member');
     rerender();
     await waitFor(() => expect(result.current.canSeeContent).toBe(true));
     await waitFor(() => expect(result.current.loading).toBe(false));
@@ -129,7 +131,7 @@ describe('useGroupDetail on a listed members-only group', () => {
   it('asks a signed-in non-member for nothing past the group itself', async () => {
     auth.user = { id: 'stranger' };
     const state = await load(membersOnlyGroup);
-    expect(membership.isGroupMember).toHaveBeenCalledWith('g1', 'stranger');
+    expect(membership.getUserRole).toHaveBeenCalledWith('g1', 'stranger');
     expect(state.canSeeContent).toBe(false);
     expect(service.getGroupMembers).not.toHaveBeenCalled();
     expect(service.getGroupWallets).not.toHaveBeenCalled();
@@ -137,7 +139,7 @@ describe('useGroupDetail on a listed members-only group', () => {
 
   it('loads everything for a member', async () => {
     auth.user = { id: 'member' };
-    membership.isGroupMember.mockResolvedValue(true);
+    membership.getUserRole.mockResolvedValue('member');
     const state = await load(membersOnlyGroup);
     expect(state.canSeeContent).toBe(true);
     expect(service.getGroupMembers).toHaveBeenCalledWith('g1');
