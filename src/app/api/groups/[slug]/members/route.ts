@@ -18,6 +18,9 @@ import {
   apiCreated,
   apiNotFound,
   apiInternalError,
+  apiUnauthorized,
+  apiForbidden,
+  apiConflict,
   apiRateLimited,
 } from '@/lib/api/standardResponse';
 import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
@@ -87,7 +90,18 @@ export const POST = withAuth(async (request: AuthenticatedRequest, context: Rout
     const result = await groupsService.joinGroup(groupResult.group.id, supabase);
 
     if (!result.success) {
-      return apiInternalError(apiErrorMessage(result, 'Failed to join group'));
+      const message = apiErrorMessage(result, 'Failed to join group');
+      // An ordinary refusal is the caller's answer, not a server fault.
+      switch (result.refusal) {
+        case 'not_signed_in':
+          return apiUnauthorized(message);
+        case 'invitation_only':
+          return apiForbidden(message);
+        case 'already_member':
+          return apiConflict(message);
+        default:
+          return apiInternalError(message);
+      }
     }
 
     return apiCreated({ success: true, message: 'Successfully joined group' });

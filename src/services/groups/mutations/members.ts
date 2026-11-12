@@ -33,15 +33,29 @@ import { fromTable } from '../db-helpers';
  * listed group whose visibility is 'public', see utils/joining.ts), refuses an
  * existing member, and answers in plain words.
  */
+/**
+ * Why a join was refused, when it was an ordinary answer rather than a fault.
+ * Absent on failure means something broke (the database call, an exception).
+ */
+export type JoinGroupRefusal = 'not_signed_in' | 'invitation_only' | 'already_member';
+
+const JOIN_REFUSALS: readonly JoinGroupRefusal[] = [
+  'not_signed_in',
+  'invitation_only',
+  'already_member',
+];
+
+export type JoinGroupResult = ServiceResult & { refusal?: JoinGroupRefusal };
+
 export async function joinGroup(
   groupId: string,
   client?: AnySupabaseClient
-): Promise<ServiceResult> {
+): Promise<JoinGroupResult> {
   try {
     const sb = client || supabase;
     const userId = await getCurrentUserId(sb);
     if (!userId) {
-      return { success: false, error: 'Sign in to join this group' };
+      return { success: false, error: 'Sign in to join this group', refusal: 'not_signed_in' };
     }
 
     const { data, error } = await sb.rpc('join_public_group', { p_group_id: groupId });
@@ -51,9 +65,14 @@ export async function joinGroup(
     }
 
     // The function's own jsonb: `error` is a sentence meant for the person.
-    const result = (data ?? {}) as { success?: boolean; error?: string };
+    const result = (data ?? {}) as { success?: boolean; error?: string; code?: string };
     if (!result.success) {
-      return { success: false, error: apiErrorMessage(result, 'Could not join the group.') };
+      const refusal = JOIN_REFUSALS.find(r => r === result.code);
+      return {
+        success: false,
+        error: apiErrorMessage(result, 'Could not join the group.'),
+        ...(refusal ? { refusal } : {}),
+      };
     }
 
     await logGroupActivity(groupId, userId, 'joined_group', 'Joined the group', undefined, sb);

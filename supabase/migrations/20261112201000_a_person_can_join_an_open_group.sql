@@ -20,6 +20,10 @@
 -- in the group is told so; the row they have, founder or admin included, is
 -- never touched.
 --
+-- Every refusal carries a `code` beside its sentence, so a caller can answer
+-- with the right status (POST /api/groups/<slug>/members: 401, 403, 409)
+-- without matching on the words.
+--
 -- Rollback: DROP FUNCTION public.join_public_group(uuid). Nothing else
 -- changes, so nothing else needs undoing.
 
@@ -34,7 +38,9 @@ DECLARE
   g RECORD;
 BEGIN
   IF v_user IS NULL THEN
-    RETURN jsonb_build_object('success', false, 'error', 'Sign in to join this group');
+    RETURN jsonb_build_object('success', false,
+      'code', 'not_signed_in',
+      'error', 'Sign in to join this group');
   END IF;
 
   -- FOR SHARE: the group cannot be closed or deleted between this check and
@@ -47,6 +53,7 @@ BEGIN
   IF NOT FOUND OR g.is_public IS NOT TRUE OR g.visibility IS DISTINCT FROM 'public' THEN
     RETURN jsonb_build_object(
       'success', false,
+      'code', 'invitation_only',
       'error', 'This group takes new members by invitation only'
     );
   END IF;
@@ -58,7 +65,11 @@ BEGIN
   ON CONFLICT (group_id, user_id) DO NOTHING;
 
   IF NOT FOUND THEN
-    RETURN jsonb_build_object('success', false, 'error', 'You are already a member of this group');
+    RETURN jsonb_build_object(
+      'success', false,
+      'code', 'already_member',
+      'error', 'You are already a member of this group'
+    );
   END IF;
 
   RETURN jsonb_build_object('success', true, 'group_id', p_group_id);

@@ -60,6 +60,28 @@ describe('joinGroup', () => {
     expect(inserts).toEqual([]);
   });
 
+  it("carries the function's refusal code, so the route can answer 403/409", async () => {
+    const { sb } = client('u1', {
+      data: {
+        success: false,
+        code: 'already_member',
+        error: 'You are already a member of this group',
+      },
+    });
+    expect(await joinGroup('g1', sb)).toEqual({
+      success: false,
+      error: 'You are already a member of this group',
+      refusal: 'already_member',
+    });
+  });
+
+  it('never invents a refusal from an unknown code or a database error', async () => {
+    const unknown = await joinGroup('g1', client('u1', { data: { success: false, code: 'x' } }).sb);
+    expect(unknown.refusal).toBeUndefined();
+    const broken = await joinGroup('g1', client('u1', { error: { message: 'boom' } }).sb);
+    expect(broken.refusal).toBeUndefined();
+  });
+
   it('never shows a database error to the person', async () => {
     const { sb } = client('u1', {
       error: { message: 'new row violates row-level security policy for table "group_members"' },
@@ -74,7 +96,11 @@ describe('joinGroup', () => {
     const { sb, rpc } = client(null, {});
     const result = await joinGroup('g1', sb);
 
-    expect(result).toEqual({ success: false, error: 'Sign in to join this group' });
+    expect(result).toEqual({
+      success: false,
+      error: 'Sign in to join this group',
+      refusal: 'not_signed_in',
+    });
     expect(rpc).not.toHaveBeenCalled();
   });
 });

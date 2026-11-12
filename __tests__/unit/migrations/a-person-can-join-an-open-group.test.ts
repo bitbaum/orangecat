@@ -61,6 +61,14 @@ describe('a person can join an open group', () => {
     expect(body).toMatch(/already a member/);
   });
 
+  it('names every refusal with a code the route maps to a status', () => {
+    for (const code of ['not_signed_in', 'invitation_only', 'already_member']) {
+      expect(body).toContain(`'code', '${code}'`);
+    }
+    expect(body.match(/'success', false/g)).toHaveLength(3);
+    expect(body.match(/'code', '/g)).toHaveLength(3);
+  });
+
   it('is callable by signed-in people only, and opens nothing else', () => {
     expect(sql).toContain(
       'REVOKE ALL ON FUNCTION public.join_public_group(uuid) FROM PUBLIC, anon, service_role;'
