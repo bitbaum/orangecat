@@ -64,7 +64,11 @@ const members = [
   { user_id: 'member', role: 'member' },
 ];
 
-function viewAs(userId: string | null, activeTab = 'overview') {
+function viewAs(
+  userId: string | null,
+  activeTab = 'overview',
+  roleOverride: 'admin' | 'member' | null = null
+) {
   const setActiveTab = vi.fn();
   detail.state = {
     user: userId ? { id: userId } : null,
@@ -85,6 +89,8 @@ function viewAs(userId: string | null, activeTab = 'overview') {
     hasGovernanceFeatures: false,
     // The real hook: a listed, public group's content is open to anyone (#1661).
     canSeeContent: true,
+    // The hook reads the viewer's own membership row, not the members page.
+    viewerRole: userId === 'founder' ? 'founder' : userId === 'member' ? 'member' : roleOverride,
   };
   return setActiveTab;
 }
@@ -163,6 +169,14 @@ describe('adding a group wallet is offered to founders and admins only', () => {
     render(<GroupWallets groupId="g1" groupSlug="record-shop" wallets={[]} canManage />);
     expect(screen.getByRole('button', { name: 'Create New Wallet' })).toBeInTheDocument();
     expect(screen.getByText(/Use “Create New Wallet” above/)).toBeInTheDocument();
+  });
+
+  it('is offered to an admin who is not among the loaded members (a group of more than 20)', () => {
+    // `members` is one page, the 20 newest; this admin joined earlier and is not on it.
+    viewAs('early-admin', 'wallets', 'admin');
+    render(<GroupDetail groupSlug="record-shop" canReceive={false} />);
+    expect(screen.queryByText('Wallets are visible to members')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Create New Wallet' })).toBeInTheDocument();
   });
 
   it('names its close button and ties every label to its field', () => {

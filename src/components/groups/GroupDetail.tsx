@@ -42,6 +42,7 @@ export function GroupDetail({ groupSlug, canReceive }: GroupDetailProps) {
     setActiveTab,
     canCreateProposal,
     canSeeContent,
+    viewerRole,
     loadGroupData,
     labelConfig,
     governanceConfig,
@@ -95,7 +96,6 @@ export function GroupDetail({ groupSlug, canReceive }: GroupDetailProps) {
   // so anyone else gets an empty list whatever the group holds. Printing that as
   // "0 Wallets" beside a pay card contradicted the card; say nothing instead.
   // Adding one is for founders and admins, the roles the create route accepts.
-  const viewerRole = user ? members.find(m => m.user_id === user.id)?.role : undefined;
   const visibleWallets = viewerRole ? wallets : null;
   const canManageWallets =
     viewerRole === STATUS.GROUP_MEMBERS.FOUNDER || viewerRole === STATUS.GROUP_MEMBERS.ADMIN;
