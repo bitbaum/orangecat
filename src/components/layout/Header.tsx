@@ -105,10 +105,17 @@ export function Header({
               />
             ) : null}
 
-            {/* Logo - Icon only on mobile, text on larger screens */}
+            {/* Logo - Icon only on mobile, text on larger screens. Each link sits
+                in its own breakpoint box: hiding only the link's contents left
+                an invisible, focusable 44px "home" link beside the visible one
+                and pushed the logo off the header's centre line. */}
             <div className="flex-shrink-0 min-w-0">
-              <Logo showText={false} size="sm" className="sm:hidden" />
-              <Logo showText={true} size="md" className="hidden sm:flex" />
+              <div className="flex items-center sm:hidden">
+                <Logo showText={false} size="sm" />
+              </div>
+              <div className="hidden items-center sm:flex">
+                <Logo showText={true} size="md" />
+              </div>
             </div>
 
             {/* Desktop Navigation Links — anonymous marketing surfaces only.
