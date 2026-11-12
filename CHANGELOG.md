@@ -11,6 +11,7 @@ to the map, sub-bullets stay here for the human reader.
 
 ## 2026-11-12
 
+- **A pay page no longer vanishes for a moment.** When the database was briefly unreachable, a real pay page answered "not found" and a wallet paying a Lightning address was told the person did not exist. A lookup that could not be made is now reported as an error to retry, never as a missing person.
 - **The bottom bar shows where you are.** On a phone, the tab you were on lost its icon: Explore showed a blank white disc instead of a compass. The icon stays drawn now; the current tab is marked by a heavier line and a bold label.
 - **A sign-in code survives the trip to your mail app.** On a phone, leaving the sign-in page to read the code could bring you back to an empty form, and you had to ask for another code. The page now reopens on the code field, with what you had typed, for fifteen minutes. If you ask for too many codes it says how long to wait instead of "We could not send a code", and you can still enter a code you already hold.
 - **Easier to tap on a phone.** "Forgot password?", "Create an account" and "Remember me" on the sign-in page, the logo in the header and the "Also here" links on Discover are now full-size tap targets (44px) instead of a line of text. The feedback button no longer sits on top of "Sign in".
