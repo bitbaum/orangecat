@@ -6,8 +6,9 @@ import Button from '@/components/ui/Button';
 import TimelineLayout from './TimelineLayout';
 import { TimelineFeedResponse } from '@/types/timeline';
 import TimelineComposer from './TimelineComposer';
+import SignInToPost from './SignInToPost';
 import { TimelineSkeleton } from './TimelineSkeleton';
-import { useSocialTimeline } from './useSocialTimeline';
+import { feedNeedsSignIn, useSocialTimeline, type SocialTimelineMode } from './useSocialTimeline';
 import { TimelineSortingControls } from './TimelineSortingControls';
 import { TimelineSearchControls } from './TimelineSearchControls';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
@@ -18,7 +19,7 @@ import { scrollBehavior } from '@/lib/scroll-behavior';
 export interface SocialTimelineProps {
   title: string;
   icon: LucideIcon;
-  mode: 'timeline' | 'community' | 'following';
+  mode: SocialTimelineMode;
   timelineOwnerId?: string;
   timelineOwnerType?: 'profile' | 'project';
   timelineOwnerName?: string;
@@ -85,7 +86,7 @@ export default function SocialTimeline({
     invalidateTimelineCache,
   } = useSocialTimeline({ mode, defaultSort, onOptimisticUpdate });
 
-  if (hydrated && authCheckComplete && !isLoading && !user) {
+  if (hydrated && authCheckComplete && !isLoading && !user && feedNeedsSignIn(mode)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-surface-page">
         <div className="text-center">
@@ -148,7 +149,18 @@ export default function SocialTimeline({
       </div>
     ) : undefined;
 
-  const postComposer = inlineComposer === undefined ? searchControls : undefined;
+  // Signed out on a feed anyone can read, the composer's place says how to post.
+  const postComposer =
+    inlineComposer === undefined ? (
+      <>
+        {searchControls}
+        {showInlineComposer && !user ? (
+          <div className={TIMELINE_SURFACE.composer}>
+            <SignInToPost />
+          </div>
+        ) : null}
+      </>
+    ) : undefined;
 
   const timelineStats =
     customStats ||
