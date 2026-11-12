@@ -28,7 +28,7 @@ import { join } from 'node:path';
 const raw = readFileSync(
   join(
     process.cwd(),
-    'supabase/migrations/20261112235900_members_only_groups_hide_their_members.sql'
+    'supabase/migrations/20261112200000_members_only_groups_hide_their_members.sql'
   ),
   'utf8'
 );
