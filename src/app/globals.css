@@ -880,7 +880,9 @@
     @apply mt-10 text-sm text-fg-secondary;
   }
   .oc-discover-inline-link {
-    @apply font-medium text-fg-primary underline decoration-border-strong underline-offset-4 hover:decoration-fg-primary;
+    /* These are the only way to the kinds without a rail: a full 44px tap
+       target each, not the 17px of a text line. */
+    @apply inline-flex min-h-11 items-center font-medium text-fg-primary underline decoration-border-strong underline-offset-4 hover:decoration-fg-primary;
   }
   .oc-discover-end {
     @apply mt-16 border-t border-border-subtle pt-10 text-center;

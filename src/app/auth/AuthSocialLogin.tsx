@@ -24,7 +24,7 @@ export function AuthSocialLogin({ mode, setMode, loading, onOAuthSignIn }: AuthS
         <button
           onClick={() => setMode('login')}
           disabled={loading}
-          className="mt-1 font-semibold text-fg-primary hover:text-fg-primary"
+          className="min-h-11 px-3 font-semibold text-fg-primary hover:text-fg-primary"
         >
           Sign in instead
         </button>
@@ -92,7 +92,7 @@ export function AuthSocialLogin({ mode, setMode, loading, onOAuthSignIn }: AuthS
         <button
           onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
           disabled={loading}
-          className="mt-1 font-semibold text-fg-primary hover:text-fg-primary"
+          className="min-h-11 px-3 font-semibold text-fg-primary hover:text-fg-primary"
         >
           {mode === 'login' ? 'Create an account' : 'Sign in instead'}
         </button>

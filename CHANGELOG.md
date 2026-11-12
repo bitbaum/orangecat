@@ -12,6 +12,7 @@ to the map, sub-bullets stay here for the human reader.
 ## 2026-11-12
 
 - **A sign-in code survives the trip to your mail app.** On a phone, leaving the sign-in page to read the code could bring you back to an empty form, and you had to ask for another code. The page now reopens on the code field, with what you had typed, for fifteen minutes. If you ask for too many codes it says how long to wait instead of "We could not send a code", and you can still enter a code you already hold.
+- **Easier to tap on a phone.** "Forgot password?", "Create an account" and "Remember me" on the sign-in page, the logo in the header and the "Also here" links on Discover are now full-size tap targets (44px) instead of a line of text. The feedback button no longer sits on top of "Sign in".
 - **Choose which identity signs in to an app.** When Loki, Solon or another app sends you to OrangeCat to sign in, the screen that asks "Allow …?" now lists your other identities under "Or continue as". Tap one and the same screen comes back as that identity; nothing is shared with the app until you press Allow. An identity no longer shows a made-up email address there.
 
 ## 2026-11-11
