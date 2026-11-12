@@ -307,6 +307,7 @@ export default async function PublicEntityDetailPage({
                     entityType={config.entityType}
                     entityId={id}
                     entityTitle={entity.title}
+                    recipientName={owner?.name ?? owner?.username ?? null}
                     priceAmount={priceAmount}
                     priceCurrency={price?.currency}
                     sellerProfileId={owner?.id ?? null}

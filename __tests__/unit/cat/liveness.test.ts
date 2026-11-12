@@ -11,6 +11,14 @@
  * assembled for it.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { servingChain } from '@/services/cat/provider-catalog';
+
+/**
+ * Every env var that can put a link in the platform chain. Cleared before each
+ * test so a key the HOST happens to hold (a box with GEMINI_API_KEY set) cannot
+ * join the chain and answer where the test means "nothing is configured".
+ */
+const PLATFORM_ENV = [...new Set(servingChain().map(p => p.keyEnv)), 'PLATFORM_OLLAMA_URL'];
 
 /**
  * Each test loads the module FRESH.
@@ -40,6 +48,9 @@ function completion(content: string) {
 let fetchMock: ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
+  for (const key of PLATFORM_ENV) {
+    delete process.env[key];
+  }
   process.env.GROQ_API_KEY = 'gsk_test';
   process.env.OPENROUTER_API_KEY = 'sk-or-test';
   delete process.env.AI_PROBE_SECRET;
