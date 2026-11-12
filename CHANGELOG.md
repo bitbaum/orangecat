@@ -11,6 +11,7 @@ to the map, sub-bullets stay here for the human reader.
 
 ## 2026-11-12
 
+- **You can delete your account again after creating an identity.** Settings → Delete account failed with an error for anyone who held an identity, and for the identity itself, because a database rule that tidies up hand-over links was not allowed to run during deletion. It runs now, and CI deletes a holder and its identity the way production does on every migration change. The hand-over page that says a link no longer works now offers a way back to OrangeCat.
 - **Small text is readable, in light and in dark.** Dates, labels, helper lines and footnotes were set in a grey too faint to read comfortably, in the light theme most of all. Grey text and the status colours now clear the accessibility minimum (4.5:1) on every surface in both themes, and a check in the build keeps it there.
 - **Nothing disappears in dark mode.** The closing banner on About, Docs, Security and Domains showed only its button, the step numbers on How it works were white on white, and the "Share via…" label could not be read. They all show now. Orange buttons such as "Open in wallet" have dark lettering in place of white, which was hard to read.
 - **Easier to use on a phone.** Footer links, switches, tabs and the rows of a menu or a select are full-size touch targets, and the footer is about a third shorter. A switch shows clearly whether it is on or off. Headings no longer split a word with a hyphen ("permission-less").
