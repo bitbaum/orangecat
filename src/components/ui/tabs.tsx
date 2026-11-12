@@ -14,7 +14,8 @@ const TabsList = React.forwardRef<
   <TabsPrimitive.List
     ref={ref}
     className={cn(
-      'inline-flex h-auto min-h-9 items-center justify-center rounded-lg bg-muted p-1 text-fg-secondary',
+      // A minimum, not a fixed height: on touch the triggers grow to 44px.
+      'inline-flex min-h-9 items-center justify-center rounded-lg bg-muted p-1 text-fg-secondary',
       className
     )}
     {...props}
@@ -29,7 +30,7 @@ const TabsTrigger = React.forwardRef<
   <TabsPrimitive.Trigger
     ref={ref}
     className={cn(
-      'inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-surface-page data-[state=active]:text-fg-primary data-[state=active]:shadow pointer-coarse:min-h-11',
+      'inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 pointer-coarse:min-h-11 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-surface-page data-[state=active]:text-fg-primary data-[state=active]:shadow',
       className
     )}
     {...props}

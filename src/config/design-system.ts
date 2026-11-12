@@ -120,4 +120,12 @@ export const COMPONENT_STYLES = {
     surface: 'bg-fg-primary text-fg-inverted',
     hairline: 'bg-fg-primary/60',
   },
+  /**
+   * A text link: the words in the text colour, the orange only in the
+   * underline. Orange as a text colour is 2.1:1 on the light surfaces, far
+   * under the 4.5:1 small text needs; the underline carries the colour instead.
+   */
+  link: {
+    text: 'text-fg-primary underline decoration-accent-warm/60 decoration-2 underline-offset-2 hover:decoration-accent-warm',
+  },
 } as const;

@@ -7,12 +7,13 @@
  * optional (collapsed), so the happy path is "paste your Lightning address → Save".
  */
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { ChevronDown, ChevronRight, Check, Wallet, ExternalLink, Camera } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
+import { COMPONENT_STYLES } from '@/config/design-system';
 import { PAY_DESTINATION_COPY } from '@/config/pay-destination';
 import { LIGHTNING_ADDRESS_PROVIDERS } from '@/config/wallet-providers';
 import {
@@ -26,6 +27,7 @@ import {
 import type { WalletFormProps } from '../types';
 import { apiErrorMessage } from '@/lib/api/errorMessage';
 import { normalizePastedHandle } from '@/lib/wallets/pastedHandle';
+import { cn } from '@/lib/utils';
 
 /** Loaded on tap, never at page load — the decoder is the heavy part. */
 const WalletQrScanner = dynamic(() => import('@/components/wallets/WalletQrScanner'), {
@@ -76,6 +78,12 @@ export function WalletForm({
   const [showDetails, setShowDetails] = useState(false);
   const [showGetWallet, setShowGetWallet] = useState(false);
   const [scanning, setScanning] = useState(false);
+  // Each label names its control, so a screen reader reads "Your wallet", not
+  // the placeholder.
+  const fieldId = useId();
+  const walletInputId = `${fieldId}-wallet`;
+  const goalAmountId = `${fieldId}-goal`;
+  const categoryLabelId = `${fieldId}-category`;
 
   // The whole point: paste ANYTHING your wallet gives you — a Lightning address,
   // a Bitcoin address, an xpub, or a wallet-connect link — and we route it to
@@ -190,7 +198,10 @@ export function WalletForm({
 
       {/* Smart "paste anything" input — auto-routes Lightning / on-chain / NWC. */}
       <div className="mb-4">
-        <label className="mb-2 flex items-center gap-1.5 text-sm font-medium text-fg-primary">
+        <label
+          htmlFor={walletInputId}
+          className="mb-2 flex items-center gap-1.5 text-sm font-medium text-fg-primary"
+        >
           <Wallet className="h-4 w-4 text-fg-secondary" />
           Your wallet
         </label>
@@ -204,6 +215,7 @@ export function WalletForm({
               inside the flex row instead of overflowing on a phone. */}
           <div className="min-w-0 flex-1">
             <Input
+              id={walletInputId}
               value={walletInput}
               onChange={e => handleWalletInput(e.target.value)}
               onFocus={() => onFieldFocus?.('lightningAddress')}
@@ -256,7 +268,7 @@ export function WalletForm({
         <button
           type="button"
           onClick={() => setShowGetWallet(v => !v)}
-          className="mt-2 text-xs font-medium text-fg-primary underline underline-offset-4 hover:text-fg-secondary"
+          className={cn('min-h-11 text-xs font-medium', COMPONENT_STYLES.link.text)}
         >
           Don&apos;t have a wallet? Get one free →
         </button>
@@ -291,7 +303,8 @@ export function WalletForm({
       <button
         type="button"
         onClick={() => setShowAdvanced(v => !v)}
-        className="mb-2 flex items-center gap-1 text-xs font-medium text-fg-secondary hover:text-fg-primary"
+        aria-expanded={showAdvanced}
+        className="mb-2 flex items-center gap-1 text-xs font-medium text-fg-secondary hover:text-fg-primary pointer-coarse:min-h-11"
       >
         {showAdvanced ? (
           <ChevronDown className="h-3.5 w-3.5" />
@@ -303,10 +316,8 @@ export function WalletForm({
       {showAdvanced && (
         <div className="mb-4 space-y-4 border-l-2 border-subtle pl-3">
           <div>
-            <label className="mb-2 block text-sm font-medium text-fg-primary">
-              On-chain Bitcoin address or extended key
-            </label>
             <Input
+              label="On-chain Bitcoin address or extended key"
               value={formData.address_or_xpub ?? ''}
               onChange={e => setFormData({ ...formData, address_or_xpub: e.target.value })}
               onFocus={() => onFieldFocus?.('addressOrXpub')}
@@ -319,10 +330,8 @@ export function WalletForm({
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-fg-primary">
-              Wallet connection link
-            </label>
             <Input
+              label="Wallet connection link"
               type="password"
               value={formData.nwc_connection_uri || ''}
               onChange={e => setFormData({ ...formData, nwc_connection_uri: e.target.value })}
@@ -343,7 +352,8 @@ export function WalletForm({
       <button
         type="button"
         onClick={() => setShowDetails(v => !v)}
-        className="mb-2 flex items-center gap-1 text-xs font-medium text-fg-secondary hover:text-fg-primary"
+        aria-expanded={showDetails}
+        className="mb-2 flex items-center gap-1 text-xs font-medium text-fg-secondary hover:text-fg-primary pointer-coarse:min-h-11"
       >
         {showDetails ? (
           <ChevronDown className="h-3.5 w-3.5" />
@@ -355,8 +365,8 @@ export function WalletForm({
       {showDetails && (
         <div className="mb-4 space-y-4 border-l-2 border-subtle pl-3">
           <div>
-            <label className="mb-2 block text-sm font-medium text-fg-primary">Wallet name</label>
             <Input
+              label="Wallet name"
               value={formData.label}
               onChange={e => setFormData({ ...formData, label: e.target.value })}
               onFocus={() => onFieldFocus?.('label')}
@@ -365,8 +375,8 @@ export function WalletForm({
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-fg-primary">Description</label>
             <Textarea
+              label="Description"
               value={formData.description ?? ''}
               onChange={e => setFormData({ ...formData, description: e.target.value })}
               onFocus={() => onFieldFocus?.('description')}
@@ -375,8 +385,10 @@ export function WalletForm({
             />
           </div>
 
-          <div>
-            <label className="mb-2 block text-sm font-medium text-fg-primary">Category</label>
+          <div role="group" aria-labelledby={categoryLabelId}>
+            <p id={categoryLabelId} className="mb-2 text-sm font-medium text-fg-primary">
+              Category
+            </p>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {(Object.keys(WALLET_CATEGORIES) as WalletCategory[]).map(cat => {
                 const catInfo = WALLET_CATEGORIES[cat];
@@ -404,9 +416,15 @@ export function WalletForm({
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-fg-primary">Funding goal</label>
+            <label
+              htmlFor={goalAmountId}
+              className="mb-2 block text-sm font-medium text-fg-primary"
+            >
+              Funding goal
+            </label>
             <div className="flex gap-2">
               <Input
+                id={goalAmountId}
                 type="number"
                 step="0.01"
                 value={formData.goal_amount || ''}
@@ -418,6 +436,7 @@ export function WalletForm({
                 className="flex-1"
               />
               <select
+                aria-label="Goal currency"
                 value={formData.goal_currency ?? ''}
                 onChange={e => setFormData({ ...formData, goal_currency: e.target.value })}
                 onFocus={() => onFieldFocus?.('goalCurrency')}

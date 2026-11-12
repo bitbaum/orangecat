@@ -83,6 +83,7 @@ export function SocialLinkForm({
           {initialLink ? 'Edit Link' : 'Add Social Link'}
         </h4>
         <Button
+          type="button"
           onClick={onCancel}
           variant="ghost"
           size="sm"
@@ -188,10 +189,10 @@ export function SocialLinkForm({
       </div>
 
       <div className="flex gap-2">
-        <Button onClick={handleSubmit} className="flex-1">
+        <Button type="button" onClick={handleSubmit} className="flex-1">
           {initialLink ? 'Save Changes' : 'Add Link'}
         </Button>
-        <Button onClick={onCancel} variant="outline">
+        <Button type="button" onClick={onCancel} variant="outline">
           Cancel
         </Button>
       </div>
