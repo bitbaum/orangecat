@@ -13,6 +13,7 @@ import MobileBottomNav from './MobileBottomNav';
 import { useNavigation } from '@/hooks/useNavigation';
 import { sidebarSections, bottomNavItems } from '@/config/navigation';
 import { MessageSyncManagerInitializer } from '@/components/MessageSyncManagerInitializer';
+import { useUnreadMessagesSync } from '@/hooks/useUnreadMessagesSync';
 import { ViewportHeightSync } from './ViewportHeightSync';
 
 interface AppShellProps {
@@ -60,6 +61,9 @@ export function AppShell({ children }: AppShellProps) {
     isItemActive,
     getFilteredSections,
   } = useNavigation(sidebarSections);
+
+  // One fetch for every Messages badge (header, sidebar, phone tab bar).
+  useUnreadMessagesSync();
 
   const routeChrome = getRouteChrome(pathname ?? '/');
   // Mirrors MobileBottomNav visibility — when the bottom nav renders, reserve
