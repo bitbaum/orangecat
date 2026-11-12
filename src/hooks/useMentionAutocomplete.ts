@@ -34,7 +34,10 @@ interface ProfilesResponse {
   data?: MentionCandidateProfile[];
 }
 
-async function fetchProfiles(search: string, signal: AbortSignal): Promise<MentionCandidateProfile[]> {
+async function fetchProfiles(
+  search: string,
+  signal: AbortSignal
+): Promise<MentionCandidateProfile[]> {
   const url = `/api/profiles?limit=${FETCH_LIMIT}&search=${encodeURIComponent(search)}`;
   const response = await fetch(url, { signal, credentials: 'same-origin' });
   if (!response.ok) {

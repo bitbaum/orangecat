@@ -209,12 +209,18 @@ describe('a row with no consumer says so', () => {
   // not. Enforced in BOTH directions, because each is a real drift: a new row
   // with no caller and no declaration would look gated and not be, and a stale
   // declaration would hide that a capability IS now gated.
+  // Every capability anything actually asks the gate about. ONE grep over src/,
+  // run on first use and shared: a grep per capability per test re-read the
+  // whole tree eight times and outran the 30s timeout under the full suite.
+  let consulted: Set<string> | null = null;
   const consumed = (cap: string): boolean => {
-    // Whether anything actually asks the gate about this capability.
-    const out = execSync(`grep -rEo "(may|can)UseCapability\\('${cap}'" src/ || true`, {
-      encoding: 'utf8',
-    });
-    return out.trim().length > 0;
+    if (!consulted) {
+      const out = execSync(`grep -rEoh "(may|can)UseCapability\\('[a-z_]+'" src/ || true`, {
+        encoding: 'utf8',
+      });
+      consulted = new Set([...out.matchAll(/UseCapability\('([a-z_]+)'/g)].map(m => m[1]));
+    }
+    return consulted.has(cap);
   };
 
   const all = Object.keys(CAPABILITY_RULES) as CatCapability[];
