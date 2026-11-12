@@ -23,6 +23,12 @@ vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => ({ user: { id: ME } }),
 }));
 
+// The follow list comes through the one shared reader (check:follow-envelope).
+const fetchFollowList = vi.fn();
+vi.mock('@/services/social/followList', () => ({
+  fetchFollowList: (...args: unknown[]) => fetchFollowList(...args),
+}));
+
 const followed = {
   id: '00000000-0000-4000-8000-000000000002',
   username: 'mara',
@@ -40,21 +46,15 @@ function json(body: unknown) {
   return { ok: true, status: 200, json: async () => body } as Response;
 }
 
-function answer(url: string, following: unknown[]) {
-  if (url.startsWith(API_ROUTES.SOCIAL.FOLLOWING(ME))) {
-    // The route's real envelope: rows nested two levels deep.
-    return json({
-      success: true,
-      data: {
-        data: following.map(profile => ({ following_id: (profile as { id: string }).id, profile })),
-        pagination: { limit: 20, offset: 0, total: following.length },
-      },
-    });
-  }
+function answer(url: string) {
   if (url.startsWith(API_ROUTES.PROFILES.BASE)) {
     return json({ success: true, data: [newestSignUp] });
   }
   return json({ success: true, data: [] });
+}
+
+function following(people: (typeof followed)[]) {
+  fetchFollowList.mockResolvedValue(people.map(profile => ({ following_id: profile.id, profile })));
 }
 
 function requested(): string[] {
@@ -64,22 +64,25 @@ function requested(): string[] {
 afterEach(() => {
   cleanup();
   vi.mocked(fetch).mockReset();
+  fetchFollowList.mockReset();
 });
 
 describe('New message picker, nothing typed', () => {
   it('lists the people you follow, never the newest sign-ups', async () => {
-    vi.mocked(fetch).mockImplementation(async input => answer(String(input), [followed]));
+    following([followed]);
+    vi.mocked(fetch).mockImplementation(async input => answer(String(input)));
     render(<NewConversationModal isOpen onClose={() => {}} onCreated={() => {}} />);
 
     expect(await screen.findByText('Mara Keller')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'People you follow' })).toBeInTheDocument();
     expect(screen.queryByText('Brand New')).not.toBeInTheDocument();
-    expect(requested()).toContain(API_ROUTES.SOCIAL.FOLLOWING(ME));
+    expect(fetchFollowList).toHaveBeenCalledWith('following', ME);
     expect(requested().some(url => url.startsWith(API_ROUTES.PROFILES.BASE))).toBe(false);
   });
 
   it('says only what it lists when you follow nobody', async () => {
-    vi.mocked(fetch).mockImplementation(async input => answer(String(input), []));
+    following([]);
+    vi.mocked(fetch).mockImplementation(async input => answer(String(input)));
     render(<NewConversationModal isOpen onClose={() => {}} onCreated={() => {}} />);
 
     expect(await screen.findByText('Find someone to message')).toBeInTheDocument();
@@ -91,13 +94,14 @@ describe('New message picker, nothing typed', () => {
 
   it('treats spaces as nothing typed, and a typed name as a search', async () => {
     const user = userEvent.setup();
-    vi.mocked(fetch).mockImplementation(async input => answer(String(input), [followed]));
+    following([followed]);
+    vi.mocked(fetch).mockImplementation(async input => answer(String(input)));
     render(<NewConversationModal isOpen onClose={() => {}} onCreated={() => {}} />);
     await screen.findByText('Mara Keller');
     const box = screen.getByRole('searchbox', { name: 'Find a person to message' });
 
     await user.type(box, '  ');
-    await waitFor(() => expect(requested().filter(u => u.includes('/following/'))).toHaveLength(2));
+    await waitFor(() => expect(fetchFollowList).toHaveBeenCalledTimes(2));
     expect(requested().some(url => url.startsWith(API_ROUTES.PROFILES.BASE))).toBe(false);
 
     await user.type(box, 'brand');
