@@ -221,7 +221,7 @@ export function AmountField({
 
         <div className="mt-2 flex min-h-5 flex-col items-center gap-1 text-xs">
           {/* Rule 1: what actually moves, always on screen. */}
-          <span className="tabular-nums text-fg-tertiary">{value > 0 ? secondary : null}</span>
+          <span className="tabular-nums text-fg-secondary">{value > 0 ? secondary : null}</span>
         </div>
         {ratesUsable && (
           <button
@@ -230,7 +230,7 @@ export function AmountField({
               e.stopPropagation();
               setPreferBtcEntry(v => !v);
             }}
-            className="mt-1 inline-flex min-h-11 items-center px-3 text-xs text-fg-tertiary underline underline-offset-2 hover:text-fg-secondary"
+            className="mt-1 inline-flex min-h-11 items-center px-3 text-xs text-fg-secondary underline underline-offset-2 hover:text-fg-primary"
           >
             {inBtc ? `Enter in ${displayCurrency}` : 'Enter in BTC'}
           </button>

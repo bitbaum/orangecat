@@ -218,7 +218,13 @@ async function generateLightningAddressInvoice(
   const callbackUrl = new URL(meta.callback);
   callbackUrl.searchParams.set('amount', amountMsats.toString());
   if (description) {
-    callbackUrl.searchParams.set('comment', description);
+    // LUD-12: the provider says how long a comment it takes and refuses a
+    // longer one. A request's note can make the description long.
+    const commentMax = Number(meta.commentAllowed);
+    callbackUrl.searchParams.set(
+      'comment',
+      commentMax > 0 ? description.slice(0, commentMax) : description
+    );
   }
 
   const invoiceResponse = await fetch(callbackUrl.toString());

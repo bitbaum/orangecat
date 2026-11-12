@@ -121,7 +121,13 @@ export const PAY_COPY = {
   shareHint: 'Send this link and they can pay you from any Bitcoin wallet.',
   copyLink: 'Copy link',
   copiedLink: 'Link copied',
-  generate: 'Show the code',
+  /**
+   * What the button does on every screen: a phone gets "Open in wallet" first
+   * and the code one more tap away, so the label cannot promise the code.
+   */
+  generate: 'Pay with a Bitcoin wallet',
+  /** The same action beside "Pay from my wallet": a different wallet from the one connected. */
+  generateOther: 'Pay from another wallet',
   generating: 'Preparing…',
   scan: 'Waiting for the payment…',
   again: 'Change amount',
@@ -176,9 +182,11 @@ export const PAY_LANDING_COPY = {
     'Your page is orangecat.ch/pay/your-name. The money goes to the wallet you connected. OrangeCat does not hold it.',
   points: [
     {
-      title: 'One door',
+      // The address needs a wallet that takes Lightning; the link does not
+      // (/.well-known/lnurlp refuses an on-chain-only wallet).
+      title: 'Two ways in',
       description:
-        'The link and your-name@orangecat.ch are the same door. A chat gets the link. A wallet app gets the address.',
+        'A chat gets the link, and it pays whichever wallet you connect. A wallet app gets your-name@orangecat.ch, which works once that wallet takes Lightning.',
     },
     {
       title: 'The payer needs a Bitcoin wallet',

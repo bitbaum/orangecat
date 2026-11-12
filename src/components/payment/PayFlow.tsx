@@ -41,6 +41,8 @@ interface PayWords {
   disclaimer: string;
   generating: string;
   generate: string;
+  /** The generate action when "pay from my wallet" sits above it. */
+  generateOther: string;
   payFromWallet: string;
   payFromWalletNote: string;
   payingFromWallet: string;
@@ -107,6 +109,9 @@ export function PayFlow({
   });
   const canPayFromWallet = useSendCapability();
   const { invoice, settleState, reset } = flow;
+  // The field already says when an amount is out of range; the actions agree
+  // with it, instead of sending it to the server to be refused.
+  const amountPayable = flow.amount >= TIP_MIN_BTC && flow.amount <= TIP_MAX_BTC;
 
   if (flow.checkingWallet) {
     return (
@@ -197,7 +202,7 @@ export function PayFlow({
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
           {words.scan}
         </p>
-        <p className="text-center text-xs text-fg-tertiary">{words.disclaimer}</p>
+        <p className="text-center text-xs text-fg-secondary">{words.disclaimer}</p>
         <div className="flex justify-center gap-3">
           <Button variant="outline" onClick={reset}>
             {words.again}
@@ -219,7 +224,7 @@ export function PayFlow({
       />
       {beforeActionSlot}
       {flow.error && <p className="text-sm text-status-negative">{flow.error}</p>}
-      <p className="text-center text-xs text-fg-tertiary">{words.disclaimer}</p>
+      <p className="text-center text-xs text-fg-secondary">{words.disclaimer}</p>
       {canPayFromWallet ? (
         // One primary action: paying from the wallet in hand. The code is the
         // other way, for a different wallet — quiet, but one tap away.
@@ -228,7 +233,7 @@ export function PayFlow({
             variant="primary"
             className="w-full"
             onClick={flow.payFromWallet}
-            disabled={flow.generating || flow.amount <= 0}
+            disabled={flow.generating || !amountPayable}
           >
             {words.payFromWallet}
           </Button>
@@ -237,10 +242,10 @@ export function PayFlow({
             variant="outline"
             className="w-full"
             onClick={flow.generate}
-            disabled={flow.generating || flow.amount <= 0}
+            disabled={flow.generating || !amountPayable}
             isLoading={flow.generating}
           >
-            {flow.generating ? words.generating : words.generate}
+            {flow.generating ? words.generating : words.generateOther}
           </Button>
         </>
       ) : (
@@ -248,7 +253,7 @@ export function PayFlow({
           variant="accent"
           className="w-full"
           onClick={flow.generate}
-          disabled={flow.generating || flow.amount <= 0}
+          disabled={flow.generating || !amountPayable}
           isLoading={flow.generating}
         >
           {flow.generating ? words.generating : words.generate}

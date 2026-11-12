@@ -308,8 +308,12 @@ export async function initiatePublicSupport(
  * anonymous tipper polls with.
  */
 export async function initiateTip(input: InitiateTipInput): Promise<InitiatePublicSupportResult> {
-  const { recipientUserId, recipientName, wallet, amountBtc, paymentRequestId } = input;
-  const description = `Tip for ${recipientName}`;
+  const { recipientUserId, recipientName, wallet, amountBtc, paymentRequestId, requestNote } =
+    input;
+  // The payer's wallet keeps this line. The same path carries a gift, a pay
+  // link and the settling of a request, so it names the payee, not a "tip".
+  const note = requestNote?.trim();
+  const description = note ? `Payment to ${recipientName}: ${note}` : `Payment to ${recipientName}`;
   const invoice = await generateInvoice(wallet, amountBtc, description);
   const token = randomBytes(32).toString('base64url');
   const expiresAt = resolveIntentExpiry(invoice.method, invoice.expires_at);
