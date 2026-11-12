@@ -11,7 +11,7 @@ import { MESSAGE_ATTACHMENT_POLICY } from '@/config/message-attachments';
  * uploaded".
  */
 const migration = readFileSync(
-  'supabase/migrations/20261112120000_messages_can_carry_files.sql',
+  'supabase/migrations/20261112200000_messages_can_carry_files.sql',
   'utf8'
 );
 

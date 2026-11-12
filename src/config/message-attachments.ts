@@ -5,7 +5,7 @@
  * an upload starts — the Messenger, `@bitbaum/chatkit/messenger`), this app's
  * routes (before a storage URL is issued), and the storage bucket itself
  * (`message-attachments`: its size limit and type list are set by migration
- * 20261112120000 from the same numbers). Change a ceiling here and the bucket
+ * 20261112200000 from the same numbers). Change a ceiling here and the bucket
  * with it, or the three disagree.
  *
  * The rules are `@bitbaum/threadkit`'s (`checkAttachment`), re-exported by
