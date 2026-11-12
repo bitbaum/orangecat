@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/Button';
 import { Wallet } from 'lucide-react';
 import { PaymentDialog } from './PaymentDialog';
 import { getEntityMetadata, type EntityType } from '@/config/entity-registry';
+import { CONTRIBUTION_TERMS, type ContributionBoundsBtc } from '@/config/contribution-terms';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 
 interface PaymentButtonProps {
@@ -26,6 +27,8 @@ interface PaymentButtonProps {
   sellerProfileId?: string;
   /** Whether the seller has a wallet connected */
   sellerHasWallet?: boolean;
+  /** An investment's stated minimum/maximum, in BTC — bounds the dialog's amount. */
+  contributionBounds?: ContributionBoundsBtc | null;
   /** Additional CSS classes */
   className?: string;
 }
@@ -38,6 +41,7 @@ export function PaymentButton({
   priceCurrency,
   sellerProfileId,
   sellerHasWallet = true,
+  contributionBounds = null,
   className,
 }: PaymentButtonProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -50,7 +54,10 @@ export function PaymentButton({
   }
 
   const isContribution = meta.paymentPattern === 'contribution';
-  const buttonText = isContribution ? 'Support' : 'Buy Now';
+  // An investment is invested in, not supported (src/config/contribution-terms.ts).
+  const buttonText = isContribution
+    ? (CONTRIBUTION_TERMS[entityType]?.verb ?? 'Support')
+    : 'Buy Now';
   const disabled = !sellerHasWallet;
 
   return (
@@ -77,6 +84,7 @@ export function PaymentButton({
         priceBtc={priceBtc}
         priceCurrency={priceCurrency}
         sellerProfileId={sellerProfileId}
+        contributionBounds={contributionBounds}
       />
     </>
   );

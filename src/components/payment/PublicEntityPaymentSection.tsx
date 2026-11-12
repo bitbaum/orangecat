@@ -24,6 +24,7 @@ import { PublicSupportPanel } from './PublicSupportPanel';
 import { SharedWalletNotice } from './SharedWalletNotice';
 import GuestTicketPurchase from '@/components/events/GuestTicketPurchase';
 import type { SharedWalletUsage } from '@/domain/wallets/walletUsage';
+import type { ContributionBoundsBtc } from '@/config/contribution-terms';
 import { getEntityMetadata, type EntityType } from '@/config/entity-registry';
 import { ROUTES } from '@/config/routes';
 
@@ -53,6 +54,8 @@ interface PublicEntityPaymentSectionProps {
   sharedWalletUsage?: SharedWalletUsage | null;
   /** Fixed price converted to BTC, for the anonymous BIP21 amount. */
   priceAmountBtc?: number;
+  /** An investment's stated minimum/maximum, in BTC (src/config/contribution-terms.ts). */
+  contributionBounds?: ContributionBoundsBtc | null;
   /** Redirect path after sign-in */
   signInRedirect: string;
 }
@@ -69,6 +72,7 @@ export function PublicEntityPaymentSection({
   sellerReceive,
   sharedWalletUsage = null,
   priceAmountBtc,
+  contributionBounds = null,
   signInRedirect,
 }: PublicEntityPaymentSectionProps) {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -105,6 +109,7 @@ export function PublicEntityPaymentSection({
           entityId={entityId}
           entityTitle={entityTitle}
           recipientName={recipientName}
+          bounds={contributionBounds}
         />
       ) : (
         <Card>
@@ -276,6 +281,7 @@ export function PublicEntityPaymentSection({
             priceCurrency={priceCurrency}
             sellerProfileId={sellerProfileId ?? undefined}
             sellerHasWallet={hasWallet}
+            contributionBounds={contributionBounds}
             className="w-full min-h-11"
           />
           <PaymentExpectationNote />

@@ -18,8 +18,17 @@ const KNOWN_PAYMENT_ERRORS: Record<string, string> = {
   'not a pay request': 'Seller Lightning Address is not configured correctly.',
 };
 
+/**
+ * A refusal already written for the payer: it names the minimum or maximum an
+ * entity states (src/config/contribution-terms.ts), so it is shown as it is.
+ */
+export class ContributionOutsideTermsError extends Error {}
+
 /** Returns the safe message for a known domain error, or null for unknown errors. */
-export function mapKnownPaymentError(message: string): string | null {
+export function mapKnownPaymentError(message: string, error?: unknown): string | null {
+  if (error instanceof ContributionOutsideTermsError) {
+    return error.message;
+  }
   for (const [pattern, safeMessage] of Object.entries(KNOWN_PAYMENT_ERRORS)) {
     if (message.includes(pattern)) {
       return safeMessage;
