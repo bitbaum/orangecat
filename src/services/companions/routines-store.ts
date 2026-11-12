@@ -83,10 +83,28 @@ export function nextRunAt(now: Date, timeLocal: string, zone: string): string {
  */
 export function nextRoutineRun(
   now: Date,
-  routine: { timeLocal: string; zone: string; everyHours: number | null | undefined }
+  routine: {
+    timeLocal: string;
+    zone: string;
+    everyHours: number | null | undefined;
+    /**
+     * The run this one was due at. A repeating routine steps from there, not
+     * from when the cron got to it (up to its 15-minute tick later), so it
+     * keeps its hours instead of drifting later every run.
+     */
+    dueAt?: string | null;
+  }
 ): string {
   if (isRoutineInterval(routine.everyHours)) {
-    return new Date(now.getTime() + routine.everyHours * 3_600_000).toISOString();
+    const step = routine.everyHours * 3_600_000;
+    const due = routine.dueAt ? Date.parse(routine.dueAt) : NaN;
+    let next = (Number.isFinite(due) ? due : now.getTime()) + step;
+    // Missed runs (the box was down) are not run late in a burst: the next
+    // one is the first still ahead.
+    while (next <= now.getTime()) {
+      next += step;
+    }
+    return new Date(next).toISOString();
   }
   return nextRunAt(now, routine.timeLocal, routine.zone);
 }

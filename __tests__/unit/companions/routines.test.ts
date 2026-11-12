@@ -89,6 +89,27 @@ describe('a routine that repeats through the day', () => {
     );
   });
 
+  it('keeps its hours: the next run steps from when it was due, not when the cron ran it', () => {
+    const late = new Date('2026-11-02T08:14:00.000Z');
+    expect(
+      nextRoutineRun(late, {
+        timeLocal: '08:00',
+        zone: 'Europe/Zurich',
+        everyHours: 2,
+        dueAt: '2026-11-02T08:00:00.000Z',
+      })
+    ).toBe('2026-11-02T10:00:00.000Z');
+    // Down for a day: the next run is the first still ahead, not a burst.
+    expect(
+      nextRoutineRun(late, {
+        timeLocal: '08:00',
+        zone: 'Europe/Zurich',
+        everyHours: 4,
+        dueAt: '2026-11-01T06:00:00.000Z',
+      })
+    ).toBe('2026-11-02T10:00:00.000Z');
+  });
+
   it('is the daily routine when no interval, or one that is not offered, is set', () => {
     const daily = nextRunAt(now, '08:00', 'Europe/Zurich');
     for (const everyHours of [null, undefined, 0, 3, 48]) {

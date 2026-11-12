@@ -60,6 +60,7 @@ export async function runDueRoutines(
         timeLocal: row.time_local,
         zone: row.zone,
         everyHours: row.every_hours,
+        dueAt: row.next_run_at,
       });
       const hasOwnKey = Boolean(await keys.getDecryptedKey(row.user_id, 'openrouter'));
       const reason = skipReason(hasOwnKey);
