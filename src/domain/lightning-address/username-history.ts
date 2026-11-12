@@ -15,6 +15,22 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 /**
+ * The handle lookup itself failed (database unreachable, query refused).
+ *
+ * Thrown, never folded into "not found": the lookup decides whether a pay page
+ * exists and which wallet a payment settles into. Answering a database hiccup
+ * with "no such person" told a payer's wallet the recipient did not exist and
+ * served a 404 for a real page (seen in CI against the live database,
+ * 2026-11-12: /pay/<name> answered 404 once, then 200).
+ */
+export class HandleLookupError extends Error {
+  constructor(detail: string) {
+    super(`Handle lookup failed: ${detail}`);
+    this.name = 'HandleLookupError';
+  }
+}
+
+/**
  * The profile id a retired handle used to belong to, or null.
  *
  * Goes through an RPC rather than a PostgREST filter. PostgREST reads `+` in a
@@ -37,6 +53,11 @@ export async function resolveHistoricalUsername(
   if (!trimmed) {
     return null;
   }
-  const { data } = await client.rpc('resolve_username_history', { handle: trimmed });
+  const { data, error } = await client.rpc('resolve_username_history', { handle: trimmed });
+  if (error) {
+    // "We could not look" is not "nobody ever had this name": see
+    // HandleLookupError in lnurl-service.
+    throw new HandleLookupError(error.message);
+  }
   return typeof data === 'string' && data ? data : null;
 }

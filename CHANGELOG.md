@@ -11,6 +11,7 @@ to the map, sub-bullets stay here for the human reader.
 
 ## 2026-11-12
 
+- **A pay page no longer vanishes for a moment.** When the database was briefly unreachable, a real pay page answered "not found" and a wallet paying a Lightning address was told the person did not exist. A lookup that could not be made is now reported as an error to retry, never as a missing person.
 - **A sign-in code survives the trip to your mail app.** On a phone, leaving the sign-in page to read the code could bring you back to an empty form, and you had to ask for another code. The page now reopens on the code field, with what you had typed, for fifteen minutes. If you ask for too many codes it says how long to wait instead of "We could not send a code", and you can still enter a code you already hold.
 - **Choose which identity signs in to an app.** When Loki, Solon or another app sends you to OrangeCat to sign in, the screen that asks "Allow …?" now lists your other identities under "Or continue as". Tap one and the same screen comes back as that identity; nothing is shared with the app until you press Allow. An identity no longer shows a made-up email address there.
 

@@ -199,3 +199,43 @@ describe('buildLnurlMetadata', () => {
     ]);
   });
 });
+
+describe('a lookup that could not be made', () => {
+  // null means "the database answered, and nobody has this name". A database
+  // error used to come back as the same null: a real pay page served a 404 and
+  // a payer's wallet was told "No OrangeCat user with that name" during a
+  // hiccup (seen 2026-11-12: /pay/<name> answered 404 once, then 200).
+  function failing(where: 'profiles' | 'history') {
+    return {
+      rpc: async () =>
+        where === 'history'
+          ? { data: null, error: { message: 'connection reset' } }
+          : { data: null, error: null },
+      from: () => ({
+        select: () => ({
+          eq: () => ({
+            maybeSingle: async () =>
+              where === 'profiles'
+                ? { data: null, error: { message: 'connection reset' } }
+                : { data: null, error: null },
+          }),
+        }),
+      }),
+    };
+  }
+
+  it('throws when the profiles read fails, rather than answering "nobody"', async () => {
+    mockGetAdmin.mockReturnValue(failing('profiles') as never);
+    await expect(resolveLnurlRecipient('cato')).rejects.toThrow(/Handle lookup failed/);
+  });
+
+  it('throws when the username-history read fails', async () => {
+    mockGetAdmin.mockReturnValue(failing('history') as never);
+    await expect(resolveLnurlRecipient('old-name')).rejects.toThrow(/Handle lookup failed/);
+  });
+
+  it('still answers null when the database says nobody has the name', async () => {
+    mockGetAdmin.mockReturnValue(adminReturning(null) as never);
+    expect(await resolveLnurlRecipient('nobody-here')).toBeNull();
+  });
+});
