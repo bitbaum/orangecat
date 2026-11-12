@@ -16,7 +16,6 @@
 
 import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
 import { LucideIcon, Globe, Lock, Wallet, TrendingUp } from 'lucide-react';
-import { GRADIENTS } from '@/config/gradients';
 
 // The "what you can do" grid used to be a hand-written list here, a second
 // copy of the entity registry that drifted from it. The capability map
@@ -33,7 +32,6 @@ interface HowItWorksStep {
   icon: LucideIcon | typeof BrandMarkIcon;
   title: string;
   description: string;
-  iconGradient: string;
   bgColor: string;
 }
 
@@ -43,7 +41,6 @@ export const HOW_IT_WORKS_STEPS: HowItWorksStep[] = [
     icon: Lock,
     title: 'Choose Your Identity',
     description: 'Use your real name, a handle, or anything in between. Your identity, your rules.',
-    iconGradient: GRADIENTS.iconTiffany,
     bgColor: 'bg-surface-raised',
   },
   {
@@ -52,7 +49,6 @@ export const HOW_IT_WORKS_STEPS: HowItWorksStep[] = [
     title: 'Meet Your Cat',
     description:
       'Your AI economic agent is ready. Tell it what you want to do — sell, fund, lend, invest, or coordinate.',
-    iconGradient: GRADIENTS.iconTiffany,
     bgColor: 'bg-surface-raised',
   },
   {
@@ -61,7 +57,6 @@ export const HOW_IT_WORKS_STEPS: HowItWorksStep[] = [
     title: 'Pick Your Currency',
     description:
       'Price your work in any display currency. Payments settle natively in Bitcoin and Lightning: global, non-custodial, and independently verifiable.',
-    iconGradient: GRADIENTS.iconOrange,
     bgColor: 'bg-surface-raised',
   },
   {
@@ -70,7 +65,6 @@ export const HOW_IT_WORKS_STEPS: HowItWorksStep[] = [
     title: 'Economic Activity Begins',
     description:
       'Buy, sell, fund, lend, invest, or coordinate. Your Cat keeps track, surfaces insights, and acts on your behalf.',
-    iconGradient: GRADIENTS.iconGreen,
     bgColor: 'bg-surface-raised',
   },
 ];
@@ -93,6 +87,15 @@ export const FEE_CLAIMS = {
   // Use for body copy where you previously said "100% reaches the recipient"
   passthroughClaim: '100% reaches the recipient — no middleman, no processing costs.',
 } as const;
+
+/**
+ * What a payment leaves in public, by rail. /how-it-works, /technology and
+ * /security each promised public blockchain verification for every payment —
+ * untrue for Lightning, the default rail, which settles off-chain (the privacy
+ * policy in legal-content.ts says so). One sentence, used as is.
+ */
+export const SETTLEMENT_TRANSPARENCY_CLAIM =
+  'On-chain Bitcoin payments can be verified by anyone on the public blockchain; Lightning payments settle off-chain and do not appear there.';
 
 // ==================== PLATFORM COMPARISON ====================
 

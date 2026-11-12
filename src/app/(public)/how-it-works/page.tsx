@@ -5,7 +5,13 @@ import Button from '@/components/ui/Button';
 import { Shield, Zap, Eye, Sparkles, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { CapabilityMap } from '@/components/map/CapabilityMap';
-import { HOW_IT_WORKS_STEPS, SECTION_HEADERS, CTA_LABELS, FEE_CLAIMS } from '@/config/landing-page';
+import {
+  HOW_IT_WORKS_STEPS,
+  SECTION_HEADERS,
+  CTA_LABELS,
+  FEE_CLAIMS,
+  SETTLEMENT_TRANSPARENCY_CLAIM,
+} from '@/config/landing-page';
 import { ROUTES } from '@/config/routes';
 
 /**
@@ -15,12 +21,16 @@ import { ROUTES } from '@/config/routes';
  * Provides more detail and explanation for users who want to learn more.
  */
 
+// Background and text are one token pair, so the step number and icon read in
+// both themes. They were `text-white` on a per-step background that turns
+// near-white in dark (1.19:1 on orangecat.ch).
+const STEP_MARK = 'bg-fg-primary text-fg-inverted';
+
 const whyBitcoin = [
   {
     icon: Shield,
     title: 'Trustless & Secure',
-    description:
-      "Bitcoin's blockchain ensures every transaction is permanent, transparent, and immutable. No chargebacks.",
+    description: 'A settled Bitcoin or Lightning payment is final. No chargebacks.',
   },
   {
     icon: Zap,
@@ -30,9 +40,8 @@ const whyBitcoin = [
   },
   {
     icon: Eye,
-    title: 'Complete Transparency',
-    description:
-      'Every transaction is publicly verifiable on the Bitcoin blockchain. Build trust through radical transparency.',
+    title: 'Transparent On-Chain',
+    description: SETTLEMENT_TRANSPARENCY_CLAIM,
   },
   {
     icon: Sparkles,
@@ -78,7 +87,7 @@ export default function HowItWorksPage() {
                       {/* Step Number & Icon */}
                       <div className="flex-shrink-0">
                         <div
-                          className={`${step.iconGradient} w-16 h-16 rounded-full flex items-center justify-center text-white mb-4 md:mb-0`}
+                          className={`${STEP_MARK} w-16 h-16 rounded-full flex items-center justify-center mb-4 md:mb-0`}
                         >
                           <Icon className="w-8 h-8" />
                         </div>
@@ -87,9 +96,7 @@ export default function HowItWorksPage() {
                       {/* Content */}
                       <div className="flex-1">
                         <div className="flex items-start gap-3 mb-3">
-                          <span
-                            className={`${step.iconGradient} text-white text-sm font-bold px-3 py-1 rounded-full`}
-                          >
+                          <span className={`${STEP_MARK} text-sm font-bold px-3 py-1 rounded-full`}>
                             Step {step.number}
                           </span>
                           <h3 className="text-2xl font-bold text-fg-primary flex-1">

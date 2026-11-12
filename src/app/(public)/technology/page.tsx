@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { Bitcoin, Shield, Zap, Lock, Globe, Code, Server, CheckCircle } from 'lucide-react';
 import { ROUTES } from '@/config/routes';
-import { FEE_CLAIMS } from '@/config/landing-page';
+import { FEE_CLAIMS, SETTLEMENT_TRANSPARENCY_CLAIM } from '@/config/landing-page';
 import { STACK } from '@/config/stack-versions';
 
 export const metadata: Metadata = {
@@ -63,9 +63,7 @@ export default function TechnologyPage() {
             <div className="bg-surface-base p-6 rounded-lg shadow-sm border border-subtle">
               <Shield className="h-12 w-12 text-fg-secondary mb-4" />
               <h3 className="text-lg font-semibold text-fg-primary mb-2">Transparent</h3>
-              <p className="text-fg-secondary">
-                All transactions are publicly verifiable on the Bitcoin blockchain. No hidden fees.
-              </p>
+              <p className="text-fg-secondary">{SETTLEMENT_TRANSPARENCY_CLAIM} No hidden fees.</p>
             </div>
 
             <div className="bg-surface-base p-6 rounded-lg shadow-sm border border-subtle">

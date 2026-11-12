@@ -17,6 +17,7 @@ import { STACK } from '@/config/stack-versions';
 import Button from '@/components/ui/Button';
 import { PageHeading } from '@/components/layout/PageHeading';
 import { ROUTES } from '@/config/routes';
+import { ENTITY_VISIBILITY_SUMMARY } from '@/config/public-visibility';
 
 export const metadata: Metadata = {
   title: 'Documentation',
@@ -185,8 +186,7 @@ export default function DocsPage() {
                 <div>
                   <p className="font-medium text-fg-primary text-sm">Visibility control</p>
                   <p className="text-fg-secondary text-sm">
-                    Each entity has a visibility setting: public, followers-only, or private. Your
-                    profile information is also configurable.
+                    {ENTITY_VISIBILITY_SUMMARY} Your profile information is also configurable.
                   </p>
                 </div>
               </div>

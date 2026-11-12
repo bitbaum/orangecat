@@ -19,3 +19,14 @@ export const PUBLIC_VISIBILITY: Partial<Record<EntityType, PublicVisibilityFilte
   ai_assistant: { column: 'is_public', value: true },
   loan: { column: 'is_public', value: true },
 };
+
+/**
+ * The rule above, in words — what /faq ("Who can see my activity?") and /docs
+ * ("Visibility control") tell a reader. Both used to promise every entity a
+ * public / followers-only / private setting; listings only have "Show on
+ * Public Profile", and that three-way choice belongs to posts and articles
+ * (TIMELINE_VISIBILITY_OPTIONS). content/faq.md takes it as
+ * {{ENTITY_VISIBILITY_SUMMARY}}.
+ */
+export const ENTITY_VISIBILITY_SUMMARY =
+  'While a project, product, service or other listing is a draft, only you can see it. Once you publish it, it is public: anyone can open it, and you choose whether it also appears on your profile. Some kinds, such as loans, companions, wishlists, circles and groups, have their own visibility setting. Posts and articles can be public, followers-only or private.';
