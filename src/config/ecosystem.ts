@@ -95,6 +95,8 @@ export const LOKI_ENDPOINTS = {
   actorStatus: '/api/orangecat/actor-status',
   /** "What are this person's agent sessions doing, and what did they say?" — signed, per actor. */
   sessions: '/api/orangecat/sessions',
+  /** File a finding into a project's feedback inbox, or read where one is — signed, per actor. */
+  feedback: '/api/orangecat/feedback',
   /** Every studio project: identity, roadmap, changelog, links — public, cached 5 min. */
   fleetMap: '/api/fleet/map',
 } as const;

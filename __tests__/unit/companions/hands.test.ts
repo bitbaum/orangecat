@@ -36,7 +36,14 @@ describe('the launch set', () => {
     }
     // Steering Loki is the platform's, for every bot: read, ask, task.
     expect(COMPANION_HANDS).toEqual(
-      expect.arrayContaining(['ask_loki', 'loki_sessions', 'loki_run_status', 'send_task_to_loki'])
+      expect.arrayContaining([
+        'ask_loki',
+        'loki_sessions',
+        'loki_run_status',
+        'send_task_to_loki',
+        'file_loki_finding',
+        'loki_finding_status',
+      ])
     );
     expect(handsActions().map(a => a.id)).toEqual([...COMPANION_HANDS]);
     expect(handsActions(['nope', 'create_event']).map(a => a.id)).toEqual(['create_event']);

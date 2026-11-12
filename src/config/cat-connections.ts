@@ -67,6 +67,8 @@ export const CAT_CONNECTIONS: readonly CatConnection[] = [
       'ask_loki',
       'loki_sessions',
       'loki_run_status',
+      'file_loki_finding',
+      'loki_finding_status',
     ],
     pushes: ['Build progress on projects you published to OrangeCat'],
     connect: {
