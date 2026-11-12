@@ -96,4 +96,35 @@ describe('SegmentedControl', () => {
       expect(button.className).toContain('min-h-11');
     }
   });
+
+  it('keeps equal cells by default, and with `scroll` never cuts a label: the row scrolls', () => {
+    const { unmount } = render(
+      <SegmentedControl
+        label="Send method"
+        value="person"
+        items={BUTTON_ITEMS}
+        onChange={() => {}}
+      />
+    );
+    expect(screen.getByRole('group').className).not.toMatch(/\boverflow-x-auto\b/);
+    for (const button of screen.getAllByRole('button')) {
+      expect(button.className).toMatch(/\bmin-w-0\b/);
+    }
+    unmount();
+
+    render(
+      <SegmentedControl
+        label="Send method"
+        value="person"
+        items={BUTTON_ITEMS}
+        onChange={() => {}}
+        scroll
+      />
+    );
+    expect(screen.getByRole('group').className).toMatch(/\boverflow-x-auto\b/);
+    for (const button of screen.getAllByRole('button')) {
+      expect(button.className).toMatch(/\bmin-w-max\b/);
+      expect(button.className).not.toMatch(/\bmin-w-0\b/);
+    }
+  });
 });

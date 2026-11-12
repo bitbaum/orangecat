@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import MessagePanel from '@/components/messaging/MessagePanel';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { SegmentedControl, type SegmentedItem } from '@/components/ui/SegmentedControl';
 import { useNotificationCenter, type UIFilter } from './useNotificationCenter';
 import { NotificationItem } from './NotificationItem';
 
@@ -14,12 +15,12 @@ interface NotificationCenterProps {
   className?: string;
 }
 
-const FILTER_TABS: { key: UIFilter; label: string }[] = [
-  { key: 'all', label: 'All' },
-  { key: 'unread', label: 'Unread' },
-  { key: 'payments', label: 'Payments' },
-  { key: 'social', label: 'Social' },
-  { key: 'messages', label: 'Messages' },
+const FILTER_TABS: SegmentedItem<UIFilter>[] = [
+  { value: 'all', label: 'All' },
+  { value: 'unread', label: 'Unread' },
+  { value: 'payments', label: 'Payments' },
+  { value: 'social', label: 'Social' },
+  { value: 'messages', label: 'Messages' },
 ];
 
 export default function NotificationCenter({
@@ -75,21 +76,14 @@ export default function NotificationCenter({
               </div>
             )}
 
-            <div className="mb-4 flex gap-1 rounded-md bg-surface-raised p-1">
-              {FILTER_TABS.map(tab => (
-                <button
-                  key={tab.key}
-                  onClick={() => setUIFilter(tab.key)}
-                  className={`flex-1 px-3 py-1.5 text-sm rounded-md transition-colors ${
-                    uiFilter === tab.key
-                      ? 'bg-surface-page text-fg-primary'
-                      : 'text-fg-secondary hover:text-fg-primary'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
+            <SegmentedControl
+              label="Notification filter"
+              items={FILTER_TABS}
+              value={uiFilter}
+              onChange={setUIFilter}
+              scroll
+              className="mb-4 shrink-0"
+            />
 
             {unreadCount > 0 && (
               <div className="flex justify-between items-center mb-4">

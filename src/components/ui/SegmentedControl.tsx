@@ -14,6 +14,11 @@
  *
  * Every segment is at least 44px tall — a control this size is aimed at with a
  * thumb far more often than a cursor.
+ *
+ * Equal cells hold for a few short labels. A longer row (the notification
+ * filters: five words in a 340px dialog on a phone) passes `scroll`: each
+ * segment stays at least as wide as its label and the row scrolls sideways
+ * when they cannot all fit, instead of a label spilling past its cell.
  */
 
 import Link from 'next/link';
@@ -37,11 +42,13 @@ interface SegmentedControlProps<T extends string> {
   onChange?: (value: T) => void;
   /** Names the group for screen readers, e.g. "Money surface". */
   label: string;
+  /** Never narrower than a label; the row scrolls sideways when it must. */
+  scroll?: boolean;
   className?: string;
 }
 
 const SEGMENT_BASE =
-  'flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-md px-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:gap-2 sm:px-3 sm:text-sm';
+  'flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-md px-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:gap-2 sm:px-3 sm:text-sm';
 const SEGMENT_ACTIVE = 'bg-surface-base text-fg-primary shadow-sm';
 const SEGMENT_IDLE = 'text-fg-secondary hover:text-fg-primary';
 
@@ -50,17 +57,26 @@ export function SegmentedControl<T extends string>({
   value,
   onChange,
   label,
+  scroll = false,
   className,
 }: SegmentedControlProps<T>) {
   return (
     <div
       role="group"
       aria-label={label}
-      className={cn('flex gap-1 rounded-lg bg-surface-raised p-1', className)}
+      className={cn(
+        'flex gap-1 rounded-lg bg-surface-raised p-1',
+        scroll && 'no-scrollbar overflow-x-auto',
+        className
+      )}
     >
       {items.map(item => {
         const active = item.value === value;
-        const classes = cn(SEGMENT_BASE, active ? SEGMENT_ACTIVE : SEGMENT_IDLE);
+        const classes = cn(
+          SEGMENT_BASE,
+          scroll ? 'min-w-max' : 'min-w-0',
+          active ? SEGMENT_ACTIVE : SEGMENT_IDLE
+        );
         const content = (
           <>
             {item.icon && <item.icon className="h-4 w-4" aria-hidden="true" />}
