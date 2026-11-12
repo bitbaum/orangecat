@@ -1,3 +1,4 @@
+import { selectHomeFleet } from '@/components/ecosystem/studio-fleet';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { fetchStudioMapForCat } from '@/services/ai/studio-map-fetcher';
 import { fetchDiscoverCounts } from '@/services/search/discoverCounts';
@@ -8,9 +9,10 @@ import { logger } from '@/utils/logger';
  * much of the studio behind it is live.
  *
  * Real counts, the same public-only filters /discover uses (so the hero can
- * never claim more than the directory shows), plus the studio's own summary
- * from Loki's fleet map. Nothing here is a marketing figure typed into a
- * config; a number that cannot be fetched is simply not shown.
+ * never claim more than the directory shows), plus the studio's live products
+ * counted from Loki's fleet map with the selection the LIVE NOW grid uses (so
+ * it can never claim more than the grid shows). Nothing here is a marketing
+ * figure typed into a config; a number that cannot be fetched is not shown.
  *
  * Cached in-process for five minutes, like the discover counts route: the
  * home page is rendered per request (it checks the session) and these
@@ -24,7 +26,11 @@ export interface HomePulse {
   people: number;
   /** Products and services on offer. */
   offers: number;
-  /** Studio products that are live, from Loki's fleet map; null when unreachable. */
+  /**
+   * Studio products that are live: exactly the tiles the home page's LIVE NOW
+   * grid shows (`selectHomeFleet`), so the two can never disagree. Not Loki's
+   * `summary.live`, which also counts client work. Null when unreachable.
+   */
   studioLive: number | null;
   /** Every project in the studio, live or not; null when unreachable. */
   studioProjects: number | null;
@@ -53,7 +59,7 @@ export async function getHomePulse(now: number = Date.now()): Promise<HomePulse>
     projects: counts?.totalProjectsCount ?? 0,
     people: counts?.totalProfilesCount ?? 0,
     offers: (counts?.totalProductsCount ?? 0) + (counts?.totalServicesCount ?? 0),
-    studioLive: map?.summary.live ?? null,
+    studioLive: map ? selectHomeFleet(map).length : null,
     studioProjects: map?.summary.projects ?? null,
   };
 
