@@ -9,7 +9,16 @@
  * call get_user_groups for anyone; after, a stranger reads only the public
  * group's rows, a listed group with a NULL visibility is closed too, a member
  * still reads everything of their own group, and get_user_groups answers
- * service_role only. These pin those rules against a later edit.
+ * service_role only.
+ *
+ * Adversarial review then found is_group_member / get_user_group_role still
+ * answered anon about anyone (`role(<group>, <admin>)` -> 'admin'), which
+ * rebuilt the member list. With the guard, anon and a stranger get false /
+ * NULL about others, a member gets true / their role about themselves, the
+ * founder/admin/member write policies and the events-at-a-place trigger behave
+ * exactly as before, and service_role still gets every answer. A NULL
+ * visibility is backfilled and the column is NOT NULL. These pin those rules
+ * against a later edit.
  * Comment-blind, because the migration's prose names every identifier.
  */
 
@@ -83,6 +92,46 @@ describe('members-only groups hide their members', () => {
     expect(sql).not.toMatch(
       /GRANT [A-Z, ]+ ON FUNCTION public\.get_user_groups\(uuid\) TO [^;]*(anon|authenticated)/
     );
+  });
+
+  const fn = (name: string) => {
+    const head = `CREATE OR REPLACE FUNCTION public.${name}(p_group_id uuid, p_user_id uuid)`;
+    const start = sql.indexOf(head);
+    expect(start, name).toBeGreaterThan(-1);
+    return sql.slice(start, sql.indexOf('$$;', start));
+  };
+
+  // anon and authenticated may ask only about themselves; any other role
+  // (service_role, a migration) is answered as before.
+  const ONLY_ABOUT_SELF =
+    /p_user_id = \(SELECT auth\.uid\(\)\) OR COALESCE\(current_setting\('role', true\), 'none'\) NOT IN \('anon', 'authenticated'\)/;
+
+  it.each(['is_group_member', 'get_user_group_role'])(
+    'answers anon and a stranger about themselves only: %s',
+    name => {
+      const body = fn(name);
+      expect(body).toMatch(/SECURITY DEFINER SET search_path TO ''/);
+      expect(body).toMatch(ONLY_ABOUT_SELF);
+      expect(body).toMatch(/user_id = p_user_id/);
+    }
+  );
+
+  it('keeps is_group_member a plain boolean, never NULL', () => {
+    expect(fn('is_group_member')).toMatch(/RETURNS boolean .*SELECT COALESCE\(.*, false \);/);
+  });
+
+  it('leaves EXECUTE on the membership functions where the policies need it', () => {
+    expect(sql).not.toMatch(
+      /(REVOKE|GRANT) [A-Z, ]+ ON FUNCTION public\.(is_group_member|get_user_group_role)/
+    );
+  });
+
+  it('gives a NULL visibility the value the settings form shows, then forbids it', () => {
+    expect(sql).toContain(
+      "UPDATE public.groups SET visibility = CASE WHEN is_public THEN 'members_only' ELSE 'private' END WHERE visibility IS NULL;"
+    );
+    expect(sql).toContain('ALTER TABLE public.groups ALTER COLUMN visibility SET NOT NULL;');
+    expect(sql.indexOf('UPDATE public.groups')).toBeLessThan(sql.indexOf('SET NOT NULL'));
   });
 
   it('opens nothing else', () => {

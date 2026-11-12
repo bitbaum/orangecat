@@ -10,11 +10,11 @@
  * Proposals and Activity tabs, and a live pay card.
  */
 
-import { render, renderHook, screen, waitFor } from '@testing-library/react';
+import { act, render, renderHook, screen, waitFor } from '@testing-library/react';
 import { GroupDetail } from '@/components/groups/GroupDetail';
 import type * as UseGroupDetailModule from '@/components/groups/useGroupDetail';
 
-const auth = vi.hoisted(() => ({ user: null as null | { id: string } }));
+const auth = vi.hoisted(() => ({ user: null as null | { id: string }, hydrated: true }));
 const service = vi.hoisted(() => ({
   getGroup: vi.fn(),
   getGroupMembers: vi.fn(async () => ({ success: true, members: [] })),
@@ -24,7 +24,9 @@ const membership = vi.hoisted(() => ({ isGroupMember: vi.fn(async () => false) }
 const detail = vi.hoisted(() => ({ state: {} as Record<string, unknown> }));
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
-vi.mock('@/hooks/useAuth', () => ({ useAuth: () => ({ user: auth.user }) }));
+vi.mock('@/hooks/useAuth', () => ({
+  useAuth: () => ({ user: auth.user, hydrated: auth.hydrated }),
+}));
 vi.mock('@/services/groups', () => ({ default: service }));
 vi.mock('@/services/groups/utils/helpers', () => membership);
 vi.mock('@/services/groups/permissions', () => ({
@@ -64,7 +66,56 @@ async function load(group: typeof membersOnlyGroup) {
 beforeEach(() => {
   vi.clearAllMocks();
   auth.user = null;
+  auth.hydrated = true;
   membership.isGroupMember.mockResolvedValue(false);
+});
+
+describe('useGroupDetail while auth is still arriving', () => {
+  function deferred<T>() {
+    let resolve!: (value: T) => void;
+    const promise = new Promise<T>(r => (resolve = r));
+    return { promise, resolve };
+  }
+
+  it('decides nothing before auth has hydrated', async () => {
+    auth.hydrated = false;
+    service.getGroup.mockResolvedValue({ success: true, group: membersOnlyGroup });
+    const useGroupDetail = await realHook();
+    const { result, rerender } = renderHook(() => useGroupDetail(membersOnlyGroup.slug));
+    expect(service.getGroup).not.toHaveBeenCalled();
+    expect(result.current.loading).toBe(true);
+
+    auth.hydrated = true;
+    auth.user = { id: 'member' };
+    membership.isGroupMember.mockResolvedValue(true);
+    rerender();
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.canSeeContent).toBe(true);
+  });
+
+  it('lets a load for the real user win over a slower one started before it', async () => {
+    // First load runs signed out and its group read is slow; the second runs
+    // for the member and finishes first. The stale one must not land last.
+    const slow = deferred<{ success: boolean; group: typeof membersOnlyGroup }>();
+    service.getGroup
+      .mockImplementationOnce(() => slow.promise)
+      .mockResolvedValue({ success: true, group: membersOnlyGroup });
+    const useGroupDetail = await realHook();
+    const { result, rerender } = renderHook(() => useGroupDetail(membersOnlyGroup.slug));
+
+    auth.user = { id: 'member' };
+    membership.isGroupMember.mockResolvedValue(true);
+    rerender();
+    await waitFor(() => expect(result.current.canSeeContent).toBe(true));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(async () => {
+      slow.resolve({ success: true, group: membersOnlyGroup });
+      await slow.promise;
+    });
+    expect(result.current.canSeeContent).toBe(true);
+    expect(result.current.loading).toBe(false);
+  });
 });
 
 describe('useGroupDetail on a listed members-only group', () => {

@@ -8,7 +8,12 @@
  * open to someone outside the group only when the group is listed
  * (`is_public`) AND its visibility is 'public'. A "Members only" or "Private"
  * group shows its content to its members alone, and an unknown visibility
- * counts as closed.
+ * counts as closed (and the column is NOT NULL since 20261112200000).
+ *
+ * Known gap: the `groups` row of a listed group is still readable over REST
+ * by anyone, all columns (description, tags, created_by, bitcoin_address,
+ * lightning_address). The page shows an outsider only the name and label,
+ * but the data layer does not hide the rest yet.
  */
 
 interface GroupVisibilityFields {
