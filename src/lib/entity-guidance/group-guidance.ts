@@ -152,7 +152,7 @@ export const groupGuidanceContent: Record<NonNullable<GroupFieldType>, GuidanceC
     title: 'Bitcoin Treasury Address',
     description: "Primary Bitcoin address for your group's treasury and financial operations.",
     tips: [
-      'Use a multi-signature wallet for security',
+      'For shared control, use a multi-signature wallet your members set up',
       'Generate a fresh address for your group',
       'Consider hardware wallet security',
       'Keep private keys secure and backed up',
@@ -188,7 +188,11 @@ export const groupDefaultGuidance: DefaultGuidance = {
   features: [
     {
       icon: React.createElement(Users, { className: 'w-4 h-4 text-fg-primary' }),
-      text: 'Collective treasury with multi-signature Bitcoin wallets',
+      // What a group wallet is: addresses the group controls, readable by its
+      // members (group_wallets RLS). OrangeCat holds no keys, so it neither
+      // makes nor enforces a multi-signature wallet; a group that wants one
+      // brings its own.
+      text: "A shared treasury: the group's own Bitcoin and Lightning addresses, shown to its members",
     },
     {
       icon: React.createElement(Shield, { className: 'w-4 h-4 text-fg-primary' }),

@@ -1,7 +1,7 @@
 import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
-import { DiscoverChips, pluralLabel } from './DiscoverChips';
+import { countLabel, DiscoverChips, pluralLabel } from './DiscoverChips';
 import { DiscoverGrid, DiscoverRail } from './DiscoverRail';
 import { DiscoverSearchBox } from './DiscoverSearchBox';
 import { CAT_QUERY_PARAM } from '@/config/cat-door';
@@ -10,6 +10,7 @@ import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { ROUTES } from '@/config/routes';
 import { discoverHref, type DiscoverParams } from '@/services/discover/params';
 import { presentTypes, type DiscoverView, type TypeCounts } from '@/services/discover/view';
+import type { PublicHitType } from '@/services/search/public-search';
 
 const sum = (counts: TypeCounts) => Object.values(counts).reduce((a, b) => a + (b ?? 0), 0);
 
@@ -74,6 +75,30 @@ function Shelf({ view }: { view: Extract<DiscoverView, { mode: 'shelf' }> }) {
         </Link>
       </div>
     </>
+  );
+}
+
+/**
+ * A kind with nothing public yet (/circles, /research …): say what the kind is
+ * and how to start one, instead of a bare "0 circles" over an empty grid.
+ */
+function NothingListed({ type }: { type: PublicHitType }) {
+  const meta = type === 'profile' ? null : ENTITY_REGISTRY[type];
+  return (
+    <div className="oc-discover-empty">
+      <p className="font-heading text-xl font-semibold text-fg-primary">
+        No public {pluralLabel(type).toLowerCase()} yet.
+      </p>
+      {meta && (
+        <p className="mt-2 text-fg-secondary">
+          <span className="font-medium text-fg-primary">{meta.plain.verb}.</span> {meta.plain.what}
+        </p>
+      )}
+      <Link href={meta?.createPath ?? ROUTES.CREATE} className="oc-problem-action">
+        <Plus className="h-4 w-4" aria-hidden />
+        {meta?.createActionLabel ?? DISCOVER_HERO.cta}
+      </Link>
+    </div>
   );
 }
 
@@ -154,11 +179,17 @@ export function DiscoverScreen({ params, view }: { params: DiscoverParams; view:
 
       {view.mode === 'browse' && (
         <section aria-label={pluralLabel(view.type)}>
-          <p className="oc-discover-status">
-            {view.total} {pluralLabel(view.type).toLowerCase()}, newest first
-          </p>
-          <DiscoverGrid hits={view.hits} />
-          <ShowMore params={params} hasMore={view.hasMore} />
+          {view.hits.length === 0 ? (
+            <NothingListed type={view.type} />
+          ) : (
+            <>
+              <p className="oc-discover-status">
+                {countLabel(view.type, view.total)}, newest first
+              </p>
+              <DiscoverGrid hits={view.hits} />
+              <ShowMore params={params} hasMore={view.hasMore} />
+            </>
+          )}
         </section>
       )}
 

@@ -122,7 +122,18 @@ export default function EntityDashboardPage<T extends BaseEntity>({
   const showStatusFilter = !!statusFilter && !activeTab?.hideStatusFilter && !isEmpty;
   const showSearch =
     !!searchableFields && searchableFields.length > 0 && !activeTab?.hideSearch && !isEmpty;
-  const emptyState = activeTab?.emptyState ?? config.emptyState;
+  const createLabel = createButtonLabel || `Create ${config.name}`;
+  const configuredEmptyState = activeTab?.emptyState ?? config.emptyState;
+  // The header's Create button is hidden while nothing is listed, so an empty
+  // state that brings no action of its own gets that button — never a dead end.
+  const emptyState =
+    isEmpty && !configuredEmptyState?.action
+      ? {
+          title: configuredEmptyState?.title ?? `No ${config.namePlural.toLowerCase()} yet`,
+          description: configuredEmptyState?.description,
+          action: <Button href={config.createPath}>{createLabel}</Button>,
+        }
+      : configuredEmptyState;
 
   const headerActions = isEmpty ? null : (
     <div className="flex items-center gap-2">
@@ -132,7 +143,7 @@ export default function EntityDashboardPage<T extends BaseEntity>({
         </Button>
       )}
       <Button href={config.createPath} className="w-full sm:w-auto">
-        {createButtonLabel || `Create ${config.name}`}
+        {createLabel}
       </Button>
     </div>
   );

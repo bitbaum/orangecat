@@ -3,10 +3,16 @@ import { cn } from '@/lib/utils';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { discoverHref } from '@/services/discover/params';
 import { presentTypes, type TypeCounts } from '@/services/discover/view';
+import { kindLabel } from './DiscoverCard';
 import type { PublicHitType } from '@/services/search/public-search';
 
 export function pluralLabel(type: PublicHitType): string {
   return type === 'profile' ? 'People' : ENTITY_REGISTRY[type].namePlural;
+}
+
+/** "1 loan", "3 loans", "1 person": a number of one kind, read as a phrase. */
+export function countLabel(type: PublicHitType, count: number): string {
+  return `${count} ${(count === 1 ? kindLabel(type) : pluralLabel(type)).toLowerCase()}`;
 }
 
 /**
