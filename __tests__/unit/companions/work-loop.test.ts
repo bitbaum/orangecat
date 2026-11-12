@@ -45,7 +45,14 @@ describe('a hand grant', () => {
   });
 
   it('lets only the Loki hands run on their own: what publishes on OrangeCat always asks', () => {
-    for (const id of ['ask_loki', 'loki_sessions', 'loki_run_status', 'send_task_to_loki']) {
+    for (const id of [
+      'ask_loki',
+      'loki_sessions',
+      'loki_run_status',
+      'send_task_to_loki',
+      'file_loki_finding',
+      'loki_finding_status',
+    ]) {
       expect(canRunOnItsOwn(id), id).toBe(true);
     }
     for (const id of COMPANION_HANDS.filter(h => h.startsWith('create_')).concat('send_to_loki')) {

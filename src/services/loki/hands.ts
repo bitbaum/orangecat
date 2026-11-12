@@ -12,6 +12,12 @@
  * the actor, so none can reach anyone else's projects.
  */
 import { askLokiAsPerson } from './ask';
+import {
+  fileLokiFinding,
+  findingFiledMessage,
+  findingStatusMessage,
+  readLokiFindingStatus,
+} from './findings';
 import { readLokiSessions, sessionsMessage } from './sessions';
 import { parseProjectList, sendTaskToLoki } from './task-dispatch';
 
@@ -115,6 +121,57 @@ export const LOKI_HANDS: Readonly<Record<string, LokiHand>> = {
         status: outcome.summary,
         ...(anySent ? { displayMessage: outcome.summary } : {}),
       },
+    };
+  },
+
+  /**
+   * A defect found on a live app, filed into that project's feedback inbox.
+   * Filed, never fixed: the report waits for the project's owner. The
+   * message carries the report id, which is what the status is read with.
+   */
+  file_loki_finding: async (actorId, params) => {
+    const text = (v: unknown): string => (typeof v === 'string' ? v : '');
+    const outcome = await fileLokiFinding({
+      actorId,
+      project: text(params.project),
+      finding: text(params.finding),
+      agentName: text(params.filed_by) || 'OrangeCat bot',
+      ...(text(params.url) ? { url: text(params.url) } : {}),
+    });
+    if (!outcome.ok) {
+      return {
+        success: false,
+        error: outcome.available?.length
+          ? `${outcome.reason} Ask the user which of these they meant.`
+          : outcome.reason,
+      };
+    }
+    return {
+      success: true,
+      data: {
+        id: outcome.id,
+        status: outcome.status,
+        displayMessage: findingFiledMessage(outcome),
+      },
+    };
+  },
+
+  /** Where one filed finding is. Read-only. */
+  loki_finding_status: async (actorId, params) => {
+    const id = typeof params.report_id === 'string' ? params.report_id.trim() : '';
+    if (!UUID.test(id)) {
+      return {
+        success: false,
+        error: 'A report is read by its full id, the one filing it returned. Ask the user for it.',
+      };
+    }
+    const outcome = await readLokiFindingStatus(actorId, id);
+    if (!outcome.ok) {
+      return { success: false, error: outcome.reason };
+    }
+    return {
+      success: true,
+      data: { state: outcome.state, displayMessage: findingStatusMessage(outcome) },
     };
   },
 };
