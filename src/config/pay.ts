@@ -113,6 +113,10 @@ export const PAY_COPY = {
   requestedFor: (note: string) => `For: ${note}`,
   noWallet: (name: string) =>
     `${name} hasn't added a Bitcoin wallet yet, so a payment has nowhere to land. Nothing was charged.`,
+  /** The same page, opened by its owner: where they add the wallet (/receive), not a message to themselves. */
+  ownerNoWallet:
+    'This is your pay page. Nobody can pay you here yet. Add a wallet and payments land in it.',
+  ownerAddWallet: 'Add a wallet',
   notFound: "We couldn't find that OrangeCat account.",
   /** Honesty line — the whole point of the alias is that we never hold funds. */
   disclaimer: 'Paid directly to them. OrangeCat takes 0% and never touches your funds.',
