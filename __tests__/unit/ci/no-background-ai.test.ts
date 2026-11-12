@@ -107,12 +107,20 @@ const GET_ALLOWED = new Map([
 
 type Chain = string[];
 
+// Every entry walks much of the same graph, so each file is read from disk
+// once per run, not once per entry: uncached, the walk re-read the shared tree
+// hundreds of times and outran the 30s timeout on a slow filesystem.
+const sources = new Map<string, string | null>();
+
 function read(file: string): string | null {
-  try {
-    return readFileSync(join(ROOT, file), 'utf8');
-  } catch {
-    return null; // missing, or a directory
+  if (!sources.has(file)) {
+    try {
+      sources.set(file, readFileSync(join(ROOT, file), 'utf8'));
+    } catch {
+      sources.set(file, null); // missing, or a directory
+    }
   }
+  return sources.get(file)!;
 }
 
 /** Runtime imports of a file, each with the names it binds (null = whole module). */

@@ -2,7 +2,7 @@
  * A bot's routine: when it writes first, and what it is asked.
  *
  * GET    /api/ai-assistants/[id]/routine — the routine, if any, and whether it can run
- * PUT    /api/ai-assistants/[id]/routine — set it: { prompt, timeLocal, zone }
+ * PUT    /api/ai-assistants/[id]/routine — set it: { prompt, timeLocal, zone, everyHours? }
  * DELETE /api/ai-assistants/[id]/routine — remove it
  *
  * Owner only (RLS answers on the bot); a routine runs only on the owner's
@@ -28,6 +28,7 @@ import {
   ROUTINE_PROMPT_MAX,
   deleteRoutine,
   getRoutine,
+  isRoutineInterval,
   isTimeLocal,
   upsertRoutine,
 } from '@/services/companions/routines-store';
@@ -42,6 +43,8 @@ const routineSchema = z.object({
   prompt: z.string().trim().min(1).max(ROUTINE_PROMPT_MAX),
   timeLocal: z.string().refine(isTimeLocal, 'A time of day as HH:MM'),
   zone: z.string().refine(isValidTimeZone, 'A time zone'),
+  /** Repeat through the day, every this many hours; absent or null = once a day. */
+  everyHours: z.number().refine(isRoutineInterval, 'How often, in hours').nullable().optional(),
 });
 
 async function ownBot(request: AuthenticatedRequest, id: string): Promise<boolean> {

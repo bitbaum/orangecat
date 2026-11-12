@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Copy, Check, ExternalLink } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react';
+import { ScanCode } from '@/components/ui/ScanCode';
 import { toast } from 'sonner';
 import Button from '@/components/ui/Button';
 import { truncateAddress } from '@/utils/string';
@@ -74,7 +74,7 @@ export default function WalletPayPanel({ wallet }: Props) {
         <>
           <div className="mt-5 flex justify-center">
             <div className="rounded-xl bg-white p-4">
-              <QRCodeSVG value={handle.qrValue} size={168} />
+              <ScanCode value={handle.qrValue} size={168} />
             </div>
           </div>
           <Button
@@ -84,7 +84,7 @@ export default function WalletPayPanel({ wallet }: Props) {
                 toast.info("If your wallet didn't open, copy the address and paste it manually");
               }, 500);
             }}
-            className="w-full mt-4 bg-bitcoinOrange hover:bg-bitcoinOrange/90 text-white"
+            className="w-full mt-4 bg-bitcoinOrange hover:bg-bitcoinOrange/90 text-on-accent"
           >
             <ExternalLink className="w-4 h-4 mr-2" />
             Open in wallet

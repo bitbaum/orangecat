@@ -12,7 +12,7 @@ import { API_ROUTES } from '@/config/api-routes';
 import { COMPANION_COPY } from '@/config/companions';
 import { ROUTES } from '@/config/routes';
 import Button from '@/components/ui/Button';
-import type { Routine } from '@/services/companions/routines-store';
+import { ROUTINE_INTERVALS, type Routine } from '@/services/companions/routines-store';
 import { logger } from '@/utils/logger';
 import { DetailRow } from './TalkDetailsSheet';
 
@@ -27,6 +27,7 @@ export function RoutineRow({ assistantId }: { assistantId: string }) {
   const [canRun, setCanRun] = useState(true);
   const [open, setOpen] = useState(false);
   const [time, setTime] = useState('08:00');
+  const [everyHours, setEveryHours] = useState<number | null>(null);
   const [prompt, setPrompt] = useState<string>(copy.defaultPrompt);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,6 +41,7 @@ export function RoutineRow({ assistantId }: { assistantId: string }) {
         setCanRun(json.data.canRun);
         if (json.data.routine) {
           setTime(json.data.routine.timeLocal);
+          setEveryHours(json.data.routine.everyHours);
           setPrompt(json.data.routine.prompt);
         }
       }
@@ -60,7 +62,7 @@ export function RoutineRow({ assistantId }: { assistantId: string }) {
       const res = await fetch(API_ROUTES.AI_ASSISTANTS.ROUTINE(assistantId), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, timeLocal: time, zone }),
+        body: JSON.stringify({ prompt, timeLocal: time, zone, everyHours }),
       });
       const json = (await res.json()) as Envelope;
       if (!res.ok || !json.data) {
@@ -91,7 +93,11 @@ export function RoutineRow({ assistantId }: { assistantId: string }) {
   return (
     <>
       <DetailRow onClick={() => setOpen(v => !v)}>
-        {routine ? copy.set(routine.timeLocal) : copy.row}
+        {routine
+          ? routine.everyHours
+            ? copy.setEvery(routine.everyHours)
+            : copy.set(routine.timeLocal)
+          : copy.row}
       </DetailRow>
       {open && (
         <form
@@ -102,15 +108,32 @@ export function RoutineRow({ assistantId }: { assistantId: string }) {
           }}
         >
           <label className="flex items-center justify-between gap-3 text-sm text-fg-secondary">
-            {copy.title}
-            <input
-              type="time"
-              value={time}
-              onChange={e => setTime(e.target.value)}
-              className="rounded-xl border border-subtle bg-surface-raised px-3 py-2 text-base text-fg-primary"
-              required
-            />
+            {copy.how}
+            <select
+              value={everyHours ?? 0}
+              onChange={e => setEveryHours(Number(e.target.value) || null)}
+              className="min-h-[44px] rounded-xl border border-subtle bg-surface-raised px-3 text-base text-fg-primary"
+            >
+              <option value={0}>{copy.daily}</option>
+              {ROUTINE_INTERVALS.map(h => (
+                <option key={h} value={h}>
+                  {copy.every(h)}
+                </option>
+              ))}
+            </select>
           </label>
+          {everyHours === null && (
+            <label className="flex items-center justify-between gap-3 text-sm text-fg-secondary">
+              {copy.title}
+              <input
+                type="time"
+                value={time}
+                onChange={e => setTime(e.target.value)}
+                className="rounded-xl border border-subtle bg-surface-raised px-3 py-2 text-base text-fg-primary"
+                required
+              />
+            </label>
+          )}
           <label className="flex flex-col gap-1 text-sm text-fg-secondary">
             {copy.prompt}
             <textarea
