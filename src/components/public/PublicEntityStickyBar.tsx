@@ -8,9 +8,17 @@
  */
 import { Z_INDEX_CLASSES } from '@/constants/z-index';
 import { useMobileActionBar } from '@/hooks/useMobileActionBar';
+import { useSectionInView } from '@/hooks/useSectionInView';
 
 export function StickyBar({ href, label }: { href: string; label: string }) {
-  useMobileActionBar(true);
+  // The bar steps aside while the section it leads to (#pay) is on screen, as
+  // the project page's Fund bar does: there it covered the open invoice's
+  // "Hide the code" on causes, products and every other entity (390px).
+  const targetInView = useSectionInView(href.startsWith('#') ? href.slice(1) : null);
+  useMobileActionBar(!targetInView);
+  if (targetInView) {
+    return null;
+  }
   // Position + z-index sourced from SSOT:
   //   .oc-above-mobile-nav  → globals.css (--mobile-nav-clearance)
   //   Z_INDEX_CLASSES.MOBILE_ACTION_BAR → src/constants/z-index.ts
