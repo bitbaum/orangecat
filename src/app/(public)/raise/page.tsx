@@ -10,10 +10,10 @@ export const metadata: Metadata = {
 /** /raise — need A, costs B, get B. The flow lives in RaiseFlow. */
 export default function RaisePage() {
   return (
-    <main className="min-h-screen bg-surface-page">
+    <div className="min-h-screen bg-surface-page">
       <div className="px-4 py-12 sm:px-6 sm:py-20 lg:px-8">
         <RaiseFlow />
       </div>
-    </main>
+    </div>
   );
 }

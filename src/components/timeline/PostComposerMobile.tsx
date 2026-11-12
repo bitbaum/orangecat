@@ -138,7 +138,7 @@ const PostComposerMobile: React.FC<PostComposerMobileProps> = ({
           {fullScreen && showProjectSelection && (
             <button
               onClick={() => setIsOptionsSheetOpen(true)}
-              className={cn(TIMELINE_SURFACE.chip, 'mb-3 min-h-8')}
+              className={cn(TIMELINE_SURFACE.chip, 'mb-3 min-h-8 pointer-coarse:min-h-11')}
             >
               {composer.selectedProjects.length > 0
                 ? `${composer.selectedProjects.length} project${composer.selectedProjects.length > 1 ? 's' : ''}`
@@ -160,7 +160,7 @@ const PostComposerMobile: React.FC<PostComposerMobileProps> = ({
                 {showVisibilityToggle && (
                   <button
                     onClick={() => setIsOptionsSheetOpen(true)}
-                    className={cn(TIMELINE_SURFACE.chip, 'mt-1 min-h-9')}
+                    className={cn(TIMELINE_SURFACE.chip, 'mt-1 min-h-9 pointer-coarse:min-h-11')}
                     aria-expanded={isOptionsSheetOpen}
                     aria-controls="post-options-sheet"
                   >

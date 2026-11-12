@@ -6,6 +6,7 @@
 import { Zap, Lightbulb, CheckCircle } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { MODEL_TIERS, TIER_CONFIG, type ModelTier } from '@/config/ai-models';
 import { aiOnboardingContent, tierDescriptions } from '@/lib/ai-guidance';
@@ -39,23 +40,11 @@ export function ConfigureStep({
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={autoRouterEnabled}
-            onClick={() => onAutoRouterChange(!autoRouterEnabled)}
-            className={cn(
-              'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
-              autoRouterEnabled ? 'bg-fg-primary' : 'bg-surface-raised'
-            )}
-          >
-            <span
-              className={cn(
-                'inline-block h-4 w-4 transform rounded-full bg-surface-base transition-transform',
-                autoRouterEnabled ? 'translate-x-6' : 'translate-x-1'
-              )}
-            />
-          </button>
+          <Switch
+            checked={autoRouterEnabled}
+            onCheckedChange={onAutoRouterChange}
+            aria-label="Auto Router"
+          />
         </div>
         {autoRouterEnabled && (
           <div className="mt-3 p-3 bg-surface-raised/40 rounded-lg">

@@ -7,6 +7,7 @@ import Button from '@/components/ui/Button';
 import { useTimelineView } from './useTimelineView';
 import type { TimelineDisplayEvent } from '@/types/timeline';
 import { TIMELINE_COPY, TIMELINE_SURFACE } from '@/config/timeline';
+import { scrollBehavior } from '@/lib/scroll-behavior';
 
 export interface TimelineViewProps {
   feedType: 'journey' | 'community' | 'profile' | 'project';
@@ -199,7 +200,7 @@ function FocusScroller() {
       if (focusId) {
         const el = document.querySelector(`[data-event-id="${focusId}"]`);
         if (el) {
-          (el as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'center' });
+          (el as HTMLElement).scrollIntoView({ behavior: scrollBehavior(), block: 'center' });
           (el as HTMLElement).classList.add('ring-2', 'ring-fg-primary', 'ring-offset-2');
           setTimeout(() => {
             (el as HTMLElement).classList.remove('ring-2', 'ring-fg-primary', 'ring-offset-2');

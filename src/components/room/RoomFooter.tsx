@@ -15,7 +15,7 @@ export function RoomFooter({
   isShared: boolean;
 }) {
   return (
-    <footer className="mt-16 space-y-2 border-t border-border-subtle pt-6 text-xs leading-5 text-fg-muted">
+    <footer className="mt-16 space-y-2 border-t border-border-subtle pt-6 text-xs leading-5 text-fg-tertiary">
       <p>
         {isShared
           ? `Shared privately by ${ownerName}.`

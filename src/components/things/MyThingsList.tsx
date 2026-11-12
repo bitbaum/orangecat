@@ -23,7 +23,7 @@ function EmptyThings() {
       </div>
       <Link
         href={ROUTES.WHAT_YOU_CAN_DO}
-        className="mt-4 inline-flex min-h-9 items-center gap-1 text-sm font-semibold text-fg-primary hover:underline"
+        className="mt-4 inline-flex min-h-9 pointer-coarse:min-h-11 items-center gap-1 text-sm font-semibold text-fg-primary hover:underline"
       >
         {THINGS_PAGE.empty.mapLink}
         <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />

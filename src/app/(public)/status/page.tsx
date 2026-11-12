@@ -124,7 +124,7 @@ export default async function StatusPage() {
           <div className="px-6 py-4 border-b border-default">
             <h3 className="text-lg font-semibold text-fg-primary">Services</h3>
           </div>
-          <div className="divide-y divide-fg-tertiary dark:divide-fg-tertiary">
+          <div className="divide-y divide-subtle">
             {report.services.map(service => (
               <div key={service.name} className="px-6 py-4 flex items-center justify-between">
                 <div className="flex items-center space-x-3">

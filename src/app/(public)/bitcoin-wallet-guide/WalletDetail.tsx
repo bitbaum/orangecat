@@ -72,7 +72,7 @@ export function WalletDetail({ wallet }: WalletDetailProps) {
               <Shield className="w-4 h-4 text-status-negative mt-0.5 flex-shrink-0" />
               <div className="text-sm">
                 <strong className="text-status-negative">Security Tip:</strong>
-                <p className="text-status-negative/80 mt-1">
+                <p className="text-status-negative mt-1">
                   Always download wallets from official websites. Save your recovery phrase in a
                   safe place - it&apos;s the only way to recover your Bitcoin if you lose access to
                   your wallet.

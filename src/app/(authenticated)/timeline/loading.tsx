@@ -8,7 +8,7 @@ export default function TimelineLoading() {
       </div>
 
       {/* Post skeletons */}
-      <div className="divide-y divide-fg-tertiary">
+      <div className="divide-y divide-subtle">
         <TimelinePostSkeleton />
         <TimelinePostSkeleton />
         <TimelinePostSkeleton />

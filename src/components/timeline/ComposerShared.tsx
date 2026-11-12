@@ -180,7 +180,7 @@ export function ComposerMessages({
           {onClearError && (
             <button
               onClick={onClearError}
-              className="text-status-negative/60 hover:text-status-negative min-h-11 min-w-11 flex items-center justify-center"
+              className="text-status-negative hover:text-status-negative/80 min-h-11 min-w-11 flex items-center justify-center"
               aria-label="Dismiss error"
             >
               <X className="w-4 h-4" />

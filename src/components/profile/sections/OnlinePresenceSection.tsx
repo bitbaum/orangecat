@@ -66,7 +66,7 @@ export function OnlinePresenceSection({
           💡 Want to add wallets? Manage them in{' '}
           <a
             href={ROUTES.DASHBOARD.WALLETS}
-            className="text-fg-primary hover:underline underline-offset-4"
+            className="text-fg-primary underline underline-offset-4"
             target="_blank"
             rel="noopener noreferrer"
           >
