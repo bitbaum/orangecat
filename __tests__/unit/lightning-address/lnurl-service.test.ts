@@ -46,8 +46,8 @@ function adminReturning(
     calls,
     rpcCalls,
     // History goes through an RPC, not a filter: PostgREST reads `+` in a query
-    // string as a space, so `.eq('old_username', 'butaeff+ocauth2')` searched
-    // for "butaeff ocauth2". An RPC argument travels in a JSON body.
+    // string as a space, so `.eq('old_username', 'ana+test2')` searched
+    // for "ana test2". An RPC argument travels in a JSON body.
     rpc: async (fn: string, args: unknown) => {
       rpcCalls.push({ fn, args });
       return { data: opts.history?.profile_id ?? null, error: null };
@@ -82,7 +82,7 @@ describe('a handle the profile no longer uses', () => {
         byId: { id: 'user-1', username: 'user_a1b2c3d4e5f6', display_name: 'Mao' },
       }) as never
     );
-    expect(await resolveLnurlRecipient('georgy.butaev')).toEqual({
+    expect(await resolveLnurlRecipient('jo.doe')).toEqual({
       userId: 'user-1',
       username: 'user_a1b2c3d4e5f6',
       displayName: 'Mao',
@@ -107,25 +107,25 @@ describe('a handle the profile no longer uses', () => {
   // THE regression. Two live profiles carry a '+' in their legacy handle. Sent
   // as a PostgREST filter the character becomes a space server-side, so the
   // owner was unfindable and a payment to that address had nowhere to go.
-  // Measured on production: eq.butaeff+ocauth2 -> [], eq.butaeff%2Bocauth2 -> [row].
+  // Measured on production: eq.ana+test2 -> [], eq.ana%2Btest2 -> [row].
   it("finds an owner whose old handle contains '+'", async () => {
     const stub = adminReturning(null, {
       history: { profile_id: 'user-1' },
       byId: { id: 'user-1', username: 'user_cbd30e0570d3', display_name: null },
     });
     mockGetAdmin.mockReturnValue(stub as never);
-    const recipient = await resolveLnurlRecipient('butaeff+ocauth2');
+    const recipient = await resolveLnurlRecipient('ana+test2');
     expect(recipient?.userId).toBe('user-1');
     // Never a query-string filter — that is what mangled it.
     expect(stub.calls.some(c => c.table === 'profile_username_history')).toBe(false);
-    expect(stub.rpcCalls[0].args).toEqual({ handle: 'butaeff+ocauth2' });
+    expect(stub.rpcCalls[0].args).toEqual({ handle: 'ana+test2' });
   });
 
   it('does not resolve when the account behind it is gone', async () => {
     mockGetAdmin.mockReturnValue(
       adminReturning(null, { history: { profile_id: 'user-1' }, byId: null }) as never
     );
-    expect(await resolveLnurlRecipient('georgy.butaev')).toBeNull();
+    expect(await resolveLnurlRecipient('jo.doe')).toBeNull();
   });
 
   it('never uses a wildcard matcher on the profiles lookup', async () => {

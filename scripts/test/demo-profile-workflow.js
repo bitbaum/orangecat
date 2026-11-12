@@ -67,9 +67,9 @@ async function demoProfileWorkflow() {
     if (await emailInput.isVisible({ timeout: 5000 }).catch(() => false)) {
       console.log('   ✅ Found email input, filling...');
       await emailInput.click({ force: true });
-      await emailInput.fill('butaeff@gmail.com', { force: true });
+      await emailInput.fill(process.env.E2E_USER_EMAIL, { force: true });
       await page.waitForTimeout(1000);
-      console.log('   ✅ Email filled: butaeff@gmail.com');
+      console.log('   ✅ Email filled: the E2E test account');
     } else {
       console.log('   ❌ Email input not found! Taking screenshot...');
       await page.screenshot({ path: 'demo-screenshots/email-input-not-found.png', fullPage: true });
@@ -77,7 +77,7 @@ async function demoProfileWorkflow() {
       const altEmail = page.locator('input[type="email"]').first();
       if (await altEmail.isVisible({ timeout: 3000 }).catch(() => false)) {
         console.log('   ✅ Found alternative email input, using that...');
-        await altEmail.fill('butaeff@gmail.com');
+        await altEmail.fill(process.env.E2E_USER_EMAIL);
       } else {
         throw new Error('Could not find email input');
       }
@@ -91,7 +91,7 @@ async function demoProfileWorkflow() {
     if (await passwordInput.isVisible({ timeout: 5000 }).catch(() => false)) {
       console.log('   ✅ Found password input, filling...');
       await passwordInput.click({ force: true });
-      await passwordInput.fill('Asdfgh11!', { force: true });
+      await passwordInput.fill(process.env.E2E_USER_PASSWORD, { force: true });
       await page.waitForTimeout(1000);
       console.log('   ✅ Password filled');
     } else {

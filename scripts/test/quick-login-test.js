@@ -1,23 +1,23 @@
-// Quick Login Test for butaeff@gmail.com
+// Quick Login Test for the E2E test account
 // Run this in browser console at https://www.orangecat.ch/auth?mode=login
 
 (async () => {
-  console.log('🧪 Testing butaeff@gmail.com login...');
+  console.log('🧪 Testing the E2E test account login...');
 
   try {
     // Get the Supabase client from the page
     const supabase = window.supabase;
 
     if (!supabase) {
-      console.log('❌ Supabase client not found. Make sure you\'re on the login page.');
+      console.log("❌ Supabase client not found. Make sure you're on the login page.");
       return;
     }
 
     console.log('🔑 Attempting login...');
 
     const { data, error } = await supabase.auth.signInWithPassword({
-      email: 'butaeff@gmail.com',
-      password: 'Asdfgh11!'
+      email: window.prompt('Test account email'),
+      password: window.prompt('Test account password'),
     });
 
     if (error) {
@@ -34,11 +34,8 @@
 
     console.log('⚠️ No user data returned');
     return null;
-
   } catch (err) {
     console.error('💥 Error:', err.message);
     return null;
   }
 })();
-
-
