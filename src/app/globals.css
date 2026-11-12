@@ -480,6 +480,14 @@
     @apply flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-fg-primary text-fg-inverted;
   }
 
+  /* What needs the person today: rows that are each the link that acts. */
+  .oc-chat-today {
+    @apply flex flex-col rounded-2xl border border-border-subtle bg-surface-raised/40 p-1.5 text-left;
+  }
+  .oc-chat-today-row {
+    @apply flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm leading-snug text-fg-primary transition-colors hover:bg-surface-raised;
+  }
+
   /* An attached file or thing: in the composer, and on the sent message. */
   .oc-chat-attachment {
     @apply inline-flex max-w-[16rem] items-center gap-1.5 rounded-lg border border-border-subtle bg-surface-page px-2 py-1 text-xs text-fg-primary;

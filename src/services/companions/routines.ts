@@ -20,7 +20,7 @@ import { createApiKeyService } from '@/services/ai/api-key-service';
 import { sendAiMessage } from '@/services/ai/sendMessage';
 import { notifyOwnerViaLoki } from '@/services/loki/notify-owner';
 import { logger } from '@/utils/logger';
-import { nextRunAt, routineNotice, skipReason, type RoutineRow } from './routines-store';
+import { nextRoutineRun, routineNotice, skipReason, type RoutineRow } from './routines-store';
 
 const LOG = 'CompanionRoutines';
 /** Shown in the list and the notification: the first breath of the reply. */
@@ -56,7 +56,12 @@ export async function runDueRoutines(
   const notifications = new NotificationService(admin);
   for (const row of rows) {
     try {
-      const next = nextRunAt(now, row.time_local, row.zone);
+      const next = nextRoutineRun(now, {
+        timeLocal: row.time_local,
+        zone: row.zone,
+        everyHours: row.every_hours,
+        dueAt: row.next_run_at,
+      });
       const hasOwnKey = Boolean(await keys.getDecryptedKey(row.user_id, 'openrouter'));
       const reason = skipReason(hasOwnKey);
       if (reason) {
@@ -113,7 +118,9 @@ export async function runDueRoutines(
           assistantId: row.assistant_id,
           botTitle,
           reply,
-          day: now.toISOString().slice(0, 10),
+          // One message per run: per day for a daily routine, per hour for
+          // one that repeats through the day.
+          day: now.toISOString().slice(0, row.every_hours ? 13 : 10),
         })
       );
       result.ran += 1;

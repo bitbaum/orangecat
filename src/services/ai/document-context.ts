@@ -11,7 +11,7 @@
 
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { fetchStudioMapForCat } from './studio-map-fetcher';
-import { fetchLokiActorStatus, type LokiProjectStatus } from '@/services/loki/actor-status';
+import { fetchLokiActorStatus, type LokiActorStatus } from '@/services/loki/actor-status';
 import { fetchConnectedGitHubForCat } from '@/services/github/cat-context';
 import { logger } from '@/utils/logger';
 import { getAdminClient } from '@/lib/supabase/admin';
@@ -376,7 +376,7 @@ export async function fetchFullContextForCat(
     economicProfile,
     trackRecord,
     studioMap,
-    lokiProjects,
+    lokiStatus,
     connectedGitHub,
   ] = await Promise.all([
     fetchProfileForCat(supabase, userId),
@@ -396,7 +396,7 @@ export async function fetchFullContextForCat(
     getEconomicProfile(supabase, userId),
     getCatTrackRecord(supabase, userId),
     fetchStudioMapForCat(),
-    fetchLokiProjectsForCat(supabase, userId),
+    fetchLokiStatusForCat(supabase, userId),
     fetchConnectedGitHubForCat(userId).catch(() => null),
   ]);
 
@@ -431,7 +431,8 @@ export async function fetchFullContextForCat(
     githubRepos: connectedGitHub?.repos.length ? connectedGitHub.repos : githubRepos,
     githubWork: connectedGitHub,
     studioMap,
-    lokiProjects,
+    lokiProjects: lokiStatus?.projects ?? null,
+    lokiNeedsYou: lokiStatus?.needsYou ?? null,
     paymentCapabilities,
     runtime,
     stats: {
@@ -448,17 +449,17 @@ export async function fetchFullContextForCat(
  * of the two-way rail (see services/loki/actor-status). null when unknown or
  * when they have never signed in to Loki with OrangeCat.
  */
-async function fetchLokiProjectsForCat(
+async function fetchLokiStatusForCat(
   supabase: AnySupabaseClient,
   userId: string
-): Promise<LokiProjectStatus[] | null> {
+): Promise<LokiActorStatus | null> {
   try {
     const actorId = await getUserActorId(supabase, userId);
     if (!actorId) {
       return null;
     }
     const status = await fetchLokiActorStatus(actorId);
-    return status?.linked ? status.projects : null;
+    return status?.linked ? status : null;
   } catch (error) {
     logger.warn('Loki projects unavailable for Cat', { error }, 'DocumentContext');
     return null;
