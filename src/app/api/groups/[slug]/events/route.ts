@@ -1,11 +1,12 @@
 /**
  * Group Events API
  *
- * GET  /api/groups/[slug]/events - List events
+ * GET  /api/groups/[slug]/events - List events (anyone who can see the group;
+ *      RLS returns public events to everyone and private ones to members)
  * POST /api/groups/[slug]/events - Create event (member only)
  */
 
-import { withAuth, type AuthenticatedRequest } from '@/lib/api/withAuth';
+import { withAuth, withOptionalAuth, type AuthenticatedRequest } from '@/lib/api/withAuth';
 import {
   apiSuccess,
   apiCreated,
@@ -41,8 +42,10 @@ const createEventSchema = z.object({
   requires_rsvp: z.boolean().optional(),
 });
 
-export const GET = withAuth(
-  async (req: AuthenticatedRequest, { params }: { params: Promise<{ slug: string }> }) => {
+// Signed out is a normal visit to a public group: the Events tab must list its
+// public events, not answer 401.
+export const GET = withOptionalAuth(
+  async (req, { params }: { params: Promise<{ slug: string }> }) => {
     const { slug } = await params;
     try {
       const { supabase } = req;
