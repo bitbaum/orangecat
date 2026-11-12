@@ -13,30 +13,18 @@ import { Loader2, Plus, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { API_ROUTES } from '@/config/api-routes';
 import { IDENTITIES_COPY } from '@/config/identities';
-import { ROUTES } from '@/config/routes';
 import { logger } from '@/utils/logger';
+import {
+  fetchIdentityCircle,
+  readIdentityError,
+  switchToIdentity,
+  type IdentityMember,
+} from '@/lib/identities/client';
+import { IdentityRow } from './IdentityRow';
 
-interface Member {
-  id: string;
-  username: string | null;
-  name: string | null;
-  avatarUrl: string | null;
-  isHolder: boolean;
-  isCurrent: boolean;
-}
-
-async function readError(res: Response, fallback: string): Promise<string> {
-  try {
-    const body = (await res.json()) as { error?: string | { message?: string } };
-    const message = typeof body.error === 'string' ? body.error : body.error?.message;
-    return message || fallback;
-  } catch {
-    return fallback;
-  }
-}
+type Member = IdentityMember;
 
 export function SettingsIdentitiesSection() {
   const [members, setMembers] = useState<Member[] | null>(null);
@@ -51,13 +39,9 @@ export function SettingsIdentitiesSection() {
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch(API_ROUTES.IDENTITIES.BASE);
-      if (!res.ok) {
-        throw new Error(`list failed (${res.status})`);
-      }
-      const body = (await res.json()) as { data: { members: Member[]; max: number } };
-      setMembers(body.data.members);
-      setMax(body.data.max);
+      const circle = await fetchIdentityCircle();
+      setMembers(circle.members);
+      setMax(circle.max);
     } catch (err) {
       logger.error('Could not load identities', err, 'Settings');
       setMembers([]);
@@ -70,25 +54,9 @@ export function SettingsIdentitiesSection() {
 
   const handleSwitch = useCallback(async (id: string) => {
     setBusyId(id);
-    try {
-      const res = await fetch(API_ROUTES.IDENTITIES.SWITCH, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id }),
-      });
-      if (!res.ok) {
-        toast.error(await readError(res, IDENTITIES_COPY.switchFailed));
-        setBusyId(null);
-        return;
-      }
-      // A full load: every store and cache in the tab belongs to the account
-      // that just stopped being signed in.
-      window.location.assign(ROUTES.DASHBOARD.HOME);
-    } catch (err) {
-      logger.error('Identity switch failed', err, 'Settings');
-      toast.error(IDENTITIES_COPY.switchFailed);
-      setBusyId(null);
-    }
+    // Resolves only on failure; on success the tab reloads as the new identity.
+    toast.error(await switchToIdentity(id));
+    setBusyId(null);
   }, []);
 
   const handleDelete = useCallback(
@@ -97,7 +65,7 @@ export function SettingsIdentitiesSection() {
       try {
         const res = await fetch(API_ROUTES.IDENTITIES.BY_ID(id), { method: 'DELETE' });
         if (!res.ok) {
-          toast.error(await readError(res, IDENTITIES_COPY.removeFailed));
+          toast.error(await readIdentityError(res, IDENTITIES_COPY.removeFailed));
           return;
         }
         setConfirmId(null);
@@ -125,7 +93,7 @@ export function SettingsIdentitiesSection() {
           body: JSON.stringify({ name, username }),
         });
         if (!res.ok) {
-          setFormError(await readError(res, IDENTITIES_COPY.createFailed));
+          setFormError(await readIdentityError(res, IDENTITIES_COPY.createFailed));
           return;
         }
         setName('');
@@ -159,81 +127,18 @@ export function SettingsIdentitiesSection() {
       ) : (
         <ul className="divide-y divide-border-subtle rounded-md border border-default">
           {members.map(member => (
-            <li key={member.id} className="flex min-h-16 items-center gap-3 px-4 py-3">
-              <Avatar className="h-10 w-10 shrink-0">
-                <AvatarImage src={member.avatarUrl || undefined} alt="" />
-                <AvatarFallback>
-                  {(member.name || member.username || '?').slice(0, 1)}
-                </AvatarFallback>
-              </Avatar>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-medium text-fg-primary">
-                  {member.name || member.username || 'Unnamed'}
-                </span>
-                <span className="block truncate text-sm text-fg-secondary">
-                  {member.username ? `@${member.username}` : ''}
-                  {member.isHolder ? ` · ${IDENTITIES_COPY.main}` : ''}
-                </span>
-              </span>
-              {confirmId === member.id ? (
-                <span className="flex shrink-0 items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setConfirmId(null)}
-                    disabled={busyId === member.id}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="danger"
-                    size="sm"
-                    onClick={() => handleDelete(member.id)}
-                    disabled={busyId === member.id}
-                  >
-                    {busyId === member.id ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Delete'}
-                  </Button>
-                </span>
-              ) : member.isCurrent ? (
-                <span className="shrink-0 text-sm text-fg-secondary">
-                  {IDENTITIES_COPY.current}
-                </span>
-              ) : (
-                <span className="flex shrink-0 items-center gap-2">
-                  {!member.isHolder && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setConfirmId(member.id)}
-                      disabled={busyId !== null}
-                    >
-                      {IDENTITIES_COPY.remove}
-                    </Button>
-                  )}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleSwitch(member.id)}
-                    disabled={busyId !== null}
-                  >
-                    {busyId === member.id ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      IDENTITIES_COPY.switchTo
-                    )}
-                  </Button>
-                </span>
-              )}
-            </li>
+            <IdentityRow
+              key={member.id}
+              member={member}
+              busyId={busyId}
+              confirming={confirmId === member.id}
+              onSwitch={handleSwitch}
+              onDelete={handleDelete}
+              onConfirm={setConfirmId}
+            />
           ))}
         </ul>
       )}
-
-      {confirmId && <p className="mt-3 text-sm text-fg-primary">{IDENTITIES_COPY.confirmRemove}</p>}
 
       {members !== null && atLimit && (
         <p className="mt-4 text-sm text-fg-secondary">{IDENTITIES_COPY.limitReached}</p>
