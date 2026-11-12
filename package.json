@@ -44,7 +44,6 @@
     "check:type-scale": "node scripts/check-type-scale.mjs",
     "check:client-ip": "node scripts/check-client-ip.mjs",
     "check:user-scoped-deletes": "node scripts/check-user-scoped-deletes.mjs",
-    "check:ai-models": "node scripts/check-ai-models.mjs",
     "check:content": "node scripts/check-content.mjs",
     "check:changelog": "node scripts/check-changelog-fresh.mjs",
     "check:follow-envelope": "node scripts/check-follow-envelope.mjs",
