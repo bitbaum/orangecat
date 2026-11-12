@@ -9,6 +9,7 @@
 
 import { initiatePayment } from '@/domain/payments/paymentFlowService';
 import { getSellerUserId, resolveSellerWallet } from '@/domain/payments/walletResolutionService';
+import { mapKnownPaymentError } from '@/domain/payments/knownPaymentErrors';
 
 import type { Mock } from 'vitest';
 
@@ -90,12 +91,14 @@ describe('initiatePayment — guards', () => {
 });
 
 describe('initiatePayment — sold-out event', () => {
-  function eventSupabase(seatsLeft: number | null) {
+  function eventSupabase(seatsLeft: number | null, event: Record<string, unknown> = {}) {
     const builder: Record<string, unknown> = {};
     for (const m of ['select', 'eq']) {
       builder[m] = vi.fn(() => builder);
     }
-    builder.maybeSingle = vi.fn(() => Promise.resolve({ data: { id: 'ev-1' }, error: null }));
+    builder.maybeSingle = vi.fn(() =>
+      Promise.resolve({ data: { id: 'ev-1', ...event }, error: null })
+    );
     return {
       from: vi.fn(() => builder),
       rpc: vi.fn(() => Promise.resolve({ data: seatsLeft, error: null })),
@@ -108,6 +111,19 @@ describe('initiatePayment — sold-out event', () => {
       'This event is sold out'
     );
     expect(getSellerUserIdMock).not.toHaveBeenCalled();
+  });
+
+  it('refuses an event that is over before anyone pays, seats or not', async () => {
+    const over = { status: 'published', start_date: '2026-09-13T21:08:47Z' };
+    await expect(initiatePayment(eventSupabase(5, over), BUYER, ticket)).rejects.toThrow(
+      'This event has ended'
+    );
+    await expect(
+      initiatePayment(eventSupabase(null, { ...over, status: 'completed' }), BUYER, ticket)
+    ).rejects.toThrow('This event has ended');
+    expect(getSellerUserIdMock).not.toHaveBeenCalled();
+    // …and the payment routes say so, instead of "Failed to initiate payment".
+    expect(mapKnownPaymentError('This event has ended')).toBe('This event has ended.');
   });
 
   it('lets an event with seats (or no limit) through to the seller checks', async () => {

@@ -42,9 +42,9 @@ import type { Mock } from 'vitest';
 
 const EVENT_ID = 'event-1';
 
-function world(published = true) {
+function world(published = true, event: Record<string, unknown> = {}) {
   const pub = createFakeSupabase({
-    [ENTITY_REGISTRY.event.tableName]: published ? [{ id: EVENT_ID }] : [],
+    [ENTITY_REGISTRY.event.tableName]: published ? [{ id: EVENT_ID, ...event }] : [],
   });
   const admin = createFakeSupabase({ [DATABASE_TABLES.PAYMENT_INTENTS]: [] });
   (getAdminClient as Mock).mockReturnValue(admin.client);
@@ -113,6 +113,15 @@ describe('a guest buys a ticket', () => {
     const { pub } = world();
     await expect(buy(pub)).rejects.toThrow('sold out');
     expect(generateInvoice).not.toHaveBeenCalled();
+  });
+
+  it('refuses an event that is over before anyone pays', async () => {
+    // Settlement issues a ticket for any payment that lands, so this is the
+    // only place an ended event can stop selling.
+    const { pub, admin } = world(true, { status: 'published', start_date: '2026-09-13T21:08:47Z' });
+    await expect(buy(pub)).rejects.toMatchObject({ status: 409, message: 'This event has ended' });
+    expect(generateInvoice).not.toHaveBeenCalled();
+    expect(admin.inserts).toEqual([]);
   });
 
   it('sends a free event back to the name-only ticket', async () => {
