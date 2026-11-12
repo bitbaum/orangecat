@@ -69,11 +69,13 @@ export function ProfileBasicSection({
               <FormLabel className="text-sm font-medium text-fg-primary">
                 Username <span className="text-status-negative">*</span>
               </FormLabel>
-              <FormControl>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-fg-secondary font-medium z-10 pointer-events-none">
-                    @
-                  </span>
+              {/* FormControl gives its child the id the label points at, so it
+                  wraps the Input, not the "@" wrapper. */}
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-fg-secondary font-medium z-10 pointer-events-none">
+                  @
+                </span>
+                <FormControl>
                   <Input
                     placeholder="your_unique_username"
                     className="pl-8"
@@ -81,8 +83,8 @@ export function ProfileBasicSection({
                     value={value || ''}
                     onFocus={() => onFieldFocus?.('username')}
                   />
-                </div>
-              </FormControl>
+                </FormControl>
+              </div>
               <FormMessage />
             </FormItem>
           );
