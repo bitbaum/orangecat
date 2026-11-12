@@ -32,13 +32,26 @@ export type SendCodeOutcome =
   /** This deployment cannot send email; the option should not be offered. */
   | { status: 'unavailable' }
   | { status: 'invalid'; reason: string }
-  /** Generation or delivery failed. Deliberately one message for every cause. */
+  /**
+   * The auth server is throttling codes for this address. Said apart from
+   * `failed` because the remedy differs: waiting works, trying again does not.
+   * It tells nothing about whether an account exists — an unknown address
+   * becomes an unconfirmed account on its first request, so both are throttled.
+   */
+  | { status: 'rate_limited' }
+  /** Generation or delivery failed. Deliberately one message for every other cause. */
   | { status: 'failed' };
+
+/** What `generateCode` answers when the auth server throttles the request. */
+export const CODE_RATE_LIMITED = Symbol('code-rate-limited');
 
 export interface EmailCodeDeps {
   isEmailConfigured: () => boolean;
-  /** Returns the six-digit code, or null when GoTrue refused. */
-  generateCode: (email: string) => Promise<string | null>;
+  /**
+   * Returns the six-digit code, `CODE_RATE_LIMITED` when GoTrue throttled the
+   * request, or null when it refused for any other reason.
+   */
+  generateCode: (email: string) => Promise<string | typeof CODE_RATE_LIMITED | null>;
   sendEmail: (message: MailMessage) => Promise<SendResult>;
 }
 
@@ -70,11 +83,14 @@ export async function sendSignInCode(
     return { status: 'invalid', reason: 'Enter a valid email address.' };
   }
 
-  let code: string | null;
+  let code: string | typeof CODE_RATE_LIMITED | null;
   try {
     code = await deps.generateCode(email);
   } catch {
     code = null;
+  }
+  if (code === CODE_RATE_LIMITED) {
+    return { status: 'rate_limited' };
   }
   if (!code || !/^\d{6,10}$/.test(code)) {
     return { status: 'failed' };

@@ -8,6 +8,7 @@ import {
   heldIdentityIds,
   mintSwitchCode,
   otherCircleMemberIds,
+  switchSessionTo,
   type Caller,
 } from '@/domain/identities/service';
 import { MAX_IDENTITIES, isUnreachableEmail } from '@/config/identities';
@@ -373,5 +374,41 @@ describe('an identity with a way in of its own loses the circle', () => {
       expect(circle.withheld).toBeUndefined();
       expect(circle.members).toHaveLength(2);
     }
+  });
+});
+
+describe('switchSessionTo is the one place a session changes hands', () => {
+  function session(error: { code?: string } | null = null) {
+    return { auth: { verifyOtp: vi.fn(async () => ({ error })) } };
+  }
+
+  it('exchanges the code for the target on the caller’s own client', async () => {
+    const { admin } = fakeAdmin(world());
+    const s = session();
+    expect(await switchSessionTo(admin, s, as('fernando'), 'alberto')).toEqual({
+      ok: true,
+      data: { id: 'alberto' },
+    });
+    expect(s.auth.verifyOtp).toHaveBeenCalledWith({
+      email: 'identity-aa@orangecat.invalid',
+      token: 'otp-for-identity-aa@orangecat.invalid',
+      type: 'email',
+    });
+  });
+
+  it('never touches the session for a target outside the circle', async () => {
+    const { admin } = fakeAdmin(world());
+    const s = session();
+    expect(await switchSessionTo(admin, s, as('fernando'), 'stranger')).toMatchObject({
+      reason: 'not_in_circle',
+    });
+    expect(s.auth.verifyOtp).not.toHaveBeenCalled();
+  });
+
+  it('reports a refused exchange as a failure, not a switch', async () => {
+    const { admin } = fakeAdmin(world());
+    expect(
+      await switchSessionTo(admin, session({ code: 'otp_expired' }), as('fernando'), 'alberto')
+    ).toMatchObject({ ok: false, reason: 'failed' });
   });
 });
