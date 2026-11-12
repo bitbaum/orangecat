@@ -12,7 +12,6 @@ import {
   getRecommendedTasks,
   getSmartQuestions,
   getCelebrationMessage,
-  getTaskCompletionPercentage,
 } from '@/services/recommendations';
 import { fetchUserStats } from '@/services/recommendations/fetchUserStats';
 
@@ -65,7 +64,8 @@ export const GET = withAuth(async (request: AuthenticatedRequest) => {
         hasPublishedEntities,
         daysSinceLastActivity,
         wishlistItemCount,
-        taskCompletion: getTaskCompletionPercentage(userContext),
+        // No setup percentage: a task whose condition is false may be done or
+        // only gated off, so a ratio counted gated tasks as done (TasksSection).
         recommendations: {
           tasks: getRecommendedTasks(userContext, { limit: 6 }),
           questions: getSmartQuestions(userContext, 3),
