@@ -29,10 +29,8 @@
   --bp-fg-faint: hsl(var(--text-tertiary));
   --bp-border: hsl(var(--border-subtle));
 
-  /* Links, the active TOC entry and the reading-progress hairline are drawn
-     in ink. They used the warm accent, which is 2.14:1 as text on the light
-     page; the orange stays for Bitcoin and the one action that brings
-     someone in. */
+  /* Links, the active TOC entry and the reading-progress hairline. Ink, not
+     the accent: the orange is 2.14:1 as text on the light page. */
   --bp-accent: hsl(var(--text-primary));
   --bp-accent-contrast: hsl(var(--text-inverted));
 

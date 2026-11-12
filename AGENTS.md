@@ -232,12 +232,15 @@ never decoration, a second button or a disabled state. Ink on it is
 `accent-primary` one.
 
 **Ink follows its fill.** A fill that flips with the theme (`bg-fg-primary`, a
-`GRADIENTS` key, a status fill) takes `text-fg-inverted`, never `text-white`.
-The band that is near-black in both themes (`bg-surface-public`) takes
-`text-on-public`, never `text-fg-inverted`, which flips. Copy is
-`text-fg-primary`, `-secondary` or `-tertiary`, each held at 4.5:1 on every
-surface in both themes; `text-fg-muted` and a resting `/NN` alpha on text are
-not for words. `check:accent-ink` and `check:token-contrast` fail the rest.
+`GRADIENTS` key) and the positive and negative status fills take
+`text-fg-inverted`, never `text-white`; the warning fill is amber in both
+themes and takes `text-warning-foreground`. The band that is near-black in
+both themes (`bg-surface-public`) takes `text-on-public`, never
+`text-fg-inverted`, which flips. Copy is `text-fg-primary`, `-secondary` or
+`-tertiary`, each held at 4.5:1 on every surface in both themes
+(`check:token-contrast`). `text-fg-muted` is not for words, and neither is a
+resting alpha on `text-fg-secondary`, `text-fg-tertiary` or a status colour;
+`check:accent-ink` fails both, and the ink mistakes above.
 
 Two global rules fight your classes: every `<p>` has a bottom margin (give
 stacked paragraphs `mb-0` and let the parent set the gap), and every text

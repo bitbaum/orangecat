@@ -274,10 +274,9 @@
     --accent-hover: var(--bitcoin-orange-dark);
     --accent-muted: 0 0% 10%;
     --accent-text: 0 0% 10%;
-    /* Status — only chromatic colors permitted outside accent. Used as text
-       far more than as a fill, so each is dark enough to read at 4.5:1 on
-       every surface and on its own -subtle tint; the tints keep the brighter
-       hue. Ink on a status FILL is text-fg-inverted, never white. */
+    /* Status — only chromatic colors permitted outside accent. These are the
+       colours as TEXT: dark enough to read at 4.5:1 on every surface and on
+       their own -subtle tint. Fills are the -fill tokens below. */
     --status-positive: 145 60% 29%;
     --status-positive-subtle: 145 60% 35% / 0.08;
     --status-warning: 38 92% 29%;

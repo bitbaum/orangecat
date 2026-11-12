@@ -153,7 +153,7 @@ export function LokiChip() {
             {notLinked && status?.connect && (
               <a
                 href={status.connect.href}
-                className="inline-flex min-h-10 pointer-coarse:min-h-11 items-center rounded-full bg-accent-warm px-4 text-sm font-medium text-on-accent"
+                className="inline-flex min-h-10 pointer-coarse:min-h-11 items-center rounded-full bg-fg-primary px-4 text-sm font-medium text-fg-inverted hover:bg-muted-strong"
               >
                 Connect Loki
               </a>

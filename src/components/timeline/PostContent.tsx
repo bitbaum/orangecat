@@ -134,7 +134,7 @@ export function PostContent({ event }: PostContentProps) {
           {displayContent && (
             <p className="mt-1 line-clamp-2 text-sm text-fg-secondary">{displayContent}</p>
           )}
-          <span className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-accent-warm">
+          <span className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-fg-primary">
             Read article
             <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover/article:translate-x-0.5" />
           </span>
