@@ -34,7 +34,11 @@ import {
 } from '@/services/companions/hands';
 import { getUserActorId } from '@/domain/actors';
 import { mayTakeStep, runAutoStep } from '@/services/companions/work-loop';
-import { handsFor, proposeFromReply } from '@/services/companions/hands-server';
+import {
+  handsFor,
+  proposeFromReply,
+  queueProposalAsCard,
+} from '@/services/companions/hands-server';
 import { logger } from '@/utils/logger';
 import { turnTimer } from './turn-timer';
 import {
@@ -233,11 +237,14 @@ export async function sendAiMessage(
       { role: 'user', content },
       { role: 'assistant', content: withProposal(proposed.text, proposed.proposal) },
     ];
-    let step: Proposal | null = actorId ? proposed.proposal : null;
+    let step: Proposal | null = proposed.proposal;
     while (step && actorId && mayTakeStep(steps, timer.elapsedMs())) {
       steps += 1;
-      const ran = await runAutoStep(supabase, actorId, convId, step);
-      const resultMessage = stepResultMessage(step.action, ran.text);
+      const ranStep: Proposal = step;
+      // It has run: whatever happens next, it is never queued again.
+      step = null;
+      const ran = await runAutoStep(supabase, userId, actorId, convId, ranStep);
+      const resultMessage = stepResultMessage(ranStep.action, ran.text);
       const next = await generateReply({
         hasByok,
         userKey: userOpenRouterKey,
@@ -282,6 +289,12 @@ export async function sendAiMessage(
         }
       );
       step = again.auto ? again.proposal : null;
+    }
+    if (step) {
+      // Proposed to run on its own but not run (the turn's budget is spent, or
+      // the owner has no actor): it becomes the ordinary card, never dropped.
+      lastPending =
+        (await queueProposalAsCard(supabase, userId, hands, step, convId)) ?? lastPending;
     }
     timer.mark('steps');
   }

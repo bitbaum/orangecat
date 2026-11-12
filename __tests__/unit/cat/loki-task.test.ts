@@ -84,9 +84,12 @@ describe('sendTaskToLoki', () => {
     });
     expect(sent).toEqual({
       actorId: ACTOR,
+      issuedAt: sent.issuedAt,
       task: 'make prompts postable',
       projects: ['orangecat', 'loki'],
     });
+    // Signed and dated, so Loki can refuse a captured request replayed later.
+    expect(Math.abs(Date.now() - Date.parse(String(sent.issuedAt)))).toBeLessThan(60_000);
     expect(out.ok).toBe(true);
     if (out.ok) {
       expect(out.summary).toContain('SENT to orangecat, loki');

@@ -24,6 +24,7 @@ import {
   MAX_AUTO_STEPS,
   mayTakeStep,
   runAutoStep,
+  runStillGoing,
   stepLine,
 } from '@/services/companions/work-loop';
 import { followLokiRun, runToFollow } from '@/services/loki/follow-run';
@@ -173,7 +174,7 @@ describe('one step', () => {
     const insert = vi.fn(async () => ({ error: null }));
     const client = { from: vi.fn(() => ({ insert })) } as unknown as AnySupabaseClient;
     const fetchSpy = vi.spyOn(globalThis, 'fetch');
-    const out = await runAutoStep(client, 'actor-1', 'conv-1', {
+    const out = await runAutoStep(client, 'user-1', 'actor-1', 'conv-1', {
       action: 'create_project',
       parameters: { title: 'x' },
     });
@@ -181,6 +182,70 @@ describe('one step', () => {
     expect(fetchSpy).not.toHaveBeenCalled();
     expect(insert).not.toHaveBeenCalled();
     fetchSpy.mockRestore();
+  });
+});
+
+describe('a step on its own', () => {
+  /** A client with the owner's grants and a recording action log. */
+  function stepClient(permissions: unknown[], usageToday = 0) {
+    const logged: Array<Record<string, unknown>> = [];
+    const from = vi.fn((table: string) => {
+      const builder: Record<string, unknown> = {};
+      for (const m of ['select', 'eq', 'gte', 'in', 'order', 'limit']) {
+        builder[m] = vi.fn(() => builder);
+      }
+      builder.insert = vi.fn(async (row: Record<string, unknown>) => {
+        logged.push({ table, ...row });
+        return { error: null };
+      });
+      builder.then = (resolve: (v: unknown) => unknown) =>
+        Promise.resolve(
+          table === 'cat_permissions'
+            ? { data: permissions, error: null }
+            : { data: null, error: null, count: usageToday }
+        ).then(resolve);
+      return builder;
+    });
+    return { client: { from } as unknown as AnySupabaseClient, logged };
+  }
+  const realEnv = { ...process.env };
+  afterEach(() => {
+    process.env = { ...realEnv };
+    vi.restoreAllMocks();
+  });
+
+  it('runs a hand switched on for the bot, and leaves a row in the action log', async () => {
+    process.env.ORANGECAT_WEBHOOK_SECRET = 'x'.repeat(48);
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ ok: true, linked: true, sessions: [] }), { status: 200 })
+    );
+    const { client, logged } = stepClient([]);
+    const out = await runAutoStep(client, 'user-1', 'actor-1', 'conv-1', {
+      action: 'loki_sessions',
+      parameters: {},
+    });
+    expect(out.ok).toBe(true);
+    const log = logged.find(l => l.table === 'cat_action_log');
+    expect(log).toMatchObject({
+      user_id: 'user-1',
+      action_id: 'loki_sessions',
+      category: 'communication',
+      status: 'completed',
+      conversation_id: 'conv-1',
+    });
+  });
+
+  it('never runs a high-risk hand the owner does not hold, and logs the refusal', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+    const { client, logged } = stepClient([]);
+    const out = await runAutoStep(client, 'user-1', 'actor-1', 'conv-1', {
+      action: 'send_task_to_loki',
+      parameters: { task: 'x', projects: ['loki'] },
+    });
+    expect(out.ok).toBe(false);
+    expect(out.text).toContain('It needs your tap');
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(logged.find(l => l.table === 'cat_action_log')).toMatchObject({ status: 'failed' });
   });
 });
 
@@ -226,16 +291,22 @@ describe('following a run', () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) => {
       const body = JSON.parse(String((init as RequestInit).body));
       bodies.push(body);
-      if (body.runId) {
+      if (!body.items) {
         return json({ ok: true, linked: true, sessions: [session(states.shift() ?? 'done')] });
       }
       return json({
         ok: true,
         linked: true,
-        sessions: [session('done')],
+        sessions: [
+          {
+            ...session('done'),
+            handoff: { done: ['On main, last commit 4d40368'], checked: null, next: [] },
+          },
+        ],
         transcript: {
           project: 'orangecat',
           at: null,
+          live: true,
           items: [{ kind: 'assistant', at: null, text: '## main...origin/main' }],
         },
       });
@@ -247,7 +318,14 @@ describe('following a run', () => {
       { sleep, intervalMs: 10 }
     );
     expect(sleep).toHaveBeenCalledTimes(2);
-    expect(bodies.filter(b => b.runId)).toHaveLength(3);
+    // Every read is of THIS run: three polls, then its own session's tail.
+    expect(bodies.every(b => b.runId === RUN && !('project' in b))).toBe(true);
+    expect(bodies).toHaveLength(4);
+    // The first poll asks Loki to watch the session for the whole wait.
+    expect(bodies[0].watch).toBeGreaterThan(60);
+    expect(bodies.slice(1).every(b => !('watch' in b))).toBe(true);
+    expect(bodies[3].items).toBe(12);
+    expect(out.text).toContain('The agent reported: On main, last commit 4d40368');
     expect(out.settled).toBe(true);
     expect(out.text).toContain(`Run ${RUN} on orangecat has settled.`);
     expect(out.text).toContain('> **Agent:** ## main...origin/main');
@@ -260,7 +338,16 @@ describe('following a run', () => {
         ok: true,
         linked: true,
         sessions: [session('working')],
-        ...(body.runId ? {} : { transcript: null }),
+        ...(body.items
+          ? {
+              transcript: {
+                project: 'orangecat',
+                at: '2026-11-12T05:00:00.000Z',
+                live: false,
+                items: [{ kind: 'assistant', at: null, text: 'old line' }],
+              },
+            }
+          : {}),
       });
     });
     let t = 0;
@@ -271,6 +358,17 @@ describe('following a run', () => {
     );
     expect(out.settled).toBe(false);
     expect(out.text).toContain('is still going after the wait');
-    expect(out.text).toContain('holds no conversation');
+    expect(out.text).toContain('an older copy from 2026-11-12T05:00:00.000Z');
+    expect(out.text).toContain('> **Agent:** old line');
+    expect(out.text).not.toContain('The agent reported');
+  });
+
+  it('a run read back while it is still going is followed; a settled one is not', () => {
+    expect(runStillGoing([{ ...session('working') } as never])).toEqual({
+      project: 'orangecat',
+      runId: RUN,
+    });
+    expect(runStillGoing([{ ...session('done') } as never])).toBeNull();
+    expect(runStillGoing(undefined)).toBeNull();
   });
 });

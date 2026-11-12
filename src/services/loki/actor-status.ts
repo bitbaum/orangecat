@@ -158,13 +158,13 @@ export function parseActorStatus(body: string): LokiActorStatus | null {
  */
 export async function fetchLokiActorStatus(
   actorId: string,
-  opts: SignedPostOptions & { now?: () => number } = {}
+  opts: SignedPostOptions & { now?: () => number; fresh?: boolean } = {}
 ): Promise<LokiActorStatus | null> {
   if (!lokiRailConfigured(opts.secret ?? process.env.ORANGECAT_WEBHOOK_SECRET)) {
     return null;
   }
   const now = opts.now ?? Date.now;
-  const hit = cache.get(actorId);
+  const hit = opts.fresh ? undefined : cache.get(actorId);
   if (hit && now() - hit.at < CACHE_TTL_MS) {
     return hit.value;
   }

@@ -4,9 +4,13 @@
  * A task sent to Loki is answered in minutes, not at once. A bot that asks
  * the model "is it done yet?" in a loop burns steps and money and still
  * reports nothing. So the waiting is done here, in code: read the run until
- * its state settles or the time is up, then read the session's conversation
- * once. What comes back is Loki's own state and the agent's own words,
- * quoted; if the time ran out, it says so and names the run to read later.
+ * its state settles or the time is up, then read the conversation of THAT
+ * run's own session once. The first read asks Loki to watch the session for
+ * the whole wait, so the runner streams the conversation while the agent
+ * works: otherwise a one-off session that closes when it reports leaves
+ * nothing to read. What comes back is Loki's own state, the agent's own
+ * handoff and its words, quoted; if the time ran out, it says so and names
+ * the run to read later.
  */
 import { readLokiSessions, sessionLine, sessionsMessage } from './sessions';
 import type { LokiTaskProjectResult } from './task-dispatch';
@@ -53,10 +57,18 @@ export async function followLokiRun(
   const until = now() + (opts.waitMs ?? FOLLOW_WAIT_MS);
   const interval = opts.intervalMs ?? FOLLOW_INTERVAL_MS;
 
+  // Watch for the whole wait plus the final read.
+  const watch = Math.ceil((until - now()) / 1000) + 60;
   let statusLine: string | null = null;
   let settled = false;
+  let first = true;
   for (;;) {
-    const status = await readLokiSessions({ actorId, runId: target.runId });
+    const status = await readLokiSessions({
+      actorId,
+      runId: target.runId,
+      ...(first ? { watch } : {}),
+    });
+    first = false;
     if (status.ok && status.sessions[0]) {
       statusLine = sessionLine(status.sessions[0]);
       settled = !IN_FLIGHT.has(status.sessions[0].state);
@@ -67,7 +79,7 @@ export async function followLokiRun(
     await sleep(interval);
   }
 
-  const talk = await readLokiSessions({ actorId, project: target.project });
+  const talk = await readLokiSessions({ actorId, runId: target.runId, items: 12 });
   const head = settled
     ? `Run ${target.runId} on ${target.project} has settled.`
     : `Run ${target.runId} on ${target.project} is still going after the wait. Read it again later with loki_run_status.`;
