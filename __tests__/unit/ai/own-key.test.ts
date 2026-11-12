@@ -42,7 +42,8 @@ describe("the person's own key for a bot turn", () => {
     expect(xai?.model).toBe(PROVIDER_RUNTIME.xai.defaultModel);
     const groq = directKeyService(key('groq'));
     expect(groq?.model).toBeTruthy();
-    expect(PROVIDER_BASE_URLS.groq).toMatch(/groq\.com/);
+    // The host exactly: a pattern on a URL without anchors matches other hosts too.
+    expect(new URL(PROVIDER_BASE_URLS.groq).hostname).toBe('api.groq.com');
     // OpenRouter keeps its own routed client; an unknown vendor has none.
     expect(directKeyService(key('openrouter'))).toBeNull();
     expect(directKeyService(key('made-up-vendor'))).toBeNull();
