@@ -34,6 +34,7 @@ describe('handsFor', () => {
     const { client, from } = clientWith([]);
     const hands = await handsFor(client, 'user-1');
     expect(from).toHaveBeenCalledTimes(1);
+    expect(hands.allowed.every(a => a.auto === false)).toBe(true);
     // Nothing granted: every hand a tap may grant is offered, in listed order,
     // and the one a tap may never grant is not.
     const ids = hands.allowed.map(a => a.action.id);

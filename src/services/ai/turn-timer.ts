@@ -8,6 +8,8 @@
 export interface TurnTimer {
   /** Close the phase that started at the previous mark (or at the start). */
   mark(phase: string): void;
+  /** Milliseconds since the turn began, now. */
+  elapsedMs(): number;
   /** `{ <phase>Ms, …, totalMs }`. A phase marked twice is summed. */
   report(): Record<string, number>;
 }
@@ -21,6 +23,9 @@ export function turnTimer(now: () => number = () => performance.now()): TurnTime
       const t = now();
       phases.set(phase, (phases.get(phase) ?? 0) + (t - last));
       last = t;
+    },
+    elapsedMs() {
+      return now() - start;
     },
     report() {
       const out: Record<string, number> = {};
