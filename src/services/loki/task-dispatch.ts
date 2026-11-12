@@ -30,6 +30,8 @@ export interface LokiTaskInput {
   projects: string[];
   /** Prefer this builder ("cloud" = the always-on runner) where the project allows it. */
   builder?: 'cloud' | 'local';
+  /** Queue behind a project's open run. Without it Loki refuses a busy project, in words. */
+  queueIfBusy?: boolean;
   originUrl?: string;
 }
 
@@ -103,6 +105,7 @@ export async function sendTaskToLoki(input: LokiTaskInput): Promise<LokiTaskOutc
     task,
     projects: input.projects,
     ...(input.builder ? { builderChannel: input.builder } : {}),
+    ...(input.queueIfBusy ? { queueIfBusy: true } : {}),
     ...(input.originUrl ? { originUrl: input.originUrl } : {}),
   });
 

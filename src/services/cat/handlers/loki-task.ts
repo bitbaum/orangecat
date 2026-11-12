@@ -17,11 +17,14 @@ export const lokiTaskHandlers: Record<string, ActionHandler> = {
     const builder =
       params.builder === 'cloud' || params.builder === 'local' ? params.builder : undefined;
 
+    const queueIfBusy = params.queue_if_busy === true || params.queue_if_busy === 'true';
+
     const outcome = await sendTaskToLoki({
       actorId,
       task,
       projects,
       ...(builder ? { builder } : {}),
+      ...(queueIfBusy ? { queueIfBusy } : {}),
     });
     if (!outcome.ok) {
       return {

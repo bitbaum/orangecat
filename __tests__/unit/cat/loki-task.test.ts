@@ -124,8 +124,10 @@ describe('the run a task opened', () => {
       task: 'git status',
       projects: ['orangecat'],
       builder: 'cloud',
+      queue_if_busy: true,
     });
     expect(sent.builderChannel).toBe('cloud');
+    expect(sent.queueIfBusy).toBe(true);
     expect(res.success).toBe(true);
     const data = res.data as { displayMessage: string; results: Array<Record<string, unknown>> };
     expect(data.displayMessage).toContain('Run orangecat: 11111111-1111-4111-8111-111111111111');
@@ -146,6 +148,23 @@ describe('the run a task opened', () => {
       builder: 'the moon',
     });
     expect('builderChannel' in sent).toBe(false);
+    expect('queueIfBusy' in sent).toBe(false);
+  });
+
+  it("relays Loki's sentence when a project is busy, and sends nothing", async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      jsonResponse(409, {
+        ok: false,
+        detail: 'orangecat is already working on a run. Nothing was sent.',
+        busy: ['orangecat'],
+      })
+    );
+    const res = await lokiTaskHandlers.send_task_to_loki({} as AnySupabaseClient, 'user-1', ACTOR, {
+      task: 'x',
+      projects: ['orangecat'],
+    });
+    expect(res.success).toBe(false);
+    expect(res.error).toContain('already working on a run');
   });
 });
 

@@ -839,6 +839,12 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
         required: false,
         description: '"cloud" = the always-on runner',
       },
+      {
+        name: 'queue_if_busy',
+        type: 'boolean',
+        required: false,
+        description: 'Queue behind a running session',
+      },
     ],
     examples: [
       'Send this to OrangeCat and Loki: make it so I can post prompts in both',
