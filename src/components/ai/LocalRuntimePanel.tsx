@@ -1,17 +1,23 @@
 'use client';
 
 /**
- * "Run locally" — live detection panel for local AI runtimes.
+ * "Run locally" — detection panel for local AI runtimes.
  *
  * Probes Ollama / LM Studio on the user's machine from the BROWSER (our
  * server can never reach a user's localhost) and shows the honest state:
- *   detected → green, lists installed models, "pick one in any Cat chat";
- *   not detected → the exact download link + copy-paste start command
- *     (including the CORS origin flag) that makes it work.
+ *   not checked / not detected → the exact download link + copy-paste start
+ *     command (including the CORS origin flag) that makes it work;
+ *   detected → green, lists installed models, "pick one in any Cat chat".
  * No decorative "coming soon" — either it works or the fix is one command.
+ *
+ * Nothing is probed until the person presses Check. A probe on page load hit
+ * localhost on every visit — two refused connections and two console errors
+ * on every phone, which never has a runtime — and a public site reaching for
+ * localhost is what Chrome gates behind a local-network permission prompt the
+ * person never asked for.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import Link from 'next/link';
 import { Check, ClipboardCopy, RefreshCw, XCircle } from 'lucide-react';
 import { LOCAL_RUNTIMES } from '@/config/local-ai';
@@ -30,10 +36,6 @@ export function LocalRuntimePanel() {
       setChecking(false);
     }
   }, []);
-
-  useEffect(() => {
-    void check();
-  }, [check]);
 
   const copySetup = async (id: string, command: string) => {
     try {
@@ -80,7 +82,7 @@ export function LocalRuntimePanel() {
                   </p>
                 )}
 
-                {statuses && !reachable && (
+                {!reachable && (
                   <div className="mt-2 space-y-1.5">
                     <p className="text-xs text-fg-secondary">
                       1 ·{' '}
@@ -101,7 +103,7 @@ export function LocalRuntimePanel() {
                       <button
                         type="button"
                         onClick={() => void copySetup(runtime.id, runtime.corsSetup)}
-                        className="inline-flex items-center gap-1 rounded-md border border-subtle px-2 py-1.5 text-xs text-fg-secondary hover:text-fg-primary"
+                        className="inline-flex items-center gap-1 rounded-md border border-subtle px-2 py-1.5 text-xs text-fg-secondary hover:text-fg-primary pointer-coarse:min-h-11"
                         title="Copy command"
                       >
                         <ClipboardCopy className="h-3.5 w-3.5" />
@@ -116,20 +118,22 @@ export function LocalRuntimePanel() {
         )
       )}
 
-      <div className="flex items-center justify-between">
-        <p className="text-xs text-fg-secondary">
+      <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <p className="mb-0 text-xs text-fg-secondary" aria-live="polite">
           {anyDetected
             ? 'Ready — pick a local model from the model menu in any Cat chat. Replies stream from this machine; no provider sees them.'
-            : 'Once a runtime is running with OrangeCat allowed, hit Check again — your models appear in the Cat chat model menu.'}
+            : statuses
+              ? 'Once a runtime is running with OrangeCat allowed, hit Check again — your models appear in the Cat chat model menu.'
+              : 'Once a runtime is running with OrangeCat allowed, check this computer — your models appear in the Cat chat model menu.'}
         </p>
         <button
           type="button"
           onClick={() => void check()}
           disabled={checking}
-          className="inline-flex items-center gap-1.5 rounded-md border border-subtle px-2.5 py-1.5 text-xs font-medium text-fg-secondary hover:text-fg-primary disabled:opacity-50"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-subtle px-2.5 py-1.5 text-xs font-medium text-fg-secondary hover:text-fg-primary disabled:opacity-50 pointer-coarse:min-h-11"
         >
           <RefreshCw className={checking ? 'h-3.5 w-3.5 animate-spin' : 'h-3.5 w-3.5'} />
-          Check again
+          {statuses ? 'Check again' : 'Check this computer'}
         </button>
       </div>
     </div>
