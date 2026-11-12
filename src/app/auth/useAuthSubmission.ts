@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { AuthFormData, AuthMode } from './useAuthForm';
 import { resetPassword, getMFAAssuranceLevel } from '@/services/supabase/auth';
 import { registrationEvents, trackEvent } from '@/lib/analytics';
@@ -46,19 +46,10 @@ export function useAuthSubmission({
   const [success, setSuccess] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
 
-  useEffect(() => {
-    if (localLoading) {
-      const timeout = Math.min(15000 + retryCount * 5000, 45000);
-      const timer = setTimeout(() => {
-        setLocalLoading(false);
-        setError(
-          'Authentication request timed out. This usually means environment variables are not configured properly.'
-        );
-      }, timeout);
-      return () => clearTimeout(timer);
-    }
-    return () => {};
-  }, [localLoading, retryCount]);
+  // No timer of our own: a slow sign-in is timed out by the auth service
+  // (src/services/supabase/auth/operations.ts), which also releases the
+  // store's loading flag. A second, shorter clock here showed an error while
+  // every button was still disabled, then replaced it when the real one fired.
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,8 +100,6 @@ export function useAuthSubmission({
         } else if (errorMessage.includes('Email not confirmed')) {
           errorMessage =
             'Please check your email and click the confirmation link before signing in.';
-        } else if (errorMessage.includes('Too many requests')) {
-          errorMessage = 'Too many login attempts. Please wait a few minutes before trying again.';
         } else if (errorMessage.includes('timeout') || errorMessage.includes('network')) {
           errorMessage = 'Connection timeout. Please check your internet connection and try again.';
         }
