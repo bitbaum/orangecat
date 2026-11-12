@@ -220,3 +220,12 @@ Every trigger reached by an account deletion must be `SECURITY DEFINER` (or
 touch only tables that role may write). The migration replay now deletes a
 holder and its identity through GoTrue, so a superuser-only test can no longer
 hide this.
+
+The second live walk found that accepting a hand-over with an address that
+already has an account answered 500. The address was checked only by the auth
+server's refusal, at the last step, after the identity's ways in were removed,
+and the refusal's wording did not read as "taken". Acceptance now asks
+`auth_user_id_for_email` (service role only) right after the offer is spent and
+refuses a taken address before the link is cut. The refusal's wording is a
+fallback only, for an address taken in the moment between the check and the
+update.
