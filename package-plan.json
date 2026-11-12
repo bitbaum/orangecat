@@ -69,6 +69,16 @@
           "symbols": ["classifyPaste"]
         }
       ]
+    },
+    "account-menu": {
+      "package": "@bitbaum/accountkit",
+      "bindings": [
+        {
+          "file": "src/components/layout/AccountMenuControl.tsx",
+          "symbols": ["AccountMenu"]
+        }
+      ],
+      "notes": "The header's account menu is the package's: layout, keyboard handling, sign-out and switch-account failure states. OrangeCat supplies the person, the places, the identities (ADR-0014) and what a tap does. Accounts themselves stay on Supabase auth; ./auth is not adopted."
     }
   }
 }

@@ -10,6 +10,8 @@ import { SettingsSecuritySection } from './SettingsSecuritySection';
 import { SettingsDangerSection } from './SettingsDangerSection';
 import { SettingsDataSection } from './SettingsDataSection';
 import { SettingsIdentitiesSection } from './SettingsIdentitiesSection';
+import { SettingsIdentityAccountNote } from './SettingsIdentityAccountNote';
+import { isUnreachableEmail } from '@/config/identities';
 import { SettingsPreferencesSection } from './SettingsPreferencesSection';
 import { SettingsAppearanceSection } from './SettingsAppearanceSection';
 import { SettingsModals } from './SettingsModals';
@@ -62,21 +64,27 @@ export default function SettingsPage() {
         </div>
 
         <div className="space-y-10 p-4 sm:p-8">
-          <SettingsEmailSection
-            email={formData.email}
-            isSubmitting={isSubmittingEmail}
-            onChange={handleInputChange}
-            onSubmit={handleEmailUpdate}
-          />
-          <SettingsPasswordSection
-            newPassword={formData.newPassword}
-            confirmPassword={formData.confirmPassword}
-            showPassword={showPassword}
-            setShowPassword={setShowPassword}
-            isSubmitting={isSubmittingPassword}
-            onChange={handleInputChange}
-            onSubmit={handlePasswordSubmit}
-          />
+          {isUnreachableEmail(user.email) ? (
+            <SettingsIdentityAccountNote />
+          ) : (
+            <>
+              <SettingsEmailSection
+                email={formData.email}
+                isSubmitting={isSubmittingEmail}
+                onChange={handleInputChange}
+                onSubmit={handleEmailUpdate}
+              />
+              <SettingsPasswordSection
+                newPassword={formData.newPassword}
+                confirmPassword={formData.confirmPassword}
+                showPassword={showPassword}
+                setShowPassword={setShowPassword}
+                isSubmitting={isSubmittingPassword}
+                onChange={handleInputChange}
+                onSubmit={handlePasswordSubmit}
+              />
+            </>
+          )}
           <SettingsSecuritySection
             mfaStatusKey={mfaStatusKey}
             onEnableMFA={() => setShowMFASetup(true)}

@@ -19,6 +19,7 @@
 
 import { fromTable } from '@/lib/supabase/untyped';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { resolveRecipientEmail } from './recipientEmail';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { sendEmail } from '@/lib/email/client';
@@ -215,34 +216,17 @@ export class NotificationEmailService {
 
   /**
    * Resolve user's email address and display name.
-   * Tries profile.contact_email first, falls back to auth.users.email.
+   * One rule for every path: src/services/notifications/recipientEmail.ts.
    */
   private async resolveEmail(
     userId: string
   ): Promise<{ email: string; displayName: string } | null> {
-    const admin = createAdminClient();
-
-    // Profile: contact_email + display name
-    const { data: profile } = await fromTable(admin, DATABASE_TABLES.PROFILES)
-      .select('contact_email, display_name:name, username')
-      .eq('id', userId)
-      .single();
-
-    const displayName = profile?.display_name || profile?.username || 'there';
-    let email = profile?.contact_email ?? null;
-
-    // Fallback to auth user email
-    if (!email) {
-      const { data: authUser } = await admin.auth.admin.getUserById(userId);
-      email = authUser?.user?.email ?? null;
-    }
-
-    if (!email) {
+    const recipient = await resolveRecipientEmail(userId);
+    if (!recipient) {
       logger.warn('User has no email address', { userId }, LOG_SOURCE);
       return null;
     }
-
-    return { email, displayName };
+    return { email: recipient.email, displayName: recipient.displayName || 'there' };
   }
 
   // ===================================================================

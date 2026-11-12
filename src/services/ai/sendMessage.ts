@@ -52,6 +52,14 @@ import {
 
 type HistoryRow = { role: string; content: string; metadata?: unknown };
 
+/** Lines of a thread the model is shown each turn. */
+export const HISTORY_LINES = 20;
+
+/** Rows read newest first, put back in the order they were said. */
+export function latestFirstToChronological<T>(rows: readonly T[]): T[] {
+  return [...rows].reverse();
+}
+
 export type { SendMessageResult, SendMessageError } from './sendMessage-types';
 
 export async function sendAiMessage(
@@ -94,7 +102,10 @@ export async function sendAiMessage(
     }
   }
 
-  // 5. Get conversation history
+  // 5. Get conversation history: the LATEST lines, oldest first. Read
+  //    ascending with a limit, a thread longer than the limit showed the
+  //    model its first lines forever and never the newest ones (a bot's own
+  //    steps and routines add lines fast).
   const { data: historyData } = await supabase
     .from(DATABASE_TABLES.AI_MESSAGES)
     .select('role, content, metadata')
@@ -102,11 +113,11 @@ export async function sendAiMessage(
     // Legacy threads stored the prompt as a system row; the prompt is composed
     // per turn now (with memory), so a stored copy would only go stale.
     .neq('role', 'system')
-    .order('created_at', { ascending: true })
-    .limit(20);
+    .order('created_at', { ascending: false })
+    .limit(HISTORY_LINES);
   // A stored turn is the words the person saw; the model is shown the fence
   // it wrote too, or it learns from its own history to stop proposing.
-  const history = ((historyData || []) as HistoryRow[]).map(row => {
+  const history = latestFirstToChronological((historyData || []) as HistoryRow[]).map(row => {
     const proposal = row.role === 'assistant' ? proposalFromMetadata(row.metadata) : null;
     return {
       role: row.role,

@@ -19,6 +19,7 @@ import { EMAIL_COLORS } from '@/lib/email/templates/layout';
 import { SITE_URL } from '@/config/brand';
 import { logger } from '@/utils/logger';
 import { NotificationEmailService } from './emailService';
+import { resolveRecipientEmail } from './recipientEmail';
 
 const LOG_SOURCE = 'NotificationDispatcher';
 
@@ -199,20 +200,10 @@ export class NotificationDispatcher {
       return;
     }
 
-    const admin = createAdminClient();
-
-    // Resolve email: profile contact_email -> auth user email
-    const { data: profile } = await fromTable(admin, DATABASE_TABLES.PROFILES)
-      .select('contact_email, display_name:name')
-      .eq('id', params.userId)
-      .single();
-
-    let email = profile?.contact_email ?? null;
-
-    if (!email) {
-      const { data: authUser } = await admin.auth.admin.getUserById(params.userId);
-      email = authUser?.user?.email ?? null;
-    }
+    // One rule for every path (recipientEmail.ts): an identity's mail goes to
+    // the account that holds it, never to its undeliverable address.
+    const recipient = await resolveRecipientEmail(params.userId);
+    const email = recipient?.email ?? null;
 
     if (!email) {
       logger.warn(
@@ -227,7 +218,7 @@ export class NotificationDispatcher {
     // For specialized templates (payment-received, tasks, etc.),
     // callers should use the dedicated send functions directly.
     const subject = params.title;
-    const userName = profile?.display_name || 'there';
+    const userName = recipient?.displayName || 'there';
 
     // actionUrl is typically a relative path (e.g. /dashboard/bookings).
     // Email clients can't resolve relative hrefs — absolutize against SITE_URL.
