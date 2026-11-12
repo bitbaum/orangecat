@@ -13,9 +13,17 @@ import { generateFormPrefill } from '@/lib/ai/form-prefill-service';
 import { AI_ASSIST_FORMS } from '@/config/ai-assist-forms';
 import { getExampleDescriptions } from '@/config/ai-form-assist';
 import { ENTITY_TYPES } from '@/config/entity-registry';
+import { servingChain } from '@/services/cat/provider-catalog';
 import { applyTaskAiData } from '@/app/(authenticated)/dashboard/tasks/task-form-types';
 import type { TaskFormData } from '@/app/(authenticated)/dashboard/tasks/task-form-types';
 import type { FieldConfig } from '@/components/create/types';
+
+/**
+ * Every env var that can put a link in the platform chain. A key the HOST
+ * holds (a box with GEMINI_API_KEY set) would otherwise join the chain and
+ * answer in place of the providers these tests stage.
+ */
+const PLATFORM_ENV = [...new Set(servingChain().map(p => p.keyEnv)), 'PLATFORM_OLLAMA_URL'];
 
 describe('AI_ASSIST_FORMS — the standalone form catalog', () => {
   it('never collides with an entity type (entity registry resolves first)', () => {
@@ -129,7 +137,7 @@ describe('generateFormPrefill — service floor follows the intent, like the rou
   // service, which still hard-rejected under 10 — so "shorter" passed the
   // route and then died here. Both layers now read AI_ASSIST_MIN_INPUT_LENGTH.
   const target = resolveAiAssistTarget('service');
-  const envKeys = ['GROQ_API_KEY', 'OPENROUTER_API_KEY'] as const;
+  const envKeys = PLATFORM_ENV;
   const saved: Record<string, string | undefined> = {};
 
   beforeAll(() => {
@@ -175,8 +183,11 @@ describe('generateFormPrefill — survives one provider failing (the 2026-08-25 
   const savedEnv: Record<string, string | undefined> = {};
 
   beforeEach(() => {
-    for (const key of ['GROQ_API_KEY', 'OPENROUTER_API_KEY']) {
+    for (const key of PLATFORM_ENV) {
       savedEnv[key] = process.env[key];
+      delete process.env[key];
+    }
+    for (const key of ['GROQ_API_KEY', 'OPENROUTER_API_KEY']) {
       process.env[key] = 'test-key';
     }
   });

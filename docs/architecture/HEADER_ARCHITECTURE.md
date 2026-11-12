@@ -76,10 +76,13 @@ src/
 import { getAuthStatus } from '@/lib/auth/utils';
 
 const authStatus = getAuthStatus(authState);
-if (authStatus.authenticated) { /* ... */ }
+if (authStatus.authenticated) {
+  /* ... */
+}
 ```
 
 **Functions**:
+
 - `isAuthenticated(user, session)` - Requires BOTH user AND session
 - `isAuthReady(hydrated, isLoading)` - Check if ready to check auth
 - `getAuthStatus(authState)` - Returns comprehensive status
@@ -98,6 +101,7 @@ const isAuthRoute = useIsAuthRoute();
 ```
 
 **Functions**:
+
 - `useRouteContext()` - Get current route context
 - `useIsAuthRoute()` - Boolean check for auth routes
 
@@ -116,6 +120,7 @@ import { HEADER_DIMENSIONS, TOUCH_TARGETS } from '@/constants/header';
 ```
 
 **Constants**:
+
 - `HEADER_DIMENSIONS` - Heights, offsets
 - `HEADER_SPACING` - Padding, gaps, max-width
 - `TOUCH_TARGETS` - Mobile/desktop touch sizes
@@ -150,6 +155,7 @@ export const headerNavigationConfig = {
 **Size**: ~150 lines (was 334)
 
 **Structure**:
+
 ```tsx
 <header>
   <div> {/* Container */}
@@ -166,7 +172,7 @@ export const headerNavigationConfig = {
     <HeaderCreateButton />
     <MessagesButton />
     <NotificationsButton />
-    <UserProfileDropdown | AuthButtons />
+    <AccountMenuControl | AuthButtons />
   </div>
 </header>
 
@@ -177,6 +183,7 @@ export const headerNavigationConfig = {
 ```
 
 **Key Improvements**:
+
 - Uses utilities for all styling
 - Uses hooks for all state management
 - Uses components for all UI elements
@@ -188,11 +195,13 @@ export const headerNavigationConfig = {
 ### **HeaderActions.tsx** (Action Buttons)
 
 **Exports**:
+
 - `MobileSearchButton` - Mobile search trigger
 - `MessagesButton` - Messages with unread count
 - `NotificationsButton` - Notifications with unread count
 
 **Pattern**:
+
 ```typescript
 // Base component (internal)
 function HeaderActionButton({ icon, badgeCount, ... }) {
@@ -212,6 +221,7 @@ export function MessagesButton() {
 ```
 
 **Benefits**:
+
 - DRY: Base button reused
 - Self-contained: Each button manages own state
 - Reusable: Can use anywhere in app
@@ -223,12 +233,14 @@ export function MessagesButton() {
 **Purpose**: Display unread counts
 
 **Usage**:
+
 ```tsx
 <NotificationBadge count={5} />
 <NotificationBadge count={15} maxDisplay={9} /> // Shows "9+"
 ```
 
 **Features**:
+
 - Auto-hides when count is 0
 - Customizable max display
 - Accessible (aria-label)
@@ -243,6 +255,7 @@ export function MessagesButton() {
 **Purpose**: Render mobile menu with portal
 
 **Props**:
+
 ```typescript
 {
   isOpen: boolean;
@@ -255,6 +268,7 @@ export function MessagesButton() {
 ```
 
 **Features**:
+
 - Portal rendering (proper z-index)
 - Animation state handling
 - Uses styling utilities
@@ -267,11 +281,13 @@ export function MessagesButton() {
 **Purpose**: Display desktop navigation links
 
 **Props**:
+
 ```typescript
 { items: NavigationItem[] }
 ```
 
 **Features**:
+
 - Active state highlighting
 - Responsive (hidden on mobile)
 - Uses useActiveRoute hook
@@ -284,14 +300,13 @@ export function MessagesButton() {
 **Purpose**: Reusable menu toggle
 
 **Usage**:
+
 ```tsx
-<MenuToggleButton
-  onClick={handleToggle}
-  ariaLabel="Toggle menu"
-/>
+<MenuToggleButton onClick={handleToggle} ariaLabel="Toggle menu" />
 ```
 
 **Features**:
+
 - Forwardable ref (for animation hook)
 - Uses constants for styling
 - Proper touch targets
@@ -309,6 +324,7 @@ const isAuthRoute = useIsAuthRoute(); // boolean
 ```
 
 **Benefits**:
+
 - Eliminates `usePathname()` + `getRouteContext()` duplication
 - Consistent route checking
 - One line usage
@@ -325,12 +341,14 @@ const { menuRef, buttonRef, isClosing, handleClose } = useMobileMenuAnimation({
 ```
 
 **Manages**:
+
 - Animation state
 - Click outside detection
 - Escape key handling
 - Cleanup
 
 **Benefits**:
+
 - 77 lines of logic → 1 hook call
 - Reusable for other menus
 - Testable in isolation
@@ -353,6 +371,7 @@ const { ready, authenticated, showLoading, hasError } = getAuthStatus(authState)
 ```
 
 **Benefits**:
+
 - Prevents stale data bugs (requires both user + session)
 - Consistent auth checks everywhere
 - Single place to update auth logic
@@ -371,6 +390,7 @@ getMobileMenuPanelClasses(isOpen);
 ```
 
 **Benefits**:
+
 - Consistent styling
 - DRY (no duplicated class strings)
 - Easier to modify globally
@@ -384,22 +404,23 @@ getMobileMenuPanelClasses(isOpen);
 All header-related constants in one place:
 
 ```typescript
-HEADER_DIMENSIONS.HEIGHT_MOBILE // 'h-14'
-HEADER_DIMENSIONS.HEIGHT_DESKTOP // 'sm:h-16'
-HEADER_DIMENSIONS.TOP_OFFSET_MOBILE // 'top-14'
+HEADER_DIMENSIONS.HEIGHT_MOBILE; // 'h-14'
+HEADER_DIMENSIONS.HEIGHT_DESKTOP; // 'sm:h-16'
+HEADER_DIMENSIONS.TOP_OFFSET_MOBILE; // 'top-14'
 
-HEADER_SPACING.CONTAINER_PADDING // 'px-3 sm:px-4 md:px-6'
-HEADER_SPACING.ITEM_GAP // 'gap-2 sm:gap-3'
+HEADER_SPACING.CONTAINER_PADDING; // 'px-3 sm:px-4 md:px-6'
+HEADER_SPACING.ITEM_GAP; // 'gap-2 sm:gap-3'
 
-TOUCH_TARGETS.RESPONSIVE // 'w-11 h-11 sm:w-10 sm:h-10 ...'
+TOUCH_TARGETS.RESPONSIVE; // 'w-11 h-11 sm:w-10 sm:h-10 ...'
 
-HEADER_BUTTON_BASE.BASE // Common button styles
-HEADER_BUTTON_BASE.MOBILE_SEARCH // Search-specific styles
+HEADER_BUTTON_BASE.BASE; // Common button styles
+HEADER_BUTTON_BASE.MOBILE_SEARCH; // Search-specific styles
 
-HEADER_ANIMATIONS.MENU_DURATION_MS // 300
+HEADER_ANIMATIONS.MENU_DURATION_MS; // 300
 ```
 
 **Benefits**:
+
 - No magic numbers
 - Consistent spacing
 - Easy to update globally
@@ -412,6 +433,7 @@ HEADER_ANIMATIONS.MENU_DURATION_MS // 300
 ### **1. DRY (Don't Repeat Yourself)**
 
 **Before**:
+
 ```typescript
 // Duplicated in 2 places
 <span className="absolute top-1 right-1 bg-red-500 text-white...">
@@ -420,6 +442,7 @@ HEADER_ANIMATIONS.MENU_DURATION_MS // 300
 ```
 
 **After**:
+
 ```typescript
 <NotificationBadge count={count} />
 ```
@@ -431,6 +454,7 @@ HEADER_ANIMATIONS.MENU_DURATION_MS // 300
 ### **2. SSOT (Single Source of Truth)**
 
 **Before**:
+
 ```typescript
 // Different auth checks
 if (user && session) // AuthButtons
@@ -439,6 +463,7 @@ if (user && hydrated) // AppShell
 ```
 
 **After**:
+
 ```typescript
 const authStatus = getAuthStatus(authState);
 if (authStatus.authenticated) // Everywhere
@@ -451,6 +476,7 @@ if (authStatus.authenticated) // Everywhere
 ### **3. SOC (Separation of Concerns)**
 
 **Before**:
+
 ```typescript
 // Header.tsx had everything:
 - Auth logic
@@ -461,6 +487,7 @@ if (authStatus.authenticated) // Everywhere
 ```
 
 **After**:
+
 ```
 lib/auth/utils.ts → Auth logic
 hooks/useRouteContext.ts → Route logic
@@ -478,6 +505,7 @@ Header.tsx → Composition only
 **Before**: Monolithic 334-line component
 
 **After**: 11 focused modules
+
 - Header.tsx (composition)
 - 7 reusable components
 - 3 utility modules
@@ -488,16 +516,16 @@ Header.tsx → Composition only
 
 ## Metrics
 
-| Metric | Before | After | Improvement |
-|--------|--------|-------|-------------|
-| **Header.tsx LOC** | 334 | ~150 | 55% reduction |
-| **Mobile menu logic** | 77 lines inline | 1 hook call | 99% reduction |
-| **Auth check patterns** | 4 different | 1 utility | 75% reduction |
-| **Route check patterns** | 5 different | 1 hook | 80% reduction |
-| **Button components** | 100+ lines inline | 4 × 1-line calls | 96% reduction |
-| **Notification badges** | 2 duplicates | 1 component | 50% reduction |
-| **Hardcoded classes** | 50+ instances | 0 (all constants) | 100% eliminated |
-| **Reusable modules** | 0 | 11 | ∞ improvement |
+| Metric                   | Before            | After             | Improvement     |
+| ------------------------ | ----------------- | ----------------- | --------------- |
+| **Header.tsx LOC**       | 334               | ~150              | 55% reduction   |
+| **Mobile menu logic**    | 77 lines inline   | 1 hook call       | 99% reduction   |
+| **Auth check patterns**  | 4 different       | 1 utility         | 75% reduction   |
+| **Route check patterns** | 5 different       | 1 hook            | 80% reduction   |
+| **Button components**    | 100+ lines inline | 4 × 1-line calls  | 96% reduction   |
+| **Notification badges**  | 2 duplicates      | 1 component       | 50% reduction   |
+| **Hardcoded classes**    | 50+ instances     | 0 (all constants) | 100% eliminated |
+| **Reusable modules**     | 0                 | 11                | ∞ improvement   |
 
 ---
 
@@ -618,12 +646,14 @@ describe('Header', () => {
 ## Future Improvements
 
 ### **Phase 1** (Optional)
+
 - [ ] Create `useAuthStatus()` hook to combine `useAuth()` + `getAuthStatus()`
 - [ ] Extract footer to follow same pattern
 - [ ] Apply same pattern to Sidebar
 - [ ] Create Storybook stories for all components
 
 ### **Phase 2** (Advanced)
+
 - [ ] Add animation variants to constants
 - [ ] Create theme system for colors
 - [ ] Add keyboard navigation support
@@ -638,19 +668,26 @@ describe('Header', () => {
 If you have components using old patterns:
 
 **Before**:
+
 ```typescript
 const { user } = useAuth();
-if (user) { /* ... */ }
+if (user) {
+  /* ... */
+}
 ```
 
 **After**:
+
 ```typescript
 const authState = useAuth();
 const authStatus = getAuthStatus(authState);
-if (authStatus.authenticated) { /* ... */ }
+if (authStatus.authenticated) {
+  /* ... */
+}
 ```
 
 **Before**:
+
 ```typescript
 const pathname = usePathname();
 const context = getRouteContext(pathname);
@@ -658,6 +695,7 @@ const isAuth = context === 'authenticated';
 ```
 
 **After**:
+
 ```typescript
 const isAuth = useIsAuthRoute();
 ```

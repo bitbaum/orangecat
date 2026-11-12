@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { QRCodeSVG } from 'qrcode.react';
+import { ScanCode } from '@/components/ui/ScanCode';
 import { Check, Copy, ExternalLink, Share2 } from 'lucide-react';
 import { SellerWalletBanner } from '@/components/payment/SellerWalletBanner';
 import { useSellerPaymentMethods } from '@/hooks/useSellerPaymentMethods';
@@ -54,7 +54,7 @@ export function DoneStep({ flow }: { flow: RaiseFlow }) {
 
       <div className="mt-8 rounded-3xl border border-default bg-surface-base p-5">
         <div className="mx-auto w-fit rounded-2xl bg-white p-3">
-          <QRCodeSVG value={url} size={168} />
+          <ScanCode value={url} size={168} />
         </div>
         <p className="mt-4 select-all break-all text-sm text-fg-secondary">{url}</p>
         <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
