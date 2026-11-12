@@ -1,6 +1,6 @@
 'use client';
 
-import { QRCodeSVG } from 'qrcode.react';
+import { ScanCode } from '@/components/ui/ScanCode';
 import { Bitcoin, Zap, Copy, ExternalLink } from 'lucide-react';
 import { GRADIENTS } from '@/config/gradients';
 import Button from '@/components/ui/Button';
@@ -63,12 +63,7 @@ function AddressCard({ type, address, label, description }: AddressCardProps) {
       {/* QR Code - Always Visible */}
       <div className="flex justify-center mb-4">
         <div className="bg-surface-base p-3 rounded-lg border-2 border-default shadow-sm">
-          <QRCodeSVG
-            value={isBitcoin ? `bitcoin:${address}` : address}
-            size={200}
-            level="H"
-            includeMargin={false}
-          />
+          <ScanCode value={isBitcoin ? `bitcoin:${address}` : address} size={200} />
         </div>
       </div>
 
@@ -87,7 +82,7 @@ function AddressCard({ type, address, label, description }: AddressCardProps) {
         {isBitcoin && (
           <Button
             onClick={openInWallet}
-            className="w-full bg-bitcoinOrange hover:bg-bitcoinOrange/90 text-white"
+            className="w-full bg-bitcoinOrange hover:bg-bitcoinOrange/90 text-on-accent"
           >
             <ExternalLink className="w-4 h-4 mr-2" />
             Send with Wallet

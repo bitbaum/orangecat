@@ -71,7 +71,7 @@ export default function MissingWalletBanner({
           <div className="flex flex-wrap items-center gap-3">
             <Button
               href={ROUTES.PROJECTS.EDIT(projectId)}
-              className="bg-bitcoinOrange hover:bg-bitcoinOrange/90 text-white"
+              className="bg-bitcoinOrange hover:bg-bitcoinOrange/90 text-on-accent"
             >
               <Wallet className="w-4 h-4 mr-2" />
               Add Wallet Address

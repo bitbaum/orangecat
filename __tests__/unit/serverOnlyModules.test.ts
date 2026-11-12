@@ -81,7 +81,15 @@ function resolveSpecifier(fromFile: string, specifier: string): string | null {
   return null;
 }
 
+// Every client entry walks much of the same graph, so each file's imports are
+// read and resolved once per run, not once per entry.
+const importsCache = new Map<string, string[]>();
+
 function importsOf(file: string): string[] {
+  const cached = importsCache.get(file);
+  if (cached) {
+    return cached;
+  }
   const source = readFileSync(file, 'utf8');
   const out: string[] = [];
   for (const match of source.matchAll(IMPORT_SPECIFIER)) {
@@ -90,6 +98,7 @@ function importsOf(file: string): string[] {
       out.push(resolved);
     }
   }
+  importsCache.set(file, out);
   return out;
 }
 
