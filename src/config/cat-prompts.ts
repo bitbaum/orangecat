@@ -10,13 +10,18 @@
  * Now the server returns two things, both GENERATED from the user's own state
  * (src/services/cat/prompt-suggestions.ts):
  *
- *   openers — things the Cat would bring up, in the Cat's voice, ranked by how
- *             timely they are (a sale, a booking, an overdue task) before how
- *             consequential (a gap). Each carries the one or two replies that
- *             act on it. The client shows the first one the user has not
- *             dismissed, so "not now" moves the Cat on instead of freezing it.
- *   chips   — short things this person might ask, in their voice, drawn from
- *             what the Cat knows about them (goals, memories, listings).
+ *   openers — things the Cat would bring up, in the Cat's voice. The first is
+ *             the DAY BRIEF: everything waiting on the person right now, in
+ *             one or two sentences, answered by the reply that fits the hour
+ *             ("Let's start my day" in the morning). Behind it, the single
+ *             facts, ranked by how timely they are (a sale, a booking, an
+ *             overdue task) before how consequential (a gap). The client
+ *             shows the first one the user has not dismissed, so "not now"
+ *             moves the Cat on instead of freezing it.
+ *   chips   — short things this person might ask, in their voice: the most
+ *             timely fact's reply, then the standing topics (goal, gaps) in
+ *             an order that turns with the calendar day, so the same three
+ *             are not offered every morning.
  *
  * There is deliberately no list of prompt strings here. The single exception is
  * a user the Cat knows nothing about: zero data is zero signal, so the only
@@ -60,6 +65,27 @@ export interface CatHome {
 }
 
 export const CAT_HOME_MAX_CHIPS = 3;
+
+export type DayPart = 'morning' | 'afternoon' | 'evening';
+
+/**
+ * Which part of the day an hour (0–23, the person's wall clock) belongs to.
+ * One rule for the greeting and the day brief, so "Good morning" is never
+ * followed by an evening reply. The small hours count as the evening before.
+ */
+export function dayPartFor(hour: number): DayPart {
+  if (hour < 5) {
+    return 'evening';
+  }
+  return hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
+}
+
+/** What the person says back to the day brief, by part of day. The first is primary. */
+export const DAY_BRIEF_REPLIES: Record<DayPart, string[]> = {
+  morning: ["Let's start my day"],
+  afternoon: ['What should I focus on this afternoon?'],
+  evening: ['Help me wrap up my day', 'Plan my tomorrow'],
+};
 
 /** How many starter options a brand-new user is offered. Three is a fork; six is a menu. */
 const STARTER_COUNT = 3;

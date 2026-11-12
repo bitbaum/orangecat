@@ -14,6 +14,7 @@ import {
   isPlaceholderTitle,
   listAttachable,
 } from '@/services/cat/prompt-suggestions';
+import { composeDayBrief, localClock } from '@/services/cat/day-brief';
 import { STARTER_HOME, getStarterChips, CAT_HOME_MAX_CHIPS } from '@/config/cat-prompts';
 import { getEntitiesByCategory } from '@/config/entity-registry';
 import type { FullUserContext } from '@/services/ai/document-context';
@@ -323,6 +324,141 @@ describe('detectOpeners', () => {
   });
 });
 
+// ─── The day brief: what is waiting, counted, for THEIR day ───────────────────
+
+describe('localClock', () => {
+  it("reads the person's wall clock, not the server's", () => {
+    // 05:05 UTC in November is 06:05 in Zürich and still the evening before in LA.
+    const now = new Date('2026-11-12T05:05:00Z');
+    expect(localClock(now, 'Europe/Zurich')).toMatchObject({
+      day: '2026-11-12',
+      hour: 6,
+      part: 'morning',
+    });
+    expect(localClock(now, 'America/Los_Angeles')).toMatchObject({
+      day: '2026-11-11',
+      part: 'evening',
+    });
+  });
+
+  it('falls back to UTC for a zone the runtime does not know', () => {
+    expect(localClock(new Date('2026-11-12T05:05:00Z'), 'Not/AZone').zone).toBe('UTC');
+  });
+});
+
+describe('composeDayBrief', () => {
+  const ZURICH = 'Europe/Zurich';
+  const morning = new Date('2026-11-12T05:05:00Z');
+  const lokiProject = (
+    name: string,
+    over: Partial<NonNullable<FullUserContext['lokiProjects']>[number]> = {}
+  ) => ({
+    id: name,
+    name,
+    lokiUrl: `https://loki.example/${name}`,
+    liveUrl: null,
+    status: 'idle' as const,
+    blockReason: null,
+    queueDepth: 0,
+    currentWork: null,
+    recentOutcomes: [],
+    feedback: { new: 0, open: 0 },
+    orangecat: [],
+    ...over,
+  });
+  const task = (id: string, due_date: string) => ({
+    id,
+    title: id,
+    category: 'admin',
+    priority: 'normal',
+    current_status: 'idle',
+    task_type: 'one_time',
+    due_date,
+  });
+
+  it('counts everything waiting, Loki first, in one or two sentences', () => {
+    const brief = composeDayBrief(
+      makeContext({
+        profile: PROFILE,
+        lokiProjects: [
+          lokiProject('orangecat', { status: 'blocked', blockReason: 'awaiting_user' }),
+          lokiProject('loki', { feedback: { new: 2, open: 2 } }),
+        ],
+        tasks: [task('a', '2026-11-12T15:00:00Z'), task('b', '2026-11-01T09:00:00Z')],
+        notificationsUnread: 14,
+        notifications: [
+          { type: 'system', title: 'x', message: '', count: 1, latest_at: '', action_url: null },
+        ],
+      }),
+      morning,
+      ZURICH
+    );
+    expect(brief.say).toBe(
+      'Loki is waiting on you in "orangecat". You have 1 task due today, 1 overdue task, ' +
+        '2 new pieces of feedback on "loki" and 14 unread notifications.'
+    );
+  });
+
+  it('offers the reply that fits the hour', () => {
+    const ctx = makeContext({ profile: PROFILE });
+    expect(composeDayBrief(ctx, morning, ZURICH).replies[0]).toBe("Let's start my day");
+    expect(composeDayBrief(ctx, new Date('2026-11-12T14:00:00Z'), ZURICH).replies[0]).toMatch(
+      /this afternoon/
+    );
+    expect(composeDayBrief(ctx, new Date('2026-11-12T20:00:00Z'), ZURICH).replies[0]).toMatch(
+      /wrap up/
+    );
+  });
+
+  it('says so plainly when nothing is waiting, and invents nothing', () => {
+    expect(composeDayBrief(makeContext({ profile: PROFILE }), morning, ZURICH).say).toBe(
+      'Nothing is waiting on you this morning.'
+    );
+  });
+
+  it('is a new opener each day, each part of day, and whenever what it says changes', () => {
+    const ctx = makeContext({ profile: PROFILE });
+    const key = (now: string, c = ctx) => composeDayBrief(c, new Date(now), ZURICH).key;
+    const today = key('2026-11-12T05:05:00Z');
+    expect(key('2026-11-12T06:30:00Z')).toBe(today);
+    expect(key('2026-11-13T05:05:00Z')).not.toBe(today);
+    expect(key('2026-11-12T14:00:00Z')).not.toBe(today);
+    expect(
+      key(
+        '2026-11-12T05:05:00Z',
+        makeContext({
+          profile: PROFILE,
+          notificationsUnread: 3,
+          notifications: [
+            { type: 'system', title: 'x', message: '', count: 3, latest_at: '', action_url: null },
+          ],
+        })
+      )
+    ).not.toBe(today);
+  });
+
+  it("only counts a booking that falls on the person's today", () => {
+    const booking = (starts_at: string) => ({
+      starts_at,
+      ends_at: null,
+      status: 'confirmed',
+      customer_display_name: 'Ben',
+      customer_username: 'ben',
+    });
+    const say = (starts_at: string) =>
+      composeDayBrief(
+        makeContext({
+          profile: PROFILE,
+          inboundActivity: { recentSales: [], upcomingBookings: [booking(starts_at)] },
+        }),
+        morning,
+        ZURICH
+      ).say;
+    expect(say('2026-11-12T13:00:00Z')).toBe('You have a booking with Ben at 14:00.');
+    expect(say('2026-11-13T13:00:00Z')).toBe('Nothing is waiting on you this morning.');
+  });
+});
+
 describe('isPlaceholderTitle', () => {
   it.each(['Test Service - Web Development', 'untitled', 'Demo product', 'asdf'])(
     'treats "%s" as a placeholder',
@@ -349,6 +485,52 @@ describe('generateCatHome', () => {
     expect(home.openers.length).toBeGreaterThan(0);
     expect(home.chips.length).toBeGreaterThan(0);
     expect(home.chips.length).toBeLessThanOrEqual(CAT_HOME_MAX_CHIPS);
+  });
+
+  it('leads with the day brief and keeps the single facts behind it', async () => {
+    const home = await generateCatHome(
+      'u-brief',
+      makeContext({ profile: PROFILE, entities: [makeEntity('product', 'Handmade Candles')] }),
+      [],
+      { now: new Date('2026-11-12T05:05:00Z'), zone: 'Europe/Zurich' }
+    );
+    expect(home.openers[0].key).toMatch(/^day:2026-11-12:morning:/);
+    expect(home.openers[0].replies).toEqual(["Let's start my day"]);
+    expect(home.openers.slice(1).some(o => o.key === 'payment')).toBe(true);
+  });
+
+  it('turns the standing chips with the calendar day, so two mornings differ', async () => {
+    const ctx = makeContext({
+      profile: { name: 'Alice', username: 'alice' },
+      entities: [
+        makeEntity('product', 'A', { status: 'draft' }),
+        makeEntity('product', 'B', { description: '' }),
+        makeEntity('product', 'C', { price_btc: 0 }),
+      ],
+    });
+    const chipsOn = async (day: string) =>
+      (await generateCatHome('u-turn', ctx, [], { now: new Date(`${day}T08:00:00Z`), zone: 'UTC' }))
+        .chips;
+    expect(await chipsOn('2026-11-12')).not.toEqual(await chipsOn('2026-11-13'));
+  });
+
+  it('never offers a chip that points at something off screen', async () => {
+    const home = await generateCatHome(
+      'u-goal',
+      makeContext({
+        profile: PROFILE,
+        economicProfile: {
+          skills: [],
+          assets: [],
+          goals: [{ text: 'Earn 2k a month from ceramics' }],
+          constraints: [],
+          askedFor: [],
+          notAvailableFor: [],
+        },
+      })
+    );
+    expect(home.chips.join(' ')).toContain('Earn 2k a month from ceramics');
+    home.chips.forEach(c => expect(c).not.toMatch(/\b(it|this|that)\?$/i));
   });
 
   it('never calls a model, even for a user with rich state and memories', async () => {

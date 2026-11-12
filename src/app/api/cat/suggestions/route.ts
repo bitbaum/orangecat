@@ -28,10 +28,14 @@ export const GET = withOptionalAuth(async request => {
       fetchFullContextForCat(supabase, user.id),
       listMemories(supabase, user.id),
     ]);
+    // The viewer's own zone, from their browser: "this morning" is theirs,
+    // not the server's. Validated downstream; the profile's zone is the fallback.
+    const zone = new URL(request.url).searchParams.get('tz');
     const home = await generateCatHome(
       user.id,
       context,
-      memories.map(m => m.content)
+      memories.map(m => m.content),
+      { zone }
     );
 
     return apiSuccess(home);

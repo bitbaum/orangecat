@@ -5,6 +5,7 @@ import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
  * starters (ChatApp `startersTitle`). In reading order:
  *
  *   greeting  — the person's name, so it is plainly THEIR Cat
+ *   today     — the weekday, the date and the time, as the person reads them
  *   opener    — the one thing the Cat noticed, in its own voice, with a quiet
  *               "Not now"; its replies are the first starters under it
  *   links     — a suggestion that only opens a page is a link, not a message
@@ -20,16 +21,23 @@ import { X } from 'lucide-react';
 import { CAT_AGENT, CAT_HUB_COPY } from '@/config/cat-hub';
 import { getCreateSuggestionHref } from '@/config/cat-create-suggestions';
 import { useAuth } from '@/hooks/useAuth';
-import type { CatOpener } from '@/config/cat-prompts';
+import { useDisplayDate } from '@/hooks/useDisplayDate';
+import { dayPartFor, type CatOpener } from '@/config/cat-prompts';
 
 /** Local time of day — the only honest thing a greeting can know without asking. */
 export function greetingFor(date: Date, name?: string | null): string {
-  const h = date.getHours();
-  const part = h < 5 ? 'evening' : h < 12 ? 'morning' : h < 18 ? 'afternoon' : 'evening';
+  const part = dayPartFor(date.getHours());
   const first = name?.trim().split(/\s+/)[0];
   // A minted handle (`user_2fc1…`) is not a name: "Good evening" alone reads
   // better than greeting someone by their database id (seen live 2026-11-01).
   return first && !isMintedHandle(first) ? `Good ${part}, ${first}` : `Good ${part}`;
+}
+
+/** "Thursday 12 November · 06:05" — what today is, in the reader's own date order. */
+export function todayLine(date: Date, locale: string): string {
+  const day = date.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' });
+  const time = date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+  return `${day} · ${time}`;
 }
 
 /** The suggestions that SAY something, for chatkit's starter buttons. */
@@ -54,9 +62,11 @@ export function EmptyState({
   isNewUser,
 }: EmptyStateProps) {
   const { profile } = useAuth();
+  const { locale } = useDisplayDate();
+  const now = new Date();
   const title = isNewUser
     ? CAT_HUB_COPY.greetingNewUser
-    : greetingFor(new Date(), profile?.name || profile?.username);
+    : greetingFor(now, profile?.name || profile?.username);
   const links = [...(opener?.replies ?? []), ...chips].flatMap(s => {
     const href = getCreateSuggestionHref(s);
     return href ? [{ label: s, href }] : [];
@@ -64,9 +74,12 @@ export function EmptyState({
 
   return (
     <div className="oc-chat-home">
-      <h2 className="text-center text-2xl font-semibold tracking-tight text-fg-primary sm:text-3xl">
-        {title}
-      </h2>
+      <div className="flex flex-col gap-1 text-center">
+        <h2 className="text-2xl font-semibold tracking-tight text-fg-primary sm:text-3xl">
+          {title}
+        </h2>
+        <p className="mb-0 text-sm text-fg-tertiary">{todayLine(now, locale)}</p>
+      </div>
 
       {isLoadingSuggestions ? (
         <div className="oc-chat-opener" aria-hidden="true">

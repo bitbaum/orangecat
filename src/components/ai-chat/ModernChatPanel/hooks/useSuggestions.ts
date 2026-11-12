@@ -100,7 +100,12 @@ export function useSuggestions() {
     const controller = new AbortController();
     const fetchHome = async () => {
       try {
-        const res = await fetch(API_ROUTES.CAT.SUGGESTIONS, { signal: controller.signal });
+        // The brief is written for the viewer's day, so the server needs their zone.
+        const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const url = zone
+          ? `${API_ROUTES.CAT.SUGGESTIONS}?tz=${encodeURIComponent(zone)}`
+          : API_ROUTES.CAT.SUGGESTIONS;
+        const res = await fetch(url, { signal: controller.signal });
         if (!res.ok || controller.signal.aborted) {
           return;
         }

@@ -16,8 +16,16 @@
  *          whichever happened to sort first;
  *        - every opener has a stable key, and the client skips dismissed keys,
  *          so "not now" moves the Cat on.
- *   2. CHIPS are what this person might ask next: the replies of the openers
- *      held in reserve, then the registry-derived starters. Deterministic.
+ *   2. The DAY BRIEF leads them: one opener that counts everything waiting
+ *      on the person right now (Loki, bookings, tasks, messages,
+ *      notifications) and offers the reply that fits the hour. A home that
+ *      showed one fact and three detached questions looked the same every
+ *      visit and read like a form (owner, 2026-11-12). It is keyed on the
+ *      day, the part of day and what it says, so it is new every morning and
+ *      returns after a dismissal the moment something changes.
+ *   3. CHIPS are what this person might ask next: the most timely fact's
+ *      reply, then the standing topics (goal, gaps) in an order that turns
+ *      with the calendar day, then the registry-derived starters.
  *
  * No model call. The chips used to be written by the platform LLM on every
  * open of an empty chat — a free-tier spend on page load, before the person
@@ -35,19 +43,16 @@ import {
   type CatReference,
 } from '@/config/cat-prompts';
 import { APP_LOCALE } from '@/utils/locale';
+import { isValidTimeZone } from '@/utils/timezone';
+import { composeDayBrief, localClock } from './day-brief';
+import { MAX_TITLE_CHARS, fingerprint, plural, truncate } from './cat-home-text';
 import type { EntitySummary, FullUserContext } from '@/services/ai/document-context-types';
 
 /** Openers held in reserve behind the one shown, so dismissing has somewhere to go. */
 const MAX_OPENERS = 6;
+
 /** Items offered in the composer's "+" menu. */
 const MAX_ATTACHABLE = 20;
-/** Entity titles are quoted into copy; long ones are elided. */
-const MAX_TITLE_CHARS = 40;
-
-const truncate = (s: string, max: number): string =>
-  s.length <= max ? s : `${s.slice(0, max - 1).trimEnd()}…`;
-
-const plural = (n: number, word: string): string => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 /**
  * Returns true when the user has enough context for the Cat to say something
@@ -93,15 +98,6 @@ const shortDate = (iso: string): string =>
     month: 'short',
   });
 
-/** A short, stable hash for keys built from free text (goals). */
-function fingerprint(input: string): string {
-  let h = 5381;
-  for (let i = 0; i < input.length; i++) {
-    h = ((h << 5) + h + input.charCodeAt(i)) | 0;
-  }
-  return (h >>> 0).toString(36);
-}
-
 // ─── Openers ──────────────────────────────────────────────────────────────────
 
 /**
@@ -109,6 +105,14 @@ function fingerprint(input: string): string {
  * object of the user's, which is what lets it justify being said at all.
  */
 export function detectOpeners(context: FullUserContext, now: Date = new Date()): CatOpener[] {
+  return detect(context, now).openers;
+}
+
+/** The openers, and how many of them (from the front) are timely rather than standing. */
+function detect(
+  context: FullUserContext,
+  now: Date
+): { openers: CatOpener[]; timelyCount: number } {
   const openers: CatOpener[] = [];
   const entities = context.entities.filter(e => !isPlaceholderTitle(e.title));
   const title = (e: EntitySummary) => truncate(e.title, MAX_TITLE_CHARS);
@@ -188,6 +192,8 @@ export function detectOpeners(context: FullUserContext, now: Date = new Date()):
     });
   }
 
+  const timelyCount = openers.length;
+
   // ── Where they said they're going ──
 
   const goal = context.economicProfile?.goals?.[0]?.text?.trim();
@@ -195,7 +201,9 @@ export function detectOpeners(context: FullUserContext, now: Date = new Date()):
     openers.push({
       key: `goal:${fingerprint(goal)}`,
       say: `You're working toward "${truncate(goal, 80)}". Want to take the next step together?`,
-      replies: ["What's the next step toward it?"],
+      // Names the goal: as a chip this is read with no opener above it, and
+      // "the next step toward it" pointed at nothing.
+      replies: [`What's the next step toward "${truncate(goal, MAX_TITLE_CHARS)}"?`],
     });
   }
 
@@ -266,8 +274,24 @@ export function detectOpeners(context: FullUserContext, now: Date = new Date()):
     });
   }
 
-  return openers.slice(0, MAX_OPENERS);
+  return {
+    openers: openers.slice(0, MAX_OPENERS),
+    timelyCount: Math.min(timelyCount, MAX_OPENERS),
+  };
 }
+
+// ─── Chips ─────────────────────────────────────────────────────────────────────
+
+/** Days since the epoch for a 'YYYY-MM-DD' — the number the chip order turns on. */
+const dayNumber = (day: string): number => Math.floor(Date.parse(`${day}T00:00:00Z`) / 86_400_000);
+
+const rotate = <T>(items: T[], by: number): T[] => {
+  if (items.length === 0) {
+    return items;
+  }
+  const n = by % items.length;
+  return [...items.slice(n), ...items.slice(0, n)];
+};
 
 function dedupe(items: string[], limit: number): string[] {
   const seen = new Set<string>();
@@ -294,12 +318,14 @@ export function listAttachable(context: FullUserContext): CatReference[] {
 }
 
 /**
- * The chips: the reserve openers' replies first (they are about this person),
- * then the starters.
+ * The chips: the most timely fact's reply (the brief above already counted
+ * the rest, and its own reply covers them), then the standing topics turned by
+ * the calendar day so tomorrow leads with a different one, then the starters.
  */
-function chipsFrom(openers: CatOpener[]): string[] {
-  const fallback = [...openers.slice(1).map(o => o.replies[0]), ...getStarterChips()];
-  return dedupe(fallback, CAT_HOME_MAX_CHIPS);
+function chipsFrom(timely: CatOpener[], standing: CatOpener[], day: string): string[] {
+  const turned = rotate(standing, dayNumber(day));
+  const ordered = [...timely.slice(0, 1), ...turned, ...timely.slice(1)];
+  return dedupe([...ordered.map(o => o.replies[0]), ...getStarterChips()], CAT_HOME_MAX_CHIPS);
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────
@@ -311,12 +337,25 @@ function chipsFrom(openers: CatOpener[]): string[] {
 export async function generateCatHome(
   _userId: string,
   context: FullUserContext,
-  memories: string[] = []
+  memories: string[] = [],
+  /** `zone` is the viewer's own (their browser's); the profile's is the fallback. */
+  at: { now?: Date; zone?: string | null } = {}
 ): Promise<CatHome> {
   if (!hasRichContext(context) && memories.length === 0) {
     return STARTER_HOME;
   }
 
-  const openers = detectOpeners(context);
-  return { openers, chips: chipsFrom(openers), attachable: listAttachable(context) };
+  const now = at.now ?? new Date();
+  const zone = isValidTimeZone(at.zone) ? at.zone : context.profile?.timezone;
+  const brief = composeDayBrief(context, now, zone);
+  const { openers: facts, timelyCount } = detect(context, now);
+  return {
+    openers: [brief, ...facts],
+    chips: chipsFrom(
+      facts.slice(0, timelyCount),
+      facts.slice(timelyCount),
+      localClock(now, zone).day
+    ),
+    attachable: listAttachable(context),
+  };
 }
