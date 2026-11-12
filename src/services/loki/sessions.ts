@@ -60,6 +60,8 @@ export interface LokiSessionsInput {
   items?: number;
   /** With runId: Loki holds the run's session as a viewer for this many seconds. */
   watch?: number;
+  /** With runId: a follower's poll; Loki reads no GitHub for it. */
+  poll?: boolean;
 }
 
 export interface LokiTranscript {
@@ -161,7 +163,12 @@ export async function readLokiSessions(input: LokiSessionsInput): Promise<LokiSe
       // Loki refuses a request older than five minutes (no nonce on the rail).
       issuedAt: new Date().toISOString(),
       ...(runId
-        ? { runId, ...(input.items ? { items } : {}), ...(watch ? { watch } : {}) }
+        ? {
+            runId,
+            ...(input.items ? { items } : {}),
+            ...(watch ? { watch } : {}),
+            ...(input.poll ? { poll: true } : {}),
+          }
         : project
           ? { project, items }
           : {}),

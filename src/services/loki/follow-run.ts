@@ -66,6 +66,8 @@ export async function followLokiRun(
     const status = await readLokiSessions({
       actorId,
       runId: target.runId,
+      // A poll reads the run's own facts only, never GitHub (Loki's `poll`).
+      poll: true,
       ...(first ? { watch } : {}),
     });
     first = false;

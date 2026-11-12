@@ -321,6 +321,9 @@ describe('following a run', () => {
     // Every read is of THIS run: three polls, then its own session's tail.
     expect(bodies.every(b => b.runId === RUN && !('project' in b))).toBe(true);
     expect(bodies).toHaveLength(4);
+    // Every poll is light (no GitHub); the final read is not a poll.
+    expect(bodies.slice(0, 3).every(b => b.poll === true)).toBe(true);
+    expect('poll' in bodies[3]).toBe(false);
     // The first poll asks Loki to watch the session for the whole wait.
     expect(bodies[0].watch).toBeGreaterThan(60);
     expect(bodies.slice(1).every(b => !('watch' in b))).toBe(true);

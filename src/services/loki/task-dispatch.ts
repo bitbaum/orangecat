@@ -197,7 +197,7 @@ export function summarise(results: LokiTaskProjectResult[]): string {
     );
   }
   parts.push(
-    'Progress shows in Loki → Control, and the outcome is announced when each agent finishes. To read a run, use loki_run_status with its runId; to read what the agent said, loki_sessions with the project.'
+    'Progress shows in Loki → Control, and the outcome is announced when each agent finishes.'
   );
   return parts.join(' ');
 }
