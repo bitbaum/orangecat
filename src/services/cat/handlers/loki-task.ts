@@ -14,7 +14,18 @@ export const lokiTaskHandlers: Record<string, ActionHandler> = {
     const task = typeof params.task === 'string' ? params.task : '';
     const projects = parseProjectList(params.projects);
 
-    const outcome = await sendTaskToLoki({ actorId, task, projects });
+    const builder =
+      params.builder === 'cloud' || params.builder === 'local' ? params.builder : undefined;
+
+    const queueIfBusy = params.queue_if_busy === true || params.queue_if_busy === 'true';
+
+    const outcome = await sendTaskToLoki({
+      actorId,
+      task,
+      projects,
+      ...(builder ? { builder } : {}),
+      ...(queueIfBusy ? { queueIfBusy } : {}),
+    });
     if (!outcome.ok) {
       return {
         success: false,
@@ -27,7 +38,13 @@ export const lokiTaskHandlers: Record<string, ActionHandler> = {
     return {
       success: anySent,
       ...(anySent ? {} : { error: outcome.summary }),
-      data: { results: outcome.results, status: outcome.summary },
+      // The summary is the line the thread keeps (companions/outcomes.ts): the
+      // runId in it is what a bot reads the run back with.
+      data: {
+        results: outcome.results,
+        status: outcome.summary,
+        ...(anySent ? { displayMessage: outcome.summary } : {}),
+      },
     };
   },
 };

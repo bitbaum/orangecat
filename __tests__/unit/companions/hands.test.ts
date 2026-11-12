@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { CAT_ACTIONS } from '@/config/cat-actions';
+import { canGrantOnConfirm } from '@/services/cat/action-types';
 import {
+  ACT_HANDS,
   COMPANION_HANDS,
   HANDS_SECTION_HEADING,
   PROPOSAL_FENCE,
@@ -12,20 +14,30 @@ import {
 } from '@/services/companions/hands';
 
 /**
- * A bot's hands: it proposes, the person taps. The launch set is the
- * person's own entities and a hand-off to Loki, never money and never a
- * high-risk action; the fence is read only at the very end of a reply.
+ * A bot's hands: it proposes, the person taps. The set is the person's own
+ * entities and their own Loki, never money; the only high-risk hands are the
+ * named act hands, which a tap can never grant. The fence is read only at
+ * the very end of a reply.
  */
 describe('the launch set', () => {
-  it('names real, enabled actions that are neither payments nor high risk', () => {
+  it('names real, enabled actions, never payments, high risk only for the act hands', () => {
     expect(COMPANION_HANDS.length).toBeGreaterThanOrEqual(4);
     for (const id of COMPANION_HANDS) {
       const action = CAT_ACTIONS[id];
       expect(action, id).toBeDefined();
       expect(action.enabled, id).toBe(true);
       expect(action.category, id).not.toBe('payments');
-      expect(action.riskLevel, id).not.toBe('high');
+      expect(action.riskLevel === 'high', id).toBe(ACT_HANDS.includes(id));
     }
+    for (const id of ACT_HANDS) {
+      expect(COMPANION_HANDS, id).toContain(id);
+      // One tap must never unlock an act hand (canGrantOnConfirm).
+      expect(canGrantOnConfirm(CAT_ACTIONS[id], 'permission_denied'), id).toBe(false);
+    }
+    // Steering Loki is the platform's, for every bot: read, ask, task.
+    expect(COMPANION_HANDS).toEqual(
+      expect.arrayContaining(['ask_loki', 'loki_sessions', 'loki_run_status', 'send_task_to_loki'])
+    );
     expect(handsActions().map(a => a.id)).toEqual([...COMPANION_HANDS]);
     expect(handsActions(['nope', 'create_event']).map(a => a.id)).toEqual(['create_event']);
   });
