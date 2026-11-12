@@ -12,6 +12,7 @@ import Button from '@/components/ui/Button';
 import { Z_INDEX_CLASSES } from '@/constants/z-index';
 import { formatCurrency } from '@/services/currency';
 import { useMobileActionBar } from '@/hooks/useMobileActionBar';
+import { useSectionInView } from '@/hooks/useSectionInView';
 
 interface FundBarProject {
   goal_amount?: number | null;
@@ -29,22 +30,11 @@ export function useMobileFundBar(eligible: boolean): boolean {
   // While the payment section itself is on screen the bar is a second Fund
   // button on top of the first, and it covered the invoice's "Hide the code"
   // and the funding card (QA 2026-11-10, 390px).
-  const [payInView, setPayInView] = useState(false);
+  const payInView = useSectionInView('pay');
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 300);
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-  useEffect(() => {
-    const pay = document.getElementById('pay');
-    if (!pay || typeof IntersectionObserver === 'undefined') {
-      return;
-    }
-    const io = new IntersectionObserver(([entry]) => setPayInView(entry.isIntersecting), {
-      threshold: 0,
-    });
-    io.observe(pay);
-    return () => io.disconnect();
   }, []);
   const visible = eligible && scrolled && !payInView;
   useMobileActionBar(visible);

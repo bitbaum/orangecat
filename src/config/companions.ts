@@ -114,6 +114,11 @@ export const COMPANION_COPY = {
     routine: {
       row: 'Writes first, every day',
       set: (time: string) => `Writes first every day at ${time}`,
+      setEvery: (hours: number) =>
+        hours === 1 ? 'Writes first every hour' : `Writes first every ${hours} hours`,
+      how: 'How often',
+      daily: 'Once a day',
+      every: (hours: number) => (hours === 1 ? 'Every hour' : `Every ${hours} hours`),
       title: 'Every day at',
       prompt: 'What it is asked',
       defaultPrompt: 'Good morning. What should I know or do today?',

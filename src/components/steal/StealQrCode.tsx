@@ -2,7 +2,7 @@
 
 import { useRef } from 'react';
 import { Download } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react';
+import { ScanCode } from '@/components/ui/ScanCode';
 import Button from '@/components/ui/Button';
 import { STEAL_QR_FILENAME, STEAL_QR_TARGET } from '@/config/steal';
 
@@ -31,7 +31,7 @@ export function StealQrCode() {
   return (
     <div className="flex flex-col items-center gap-4">
       <div ref={wrapperRef} className="rounded-xl bg-white p-4">
-        <QRCodeSVG value={STEAL_QR_TARGET} size={200} marginSize={1} title="Steal the cat" />
+        <ScanCode value={STEAL_QR_TARGET} size={200} title="Steal the cat" />
       </div>
       <Button variant="outline" size="sm" onClick={download}>
         <Download className="h-4 w-4 mr-2" />

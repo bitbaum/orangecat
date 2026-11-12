@@ -20,7 +20,7 @@ import { MessagesButton, NotificationsButton } from './HeaderActions';
 import { MenuToggleButton } from './MenuToggleButton';
 import { DesktopNavigation } from './DesktopNavigation';
 import { MobileMenu } from './MobileMenu';
-import UserProfileDropdown from '@/components/ui/UserProfileDropdown';
+import AccountMenuControl from './AccountMenuControl';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 interface HeaderProps {
@@ -173,7 +173,7 @@ export function Header({
 
             {/* User Menu or Auth Buttons */}
             <div className="flex-shrink-0">
-              {authStatus.authenticated ? <UserProfileDropdown /> : <AuthButtons />}
+              {authStatus.authenticated ? <AccountMenuControl /> : <AuthButtons />}
             </div>
           </div>
         </div>

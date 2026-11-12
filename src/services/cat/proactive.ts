@@ -11,6 +11,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { STATUS } from '@/config/database-constants';
+import { ROUTES } from '@/config/routes';
 import { NotificationService } from '@/lib/services/notifications';
 import { logger } from '@/utils/logger';
 import { countUnreadNotifications } from '@/services/notifications/unread-count';
@@ -131,29 +132,16 @@ export async function collectBriefFacts(
   };
 }
 
-/** The in-app brief line, or null when there is nothing to say. */
+/**
+ * The in-app brief line, or null when there is nothing to say: the same ONE
+ * actionable thing the owner's phone gets (ownerBriefNotice), and the
+ * notification opens it. It used to be a row of counts ending in "4 unread
+ * notifications. Ask your Cat for details" — the line the owner rejected on
+ * 2026-11-02 ("read it and tap once"), still arriving in the app every day
+ * after the phone stopped getting it.
+ */
 export function briefText(f: BriefFacts): string | null {
-  const parts: string[] = [];
-  if (f.salesCount > 0) {
-    parts.push(
-      `${f.salesCount} sale${f.salesCount === 1 ? '' : 's'} (${displayBTC(f.salesBtc)}) in the last 24h`
-    );
-  }
-  if (f.bookingsCount > 0) {
-    parts.push(`${f.bookingsCount} booking${f.bookingsCount === 1 ? '' : 's'} in the next 48h`);
-  }
-  if (f.overdueTitles.length > 0) {
-    parts.push(
-      `${f.overdueTitles.length} task${f.overdueTitles.length === 1 ? '' : 's'} overdue (first: "${f.overdueTitles[0]}")`
-    );
-  }
-  if (f.unread > 0) {
-    parts.push(`${f.unread} unread notification${f.unread === 1 ? '' : 's'}`);
-  }
-  if (parts.length === 0) {
-    return null;
-  }
-  return `☀️ Daily brief: ${parts.join(' · ')}. Ask your Cat for details or next steps.`;
+  return ownerBriefNotice(f)?.title ?? null;
 }
 
 /**
@@ -238,24 +226,22 @@ export async function runDailyBrief(admin: SupabaseClient, limit: number): Promi
       }
       await supersedeOldBriefs(admin, userId);
       const facts = await collectBriefFacts(admin, userId);
-      const brief = briefText(facts);
-      if (!brief) {
+      // One composition for the app and the phone: the same thing, the same tap.
+      const notice = ownerBriefNotice(facts);
+      if (!notice) {
         continue;
       }
       const sent = await notifications.createNotification({
         recipientUserId: userId,
         type: 'system',
         title: 'Your Cat daily brief',
-        message: brief,
-        actionUrl: '/dashboard/cat',
+        message: notice.title,
+        actionUrl: notice.action?.path ?? ROUTES.DASHBOARD.CAT,
         metadata: { kind: 'cat_brief' },
       });
       if (sent.success) {
         result.briefsSent += 1;
-        const notice = ownerBriefNotice(facts);
-        if (notice) {
-          await notifyOwnerViaLoki(userId, notice);
-        }
+        await notifyOwnerViaLoki(userId, notice);
       } else {
         result.errors += 1;
       }
