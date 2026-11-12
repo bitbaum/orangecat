@@ -146,6 +146,7 @@ export const COMPANION_COPY = {
         create_wishlist: 'Make a wishlist',
         send_to_loki: 'Hand a page to Loki to build',
         ask_loki: 'Ask Loki a question',
+        project_status: 'Check how your projects and live sites are doing',
         loki_sessions: 'Read your agent sessions in Loki',
         loki_run_status: 'Read where a Loki run is',
         send_task_to_loki: 'Start or task an agent session in Loki',

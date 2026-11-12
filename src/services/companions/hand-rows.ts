@@ -27,6 +27,7 @@ export interface HandRow {
 /** Hands that only read. Named, not guessed from a description. */
 const READS: ReadonlySet<string> = new Set([
   'ask_loki',
+  'project_status',
   'loki_sessions',
   'loki_run_status',
   'loki_finding_status',

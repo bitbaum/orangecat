@@ -44,6 +44,7 @@ export const COMPANION_HANDS: readonly string[] = [
   'create_wishlist',
   'send_to_loki',
   'ask_loki',
+  'project_status',
   'loki_sessions',
   'loki_run_status',
   'send_task_to_loki',
