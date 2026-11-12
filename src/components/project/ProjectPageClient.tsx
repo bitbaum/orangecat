@@ -187,6 +187,7 @@ export default function ProjectPageClient({
                 entityType="project"
                 entityId={project.id}
                 entityTitle={project.title}
+                recipientName={project.profiles?.name ?? project.profiles?.username ?? null}
                 sellerProfileId={project.user_id}
                 sellerUserId={project.user_id}
                 sellerReceive={sellerReceive}

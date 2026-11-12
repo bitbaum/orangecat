@@ -16,7 +16,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { DATABASE_TABLES } from '@/config/database-tables';
-import { resolveHistoricalUsername } from './username-history';
+import { HandleLookupError, resolveHistoricalUsername } from './username-history';
 import { resolveUserWallet } from '@/domain/payments/walletResolutionService';
 import type { ResolvedWallet } from '@/domain/payments/types';
 
@@ -34,7 +34,11 @@ function admin(): SupabaseClient {
   return getAdminClient() as unknown as SupabaseClient;
 }
 
-/** Resolve a username (case-insensitive) to its owner, or null if unknown. */
+/**
+ * Resolve a username (case-insensitive) to its owner, or null if unknown.
+ * Throws HandleLookupError when the lookup could not be made: null means the
+ * database answered and nobody has, or had, the name.
+ */
 export async function resolveLnurlRecipient(username: string): Promise<LnurlRecipient | null> {
   const handle = username.trim();
   if (!handle) {
@@ -46,11 +50,14 @@ export async function resolveLnurlRecipient(username: string): Promise<LnurlReci
   // every newly minted handle is shaped `user_<hex>`, an ilike lookup for
   // `user_823e4d9d2714` would also match `userX823e4d9d2714`. This lookup
   // decides which wallet a payment settles into; it cannot be approximate.
-  const { data } = await admin()
+  const { data, error } = await admin()
     .from(DATABASE_TABLES.PROFILES)
     .select('id, username, display_name:name')
     .eq('username_lower', handle.toLowerCase())
     .maybeSingle();
+  if (error) {
+    throw new HandleLookupError(error.message);
+  }
 
   const row = data as { id?: string; username?: string; display_name?: string } | null;
   if (row?.id && row.username) {
@@ -68,11 +75,14 @@ export async function resolveLnurlRecipient(username: string): Promise<LnurlReci
   if (!historicalId) {
     return null;
   }
-  const { data: current } = await admin()
+  const { data: current, error: currentError } = await admin()
     .from(DATABASE_TABLES.PROFILES)
     .select('id, username, display_name:name')
     .eq('id', historicalId)
     .maybeSingle();
+  if (currentError) {
+    throw new HandleLookupError(currentError.message);
+  }
 
   const owner = current as { id?: string; username?: string; display_name?: string } | null;
   if (!owner?.id || !owner.username) {

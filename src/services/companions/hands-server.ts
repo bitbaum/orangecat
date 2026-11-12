@@ -172,3 +172,30 @@ export async function proposeFromReply(
     return { text, pendingAction: null, proposal: null, auto: false };
   }
 }
+
+/**
+ * A proposal the owner let this bot run on its own, that the turn could not
+ * run (its step budget ran out, or the owner has no actor): queued as the
+ * ordinary card instead, so it is never dropped without a trace.
+ */
+export async function queueProposalAsCard(
+  supabase: AnySupabaseClient,
+  userId: string,
+  hands: Hands,
+  proposal: Proposal,
+  conversationId: string
+): Promise<PendingAction | null> {
+  const offered = hands.allowed.find(a => a.action.id === proposal.action);
+  if (!offered) {
+    return null;
+  }
+  try {
+    return await createPendingAction(supabase, userId, offered.action, proposal.parameters, {
+      conversationId,
+      grantOnConfirm: offered.grantOnConfirm,
+    });
+  } catch (error) {
+    logger.error('left-over step could not be queued', error, 'CompanionHands');
+    return null;
+  }
+}

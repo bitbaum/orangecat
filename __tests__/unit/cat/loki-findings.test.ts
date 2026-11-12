@@ -5,7 +5,7 @@
  * answer is never reported as a filing.
  */
 import { lokiFindingHandlers } from '@/services/cat/handlers/loki-findings';
-import { fileLokiFinding, LOKI_FINDING_MAX_LENGTH } from '@/services/loki/findings';
+import { fileLokiFinding, findingKey, LOKI_FINDING_MAX_LENGTH } from '@/services/loki/findings';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 
 const SECRET = 'x'.repeat(48);
@@ -94,6 +94,50 @@ describe('fileLokiFinding', () => {
       agentName: 'QA',
     });
     expect(out.ok).toBe(false);
+  });
+});
+
+describe('a retried filing', () => {
+  it('is the same report: the same finding on the same day has the same key', async () => {
+    const base = { actorId: ACTOR, project: 'Loki', finding: ' Broken link ' };
+    expect(findingKey(base, '2026-11-12')).toBe(
+      findingKey({ ...base, project: 'loki', finding: 'Broken link' }, '2026-11-12')
+    );
+    expect(findingKey(base, '2026-11-12')).not.toBe(findingKey(base, '2026-11-13'));
+    expect(findingKey(base, '2026-11-12')).toMatch(/^oc-[0-9a-f]{40}$/);
+    const keys: unknown[] = [];
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) => {
+      keys.push(JSON.parse(String((init as RequestInit).body)).idempotencyKey);
+      return jsonResponse(200, {
+        ok: true,
+        project: 'loki',
+        id: REPORT,
+        status: 'new',
+        replayed: true,
+      });
+    });
+    const one = await fileLokiFinding({ ...base, agentName: 'QA' });
+    const two = await fileLokiFinding({ ...base, agentName: 'QA' });
+    expect(keys[0]).toBe(keys[1]);
+    expect(one.ok && two.ok && two.replayed).toBe(true);
+  });
+
+  it('says a retry is safe when Loki did not answer, instead of "nothing was filed"', async () => {
+    vi.spyOn(globalThis, 'fetch').mockRejectedValue(
+      Object.assign(new Error('t'), { name: 'TimeoutError' })
+    );
+    const out = await fileLokiFinding({
+      actorId: ACTOR,
+      project: 'loki',
+      finding: 'x',
+      agentName: 'QA',
+    });
+    expect(out.ok).toBe(false);
+    if (!out.ok) {
+      expect(out.reason).toContain('unknown whether the finding was filed');
+      expect(out.reason).toContain('never filed twice');
+      expect(out.reason).not.toContain('Nothing was filed');
+    }
   });
 });
 
