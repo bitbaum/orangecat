@@ -110,7 +110,7 @@ OC, RevampIT (and any future R2 consumer) share ONE account-wide R2 token (key i
 ## Message attachments (private bucket)
 
 Files sent with direct messages live in the private bucket `message-attachments`
-(migration `supabase/migrations/20261112200000_messages_can_carry_files.sql`). Nothing about
+(migration `supabase/migrations/20261112235900_messages_can_carry_files.sql`). Nothing about
 the R2 setup changes for it; what differs from the public buckets:
 
 - **No browser role can read or write it.** A participant asks the app to upload
