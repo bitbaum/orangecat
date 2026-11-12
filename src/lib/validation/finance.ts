@@ -103,8 +103,12 @@ export const loanSchema = z.object({
   // this is what retired the description-padding workaround in the API client.
   description: z.string().max(1000, 'Description must be at most 1000 characters').optional(),
   loan_category_id: optionalText(),
-  original_amount: z.number().positive('Amount must be greater than 0'),
-  remaining_balance: z.number().positive('Balance must be greater than 0'),
+  original_amount: z
+    .number({ error: 'Enter the loan amount' })
+    .positive('Amount must be greater than 0'),
+  remaining_balance: z
+    .number({ error: 'Enter the remaining balance' })
+    .positive('Balance must be greater than 0'),
   interest_rate: z.number().min(0).max(100).optional().nullable(),
   monthly_payment: z.number().min(0).optional().nullable(),
   currency: z.enum(CURRENCY_CODES).optional(),

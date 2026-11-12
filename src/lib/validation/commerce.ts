@@ -79,7 +79,7 @@ export const userProductSchema = z.object({
   // - Fiat: decimal value in currency units, e.g. 9.99 = $9.99.
   // (SATS is supported only as a *display* currency at the UI layer, not
   // as a storage unit for new prices.)
-  price: z.number().positive('Price must be positive'),
+  price: z.number({ error: 'Enter a price' }).positive('Price must be positive'),
   currency: z.enum(CURRENCY_CODES).optional(),
   product_type: z
     .enum(PRODUCT_TYPES.map(t => t.value) as [string, ...string[]])
