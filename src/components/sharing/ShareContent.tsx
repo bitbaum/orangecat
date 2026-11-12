@@ -9,6 +9,7 @@ import { GRADIENTS } from '@/config/gradients';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { APP_NAME } from '@/config/brand';
 import { shareIntentUrl } from '@/config/share';
+import { xPostText } from '@/lib/og/share-line';
 
 // Real brand marks. lucide-react dropped brand icons in 0.400+ and the
 // replacement here was `const Facebook = Globe; const Linkedin = Globe;` — two
@@ -48,7 +49,7 @@ export const SHARE_PLATFORMS: SharePlatform[] = [
     color: 'text-fg-primary',
     bgColor: 'bg-surface-raised hover:bg-surface-raised/80',
     action: (shareUrl, shareTitle, shareDescription) => {
-      const text = `${shareTitle}\n\n${shareDescription}\n\n#Bitcoin #${APP_NAME}`;
+      const text = xPostText(shareTitle, shareDescription ?? null, `#Bitcoin #${APP_NAME}`);
       window.open(
         `https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`,
         '_blank',
@@ -187,6 +188,8 @@ export default function ShareContent({
 
   // Check if native share is available
   const hasNativeShare = typeof navigator !== 'undefined' && !!navigator.share;
+  // On a phone the panel sits in a Dialog, which brings its own close button.
+  const inDialog = isMobile && Boolean(onClose);
 
   // Modern share UI - Modal on mobile, dropdown on desktop
   const shareContent = (
@@ -203,11 +206,11 @@ export default function ShareContent({
             <div
               className={`w-8 h-8 rounded-full ${GRADIENTS.brandOrange} flex items-center justify-center`}
             >
-              <Share2 className="w-4 h-4 text-white" />
+              <Share2 className="w-4 h-4 text-fg-inverted" />
             </div>
             {titleText}
           </h3>
-          {onClose && (
+          {onClose && !inDialog && (
             <button
               onClick={onClose}
               className="text-fg-tertiary hover:text-fg-primary transition-colors p-2 hover:bg-surface-raised rounded-full touch-manipulation min-h-11 min-w-11 flex items-center justify-center"
@@ -223,7 +226,7 @@ export default function ShareContent({
       {hasNativeShare && (
         <button
           onClick={handleNativeShare}
-          className={`w-full mb-5 flex items-center justify-center gap-3 p-4 rounded-lg ${GRADIENTS.btnOrange} text-white font-semibold transition-all touch-manipulation active:scale-95 shadow-sm`}
+          className={`w-full mb-5 flex items-center justify-center gap-3 p-4 rounded-lg ${GRADIENTS.btnOrange} text-fg-inverted font-semibold transition-all touch-manipulation active:scale-95 shadow-sm`}
         >
           <Share2 className="w-5 h-5" />
           <span>Share via...</span>
@@ -280,7 +283,7 @@ export default function ShareContent({
   );
 
   // On mobile, show as modal overlay; on desktop, show as dropdown
-  if (isMobile && onClose) {
+  if (inDialog && onClose) {
     // Mobile: Dialog modal
     return (
       <Dialog open onOpenChange={open => !open && onClose()}>
