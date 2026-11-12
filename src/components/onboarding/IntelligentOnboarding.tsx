@@ -6,7 +6,7 @@
  */
 
 import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { ArrowLeft, Sparkles } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { OnboardingOffers } from '@/components/onboarding/OnboardingOffers';
@@ -49,6 +49,7 @@ export default function IntelligentOnboarding() {
   // same empty result as genuinely thin input — probe Cat's health to tell them
   // apart instead of blaming the user.
   const { health, probe } = useCatHealth();
+  const descriptionId = useId();
 
   const canSubmit = description.trim().length > 0 && displayName.trim().length > 0;
 
@@ -211,12 +212,13 @@ export default function IntelligentOnboarding() {
               required
             />
 
-            <label className="block text-sm font-medium text-fg-primary">
+            <label htmlFor={descriptionId} className="block text-sm font-medium text-fg-primary">
               Who are you? What do you do?
             </label>
 
             <div className="flex items-start gap-2">
               <Textarea
+                id={descriptionId}
                 data-testid="onboarding-description"
                 placeholder="e.g. Senior product designer, 10 years, ex-fintech. I also restore vintage bikes on weekends…"
                 value={description}
@@ -282,7 +284,7 @@ export default function IntelligentOnboarding() {
               data-testid="onboarding-start-chat"
               onClick={handleStartChat}
               disabled={!canSubmit || isRedirecting}
-              className="w-full text-center text-sm text-fg-secondary hover:text-fg-primary transition-colors py-1 disabled:opacity-50"
+              className="w-full min-h-11 text-center text-sm text-fg-secondary hover:text-fg-primary transition-colors disabled:opacity-50"
             >
               Or just chat with your Cat instead →
             </button>

@@ -11,8 +11,10 @@ import { getContextualCreateAction } from '@/lib/navigation/contextual-create';
 import { isNavHrefActive } from '@/lib/navigation/isActive';
 import { mobileTabBar, mobileTabBarAnonymous } from '@/config/navigation';
 import { MobileCreateSheet } from '@/components/create/MobileCreateSheet';
+import { NotificationBadge } from '@/components/ui/NotificationBadge';
 import { Z_INDEX } from '@/constants/z-index';
 import { useSoftKeyboard } from '@/hooks/useSoftKeyboard';
+import { useUnreadCount } from '@/stores/messaging';
 
 // The nav is position:fixed to the bottom, so while the soft keyboard is up
 // it sits right where the field being typed into scrolls to. It hides then —
@@ -29,6 +31,10 @@ const MobileBottomNav = React.memo(function MobileBottomNav() {
   const createTriggerRef = useRef<HTMLButtonElement>(null);
   // Shared with the floating Cat button: both step aside while typing.
   const keyboardOpen = useSoftKeyboard();
+  // Same number the header and sidebar badges show. Below md the header's
+  // Messages button is hidden in favour of this tab, so this is the only place
+  // a phone shows it.
+  const unreadMessages = useUnreadCount();
 
   // Don't render until auth is hydrated to prevent layout shift
   if (!hydrated) {
@@ -127,6 +133,10 @@ const MobileBottomNav = React.memo(function MobileBottomNav() {
             // that special case now, so every slot uses the shared active test.
             const isActive = isActiveHref(item.href);
             const label = item.opensCreate ? createAction.label : item.name;
+            const count = item.counter === 'messages' ? unreadMessages : 0;
+            // Worded like the header's Messages button, so a screen reader
+            // hears the count from either.
+            const accessibleName = count > 0 ? `${label} (${count} unread)` : label;
 
             return (
               <button
@@ -151,7 +161,7 @@ const MobileBottomNav = React.memo(function MobileBottomNav() {
                   item.primary && 'relative',
                   isCompact ? 'min-h-12 gap-0.5' : 'min-h-14 gap-1'
                 )}
-                aria-label={label}
+                aria-label={accessibleName}
                 aria-current={isActive ? 'page' : undefined}
                 type="button"
               >
@@ -183,9 +193,17 @@ const MobileBottomNav = React.memo(function MobileBottomNav() {
                         strokeWidth={2}
                       />
                     </div>
+                    {/* The circle is lifted out of flow, so this stands in for
+                        the icon every other slot stacks above its label. With
+                        the label pushed to the bottom instead (`mt-auto`) it
+                        sat 6px below its neighbours (production, 2026-11-12). */}
+                    <span
+                      className={cn('shrink-0', isCompact ? 'h-5 w-5' : 'h-6 w-6')}
+                      aria-hidden="true"
+                    />
                     <span
                       className={cn(
-                        'mt-auto font-medium leading-tight transition-all duration-300',
+                        'font-medium leading-tight transition-all duration-300',
                         isCompact ? 'text-2xs' : 'text-xs',
                         isActive ? 'font-semibold text-fg-primary' : 'text-fg-secondary'
                       )}
@@ -195,18 +213,23 @@ const MobileBottomNav = React.memo(function MobileBottomNav() {
                   </>
                 ) : (
                   <>
-                    <Icon
-                      className={cn(
-                        'transition-all duration-300',
-                        isCompact ? 'w-5 h-5' : 'w-6 h-6',
-                        // Never `fill-current`: these are stroke icons, and a
-                        // fill in the stroke's colour swallows every inner
-                        // line. The active Explore tab showed a blank white
-                        // disc instead of a compass (production, 2026-11-12).
-                        isActive && 'scale-110'
-                      )}
-                      strokeWidth={isActive ? 2.5 : 2}
-                    />
+                    <span className="relative inline-flex">
+                      <Icon
+                        className={cn(
+                          'transition-all duration-300',
+                          isCompact ? 'w-5 h-5' : 'w-6 h-6',
+                          // Never `fill-current`: these are stroke icons, and a
+                          // fill in the stroke's colour swallows every inner
+                          // line. The active Explore tab showed a blank white
+                          // disc instead of a compass (production, 2026-11-12).
+                          isActive && 'scale-110'
+                        )}
+                        strokeWidth={isActive ? 2.5 : 2}
+                      />
+                      {/* The header's badge, centred on the icon's corner as it
+                          is there. */}
+                      <NotificationBadge count={count} className="-right-2 -top-2" />
+                    </span>
                     <span
                       className={cn(
                         'font-medium transition-all duration-300 leading-tight',

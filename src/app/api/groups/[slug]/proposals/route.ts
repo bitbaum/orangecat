@@ -47,7 +47,10 @@ export const GET = withOptionalAuth(async (request, context: RouteContext) => {
     );
     const offset = Math.max(0, parseInt(searchParams.get('offset') || '0', 10));
 
-    const groupResult = await getGroup(slug, true);
+    // Every service call here gets the per-request server client. Without one
+    // the service falls back to the browser client, which cannot run on the
+    // server, and every group read as "Group not found".
+    const groupResult = await getGroup(slug, true, request.supabase);
     if (!groupResult.success || !groupResult.group) {
       return apiNotFound('Group not found');
     }
@@ -57,12 +60,11 @@ export const GET = withOptionalAuth(async (request, context: RouteContext) => {
       return apiUnauthorized();
     }
 
-    const result = await getGroupProposals(groupResult.group.id, {
-      status,
-      proposal_type: proposalType,
-      limit,
-      offset,
-    });
+    const result = await getGroupProposals(
+      groupResult.group.id,
+      { status, proposal_type: proposalType, limit, offset },
+      request.supabase
+    );
 
     if (!result.success) {
       return apiInternalError(result.error);
@@ -86,7 +88,7 @@ export const POST = withAuth(async (request: AuthenticatedRequest, context: Rout
       return apiRateLimited('Too many proposal requests. Please slow down.', retryAfter);
     }
 
-    const groupResult = await getGroup(slug, true);
+    const groupResult = await getGroup(slug, true, request.supabase);
     if (!groupResult.success || !groupResult.group) {
       return apiNotFound('Group not found');
     }
