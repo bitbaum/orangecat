@@ -89,7 +89,9 @@ const MobileBottomNav = React.memo(function MobileBottomNav() {
       <div
         data-fc-avoid=""
         className={cn(
-          'md:hidden fixed bottom-0 left-0 right-0 border-t border-default',
+          // app-mobile-nav: globals.css keeps keyboard focus scrolled clear of
+          // this bar while it is on the page (scroll-padding-bottom).
+          'app-mobile-nav md:hidden fixed bottom-0 left-0 right-0 border-t border-default',
           'transition-all duration-300 ease-in-out',
           // OPAQUE, always. `bg-surface-page/95` let page content read through
           // the nav on a light background; primary navigation has to be a
