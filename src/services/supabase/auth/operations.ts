@@ -193,11 +193,16 @@ export async function updatePassword({
 
 // NOTE: Anonymous sign-in requires "Allow anonymous sign-ins" to be enabled
 // in Supabase Dashboard > Authentication > Providers > Anonymous
-export async function signInAnonymously(): Promise<AuthResponse> {
+export async function signInAnonymously(captchaToken?: string | null): Promise<AuthResponse> {
   try {
     logger.auth('Attempting anonymous sign-in');
 
-    const { data, error } = await supabase.auth.signInAnonymously();
+    // The captcha travels with it, as with every other sign-in: a
+    // pseudonymous account gets the free daily allowance, so an account
+    // made by a script multiplies it (2026-11-12 audit).
+    const { data, error } = await supabase.auth.signInAnonymously(
+      captchaToken ? { options: { captchaToken } } : undefined
+    );
 
     if (error) {
       const enhancedError = handleAuthError(error, 'anonymous sign-in');
