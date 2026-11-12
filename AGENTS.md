@@ -268,10 +268,11 @@ Gates (in `pnpm run verify` except the last): `check:choice-rows`,
 `check:accent-ink`, `check:token-contrast`, `check:tap-targets`,
 `check:type-scale`, `grep -rn '\[#' src/`, and
 `BASE_URL=http://localhost:3020 pnpm run check:broken-words` (a word drawn
-across two lines on the landing page, seven public pages, the Cat chat and the
-money surface at 320/390/1440, measured in Chromium; `E2E_USER_EMAIL` /
-`E2E_USER_PASSWORD` open the signed-in pages; CI runs it against the standalone
-build).
+across two lines on the landing page, the Cat chat and the money surface at
+320/390/1440, measured in Chromium; `E2E_USER_EMAIL` / `E2E_USER_PASSWORD` open
+the signed-in pages; CI runs it against the standalone build). Its job stops
+at 25 minutes: with 39 screens in place of 18 the step ran for 20 minutes
+without finishing (2026-11-12), so a page is added to it with that in mind.
 
 Before a PR with a screen in it: open it at 390px (no sideways scroll, 44px
 targets, the committing action reachable), put it beside its siblings, read

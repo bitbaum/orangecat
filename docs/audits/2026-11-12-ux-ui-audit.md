@@ -182,13 +182,17 @@ them rather than replacing them:
 
 ### Gates added
 
-| Gate                           | Holds                                                                                                                                                                                      |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `check:token-contrast`         | 124 text, status and ink pairs at 4.5:1 in both themes, read from `globals.css`                                                                                                            |
-| `check:accent-ink` (widened)   | no light ink on orange, no white on a flipping or status fill, the right ink on the warning fill, no accent class that draws nothing, no dimmed copy; also across a multi-line `cn()` call |
-| `check:tap-targets`            | a compact `min-h` on a raw link or button carries `pointer-coarse:min-h-11`                                                                                                                |
-| `check:type-scale` (widened)   | reads `.css` as well, and ratchets `text-2xs`                                                                                                                                              |
-| `check:broken-words` (widened) | seven more public pages                                                                                                                                                                    |
+| Gate                         | Holds                                                                                                                                                                                      |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `check:token-contrast`       | 124 text, status and ink pairs at 4.5:1 in both themes, read from `globals.css`                                                                                                            |
+| `check:accent-ink` (widened) | no light ink on orange, no white on a flipping or status fill, the right ink on the warning fill, no accent class that draws nothing, no dimmed copy; also across a multi-line `cn()` call |
+| `check:tap-targets`          | a compact `min-h` on a raw link or button carries `pointer-coarse:min-h-11`                                                                                                                |
+| `check:type-scale` (widened) | reads `.css` as well, and ratchets `text-2xs`                                                                                                                                              |
+
+Seven public pages were added to `check:broken-words` and taken out again
+before merge: with 39 screens in place of 18 the step ran for 20 minutes
+without finishing, and its CI job stops at 25. The hyphenation rule is held
+by a unit test on `globals.css` instead.
 
 ### Reviewed before shipping
 
