@@ -14,7 +14,7 @@ import {
   isPlaceholderTitle,
   listAttachable,
 } from '@/services/cat/prompt-suggestions';
-import { composeDayBrief, localClock } from '@/services/cat/day-brief';
+import { composeToday, localClock } from '@/services/cat/today-lines';
 import { STARTER_HOME, getStarterChips, CAT_HOME_MAX_CHIPS } from '@/config/cat-prompts';
 import { getEntitiesByCategory } from '@/config/entity-registry';
 import type { FullUserContext } from '@/services/ai/document-context';
@@ -162,23 +162,6 @@ describe('detectOpeners', () => {
     }
   });
 
-  it('quotes the exact unread total, not the sum of the coalesced newest rows', () => {
-    const group = {
-      type: 'system',
-      title: 'Cat eval harness error',
-      message: 'failed',
-      count: 30,
-      latest_at: '2026-09-23T10:00:00Z',
-      action_url: null,
-    };
-    const say = (ctx: Partial<FullUserContext>) =>
-      detectOpeners(makeContext({ profile: PROFILE, notifications: [group], ...ctx })).find(o =>
-        o.key.startsWith('notifications:')
-      )?.say;
-    expect(say({ notificationsUnread: 80 })).toContain('80 unread notifications');
-    expect(say({})).toContain('30 unread notifications');
-  });
-
   it('puts something that HAPPENED ahead of a chore', () => {
     const [top] = detectOpeners(
       makeContext({
@@ -200,28 +183,6 @@ describe('detectOpeners', () => {
     );
     expect(top.say).toContain('Pottery Class');
     expect(top.key).toMatch(/^sales:/);
-  });
-
-  it('brings up an overdue task by name', () => {
-    const openers = detectOpeners(
-      makeContext({
-        profile: PROFILE,
-        tasks: [
-          {
-            id: 't1',
-            title: 'Send invoice',
-            category: 'admin',
-            priority: 'high',
-            current_status: 'idle',
-            task_type: 'one_time',
-            due_date: '2026-09-01T00:00:00Z',
-          },
-        ],
-      }),
-      new Date('2026-09-24T00:00:00Z')
-    );
-    expect(openers[0].key).toBe('task:t1');
-    expect(openers[0].say).toContain('Send invoice');
   });
 
   it('builds on a goal the user told the Cat about', () => {
@@ -346,116 +307,145 @@ describe('localClock', () => {
   });
 });
 
-describe('composeDayBrief', () => {
+describe('composeToday', () => {
   const ZURICH = 'Europe/Zurich';
   const morning = new Date('2026-11-12T05:05:00Z');
-  const lokiProject = (
-    name: string,
-    over: Partial<NonNullable<FullUserContext['lokiProjects']>[number]> = {}
-  ) => ({
-    id: name,
-    name,
-    lokiUrl: `https://loki.example/${name}`,
-    liveUrl: null,
-    status: 'idle' as const,
-    blockReason: null,
-    queueDepth: 0,
-    currentWork: null,
-    recentOutcomes: [],
-    feedback: { new: 0, open: 0 },
-    orangecat: [],
-    ...over,
-  });
   const task = (id: string, due_date: string) => ({
     id,
-    title: id,
+    title: `Task ${id}`,
     category: 'admin',
     priority: 'normal',
     current_status: 'idle',
     task_type: 'one_time',
     due_date,
   });
+  const booking = (id: string, starts_at: string) => ({
+    id,
+    starts_at,
+    ends_at: null,
+    status: 'confirmed',
+    customer_display_name: 'Ben',
+    customer_username: 'ben',
+  });
 
-  it('counts everything waiting, Loki first, in one or two sentences', () => {
-    const brief = composeDayBrief(
+  it('writes every line as an action with its one link, and never a count', () => {
+    const today = composeToday(
       makeContext({
         profile: PROFILE,
-        lokiProjects: [
-          lokiProject('orangecat', { status: 'blocked', blockReason: 'awaiting_user' }),
-          lokiProject('loki', { feedback: { new: 2, open: 2 } }),
-        ],
-        tasks: [task('a', '2026-11-12T15:00:00Z'), task('b', '2026-11-01T09:00:00Z')],
-        notificationsUnread: 14,
-        notifications: [
-          { type: 'system', title: 'x', message: '', count: 1, latest_at: '', action_url: null },
+        tasks: [task('late', '2026-11-01T09:00:00Z'), task('now', '2026-11-12T15:00:00Z')],
+        inboundActivity: {
+          recentSales: [],
+          upcomingBookings: [booking('b1', '2026-11-12T13:00:00Z')],
+        },
+        notificationsUnread: 80,
+      }),
+      morning,
+      ZURICH
+    );
+    expect(today.lines.map(l => [l.text, l.href])).toEqual([
+      ['Booking with Ben at 14:00', '/dashboard/bookings/b1'],
+      ['Task late — due Nov 1', '/dashboard/tasks/late'],
+      ['Task now — due today', '/dashboard/tasks/now'],
+    ]);
+    // 80 unread notifications is a count with nothing to tap: not a line.
+    expect(today.lines.some(l => /notification/i.test(l.text))).toBe(false);
+  });
+
+  it('shows at most three lines, most pressing first', () => {
+    const tasks = ['a', 'b', 'c', 'd'].map(id => task(id, '2026-11-01T09:00:00Z'));
+    expect(
+      composeToday(makeContext({ profile: PROFILE, tasks }), morning, ZURICH).lines
+    ).toHaveLength(3);
+  });
+
+  it("puts Loki's urgent items first and its approvals as decisions, linked to Loki", () => {
+    const today = composeToday(
+      makeContext({
+        profile: PROFILE,
+        tasks: [task('late', '2026-11-01T09:00:00Z')],
+        lokiProjects: [],
+        lokiNeedsYou: [
+          {
+            key: 'approval:a1',
+            label: 'Email Anna about the lease',
+            reason: null,
+            href: 'https://loki.orangecat.ch/approvals',
+            urgent: false,
+          },
+          {
+            key: 'alert:s1',
+            label: 'shop.example is down',
+            reason: null,
+            href: 'https://loki.orangecat.ch/system',
+            urgent: true,
+          },
         ],
       }),
       morning,
       ZURICH
     );
-    expect(brief.say).toBe(
-      'Loki is waiting on you in "orangecat". You have 1 task due today, 1 overdue task, ' +
-        '2 new pieces of feedback on "loki" and 14 unread notifications.'
-    );
+    expect(today.lines.map(l => l.text)).toEqual([
+      'shop.example is down',
+      'Task late — due Nov 1',
+      'Decide: Email Anna about the lease',
+    ]);
+    expect(today.lines[0].urgent).toBe(true);
   });
 
-  it('offers the reply that fits the hour', () => {
-    const ctx = makeContext({ profile: PROFILE });
-    expect(composeDayBrief(ctx, morning, ZURICH).replies[0]).toBe("Let's start my day");
-    expect(composeDayBrief(ctx, new Date('2026-11-12T14:00:00Z'), ZURICH).replies[0]).toMatch(
-      /this afternoon/
-    );
-    expect(composeDayBrief(ctx, new Date('2026-11-12T20:00:00Z'), ZURICH).replies[0]).toMatch(
-      /wrap up/
-    );
-  });
-
-  it('says so plainly when nothing is waiting, and invents nothing', () => {
-    expect(composeDayBrief(makeContext({ profile: PROFILE }), morning, ZURICH).say).toBe(
-      'Nothing is waiting on you this morning.'
-    );
-  });
-
-  it('is a new opener each day, each part of day, and whenever what it says changes', () => {
-    const ctx = makeContext({ profile: PROFILE });
-    const key = (now: string, c = ctx) => composeDayBrief(c, new Date(now), ZURICH).key;
-    const today = key('2026-11-12T05:05:00Z');
-    expect(key('2026-11-12T06:30:00Z')).toBe(today);
-    expect(key('2026-11-13T05:05:00Z')).not.toBe(today);
-    expect(key('2026-11-12T14:00:00Z')).not.toBe(today);
-    expect(
-      key(
-        '2026-11-12T05:05:00Z',
-        makeContext({
-          profile: PROFILE,
-          notificationsUnread: 3,
-          notifications: [
-            { type: 'system', title: 'x', message: '', count: 3, latest_at: '', action_url: null },
-          ],
-        })
-      )
-    ).not.toBe(today);
-  });
-
-  it("only counts a booking that falls on the person's today", () => {
-    const booking = (starts_at: string) => ({
-      starts_at,
-      ends_at: null,
-      status: 'confirmed',
-      customer_display_name: 'Ben',
-      customer_username: 'ben',
+  it('asks for a reply only where someone is waiting on one', () => {
+    const conv = (id: string, over: object) => ({
+      id,
+      other_username: 'ben',
+      other_name: 'Ben',
+      last_message_preview: 'hi',
+      last_message_is_mine: false,
+      last_message_at: '2026-11-11T20:00:00Z',
+      has_unread: true,
+      ...over,
     });
-    const say = (starts_at: string) =>
-      composeDayBrief(
+    const today = composeToday(
+      makeContext({
+        profile: PROFILE,
+        conversations: [
+          conv('c1', {}),
+          conv('c2', { last_message_is_mine: true }),
+          conv('c3', { has_unread: false }),
+        ],
+      }),
+      morning,
+      ZURICH
+    );
+    expect(today.lines.map(l => [l.text, l.href])).toEqual([['Reply to Ben', '/messages?id=c1']]);
+  });
+
+  it("only lists a booking that falls on the person's today", () => {
+    const lines = (starts_at: string) =>
+      composeToday(
         makeContext({
           profile: PROFILE,
-          inboundActivity: { recentSales: [], upcomingBookings: [booking(starts_at)] },
+          inboundActivity: { recentSales: [], upcomingBookings: [booking('b1', starts_at)] },
         }),
         morning,
         ZURICH
-      ).say;
-    expect(say('2026-11-12T13:00:00Z')).toBe('You have a booking with Ben at 14:00.');
-    expect(say('2026-11-13T13:00:00Z')).toBe('Nothing is waiting on you this morning.');
+      ).lines;
+    expect(lines('2026-11-12T13:00:00Z')).toHaveLength(1);
+    expect(lines('2026-11-13T13:00:00Z')).toHaveLength(0);
+  });
+
+  it('links their day in Loki by part of day, only when they use Loki', () => {
+    const linked = makeContext({ profile: PROFILE, lokiProjects: [] });
+    const at = (iso: string) => composeToday(linked, new Date(iso), ZURICH).day;
+    expect(at('2026-11-12T05:05:00Z')).toEqual({
+      label: 'Start my day in Loki',
+      href: expect.stringMatching(/^https?:\/\/.+\/today$/),
+    });
+    expect(at('2026-11-12T14:00:00Z')?.label).toBe('My day in Loki');
+    expect(at('2026-11-12T20:00:00Z')?.label).toBe('Wrap up my day in Loki');
+    expect(composeToday(makeContext({ profile: PROFILE }), morning, ZURICH).day).toBeNull();
+  });
+
+  it('is empty, not invented, when nothing needs them', () => {
+    expect(composeToday(makeContext({ profile: PROFILE }), morning, ZURICH).lines).toEqual([]);
   });
 });
 
@@ -487,16 +477,15 @@ describe('generateCatHome', () => {
     expect(home.chips.length).toBeLessThanOrEqual(CAT_HOME_MAX_CHIPS);
   });
 
-  it('leads with the day brief and keeps the single facts behind it', async () => {
+  it('returns what needs them today beside the openers', async () => {
     const home = await generateCatHome(
-      'u-brief',
+      'u-today',
       makeContext({ profile: PROFILE, entities: [makeEntity('product', 'Handmade Candles')] }),
       [],
       { now: new Date('2026-11-12T05:05:00Z'), zone: 'Europe/Zurich' }
     );
-    expect(home.openers[0].key).toMatch(/^day:2026-11-12:morning:/);
-    expect(home.openers[0].replies).toEqual(["Let's start my day"]);
-    expect(home.openers.slice(1).some(o => o.key === 'payment')).toBe(true);
+    expect(home.today).toEqual({ lines: [], day: null });
+    expect(home.openers.some(o => o.key === 'payment')).toBe(true);
   });
 
   it('turns the standing chips with the calendar day, so two mornings differ', async () => {

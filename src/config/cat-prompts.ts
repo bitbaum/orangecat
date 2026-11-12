@@ -10,18 +10,17 @@
  * Now the server returns two things, both GENERATED from the user's own state
  * (src/services/cat/prompt-suggestions.ts):
  *
- *   openers — things the Cat would bring up, in the Cat's voice. The first is
- *             the DAY BRIEF: everything waiting on the person right now, in
- *             one or two sentences, answered by the reply that fits the hour
- *             ("Let's start my day" in the morning). Behind it, the single
- *             facts, ranked by how timely they are (a sale, a booking, an
- *             overdue task) before how consequential (a gap). The client
- *             shows the first one the user has not dismissed, so "not now"
- *             moves the Cat on instead of freezing it.
- *   chips   — short things this person might ask, in their voice: the most
- *             timely fact's reply, then the standing topics (goal, gaps) in
- *             an order that turns with the calendar day, so the same three
- *             are not offered every morning.
+ *   today   — what needs the person, as at most three ACTIONS, each with the
+ *             one link that does it, and a link to their day in Loki (Loki
+ *             owns the day). Never a count: "read it and tap once" is the
+ *             owner's test (services/cat/today-lines.ts).
+ *   openers — things the Cat would bring up, in the Cat's voice: a sale, a
+ *             goal, a gap in their listings. Each carries the one or two
+ *             replies that act on it. The client shows the first one the user
+ *             has not dismissed, and only when nothing needs them today.
+ *   chips   — short things this person might ask, in their voice: the
+ *             openers' replies in an order that turns with the calendar day,
+ *             so the same three are not offered every morning.
  *
  * There is deliberately no list of prompt strings here. The single exception is
  * a user the Cat knows nothing about: zero data is zero signal, so the only
@@ -53,6 +52,8 @@ export interface CatReference {
 }
 
 export interface CatHome {
+  /** What needs them today. Null for a person the Cat knows nothing about. */
+  today: CatToday | null;
   /** Ranked; the client shows the first not dismissed. May be empty. */
   openers: CatOpener[];
   /** Short prompts in the user's voice, at most CAT_HOME_MAX_CHIPS. */
@@ -80,12 +81,34 @@ export function dayPartFor(hour: number): DayPart {
   return hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
 }
 
-/** What the person says back to the day brief, by part of day. The first is primary. */
-export const DAY_BRIEF_REPLIES: Record<DayPart, string[]> = {
-  morning: ["Let's start my day"],
-  afternoon: ['What should I focus on this afternoon?'],
-  evening: ['Help me wrap up my day', 'Plan my tomorrow'],
+/** The link to the person's day in Loki, by part of day. Says where it goes. */
+export const DAY_LINK_LABELS: Record<DayPart, string> = {
+  morning: 'Start my day in Loki',
+  afternoon: 'My day in Loki',
+  evening: 'Wrap up my day in Loki',
 };
+
+/** Lines of "today" the home shows: what fits above the composer on a phone. */
+export const CAT_TODAY_MAX_LINES = 3;
+
+/** One thing that needs the person, and the one link that acts on it. */
+export interface CatTodayLine {
+  /** Stable identity ("task:<id>", "loki:approval:<id>"). */
+  key: string;
+  /** Written as the action: "Reply to Ben", "Send invoice — due 1 Nov". */
+  text: string;
+  /** The one tap: an OrangeCat path, or an absolute Loki URL. */
+  href: string;
+  /** Something broken or exposed: shown first, and marked. */
+  urgent?: boolean;
+}
+
+export interface CatToday {
+  /** At most CAT_TODAY_MAX_LINES, most pressing first. Empty: nothing needs them. */
+  lines: CatTodayLine[];
+  /** Their day in Loki, when they use Loki. */
+  day: { label: string; href: string } | null;
+}
 
 /** How many starter options a brand-new user is offered. Three is a fork; six is a menu. */
 const STARTER_COUNT = 3;
@@ -106,4 +129,9 @@ export function getStarterChips(): string[] {
  * What an unknown user sees — and the fallback for anonymous visitors and
  * errors. Safe as a module constant: it derives from a static registry.
  */
-export const STARTER_HOME: CatHome = { openers: [], chips: getStarterChips(), attachable: [] };
+export const STARTER_HOME: CatHome = {
+  today: null,
+  openers: [],
+  chips: getStarterChips(),
+  attachable: [],
+};

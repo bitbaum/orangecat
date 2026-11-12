@@ -16,14 +16,11 @@
  *          whichever happened to sort first;
  *        - every opener has a stable key, and the client skips dismissed keys,
  *          so "not now" moves the Cat on.
- *   2. The DAY BRIEF leads them: one opener that counts everything waiting
- *      on the person right now (Loki, bookings, tasks, messages,
- *      notifications) and offers the reply that fits the hour. A home that
- *      showed one fact and three detached questions looked the same every
- *      visit and read like a form (owner, 2026-11-12). It is keyed on the
- *      day, the part of day and what it says, so it is new every morning and
- *      returns after a dismissal the moment something changes.
- *   3. CHIPS are what this person might ask next: the most timely fact's
+ *   2. TODAY leads them (./today-lines): what needs the person, as at most
+ *      three actions each with its one link, and their day in Loki. A home
+ *      that showed one fact and three detached questions looked the same
+ *      every visit (owner, 2026-11-12).
+ *   3. CHIPS are what this person might ask next: the most timely opener's
  *      reply, then the standing topics (goal, gaps) in an order that turns
  *      with the calendar day, then the registry-derived starters.
  *
@@ -42,9 +39,8 @@ import {
   type CatOpener,
   type CatReference,
 } from '@/config/cat-prompts';
-import { APP_LOCALE } from '@/utils/locale';
 import { isValidTimeZone } from '@/utils/timezone';
-import { composeDayBrief, localClock } from './day-brief';
+import { composeToday, localClock } from './today-lines';
 import { MAX_TITLE_CHARS, fingerprint, plural, truncate } from './cat-home-text';
 import type { EntitySummary, FullUserContext } from '@/services/ai/document-context-types';
 
@@ -91,58 +87,27 @@ const canBePaid = (context: FullUserContext): boolean =>
   !!context.paymentCapabilities?.hasNwcWallet ||
   !!context.paymentCapabilities?.lightningAddress;
 
-const shortDate = (iso: string): string =>
-  new Date(iso).toLocaleDateString(APP_LOCALE, {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-  });
-
 // ─── Openers ──────────────────────────────────────────────────────────────────
 
 /**
  * Everything the Cat could bring up, most timely first. Each names a real
  * object of the user's, which is what lets it justify being said at all.
  */
-export function detectOpeners(context: FullUserContext, now: Date = new Date()): CatOpener[] {
-  return detect(context, now).openers;
+export function detectOpeners(context: FullUserContext): CatOpener[] {
+  return detect(context).openers;
 }
 
 /** The openers, and how many of them (from the front) are timely rather than standing. */
-function detect(
-  context: FullUserContext,
-  now: Date
-): { openers: CatOpener[]; timelyCount: number } {
+function detect(context: FullUserContext): { openers: CatOpener[]; timelyCount: number } {
   const openers: CatOpener[] = [];
   const entities = context.entities.filter(e => !isPlaceholderTitle(e.title));
   const title = (e: EntitySummary) => truncate(e.title, MAX_TITLE_CHARS);
 
-  // ── Timely: something happened, or is about to ──
-
-  // Loki first: a build blocked on its owner is the one thing here that is
-  // literally waiting for them, and until the rail ran both ways Cat could not
-  // see it at all.
-  const loki = context.lokiProjects ?? [];
-  const waiting = loki.find(p => p.status === 'blocked' && p.blockReason === 'awaiting_user');
-  if (waiting) {
-    const name = truncate(waiting.name, MAX_TITLE_CHARS);
-    openers.push({
-      key: `loki-waiting:${waiting.id}:${waiting.currentWork ?? ''}`,
-      say: `Loki is waiting on you to continue "${name}".`,
-      replies: [`What does "${name}" need from me?`],
-    });
-  }
-  const withFeedback = loki.find(p => p.feedback.new > 0);
-  if (withFeedback) {
-    const name = truncate(withFeedback.name, MAX_TITLE_CHARS);
-    openers.push({
-      key: `loki-feedback:${withFeedback.id}:${withFeedback.feedback.new}`,
-      say: `"${name}" has ${plural(withFeedback.feedback.new, 'new piece')} of visitor feedback in Loki.`,
-      // Cat sees the count and the Loki link, not the feedback text — so the
-      // reply asks for the next step, never for a summary it would invent.
-      replies: [`How do I act on the feedback for "${name}"?`],
-    });
-  }
+  // ── Timely: something happened ──
+  // What needs the person TODAY (Loki, bookings, tasks, replies) is not an
+  // opener any more: those are action lines with their link, in
+  // ./today-lines. Unread notifications are not here either: "You have 80
+  // unread notifications" is a count, and counts fail the owner's test.
 
   const sales = context.inboundActivity?.recentSales ?? [];
   if (sales.length > 0) {
@@ -155,40 +120,6 @@ function detect(
           ? `"${name}" sold recently.`
           : `You've had ${plural(sales.length, 'sale')} recently — the latest was "${name}".`,
       replies: ['How should I follow up with my buyers?', 'What should I offer next?'],
-    });
-  }
-
-  const booking = context.inboundActivity?.upcomingBookings?.[0];
-  if (booking) {
-    const who = booking.customer_display_name || booking.customer_username || 'a customer';
-    openers.push({
-      key: `booking:${booking.starts_at}`,
-      say: `You have a booking with ${who} on ${shortDate(booking.starts_at)}.`,
-      replies: ['Help me prepare for it'],
-    });
-  }
-
-  // The context fetch only loads open tasks, so "past due" is "overdue".
-  const overdue = context.tasks.find(t => !!t.due_date && new Date(t.due_date) < now);
-  if (overdue?.due_date) {
-    const name = truncate(overdue.title, MAX_TITLE_CHARS);
-    openers.push({
-      key: `task:${overdue.id}`,
-      say: `"${name}" was due ${shortDate(overdue.due_date)} and is still open.`,
-      replies: [`Help me get "${name}" done`, `Move "${name}" to next week`],
-    });
-  }
-
-  const unread = context.notifications ?? [];
-  if (unread.length > 0) {
-    // The exact count, not a sum of the coalesced groups: those cover only the
-    // newest rows fetched, so summing them said "30" beside a bell that said 80.
-    const total = context.notificationsUnread ?? unread.reduce((n, x) => n + (x.count || 1), 0);
-    const latest = [...unread].sort((a, b) => b.latest_at.localeCompare(a.latest_at))[0];
-    openers.push({
-      key: `notifications:${latest.latest_at}`,
-      say: `You have ${plural(total, 'unread notification')} — the latest is "${truncate(latest.title, MAX_TITLE_CHARS)}".`,
-      replies: ['What needs my attention?'],
     });
   }
 
@@ -347,10 +278,10 @@ export async function generateCatHome(
 
   const now = at.now ?? new Date();
   const zone = isValidTimeZone(at.zone) ? at.zone : context.profile?.timezone;
-  const brief = composeDayBrief(context, now, zone);
-  const { openers: facts, timelyCount } = detect(context, now);
+  const { openers: facts, timelyCount } = detect(context);
   return {
-    openers: [brief, ...facts],
+    today: composeToday(context, now, zone),
+    openers: facts,
     chips: chipsFrom(
       facts.slice(0, timelyCount),
       facts.slice(timelyCount),

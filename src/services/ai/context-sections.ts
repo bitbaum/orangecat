@@ -6,6 +6,7 @@
  * context-string-builder.snapshot.test.ts), so keep wording/format changes here.
  */
 import { isValidTimeZone } from '@/utils/timezone';
+import { lokiPageUrl } from '@/config/ecosystem';
 import type { DocumentContext, EntitySummary, FullUserContext } from './document-context-types';
 import { ENTITY_STATUS } from '@/config/database-constants';
 import { renderLightningAddressProviders } from '@/config/wallet-providers';
@@ -406,14 +407,18 @@ export function renderStakeholders(stakeholders: FullUserContext['stakeholders']
  * What Loki is doing with this person's projects. Only the state that changes
  * what Cat says: live or not, blocked on them, working, and feedback waiting.
  */
-export function renderLokiProjects(lokiProjects: FullUserContext['lokiProjects']): string | null {
+export function renderLokiProjects(
+  lokiProjects: FullUserContext['lokiProjects'],
+  lokiNeedsYou?: FullUserContext['lokiNeedsYou']
+): string | null {
   if (!lokiProjects || lokiProjects.length === 0) {
     return null;
   }
   const lines = lokiProjects.slice(0, 10).map(p => {
+    const waiting = p.blockReason?.startsWith('awaiting_user');
     const state =
       p.status === 'blocked'
-        ? `BLOCKED${p.blockReason === 'awaiting_user' ? ' — waiting on the user' : p.blockReason ? ` (${p.blockReason})` : ''}`
+        ? `BLOCKED${waiting ? ` — waiting on the user${p.needsYou ? `: "${p.needsYou}"` : ''}` : p.blockReason ? ` (${p.blockReason})` : ''}`
         : p.status === 'working'
           ? `building${p.currentWork ? `: ${p.currentWork.slice(0, 60)}` : ''}`
           : 'idle';
@@ -430,7 +435,18 @@ export function renderLokiProjects(lokiProjects: FullUserContext['lokiProjects']
     const site = p.liveUrl ? `live at ${p.liveUrl}` : 'not deployed';
     return `- **${p.name}** — ${site}; ${parts.join(', ')} (Loki: ${p.lokiUrl})`;
   });
-  return `## Loki Projects\nWhat Loki (the studio that builds and runs their sites) reports right now. Link the Loki page when they need to act there:\n${lines.join('\n')}`;
+  // Approvals and alerts waiting in Loki, each with the page that acts on it.
+  const waitingLines = (lokiNeedsYou ?? [])
+    .slice(0, 10)
+    .map(
+      n =>
+        `- ${n.urgent ? 'URGENT: ' : ''}${n.label}${n.reason ? ` — ${n.reason}` : ''} (${n.href})`
+    );
+  const waitingBlock =
+    waitingLines.length > 0
+      ? `\n\nWaiting on them in Loki (approvals, alerts):\n${waitingLines.join('\n')}`
+      : '';
+  return `## Loki Projects\nWhat Loki (where their work, and their day, is run) reports right now. Link the Loki page when they need to act there. Their whole day — calendar, habits, commitments, everything that needs them — is at ${lokiPageUrl('/today')}.\n${lines.join('\n')}${waitingBlock}`;
 }
 
 export function renderGithubRepos(githubRepos: FullUserContext['githubRepos']): string | null {

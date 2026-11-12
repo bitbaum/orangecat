@@ -99,6 +99,21 @@ export const LOKI_ENDPOINTS = {
   fleetMap: '/api/fleet/map',
 } as const;
 
+/**
+ * Loki PAGES the Cat sends a person to. Loki owns "what the day holds"
+ * (ECOSYSTEM_PILLARS below), so the Cat links there rather than keeping a
+ * second day of its own.
+ */
+export const LOKI_PAGES = {
+  /** The day: greeting, what needs you, calendar, habits, commitments. */
+  today: '/today',
+} as const;
+
+/** An absolute Loki page URL, off the configured Loki origin. */
+export function lokiPageUrl(path: (typeof LOKI_PAGES)[keyof typeof LOKI_PAGES]): string {
+  return new URL(path, ECOSYSTEM.loki.siteUrl).toString();
+}
+
 export const ECOSYSTEM_LINKS = {
   mao: ECOSYSTEM.orangeCat.profileUrl,
   orangeCat: orangeCatPage(`/projects/${ECOSYSTEM.orangeCat.projectId}`),

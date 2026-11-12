@@ -145,7 +145,8 @@ export function ModernChatPanel({
   }, []);
 
   const { memoryNotes, checkAfterSend, undoNote, dismissNote } = useMemoryNotes();
-  const { opener, chips, attachable, dismissOpener, isLoadingSuggestions } = useSuggestions();
+  const { today, opener, chips, attachable, dismissOpener, isLoadingSuggestions } =
+    useSuggestions();
 
   // Pending actions the person answered since their turn ended: the chip
   // under that turn settles, and what the handler said (with its one link)
@@ -295,6 +296,7 @@ export function ModernChatPanel({
         starters={catStarters(opener, chips)}
         startersTitle={
           <EmptyState
+            today={today}
             opener={opener}
             chips={chips}
             isLoadingSuggestions={isLoadingSuggestions}
