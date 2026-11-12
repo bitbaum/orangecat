@@ -13,7 +13,7 @@
  * constant.
  */
 
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 /** `btcToChf: 86000`, `BTC_USD: 97000`, `btcPriceUsd = 100000`, … */
@@ -21,11 +21,13 @@ const FORBIDDEN =
   /(btcTo(Chf|Usd|Eur|Gbp)|BTC_(CHF|USD|EUR|GBP)|btcPrice[A-Za-z]*|[A-Za-z]*RateFallback)['"]?\s*[:=]\s*[0-9_]{4,}/;
 
 function sourceFiles(dir: string, out: string[] = []): string[] {
-  for (const name of readdirSync(dir)) {
-    const path = join(dir, name);
-    if (statSync(path).isDirectory()) {
+  // The directory entry already says what it is; a stat per file doubled the
+  // syscalls on a slow filesystem.
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) {
       sourceFiles(path, out);
-    } else if (/\.tsx?$/.test(name)) {
+    } else if (/\.tsx?$/.test(entry.name)) {
       out.push(path);
     }
   }
@@ -56,5 +58,7 @@ describe('no hardcoded exchange rates in source', () => {
     }
 
     expect(offenders).toEqual([]);
-  });
+    // Reads every file under src/ once — a full-tree read cannot get cheaper
+    // than that, and under the whole suite's parallel I/O it outran 30s.
+  }, 120_000);
 });

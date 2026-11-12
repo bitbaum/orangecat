@@ -29,7 +29,7 @@ export function GetStartedCTA({ onGetWallet }: GetStartedCTAProps) {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
               onClick={onGetWallet}
-              className="bg-bitcoinOrange hover:bg-bitcoinOrange/90 text-white"
+              className="bg-bitcoinOrange hover:bg-bitcoinOrange/90 text-on-accent"
             >
               <Download className="w-4 h-4 mr-2" />
               Get a Wallet Now

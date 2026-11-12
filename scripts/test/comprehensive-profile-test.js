@@ -55,12 +55,12 @@ async function comprehensiveTest() {
 
       const emailInput = page.locator('input[type="email"], input[placeholder*="email" i]').first();
       if (await emailInput.isVisible({ timeout: 5000 }).catch(() => false)) {
-        await emailInput.fill('butaeff@gmail.com');
+        await emailInput.fill(process.env.E2E_USER_EMAIL);
         await page.waitForTimeout(500);
 
         const passwordInput = page.locator('input[type="password"]').first();
         if (await passwordInput.isVisible({ timeout: 5000 }).catch(() => false)) {
-          await passwordInput.fill('Asdfgh11!');
+          await passwordInput.fill(process.env.E2E_USER_PASSWORD);
           await page.waitForTimeout(500);
 
           const signInButton = page
@@ -328,6 +328,3 @@ async function comprehensiveTest() {
 
 console.log('🚀 Starting Comprehensive Profile Test...');
 comprehensiveTest();
-
-
-

@@ -26,8 +26,8 @@
  * A hand is offered when the person has granted it, or may grant it by
  * confirming (the Cat's grant-on-confirm rule). The one high-risk hand,
  * send_task_to_loki, is never granted by a tap: it is offered only where the
- * person already holds that permission, and it still waits for a tap every
- * time.
+ * person already holds that permission. It waits for a tap every time unless
+ * the owner switched it to run on its own for that bot (hand-grants.ts).
  */
 
 import { CAT_ACTIONS, type CatAction } from '@/config/cat-actions';

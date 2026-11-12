@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   isTimeLocal,
+  ROUTINE_INTERVALS,
+  isRoutineInterval,
+  nextRoutineRun,
   nextRunAt,
   routineNotice,
   skipReason,
@@ -71,5 +74,50 @@ describe('a routine on the owner’s Telegram', () => {
 
   it('is one message per routine per day', () => {
     expect(notice.key).toBe('routine:r1:2026-11-02');
+  });
+});
+
+describe('a routine that repeats through the day', () => {
+  const now = new Date('2026-11-02T06:10:00.000Z');
+
+  it('runs again that many hours after each run', () => {
+    expect(nextRoutineRun(now, { timeLocal: '08:00', zone: 'Europe/Zurich', everyHours: 2 })).toBe(
+      '2026-11-02T08:10:00.000Z'
+    );
+    expect(nextRoutineRun(now, { timeLocal: '08:00', zone: 'Europe/Zurich', everyHours: 1 })).toBe(
+      '2026-11-02T07:10:00.000Z'
+    );
+  });
+
+  it('keeps its hours: the next run steps from when it was due, not when the cron ran it', () => {
+    const late = new Date('2026-11-02T08:14:00.000Z');
+    expect(
+      nextRoutineRun(late, {
+        timeLocal: '08:00',
+        zone: 'Europe/Zurich',
+        everyHours: 2,
+        dueAt: '2026-11-02T08:00:00.000Z',
+      })
+    ).toBe('2026-11-02T10:00:00.000Z');
+    // Down for a day: the next run is the first still ahead, not a burst.
+    expect(
+      nextRoutineRun(late, {
+        timeLocal: '08:00',
+        zone: 'Europe/Zurich',
+        everyHours: 4,
+        dueAt: '2026-11-01T06:00:00.000Z',
+      })
+    ).toBe('2026-11-02T10:00:00.000Z');
+  });
+
+  it('is the daily routine when no interval, or one that is not offered, is set', () => {
+    const daily = nextRunAt(now, '08:00', 'Europe/Zurich');
+    for (const everyHours of [null, undefined, 0, 3, 48]) {
+      expect(nextRoutineRun(now, { timeLocal: '08:00', zone: 'Europe/Zurich', everyHours })).toBe(
+        daily
+      );
+    }
+    expect(ROUTINE_INTERVALS.every(isRoutineInterval)).toBe(true);
+    expect(isRoutineInterval('2')).toBe(false);
   });
 });
