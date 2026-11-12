@@ -16,7 +16,7 @@
 'use client';
 
 import { useState } from 'react';
-import { QRCodeSVG } from 'qrcode.react';
+import { ScanCode } from '@/components/ui/ScanCode';
 import Link from 'next/link';
 import { Bitcoin, Zap, Copy, Check, ExternalLink } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -156,7 +156,7 @@ export function PublicPayPanel({
         )}
 
         <div className="flex justify-center rounded-lg border border-default bg-surface-base p-4">
-          <QRCodeSVG value={paymentUri} size={192} level="M" />
+          <ScanCode value={paymentUri} size={192} />
         </div>
 
         <div className="space-y-1">
