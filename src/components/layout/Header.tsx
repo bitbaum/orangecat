@@ -9,7 +9,7 @@ import { useMobileMenuAnimation } from '@/hooks/useMobileMenuAnimation';
 import { authNavigationItems, getHeaderNavigationItems } from '@/config/navigation';
 import { getAuthStatus } from '@/lib/auth/utils';
 import { getHeaderClasses } from '@/lib/ui/header-utils';
-import { HEADER_DIMENSIONS, HEADER_SPACING } from '@/constants/header';
+import { HEADER_DIMENSIONS, HEADER_SPACING, VISITOR_MENU_ID } from '@/constants/header';
 import Logo from './Logo';
 import AuthButtons from './AuthButtons';
 import { HeaderCreateButton } from '@/components/dashboard/HeaderCreateButton';
@@ -19,7 +19,7 @@ import { EmailConfirmationBanner } from './EmailConfirmationBanner';
 import { MessagesButton, NotificationsButton } from './HeaderActions';
 import { MenuToggleButton } from './MenuToggleButton';
 import { DesktopNavigation } from './DesktopNavigation';
-import { MobileMenu, VISITOR_MENU_ID } from './MobileMenu';
+import { MobileMenu } from './MobileMenu';
 import AccountMenuControl from './AccountMenuControl';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 

@@ -14,12 +14,10 @@ import FocusLock from 'react-focus-lock';
 import { ExternalLink, X } from 'lucide-react';
 
 import Button from '@/components/ui/Button';
+import { VISITOR_MENU_ID } from '@/constants/header';
 import { getMobileMenuBackdropClasses, getMobileMenuPanelClasses } from '@/lib/ui/header-utils';
 
 import type { NavigationItem } from './HeaderNavigation';
-
-/** The id the header's menu button points at with `aria-controls`. */
-export const VISITOR_MENU_ID = 'visitor-menu';
 
 interface MobileMenuProps {
   /** Whether menu is open */

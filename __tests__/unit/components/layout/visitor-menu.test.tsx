@@ -13,7 +13,8 @@ import React from 'react';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
-import { MobileMenu, VISITOR_MENU_ID } from '@/components/layout/MobileMenu';
+import { MobileMenu } from '@/components/layout/MobileMenu';
+import { VISITOR_MENU_ID } from '@/constants/header';
 import { MenuToggleButton } from '@/components/layout/MenuToggleButton';
 import { authNavigationItems, getHeaderNavigationItems } from '@/config/navigation';
 import type { NavigationItem } from '@/components/layout/HeaderNavigation';
@@ -86,7 +87,9 @@ describe('visitor menu', () => {
   it('keeps a plain link out of the group before it', () => {
     const { dialog } = renderMenu();
     const blog = within(dialog).getByRole('link', { name: /Blog/ });
-    const productGroup = within(dialog).getByRole('heading', { name: 'Product' }).closest('section');
+    const productGroup = within(dialog)
+      .getByRole('heading', { name: 'Product' })
+      .closest('section');
     expect(productGroup).not.toBeNull();
     expect(productGroup).not.toContainElement(blog);
   });

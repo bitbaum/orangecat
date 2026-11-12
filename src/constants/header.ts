@@ -47,6 +47,13 @@ export const HEADER_SPACING = {
 /**
  * Mobile menu constants
  */
+/**
+ * The id of the visitor menu, which the header's menu button names in
+ * `aria-controls`. It lives here, not in MobileMenu, so a test that stubs the
+ * menu does not take the header's import away with it.
+ */
+export const VISITOR_MENU_ID = 'visitor-menu';
+
 export const MOBILE_MENU = {
   /** Menu width */
   WIDTH: 'w-80',
