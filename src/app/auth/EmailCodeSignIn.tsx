@@ -8,6 +8,12 @@ import { TurnstileCaptcha } from '@/components/auth/TurnstileCaptcha';
 import supabase from '@/lib/supabase/browser';
 import { getMFAAssuranceLevel } from '@/services/supabase/auth';
 import { API_ROUTES } from '@/config/api-routes';
+import {
+  clearPendingEmailCode,
+  codeRateLimitMessage,
+  readPendingEmailCode,
+  writePendingEmailCode,
+} from './pendingEmailCode';
 
 /** Seconds before "send another code" unlocks — the server allows 3 per 15 minutes. */
 const RESEND_AFTER_S = 45;
@@ -22,6 +28,9 @@ const RESEND_AFTER_S = 45;
  * exists, and the sign-in page's existing redirect takes the person on to
  * wherever they were going — including back to Solon or Loki mid-login.
  * Accounts with two-factor authentication still get their second step.
+ *
+ * The code step survives a reload (pendingEmailCode.ts): the person leaves for
+ * their mail app to read the code, and a phone may discard the tab meanwhile.
  */
 export function EmailCodeSignIn({
   initialEmail,
@@ -36,13 +45,27 @@ export function EmailCodeSignIn({
   onBack: () => void;
   onNeedsSecondFactor: () => void;
 }) {
-  const [step, setStep] = useState<'email' | 'code'>('email');
-  const [email, setEmail] = useState(initialEmail);
-  const [code, setCode] = useState('');
+  // Read once, on mount. This component only ever mounts in the browser (the
+  // page opens it from a click or from its own effect), so there is no server
+  // render for these initial values to disagree with.
+  const [restored] = useState(() => readPendingEmailCode());
+  const [step, setStep] = useState<'email' | 'code'>(restored ? 'code' : 'email');
+  const [email, setEmail] = useState(restored?.email ?? initialEmail);
+  const [code, setCode] = useState(restored?.code ?? '');
+  const [sentAt, setSentAt] = useState<number | null>(restored?.sentAt ?? null);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [resendIn, setResendIn] = useState(0);
+  const [rateLimited, setRateLimited] = useState(false);
+  const [resendIn, setResendIn] = useState(() =>
+    restored ? Math.max(0, RESEND_AFTER_S - Math.floor((Date.now() - restored.sentAt) / 1000)) : 0
+  );
+
+  useEffect(() => {
+    if (step === 'code' && sentAt !== null) {
+      writePendingEmailCode({ email: email.trim(), code, sentAt });
+    }
+  }, [step, email, code, sentAt]);
 
   useEffect(() => {
     if (resendIn <= 0) {
@@ -55,6 +78,7 @@ export function EmailCodeSignIn({
   const sendCode = async () => {
     setBusy(true);
     setError(null);
+    setRateLimited(false);
     try {
       const res = await fetch(API_ROUTES.AUTH.EMAIL_CODE, {
         method: 'POST',
@@ -62,7 +86,9 @@ export function EmailCodeSignIn({
         body: JSON.stringify({ email: email.trim(), client: clientId, captchaToken }),
       });
       if (res.status === 429) {
-        throw new Error('Too many codes asked for. Wait a few minutes, then try again.');
+        const retryAfter = Number(res.headers.get('Retry-After'));
+        setRateLimited(true);
+        throw new Error(codeRateLimitMessage(retryAfter > 0 ? retryAfter : null));
       }
       const body = (await res.json().catch(() => null)) as {
         error?: { message?: string };
@@ -72,6 +98,7 @@ export function EmailCodeSignIn({
       }
       setStep('code');
       setCode('');
+      setSentAt(Date.now());
       setResendIn(RESEND_AFTER_S);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'We could not send a code. Try again.');
@@ -96,6 +123,7 @@ export function EmailCodeSignIn({
             : 'We could not check that code. Try again.'
         );
       }
+      clearPendingEmailCode();
       // Same second step the password sign-in enforces.
       const mfa = await getMFAAssuranceLevel();
       if (mfa.data?.currentLevel === 'aal1' && mfa.data?.nextLevel === 'aal2') {
@@ -116,7 +144,18 @@ export function EmailCodeSignIn({
     <div className="space-y-5">
       <button
         type="button"
-        onClick={step === 'code' ? () => setStep('email') : onBack}
+        onClick={
+          step === 'code'
+            ? () => {
+                clearPendingEmailCode();
+                setSentAt(null);
+                setCode('');
+                setError(null);
+                setRateLimited(false);
+                setStep('email');
+              }
+            : onBack
+        }
         className="inline-flex min-h-11 items-center gap-1.5 text-sm text-fg-secondary transition-colors hover:text-fg-primary"
       >
         <ArrowLeft className="h-4 w-4" />
@@ -174,6 +213,23 @@ export function EmailCodeSignIn({
           >
             {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Email me a code'}
           </Button>
+          {rateLimited && (
+            // Refused a new code, but an earlier one may be in the inbox:
+            // without this there is no way to the field that takes it.
+            <button
+              type="button"
+              onClick={() => {
+                setError(null);
+                setRateLimited(false);
+                setSentAt(current => current ?? Date.now());
+                setStep('code');
+              }}
+              disabled={busy || !email.trim()}
+              className="min-h-11 w-full text-sm text-fg-secondary transition-colors hover:text-fg-primary disabled:opacity-50"
+            >
+              I already have a code
+            </button>
+          )}
         </form>
       ) : (
         <form

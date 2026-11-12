@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import {
   apiBadRequest,
   apiError,
+  apiRateLimited,
   apiServiceUnavailable,
   apiSuccess,
 } from '@/lib/api/standardResponse';
@@ -15,8 +16,14 @@ import {
 } from '@/lib/rate-limit';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { getClient } from '@/services/auth/oauthProvider';
-import { normalizeEmail, sendSignInCode } from '@/services/auth/emailCode';
+import { CODE_RATE_LIMITED, normalizeEmail, sendSignInCode } from '@/services/auth/emailCode';
 import { logger } from '@/utils/logger';
+
+/**
+ * GoTrue does not say how long its throttle lasts; its per-address send
+ * frequency is a minute by default, so that is what the answer asks for.
+ */
+const AUTH_SERVER_RETRY_AFTER_S = 60;
 
 /**
  * POST /api/auth/email-code — mail a six-digit sign-in code.
@@ -75,6 +82,16 @@ export async function POST(request: NextRequest) {
           email: target,
         });
         if (error) {
+          // GoTrue throttles on its own (per-address send frequency, request
+          // rate). That is not a failure to retry at once; say so.
+          if (error.status === 429 || /rate_limit/.test(error.code ?? '')) {
+            logger.warn(
+              'Sign-in code throttled by the auth server',
+              { code: error.code },
+              'EmailCode'
+            );
+            return CODE_RATE_LIMITED;
+          }
           logger.warn('Sign-in code generation refused', { code: error.code }, 'EmailCode');
           return null;
         }
@@ -90,6 +107,11 @@ export async function POST(request: NextRequest) {
       return apiServiceUnavailable('Sign-in by email code is not available here.');
     case 'invalid':
       return apiBadRequest(outcome.reason);
+    case 'rate_limited':
+      return apiRateLimited(
+        'Too many codes asked for. Wait a minute, then try again.',
+        AUTH_SERVER_RETRY_AFTER_S
+      );
     case 'failed':
       return apiError(
         'We could not send a code just now. Try again in a minute, or sign in another way.',
