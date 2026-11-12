@@ -71,7 +71,7 @@ export function RouteError({ error, reset, context }: RouteErrorProps) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] p-6 text-center">
         <RefreshCw className="h-8 w-8 animate-spin text-fg-tertiary mb-4" />
-        <h2 className="text-xl font-semibold mb-2">Updating to the latest version</h2>
+        <h1 className="text-xl font-semibold mb-2">Updating to the latest version</h1>
         <p className="text-fg-secondary max-w-md">
           OrangeCat was updated while this page was open. Reloading now — nothing is lost.
         </p>
@@ -91,7 +91,7 @@ export function RouteError({ error, reset, context }: RouteErrorProps) {
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] p-6 text-center">
       <AlertCircle className="h-12 w-12 text-destructive mb-4" />
-      <h2 className="text-xl font-semibold mb-2">Something went wrong</h2>
+      <h1 className="text-xl font-semibold mb-2">Something went wrong</h1>
       <p className="text-fg-secondary mb-4 max-w-md">
         There was a problem loading this page. It has been reported to us. Please try again.
       </p>

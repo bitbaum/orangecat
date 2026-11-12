@@ -1,7 +1,8 @@
 /**
  * Mobile-only sticky bottom CTA for the public entity detail page. Extracted
  * from PublicEntityDetailPage.tsx to keep that component under 300 lines.
- * On <md it keeps the primary visitor action one tap from any scroll position.
+ * On <md it keeps the primary visitor action one tap from any scroll position,
+ * and steps aside while the section it leads to is on screen (StickyBar).
  */
 import { getEntityPrimaryCta } from '@/config/entity-cta';
 import type { EntityDetailConfig, EntityData } from './public-entity-detail-config';

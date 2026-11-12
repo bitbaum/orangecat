@@ -39,7 +39,7 @@ export function ProgressSteps({ currentStep, onStepClick }: ProgressStepsProps) 
               <div
                 className={`w-12 h-12 rounded-full mx-auto mb-4 flex items-center justify-center ${
                   isActive
-                    ? 'bg-bitcoinOrange text-white'
+                    ? 'bg-bitcoinOrange text-on-accent'
                     : isCompleted
                       ? 'bg-status-positive text-white'
                       : 'bg-surface-raised text-fg-secondary'
