@@ -8,7 +8,7 @@
  * for itself whether it is up, by answering a request made here. Nothing is
  * inferred: a site that was not asked is "not checked", never "up".
  */
-import { checkPublicUrl } from '@/lib/security/ssrfGuard';
+import { PinnedGetRefused, pinnedGetStatus } from '@/lib/security/pinned-get';
 import { fetchLokiActorStatus, type LokiProjectStatus } from './actor-status';
 import { readLokiSessions, type LokiSession } from './sessions';
 
@@ -38,37 +38,48 @@ export interface ProjectStatusRow {
 export type ProjectStatusOutcome =
   { ok: true; projects: ProjectStatusRow[] } | { ok: false; reason: string };
 
-/** Ask one live site whether it answers. Never follows a redirect, never a private address. */
+/** Why a probe was not made, in words, from the refusal the pinned GET raised. */
+function refusedReason(err: unknown): string | null {
+  if (err instanceof PinnedGetRefused) {
+    return err.message;
+  }
+  const code = (err as { code?: string } | null)?.code;
+  return code === 'EPRIVATEADDR' ? 'it resolves to a private or reserved address' : null;
+}
+
+/**
+ * Ask one live site whether it answers. The request can only reach a public
+ * address on the default port (lib/security/pinned-get.ts), never follows a
+ * redirect and never reads the body. A name that does not resolve is the
+ * site being down; an address it may not ask is "not checked".
+ */
 export async function probeLive(
   url: string,
-  opts: { fetchImpl?: typeof fetch; check?: typeof checkPublicUrl; now?: () => number } = {}
+  opts: { send?: (url: string, timeoutMs: number) => Promise<number>; now?: () => number } = {}
 ): Promise<LiveCheck> {
-  const check = await (opts.check ?? checkPublicUrl)(url);
-  if (!check.ok) {
-    return { state: 'not_checked', reason: check.reason ?? 'not a public address' };
-  }
   const now = opts.now ?? (() => Date.now());
   const started = now();
   try {
-    const res = await (opts.fetchImpl ?? fetch)(url, {
-      method: 'GET',
-      redirect: 'manual',
-      signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
-      headers: { accept: 'text/html,*/*' },
-    });
+    const status = await (opts.send ?? pinnedGetStatus)(url, PROBE_TIMEOUT_MS);
     const ms = Math.round(now() - started);
     // A redirect is the site answering; only a server error is "down".
-    return res.status < 500
-      ? { state: 'up', status: res.status, ms }
-      : { state: 'down', reason: `it answered ${res.status}` };
+    return status > 0 && status < 500
+      ? { state: 'up', status, ms }
+      : { state: 'down', reason: `it answered ${status}` };
   } catch (err) {
-    const name = err instanceof Error ? err.name : '';
+    const refused = refusedReason(err);
+    if (refused) {
+      return { state: 'not_checked', reason: refused };
+    }
+    const e = err as { name?: string; code?: string } | null;
     return {
       state: 'down',
       reason:
-        name === 'TimeoutError' || name === 'AbortError'
+        e?.name === 'TimeoutError'
           ? `no answer in ${PROBE_TIMEOUT_MS / 1000} seconds`
-          : 'it could not be reached',
+          : e?.code === 'ENOTFOUND' || e?.code === 'EAI_AGAIN'
+            ? 'its name does not resolve'
+            : 'it could not be reached',
     };
   }
 }
@@ -78,7 +89,8 @@ export async function readProjectStatus(
   opts: { project?: string; probe?: (url: string) => Promise<LiveCheck> } = {}
 ): Promise<ProjectStatusOutcome> {
   const [status, sessions] = await Promise.all([
-    fetchLokiActorStatus(actorId),
+    // Read now, not the Cat's five-minute copy: this is asked for the current state.
+    fetchLokiActorStatus(actorId, { fresh: true }),
     readLokiSessions({ actorId }),
   ]);
   if (!status) {
@@ -178,9 +190,17 @@ export function projectStatusMessage(outcome: Extract<ProjectStatusOutcome, { ok
     return 'Loki has no projects for this account yet.';
   }
   const down = outcome.projects.filter(p => p.live.state === 'down').length;
-  const head =
+  const unchecked = outcome.projects.filter(p => p.live.state === 'not_checked').length;
+  const checked = outcome.projects.filter(p => p.live.state === 'up').length + down;
+  const head = [
     down > 0
       ? `${down} live ${down === 1 ? 'site is' : 'sites are'} down.`
-      : 'Every live site that was checked answered.';
+      : checked > 0
+        ? `All ${checked} live ${checked === 1 ? 'site' : 'sites'} checked answered.`
+        : 'No live site was checked.',
+    unchecked > 0 ? `${unchecked} not checked.` : null,
+  ]
+    .filter(Boolean)
+    .join(' ');
   return `${head}\n\n${outcome.projects.map(projectLine).join('\n')}`;
 }
