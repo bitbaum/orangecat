@@ -45,7 +45,7 @@ export function getHeaderClasses(
  */
 export function getMobileMenuBackdropClasses(isOpen: boolean): string {
   return cn(
-    'fixed inset-0 backdrop-blur-sm transition-opacity duration-300',
+    'fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300',
     Z_INDEX_CLASSES.MOBILE_MENU_BACKDROP,
     isOpen ? 'opacity-100' : 'opacity-0'
   );
@@ -59,7 +59,7 @@ export function getMobileMenuBackdropClasses(isOpen: boolean): string {
  */
 export function getMobileMenuPanelClasses(isOpen: boolean): string {
   return cn(
-    'fixed top-16 bottom-0 left-0 w-80 max-w-[85vw] sm:max-w-sm bg-surface-base shadow-sm overflow-y-auto overscroll-contain transition-transform duration-300 ease-out',
+    'fixed top-16 bottom-0 left-0 flex w-80 max-w-[85vw] flex-col sm:max-w-sm bg-surface-base shadow-sm transition-transform duration-300 ease-out',
     Z_INDEX_CLASSES.MOBILE_MENU,
     isOpen ? 'translate-x-0' : '-translate-x-full'
   );

@@ -37,6 +37,8 @@ Status: Partly (#1634): the card and badge are neutral; the action on the wrong 
 
 ### funnel#7 · medium · Six sibling pages, six page-header frames
 
+**Fixed in the second pull request** (see "Second batch" in the audit). The cause and fix below are kept as the record.
+
 - **Where:** /how-it-works, /what-you-can-do, /pricing, /about, /faq, /ecosystem (both, both themes)
 - **What a person meets:** Moving between pages of one site feels like moving between sites, and on three of them the title does not outrank the text under it on a phone.
 - **Cause:** src/app/(public)/how-it-works/page.tsx:56, src/app/(public)/about/page.tsx:21, src/app/(public)/ecosystem/page.tsx:79-84, src/app/(public)/faq/page.tsx:17 and :21, src/app/(public)/pricing/page.tsx:37-41, src/components/map/CapabilityMap.tsx:84
