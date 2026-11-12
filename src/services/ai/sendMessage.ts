@@ -28,6 +28,8 @@ import { buildCompanionSystemPrompt } from '@/services/companions/system-prompt'
 import { adoptJob, isJobAnswer } from '@/services/companions/born';
 import { proposalFromMetadata, withProposal } from '@/services/companions/hands';
 import { handsFor, proposeFromReply } from '@/services/companions/hands-server';
+import { logger } from '@/utils/logger';
+import { turnTimer } from './turn-timer';
 import {
   verifyConversation,
   fetchAssistant,
@@ -51,6 +53,7 @@ export async function sendAiMessage(
   /** Photos on this turn (the message carries their tags; see chat-images.ts). */
   images?: ChatImage[]
 ): Promise<SendMessageResult | SendMessageError> {
+  const timer = turnTimer();
   // 1. Verify conversation
   const convResult = await verifyConversation(supabase, convId, assistantId, userId);
   if ('error' in convResult) {
@@ -146,10 +149,15 @@ export async function sendAiMessage(
   // 10. Generate AI response. The prompt is the creator's definition plus what
   //     this companion remembers about THIS person — nothing else.
   const memoryKey = { assistantId, userId };
-  const recalled = await recallCompanionMemories(supabase, memoryKey, content);
+  timer.mark('checks');
+  // Memory and hands do not depend on each other: both are read at once.
   // Hands: the owner's own companion may propose what OrangeCat can do for
   // them (hands.ts); anyone else's companion, or a stranger's chat, cannot.
-  const hands = assistant.user_id === userId ? await handsFor(supabase, userId) : null;
+  const [recalled, hands] = await Promise.all([
+    recallCompanionMemories(supabase, memoryKey, content),
+    assistant.user_id === userId ? handsFor(supabase, userId) : Promise.resolve(null),
+  ]);
+  timer.mark('context');
   const systemPrompt = buildCompanionSystemPrompt({
     definition: assistant.system_prompt,
     memories: recalled.map(m => m.content),
@@ -166,6 +174,9 @@ export async function sendAiMessage(
     images,
     ownerTurn: assistant.user_id === userId,
   });
+  // The reply is not streamed, so the model's whole answer is the wait for
+  // its first word: this is the time to first token the person feels.
+  timer.mark('model');
   if ('error' in aiResult) {
     // Clean up user message on AI failure
     await supabase
@@ -237,6 +248,20 @@ export async function sendAiMessage(
   await fromTable(supabase, DATABASE_TABLES.AI_CONVERSATIONS)
     .update({ last_message_at: new Date().toISOString() })
     .eq('id', convId);
+
+  timer.mark('store');
+  logger.info(
+    'companion turn timing',
+    {
+      assistantId,
+      ...timer.report(),
+      model: aiResponse.model,
+      outputTokens: aiResponse.outputTokens,
+      promptChars: systemPrompt?.length ?? 0,
+      hands: hands?.allowed.length ?? 0,
+    },
+    'AIMessagesService'
+  );
 
   return {
     userMessage,
