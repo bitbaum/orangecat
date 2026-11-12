@@ -109,6 +109,8 @@ export default function AccountMenuControl() {
       accounts={others.map(member => ({
         id: member.id,
         note: member.isHolder ? IDENTITIES_COPY.main : undefined,
+        // What waits there, so it is known without switching (ADR-0014 D8).
+        waiting: member.waiting,
         user: { name: member.name, handle: member.username, image: member.avatarUrl },
       }))}
       onSwitchAccount={async id => {
@@ -124,7 +126,11 @@ export default function AccountMenuControl() {
         router.push(ROUTES.HOME);
       }}
       renderLink={props => <Link {...props} />}
-      labels={{ switchAccount: IDENTITIES_COPY.switchLabel }}
+      labels={{
+        switchAccount: IDENTITIES_COPY.switchLabel,
+        waiting: '{count} unread',
+        waitingElsewhere: 'something is unread in another identity',
+      }}
     />
   );
 }

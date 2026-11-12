@@ -61,6 +61,7 @@ export function IdentityRow({
         <span className="block truncate text-sm text-fg-secondary">
           {member.isHolder ? `${IDENTITIES_COPY.main} · ` : ''}
           {member.username ? `@${member.username}` : ''}
+          {member.waiting ? ` · ${IDENTITIES_COPY.waiting(member.waiting)}` : ''}
         </span>
       </span>
       {member.isCurrent ? (

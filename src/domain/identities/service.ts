@@ -27,6 +27,7 @@ import {
 } from '@/config/identities';
 import { looseClient } from '@/lib/supabase/untyped';
 import { usernameSchema } from '@/lib/validation/base';
+import { countUnreadNotifications } from '@/services/notifications/unread-count';
 import { logger } from '@/utils/logger';
 
 export interface CircleMember {
@@ -415,6 +416,32 @@ export async function otherCircleMemberIds(
 ): Promise<string[]> {
   const circle = await circleForCaller(admin, caller);
   return circle.members.map(m => m.id).filter(id => id !== caller.userId);
+}
+
+/**
+ * How much waits for the person in each of the caller's OTHER identities
+ * (ADR-0014 D8): the same unread count the bell shows, read for accounts the
+ * caller is not signed in to. That crossing is why it lives here: it is only
+ * ever answered for the members of the caller's own circle, on the service
+ * role. A count that cannot be read is left out rather than shown as zero.
+ */
+export async function waitingByMember(
+  admin: SupabaseClient,
+  caller: Caller
+): Promise<Record<string, number>> {
+  const circle = await circleForCaller(admin, caller);
+  const others = circle.members.filter(m => m.id !== caller.userId);
+  const counts = await Promise.all(
+    others.map(async member => {
+      try {
+        return [member.id, await countUnreadNotifications(admin, member.id)] as const;
+      } catch (error) {
+        logger.warn('Could not count what waits for an identity', { error }, 'Identities');
+        return null;
+      }
+    })
+  );
+  return Object.fromEntries(counts.filter((entry): entry is readonly [string, number] => !!entry));
 }
 
 /** The identities a holder's deletion must take with it. Empty for an identity. */

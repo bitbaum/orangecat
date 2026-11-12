@@ -11,6 +11,7 @@ to the map, sub-bullets stay here for the human reader.
 
 ## 2026-11-12
 
+- **See what is waiting in your other identities.** The menu under your picture shows an unread count beside each of your other identities, and a dot on your picture when any of them has something waiting, so you no longer have to switch into each one to find out. Settings shows the same count.
 - **Hand an identity over to someone else.** In Settings, under an identity, "Hand over" creates a link. Send it to the person who should have the identity. When they open it, give their email and accept, it is their account, with everything it owns including its wallets, and you can no longer switch to it. The link is shown once, works for seven days, and you can cancel it until it is used.
 - **The menu under your picture is the same one every bitbaum product has.** It lists your other identities first, then Dashboard, My projects, Your page and Edit profile, then Appearance and Sign out. Arrow keys move through every row, Escape closes it, and if signing out or switching fails the menu stays open and says so. It replaces OrangeCat's own menu, which is gone.
 - **A sign-in code survives the trip to your mail app.** On a phone, leaving the sign-in page to read the code could bring you back to an empty form, and you had to ask for another code. The page now reopens on the code field, with what you had typed, for fifteen minutes. If you ask for too many codes it says how long to wait instead of "We could not send a code", and you can still enter a code you already hold.

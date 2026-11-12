@@ -9,9 +9,13 @@ import {
   mintSwitchCode,
   otherCircleMemberIds,
   switchSessionTo,
+  waitingByMember,
   type Caller,
 } from '@/domain/identities/service';
 import { MAX_IDENTITIES, isUnreachableEmail } from '@/config/identities';
+
+const unread = vi.hoisted(() => vi.fn());
+vi.mock('@/services/notifications/unread-count', () => ({ countUnreadNotifications: unread }));
 
 /**
  * The circle is the whole authority model (ADR-0014): a session for one member
@@ -410,5 +414,32 @@ describe('switchSessionTo is the one place a session changes hands', () => {
     expect(
       await switchSessionTo(admin, session({ code: 'otp_expired' }), as('fernando'), 'alberto')
     ).toMatchObject({ ok: false, reason: 'failed' });
+  });
+});
+
+describe('what waits in the other identities', () => {
+  it('is counted for every member but the one in use', async () => {
+    unread.mockReset();
+    unread.mockImplementation(async (_c: unknown, id: string) => (id === 'fernando' ? 4 : 9));
+    const { admin } = fakeAdmin(world());
+    expect(await waitingByMember(admin, as('alberto'))).toEqual({ fernando: 4 });
+    expect(await waitingByMember(admin, as('fernando'))).toEqual({ alberto: 9 });
+  });
+
+  it('is never answered outside the circle', async () => {
+    unread.mockReset();
+    unread.mockResolvedValue(7);
+    const { admin } = fakeAdmin(world());
+    expect(await waitingByMember(admin, as('stranger'))).toEqual({});
+    // An identity entered with its own password has no circle, so no counts.
+    expect(await waitingByMember(admin, as('alberto', ['password']))).toEqual({});
+    expect(unread).not.toHaveBeenCalled();
+  });
+
+  it('leaves out a count it could not read, rather than saying zero', async () => {
+    unread.mockReset();
+    unread.mockRejectedValue(new Error('boom'));
+    const { admin } = fakeAdmin(world());
+    expect(await waitingByMember(admin, as('fernando'))).toEqual({});
   });
 });

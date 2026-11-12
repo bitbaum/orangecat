@@ -1,7 +1,7 @@
 # ADR-0014: A Person Holds More Than One Name
 
 Date: 2026-11-11
-Status: Accepted (D1–D6b and D9 shipped; D7, the shared count in D8, and D10 on the roadmap)
+Status: Accepted (D1–D6b, D8, D9 and D10a shipped; D7 and a circle-wide ban on the roadmap)
 
 ## Context
 
@@ -117,6 +117,18 @@ owns, and this browser is signed in to it. `src/domain/identities/handover.ts`.
 - The address is not verified before it is set, as at sign-up: the person is
   signed in at that moment and can correct it in Settings.
 
+**D8. What waits in the other identities is shown where a person switches.**
+`GET /api/identities` gives each other member the same unread count the bell
+shows (`countUnreadNotifications`), read on the service role and only ever for
+the caller's own circle. The menu shows it on that identity's row and as a dot
+on the avatar (`waiting` on an account, `@bitbaum/accountkit`); Settings shows
+it on the row. A count that cannot be read is left out, not shown as zero.
+
+**D10a. An operator can resolve a circle.** `identity_circle_of(handle)`
+returns the holder and every identity it holds, for any handle in the circle.
+Service role only, so it adds no way for one user to learn another's
+identities. It reads; it does not act.
+
 ## Not yet (roadmap)
 
 - **D7. One person, one vote in Solon.** Solon counts seats, and a seat is an
@@ -125,17 +137,16 @@ owns, and this browser is signed in to it. `src/domain/identities/handover.ts`.
   refuse a second seat for the same person without learning who anyone is or
   linking them across organizations. Goes where admission by MEMBERSHIP vote is
   built; that path does not exist in Solon yet.
-- **D8. One unread count across the circle.** The switcher itself shipped,
-  and lives in the fleet's shared menu: `AccountMenu` in `@bitbaum/accountkit`
-  (0.28.0) lists a person's other accounts and switches on a tap. OrangeCat's
-  header mounts it through `src/components/layout/AccountMenuControl.tsx`.
-- **D10. Moderation.** A platform admin can resolve a circle; a ban reaches
-  every member. No screen for it yet.
+- **D10, the rest. A ban that reaches every identity.** OrangeCat has no
+  suspension mechanism today: `profiles.status` has a `suspended` value that
+  nothing sets or enforces. When one exists it must act on the whole circle,
+  and it starts from `identity_circle_of` (D10a).
 
 ## Consequences
 
 - Reputation starts cold for each identity. That is the point of a separate
-  name, and it means a banned person can come back under a new one until D10.
+  name, and it means a person removed under one name can come back under
+  another until a ban exists that acts on the circle (see the roadmap).
 - A person signed in as an identity is, to every query, only that identity.
   Seeing across the circle (D8) is an explicit service-role read.
 - Switching to an account with a second factor yields a session at the first

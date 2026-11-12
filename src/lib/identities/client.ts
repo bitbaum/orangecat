@@ -17,6 +17,8 @@ export interface IdentityMember {
   isCurrent: boolean;
   /** A hand-over link is open for this identity. */
   handoverOpen?: boolean;
+  /** How many unread notifications wait in this account. */
+  waiting?: number;
 }
 
 export interface IdentityCircle {

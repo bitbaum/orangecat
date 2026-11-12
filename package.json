@@ -125,7 +125,7 @@
   },
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^9.1.0",
-    "@bitbaum/accountkit": "^0.28.0",
+    "@bitbaum/accountkit": "^0.29.0",
     "@bitbaum/ai-kit": "^1.24.0",
     "@bitbaum/bip-kit": "^0.6.1",
     "@bitbaum/chatkit": "github:bitbaum/chatkit#6451d3b9d0c3d467011a80f8cf023da90dffe92c",

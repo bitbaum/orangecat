@@ -45,6 +45,7 @@ export const IDENTITIES_COPY = {
   create: 'Create identity',
   switchTo: 'Switch',
   switchLabel: 'Switch identity',
+  waiting: (count: number) => `${count > 99 ? '99+' : count} unread`,
   continueAs: 'Or continue as',
   noEmailToShare: 'Ask for your email address (this identity has none, so none is shared)',
   current: 'Signed in',

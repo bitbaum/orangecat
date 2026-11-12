@@ -78,10 +78,10 @@ describe('AccountMenuControl', () => {
     expect(seen.props?.user.email).toBeNull();
   });
 
-  it('offers the other identities, with the main account labelled', () => {
+  it('offers the other identities, with the main account labelled and what waits in each', () => {
     signedInAs('identity-ab12@orangecat.invalid');
     others.value = [
-      { id: 'h', name: 'George', username: 'cato', avatarUrl: null, isHolder: true },
+      { id: 'h', name: 'George', username: 'cato', avatarUrl: null, isHolder: true, waiting: 3 },
       {
         id: 'r',
         name: 'Ricardo Reis',
@@ -92,10 +92,16 @@ describe('AccountMenuControl', () => {
     ];
     render(<AccountMenuControl />);
     expect(seen.props?.accounts).toEqual([
-      { id: 'h', note: 'Main account', user: { name: 'George', handle: 'cato', image: null } },
+      {
+        id: 'h',
+        note: 'Main account',
+        waiting: 3,
+        user: { name: 'George', handle: 'cato', image: null },
+      },
       {
         id: 'r',
         note: undefined,
+        waiting: undefined,
         user: { name: 'Ricardo Reis', handle: 'reis', image: 'https://x/r.png' },
       },
     ]);
