@@ -25,7 +25,7 @@ changed.
 - **Open:** 104 findings, each with its cause and a checked fix, in one
   file per area beside this one. Other pull requests opened since are fixing
   some of them.
-- **For the owner:** five things below need a decision rather than a fix.
+- **Owner decisions:** five, made and shipped in a third pull request (see "Owner decisions, made").
 
 ## How it was measured
 
@@ -306,48 +306,39 @@ limit):
 | `auth-firstrun#10` | #1667                          | Empty fields and a password mismatch still go to the banner, not the field.                     |
 | `auth-firstrun#13` | #1655 (merged), #1656 (merged) | The three password-reset screens keep their own card, icon tile and Title Case headings.        |
 
-## Needs the owner's decision
+## Owner decisions, made
 
-Found during the audit, not changed by it. Each is a product or data decision
-rather than a design fix.
+Found during the audit as product or data decisions rather than design
+fixes. On 2026-11-12 the owner handed them over ("you make them and execute");
+each was decided and shipped in a third pull request.
 
-1. **Tasks are visible across accounts.** A brand-new account opens
-   `/dashboard/tasks` and sees another account's task, with a working
-   "complete" control. `GET /api/tasks` returns it because the `tasks_select`
-   and `tasks_update` policies in the baseline migration let any signed-in
-   person read and update every non-archived task, and
-   `src/app/api/tasks/route.ts` adds no owner filter. The fix is a new
-   migration that scopes both policies to `created_by`. The task review of
-   2026-10-23 left visibility unchanged on purpose, so this waits for a
-   decision. Production holds one task, a test row.
-2. **Saving a Cat spending cap turns payment actions on.** Traced in code, not
-   executed. `SpendCapsCard` posts `actionId: '*'` for the payments category;
-   the caps branch of `grantCategory` in
-   `src/services/cat/permission-service.ts` upserts that row with
-   `granted: true`, and `effectivePermission` falls back to the `*` row for
-   every action without its own row. On an account that never chose, Send
-   Payment, Fund Project and four more move from Off to "Ask first". The Cat
-   still asks before each payment. The fix is to write each action's current
-   permission as its own row in the same upsert, with a unit test for "saving
-   a cap leaves `send_payment` off".
-3. **QA listings lead the public Discover shelf.** "QA test product", "QA Test
-   Project", "QA Test Service" and the account "QA Grok A" are the first cards
-   under "Just listed" and lead their own rails. They were created without
-   `is_test` and without the `TEST ` title prefix the filter in
-   `src/config/public-directory.ts` looks for. They need `is_test = true` or
-   deleting on production. Widening the title filter would hide real listings
-   ("Test prep tutoring" is a fixture in its own test).
-4. **The home page order.** On a phone, 4,112px of studio products sit between
-   the hero and "What it solves". `HomePublic.tsx` documents the current order
-   as a decision ("one fold, then the studio behind it, then what it
-   solves"), so the order was left alone. Swapping the two sections would put
-   "What it solves" at 922px.
-5. **The shared token package.** `@bitbaum/design-tokens#62` sets tertiary
-   text to 44% and 55%. OrangeCat now uses 42% and 58%, with secondary at 30%
-   and 72%. The difference is that 44% and 55% read 4.33:1 and 4.22:1 on
-   `surface-overlay`. Either the package follows, or OrangeCat goes back to
-   the package's values and the overlay pair is left out of
-   `check:token-contrast`.
+1. **Tasks are seen by their creator and by whoever is asked.** Any signed-in
+   account could read and update every non-archived task, read every
+   completion and flag, and read requests sent to "everyone"; the request and
+   flag routes notified every account on the platform. Migration
+   `20261113120000_a_task_is_seen_by_its_creator_and_whoever_is_asked.sql`
+   scopes tasks, completions, flags and requests to the task's creator and the
+   person a request names; a request must name a person, chosen with the same
+   people picker as the money screens; the broadcast helper is removed. Tested
+   against Postgres 16 as the creator, the person asked and a stranger: the
+   stranger sees and changes nothing.
+2. **Saving a Cat spending cap leaves payments as they were.** The cap is
+   written on the payments category row with its current on/off state (or the
+   category default, off, when there is no row), so Send Payment and the rest
+   no longer move from Off to "Ask first". A unit test fails on the old code
+   and passes on the new.
+3. **The three QA listings are marked as test data.** Migration
+   `20261113121000_three_qa_listings_are_marked_as_test_data.sql` sets
+   `is_test` on "QA test product", "QA Test Project" and "QA Test Service" by
+   id; nothing is deleted. The account "QA Grok A" is a person's account and
+   was left alone.
+4. **"What it solves" comes before the studio on the home page.** On a phone
+   it sat under about 4,100px of studio products.
+5. **The shared token package takes OrangeCat's values.**
+   [bitbaum/design-tokens#64](https://github.com/bitbaum/design-tokens/pull/64)
+   moves tertiary to 42% / 58% and secondary to 30% / 72%: the package's 44% /
+   55% read 4.32:1 and 4.20:1 on the overlay surface. Its contrast test now
+   checks overlay.
 
 ## Findings by area
 
