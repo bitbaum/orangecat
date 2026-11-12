@@ -16,9 +16,31 @@ interface PublicSupportPanelProps {
   entityType: EntityType;
   entityId: string;
   entityTitle: string;
+  /**
+   * Who receives the money: the owner (a person or a group). The payment
+   * settles in a wallet of theirs — one tied to this listing, else their own —
+   * never in the listing's, so the card names them, not the listing.
+   */
+  recipientName?: string | null;
 }
 
-export function PublicSupportPanel({ entityType, entityId, entityTitle }: PublicSupportPanelProps) {
+/** "You pay Cato directly for Remise Rosa…" — the payee, then what it is for. */
+export function supportPayeeLines(entityTitle: string, recipientName?: string | null) {
+  const payee = recipientName?.trim() || null;
+  const forWhat = payee !== entityTitle ? ` for ${entityTitle}` : '';
+  return {
+    intro: `You pay ${payee ?? 'the owner'} directly${forWhat}; no account is required.`,
+    custody: `OrangeCat never holds the money. It goes straight to ${payee ? `${payee}'s` : "the owner's"} wallet.`,
+  };
+}
+
+export function PublicSupportPanel({
+  entityType,
+  entityId,
+  entityTitle,
+  recipientName,
+}: PublicSupportPanelProps) {
+  const lines = supportPayeeLines(entityTitle, recipientName);
   const [amountBtc, setAmountBtc] = useState<number>(DEFAULT_CONTRIBUTION_BTC);
   const payment = usePublicPayment();
 
@@ -46,9 +68,7 @@ export function PublicSupportPanel({ entityType, entityId, entityTitle }: Public
       <CardContent className="space-y-4">
         {payment.phase === 'choose' && (
           <>
-            <p className="text-sm text-fg-secondary">
-              You will pay {entityTitle} directly; no account is required.
-            </p>
+            <p className="text-sm text-fg-secondary">{lines.intro}</p>
             <AmountField
               value={amountBtc}
               onChange={setAmountBtc}
@@ -65,9 +85,7 @@ export function PublicSupportPanel({ entityType, entityId, entityTitle }: Public
             >
               Create Bitcoin request
             </Button>
-            <p className="text-center text-xs text-fg-tertiary">
-              OrangeCat never holds the money. It goes straight to {entityTitle}&apos;s wallet.
-            </p>
+            <p className="text-center text-xs text-fg-tertiary">{lines.custody}</p>
           </>
         )}
 

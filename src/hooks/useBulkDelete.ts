@@ -47,9 +47,7 @@ export function useBulkDelete({
             const errorData = await response.json().catch(() => ({}));
             const err = errorData.error;
             const message =
-              typeof err === 'string'
-                ? err
-                : (err as { message?: string } | undefined)?.message;
+              typeof err === 'string' ? err : (err as { message?: string } | undefined)?.message;
             throw new Error(message || `Failed to delete ${entityName} ${id}`);
           }
           return response.json().catch(() => ({}));

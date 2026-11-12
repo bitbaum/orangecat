@@ -16,8 +16,13 @@
  *          whichever happened to sort first;
  *        - every opener has a stable key, and the client skips dismissed keys,
  *          so "not now" moves the Cat on.
- *   2. CHIPS are what this person might ask next: the replies of the openers
- *      held in reserve, then the registry-derived starters. Deterministic.
+ *   2. TODAY leads them (./today-lines): what needs the person, as at most
+ *      three actions each with its one link, and their day in Loki. A home
+ *      that showed one fact and three detached questions looked the same
+ *      every visit (owner, 2026-11-12).
+ *   3. CHIPS are what this person might ask next: the most timely opener's
+ *      reply, then the standing topics (goal, gaps) in an order that turns
+ *      with the calendar day, then the registry-derived starters.
  *
  * No model call. The chips used to be written by the platform LLM on every
  * open of an empty chat — a free-tier spend on page load, before the person
@@ -34,20 +39,16 @@ import {
   type CatOpener,
   type CatReference,
 } from '@/config/cat-prompts';
-import { APP_LOCALE } from '@/utils/locale';
+import { isValidTimeZone } from '@/utils/timezone';
+import { composeToday, localClock } from './today-lines';
+import { MAX_TITLE_CHARS, fingerprint, plural, truncate } from './cat-home-text';
 import type { EntitySummary, FullUserContext } from '@/services/ai/document-context-types';
 
 /** Openers held in reserve behind the one shown, so dismissing has somewhere to go. */
 const MAX_OPENERS = 6;
+
 /** Items offered in the composer's "+" menu. */
 const MAX_ATTACHABLE = 20;
-/** Entity titles are quoted into copy; long ones are elided. */
-const MAX_TITLE_CHARS = 40;
-
-const truncate = (s: string, max: number): string =>
-  s.length <= max ? s : `${s.slice(0, max - 1).trimEnd()}…`;
-
-const plural = (n: number, word: string): string => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 /**
  * Returns true when the user has enough context for the Cat to say something
@@ -86,59 +87,27 @@ const canBePaid = (context: FullUserContext): boolean =>
   !!context.paymentCapabilities?.hasNwcWallet ||
   !!context.paymentCapabilities?.lightningAddress;
 
-const shortDate = (iso: string): string =>
-  new Date(iso).toLocaleDateString(APP_LOCALE, {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-  });
-
-/** A short, stable hash for keys built from free text (goals). */
-function fingerprint(input: string): string {
-  let h = 5381;
-  for (let i = 0; i < input.length; i++) {
-    h = ((h << 5) + h + input.charCodeAt(i)) | 0;
-  }
-  return (h >>> 0).toString(36);
-}
-
 // ─── Openers ──────────────────────────────────────────────────────────────────
 
 /**
  * Everything the Cat could bring up, most timely first. Each names a real
  * object of the user's, which is what lets it justify being said at all.
  */
-export function detectOpeners(context: FullUserContext, now: Date = new Date()): CatOpener[] {
+export function detectOpeners(context: FullUserContext): CatOpener[] {
+  return detect(context).openers;
+}
+
+/** The openers, and how many of them (from the front) are timely rather than standing. */
+function detect(context: FullUserContext): { openers: CatOpener[]; timelyCount: number } {
   const openers: CatOpener[] = [];
   const entities = context.entities.filter(e => !isPlaceholderTitle(e.title));
   const title = (e: EntitySummary) => truncate(e.title, MAX_TITLE_CHARS);
 
-  // ── Timely: something happened, or is about to ──
-
-  // Loki first: a build blocked on its owner is the one thing here that is
-  // literally waiting for them, and until the rail ran both ways Cat could not
-  // see it at all.
-  const loki = context.lokiProjects ?? [];
-  const waiting = loki.find(p => p.status === 'blocked' && p.blockReason === 'awaiting_user');
-  if (waiting) {
-    const name = truncate(waiting.name, MAX_TITLE_CHARS);
-    openers.push({
-      key: `loki-waiting:${waiting.id}:${waiting.currentWork ?? ''}`,
-      say: `Loki is waiting on you to continue "${name}".`,
-      replies: [`What does "${name}" need from me?`],
-    });
-  }
-  const withFeedback = loki.find(p => p.feedback.new > 0);
-  if (withFeedback) {
-    const name = truncate(withFeedback.name, MAX_TITLE_CHARS);
-    openers.push({
-      key: `loki-feedback:${withFeedback.id}:${withFeedback.feedback.new}`,
-      say: `"${name}" has ${plural(withFeedback.feedback.new, 'new piece')} of visitor feedback in Loki.`,
-      // Cat sees the count and the Loki link, not the feedback text — so the
-      // reply asks for the next step, never for a summary it would invent.
-      replies: [`How do I act on the feedback for "${name}"?`],
-    });
-  }
+  // ── Timely: something happened ──
+  // What needs the person TODAY (Loki, bookings, tasks, replies) is not an
+  // opener any more: those are action lines with their link, in
+  // ./today-lines. Unread notifications are not here either: "You have 80
+  // unread notifications" is a count, and counts fail the owner's test.
 
   const sales = context.inboundActivity?.recentSales ?? [];
   if (sales.length > 0) {
@@ -154,39 +123,7 @@ export function detectOpeners(context: FullUserContext, now: Date = new Date()):
     });
   }
 
-  const booking = context.inboundActivity?.upcomingBookings?.[0];
-  if (booking) {
-    const who = booking.customer_display_name || booking.customer_username || 'a customer';
-    openers.push({
-      key: `booking:${booking.starts_at}`,
-      say: `You have a booking with ${who} on ${shortDate(booking.starts_at)}.`,
-      replies: ['Help me prepare for it'],
-    });
-  }
-
-  // The context fetch only loads open tasks, so "past due" is "overdue".
-  const overdue = context.tasks.find(t => !!t.due_date && new Date(t.due_date) < now);
-  if (overdue?.due_date) {
-    const name = truncate(overdue.title, MAX_TITLE_CHARS);
-    openers.push({
-      key: `task:${overdue.id}`,
-      say: `"${name}" was due ${shortDate(overdue.due_date)} and is still open.`,
-      replies: [`Help me get "${name}" done`, `Move "${name}" to next week`],
-    });
-  }
-
-  const unread = context.notifications ?? [];
-  if (unread.length > 0) {
-    // The exact count, not a sum of the coalesced groups: those cover only the
-    // newest rows fetched, so summing them said "30" beside a bell that said 80.
-    const total = context.notificationsUnread ?? unread.reduce((n, x) => n + (x.count || 1), 0);
-    const latest = [...unread].sort((a, b) => b.latest_at.localeCompare(a.latest_at))[0];
-    openers.push({
-      key: `notifications:${latest.latest_at}`,
-      say: `You have ${plural(total, 'unread notification')} — the latest is "${truncate(latest.title, MAX_TITLE_CHARS)}".`,
-      replies: ['What needs my attention?'],
-    });
-  }
+  const timelyCount = openers.length;
 
   // ── Where they said they're going ──
 
@@ -195,7 +132,9 @@ export function detectOpeners(context: FullUserContext, now: Date = new Date()):
     openers.push({
       key: `goal:${fingerprint(goal)}`,
       say: `You're working toward "${truncate(goal, 80)}". Want to take the next step together?`,
-      replies: ["What's the next step toward it?"],
+      // Names the goal: as a chip this is read with no opener above it, and
+      // "the next step toward it" pointed at nothing.
+      replies: [`What's the next step toward "${truncate(goal, MAX_TITLE_CHARS)}"?`],
     });
   }
 
@@ -266,8 +205,24 @@ export function detectOpeners(context: FullUserContext, now: Date = new Date()):
     });
   }
 
-  return openers.slice(0, MAX_OPENERS);
+  return {
+    openers: openers.slice(0, MAX_OPENERS),
+    timelyCount: Math.min(timelyCount, MAX_OPENERS),
+  };
 }
+
+// ─── Chips ─────────────────────────────────────────────────────────────────────
+
+/** Days since the epoch for a 'YYYY-MM-DD' — the number the chip order turns on. */
+const dayNumber = (day: string): number => Math.floor(Date.parse(`${day}T00:00:00Z`) / 86_400_000);
+
+const rotate = <T>(items: T[], by: number): T[] => {
+  if (items.length === 0) {
+    return items;
+  }
+  const n = by % items.length;
+  return [...items.slice(n), ...items.slice(0, n)];
+};
 
 function dedupe(items: string[], limit: number): string[] {
   const seen = new Set<string>();
@@ -294,12 +249,14 @@ export function listAttachable(context: FullUserContext): CatReference[] {
 }
 
 /**
- * The chips: the reserve openers' replies first (they are about this person),
- * then the starters.
+ * The chips: the most timely fact's reply (the brief above already counted
+ * the rest, and its own reply covers them), then the standing topics turned by
+ * the calendar day so tomorrow leads with a different one, then the starters.
  */
-function chipsFrom(openers: CatOpener[]): string[] {
-  const fallback = [...openers.slice(1).map(o => o.replies[0]), ...getStarterChips()];
-  return dedupe(fallback, CAT_HOME_MAX_CHIPS);
+function chipsFrom(timely: CatOpener[], standing: CatOpener[], day: string): string[] {
+  const turned = rotate(standing, dayNumber(day));
+  const ordered = [...timely.slice(0, 1), ...turned, ...timely.slice(1)];
+  return dedupe([...ordered.map(o => o.replies[0]), ...getStarterChips()], CAT_HOME_MAX_CHIPS);
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────
@@ -311,12 +268,25 @@ function chipsFrom(openers: CatOpener[]): string[] {
 export async function generateCatHome(
   _userId: string,
   context: FullUserContext,
-  memories: string[] = []
+  memories: string[] = [],
+  /** `zone` is the viewer's own (their browser's); the profile's is the fallback. */
+  at: { now?: Date; zone?: string | null } = {}
 ): Promise<CatHome> {
   if (!hasRichContext(context) && memories.length === 0) {
     return STARTER_HOME;
   }
 
-  const openers = detectOpeners(context);
-  return { openers, chips: chipsFrom(openers), attachable: listAttachable(context) };
+  const now = at.now ?? new Date();
+  const zone = isValidTimeZone(at.zone) ? at.zone : context.profile?.timezone;
+  const { openers: facts, timelyCount } = detect(context);
+  return {
+    today: composeToday(context, now, zone),
+    openers: facts,
+    chips: chipsFrom(
+      facts.slice(0, timelyCount),
+      facts.slice(timelyCount),
+      localClock(now, zone).day
+    ),
+    attachable: listAttachable(context),
+  };
 }
