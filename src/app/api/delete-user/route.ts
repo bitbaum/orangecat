@@ -2,12 +2,17 @@
  * DELETE USER API
  *
  * POST /api/delete-user — permanently deletes the authenticated user's account.
- * Called by Settings → Delete account (API_ROUTES.DELETE_USER). The endpoint
- * was declared and wired into the UI but never implemented — the button 404'd.
+ * Called by Settings → Delete account (API_ROUTES.DELETE_USER).
  *
- * Deletes the auth user via the GoTrue admin API (service role). Owned rows
- * keyed to the user id (profile, actors, entities) either cascade via FK or
- * remain orphaned-but-inaccessible; the account itself can no longer sign in.
+ * Each account (every identity it holds, then itself) goes in two steps:
+ *   1. deleteAccountPages() removes every page its actor owns, in one
+ *      transaction. Without it GoTrue's delete failed for anyone who owned a
+ *      project, product, service, cause or loan (see there for why).
+ *   2. GoTrue deletes the auth user (service role), which cascades the profile,
+ *      the actor and what hangs off them. Orders and payments with other people
+ *      stay in their records; an order's or loan payment's reference to this
+ *      person becomes NULL (migration 20261112203000).
+ * Step 1 is idempotent, so a retry after step 2 failed finishes the job.
  */
 
 import {
@@ -20,8 +25,22 @@ import { withAuth, type AuthenticatedRequest } from '@/lib/api/withAuth';
 import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { revokeAllConnectedApps } from '@/services/auth/connectedApps';
+import { deleteAccountPages } from '@/domain/actors/deleteAccountPages';
 import { heldIdentityIds } from '@/domain/identities/service';
 import { logger } from '@/utils/logger';
+
+/** Step 1 then step 2 for one account. Returns the error message, or null. */
+async function deleteAccount(
+  admin: ReturnType<typeof getAdminClient>,
+  userId: string
+): Promise<string | null> {
+  const pagesError = await deleteAccountPages(admin, userId);
+  if (pagesError) {
+    return pagesError;
+  }
+  const { error } = await admin.auth.admin.deleteUser(userId);
+  return error ? error.message : null;
+}
 
 export const POST = withAuth(async (request: AuthenticatedRequest) => {
   try {
@@ -40,11 +59,11 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
     // the person can retry, and nothing is half-deleted that they cannot reach.
     for (const identityId of await heldIdentityIds(admin, user.id)) {
       await revokeAllConnectedApps(identityId, { forgetConsents: true });
-      const { error: identityError } = await admin.auth.admin.deleteUser(identityId);
+      const identityError = await deleteAccount(admin, identityId);
       if (identityError) {
         logger.error(
           'Account deletion stopped: an identity could not be deleted',
-          { userId: user.id, identityId, error: identityError.message },
+          { userId: user.id, identityId, error: identityError },
           'Auth'
         );
         return apiInternalError('Failed to delete account. Please try again.');
@@ -55,9 +74,9 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
     // that signed in as this person keeps a session after the person is gone.
     await revokeAllConnectedApps(user.id, { forgetConsents: true });
 
-    const { error } = await admin.auth.admin.deleteUser(user.id);
+    const error = await deleteAccount(admin, user.id);
     if (error) {
-      logger.error('Account deletion failed', { userId: user.id, error: error.message }, 'Auth');
+      logger.error('Account deletion failed', { userId: user.id, error }, 'Auth');
       return apiInternalError('Failed to delete account. Please try again.');
     }
 

@@ -17,8 +17,10 @@ import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { sessionMethods } from '@/lib/auth/session-methods';
 import { IDENTITIES_COPY } from '@/config/identities';
+import { deleteAccountPages } from '@/domain/actors/deleteAccountPages';
 import { deleteIdentity } from '@/domain/identities/service';
 import { revokeAllConnectedApps } from '@/services/auth/connectedApps';
+import { logger } from '@/utils/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,13 +38,22 @@ export const DELETE = withAuth(
         return idCheck;
       }
 
+      const admin = getAdminClient();
       const result = await deleteIdentity(
-        getAdminClient(),
+        admin,
         { userId: req.user.id, sessionMethods: await sessionMethods(req.supabase) },
         id,
-        identityId =>
+        async identityId => {
           // The oauth_* rows do not cascade from auth.users (see /api/delete-user).
-          revokeAllConnectedApps(identityId, { forgetConsents: true })
+          await revokeAllConnectedApps(identityId, { forgetConsents: true });
+          // Its pages first, or GoTrue's delete fails for an identity that owns
+          // one. If this fails while a page remains, that delete fails as well
+          // and nothing is removed.
+          const pagesError = await deleteAccountPages(admin, identityId);
+          if (pagesError) {
+            logger.error('Identity pages could not be deleted', { identityId, pagesError }, 'Auth');
+          }
+        }
       );
       if (result.ok) {
         return apiSuccess({ deleted: true });

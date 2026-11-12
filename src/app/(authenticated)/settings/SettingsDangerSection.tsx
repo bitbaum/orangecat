@@ -18,8 +18,10 @@ export function SettingsDangerSection({ isDeleting, onDelete }: Props) {
       <div className="rounded-md border border-status-negative/20 bg-status-negative/10 p-6">
         <h4 className="mb-2 text-lg font-medium text-status-negative">Delete Account</h4>
         <p className="mb-4 text-base text-fg-secondary">
-          This will permanently delete your account and all associated data including your profile,
-          projects, and transaction history. This action cannot be undone.
+          This permanently deletes your account, your profile and every page you own: projects,
+          products, services, causes, loans and the rest. Groups you are in stay with their other
+          members, and orders and payments between you and other people stay in their records. This
+          cannot be undone.
         </p>
         <Button
           type="button"
