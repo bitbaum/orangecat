@@ -130,6 +130,34 @@ export const COMPANION_COPY = {
       skipped: 'The last run was skipped: it needs your own key.',
       failed: 'That did not save. Try again.',
     },
+    /** The owner's switch per hand, in the bot's details. */
+    abilities: {
+      row: 'What it can do',
+      rowOwn: (n: number) => `What it can do · ${n} on its own`,
+      intro:
+        'Ask me: it proposes, and nothing happens until you tap. On its own: it does it as you in your Loki, and carries on with the result. Anything it makes on OrangeCat always asks.',
+      off: 'Off',
+      ask: 'Ask me',
+      auto: 'On its own',
+      needsPermission: 'Needs the permission you give your Cat first.',
+      allow: 'Allow it',
+      failed: 'That did not save. Try again.',
+      /** What each hand does, in the owner's words. Every hand has one (a test asserts it). */
+      labels: {
+        create_event: 'Make an event',
+        create_project: 'Make a project',
+        create_product: 'Make a product',
+        create_service: 'Make a service',
+        create_wishlist: 'Make a wishlist',
+        send_to_loki: 'Hand a page to Loki to build',
+        ask_loki: 'Ask Loki a question',
+        loki_sessions: 'Read your agent sessions in Loki',
+        loki_run_status: 'Read where a Loki run is',
+        send_task_to_loki: 'Start or task an agent session in Loki',
+        file_loki_finding: 'File a finding in a Loki project',
+        loki_finding_status: 'Read where a finding is',
+      } as Record<string, string>,
+    },
     /** The "Do it?" card under a bot's answer, and what follows the tap. */
     hands: {
       done: 'Done.',
