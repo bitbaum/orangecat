@@ -22,6 +22,14 @@ const isNumber = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value);
 
 /**
+ * A loan's visitor action is a message to the lister. Signed out, sign-in comes
+ * first and leads straight into that message. It used to be a sign-in link for
+ * everyone, and sign-in sends a signed-in visitor back to this same page.
+ */
+const contactListerHref = (isSignedIn: boolean, contactHref: string): string =>
+  isSignedIn ? contactHref : `${ROUTES.AUTH}?mode=login&from=${encodeURIComponent(contactHref)}`;
+
+/**
  * Loan detail config (SSOT) — shared by the public route (/loans/[id]) and the
  * owner dashboard route (/dashboard/loans/[id]).
  */
@@ -32,10 +40,10 @@ export const loanDetailConfig: EntityDetailConfig = {
   visibilityFilter: PUBLIC_VISIBILITY.loan,
   getViewRoute: id => ROUTES.LOANS.VIEW(id),
   showPaymentSection: false,
-  mobileStickyCTA: (entity: EntityData) => ({
-    label: 'Contact lister',
-    href: `${ROUTES.AUTH}?mode=login&from=${ROUTES.LOANS.VIEW(entity.id)}`,
-  }),
+  mobileStickyCTA: (_entity, isSignedIn, contactHref) =>
+    contactHref
+      ? { label: 'Contact lister', href: contactListerHref(isSignedIn, contactHref) }
+      : null,
   getJsonLdExtra: (entity: EntityData) => ({
     amount: {
       '@type': 'MonetaryAmount',
@@ -219,7 +227,7 @@ export const loanDetailConfig: EntityDetailConfig = {
       </>
     );
   },
-  renderSidebarExtra: (entity: EntityData) => (
+  renderSidebarExtra: (entity: EntityData, isOwner, isSignedIn, contactHref) => (
     <>
       <Card>
         <CardHeader>
@@ -264,12 +272,18 @@ export const loanDetailConfig: EntityDetailConfig = {
         </CardContent>
       </Card>
 
-      <PublicEntityCTA
-        href={`${ROUTES.AUTH}?mode=login&from=${ROUTES.LOANS.VIEW(entity.id)}`}
-        icon={MessageSquare}
-        label="Contact Lister"
-        description="Sign in to contact the loan lister or make an offer"
-      />
+      {!isOwner && contactHref && (
+        <PublicEntityCTA
+          href={contactListerHref(isSignedIn, contactHref)}
+          icon={MessageSquare}
+          label="Contact Lister"
+          description={
+            isSignedIn
+              ? 'Opens a message to the lister about this loan'
+              : 'Sign in to message the lister about this loan'
+          }
+        />
+      )}
     </>
   ),
 };

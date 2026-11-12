@@ -5,6 +5,8 @@
  * question. Session-scoped and read once.
  */
 
+import { ROUTES } from '@/config/routes';
+
 const key = (conversationId: string) => `oc:message-draft:${conversationId}`;
 
 export function stashMessageDraft(conversationId: string, text: string): void {
@@ -30,4 +32,13 @@ export function takeMessageDraft(conversationId: string): string | null {
 /** The opening line of an inquiry about a listing. */
 export function inquiryDraft(title: string, url: string): string {
   return `Hi! I have a question about “${title}” (${url}): `;
+}
+
+/**
+ * The link that starts that inquiry: the messages page opens a conversation
+ * with `to` and turns `about` + `ref` into the draft above.
+ */
+export function inquiryHref(toUserId: string, listing: { title: string; path: string }): string {
+  const query = new URLSearchParams({ to: toUserId, about: listing.title, ref: listing.path });
+  return `${ROUTES.MESSAGES}?${query.toString()}`;
 }
