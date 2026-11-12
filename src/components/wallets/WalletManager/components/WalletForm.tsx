@@ -291,7 +291,8 @@ export function WalletForm({
       <button
         type="button"
         onClick={() => setShowAdvanced(v => !v)}
-        className="mb-2 flex items-center gap-1 text-xs font-medium text-fg-secondary hover:text-fg-primary"
+        aria-expanded={showAdvanced}
+        className="mb-2 flex items-center gap-1 text-xs font-medium text-fg-secondary hover:text-fg-primary pointer-coarse:min-h-11"
       >
         {showAdvanced ? (
           <ChevronDown className="h-3.5 w-3.5" />
@@ -343,7 +344,8 @@ export function WalletForm({
       <button
         type="button"
         onClick={() => setShowDetails(v => !v)}
-        className="mb-2 flex items-center gap-1 text-xs font-medium text-fg-secondary hover:text-fg-primary"
+        aria-expanded={showDetails}
+        className="mb-2 flex items-center gap-1 text-xs font-medium text-fg-secondary hover:text-fg-primary pointer-coarse:min-h-11"
       >
         {showDetails ? (
           <ChevronDown className="h-3.5 w-3.5" />
