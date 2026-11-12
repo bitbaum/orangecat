@@ -19,6 +19,7 @@ import { Toaster } from '@/components/ui/sonner';
 
 import type { Metadata, Viewport } from 'next';
 import { APP_DESCRIPTION, APP_NAME, APP_TAGLINE, SITE_URL } from '@/config/brand';
+import { FEED_ALTERNATES } from '@/lib/seo/metadata';
 
 // Required for env(safe-area-inset-*) to take effect on iOS (notch + home indicator).
 // Without `viewportFit: 'cover'` the inset values resolve to 0.
@@ -46,21 +47,18 @@ export const metadata: Metadata = {
     'AI economic agent, bitcoin, finance, community, fund, invest, lend, products, services, lightning network, peer-to-peer, pseudonymous, non-custodial',
   metadataBase: new URL(SITE_URL),
   // Feed autodiscovery — browsers/readers find /rss.xml from any page.
-  alternates: {
-    types: { 'application/rss+xml': `${SITE_URL}/rss.xml` },
-  },
+  alternates: { types: FEED_ALTERNATES },
+  // Only what is true of every page. Every page that does not set its own
+  // openGraph inherits this object whole, so a url, title or description here
+  // made /about, /faq and the rest share as the homepage. Without them Next.js
+  // fills og:* and twitter:* from the page's own title and description.
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: SITE_URL,
     siteName: APP_NAME,
-    title: `${APP_NAME} — ${APP_TAGLINE}`,
-    description: APP_DESCRIPTION,
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'OrangeCat - Your AI Economic Agent',
-    description: 'Fund, lend, invest, trade, and govern with any identity, settled in Bitcoin.',
   },
   manifest: '/manifest.json',
   icons: {

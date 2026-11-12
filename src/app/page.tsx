@@ -2,10 +2,20 @@ import { fromTable, looseClient } from '@/lib/supabase/untyped';
 import { redirect } from 'next/navigation';
 import { createServerClient } from '@/lib/supabase/server';
 import HomePublic from '@/components/home/HomePublic';
+import { APP_DESCRIPTION, APP_NAME, APP_TAGLINE } from '@/config/brand';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { ROUTES } from '@/config/routes';
+import { pageMetadata } from '@/lib/seo/metadata';
 import { logger } from '@/utils/logger';
+
+// The homepage's own share card and canonical URL. They sat in the root
+// layout, where every page that set none of its own inherited them.
+export const metadata = pageMetadata({
+  title: `${APP_NAME} — ${APP_TAGLINE}`,
+  description: APP_DESCRIPTION,
+  path: ROUTES.HOME,
+});
 
 export default async function Home() {
   const supabase = await createServerClient();

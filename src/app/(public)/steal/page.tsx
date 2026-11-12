@@ -4,6 +4,7 @@ import Button from '@/components/ui/Button';
 import { CopyCommand } from '@/components/steal/CopyCommand';
 import { StealQrCode } from '@/components/steal/StealQrCode';
 import { ROUTES } from '@/config/routes';
+import { pageMetadata } from '@/lib/seo/metadata';
 import {
   STEALABLE_REPOS,
   STEAL_ORG_URL,
@@ -16,16 +17,13 @@ import {
   repoUrl,
 } from '@/config/steal';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: 'Steal the cat',
   description:
     'OrangeCat is MIT-licensed. Use it as it is, or take the code, change it and own your copy. No permission needed.',
-  openGraph: {
-    title: 'Steal the cat',
-    description: 'Use it, or take the code and make it yours. MIT, no permission needed.',
-    type: 'website',
-  },
-};
+  shareDescription: 'Use it, or take the code and make it yours. MIT, no permission needed.',
+  path: ROUTES.STEAL,
+});
 
 /**
  * /steal — the "Steal the cat" campaign, where the poster QR code lands.

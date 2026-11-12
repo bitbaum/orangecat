@@ -12,6 +12,7 @@ import '@/lib/longform/longform.css';
 import { getBlogPost, getBlogPostSlugs } from '@/lib/blog';
 import LongformBody from '@/lib/longform/LongformBody';
 import Button from '@/components/ui/Button';
+import { metaDescription } from '@/lib/og/share-line';
 import { JsonLdScript } from '@/lib/seo/structured-data';
 import { APP_NAME, SITE_URL } from '@/config/brand';
 import BlogShareButton from './BlogShareButton';
@@ -45,14 +46,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   // Dynamically rendered share card — without an image, chat apps and social
   // feeds show a bare text link.
   const ogImage = `${SITE_URL}/api/og/blog/${slug}`;
+  const description = metaDescription(post.excerpt);
 
   return {
     title: post.title,
-    description: post.excerpt,
+    description,
     alternates: { canonical: `${SITE_URL}/blog/${slug}` },
     openGraph: {
       title: post.title,
-      description: post.excerpt,
+      description,
       type: 'article',
       publishedTime: post.date,
       authors: [post.author || `${APP_NAME} Team`],
@@ -63,7 +65,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     twitter: {
       card: 'summary_large_image',
       title: post.title,
-      description: post.excerpt,
+      description,
       images: [ogImage],
     },
   };

@@ -3,18 +3,17 @@ import Link from 'next/link';
 import { Bitcoin, Shield, Zap, Lock, Globe, Code, Server, CheckCircle } from 'lucide-react';
 import { ROUTES } from '@/config/routes';
 import { FEE_CLAIMS } from '@/config/landing-page';
+import { pageMetadata } from '@/lib/seo/metadata';
 import { STACK } from '@/config/stack-versions';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: 'Technology',
+  shareTitle: 'Our Technology',
   description:
     'Learn about the technology powering OrangeCat - Bitcoin-native economic infrastructure with transparency, security, and zero platform fees.',
-  openGraph: {
-    title: 'Our Technology',
-    description: 'Bitcoin-native economic infrastructure built on modern web technology',
-    type: 'website',
-  },
-};
+  shareDescription: 'Bitcoin-native economic infrastructure built on modern web technology',
+  path: ROUTES.TECHNOLOGY,
+});
 
 /**
  * /technology — monochrome surfaces, single Bitcoin Orange accent for
