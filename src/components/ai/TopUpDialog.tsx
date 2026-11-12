@@ -18,7 +18,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { QRCodeSVG } from 'qrcode.react';
+import { ScanCode } from '@/components/ui/ScanCode';
 import { Loader2, Copy, Check, X, AlertCircle, CheckCircle2, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import Button from '@/components/ui/Button';
@@ -244,7 +244,7 @@ export function TopUpDialog({ onClose, onSuccess, initialInvoice }: TopUpDialogP
                 wallet app. Uppercase keeps the QR in bech32 alphanumeric mode,
                 and `:` is in that charset, so the prefix costs no density.
               */}
-              <QRCodeSVG value={`LIGHTNING:${invoice.bolt11.toUpperCase()}`} size={200} />
+              <ScanCode value={`LIGHTNING:${invoice.bolt11.toUpperCase()}`} size={200} />
             </div>
             <div className="flex items-center gap-2">
               <a

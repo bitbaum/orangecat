@@ -28,7 +28,7 @@ export const BitcoinBadge: React.FC<BitcoinBadgeProps> = ({
   const variantClasses = {
     default: 'bg-bitcoinOrange/10 text-bitcoinOrange border-bitcoinOrange/20',
     outline: 'bg-transparent text-bitcoinOrange border-bitcoinOrange',
-    solid: 'bg-bitcoinOrange text-white border-bitcoinOrange',
+    solid: 'bg-bitcoinOrange text-on-accent border-bitcoinOrange',
   };
 
   const sizeClasses = {

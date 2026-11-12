@@ -27,7 +27,7 @@
  *      page rather than a missing grant.
  */
 
-import { readFileSync, readdirSync, statSync } from 'fs';
+import { readFileSync, readdirSync } from 'fs';
 import { join, relative } from 'path';
 import { PRIVATE_PROFILE_COLUMNS } from '@/config/database-tables';
 
@@ -92,11 +92,13 @@ export function addedProfileColumns(sql: string): string[] {
 // ------------------------------------------------------------ source scan --
 
 function sourceFiles(dir: string, acc: string[] = []): string[] {
-  for (const entry of readdirSync(dir)) {
-    const full = join(dir, entry);
-    if (statSync(full).isDirectory()) {
+  // The directory entry already says what it is; a stat per file doubled the
+  // syscalls on a slow filesystem.
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) {
       sourceFiles(full, acc);
-    } else if (/\.tsx?$/.test(entry)) {
+    } else if (/\.tsx?$/.test(entry.name)) {
       acc.push(full);
     }
   }
@@ -233,7 +235,9 @@ describe('profiles private columns', () => {
     console.log(`[profile-reads] ${scanned} file(s) touch the profiles table`);
     expect(scanned).toBeGreaterThan(0);
     expect(offenders).toEqual([]);
-  });
+    // Reads every file under src/ once — a full-tree read cannot get cheaper
+    // than that, and under the whole suite's parallel I/O it outran 30s.
+  }, 120_000);
 });
 
 describe('the parsers actually parse', () => {
