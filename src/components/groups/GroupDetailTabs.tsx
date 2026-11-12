@@ -15,9 +15,14 @@ import { EventsList } from './events/EventsList';
 import { GroupActivityFeed } from './GroupActivityFeed';
 
 interface GroupDetailTabsProps {
+  /** Anchor for the tab strip (GroupDetail scrolls to it). */
+  id?: string;
   group: Group;
   members: GroupMember[];
-  wallets: unknown[];
+  /** null: this viewer cannot read the group's wallets (members only). */
+  wallets: unknown[] | null;
+  /** Founder or admin: the only roles allowed to add a wallet. */
+  canManageWallets: boolean;
   activeTab: string;
   onTabChange: (tab: string) => void;
   hasGovernanceFeatures: boolean;
@@ -29,9 +34,11 @@ interface GroupDetailTabsProps {
 }
 
 export function GroupDetailTabs({
+  id,
   group,
   members,
   wallets,
+  canManageWallets,
   activeTab,
   onTabChange,
   hasGovernanceFeatures,
@@ -42,12 +49,14 @@ export function GroupDetailTabs({
   labelConfig,
 }: GroupDetailTabsProps) {
   return (
-    <Tabs value={activeTab} onValueChange={onTabChange} className="space-y-6">
+    <Tabs id={id} value={activeTab} onValueChange={onTabChange} className="space-y-6 scroll-mt-24">
       {/* Six tabs do not fit a 320px phone: scroll the strip, never the page. */}
       <TabsList className="max-w-full justify-start overflow-x-auto">
         <TabsTrigger value="overview">Overview</TabsTrigger>
         <TabsTrigger value="members">Members ({members.length})</TabsTrigger>
-        <TabsTrigger value="wallets">Wallets ({wallets.length})</TabsTrigger>
+        <TabsTrigger value="wallets">
+          {wallets ? `Wallets (${wallets.length})` : 'Wallets'}
+        </TabsTrigger>
         <TabsTrigger value="events">
           <Calendar className="h-4 w-4 mr-1" />
           Events
@@ -103,6 +112,7 @@ export function GroupDetailTabs({
           groupId={group.id}
           groupSlug={group.slug}
           wallets={wallets}
+          canManage={canManageWallets}
           onUpdate={onUpdate}
         />
       </TabsContent>

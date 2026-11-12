@@ -35,6 +35,9 @@ async function updateWalletBalance(
     const { error } = await fromTable(sb, DATABASE_TABLES.GROUP_WALLETS)
       .update({
         current_balance_btc: balanceBtc,
+        // Without a read time the card cannot tell this from the column's
+        // default 0, and an unread balance would show as an empty treasury.
+        balance_updated_at: new Date().toISOString(),
       })
       .eq('id', walletId);
 
