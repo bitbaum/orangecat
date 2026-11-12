@@ -10,10 +10,18 @@
  * "Do it?" card. Nothing runs until the person taps; a bot never says a
  * thing is done.
  *
- * Only the owner's own companions get hands, only the launch set below
- * (entities the person makes for themselves; nothing that moves money or
- * is high risk), and only the actions the person has granted or may grant
- * by confirming (the Cat's grant-on-confirm rule).
+ * Only the owner's own companions get hands, and only the set below: the
+ * entities the person makes for themselves, and their own Loki (read its
+ * sessions and runs, ask it, send its agents a task). Nothing moves money.
+ * The set is the platform's, not one bot's: every bot of the owner is
+ * offered the same hands, and Loki answers each one as the Loki account
+ * linked to the owner, so a bot never reaches anyone else's projects.
+ *
+ * A hand is offered when the person has granted it, or may grant it by
+ * confirming (the Cat's grant-on-confirm rule). The one high-risk hand,
+ * send_task_to_loki, is never granted by a tap: it is offered only where the
+ * person already holds that permission, and it still waits for a tap every
+ * time.
  */
 
 import { CAT_ACTIONS, type CatAction } from '@/config/cat-actions';
@@ -30,7 +38,13 @@ export const COMPANION_HANDS: readonly string[] = [
   'create_wishlist',
   'send_to_loki',
   'ask_loki',
+  'loki_sessions',
+  'loki_run_status',
+  'send_task_to_loki',
 ];
+
+/** The hands that start work in the person's repositories. Always confirmed. */
+export const ACT_HANDS: readonly string[] = ['send_task_to_loki'];
 
 export const HANDS_SECTION_HEADING = '## What you can set in motion';
 
@@ -101,7 +115,7 @@ export function handsSection(actions: readonly CatAction[]): string | undefined 
   });
   return [
     HANDS_SECTION_HEADING,
-    'OrangeCat can do these for the person, and you may propose one when they ask you to make, create, book or send such a thing, or to ask Loki (the agent that builds and runs their projects):',
+    'OrangeCat can do these for the person, and you may propose one when they ask you to make, create, book or send such a thing, or to ask, read or task Loki (the agent system that builds and runs their projects; a task starts a coding agent session there, and its answer is read back with loki_sessions):',
     ...lines,
     `To propose, first write one sentence that names what you will set up, with its main details (never only "Sure"), then end with exactly one block, the proposal itself (not a query to show, not an example):\n${exampleBlock(actions[0])}`,
     '"action" is one id from the list above, exactly as written; "parameters" holds only that action\'s fields. Write no other code block. The person taps to approve it; until then nothing exists, so never say it is done, created or sent. Propose only what they asked for, with the details they gave; ask for a missing required detail instead of inventing one. Never propose anything in a group chat.',

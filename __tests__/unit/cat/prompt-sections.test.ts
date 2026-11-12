@@ -237,7 +237,15 @@ describe('selection is worth doing', () => {
     // decks) add real action IDs and parameters to the prose catalog. Their
     // descriptions are compact; detailed field schemas stay in tool parameters.
     // Keep them discoverable rather than dropping capabilities on a regex miss.
-    expect(remaining).toBeLessThanOrEqual(6_400);
+    //
+    // Raised 6,400 -> 6,680 for steering Loki sessions: `loki_sessions` (what
+    // every agent session is doing, and with a project what its agent last
+    // said) and `loki_run_status` (one run on its way to live), plus the
+    // `builder` and `queue_if_busy` parameters on send_task_to_loki. ~260
+    // characters: two one-clause descriptions and four parameter names. A bot that can send
+    // a task but not read the answer reports nothing; the state, track and
+    // transcript are Loki's own (services/loki/sessions.ts), never prose here.
+    expect(remaining).toBeLessThanOrEqual(6_680);
   });
 
   it('selects by default now, and still sends everything when told to', async () => {
