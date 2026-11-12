@@ -70,7 +70,7 @@ export function LearningPathCard({ path }: LearningPathCardProps) {
           href={path.status === 'available' ? path.href : '#'}
           className={`inline-flex items-center justify-center w-full px-4 py-2 rounded-lg font-medium transition-colors ${
             path.status === 'available'
-              ? 'bg-fg-primary text-fg-inverted hover:bg-muted-strong'
+              ? 'bg-bitcoinOrange hover:bg-bitcoinOrange/90 text-on-accent'
               : 'bg-surface-raised text-fg-secondary cursor-not-allowed'
           }`}
           {...(path.status === 'coming-soon' ? { 'aria-disabled': true } : {})}

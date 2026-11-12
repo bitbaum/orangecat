@@ -246,8 +246,11 @@
        ────────────────────────────────────────────────────────────────────── */
     /* Text. Primary, secondary and tertiary are all copy, so each clears
        4.5:1 on every surface below; tertiary sits at the floor on purpose
-       (42% reads 4.66:1 on surface-overlay, 43% misses). check:token-contrast
-       holds this in both themes. Muted is for dots and hairlines, not copy. */
+       (42% reads 4.66:1 on surface-overlay, 43% misses). @bitbaum/design-tokens#62
+       sets tertiary to 44% and 55%, which holds on page, base and raised;
+       these go two to three points further so it holds on overlay too, and
+       secondary moves with it to keep the step. check:token-contrast holds
+       this in both themes. Muted is for dots and hairlines, not copy. */
     --text-primary: 0 0% 10%;
     --text-secondary: 0 0% 30%;
     --text-tertiary: 0 0% 42%;

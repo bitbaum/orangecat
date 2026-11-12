@@ -17,8 +17,9 @@
  * 2. A fill that flips with the theme never takes text-white. `bg-fg-primary`
  *    is near-white in dark, so white on it is 1.19:1; the GRADIENTS keys
  *    resolve to that fill and carry their own ink.
- * 3. A status fill takes text-fg-inverted, not text-white (2.2:1 on the dark
- *    positive, 1.84:1 on the warning).
+ * 3. A status fill never takes text-white (2.2:1 on the dark positive). The
+ *    positive and negative fills take text-fg-inverted; the warning fill is
+ *    amber in both themes and takes text-warning-foreground.
  * 4. Words are not dimmed. `text-fg-muted` is under 3:1 on every surface and
  *    is for marks, never copy; an alpha on a text or status colour takes copy
  *    that passed below 4.5:1 (an error message at /80 is 3.28:1). A hover or
@@ -36,7 +37,8 @@ const inOneString = (a, b) => new RegExp(`${a}[^"'\`]*${b}|${b}[^"'\`]*${a}`);
 /** Both on one line: a fill constant and an ink class appended beside it. */
 const onOneLine = (a, b) => new RegExp(`${a}.*${b}|${b}.*${a}`);
 
-const ORANGE_FILL = String.raw`bg-(?:accent-warm|bitcoinOrange)\b`;
+// The solid fill only: a tint such as bg-bitcoinOrange/10 takes ordinary ink.
+const ORANGE_FILL = String.raw`(?<![\w:-])bg-(?:accent-warm|bitcoinOrange)(?![\w/-])`;
 const LIGHT_INK = String.raw`\btext-(?:white|fg-inverted|primary-foreground)\b`;
 const FLIPPING_FILL = String.raw`(?:GRADIENTS\.|iconGradient|bg-fg-primary|bg-foreground|bg-primary\b)`;
 const STATUS_FILL = String.raw`bg-status-(?:positive|negative|warning|neutral)(?![\w/-])`;

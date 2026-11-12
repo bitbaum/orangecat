@@ -179,7 +179,7 @@ export default function ProfileWalletSection({
                           navigator.clipboard.writeText(handle.value as string);
                           toast.success('Copied to clipboard');
                         }}
-                        className="text-xs text-fg-primary hover:text-fg-primary font-medium"
+                        className="-my-3 inline-flex min-h-11 min-w-11 items-center justify-center text-xs text-fg-primary hover:text-fg-primary font-medium"
                         aria-label={`Copy ${handle.label}`}
                       >
                         <Copy className="w-3 h-3 inline mr-1" />

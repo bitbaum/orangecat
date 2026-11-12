@@ -3,16 +3,13 @@ import { DATABASE_TABLES } from '@/config/database-tables';
 
 export type ServiceStatus = 'operational' | 'degraded' | 'outage' | 'unknown';
 
-/** A status something measured. `unknown` is a row nobody probes. */
-export type MeasuredStatus = Exclude<ServiceStatus, 'unknown'>;
-
 interface ServiceHealth {
   name: string;
   status: ServiceStatus;
 }
 
 interface HealthReport {
-  overall: MeasuredStatus;
+  overall: ServiceStatus;
   timestamp: string;
   services: ServiceHealth[];
 }
@@ -76,6 +73,11 @@ async function probeAuth(): Promise<ServiceStatus> {
 // MemoryStore) since the Upstash path — never configured in production — was
 // deleted with the limitkit adoption. There is no cache dependency to probe,
 // and a hard-coded "operational" row would be a fake metric.
+//
+// No Bitcoin row either: nothing probes one (payments are non-custodial; the
+// payee's own wallet mints the invoice). The hard-coded 'unknown' row that
+// stood here rendered as a red "Outage" on /status under "All Systems
+// Operational".
 
 export async function checkHealth(): Promise<HealthReport> {
   const timestamp = new Date().toISOString();
@@ -96,21 +98,7 @@ export async function checkHealth(): Promise<HealthReport> {
   // must NOT flip the endpoint to 503 — that would roll back a healthy deploy (it
   // did: a bugged auth probe took every deploy down). Alert on a real auth outage
   // off this critical path (uptime.yml reads services.authentication).
-  const overall: MeasuredStatus = dbStatus === 'outage' ? 'outage' : 'operational';
+  const overall: ServiceStatus = dbStatus === 'outage' ? 'outage' : 'operational';
 
   return { overall, timestamp, services };
-}
-
-/**
- * What the status page says at the top. `overall` answers the deploy gate and
- * leaves auth out on purpose, so used alone it read "All Systems Operational"
- * above a red row. The headline never contradicts the rows under it: a core
- * outage is an outage, any other failing row makes it a partial disruption.
- */
-export function headlineStatus(report: Pick<HealthReport, 'overall' | 'services'>): MeasuredStatus {
-  if (report.overall !== 'operational') {
-    return report.overall;
-  }
-  const failing = report.services.some(s => s.status === 'outage' || s.status === 'degraded');
-  return failing ? 'degraded' : 'operational';
 }

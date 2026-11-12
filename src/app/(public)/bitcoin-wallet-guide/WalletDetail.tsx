@@ -58,7 +58,10 @@ export function WalletDetail({ wallet }: WalletDetailProps) {
             </ul>
           </div>
 
-          <Button onClick={() => window.open(wallet.downloadUrl, '_blank')} className="w-full">
+          <Button
+            onClick={() => window.open(wallet.downloadUrl, '_blank')}
+            className="w-full bg-bitcoinOrange hover:bg-bitcoinOrange/90 text-on-accent"
+          >
             <Download className="w-4 h-4 mr-2" />
             Get {wallet.name}
             <ExternalLink className="w-4 h-4 ml-2" />

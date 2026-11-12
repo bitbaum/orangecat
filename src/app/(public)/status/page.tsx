@@ -1,11 +1,11 @@
-import { CheckCircle, AlertTriangle, XCircle, Clock, Minus } from 'lucide-react';
+import { CheckCircle, AlertTriangle, XCircle, Clock, CircleHelp } from 'lucide-react';
 import Link from 'next/link';
-import { checkHealth, headlineStatus } from '@/lib/health';
+import { checkHealth } from '@/lib/health';
 import { PageHeading } from '@/components/layout/PageHeading';
 import { ROUTES } from '@/config/routes';
 import { CONTACT_EMAIL } from '@/config/brand';
 import type { LucideIcon } from 'lucide-react';
-import type { MeasuredStatus, ServiceStatus } from '@/lib/health';
+import type { ServiceStatus } from '@/lib/health';
 import { APP_LOCALE } from '@/utils/locale';
 
 export const metadata = {
@@ -16,59 +16,44 @@ export const metadata = {
 // Revalidate every 30 seconds so stale data doesn't persist
 export const revalidate = 30;
 
-/* One entry per state, typed so a new state cannot compile without one. The
-   if-chain this replaces ended in a fallthrough, and the fallthrough drew a
-   service nobody probes as a red "Outage". */
-const STATUS_VIEW: Record<
+// One entry per ServiceStatus, so a status with no entry is a type error rather
+// than a fall-through: the old if-chains drew every unmatched status, 'unknown'
+// included, as a red "Outage". 'unknown' means nothing probed it, so it is neutral.
+const STATUS_DISPLAY: Record<
   ServiceStatus,
-  { label: string; Icon: LucideIcon; icon: string; badge: string }
+  { label: string; Icon: LucideIcon; tone: string; badgeSurface: string }
 > = {
   operational: {
     label: 'Operational',
     Icon: CheckCircle,
-    icon: 'text-status-positive',
-    badge: 'text-status-positive bg-status-positive-subtle',
+    tone: 'text-status-positive',
+    badgeSurface: 'bg-status-positive-subtle',
   },
   degraded: {
     label: 'Degraded',
     Icon: AlertTriangle,
-    icon: 'text-status-warning',
-    badge: 'text-status-warning bg-status-warning-subtle',
+    tone: 'text-status-warning',
+    badgeSurface: 'bg-status-warning-subtle',
   },
   outage: {
     label: 'Outage',
     Icon: XCircle,
-    icon: 'text-status-negative',
-    badge: 'text-status-negative bg-status-negative-subtle',
+    tone: 'text-status-negative',
+    badgeSurface: 'bg-status-negative-subtle',
   },
   unknown: {
-    label: 'Not monitored',
-    Icon: Minus,
-    icon: 'text-fg-secondary',
-    badge: 'text-fg-secondary bg-surface-raised',
-  },
-};
-
-const HEADLINE: Record<MeasuredStatus, { title: string; body: string }> = {
-  operational: {
-    title: 'All Systems Operational',
-    body: 'All OrangeCat services are running normally.',
-  },
-  degraded: {
-    title: 'Partial Service Disruption',
-    body: 'Some services are experiencing issues. We are working to restore full functionality.',
-  },
-  outage: {
-    title: 'Service Outage',
-    body: 'We are experiencing a service outage and are working to resolve it as quickly as possible.',
+    label: 'Not checked',
+    Icon: CircleHelp,
+    tone: 'text-fg-secondary',
+    badgeSurface: 'bg-surface-raised',
   },
 };
 
 function StatusBadge({ status }: { status: ServiceStatus }) {
-  const { label, badge } = STATUS_VIEW[status];
+  const { label, tone, badgeSurface } = STATUS_DISPLAY[status];
   return (
     <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badge}`}
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${tone} ${badgeSurface}`}
     >
       {label}
     </span>
@@ -76,9 +61,28 @@ function StatusBadge({ status }: { status: ServiceStatus }) {
 }
 
 function StatusIcon({ status, size = 'sm' }: { status: ServiceStatus; size?: 'sm' | 'lg' }) {
-  const { Icon, icon } = STATUS_VIEW[status];
-  const box = size === 'lg' ? 'w-8 h-8' : 'w-5 h-5';
-  return <Icon className={`${box} shrink-0 ${icon}`} aria-hidden="true" />;
+  const cls = size === 'lg' ? 'w-8 h-8' : 'w-5 h-5';
+  const { Icon, tone } = STATUS_DISPLAY[status];
+  return <Icon className={`${cls} ${tone}`} />;
+}
+
+function overallMessage(status: ServiceStatus) {
+  if (status === 'operational') {
+    return {
+      title: 'All Systems Operational',
+      body: 'All OrangeCat services are running normally.',
+    };
+  }
+  if (status === 'degraded') {
+    return {
+      title: 'Partial Service Disruption',
+      body: 'Some services are experiencing issues. We are working to restore full functionality.',
+    };
+  }
+  return {
+    title: 'Service Outage',
+    body: 'We are experiencing a service outage and are working to resolve it as quickly as possible.',
+  };
 }
 
 /**
@@ -87,8 +91,7 @@ function StatusIcon({ status, size = 'sm' }: { status: ServiceStatus; size?: 'sm
  */
 export default async function StatusPage() {
   const report = await checkHealth();
-  const headline = headlineStatus(report);
-  const { title, body } = HEADLINE[headline];
+  const { title, body } = overallMessage(report.overall);
   const checkedAt = new Date(report.timestamp).toLocaleTimeString(APP_LOCALE, {
     hour: '2-digit',
     minute: '2-digit',
@@ -108,10 +111,10 @@ export default async function StatusPage() {
         {/* Overall Status */}
         <div className="bg-surface-base rounded-lg shadow-sm border border-default p-6 mb-8">
           <div className="flex items-center space-x-3">
-            <StatusIcon status={headline} size="lg" />
+            <StatusIcon status={report.overall} size="lg" />
             <div>
-              <h2 className="mb-1 text-2xl font-semibold text-fg-primary">{title}</h2>
-              <p className="mb-0 text-fg-secondary">{body}</p>
+              <h2 className="text-2xl font-semibold text-fg-primary">{title}</h2>
+              <p className="text-fg-secondary">{body}</p>
             </div>
           </div>
         </div>
@@ -119,7 +122,7 @@ export default async function StatusPage() {
         {/* Per-service Status */}
         <div className="bg-surface-base rounded-lg shadow-sm border border-default overflow-hidden mb-8">
           <div className="px-6 py-4 border-b border-default">
-            <h3 className="mb-0 text-lg font-semibold text-fg-primary">Services</h3>
+            <h3 className="text-lg font-semibold text-fg-primary">Services</h3>
           </div>
           <div className="divide-y divide-subtle">
             {report.services.map(service => (
@@ -137,11 +140,11 @@ export default async function StatusPage() {
         {/* Incident History */}
         <div className="bg-surface-base rounded-lg shadow-sm border border-default overflow-hidden mb-8">
           <div className="px-6 py-4 border-b border-default">
-            <h3 className="mb-0 text-lg font-semibold text-fg-primary">Recent Incidents</h3>
+            <h3 className="text-lg font-semibold text-fg-primary">Recent Incidents</h3>
           </div>
           <div className="px-6 py-8 text-center">
-            <Clock className="w-8 h-8 text-fg-tertiary mx-auto mb-3" aria-hidden="true" />
-            <p className="mb-0 text-fg-secondary">We do not yet publish an incident history.</p>
+            <Clock className="w-8 h-8 text-fg-tertiary dark:text-fg-secondary/50 mx-auto mb-3" />
+            <p className="text-fg-secondary">We do not yet publish an incident history.</p>
           </div>
         </div>
 
