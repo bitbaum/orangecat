@@ -190,6 +190,7 @@ export async function initiateTip(
       wallet,
       amountBtc,
       paymentRequestId: request?.id ?? null,
+      requestNote: request?.note ?? null,
     });
     return {
       ok: true,

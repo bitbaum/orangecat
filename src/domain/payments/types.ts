@@ -167,6 +167,8 @@ export interface InitiateTipInput {
   amountBtc: number;
   /** A pending request this payment answers — already checked against the recipient. */
   paymentRequestId?: string | null;
+  /** What that request was for, so the payer's wallet records what was paid. */
+  requestNote?: string | null;
 }
 
 /** Resolved wallet info for a seller */
