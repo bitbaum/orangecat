@@ -421,7 +421,7 @@ export class CatPermissionService {
     // Editing caps changes only the category row, preserving individual caps
     // and autonomy. A switch without limits applies to every action atomically.
     if ('dailyLimit' in options || 'maxBtcPerAction' in options || 'maxBtcPerDay' in options) {
-      await this.grantPermission(userId, '*', category, options);
+      await this.saveCategoryLimits(userId, category, options);
       return;
     }
     const base = {
@@ -447,6 +447,60 @@ export class CatPermissionService {
     );
     if (error) {
       throw new Error(`Failed to grant category: ${error.message}`);
+    }
+  }
+
+  /**
+   * Write limits and caps on a category's '*' row without turning anything on.
+   *
+   * Every action without a row of its own falls back to the '*' row, so a cap
+   * saved as `granted: true` switched Send Payment, Fund Project and four more
+   * from Off to "Ask first" on an account that never chose. The row keeps the
+   * on/off state it had; with no row yet, it takes the category's default.
+   */
+  private async saveCategoryLimits(
+    userId: string,
+    category: ActionCategory,
+    options: {
+      requiresConfirmation?: boolean;
+      dailyLimit?: number | null;
+      maxBtcPerAction?: number | null;
+      maxBtcPerDay?: number | null;
+    }
+  ): Promise<void> {
+    const { data: existing, error: readError } = await this.supabase
+      .from(DATABASE_TABLES.CAT_PERMISSIONS)
+      .select('granted, requires_confirmation')
+      .eq('user_id', userId)
+      .eq('action_id', '*')
+      .eq('category', category)
+      .maybeSingle();
+    if (readError) {
+      throw new Error(`Failed to read category permission: ${readError.message}`);
+    }
+    const current = existing as { granted?: boolean; requires_confirmation?: boolean } | null;
+    const record: Record<string, unknown> = {
+      user_id: userId,
+      action_id: '*',
+      category,
+      granted: current?.granted ?? DEFAULT_PERMISSIONS[category] ?? false,
+      requires_confirmation: options.requiresConfirmation ?? current?.requires_confirmation ?? true,
+      updated_at: new Date().toISOString(),
+    };
+    if ('dailyLimit' in options) {
+      record.daily_limit = options.dailyLimit;
+    }
+    if ('maxBtcPerAction' in options) {
+      record.max_btc_per_action = options.maxBtcPerAction;
+    }
+    if ('maxBtcPerDay' in options) {
+      record.max_btc_per_day = options.maxBtcPerDay;
+    }
+    const { error } = await this.supabase
+      .from(DATABASE_TABLES.CAT_PERMISSIONS)
+      .upsert(record, { onConflict: 'user_id,action_id,category' });
+    if (error) {
+      throw new Error(`Failed to save category limits: ${error.message}`);
     }
   }
 

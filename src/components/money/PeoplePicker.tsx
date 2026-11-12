@@ -20,7 +20,8 @@ import { getInitial } from '@/utils/string';
 
 interface PeoplePickerProps {
   people: readonly FoundPerson[];
-  onPick: (handle: string) => void;
+  /** The handle fills a text field; the person is there for a caller that needs the id. */
+  onPick: (handle: string, person: FoundPerson) => void;
 }
 
 export function PeoplePicker({ people, onPick }: PeoplePickerProps) {
@@ -39,7 +40,7 @@ export function PeoplePicker({ people, onPick }: PeoplePickerProps) {
           <li key={person.id}>
             <button
               type="button"
-              onClick={() => onPick(person.username)}
+              onClick={() => onPick(person.username, person)}
               className="flex min-h-14 w-full items-center gap-3 px-3 py-2 text-left hover:bg-surface-raised"
             >
               <Avatar className="h-9 w-9">
