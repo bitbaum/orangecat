@@ -15,7 +15,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { QRCodeSVG } from 'qrcode.react';
+import { ScanCode } from '@/components/ui/ScanCode';
 import { Copy, Check, ExternalLink, QrCode } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
@@ -118,13 +118,9 @@ export function PaymentQRCode({
       {/* The code: first on a wide screen, a tap away on a phone. */}
       <div className={cn('justify-center', codeShown ? 'flex' : 'hidden sm:flex')}>
         <div className="overflow-hidden rounded-md border border-subtle">
-          <QRCodeSVG
+          <ScanCode
             value={qrData}
             size={size}
-            level={QR_RENDER.level}
-            includeMargin
-            bgColor={QR_RENDER.bgColor}
-            fgColor={QR_RENDER.fgColor}
             title={`${methodLabel} code for ${formatAmountBtc(amountBtc)}`}
           />
         </div>

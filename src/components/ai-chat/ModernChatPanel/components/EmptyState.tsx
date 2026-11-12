@@ -5,8 +5,12 @@ import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
  * starters (ChatApp `startersTitle`). In reading order:
  *
  *   greeting  — the person's name, so it is plainly THEIR Cat
- *   opener    — the one thing the Cat noticed, in its own voice, with a quiet
- *               "Not now"; its replies are the first starters under it
+ *   date      — the weekday, the date and the time, as the person reads them
+ *   today     — what needs them, each line the link that acts on it, and
+ *               their day in Loki (TodayLines)
+ *   opener    — when nothing needs them today: the one thing the Cat noticed,
+ *               in its own voice, with a quiet "Not now"; its replies are the
+ *               first starters under it
  *   links     — a suggestion that only opens a page is a link, not a message
  *
  * The starters themselves (the opener's replies, then three things this
@@ -15,21 +19,30 @@ import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
  * this file only lays it out.
  */
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { X } from 'lucide-react';
 import { CAT_AGENT, CAT_HUB_COPY } from '@/config/cat-hub';
 import { getCreateSuggestionHref } from '@/config/cat-create-suggestions';
 import { useAuth } from '@/hooks/useAuth';
-import type { CatOpener } from '@/config/cat-prompts';
+import { useDisplayDate } from '@/hooks/useDisplayDate';
+import { dayPartFor, type CatOpener, type CatToday } from '@/config/cat-prompts';
+import { TodayLines } from './TodayLines';
 
 /** Local time of day — the only honest thing a greeting can know without asking. */
 export function greetingFor(date: Date, name?: string | null): string {
-  const h = date.getHours();
-  const part = h < 5 ? 'evening' : h < 12 ? 'morning' : h < 18 ? 'afternoon' : 'evening';
+  const part = dayPartFor(date.getHours());
   const first = name?.trim().split(/\s+/)[0];
   // A minted handle (`user_2fc1…`) is not a name: "Good evening" alone reads
   // better than greeting someone by their database id (seen live 2026-11-01).
   return first && !isMintedHandle(first) ? `Good ${part}, ${first}` : `Good ${part}`;
+}
+
+/** "Thursday 12 November · 06:05" — what today is, in the reader's own date order. */
+export function dateLine(date: Date, locale: string): string {
+  const day = date.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' });
+  const time = date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+  return `${day} · ${time}`;
 }
 
 /** The suggestions that SAY something, for chatkit's starter buttons. */
@@ -39,6 +52,7 @@ export function catStarters(opener: CatOpener | null, chips: readonly string[]):
 }
 
 interface EmptyStateProps {
+  today: CatToday | null;
   opener: CatOpener | null;
   chips: readonly string[];
   isLoadingSuggestions: boolean;
@@ -47,6 +61,7 @@ interface EmptyStateProps {
 }
 
 export function EmptyState({
+  today,
   opener,
   chips,
   isLoadingSuggestions,
@@ -54,9 +69,18 @@ export function EmptyState({
   isNewUser,
 }: EmptyStateProps) {
   const { profile } = useAuth();
+  const { locale } = useDisplayDate();
+  // The clock is the reader's, not the server's: rendered on the server it is
+  // UTC, so "Good morning" at 12:30 in Zürich hydrated as a mismatch and the
+  // date line would carry the server's time. Read once mounted, in lines that
+  // already hold their height.
+  const [now, setNow] = useState<Date | null>(null);
+  useEffect(() => setNow(new Date()), []);
   const title = isNewUser
     ? CAT_HUB_COPY.greetingNewUser
-    : greetingFor(new Date(), profile?.name || profile?.username);
+    : now
+      ? greetingFor(now, profile?.name || profile?.username)
+      : '\u00a0';
   const links = [...(opener?.replies ?? []), ...chips].flatMap(s => {
     const href = getCreateSuggestionHref(s);
     return href ? [{ label: s, href }] : [];
@@ -64,9 +88,14 @@ export function EmptyState({
 
   return (
     <div className="oc-chat-home">
-      <h2 className="text-center text-2xl font-semibold tracking-tight text-fg-primary sm:text-3xl">
-        {title}
-      </h2>
+      <div className="flex flex-col gap-1 text-center">
+        <h2 className="text-2xl font-semibold tracking-tight text-fg-primary sm:text-3xl">
+          {title}
+        </h2>
+        <p className="mb-0 min-h-5 text-sm text-fg-tertiary">
+          {now ? dateLine(now, locale) : '\u00a0'}
+        </p>
+      </div>
 
       {isLoadingSuggestions ? (
         <div className="oc-chat-opener" aria-hidden="true">
@@ -80,26 +109,29 @@ export function EmptyState({
           </div>
         </div>
       ) : (
-        opener && (
-          <div className="oc-chat-opener" aria-live="polite">
-            <span className="oc-chat-opener-mark" aria-hidden="true">
-              <BrandMarkIcon size={16} />
-            </span>
-            <p className="mb-0 min-w-0 flex-1 text-sm leading-relaxed text-fg-primary">
-              <span className="sr-only">{CAT_AGENT.name}: </span>
-              {opener.say}
-            </p>
-            <button
-              type="button"
-              onClick={() => onDismissOpener(opener.key)}
-              className="-mr-1 -mt-1 flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md text-fg-tertiary transition-colors hover:bg-surface-raised hover:text-fg-primary"
-              aria-label="Not now"
-              title="Not now"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        )
+        <>
+          {today && <TodayLines today={today} />}
+          {opener && (
+            <div className="oc-chat-opener" aria-live="polite">
+              <span className="oc-chat-opener-mark" aria-hidden="true">
+                <BrandMarkIcon size={16} />
+              </span>
+              <p className="mb-0 min-w-0 flex-1 text-sm leading-relaxed text-fg-primary">
+                <span className="sr-only">{CAT_AGENT.name}: </span>
+                {opener.say}
+              </p>
+              <button
+                type="button"
+                onClick={() => onDismissOpener(opener.key)}
+                className="-mr-1 -mt-1 flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md text-fg-tertiary transition-colors hover:bg-surface-raised hover:text-fg-primary"
+                aria-label="Not now"
+                title="Not now"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+        </>
       )}
 
       {links.length > 0 && (

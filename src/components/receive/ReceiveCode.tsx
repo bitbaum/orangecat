@@ -21,13 +21,12 @@
 
 import { useCallback, useMemo } from 'react';
 import { Check, Copy, Share2 } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react';
+import { ScanCode } from '@/components/ui/ScanCode';
 import brandAssets from '@/config/brand-assets.json';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/Button';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { buildPayUrl, payLinkOrigin, PAY_COPY } from '@/config/pay';
-import { QR_RENDER } from '@/config/payment-qr';
 import { RECEIVE_SHARE_COPY } from '@/config/receive';
 import { getInitial } from '@/utils/string';
 import { cn } from '@/lib/utils';
@@ -91,13 +90,9 @@ export function ReceiveCode({ username, name, avatarUrl, className }: ReceiveCod
       {/* The Cat sits in the middle of the code: the symbol is recognisably ours
           before it is read, and it costs the scanner ~4% of the modules. */}
       <div className={cn('overflow-hidden rounded-2xl border border-subtle', name && 'mt-6')}>
-        <QRCodeSVG
+        <ScanCode
           value={url}
           size={QR_SIZE}
-          level={QR_RENDER.level}
-          includeMargin
-          bgColor={QR_RENDER.bgColor}
-          fgColor={QR_RENDER.fgColor}
           title={RECEIVE_SHARE_COPY.qrTitle(who)}
           imageSettings={{
             src: brandAssets.favicon,

@@ -124,7 +124,10 @@ export function PayPageClient({
         username={username}
         recipientName={recipientName}
         initialCanReceive={canReceive}
-        initialAmountBtc={prefill.amountBtc ?? 0}
+        // The same number as the rest of the page: an open ask made in a
+        // currency is worth today's Bitcoin, not the Bitcoin frozen into a link
+        // that may be days old. Paying the old figure left the request unpaid.
+        initialAmountBtc={requestAmountBtc ?? prefill.amountBtc ?? 0}
         requestId={prefill.requestId}
         onAmountChange={setAmountBtc}
         words={PAY_COPY}
