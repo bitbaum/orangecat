@@ -54,7 +54,7 @@ export function RoomIdentity({ fleet }: { fleet: FleetProject }) {
       <dl className="grid gap-5 sm:grid-cols-2">
         {parts.map(part => (
           <div key={part.key}>
-            <dt className="text-xs font-medium uppercase tracking-caps text-fg-muted">
+            <dt className="text-xs font-medium uppercase tracking-caps text-fg-tertiary">
               {part.label}
             </dt>
             <dd className="mt-1 text-base leading-relaxed text-fg-secondary">
@@ -91,7 +91,10 @@ export function RoomShipping({
           <ol className="mt-3 space-y-3">
             {recent.map(change => (
               <li key={`${change.date}-${change.done.slice(0, 32)}`} className="flex gap-4">
-                <time dateTime={change.date} className="w-14 shrink-0 pt-0.5 text-xs text-fg-muted">
+                <time
+                  dateTime={change.date}
+                  className="w-14 shrink-0 pt-0.5 text-xs text-fg-tertiary"
+                >
                   {shortDate(change.date)}
                 </time>
                 <p className="line-clamp-3 min-w-0 text-sm leading-6 text-fg-secondary">
@@ -128,7 +131,7 @@ export function RoomRoadmap({ fleet }: { fleet: FleetProject }) {
           }
           return (
             <div key={status}>
-              <h3 className="text-xs font-medium uppercase tracking-caps text-fg-muted">
+              <h3 className="text-xs font-medium uppercase tracking-caps text-fg-tertiary">
                 {label} · {items.length}
               </h3>
               <ul className="mt-2 space-y-2">

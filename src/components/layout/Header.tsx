@@ -20,7 +20,7 @@ import { MessagesButton, NotificationsButton } from './HeaderActions';
 import { MenuToggleButton } from './MenuToggleButton';
 import { DesktopNavigation } from './DesktopNavigation';
 import { MobileMenu } from './MobileMenu';
-import UserProfileDropdown from '@/components/ui/UserProfileDropdown';
+import AccountMenuControl from './AccountMenuControl';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 interface HeaderProps {
@@ -108,7 +108,7 @@ export function Header({
             {/* Logo - Icon only on mobile, text on larger screens */}
             <div className="flex-shrink-0 min-w-0">
               <Logo showText={false} size="sm" className="sm:hidden" />
-              <Logo showText={true} size="md" className="hidden sm:flex" />
+              <Logo showText={true} size="md" className="hidden sm:inline-flex" />
             </div>
 
             {/* Desktop Navigation Links — anonymous marketing surfaces only.
@@ -166,7 +166,7 @@ export function Header({
 
             {/* User Menu or Auth Buttons */}
             <div className="flex-shrink-0">
-              {authStatus.authenticated ? <UserProfileDropdown /> : <AuthButtons />}
+              {authStatus.authenticated ? <AccountMenuControl /> : <AuthButtons />}
             </div>
           </div>
         </div>

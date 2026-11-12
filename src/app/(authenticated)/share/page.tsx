@@ -43,7 +43,7 @@ function ShareContent() {
         </p>
         <Link
           href={ROUTES.TIMELINE}
-          className="text-sm text-accent-warm underline-offset-2 hover:underline"
+          className="text-sm text-fg-primary underline underline-offset-4 hover:text-fg-secondary"
         >
           Go to your timeline
         </Link>

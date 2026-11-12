@@ -17,6 +17,20 @@ const config: Config = {
       // Semantic border tier (Loki). `border-default`/`-interactive` are
       // the migration targets for legacy `border-border`; subtle/strong carry
       // the existing neutral border vars forward under semantic names.
+      // `bg-status-*` (and the legacy bg-destructive / -success / -warning)
+      // paint the FILL tokens. The status colours themselves are tuned to be
+      // read as words at 4.5:1 on every surface, which as a fill made a dark
+      // danger button salmon and a light warning bar brown.
+      backgroundColor: {
+        status: {
+          positive: 'hsl(var(--status-positive-fill))',
+          warning: 'hsl(var(--status-warning-fill))',
+          negative: 'hsl(var(--status-negative-fill))',
+        },
+        destructive: { DEFAULT: 'hsl(var(--status-negative-fill))' },
+        success: { DEFAULT: 'hsl(var(--status-positive-fill))' },
+        warning: { DEFAULT: 'hsl(var(--status-warning-fill))' },
+      },
       borderColor: {
         default: 'hsl(var(--border-default))',
         interactive: 'hsl(var(--border-interactive))',
@@ -198,10 +212,13 @@ const config: Config = {
           hover: 'var(--accent-hover)',
         },
         // The label colour for text ON accent-warm. `bg-accent-warm text-white`
-        // is 3.10:1 and fails AA; `text-on-accent` is 6.10:1. Paired with the
+        // is 2.30:1 and fails AA; `text-on-accent` is 8.02:1. Paired with the
         // background it belongs to so nobody has to remember which ink an
         // orange button takes.
         'on-accent': 'hsl(var(--on-accent))',
+        // The ink for text ON surface-public, the band that is near-black in
+        // both themes. `text-fg-inverted` flips and is 1.1:1 on it in dark.
+        'on-public': 'hsl(var(--on-public))',
         status: {
           positive: 'hsl(var(--status-positive))',
           'positive-subtle': 'hsl(var(--status-positive-subtle))',

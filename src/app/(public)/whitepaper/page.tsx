@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 export default function WhitepaperPage() {
   return (
-    <main className="min-h-screen bg-surface-page">
+    <div className="min-h-screen bg-surface-page">
       <article className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
         <header className="border-b border-default pb-10">
           <div className="flex flex-wrap items-center gap-3 font-mono text-xs text-fg-tertiary">
@@ -20,7 +20,9 @@ export default function WhitepaperPage() {
             <span>v0.1</span>
             <span>July 2026</span>
           </div>
-          <PageHeading className="mt-6">Fund what people build. Build what people fund.</PageHeading>
+          <PageHeading className="mt-6">
+            Fund what people build. Build what people fund.
+          </PageHeading>
           <p className="mt-5 text-lg leading-relaxed text-fg-secondary">
             A focused architecture for connecting public economic coordination on OrangeCat with
             supervised agent execution on Loki.
@@ -55,6 +57,6 @@ export default function WhitepaperPage() {
           </Link>
         </footer>
       </article>
-    </main>
+    </div>
   );
 }

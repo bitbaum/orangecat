@@ -8,6 +8,7 @@ import type { Group, GroupMember } from '@/types/group';
 import type { User } from '@supabase/supabase-js';
 import type { GroupLabel } from '@/config/group-labels';
 import { GROUP_LABELS } from '@/config/group-labels';
+import { groupIsOpenToJoin } from '@/services/groups/utils/joining';
 import { GroupMembers } from './GroupMembers';
 import { GroupWallets } from './GroupWallets';
 import { ProposalsList } from './proposals/ProposalsList';
@@ -71,7 +72,7 @@ export function GroupDetailTabs({
             <CardTitle>About</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-fg-primary dark:text-fg-tertiary whitespace-pre-wrap">
+            <p className="text-fg-primary whitespace-pre-wrap">
               {group.description || 'No description provided.'}
             </p>
           </CardContent>
@@ -103,6 +104,7 @@ export function GroupDetailTabs({
           groupId={group.id}
           groupSlug={group.slug}
           members={members}
+          openToJoin={groupIsOpenToJoin(group)}
           onUpdate={onUpdate}
         />
       </TabsContent>

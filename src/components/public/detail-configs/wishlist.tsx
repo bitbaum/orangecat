@@ -67,7 +67,7 @@ function ItemProgress({ item }: { item: WishlistDetailItem }) {
         <span>{displayBTC(funded)}</span>
         <span>{displayBTC(item.target_amount_btc)} goal</span>
       </div>
-      <Progress value={pct} className="h-1.5" />
+      <Progress value={pct} aria-label={`${item.title} funding progress`} className="h-1.5" />
     </div>
   );
 }

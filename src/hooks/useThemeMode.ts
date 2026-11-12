@@ -3,12 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTheme } from 'next-themes';
 import { useProfileTheme } from '@/hooks/useProfileTheme';
-import {
-  DEFAULT_THEME_MODE,
-  isThemeMode,
-  nextThemeMode,
-  type ThemeMode,
-} from '@/config/theme';
+import { DEFAULT_THEME_MODE, isThemeMode, nextThemeMode, type ThemeMode } from '@/config/theme';
 
 /**
  * The one place theme changing is implemented.

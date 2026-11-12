@@ -26,7 +26,7 @@ export function StepNavigation({ steps, currentStep }: StepNavigationProps) {
               <div
                 className={`relative flex items-center justify-center w-12 h-12 rounded-full border-2 transition-all duration-300 ${
                   isCompleted
-                    ? 'bg-status-positive border-status-positive text-white shadow-sm'
+                    ? 'bg-status-positive border-status-positive text-fg-inverted shadow-sm'
                     : isCurrent
                       ? 'bg-fg-primary border-fg-primary text-fg-inverted shadow-sm animate-pulse'
                       : isUpcoming

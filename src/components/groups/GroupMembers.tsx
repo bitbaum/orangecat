@@ -34,6 +34,7 @@ import {
   UserMinus,
 } from 'lucide-react';
 import { STATUS } from '@/config/database-constants';
+import { ROUTES } from '@/config/routes';
 import type { GroupMember, GroupRole } from '@/types/group';
 import { getInitial } from '@/utils/string';
 import { InviteMemberDialog } from './InviteMemberDialog';
@@ -54,11 +55,19 @@ interface GroupMembersProps {
   groupId: string;
   groupSlug: string;
   members: MemberWithProfile[];
+  /** Anyone may join without an invitation (services/groups/utils/joining.ts). */
+  openToJoin: boolean;
   onUpdate?: () => void;
 }
 
-export function GroupMembers({ groupId, groupSlug, members, onUpdate }: GroupMembersProps) {
-  const { user } = useAuth();
+export function GroupMembers({
+  groupId,
+  groupSlug,
+  members,
+  openToJoin,
+  onUpdate,
+}: GroupMembersProps) {
+  const { user, hydrated } = useAuth();
   const [joining, setJoining] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState(false);
@@ -175,14 +184,25 @@ export function GroupMembers({ groupId, groupSlug, members, onUpdate }: GroupMem
 
   return (
     <div className="space-y-4">
-      {/* Join Button (if not member) */}
-      {!isMember && (
+      {/* Join is offered only where it can succeed. Signed out, the way in is
+          to sign in and come back to this group. */}
+      {!isMember && openToJoin && hydrated && (
         <Card>
           <CardContent className="pt-6">
-            <Button onClick={handleJoin} disabled={joining} className="w-full">
-              <UserPlus className="h-4 w-4 mr-2" />
-              {joining ? 'Joining...' : 'Join Group'}
-            </Button>
+            {user ? (
+              <Button onClick={handleJoin} disabled={joining} className="w-full">
+                <UserPlus className="h-4 w-4 mr-2" />
+                {joining ? 'Joining...' : 'Join Group'}
+              </Button>
+            ) : (
+              <Button
+                href={`${ROUTES.AUTH_LOGIN}&from=${encodeURIComponent(ROUTES.GROUPS.VIEW(groupSlug))}`}
+                className="w-full"
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                Sign in to join
+              </Button>
+            )}
           </CardContent>
         </Card>
       )}
