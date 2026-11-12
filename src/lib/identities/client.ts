@@ -15,11 +15,31 @@ export interface IdentityMember {
   avatarUrl: string | null;
   isHolder: boolean;
   isCurrent: boolean;
+  /** A hand-over link is open for this identity. */
+  handoverOpen?: boolean;
+  /** How many unread notifications wait in this account. */
+  waiting?: number;
 }
 
 export interface IdentityCircle {
   members: IdentityMember[];
   max: number;
+  /**
+   * False for an identity that has had a way in of its own (ADR-0014 D6a):
+   * it stands alone and can neither switch nor add, list or delete others.
+   */
+  canManage: boolean;
+}
+
+/**
+ * Fired on the window when the circle changes in this tab (an identity
+ * created, deleted, offered or withdrawn), so every surface showing it reads
+ * it again instead of waiting for a reload.
+ */
+export const IDENTITIES_CHANGED_EVENT = 'orangecat:identities-changed';
+
+export function notifyIdentitiesChanged(): void {
+  window.dispatchEvent(new Event(IDENTITIES_CHANGED_EVENT));
 }
 
 /** The message a failed identities call carries, or `fallback`. */

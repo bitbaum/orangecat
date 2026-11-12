@@ -12,7 +12,7 @@
 
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { QRCodeSVG } from 'qrcode.react';
+import { ScanCode } from '@/components/ui/ScanCode';
 import { Copy, Check, QrCode, Wallet, Loader2, ShieldCheck } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -212,7 +212,7 @@ export function OwnerCollectPanel({
           </div>
           {showQr && shareUrl && (
             <div className="flex justify-center rounded-lg border border-default bg-surface-base p-4">
-              <QRCodeSVG value={shareUrl} size={192} />
+              <ScanCode value={shareUrl} size={192} />
             </div>
           )}
           <p className="text-xs text-fg-secondary">
