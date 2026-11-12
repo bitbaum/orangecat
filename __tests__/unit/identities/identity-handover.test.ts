@@ -21,7 +21,13 @@ import type { Caller } from '@/domain/identities/service';
 type Row = Record<string, unknown>;
 
 function fakeAdmin(
-  opts: { emailError?: { message: string; code?: string }; relinkFails?: boolean } = {}
+  opts: {
+    emailError?: { message: string; code?: string };
+    /** The auth server reports an error but applied the change anyway. */
+    emailErrorButApplied?: boolean;
+    stripFails?: boolean;
+    relinkFails?: boolean;
+  } = {}
 ) {
   const tables: Record<string, Row[]> = {
     identity_links: [{ identity_user_id: 'alberto', holder_user_id: 'fernando', created_at: 't' }],
@@ -82,19 +88,32 @@ function fakeAdmin(
 
   const admin = {
     from,
-    rpc: vi.fn(async (fn: string) => (log.push(`rpc ${fn}`), { data: 1, error: null })),
+    rpc: vi.fn(async (fn: string) => {
+      log.push(`rpc ${fn}`);
+      return opts.stripFails && fn === 'identity_strip_ways_in'
+        ? { data: null, error: { message: 'boom' } }
+        : { data: 1, error: null };
+    }),
     auth: {
       admin: {
         getUserById: vi.fn(async (id: string) => ({
           data: { user: { id, ...users[id] } },
           error: null,
         })),
-        updateUserById: vi.fn(async (id: string, attrs: { email: string }) => {
+        updateUserById: vi.fn(async (id: string, attrs: { email?: string; password?: string }) => {
+          if (attrs.password) {
+            log.push('setPassword');
+            return { error: null };
+          }
           log.push('updateUser');
+          if (opts.emailErrorButApplied) {
+            users[id] = { email: attrs.email! };
+            return { error: { message: 'upstream timeout' } };
+          }
           if (opts.emailError) {
             return { error: opts.emailError };
           }
-          users[id] = { email: attrs.email };
+          users[id] = { email: attrs.email! };
           return { error: null };
         }),
       },
@@ -193,27 +212,52 @@ describe('accepting an offer', () => {
     const f = fakeAdmin(opts);
     const offer = await offerHandover(f.admin, holder, 'alberto');
     f.log.length = 0;
-    return { f, token: offer.ok ? offer.data.token : '' };
+    const revokeApps = vi.fn(async (id: string) => {
+      f.log.push(`revokeApps ${id}`);
+    });
+    return { f, token: offer.ok ? offer.data.token : '', deps: { revokeApps } };
   }
 
-  it('cuts the link BEFORE giving the identity its address, then ends the old sessions', async () => {
-    const { f, token } = await offered();
-    const result = await acceptHandover(f.admin, token, '  New.Owner@Example.com ');
+  it('spends the offer, cuts the link, removes every way in, and only then sets the address', async () => {
+    const { f, token, deps } = await offered();
+    const result = await acceptHandover(f.admin, token, '  New.Owner@Example.com ', deps);
     expect(result).toEqual({ ok: true, identityId: 'alberto', email: 'new.owner@example.com' });
-    expect(f.log.indexOf('delete identity_links x1')).toBeLessThan(f.log.indexOf('updateUser'));
-    expect(f.log.indexOf('updateUser')).toBeLessThan(f.log.indexOf('rpc end_sessions_of'));
+    expect(f.log).toEqual([
+      'delete identity_handovers x1',
+      'delete identity_links x1',
+      'rpc identity_strip_ways_in',
+      'revokeApps alberto',
+      'setPassword',
+      'updateUser',
+    ]);
     expect(f.tables.identity_links).toHaveLength(0);
+    expect(f.tables.identity_handovers).toHaveLength(0);
     expect(f.users.alberto!.email).toBe('new.owner@example.com');
+    expect(f.raw.rpc).toHaveBeenCalledWith(
+      'identity_strip_ways_in',
+      { p_user_id: 'alberto' },
+      undefined
+    );
     expect(f.raw.auth.admin.updateUserById).toHaveBeenCalledWith('alberto', {
       email: 'new.owner@example.com',
       email_confirm: true,
     });
   });
 
+  it('replaces the password with one nobody is told', async () => {
+    const { f, token, deps } = await offered();
+    await acceptHandover(f.admin, token, 'new@example.com', deps);
+    const passwords = f.raw.auth.admin.updateUserById.mock.calls
+      .map(c => (c[1] as { password?: string }).password)
+      .filter(Boolean);
+    expect(passwords).toHaveLength(1);
+    expect(passwords[0]!.length).toBeGreaterThanOrEqual(40);
+  });
+
   it('refuses an address nobody can read or that is not one, before touching anything', async () => {
-    const { f, token } = await offered();
+    const { f, token, deps } = await offered();
     for (const email of ['x@orangecat.invalid', 'not-an-email', '', null]) {
-      expect(await acceptHandover(f.admin, token, email)).toEqual({
+      expect(await acceptHandover(f.admin, token, email, deps)).toEqual({
         ok: false,
         reason: 'invalid_email',
       });
@@ -222,20 +266,42 @@ describe('accepting an offer', () => {
     expect(f.tables.identity_links).toHaveLength(1);
   });
 
-  it('refuses an unknown or expired link without touching anything', async () => {
-    const { f, token } = await offered();
-    expect(await acceptHandover(f.admin, 'wrong', 'a@b.co')).toEqual({ ok: false, reason: 'gone' });
+  it('refuses an unknown, expired or withdrawn link without touching anything', async () => {
+    const { f, token, deps } = await offered();
+    expect(await acceptHandover(f.admin, 'wrong', 'a@b.co', deps)).toEqual({
+      ok: false,
+      reason: 'gone',
+    });
     f.tables.identity_handovers![0]!.expires_at = new Date(Date.now() - 1000).toISOString();
-    expect(await acceptHandover(f.admin, token, 'a@b.co')).toEqual({ ok: false, reason: 'gone' });
+    expect(await acceptHandover(f.admin, token, 'a@b.co', deps)).toEqual({
+      ok: false,
+      reason: 'gone',
+    });
+    expect(f.tables.identity_handovers).toHaveLength(1);
+    f.tables.identity_handovers = [];
+    expect(await acceptHandover(f.admin, token, 'a@b.co', deps)).toEqual({
+      ok: false,
+      reason: 'gone',
+    });
     expect(f.raw.auth.admin.updateUserById).not.toHaveBeenCalled();
     expect(f.tables.identity_links).toHaveLength(1);
   });
 
+  it('lets only one of two people opening the same link through', async () => {
+    const { f, token, deps } = await offered();
+    const [a, b] = await Promise.all([
+      acceptHandover(f.admin, token, 'first@example.com', deps),
+      acceptHandover(f.admin, token, 'second@example.com', deps),
+    ]);
+    expect([a, b].filter(r => r.ok)).toHaveLength(1);
+    expect([a, b].filter(r => !r.ok)).toEqual([{ ok: false, reason: 'gone' }]);
+  });
+
   it('puts the link and the offer back when the address is taken: the holder still holds it', async () => {
-    const { f, token } = await offered({
+    const { f, token, deps } = await offered({
       emailError: { message: 'A user with this email address has already been registered' },
     });
-    expect(await acceptHandover(f.admin, token, 'taken@example.com')).toEqual({
+    expect(await acceptHandover(f.admin, token, 'taken@example.com', deps)).toEqual({
       ok: false,
       reason: 'email_taken',
     });
@@ -245,16 +311,34 @@ describe('accepting an offer', () => {
     expect(f.users.alberto!.email).toBe('identity-aa@orangecat.invalid');
     // The same link still works, so the person can try another address.
     expect(await previewHandover(f.admin, token)).not.toBeNull();
-    expect(f.raw.rpc).not.toHaveBeenCalled();
+  });
+
+  it('puts everything back, and never sets the address, when the ways in cannot be removed', async () => {
+    const { f, token, deps } = await offered({ stripFails: true });
+    expect(await acceptHandover(f.admin, token, 'new@example.com', deps)).toEqual({
+      ok: false,
+      reason: 'failed',
+    });
+    expect(f.log).not.toContain('updateUser');
+    expect(f.users.alberto!.email).toBe('identity-aa@orangecat.invalid');
+    expect(f.tables.identity_links).toHaveLength(1);
+    expect(await previewHandover(f.admin, token)).not.toBeNull();
+  });
+
+  it('counts an address change the auth server applied despite an error as done, not as a reason to relink', async () => {
+    const { f, token, deps } = await offered({ emailErrorButApplied: true });
+    expect(await acceptHandover(f.admin, token, 'new@example.com', deps)).toEqual({
+      ok: true,
+      identityId: 'alberto',
+      email: 'new@example.com',
+    });
+    expect(f.tables.identity_links).toHaveLength(0);
   });
 
   it('works once: a second use of the same link finds nothing', async () => {
-    const { f, token } = await offered();
-    // The database trigger removes the offer when the link goes; the fake has
-    // no triggers, so do what it does.
-    await acceptHandover(f.admin, token, 'first@example.com');
-    f.tables.identity_handovers = [];
-    expect(await acceptHandover(f.admin, token, 'second@example.com')).toEqual({
+    const { f, token, deps } = await offered();
+    await acceptHandover(f.admin, token, 'first@example.com', deps);
+    expect(await acceptHandover(f.admin, token, 'second@example.com', deps)).toEqual({
       ok: false,
       reason: 'gone',
     });

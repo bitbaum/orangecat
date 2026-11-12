@@ -173,28 +173,81 @@ export async function previewHandover(
 export type AcceptFailure = 'gone' | 'invalid_email' | 'email_taken' | 'failed';
 
 /**
- * Accept an offer: the identity becomes an ordinary account on `email`, and
- * its former holder's sessions in it are ended. Returns the address to sign
- * the new owner in with.
+ * Accept an offer: the identity becomes an ordinary account on `email`, with
+ * no way in left for its former holder, and the address to sign the new owner
+ * in with is returned.
+ *
+ * Order, each step chosen so a failure leaves the holder holding the identity:
+ *  1. Spend the offer: delete it by its token, atomically. A link that was
+ *     withdrawn or replaced a moment ago finds nothing, and two people opening
+ *     the same link cannot both get past here.
+ *  2. Cut the link to the holder. From now on no switch reaches the identity.
+ *  3. Remove every way in the holder could have put on it: sessions, second
+ *     factors, passkeys, linked sign-in providers (identity_strip_ways_in),
+ *     the connected apps' tokens and consents, and the password, replaced by
+ *     one nobody knows.
+ *  4. Give it its new address. Last, because it is the one step that hands
+ *     the account to someone else.
+ * Before step 4, any failure puts the link and the offer back.
  */
 export async function acceptHandover(
   admin: SupabaseClient,
   token: string,
-  rawEmail: unknown
+  rawEmail: unknown,
+  deps: { revokeApps: (userId: string) => Promise<unknown> }
 ): Promise<{ ok: true; identityId: string; email: string } | { ok: false; reason: AcceptFailure }> {
   const email = normalizeEmail(rawEmail);
   if (!email || isUnreachableEmail(email)) {
     return { ok: false, reason: 'invalid_email' };
   }
-  const row = await findOpenHandover(admin, token);
+  if (!token || token.length > 200) {
+    return { ok: false, reason: 'gone' };
+  }
+  const db = looseClient(admin);
+  const tokenHash = hashHandoverToken(token);
+
+  // 1. Spend the offer.
+  const { data: spent, error: spendError } = await db
+    .from(DATABASE_TABLES.IDENTITY_HANDOVERS)
+    .delete()
+    .eq('token_hash', tokenHash)
+    .gt('expires_at', new Date().toISOString())
+    .select('identity_user_id, offered_by, expires_at');
+  if (spendError) {
+    logger.error('Handover could not spend the offer', { error: spendError }, 'Identities');
+    return { ok: false, reason: 'failed' };
+  }
+  const row = ((spent ?? []) as HandoverRow[])[0];
   if (!row) {
     return { ok: false, reason: 'gone' };
   }
   const identityId = row.identity_user_id;
-  const db = looseClient(admin);
 
-  // 1. Cut the link. The trigger removes the offer with it, so the token is
-  //    spent from here on, whatever happens next.
+  const reoffer = async () => {
+    await db.from(DATABASE_TABLES.IDENTITY_HANDOVERS).insert({
+      identity_user_id: identityId,
+      offered_by: row.offered_by,
+      token_hash: tokenHash,
+      expires_at: row.expires_at,
+    });
+  };
+  const relink = async (): Promise<boolean> => {
+    const { error } = await db
+      .from(DATABASE_TABLES.IDENTITY_LINKS)
+      .insert({ identity_user_id: identityId, holder_user_id: row.offered_by });
+    if (error) {
+      logger.error(
+        'Handover failed AND the link could not be restored: this identity has no holder and no address',
+        { identityId, holderId: row.offered_by, error },
+        'Identities'
+      );
+      return false;
+    }
+    await reoffer();
+    return true;
+  };
+
+  // 2. Cut the link.
   const { data: cut, error: cutError } = await db
     .from(DATABASE_TABLES.IDENTITY_LINKS)
     .delete()
@@ -202,55 +255,61 @@ export async function acceptHandover(
     .eq('holder_user_id', row.offered_by)
     .select('identity_user_id');
   if (cutError || ((cut ?? []) as unknown[]).length !== 1) {
+    // Nothing was changed but the offer; give it back unless the link is gone
+    // for good (the identity deleted), in which case the offer is meaningless.
+    if (!cutError) {
+      return { ok: false, reason: 'gone' };
+    }
+    await reoffer();
     logger.error('Handover could not cut the link', { error: cutError, identityId }, 'Identities');
     return { ok: false, reason: 'failed' };
   }
 
-  // 2. Give the identity its own address.
+  // 3. Remove every way in.
+  try {
+    const { error: stripError } = (await callRpc(admin, 'identity_strip_ways_in', {
+      p_user_id: identityId,
+    })) as { error: { message: string } | null };
+    if (stripError) {
+      throw new Error(stripError.message);
+    }
+    await deps.revokeApps(identityId);
+    const { error: passwordError } = await admin.auth.admin.updateUserById(identityId, {
+      password: randomBytes(32).toString('base64url'),
+    });
+    if (passwordError) {
+      throw new Error(passwordError.message);
+    }
+  } catch (error) {
+    logger.error(
+      "Handover could not remove the former holder's ways in",
+      { error, identityId },
+      'Identities'
+    );
+    await relink();
+    return { ok: false, reason: 'failed' };
+  }
+
+  // 4. The new address.
   const { error: emailError } = await admin.auth.admin.updateUserById(identityId, {
     email,
     email_confirm: true,
   });
   if (emailError) {
-    // Put everything back: the holder keeps the identity and the link works
-    // again, so the person can try another address.
-    const { error: relinkError } = await db
-      .from(DATABASE_TABLES.IDENTITY_LINKS)
-      .insert({ identity_user_id: identityId, holder_user_id: row.offered_by });
-    if (relinkError) {
-      logger.error(
-        'Handover failed AND the link could not be restored: this identity has no holder and no address',
-        { identityId, holderId: row.offered_by, relinkError },
+    // An error is not always a refusal: the request can fail after the auth
+    // server applied it. Look before putting the link back on an account that
+    // may already be someone else's.
+    const { data: now } = await admin.auth.admin.getUserById(identityId);
+    if (now?.user?.email?.toLowerCase() !== email) {
+      const taken = /already|exists|registered/i.test(emailError.message ?? '');
+      logger.warn(
+        'Handover refused by the auth server',
+        { code: emailError.code, identityId },
         'Identities'
       );
-      return { ok: false, reason: 'failed' };
+      await relink();
+      return { ok: false, reason: taken ? 'email_taken' : 'failed' };
     }
-    await db.from(DATABASE_TABLES.IDENTITY_HANDOVERS).insert({
-      identity_user_id: identityId,
-      offered_by: row.offered_by,
-      token_hash: hashHandoverToken(token),
-      expires_at: row.expires_at,
-    });
-    const taken = /already|exists|registered/i.test(emailError.message ?? '');
-    logger.warn(
-      'Handover refused by the auth server',
-      { code: emailError.code, identityId },
-      'Identities'
-    );
-    return { ok: false, reason: taken ? 'email_taken' : 'failed' };
-  }
-
-  // 3. End the former holder's sessions in the account. They came from
-  //    switches; none of them is the new owner's.
-  const { error: endError } = (await callRpc(admin, 'end_sessions_of', {
-    p_user_ids: [identityId],
-  })) as { error: { message: string } | null };
-  if (endError) {
-    logger.error(
-      'Handed-over identity: former sessions could not be ended',
-      { error: endError.message, identityId },
-      'Identities'
-    );
   }
 
   await db.from(DATABASE_TABLES.PROFILES).update({ email }).eq('id', identityId);

@@ -21,6 +21,7 @@ import { getAdminClient } from '@/lib/supabase/admin';
 import { createServerClient } from '@/lib/supabase/server';
 import { IDENTITIES_COPY } from '@/config/identities';
 import { acceptHandover } from '@/domain/identities/handover';
+import { revokeAllConnectedApps } from '@/services/auth/connectedApps';
 import { logger } from '@/utils/logger';
 
 export const dynamic = 'force-dynamic';
@@ -43,7 +44,11 @@ export async function POST(request: NextRequest) {
     const token = typeof body.token === 'string' ? body.token : '';
 
     const admin = getAdminClient();
-    const result = await acceptHandover(admin, token, body.email);
+    const result = await acceptHandover(admin, token, body.email, {
+      // The connected apps' tokens and consents the former holder gave as the
+      // identity (Solon, Loki, Heidi): nothing may keep acting as it for them.
+      revokeApps: userId => revokeAllConnectedApps(userId, { forgetConsents: true }),
+    });
     if (!result.ok) {
       switch (result.reason) {
         case 'gone':

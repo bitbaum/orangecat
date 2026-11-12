@@ -48,6 +48,12 @@ export interface Circle {
    * (see circleForCaller). It then stands alone, and holds nothing.
    */
   withheld?: boolean;
+  /**
+   * The asked-about account is an identity that has had a way in of its own
+   * (its email or password changed). Permanent, set by the database
+   * (identity_links.lost_circle_at).
+   */
+  lostCircle?: boolean;
 }
 
 export type IdentityFailure =
@@ -64,7 +70,7 @@ export type IdentityFailure =
 export type IdentityResult<T> =
   { ok: true; data: T } | { ok: false; reason: IdentityFailure; message?: string };
 
-const fail = (reason: IdentityFailure, message?: string): IdentityResult<never> => ({
+export const fail = (reason: IdentityFailure, message?: string): IdentityResult<never> => ({
   ok: false,
   reason,
   message,
@@ -113,6 +119,17 @@ export async function circleForCaller(admin: SupabaseClient, caller: Caller): Pr
     withheld: true,
   };
 
+  // Once an identity has had a way in of its own it never has its circle
+  // again, whatever its address or session looks like now.
+  if (circle.lostCircle) {
+    logger.warn(
+      'Identity has had a way in of its own; circle withheld',
+      { userId: caller.userId },
+      'Identities'
+    );
+    return alone;
+  }
+
   const methods = caller.sessionMethods.filter(m => !NEUTRAL_SESSION_METHODS.has(m));
   const fromSwitch = methods.length > 0 && methods.every(m => SWITCH_SESSION_METHODS.has(m));
   if (!fromSwitch) {
@@ -136,22 +153,35 @@ export async function circleForCaller(admin: SupabaseClient, caller: Caller): Pr
   return circle;
 }
 
-/** The circle `userId` belongs to. A person with no identities is a circle of one. */
+/**
+ * The circle `userId` belongs to. A person with no identities is a circle of one.
+ *
+ * Throws when the links cannot be read. Read as "no identities", a failed read
+ * made account deletion orphan every identity and sign-out-everywhere report
+ * success without reaching them.
+ */
 export async function getCircle(admin: SupabaseClient, userId: string): Promise<Circle> {
   const db = looseClient(admin);
 
-  const { data: asIdentity } = await db
+  const { data: asIdentity, error: asIdentityError } = await db
     .from(DATABASE_TABLES.IDENTITY_LINKS)
-    .select('holder_user_id')
+    .select('holder_user_id, lost_circle_at')
     .eq('identity_user_id', userId)
     .maybeSingle();
+  if (asIdentityError) {
+    throw new Error(`Could not read the identity link of ${userId}: ${asIdentityError.message}`);
+  }
   const holderId = (asIdentity?.holder_user_id as string | undefined) ?? userId;
+  const lostCircle = Boolean(asIdentity?.lost_circle_at);
 
-  const { data: links } = await db
+  const { data: links, error: linksError } = await db
     .from(DATABASE_TABLES.IDENTITY_LINKS)
     .select('identity_user_id, created_at')
     .eq('holder_user_id', holderId)
     .order('created_at', { ascending: true });
+  if (linksError) {
+    throw new Error(`Could not read the identities of ${holderId}: ${linksError.message}`);
+  }
   const identityIds = ((links ?? []) as Array<{ identity_user_id: string }>).map(
     l => l.identity_user_id
   );
@@ -167,6 +197,7 @@ export async function getCircle(admin: SupabaseClient, userId: string): Promise<
 
   return {
     holderId,
+    lostCircle,
     members: ids.map(id => ({
       id,
       username: byId.get(id)?.username ?? null,
@@ -228,7 +259,12 @@ export async function createIdentity(
   const { data: clash } = await db
     .from(DATABASE_TABLES.PROFILES)
     .select('id')
-    .ilike('username', username)
+    // Escaped: '_' is a wildcard to ILIKE and is allowed in a handle, so
+    // 'a_b' would otherwise match 'axb' and refuse a free handle.
+    .ilike(
+      'username',
+      username.replace(/[\\%_]/g, c => `\\${c}`)
+    )
     .limit(1);
   if (((clash ?? []) as unknown[]).length > 0) {
     return fail('username_taken');
@@ -281,88 +317,27 @@ export async function createIdentity(
     return fail((linkError as { code?: string }).code === '23514' ? 'limit_reached' : 'failed');
   }
 
+  // The limit is checked before creating, so two creates at the same moment
+  // could both pass it. Count again now that this one exists, and give way if
+  // it is past the limit in creation order (the database's own, higher
+  // ceiling is the backstop behind this).
+  const { data: held, error: heldError } = await db
+    .from(DATABASE_TABLES.IDENTITY_LINKS)
+    .select('identity_user_id')
+    .eq('holder_user_id', circle.holderId)
+    .order('created_at', { ascending: true })
+    .order('identity_user_id', { ascending: true });
+  const position = ((held ?? []) as Array<{ identity_user_id: string }>).findIndex(
+    l => l.identity_user_id === identityId
+  );
+  if (heldError || position < 0 || position >= MAX_IDENTITIES) {
+    await db.from(DATABASE_TABLES.IDENTITY_LINKS).delete().eq('identity_user_id', identityId);
+    await undo('over the limit after a concurrent create', heldError);
+    return fail(heldError ? 'failed' : 'limit_reached');
+  }
+
   logger.info('Identity created', { identityId }, 'Identities');
   return { ok: true, data: { id: identityId, username, name, avatarUrl: null, isHolder: false } };
-}
-
-/**
- * A one-time sign-in code for `targetId`, if the caller's circle contains it.
- *
- * GoTrue only generates the code here (admin generateLink sends nothing); the
- * route exchanges it on the caller's cookie-bound client, which replaces the
- * session. The same mechanism as sign-in by emailed code
- * (src/services/auth/emailCode.ts), minus the email.
- */
-export async function mintSwitchCode(
-  admin: SupabaseClient,
-  caller: Caller,
-  targetId: string
-): Promise<IdentityResult<{ email: string; code: string }>> {
-  const userId = caller.userId;
-  const circle = await circleForCaller(admin, caller);
-  if (!circle.members.some(m => m.id === targetId)) {
-    // Logged: outside the UI this is someone probing for another account.
-    logger.warn(
-      'Identity switch refused: target not in circle',
-      { userId, targetId },
-      'Identities'
-    );
-    return fail('not_in_circle');
-  }
-
-  const { data: target, error: targetError } = await admin.auth.admin.getUserById(targetId);
-  const email = target?.user?.email;
-  if (targetError || !email) {
-    return fail(targetId === circle.holderId ? 'holder_needs_email' : 'failed');
-  }
-
-  const { data, error } = await admin.auth.admin.generateLink({ type: 'magiclink', email });
-  const code = data?.properties?.email_otp;
-  if (error || !code) {
-    logger.error('Identity switch code refused', { code: error?.code, targetId }, 'Identities');
-    return fail('failed');
-  }
-  return { ok: true, data: { email, code } };
-}
-
-/** What the caller's cookie-bound client must be able to do for a switch. */
-interface SessionClient {
-  auth: {
-    verifyOtp(params: {
-      email: string;
-      token: string;
-      type: 'email';
-    }): Promise<{ error: { code?: string; message?: string } | null }>;
-  };
-}
-
-/**
- * Replace the caller's session with one for `targetId`, if their circle
- * contains it. The one place a switch happens: the API route and the consent
- * screen's "Continue as" both call this, so neither can skip the circle check
- * or exchange a code on its own.
- */
-export async function switchSessionTo(
-  admin: SupabaseClient,
-  session: SessionClient,
-  caller: Caller,
-  targetId: string
-): Promise<IdentityResult<{ id: string }>> {
-  const minted = await mintSwitchCode(admin, caller, targetId);
-  if (!minted.ok) {
-    return minted;
-  }
-  const { error } = await session.auth.verifyOtp({
-    email: minted.data.email,
-    token: minted.data.code,
-    type: 'email',
-  });
-  if (error) {
-    logger.error('Identity switch exchange failed', { code: error.code, targetId }, 'Identities');
-    return fail('failed');
-  }
-  logger.info('Identity switched', { from: caller.userId, to: targetId }, 'Identities');
-  return { ok: true, data: { id: targetId } };
 }
 
 /**

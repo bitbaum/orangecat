@@ -22,7 +22,7 @@ import {
 } from '@/services/auth/oauthProvider';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { sessionMethods } from '@/lib/auth/session-methods';
-import { switchSessionTo } from '@/domain/identities/service';
+import { switchSessionTo } from '@/domain/identities/switching';
 import { logger } from '@/utils/logger';
 
 function withParams(base: string, params: Record<string, string | undefined>): string {
