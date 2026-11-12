@@ -8,6 +8,7 @@
  * whatever zone the server runs in. All of it rests on src/utils/timezone.ts.
  */
 
+import { STATUS } from '@/config/database-constants';
 import {
   formatInZone,
   hasUtcOffset,
@@ -19,6 +20,57 @@ import {
 /** The zone to read an event in: its own, else UTC (the column's default). */
 export function eventZone(event: { timezone?: unknown }): string {
   return isValidTimeZone(event.timezone) ? event.timezone : 'UTC';
+}
+
+interface EventSpan {
+  start_date?: unknown;
+  end_date?: unknown;
+  is_all_day?: unknown;
+  timezone?: unknown;
+}
+
+/** The columns {@link eventHasEnded} reads — for a select that asks only that. */
+export const EVENT_SPAN_COLUMNS = 'status, start_date, end_date, is_all_day, timezone';
+
+const instant = (v: unknown): Date | null => {
+  const d = typeof v === 'string' && v.trim() ? new Date(v) : null;
+  return d && !Number.isNaN(d.getTime()) ? d : null;
+};
+
+/**
+ * The moment an event is over: its end, or its start when it has none. An
+ * all-day event runs to midnight after its last day, on the venue's clock.
+ * The database holds the same rule (public.event_has_ended), so a page never
+ * offers a ticket the ticket functions would refuse.
+ */
+export function eventEndsAt(event: EventSpan): Date | null {
+  const last = instant(event.end_date) ?? instant(event.start_date);
+  if (!last || !event.is_all_day) {
+    return last;
+  }
+  const zone = eventZone(event);
+  const [y = 0, m = 1, d = 1] = formatInZone(
+    last,
+    zone,
+    { year: 'numeric', month: '2-digit', day: '2-digit' },
+    'en-CA'
+  )
+    .split('-')
+    .map(Number);
+  const nextDay = new Date(Date.UTC(y, m - 1, d + 1)).toISOString().slice(0, 10);
+  return instant(wallTimeToUtc(`${nextDay}T00:00`, zone)) ?? last;
+}
+
+/** Over: its organizer marked it completed, or {@link eventEndsAt} has passed. */
+export function eventHasEnded(
+  event: EventSpan & { status?: unknown },
+  now: Date = new Date()
+): boolean {
+  if (event.status === STATUS.EVENTS.COMPLETED) {
+    return true;
+  }
+  const end = eventEndsAt(event);
+  return !!end && end.getTime() < now.getTime();
 }
 
 /** "Saturday, October 10, 2026" */

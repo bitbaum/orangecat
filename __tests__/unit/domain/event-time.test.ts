@@ -1,4 +1,6 @@
 import {
+  eventEndsAt,
+  eventHasEnded,
   eventZone,
   formatEventClockRange,
   formatEventDay,
@@ -58,5 +60,58 @@ describe('reading an event', () => {
     expect(eventZone({ timezone: 'nonsense' })).toBe('UTC');
     expect(zoneLabel('UTC')).toBe('UTC');
     expect(zoneLabel('America/New_York')).toBe('New York time');
+  });
+});
+
+// The same rule as public.event_has_ended (migration 20261112154700): a page
+// must never offer a ticket the ticket functions refuse, nor hide one they take.
+describe('when an event is over', () => {
+  const now = new Date('2026-11-12T12:00:00Z');
+
+  it('is over once its start has passed, when it has no end', () => {
+    // The live case: Sunday, September 13, 2026, still offering a free ticket.
+    expect(eventHasEnded({ status: 'published', start_date: '2026-09-13T21:08:47Z' }, now)).toBe(
+      true
+    );
+    expect(eventHasEnded({ start_date: '2026-11-14T20:00:00Z' }, now)).toBe(false);
+  });
+
+  it('runs to its end when it has one', () => {
+    const tonight = { start_date: '2026-11-12T10:00:00Z', end_date: '2026-11-12T23:00:00Z' };
+    expect(eventHasEnded(tonight, now)).toBe(false);
+    expect(eventHasEnded(tonight, new Date('2026-11-12T23:00:01Z'))).toBe(true);
+    expect(eventEndsAt(tonight)?.toISOString()).toBe('2026-11-12T23:00:00.000Z');
+  });
+
+  it('runs an all-day event to midnight after its last day, on the venue’s clock', () => {
+    // 00:00 in Zurich on the 12th is 23:00 UTC on the 11th.
+    const day = {
+      start_date: '2026-11-11T23:00:00Z',
+      is_all_day: true,
+      timezone: 'Europe/Zurich',
+    };
+    expect(eventEndsAt(day)?.toISOString()).toBe('2026-11-12T23:00:00.000Z');
+    expect(eventHasEnded(day, now)).toBe(false);
+    expect(eventHasEnded({ ...day, is_all_day: false }, now)).toBe(true);
+    expect(
+      eventEndsAt({ ...day, end_date: '2026-11-13T23:00:00Z' })?.toISOString() // through the 14th
+    ).toBe('2026-11-14T23:00:00.000Z');
+  });
+
+  it('reads an all-day event with no usable zone in UTC, as the pages do', () => {
+    expect(
+      eventEndsAt({ start_date: '2026-11-11T23:00:00Z', is_all_day: true, timezone: 'nowhere' })
+    ).toEqual(new Date('2026-11-12T00:00:00Z'));
+  });
+
+  it('is over when its organizer marked it completed, whatever the date', () => {
+    expect(eventHasEnded({ status: 'completed', start_date: '2026-12-01T20:00:00Z' }, now)).toBe(
+      true
+    );
+  });
+
+  it('is not over when it has no date to be over by', () => {
+    expect(eventHasEnded({ status: 'published' }, now)).toBe(false);
+    expect(eventHasEnded({ start_date: 'not a date' }, now)).toBe(false);
   });
 });

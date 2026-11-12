@@ -20,6 +20,7 @@ import { getEntityMetadata } from '@/config/entity-registry';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/utils/logger';
 import { GUEST_NAME_MAX, getSeatsLeft } from '@/domain/events/tickets';
+import { EVENT_SPAN_COLUMNS, eventHasEnded } from '@/domain/events/time';
 import { resolveSellerWallet, getSellerUserId } from './walletResolutionService';
 import { generateInvoice } from './invoiceGenerationService';
 import { resolveIntentExpiry, expiresInSecondsFrom } from './intentExpiry';
@@ -68,14 +69,18 @@ export async function initiateGuestTicketPurchase(
   const meta = getEntityMetadata(entityType);
   const { data: visible } = await publicSupabase
     .from(meta.tableName)
-    .select('id')
+    .select(`id, ${EVENT_SPAN_COLUMNS}`)
     .eq('id', eventId)
     .maybeSingle();
   if (!visible) {
     throw new GuestTicketPurchaseError('Event not found', 404);
   }
 
-  // Capacity holds only here: once money moves, the ticket is always issued.
+  // Capacity and the event's end hold only here: once money moves, the ticket
+  // is always issued.
+  if (eventHasEnded(visible as Record<string, unknown>)) {
+    throw new GuestTicketPurchaseError('This event has ended', 409);
+  }
   if ((await getSeatsLeft(publicSupabase, eventId)) === 0) {
     throw new GuestTicketPurchaseError('This event is sold out', 409);
   }

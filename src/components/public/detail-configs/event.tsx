@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import type { EntityDetailConfig } from '@/components/public/PublicEntityDetailPage';
 import { ROUTES } from '@/config/routes';
-import { eventZone, formatEventDate } from '@/domain/events/time';
+import { eventHasEnded, eventZone, formatEventDate } from '@/domain/events/time';
 import { eventPlaceText } from '@/domain/events/place';
 import { Users, Clock, Repeat, Film, Music, Sparkles } from 'lucide-react';
 import { safeHref } from '@/lib/security/safeHref';
@@ -36,6 +36,10 @@ const ticketOf = (entity: Record<string, unknown>) => {
     : null;
 };
 
+/** A paid ticket can be bought: there is a price, and the event is not over. */
+const onSale = (entity: Record<string, unknown>) =>
+  ticketOf(entity) !== null && !eventHasEnded(entity);
+
 /** SSOT for the event detail page — shared by the public + owner dashboard routes. */
 export const eventDetailConfig: EntityDetailConfig = {
   entityType: 'event',
@@ -49,16 +53,21 @@ export const eventDetailConfig: EntityDetailConfig = {
   metadataSelect: EVENT_METADATA_SELECT,
   getPrice: ticketOf,
   // A free event has nothing to pay: the section only told its guests "Sign
-  // in to buy a ticket" or "hasn't connected a wallet yet".
-  paymentSectionFor: entity => ticketOf(entity) !== null,
+  // in to buy a ticket" or "hasn't connected a wallet yet". An event that is
+  // over sells nothing either.
+  paymentSectionFor: onSale,
   // "Published" is the organizer's word. A visitor needs to hear only what
   // changes their plans.
-  statusBadge: (entity, isOwner) =>
-    isOwner ? (entity.status as string) : (VISITOR_STATUS[entity.status as string] ?? null),
+  statusBadge: (entity, isOwner) => {
+    if (isOwner) {
+      return entity.status as string;
+    }
+    return eventHasEnded(entity) ? 'Ended' : (VISITOR_STATUS[entity.status as string] ?? null);
+  },
   // A free ticket is in the first screen already (renderLead); a paid one is
   // bought in the pay panel, which on a phone sits at the very bottom.
   mobileStickyCTA: entity =>
-    ticketOf(entity) && entity.status !== 'full' ? { href: '#pay', label: 'Buy a ticket' } : null,
+    onSale(entity) && entity.status !== 'full' ? { href: '#pay', label: 'Buy a ticket' } : null,
   renderLead: (entity, isOwner) => (
     <>
       <EventEssentials event={entity} />
