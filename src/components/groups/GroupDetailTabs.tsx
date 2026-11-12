@@ -62,7 +62,7 @@ export function GroupDetailTabs({
             <CardTitle>About</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-fg-primary dark:text-fg-tertiary whitespace-pre-wrap">
+            <p className="text-fg-primary whitespace-pre-wrap">
               {group.description || 'No description provided.'}
             </p>
           </CardContent>

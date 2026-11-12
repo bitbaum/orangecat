@@ -26,7 +26,7 @@ export function FormErrorDisplay({ errors }: FormErrorDisplayProps) {
         </div>
         <div className="flex-1">
           <h4 className="text-sm font-semibold mb-2">Please fix the following errors:</h4>
-          <ul className="text-sm text-status-negative/80 space-y-1 list-disc list-inside">
+          <ul className="text-sm text-status-negative space-y-1 list-disc list-inside">
             {Object.entries(errors).map(([field, error]) => (
               <li key={field}>
                 <span className="font-medium">{field}:</span>{' '}

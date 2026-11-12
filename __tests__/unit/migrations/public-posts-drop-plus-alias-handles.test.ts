@@ -22,7 +22,7 @@ const sql = readFileSync(
 
 const patterns = [...sql.matchAll(/regexp_replace\(\s*\w+,\s*'([^']+)'/g)].map(m => m[1]);
 const redact = (text: string, pattern: string) =>
-  text.replace(new RegExp(pattern.replace(/\\s/g, '\\s'), 'g'), 'an old test account');
+  text.replace(new RegExp(pattern, 'g'), 'an old test account');
 
 describe('public posts drop plus-alias handles', () => {
   it('rewrites description and title, and only rows that carry an alias', () => {

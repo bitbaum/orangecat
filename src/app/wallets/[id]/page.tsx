@@ -103,7 +103,7 @@ export default async function WalletPage({ params }: PageProps) {
   const ledger = await readPublicLedger(wallet.id);
 
   return (
-    <main className="mx-auto max-w-2xl px-4 sm:px-6 py-10">
+    <div className="mx-auto max-w-2xl px-4 sm:px-6 py-10">
       {owner?.username && (
         <Link
           href={ROUTES.PROFILES.VIEW(owner.username)}
@@ -148,6 +148,6 @@ export default async function WalletPage({ params }: PageProps) {
       <p className="text-xs text-fg-tertiary mt-6 text-center">
         Payments go straight to this person’s own wallet. OrangeCat never holds funds.
       </p>
-    </main>
+    </div>
   );
 }

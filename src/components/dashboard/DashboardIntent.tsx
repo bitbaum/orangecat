@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ChatInput } from '@/components/ai-chat/ModernChatPanel/components/ChatInput';
 import { CAT_DOOR, CAT_QUERY_PARAM } from '@/config/cat-door';
 import { ROUTES } from '@/config/routes';
+import { DoorExamples } from './DoorExamples';
 
 /**
  * The one "What do you want to do?" entry for signed-in pages (dashboard, My
@@ -45,20 +46,7 @@ export function DashboardIntent({ examples }: { examples?: readonly string[] } =
         sendLabel={CAT_DOOR.submit}
         sendBlockedReason={blockedReason}
       />
-      {examples && examples.length > 0 && (
-        <ul className="flex flex-wrap gap-2" aria-label="Examples">
-          {examples.map(example => (
-            <li key={example}>
-              <a
-                href={`${ROUTES.DASHBOARD.CAT}?${CAT_QUERY_PARAM}=${encodeURIComponent(example)}`}
-                className="inline-block rounded-full border border-default px-3 py-1.5 text-xs text-fg-secondary hover:border-interactive hover:text-fg-primary"
-              >
-                {example}
-              </a>
-            </li>
-          ))}
-        </ul>
-      )}
+      <DoorExamples examples={examples} />
       {tooLong && (
         <p role="alert" className="text-sm text-status-negative">
           {blockedReason}

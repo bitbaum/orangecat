@@ -87,7 +87,7 @@ export default function CategoriesPage() {
               Already have an account?{' '}
               <Link
                 href={ROUTES.AUTH_LOGIN}
-                className="text-fg-primary hover:text-fg-primary underline-offset-4 hover:underline"
+                className="text-fg-primary underline underline-offset-4"
               >
                 Sign in
               </Link>

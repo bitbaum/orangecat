@@ -60,7 +60,7 @@ export function AIFillPanel({
 
       {examples.length > 0 && !description && (
         <div className="space-y-2">
-          <p className="text-xs text-fg-tertiary">Or start from an example:</p>
+          <p className="text-xs text-fg-secondary">Or start from an example:</p>
           <div className="flex flex-wrap gap-2">
             {examples.slice(0, 2).map(example => (
               <AIAssistChip

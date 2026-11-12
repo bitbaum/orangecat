@@ -116,7 +116,7 @@ export default function AuthPageClient({
               here — never touch-target sizes — clears it without a layout
               rewrite. */}
           <div className="text-center mb-8 max-[359px]:mb-4">
-            <h2 className="text-2xl font-semibold mb-2 text-fg-primary">
+            <h1 className="text-2xl font-semibold mb-2 text-fg-primary">
               {mode === 'forgot'
                 ? 'Reset password'
                 : clientName
@@ -126,7 +126,7 @@ export default function AuthPageClient({
                   : mode === 'login'
                     ? 'Welcome back'
                     : 'Get started'}
-            </h2>
+            </h1>
             <p className="text-fg-secondary">
               {mode === 'forgot'
                 ? 'Enter your email to receive reset instructions'
@@ -150,7 +150,7 @@ export default function AuthPageClient({
                       size="sm"
                       onClick={handleRetry}
                       disabled={loading}
-                      className="text-status-negative/80 border-status-negative-subtle hover:bg-status-negative/10"
+                      className="text-status-negative border-status-negative-subtle hover:bg-status-negative/10"
                     >
                       <RefreshCw className="w-4 h-4 mr-2" />
                       Try Again

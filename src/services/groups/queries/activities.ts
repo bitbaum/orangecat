@@ -16,6 +16,7 @@ import type { GroupActivitiesResponse, GroupActivitiesQuery } from '../types';
 import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from '../constants';
 import { checkGroupPermission } from '../permissions';
 import { getCurrentUserId } from '../utils/helpers';
+import { groupContentIsOpen } from '../utils/visibility';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { fromTable } from '../db-helpers';
 
@@ -39,14 +40,13 @@ export async function getGroupActivities(
         return { success: false, error: 'Cannot view group activities' };
       }
     } else {
-      // Check if group is public
-
+      // Signed out: only a group whose content is open shows its activity.
       const { data: group } = await fromTable(sb, DATABASE_TABLES.GROUPS)
-        .select('is_public')
+        .select('is_public, visibility')
         .eq('id', groupId)
         .single();
 
-      if (!group?.is_public) {
+      if (!group || !groupContentIsOpen(group)) {
         return { success: false, error: 'Cannot view group activities' };
       }
     }
