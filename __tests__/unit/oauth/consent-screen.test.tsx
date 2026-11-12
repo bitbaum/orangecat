@@ -13,9 +13,11 @@ vi.mock('@/app/oauth/authorize/actions', () => ({
   approveAuthorization: vi.fn(),
   denyAuthorization: vi.fn(),
   switchAccount: vi.fn(),
+  continueAsIdentity: vi.fn(),
 }));
 
 import { ConsentForm } from '@/app/oauth/authorize/ConsentForm';
+import { continueAsIdentity } from '@/app/oauth/authorize/actions';
 import { OAUTH_SCOPES } from '@/lib/oauth/config';
 import { ROUTES } from '@/config/routes';
 
@@ -123,5 +125,46 @@ describe('consent screen', () => {
     for (const s of OAUTH_SCOPES.filter(x => /\.(write|act)$/.test(x.name))) {
       expect(sensitive).toContain(s.name);
     }
+  });
+});
+
+describe('consent screen: which identity signs in (ADR-0014)', () => {
+  const others = [
+    { id: 'id-main', name: 'George', username: 'cato', isMain: true },
+    { id: 'id-reis', name: 'Ricardo Reis', username: 'reis', isMain: false },
+  ];
+
+  it('offers no choice to a person with one identity', () => {
+    const h = html();
+    expect(text(h)).not.toContain('Or continue as');
+    expect(h).not.toContain('>Switch<');
+  });
+
+  it('lists the other identities, each a button bound to its id', () => {
+    // The id is bound to the action. React replaces the name and value of a
+    // button that carries a server action, so a field on the button would
+    // never reach the server: the first version of this screen did that.
+    const bind = vi.spyOn(continueAsIdentity, 'bind');
+    const h = html({ otherIdentities: others });
+    const t = text(h);
+    expect(t).toContain('Or continue as');
+    expect(t).toContain('George');
+    expect(t).toContain('Main account · @cato');
+    expect(t).toContain('Ricardo Reis');
+    expect(h.match(/>Switch</g)).toHaveLength(2);
+    expect(bind).toHaveBeenCalledWith(null, 'id-main');
+    expect(bind).toHaveBeenCalledWith(null, 'id-reis');
+  });
+
+  it('puts the choice above the question, so it is made before Allow', () => {
+    const h = html({ otherIdentities: others });
+    expect(h.indexOf('Or continue as')).toBeLessThan(h.indexOf('Allow <span'));
+  });
+
+  it('shows no address for an account that has none to show', () => {
+    const t = text(html({ account: { name: 'Ricardo Reis', username: 'reis', email: null } }));
+    expect(t).toContain('Signed in as Ricardo Reis');
+    expect(t).toContain('@reis');
+    expect(t).not.toContain('.invalid');
   });
 });

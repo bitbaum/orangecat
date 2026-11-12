@@ -25,8 +25,7 @@ import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { sessionMethods } from '@/lib/auth/session-methods';
 import { IDENTITIES_COPY } from '@/config/identities';
-import { mintSwitchCode } from '@/domain/identities/service';
-import { logger } from '@/utils/logger';
+import { switchSessionTo } from '@/domain/identities/service';
 
 export const dynamic = 'force-dynamic';
 
@@ -52,34 +51,24 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
       return apiSuccess({ switched: false });
     }
 
-    const minted = await mintSwitchCode(
+    const result = await switchSessionTo(
       getAdminClient(),
+      req.supabase,
       { userId: req.user.id, sessionMethods: await sessionMethods(req.supabase) },
       targetId
     );
-    if (!minted.ok) {
+    if (!result.ok) {
       // One answer for "not yours" and "does not exist": this must not become
       // a way to ask whether an account id is real.
-      if (minted.reason === 'not_in_circle') {
+      if (result.reason === 'not_in_circle') {
         return apiNotFound('Identity');
       }
-      if (minted.reason === 'holder_needs_email') {
+      if (result.reason === 'holder_needs_email') {
         return apiForbidden(IDENTITIES_COPY.needsEmail);
       }
       return apiInternalError(IDENTITIES_COPY.switchFailed);
     }
 
-    const { error } = await req.supabase.auth.verifyOtp({
-      email: minted.data.email,
-      token: minted.data.code,
-      type: 'email',
-    });
-    if (error) {
-      logger.error('Identity switch exchange failed', { code: error.code, targetId }, 'Identities');
-      return apiInternalError(IDENTITIES_COPY.switchFailed);
-    }
-
-    logger.info('Identity switched', { from: req.user.id, to: targetId }, 'Identities');
     return apiSuccess({ switched: true });
   } catch (error) {
     return handleApiError(error);
