@@ -242,6 +242,10 @@
     --surface-public: 0 0% 4%;
     /* Border tier */
     --border-default: 0 0% 82%;
+    /* The account menu (@bitbaum/accountkit) draws its dividers in
+       --border-subtle by default. Here that is the same shade as the overlay
+       the menu sits on, so in light mode the groups ran together. */
+    --acct-line: hsl(var(--border-default));
     --border-interactive: 0 0% 30%;
     /* Accent — single warm color for download-tier CTAs; rest is monochrome */
     --accent-primary: var(--public-accent);

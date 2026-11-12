@@ -105,8 +105,10 @@ signs in whichever identity is current.
   refuse a second seat for the same person without learning who anyone is or
   linking them across organizations. Goes where admission by MEMBERSHIP vote is
   built; that path does not exist in Solon yet.
-- **D8. One unread count across the circle.** The switcher itself shipped:
-  the user menu lists the other members and one tap switches.
+- **D8. One unread count across the circle.** The switcher itself shipped,
+  and lives in the fleet's shared menu: `AccountMenu` in `@bitbaum/accountkit`
+  (0.28.0) lists a person's other accounts and switches on a tap. OrangeCat's
+  header mounts it through `src/components/layout/AccountMenuControl.tsx`.
 - **D9. Handing an identity over.** Giving it its own address and removing the
   link turns it into an ordinary account: ADR-0004's handing over the keys.
 - **D10. Moderation.** A platform admin can resolve a circle; a ban reaches

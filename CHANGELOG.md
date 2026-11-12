@@ -11,6 +11,7 @@ to the map, sub-bullets stay here for the human reader.
 
 ## 2026-11-12
 
+- **The menu under your picture is the same one every bitbaum product has.** It lists your other identities first, then Dashboard, My projects, Your page and Edit profile, then Appearance and Sign out. Arrow keys move through every row, Escape closes it, and if signing out or switching fails the menu stays open and says so. It replaces OrangeCat's own menu, which is gone.
 - **Choose which identity signs in to an app.** When Loki, Solon or another app sends you to OrangeCat to sign in, the screen that asks "Allow …?" now lists your other identities under "Or continue as". Tap one and the same screen comes back as that identity; nothing is shared with the app until you press Allow. An identity no longer shows a made-up email address there.
 
 ## 2026-11-11
