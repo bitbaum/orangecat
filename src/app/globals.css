@@ -240,6 +240,11 @@
     --surface-drawer: 0 0% 98%;
     /* Marketing band — always near-black so CTAs read regardless of app theme */
     --surface-public: 0 0% 4%;
+    /* The ink for text ON --surface-public. Declared identically in BOTH
+       theme blocks, like --on-accent: the band never flips, so its ink must
+       not either. The bands used --text-inverted, which flips to 10% in dark
+       — 10% text on this 4% band is 1.14:1, nothing to read. */
+    --on-public: 0 0% 98%;
     /* Border tier */
     --border-default: 0 0% 82%;
     --border-interactive: 0 0% 30%;
@@ -336,6 +341,7 @@
     --surface-modal: 0 0% 11%;
     --surface-drawer: 0 0% 9%;
     --surface-public: 0 0% 4%;
+    --on-public: 0 0% 98%;
     --border-default: 0 0% 20%;
     --border-interactive: 0 0% 60%;
     --accent-primary: var(--public-accent);

@@ -202,6 +202,10 @@ const config: Config = {
         // background it belongs to so nobody has to remember which ink an
         // orange button takes.
         'on-accent': 'hsl(var(--on-accent))',
+        // The ink for text ON surface-public, the always-dark marketing band.
+        // `text-fg-inverted` flips with the theme and is near-black in dark —
+        // invisible on a band that stays near-black in both.
+        'on-public': 'hsl(var(--on-public))',
         status: {
           positive: 'hsl(var(--status-positive))',
           'positive-subtle': 'hsl(var(--status-positive-subtle))',

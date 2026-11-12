@@ -162,12 +162,12 @@ export default function SecurityPage() {
         </div>
 
         {/* Contact Section — public-surface band per Loki pattern */}
-        <div className="mt-12 bg-surface-public text-fg-inverted rounded-lg p-6">
+        <div className="mt-12 bg-surface-public text-on-public rounded-lg p-6">
           <div className="text-center">
             <h3 className="font-heading tracking-display text-2xl font-bold mb-4">
               Security Concerns?
             </h3>
-            <p className="mb-6 text-fg-inverted/70">
+            <p className="mb-6 text-on-public/70">
               If you have security concerns or believe you&apos;ve discovered a vulnerability,
               please contact us immediately.
             </p>
@@ -183,7 +183,7 @@ export default function SecurityPage() {
                 <Button
                   variant="outline"
                   size="lg"
-                  className="border-fg-inverted/40 text-fg-inverted hover:bg-fg-inverted/10"
+                  className="border-on-public/40 text-on-public hover:bg-on-public/10"
                 >
                   View Documentation
                 </Button>
