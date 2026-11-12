@@ -2,8 +2,9 @@
  * A bot that writes first: the routine itself, and its rules.
  *
  * A routine is one line in a bot's details: every day at a time, in the
- * person's zone, the bot is asked one thing in its own thread and the reply
- * lands there like any other message, with a notification. One routine per
+ * person's zone, or every few hours through the day, the bot is asked one
+ * thing in its own thread and the reply lands there like any other message,
+ * with a notification. One routine per
  * bot per person. This module reads and writes the row and knows when the
  * next run is; it reaches no model, so the API that sets a routine never
  * does either. The runner (routines.ts) is the one place a turn is sent.
@@ -23,6 +24,13 @@ import { instantToWallTime, isValidTimeZone, wallTimeToUtc } from '@/utils/timez
 
 export const ROUTINE_PROMPT_MAX = 500;
 
+/** How often a routine may repeat through the day, in hours. */
+export const ROUTINE_INTERVALS = [1, 2, 4, 8, 12] as const;
+
+export function isRoutineInterval(value: unknown): value is number {
+  return typeof value === 'number' && (ROUTINE_INTERVALS as readonly number[]).includes(value);
+}
+
 export interface Routine {
   id: string;
   assistantId: string;
@@ -30,13 +38,20 @@ export interface Routine {
   prompt: string;
   timeLocal: string;
   zone: string;
+  /** Runs again this many hours after each run; null = once a day at timeLocal. */
+  everyHours: number | null;
   enabled: boolean;
   nextRunAt: string;
   lastRunAt: string | null;
   skippedReason: string | null;
 }
 
-export type RoutineInput = { prompt: string; timeLocal: string; zone: string };
+export type RoutineInput = {
+  prompt: string;
+  timeLocal: string;
+  zone: string;
+  everyHours?: number | null;
+};
 
 /** "HH:MM", 24 hours. */
 export function isTimeLocal(value: unknown): value is string {
@@ -62,6 +77,20 @@ export function nextRunAt(now: Date, timeLocal: string, zone: string): string {
   return new Date(now.getTime() + 86_400_000).toISOString();
 }
 
+/**
+ * When a routine runs next: that many hours from now when it repeats through
+ * the day, otherwise the next time its hour of day comes round.
+ */
+export function nextRoutineRun(
+  now: Date,
+  routine: { timeLocal: string; zone: string; everyHours: number | null | undefined }
+): string {
+  if (isRoutineInterval(routine.everyHours)) {
+    return new Date(now.getTime() + routine.everyHours * 3_600_000).toISOString();
+  }
+  return nextRunAt(now, routine.timeLocal, routine.zone);
+}
+
 export interface RoutineRow {
   id: string;
   user_id: string;
@@ -70,6 +99,7 @@ export interface RoutineRow {
   prompt: string;
   time_local: string;
   zone: string;
+  every_hours?: number | null;
   enabled: boolean;
   next_run_at: string;
   last_run_at: string | null;
@@ -84,6 +114,7 @@ export function toRoutine(r: RoutineRow): Routine {
     prompt: r.prompt,
     timeLocal: r.time_local,
     zone: r.zone,
+    everyHours: isRoutineInterval(r.every_hours) ? r.every_hours : null,
     enabled: r.enabled,
     nextRunAt: r.next_run_at,
     lastRunAt: r.last_run_at,
@@ -115,6 +146,7 @@ export async function upsertRoutine(
   if (!isTimeLocal(input.timeLocal) || !isValidTimeZone(input.zone)) {
     throw new Error('A routine needs a time of day and a zone');
   }
+  const everyHours = isRoutineInterval(input.everyHours) ? input.everyHours : null;
   const { data, error } = await fromTable(supabase, DATABASE_TABLES.COMPANION_ROUTINES)
     .upsert(
       {
@@ -123,8 +155,13 @@ export async function upsertRoutine(
         prompt: input.prompt.trim().slice(0, ROUTINE_PROMPT_MAX),
         time_local: input.timeLocal,
         zone: input.zone,
+        every_hours: everyHours,
         enabled: true,
-        next_run_at: nextRunAt(now, input.timeLocal, input.zone),
+        next_run_at: nextRoutineRun(now, {
+          timeLocal: input.timeLocal,
+          zone: input.zone,
+          everyHours,
+        }),
         skipped_reason: null,
         updated_at: now.toISOString(),
       },
@@ -163,7 +200,9 @@ export function skipReason(hasOwnKey: boolean): string | null {
  * news and decides when). The owner, 2026-11-02: Telegram is "the way for any
  * bot of mine to contact me", and a message there is read and answered with
  * one tap. So: the bot's name, the first lines of what it wrote, one button
- * that opens its chat, silent ("today"), and one message per routine per day.
+ * that opens its chat, silent ("today"), and one message per routine per day
+ * (per run for a routine that repeats through the day: `day` then carries
+ * the hour).
  */
 export function routineNotice(input: {
   routineId: string;
