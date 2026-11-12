@@ -57,5 +57,11 @@ export type SendMessageError =
       requiredAmount: number;
       shortfall: number;
     }
-  | { code: 'AI_ERROR'; message: string }
+  | {
+      code: 'AI_ERROR';
+      message: string;
+      /** The shared pool could not answer (not the person's own key): their
+       *  own key is the way out, and the chat offers it. */
+      sharedPool?: boolean;
+    }
   | { code: 'DB_ERROR'; message: string };

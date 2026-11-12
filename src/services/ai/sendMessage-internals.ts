@@ -17,6 +17,11 @@ import { createOpenRouterServiceWithByok, type OpenRouterMessage } from './openr
 import { DEFAULT_FREE_MODEL_ID, getModelMetadata } from '@/config/ai-models';
 import { createAutoRouter } from '@/services/ai/auto-router';
 import { completeOnPlatform, PlatformChainExhausted } from '@/services/ai/platform-providers';
+import {
+  BOT_TURN_LOG_SOURCE,
+  SHARED_POOL_DOWN_MESSAGE,
+  chainFailureSummary,
+} from '@/services/ai/chain-failure-summary';
 import type { AiService } from './types';
 import type { AssistantRecord, SendMessageError } from './sendMessage-types';
 import type { Proposal } from '@/services/companions/hands';
@@ -274,14 +279,22 @@ export async function generateReply(params: {
       return { error: { code: 'SERVICE_UNAVAILABLE' } };
     }
     logger.error('AI API error (platform chain exhausted)', aiError, 'AIMessagesService');
+    // Which link failed how, as provider and HTTP status only: what
+    // scripts/diagnose-cat-logs.mjs may print in a public run log. On
+    // 2026-11-12 every bot send failed for hours and that summary read
+    // "0 failures", because it counted the Cat's turns and nothing else.
+    if (aiError instanceof PlatformChainExhausted) {
+      logger.warn(
+        'bot turn: no link of the shared pool answered',
+        { links: chainFailureSummary(aiError.failures) },
+        BOT_TURN_LOG_SOURCE
+      );
+    }
     const rationed = aiError instanceof PlatformChainExhausted && aiError.allRateLimited;
     return {
       error: rationed
         ? { code: 'RATE_LIMITED', message: RATE_LIMITED_MESSAGE }
-        : {
-            code: 'AI_ERROR',
-            message: 'The AI service could not answer just now. Try again shortly.',
-          },
+        : { code: 'AI_ERROR', message: SHARED_POOL_DOWN_MESSAGE, sharedPool: true },
     };
   }
 }
