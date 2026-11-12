@@ -47,6 +47,8 @@ export const IDENTITIES_COPY = {
   switchLabel: 'Switch identity',
   waiting: (count: number) => `${count > 99 ? '99+' : count} unread`,
   continueAs: 'Or continue as',
+  consentSwitchFailed:
+    'That switch did not happen. You are still signed in as the account named above; choose again or allow as it.',
   noEmailToShare: 'Ask for your email address (this identity has none, so none is shared)',
   current: 'Signed in',
   main: 'Main account',
@@ -63,6 +65,26 @@ export const IDENTITIES_COPY = {
   switchFailed: 'Could not switch. Try again.',
   removeFailed: 'Could not delete the identity. Try again.',
   removeCurrent: 'Switch to another identity before deleting this one.',
+  loadFailed: 'Could not load your identities.',
+  identityAccountTitle: 'How you sign in to this identity',
+  identityAccountBody:
+    'This identity has no email address or password of its own. You reach it from your main account, ' +
+    'through the menu under your picture. That is also what keeps it private: nothing else leads to it.',
+  identityAccountHandOver:
+    'To give this identity to someone else, hand it over from your main account (Settings, Your identities). ' +
+    'They choose their own address when they accept.',
+  deleteHolderWithIdentities: (handles: string[]) =>
+    `This also deletes your ${handles.length === 1 ? 'identity' : `${handles.length} identities`} ` +
+    `(${handles.join(', ')}) and everything they own.`,
+  deleteIdentityOnly: (handle: string) =>
+    `This deletes ${handle} and everything it owns. Your main account and your other identities stay. This cannot be undone.`,
+  retry: 'Try again',
+  standsAlone:
+    'This identity has a way in of its own (an address or password), so it stands alone: ' +
+    'it cannot switch to or manage your other identities. Sign in to your main account to do that.',
+  handOverNotNow: 'Not now',
+  handOverNewLink: 'Make a new link',
+  handOverNewLinkNote: 'A new link replaces the open one, which stops working.',
   handOver: 'Hand over',
   handOverIntro:
     'Create a link and send it to the person who should have this identity. ' +
@@ -87,8 +109,13 @@ export const IDENTITIES_COPY = {
     'You are signed in to another account in this browser. Accepting signs you in to this one here instead.',
   acceptGoneTitle: 'This link no longer works',
   acceptGone: 'It was used, withdrawn or has expired. Ask the person who sent it for a new one.',
+  acceptDoneTitle: 'It is yours',
+  acceptDoneSignIn: (email: string) =>
+    `This identity is now an account of its own on ${email}. Sign in with that address to open it.`,
+  acceptDoneSignInButton: 'Sign in',
   acceptEmailTaken:
-    'That address already has an OrangeCat account. Use another address, or sign in to that account instead.',
+    'That address already has an OrangeCat account. A handed-over identity becomes an account of its own, ' +
+    'so use an address that has none yet.',
   acceptInvalidEmail: 'Enter a valid email address.',
   acceptFailed: 'Could not complete the hand-over. Nothing has changed. Try again.',
 } as const;

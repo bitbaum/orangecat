@@ -24,6 +24,8 @@ export function AcceptHandoverForm({
   const [email, setEmail] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** Accepted, but this browser could not be signed in to it: the address to use. */
+  const [doneAs, setDoneAs] = useState<string | null>(null);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -41,14 +43,36 @@ export function AcceptHandoverForm({
         return;
       }
       const body = (await res.json()) as { data?: { signedIn?: boolean } };
-      // Signed in: straight to the account. Otherwise it is theirs but this
-      // browser is not in it yet, so the sign-in page is the way forward.
-      window.location.assign(body.data?.signedIn ? ROUTES.DASHBOARD.HOME : ROUTES.AUTH);
+      if (body.data?.signedIn) {
+        window.location.assign(ROUTES.DASHBOARD.HOME);
+        return;
+      }
+      // It is theirs, but this browser is not in it (it may still be in
+      // another account). Say so here; sending them anywhere would land them
+      // in whatever account the browser already had, with no word it worked.
+      setDoneAs(email.trim());
+      setBusy(false);
     } catch {
       setError(IDENTITIES_COPY.acceptFailed);
       setBusy(false);
     }
   };
+
+  if (doneAs) {
+    return (
+      <div className="mt-6 space-y-4" role="status">
+        <h2 className="text-lg font-semibold text-fg-primary">{IDENTITIES_COPY.acceptDoneTitle}</h2>
+        <p className="mb-0 text-fg-secondary">{IDENTITIES_COPY.acceptDoneSignIn(doneAs)}</p>
+        <Button
+          type="button"
+          className="min-h-11 w-full"
+          onClick={() => window.location.assign(ROUTES.AUTH)}
+        >
+          {IDENTITIES_COPY.acceptDoneSignInButton}
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={submit} className="mt-6 space-y-4">

@@ -165,6 +165,7 @@ export async function continueAsIdentity(targetId: string, formData: FormData): 
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  let switched = false;
   if (user && targetId) {
     const result = await switchSessionTo(
       getAdminClient(),
@@ -172,13 +173,14 @@ export async function continueAsIdentity(targetId: string, formData: FormData): 
       { userId: user.id, sessionMethods: await sessionMethods(supabase) },
       targetId
     );
+    switched = result.ok;
     if (!result.ok) {
       logger.warn('continueAsIdentity refused', { reason: result.reason }, 'OAuth');
     }
   }
-  // Back to the same screen either way: it shows who is signed in now, so a
-  // switch that did not happen is visible there rather than hidden here.
-  redirect(path);
+  // Back to the same screen either way. When the switch did not happen it says
+  // so there; the reload alone looked like nothing had been pressed.
+  redirect(switched ? path : `${path}&identity_switch=failed`);
 }
 
 /**

@@ -19,6 +19,7 @@ import { logger } from '@/utils/logger';
 import {
   fetchIdentityCircle,
   readIdentityError,
+  notifyIdentitiesChanged,
   switchToIdentity,
   type IdentityMember,
 } from '@/lib/identities/client';
@@ -29,6 +30,8 @@ type Member = IdentityMember;
 export function SettingsIdentitiesSection() {
   const [members, setMembers] = useState<Member[] | null>(null);
   const [max, setMax] = useState(0);
+  const [canManage, setCanManage] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
@@ -38,15 +41,24 @@ export function SettingsIdentitiesSection() {
   const [formError, setFormError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
+    setLoadFailed(false);
     try {
       const circle = await fetchIdentityCircle();
       setMembers(circle.members);
       setMax(circle.max);
+      setCanManage(circle.canManage);
     } catch (err) {
+      // Not "no identities": the list is unknown, so nothing is offered on it.
       logger.error('Could not load identities', err, 'Settings');
-      setMembers([]);
+      setLoadFailed(true);
     }
   }, []);
+
+  /** Read the circle again here, and tell the menu (and any other tab view). */
+  const changed = useCallback(async () => {
+    await load();
+    notifyIdentitiesChanged();
+  }, [load]);
 
   useEffect(() => {
     void load();
@@ -70,7 +82,7 @@ export function SettingsIdentitiesSection() {
         }
         setConfirmId(null);
         toast.success('Identity deleted');
-        await load();
+        await changed();
       } catch (err) {
         logger.error('Identity delete failed', err, 'Settings');
         toast.error(IDENTITIES_COPY.removeFailed);
@@ -78,7 +90,7 @@ export function SettingsIdentitiesSection() {
         setBusyId(null);
       }
     },
-    [load]
+    [changed]
   );
 
   const handleCreate = useCallback(
@@ -100,7 +112,7 @@ export function SettingsIdentitiesSection() {
         setUsername('');
         setAdding(false);
         toast.success('Identity created');
-        await load();
+        await changed();
       } catch (err) {
         logger.error('Identity create failed', err, 'Settings');
         setFormError(IDENTITIES_COPY.createFailed);
@@ -108,7 +120,7 @@ export function SettingsIdentitiesSection() {
         setCreating(false);
       }
     },
-    [name, username, load]
+    [name, username, changed]
   );
 
   const identityCount = (members ?? []).filter(m => !m.isHolder).length;
@@ -122,7 +134,20 @@ export function SettingsIdentitiesSection() {
       </h3>
       <p className="mb-6 text-fg-secondary">{IDENTITIES_COPY.intro}</p>
 
-      {members === null ? (
+      {loadFailed ? (
+        <div className="flex flex-wrap items-center gap-3" role="alert">
+          <p className="mb-0 text-sm text-fg-primary">{IDENTITIES_COPY.loadFailed}</p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="min-h-11"
+            onClick={() => void load()}
+          >
+            {IDENTITIES_COPY.retry}
+          </Button>
+        </div>
+      ) : members === null ? (
         <Loader2 className="h-5 w-5 animate-spin text-fg-secondary" aria-label="Loading" />
       ) : (
         <ul className="divide-y divide-border-subtle rounded-md border border-default">
@@ -135,17 +160,21 @@ export function SettingsIdentitiesSection() {
               onSwitch={handleSwitch}
               onDelete={handleDelete}
               onConfirm={setConfirmId}
-              onChanged={load}
+              onChanged={changed}
             />
           ))}
         </ul>
       )}
 
-      {members !== null && atLimit && (
+      {members !== null && !loadFailed && !canManage && (
+        <p className="mt-4 text-sm text-fg-secondary">{IDENTITIES_COPY.standsAlone}</p>
+      )}
+
+      {members !== null && !loadFailed && canManage && atLimit && (
         <p className="mt-4 text-sm text-fg-secondary">{IDENTITIES_COPY.limitReached}</p>
       )}
 
-      {members !== null && !atLimit && !adding && (
+      {members !== null && !loadFailed && canManage && !atLimit && !adding && (
         <Button type="button" variant="outline" className="mt-4" onClick={() => setAdding(true)}>
           <Plus className="mr-2 h-4 w-4" />
           {IDENTITIES_COPY.add}

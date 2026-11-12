@@ -168,3 +168,15 @@ describe('consent screen: which identity signs in (ADR-0014)', () => {
     expect(t).not.toContain('.invalid');
   });
 });
+
+describe('consent screen: a "Continue as" that did not happen', () => {
+  it('says so, above the question', () => {
+    const h = html({ identitySwitchFailed: true });
+    expect(text(h)).toContain('That switch did not happen');
+    expect(h.indexOf('That switch did not happen')).toBeLessThan(h.indexOf('Allow <span'));
+  });
+
+  it('says nothing when nothing failed', () => {
+    expect(text(html())).not.toContain('That switch did not happen');
+  });
+});

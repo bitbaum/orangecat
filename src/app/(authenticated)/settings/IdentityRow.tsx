@@ -145,6 +145,7 @@ export function IdentityRow({
           identityId={member.id}
           open={Boolean(member.handoverOpen)}
           onChanged={onChanged}
+          onClose={() => setHanding(false)}
         />
       )}
     </li>

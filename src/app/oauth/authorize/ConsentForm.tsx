@@ -48,6 +48,7 @@ export function ConsentForm({
   redirectHost,
   account,
   otherIdentities = [],
+  identitySwitchFailed = false,
   policyUri,
   tosUri,
   resourceName,
@@ -63,6 +64,8 @@ export function ConsentForm({
   account: ConsentAccount;
   /** The person's other identities; choosing one reloads this screen as it. */
   otherIdentities?: ConsentIdentity[];
+  /** "Continue as" was pressed and the switch did not happen. */
+  identitySwitchFailed?: boolean;
   /** The app's own privacy policy / terms (https, from oauth_clients). */
   policyUri: string | null;
   tosUri: string | null;
@@ -101,6 +104,15 @@ export function ConsentForm({
           Not you?
         </button>
       </div>
+
+      {identitySwitchFailed && (
+        <p
+          role="alert"
+          className="mb-5 rounded-card border border-border-default bg-surface-raised px-3 py-2 text-sm text-fg-primary"
+        >
+          {IDENTITIES_COPY.consentSwitchFailed}
+        </p>
+      )}
 
       {otherIdentities.length > 0 && (
         <section className="mb-5 border-b border-border-default pb-4">

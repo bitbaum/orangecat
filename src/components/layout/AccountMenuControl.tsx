@@ -128,6 +128,7 @@ export default function AccountMenuControl() {
       renderLink={props => <Link {...props} />}
       labels={{
         switchAccount: IDENTITIES_COPY.switchLabel,
+        switchFailed: IDENTITIES_COPY.switchFailed,
         waiting: '{count} unread',
         waitingElsewhere: 'something is unread in another identity',
       }}

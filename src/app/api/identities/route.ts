@@ -48,6 +48,7 @@ export const GET = withAuth(async (req: AuthenticatedRequest) => {
         waiting: waiting[m.id],
       })),
       max: MAX_IDENTITIES,
+      canManage: !circle.withheld,
     });
   } catch (error) {
     return handleApiError(error);

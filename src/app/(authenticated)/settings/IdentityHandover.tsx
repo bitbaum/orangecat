@@ -19,12 +19,15 @@ export function IdentityHandover({
   identityId,
   open,
   onChanged,
+  onClose,
 }: {
   identityId: string;
   /** A link is already open for this identity. */
   open: boolean;
   /** The circle should be read again: an offer was made or withdrawn. */
   onChanged: () => void;
+  /** Close the panel. Offered only while nothing is open: an open link stays visible. */
+  onClose: () => void;
 }) {
   const [link, setLink] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -58,6 +61,7 @@ export function IdentityHandover({
       }
       setLink(null);
       onChanged();
+      onClose();
     } catch {
       toast.error(IDENTITIES_COPY.handOverCancelFailed);
     } finally {
@@ -95,13 +99,21 @@ export function IdentityHandover({
         </>
       ) : (
         <p className="mb-0 text-sm text-fg-secondary">
-          {open ? IDENTITIES_COPY.handOverOpen : IDENTITIES_COPY.handOverIntro}
+          {open
+            ? `${IDENTITIES_COPY.handOverOpen} ${IDENTITIES_COPY.handOverNewLinkNote}`
+            : IDENTITIES_COPY.handOverIntro}
         </p>
       )}
       <div className="flex flex-wrap items-center gap-2">
         {link && (
           <Button type="button" size="sm" className="min-h-11" onClick={copy}>
             {copied ? IDENTITIES_COPY.handOverCopied : IDENTITIES_COPY.handOverCopy}
+          </Button>
+        )}
+        {/* An open link from before cannot be shown again; a new one replaces it. */}
+        {open && !link && (
+          <Button type="button" size="sm" className="min-h-11" onClick={create} disabled={busy}>
+            {IDENTITIES_COPY.handOverNewLink}
           </Button>
         )}
         {link || open ? (
@@ -116,9 +128,21 @@ export function IdentityHandover({
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : IDENTITIES_COPY.handOverCancel}
           </Button>
         ) : (
-          <Button type="button" size="sm" className="min-h-11" onClick={create} disabled={busy}>
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : IDENTITIES_COPY.handOverCreate}
-          </Button>
+          <>
+            <Button type="button" size="sm" className="min-h-11" onClick={create} disabled={busy}>
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : IDENTITIES_COPY.handOverCreate}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="min-h-11"
+              onClick={onClose}
+              disabled={busy}
+            >
+              {IDENTITIES_COPY.handOverNotNow}
+            </Button>
+          </>
         )}
       </div>
     </div>

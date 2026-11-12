@@ -129,6 +129,36 @@ returns the holder and every identity it holds, for any handle in the circle.
 Service role only, so it adds no way for one user to learn another's
 identities. It reads; it does not act.
 
+## After review (2026-11-12)
+
+An adversarial review (six independent lenses, every finding put to three
+reviewers trying to refute it) confirmed these, now fixed:
+
+- **D6a could be laundered.** A withheld identity's circle still listed itself,
+  and only the API route refused a switch to yourself. The consent screen's
+  "Continue as", called with the identity's own id, minted a one-time-code
+  session the gate read as a switch. `mintSwitchCode` (`switching.ts`) now
+  refuses a withheld caller and a self-target, for every path.
+- **D6a is permanent.** The first change to an identity's email or password
+  stamps `identity_links.lost_circle_at` (trigger on `auth.users`); the gate
+  reads the stamp, not the current address.
+- **A hand-over leaves no way in.** Acceptance spends the offer atomically,
+  cuts the link, then removes every way in the former holder could have put on
+  the identity (`identity_strip_ways_in`: every GoTrue table tied to the user,
+  found from the catalog, and linked providers; the connected apps' tokens and
+  consents; the password), and sets the new address last.
+- **Person tags only for an app's own users** (accounts with an
+  `oauth_user_grants` row for that client).
+- **An identity's mail reaches the person**: notification email for an
+  identity goes to the account that holds it (`recipientEmail.ts`), never to
+  its `.invalid` address.
+- **Interface**: Settings shows a failed load as such; an identity that stands
+  alone is told why; an identity's Settings explains how it is reached instead
+  of offering to set an address or password; deleting a main account names the
+  identities it takes; a hand-over link can be closed and replaced; the accept
+  page says it worked when the browser could not be signed in; "Continue as"
+  says when it did not happen; the menu reads the circle again when it changes.
+
 ## Not yet (roadmap)
 
 - **D7. One person, one vote in Solon.** Solon counts seats, and a seat is an

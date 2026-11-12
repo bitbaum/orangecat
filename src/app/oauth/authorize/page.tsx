@@ -75,6 +75,8 @@ export default async function AuthorizePage({
   const prompt = one(sp.prompt);
   const loginHint = one(sp.login_hint);
   const idpHint = one(sp.idp_hint);
+  // Set by "Continue as" when the switch did not happen (actions.ts).
+  const identitySwitchFailed = one(sp.identity_switch) === 'failed';
 
   // 1) Validate client + redirect FIRST — these gate whether we may redirect at all.
   const client = clientId ? await getClient(clientId) : null;
@@ -205,6 +207,7 @@ export default async function AuthorizePage({
           email: isUnreachableEmail(user!.email) ? null : (user!.email ?? null),
         }}
         otherIdentities={otherIdentities}
+        identitySwitchFailed={identitySwitchFailed}
         policyUri={client.policy_uri ?? null}
         tosUri={client.tos_uri ?? null}
         resourceName={resource?.name ?? null}
