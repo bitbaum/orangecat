@@ -131,6 +131,13 @@ export const SITUATIONAL_SECTIONS: ReadonlyArray<{ heading: string; when: RegExp
     when: /first-message|no-specific-request|what should i|anything new|what else|next step|my (product|service|project|cause|draft|entities)|draft|publish|catch me up|how am i doing|what can i/,
   },
   {
+    // A person asking for their day ("let's start my day", "wrap up my day",
+    // "plan my tomorrow", "what needs me today"). Loaded only on those turns:
+    // it shapes one kind of answer, and every other turn would pay for it.
+    heading: 'Starting, Steering and Closing Their Day',
+    when: /my day|my (morning|afternoon|evening|week)|my tomorrow|\btoday\b|\btomorrow\b|focus on|wrap up|on my plate|agenda|priorit|needs? (me|my attention)|need from me/,
+  },
+  {
     // The turn where the ask is judgement, not an object. Without this the
     // brief had no mode for "what do you think" and every path through it
     // ended at a proposal, so a question came back as a Project to create.
