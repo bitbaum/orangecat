@@ -11,7 +11,7 @@
 
 'use client';
 
-import { useState, useRef, useEffect, useId, type ComponentType, type SVGProps } from 'react';
+import { useState, useRef, useEffect, useId } from 'react';
 import Link from 'next/link';
 import { ChevronDown, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -24,118 +24,20 @@ export interface NavigationItem {
   external?: boolean;
 }
 
-// Variant A: Horizontal header links
-interface HeaderNavBarProps {
+interface HeaderNavigationProps {
   items: NavigationItem[];
   isActive: (href: string) => boolean;
   className?: string;
 }
 
-// Variant B: Mobile drawer navigation used by Header.tsx
-interface MobileDrawerProps {
-  navigation: NavigationItem[];
-  footer: {
-    product?: Array<{ name: string; href: string; external?: boolean }>;
-    learn?: Array<{ name: string; href: string; external?: boolean }>;
-    support?: Array<{ name: string; href: string; external?: boolean }>;
-    ecosystem?: Array<{ name: string; href: string; external?: boolean }>;
-    legal?: Array<{ name: string; href: string; external?: boolean }>;
-    // Matches NavigationItem.icon in @/config/navigation — lucide icons and
-    // local brand SVGs (BrandIcons) are both plain SVG components.
-    social?: Array<{ name: string; href: string; icon?: ComponentType<SVGProps<SVGSVGElement>> }>;
-  };
-  onClose: () => void;
-}
-
-type HeaderNavigationProps = HeaderNavBarProps | MobileDrawerProps;
-
 /**
  * Header Navigation Component
  *
- * Renders navigation links with consistent styling and active state indicators
- * Supports dropdown menus for items with children
+ * The horizontal links of the public header, with a dropdown for an item that
+ * has children. The same items on a narrow screen are `MobileMenu`.
  */
 export function HeaderNavigation(props: HeaderNavigationProps) {
-  // Variant B: Mobile drawer (navigation + footer + onClose)
-  if ('navigation' in props) {
-    const { navigation, footer, onClose } = props;
-    const navItems = Array.isArray(navigation) ? navigation : [];
-    return (
-      <div className="flex flex-col h-full">
-        <div className="p-4 space-y-1">
-          {navItems.map(item =>
-            item.href && item.external ? (
-              <a
-                key={item.href}
-                href={item.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex min-h-11 items-center gap-1.5 rounded-md px-3 py-2 text-base text-fg-primary hover:bg-surface-raised"
-                onClick={onClose}
-              >
-                {item.name}
-                <ExternalLink className="h-3.5 w-3.5" aria-hidden />
-              </a>
-            ) : item.href ? (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="block px-3 py-2 min-h-11 rounded-md text-base text-fg-primary hover:bg-surface-raised"
-                onClick={onClose}
-              >
-                {item.name}
-              </Link>
-            ) : null
-          )}
-        </div>
-
-        {/* Footer sections */}
-        <div className="mt-auto border-t border-subtle">
-          {(['product', 'learn', 'support', 'ecosystem', 'legal'] as const).map(sectionKey => {
-            const section = footer?.[sectionKey] || [];
-            if (!section || section.length === 0) {
-              return null;
-            }
-            return (
-              <div key={sectionKey} className="p-4">
-                <div className="text-xs font-semibold text-fg-secondary uppercase mb-2">
-                  {sectionKey}
-                </div>
-                <div className="grid grid-cols-1 gap-1">
-                  {section.map(link =>
-                    link.external ? (
-                      <a
-                        key={`${sectionKey}-${link.name}-${link.href}`}
-                        href={link.href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-3 py-2 min-h-11 rounded-md text-sm text-fg-secondary hover:text-fg-primary hover:bg-surface-raised"
-                        onClick={onClose}
-                      >
-                        {link.name}
-                      </a>
-                    ) : (
-                      <Link
-                        key={`${sectionKey}-${link.name}-${link.href}`}
-                        href={link.href}
-                        className="px-3 py-2 min-h-11 rounded-md text-sm text-fg-secondary hover:text-fg-primary hover:bg-surface-raised"
-                        onClick={onClose}
-                      >
-                        {link.name}
-                      </Link>
-                    )
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
-
-  // Variant A: Horizontal header links (default)
-  const { items = [], isActive, className } = props as HeaderNavBarProps;
+  const { items = [], isActive, className } = props;
   const safeItems = Array.isArray(items) ? items : [];
   const activeFn = typeof isActive === 'function' ? isActive : () => false;
   return (

@@ -6,10 +6,10 @@ import { useHeaderScroll } from '@/hooks/useHeaderScroll';
 import { useMobileMenu } from '@/hooks/useMobileMenu';
 import { useIsAuthRoute } from '@/hooks/useRouteContext';
 import { useMobileMenuAnimation } from '@/hooks/useMobileMenuAnimation';
-import { getHeaderNavigationItems, footerNavigation } from '@/config/navigation';
+import { authNavigationItems, getHeaderNavigationItems } from '@/config/navigation';
 import { getAuthStatus } from '@/lib/auth/utils';
 import { getHeaderClasses } from '@/lib/ui/header-utils';
-import { HEADER_DIMENSIONS, HEADER_SPACING } from '@/constants/header';
+import { HEADER_DIMENSIONS, HEADER_SPACING, VISITOR_MENU_ID } from '@/constants/header';
 import Logo from './Logo';
 import AuthButtons from './AuthButtons';
 import { HeaderCreateButton } from '@/components/dashboard/HeaderCreateButton';
@@ -100,8 +100,10 @@ export function Header({
             ) : showMarketingNav ? (
               <MenuToggleButton
                 ref={buttonRef}
-                onClick={() => mobileMenu.open()}
-                ariaLabel="Open navigation menu"
+                onClick={() => (mobileMenu.isOpen ? handleClose() : mobileMenu.open())}
+                ariaLabel={mobileMenu.isOpen ? 'Close navigation menu' : 'Open navigation menu'}
+                expanded={mobileMenu.isOpen}
+                controls={VISITOR_MENU_ID}
               />
             ) : null}
 
@@ -209,7 +211,8 @@ export function Header({
           isClosing={isClosing}
           menuRef={menuRef}
           navigation={navigation}
-          footer={footerNavigation}
+          signIn={authNavigationItems[0]}
+          getStarted={authNavigationItems[1]}
           onClose={handleClose}
         />
       )}

@@ -17,7 +17,7 @@ export function NeedStep({ flow }: { flow: RaiseFlow }) {
       <p className="flex items-center gap-2 text-xs font-medium uppercase tracking-caps text-fg-tertiary">
         <Sparkles className="h-3.5 w-3.5" aria-hidden /> Raise money
       </p>
-      <h1 className="mt-4 text-4xl font-semibold tracking-display text-fg-primary sm:text-5xl">
+      <h1 className="mt-4 font-heading text-4xl font-semibold tracking-display text-fg-primary sm:text-5xl">
         What do you need?
       </h1>
       <p className="mt-4 text-lg text-fg-secondary">

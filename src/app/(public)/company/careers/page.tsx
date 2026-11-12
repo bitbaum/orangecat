@@ -1,8 +1,10 @@
 import React from 'react';
 import { Metadata } from 'next';
-import { Briefcase, Users, Zap, Heart, Globe, Code, Handshake, Bitcoin } from 'lucide-react';
+import { Users, Zap, Heart, Globe, Code, Handshake, Bitcoin } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { ROUTES } from '@/config/routes';
+import { PUBLIC_PAGE_WIDTH, PublicPageHeader } from '@/components/layout/PublicPageHeader';
+import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
   title: 'Build with us',
@@ -72,26 +74,12 @@ export default function CareersPage() {
 
   return (
     <div className="min-h-screen bg-surface-page">
-      {/* Hero Section */}
-      <div className="bg-surface-base border-b border-default">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-surface-raised border border-subtle rounded-full mb-8">
-              <Briefcase className="w-8 h-8 text-fg-secondary" />
-            </div>
-            <h1 className="font-heading tracking-display text-4xl font-bold text-fg-primary sm:text-5xl mb-4">
-              Build OrangeCat with us
-            </h1>
-            <p className="text-xl text-fg-secondary max-w-3xl mx-auto">
-              A platform that lets anyone — including a pseudonym or agent — organize and fund work
-              with Bitcoin. It is built in the open, and there is more than one way in.
-            </p>
-          </div>
-        </div>
-      </div>
-
       {/* Our Mission */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <div className={cn(PUBLIC_PAGE_WIDTH.wide, 'pb-16')}>
+        <PublicPageHeader
+          title="Build OrangeCat with us"
+          lede="A platform that lets anyone — including a pseudonym or agent — organize and fund work with Bitcoin. It is built in the open, and there is more than one way in."
+        />
         <div className="text-center mb-16">
           <h2 className="text-2xl font-semibold text-fg-primary mb-6">Why OrangeCat?</h2>
           <p className="text-lg text-fg-secondary max-w-4xl mx-auto">

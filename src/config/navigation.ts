@@ -127,8 +127,12 @@ const headerNavigationConfig = {
         },
       ],
     },
-    { name: 'Blog', href: ROUTES.BLOG },
-    { name: 'Support', href: ROUTES.SUPPORT },
+    { name: 'Blog', href: ROUTES.BLOG, description: 'Guides and stories from the build' },
+    {
+      name: 'Support',
+      href: ROUTES.SUPPORT,
+      description: 'Back OrangeCat with Bitcoin',
+    },
     {
       // The sibling products used to sit loose in the top bar, one link each,
       // with nothing saying they belong together. One menu, three pillars —

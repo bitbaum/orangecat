@@ -1,7 +1,8 @@
 import { linkDevelopment, type Advance } from '@bitbaum/bip-kit';
-import { PageHeading } from '@/components/layout/PageHeading';
+import { PUBLIC_PAGE_WIDTH, PublicPageHeader } from '@/components/layout/PublicPageHeader';
 import { FormattedDate } from '@/components/ui/FormattedDate';
 import { ROUTES } from '@/config/routes';
+import { cn } from '@/lib/utils';
 import { loadOrangeCatProfile } from '@/lib/development/records';
 
 export const metadata = {
@@ -42,21 +43,22 @@ export default async function ChangelogPage() {
 
   return (
     <div className="min-h-screen bg-surface-page">
-      <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="mb-14">
-          <p className="text-xs font-medium uppercase tracking-caps text-fg-tertiary">
-            Building in public
-          </p>
-          <PageHeading className="mb-3 mt-4">Changelog</PageHeading>
-          <p className="max-w-2xl text-lg text-fg-secondary">
-            What’s new on OrangeCat — building the Bitcoin-native personal economy in the open.
-            Newest first. Where a change delivered something on the{' '}
-            <a href={ROUTES.ROADMAP} className={LINK}>
-              roadmap
-            </a>
-            , it says which.
-          </p>
-        </div>
+      <div className={cn(PUBLIC_PAGE_WIDTH.reading, 'pb-16')}>
+        <PublicPageHeader
+          align="start"
+          eyebrow="Building in public"
+          title="Changelog"
+          lede={
+            <>
+              What’s new on OrangeCat — building the Bitcoin-native personal economy in the open.
+              Newest first. Where a change delivered something on the{' '}
+              <a href={ROUTES.ROADMAP} className={LINK}>
+                roadmap
+              </a>
+              , it says which.
+            </>
+          }
+        />
 
         {profile === null ? (
           <p className="rounded-lg border border-default bg-surface-base p-6 text-fg-secondary">

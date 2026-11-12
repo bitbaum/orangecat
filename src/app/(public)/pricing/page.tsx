@@ -1,7 +1,7 @@
 import React from 'react';
-import { Check, Sparkles, Cat as CatIcon } from 'lucide-react';
+import { Check, Sparkles } from 'lucide-react';
 import Button from '@/components/ui/Button';
-import { PageHeading } from '@/components/layout/PageHeading';
+import { PUBLIC_PAGE_WIDTH, PublicPageHeader } from '@/components/layout/PublicPageHeader';
 import {
   CAT_PLANS,
   CAT_WIRED_PROVIDERS,
@@ -31,19 +31,17 @@ export const metadata = {
 export default function PricingPage() {
   return (
     <div className="min-h-screen bg-surface-page">
-      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-        {/* Hero */}
-        <div className="mb-12 text-center">
-          <div className="mb-4 flex justify-center">
-            <CatIcon className="h-16 w-16 text-fg-secondary" />
-          </div>
-          <PageHeading className="mb-4">Your AI, your bill, your choice</PageHeading>
-          <p className="mx-auto max-w-2xl text-xl text-fg-secondary">
-            Cat works any way you want. Free out of the box, or bring your own key from{' '}
-            {CAT_WIRED_PROVIDERS.length} wired providers — {CAT_WIRED_PROVIDERS.join(', ')}.
-            OrangeCat doesn&apos;t mark up inference; we earn from the platform, not your AI bill.
-          </p>
-        </div>
+      <div className={cn(PUBLIC_PAGE_WIDTH.wide, 'pb-12')}>
+        <PublicPageHeader
+          title="Your AI, your bill, your choice"
+          lede={
+            <>
+              Cat works any way you want. Free out of the box, or bring your own key from{' '}
+              {CAT_WIRED_PROVIDERS.length} wired providers — {CAT_WIRED_PROVIDERS.join(', ')}.
+              OrangeCat doesn&apos;t mark up inference; we earn from the platform, not your AI bill.
+            </>
+          }
+        />
 
         {/* Plan cards */}
         <div className="mb-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">

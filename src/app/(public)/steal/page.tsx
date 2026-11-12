@@ -15,6 +15,8 @@ import {
   makeItYoursUrl,
   repoUrl,
 } from '@/config/steal';
+import { PUBLIC_PAGE_WIDTH, PublicPageHeader } from '@/components/layout/PublicPageHeader';
+import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
   title: 'Steal the cat',
@@ -37,18 +39,13 @@ export default function StealPage() {
   return (
     <div className="min-h-screen bg-surface-page">
       <section className="border-b border-default">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
-          <p className="text-sm font-medium uppercase tracking-caps text-fg-tertiary">
-            Open source · MIT
-          </p>
-          <h1 className="mt-4 font-heading tracking-display text-4xl font-bold text-fg-primary sm:text-6xl">
-            Steal the cat.
-          </h1>
-          <p className="mt-6 max-w-2xl text-lg text-fg-secondary sm:text-xl">
-            We build technology to release it. Use OrangeCat as it is, or take the whole thing,
-            change it and run it as your own. You don&apos;t need to ask us first.
-          </p>
-          <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className={cn(PUBLIC_PAGE_WIDTH.wide, 'pb-16 sm:pb-20')}>
+          <PublicPageHeader
+            eyebrow="Open source · MIT"
+            title="Steal the cat."
+            lede="We build technology to release it. Use OrangeCat as it is, or take the whole thing, change it and run it as your own. You don't need to ask us first."
+          />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="rounded-xl border border-default bg-surface-base p-6">
               <h2 className="text-lg font-semibold text-fg-primary">Use it</h2>
               <p className="mt-2 text-fg-secondary">
@@ -78,7 +75,7 @@ export default function StealPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+      <section className={cn(PUBLIC_PAGE_WIDTH.wide, 'py-16')}>
         <h2 className="font-heading tracking-display text-2xl font-semibold text-fg-primary">
           From &ldquo;I like it&rdquo; to &ldquo;it&apos;s mine&rdquo;
         </h2>
@@ -100,7 +97,12 @@ export default function StealPage() {
       </section>
 
       <section className="border-y border-default bg-surface-base">
-        <div className="mx-auto grid grid-cols-1 max-w-7xl items-center gap-10 px-4 py-16 sm:px-6 md:grid-cols-2 lg:px-8">
+        <div
+          className={cn(
+            PUBLIC_PAGE_WIDTH.wide,
+            'grid grid-cols-1 items-center gap-10 py-16 md:grid-cols-2'
+          )}
+        >
           <div className="min-w-0">
             <h2 className="font-heading tracking-display text-2xl font-semibold text-fg-primary">
               Pass it on
@@ -114,7 +116,7 @@ export default function StealPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+      <section className={cn(PUBLIC_PAGE_WIDTH.wide, 'py-16')}>
         <h2 className="font-heading tracking-display text-2xl font-semibold text-fg-primary">
           The rest of the fleet is yours too
         </h2>
@@ -156,7 +158,7 @@ export default function StealPage() {
       </section>
 
       <section className="border-t border-default">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+        <div className={cn(PUBLIC_PAGE_WIDTH.wide, 'py-16')}>
           <h2 className="font-heading tracking-display text-2xl font-semibold text-fg-primary">
             Want to build it with us? Show us how you think.
           </h2>
