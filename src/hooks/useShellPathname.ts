@@ -10,6 +10,14 @@ import { usePathname, useSelectedLayoutSegment } from 'next/navigation';
 export const NOT_FOUND_SHELL_PATH = '/_not-found';
 
 /**
+ * How that route's segment arrives in the route tree. Next.js 16.4 spells it
+ * both ways: '/_not-found' in the build orangecat.ch serves, '_not-found' in a
+ * local `next build --webpack` (both seen 2026-11-12). A folder starting with
+ * '_' is private and never routes, so neither spelling can be a real page.
+ */
+const NOT_FOUND_SEGMENTS: ReadonlySet<string> = new Set([NOT_FOUND_SHELL_PATH, '_not-found']);
+
+/**
  * Next.js renders a URL that matches no route (/discover/zzz,
  * /settings/security) through its own /_not-found route. On the server
  * usePathname() then answers '/_not-found'; in the browser the router reads
@@ -20,7 +28,9 @@ export const NOT_FOUND_SHELL_PATH = '/_not-found';
  * from the route tree the server sent, so it is the same on both sides.
  */
 export function resolveShellPathname(pathname: string | null, topSegment: string | null): string {
-  return topSegment === NOT_FOUND_SHELL_PATH ? NOT_FOUND_SHELL_PATH : (pathname ?? '/');
+  return topSegment !== null && NOT_FOUND_SEGMENTS.has(topSegment)
+    ? NOT_FOUND_SHELL_PATH
+    : (pathname ?? '/');
 }
 
 export const ShellPathnameContext = createContext<string | null>(null);
