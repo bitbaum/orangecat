@@ -19,8 +19,12 @@ changed.
   one `h1`. 32 findings are fixed and 9 partly fixed. Some of those were
   fixed on `main` by other changes while this was in review (#1625, #1629,
   #1630, #1631), and this change was merged over them.
-- **Open:** 108 findings, each with its cause and a checked fix, in one
-  file per area beside this one.
+- **Second batch:** a second pull request gives every public page one header
+  and rebuilds the visitor menu on a phone; it fixes four more findings (see
+  "Second batch" below).
+- **Open:** 104 findings, each with its cause and a checked fix, in one
+  file per area beside this one. Other pull requests opened since are fixing
+  some of them.
 - **For the owner:** five things below need a decision rather than a fix.
 
 ## How it was measured
@@ -207,6 +211,101 @@ accessibility reviewer and two second-pass checks did not run (the account's
 usage limit was reached), so the accessibility result rests on the
 measurements above, not on a separate review.
 
+## Second batch: one header for public pages, and the visitor menu
+
+A second pull request, opened after the first. It takes the two findings about
+public page frames (`content#6`, `funnel#7`) and the two about the visitor
+menu (`chrome#0`, `chrome#3`).
+
+### One header for every public page
+
+Thirty public pages each built their own first screen: titles from 24px to
+60px, centred on some and left on others, an icon above one title, a pill
+above another, a raised band behind a third, and six different content
+widths. They now open with one component,
+`src/components/layout/PublicPageHeader.tsx`:
+
+- **One title scale** (30px on a phone, 36px, then 48px on a desktop), one
+  lead line under it, the same space above and below.
+- **Nothing above the title but an optional label.** The shield on Security,
+  the cat on Pricing, the briefcase on Careers, the play tile on Channel, the
+  logo on About bitbaum and the pills on How it works, Technology and
+  Ecosystem are gone. "Founding supporters" and "Open source · MIT" stay as
+  the label, because they say what kind of page it is.
+- **No band behind the header.** It sits on the page surface everywhere.
+- **Two alignments, by kind.** A page about OrangeCat is centred. A document
+  read top to bottom (the legal pages, the whitepaper, the changelog, the
+  roadmap, the two docs sub-pages) starts at the left of its column, and so
+  does "What you can do", whose header ends in a prompt.
+- **Two page widths**, `reading` (768px) and `wide` (1152px), in place of six.
+  Security's three-card row became two at the narrower width.
+- The three titles that were set in the body typeface (Articles, a blog post,
+  "What do you need?") use the heading face.
+
+The titles and lead lines themselves are unchanged. `check:public-frame` fails
+a page under `src/app/(public)` that writes its own `<h1>`, uses the signed-in
+`PageHeading` directly or wraps itself in `PageLayout`; five pages are exempt
+by name with the reason (a post, an article, the articles list, the two
+payment screens).
+
+![Eight public pages on a phone, before and after](2026-11-12-ux-ui/07-public-headers-phone.jpg)
+
+![Four public pages on a desktop, before and after](2026-11-12-ux-ui/08-public-headers-desktop.jpg)
+
+### The visitor menu
+
+On a phone the public menu showed "Blog" and "Support", dropped the Product
+and Ecosystem groups (they have children and no link of their own, so they
+rendered nothing), listed the whole footer in their place (27 links, 1,681px
+in a 780px panel) and offered no Sign in anywhere in the public chrome. It was
+a plain `div`.
+
+- It lists the header's own destinations in their groups, each with the line
+  that says what it is, and ends with Sign In and Get Started as two equal
+  cells. The footer is not repeated; it is on the page.
+- It is a modal dialog: a close button, a dimmed page behind it, keyboard
+  focus kept inside while it is open and returned to the menu button after.
+  The menu button says whether the menu is open and now closes it too.
+
+![The visitor menu on a phone, before and after](2026-11-12-ux-ui/09-visitor-menu.jpg)
+
+### Also in this batch
+
+- The code samples on "Sign in with OrangeCat" and the command on "Steal the
+  cat" scroll sideways; a keyboard could not reach them to scroll. They take
+  focus now.
+- The first section heading on How it works was the same size as the page
+  title on a phone. It is one step smaller.
+
+### Measured
+
+Thirty pages at 390px and 1440px in light, and at 390px in dark, plus the open
+menu in both themes: no sideways scroll, one `h1` on each, and no axe
+violation. `/blog` (6) and `/study-bitcoin` (4) still have targets under 44px
+at 390px; both were there before and another open pull request (#1643) is
+about those two pages.
+
+This batch was not read by a second reviewer: the account's sub-agent limit
+was reached while it was being built, so it rests on the captures, the gates
+and 20 new unit tests.
+
+### Findings other pull requests are fixing
+
+While the first pull request waited for CI, other sessions opened about 55
+pull requests against the same repository. Two of the ten areas were checked
+against their diffs (one reading, not re-checked; the run stopped at the same
+limit):
+
+| Finding            | Pull requests                  | What is left                                                                                    |
+| ------------------ | ------------------------------ | ----------------------------------------------------------------------------------------------- |
+| `app-shell#0`      | #1654 (merged)                 | The phone drawer ends above the tab bar now. It still stays open after a destination is picked. |
+| `app-shell#12`     | #1655 (merged), #1651          | The "Switch context" button in the sidebar is still about 32px.                                 |
+| `auth-firstrun#2`  | #1656 (merged), #1665          | The onboarding text box is still 241px wide beside its microphone.                              |
+| `auth-firstrun#3`  | #1653 (merged)                 | "56% set up" is gone. The dashboard still tells a new account "No pending Cat approvals."       |
+| `auth-firstrun#4`  | #1667                          | Nothing, once it merges.                                                                        |
+| `auth-firstrun#10` | #1667                          | Empty fields and a password mismatch still go to the banner, not the field.                     |
+| `auth-firstrun#13` | #1655 (merged), #1656 (merged) | The three password-reset screens keep their own card, icon tile and Title Case headings.        |
+
 ## Needs the owner's decision
 
 Found during the audit, not changed by it. Each is a product or data decision
@@ -254,15 +353,15 @@ rather than a design fix.
 
 Severity is the second reviewer's. "Corrected on re-check" means the finding was real and its severity, cause or fix was wrong as first written. The cause and fix for every open finding are in the per-area files:
 
-- [Landing page and marketing funnel](2026-11-12-ux-ui-findings-funnel.md): 11 open of 14
+- [Landing page and marketing funnel](2026-11-12-ux-ui-findings-funnel.md): 10 open of 14
 - [Sign-in, sign-up and the first five minutes](2026-11-12-ux-ui-findings-auth-firstrun.md): 13 open of 14
-- [Global chrome and interaction states](2026-11-12-ux-ui-findings-chrome.md): 12 open of 14
+- [Global chrome and interaction states](2026-11-12-ux-ui-findings-chrome.md): 10 open of 14
 - [Discover, public listings and public detail pages](2026-11-12-ux-ui-findings-discover.md): 13 open of 14
 - [Money surface: pay, receive, send, requests, wallets, finances](2026-11-12-ux-ui-findings-money.md): 12 open of 14
 - [Signed-in shell, dashboard and social surfaces](2026-11-12-ux-ui-findings-app-shell.md): 13 open of 14
 - [Create and manage flows](2026-11-12-ux-ui-findings-create-manage.md): 12 open of 14
 - [Profile and settings](2026-11-12-ux-ui-findings-profile-settings.md): 12 open of 14
-- [Content and long-tail public pages](2026-11-12-ux-ui-findings-content.md): 8 open of 14
+- [Content and long-tail public pages](2026-11-12-ux-ui-findings-content.md): 7 open of 14
 - [Systemic accessibility and design-system issues (measurement-driven)](2026-11-12-ux-ui-findings-systemic.md): 2 open of 14
 
 ### Landing page and marketing funnel
@@ -278,7 +377,7 @@ The first screen is strong: one statement, one warm action, a real mark, readabl
 | funnel#3  | medium   | Home on a phone: 4,112px of other studio products sit between the hero and what OrangeCat does for you (corrected on re-check)          | /                                            | Open                                                                                 |
 | funnel#4  | medium   | 'How it works' never says how it works, and half of it repeats another page (corrected on re-check)                                     | /how-it-works                                | Open                                                                                 |
 | funnel#6  | medium   | Pricing: orange is a border, a 'not open yet' badge and three buttons, and the warm action is on the wrong plan (corrected on re-check) | /pricing                                     | Partly (#1634): the card and badge are neutral; the action on the wrong plan is open |
-| funnel#7  | medium   | Six sibling pages, six page-header frames (corrected on re-check)                                                                       | /how-it-works, /what-you-can-do, /pricing, … | Open                                                                                 |
+| funnel#7  | medium   | Six sibling pages, six page-header frames (corrected on re-check)                                                                       | /how-it-works, /what-you-can-do, /pricing, … | Fixed (second pull request)                                                          |
 | funnel#8  | medium   | One action, six names; closing bands differ and one page ends by sending the visitor to another product (corrected on re-check)         | /, /how-it-works, /what-you-can-do, …        | Open                                                                                 |
 | funnel#9  | medium   | What you can do: two identical rows of wrapping pills do different things, and their labels sit off-centre                              | /what-you-can-do                             | Open                                                                                 |
 | funnel#10 | medium   | Capability cards: the action is a 51x36 text link, and 'See yours' is offered to people who have nothing yet                            | /what-you-can-do, /how-it-works              | Open                                                                                 |
@@ -315,22 +414,22 @@ Keep: Pseudonymous entry with no email, explained in one plain sentence; No dead
 
 The chrome has good bones: one icon-button primitive, a skip link, a visible two-ring focus style, an opaque labelled tab bar, zero sideways scroll in every state I opened at 390 and 1440, and strict use of the one orange. What lets it down is what a signed-out person meets first: the phone menu, the header's labels and the search box. The phone menu offers no Sign in, drops both header groups, lists 27 footer links instead, and cannot be reached by keyboard. The header calls a fundraising page "Support" and files company pages under "Product". "Search or jump to" finds no public page at all ("pricing" returns nothing). Keyboard focus is the second cluster: the auto-hiding header takes focus off-screen, and search, notifications and the Cat panel drop focus when closed. The three things to fix first: (1) rebuild the visitor phone menu (Sign in and Get started, the real groups, a focus trap and a close row); (2) rename and regroup the header navigation so one route has one name; (3) make the palette find public pages and stop sending visitors to the sign-in form. Note: the local checkout is one merged pull request behind main (#1611). That PR already fixed the solid white active-tab icon and the 36px logo link, so neither is reported; it also introduced finding 7, which I measured on production.
 
-| #         | Severity | Finding                                                                                                                                          | Where                                     | Status        |
-| --------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------- | ------------- |
-| chrome#0  | high     | Visitor phone menu: no Sign in, both header groups missing, 27 footer links in their place                                                       | /, /pricing, /blog, …                     | Open          |
-| chrome#3  | high     | The visitor menu cannot be reached with the keyboard, has no close control and does not dim the page                                             | /, /pricing, /blog, …                     | Open          |
-| chrome#4  | high     | The auto-hiding header takes keyboard focus off-screen and leaves a 64px gap above the desktop sidebar                                           | /, /dashboard, /discover, …               | Open          |
-| chrome#1  | medium   | Header navigation: "Product" holds company pages, "Support" is a fundraising page, and one route has several names (corrected on re-check)       | /, /pricing, /blog, …                     | Open          |
-| chrome#2  | medium   | "Search or jump to" finds no public page, and for a visitor every default row leads to the sign-in form (corrected on re-check)                  | /, /discover, /pricing, …                 | Open          |
-| chrome#5  | medium   | Closing search, notifications or the Cat panel drops keyboard focus to the top of the page                                                       | /, /dashboard, every page with the header | Open          |
-| chrome#6  | medium   | A second, invisible logo link in the header: on production an empty 44px focus box that pushes the logo 44px right                               | /, /discover, /dashboard, …               | Fixed (#1634) |
-| chrome#7  | medium   | A signed-out visitor on Discover gets the app's chrome: no site navigation, no footer, and Create as the loudest control (corrected on re-check) | /discover, /events, /loans, …             | Open          |
-| chrome#8  | medium   | The bottom of the signed-in phone drawer is hidden under the tab bar, including its Close button                                                 | /dashboard, /messages, /discover, …       | Open          |
-| chrome#9  | medium   | Phone footer is 2.4 screens tall with 31 links at 36px, and a bottom bar that repeats links and wraps                                            | /, /pricing, /about, …                    | Fixed (#1634) |
-| chrome#10 | medium   | In light theme hover, open and selected states are invisible, and no button has a pressed state (corrected on re-check)                          | /, /dashboard, every page                 | Open          |
-| chrome#11 | medium   | Notifications panel shows an error and "No notifications found" together, and its filter row runs off a phone screen                             | /dashboard, every signed-in page          | Open          |
-| chrome#12 | low      | One destination, several names: Money / Receive, Create / Post, Home / Dashboard, My things / My Projects (corrected on re-check)                | /dashboard, /messages, /receive, …        | Open          |
-| chrome#13 | low      | The feedback tab is a 24px-wide black sliver on a near-black page, marked only with a spiral (corrected on re-check)                             | /, /discover, every page on production    | Open          |
+| #         | Severity | Finding                                                                                                                                          | Where                                     | Status                      |
+| --------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------- | --------------------------- |
+| chrome#0  | high     | Visitor phone menu: no Sign in, both header groups missing, 27 footer links in their place                                                       | /, /pricing, /blog, …                     | Fixed (second pull request) |
+| chrome#3  | high     | The visitor menu cannot be reached with the keyboard, has no close control and does not dim the page                                             | /, /pricing, /blog, …                     | Fixed (second pull request) |
+| chrome#4  | high     | The auto-hiding header takes keyboard focus off-screen and leaves a 64px gap above the desktop sidebar                                           | /, /dashboard, /discover, …               | Open                        |
+| chrome#1  | medium   | Header navigation: "Product" holds company pages, "Support" is a fundraising page, and one route has several names (corrected on re-check)       | /, /pricing, /blog, …                     | Open                        |
+| chrome#2  | medium   | "Search or jump to" finds no public page, and for a visitor every default row leads to the sign-in form (corrected on re-check)                  | /, /discover, /pricing, …                 | Open                        |
+| chrome#5  | medium   | Closing search, notifications or the Cat panel drops keyboard focus to the top of the page                                                       | /, /dashboard, every page with the header | Open                        |
+| chrome#6  | medium   | A second, invisible logo link in the header: on production an empty 44px focus box that pushes the logo 44px right                               | /, /discover, /dashboard, …               | Fixed (#1634)               |
+| chrome#7  | medium   | A signed-out visitor on Discover gets the app's chrome: no site navigation, no footer, and Create as the loudest control (corrected on re-check) | /discover, /events, /loans, …             | Open                        |
+| chrome#8  | medium   | The bottom of the signed-in phone drawer is hidden under the tab bar, including its Close button                                                 | /dashboard, /messages, /discover, …       | Open                        |
+| chrome#9  | medium   | Phone footer is 2.4 screens tall with 31 links at 36px, and a bottom bar that repeats links and wraps                                            | /, /pricing, /about, …                    | Fixed (#1634)               |
+| chrome#10 | medium   | In light theme hover, open and selected states are invisible, and no button has a pressed state (corrected on re-check)                          | /, /dashboard, every page                 | Open                        |
+| chrome#11 | medium   | Notifications panel shows an error and "No notifications found" together, and its filter row runs off a phone screen                             | /dashboard, every signed-in page          | Open                        |
+| chrome#12 | low      | One destination, several names: Money / Receive, Create / Post, Home / Dashboard, My things / My Projects (corrected on re-check)                | /dashboard, /messages, /receive, …        | Open                        |
+| chrome#13 | low      | The feedback tab is a 24px-wide black sliver on a near-black page, marked only with a spiral (corrected on re-check)                             | /, /discover, every page on production    | Open                        |
 
 Keep: Skip link is the first tab stop on every page and becomes a visible 187x44 button on focus (src/app/layout.tsx:128-133). One global :focus-visible rule (src/app/globals.css:81-83) draws a two-ring focus indicator that is clearly visible on every header control in dark and light; HeaderIconButton is a single primitive: every header control measured 44x44 at 390 and 40x40 at 1440, with one icon size and one hover treatment. Button sizes use pointer-coarse:h-11, so touch screens get 44px without bloating desktop density.
 
@@ -461,7 +560,7 @@ The content surface holds up structurally: none of the 30 pages overflows sidewa
 | content#3  | medium   | Blog index: a wall of 71 filter pills comes before the first post on desktop (corrected on re-check)                                                | /blog, /study-bitcoin, /studio                     | Open                                                                                    |
 | content#4  | medium   | A blog post and a community article are the same kind of page with two frames, and the title does not line up with its text (corrected on re-check) | /blog/orangecat-vision-future, /blog, /articles, … | Open                                                                                    |
 | content#5  | medium   | Changelog loses every entry's headline and is 50 phone screens of grey paragraphs (corrected on re-check)                                           | /changelog                                         | Open                                                                                    |
-| content#6  | medium   | No shared page frame: 5 content widths, 4 title sizes, 2 alignments and 2 title typefaces across 24 sibling pages                                   | /docs, /security, /status, …                       | Open                                                                                    |
+| content#6  | medium   | No shared page frame: 5 content widths, 4 title sizes, 2 alignments and 2 title typefaces across 24 sibling pages                                   | /docs, /security, /status, …                       | Fixed (second pull request)                                                             |
 | content#7  | medium   | On a phone the page title is the same size as the section headings under it (corrected on re-check)                                                 | /docs, /security, /status, …                       | Open                                                                                    |
 | content#8  | medium   | The three public 'say it in one box' entry points have no microphone and a washed-out orange disabled button (corrected on re-check)                | /raise, /feedback, /studio                         | Open                                                                                    |
 | content#10 | medium   | The Bitcoin guide pages use orange as decoration and put white text on it (2.29:1) (corrected on re-check)                                          | /bitcoin-wallet-guide, /study-bitcoin              | Fixed (#1634)                                                                           |
@@ -497,8 +596,11 @@ Keep: Keyboard focus is one global rule and it works: 179 of 179 tab stops per t
 
 ## What to do next
 
-108 findings are open. In the order a product team would take them, with the
-finding ids that carry the cause and the checked fix:
+104 findings are open. In the order a product team would take them, with the
+finding ids that carry the cause and the checked fix. Other pull requests
+opened since this was written are fixing some of them (#1640 the failed
+sign-in, #1647 the pay amount guard, by their titles); check a finding
+against the open pull requests before starting it.
 
 1. **The first five minutes.** A failed sign-in lands on the password-reset
    form with no message (`auth-firstrun` re-check note 1: the middleware
@@ -506,11 +608,10 @@ finding ids that carry the cause and the checked fix:
    orange primaries, and the first creates a new account (`auth-firstrun#0`).
    The hero's "Meet your Cat" opens "Welcome back" (`funnel#2`). Social
    buttons lose their labels from 640px (`auth-firstrun#9`).
-2. **Navigation on a phone.** The visitor menu has no Sign in, drops both
-   header groups, lists 27 footer links and cannot be reached by keyboard
-   (`chrome#0`, `chrome#3`). The signed-in drawer stays open after a
+2. **Navigation on a phone.** The signed-in drawer stays open after a
    destination is picked and reopens after reload (`app-shell#0`). Visiting
-   the Cat collapses the desktop sidebar for good (`app-shell#1`).
+   the Cat collapses the desktop sidebar for good (`app-shell#1`). The
+   visitor menu is done (second batch).
 3. **The money path.** An amount outside the limits shows an error and
    leaves the committing button live (`money#8`). The pay page names the
    payee by display name only (`money#1`). A pay panel reads "CHF 20.00 ≈
@@ -521,11 +622,10 @@ finding ids that carry the cause and the checked fix:
    sign-in (`discover#8`). Links into Discover use a parameter it does not
    read (`discover#9`). People at 390px: "Copy Link" is off the screen
    (`app-shell#10`).
-5. **One frame per kind.** 24 public pages use 5 content widths and 4 title
-   sizes (`content#6`); the six marketing pages, the signed-in pages and the
-   create pages each have their own header frame (`funnel#7`, `app-shell#9`,
-   `create-manage#10`); product, project and group pages open three ways
-   (`discover#13`).
+5. **One frame per kind.** Public pages share one header now (second
+   batch). The signed-in pages and the create pages still each have their own
+   header frame (`app-shell#9`, `create-manage#10`), and product, project and
+   group pages open three ways (`discover#13`).
 6. **Settings and the Cat's permissions.** Permission rows show the model's
    tool instructions instead of words for the person (`profile-settings#0`);
    a new account is told Payments is on (`profile-settings#1`); Account is

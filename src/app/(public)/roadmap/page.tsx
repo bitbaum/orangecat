@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
-import { PageHeading } from '@/components/layout/PageHeading';
+import { PUBLIC_PAGE_WIDTH, PublicPageHeader } from '@/components/layout/PublicPageHeader';
+import { cn } from '@/lib/utils';
 import { FLEET_PROFILE_URL, loadOrangeCatProfile } from '@/lib/development/records';
 import { linkDevelopment } from '@bitbaum/bip-kit';
 import { RoadmapJourney } from '@/components/roadmap/RoadmapJourney';
@@ -28,33 +29,27 @@ export default async function RoadmapPage() {
 
   return (
     <div className="min-h-screen bg-surface-page">
-      <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
-        <div className="max-w-3xl">
-          <p className="text-xs font-medium uppercase tracking-caps text-fg-tertiary">
-            Product direction
-          </p>
-          <PageHeading className="mt-4">Roadmap</PageHeading>
-          <p className="mt-5 text-lg text-fg-secondary sm:text-xl">
-            First make public entities effortless to share, fund in Bitcoin, and turn into
-            supervised Loki projects. Broaden the rails only after that loop is dependable.
-          </p>
-        </div>
+      <div className={cn(PUBLIC_PAGE_WIDTH.reading, 'pb-16')}>
+        <PublicPageHeader
+          align="start"
+          eyebrow="Product direction"
+          title="Roadmap"
+          lede="First make public entities effortless to share, fund in Bitcoin, and turn into supervised Loki projects. Broaden the rails only after that loop is dependable."
+        />
 
         {profile === null ? (
-          <p className="mt-14 rounded-lg border border-default bg-surface-base p-6 text-fg-secondary">
+          <p className="rounded-lg border border-default bg-surface-base p-6 text-fg-secondary">
             The roadmap is temporarily unavailable. It is read from the fleet map, which did not
             answer just now; try again in a few minutes.
           </p>
         ) : profile.roadmap.length === 0 ? (
-          <p className="mt-14 rounded-lg border border-default bg-surface-base p-6 text-fg-secondary">
+          <p className="rounded-lg border border-default bg-surface-base p-6 text-fg-secondary">
             Nothing recorded yet.
           </p>
         ) : (
           // Drawn as a road — behind us, you are here, ahead — instead of four
           // stacked lists of equal weight (see RoadmapJourney).
-          <div className="mt-14">
-            <RoadmapJourney journey={linkDevelopment(profile).journey} />
-          </div>
+          <RoadmapJourney journey={linkDevelopment(profile).journey} />
         )}
 
         {/* The money behind the road, in the open: fund, lend, invest. */}

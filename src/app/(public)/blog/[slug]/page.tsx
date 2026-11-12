@@ -122,7 +122,7 @@ export default async function BlogPost({ params }: PageProps) {
                   <span className="bg-surface-raised px-3 py-1 rounded-full">Featured Article</span>
                 </div>
               )}
-              <h1 className="text-4xl md:text-5xl font-bold text-fg-primary mb-6 leading-tight">
+              <h1 className="font-heading tracking-display text-4xl md:text-5xl font-bold text-fg-primary mb-6 leading-tight">
                 {post.title}
               </h1>
               <p className="text-xl text-fg-secondary leading-relaxed mb-6">{post.excerpt}</p>

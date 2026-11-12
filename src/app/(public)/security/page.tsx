@@ -2,8 +2,9 @@ import React from 'react';
 import Link from 'next/link';
 import { Shield, Lock, Eye, Server, Key, AlertTriangle } from 'lucide-react';
 import Button from '@/components/ui/Button';
-import { PageHeading } from '@/components/layout/PageHeading';
+import { PUBLIC_PAGE_WIDTH, PublicPageHeader } from '@/components/layout/PublicPageHeader';
 import { ROUTES } from '@/config/routes';
+import { cn } from '@/lib/utils';
 import { CONTACT_EMAIL } from '@/config/brand';
 
 export const metadata = {
@@ -83,17 +84,11 @@ export default function SecurityPage() {
 
   return (
     <div className="min-h-screen bg-surface-page">
-      <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <div className="flex justify-center mb-4">
-            <Shield className="w-16 h-16 text-fg-secondary" />
-          </div>
-          <PageHeading className="mb-4">Security &amp; Privacy</PageHeading>
-          <p className="text-xl text-fg-secondary">
-            Your security and privacy are our top priorities at OrangeCat
-          </p>
-        </div>
+      <div className={cn(PUBLIC_PAGE_WIDTH.reading, 'pb-16')}>
+        <PublicPageHeader
+          title="Security & Privacy"
+          lede="Your security and privacy are our top priorities at OrangeCat"
+        />
 
         {/* Security Overview */}
         <div className="bg-surface-base rounded-lg shadow-sm border border-default p-6 mb-8">

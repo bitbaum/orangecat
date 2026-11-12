@@ -27,6 +27,8 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### content#6 · medium · No shared page frame: 5 content widths, 4 title sizes, 2 alignments and 2 title typefaces across 24 sibling pages
 
+**Fixed in the second pull request** (see "Second batch" in the audit). The cause and fix below are kept as the record.
+
 - **Where:** /docs, /security, /status, /governance, /privacy, /terms, … (both, both themes)
 - **What a person meets:** Moving between footer links, the title jumps left and right, up and down and between sizes, so each page feels like a different site. This is the 'siblings share one frame' rule, broken across the whole surface, and the reason every new page gets re-explained.
 - **Cause:** src/components/layout/PageLayout.tsx:26-67 (PageLayout and PageHeader) exists but only src/app/(public)/study-bitcoin/page.tsx:27 uses it; the others hand-roll the wrapper, for example src/components/legal/LegalDocumentPage.tsx:11 (max-w-3xl, left), src/app/(public)/articles/page.tsx:24 (max-w-2xl, pt-8), src/app/(public)/blog/page.tsx:40-43 (container, pt-20, centred). Four also render a second &lt;main> inside AppShell's (whitepaper/page.tsx:15, roadmap/page.tsx:30, raise/page.tsx:13, LegalDocumentPage.tsx:10, …

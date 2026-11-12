@@ -255,6 +255,7 @@ The reference implementation is the money surface (`/receive`, `/send`,
 | Rule                                                     | Where it lives                                                    |
 | -------------------------------------------------------- | ----------------------------------------------------------------- |
 | Siblings share one frame: title, one line, tabs, content | `src/components/money/MoneyPage.tsx` — no `icon` prop, on purpose |
+| A public page opens with the one public header           | `src/components/layout/PublicPageHeader.tsx`, two page widths     |
 | Pick one of a few → equal cells in one row               | `src/components/ui/SegmentedControl.tsx`                          |
 | A few suggestions → an even grid                         | `AmountField` presets: `grid grid-cols-4`                         |
 | Two actions together → two equal cells                   | `ReceiveCode`: Copy link · Share                                  |
@@ -266,6 +267,8 @@ The reference implementation is the money surface (`/receive`, `/send`,
 
 Gates (in `pnpm run verify` except the last): `check:choice-rows`,
 `check:accent-ink`, `check:token-contrast`, `check:tap-targets`,
+`check:public-frame` (a page under `src/app/(public)` writes no `<h1>` of its
+own),
 `check:type-scale`, `grep -rn '\[#' src/`, and
 `BASE_URL=http://localhost:3020 pnpm run check:broken-words` (a word drawn
 across two lines on the landing page, the Cat chat and the money surface at

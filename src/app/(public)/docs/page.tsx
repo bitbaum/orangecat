@@ -15,7 +15,7 @@ import {
 import { ENTITY_REGISTRY, ENTITY_TYPES as ENTITY_TYPE_KEYS } from '@/config/entity-registry';
 import { STACK } from '@/config/stack-versions';
 import Button from '@/components/ui/Button';
-import { PageHeading } from '@/components/layout/PageHeading';
+import { PUBLIC_PAGE_WIDTH, PublicPageHeader } from '@/components/layout/PublicPageHeader';
 import { ROUTES } from '@/config/routes';
 
 export const metadata: Metadata = {
@@ -35,15 +35,12 @@ const ENTITY_TYPES = ENTITY_TYPE_KEYS.filter(t => t !== 'wallet') // wallet is i
  */
 export default function DocsPage() {
   return (
-    <div className="min-h-screen bg-surface-page py-12">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="text-center mb-14">
-          <PageHeading className="mb-4">Platform Documentation</PageHeading>
-          <p className="text-xl text-fg-secondary max-w-2xl mx-auto">
-            How OrangeCat works — the AI agent, entity system, payments, and security.
-          </p>
-        </div>
+    <div className="min-h-screen bg-surface-page pb-12">
+      <div className={PUBLIC_PAGE_WIDTH.reading}>
+        <PublicPageHeader
+          title="Platform Documentation"
+          lede="How OrangeCat works — the AI agent, entity system, payments, and security."
+        />
 
         {/* The Cat */}
         <section className="mb-10">

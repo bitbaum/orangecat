@@ -4,6 +4,8 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### chrome#0 · high · Visitor phone menu: no Sign in, both header groups missing, 27 footer links in their place
 
+**Fixed in the second pull request** (see "Second batch" in the audit). The cause and fix below are kept as the record.
+
 - **Where:** /, /pricing, /blog, /about, every public page below 1024px (phone, both themes)
 - **What a person meets:** A returning person on a phone finds no Sign in anywhere in the public chrome. They must tap Get Started, land on a sign-up form and scroll to find "Sign in instead". A new visitor who opens the menu does not get the About, Pricing, Docs or ecosystem groups the desktop header offers; they get two screens of undifferentiated links.
 - **Cause:** src/components/layout/HeaderNavigation.tsx:66-89 renders only items that have an href, so "Product" and "Ecosystem" (children, no href) return null; :93-131 appends all five footerNavigation sections; nothing renders authNavigationItems. src/components/layout/AuthButtons.tsx:98 hides Sign In below sm.
@@ -11,6 +13,8 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 - **Mind:** One orange: with the drawer open there are two accent buttons in the DOM (header Get Started and the drawer's). Acceptable only if the scrim from finding 3 lands in the same change so the header one is dimmed and inert; otherwise use variant="primary" in the drawer. Fleet 'The experience belongs to …
 
 ### chrome#3 · high · The visitor menu cannot be reached with the keyboard, has no close control and does not dim the page
+
+**Fixed in the second pull request** (see "Second batch" in the audit). The cause and fix below are kept as the record.
 
 - **Where:** /, /pricing, /blog, every public page below 1024px, and desktop at 400% zoom (phone, both themes)
 - **What a person meets:** Keyboard and screen-reader users (including desktop users at 400% zoom, who get this layout) cannot get into the menu without tabbing through the whole page behind it, and are never told a menu opened. Touch users get no visible way to close it; the hamburger is blurred with the page.
