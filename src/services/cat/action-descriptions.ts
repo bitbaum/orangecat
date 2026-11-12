@@ -40,6 +40,10 @@ export function generateActionDescription(
       return parameters.project
         ? `Read what the agent on ${parameters.project} is doing in Loki, and what it last said`
         : 'Read what your Loki sessions are doing';
+    case 'file_loki_finding':
+      return `File this finding in ${parameters.project}'s feedback inbox in Loki: “${String(parameters.finding ?? '').slice(0, 300)}”`;
+    case 'loki_finding_status':
+      return `Read where Loki report ${String(parameters.report_id ?? '').slice(0, 8)} is`;
     case 'loki_run_status':
       return `Read where Loki run ${String(parameters.run_id ?? '').slice(0, 8)} is`;
     case 'send_task_to_loki': {
