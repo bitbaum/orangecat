@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import groupsService from '@/services/groups';
-import { isGroupMember } from '@/services/groups/utils/helpers';
+import { getUserRole } from '@/services/groups/utils/helpers';
 import { canSeeGroupContent } from '@/services/groups/utils/visibility';
 import type { Group, GroupMember } from '@/types/group';
 import { GROUP_LABELS, type GroupLabel } from '@/config/group-labels';
@@ -22,6 +22,10 @@ export function useGroupDetail(groupSlug: string) {
   const [activeTab, setActiveTab] = useState('overview');
   const [canCreateProposal, setCanCreateProposal] = useState(false);
   const [canSeeContent, setCanSeeContent] = useState(false);
+  // The viewer's own role, read from their own membership row. Never inferred
+  // from `members`: that list is one page (the 20 newest), so a founder or
+  // admin of a larger group would drop out of it.
+  const [viewerRole, setViewerRole] = useState<'founder' | 'admin' | 'member' | null>(null);
   // Each load gets a number; only the newest may write. A load started before
   // auth knew the user would otherwise land after the real one and hide a
   // members-only group from its own member.
@@ -52,13 +56,16 @@ export function useGroupDetail(groupSlug: string) {
 
       // A members-only or private group shows an outsider its name and label
       // and nothing else, so nothing else is asked for.
-      const isMember = user
-        ? user.id === groupResult.group.created_by ||
-          (await isGroupMember(groupResult.group.id, user.id))
-        : false;
+      const role = user
+        ? user.id === groupResult.group.created_by
+          ? 'founder'
+          : await getUserRole(groupResult.group.id, user.id)
+        : null;
       if (superseded()) {
         return;
       }
+      setViewerRole(role);
+      const isMember = role !== null;
       const contentVisible = canSeeGroupContent(groupResult.group, isMember);
       setCanSeeContent(contentVisible);
       if (!contentVisible) {
@@ -139,6 +146,7 @@ export function useGroupDetail(groupSlug: string) {
     setActiveTab,
     canCreateProposal,
     canSeeContent,
+    viewerRole,
     loadGroupData,
     labelConfig,
     governanceConfig,
