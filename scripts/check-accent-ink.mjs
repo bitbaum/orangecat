@@ -5,13 +5,20 @@
  * This class of bug shipped twice (PR #703 swept 13 files; three stragglers
  * survived in a cva variant and two inline chips), so the class is now closed
  * by a gate instead of a third sweep.
+ *
+ * One orange: --public-accent IS --bitcoin-orange, so `bg-bitcoinOrange` is the
+ * same fill under its Bitcoin name. The gate read only `bg-accent-warm`, and
+ * ten white-on-orange labels — the pay card's "Open in wallet", every wallet's
+ * "Send with Wallet" — passed it at 2.30:1. Only the solid fill counts: a tint
+ * such as `bg-bitcoinOrange/10` takes ordinary ink.
  */
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, relative, extname } from 'node:path';
 
 const ROOT = process.cwd();
 const EXTENSIONS = new Set(['.ts', '.tsx', '.css', '.mdx']);
-const PAIR = /bg-accent-warm[^"'`]*text-white\b|text-white\b[^"'`]*bg-accent-warm/;
+const PAIR =
+  /(?:bg-accent-warm|bg-bitcoinOrange(?![\w/]))[^"'`]*text-white\b|text-white\b[^"'`]*(?:bg-accent-warm|bg-bitcoinOrange(?![\w/]))/;
 
 function walk(dir, files = []) {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
