@@ -2,6 +2,7 @@
 
 import { logger } from '@/utils/logger';
 import { API_ROUTES } from '@/config/api-routes';
+import { fetchFollowList } from '@/services/social/followList';
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Search, MessageSquare, Loader2 } from 'lucide-react';
@@ -18,8 +19,8 @@ import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
 type ProfileLite = {
   id: string;
   username: string | null;
-  name: string | null;
-  avatar_url: string | null;
+  name?: string | null;
+  avatar_url?: string | null;
   bio?: string | null;
 };
 
@@ -44,6 +45,7 @@ export default function NewConversationModal({
   const [loading, setLoading] = useState(false);
   const [creatingId, setCreatingId] = useState<string | null>(null);
   const [profiles, setProfiles] = useState<ProfileLite[]>([]);
+  const [listsFollows, setListsFollows] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const timeoutRef = useRef<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -57,9 +59,20 @@ export default function NewConversationModal({
       try {
         setLoading(true);
         setError(null);
-        const url = q
-          ? `${API_ROUTES.PROFILES.BASE}?limit=20&search=${encodeURIComponent(q)}`
-          : `${API_ROUTES.PROFILES.BASE}?limit=20`;
+        // Spaces only is nothing typed (the server trims, then lists newest sign-ups).
+        const typed = q.trim();
+        if (!typed) {
+          // The people you follow, as the empty state says — not the 20 newest
+          // sign-ups, which the fixture and placeholder filters emptied to nobody.
+          const rows = user?.id ? await fetchFollowList('following', user.id) : [];
+          const followed: ProfileLite[] = rows.flatMap(r => (r.profile ? [r.profile] : []));
+          if (!controller.signal.aborted) {
+            setProfiles(rankPeopleForPicker(followed, { searching: false, selfId: user?.id }));
+            setListsFollows(true);
+          }
+          return;
+        }
+        const url = `${API_ROUTES.PROFILES.BASE}?limit=20&search=${encodeURIComponent(typed)}`;
         const res = await fetch(url, { credentials: 'same-origin', signal: controller.signal });
         if (!res.ok) {
           throw new Error('Failed to load people');
@@ -72,7 +85,8 @@ export default function NewConversationModal({
             ? data.data.data
             : [];
         if (!controller.signal.aborted) {
-          setProfiles(rankPeopleForPicker(arr, { searching: !!q, selfId: user?.id }));
+          setProfiles(rankPeopleForPicker(arr, { searching: true, selfId: user?.id }));
+          setListsFollows(false);
         }
       } catch (e) {
         if (controller.signal.aborted) {
@@ -230,11 +244,16 @@ export default function NewConversationModal({
               <p className="text-sm text-fg-tertiary mt-1">
                 {search
                   ? 'Try their display name or @username, or share your profile link with them.'
-                  : 'Type a name or @username above. People you follow or have talked to show up here.'}
+                  : 'Type a name or @username above. People you follow show up here.'}
               </p>
             </div>
           ) : (
             <div className="py-2">
+              {listsFollows && (
+                <h3 className="px-4 pb-1 pt-2 text-xs font-medium text-fg-secondary">
+                  People you follow
+                </h3>
+              )}
               {profiles.map(p => (
                 <button
                   type="button"

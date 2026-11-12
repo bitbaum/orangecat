@@ -73,6 +73,29 @@ export function MessageContextMenu({
     };
   }, [isOpen, onClose]);
 
+  // Opened from a menu button (a message's "Message actions", by keyboard or
+  // click): focus goes to the first item and comes back to the button when the
+  // menu closes. Right-click and long-press leave focus where it was, as before.
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+    const active = document.activeElement;
+    const opener =
+      active instanceof HTMLElement && active.getAttribute('aria-haspopup') === 'menu'
+        ? active
+        : null;
+    if (opener) {
+      menuRef.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
+    }
+    return () => {
+      // Gone when Edit swapped the bubble for its editor: leave focus there.
+      if (opener?.isConnected) {
+        opener.focus();
+      }
+    };
+  }, [isOpen]);
+
   // Adjust position to keep menu in viewport
   useEffect(() => {
     if (!isOpen || !menuRef.current) {

@@ -9,7 +9,7 @@
  */
 
 import React, { useRef, useCallback, useState, useEffect } from 'react';
-import { Check, CheckCheck, AlertCircle } from 'lucide-react';
+import { Check, CheckCheck, AlertCircle, MoreHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Message } from '@/features/messaging/types';
 import { TIMING, MESSAGE_STATUS } from '@/features/messaging/lib/constants';
@@ -134,6 +134,11 @@ export default function MessageItem({
     }
   }, []);
 
+  // Right-click and long-press are not keyboard paths: your own message also
+  // gets a button that opens the same menu (Edit, Delete).
+  const showActions =
+    isCurrentUser && !!onLongPress && !isEditing && !isOptimistic && !message.is_deleted;
+
   return (
     <>
       {/* Date Divider */}
@@ -146,7 +151,7 @@ export default function MessageItem({
       )}
 
       {/* Message Bubble */}
-      <div className={cn('flex', isCurrentUser ? 'justify-end' : 'justify-start')}>
+      <div className={cn('group flex gap-1', isCurrentUser ? 'justify-end' : 'justify-start')}>
         <div
           className={cn('max-w-[85%] sm:max-w-[70%]', isOptimistic && 'opacity-70')}
           onContextMenu={e => {
@@ -227,6 +232,29 @@ export default function MessageItem({
             {message.edited_at && <span className="text-fg-tertiary italic">edited</span>}
           </div>
         </div>
+
+        {showActions && (
+          <button
+            type="button"
+            aria-label="Message actions"
+            aria-haspopup="menu"
+            onClick={e => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              onLongPress?.(message, { x: rect.left, y: rect.bottom });
+            }}
+            className={cn(
+              // After the bubble in reading order, beside it on screen.
+              'order-first flex shrink-0 items-center justify-center self-start rounded-md text-fg-secondary transition-opacity hover:bg-surface-raised hover:text-fg-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+              // Mouse: there on hover or keyboard focus.
+              'pointer-fine:h-9 pointer-fine:w-9 pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100 pointer-fine:focus-visible:opacity-100',
+              // Touch has long-press: out of sight and untappable until a
+              // keyboard or switch focuses it, then a 44px target.
+              'pointer-coarse:sr-only pointer-coarse:focus:not-sr-only pointer-coarse:focus:min-h-11 pointer-coarse:focus:min-w-11'
+            )}
+          >
+            <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+          </button>
+        )}
       </div>
     </>
   );
