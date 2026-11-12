@@ -14,7 +14,7 @@ export function WhyReceive() {
         type="button"
         onClick={() => setOpen(value => !value)}
         aria-expanded={open}
-        className="flex min-h-11 items-center gap-1 text-xs font-medium text-accent-warm underline hover:text-accent-warm-hover"
+        className="flex min-h-11 items-center gap-1 text-xs font-medium text-fg-primary underline underline-offset-4 hover:text-fg-secondary"
       >
         {open ? (
           <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />

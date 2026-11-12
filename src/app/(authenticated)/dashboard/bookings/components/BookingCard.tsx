@@ -127,7 +127,7 @@ export default function BookingCard({
               <p className="text-xs font-medium mb-1">
                 {booking.status === STATUS.BOOKINGS.REJECTED ? 'Rejection' : 'Cancellation'} reason:
               </p>
-              <p className="text-base text-status-negative/80">{booking.cancellation_reason}</p>
+              <p className="text-base text-status-negative">{booking.cancellation_reason}</p>
             </div>
           )}
         </div>

@@ -182,7 +182,7 @@ export function PublicPayPanel({
 
         <a
           href={paymentUri}
-          className="flex w-full items-center justify-center gap-2 rounded-md bg-bitcoinOrange px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-bitcoinOrange/90 min-h-11"
+          className="flex w-full items-center justify-center gap-2 rounded-md bg-bitcoinOrange px-4 py-3 text-sm font-semibold text-on-accent transition-colors hover:bg-bitcoinOrange/90 min-h-11"
         >
           <ExternalLink className="h-4 w-4" />
           Open in wallet

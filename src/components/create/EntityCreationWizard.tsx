@@ -16,10 +16,10 @@ import type { EntityConfig, EntityTemplate } from './types';
 
 // The four colorTheme values that ENTITY_REGISTRY exposes used to drive a
 // per-entity chromatic palette in the wizard progress bar (amber, emerald,
-// rose, etc). The rebrand collapses entity surfaces to monochrome chrome +
-// one warm accent for top-of-funnel conversion (see CLAUDE.md design system).
-// The progress bar now renders that warm accent uniformly — completed steps
-// stay status-positive — and consumers no longer need to pass a theme prop.
+// rose, etc). The rebrand collapses entity surfaces to monochrome chrome; the
+// one orange is for Bitcoin and the way in, never a step marker (AGENTS.md,
+// "One orange"). The progress bar draws the current step in ink — completed
+// steps stay status-positive — and consumers no longer need to pass a theme prop.
 const WIZARD_STEP_VARIANTS = {
   enter: (direction: number) => ({
     x: direction > 0 ? 1000 : -1000,

@@ -222,7 +222,7 @@ export default function ProfileWalletSection({
                           );
                         }, 500);
                       }}
-                      className="w-full bg-bitcoinOrange hover:bg-bitcoinOrange/90 text-white"
+                      className="w-full bg-bitcoinOrange hover:bg-bitcoinOrange/90 text-on-accent"
                     >
                       <ExternalLink className="w-4 h-4 mr-2" />
                       Send with Wallet

@@ -94,7 +94,7 @@ export function SocialLinkForm({
       </div>
 
       {error && (
-        <div className="oc-error-surface text-status-negative/80 px-3 py-2 rounded text-sm">
+        <div className="oc-error-surface text-status-negative px-3 py-2 rounded text-sm">
           {error}
         </div>
       )}
@@ -167,7 +167,7 @@ export function SocialLinkForm({
         </label>
         <div className="relative">
           {platformConfig && (
-            <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
+            <div className="pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2">
               <Icon className="w-4 h-4 text-fg-tertiary" />
             </div>
           )}

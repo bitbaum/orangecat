@@ -153,7 +153,7 @@ export function LokiChip() {
             {notLinked && status?.connect && (
               <a
                 href={status.connect.href}
-                className="inline-flex min-h-10 items-center rounded-full bg-accent-warm px-4 text-sm font-medium text-on-accent"
+                className="inline-flex min-h-10 pointer-coarse:min-h-11 items-center rounded-full bg-accent-warm px-4 text-sm font-medium text-on-accent"
               >
                 Connect Loki
               </a>
@@ -162,7 +162,7 @@ export function LokiChip() {
               href={ECOSYSTEM.loki.siteUrl}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex min-h-10 items-center gap-1 rounded-full border border-default px-4 text-sm text-fg-primary hover:bg-surface-raised"
+              className="inline-flex min-h-10 pointer-coarse:min-h-11 items-center gap-1 rounded-full border border-default px-4 text-sm text-fg-primary hover:bg-surface-raised"
             >
               Open Loki <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
             </a>

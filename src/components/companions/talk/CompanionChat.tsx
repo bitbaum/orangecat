@@ -85,7 +85,7 @@ export function CompanionChat({
             {fresh && (
               <p className="mb-0 text-base text-fg-primary">{copy.starters.firstQuestion}</p>
             )}
-            <p className="mb-0 text-xs text-fg-muted">{COMPANION_COPY.disclosure(name)}</p>
+            <p className="mb-0 text-xs text-fg-tertiary">{COMPANION_COPY.disclosure(name)}</p>
           </div>
         }
         aboveComposer={

@@ -10,6 +10,7 @@ import type { Profile } from '@/types/profile';
 import type { ProfileFormData } from '@/types/database';
 import type { ProfileFieldType } from '@/lib/profile-guidance';
 import { getProfileCompletionPercentage } from './profile-completion';
+import { scrollBehavior } from '@/lib/scroll-behavior';
 
 export function useProfileEdit() {
   const { user, profile: storeProfile, isLoading: authLoading } = useRequireAuth();
@@ -45,7 +46,7 @@ export function useProfileEdit() {
     const id = setTimeout(() => {
       const element = document.getElementById(hash);
       if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        element.scrollIntoView({ behavior: scrollBehavior(), block: 'start' });
         const input = element.querySelector('input, textarea');
         if (input) {
           (input as HTMLElement).focus();

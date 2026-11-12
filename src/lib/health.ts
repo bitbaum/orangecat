@@ -3,13 +3,16 @@ import { DATABASE_TABLES } from '@/config/database-tables';
 
 export type ServiceStatus = 'operational' | 'degraded' | 'outage' | 'unknown';
 
+/** A status something measured. `unknown` is a row nobody probes. */
+export type MeasuredStatus = Exclude<ServiceStatus, 'unknown'>;
+
 interface ServiceHealth {
   name: string;
   status: ServiceStatus;
 }
 
 interface HealthReport {
-  overall: ServiceStatus;
+  overall: MeasuredStatus;
   timestamp: string;
   services: ServiceHealth[];
 }
@@ -85,7 +88,6 @@ export async function checkHealth(): Promise<HealthReport> {
     { name: 'API', status: 'operational' },
     { name: 'Database', status: dbStatus },
     { name: 'Authentication', status: authStatus },
-    { name: 'Bitcoin Integration', status: 'unknown' },
   ];
 
   // The 200/503 that the DEPLOY health-gate and uptime monitor key on reflects
@@ -94,7 +96,21 @@ export async function checkHealth(): Promise<HealthReport> {
   // must NOT flip the endpoint to 503 — that would roll back a healthy deploy (it
   // did: a bugged auth probe took every deploy down). Alert on a real auth outage
   // off this critical path (uptime.yml reads services.authentication).
-  const overall: ServiceStatus = dbStatus === 'outage' ? 'outage' : 'operational';
+  const overall: MeasuredStatus = dbStatus === 'outage' ? 'outage' : 'operational';
 
   return { overall, timestamp, services };
+}
+
+/**
+ * What the status page says at the top. `overall` answers the deploy gate and
+ * leaves auth out on purpose, so used alone it read "All Systems Operational"
+ * above a red row. The headline never contradicts the rows under it: a core
+ * outage is an outage, any other failing row makes it a partial disruption.
+ */
+export function headlineStatus(report: Pick<HealthReport, 'overall' | 'services'>): MeasuredStatus {
+  if (report.overall !== 'operational') {
+    return report.overall;
+  }
+  const failing = report.services.some(s => s.status === 'outage' || s.status === 'degraded');
+  return failing ? 'degraded' : 'operational';
 }

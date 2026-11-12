@@ -19,6 +19,11 @@
  * P0 matrix uses; without them those pages are reported as not opened, never
  * as passed. Widths: 320, 390, 1440.
  *
+ * And seven public pages whose headings a global `hyphens: auto` cut in two
+ * at phone width (2026-11-12): "Back the permission- / less economy" on
+ * /support, "al- / ready", "prema- / ture", "multi- / ple". The rule is gone
+ * from globals.css; these pages are where it would show first if it returned.
+ *
  * Fails listing page, width and the words. A page that does not answer 2xx,
  * or bounces to sign-in, fails too — an audit of a 404 is not an audit.
  *
@@ -53,6 +58,13 @@ const PAGES = [
   { path: '/receive', signedIn: true },
   { path: '/send', signedIn: true },
   { path: '/requests', signedIn: true },
+  { path: '/pricing', signedIn: false },
+  { path: '/how-it-works', signedIn: false },
+  { path: '/what-you-can-do', signedIn: false },
+  { path: '/support', signedIn: false },
+  { path: '/domains', signedIn: false },
+  { path: '/whitepaper', signedIn: false },
+  { path: '/bitcoin-wallet-guide', signedIn: false },
 ];
 
 /** Let the page finish: network quiet, fonts in, hydration done. */

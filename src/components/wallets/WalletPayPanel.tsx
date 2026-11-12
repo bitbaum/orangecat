@@ -84,7 +84,7 @@ export default function WalletPayPanel({ wallet }: Props) {
                 toast.info("If your wallet didn't open, copy the address and paste it manually");
               }, 500);
             }}
-            className="w-full mt-4 bg-bitcoinOrange hover:bg-bitcoinOrange/90 text-white"
+            className="w-full mt-4 bg-bitcoinOrange hover:bg-bitcoinOrange/90 text-on-accent"
           >
             <ExternalLink className="w-4 h-4 mr-2" />
             Open in wallet

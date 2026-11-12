@@ -228,8 +228,16 @@ two things: Bitcoin (balances, Lightning, icons — `bg-bitcoinOrange`) and the 
 action that brings someone in (the `accent` Button variant, on public
 top-of-funnel surfaces only). In-app actions are monochrome `primary`. Orange is
 never decoration, a second button or a disabled state. Ink on it is
-`text-on-accent`; `check:accent-ink` fails white. There is no `bitcoin-orange`
-utility class.
+`text-on-accent`. There is no `bitcoin-orange` utility class and no
+`accent-primary` one.
+
+**Ink follows its fill.** A fill that flips with the theme (`bg-fg-primary`, a
+`GRADIENTS` key, a status fill) takes `text-fg-inverted`, never `text-white`.
+The band that is near-black in both themes (`bg-surface-public`) takes
+`text-on-public`, never `text-fg-inverted`, which flips. Copy is
+`text-fg-primary`, `-secondary` or `-tertiary`, each held at 4.5:1 on every
+surface in both themes; `text-fg-muted` and a resting `/NN` alpha on text are
+not for words. `check:accent-ink` and `check:token-contrast` fail the rest.
 
 Two global rules fight your classes: every `<p>` has a bottom margin (give
 stacked paragraphs `mb-0` and let the parent set the gap), and every text
@@ -254,11 +262,13 @@ The reference implementation is the money surface (`/receive`, `/send`,
 | A row of a list has a face                               | `RailGlyph`; only the Bitcoin tile is orange                      |
 
 Gates (in `pnpm run verify` except the last): `check:choice-rows`,
-`check:accent-ink`, `check:type-scale`, `grep -rn '\[#' src/`, and
+`check:accent-ink`, `check:token-contrast`, `check:tap-targets`,
+`check:type-scale`, `grep -rn '\[#' src/`, and
 `BASE_URL=http://localhost:3020 pnpm run check:broken-words` (a word drawn
-across two lines on the landing page, the Cat chat and the money surface at
-320/390/1440, measured in Chromium; `E2E_USER_EMAIL` / `E2E_USER_PASSWORD` open
-the signed-in pages; CI runs it against the standalone build).
+across two lines on the landing page, seven public pages, the Cat chat and the
+money surface at 320/390/1440, measured in Chromium; `E2E_USER_EMAIL` /
+`E2E_USER_PASSWORD` open the signed-in pages; CI runs it against the standalone
+build).
 
 Before a PR with a screen in it: open it at 390px (no sideways scroll, 44px
 targets, the committing action reachable), put it beside its siblings, read

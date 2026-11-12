@@ -256,7 +256,7 @@ export function WalletForm({
         <button
           type="button"
           onClick={() => setShowGetWallet(v => !v)}
-          className="mt-2 text-xs font-medium text-accent-warm underline hover:text-accent-warm-hover"
+          className="mt-2 text-xs font-medium text-fg-primary underline underline-offset-4 hover:text-fg-secondary"
         >
           Don&apos;t have a wallet? Get one free →
         </button>

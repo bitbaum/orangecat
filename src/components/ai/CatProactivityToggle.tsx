@@ -11,6 +11,7 @@
 
 import { Lightbulb } from 'lucide-react';
 import { useState } from 'react';
+import { Switch } from '@/components/ui/switch';
 
 interface CatProactivityToggleProps {
   enabled: boolean;
@@ -52,27 +53,12 @@ export function CatProactivityToggle({
           </div>
         </div>
 
-        <button
-          type="button"
-          role="switch"
-          aria-checked={enabled}
-          aria-label="Let Cat bring things up"
+        <Switch
+          checked={enabled}
+          onCheckedChange={handleToggle}
           disabled={saving || isLoading}
-          onClick={handleToggle}
-          className={[
-            'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors',
-            'focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2',
-            'disabled:cursor-not-allowed disabled:opacity-50',
-            enabled ? 'bg-accent-primary' : 'bg-border-default',
-          ].join(' ')}
-        >
-          <span
-            className={[
-              'inline-block h-4 w-4 transform rounded-full bg-surface-base transition-transform',
-              enabled ? 'translate-x-6' : 'translate-x-1',
-            ].join(' ')}
-          />
-        </button>
+          aria-label="Let Cat bring things up"
+        />
       </div>
     </div>
   );

@@ -29,10 +29,12 @@
   --bp-fg-faint: hsl(var(--text-tertiary));
   --bp-border: hsl(var(--border-subtle));
 
-  /* The warm accent: links, active TOC entry, reading-progress hairline —
-     the same places the pre-bip-kit article reader used accent-warm. */
-  --bp-accent: var(--accent-primary);
-  --bp-accent-contrast: hsl(var(--on-accent));
+  /* Links, the active TOC entry and the reading-progress hairline are drawn
+     in ink. They used the warm accent, which is 2.14:1 as text on the light
+     page; the orange stays for Bitcoin and the one action that brings
+     someone in. */
+  --bp-accent: hsl(var(--text-primary));
+  --bp-accent-contrast: hsl(var(--text-inverted));
 
   /* Callouts follow the status tier: colors mean status, nothing else.
      Notes are informational → achromatic, per the migration direction. */
@@ -53,6 +55,18 @@
 .bp-faq-section-title {
   font-family: var(--font-heading), var(--font-inter), system-ui, sans-serif;
   letter-spacing: var(--tracking-display);
+}
+
+/* With the accent drawn in ink, colour no longer tells a link from its
+   sentence or a linked question from its neighbours. The underline carries
+   the link at full strength, and the question someone was sent to gets a
+   rule down its edge. */
+.bp-link {
+  text-decoration-color: currentColor;
+}
+.bp-faq-item:target > .bp-faq-question {
+  box-shadow: inset 2px 0 0 var(--bp-accent);
+  padding-left: 0.75rem;
 }
 
 /* A linked section or question lands below the fixed header, not under it. */

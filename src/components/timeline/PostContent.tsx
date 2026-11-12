@@ -8,6 +8,7 @@ import { renderMarkdownToReact } from '@/utils/markdown';
 import { TIMELINE_SURFACE } from '@/config/timeline';
 import { getExternalAttribution } from '@/config/external-publish';
 import { ROUTES } from '@/config/routes';
+import { scrollBehavior } from '@/lib/scroll-behavior';
 
 interface PostContentProps {
   event: TimelineDisplayEvent;
@@ -72,7 +73,10 @@ export function PostContent({ event }: PostContentProps) {
                 window.history.replaceState({}, '', url.toString());
                 const el = document.querySelector(`[data-event-id="${event.parentEventId}"]`);
                 if (el) {
-                  (el as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  (el as HTMLElement).scrollIntoView({
+                    behavior: scrollBehavior(),
+                    block: 'center',
+                  });
                 }
               } catch {}
             }}

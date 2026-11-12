@@ -134,11 +134,18 @@ function PlanCard({ plan }: { plan: CatPlan }) {
     <div
       className={cn(
         'relative flex flex-col rounded-lg border bg-surface-base p-6 shadow-sm',
-        hasBadge ? 'border-accent-warm' : 'border-default'
+        hasBadge && !isComingSoon ? 'border-accent-warm' : 'border-default'
       )}
     >
       {hasBadge && (
-        <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-accent-warm px-3 py-1 text-xs font-medium uppercase tracking-caps text-fg-inverted">
+        <span
+          className={cn(
+            'absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium uppercase tracking-caps',
+            isComingSoon
+              ? 'border border-default bg-surface-raised text-fg-secondary'
+              : 'bg-accent-warm text-on-accent'
+          )}
+        >
           {plan.badge}
         </span>
       )}

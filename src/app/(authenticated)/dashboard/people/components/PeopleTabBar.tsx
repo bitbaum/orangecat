@@ -49,9 +49,10 @@ export default function PeopleTabBar({
 
       {/* Search */}
       <div className="mb-6">
-        <div className="relative max-w-md">
-          <Search className="w-4 h-4 text-fg-tertiary absolute left-3 top-1/2 -translate-y-1/2" />
+        <div className="max-w-md">
           <Input
+            icon={Search}
+            aria-label="Search people"
             value={searchTerm}
             onChange={e => onSearchChange(e.target.value)}
             placeholder={
@@ -61,7 +62,6 @@ export default function PeopleTabBar({
                   ? 'Search following\u2026'
                   : 'Search followers\u2026'
             }
-            className="pl-9"
           />
         </div>
       </div>

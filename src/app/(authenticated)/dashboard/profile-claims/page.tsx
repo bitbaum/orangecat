@@ -35,8 +35,8 @@ const STATUS_LABEL: Record<ProfileClaimListItem['status'], string> = {
 const STATUS_CLASS: Record<ProfileClaimListItem['status'], string> = {
   pending: 'bg-status-warning-subtle text-fg-primary',
   claimed: 'bg-status-positive-subtle text-fg-primary',
-  revoked: 'bg-surface-raised text-fg-muted',
-  declined: 'bg-surface-raised text-fg-muted',
+  revoked: 'bg-surface-raised text-fg-tertiary',
+  declined: 'bg-surface-raised text-fg-tertiary',
 };
 
 function ClaimRow({
@@ -80,7 +80,7 @@ function ClaimRow({
             </span>
           </div>
           {claim.suggestedUsername && (
-            <p className="mt-0.5 text-xs text-fg-muted">@{claim.suggestedUsername}</p>
+            <p className="mt-0.5 text-xs text-fg-tertiary">@{claim.suggestedUsername}</p>
           )}
         </div>
 

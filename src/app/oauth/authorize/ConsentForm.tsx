@@ -137,7 +137,8 @@ export function ConsentForm({
       )}
 
       <h1 className="text-xl font-semibold text-fg-primary">
-        Allow <span className="text-accent-warm">{clientName}</span> to use your OrangeCat account?
+        Allow <span className="font-semibold text-fg-primary">{clientName}</span> to use your
+        OrangeCat account?
       </h1>
       <p className="mt-2 text-sm text-fg-secondary">
         {resourceName

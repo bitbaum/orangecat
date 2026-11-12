@@ -204,7 +204,7 @@ export function WalletSelectorField({
             type="button"
             onClick={() => setMode('paste')}
             disabled={disabled}
-            className="text-sm font-medium text-accent-warm underline hover:text-accent-warm-hover disabled:opacity-50"
+            className="text-sm font-medium text-fg-primary underline underline-offset-4 hover:text-fg-secondary disabled:opacity-50"
           >
             {PAY_DESTINATION_COPY.differentDestination}
           </button>

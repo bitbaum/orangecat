@@ -1,7 +1,14 @@
+import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { createServerClient } from '@/lib/supabase/server';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { ROUTES } from '@/config/routes';
+
+// This route only redirects or 404s, so the 404 is the one time its title is
+// seen. Without it, a mistyped address (every unknown single segment lands
+// here) hydrates back to the home page's title: the root not-found's metadata
+// reaches the served HTML but not the payload the browser hydrates from.
+export const metadata: Metadata = { title: 'Page not found' };
 
 /**
  * Username shortlink: /<username> → /profiles/<username>.

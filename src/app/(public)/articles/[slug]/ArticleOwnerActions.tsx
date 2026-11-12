@@ -55,7 +55,7 @@ export default function ArticleOwnerActions({
             type="button"
             onClick={handleDelete}
             disabled={deleting}
-            className="inline-flex items-center gap-1.5 rounded-md bg-status-negative px-3 py-1.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-md bg-status-negative px-3 py-1.5 text-sm font-semibold text-fg-inverted transition-opacity hover:opacity-90 disabled:opacity-50"
           >
             {deleting ? (
               <Loader2 className="h-4 w-4 animate-spin" />

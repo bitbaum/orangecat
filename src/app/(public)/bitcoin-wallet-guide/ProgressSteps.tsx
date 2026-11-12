@@ -29,7 +29,7 @@ export function ProgressSteps({ currentStep, onStepClick }: ProgressStepsProps) 
               transition={{ delay: index * 0.1 }}
               className={`text-center p-6 rounded-lg border-2 transition-all cursor-pointer ${
                 isActive
-                  ? 'bg-bitcoinOrange/10 text-bitcoinOrange border-bitcoinOrange/20 border-bitcoinOrange shadow-sm'
+                  ? 'border-interactive bg-surface-raised text-fg-primary'
                   : isCompleted
                     ? 'bg-status-positive-subtle border-status-positive/20 text-status-positive'
                     : 'bg-surface-base border-default hover:border-strong dark:hover:border-default'
@@ -39,9 +39,9 @@ export function ProgressSteps({ currentStep, onStepClick }: ProgressStepsProps) 
               <div
                 className={`w-12 h-12 rounded-full mx-auto mb-4 flex items-center justify-center ${
                   isActive
-                    ? 'bg-bitcoinOrange text-white'
+                    ? 'bg-fg-primary text-fg-inverted'
                     : isCompleted
-                      ? 'bg-status-positive text-white'
+                      ? 'bg-status-positive text-fg-inverted'
                       : 'bg-surface-raised text-fg-secondary'
                 }`}
               >
