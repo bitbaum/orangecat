@@ -24,7 +24,7 @@ import { cn } from '@/lib/utils';
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
 import { PaymentExpectationNote } from './PaymentExpectationNote';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
-import { displayBTC } from '@/services/currency';
+import { displayBTC, formatCurrency } from '@/services/currency';
 import { LABELED_SUPPORT_AMOUNTS_BTC } from '@/config/payment-presets';
 
 interface PublicPayPanelProps {
@@ -96,6 +96,25 @@ export function PublicPayPanel({
     return `lightning:${address}`;
   })();
 
+  // The fixed price as listed, and the Bitcoin figure the payer actually sends.
+  // The second is formatCurrency(…, 'BTC'), not formatAmountBtc: that one
+  // renders in the viewer's display currency, so a CHF price read
+  // "CHF 20.00 ≈ CHF 20.00" and the BTC amount was nowhere on the card.
+  const priceLabel = hasFixedAmount ? formatPrice(priceAmount as number, priceCurrency) : '';
+  const btcLabel = amountBtc && amountBtc > 0 ? formatCurrency(amountBtc, 'BTC') : null;
+
+  // A lightning: URI cannot carry an amount, so the payer types it: the
+  // amount as shown, with the exact BTC beside it (once, if they are the same).
+  const lightningAmountPrompt = (label: string, btc: number) => (
+    <p className="text-xs text-fg-tertiary">
+      Lightning wallets ask for the amount — enter{' '}
+      <span className="whitespace-nowrap">
+        {label === formatCurrency(btc, 'BTC') ? displayBTC(btc) : `${label} (${displayBTC(btc)})`}
+      </span>{' '}
+      when prompted.
+    </p>
+  );
+
   return (
     <Card>
       <CardHeader>
@@ -106,16 +125,21 @@ export function PublicPayPanel({
       </CardHeader>
       <CardContent className="space-y-4">
         {hasFixedAmount ? (
-          <div className="flex items-baseline justify-between">
-            <span className="text-fg-secondary">Amount</span>
-            <span className="text-lg font-bold text-fg-primary">
-              {formatPrice(priceAmount as number, priceCurrency)}
-              {amountBtc && amountBtc > 0 && priceCurrency && priceCurrency !== 'BTC' && (
-                <span className="ml-2 text-sm font-normal text-fg-secondary">
-                  ≈ {formatAmountBtc(amountBtc)}
-                </span>
-              )}
-            </span>
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+              <span className="text-fg-secondary">Amount</span>
+              <span className="text-lg font-bold text-fg-primary">
+                {priceLabel}
+                {btcLabel && btcLabel !== priceLabel && (
+                  <span className="ml-2 whitespace-nowrap text-sm font-normal text-fg-secondary">
+                    ≈ {btcLabel}
+                  </span>
+                )}
+              </span>
+            </div>
+            {!isOnchain && amountBtc && amountBtc > 0
+              ? lightningAmountPrompt(priceLabel, amountBtc)
+              : null}
           </div>
         ) : (
           <div className="space-y-2">
@@ -146,12 +170,9 @@ export function PublicPayPanel({
                 );
               })}
             </div>
-            {selectedBtc !== null && !isOnchain && (
-              <p className="text-xs text-fg-tertiary">
-                Lightning wallets ask for the amount — enter{' '}
-                {`${formatAmountBtc(selectedBtc)} (${displayBTC(selectedBtc)})`} when prompted.
-              </p>
-            )}
+            {selectedBtc !== null &&
+              !isOnchain &&
+              lightningAmountPrompt(formatAmountBtc(selectedBtc), selectedBtc)}
           </div>
         )}
 
@@ -166,7 +187,7 @@ export function PublicPayPanel({
           <button
             type="button"
             onClick={() => copy(address)}
-            className="flex w-full items-center justify-between gap-2 rounded-lg border border-default bg-surface-raised/40 px-3 py-2 text-left hover:bg-surface-raised/70"
+            className="flex min-h-11 w-full items-center justify-between gap-2 rounded-lg border border-default bg-surface-raised/40 px-3 py-2 text-left hover:bg-surface-raised/70"
             aria-label="Copy receiving address"
           >
             <span className="min-w-0 truncate font-mono text-sm text-fg-primary">
@@ -182,7 +203,7 @@ export function PublicPayPanel({
 
         <a
           href={paymentUri}
-          className="flex w-full items-center justify-center gap-2 rounded-md bg-bitcoinOrange px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-bitcoinOrange/90 min-h-11"
+          className="flex w-full items-center justify-center gap-2 rounded-md bg-bitcoinOrange px-4 py-3 text-sm font-semibold text-on-accent transition-colors hover:bg-bitcoinOrange/90 min-h-11"
         >
           <ExternalLink className="h-4 w-4" />
           Open in wallet
@@ -196,7 +217,10 @@ export function PublicPayPanel({
         {signInHref && (
           <p className="text-xs text-fg-tertiary text-center">
             Have an account?{' '}
-            <Link href={signInHref} className="underline hover:text-fg-secondary">
+            <Link
+              href={signInHref}
+              className="-my-3 inline-flex min-h-11 items-center underline hover:text-fg-secondary"
+            >
               Sign in to track your order
             </Link>
           </p>
