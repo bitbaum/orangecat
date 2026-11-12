@@ -86,6 +86,7 @@ export async function createGroupWallet(
           bitcoin_address: data.bitcoin_address || undefined,
           lightning_address: data.lightning_address || undefined,
           current_balance_btc: data.current_balance_btc || 0,
+          balance_updated_at: null,
           is_active: data.is_active,
           can_access: true,
           required_signatures: data.required_signatures || 1,

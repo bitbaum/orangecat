@@ -17,14 +17,22 @@ import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { BADGE_COLORS } from '@/config/badge-colors';
 import { apiErrorMessage } from '@/lib/api/errorMessage';
 import { explorerAddressUrl } from '@/lib/bitcoin/explorer';
+import { FormattedDate } from '@/components/ui/FormattedDate';
 
 export function GroupWalletCard({
   wallet,
   groupSlug,
+  canRefresh,
   onUpdate,
 }: {
   wallet: GroupWalletSummary;
   groupSlug: string;
+  /**
+   * Founder or admin. The stored balance changes only under the
+   * group_wallets_update policy (those two roles); anyone else's refresh read
+   * the chain and stored nothing.
+   */
+  canRefresh: boolean;
   onUpdate?: () => void;
 }) {
   const { formatAmountBtc } = useDisplayCurrency();
@@ -128,46 +136,72 @@ export function GroupWalletCard({
           </div>
         )}
 
-        <div className="flex items-center justify-between pt-2 border-t">
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <div>
-                <div className="text-sm text-fg-secondary">Balance</div>
-                {/* Green only for a non-zero balance — a zero
-                    rendered green reads as a positive it isn't. */}
-                <div
-                  className={`text-lg font-bold ${
-                    Number(wallet.current_balance_btc) > 0
-                      ? 'text-status-positive'
-                      : 'text-fg-primary'
-                  }`}
-                >
-                  {formatAmountBtc(wallet.current_balance_btc)}
+        {(wallet.bitcoin_address || wallet.required_signatures > 1) && (
+          <div className="flex items-center justify-between pt-2 border-t">
+            {/* Balance — the personal wallet's rule (WalletCard): only an
+                on-chain address has a balance anyone can read, so a
+                Lightning-only wallet shows none; and a balance nobody has read
+                is unknown, not zero. current_balance_btc defaults to 0, so
+                without balance_updated_at that 0 says nothing. */}
+            {wallet.bitcoin_address && (
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <div>
+                    <div className="text-sm text-fg-secondary">Balance</div>
+                    {/* Green only for a non-zero balance — a zero
+                        rendered green reads as a positive it isn't. */}
+                    <div
+                      className={`text-lg font-bold ${
+                        !wallet.balance_updated_at
+                          ? 'text-fg-tertiary'
+                          : Number(wallet.current_balance_btc) > 0
+                            ? 'text-status-positive'
+                            : 'text-fg-primary'
+                      }`}
+                    >
+                      {wallet.balance_updated_at
+                        ? formatAmountBtc(wallet.current_balance_btc)
+                        : '—'}
+                    </div>
+                    <div className="text-xs text-fg-secondary">
+                      {wallet.balance_updated_at ? (
+                        <>
+                          Updated{' '}
+                          <FormattedDate value={wallet.balance_updated_at} mode="datetime" />
+                        </>
+                      ) : canRefresh ? (
+                        'Not checked yet — refresh to read it from the blockchain'
+                      ) : (
+                        'Not checked yet'
+                      )}
+                    </div>
+                  </div>
+                  {canRefresh && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={handleRefreshBalance}
+                      disabled={refreshing}
+                      aria-label="Refresh balance"
+                      className="ml-auto"
+                    >
+                      {refreshing ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-4 w-4" />
+                      )}
+                    </Button>
+                  )}
                 </div>
               </div>
-              {wallet.bitcoin_address && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={handleRefreshBalance}
-                  disabled={refreshing}
-                  className="ml-auto"
-                >
-                  {refreshing ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <RefreshCw className="h-4 w-4" />
-                  )}
-                </Button>
-              )}
-            </div>
+            )}
+            {wallet.required_signatures > 1 && (
+              <div className="text-sm text-fg-secondary">
+                Multi-sig: {wallet.required_signatures} signatures required
+              </div>
+            )}
           </div>
-          {wallet.required_signatures > 1 && (
-            <div className="text-sm text-fg-secondary">
-              Multi-sig: {wallet.required_signatures} signatures required
-            </div>
-          )}
-        </div>
+        )}
       </CardContent>
     </Card>
   );

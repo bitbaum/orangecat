@@ -21,6 +21,7 @@ import { SellerWalletBanner } from './SellerWalletBanner';
 import { OwnerCollectPanel } from './OwnerCollectPanel';
 import { PublicPayPanel } from './PublicPayPanel';
 import { PublicSupportPanel } from './PublicSupportPanel';
+import { NoWalletYetNotice } from './NoWalletYetNotice';
 import { SharedWalletNotice } from './SharedWalletNotice';
 import GuestTicketPurchase from '@/components/events/GuestTicketPurchase';
 import type { SharedWalletUsage } from '@/domain/wallets/walletUsage';
@@ -107,13 +108,7 @@ export function PublicEntityPaymentSection({
           recipientName={recipientName}
         />
       ) : (
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-fg-secondary text-center">
-              This creator hasn&apos;t connected a wallet yet.
-            </p>
-          </CardContent>
-        </Card>
+        <NoWalletYetNotice />
       );
     }
 
@@ -163,32 +158,26 @@ export function PublicEntityPaymentSection({
       );
     }
 
-    const purchaseFallback = (
+    const purchaseFallback = !sellerReceive ? (
+      <NoWalletYetNotice />
+    ) : (
       <Card>
         <CardContent className="pt-6 space-y-3">
-          {!sellerReceive ? (
-            <p className="text-sm text-fg-secondary text-center">
-              This creator hasn&apos;t connected a wallet yet.
-            </p>
-          ) : (
-            <>
-              <Button
-                href={`${ROUTES.AUTH}?mode=login&from=${signInRedirect}`}
-                className="w-full gap-2 min-h-11"
-              >
-                <LogIn className="w-4 h-4" />
-                Sign in to purchase
-              </Button>
-              <p className="text-xs text-fg-secondary text-center">
-                {
-                  // Not 'a Lightning invoice': for an xpub wallet the request is a fresh
-                  // on-chain address.
-                  'You get a payment request straight from the seller’s wallet.'
-                }
-              </p>
-              <PaymentExpectationNote />
-            </>
-          )}
+          <Button
+            href={`${ROUTES.AUTH}?mode=login&from=${signInRedirect}`}
+            className="w-full gap-2 min-h-11"
+          >
+            <LogIn className="w-4 h-4" />
+            Sign in to purchase
+          </Button>
+          <p className="text-xs text-fg-secondary text-center">
+            {
+              // Not 'a Lightning invoice': for an xpub wallet the request is a fresh
+              // on-chain address.
+              'You get a payment request straight from the seller’s wallet.'
+            }
+          </p>
+          <PaymentExpectationNote />
         </CardContent>
       </Card>
     );
@@ -241,15 +230,7 @@ export function PublicEntityPaymentSection({
   // "No wallet connected" button promised an action that could never complete;
   // say the true thing instead.
   if (!hasWallet) {
-    return (
-      <Card>
-        <CardContent className="pt-6">
-          <p className="text-sm text-fg-secondary text-center">
-            This creator hasn&apos;t connected a wallet yet.
-          </p>
-        </CardContent>
-      </Card>
-    );
+    return <NoWalletYetNotice />;
   }
 
   if (meta.paymentPattern === 'none') {
