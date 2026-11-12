@@ -20,10 +20,18 @@ import { logGroupActivity } from '../utils/activity';
 import { canPerformAction } from '../permissions/resolver';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import type { ServiceResult } from '@/types/common';
+import { apiErrorMessage } from '@/lib/api/errorMessage';
 import { fromTable } from '../db-helpers';
 
 /**
- * Join a group
+ * Join an open group as yourself.
+ *
+ * Through join_public_group (migration 20261112201000), which runs as definer:
+ * group_members' own insert policy lets only a group's founder or admins add
+ * people, so the direct insert this used to make was refused for everyone
+ * else and nobody could ever join. The function decides who may join (a
+ * listed group whose visibility is 'public', see utils/joining.ts), refuses an
+ * existing member, and answers in plain words.
  */
 export async function joinGroup(
   groupId: string,
@@ -33,51 +41,21 @@ export async function joinGroup(
     const sb = client || supabase;
     const userId = await getCurrentUserId(sb);
     if (!userId) {
-      return { success: false, error: 'Authentication required' };
+      return { success: false, error: 'Sign in to join this group' };
     }
 
-    // Get group to check join policy
-    // Cast to any to bypass Supabase type generation for tables not in generated types
-
-    const { data: group, error: groupError } = (await fromTable(sb, DATABASE_TABLES.GROUPS)
-      .select('is_public, visibility')
-      .eq('id', groupId)
-
-      .single()) as {
-      data: { is_public: boolean; visibility: string } | null;
-      error: Error | null;
-    };
-
-    if (groupError || !group) {
-      return { success: false, error: 'Group not found' };
+    const { data, error } = await sb.rpc('join_public_group', { p_group_id: groupId });
+    if (error) {
+      logger.error('Failed to join group', error, 'Groups');
+      return { success: false, error: 'Could not join the group. Please try again.' };
     }
 
-    // Check if group allows joining
-    if (!group.is_public && group.visibility === 'private') {
-      return { success: false, error: 'This group is private and requires an invitation' };
+    // The function's own jsonb: `error` is a sentence meant for the person.
+    const result = (data ?? {}) as { success?: boolean; error?: string };
+    if (!result.success) {
+      return { success: false, error: apiErrorMessage(result, 'Could not join the group.') };
     }
 
-    // Check if already a member
-    const alreadyMember = await isGroupMember(groupId, userId, sb);
-    if (alreadyMember) {
-      return { success: false, error: 'Already a member of this group' };
-    }
-
-    // Create membership
-
-    const { error: insertError } = await fromTable(sb, DATABASE_TABLES.GROUP_MEMBERS).insert({
-      group_id: groupId,
-      user_id: userId,
-      role: 'member',
-      invited_by: null,
-    });
-
-    if (insertError) {
-      logger.error('Failed to join group', insertError, 'Groups');
-      return { success: false, error: insertError.message };
-    }
-
-    // Log activity
     await logGroupActivity(groupId, userId, 'joined_group', 'Joined the group', undefined, sb);
 
     return { success: true };

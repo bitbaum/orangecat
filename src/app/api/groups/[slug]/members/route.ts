@@ -21,7 +21,6 @@ import {
   apiRateLimited,
 } from '@/lib/api/standardResponse';
 import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
-import { recordGroupActivity } from '@/services/groups/activities';
 import { apiErrorMessage } from '@/lib/api/errorMessage';
 
 interface RouteContext {
@@ -82,23 +81,13 @@ export const POST = withAuth(async (request: AuthenticatedRequest, context: Rout
       return apiNotFound('Group not found');
     }
 
-    // Join group — pass the authed server client so RLS/auth resolve correctly
+    // Join group — pass the authed server client so auth resolves to the caller.
+    // The service records the 'joined_group' activity itself; writing it here
+    // too would log every join twice.
     const result = await groupsService.joinGroup(groupResult.group.id, supabase);
 
     if (!result.success) {
       return apiInternalError(apiErrorMessage(result, 'Failed to join group'));
-    }
-
-    // Await so the activity write completes (and errors surface) before responding.
-    try {
-      await recordGroupActivity(request.supabase, {
-        group_id: groupResult.group.id,
-        user_id: user.id,
-        activity_type: 'joined_group',
-        metadata: { group_name: groupResult.group.name },
-      });
-    } catch (activityError) {
-      logger.error('Failed to record join activity', activityError);
     }
 
     return apiCreated({ success: true, message: 'Successfully joined group' });
