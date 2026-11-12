@@ -104,6 +104,35 @@
     }
   }
 
+  /* Keyboard focus is never hidden under the fixed bars (WCAG 2.4.11). The
+     browser scrolls a focused control only as far as the viewport's edge, and
+     both edges are covered: on a phone, Reply / Like / Share on /timeline took
+     focus at y=609, under a tab bar spanning 583-664, and tabbing back up put
+     them at y=0, under the header. Scroll padding moves each edge in to its
+     bar, keyed on the bar being on the page (.app-mobile-nav is the tab bar,
+     MobileBottomNav; .app-header the header). The header's height includes
+     the status-bar inset it pads itself, and the email banner inside it.
+     The top only while focus is keyboard-visible: in-page anchors (#pay, the
+     settings sections) already clear the header with their own scroll-margin,
+     and a tap that jumps to one should land where it always has. */
+  @media (max-width: 767px) {
+    html:has(.app-mobile-nav) {
+      scroll-padding-bottom: var(--mobile-nav-clearance);
+    }
+  }
+  html:has(.app-header):has(:focus-visible) {
+    scroll-padding-top: calc(
+      3.5rem + env(safe-area-inset-top, 0px) + var(--header-banner-height, 0px)
+    );
+  }
+  @media (min-width: 640px) {
+    html:has(.app-header):has(:focus-visible) {
+      scroll-padding-top: calc(
+        4rem + env(safe-area-inset-top, 0px) + var(--header-banner-height, 0px)
+      );
+    }
+  }
+
   /* Better typography scaling for mobile */
   h1,
   h2,

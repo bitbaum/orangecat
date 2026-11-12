@@ -34,6 +34,7 @@
  * has nowhere to go. The allow-list is per turn and lives in memory; it is not
  * a filter on the model's intent, it is a bound on its reach.
  */
+import { CAPPED_SERVICES, reserveServiceCall } from '@/services/ai/vendor-spend-cap';
 import {
   webSearch,
   readPage,
@@ -176,6 +177,9 @@ export async function searchTheWeb(
 
   let outcome: WebSearchResult;
   try {
+    // Counted against the day's search cap first (vendor-spend-cap); a
+    // refusal lands in the catch below as "could not search".
+    await reserveServiceCall(CAPPED_SERVICES.webSearch);
     outcome = await webSearch(query, {
       limit: SEARCH_RESULT_COUNT,
       timeoutMs: SEARCH_TIMEOUT_MS,

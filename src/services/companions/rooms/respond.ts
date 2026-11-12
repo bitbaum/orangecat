@@ -17,6 +17,7 @@ import { imageRefsIn } from '@/lib/chat/attachment-tags';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { createApiKeyService } from '@/services/ai/api-key-service';
+import { readOwnKey } from '@/services/ai/own-key';
 import {
   checkAffordability,
   computeCreatorChargeBtc,
@@ -143,8 +144,8 @@ async function companionLine(args: {
   }
 
   const keyService = createApiKeyService(supabase);
-  const userKey = await keyService.getDecryptedKey(userId, 'openrouter');
-  const hasByok = !!userKey;
+  // The person's own key, whichever provider it is from (ai/own-key.ts).
+  const { hasByok, userKey, directKey } = await readOwnKey(keyService, userId);
   if (!hasByok) {
     const usage = await keyService.checkPlatformUsage(userId);
     if (!usage.can_use_platform) {
@@ -191,6 +192,7 @@ async function companionLine(args: {
   const reply = await generateReply({
     hasByok,
     userKey,
+    directKey,
     requestedModel: undefined,
     assistant,
     images,

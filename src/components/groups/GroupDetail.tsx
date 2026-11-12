@@ -7,6 +7,7 @@ import { Settings } from 'lucide-react';
 import { useGroupDetail } from './useGroupDetail';
 import { GroupDetailSidebar } from './GroupDetailSidebar';
 import { GroupDetailTabs } from './GroupDetailTabs';
+import { GroupMembersOnly } from './GroupMembersOnly';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { ROUTES } from '@/config/routes';
 import LokiBuildCta from '@/components/integrations/LokiBuildCta';
@@ -29,6 +30,7 @@ export function GroupDetail({ groupSlug }: GroupDetailProps) {
     activeTab,
     setActiveTab,
     canCreateProposal,
+    canSeeContent,
     loadGroupData,
     labelConfig,
     governanceConfig,
@@ -54,6 +56,18 @@ export function GroupDetail({ groupSlug }: GroupDetailProps) {
           Back to Groups
         </Button>
       </div>
+    );
+  }
+
+  if (!canSeeContent) {
+    return (
+      <GroupMembersOnly
+        name={group.name}
+        slug={groupSlug}
+        labelName={labelConfig?.name || group.label}
+        LabelIcon={LabelIcon}
+        signedIn={!!user}
+      />
     );
   }
 
