@@ -3,6 +3,11 @@
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import {
+  ShellPathnameContext,
+  useRootShellPathname,
+  useShellPathname,
+} from '@/hooks/useShellPathname';
 import { getRouteChrome, getRouteSurface } from '@/config/routes';
 import GlobalCatLauncher from '@/components/ai-chat/GlobalCatLauncher';
 import { STORAGE_KEYS } from '@/config/storage-keys';
@@ -34,7 +39,20 @@ interface AppShellProps {
  * Last Modified Summary: Fixed hydration race condition - wait for auth hydration before rendering sidebar
  */
 export function AppShell({ children }: AppShellProps) {
-  const pathname = usePathname();
+  // Read once, at the root layout, for every piece of chrome below: a 404's
+  // chrome must be the same on the server and in the browser.
+  const shellPathname = useRootShellPathname();
+  return (
+    <ShellPathnameContext.Provider value={shellPathname}>
+      <AppShellChrome>{children}</AppShellChrome>
+    </ShellPathnameContext.Provider>
+  );
+}
+
+function AppShellChrome({ children }: AppShellProps) {
+  const pathname = useShellPathname();
+  // The address actually visited, for Cat's breadcrumb (set after load).
+  const visitedPathname = usePathname();
   const { user, profile, hydrated, isLoading } = useAuth();
   // SSOT: every shell-related visibility decision derives from
   // getRouteSurface (src/config/routes.ts). Do not branch on pathname here.
@@ -77,19 +95,19 @@ export function AppShell({ children }: AppShellProps) {
   // navigations, so we maintain a session breadcrumb ourselves.
   const previousPathnameRef = useRef<string | null>(null);
   useEffect(() => {
-    if (typeof window === 'undefined' || !pathname) {
+    if (typeof window === 'undefined' || !visitedPathname) {
       return;
     }
     const prev = previousPathnameRef.current;
-    if (prev && prev !== pathname) {
+    if (prev && prev !== visitedPathname) {
       try {
         window.sessionStorage.setItem(STORAGE_KEYS.LAST_VISITED_PATH, prev);
       } catch {
         /* sessionStorage unavailable; Cat falls back to document.referrer */
       }
     }
-    previousPathnameRef.current = pathname;
-  }, [pathname]);
+    previousPathnameRef.current = visitedPathname;
+  }, [visitedPathname]);
 
   // Sidebar margin-left animates from 0 → 16rem/64rem when auth hydrates,
   // which produces a 300ms content slide on every page load — the

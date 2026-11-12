@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useShellPathname } from '@/hooks/useShellPathname';
 import { useBottomNavScroll } from '@/hooks/useHeaderScroll';
 import { useComposer } from '@/contexts/ComposerContext';
 import { cn } from '@/lib/utils';
@@ -20,7 +21,7 @@ import { useSoftKeyboard } from '@/hooks/useSoftKeyboard';
 // Android.
 
 const MobileBottomNav = React.memo(function MobileBottomNav() {
-  const pathname = usePathname();
+  const pathname = useShellPathname();
   const router = useRouter();
   const { user, hydrated } = useAuth();
   const { isCompact } = useBottomNavScroll();

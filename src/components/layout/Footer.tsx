@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { footerNavigation } from '@/config/navigation';
 import { shouldShowFooter } from '@/config/routes';
 import Logo from './Logo';
-import { usePathname } from 'next/navigation';
+import { useShellPathname } from '@/hooks/useShellPathname';
 import { ArrowUp } from 'lucide-react';
 import { APP_NAME } from '@/config/brand';
 import { useAuth } from '@/hooks/useAuth';
@@ -58,9 +58,9 @@ function FooterColumn({
 }
 
 const Footer = React.memo(function Footer() {
-  const pathname = usePathname();
+  const pathname = useShellPathname();
   const { user, hydrated } = useAuth();
-  const shouldRender = shouldShowFooter(pathname ?? '/');
+  const shouldRender = shouldShowFooter(pathname);
 
   const scrollToTop = () => {
     if (typeof window !== 'undefined' && window.scrollTo) {
