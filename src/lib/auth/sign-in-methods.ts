@@ -54,6 +54,25 @@ export function describeIdentity(identity: IdentityLike): SignInMethod {
   };
 }
 
+/**
+ * What an account with no way back in is told. A "Start instantly" account is
+ * anonymous at the auth server: no email, no linked provider, no passkey —
+ * only the session in this browser. Signing out, or clearing the browser,
+ * leaves nothing to sign in with, so every place that could end that session
+ * says so first and offers the one step that keeps the account: an email.
+ */
+export const NO_WAY_IN = {
+  warning:
+    'No way back in yet. This account lives only in this browser: sign out or clear this browser and there is no way to sign in to it again.',
+  addEmail: 'Add an email',
+  signOutNote:
+    'This account has no email, linked account or passkey yet: once you sign out, there is no way to sign in to it again. Add an email first to keep it.',
+  confirmTitle: 'Sign out and lose this account?',
+  confirmBody:
+    'There is no email, linked account or passkey on it, so once you sign out there is no way to sign in to it again. Cancel and add an email first to keep it.',
+  confirmLabel: 'Sign out and lose it',
+} as const;
+
 /** Human label for a method: "Email", "Google", "X"… */
 export function methodLabel(method: SignInMethod, providerNames: Record<string, string>): string {
   if (method.provider === 'email') {

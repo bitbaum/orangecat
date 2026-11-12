@@ -1,14 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Shield, Link2, Loader2, MonitorSmartphone, KeyRound } from 'lucide-react';
+import { Shield, Link2, Loader2, Mail, MonitorSmartphone, KeyRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { MFAStatus } from '@/components/auth/MFASetup';
 import { PasskeysCard } from '@/components/auth/PasskeysCard';
 import { SignInMethodsCard } from '@/components/auth/SignInMethodsCard';
 import { NostrConnectionCard } from '@/components/nostr/NostrConnectionCard';
 import Button from '@/components/ui/Button';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { supabase } from '@/lib/supabase/browser';
+import { NO_WAY_IN } from '@/lib/auth/sign-in-methods';
 import { API_ROUTES } from '@/config/api-routes';
 import { ROUTES } from '@/config/routes';
 import { logger } from '@/utils/logger';
@@ -17,14 +19,25 @@ interface Props {
   mfaStatusKey: number;
   onEnableMFA: () => void;
   onMFADisableComplete: () => void;
+  /** A "Start instantly" account: the auth server knows no way into it. */
+  accountIsAnonymous?: boolean;
+  /** Leads to the field that adds an email. */
+  onAddEmail?: () => void;
 }
 
 export function SettingsSecuritySection({
   mfaStatusKey,
   onEnableMFA,
   onMFADisableComplete,
+  accountIsAnonymous = false,
+  onAddEmail,
 }: Props) {
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [confirmSignOut, setConfirmSignOut] = useState(false);
+  // Counted by the sign-in card below; until it has, the auth server's own
+  // "anonymous" flag says whether there is any way back in.
+  const [waysIn, setWaysIn] = useState<number | null>(null);
+  const noWayIn = waysIn === null ? accountIsAnonymous : waysIn === 0;
   // Shown only when the auth server has passkeys switched on (a public fact,
   // cached server-side); see docs/operations/passkeys.md.
   const [passkeysAvailable, setPasskeysAvailable] = useState(false);
@@ -125,26 +138,49 @@ export function SettingsSecuritySection({
           <MonitorSmartphone className="w-6 h-6 mr-2 text-fg-secondary" />
           Sign out everywhere
         </h3>
-        <p className="text-fg-secondary mb-6">
-          Lost a device, or signed in somewhere you don&apos;t trust? Sign out of your account on
-          every device, including this one — and out of every app that signed in with it (Solon,
-          Loki and the rest). You&apos;ll need to sign in again.
-        </p>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={handleSignOutEverywhere}
-          disabled={isSigningOut}
-          className="px-6 py-2"
-        >
-          {isSigningOut ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Signing out…
-            </>
-          ) : (
-            'Sign out all devices'
+        {noWayIn ? (
+          <p className="text-status-warning mb-6">{NO_WAY_IN.signOutNote}</p>
+        ) : (
+          <p className="text-fg-secondary mb-6">
+            Lost a device, or signed in somewhere you don&apos;t trust? Sign out of your account on
+            every device, including this one — and out of every app that signed in with it (Solon,
+            Loki and the rest). You&apos;ll need to sign in again.
+          </p>
+        )}
+        <div className="flex flex-wrap gap-2">
+          {noWayIn && onAddEmail && (
+            <Button type="button" variant="outline" onClick={onAddEmail} className="px-6 py-2">
+              <Mail className="mr-2 h-4 w-4" />
+              {NO_WAY_IN.addEmail}
+            </Button>
           )}
-        </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={noWayIn ? () => setConfirmSignOut(true) : handleSignOutEverywhere}
+            disabled={isSigningOut}
+            className="px-6 py-2"
+          >
+            {isSigningOut ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Signing out…
+              </>
+            ) : (
+              'Sign out all devices'
+            )}
+          </Button>
+        </div>
+        <ConfirmDialog
+          isOpen={confirmSignOut}
+          onClose={() => setConfirmSignOut(false)}
+          onConfirm={() => {
+            setConfirmSignOut(false);
+            return handleSignOutEverywhere();
+          }}
+          title={NO_WAY_IN.confirmTitle}
+          description={NO_WAY_IN.confirmBody}
+          confirmLabel={NO_WAY_IN.confirmLabel}
+        />
       </div>
 
       <div className="border-t border-subtle pt-10">
@@ -158,7 +194,7 @@ export function SettingsSecuritySection({
           inside.
         </p>
         <div className="bg-surface-raised border border-default rounded-lg p-6 max-w-md">
-          <SignInMethodsCard />
+          <SignInMethodsCard onAddEmail={onAddEmail} onWaysInChange={setWaysIn} />
         </div>
       </div>
 
