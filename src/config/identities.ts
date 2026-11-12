@@ -28,6 +28,14 @@ export function isUnreachableEmail(email: string | null | undefined): boolean {
 
 export const IDENTITY_NAME_MAX_LENGTH = 60;
 
+/** How long a hand-over link works. After that the holder offers again. */
+export const HANDOVER_TTL_DAYS = 7;
+
+/** The page a hand-over link opens. The token is the last path segment. */
+export function handoverAcceptPath(token: string): string {
+  return `/identities/accept/${token}`;
+}
+
 export const IDENTITIES_COPY = {
   title: 'Your identities',
   intro:
@@ -38,6 +46,7 @@ export const IDENTITIES_COPY = {
   switchTo: 'Switch',
   switchLabel: 'Switch identity',
   continueAs: 'Or continue as',
+  noEmailToShare: 'Ask for your email address (this identity has none, so none is shared)',
   current: 'Signed in',
   main: 'Main account',
   remove: 'Delete',
@@ -53,4 +62,32 @@ export const IDENTITIES_COPY = {
   switchFailed: 'Could not switch. Try again.',
   removeFailed: 'Could not delete the identity. Try again.',
   removeCurrent: 'Switch to another identity before deleting this one.',
+  handOver: 'Hand over',
+  handOverIntro:
+    'Create a link and send it to the person who should have this identity. ' +
+    'When they open it and accept, the identity and everything it owns, including its wallets, is theirs, and you can no longer switch to it.',
+  handOverCreate: 'Create hand-over link',
+  handOverLinkLabel: 'Hand-over link',
+  handOverLinkNote: `Shown once. It works for ${HANDOVER_TTL_DAYS} days, for whoever opens it first.`,
+  handOverCopy: 'Copy link',
+  handOverCopied: 'Copied',
+  handOverOpen: 'A hand-over link is open.',
+  handOverCancel: 'Cancel hand-over',
+  handOverFailed: 'Could not create the link. Try again.',
+  handOverCancelFailed: 'Could not cancel. Try again.',
+  acceptTitle: (name: string) => `Take over ${name}?`,
+  acceptIntro:
+    'This identity was offered to you. Accepting makes it your account, with everything it owns. ' +
+    'The person who offered it loses access.',
+  acceptEmailLabel: 'Your email',
+  acceptEmailNote: 'You will sign in to this account with this address from now on.',
+  acceptButton: 'Accept and sign in',
+  acceptSignedInNote:
+    'You are signed in to another account in this browser. Accepting signs you in to this one here instead.',
+  acceptGoneTitle: 'This link no longer works',
+  acceptGone: 'It was used, withdrawn or has expired. Ask the person who sent it for a new one.',
+  acceptEmailTaken:
+    'That address already has an OrangeCat account. Use another address, or sign in to that account instead.',
+  acceptInvalidEmail: 'Enter a valid email address.',
+  acceptFailed: 'Could not complete the hand-over. Nothing has changed. Try again.',
 } as const;

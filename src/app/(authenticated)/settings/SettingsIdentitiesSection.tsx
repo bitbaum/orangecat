@@ -135,6 +135,7 @@ export function SettingsIdentitiesSection() {
               onSwitch={handleSwitch}
               onDelete={handleDelete}
               onConfirm={setConfirmId}
+              onChanged={load}
             />
           ))}
         </ul>

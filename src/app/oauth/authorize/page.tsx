@@ -13,7 +13,7 @@
  * `from` return). Trusted first-party clients with a remembered grant skip the
  * screen; everyone else approves the requested scopes here.
  */
-import { isUnreachableEmail } from '@/config/identities';
+import { IDENTITIES_COPY, isUnreachableEmail } from '@/config/identities';
 import { circleForCaller } from '@/domain/identities/service';
 import { sessionMethods } from '@/lib/auth/session-methods';
 import { getAdminClient } from '@/lib/supabase/admin';
@@ -178,9 +178,17 @@ export default async function AuthorizePage({
     .filter(m => m.id !== user!.id)
     .map(m => ({ id: m.id, name: m.name, username: m.username, isMain: m.isHolder }));
 
+  // An identity sits on an address nobody can read, so the app is given no
+  // email (oidcProfileClaims). Saying "Read your email address" there would
+  // promise the app something it does not get.
+  const hasNoEmailToShare = isUnreachableEmail(user!.email);
   const scopeRows = scopes.map(name => {
     const scope = OAUTH_SCOPES.find(s => s.name === name);
-    return { name, description: scope?.description ?? name, sensitive: !!scope?.sensitive };
+    const description =
+      name === 'email' && hasNoEmailToShare
+        ? IDENTITIES_COPY.noEmailToShare
+        : (scope?.description ?? name);
+    return { name, description, sensitive: !!scope?.sensitive };
   });
 
   return (

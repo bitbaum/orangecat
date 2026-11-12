@@ -22,18 +22,24 @@ import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { sessionMethods } from '@/lib/auth/session-methods';
 import { IDENTITIES_COPY, MAX_IDENTITIES } from '@/config/identities';
+import { listHandovers } from '@/domain/identities/handover';
 import { circleForCaller, createIdentity } from '@/domain/identities/service';
 
 export const dynamic = 'force-dynamic';
 
 export const GET = withAuth(async (req: AuthenticatedRequest) => {
   try {
-    const circle = await circleForCaller(getAdminClient(), {
-      userId: req.user.id,
-      sessionMethods: await sessionMethods(req.supabase),
-    });
+    const caller = { userId: req.user.id, sessionMethods: await sessionMethods(req.supabase) };
+    const admin = getAdminClient();
+    const circle = await circleForCaller(admin, caller);
+    const offered = new Set((await listHandovers(admin, caller)).map(h => h.identityId));
     return apiSuccess({
-      members: circle.members.map(m => ({ ...m, isCurrent: m.id === req.user.id })),
+      members: circle.members.map(m => ({
+        ...m,
+        isCurrent: m.id === req.user.id,
+        // A hand-over link is open for this identity (ADR-0014 D9).
+        handoverOpen: offered.has(m.id),
+      })),
       max: MAX_IDENTITIES,
     });
   } catch (error) {

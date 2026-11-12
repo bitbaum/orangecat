@@ -15,6 +15,8 @@ export interface IdentityMember {
   avatarUrl: string | null;
   isHolder: boolean;
   isCurrent: boolean;
+  /** A hand-over link is open for this identity. */
+  handoverOpen?: boolean;
 }
 
 export interface IdentityCircle {

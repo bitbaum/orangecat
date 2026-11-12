@@ -305,6 +305,10 @@ export const API_ROUTES = {
     BASE: '/api/identities',
     SWITCH: '/api/identities/switch',
     BY_ID: (id: string) => `/api/identities/${id}`,
+    /** Offer (POST) or withdraw (DELETE) a hand-over of one identity. */
+    HANDOVER: (id: string) => `/api/identities/${id}/handover`,
+    /** Accept a hand-over link. No session needed: the link is the credential. */
+    HANDOVER_ACCEPT: '/api/identities/handover/accept',
   },
   WAITLIST: '/api/waitlist',
   AI_ASSISTANTS: {

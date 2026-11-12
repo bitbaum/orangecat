@@ -1,7 +1,7 @@
 # ADR-0014: A Person Holds More Than One Name
 
 Date: 2026-11-11
-Status: Accepted (D1–D6 shipped; D7–D10 on the roadmap)
+Status: Accepted (D1–D6b and D9 shipped; D7, the shared count in D8, and D10 on the roadmap)
 
 ## Context
 
@@ -97,6 +97,26 @@ as that identity. Nothing is granted by the choice. The switch itself is
 A trusted app with a remembered grant still skips the screen, as before, and
 signs in whichever identity is current.
 
+**D9. An identity can be handed over.** The holder creates a hand-over link for
+one identity (Settings). Whoever opens it gives an email address and accepts;
+the identity is then an ordinary account on that address, with everything it
+owns, and this browser is signed in to it. `src/domain/identities/handover.ts`.
+
+- The link is the credential, as a claim link is (ADR-0004). It is shown once;
+  only the SHA-256 of its token is stored (`identity_handovers`, service-role
+  only), so nothing in the database can take an account. One open offer per
+  identity; offering again replaces it; it expires after seven days and can be
+  withdrawn.
+- Reading the accept page spends nothing. Only the form's submit accepts.
+- **The order of acceptance is the safety property.** The link to the holder
+  is deleted before the identity is given its address. If the second step
+  fails (the address already has an account), the link and the offer are put
+  back and nothing has changed. The other order would leave, on a failure, an
+  identity that has a new owner and is still one switch away from the old one.
+- The former holder's sessions in the identity are ended on acceptance.
+- The address is not verified before it is set, as at sign-up: the person is
+  signed in at that moment and can correct it in Settings.
+
 ## Not yet (roadmap)
 
 - **D7. One person, one vote in Solon.** Solon counts seats, and a seat is an
@@ -109,8 +129,6 @@ signs in whichever identity is current.
   and lives in the fleet's shared menu: `AccountMenu` in `@bitbaum/accountkit`
   (0.28.0) lists a person's other accounts and switches on a tap. OrangeCat's
   header mounts it through `src/components/layout/AccountMenuControl.tsx`.
-- **D9. Handing an identity over.** Giving it its own address and removing the
-  link turns it into an ordinary account: ADR-0004's handing over the keys.
 - **D10. Moderation.** A platform admin can resolve a circle; a ban reaches
   every member. No screen for it yet.
 
