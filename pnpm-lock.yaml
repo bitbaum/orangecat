@@ -45,8 +45,8 @@ importers:
         specifier: ^0.6.1
         version: 0.6.1(katex@0.18.11)(mermaid@11.17.2)(react@19.3.1)(shiki@4.4.3)
       '@bitbaum/chatkit':
-        specifier: github:bitbaum/chatkit#6451d3b9d0c3d467011a80f8cf023da90dffe92c
-        version: https://codeload.github.com/bitbaum/chatkit/tar.gz/6451d3b9d0c3d467011a80f8cf023da90dffe92c(react@19.3.1)
+        specifier: ^0.26.0
+        version: 0.26.0(react@19.3.1)
       '@bitbaum/collective-kinds':
         specifier: workspace:*
         version: link:packages/collective-kinds
@@ -82,7 +82,7 @@ importers:
         version: 0.3.3(react@19.3.1)
       '@bitbaum/writingkit':
         specifier: ^0.2.0
-        version: 0.2.0(@bitbaum/chatkit@https://codeload.github.com/bitbaum/chatkit/tar.gz/6451d3b9d0c3d467011a80f8cf023da90dffe92c(react@19.3.1))(react@19.3.1)
+        version: 0.2.0(@bitbaum/chatkit@0.26.0(react@19.3.1))(react@19.3.1)
       '@hono/node-server':
         specifier: ^2.1.1
         version: 2.1.1(hono@4.13.13)
@@ -618,9 +618,8 @@ packages:
       shiki:
         optional: true
 
-  '@bitbaum/chatkit@https://codeload.github.com/bitbaum/chatkit/tar.gz/6451d3b9d0c3d467011a80f8cf023da90dffe92c':
-    resolution: {gitHosted: true, integrity: sha512-jJ+ZEEVUicjZchEwZ3z3VuXulbt5L2uAz1hwKjq4yauxS7mKpYYj/lagty8cDxgn0cnOg4cI7jLVs1/sjg4ZmA==, tarball: https://codeload.github.com/bitbaum/chatkit/tar.gz/6451d3b9d0c3d467011a80f8cf023da90dffe92c}
-    version: 0.23.0
+  '@bitbaum/chatkit@0.26.0':
+    resolution: {integrity: sha512-oUUIC2Opdn3MhU+Fsk8DpIqFnee+c/WKY1fwtDSFtxti8IRI9eG7VyNDboa8TKpS5byxtFGnbOlfUilF4W9dAA==}
     engines: {node: '>=20'}
     hasBin: true
     peerDependencies:
@@ -679,7 +678,6 @@ packages:
 
   '@bitbaum/writingkit@0.2.0':
     resolution: {integrity: sha512-6LXTfJi6quUN1gSI7xbN8Coe0QsjVW+UFS0lVyAxkoDmWtFc/Xk9P26fMUV28EiLdMjxcClc79fhs8lhGVlKWA==}
-    version: 0.2.0
     engines: {node: '>=20'}
     peerDependencies:
       '@bitbaum/chatkit': ^0.23.0
@@ -7039,7 +7037,7 @@ snapshots:
       mermaid: 11.17.2
       shiki: 4.4.3
 
-  '@bitbaum/chatkit@https://codeload.github.com/bitbaum/chatkit/tar.gz/6451d3b9d0c3d467011a80f8cf023da90dffe92c(react@19.3.1)':
+  '@bitbaum/chatkit@0.26.0(react@19.3.1)':
     dependencies:
       pdfjs-dist: 6.4.299
       react: 19.3.1
@@ -7068,9 +7066,9 @@ snapshots:
     dependencies:
       react: 19.3.1
 
-  '@bitbaum/writingkit@0.2.0(@bitbaum/chatkit@https://codeload.github.com/bitbaum/chatkit/tar.gz/6451d3b9d0c3d467011a80f8cf023da90dffe92c(react@19.3.1))(react@19.3.1)':
+  '@bitbaum/writingkit@0.2.0(@bitbaum/chatkit@0.26.0(react@19.3.1))(react@19.3.1)':
     optionalDependencies:
-      '@bitbaum/chatkit': https://codeload.github.com/bitbaum/chatkit/tar.gz/6451d3b9d0c3d467011a80f8cf023da90dffe92c(react@19.3.1)
+      '@bitbaum/chatkit': 0.26.0(react@19.3.1)
       react: 19.3.1
 
   '@braintree/sanitize-url@7.1.2': {}
