@@ -18,7 +18,6 @@ import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 import type { Conversation, Message } from '@/features/messaging/types';
 import { debugLog } from '@/features/messaging/lib/constants';
-import { API_ROUTES } from '@/config/api-routes';
 import type { ConnectionStatus } from '@/hooks/useRealtimeConnection';
 
 interface MessagingState {
@@ -200,25 +199,3 @@ export const messagingActions = {
   setError: useMessagingStore.getState().setError,
   clearAll: useMessagingStore.getState().clearAll,
 };
-
-/**
- * Ask the server how many messages are unread and put the answer in the
- * store the header and the sidebar read. Until 2026-11-12 nothing ever wrote
- * that number, so the badge on Messages stayed at zero whatever arrived.
- * Quiet on failure: a badge that is briefly stale is not an error to show.
- */
-export async function refreshUnreadMessages(): Promise<void> {
-  try {
-    const response = await fetch(API_ROUTES.MESSAGES.UNREAD_COUNT, { credentials: 'same-origin' });
-    if (!response.ok) {
-      return;
-    }
-    const payload = (await response.json()) as { data?: { count?: unknown } };
-    const count = payload.data?.count;
-    if (typeof count === 'number') {
-      useMessagingStore.getState().setUnreadCount(count);
-    }
-  } catch {
-    /* offline, or signed out mid-request: the next refresh corrects it */
-  }
-}

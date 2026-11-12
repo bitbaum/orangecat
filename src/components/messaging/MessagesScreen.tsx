@@ -37,7 +37,7 @@ import { CHAT_VOICE } from '@/hooks/useDictation';
 import { useMentionAutocomplete } from '@/hooks/useMentionAutocomplete';
 import { useSoftKeyboard } from '@/hooks/useSoftKeyboard';
 import { cn } from '@/lib/utils';
-import { refreshUnreadMessages } from '@/stores/messaging';
+import { announceMessagesRead } from '@/hooks/useUnreadMessagesSync';
 import { MessageActorSelector } from './MessageActorSelector';
 
 interface MessagesScreenProps {
@@ -70,7 +70,8 @@ export default function MessagesScreen({
       createMessengerTransport({
         userId,
         senderActorId: () => actorRef.current,
-        onUnreadMayHaveChanged: refreshUnreadMessages,
+        // The app shell's useUnreadMessagesSync owns the badge; this nudges it.
+        onUnreadMayHaveChanged: announceMessagesRead,
       }),
     [userId]
   );

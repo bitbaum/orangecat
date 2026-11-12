@@ -13,6 +13,7 @@ import MobileBottomNav from './MobileBottomNav';
 import { useNavigation } from '@/hooks/useNavigation';
 import { sidebarSections, bottomNavItems } from '@/config/navigation';
 import { MessageSyncManagerInitializer } from '@/components/MessageSyncManagerInitializer';
+import { useUnreadMessagesSync } from '@/hooks/useUnreadMessagesSync';
 import { ViewportHeightSync } from './ViewportHeightSync';
 
 interface AppShellProps {
@@ -60,6 +61,9 @@ export function AppShell({ children }: AppShellProps) {
     isItemActive,
     getFilteredSections,
   } = useNavigation(sidebarSections);
+
+  // One fetch for every Messages badge (header, sidebar, phone tab bar).
+  useUnreadMessagesSync();
 
   const routeChrome = getRouteChrome(pathname ?? '/');
   // Mirrors MobileBottomNav visibility — when the bottom nav renders, reserve
@@ -112,8 +116,10 @@ export function AppShell({ children }: AppShellProps) {
   // Auth surface: no global chrome at all. The /auth page is its own
   // self-contained universe with its own minimal back-link.
   if (isAuthSurface) {
+    // No header or tab bar here to clear the status bar and home indicator,
+    // so the screen does (globals.css, "Safe areas").
     return (
-      <div className="min-h-screen bg-surface-page">
+      <div className="min-h-screen bg-surface-page safe-area-padding-top app-page-foot">
         <MessageSyncManagerInitializer />
         {/* The feedback launcher is the edge tab here too: the round button
             sat on the "Sign in" button at 390px (seen live 2026-11-12). */}
@@ -124,8 +130,15 @@ export function AppShell({ children }: AppShellProps) {
     );
   }
 
+  // The home-indicator inset at the foot of the page, applied once: where the
+  // tab bar shows, main's clearance below already carries it; elsewhere the
+  // shell's last edge does (globals.css, .app-page-foot).
   return (
-    <div className="min-h-screen flex flex-col bg-surface-page">
+    <div
+      className={`min-h-screen flex flex-col bg-surface-page ${
+        showsMobileBottomNav ? '' : 'app-page-foot'
+      }`}
+    >
       {/* Initialize message sync manager */}
       <MessageSyncManagerInitializer />
 
@@ -164,6 +177,7 @@ export function AppShell({ children }: AppShellProps) {
             toggleSidebar={toggleSidebar}
             toggleSidebarCollapse={toggleSidebarCollapse}
             toggleSection={toggleSection}
+            aboveMobileNav={showsMobileBottomNav}
           />
         )}
 

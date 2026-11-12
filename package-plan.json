@@ -87,6 +87,16 @@
         }
       ],
       "notes": "Direct messages are the packaged Messenger: list, thread, box, files and the agent mark are the package's. OrangeCat owns the transport (its routes and realtime channels), attachment storage (a private bucket behind signed URLs), the Cat as the agent, sending as a group, and the @mention menu."
+    },
+    "account-menu": {
+      "package": "@bitbaum/accountkit",
+      "bindings": [
+        {
+          "file": "src/components/layout/AccountMenuControl.tsx",
+          "symbols": ["AccountMenu"]
+        }
+      ],
+      "notes": "The header's account menu is the package's: layout, keyboard handling, sign-out and switch-account failure states. OrangeCat supplies the person, the places, the identities (ADR-0014) and what a tap does. Accounts themselves stay on Supabase auth; ./auth is not adopted."
     }
   }
 }

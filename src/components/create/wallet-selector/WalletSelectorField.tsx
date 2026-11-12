@@ -5,6 +5,8 @@ import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { type Wallet } from '@/types/wallet';
 import { PAY_DESTINATION_COPY } from '@/config/pay-destination';
+import { COMPONENT_STYLES } from '@/config/design-system';
+import { cn } from '@/lib/utils';
 import { WalletCard } from './WalletCard';
 import { reuseIsPublicOnChain, sameDestinationAs } from './wallet-display';
 import { WalletPasteField } from './WalletPasteField';
@@ -204,7 +206,10 @@ export function WalletSelectorField({
             type="button"
             onClick={() => setMode('paste')}
             disabled={disabled}
-            className="text-sm font-medium text-accent-warm underline hover:text-accent-warm-hover disabled:opacity-50"
+            className={cn(
+              'min-h-11 text-sm font-medium disabled:opacity-50',
+              COMPONENT_STYLES.link.text
+            )}
           >
             {PAY_DESTINATION_COPY.differentDestination}
           </button>

@@ -7,11 +7,11 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { PaymentIntent } from '@/domain/payments/types';
-import { createAdminClient } from '@/lib/supabase/admin';
 import { isEmailConfigured, sendEmail } from '@/lib/email/client';
 import { paymentReceivedTemplate } from '@/lib/email/templates/payment-received';
 import { logger } from '@/utils/logger';
 import { DATABASE_TABLES } from '@/config/database-tables';
+import { resolveRecipientEmail } from '@/services/notifications/recipientEmail';
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
   nwc: 'Lightning',
@@ -38,21 +38,10 @@ export async function sendSellerPaymentNotification(
   try {
     const sellerId = paymentIntent.seller_id;
 
-    // 1. Fetch seller profile (contact_email, display_name, username)
-    const { data: sellerProfile } = await supabase
-      .from(DATABASE_TABLES.PROFILES)
-      .select('contact_email, display_name:name, username')
-      .eq('id', sellerId)
-      .single();
-
-    // 2. Resolve email: profile.contact_email → auth.users.email fallback
-    let sellerEmail = sellerProfile?.contact_email ?? null;
-
-    if (!sellerEmail) {
-      const adminClient = createAdminClient();
-      const { data: authUser } = await adminClient.auth.admin.getUserById(sellerId);
-      sellerEmail = authUser?.user?.email ?? null;
-    }
+    // 1. Resolve email and greeting (recipientEmail.ts): an identity's mail goes to the
+    //    account that holds it, never to its undeliverable address.
+    const recipient = await resolveRecipientEmail(sellerId);
+    const sellerEmail = recipient?.email ?? null;
 
     if (!sellerEmail) {
       logger.warn(
@@ -86,7 +75,7 @@ export async function sendSellerPaymentNotification(
       PAYMENT_METHOD_LABELS[paymentIntent.payment_method] ?? paymentIntent.payment_method;
 
     // 7. Seller name for greeting
-    const sellerName = sellerProfile?.display_name || sellerProfile?.username || 'there';
+    const sellerName = recipient?.displayName || 'there';
 
     // 8. Build and send
     const template = paymentReceivedTemplate({

@@ -3,9 +3,6 @@
 import { useEffect } from 'react';
 import { messageSyncManager } from '@/lib/message-sync-manager';
 import { useAuth } from '@/hooks/useAuth';
-import { refreshUnreadMessages } from '@/stores/messaging';
-
-const UNREAD_REFRESH_MS = 60_000;
 
 /**
  * A client component that initializes the message queue sync manager.
@@ -26,26 +23,6 @@ export function MessageSyncManagerInitializer() {
     if (user?.id) {
       messageSyncManager.processQueue();
     }
-  }, [user?.id]);
-
-  // The unread badge on Messages: on sign-in, whenever the tab comes back,
-  // and once a minute while it is in front.
-  useEffect(() => {
-    if (!user?.id) {
-      return;
-    }
-    const refresh = () => {
-      if (document.visibilityState === 'visible') {
-        void refreshUnreadMessages();
-      }
-    };
-    refresh();
-    const timer = window.setInterval(refresh, UNREAD_REFRESH_MS);
-    document.addEventListener('visibilitychange', refresh);
-    return () => {
-      window.clearInterval(timer);
-      document.removeEventListener('visibilitychange', refresh);
-    };
   }, [user?.id]);
 
   return null;

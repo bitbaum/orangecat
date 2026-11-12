@@ -7,7 +7,7 @@ import { truncateAddress } from '@/utils/string';
 import Button from '@/components/ui/Button';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 
-import { QRCodeSVG } from 'qrcode.react';
+import { ScanCode } from '@/components/ui/ScanCode';
 import { Wallet, WALLET_CATEGORIES } from '@/types/wallet';
 import BitcoinDonationCard from '@/components/bitcoin/BitcoinDonationCard';
 import BitcoinWalletStatsCompact from '@/components/bitcoin/BitcoinWalletStatsCompact';
@@ -15,7 +15,7 @@ import { WalletsSkeleton } from '@/components/profile/ProfileSkeleton';
 import { getWalletReceiveHandle } from '@/lib/wallet-receive-handle';
 import { showsLegacyReceive } from '@/lib/wallets/shownReceiveMethods';
 import { ROUTES } from '@/config/routes';
-import { computeWalletGoalProgress } from '@/lib/wallet-goal';
+import { computeWalletGoalProgress, measuredBalanceBtc } from '@/lib/wallet-goal';
 import { useCurrencyConversion } from '@/hooks/useCurrencyConversion';
 
 interface ProfileWalletSectionProps {
@@ -73,7 +73,7 @@ export default function ProfileWalletSection({
             // lib/wallet-goal.ts for why dividing them directly is wrong.
             const goal = computeWalletGoalProgress(
               {
-                balanceBtc: wallet.balance_btc,
+                balanceBtc: measuredBalanceBtc(wallet),
                 goalAmount: wallet.goal_amount,
                 goalCurrency: wallet.goal_currency,
               },
@@ -117,12 +117,21 @@ export default function ProfileWalletSection({
                       it is absent, and formatting it produced the literal
                       string "₿NaN" on a public page. A balance we did not fetch
                       is not a balance of zero — show nothing. */}
+                {/* And a balance nobody has READ is not zero either: the
+                      owner's payload carries the column's default 0 until a
+                      chain lookup, so say so instead of printing "CHF 0.00". */}
                 {handle.kind === 'onchain' && typeof wallet.balance_btc === 'number' && (
                   <div className="bg-surface-raised rounded-lg p-3 mb-3">
                     <div className="text-sm text-fg-secondary mb-1">Current Balance</div>
-                    <div className="text-xl font-bold text-bitcoinOrange">
-                      {formatAmountBtc(wallet.balance_btc)}
-                    </div>
+                    {measuredBalanceBtc(wallet) === null ? (
+                      <div className="text-sm text-fg-secondary">
+                        Not checked yet — refresh it on your wallets page
+                      </div>
+                    ) : (
+                      <div className="text-xl font-bold text-bitcoinOrange">
+                        {formatAmountBtc(wallet.balance_btc)}
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -164,12 +173,7 @@ export default function ProfileWalletSection({
                 {handle.qrValue && (
                   <div className="mb-4 flex justify-center">
                     <div className="bg-surface-base p-3 rounded-lg border-2 border-default shadow-sm">
-                      <QRCodeSVG
-                        value={handle.qrValue}
-                        size={120}
-                        level="H"
-                        includeMargin={false}
-                      />
+                      <ScanCode value={handle.qrValue} size={120} />
                     </div>
                   </div>
                 )}
@@ -184,7 +188,7 @@ export default function ProfileWalletSection({
                           navigator.clipboard.writeText(handle.value as string);
                           toast.success('Copied to clipboard');
                         }}
-                        className="text-xs text-fg-primary hover:text-fg-primary font-medium"
+                        className="-my-3 inline-flex min-h-11 min-w-11 items-center justify-center text-xs text-fg-primary hover:text-fg-primary font-medium"
                         aria-label={`Copy ${handle.label}`}
                       >
                         <Copy className="w-3 h-3 inline mr-1" />
@@ -222,7 +226,7 @@ export default function ProfileWalletSection({
                           );
                         }, 500);
                       }}
-                      className="w-full bg-bitcoinOrange hover:bg-bitcoinOrange/90 text-white"
+                      className="w-full bg-bitcoinOrange hover:bg-bitcoinOrange/90 text-on-accent"
                     >
                       <ExternalLink className="w-4 h-4 mr-2" />
                       Send with Wallet

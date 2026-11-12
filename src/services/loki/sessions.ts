@@ -34,6 +34,14 @@ export interface LokiSession {
   track: string | null;
   prUrl: string | null;
   statusUrl: string | null;
+  /** What the agent reported when it finished: the answer, once there is one. */
+  handoff: LokiHandoff | null;
+}
+
+export interface LokiHandoff {
+  done: string[];
+  checked: string | null;
+  next: string[];
 }
 
 export interface LokiTranscriptItem {
@@ -47,9 +55,21 @@ export interface LokiSessionsInput {
   actorId: string;
   /** One project: its row plus the tail of its conversation. */
   project?: string;
-  /** One run, with its full track. */
+  /** One run, with its full track; with `items`, the tail of that run's own session. */
   runId?: string;
   items?: number;
+  /** With runId: Loki holds the run's session as a viewer for this many seconds. */
+  watch?: number;
+  /** With runId: a follower's poll; Loki reads no GitHub for it. */
+  poll?: boolean;
+}
+
+export interface LokiTranscript {
+  project: string;
+  at: string | null;
+  /** False when Loki only had an older copy: the latest turns may be missing. */
+  live: boolean;
+  items: LokiTranscriptItem[];
 }
 
 export type LokiSessionsOutcome =
@@ -57,7 +77,7 @@ export type LokiSessionsOutcome =
       ok: true;
       sessions: LokiSession[];
       /** Present only when a project was named; null when Loki holds no conversation. */
-      transcript?: { project: string; at: string | null; items: LokiTranscriptItem[] } | null;
+      transcript?: LokiTranscript | null;
     }
   | { ok: false; reason: string };
 
@@ -109,12 +129,28 @@ function parseSession(raw: unknown): LokiSession | null {
     track: str(r.track),
     prUrl: http(r.prUrl),
     statusUrl: http(r.statusUrl),
+    handoff: parseHandoff(r.handoff),
   };
+}
+
+function parseHandoff(raw: unknown): LokiHandoff | null {
+  if (!raw || typeof raw !== 'object') {
+    return null;
+  }
+  const h = raw as Record<string, unknown>;
+  const list = (v: unknown) =>
+    Array.isArray(v) ? v.flatMap(x => (str(x) ? [str(x) as string] : [])).slice(0, 6) : [];
+  const done = list(h.done);
+  const next = list(h.next);
+  const checked = str(h.checked);
+  return done.length || next.length || checked ? { done, checked, next } : null;
 }
 
 export async function readLokiSessions(input: LokiSessionsInput): Promise<LokiSessionsOutcome> {
   const project = input.project?.trim();
   const runId = input.runId?.trim();
+  const watch =
+    input.watch && input.watch > 0 ? Math.min(300, Math.max(1, Math.floor(input.watch))) : 0;
   const items = Math.max(
     1,
     Math.min(LOKI_SESSIONS_MAX_ITEMS, Math.floor(input.items ?? DEFAULT_ITEMS) || DEFAULT_ITEMS)
@@ -126,7 +162,16 @@ export async function readLokiSessions(input: LokiSessionsInput): Promise<LokiSe
       actorId: input.actorId,
       // Loki refuses a request older than five minutes (no nonce on the rail).
       issuedAt: new Date().toISOString(),
-      ...(runId ? { runId } : project ? { project, items } : {}),
+      ...(runId
+        ? {
+            runId,
+            ...(input.items ? { items } : {}),
+            ...(watch ? { watch } : {}),
+            ...(input.poll ? { poll: true } : {}),
+          }
+        : project
+          ? { project, items }
+          : {}),
     },
     { timeoutMs: TIMEOUT_MS }
   );
@@ -154,15 +199,17 @@ export async function readLokiSessions(input: LokiSessionsInput): Promise<LokiSe
   }
 
   const sessions = parsed.sessions.flatMap(s => parseSession(s) ?? []);
-  if (!project || runId) {
+  if (runId ? !input.items : !project) {
     return { ok: true, sessions };
   }
   const t = parsed.transcript as Record<string, unknown> | null | undefined;
   const transcript =
     t && Array.isArray(t.items)
       ? {
-          project: str(t.project) ?? project,
+          project: str(t.project) ?? project ?? sessions[0]?.project ?? '',
           at: str(t.at),
+          // An older Loki sends no flag; its copy was whatever it had.
+          live: t.live !== false,
           items: t.items.flatMap((raw): LokiTranscriptItem[] => {
             const i = (raw ?? {}) as Record<string, unknown>;
             const text = str(i.text);
@@ -191,6 +238,9 @@ export function sessionLine(s: LokiSession): string {
   if (s.prUrl) {
     parts.push(`PR ${s.prUrl}`);
   }
+  if (s.handoff) {
+    parts.push(handoffWords(s.handoff));
+  }
   if (s.builder) {
     parts.push(`${s.builder} builder ${s.online ? 'online' : 'offline'}`);
   }
@@ -198,6 +248,21 @@ export function sessionLine(s: LokiSession): string {
     parts.push(`last activity ${s.lastActivityAt}`);
   }
   return `- ${parts.join(' · ')}`;
+}
+
+/** What the agent reported, in its own words. */
+export function handoffWords(h: LokiHandoff): string {
+  const parts = [];
+  if (h.done.length) {
+    parts.push(`The agent reported: ${h.done.join('; ')}`);
+  }
+  if (h.checked) {
+    parts.push(`Checked: ${h.checked}`);
+  }
+  if (h.next.length) {
+    parts.push(`It suggests next: ${h.next.join('; ')}`);
+  }
+  return parts.join(' · ');
 }
 
 const SPEAKER: Record<string, string> = { user: 'Asked', assistant: 'Agent', tool: 'Tool' };
@@ -217,5 +282,8 @@ export function sessionsMessage(outcome: Extract<LokiSessionsOutcome, { ok: true
   const quoted = outcome.transcript.items
     .map(i => `> **${SPEAKER[i.kind] ?? 'Note'}:** ${i.text.replace(/\n/g, '\n> ')}`)
     .join('\n>\n');
-  return `${lines.join('\n')}\n\nThe last ${outcome.transcript.items.length} lines of its conversation:\n\n${quoted}`;
+  const age = outcome.transcript.live
+    ? ''
+    : ` (an older copy from ${outcome.transcript.at ?? 'earlier'}: the latest turns may be missing)`;
+  return `${lines.join('\n')}\n\nThe last ${outcome.transcript.items.length} lines of its conversation${age}:\n\n${quoted}`;
 }
