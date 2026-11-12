@@ -13,6 +13,10 @@
  * `from` return). Trusted first-party clients with a remembered grant skip the
  * screen; everyone else approves the requested scopes here.
  */
+import { isUnreachableEmail } from '@/config/identities';
+import { circleForCaller } from '@/domain/identities/service';
+import { sessionMethods } from '@/lib/auth/session-methods';
+import { getAdminClient } from '@/lib/supabase/admin';
 import { redirect } from 'next/navigation';
 import { createServerClient } from '@/lib/supabase/server';
 import { DATABASE_TABLES } from '@/config/database-tables';
@@ -164,6 +168,16 @@ export default async function AuthorizePage({
     .eq('id', user!.id)
     .maybeSingle<{ username: string | null; name: string | null }>();
 
+  // The other identities this person holds (ADR-0014), so they can choose
+  // which one signs in to the app without leaving this screen.
+  const circle = await circleForCaller(getAdminClient(), {
+    userId: user!.id,
+    sessionMethods: await sessionMethods(supabase),
+  });
+  const otherIdentities = circle.members
+    .filter(m => m.id !== user!.id)
+    .map(m => ({ id: m.id, name: m.name, username: m.username, isMain: m.isHolder }));
+
   const scopeRows = scopes.map(name => {
     const scope = OAUTH_SCOPES.find(s => s.name === name);
     return { name, description: scope?.description ?? name, sensitive: !!scope?.sensitive };
@@ -178,8 +192,11 @@ export default async function AuthorizePage({
         account={{
           name: profile?.name ?? null,
           username: profile?.username ?? null,
-          email: user!.email ?? null,
+          // An identity sits on an address nobody can read; it has no email
+          // to show.
+          email: isUnreachableEmail(user!.email) ? null : (user!.email ?? null),
         }}
+        otherIdentities={otherIdentities}
         policyUri={client.policy_uri ?? null}
         tosUri={client.tos_uri ?? null}
         resourceName={resource?.name ?? null}

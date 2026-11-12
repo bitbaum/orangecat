@@ -20,6 +20,9 @@ import {
   createAuthCode,
   recordGrant,
 } from '@/services/auth/oauthProvider';
+import { getAdminClient } from '@/lib/supabase/admin';
+import { sessionMethods } from '@/lib/auth/session-methods';
+import { switchSessionTo } from '@/domain/identities/service';
 import { logger } from '@/utils/logger';
 
 function withParams(base: string, params: Record<string, string | undefined>): string {
@@ -131,12 +134,8 @@ const AUTHORIZE_FIELDS = [
   'resource',
 ] as const;
 
-/**
- * "Not you?" — sign out and sign in again, then land back on this same
- * consent screen. Nothing is granted or sent to the app; the authorize request
- * is re-validated in full when it is loaded again.
- */
-export async function switchAccount(formData: FormData): Promise<void> {
+/** The authorize request these fields describe, as a path to come back to. */
+function authorizePathFrom(formData: FormData): { path: string; clientId?: string } {
   const params = new URLSearchParams({ response_type: 'code' });
   for (const k of AUTHORIZE_FIELDS) {
     const v = formData.get(k);
@@ -144,14 +143,54 @@ export async function switchAccount(formData: FormData): Promise<void> {
       params.set(k, v);
     }
   }
+  return {
+    path: `${OAUTH_PATHS.authorize}?${params.toString()}`,
+    clientId: params.get('client_id') ?? undefined,
+  };
+}
+
+/**
+ * "Continue as" — become another identity this person holds (ADR-0014), then
+ * land back on this same consent screen as that identity. Nothing is granted
+ * or sent to the app; the authorize request is re-validated in full when it is
+ * loaded again, and the circle check is the service's, not this form's.
+ *
+ * The identity is a BOUND argument, not a field: React replaces the name and
+ * value of a button that carries a server action, so a `name="continue_as"`
+ * on the button never reaches the server.
+ */
+export async function continueAsIdentity(targetId: string, formData: FormData): Promise<void> {
+  const { path } = authorizePathFrom(formData);
+  const supabase = await createServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user && targetId) {
+    const result = await switchSessionTo(
+      getAdminClient(),
+      supabase,
+      { userId: user.id, sessionMethods: await sessionMethods(supabase) },
+      targetId
+    );
+    if (!result.ok) {
+      logger.warn('continueAsIdentity refused', { reason: result.reason }, 'OAuth');
+    }
+  }
+  // Back to the same screen either way: it shows who is signed in now, so a
+  // switch that did not happen is visible there rather than hidden here.
+  redirect(path);
+}
+
+/**
+ * "Not you?" — sign out and sign in again, then land back on this same
+ * consent screen. Nothing is granted or sent to the app; the authorize request
+ * is re-validated in full when it is loaded again.
+ */
+export async function switchAccount(formData: FormData): Promise<void> {
+  const { path, clientId } = authorizePathFrom(formData);
   const { error } = await (await createServerClient()).auth.signOut();
   if (error) {
     logger.error('switchAccount signOut failed', error, 'OAuth');
   }
-  redirect(
-    authHandoffUrl({
-      returnTo: `${OAUTH_PATHS.authorize}?${params.toString()}`,
-      clientId: params.get('client_id') ?? undefined,
-    })
-  );
+  redirect(authHandoffUrl({ returnTo: path, clientId }));
 }
