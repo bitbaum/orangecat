@@ -8,7 +8,7 @@
  * (cappedService), the Cat's tool loop and the health probe (reservePlatformCall).
  *
  * The count lives in the database (reserve_vendor_call, migration
- * 20261112200000), taken BEFORE the call, atomically, per UTC day. A call is
+ * 20261112200500), taken BEFORE the call, atomically, per UTC day. A call is
  * refused when the database cannot be asked: an unknown count is never room.
  *
  * Calls, not tokens: a call's cost is bounded by its prompt and its output
