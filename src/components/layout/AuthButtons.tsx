@@ -1,7 +1,7 @@
 'use client';
 
 import Button from '@/components/ui/Button';
-import UserProfileDropdown from '@/components/ui/UserProfileDropdown';
+import AccountMenuControl from '@/components/layout/AccountMenuControl';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAuthRoute } from '@/hooks/useRouteContext';
 import { authNavigationItems } from '@/config/navigation';
@@ -46,9 +46,9 @@ export default function AuthButtons({ className = '' }: AuthButtonsProps) {
     );
   }
 
-  // If authenticated, show user profile dropdown
+  // If authenticated, show the account menu
   if (authStatus.authenticated) {
-    return <UserProfileDropdown variant="advanced" />;
+    return <AccountMenuControl />;
   }
 
   // Show auth buttons for unauthenticated users

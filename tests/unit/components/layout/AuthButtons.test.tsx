@@ -38,13 +38,9 @@ vi.mock('next/link', () => ({
   },
 }));
 
-vi.mock('@/components/ui/UserProfileDropdown', () => ({
-  default: function MockUserProfileDropdown({ variant }: { variant?: string }) {
-    return (
-      <div data-testid="user-profile-dropdown" data-variant={variant}>
-        User Profile Dropdown
-      </div>
-    );
+vi.mock('@/components/layout/AccountMenuControl', () => ({
+  default: function MockAccountMenuControl() {
+    return <div data-testid="account-menu">Account menu</div>;
   },
 }));
 
@@ -75,7 +71,7 @@ describe('AuthButtons', () => {
       // least one of each must be present.
       const links = screen.getAllByRole('link');
       expect(links.length).toBeGreaterThan(0);
-      expect(screen.queryByTestId('user-profile-dropdown')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('account-menu')).not.toBeInTheDocument();
     });
 
     it('keeps sign-in CTA visible during hydration (no spinner blocks nav)', () => {
@@ -88,27 +84,14 @@ describe('AuthButtons', () => {
   });
 
   describe('authenticated', () => {
-    it('renders the user profile dropdown when a session exists', () => {
+    it('renders the account menu when a session exists', () => {
       setAuth({
         hydrated: true,
         user: { id: 'user-1' },
         session: { access_token: 'token' },
       });
       render(<AuthButtons />);
-      expect(screen.getByTestId('user-profile-dropdown')).toBeInTheDocument();
-    });
-
-    it('uses the advanced variant for the dropdown', () => {
-      setAuth({
-        hydrated: true,
-        user: { id: 'user-1' },
-        session: { access_token: 'token' },
-      });
-      render(<AuthButtons />);
-      expect(screen.getByTestId('user-profile-dropdown')).toHaveAttribute(
-        'data-variant',
-        'advanced'
-      );
+      expect(screen.getByTestId('account-menu')).toBeInTheDocument();
     });
   });
 
