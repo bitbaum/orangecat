@@ -312,19 +312,32 @@ describe('creating an identity', () => {
 });
 
 describe('deleting an identity', () => {
-  it('deletes one the caller holds, after its connected apps are revoked', async () => {
-    const { admin, deleted } = fakeAdmin(world());
-    const before = vi.fn(async () => undefined);
-    expect(await deleteIdentity(admin, as('fernando'), 'alberto', before)).toMatchObject({
+  it('deletes one the caller holds, through the remove it is given', async () => {
+    const { admin, raw, deleted } = fakeAdmin(world());
+    const remove = vi.fn(async (id: string) => {
+      await raw.auth.admin.deleteUser(id);
+      return null;
+    });
+    expect(await deleteIdentity(admin, as('fernando'), 'alberto', remove)).toMatchObject({
       ok: true,
     });
-    expect(before).toHaveBeenCalledWith('alberto');
+    expect(remove).toHaveBeenCalledWith('alberto');
     expect(deleted).toEqual(['alberto']);
+  });
+
+  it("passes on remove's message when nothing was removed", async () => {
+    const { admin } = fakeAdmin(world());
+    const remove = vi.fn(async () => 'An order you paid for has not shipped yet.');
+    expect(await deleteIdentity(admin, as('fernando'), 'alberto', remove)).toEqual({
+      ok: false,
+      reason: 'failed',
+      message: 'An order you paid for has not shipped yet.',
+    });
   });
 
   it('never deletes the holder, the signed-in identity, or anyone outside the circle', async () => {
     const { admin, deleted } = fakeAdmin(world());
-    const before = vi.fn(async () => undefined);
+    const before = vi.fn(async () => null);
     expect(await deleteIdentity(admin, as('alberto'), 'fernando', before)).toMatchObject({
       reason: 'is_holder',
     });
@@ -390,7 +403,7 @@ describe('an identity with a way in of its own loses the circle', () => {
           reason: 'not_in_circle',
         }
       );
-      expect(await deleteIdentity(admin, caller, 'fernando', async () => undefined)).toMatchObject({
+      expect(await deleteIdentity(admin, caller, 'fernando', async () => null)).toMatchObject({
         ok: false,
       });
       expect(await otherCircleMemberIds(admin, caller)).toEqual([]);

@@ -17,10 +17,10 @@ import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { sessionMethods } from '@/lib/auth/session-methods';
 import { IDENTITIES_COPY } from '@/config/identities';
-import { deleteAccountPages } from '@/domain/actors/deleteAccountPages';
+import { ACCOUNT_DELETION_COPY } from '@/config/account-deletion';
+import { deleteAccount } from '@/domain/actors/deleteAccount';
 import { deleteIdentity } from '@/domain/identities/service';
 import { revokeAllConnectedApps } from '@/services/auth/connectedApps';
-import { logger } from '@/utils/logger';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,13 +46,14 @@ export const DELETE = withAuth(
         async identityId => {
           // The oauth_* rows do not cascade from auth.users (see /api/delete-user).
           await revokeAllConnectedApps(identityId, { forgetConsents: true });
-          // Its pages first, or GoTrue's delete fails for an identity that owns
-          // one. If this fails while a page remains, that delete fails as well
-          // and nothing is removed.
-          const pagesError = await deleteAccountPages(admin, identityId);
-          if (pagesError) {
-            logger.error('Identity pages could not be deleted', { identityId, pagesError }, 'Auth');
+          // One transaction: its pages, its groups handed on, the auth user.
+          const removed = await deleteAccount(admin, identityId);
+          if (removed.ok) {
+            return null;
           }
+          return removed.reason === 'unshipped_orders'
+            ? ACCOUNT_DELETION_COPY.unshippedOrders
+            : IDENTITIES_COPY.removeFailed;
         }
       );
       if (result.ok) {
@@ -66,7 +67,7 @@ export const DELETE = withAuth(
         case 'is_current':
           return apiBadRequest(IDENTITIES_COPY.removeCurrent);
         default:
-          return apiInternalError(IDENTITIES_COPY.removeFailed);
+          return apiInternalError(result.message ?? IDENTITIES_COPY.removeFailed);
       }
     } catch (error) {
       return handleApiError(error);
