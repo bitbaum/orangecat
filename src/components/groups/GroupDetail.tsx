@@ -104,7 +104,12 @@ export function GroupDetail({ groupSlug }: GroupDetailProps) {
             publicPath={`/groups/${groupSlug}`}
             className="w-full justify-center"
           />
-          <PublicSupportPanel entityType="group" entityId={group.id} entityTitle={group.name} />
+          <PublicSupportPanel
+            entityType="group"
+            entityId={group.id}
+            entityTitle={group.name}
+            recipientName={group.name}
+          />
           {isOwner && (
             <LokiBuildCta
               variant="card"

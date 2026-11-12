@@ -141,7 +141,7 @@ export interface StakeholderSummary {
 
 /** One of the user's public GitHub repositories (cached). */
 import type { StudioMapSummary } from './studio-map-fetcher';
-import type { LokiProjectStatus } from '@/services/loki/actor-status';
+import type { LokiNeedsYouItem, LokiProjectStatus } from '@/services/loki/actor-status';
 import type { ConnectedGitHub } from '@/services/github/cat-context';
 
 export interface GitHubRepoSummary {
@@ -183,6 +183,8 @@ export interface NotificationSummary {
 
 /** An upcoming booking where the user is the service/asset provider */
 export interface BookingRecord {
+  /** The booking's id: its page is where it is confirmed, moved or declined. */
+  id?: string;
   starts_at: string;
   ends_at: string | null;
   status: string;
@@ -281,6 +283,8 @@ export interface FullUserContext {
   /** This person's projects as Loki sees them (status, live site, feedback).
    *  Optional: absent or null when Loki is unreachable or not linked. */
   lokiProjects?: LokiProjectStatus[] | null;
+  /** Approvals and alerts waiting on them in Loki, each with its Loki link. */
+  lokiNeedsYou?: LokiNeedsYouItem[] | null;
   /** Through a connected GitHub account: assigned issues + latest releases.
    *  Optional: absent or null when GitHub is not connected. */
   githubWork?: Pick<ConnectedGitHub, 'login' | 'assignedIssues' | 'releases'> | null;

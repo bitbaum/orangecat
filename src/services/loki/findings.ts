@@ -9,6 +9,7 @@
  * building: the report waits in the inbox for its owner unless the project's
  * owner opted in on Loki.
  */
+import { createHash } from 'crypto';
 import { ECOSYSTEM, LOKI_ENDPOINTS } from '@/config/ecosystem';
 import { logger } from '@/utils/logger';
 import { postSignedToLoki } from './signed-post';
@@ -44,6 +45,26 @@ export type LokiFindingStatusOutcome =
       next: string | null;
     }
   | { ok: false; reason: string };
+
+/**
+ * The retry key for a filing: the same finding, about the same project, by
+ * the same person, on the same day, is one report. A filing that timed out
+ * and is sent again replays the first instead of filing it twice (Loki
+ * answers the existing report, replayed: true).
+ */
+export function findingKey(
+  input: Pick<LokiFindingInput, 'actorId' | 'project' | 'finding' | 'url'>,
+  day: string
+): string {
+  const body = [
+    input.actorId,
+    input.project.trim().toLowerCase(),
+    input.finding.trim(),
+    input.url ?? '',
+    day,
+  ].join('\n');
+  return `oc-${createHash('sha256').update(body).digest('hex').slice(0, 40)}`;
+}
 
 export function lokiFeedbackUrl(): string {
   return (
@@ -89,11 +110,21 @@ export async function fileLokiFinding(input: LokiFindingInput): Promise<LokiFind
     project,
     suggestion: finding,
     agentName: (input.agentName.trim() || 'OrangeCat bot').slice(0, LOKI_FINDING_AGENT_NAME_MAX),
-    ...(input.idempotencyKey ? { idempotencyKey: input.idempotencyKey } : {}),
+    idempotencyKey:
+      input.idempotencyKey ??
+      findingKey({ ...input, finding }, new Date().toISOString().slice(0, 10)),
     ...(url && /^https?:\/\//i.test(url) ? { url: url.slice(0, 1000) } : {}),
   });
 
   const parsed = safeJson(result.body);
+  if (!result.ok && result.status === null) {
+    // No answer at all: it may or may not have arrived. The same filing sent
+    // again is the same report (findingKey), so a retry is safe; say so.
+    return {
+      ok: false,
+      reason: `Loki did not answer (${result.error}), so it is unknown whether the finding was filed. Sending it again is safe: the same finding is never filed twice.`,
+    };
+  }
   if (!result.ok) {
     const available = Array.isArray(parsed?.available)
       ? (parsed.available as unknown[]).filter((v): v is string => typeof v === 'string')

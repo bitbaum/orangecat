@@ -70,6 +70,10 @@ const AUTH_ALLOWLIST: Record<string, string> = {
   // The same flow for a ticket: a guest buys by name, no account; limited per
   // IP and per event, and the invoice pays the organizer's own wallet.
   'events/[id]/ticket/purchase/route.ts': 'anonymous ticket purchase by name by design',
+  // Handing an identity over (ADR-0014 D9): whoever accepts has no session in
+  // the account yet. The hand-over link is the whole credential (256 bits,
+  // stored only as a hash, one use, seven days); limited per IP.
+  'identities/handover/accept/route.ts': 'hand-over-link-gated acceptance by design',
   // Machine-to-machine webhook: HMAC-verified (SOLON_WEBHOOK_SECRET, timing
   // safe) rather than session-authed, and a doorbell only — the decision is
   // re-fetched and every signature re-verified before anything activates.

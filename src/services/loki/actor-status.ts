@@ -35,6 +35,11 @@ export interface LokiProjectStatus {
   status: LokiProjectState;
   /** awaiting_user | external_dependency | manual_pause, when blocked. */
   blockReason: string | null;
+  /**
+   * What Loki needs from its owner on this project, in one sentence, when it
+   * waits on them. Null when nothing is asked (or Loki predates the field).
+   */
+  needsYou: string | null;
   queueDepth: number;
   currentWork: string | null;
   /** Newest first: success | partial | error | hang | user_abort | timeout. */
@@ -52,10 +57,22 @@ export interface LokiModelKey {
   keyHint: string | null;
 }
 
+/** One line of Loki's own "needs you" list: an approval, an alert. */
+export interface LokiNeedsYouItem {
+  key: string;
+  label: string;
+  reason: string | null;
+  /** Absolute Loki URL of the page that acts on it. */
+  href: string;
+  urgent: boolean;
+}
+
 export interface LokiActorStatus {
   /** False when this person has never signed in to Loki with OrangeCat. */
   linked: boolean;
   projects: LokiProjectStatus[];
+  /** Approvals and alerts waiting on this person in Loki, in Loki's order. */
+  needsYou: LokiNeedsYouItem[];
   /** Provider keys held on Loki, by name. Empty when Loki sends none. */
   modelKeys: LokiModelKey[];
 }
@@ -64,6 +81,8 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
 const FETCH_TIMEOUT_MS = 3000;
 const MAX_PROJECTS = 25;
 const MAX_MODEL_KEYS = 20;
+const MAX_NEEDS_YOU = 10;
+const MAX_LINE_CHARS = 200;
 const MAX_CACHE_ENTRIES = 500;
 
 const cache = new Map<string, { at: number; value: LokiActorStatus | null }>();
@@ -102,6 +121,7 @@ function parseProject(raw: unknown): LokiProjectStatus | null {
     liveUrl: isHttp(liveUrl) ? liveUrl : null,
     status,
     blockReason: str(p.blockReason),
+    needsYou: line(p.needsYou),
     queueDepth: num(p.queueDepth),
     currentWork: str(p.currentWork),
     recentOutcomes: Array.isArray(p.recentOutcomes)
@@ -117,6 +137,26 @@ function parseProject(raw: unknown): LokiProjectStatus | null {
   };
 }
 
+/** A sentence from the other side, trimmed and bounded. */
+function line(v: unknown): string | null {
+  const s = str(v)?.replace(/\s+/g, ' ').trim();
+  return s ? s.slice(0, MAX_LINE_CHARS) : null;
+}
+
+function parseNeedsYou(raw: unknown): LokiNeedsYouItem | null {
+  if (!raw || typeof raw !== 'object') {
+    return null;
+  }
+  const n = raw as Record<string, unknown>;
+  const key = str(n.key);
+  const label = line(n.label);
+  const href = str(n.href);
+  if (!key || !label || !isHttp(href)) {
+    return null;
+  }
+  return { key, label, reason: line(n.reason), href, urgent: n.urgent === true };
+}
+
 /** The response crosses a product boundary: trust only what type-checks. */
 export function parseActorStatus(body: string): LokiActorStatus | null {
   let json: unknown;
@@ -128,16 +168,21 @@ export function parseActorStatus(body: string): LokiActorStatus | null {
   if (!json || typeof json !== 'object' || (json as { ok?: unknown }).ok !== true) {
     return null;
   }
-  const { linked, projects, modelKeys } = json as {
+  const { linked, projects, modelKeys, needsYou } = json as {
     linked?: unknown;
     projects?: unknown;
     modelKeys?: unknown;
+    needsYou?: unknown;
   };
   if (linked !== true) {
-    return { linked: false, projects: [], modelKeys: [] };
+    return { linked: false, projects: [], modelKeys: [], needsYou: [] };
   }
   return {
     linked: true,
+    needsYou: (Array.isArray(needsYou) ? needsYou : [])
+      .map(parseNeedsYou)
+      .filter((n): n is LokiNeedsYouItem => !!n)
+      .slice(0, MAX_NEEDS_YOU),
     modelKeys: (Array.isArray(modelKeys) ? modelKeys : [])
       .flatMap(raw => {
         const k = (raw ?? {}) as Record<string, unknown>;
@@ -158,13 +203,13 @@ export function parseActorStatus(body: string): LokiActorStatus | null {
  */
 export async function fetchLokiActorStatus(
   actorId: string,
-  opts: SignedPostOptions & { now?: () => number } = {}
+  opts: SignedPostOptions & { now?: () => number; fresh?: boolean } = {}
 ): Promise<LokiActorStatus | null> {
   if (!lokiRailConfigured(opts.secret ?? process.env.ORANGECAT_WEBHOOK_SECRET)) {
     return null;
   }
   const now = opts.now ?? Date.now;
-  const hit = cache.get(actorId);
+  const hit = opts.fresh ? undefined : cache.get(actorId);
   if (hit && now() - hit.at < CACHE_TTL_MS) {
     return hit.value;
   }

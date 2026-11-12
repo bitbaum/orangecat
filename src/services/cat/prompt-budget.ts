@@ -109,6 +109,8 @@ export const DROPPABLE_SECTIONS_IN_ORDER: readonly string[] = [
   // present it is the turn's point; it goes late.
   'Setting Someone Up End to End',
   'Getting Something Built (Loki)',
+  // Present only when the person asked for their day; then it is the answer's shape.
+  'Starting, Steering and Closing Their Day',
   ...PLAYBOOK_HEADINGS,
   'Answering a Question (evaluation, opinion, design)',
 ];
