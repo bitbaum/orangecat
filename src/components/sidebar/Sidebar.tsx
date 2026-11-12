@@ -47,6 +47,8 @@ interface SidebarProps {
   toggleSidebarCollapse: () => void;
   toggleSection: (sectionId: string) => void;
   onNavigate?: () => void;
+  /** The mobile tab bar shows on this route: on a phone the drawer ends on top of it. */
+  aboveMobileNav?: boolean;
 }
 
 export function Sidebar({
@@ -60,6 +62,7 @@ export function Sidebar({
   toggleSidebarCollapse,
   toggleSection,
   onNavigate,
+  aboveMobileNav = false,
 }: SidebarProps) {
   const handleNavigate = () => {
     // On mobile, close sidebar after navigation
@@ -117,17 +120,14 @@ export function Sidebar({
       <FocusLock disabled={!mobileDrawerOpen} returnFocus>
         {/* Desktop: w-64 (full width) or w-16 (collapsed, icons only) based on user preference
             Mobile: w-64 drawer when open
-            Using literal class names for Tailwind JIT compatibility */}
+            Using literal class names for Tailwind JIT compatibility.
+            Top, bottom and safe-area insets: .app-sidebar in globals.css. */}
         <aside
           data-fc-place={mobileDrawerOpen ? 'hidden' : undefined}
+          data-above-mobile-nav={aboveMobileNav ? '' : undefined}
           inert={!isDesktop && !navigationState.isSidebarOpen}
           aria-hidden={!isDesktop && !navigationState.isSidebarOpen}
-          className={`fixed bottom-0 left-0 ${SIDEBAR_Z_INDEX.SIDEBAR} flex flex-col ${SIDEBAR_COLORS.BACKGROUND} border-r ${SIDEBAR_COLORS.BORDER} ${sidebarTranslate} overflow-hidden transition-all ${SIDEBAR_TRANSITIONS.DURATION} ${SIDEBAR_TRANSITIONS.EASING} ${sidebarWidth}`}
-          style={{
-            paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-            paddingLeft: 'env(safe-area-inset-left, 0px)',
-            top: 'calc(4rem + env(safe-area-inset-top, 0px))',
-          }}
+          className={`app-sidebar fixed left-0 ${SIDEBAR_Z_INDEX.SIDEBAR} flex flex-col ${SIDEBAR_COLORS.BACKGROUND} border-r ${SIDEBAR_COLORS.BORDER} ${sidebarTranslate} overflow-hidden transition-all ${SIDEBAR_TRANSITIONS.DURATION} ${SIDEBAR_TRANSITIONS.EASING} ${sidebarWidth}`}
         >
           {/* Wrapper to ensure tooltips can overflow */}
           <div className="flex h-full min-w-0 flex-col overflow-hidden">
