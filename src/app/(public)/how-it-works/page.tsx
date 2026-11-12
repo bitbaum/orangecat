@@ -77,19 +77,15 @@ export default function HowItWorksPage() {
                     <div className="flex flex-col md:flex-row gap-6">
                       {/* Step Number & Icon */}
                       <div className="flex-shrink-0">
-                        <div
-                          className={`${step.iconGradient} w-16 h-16 rounded-full flex items-center justify-center text-white mb-4 md:mb-0`}
-                        >
-                          <Icon className="w-8 h-8" />
+                        <div className="oc-icon-tile mb-4 h-12 w-12 md:mb-0">
+                          <Icon className="h-6 w-6" />
                         </div>
                       </div>
 
                       {/* Content */}
                       <div className="flex-1">
                         <div className="flex items-start gap-3 mb-3">
-                          <span
-                            className={`${step.iconGradient} text-white text-sm font-bold px-3 py-1 rounded-full`}
-                          >
+                          <span className="mt-1 shrink-0 rounded-full border border-default bg-surface-raised px-3 py-1 text-xs font-medium uppercase tracking-caps text-fg-secondary">
                             Step {step.number}
                           </span>
                           <h3 className="text-2xl font-bold text-fg-primary flex-1">

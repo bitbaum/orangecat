@@ -12,7 +12,6 @@ vi.mock('@/hooks/useRecommendations', () => ({
     isLoading: false,
     error: null,
     profileCompletion: 50,
-    taskCompletion: 50,
     tasks: Array.from({ length: 6 }, (_, i) => ({
       id: `setup-${i}`,
       title: `Profile task ${i}`,

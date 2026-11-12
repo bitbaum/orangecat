@@ -35,7 +35,7 @@ export default function WhatYouCanDoPage() {
                 <li key={intent.id}>
                   <a
                     href={`#do-${intent.id}`}
-                    className="inline-block rounded-full border border-default bg-surface-base px-3 py-1.5 text-sm text-fg-secondary hover:border-interactive hover:text-fg-primary"
+                    className="inline-flex items-center rounded-full border border-default bg-surface-base px-3 py-1.5 text-sm text-fg-secondary hover:border-interactive hover:text-fg-primary"
                   >
                     {intent.title}
                   </a>
@@ -45,7 +45,7 @@ export default function WhatYouCanDoPage() {
                 <li>
                   <a
                     href="#do-decide"
-                    className="inline-block rounded-full border border-default bg-surface-base px-3 py-1.5 text-sm text-fg-secondary hover:border-interactive hover:text-fg-primary"
+                    className="inline-flex items-center rounded-full border border-default bg-surface-base px-3 py-1.5 text-sm text-fg-secondary hover:border-interactive hover:text-fg-primary"
                   >
                     Decide
                   </a>

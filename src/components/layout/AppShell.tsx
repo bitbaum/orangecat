@@ -3,6 +3,11 @@
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import {
+  ShellPathnameContext,
+  useRootShellPathname,
+  useShellPathname,
+} from '@/hooks/useShellPathname';
 import { getRouteChrome, getRouteSurface } from '@/config/routes';
 import GlobalCatLauncher from '@/components/ai-chat/GlobalCatLauncher';
 import { STORAGE_KEYS } from '@/config/storage-keys';
@@ -13,6 +18,7 @@ import MobileBottomNav from './MobileBottomNav';
 import { useNavigation } from '@/hooks/useNavigation';
 import { sidebarSections, bottomNavItems } from '@/config/navigation';
 import { MessageSyncManagerInitializer } from '@/components/MessageSyncManagerInitializer';
+import { useUnreadMessagesSync } from '@/hooks/useUnreadMessagesSync';
 import { ViewportHeightSync } from './ViewportHeightSync';
 
 interface AppShellProps {
@@ -34,7 +40,20 @@ interface AppShellProps {
  * Last Modified Summary: Fixed hydration race condition - wait for auth hydration before rendering sidebar
  */
 export function AppShell({ children }: AppShellProps) {
-  const pathname = usePathname();
+  // Read once, at the root layout, for every piece of chrome below: a 404's
+  // chrome must be the same on the server and in the browser.
+  const shellPathname = useRootShellPathname();
+  return (
+    <ShellPathnameContext.Provider value={shellPathname}>
+      <AppShellChrome>{children}</AppShellChrome>
+    </ShellPathnameContext.Provider>
+  );
+}
+
+function AppShellChrome({ children }: AppShellProps) {
+  const pathname = useShellPathname();
+  // The address actually visited, for Cat's breadcrumb (set after load).
+  const visitedPathname = usePathname();
   const { user, profile, hydrated, isLoading } = useAuth();
   // SSOT: every shell-related visibility decision derives from
   // getRouteSurface (src/config/routes.ts). Do not branch on pathname here.
@@ -61,6 +80,9 @@ export function AppShell({ children }: AppShellProps) {
     getFilteredSections,
   } = useNavigation(sidebarSections);
 
+  // One fetch for every Messages badge (header, sidebar, phone tab bar).
+  useUnreadMessagesSync();
+
   const routeChrome = getRouteChrome(pathname ?? '/');
   // Mirrors MobileBottomNav visibility — when the bottom nav renders, reserve
   // space below the main scroll area so its content isn't covered.
@@ -77,19 +99,19 @@ export function AppShell({ children }: AppShellProps) {
   // navigations, so we maintain a session breadcrumb ourselves.
   const previousPathnameRef = useRef<string | null>(null);
   useEffect(() => {
-    if (typeof window === 'undefined' || !pathname) {
+    if (typeof window === 'undefined' || !visitedPathname) {
       return;
     }
     const prev = previousPathnameRef.current;
-    if (prev && prev !== pathname) {
+    if (prev && prev !== visitedPathname) {
       try {
         window.sessionStorage.setItem(STORAGE_KEYS.LAST_VISITED_PATH, prev);
       } catch {
         /* sessionStorage unavailable; Cat falls back to document.referrer */
       }
     }
-    previousPathnameRef.current = pathname;
-  }, [pathname]);
+    previousPathnameRef.current = visitedPathname;
+  }, [visitedPathname]);
 
   // Sidebar margin-left animates from 0 → 16rem/64rem when auth hydrates,
   // which produces a 300ms content slide on every page load — the
@@ -112,8 +134,10 @@ export function AppShell({ children }: AppShellProps) {
   // Auth surface: no global chrome at all. The /auth page is its own
   // self-contained universe with its own minimal back-link.
   if (isAuthSurface) {
+    // No header or tab bar here to clear the status bar and home indicator,
+    // so the screen does (globals.css, "Safe areas").
     return (
-      <div className="min-h-screen bg-surface-page">
+      <div className="min-h-screen bg-surface-page safe-area-padding-top app-page-foot">
         <MessageSyncManagerInitializer />
         {/* The feedback launcher is the edge tab here too: the round button
             sat on the "Sign in" button at 390px (seen live 2026-11-12). */}
@@ -124,8 +148,15 @@ export function AppShell({ children }: AppShellProps) {
     );
   }
 
+  // The home-indicator inset at the foot of the page, applied once: where the
+  // tab bar shows, main's clearance below already carries it; elsewhere the
+  // shell's last edge does (globals.css, .app-page-foot).
   return (
-    <div className="min-h-screen flex flex-col bg-surface-page">
+    <div
+      className={`min-h-screen flex flex-col bg-surface-page ${
+        showsMobileBottomNav ? '' : 'app-page-foot'
+      }`}
+    >
       {/* Initialize message sync manager */}
       <MessageSyncManagerInitializer />
 
@@ -164,6 +195,7 @@ export function AppShell({ children }: AppShellProps) {
             toggleSidebar={toggleSidebar}
             toggleSidebarCollapse={toggleSidebarCollapse}
             toggleSection={toggleSection}
+            aboveMobileNav={showsMobileBottomNav}
           />
         )}
 

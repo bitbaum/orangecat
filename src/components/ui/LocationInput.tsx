@@ -23,6 +23,10 @@ interface LocationInputProps {
   placeholder?: string;
   className?: string;
   onFocus?: () => void;
+  /** Set by FormControl: the id its FormLabel points at, and the field's description. */
+  id?: string;
+  'aria-describedby'?: string;
+  'aria-invalid'?: boolean;
 }
 
 export function LocationInput({
@@ -31,6 +35,9 @@ export function LocationInput({
   placeholder = 'Type your city or address...',
   className,
   onFocus,
+  id,
+  'aria-describedby': ariaDescribedBy,
+  'aria-invalid': ariaInvalid,
 }: LocationInputProps) {
   const {
     inputValue,
@@ -49,6 +56,9 @@ export function LocationInput({
       <div className="relative">
         <Input
           ref={inputRef}
+          id={id}
+          aria-describedby={ariaDescribedBy}
+          aria-invalid={ariaInvalid}
           type="text"
           value={inputValue}
           onChange={e => handleInputChange(e.target.value)}

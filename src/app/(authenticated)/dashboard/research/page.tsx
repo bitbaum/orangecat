@@ -140,13 +140,13 @@ export default function ResearchDashboard() {
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-secondary w-4 h-4" />
+        <div className="flex-1">
           <Input
+            icon={Search}
+            aria-label="Search research projects"
             placeholder="Search research projects..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            className="pl-10"
           />
         </div>
         <Select value={fieldFilter} onValueChange={setFieldFilter}>
@@ -250,6 +250,7 @@ export default function ResearchDashboard() {
                         ? ((entity.funding_raised_btc || 0) / entity.funding_goal) * 100
                         : 0
                     }
+                    aria-label="Funding progress"
                     className="h-2"
                   />
                 </div>

@@ -104,7 +104,7 @@ export function BlogFilters({
                 }`}
               >
                 {option.label}
-                <span className="ml-1.5 text-xs opacity-75">({option.count})</span>
+                <span className="ml-1.5 text-xs">({option.count})</span>
               </button>
             ))}
           </div>

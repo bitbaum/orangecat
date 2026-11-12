@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import type { Message, Conversation, Pagination } from '../types';
 import { TIMING, debugLog } from '../lib/constants';
 import { API_ROUTES } from '@/config/api-routes';
+import { announceMessagesRead } from '@/hooks/useUnreadMessagesSync';
 import { mergeMessages, confirmOptimisticMessage } from '../lib/message-utils';
 import { useReadReceipts } from './useReadReceipts';
 import { useMessagesFetcher } from './useMessagesFetcher';
@@ -48,10 +49,13 @@ export function useMessages(
       return;
     }
     try {
-      await fetch(API_ROUTES.MESSAGES.CONVERSATION_READ(conversationId), {
+      const res = await fetch(API_ROUTES.MESSAGES.CONVERSATION_READ(conversationId), {
         method: 'POST',
         credentials: 'same-origin',
       });
+      if (res.ok) {
+        announceMessagesRead();
+      }
       setTimeout(() => refreshReadReceipts(), TIMING.READ_RECEIPT_RECALC_DELAY_MS);
     } catch (err) {
       debugLog('Error marking as read:', err);

@@ -56,9 +56,12 @@ export function SocialLinksEditor({ links, onChange, maxLinks = 15 }: SocialLink
           </p>
         </div>
         {canAddMore && !isAdding && editingIndex === null && (
+          // type="button": this editor sits inside the profile <form>, where a
+          // bare button submits — and saves — the whole profile.
           <button
+            type="button"
             onClick={() => setIsAdding(true)}
-            className="text-xs sm:text-sm font-medium text-fg-primary hover:underline underline-offset-4"
+            className="text-xs sm:text-sm font-medium text-fg-primary hover:underline underline-offset-4 pointer-coarse:min-h-11"
           >
             + Add Link
           </button>
@@ -105,7 +108,7 @@ export function SocialLinksEditor({ links, onChange, maxLinks = 15 }: SocialLink
             Add links to build credibility and help supporters find you
           </p>
           {canAddMore && (
-            <Button onClick={() => setIsAdding(true)} variant="outline" size="sm">
+            <Button type="button" onClick={() => setIsAdding(true)} variant="outline" size="sm">
               <Plus className="w-4 h-4 mr-1" />
               Add Your First Link
             </Button>

@@ -86,7 +86,7 @@ export default function FundingProgress({
                 {formatCurrency(goalAmt, currency)} {goalLabel}
               </span>
             </div>
-            <Progress value={progress} className="h-2" />
+            <Progress value={progress} aria-label="Funding progress" className="h-2" />
             <p className="text-sm text-fg-secondary">
               {progress}% funded
               {!hasRaised && <span className="text-fg-tertiary"> · Be the first to back this</span>}

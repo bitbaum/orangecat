@@ -38,7 +38,7 @@ export default async function RoadmapPage() {
   ]);
 
   return (
-    <main className="min-h-screen bg-surface-page">
+    <div className="min-h-screen bg-surface-page">
       <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
         <div className="max-w-3xl">
           <p className="text-xs font-medium uppercase tracking-caps text-fg-tertiary">
@@ -75,20 +75,20 @@ export default async function RoadmapPage() {
           Read from the fleet map. The record is{' '}
           <a
             href="https://github.com/bitbaum/orangecat/blob/main/ROADMAP.md"
-            className="text-fg-secondary underline-offset-4 hover:text-fg-primary hover:underline"
+            className="text-fg-secondary underline underline-offset-4 hover:text-fg-primary"
           >
             ROADMAP.md
           </a>{' '}
           in the repository; the project&apos;s place in the fleet is{' '}
           <a
             href={FLEET_PROFILE_URL}
-            className="text-fg-secondary underline-offset-4 hover:text-fg-primary hover:underline"
+            className="text-fg-secondary underline underline-offset-4 hover:text-fg-primary"
           >
             on Loki
           </a>
           .
         </p>
       </div>
-    </main>
+    </div>
   );
 }

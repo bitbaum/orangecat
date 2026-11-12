@@ -95,7 +95,7 @@ export default function BitcoinWalletStatsCompact({
       className={`bg-surface-base rounded-lg border border-default overflow-hidden ${className}`}
     >
       {/* Balance Display */}
-      <div className={`${GRADIENTS.brandOrangeAmber} p-4 text-white`}>
+      <div className={`${GRADIENTS.brandOrangeAmber} p-4`}>
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-2">
             <Bitcoin className="w-4 h-4" />
@@ -103,7 +103,7 @@ export default function BitcoinWalletStatsCompact({
           </div>
           <button
             onClick={fetchData}
-            className="text-white/80 hover:text-white transition-colors p-1 min-h-11 min-w-11 flex items-center justify-center"
+            className="text-fg-inverted/80 hover:text-fg-inverted transition-colors p-1 min-h-11 min-w-11 flex items-center justify-center"
             aria-label="Refresh balance"
           >
             <RefreshCw className="w-3 h-3" />
