@@ -31,3 +31,13 @@ export const CAT_MENTION = `@${CAT_USERNAME}`;
  * product decision rather than whatever a query happened to default to.
  */
 export const CAT_CONTEXT_MESSAGE_WINDOW = 20;
+
+/**
+ * Is this handle the Cat's? The handle is reserved (config/usernames.ts), so
+ * nobody else can hold it: a message or a seat whose profile carries it is the
+ * agent's, and is shown as an agent's wherever people and the Cat share a
+ * conversation.
+ */
+export function isCatUsername(username: string | null | undefined): boolean {
+  return (username ?? '').trim().toLowerCase() === CAT_USERNAME;
+}

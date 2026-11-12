@@ -1,3 +1,5 @@
+import type { MessageAttachmentDto } from './server/attachments';
+
 export interface Participant {
   user_id: string;
   username: string;
@@ -7,6 +9,8 @@ export interface Participant {
   joined_at: string;
   last_read_at: string;
   is_active: boolean;
+  /** The Cat: an agent, shown as one. */
+  is_agent?: boolean;
 }
 
 export interface Conversation {
@@ -39,7 +43,10 @@ export interface Message {
     username: string;
     name: string;
     avatar_url: string | null;
+    is_agent?: boolean;
   };
+  /** Files sent with the message (features/messaging/server/attachments.ts). */
+  attachments?: MessageAttachmentDto[];
   is_read?: boolean;
   is_delivered?: boolean;
   status?: 'pending' | 'failed' | 'sent' | 'delivered' | 'read';

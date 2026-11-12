@@ -17,8 +17,18 @@ export interface MessagingActor {
   is_personal: boolean;
 }
 
+/** The Cat's account, as the Messenger needs it to mark an agent's messages. */
+export interface MessagingAgent {
+  id: string;
+  username: string;
+  name: string;
+  avatar_url: string | null;
+}
+
 interface UseMessagingActorsResult {
   actors: MessagingActor[];
+  /** The agent people can bring into a conversation, once known. */
+  agent: MessagingAgent | null;
   isLoading: boolean;
   error: string | null;
   personalActor: MessagingActor | null;
@@ -30,6 +40,7 @@ export function useMessagingActors(): UseMessagingActorsResult {
   const { user } = useAuth();
   const userId = user?.id;
   const [actors, setActors] = useState<MessagingActor[]>([]);
+  const [agent, setAgent] = useState<MessagingAgent | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -65,6 +76,7 @@ export function useMessagingActors(): UseMessagingActorsResult {
         }
         if (!cancelled) {
           setActors(data.data.actors);
+          setAgent(data.data.agent ?? null);
         }
       } catch (err) {
         if (cancelled) {
@@ -92,6 +104,7 @@ export function useMessagingActors(): UseMessagingActorsResult {
 
   return {
     actors,
+    agent,
     isLoading,
     error,
     personalActor,

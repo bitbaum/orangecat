@@ -19,7 +19,8 @@ export async function sendMessage(
   content: string,
   type: string = 'text',
   metadata: Record<string, unknown> | null = null,
-  senderActorId?: string | null
+  senderActorId?: string | null,
+  preview?: string
 ): Promise<string> {
   const { user } = await getServerUser();
   if (!user) {
@@ -94,6 +95,7 @@ export async function sendMessage(
       type,
       metadata,
       senderActorId,
+      preview,
     });
 
     logger.info('Message sent successfully:', messageId);

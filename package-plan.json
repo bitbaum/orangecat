@@ -69,6 +69,24 @@
           "symbols": ["classifyPaste"]
         }
       ]
+    },
+    "messenger": {
+      "package": "@bitbaum/chatkit",
+      "bindings": [
+        {
+          "file": "src/components/messaging/MessagesScreen.tsx",
+          "symbols": ["Messenger"]
+        },
+        {
+          "file": "src/features/messaging/messenger-transport.ts",
+          "symbols": ["mentionMatcher", "reviveConversation", "reviveMessage"]
+        },
+        {
+          "file": "src/features/messaging/server/attachments.ts",
+          "symbols": ["checkAttachment"]
+        }
+      ],
+      "notes": "Direct messages are the packaged Messenger: list, thread, box, files and the agent mark are the package's. OrangeCat owns the transport (its routes and realtime channels), attachment storage (a private bucket behind signed URLs), the Cat as the agent, sending as a group, and the @mention menu."
     }
   }
 }

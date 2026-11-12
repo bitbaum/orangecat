@@ -11,6 +11,11 @@ to the map, sub-bullets stay here for the human reader.
 
 ## 2026-11-12
 
+- **Messages tell you who is speaking.** When Cat answered in a conversation between two people, its answer looked like the other person's. Cat's messages now carry its own mark, the word "Agent" and whom it answered for, in a bubble of their own; the top of the conversation says when Cat is in it, and you see "Cat is thinking…" from the moment you tag it.
+- **Send photos, videos and files in a message.** Tap the paperclip for Camera, Photos, Videos or Files. Photos are made smaller on your phone before they are sent, each file shows its progress, and a picture opens on the whole screen. Only the people in the conversation can open what was sent.
+- **A conversation uses the whole phone.** Opening a conversation used to leave an empty band under the message box and the box sat in the middle of the screen. The box is now one row at the bottom, and the rest of the screen is the conversation.
+- **The Messages badge counts.** The number on Messages in the menu stayed at zero whatever arrived. It now shows how many messages you have not read.
+
 - **The bottom bar shows where you are.** On a phone, the tab you were on lost its icon: Explore showed a blank white disc instead of a compass. The icon stays drawn now; the current tab is marked by a heavier line and a bold label.
 - **A sign-in code survives the trip to your mail app.** On a phone, leaving the sign-in page to read the code could bring you back to an empty form, and you had to ask for another code. The page now reopens on the code field, with what you had typed, for fifteen minutes. If you ask for too many codes it says how long to wait instead of "We could not send a code", and you can still enter a code you already hold.
 - **Easier to tap on a phone.** "Forgot password?", "Create an account" and "Remember me" on the sign-in page, the logo in the header and the "Also here" links on Discover are now full-size tap targets (44px) instead of a line of text. The feedback button no longer sits on top of "Sign in".

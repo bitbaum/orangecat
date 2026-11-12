@@ -88,6 +88,9 @@ const MobileBottomNav = React.memo(function MobileBottomNav() {
     <>
       <div
         data-fc-avoid=""
+        // Named so a chat that owns the phone can ask it to step aside
+        // (globals.css, "A chat that owns the phone").
+        data-app-mobile-nav=""
         className={cn(
           'md:hidden fixed bottom-0 left-0 right-0 border-t border-default',
           'transition-all duration-300 ease-in-out',
