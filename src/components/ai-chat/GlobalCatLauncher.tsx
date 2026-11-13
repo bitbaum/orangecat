@@ -29,6 +29,9 @@ import { useSoftKeyboard } from '@/hooks/useSoftKeyboard';
  * that matters, so this one fades out while the page is scrolling and comes
  * back when it stops.
  */
+/** What can be open inside the Cat panel and closes on its own Escape. */
+export const CAT_INNER_LAYER = 'dialog[open], [role="menu"]';
+
 export default function GlobalCatLauncher() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -62,15 +65,22 @@ export default function GlobalCatLauncher() {
     };
   }, [open]);
 
-  // Close on Escape.
+  // Close on Escape, unless Escape is for something open inside the panel (a
+  // menu, a sheet): that closes on its own. This listener runs before theirs,
+  // so they are still open here. Closing the panel used to throw away the
+  // menu and the message being typed with it.
   useEffect(() => {
     if (!open) {
       return;
     }
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
-        setOpen(false);
+      if (e.key !== 'Escape' || e.defaultPrevented) {
+        return;
       }
+      if (document.querySelector(CAT_INNER_LAYER)) {
+        return;
+      }
+      setOpen(false);
     }
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
