@@ -13,7 +13,7 @@ import GlobalCatLauncher from '@/components/ai-chat/GlobalCatLauncher';
 import { STORAGE_KEYS } from '@/config/storage-keys';
 import { Header } from './Header';
 import { Sidebar } from '@/components/sidebar/Sidebar';
-import Footer from './Footer';
+import Footer, { showsSiteFooter } from './Footer';
 import MobileBottomNav from './MobileBottomNav';
 import { useNavigation } from '@/hooks/useNavigation';
 import { sidebarSections, bottomNavItems } from '@/config/navigation';
@@ -87,6 +87,11 @@ function AppShellChrome({ children }: AppShellProps) {
   // Mirrors MobileBottomNav visibility — when the bottom nav renders, reserve
   // space below the main scroll area so its content isn't covered.
   const showsMobileBottomNav = isAppSurface && !routeChrome.hideMobileBottomNav;
+  // A visitor on an app surface gets the site footer below the page; the
+  // tab-bar clearance then belongs under the footer, not between it and the
+  // content.
+  const visitorFooterOnApp =
+    isAppSurface && showsSiteFooter(surface, { signedIn: !!user, settled: isAuthReady });
 
   useEffect(() => {
     if (routeChrome.preferCollapsedSidebar) {
@@ -215,14 +220,18 @@ function AppShellChrome({ children }: AppShellProps) {
                 ? 'lg:ml-16'
                 : 'lg:ml-64'
               : 'ml-0'
-          } ${showsMobileBottomNav && !routeChrome.ownsMobileNavClearance ? 'app-bottom-nav-clearance' : ''}`}
+          } ${
+            showsMobileBottomNav && !routeChrome.ownsMobileNavClearance && !visitorFooterOnApp
+              ? 'app-bottom-nav-clearance'
+              : ''
+          }`}
         >
           {children}
         </main>
       </div>
 
-      {/* Footer - Only for public routes (handled internally by Footer component) */}
-      <Footer />
+      {/* Footer - public routes, and app surfaces for visitors (Footer decides) */}
+      <Footer clearsMobileNav={showsMobileBottomNav && visitorFooterOnApp} />
 
       {/* Mobile Bottom Navigation - Context-aware (handles its own visibility) */}
       <MobileBottomNav />

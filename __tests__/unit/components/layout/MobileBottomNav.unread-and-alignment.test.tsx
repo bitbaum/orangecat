@@ -78,7 +78,6 @@ describe('the raised tab labels on the same line as the others', () => {
   it.each([
     ['signed in, full', { id: 'user-1' }, false, 'Receive', 'Home'],
     ['signed in, compact', { id: 'user-1' }, true, 'Receive', 'Home'],
-    ['signed out, full', null, false, 'Create', 'Home'],
   ])('%s', (_case, user, compact, raised, neighbour) => {
     mockUser = user;
     mockCompact = compact;

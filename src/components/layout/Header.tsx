@@ -75,7 +75,10 @@ export function Header({
   // only. Signed-in users get ONE navigation system — the app sidebar +
   // header actions — everywhere, including public pages and 404/error
   // pages, instead of a second competing marketing nav.
-  const showMarketingNav = !isAuthRoute && !authStatus.authenticated;
+  // A visitor on an app surface (Discover, a public listing) gets it too: it
+  // was their only way to the rest of the site. There it waits for auth to
+  // settle, so a signed-in person never sees it flash before the sidebar.
+  const showMarketingNav = !authStatus.authenticated && (!isAuthRoute || authStatus.ready);
 
   // Mobile menu animation state
   const { menuRef, buttonRef, isClosing, handleClose } = useMobileMenuAnimation({
@@ -143,8 +146,8 @@ export function Header({
               </div>
             )}
 
-            {/* Create Button (authenticated only) - Icon only on mobile */}
-            {isAuthRoute && (
+            {/* Create Button (signed in, in-app only) - Icon only on mobile */}
+            {isAuthRoute && authStatus.authenticated && (
               <div className="hidden sm:block">
                 <HeaderCreateButton />
               </div>

@@ -515,10 +515,15 @@ export const mobileTabBar: MobileTabItem[] = [
   { name: 'Messages', href: ROUTES.MESSAGES, icon: MessageSquare, counter: 'messages' },
 ];
 
+/**
+ * A visitor's bar: places to look, and the way in. Creating needs an account,
+ * so a raised Create slot here was the loudest control on Discover and led
+ * straight to the sign-in form. No slot is raised.
+ */
 export const mobileTabBarAnonymous: MobileTabItem[] = [
   { name: 'Home', href: ROUTES.HOME, icon: Home },
   { name: 'Explore', href: ROUTES.DISCOVER, icon: Compass },
-  { name: 'Create', href: ROUTES.CREATE, icon: Plus, primary: true, opensCreate: true },
+  { name: PUBLIC_PAGES[ROUTES.HOW_IT_WORKS].name, href: ROUTES.HOW_IT_WORKS, icon: Info },
   { name: 'Sign in', href: ROUTES.AUTH, icon: UserIcon },
 ];
 

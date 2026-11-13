@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
-import { requiresSignIn, ROUTES } from '@/config/routes';
+import { requiresSignIn, ROUTES, signInModeFor } from '@/config/routes';
 
 // Edge middleware route classification reads from the SAME SSOT used by
 // AppShell / MobileBottomNav / Footer / Header (src/config/routes.ts).
@@ -98,7 +98,7 @@ export async function middleware(request: NextRequest) {
     if (!supabaseUrl || !supabaseAnonKey) {
       // Misconfigured deployment — bounce to auth rather than crash.
       const redirectUrl = new URL('/auth', request.url);
-      redirectUrl.searchParams.set('mode', 'login');
+      redirectUrl.searchParams.set('mode', signInModeFor(pathname));
       redirectUrl.searchParams.set('from', returnPath);
       return NextResponse.redirect(redirectUrl);
     }
@@ -126,7 +126,7 @@ export async function middleware(request: NextRequest) {
 
     if (!user) {
       const redirectUrl = new URL('/auth', request.url);
-      redirectUrl.searchParams.set('mode', 'login');
+      redirectUrl.searchParams.set('mode', signInModeFor(pathname));
       redirectUrl.searchParams.set('from', returnPath);
       return NextResponse.redirect(redirectUrl);
     }

@@ -324,6 +324,15 @@ export const SIGN_IN_REQUIRED_PREFIXES = [
   '/home',
 ] as const;
 
+/**
+ * Which tab of the sign-in form a signed-out visitor bounced from this path
+ * lands on. Someone who reached a create form is about to make their first
+ * thing, so they need an account, not the sign-in fields.
+ */
+export function signInModeFor(pathname: string): 'login' | 'register' {
+  return /\/create(\/|$)/.test(pathname) ? 'register' : 'login';
+}
+
 /** True when the middleware must see a signed-in user before the page renders. */
 export function requiresSignIn(pathname: string): boolean {
   return (
