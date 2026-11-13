@@ -2,6 +2,10 @@
  * What a companion remembers about YOU.
  *
  * GET    /api/ai-assistants/[id]/memories            — list, newest first
+ *
+ * Adding and correcting a memory embed its words, so they live at
+ * ./write (POST, PATCH): no GET may import what can reach a model
+ * (__tests__/unit/ci/no-background-ai).
  * DELETE /api/ai-assistants/[id]/memories?id=<uuid>  — forget one
  * DELETE /api/ai-assistants/[id]/memories?all=true   — forget everything
  *

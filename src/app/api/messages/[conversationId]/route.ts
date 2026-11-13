@@ -9,8 +9,8 @@
  */
 
 import { withAuth, type AuthenticatedRequest } from '@/lib/api/withAuth';
-import { z } from 'zod';
-import { PAGINATION, VALIDATION, MESSAGE_TYPES } from '@/features/messaging/lib';
+import { PAGINATION } from '@/features/messaging/lib';
+import { sendMessageSchema } from '@/features/messaging/lib/send-message-schema';
 import { rateLimitAction, rateLimitHeaders, retryAfterSeconds } from '@/lib/rate-limit';
 import {
   loadConversationMessages,
@@ -27,18 +27,6 @@ import {
 } from '@/lib/api/standardResponse';
 import { logger } from '@/utils/logger';
 import { validateUUID, getValidationError } from '@/lib/api/validation';
-
-const sendMessageSchema = z.object({
-  content: z.string().min(VALIDATION.MESSAGE_MIN_LENGTH).max(VALIDATION.MESSAGE_MAX_LENGTH),
-  messageType: z
-    .enum([MESSAGE_TYPES.TEXT, MESSAGE_TYPES.IMAGE, MESSAGE_TYPES.FILE, MESSAGE_TYPES.SYSTEM])
-    .default(MESSAGE_TYPES.TEXT),
-  metadata: z.record(z.string(), z.unknown()).optional(),
-  /** Echoed back on the stored row so the client retires its optimistic bubble
-   *  rather than rendering a duplicate — see features/messaging/lib/threadkit-adapter. */
-  clientId: z.string().min(1).max(128).optional(),
-  senderActorId: z.string().guid().optional(),
-});
 
 /** GET - Fetch messages for a conversation with cursor-based pagination */
 export const GET = withAuth(
@@ -122,18 +110,29 @@ export const POST = withAuth(
         });
       }
 
-      const { content, messageType, metadata, clientId, senderActorId } = validation.data;
+      const { content, messageType, metadata, clientId, senderActorId, attachmentIds } =
+        validation.data;
       const result = await postConversationMessage(conversationId, user.id, {
-        content,
+        content: content.trim(),
+        attachmentIds,
         messageType,
         // Server-owned key, applied last so a caller cannot displace it.
         metadata: clientId ? { ...(metadata ?? {}), client_id: clientId } : metadata,
         senderActorId,
       });
       if (!result.ok) {
-        return apiForbidden('Not a participant in this conversation');
+        return result.code === 'forbidden'
+          ? apiForbidden('Not a participant in this conversation')
+          : apiValidationError(
+              result.code === 'attachments_not_uploaded'
+                ? 'A file has not finished uploading. Try again in a moment.'
+                : 'These files cannot be sent with this message.'
+            );
       }
-      return apiCreated({ id: result.id }, { headers: rateLimitHeaders(rateLimitResult) });
+      return apiCreated(
+        { id: result.id, attachments: result.attachments },
+        { headers: rateLimitHeaders(rateLimitResult) }
+      );
     } catch (error) {
       logger.error(
         'Messages POST error',

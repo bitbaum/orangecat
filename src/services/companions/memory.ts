@@ -236,6 +236,31 @@ export async function deleteCompanionMemory(
   return !error;
 }
 
+/**
+ * A memory the person wrote or corrected themselves. The new words are
+ * stored first (embedded like any other, never deduplicated: the person said
+ * it), and only then is the line they replace forgotten, so a failed save
+ * loses nothing. Returns the stored words, or null when nothing was stored.
+ */
+export async function writeCompanionMemory(
+  supabase: AnySupabaseClient,
+  key: CompanionMemoryKey,
+  content: string,
+  replacesId?: string
+): Promise<string | null> {
+  const { stored } = await rememberCompanionFacts(supabase, key, [content], {
+    dedupe: false,
+    source: 'owner',
+  });
+  if (stored.length === 0) {
+    return null;
+  }
+  if (replacesId) {
+    await deleteCompanionMemory(supabase, key.userId, replacesId);
+  }
+  return stored[0];
+}
+
 export async function deleteAllCompanionMemories(
   supabase: AnySupabaseClient,
   key: CompanionMemoryKey

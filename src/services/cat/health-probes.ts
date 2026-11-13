@@ -11,6 +11,7 @@
  * result is safe to surface to an authenticated user (and to the model).
  */
 
+import { reservePlatformCall } from '@/services/ai/vendor-spend-cap';
 import { PROVIDER_BASE_URLS } from '@/config/ai-provider-runtime';
 import { configuredFreeVendors, vendorModel } from '@/config/free-vendors';
 import { DEFAULT_FREE_MODEL_ID } from '@/config/ai-models';
@@ -18,6 +19,7 @@ import { promptFitsGroqOnDemand, PLATFORM_GROQ_MODEL } from '@/services/ai/groq'
 import { getGroqDailyPoolReturnsAt } from '@/services/ai/groq-capacity';
 import { checkModelRot, type SupersededPin } from './provider-catalog';
 import { webSearch, describeAttempts } from '@bitbaum/ai-kit/web';
+import { catSearchProviders } from './web-research';
 import { buildCatSystemPrompt } from './system-prompt';
 import { sanitizeApiKeyChecked } from '@/lib/api-key';
 
@@ -118,6 +120,8 @@ async function probeProvider(
   }
   const { clean, hadJunk } = sanitizeApiKeyChecked(raw);
   try {
+    // A probe on a paid platform key is a call like any other.
+    await reservePlatformCall(clean);
     const res = await fetch(endpoint, {
       method: 'POST',
       headers: { Authorization: `Bearer ${clean}`, 'Content-Type': 'application/json' },
@@ -270,7 +274,11 @@ async function probeWeb(): Promise<WebProbeResult> {
     };
   }
   try {
-    const outcome = await webSearch('orangecat', { limit: 1, timeoutMs: 6_000 });
+    const outcome = await webSearch(
+      'orangecat',
+      { limit: 1, timeoutMs: 6_000 },
+      { providers: catSearchProviders() }
+    );
     if (outcome.status === 'could_not_look') {
       return {
         configured: true,

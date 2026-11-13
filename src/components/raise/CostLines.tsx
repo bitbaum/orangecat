@@ -42,7 +42,7 @@ export function CostLines({ flow }: { flow: RaiseFlow }) {
               maxLength={RAISE_LIMITS.lineLabelMax}
               onChange={e => flow.editLine(i, { label: e.target.value })}
               placeholder="What this pays for"
-              className="min-h-11 min-w-0 flex-1 bg-transparent text-sm text-fg-primary placeholder:text-fg-muted focus:outline-none"
+              className="min-h-11 min-w-0 flex-1 bg-transparent text-sm text-fg-primary placeholder:text-fg-tertiary focus:outline-none"
             />
             <label className="sr-only" htmlFor={`raise-amount-${i}`}>
               Amount in {plan.currency}
@@ -59,7 +59,7 @@ export function CostLines({ flow }: { flow: RaiseFlow }) {
                 flow.editLine(i, { amount: Number.isFinite(n) ? n : 0 });
               }}
               placeholder="0"
-              className="min-h-11 w-16 bg-transparent sm:w-24 text-right text-sm font-medium tabular-nums text-fg-primary placeholder:text-fg-muted focus:outline-none"
+              className="min-h-11 w-16 bg-transparent sm:w-24 text-right text-sm font-medium tabular-nums text-fg-primary placeholder:text-fg-tertiary focus:outline-none"
             />
             <button
               type="button"

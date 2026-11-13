@@ -14,6 +14,7 @@ import { API_ROUTES } from '@/config/api-routes';
 import { logger } from '@/utils/logger';
 import type { PendingAction } from '@/components/ai-chat/usePendingActions';
 import type { ChatImage } from '@/services/cat/chat-images';
+import { readChosenModel } from './talk/chosen-model';
 
 export interface TalkMessage {
   id: string;
@@ -70,6 +71,7 @@ export function useCompanionTalk(assistantId: string) {
   const [creditsNeeded, setCreditsNeeded] = useState<CreditsNeeded | null>(null);
   /** The day's free messages are spent: the way forward is the person's own key. */
   const [limitReached, setLimitReached] = useState(false);
+  const [poolDown, setPoolDown] = useState(false);
   /** What the companion proposed to set in motion, waiting for the person's tap. */
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
 
@@ -137,6 +139,7 @@ export function useCompanionTalk(assistantId: string) {
       setError(null);
       setCreditsNeeded(null);
       setLimitReached(false);
+      setPoolDown(false);
       const optimistic: TalkMessage = {
         id: `temp-${Date.now()}`,
         role: 'user',
@@ -147,12 +150,18 @@ export function useCompanionTalk(assistantId: string) {
       setSending(true);
       try {
         const threadId = await ensureThread();
+        const chosenModel = readChosenModel(assistantId);
         const res = await fetch(
           API_ROUTES.AI_ASSISTANTS.CONVERSATION_MESSAGES(assistantId, threadId),
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ content, images }),
+            body: JSON.stringify({
+              content,
+              images,
+              // The model chosen for this bot on this device, if any (ModelRow).
+              ...(chosenModel ? { model: chosenModel } : {}),
+            }),
           }
         );
         const json = (await res.json()) as ApiEnvelope<{
@@ -177,6 +186,13 @@ export function useCompanionTalk(assistantId: string) {
           // leads nowhere. The server says what happened; show that, and the
           // way out.
           setLimitReached(true);
+        }
+        // The shared pool could not answer (seen live 2026-11-12, for hours):
+        // "Try again" leads nowhere then. The server's line names the way out.
+        const pool = (json.error?.details ?? {}) as { sharedPool?: boolean; message?: string };
+        if (res.status === 502 && pool.sharedPool && pool.message) {
+          setPoolDown(true);
+          throw new Error(pool.message);
         }
         if (!res.ok || !json.data) {
           throw new Error(json.error?.message || 'Failed to send message');
@@ -233,6 +249,7 @@ export function useCompanionTalk(assistantId: string) {
     setError(null);
     setCreditsNeeded(null);
     setLimitReached(false);
+    setPoolDown(false);
     setPendingAction(null);
   }, []);
 
@@ -245,6 +262,7 @@ export function useCompanionTalk(assistantId: string) {
     error,
     creditsNeeded,
     limitReached,
+    poolDown,
     pendingAction,
     /** The card is answered or dismissed; the chat shows no card. */
     clearPendingAction: () => setPendingAction(null),

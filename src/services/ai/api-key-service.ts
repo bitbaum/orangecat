@@ -455,20 +455,27 @@ export class ApiKeyService {
    *
    * Source of truth = the `check_platform_limit` RPC, which since migration
    * 20260610000001_user_plans reads `daily_limit` from `public.user_plans`
-   * (free=10, pro=their plan, expired-pro=10). The literal `10` below is the
-   * **last-resort safety fallback** for when the RPC or database itself is
-   * unreachable — never the source of truth. Keep them in sync with
-   * CAT_FREE_DAILY_LIMIT in `src/config/cat-plans.ts` if the free cap moves.
+   * (free=10, pro=their plan, expired-pro=10). When the RPC or the database
+   * cannot answer, the shared pool is refused (can_use_platform false): an
+   * unreadable count is never room.
    */
   async checkPlatformUsage(userId: string): Promise<PlatformUsage> {
     const { data, error } = await this.supabase.rpc('check_platform_limit', { p_user_id: userId });
 
+    // Unknown is never room: when the count cannot be read, the shared pool
+    // is refused, as every paid vendor's cap is (vendor-spend-cap). It used
+    // to let every message through, so a database fault lifted the limit.
     if (error || !data || data.length === 0) {
+      logger.warn(
+        'platform usage unreadable: the shared pool is refused',
+        { userId },
+        'APIKeyService'
+      );
       return {
         daily_requests: 0,
         daily_limit: CAT_FREE_DAILY_LIMIT,
-        requests_remaining: CAT_FREE_DAILY_LIMIT,
-        can_use_platform: true,
+        requests_remaining: 0,
+        can_use_platform: false,
       };
     }
 

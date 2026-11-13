@@ -31,7 +31,6 @@ interface UserStatsResponse {
   hasPublishedEntities: boolean;
   daysSinceLastActivity: number | null;
   wishlistItemCount: number;
-  taskCompletion: number;
   recommendations: {
     tasks: RecommendedTask[];
     questions: SmartQuestion[];
@@ -49,8 +48,6 @@ interface UseRecommendationsState {
   error: Error | null;
   /** Profile completion percentage */
   profileCompletion: number;
-  /** Task completion percentage (critical + high priority) */
-  taskCompletion: number;
   /** Entity counts by type */
   entityCounts: Partial<Record<EntityType, number>>;
   /** Whether user has wallet */
@@ -158,7 +155,6 @@ export function useRecommendations(
     isLoading,
     error,
     profileCompletion: data?.profileCompletion ?? 0,
-    taskCompletion: data?.taskCompletion ?? 0,
     entityCounts: data?.entityCounts ?? {},
     hasWallet: data?.hasWallet ?? false,
     hasPublishedEntities: data?.hasPublishedEntities ?? false,

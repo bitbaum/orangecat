@@ -34,6 +34,7 @@
  * has nowhere to go. The allow-list is per turn and lives in memory; it is not
  * a filter on the model's intent, it is a bound on its reach.
  */
+import { CAPPED_SERVICES, reserveServiceCall } from '@/services/ai/vendor-spend-cap';
 import {
   webSearch,
   readPage,
@@ -42,8 +43,22 @@ import {
   resultsEvidence,
   pageEvidence,
   describeEmptySearch,
+  withKeylessFallback,
+  type SearchProvider,
   type WebSearchResult,
 } from '@bitbaum/ai-kit/web';
+
+/**
+ * Where the Cat looks things up: the configured backends (self-hosted SearXNG,
+ * Brave, Tavily), then two that need no key or server — GDELT news and
+ * Wikipedia. On 2026-11-12 the SearXNG container was unreachable, nothing else
+ * was configured, and the Cat could not look anything up at all. The keyless
+ * ones are partial indexes, so an empty answer from them is never reported as
+ * "nothing on the web".
+ */
+export function catSearchProviders(): SearchProvider[] {
+  return withKeylessFallback(process.env, { userAgent: 'OrangeCat Cat (+https://orangecat.ch)' });
+}
 // No `assignFactIds` here on purpose: it numbers from F1 on every call, and
 // this turn's handles have to keep counting across tool calls. See addResults.
 import { renderFacts, type Fact } from '@bitbaum/ai-kit/grounding';
@@ -176,11 +191,18 @@ export async function searchTheWeb(
 
   let outcome: WebSearchResult;
   try {
-    outcome = await webSearch(query, {
-      limit: SEARCH_RESULT_COUNT,
-      timeoutMs: SEARCH_TIMEOUT_MS,
-      ...(args.site ? { site: args.site } : {}),
-    });
+    // Counted against the day's search cap first (vendor-spend-cap); a
+    // refusal lands in the catch below as "could not search".
+    await reserveServiceCall(CAPPED_SERVICES.webSearch);
+    outcome = await webSearch(
+      query,
+      {
+        limit: SEARCH_RESULT_COUNT,
+        timeoutMs: SEARCH_TIMEOUT_MS,
+        ...(args.site ? { site: args.site } : {}),
+      },
+      { providers: catSearchProviders() }
+    );
   } catch (err) {
     // webSearch is documented never to throw; if it ever does, the honest
     // reading is still "could not look", never "nothing out there".

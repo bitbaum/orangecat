@@ -113,7 +113,9 @@ export const attentionFlagSchema = z.object({
  * requested_user_id = null means broadcast to all staff
  */
 export const taskRequestSchema = z.object({
-  requested_user_id: z.string().guid('Invalid user ID').optional().nullable(),
+  // A request names one person. A request with no one named went to every
+  // account on the platform.
+  requested_user_id: z.string().guid('Choose who should do the task'),
   message: z.string().max(500, 'Message must be at most 500 characters').optional().nullable(),
 });
 

@@ -68,16 +68,6 @@ export const POST = createTaskActionRoute({
       });
     }
 
-    await notificationService.createBroadcastNotification({
-      excludeUserId: user.id,
-      type: 'task_attention',
-      title: `Task needs attention: "${task.title}"`,
-      message: flagData.message || null,
-      actionUrl: `/dashboard/tasks/${taskId}`,
-      sourceEntityType: 'task',
-      sourceEntityId: taskId,
-    });
-
     return apiSuccess({ flag }, { status: 201 });
   },
 });

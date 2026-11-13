@@ -9,6 +9,8 @@ import {
   WEBSITE_BUILD_SERVICE_URL,
   CUSTOM_DOMAIN_PRICE_CHF_PER_MONTH,
 } from '@/config/domains-offer';
+import { PUBLIC_PAGE_WIDTH, PublicPageHeader } from '@/components/layout/PublicPageHeader';
+import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
   title: 'OrangeCat Domains',
@@ -19,34 +21,29 @@ export const metadata: Metadata = {
 export default function DomainsPage() {
   return (
     <div className="min-h-screen bg-surface-page">
-      {/* Hero */}
-      <div className="bg-surface-base border-b border-subtle">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="text-center">
-            <h1 className="font-heading tracking-display text-4xl font-bold text-fg-primary sm:text-5xl md:text-6xl">
-              Your site, running.
-            </h1>
-            <p className="mt-3 max-w-md mx-auto text-base text-fg-secondary sm:text-lg md:mt-5 md:text-xl md:max-w-3xl">
+      <div className={PUBLIC_PAGE_WIDTH.wide}>
+        <PublicPageHeader
+          title="Your site, running."
+          lede={
+            <>
               Hosted, deployed, and monitored at{' '}
               <span className="font-mono text-fg-primary">yourname.orangecat.ch</span> — free. Move
               to your own domain when you&apos;re ready, and everything keeps working.
-            </p>
-          </div>
-
+            </>
+          }
+        >
           {/* The rung before everything else on this page: you cannot host a
               domain you have not found yet. */}
-          <div className="mt-10">
-            <p className="mb-4 text-center text-sm text-fg-tertiary">
-              Don&apos;t have a name yet? Check one against the registries.
-            </p>
-            <DomainSearch />
-          </div>
-        </div>
+          <p className="mb-4 text-sm text-fg-tertiary">
+            Don&apos;t have a name yet? Check one against the registries.
+          </p>
+          <DomainSearch />
+        </PublicPageHeader>
       </div>
 
       {/* How it works */}
       <div className="bg-surface-page">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className={cn(PUBLIC_PAGE_WIDTH.wide, 'pb-16')}>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="text-center">
               <div className="w-16 h-16 bg-surface-raised border border-subtle rounded-full flex items-center justify-center mx-auto mb-4">
@@ -155,10 +152,10 @@ export default function DomainsPage() {
               self-serve provisioning behind a signup button, and a button that
               implies one sends people to a dead end wearing a welcome mat. */}
           <div className="text-center">
-            <h2 className="font-heading tracking-display text-3xl sm:text-4xl font-bold text-fg-inverted mb-4">
+            <h2 className="font-heading tracking-display text-3xl sm:text-4xl font-bold text-on-public mb-4">
               Start with a site that already works
             </h2>
-            <p className="text-xl text-fg-inverted/70 mb-8">
+            <p className="text-xl text-on-public/70 mb-8">
               No preview links, no cold starts — a running site with a real address, set up and
               managed for you. Tell me what you need and I&apos;ll quote it first.
             </p>

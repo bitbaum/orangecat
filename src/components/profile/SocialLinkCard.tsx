@@ -30,6 +30,7 @@ export function SocialLinkCard({ link, onEdit, onDelete }: SocialLinkCardProps) 
       </div>
       <div className="flex items-center gap-1 flex-shrink-0">
         <Button
+          type="button"
           onClick={onEdit}
           variant="ghost"
           size="sm"
@@ -39,6 +40,7 @@ export function SocialLinkCard({ link, onEdit, onDelete }: SocialLinkCardProps) 
           <Edit2 className="w-4 h-4" />
         </Button>
         <Button
+          type="button"
           onClick={onDelete}
           variant="ghost"
           size="sm"

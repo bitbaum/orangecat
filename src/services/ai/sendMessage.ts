@@ -16,6 +16,7 @@ import { fromTable } from '@/lib/supabase/untyped';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { createApiKeyService } from './api-key-service';
+import { readOwnKey } from './own-key';
 import { getAdminClient } from '@/lib/supabase/admin';
 import {
   computeCreatorChargeBtc,
@@ -33,7 +34,16 @@ import {
   type Proposal,
 } from '@/services/companions/hands';
 import { getUserActorId } from '@/domain/actors';
-import { mayTakeStep, runAutoStep } from '@/services/companions/work-loop';
+import { mayTakeStep, noteHeldStep, runAutoStep } from '@/services/companions/work-loop';
+import {
+  REVIEW_SYSTEM,
+  getBotSettings,
+  heldLine,
+  needsReview,
+  readVerdict,
+  reviewQuestion,
+  rulesSection,
+} from '@/services/companions/rules';
 import {
   handsFor,
   proposeFromReply,
@@ -88,8 +98,9 @@ export async function sendAiMessage(
 
   // 3. Determine provider + BYOK
   const keyService = createApiKeyService(supabase);
-  const userOpenRouterKey = await keyService.getDecryptedKey(userId, 'openrouter');
-  const hasByok = !!userOpenRouterKey;
+  // The person's own key, whichever provider it is from (own-key.ts): asked
+  // first, so their bots answer whatever the shared pool does.
+  const { hasByok, userKey: userOpenRouterKey, directKey } = await readOwnKey(keyService, userId);
 
   // 4. Check platform usage limits (non-BYOK users)
   if (!hasByok) {
@@ -175,19 +186,24 @@ export async function sendAiMessage(
   // Memory and hands do not depend on each other: both are read at once.
   // Hands: the owner's own companion may propose what OrangeCat can do for
   // them (hands.ts); anyone else's companion, or a stranger's chat, cannot.
-  const [recalled, hands] = await Promise.all([
+  const isOwner = assistant.user_id === userId;
+  const [recalled, hands, botSettings] = await Promise.all([
     recallCompanionMemories(supabase, memoryKey, content),
-    assistant.user_id === userId ? handsFor(supabase, userId, assistantId) : Promise.resolve(null),
+    isOwner ? handsFor(supabase, userId, assistantId) : Promise.resolve(null),
+    // The owner's own rules and time zone, for the owner's own bot only.
+    isOwner ? getBotSettings(supabase, userId) : Promise.resolve(null),
   ]);
   timer.mark('context');
   const systemPrompt = buildCompanionSystemPrompt({
     definition: assistant.system_prompt,
     memories: recalled.map(m => m.content),
     hands: hands?.section,
+    rules: botSettings ? rulesSection(botSettings) : undefined,
   });
   const aiResult = await generateReply({
     hasByok,
     userKey: userOpenRouterKey,
+    directKey,
     requestedModel,
     assistant,
     systemPrompt: systemPrompt ?? null,
@@ -210,7 +226,14 @@ export async function sendAiMessage(
   // A proposal rides the end of the reply as a fence; it comes off before
   // the words are stored, spoken or remembered, and becomes a pending action.
   const proposed = hands
-    ? await proposeFromReply(supabase, userId, hands, aiResult.response.content, convId)
+    ? await proposeFromReply(
+        supabase,
+        userId,
+        hands,
+        aiResult.response.content,
+        convId,
+        assistant.id
+      )
     : null;
   const aiResponse = proposed
     ? { ...aiResult.response, content: proposed.text }
@@ -252,6 +275,26 @@ export async function sendAiMessage(
     while (step && actorId && mayTakeStep(steps, timer.elapsedMs())) {
       steps += 1;
       const ranStep: Proposal = step;
+      // The owner's rules come first: a step a rule forbids, or says to ask
+      // about, does not run on its own. It becomes the ordinary card.
+      if (botSettings?.rules && needsReview(ranStep.action, ranStep.parameters)) {
+        const reviewed = await generateReply({
+          hasByok,
+          userKey: userOpenRouterKey,
+          directKey,
+          requestedModel,
+          assistant,
+          systemPrompt: REVIEW_SYSTEM,
+          history: [],
+          content: reviewQuestion(botSettings.rules, ranStep.action, ranStep.parameters),
+        });
+        const verdict = readVerdict('error' in reviewed ? null : reviewed.response.content);
+        if (!verdict.allow) {
+          steps -= 1;
+          await noteHeldStep(supabase, convId, heldLine(verdict.reason), ranStep.action);
+          break;
+        }
+      }
       // It has run: whatever happens next, it is never queued again.
       step = null;
       const ran = await runAutoStep(supabase, userId, actorId, convId, ranStep);
@@ -259,6 +302,7 @@ export async function sendAiMessage(
       const next = await generateReply({
         hasByok,
         userKey: userOpenRouterKey,
+        directKey,
         requestedModel,
         assistant,
         systemPrompt: systemPrompt ?? null,
@@ -271,7 +315,14 @@ export async function sendAiMessage(
         logger.warn('work loop stopped: no reply', { steps }, 'AIMessagesService');
         break;
       }
-      const again = await proposeFromReply(supabase, userId, hands, next.response.content, convId);
+      const again = await proposeFromReply(
+        supabase,
+        userId,
+        hands,
+        next.response.content,
+        convId,
+        assistant.id
+      );
       const nextResponse = { ...next.response, content: again.text };
       const stored = await storeAssistantMessage(
         supabase,

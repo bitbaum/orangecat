@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import { KeyRound, ShieldCheck, Plug, RefreshCw, ArrowRight } from 'lucide-react';
-import { PageHeading } from '@/components/layout/PageHeading';
+import { PUBLIC_PAGE_WIDTH, PublicPageHeader } from '@/components/layout/PublicPageHeader';
 import { CONTACT_EMAIL } from '@/config/brand';
+import { cn } from '@/lib/utils';
 import { OAUTH_SCOPES, OAUTH_TTL } from '@/lib/oauth/config';
 import { DCR_LIMITS } from '@/services/auth/oauthRegistration';
 import {
@@ -37,7 +38,11 @@ function Snippet({ children, label }: { children: string; label: string }) {
       <figcaption className="mb-1 text-xs font-medium uppercase tracking-caps text-fg-tertiary">
         {label}
       </figcaption>
-      <pre className="overflow-x-auto rounded-lg border border-subtle bg-surface-raised p-4 text-xs leading-relaxed text-fg-primary">
+      {/* Focusable, so a keyboard can scroll a line that runs past the box. */}
+      <pre
+        tabIndex={0}
+        className="overflow-x-auto rounded-lg border border-subtle bg-surface-raised p-4 text-xs leading-relaxed text-fg-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fg-primary"
+      >
         <code>{children}</code>
       </pre>
     </figure>
@@ -73,15 +78,13 @@ const refreshTokenDays = OAUTH_TTL.refreshToken / 86400;
 
 export default function SignInWithOrangeCatPage() {
   return (
-    <div className="min-h-screen bg-surface-page py-12">
-      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-        <div className="mb-14 text-center">
-          <PageHeading className="mb-4">Sign in with OrangeCat</PageHeading>
-          <p className="mx-auto max-w-2xl text-xl text-fg-secondary">
-            One account for every door. Standard OpenID Connect, self-service registration, and the
-            same identity across OrangeCat, Solon, Loki, Heidi and your site.
-          </p>
-        </div>
+    <div className="min-h-screen bg-surface-page">
+      <div className={cn(PUBLIC_PAGE_WIDTH.reading, 'pb-16')}>
+        <PublicPageHeader
+          align="start"
+          title="Sign in with OrangeCat"
+          lede="One account for every door. Standard OpenID Connect, self-service registration, and the same identity across OrangeCat, Solon, Loki, Heidi and your site."
+        />
 
         <Section icon={Plug} title="What you get">
           <p>

@@ -49,7 +49,7 @@ const ENTITY_PATTERNS: Pattern[] = [
 const AREA_LABELS: Array<{ re: RegExp; label: string }> = [
   {
     re: /^\/dashboard\/info\/edit/,
-    label: 'your profile editor (offer to fill it in with update_profile)',
+    label: 'your profile editor',
   },
   { re: /^\/dashboard\/store/, label: 'your store' },
   { re: /^\/dashboard\/wallet/, label: 'your wallet' },

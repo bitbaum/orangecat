@@ -54,7 +54,7 @@ export function RoomHero({ token, room, isShared, hasBuildRecord, hasDeck }: Roo
   const { project, content, linkLabel } = room;
   return (
     <header>
-      <p className="text-xs font-medium uppercase tracking-caps text-fg-muted">
+      <p className="text-xs font-medium uppercase tracking-caps text-fg-tertiary">
         Investor room · {isShared ? 'Private' : `Private, for ${linkLabel}`}
       </p>
       {project.cover_image_url && (

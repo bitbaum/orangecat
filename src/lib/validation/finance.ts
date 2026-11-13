@@ -15,6 +15,17 @@ import { TIP_MAX_BTC, TIP_MIN_BTC } from '@/config/tips';
 import { lightningAddressSchema, optionalText, webUrl, publicBitcoinAddress } from './base';
 
 /**
+ * A price kept in BTC. Typed in a fiat currency and converted, a very small
+ * amount rounds to 0.00000000 BTC: positive on the client, stored as nothing.
+ */
+const storedBtcAmount = z
+  .number()
+  .positive()
+  .refine(n => Number(n.toFixed(8)) > 0, {
+    message: 'This amount is too small to keep in Bitcoin. The smallest is 0.00000001 BTC.',
+  });
+
+/**
  * Collateral item for loans.
  * Matches CollateralItem interface in components/create/collateral/CollateralSelector.tsx
  * and the shape used in domain/loans/service.ts.
@@ -55,11 +66,11 @@ export const assetSchema = z.object({
 
   // Sale options
   is_for_sale: z.boolean().optional().default(false),
-  sale_price_btc: z.number().positive().optional().nullable(),
+  sale_price_btc: storedBtcAmount.optional().nullable(),
 
   // Rental options
   is_for_rent: z.boolean().optional().default(false),
-  rental_price_btc: z.number().positive().optional().nullable(),
+  rental_price_btc: storedBtcAmount.optional().nullable(),
   rental_period_type: z
     .enum(RENTAL_PERIODS.map(r => r.value) as [string, ...string[]])
     .optional()
@@ -69,7 +80,7 @@ export const assetSchema = z.object({
 
   // Deposit
   requires_deposit: z.boolean().optional().default(false),
-  deposit_amount_btc: z.number().positive().optional().nullable(),
+  deposit_amount_btc: storedBtcAmount.optional().nullable(),
 
   // Visibility
   show_on_profile: z.boolean().optional().default(true),
@@ -103,8 +114,12 @@ export const loanSchema = z.object({
   // this is what retired the description-padding workaround in the API client.
   description: z.string().max(1000, 'Description must be at most 1000 characters').optional(),
   loan_category_id: optionalText(),
-  original_amount: z.number().positive('Amount must be greater than 0'),
-  remaining_balance: z.number().positive('Balance must be greater than 0'),
+  original_amount: z
+    .number({ error: 'Enter the loan amount' })
+    .positive('Amount must be greater than 0'),
+  remaining_balance: z
+    .number({ error: 'Enter the remaining balance' })
+    .positive('Balance must be greater than 0'),
   interest_rate: z.number().min(0).max(100).optional().nullable(),
   monthly_payment: z.number().min(0).optional().nullable(),
   currency: z.enum(CURRENCY_CODES).optional(),

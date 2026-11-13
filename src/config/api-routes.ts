@@ -82,6 +82,10 @@ export const API_ROUTES = {
     BULK_CONVERSATIONS: '/api/messages/bulk-conversations',
     BULK_DELETE: '/api/messages/bulk-delete',
     UNREAD_COUNT: '/api/messages/unread-count',
+    /** POST: start an upload. GET: how much the caller has stored. */
+    ATTACHMENTS: '/api/messages/attachments',
+    /** GET: redirects a participant to a short-lived link to the file. */
+    ATTACHMENT: (id: string) => `/api/messages/attachments/${encodeURIComponent(id)}`,
   },
   WALLETS: {
     BASE: ENTITY_REGISTRY['wallet'].apiEndpoint,
@@ -305,6 +309,10 @@ export const API_ROUTES = {
     BASE: '/api/identities',
     SWITCH: '/api/identities/switch',
     BY_ID: (id: string) => `/api/identities/${id}`,
+    /** Offer (POST) or withdraw (DELETE) a hand-over of one identity. */
+    HANDOVER: (id: string) => `/api/identities/${id}/handover`,
+    /** Accept a hand-over link. No session needed: the link is the credential. */
+    HANDOVER_ACCEPT: '/api/identities/handover/accept',
   },
   WAITLIST: '/api/waitlist',
   AI_ASSISTANTS: {
@@ -321,6 +329,12 @@ export const API_ROUTES = {
     /** The bot's routine: when it writes first, and what it is asked. */
     ROUTINE: (id: string) => `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/${id}/routine`,
     HANDS: (id: string) => `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/${id}/hands`,
+    /** The photos, files and links from the caller's chats with this bot. */
+    LIBRARY: (id: string) => `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/${id}/library`,
+    /** The caller's own rules for their bots, and their time zone. */
+    RULES: `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/rules`,
+    /** The models this person can choose for a bot's chat (their own key's list). */
+    MODELS: `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/models`,
     /** The talk home (companions, group chats, fleet bots in one list) and a companion made in a minute. */
     TALK: `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/talk`,
     /** Group chats between the person and two to six companions. */

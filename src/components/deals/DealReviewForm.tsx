@@ -68,7 +68,7 @@ export function DealReviewForm({
         <fieldset key={q.id} className="space-y-2">
           <legend className="text-sm font-medium text-fg-primary">
             {q.label}
-            {!q.required && <span className="ml-1 font-normal text-fg-muted">(optional)</span>}
+            {!q.required && <span className="ml-1 font-normal text-fg-tertiary">(optional)</span>}
           </legend>
           <div className="flex gap-2">
             {[true, false].map(value => (

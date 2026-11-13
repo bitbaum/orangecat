@@ -25,6 +25,7 @@ import { logger } from '@/utils/logger';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { fromTable } from '../db-helpers';
+import { groupContentIsOpen } from '../utils/visibility';
 import { canPerformAction } from './resolver';
 import type { RolePermissions } from '@/config/governance-presets';
 
@@ -83,21 +84,23 @@ export async function checkGroupPermission(
 
   // Visibility, not authority: neither `view` nor `join` exists in
   // RolePermissions, so no preset can express them and the resolver cannot be
-  // asked. A public group is viewable and joinable by anyone; a member can
-  // always view their own group.
+  // asked. A group with open content (utils/visibility) is viewable by anyone;
+  // a member can always view their own group.
   if (permission === 'canView' || permission === 'canJoin') {
     try {
       const sb = client || supabase;
       const { data: group } = await fromTable(sb, DATABASE_TABLES.GROUPS)
-        .select('is_public')
+        .select('is_public, visibility')
         .eq('id', groupId)
         .maybeSingle();
       if (!group) {
         return false;
       }
 
-      // Anyone may read a public group, so this needs no membership lookup.
-      if (permission === 'canView' && group.is_public) {
+      // Anyone may read a group whose content is open, so this needs no
+      // membership lookup. Listed is not enough: a listed "Members only"
+      // group shows its name to everyone and its content to members.
+      if (permission === 'canView' && groupContentIsOpen(group)) {
         return true;
       }
 
@@ -116,7 +119,7 @@ export async function checkGroupPermission(
         return group.is_public && !membership;
       }
 
-      // A private group is readable only by its members.
+      // A members-only or private group is readable only by its members.
       return !!membership;
     } catch (error) {
       logger.error('Error checking group visibility', error, 'Groups');

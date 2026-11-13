@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { ROUTES } from '@/config/routes';
 import { APP_NAME } from '@/config/brand';
 import type { EntityOwner } from '@/lib/entities/fetchEntityOwner';
+import { inquiryHref } from '@/features/messaging/lib/draft';
 import { APP_LOCALE } from '@/utils/locale';
 
 interface PublicEntityOwnerCardProps {
@@ -92,11 +93,7 @@ export default function PublicEntityOwnerCard({
 
         {inquiry && owner.user_id && (
           <Link
-            href={`${ROUTES.MESSAGES}?${new URLSearchParams({
-              to: owner.user_id,
-              about: inquiry.title,
-              ref: inquiry.path,
-            }).toString()}`}
+            href={inquiryHref(owner.user_id, inquiry)}
             className="mt-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-md border border-default px-4 py-2 text-sm font-medium text-fg-primary transition-colors hover:bg-surface-raised"
           >
             <MessageCircle className="h-4 w-4" />

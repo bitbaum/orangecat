@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { PageHeading } from '@/components/layout/PageHeading';
+import { PUBLIC_PAGE_WIDTH, PublicPageHeader } from '@/components/layout/PublicPageHeader';
 import { CapabilityMap } from '@/components/map/CapabilityMap';
 import { TheDoor } from '@/components/map/TheDoor';
 import { CAPABILITY_MAP_PAGE } from '@/config/capability-map';
@@ -22,20 +22,20 @@ export default function WhatYouCanDoPage() {
   const decide = ECOSYSTEM_PILLARS.find(p => p.key === 'solon');
   return (
     <div className="min-h-screen bg-surface-page pb-16">
-      <div className="container mx-auto max-w-5xl px-4">
-        <header className="py-12 sm:py-16">
-          <PageHeading>{CAPABILITY_MAP_PAGE.title}</PageHeading>
-          <p className="mt-4 max-w-3xl text-lg leading-relaxed text-fg-secondary">
-            {CAPABILITY_MAP_PAGE.lede}
-          </p>
-          <TheDoor className="mt-8 max-w-2xl" examples={DOOR_EXAMPLES} />
+      <div className={PUBLIC_PAGE_WIDTH.wide}>
+        <PublicPageHeader
+          align="start"
+          title={CAPABILITY_MAP_PAGE.title}
+          lede={CAPABILITY_MAP_PAGE.lede}
+        >
+          <TheDoor className="max-w-2xl" examples={DOOR_EXAMPLES} />
           <nav aria-label="On this page" className="mt-8">
             <ul className="flex flex-wrap gap-2">
               {INTENT_LIST.map(intent => (
                 <li key={intent.id}>
                   <a
                     href={`#do-${intent.id}`}
-                    className="inline-block rounded-full border border-default bg-surface-base px-3 py-1.5 text-sm text-fg-secondary hover:border-interactive hover:text-fg-primary"
+                    className="inline-flex items-center rounded-full border border-default bg-surface-base px-3 py-1.5 text-sm text-fg-secondary hover:border-interactive hover:text-fg-primary"
                   >
                     {intent.title}
                   </a>
@@ -45,7 +45,7 @@ export default function WhatYouCanDoPage() {
                 <li>
                   <a
                     href="#do-decide"
-                    className="inline-block rounded-full border border-default bg-surface-base px-3 py-1.5 text-sm text-fg-secondary hover:border-interactive hover:text-fg-primary"
+                    className="inline-flex items-center rounded-full border border-default bg-surface-base px-3 py-1.5 text-sm text-fg-secondary hover:border-interactive hover:text-fg-primary"
                   >
                     Decide
                   </a>
@@ -53,7 +53,7 @@ export default function WhatYouCanDoPage() {
               )}
             </ul>
           </nav>
-        </header>
+        </PublicPageHeader>
 
         <CapabilityMap />
 

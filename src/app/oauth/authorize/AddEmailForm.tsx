@@ -65,7 +65,8 @@ export function AddEmailForm({ clientName, returnTo }: { clientName: string; ret
   return (
     <div className="oc-surface oc-surface-padding rounded-card">
       <h1 className="text-xl font-semibold text-fg-primary">
-        Add your email to continue to <span className="text-accent-warm">{clientName}</span>
+        Add your email to continue to{' '}
+        <span className="font-semibold text-fg-primary">{clientName}</span>
       </h1>
       <p className="mt-2 text-sm text-fg-secondary">
         You have been exploring without an email. {clientName} needs one to know it is you next
