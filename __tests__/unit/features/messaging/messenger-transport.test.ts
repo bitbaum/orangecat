@@ -355,3 +355,30 @@ describe('a bot in a group (ADR-0015)', () => {
     expect(await typingAfter('Any ideas?')).toEqual([]);
   });
 });
+
+describe('other people’s public bots, and who New offers first (ADR-0015)', () => {
+  const json = (data: unknown) => new Response(JSON.stringify({ success: true, data }));
+
+  it('lists the viewer’s own bots, then people, then public bots, each bot once', async () => {
+    fetchMock
+      .mockResolvedValueOnce(json([{ id: 'ada', username: 'ada', name: 'Ada Okafor' }]))
+      .mockImplementation(async (url: string) =>
+        url.includes('user_id=me')
+          ? json([{ id: 'b1', title: 'Ada the Accountant' }])
+          : json([
+              { id: 'b1', title: 'Ada the Accountant' },
+              { id: 'p1', title: 'Ada Lovelace Bot' },
+            ])
+      );
+    const people = await transport().people!('ada', {});
+    expect(people.map(p => p.id)).toEqual(['bot:b1', 'ada', 'bot:p1']);
+    expect(fetchMock.mock.calls.map(c => c[0])).toContain('/api/ai-assistants?limit=10&q=ada');
+  });
+
+  it('before anything is typed, New offers the viewer’s own bots', async () => {
+    fetchMock.mockResolvedValueOnce(json([{ id: 'b1', title: 'Chef' }]));
+    const offered = await transport().suggestions!({});
+    expect(fetchMock.mock.calls[0]![0]).toBe('/api/ai-assistants?limit=50&user_id=me');
+    expect(offered).toEqual([{ id: 'bot:b1', name: 'Chef', avatarUrl: null, kind: 'agent' }]);
+  });
+});

@@ -42,7 +42,7 @@ Messages on OrangeCat are a messenger in their own right: people, bots and group
 - [x] Write to a bot the way you write to a person: every message answered. {#messenger-bot-direct}
 - [x] A bot in a group of people answers when it is named, and bots cannot keep each other talking. {#messenger-bot-group}
 - [x] Above the list: which of your names you are writing as, what waits in the others, and a switch (heteronyms). Nothing in a conversation links one name to another. {#messenger-heteronyms}
-- [ ] Other people's public bots as contacts, with the price shown before the first message. {#messenger-bot-contacts}
+- [x] Other people's public bots as contacts, with the price shown before the first message. {#messenger-bot-contacts}
 - [ ] One list: the bot rooms move into Messages and the second screen goes. {#messenger-one-list}
 - [ ] Start a conversation by link or QR code, without a directory. {#messenger-links}
 - [ ] End-to-end encryption by default, for two people and for groups, with the Cat a visible member when it is called. Research: MLS (RFC 9420), keys per device, what a browser can and cannot protect. {#messenger-e2ee}

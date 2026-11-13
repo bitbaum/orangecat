@@ -18,6 +18,8 @@ import { randomBytes } from 'node:crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { fromTable } from '@/lib/supabase/untyped';
+import { computeCreatorChargeBtc } from '@/services/ai/assistant-charge';
+import { decideConversationAccess } from '@/services/companions/access';
 import { logger } from '@/utils/logger';
 
 /** RFC 2606: nobody can receive mail here, so a seat has no reset channel. */
@@ -138,16 +140,32 @@ async function ensureSeat(admin: SupabaseClient, companion: CompanionRow): Promi
   return seatUserId;
 }
 
+interface OpenableRow extends CompanionRow {
+  status: string | null;
+  is_public: boolean | null;
+}
+
+/**
+ * Who may write to a companion in Messages: its owner always, anybody else
+ * while it is public and active. The same door as its own thread and the bot
+ * rooms (services/companions/access.ts), so a bot is reachable here exactly
+ * when it is reachable there.
+ */
+function openTo(companion: OpenableRow, callerId: string): boolean {
+  return decideConversationAccess(companion, callerId).allowed;
+}
+
 /**
  * The seats of these companions, for somebody starting a conversation.
  *
- * Only the caller's OWN companions for now (ADR-0015, build order 1): a
- * companion that is not theirs is refused, whatever its id. Null when any of
- * them cannot be seated, so a conversation is never opened with a bot missing.
+ * The caller's own companions, and other people's public ones (ADR-0015,
+ * build order 1 and 5). Null when any of them may not be written to by the
+ * caller, or cannot be seated, so a conversation is never opened with a bot
+ * missing.
  */
-export async function seatOwnCompanions(
+export async function seatCompanionsFor(
   admin: SupabaseClient,
-  ownerId: string,
+  callerId: string,
   assistantIds: readonly string[]
 ): Promise<BotSeat[] | null> {
   const ids = [...new Set(assistantIds)];
@@ -155,11 +173,10 @@ export async function seatOwnCompanions(
     return [];
   }
   const { data, error } = await fromTable(admin, DATABASE_TABLES.AI_ASSISTANTS)
-    .select('id, user_id, title, avatar_url')
-    .in('id', ids)
-    .eq('user_id', ownerId);
-  const companions = (data ?? []) as CompanionRow[];
-  if (error || companions.length !== ids.length) {
+    .select('id, user_id, title, avatar_url, status, is_public')
+    .in('id', ids);
+  const companions = (data ?? []) as OpenableRow[];
+  if (error || companions.length !== ids.length || !companions.every(c => openTo(c, callerId))) {
     return null;
   }
   const seats: BotSeat[] = [];
@@ -174,12 +191,11 @@ export async function seatOwnCompanions(
 }
 
 /**
- * May `callerId` start a conversation with these accounts? A seat can be
- * written to only by the owner of its companion: somebody who learned a
- * seat's account id must not be able to open a conversation with another
- * person's private bot.
+ * Is there a seat among these accounts that `callerId` may not write to? A
+ * seat follows its companion's door: somebody who learned a seat's account id
+ * must not be able to open a conversation with another person's private bot.
  */
-export async function foreignSeatAmong(
+export async function closedSeatAmong(
   admin: SupabaseClient,
   callerId: string,
   userIds: readonly string[]
@@ -188,13 +204,57 @@ export async function foreignSeatAmong(
   if (seats.size === 0) {
     return false;
   }
+  const assistantIds = [...seats.values()].filter((id): id is string => id !== null);
+  // A seat whose companion is gone belongs to nobody: nobody may open it.
+  if (assistantIds.length !== seats.size) {
+    return true;
+  }
   const { data } = await fromTable(admin, DATABASE_TABLES.AI_ASSISTANTS)
-    .select('id')
+    .select('id, user_id, title, avatar_url, status, is_public')
+    .in('id', assistantIds);
+  const companions = (data ?? []) as OpenableRow[];
+  return companions.length !== assistantIds.length || !companions.every(c => openTo(c, callerId));
+}
+
+/**
+ * What each of these seats charges `viewerId` per message, in BTC: only the
+ * seats that charge, and never the viewer's own bots (an owner is not
+ * charged by their own companion's price in Messages' eyes: the price is what
+ * a stranger is told before writing).
+ */
+export async function seatPricesFor(
+  admin: SupabaseClient,
+  viewerId: string,
+  seats: ReadonlyMap<string, string | null>
+): Promise<Map<string, number>> {
+  const prices = new Map<string, number>();
+  const bySeat = [...seats.entries()].filter(
+    (entry): entry is [string, string] => entry[1] !== null
+  );
+  if (bySeat.length === 0) {
+    return prices;
+  }
+  const { data } = await fromTable(admin, DATABASE_TABLES.AI_ASSISTANTS)
+    .select('id, user_id, pricing_model, price_per_message')
     .in(
       'id',
-      [...seats.values()].filter((id): id is string => id !== null)
-    )
-    .eq('user_id', callerId);
-  // A seat whose companion is gone belongs to nobody: nobody may open it.
-  return ((data ?? []) as unknown[]).length !== seats.size;
+      bySeat.map(([, assistantId]) => assistantId)
+    );
+  const rows = (data ?? []) as Array<{
+    id: string;
+    user_id: string;
+    pricing_model: string;
+    price_per_message: number | null;
+  }>;
+  for (const [seatUserId, assistantId] of bySeat) {
+    const row = rows.find(r => r.id === assistantId);
+    if (!row || row.user_id === viewerId) {
+      continue;
+    }
+    const charge = computeCreatorChargeBtc(row, false);
+    if (charge > 0) {
+      prices.set(seatUserId, charge);
+    }
+  }
+  return prices;
 }

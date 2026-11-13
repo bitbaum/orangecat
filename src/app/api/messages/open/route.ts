@@ -13,7 +13,7 @@
 
 import { withAuth, type AuthenticatedRequest } from '@/lib/api/withAuth';
 import { openOrCreateConversation, VALIDATION } from '@/features/messaging/lib';
-import { foreignSeatAmong, seatOwnCompanions } from '@/features/messaging/server/bot-seats';
+import { closedSeatAmong, seatCompanionsFor } from '@/features/messaging/server/bot-seats';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { rateLimitAction, rateLimitHeaders, retryAfterSeconds } from '@/lib/rate-limit';
 import {
@@ -64,8 +64,9 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
       (id): id is string => typeof id === 'string' && id.trim().length > 0
     );
 
-    // Bots (ADR-0015): the caller's own companions, each by its seat, alone
-    // or in a group with people. In a group a bot answers when it is named.
+    // Bots (ADR-0015): the caller's own companions and other people's public
+    // ones, each by its seat, alone or in a group with people. In a group a
+    // bot answers when it is named.
     const assistantIds = Array.isArray(body?.assistantIds)
       ? body.assistantIds.filter((id): id is string => typeof id === 'string' && id.length > 0)
       : [];
@@ -73,8 +74,8 @@ export const POST = withAuth(async (req: AuthenticatedRequest) => {
     if (validParticipantIds.length + assistantIds.length > VALIDATION.MAX_PARTICIPANTS) {
       return apiValidationError(`Maximum ${VALIDATION.MAX_PARTICIPANTS} participants allowed`);
     }
-    const seats = await seatOwnCompanions(admin, user.id, assistantIds);
-    if (!seats || (await foreignSeatAmong(admin, user.id, validParticipantIds))) {
+    const seats = await seatCompanionsFor(admin, user.id, assistantIds);
+    if (!seats || (await closedSeatAmong(admin, user.id, validParticipantIds))) {
       return apiValidationError('That bot cannot be written to from here.');
     }
 
