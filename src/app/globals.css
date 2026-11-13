@@ -88,6 +88,15 @@
     border-radius: var(--radius-control);
   }
 
+  /* Time and date fields: same 16px floor so iOS does not zoom on focus
+     (AvailabilityEditor's text-sm time inputs did), without the appearance
+     reset above, which would strip the native picker. */
+  input[type='time'],
+  input[type='date'],
+  input[type='datetime-local'] {
+    font-size: 16px !important;
+  }
+
   /* Improve focus visibility for better accessibility */
   *:focus-visible {
     @apply outline-hidden ring-2 ring-ring ring-offset-2 ring-offset-background;

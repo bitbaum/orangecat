@@ -10,14 +10,20 @@
  * MediaRecorder + transcribing here works in every modern browser and keeps the
  * Groq key server-only.
  *
- * The call itself is @bitbaum/ai-kit's `transcribe` over services/ai/speech's
+ * The call itself is @bitbaum/ai-kit's `transcribe` over ai-kit's own speech
  * chain: the fleet's one implementation, with a second model to fall to. It
  * was a hand-rolled fetch at one model, which is the shape ai-kit replaced.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { ChainExhaustedError, LinkFailure, transcribe } from '@bitbaum/ai-kit';
-import { speechChain, speechConfigured } from '@/services/ai/speech';
+import {
+  ChainExhaustedError,
+  LinkFailure,
+  looksLikeSilence,
+  speechChain,
+  speechConfigured,
+  transcribe,
+} from '@bitbaum/ai-kit';
 import { logger } from '@/utils/logger';
 import { apiBadRequest, apiError, apiSuccess, apiInternalError } from '@/lib/api/standardResponse';
 import { withAuth, type AuthenticatedRequest } from '@/lib/api/withAuth';
@@ -42,7 +48,7 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
       return createRateLimitResponse(rl) as unknown as NextResponse;
     }
 
-    if (!speechConfigured()) {
+    if (!speechConfigured(process.env)) {
       logger.error('Transcribe: GROQ_API_KEY not set', undefined, 'cat/transcribe');
       return apiError('Dictation is not configured right now.', 'TRANSCRIBE_UNAVAILABLE', 503);
     }
@@ -85,7 +91,10 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
           }
         },
       });
-      text = result.text.trim();
+      // A silent or muted take comes back as Whisper's stock filler ("Thank
+      // you.", "Untertitelung des ZDF") and was typed into the person's message.
+      // An empty text is chatkit's "Nothing was heard".
+      text = looksLikeSilence(result.text) ? '' : result.text.trim();
     } catch (error) {
       // Every link's failure, logged and never returned: a vendor body carries
       // request ids and quota detail that mean nothing to the person.
