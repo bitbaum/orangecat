@@ -15,6 +15,7 @@ import Input from '@/components/ui/Input';
 import { outgoing, shownTurn } from './attachments';
 import { ChatFrame } from './ChatFrame';
 import { Face, GroupFaces } from './CompanionFace';
+import { RoomFaceRow } from './RoomFaceRow';
 import { RoomMembers } from './RoomMembers';
 import { DetailRow, TalkDetailsSheet } from './TalkDetailsSheet';
 import { nameWithJob } from './format';
@@ -60,7 +61,13 @@ export function RoomChat({
     <>
       <ChatFrame
         title={name}
-        face={room ? <GroupFaces members={room.members} size={32} /> : <Face name="?" size={32} />}
+        face={
+          room ? (
+            <GroupFaces members={room.members} avatarUrl={room.avatarUrl} size={32} />
+          ) : (
+            <Face name="?" size={32} />
+          )
+        }
         onBack={onBack}
         onDetails={() => setDetails(true)}
         placeholder={copy.placeholder(name)}
@@ -93,7 +100,9 @@ export function RoomChat({
         open={details}
         onClose={() => setDetails(false)}
         title={name}
-        face={room ? <GroupFaces members={room.members} size={96} /> : null}
+        face={
+          room ? <GroupFaces members={room.members} avatarUrl={room.avatarUrl} size={96} /> : null
+        }
         lines={[room ? COMPANION_COPY.talk.groupLine(room.members.length) : null]}
       >
         <form
@@ -125,6 +134,20 @@ export function RoomChat({
           />
         )}
         <div className="flex flex-col">
+          {room && (
+            <RoomFaceRow
+              // Opened again after a change, it starts from the face now worn.
+              key={room.avatarUrl ?? 'members'}
+              title={name}
+              avatarUrl={room.avatarUrl}
+              onSet={face =>
+                talk.setFace(face).then(ok => {
+                  onActivity();
+                  return ok;
+                })
+              }
+            />
+          )}
           <DetailRow
             danger
             onClick={() => {

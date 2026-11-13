@@ -113,6 +113,14 @@ export const COMPANION_COPY = {
       working: (name: string) => `${name} is writing`,
       failedTurn: (name: string, why: string) => `${name} could not answer: ${why}`,
       rename: 'Rename',
+      /** The group's own face: a shape and a colour, or its members' faces. */
+      face: {
+        row: 'Change the picture',
+        save: 'Use this picture',
+        saving: 'Saving…',
+        reset: 'Use the members’ faces',
+        failed: 'That did not save. Try again.',
+      },
       leave: 'Delete group chat',
       leaveConfirm: 'Delete this group chat? The transcript goes with it.',
       members: 'In this chat',

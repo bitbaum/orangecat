@@ -19,6 +19,7 @@ const UNAVAILABLE = 'Unavailable';
 interface RoomRow {
   id: string;
   title: string;
+  avatar_url?: string | null;
   created_at: string;
   last_message_at: string | null;
 }
@@ -110,7 +111,7 @@ async function membersOf(
 
 export async function listRooms(supabase: AnySupabaseClient): Promise<RoomSummary[]> {
   const { data, error } = await fromTable(supabase, DATABASE_TABLES.COMPANION_ROOMS)
-    .select('id, title, created_at, last_message_at')
+    .select('id, title, avatar_url, created_at, last_message_at')
     .order('last_message_at', { ascending: false, nullsFirst: false })
     .order('created_at', { ascending: false });
   if (error) {
@@ -125,6 +126,7 @@ export async function listRooms(supabase: AnySupabaseClient): Promise<RoomSummar
   return rows.map(r => ({
     id: r.id,
     title: r.title,
+    avatarUrl: r.avatar_url ?? null,
     createdAt: r.created_at,
     lastMessageAt: r.last_message_at,
     members: members.get(r.id) ?? [],
@@ -136,7 +138,7 @@ export async function getRoom(
   roomId: string
 ): Promise<RoomView | null> {
   const { data, error } = await fromTable(supabase, DATABASE_TABLES.COMPANION_ROOMS)
-    .select('id, title, created_at, last_message_at')
+    .select('id, title, avatar_url, created_at, last_message_at')
     .eq('id', roomId)
     .maybeSingle();
   if (error || !data) {
@@ -157,6 +159,7 @@ export async function getRoom(
   return {
     id: row.id,
     title: row.title,
+    avatarUrl: row.avatar_url ?? null,
     createdAt: row.created_at,
     lastMessageAt: row.last_message_at,
     members: members.get(row.id) ?? [],
@@ -175,7 +178,7 @@ export async function createRoom(
 ): Promise<RoomSummary> {
   const { data: created, error } = await fromTable(supabase, DATABASE_TABLES.COMPANION_ROOMS)
     .insert({ user_id: userId, title: input.title?.trim() || 'Group chat' })
-    .select('id, title, created_at, last_message_at')
+    .select('id, title, avatar_url, created_at, last_message_at')
     .single();
   if (error || !created) {
     logger.error('room could not be created', error, 'CompanionRooms');
@@ -207,6 +210,7 @@ export async function createRoom(
   return {
     id: room.id,
     title,
+    avatarUrl: room.avatar_url ?? null,
     createdAt: room.created_at,
     lastMessageAt: room.last_message_at,
     members,
@@ -220,6 +224,19 @@ export async function renameRoom(
 ): Promise<boolean> {
   const { data, error } = await fromTable(supabase, DATABASE_TABLES.COMPANION_ROOMS)
     .update({ title: title.trim(), updated_at: new Date().toISOString() })
+    .eq('id', roomId)
+    .select('id');
+  return !error && Array.isArray(data) && data.length > 0;
+}
+
+/** Give the room a face of its own, or (null) hand it back its members' faces. */
+export async function setRoomFace(
+  supabase: AnySupabaseClient,
+  roomId: string,
+  avatarUrl: string | null
+): Promise<boolean> {
+  const { data, error } = await fromTable(supabase, DATABASE_TABLES.COMPANION_ROOMS)
+    .update({ avatar_url: avatarUrl, updated_at: new Date().toISOString() })
     .eq('id', roomId)
     .select('id');
   return !error && Array.isArray(data) && data.length > 0;
