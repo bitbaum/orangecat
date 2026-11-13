@@ -1,8 +1,8 @@
 # ADR-0015: One Messenger for People and Bots
 
 Date: 2026-11-13
-Status: Accepted. Build order 1–3 shipped (D1–D4 and D6 for a person's own bots,
-alone or in a group); 4–6 on the roadmap
+Status: Accepted. Build order 1–4 shipped (D1–D6 for a person's own bots, alone
+or in a group, and the name being written as); 5 and 6 on the roadmap
 
 ## Context
 
@@ -114,6 +114,10 @@ company is not a confidence between one person and one bot.
   added without changing anything else.
 - A bot that is not public answers its owner only, and tells anyone else who
   names it so, without a model call.
+- "Writing as" (D5) is `src/components/identities/WritingAs.tsx`, above the
+  list: the name in use, the count waiting in the others (ADR-0014 D8's own
+  number, unread notifications) and a switch that lands on Messages. Drawn
+  only for somebody who holds more than one name and may switch.
 - Not built: other people's bots as contacts (build order 5), and the bot's
   own memory of what is said in Messages.
 

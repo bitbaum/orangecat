@@ -64,12 +64,17 @@ export async function fetchIdentityCircle(): Promise<IdentityCircle> {
 }
 
 /**
- * Become another identity. On success the tab is reloaded onto the dashboard
- * and this never returns: every store and cache in the tab belongs to the
+ * Become another identity. On success the tab is reloaded (onto the dashboard
+ * unless `to` says otherwise) and this never returns: every store and cache in the tab belongs to the
  * account that just stopped being signed in. On failure, resolves to the
  * message to show.
  */
-export async function switchToIdentity(id: string): Promise<string> {
+export async function switchToIdentity(
+  id: string,
+  /** Where the tab lands as the other identity. The dashboard unless the
+   *  switch was made somewhere that exists for every identity (Messages). */
+  to: string = ROUTES.DASHBOARD.HOME
+): Promise<string> {
   try {
     const res = await fetch(API_ROUTES.IDENTITIES.SWITCH, {
       method: 'POST',
@@ -79,7 +84,7 @@ export async function switchToIdentity(id: string): Promise<string> {
     if (!res.ok) {
       return await readIdentityError(res, IDENTITIES_COPY.switchFailed);
     }
-    window.location.assign(ROUTES.DASHBOARD.HOME);
+    window.location.assign(to);
     return new Promise<string>(() => {});
   } catch {
     return IDENTITIES_COPY.switchFailed;
