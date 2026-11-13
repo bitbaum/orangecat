@@ -1,76 +1,76 @@
 'use client';
 
 /**
- * The one row in a bot's details that makes it write first: a time of day,
- * what it is asked, Save or Stop. Opens inline, under the row, so the
- * details sheet stays the one place the bot is set up. Says plainly when
- * the routine cannot run (no own key) and offers the way to add one.
+ * The rows in a bot's details that make it write first: one per routine
+ * (a time or an interval, and what it is asked), and a last row that adds
+ * another. Each opens inline, under its row, so the details sheet stays the
+ * one place the bot is set up. Says plainly when a routine cannot run (no
+ * own key) and offers the way to add one.
  */
 
 import { useCallback, useEffect, useState } from 'react';
 import { API_ROUTES } from '@/config/api-routes';
 import { COMPANION_COPY } from '@/config/companions';
-import { ROUTES } from '@/config/routes';
-import Button from '@/components/ui/Button';
-import { ROUTINE_INTERVALS, type Routine } from '@/services/companions/routines-store';
+import type { Routine, RoutineInput } from '@/services/companions/routines-store';
 import { logger } from '@/utils/logger';
+import { RoutineForm } from './RoutineForm';
 import { DetailRow } from './TalkDetailsSheet';
 
 interface Envelope {
-  data?: { routine: Routine | null; canRun: boolean };
+  data?: { routines: Routine[]; canRun: boolean; max: number };
   error?: { message?: string };
 }
 
+/** Which form is open: a routine's id, or the one that adds. */
+const NEW = 'new';
+
 export function RoutineRow({ assistantId }: { assistantId: string }) {
   const copy = COMPANION_COPY.talk.routine;
-  const [routine, setRoutine] = useState<Routine | null>(null);
+  const [routines, setRoutines] = useState<Routine[]>([]);
   const [canRun, setCanRun] = useState(true);
-  const [open, setOpen] = useState(false);
-  const [time, setTime] = useState('08:00');
-  const [everyHours, setEveryHours] = useState<number | null>(null);
-  const [prompt, setPrompt] = useState<string>(copy.defaultPrompt);
+  const [max, setMax] = useState(1);
+  const [open, setOpen] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const url = API_ROUTES.AI_ASSISTANTS.ROUTINE(assistantId);
 
-  const load = useCallback(async () => {
-    try {
-      const res = await fetch(API_ROUTES.AI_ASSISTANTS.ROUTINE(assistantId));
-      const json = (await res.json()) as Envelope;
-      if (res.ok && json.data) {
-        setRoutine(json.data.routine);
-        setCanRun(json.data.canRun);
-        if (json.data.routine) {
-          setTime(json.data.routine.timeLocal);
-          setEveryHours(json.data.routine.everyHours);
-          setPrompt(json.data.routine.prompt);
-        }
-      }
-    } catch (err) {
-      logger.error('routine load failed', err, 'RoutineRow');
-    }
-  }, [assistantId]);
+  const take = useCallback((data: NonNullable<Envelope['data']>) => {
+    setRoutines(data.routines ?? []);
+    setCanRun(data.canRun);
+    setMax(data.max ?? 1);
+  }, []);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    let live = true;
+    fetch(url)
+      .then(async res => {
+        const json = (await res.json()) as Envelope;
+        if (live && res.ok && json.data) {
+          take(json.data);
+        }
+      })
+      .catch(err => logger.error('routine load failed', err, 'RoutineRow'));
+    return () => {
+      live = false;
+    };
+  }, [url, take]);
 
-  async function save() {
+  async function save(id: string | null, input: Omit<RoutineInput, 'zone'>) {
     setBusy(true);
     setError(null);
     try {
       const zone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-      const res = await fetch(API_ROUTES.AI_ASSISTANTS.ROUTINE(assistantId), {
+      const res = await fetch(url, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, timeLocal: time, zone, everyHours }),
+        body: JSON.stringify({ ...input, zone, ...(id ? { id } : {}) }),
       });
       const json = (await res.json()) as Envelope;
       if (!res.ok || !json.data) {
         throw new Error(json.error?.message || copy.failed);
       }
-      setRoutine(json.data.routine);
-      setCanRun(json.data.canRun);
-      setOpen(false);
+      take(json.data);
+      setOpen(null);
     } catch (err) {
       logger.error('routine save failed', err, 'RoutineRow');
       setError(err instanceof Error ? err.message : copy.failed);
@@ -79,100 +79,69 @@ export function RoutineRow({ assistantId }: { assistantId: string }) {
     }
   }
 
-  async function remove() {
+  async function stop(id: string) {
     setBusy(true);
+    setError(null);
     try {
-      await fetch(API_ROUTES.AI_ASSISTANTS.ROUTINE(assistantId), { method: 'DELETE' });
-      setRoutine(null);
-      setOpen(false);
+      const res = await fetch(`${url}?routine=${encodeURIComponent(id)}`, { method: 'DELETE' });
+      if (!res.ok) {
+        throw new Error(copy.failed);
+      }
+      setRoutines(prev => prev.filter(r => r.id !== id));
+      setOpen(null);
+    } catch (err) {
+      logger.error('routine stop failed', err, 'RoutineRow');
+      setError(copy.failed);
     } finally {
       setBusy(false);
     }
   }
 
+  function toggle(key: string) {
+    setError(null);
+    setOpen(v => (v === key ? null : key));
+  }
+
+  const several = routines.length > 1;
   return (
     <>
-      <DetailRow onClick={() => setOpen(v => !v)}>
-        {routine
-          ? routine.everyHours
-            ? copy.setEvery(routine.everyHours)
-            : copy.set(routine.timeLocal)
-          : copy.row}
-      </DetailRow>
-      {open && (
-        <form
-          className="flex flex-col gap-3 px-4 pb-3"
-          onSubmit={e => {
-            e.preventDefault();
-            void save();
-          }}
-        >
-          <label className="flex items-center justify-between gap-3 text-sm text-fg-secondary">
-            {copy.how}
-            <select
-              value={everyHours ?? 0}
-              onChange={e => setEveryHours(Number(e.target.value) || null)}
-              className="min-h-[44px] rounded-xl border border-subtle bg-surface-raised px-3 text-base text-fg-primary"
-            >
-              <option value={0}>{copy.daily}</option>
-              {ROUTINE_INTERVALS.map(h => (
-                <option key={h} value={h}>
-                  {copy.every(h)}
-                </option>
-              ))}
-            </select>
-          </label>
-          {everyHours === null && (
-            <label className="flex items-center justify-between gap-3 text-sm text-fg-secondary">
-              {copy.title}
-              <input
-                type="time"
-                value={time}
-                onChange={e => setTime(e.target.value)}
-                className="rounded-xl border border-subtle bg-surface-raised px-3 py-2 text-base text-fg-primary"
-                required
-              />
-            </label>
-          )}
-          <label className="flex flex-col gap-1 text-sm text-fg-secondary">
-            {copy.prompt}
-            <textarea
-              value={prompt}
-              onChange={e => setPrompt(e.target.value)}
-              maxLength={500}
-              rows={2}
-              className="rounded-xl border border-subtle bg-surface-raised px-3 py-2 text-base text-fg-primary"
+      {routines.map(r => (
+        <div key={r.id} className="flex flex-col">
+          <DetailRow onClick={() => toggle(r.id)}>
+            <span className="flex min-w-0 flex-1 flex-col py-1">
+              <span>{r.everyHours ? copy.setEvery(r.everyHours) : copy.set(r.timeLocal)}</span>
+              {several && <span className="truncate text-sm text-fg-secondary">{r.prompt}</span>}
+            </span>
+          </DetailRow>
+          {open === r.id && (
+            <RoutineForm
+              routine={r}
+              canRun={canRun}
+              busy={busy}
+              error={error}
+              onSave={input => void save(r.id, input)}
+              onStop={() => void stop(r.id)}
             />
-          </label>
-          {!canRun && (
-            <p className="mb-0 text-sm text-fg-secondary">
-              {copy.needsKey}{' '}
-              <a href={ROUTES.SETTINGS_AI} className="underline underline-offset-2">
-                {copy.addKey}
-              </a>
-            </p>
           )}
-          {routine?.skippedReason && canRun === false && (
-            <p className="mb-0 text-sm text-status-negative">{copy.skipped}</p>
+        </div>
+      ))}
+      {routines.length < max && (
+        <>
+          <DetailRow onClick={() => toggle(NEW)}>
+            {routines.length === 0 ? copy.row : copy.add}
+          </DetailRow>
+          {open === NEW && (
+            <RoutineForm
+              // A fresh form each time one is added, not the last one's words.
+              key={routines.length}
+              routine={null}
+              canRun={canRun}
+              busy={busy}
+              error={error}
+              onSave={input => void save(null, input)}
+            />
           )}
-          {error && <p className="mb-0 text-sm text-status-negative">{error}</p>}
-          <div className="flex gap-2">
-            <Button type="submit" variant="primary" size="sm" disabled={busy || !prompt.trim()}>
-              {busy ? copy.saving : copy.save}
-            </Button>
-            {routine && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={busy}
-                onClick={() => void remove()}
-              >
-                {copy.remove}
-              </Button>
-            )}
-          </div>
-        </form>
+        </>
       )}
     </>
   );

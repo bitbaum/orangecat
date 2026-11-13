@@ -195,9 +195,17 @@ shown as waiting, and skipped with the reason. The cron route is a
 registered person-asked timer in the no-background-ai gate, with a check
 that the runner still carries the own-key skip.
 
+**D7, widened (2026-11-13).** A bot holds up to five routines per person
+(`ROUTINES_PER_BOT`), each with its own time or interval and its own
+question: a morning brief and a site check are two routines. The own-key
+rule is unchanged.
+
 **D8. Voice calls.** chatkit's composer dictates and its answers can be read
 aloud; a full-screen call with a chosen voice and speed is a chatkit feature
 to ask for there, so every product gets it at once.
+
+**D8, taken up (2026-11-13).** chatkit carries it (`VoiceMode`). A bot's
+chat header has "Talk"; a spoken turn is the same send as a typed one.
 
 **The job given in chat is the definition, not a memory.** D5 said a born
 companion asks what it is for and remembers the answer. Remembering was an

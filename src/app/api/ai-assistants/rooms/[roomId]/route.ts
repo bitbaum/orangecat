@@ -2,7 +2,8 @@
  * One group chat.
  *
  * GET    /api/ai-assistants/rooms/[roomId] — the room, its members and its transcript
- * PATCH  /api/ai-assistants/rooms/[roomId] — rename: { title }
+ * PATCH  /api/ai-assistants/rooms/[roomId] — rename it, give it a face, or both:
+ *        { title?, face?: { shape, hue } | null } (null = its members' faces again)
  * DELETE /api/ai-assistants/rooms/[roomId] — close it; the transcript goes with it
  */
 
@@ -18,8 +19,9 @@ import {
 } from '@/lib/api/standardResponse';
 import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
 import { getValidationError, validateUUID } from '@/lib/api/validation';
-import { renameRoomSchema } from '@/lib/api/companion-rooms';
-import { deleteRoom, getRoom, renameRoom } from '@/services/companions/rooms/store';
+import { avatarPath } from '@/config/companion-avatars';
+import { updateRoomSchema } from '@/lib/api/companion-rooms';
+import { deleteRoom, getRoom, renameRoom, setRoomFace } from '@/services/companions/rooms/store';
 import { logger } from '@/utils/logger';
 
 interface RouteContext {
@@ -58,14 +60,23 @@ export const PATCH = withAuth(async (request: AuthenticatedRequest, context: Rou
   if (limited) {
     return limited;
   }
-  const parsed = renameRoomSchema.safeParse(await (request as NextRequest).json());
+  const parsed = updateRoomSchema.safeParse(await (request as NextRequest).json());
   if (!parsed.success) {
     return apiBadRequest(parsed.error.issues[0]?.message || 'Invalid request data');
   }
-  const renamed = await renameRoom(request.supabase, roomId, parsed.data.title);
-  return renamed
-    ? apiSuccess({ id: roomId, title: parsed.data.title })
-    : apiNotFound('Group chat not found');
+  const { title, face } = parsed.data;
+  const avatarUrl = face ? avatarPath(face.shape, face.hue) : null;
+  if (title !== undefined && !(await renameRoom(request.supabase, roomId, title))) {
+    return apiNotFound('Group chat not found');
+  }
+  if (face !== undefined && !(await setRoomFace(request.supabase, roomId, avatarUrl))) {
+    return apiNotFound('Group chat not found');
+  }
+  return apiSuccess({
+    id: roomId,
+    ...(title !== undefined ? { title } : {}),
+    ...(face !== undefined ? { avatarUrl } : {}),
+  });
 });
 
 export const DELETE = withAuth(async (request: AuthenticatedRequest, context: RouteContext) => {

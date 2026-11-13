@@ -6,7 +6,7 @@
  */
 import { render, screen } from '@testing-library/react';
 import ArticleDiscussion from '@/app/(public)/articles/[slug]/ArticleDiscussion';
-import ShareButton from '@/app/(public)/articles/[slug]/ShareButton';
+import { PostShareRow } from '@/components/sharing/PostShareRow';
 
 vi.mock('@/hooks/useAuth', () => ({ useAuth: () => ({ user: null, profile: null }) }));
 vi.mock('@/hooks/usePostThread', () => ({
@@ -24,8 +24,12 @@ describe('reading an article', () => {
     expect(link.className).toContain('min-h-11');
   });
 
-  it('the Share button is a 44px target like the links beside it', () => {
-    render(<ShareButton title="One star" url="https://orangecat.ch/articles/one-star" />);
-    expect(screen.getByRole('button', { name: /share/i }).className).toContain('min-h-11');
+  it('every way to share is a 44px target like the links beside it', () => {
+    render(<PostShareRow isPublic title="One star" url="https://orangecat.ch/articles/one-star" />);
+    const targets = [...screen.getAllByRole('button'), ...screen.getAllByRole('link')];
+    expect(targets.length).toBeGreaterThan(1);
+    for (const target of targets) {
+      expect(target.className).toContain('min-h-11');
+    }
   });
 });
