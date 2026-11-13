@@ -5,7 +5,7 @@ import { DATABASE_TABLES } from '@/config/database-tables';
 import { STATUS } from '@/config/database-constants';
 import { isCatUsername } from '@/config/cat-identity';
 import { attachmentsOfMessages } from './attachments';
-import { seatsOfAccounts } from './bot-seats';
+import { seatPricesFor, seatsOfAccounts } from './bot-seats';
 import { paymentRequestIdOf, paymentRequestsById, reactionsOfMessages, replyOf } from './extras';
 import {
   assertMember,
@@ -125,6 +125,7 @@ export async function fetchUserConversations(
     }
     // A bot's seat is an account like any other; this is what says it is one.
     const seats = await seatsOfAccounts(admin, userIds);
+    const prices = await seatPricesFor(admin, user.id, seats);
 
     // Group participants by conversation
     const participantsByConv = new Map<string, Participant[]>();
@@ -144,6 +145,7 @@ export async function fetchUserConversations(
         last_read_at: p.last_read_at || '',
         is_active: p.is_active,
         is_agent: isCatUsername(profile?.username) || seats.has(p.user_id),
+        ...(prices.has(p.user_id) ? { agent_price_btc: prices.get(p.user_id) } : {}),
       });
       participantsByConv.set(p.conversation_id, list);
     }
@@ -212,6 +214,7 @@ export async function fetchConversationSummary(conversationId: string): Promise<
     admin,
     (participants || []).map(p => p.user_id)
   );
+  const prices = await seatPricesFor(admin, user.id, seats);
   const formattedParticipants = (participants || []).map(p => ({
     user_id: p.user_id,
     username: p.profiles?.username || '',
@@ -222,6 +225,7 @@ export async function fetchConversationSummary(conversationId: string): Promise<
     last_read_at: p.last_read_at,
     is_active: p.is_active,
     is_agent: isCatUsername(p.profiles?.username) || seats.has(p.user_id),
+    ...(prices.has(p.user_id) ? { agent_price_btc: prices.get(p.user_id) } : {}),
   }));
 
   return {
