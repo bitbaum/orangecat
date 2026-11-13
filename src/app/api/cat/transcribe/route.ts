@@ -21,7 +21,7 @@
  * was a hand-rolled fetch at one model, which is the shape ai-kit replaced.
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import {
   ChainExhaustedError,
   LinkFailure,
@@ -33,39 +33,14 @@ import {
 import { logger } from '@/utils/logger';
 import { apiBadRequest, apiError, apiSuccess, apiInternalError } from '@/lib/api/standardResponse';
 import { withOptionalAuth } from '@/lib/api/withAuth';
-import {
-  applyRateLimitHeaders,
-  createRateLimitResponse,
-  rateLimit,
-  rateLimitDictation,
-  rateLimitWriteAsync,
-  type RateLimitResult,
-} from '@/lib/rate-limit';
+import { applyRateLimitHeaders, createRateLimitResponse } from '@/lib/rate-limit';
+import { dictationBudget, MAX_VISITOR_AUDIO_BYTES } from '@/lib/api/dictationBudget';
 
 /** Per link, so a stalled model costs one budget and not the whole request. */
 const LINK_TIMEOUT_MS = 30_000;
 // Generous for short dictation; well under Groq's 25 MB limit. A minute of
 // opus/webm audio is ~0.5 MB, so 15 MB covers long messages with headroom.
 const MAX_AUDIO_BYTES = 15 * 1024 * 1024;
-// A visitor's take: about four minutes. Enough to say what you need; a long
-// recording is what an account is for.
-const MAX_VISITOR_AUDIO_BYTES = 2 * 1024 * 1024;
-
-/** A signed-in person's write budget, or a visitor's IP budgets (both must pass). */
-async function dictationBudget(
-  request: NextRequest,
-  userId: string | null
-): Promise<RateLimitResult> {
-  if (userId) {
-    return rateLimitWriteAsync(userId);
-  }
-  const general = await rateLimit(request);
-  if (!general.success) {
-    return general;
-  }
-  return rateLimitDictation(request);
-}
-
 export const POST = withOptionalAuth(async request => {
   const userId = request.user?.id ?? null;
   try {
