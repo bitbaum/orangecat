@@ -652,21 +652,28 @@ Made on the owner's behalf on 2026-11-13 and shipped in one pull request.
 
 ## What to do next
 
-Every finding has been worked. What remains is the unfinished part of the
-eight still marked "Partly" in the tables above.
-Most of those are decisions or package changes rather than page fixes:
+The audit is closed. Every finding was worked; the eight still marked
+"Partly" were triaged on 2026-11-13 and none of them blocks anything:
 
-1. **Decisions (made 2026-11-13, "Fifth batch" above):** visitors can
-   dictate, on a per-IP budget; the group kind is "Organization" wherever it
-   is named; /channel stays; a new loan is not asked what it still owes.
-2. **Package releases (done 2026-11-13):** the Cat's starter list
-   (`@bitbaum/chatkit` 0.31.3), a phone-only Appearance row
-   (`@bitbaum/accountkit` 0.30.0) and the feedback tab (bitbaum/loki#1707).
-3. **Page work:** the project page on the shared detail header, Timeline and
-   Messages on the shared page header, the create form's error summary and
-   "More options", and asking for a picture when a listing is created.
-4. **Measure again.** Run the capture described below on all 99 pages and
-   compare with the numbers at the top of this file.
+**Not worth doing now (closed):**
+
+- `auth-firstrun#10`: no password-length hint. The fleet password rule lives
+  in `@bitbaum/accountkit`; a hint belongs there, for every product, if at all.
+- `app-shell#3`: "six most common first" in Create. There is no usage data to
+  rank by; guessing an order would be made up.
+- `app-shell#9`: compact headers on Timeline and Messages. Messages is now the
+  packaged Messenger (ADR-0015) and owns its own header; Timeline's compact
+  header is a feed's, by design.
+- `money#13`: the guidance heading in the shared create sidebar. Cosmetic, and
+  the money tabs and Wallets now share one frame.
+
+**Ordinary product work, if and when it is wanted (not UX debt):**
+
+- `discover#4`: ask for a picture when a listing is created. Cards without a picture now show a small initial tile instead of a grey plate filling half the card; more pictures need people to add them, which is a create-flow feature.
+- `discover#13`: project pages on the shared detail header.
+- `money#7`: name the person being messaged on the sign-in screen.
+- `create-manage#9`: an error summary that links to each field, and "More
+  options" on long forms. Invalid fields are already focused.
 
 ## How to repeat the measurement
 
