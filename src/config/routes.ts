@@ -358,16 +358,21 @@ export const SIGN_IN_REQUIRED_PREFIXES = [
 /**
  * Which form a signed-out person meets when sign-in is required.
  *
- * Sign-up when they were starting something (a create form: "Create your
- * account" is what they are doing), or when this browser has never held a
- * session (no `sb-*` cookie: a first visit). Sign-in otherwise, for someone
- * whose session simply expired.
+ * Sign-in by default: someone opening /dashboard, /settings or /messages
+ * without a session is almost always a returning person on a new device or
+ * after a timeout. Sign-up only where a newcomer is the likely visitor:
+ *   - a create form ("Create your account" is what they are doing);
+ *   - the Cat, which the public "What do you want to do?" box sends a sentence
+ *     to, when this browser has never held a session (no `sb-*` cookie).
  */
 export function signInModeFor(pathname: string, hasHeldSession: boolean): 'login' | 'register' {
   if (/\/create(\/|$)/.test(pathname)) {
     return 'register';
   }
-  return hasHeldSession ? 'login' : 'register';
+  if (!hasHeldSession && pathname.startsWith(ROUTES.DASHBOARD.CAT)) {
+    return 'register';
+  }
+  return 'login';
 }
 
 /** True when the middleware must see a signed-in user before the page renders. */

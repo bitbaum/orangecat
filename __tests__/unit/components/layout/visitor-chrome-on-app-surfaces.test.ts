@@ -44,7 +44,13 @@ describe('signInModeFor', () => {
     expect(signInModeFor('/settings/creators', true)).toBe('login');
   });
 
-  it('sends a first visit to make an account', () => {
-    expect(signInModeFor('/dashboard', false)).toBe('register');
+  it('sends a first visit to the Cat to make an account', () => {
+    expect(signInModeFor('/dashboard/cat', false)).toBe('register');
+    expect(signInModeFor('/dashboard/cat', true)).toBe('login');
+  });
+
+  it('sends a first visit to any other page to sign in', () => {
+    expect(signInModeFor('/dashboard', false)).toBe('login');
+    expect(signInModeFor('/settings', false)).toBe('login');
   });
 });
