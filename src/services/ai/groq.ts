@@ -10,6 +10,7 @@
  * Created: 2026-01-22
  */
 
+import { countCalls } from './usage-events';
 import { PROVIDER_BASE_URLS } from '@/config/ai-provider-runtime';
 import {
   recordGroqRateLimitHeaders,
@@ -141,6 +142,7 @@ export class GroqService {
   ) {
     this.apiKey = apiKey;
     this.isByok = options.isByok || false;
+    countCalls(this, { provider: 'groq', byok: this.isByok, defaultModel: DEFAULT_GROQ_MODEL });
   }
 
   /**
