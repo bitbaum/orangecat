@@ -23,6 +23,7 @@ import {
   chainFailureSummary,
 } from '@/services/ai/chain-failure-summary';
 import { directKeyService } from './own-key-service';
+import { chosenModel } from './own-models';
 import type { OwnKey } from './own-key';
 import type { AiService } from './types';
 import type { AssistantRecord, SendMessageError } from './sendMessage-types';
@@ -258,9 +259,13 @@ export async function generateReply(params: {
     const withSystem = systemPrompt
       ? [{ role: 'system' as const, content: systemPrompt }, ...messages]
       : messages;
+    // The model the person chose for this chat, on their own key; else the
+    // provider's default (own-models.ts). A name the provider does not know
+    // is the provider's error, said as one.
+    const directModel = chosenModel(params.requestedModel, direct.model);
     const ask = (turns: typeof withSystem) =>
       direct.service.chatCompletion({
-        model: direct.model,
+        model: directModel,
         messages: turns,
         temperature,
         maxTokens,
@@ -276,7 +281,7 @@ export async function generateReply(params: {
       return {
         response: { ...whole, costBtc: whole.costBtc ?? 0 },
         chatService: direct.service,
-        modelLabel: getModelMetadata(direct.model)?.name || direct.model,
+        modelLabel: getModelMetadata(directModel)?.name || directModel,
       };
     } catch (aiError: unknown) {
       logger.error('AI API error (own key)', aiError, 'AIMessagesService');

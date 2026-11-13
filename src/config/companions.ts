@@ -111,6 +111,16 @@ export const COMPANION_COPY = {
       job: 'money, pages and your account',
       preview: 'Say what you want done on OrangeCat',
     },
+    /** Which model a bot's answers come from: the row in its details. */
+    model: {
+      row: 'Model: automatic',
+      rowChosen: (id: string) => `Model: ${id}`,
+      loading: 'Reading the models your key can use…',
+      pool: 'Answers come from the free shared pool, which picks the model itself. With your own key you choose.',
+      addKey: 'Add a key',
+      pick: (provider: string) => `Your ${provider} key answers. Choose the model:`,
+      auto: (fallback: string) => (fallback === 'auto' ? 'Automatic' : `Automatic (${fallback})`),
+    },
     /** A bot that writes first: the one row in its details. */
     routine: {
       row: 'Writes first, every day',

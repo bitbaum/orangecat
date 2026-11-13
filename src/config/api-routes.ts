@@ -329,6 +329,8 @@ export const API_ROUTES = {
     /** The bot's routine: when it writes first, and what it is asked. */
     ROUTINE: (id: string) => `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/${id}/routine`,
     HANDS: (id: string) => `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/${id}/hands`,
+    /** The models this person can choose for a bot's chat (their own key's list). */
+    MODELS: `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/models`,
     /** The talk home (companions, group chats, fleet bots in one list) and a companion made in a minute. */
     TALK: `${ENTITY_REGISTRY['ai_assistant'].apiEndpoint}/talk`,
     /** Group chats between the person and two to six companions. */

@@ -14,6 +14,7 @@ import { API_ROUTES } from '@/config/api-routes';
 import { logger } from '@/utils/logger';
 import type { PendingAction } from '@/components/ai-chat/usePendingActions';
 import type { ChatImage } from '@/services/cat/chat-images';
+import { readChosenModel } from './talk/chosen-model';
 
 export interface TalkMessage {
   id: string;
@@ -149,12 +150,18 @@ export function useCompanionTalk(assistantId: string) {
       setSending(true);
       try {
         const threadId = await ensureThread();
+        const chosenModel = readChosenModel(assistantId);
         const res = await fetch(
           API_ROUTES.AI_ASSISTANTS.CONVERSATION_MESSAGES(assistantId, threadId),
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ content, images }),
+            body: JSON.stringify({
+              content,
+              images,
+              // The model chosen for this bot on this device, if any (ModelRow).
+              ...(chosenModel ? { model: chosenModel } : {}),
+            }),
           }
         );
         const json = (await res.json()) as ApiEnvelope<{
