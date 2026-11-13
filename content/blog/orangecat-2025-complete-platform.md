@@ -4,10 +4,12 @@ excerpt: "OrangeCat has evolved into a comprehensive Bitcoin-native platform wit
 date: '2025-12-27'
 tags:
   ['Platform Evolution', 'Bitcoin', 'AI Ownership', 'Transparency', 'Organization DAOs', 'BitBaum']
-featured: true
+featured: false
 author: 'OrangeCat Team'
 published: true
 ---
+
+> **Editor's note, 13 November 2026.** This post was written in December 2025 and describes some things as live that were plans and were not built: multi-signature treasuries (3-of-5), automated payroll and dividend distribution, quadratic voting, time-locked execution, and transactions posting to your timeline on their own. For what works today, see [What you can do](/what-you-can-do).
 
 **OrangeCat has evolved from a simple crowdfunding platform into a comprehensive Bitcoin-native ecosystem that enables the free flow of knowledge and value between people.**
 
