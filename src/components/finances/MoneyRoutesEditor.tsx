@@ -244,7 +244,7 @@ export function MoneyRoutesEditor({
       )}
 
       <div className="flex flex-wrap gap-3">
-        <Button variant="accent" onClick={save} isLoading={saving} disabled={saving}>
+        <Button variant="primary" onClick={save} isLoading={saving} disabled={saving}>
           {COPY.form.save}
         </Button>
         <Button variant="ghost" onClick={onCancel} disabled={saving}>

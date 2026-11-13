@@ -74,7 +74,7 @@ export default function SolonGovernCta({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
             <div className="rounded-md border border-subtle bg-surface-page p-2">
-              <Landmark className="h-5 w-5 text-accent-warm" aria-hidden="true" />
+              <Landmark className="h-5 w-5 text-fg-secondary" aria-hidden="true" />
             </div>
             <div>
               <h3 className="font-medium text-fg-primary">{COPY.title}</h3>
@@ -97,7 +97,7 @@ export default function SolonGovernCta({
     <div className="rounded-lg border border-subtle bg-surface-base p-4">
       <div className="flex items-start gap-3">
         <div className="rounded-md border border-subtle bg-surface-page p-2">
-          <Landmark className="h-5 w-5 text-accent-warm" aria-hidden="true" />
+          <Landmark className="h-5 w-5 text-fg-secondary" aria-hidden="true" />
         </div>
         <div className="min-w-0">
           <h3 className="text-sm font-medium text-fg-primary">{COPY.title}</h3>

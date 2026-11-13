@@ -983,6 +983,11 @@
   .oc-discover-also {
     @apply mt-10 text-sm text-fg-secondary;
   }
+  /* A link inside running text: the ink of the words around it is not enough
+     to find it (content#9). One look on every content and legal page. */
+  .oc-text-link {
+    @apply text-fg-primary underline decoration-border-strong underline-offset-4 hover:decoration-fg-primary;
+  }
   .oc-discover-inline-link {
     /* These are the only way to the kinds without a rail: a full 44px tap
        target each, not the 17px of a text line. */

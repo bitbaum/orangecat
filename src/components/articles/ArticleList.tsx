@@ -25,7 +25,7 @@ export default function ArticleList({
             className="group flex gap-4 py-6 transition-opacity hover:opacity-90"
           >
             <div className="min-w-0 flex-1">
-              <h2 className="text-xl font-semibold leading-snug text-fg-primary group-hover:text-accent-warm">
+              <h2 className="text-xl font-semibold leading-snug text-fg-primary group-hover:underline">
                 {article.title}
               </h2>
               {article.excerpt && (

@@ -1,6 +1,7 @@
 import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
 import React from 'react';
 import { Metadata } from 'next';
+import Link from 'next/link';
 import { Zap, TreePine } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { ROUTES } from '@/config/routes';
@@ -92,6 +93,15 @@ export default function AboutPage() {
             <Button href={`${ROUTES.AUTH}?mode=register`} variant="accent" size="lg">
               Get Started Free
             </Button>
+            <p className="mb-0 mt-6 text-base text-on-public">
+              Or build it with us:{' '}
+              <Link
+                href="/company/careers"
+                className="inline-flex min-h-11 items-center underline underline-offset-4"
+              >
+                the ways in
+              </Link>
+            </p>
           </div>
         </div>
       </div>

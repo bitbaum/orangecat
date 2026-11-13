@@ -50,9 +50,9 @@ export default function ArticleAiControls({
               className="inline-flex items-center gap-1.5 rounded-md border border-default bg-surface-raised/40 px-3 py-1.5 text-sm font-medium text-fg-primary transition-colors hover:bg-surface-raised disabled:opacity-50"
             >
               {ai.busy ? (
-                <Loader2 className="h-4 w-4 animate-spin text-accent-warm" />
+                <Loader2 className="h-4 w-4 animate-spin text-fg-secondary" />
               ) : (
-                <Sparkles className="h-4 w-4 text-accent-warm" />
+                <Sparkles className="h-4 w-4 text-fg-secondary" />
               )}
               Choose an edit
               <ChevronDown className="h-3.5 w-3.5 text-fg-tertiary" />

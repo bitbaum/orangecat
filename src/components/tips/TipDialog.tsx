@@ -42,7 +42,7 @@ export default function TipDialog({ open, onOpenChange, username, recipientName 
           recipientName={recipientName}
           active={open}
           renderDone={() => (
-            <Button variant="accent" onClick={() => onOpenChange(false)}>
+            <Button variant="primary" onClick={() => onOpenChange(false)}>
               {TIP_COPY.done}
             </Button>
           )}

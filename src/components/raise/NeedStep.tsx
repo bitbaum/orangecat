@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import { RAISE_EXAMPLES, RAISE_LIMITS } from '@/config/raise';
+import { DictationButton } from '@/components/ui/DictationButton';
+import { useAuth } from '@/hooks/useAuth';
 import type { RaiseFlow } from '@/hooks/useRaiseFlow';
 
 /** What the Cat is doing while it prices — said, so the wait reads as work. */
@@ -12,6 +14,8 @@ const THINKING_STEP_MS = 1400;
 /** Step one: say what you need, in your own words. Nothing else on screen. */
 export function NeedStep({ flow }: { flow: RaiseFlow }) {
   const planning = flow.step === 'planning';
+  // Transcription is a signed-in endpoint; a visitor types.
+  const { user } = useAuth();
   return (
     <div className="mx-auto max-w-2xl">
       <p className="flex items-center gap-2 text-xs font-medium uppercase tracking-caps text-fg-tertiary">
@@ -53,13 +57,21 @@ export function NeedStep({ flow }: { flow: RaiseFlow }) {
             className="block w-full resize-none bg-transparent px-4 pt-3 text-lg text-fg-primary placeholder:text-fg-tertiary focus:outline-none"
           />
           <div className="flex items-center justify-between gap-3 px-2 pb-1">
-            <span className="text-xs text-fg-tertiary">
+            <span className="text-xs text-fg-secondary">
               Know the price? Say it — “about CHF 4,000”.
             </span>
+            {user && (
+              <DictationButton
+                ariaLabel="Say what you need"
+                disabled={planning}
+                className="ml-auto shrink-0"
+                onTranscript={t => flow.setNeed(flow.need ? `${flow.need} ${t}` : t)}
+              />
+            )}
             <button
               type="submit"
               disabled={planning || flow.need.trim().length < RAISE_LIMITS.needMin}
-              className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full bg-accent-warm px-5 text-sm font-medium text-on-accent transition-opacity disabled:opacity-40"
+              className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full bg-accent-warm px-5 text-sm font-medium text-on-accent transition-colors disabled:bg-surface-raised disabled:text-fg-tertiary"
             >
               {planning ? 'Pricing…' : 'Price it'}
               {!planning && <ArrowRight className="h-4 w-4" aria-hidden />}

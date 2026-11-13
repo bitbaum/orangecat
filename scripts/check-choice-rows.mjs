@@ -18,6 +18,10 @@
  * Heuristic, deliberately narrow: a wrapping container whose next lines hold
  * choices (aria-pressed, role="radio", role="tab"). Same shape as Loki's
  * scripts/test/choice-rows.ts, so the two repos fail on the same thing.
+ * Also a native radio (type="radio") and a button that sets a selection
+ * (onClick={() => setSelectedX(…)}): the blog's 71 topic and month pills,
+ * the /study-bitcoin levels and the /studio forms were all choices this did
+ * not see, because none of them said aria-pressed.
  *
  * Run: node scripts/check-choice-rows.mjs   (wired into `pnpm run verify`)
  */
@@ -40,7 +44,8 @@ function* tsx(dir) {
   }
 }
 
-const CHOICE = /aria-pressed=|role="radio"|role="tab"/;
+const CHOICE =
+  /aria-pressed=|role="radio"|role="tab"|type="radio"|onClick=\{\(\) => setSelected[A-Z]\w*\(/;
 const offenders = [];
 
 for (const file of [...tsx(join(ROOT, 'src/components')), ...tsx(join(ROOT, 'src/app'))]) {

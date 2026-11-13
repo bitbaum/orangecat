@@ -45,7 +45,7 @@ export function OnboardingPay({
     <div className="space-y-3">
       {error && <p className="text-sm text-status-negative">{error}</p>}
       {saved && error && (
-        <Button variant="accent" className="w-full" onClick={() => void onDone()}>
+        <Button variant="primary" className="w-full" onClick={() => void onDone()}>
           Try again
         </Button>
       )}

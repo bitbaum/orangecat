@@ -100,7 +100,7 @@ export default function EventsNearYou() {
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-2 sm:flex-row">
-        <Button variant="accent" onClick={useMyLocation} disabled={loading}>
+        <Button variant="primary" onClick={useMyLocation} disabled={loading}>
           <LocateFixed className="mr-2 h-4 w-4" />
           Near me
         </Button>

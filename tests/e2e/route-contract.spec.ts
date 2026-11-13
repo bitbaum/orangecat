@@ -31,7 +31,6 @@ const PUBLIC_PAGES = [
   '/faq',
   '/privacy',
   '/terms',
-  '/technology',
   '/docs',
   '/community',
 ];
@@ -40,6 +39,9 @@ const PUBLIC_PAGES = [
 const LEGACY_REDIRECTS: Array<[from: string, to: RegExp]> = [
   ['/loans', /\/discover\?type=loans$/],
   ['/circles', /\/discover\?type=circles$/],
+  ['/technology', /\/docs$/],
+  ['/company/about', /\/about$/],
+  ['/pages', /\/discover$/],
 ];
 
 /** Signed-in pages, and where the sign-in sends the person back to. */

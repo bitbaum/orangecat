@@ -41,7 +41,7 @@ export function UpgradeNudge() {
 
   return (
     <div className="mt-2 flex items-start gap-2 rounded-md border border-subtle bg-surface-raised/40 px-3 py-2">
-      <Sparkles className="mt-0.5 h-4 w-4 flex-shrink-0 text-accent-warm" />
+      <Sparkles className="mt-0.5 h-4 w-4 flex-shrink-0 text-fg-secondary" />
       <div className="min-w-0 flex-1 text-xs text-fg-secondary">
         Tasks like this — discovery, matchmaking, multi-step work — are sharper on a frontier model.{' '}
         <Link

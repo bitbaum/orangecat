@@ -121,7 +121,7 @@ export function RoomLinks({ projectId, links, opens, onLinksChange }: RoomLinksP
             Shared link — <span className="text-fg-tertiary">{ROOM_COPY.sharedLinkHint}</span>
           </span>
         </label>
-        <Button type="submit" variant="accent" isLoading={busy} disabled={!label.trim()}>
+        <Button type="submit" variant="primary" isLoading={busy} disabled={!label.trim()}>
           <Plus className="h-4 w-4" aria-hidden />
           Create link and copy it
         </Button>

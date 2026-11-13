@@ -68,7 +68,7 @@ export function OnboardingOffers({ offers, health, isRedirecting, onChat }: Onbo
             {offer.rationale && <p className="mb-4 text-xs text-fg-tertiary">{offer.rationale}</p>}
             <Button
               href={href}
-              variant="accent"
+              variant="primary"
               size="sm"
               className="w-full sm:w-auto"
               data-testid="offer-create"
