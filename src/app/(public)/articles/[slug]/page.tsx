@@ -12,7 +12,7 @@ import '@bitbaum/bip-kit/styles.css';
 import '@/lib/longform/longform.css';
 import { parseLongform } from '@/lib/longform/parse';
 import LongformBody from '@/lib/longform/LongformBody';
-import { PostShareRow } from '@/components/sharing/PostShareRow';
+import { ShareRow } from '@/components/sharing/ShareRow';
 import { shareIntentUrl } from '@/config/share';
 import { getTipReceiveInfo } from '@/domain/tips/tip-service';
 import { createServerClient } from '@/lib/supabase/server';
@@ -249,16 +249,17 @@ export default async function ArticlePage({ params }: PageProps) {
               </div>
             </div>
 
-            <PostShareRow
+            <ShareRow
               className="mt-6"
-              landmark="Share this article"
+              labels={{ landmark: 'Share this article' }}
               url={shareUrl}
               title={article.title}
               summary={article.excerpt}
-              isPublic={article.visibility === 'public'}
+              audience={article.visibility === 'public' ? 'public' : 'restricted'}
               crossPost={{
                 label: `Post on ${APP_NAME}`,
                 href: shareIntentUrl(SITE_URL, { url: shareUrl, title: article.title }),
+                newTab: false,
               }}
             />
 
