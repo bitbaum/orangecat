@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import MessagePanel from '@/components/messaging/MessagePanel';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { useNotificationCenter, type UIFilter } from './useNotificationCenter';
 import { NotificationItem } from './NotificationItem';
 
@@ -20,12 +21,12 @@ interface NotificationCenterProps {
   returnFocusRef?: RefObject<HTMLElement | null>;
 }
 
-const FILTER_TABS: { key: UIFilter; label: string }[] = [
-  { key: 'all', label: 'All' },
-  { key: 'unread', label: 'Unread' },
-  { key: 'payments', label: 'Payments' },
-  { key: 'social', label: 'Social' },
-  { key: 'messages', label: 'Messages' },
+const FILTER_TABS: { value: UIFilter; label: string }[] = [
+  { value: 'all', label: 'All' },
+  { value: 'unread', label: 'Unread' },
+  { value: 'payments', label: 'Payments' },
+  { value: 'social', label: 'Social' },
+  { value: 'messages', label: 'Messages' },
 ];
 
 export default function NotificationCenter({
@@ -53,6 +54,7 @@ export default function NotificationCenter({
     handleNotificationClick,
     handleAskCat,
   } = useNotificationCenter({ onClose });
+  const loadFailed = Boolean(error) && !isLoading && notifications.length === 0;
 
   return (
     <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
@@ -80,33 +82,44 @@ export default function NotificationCenter({
           </CardHeader>
 
           <CardContent className="flex flex-col flex-1 overflow-hidden">
-            {error && (
+            {/* Nothing loaded and the load failed: one state, one way forward.
+                It used to draw the error above the filter row AND "No
+                notifications found" below it, which read as both. */}
+            {loadFailed ? (
+              <div className="flex flex-col items-center gap-4 py-8 text-center" role="alert">
+                <AlertCircle className="h-8 w-8 text-fg-secondary" aria-hidden />
+                <p className="mb-0 text-sm text-fg-primary">Could not load your notifications.</p>
+                <Button variant="outline" onClick={refresh}>
+                  Try again
+                </Button>
+              </div>
+            ) : null}
+
+            {error && !loadFailed && (
               <div className="mb-4 flex items-center gap-2 rounded-md border border-status-negative/20 bg-status-negative/10 p-3 text-status-negative">
-                <AlertCircle className="w-4 h-4" />
-                <span className="text-sm">{error.message}</span>
+                <AlertCircle className="w-4 h-4" aria-hidden />
+                <span className="text-sm">Could not refresh your notifications.</span>
                 <Button variant="ghost" size="sm" onClick={refresh} className="ml-auto">
-                  Retry
+                  Try again
                 </Button>
               </div>
             )}
 
-            <div className="mb-4 flex gap-1 rounded-md bg-surface-raised p-1">
-              {FILTER_TABS.map(tab => (
-                <button
-                  key={tab.key}
-                  onClick={() => setUIFilter(tab.key)}
-                  className={`flex-1 px-3 py-1.5 text-sm rounded-md transition-colors ${
-                    uiFilter === tab.key
-                      ? 'bg-surface-page text-fg-primary'
-                      : 'text-fg-secondary hover:text-fg-primary'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
+            {/* The shared control, in one line that scrolls sideways when five
+                labels do not fit (a phone): never a wrapped second row. */}
+            {!loadFailed && (
+              <div className="-mx-1 mb-4 overflow-x-auto px-1">
+                <SegmentedControl
+                  label="Show"
+                  items={FILTER_TABS}
+                  value={uiFilter}
+                  onChange={setUIFilter}
+                  className="min-w-max"
+                />
+              </div>
+            )}
 
-            {unreadCount > 0 && (
+            {!loadFailed && unreadCount > 0 && (
               <div className="flex justify-between items-center mb-4">
                 <span className="text-sm text-fg-secondary">
                   {unreadCount} unread notification{unreadCount !== 1 ? 's' : ''}
@@ -118,56 +131,58 @@ export default function NotificationCenter({
               </div>
             )}
 
-            <div className="flex-1 overflow-y-auto space-y-2">
-              {isLoading && notifications.length === 0 ? (
-                <div className="space-y-3">
-                  {[...Array(3)].map((_, i) => (
-                    <div key={i} className="animate-pulse">
-                      <div className="flex items-start gap-3 rounded-md bg-surface-raised p-3">
-                        <div className="h-8 w-8 rounded-md bg-fg-secondary/20" />
-                        <div className="flex-1">
-                          <div className="mb-2 h-4 rounded bg-fg-secondary/20" />
-                          <div className="h-3 w-3/4 rounded bg-fg-secondary/20" />
+            {!loadFailed && (
+              <div className="flex-1 overflow-y-auto space-y-2">
+                {isLoading && notifications.length === 0 ? (
+                  <div className="space-y-3">
+                    {[...Array(3)].map((_, i) => (
+                      <div key={i} className="animate-pulse">
+                        <div className="flex items-start gap-3 rounded-md bg-surface-raised p-3">
+                          <div className="h-8 w-8 rounded-md bg-fg-secondary/20" />
+                          <div className="flex-1">
+                            <div className="mb-2 h-4 rounded bg-fg-secondary/20" />
+                            <div className="h-3 w-3/4 rounded bg-fg-secondary/20" />
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              ) : notifications.length === 0 ? (
-                <div className="text-center py-8 text-fg-secondary">
-                  <Bell className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p>No notifications found</p>
-                  {uiFilter !== 'all' && (
-                    <button
-                      onClick={() => setUIFilter('all')}
-                      className="text-fg-primary text-sm mt-2 hover:underline"
-                    >
-                      View all notifications
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <>
-                  {notifications.map(notification => (
-                    <NotificationItem
-                      key={notification.id}
-                      notification={notification}
-                      onMarkAsRead={handleMarkAsRead}
-                      onDelete={handleDeleteNotification}
-                      onClick={handleNotificationClick}
-                      onAskCat={handleAskCat}
-                    />
-                  ))}
-                  {hasMore && (
-                    <div className="pt-2 text-center">
-                      <Button variant="ghost" size="sm" onClick={loadMore} disabled={isLoading}>
-                        {isLoading ? 'Loading...' : 'Load more'}
-                      </Button>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
+                    ))}
+                  </div>
+                ) : notifications.length === 0 ? (
+                  <div className="text-center py-8 text-fg-secondary">
+                    <Bell className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                    <p className="mb-0">No notifications found</p>
+                    {uiFilter !== 'all' && (
+                      <button
+                        onClick={() => setUIFilter('all')}
+                        className="text-fg-primary text-sm mt-2 hover:underline"
+                      >
+                        View all notifications
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    {notifications.map(notification => (
+                      <NotificationItem
+                        key={notification.id}
+                        notification={notification}
+                        onMarkAsRead={handleMarkAsRead}
+                        onDelete={handleDeleteNotification}
+                        onClick={handleNotificationClick}
+                        onAskCat={handleAskCat}
+                      />
+                    ))}
+                    {hasMore && (
+                      <div className="pt-2 text-center">
+                        <Button variant="ghost" size="sm" onClick={loadMore} disabled={isLoading}>
+                          {isLoading ? 'Loading...' : 'Load more'}
+                        </Button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
 
             {notifications.length > 0 && (
               <div className="pt-4 mt-4 border-t border-default">
