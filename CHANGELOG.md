@@ -11,6 +11,8 @@ to the map, sub-bullets stay here for the human reader.
 
 ## 2026-11-13
 
+- **The Studio works for everyone, in every form.** Poems, haiku, lyrics, fiction and the rest no longer fail with "could not finish", and you can create without an account (a few drafts every ten minutes; signing in lifts that).
+
 - **Paying on-chain shows where the money goes.** The pay screen shows the address and the exact BTC that must arrive, and Copy copies the address; invoices say "Payment to" whom.
 - **A shared link shows the page you shared.** Its own title and picture, on X too, and share cards only say what is true.
 - **An event that is over says so and sells no more tickets.**

@@ -15,10 +15,15 @@ import {
 // recording is what an account is for.
 export const MAX_VISITOR_AUDIO_BYTES = 2 * 1024 * 1024;
 
-/** A signed-in person's write budget, or a visitor's IP budgets (both must pass). */
-export async function dictationBudget(
+/**
+ * A signed-in person's write budget, or a visitor's IP budgets: the general
+ * one, then the feature's own (both must pass). One shape for every paid call
+ * a visitor may make (dictation, a Studio draft).
+ */
+export async function visitorOrUserBudget(
   request: NextRequest,
-  userId: string | null
+  userId: string | null,
+  visitorLimit: (request: NextRequest) => Promise<RateLimitResult>
 ): Promise<RateLimitResult> {
   if (userId) {
     return rateLimitWriteAsync(userId);
@@ -27,5 +32,9 @@ export async function dictationBudget(
   if (!general.success) {
     return general;
   }
-  return rateLimitDictation(request);
+  return visitorLimit(request);
+}
+
+export function dictationBudget(request: NextRequest, userId: string | null) {
+  return visitorOrUserBudget(request, userId, rateLimitDictation);
 }

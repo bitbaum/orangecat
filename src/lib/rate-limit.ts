@@ -118,6 +118,10 @@ const catPostInstructionLimiter = slidingWindow({ limit: 10, windowMs: 10 * 60_0
 // takes in ten minutes covers a person filling a box by voice and correcting
 // themselves; it is flat for a script turning the route into free transcription.
 const dictationLimiter = slidingWindow({ limit: 12, windowMs: 10 * 60_000 });
+// A Studio draft for a visitor with no account (/api/ai/creative): one free-pool
+// model call each. Six in ten minutes is a person trying a feeling in a few
+// forms and revising once or twice; it is flat for a script.
+const studioLimiter = slidingWindow({ limit: 6, windowMs: 10 * 60_000 });
 
 // ==================== RATE LIMIT FUNCTIONS ====================
 //
@@ -237,6 +241,11 @@ export async function rateLimitL402Verify(paymentIntentId: string): Promise<Rate
  */
 export async function rateLimitAskCat(request: RequestLike): Promise<RateLimitResult> {
   return toRateLimitResult(askCatLimiter.check(`ask-cat:${clientIpKey(request)}`));
+}
+
+/** A Studio draft by a signed-out visitor, per IP: 6 per 10 minutes. */
+export async function rateLimitStudio(request: RequestLike): Promise<RateLimitResult> {
+  return toRateLimitResult(studioLimiter.check(`studio:${clientIpKey(request)}`));
 }
 
 /**
