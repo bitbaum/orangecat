@@ -18,6 +18,7 @@ import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { createApiKeyService } from '@/services/ai/api-key-service';
 import { readOwnKey } from '@/services/ai/own-key';
+import { sharedLokiOwnKeys } from '@/services/loki/shared-keys';
 import {
   checkAffordability,
   computeCreatorChargeBtc,
@@ -145,7 +146,8 @@ async function companionLine(args: {
 
   const keyService = createApiKeyService(supabase);
   // The person's own key, whichever provider it is from (ai/own-key.ts).
-  const { hasByok, userKey, directKey } = await readOwnKey(keyService, userId);
+  const onLoki = () => sharedLokiOwnKeys(supabase, userId);
+  const { hasByok, userKey, directKey } = await readOwnKey(keyService, userId, onLoki);
   if (!hasByok) {
     const usage = await keyService.checkPlatformUsage(userId);
     if (!usage.can_use_platform) {

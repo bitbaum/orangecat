@@ -5,6 +5,7 @@ import { DATABASE_TABLES } from '@/config/database-tables';
 import { STATUS } from '@/config/database-constants';
 import { isCatUsername } from '@/config/cat-identity';
 import { attachmentsOfMessages } from './attachments';
+import { paymentRequestIdOf, paymentRequestsById, reactionsOfMessages, replyOf } from './extras';
 import {
   assertMember,
   getServerUser,
@@ -284,10 +285,17 @@ export async function fetchMessages(
   });
 
   const userLastReadAt = participantReadTimes.get(user.id) || null;
-  const attachments = await attachmentsOfMessages(
-    admin,
-    (data || []).map(m => m.id)
-  );
+  const messageIds = (data || []).map(m => m.id);
+  const metadataOf = (m: { metadata: unknown }) =>
+    (m.metadata ?? null) as Record<string, unknown> | null;
+  const [attachments, reactions, paymentRequests] = await Promise.all([
+    attachmentsOfMessages(admin, messageIds),
+    reactionsOfMessages(admin, messageIds),
+    paymentRequestsById(
+      admin,
+      (data || []).map(m => paymentRequestIdOf(metadataOf(m))).filter((id): id is string => !!id)
+    ),
+  ]);
 
   // Transform to expected format
   const messages = (data || []).map(m => {
@@ -349,6 +357,9 @@ export async function fetchMessages(
         is_agent: isCatUsername(m.profiles?.username),
       },
       attachments: attachments.get(m.id) ?? [],
+      reply_to: replyOf(metadataOf(m)),
+      reactions: reactions.get(m.id) ?? [],
+      payment_request: paymentRequests.get(paymentRequestIdOf(metadataOf(m)) ?? '') ?? null,
       is_read: isRead,
       is_delivered: isDelivered,
       status: status,

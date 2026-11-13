@@ -20,8 +20,7 @@ export interface ChainKey {
 }
 
 export type ChainItem<K extends ChainKey = ChainKey> =
-  | { kind: 'key'; key: K }
-  | { kind: 'platform' };
+  { kind: 'key'; key: K } | { kind: 'platform' };
 
 /**
  * Reconstruct the merged chain from stored positions. Sorting by the shared

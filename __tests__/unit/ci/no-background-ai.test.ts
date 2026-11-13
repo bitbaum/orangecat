@@ -54,6 +54,7 @@ const SINKS = new Set([
   'src/services/ai/groq.ts',
   'src/services/ai/openrouter.ts',
   'src/services/ai/openai-compat.ts',
+  'src/services/ai/loki-key-service.ts',
   'src/services/ai/free-model-pool.ts',
   'src/services/ai/platform-providers.ts',
   'src/services/ai/index.ts',

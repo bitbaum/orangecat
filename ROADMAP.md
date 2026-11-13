@@ -22,6 +22,33 @@ No fiat, privacy-coin, or smart-contract controls are presented as if they work 
 - [x] Decide where money paid to you goes, in order — a share for taxes first, then a debt, rent or insurance — with each payment landing in the first wallet still behind. {#money-routes}
 - [ ] The tax line suggested from Solon's tax figures for your own commune, instead of a percentage you type.
 
+### A messenger for words, agents and value {#messenger}
+
+Messages on OrangeCat are a messenger in their own right: people, bots and groups of both in one list, under whichever of your names you choose; anything they exchange, and anything of value, in one conversation. The screen is a package (`@bitbaum/chatkit/messenger`), so every bitbaum product and any customer can embed the same one. Interface first; the security work below is the direction, and nothing in it is presented as done. What was learned from Signal, SimpleX, Telegram and the others, with sources: [the article](https://orangecat.ch/blog/a-messenger-for-words-agents-and-money).
+
+- [x] The Messenger as a package: one screen for a phone and a desk, the same in every product. {#messenger-package}
+- [x] An agent is never mistaken for a person: its own face, the word "Agent", whom it answered for. {#messenger-agent}
+- [x] Photos, videos and files on a message, in private storage, with a quota per person. {#messenger-files}
+- [x] Reply to a message; the answer leads back to what it answers. {#messenger-reply}
+- [x] React to a message with an emoji. {#messenger-reactions}
+- [x] Ask for money in a conversation: a card with a Pay button, marked paid when it is. Send money from the same menu. {#messenger-money}
+- [ ] Voice messages. {#messenger-voice}
+- [ ] Search inside a conversation; forward a message; pin and mute a conversation. {#messenger-search}
+- [ ] A payment made from a conversation shows in it as a card; gifts. {#messenger-gifts}
+- [ ] Disappearing messages, with a timer per conversation. {#messenger-disappearing}
+- [ ] Link previews made by the sender's device, never by the server. {#messenger-previews}
+- [ ] Polls and events in a group. {#messenger-polls}
+- [ ] Your own bots in "New conversation", beside people: a bot is an account of its own, as a person is. Decision: `docs/architecture/adr/ADR-0015-one-messenger-for-people-and-bots.md`. {#messenger-bot-seat}
+- [ ] Write to a bot the way you write to a person: every message answered. {#messenger-bot-direct}
+- [ ] A bot in a group of people answers when it is named, and bots cannot keep each other talking. {#messenger-bot-group}
+- [ ] Above the list: which of your names you are writing as, what waits in the others, and a switch (heteronyms). Nothing in a conversation links one name to another. {#messenger-heteronyms}
+- [ ] Other people's public bots as contacts, with the price shown before the first message. {#messenger-bot-contacts}
+- [ ] One list: the bot rooms move into Messages and the second screen goes. {#messenger-one-list}
+- [ ] Start a conversation by link or QR code, without a directory. {#messenger-links}
+- [ ] End-to-end encryption by default, for two people and for groups, with the Cat a visible member when it is called. Research: MLS (RFC 9420), keys per device, what a browser can and cannot protect. {#messenger-e2ee}
+- [ ] The server knows as little as it can: not who is in which group, not what a group is called. {#messenger-metadata}
+- [ ] A messenger of its own, beside the one inside OrangeCat. {#messenger-standalone}
+
 ### Events, end to end {#events}
 
 Run a real night on OrangeCat — "electronic music night at Espresso Bar in Landquart on Friday" — from the first sentence to the last guest through the door, and pay the people who made it happen. The plan and how it was tested: `docs/features/events-end-to-end.md`.

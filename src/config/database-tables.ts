@@ -197,6 +197,8 @@ export const DATABASE_TABLES = {
   MESSAGE_DETAILS: 'message_details',
   /** Files sent with direct messages (service role only; see features/messaging/server/attachments.ts). */
   MESSAGE_ATTACHMENTS: 'message_attachments',
+  /** One emoji per person per message (service role only; see features/messaging/server/extras.ts). */
+  MESSAGE_REACTIONS: 'message_reactions',
   CONVERSATION_DETAILS: 'conversation_details',
 
   // Entity Tables (for direct access when not using entity-registry)

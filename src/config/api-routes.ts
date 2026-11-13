@@ -82,6 +82,8 @@ export const API_ROUTES = {
     BULK_CONVERSATIONS: '/api/messages/bulk-conversations',
     BULK_DELETE: '/api/messages/bulk-delete',
     UNREAD_COUNT: '/api/messages/unread-count',
+    /** PUT: put the caller's emoji on a message, or take it off. */
+    REACTIONS: '/api/messages/reactions',
     /** POST: start an upload. GET: how much the caller has stored. */
     ATTACHMENTS: '/api/messages/attachments',
     /** GET: redirects a participant to a short-lived link to the file. */

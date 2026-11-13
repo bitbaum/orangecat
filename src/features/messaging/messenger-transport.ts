@@ -19,6 +19,7 @@ import {
   reviveConversation,
   reviveMessage,
   type MessengerAttachment,
+  type MessengerCard,
   type MessengerEvent,
   type MessengerTransport,
 } from '@bitbaum/chatkit/messenger';
@@ -108,6 +109,12 @@ function putToStorage(
   });
 }
 
+/** The payment request a card was made for (set by the "Request money" action). */
+export function paymentRequestIdOfCard(card: MessengerCard | undefined): string | undefined {
+  const id = card?.data?.paymentRequestId;
+  return typeof id === 'string' && id ? id : undefined;
+}
+
 export function createMessengerTransport(options: MessengerTransportOptions): MessengerTransport {
   const { userId } = options;
   const listeners = new Set<(event: MessengerEvent) => void>();
@@ -133,7 +140,7 @@ export function createMessengerTransport(options: MessengerTransportOptions): Me
       });
     }
     return {
-      messages: (data.messages ?? []).map(m => reviveMessage(toMessengerMessage(m))),
+      messages: (data.messages ?? []).map(m => reviveMessage(toMessengerMessage(m, userId))),
       before: data.pagination?.hasMore ? data.pagination.nextCursor : null,
     };
   };
@@ -181,6 +188,8 @@ export function createMessengerTransport(options: MessengerTransportOptions): Me
             clientId: draft.clientId,
             attachmentIds: draft.attachments.map(a => a.id),
             senderActorId: options.senderActorId?.() ?? undefined,
+            replyToId: draft.replyTo?.id,
+            paymentRequestId: paymentRequestIdOfCard(draft.card),
           }),
         }
       );
@@ -201,7 +210,16 @@ export function createMessengerTransport(options: MessengerTransportOptions): Me
         ...(draft.attachments.length > 0
           ? { attachments: data.attachments?.map(toMessengerAttachment) ?? [...draft.attachments] }
           : {}),
+        ...(draft.replyTo ? { replyTo: draft.replyTo } : {}),
+        ...(draft.card ? { card: draft.card } : {}),
       };
+    },
+
+    async react(message, emoji) {
+      await api<{ saved: boolean }>(API_ROUTES.MESSAGES.REACTIONS, {
+        method: 'PUT',
+        body: JSON.stringify({ messageId: message.id, emoji }),
+      });
     },
 
     async edit(message, body) {

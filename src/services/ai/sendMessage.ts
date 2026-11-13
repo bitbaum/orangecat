@@ -17,6 +17,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { createApiKeyService } from './api-key-service';
 import { readOwnKey } from './own-key';
+import { sharedLokiOwnKeys } from '@/services/loki/shared-keys';
 import { getAdminClient } from '@/lib/supabase/admin';
 import {
   computeCreatorChargeBtc,
@@ -100,7 +101,10 @@ export async function sendAiMessage(
   const keyService = createApiKeyService(supabase);
   // The person's own key, whichever provider it is from (own-key.ts): asked
   // first, so their bots answer whatever the shared pool does.
-  const { hasByok, userKey: userOpenRouterKey, directKey } = await readOwnKey(keyService, userId);
+  // With none saved here, a key they keep on Loki and switched on for their bots.
+  const onLoki = () => sharedLokiOwnKeys(supabase, userId);
+  const own = await readOwnKey(keyService, userId, onLoki);
+  const { hasByok, userKey: userOpenRouterKey, directKey } = own;
 
   // 4. Check platform usage limits (non-BYOK users)
   if (!hasByok) {
@@ -200,6 +204,20 @@ export async function sendAiMessage(
     hands: hands?.section,
     rules: botSettings ? rulesSection(botSettings) : undefined,
   });
+  // The same prompt for a model that is given the hands as functions; which
+  // one a turn uses is the model's profile (sendMessage-internals.ts).
+  const native = hands?.allowed.length
+    ? {
+        actions: hands.allowed.map(a => a.action),
+        systemPrompt:
+          buildCompanionSystemPrompt({
+            definition: assistant.system_prompt,
+            memories: recalled.map(m => m.content),
+            hands: hands.nativeSection,
+            rules: botSettings ? rulesSection(botSettings) : undefined,
+          }) ?? null,
+      }
+    : undefined;
   const aiResult = await generateReply({
     hasByok,
     userKey: userOpenRouterKey,
@@ -207,6 +225,7 @@ export async function sendAiMessage(
     requestedModel,
     assistant,
     systemPrompt: systemPrompt ?? null,
+    native,
     history,
     content,
     images,
@@ -306,6 +325,7 @@ export async function sendAiMessage(
         requestedModel,
         assistant,
         systemPrompt: systemPrompt ?? null,
+        native,
         history: loopHistory,
         content: resultMessage,
         ownerTurn: true,

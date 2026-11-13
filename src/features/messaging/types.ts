@@ -27,6 +27,30 @@ export interface Conversation {
   unread_count: number;
 }
 
+export interface MessageReplyDto {
+  id: string;
+  sender_id: string;
+  /** One line of its words; empty for a message of only files. */
+  body: string;
+  kinds?: Array<'image' | 'video' | 'audio' | 'file'>;
+}
+
+export interface MessageReactionDto {
+  emoji: string;
+  user_ids: string[];
+}
+
+export interface MessagePaymentRequestDto {
+  id: string;
+  requester_id: string;
+  payer_id: string;
+  amount_btc: number;
+  ask_amount: number | null;
+  ask_currency: string | null;
+  note: string | null;
+  status: 'pending' | 'paid' | 'declined' | 'cancelled';
+}
+
 export interface Message {
   id: string;
   conversation_id: string;
@@ -45,6 +69,11 @@ export interface Message {
     avatar_url: string | null;
     is_agent?: boolean;
   };
+  /** The message this one answers, as it was when the answer was sent. */
+  reply_to?: MessageReplyDto | null;
+  reactions?: MessageReactionDto[];
+  /** The payment request this message carries, as it stands now. */
+  payment_request?: MessagePaymentRequestDto | null;
   /** Files sent with the message (features/messaging/server/attachments.ts). */
   attachments?: MessageAttachmentDto[];
   is_read?: boolean;

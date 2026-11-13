@@ -25,6 +25,7 @@ import { getValidationError, validateUUID } from '@/lib/api/validation';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { createApiKeyService } from '@/services/ai/api-key-service';
 import { readOwnKey } from '@/services/ai/own-key';
+import { sharedLokiOwnKeys } from '@/services/loki/shared-keys';
 import {
   ROUTINE_PROMPT_MAX,
   deleteRoutine,
@@ -70,7 +71,9 @@ export const GET = withAuth(async (request: AuthenticatedRequest, context: Route
     }
     const [routine, own] = await Promise.all([
       getRoutine(request.supabase, request.user.id, id),
-      readOwnKey(createApiKeyService(request.supabase), request.user.id),
+      readOwnKey(createApiKeyService(request.supabase), request.user.id, () =>
+        sharedLokiOwnKeys(request.supabase, request.user.id)
+      ),
     ]);
     return apiSuccess({ routine, canRun: own.hasByok });
   } catch (error) {
@@ -98,7 +101,9 @@ export const PUT = withAuth(async (request: AuthenticatedRequest, context: Route
       return apiNotFound('Bot not found');
     }
     const routine = await upsertRoutine(request.supabase, request.user.id, id, parsed.data);
-    const own = await readOwnKey(createApiKeyService(request.supabase), request.user.id);
+    const own = await readOwnKey(createApiKeyService(request.supabase), request.user.id, () =>
+      sharedLokiOwnKeys(request.supabase, request.user.id)
+    );
     return apiSuccess({ routine, canRun: own.hasByok });
   } catch (error) {
     logger.error('routine save failed', error, 'CompanionRoutineAPI');
