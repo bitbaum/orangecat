@@ -1,7 +1,7 @@
 'use client';
 
 import BottomSheet from '@/components/ui/BottomSheet';
-import { PostShareRow } from '@/components/sharing/PostShareRow';
+import { ShareRow, type CrossPost } from '@/components/sharing/ShareRow';
 import { APP_NAME, SITE_URL } from '@/config/brand';
 import { ROUTES } from '@/config/routes';
 import { isPublicPost, postPreview, postUrl } from '@/lib/seo/post-metadata';
@@ -36,7 +36,7 @@ export function PostShareSheet({
   });
 
   const repostLabel = `Repost on ${APP_NAME}`;
-  const crossPost = signedIn
+  const crossPost: CrossPost | undefined = signedIn
     ? onRepost
       ? {
           label: repostLabel,
@@ -49,17 +49,19 @@ export function PostShareSheet({
     : {
         label: repostLabel,
         href: `${ROUTES.AUTH_REGISTER}&from=${encodeURIComponent(ROUTES.POST(event.id))}`,
+        // Sign-up is part of this app: stay in the tab.
+        newTab: false,
       };
 
   return (
     <BottomSheet isOpen={isOpen} onClose={onClose} title="Share post">
       <div className="p-4">
-        <PostShareRow
+        <ShareRow
           url={url}
           // Only a public post's words travel with its link.
           title={isPublic ? title : ''}
           summary={isPublic ? description : undefined}
-          isPublic={isPublic}
+          audience={isPublic ? 'public' : 'restricted'}
           crossPost={crossPost}
         />
       </div>

@@ -1,7 +1,8 @@
 /**
  * OrangeCat tokens → bip-kit's --bp-* theming contract, for the surfaces
- * bip-kit renders (/blog/[slug], /articles/[slug], the composer preview and
- * /faq — imported by those routes, not by globals.css).
+ * bip-kit renders (/blog/[slug], /articles/[slug], the composer preview, /faq
+ * and the share row in src/components/sharing/ShareRow.tsx — imported by
+ * those, not by globals.css).
  *
  * Every value is a reference into the design-token SSOT (src/app/globals.css,
  * Loki-aligned semantic tier). OC tokens are HSL channel triples, so
@@ -33,6 +34,8 @@
      the accent: the orange is 2.14:1 as text on the light page. */
   --bp-accent: hsl(var(--text-primary));
   --bp-accent-contrast: hsl(var(--text-inverted));
+  /* Ink on a --bp-fg fill: the share row's one primary action. */
+  --bp-on-fg: hsl(var(--text-inverted));
 
   /* Callouts follow the status tier: colors mean status, nothing else.
      Notes are informational → achromatic, per the migration direction. */
@@ -44,6 +47,18 @@
   --bp-warn-bg: hsl(var(--status-warning-subtle));
   --bp-danger: hsl(var(--status-negative));
   --bp-danger-bg: hsl(var(--status-negative-subtle));
+}
+
+/* The share row (bip-kit ShareRow) inside the app: actions take the
+   surface they sit on, hover paints surface-overlay (raised is invisible on
+   the light page), the control radius; the parent sets the spacing. */
+.oc-share {
+  --bp-bg: transparent;
+  --bp-surface: hsl(var(--surface-overlay));
+  --bp-radius-sm: var(--radius-control);
+}
+.oc-share .bp-share {
+  margin-block: 0;
 }
 
 /* Headings take the display stack, matching the rest of the public surface. */

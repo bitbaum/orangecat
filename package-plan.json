@@ -97,6 +97,16 @@
         }
       ],
       "notes": "The header's account menu is the package's: layout, keyboard handling, sign-out and switch-account failure states. OrangeCat supplies the person, the places, the identities (ADR-0014) and what a tap does. Accounts themselves stay on Supabase auth; ./auth is not adopted."
+    },
+    "share": {
+      "package": "@bitbaum/bip-kit",
+      "bindings": [
+        {
+          "file": "src/components/sharing/ShareRow.tsx",
+          "symbols": ["ShareRow"]
+        }
+      ],
+      "notes": "Every share surface (wall posts, articles, profiles, projects, entities, blog posts) is bip-kit's ShareRow: order, services, restricted-audience behaviour and layout are the package's. OrangeCat supplies the URL, the words, the cross-post (repost in place, sign-up, /share) and the token mapping in src/lib/longform/longform.css."
     }
   }
 }
