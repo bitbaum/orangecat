@@ -24,6 +24,13 @@ import { DateInput } from './fields/DateInputs';
 
 // ==================== COMPONENT ====================
 
+/**
+ * Radios and checkboxes: 20px, drawn in ink rather than the browser's blue
+ * (accent-color is the one thing a native control takes from the page).
+ * They were 13px natives with no accent.
+ */
+export const CHOICE_INPUT = 'mt-0.5 h-5 w-5 shrink-0 accent-fg-primary focus:ring-ring';
+
 export function FormField({
   config,
   value,
@@ -134,7 +141,10 @@ export function FormField({
         return (
           <div className="space-y-2">
             {options?.map(option => (
-              <label key={option.value} className="flex items-start gap-3 cursor-pointer">
+              <label
+                key={option.value}
+                className="flex min-h-11 cursor-pointer items-start gap-3 py-1"
+              >
                 <input
                   type="radio"
                   name={name}
@@ -143,12 +153,12 @@ export function FormField({
                   onChange={e => onChange(e.target.value)}
                   onFocus={onFocus}
                   disabled={disabled}
-                  className="mt-1"
+                  className={CHOICE_INPUT}
                 />
                 <div>
                   <span className="text-sm font-medium text-fg-primary">{option.label}</span>
                   {option.description && (
-                    <p className="text-xs text-fg-secondary">{option.description}</p>
+                    <p className="mb-0 text-xs text-fg-secondary">{option.description}</p>
                   )}
                 </div>
               </label>
@@ -166,7 +176,7 @@ export function FormField({
               onChange={e => onChange(e.target.checked)}
               onFocus={onFocus}
               disabled={disabled}
-              className="w-4 h-4 rounded border-strong text-fg-primary focus:ring-ring"
+              className={CHOICE_INPUT}
             />
             <span className="text-sm text-fg-primary">{placeholder || label}</span>
           </label>
