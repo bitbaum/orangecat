@@ -11,6 +11,9 @@ import {
 } from '@/domain/creative/brief';
 import { callPlatformJson, parseJsonLoose } from '@/services/cat/platform-llm';
 
+/** One retry: a free model's draft is sometimes unusable JSON. */
+const DRAFT_ATTEMPTS = 2;
+
 // Visitors may draft too (owner's call, 2026-11-13): the Studio is a public
 // page, and a sign-in wall in a new tab was where every first try ended. A
 // visitor's draft is held to a per-IP budget, like dictation and Ask-Cat.
@@ -73,7 +76,10 @@ export const POST = withOptionalAuth(async request => {
     );
   // One more try before giving up: a free model's draft is sometimes unusable
   // JSON, and the person should not have to press the button again for that.
-  const draft = (await draw()) ?? (await draw());
+  let draft = null;
+  for (let attempt = 0; attempt < DRAFT_ATTEMPTS && !draft; attempt++) {
+    draft = await draw();
+  }
   if (!draft) {
     return apiError(
       'The artist could not finish this draft. Your brief is still here; try again.',
