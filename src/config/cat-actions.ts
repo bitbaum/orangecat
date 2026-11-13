@@ -983,6 +983,72 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
     enabled: true,
   },
 
+  walk_site: {
+    id: 'walk_site',
+    name: 'Walk a Live Site',
+    description:
+      'Check up to three live pages in a phone-size browser: what is wrong on each. Read-only.',
+    category: 'communication',
+    icon: Bot,
+    riskLevel: 'low',
+    requiresConfirmation: true,
+    parameters: [
+      {
+        name: 'urls',
+        type: 'string',
+        required: true,
+        description: 'Full addresses, comma-separated',
+      },
+      {
+        name: 'must_show',
+        type: 'string',
+        required: false,
+        description: 'Phrases each page must show; ;-separated',
+      },
+    ],
+    examples: [
+      'Check orangecat.ch on a phone',
+      'Walk the pricing and sign-in pages and tell me what is broken',
+    ],
+    enabled: true,
+  },
+
+  use_browser: {
+    id: 'use_browser',
+    name: 'Use Your Own Browser',
+    description:
+      'One step in your own browser; the result shows the page with its elements numbered. Never types passwords or cards.',
+    category: 'communication',
+    icon: Bot,
+    riskLevel: 'medium',
+    requiresConfirmation: true,
+    parameters: [
+      {
+        name: 'do',
+        type: 'string',
+        required: true,
+        description: 'open|click|type|press|scroll|back|look|close',
+      },
+      { name: 'url', type: 'string', required: false, description: 'for open' },
+      { name: 'n', type: 'number', required: false, description: 'element number, for click/type' },
+      { name: 'label', type: 'string', required: false, description: 'click by its words' },
+      { name: 'text', type: 'string', required: false, description: 'for type' },
+      { name: 'submit', type: 'boolean', required: false, description: 'Enter after typing' },
+      {
+        name: 'key',
+        type: 'string',
+        required: false,
+        description: 'for press: Enter, Tab, Escape…',
+      },
+      { name: 'by', type: 'string', required: false, description: 'for scroll: down|up' },
+    ],
+    examples: [
+      'Open example.com and tell me what the pricing page says',
+      'Search that site for opening hours',
+    ],
+    enabled: true,
+  },
+
   create_project_for_person: {
     id: 'create_project_for_person',
     name: 'Set Up a Project for Someone Else',
