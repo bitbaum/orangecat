@@ -5,27 +5,12 @@ import {
   CREATE_CATEGORY_LABELS,
   CREATE_OPTIONS,
   CREATE_PAGE,
-  type CreateOption,
+  groupCreateOptions,
 } from '@/config/create-options';
 import { ROUTES } from '@/config/routes';
 
-function groupOptions(
-  options: CreateOption[]
-): { category: CreateOption['category']; items: CreateOption[] }[] {
-  const groups: { category: CreateOption['category']; items: CreateOption[] }[] = [];
-  for (const option of options) {
-    const last = groups[groups.length - 1];
-    if (last && last.category === option.category) {
-      last.items.push(option);
-    } else {
-      groups.push({ category: option.category, items: [option] });
-    }
-  }
-  return groups;
-}
-
 export function CreateChooser() {
-  const groups = groupOptions(CREATE_OPTIONS);
+  const groups = groupCreateOptions(CREATE_OPTIONS);
 
   return (
     <div className="mx-auto max-w-xl px-4 py-8 sm:py-10">

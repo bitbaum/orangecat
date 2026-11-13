@@ -6,7 +6,7 @@ import { MobileCreateSheet } from '@/components/create/MobileCreateSheet';
 vi.mock('@/components/create/VoiceCreate', () => ({ VoiceCreate: () => null }));
 afterEach(cleanup);
 
-function Harness() {
+function Harness({ suggestedType }: { suggestedType?: 'group' } = {}) {
   const [open, setOpen] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);
   return (
@@ -14,7 +14,12 @@ function Harness() {
       <button ref={trigger} onClick={() => setOpen(true)}>
         Open Create
       </button>
-      <MobileCreateSheet isOpen={open} onClose={() => setOpen(false)} returnFocusRef={trigger} />
+      <MobileCreateSheet
+        isOpen={open}
+        onClose={() => setOpen(false)}
+        returnFocusRef={trigger}
+        suggestedType={suggestedType}
+      />
     </>
   );
 }
@@ -25,11 +30,11 @@ it('offers writing through a named dialog and restores focus after Escape', asyn
   trigger.focus();
   fireEvent.click(trigger);
   expect(screen.getByRole('dialog', { name: 'Create' })).toBeVisible();
-  expect(screen.getByRole('link', { name: 'Article', exact: true })).toHaveAttribute(
+  expect(screen.getByRole('link', { name: /^Write an article/ })).toHaveAttribute(
     'href',
     '/articles/new'
   );
-  expect(screen.getByRole('link', { name: 'Post', exact: true })).toHaveAttribute(
+  expect(screen.getByRole('link', { name: /^Share an update/ })).toHaveAttribute(
     'href',
     '/timeline?compose=true'
   );
@@ -39,4 +44,12 @@ it('offers writing through a named dialog and restores focus after Escape', asyn
   fireEvent.click(trigger);
   fireEvent.click(screen.getByRole('button', { name: 'Close', exact: true }));
   await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+});
+
+it('puts the kind the page is about first, and ends with the map', () => {
+  render(<Harness suggestedType="group" />);
+  fireEvent.click(screen.getByRole('button', { name: 'Open Create' }));
+  const links = screen.getAllByRole('link');
+  expect(links[0]).toHaveAttribute('href', '/dashboard/groups/create');
+  expect(links[links.length - 1]).toHaveAttribute('href', '/what-you-can-do');
 });

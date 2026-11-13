@@ -21,7 +21,7 @@ export function CreateNavigation({
     <nav aria-label="Create destinations" className="mt-2 grid gap-2 sm:grid-cols-2">
       {destinations.map(option => (
         <Button key={option.href} href={option.href} variant="outline" className="min-h-11">
-          Open {option.name.toLowerCase()} {option.category === 'content' ? 'editor' : 'form'}
+          Open {option.kind.toLowerCase()} {option.category === 'content' ? 'editor' : 'form'}
         </Button>
       ))}
     </nav>
