@@ -14,6 +14,7 @@ import { ACTION_HANDLERS } from './handlers';
 import { generateActionDescription } from './action-descriptions';
 import { createPendingAction } from './pending-actions';
 import { extractBtcAmount, getActionHistory, logDeniedAction, updateActionLog } from './action-log';
+import { recordProvenance } from '@/services/provenance';
 
 // Re-export parseReminderDate for back-compat (legacy tests import from here).
 export { parseReminderDate } from './handlers/date-utils';
@@ -428,6 +429,9 @@ export class CatActionExecutor {
         if (logEntry) {
           await updateActionLog(this.supabase, logEntry.id, 'completed', result.data);
         }
+        // A listing made here carries its maker: the Cat, or the bot whose
+        // proposal this was (its conversation says which).
+        await recordProvenance({ actionId: action.id, userId, conversationId, data: result.data });
 
         return {
           success: true,

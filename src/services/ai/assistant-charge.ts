@@ -3,7 +3,7 @@
  *
  * Wires user-created `ai_assistant` chat to the Cat Credits ledger:
  * a paid assistant debits the chatter's prepaid Cat Credits and credits the
- * creator's 95% share as spendable Cat Credits (platform keeps 5%).
+ * creator's share (CREATOR_SHARE, all of it) as spendable Cat Credits.
  *
  * v1 scope: `free` (no charge) and `per_message` (full price, pre-authorized).
  * `per_token` / `subscription` are not metered yet → charge 0. The ledger is the
@@ -124,7 +124,7 @@ export async function settleAssistantCharge(
     return;
   }
 
-  // 2. Credit the creator's 95% share as spendable Cat Credits (best-effort).
+  // 2. Credit the creator's share as spendable Cat Credits (best-effort).
   const creatorShare = roundBtc(chargeBtc * CREATOR_SHARE);
   if (creatorUserId && creatorUserId !== payerUserId && creatorShare > 0) {
     const credited = await appendCreditEntry(admin, creatorUserId, {

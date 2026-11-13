@@ -61,6 +61,8 @@ interface PublicEntityPaymentSectionProps {
   contributionBounds?: ContributionBoundsBtc | null;
   /** Redirect path after sign-in */
   signInRedirect: string;
+  /** The support card's title when the entity itself is supported ("Support Mira"). */
+  supportTitle?: string;
 }
 
 export function PublicEntityPaymentSection({
@@ -77,6 +79,7 @@ export function PublicEntityPaymentSection({
   priceAmountBtc,
   contributionBounds = null,
   signInRedirect,
+  supportTitle,
 }: PublicEntityPaymentSectionProps) {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const meta = getEntityMetadata(entityType);
@@ -132,6 +135,7 @@ export function PublicEntityPaymentSection({
           entityTitle={entityTitle}
           recipientName={recipientName}
           bounds={contributionBounds}
+          title={supportTitle}
         />
       ) : (
         noWalletNotice
@@ -248,6 +252,7 @@ export function PublicEntityPaymentSection({
         entityId={entityId}
         entityTitle={entityTitle}
         recipientName={recipientName}
+        title={supportTitle}
       />
     ) : null;
   }

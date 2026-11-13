@@ -129,3 +129,15 @@ export function parseFaceUrl(
   const hue = params.get('hue');
   return shape && hue && findShape(shape) && findHue(hue) ? { shape, hue } : null;
 }
+
+/**
+ * The picture a share card may carry: an uploaded one, never one of our faces
+ * (served as SVG, which link previews do not render). Undefined lets the page
+ * fall back to its generated entity card.
+ */
+export function shareImageFor(url: string | null | undefined): string | undefined {
+  if (!url || parseFaceUrl(url) || url.includes(`${AVATAR_PATH}?`) || /\.svg(\?|$)/i.test(url)) {
+    return undefined;
+  }
+  return url;
+}

@@ -4,6 +4,7 @@ import PublicEntityDetailPage, {
   fetchEntityForMetadata,
 } from '@/components/public/PublicEntityDetailPage';
 import { aiAssistantDetailConfig } from '@/components/public/detail-configs/ai-assistant';
+import { shareImageFor } from '@/config/companion-avatars';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -20,7 +21,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     id,
     title: entity.title,
     description: entity.description,
-    imageUrl: entity.avatar_url,
+    // A picked face is an SVG, which X and WhatsApp do not draw: leave the
+    // image empty so the entity share card stands in for it.
+    imageUrl: shareImageFor(entity.avatar_url),
   });
 }
 

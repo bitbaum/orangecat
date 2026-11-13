@@ -33,6 +33,7 @@ import { ROUTES } from '@/config/routes';
 import { SITE_URL } from '@/config/brand';
 import { Breadcrumb, PUBLIC_BREADCRUMB_ROOT } from '@/components/ui/Breadcrumb';
 import { PublicEntityOwnerBar } from './PublicEntityOwnerBar';
+import MadeWithChip from './MadeWithChip';
 import {
   THEME_CLASSES,
   PAGE_SURFACE_CLASSES,
@@ -176,6 +177,8 @@ export default async function PublicEntityDetailPage({
       () => null
     );
   }
+  const showPayment =
+    hasPaymentSurface && (isOwner || !!sellerReceive || !config.paymentNeedsWallet);
 
   const jsonLd = generateEntityJsonLd({
     type: config.entityType,
@@ -242,6 +245,7 @@ export default async function PublicEntityDetailPage({
                       </Badge>
                     )}
                     {config.renderHeaderExtra?.(entity)}
+                    <MadeWithChip entityType={config.entityType} entityId={id} />
                   </div>
                 </div>
               </div>
@@ -317,7 +321,7 @@ export default async function PublicEntityDetailPage({
 
               {config.renderSidebarExtra?.(entity, isOwner, !!user, contactHref)}
 
-              {hasPaymentSurface && (
+              {showPayment && (
                 <div id="pay">
                   <PublicEntityPaymentSection
                     entityType={config.entityType}
@@ -333,6 +337,7 @@ export default async function PublicEntityDetailPage({
                     priceAmountBtc={priceAmountBtc}
                     contributionBounds={contributionBounds}
                     signInRedirect={viewRoute}
+                    supportTitle={config.supportTitle?.(entity)}
                   />
                 </div>
               )}
