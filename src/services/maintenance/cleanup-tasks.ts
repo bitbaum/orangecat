@@ -10,6 +10,7 @@ import { pruneDeliveredWebhookDeliveries } from '@/services/webhooks/deliverySer
 import { pruneAbandonedDcrClients } from '@/services/auth/oauthRegistration';
 import { deleteStaleEphemeralConversations } from '@/services/cat/conversation-history';
 import { TEMPORARY_CHAT_MAX_AGE_MS } from '@/lib/chat/temporary-chat';
+import { sweepAttachments } from '@/features/messaging/server/attachments';
 
 export interface CleanupResult {
   task: string;
@@ -80,9 +81,28 @@ export async function pruneExpiredIdempotencyResults(): Promise<CleanupResult> {
   return { task: 'idempotency_results', deleted: count ?? 0 };
 }
 
+/**
+ * Files on direct messages that nothing points at any more: uploads that were
+ * never sent, and the files of deleted messages. Stored bytes are what is
+ * billed, and an object nobody can reach is paid for until this takes it.
+ */
+export async function pruneMessageAttachments(): Promise<CleanupResult> {
+  try {
+    const deleted = await sweepAttachments(createAdminClient());
+    return { task: 'message_attachments_unreferenced', deleted };
+  } catch (error) {
+    return {
+      task: 'message_attachments_unreferenced',
+      deleted: 0,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
 export const CLEANUP_TASKS: Array<() => Promise<CleanupResult>> = [
   pruneExpiredIdempotencyResults,
   pruneOldDeliveredWebhooks,
   pruneAbandonedSelfRegisteredClients,
   pruneStaleTemporaryChats,
+  pruneMessageAttachments,
 ];

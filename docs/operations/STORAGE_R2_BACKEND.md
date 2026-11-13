@@ -9,7 +9,8 @@ write end-to-end. This doc is the deployed record + maintenance/rollback/rotatio
 ## What this is
 
 OC stores media through the Supabase Storage API (`supabase.storage.from(...)`): avatars,
-banners, project-media, proofs, documents, project-files. We repointed the storage **backend**
+banners, project-media, proofs, documents, project-files, and — since 2026-11-12 — the private
+`message-attachments` bucket (files on direct messages; see "Message attachments" below). We repointed the storage **backend**
 from the box's local disk to **Cloudflare R2**. No app code changed; no DB rewrite. Public
 URLs (`…/storage/v1/object/public/<bucket>/<path>`) are unchanged — they're served _through_
 storage-api, which now reads from R2. Existing DB URLs stayed valid.
@@ -105,6 +106,28 @@ OC, RevampIT (and any future R2 consumer) share ONE account-wide R2 token (key i
 - RevampIT: `/opt/revampit/app/.env` → `S3_SECRET_ACCESS_KEY`, then `docker compose -f docker-compose.prod.yml up -d app`.
 - OrangeCat: `/opt/supabase/docker/.env` → `AWS_SECRET_ACCESS_KEY`, then
   `docker compose -p supabase -f docker-compose.yml up -d --no-deps storage`.
+
+## Message attachments (private bucket)
+
+Files sent with direct messages live in the private bucket `message-attachments`
+(migration `supabase/migrations/20261112235900_messages_can_carry_files.sql`). Nothing about
+the R2 setup changes for it; what differs from the public buckets:
+
+- **No browser role can read or write it.** A participant asks the app to upload
+  (`POST /api/messages/attachments`), gets a signed URL for exactly one object, and sends
+  the bytes straight to storage-api; a reader is redirected to a signed link that lasts an
+  hour (`GET /api/messages/attachments/<id>`). The bytes never pass through the Next server.
+- **One policy, three enforcers.** `src/config/message-attachments.ts` (types, a ceiling per
+  kind, 1 GB stored per person) is checked in the browser, in the routes, and by the bucket's
+  own `file_size_limit` / `allowed_mime_types`. A unit test keeps the bucket and the policy
+  equal.
+- **Photos are shrunk in the browser** (2048px, 1.5 MB) before upload; videos are capped at
+  50 MB and never transcoded on the box.
+- **Nothing is left behind.** The daily cleanup (`/api/cron/cleanup`, task
+  `message_attachments_unreferenced`) removes uploads that were never sent after 24 h and the
+  files of deleted messages, objects first and rows after.
+- **storage-api's global `FILE_SIZE_LIMIT`** on the box must stay at or above 52428800
+  (50 MB), or the bucket's own limit is never reached.
 
 ## Follow-ups (optional)
 

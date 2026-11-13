@@ -6,9 +6,5 @@ import { CreateChooser } from '@/components/create/CreateChooser';
  * canonical dashboard create path.
  */
 export default function CreatePage() {
-  return (
-    <main>
-      <CreateChooser />
-    </main>
-  );
+  return <CreateChooser />;
 }

@@ -20,9 +20,12 @@ import PublicEntityHero from '@/components/public/PublicEntityHero';
 import { PublicEntityPaymentSection } from '@/components/payment';
 import { resolveSellerReceiveInfo, type SellerReceiveInfo } from '@/domain/payments';
 import { getSharedWalletUsage, type SharedWalletUsage } from '@/domain/wallets/walletUsage';
+import { resolveContributionBoundsBtc } from '@/domain/payments/contributionTerms';
 import { convertToBtcOrNull } from '@/services/currency/rates.server';
 import { type CurrencyCode } from '@/config/currencies';
+import type { ContributionBoundsBtc } from '@/config/contribution-terms';
 import { fetchEntityOwner } from '@/lib/entities/fetchEntityOwner';
+import { inquiryHref } from '@/features/messaging/lib/draft';
 import { fetchProfileListingCounts } from '@/services/profile/listingCounts';
 import { type WalletVisibility } from '@/config/wallet-visibility';
 import { DATABASE_TABLES } from '@/config/database-tables';
@@ -147,6 +150,7 @@ export default async function PublicEntityDetailPage({
   let sellerReceive: SellerReceiveInfo | null = null;
   let sharedWalletUsage: SharedWalletUsage | null = null;
   let priceAmountBtc: number | undefined;
+  let contributionBounds: ContributionBoundsBtc | null = null;
   const hasPaymentSurface =
     (config.showPaymentSection !== false || meta.canReceiveSupport) &&
     config.paymentSectionFor?.(entity) !== false;
@@ -166,6 +170,11 @@ export default async function PublicEntityDetailPage({
           ? priceAmount
           : ((await convertToBtcOrNull(priceAmount, price.currency as CurrencyCode)) ?? undefined);
     }
+    // An investment's stated minimum and maximum bound what its card takes.
+    // No rate → no bounds here; the server still refuses rather than guess.
+    contributionBounds = await resolveContributionBoundsBtc(config.entityType, entity).catch(
+      () => null
+    );
   }
 
   const jsonLd = generateEntityJsonLd({
@@ -177,6 +186,12 @@ export default async function PublicEntityDetailPage({
   });
 
   const viewRoute = config.getViewRoute ? config.getViewRoute(id) : `${meta.publicBasePath}/${id}`;
+  // A visitor's message to the owner about this listing — what a loan's
+  // "Contact lister" opens. None for the owner, or an owner with no account.
+  const contactHref =
+    !isOwner && owner?.user_id
+      ? inquiryHref(owner.user_id, { title: entity.title, path: viewRoute })
+      : null;
 
   return (
     <>
@@ -299,7 +314,7 @@ export default async function PublicEntityDetailPage({
                 />
               )}
 
-              {config.renderSidebarExtra?.(entity)}
+              {config.renderSidebarExtra?.(entity, isOwner, !!user, contactHref)}
 
               {hasPaymentSurface && (
                 <div id="pay">
@@ -315,6 +330,7 @@ export default async function PublicEntityDetailPage({
                     sellerReceive={sellerReceive}
                     sharedWalletUsage={sharedWalletUsage}
                     priceAmountBtc={priceAmountBtc}
+                    contributionBounds={contributionBounds}
                     signInRedirect={viewRoute}
                   />
                 </div>
@@ -326,7 +342,15 @@ export default async function PublicEntityDetailPage({
         {/* Mobile sticky bottom CTA — keeps the primary action one tap
             away from any scroll position. Hidden on >=md where the
             sidebar payment section is naturally visible. */}
-        {!isOwner && <MobileStickyCTA config={config} entity={entity} payable={!!sellerReceive} />}
+        {!isOwner && (
+          <MobileStickyCTA
+            config={config}
+            entity={entity}
+            payable={!!sellerReceive}
+            isSignedIn={!!user}
+            contactHref={contactHref}
+          />
+        )}
       </div>
     </>
   );

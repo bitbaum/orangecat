@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth';
 import { supabase } from '@/lib/supabase/browser';
 import { toast } from 'sonner';
+import { ACCOUNT_DELETION_COPY } from '@/config/account-deletion';
 import { API_ROUTES } from '@/config/api-routes';
 import { ROUTES } from '@/config/routes';
 import { apiErrorMessage } from '@/lib/api/errorMessage';
@@ -53,11 +54,18 @@ export function useSettingsForm(user: User | null) {
     }
     setIsSubmittingEmail(true);
     try {
-      const { error } = await supabase.auth.updateUser({ email: formData.email });
+      const { data, error } = await supabase.auth.updateUser({ email: formData.email });
       if (error) {
         throw error;
       }
-      toast.success('Confirmation email sent! Please check your inbox.');
+      // A pending address waits on the emailed link; where the auth server
+      // confirms at once (and a "Start instantly" account converts on the
+      // spot) no email is sent, so none is promised.
+      toast.success(
+        data.user?.new_email
+          ? 'Confirmation email sent! Please check your inbox.'
+          : 'Email saved. It is now a way to sign in.'
+      );
     } catch (error: unknown) {
       toast.error(apiErrorMessage(error, 'Failed to update email.'));
     } finally {
@@ -101,14 +109,16 @@ export function useSettingsForm(user: User | null) {
     try {
       const response = await fetch(API_ROUTES.DELETE_USER, { method: 'POST' });
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to delete account.');
+        // The route says exactly why (an order still shipping, or nothing removed).
+        const body: unknown = await response.json().catch(() => null);
+        toast.error(apiErrorMessage(body, ACCOUNT_DELETION_COPY.notDeleted));
+        return;
       }
       toast.success('Account deleted. You will be signed out.');
       await signOut();
       router.push(ROUTES.HOME);
     } catch (error: unknown) {
-      toast.error(apiErrorMessage(error, 'Failed to delete account.'));
+      toast.error(apiErrorMessage(error, ACCOUNT_DELETION_COPY.notDeleted));
     } finally {
       setIsDeleting(false);
     }

@@ -1,3 +1,4 @@
+import { authUrlErrorMessage } from './url-error';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
@@ -59,7 +60,7 @@ export function useAuthForm() {
   useEffect(() => {
     const errParam = searchParams?.get('error');
     if (errParam) {
-      setUrlError(errParam);
+      setUrlError(authUrlErrorMessage(errParam));
       if (typeof window !== 'undefined') {
         const url = new URL(window.location.href);
         url.searchParams.delete('error');
@@ -207,7 +208,7 @@ export function useAuthForm() {
 
   const handleAnonymousSignIn = async () => {
     try {
-      const result = await signInAnonymously();
+      const result = await signInAnonymously(captchaToken);
       if (result.error) {
         throw new Error(apiErrorMessage(result.error, 'Anonymous sign-in failed'));
       }

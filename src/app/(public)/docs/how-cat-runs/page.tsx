@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Gift, Coins, KeyRound, Laptop, ArrowRight } from 'lucide-react';
-import { PageHeading } from '@/components/layout/PageHeading';
+import { PUBLIC_PAGE_WIDTH, PublicPageHeader } from '@/components/layout/PublicPageHeader';
 import { ROUTES } from '@/config/routes';
+import { cn } from '@/lib/utils';
 import {
   CAT_FREE_DAILY_LIMIT,
   CAT_CREDITS_MARKUP_LABEL,
@@ -95,15 +96,15 @@ const ROUTES_TO_POWER: Route[] = [
 
 export default function HowCatRunsPage() {
   return (
-    <div className="min-h-screen bg-surface-page py-12">
-      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-        <PageHeading>How Cat runs</PageHeading>
-        <p className="mt-3 text-lg text-fg-secondary">
-          Cat is an AI agent, and something has to pay for the thinking. There are four ways, you
-          can mix them, and none of them is hidden from you.
-        </p>
+    <div className="min-h-screen bg-surface-page">
+      <div className={cn(PUBLIC_PAGE_WIDTH.reading, 'pb-16')}>
+        <PublicPageHeader
+          align="start"
+          title="How Cat runs"
+          lede="Cat is an AI agent, and something has to pay for the thinking. There are four ways, you can mix them, and none of them is hidden from you."
+        />
 
-        <p className="mt-6 text-fg-secondary">
+        <p className="text-fg-secondary">
           Cat works the moment you sign up, free, with nothing to set up. Everything below is
           optional power. OrangeCat earns from activity on the platform — not from marking up your
           AI bill — which is why two of these four routes send us no money at all and we still wired

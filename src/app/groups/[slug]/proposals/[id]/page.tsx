@@ -31,8 +31,9 @@ export default async function ProposalPage({ params }: PageProps) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Get group
-  const groupResult = await getGroupBySlug(slug);
+  // Get group — with the server client; the services' browser-client fallback
+  // cannot run on the server and would make every group read as missing.
+  const groupResult = await getGroupBySlug(slug, supabase);
   if (!groupResult.success || !groupResult.group) {
     notFound();
   }
@@ -44,9 +45,14 @@ export default async function ProposalPage({ params }: PageProps) {
   let canActivate = false;
 
   if (user) {
-    canVote = await checkGroupPermission(group.id, user.id, 'canVote');
+    canVote = await checkGroupPermission(group.id, user.id, 'canVote', supabase);
     // Can activate if proposer or admin
-    const canCreateProposal = await checkGroupPermission(group.id, user.id, 'canCreateProposals');
+    const canCreateProposal = await checkGroupPermission(
+      group.id,
+      user.id,
+      'canCreateProposals',
+      supabase
+    );
     canActivate = canCreateProposal; // For now, same permission
   }
 

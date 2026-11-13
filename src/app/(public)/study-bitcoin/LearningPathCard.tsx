@@ -1,10 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { BookOpen, ChevronRight, Clock } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/Card';
 import type { LearningPath } from './config';
 import { BADGE_COLORS } from '@/config/badge-colors';
+import { cn } from '@/lib/utils';
 
 interface LearningPathCardProps {
   path: LearningPath;
@@ -18,9 +19,14 @@ const levelColors: Record<string, string> = {
 
 export function LearningPathCard({ path }: LearningPathCardProps) {
   const Icon = path.icon;
+  // A coming-soon path has nowhere to go, so it gets no link and no hover
+  // that promises one; its badge says what it is.
+  const available = path.status === 'available';
 
   return (
-    <Card className="group oc-card-link duration-200 relative overflow-hidden">
+    <Card
+      className={cn('group duration-200 relative overflow-hidden', available && 'oc-card-link')}
+    >
       <div className="absolute top-0 left-0 right-0 h-px bg-border-strong" />
 
       <CardContent className="p-6">
@@ -34,7 +40,7 @@ export function LearningPathCard({ path }: LearningPathCardProps) {
             >
               {path.level}
             </span>
-            {path.status === 'coming-soon' && (
+            {!available && (
               <span className="px-2 py-1 text-xs font-medium rounded-full bg-surface-raised text-fg-secondary">
                 Coming Soon
               </span>
@@ -42,42 +48,27 @@ export function LearningPathCard({ path }: LearningPathCardProps) {
           </div>
         </div>
 
-        <h3 className="text-lg font-semibold text-fg-primary mb-2 group-hover:underline underline-offset-4">
+        <h3
+          className={cn(
+            'text-lg font-semibold text-fg-primary mb-2',
+            available && 'group-hover:underline underline-offset-4'
+          )}
+        >
           {path.title}
         </h3>
-        <p className="text-fg-secondary mb-4 leading-relaxed">{path.description}</p>
+        <p className={cn('text-fg-secondary leading-relaxed', available ? 'mb-4' : 'mb-0')}>
+          {path.description}
+        </p>
 
-        {/* Duration/lesson counts only exist for courses that actually exist —
-            coming-soon paths carry neither, so we render nothing for them. */}
-        {(path.duration || path.lessons) && (
-          <div className="flex items-center gap-4 text-sm text-fg-secondary mb-6">
-            {path.duration && (
-              <div className="flex items-center gap-1">
-                <Clock className="w-4 h-4" />
-                {path.duration}
-              </div>
-            )}
-            {path.lessons && (
-              <div className="flex items-center gap-1">
-                <BookOpen className="w-4 h-4" />
-                {path.lessons} lessons
-              </div>
-            )}
-          </div>
+        {path.status === 'available' && (
+          <Link
+            href={path.href}
+            className="inline-flex min-h-11 items-center justify-center w-full px-4 py-2 rounded-lg font-medium transition-colors bg-bitcoinOrange hover:bg-bitcoinOrange/90 text-on-accent"
+          >
+            Start Learning
+            <ChevronRight className="w-4 h-4 ml-2" />
+          </Link>
         )}
-
-        <Link
-          href={path.status === 'available' ? path.href : '#'}
-          className={`inline-flex items-center justify-center w-full px-4 py-2 rounded-lg font-medium transition-colors ${
-            path.status === 'available'
-              ? 'bg-bitcoinOrange hover:bg-bitcoinOrange/90 text-on-accent'
-              : 'bg-surface-raised text-fg-secondary cursor-not-allowed'
-          }`}
-          {...(path.status === 'coming-soon' ? { 'aria-disabled': true } : {})}
-        >
-          {path.status === 'available' ? 'Start Learning' : 'Learn More'}
-          {path.status === 'available' && <ChevronRight className="w-4 h-4 ml-2" />}
-        </Link>
       </CardContent>
     </Card>
   );

@@ -81,11 +81,14 @@ export function CategoryRow({
 }: CategoryRowProps) {
   return (
     <div className="bg-surface-base rounded-lg border border-default overflow-hidden">
-      <div className="p-4 flex items-center justify-between">
-        <div className="flex items-center gap-3 flex-1">
+      <div className="flex items-center justify-between gap-3 p-4">
+        <div className="flex min-w-0 flex-1 items-center gap-1">
           <button
+            type="button"
             onClick={() => onToggleExpanded(cat.category)}
-            className="p-1 hover:bg-surface-raised rounded"
+            aria-expanded={isExpanded}
+            aria-label={`${isExpanded ? 'Hide' : 'Show'} ${cat.name} actions`}
+            className="-ml-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-md hover:bg-surface-raised"
           >
             {isExpanded ? (
               <ChevronDown className="h-5 w-5 text-fg-tertiary" />
@@ -107,6 +110,7 @@ export function CategoryRow({
           checked={cat.enabled}
           onCheckedChange={checked => onToggleCategory(cat.category, checked)}
           disabled={saving === cat.category}
+          aria-label={`Allow ${cat.name}`}
         />
       </div>
 

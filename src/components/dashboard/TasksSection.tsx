@@ -26,7 +26,7 @@ interface TasksSectionProps {
   showQuestions?: boolean;
   /**
    * Render nothing unless there is setup left to do: no spinner card while
-   * loading, no "all caught up" card, no 100% bar. The dashboard uses this —
+   * loading, no "all caught up" card, no "Setup complete" card. The dashboard uses this —
    * a finished checklist is not a reason to spend a screen.
    */
   quietWhenDone?: boolean;
@@ -41,7 +41,7 @@ export default function TasksSection({
   const { user, profile } = useAuth();
   // `userToggled` tracks whether the viewer has clicked the expand/collapse
   // button. Default collapsed state derives from setup progress (collapse
-  // when 0 critical/high tasks remain) so the 100% chrome doesn't dominate
+  // when 0 critical/high tasks remain) so a finished checklist doesn't dominate
   // the dashboard slot. Once the viewer clicks, we honor their choice.
   const [userToggled, setUserToggled] = useState(false);
   const [userExpanded, setUserExpanded] = useState(true);
@@ -75,7 +75,6 @@ export default function TasksSection({
     isLoading,
     error,
     profileCompletion,
-    taskCompletion,
     tasks,
     questions,
     celebration,
@@ -181,16 +180,17 @@ export default function TasksSection({
     );
   }
 
-  // "Tasks remaining" must measure the same scope as the "% Setup" number, which
-  // only counts critical + high priority tasks. Counting all tasks here caused
-  // "100% Setup" to appear next to "3 tasks remaining" when the only remaining
-  // items were optional/suggested polish.
+  // The card's one progress figure is the count of critical + high tasks still
+  // to do. There is no "% Setup": a task that is not shown may be done or only
+  // gated off (no wallet yet, no project yet), so a ratio counted those as done
+  // and told a brand-new account it was "56%" set up while Edit Profile said 9%.
+  // Medium/low tasks are suggestions and stay out of the count.
   const setupTasks = tasks.filter(t => t.priority === 'critical' || t.priority === 'high');
   const setupTasksRemaining = setupTasks.length;
 
   // When setup is fully done, the dropdown should match the header's
   // "Setup complete" claim. Hide medium/low polish tasks instead of
-  // promoting them next to a 100% bar — they get their own surface
+  // promoting them under it — they get their own surface
   // elsewhere (smart questions panel + entity-create CTAs).
   if (quietWhenDone && setupTasksRemaining === 0) {
     return null;
@@ -219,13 +219,10 @@ export default function TasksSection({
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <div className="text-right">
-                <div className="text-sm font-medium text-fg-primary">{taskCompletion}% Setup</div>
-                <div className="text-xs text-fg-secondary">
-                  {setupTasksRemaining === 0
-                    ? 'Setup complete'
-                    : `${setupTasksRemaining} task${setupTasksRemaining !== 1 ? 's' : ''} remaining`}
-                </div>
+              <div className="text-right text-sm font-medium text-fg-primary">
+                {setupTasksRemaining === 0
+                  ? 'Setup complete'
+                  : `${setupTasksRemaining} task${setupTasksRemaining !== 1 ? 's' : ''} remaining`}
               </div>
               <button
                 onClick={toggleExpanded}
@@ -240,13 +237,6 @@ export default function TasksSection({
                 )}
               </button>
             </div>
-          </div>
-
-          <div className="mt-3 h-2 w-full overflow-hidden rounded-sm bg-surface-raised">
-            <div
-              className="h-2 rounded-sm bg-fg-primary transition-all duration-500"
-              style={{ width: `${taskCompletion}%` }}
-            />
           </div>
         </CardHeader>
 

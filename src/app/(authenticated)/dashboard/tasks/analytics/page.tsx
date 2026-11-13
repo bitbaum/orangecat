@@ -124,7 +124,7 @@ export default function TaskAnalyticsPage() {
                     </div>
                     <div className="h-2 bg-surface-raised rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-surface-raised rounded-full transition-all duration-500"
+                        className="h-full bg-fg-primary rounded-full transition-all duration-500"
                         style={{
                           width: `${(contribution.totalCompletions / maxCompletions) * 100}%`,
                         }}

@@ -8,6 +8,7 @@ import Button from '@/components/ui/Button';
 import Loading from '@/components/Loading';
 import { MFAVerify } from '@/components/auth/MFAVerify';
 import { AuthHeroPanel } from './AuthHeroPanel';
+import { AuthDivider } from './AuthDivider';
 import { AuthFormBody } from './AuthFormBody';
 import { AuthSocialLogin } from './AuthSocialLogin';
 import { useAuthForm } from './useAuthForm';
@@ -116,7 +117,7 @@ export default function AuthPageClient({
               here — never touch-target sizes — clears it without a layout
               rewrite. */}
           <div className="text-center mb-8 max-[359px]:mb-4">
-            <h2 className="text-2xl font-semibold mb-2 text-fg-primary">
+            <h1 className="text-2xl font-semibold mb-2 text-fg-primary">
               {mode === 'forgot'
                 ? 'Reset password'
                 : clientName
@@ -126,7 +127,7 @@ export default function AuthPageClient({
                   : mode === 'login'
                     ? 'Welcome back'
                     : 'Get started'}
-            </h2>
+            </h1>
             <p className="text-fg-secondary">
               {mode === 'forgot'
                 ? 'Enter your email to receive reset instructions'
@@ -150,7 +151,7 @@ export default function AuthPageClient({
                       size="sm"
                       onClick={handleRetry}
                       disabled={loading}
-                      className="text-status-negative/80 border-status-negative-subtle hover:bg-status-negative/10"
+                      className="text-status-negative border-status-negative-subtle hover:bg-status-negative/10"
                     >
                       <RefreshCw className="w-4 h-4 mr-2" />
                       Try Again
@@ -205,16 +206,10 @@ export default function AuthPageClient({
               <p className="mt-2 text-center text-xs text-fg-tertiary">
                 Explore pseudonymously. Add an email anytime to secure your account.
               </p>
-              <div className="relative mt-5">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-default" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase tracking-wider">
-                  <span className="bg-surface-raised/40 dark:bg-surface-page px-3 text-fg-tertiary">
-                    or {mode === 'login' ? 'sign in' : 'sign up'} with email
-                  </span>
-                </div>
-              </div>
+              <AuthDivider
+                label={`or ${mode === 'login' ? 'sign in' : 'sign up'} with email`}
+                className="mt-5"
+              />
             </div>
           )}
 

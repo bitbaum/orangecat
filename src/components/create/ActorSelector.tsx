@@ -104,7 +104,7 @@ export function ActorSelector({
             type="button"
             disabled={disabled}
             className={cn(
-              'flex items-center gap-1.5 rounded-md border border-subtle bg-surface-page px-2 py-1',
+              'flex items-center gap-1.5 rounded-md border border-subtle bg-surface-page px-2 py-1 pointer-coarse:min-h-11',
               'hover:bg-surface-raised/60 disabled:cursor-not-allowed disabled:opacity-60'
             )}
           >
@@ -182,7 +182,7 @@ export function ActorSelector({
             onChange={event => onChange({ kind: 'someone-else', name: event.target.value })}
             placeholder="Their name"
             className={cn(
-              'rounded-md border border-subtle bg-surface-page px-2 py-1 text-sm text-fg-primary',
+              'rounded-md border border-subtle bg-surface-page px-2 py-1 text-sm text-fg-primary pointer-coarse:min-h-11',
               'placeholder:text-fg-tertiary focus:outline-none focus:ring-2 focus:ring-accent-warm/40'
             )}
           />

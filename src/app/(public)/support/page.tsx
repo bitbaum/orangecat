@@ -1,11 +1,13 @@
 import Link from 'next/link';
-import { ArrowRight, Bitcoin, KeyRound, Sparkles, Check, ExternalLink } from 'lucide-react';
+import { ArrowRight, Bitcoin, KeyRound, Check, ExternalLink } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { ROUTES } from '@/config/routes';
 import { CAT_FRONTIER_MODELS_OR } from '@/config/cat-plans';
 import { PRO_DESTINATION_COPY } from '@/config/public-content';
 import { FoundingSupporterDonation } from '@/components/support/FoundingSupporterDonation';
 import { ECOSYSTEM_LINKS, ECOSYSTEM_PILLARS, ECOSYSTEM_STACK_LINE } from '@/config/ecosystem';
+import { PUBLIC_PAGE_WIDTH, PublicPageHeader } from '@/components/layout/PublicPageHeader';
+import { cn } from '@/lib/utils';
 
 export const metadata = {
   title: 'Become a founding supporter',
@@ -23,25 +25,21 @@ export const metadata = {
 export default function SupportPage() {
   return (
     <div className="min-h-screen bg-surface-page">
-      <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
-        {/* Hero */}
-        <div className="mx-auto max-w-3xl text-center">
-          <span className="inline-flex items-center gap-2 rounded-full border border-default bg-surface-base px-4 py-1.5 text-xs font-medium uppercase tracking-caps text-fg-secondary">
-            <Sparkles className="h-3.5 w-3.5 text-bitcoinOrange" />
-            Founding supporters
-          </span>
-          <h1 className="mt-6 font-heading text-4xl font-bold tracking-display text-fg-primary sm:text-5xl lg:text-6xl">
-            Back the permissionless economy
-          </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg text-fg-secondary sm:text-xl">
-            OrangeCat is building toward a world where anyone — any person, pseudonym, or AI — can
-            earn, fund, lend, and govern without gatekeepers. Today, support settles in Bitcoin;
-            other rails remain roadmap work. We&apos;re early, and we&apos;d rather be honest about
-            it than polished about it.
-          </p>
-        </div>
+      <div className={cn(PUBLIC_PAGE_WIDTH.wide, 'pb-16 lg:pb-24')}>
+        <PublicPageHeader
+          eyebrow="Founding supporters"
+          title="Back the permissionless economy"
+          lede={
+            <>
+              OrangeCat is building toward a world where anyone — any person, pseudonym, or AI — can
+              earn, fund, lend, and govern without gatekeepers. Today, support settles in Bitcoin;
+              other rails remain roadmap work. We&apos;re early, and we&apos;d rather be honest
+              about it than polished about it.
+            </>
+          }
+        />
 
-        <section className="mx-auto mt-14 max-w-4xl">
+        <section className="mx-auto max-w-4xl">
           <h2 className="text-center font-heading text-2xl font-bold tracking-display text-fg-primary">
             Choose what to support
           </h2>

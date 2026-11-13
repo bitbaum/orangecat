@@ -10,7 +10,7 @@ import EntityList from '@/components/entity/EntityList';
 import CommercePagination from '@/components/commerce/CommercePagination';
 import BulkActionsBar from '@/components/entity/BulkActionsBar';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { BaseEntity, EntityConfig } from '@/types/entity';
 import {
   useEntityDashboard,
@@ -142,16 +142,13 @@ export default function EntityDashboardPage<T extends BaseEntity>({
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
         {showSearch && (
           <div className="relative flex-1 sm:flex-initial">
-            <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-tertiary w-4 h-4"
-              aria-hidden="true"
-            />
             <Input
               type="text"
+              icon={Search}
               placeholder={searchPlaceholder || `Search ${config.namePlural.toLowerCase()}...`}
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="pl-10 pr-10 w-full sm:w-48 md:w-64"
+              className="pr-10 w-full sm:w-48 md:w-64"
               aria-label={`Search ${config.namePlural.toLowerCase()}`}
             />
             {searchQuery && (
@@ -192,25 +189,16 @@ export default function EntityDashboardPage<T extends BaseEntity>({
         {headerContent}
 
         {tabs && tabs.length > 0 ? (
-          <Tabs value={activeTabId} onValueChange={setActiveTabId} className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <TabsList
-                className="grid w-full sm:w-auto"
-                style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}
-              >
-                {tabs.map(tab => {
-                  const Icon = tab.icon;
-                  return (
-                    <TabsTrigger key={tab.id} value={tab.id} className="gap-2">
-                      {Icon && <Icon className="h-4 w-4" />}
-                      <span>{tab.label}</span>
-                    </TabsTrigger>
-                  );
-                })}
-              </TabsList>
-              {filterBar}
-            </div>
-          </Tabs>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <SegmentedControl
+              label={`${config.name} view`}
+              items={tabs.map(tab => ({ value: tab.id, label: tab.label, icon: tab.icon }))}
+              value={activeTabId}
+              onChange={setActiveTabId}
+              className="sm:inline-grid sm:auto-cols-fr sm:grid-flow-col"
+            />
+            {filterBar}
+          </div>
         ) : (
           filterBar && <div className="mb-4">{filterBar}</div>
         )}
@@ -220,7 +208,7 @@ export default function EntityDashboardPage<T extends BaseEntity>({
             <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
             <div className="flex-1">
               <p className="text-sm font-medium">Failed to load</p>
-              <p className="mt-1 text-sm text-status-negative/80">{error}</p>
+              <p className="mt-1 text-sm text-status-negative">{error}</p>
               <Button variant="outline" size="sm" onClick={() => refresh()} className="mt-3">
                 Try again
               </Button>

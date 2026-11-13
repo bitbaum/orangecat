@@ -15,6 +15,7 @@
  * different dimension, a new migration must recreate the column + index.
  */
 
+import { reservePlatformCall } from '@/services/ai/vendor-spend-cap';
 import { logger } from '@/utils/logger';
 
 const EMBEDDINGS_DIM = 1536;
@@ -26,6 +27,15 @@ function apiKey(): string | undefined {
 
 function baseUrl(): string {
   return (process.env.EMBEDDINGS_BASE_URL || 'https://api.openai.com/v1').replace(/\/+$/, '');
+}
+
+function isLoopback(url: string): boolean {
+  try {
+    const host = new URL(url).hostname;
+    return host === 'localhost' || host === '127.0.0.1' || host === '::1' || host === '[::1]';
+  } catch {
+    return false;
+  }
 }
 
 function model(): string {
@@ -54,6 +64,11 @@ export async function embedTexts(inputs: string[]): Promise<(number[] | null)[]>
   const payloadInput = cleaned.map(t => (t.length > 0 ? t : ' '));
 
   try {
+    // A paid host is counted against its daily cap first; a self-hosted
+    // server on this machine costs nothing and is not (vendor-spend-cap).
+    if (!isLoopback(baseUrl())) {
+      await reservePlatformCall(key);
+    }
     const res = await fetch(`${baseUrl()}/embeddings`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },

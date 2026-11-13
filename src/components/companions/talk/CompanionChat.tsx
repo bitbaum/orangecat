@@ -20,6 +20,8 @@ import { useCompanionTalk } from '../useCompanionTalk';
 import { DoItCard } from './DoItCard';
 import { RoutineRow } from './RoutineRow';
 import { AbilitiesRow } from './AbilitiesRow';
+import { ModelRow } from './ModelRow';
+import { RulesRow } from './RulesRow';
 import { outgoing, shownUserTurn } from './attachments';
 import { ChatFrame } from './ChatFrame';
 import { Face } from './CompanionFace';
@@ -38,6 +40,9 @@ export function CompanionChat({
   onActivity: () => void;
 }) {
   const talk = useCompanionTalk(id);
+  // A failed send whose server line carries the way out (the day's free
+  // messages spent, or the shared pool down): shown as written, with the key.
+  const wayOut = talk.limitReached || talk.poolDown;
   const { formatAmountBtc } = useDisplayCurrency();
   const [details, setDetails] = useState(false);
   const copy = COMPANION_COPY.talk;
@@ -85,7 +90,7 @@ export function CompanionChat({
             {fresh && (
               <p className="mb-0 text-base text-fg-primary">{copy.starters.firstQuestion}</p>
             )}
-            <p className="mb-0 text-xs text-fg-muted">{COMPANION_COPY.disclosure(name)}</p>
+            <p className="mb-0 text-xs text-fg-tertiary">{COMPANION_COPY.disclosure(name)}</p>
           </div>
         }
         aboveComposer={
@@ -114,12 +119,10 @@ export function CompanionChat({
             )}
             {talk.error && (
               <div className="mb-2 rounded-2xl border border-subtle bg-surface-raised p-3 text-sm">
-                <p
-                  className={`mb-0 ${talk.limitReached ? 'text-fg-primary' : 'text-status-negative'}`}
-                >
-                  {talk.limitReached ? talk.error : COMPANION_COPY.room.sendFailed}
+                <p className={`mb-0 ${wayOut ? 'text-fg-primary' : 'text-status-negative'}`}>
+                  {wayOut ? talk.error : COMPANION_COPY.room.sendFailed}
                 </p>
-                {talk.limitReached && (
+                {wayOut && (
                   <Button href={ROUTES.SETTINGS_AI} variant="primary" size="sm" className="mt-2">
                     {COMPANION_COPY.room.liftLimit}
                   </Button>
@@ -141,6 +144,9 @@ export function CompanionChat({
           <DetailRow href={`${ROUTES.AI_ASSISTANTS.VIEW(id)}/memory`}>
             {copy.companion.memory(name)}
           </DetailRow>
+          <DetailRow href={`${ROUTES.AI_ASSISTANTS.VIEW(id)}/library`}>
+            {COMPANION_COPY.library.row}
+          </DetailRow>
           {row?.mine && (
             <DetailRow href={`${ENTITY_REGISTRY['ai_assistant'].createPath}?edit=${id}`}>
               {copy.companion.edit}
@@ -148,6 +154,8 @@ export function CompanionChat({
           )}
           {row?.mine && <RoutineRow assistantId={id} />}
           {row?.mine && <AbilitiesRow assistantId={id} />}
+          <ModelRow assistantId={id} />
+          {row?.mine && <RulesRow />}
           <DetailRow
             onClick={() => {
               talk.startNewThread();

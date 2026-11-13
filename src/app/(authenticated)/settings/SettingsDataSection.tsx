@@ -12,7 +12,9 @@
 import { useCallback, useState } from 'react';
 import { DatabaseBackup, Download, Loader2, MessageSquareX } from 'lucide-react';
 import { toast } from 'sonner';
+import Link from 'next/link';
 import Button from '@/components/ui/Button';
+import { ROUTES } from '@/config/routes';
 import { logger } from '@/utils/logger';
 import { API_ROUTES, ACCOUNT_EXPORT_FILENAME } from '@/config/api-routes';
 
@@ -80,8 +82,11 @@ export function SettingsDataSection() {
         <div className="rounded-md border border-default bg-surface-raised/30 p-6">
           <h4 className="mb-2 text-lg font-medium text-fg-primary">Export my data</h4>
           <p className="mb-4 text-base text-fg-secondary">
-            Download a JSON file with the data we store about you — profile, Cat conversations and
-            memories, credit history, and preferences. It&apos;s your data; take it anywhere.
+            Download a JSON file with the data we store about you: your profile, every page you own
+            (wallets included), your posts, follows and group memberships, payment requests and
+            orders you are part of, notifications, Cat conversations, memories and interests, credit
+            history, and preferences. It leaves out encrypted API keys and your wallet connection
+            secret. It&apos;s your data; take it anywhere.
           </p>
           <Button
             type="button"
@@ -105,8 +110,12 @@ export function SettingsDataSection() {
         <div className="rounded-md border border-default bg-surface-raised/30 p-6">
           <h4 className="mb-2 text-lg font-medium text-fg-primary">Delete all Cat conversations</h4>
           <p className="mb-4 text-base text-fg-secondary">
-            Permanently delete your entire Cat chat history. Memories Cat has saved are managed
-            separately in AI settings. This cannot be undone.
+            Permanently delete your entire Cat chat history. Memories Cat has saved are kept
+            separately; manage them on the{' '}
+            <Link href={ROUTES.SETTINGS_MEMORY} className="font-medium text-fg-primary underline">
+              Memory tab
+            </Link>
+            . This cannot be undone.
           </p>
           {confirmClear ? (
             <div className="flex flex-wrap items-center gap-2">

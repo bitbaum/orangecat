@@ -10,6 +10,7 @@ import { fromTable } from '@/lib/supabase/untyped';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { noteCatMention } from '@/services/mentions/note-mention';
 import { DATABASE_TABLES } from '@/config/database-tables';
+import { CAT_DISPLAY_NAME, CAT_USERNAME } from '@/config/cat-identity';
 import { logger } from '@/utils/logger';
 import type { Database } from '@/types/database';
 import {
@@ -17,6 +18,25 @@ import {
   sendMessage as svcSendMessage,
 } from '@/features/messaging/service.server';
 import type { Message, Pagination } from './types';
+import { attachmentSummary } from '@bitbaum/chatkit';
+import {
+  attachToMessage,
+  claimableAttachments,
+  toAttachmentDto,
+  type MessageAttachmentDto,
+} from './server/attachments';
+
+/** What a message of only files is called in the conversation list. */
+const ATTACHMENT_PREVIEW_LABELS = {
+  you: '',
+  photo: 'Photo',
+  photos: '{n} photos',
+  video: 'Video',
+  audio: 'Audio',
+  file: 'File',
+  attachments: '{n} attachments',
+  empty: '',
+};
 // Single source of truth for the actor shape — shared with the client hook
 // that consumes this endpoint (avoids the response/consumer types drifting).
 import type { MessagingActor } from '@/features/messaging/hooks/useMessagingActors';
@@ -205,6 +225,8 @@ export async function loadConversationMessages(
 /** Validated input for sending a message. */
 export interface SendMessageInput {
   content: string;
+  /** Uploads to put on the message; checked before the message is written. */
+  attachmentIds?: string[];
   messageType: string;
   metadata?: Record<string, unknown>;
   senderActorId?: string;
@@ -221,7 +243,10 @@ export async function postConversationMessage(
   conversationId: string,
   userId: string,
   input: SendMessageInput
-): Promise<{ ok: true; id: string } | { ok: false; code: 'forbidden' }> {
+): Promise<
+  | { ok: true; id: string; attachments: MessageAttachmentDto[] }
+  | { ok: false; code: 'forbidden' | 'attachments_invalid' | 'attachments_not_uploaded' }
+> {
   const admin = createAdminClient();
 
   const membership = await verifyParticipantAndReactivate(admin, conversationId, userId);
@@ -229,20 +254,35 @@ export async function postConversationMessage(
     return { ok: false, code: 'forbidden' };
   }
 
+  // Before the message exists: a message must never be written and then
+  // found to be pointing at files that are not the sender's, or not there.
+  const claim = await claimableAttachments(
+    admin,
+    userId,
+    conversationId,
+    input.attachmentIds ?? []
+  );
+  if (!claim.ok) {
+    return {
+      ok: false,
+      code: claim.code === 'not_uploaded' ? 'attachments_not_uploaded' : 'attachments_invalid',
+    };
+  }
+  const kinds = claim.rows.map(row => row.kind);
+
   const id = await svcSendMessage(
     conversationId,
     userId,
     input.content,
-    input.messageType,
+    // What older readers of `message_type` expect of a message with files.
+    kinds.length === 0 ? input.messageType : kinds.every(k => k === 'image') ? 'image' : 'file',
     input.metadata || null,
-    input.senderActorId || null
+    input.senderActorId || null,
+    // The list's second line for a message of only files ("Photo", "2 photos").
+    input.content ? undefined : attachmentSummary(kinds, ATTACHMENT_PREVIEW_LABELS)
   );
+  await attachToMessage(admin, userId, id, claim.rows);
 
-  // Recording that @cat was tagged must not make the sender wait for an LLM,
-  // and must not fail their message if the Cat is unavailable — so the debt is
-  // recorded here and paid elsewhere. Deliberately awaited rather than
-  // fire-and-forget: the insert is one indexed statement, and losing it would
-  // mean a question that silently never gets an answer.
   await noteCatMention(admin, {
     conversationId,
     messageId: id,
@@ -250,10 +290,9 @@ export async function postConversationMessage(
     content: input.content,
   });
 
-  return { ok: true, id };
+  return { ok: true, id, attachments: claim.rows.map(toAttachmentDto) };
 }
 
-// Actor row shape from database (joined with profiles)
 interface ActorRow {
   id: string;
   actor_type: string;
@@ -392,4 +431,34 @@ export async function fetchMessagingActors(userId: string): Promise<MessagingAct
   }
 
   return actors;
+}
+
+/** The Cat, as a member people can bring into a conversation. */
+export interface MessagingAgent {
+  id: string;
+  username: string;
+  name: string;
+  avatar_url: string | null;
+}
+
+/**
+ * The Cat's account, for the Messenger. `null` when it has not been
+ * established yet (the daily cat-account job does that): the Messenger then
+ * simply offers no agent.
+ */
+export async function fetchMessagingAgent(): Promise<MessagingAgent | null> {
+  const { data, error } = await createAdminClient()
+    .from(DATABASE_TABLES.PROFILES)
+    .select('id, username, name, avatar_url')
+    .eq('username', CAT_USERNAME)
+    .maybeSingle();
+  if (error || !data) {
+    return null;
+  }
+  return {
+    id: data.id,
+    username: data.username ?? CAT_USERNAME,
+    name: data.name || CAT_DISPLAY_NAME,
+    avatar_url: data.avatar_url ?? null,
+  };
 }

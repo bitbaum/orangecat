@@ -2,8 +2,8 @@
 
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
-import MessagePanel from '@/components/messaging/MessagePanel';
-import { useRequireAuth } from '@/hooks/useAuth';
+import MessagesScreen from '@/components/messaging/MessagesScreen';
+import { useAuth, useRequireAuth } from '@/hooks/useAuth';
 import Loading from '@/components/Loading';
 import Button from '@/components/ui/Button';
 import { openConversationFor } from '@/features/messaging/open-conversation.client';
@@ -30,6 +30,7 @@ function MessagesContent() {
   const [openError, setOpenError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   const { isLoading, isAuthenticated } = useRequireAuth();
+  const { user } = useAuth();
 
   useEffect(() => {
     if (!toUserId || idFromUrl) {
@@ -112,7 +113,24 @@ function MessagesContent() {
     );
   }
 
-  return <MessagePanel isOpen fullPage initialConversationId={id} onClose={() => {}} />;
+  if (!user) {
+    return <Loading fullScreen contextual message="Loading messages..." />;
+  }
+
+  return (
+    <MessagesScreen
+      userId={user.id}
+      conversationId={id ?? null}
+      // The open conversation lives in the URL: a link to it works, and Back
+      // on a phone returns to the list.
+      onConversationChange={next => {
+        setOpenedId(undefined);
+        router.push(next ? ROUTES.MESSAGES_WITH_CONVERSATION(next) : ROUTES.MESSAGES, {
+          scroll: false,
+        });
+      }}
+    />
+  );
 }
 
 export default function MessagesPage() {

@@ -110,7 +110,7 @@ export function PersonalFinances({ finances }: { finances: Finances }) {
             <p className="text-sm text-fg-secondary">{FINANCES_PAGE.civic.empty}</p>
             <Link
               href={ROUTES.DASHBOARD.CIVIC_SPLIT}
-              className="mt-3 inline-flex min-h-9 items-center gap-1 text-sm font-semibold text-fg-primary hover:underline"
+              className="mt-3 inline-flex min-h-9 pointer-coarse:min-h-11 items-center gap-1 text-sm font-semibold text-fg-primary hover:underline"
             >
               {FINANCES_PAGE.civic.cta}
               <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />

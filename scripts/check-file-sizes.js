@@ -39,7 +39,6 @@ const EXCEPTIONS = [
   'src/components/timeline/TimelineComposer.tsx',
   'src/app/profiles/[username]/page.tsx',
   'src/components/ai-chat/ModernChatPanel/components/ModelSelector.tsx',
-  'src/components/layout/HeaderNavigation.tsx',
   'src/components/public/PublicEntityDetailPage.tsx',
   'src/app/(authenticated)/dashboard/analytics/components/AnalyticsInsights.tsx',
   'src/components/ai-chat/ModernChatPanel/index.tsx',

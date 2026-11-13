@@ -75,6 +75,53 @@ jobs:
             exit 1
           fi
 
+      # Deleting an account goes through GoTrue, which deletes as
+      # supabase_auth_admin, and every trigger the cascade reaches runs as that
+      # role unless it is SECURITY DEFINER. A superuser DELETE cannot catch a
+      # trigger that role may not run: 20261112120000 shipped one, and every
+      # account in an identity circle answered 500 on deletion until
+      # 20261112230000. So delete a holder and its identity the way production
+      # does, through GoTrue's admin API.
+      - name: An account in an identity circle can be deleted through GoTrue
+        run: |
+          eval "$(supabase status -o env)"
+          # Older CLIs print SERVICE_ROLE_KEY, newer ones SECRET_KEY.
+          SERVICE_ROLE_KEY="${SERVICE_ROLE_KEY:-${SECRET_KEY:-}}"
+          if [ -z "${API_URL:-}" ] || [ -z "$SERVICE_ROLE_KEY" ]; then
+            echo "::error::supabase status gave no API_URL or service key"
+            exit 1
+          fi
+          DB="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
+          create() {
+            curl -sf -X POST "$API_URL/auth/v1/admin/users" \
+              -H "apikey: $SERVICE_ROLE_KEY" -H "Authorization: Bearer $SERVICE_ROLE_KEY" \
+              -H 'Content-Type: application/json' \
+              -d "{\"email\":\"$1\",\"password\":\"replay-$RANDOM-$RANDOM-aA9!\",\"email_confirm\":true}" \
+              | jq -r .id
+          }
+          remove() {
+            code=$(curl -s -o /tmp/delete.out -w '%{http_code}' -X DELETE "$API_URL/auth/v1/admin/users/$1" \
+              -H "apikey: $SERVICE_ROLE_KEY" -H "Authorization: Bearer $SERVICE_ROLE_KEY")
+            if [ "$code" != "200" ]; then
+              echo "::error::Deleting $2 through GoTrue answered $code: $(cat /tmp/delete.out)"
+              exit 1
+            fi
+          }
+          holder=$(create holder@example.com)
+          identity=$(create identity-replay@orangecat.invalid)
+          psql "$DB" -v ON_ERROR_STOP=1 -c "
+            INSERT INTO public.identity_links (identity_user_id, holder_user_id) VALUES ('$identity', '$holder');
+            INSERT INTO public.identity_handovers (identity_user_id, offered_by, token_hash, expires_at)
+              VALUES ('$identity', '$holder', repeat('a', 64), now() + interval '7 days');"
+          remove "$identity" "an identity with an open hand-over offer"
+          remove "$holder" "the account that held it"
+          left=$(psql "$DB" -tAc "select (select count(*) from public.identity_links) + (select count(*) from public.identity_handovers)")
+          if [ "$left" != "0" ]; then
+            echo "::error::$left identity link or offer rows outlived both accounts"
+            exit 1
+          fi
+          echo "A holder and its identity deleted through GoTrue; no link or offer left."
+
       - name: Tear down
         if: always()
         run: supabase stop --no-backup || true

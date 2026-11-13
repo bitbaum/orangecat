@@ -25,7 +25,7 @@ import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { sessionMethods } from '@/lib/auth/session-methods';
 import { IDENTITIES_COPY } from '@/config/identities';
-import { switchSessionTo } from '@/domain/identities/service';
+import { switchSessionTo } from '@/domain/identities/switching';
 
 export const dynamic = 'force-dynamic';
 

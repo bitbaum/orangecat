@@ -74,7 +74,7 @@ export function VotingProgress({ votingResults, threshold, totalMembers }: Votin
               <span className="text-fg-secondary">({votingResults.yes_votes} votes)</span>
             </div>
           </div>
-          <Progress value={yesPercentage} className="h-2" />
+          <Progress value={yesPercentage} aria-label="Yes votes" className="h-2" />
         </div>
 
         {/* No Votes */}
@@ -89,7 +89,7 @@ export function VotingProgress({ votingResults, threshold, totalMembers }: Votin
               <span className="text-fg-secondary">({votingResults.no_votes} votes)</span>
             </div>
           </div>
-          <Progress value={noPercentage} className="h-2" />
+          <Progress value={noPercentage} aria-label="No votes" className="h-2" />
         </div>
 
         {/* Participation */}
@@ -99,7 +99,7 @@ export function VotingProgress({ votingResults, threshold, totalMembers }: Votin
               <span>Participation</span>
               <span className="font-medium">{participationRate.toFixed(1)}%</span>
             </div>
-            <Progress value={participationRate} className="h-2 mt-2" />
+            <Progress value={participationRate} aria-label="Participation" className="h-2 mt-2" />
             <p className="text-xs text-fg-secondary mt-1">
               {votingResults.total_voting_power} of {totalMembers} members have voted
             </p>

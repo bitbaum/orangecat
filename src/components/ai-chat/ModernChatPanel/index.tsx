@@ -31,7 +31,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ChatApp, type ChatAppHandle, type RenderLink } from '@bitbaum/chatkit/react';
 import '@bitbaum/chatkit/styles.css';
-import { CAT_SEND_EVENT } from '@/lib/chat/cat-send-event';
+import { CAT_SEND_EVENT, type CatSendDetail } from '@/lib/chat/cat-send-event';
 import { postChatFeedback } from '@/lib/chat/feedback';
 import { catConversationStore } from '@/lib/chat/cat-conversation-store';
 import { refChip, type CatMessage } from '@/lib/chat/cat-messages';
@@ -192,11 +192,18 @@ export function ModernChatPanel({
   const chatRef = useRef<ChatAppHandle>(null);
   useEffect(() => {
     const onSend = (e: Event) => {
-      const text = (e as CustomEvent<string>).detail;
-      if (typeof text === 'string' && text.trim()) {
-        // Its staged things go with it, so they show on it as they would typed.
-        void chatRef.current?.send(text, [], { chips: referencesRef.current.map(refChip) });
+      const detail = (e as CustomEvent<CatSendDetail>).detail;
+      const text = detail?.text;
+      if (typeof text !== 'string' || !text.trim()) {
+        return;
       }
+      if (!detail.send) {
+        // A template for the person to finish: into the box, not sent.
+        chatRef.current?.fill(text);
+        return;
+      }
+      // Its staged things go with it, so they show on it as they would typed.
+      void chatRef.current?.send(text, [], { chips: referencesRef.current.map(refChip) });
     };
     window.addEventListener(CAT_SEND_EVENT, onSend);
     return () => window.removeEventListener(CAT_SEND_EVENT, onSend);

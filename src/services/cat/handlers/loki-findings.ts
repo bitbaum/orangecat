@@ -1,6 +1,7 @@
 /**
  * `file_loki_finding` and `loki_finding_status` — a bot reports what it found
- * on a live app into the project's own feedback inbox in Loki.
+ * on a live app into the project's own feedback inbox in Loki. `walk_site` is
+ * how it finds it: Loki's browser opens the pages and says what is wrong.
  *
  * Filed, never fixed. The bodies are services/loki/hands.ts, shared with a
  * bot's own work loop.
@@ -13,4 +14,6 @@ export const lokiFindingHandlers: Record<string, ActionHandler> = {
     LOKI_HANDS.file_loki_finding(actorId, params),
   loki_finding_status: (_supabase, _userId, actorId, params) =>
     LOKI_HANDS.loki_finding_status(actorId, params),
+  walk_site: (_supabase, _userId, actorId, params) => LOKI_HANDS.walk_site(actorId, params),
+  use_browser: (_supabase, _userId, actorId, params) => LOKI_HANDS.use_browser(actorId, params),
 };

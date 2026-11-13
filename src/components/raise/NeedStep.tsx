@@ -17,7 +17,7 @@ export function NeedStep({ flow }: { flow: RaiseFlow }) {
       <p className="flex items-center gap-2 text-xs font-medium uppercase tracking-caps text-fg-tertiary">
         <Sparkles className="h-3.5 w-3.5" aria-hidden /> Raise money
       </p>
-      <h1 className="mt-4 text-4xl font-semibold tracking-display text-fg-primary sm:text-5xl">
+      <h1 className="mt-4 font-heading text-4xl font-semibold tracking-display text-fg-primary sm:text-5xl">
         What do you need?
       </h1>
       <p className="mt-4 text-lg text-fg-secondary">
@@ -50,10 +50,10 @@ export function NeedStep({ flow }: { flow: RaiseFlow }) {
             rows={3}
             disabled={planning}
             placeholder="A second oven for my bakery so I can bake on weekdays too"
-            className="block w-full resize-none bg-transparent px-4 pt-3 text-lg text-fg-primary placeholder:text-fg-muted focus:outline-none"
+            className="block w-full resize-none bg-transparent px-4 pt-3 text-lg text-fg-primary placeholder:text-fg-tertiary focus:outline-none"
           />
           <div className="flex items-center justify-between gap-3 px-2 pb-1">
-            <span className="text-xs text-fg-muted">
+            <span className="text-xs text-fg-tertiary">
               Know the price? Say it — “about CHF 4,000”.
             </span>
             <button
