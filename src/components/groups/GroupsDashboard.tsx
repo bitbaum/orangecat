@@ -30,6 +30,12 @@ import Loading from '@/components/Loading';
 import { ROUTES } from '@/config/routes';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 
+// The registry's names ("Organization"), so the create chooser, this list and
+// the create form say the same word; this page said "Group" while the form
+// and chooser said otherwise. In-app Create is the primary (ink) button, not
+// the orange accent.
+const GROUP = ENTITY_REGISTRY['group'];
+
 export function GroupsDashboard() {
   const router = useRouter();
   const [myGroups, setMyGroups] = useState<Group[]>([]);
@@ -96,15 +102,15 @@ export function GroupsDashboard() {
   const hasAnyGroups = myGroups.length + availableGroups.length > 0;
 
   const headerActions = (
-    <Button href={ROUTES.DASHBOARD.GROUPS_CREATE} variant="accent" className="gap-2">
+    <Button href={ROUTES.DASHBOARD.GROUPS_CREATE} className="gap-2">
       <Plus className="h-4 w-4" />
-      Create Group
+      Create {GROUP.name}
     </Button>
   );
 
   return (
     <EntityListShell
-      title="My Groups"
+      title={`My ${GROUP.namePlural}`}
       description="Create groups, join communities, and collaborate with like-minded people"
       headerActions={headerActions}
     >
@@ -127,7 +133,7 @@ export function GroupsDashboard() {
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="my-groups" className="gap-2 text-xs sm:text-sm">
             <Users className="h-4 w-4" />
-            <span className="truncate">My Groups ({filteredMyGroups.length})</span>
+            <span className="truncate">Mine ({filteredMyGroups.length})</span>
           </TabsTrigger>
           <TabsTrigger value="discover" className="gap-2 text-xs sm:text-sm">
             <Building2 className="h-4 w-4" />
@@ -140,12 +146,12 @@ export function GroupsDashboard() {
             <EmptyState
               icon={Users}
               className="rounded-lg border border-default bg-surface-base px-4"
-              title="No groups yet"
+              title={`No ${GROUP.namePlural.toLowerCase()} yet`}
               description="A group is a shared space for a team, a club, a family or a neighbourhood: members, a shared treasury, events and proposals. Create one and invite people."
               action={
                 <Button href={ROUTES.DASHBOARD.GROUPS_CREATE} className="gap-2">
                   <Plus className="h-4 w-4" />
-                  Create a group
+                  Create {GROUP.name}
                 </Button>
               }
             />
@@ -170,7 +176,7 @@ export function GroupsDashboard() {
               <p className="text-fg-secondary mb-6">Be the first to create a group!</p>
               <Button href={ROUTES.DASHBOARD.GROUPS_CREATE} className="gap-2">
                 <Plus className="h-4 w-4" />
-                Create Group
+                Create {GROUP.name}
               </Button>
             </div>
           ) : filteredAvailable.length === 0 ? (
