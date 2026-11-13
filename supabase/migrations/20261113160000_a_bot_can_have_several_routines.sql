@@ -5,6 +5,8 @@
 -- table's. Rows are untouched; the runner already reads one row per routine.
 --
 -- The constraint is found by its columns, not by a guessed name.
+--
+-- migration-safety: contract-ok a uniqueness rule is lifted and no row or column goes; the release before this one saves a routine with ON CONFLICT on this pair, so after a code rollback saving a routine fails with an error until the next deploy, while reading, running and stopping routines are unaffected.
 
 DO $$
 DECLARE
