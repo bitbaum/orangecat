@@ -210,7 +210,7 @@ export function WalletCard({
               this UI sits on top of: never present unmeasured as measured. */}
           <div
             className={`text-2xl sm:text-3xl font-bold ${
-              wallet.balance_updated_at ? 'text-bitcoinOrange' : 'text-fg-tertiary'
+              wallet.balance_updated_at ? 'text-bitcoin-text' : 'text-fg-tertiary'
             }`}
           >
             {wallet.balance_updated_at ? formatAmountBtc(wallet.balance_btc) : '—'}

@@ -34,7 +34,7 @@ export default async function EntityLedgerTotal({ entityType, entityId }: Entity
   return (
     <div className="rounded-lg border border-subtle bg-surface-raised p-4">
       <p className="text-xs uppercase tracking-caps text-fg-tertiary">Raised in Bitcoin</p>
-      <p className="mt-1 text-2xl font-bold text-bitcoinOrange">{displayBTC(stats.totalBtc)}</p>
+      <p className="mt-1 text-2xl font-bold text-bitcoin-text">{displayBTC(stats.totalBtc)}</p>
       <p className="mt-1 text-sm text-fg-secondary">
         {stats.contributorCount === 0
           ? 'Be the first to contribute'

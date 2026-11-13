@@ -81,7 +81,7 @@ export default function MissingWalletBanner({
               href={ROUTES.WALLETS.LIST}
               target="_blank"
               variant="outline"
-              className="border-bitcoinOrange/40 text-bitcoinOrange hover:bg-bitcoinOrange/5"
+              className="border-bitcoinOrange/40 text-bitcoin-text hover:bg-bitcoinOrange/5"
             >
               <ExternalLink className="w-4 h-4 mr-2" />
               Get a Wallet First

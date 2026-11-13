@@ -154,7 +154,7 @@ export default function ProfileProjectCard({ project }: { project: ProfileProjec
         <div className="flex items-center gap-3 text-xs text-fg-secondary">
           <span>{formatRelativeTimeCompact(project.createdAt)}</span>
           {project.hasWallet && (
-            <span className="flex items-center gap-1 text-bitcoinOrange">
+            <span className="flex items-center gap-1 text-bitcoin-text">
               <Bitcoin className="h-3 w-3" />
               Wallet
             </span>
