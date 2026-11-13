@@ -10,8 +10,7 @@
 
 import { after } from 'next/server';
 import { withAuth, type AuthenticatedRequest } from '@/lib/api/withAuth';
-import { createAdminClient } from '@/lib/supabase/admin';
-import { answerAsBot } from '@/features/messaging/server/bot-answer';
+import { answerAfterSend } from '@/features/messaging/server/bot-answer';
 import { PAGINATION } from '@/features/messaging/lib';
 import { sendMessageSchema } from '@/features/messaging/lib/send-message-schema';
 import { rateLimitAction, rateLimitHeaders, retryAfterSeconds } from '@/lib/rate-limit';
@@ -129,9 +128,9 @@ export const POST = withAuth(
           ? apiForbidden('Not a participant in this conversation')
           : apiValidationError(SEND_REFUSALS[result.code]);
       }
-      // A message to a bot is owed an answer (ADR-0015 D3). It is written
-      // after this response, so sending is never slower for it.
-      after(() => answerAsBot(createAdminClient(), { conversationId, senderId: user.id }));
+      // A message to a bot, or one that names a bot in a group, is owed an
+      // answer (ADR-0015 D3), written after this response.
+      after(() => answerAfterSend(conversationId, user.id, content.trim()));
       return apiCreated(
         { id: result.id, attachments: result.attachments },
         { headers: rateLimitHeaders(rateLimitResult) }

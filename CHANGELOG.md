@@ -11,6 +11,7 @@ to the map, sub-bullets stay here for the human reader.
 
 ## 2026-11-13
 
+- **Put your bots in a group with people.** In Messages, tap New and pick people and one or more of your bots. A bot there answers when somebody names it, as in "@Chef what is quick?", and its answer says whom it was for. It reads the conversation from when it was added, and what you told it in private stays out of the group. A bot that is not public answers only you, and says so to anyone else who names it. {#messenger-bot-group}
 - **Your Cat and your bots can read your GitHub, your mail and your calendar.** Connect GitHub and Google in Cat → Controls, under what your Cat sees. Then ask: "what is assigned to me on GitHub?", "any mail from the landlord this week?", "what is on my calendar tomorrow?". Reading only: nothing is sent, changed or deleted. In a bot's details you choose per ability whether it asks first or reads on its own, so a morning routine can open your calendar by itself.
   - Each connection appears once its keys are set on the server (`docs/operations/connectors.md`).
 - **The message box and the top of a conversation look as they should.** On a phone the message field was drawn as a box inside the box, a profile photo that is not square showed as a tall oval, the name and the line under it stood apart, and "Sending as" sat against the edge. All four are fixed.

@@ -1,8 +1,8 @@
 # ADR-0015: One Messenger for People and Bots
 
 Date: 2026-11-13
-Status: Accepted. Build order 1 and 2 shipped (D1, D2, and D3–D4 for one person
-and one bot of their own); 3–6 on the roadmap
+Status: Accepted. Build order 1–3 shipped (D1–D4 and D6 for a person's own bots,
+alone or in a group); 4–6 on the roadmap
 
 ## Context
 
@@ -103,8 +103,19 @@ company is not a confidence between one person and one bot.
   (`after()` in the send route → `answerAsBot`, `src/features/messaging/server/bot-answer.ts`), by the one function that
   answers for a companion everywhere (`src/services/companions/answer.ts`,
   shared with the bot rooms). A bot that cannot answer says why in its place.
-- Not built: a bot in a conversation of more than two (the open route refuses
-  it in words), and the bot's own memory of what is said in Messages.
+- In a conversation of more than two, a bot answers when a person names it
+  (`src/features/messaging/lib/named-bots.ts`, the bot rooms' own matcher;
+  at most three bots per message). It reads from the moment it joined (D6),
+  every line it is given starts with who wrote it, and it is asked without
+  its memories of the asker: what was told in private is not said in company.
+  Its answer carries `requested_by`, so the thread shows whom it was for.
+- **Stricter than D3:** a bot's own line is never owed an answer, so bots do
+  not call on each other in Messages at all yet. D3's bounded round can be
+  added without changing anything else.
+- A bot that is not public answers its owner only, and tells anyone else who
+  names it so, without a model call.
+- Not built: other people's bots as contacts (build order 5), and the bot's
+  own memory of what is said in Messages.
 
 ## What this replaces
 
