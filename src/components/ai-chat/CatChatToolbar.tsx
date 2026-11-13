@@ -39,9 +39,9 @@ export function CatHeaderEnd({ quota = null }: { quota?: CatQuota | null }) {
     <div className="oc-chat-header-end">
       {/* min-w-0: the chip truncates rather than push the title out. */}
       {isQuotaWorthShowing(quota) && <QuotaMeter quota={quota} className="min-w-0" />}
-      <div className="hidden sm:block">
-        <LokiChip />
-      </div>
+      {/* On a phone the chip is its hammer alone (still 44px, still named
+          "Loki"): hiding it left a phone with no way to Loki from the chat. */}
+      <LokiChip />
       <Link
         href={ROUTES.DASHBOARD.CAT_SETTINGS}
         className="ck-glass ck-app-icon"

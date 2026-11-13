@@ -650,6 +650,52 @@ Made on the owner's behalf on 2026-11-13 and shipped in one pull request.
   clears it, so a hidden value is never sent. No migration: the column keeps
   its value on every row and an update never writes an empty one.
 
+## Handoff from the "mobile UI and sign-in" session (2026-11-13)
+
+That session reviewed production in parallel, wrote 19 fixes as PRs, and
+closed them unmerged so one session owns UI/UX. Each was re-checked against
+current main and production before anything was changed, then carried over in
+one pull request:
+
+| PR    | Defect                                                           | Result                                                                        |
+| ----- | ---------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| #1646 | On-chain pay screen hid the address and the BTC that must arrive | Fixed                                                                         |
+| #1647 | Pay buttons and invoice wording                                  | Fixed (amount guard and contrast were already on main)                        |
+| #1648 | Your own pay page with no wallet messaged yourself               | Fixed                                                                         |
+| #1649 | Shared pages carried the homepage's title and no image           | Fixed                                                                         |
+| #1650 | Share cards claimed untrue things; X post too long               | Fixed (share sheet contrast already on main)                                  |
+| #1675 | Discover's group counts and dashboard member counts              | Fixed (new migration)                                                         |
+| #1678 | A public group's Events and Activity refused signed-out visitors | Fixed                                                                         |
+| #1680 | A multisig promise; empty kinds said nothing                     | Fixed (zero states already on main)                                           |
+| #1651 | Notification actions invisible on a phone                        | Fixed (filters already on main)                                               |
+| #1681 | Messaging the Cat; Read receipts                                 | Partly: the Cat's profile opens its chat; the rest is the Messenger's (below) |
+| #1686 | New message picker; Edit / Delete by keyboard                    | Not here: belongs in `@bitbaum/chatkit` (below)                               |
+| #1635 | Two logo links per width                                         | Already fixed on main                                                         |
+| #1639 | Dark CTA bands unreadable                                        | Already fixed on main (#1634)                                                 |
+| #1641 | Public copy overstated what is public                            | Fixed (step marks already on main)                                            |
+| #1645 | Community feed refused signed-out visitors                       | Fixed                                                                         |
+| #1636 | A past event still sold tickets                                  | Fixed, also server-side (new migration)                                       |
+| #1637 | Rental periods read "1 Per Day"                                  | Fixed                                                                         |
+| #1674 | Discover focus rings clipped                                     | Fixed (count and badge contrast already on main)                              |
+| #1669 | Cat settings probed localhost on every load                      | Fixed (h1 already on main)                                                    |
+
+Also from the handoff: Bitcoin-orange words now use `text-bitcoin-text`, which
+clears 4.5:1 in light (orange text measured about 2.1:1 before), and the
+long-form diagrams and padding are fixed in `@bitbaum/bip-kit` 0.8.2
+(bitbaum/bip-kit#64), which OrangeCat now uses. The seven merged fixes the
+handoff could not check signed out (#1702, #1703, #1704, #1705, #1712, #1713,
+#1715) were checked read-only on production with a signed-in account: all
+pass. That check found the Loki chip hidden on phones and the model menu
+running off the side panel; both are fixed here, with five icons that used a
+class that does not exist (`text-bitcoin-orange`).
+
+**For the Messenger's owner** (code in `@bitbaum/chatkit`, not changed here):
+New message lists nobody until you type (`react/MessengerScreen.js` does not
+ask the transport for suggestions with an empty query); the message actions
+button is `display: none` outside hover (`styles/messenger.css`), so Tab and
+touch never reach Edit / Delete; and `readState` leaves agents out, so a
+one-to-one with only the Cat never shows Read.
+
 ## What to do next
 
 The audit is closed. Every finding was worked; the eight still marked

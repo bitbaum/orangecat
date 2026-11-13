@@ -130,7 +130,7 @@
     "@asteasolutions/zod-to-openapi": "^9.1.0",
     "@bitbaum/accountkit": "^0.30.0",
     "@bitbaum/ai-kit": "^1.26.0",
-    "@bitbaum/bip-kit": "^0.6.1",
+    "@bitbaum/bip-kit": "^0.8.2",
     "@bitbaum/chatkit": "^0.31.3",
     "@bitbaum/collective-kinds": "workspace:*",
     "@bitbaum/deckkit": "workspace:*",

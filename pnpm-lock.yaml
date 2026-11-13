@@ -42,8 +42,8 @@ importers:
         specifier: ^1.26.0
         version: 1.26.0(react@19.3.1)
       '@bitbaum/bip-kit':
-        specifier: ^0.6.1
-        version: 0.6.1(katex@0.18.11)(mermaid@11.17.2)(react@19.3.1)(shiki@4.4.3)
+        specifier: ^0.8.2
+        version: 0.8.2(katex@0.18.11)(mermaid@11.17.2)(react@19.3.1)(shiki@4.4.3)
       '@bitbaum/chatkit':
         specifier: ^0.31.3
         version: 0.31.3(react@19.3.1)
@@ -596,8 +596,8 @@ packages:
       react:
         optional: true
 
-  '@bitbaum/bip-kit@0.6.1':
-    resolution: {integrity: sha512-bDcAeO3+X+Dh+TVKioYWoYBdk3bgSFJSUMR4Af5K2qemRXjN4bfPrSUQWWDH7s2UlOIf297Ot28/0WPij7wVvQ==}
+  '@bitbaum/bip-kit@0.8.2':
+    resolution: {integrity: sha512-1xPGs5JD0p2UKm86Z63NTHgaO47CFXTqKJmVSEQHUrEp15XH1isZWGwPBuJSmsFMvZBLefFwp9hSn42wFe/rwA==}
     engines: {node: '>=20'}
     peerDependencies:
       katex: ^0.18.2
@@ -7025,7 +7025,7 @@ snapshots:
     transitivePeerDependencies:
       - canvas
 
-  '@bitbaum/bip-kit@0.6.1(katex@0.18.11)(mermaid@11.17.2)(react@19.3.1)(shiki@4.4.3)':
+  '@bitbaum/bip-kit@0.8.2(katex@0.18.11)(mermaid@11.17.2)(react@19.3.1)(shiki@4.4.3)':
     dependencies:
       react: 19.3.1
     optionalDependencies:

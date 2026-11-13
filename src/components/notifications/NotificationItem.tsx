@@ -21,7 +21,7 @@ function getNotificationIcon(notification: Notification) {
     case 'payment':
     case 'project_funded':
     case 'tip_dead_end':
-      return <Bitcoin className="w-5 h-5 text-bitcoin-orange" />;
+      return <Bitcoin className="w-5 h-5 text-bitcoinOrange" />;
     case 'follow':
       return <Users className="w-5 h-5 text-fg-primary" />;
     case 'message':

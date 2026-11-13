@@ -185,7 +185,13 @@ export function ModelSelector({
           'z-[61] flex flex-col rounded-md border border-subtle bg-surface-modal shadow-lg',
           isPhone
             ? 'fixed inset-x-3 bottom-3 max-h-[70vh]'
-            : cn('absolute left-0 max-h-80 w-72', openUp ? 'bottom-full mb-2' : 'top-full mt-2')
+            : cn(
+                // Up from the composer, the trigger sits right of centre in the
+                // side panel: hang the menu from its right edge so it opens
+                // into the panel instead of off the screen.
+                'absolute max-h-80 w-72 max-w-[calc(100vw-1.5rem)]',
+                openUp ? 'bottom-full right-0 mb-2' : 'left-0 top-full mt-2'
+              )
         )}
       >
         <div className="min-h-0 flex-1 overflow-y-auto py-2">

@@ -11,6 +11,14 @@ to the map, sub-bullets stay here for the human reader.
 
 ## 2026-11-13
 
+- **Paying on-chain shows where the money goes.** The pay screen shows the address and the exact BTC that must arrive, and Copy copies the address; invoices say "Payment to" whom.
+- **A shared link shows the page you shared.** Its own title and picture, on X too, and share cards only say what is true.
+- **An event that is over says so and sells no more tickets.**
+- **Organizations count right.** Discover's numbers match what it lists, member counts are real, and a public organization's Events and Activity open signed out.
+- **The community feed and public posts open without an account.**
+- **Bitcoin amounts are readable in light mode**, and long articles keep diagrams legible on a phone.
+- **On a phone, notifications show their actions and the Cat's chat reaches Loki.**
+
 - **The Cat's suggestions sit in one column.** On a new conversation they no longer wrap into a row of pills of different widths.
 - **One theme switch per screen.** On a computer the header's switch is the only one; the account menu offers Appearance on a phone, where the header has none, and no longer flickers on load.
 
