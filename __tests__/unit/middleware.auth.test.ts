@@ -170,6 +170,31 @@ describe('middleware auth protection', () => {
     expect(location.searchParams.get('from')).toBe('/dashboard/cat?q=Throw%20a%20party');
   });
 
+  it('shows a first-time visitor the register form, not "Welcome back"', async () => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
+    setMockUser(null);
+
+    const res = await middleware(buildRequest('/dashboard/cat') as any);
+
+    const location = new URL(res?.headers.get('location') ?? '');
+    expect(location.searchParams.get('mode')).toBe('register');
+    expect(location.searchParams.get('from')).toBe('/dashboard/cat');
+  });
+
+  it('shows the sign-in form to a browser that has signed in here before', async () => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
+    setMockUser(null);
+
+    const res = await middleware(
+      buildRequest('/dashboard', { 'sb-test-auth-token': 'expired' }) as any
+    );
+
+    const location = new URL(res?.headers.get('location') ?? '');
+    expect(location.searchParams.get('mode')).toBe('login');
+  });
+
   it('allows a protected route through when @supabase/ssr returns a user', async () => {
     process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';

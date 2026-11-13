@@ -8,6 +8,22 @@ import { requiresSignIn, ROUTES } from '@/config/routes';
 // Never keep a parallel list here — they will drift. Which in-app routes need
 // a signed-in user is `requiresSignIn` / SIGN_IN_REQUIRED_PREFIXES there.
 
+/**
+ * Which form a signed-out visitor sent to /auth should see first.
+ *
+ * Every public "Start" points at a protected path, so this redirect is where
+ * most first-time visitors meet OrangeCat — and it used to greet all of them
+ * with "Welcome back, sign in". A browser carrying no Supabase cookie has
+ * never signed in on this device, so it gets the register form (which offers
+ * "Already have an account?"); one that has a cookie — an expired session —
+ * gets the sign-in form.
+ */
+function signInModeFor(request: NextRequest): 'login' | 'register' {
+  return request.cookies.getAll().some(cookie => cookie.name.startsWith('sb-'))
+    ? 'login'
+    : 'register';
+}
+
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   // Where sign-in returns to, query included: `/dashboard/cat?q=…` is a
@@ -98,7 +114,7 @@ export async function middleware(request: NextRequest) {
     if (!supabaseUrl || !supabaseAnonKey) {
       // Misconfigured deployment — bounce to auth rather than crash.
       const redirectUrl = new URL('/auth', request.url);
-      redirectUrl.searchParams.set('mode', 'login');
+      redirectUrl.searchParams.set('mode', signInModeFor(request));
       redirectUrl.searchParams.set('from', returnPath);
       return NextResponse.redirect(redirectUrl);
     }
@@ -126,7 +142,7 @@ export async function middleware(request: NextRequest) {
 
     if (!user) {
       const redirectUrl = new URL('/auth', request.url);
-      redirectUrl.searchParams.set('mode', 'login');
+      redirectUrl.searchParams.set('mode', signInModeFor(request));
       redirectUrl.searchParams.set('from', returnPath);
       return NextResponse.redirect(redirectUrl);
     }
