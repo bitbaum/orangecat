@@ -31,7 +31,7 @@ export default async function RoomDeckEditorPage({ params }: PageProps) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    redirect(`${ROUTES.AUTH_LOGIN}&redirect=${encodeURIComponent(ROUTES.PROJECTS.ROOM_DECK(id))}`);
+    redirect(`${ROUTES.AUTH_LOGIN}&from=${encodeURIComponent(ROUTES.PROJECTS.ROOM_DECK(id))}`);
   }
 
   const room = await getOwnerRoom(id, user.id, supabase);
