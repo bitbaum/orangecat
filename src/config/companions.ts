@@ -27,7 +27,8 @@ export const COMPANION_COPY = {
     notEnoughCredits: 'Not enough Cat Credits for this message.',
     topUp: 'Top up Cat Credits',
     sendFailed: 'That did not go through. Try again.',
-    /** Under the server's own line about the day's free messages being spent. */
+    /** Under the server's own line: the day's free messages spent, or the
+     *  shared pool unable to answer. */
     liftLimit: 'Use your own key',
   },
 

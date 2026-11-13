@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { Faq } from '@bitbaum/bip-kit/react';
 import '@bitbaum/bip-kit/styles.css';
 import '@/lib/longform/longform.css';
-import { PageHeading } from '@/components/layout/PageHeading';
+import { PUBLIC_PAGE_WIDTH, PublicPageHeader } from '@/components/layout/PublicPageHeader';
 import { ROUTES } from '@/config/routes';
 import { CONTACT_EMAIL } from '@/config/brand';
 import { getFaqSections } from '@/lib/faq';
@@ -14,18 +14,14 @@ export default function FAQPage() {
   const sections = getFaqSections();
 
   return (
-    <div className="min-h-screen pt-20 pb-24">
-      <div className="border-b border-default bg-surface-page py-16 px-4">
-        <div className="max-w-3xl mx-auto text-center">
-          <PageHeading className="mb-4">Frequently Asked Questions</PageHeading>
-          <p className="text-xl text-fg-secondary max-w-2xl mx-auto">
-            Everything you need to know about OrangeCat — your AI economic agent.
-          </p>
-        </div>
-      </div>
+    <div className="min-h-screen bg-surface-page pb-24">
+      <div className={PUBLIC_PAGE_WIDTH.wide}>
+        <PublicPageHeader
+          title="Frequently Asked Questions"
+          lede="Everything you need to know about OrangeCat — your AI economic agent."
+        />
 
-      {/* Two-column at lg+: sticky section list left, questions right. */}
-      <div className="max-w-6xl mx-auto px-4 py-12">
+        {/* Two-column at lg+: sticky section list left, questions right. */}
         <div className="grid grid-cols-1 lg:grid-cols-[200px_minmax(0,1fr)] gap-8 lg:gap-12">
           <aside className="hidden lg:block">
             <nav className="sticky top-24 space-y-1" aria-label="FAQ sections">

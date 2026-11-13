@@ -64,9 +64,8 @@ export default async function DoorPage({ params, searchParams }: PageProps) {
     .eq('id', id)
     .maybeSingle();
   if (!event) {
-    // A plain message, not a 404 call: this page streams behind events/[id]/loading.tsx, so a
-    // 404 status could not be sent anyway (see scripts/audit-routes.mjs §5).
-    // It is reachable only when signed in, where the words matter more.
+    // A plain message, not a 404 call: this page is reachable only when signed
+    // in, where the words matter more than the status.
     return (
       <div className="mx-auto max-w-md px-4 py-12 text-center">
         <h1 className="mb-3 text-xl font-semibold text-fg-primary">No such event</h1>

@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useShellPathname } from '@/hooks/useShellPathname';
 import { useBottomNavScroll } from '@/hooks/useHeaderScroll';
 import { useComposer } from '@/contexts/ComposerContext';
 import { cn } from '@/lib/utils';
@@ -22,7 +23,7 @@ import { useUnreadCount } from '@/stores/messaging';
 // Android.
 
 const MobileBottomNav = React.memo(function MobileBottomNav() {
-  const pathname = usePathname();
+  const pathname = useShellPathname();
   const router = useRouter();
   const { user, hydrated } = useAuth();
   const { isCompact } = useBottomNavScroll();
@@ -98,7 +99,9 @@ const MobileBottomNav = React.memo(function MobileBottomNav() {
         // (globals.css, "A chat that owns the phone").
         data-app-mobile-nav=""
         className={cn(
-          'md:hidden fixed bottom-0 left-0 right-0 border-t border-default',
+          // app-mobile-nav: globals.css keeps keyboard focus scrolled clear of
+          // this bar while it is on the page (scroll-padding-bottom).
+          'app-mobile-nav md:hidden fixed bottom-0 left-0 right-0 border-t border-default',
           'transition-all duration-300 ease-in-out',
           // OPAQUE, always. `bg-surface-page/95` let page content read through
           // the nav on a light background; primary navigation has to be a

@@ -1,5 +1,7 @@
 import { AlertTriangle } from 'lucide-react';
 import { LEGAL_DRAFT_NOTICE, type LegalDocument } from '@/config/legal-content';
+import { PUBLIC_PAGE_WIDTH, PublicPageHeader } from '@/components/layout/PublicPageHeader';
+import { cn } from '@/lib/utils';
 
 /**
  * Shared renderer for the /privacy and /terms pages. Content lives in
@@ -8,14 +10,15 @@ import { LEGAL_DRAFT_NOTICE, type LegalDocument } from '@/config/legal-content';
 export function LegalDocumentPage({ document }: { document: LegalDocument }) {
   return (
     <div className="min-h-screen bg-surface-page">
-      <article className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
-        <header className="border-b border-default pb-8">
-          <h1 className="font-heading tracking-display text-3xl font-bold text-fg-primary sm:text-4xl">
-            {document.title}
-          </h1>
-          <p className="mt-3 text-sm text-fg-secondary">Last updated: {document.lastUpdated}</p>
+      <article className={cn(PUBLIC_PAGE_WIDTH.reading, 'pb-16')}>
+        <PublicPageHeader
+          align="start"
+          title={document.title}
+          meta={`Last updated: ${document.lastUpdated}`}
+        />
+        <div className="border-b border-default pb-8">
           {document.draft && (
-            <div className="mt-5 flex items-start gap-3 rounded-lg border border-default bg-surface-raised/40 p-4">
+            <div className="flex items-start gap-3 rounded-lg border border-default bg-surface-raised/40 p-4">
               <AlertTriangle
                 className="mt-0.5 h-5 w-5 flex-shrink-0 text-fg-secondary"
                 aria-hidden
@@ -28,7 +31,7 @@ export function LegalDocumentPage({ document }: { document: LegalDocument }) {
               <p key={paragraph}>{paragraph}</p>
             ))}
           </div>
-        </header>
+        </div>
 
         <div className="space-y-10 py-10">
           {document.sections.map((section, index) => (

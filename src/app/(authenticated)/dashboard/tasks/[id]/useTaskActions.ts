@@ -86,7 +86,7 @@ export function useTaskActions({ taskId, onSuccess }: UseTaskActionsOptions) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          requested_user_id: requestUserId || null,
+          requested_user_id: requestUserId,
           message: requestMessage || null,
         }),
       });
@@ -96,7 +96,7 @@ export function useTaskActions({ taskId, onSuccess }: UseTaskActionsOptions) {
         throw new Error(apiErrorMessage(data, 'Failed to send request'));
       }
 
-      toast.success(requestUserId ? 'Request sent' : 'Request sent to everyone');
+      toast.success('Request sent');
       onSuccess();
       return true;
     } catch (err) {
