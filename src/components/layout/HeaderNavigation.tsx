@@ -152,7 +152,17 @@ function HeaderNavDropdown({ item, isActive }: HeaderNavDropdownProps) {
   const hasActiveChild = item.children?.some(child => child.href && isActive(child.href)) || false;
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div
+      className="relative"
+      ref={dropdownRef}
+      // Close when keyboard focus leaves the panel. Only a mousedown closed it,
+      // so Tab moved on with the panel still open, and two could be open at once.
+      onBlur={event => {
+        if (!dropdownRef.current?.contains(event.relatedTarget as Node | null)) {
+          setIsOpen(false);
+        }
+      }}
+    >
       <button
         ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}

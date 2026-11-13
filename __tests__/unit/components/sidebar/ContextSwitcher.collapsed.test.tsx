@@ -82,3 +82,25 @@ describe('ContextSwitcher — expanded mode', () => {
     );
   });
 });
+
+describe('ContextSwitcher — expanded mode, keyboard', () => {
+  it('has a 44px trigger that names the menu it opens', () => {
+    render(<ContextSwitcher profile={profile} isExpanded />);
+    const trigger = screen.getByRole('button', { name: 'Switch context' });
+    expect(trigger.className).toContain('min-h-11');
+    fireEvent.click(trigger);
+    expect(
+      document.getElementById(trigger.getAttribute('aria-controls') ?? '')
+    ).toBeInTheDocument();
+  });
+
+  it('closes on Escape and gives focus back to the trigger', () => {
+    render(<ContextSwitcher profile={profile} isExpanded />);
+    const trigger = screen.getByRole('button', { name: 'Switch context' });
+    fireEvent.click(trigger);
+    expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    expect(document.activeElement).toBe(trigger);
+  });
+});

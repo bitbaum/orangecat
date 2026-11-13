@@ -85,6 +85,7 @@ export function SidebarNavItem({ item, isActive, isExpanded, onNavigate }: Sideb
         href={item.href || '#'}
         className={linkClasses}
         onClick={onNavigate}
+        aria-current={isActive ? 'page' : undefined}
         aria-label={item.comingSoon ? `${item.name} - ${navigationLabels.COMING_SOON}` : item.name}
       >
         {item.icon && <item.icon className={iconClasses} />}

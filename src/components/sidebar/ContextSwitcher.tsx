@@ -13,7 +13,7 @@
  * Created: 2026-02-25
  */
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useId } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -48,6 +48,23 @@ export function ContextSwitcher({
 
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelId = useId();
+
+  // Escape closes the menu and gives focus back to its trigger.
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+    function handleKey(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+        triggerRef.current?.focus();
+      }
+    }
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, [isOpen]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -113,7 +130,15 @@ export function ContextSwitcher({
   }
 
   return (
-    <div ref={dropdownRef} className={cn('relative px-2 py-3 border-b border-subtle', className)}>
+    <div
+      ref={dropdownRef}
+      className={cn('relative px-2 py-3 border-b border-subtle', className)}
+      onBlur={event => {
+        if (!dropdownRef.current?.contains(event.relatedTarget as Node | null)) {
+          setIsOpen(false);
+        }
+      }}
+    >
       {/* Trigger. The avatar + name open what people expect them to: your own
           public profile (or the group's page). The chevron alone opens the
           context switcher — before, the whole row only toggled the menu and
@@ -162,10 +187,12 @@ export function ContextSwitcher({
         </Link>
         <button
           type="button"
+          ref={triggerRef}
           onClick={() => setIsOpen(!isOpen)}
           aria-label="Switch context"
           aria-expanded={isOpen}
-          className="flex-shrink-0 rounded-md p-2 transition-colors hover:bg-surface-raised"
+          aria-controls={panelId}
+          className="flex min-h-11 min-w-11 flex-shrink-0 items-center justify-center rounded-md transition-colors hover:bg-surface-raised"
         >
           <ChevronDown
             className={cn('w-4 h-4 text-fg-tertiary transition-transform', isOpen && 'rotate-180')}
@@ -175,7 +202,10 @@ export function ContextSwitcher({
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute left-2 right-2 top-full z-50 mt-1 max-h-80 overflow-y-auto rounded-md border border-subtle bg-surface-modal py-1 shadow-sm">
+        <div
+          id={panelId}
+          className="absolute left-2 right-2 top-full z-50 mt-1 max-h-80 overflow-y-auto rounded-md border border-subtle bg-surface-modal py-1 shadow-sm"
+        >
           {profile.username && (
             <Link
               href={publicProfilePath(profile.username)}
