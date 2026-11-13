@@ -207,7 +207,7 @@ export function EmailCodeSignIn({
           )}
           <Button
             type="submit"
-            variant="accent"
+            variant="primary"
             disabled={busy || !email.trim() || (needsCaptcha && !captchaToken)}
             className="h-12 w-full font-semibold"
           >
@@ -267,7 +267,7 @@ export function EmailCodeSignIn({
           </div>
           <Button
             type="submit"
-            variant="accent"
+            variant="primary"
             disabled={busy || digits.length < 6}
             className="h-12 w-full font-semibold"
           >

@@ -9,6 +9,7 @@ import { useAuthSubmission } from './useAuthSubmission';
 import type { Provider } from '@supabase/supabase-js';
 import { OAUTH_TO_SUPABASE, type OAuthProvider } from './oauth-provider-map';
 import { callbackUrl, readHandoff, safeReturnPath } from '@/lib/oauth/handoff';
+import { landingAfterSignIn } from '@/lib/auth/landing';
 
 export type { OAuthProvider };
 
@@ -41,6 +42,17 @@ export function useAuthForm() {
       setMode(modeParam);
     }
   }, [searchParams]);
+
+  // The Sign in / Create account switch. Keeps ?mode= in step, so a reload or
+  // a shared link opens the same side.
+  const switchMode = useCallback((next: AuthMode) => {
+    setMode(next);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('mode', next);
+      window.history.replaceState(window.history.state, '', url.toString());
+    }
+  }, []);
 
   useEffect(() => {
     if (hydrated && !session && !profile) {
@@ -100,6 +112,9 @@ export function useAuthForm() {
   const {
     localLoading,
     error,
+    retryable,
+    fieldErrors,
+    setFieldErrors,
     success,
     retryCount,
     handleSubmit,
@@ -121,6 +136,8 @@ export function useAuthForm() {
   });
 
   const loading = localLoading || authLoading;
+  // Its own flag, so the spinner shows on the button that was pressed only.
+  const [anonLoading, setAnonLoading] = useState(false);
   const _isCurrentlyLoading = loading || redirectLoading;
 
   // Wrap submission's retry/clear so the URL-error layer clears too —
@@ -139,10 +156,12 @@ export function useAuthForm() {
     if (!(session?.user && hydrated)) {
       return;
     }
-    const fromParam = searchParams?.get('from') || '/dashboard';
-    // Same-origin paths only — `from` is attacker-suppliable via the URL.
-    const redirectUrl =
-      fromParam.startsWith('/') && !fromParam.startsWith('//') ? fromParam : '/dashboard';
+    // One rule for every way in (lib/auth/landing.ts); same-origin `from` only.
+    const redirectUrl = landingAfterSignIn({
+      from: searchParams?.get('from'),
+      isNewAccount: !!session.user.is_anonymous || mode === 'register',
+      onboardingCompleted: profile?.onboarding_completed,
+    });
     router.replace(redirectUrl);
     // The soft replace can race the server's view of the fresh auth cookie
     // (e.g. right after anonymous sign-in): middleware 307s back to /auth,
@@ -156,6 +175,9 @@ export function useAuthForm() {
       }
     }, 2500);
     return () => clearTimeout(fallback);
+    // Decided once, when the session arrives: a profile loading a moment later
+    // must not send the person somewhere else mid-navigation.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session, hydrated, router, searchParams]);
 
   const handleMFAVerificationComplete = () => {
@@ -206,19 +228,23 @@ export function useAuthForm() {
   }, [hydrated, session, handoff.provider]);
 
   const handleAnonymousSignIn = async () => {
+    setAnonLoading(true);
     try {
       const result = await signInAnonymously(captchaToken);
       if (result.error) {
         throw new Error(apiErrorMessage(result.error, 'Anonymous sign-in failed'));
       }
-      // Same-origin paths only — `from` is attacker-suppliable via the URL.
-      // The session branch above already guards this; without the same check
-      // here, anonymous sign-in was an open redirect.
-      const anonFrom = searchParams?.get('from') || '/dashboard';
-      const redirectUrl =
-        anonFrom.startsWith('/') && !anonFrom.startsWith('//') ? anonFrom : '/dashboard';
-      router.replace(redirectUrl);
+      // Same-origin `from` only (landingAfterSignIn) — without the check this
+      // was an open redirect. The spinner stays until the page changes.
+      router.replace(
+        landingAfterSignIn({
+          from: searchParams?.get('from'),
+          isNewAccount: true,
+          onboardingCompleted: undefined,
+        })
+      );
     } catch (err) {
+      setAnonLoading(false);
       // Surface the failure: anonymous sign-in can fail for environment
       // reasons (provider disabled in Supabase, captcha required, rate
       // limit). The previous handler swallowed the error to the console
@@ -231,14 +257,32 @@ export function useAuthForm() {
   return {
     mode,
     setMode,
+    switchMode,
     formData,
-    setFormData,
+    setFormData: (data: AuthFormData) => {
+      setFormData(data);
+      // A field's message goes once the person edits that field.
+      setFieldErrors(prev => {
+        const next = { ...prev };
+        (Object.keys(next) as (keyof AuthFormData)[]).forEach(key => {
+          if (data[key] !== formData[key]) {
+            delete next[key];
+          }
+        });
+        return next;
+      });
+    },
+    fieldErrors,
     showPassword,
     setShowPassword,
     showConfirmPassword,
     setShowConfirmPassword,
     loading,
+    anonLoading,
     error: error || urlError,
+    // A callback error (a cancelled Google sign-in, an expired link) is not
+    // fixed by resubmitting this form, so it never offers "Try again".
+    retryable: !!error && retryable,
     success,
     rememberMe,
     setRememberMe,

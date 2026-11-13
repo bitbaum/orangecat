@@ -21,6 +21,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
+import { landingAfterSignIn } from '@/lib/auth/landing';
 
 const ROOT = join(__dirname, '..', '..');
 const read = (rel: string) => readFileSync(join(ROOT, rel), 'utf8');
@@ -40,8 +41,13 @@ describe('the auth page reads `from`', () => {
   it('guards the return path in BOTH branches, not just the session one', () => {
     // `from` is attacker-suppliable. A same-origin check in one branch and not
     // the other is an open redirect through whichever branch was forgotten.
-    const guards = AUTH_FORM.match(/startsWith\('\/'\) && !\w+\.startsWith\('\/\/'\)/g) ?? [];
-    expect(guards.length).toBeGreaterThanOrEqual(2);
+    // Both now go through the one rule (lib/auth/landing.ts), which guards it.
+    const routed = AUTH_FORM.match(/landingAfterSignIn\(/g) ?? [];
+    expect(routed.length).toBeGreaterThanOrEqual(2);
+    expect(AUTH_FORM).not.toMatch(/router\.replace\(\s*(?:fromParam|anonFrom)/);
+    expect(
+      landingAfterSignIn({ from: '//evil.example', isNewAccount: true, onboardingCompleted: null })
+    ).not.toContain('evil');
   });
 });
 
