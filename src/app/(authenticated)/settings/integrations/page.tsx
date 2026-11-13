@@ -153,10 +153,17 @@ export default function IntegrationsPage() {
           Webhook endpoints
         </h2>
         <p className="mb-4 text-sm text-fg-secondary">
-          Receive signed POST events when entities the bound actor owns are created. Verify
-          deliveries with{' '}
-          <code className="rounded bg-surface-raised px-1 text-xs">verifyWebhookSignature</code>{' '}
-          from <code className="rounded bg-surface-raised px-1 text-xs">@orangecat/sdk</code>.
+          Receive signed POST events when entities the bound actor owns are created. Each delivery
+          carries an{' '}
+          <code className="rounded bg-surface-raised px-1 text-xs">X-OrangeCat-Signature</code>{' '}
+          header,{' '}
+          <code className="rounded bg-surface-raised px-1 text-xs">
+            t=&lt;unix seconds&gt;,v1=&lt;hex&gt;
+          </code>
+          : an HMAC-SHA-256 of{' '}
+          <code className="rounded bg-surface-raised px-1 text-xs">{'${t}.${raw body}'}</code> with
+          the endpoint&apos;s secret. Compare in constant time and refuse deliveries more than five
+          minutes old.
         </p>
         <WebhookEndpointsCard actors={actors} defaultActorId={defaultActorId} />
       </div>
