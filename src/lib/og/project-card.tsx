@@ -12,7 +12,7 @@ import { shareLine } from '@/lib/og/share-line';
 
 const CACHE = { 'cache-control': 'public, max-age=3600, s-maxage=3600' };
 
-/** The plain brand card — for drafts and missing projects. */
+/** The plain brand card — for drafts, and for a project, profile or group that does not exist. */
 export function brandOnlyCard() {
   return new ImageResponse(
     <div
@@ -42,6 +42,11 @@ export interface ProjectCardProps {
   mark: MarkDefinition | null;
   /** True for one of the studio's own products. */
   isStudio: boolean;
+  /**
+   * Whether a backer can pay this project now (the page's own test: a wallet
+   * resolves). Only then does the card say "Back it in Bitcoin".
+   */
+  canReceive: boolean;
 }
 
 export function projectCardResponse({
@@ -52,6 +57,7 @@ export function projectCardResponse({
   creatorName,
   mark,
   isStudio,
+  canReceive,
 }: ProjectCardProps) {
   const line = shareLine(description);
   const titleSize = title.length > 48 ? 56 : title.length > 28 ? 68 : 84;
@@ -149,12 +155,14 @@ export function projectCardResponse({
         style={{
           display: 'flex',
           alignItems: 'flex-end',
-          justifyContent: 'space-between',
+          justifyContent: canReceive ? 'space-between' : 'flex-end',
         }}
       >
-        <span style={{ display: 'flex', fontSize: 26, color: OG_COLOR.textMuted }}>
-          Back it in Bitcoin — it goes straight to the project.
-        </span>
+        {canReceive && (
+          <span style={{ display: 'flex', fontSize: 26, color: OG_COLOR.textMuted }}>
+            Back it in Bitcoin — it goes straight to the project.
+          </span>
+        )}
         <BrandFooter wordmark={APP_NAME} tagline={APP_KICKER} />
       </div>
     </div>,

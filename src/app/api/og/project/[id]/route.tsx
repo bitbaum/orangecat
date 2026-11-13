@@ -8,6 +8,10 @@
  * mark when the fleet map knows it, else its cover image, else its initial),
  * its title, one line on what it is, who is behind it, and how backing works.
  *
+ * "Back it in Bitcoin" only when a backer can actually pay it: the same wallet
+ * resolution the page uses. A project nobody can pay yet (no wallet, or set up
+ * for someone who has not taken it over) said it anyway (QA 2026-11-12).
+ *
  * No amounts. A cached image cannot keep a currency conversion honest, and a
  * stale "CHF 0 of 5,000" on a card someone shared last week is worse than none.
  *
@@ -22,6 +26,7 @@ import { DATABASE_TABLES } from '@/config/database-tables';
 import { getTableName } from '@/config/entity-registry';
 import { markFor } from '@/config/marks';
 import { isProjectPubliclyVisible } from '@/config/project-statuses';
+import { resolveSellerReceiveInfo } from '@/domain/payments';
 import { brandOnlyCard, projectCardResponse } from '@/lib/og/project-card';
 import { createServerClient } from '@/lib/supabase/server';
 import { getStudioProject } from '@/services/loki/studio-project';
@@ -58,7 +63,7 @@ export async function GET(_req: Request, { params }: RouteContext) {
     return brandOnlyCard();
   }
 
-  const [creatorRes, studio] = await Promise.all([
+  const [creatorRes, studio, receive] = await Promise.all([
     project.user_id
       ? supabase
           .from(DATABASE_TABLES.PROFILES)
@@ -67,6 +72,8 @@ export async function GET(_req: Request, { params }: RouteContext) {
           .maybeSingle()
       : Promise.resolve({ data: null }),
     getStudioProject(id),
+    // Unknown is not a yes: a failed lookup leaves the backing line off.
+    resolveSellerReceiveInfo('project', id).catch(() => null),
   ]);
   const creator = creatorRes.data as { name: string | null; username: string | null } | null;
 
@@ -78,5 +85,6 @@ export async function GET(_req: Request, { params }: RouteContext) {
     creatorName: creator?.name || (creator?.username ? `@${creator.username}` : null),
     mark: studio ? markFor(studio.slug) : null,
     isStudio: Boolean(studio),
+    canReceive: receive !== null,
   });
 }
