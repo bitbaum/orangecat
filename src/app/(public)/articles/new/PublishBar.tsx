@@ -5,6 +5,7 @@ import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { TIMELINE_VISIBILITY_OPTIONS } from '@/config/timeline';
 import { ARTICLE_COPY } from '@/config/articles';
 import type { TimelineVisibility } from '@/types/timeline';
+import BylineField, { type BylinePrompt } from './BylineField';
 import ProjectWallsField from './ProjectWallsField';
 import type { ProjectWalls } from './useProjectWalls';
 
@@ -20,6 +21,7 @@ export default function PublishBar({
   isEditing,
   onPublish,
   projectWalls,
+  byline,
 }: {
   visibility: TimelineVisibility;
   setVisibility: (v: TimelineVisibility) => void;
@@ -29,10 +31,13 @@ export default function PublishBar({
   onPublish: () => void;
   /** Absent when editing: an edit keeps the walls it was published on. */
   projectWalls?: ProjectWalls;
+  /** Absent when editing: the byline is asked once, before the first publish. */
+  byline?: BylinePrompt;
 }) {
   return (
     <div className="mt-6 grid items-end gap-3 border-t border-subtle pt-4 sm:grid-cols-[1fr_auto]">
       <div className="flex min-w-0 flex-col gap-2">
+        {byline && <BylineField prompt={byline} disabled={publishing} />}
         <fieldset disabled={publishing} className="min-w-0">
           <legend className="mb-2 text-sm font-medium text-fg-primary">Who can read this?</legend>
           <SegmentedControl
