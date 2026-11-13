@@ -3,6 +3,7 @@
 import { Share2, UserPlus, UserCheck, Pencil, Bitcoin, MessageSquare } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import ProfileShare from '@/components/sharing/ProfileShare';
+import { isCatUsername } from '@/config/cat-identity';
 import { ROUTES } from '@/config/routes';
 import { cn } from '@/lib/utils';
 import { useCanReceive } from './useCanReceive';
@@ -42,6 +43,15 @@ export function ProfileActions({
   const displayName = profile.name || profile.username || 'User';
   // Pay only when a payment would land — the same check the pay flow runs.
   const canReceive = useCanReceive(profile.username);
+  // A direct message to the Cat's account is answered only when it tags @cat,
+  // so "Message" on its profile opened a thread that stayed silent. Until a
+  // one-to-one with a bot answers every message (ADR-0015 D3), it leads to the
+  // Cat's own chat.
+  const message = isCatUsername(profile.username)
+    ? { href: ROUTES.DASHBOARD.CAT, label: 'Talk to Cat' }
+    : profile.id
+      ? { href: ROUTES.MESSAGES_TO(profile.id), label: 'Message' }
+      : null;
 
   return (
     <div className={cn('flex items-center gap-2', className)}>
@@ -59,15 +69,10 @@ export function ProfileActions({
         </Button>
       ) : (
         <>
-          {profile.id && (
-            <Button
-              href={ROUTES.MESSAGES_TO(profile.id)}
-              variant="outline"
-              size="sm"
-              className={ACTION}
-            >
+          {message && (
+            <Button href={message.href} variant="outline" size="sm" className={ACTION}>
               <MessageSquare className="mr-1.5 hidden h-4 w-4 sm:block" aria-hidden />
-              Message
+              {message.label}
             </Button>
           )}
           <Button
