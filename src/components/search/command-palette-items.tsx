@@ -13,10 +13,10 @@
  * in a keyword.
  */
 import type { ComponentType } from 'react';
-import { User } from 'lucide-react';
+import { FileText, User } from 'lucide-react';
 import { createSearch, type Range, type SearchSpec } from '@bitbaum/searchkit';
 import { ENTITY_REGISTRY, ENTITY_TYPES } from '@/config/entity-registry';
-import { sidebarSections, type NavigationItem } from '@/config/navigation';
+import { PUBLIC_PAGES, sidebarSections, type NavigationItem } from '@/config/navigation';
 import type { Thing } from '@/domain/things/service';
 import type { PublicHit } from '@/services/search/public-search';
 
@@ -75,43 +75,74 @@ function flatten(items: NavigationItem[]): NavigationItem[] {
   return items.flatMap(item => [item, ...flatten(item.children ?? [])]);
 }
 
-/** Every page in the sidebar, plus each entity type's own list. */
-export function buildPages(): PaletteItem[] {
-  const seen = new Set<string>();
-  const out: PaletteItem[] = [];
-  const add = (item: PaletteItem) => {
-    if (seen.has(item.href)) {
-      return;
-    }
-    seen.add(item.href);
-    out.push(item);
-  };
-  for (const section of sidebarSections) {
-    for (const item of flatten(section.items)) {
-      if (!item.href || item.external || item.comingSoon || !item.icon) {
-        continue;
-      }
-      add({
+/** The public pages — the header's and the footer's — as palette rows. */
+function publicPageItems(): PaletteItem[] {
+  return Object.entries(PUBLIC_PAGES).map(([href, page]) => ({
+    id: `page-${href}`,
+    label: page.name,
+    hint: page.description,
+    icon: FileText,
+    keywords: 'keywords' in page ? page.keywords : undefined,
+    href,
+  }));
+}
+
+/** The sidebar's pages as palette rows; signed out, only those a visitor can open. */
+function sidebarPageItems(signedIn: boolean): PaletteItem[] {
+  return sidebarSections.flatMap(section =>
+    flatten(section.items)
+      .filter(
+        item =>
+          item.href &&
+          !item.external &&
+          !item.comingSoon &&
+          item.icon &&
+          (signedIn || !item.requiresAuth)
+      )
+      .map(item => ({
         id: `page-${item.href}`,
         label: item.name,
         hint: item.description,
         icon: item.icon as PaletteItem['icon'],
         keywords: section.title,
-        href: item.href,
-      });
+        href: item.href as string,
+      }))
+  );
+}
+
+/**
+ * Every page a person can open, once each.
+ *
+ * Signed in: the sidebar, each entity type's own list, then the public pages.
+ * Signed out: the public pages lead and nothing behind sign-in is offered —
+ * the palette used to index only the sidebar, so a visitor could not find
+ * Pricing or Docs, and every row it showed them ended at the sign-in form.
+ */
+export function buildPages({ signedIn = true }: { signedIn?: boolean } = {}): PaletteItem[] {
+  const entityLists: PaletteItem[] = signedIn
+    ? ENTITY_TYPES.map(type => {
+        const meta = ENTITY_REGISTRY[type];
+        return {
+          id: `page-${meta.basePath}`,
+          label: `Your ${meta.namePlural.toLowerCase()}`,
+          icon: meta.icon,
+          keywords: `${meta.name} ${meta.namePlural} my list manage`,
+          href: meta.basePath,
+        };
+      })
+    : [];
+  const ordered = signedIn
+    ? [...sidebarPageItems(true), ...entityLists, ...publicPageItems()]
+    : [...publicPageItems(), ...sidebarPageItems(false)];
+
+  const seen = new Set<string>();
+  return ordered.filter(item => {
+    if (seen.has(item.href)) {
+      return false;
     }
-  }
-  for (const type of ENTITY_TYPES) {
-    const meta = ENTITY_REGISTRY[type];
-    add({
-      id: `page-${meta.basePath}`,
-      label: `Your ${meta.namePlural.toLowerCase()}`,
-      icon: meta.icon,
-      keywords: `${meta.name} ${meta.namePlural} my list manage`,
-      href: meta.basePath,
-    });
-  }
-  return out;
+    seen.add(item.href);
+    return true;
+  });
 }
 
 /** Your own things, as palette rows. */

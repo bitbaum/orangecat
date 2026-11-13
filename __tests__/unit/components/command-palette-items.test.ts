@@ -10,6 +10,8 @@ import {
 } from '@/components/search/command-palette-items';
 import { publicHref, type PublicHit } from '@/services/search/public-search';
 import { ENTITY_REGISTRY, ENTITY_TYPES } from '@/config/entity-registry';
+import { PUBLIC_PAGES, sidebarSections } from '@/config/navigation';
+import { ROUTES } from '@/config/routes';
 import type { Thing } from '@/domain/things/service';
 
 // The palette's lists are derived, so a new entity type or sidebar page shows
@@ -94,5 +96,32 @@ describe('command palette items', () => {
     expect(pagesFirst(settings, [{ typos: 1 }])).toBe(true);
     expect(pagesFirst(settings, [{ typos: 0 }])).toBe(false);
     expect(pagesFirst([], [{ typos: 0 }])).toBe(false);
+  });
+
+  it('finds the public pages too: Pricing by its name and by "plans"', () => {
+    for (const signedIn of [true, false]) {
+      const pages = buildPages({ signedIn });
+      expect(pages.map(p => p.href)).toEqual(expect.arrayContaining(Object.keys(PUBLIC_PAGES)));
+      expect(rankItems(pages, 'pricing', 1)[0]?.href).toBe(ROUTES.PRICING);
+      expect(rankItems(pages, 'plans', 1)[0]?.href).toBe(ROUTES.PRICING);
+    }
+  });
+
+  it('offers a visitor public pages first and nothing behind sign-in', () => {
+    const pages = buildPages({ signedIn: false });
+    const hrefs = pages.map(p => p.href);
+    expect(new Set(hrefs).size).toBe(hrefs.length);
+    expect(pages.slice(0, 6).every(p => p.href in PUBLIC_PAGES)).toBe(true);
+    const behindSignIn = sidebarSections
+      .flatMap(s => s.items)
+      .filter(i => i.requiresAuth && i.href && !(i.href in PUBLIC_PAGES))
+      .map(i => i.href);
+    expect(behindSignIn.length).toBeGreaterThan(0);
+    for (const href of behindSignIn) {
+      expect(hrefs).not.toContain(href);
+    }
+    for (const t of ENTITY_TYPES) {
+      expect(hrefs).not.toContain(ENTITY_REGISTRY[t].basePath);
+    }
   });
 });
