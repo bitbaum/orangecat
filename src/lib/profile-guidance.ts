@@ -144,9 +144,8 @@ export const profileGuidanceContent: Record<NonNullable<ProfileFieldType>, Field
     description:
       'Public email address for supporters to contact you. Different from your registration email (which is private).',
     tips: [
-      'Defaults to your registration email (but you can change it)',
+      'Empty unless you fill it in: your sign-in email is never shown here',
       'This will be visible on your public profile',
-      'Use a different email if you want to keep registration email private',
       'Helps supporters reach out directly',
       'Optional but recommended for transparency',
     ],

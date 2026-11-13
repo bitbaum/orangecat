@@ -10,9 +10,11 @@
  */
 
 import { useCallback, useState } from 'react';
-import { Download, Loader2, MessageSquareX } from 'lucide-react';
+import { DatabaseBackup, Download, Loader2, MessageSquareX } from 'lucide-react';
 import { toast } from 'sonner';
+import Link from 'next/link';
 import Button from '@/components/ui/Button';
+import { ROUTES } from '@/config/routes';
 import { logger } from '@/utils/logger';
 import { API_ROUTES, ACCOUNT_EXPORT_FILENAME } from '@/config/api-routes';
 
@@ -64,8 +66,12 @@ export function SettingsDataSection() {
   }, []);
 
   return (
-    <div>
-      <p className="mb-6 max-w-prose text-fg-secondary">
+    <div className="border-t border-default pt-10">
+      <h3 className="mb-4 flex items-center text-lg font-semibold text-fg-primary">
+        <DatabaseBackup className="mr-2 h-6 w-6" />
+        Your data
+      </h3>
+      <p className="mb-6 text-fg-secondary">
         OrangeCat never uses your data to train AI models. When Cat calls an AI provider, that
         provider&apos;s own data policy applies — with your own key it&apos;s your provider
         agreement; on the free pool, prompts may be logged by the model host. Your data here exists
@@ -76,15 +82,18 @@ export function SettingsDataSection() {
         <div className="rounded-md border border-default bg-surface-raised/30 p-6">
           <h4 className="mb-2 text-lg font-medium text-fg-primary">Export my data</h4>
           <p className="mb-4 text-base text-fg-secondary">
-            Download a JSON file with the data we store about you — profile, Cat conversations and
-            memories, credit history, and preferences. It&apos;s your data; take it anywhere.
+            Download a JSON file with the data we store about you: your profile, every page you own
+            (wallets included), your posts, follows and group memberships, payment requests and
+            orders you are part of, notifications, Cat conversations, memories and interests, credit
+            history, and preferences. It leaves out encrypted API keys and your wallet connection
+            secret. It&apos;s your data; take it anywhere.
           </p>
           <Button
             type="button"
             variant="outline"
             onClick={handleExport}
             disabled={isExporting}
-            className="min-h-11"
+            className="px-6 py-2"
           >
             {isExporting ? (
               <>
@@ -101,8 +110,12 @@ export function SettingsDataSection() {
         <div className="rounded-md border border-default bg-surface-raised/30 p-6">
           <h4 className="mb-2 text-lg font-medium text-fg-primary">Delete all Cat conversations</h4>
           <p className="mb-4 text-base text-fg-secondary">
-            Permanently delete your entire Cat chat history. Memories Cat has saved are managed
-            under Memory. This cannot be undone.
+            Permanently delete your entire Cat chat history. Memories Cat has saved are kept
+            separately; manage them on the{' '}
+            <Link href={ROUTES.SETTINGS_MEMORY} className="font-medium text-fg-primary underline">
+              Memory tab
+            </Link>
+            . This cannot be undone.
           </p>
           {confirmClear ? (
             <div className="flex flex-wrap items-center gap-2">
@@ -114,7 +127,7 @@ export function SettingsDataSection() {
                 variant="outline"
                 onClick={() => setConfirmClear(false)}
                 disabled={isClearing}
-                className="min-h-11"
+                className="px-4 py-2"
               >
                 Cancel
               </Button>
@@ -123,7 +136,7 @@ export function SettingsDataSection() {
                 variant="danger"
                 onClick={handleClearConversations}
                 disabled={isClearing}
-                className="min-h-11"
+                className="px-4 py-2"
               >
                 {isClearing ? (
                   <>
@@ -139,7 +152,7 @@ export function SettingsDataSection() {
               type="button"
               variant="outline"
               onClick={() => setConfirmClear(true)}
-              className="min-h-11 text-status-negative hover:border-status-negative/40"
+              className="px-6 py-2 text-status-negative hover:border-status-negative/40"
             >
               <MessageSquareX className="mr-2 h-4 w-4" /> Delete all conversations
             </Button>
