@@ -59,7 +59,8 @@ export function ContactSection({ control, onFieldFocus, userEmail }: ContactSect
               />
             </FormControl>
             <FormDescription className="text-xs text-fg-secondary">
-              Visible on your public profile. Defaults to your registration email.
+              Visible on your public profile. Leave it empty to show none; your sign-in email is
+              never shown.
             </FormDescription>
             <FormMessage />
           </FormItem>
