@@ -22,6 +22,7 @@ import ComposerEditor from './ComposerEditor';
 import PublishBar from './PublishBar';
 import ImportNotice, { type ArticlePrefill } from './ImportNotice';
 import { formatNumber } from '@/utils/locale';
+import { useProjectWalls } from './useProjectWalls';
 
 /** Existing article passed when the composer is opened in edit mode. */
 export interface ArticleInitial {
@@ -38,13 +39,17 @@ export default function ArticleComposer({
   user,
   initial,
   prefill,
+  projectParam = null,
 }: {
   user: { id: string };
   initial?: ArticleInitial;
   prefill?: ArticlePrefill;
+  /** `?project=` from a sister product's link: preselected when it is the writer's own. */
+  projectParam?: string | null;
 }) {
   const router = useRouter();
   const isEditing = !!initial;
+  const projectWalls = useProjectWalls(user.id, projectParam, !isEditing);
   const [title, setTitle] = useState(initial?.title ?? prefill?.title ?? '');
   const [excerpt, setExcerpt] = useState(initial?.excerpt ?? prefill?.excerpt ?? '');
   const [coverImage, setCoverImage] = useState(initial?.coverImage ?? '');
@@ -136,7 +141,7 @@ export default function ArticleComposer({
       return;
     }
 
-    const result = await publishArticle(user, payload);
+    const result = await publishArticle(user, { ...payload, projectIds: projectWalls.selected });
     if (!result.success) {
       setError(result.error);
       setPublishing(false);
@@ -278,6 +283,7 @@ export default function ArticleComposer({
           canPublish={canPublish}
           isEditing={isEditing}
           onPublish={handlePublish}
+          projectWalls={isEditing ? undefined : projectWalls}
         />
       </div>
     </div>

@@ -24,7 +24,7 @@ const bundle = await build({
       import ArticleComposer from './src/app/(public)/articles/new/ArticleComposer';
       const root=createRoot(document.getElementById('app'));
       window.published=[];window.paths=[];
-      let mountId=0;window.mount=(id='fixture-account-a',prefill)=>root.render(<ArticleComposer key={id+':'+mountId++} user={{id}} prefill={prefill}/>);
+      let mountId=0;window.mount=(id='fixture-account-a',prefill,projectParam)=>root.render(<ArticleComposer key={id+':'+mountId++} user={{id}} prefill={prefill} projectParam={projectParam}/>);
       window.mount();`,
   },
   bundle: true,
@@ -40,7 +40,7 @@ const bundle = await build({
         b.onResolve(
           {
             filter:
-              /^(next\/(navigation|link|image)|@\/hooks\/useAuth|@\/services\/articles\/(create|update)|@\/services\/images\/upload)$/,
+              /^(next\/(navigation|link|image)|@\/hooks\/useAuth|@\/services\/articles\/(create|update)|@\/services\/images\/upload|@\/services\/timeline\/utils\/post-composer)$/,
           },
           a => ({ path: a.path, namespace: 'boundary' })
         );
@@ -56,9 +56,11 @@ const bundle = await build({
                   ? 'import React from "react";export default function Link({children,...props}){return <a {...props}>{children}</a>}'
                   : a.path === 'next/image'
                     ? 'import React from "react";export default function Image(props){return <img {...props}/>}'
-                    : a.path.includes('/articles/')
-                      ? 'export async function publishArticle(user,input){window.published.push({user,input});return {success:true,slug:"fixture-article"}};export const updateArticle=publishArticle;'
-                      : 'export const IMAGE_UPLOAD_ACCEPT="image/png,image/jpeg,image/webp,image/gif";export const IMAGE_UPLOAD_FORMATS_LABEL="Images";export const uploadUserImage=async()=>{throw Error("Upload not exercised in this fixture")};',
+                    : a.path.includes('/post-composer')
+                      ? 'export const fetchUserProjects=async()=>window.ownProjects??[];'
+                      : a.path.includes('/articles/')
+                        ? 'export async function publishArticle(user,input){window.published.push({user,input});return {success:true,slug:"fixture-article"}};export const updateArticle=publishArticle;'
+                        : 'export const IMAGE_UPLOAD_ACCEPT="image/png,image/jpeg,image/webp,image/gif";export const IMAGE_UPLOAD_FORMATS_LABEL="Images";export const uploadUserImage=async()=>{throw Error("Upload not exercised in this fixture")};',
         }));
         b.onResolve({ filter: /^@\// }, a => {
           const target = path.join(root, 'src', a.path.slice(2));
@@ -281,6 +283,42 @@ try {
     assert.equal(await title.inputValue(), 'Human article');
     assert.equal(await body.inputValue(), 'Human writing.');
     assert.equal(await page.getByText('Brought over from', { exact: false }).count(), 0);
+    // "Also post on a project": a link's ?project= preselects the writer's own
+    // project; one that is not theirs is not chosen and the editor says so.
+    await page.evaluate(() => {
+      window.ownProjects = [{ id: 'project-solon', title: 'Solon', status: 'active' }];
+      window.mount('fixture-account-a', undefined, 'someone-elses');
+    });
+    await page.getByText('not one of yours', { exact: false }).waitFor();
+    await page.getByRole('button', { name: 'Also post on a project', exact: true }).waitFor();
+    await page.evaluate(() => window.mount('fixture-account-a', undefined, 'solon'));
+    const walls = page.getByRole('button', { name: 'Also posting on Solon', exact: true });
+    await walls.waitFor();
+    await assertFits();
+    await assertTargets();
+    await walls.click();
+    await page.getByRole('button', { name: 'Deselect Solon', exact: true }).waitFor();
+    await assertFits();
+    await assertTargets();
+    await page.getByRole('button', { name: 'Close', exact: true }).click();
+    await title.fill('Article for Solon');
+    await body.fill('Posted on the project too.');
+    await page.getByRole('button', { name: 'Publish', exact: true }).click();
+    await page.waitForFunction(() =>
+      window.published.some(p => p.input.title === 'Article for Solon')
+    );
+    assert.deepEqual(
+      await page.evaluate(
+        () => window.published.find(p => p.input.title === 'Article for Solon').input.projectIds
+      ),
+      ['project-solon']
+    );
+    await page.evaluate(() => {
+      window.ownProjects = [];
+      window.mount('fixture-account-a');
+    });
+    // No projects, nothing to choose: the control is not there at all.
+    await page.getByText('Also post', { exact: false }).waitFor({ state: 'detached' });
     await page.evaluate(() => {
       document.activeElement?.blur();
       scrollTo({ top: 0, behavior: 'instant' });

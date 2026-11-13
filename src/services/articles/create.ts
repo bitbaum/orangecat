@@ -10,12 +10,23 @@ import { ARTICLE_EVENT_TYPE, buildArticleSlug, shortToken } from '@/config/artic
 import { buildArticleMetadata, validateArticleInput } from './write-shared';
 import type { CreateArticleInput } from './types';
 import { apiErrorMessage } from '@/lib/api/errorMessage';
+import { buildTimelineContexts } from '@/services/timeline/utils/timeline-contexts';
+import { fetchUserProjects } from '@/services/timeline/utils/post-composer';
+import { ownedProjectIds } from './project-walls';
 
 interface PublishArticleUser {
   id: string;
 }
 
 type PublishArticleResult = { success: true; slug: string } | { success: false; error: string };
+
+/** Keep only the requested projects the writer owns; ask the database only when some were requested. */
+async function ownProjects(userId: string, requested: string[] | undefined): Promise<string[]> {
+  if (!requested?.length) {
+    return [];
+  }
+  return ownedProjectIds(requested, await fetchUserProjects(userId));
+}
 
 export async function publishArticle(
   user: PublishArticleUser,
@@ -28,15 +39,16 @@ export async function publishArticle(
   const { title, body, excerpt, coverImage } = validation.value;
   const slug = buildArticleSlug(title, shortToken());
 
-  // Owner (profile) timeline + community feed when public — mirrors the short-post
-  // distribution contexts so articles surface everywhere posts do.
-  const timelineContexts: Array<{
-    timeline_type: 'profile' | 'project' | 'community';
-    timeline_owner_id: string | null;
-  }> = [{ timeline_type: 'profile', timeline_owner_id: user.id }];
-  if (input.visibility === 'public') {
-    timelineContexts.push({ timeline_type: 'community', timeline_owner_id: null });
-  }
+  // The writer's profile, each of their own projects they chose, and the
+  // community feed when public — the same contexts a short post builds.
+  const projectIds = await ownProjects(user.id, input.projectIds);
+  const timelineContexts = buildTimelineContexts(
+    'profile',
+    user.id,
+    user.id,
+    projectIds,
+    input.visibility
+  );
 
   const result = await timelineService.createEventWithVisibility({
     eventType: ARTICLE_EVENT_TYPE,
