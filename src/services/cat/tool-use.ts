@@ -18,6 +18,7 @@
  */
 
 import { reservePlatformCall } from '@/services/ai/vendor-spend-cap';
+import { postToolStep } from './tool-transport';
 import { actionToolDefinitions } from './action-schemas';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { toolPlanForModel, observedToolVerdict, recordToolAttempt } from './tool-capability';
@@ -389,34 +390,26 @@ async function runToolLoop(args: {
     // Every step is a call: on the platform's paid key it is counted against
     // the vendor's daily cap first, and refused once it is spent.
     await reservePlatformCall(toolKey);
-    const res = await fetch(toolEndpoint, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${toolKey}`, 'Content-Type': 'application/json' },
-      // Belt & braces with the outer race: the provider socket itself is
-      // aborted at the same deadline so no orphaned request lingers.
+    const res = await postToolStep({
+      toolEndpoint,
+      toolKey,
+      model: modelToUse,
+      messages: loopMessages,
+      tools: availableTools,
+      // Enough headroom for the analyze_website → prefill chain, where one
+      // assistant message carries up to 3 prefill_entity_form calls with
+      // full descriptions. Plain routing turns use far less.
+      maxTokens: 1200,
       signal: state.controller.signal,
-      body: JSON.stringify({
-        model: modelToUse,
-        messages: loopMessages,
-        tools: availableTools,
-        tool_choice: 'auto',
-        stream: false,
-        // Enough headroom for the analyze_website → prefill chain, where one
-        // assistant message carries up to 3 prefill_entity_form calls with
-        // full descriptions. Plain routing turns use far less.
-        max_tokens: 1200,
-      }),
     });
     if (!res.ok) {
       // Evidence only when the vendor SAYS it is about tools (classifyToolAttempt).
-      recordToolAttempt(modelToUse, toolKey, {
-        status: res.status,
-        bodyText: await res.text().catch(() => ''),
-      });
+      recordToolAttempt(modelToUse, toolKey, { status: res.status, bodyText: res.bodyText });
       throw new Error('Tool provider did not complete the request');
     }
 
-    const data = await res.json();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- a provider's chat-completions answer, narrowed field by field below
+    const data = res.data as any;
     state.controller.signal.throwIfAborted();
     recordToolAttempt(modelToUse, toolKey, { status: res.status, parsed: data });
     const choice = data.choices?.[0];

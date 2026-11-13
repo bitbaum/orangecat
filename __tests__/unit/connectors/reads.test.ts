@@ -72,7 +72,10 @@ describe('connector hands', () => {
     // No keys in the test environment: nothing is configured, so nothing is connected.
     const out = await CONNECTOR_HANDS.gmail_read('u1', {});
     expect(out.success).toBe(false);
-    expect(out.error).toMatch(/not connected/);
+    // The server has no Google keys here: said as ours to set up, with no
+    // button to go looking for.
+    expect(out.error).toMatch(/not switched on for OrangeCat yet/);
+    expect(out.error).not.toMatch(/Connect it here/);
     const bad = await CONNECTOR_HANDS.github_read('u1', { what: 'everything' });
     expect(bad.success).toBe(false);
     expect(bad.error).toMatch(/repos, issues, pulls, file/);

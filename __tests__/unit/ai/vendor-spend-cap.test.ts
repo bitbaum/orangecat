@@ -123,9 +123,13 @@ describe('the daily spending cap on a platform key', () => {
     );
     const tool = readFileSync('src/services/cat/tool-use.ts', 'utf8');
     expect(tool.indexOf('await reservePlatformCall(toolKey);')).toBeGreaterThan(0);
+    // The step itself is sent by tool-transport.ts (a key here, or one kept
+    // on Loki); the loop is still the only caller, and counts first.
+    expect(tool.indexOf('const res = await postToolStep({')).toBeGreaterThan(0);
     expect(tool.indexOf('await reservePlatformCall(toolKey);')).toBeLessThan(
-      tool.indexOf('const res = await fetch(toolEndpoint, {')
+      tool.indexOf('const res = await postToolStep({')
     );
+    expect(tool).not.toMatch(/await fetch\(toolEndpoint/);
     const probe = readFileSync('src/services/cat/health-probes.ts', 'utf8');
     expect(probe.indexOf('await reservePlatformCall(clean);')).toBeLessThan(
       probe.indexOf('const res = await fetch(endpoint, {')
