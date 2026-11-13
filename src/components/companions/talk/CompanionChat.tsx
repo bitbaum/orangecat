@@ -143,6 +143,9 @@ export function CompanionChat({
           <DetailRow href={`${ROUTES.AI_ASSISTANTS.VIEW(id)}/memory`}>
             {copy.companion.memory(name)}
           </DetailRow>
+          <DetailRow href={`${ROUTES.AI_ASSISTANTS.VIEW(id)}/library`}>
+            {COMPANION_COPY.library.row}
+          </DetailRow>
           {row?.mine && (
             <DetailRow href={`${ENTITY_REGISTRY['ai_assistant'].createPath}?edit=${id}`}>
               {copy.companion.edit}

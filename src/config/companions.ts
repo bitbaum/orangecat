@@ -48,6 +48,18 @@ export const COMPANION_COPY = {
     failed: 'That did not save. Try again.',
   },
 
+  /** A bot's library: what passed through your chats with it. */
+  library: {
+    row: 'Library',
+    title: (name: string) => `Your library with ${name}`,
+    privacy: 'Photos, files and links from your chats with this bot. Only you see this.',
+    empty: (name: string) =>
+      `Nothing yet. A photo, a file or a link you send ${name}, or it sends you, shows up here.`,
+    failed: 'The library could not be read. Try again.',
+    fromYou: 'You',
+    kinds: { photo: 'Photo', file: 'File', link: 'Link', picture: 'Picture from its browser' },
+  },
+
   /** The talk home: companions, group chats and the fleet's bots as one list. */
   talk: {
     title: 'Bots',
