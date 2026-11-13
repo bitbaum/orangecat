@@ -145,7 +145,7 @@ export default function ProjectHeader({
                   )}
                 </Link>
                 <div>
-                  <p className="text-sm text-fg-secondary">Created by</p>
+                  <p className="mb-0 text-sm text-fg-secondary">Created by</p>
                   <Link
                     href={creatorProfileUrl}
                     className="-my-3 inline-flex min-h-11 min-w-11 items-center text-sm font-semibold text-fg-primary hover:underline underline-offset-4"
@@ -164,7 +164,7 @@ export default function ProjectHeader({
                 ?
               </div>
               <div>
-                <p className="text-sm text-fg-secondary">Created by</p>
+                <p className="mb-0 text-sm text-fg-secondary">Created by</p>
                 <Link
                   href={`/profiles/${project.user_id}`}
                   className="-my-3 inline-flex min-h-11 min-w-11 items-center text-sm font-semibold text-fg-primary hover:underline underline-offset-4"
@@ -179,7 +179,7 @@ export default function ProjectHeader({
                 ?
               </div>
               <div>
-                <p className="text-sm text-fg-secondary">Created by</p>
+                <p className="mb-0 text-sm text-fg-secondary">Created by</p>
                 <span className="text-sm font-semibold text-fg-primary">Anonymous</span>
               </div>
             </div>

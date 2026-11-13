@@ -56,9 +56,16 @@ interface Props {
    *  "amount raised" — NOT the cached on-chain balance, which is Lightning-blind. */
   settledRaisedBtc?: number;
   isOwner?: boolean;
+  /** False when the owner has no wallet a payment can reach (sellerReceive null). */
+  payable?: boolean;
 }
 
-export default function ProjectSummaryRail({ project, settledRaisedBtc = 0, isOwner }: Props) {
+export default function ProjectSummaryRail({
+  project,
+  settledRaisedBtc = 0,
+  isOwner,
+  payable = true,
+}: Props) {
   const { formatAmountBtc } = useDisplayCurrency();
   const goalCurrency = project.goal_currency || project.currency || PLATFORM_DEFAULT_CURRENCY;
   const targetCompletion = formatTargetCompletion(project.target_completion);
@@ -144,7 +151,11 @@ export default function ProjectSummaryRail({ project, settledRaisedBtc = 0, isOw
               : formatCurrency(amountRaised, goalCurrency)}
           </div>
         ) : (
-          <div className="text-sm text-fg-secondary">No contributions yet — be the first.</div>
+          // "Be the first" invites an action the page cannot take while the
+          // project has no wallet to pay into.
+          <div className="text-sm text-fg-secondary">
+            {payable ? 'No contributions yet — be the first.' : 'Not open for funding yet.'}
+          </div>
         )}
         {project.goal_amount && amountRaised !== null && (
           <div className="text-sm text-fg-secondary">
