@@ -245,9 +245,9 @@ export function TaskFormFields({
               }
             }}
             placeholder="Add tag..."
-            className="flex-1 rounded-lg border border-strong bg-surface-base text-fg-primary px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring"
+            className="min-w-0 flex-1 rounded-lg border border-strong bg-surface-base text-fg-primary px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring"
           />
-          <Button type="button" variant="outline" onClick={onAddTag}>
+          <Button type="button" variant="outline" onClick={onAddTag} className="min-h-11 shrink-0">
             Add
           </Button>
         </div>
@@ -272,13 +272,15 @@ export function TaskFormFields({
         )}
       </div>
 
-      <div className="flex justify-end gap-3 pt-4 border-t border-default">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit" isLoading={submitting}>
+      {/* The create forms' order and sizes (FormActions): commit first, an
+          equal pair of 44px buttons. Cancel came first here. */}
+      <div className="grid grid-cols-2 gap-3 pt-4 border-t border-default">
+        <Button type="submit" isLoading={submitting} className="min-h-11 w-full">
           <Save className="h-4 w-4 mr-2" />
           {submitLabel}
+        </Button>
+        <Button type="button" variant="outline" onClick={onCancel} className="min-h-11 w-full">
+          Cancel
         </Button>
       </div>
     </form>

@@ -71,6 +71,12 @@ export interface FieldConfig {
   max?: number;
   /** Step value for number fields */
   step?: number;
+  /**
+   * Number fields: the stored value an empty input stands for (e.g. -1 =
+   * unlimited stock). The input shows empty for it and sends it when cleared,
+   * so a person never has to type a sentinel.
+   */
+  emptyValue?: number;
   /** Number of rows for textarea */
   rows?: number;
   /** Conditional visibility based on other fields */
@@ -142,7 +148,7 @@ export interface WizardStep {
   description: string;
   /** Whether this step can be skipped */
   optional?: boolean;
-  /** Field names to display in this step (empty for template step) */
+  /** Field names to display in this step */
   fields: string[];
 }
 
@@ -155,8 +161,6 @@ export interface WizardConfig {
   enabled: boolean;
   /** Wizard steps configuration */
   steps: WizardStep[];
-  /** Whether to include template selection as first step */
-  includeTemplateStep?: boolean;
 }
 
 // ==================== GUIDANCE TYPES ====================

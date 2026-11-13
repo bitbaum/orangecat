@@ -8,13 +8,10 @@
 
 import { EntityConfig } from '@/types/entity';
 import { Loan } from '@/types/loans';
-import Button from '@/components/ui/Button';
 import { PLATFORM_DEFAULT_CURRENCY } from '@/config/currencies';
 import { formatCurrency } from '@/services/currency';
-import { ROUTES } from '@/config/routes';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { getStatusBadge } from '@/config/entity-status';
-import { GRADIENTS } from '@/config/gradients';
 
 export const loanEntityConfig: EntityConfig<Loan> = {
   name: ENTITY_REGISTRY['loan'].name,
@@ -80,11 +77,6 @@ export const loanEntityConfig: EntityConfig<Loan> = {
   emptyState: {
     title: 'No loans yet',
     description: 'Add your first loan to start receiving refinancing offers from the community.',
-    action: (
-      <Button href={ROUTES.DASHBOARD.LOANS_CREATE} className={GRADIENTS.brandTiffanyDark}>
-        Create Loan
-      </Button>
-    ),
   },
 
   gridCols: {

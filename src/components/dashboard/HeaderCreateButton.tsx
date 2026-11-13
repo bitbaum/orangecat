@@ -1,18 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { HeaderIconButton } from '@/components/layout/HeaderIconButton';
-import {
-  CREATE_CATEGORY_LABELS,
-  CREATE_OPTIONS,
-  CREATE_PAGE,
-  groupCreateOptions,
-} from '@/config/create-options';
-import { ROUTES } from '@/config/routes';
-import { CreateOptionRowContent } from '@/components/create/CreateOptionRow';
+import { CreateOptionList } from '@/components/create/CreateOptionList';
 import { VoiceCreate } from '@/components/create/VoiceCreate';
 import {
   DropdownMenu,
@@ -20,7 +12,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 
 export function HeaderCreateButton() {
@@ -46,25 +37,17 @@ export function HeaderCreateButton() {
       >
         <DropdownMenuLabel>Create new</DropdownMenuLabel>
         <VoiceCreate onNavigate={() => setIsOpen(false)} />
-        {groupCreateOptions(CREATE_OPTIONS).map(group => (
-          <div key={group.category}>
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel className="text-xs font-semibold uppercase tracking-wider text-fg-secondary">
-              {CREATE_CATEGORY_LABELS[group.category]}
-            </DropdownMenuLabel>
-            {group.items.map(option => (
-              <DropdownMenuItem key={option.href} asChild className="min-h-11 gap-3 px-3 py-2.5">
-                <Link href={option.href}>
-                  <CreateOptionRowContent option={option} />
-                </Link>
-              </DropdownMenuItem>
-            ))}
-          </div>
-        ))}
-        <DropdownMenuSeparator />
-        <DropdownMenuItem asChild className="min-h-11 px-3 text-sm text-fg-secondary">
-          <Link href={ROUTES.WHAT_YOU_CAN_DO}>{CREATE_PAGE.browseAll}</Link>
-        </DropdownMenuItem>
+        {/* The same list as /create and the phone's sheet. Each row is a
+            menu item, so arrow keys still move between them. */}
+        <CreateOptionList
+          className="mt-2"
+          onNavigate={() => setIsOpen(false)}
+          wrapRow={(row, key) => (
+            <DropdownMenuItem key={key} asChild className="rounded-none">
+              {row}
+            </DropdownMenuItem>
+          )}
+        />
       </DropdownMenuContent>
     </DropdownMenu>
   );

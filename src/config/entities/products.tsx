@@ -8,10 +8,8 @@
 
 import { EntityConfig } from '@/types/entity';
 import { UserProduct } from '@/types/database';
-import Button from '@/components/ui/Button';
 import { convert, formatCurrency } from '@/services/currency';
 import { PLATFORM_DEFAULT_CURRENCY } from '@/config/currencies';
-import { ROUTES } from '@/config/routes';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { getStatusBadge } from '@/config/entity-status';
 import type { Currency } from '@/types/settings';
@@ -64,7 +62,6 @@ export const productEntityConfig: EntityConfig<UserProduct> = {
   emptyState: {
     title: 'No products yet',
     description: 'Start building your marketplace by creating your first product.',
-    action: <Button href={ROUTES.DASHBOARD.STORE_CREATE}>Create Product</Button>,
   },
 
   gridCols: {

@@ -1,73 +1,51 @@
 'use client';
 
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ArrowRight, Sparkles } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
+import { Card, CardContent } from '@/components/ui/Card';
 import { ActorSelector } from './ActorSelector';
 import { canCreateForSomeoneElse, OWNER_ME, type CreateOwner } from './owner';
+import { CreateTemplateOffer } from './CreateTemplateOffer';
 import { EntityForm } from './EntityForm';
-import { WizardTemplatePicker } from './templates/WizardTemplatePicker';
+import { FormHeader } from './EntityForm/components/FormHeader';
 import { WizardProgressBar } from './WizardProgressBar';
-import { WizardTemplateOnlyView } from './WizardTemplateOnlyView';
 import { useEntityCreationWizard } from './useEntityCreationWizard';
-import type { EntityConfig, EntityTemplate } from './types';
-
-// The four colorTheme values that ENTITY_REGISTRY exposes used to drive a
-// per-entity chromatic palette in the wizard progress bar (amber, emerald,
-// rose, etc). The rebrand collapses entity surfaces to monochrome chrome; the
-// one orange is for Bitcoin and the way in, never a step marker (AGENTS.md,
-// "One orange"). The progress bar draws the current step in ink — completed
-// steps stay status-positive — and consumers no longer need to pass a theme prop.
-const WIZARD_STEP_VARIANTS = {
-  enter: (direction: number) => ({
-    x: direction > 0 ? 1000 : -1000,
-    opacity: 0,
-  }),
-  center: {
-    x: 0,
-    opacity: 1,
-  },
-  exit: (direction: number) => ({
-    x: direction < 0 ? 1000 : -1000,
-    opacity: 0,
-  }),
-};
+import type { EntityConfig } from './types';
 
 interface EntityCreationWizardProps<T extends Record<string, unknown>> {
   config: EntityConfig<T>;
   initialData?: Partial<T>;
   onSuccess?: (data: T & { id: string }) => void;
-  onCancel?: () => void;
 }
 
+/**
+ * Every create page: the form first, with the owner picker and (where the
+ * type has templates) "Start from a template" in the one page header.
+ *
+ * The step-by-step wizard (projects) and the single-page form share that
+ * header — FormHeader, which is PageHeader — so the two no longer have two
+ * different title sizes and two different ways back.
+ */
 export function EntityCreationWizard<T extends Record<string, unknown>>({
   config,
   initialData,
   onSuccess,
-  onCancel,
 }: EntityCreationWizardProps<T>) {
   const {
     wizardSteps,
-    isTemplateOnlyMode,
+    templates,
     currentStep,
     completedSteps,
     selectedTemplate,
     formInitialValues,
-    showTemplateSelection,
     currentStepConfig,
     progress,
-    isTemplateStep,
     isLastStep,
     handleNext,
     handlePrevious,
     handleSkip,
     handleStepClick,
     handleTemplateSelect,
-    handleTemplateOnlySelect,
-    handleCancel,
-  } = useEntityCreationWizard({ config, initialData, onSuccess, onCancel });
+  } = useEntityCreationWizard({ config, initialData });
 
   // Who will own the thing being created (ADR-0004 D8). `me` is the default;
   // a group actor is validated server-side by resolveCreationActor; "someone
@@ -75,60 +53,40 @@ export function EntityCreationWizard<T extends Record<string, unknown>>({
   const [owner, setOwner] = useState<CreateOwner>(OWNER_ME);
   const allowSomeoneElse = canCreateForSomeoneElse(config.type);
 
-  const ownerSelector = (
-    <ActorSelector
-      value={owner}
-      onChange={setOwner}
-      allowSomeoneElse={allowSomeoneElse}
-      className="ml-auto"
-    />
+  const headerActions = (
+    <div className="flex flex-wrap items-center gap-3">
+      <CreateTemplateOffer
+        templates={templates}
+        selectedTemplateId={selectedTemplate?.id ?? null}
+        onSelectTemplate={handleTemplateSelect}
+      />
+      <ActorSelector value={owner} onChange={setOwner} allowSomeoneElse={allowSomeoneElse} />
+    </div>
   );
 
-  if (showTemplateSelection && isTemplateOnlyMode) {
-    return (
-      <WizardTemplateOnlyView
-        config={config}
-        onCancel={handleCancel}
-        onSelectTemplate={handleTemplateOnlySelect}
-      />
-    );
-  }
-
   if (!config.wizardConfig?.enabled || wizardSteps.length === 0) {
-    // The owner selector used to live only in the wizard branch below, so it
-    // appeared on 1 of 13 entity types — and groups, which is what a bar is,
-    // were in this branch. It renders here too now.
     return (
-      <div>
-        <div className="mx-auto mb-3 flex max-w-4xl flex-wrap items-center gap-3">
-          {ownerSelector}
-        </div>
-        <EntityForm
-          config={config}
-          initialValues={formInitialValues || initialData}
-          onSuccess={onSuccess}
-          owner={owner}
-        />
-      </div>
+      <EntityForm
+        config={config}
+        initialValues={formInitialValues}
+        onSuccess={onSuccess}
+        owner={owner}
+        headerActions={headerActions}
+      />
     );
   }
 
   return (
     <div className="bg-surface-page min-h-screen p-4 sm:p-6 lg:p-8">
-      <div className="max-w-4xl mx-auto mb-3">
-        <div className="flex flex-wrap items-center gap-3 mb-1">
-          <button
-            onClick={handleCancel}
-            className="inline-flex items-center text-fg-secondary hover:text-fg-primary transition-colors shrink-0 pointer-coarse:min-h-11"
-          >
-            <ArrowLeft className="w-4 h-4 mr-1" />
-            Cancel
-          </button>
-          <h1 className="text-xl sm:text-2xl font-bold text-fg-primary">{config.pageTitle}</h1>
-          {ownerSelector}
-        </div>
-        <p className="text-sm text-fg-secondary ml-12">{config.pageDescription}</p>
-      </div>
+      <FormHeader
+        className="max-w-4xl mx-auto mb-6"
+        name={config.name}
+        namePlural={config.namePlural}
+        pageDescription={config.pageDescription}
+        backUrl={config.backUrl}
+        mode="create"
+        actions={headerActions}
+      />
 
       <WizardProgressBar
         wizardSteps={wizardSteps}
@@ -140,62 +98,14 @@ export function EntityCreationWizard<T extends Record<string, unknown>>({
 
       <div className="max-w-4xl mx-auto">
         {/*
-          Keep EntityForm mounted across content steps. key={currentStep} on the
-          animated wrapper remounted the form on every Next and wiped entered
-          fields (live dogfood 2026-09-06: Create Project submitted empty / no-op).
-          Template step stays animated; content steps share one form instance and
-          only swap visibleFields via wizardMode.
+          One EntityForm instance for every step: remounting it per step wiped
+          entered fields (live dogfood 2026-09-06). Steps only swap
+          visibleFields via wizardMode. No card header: the progress bar names
+          the step and each field group carries its own heading, so a step
+          showed its heading twice ("Basic Info" over "Basic Information").
         */}
-        {isTemplateStep ? (
-          <AnimatePresence mode="wait" custom={currentStep}>
-            <motion.div
-              key="template"
-              custom={currentStep}
-              variants={WIZARD_STEP_VARIANTS}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{
-                x: { type: 'spring', stiffness: 300, damping: 30 },
-                opacity: { duration: 0.2 },
-              }}
-            >
-              <Card className="mb-6">
-                <CardHeader>
-                  <div className="flex items-center gap-3">
-                    <Sparkles className="h-6 w-6 text-fg-primary" />
-                    <div>
-                      <CardTitle>{currentStepConfig.title}</CardTitle>
-                      <CardDescription>{currentStepConfig.description}</CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <WizardTemplatePicker
-                      templates={(config.templates || []) as EntityTemplate<T>[]}
-                      onSelectTemplate={handleTemplateSelect}
-                      selectedTemplateId={selectedTemplate?.id}
-                      showStartFromScratch
-                      entityLabel={config.pageTitle?.replace(/^Create\s+/i, '')}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </AnimatePresence>
-        ) : null}
-        {/* Mounted from the start and only hidden on the template step:
-            going back to change the template used to unmount the form and
-            throw away everything typed so far. */}
-        <Card className={isTemplateStep ? 'hidden' : 'mb-6'}>
-          <CardHeader>
-            <div>
-              <CardTitle>{currentStepConfig.title}</CardTitle>
-              <CardDescription>{currentStepConfig.description}</CardDescription>
-            </div>
-          </CardHeader>
-          <CardContent>
+        <Card className="mb-6">
+          <CardContent className="pt-6">
             <EntityForm
               config={config}
               initialValues={formInitialValues}
@@ -215,28 +125,6 @@ export function EntityCreationWizard<T extends Record<string, unknown>>({
             />
           </CardContent>
         </Card>
-
-        {isTemplateStep && (
-          <div className="flex justify-between items-center">
-            <Button variant="outline" onClick={handlePrevious} disabled={currentStep === 0}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Previous
-            </Button>
-
-            <div className="flex gap-3">
-              {currentStepConfig.optional && (
-                <Button variant="ghost" onClick={handleSkip}>
-                  Skip
-                </Button>
-              )}
-
-              <Button onClick={handleNext}>
-                Next
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

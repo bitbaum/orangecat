@@ -63,6 +63,8 @@ export function WalletForm({
   onCancel,
   cancelLabel = 'Cancel',
   submitLabel = 'Save',
+  submitVariant = 'primary',
+  title = WALLET_FORM_COPY.receiveHeading,
   defaultLabel = 'My wallet',
   hideIntro = false,
   onFieldFocus,
@@ -206,11 +208,7 @@ export function WalletForm({
       {!hideIntro && (
         <>
           <h4 className="mb-1 font-semibold text-fg-primary">
-            {forSend
-              ? WALLET_FORM_COPY.sendHeading
-              : submitLabel === 'Save'
-                ? WALLET_FORM_COPY.receiveHeading
-                : submitLabel}
+            {forSend ? WALLET_FORM_COPY.sendHeading : title}
           </h4>
           <p className="mb-4 text-sm text-fg-secondary">
             {forSend ? WALLET_FORM_COPY.sendBody : WALLET_FORM_COPY.receiveBody}
@@ -517,11 +515,17 @@ export function WalletForm({
       {/* Actions */}
       {/* Two actions together are two equal cells; one action is full width. */}
       <div className={cn('grid gap-2', onCancel ? 'grid-cols-2' : 'grid-cols-1')}>
-        <Button type="button" onClick={handleSubmit} disabled={isSubmitting} className="w-full">
+        <Button
+          type="button"
+          onClick={handleSubmit}
+          disabled={isSubmitting}
+          variant={submitVariant}
+          className="min-h-11 w-full"
+        >
           {isSubmitting ? 'Saving…' : submitLabel}
         </Button>
         {onCancel && (
-          <Button type="button" onClick={onCancel} variant="outline" className="w-full">
+          <Button type="button" onClick={onCancel} variant="outline" className="min-h-11 w-full">
             {cancelLabel}
           </Button>
         )}

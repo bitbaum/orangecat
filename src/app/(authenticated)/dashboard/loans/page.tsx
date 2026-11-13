@@ -4,6 +4,7 @@ import Button from '@/components/ui/Button';
 import Loading from '@/components/Loading';
 import EntityListShell from '@/components/entity/EntityListShell';
 import EntityList from '@/components/entity/EntityList';
+import { emptyStateWithCreate } from '@/components/entity/emptyStateWithCreate';
 import CommercePagination from '@/components/commerce/CommercePagination';
 import BulkActionsBar from '@/components/entity/BulkActionsBar';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -61,6 +62,8 @@ export default function LoansPage() {
     return null;
   }
 
+  const myLoansEmpty = activeTab === 'my-loans' && !loading && !error && myLoans.length === 0;
+
   const headerActions = (
     <div className="grid w-full grid-cols-1 gap-2 sm:w-auto sm:grid-cols-none sm:flex sm:items-center">
       {activeTab === 'my-loans' && myLoans.length > 0 && (
@@ -73,9 +76,13 @@ export default function LoansPage() {
           {showSelection ? 'Cancel' : 'Select'}
         </Button>
       )}
-      <Button href={loanEntityConfig.createPath} className="w-full sm:w-auto">
-        Create Loan
-      </Button>
+      {/* On an empty "My loans" the empty state owns Create, as on every
+          other entity list; two primary Create buttons sat on one screen. */}
+      {!myLoansEmpty && (
+        <Button href={loanEntityConfig.createPath} className="w-full sm:w-auto">
+          Create Loan
+        </Button>
+      )}
     </div>
   );
 
@@ -94,28 +101,25 @@ export default function LoansPage() {
           <TabsList className="grid h-auto w-full grid-cols-3 gap-1 p-1">
             <TabsTrigger
               value="my-loans"
-              className="min-h-10 gap-1 px-2 text-xs sm:gap-2 sm:text-sm"
+              className="min-h-11 gap-1 px-2 text-xs sm:gap-2 sm:text-sm"
             >
-              <DollarSign className="h-4 w-4" />
-              <span className="hidden sm:inline">My Loans</span>
-              <span className="sm:hidden">Mine</span>
+              <DollarSign className="hidden h-4 w-4 sm:block" aria-hidden />
+              <span>My loans</span>
               {myLoans.length > 0 && <span className="ml-1 text-xs">({myLoans.length})</span>}
             </TabsTrigger>
             <TabsTrigger
               value="available"
-              className="min-h-10 gap-1 px-2 text-xs sm:gap-2 sm:text-sm"
+              className="min-h-11 gap-1 px-2 text-xs sm:gap-2 sm:text-sm"
             >
-              <Target className="h-4 w-4" />
-              <span className="hidden sm:inline">Available</span>
-              <span className="sm:hidden">Browse</span>
+              <Target className="hidden h-4 w-4 sm:block" aria-hidden />
+              <span>Browse</span>
               {availableLoans.length > 0 && (
                 <span className="ml-1 text-xs">({availableLoans.length})</span>
               )}
             </TabsTrigger>
-            <TabsTrigger value="offers" className="min-h-10 gap-1 px-2 text-xs sm:gap-2 sm:text-sm">
-              <TrendingUp className="h-4 w-4" />
-              <span className="hidden sm:inline">My Offers</span>
-              <span className="sm:hidden">Offers</span>
+            <TabsTrigger value="offers" className="min-h-11 gap-1 px-2 text-xs sm:gap-2 sm:text-sm">
+              <TrendingUp className="hidden h-4 w-4 sm:block" aria-hidden />
+              <span>My offers</span>
               {myOffers.length > 0 && <span className="ml-1 text-xs">({myOffers.length})</span>}
             </TabsTrigger>
           </TabsList>
@@ -143,7 +147,11 @@ export default function LoansPage() {
                   isLoading={loading}
                   makeHref={loanEntityConfig.makeHref}
                   makeCardProps={loanEntityConfig.makeCardProps}
-                  emptyState={loanEntityConfig.emptyState}
+                  emptyState={emptyStateWithCreate(
+                    loanEntityConfig.emptyState,
+                    loanEntityConfig,
+                    'Create Loan'
+                  )}
                   gridCols={loanEntityConfig.gridCols}
                   selectedIds={showSelection ? selectedIds : undefined}
                   onToggleSelect={showSelection ? toggleSelect : undefined}

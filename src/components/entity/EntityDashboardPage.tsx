@@ -7,6 +7,7 @@ import Input from '@/components/ui/Input';
 import Loading from '@/components/Loading';
 import EntityListShell from '@/components/entity/EntityListShell';
 import EntityList from '@/components/entity/EntityList';
+import { emptyStateWithCreate } from '@/components/entity/emptyStateWithCreate';
 import CommercePagination from '@/components/commerce/CommercePagination';
 import BulkActionsBar from '@/components/entity/BulkActionsBar';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -122,7 +123,10 @@ export default function EntityDashboardPage<T extends BaseEntity>({
   const showStatusFilter = !!statusFilter && !activeTab?.hideStatusFilter && !isEmpty;
   const showSearch =
     !!searchableFields && searchableFields.length > 0 && !activeTab?.hideSearch && !isEmpty;
-  const emptyState = activeTab?.emptyState ?? config.emptyState;
+  // A tab's own empty state (Favorites, …) stands as written; the entity's
+  // gets the create button if its config brought none.
+  const emptyState =
+    activeTab?.emptyState ?? emptyStateWithCreate(config.emptyState, config, createButtonLabel);
 
   const headerActions = isEmpty ? null : (
     <div className="flex items-center gap-2">
@@ -186,7 +190,10 @@ export default function EntityDashboardPage<T extends BaseEntity>({
         description={description}
         headerActions={headerActions}
       >
-        {headerContent}
+        {/* With nothing in the list yet, the empty state and its Create button
+            come first and the extra card (e.g. "Open Loki") follows as the
+            second route; it used to be the only button above the fold. */}
+        {!isEmpty && headerContent}
 
         {tabs && tabs.length > 0 ? (
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -247,6 +254,8 @@ export default function EntityDashboardPage<T extends BaseEntity>({
             <CommercePagination page={page} limit={limit} total={total} onPageChange={setPage} />
           </>
         )}
+
+        {isEmpty && headerContent}
       </EntityListShell>
       <BulkActionsBar
         selectedCount={selectedIds.size}

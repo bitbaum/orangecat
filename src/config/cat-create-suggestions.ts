@@ -10,7 +10,8 @@ export function getCreateSuggestionHref(suggestion: string): string | null {
     return (
       CREATE_OPTIONS.find(
         option =>
-          option.category === 'content' && option.kind.toLowerCase() === editor[1].toLowerCase()
+          option.category === 'content' &&
+          (option.typeLabel ?? option.name).toLowerCase() === editor[1].toLowerCase()
       )?.href ?? null
     );
   }

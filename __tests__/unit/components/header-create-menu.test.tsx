@@ -11,7 +11,7 @@ describe('header create menu', () => {
     const { container } = render(<HeaderCreateButton />);
     const trigger = screen.getByRole('button', { name: 'Create new' });
     await user.click(trigger);
-    const article = await screen.findByRole('menuitem', { name: /Write an article/ });
+    const article = await screen.findByRole('menuitem', { name: /Article/ });
     expect(article).toHaveAttribute('href', '/articles/new');
     expect(container).not.toContainElement(article);
     expect(trigger).toHaveAttribute('aria-expanded', 'true');
@@ -25,8 +25,11 @@ describe('header create menu', () => {
     render(<HeaderCreateButton />);
     screen.getByRole('button', { name: 'Create new' }).focus();
     await user.keyboard('{ArrowDown}');
+    // The need-first row leads, as on /create and the phone's sheet.
     await waitFor(() =>
-      expect(screen.getByRole('menuitem', { name: /Write an article/ })).toHaveFocus()
+      expect(screen.getByRole('menuitem', { name: /Need money for something/ })).toHaveFocus()
     );
+    await user.keyboard('{ArrowDown}');
+    await waitFor(() => expect(screen.getByRole('menuitem', { name: /Article/ })).toHaveFocus());
   });
 });

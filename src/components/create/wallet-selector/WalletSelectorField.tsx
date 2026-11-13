@@ -221,6 +221,10 @@ export function WalletSelectorField({
           profileId={profileId}
           defaultLabel={wallets.length === 0 ? 'Main' : 'Another destination'}
           hideIntro={wallets.length > 0}
+          // Inside an entity form: its own Create is the one filled button,
+          // and "Save" beside "Create Product" read as two ways to finish.
+          submitLabel="Use this wallet"
+          submitVariant="outline"
           cancelLabel={wallets.length > 0 ? PAY_DESTINATION_COPY.back : undefined}
           onCancel={wallets.length > 0 ? () => setMode('select') : undefined}
           onSaved={handleWalletSaved}

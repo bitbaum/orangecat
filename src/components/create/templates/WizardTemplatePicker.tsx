@@ -1,32 +1,28 @@
 /**
- * WizardTemplatePicker - Featured template selector for wizard flows
+ * WizardTemplatePicker - the list of templates a create form can start from.
  *
- * Displays templates prominently as cards in a grid layout, designed to be
- * the main content of a wizard step (unlike TemplatePicker which is a helper).
+ * Opened on demand from "Start from a template" (CreateTemplateOffer); the
+ * form is already on the page behind it, so there is no "Start from scratch"
+ * choice — closing the sheet is that.
  *
- * Features:
- * - Responsive grid layout (1 col mobile, 2 col tablet+)
- * - "Start from scratch" option
- * - Visual highlighting on selection
- * - Works with any entity's templates
- * - Touch-friendly (44px+ touch targets)
- *
- * Created: 2026-01-20
+ * - Below sm: one bordered list of rows (icon tile, name, one-line tagline),
+ *   the create chooser's row anatomy. Full-height cards made a phone scroll
+ *   past up to 50 of them.
+ * - From sm: two columns of cards.
+ * - A check is drawn only for a template the person actually picked.
  */
 
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Check, FileText } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { EntityTemplate } from '../types';
 
 interface WizardTemplatePickerProps<T extends EntityTemplate> {
   templates: T[];
-  onSelectTemplate: (template: T | null) => void;
+  onSelectTemplate: (template: T) => void;
+  /** The template already applied, if any. Nothing is checked otherwise. */
   selectedTemplateId?: string | null;
-  showStartFromScratch?: boolean;
-  entityLabel?: string;
   className?: string;
 }
 
@@ -34,104 +30,53 @@ export function WizardTemplatePicker<T extends EntityTemplate>({
   templates,
   onSelectTemplate,
   selectedTemplateId,
-  showStartFromScratch = true,
-  entityLabel,
   className,
 }: WizardTemplatePickerProps<T>) {
-  const [selected, setSelected] = useState<string | null>(selectedTemplateId ?? null);
-
-  // Sync with external state
-  useEffect(() => {
-    if (selectedTemplateId !== undefined) {
-      setSelected(selectedTemplateId);
-    }
-  }, [selectedTemplateId]);
-
-  const handleSelect = (templateId: string | null) => {
-    setSelected(templateId);
-    if (templateId === null) {
-      onSelectTemplate(null);
-    } else {
-      const template = templates.find(t => t.id === templateId);
-      if (template) {
-        onSelectTemplate(template);
-      }
-    }
-  };
-
   return (
-    <div className={cn('space-y-4', className)}>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-        {/* Start from scratch option */}
-        {showStartFromScratch && (
-          <button
-            type="button"
-            onClick={() => handleSelect(null)}
-            className={cn(
-              'relative flex min-h-[120px] flex-col items-start rounded-md border p-4 text-left transition-colors sm:p-5',
-              'hover:border-strong hover:bg-surface-raised focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-              selected === null
-                ? 'border-strong bg-surface-raised ring-2 ring-ring/20'
-                : 'border-subtle bg-surface-page'
-            )}
-          >
-            {selected === null && (
-              <div className="absolute top-3 right-3">
-                <div className="flex h-6 w-6 items-center justify-center rounded-md bg-fg-primary">
-                  <Check className="h-4 w-4 text-fg-inverted" />
-                </div>
-              </div>
-            )}
-            <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-md bg-surface-raised text-fg-secondary sm:mb-4 sm:h-12 sm:w-12">
-              <FileText className="h-5 w-5 sm:h-6 sm:w-6" />
-            </div>
-            <h3 className="text-sm sm:text-base font-semibold text-fg-primary mb-1">
-              Start from scratch
-            </h3>
-            <p className="text-xs sm:text-sm text-fg-secondary">
-              {entityLabel
-                ? `Create a blank ${entityLabel.toLowerCase()}`
-                : 'Start with a blank form'}
-            </p>
-          </button>
-        )}
-
-        {/* Template options */}
-        {templates.map(template => {
-          const isSelected = selected === template.id;
-          return (
+    <ul
+      className={cn(
+        'divide-y divide-subtle rounded-lg border border-default bg-surface-base',
+        'sm:grid sm:grid-cols-2 sm:gap-4 sm:divide-y-0 sm:rounded-none sm:border-0 sm:bg-transparent',
+        className
+      )}
+    >
+      {templates.map(template => {
+        const isSelected = selectedTemplateId === template.id;
+        return (
+          <li key={template.id}>
             <button
-              key={template.id}
               type="button"
-              onClick={() => handleSelect(template.id)}
+              onClick={() => onSelectTemplate(template)}
+              aria-pressed={isSelected}
               className={cn(
-                'relative flex min-h-[120px] flex-col items-start rounded-md border p-4 text-left transition-colors sm:p-5',
-                'hover:border-strong hover:bg-surface-raised focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                'relative flex min-h-14 w-full items-center gap-3 px-3 py-3 text-left transition-colors',
+                'hover:bg-surface-raised focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                'sm:h-full sm:min-h-[120px] sm:flex-col sm:items-start sm:rounded-md sm:border sm:p-5',
                 isSelected
-                  ? 'border-strong bg-surface-raised ring-2 ring-ring/20'
-                  : 'border-subtle bg-surface-page'
+                  ? 'bg-surface-raised sm:border-strong'
+                  : 'sm:border-subtle sm:bg-surface-page'
               )}
             >
-              {isSelected && (
-                <div className="absolute top-3 right-3">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-md bg-fg-primary">
-                    <Check className="h-4 w-4 text-fg-inverted" />
-                  </div>
-                </div>
-              )}
-              <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-md border border-subtle bg-surface-raised text-fg-primary sm:mb-4 sm:h-12 sm:w-12">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-subtle bg-surface-raised text-fg-primary sm:h-12 sm:w-12">
                 {template.icon}
-              </div>
-              <h3 className="text-sm sm:text-base font-semibold text-fg-primary mb-1 pr-8">
-                {template.name}
-              </h3>
-              <p className="text-xs sm:text-sm text-fg-secondary line-clamp-2">
-                {template.tagline}
-              </p>
+              </span>
+              <span className="min-w-0 flex-1 pr-8">
+                <span className="block truncate text-sm font-semibold text-fg-primary sm:whitespace-normal sm:text-base">
+                  {template.name}
+                </span>
+                <span className="block truncate text-sm text-fg-secondary sm:line-clamp-2 sm:whitespace-normal">
+                  {template.tagline}
+                </span>
+              </span>
+              {isSelected && (
+                <span className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md bg-fg-primary sm:top-3 sm:translate-y-0">
+                  <Check className="h-4 w-4 text-fg-inverted" aria-hidden />
+                </span>
+              )}
             </button>
-          );
-        })}
-      </div>
-    </div>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
