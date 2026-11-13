@@ -84,8 +84,6 @@ export const COMPANION_COPY = {
     groupLine: (n: number) => `${n} in this chat`,
     back: 'Back',
     details: 'Details',
-    /** The header button that opens a spoken conversation with the bot. */
-    talk: 'Talk',
     close: 'Close',
     create: {
       title: 'New bot',

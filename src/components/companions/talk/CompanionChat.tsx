@@ -14,8 +14,6 @@ import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { ROUTES } from '@/config/routes';
 import Button from '@/components/ui/Button';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
-import { VoiceMode } from '@bitbaum/chatkit/react';
-import { CHAT_VOICE } from '@/hooks/useDictation';
 import { visibleReply } from '@/services/companions/memory-lines';
 import type { CompanionRow } from '@/services/companions/talk-home';
 import { useCompanionTalk } from '../useCompanionTalk';
@@ -47,7 +45,6 @@ export function CompanionChat({
   const wayOut = talk.limitReached || talk.poolDown;
   const { formatAmountBtc } = useDisplayCurrency();
   const [details, setDetails] = useState(false);
-  const [talking, setTalking] = useState(false);
   const copy = COMPANION_COPY.talk;
   const name = row?.title ?? '…';
 
@@ -70,7 +67,6 @@ export function CompanionChat({
         face={<Face name={name} avatarUrl={row?.avatarUrl} size={32} />}
         onBack={onBack}
         onDetails={() => setDetails(true)}
-        onTalk={() => setTalking(true)}
         placeholder={copy.companion.placeholder(name)}
         messages={messages}
         live={talk.sending ? { status: copy.companion.working(name) } : null}
@@ -135,15 +131,6 @@ export function CompanionChat({
             )}
           </>
         }
-      />
-      <VoiceMode
-        open={talking}
-        onClose={() => setTalking(false)}
-        name={name}
-        dictation={CHAT_VOICE}
-        // The same send as typing: the turn is in the thread, with its cards
-        // and steps. What is read aloud is what the thread shows.
-        onTurn={async said => visibleReply(await talk.ask(said))}
       />
       <TalkDetailsSheet
         open={details}

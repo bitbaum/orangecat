@@ -133,9 +133,9 @@ export function useCompanionTalk(assistantId: string) {
     return json.data.id;
   }, [assistantId, activeId]);
 
-  /** The bot's answer when the message was delivered; null when it was not. */
-  const deliver = useCallback(
-    async (content: string, images?: ChatImage[]): Promise<string | null> => {
+  /** True when the message was delivered; false leaves the words in the box. */
+  const send = useCallback(
+    async (content: string, images?: ChatImage[]): Promise<boolean> => {
       setError(null);
       setCreditsNeeded(null);
       setLimitReached(false);
@@ -178,7 +178,7 @@ export function useCompanionTalk(assistantId: string) {
           };
           setCreditsNeeded({ balance: d.currentBalance ?? 0, required: d.requiredAmount ?? 0 });
           setMessages(prev => prev.filter(m => m.id !== optimistic.id));
-          return null;
+          return false;
         }
         if (res.status === 429) {
           // Seen live (2026-10-31): the eleventh message of the day came back
@@ -213,40 +213,17 @@ export function useCompanionTalk(assistantId: string) {
             logger.error('Thread re-read after steps failed', err, 'useCompanionTalk')
           );
         }
-        return json.data.assistantMessage.content ?? '';
+        return true;
       } catch (err) {
         logger.error('Companion send failed', err, 'useCompanionTalk');
         setMessages(prev => prev.filter(m => m.id !== optimistic.id));
         setError(err instanceof Error ? err.message : 'Something went wrong.');
-        return null;
+        return false;
       } finally {
         setSending(false);
       }
     },
     [assistantId, ensureThread, loadThread]
-  );
-
-  /** True when the message was delivered; false leaves the words in the box. */
-  const send = useCallback(
-    async (content: string, images?: ChatImage[]): Promise<boolean> =>
-      (await deliver(content, images)) !== null,
-    [deliver]
-  );
-
-  /**
-   * A spoken turn (voice mode): the same send, answered with the bot's words
-   * to read aloud. Rejects when nothing came back, so the call ends and says
-   * so; the reason is already on the chat underneath (error, pool, credits).
-   */
-  const ask = useCallback(
-    async (content: string): Promise<string> => {
-      const answer = await deliver(content);
-      if (answer === null) {
-        throw new Error('no answer');
-      }
-      return answer;
-    },
-    [deliver]
   );
 
   /**
@@ -291,7 +268,6 @@ export function useCompanionTalk(assistantId: string) {
     clearPendingAction: () => setPendingAction(null),
     showOutcome,
     send,
-    ask,
     loadThread,
     startNewThread,
   };
