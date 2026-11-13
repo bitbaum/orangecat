@@ -39,14 +39,14 @@ importers:
         specifier: ^0.29.0
         version: 0.29.0(@bitbaum/mail-kit@0.2.0)(next@16.4.1(@babel/core@7.29.7(supports-color@10.2.2))(@playwright/test@1.64.1)(@types/node@26.6.4)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react@19.3.1)
       '@bitbaum/ai-kit':
-        specifier: ^1.25.0
-        version: 1.25.0(react@19.3.1)
+        specifier: ^1.24.0
+        version: 1.24.0(react@19.3.1)
       '@bitbaum/bip-kit':
         specifier: ^0.6.1
         version: 0.6.1(katex@0.18.11)(mermaid@11.17.2)(react@19.3.1)(shiki@4.4.3)
       '@bitbaum/chatkit':
-        specifier: ^0.26.0
-        version: 0.26.0(react@19.3.1)
+        specifier: ^0.29.0
+        version: 0.29.0(react@19.3.1)
       '@bitbaum/collective-kinds':
         specifier: workspace:*
         version: link:packages/collective-kinds
@@ -82,7 +82,7 @@ importers:
         version: 0.3.3(react@19.3.1)
       '@bitbaum/writingkit':
         specifier: ^0.2.0
-        version: 0.2.0(@bitbaum/chatkit@0.26.0(react@19.3.1))(react@19.3.1)
+        version: 0.2.0(@bitbaum/chatkit@0.29.0(react@19.3.1))(react@19.3.1)
       '@hono/node-server':
         specifier: ^2.1.1
         version: 2.1.1(hono@4.13.13)
@@ -590,8 +590,8 @@ packages:
       next:
         optional: true
 
-  '@bitbaum/ai-kit@1.25.0':
-    resolution: {integrity: sha512-GWGKlFGbeWTdzlJgxpwHTyF0qw4uyMRVMFMQw5A9N8YLU2mYxCavNdLFULtaxY6SERU+0n1i6Mm7HGobKwnUhQ==}
+  '@bitbaum/ai-kit@1.24.0':
+    resolution: {integrity: sha512-fP5PFQijF+XWi8lT8zJEFJfC/Y6/SvzCT/nw04EvI+jXhVDdKdoPq5KKiGlFqR/SvkwiBJLCW35xiKkFysj3dw==}
     engines: {node: '>=20'}
     peerDependencies:
       react: '>=18'
@@ -615,8 +615,8 @@ packages:
       shiki:
         optional: true
 
-  '@bitbaum/chatkit@0.26.0':
-    resolution: {integrity: sha512-oUUIC2Opdn3MhU+Fsk8DpIqFnee+c/WKY1fwtDSFtxti8IRI9eG7VyNDboa8TKpS5byxtFGnbOlfUilF4W9dAA==}
+  '@bitbaum/chatkit@0.29.0':
+    resolution: {integrity: sha512-UsKUfwhY/UJHAANKa0avBYVYQwomg+r6wYmnIXqUntRoHZOZZ7Xywe43ZcIvczQChKDgwAuL+zkifeVxszfSsQ==}
     engines: {node: '>=20'}
     hasBin: true
     peerDependencies:
@@ -7018,7 +7018,7 @@ snapshots:
       '@bitbaum/mail-kit': 0.2.0
       next: 16.4.1(@babel/core@7.29.7(supports-color@10.2.2))(@playwright/test@1.64.1)(@types/node@26.6.4)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
 
-  '@bitbaum/ai-kit@1.25.0(react@19.3.1)':
+  '@bitbaum/ai-kit@1.24.0(react@19.3.1)':
     dependencies:
       '@mozilla/readability': 0.6.0
       ai-forms: 0.1.3(react@19.3.1)
@@ -7036,8 +7036,9 @@ snapshots:
       mermaid: 11.17.2
       shiki: 4.4.3
 
-  '@bitbaum/chatkit@0.26.0(react@19.3.1)':
+  '@bitbaum/chatkit@0.29.0(react@19.3.1)':
     dependencies:
+      '@bitbaum/threadkit': 0.1.1
       pdfjs-dist: 6.4.299
       react: 19.3.1
 
@@ -7065,9 +7066,9 @@ snapshots:
     dependencies:
       react: 19.3.1
 
-  '@bitbaum/writingkit@0.2.0(@bitbaum/chatkit@0.26.0(react@19.3.1))(react@19.3.1)':
+  '@bitbaum/writingkit@0.2.0(@bitbaum/chatkit@0.29.0(react@19.3.1))(react@19.3.1)':
     optionalDependencies:
-      '@bitbaum/chatkit': 0.26.0(react@19.3.1)
+      '@bitbaum/chatkit': 0.29.0(react@19.3.1)
       react: 19.3.1
 
   '@braintree/sanitize-url@7.1.2': {}

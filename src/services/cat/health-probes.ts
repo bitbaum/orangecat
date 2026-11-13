@@ -19,7 +19,6 @@ import { promptFitsGroqOnDemand, PLATFORM_GROQ_MODEL } from '@/services/ai/groq'
 import { getGroqDailyPoolReturnsAt } from '@/services/ai/groq-capacity';
 import { checkModelRot, type SupersededPin } from './provider-catalog';
 import { webSearch, describeAttempts } from '@bitbaum/ai-kit/web';
-import { catSearchProviders } from './web-research';
 import { buildCatSystemPrompt } from './system-prompt';
 import { sanitizeApiKeyChecked } from '@/lib/api-key';
 
@@ -274,11 +273,7 @@ async function probeWeb(): Promise<WebProbeResult> {
     };
   }
   try {
-    const outcome = await webSearch(
-      'orangecat',
-      { limit: 1, timeoutMs: 6_000 },
-      { providers: catSearchProviders() }
-    );
+    const outcome = await webSearch('orangecat', { limit: 1, timeoutMs: 6_000 });
     if (outcome.status === 'could_not_look') {
       return {
         configured: true,
