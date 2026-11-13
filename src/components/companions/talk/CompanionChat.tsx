@@ -20,6 +20,7 @@ import { visibleReply } from '@/services/companions/memory-lines';
 import type { CompanionRow } from '@/services/companions/talk-home';
 import { useCompanionTalk } from '../useCompanionTalk';
 import { DoItCard } from './DoItCard';
+import { useSuggestionChips } from './SuggestionChips';
 import { RoutineRow } from './RoutineRow';
 import { AbilitiesRow } from './AbilitiesRow';
 import { ModelRow } from './ModelRow';
@@ -48,6 +49,7 @@ export function CompanionChat({
   const { formatAmountBtc } = useDisplayCurrency();
   const [details, setDetails] = useState(false);
   const [talking, setTalking] = useState(false);
+  const chips = useSuggestionChips(row?.mine ? id : null);
   const copy = COMPANION_COPY.talk;
   const name = row?.title ?? '…';
 
@@ -88,6 +90,7 @@ export function CompanionChat({
             return ok;
           });
         }}
+        chips={fresh ? undefined : chips}
         starters={fresh ? copy.starters.firstOptions : undefined}
         startersTitle={
           <div className="flex flex-col gap-1">

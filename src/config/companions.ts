@@ -157,7 +157,7 @@ export const COMPANION_COPY = {
       pick: (provider: string) => `Your ${provider} key answers. Choose the model:`,
       auto: (fallback: string) => (fallback === 'auto' ? 'Automatic' : `Automatic (${fallback})`),
     },
-    /** A bot that writes first: the one row in its details. */
+    /** A bot that writes first: one row per routine in its details. */
     routine: {
       row: 'Writes first, every day',
       set: (time: string) => `Writes first every day at ${time}`,
@@ -176,6 +176,32 @@ export const COMPANION_COPY = {
       addKey: 'Add your key',
       skipped: 'The last run was skipped: it needs your own key.',
       failed: 'That did not save. Try again.',
+      /** The last row once a bot has a routine: one more, at its own time. */
+      add: 'Add another routine',
+    },
+    /**
+     * Above the message box of your own bot: what it can set in motion, one
+     * tap each. A chip writes the start of the sentence into the box and the
+     * person finishes it; one that needs nothing more is a whole question.
+     * Each is shown only while its ability is switched on for that bot.
+     */
+    chips: {
+      label: 'Suggestions',
+      items: [
+        {
+          hand: 'walk_site',
+          label: 'Check a site',
+          draft: 'Check this site and tell me what is broken: ',
+        },
+        { hand: 'send_task_to_loki', label: 'Build something', draft: 'Send Loki this task: ' },
+        {
+          hand: 'project_status',
+          label: 'My projects',
+          draft: 'How are my projects and live sites doing?',
+        },
+        { hand: 'ask_loki', label: 'Ask Loki', draft: 'Ask Loki: ' },
+        { hand: 'create_event', label: 'Make an event', draft: 'Make an event: ' },
+      ],
     },
     /** The owner's switch per hand, in the bot's details. */
     abilities: {
