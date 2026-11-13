@@ -2418,8 +2418,9 @@ export const ACTION_CATEGORIES: Record<
   { name: string; description: string; icon: LucideIcon }
 > = {
   entities: {
-    name: 'Entities',
-    description: 'Create and manage products, services, projects, causes, and events',
+    // The sidebar's own word for what a person owns here.
+    name: 'My things',
+    description: 'Create and manage your products, services, projects, causes and events',
     icon: Package,
   },
   communication: {
@@ -2429,7 +2430,9 @@ export const ACTION_CATEGORIES: Record<
   },
   payments: {
     name: 'Payments',
-    description: 'Send Bitcoin and fund projects',
+    // Most of this category is wallets and bookings; "Send Bitcoin" told a new
+    // account with two harmless defaults on that Cat could spend.
+    description: 'Wallets, bookings and payments',
     icon: Wallet,
   },
   organization: {
@@ -2438,8 +2441,8 @@ export const ACTION_CATEGORIES: Record<
     icon: Users,
   },
   context: {
-    name: 'Context',
-    description: 'Manage what your Cat knows about you',
+    name: 'Memory and notes',
+    description: 'What Cat remembers about you, your tasks and reminders',
     icon: FileText,
   },
 };
@@ -2451,10 +2454,18 @@ export const ACTION_CATEGORY_KEYS = Object.keys(ACTION_CATEGORIES) as [
 ];
 
 export const RISK_COLORS: Record<ActionRiskLevel, string> = {
-  low: 'text-green-600 bg-green-50',
-  medium: 'text-amber-600 bg-amber-50',
-  high: 'text-red-600 bg-red-50',
+  low: 'text-status-positive bg-status-positive-subtle',
+  medium: 'text-status-warning bg-status-warning-subtle',
+  high: 'text-status-negative bg-status-negative-subtle',
 };
+
+/**
+ * The actions that move a person's own Bitcoin out of their wallet. Settings
+ * keep the warning tone for these; every other high-risk action gets a plain
+ * note, because "something high-risk is on" said about Connect Wallet alarmed
+ * brand-new accounts for no reason.
+ */
+export const CAT_SPENDING_ACTION_IDS: readonly string[] = ['send_payment', 'fund_project'];
 
 export const RISK_ICONS: Record<ActionRiskLevel, LucideIcon> = {
   low: ShieldCheck,

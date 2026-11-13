@@ -62,7 +62,7 @@ describe('what the model is told when permission is the blocker', () => {
       data: { description: 'Create product "Mugs"', pendingAction: { grantOnConfirm: true } },
     });
     expect(out).toContain('NOT YET ALLOWED');
-    expect(out).toContain('Entities actions');
+    expect(out).toContain('My things actions');
     expect(out).toContain('one tap allows it');
     expect(out).toContain('Nothing has been created or changed');
     expect(out).not.toContain('it is ready');

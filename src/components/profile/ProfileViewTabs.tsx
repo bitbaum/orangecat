@@ -280,8 +280,11 @@ export default function ProfileViewTabs({
             <div
               key={tab.id}
               className={cn('transition-opacity duration-200', isActive ? 'block' : 'hidden')}
-              role="tabpanel"
-              aria-labelledby={`tab-${tab.id}`}
+              // The strip is navigation (aria-current), not an ARIA tablist: a
+              // "More" menu sits in it. So each panel is a named region; it
+              // used to claim role="tabpanel" labelled by a tab id nothing had.
+              role="region"
+              aria-label={tab.label}
             >
               {tab.content}
             </div>

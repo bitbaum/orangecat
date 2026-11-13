@@ -15,6 +15,7 @@ import {
   ACTION_CATEGORY_KEYS,
   type ActionCategory,
 } from '@/config/cat-actions';
+import { catActionSummary } from '@/config/cat-action-summaries';
 import { toAutonomyLevel, PERMISSION_PRESETS } from '@/config/cat-autonomy';
 import { z } from 'zod';
 import { logger } from '@/utils/logger';
@@ -59,7 +60,8 @@ export const GET = withAuth(async (request: AuthenticatedRequest) => {
         return {
           id: a.id,
           name: a.name,
-          description: a.description,
+          // The model's tool prompt stays server-side; a person reads the summary.
+          description: catActionSummary(a),
           category: a.category,
           riskLevel: a.riskLevel,
           requiresConfirmation: a.requiresConfirmation,

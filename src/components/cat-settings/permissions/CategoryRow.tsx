@@ -7,6 +7,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/Tooltip
 import { RISK_COLORS, RISK_ICONS } from '@/config/cat-actions';
 import { AUTONOMY_LEVEL_META, type AutonomyLevel } from '@/config/cat-autonomy';
 import { AutonomySelect } from './AutonomySelect';
+import { categoryCountLabel, categoryDetail } from './permission-view';
 import type { Action, CategorySummary } from './types';
 
 interface ActionRowProps {
@@ -41,8 +42,8 @@ function ActionRow({ action, isSaving, isAnySaving, onSetAutonomy }: ActionRowPr
               </Badge>
             )}
           </div>
-          <p className="break-words text-sm text-fg-secondary">{action.description}</p>
-          <p className="mt-0.5 text-xs text-fg-tertiary">
+          <p className="mb-0 break-words text-sm text-fg-secondary">{action.description}</p>
+          <p className="mb-0 mt-0.5 text-xs text-fg-tertiary">
             {AUTONOMY_LEVEL_META[action.autonomy].description}
           </p>
         </div>
@@ -79,6 +80,7 @@ export function CategoryRow({
   onToggleCategory,
   onSetAutonomy,
 }: CategoryRowProps) {
+  const panelId = `cat-category-${cat.category}-actions`;
   return (
     <div className="bg-surface-base rounded-lg border border-default overflow-hidden">
       <div className="flex items-center justify-between gap-3 p-4">
@@ -87,6 +89,7 @@ export function CategoryRow({
             type="button"
             onClick={() => onToggleExpanded(cat.category)}
             aria-expanded={isExpanded}
+            aria-controls={panelId}
             aria-label={`${isExpanded ? 'Hide' : 'Show'} ${cat.name} actions`}
             className="-ml-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-md hover:bg-surface-raised"
           >
@@ -96,14 +99,12 @@ export function CategoryRow({
               <ChevronRight className="h-5 w-5 text-fg-tertiary" />
             )}
           </button>
-          <div>
-            <div className="flex items-center gap-2">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-baseline gap-x-2">
               <h3 className="text-base font-semibold text-fg-primary">{cat.name}</h3>
-              <Badge variant="secondary" className="text-xs">
-                {cat.enabledActionCount}/{cat.actionCount}
-              </Badge>
+              <span className="text-sm text-fg-secondary">{categoryCountLabel(cat)}</span>
             </div>
-            <p className="text-base text-fg-secondary">{cat.description}</p>
+            <p className="mb-0 text-sm text-fg-secondary">{categoryDetail(cat, actions)}</p>
           </div>
         </div>
         <Switch
@@ -115,7 +116,7 @@ export function CategoryRow({
       </div>
 
       {isExpanded && (
-        <div className="border-t border-subtle bg-surface-raised p-4">
+        <div id={panelId} className="border-t border-subtle bg-surface-raised p-4">
           <div className="space-y-3">
             {actions.map(action => (
               <ActionRow

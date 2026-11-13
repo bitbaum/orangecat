@@ -2,7 +2,11 @@
 
 import { useRequireAuth } from '@/hooks/useAuth';
 import Loading from '@/components/Loading';
-import { Lock } from 'lucide-react';
+import Link from 'next/link';
+import { ROUTES } from '@/config/routes';
+import { accountHasNoEmail } from '@/lib/auth/account-email';
+import { SettingsFrame } from './SettingsFrame';
+import { SettingsDevicesSection } from './SettingsDevicesSection';
 import { useSettingsForm } from './useSettingsForm';
 import { SettingsEmailSection } from './SettingsEmailSection';
 import { SettingsPasswordSection } from './SettingsPasswordSection';
@@ -12,8 +16,6 @@ import { SettingsDataSection } from './SettingsDataSection';
 import { SettingsIdentitiesSection } from './SettingsIdentitiesSection';
 import { SettingsIdentityAccountNote } from './SettingsIdentityAccountNote';
 import { isUnreachableEmail } from '@/config/identities';
-import { SettingsPreferencesSection } from './SettingsPreferencesSection';
-import { SettingsAppearanceSection } from './SettingsAppearanceSection';
 import { SettingsModals } from './SettingsModals';
 
 export default function SettingsPage() {
@@ -46,43 +48,35 @@ export default function SettingsPage() {
     return null;
   }
 
+  const noEmail = accountHasNoEmail(user);
+
   return (
     <>
-      <div className="bg-surface-base rounded-lg border border-subtle overflow-hidden">
-        <div className="flex items-center gap-4 border-b border-subtle px-4 py-5 sm:px-8 sm:py-6">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-surface-raised text-fg-secondary">
-            <Lock className="h-5 w-5" />
-          </div>
-          <div>
-            <h2 className="text-lg font-semibold tracking-tight text-fg-primary">
-              Account &amp; Security
-            </h2>
-            <p className="mt-0.5 text-sm text-fg-secondary">
-              Manage your login credentials and account security
-            </p>
-          </div>
-        </div>
-
-        <div className="space-y-10 p-4 sm:p-8">
+      <div className="space-y-6">
+        <SettingsFrame title="Sign-in" description="How you get into this account.">
           {isUnreachableEmail(user.email) ? (
             <SettingsIdentityAccountNote />
           ) : (
             <>
               <SettingsEmailSection
                 email={formData.email}
+                noEmail={noEmail}
                 isSubmitting={isSubmittingEmail}
                 onChange={handleInputChange}
                 onSubmit={handleEmailUpdate}
               />
-              <SettingsPasswordSection
-                newPassword={formData.newPassword}
-                confirmPassword={formData.confirmPassword}
-                showPassword={showPassword}
-                setShowPassword={setShowPassword}
-                isSubmitting={isSubmittingPassword}
-                onChange={handleInputChange}
-                onSubmit={handlePasswordSubmit}
-              />
+              {/* A password needs an email to sign in with; it waits until there is one. */}
+              {!noEmail && (
+                <SettingsPasswordSection
+                  newPassword={formData.newPassword}
+                  confirmPassword={formData.confirmPassword}
+                  showPassword={showPassword}
+                  setShowPassword={setShowPassword}
+                  isSubmitting={isSubmittingPassword}
+                  onChange={handleInputChange}
+                  onSubmit={handlePasswordSubmit}
+                />
+              )}
             </>
           )}
           <SettingsSecuritySection
@@ -90,16 +84,31 @@ export default function SettingsPage() {
             onEnableMFA={() => setShowMFASetup(true)}
             onMFADisableComplete={refreshMFAStatus}
           />
+        </SettingsFrame>
+
+        <SettingsFrame title="Devices">
+          <SettingsDevicesSection />
+        </SettingsFrame>
+
+        <SettingsFrame title="Identities">
           <SettingsIdentitiesSection />
+        </SettingsFrame>
 
-          <SettingsPreferencesSection />
-
-          <SettingsAppearanceSection />
-
+        <SettingsFrame title="Your data">
           <SettingsDataSection />
+        </SettingsFrame>
 
+        <SettingsFrame title="Delete account">
           <SettingsDangerSection isDeleting={isDeleting} onDelete={handleDeleteAccount} />
-        </div>
+        </SettingsFrame>
+
+        <p className="mb-0 text-sm text-fg-secondary">
+          Currency, date format and theme are under{' '}
+          <Link href={ROUTES.SETTINGS_PREFERENCES} className="underline underline-offset-2">
+            Preferences
+          </Link>
+          .
+        </p>
       </div>
 
       <SettingsModals

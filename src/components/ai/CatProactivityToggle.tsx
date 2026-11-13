@@ -11,7 +11,7 @@
 
 import { Lightbulb } from 'lucide-react';
 import { useState } from 'react';
-import { Switch } from '@/components/ui/switch';
+import { SettingToggleRow } from '@/components/ui/SettingToggleRow';
 
 interface CatProactivityToggleProps {
   enabled: boolean;
@@ -39,27 +39,14 @@ export function CatProactivityToggle({
   };
 
   return (
-    <div className="rounded-md border border-subtle bg-surface-raised/30 p-4">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-start gap-3">
-          <Lightbulb className="mt-0.5 h-5 w-5 shrink-0 text-fg-tertiary" aria-hidden />
-          <div>
-            <h3 className="text-sm font-medium text-fg-primary">Let Cat bring things up</h3>
-            <p className="mt-1 text-sm text-fg-secondary">
-              Cat can mention something you didn&apos;t ask about — a draft nobody can find yet, or
-              something nobody can pay into. One at a time, at the end of a reply, and never twice.
-              Turn this off and Cat only answers what you ask.
-            </p>
-          </div>
-        </div>
-
-        <Switch
-          checked={enabled}
-          onCheckedChange={handleToggle}
-          disabled={saving || isLoading}
-          aria-label="Let Cat bring things up"
-        />
-      </div>
-    </div>
+    <SettingToggleRow
+      className="rounded-md border border-subtle bg-surface-raised/30 px-4"
+      leading={<Lightbulb className="mt-0.5 h-5 w-5 shrink-0 text-fg-tertiary" aria-hidden />}
+      label="Let Cat bring things up"
+      detail="Cat can mention something you didn’t ask about — a draft nobody can find yet, or something nobody can pay into. One at a time, at the end of a reply, and never twice. Turn this off and Cat only answers what you ask."
+      checked={enabled}
+      onCheckedChange={handleToggle}
+      disabled={saving || isLoading}
+    />
   );
 }

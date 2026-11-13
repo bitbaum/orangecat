@@ -58,6 +58,25 @@ export default function OwnerProfileOfferings() {
     }
   }
 
+  const empty =
+    !!state &&
+    !state.enabled &&
+    (state.offerings?.skills?.length ?? 0) +
+      (state.offerings?.assets?.length ?? 0) +
+      (state.offerings?.askedFor?.length ?? 0) +
+      (state.offerings?.notAvailableFor?.length ?? 0) ===
+      0;
+
+  // Nothing to share yet: a "Make offerings public" button would publish an
+  // empty card. Show the empty card and its way to fill it instead.
+  if (empty) {
+    return (
+      <section aria-label="Your offerings">
+        <ProfileOfferings economicProfile={state.offerings} isOwnProfile />
+      </section>
+    );
+  }
+
   return (
     <section className="mt-4" aria-label="Your offerings and sharing">
       <div className="space-y-3 rounded-md border border-subtle bg-surface-raised/40 p-4">

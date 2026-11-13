@@ -1,17 +1,26 @@
+import { cn } from '@/lib/utils';
+
 export interface DefaultAvatarProps {
   size?: number;
   className?: string;
 }
 
-export default function DefaultAvatar({ size = 32, className = '' }: DefaultAvatarProps) {
+/**
+ * `size` sets a fixed inline size. Leave it out to size by class: an inline
+ * width beats every responsive `w-*` a caller passes.
+ */
+export default function DefaultAvatar({ size, className = '' }: DefaultAvatarProps) {
   return (
     <div
-      className={`rounded-full bg-muted flex items-center justify-center border-2 border-border-strong ${className}`}
-      style={{ width: size, height: size }}
+      className={cn(
+        'rounded-full bg-muted flex items-center justify-center border-2 border-border-strong',
+        className
+      )}
+      style={size ? { width: size, height: size } : undefined}
     >
       <svg
-        width={size * 0.6}
-        height={size * 0.6}
+        width={size ? size * 0.6 : '60%'}
+        height={size ? size * 0.6 : '60%'}
         viewBox="0 0 24 24"
         fill="none"
         className="text-fg-secondary"

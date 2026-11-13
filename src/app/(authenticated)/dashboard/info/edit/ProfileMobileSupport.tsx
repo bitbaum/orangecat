@@ -1,8 +1,8 @@
 'use client';
 
-import { CheckCircle2 } from 'lucide-react';
+import { useState } from 'react';
+import { CheckCircle2, ChevronDown } from 'lucide-react';
 import { FieldHelpButton } from '@/components/ui/FieldHelpButton';
-import { GRADIENTS } from '@/config/gradients';
 import { DynamicSidebar } from '@/components/create/DynamicSidebar';
 import {
   profileGuidanceContent,
@@ -11,53 +11,18 @@ import {
 } from '@/lib/profile-guidance';
 
 interface ProfileMobileSupportProps {
-  completionPercentage: number;
-  missingFields: string[];
   focusedField: ProfileFieldType;
   showMobileGuidance: boolean;
   setShowMobileGuidance: (show: boolean) => void;
 }
 
 export function ProfileMobileSupport({
-  completionPercentage,
-  missingFields,
   focusedField,
   showMobileGuidance,
   setShowMobileGuidance,
 }: ProfileMobileSupportProps) {
   return (
     <>
-      {/* Progress bar at top (mobile only) */}
-      <div className="lg:hidden mb-6">
-        <div className="bg-surface-base rounded-lg border border-default shadow-sm p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-fg-primary">Profile Completion</span>
-            <span className="text-sm font-bold text-fg-primary">{completionPercentage}%</span>
-          </div>
-          <div className="w-full bg-surface-raised rounded-full h-2 overflow-hidden">
-            <div
-              className={`${GRADIENTS.progressBitcoin} h-2 rounded-full transition-all duration-700 ease-out`}
-              style={{ width: `${completionPercentage}%` }}
-            />
-          </div>
-          {completionPercentage === 100 ? (
-            <div className="flex items-center gap-2 text-xs text-status-positive mt-2">
-              <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
-              <span className="font-medium">Profile complete!</span>
-            </div>
-          ) : (
-            <div className="mt-3 text-xs text-fg-primary">
-              <div className="font-medium mb-1">To reach 100%, add:</div>
-              <ul className="list-disc list-inside space-y-0.5">
-                {missingFields.map(field => (
-                  <li key={field}>{field}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      </div>
-
       {/* Floating help button (mobile, only when a field is focused) */}
       {focusedField && <FieldHelpButton onClick={() => setShowMobileGuidance(true)} />}
 
@@ -104,5 +69,64 @@ export function ProfileMobileSupport({
         </div>
       )}
     </>
+  );
+}
+
+/**
+ * Profile completion on a phone: below the form, closed until wanted.
+ *
+ * It used to sit above the page header and print the whole missing list, so a
+ * phone opened on a checklist with no field in sight.
+ */
+export function ProfileMobileCompletion({
+  completionPercentage,
+  missingFields,
+}: {
+  completionPercentage: number;
+  missingFields: string[];
+}) {
+  const [open, setOpen] = useState(false);
+
+  if (completionPercentage >= 100) {
+    return (
+      <p className="mb-0 flex items-center gap-2 text-sm text-status-positive lg:hidden">
+        <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
+        Profile complete
+      </p>
+    );
+  }
+
+  return (
+    <div className="oc-surface px-4 py-3 lg:hidden">
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        aria-expanded={open}
+        aria-controls="profile-completion-missing"
+        className="flex min-h-11 w-full items-center justify-between gap-3 text-left text-sm font-medium text-fg-primary"
+      >
+        <span>Profile {completionPercentage}% complete — see what is missing</span>
+        <ChevronDown
+          className={`h-4 w-4 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}
+          aria-hidden
+        />
+      </button>
+      <div className="h-2 w-full overflow-hidden rounded-full bg-surface-raised">
+        <div
+          className="h-2 rounded-full bg-fg-primary transition-all duration-700 ease-out"
+          style={{ width: `${completionPercentage}%` }}
+        />
+      </div>
+      {open && (
+        <ul
+          id="profile-completion-missing"
+          className="mb-0 mt-3 list-inside list-disc space-y-0.5 text-sm text-fg-secondary"
+        >
+          {missingFields.map(field => (
+            <li key={field}>{field}</li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }

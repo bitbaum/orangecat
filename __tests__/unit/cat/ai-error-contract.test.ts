@@ -144,7 +144,7 @@ describe('describeAiError', () => {
     });
 
     it('names the category the way the settings UI does', () => {
-      expect(denied.title).toBe("Cat isn't allowed to handle entities actions yet.");
+      expect(denied.title).toBe("Cat isn't allowed to act on my things yet.");
     });
 
     it('deep-links to the category card, not the top of the page', () => {

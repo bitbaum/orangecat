@@ -19,6 +19,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Sparkles, Plus, MinusCircle, MessageCircle } from 'lucide-react';
+import Button from '@/components/ui/Button';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { ROUTES } from '@/config/routes';
 import {
@@ -118,10 +119,13 @@ export default function ProfileOfferings({ economicProfile, isOwnProfile }: Prof
           <Sparkles className="h-4 w-4 text-fg-secondary" />
           <h2 className="text-sm font-semibold text-fg-primary">What I can offer</h2>
         </div>
-        <p className="mb-3 text-xs text-fg-secondary">
+        <p className="mb-3 text-sm text-fg-secondary">
           Nothing here yet. This is the part of your profile a potential client actually reads.
         </p>
-        <AskCatLink label="Ask Cat to help me figure this out" question={DISCOVER_QUESTION} />
+        <Button href={askCatHref(DISCOVER_QUESTION)} variant="primary" className="min-h-11">
+          <MessageCircle className="mr-2 h-4 w-4" />
+          Ask Cat to help me figure this out
+        </Button>
       </div>
     );
   }

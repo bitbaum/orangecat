@@ -10,7 +10,7 @@
  */
 
 import { useCallback, useState } from 'react';
-import { DatabaseBackup, Download, Loader2, MessageSquareX } from 'lucide-react';
+import { Download, Loader2, MessageSquareX } from 'lucide-react';
 import { toast } from 'sonner';
 import Button from '@/components/ui/Button';
 import { logger } from '@/utils/logger';
@@ -64,12 +64,8 @@ export function SettingsDataSection() {
   }, []);
 
   return (
-    <div className="border-t border-default pt-10">
-      <h3 className="mb-4 flex items-center text-lg font-semibold text-fg-primary">
-        <DatabaseBackup className="mr-2 h-6 w-6" />
-        Your data
-      </h3>
-      <p className="mb-6 text-fg-secondary">
+    <div>
+      <p className="mb-6 max-w-prose text-fg-secondary">
         OrangeCat never uses your data to train AI models. When Cat calls an AI provider, that
         provider&apos;s own data policy applies — with your own key it&apos;s your provider
         agreement; on the free pool, prompts may be logged by the model host. Your data here exists
@@ -88,7 +84,7 @@ export function SettingsDataSection() {
             variant="outline"
             onClick={handleExport}
             disabled={isExporting}
-            className="px-6 py-2"
+            className="min-h-11"
           >
             {isExporting ? (
               <>
@@ -106,7 +102,7 @@ export function SettingsDataSection() {
           <h4 className="mb-2 text-lg font-medium text-fg-primary">Delete all Cat conversations</h4>
           <p className="mb-4 text-base text-fg-secondary">
             Permanently delete your entire Cat chat history. Memories Cat has saved are managed
-            separately in AI settings. This cannot be undone.
+            under Memory. This cannot be undone.
           </p>
           {confirmClear ? (
             <div className="flex flex-wrap items-center gap-2">
@@ -118,7 +114,7 @@ export function SettingsDataSection() {
                 variant="outline"
                 onClick={() => setConfirmClear(false)}
                 disabled={isClearing}
-                className="px-4 py-2"
+                className="min-h-11"
               >
                 Cancel
               </Button>
@@ -127,7 +123,7 @@ export function SettingsDataSection() {
                 variant="danger"
                 onClick={handleClearConversations}
                 disabled={isClearing}
-                className="px-4 py-2"
+                className="min-h-11"
               >
                 {isClearing ? (
                   <>
@@ -143,7 +139,7 @@ export function SettingsDataSection() {
               type="button"
               variant="outline"
               onClick={() => setConfirmClear(true)}
-              className="px-6 py-2 text-status-negative hover:border-status-negative/40"
+              className="min-h-11 text-status-negative hover:border-status-negative/40"
             >
               <MessageSquareX className="mr-2 h-4 w-4" /> Delete all conversations
             </Button>

@@ -189,16 +189,30 @@ export default function ShareContent({
   const hasNativeShare = typeof navigator !== 'undefined' && !!navigator.share;
 
   // Modern share UI - Modal on mobile, dropdown on desktop
+  // In the phone dialog, DialogContent is the one frame and owns the one close
+  // button; the card drawing its own border, shadow and X inside it made two.
+  const inDialog = isMobile && !!onClose;
   const shareContent = (
     <div
-      className={`bg-surface-base rounded-lg shadow-sm border border-default dark:border-default/50 backdrop-blur-xl p-5 sm:p-6 w-full max-w-md mx-auto ${className}`}
-      style={{
-        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-      }}
+      className={
+        inDialog
+          ? `w-full ${className}`
+          : `bg-surface-base rounded-lg shadow-sm border border-default dark:border-default/50 backdrop-blur-xl p-5 sm:p-6 w-full max-w-md mx-auto ${className}`
+      }
+      style={
+        inDialog
+          ? undefined
+          : {
+              boxShadow:
+                '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            }
+      }
       onClick={e => e.stopPropagation()}
     >
       {showTitle && (
-        <div className="flex items-center justify-between mb-5 sm:mb-6 pb-4 border-b border-subtle">
+        <div
+          className={`flex items-center justify-between mb-5 sm:mb-6 pb-4 border-b border-subtle ${inDialog ? 'pr-12' : ''}`}
+        >
           <h3 className="font-semibold text-fg-primary flex items-center gap-2 text-lg">
             <div
               className={`w-8 h-8 rounded-full ${GRADIENTS.brandOrange} flex items-center justify-center`}
@@ -207,7 +221,7 @@ export default function ShareContent({
             </div>
             {titleText}
           </h3>
-          {onClose && (
+          {onClose && !inDialog && (
             <button
               onClick={onClose}
               className="text-fg-tertiary hover:text-fg-primary transition-colors p-2 hover:bg-surface-raised rounded-full touch-manipulation min-h-11 min-w-11 flex items-center justify-center"
@@ -231,7 +245,7 @@ export default function ShareContent({
       )}
 
       {/* Social Platforms - Modern grid with icons */}
-      <div className="grid grid-cols-4 sm:grid-cols-5 gap-3 sm:gap-4 mb-5">
+      <div className="grid grid-cols-4 gap-3 sm:gap-4 mb-5">
         {SHARE_PLATFORMS.map(platform => {
           const Icon = platform.icon;
           return (
@@ -272,7 +286,7 @@ export default function ShareContent({
         ) : (
           <>
             <Copy className="w-5 h-5" />
-            <span>Copy Link</span>
+            <span>Copy link</span>
           </>
         )}
       </button>
@@ -280,7 +294,7 @@ export default function ShareContent({
   );
 
   // On mobile, show as modal overlay; on desktop, show as dropdown
-  if (isMobile && onClose) {
+  if (inDialog) {
     // Mobile: Dialog modal
     return (
       <Dialog open onOpenChange={open => !open && onClose()}>

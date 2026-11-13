@@ -9,7 +9,9 @@
  * under payments), and what has it actually done (track record, activity).
  */
 
-import { AlertTriangle, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { AlertTriangle, Info, Loader2 } from 'lucide-react';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { catPermissionAnchorId } from '@/config/routes';
 import { TooltipProvider } from '@/components/ui/Tooltip';
 import { CatTrackRecordCard } from '@/components/ai-chat/CatTrackRecordCard';
@@ -19,9 +21,11 @@ import { PermissionPresets } from './permissions/PermissionPresets';
 import { PermissionInfo } from './permissions/PermissionInfo';
 import { CatActivityCard } from './permissions/CatActivityCard';
 import { useCatPermissionsData } from './permissions/useCatPermissionsData';
+import { activePreset, highRiskNotice, needsConfirmToTurnOn } from './permissions/permission-view';
 
 export function CanDoSection({ userId }: { userId: string }) {
   const p = useCatPermissionsData(true);
+  const [confirmCategory, setConfirmCategory] = useState<string | null>(null);
 
   if (p.loading) {
     return (
@@ -39,16 +43,38 @@ export function CanDoSection({ userId }: { userId: string }) {
   }
 
   const { summary, availableActions, spendCaps } = p.data;
+  const notice = highRiskNotice(availableActions);
+  const actionsIn = (category: string) => availableActions.filter(a => a.category === category);
+  const confirming = summary.categories.find(c => c.category === confirmCategory);
+
+  // Turning on a whole category that spends Bitcoin asks first; off never does.
+  const toggleCategory = (category: string, on: boolean) => {
+    if (needsConfirmToTurnOn(actionsIn(category), on)) {
+      setConfirmCategory(category);
+      return;
+    }
+    void p.toggleCategory(category, on);
+  };
 
   return (
     <TooltipProvider>
       <div className="space-y-6">
-        <PermissionPresets saving={p.saving} onApplyPreset={p.applyPreset} />
+        <PermissionPresets
+          saving={p.saving}
+          active={activePreset(summary.categories)}
+          onApplyPreset={p.applyPreset}
+        />
 
-        {summary.highRiskEnabled && (
-          <p className="flex items-start gap-2 rounded-md border border-subtle bg-status-warning-subtle px-4 py-3 text-sm text-fg-primary">
+        {notice?.tone === 'warning' && (
+          <p className="mb-0 flex items-start gap-2 rounded-md border border-subtle bg-status-warning-subtle px-4 py-3 text-sm text-fg-primary">
             <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-status-warning" />
-            Some enabled actions are high risk. Cat always asks you to confirm those actions.
+            {notice.text}
+          </p>
+        )}
+        {notice?.tone === 'neutral' && (
+          <p className="mb-0 flex items-start gap-2 rounded-md border border-subtle px-4 py-3 text-sm text-fg-secondary">
+            <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-fg-tertiary" />
+            {notice.text}
           </p>
         )}
 
@@ -62,11 +88,11 @@ export function CanDoSection({ userId }: { userId: string }) {
             >
               <CategoryRow
                 cat={cat}
-                actions={availableActions.filter(a => a.category === cat.category)}
+                actions={actionsIn(cat.category)}
                 isExpanded={p.expanded.has(cat.category)}
                 saving={p.saving}
                 onToggleExpanded={p.toggleExpanded}
-                onToggleCategory={p.toggleCategory}
+                onToggleCategory={toggleCategory}
                 onSetAutonomy={p.setActionAutonomy}
               />
               {cat.category === 'payments' && cat.enabled && (
@@ -87,6 +113,26 @@ export function CanDoSection({ userId }: { userId: string }) {
         </div>
 
         <PermissionInfo />
+
+        <ConfirmDialog
+          isOpen={confirming !== undefined}
+          onClose={() => setConfirmCategory(null)}
+          onConfirm={async () => {
+            const category = confirmCategory;
+            setConfirmCategory(null);
+            if (category) {
+              await p.toggleCategory(category, true);
+            }
+          }}
+          title={
+            confirming
+              ? `Turn on all ${confirming.actionCount} ${confirming.name.toLowerCase()} actions?`
+              : ''
+          }
+          description="Cat still asks before every payment."
+          confirmLabel="Turn them on"
+          isLoading={p.saving === confirmCategory}
+        />
       </div>
     </TooltipProvider>
   );
