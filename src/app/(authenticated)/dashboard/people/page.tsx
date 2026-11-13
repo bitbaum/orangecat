@@ -72,7 +72,7 @@ export default function PeoplePage() {
         : 'No users found yet.';
 
   const discoverButton = (
-    <Button href={`${ROUTES.DISCOVER}?section=people`}>
+    <Button href={ROUTES.DISCOVER_TYPE('people')}>
       <Search className="w-4 h-4 mr-2" />
       Discover People
     </Button>

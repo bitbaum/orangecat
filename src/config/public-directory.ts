@@ -55,7 +55,8 @@ export const EXACT_FIXTURE_USERNAMES = [
 ] as const;
 const EXACT_FIXTURE_USERNAME_SET = new Set<string>(EXACT_FIXTURE_USERNAMES);
 
-const FIXTURE_DISPLAY_NAME = /^(e2e reset user|user)$/i;
+// "QA Grok A": a QA run's profile, named for the run.
+const FIXTURE_DISPLAY_NAME = /^(e2e reset user|user|qa\s.+)$/i;
 const FIXTURE_GROUP_TITLE = /^(audit\s+wf|ephemeral\s+verify|workflow\s+audit)/i;
 
 /**
@@ -149,7 +150,17 @@ export function isEmailDerivedHandle(profile: {
  * `withoutFixtureTitles()` applies them to a query, `isFixtureTitle()` is the
  * same rule for rows already fetched — one list, so the two cannot drift.
  */
-export const FIXTURE_TITLE_LIKE_PATTERNS = ['TEST %', 'TEST:%', 'E2E %', 'E2E:%'] as const;
+// 'QA test…' / 'QA:' joined after a QA run's listings led the live shelf
+// (2026-11-12); QA runs should use the 'TEST ' prefix from now on.
+export const FIXTURE_TITLE_LIKE_PATTERNS = [
+  'TEST %',
+  'TEST:%',
+  'E2E %',
+  'E2E:%',
+  'QA test%',
+  'QA Test%',
+  'QA:%',
+] as const;
 
 const FIXTURE_TITLE_PREFIXES = FIXTURE_TITLE_LIKE_PATTERNS.map(pattern => pattern.slice(0, -1));
 

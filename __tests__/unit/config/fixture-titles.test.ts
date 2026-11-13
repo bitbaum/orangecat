@@ -14,18 +14,25 @@ import {
 } from '@/config/public-directory';
 
 describe('isFixtureTitle', () => {
-  it.each(['TEST Session (60 min)', 'TEST: checkout', 'E2E reset group', 'E2E:wf-1'])(
-    'catches %s',
-    title => {
-      expect(isFixtureTitle(title)).toBe(true);
-    }
-  );
+  it.each([
+    'TEST Session (60 min)',
+    'TEST: checkout',
+    'E2E reset group',
+    'E2E:wf-1',
+    // A QA run's listings that led the live shelf on 2026-11-12.
+    'QA test product 1762900000',
+    'QA Test service',
+    'QA: pay flow',
+  ])('catches %s', title => {
+    expect(isFixtureTitle(title)).toBe(true);
+  });
 
   it.each([
     'Test prep tutoring',
     'Testing the waters — a pottery class',
     'TESTAMENT reading circle',
     'A TEST of patience',
+    'Quality assurance for small shops',
     '',
     null,
   ])('leaves %s alone', title => {

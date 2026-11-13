@@ -56,6 +56,8 @@ export type DiscoverView =
       hits: PublicHit[];
       total: number;
       hasMore: boolean;
+      /** When the kind has nothing public: what was just listed, so the page is never empty. */
+      fallback: PublicHit[];
     }
   | {
       mode: 'search';
@@ -109,9 +111,13 @@ export function buildShelf(hits: PublicHit[], counts: TypeCounts) {
   };
 }
 
-const cachedCounts = unstable_cache(() => countPublic(getAdminClient()), ['discover-counts'], {
-  revalidate: 120,
-});
+// strict: a failed read throws to discover/error.tsx (Try again) instead of
+// being cached for two minutes as an empty shelf.
+const cachedCounts = unstable_cache(
+  () => countPublic(getAdminClient(), { strict: true }),
+  ['discover-counts'],
+  { revalidate: 120 }
+);
 
 const cachedShelfHits = unstable_cache(
   async () =>
@@ -119,6 +125,7 @@ const cachedShelfHits = unstable_cache(
       await searchPublic(getAdminClient(), {
         perType: DISCOVER_RAIL_SIZE,
         limit: DISCOVER_RAIL_SIZE * DISCOVER_ORDER.length,
+        strict: true,
       })
     ).hits,
   ['discover-shelf'],
@@ -151,9 +158,10 @@ export async function loadDiscoverView({ q, type, page }: DiscoverParams): Promi
   if (type) {
     const [counts, { hits, total }] = await Promise.all([
       cachedCounts(),
-      searchPublic(getAdminClient(), { types: [type], limit: shown }),
+      searchPublic(getAdminClient(), { types: [type], limit: shown, strict: true }),
     ]);
-    return { mode: 'browse', counts, type, hits, total, hasMore: total > hits.length };
+    const fallback = hits.length === 0 ? buildShelf(await cachedShelfHits(), {}).fresh : [];
+    return { mode: 'browse', counts, type, hits, total, hasMore: total > hits.length, fallback };
   }
 
   const [counts, hits] = await Promise.all([cachedCounts(), cachedShelfHits()]);

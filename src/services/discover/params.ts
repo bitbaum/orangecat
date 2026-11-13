@@ -28,7 +28,9 @@ export function parseDiscoverParams(raw: RawParams): DiscoverParams {
   const page = Number.parseInt(first(raw.page), 10);
   return {
     q,
-    type: typeFromSlug(first(raw.type)),
+    // `section` is what older links (and the /projects redirect) sent; a
+    // parameter the page ignored showed everything instead of the one kind.
+    type: typeFromSlug(first(raw.type) || first(raw.section)),
     page: Number.isFinite(page) ? Math.min(Math.max(page, 1), MAX_PAGE) : 1,
   };
 }

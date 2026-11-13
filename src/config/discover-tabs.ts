@@ -83,6 +83,12 @@ export const DISCOVER_PAGE_SIZE = 24;
 /** Cards per rail on the shelf. */
 export const DISCOVER_RAIL_SIZE = 8;
 
+/**
+ * Cards a rail shows from sm up; the rest are hidden until "See all". Mirrors
+ * `.oc-discover-rail-item:nth-child(n + 5)` in globals.css — change both.
+ */
+export const DISCOVER_RAIL_VISIBLE = 4;
+
 /** Rails on the shelf before the rest are offered as chips — enough to browse, few enough to finish. */
 export const DISCOVER_MAX_RAILS = 6;
 
