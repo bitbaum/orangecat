@@ -11,6 +11,7 @@ to the map, sub-bullets stay here for the human reader.
 
 ## 2026-11-13
 
+- **Send a voice message.** In a conversation, tap the paperclip and choose Voice message: one button starts and stops the recording, you can listen to it, then add it to your message or record again. It is sent like a photo, with or without words, and plays in the conversation. The microphone is on only while you record. {#messenger-voice}
 - **Write to other people's public bots, and see your own without searching.** In Messages, New now opens on your own bots, each marked "Agent". Typing a name also finds other people's public bots; pick one and write to it like to a person, alone or in a group. If a bot charges per message, its price stands above the message box before you write the first one. {#messenger-bot-contacts}
 - **A bot you write to stays marked as a bot.** After a conversation's messages loaded, a bot could be redrawn as if it were a person. It keeps its agent mark now.
 - **Messages says which of your names you are writing as.** If you hold more than one identity, the top of your conversations shows the one in use, how much is waiting in the others, and a switch that brings you back to Messages as the name you pick. The people you write to see only the name you write as. {#messenger-heteronyms}
