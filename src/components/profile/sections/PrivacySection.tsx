@@ -12,7 +12,7 @@
 
 import { EyeOff } from 'lucide-react';
 import type { UseFormReturn } from 'react-hook-form';
-import { Switch } from '@/components/ui/switch';
+import { SettingToggleRow } from '@/components/ui/SettingToggleRow';
 import {
   HIDEABLE_PROFILE_FIELDS,
   getHiddenProfileFields,
@@ -54,21 +54,19 @@ export function PrivacySection({ form }: PrivacySectionProps) {
       <ul className="divide-y divide-subtle">
         {HIDEABLE_PROFILE_FIELDS.map(({ key, label }) => {
           const isHidden = hidden.has(key);
-          const switchId = `privacy-hide-${key}`;
           return (
-            <li key={key} className="flex items-center justify-between gap-4 py-3">
-              <label htmlFor={switchId} className="flex items-center gap-2 cursor-pointer">
-                <EyeOff
-                  className={`w-4 h-4 ${isHidden ? 'text-fg-primary' : 'text-fg-tertiary'}`}
-                  aria-hidden
-                />
-                <span className="text-sm font-medium text-fg-primary">{label}</span>
-              </label>
-              <Switch
-                id={switchId}
+            <li key={key}>
+              <SettingToggleRow
+                leading={
+                  <EyeOff
+                    className={`mt-0.5 h-4 w-4 ${isHidden ? 'text-fg-primary' : 'text-fg-tertiary'}`}
+                    aria-hidden
+                  />
+                }
+                // The words are the action, so "on" reads as "hidden".
+                label={`Hide ${label.toLowerCase()}`}
                 checked={isHidden}
                 onCheckedChange={() => toggle(key)}
-                aria-label={`Hide ${label} from visitors`}
               />
             </li>
           );
