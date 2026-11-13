@@ -74,9 +74,6 @@ importers:
       '@bitbaum/tax-model':
         specifier: workspace:*
         version: link:packages/tax-model
-      '@bitbaum/threadkit':
-        specifier: ^0.1.1
-        version: 0.1.1
       '@bitbaum/whenkit':
         specifier: ^0.3.3
         version: 0.3.3(react@19.3.1)

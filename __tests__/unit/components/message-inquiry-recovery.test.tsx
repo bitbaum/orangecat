@@ -14,11 +14,14 @@ vi.mock('next/navigation', () => ({
 }));
 vi.mock('@/hooks/useAuth', () => ({
   useRequireAuth: () => ({ isLoading: false, isAuthenticated: true }),
+  useAuth: () => ({ user: { id: 'viewer' } }),
 }));
 vi.mock('@/features/messaging/open-conversation.client', () => ({
   openConversationFor: state.open,
 }));
-vi.mock('@/components/messaging/MessagePanel', () => ({ default: () => <div>Inbox ready</div> }));
+vi.mock('@/components/messaging/MessagesScreen', () => ({
+  default: () => <div>Inbox ready</div>,
+}));
 vi.mock('@/components/Loading', () => ({
   default: ({ message }: { message: string }) => <p>{message}</p>,
 }));

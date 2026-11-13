@@ -38,8 +38,9 @@ const RATCHETS = [
     name: 'arbitrary font sizes',
     pattern: /\btext-\[[0-9]/,
     // 14 → 13 on 2026-08-29: the timeline's post body moved from `text-[15px]`
-    // to the named `text-post` token.
-    baseline: 8,
+    // to the named `text-post` token. 8 → 7 on 2026-11-12: the old messages UI
+    // went to @bitbaum/chatkit/messenger.
+    baseline: 7,
     advice: [
       'Use a size from the scale in tailwind.config.ts, or add a NAMED one',
       'there if the size is a real decision (as `post` = 15px is).',

@@ -3,7 +3,7 @@
 import { Bell, Check, MessageSquare, Trash2, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
-import MessagePanel from '@/components/messaging/MessagePanel';
+import { ROUTES } from '@/config/routes';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { useNotificationCenter, type UIFilter } from './useNotificationCenter';
 import { NotificationItem } from './NotificationItem';
@@ -37,8 +37,6 @@ export default function NotificationCenter({
     refresh,
     uiFilter,
     setUIFilter,
-    showMessages,
-    setShowMessages,
     handleMarkAsRead,
     handleMarkAllAsRead,
     handleDeleteNotification,
@@ -161,10 +159,8 @@ export default function NotificationCenter({
                     variant="outline"
                     size="sm"
                     className="flex-1"
-                    onClick={() => {
-                      setShowMessages(true);
-                      onClose();
-                    }}
+                    href={ROUTES.MESSAGES}
+                    onClick={onClose}
                   >
                     <MessageSquare className="w-4 h-4 mr-2" />
                     Messages
@@ -178,8 +174,6 @@ export default function NotificationCenter({
             )}
           </CardContent>
         </Card>
-
-        <MessagePanel isOpen={showMessages} onClose={() => setShowMessages(false)} />
       </DialogContent>
     </Dialog>
   );

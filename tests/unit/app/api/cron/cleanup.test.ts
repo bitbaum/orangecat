@@ -43,6 +43,10 @@ vi.mock('@/services/auth/oauthRegistration', () => ({
   pruneAbandonedDcrClients: vi.fn(async () => 0),
 }));
 
+vi.mock('@/features/messaging/server/attachments', () => ({
+  sweepAttachments: vi.fn(async () => 0),
+}));
+
 vi.mock('@/lib/api/standardResponse', () => ({
   apiSuccess: vi.fn((payload: unknown) => ({ ok: true, data: payload, status: 200 })),
   apiError: vi.fn((msg: string, code: string, status: number) => ({
@@ -130,6 +134,7 @@ describe('GET /api/cron/cleanup', () => {
         webhook_deliveries_delivered: 7,
         oauth_clients_dcr_abandoned: 0,
         cat_conversations_temporary: 42,
+        message_attachments_unreferenced: 0,
       });
       expect(typeof res.data.ranAt).toBe('string');
       expect(pruneDeliveredWebhookDeliveries).toHaveBeenCalledTimes(1);
@@ -149,6 +154,7 @@ describe('GET /api/cron/cleanup', () => {
         webhook_deliveries_delivered: 0,
         oauth_clients_dcr_abandoned: 0,
         cat_conversations_temporary: 0,
+        message_attachments_unreferenced: 0,
       });
     });
 
