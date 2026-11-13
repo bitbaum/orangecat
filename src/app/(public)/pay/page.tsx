@@ -10,23 +10,17 @@
 import type { Metadata } from 'next';
 import { Link2, ShieldCheck, UserX } from 'lucide-react';
 import Button from '@/components/ui/Button';
-import { SITE_URL } from '@/config/brand';
 import { PAY_LANDING_COPY } from '@/config/pay';
 import { ROUTES } from '@/config/routes';
+import { pageMetadata } from '@/lib/seo/metadata';
 
 const POINT_ICONS = [UserX, ShieldCheck, Link2] as const;
 
-export const metadata: Metadata = {
-  title: 'Get paid',
+export const metadata: Metadata = pageMetadata({
+  title: PAY_LANDING_COPY.title,
   description: PAY_LANDING_COPY.subtitle,
-  alternates: { canonical: `${SITE_URL}${ROUTES.PAY_LANDING}` },
-  openGraph: {
-    title: PAY_LANDING_COPY.title,
-    description: PAY_LANDING_COPY.subtitle,
-    url: `${SITE_URL}${ROUTES.PAY_LANDING}`,
-    type: 'website',
-  },
-};
+  path: ROUTES.PAY_LANDING,
+});
 
 export default function PayLandingPage() {
   return (

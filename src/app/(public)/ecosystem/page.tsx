@@ -23,6 +23,7 @@ import {
 } from '@/config/ecosystem';
 import { ROUTES } from '@/config/routes';
 import { SOLON_BASE_URL_DEFAULT } from '@/config/solon';
+import { pageMetadata } from '@/lib/seo/metadata';
 import { fetchStudioMapForCat } from '@/services/ai/studio-map-fetcher';
 import { PUBLIC_PAGE_WIDTH, PublicPageHeader } from '@/components/layout/PublicPageHeader';
 import { cn } from '@/lib/utils';
@@ -35,16 +36,14 @@ import { cn } from '@/lib/utils';
  */
 export const revalidate = 300;
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: 'The stack',
+  shareTitle: 'One stack, three pillars',
   description: `OrangeCat, Loki, and Solon are one stack and three products: ${ECOSYSTEM_STACK_LINE}.`,
-  openGraph: {
-    title: 'One stack, three pillars',
-    description:
-      'Fund what is being built, build what people choose to fund, and govern both in the open.',
-    type: 'website',
-  },
-};
+  shareDescription:
+    'Fund what is being built, build what people choose to fund, and govern both in the open.',
+  path: ROUTES.ECOSYSTEM,
+});
 
 const solonBase = process.env.SOLON_BASE_URL || SOLON_BASE_URL_DEFAULT;
 

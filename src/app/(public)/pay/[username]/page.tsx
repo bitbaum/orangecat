@@ -16,10 +16,11 @@ import { notFound, permanentRedirect } from 'next/navigation';
 import { cache, Suspense } from 'react';
 import { Loader2 } from 'lucide-react';
 import { getAdminClient } from '@/lib/supabase/admin';
-import { SITE_URL } from '@/config/brand';
-import { ROUTES } from '@/config/routes';
+import { APP_NAME, SITE_URL } from '@/config/brand';
 import { PayeeIdentity } from '@/components/money/PayeeIdentity';
 import { PAY_COPY, renamedPayHref } from '@/config/pay';
+import { ROUTES } from '@/config/routes';
+import { pageMetadata } from '@/lib/seo/metadata';
 import { resolveLnurlRecipient } from '@/domain/lightning-address/lnurl-service';
 import { listPublicPaymentMethods } from '@/domain/payments/paymentMethodsService';
 import { getOpenAskBtcNow, getRequestStatusFor } from '@/domain/payments/paymentRequestService';
@@ -48,10 +49,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
   const title = PAY_COPY.title(recipient.displayName);
   return {
-    title,
-    description: PAY_COPY.subtitle,
-    alternates: { canonical: `${SITE_URL}/pay/${recipient.username}` },
-    openGraph: { title: `${title} — OrangeCat`, description: PAY_COPY.subtitle, type: 'website' },
+    ...pageMetadata({
+      title,
+      shareTitle: `${title} — ${APP_NAME}`,
+      description: PAY_COPY.subtitle,
+      path: ROUTES.PAY(recipient.username),
+      // The person's own card: a pay link in a chat shows who is being paid.
+      image: `${SITE_URL}/api/og/profile/${encodeURIComponent(recipient.username)}`,
+    }),
     // A personal payment page is for the person holding the link, not for search.
     robots: { index: false, follow: false },
   };

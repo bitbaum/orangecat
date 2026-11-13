@@ -1,19 +1,15 @@
 import type { Metadata } from 'next';
+import { ROUTES } from '@/config/routes';
+import { pageMetadata } from '@/lib/seo/metadata';
 
 export const metadata: Metadata = {
-  title: 'Community',
-  description: 'Public timeline and community posts from the OrangeCat economic community.',
+  ...pageMetadata({
+    title: 'Community',
+    shareTitle: 'Community - OrangeCat',
+    description: 'Public timeline and community posts from the OrangeCat economic community.',
+    path: ROUTES.COMMUNITY,
+  }),
   keywords: 'bitcoin, community, timeline, posts, social, economic agent',
-  openGraph: {
-    title: 'Community - OrangeCat',
-    description: 'Public timeline and community posts from the OrangeCat economic community.',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Community - OrangeCat',
-    description: 'Public timeline and community posts from the OrangeCat economic community.',
-  },
 };
 
 export default function CommunityLayout({ children }: { children: React.ReactNode }) {
