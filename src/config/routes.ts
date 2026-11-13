@@ -27,7 +27,6 @@ export const ROUTE_CONTEXTS = {
     '/settings',
     '/messages',
     '/timeline',
-    '/post',
     '/project',
     '/onboarding',
   ] as const,
@@ -86,7 +85,7 @@ export const ROUTE_CONTEXTS = {
    * Routes that show different content based on auth state
    * (e.g., profiles show different data for own vs others)
    */
-  contextual: ['/profiles'] as const,
+  contextual: ['/profiles', '/post'] as const,
 } as const;
 
 /**
@@ -348,7 +347,9 @@ export const SIGN_IN_REQUIRED_PREFIXES = [
   '/settings',
   '/timeline',
   '/messages',
-  '/post',
+  // Not '/post': a public post is readable signed out at /post/<id>, the URL
+  // people share. What a post shows a reader is decided by the database
+  // (timeline_events RLS), not by this list.
   '/ai-chat',
   '/profile/',
   // The "Following" feed: signed out it can only say "Please sign in".
@@ -476,6 +477,8 @@ export const ROUTES = {
   ARTICLES_NEW: '/articles/new',
   ARTICLE: (slug: string) => `/articles/${slug}`,
   ARTICLE_EDIT: (slug: string) => `/articles/${slug}/edit`,
+  /** A wall post and its thread; public posts are readable signed out. */
+  POST: (id: string) => `/post/${id}`,
   DOCS: '/docs',
   /** Canonical explanation of the four ways Cat can be powered. */
   HOW_CAT_RUNS: '/docs/how-cat-runs',

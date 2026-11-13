@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { PostCard } from '@/components/timeline/PostCard';
 import TimelineComposer from '@/components/timeline/TimelineComposer';
@@ -13,20 +13,31 @@ import { TimelineDisplayEvent } from '@/types/timeline';
 import { usePostThread } from '@/hooks/usePostThread';
 import { useAwaitCatReply } from '@/hooks/useAwaitCatReply';
 import CatIsAnswering from '@/components/timeline/CatIsAnswering';
+import { JoinToReply } from './JoinToReply';
 
 /**
- * Thread View Page - X-style conversation thread
+ * Thread view - X-style conversation thread
  *
  * Shows a single post with its full context:
  * - Parent posts (if this is a reply)
  * - The main post
  * - All replies/comments
+ *
+ * The server has already decided the reader may see the post (page.tsx).
+ * Signed out, the reply composer's place holds the way in: join or sign in,
+ * and come back to this post.
  */
-export default function PostPage() {
-  const params = useParams();
+export default function PostThreadView({
+  postId,
+  viewerSignedIn,
+}: {
+  postId: string;
+  viewerSignedIn: boolean;
+}) {
   const router = useRouter();
   const { user } = useAuth();
-  const postId = params?.id as string;
+  // The server knows on first paint; the client's session takes over once read.
+  const signedIn = !!user || viewerSignedIn;
 
   const {
     mainPost,
@@ -180,6 +191,8 @@ export default function PostPage() {
           </div>
         </div>
 
+        {!signedIn && <JoinToReply postId={mainPost.id} authorName={mainPost.actor.name} />}
+
         {/* Reply composer */}
         {user && (
           <div className="border-b border-default">
@@ -212,8 +225,8 @@ export default function PostPage() {
 
         {replies.length === 0 && !awaitingParentId && (
           <div className="py-12 text-center">
-            <p className="text-fg-secondary">No replies yet</p>
-            {user && <p className="text-sm text-fg-tertiary mt-1">Be the first to reply!</p>}
+            <p className="mb-0 text-fg-secondary">No replies yet</p>
+            {user && <p className="mb-0 text-sm text-fg-tertiary mt-1">Be the first to reply!</p>}
           </div>
         )}
       </div>

@@ -27,7 +27,6 @@ const NOT_A_CONVERSATION: Record<string, string> = {
   'src/components/create/AIFillPanel.tsx':
     'one-shot prompt that fills a form — no turns, no history, no reply',
   'src/components/timeline/RepostModal.tsx': 'post composer, not a conversation',
-  'src/components/timeline/ShareModal.tsx': 'post composer, not a conversation',
   'src/components/raise/NeedStep.tsx':
     'one-shot "what do you need?" prompt that returns a priced plan — no turns, no history, no reply',
 };
