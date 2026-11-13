@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Currency, FIAT_CURRENCIES } from '@/types/settings';
 import { convert, parseAmount } from '@/services/currency';
 import { getRate } from '@/services/currency/rates';
-import { PLATFORM_DEFAULT_CURRENCY } from '@/config/currencies';
+import { CURRENCY_METADATA, PLATFORM_DEFAULT_CURRENCY } from '@/config/currencies';
 import { useRatesReady } from '@/components/providers/CurrencyRatesProvider';
 
 /**
@@ -46,6 +46,11 @@ export function useCurrencyInput(
   );
   const [localValue, setLocalValue] = useState<string>('');
   const [isUserEditing, setIsUserEditing] = useState<boolean>(false);
+  // The unit an edit started in, held until blur. Worked out afresh on every
+  // keystroke, a rate expiring mid-edit flipped it to the stored unit and the
+  // whole typed string was read again in that unit: "30000" typed as CHF was
+  // stored as 30000 BTC.
+  const [editCurrency, setEditCurrency] = useState<Currency | null>(null);
   // Re-render when rates land, so a field held in BTC for want of a rate
   // moves to the chosen currency.
   useRatesReady();
@@ -55,15 +60,20 @@ export function useCurrencyInput(
     if (next) {
       setChosenCurrency(next);
     }
+    // A switch from the owner ends the edit: the field is shown again in the
+    // new unit rather than keeping digits typed in the old one.
+    setEditCurrency(null);
+    setIsUserEditing(false);
   }, [entryCurrency, propCurrency]);
 
   // Typed in one currency and stored in another needs both rates. Without
   // them the field is typed in the stored currency, never converted to 0.
   const inputCurrency: Currency =
-    chosenCurrency === propCurrency ||
+    editCurrency ??
+    (chosenCurrency === propCurrency ||
     (getRate(chosenCurrency) !== null && getRate(propCurrency) !== null)
       ? chosenCurrency
-      : propCurrency;
+      : propCurrency);
 
   useEffect(() => {
     if (value === null || value === undefined) {
@@ -91,6 +101,9 @@ export function useCurrencyInput(
     const rawValue = e.target.value;
     setLocalValue(rawValue);
     setIsUserEditing(true);
+    if (editCurrency === null) {
+      setEditCurrency(inputCurrency);
+    }
 
     const parsed = parseAmount(rawValue);
     if (parsed === null) {
@@ -104,10 +117,14 @@ export function useCurrencyInput(
     // can say so, not to the keyboard, which silently rewrites the amount.
     //
     // A typed number is in the input's currency; the form stores the field's.
-    // When they differ, convert the TYPED amount.
-    onChange(
-      inputCurrency !== propCurrency ? convert(parsed, inputCurrency, propCurrency) : parsed
-    );
+    // When they differ, convert the TYPED amount, rounded to what the stored
+    // unit can hold (eight places for BTC), so validation sees what is saved.
+    if (inputCurrency === propCurrency) {
+      onChange(parsed);
+      return;
+    }
+    const places = CURRENCY_METADATA[propCurrency].precision;
+    onChange(Number(convert(parsed, inputCurrency, propCurrency).toFixed(places)));
   };
 
   const handleCurrencyChange = (newCurrency: Currency) => {
@@ -121,11 +138,13 @@ export function useCurrencyInput(
     // On its own the field keeps what it stores; only the unit it is typed
     // and shown in changes.
     setIsUserEditing(false);
+    setEditCurrency(null);
     setChosenCurrency(newCurrency);
   };
 
   const handleBlur = (onBlur: (() => void) | undefined) => {
     setIsUserEditing(false);
+    setEditCurrency(null);
     onBlur?.();
   };
 
