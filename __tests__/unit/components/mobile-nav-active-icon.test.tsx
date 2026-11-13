@@ -22,7 +22,7 @@ vi.mock('@/components/create/VoiceCreate', () => ({ VoiceCreate: () => null }));
 it('the active tab keeps its icon drawn: marked as current, never filled solid', () => {
   render(<MobileBottomNav />);
   const active = screen.getByRole('button', { current: 'page' });
-  expect(active).toHaveAccessibleName('Explore');
+  expect(active).toHaveAccessibleName('Discover');
   const icon = active.querySelector('svg');
   expect(icon).not.toBeNull();
   expect(icon?.getAttribute('class') ?? '').not.toMatch(/\bfill-current\b/);
