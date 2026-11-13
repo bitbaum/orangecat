@@ -21,6 +21,7 @@ import { useAuthSubmission } from '@/app/auth/useAuthSubmission';
 import { useAuthStore } from '@/stores/auth';
 import AuthPageClient from '@/app/auth/AuthPageClient';
 import { AuthSocialLogin } from '@/app/auth/AuthSocialLogin';
+import { AUTH_ERROR_COPY } from '@/app/auth/authErrors';
 
 vi.unmock('@/stores/auth');
 
@@ -48,8 +49,11 @@ vi.mock('@/app/auth/oauthProviders', () => ({
   useEnabledOAuthProviders: () => ({ enabled: new Set(['google', 'github']), loaded: true }),
 }));
 
+// What the service says when it gives up…
 const PLAIN_TIMEOUT =
   'Request timed out. Please check your internet connection or try again later.';
+// …and what the form shows for it.
+const FORM_TIMEOUT = AUTH_ERROR_COPY.timeout;
 
 describe('a slow sign-in', () => {
   beforeEach(() => {
@@ -105,8 +109,10 @@ describe('a slow sign-in', () => {
       await vi.advanceTimersByTimeAsync(20_000);
     });
 
-    expect(result.current.error).toBe(PLAIN_TIMEOUT);
+    expect(result.current.error).toBe(FORM_TIMEOUT);
     expect(result.current.error).not.toMatch(/environment variables/i);
+    // A timeout is worth another go, so the banner offers one.
+    expect(result.current.retryable).toBe(true);
     // Both halves of `loading` are released, so Try Again can be pressed.
     expect(result.current.localLoading).toBe(false);
     expect(useAuthStore.getState().isLoading).toBe(false);
@@ -115,7 +121,7 @@ describe('a slow sign-in', () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(30_000);
     });
-    expect(result.current.error).toBe(PLAIN_TIMEOUT);
+    expect(result.current.error).toBe(FORM_TIMEOUT);
   });
 });
 
@@ -159,13 +165,13 @@ describe('/auth dividers', () => {
     }
   }
 
-  it('"or sign in with email" is not struck through', () => {
+  it('the page itself draws its dividers the same way', () => {
     const container = document.createElement('div');
     container.innerHTML = renderToString(
       <AuthPageClient clientName={null} emailCodeAvailable passkeysAvailable={false} />
     );
     const label = Array.from(container.querySelectorAll('span')).find(
-      span => span.textContent === 'or sign in with email'
+      span => span.textContent === 'Or continue with'
     );
     expect(label).toBeDefined();
     expectRuleBesideLabel(label as HTMLElement);

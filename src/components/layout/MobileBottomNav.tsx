@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useShellPathname } from '@/hooks/useShellPathname';
 import { useBottomNavScroll } from '@/hooks/useHeaderScroll';
 import { cn } from '@/lib/utils';
-import { getRouteChrome, getRouteSurface } from '@/config/routes';
+import { getRouteChrome, getShellSurface } from '@/config/routes';
 import { getContextualCreateType } from '@/lib/navigation/contextual-create';
 import { isNavHrefActive } from '@/lib/navigation/isActive';
 import { mobileTabBar, mobileTabBarAnonymous } from '@/config/navigation';
@@ -47,7 +47,7 @@ const MobileBottomNav = React.memo(function MobileBottomNav() {
 
   // SSOT: bottom nav appears wherever the desktop sidebar would (every
   // in-app surface). Mirrors AppShell's `isAppSurface` rule.
-  if (getRouteSurface(pathname) !== 'app') {
+  if (getShellSurface(pathname, !!user) !== 'app') {
     return null;
   }
 

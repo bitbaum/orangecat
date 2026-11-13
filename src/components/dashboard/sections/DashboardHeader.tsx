@@ -18,7 +18,7 @@ function capitalizeName(name: string): string {
 // as a real name produces "Welcome back, User" — impersonal and a tell
 // that the platform doesn't actually know who you are. Detect the
 // placeholder pattern and skip the comma+name instead.
-function isPlaceholderName(name?: string | null, username?: string | null): boolean {
+export function isPlaceholderName(name?: string | null, username?: string | null): boolean {
   if (name?.trim() && name !== 'User') {
     return false;
   }

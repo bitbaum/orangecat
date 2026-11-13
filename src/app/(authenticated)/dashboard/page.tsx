@@ -97,7 +97,11 @@ export default function DashboardPage() {
             {/* The door: one sentence in, the right thing out. The Cat answers
                 with a draft card, so this is the fastest route from wanting to
                 having. */}
-            <TheDoor examples={ownsNothing ? DOOR_EXAMPLES : undefined} />
+            <TheDoor
+              // A person with nothing yet has nothing to recognise in an empty
+              // box; the examples say what kind of sentence it takes.
+              examples={safeProjects.length === 0 && totalDrafts === 0 ? DOOR_EXAMPLES : undefined}
+            />
           </div>
 
           {pendingActions.length > 0 && (

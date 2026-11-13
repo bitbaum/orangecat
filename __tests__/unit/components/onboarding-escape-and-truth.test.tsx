@@ -45,10 +45,11 @@ vi.mock('@/components/onboarding/OnboardingPay', () => ({
 
 const fallbackProfileUpdate = vi.mocked(ProfileService.fallbackProfileUpdate);
 
+// The three shown (auth-firstrun #2: three whole sentences, one per row).
 const FULL_EXAMPLES = [
   "I'm a freelance graphic designer looking to find clients and sell design templates",
+  'I run a small community garden and want to raise funds for seeds and equipment',
   'I make handmade jewellery and want to start selling online',
-  'My neighbourhood needs a community space — I want to fundraise and organise it',
 ];
 
 beforeEach(() => {
@@ -100,15 +101,24 @@ describe('a way out of onboarding', () => {
 });
 
 describe('onboarding says what it does', () => {
-  it('shows each example whole, clamped by CSS rather than cut mid-word', () => {
+  it('shows each example whole, one full-width row each, never cut mid-word', () => {
     render(<IntelligentOnboarding />);
 
     for (const example of FULL_EXAMPLES) {
-      const chip = screen.getByRole('button', { name: example });
-      expect(chip.textContent).toBe(example);
-      expect(chip.querySelector('.line-clamp-2')).not.toBeNull();
+      const row = screen.getByRole('button', { name: example });
+      expect(row.textContent).toBe(example);
+      expect(row.className).toMatch(/\bw-full\b/);
+      expect(row.className).toMatch(/\bmin-h-11\b/);
+      expect(row.querySelector('.line-clamp-2')).toBeNull();
     }
     expect(screen.queryByText(/…$/)).toBeNull();
+  });
+
+  it('gives the description field the column, not the browser default width', () => {
+    render(<IntelligentOnboarding />);
+    const field = screen.getByRole('textbox', { name: 'Who are you? What do you do?' });
+    // Textarea's own wrapper div, then the flex child that must grow.
+    expect(field.parentElement?.parentElement?.className).toMatch(/\bflex-1\b/);
   });
 
   it('does not promise that Cat sets offers up or creates them in one click', async () => {

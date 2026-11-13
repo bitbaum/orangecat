@@ -222,20 +222,25 @@ export default function IntelligentOnboarding() {
             </label>
 
             <div className="flex items-start gap-2">
-              <Textarea
-                id={descriptionId}
-                data-testid="onboarding-description"
-                placeholder="e.g. Senior product designer, 10 years, ex-fintech. I also restore vintage bikes on weekends…"
-                value={description}
-                onChange={e => setDescription(e.target.value)}
-                rows={4}
-                className="w-full resize-none"
-                onKeyDown={e => {
-                  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                    void handleSeeOffers();
-                  }
-                }}
-              />
+              {/* Textarea wraps itself in a block div; without flex-1 here
+                  that div shrink-wrapped to the browser's 20 columns and the
+                  field was 241px wide in a 462px column. */}
+              <div className="min-w-0 flex-1">
+                <Textarea
+                  id={descriptionId}
+                  data-testid="onboarding-description"
+                  placeholder="e.g. Senior product designer, 10 years, ex-fintech. I also restore vintage bikes on weekends…"
+                  value={description}
+                  onChange={e => setDescription(e.target.value)}
+                  rows={4}
+                  className="w-full resize-none"
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                      void handleSeeOffers();
+                    }
+                  }}
+                />
+              </div>
               {FEATURES.voiceInput && (
                 <DictationButton
                   ariaLabel="Voice input"
@@ -253,6 +258,8 @@ export default function IntelligentOnboarding() {
               data-testid="onboarding-see-offers"
               onClick={handleAskPay}
               disabled={!canSubmit || isGenerating}
+              // An in-app step, not the conversion: primary. (Disabled orange
+              // read as a broken accent.)
               variant="primary"
               className="w-full"
             >

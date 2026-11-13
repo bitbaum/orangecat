@@ -27,12 +27,9 @@ export function TaskCard({
   const IconComponent = TASK_ICON_MAP[task.id] || Target;
 
   return (
-    <div
-      className={`
-        flex items-start gap-4 rounded-md border p-4 transition-colors
-        ${isCompleted ? 'border-subtle bg-surface-raised/50 opacity-70' : 'border-subtle hover:border-strong hover:bg-surface-raised/30'}
-      `}
-    >
+    // A row of a list (the parent draws the dividers), not a box inside the
+    // card: a border per task inside a Card was a card around a card.
+    <div className={`flex items-start gap-4 py-3 ${isCompleted ? 'opacity-70' : ''}`}>
       <button
         onClick={onComplete}
         type="button"
@@ -51,14 +48,16 @@ export function TaskCard({
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1 flex-wrap">
               <IconComponent className="w-4 h-4 text-fg-secondary flex-shrink-0" />
+              {/* text-sm: the global h4 rule (text-base → text-xl) made each
+                  row's title outrank the card's own title. */}
               <h4
-                className={`font-medium ${isCompleted ? 'line-through text-fg-secondary' : 'text-fg-primary'}`}
+                className={`mb-0 text-sm font-medium ${isCompleted ? 'line-through text-fg-secondary' : 'text-fg-primary'}`}
               >
                 {task.title}
               </h4>
             </div>
 
-            <p className="text-sm text-fg-secondary mb-3">{task.description}</p>
+            <p className="mb-3 text-sm text-fg-secondary">{task.description}</p>
 
             {!isCompleted && (
               <Button
