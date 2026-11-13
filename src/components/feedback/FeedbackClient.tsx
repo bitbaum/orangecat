@@ -6,7 +6,6 @@ import { Send, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Textarea } from '@/components/ui/Textarea';
 import { DictationButton } from '@/components/ui/DictationButton';
-import { useAuth } from '@/hooks/useAuth';
 import Input from '@/components/ui/Input';
 import { PageHeading } from '@/components/layout/PageHeading';
 import { API_ROUTES } from '@/config/api-routes';
@@ -28,7 +27,6 @@ const MAX_MESSAGE_CHARS = 2000;
  */
 export function FeedbackClient() {
   // Transcription is a signed-in endpoint; a visitor types.
-  const { user } = useAuth();
   const [message, setMessage] = useState('');
   const [email, setEmail] = useState('');
   const [exchanges, setExchanges] = useState<Exchange[]>([]);
@@ -180,13 +178,11 @@ export function FeedbackClient() {
 
           <div className="flex items-center justify-between gap-4">
             <span className="flex items-center gap-2 text-xs text-fg-secondary">
-              {user && (
-                <DictationButton
-                  ariaLabel="Say it instead"
-                  disabled={isSubmitting}
-                  onTranscript={t => setMessage(prev => (prev ? `${prev} ${t}` : t))}
-                />
-              )}
+              <DictationButton
+                ariaLabel="Say it instead"
+                disabled={isSubmitting}
+                onTranscript={t => setMessage(prev => (prev ? `${prev} ${t}` : t))}
+              />
               {message.length}/{MAX_MESSAGE_CHARS}
             </span>
             <Button

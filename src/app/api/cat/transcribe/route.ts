@@ -10,6 +10,12 @@
  * MediaRecorder + transcribing here works in every modern browser and keeps the
  * Groq key server-only.
  *
+ * Signed out works too (owner's call, 2026-11-13): "anywhere a person types
+ * words there is a microphone" is a fleet rule, and the public boxes (/raise,
+ * /feedback, /studio, the door on /what-you-can-do) are where a newcomer meets
+ * OrangeCat. A visitor's take is held to a per-IP budget and a shorter
+ * recording, the same shape as the public Ask-Cat route.
+ *
  * The call itself is @bitbaum/ai-kit's `transcribe` over ai-kit's own speech
  * chain: the fleet's one implementation, with a second model to fall to. It
  * was a hand-rolled fetch at one model, which is the shape ai-kit replaced.
@@ -26,11 +32,14 @@ import {
 } from '@bitbaum/ai-kit';
 import { logger } from '@/utils/logger';
 import { apiBadRequest, apiError, apiSuccess, apiInternalError } from '@/lib/api/standardResponse';
-import { withAuth, type AuthenticatedRequest } from '@/lib/api/withAuth';
+import { withOptionalAuth } from '@/lib/api/withAuth';
 import {
   applyRateLimitHeaders,
   createRateLimitResponse,
+  rateLimit,
+  rateLimitDictation,
   rateLimitWriteAsync,
+  type RateLimitResult,
 } from '@/lib/rate-limit';
 
 /** Per link, so a stalled model costs one budget and not the whole request. */
@@ -38,11 +47,29 @@ const LINK_TIMEOUT_MS = 30_000;
 // Generous for short dictation; well under Groq's 25 MB limit. A minute of
 // opus/webm audio is ~0.5 MB, so 15 MB covers long messages with headroom.
 const MAX_AUDIO_BYTES = 15 * 1024 * 1024;
+// A visitor's take: about four minutes. Enough to say what you need; a long
+// recording is what an account is for.
+const MAX_VISITOR_AUDIO_BYTES = 2 * 1024 * 1024;
 
-export const POST = withAuth(async (request: AuthenticatedRequest) => {
-  const { user } = request;
+/** A signed-in person's write budget, or a visitor's IP budgets (both must pass). */
+async function dictationBudget(
+  request: NextRequest,
+  userId: string | null
+): Promise<RateLimitResult> {
+  if (userId) {
+    return rateLimitWriteAsync(userId);
+  }
+  const general = await rateLimit(request);
+  if (!general.success) {
+    return general;
+  }
+  return rateLimitDictation(request);
+}
+
+export const POST = withOptionalAuth(async request => {
+  const userId = request.user?.id ?? null;
   try {
-    const rl = await rateLimitWriteAsync(user.id);
+    const rl = await dictationBudget(request, userId);
     if (!rl.success) {
       // createRateLimitResponse returns a bare Response; withAuth wants NextResponse.
       return createRateLimitResponse(rl) as unknown as NextResponse;
@@ -55,7 +82,7 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
 
     let form: FormData;
     try {
-      form = await (request as NextRequest).formData();
+      form = await request.formData();
     } catch {
       return apiBadRequest('Expected multipart/form-data with an audio file.');
     }
@@ -66,6 +93,11 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
     }
     if (file.size > MAX_AUDIO_BYTES) {
       return apiBadRequest('Recording is too long. Keep dictation under ~10 minutes.');
+    }
+    if (!userId && file.size > MAX_VISITOR_AUDIO_BYTES) {
+      return apiBadRequest(
+        'Recording is too long. Keep it under about four minutes, or sign in to dictate longer.'
+      );
     }
 
     const optionalLang = form.get('language');
@@ -84,7 +116,7 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
             : undefined,
         chain: speechChain(),
         timeoutMs: LINK_TIMEOUT_MS,
-        signal: (request as NextRequest).signal,
+        signal: request.signal,
         onLinkFailure: (_link, error) => {
           if (error instanceof LinkFailure && error.status === 429) {
             rateLimited = true;

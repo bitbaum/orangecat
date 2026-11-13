@@ -6,9 +6,8 @@ import { ChatInput } from '@/components/ai-chat/ModernChatPanel/components/ChatI
 import { DoorExamples } from '@/components/dashboard/DoorExamples';
 import { CAT_DOOR, CAT_QUERY_PARAM } from '@/config/cat-door';
 import { ROUTES } from '@/config/routes';
-import { CHAT_VOICE, SIGNED_OUT_VOICE } from '@/hooks/useDictation';
+import { CHAT_VOICE } from '@/hooks/useDictation';
 import { cn } from '@/lib/utils';
-import { useAuthStore } from '@/stores/auth';
 
 interface TheDoorProps {
   /** A short row of example sentences the visitor can tap. */
@@ -27,13 +26,12 @@ interface TheDoorProps {
  *
  * Sending pushes `/dashboard/cat?q=…`. A signed-out visitor is carried
  * through sign-up by the middleware and arrives at the Cat with the sentence
- * intact. Their microphone is the browser's (SIGNED_OUT_VOICE): the server
- * transcriber needs a session.
+ * intact. The microphone is the same for everyone: the server transcriber
+ * takes a visitor's take too, on a per-IP budget (api/cat/transcribe).
  */
 export function TheDoor({ examples, className }: TheDoorProps = {}) {
   const router = useRouter();
   const headingId = useId();
-  const signedIn = useAuthStore(state => !!state.user);
   const [value, setValue] = useState('');
   const text = value.trim();
   const tooLong = text.length > CAT_DOOR.maxLength;
@@ -65,7 +63,7 @@ export function TheDoor({ examples, className }: TheDoorProps = {}) {
         ariaLabel={CAT_DOOR.prompt}
         sendLabel={CAT_DOOR.submit}
         sendBlockedReason={blockedReason}
-        voice={signedIn ? CHAT_VOICE : SIGNED_OUT_VOICE}
+        voice={CHAT_VOICE}
       />
       <DoorExamples examples={examples} />
       {tooLong && (

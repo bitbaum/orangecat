@@ -71,7 +71,7 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### create-manage#8 · medium · Help text and defaults leak the implementation: "-1 for unlimited", "Currency selector is included in this field", two currency controls, Bitcoin-scale placeholders in franc fields
 
-**Status:** Partly (fourth pull request): loans still ask for "Remaining balance" on a new loan (needs a schema decision).
+**Status:** Fixed (owner decision, 2026-11-13): a new loan is not asked what it still owes; a refinance is asked "Still owed".
 
 - **Where:** app-create-product, app-create-project, /dashboard/investments/create, /dashboard/loans/create (both, both themes)
 - **What a person meets:** A seller sees a negative number in a stock field and has to learn a sentinel value; a fundraiser is told about a currency selector instead of about their goal; an investor-seeker is shown "1.0 CHF" as an example target. Each one makes the form look machine-generated and makes the person doubt what will be published.

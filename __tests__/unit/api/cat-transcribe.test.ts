@@ -13,16 +13,27 @@ vi.mock('@/utils/logger', () => ({
   logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 
+const { session, limits } = vi.hoisted(() => ({
+  session: { user: { id: 'test-user' } as { id: string } | null },
+  limits: {
+    write: vi.fn(),
+    general: vi.fn(),
+    dictation: vi.fn(),
+  },
+}));
+
 vi.mock('@/lib/api/withAuth', () => ({
-  withAuth:
+  withOptionalAuth:
     (handler: (req: unknown) => Promise<unknown>) =>
     (req: unknown): Promise<unknown> =>
-      handler(Object.assign(req as object, { user: { id: 'test-user' }, supabase: {} })),
+      handler(Object.assign(req as object, { user: session.user, supabase: {} })),
 }));
 
 vi.mock('@/lib/rate-limit', () => ({
-  rateLimitWriteAsync: vi.fn().mockResolvedValue({ success: true }),
-  createRateLimitResponse: vi.fn(),
+  rateLimitWriteAsync: limits.write,
+  rateLimit: limits.general,
+  rateLimitDictation: limits.dictation,
+  createRateLimitResponse: () => ({ status: 429 }),
   applyRateLimitHeaders: (response: unknown) => response,
 }));
 
@@ -35,10 +46,14 @@ vi.mock('@/lib/api/standardResponse', () => ({
 
 type Reply = { status: number; data?: { text: string }; code?: string };
 
-function request(): unknown {
+function request(bytes = 2048): unknown {
   const form = new FormData();
-  form.append('file', new Blob([new Uint8Array(2048)], { type: 'audio/webm' }), 'audio.webm');
-  return { formData: async () => form, signal: new AbortController().signal };
+  form.append('file', new Blob([new Uint8Array(bytes)], { type: 'audio/webm' }), 'audio.webm');
+  return {
+    formData: async () => form,
+    signal: new AbortController().signal,
+    headers: new Headers(),
+  };
 }
 
 function vendor(status: number, body: unknown): Response {
@@ -54,6 +69,10 @@ describe('POST /api/cat/transcribe', () => {
 
   beforeEach(() => {
     process.env.GROQ_API_KEY = 'test-groq-key';
+    session.user = { id: 'test-user' };
+    limits.write.mockResolvedValue({ success: true });
+    limits.general.mockResolvedValue({ success: true });
+    limits.dictation.mockResolvedValue({ success: true });
   });
   afterEach(() => {
     global.fetch = realFetch;
@@ -118,5 +137,38 @@ describe('POST /api/cat/transcribe', () => {
     const reply = (await POST(request() as never)) as unknown as Reply;
     expect(reply.status).toBe(503);
     expect(reply.code).toBe('TRANSCRIBE_UNAVAILABLE');
+  });
+
+  describe('a visitor with no account', () => {
+    beforeEach(() => {
+      session.user = null;
+      global.fetch = vi.fn(async () => vendor(200, { text: 'A second oven.' })) as never;
+    });
+
+    it('is transcribed, on the per-IP budgets rather than a person’s', async () => {
+      const reply = (await POST(request() as never)) as unknown as Reply;
+      expect(reply.status).toBe(200);
+      expect(reply.data?.text).toBe('A second oven.');
+      expect(limits.general).toHaveBeenCalled();
+      expect(limits.dictation).toHaveBeenCalled();
+      expect(limits.write).not.toHaveBeenCalled();
+    });
+
+    it('is refused once the dictation budget is spent, before any model is called', async () => {
+      limits.dictation.mockResolvedValue({ success: false });
+      const reply = (await POST(request() as never)) as unknown as Reply;
+      expect(reply.status).toBe(429);
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    it('gets a shorter recording than a signed-in person', async () => {
+      const reply = (await POST(request(3 * 1024 * 1024) as never)) as unknown as Reply;
+      expect(reply.status).toBe(400);
+      expect(global.fetch).not.toHaveBeenCalled();
+
+      session.user = { id: 'test-user' };
+      const signedIn = (await POST(request(3 * 1024 * 1024) as never)) as unknown as Reply;
+      expect(signedIn.status).toBe(200);
+    });
   });
 });

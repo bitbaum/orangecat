@@ -28,6 +28,7 @@ import type { Profile } from '@/types/database';
 import { ROUTES } from '@/config/routes';
 import { cn } from '@/lib/utils';
 import { CollapsedSwitcher } from './CollapsedSwitcher';
+import { ENTITY_REGISTRY } from '@/config/entity-registry';
 
 interface ContextSwitcherProps {
   profile: Profile;
@@ -232,14 +233,16 @@ export function ContextSwitcher({
               <div className="border-t border-subtle my-1" />
               <div className="px-3 py-1.5">
                 <p className="text-xs font-medium text-fg-tertiary uppercase tracking-wider">
-                  Groups
+                  {ENTITY_REGISTRY.group.namePlural}
                 </p>
               </div>
             </>
           )}
 
           {loadingGroups ? (
-            <div className="px-3 py-2 text-xs text-fg-tertiary">Loading groups...</div>
+            <div className="px-3 py-2 text-xs text-fg-tertiary">
+              Loading {ENTITY_REGISTRY.group.namePlural.toLowerCase()}…
+            </div>
           ) : (
             userGroups.map(group => (
               <button
@@ -289,7 +292,9 @@ export function ContextSwitcher({
             <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-surface-raised">
               <Plus className="w-4 h-4 text-fg-secondary" />
             </div>
-            <p className="text-sm text-fg-secondary">Create a group</p>
+            <p className="text-sm text-fg-secondary">
+              Start an {ENTITY_REGISTRY.group.name.toLowerCase()}
+            </p>
           </button>
         </div>
       )}

@@ -11,6 +11,10 @@ to the map, sub-bullets stay here for the human reader.
 
 ## 2026-11-13
 
+- **You can speak instead of type without an account.** The microphone on "What do you want to do?", raising money, feedback and the studio now works for visitors too, in every browser.
+  - A visitor gets twelve takes in ten minutes and about four minutes per take; signing in lifts both.
+- **Organizations are called Organizations everywhere.** The switcher, the list and the join button no longer say "Groups" for the same thing.
+- **A new loan no longer asks what is still owed.** It owes the full amount, so that is filled in for you; only a loan you are refinancing asks "Still owed".
 - **Signing up is one clear step.** Sign-in and sign-up each have one highlighted button, a mistake shows under the field it belongs to, and wherever you sign in from you land in the same place: the Cat if you are new, your dashboard if you are back.
 - **The phone app is easier to move around.** The menu closes when you pick a page and stays closed after a reload, Create lists what you can make in plain words with the page's own kind first, and the money tab is called "Money" everywhere.
 - **Paying and getting paid say what is happening.** The pay page shows who you are paying, buttons wait until the amount is within the limits, and Send takes you straight to connecting a wallet when you need one.
