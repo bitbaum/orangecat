@@ -1,16 +1,15 @@
 'use client';
 
 import { useId, useState } from 'react';
-import { AlertCircle, Loader2, Key, ArrowLeft } from 'lucide-react';
-import Link from 'next/link';
+import { AlertCircle, Loader2 } from 'lucide-react';
 import Button from '@/components/ui/Button';
-import Card from '@/components/ui/Card';
 import supabase from '@/lib/supabase/browser';
 import { COMPONENT_STYLES } from '@/config/design-system';
-import { ROUTES } from '@/config/routes';
 import { cn } from '@/lib/utils';
 import { passwordProblem } from '@bitbaum/accountkit/auth/password';
 import { PasswordField } from '@bitbaum/accountkit/auth/password-field';
+import { AuthTitle } from '../AuthTitle';
+import { BackToSignIn } from './BackToSignIn';
 
 /**
  * accountkit's one new-password field (autocomplete, the show/hide eye inside
@@ -19,7 +18,7 @@ import { PasswordField } from '@bitbaum/accountkit/auth/password-field';
  */
 const PASSWORD_FIELD_CLASSES = {
   inputWrap: 'relative',
-  input: cn(COMPONENT_STYLES.field.control, 'block min-h-11 px-3 pr-12 text-base sm:text-sm'),
+  input: cn(COMPONENT_STYLES.field.control, 'block h-12 px-3 pr-12 text-base sm:text-sm'),
   reveal:
     'absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-md text-fg-tertiary hover:text-fg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:hover:text-fg-primary',
 };
@@ -60,21 +59,15 @@ export function NewPasswordForm({ onSuccess }: { onSuccess: () => void }) {
   };
 
   return (
-    <Card className="max-w-md w-full p-8 shadow-sm">
-      <div className="text-center mb-8">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-lg bg-surface-base border border-default mb-6">
-          <Key className="h-8 w-8 text-fg-primary" />
-        </div>
-        <h1 className="text-2xl font-bold text-fg-primary mb-2">Create New Password</h1>
-        <p className="text-fg-secondary">Enter a strong password to secure your account</p>
-      </div>
+    <>
+      <AuthTitle title="Choose a new password" lede="You will use it the next time you sign in." />
 
       {error && (
         <div className="oc-error-surface mb-6">
           <div className="flex">
             <AlertCircle className="h-5 w-5 mt-0.5" />
             <div className="ml-3">
-              <p className="text-sm font-medium">{error}</p>
+              <p className="mb-0 text-sm font-medium">{error}</p>
             </div>
           </div>
         </div>
@@ -110,29 +103,23 @@ export function NewPasswordForm({ onSuccess }: { onSuccess: () => void }) {
         <Button
           type="submit"
           variant="primary"
-          className="w-full"
+          className="h-12 w-full"
           disabled={isLoading || !password || !confirmPassword}
         >
           {isLoading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Updating Password...
+              Updating password…
             </>
           ) : (
-            'Update Password'
+            'Update password'
           )}
         </Button>
       </form>
 
-      <div className="mt-8 text-center">
-        <Link
-          href={`${ROUTES.AUTH}?mode=login`}
-          className="inline-flex items-center text-sm text-fg-secondary hover:text-fg-primary transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4 mr-1" />
-          Back to Login
-        </Link>
+      <div className="mt-6">
+        <BackToSignIn />
       </div>
-    </Card>
+    </>
   );
 }

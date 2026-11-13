@@ -2,13 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import Button from '@/components/ui/Button';
-import Card from '@/components/ui/Card';
 import supabase from '@/lib/supabase/browser';
-import { cn } from '@/lib/utils';
-import { GRADIENTS } from '@/config/gradients';
 import { ROUTES } from '@/config/routes';
+import { AuthStepPage, AuthTitle } from '../AuthTitle';
 import { CLEAR_RETURN_COOKIE, returnPathFromCookies } from '@/lib/oauth/handoff';
 import { OtpForm } from './OtpForm';
 import { NewPasswordForm } from './NewPasswordForm';
@@ -90,40 +88,29 @@ export default function ResetPasswordPage() {
   };
   const goToForgot = () => router.push(ROUTES.AUTH_FORGOT_PASSWORD);
 
+  // Every step in the frame of /auth itself: one centred title block, no
+  // card, no icon tile, sentence case — the same place, not three others.
   return (
-    <div
-      className={cn(GRADIENTS.pageBgSolid, 'min-h-screen flex items-center justify-center px-4')}
-    >
+    <AuthStepPage>
       {step === 'loading' && (
-        <Card className="max-w-md w-full p-8 shadow-sm">
-          <div className="text-center">
-            <Loader2 className="h-12 w-12 animate-spin mx-auto text-fg-primary mb-6" />
-            <h2 className="text-xl font-semibold text-fg-primary mb-2">Verifying Reset Link</h2>
-            <p className="text-fg-secondary">
-              Please wait while we verify your password reset link...
-            </p>
-          </div>
-        </Card>
+        <div className="text-center" role="status">
+          <Loader2 className="mx-auto mb-6 h-8 w-8 animate-spin text-fg-secondary" />
+          <AuthTitle title="Checking your reset link" lede="This takes a moment." />
+        </div>
       )}
 
       {step === 'error' && (
-        <Card className="max-w-md w-full p-8 shadow-sm">
-          <div className="text-center">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-status-negative-subtle mb-6">
-              <AlertCircle className="h-8 w-8 text-status-negative" />
-            </div>
-            <h1 className="text-2xl font-bold text-fg-primary mb-3">Reset Link Invalid</h1>
-            <p className="text-fg-secondary mb-6">{error}</p>
-            <div className="space-y-3">
-              <Button onClick={goToForgot} variant="primary" className="w-full">
-                Request New Reset Link
-              </Button>
-              <Button onClick={goToLogin} variant="outline" className="w-full">
-                Back to Login
-              </Button>
-            </div>
+        <>
+          <AuthTitle title="This reset link no longer works" lede={error ?? undefined} />
+          <div className="space-y-3">
+            <Button onClick={goToForgot} variant="primary" className="h-12 w-full">
+              Send a new reset email
+            </Button>
+            <Button onClick={goToLogin} variant="outline" className="h-12 w-full">
+              Back to sign in
+            </Button>
           </div>
-        </Card>
+        </>
       )}
 
       {step === 'otp' && (
@@ -133,31 +120,26 @@ export default function ResetPasswordPage() {
       {step === 'reset' && <NewPasswordForm onSuccess={() => setStep('success')} />}
 
       {step === 'success' && (
-        <Card className="max-w-md w-full p-8 shadow-sm">
-          <div className="text-center">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-status-positive-subtle mb-6">
-              <CheckCircle2 className="h-8 w-8 text-status-positive" />
-            </div>
-            <h1 className="text-2xl font-bold text-fg-primary mb-3">
-              Password Updated Successfully
-            </h1>
-            <p className="text-fg-secondary mb-6">
-              {returnTo
-                ? 'Your password has been updated and you are signed in.'
-                : 'Your password has been updated. You can now sign in with your new password.'}
-            </p>
-            {returnTo ? (
-              <Button onClick={continueToApp} variant="primary" className="w-full">
-                Continue
-              </Button>
-            ) : (
-              <Button onClick={goToLogin} variant="primary" className="w-full">
-                Sign In Now
-              </Button>
-            )}
-          </div>
-        </Card>
+        <>
+          <AuthTitle
+            title="Password updated"
+            lede={
+              returnTo
+                ? 'You are signed in with your new password.'
+                : 'Sign in with your new password.'
+            }
+          />
+          {returnTo ? (
+            <Button onClick={continueToApp} variant="primary" className="h-12 w-full">
+              Continue
+            </Button>
+          ) : (
+            <Button onClick={goToLogin} variant="primary" className="h-12 w-full">
+              Sign in
+            </Button>
+          )}
+        </>
       )}
-    </div>
+    </AuthStepPage>
   );
 }

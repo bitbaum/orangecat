@@ -107,7 +107,7 @@ describe('the password reset', () => {
     expect(screen.getByRole('textbox', { name: /Email address/ }).getAttribute('type')).toBe(
       'email'
     );
-    expect(screen.getByRole('textbox', { name: /Reset code/ }).getAttribute('autocomplete')).toBe(
+    expect(screen.getByRole('textbox', { name: /6-digit code/ }).getAttribute('autocomplete')).toBe(
       'one-time-code'
     );
   });
