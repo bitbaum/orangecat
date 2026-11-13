@@ -20,7 +20,9 @@ export const ENTITY_PRIMARY_CTA: Record<EntityType, string> = {
   // disagreed with the panel it scrolls to ("Support with Bitcoin").
   cause: 'Fund this cause',
   research: 'Fund this research',
-  wishlist: 'Gift an item',
+  // Not "Gift an item": the button opens the wishlist's support card, where
+  // no item can be chosen. Per-item gifting does not exist yet.
+  wishlist: 'Send a gift',
   // Funding (soft strings) — milestone accountability
   project: 'Fund this project',
   // Lending / Investing

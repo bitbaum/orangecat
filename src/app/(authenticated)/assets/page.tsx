@@ -1,16 +1,16 @@
 /**
- * Assets Page - Redirect to Dashboard
+ * /assets — the public list of assets, like every other kind's list route.
  *
- * Redirects to /dashboard/assets for consistency with other entity pages.
- *
- * Created: 2025-01-27
- * Last Modified: 2025-01-30
- * Last Modified Summary: Redirect to /dashboard/assets for path consistency
+ * It is the breadcrumb on a public asset page. It used to redirect to
+ * /dashboard/assets, the visitor's OWN assets: a sign-in wall for a stranger,
+ * an empty "My Assets" for a signed-in visitor. The owner's list stays at
+ * /dashboard/assets.
  */
 
 import { redirect } from 'next/navigation';
 import { ROUTES } from '@/config/routes';
+import { DISCOVER_TYPE_SLUGS } from '@/config/discover-tabs';
 
 export default function AssetsPage() {
-  redirect(ROUTES.DASHBOARD.ASSETS);
+  redirect(ROUTES.DISCOVER_TYPE(DISCOVER_TYPE_SLUGS.asset));
 }
