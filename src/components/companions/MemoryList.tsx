@@ -44,6 +44,36 @@ export function MemoryList({ companionId, name }: MemoryListProps) {
     void load();
   }, [load]);
 
+  const [editing, setEditing] = useState<string | null>(null);
+  const [draft, setDraft] = useState('');
+  const [added, setAdded] = useState('');
+  const [error, setError] = useState<string | null>(null);
+
+  /** Add a memory (no id) or correct one (its id): the server answers the new list. */
+  const write = async (content: string, id?: string) => {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(API_ROUTES.AI_ASSISTANTS.MEMORIES(companionId), {
+        method: id ? 'PATCH' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(id ? { id, content } : { content }),
+      });
+      const json = (await res.json()) as { data?: { memories: Memory[] } };
+      if (!res.ok || !json.data) {
+        throw new Error(copy.failed);
+      }
+      setMemories(json.data.memories);
+      setEditing(null);
+      setAdded('');
+    } catch (err) {
+      logger.error('Companion memory failed to save', err, 'MemoryList');
+      setError(copy.failed);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const forget = async (query: string) => {
     setBusy(true);
     try {
@@ -62,21 +92,92 @@ export function MemoryList({ companionId, name }: MemoryListProps) {
       <h1 className="text-lg font-semibold text-fg-primary">{copy.title(name)}</h1>
       <p className="mt-1 text-sm text-fg-tertiary">{COMPANION_COPY.memoryPrivacy(name)}</p>
 
+      <form
+        className="mt-6 flex flex-col gap-2 sm:flex-row sm:items-end"
+        onSubmit={e => {
+          e.preventDefault();
+          void write(added.trim());
+        }}
+      >
+        <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm text-fg-secondary">
+          <span>{copy.addLabel(name)}</span>
+          <input
+            type="text"
+            value={added}
+            onChange={e => setAdded(e.target.value)}
+            maxLength={240}
+            placeholder={copy.addPlaceholder}
+            className="min-h-[44px] w-full rounded-xl border border-subtle bg-surface-raised px-3 text-fg-primary"
+          />
+        </label>
+        <Button type="submit" size="sm" disabled={busy || added.trim().length < 3}>
+          {copy.add}
+        </Button>
+      </form>
+      {error && <p className="mb-0 mt-2 text-sm text-status-negative">{error}</p>}
+
       {memories === null ? null : memories.length === 0 ? (
         <p className="mt-8 text-sm text-fg-secondary">{copy.empty(name)}</p>
       ) : (
         <ul className="mt-6 divide-y divide-subtle">
           {memories.map(m => (
             <li key={m.id} className="flex items-start justify-between gap-4 py-3">
-              <span className="text-sm leading-relaxed text-fg-primary">{m.content}</span>
-              <button
-                type="button"
-                className="shrink-0 text-xs text-fg-tertiary hover:text-status-negative"
-                disabled={busy}
-                onClick={() => void forget(`id=${m.id}`)}
-              >
-                {copy.forgetOne}
-              </button>
+              {editing === m.id ? (
+                <form
+                  className="flex w-full flex-col gap-2"
+                  onSubmit={e => {
+                    e.preventDefault();
+                    void write(draft.trim(), m.id);
+                  }}
+                >
+                  <textarea
+                    value={draft}
+                    onChange={e => setDraft(e.target.value)}
+                    maxLength={240}
+                    rows={2}
+                    aria-label={copy.edit}
+                    className="w-full rounded-xl border border-subtle bg-surface-raised p-3 text-base text-fg-primary"
+                  />
+                  <div className="flex gap-2">
+                    <Button type="submit" size="sm" disabled={busy || draft.trim().length < 3}>
+                      {copy.save}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setEditing(null)}
+                    >
+                      {copy.cancel}
+                    </Button>
+                  </div>
+                </form>
+              ) : (
+                <>
+                  <span className="text-sm leading-relaxed text-fg-primary">{m.content}</span>
+                  <span className="flex shrink-0 gap-1">
+                    <button
+                      type="button"
+                      className="min-h-[44px] px-2 text-sm text-fg-secondary hover:text-fg-primary"
+                      disabled={busy}
+                      onClick={() => {
+                        setDraft(m.content);
+                        setEditing(m.id);
+                      }}
+                    >
+                      {copy.edit}
+                    </button>
+                    <button
+                      type="button"
+                      className="min-h-[44px] px-2 text-sm text-fg-secondary hover:text-status-negative"
+                      disabled={busy}
+                      onClick={() => void forget(`id=${m.id}`)}
+                    >
+                      {copy.forgetOne}
+                    </button>
+                  </span>
+                </>
+              )}
             </li>
           ))}
         </ul>

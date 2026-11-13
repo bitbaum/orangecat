@@ -39,6 +39,13 @@ export const COMPANION_COPY = {
     forgetAll: 'Forget everything',
     forgetAllConfirm: 'Yes, forget everything',
     forgetAllHint: 'Every memory goes. Conversations stay.',
+    edit: 'Edit',
+    save: 'Save',
+    cancel: 'Cancel',
+    add: 'Add',
+    addLabel: (name: string) => `Tell ${name} something to remember`,
+    addPlaceholder: 'For example: I am vegetarian',
+    failed: 'That did not save. Try again.',
   },
 
   /** The talk home: companions, group chats and the fleet's bots as one list. */
