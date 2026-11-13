@@ -37,12 +37,14 @@ describe('the wallet form', () => {
     const wallet = screen.getByRole('textbox', { name: 'Your wallet' });
     expect(wallet.getAttribute('placeholder')).toBe('you@wallet.com or bc1…');
 
-    await user.click(screen.getByRole('button', { name: /Other ways to get paid/ }));
+    await user.click(
+      screen.getByRole('button', { name: /Add an on-chain address or a wallet connection/ })
+    );
     expect(screen.getByRole('textbox', { name: 'On-chain Bitcoin address or extended key' }));
     // A password input has no role; the label still has to reach it.
     expect(screen.getByLabelText('Wallet connection link').getAttribute('type')).toBe('password');
 
-    await user.click(screen.getByRole('button', { name: /Name & details/ }));
+    await user.click(screen.getByRole('button', { name: /Name and details/ }));
     expect(screen.getByRole('textbox', { name: 'Wallet name' }));
     expect(screen.getByRole('textbox', { name: 'Description' }));
     expect(screen.getByRole('spinbutton', { name: 'Funding goal' }));

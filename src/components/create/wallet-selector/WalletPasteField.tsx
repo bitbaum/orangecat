@@ -14,6 +14,8 @@ interface WalletPasteFieldProps {
   cancelLabel?: string;
   onCancel?: () => void;
   onSaved: (wallet: Wallet) => void;
+  /** The host is already the surface; the form draws no card of its own. */
+  bare?: boolean;
 }
 
 /**
@@ -28,6 +30,7 @@ export function WalletPasteField({
   cancelLabel,
   onCancel,
   onSaved,
+  bare = false,
 }: WalletPasteFieldProps) {
   if (!profileId) {
     return (
@@ -42,6 +45,7 @@ export function WalletPasteField({
       <WhyReceive />
       <WalletForm
         hideIntro={hideIntro}
+        bare={bare}
         defaultLabel={defaultLabel}
         submitLabel={submitLabel}
         cancelLabel={cancelLabel}

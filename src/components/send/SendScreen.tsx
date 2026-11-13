@@ -22,7 +22,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Clock } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { MoneyLoading, MoneyPage } from '@/components/money/MoneyPage';
+import { MoneyLoading, MoneyPage, MoneyPrompt } from '@/components/money/MoneyPage';
+import { isAmountInRange } from '@/components/money/amount-draft';
 import { MoneyReceipt } from '@/components/money/MoneyReceipt';
 import { StatusNote } from '@/components/money/StatusNote';
 import { AmountField } from '@/components/money/AmountField';
@@ -154,7 +155,11 @@ export function SendScreen() {
   }, [destination, recipientHandle, amount, memo]);
 
   if (authLoading || !capability) {
-    return <MoneyLoading />;
+    return (
+      <MoneyPage title={SEND_COPY.title} subtitle={SEND_COPY.subtitle}>
+        <MoneyLoading />
+      </MoneyPage>
+    );
   }
 
   // Nothing on this screen can work without a wallet to spend from, so say so
@@ -164,15 +169,21 @@ export function SendScreen() {
   if (!capability.canSend) {
     const oursNotTheirs = capability.reason === 'sending_unavailable';
     return (
-      <MoneyPage
-        title={oursNotTheirs ? SEND_COPY.unavailableTitle : SEND_COPY.noWalletTitle}
-        subtitle={capability.message ?? SEND_COPY.noWalletBody}
-      >
-        {!oursNotTheirs && (
-          <Button variant="primary" href={ROUTES.DASHBOARD.WALLETS}>
-            {SEND_COPY.noWalletCta}
-          </Button>
-        )}
+      <MoneyPage title={SEND_COPY.title} subtitle={SEND_COPY.subtitle}>
+        <MoneyPrompt
+          heading={oursNotTheirs ? SEND_COPY.unavailableTitle : SEND_COPY.noWalletTitle}
+          body={
+            capability.reason === 'no_sender_wallet'
+              ? SEND_COPY.noWalletBody
+              : (capability.message ?? SEND_COPY.noWalletBody)
+          }
+        >
+          {!oursNotTheirs && (
+            <Button variant="primary" className="w-full" href={ROUTES.DASHBOARD.WALLETS_FOR_SEND}>
+              {SEND_COPY.noWalletCta}
+            </Button>
+          )}
+        </MoneyPrompt>
       </MoneyPage>
     );
   }
@@ -217,7 +228,9 @@ export function SendScreen() {
     );
   }
 
-  const canReview = isInvoice ? invoiceIsPayable : recipientCheck.payable && amount > 0;
+  const canReview = isInvoice
+    ? invoiceIsPayable
+    : recipientCheck.payable && isAmountInRange(amount, PAY_MIN_BTC, PAY_MAX_BTC);
 
   return (
     <MoneyPage title={SEND_COPY.title} subtitle={SEND_COPY.subtitle}>
