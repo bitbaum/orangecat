@@ -15,4 +15,5 @@ export const lokiFindingHandlers: Record<string, ActionHandler> = {
   loki_finding_status: (_supabase, _userId, actorId, params) =>
     LOKI_HANDS.loki_finding_status(actorId, params),
   walk_site: (_supabase, _userId, actorId, params) => LOKI_HANDS.walk_site(actorId, params),
+  use_browser: (_supabase, _userId, actorId, params) => LOKI_HANDS.use_browser(actorId, params),
 };

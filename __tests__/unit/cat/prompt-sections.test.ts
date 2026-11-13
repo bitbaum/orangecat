@@ -266,7 +266,13 @@ describe('selection is worth doing', () => {
     // each: Cat Bot's headless-browser testing, docs/PARITY.md step 1). ~150
     // characters: one clause and two parameter names. What a page fails on
     // is Loki's code (its lib/site-walk), never prose here.
-    expect(remaining).toBeLessThanOrEqual(7_230);
+    //
+    // Raised 7,230 -> 7,440 for `use_browser` (a bot's own browser, one step
+    // at a time: open, click, type, press, scroll, back, look, close;
+    // docs/PARITY.md step 2). ~205 characters: one clause and eight short
+    // parameter names, because each step names what it needs. What a page
+    // shows, and what a bot may never type, are Loki's code, not prose here.
+    expect(remaining).toBeLessThanOrEqual(7_440);
   });
 
   it('selects by default now, and still sends everything when told to', async () => {

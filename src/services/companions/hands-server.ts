@@ -110,7 +110,9 @@ export async function proposeFromReply(
   userId: string,
   hands: Hands,
   reply: string,
-  conversationId: string
+  conversationId: string,
+  /** The bot whose turn this is: whose browser a use_browser step drives. */
+  botId?: string
 ): Promise<{
   text: string;
   pendingAction: PendingAction | null;
@@ -143,7 +145,16 @@ export async function proposeFromReply(
     );
     return { text, pendingAction: null, proposal: null, auto: false };
   }
-  const parameters = validation.data ?? proposal.parameters;
+  const parameters = { ...(validation.data ?? proposal.parameters) };
+  if (proposal.action === 'use_browser') {
+    // Whose browser is the server's to say, never the model's: each bot has
+    // its own (services/loki/browser.ts), and a model that wrote an id here
+    // does not get another bot's.
+    delete parameters.bot_id;
+    if (botId) {
+      parameters.bot_id = botId;
+    }
+  }
   if (offered.auto) {
     // The owner let this bot run this hand itself: no card is queued. The
     // work loop runs it and writes what happened into the thread.

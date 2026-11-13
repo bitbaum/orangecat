@@ -42,6 +42,19 @@ export function generateActionDescription(
         : 'Read what your Loki sessions are doing';
     case 'file_loki_finding':
       return `File this finding in ${parameters.project}'s feedback inbox in Loki: “${String(parameters.finding ?? '').slice(0, 300)}”`;
+    case 'use_browser': {
+      const step = String(parameters.do ?? '');
+      if (step === 'open') {
+        return `Open ${String(parameters.url ?? '').slice(0, 300)} in the bot's own browser`;
+      }
+      if (step === 'type') {
+        return `Type “${String(parameters.text ?? '').slice(0, 200)}” in the bot's browser${parameters.submit ? ' and press Enter' : ''}`;
+      }
+      if (step === 'click') {
+        return `Click ${parameters.label ? `“${String(parameters.label).slice(0, 80)}”` : `element ${parameters.n ?? ''}`} in the bot's browser`;
+      }
+      return `In the bot's browser: ${step}${parameters.key ? ` ${parameters.key}` : ''}`;
+    }
     case 'walk_site':
       return `Open ${String(parameters.urls ?? '').slice(0, 300)} in Loki's browser at phone size and report what is wrong`;
     case 'loki_finding_status':

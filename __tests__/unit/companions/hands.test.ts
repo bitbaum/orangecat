@@ -44,6 +44,7 @@ describe('the launch set', () => {
         'file_loki_finding',
         'loki_finding_status',
         'walk_site',
+        'use_browser',
       ])
     );
     expect(handsActions().map(a => a.id)).toEqual([...COMPANION_HANDS]);

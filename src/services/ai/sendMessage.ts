@@ -213,7 +213,14 @@ export async function sendAiMessage(
   // A proposal rides the end of the reply as a fence; it comes off before
   // the words are stored, spoken or remembered, and becomes a pending action.
   const proposed = hands
-    ? await proposeFromReply(supabase, userId, hands, aiResult.response.content, convId)
+    ? await proposeFromReply(
+        supabase,
+        userId,
+        hands,
+        aiResult.response.content,
+        convId,
+        assistant.id
+      )
     : null;
   const aiResponse = proposed
     ? { ...aiResult.response, content: proposed.text }
@@ -275,7 +282,14 @@ export async function sendAiMessage(
         logger.warn('work loop stopped: no reply', { steps }, 'AIMessagesService');
         break;
       }
-      const again = await proposeFromReply(supabase, userId, hands, next.response.content, convId);
+      const again = await proposeFromReply(
+        supabase,
+        userId,
+        hands,
+        next.response.content,
+        convId,
+        assistant.id
+      );
       const nextResponse = { ...next.response, content: again.text };
       const stored = await storeAssistantMessage(
         supabase,

@@ -65,7 +65,7 @@ describe('walkSiteWithLoki', () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
-  it('sends each page with the phrases, asks for words only, and reports what Loki found', async () => {
+  it('sends each page with the phrases and reports what Loki found, with the picture of a failed page', async () => {
     let sent: Record<string, unknown> = {};
     let calledUrl = '';
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (url, init) => {
@@ -81,7 +81,8 @@ describe('walkSiteWithLoki', () => {
             ok: false,
             title: 'Discover',
             problems: ['The page scrolls sideways on a phone: it is 512px wide on a 390px screen.'],
-            screenshot: 'AAAA',
+            screenshotUrl:
+              'https://loki.orangecat.ch/api/orangecat/shot/0123456789abcdef0123456789abcdef',
           },
         ],
       });
@@ -92,7 +93,7 @@ describe('walkSiteWithLoki', () => {
     });
     expect(calledUrl).toContain('/api/orangecat/site-walk');
     expect(sent.actorId).toBe(ACTOR);
-    expect(sent.screenshots).toBe(false);
+    expect(sent.screenshots).toBeUndefined();
     expect(sent.steps).toEqual([
       { url: 'https://orangecat.ch/', expect: ['OrangeCat'] },
       { url: 'https://orangecat.ch/discover', expect: ['OrangeCat'] },
@@ -103,8 +104,10 @@ describe('walkSiteWithLoki', () => {
     expect(data.displayMessage).toContain('1 has problems');
     expect(data.displayMessage).toContain('512px wide on a 390px screen');
     expect(data.displayMessage).toContain('Nothing was filed');
-    // The picture does not ride into the thread.
-    expect(JSON.stringify(data.steps)).not.toContain('AAAA');
+    // The picture of the failed page rides into the thread as an address.
+    expect(data.displayMessage).toContain(
+      '![https://orangecat.ch/discover at phone size](https://loki.orangecat.ch/api/orangecat/shot/0123456789abcdef0123456789abcdef)'
+    );
   });
 
   it("says Loki's own sentence when it refuses", async () => {

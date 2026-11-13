@@ -22,6 +22,8 @@ export interface SiteWalkStep {
   ok: boolean;
   title: string | null;
   problems: string[];
+  /** A picture of a page that loaded and failed, at an address the thread can show. */
+  screenshotUrl?: string;
 }
 
 export type SiteWalkOutcome =
@@ -86,6 +88,9 @@ function readSteps(raw: unknown): SiteWalkStep[] | null {
       problems: Array.isArray(rec.problems)
         ? rec.problems.filter((p): p is string => typeof p === 'string')
         : [],
+      ...(typeof rec.screenshotUrl === 'string' && /^https:\/\//.test(rec.screenshotUrl)
+        ? { screenshotUrl: rec.screenshotUrl }
+        : {}),
     });
   }
   return steps;
@@ -116,8 +121,6 @@ export async function walkSiteWithLoki(input: {
       actorId: input.actorId,
       issuedAt: new Date().toISOString(),
       steps: input.urls.map(url => ({ url, ...(expect.length ? { expect } : {}) })),
-      // Words only across this rail for now: the picture stays in Loki.
-      screenshots: false,
     },
     { timeoutMs: SITE_WALK_TIMEOUT_MS }
   );
@@ -150,7 +153,7 @@ export function siteWalkMessage(o: Extract<SiteWalkOutcome, { ok: true }>): stri
   const lines = o.steps.map(s =>
     s.ok
       ? `- ${s.url}: fine${s.title ? ` (“${s.title}”)` : ''}.`
-      : `- ${s.url}: ${s.problems.join(' ')}`
+      : `- ${s.url}: ${s.problems.join(' ')}${s.screenshotUrl ? `\n\n  ![${s.url} at phone size](${s.screenshotUrl})` : ''}`
   );
   const tail =
     failed === 0

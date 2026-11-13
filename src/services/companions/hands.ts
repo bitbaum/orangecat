@@ -51,6 +51,7 @@ export const COMPANION_HANDS: readonly string[] = [
   'file_loki_finding',
   'loki_finding_status',
   'walk_site',
+  'use_browser',
 ];
 
 /** The hands that start work in the person's repositories. Always confirmed. */
