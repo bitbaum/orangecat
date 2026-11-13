@@ -11,6 +11,7 @@ import { interestHandlers } from './interests';
 import { siteBuildHandlers } from './site-build';
 import { lokiTaskHandlers } from './loki-task';
 import { lokiAskHandlers } from './loki-ask';
+import { connectorHandlers } from './connectors';
 import { lokiSessionsHandlers } from './loki-sessions';
 import { lokiFindingHandlers } from './loki-findings';
 import { promotionHandlers } from './promotion';
@@ -34,6 +35,7 @@ export const ACTION_HANDLERS: Partial<Record<string, ActionHandler>> = {
   ...lokiTaskHandlers,
   ...lokiAskHandlers,
   ...lokiSessionsHandlers,
+  ...connectorHandlers,
   ...lokiFindingHandlers,
   ...promotionHandlers,
   ...civicSplitHandlers,

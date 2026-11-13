@@ -21,7 +21,9 @@ import {
 } from '@/config/cat-connections';
 import { API_ROUTES } from '@/config/api-routes';
 import { getAdminClient } from '@/lib/supabase/admin';
+import { hasConnection } from '@/services/connectors/token-store';
 import { githubConnectionConfigured, hasGitHubConnection } from '@/services/github/connection';
+import { googleConnectionConfigured } from '@/services/google/connection';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { getUserActorId } from '@/domain/actors';
 import { getGitHubHandleForUser } from '@/services/ai/github-repos-fetcher';
@@ -100,6 +102,21 @@ const PROBES: Record<CatConnectionId, Probe> = {
     return handle
       ? { state: 'limited', detail: `@${handle}`, connect, upgradable: !!connect }
       : { state: 'not_connected', connect };
+  },
+
+  google: async (_supabase, userId) => {
+    // Not armed on this server: say "unknown", never offer a button that 503s.
+    if (!googleConnectionConfigured()) {
+      return { state: 'unknown' };
+    }
+    const account = await hasConnection(getAdminClient(), userId, 'google');
+    return account
+      ? {
+          state: 'connected',
+          detail: account.login ? `${account.login} · mail and calendar, read-only` : null,
+          disconnectEndpoint: API_ROUTES.INTEGRATIONS.GOOGLE,
+        }
+      : { state: 'not_connected' };
   },
 
   lightning: async (supabase, userId) => {

@@ -29,10 +29,15 @@ export const FIXTURE_USERNAME_ILIKE_PATTERNS = [
   'audit-%',
   'audit\\_%',
   'user\\_________',
+  // A bot's seat in Messages (ADR-0015): an account, not a person to find.
+  'seat\\_____________',
 ] as const;
 
 /** Exact `user_<8 hex chars>` shape minted by CI fixtures — the JS-side equivalent of the ilike pattern above. */
 const FIXTURE_HEX_USER = /^user_[0-9a-f]{8}$/i;
+
+/** The handle of a bot's seat: `seat_` and twelve hex characters (the JS twin of the ilike pattern above). */
+export const SEAT_USERNAME = /^seat_[0-9a-f]{12}$/i;
 
 /**
  * Known CI-tool smoke-test accounts. Exact strings, not a pattern — every
@@ -95,6 +100,9 @@ export function isFixtureUsername(username: string | null | undefined): boolean 
     return true;
   }
   if (FIXTURE_HEX_USER.test(u)) {
+    return true;
+  }
+  if (SEAT_USERNAME.test(u)) {
     return true;
   }
   return (

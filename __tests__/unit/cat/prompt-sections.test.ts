@@ -272,7 +272,15 @@ describe('selection is worth doing', () => {
     // docs/PARITY.md step 2). ~205 characters: one clause and eight short
     // parameter names, because each step names what it needs. What a page
     // shows, and what a bot may never type, are Loki's code, not prose here.
-    expect(remaining).toBeLessThanOrEqual(7_440);
+    //
+    // Raised 7,440 -> 7,790 for `github_read`, `gmail_read` and
+    // `calendar_read` (the first connectors: a person's connected GitHub,
+    // mail and calendar, read on request; docs/PARITY.md, Connectors). ~350
+    // characters for three actions: one clause each and seven short
+    // parameter names. What a read returns, how much of it, and what is
+    // said when the account is not connected are code
+    // (services/connectors), not prose here.
+    expect(remaining).toBeLessThanOrEqual(7_790);
   });
 
   it('selects by default now, and still sends everything when told to', async () => {

@@ -1,7 +1,8 @@
 # ADR-0015: One Messenger for People and Bots
 
 Date: 2026-11-13
-Status: Accepted as direction (nothing in D1–D6 is shipped; the order is in "Build order")
+Status: Accepted. Build order 1 and 2 shipped (D1, D2, and D3–D4 for one person
+and one bot of their own); 3–6 on the roadmap
 
 ## Context
 
@@ -83,6 +84,27 @@ the conversation it is named in, from the point it was added (threadkit's
 `visibleFrom`), not the history before it. It keeps no private memory of what
 was said in a group, as ADR-0013 D2 already rules for rooms: what is said in
 company is not a confidence between one person and one bot.
+
+## As built (2026-11-13)
+
+- The seat: `companion_seats(user_id, assistant_id)`, service role only
+  (`supabase/migrations/20261113173000_a_bot_has_a_seat.sql`). The account is
+  made the first time its owner opens a conversation with the bot
+  (`src/features/messaging/server/bot-seats.ts`), on `seat-<random>@orangecat.invalid`
+  with the handle `seat_<12 hex>`; `src/config/public-directory.ts` keeps that
+  shape out of people search, Discover and the sitemap. Neither the address
+  nor the handle names the companion or its owner.
+- A seat outlives its companion (`assistant_id` goes null). The conversation
+  still says a bot wrote those lines, and a message to it is told the bot is
+  gone.
+- Only the owner may open a conversation with a seat
+  (`foreignSeatAmong`, checked in `POST /api/messages/open`).
+- The answer is written after the sender's request has been answered
+  (`after()` in the send route → `answerAsBot`, `src/features/messaging/server/bot-answer.ts`), by the one function that
+  answers for a companion everywhere (`src/services/companions/answer.ts`,
+  shared with the bot rooms). A bot that cannot answer says why in its place.
+- Not built: a bot in a conversation of more than two (the open route refuses
+  it in words), and the bot's own memory of what is said in Messages.
 
 ## What this replaces
 

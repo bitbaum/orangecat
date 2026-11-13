@@ -19,6 +19,7 @@ import { DATABASE_TABLES } from '@/config/database-tables';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { fromTable } from '@/lib/supabase/untyped';
 import { logger } from '@/utils/logger';
+import { isConnectorHand } from '@/services/connectors/hands';
 import { isLokiHand } from '@/services/loki/hands';
 import { COMPANION_HANDS } from './hands';
 
@@ -44,9 +45,13 @@ export function isHand(actionId: string): boolean {
  * something on OrangeCat (an event, a project, a product) publishes, and
  * what a bot was told in confidence must never become public without its
  * owner seeing it first, so those always wait for a tap.
+ *
+ * So can the hands that read an account the owner connected (GitHub, mail,
+ * calendar): they only read, as the owner, and a morning routine that waits
+ * for a tap before it may look at the calendar is no routine.
  */
 export function canRunOnItsOwn(actionId: string): boolean {
-  return isHand(actionId) && isLokiHand(actionId);
+  return isHand(actionId) && (isLokiHand(actionId) || isConnectorHand(actionId));
 }
 
 /** The owner's settings for one bot. A failed read is "ask" for everything: never more than a tap allows. */

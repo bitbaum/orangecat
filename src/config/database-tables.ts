@@ -199,6 +199,8 @@ export const DATABASE_TABLES = {
   MESSAGE_ATTACHMENTS: 'message_attachments',
   /** One emoji per person per message (service role only; see features/messaging/server/extras.ts). */
   MESSAGE_REACTIONS: 'message_reactions',
+  /** Which account speaks for which companion in Messages (service role only; ADR-0015). */
+  COMPANION_SEATS: 'companion_seats',
   CONVERSATION_DETAILS: 'conversation_details',
 
   // Entity Tables (for direct access when not using entity-registry)

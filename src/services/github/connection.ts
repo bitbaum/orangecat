@@ -26,9 +26,14 @@
  */
 
 import { API_ROUTES } from '@/config/api-routes';
-import { DATABASE_TABLES } from '@/config/database-tables';
 import { SITE_URL } from '@/config/brand';
-import { decryptWebhookSecret, encryptWebhookSecret } from '@/lib/crypto/webhookSecretCipher';
+import {
+  deleteConnectionTokens,
+  hasConnection,
+  loadConnectionTokens,
+  saveConnectionTokens,
+  type ConnectionTokens,
+} from '@/services/connectors/token-store';
 import { logger } from '@/utils/logger';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 
@@ -81,12 +86,7 @@ export function githubAuthorizeUrl(state: string): string {
   return url.toString();
 }
 
-export interface GitHubTokenSet {
-  accessToken: string;
-  accessExpiresAt: Date | null;
-  refreshToken: string | null;
-  refreshExpiresAt: Date | null;
-}
+export type GitHubTokenSet = ConnectionTokens;
 
 const inSeconds = (s: unknown, now: number): Date | null =>
   typeof s === 'number' && s > 0 ? new Date(now + s * 1000) : null;
@@ -148,63 +148,20 @@ export async function githubGet<T>(token: string, path: string): Promise<T | nul
   }
 }
 
-// ─── Storage ─────────────────────────────────────────────────────────────────
-
-const seal = (v: string) => encryptWebhookSecret(v).toString('base64');
-const open = (v: string) => decryptWebhookSecret(Buffer.from(v, 'base64'));
-
-interface TokenRow {
-  account_login: string | null;
-  access_token_encrypted: string;
-  access_expires_at: string | null;
-  refresh_token_encrypted: string | null;
-  refresh_expires_at: string | null;
-}
+// ─── Storage (services/connectors/token-store.ts, provider 'github') ─────────
 
 /** `admin` must be the service-role client: the table has no client grants. */
-export async function saveGitHubConnection(
+export function saveGitHubConnection(
   admin: AnySupabaseClient,
   userId: string,
   login: string | null,
   tokens: GitHubTokenSet
 ): Promise<boolean> {
-  const { error } = await admin.from(DATABASE_TABLES.CAT_CONNECTION_TOKENS).upsert({
-    user_id: userId,
-    provider: 'github',
-    account_login: login,
-    access_token_encrypted: seal(tokens.accessToken),
-    access_expires_at: tokens.accessExpiresAt?.toISOString() ?? null,
-    refresh_token_encrypted: tokens.refreshToken ? seal(tokens.refreshToken) : null,
-    refresh_expires_at: tokens.refreshExpiresAt?.toISOString() ?? null,
-    updated_at: new Date().toISOString(),
-  });
-  if (error) {
-    logger.error('Saving GitHub connection failed', { error: error.message }, 'GitHubConnection');
-  }
-  return !error;
+  return saveConnectionTokens(admin, userId, 'github', login, tokens);
 }
 
-export async function deleteGitHubConnection(
-  admin: AnySupabaseClient,
-  userId: string
-): Promise<void> {
-  await admin
-    .from(DATABASE_TABLES.CAT_CONNECTION_TOKENS)
-    .delete()
-    .eq('user_id', userId)
-    .eq('provider', 'github');
-}
-
-async function loadRow(admin: AnySupabaseClient, userId: string): Promise<TokenRow | null> {
-  const { data } = await admin
-    .from(DATABASE_TABLES.CAT_CONNECTION_TOKENS)
-    .select(
-      'account_login, access_token_encrypted, access_expires_at, refresh_token_encrypted, refresh_expires_at'
-    )
-    .eq('user_id', userId)
-    .eq('provider', 'github')
-    .maybeSingle();
-  return (data as TokenRow | null) ?? null;
+export function deleteGitHubConnection(admin: AnySupabaseClient, userId: string): Promise<void> {
+  return deleteConnectionTokens(admin, userId, 'github');
 }
 
 export interface GitHubConnection {
@@ -226,26 +183,25 @@ export async function getGitHubConnection(
     return null;
   }
   try {
-    const row = await loadRow(admin, userId);
+    const row = await loadConnectionTokens(admin, userId, 'github');
     if (!row) {
       return null;
     }
-    const expires = row.access_expires_at ? Date.parse(row.access_expires_at) : Infinity;
-    if (expires - now > REFRESH_MARGIN_MS) {
-      return { login: row.account_login, token: open(row.access_token_encrypted) };
+    if ((row.accessExpiresAt ?? Infinity) - now > REFRESH_MARGIN_MS) {
+      return { login: row.login, token: row.accessToken };
     }
-    if (!row.refresh_token_encrypted) {
+    if (!row.refreshToken) {
       return null;
     }
     const refreshed = await tokenRequest({
       grant_type: 'refresh_token',
-      refresh_token: open(row.refresh_token_encrypted),
+      refresh_token: row.refreshToken,
     });
     if (!refreshed) {
       return null;
     }
-    await saveGitHubConnection(admin, userId, row.account_login, refreshed);
-    return { login: row.account_login, token: refreshed.accessToken };
+    await saveGitHubConnection(admin, userId, row.login, refreshed);
+    return { login: row.login, token: refreshed.accessToken };
   } catch (error) {
     logger.warn('GitHub connection unavailable', { error }, 'GitHubConnection');
     return null;
@@ -253,15 +209,9 @@ export async function getGitHubConnection(
 }
 
 /** Connected at all (a row exists) — the UI's question, no token work. */
-export async function hasGitHubConnection(
+export function hasGitHubConnection(
   admin: AnySupabaseClient,
   userId: string
 ): Promise<{ login: string | null } | null> {
-  const { data } = await admin
-    .from(DATABASE_TABLES.CAT_CONNECTION_TOKENS)
-    .select('account_login')
-    .eq('user_id', userId)
-    .eq('provider', 'github')
-    .maybeSingle();
-  return data ? { login: (data as { account_login: string | null }).account_login } : null;
+  return hasConnection(admin, userId, 'github');
 }

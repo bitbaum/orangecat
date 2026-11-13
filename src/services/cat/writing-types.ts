@@ -35,13 +35,7 @@ export interface PostDraft {
  * - outline   → propose a section outline for a topic (seeds an empty body)
  */
 export type ReviseAction =
-  | 'improve'
-  | 'continue'
-  | 'tighten'
-  | 'expand'
-  | 'grammar'
-  | 'tone'
-  | 'outline';
+  'improve' | 'continue' | 'tighten' | 'expand' | 'grammar' | 'tone' | 'outline';
 
 export type TonePreset = 'casual' | 'formal' | 'punchy' | 'warm';
 

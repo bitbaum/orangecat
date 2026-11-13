@@ -19,10 +19,11 @@
  * fetcher in services/ai/document-context.ts.
  */
 
+import { API_ROUTES } from '@/config/api-routes';
 import { ECOSYSTEM } from '@/config/ecosystem';
 import { ROUTES } from '@/config/routes';
 
-export type CatConnectionId = 'loki' | 'solon' | 'github' | 'lightning';
+export type CatConnectionId = 'loki' | 'solon' | 'github' | 'google' | 'lightning';
 
 export interface CatConnectionLink {
   label: string;
@@ -103,7 +104,8 @@ export const CAT_CONNECTIONS: readonly CatConnection[] = [
       'Issues and pull requests assigned to you',
       'Your latest releases',
     ],
-    actions: [],
+    // Asked for, not read every turn; works once the account is connected.
+    actions: ['github_read'],
     pushes: [],
     // The default. services/cat/connections swaps in the account connect
     // (a redirect through /api/integrations/github/connect) when the server
@@ -114,6 +116,25 @@ export const CAT_CONNECTIONS: readonly CatConnection[] = [
       label: 'Add your GitHub to your profile',
       href: ROUTES.PROFILE.EDIT,
       kind: 'page',
+    },
+  },
+  {
+    id: 'google',
+    name: 'Google',
+    purpose: 'Let your Cat and your bots read your mail and your calendar when you ask.',
+    reads: [
+      'Your Gmail: a search, or one message',
+      'Your Google Calendar: the coming days',
+      'Read-only: nothing is sent, changed or deleted',
+    ],
+    actions: ['gmail_read', 'calendar_read'],
+    pushes: [],
+    connectHint:
+      'Google asks you to allow reading your mail and your calendar. Leave both ticked; OrangeCat asks for nothing else and cannot send or change anything.',
+    connect: {
+      label: 'Connect Google',
+      href: API_ROUTES.INTEGRATIONS.GOOGLE_CONNECT,
+      kind: 'redirect',
     },
   },
   {
