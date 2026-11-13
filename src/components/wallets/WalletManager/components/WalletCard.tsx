@@ -11,7 +11,7 @@ import { WalletTransactions } from './WalletTransactions';
 import type { WalletCardProps } from '../types';
 import { truncateAddress } from '@/utils/string';
 import { getWalletReceiveHandle } from '@/lib/wallet-receive-handle';
-import { computeWalletGoalProgress } from '@/lib/wallet-goal';
+import { computeWalletGoalProgress, measuredBalanceBtc } from '@/lib/wallet-goal';
 import { useCurrencyConversion } from '@/hooks/useCurrencyConversion';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { FormattedDate } from '@/components/ui/FormattedDate';
@@ -68,7 +68,7 @@ export function WalletCard({
   // why dividing them directly (as this line used to) is wrong.
   const goal = computeWalletGoalProgress(
     {
-      balanceBtc: wallet.balance_btc,
+      balanceBtc: measuredBalanceBtc(wallet),
       goalAmount: wallet.goal_amount,
       goalCurrency: wallet.goal_currency,
     },

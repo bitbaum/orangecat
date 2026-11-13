@@ -12,7 +12,10 @@
 import { useState } from 'react';
 import Button from '@/components/ui/Button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { Users } from 'lucide-react';
+import Input from '@/components/ui/Input';
+import { PeoplePicker } from '@/components/money/PeoplePicker';
+import { usePeopleFinder } from '@/hooks/usePeopleFinder';
+import type { FoundPerson } from '@/domain/people/rankPeople';
 
 // ==================== Complete Modal ====================
 
@@ -128,7 +131,7 @@ export function AttentionModal({ actionLoading, onClose, onFlag }: AttentionModa
             <Button
               onClick={handleSubmit}
               isLoading={actionLoading}
-              className="bg-status-warning hover:bg-status-warning/90 text-white"
+              className="bg-status-warning hover:bg-status-warning/90 text-warning-foreground"
             >
               Flag
             </Button>
@@ -147,14 +150,27 @@ interface RequestModalProps {
   onRequest: (userId: string, message: string) => Promise<boolean>;
 }
 
+/**
+ * Ask one named person to do the task.
+ *
+ * It used to offer a single choice, "All Team Members (Broadcast)", which
+ * notified every account on the platform. A request now goes to a person
+ * picked from your circle or found by name.
+ */
 export function RequestModal({ actionLoading, onClose, onRequest }: RequestModalProps) {
-  const [userId, setUserId] = useState('');
+  const [query, setQuery] = useState('');
+  const [person, setPerson] = useState<FoundPerson | null>(null);
   const [message, setMessage] = useState('');
+  const { people } = usePeopleFinder(query, person === null);
 
   const handleSubmit = async () => {
-    const success = await onRequest(userId, message);
+    if (!person) {
+      return;
+    }
+    const success = await onRequest(person.id, message);
     if (success) {
-      setUserId('');
+      setPerson(null);
+      setQuery('');
       setMessage('');
     }
   };
@@ -162,28 +178,47 @@ export function RequestModal({ actionLoading, onClose, onRequest }: RequestModal
   return (
     <Dialog open onOpenChange={open => !open && onClose()}>
       <DialogContent className="max-w-md">
-        <DialogTitle>Request Task</DialogTitle>
+        <DialogTitle>Ask someone to do this</DialogTitle>
         <div className="space-y-4">
+          {person ? (
+            <div className="flex min-h-14 items-center justify-between gap-3 rounded-lg border border-subtle bg-surface-base px-3 py-2">
+              <span className="min-w-0">
+                <span className="block truncate font-medium text-fg-primary">
+                  {person.name ?? `@${person.username}`}
+                </span>
+                {person.name && (
+                  <span className="block truncate text-sm text-fg-secondary">
+                    @{person.username}
+                  </span>
+                )}
+              </span>
+              <Button variant="ghost" size="sm" onClick={() => setPerson(null)}>
+                Change
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Input
+                label="Who should do it?"
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder="Name or @handle"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+              />
+              <PeoplePicker people={people} onPick={(_handle, found) => setPerson(found)} />
+            </div>
+          )}
           <div>
-            <label className="block text-sm font-medium text-fg-primary mb-1">To whom?</label>
-            <select
-              value={userId}
-              onChange={e => setUserId(e.target.value)}
-              className="w-full rounded-lg border border-strong bg-surface-base text-fg-primary px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring"
+            <label
+              htmlFor="task-request-message"
+              className="mb-1 block text-sm font-medium text-fg-primary"
             >
-              <option value="">
-                <Users className="h-4 w-4 inline mr-2" />
-                All Team Members (Broadcast)
-              </option>
-              {/* FUTURE: Populate with project team members — requires a team members API endpoint scoped to the current project/group actor */}
-            </select>
-            <p className="text-xs text-fg-secondary mt-1">Leave empty to notify all team members</p>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-fg-primary mb-1">
               Message (optional)
             </label>
             <textarea
+              id="task-request-message"
               value={message}
               onChange={e => setMessage(e.target.value)}
               rows={3}
@@ -191,12 +226,12 @@ export function RequestModal({ actionLoading, onClose, onRequest }: RequestModal
               className="w-full rounded-lg border border-strong bg-surface-base text-fg-primary px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
-          <div className="flex justify-end gap-2">
+          <div className="grid grid-cols-2 gap-2">
             <Button variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button onClick={handleSubmit} isLoading={actionLoading}>
-              Send Request
+            <Button onClick={handleSubmit} isLoading={actionLoading} disabled={!person}>
+              Send request
             </Button>
           </div>
         </div>

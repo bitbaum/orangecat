@@ -25,7 +25,25 @@ it('exposes the open navigation and closes it with Escape', () => {
   expect(toggleSidebar).toHaveBeenCalledOnce();
 });
 
-function renderSidebar(open: boolean, toggleSidebar = vi.fn()) {
+it('places the drawer by the shared rule, and on top of the tab bar where it shows', () => {
+  // Where it ends and starts is .app-sidebar in globals.css, measured in
+  // __tests__/unit/app/safe-area-insets.test.ts. An inline top or bottom here
+  // would beat it: the drawer ran under the tab bar and 8px below the header.
+  const withBar = renderSidebar(true, vi.fn(), true).container.querySelector('aside')!;
+  expect(withBar).toHaveClass('app-sidebar');
+  expect(withBar).not.toHaveClass('bottom-0');
+  expect(withBar.style.top).toBe('');
+  expect(withBar.style.bottom).toBe('');
+  expect(withBar.style.paddingBottom).toBe('');
+  expect(withBar).toHaveAttribute('data-above-mobile-nav');
+  cleanup();
+
+  // The Cat hub and the article editor have no tab bar: the drawer runs to the bottom.
+  const noBar = renderSidebar(true).container.querySelector('aside')!;
+  expect(noBar).not.toHaveAttribute('data-above-mobile-nav');
+});
+
+function renderSidebar(open: boolean, toggleSidebar = vi.fn(), aboveMobileNav?: boolean) {
   return render(
     <Sidebar
       user={null}
@@ -41,6 +59,7 @@ function renderSidebar(open: boolean, toggleSidebar = vi.fn()) {
       toggleSidebar={toggleSidebar}
       toggleSidebarCollapse={vi.fn()}
       toggleSection={vi.fn()}
+      aboveMobileNav={aboveMobileNav}
     />
   );
 }

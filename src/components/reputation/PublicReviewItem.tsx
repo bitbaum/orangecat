@@ -66,22 +66,24 @@ export function PublicReviewItem({
 
   return (
     <li className="space-y-2">
-      <p className="text-xs text-fg-muted">
+      <p className="text-xs text-fg-tertiary">
         {reviewer} · {formatDate(review.created_at)}
       </p>
       <ReviewAnswers answers={review.answers} body={review.body} />
       {review.textHidden && (
-        <p className="text-xs italic text-fg-muted">
+        <p className="text-xs italic text-fg-tertiary">
           The text of this review was removed after a report.
         </p>
       )}
       {review.reply && (
         <div className="ml-4 border-l border-default pl-3">
-          <p className="text-xs text-fg-muted">
+          <p className="text-xs text-fg-tertiary">
             Their reply · {formatDate(review.reply.created_at)}
           </p>
           {review.reply.hidden ? (
-            <p className="text-xs italic text-fg-muted">This reply was removed after a report.</p>
+            <p className="text-xs italic text-fg-tertiary">
+              This reply was removed after a report.
+            </p>
           ) : (
             <p className="whitespace-pre-line text-sm text-fg-primary">{review.reply.body}</p>
           )}
@@ -102,7 +104,7 @@ export function PublicReviewItem({
           {canReport && (
             <button
               type="button"
-              className="text-xs text-fg-muted underline"
+              className="text-xs text-fg-tertiary underline"
               onClick={() => setOpen('report')}
             >
               Report

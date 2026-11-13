@@ -5,13 +5,14 @@ import Link from 'next/link';
 import { footerNavigation } from '@/config/navigation';
 import { shouldShowFooter } from '@/config/routes';
 import Logo from './Logo';
-import { usePathname } from 'next/navigation';
+import { useShellPathname } from '@/hooks/useShellPathname';
 import { ArrowUp } from 'lucide-react';
 import { APP_NAME } from '@/config/brand';
 import { useAuth } from '@/hooks/useAuth';
+import { scrollBehavior } from '@/lib/scroll-behavior';
 
 const footerLinkClass =
-  'group flex items-center text-sm text-fg-secondary hover:text-fg-primary transition-colors py-1.5 rounded-md min-h-9';
+  'group flex items-center text-sm text-fg-secondary hover:text-fg-primary transition-colors rounded-md min-h-11';
 const footerHeadingClass = 'text-xs font-medium text-fg-secondary uppercase tracking-normal';
 
 /**
@@ -25,15 +26,18 @@ function FooterColumn({
   title,
   items,
   className,
+  rowBelowLg = false,
 }: {
   title: string;
   items: ReadonlyArray<{ name: string; href: string; external?: boolean }>;
   className?: string;
+  /** For a column that spans the two-column phone grid: its links sit in one row there. */
+  rowBelowLg?: boolean;
 }) {
   return (
-    <div className={className ? `space-y-6 ${className}` : 'space-y-6'}>
-      <h3 className={footerHeadingClass}>{title}</h3>
-      <ul className="space-y-3">
+    <div className={className ? `space-y-5 ${className}` : 'space-y-5'}>
+      <h2 className={footerHeadingClass}>{title}</h2>
+      <ul className={rowBelowLg ? 'flex flex-wrap gap-x-6 gap-y-1 lg:flex-col' : 'space-y-1'}>
         {items.map(item => (
           <li key={item.name}>
             {'external' in item && item.external ? (
@@ -58,14 +62,12 @@ function FooterColumn({
 }
 
 const Footer = React.memo(function Footer() {
-  const pathname = usePathname();
+  const pathname = useShellPathname();
   const { user, hydrated } = useAuth();
-  const shouldRender = shouldShowFooter(pathname ?? '/');
+  const shouldRender = shouldShowFooter(pathname);
 
   const scrollToTop = () => {
-    if (typeof window !== 'undefined' && window.scrollTo) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    window.scrollTo({ top: 0, behavior: scrollBehavior() });
   };
 
   // Marketing footer is for anonymous visitors only. Signed-in users keep
@@ -81,7 +83,7 @@ const Footer = React.memo(function Footer() {
       {/* Back to top button */}
       <button
         onClick={scrollToTop}
-        className="absolute -top-5 right-4 sm:right-8 w-10 h-10 bg-surface-base text-fg-primary rounded-md border border-default hover:bg-surface-raised transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background flex items-center justify-center group z-10"
+        className="absolute -top-5.5 right-4 sm:right-8 h-11 w-11 bg-surface-base text-fg-primary rounded-md border border-default hover:bg-surface-raised transition-colors focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background flex items-center justify-center group z-10"
         aria-label="Back to top"
         type="button"
       >
@@ -90,9 +92,9 @@ const Footer = React.memo(function Footer() {
 
       <div className="max-w-7xl mx-auto py-8 sm:py-10 px-4 sm:px-6 lg:px-8">
         {/* Main Footer Content */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-8 lg:gap-10">
+        <div className="grid grid-cols-2 gap-x-6 gap-y-8 lg:grid-cols-6 lg:gap-10">
           {/* Brand Section */}
-          <div className="sm:col-span-2 lg:col-span-1 space-y-6">
+          <div className="col-span-2 lg:col-span-1 space-y-6">
             <div className="space-y-4">
               <div className="flex items-center space-x-4 mb-2">
                 <Logo />
@@ -108,7 +110,7 @@ const Footer = React.memo(function Footer() {
                 <a
                   key={item.name}
                   href={item.href}
-                  className="group w-9 h-9 bg-surface-base border border-default rounded-md flex items-center justify-center text-fg-secondary hover:text-fg-primary hover:bg-surface-raised transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
+                  className="group h-11 w-11 bg-surface-base border border-default rounded-md flex items-center justify-center text-fg-secondary hover:text-fg-primary hover:bg-surface-raised transition-colors focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={`Follow us on ${item.name}`}
@@ -132,39 +134,15 @@ const Footer = React.memo(function Footer() {
           <FooterColumn
             title="Legal"
             items={footerNavigation.legal}
-            className="sm:col-span-2 lg:col-span-1"
+            className="col-span-2 lg:col-span-1"
+            rowBelowLg
           />
         </div>
 
-        {/* Bottom Section */}
         <div className="mt-8 sm:mt-12 pt-6 sm:pt-8 border-t border-default">
-          <div className="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
-            <div className="text-sm text-fg-secondary text-center sm:text-left">
-              <p>&copy; 2026 {APP_NAME}. Open source under the MIT licence.</p>
-            </div>
-
-            {/* Additional Links — sourced from config.footerNavigation.bottomBar
-                so adding/removing a link is a config-only change. */}
-            <div className="flex items-center space-x-6 text-sm">
-              {footerNavigation.bottomBar.map(link =>
-                link.external ? (
-                  <a
-                    key={link.name}
-                    href={link.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={footerLinkClass}
-                  >
-                    {link.name}
-                  </a>
-                ) : (
-                  <Link key={link.name} href={link.href} className={footerLinkClass}>
-                    {link.name}
-                  </Link>
-                )
-              )}
-            </div>
-          </div>
+          <p className="mb-0 text-center text-sm text-fg-secondary sm:text-left">
+            &copy; 2026 {APP_NAME}. Open source under the MIT licence.
+          </p>
         </div>
       </div>
     </footer>

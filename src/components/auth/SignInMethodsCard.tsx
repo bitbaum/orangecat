@@ -193,7 +193,7 @@ export function SignInMethodsCard() {
       {error && (
         <div className="oc-error-surface flex items-center gap-2 rounded-lg p-3">
           <AlertCircle className="h-4 w-4 shrink-0 text-status-negative" />
-          <p className="text-sm text-status-negative/80">{error}</p>
+          <p className="text-sm text-status-negative">{error}</p>
         </div>
       )}
     </div>

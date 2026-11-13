@@ -6,7 +6,7 @@ import { API_ROUTES } from '@/config/api-routes';
 import Button from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
-import { PlayCircle, Radio, Video, Mic2, Share2, Users, Clock } from 'lucide-react';
+import { Radio, Video, Mic2, Share2, Users, Clock } from 'lucide-react';
 import ProfileShare from '@/components/sharing/ProfileShare';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -14,6 +14,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { waitlistSchema, type WaitlistFormData } from '@/lib/validation/social';
 import { toast } from 'sonner';
 import { apiErrorMessage } from '@/lib/api/errorMessage';
+import { PUBLIC_PAGE_WIDTH, PublicPageHeader } from '@/components/layout/PublicPageHeader';
+import { cn } from '@/lib/utils';
 
 export default function ChannelComingSoonPage() {
   const { user, profile } = useAuth();
@@ -31,20 +33,11 @@ export default function ChannelComingSoonPage() {
 
   return (
     <div className="min-h-screen bg-surface-page">
-      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-lg bg-surface-raised border border-subtle text-fg-primary shadow-sm">
-            <PlayCircle className="w-8 h-8" />
-          </div>
-          <h1 className="mt-4 font-heading tracking-display text-3xl sm:text-4xl font-bold text-fg-primary">
-            Stream anything. Get paid directly.
-          </h1>
-          <p className="mt-3 text-fg-secondary max-w-2xl mx-auto">
-            Share videos, audio, and live sessions. Build your audience, accept Bitcoin payments,
-            and keep your creative freedom. We respect rights and make support simple.
-          </p>
-        </div>
+      <div className={cn(PUBLIC_PAGE_WIDTH.wide, 'pb-8')}>
+        <PublicPageHeader
+          title="Stream anything. Get paid directly."
+          lede="Share videos, audio, and live sessions. Build your audience, accept Bitcoin payments, and keep your creative freedom. We respect rights and make support simple."
+        />
 
         {/* Highlights */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">

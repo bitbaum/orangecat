@@ -26,7 +26,7 @@ describe('PeoplePicker', () => {
     expect(screen.getAllByText('@fresh')).toHaveLength(1);
 
     fireEvent.click(screen.getByRole('button', { name: /Lena Meier/ }));
-    expect(onPick).toHaveBeenCalledWith('lena_m');
+    expect(onPick).toHaveBeenCalledWith('lena_m', expect.objectContaining({ username: 'lena_m' }));
   });
 
   it('renders nothing for nobody', () => {

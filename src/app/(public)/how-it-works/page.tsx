@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { CapabilityMap } from '@/components/map/CapabilityMap';
 import { HOW_IT_WORKS_STEPS, SECTION_HEADERS, CTA_LABELS, FEE_CLAIMS } from '@/config/landing-page';
 import { ROUTES } from '@/config/routes';
+import { PUBLIC_PAGE_WIDTH, PublicPageHeader } from '@/components/layout/PublicPageHeader';
 
 /**
  * How It Works Page - Detailed walkthrough
@@ -46,25 +47,15 @@ export default function HowItWorksPage() {
 
   return (
     <div className="min-h-screen bg-surface-page pb-16">
-      <div className="container mx-auto px-4">
-        {/* Hero Section */}
-        <div className="text-center py-12 sm:py-16 mb-8">
-          <div className="inline-flex items-center gap-2 bg-surface-base text-fg-primary border border-default px-4 py-2 rounded-full mb-6">
-            <Sparkles className="w-4 h-4" />
-            <span className="text-sm font-medium">Simple, Universal, Powerful</span>
-          </div>
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 text-fg-primary">
-            {howItWorks.title}
-          </h1>
-          <p className="text-xl text-fg-secondary max-w-3xl mx-auto leading-relaxed">
-            One platform. Endless possibilities. Here's how to get started with anything on
-            OrangeCat.
-          </p>
-        </div>
+      <div className={PUBLIC_PAGE_WIDTH.wide}>
+        <PublicPageHeader
+          title={howItWorks.title}
+          lede="One platform. Endless possibilities. Here's how to get started with anything on OrangeCat."
+        />
 
         {/* Steps Section - Matches home page (4 steps) */}
         <div className="max-w-5xl mx-auto mb-20">
-          <h2 className="text-3xl font-bold text-center mb-12">
+          <h2 className="text-2xl font-semibold text-center mb-12">
             Get Started in {HOW_IT_WORKS_STEPS.length} Simple Steps
           </h2>
 
@@ -77,19 +68,15 @@ export default function HowItWorksPage() {
                     <div className="flex flex-col md:flex-row gap-6">
                       {/* Step Number & Icon */}
                       <div className="flex-shrink-0">
-                        <div
-                          className={`${step.iconGradient} w-16 h-16 rounded-full flex items-center justify-center text-white mb-4 md:mb-0`}
-                        >
-                          <Icon className="w-8 h-8" />
+                        <div className="oc-icon-tile mb-4 h-12 w-12 md:mb-0">
+                          <Icon className="h-6 w-6" />
                         </div>
                       </div>
 
                       {/* Content */}
                       <div className="flex-1">
                         <div className="flex items-start gap-3 mb-3">
-                          <span
-                            className={`${step.iconGradient} text-white text-sm font-bold px-3 py-1 rounded-full`}
-                          >
+                          <span className="mt-1 shrink-0 rounded-full border border-default bg-surface-raised px-3 py-1 text-xs font-medium uppercase tracking-caps text-fg-secondary">
                             Step {step.number}
                           </span>
                           <h3 className="text-2xl font-bold text-fg-primary flex-1">

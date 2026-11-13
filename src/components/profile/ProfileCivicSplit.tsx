@@ -46,7 +46,7 @@ export default function ProfileCivicSplit({ split }: { split?: PublicCivicSplit 
         ))}
       </dl>
       {split.note && <p className="mt-3 text-sm text-fg-secondary">&ldquo;{split.note}&rdquo;</p>}
-      <p className="mt-3 text-xs text-fg-muted">{CIVIC_SPLIT_CAVEAT}</p>
+      <p className="mt-3 text-xs text-fg-tertiary">{CIVIC_SPLIT_CAVEAT}</p>
     </section>
   );
 }

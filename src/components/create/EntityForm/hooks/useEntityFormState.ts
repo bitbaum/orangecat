@@ -3,6 +3,7 @@ import type { FormState, AIGeneratedFields, FieldConfidence, EntityConfig } from
 import { useEntityFormDraft } from './useEntityFormDraft';
 import { convertFormAmounts, NO_RATE_FOR_SWITCH } from './convertFormAmounts';
 import { slugify } from '@/utils/string';
+import { scrollBehavior } from '@/lib/scroll-behavior';
 
 interface UseEntityFormStateOptions<T extends Record<string, unknown>> {
   config: EntityConfig<T>;
@@ -186,7 +187,7 @@ export function useEntityFormState<T extends Record<string, unknown>>({
       setFormState(prev => ({ ...prev, data: { ...prev.data, ...patch } as T, isDirty: true }));
       // Highlight only what the AI actually wrote.
       setAiGeneratedFields({ fields: new Set<string>(applied), confidence });
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: scrollBehavior() });
     },
     []
   );
