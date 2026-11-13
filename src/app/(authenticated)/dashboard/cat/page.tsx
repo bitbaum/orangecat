@@ -16,7 +16,7 @@ import Loading from '@/components/Loading';
 import { ModernChatPanel } from '@/components/ai-chat/ModernChatPanel/index';
 import { useCatQuota } from '@/components/ai-chat/ModernChatPanel/hooks/useCatQuota';
 import { CatHeaderEnd, CatHeaderStart } from '@/components/ai-chat/CatChatToolbar';
-import { CAT_HUB_TAB_HREFS } from '@/config/cat-hub';
+import { CAT_HUB_COPY, CAT_HUB_TAB_HREFS } from '@/config/cat-hub';
 import { CAT_QUERY_PARAM } from '@/config/cat-door';
 import { APP_CONTENT_HEIGHT_CLASS } from '@/config/layout-chrome';
 
@@ -48,7 +48,7 @@ export default function CatHubPage() {
     // nav is hidden on this route — see getRouteChrome), so the composer
     // stays above the keyboard and the thread scrolls under it.
     <div className={`relative flex min-h-0 ${APP_CONTENT_HEIGHT_CLASS}`}>
-      <h1 className="sr-only">Cat</h1>
+      <h1 className="sr-only">{CAT_HUB_COPY.title}</h1>
       <ModernChatPanel
         className="min-h-0 min-w-0 flex-1"
         headerStart={<CatHeaderStart />}
