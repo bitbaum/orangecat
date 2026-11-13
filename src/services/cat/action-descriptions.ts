@@ -63,6 +63,18 @@ export function generateActionDescription(
       return parameters.project
         ? `Read how ${parameters.project} is doing: its work, latest run, and whether its live site answers`
         : 'Read how all your projects are doing, and whether each live site answers';
+    case 'github_read': {
+      const repo = parameters.repo ? ` in ${String(parameters.repo).slice(0, 100)}` : '';
+      return parameters.what === 'file'
+        ? `Read ${String(parameters.path ?? 'the top folder').slice(0, 200)}${repo} on your GitHub`
+        : `Read your GitHub ${String(parameters.what ?? 'repos').slice(0, 20)}${repo}`;
+    }
+    case 'gmail_read':
+      return parameters.message_id
+        ? 'Read one message in your Gmail'
+        : `Search your Gmail for "${String(parameters.query ?? 'this week’s inbox').slice(0, 200)}"`;
+    case 'calendar_read':
+      return `Read your Google Calendar for the next ${Number(parameters.days) > 0 ? Math.min(Number(parameters.days), 31) : 7} days`;
     case 'loki_run_status':
       return `Read where Loki run ${String(parameters.run_id ?? '').slice(0, 8)} is`;
     case 'send_task_to_loki': {

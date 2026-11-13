@@ -52,6 +52,9 @@ export const COMPANION_HANDS: readonly string[] = [
   'loki_finding_status',
   'walk_site',
   'use_browser',
+  'github_read',
+  'gmail_read',
+  'calendar_read',
 ];
 
 /** The hands that start work in the person's repositories. Always confirmed. */
@@ -131,7 +134,7 @@ export function handsSection(
   const own = actions.filter(a => autoIds.includes(a.id)).map(a => a.id);
   return [
     HANDS_SECTION_HEADING,
-    'OrangeCat can do these for the person, and you may propose one when they ask you to make, create, book or send such a thing, or to ask, read or task Loki (the agent system that builds and runs their projects; a task starts a coding agent session there, and its answer is read back with loki_sessions; a live site is checked with walk_site, and a defect on it is filed with file_loki_finding):',
+    'OrangeCat can do these for the person, and you may propose one when they ask you to make, create, book or send such a thing, or to read their connected GitHub, mail or calendar, or to ask, read or task Loki (the agent system that builds and runs their projects; a task starts a coding agent session there, and its answer is read back with loki_sessions; a live site is checked with walk_site, and a defect on it is filed with file_loki_finding):',
     ...lines,
     `To propose, first write one sentence that names what you will set up, with its main details (never only "Sure"), then end with exactly one block, the proposal itself (not a query to show, not an example):\n${exampleBlock(actions[0])}`,
     '"action" is one id from the list above, exactly as written; "parameters" holds only that action\'s fields. Write no other code block. The person taps to approve it; until then nothing exists, so never say it is done, created or sent. Propose only what they asked for, with the details they gave; ask for a missing required detail instead of inventing one. Never propose anything in a group chat.',
