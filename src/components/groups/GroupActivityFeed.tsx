@@ -1,11 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import EmptyState from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { UserPlus, FileText, Vote, CalendarPlus, Activity } from 'lucide-react';
 import { API_ROUTES } from '@/config/api-routes';
+import { ROUTES } from '@/config/routes';
+import { useAuth } from '@/hooks/useAuth';
 import { logger } from '@/utils/logger';
 import type { ActivityType } from '@/services/groups/types';
 import { formatRelativeTimeFine } from '@/utils/dates';
@@ -69,7 +73,10 @@ interface Props {
 }
 
 export function GroupActivityFeed({ groupSlug }: Props) {
+  const { user } = useAuth();
   const [activities, setActivities] = useState<GroupActivity[]>([]);
+  // The feed is for members; the API says when this viewer is not one.
+  const [membersOnly, setMembersOnly] = useState(false);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(false);
 
@@ -89,6 +96,7 @@ export function GroupActivityFeed({ groupSlug }: Props) {
             return;
           }
           setActivities(data.data?.activities ?? []);
+          setMembersOnly(data.data?.membersOnly === true);
         } else {
           logger.error(
             'Failed to fetch group activities',
@@ -146,6 +154,30 @@ export function GroupActivityFeed({ groupSlug }: Props) {
             <p className="text-sm font-medium text-fg-primary">Could not load activity</p>
             <p className="text-xs text-fg-secondary mt-1">Try refreshing the page.</p>
           </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (membersOnly) {
+    const signInHref = `${ROUTES.AUTH_LOGIN}&from=${encodeURIComponent(ROUTES.GROUPS.VIEW(groupSlug))}`;
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Activity</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <EmptyState
+            icon={Activity}
+            title="Activity is visible to members"
+            description={
+              user
+                ? 'Members see who joins, proposes, votes and schedules events here.'
+                : 'If you are a member, sign in to see it.'
+            }
+            action={user ? undefined : <Button href={signInHref}>Sign in</Button>}
+            className="py-8"
+          />
         </CardContent>
       </Card>
     );

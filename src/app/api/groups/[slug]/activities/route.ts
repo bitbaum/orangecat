@@ -2,22 +2,26 @@
  * Group Activities API
  *
  * GET /api/groups/[slug]/activities — Fetch recent activity feed for a group.
- * RLS ensures only group members can read.
+ *
+ * The feed is for members (RLS "Group members can view activities"). Anyone
+ * else who can see the group, signed in or out, gets `membersOnly: true` and
+ * no rows, so the page can say the feed is for members — not "Could not load"
+ * and not "No activity yet", which would be false.
  */
 
-import { withAuth, type AuthenticatedRequest } from '@/lib/api/withAuth';
+import { withOptionalAuth } from '@/lib/api/withAuth';
 import { apiSuccess, apiNotFound, handleApiError } from '@/lib/api/standardResponse';
-import { resolveGroupBySlug } from '@/domain/groups/helpers.server';
+import { resolveGroupBySlug, checkGroupMember } from '@/domain/groups/helpers.server';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { logger } from '@/utils/logger';
 
 const MAX_LIMIT = 50;
 
-export const GET = withAuth(
-  async (req: AuthenticatedRequest, { params }: { params: Promise<{ slug: string }> }) => {
+export const GET = withOptionalAuth(
+  async (req, { params }: { params: Promise<{ slug: string }> }) => {
     const { slug } = await params;
     try {
-      const { supabase } = req;
+      const { supabase, user } = req;
       const limit = Math.min(
         parseInt(new URL(req.url).searchParams.get('limit') || '20', 10) || 20,
         MAX_LIMIT
@@ -28,7 +32,10 @@ export const GET = withAuth(
         return apiNotFound('Group not found');
       }
 
-      // Fetch activities (RLS restricts to members)
+      if (!user || !(await checkGroupMember(supabase, group.id, user.id))) {
+        return apiSuccess({ activities: [], membersOnly: true });
+      }
+
       const { data: activities, error } = await supabase
         .from(DATABASE_TABLES.GROUP_ACTIVITIES)
         .select('id, activity_type, metadata, created_at, user_id')
@@ -42,7 +49,7 @@ export const GET = withAuth(
       }
 
       if (!activities || activities.length === 0) {
-        return apiSuccess({ activities: [] });
+        return apiSuccess({ activities: [], membersOnly: false });
       }
 
       // Batch-fetch profiles for all unique user_ids
@@ -70,7 +77,7 @@ export const GET = withAuth(
         user: profileMap.get(activity.user_id) ?? null,
       }));
 
-      return apiSuccess({ activities: enriched });
+      return apiSuccess({ activities: enriched, membersOnly: false });
     } catch (error) {
       logger.error('Activities GET error', { error }, 'Groups');
       return handleApiError(error);
