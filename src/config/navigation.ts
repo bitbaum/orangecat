@@ -45,6 +45,8 @@ import {
   Landmark,
 } from 'lucide-react';
 import { ECOSYSTEM_PILLARS } from './ecosystem';
+import { SOURCE_REPO_URL } from './brand';
+import { CTA_LABELS } from './landing-page';
 
 /**
  * Counter source identifier for nav items showing a live numeric badge.
@@ -515,7 +517,7 @@ export const footerNavigation = {
     },
     {
       name: 'GitHub',
-      href: 'https://github.com/bitbaum/orangecat',
+      href: SOURCE_REPO_URL,
       icon: GitHubIcon,
     },
   ],
@@ -526,7 +528,7 @@ export const footerNavigation = {
  */
 export const authNavigationItems = [
   { name: 'Sign In', href: `${ROUTES.AUTH}?mode=login` },
-  { name: 'Get Started', href: `${ROUTES.AUTH}?mode=register` },
+  { name: CTA_LABELS.primaryAction, href: ROUTES.AUTH_REGISTER },
 ];
 
 /**

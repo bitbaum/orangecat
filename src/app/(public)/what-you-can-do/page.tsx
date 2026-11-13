@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { PUBLIC_PAGE_WIDTH, PublicPageHeader } from '@/components/layout/PublicPageHeader';
 import { CapabilityMap } from '@/components/map/CapabilityMap';
+import { PublicStartBand } from '@/components/layout/PublicStartBand';
 import { TheDoor } from '@/components/map/TheDoor';
 import { CAPABILITY_MAP_PAGE } from '@/config/capability-map';
 import { DOOR_EXAMPLES } from '@/config/cat-door';
@@ -16,10 +17,15 @@ export const metadata: Metadata = {
 /**
  * The map: every capability, in the visitor's words, with a start button.
  * Public on purpose — the person who most needs it has no account yet.
- * Signed in or not, the same page; the door and every Start lead into the app.
+ * Signed in or not, the same page; the door and every Start lead into the app,
+ * and it ends on the one start action rather than on another product's link.
  */
 export default function WhatYouCanDoPage() {
   const decide = ECOSYSTEM_PILLARS.find(p => p.key === 'solon');
+  const sections = [
+    ...INTENT_LIST.map(intent => ({ id: intent.id, title: intent.title })),
+    ...(decide ? [{ id: 'decide', title: 'Decide' }] : []),
+  ];
   return (
     <div className="min-h-screen bg-surface-page pb-16">
       <div className={PUBLIC_PAGE_WIDTH.wide}>
@@ -29,28 +35,21 @@ export default function WhatYouCanDoPage() {
           lede={CAPABILITY_MAP_PAGE.lede}
         >
           <TheDoor className="max-w-2xl" examples={DOOR_EXAMPLES} />
+          {/* The on-page index is plain links in one row that scrolls, so it
+              cannot be mistaken for the example sentences above it, which
+              send a question to the Cat. */}
           <nav aria-label="On this page" className="mt-8">
-            <ul className="flex flex-wrap gap-2">
-              {INTENT_LIST.map(intent => (
-                <li key={intent.id}>
+            <ul className="no-scrollbar -mx-4 flex gap-1 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+              {sections.map(section => (
+                <li key={section.id} className="shrink-0">
                   <a
-                    href={`#do-${intent.id}`}
-                    className="inline-flex items-center rounded-full border border-default bg-surface-base px-3 py-1.5 text-sm text-fg-secondary hover:border-interactive hover:text-fg-primary"
+                    href={`#do-${section.id}`}
+                    className="inline-flex min-h-11 items-center whitespace-nowrap px-2 text-sm text-fg-secondary underline-offset-4 hover:text-fg-primary hover:underline"
                   >
-                    {intent.title}
+                    {section.title}
                   </a>
                 </li>
               ))}
-              {decide && (
-                <li>
-                  <a
-                    href="#do-decide"
-                    className="inline-flex items-center rounded-full border border-default bg-surface-base px-3 py-1.5 text-sm text-fg-secondary hover:border-interactive hover:text-fg-primary"
-                  >
-                    Decide
-                  </a>
-                </li>
-              )}
             </ul>
           </nav>
         </PublicPageHeader>
@@ -77,6 +76,11 @@ export default function WhatYouCanDoPage() {
             </Link>
           </section>
         )}
+
+        <PublicStartBand className="mt-16">
+          Not sure which of these is yours? Tell your Cat what you want in a sentence. It picks one
+          and sets it up.
+        </PublicStartBand>
       </div>
     </div>
   );

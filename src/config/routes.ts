@@ -408,6 +408,8 @@ export const ROUTES = {
   GOVERNANCE: '/governance',
   ECOSYSTEM: '/ecosystem',
   ABOUT: '/about',
+  /** The studio behind OrangeCat (bitbaum). */
+  COMPANY_ABOUT: '/company/about',
   HOW_IT_WORKS: '/how-it-works',
   /** The map: every capability in the visitor's words, with a Start on each. */
   WHAT_YOU_CAN_DO: '/what-you-can-do',

@@ -20,7 +20,7 @@ import { LucideIcon, Globe, Lock, Wallet, TrendingUp } from 'lucide-react';
 // The "what you can do" grid used to be a hand-written list here, a second
 // copy of the entity registry that drifted from it. The capability map
 // (src/config/capability-map.ts) now derives it from the registry's `plain`
-// copy; how-it-works renders <CapabilityMap compact />.
+// copy; how-it-works links into it, one row per intent.
 
 // ==================== HOW IT WORKS STEPS ====================
 
@@ -38,27 +38,27 @@ export const HOW_IT_WORKS_STEPS: HowItWorksStep[] = [
   {
     number: '1',
     icon: Lock,
-    title: 'Choose Your Identity',
+    title: 'Pick a name',
     description: 'Use your real name, a handle, or anything in between. Your identity, your rules.',
   },
   {
     number: '2',
     icon: BrandMarkIcon,
-    title: 'Meet Your Cat',
+    title: 'Tell your Cat what you want',
     description:
       'Your AI economic agent is ready. Tell it what you want to do — sell, fund, lend, invest, or coordinate.',
   },
   {
     number: '3',
     icon: Wallet,
-    title: 'Pick Your Currency',
+    title: 'Choose your currency',
     description:
       'Price your work in any display currency. Payments settle natively in Bitcoin and Lightning: global, non-custodial, and independently verifiable.',
   },
   {
     number: '4',
     icon: TrendingUp,
-    title: 'Economic Activity Begins',
+    title: 'Let your Cat keep track',
     description:
       'Buy, sell, fund, lend, invest, or coordinate. Your Cat keeps track, surfaces insights, and acts on your behalf.',
   },
@@ -235,7 +235,6 @@ export const CTA_LABELS = {
   primaryAction: 'Meet your Cat',
   secondaryAction: 'Discover',
   discoverAction: 'Discover',
-  createAccount: 'Create Free Account',
   startCreating: 'Meet your Cat',
   viewProject: 'View Project',
   learnMore: 'How it works',
@@ -266,7 +265,7 @@ export const SECTION_HEADERS = {
       'Everything below works today, for anyone, under any name, in any currency you like — settled in Bitcoin, paid to you directly.',
   },
   howItWorks: {
-    title: 'Meet Your Cat',
+    title: 'How it works',
     subtitle:
       'Your AI economic agent finds you ways to earn and sets them up. You decide what to pursue.',
   },
