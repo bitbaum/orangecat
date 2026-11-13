@@ -18,10 +18,9 @@ to the map, sub-bullets stay here for the human reader.
 - **An event that is over says so and sells no more tickets.**
 - **Organizations count right.** Discover's numbers match what it lists, member counts are real, and a public organization's Events and Activity open signed out.
 - **The community feed opens without an account.**
-- **Bitcoin amounts are readable in light mode**, and long articles keep diagrams legible on a phone.
+- **Bitcoin amounts are readable in light mode.**
 - **On a phone, notifications show their actions and the Cat's chat reaches Loki.**
 
-- **The Cat's suggestions sit in one column.** On a new conversation they no longer wrap into a row of pills of different widths.
 - **One theme switch per screen.** On a computer the header's switch is the only one; the account menu offers Appearance on a phone, where the header has none, and no longer flickers on load.
 
 - **Put your bots in a group with people.** In Messages, tap New and pick people and one or more of your bots. A bot there answers when somebody names it, as in "@Chef what is quick?", and its answer says whom it was for. It reads the conversation from when it was added, and what you told it in private stays out of the group. A bot that is not public answers only you, and says so to anyone else who names it. {#messenger-bot-group}

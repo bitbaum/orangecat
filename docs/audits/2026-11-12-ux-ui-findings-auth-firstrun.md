@@ -112,7 +112,7 @@ Status: Partly (#1634): contrast; the divider line is open.
 
 ### auth-firstrun#5 · low · Cat chat first-run empty state: a greeting and three registry nouns in a wrapping pill box
 
-**Status:** Fixed (2026-11-13): @bitbaum/chatkit 0.31.3 lays the starters out in one column (bitbaum/chatkit#94).
+**Status:** Fixed in @bitbaum/chatkit 0.31.3 (bitbaum/chatkit#94) (released in the package; OrangeCat adopts it once the fleet's shared-package rollout gate clears it).
 
 - **Where:** /dashboard/cat, /dashboard/cat?welcome=true, /dashboard (both, both themes)
 - **What a person meets:** A person with nothing is asked to choose between three internal nouns before knowing what they mean here, and nothing says what the Cat will do or that it asks before publishing. The same question gives three different sets of hints on three pages, and the wrapped pills leave an orphan.

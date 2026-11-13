@@ -42,11 +42,11 @@ importers:
         specifier: ^1.26.0
         version: 1.26.0(react@19.3.1)
       '@bitbaum/bip-kit':
-        specifier: ^0.8.2
-        version: 0.8.2(katex@0.18.11)(mermaid@11.17.2)(react@19.3.1)(shiki@4.4.3)
+        specifier: ^0.6.1
+        version: 0.6.1(katex@0.18.11)(mermaid@11.17.2)(react@19.3.1)(shiki@4.4.3)
       '@bitbaum/chatkit':
-        specifier: ^0.31.3
-        version: 0.31.3(react@19.3.1)
+        specifier: ^0.31.2
+        version: 0.31.2(react@19.3.1)
       '@bitbaum/collective-kinds':
         specifier: workspace:*
         version: link:packages/collective-kinds
@@ -79,7 +79,7 @@ importers:
         version: 0.3.3(react@19.3.1)
       '@bitbaum/writingkit':
         specifier: ^0.2.0
-        version: 0.2.0(@bitbaum/chatkit@0.31.3(react@19.3.1))(react@19.3.1)
+        version: 0.2.0(@bitbaum/chatkit@0.31.2(react@19.3.1))(react@19.3.1)
       '@hono/node-server':
         specifier: ^2.1.1
         version: 2.1.1(hono@4.13.13)
@@ -596,8 +596,8 @@ packages:
       react:
         optional: true
 
-  '@bitbaum/bip-kit@0.8.2':
-    resolution: {integrity: sha512-1xPGs5JD0p2UKm86Z63NTHgaO47CFXTqKJmVSEQHUrEp15XH1isZWGwPBuJSmsFMvZBLefFwp9hSn42wFe/rwA==}
+  '@bitbaum/bip-kit@0.6.1':
+    resolution: {integrity: sha512-bDcAeO3+X+Dh+TVKioYWoYBdk3bgSFJSUMR4Af5K2qemRXjN4bfPrSUQWWDH7s2UlOIf297Ot28/0WPij7wVvQ==}
     engines: {node: '>=20'}
     peerDependencies:
       katex: ^0.18.2
@@ -612,8 +612,8 @@ packages:
       shiki:
         optional: true
 
-  '@bitbaum/chatkit@0.31.3':
-    resolution: {integrity: sha512-WfYzac8+uqPUpgKsaoYUOJFoUvgXRJaCdwX5YVuwZuhh+1cF9IPg1tMtw2l/SDG8V9IeLo6QiEJGuqw0cpkszw==}
+  '@bitbaum/chatkit@0.31.2':
+    resolution: {integrity: sha512-2uJAg+6VM86aXADwqHkgdVAjr4/uv8FEt5L/xbYs18o4RRlRvrVMnQOOGLwdUsIAU62aMkqxQ7bcpNebw6wFsw==}
     engines: {node: '>=20'}
     hasBin: true
     peerDependencies:
@@ -660,8 +660,8 @@ packages:
       react:
         optional: true
 
-  '@bitbaum/threadkit@0.1.2':
-    resolution: {integrity: sha512-DzM0A/xlOfJStLpoiqleJUEbLSatxAUpUXihvgz5U+ZABLnQ7nCdMT32dz0C6nyKXEXfrnnEakbsChluTFXwSA==}
+  '@bitbaum/threadkit@0.1.1':
+    resolution: {integrity: sha512-tNsM2bVHBzmXaNzrsMeDipjNUssTwgeRIUVLA+SzzPOUSa21wgzX5Majo9HfEtTR4gxyHCrIFYzUWsvbdAkrRw==}
     engines: {node: '>=20'}
 
   '@bitbaum/whenkit@0.3.3':
@@ -7025,7 +7025,7 @@ snapshots:
     transitivePeerDependencies:
       - canvas
 
-  '@bitbaum/bip-kit@0.8.2(katex@0.18.11)(mermaid@11.17.2)(react@19.3.1)(shiki@4.4.3)':
+  '@bitbaum/bip-kit@0.6.1(katex@0.18.11)(mermaid@11.17.2)(react@19.3.1)(shiki@4.4.3)':
     dependencies:
       react: 19.3.1
     optionalDependencies:
@@ -7033,9 +7033,9 @@ snapshots:
       mermaid: 11.17.2
       shiki: 4.4.3
 
-  '@bitbaum/chatkit@0.31.3(react@19.3.1)':
+  '@bitbaum/chatkit@0.31.2(react@19.3.1)':
     dependencies:
-      '@bitbaum/threadkit': 0.1.2
+      '@bitbaum/threadkit': 0.1.1
       pdfjs-dist: 6.4.299
       react: 19.3.1
 
@@ -7057,15 +7057,15 @@ snapshots:
     optionalDependencies:
       react: 19.3.1
 
-  '@bitbaum/threadkit@0.1.2': {}
+  '@bitbaum/threadkit@0.1.1': {}
 
   '@bitbaum/whenkit@0.3.3(react@19.3.1)':
     dependencies:
       react: 19.3.1
 
-  '@bitbaum/writingkit@0.2.0(@bitbaum/chatkit@0.31.3(react@19.3.1))(react@19.3.1)':
+  '@bitbaum/writingkit@0.2.0(@bitbaum/chatkit@0.31.2(react@19.3.1))(react@19.3.1)':
     optionalDependencies:
-      '@bitbaum/chatkit': 0.31.3(react@19.3.1)
+      '@bitbaum/chatkit': 0.31.2(react@19.3.1)
       react: 19.3.1
 
   '@braintree/sanitize-url@7.1.2': {}
