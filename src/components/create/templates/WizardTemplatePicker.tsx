@@ -25,6 +25,12 @@ interface WizardTemplatePickerProps<T extends EntityTemplate> {
   templates: T[];
   onSelectTemplate: (template: T | null) => void;
   selectedTemplateId?: string | null;
+  /**
+   * Show "Start from scratch" as already chosen while nothing else is. Right
+   * where a Next button follows the grid (the wizard); wrong where picking a
+   * card is the only way on: a ticked card with nothing after it is a dead end.
+   */
+  preselectScratch?: boolean;
   showStartFromScratch?: boolean;
   entityLabel?: string;
   className?: string;
@@ -34,11 +40,15 @@ export function WizardTemplatePicker<T extends EntityTemplate>({
   templates,
   onSelectTemplate,
   selectedTemplateId,
+  preselectScratch = true,
   showStartFromScratch = true,
   entityLabel,
   className,
 }: WizardTemplatePickerProps<T>) {
-  const [selected, setSelected] = useState<string | null>(selectedTemplateId ?? null);
+  // undefined = nothing chosen yet; null = Start from scratch.
+  const [selected, setSelected] = useState<string | null | undefined>(
+    selectedTemplateId ?? (preselectScratch ? null : undefined)
+  );
 
   // Sync with external state
   useEffect(() => {
