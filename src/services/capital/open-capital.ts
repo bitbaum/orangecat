@@ -13,6 +13,7 @@ import { CAPITAL, type CapitalSlug } from '@/config/capital';
 import { getTableName } from '@/config/entity-registry';
 import { ENTITY_STATUS } from '@/config/database-constants';
 import { INVESTMENT_PUBLIC_STATUSES, INVESTMENT_TYPE_LABELS } from '@/config/investments';
+import { PUBLIC_VISIBILITY } from '@/config/public-visibility';
 import { ROUTES } from '@/config/routes';
 import { applyVisibility, type VisibilityFilter } from '@/lib/entities/visibility';
 import { createPublicClient } from '@/lib/supabase/public';
@@ -71,7 +72,7 @@ async function readPublicRow(
   supabase: AnySupabaseClient,
   table: string,
   id: string,
-  visibility: VisibilityFilter
+  visibility: VisibilityFilter | undefined
 ): Promise<Row | null> {
   const { data, error } = await applyVisibility(
     supabase.from(table).select('*').eq('id', id),
@@ -132,10 +133,8 @@ async function lendRail(supabase: AnySupabaseClient, id: string | null): Promise
   if (!id) {
     return closed('lend');
   }
-  const row = await readPublicRow(supabase, getTableName('loan'), id, {
-    column: 'is_public',
-    value: true,
-  });
+  // The loan page's own rule (public AND active), so a cancelled loan reads closed.
+  const row = await readPublicRow(supabase, getTableName('loan'), id, PUBLIC_VISIBILITY.loan);
   if (!row) {
     return closed('lend');
   }
