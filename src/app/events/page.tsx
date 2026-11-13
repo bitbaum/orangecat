@@ -13,10 +13,10 @@ import {
   Globe,
   ArrowRight,
   Check,
-  BarChart3,
+  CalendarCheck,
   Ticket,
   QrCode,
-  Camera,
+  HandCoins,
   PartyPopper,
   Palette,
   Tent,
@@ -42,13 +42,13 @@ export default function EventsPage() {
       icon: QrCode,
       title: 'Smart Check-in',
       description:
-        'QR code entry system with real-time attendance tracking and automated verification',
+        'Every ticket carries a QR code: scan it at the door, or check guests in from the door list',
     },
     {
       icon: Users,
       title: 'RSVP Management',
       description:
-        'Track responses, manage capacity limits, and send automated updates to attendees',
+        'Set a capacity and let guests claim free seats; a guest needs no account to come',
     },
     {
       icon: Globe,
@@ -56,15 +56,16 @@ export default function EventsPage() {
       description: 'Connect with attendees worldwide through open, borderless event discovery',
     },
     {
-      icon: Camera,
-      title: 'Event Media',
+      icon: HandCoins,
+      title: 'Crew & Payouts',
       description:
-        'Share photos, live updates, and create lasting memories with integrated media tools',
+        'Put your crew on the event and record what each was paid, from your wallet or another way',
     },
     {
-      icon: BarChart3,
-      title: 'Event Analytics',
-      description: 'Track attendance, engagement, and revenue with comprehensive event insights',
+      icon: CalendarCheck,
+      title: 'Refunds & Calendar',
+      description:
+        'Refund a paid ticket from your own wallet, and give guests the date and place for their calendar',
     },
   ];
 
@@ -110,18 +111,18 @@ export default function EventsPage() {
     'Instant Bitcoin payments directly to your wallet',
     'Global attendee reach with no geographic barriers',
     'Automated check-in and attendance management',
-    'Integrated event promotion and social sharing',
-    'Real-time analytics and performance tracking',
+    'A door list and QR check-in on your phone',
+    'Add-to-calendar and directions on every ticket',
     'Flexible pricing with Bitcoin and fiat options',
     'Professional event pages with customization',
   ];
 
   const handleGetStarted = () => {
     if (session) {
-      _router.push(`${ENTITY_REGISTRY['event'].publicBasePath}/create`);
+      _router.push(ENTITY_REGISTRY.event.createPath);
     } else {
       _router.push(
-        `${ROUTES.AUTH_LOGIN}&redirect=${ENTITY_REGISTRY['event'].publicBasePath}/create`
+        `${ROUTES.AUTH_LOGIN}&from=${encodeURIComponent(ENTITY_REGISTRY.event.createPath)}`
       );
     }
   };
@@ -260,7 +261,7 @@ export default function EventsPage() {
             </div>
             <h3 className="text-lg font-semibold mb-3">Manage Attendees</h3>
             <p className="text-fg-secondary">
-              Track RSVPs, send updates, and manage your attendee list
+              See who is coming and keep your door list in one place
             </p>
           </div>
           <div className="text-center">
@@ -280,15 +281,11 @@ export default function EventsPage() {
         <div className="text-center">
           <h2 className="text-2xl font-semibold mb-6">Ready to Organize Your Event?</h2>
           <p className="text-xl text-fg-secondary mb-8 max-w-2xl mx-auto">
-            Join event organizers worldwide who use OrangeCat to create amazing experiences with
-            seamless ticketing and Bitcoin-native payments.
+            Host your event on OrangeCat: tickets, a door list and Bitcoin payments straight to your
+            own wallet.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button
-              onClick={handleGetStarted}
-              size="lg"
-              className="bg-surface-raised hover:bg-fg-primary text-fg-primary hover:text-fg-inverted transition-colors"
-            >
+            <Button onClick={handleGetStarted} variant="primary" size="lg">
               Create Your Event
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>

@@ -160,7 +160,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
     } = await supabase.auth.getUser();
     if (!user) {
       // Not authenticated, redirect to login
-      redirect(`${ROUTES.AUTH}?redirect=${ROUTES.PROFILES.ME}`);
+      redirect(`${ROUTES.AUTH}?from=${encodeURIComponent(ROUTES.PROFILES.ME)}`);
     }
 
     // Get username for current user

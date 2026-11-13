@@ -151,8 +151,8 @@ export default function EventsNearYou() {
 
       {events && events.length === 0 && (
         <p className="text-sm text-fg-secondary">
-          Nothing on within {radius} km{genre ? ` playing ${genre}` : ''} yet. Widen the distance,
-          or{' '}
+          Nothing on within {radius} km{genre ? ` playing ${genre}` : ''} yet.{' '}
+          {radius < RADII_KM[RADII_KM.length - 1] ? 'Widen the distance, or ' : ''}
           <Link href={ENTITY_REGISTRY.event.createPath} className="underline underline-offset-4">
             host the first one
           </Link>
