@@ -65,7 +65,12 @@ export function toFieldSpec(field: FieldConfig): FieldSpec {
     label: field.label,
     type: mapped.type,
     required: field.required,
-    hint: joinHints(field.hint, mapped.hint),
+    hint: joinHints(
+      field.hint,
+      // A column that always holds one currency is written in that currency,
+      // whatever the form's currency field says.
+      field.storedIn ? `amount in ${field.storedIn}` : mapped.hint
+    ),
     placeholder: field.placeholder ?? mapped.example,
     options: field.options?.map(o => ({ value: o.value, label: o.label })),
     min: field.min,

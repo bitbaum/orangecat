@@ -92,11 +92,15 @@ const realEstateTemplates: EntityTemplate<AssetDefaults>[] = [
       estimated_value: 850000,
       currency: 'CHF',
       is_for_rent: true,
-      rental_price_btc: 0.025,
-      rental_period_type: 'daily',
-      min_rental_period: 2,
+      // Per month, not per day: 0.025 BTC a day read as about CHF 1,500 a
+      // night. 0.05 BTC a month is about CHF 3,000 at CHF 60,000 to the
+      // Bitcoin; the form shows it in francs at the day's rate.
+      rental_price_btc: 0.05,
+      rental_period_type: 'monthly',
+      min_rental_period: 1,
       requires_deposit: true,
-      deposit_amount_btc: 0.05,
+      // Two months' rent.
+      deposit_amount_btc: 0.1,
       show_on_profile: true,
     },
   },

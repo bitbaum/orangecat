@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { FormState, AIGeneratedFields, FieldConfidence, EntityConfig } from '../../types';
 import { useEntityFormDraft } from './useEntityFormDraft';
+import { convertFormAmounts, NO_RATE_FOR_SWITCH } from './convertFormAmounts';
 import { slugify } from '@/utils/string';
 import { scrollBehavior } from '@/lib/scroll-behavior';
 
@@ -97,30 +98,42 @@ export function useEntityFormState<T extends Record<string, unknown>>({
 
   const handleFieldChange = useCallback(
     (field: keyof T, value: unknown) => {
+      const fields = config.fieldGroups.flatMap(g => g.fields ?? []);
       // Mode-toggle fields declare clearOnChange: reset the listed siblings so a
       // value entered under the previous mode never rides along invisibly.
-      const fieldConfig = config.fieldGroups
-        .flatMap(g => g.fields ?? [])
-        .find(f => f.name === field);
+      const fieldConfig = fields.find(f => f.name === field);
 
       // Built from `prev`, not from the render's snapshot: several changes in
       // one tick (picking a wallet sets _wallet_id, bitcoin_address and
       // lightning_address) each started from the same stale data, and only
       // the last one survived.
       setFormState(prev => {
-        const updatedData = { ...prev.data, [field]: value };
+        // A new currency converts every amount held in the old one, from
+        // whichever control changed it. See convertFormAmounts.
+        let converted: Record<string, number> = {};
+        if (field === 'currency') {
+          const result = convertFormAmounts(prev.data, fields, prev.data.currency, value);
+          if (!result.ok) {
+            const errors = { ...prev.errors };
+            for (const name of result.fields) {
+              errors[name] = NO_RATE_FOR_SWITCH;
+            }
+            return { ...prev, errors };
+          }
+          converted = result.amounts;
+        }
+        const updatedData = { ...prev.data, ...converted, [field]: value };
         if (field === 'name' && config.type === 'group') {
           (updatedData as Record<string, unknown>).slug = slugify(value as string);
         }
         for (const sibling of fieldConfig?.clearOnChange ?? []) {
           (updatedData as Record<string, unknown>)[sibling] = null;
         }
-        return {
-          ...prev,
-          data: updatedData,
-          errors: { ...prev.errors, [field as string]: '' },
-          isDirty: true,
-        };
+        const errors = { ...prev.errors, [field as string]: '' };
+        for (const name of Object.keys(converted)) {
+          errors[name] = '';
+        }
+        return { ...prev, data: updatedData, errors, isDirty: true };
       });
 
       setAiGeneratedFields(prev => {
