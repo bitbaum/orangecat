@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
+  deleteRoutine,
   isTimeLocal,
+  listRoutines,
   ROUTINE_INTERVALS,
+  ROUTINES_PER_BOT,
+  RoutineLimitError,
+  saveRoutine,
   isRoutineInterval,
   nextRoutineRun,
   nextRunAt,
@@ -119,5 +124,136 @@ describe('a routine that repeats through the day', () => {
     }
     expect(ROUTINE_INTERVALS.every(isRoutineInterval)).toBe(true);
     expect(isRoutineInterval('2')).toBe(false);
+  });
+});
+
+/**
+ * A bot holds several routines. The table is faked as rows in memory with
+ * the few calls the store makes, so what is checked is the store's own
+ * rules: a new one is added beside the others, an id changes only that one,
+ * a sixth is refused, and Stop takes one or all.
+ */
+describe('several routines per bot', () => {
+  type Row = Record<string, unknown> & { id: string };
+
+  function fakeDb(seed: Row[] = []) {
+    const rows = [...seed];
+    let n = seed.length;
+    const from = () => {
+      const filters: Array<[string, unknown]> = [];
+      let op: 'select' | 'update' | 'delete' | 'insert' = 'select';
+      let patch: Record<string, unknown> = {};
+      const matches = (r: Row) => filters.every(([k, v]) => r[k] === v);
+      const run = () => {
+        if (op === 'insert') {
+          n += 1;
+          const row = { id: `r${n}`, created_at: `2026-11-13T00:00:0${n}Z`, ...patch } as Row;
+          rows.push(row);
+          return [row];
+        }
+        const hit = rows.filter(matches);
+        if (op === 'update') {
+          hit.forEach(r => Object.assign(r, patch));
+        }
+        if (op === 'delete') {
+          hit.forEach(r => rows.splice(rows.indexOf(r), 1));
+        }
+        return hit;
+      };
+      const q = {
+        select: () => q,
+        order: () => q,
+        limit: (count: number) => Promise.resolve({ data: run().slice(0, count), error: null }),
+        eq: (k: string, v: unknown) => {
+          filters.push([k, v]);
+          return q;
+        },
+        insert: (v: Record<string, unknown>) => {
+          op = 'insert';
+          patch = v;
+          return q;
+        },
+        update: (v: Record<string, unknown>) => {
+          op = 'update';
+          patch = v;
+          return q;
+        },
+        delete: () => {
+          op = 'delete';
+          return q;
+        },
+        single: () => Promise.resolve({ data: run()[0] ?? null, error: null }),
+        maybeSingle: () => Promise.resolve({ data: run()[0] ?? null, error: null }),
+        then: (resolve: (v: { data: Row[]; error: null }) => unknown) =>
+          resolve({ data: run(), error: null }),
+      };
+      return q;
+    };
+    return { client: { from } as never, rows };
+  }
+
+  const input = { prompt: 'Is the site up?', timeLocal: '08:00', zone: 'Europe/Zurich' };
+
+  it('adds a second routine beside the first and lists both, oldest first', async () => {
+    const db = fakeDb();
+    await saveRoutine(db.client, 'u1', 'bot1', input);
+    await saveRoutine(db.client, 'u1', 'bot1', {
+      ...input,
+      prompt: 'Morning brief',
+      everyHours: 4,
+    });
+    const list = await listRoutines(db.client, 'u1', 'bot1');
+    expect(list.map(r => r.prompt)).toEqual(['Is the site up?', 'Morning brief']);
+    expect(list[1].everyHours).toBe(4);
+  });
+
+  it('changes only the routine it is given', async () => {
+    const db = fakeDb();
+    const first = await saveRoutine(db.client, 'u1', 'bot1', input);
+    await saveRoutine(db.client, 'u1', 'bot1', { ...input, prompt: 'Second' });
+    const changed = await saveRoutine(
+      db.client,
+      'u1',
+      'bot1',
+      { ...input, timeLocal: '09:30' },
+      first?.id
+    );
+    expect(changed?.timeLocal).toBe('09:30');
+    const list = await listRoutines(db.client, 'u1', 'bot1');
+    expect(list.map(r => r.timeLocal)).toEqual(['09:30', '08:00']);
+    expect(db.rows).toHaveLength(2);
+  });
+
+  it('answers null, and changes nothing, for a routine that is someone else’s', async () => {
+    const db = fakeDb();
+    const mine = await saveRoutine(db.client, 'u1', 'bot1', input);
+    expect(await saveRoutine(db.client, 'u2', 'bot1', input, mine?.id)).toBeNull();
+    expect(await saveRoutine(db.client, 'u1', 'bot2', input, mine?.id)).toBeNull();
+    expect(db.rows).toHaveLength(1);
+  });
+
+  it('refuses one more than a bot can hold', async () => {
+    const db = fakeDb();
+    for (let i = 0; i < ROUTINES_PER_BOT; i++) {
+      await saveRoutine(db.client, 'u1', 'bot1', input);
+    }
+    await expect(saveRoutine(db.client, 'u1', 'bot1', input)).rejects.toBeInstanceOf(
+      RoutineLimitError
+    );
+    // Another bot of the same person starts from none.
+    expect(await saveRoutine(db.client, 'u1', 'bot2', input)).not.toBeNull();
+  });
+
+  it('stops one routine, or all of the bot’s', async () => {
+    const db = fakeDb();
+    const first = await saveRoutine(db.client, 'u1', 'bot1', input);
+    await saveRoutine(db.client, 'u1', 'bot1', input);
+    await saveRoutine(db.client, 'u1', 'bot1', input);
+    await saveRoutine(db.client, 'u1', 'bot2', input);
+    await deleteRoutine(db.client, 'u1', 'bot1', first?.id);
+    expect(await listRoutines(db.client, 'u1', 'bot1')).toHaveLength(2);
+    await deleteRoutine(db.client, 'u1', 'bot1');
+    expect(await listRoutines(db.client, 'u1', 'bot1')).toHaveLength(0);
+    expect(await listRoutines(db.client, 'u1', 'bot2')).toHaveLength(1);
   });
 });

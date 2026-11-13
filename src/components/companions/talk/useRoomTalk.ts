@@ -198,6 +198,29 @@ export function useRoomTalk(roomId: string | null) {
     [roomId]
   );
 
+  /** A face of its own (shape and colour), or null for its members' faces again. */
+  const setFace = useCallback(
+    async (face: { shape: string; hue: string } | null): Promise<boolean> => {
+      if (!roomId) {
+        return false;
+      }
+      const res = await fetch(API_ROUTES.AI_ASSISTANTS.ROOM(roomId), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ face }),
+      });
+      const json = (await res.json().catch(() => ({}))) as {
+        data?: { avatarUrl?: string | null };
+      };
+      if (!res.ok) {
+        return false;
+      }
+      setRoom(r => (r ? { ...r, avatarUrl: json.data?.avatarUrl ?? null } : r));
+      return true;
+    },
+    [roomId]
+  );
+
   const remove = useCallback(async () => {
     if (!roomId) {
       return false;
@@ -248,6 +271,7 @@ export function useRoomTalk(roomId: string | null) {
     send,
     stop,
     rename,
+    setFace,
     remove,
     reload,
     addMember,
