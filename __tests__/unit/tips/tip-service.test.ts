@@ -97,6 +97,18 @@ describe('getTipReceiveInfo', () => {
     );
   });
 
+  it('a page asking whether to show Tip does not tell the author someone tried', async () => {
+    mockResolveWallet.mockResolvedValue(null);
+    const info = await getTipReceiveInfo(
+      supabaseWith({ id: 'u1', username: 'alice', display_name: 'Alice' }),
+      'alice',
+      { notifyDeadEnd: false }
+    );
+    await flush();
+    expect(info?.canReceive).toBe(false);
+    expect(NotificationDispatcher.dispatch).not.toHaveBeenCalled();
+  });
+
   it('dedupes the dead-end notification when a recent one exists', async () => {
     mockResolveWallet.mockResolvedValue(null);
     mockDedupLimit.mockResolvedValueOnce({ data: [{ id: 'n1' }] });

@@ -13,6 +13,8 @@ import '@/lib/longform/longform.css';
 import { parseLongform } from '@/lib/longform/parse';
 import LongformBody from '@/lib/longform/LongformBody';
 import ShareButton from './ShareButton';
+import { getTipReceiveInfo } from '@/domain/tips/tip-service';
+import { createServerClient } from '@/lib/supabase/server';
 import TipButton from '@/components/tips/TipButton';
 import ArticleOwnerActions from './ArticleOwnerActions';
 import ArticleDiscussion from './ArticleDiscussion';
@@ -87,6 +89,16 @@ export default async function ArticlePage({ params }: PageProps) {
   const { blocks, toc } = parseLongform(article.body);
 
   const isOwner = await isCurrentUserArticleAuthor(article.authorProfileId);
+
+  // Offer Tip only to an author who can receive it. Asked inside the dialog,
+  // the answer came after the dialog had promised "straight to their wallet".
+  const canTip = article.author.username
+    ? ((
+        await getTipReceiveInfo(await createServerClient(), article.author.username, {
+          notifyDeadEnd: false,
+        }).catch(() => null)
+      )?.canReceive ?? false)
+    : false;
 
   // An excerpt the author did not write is the opening paragraph again; shown
   // above the body it reads as a duplicate. Feeds and metadata still use it.
@@ -219,7 +231,7 @@ export default async function ArticlePage({ params }: PageProps) {
                 </span>
               </Link>
               <div className="flex flex-wrap items-center gap-2">
-                {article.author.username && (
+                {canTip && article.author.username && (
                   <TipButton
                     username={article.author.username}
                     recipientName={article.author.name}
@@ -244,7 +256,11 @@ export default async function ArticlePage({ params }: PageProps) {
           </footer>
 
           {article.visibility === 'public' && (
-            <ArticleDiscussion articleId={article.id} authorName={article.author.name} />
+            <ArticleDiscussion
+              articleId={article.id}
+              authorName={article.author.name}
+              articlePath={ROUTES.ARTICLE(article.slug)}
+            />
           )}
         </article>
       </div>
