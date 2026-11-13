@@ -80,6 +80,7 @@ export const VERB_FORMS: Record<string, { gerund: string; past: string }> = {
   unfollow: { gerund: 'Unfollowing', past: 'Unfollowed' },
   update: { gerund: 'Updating', past: 'Updated' },
   watch: { gerund: 'Watching', past: 'Watched' },
+  walk: { gerund: 'Walking', past: 'Walked' },
 };
 
 /**

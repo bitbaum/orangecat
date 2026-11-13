@@ -53,6 +53,7 @@ describe('a hand grant', () => {
       'send_task_to_loki',
       'file_loki_finding',
       'loki_finding_status',
+      'walk_site',
     ]) {
       expect(canRunOnItsOwn(id), id).toBe(true);
     }

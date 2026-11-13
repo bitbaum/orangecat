@@ -20,6 +20,7 @@ import {
 } from './findings';
 import { projectStatusMessage, readProjectStatus } from './project-status';
 import { readLokiSessions, sessionsMessage } from './sessions';
+import { parseWalkPhrases, parseWalkUrls, siteWalkMessage, walkSiteWithLoki } from './site-walk';
 import { parseProjectList, sendTaskToLoki } from './task-dispatch';
 
 export interface LokiHandOutcome {
@@ -168,6 +169,30 @@ export const LOKI_HANDS: Readonly<Record<string, LokiHand>> = {
         id: outcome.id,
         status: outcome.status,
         displayMessage: findingFiledMessage(outcome),
+      },
+    };
+  },
+
+  /**
+   * A live site walked in Loki's browser at phone size: per page, whether it
+   * loads, shows what it must, scrolls sideways or has a broken picture.
+   * Read-only: it files nothing.
+   */
+  walk_site: async (actorId, params) => {
+    const outcome = await walkSiteWithLoki({
+      actorId,
+      urls: parseWalkUrls(params.urls),
+      mustShow: parseWalkPhrases(params.must_show),
+    });
+    if (!outcome.ok) {
+      return { success: false, error: outcome.reason };
+    }
+    return {
+      success: true,
+      data: {
+        passed: outcome.passed,
+        steps: outcome.steps,
+        displayMessage: siteWalkMessage(outcome),
       },
     };
   },

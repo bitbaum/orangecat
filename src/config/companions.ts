@@ -158,6 +158,7 @@ export const COMPANION_COPY = {
         send_task_to_loki: 'Start or task an agent session in Loki',
         file_loki_finding: 'File a finding in a Loki project',
         loki_finding_status: 'Read where a finding is',
+        walk_site: 'Walk a live site and say what is wrong',
       } as Record<string, string>,
     },
     /** The "Do it?" card under a bot's answer, and what follows the tap. */

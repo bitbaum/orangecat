@@ -42,6 +42,8 @@ export function generateActionDescription(
         : 'Read what your Loki sessions are doing';
     case 'file_loki_finding':
       return `File this finding in ${parameters.project}'s feedback inbox in Loki: “${String(parameters.finding ?? '').slice(0, 300)}”`;
+    case 'walk_site':
+      return `Open ${String(parameters.urls ?? '').slice(0, 300)} in Loki's browser at phone size and report what is wrong`;
     case 'loki_finding_status':
       return `Read where Loki report ${String(parameters.report_id ?? '').slice(0, 8)} is`;
     case 'project_status':

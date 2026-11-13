@@ -983,6 +983,36 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
     enabled: true,
   },
 
+  walk_site: {
+    id: 'walk_site',
+    name: 'Walk a Live Site',
+    description:
+      'Check up to three live pages in a phone-size browser: what is wrong on each. Read-only.',
+    category: 'communication',
+    icon: Bot,
+    riskLevel: 'low',
+    requiresConfirmation: true,
+    parameters: [
+      {
+        name: 'urls',
+        type: 'string',
+        required: true,
+        description: 'Full addresses, comma-separated',
+      },
+      {
+        name: 'must_show',
+        type: 'string',
+        required: false,
+        description: 'Phrases each page must show; ;-separated',
+      },
+    ],
+    examples: [
+      'Check orangecat.ch on a phone',
+      'Walk the pricing and sign-in pages and tell me what is broken',
+    ],
+    enabled: true,
+  },
+
   create_project_for_person: {
     id: 'create_project_for_person',
     name: 'Set Up a Project for Someone Else',

@@ -260,7 +260,13 @@ describe('selection is worth doing', () => {
     // the open run). ~150 characters: one clause and two parameter names.
     // The three sources and the live check are code
     // (services/loki/project-status.ts), not prose here.
-    expect(remaining).toBeLessThanOrEqual(7_080);
+    //
+    // Raised 7,080 -> 7,230 for `walk_site` (a QA bot opens up to three live
+    // pages in Loki's browser at phone size and is told what is wrong on
+    // each: Cat Bot's headless-browser testing, docs/PARITY.md step 1). ~150
+    // characters: one clause and two parameter names. What a page fails on
+    // is Loki's code (its lib/site-walk), never prose here.
+    expect(remaining).toBeLessThanOrEqual(7_230);
   });
 
   it('selects by default now, and still sends everything when told to', async () => {
