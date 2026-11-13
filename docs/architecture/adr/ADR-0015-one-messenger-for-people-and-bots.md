@@ -88,7 +88,7 @@ company is not a confidence between one person and one bot.
 ## As built (2026-11-13)
 
 - The seat: `companion_seats(user_id, assistant_id)`, service role only
-  (`supabase/migrations/20261113170000_a_bot_has_a_seat.sql`). The account is
+  (`supabase/migrations/20261113173000_a_bot_has_a_seat.sql`). The account is
   made the first time its owner opens a conversation with the bot
   (`src/features/messaging/server/bot-seats.ts`), on `seat-<random>@orangecat.invalid`
   with the handle `seat_<12 hex>`; `src/config/public-directory.ts` keeps that
