@@ -7,10 +7,8 @@
  * sign in with. It is now asked to add an email, as the page's one filled
  * button.
  */
-import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { accountHasNoEmail } from '@/lib/auth/account-email';
-import { SettingsEmailSection } from '@/app/(authenticated)/settings/SettingsEmailSection';
 
 describe('accountHasNoEmail', () => {
   it('is true for an anonymous account, even one carrying a placeholder', () => {
@@ -29,28 +27,4 @@ describe('accountHasNoEmail', () => {
   });
 });
 
-describe('SettingsEmailSection', () => {
-  const noop = () => {};
-
-  it('asks an account with no email to add one', () => {
-    render(
-      <SettingsEmailSection email="" noEmail isSubmitting={false} onChange={noop} onSubmit={noop} />
-    );
-    expect(screen.getByRole('heading', { name: 'Add an email' })).toBeTruthy();
-    expect(screen.getByText(/only exists in this browser/)).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Add email' })).toBeTruthy();
-  });
-
-  it('offers to change an existing email', () => {
-    render(
-      <SettingsEmailSection
-        email="ana@example.com"
-        isSubmitting={false}
-        onChange={noop}
-        onSubmit={noop}
-      />
-    );
-    expect(screen.getByRole('heading', { name: 'Email address' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Update email' })).toBeTruthy();
-  });
-});
+// The email section itself is pinned in anonymous-account-sign-in-truth.test.tsx.

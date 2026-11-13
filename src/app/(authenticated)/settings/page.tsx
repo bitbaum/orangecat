@@ -1,12 +1,12 @@
 'use client';
 
+import { useRef } from 'react';
 import { useRequireAuth } from '@/hooks/useAuth';
 import Loading from '@/components/Loading';
 import Link from 'next/link';
 import { ROUTES } from '@/config/routes';
 import { accountHasNoEmail } from '@/lib/auth/account-email';
 import { SettingsFrame } from './SettingsFrame';
-import { SettingsDevicesSection } from './SettingsDevicesSection';
 import { useSettingsForm } from './useSettingsForm';
 import { SettingsEmailSection } from './SettingsEmailSection';
 import { SettingsPasswordSection } from './SettingsPasswordSection';
@@ -39,6 +39,12 @@ export default function SettingsPage() {
     handleDeleteAccount,
     executeDeleteAccount,
   } = useSettingsForm(user ?? null);
+  const emailInputRef = useRef<HTMLInputElement>(null);
+  // The one step that gives a "Start instantly" account a way back in.
+  const focusEmail = () => {
+    emailInputRef.current?.scrollIntoView({ block: 'center' });
+    emailInputRef.current?.focus({ preventScroll: true });
+  };
 
   if (isLoading) {
     return <Loading fullScreen />;
@@ -60,7 +66,8 @@ export default function SettingsPage() {
             <>
               <SettingsEmailSection
                 email={formData.email}
-                noEmail={noEmail}
+                hasEmail={Boolean(user.email)}
+                inputRef={emailInputRef}
                 isSubmitting={isSubmittingEmail}
                 onChange={handleInputChange}
                 onSubmit={handleEmailUpdate}
@@ -80,14 +87,14 @@ export default function SettingsPage() {
             </>
           )}
           <SettingsSecuritySection
+            // Adding an email changes the ways in: count them again.
+            key={user.email || 'no-email'}
             mfaStatusKey={mfaStatusKey}
             onEnableMFA={() => setShowMFASetup(true)}
             onMFADisableComplete={refreshMFAStatus}
+            accountIsAnonymous={user.is_anonymous === true}
+            onAddEmail={isUnreachableEmail(user.email) ? undefined : focusEmail}
           />
-        </SettingsFrame>
-
-        <SettingsFrame title="Devices">
-          <SettingsDevicesSection />
         </SettingsFrame>
 
         <SettingsFrame title="Identities">
