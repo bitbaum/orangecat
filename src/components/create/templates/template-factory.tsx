@@ -11,6 +11,7 @@
 
 'use client';
 
+import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { TemplatePicker, type GenericTemplate } from './TemplatePicker';
 import {
   PRODUCT_TEMPLATES,
@@ -64,7 +65,7 @@ export const CauseTemplates = createTemplateComponent(CAUSE_TEMPLATES, 'Causes')
 export const LoanTemplates = createTemplateComponent(LOAN_TEMPLATES, 'Loans');
 export const AIAssistantTemplates = createTemplateComponent(
   AI_ASSISTANT_TEMPLATES,
-  'AI Assistants'
+  ENTITY_REGISTRY.ai_assistant.namePlural
 );
 export const ProjectTemplates = createTemplateComponent(PROJECT_TEMPLATES, 'Projects');
 export const AssetTemplates = createTemplateComponent(ASSET_TEMPLATES, 'Assets');

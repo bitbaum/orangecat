@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { generateEntityMetadata } from '@/lib/seo/metadata';
 import PublicEntityDetailPage, {
   fetchEntityForMetadata,
@@ -13,7 +14,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { id } = await params;
   const entity = await fetchEntityForMetadata('ai_assistant', id, 'title, description, avatar_url');
   if (!entity) {
-    return { title: 'AI Assistant Not Found' };
+    return { title: `${ENTITY_REGISTRY.ai_assistant.name} Not Found` };
   }
   return generateEntityMetadata({
     type: 'ai_assistant',

@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { CompanionActions } from '@/components/companions/CompanionActions';
 import { AssistantPriceChip } from '@/components/ai-assistants/AssistantPriceChip';
 import type { EntityDetailConfig } from '@/components/public/PublicEntityDetailPage';
+import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { ROUTES } from '@/config/routes';
 import { PUBLIC_VISIBILITY } from '@/config/public-visibility';
 
@@ -55,7 +56,7 @@ export const aiAssistantDetailConfig: EntityDetailConfig = {
     entity.avatar_url ? (
       <Image
         src={entity.avatar_url as string}
-        alt={(entity.title as string) || 'Companion'}
+        alt={(entity.title as string) || ENTITY_REGISTRY.ai_assistant.name}
         width={64}
         height={64}
         className="w-16 h-16 rounded-lg object-cover flex-shrink-0"

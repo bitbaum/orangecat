@@ -25,12 +25,12 @@ import { ENTITY_REGISTRY } from '@/config/entity-registry';
 const fieldGroups: FieldGroup[] = [
   {
     id: 'label',
-    title: 'Group Type',
+    title: `${ENTITY_REGISTRY.group.name} Type`,
     description: "Labels influence defaults but don't restrict capabilities",
     fields: [
       {
         name: 'label',
-        label: 'Group Label',
+        label: `${ENTITY_REGISTRY.group.name} Label`,
         type: 'select',
         required: true,
         options: getGroupLabelsArray().map(label => ({
@@ -48,7 +48,7 @@ const fieldGroups: FieldGroup[] = [
     fields: [
       {
         name: 'name',
-        label: 'Group Name',
+        label: `${ENTITY_REGISTRY.group.name} Name`,
         type: 'text',
         placeholder: 'e.g., Bitcoin Investment Club, Ossetia Network State',
         required: true,
@@ -167,7 +167,7 @@ export const groupConfig = createEntityConfig<CreateGroupSchemaType>({
   successUrl: `${ENTITY_REGISTRY['group'].publicBasePath}/[slug]`,
   pageTitle: `Create ${ENTITY_REGISTRY['group'].name}`,
   pageDescription: ENTITY_REGISTRY['group'].plain.what,
-  formTitle: 'Create New Group',
+  formTitle: `${ENTITY_REGISTRY.group.name} Details`,
   formDescription:
     "Choose a label and configure your group. Labels influence defaults but don't restrict capabilities.",
   fieldGroups,

@@ -1,7 +1,7 @@
 /**
- * COMPANION ENTITY CONFIGURATION (entity type `ai_assistant`)
+ * BOT ENTITY CONFIGURATION (entity type `ai_assistant`)
  *
- * A companion is a being with its own voice and a memory of whoever talks to
+ * A bot has its own voice and a memory of whoever talks to
  * it. The form is character-first: who they are, how they speak, then who
  * may talk to them. Money comes last and only matters once they are public.
  *
@@ -113,7 +113,7 @@ const fieldGroups: FieldGroup[] = [
   {
     id: 'visibility',
     title: 'Who can talk to them',
-    description: 'A companion starts private. Publishing is a choice, not a default.',
+    description: 'A bot starts private. Publishing is a choice, not a default.',
     fields: [
       {
         name: 'is_public',
@@ -208,15 +208,13 @@ const defaultValues: AIAssistantFormData = {
 
 export const aiAssistantConfig = createEntityConfig<AIAssistantFormData>({
   entityType: 'ai_assistant',
-  name: 'Companion',
-  namePlural: 'Companions',
   icon: Bot,
   colorTheme: 'tiffany',
   backUrl: ENTITY_REGISTRY['ai_assistant'].basePath,
   successUrl: `${ENTITY_REGISTRY['ai_assistant'].basePath}/[id]`,
-  pageTitle: 'Create a companion',
-  pageDescription: 'A being with its own voice that remembers whoever talks to it.',
-  formTitle: 'Your companion',
+  pageTitle: ENTITY_REGISTRY.ai_assistant.createActionLabel,
+  pageDescription: `A ${ENTITY_REGISTRY.ai_assistant.name.toLowerCase()} with its own voice that remembers whoever talks to it.`,
+  formTitle: `Your ${ENTITY_REGISTRY.ai_assistant.name.toLowerCase()}`,
   formDescription:
     'Write who they are. The definition is the whole of them: it is what a clone copies, and what an embodied version would run.',
   fieldGroups,
@@ -228,7 +226,7 @@ export const aiAssistantConfig = createEntityConfig<AIAssistantFormData>({
   infoBanner: {
     title: 'Yours first, then anyone’s',
     content:
-      'A companion starts private: only you can talk to it, and it remembers you. Publish it and anyone can talk to it, paying you per message if you set a price. Clones copy the definition, never the memories.',
+      'A bot starts private: only you can talk to it, and it remembers you. Publish it and anyone can talk to it, paying you per message if you set a price. Clones copy the definition, never the memories.',
     variant: 'info',
   },
 });

@@ -89,8 +89,8 @@ export const aiAssistantEntityConfig: EntityConfig<AIAssistant> = {
   },
 
   emptyState: {
-    title: 'No companions yet',
-    description: 'Create your first companion: a being with its own voice that remembers you.',
+    title: `No ${ENTITY_REGISTRY['ai_assistant'].namePlural.toLowerCase()} yet`,
+    description: `Create your first ${ENTITY_REGISTRY['ai_assistant'].name.toLowerCase()}: its own voice, and it remembers you.`,
   },
 
   gridCols: {

@@ -46,7 +46,7 @@ export const GET = withAuth(async (request: AuthenticatedRequest) => {
     return apiSuccess(await loadTalkHome(request.supabase, request.user.id));
   } catch (error) {
     logger.error('talk home failed', error, 'TalkHomeAPI');
-    return apiInternalError('Failed to load your companions');
+    return apiInternalError('Failed to load your bots');
   }
 });
 
@@ -81,11 +81,11 @@ export const POST = withAuth(async (request: AuthenticatedRequest) => {
     const result = await createAssistant(supabase, user.id, input.data);
     if (!result.ok) {
       logger.error('quick create failed', result.dbError, 'TalkHomeAPI');
-      return apiInternalError('Failed to create the companion');
+      return apiInternalError('Failed to create the bot');
     }
     return apiCreated(result.data);
   } catch (error) {
     logger.error('quick create crashed', error, 'TalkHomeAPI');
-    return apiInternalError('Failed to create the companion');
+    return apiInternalError('Failed to create the bot');
   }
 });

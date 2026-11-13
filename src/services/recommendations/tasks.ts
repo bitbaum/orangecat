@@ -387,8 +387,11 @@ export const SMART_QUESTIONS: SmartQuestion[] = [
   },
   {
     id: 'try-ai-q',
-    question: 'Have you tried creating an AI assistant to monetize?',
-    action: { label: 'Create AI assistant', href: ENTITY_REGISTRY.ai_assistant.createPath },
+    question: 'Have you tried creating a bot to monetize?',
+    action: {
+      label: ENTITY_REGISTRY.ai_assistant.createActionLabel,
+      href: ENTITY_REGISTRY.ai_assistant.createPath,
+    },
     condition: ctx =>
       ctx.profileCompletion === 100 &&
       ctx.hasPublishedEntities &&

@@ -205,7 +205,9 @@ export function GroupsDashboard() {
       <div className="hidden md:grid md:grid-cols-3 gap-4 pt-6 border-t mt-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Groups</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total {ENTITY_REGISTRY.group.namePlural}
+            </CardTitle>
             <Users className="h-4 w-4 text-fg-secondary" />
           </CardHeader>
           <CardContent>
@@ -218,7 +220,9 @@ export function GroupsDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Group Types</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {ENTITY_REGISTRY.group.name} Types
+            </CardTitle>
             <Target className="h-4 w-4 text-fg-secondary" />
           </CardHeader>
           <CardContent>
@@ -239,7 +243,9 @@ export function GroupsDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{availableGroups.length}</div>
-            <p className="text-xs text-fg-secondary">Groups to discover</p>
+            <p className="text-xs text-fg-secondary">
+              {ENTITY_REGISTRY.group.namePlural} to discover
+            </p>
           </CardContent>
         </Card>
       </div>

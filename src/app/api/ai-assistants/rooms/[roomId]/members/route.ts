@@ -47,7 +47,7 @@ export const POST = withAuth(async (request: AuthenticatedRequest, context: Rout
       return apiNotFound('Group chat not found');
     }
     if (room.members.length >= MAX_ROOM_MEMBERS) {
-      return apiBadRequest(`A group chat holds at most ${MAX_ROOM_MEMBERS} companions`);
+      return apiBadRequest(`A group chat holds at most ${MAX_ROOM_MEMBERS} bots`);
     }
     const member = parsed.data;
     const already = room.members.some(m =>
@@ -56,7 +56,7 @@ export const POST = withAuth(async (request: AuthenticatedRequest, context: Rout
         : m.fleetSlug === member.fleetSlug
     );
     if (already) {
-      return apiBadRequest('A companion can sit in a group chat once');
+      return apiBadRequest('A bot can sit in a group chat once');
     }
     if ('assistantId' in member) {
       const { data } = await supabase
@@ -65,12 +65,12 @@ export const POST = withAuth(async (request: AuthenticatedRequest, context: Rout
         .eq('id', member.assistantId)
         .maybeSingle();
       if (!data) {
-        return apiBadRequest('This companion is not available to you');
+        return apiBadRequest('This bot is not available to you');
       }
     }
     return apiSuccess({ members: await addRoomMember(supabase, roomId, member) });
   } catch (error) {
     logger.error('room member add failed', error, 'CompanionRoomsAPI');
-    return apiInternalError('Failed to add the companion');
+    return apiInternalError('Failed to add the bot');
   }
 });

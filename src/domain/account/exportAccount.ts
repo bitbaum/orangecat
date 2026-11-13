@@ -87,7 +87,7 @@ async function ownPages(
 
 export const EXPORT_SCOPE = [
   'profile',
-  'pages: every page you own, by kind (projects, products, services, causes, events, assets, loans, investments, research, wishlists, documents, AI assistants, circles, groups you founded, wallets)',
+  'pages: every page you own, by kind (projects, products, services, causes, events, assets, loans, investments, research, wishlists, documents, bots, circles, groups you founded, wallets)',
   'posts: timeline posts you wrote',
   'follows: who you follow and who follows you',
   'group_memberships',

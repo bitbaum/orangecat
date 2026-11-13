@@ -104,7 +104,7 @@ export function findHue(id: string | null | undefined): AvatarHue | null {
 /** The face as SVG markup: the shape, and two eyes that always sit in the same place. */
 export function faceSvg(shape: AvatarShape, hue: AvatarHue, size = 96): string {
   return [
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="${size}" height="${size}" role="img" aria-label="Companion">`,
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="${size}" height="${size}" role="img" aria-label="Bot">`,
     `<path d="${shape.d}" fill="${hue.fill}"/>`,
     `<g fill="#FFFFFF" fill-opacity="0.96">`,
     `<rect x="38" y="38" width="8" height="18" rx="4" transform="rotate(-10 42 47)"/>`,

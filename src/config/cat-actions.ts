@@ -671,9 +671,8 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
 
   create_ai_assistant: {
     id: 'create_ai_assistant',
-    name: 'Create AI Assistant',
-    description:
-      'Build an autonomous AI service that earns Bitcoin — define its personality, capabilities, and pricing',
+    name: 'Create Bot',
+    description: 'Build a bot — define its personality, capabilities, and pricing',
     category: 'entities',
     icon: Bot,
     riskLevel: 'medium',
@@ -716,7 +715,7 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
       },
     ],
     examples: [
-      'Create a Bitcoin tax advisor AI assistant',
+      'Create a Bitcoin tax advisor bot',
       'Build a code reviewer that charges per message',
       'Launch a free educational assistant about Lightning Network',
     ],
