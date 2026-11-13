@@ -11,18 +11,21 @@ interface BlogPostCardProps {
 
 export function BlogPostCard({ post }: BlogPostCardProps) {
   return (
-    <Card className="p-6 oc-card-link">
+    // The whole card is the target: the title link's ::after covers it, so a
+    // tap on the excerpt or tags opens the post and the link's name stays the
+    // title alone.
+    <Card className="relative p-6 oc-card-link">
       <div className="flex items-center text-sm text-fg-secondary mb-4">
         <Calendar className="w-4 h-4 mr-2" />
         {post.date}
         <Clock className="w-4 h-4 ml-4 mr-2" />
         {post.readTime}
       </div>
-      <Link href={`/blog/${post.slug}`}>
-        <h2 className="text-xl font-semibold mb-2 hover:text-fg-primary transition-colors cursor-pointer">
+      <h2 className="text-xl font-semibold mb-2">
+        <Link href={`/blog/${post.slug}`} className="after:absolute after:inset-0">
           {post.title}
-        </h2>
-      </Link>
+        </Link>
+      </h2>
       <p className="text-base text-fg-secondary mb-4">{post.excerpt}</p>
       <div className="flex flex-wrap gap-2">
         {post.tags.map(tag => (

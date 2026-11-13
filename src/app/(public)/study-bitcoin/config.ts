@@ -11,21 +11,24 @@ import {
 
 type IconComponent = LucideIcon;
 
-export interface LearningPath {
+interface LearningPathBase {
   id: string;
   title: string;
   description: string;
   level: 'Beginner' | 'Intermediate' | 'Advanced';
-  /** Only set for available courses — unbuilt content has no honest duration. */
-  duration?: string;
   icon: IconComponent;
   color: string;
   bgColor: string;
-  /** Only set for available courses — unbuilt content has no honest lesson count. */
-  lessons?: number;
-  href: string;
-  status: 'available' | 'coming-soon';
 }
+
+/**
+ * A path either exists and has somewhere to go, or is coming soon and has
+ * nowhere — so it cannot carry a link. No path states a duration or a lesson
+ * count: the one that exists is a single guide page, not a course.
+ */
+export type LearningPath =
+  | (LearningPathBase & { status: 'available'; href: string })
+  | (LearningPathBase & { status: 'coming-soon' });
 
 export interface Resource {
   id: string;
@@ -50,11 +53,9 @@ export const LEARNING_PATHS: LearningPath[] = [
     title: 'Bitcoin Wallets',
     description: 'Learn how to securely store and manage your Bitcoin',
     level: 'Beginner',
-    duration: '1-2 hours',
     icon: Wallet,
     color: 'text-bitcoinOrange',
     bgColor: 'bg-bitcoinOrange/5',
-    lessons: 5,
     href: '/bitcoin-wallet-guide',
     status: 'available',
   },
@@ -66,7 +67,6 @@ export const LEARNING_PATHS: LearningPath[] = [
     icon: BookOpen,
     color: 'text-fg-primary',
     bgColor: 'bg-surface-raised/40',
-    href: '/study-bitcoin/basics',
     status: 'coming-soon',
   },
   {
@@ -77,7 +77,6 @@ export const LEARNING_PATHS: LearningPath[] = [
     icon: Shield,
     color: 'text-green-600',
     bgColor: 'bg-green-50',
-    href: '/study-bitcoin/security',
     status: 'coming-soon',
   },
   {
@@ -88,7 +87,6 @@ export const LEARNING_PATHS: LearningPath[] = [
     icon: Zap,
     color: 'text-yellow-600',
     bgColor: 'bg-yellow-50',
-    href: '/study-bitcoin/lightning',
     status: 'coming-soon',
   },
 ];

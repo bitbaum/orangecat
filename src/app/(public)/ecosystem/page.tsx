@@ -205,7 +205,7 @@ export default async function EcosystemPage() {
               <a
                 href={`${solonBase}/proposals`}
                 rel="noopener"
-                className="font-medium text-fg-primary underline underline-offset-4"
+                className="inline-flex min-h-11 items-center font-medium text-fg-primary underline underline-offset-4"
               >
                 Solon decisions
               </a>
@@ -218,7 +218,7 @@ export default async function EcosystemPage() {
               <a
                 href={`${solonBase}/ecosystem`}
                 rel="noopener"
-                className="font-medium text-fg-primary underline underline-offset-4"
+                className="inline-flex min-h-11 items-center font-medium text-fg-primary underline underline-offset-4"
               >
                 Live governed state
               </a>
