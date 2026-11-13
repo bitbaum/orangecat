@@ -50,6 +50,13 @@ export type CatPlanId = 'free' | 'supporter' | 'byok' | 'credits';
  */
 export const CAT_CREDITS_LIVE = FEATURES.catCreditsLive;
 
+/**
+ * Can a person buy Cat Credits right now: the wallet is live AND the platform
+ * may take payments. Anything that says "add credits" asks this first; the chat
+ * once offered credits while the checkout was switched off.
+ */
+export const CAT_CREDITS_ON_SALE = CAT_CREDITS_LIVE && PAID_PLANS_OPEN;
+
 /** Platform margin label — derived from CREDIT_USAGE_MARKUP so marketing never drifts. */
 export const CAT_CREDITS_MARKUP_LABEL = `provider cost + ${Math.round((CREDIT_USAGE_MARKUP - 1) * 100)}%`;
 
@@ -237,12 +244,11 @@ export const CAT_PLANS: CatPlan[] = [
     // The PRICE stays visible and real whether or not the till is open — a
     // plan you cannot evaluate is worse than one you cannot yet buy. Only the
     // CTA changes, and it changes to the truth.
-    cta:
-      CAT_CREDITS_LIVE && PAID_PLANS_OPEN
-        ? { label: 'Top up credits', href: SETTINGS_AI_ANCHORS.credits, variant: 'accent' }
-        : { label: 'How Cat runs', href: ROUTES.HOW_CAT_RUNS, variant: 'outline' },
-    status: CAT_CREDITS_LIVE && PAID_PLANS_OPEN ? 'available' : 'coming-soon',
-    badge: CAT_CREDITS_LIVE && PAID_PLANS_OPEN ? 'Live' : COMMERCE_CLOSED.badge,
+    cta: CAT_CREDITS_ON_SALE
+      ? { label: 'Top up credits', href: SETTINGS_AI_ANCHORS.credits, variant: 'accent' }
+      : { label: 'How Cat runs', href: ROUTES.HOW_CAT_RUNS, variant: 'outline' },
+    status: CAT_CREDITS_ON_SALE ? 'available' : 'coming-soon',
+    badge: CAT_CREDITS_ON_SALE ? 'Live' : COMMERCE_CLOSED.badge,
   },
 ];
 

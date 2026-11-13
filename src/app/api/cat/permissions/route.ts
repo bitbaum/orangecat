@@ -59,7 +59,7 @@ export const GET = withAuth(async (request: AuthenticatedRequest) => {
         return {
           id: a.id,
           name: a.name,
-          description: a.description,
+          description: a.summary ?? a.description,
           category: a.category,
           riskLevel: a.riskLevel,
           requiresConfirmation: a.requiresConfirmation,
