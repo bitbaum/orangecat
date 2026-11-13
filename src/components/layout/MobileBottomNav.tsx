@@ -158,7 +158,7 @@ const MobileBottomNav = React.memo(function MobileBottomNav() {
                   'transition-all duration-200',
                   'touch-manipulation select-none',
                   '-webkit-tap-highlight-color-transparent',
-                  'active:scale-95 active:bg-surface-raised dark:active:bg-surface-raised',
+                  'active:scale-95 active:bg-surface-overlay',
                   isActive && 'text-fg-primary',
                   !isActive && 'text-fg-secondary',
                   item.primary && 'relative',

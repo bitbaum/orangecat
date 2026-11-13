@@ -76,7 +76,7 @@ export function SidebarNavigation({
                     // Only reference the panel while it exists — aria-controls
                     // pointing at an unrendered id is an invalid-value violation.
                     aria-controls={isCollapsed ? undefined : sectionItemsId}
-                    className="flex w-full min-h-11 items-center justify-between gap-2 rounded-md px-3 mb-1 text-left transition-colors hover:bg-surface-raised active:bg-surface-raised touch-manipulation"
+                    className="flex w-full min-h-11 items-center justify-between gap-2 rounded-md px-3 mb-1 text-left transition-colors hover:bg-surface-overlay active:bg-surface-raised touch-manipulation"
                     aria-label={`${navigationLabels.SECTION_TOGGLE} ${section.title}`}
                   >
                     <h3 className="text-xs font-semibold uppercase text-fg-secondary">

@@ -73,7 +73,7 @@ export function SearchTrigger({ compact = false, className }: SearchTriggerProps
           aria-label="Open search"
           className={cn(
             'flex h-9 w-full items-center justify-between gap-2 rounded-md border border-subtle bg-surface-raised/40 px-3 text-sm text-fg-secondary',
-            'transition-colors hover:bg-surface-raised/60 hover:text-fg-primary',
+            'transition-colors hover:bg-surface-overlay hover:text-fg-primary',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40',
             className
           )}

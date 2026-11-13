@@ -42,18 +42,26 @@ export const COMPONENT_STYLES = {
       'disabled:pointer-events-none disabled:opacity-50',
       'touch-manipulation select-none',
     ].join(' '),
+    // Hover, open and pressed states paint surface-overlay, not surface-raised:
+    // in light theme raised is 96% on a 97% page, a state nobody can see.
+    // Every variant has a pressed (active:) state.
     variants: {
-      primary: 'bg-fg-primary text-fg-inverted hover:bg-muted-strong',
-      secondary: 'bg-surface-raised text-fg-primary hover:bg-surface-raised',
-      ghost: 'text-fg-primary hover:bg-surface-raised hover:text-fg-primary',
-      danger: 'bg-status-negative text-fg-inverted hover:bg-status-negative/90',
-      outline: 'border border-strong bg-transparent text-fg-primary hover:bg-surface-raised',
-      gradient: 'bg-fg-primary text-fg-inverted hover:bg-muted-strong',
+      primary: 'bg-fg-primary text-fg-inverted hover:bg-muted-strong active:bg-muted-strong',
+      secondary:
+        'bg-surface-raised text-fg-primary hover:bg-surface-overlay active:bg-surface-overlay',
+      ghost:
+        'text-fg-primary hover:bg-surface-overlay hover:text-fg-primary active:bg-surface-overlay',
+      danger:
+        'bg-status-negative text-fg-inverted hover:bg-status-negative/90 active:bg-status-negative/80',
+      outline:
+        'border border-strong bg-transparent text-fg-primary hover:bg-surface-overlay active:bg-surface-overlay',
+      gradient: 'bg-fg-primary text-fg-inverted hover:bg-muted-strong active:bg-muted-strong',
       // Migration commit 3/N: warm-accent CTA per Loki — the single
       // chromatic color reserved for top-of-funnel conversion ("Start
       // Creating", "Get Started", "Sign Up"). Everything else stays
       // monochromatic.
-      accent: 'bg-accent-warm text-on-accent hover:bg-accent-warm-hover',
+      accent:
+        'bg-accent-warm text-on-accent hover:bg-accent-warm-hover active:bg-accent-warm-hover',
     },
     sizes: {
       // Touch screens get the 44px minimum; desktop keeps its density.
@@ -72,9 +80,11 @@ export const COMPONENT_STYLES = {
       'touch-manipulation select-none',
     ].join(' '),
     variants: {
-      ghost: 'text-fg-primary hover:bg-surface-raised hover:text-fg-primary',
-      outline: 'border border-default bg-surface-base text-fg-primary hover:bg-surface-raised',
-      inverse: 'bg-fg-primary text-fg-inverted hover:bg-muted-strong',
+      ghost:
+        'text-fg-primary hover:bg-surface-overlay hover:text-fg-primary active:bg-surface-overlay',
+      outline:
+        'border border-default bg-surface-base text-fg-primary hover:bg-surface-overlay active:bg-surface-overlay',
+      inverse: 'bg-fg-primary text-fg-inverted hover:bg-muted-strong active:bg-muted-strong',
     },
   },
   card: {

@@ -110,7 +110,7 @@ const Footer = React.memo(function Footer({ clearsMobileNav = false }: FooterPro
       {/* Back to top button */}
       <button
         onClick={scrollToTop}
-        className="absolute -top-5.5 right-4 sm:right-8 h-11 w-11 bg-surface-base text-fg-primary rounded-md border border-default hover:bg-surface-raised transition-colors focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background flex items-center justify-center group z-10"
+        className="absolute -top-5.5 right-4 sm:right-8 h-11 w-11 bg-surface-base text-fg-primary rounded-md border border-default hover:bg-surface-overlay transition-colors focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background flex items-center justify-center group z-10"
         aria-label="Back to top"
         type="button"
       >
@@ -137,7 +137,7 @@ const Footer = React.memo(function Footer({ clearsMobileNav = false }: FooterPro
                 <a
                   key={item.name}
                   href={item.href}
-                  className="group h-11 w-11 bg-surface-base border border-default rounded-md flex items-center justify-center text-fg-secondary hover:text-fg-primary hover:bg-surface-raised transition-colors focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
+                  className="group h-11 w-11 bg-surface-base border border-default rounded-md flex items-center justify-center text-fg-secondary hover:text-fg-primary hover:bg-surface-overlay transition-colors focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={`Follow us on ${item.name}`}
