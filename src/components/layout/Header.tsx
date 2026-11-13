@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useHeaderScroll } from '@/hooks/useHeaderScroll';
 import { useMobileMenu } from '@/hooks/useMobileMenu';
 import { useIsAuthRoute } from '@/hooks/useRouteContext';
+import { useIsDesktop } from '@/hooks/useMediaQuery';
 import { useMobileMenuAnimation } from '@/hooks/useMobileMenuAnimation';
 import { authNavigationItems, getHeaderNavigationItems } from '@/config/navigation';
 import { getAuthStatus } from '@/lib/auth/utils';
@@ -53,7 +54,11 @@ export function Header({
 
   const authState = useAuth();
   const authStatus = getAuthStatus(authState);
-  const { isScrolled, isHidden } = useHeaderScroll();
+  // The header hides on scroll-down only where screen height is scarce. From
+  // lg up the sidebar is pinned under it (`.app-sidebar` top), so a hidden
+  // header left a 64px empty band above the sidebar.
+  const isDesktop = useIsDesktop();
+  const { isScrolled, isHidden } = useHeaderScroll({ hideOnScrollDown: !isDesktop });
 
   // Announce the header's visibility on <html> so anything pinned below it
   // (`.sticky-below-header` in globals.css) can move up when it hides —
