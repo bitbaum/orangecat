@@ -247,7 +247,7 @@ export function getHeaderNavigationItems(): NavigationItem[] {
  * - Less cognitive load, faster navigation
  *
  * Structure:
- * 1. Main (Home, Timeline, Messages, Explore) - flat, no nesting
+ * 1. Main (Cat, Home, Discover, My things, Money, Messages, the map) - flat
  * 2. Create (single section for all creation - collapsed by default)
  * 3. More (Settings, Profile, Help) - collapsed by default
  */
@@ -434,6 +434,20 @@ const simplifiedSections: NavSection[] = [
         requiresAuth: true,
       },
       {
+        // The shelf where makers are found. It used to sit under "More", next
+        // to About: two clicks away, and with its group collapsed nothing in
+        // the sidebar lit up on /discover. Top level, so it is one tap and
+        // always shows where you are. The phone tab bar is full (five slots,
+        // and Create is the only way to create below the header's sm
+        // breakpoint), so on a phone Discover is the drawer's top level.
+        // Named after its page, with the compass the visitor tab bar uses.
+        name: PUBLIC_PAGES[ROUTES.DISCOVER].name,
+        href: ROUTES.DISCOVER,
+        icon: Compass,
+        description: 'Find people and projects',
+        requiresAuth: false,
+      },
+      {
         // Everything the person made or joined, one list. Replaces the four
         // collapsed entity sections that used to sit under Home.
         name: 'My things',
@@ -498,14 +512,6 @@ const simplifiedSections: NavSection[] = [
         requiresAuth: true,
       },
       {
-        // Named after its page, with the compass the anonymous tab bar uses.
-        name: 'Discover',
-        href: ROUTES.DISCOVER,
-        icon: Compass,
-        description: 'Find people and projects',
-        requiresAuth: false,
-      },
-      {
         name: 'About',
         href: ROUTES.ABOUT,
         icon: Info,
@@ -564,7 +570,8 @@ export const mobileTabBar: MobileTabItem[] = [
  */
 export const mobileTabBarAnonymous: MobileTabItem[] = [
   { name: 'Home', href: ROUTES.HOME, icon: Home },
-  { name: 'Explore', href: ROUTES.DISCOVER, icon: Compass },
+  // Same word as the page it opens and the signed-in sidebar: one place, one name.
+  { name: PUBLIC_PAGES[ROUTES.DISCOVER].name, href: ROUTES.DISCOVER, icon: Compass },
   { name: PUBLIC_PAGES[ROUTES.HOW_IT_WORKS].name, href: ROUTES.HOW_IT_WORKS, icon: Info },
   { name: 'Sign in', href: ROUTES.AUTH, icon: UserIcon },
 ];

@@ -428,8 +428,8 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
     type: 'ai_assistant',
     plain: {
       intent: 'earn',
-      verb: 'Create a companion',
-      what: 'An AI being with its own memory and its own purse, made by you — shared or sold if you choose.',
+      verb: 'Create a bot',
+      what: 'An AI with its own memory and its own purse, made by you — shared or sold if you choose.',
       example: 'A language tutor that remembers every learner.',
       steps: [
         'Give it a soul and a job',
@@ -443,12 +443,14 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
       holds: true,
       why: "It earns and spends on its owner's behalf, so it needs its own purse and its own cap.",
     },
-    // The TYPE stays `ai_assistant` and so do the tables and the API path:
-    // only what a person reads was renamed. A companion is a being with its
-    // own soul and a memory of the person it talks to — created privately,
-    // published by choice, clonable without its memories.
-    name: 'Companion',
-    namePlural: 'Companions',
+    // The TYPE stays `ai_assistant` and so do the tables, the API path and the
+    // /companions URLs: only what a person reads is named here. "Bot" is the
+    // one word (ADR-0015, the sidebar, the Talk home); the Cat is a bot too.
+    // A bot has its own voice and a memory of the person it talks to —
+    // created privately, published by choice, clonable without its memories.
+    // Every visible label for this kind reads `name` / `namePlural`.
+    name: 'Bot',
+    namePlural: 'Bots',
     tableName: ENTITY_TABLE_NAMES.ai_assistant,
     userIdField: 'actor_id',
     icon: Bot,
@@ -459,8 +461,8 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
     apiEndpoint: '/api/ai-assistants',
     detailPath: key => `/dashboard/companions/${key}`,
     hasTemplates: true,
-    description: 'AI beings you create, talk to, share, and let others support',
-    createActionLabel: 'Create a companion',
+    description: 'Bots you create, talk to and share, and that others can support',
+    createActionLabel: 'Create a bot',
     category: 'business',
     createPriority: 5,
     // Nothing is bought from a companion: the chat is the product, and the
@@ -486,7 +488,7 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
     type: 'group',
     plain: {
       intent: 'together',
-      verb: 'Start an organisation',
+      verb: 'Start an organization',
       what: 'People acting together, with a shared treasury and a say in how it is spent.',
       example: 'A Verein, a co-op, a company, a neighbourhood fund.',
       steps: ['Name it and choose its kind', 'Invite people', 'Decide together — money and rules'],

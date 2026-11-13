@@ -34,7 +34,7 @@ export const CAT_ACTION_SUMMARIES: Record<string, string> = {
   create_research: 'Create a research project people can fund.',
   review_research: 'Post a public review of someone else’s research in your name.',
   create_wishlist: 'Create a wishlist others can fund.',
-  create_ai_assistant: 'Build an AI assistant that people can pay to use.',
+  create_ai_assistant: 'Build a bot that people can pay to use.',
   create_circle: 'Start a circle around something you care about.',
   build_site: 'Ask Loki to build and put online a website for you.',
   send_task_to_loki: 'Send one coding task to several of your Loki projects.',

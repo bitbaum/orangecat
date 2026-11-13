@@ -69,7 +69,9 @@ export default function GroupSettingsPage() {
   if (!group) {
     return (
       <div className="mx-auto max-w-md p-6 text-center">
-        <h1 className="text-xl font-semibold text-fg-primary">Group not found</h1>
+        <h1 className="text-xl font-semibold text-fg-primary">
+          {ENTITY_REGISTRY.group.name} not found
+        </h1>
         <Link href={groupsBase} className="mt-4 inline-block text-sm text-fg-primary underline">
           Back to groups
         </Link>
@@ -127,7 +129,7 @@ export default function GroupSettingsPage() {
         governance_preset: governance,
       });
       if (result.success) {
-        toast.success('Group settings saved');
+        toast.success(`${ENTITY_REGISTRY.group.name} settings saved`);
         router.push(backHref);
       } else {
         toast.error(apiErrorMessage(result, 'Failed to save settings'));
@@ -145,7 +147,7 @@ export default function GroupSettingsPage() {
       setDeleting(true);
       const result = await groupsService.deleteGroup(group.id);
       if (result.success) {
-        toast.success('Group deleted');
+        toast.success(`${ENTITY_REGISTRY.group.name} deleted`);
         router.push(groupsBase);
       } else {
         toast.error(apiErrorMessage(result, 'Failed to delete group'));
@@ -168,7 +170,9 @@ export default function GroupSettingsPage() {
           <ArrowLeft className="h-4 w-4" />
           {group.name}
         </Link>
-        <h1 className="mt-3 text-2xl font-semibold text-fg-primary">Group settings</h1>
+        <h1 className="mt-3 text-2xl font-semibold text-fg-primary">
+          {ENTITY_REGISTRY.group.name} settings
+        </h1>
       </div>
 
       <Card>

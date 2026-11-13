@@ -7,6 +7,7 @@ import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { createServerClient } from '@/lib/supabase/server';
 import { DATABASE_TABLES } from '@/config/database-tables';
+import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { ROUTES } from '@/config/routes';
 import { MemoryList } from '@/components/companions/MemoryList';
 
@@ -23,7 +24,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     .eq('id', id)
     .maybeSingle();
   const title = (data as { title?: string } | null)?.title;
-  return { title: title ? `What ${title} remembers` : 'Companion memory' };
+  return {
+    title: title ? `What ${title} remembers` : `${ENTITY_REGISTRY.ai_assistant.name} memory`,
+  };
 }
 
 export default async function CompanionMemoryPage({ params }: PageProps) {

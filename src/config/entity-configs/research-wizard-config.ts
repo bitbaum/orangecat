@@ -345,7 +345,7 @@ export const researchWizardConfig = createEntityConfig<ResearchWizardFormData>({
   colorTheme: 'tiffany',
   backUrl: ENTITY_REGISTRY['research'].basePath,
   successUrl: `${ENTITY_REGISTRY['research'].basePath}/[id]`,
-  pageTitle: 'Create Research',
+  pageTitle: `Create ${ENTITY_REGISTRY.research.name}`,
   pageDescription: 'Launch your independent research with decentralized funding',
   formTitle: 'Research Details',
   formDescription: 'Define your research question, methodology, and funding needs.',

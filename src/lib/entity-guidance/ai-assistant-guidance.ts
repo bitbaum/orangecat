@@ -9,6 +9,7 @@
  * Last Modified Summary: Initial AI assistant guidance content
  */
 
+import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import React from 'react';
 import { Bot, FileText, Cpu, Zap, DollarSign, MessageSquare } from 'lucide-react';
 import type { GuidanceContent, DefaultGuidance } from '@/components/create/types';
@@ -56,7 +57,7 @@ export const aiAssistantGuidanceContent: Record<
   description: {
     icon: React.createElement(FileText, { className: 'w-5 h-5 text-fg-primary' }),
     title: 'Description',
-    description: "Tell potential users what your AI assistant can do and who it's for.",
+    description: "Tell potential users what your bot can do and who it's for.",
     tips: [
       'Start with the main capability',
       'Mention the target audience',
@@ -148,7 +149,7 @@ export const aiAssistantGuidanceContent: Record<
   pricing_model: {
     icon: React.createElement(DollarSign, { className: 'w-5 h-5 text-fg-primary' }),
     title: 'Pricing Model',
-    description: 'Choose how users pay for your AI assistant.',
+    description: 'Choose how users pay for your bot.',
     tips: [
       'Free: Great for building audience',
       'Per Message: Simple, predictable for users',
@@ -231,9 +232,9 @@ export const aiAssistantGuidanceContent: Record<
 };
 
 export const aiAssistantDefaultGuidance: DefaultGuidance = {
-  title: 'What is a companion?',
+  title: `What is a ${ENTITY_REGISTRY.ai_assistant.name.toLowerCase()}?`,
   description:
-    'A companion is a bot with its own voice. You write who it is; then you can talk to it, publish it so anyone can, and share its page.',
+    'A bot is an AI with its own voice. You write who it is; then you can talk to it, publish it so anyone can, and share its page.',
   features: [
     {
       icon: React.createElement(Bot, { className: 'w-4 h-4 text-fg-primary' }),
@@ -245,7 +246,7 @@ export const aiAssistantDefaultGuidance: DefaultGuidance = {
     },
     {
       icon: React.createElement(Zap, { className: 'w-4 h-4 text-fg-primary' }),
-      text: 'A public companion can be supported in Bitcoin, straight into your wallet',
+      text: 'A public bot can be supported in Bitcoin, straight into your wallet',
     },
   ],
   hint: 'The definition is the whole of who they are: make it good.',

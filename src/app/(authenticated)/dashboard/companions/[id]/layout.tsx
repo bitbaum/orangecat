@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
 
+import { ENTITY_REGISTRY } from '@/config/entity-registry';
+
 export const metadata: Metadata = {
-  title: { default: 'Companion', template: '%s | OrangeCat' },
+  title: { default: ENTITY_REGISTRY.ai_assistant.name, template: '%s | OrangeCat' },
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
