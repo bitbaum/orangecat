@@ -45,8 +45,8 @@ importers:
         specifier: ^0.6.1
         version: 0.6.1(katex@0.18.11)(mermaid@11.17.2)(react@19.3.1)(shiki@4.4.3)
       '@bitbaum/chatkit':
-        specifier: ^0.31.1
-        version: 0.31.1(react@19.3.1)
+        specifier: ^0.31.2
+        version: 0.31.2(react@19.3.1)
       '@bitbaum/collective-kinds':
         specifier: workspace:*
         version: link:packages/collective-kinds
@@ -79,7 +79,7 @@ importers:
         version: 0.3.3(react@19.3.1)
       '@bitbaum/writingkit':
         specifier: ^0.2.0
-        version: 0.2.0(@bitbaum/chatkit@0.31.1(react@19.3.1))(react@19.3.1)
+        version: 0.2.0(@bitbaum/chatkit@0.31.2(react@19.3.1))(react@19.3.1)
       '@hono/node-server':
         specifier: ^2.1.1
         version: 2.1.1(hono@4.13.13)
@@ -612,8 +612,8 @@ packages:
       shiki:
         optional: true
 
-  '@bitbaum/chatkit@0.31.1':
-    resolution: {integrity: sha512-8evC/Nz69qJc27PjoiP8UJ/ZeXYqlcgUV5qqje/F9YGEEs4JS6LRP4aZkgqsDpb+L5hQr0DXa0jICecvsepCFA==}
+  '@bitbaum/chatkit@0.31.2':
+    resolution: {integrity: sha512-2uJAg+6VM86aXADwqHkgdVAjr4/uv8FEt5L/xbYs18o4RRlRvrVMnQOOGLwdUsIAU62aMkqxQ7bcpNebw6wFsw==}
     engines: {node: '>=20'}
     hasBin: true
     peerDependencies:
@@ -7033,7 +7033,7 @@ snapshots:
       mermaid: 11.17.2
       shiki: 4.4.3
 
-  '@bitbaum/chatkit@0.31.1(react@19.3.1)':
+  '@bitbaum/chatkit@0.31.2(react@19.3.1)':
     dependencies:
       '@bitbaum/threadkit': 0.1.1
       pdfjs-dist: 6.4.299
@@ -7063,9 +7063,9 @@ snapshots:
     dependencies:
       react: 19.3.1
 
-  '@bitbaum/writingkit@0.2.0(@bitbaum/chatkit@0.31.1(react@19.3.1))(react@19.3.1)':
+  '@bitbaum/writingkit@0.2.0(@bitbaum/chatkit@0.31.2(react@19.3.1))(react@19.3.1)':
     optionalDependencies:
-      '@bitbaum/chatkit': 0.31.1(react@19.3.1)
+      '@bitbaum/chatkit': 0.31.2(react@19.3.1)
       react: 19.3.1
 
   '@braintree/sanitize-url@7.1.2': {}
