@@ -1,7 +1,6 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import Loading from '@/components/Loading';
 import {
   DashboardHeader,
   DashboardInviteCTA,
@@ -10,6 +9,7 @@ import {
   DashboardSection,
 } from '@/components/dashboard/sections';
 import { CatNudges } from '@/components/dashboard/CatNudges';
+import { DashboardSkeleton } from '@/components/dashboard/DashboardSkeleton';
 import { TheDoor } from '@/components/map/TheDoor';
 import { DOOR_EXAMPLES } from '@/config/cat-door';
 import { PendingActionsCard } from '@/components/ai-chat/PendingActionsCard';
@@ -35,7 +35,6 @@ export default function DashboardPage() {
   const {
     user,
     profile,
-    isLoading,
     hydrated,
     localLoading,
     timelineFeed,
@@ -59,16 +58,12 @@ export default function DashboardPage() {
   // already owned. Cat-first is still honoured where it belongs: sign-in goes
   // to CAT_WELCOME (auth/callback + auth/confirm) and "/" redirects to the Cat.
 
-  if (!hydrated || localLoading) {
-    return <Loading fullScreen message="Loading your account..." />;
-  }
-
-  if (!user && !isLoading) {
-    return <Loading fullScreen message="Redirecting to login..." />;
-  }
-
-  if (!user) {
-    return null;
+  // Until the account is known (and while a signed-out visitor is sent to
+  // sign-in) the page keeps drawing the route's own skeleton. A full-screen
+  // spinner here replaced loading.tsx with a different screen and then with
+  // the page: three loading states and the column jumping on a phone.
+  if (!hydrated || localLoading || !user) {
+    return <DashboardSkeleton />;
   }
 
   // Projects are the one kind this page loads; with none, the door (and its

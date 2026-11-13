@@ -18,6 +18,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useRecommendations } from '@/hooks/useRecommendations';
 import { SmartQuestionsPanel } from './SmartQuestionsPanel';
 import { TaskCard } from './TaskCard';
+import { SetupCardSkeleton } from './DashboardSkeleton';
+import { expectSetupCard, rememberSetupCard } from './setup-card-memory';
 import { ROUTES } from '@/config/routes';
 
 interface TasksSectionProps {
@@ -83,13 +85,24 @@ export default function TasksSection({
     refresh,
   } = useRecommendations({ limit: maxTasks + 2 });
 
+  // Quiet mode shows the card only for a celebration or setup still to do.
+  // Remember which, so the next load reserves its space only when it comes.
+  const showsQuietCard =
+    Boolean(celebration && !celebrationDismissed) ||
+    tasks.some(t => t.priority === 'critical' || t.priority === 'high');
+  useEffect(() => {
+    if (quietWhenDone && user?.id && !isLoading && !error) {
+      rememberSetupCard(user.id, showsQuietCard);
+    }
+  }, [quietWhenDone, user?.id, isLoading, error, showsQuietCard]);
+
   if (!user || !profile) {
     return null;
   }
 
   if (isLoading) {
     if (quietWhenDone) {
-      return null;
+      return expectSetupCard(user.id) ? <SetupCardSkeleton className={className} /> : null;
     }
     return (
       <Card className={className}>
