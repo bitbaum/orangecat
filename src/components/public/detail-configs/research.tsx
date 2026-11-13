@@ -19,7 +19,6 @@ const TIMELINE_LABELS = Object.fromEntries(TIMELINES.map(t => [t.value, t.label]
 export const researchDetailConfig: EntityDetailConfig = {
   entityType: 'research',
   ownerLabel: 'Lead Researcher',
-  descriptionTitle: 'About this Research',
   metadataSelect: 'title, description',
   getViewRoute: id => ROUTES.RESEARCH.VIEW(id),
   getSolonDraft: (entity, pageUrl) =>

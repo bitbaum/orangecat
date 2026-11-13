@@ -17,7 +17,7 @@ export function NoWalletYetNotice({
   return (
     <Card>
       <CardContent className="pt-6">
-        <p className="text-sm text-fg-secondary text-center">
+        <p className="mb-0 text-sm text-fg-secondary text-center">
           {payee} hasn&apos;t connected a wallet yet.
         </p>
         {children}
