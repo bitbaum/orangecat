@@ -16,10 +16,6 @@
  *   - "See all results" (⌘ Enter) and "Ask your Cat", which also answers when
  *     nothing public matches: a sentence is often a task the Cat can set up.
  *
- * Signed out, it offers only what a visitor can open: public pages lead, the
- * Create group is hidden, and "Search Discover" takes the place of the Cat —
- * every one of those used to end at the sign-in form.
- *
  * cmdk handles arrows, Enter and Esc; its own filter is OFF so one engine
  * decides what each group shows.
  */
@@ -31,6 +27,7 @@ import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Cat, Clock, Search } from 'lucide-react';
 import {
+  ROW_VALUE,
   buildCreateItems,
   buildPages,
   groupHits,
@@ -43,11 +40,12 @@ import {
 import { GROUP_HEADING, PaletteGroup, PaletteRow } from './PaletteRows';
 import { logSearch } from './search-log';
 import { forgetRecents, readRecents, rememberRecent, type RecentEntry } from './recent-searches';
+import { useLeadRow } from './useLeadRow';
 import { ROUTES } from '@/config/routes';
 import { API_ROUTES } from '@/config/api-routes';
 import { CAT_QUERY_PARAM } from '@/config/cat-door';
-import { useAuth } from '@/hooks/useAuth';
 import { useGlobalSearch } from '@/hooks/useGlobalSearch';
+import { useAuthStore } from '@/stores/auth';
 import { cn } from '@/lib/utils';
 import type { Thing } from '@/domain/things/service';
 
@@ -61,8 +59,7 @@ export interface CommandPaletteProps {
 
 export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   const router = useRouter();
-  const { user } = useAuth();
-  const signedIn = Boolean(user);
+  const signedIn = useAuthStore(state => Boolean(state.user));
   const [query, setQuery] = useState('');
   const [recents, setRecents] = useState<RecentEntry[]>([]);
   const typed = query.trim();
@@ -117,12 +114,12 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     navigateTo(href, { kind: 'search', label: typed, href });
   }, [typed, total, navigateTo]);
 
-  const pages = useMemo(() => buildPages({ signedIn }), [signedIn]);
+  const pages = useMemo(() => buildPages(signedIn), [signedIn]);
   const creates = useMemo(() => buildCreateItems(), []);
   const mine = useMemo(() => thingItems(things ?? []), [things]);
   const shownThings = typed ? rankItems(mine, typed, GROUP_LIMIT.things) : [];
   const shownPages = rankItems(pages, typed, GROUP_LIMIT.pages);
-  const shownCreates = signedIn ? rankItems(creates, typed, GROUP_LIMIT.create) : [];
+  const shownCreates = rankItems(creates, typed, GROUP_LIMIT.create);
   const groups = searching ? groupHits(hits) : [];
   const pagesLead = Boolean(typed) && pagesFirst(shownPages, hits);
   // Said only when nothing at all matched: a page or your own thing found by
@@ -132,6 +129,19 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     !loading &&
     hits.length === 0 &&
     shownThings.length + shownPages.length + shownCreates.length === 0;
+
+  // Each group's first row, in render order; the Cat row waits for results.
+  const catWaits = searching && loading;
+  const [active, setActive] = useLeadRow([
+    !typed && recents[0] && `recent-${recents[0].href}`,
+    shownThings[0]?.id,
+    pagesLead && shownPages[0]?.id,
+    groups[0] && ROW_VALUE.hit(groups[0].hits[0]),
+    shownPages[0]?.id,
+    typed && hits.length > 0 && ROW_VALUE.seeAll,
+    typed && !catWaits && ROW_VALUE.askCat,
+    shownCreates[0]?.id,
+  ]);
 
   if (!open) {
     return null;
@@ -143,6 +153,8 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
       onOpenChange={onOpenChange}
       label="Search"
       shouldFilter={false}
+      value={active}
+      onValueChange={setActive}
       className={cn(
         'fixed inset-0 z-[100] flex flex-col overflow-hidden bg-surface-page',
         'sm:inset-auto sm:left-1/2 sm:top-[12vh] sm:w-[min(640px,calc(100vw-2rem))] sm:-translate-x-1/2',
@@ -221,7 +233,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
             {group.hits.map(hit => (
               <PaletteRow
                 key={`${hit.type}-${hit.id}`}
-                value={`hit-${hit.type}-${hit.id}`}
+                value={ROW_VALUE.hit(hit)}
                 icon={iconForType(hit.type)}
                 label={hit.title}
                 hint={hit.handle ? `@${hit.handle}` : hit.snippet}
@@ -250,44 +262,33 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
 
         {nothingPublic && (
           <p className="px-3 py-3 text-sm text-fg-secondary">
-            No page or listing matches “{typed}”.
+            Nothing public matches “{typed}” yet. Your Cat can look further, or set it up.
           </p>
         )}
 
         {typed && (
           <Command.Group heading="More" className={GROUP_HEADING}>
-            {hits.length > 0 ? (
+            {hits.length > 0 && (
               <PaletteRow
                 icon={Search}
                 label={total > hits.length ? `See all ${total} results` : 'See all results'}
                 hint="⌘ Enter"
                 onSelect={seeAll}
-                value="search-discover"
-              />
-            ) : (
-              !signedIn && (
-                <PaletteRow
-                  icon={Search}
-                  label={`Search Discover for “${typed}”`}
-                  hint="⌘ Enter"
-                  onSelect={seeAll}
-                  value="search-discover"
-                />
-              )
-            )}
-            {signedIn && (
-              <PaletteRow
-                icon={Cat}
-                label={`Ask your Cat: “${typed}”`}
-                hint="It can find it or set it up"
-                onSelect={() =>
-                  navigateTo(
-                    `${ROUTES.DASHBOARD.CAT}?${CAT_QUERY_PARAM}=${encodeURIComponent(typed)}`
-                  )
-                }
-                value="ask-cat"
+                value={ROW_VALUE.seeAll}
               />
             )}
+            <PaletteRow
+              icon={Cat}
+              label={`${signedIn ? 'Ask your Cat' : 'Sign in to ask the Cat'}: “${typed}”`}
+              hint="It can find it or set it up"
+              disabled={catWaits}
+              onSelect={() =>
+                navigateTo(
+                  `${ROUTES.DASHBOARD.CAT}?${CAT_QUERY_PARAM}=${encodeURIComponent(typed)}`
+                )
+              }
+              value={ROW_VALUE.askCat}
+            />
           </Command.Group>
         )}
 

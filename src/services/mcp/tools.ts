@@ -219,7 +219,7 @@ export const MCP_TOOLS: readonly McpTool[] = [
     name: 'orangecat_create_project',
     title: 'Create an OrangeCat project',
     description:
-      'Creates a project on OrangeCat for the signed-in person — a defined outcome people can fund, with a goal and a purpose. It is created as a DRAFT unless status "active" is given, so nothing is public until the person publishes it; say so when you report back. goal_amount is a whole number in the given currency (default CHF). Confirm the title and description with the person before calling.',
+      'Creates a project on OrangeCat for the signed-in person — a defined outcome people can fund, with a goal and a purpose. It is created as a DRAFT unless status "active" is given, so nothing is public until the person publishes it; say so when you report back. goal_amount is the goal in the given currency (default CHF) and may have decimals, e.g. 0.5 with currency BTC. Confirm the title and description with the person before calling.',
     scope: 'project.write',
     inputSchema: projectInput,
     readOnly: false,

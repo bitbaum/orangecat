@@ -422,4 +422,76 @@ test.describe('bots rehearsal (live)', () => {
     );
     expect(foreignRoom.status()).toBe(404);
   });
+
+  test('8. what a person sets for a bot: model, rules, memory, library', async () => {
+    type Res = import('@playwright/test').APIResponse;
+    const id = new URL(page.url()).searchParams.get('with');
+    expect(id).toBeTruthy();
+
+    // Model: a new person has no key of their own, so the shared pool picks,
+    // and the answer says so instead of offering a choice that does nothing.
+    const models = (await call('models GET', () =>
+      api.get(`${baseURL}/api/ai-assistants/models`)
+    )) as Res;
+    expect(models.status()).toBe(200);
+    expect(((await models.json()) as { data?: { source?: string } }).data?.source).toBe('pool');
+
+    // Rules: saved as written, with the time zone; a zone nobody knows is refused.
+    const rules = 'Never send anything to anyone without asking me first.';
+    const put = (await call('rules PUT', () =>
+      api.put(`${baseURL}/api/ai-assistants/rules`, {
+        data: { rules, timeZone: 'Europe/Zurich' },
+      })
+    )) as Res;
+    expect(put.status()).toBe(200);
+    expect(((await put.json()) as { data?: unknown }).data).toEqual({
+      rules,
+      timeZone: 'Europe/Zurich',
+    });
+    const badZone = await call('rules PUT bad zone', () =>
+      api.put(`${baseURL}/api/ai-assistants/rules`, {
+        data: { rules, timeZone: 'Mars/Olympus' },
+      })
+    );
+    expect(badZone.status()).toBe(400);
+    const cleared = await call('rules PUT clear', () =>
+      api.put(`${baseURL}/api/ai-assistants/rules`, { data: { rules: '', timeZone: null } })
+    );
+    expect(cleared.status()).toBe(200);
+
+    // Memory: a person adds a line, corrects it, and forgets it.
+    type Mem = { id: string; content: string };
+    const memories = async (r: Res) =>
+      ((await r.json()) as { data?: { memories?: Mem[] } }).data?.memories ?? [];
+    const added = (await call('memory POST', () =>
+      api.post(`${baseURL}/api/ai-assistants/${id}/memories/write`, {
+        data: { content: 'Rehearsal: prefers short answers.' },
+      })
+    )) as Res;
+    expect(added.status()).toBe(200);
+    const first = (await memories(added)).find(m => m.content.includes('prefers short answers'));
+    expect(first).toBeTruthy();
+    const corrected = (await call('memory PATCH', () =>
+      api.patch(`${baseURL}/api/ai-assistants/${id}/memories/write`, {
+        data: { id: first!.id, content: 'Rehearsal: prefers long answers.' },
+      })
+    )) as Res;
+    expect(corrected.status()).toBe(200);
+    const after = await memories(corrected);
+    expect(after.some(m => m.content.includes('prefers long answers'))).toBe(true);
+    expect(after.some(m => m.id === first!.id)).toBe(false);
+    const forgotten = await call('memory DELETE all', () =>
+      api.delete(`${baseURL}/api/ai-assistants/${id}/memories?all=true`)
+    );
+    expect(forgotten.status()).toBe(200);
+
+    // Library: the caller's own, a list, never an error for an empty one.
+    const library = (await call('library GET', () =>
+      api.get(`${baseURL}/api/ai-assistants/${id}/library`)
+    )) as Res;
+    expect(library.status()).toBe(200);
+    expect(
+      Array.isArray(((await library.json()) as { data?: { items?: unknown } }).data?.items)
+    ).toBe(true);
+  });
 });

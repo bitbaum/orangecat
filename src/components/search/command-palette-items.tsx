@@ -17,8 +17,9 @@ import { FileText, User } from 'lucide-react';
 import { createSearch, type Range, type SearchSpec } from '@bitbaum/searchkit';
 import { ENTITY_REGISTRY, ENTITY_TYPES } from '@/config/entity-registry';
 import {
+  footerNavigation,
   accountNavItems,
-  PUBLIC_PAGES,
+  getHeaderNavigationItems,
   sidebarSections,
   type NavigationItem,
 } from '@/config/navigation';
@@ -34,6 +35,13 @@ export interface PaletteItem {
   keywords?: string;
   href: string;
 }
+
+/** cmdk values of the palette's own rows, and of one of everyone's results. */
+export const ROW_VALUE = {
+  seeAll: 'search-discover',
+  askCat: 'ask-cat',
+  hit: (hit: { type: string; id: string }) => `hit-${hit.type}-${hit.id}`,
+} as const;
 
 /** Icon for a kind of result: the registry's, else the person icon for people. */
 export function iconForType(type: string): PaletteItem['icon'] {
@@ -80,77 +88,80 @@ function flatten(items: NavigationItem[]): NavigationItem[] {
   return items.flatMap(item => [item, ...flatten(item.children ?? [])]);
 }
 
-/** The public pages — the header's and the footer's — as palette rows. */
-function publicPageItems(): PaletteItem[] {
-  return Object.entries(PUBLIC_PAGES).map(([href, page]) => ({
-    id: `page-${href}`,
-    label: page.name,
-    hint: page.description,
-    icon: FileText,
-    keywords: 'keywords' in page ? page.keywords : undefined,
-    href,
-  }));
-}
-
-/** The sidebar's pages as palette rows; signed out, only those a visitor can open. */
-function sidebarPageItems(signedIn: boolean): PaletteItem[] {
+/**
+ * Every page the reader can open: the sidebar's, each entity type's own list,
+ * then the public site's own pages (Docs, Blog, Pricing, Privacy …) from the
+ * header and footer navigation. Signed out, the pages that only bounce to
+ * sign-in are left out: visitors were offered Cat, Money and Messages, and
+ * could not find Docs or Privacy at all.
+ */
+export function buildPages(signedIn: boolean): PaletteItem[] {
+  const seen = new Set<string>();
+  const out: PaletteItem[] = [];
+  const add = (item: PaletteItem) => {
+    if (seen.has(item.href)) {
+      return;
+    }
+    seen.add(item.href);
+    out.push(item);
+  };
   // The account menu's places (Settings, Help…) live there, not in the
   // sidebar, but are still found from the palette.
-  const sections = [...sidebarSections, { title: 'Account', items: accountNavItems }];
-  return sections.flatMap(section =>
-    flatten(section.items)
-      .filter(
-        item =>
-          item.href &&
-          !item.external &&
-          !item.comingSoon &&
-          item.icon &&
-          (signedIn || !item.requiresAuth)
-      )
-      .map(item => ({
+  const sections = [
+    ...sidebarSections,
+    { title: 'Account', items: accountNavItems, requiresAuth: false },
+  ];
+  for (const section of sections) {
+    for (const item of flatten(section.items)) {
+      if (!item.href || item.external || item.comingSoon || !item.icon) {
+        continue;
+      }
+      if (!signedIn && (section.requiresAuth || item.requiresAuth)) {
+        continue;
+      }
+      add({
         id: `page-${item.href}`,
         label: item.name,
         hint: item.description,
         icon: item.icon as PaletteItem['icon'],
         keywords: section.title,
-        href: item.href as string,
-      }))
-  );
-}
-
-/**
- * Every page a person can open, once each.
- *
- * Signed in: the sidebar, each entity type's own list, then the public pages.
- * Signed out: the public pages lead and nothing behind sign-in is offered —
- * the palette used to index only the sidebar, so a visitor could not find
- * Pricing or Docs, and every row it showed them ended at the sign-in form.
- */
-export function buildPages({ signedIn = true }: { signedIn?: boolean } = {}): PaletteItem[] {
-  const entityLists: PaletteItem[] = signedIn
-    ? ENTITY_TYPES.map(type => {
-        const meta = ENTITY_REGISTRY[type];
-        return {
-          id: `page-${meta.basePath}`,
-          label: `Your ${meta.namePlural.toLowerCase()}`,
-          icon: meta.icon,
-          keywords: `${meta.name} ${meta.namePlural} my list manage`,
-          href: meta.basePath,
-        };
-      })
-    : [];
-  const ordered = signedIn
-    ? [...sidebarPageItems(true), ...entityLists, ...publicPageItems()]
-    : [...publicPageItems(), ...sidebarPageItems(false)];
-
-  const seen = new Set<string>();
-  return ordered.filter(item => {
-    if (seen.has(item.href)) {
-      return false;
+        href: item.href,
+      });
     }
-    seen.add(item.href);
-    return true;
-  });
+  }
+  for (const type of signedIn ? ENTITY_TYPES : []) {
+    const meta = ENTITY_REGISTRY[type];
+    add({
+      id: `page-${meta.basePath}`,
+      label: `Your ${meta.namePlural.toLowerCase()}`,
+      icon: meta.icon,
+      keywords: `${meta.name} ${meta.namePlural} my list manage`,
+      href: meta.basePath,
+    });
+  }
+  // The header's names first ("Pricing", with its description), then every
+  // footer column. Off-site links (sibling products, socials) stay out.
+  const publicLinks: Array<{ name: string; href?: string; description?: string; group: string }> = [
+    ...flatten(getHeaderNavigationItems()).map(item => ({ ...item, group: '' })),
+    ...Object.entries(footerNavigation).flatMap(([group, items]) =>
+      items.map(item => ({ name: item.name, href: item.href, group }))
+    ),
+  ];
+  for (const link of publicLinks) {
+    if (link.href?.startsWith('/')) {
+      add({
+        id: `page-${link.href}`,
+        label: link.name,
+        hint: link.description,
+        icon: FileText,
+        // Found by its address too ("feedback" finds "Ask the Cat"), and by
+        // its footer column ("legal" finds Privacy and Terms).
+        keywords: `${link.group} ${link.href.replace(/[/-]/g, ' ')}`,
+        href: link.href,
+      });
+    }
+  }
+  return out;
 }
 
 /** Your own things, as palette rows. */

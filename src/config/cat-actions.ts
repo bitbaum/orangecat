@@ -76,7 +76,13 @@ interface ActionParameter {
 export interface CatAction {
   id: string;
   name: string;
+  /** For the model: when to call this tool and how to report it. Never shown to people. */
   description: string;
+  /**
+   * For people: one plain sentence on the permissions page. Needed wherever
+   * `description` addresses the model ("say SENT", "NOT add_wallet").
+   */
+  summary?: string;
   category: ActionCategory;
   icon: LucideIcon;
   riskLevel: ActionRiskLevel;
@@ -775,6 +781,8 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
     name: 'Build a Website',
     description:
       'Commission Loki to build and deploy a real website on its own subdomain. Queued, not instant: the reply must say a build was STARTED, never that a site is ready.',
+    summary:
+      'Ask Loki to build and publish a website for you. The build starts when you confirm and takes a while.',
     category: 'entities',
     icon: Hammer,
     riskLevel: 'high',
@@ -816,6 +824,7 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
     name: 'Send a Task to Loki',
     description:
       'Send one coding task to several Loki projects at once. Dispatched, not done: say SENT. A question is ask_loki.',
+    summary: 'Send one coding task to several of your Loki projects at once.',
     category: 'entities',
     icon: Hammer,
     riskLevel: 'high',
@@ -865,6 +874,7 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
     name: 'Ask Loki',
     description:
       "A question to the user's own Loki (what is live, built, queued), answered as them. Read-only, NOT send_task_to_loki.",
+    summary: 'Ask your Loki what is live, built or queued. Read-only.',
     category: 'communication',
     icon: Bot,
     riskLevel: 'low',
@@ -890,6 +900,7 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
     name: 'Read Loki Sessions',
     description:
       "Read the user's Loki agent sessions: state, task, run, PR. With project: what its agent last said. Read-only.",
+    summary: 'Read what your Loki agents are working on and what they last said. Read-only.',
     category: 'communication',
     icon: Bot,
     riskLevel: 'low',
@@ -915,6 +926,8 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
     name: 'Read Project Status',
     description:
       "User's Loki projects: work, latest run and PR, inbox, live site up or down. Read-only.",
+    summary:
+      'Read how your Loki projects are doing: current work, latest run, inbox, and whether the live site is up. Read-only.',
     category: 'communication',
     icon: Bot,
     riskLevel: 'low',
@@ -1054,6 +1067,8 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
     name: 'Set Up a Project for Someone Else',
     description:
       'Page for a person with no account + a project owned by THEM; returns the link they take it over with. No money until they accept.',
+    summary:
+      'Set up a page and project for someone without an account, and give you the link they take it over with. No money moves until they accept.',
     category: 'entities',
     icon: Gift,
     riskLevel: 'medium',
@@ -1344,6 +1359,7 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
     id: 'comment_on_post',
     name: 'Comment on Post',
     description: 'Comment on a timeline post on behalf of the user (their words, confirmed)',
+    summary: 'Comment on a post in your name, with words you confirm.',
     category: 'communication',
     icon: MessageSquare,
     riskLevel: 'medium',
@@ -1374,6 +1390,8 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
     name: 'Request Introduction',
     description:
       "Put the user in touch with the person behind an entity they discovered: opens a direct conversation and sends their intro message. Use after explore_topic when the user wants to connect ('introduce me', 'put me in touch', 'reach out to them'). Draft the message in the USER's voice — who they are and why they're reaching out — and show it to them before sending.",
+    summary:
+      'Put you in touch with the person behind something you found: open a conversation and send your introduction.',
     category: 'communication',
     icon: Users,
     riskLevel: 'high',
@@ -1412,6 +1430,7 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
     name: 'Publish Interest',
     description:
       "Add a topic to the user's PUBLIC INTERESTS LIST so other people searching that topic can find them. This is NOT update_profile — it does not touch their bio or background, it adds a searchable topic tag. Use this, never update_profile, whenever the goal is being findable by topic. Offer it when they express an interest ('I'm into longevity') or when explore_topic finds nothing — being findable is the fix for an empty result. It makes something public: say plainly that the topic becomes visible to anyone signed in, and wait for a clear yes. Never publish a topic they only mentioned in passing, and never publish anything sensitive (health, finances, relationships, politics, anything they asked you to keep private).",
+    summary: 'Add a topic to your public interests, so people searching for it can find you.',
     category: 'context',
     icon: Users,
     riskLevel: 'high',
@@ -1437,6 +1456,7 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
     name: 'Remove Interest',
     description:
       'Remove a topic from the user\'s public interests — they stop being discoverable for it. This is NOT forget_memories: it removes a PUBLIC listing and touches no private memory. Use it, never forget_memories, whenever the user says "remove my interest(s)", "stop being findable for X", or names something they published. Always honour it immediately and without argument.',
+    summary: 'Remove a topic from your public interests. Your private memories are not touched.',
     category: 'context',
     icon: Users,
     riskLevel: 'low',
@@ -1458,6 +1478,7 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
     name: 'Watch Topic',
     description:
       "Notify the user when someone new appears on OrangeCat working on a topic. Offer this whenever explore_topic comes back empty — it turns 'nothing here yet' into a standing subscription instead of a dead end.",
+    summary: 'Tell you when someone new on OrangeCat works on a topic you care about.',
     category: 'context',
     icon: Eye,
     riskLevel: 'low',
@@ -1482,6 +1503,8 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
     name: 'Book Service',
     description:
       "Request a booking for someone's service at a specific time (the provider must confirm). Take service_id from context or search results.",
+    summary:
+      "Request a booking for someone's service at a time you choose. The provider confirms it.",
     category: 'payments',
     icon: Calendar,
     riskLevel: 'high',
@@ -1580,6 +1603,7 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
     name: 'Connect Wallet',
     description:
       'Make the user able to RECEIVE Bitcoin — store the Lightning address, Bitcoin address/xpub or NWC string they paste. The setup step, NOT add_wallet (a savings goal on top of a rail they already have). No wallet at all? Point them at a provider first, then run this.',
+    summary: 'Save the Lightning or Bitcoin address you paste so you can get paid.',
     category: 'payments',
     icon: Zap,
     riskLevel: 'high',
@@ -1613,6 +1637,8 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
     name: 'Add Wallet',
     description:
       "Create a savings goal or budget wallet on the user's profile — a bucket to save toward, NOT a way to get paid. Use connect_wallet to give the user a receiving rail; this action reuses one they already have.",
+    summary:
+      'Create a savings goal or budget on your profile, using a wallet you already connected.',
     category: 'payments',
     icon: Wallet,
     riskLevel: 'medium',
@@ -1911,6 +1937,8 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
     name: 'Save Economic Profile',
     description:
       'Save latent economic value the user reveals — skills, things they own to rent/sell, goals, constraints, what people come to them for, engagement scope they are not taking on, motivation, or stage — into their structured economic profile so Cat can suggest better offers. Skills, assets, asked-for, and not-available-for stay private unless the owner explicitly enables public offerings on their profile. Saving here never changes that sharing choice. Goals, constraints, motivation, and stage stay private.',
+    summary:
+      'Keep what you tell Cat about your skills, things you own and goals, so it can suggest better.',
     category: 'context',
     icon: TrendingUp,
     riskLevel: 'low',
@@ -1979,6 +2007,7 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
     name: 'Forget About Me',
     description:
       "Delete stored facts the user says are wrong or wants removed — clears BOTH Cat's memories and the matching economic-profile entries. Use when the user says something you know about them is incorrect ('I don't speak French', 'remove the photography thing'). NOT for interests: 'remove my interests' or 'stop being findable for X' means unpublish_interest, a public listing — deleting memories there destroys private data the user never asked you to touch.",
+    summary: 'Delete facts Cat stored about you that are wrong or that you want gone.',
     category: 'context',
     icon: Shield,
     riskLevel: 'low',
@@ -2003,6 +2032,7 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
     name: 'Remember Fact',
     description:
       'Store facts the user explicitly asks Cat to remember ("remember that I…"). Overrides any earlier forget of the same fact — a deliberate statement outranks a past deletion.',
+    summary: 'Remember something you explicitly ask Cat to keep.',
     category: 'context',
     icon: FileText,
     riskLevel: 'low',
@@ -2028,6 +2058,7 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
     name: 'Edit Memory',
     description:
       'Correct ONE stored memory in place when the user says a remembered fact is slightly wrong ("it\'s 45 CHF, not 40"). Use forget_memories instead when the fact should simply be removed.',
+    summary: 'Correct a fact Cat remembered that is slightly wrong.',
     category: 'context',
     icon: Settings,
     riskLevel: 'low',
@@ -2201,6 +2232,8 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
     name: 'Create Watch',
     description:
       'Notify the user when something happens. Once: funding_reached (funding hits target_btc), sale_received, booking_received. Per new public post until cancelled: person_posts (username posts; topic optional) or following_topic (anyone they follow posts about topic). Checked every 15 min.',
+    summary:
+      'Tell you when something happens: a goal is funded, a sale or booking comes in, or someone you follow posts.',
     category: 'context',
     icon: Bell,
     riskLevel: 'low',
@@ -2269,6 +2302,7 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
     name: 'Cancel Watch',
     description:
       'Stop an active watch. Pass watch_id when known; without it, the single active watch is cancelled, or the result lists the active watches to choose from.',
+    summary: 'Stop one of the alerts Cat set up for you.',
     category: 'context',
     icon: Bell,
     riskLevel: 'low',
@@ -2325,6 +2359,8 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
     name: 'Set Civic Split',
     description:
       'How the user would split their public money between locality, region and nation — a statement, never a tax setting. Merges over the split on file; one share rebalances the rest.',
+    summary:
+      'Record how you would split your public money between locality, region and nation. A statement, not a tax setting.',
     category: 'context',
     icon: Landmark,
     riskLevel: 'low',
@@ -2389,6 +2425,8 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
     name: 'Draft Promotion',
     description:
       "Get the real posting rules for one or more channels before writing promotional copy, so the draft cannot get the user banned. Returns each channel's hard limits, prohibitions and required disclosures, and says which channels Cat may post to on its own (only Nostr and the user's own OrangeCat timeline). Use it whenever the user wants to promote, announce or share a project anywhere off-platform.",
+    summary:
+      "Look up a channel's posting rules before drafting a promotion, so the draft follows them.",
     category: 'communication',
     icon: Megaphone,
     riskLevel: 'low',
@@ -2429,6 +2467,7 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
     // an entity of the user's, not Cat's context: default-off, confirm each
     // time. First use goes through grant-on-confirm like any other entity
     // action — one tap allows it, still confirmed every time.
+    summary: 'Change your public profile: handle, name, bio, background, location or website.',
     category: 'entities',
     icon: Settings,
     riskLevel: 'medium',

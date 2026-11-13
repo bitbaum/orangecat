@@ -91,7 +91,8 @@ describe("the person's own key for a bot turn", () => {
     }
     const turn = readFileSync('src/services/ai/sendMessage.ts', 'utf8');
     // Both calls of the turn pass it on: the first reply and the work loop's steps.
-    expect(turn.match(/^\s*directKey,$/gm)?.length).toBe(2);
+    // And the check of a step against the owner's rules (companions/rules.ts) runs on it too.
+    expect(turn.match(/^\s*directKey,$/gm)?.length).toBe(3);
     expect(readFileSync('src/services/companions/rooms/respond.ts', 'utf8')).toMatch(
       /userKey,\s*directKey,/
     );

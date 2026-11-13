@@ -12,7 +12,7 @@
 import { useEffect } from 'react';
 import { Search } from 'lucide-react';
 import { CommandPalette } from './CommandPalette';
-import { setPaletteOpen, usePaletteOpen } from './palette-store';
+import { returnPaletteFocus, setPaletteOpen, usePaletteOpen } from './palette-store';
 import { HeaderIconButton } from '@/components/layout/HeaderIconButton';
 import { cn } from '@/lib/utils';
 
@@ -26,6 +26,14 @@ const PLACEHOLDER = 'Search or jump to…';
 /** The one palette on the page, and the keys that open it. Mount once. */
 export function CommandPaletteHost() {
   const open = usePaletteOpen();
+
+  // Runs after the palette has unmounted (a parent's effect follows its
+  // children's cleanups), so the dialog's focus trap is already gone.
+  useEffect(() => {
+    if (!open) {
+      returnPaletteFocus();
+    }
+  }, [open]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {

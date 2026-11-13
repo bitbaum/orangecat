@@ -54,3 +54,20 @@ it('counts the bot sends the shared pool could not answer, by vendor and status 
   expect(report.matched).toBe(0);
   expect(JSON.stringify(report)).not.toContain(privateText);
 });
+
+it("tells OrangeCat's own daily cap apart from a vendor's own 429", () => {
+  const report = summarizeCatJournal(
+    JSON.stringify({
+      source: 'companions/chat',
+      level: 'warn',
+      data: {
+        links: [
+          { provider: 'groq', status: 429, cap: true },
+          { provider: 'openrouter', status: 429 },
+        ],
+      },
+    })
+  );
+  expect(report.bots.links).toContainEqual({ provider: 'groq', status: 'cap', count: 1 });
+  expect(report.bots.links).toContainEqual({ provider: 'openrouter', status: '429', count: 1 });
+});

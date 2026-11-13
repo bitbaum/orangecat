@@ -182,8 +182,9 @@ export function CatCreditsPanel() {
         </div>
       ) : isLoading ? null : entries.length === 0 ? (
         <p className="text-sm text-fg-tertiary">
-          No credit activity yet. {topupEnabled ? 'Top up' : 'Once top-up is live'} to run Cat on
-          frontier models; purchases and usage will show here.
+          {topupEnabled
+            ? 'No credit activity yet. Top up to run Cat on frontier models; purchases and usage will show here.'
+            : 'No credit activity yet. Purchases and usage will show here once top-up opens.'}
         </p>
       ) : (
         <ul className="divide-y divide-border-subtle">

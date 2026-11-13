@@ -10,7 +10,7 @@ import {
 } from '@/components/search/command-palette-items';
 import { publicHref, type PublicHit } from '@/services/search/public-search';
 import { ENTITY_REGISTRY, ENTITY_TYPES } from '@/config/entity-registry';
-import { PUBLIC_PAGES, sidebarSections } from '@/config/navigation';
+import { sidebarSections } from '@/config/navigation';
 import { ROUTES } from '@/config/routes';
 import type { Thing } from '@/domain/things/service';
 
@@ -24,12 +24,48 @@ describe('command palette items', () => {
   });
 
   it('can jump to every type list and every sidebar page, once each', () => {
-    const pages = buildPages();
+    const pages = buildPages(true);
     const hrefs = pages.map(p => p.href);
     expect(new Set(hrefs).size).toBe(hrefs.length);
     for (const t of ENTITY_TYPES) {
       expect(hrefs).toContain(ENTITY_REGISTRY[t].basePath);
     }
+  });
+
+  // Signed out on orangecat.ch (2026-11-12), the palette offered Cat, Home,
+  // Money and Messages — each a 307 to sign-in — and "docs", "blog",
+  // "pricing", "privacy" and "roadmap" found none of the public pages.
+  it("finds the public site's own pages, for visitors and members alike", () => {
+    const expected = {
+      docs: ROUTES.DOCS,
+      blog: ROUTES.BLOG,
+      pricing: ROUTES.PRICING,
+      privacy: ROUTES.PRIVACY,
+      roadmap: ROUTES.ROADMAP,
+    };
+    for (const signedIn of [false, true]) {
+      const pages = buildPages(signedIn);
+      for (const [typed, href] of Object.entries(expected)) {
+        expect(rankItems(pages, typed, 1)[0]?.href, `${typed}, signed in: ${signedIn}`).toBe(href);
+      }
+    }
+  });
+
+  it('offers a visitor no page that only bounces to sign-in', () => {
+    const visitor = buildPages(false).map(p => p.href);
+    const membersOnly = sidebarSections.flatMap(section =>
+      section.items.filter(item => section.requiresAuth || item.requiresAuth).map(item => item.href)
+    );
+    expect(membersOnly).toContain(ROUTES.DASHBOARD.CAT);
+    for (const href of membersOnly) {
+      expect(visitor).not.toContain(href);
+    }
+    for (const t of ENTITY_TYPES) {
+      expect(visitor).not.toContain(ENTITY_REGISTRY[t].basePath);
+    }
+    expect(visitor.every(href => href.startsWith('/') && !href.startsWith('/dashboard'))).toBe(
+      true
+    );
   });
 
   it('finds your own things by any word, accents folded, best match first', () => {
@@ -65,7 +101,7 @@ describe('command palette items', () => {
   });
 
   it('keeps the given order when nothing is typed, and caps the group', () => {
-    const pages = buildPages();
+    const pages = buildPages(true);
     expect(rankItems(pages, '', 3)).toEqual(pages.slice(0, 3));
   });
 
@@ -90,38 +126,11 @@ describe('command palette items', () => {
   });
 
   it("puts a page first when it matched with no more typos than everyone's best", () => {
-    const settings = rankItems(buildPages(), 'setings', 1);
+    const settings = rankItems(buildPages(true), 'setings', 1);
     expect(settings[0]?.typos).toBe(1);
     expect(pagesFirst(settings, [{ typos: null }])).toBe(true);
     expect(pagesFirst(settings, [{ typos: 1 }])).toBe(true);
     expect(pagesFirst(settings, [{ typos: 0 }])).toBe(false);
     expect(pagesFirst([], [{ typos: 0 }])).toBe(false);
-  });
-
-  it('finds the public pages too: Pricing by its name and by "plans"', () => {
-    for (const signedIn of [true, false]) {
-      const pages = buildPages({ signedIn });
-      expect(pages.map(p => p.href)).toEqual(expect.arrayContaining(Object.keys(PUBLIC_PAGES)));
-      expect(rankItems(pages, 'pricing', 1)[0]?.href).toBe(ROUTES.PRICING);
-      expect(rankItems(pages, 'plans', 1)[0]?.href).toBe(ROUTES.PRICING);
-    }
-  });
-
-  it('offers a visitor public pages first and nothing behind sign-in', () => {
-    const pages = buildPages({ signedIn: false });
-    const hrefs = pages.map(p => p.href);
-    expect(new Set(hrefs).size).toBe(hrefs.length);
-    expect(pages.slice(0, 6).every(p => p.href in PUBLIC_PAGES)).toBe(true);
-    const behindSignIn = sidebarSections
-      .flatMap(s => s.items)
-      .filter(i => i.requiresAuth && i.href && !(i.href in PUBLIC_PAGES))
-      .map(i => i.href);
-    expect(behindSignIn.length).toBeGreaterThan(0);
-    for (const href of behindSignIn) {
-      expect(hrefs).not.toContain(href);
-    }
-    for (const t of ENTITY_TYPES) {
-      expect(hrefs).not.toContain(ENTITY_REGISTRY[t].basePath);
-    }
   });
 });

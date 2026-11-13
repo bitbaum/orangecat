@@ -14,6 +14,8 @@ export interface CompanionPromptParts {
   memories: string[];
   /** What the companion may set in motion for its owner (hands.ts), if anything. */
   hands?: string;
+  /** The owner's own rules and time zone (rules.ts), on the owner's turn only. */
+  rules?: string;
 }
 
 /**
@@ -24,6 +26,7 @@ export function buildCompanionSystemPrompt({
   definition,
   memories,
   hands,
+  rules,
 }: CompanionPromptParts): string | undefined {
   const base = definition?.trim() ?? '';
   const facts = memories.map(m => m.trim()).filter(Boolean);
@@ -39,6 +42,9 @@ export function buildCompanionSystemPrompt({
   }
   if (hands?.trim()) {
     parts.push(hands.trim());
+  }
+  if (rules?.trim()) {
+    parts.push(rules.trim());
   }
   return parts.length > 0 ? parts.join('\n\n') : undefined;
 }

@@ -228,8 +228,9 @@ export function planToEntityRequest(plan: RaisePlan, format: (n: number) => stri
     payload: {
       title: plan.title,
       description,
-      // A project goal is a whole number; a BTC goal below 1 cannot be one.
-      goal_amount: plan.currency === 'BTC' ? null : Math.max(1, Math.round(total)),
+      // planTotal already rounds to the currency's unit (whole francs, or BTC
+      // to 8 places), so a 0.5 BTC raise keeps its goal.
+      goal_amount: total > 0 ? total : null,
       currency: plan.currency,
       funding_purpose: purpose || null,
     },

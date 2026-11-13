@@ -9,6 +9,8 @@ author: 'OrangeCat Team'
 published: true
 ---
 
+> **Editor's note, 13 November 2026.** Where this post says every OrangeCat transaction is auditable on the Bitcoin blockchain: that holds for on-chain payments. Lightning payments settle off-chain and do not appear on the blockchain.
+
 **OrangeCat is a Bitcoin-powered platform that lets creators keep 100% of their earnings (0% platform fees) while building transparent, community-owned economies.**
 
 ---

@@ -13,13 +13,19 @@ export const projectSchema = z.object({
     .string()
     .min(1, 'Project description is required')
     .max(2000, 'Description must be 2000 characters or less'),
+  // An amount in `currency`: 0.5 BTC and CHF 2500.50 are both normal goals.
+  // The old .int('whole number') gate was a sats-era leftover (see the same
+  // note on wishlist target_amount_btc). No decimal-places rule: a goal
+  // switched from CHF to BTC arrives as an unrounded conversion, and the
+  // numeric(20,8) column keeps 8 places. The cap matches the wallet goal and
+  // sits well inside that column.
   goal_amount: z
     .number({
       error: issue =>
         issue.input === undefined ? 'Funding goal is required' : 'Funding goal must be a number',
     })
-    .int('Funding goal must be a whole number')
     .positive('Funding goal must be greater than 0')
+    .max(1_000_000_000, 'Funding goal is too large')
     .optional()
     .nullable(),
   currency: z

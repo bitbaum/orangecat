@@ -20,6 +20,8 @@ import { useCompanionTalk } from '../useCompanionTalk';
 import { DoItCard } from './DoItCard';
 import { RoutineRow } from './RoutineRow';
 import { AbilitiesRow } from './AbilitiesRow';
+import { ModelRow } from './ModelRow';
+import { RulesRow } from './RulesRow';
 import { outgoing, shownUserTurn } from './attachments';
 import { ChatFrame } from './ChatFrame';
 import { Face } from './CompanionFace';
@@ -142,6 +144,9 @@ export function CompanionChat({
           <DetailRow href={`${ROUTES.AI_ASSISTANTS.VIEW(id)}/memory`}>
             {copy.companion.memory(name)}
           </DetailRow>
+          <DetailRow href={`${ROUTES.AI_ASSISTANTS.VIEW(id)}/library`}>
+            {COMPANION_COPY.library.row}
+          </DetailRow>
           {row?.mine && (
             <DetailRow href={`${ENTITY_REGISTRY['ai_assistant'].createPath}?edit=${id}`}>
               {copy.companion.edit}
@@ -149,6 +154,8 @@ export function CompanionChat({
           )}
           {row?.mine && <RoutineRow assistantId={id} />}
           {row?.mine && <AbilitiesRow assistantId={id} />}
+          <ModelRow assistantId={id} />
+          {row?.mine && <RulesRow />}
           <DetailRow
             onClick={() => {
               talk.startNewThread();

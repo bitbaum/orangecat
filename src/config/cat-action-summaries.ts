@@ -100,7 +100,15 @@ export const CAT_ACTION_SUMMARIES: Record<string, string> = {
   use_browser: 'Take one step in a browser of its own. Never types passwords or card numbers.',
 };
 
-/** The words a person reads for an action; the model's description only as a last resort. */
-export function catActionSummary(action: { id: string; description: string }): string {
-  return CAT_ACTION_SUMMARIES[action.id] ?? action.description;
+/**
+ * The words a person reads for an action: the action's own `summary` where
+ * cat-actions.ts has one, else this list, and the model's description only as
+ * a last resort.
+ */
+export function catActionSummary(action: {
+  id: string;
+  description: string;
+  summary?: string;
+}): string {
+  return action.summary ?? CAT_ACTION_SUMMARIES[action.id] ?? action.description;
 }

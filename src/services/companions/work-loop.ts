@@ -175,6 +175,16 @@ export function runStillGoing(
     : null;
 }
 
+/** A step the owner's rules turned into a tap: said in the thread, as the bot's own line. */
+export async function noteHeldStep(
+  supabase: AnySupabaseClient,
+  conversationId: string,
+  line: string,
+  actionId: string
+): Promise<void> {
+  await noteInThread(supabase, conversationId, line, actionId, false);
+}
+
 /** What a step did is a line of the thread, so the person reads it where they asked. */
 async function noteInThread(
   supabase: AnySupabaseClient,

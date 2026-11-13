@@ -26,6 +26,7 @@ export function DiscoverSearchBox({
   const [value, setValue] = useState(initialQuery);
   const [pending, startTransition] = useTransition();
   const committed = useRef(initialQuery);
+  const input = useRef<HTMLInputElement>(null);
 
   // The query changed from outside this field (a link, Back): follow it. Our
   // own navigations already match `committed`, so typing that continued
@@ -66,6 +67,7 @@ export function DiscoverSearchBox({
         <Search className="h-5 w-5 flex-shrink-0 text-fg-tertiary" aria-hidden />
       )}
       <input
+        ref={input}
         type="search"
         name="q"
         value={value}
@@ -79,7 +81,12 @@ export function DiscoverSearchBox({
       {value && (
         <button
           type="button"
-          onClick={() => setValue('')}
+          // The button goes as the field empties; focus goes to the field,
+          // not to <body>, so the next search starts where the last one did.
+          onClick={() => {
+            setValue('');
+            input.current?.focus();
+          }}
           aria-label="Clear search"
           className="flex min-h-11 min-w-11 items-center justify-center text-fg-tertiary hover:text-fg-primary"
         >
