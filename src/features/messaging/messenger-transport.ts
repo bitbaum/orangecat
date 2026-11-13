@@ -21,6 +21,7 @@ import {
   type MessengerAttachment,
   type MessengerCard,
   type MessengerEvent,
+  type MessengerPerson,
   type MessengerTransport,
 } from '@bitbaum/chatkit/messenger';
 import { API_ROUTES } from '@/config/api-routes';
@@ -51,6 +52,11 @@ export interface MessengerTransportOptions {
 const PAGE = 50;
 /** How long "is typing" lives without being renewed (the row's expires_at). */
 const TYPING_TTL_MS = 8_000;
+/** How a bot is named in the people list, so `open` can tell it from a person. */
+export const BOT_PERSON_PREFIX = 'bot:';
+/** While a bot is answering: how often "is typing" is renewed, and for how long. */
+const BOT_TYPING_EVERY_MS = 4_000;
+const BOT_TYPING_FOR_MS = 60_000;
 /** After the Cat is tagged: when to look for its answer if no push arrives. */
 const CAT_CHECKS_MS = [4_000, 9_000, 16_000, 30_000, 55_000];
 
@@ -115,11 +121,78 @@ export function paymentRequestIdOfCard(card: MessengerCard | undefined): string 
   return typeof id === 'string' && id ? id : undefined;
 }
 
+/** The viewer's own companions whose name matches what was typed. */
+async function ownBots(
+  userId: string,
+  query: string,
+  signal?: AbortSignal
+): Promise<MessengerPerson[]> {
+  const response = await fetch(
+    `${API_ROUTES.AI_ASSISTANTS.BASE}?limit=50&user_id=${encodeURIComponent(userId)}`,
+    { credentials: 'same-origin', signal }
+  );
+  if (!response.ok) {
+    return [];
+  }
+  const payload = (await response.json()) as {
+    data?: Array<{ id: string; title?: string | null; avatar_url?: string | null }>;
+  };
+  const asked = query.trim().toLowerCase();
+  return (Array.isArray(payload.data) ? payload.data : [])
+    .filter(bot => (bot.title ?? '').toLowerCase().includes(asked))
+    .map(bot => ({
+      id: `${BOT_PERSON_PREFIX}${bot.id}`,
+      name: bot.title?.trim() || 'Bot',
+      avatarUrl: bot.avatar_url ?? null,
+      kind: 'agent' as const,
+    }));
+}
+
 export function createMessengerTransport(options: MessengerTransportOptions): MessengerTransport {
   const { userId } = options;
   const listeners = new Set<(event: MessengerEvent) => void>();
   const emit = (event: MessengerEvent) => listeners.forEach(on => on(event));
   const mentionsCat = mentionMatcher([CAT_MENTION]);
+
+  // The bot of a conversation between the viewer and one bot (ADR-0015): it
+  // is owed an answer to every message, so the thread says it is writing.
+  const botOf = new Map<string, string>();
+  const learn = (conversation: Conversation) => {
+    const others = (conversation.participants ?? []).filter(
+      p => p.user_id !== userId && p.is_active !== false
+    );
+    const [only] = others;
+    if (others.length === 1 && only?.is_agent) {
+      botOf.set(conversation.id, only.user_id);
+    } else {
+      botOf.delete(conversation.id);
+    }
+  };
+  const writing = new Map<string, ReturnType<typeof setInterval>>();
+  const stopWriting = (conversationId: string) => {
+    const timer = writing.get(conversationId);
+    if (timer) {
+      clearInterval(timer);
+      writing.delete(conversationId);
+    }
+    const bot = botOf.get(conversationId);
+    if (bot) {
+      emit({ type: 'typing', conversationId, actorId: bot, typing: false });
+    }
+  };
+  const startWriting = (conversationId: string, bot: string) => {
+    stopWriting(conversationId);
+    const until = Date.now() + BOT_TYPING_FOR_MS;
+    const say = () => {
+      if (Date.now() > until) {
+        stopWriting(conversationId);
+        return;
+      }
+      emit({ type: 'typing', conversationId, actorId: bot, typing: true });
+    };
+    say();
+    writing.set(conversationId, setInterval(say, BOT_TYPING_EVERY_MS));
+  };
 
   const loadPage = async (conversationId: string, before?: string, signal?: AbortSignal) => {
     const query = new URLSearchParams({ limit: String(PAGE) });
@@ -134,6 +207,7 @@ export function createMessengerTransport(options: MessengerTransportOptions): Me
     // The page comes with the conversation as it is now: who is in it, how
     // far each has read. The list learns it for free.
     if (data.conversation?.id) {
+      learn(data.conversation);
       emit({
         type: 'conversation',
         conversation: reviveConversation(toMessengerConversation(data.conversation)),
@@ -152,6 +226,12 @@ export function createMessengerTransport(options: MessengerTransportOptions): Me
       for (const message of page.messages) {
         emit({ type: 'message', message });
       }
+      // The bot has answered: its newest message is newer than the viewer's.
+      const bot = botOf.get(conversationId);
+      const newest = page.messages[page.messages.length - 1];
+      if (bot && newest?.authorId === bot) {
+        stopWriting(conversationId);
+      }
     } catch {
       // The next push, or the tab coming back, brings it.
     }
@@ -163,6 +243,7 @@ export function createMessengerTransport(options: MessengerTransportOptions): Me
         `${API_ROUTES.MESSAGES.BASE}?limit=100`,
         { signal }
       );
+      (data.conversations ?? []).forEach(learn);
       return (data.conversations ?? []).map(c => reviveConversation(toMessengerConversation(c)));
     },
 
@@ -171,6 +252,7 @@ export function createMessengerTransport(options: MessengerTransportOptions): Me
         API_ROUTES.MESSAGES.CONVERSATION_SUMMARY(id),
         { signal }
       );
+      learn(data.conversation);
       return reviveConversation(toMessengerConversation(data.conversation));
     },
 
@@ -193,6 +275,15 @@ export function createMessengerTransport(options: MessengerTransportOptions): Me
           }),
         }
       );
+      const bot = botOf.get(conversationId);
+      if (bot && draft.body.trim()) {
+        // Every message to a bot is answered. A push normally brings the
+        // answer; these looks are for when the push does not arrive.
+        startWriting(conversationId, bot);
+        for (const delay of CAT_CHECKS_MS) {
+          setTimeout(() => void pushLatest(conversationId), delay);
+        }
+      }
       if (mentionsCat(draft.body)) {
         // The Cat answers from a worker. A push normally brings its reply in
         // seconds; these looks are for the times the push does not arrive.
@@ -315,18 +406,28 @@ export function createMessengerTransport(options: MessengerTransportOptions): Me
         data?: PickerPerson[] | { data?: PickerPerson[] };
       };
       const found = Array.isArray(payload.data) ? payload.data : (payload.data?.data ?? []);
-      return rankPeopleForPicker(found, { searching: true, selfId: userId }).map(p => ({
+      const people = rankPeopleForPicker(found, { searching: true, selfId: userId }).map(p => ({
         id: p.id,
         name: p.name?.trim() || p.username || 'Someone',
         handle: p.username ?? undefined,
         avatarUrl: p.avatar_url ?? null,
       }));
+      // The viewer's own bots, beside the people: a bot is written to the
+      // way a person is (ADR-0015). A list of bots that cannot be read is not
+      // a reason to find nobody.
+      const bots = await ownBots(userId, query, signal).catch(() => []);
+      return [...bots, ...people];
     },
 
     async open(personIds) {
       const data = await api<{ conversationId: string }>(API_ROUTES.MESSAGES.OPEN, {
         method: 'POST',
-        body: JSON.stringify({ participantIds: [...personIds] }),
+        body: JSON.stringify({
+          participantIds: personIds.filter(id => !id.startsWith(BOT_PERSON_PREFIX)),
+          assistantIds: personIds
+            .filter(id => id.startsWith(BOT_PERSON_PREFIX))
+            .map(id => id.slice(BOT_PERSON_PREFIX.length)),
+        }),
       });
       return transport.conversation!(data.conversationId, {});
     },
