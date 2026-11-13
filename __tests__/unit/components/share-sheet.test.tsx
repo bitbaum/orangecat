@@ -5,9 +5,10 @@
  *   (1.2:1), and so was the header icon;
  * - the sheet had two close buttons 30px apart, the card's and the Dialog's;
  * - "Share on X" filled the post with the whole description, over 280.
+ * The sheet is now the bip-kit ShareRow; these hold it to the same promises.
  */
 
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import ShareContent from '@/components/sharing/ShareContent';
 import { xWeightedLength } from '@/lib/og/share-line';
 
@@ -43,18 +44,13 @@ function renderSheet(onClose: (() => void) | undefined = vi.fn()) {
 }
 
 describe('the share sheet on a phone', () => {
-  it('pairs the main button and the header icon with the inverted text token', () => {
+  // The white-on-white "Share via..." button is gone with the hand-built sheet:
+  // the sheet is now @bitbaum/bip-kit's ShareRow, whose primary ink is
+  // `--bp-on-fg`, tested in bip-kit itself (test/styles.test.js).
+  it('is the shared share row, named for what is shared', () => {
     renderSheet();
-    const shareVia = screen.getByRole('button', { name: /share via/i });
-    expect(shareVia.className).toContain('bg-fg-primary');
-    expect(shareVia.className).toContain('text-fg-inverted');
-    expect(shareVia.className).not.toContain('text-white');
-
-    const heading = screen.getByRole('heading', { name: 'Share Project' });
-    // The icon inherits its ink from the disc it sits on.
-    const disc = heading.querySelector('svg')?.parentElement;
-    expect(disc?.className).toContain('bg-fg-primary');
-    expect(disc?.className).toContain('text-fg-inverted');
+    expect(screen.getByRole('navigation', { name: 'Share Project' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Copy link' })).toBeTruthy();
   });
 
   it('has one close button', () => {
@@ -70,14 +66,13 @@ describe('the share sheet on a phone', () => {
   });
 
   it('prefills X with one post, not the whole description', () => {
-    const open = vi.spyOn(window, 'open').mockImplementation(() => null);
     renderSheet();
-    fireEvent.click(screen.getByRole('button', { name: 'Share on X' }));
-    const intent = new URL(String(open.mock.calls[0][0]));
+    const link = screen.getByRole('link', { name: 'Share on X' });
+    const intent = new URL(link.getAttribute('href') ?? '');
     const text = intent.searchParams.get('text') ?? '';
     expect(intent.searchParams.get('url')).toBe('https://orangecat.ch/projects/loki');
     // X counts the link as 23, after a space.
     expect(xWeightedLength(text) + 1 + 23).toBeLessThanOrEqual(280);
-    expect(text.startsWith('Support: Loki\n\nLoki is the capability layer')).toBe(true);
+    expect(text).toBe('Support: Loki');
   });
 });
