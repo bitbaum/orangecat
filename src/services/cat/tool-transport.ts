@@ -16,6 +16,7 @@
  */
 
 import { LokiKeyError, lokiKeyService } from '@/services/ai/loki-key-service';
+import { isPlatformKey, recordModelCall, vendorOfEndpoint } from '@/services/ai/usage-events';
 
 const LOKI_MARK = 'loki-door:';
 
@@ -104,21 +105,39 @@ export async function postToolStep(
       };
     }
   }
-  const res = await fetch(request.toolEndpoint, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${request.toolKey}`, 'Content-Type': 'application/json' },
-    // Belt & braces with the loop's own race: the provider socket itself is
-    // aborted at the same deadline so no orphaned request lingers.
-    signal: request.signal,
-    body: JSON.stringify({
-      model: request.model,
-      messages: request.messages,
-      tools: request.tools,
-      tool_choice: 'auto',
-      stream: false,
-      max_tokens: request.maxTokens,
-    }),
-  });
+  const started = Date.now();
+  // A key kept on Loki is counted by Loki; a call made from here is counted here.
+  const call = {
+    provider: vendorOfEndpoint(request.toolEndpoint),
+    model: request.model,
+    byok: !isPlatformKey(request.toolKey),
+  };
+  let res: Response;
+  try {
+    res = await fetch(request.toolEndpoint, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${request.toolKey}`, 'Content-Type': 'application/json' },
+      // Belt & braces with the loop's own race: the provider socket itself is
+      // aborted at the same deadline so no orphaned request lingers.
+      signal: request.signal,
+      body: JSON.stringify({
+        model: request.model,
+        messages: request.messages,
+        tools: request.tools,
+        tool_choice: 'auto',
+        stream: false,
+        max_tokens: request.maxTokens,
+      }),
+    });
+  } catch (error) {
+    recordModelCall({ ...call, outcome: 'failed' });
+    throw error;
+  }
+  recordModelCall(
+    res.ok
+      ? { ...call, outcome: 'served', ms: Date.now() - started }
+      : { ...call, outcome: 'failed', status: res.status }
+  );
   return res.ok
     ? { ok: true, status: res.status, data: await res.json() }
     : { ok: false, status: res.status, bodyText: await res.text().catch(() => '') };
