@@ -1,7 +1,7 @@
 'use client';
 
 import type { CreateOwner } from '../owner';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserCurrency } from '@/hooks/useUserCurrency';
 import Loading from '@/components/Loading';
@@ -50,6 +50,8 @@ interface EntityFormProps<T extends Record<string, unknown>> {
    */
   /** Who will own it (ADR-0004 D8). Defaults to the signed-in user. */
   owner?: CreateOwner;
+  /** Right-aligned header actions on the full page (owner picker, template offer). */
+  headerActions?: ReactNode;
 }
 
 export function EntityForm<T extends Record<string, unknown>>({
@@ -62,6 +64,7 @@ export function EntityForm<T extends Record<string, unknown>>({
   wizardMode,
   embedded,
   owner,
+  headerActions,
 }: EntityFormProps<T>) {
   const { user, isLoading: authLoading, hydrated } = useAuth();
   const userCurrency = useUserCurrency();
@@ -171,8 +174,6 @@ export function EntityForm<T extends Record<string, unknown>>({
     );
   }
 
-  const Icon = config.icon;
-
   /**
    * FORM WIDTH SSOT
    *
@@ -192,18 +193,22 @@ export function EntityForm<T extends Record<string, unknown>>({
     // checks rejected valid amounts (step=1 from min 0.00001 refused 0.01 BTC;
     // step 0.1 refused a 4.75% rate) with a native bubble the form never saw.
     <form onSubmit={handleSubmit} noValidate className="space-y-8">
-      {/* Cat-powered prefill on EVERY form — create and edit alike — so
-                    users can describe what they want (or the change they want)
-                    and have the fields filled instead of typing each one. On edit
-                    the bar refines the existing values (it receives existingData). */}
-      <AIPrefillBar
-        formType={config.type}
-        onPrefill={handleAIPrefill}
-        disabled={formState.isSubmitting}
-        existingData={aiExistingData}
-        mode={mode}
-        fields={aiAssistFields}
-      />
+      {/* Cat-powered prefill on every form — create and edit alike — so
+          users can describe what they want (or the change they want) and have
+          the fields filled instead of typing each one. On edit the bar refines
+          the existing values (it receives existingData). In a wizard it is on
+          the first step only: it fills every step's fields from one sentence,
+          and repeating it pushed each later step's own fields below the fold. */}
+      {showAIPrefill(wizardMode) && (
+        <AIPrefillBar
+          formType={config.type}
+          onPrefill={handleAIPrefill}
+          disabled={formState.isSubmitting}
+          existingData={aiExistingData}
+          mode={mode}
+          fields={aiAssistFields}
+        />
+      )}
 
       <FormFieldGroups
         visibleFieldGroups={visibleFieldGroups}
@@ -249,13 +254,12 @@ export function EntityForm<T extends Record<string, unknown>>({
   return (
     <div className={`min-h-screen bg-surface-page p-4 sm:p-6 lg:p-8 pb-24 md:pb-8`}>
       <FormHeader
-        icon={Icon}
-        colorTheme={config.colorTheme}
         name={config.name}
         namePlural={config.namePlural}
         pageDescription={config.pageDescription}
         backUrl={config.backUrl}
         mode={mode}
+        actions={headerActions}
       />
 
       <div className="max-w-6xl grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -283,4 +287,9 @@ export function EntityForm<T extends Record<string, unknown>>({
       </div>
     </div>
   );
+}
+
+/** The AI bar shows on a single-page form and on a wizard's first step. */
+export function showAIPrefill(wizardMode?: Pick<WizardMode, 'currentStep'>): boolean {
+  return !wizardMode || wizardMode.currentStep === 0;
 }

@@ -57,23 +57,19 @@ vi.mock('@/components/create/EntityForm', () => ({ EntityForm: () => null }));
 vi.mock('@/components/create/useEntityCreationWizard', () => ({
   useEntityCreationWizard: () => ({
     wizardSteps: [{ id: 'basics', title: 'Basics', description: '', fields: [] }],
-    isTemplateOnlyMode: false,
+    templates: [{ id: 't1', icon: null, name: 'Bakery', tagline: 'Bread', defaults: {} }],
     currentStep: 0,
     completedSteps: new Set<number>(),
     selectedTemplate: null,
     formInitialValues: {},
-    showTemplateSelection: false,
     currentStepConfig: { id: 'basics', title: 'Basics', description: '', fields: [] },
     progress: 0,
-    isTemplateStep: false,
     isLastStep: true,
     handleNext: vi.fn(),
     handlePrevious: vi.fn(),
     handleSkip: vi.fn(),
     handleStepClick: vi.fn(),
     handleTemplateSelect: vi.fn(),
-    handleTemplateOnlySelect: vi.fn(),
-    handleCancel: vi.fn(),
   }),
 }));
 
@@ -84,7 +80,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DictationButton } from '@/components/ui/DictationButton';
 import { ActorSelector } from '@/components/create/ActorSelector';
 import { OWNER_ME } from '@/components/create/owner';
-import { WizardTemplateOnlyView } from '@/components/create/WizardTemplateOnlyView';
 import { EntityCreationWizard } from '@/components/create/EntityCreationWizard';
 import { WalletForm } from '@/components/wallets/WalletManager/components/WalletForm';
 import { SocialLinksEditor } from '@/components/profile/SocialLinksEditor';
@@ -98,6 +93,9 @@ const ALWAYS_44 = /(^|\s)min-h-11(\s|$)/;
 
 const CONFIG = {
   type: 'product',
+  name: 'Product',
+  namePlural: 'Products',
+  backUrl: '/dashboard/store',
   pageTitle: 'Create Product',
   pageDescription: 'Sell something',
   templates: [],
@@ -159,15 +157,19 @@ describe('create forms', () => {
     expect(container.querySelector('img')).toBeNull();
   });
 
-  it('Cancel is 44px on touch on the template page and in the wizard', () => {
-    const { unmount } = render(
-      <WizardTemplateOnlyView config={CONFIG} onCancel={() => {}} onSelectTemplate={() => {}} />
-    );
-    expect(screen.getByRole('button', { name: 'Cancel' }).className).toMatch(TOUCH_44);
-    unmount();
-
+  it('the wizard opens on the form, with the template offer as a 44px button', () => {
     render(<EntityCreationWizard config={CONFIG} />);
-    expect(screen.getByRole('button', { name: 'Cancel' }).className).toMatch(TOUCH_44);
+    // One header frame: the breadcrumb is the way back to the list.
+    expect(screen.getByRole('link', { name: 'Products' })).toHaveAttribute(
+      'href',
+      '/dashboard/store'
+    );
+    expect(screen.getByRole('heading', { level: 1, name: 'Create Product' })).toBeInTheDocument();
+    // No template gallery in front of the form, and nothing pre-ticked.
+    expect(screen.queryByText('Start from scratch')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Start from a template' }).className).toMatch(
+      ALWAYS_44
+    );
   });
 });
 

@@ -149,7 +149,6 @@ const fieldGroups: FieldGroup[] = [
 
 const wizardConfig: WizardConfig = {
   enabled: true,
-  includeTemplateStep: true,
   steps: [
     {
       id: 'basic',

@@ -142,7 +142,7 @@ export interface WizardStep {
   description: string;
   /** Whether this step can be skipped */
   optional?: boolean;
-  /** Field names to display in this step (empty for template step) */
+  /** Field names to display in this step */
   fields: string[];
 }
 
@@ -155,8 +155,6 @@ export interface WizardConfig {
   enabled: boolean;
   /** Wizard steps configuration */
   steps: WizardStep[];
-  /** Whether to include template selection as first step */
-  includeTemplateStep?: boolean;
 }
 
 // ==================== GUIDANCE TYPES ====================
