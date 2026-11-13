@@ -11,6 +11,8 @@ to the map, sub-bullets stay here for the human reader.
 
 ## 2026-11-13
 
+- **Your Cat and your bots can read your GitHub, your mail and your calendar.** Connect GitHub and Google in Cat → Controls, under what your Cat sees. Then ask: "what is assigned to me on GitHub?", "any mail from the landlord this week?", "what is on my calendar tomorrow?". Reading only: nothing is sent, changed or deleted. In a bot's details you choose per ability whether it asks first or reads on its own, so a morning routine can open your calendar by itself.
+  - Each connection appears once its keys are set on the server (`docs/operations/connectors.md`).
 - **You can speak instead of type without an account.** The microphone on "What do you want to do?", raising money, feedback and the studio now works for visitors too, in every browser.
   - A visitor gets twelve takes in ten minutes and about four minutes per take; signing in lifts both.
 - **Organizations are called Organizations everywhere.** The switcher, the list and the join button no longer say "Groups" for the same thing.

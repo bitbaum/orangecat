@@ -231,6 +231,12 @@ export const API_ROUTES = {
     GITHUB_CONNECT: '/api/integrations/github/connect',
     /** Where GitHub returns the person (the GitHub App's callback URL). */
     GITHUB_CALLBACK: '/api/integrations/github/callback',
+    /** DELETE disconnects the Google account. */
+    GOOGLE: '/api/integrations/google',
+    /** GET (full-page) starts Google's consent for mail and calendar, read-only. */
+    GOOGLE_CONNECT: '/api/integrations/google/connect',
+    /** Where Google returns the person (the OAuth client's redirect URI). */
+    GOOGLE_CALLBACK: '/api/integrations/google/callback',
   },
   LNURLP: {
     CALLBACK: (username: string) => `/api/lnurlp/${encodeURIComponent(username)}/callback`,

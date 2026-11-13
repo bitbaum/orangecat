@@ -180,7 +180,7 @@ export const COMPANION_COPY = {
       row: 'What it can do',
       rowOwn: (n: number) => `What it can do · ${n} on its own`,
       intro:
-        'Ask me: it proposes, and nothing happens until you tap. On its own: it does it as you in your Loki, and carries on with the result. Anything it makes on OrangeCat always asks.',
+        'Ask me: it proposes, and nothing happens until you tap. On its own: it does it as you, in your Loki or in an account you connected (those it only reads), and carries on with the result. Anything it makes on OrangeCat always asks.',
       off: 'Off',
       ask: 'Ask me',
       auto: 'On its own',
@@ -204,6 +204,9 @@ export const COMPANION_COPY = {
         loki_finding_status: 'Read where a finding is',
         walk_site: 'Walk a live site and say what is wrong',
         use_browser: 'Use a browser of its own',
+        github_read: 'Read your GitHub: repositories, issues, pull requests, a file',
+        gmail_read: 'Search and read your mail',
+        calendar_read: 'Read your calendar',
       } as Record<string, string>,
     },
     /** The "Do it?" card under a bot's answer, and what follows the tap. */
