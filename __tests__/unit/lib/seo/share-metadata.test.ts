@@ -9,7 +9,7 @@
  * - the root layout carried the homepage's og:title, og:description and
  *   og:url, so /about, /faq, /whitepaper and every page without its own
  *   openGraph shared as the homepage;
- * - /pay/cato, /pay, /blog, /steal, /ecosystem, /technology and /community
+ * - /pay/cato, /pay, /blog, /steal, /ecosystem and /community
  *   set an openGraph with no image, which dropped the root card, and most of
  *   them were titled "OrangeCat - Your AI Economic Agent" on X;
  * - entity, profile, group, article and blog descriptions went out whole: an
@@ -24,7 +24,6 @@ import { generateMetadata as payLinkMetadata } from '@/app/(public)/pay/[usernam
 import { metadata as blogMetadata } from '@/app/(public)/blog/page';
 import { metadata as stealMetadata } from '@/app/(public)/steal/page';
 import { metadata as ecosystemMetadata } from '@/app/(public)/ecosystem/page';
-import { metadata as technologyMetadata } from '@/app/(public)/technology/page';
 import { metadata as communityMetadata } from '@/app/(authenticated)/community/layout';
 import { generateMetadata as profileMetadata } from '@/app/profiles/[username]/page';
 import { generateMetadata as groupMetadata } from '@/app/groups/[slug]/page';
@@ -142,7 +141,6 @@ describe('pages that set their own openGraph', () => {
     ['/blog', blogMetadata],
     ['/steal', stealMetadata],
     ['/ecosystem', ecosystemMetadata],
-    ['/technology', technologyMetadata],
     ['/community', communityMetadata],
   ])('%s has a preview image, its own address, and one title on every network', (path, m) => {
     expect(imageUrls(og(m).images)).toHaveLength(1);

@@ -11,6 +11,10 @@
  * Cache 1h at the edge so the social previewer can hit us hard at
  * share-time without overloading the DB.
  *
+ * A name with no profile gets the plain brand card. It used to get a card
+ * built from the URL itself, so any made-up text ("Satoshi Nakamoto -
+ * official") rendered as an OrangeCat profile on an orangecat.ch image.
+ *
  * Created: 2026-06-03
  */
 
@@ -19,6 +23,8 @@ import { createServerClient } from '@/lib/supabase/server';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { APP_NAME, APP_KICKER } from '@/config/brand';
 import { OG_SIZE, OG_COLOR, Avatar, BrandFooter } from '@/lib/og/branding';
+import { brandOnlyCard } from '@/lib/og/project-card';
+import { shareLine } from '@/lib/og/share-line';
 
 // Must be a string literal — Next.js static-analyzes `runtime` at build
 // time and cannot resolve imported identifiers.
@@ -46,16 +52,14 @@ export async function GET(_req: Request, { params }: RouteContext) {
     .eq('username', username)
     .maybeSingle();
 
-  const profile = (data as ProfileRow | null) ?? {
-    name: username,
-    username,
-    bio: null,
-    avatar_url: null,
-  };
+  const profile = data as ProfileRow | null;
+  if (!profile) {
+    return brandOnlyCard();
+  }
 
   const displayName = profile.name || profile.username || username;
   const handle = profile.username ? `@${profile.username}` : '';
-  const bio = (profile.bio ?? '').trim().slice(0, 180);
+  const bio = shareLine(profile.bio);
 
   return new ImageResponse(
     <div
