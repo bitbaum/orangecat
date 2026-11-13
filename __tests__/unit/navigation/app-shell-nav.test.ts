@@ -79,7 +79,7 @@ describe('places under "you"', () => {
   });
 
   it('are still found from the palette', () => {
-    expect(rankItems(buildPages(), 'settings', 1)[0]?.href).toBe(ROUTES.SETTINGS);
+    expect(rankItems(buildPages(true), 'settings', 1)[0]?.href).toBe(ROUTES.SETTINGS);
   });
 
   it('give no two sidebar rows the same icon', () => {
