@@ -200,12 +200,12 @@ export function PendingActionsCard({ action, onConfirm, onReject }: PendingActio
         {subject && <p className="mt-0.5 break-words text-sm text-fg-secondary">{subject}</p>}
         {action.grantOnConfirm && (
           <p className="mt-2 text-sm text-fg-secondary">
-            Cat isn’t allowed to handle{' '}
+            Cat isn’t allowed to act on{' '}
             {ACTION_CATEGORIES[
               action.category as keyof typeof ACTION_CATEGORIES
             ]?.name.toLowerCase() ?? action.category}{' '}
-            actions yet. Confirming allows it from now on — you’ll still confirm each one — and runs
-            this action.
+            yet. Confirming allows it from now on — you’ll still confirm each one — and runs this
+            action.
           </p>
         )}
       </div>

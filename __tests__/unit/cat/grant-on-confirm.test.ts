@@ -1,6 +1,6 @@
 /**
  * A category Cat was never allowed to touch used to end every action in
- * "Cat isn't allowed to handle entities actions yet" + a link to Settings.
+ * "Cat isn't allowed to act on my things yet" + a link to Settings.
  * Now it is a consent card: confirming allows the category AND runs the
  * action. Money and high-risk actions are excluded from that shortcut.
  */
