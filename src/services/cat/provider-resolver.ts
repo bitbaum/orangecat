@@ -30,6 +30,7 @@ import { prepareFreePool } from '@/services/ai/free-model-pool';
 import { buildPlatformProviders } from '@/services/ai/platform-providers';
 import { GROQ_KEY_HEADER, OPENROUTER_KEY_HEADER } from '@/config/http-headers';
 import { ROUTES } from '@/config/routes';
+import { lokiKeySteps } from '@/services/cat/loki-key-step';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import type { WiredProviderId } from '@/data/aiProviders';
 
@@ -288,6 +289,17 @@ export async function resolveProvider(
           const s = buildKeyStep(k.provider, k.key);
           return s ? [s] : [];
         },
+      });
+    }
+  }
+
+  // A key the person keeps on Loki and switched on for OrangeCat: the same
+  // key their bots answer on, by the same rule (only when none is saved here).
+  if (!evalLock && storedKeys.length === 0 && !clientGroqKey && !clientOpenRouterKey) {
+    for (const step of await lokiKeySteps(supabase, userId, requestedModel)) {
+      entries.push({
+        order: step.order,
+        build: () => [{ ...step.link, provider: step.link.provider as AIProvider }],
       });
     }
   }

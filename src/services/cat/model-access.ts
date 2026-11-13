@@ -23,6 +23,13 @@ import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { getAIProvider } from '@/data/aiProviders';
 import { createApiKeyService } from '@/services/ai/api-key-service';
 import { isProbedProvider, modelsForKey, type KeyModels } from '@/services/cat/key-models';
+import { isCallableThroughLoki } from '@/services/ai/own-key';
+import { isModelId } from '@/services/ai/own-models';
+import { listLokiModels, sharedLokiOwnKeys } from '@/services/loki/shared-keys';
+
+/** Names a provider lists that are not for a conversation. */
+const NOT_A_CHAT_MODEL =
+  /embed|whisper|tts|audio|speech|transcri|image|moderation|rerank|guard|imagine/i;
 
 /** How a model is served for this specific user. */
 export type ModelAccessSource = 'free' | 'byok' | 'credits';
@@ -62,6 +69,12 @@ export interface ModelAccess {
    */
   allowsCustomModel: boolean;
   creditBalanceBtc: number;
+  /**
+   * Set when "Auto" does not mean the free pool: the person keeps a key on
+   * Loki, switched on for OrangeCat, and the Cat answers on it. The picker
+   * says so instead of "Best Free".
+   */
+  autoOn?: { provider: string; providerName: string; model: string | null; heldOn: 'loki' };
 }
 
 /** OpenRouter is the aggregator: one verified key → any registry/custom model id. */
@@ -129,9 +142,37 @@ function toKeyModel(id: string, keyModels: KeyModels): UsableModel {
   };
 }
 
+/** A key kept on Loki and switched on for OrangeCat, with the models it lists. */
+export interface LokiKeyModels {
+  provider: string;
+  chosen: string | null;
+  models: string[];
+}
+
+/** The first switched-on Loki key this app can call, and its models. Never throws. */
+async function lokiKeyModels(
+  supabase: AnySupabaseClient,
+  userId: string
+): Promise<LokiKeyModels | null> {
+  const key = (await sharedLokiOwnKeys(supabase, userId)).find(
+    k => k.lokiActorId && isCallableThroughLoki(k.provider)
+  );
+  if (!key?.lokiActorId) {
+    return null;
+  }
+  const listed = await listLokiModels(key.lokiActorId, key.provider);
+  return {
+    provider: key.provider,
+    chosen: listed.chosen ?? key.model ?? null,
+    models: listed.models.filter(id => isModelId(id) && !NOT_A_CHAT_MODEL.test(id)).slice(0, 80),
+  };
+}
+
 export interface ModelAccessDeps {
   /** Test seam for the per-key provider lookup. */
   directKeyModels?: (supabase: AnySupabaseClient, userId: string) => Promise<KeyModels[]>;
+  /** Test seam for the key the person keeps on Loki. */
+  lokiKeyModels?: (supabase: AnySupabaseClient, userId: string) => Promise<LokiKeyModels | null>;
 }
 
 /**
@@ -144,10 +185,11 @@ export async function getUsableModels(
   userId: string,
   deps: ModelAccessDeps = {}
 ): Promise<ModelAccess> {
-  const [byokProviders, creditBalanceBtc, keyModels] = await Promise.all([
+  const [byokProviders, creditBalanceBtc, keyModels, onLoki] = await Promise.all([
     getVerifiedProviderIds(supabase, userId).catch(() => [] as string[]),
     getCreditBalance(supabase, userId).catch(() => 0),
     (deps.directKeyModels ?? directKeyModels)(supabase, userId).catch(() => [] as KeyModels[]),
+    (deps.lokiKeyModels ?? lokiKeyModels)(supabase, userId).catch(() => null),
   ]);
 
   const hasAggregatorKey = byokProviders.includes(AGGREGATOR_PROVIDER);
@@ -192,11 +234,42 @@ export async function getUsableModels(
     }
   }
 
+  // A key kept on Loki answers only when none is saved here (the resolver's
+  // rule, loki-key-step.ts), so that is when its models are offered.
+  const lokiKey = byokProviders.length === 0 ? onLoki : null;
+  const lokiName = lokiKey ? (getAIProvider(lokiKey.provider)?.name ?? lokiKey.provider) : '';
+  for (const id of lokiKey?.models ?? []) {
+    if (offered.has(id)) {
+      continue;
+    }
+    offered.add(id);
+    const known = getModelMetadata(id);
+    models.push({
+      id,
+      name: known?.name ?? id,
+      provider: `${lokiName} · your key on Loki${id === lokiKey?.chosen ? ' · chosen there' : ''}`,
+      tier: known?.tier ?? 'premium',
+      contextWindow: known?.contextWindow ?? 0,
+      capabilities: known?.capabilities ?? ['text', 'streaming'],
+      source: 'byok',
+    });
+  }
+
   return {
     models,
     locked,
     byokProviders,
     allowsCustomModel: hasAggregatorKey,
     creditBalanceBtc,
+    ...(lokiKey
+      ? {
+          autoOn: {
+            provider: lokiKey.provider,
+            providerName: lokiName,
+            model: lokiKey.chosen,
+            heldOn: 'loki' as const,
+          },
+        }
+      : {}),
   };
 }

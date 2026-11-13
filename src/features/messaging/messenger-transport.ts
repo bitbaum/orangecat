@@ -25,11 +25,12 @@ import {
   type MessengerTransport,
 } from '@bitbaum/chatkit/messenger';
 import { API_ROUTES } from '@/config/api-routes';
-import { CAT_MENTION } from '@/config/cat-identity';
+import { CAT_MENTION, CAT_USERNAME } from '@/config/cat-identity';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { apiErrorMessage } from '@/lib/api/errorMessage';
 import supabase from '@/lib/supabase/browser';
 import { logger } from '@/utils/logger';
+import { namedBots } from './lib/named-bots';
 import {
   toMessengerAttachment,
   toMessengerConversation,
@@ -154,44 +155,55 @@ export function createMessengerTransport(options: MessengerTransportOptions): Me
   const emit = (event: MessengerEvent) => listeners.forEach(on => on(event));
   const mentionsCat = mentionMatcher([CAT_MENTION]);
 
-  // The bot of a conversation between the viewer and one bot (ADR-0015): it
-  // is owed an answer to every message, so the thread says it is writing.
-  const botOf = new Map<string, string>();
+  // The bots of each conversation (ADR-0015), so the thread can say a bot is
+  // writing from the moment it is owed an answer: always when it is the only
+  // other member, and when it is named where there are more voices. The Cat
+  // is left out: it has its own "is thinking".
+  const botsOf = new Map<string, { direct: boolean; bots: Array<{ id: string; name: string }> }>();
   const learn = (conversation: Conversation) => {
     const others = (conversation.participants ?? []).filter(
       p => p.user_id !== userId && p.is_active !== false
     );
-    const [only] = others;
-    if (others.length === 1 && only?.is_agent) {
-      botOf.set(conversation.id, only.user_id);
+    const bots = others
+      .filter(p => p.is_agent && p.username !== CAT_USERNAME)
+      .map(p => ({ id: p.user_id, name: p.name || p.username }));
+    if (bots.length === 0) {
+      botsOf.delete(conversation.id);
     } else {
-      botOf.delete(conversation.id);
+      botsOf.set(conversation.id, { direct: others.length === 1, bots });
     }
+  };
+  /** The bots a message is owed an answer from: the server's own rule. */
+  const owedBy = (conversationId: string, body: string) => {
+    const here = botsOf.get(conversationId);
+    if (!here || !body.trim()) {
+      return [];
+    }
+    return here.direct ? here.bots : namedBots(body, here.bots);
   };
   const writing = new Map<string, ReturnType<typeof setInterval>>();
-  const stopWriting = (conversationId: string) => {
-    const timer = writing.get(conversationId);
-    if (timer) {
-      clearInterval(timer);
-      writing.delete(conversationId);
+  const stopWriting = (conversationId: string, bot: string) => {
+    const key = `${conversationId}:${bot}`;
+    const timer = writing.get(key);
+    if (!timer) {
+      return;
     }
-    const bot = botOf.get(conversationId);
-    if (bot) {
-      emit({ type: 'typing', conversationId, actorId: bot, typing: false });
-    }
+    clearInterval(timer);
+    writing.delete(key);
+    emit({ type: 'typing', conversationId, actorId: bot, typing: false });
   };
   const startWriting = (conversationId: string, bot: string) => {
-    stopWriting(conversationId);
+    stopWriting(conversationId, bot);
     const until = Date.now() + BOT_TYPING_FOR_MS;
     const say = () => {
       if (Date.now() > until) {
-        stopWriting(conversationId);
+        stopWriting(conversationId, bot);
         return;
       }
       emit({ type: 'typing', conversationId, actorId: bot, typing: true });
     };
     say();
-    writing.set(conversationId, setInterval(say, BOT_TYPING_EVERY_MS));
+    writing.set(`${conversationId}:${bot}`, setInterval(say, BOT_TYPING_EVERY_MS));
   };
 
   const loadPage = async (conversationId: string, before?: string, signal?: AbortSignal) => {
@@ -226,11 +238,12 @@ export function createMessengerTransport(options: MessengerTransportOptions): Me
       for (const message of page.messages) {
         emit({ type: 'message', message });
       }
-      // The bot has answered: its newest message is newer than the viewer's.
-      const bot = botOf.get(conversationId);
-      const newest = page.messages[page.messages.length - 1];
-      if (bot && newest?.authorId === bot) {
-        stopWriting(conversationId);
+      // A bot that has answered is no longer writing. Only the messages
+      // after the viewer's own newest one count: an older answer of the same
+      // bot must not end the wait for this one.
+      const ownNewest = page.messages.map(m => m.authorId).lastIndexOf(userId);
+      for (const message of page.messages.slice(ownNewest + 1)) {
+        stopWriting(conversationId, message.authorId);
       }
     } catch {
       // The next push, or the tab coming back, brings it.
@@ -275,11 +288,11 @@ export function createMessengerTransport(options: MessengerTransportOptions): Me
           }),
         }
       );
-      const bot = botOf.get(conversationId);
-      if (bot && draft.body.trim()) {
-        // Every message to a bot is answered. A push normally brings the
-        // answer; these looks are for when the push does not arrive.
-        startWriting(conversationId, bot);
+      const owed = owedBy(conversationId, draft.body);
+      if (owed.length > 0) {
+        // A push normally brings each answer; these looks are for when the
+        // push does not arrive.
+        owed.forEach(bot => startWriting(conversationId, bot.id));
         for (const delay of CAT_CHECKS_MS) {
           setTimeout(() => void pushLatest(conversationId), delay);
         }
