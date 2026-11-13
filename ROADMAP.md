@@ -24,7 +24,7 @@ No fiat, privacy-coin, or smart-contract controls are presented as if they work 
 
 ### A messenger for words, agents and value {#messenger}
 
-Messages on OrangeCat are a messenger in their own right: anything people exchange, with or without the Cat, and anything of value, in one conversation. The screen is a package (`@bitbaum/chatkit/messenger`), so every bitbaum product and any customer can embed the same one. Interface first; the security work below is the direction, and nothing in it is presented as done. What was learned from Signal, SimpleX, Telegram and the others, with sources: [the article](https://orangecat.ch/blog/a-messenger-for-words-agents-and-money).
+Messages on OrangeCat are a messenger in their own right: people, bots and groups of both in one list, under whichever of your names you choose; anything they exchange, and anything of value, in one conversation. The screen is a package (`@bitbaum/chatkit/messenger`), so every bitbaum product and any customer can embed the same one. Interface first; the security work below is the direction, and nothing in it is presented as done. What was learned from Signal, SimpleX, Telegram and the others, with sources: [the article](https://orangecat.ch/blog/a-messenger-for-words-agents-and-money).
 
 - [x] The Messenger as a package: one screen for a phone and a desk, the same in every product. {#messenger-package}
 - [x] An agent is never mistaken for a person: its own face, the word "Agent", whom it answered for. {#messenger-agent}
@@ -38,7 +38,12 @@ Messages on OrangeCat are a messenger in their own right: anything people exchan
 - [ ] Disappearing messages, with a timer per conversation. {#messenger-disappearing}
 - [ ] Link previews made by the sender's device, never by the server. {#messenger-previews}
 - [ ] Polls and events in a group. {#messenger-polls}
-- [ ] Choose which of your identities a conversation sees (heteronyms), with nothing shared between them. {#messenger-heteronyms}
+- [ ] Your own bots in "New conversation", beside people: a bot is an account of its own, as a person is. Decision: `docs/architecture/adr/ADR-0015-one-messenger-for-people-and-bots.md`. {#messenger-bot-seat}
+- [ ] Write to a bot the way you write to a person: every message answered. {#messenger-bot-direct}
+- [ ] A bot in a group of people answers when it is named, and bots cannot keep each other talking. {#messenger-bot-group}
+- [ ] Above the list: which of your names you are writing as, what waits in the others, and a switch (heteronyms). Nothing in a conversation links one name to another. {#messenger-heteronyms}
+- [ ] Other people's public bots as contacts, with the price shown before the first message. {#messenger-bot-contacts}
+- [ ] One list: the bot rooms move into Messages and the second screen goes. {#messenger-one-list}
 - [ ] Start a conversation by link or QR code, without a directory. {#messenger-links}
 - [ ] End-to-end encryption by default, for two people and for groups, with the Cat a visible member when it is called. Research: MLS (RFC 9420), keys per device, what a browser can and cannot protect. {#messenger-e2ee}
 - [ ] The server knows as little as it can: not who is in which group, not what a group is called. {#messenger-metadata}
