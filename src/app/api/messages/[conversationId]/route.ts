@@ -28,6 +28,12 @@ import {
 import { logger } from '@/utils/logger';
 import { validateUUID, getValidationError } from '@/lib/api/validation';
 
+const SEND_REFUSALS = {
+  attachments_not_uploaded: 'A file has not finished uploading. Try again in a moment.',
+  attachments_invalid: 'These files cannot be sent with this message.',
+  payment_request_invalid: 'That payment request cannot be sent in this conversation.',
+} as const;
+
 /** GET - Fetch messages for a conversation with cursor-based pagination */
 export const GET = withAuth(
   async (
@@ -110,24 +116,15 @@ export const POST = withAuth(
         });
       }
 
-      const { content, messageType, metadata, clientId, senderActorId, attachmentIds } =
-        validation.data;
+      const { content, ...rest } = validation.data;
       const result = await postConversationMessage(conversationId, user.id, {
         content: content.trim(),
-        attachmentIds,
-        messageType,
-        // Server-owned key, applied last so a caller cannot displace it.
-        metadata: clientId ? { ...(metadata ?? {}), client_id: clientId } : metadata,
-        senderActorId,
+        ...rest,
       });
       if (!result.ok) {
         return result.code === 'forbidden'
           ? apiForbidden('Not a participant in this conversation')
-          : apiValidationError(
-              result.code === 'attachments_not_uploaded'
-                ? 'A file has not finished uploading. Try again in a moment.'
-                : 'These files cannot be sent with this message.'
-            );
+          : apiValidationError(SEND_REFUSALS[result.code]);
       }
       return apiCreated(
         { id: result.id, attachments: result.attachments },
