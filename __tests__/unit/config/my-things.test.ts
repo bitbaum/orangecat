@@ -58,8 +58,10 @@ describe('the sidebar after the fold', () => {
     expect(hrefs).toContain(ROUTES.WHAT_YOU_CAN_DO);
   });
 
+  // Seven since Discover moved up from "More" (full-path review 2026-11-13):
+  // the shelf where makers are found was two clicks away and never lit up.
   it('keeps the primary section short enough to read at a glance', () => {
-    expect(hrefs.length).toBeLessThanOrEqual(6);
+    expect(hrefs.length).toBeLessThanOrEqual(7);
   });
 
   it('no longer lists entity types one by one', () => {
