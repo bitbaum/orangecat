@@ -4,6 +4,8 @@ import { Metadata } from 'next';
 import { Zap, TreePine } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { ROUTES } from '@/config/routes';
+import { PUBLIC_PAGE_WIDTH, PublicPageHeader } from '@/components/layout/PublicPageHeader';
+import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
   title: 'About',
@@ -14,23 +16,16 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   return (
     <div className="min-h-screen bg-surface-page">
-      {/* Hero Section — monochrome per migration 6/N */}
-      <div className="bg-surface-base border-b border-subtle">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="text-center">
-            <h1 className="font-heading tracking-display text-4xl font-bold text-fg-primary sm:text-5xl md:text-6xl">
-              About OrangeCat
-            </h1>
-            <p className="mt-3 max-w-md mx-auto text-base text-fg-secondary sm:text-lg md:mt-5 md:text-xl md:max-w-3xl">
-              Your AI economic agent — and the platform where it operates.
-            </p>
-          </div>
-        </div>
+      <div className={PUBLIC_PAGE_WIDTH.wide}>
+        <PublicPageHeader
+          title="About OrangeCat"
+          lede="Your AI economic agent — and the platform where it operates."
+        />
       </div>
 
       {/* Mission & Values */}
       <div className="bg-surface-page">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className={cn(PUBLIC_PAGE_WIDTH.wide, 'pb-16')}>
           <div className="text-center mb-12">
             <h2 className="text-2xl font-semibold text-fg-primary mb-4">Our Mission</h2>
             <p className="text-lg text-fg-secondary max-w-3xl mx-auto">
@@ -87,10 +82,10 @@ export default function AboutPage() {
       <div className="bg-surface-public">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center">
-            <h2 className="font-heading tracking-display text-3xl sm:text-4xl font-bold text-fg-inverted mb-4">
+            <h2 className="font-heading tracking-display text-3xl sm:text-4xl font-bold text-on-public mb-4">
               Join the Open Economy
             </h2>
-            <p className="text-xl text-fg-inverted/70 mb-8">
+            <p className="text-xl text-on-public/70 mb-8">
               Exchange, fund, lend, invest, and govern — with your AI agent, under any identity, in
               Bitcoin.
             </p>

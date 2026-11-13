@@ -120,6 +120,8 @@ export interface GroupWalletSummary {
   bitcoin_address?: string;
   lightning_address?: string;
   current_balance_btc: number;
+  /** When current_balance_btc was read from the chain; null = never (the 0 is the column default). */
+  balance_updated_at: string | null;
   is_active: boolean;
   can_access: boolean; // Based on group membership
   required_signatures: number;

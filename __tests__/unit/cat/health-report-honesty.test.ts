@@ -17,6 +17,15 @@
 import { runCatHealthProbes, groqCanServeCatPrompt } from '@/services/cat/health-probes';
 import { recordGroqRefusal, resetGroqDailyPool } from '@/services/ai/groq-capacity';
 
+// This file is not about spending caps, and with no database here the cap
+// refuses every call. The cap has its own tests
+// (__tests__/unit/ai/vendor-spend-cap.test.ts).
+vi.mock('@/services/ai/vendor-spend-cap', async importOriginal => ({
+  ...(await importOriginal<typeof import('@/services/ai/vendor-spend-cap')>()),
+  reservePlatformCall: async () => {},
+  reserveServiceCall: async () => {},
+}));
+
 const OK = { ok: true, status: 200, json: async () => ({ choices: [] }) };
 const RATE_LIMITED = {
   ok: false,

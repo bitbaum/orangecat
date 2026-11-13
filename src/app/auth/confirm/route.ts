@@ -12,9 +12,7 @@ export async function GET(request: Request) {
   const rawNext = requestUrl.searchParams.get('next') ?? ROUTES.DASHBOARD.CAT_WELCOME;
   // Only allow internal paths (must start with /) to prevent open redirect attacks
   const next =
-    rawNext.startsWith('/') && !rawNext.startsWith('//')
-      ? rawNext
-      : ROUTES.DASHBOARD.CAT_WELCOME;
+    rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : ROUTES.DASHBOARD.CAT_WELCOME;
 
   if (token_hash && type) {
     const supabase = await createServerClient();
@@ -29,10 +27,6 @@ export async function GET(request: Request) {
     }
   }
 
-  // Provide more helpful error messages
-  const errorMessage =
-    'Email verification failed. The link may have expired or already been used. Please try signing in or request a new verification email.';
-  return NextResponse.redirect(
-    `${SITE_URL}/auth?error=${encodeURIComponent(errorMessage)}&showResend=true`
-  );
+  // A code, not a sentence: the page shows fixed copy for it (auth/url-error).
+  return NextResponse.redirect(`${SITE_URL}/auth?error=link_expired&showResend=true`);
 }

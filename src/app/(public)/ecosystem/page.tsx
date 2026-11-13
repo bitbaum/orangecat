@@ -24,6 +24,8 @@ import {
 import { ROUTES } from '@/config/routes';
 import { SOLON_BASE_URL_DEFAULT } from '@/config/solon';
 import { fetchStudioMapForCat } from '@/services/ai/studio-map-fetcher';
+import { PUBLIC_PAGE_WIDTH, PublicPageHeader } from '@/components/layout/PublicPageHeader';
+import { cn } from '@/lib/utils';
 
 /**
  * The studio list is Loki's fleet map, which is itself cached five minutes.
@@ -73,23 +75,12 @@ export default async function EcosystemPage() {
 
   return (
     <div className="min-h-screen bg-surface-page">
-      {/* Hero */}
-      <div className="border-b border-default bg-surface-base">
-        <div className="mx-auto max-w-4xl px-4 py-16 text-center sm:px-6 lg:px-8 lg:py-20">
-          <span className="inline-flex items-center rounded-full border border-default bg-surface-page px-4 py-1.5 text-xs font-medium uppercase tracking-caps text-fg-secondary">
-            {ECOSYSTEM.owner}
-          </span>
-          <h1 className="mt-6 font-heading text-4xl font-bold tracking-display text-fg-primary sm:text-5xl">
-            One stack, three pillars
-          </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg text-fg-secondary sm:text-xl">
-            Fund what is being built, build what people choose to fund, and govern both in the open.
-            Three products, deliberately kept apart — and bound where it counts.
-          </p>
-        </div>
-      </div>
+      <div className={cn(PUBLIC_PAGE_WIDTH.wide, 'pb-16')}>
+        <PublicPageHeader
+          title="One stack, three pillars"
+          lede="Fund what is being built, build what people choose to fund, and govern both in the open. Three products, deliberately kept apart — and bound where it counts."
+        />
 
-      <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
         {/* The pillars — different, in their own words */}
         <section>
           <div className="grid gap-4 md:grid-cols-3">
@@ -214,7 +205,7 @@ export default async function EcosystemPage() {
               <a
                 href={`${solonBase}/proposals`}
                 rel="noopener"
-                className="font-medium text-fg-primary underline underline-offset-4"
+                className="inline-flex min-h-11 items-center font-medium text-fg-primary underline underline-offset-4"
               >
                 Solon decisions
               </a>
@@ -227,7 +218,7 @@ export default async function EcosystemPage() {
               <a
                 href={`${solonBase}/ecosystem`}
                 rel="noopener"
-                className="font-medium text-fg-primary underline underline-offset-4"
+                className="inline-flex min-h-11 items-center font-medium text-fg-primary underline underline-offset-4"
               >
                 Live governed state
               </a>

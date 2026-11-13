@@ -43,13 +43,13 @@ export function SettingsAppearanceSection() {
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                 'disabled:opacity-50',
                 active
-                  ? 'border-accent-primary bg-accent-primary/5'
+                  ? 'border-fg-primary bg-surface-raised'
                   : 'border-default hover:border-interactive hover:bg-surface-raised'
               )}
             >
               <div className="flex items-center justify-between">
                 <Icon className="h-5 w-5 text-fg-secondary" />
-                {active && <Check className="h-4 w-4 text-accent-warm" />}
+                {active && <Check className="h-4 w-4 text-fg-primary" />}
               </div>
               <span className="font-medium text-fg-primary">{label}</span>
               <span className="text-sm text-fg-secondary">{description}</span>

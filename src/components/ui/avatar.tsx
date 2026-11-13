@@ -21,10 +21,22 @@ const Avatar = React.forwardRef<HTMLDivElement, AvatarProps>(({ className, ...pr
 Avatar.displayName = 'Avatar';
 
 const AvatarImage = React.forwardRef<HTMLImageElement, AvatarImageProps>(
-  ({ className, alt = '', ...props }, ref) => (
-    // eslint-disable-next-line @next/next/no-img-element -- generic src prop carrying free-form user URLs (any host); next/image would throw for hosts outside images.remotePatterns
-    <img ref={ref} alt={alt} className={cn('aspect-square h-full w-full', className)} {...props} />
-  )
+  ({ className, alt = '', ...props }, ref) => {
+    // No photo, no <img>: an empty one drew a blank ring and pushed the
+    // AvatarFallback beside it out of the clipped circle.
+    if (!props.src) {
+      return null;
+    }
+    return (
+      // eslint-disable-next-line @next/next/no-img-element -- generic src prop carrying free-form user URLs (any host); next/image would throw for hosts outside images.remotePatterns
+      <img
+        ref={ref}
+        alt={alt}
+        className={cn('aspect-square h-full w-full', className)}
+        {...props}
+      />
+    );
+  }
 );
 AvatarImage.displayName = 'AvatarImage';
 

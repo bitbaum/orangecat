@@ -61,13 +61,16 @@ export default function NewsletterSignup({ source }: NewsletterSignupProps) {
         role="status"
       >
         <CheckCircle className="h-5 w-5" />
-        <span className="font-medium">You&apos;re subscribed. Watch your inbox.</span>
+        <span className="font-medium">You&apos;re on the list.</span>
       </div>
     );
   }
 
   return (
     <form onSubmit={handleSubmit} noValidate>
+      {/* min-w-0 on the input: a flex item never shrinks below its intrinsic
+          width (~268px at the forced 16px), which pushed Subscribe off a
+          390px screen. */}
       <div className="flex gap-4">
         <input
           type="email"
@@ -77,7 +80,7 @@ export default function NewsletterSignup({ source }: NewsletterSignupProps) {
           placeholder="Enter your email"
           aria-label="Email address"
           disabled={status === 'loading'}
-          className="flex-1 px-4 py-2 border border-strong bg-surface-base text-fg-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
+          className="min-w-0 flex-1 px-4 py-2 border border-strong bg-surface-base text-fg-primary rounded-lg focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
         />
         <Button type="submit" variant="primary" size="sm" disabled={status === 'loading'}>
           {status === 'loading' ? (

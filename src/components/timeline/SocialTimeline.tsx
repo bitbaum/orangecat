@@ -11,6 +11,7 @@ import { useSocialTimeline } from './useSocialTimeline';
 import { TimelineSortingControls } from './TimelineSortingControls';
 import { TimelineSearchControls } from './TimelineSearchControls';
 import { TIMELINE_COPY, TIMELINE_SURFACE } from '@/config/timeline';
+import { scrollBehavior } from '@/lib/scroll-behavior';
 
 export interface SocialTimelineProps {
   title: string;
@@ -251,7 +252,7 @@ export default function SocialTimeline({
           if (composerRef.current) {
             const element = composerRef.current;
             const elementPosition = element.getBoundingClientRect().top + window.scrollY;
-            window.scrollTo({ top: elementPosition - 80, behavior: 'smooth' });
+            window.scrollTo({ top: elementPosition - 80, behavior: scrollBehavior() });
           }
         }}
         className={TIMELINE_SURFACE.chip}

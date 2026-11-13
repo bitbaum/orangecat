@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 /**
- * Home page composition: the fold, the studio behind it, then "What it solves".
+ * Home page composition: the fold, "What it solves", then the studio behind it.
  * Long-form marketing sections (steps, comparison) live on /how-it-works.
  */
 
@@ -35,7 +35,7 @@ vi.mock('@/components/home/sections/ProblemsSection', () => ({
 import HomePublic from '@/components/home/HomePublic';
 
 describe('HomePublic', () => {
-  it('renders the fold, the studio and what it solves, in that order', () => {
+  it('renders the fold, what it solves and the studio, in that order', () => {
     const { container } = render(<HomePublic />);
     expect(screen.getByTestId('hero-section')).toBeInTheDocument();
     expect(screen.getByTestId('studio-section')).toBeInTheDocument();
@@ -48,7 +48,7 @@ describe('HomePublic', () => {
     const order = Array.from(container.querySelectorAll('[data-testid]')).map(el =>
       el.getAttribute('data-testid')
     );
-    expect(order).toEqual(['hero-section', 'studio-section', 'problems-section']);
+    expect(order).toEqual(['hero-section', 'problems-section', 'studio-section']);
   });
 
   it('has a minimum height container', () => {

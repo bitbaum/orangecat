@@ -139,7 +139,7 @@ export default class ErrorBoundary extends Component<Props, State> {
             <AlertTriangle className="h-5 w-5 mt-0.5 mr-3 flex-shrink-0" />
             <div className="flex-1">
               <h3 className="text-sm font-medium">Component Error</h3>
-              <p className="mt-1 text-sm text-status-negative/80">
+              <p className="mt-1 text-sm text-status-negative">
                 This component encountered an error and could not render properly.
               </p>
 

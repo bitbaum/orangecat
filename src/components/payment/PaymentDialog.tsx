@@ -2,7 +2,8 @@
  * PaymentDialog — Full payment flow modal
  *
  * Phases: Confirm → QR code → Waiting → Success
- * Handles both fixed_price (buy) and contribution (support) flows.
+ * Handles fixed_price (buy) and contribution flows: support, or for an
+ * investment, investing on its stated terms (src/config/contribution-terms.ts).
  */
 
 'use client';
@@ -22,6 +23,12 @@ import { PaymentStatusIndicator } from './PaymentStatusIndicator';
 import { AmountField } from '@/components/money/AmountField';
 import { usePaymentFlow } from '@/hooks/usePaymentFlow';
 import { getEntityMetadata, type EntityType } from '@/config/entity-registry';
+import {
+  CONTRIBUTION_TERMS,
+  breachedBound,
+  contributionRange,
+  type ContributionBoundsBtc,
+} from '@/config/contribution-terms';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { CheckCircle2, Loader2 } from 'lucide-react';
 
@@ -40,10 +47,9 @@ interface PaymentDialogProps {
   sellerProfileId?: string;
   /** Seed the contribution amount picker (e.g. wishlist tier target) */
   defaultAmount?: number;
+  /** An investment's stated minimum/maximum, in BTC (src/config/contribution-terms.ts). */
+  contributionBounds?: ContributionBoundsBtc | null;
 }
-
-import { DEFAULT_CONTRIBUTION_BTC } from '@/config/payment-presets';
-import { PAY_MAX_BTC, PAY_MIN_BTC } from '@/config/pay';
 
 export function PaymentDialog({
   open,
@@ -54,17 +60,18 @@ export function PaymentDialog({
   priceBtc,
   priceCurrency,
   defaultAmount,
+  contributionBounds = null,
 }: PaymentDialogProps) {
   const meta = getEntityMetadata(entityType);
   const isContribution = meta.paymentPattern === 'contribution';
+  const terms = CONTRIBUTION_TERMS[entityType];
+  const range = contributionRange(contributionBounds);
   const { formatAmountBtc, formatPrice } = useDisplayCurrency();
 
   const { state, initiate, confirmPaid, reset, isLoading } = usePaymentFlow();
 
   // Contribution-specific state
-  const [contributionAmount, setContributionAmount] = useState(
-    defaultAmount ?? DEFAULT_CONTRIBUTION_BTC
-  );
+  const [contributionAmount, setContributionAmount] = useState(defaultAmount ?? range.defaultBtc);
   // Sync the picker when a new defaultAmount arrives (e.g. user clicked a
   // different wishlist tier on the parent). Initial-state seeding only
   // catches the first mount.
@@ -84,7 +91,7 @@ export function PaymentDialog({
     setMessage('');
     setIsAnonymous(false);
     setShowMore(false);
-    setContributionAmount(defaultAmount ?? DEFAULT_CONTRIBUTION_BTC);
+    setContributionAmount(defaultAmount ?? range.defaultBtc);
     onOpenChange(false);
   };
 
@@ -102,7 +109,9 @@ export function PaymentDialog({
   // amount, priceCurrency the unit); contributions are chosen in BTC. The server
   // re-derives the BTC charge authoritatively — this only drives display + gating.
   const fixedPrice = priceBtc ?? 0;
-  const hasValidAmount = isContribution ? contributionAmount > 0 : fixedPrice > 0;
+  const hasValidAmount = isContribution
+    ? contributionAmount > 0 && !breachedBound(contributionAmount, contributionBounds)
+    : fixedPrice > 0;
   const priceLabel = isContribution
     ? formatAmountBtc(contributionAmount)
     : formatPrice(fixedPrice, priceCurrency);
@@ -119,12 +128,14 @@ export function PaymentDialog({
       >
         <DialogHeader>
           <DialogTitle>
-            {isContribution ? 'Support' : 'Buy'} {entityTitle}
+            {isContribution ? (terms ? `${terms.verb} in` : 'Support') : 'Buy'} {entityTitle}
           </DialogTitle>
           <DialogDescription>
-            {isContribution
-              ? `Choose an amount to support this ${meta.name.toLowerCase()}`
-              : `Pay ${priceLabel}`}
+            {terms
+              ? `Choose an amount to ${terms.verb.toLowerCase()} on the terms on this page`
+              : isContribution
+                ? `Choose an amount to support this ${meta.name.toLowerCase()}`
+                : `Pay ${priceLabel}`}
           </DialogDescription>
         </DialogHeader>
 
@@ -137,8 +148,8 @@ export function PaymentDialog({
                   <AmountField
                     value={contributionAmount}
                     onChange={setContributionAmount}
-                    minBtc={PAY_MIN_BTC}
-                    maxBtc={PAY_MAX_BTC}
+                    minBtc={range.minBtc}
+                    maxBtc={range.maxBtc}
                   />
                   {showMore ? (
                     <div className="space-y-4">
@@ -181,7 +192,9 @@ export function PaymentDialog({
                 disabled={isLoading || !hasValidAmount}
                 className="w-full min-h-11"
               >
-                {isContribution ? `Support with ${priceLabel}` : `Pay ${priceLabel}`}
+                {isContribution
+                  ? `${terms?.verb ?? 'Support with'} ${priceLabel}`
+                  : `Pay ${priceLabel}`}
               </Button>
             </>
           )}
@@ -231,7 +244,11 @@ export function PaymentDialog({
               <CheckCircle2 className="h-12 w-12 text-status-positive" />
               <p className="text-lg font-semibold text-status-positive">Payment successful!</p>
               <p className="text-sm text-fg-secondary">
-                {isContribution ? 'Thank you for your support!' : 'Your order has been placed.'}
+                {terms
+                  ? `Your ${terms.noun} is paid.`
+                  : isContribution
+                    ? 'Thank you for your support!'
+                    : 'Your order has been placed.'}
               </p>
               <Button onClick={handleClose} className="min-h-11">
                 Done

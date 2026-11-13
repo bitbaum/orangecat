@@ -10,9 +10,7 @@ export async function GET(request: Request) {
   // Only allow internal paths (must start with /) to prevent open redirect attacks
   const rawNext = requestUrl.searchParams.get('next') || ROUTES.DASHBOARD.CAT_WELCOME;
   const next =
-    rawNext.startsWith('/') && !rawNext.startsWith('//')
-      ? rawNext
-      : ROUTES.DASHBOARD.CAT_WELCOME;
+    rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : ROUTES.DASHBOARD.CAT_WELCOME;
 
   if (code) {
     try {
@@ -20,20 +18,16 @@ export async function GET(request: Request) {
       const { error } = await supabase.auth.exchangeCodeForSession(code);
 
       if (error) {
-        return NextResponse.redirect(
-          `${SITE_URL}/auth?error=${encodeURIComponent('Authentication failed. Please try again.')}`
-        );
+        return NextResponse.redirect(`${SITE_URL}/auth?error=failed`);
       }
 
       // Successfully authenticated, redirect to Cat — the primary interface
       return NextResponse.redirect(`${SITE_URL}${next}`);
     } catch {
-      return NextResponse.redirect(
-        `${SITE_URL}/auth?error=${encodeURIComponent('An unexpected error occurred during authentication')}`
-      );
+      return NextResponse.redirect(`${SITE_URL}/auth?error=failed`);
     }
   }
 
   // Return the user to an error page with instructions
-  return NextResponse.redirect(`${SITE_URL}/auth?error=${encodeURIComponent('No code provided')}`);
+  return NextResponse.redirect(`${SITE_URL}/auth?error=failed`);
 }

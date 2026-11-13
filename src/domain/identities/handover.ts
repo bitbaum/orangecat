@@ -14,7 +14,8 @@
  * deleted BEFORE the identity is given its new address. If the second step
  * fails, the link is put back and nothing has changed. The other order would
  * leave, on a failure, an identity that has a new owner and is still one
- * switch away from the old one.
+ * switch away from the old one. An address that already has an account is
+ * refused before the link is cut, so a refusal changes nothing at all.
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -190,6 +191,21 @@ export type AcceptFailure = 'gone' | 'invalid_email' | 'email_taken' | 'failed';
  *     the account to someone else.
  * Before step 4, any failure puts the link and the offer back.
  */
+/** The account that has this address, if any (service role only). */
+async function accountWithEmail(
+  admin: SupabaseClient,
+  email: string
+): Promise<{ id: string | null; error: boolean }> {
+  const { data, error } = (await callRpc(admin, 'auth_user_id_for_email', {
+    p_email: email,
+  })) as { data: string | null; error: { message: string } | null };
+  if (error) {
+    logger.error('Could not look up an address', { error: error.message }, 'Identities');
+    return { id: null, error: true };
+  }
+  return { id: data ?? null, error: false };
+}
+
 export async function acceptHandover(
   admin: SupabaseClient,
   token: string,
@@ -247,7 +263,21 @@ export async function acceptHandover(
     return true;
   };
 
-  // 2. Cut the link.
+  // 2. Refuse an address that already has an account, before anything else
+  // changes. The auth server would refuse it too, but only at the last step,
+  // after the ways in are gone, and in words that differ between versions.
+  const owner = await accountWithEmail(admin, email);
+  if (owner.error) {
+    await reoffer();
+    logger.error('Handover could not check the address', { identityId }, 'Identities');
+    return { ok: false, reason: 'failed' };
+  }
+  if (owner.id && owner.id !== identityId) {
+    await reoffer();
+    return { ok: false, reason: 'email_taken' };
+  }
+
+  // 3. Cut the link.
   const { data: cut, error: cutError } = await db
     .from(DATABASE_TABLES.IDENTITY_LINKS)
     .delete()
@@ -265,7 +295,7 @@ export async function acceptHandover(
     return { ok: false, reason: 'failed' };
   }
 
-  // 3. Remove every way in.
+  // 4. Remove every way in.
   try {
     const { error: stripError } = (await callRpc(admin, 'identity_strip_ways_in', {
       p_user_id: identityId,
@@ -290,7 +320,7 @@ export async function acceptHandover(
     return { ok: false, reason: 'failed' };
   }
 
-  // 4. The new address.
+  // 5. The new address.
   const { error: emailError } = await admin.auth.admin.updateUserById(identityId, {
     email,
     email_confirm: true,
@@ -301,7 +331,12 @@ export async function acceptHandover(
     // may already be someone else's.
     const { data: now } = await admin.auth.admin.getUserById(identityId);
     if (now?.user?.email?.toLowerCase() !== email) {
-      const taken = /already|exists|registered/i.test(emailError.message ?? '');
+      // Taken in the moment since step 2, or refused for another reason.
+      const since = await accountWithEmail(admin, email);
+      const taken =
+        (since.id !== null && since.id !== identityId) ||
+        emailError.code === 'email_exists' ||
+        /already|exists|registered/i.test(emailError.message ?? '');
       logger.warn(
         'Handover refused by the auth server',
         { code: emailError.code, identityId },

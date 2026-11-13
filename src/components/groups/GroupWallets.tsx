@@ -10,7 +10,14 @@ import { GroupWalletCreateForm } from './GroupWalletCreateForm';
 interface GroupWalletsProps {
   groupId: string;
   groupSlug: string;
-  wallets: unknown[];
+  /**
+   * null: this viewer cannot read the group's wallets. group_wallets is
+   * readable by members only, so a visitor's list is empty whatever the group
+   * holds — never show that as "No wallets yet".
+   */
+  wallets: unknown[] | null;
+  /** Founder or admin — the only roles POST /api/groups/[slug]/wallets accepts. */
+  canManage: boolean;
   onUpdate?: () => void;
 }
 
@@ -23,13 +30,24 @@ export function GroupWallets({
   groupId: _groupId,
   groupSlug,
   wallets,
+  canManage,
   onUpdate,
 }: GroupWalletsProps) {
+  if (wallets === null) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <EmptyState icon={Wallet} title="Wallets are visible to members" className="py-8" />
+        </CardContent>
+      </Card>
+    );
+  }
+
   const typedWallets = wallets.filter(isWalletSummary);
 
   return (
     <div className="space-y-4">
-      <GroupWalletCreateForm groupSlug={groupSlug} onCreated={onUpdate} />
+      {canManage && <GroupWalletCreateForm groupSlug={groupSlug} onCreated={onUpdate} />}
 
       <Card>
         <CardHeader>
@@ -44,7 +62,11 @@ export function GroupWallets({
             <EmptyState
               icon={Wallet}
               title="No wallets yet"
-              description="Use “Create a group wallet” above to add a Bitcoin wallet so this group can receive funds together."
+              description={
+                canManage
+                  ? 'Use “Create New Wallet” above to add a Bitcoin wallet so this group can receive funds together.'
+                  : 'A founder or admin of this group can add a Bitcoin wallet so it can receive funds together.'
+              }
               className="py-8"
             />
           ) : (
@@ -54,6 +76,7 @@ export function GroupWallets({
                   key={wallet.id}
                   wallet={wallet}
                   groupSlug={groupSlug}
+                  canRefresh={canManage}
                   onUpdate={onUpdate}
                 />
               ))}

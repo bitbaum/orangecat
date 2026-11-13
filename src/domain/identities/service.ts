@@ -345,12 +345,16 @@ export async function createIdentity(
  * account is deleted through the account-deletion flow, which removes its
  * identities with it. The signed-in identity cannot delete itself here, so a
  * person always lands somewhere after the act.
+ *
+ * `remove` does the deleting, once every check has passed (the route passes
+ * the one-transaction delete_account). It returns null when the identity is
+ * gone, or a message for the person when nothing was removed.
  */
 export async function deleteIdentity(
   admin: SupabaseClient,
   caller: Caller,
   targetId: string,
-  beforeDelete: (identityId: string) => Promise<unknown>
+  remove: (identityId: string) => Promise<string | null>
 ): Promise<IdentityResult<{ id: string }>> {
   const userId = caller.userId;
   const circle = await circleForCaller(admin, caller);
@@ -369,11 +373,10 @@ export async function deleteIdentity(
     return fail('is_current');
   }
 
-  await beforeDelete(targetId);
-  const { error } = await admin.auth.admin.deleteUser(targetId);
+  const error = await remove(targetId);
   if (error) {
-    logger.error('Identity deletion failed', { error: error.message, targetId }, 'Identities');
-    return fail('failed');
+    logger.error('Identity deletion failed', { error, targetId }, 'Identities');
+    return fail('failed', error);
   }
   logger.info('Identity deleted', { targetId }, 'Identities');
   return { ok: true, data: { id: targetId } };

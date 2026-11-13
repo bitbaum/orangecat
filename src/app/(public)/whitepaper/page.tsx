@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
-import { PageHeading } from '@/components/layout/PageHeading';
+import { PUBLIC_PAGE_WIDTH, PublicPageHeader } from '@/components/layout/PublicPageHeader';
 import { ROUTES } from '@/config/routes';
+import { cn } from '@/lib/utils';
 import { WHITEPAPER_SECTIONS } from '@/config/public-content';
 
 export const metadata: Metadata = {
@@ -12,22 +13,16 @@ export const metadata: Metadata = {
 
 export default function WhitepaperPage() {
   return (
-    <main className="min-h-screen bg-surface-page">
-      <article className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
-        <header className="border-b border-default pb-10">
-          <div className="flex flex-wrap items-center gap-3 font-mono text-xs text-fg-tertiary">
-            <span className="rounded-full border border-default px-2.5 py-1">WHITEPAPER</span>
-            <span>v0.1</span>
-            <span>July 2026</span>
-          </div>
-          <PageHeading className="mt-6">Fund what people build. Build what people fund.</PageHeading>
-          <p className="mt-5 text-lg leading-relaxed text-fg-secondary">
-            A focused architecture for connecting public economic coordination on OrangeCat with
-            supervised agent execution on Loki.
-          </p>
-        </header>
+    <div className="min-h-screen bg-surface-page">
+      <article className={cn(PUBLIC_PAGE_WIDTH.reading, 'pb-16')}>
+        <PublicPageHeader
+          align="start"
+          eyebrow="Whitepaper · v0.1 · July 2026"
+          title="Fund what people build. Build what people fund."
+          lede="A focused architecture for connecting public economic coordination on OrangeCat with supervised agent execution on Loki."
+        />
 
-        <div className="space-y-14 py-12">
+        <div className="space-y-14 pb-12">
           {WHITEPAPER_SECTIONS.map((section, index) => (
             <section key={section.title}>
               <p className="font-mono text-xs text-fg-tertiary">
@@ -55,6 +50,6 @@ export default function WhitepaperPage() {
           </Link>
         </footer>
       </article>
-    </main>
+    </div>
   );
 }
