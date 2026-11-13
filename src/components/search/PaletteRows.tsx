@@ -55,6 +55,8 @@ interface PaletteRowProps {
   labelRanges?: readonly Range[];
   hintRanges?: readonly Range[];
   muted?: boolean;
+  /** Shown but not yet choosable: arrows and Enter pass it by. */
+  disabled?: boolean;
   onSelect: () => void;
 }
 
@@ -67,15 +69,20 @@ export function PaletteRow({
   labelRanges,
   hintRanges,
   muted,
+  disabled,
   onSelect,
 }: PaletteRowProps) {
   return (
     <Command.Item
       value={value}
+      disabled={disabled}
       onSelect={onSelect}
       className={cn(
         'group flex min-h-11 cursor-pointer items-center gap-3 rounded-md px-2.5 py-2 text-sm sm:min-h-0',
-        'aria-selected:bg-surface-raised/60 aria-selected:text-fg-primary',
+        // The row Enter will take. A tint alone measured 1.01:1 on the light
+        // dialog; the bar is the sidebar's current-page mark, well over 3:1.
+        'aria-selected:bg-surface-overlay aria-selected:text-fg-primary aria-selected:shadow-[inset_2px_0_0_hsl(var(--text-primary))]',
+        'aria-disabled:cursor-default aria-disabled:opacity-60',
         'text-fg-secondary transition-colors'
       )}
     >
