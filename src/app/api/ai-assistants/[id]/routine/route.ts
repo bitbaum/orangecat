@@ -27,9 +27,6 @@ import {
 import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
 import { getValidationError, validateUUID } from '@/lib/api/validation';
 import { DATABASE_TABLES } from '@/config/database-tables';
-import { createApiKeyService } from '@/services/ai/api-key-service';
-import { readOwnKey } from '@/services/ai/own-key';
-import { sharedLokiOwnKeys } from '@/services/loki/shared-keys';
 import {
   ROUTINE_PROMPT_MAX,
   ROUTINES_PER_BOT,
@@ -37,9 +34,9 @@ import {
   deleteRoutine,
   isRoutineInterval,
   isTimeLocal,
-  listRoutines,
   saveRoutine,
 } from '@/services/companions/routines-store';
+import { routinesView } from '@/services/companions/routines-view';
 import { isValidTimeZone } from '@/utils/timezone';
 import { logger } from '@/utils/logger';
 
@@ -67,17 +64,6 @@ async function ownBot(request: AuthenticatedRequest, id: string): Promise<boolea
   return Boolean(data);
 }
 
-/** The bot's routines, the first of them for older clients, and whether they can run. */
-async function answer(request: AuthenticatedRequest, id: string) {
-  const [routines, own] = await Promise.all([
-    listRoutines(request.supabase, request.user.id, id),
-    readOwnKey(createApiKeyService(request.supabase), request.user.id, () =>
-      sharedLokiOwnKeys(request.supabase, request.user.id)
-    ),
-  ]);
-  return { routines, routine: routines[0] ?? null, canRun: own.hasByok, max: ROUTINES_PER_BOT };
-}
-
 export const GET = withAuth(async (request: AuthenticatedRequest, context: RouteContext) => {
   const { id } = await context.params;
   const invalid = getValidationError(validateUUID(id, 'assistant ID'));
@@ -88,7 +74,7 @@ export const GET = withAuth(async (request: AuthenticatedRequest, context: Route
     if (!(await ownBot(request, id))) {
       return apiNotFound('Bot not found');
     }
-    return apiSuccess(await answer(request, id));
+    return apiSuccess(await routinesView(request.supabase, request.user.id, id));
   } catch (error) {
     logger.error('routine load failed', error, 'CompanionRoutineAPI');
     return apiInternalError('Failed to load the routine');
@@ -118,7 +104,7 @@ export const PUT = withAuth(async (request: AuthenticatedRequest, context: Route
     if (!saved) {
       return apiNotFound('Routine not found');
     }
-    return apiSuccess(await answer(request, id));
+    return apiSuccess(await routinesView(request.supabase, request.user.id, id));
   } catch (error) {
     if (error instanceof RoutineLimitError) {
       return apiBadRequest(`A bot can have ${ROUTINES_PER_BOT} routines. Stop one to add another.`);
