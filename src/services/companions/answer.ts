@@ -49,6 +49,12 @@ export async function companionAnswer(args: {
    *  prompt for this place (a room, a conversation). */
   scene: (definition: string | undefined) => string | null;
   images?: ChatImage[];
+  /**
+   * Bring what the companion remembers about the asker. On by default. Off
+   * where other people read the answer: what one person told a companion in
+   * private is not said in front of a group.
+   */
+  recall?: boolean;
 }): Promise<CompanionAnswer> {
   const { supabase, userId, name, history, content } = args;
   const fetched = await fetchAssistant(supabase, args.assistantId);
@@ -113,11 +119,10 @@ export async function companionAnswer(args: {
 
   // What this companion knows about this person (its job, told in their own
   // thread) comes with it, as it does one to one.
-  const recalled = await recallCompanionMemories(
-    supabase,
-    { assistantId: assistant.id, userId },
-    content
-  );
+  const recalled =
+    args.recall === false
+      ? []
+      : await recallCompanionMemories(supabase, { assistantId: assistant.id, userId }, content);
   const definition = buildCompanionSystemPrompt({
     definition: assistant.system_prompt,
     memories: recalled.map(m => m.content),
