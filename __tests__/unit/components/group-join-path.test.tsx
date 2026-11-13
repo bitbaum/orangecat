@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 /**
- * "Join Group" is offered only where joining can succeed, and signed out it
+ * "Join organization" is offered only where joining can succeed, and signed out it
  * leads to sign-in and back to the group. On 2026-11-12 every public group's
  * Members tab showed the button to everyone: signed out it answered
  * "Authentication required" with no way to sign in, and signed in the insert
@@ -43,16 +43,16 @@ describe('the way into a group', () => {
     auth.value = { user: null, hydrated: true };
     renderMembers(true);
 
-    expect(screen.queryByRole('button', { name: /join group/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /join organization/i })).toBeNull();
     const link = screen.getByRole('link', { name: /sign in to join/i });
     expect(link.getAttribute('href')).toBe('/auth?mode=login&from=%2Fgroups%2Fbike-club');
   });
 
-  it('signed in, a non-member of an open group can press Join Group', () => {
+  it('signed in, a non-member of an open group can press Join organization', () => {
     auth.value = { user: { id: 'someone' }, hydrated: true };
     renderMembers(true);
 
-    expect(screen.getByRole('button', { name: /join group/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /join organization/i })).toBeTruthy();
     expect(screen.queryByRole('link', { name: /sign in to join/i })).toBeNull();
   });
 
@@ -60,7 +60,7 @@ describe('the way into a group', () => {
     for (const user of [null, { id: 'someone' }]) {
       auth.value = { user, hydrated: true };
       const { unmount } = renderMembers(false);
-      expect(screen.queryByRole('button', { name: /join group/i })).toBeNull();
+      expect(screen.queryByRole('button', { name: /join organization/i })).toBeNull();
       expect(screen.queryByRole('link', { name: /sign in to join/i })).toBeNull();
       unmount();
     }
@@ -70,7 +70,7 @@ describe('the way into a group', () => {
     auth.value = { user: { id: 'founder' }, hydrated: true };
     renderMembers(true);
 
-    expect(screen.queryByRole('button', { name: /join group/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /join organization/i })).toBeNull();
   });
 
   it('says nothing until it knows who is signed in', () => {
@@ -78,7 +78,7 @@ describe('the way into a group', () => {
     renderMembers(true);
 
     expect(screen.queryByRole('link', { name: /sign in to join/i })).toBeNull();
-    expect(screen.queryByRole('button', { name: /join group/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /join organization/i })).toBeNull();
   });
 
   it('is offered in the page header too, where a visitor lands (the Overview tab)', () => {

@@ -16,6 +16,7 @@ import groupsService from '@/services/groups';
 import { useAuth } from '@/hooks/useAuth';
 import { logger } from '@/utils/logger';
 import { apiErrorMessage } from '@/lib/api/errorMessage';
+import { ENTITY_REGISTRY } from '@/config/entity-registry';
 
 interface GroupJoinButtonProps {
   groupId: string;
@@ -60,14 +61,19 @@ export function GroupJoinButton({
       setJoining(true);
       const result = await groupsService.joinGroup(groupId);
       if (result.success) {
-        toast.success('Successfully joined group!');
+        toast.success(`You joined this ${ENTITY_REGISTRY.group.name.toLowerCase()}`);
         onJoined?.();
       } else {
-        toast.error(apiErrorMessage(result, 'Failed to join group'));
+        toast.error(
+          apiErrorMessage(
+            result,
+            `Could not join this ${ENTITY_REGISTRY.group.name.toLowerCase()}. Try again.`
+          )
+        );
       }
     } catch (error) {
       logger.error('Failed to join group:', error);
-      toast.error('Failed to join group');
+      toast.error(`Could not join this ${ENTITY_REGISTRY.group.name.toLowerCase()}. Try again.`);
     } finally {
       setJoining(false);
     }
@@ -76,7 +82,7 @@ export function GroupJoinButton({
   return (
     <Button variant="primary" onClick={handleJoin} disabled={joining} className={className}>
       <UserPlus className="h-4 w-4 mr-2" />
-      {joining ? 'Joining...' : 'Join group'}
+      {joining ? 'Joining…' : `Join ${ENTITY_REGISTRY.group.name.toLowerCase()}`}
     </Button>
   );
 }

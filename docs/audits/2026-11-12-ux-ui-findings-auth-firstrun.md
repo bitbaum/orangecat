@@ -92,7 +92,7 @@ Status: Partly (#1634): contrast; the divider line is open.
 
 ### auth-firstrun#12 · medium · The 'What do you want to do?' door is built twice; on 'What you can do' it has no microphone and the app shell disappears
 
-**Status:** Partly (fourth pull request): signed-out visitors have no microphone: transcription needs an account.
+**Status:** Fixed (owner decision, 2026-11-13): visitors get the microphone too, on a per-IP budget.
 
 - **Where:** /what-you-can-do, /dashboard/things, /dashboard (both, both themes)
 - **What a person meets:** The product's one entry point behaves differently depending on the page, and here it lacks dictation. Tapping a main navigation item removes the navigation, and the logo then leads a not-yet-onboarded person into the onboarding form. The chips look misdrawn.

@@ -125,9 +125,9 @@ export const loanSchema = z.object({
   original_amount: z
     .number({ error: 'Enter the loan amount' })
     .positive('Amount must be greater than 0'),
-  remaining_balance: z
-    .number({ error: 'Enter the remaining balance' })
-    .positive('Balance must be greater than 0'),
+  // Asked only when refinancing; a new loan owes its full amount, which the
+  // domain fills in (src/domain/loans/service.ts).
+  remaining_balance: z.number().positive('Balance must be greater than 0').optional().nullable(),
   interest_rate: percentage().optional().nullable(),
   monthly_payment: z.number().min(0).optional().nullable(),
   currency: z.enum(CURRENCY_CODES).optional(),

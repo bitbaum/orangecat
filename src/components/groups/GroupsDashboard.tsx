@@ -114,7 +114,7 @@ export function GroupsDashboard() {
   return (
     <EntityListShell
       title={`My ${GROUP.namePlural}`}
-      description="Create groups, join communities, and collaborate with like-minded people"
+      description={GROUP.plain.what}
       headerActions={headerActions}
     >
       {/* Search across both tabs (only when there's something to search) */}
@@ -175,8 +175,12 @@ export function GroupsDashboard() {
         <TabsContent value="discover" className="space-y-4">
           {availableGroups.length === 0 ? (
             <div className="text-center py-12 px-4 bg-surface-base rounded-lg border dark:border-default">
-              <h3 className="text-lg font-semibold mb-2">No groups available</h3>
-              <p className="text-fg-secondary mb-6">Be the first to create a group!</p>
+              <h3 className="text-lg font-semibold mb-2">
+                No {GROUP.namePlural.toLowerCase()} to join yet
+              </h3>
+              <p className="text-fg-secondary mb-6">
+                Start the first one, and invite the people it is for.
+              </p>
               <Button href={ROUTES.DASHBOARD.GROUPS_CREATE} variant="outline" className="gap-2">
                 <Plus className="h-4 w-4" />
                 Create {GROUP.name}

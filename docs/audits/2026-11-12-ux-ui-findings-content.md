@@ -52,7 +52,7 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### content#8 · medium · The three public 'say it in one box' entry points have no microphone and a washed-out orange disabled button
 
-**Status:** Partly (fourth pull request): the microphone shows to signed-in people only; opening transcription to visitors is a cost decision.
+**Status:** Fixed (owner decision, 2026-11-13): the microphone shows to visitors, on a per-IP budget.
 
 - **Where:** /raise, /feedback, /studio (both, both themes)
 - **What a person meets:** These are top-of-funnel screens whose whole promise is 'just say it'. On a phone the person has to type, and the first thing the brand colour says is a button that looks faded or broken; the fleet rule names both (a microphone wherever a person types words; orange is never a disabled state).
@@ -73,7 +73,7 @@ Status: Partly (#1634): links in sentences are underlined; legal pages still end
 
 ### content#13 · low · Placeholder and duplicate pages are still reachable, and two footer links mislead
 
-**Status:** Partly (fourth pull request): /channel is kept (it has a live waitlist); its links and words are fixed.
+**Status:** Fixed (owner decision, 2026-11-13): /channel stays, because its waitlist is live.
 
 - **Where:** /channel, /pages, /technology, /company/about, /company/careers, /builders (both, both themes)
 - **What a person meets:** Few people arrive, but those who do meet promises the product does not keep (streaming, a waiting list), a sign-in wall on a public address, buttons that do not do what their section says, and a 'Product' link that silently leaves the product. The footer also lists Security twice.

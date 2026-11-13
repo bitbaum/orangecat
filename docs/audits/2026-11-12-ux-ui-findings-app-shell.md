@@ -44,7 +44,7 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### app-shell#4 · medium · The tab bar's plus changes its name and what it does from page to page; on Messages it opens the public post composer
 
-**Status:** Partly (fourth pull request): the group kind keeps two names ("Organization", "Groups"); renaming the registry entity is a product call.
+**Status:** Fixed (owner decision, 2026-11-13): the kind is "Organization" everywhere it is named; the code type stays `group`.
 
 - **Where:** app-messages, app-groups, app-dashboard, app-timeline (phone, both themes)
 - **What a person meets:** A fixed slot in primary navigation is a promise. Here the same thumb position opens a menu on one page, a form on another, and from a private conversation list a public post composer. Someone looking for 'new message' is one tap from publishing to everyone, and on Groups the label uses a third word for the thing the page calls a group.
