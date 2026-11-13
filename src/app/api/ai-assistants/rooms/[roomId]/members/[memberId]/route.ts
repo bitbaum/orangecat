@@ -43,11 +43,11 @@ export const DELETE = withAuth(async (request: AuthenticatedRequest, context: Ro
       return apiNotFound('Not in this group chat');
     }
     if (room.members.length <= MIN_ROOM_MEMBERS) {
-      return apiBadRequest(`A group chat keeps at least ${MIN_ROOM_MEMBERS} companions`);
+      return apiBadRequest(`A group chat keeps at least ${MIN_ROOM_MEMBERS} bots`);
     }
     return apiSuccess({ members: await removeRoomMember(request.supabase, roomId, memberId) });
   } catch (error) {
     logger.error('room member remove failed', error, 'CompanionRoomsAPI');
-    return apiInternalError('Failed to remove the companion');
+    return apiInternalError('Failed to remove the bot');
   }
 });

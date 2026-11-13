@@ -78,11 +78,13 @@ export default function ImageSuggestPicker({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [manual, setManual] = useState('');
+  const [lastQuery, setLastQuery] = useState<string | undefined>(undefined);
 
   const load = useCallback(
     async (query?: string) => {
       setLoading(true);
       setError(null);
+      setLastQuery(query);
       try {
         const result = await suggestImages(query ? { query } : { title, body });
         setImages(result.images);
@@ -227,7 +229,27 @@ export default function ImageSuggestPicker({
               Finding images…
             </div>
           ) : error ? (
-            <p className="py-6 text-center text-xs text-status-negative">{error}</p>
+            // A failure is not "no results": say what happened and offer the
+            // two ways on — ask again, or bring your own photo (media#3).
+            <div role="alert" className="flex flex-col items-center gap-2 py-6 text-center">
+              <p className="mb-0 text-xs text-fg-secondary">{error}</p>
+              <div className="flex flex-wrap justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => void load(lastQuery)}
+                  className="min-h-11 rounded-md border border-default px-3 text-sm font-medium text-fg-primary transition-colors hover:bg-surface-raised"
+                >
+                  Try again
+                </button>
+                <button
+                  type="button"
+                  onClick={() => switchMode('upload')}
+                  className="min-h-11 rounded-md border border-default px-3 text-sm font-medium text-fg-primary transition-colors hover:bg-surface-raised"
+                >
+                  Upload your own
+                </button>
+              </div>
+            </div>
           ) : images.length === 0 ? (
             <div className="flex flex-col items-center gap-1.5 py-8 text-center text-fg-tertiary">
               <ImageOff className="h-6 w-6" />

@@ -31,7 +31,7 @@ const STATUS = ['status-positive', 'status-warning', 'status-negative'];
 /** A tinted chip sits on a page, a card or a raised panel. */
 const TINT_GROUNDS = ['surface-page', 'surface-base', 'surface-raised'];
 
-/** [ink, ground, tint laid over the ground first]. */
+/** [ink, ground, tint laid over the ground first: a token, or [token, alpha]]. */
 const PAIRS = [
   ...[...TEXT, ...STATUS, 'status-neutral'].flatMap(ink => SURFACES.map(s => [ink, s])),
   ...STATUS.flatMap(ink => TINT_GROUNDS.map(s => [ink, s, `${ink}-subtle`])),
@@ -48,6 +48,10 @@ const PAIRS = [
   ['primary-foreground', 'primary'],
   ['destructive-foreground', 'status-negative-fill'],
   ['success-foreground', 'status-positive-fill'],
+  // Bitcoin orange as words: on every surface, and on the bitcoinOrange/10
+  // chip (RecommendedWalletCard, ProfileWalletSection, WalletsStep).
+  ...SURFACES.map(s => ['bitcoin-orange-text', s]),
+  ...TINT_GROUNDS.map(s => ['bitcoin-orange-text', s, ['bitcoin-orange', 0.1]]),
 ];
 
 /** The custom properties of one rule. Comments go first: a brace inside one
@@ -121,7 +125,9 @@ const light = block(css, ':root');
 const darkOnly = block(css, '.dark');
 // A dark block that was only half read would be measured with light values
 // and pass. Every token this check holds has to be set by the dark theme itself.
-const unset = [...TEXT, ...SURFACES, ...STATUS].filter(name => darkOnly[name] === undefined);
+const unset = [...TEXT, ...SURFACES, ...STATUS, 'bitcoin-orange-text'].filter(
+  name => darkOnly[name] === undefined
+);
 if (unset.length > 0) {
   throw new Error(`${CSS}: the .dark block does not set ${unset.map(n => `--${n}`).join(', ')}`);
 }
@@ -132,9 +138,15 @@ let lowest = { value: Infinity };
 for (const [theme, vars] of Object.entries(themes)) {
   for (const [ink, ground, tint] of PAIRS) {
     const under = colour(vars, ground);
-    const bg = tint ? over(colour(vars, tint), under) : under;
+    const [tintName, alpha] = Array.isArray(tint) ? tint : [tint];
+    const tintColour = tint ? colour(vars, tintName) : null;
+    if (alpha !== undefined) {
+      tintColour[3] = alpha;
+    }
+    const bg = tint ? over(tintColour, under) : under;
     const value = ratio(over(colour(vars, ink), bg), bg);
-    const label = `${theme}: --${ink} on --${tint ? `${tint} over --` : ''}${ground}`;
+    const tintLabel = alpha === undefined ? tintName : `${tintName}/${alpha * 100}`;
+    const label = `${theme}: --${ink} on --${tint ? `${tintLabel} over --` : ''}${ground}`;
     if (value < lowest.value) {
       lowest = { value, label };
     }

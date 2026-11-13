@@ -6,7 +6,11 @@ import {
   searchPublic,
   toPublicHit,
 } from '@/services/search/public-search';
-import { EXACT_FIXTURE_USERNAMES, FIXTURE_TITLE_LIKE_PATTERNS } from '@/config/public-directory';
+import {
+  EXACT_FIXTURE_USERNAMES,
+  FIXTURE_GROUP_NAME_PATTERNS,
+  FIXTURE_TITLE_LIKE_PATTERNS,
+} from '@/config/public-directory';
 
 const row = (over: Record<string, unknown> = {}) => ({
   entity_type: 'product',
@@ -40,6 +44,8 @@ describe('searchPublic', () => {
     });
     expect(FIXTURE_RPC_ARGS.p_exclude_title_like).toEqual([...FIXTURE_TITLE_LIKE_PATTERNS]);
     expect(FIXTURE_RPC_ARGS.p_exclude_handles).toEqual([...EXACT_FIXTURE_USERNAMES]);
+    // Group fixtures are filtered in SQL too, so the count and total agree with the rows.
+    expect(FIXTURE_RPC_ARGS.p_exclude_group_names).toEqual([...FIXTURE_GROUP_NAME_PATTERNS]);
     expect(page.total).toBe(7);
     expect(page.hits[0]).toMatchObject({ type: 'product', amount: 80 });
     expect(page.hits[0].href).toMatch(/\/p1$/);

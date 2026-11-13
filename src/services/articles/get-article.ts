@@ -11,6 +11,7 @@ import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { logger } from '@/utils/logger';
 import { ARTICLE_METADATA_FLAG } from '@/config/articles';
+import { bylineName } from '@/utils/byline';
 import type { Article, ArticleMetadataPayload } from './types';
 
 interface AuthorProfileData {
@@ -61,7 +62,7 @@ function rowToArticle(row: EnrichedArticleRow): Article | null {
     publishedAt: row.event_timestamp,
     author: {
       id: profile?.id ?? row.actor_id,
-      name: profile?.display_name || profile?.username || 'Unknown',
+      name: bylineName(profile?.display_name, profile?.username),
       username: profile?.username,
       avatarUrl: profile?.avatar_url,
     },

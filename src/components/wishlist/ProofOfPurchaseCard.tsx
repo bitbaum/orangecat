@@ -103,7 +103,7 @@ export function ProofOfPurchaseCard({
       {/* Transaction ID */}
       {proof.transaction_id && (
         <div className="flex items-center gap-2 p-2 bg-surface-raised rounded-md mb-3">
-          <Bitcoin className="h-4 w-4 text-bitcoin-orange" />
+          <Bitcoin className="h-4 w-4 text-bitcoinOrange" />
           <code className="text-xs font-mono flex-1 truncate">{proof.transaction_id}</code>
           <Button
             variant="ghost"

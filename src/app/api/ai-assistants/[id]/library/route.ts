@@ -24,7 +24,7 @@ const MAX_ROWS = 1500;
 
 export const GET = withAuth(async (request: AuthenticatedRequest, context: RouteContext) => {
   const { id: assistantId } = await context.params;
-  const idError = getValidationError(validateUUID(assistantId, 'companion ID'));
+  const idError = getValidationError(validateUUID(assistantId, 'bot ID'));
   if (idError) {
     return idError;
   }

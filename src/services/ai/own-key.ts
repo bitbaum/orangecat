@@ -47,6 +47,16 @@ export function directRuntime(provider: string): { baseUrl: string; model: strin
   return runtime ? { baseUrl: runtime.baseUrl, model: runtime.defaultModel } : null;
 }
 
+/**
+ * A provider this app has a name and a default model for, so a key of it
+ * that stays on Loki can answer here. Asked by the Cat's chain and by its
+ * model menu; it lives in this lookup-only file so the menu's page load can
+ * ask it without being able to reach a model.
+ */
+export function isCallableThroughLoki(provider: string): boolean {
+  return provider === 'groq' || provider === 'openrouter' || getProviderRuntime(provider) !== null;
+}
+
 /** Pure: the first of the person's keys, in their saved order, a bot can run on. */
 export function pickOwnKey(keys: ReadonlyArray<OwnKey>): OwnKey | null {
   return (

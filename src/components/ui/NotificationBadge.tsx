@@ -25,6 +25,10 @@ interface NotificationBadgeProps {
 /**
  * Notification badge for displaying unread counts
  *
+ * The control holding the badge names the count in its own label
+ * ("Notifications (3 unread)"), so the badge carries none: an aria-label is
+ * not allowed on a plain span, and the control's label replaces it anyway.
+ *
  * @example
  * <NotificationBadge count={5} />
  * <NotificationBadge count={150} /> // Shows "99+"
@@ -40,7 +44,6 @@ export function NotificationBadge({ count, maxDisplay = 99, className }: Notific
         'absolute top-1 right-1 bg-status-negative text-fg-inverted text-2xs rounded-full h-4 min-w-4 px-1 flex items-center justify-center font-semibold leading-none',
         className
       )}
-      aria-label={`${count} unread`}
     >
       {count > maxDisplay ? `${maxDisplay}+` : count}
     </span>

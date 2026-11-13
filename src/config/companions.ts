@@ -1,11 +1,16 @@
 /**
- * Companions — copy SSOT.
+ * Bots (entity type `ai_assistant`) — copy SSOT.
  *
- * A companion is a being with its own soul and a memory of the person it
- * talks to. Created privately, published by choice, clonable without its
+ * The kind's name is ENTITY_REGISTRY.ai_assistant.name ("Bot"); this file
+ * holds the sentences around it. A bot has its own voice and a memory of the
+ * person it talks to. Created privately, published by choice, clonable without its
  * memories. Every user-facing sentence about companions lives here so the
  * room, the profile, the wizard and the memory page cannot drift apart.
  */
+
+import { ENTITY_REGISTRY } from '@/config/entity-registry';
+
+const BOT = ENTITY_REGISTRY.ai_assistant;
 
 export const COMPANION_COPY = {
   /** The one honest line every room shows once: this is software. */
@@ -62,9 +67,9 @@ export const COMPANION_COPY = {
 
   /** The talk home: companions, group chats and the fleet's bots as one list. */
   talk: {
-    title: 'Bots',
+    title: BOT.namePlural,
     search: 'Search',
-    newCompanion: 'New bot',
+    newCompanion: `New ${BOT.name.toLowerCase()}`,
     newGroup: 'New group chat',
     /** Under a name, when the companion has no description yet. */
     noJob: 'Tell it what it is for',
@@ -88,10 +93,10 @@ export const COMPANION_COPY = {
     talk: 'Talk',
     close: 'Close',
     create: {
-      title: 'New bot',
+      title: `New ${BOT.name.toLowerCase()}`,
       shelf: 'Ready to go',
       blank: 'Or start from a blank name',
-      name: 'Give your bot a name',
+      name: `Give your ${BOT.name.toLowerCase()} a name`,
       shape: 'Shape',
       colour: 'Colour',
       submit: 'Create',
@@ -216,7 +221,7 @@ export const COMPANION_COPY = {
       row: 'What it can do',
       rowOwn: (n: number) => `What it can do · ${n} on its own`,
       intro:
-        'Ask me: it proposes, and nothing happens until you tap. On its own: it does it as you in your Loki, and carries on with the result. Anything it makes on OrangeCat always asks.',
+        'Ask me: it proposes, and nothing happens until you tap. On its own: it does it as you, in your Loki or in an account you connected (those it only reads), and carries on with the result. Anything it makes on OrangeCat always asks.',
       off: 'Off',
       ask: 'Ask me',
       auto: 'On its own',
@@ -240,6 +245,9 @@ export const COMPANION_COPY = {
         loki_finding_status: 'Read where a finding is',
         walk_site: 'Walk a live site and say what is wrong',
         use_browser: 'Use a browser of its own',
+        github_read: 'Read your GitHub: repositories, issues, pull requests, a file',
+        gmail_read: 'Search and read your mail',
+        calendar_read: 'Read your calendar',
       } as Record<string, string>,
     },
     /** The "Do it?" card under a bot's answer, and what follows the tap. */

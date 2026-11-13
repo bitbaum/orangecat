@@ -25,6 +25,7 @@ import {
   apiForbidden,
   apiNotFound,
   apiValidationError,
+  apiConflict,
   handleApiError,
   handleSupabaseError,
   apiRateLimited,
@@ -41,6 +42,7 @@ import { getAdminClient } from '@/lib/supabase/admin';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { type EntityType, getEntityMetadata } from '@/config/entity-registry';
 import { ENTITY_STATUS } from '@/config/database-constants';
+import { canDeleteInStatus } from '@/config/entity-status';
 import { checkOwnership } from '@/services/actors';
 import { getOrCreateUserActor } from '@/services/actors/getOrCreateUserActor';
 import { validateUUID } from '@/lib/api/validation';
@@ -501,12 +503,26 @@ function createDeleteHandler(config: EntityHandlerConfig) {
       }
       const { supabase, user, existing } = load.loaded;
 
+      // Some types can only be deleted in some statuses (events: drafts only,
+      // by RLS). Say so before touching anything, rather than letting the
+      // database quietly delete nothing.
+      const status = typeof existing.status === 'string' ? existing.status : null;
+      if (!canDeleteInStatus(entityType, status)) {
+        return apiConflict(
+          `This ${meta.name.toLowerCase()} is ${status} and can only be deleted as a draft. Take it offline first, then delete it.`,
+          { status }
+        );
+      }
+
       // Pre-delete hook (cleanup operations)
       if (preDelete) {
         await preDelete(existing, user.id, supabase);
       }
 
-      const { error } = await fromTable(supabase, table).delete().eq('id', entityId);
+      const { data: removed, error } = await fromTable(supabase, table)
+        .delete()
+        .eq('id', entityId)
+        .select('id');
 
       if (error) {
         logger.error(`${meta.name} deletion failed`, {
@@ -516,6 +532,17 @@ function createDeleteHandler(config: EntityHandlerConfig) {
           code: error.code,
         });
         return handleSupabaseError(error);
+      }
+
+      // RLS filters a DELETE silently: a policy narrower than the ownership
+      // check above removes zero rows and returns no error. Reporting that as
+      // "deleted" left a published event live with tickets on sale.
+      if (!removed || (Array.isArray(removed) && removed.length === 0)) {
+        logger.warn(`${meta.name} delete removed no rows`, { userId: user.id, entityId, status });
+        return apiConflict(
+          `This ${meta.name.toLowerCase()} could not be deleted in its current state. Nothing was removed.`,
+          { status }
+        );
       }
 
       // entity_wallets is polymorphic (entity_type + entity_id), so Postgres

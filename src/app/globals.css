@@ -211,6 +211,12 @@
     --bitcoin-orange-dark: #e8830f;
     /* RGB channels for Tailwind opacity-modifier support (bg-tiffany-500/50 etc.) */
     --bitcoin-orange-channels: 247 147 26;
+    /* Bitcoin orange for WORDS (text-bitcoin-text): BTC amounts, labels.
+       #f7931a is 2.0-2.3:1 on every light surface, so light takes #9d5906
+       (4.97:1 on raised); dark keeps the true orange (.dark below). Fills,
+       icons and borders keep --bitcoin-orange. Mirrors
+       @bitbaum/design-tokens --bitcoin-orange-text. */
+    --bitcoin-orange-text: #9d5906;
     --tiffany-50: 230 247 247;
     --tiffany-100: 186 235 234;
     --tiffany-200: 142 222 221;
@@ -360,6 +366,7 @@
     --mobile-nav-clearance: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px));
   }
   .dark {
+    --bitcoin-orange-text: var(--bitcoin-orange);
     --background: var(--surface-page);
     --foreground: var(--text-primary);
     --card: var(--surface-base);
@@ -909,9 +916,13 @@
     display: none;
   }
   /* One sideways line at every width: a row of choices is one row, never a
-     wrapping box (it read 10 + 3 on a desktop). A mouse gets a thin bar. */
+     wrapping box (it read 10 + 3 on a desktop). A mouse gets a thin bar.
+     A scroller clips on both axes (overflow-x: auto makes overflow-y auto),
+     and the focus ring sits 4px outside a chip: it lost its top and bottom,
+     and from sm the first chip its left edge. So the row keeps 4px of padding
+     on every side the ring reaches and gives it back in margin: nothing moves. */
   .oc-discover-chips {
-    @apply -mx-4 mt-5 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:px-0;
+    @apply -mx-4 -mb-1 mt-4 flex gap-2 overflow-x-auto px-4 py-1 sm:-mx-1 sm:px-1;
     scrollbar-width: none;
   }
   .oc-discover-chips::-webkit-scrollbar {
@@ -921,6 +932,7 @@
     .oc-discover-chips {
       scrollbar-width: thin;
       padding-bottom: 0.5rem;
+      margin-bottom: 0;
     }
     .oc-discover-chips::-webkit-scrollbar {
       display: block;
@@ -948,8 +960,10 @@
   .oc-discover-see-all {
     @apply inline-flex min-h-11 flex-shrink-0 items-center gap-1 text-sm font-medium text-fg-secondary transition-colors hover:text-fg-primary;
   }
+  /* On a phone the rail scrolls, so it clips: 4px above the cards keeps the
+     top of the focus ring, given back in margin. From sm it is a grid. */
   .oc-discover-rail-track {
-    @apply -mx-4 grid snap-x snap-mandatory scroll-px-4 auto-cols-[78%] grid-flow-col gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:auto-cols-auto sm:grid-flow-row sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:px-0 lg:grid-cols-4;
+    @apply -mx-4 -mt-1 grid snap-x snap-mandatory scroll-px-4 auto-cols-[78%] grid-flow-col gap-3 overflow-x-auto px-4 pb-2 pt-1 sm:mx-0 sm:mt-0 sm:pt-0 sm:auto-cols-auto sm:grid-flow-row sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:px-0 lg:grid-cols-4;
     scrollbar-width: none;
   }
   .oc-discover-rail-track::-webkit-scrollbar {
@@ -1110,7 +1124,7 @@
 
   /* Bitcoin-themed elements */
   .bitcoin-text {
-    @apply text-bitcoinOrange font-semibold;
+    @apply text-bitcoin-text font-semibold;
   }
 
   .bitcoin-card {

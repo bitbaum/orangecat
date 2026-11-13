@@ -35,7 +35,7 @@ export function NWCStatusBadge({ className, showLabel = false }: NWCStatusBadgeP
       title={nwcConnected ? 'NWC Wallet Connected' : 'No wallet connected'}
     >
       <Zap
-        className={cn('h-3.5 w-3.5', nwcConnected ? 'text-bitcoin-orange fill-bitcoin-orange' : '')}
+        className={cn('h-3.5 w-3.5', nwcConnected ? 'text-bitcoinOrange fill-bitcoinOrange' : '')}
       />
       {showLabel && <span>{nwcConnected ? 'NWC Active' : 'No Wallet'}</span>}
     </div>

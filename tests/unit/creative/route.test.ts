@@ -4,9 +4,12 @@ vi.mock('next/server', () => ({
 }));
 const model = vi.hoisted(() => vi.fn());
 const rate = vi.hoisted(() => vi.fn());
-vi.mock('@/lib/api/withAuth', () => ({ withAuth: (handler: unknown) => handler }));
+vi.mock('@/lib/api/withAuth', () => ({ withOptionalAuth: (handler: unknown) => handler }));
 vi.mock('@/lib/rate-limit', () => ({
   rateLimitWriteAsync: rate,
+  rateLimit: rate,
+  rateLimitStudio: rate,
+  rateLimitDictation: rate,
   createRateLimitResponse: () => new Response('{}', { status: 429 }),
 }));
 vi.mock('@/services/cat/platform-llm', () => ({

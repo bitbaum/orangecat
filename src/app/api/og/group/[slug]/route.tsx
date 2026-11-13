@@ -6,14 +6,22 @@
  *
  * Public, unauthenticated. Cached 1h at the edge.
  *
+ * A slug with no group gets the plain brand card, never one built from the
+ * URL (any made-up name used to render as an OrangeCat group). No "/slug"
+ * pill either: that path 404s, the page is /groups/<slug>, and the preview
+ * shows the real link beside the card anyway.
+ *
  * Created: 2026-06-03
  */
 
 import { ImageResponse } from 'next/og';
 import { createServerClient } from '@/lib/supabase/server';
+import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { APP_NAME, APP_KICKER } from '@/config/brand';
-import { OG_SIZE, OG_COLOR, Avatar, BrandFooter, StatPill } from '@/lib/og/branding';
+import { OG_SIZE, OG_COLOR, Avatar, BrandFooter } from '@/lib/og/branding';
+import { brandOnlyCard } from '@/lib/og/project-card';
+import { shareLine } from '@/lib/og/share-line';
 
 // Must be a string literal — Next.js static-analyzes `runtime` at build
 // time and cannot resolve imported identifiers (see OG_RUNTIME in
@@ -29,7 +37,6 @@ interface GroupRow {
   name: string;
   description: string | null;
   avatar_url: string | null;
-  slug: string;
 }
 
 export async function GET(_req: Request, { params }: RouteContext) {
@@ -38,18 +45,16 @@ export async function GET(_req: Request, { params }: RouteContext) {
 
   const { data } = await supabase
     .from(DATABASE_TABLES.GROUPS)
-    .select('name, description, avatar_url, slug')
+    .select('name, description, avatar_url')
     .eq('slug', slug)
     .maybeSingle();
 
-  const group = (data as GroupRow | null) ?? {
-    name: slug,
-    description: null,
-    avatar_url: null,
-    slug,
-  };
+  const group = data as GroupRow | null;
+  if (!group) {
+    return brandOnlyCard();
+  }
 
-  const description = (group.description ?? '').trim().slice(0, 180);
+  const description = shareLine(group.description);
 
   return new ImageResponse(
     <div
@@ -77,7 +82,7 @@ export async function GET(_req: Request, { params }: RouteContext) {
               textTransform: 'uppercase',
             }}
           >
-            Group
+            {ENTITY_REGISTRY.group.name}
           </span>
           <span
             style={{
@@ -105,10 +110,7 @@ export async function GET(_req: Request, { params }: RouteContext) {
           )}
         </div>
       </div>
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', gap: 16 }}>
-          <StatPill label="@" value={`/${group.slug}`} />
-        </div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
         <BrandFooter wordmark={APP_NAME} tagline={APP_KICKER} />
       </div>
     </div>,

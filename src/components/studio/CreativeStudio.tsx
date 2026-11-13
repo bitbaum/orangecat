@@ -11,7 +11,6 @@ import { ROUTES } from '@/config/routes';
 import { useCreativeStudio, EXAMPLE } from './useCreativeStudio';
 
 export function CreativeStudio() {
-  // Transcription is a signed-in endpoint; a visitor types.
   const {
     ready,
     feeling,
@@ -126,8 +125,8 @@ export function CreativeStudio() {
             {busy ? 'Creating…' : 'Create an interpretation'}
           </Button>
           <p className="text-sm text-fg-tertiary">
-            AI creation needs sign-in. Your brief is sent when you create. Work stays in this tab
-            until you download it. No work is posted to your profile.
+            No account needed. Your brief is sent when you create. Work stays in this tab until you
+            download it. Nothing is posted anywhere.
           </p>
           <Button
             type="button"
@@ -169,7 +168,9 @@ export function CreativeStudio() {
                 {work.source} · {CREATIVE_FORMS[work.form].label}
               </p>
               <h2 className="mt-3 font-heading text-2xl font-semibold">{work.draft.title}</h2>
-              <div className="mt-5">
+              {/* pre-line: a haiku's three lines stay three lines. Markdown keeps a
+                  single newline inside the paragraph, and plain CSS collapses it. */}
+              <div className="mt-5 [&_.ck-md_p]:whitespace-pre-line">
                 <Markdown text={work.draft.text} />
               </div>
               {work.draft.score && <MusicPlayer draft={work.draft} />}

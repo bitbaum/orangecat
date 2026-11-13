@@ -17,12 +17,10 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
-  const wishlist = await fetchEntityForMetadata(
-    'wishlist',
-    id,
-    'title, description, cover_image_url',
-    { column: 'is_active', value: true }
-  );
+  const wishlist = await fetchEntityForMetadata('wishlist', id, 'title, description', {
+    column: 'is_active',
+    value: true,
+  });
   if (!wishlist) {
     return {
       title: 'Wishlist Not Found',
@@ -34,7 +32,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     id,
     title: wishlist.title,
     description: wishlist.description,
-    imageUrl: wishlist.cover_image_url,
   });
 }
 

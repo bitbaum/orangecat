@@ -54,7 +54,7 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### app-shell#5 · medium · Navigation vocabulary: the same place has different names and icons in the sidebar, the user menu and the tab bar, and MORE is a ten-item drawer
 
-**Status:** Partly (fourth pull request): Appearance still shows at every width in the account menu (accountkit has no per-width option).
+**Status:** Fixed (2026-11-13): @bitbaum/accountkit 0.30.0 `shown: 'narrow'` hides the Appearance row from 768px up, where the header has its own toggle (bitbaum/accountkit#95).
 
 - **Where:** app-dashboard, app-discover, app-timeline, app-community, app-people, app-collaborate (both, both themes)
 - **What a person meets:** People learn a product's map by its words and pictures. When 'Home' is also 'Dashboard', a gear is both Settings and Edit Profile, and a handshake is three different places, nothing can be found by recognition; Settings, which most people look for under their avatar, is three taps deep in a group called MORE.

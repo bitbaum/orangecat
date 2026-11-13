@@ -6,6 +6,7 @@ import { PUBLIC_PAGE_WIDTH, PublicPageHeader } from '@/components/layout/PublicP
 import { ROUTES } from '@/config/routes';
 import { cn } from '@/lib/utils';
 import { CONTACT_EMAIL } from '@/config/brand';
+import { SETTLEMENT_TRANSPARENCY_CLAIM } from '@/config/landing-page';
 
 export const metadata = {
   title: 'Security',
@@ -77,7 +78,7 @@ export default function SecurityPage() {
       items: [
         'No custody of user funds — payments flow directly to your wallet',
         'Lightning Network support via LNURL',
-        'Transaction transparency on the Bitcoin blockchain',
+        SETTLEMENT_TRANSPARENCY_CLAIM,
       ],
     },
   ];

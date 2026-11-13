@@ -144,45 +144,6 @@ export function BrandFooter({ wordmark, tagline }: { wordmark: string; tagline: 
   );
 }
 
-/** Card with a pill-style stat — small block users see "live data" energy from. */
-export function StatPill({ label, value }: { label: string; value: string }) {
-  return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        background: OG_COLOR.glass,
-        border: `1px solid ${OG_COLOR.border}`,
-        borderRadius: 16,
-        padding: '16px 24px',
-        minWidth: 140,
-      }}
-    >
-      <span
-        style={{
-          display: 'flex',
-          fontSize: 32,
-          fontWeight: 700,
-          color: OG_COLOR.text,
-          lineHeight: 1.2,
-        }}
-      >
-        {value}
-      </span>
-      <span
-        style={{
-          display: 'flex',
-          fontSize: 16,
-          color: OG_COLOR.textMuted,
-          marginTop: 4,
-        }}
-      >
-        {label}
-      </span>
-    </div>
-  );
-}
-
 /** Avatar disk — works for both real avatar_url and initials fallback. */
 export function Avatar({ src, fallback }: { src?: string | null; fallback: string }) {
   if (src) {

@@ -5,7 +5,7 @@ import { StudioFleetGrid } from '@/components/ecosystem/StudioFleetGrid';
 import { homeFleetPreview, selectHomeFleet } from '@/components/ecosystem/studio-fleet';
 import { ECOSYSTEM, ECOSYSTEM_PILLARS } from '@/config/ecosystem';
 import { ROUTES } from '@/config/routes';
-import { fetchStudioMapForCat } from '@/services/ai/studio-map-fetcher';
+import { fetchStudioMapForPublicPage } from '@/services/loki/studio-fleet-map';
 
 /**
  * The studio behind the product, on the front page.
@@ -20,7 +20,7 @@ import { fetchStudioMapForCat } from '@/services/ai/studio-map-fetcher';
  * reached the pillars still stand and the grid is simply absent.
  */
 export default async function StudioSection() {
-  const map = await fetchStudioMapForCat();
+  const map = await fetchStudioMapForPublicPage();
   const tiles = selectHomeFleet(map);
   const preview = homeFleetPreview(tiles);
 

@@ -7,8 +7,15 @@
  * every turn, growing with each hand added. The grants are read once.
  */
 import { describe, expect, it, vi } from 'vitest';
+
+const connected = vi.hoisted(() => ({ providers: new Set<string>() }));
+vi.mock('@/lib/supabase/admin', () => ({ getAdminClient: vi.fn(() => ({})) }));
+vi.mock('@/services/connectors/token-store', () => ({
+  connectedProviders: vi.fn(async () => connected.providers),
+}));
 import { COMPANION_HANDS, HANDS_SECTION_HEADING } from '@/services/companions/hands';
 import { handsFor } from '@/services/companions/hands-server';
+import { CONNECTOR_HAND_PROVIDER } from '@/services/connectors/hands';
 import { turnTimer } from '@/services/ai/turn-timer';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 
@@ -36,11 +43,27 @@ describe('handsFor', () => {
     expect(from).toHaveBeenCalledTimes(1);
     expect(hands.allowed.every(a => a.auto === false)).toBe(true);
     // Nothing granted: every hand a tap may grant is offered, in listed order,
-    // and the one a tap may never grant is not.
+    // and the one a tap may never grant is not. Nothing connected: no read of
+    // an account is offered either.
     const ids = hands.allowed.map(a => a.action.id);
-    expect(ids).toEqual(COMPANION_HANDS.filter(id => id !== 'send_task_to_loki'));
+    expect(ids).toEqual(
+      COMPANION_HANDS.filter(id => id !== 'send_task_to_loki' && !CONNECTOR_HAND_PROVIDER[id])
+    );
     expect(hands.allowed.every(a => a.grantOnConfirm)).toBe(true);
     expect(hands.section?.startsWith(HANDS_SECTION_HEADING)).toBe(true);
+  });
+
+  it('offers the read of an account only where that account is connected', async () => {
+    connected.providers = new Set(['google']);
+    try {
+      const { client } = clientWith([]);
+      const ids = (await handsFor(client, 'user-1')).allowed.map(a => a.action.id);
+      expect(ids).toContain('gmail_read');
+      expect(ids).toContain('calendar_read');
+      expect(ids).not.toContain('github_read');
+    } finally {
+      connected.providers = new Set();
+    }
   });
 
   it('offers nothing, and does not throw, when the grants cannot be read', async () => {

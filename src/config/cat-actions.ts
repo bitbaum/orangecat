@@ -671,9 +671,8 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
 
   create_ai_assistant: {
     id: 'create_ai_assistant',
-    name: 'Create AI Assistant',
-    description:
-      'Build an autonomous AI service that earns Bitcoin — define its personality, capabilities, and pricing',
+    name: 'Create Bot',
+    description: 'Build a bot — define its personality, capabilities, and pricing',
     category: 'entities',
     icon: Bot,
     riskLevel: 'medium',
@@ -716,7 +715,7 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
       },
     ],
     examples: [
-      'Create a Bitcoin tax advisor AI assistant',
+      'Create a Bitcoin tax advisor bot',
       'Build a code reviewer that charges per message',
       'Launch a free educational assistant about Lightning Network',
     ],
@@ -956,6 +955,64 @@ export const CAT_ACTIONS: Record<string, CatAction> = {
       },
     ],
     examples: ['Where is run 70d1a78d?', 'Did that task open a pull request yet?'],
+    enabled: true,
+  },
+
+  github_read: {
+    id: 'github_read',
+    name: 'Read GitHub',
+    description: 'Connected GitHub: repos, open issues, pulls, a file. Read-only.',
+    summary:
+      'Read your connected GitHub: your repositories, open issues and pull requests, or a file. Read-only.',
+    category: 'communication',
+    icon: Bot,
+    riskLevel: 'low',
+    requiresConfirmation: true,
+    parameters: [
+      { name: 'what', type: 'string', required: true, description: 'repos|issues|pulls|file' },
+      { name: 'repo', type: 'string', required: false, description: 'owner/name' },
+      { name: 'path', type: 'string', required: false, description: 'File or folder, for file' },
+    ],
+    examples: ['What is assigned to me on GitHub?', 'Which pull requests are open in loki?'],
+    enabled: true,
+  },
+
+  gmail_read: {
+    id: 'gmail_read',
+    name: 'Read Mail',
+    description: 'Connected Gmail: search, or one message by id. Read-only.',
+    summary: 'Search your connected Gmail and read a message. Read-only: nothing is sent.',
+    category: 'communication',
+    icon: Bot,
+    riskLevel: 'low',
+    requiresConfirmation: true,
+    parameters: [
+      { name: 'query', type: 'string', required: false, description: 'Gmail search words' },
+      { name: 'message_id', type: 'string', required: false, description: 'Read this one' },
+    ],
+    examples: ['Any mail from the landlord this week?', 'What is unread in my inbox?'],
+    enabled: true,
+  },
+
+  calendar_read: {
+    id: 'calendar_read',
+    name: 'Read Calendar',
+    description: 'Connected Google Calendar, coming days. Read-only.',
+    summary: 'Read the coming days of your connected Google Calendar. Read-only.',
+    category: 'communication',
+    icon: Calendar,
+    riskLevel: 'low',
+    requiresConfirmation: true,
+    parameters: [
+      { name: 'days', type: 'number', required: false, description: 'Days ahead, 1 to 31' },
+      {
+        name: 'query',
+        type: 'string',
+        required: false,
+        description: 'Only events with these words',
+      },
+    ],
+    examples: ['What is on my calendar this week?', 'When is my next dentist appointment?'],
     enabled: true,
   },
 

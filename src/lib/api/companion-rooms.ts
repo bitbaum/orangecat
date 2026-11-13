@@ -35,8 +35,8 @@ export const newRoomSchema = z.object({
   title: z.string().trim().max(ROOM_TITLE_MAX).optional().nullable(),
   members: z
     .array(roomMemberSchema)
-    .min(MIN_ROOM_MEMBERS, `A group chat needs at least ${MIN_ROOM_MEMBERS} companions`)
-    .max(MAX_ROOM_MEMBERS, `A group chat holds at most ${MAX_ROOM_MEMBERS} companions`),
+    .min(MIN_ROOM_MEMBERS, `A group chat needs at least ${MIN_ROOM_MEMBERS} bots`)
+    .max(MAX_ROOM_MEMBERS, `A group chat holds at most ${MAX_ROOM_MEMBERS} bots`),
 });
 
 /**

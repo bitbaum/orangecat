@@ -5,6 +5,7 @@ import { ArrowLeft, Clock, Lock, Users } from 'lucide-react';
 import { getArticleBySlug, isCurrentUserArticleAuthor } from '@/services/articles/get-article';
 import { ARTICLE_COPY, deriveExcerpt } from '@/config/articles';
 import { ROUTES } from '@/config/routes';
+import { metaDescription } from '@/lib/og/share-line';
 import { JsonLdScript } from '@/lib/seo/structured-data';
 import { APP_NAME, SITE_URL } from '@/config/brand';
 import { Toc, ReadingProgress } from '@bitbaum/bip-kit/react';
@@ -57,16 +58,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const ogImage = article.coverImage
     ? article.coverImage
     : `${SITE_URL}/api/og/article/${encodeURIComponent(article.slug)}`;
+  const description = metaDescription(article.excerpt);
 
   return {
     title: article.title,
-    description: article.excerpt,
+    description,
     // Slugs are user-authored (title + random suffix) and duplicate-prone —
     // pin the canonical URL so near-duplicate titles don't split ranking.
     alternates: { canonical },
     openGraph: {
       title: article.title,
-      description: article.excerpt,
+      description,
       type: 'article',
       siteName: APP_NAME,
       publishedTime: article.publishedAt,
@@ -77,7 +79,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     twitter: {
       card: 'summary_large_image',
       title: article.title,
-      description: article.excerpt,
+      description,
       images: [ogImage],
     },
   };

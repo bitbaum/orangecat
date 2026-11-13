@@ -3,6 +3,7 @@ import { withAuth, type AuthenticatedRequest } from '@/lib/api/withAuth';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { ilikeAny } from '@/lib/db/likePattern';
+import { onlyPublicPeople } from '@/domain/people/publicPeopleFilter';
 
 // GET /api/profiles - List profiles (basic fields)
 export const GET = withAuth(async (request: AuthenticatedRequest) => {
@@ -30,24 +31,26 @@ export const GET = withAuth(async (request: AuthenticatedRequest) => {
     const page = Math.max(Number(request.nextUrl.searchParams.get('page') || 1), 1);
     const offset = (page - 1) * limit;
 
-    let query = supabase
-      .from(DATABASE_TABLES.PROFILES)
-      .select(
-        `id, username, name, bio, avatar_url, bitcoin_address, lightning_address, created_at, updated_at, email`,
-        { count: 'exact' }
-      )
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
-
-    // Hide anonymous-user and CI fixture profiles from the people picker.
-    query = query
-      .not('username', 'ilike', 'user\\_________')
-      .not('username', 'ilike', 'e2e-reset-%')
-      .not('username', 'ilike', 'e2e\\_%');
+    // Fixtures and nameless shells are filtered in the query, before the
+    // range: filtering after it left a page of throwaway sign-ups.
+    let query = onlyPublicPeople(
+      supabase
+        .from(DATABASE_TABLES.PROFILES)
+        .select(
+          `id, username, name, bio, avatar_url, bitcoin_address, lightning_address, created_at, updated_at, email`,
+          { count: 'exact' }
+        )
+    );
 
     if (search) {
-      query = query.or(ilikeAny(['username', 'name'], search));
+      query = query.or(ilikeAny(['username', 'name'], search.replace(/^@/, '')));
     }
+
+    // Alphabetical by name (people without one after), then the newest.
+    query = query
+      .order('name', { ascending: true, nullsFirst: false })
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
     const { data, error, count } = await query;
     if (error) {

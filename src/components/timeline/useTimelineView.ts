@@ -80,7 +80,7 @@ export function useTimelineView({
       if ((feedType === 'profile' || feedType === 'project') && !ownerId) {
         return;
       }
-      if ((feedType === 'journey' || feedType === 'community') && !user?.id) {
+      if (feedType === 'journey' && !user?.id) {
         return;
       }
 

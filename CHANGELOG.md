@@ -11,6 +11,29 @@ to the map, sub-bullets stay here for the human reader.
 
 ## 2026-11-13
 
+- **Every listing and every public post shares with its own card**: its picture or kind, title, maker and price, instead of one grey logo.
+- **Bots are makers too.** A public bot with a wallet can be supported in Bitcoin, its page wears its face, and what a bot helped make says "Made with" it. They are called bots everywhere now.
+- **The community feed is people again.** Automated build updates stay on their project's page, not on /community or a newcomer's first screen.
+- **Deleting is honest.** A published event can be unpublished or cancelled (which stops ticket sales); nothing says "deleted" when it is not.
+- **Money you can trust.** Amounts are checked as you type them, a request needs a wallet to land in, amounts open empty or round, loans show in your currency, and the code screen shows the Bitcoin amount.
+- **Easier to find people and events.** People search finds names, /events lists what is coming without a location, Discover is in the main menu, and hosts hear when someone takes a ticket.
+- **Writing on a phone works.** The Post button stays on screen, a photo search that is down says so, and an article is never signed with a raw account handle.
+
+- **The Studio works for everyone, in every form.** Poems, haiku, lyrics, fiction and the rest no longer fail with "could not finish", and you can create without an account (a few drafts every ten minutes; signing in lifts that).
+
+- **Paying on-chain shows where the money goes.** The pay screen shows the address and the exact BTC that must arrive, and Copy copies the address; invoices say "Payment to" whom.
+- **A shared link shows the page you shared.** Its own title and picture, on X too, and share cards only say what is true.
+- **An event that is over says so and sells no more tickets.**
+- **Organizations count right.** Discover's numbers match what it lists, member counts are real, and a public organization's Events and Activity open signed out.
+- **The community feed opens without an account.**
+- **Bitcoin amounts are readable in light mode.**
+- **On a phone, notifications show their actions and the Cat's chat reaches Loki.**
+
+- **One theme switch per screen.** On a computer the header's switch is the only one; the account menu offers Appearance on a phone, where the header has none, and no longer flickers on load.
+
+- **Put your bots in a group with people.** In Messages, tap New and pick people and one or more of your bots. A bot there answers when somebody names it, as in "@Chef what is quick?", and its answer says whom it was for. It reads the conversation from when it was added, and what you told it in private stays out of the group. A bot that is not public answers only you, and says so to anyone else who names it. {#messenger-bot-group}
+- **Your Cat and your bots can read your GitHub, your mail and your calendar.** Connect GitHub and Google in Cat → Controls, under what your Cat sees. Then ask: "what is assigned to me on GitHub?", "any mail from the landlord this week?", "what is on my calendar tomorrow?". Reading only: nothing is sent, changed or deleted. In a bot's details you choose per ability whether it asks first or reads on its own, so a morning routine can open your calendar by itself.
+  - Each connection appears once its keys are set on the server (`docs/operations/connectors.md`).
 - **The message box and the top of a conversation look as they should.** On a phone the message field was drawn as a box inside the box, a profile photo that is not square showed as a tall oval, the name and the line under it stood apart, and "Sending as" sat against the edge. All four are fixed.
 - **Write to your own bots in Messages, the way you write to a person.** In Messages, tap New and type the name of one of your bots: it is listed beside the people. Open it and every message you send is answered there, by the bot, marked as an agent; it shows as writing while it answers. It answers on your own AI key if you have one, otherwise on your free daily messages. A group with a bot in it comes next. {#messenger-bot-seat} {#messenger-bot-direct}
 - **Talk to a bot out loud, give it several routines, and tap a suggestion instead of typing.** A bot's chat has a "Talk" button: say something, it answers aloud, and the conversation is in the chat afterwards. A bot can now write first up to five times, each at its own time or every few hours with its own question, so a morning brief and a site check no longer share one line. Above the message box of your own bot, chips start the sentence for what it can do ("Check a site", "Ask Loki"). A group chat can have a picture of its own: "Change the picture" in its details.
@@ -27,6 +50,9 @@ to the map, sub-bullets stay here for the human reader.
 - **Settings are easier to find.** Account is split into sections, and currency, date format and theme have their own Preferences page.
 - **An article can go on your projects' walls too.** Under "Who can read this?" in the article editor, "Also post on a project" offers your own projects, the same list a short post cross-posts to, and the article appears on each one you choose as well as on your profile. A sister product can link straight to the editor with the article and the project already chosen (`/articles/new?import=…&project=solon`); a project that is not yours is not chosen, and the editor says so. Signing in on the way keeps both.
   - Project walls now also show what their owners cross-posted there. Those posts were recorded and never shown.
+- **A bot you just made is yours straight away.** Its chat used to open without its Edit, routine and abilities rows and without its suggestion chips until you reloaded the page.
+- **Your Cat answers on the key you keep in Loki, like your bots do.** Switching on "Use my xAI key here" in Settings → AI used to change your bots only: the Cat stayed on the free pool, and when that was spent it could not answer. Now the Cat uses the same key. Its model menu says "Auto · your xAI key" and lists that key's models to choose from; the free pool only backs it up.
+- **On your own Grok key, your Cat can look things up and act again.** The answer came from your key, but the Cat's lookups and actions were still sent to the free pool, so "check my calendar" ended with "that check stopped before it finished". They now run on your key too. The model menu puts the model you chose in Loki first and no longer shows a wall of locked models once you are on your own key. Asking for mail or calendar before Google is set up now says so plainly instead of failing.
 
 ## 2026-11-12
 

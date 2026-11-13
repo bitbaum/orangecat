@@ -13,13 +13,16 @@ import supabase from '@/lib/supabase/browser';
 import { logger } from '@/utils/logger';
 import { withApiRetry } from '@/utils/retry';
 import { TIMELINE_TABLES } from '@/config/database-tables';
+import { EXCLUDE_AUTOMATED_PUBLISH_OR_FILTER } from '@/config/external-publish';
 import type { TimelineFeedResponse, TimelineFilters, TimelinePagination } from '@/types/timeline';
 import { pageWindow, feedResponse, emptyFeed } from './feed-shape';
 import { displayEventsFromView } from './helpers';
+import { NOT_A_FIXTURE_AUTHOR } from '@/domain/people/publicPeopleFilter';
 
 /**
  * Get public community timeline (posts from all users and projects)
- * Uses community_timeline_no_duplicates VIEW to eliminate duplicate cross-posts
+ * Uses community_timeline_no_duplicates VIEW to eliminate duplicate cross-posts,
+ * and leaves out automated publishes (Loki's build updates).
  */
 export async function getCommunityFeed(
   filters?: Partial<TimelineFilters>,
@@ -38,6 +41,11 @@ export async function getCommunityFeed(
         } = await supabase
           .from(TIMELINE_TABLES.COMMUNITY_VIEW)
           .select('*', { count: 'exact' })
+          // Automated build updates stay on the project's own wall; the public
+          // feed is for what people post (config/external-publish.ts).
+          .or(EXCLUDE_AUTOMATED_PUBLISH_OR_FILTER)
+          // A QA run's account posts nothing a visitor came for.
+          .or(NOT_A_FIXTURE_AUTHOR)
           .order('event_timestamp', { ascending: false })
           .range(offset, offset + limit - 1);
 

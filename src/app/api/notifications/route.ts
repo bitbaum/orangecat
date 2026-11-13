@@ -5,12 +5,14 @@ import { rateLimitWriteAsync, retryAfterSeconds } from '@/lib/rate-limit';
 import { logger } from '@/utils/logger';
 import { DATABASE_TABLES } from '@/config/database-tables';
 import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from '@/constants/pagination';
+import { isNotificationFilterCategory, notificationTypesIn } from '@/config/notification-types';
 
 /**
  * GET /api/notifications
  *
  * Fetch user's notifications with pagination.
- * Query params: limit (default 20, max 100), offset (default 0), filter ('all' | 'unread' | type)
+ * Query params: limit (default 20, max 100), offset (default 0),
+ * filter ('all' | 'unread' | a category: 'payments' | 'social' | 'messages' | a single type)
  */
 export const GET = withAuth(async (req: AuthenticatedRequest) => {
   try {
@@ -38,6 +40,8 @@ export const GET = withAuth(async (req: AuthenticatedRequest) => {
 
     if (filter === 'unread') {
       query = query.eq('is_read', false);
+    } else if (isNotificationFilterCategory(filter)) {
+      query = query.in('type', notificationTypesIn(filter));
     } else if (filter !== 'all') {
       query = query.eq('type', filter);
     }

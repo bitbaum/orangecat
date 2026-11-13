@@ -30,6 +30,7 @@ import {
   type ContributionBoundsBtc,
 } from '@/config/contribution-terms';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
+import { useChosenAmountBtc } from '@/components/money/useOpeningAmountBtc';
 import { CheckCircle2, Loader2 } from 'lucide-react';
 
 interface PaymentDialogProps {
@@ -70,16 +71,13 @@ export function PaymentDialog({
 
   const { state, initiate, confirmPaid, reset, isLoading } = usePaymentFlow();
 
-  // Contribution-specific state
-  const [contributionAmount, setContributionAmount] = useState(defaultAmount ?? range.defaultBtc);
-  // Sync the picker when a new defaultAmount arrives (e.g. user clicked a
-  // different wishlist tier on the parent). Initial-state seeding only
-  // catches the first mount.
+  const [contributionAmount, setContributionAmount] = useChosenAmountBtc(range, defaultAmount);
+  // A new defaultAmount (another wishlist tier picked on the parent) re-seeds the picker.
   useEffect(() => {
     if (defaultAmount !== undefined) {
       setContributionAmount(defaultAmount);
     }
-  }, [defaultAmount]);
+  }, [defaultAmount, setContributionAmount]);
   const [message, setMessage] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
   // Message + anonymous are optional — keep them one tap away so the default
@@ -91,7 +89,7 @@ export function PaymentDialog({
     setMessage('');
     setIsAnonymous(false);
     setShowMore(false);
-    setContributionAmount(defaultAmount ?? range.defaultBtc);
+    setContributionAmount(defaultAmount ?? null);
     onOpenChange(false);
   };
 
@@ -192,9 +190,11 @@ export function PaymentDialog({
                 disabled={isLoading || !hasValidAmount}
                 className="w-full min-h-11"
               >
-                {isContribution
-                  ? `${terms?.verb ?? 'Support with'} ${priceLabel}`
-                  : `Pay ${priceLabel}`}
+                {!isContribution
+                  ? `Pay ${priceLabel}`
+                  : contributionAmount > 0
+                    ? `${terms?.verb ?? 'Support with'} ${priceLabel}`
+                    : 'Enter an amount'}
               </Button>
             </>
           )}

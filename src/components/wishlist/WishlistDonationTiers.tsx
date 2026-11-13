@@ -124,7 +124,7 @@ export function WishlistDonationTiers({
               onClick={() => handleTierClick(item)}
               className="flex flex-col items-start p-4 border-2 border-default rounded-lg hover:border-bitcoinOrange hover:bg-bitcoinOrange/5 transition-all text-left group"
             >
-              <span className="text-sm font-bold text-fg-primary group-hover:text-bitcoinOrange">
+              <span className="text-sm font-bold text-fg-primary group-hover:text-bitcoin-text">
                 {formattedAmount}
               </span>
               <span className="text-xs text-fg-tertiary mt-0.5">≈ {btcDisplay}</span>

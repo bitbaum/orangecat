@@ -43,6 +43,8 @@ interface PayWords {
   disclaimer: string;
   generating: string;
   generate: string;
+  /** The generate action when "pay from my wallet" sits above it. */
+  generateOther?: string;
   payFromWallet: string;
   payFromWalletNote: string;
   payingFromWallet: string;
@@ -196,6 +198,8 @@ export function PayFlow({
             {words.walletDeclined(flow.walletNote)}
           </p>
         )}
+        {/* What the payment is for stays on the step where the payer decides. */}
+        {noteSlot}
         <PaymentQRCode
           qrData={invoice.qrData}
           methodLabel={invoice.methodLabel}
@@ -260,7 +264,7 @@ export function PayFlow({
             disabled={notReady}
             isLoading={flow.generating}
           >
-            {flow.generating ? words.generating : words.generate}
+            {flow.generating ? words.generating : (words.generateOther ?? words.generate)}
           </Button>
         </>
       ) : (

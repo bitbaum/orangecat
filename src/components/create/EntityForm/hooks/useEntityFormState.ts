@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { FormState, AIGeneratedFields, FieldConfidence, EntityConfig } from '../../types';
 import { useEntityFormDraft } from './useEntityFormDraft';
 import { convertFormAmounts, NO_RATE_FOR_SWITCH } from './convertFormAmounts';
+import { currencyFieldIssue } from './currencyFieldIssue';
 import { slugify } from '@/utils/string';
 import { scrollBehavior } from '@/lib/scroll-behavior';
 
@@ -201,24 +202,32 @@ export function useEntityFormState<T extends Record<string, unknown>>({
 
   const validateField = useCallback(
     (fieldName: string) => {
-      if (!config.validationSchema) {
-        return;
-      }
-      const result = config.validationSchema.safeParse({
-        ...config.defaultValues,
-        ...formState.data,
-      });
-      if (!result.success) {
-        const fieldError = result.error.issues.find(e => e.path[0] === fieldName);
+      const showError = (message: string) =>
+        setFormState(prev => ({
+          ...prev,
+          errors: { ...prev.errors, [fieldName]: message },
+        }));
+      if (config.validationSchema) {
+        const result = config.validationSchema.safeParse({
+          ...config.defaultValues,
+          ...formState.data,
+        });
+        const fieldError = result.success
+          ? undefined
+          : result.error.issues.find(e => e.path[0] === fieldName);
         if (fieldError) {
-          setFormState(prev => ({
-            ...prev,
-            errors: { ...prev.errors, [fieldName]: fieldError.message },
-          }));
+          showError(fieldError.message);
+          return;
         }
       }
+      const field = config.fieldGroups.flatMap(g => g.fields ?? []).find(f => f.name === fieldName);
+      const data = formState.data as Record<string, unknown>;
+      const moneyIssue = field && currencyFieldIssue(field, data[fieldName], data.currency);
+      if (moneyIssue) {
+        showError(moneyIssue);
+      }
     },
-    [config.validationSchema, config.defaultValues, formState.data]
+    [config.validationSchema, config.defaultValues, config.fieldGroups, formState.data]
   );
 
   return {

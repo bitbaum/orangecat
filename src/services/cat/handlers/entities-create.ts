@@ -99,7 +99,7 @@ export const entityCreateHandlers: Record<string, ActionHandler> = {
     const title = params.title as string;
     const systemPrompt = (params.system_prompt as string) || '';
     if (!title || !systemPrompt) {
-      return { success: false, error: 'An AI assistant needs a name and a system prompt.' };
+      return { success: false, error: 'A bot needs a name and a system prompt.' };
     }
     // ai_assistants requires both user_id and actor_id (both NOT NULL).
     const { data, error } = await supabase
@@ -124,7 +124,7 @@ export const entityCreateHandlers: Record<string, ActionHandler> = {
     const statusLabel = params.publish ? 'live' : 'draft';
     return {
       success: true,
-      data: { ...data, displayMessage: `🤖 AI assistant "${title}" created (${statusLabel})` },
+      data: { ...data, displayMessage: `🤖 Bot "${title}" created (${statusLabel})` },
     };
   },
 

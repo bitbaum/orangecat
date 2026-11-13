@@ -1,4 +1,8 @@
-import { notifyCrewAssigned, notifyTicketIssued } from '@/domain/events/notify';
+import {
+  notifyCrewAssigned,
+  notifyHostTicketTaken,
+  notifyTicketIssued,
+} from '@/domain/events/notify';
 import { NotificationDispatcher } from '@/services/notifications/dispatcher';
 import type { Mock } from 'vitest';
 
@@ -11,13 +15,22 @@ vi.mock('@/lib/supabase/admin', () => ({
     chain.from = vi.fn(() => chain);
     chain.select = vi.fn(() => chain);
     chain.eq = vi.fn(() => chain);
+    let table = '';
+    chain.from = vi.fn((t: string) => {
+      table = t;
+      return chain;
+    });
     chain.maybeSingle = vi.fn(() =>
       Promise.resolve({
-        data: {
-          title: 'Electronic Night',
-          start_date: '2026-10-09T20:00:00Z',
-          timezone: 'Europe/Zurich',
-        },
+        data:
+          table === 'profiles'
+            ? { name: 'Ana Muster', username: 'ana' }
+            : {
+                title: 'Electronic Night',
+                start_date: '2026-10-09T20:00:00Z',
+                timezone: 'Europe/Zurich',
+                user_id: 'host',
+              },
         error: null,
       })
     );
@@ -46,5 +59,27 @@ describe('event notifications', () => {
       title: "You're on the crew: Door at Electronic Night",
     });
     expect(sent().message).toContain('You can check guests in');
+  });
+
+  it('tells the host a guest is coming, by the name they gave', async () => {
+    await notifyHostTicketTaken({ eventId: 'e1', guestName: 'Anna' });
+    expect(sent()).toMatchObject({
+      userId: 'host',
+      type: 'ticket',
+      title: 'Anna is coming to Electronic Night',
+      actionUrl: '/events/e1',
+    });
+    expect(sent().message).toContain('door list');
+  });
+
+  it('names a signed-in guest by their profile, and never tells the host about themselves', async () => {
+    await notifyHostTicketTaken({ eventId: 'e1', userId: 'u3' });
+    expect(sent()).toMatchObject({
+      userId: 'host',
+      title: 'Ana Muster is coming to Electronic Night',
+    });
+    (NotificationDispatcher.dispatch as Mock).mockClear();
+    await notifyHostTicketTaken({ eventId: 'e1', userId: 'host' });
+    expect(NotificationDispatcher.dispatch).not.toHaveBeenCalled();
   });
 });

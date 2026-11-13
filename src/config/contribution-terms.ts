@@ -40,13 +40,14 @@ export interface ContributionBoundsBtc {
 
 /**
  * The amount field's range and its opening amount: the stated bounds, inside
- * what a payment can be at all. The usual suggestion opens the field unless the
- * terms rule it out, in which case the nearest bound does.
+ * what a payment can be at all. The field opens empty unless the terms state a
+ * minimum, in which case it opens there (the screen rounds that up to a whole
+ * unit of the payer's currency: useOpeningAmountBtc).
  */
 export function contributionRange(bounds?: ContributionBoundsBtc | null) {
   const minBtc = Math.max(PAY_MIN_BTC, bounds?.minBtc ?? 0);
   const maxBtc = Math.min(PAY_MAX_BTC, bounds?.maxBtc ?? PAY_MAX_BTC);
-  const defaultBtc = Math.min(Math.max(DEFAULT_CONTRIBUTION_BTC, minBtc), maxBtc);
+  const defaultBtc = bounds?.minBtc ? Math.min(minBtc, maxBtc) : DEFAULT_CONTRIBUTION_BTC;
   // A stated minimum above what one payment can be (PAY_MAX_BTC) cannot be met
   // online at all; the card says so instead of offering a field it refuses.
   const unpayable = minBtc > maxBtc;

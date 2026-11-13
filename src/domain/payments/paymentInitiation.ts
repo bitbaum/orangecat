@@ -25,6 +25,7 @@ import type {
 } from './types';
 import { logger } from '@/utils/logger';
 import { getSeatsLeft } from '@/domain/events/tickets';
+import { EVENT_SPAN_COLUMNS, eventHasEnded } from '@/domain/events/time';
 import {
   METHOD_LABELS,
   hashPublicStatusToken,
@@ -48,18 +49,25 @@ export async function initiatePayment(
   // client (seller lookup, wallet secrets), so without this gate an
   // authenticated user could mint an invoice + order against a DRAFT entity
   // the owner never published (found by live simulation, 2026-08-02).
+  const isEvent = entity_type === 'event';
+  const columns: string = isEvent ? `id, ${EVENT_SPAN_COLUMNS}` : 'id';
   const { data: visibleEntity } = await supabase
     .from(meta.tableName)
-    .select('id')
+    .select(columns)
     .eq('id', entity_id)
     .maybeSingle();
   if (!visibleEntity) {
     throw new Error('Entity is not publicly available');
   }
 
-  // A sold-out event refuses here, before anyone pays — once money has moved
-  // the ticket is always issued, so this is the only place capacity can hold.
-  if (entity_type === 'event' && (await getSeatsLeft(supabase, entity_id)) === 0) {
+  // An event that is over, or sold out, refuses here, before anyone pays —
+  // once money has moved the ticket is always issued, so this is the only
+  // place either can hold.
+  // The column list is chosen at run time, so supabase-js cannot type the row.
+  if (isEvent && eventHasEnded(visibleEntity as unknown as Record<string, unknown>)) {
+    throw new Error('This event has ended');
+  }
+  if (isEvent && (await getSeatsLeft(supabase, entity_id)) === 0) {
     throw new Error('This event is sold out');
   }
 
@@ -313,8 +321,12 @@ export async function initiatePublicSupport(
  * anonymous tipper polls with.
  */
 export async function initiateTip(input: InitiateTipInput): Promise<InitiatePublicSupportResult> {
-  const { recipientUserId, recipientName, wallet, amountBtc, paymentRequestId } = input;
-  const description = `Tip for ${recipientName}`;
+  const { recipientUserId, recipientName, wallet, amountBtc, paymentRequestId, requestNote } =
+    input;
+  // The payer's wallet keeps this line. The same path carries a gift, a pay
+  // link and the settling of a request, so it names the payee, not a "tip".
+  const note = requestNote?.trim();
+  const description = note ? `Payment to ${recipientName}: ${note}` : `Payment to ${recipientName}`;
   const invoice = await generateInvoice(wallet, amountBtc, description);
   const token = randomBytes(32).toString('base64url');
   const expiresAt = resolveIntentExpiry(invoice.method, invoice.expires_at);

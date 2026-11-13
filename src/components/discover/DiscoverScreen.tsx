@@ -180,6 +180,12 @@ function NothingListed({
         <p className="mb-0 font-heading text-xl font-semibold text-fg-primary">
           No {pluralLabel(type).toLowerCase()} listed yet.
         </p>
+        {type !== 'profile' && (
+          <p className="mb-0 mt-2 text-fg-secondary">
+            <span className="font-medium text-fg-primary">{ENTITY_REGISTRY[type].plain.verb}.</span>{' '}
+            {ENTITY_REGISTRY[type].plain.what}
+          </p>
+        )}
         <Link href={create} className="oc-problem-action">
           <Plus className="h-4 w-4" aria-hidden />
           List the first one

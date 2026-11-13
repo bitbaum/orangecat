@@ -29,7 +29,7 @@ export const INTENTS: Readonly<Record<IntentId, Intent>> = {
   earn: {
     id: 'earn',
     title: 'Earn',
-    how: 'Offer a thing, your time, or a companion you made. People pay you directly — no platform fee, no middleman holding the money.',
+    how: 'Offer a thing, your time, or a bot you made. People pay you directly — no platform fee, no middleman holding the money.',
   },
   fund: {
     id: 'fund',

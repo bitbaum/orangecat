@@ -28,7 +28,7 @@ export function WalletsStep({ form }: WalletsStepProps) {
         <p className="text-fg-secondary mb-3">
           Set up addresses where people can send you funding.
         </p>
-        <div className="inline-flex items-center gap-2 px-3 py-1 bg-bitcoinOrange/10 text-bitcoinOrange border border-bitcoinOrange/20 text-xs rounded-full">
+        <div className="inline-flex items-center gap-2 px-3 py-1 bg-bitcoinOrange/10 text-bitcoin-text border border-bitcoinOrange/20 text-xs rounded-full">
           <span>₿</span>
           <span>All wallet fields are optional</span>
         </div>

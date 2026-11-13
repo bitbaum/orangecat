@@ -171,7 +171,7 @@ export function ProposalDetail({
             className="mt-4"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Group
+            Back to {ENTITY_REGISTRY.group.name}
           </Button>
         </CardContent>
       </Card>
@@ -187,7 +187,7 @@ export function ProposalDetail({
         size="sm"
       >
         <ArrowLeft className="h-4 w-4 mr-2" />
-        Back to Group
+        Back to {ENTITY_REGISTRY.group.name}
       </Button>
 
       {/* Proposal Header */}

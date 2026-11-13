@@ -93,6 +93,9 @@ export function ModelSelector({
       source: 'free' as const,
     }));
   const locked = access?.locked ?? [];
+  // Someone already answering on their own key is not shown a wall of other
+  // vendors' models under "Connect your own key to unlock": they did.
+  const showLocked = locked.length > 0 && !access?.autoOn;
   const allowsCustom = access?.allowsCustomModel ?? false;
 
   const grouped = SOURCE_ORDER.map(source => ({
@@ -100,10 +103,15 @@ export function ModelSelector({
     models: usable.filter(m => m.source === source),
   })).filter(g => g.models.length > 0);
 
+  // "Auto" is the free pool unless the person's own key answers (a key kept
+  // on Loki, switched on for OrangeCat): then the word names that key.
+  const autoLabel = access?.autoOn
+    ? `Auto · your ${access.autoOn.providerName} key`
+    : 'Auto (Best Free)';
   const selectedLocal = parseLocalModelId(selectedModel);
   const selectedName =
     selectedModel === 'auto'
-      ? 'Auto (Best Free)'
+      ? autoLabel
       : selectedLocal
         ? selectedLocal.model
         : (usable.find(m => m.id === selectedModel)?.name ?? selectedModel);
@@ -185,7 +193,13 @@ export function ModelSelector({
           'z-[61] flex flex-col rounded-md border border-subtle bg-surface-modal shadow-lg',
           isPhone
             ? 'fixed inset-x-3 bottom-3 max-h-[70vh]'
-            : cn('absolute left-0 max-h-80 w-72', openUp ? 'bottom-full mb-2' : 'top-full mt-2')
+            : cn(
+                // Up from the composer, the trigger sits right of centre in the
+                // side panel: hang the menu from its right edge so it opens
+                // into the panel instead of off the screen.
+                'absolute max-h-80 w-72 max-w-[calc(100vw-1.5rem)]',
+                openUp ? 'bottom-full right-0 mb-2' : 'left-0 top-full mt-2'
+              )
         )}
       >
         <div className="min-h-0 flex-1 overflow-y-auto py-2">
@@ -203,7 +217,7 @@ export function ModelSelector({
           >
             <div className="flex-1">
               <div className="font-medium text-fg-primary flex items-center gap-2">
-                Auto (Best Free)
+                {autoLabel}
                 {selectedModel === 'auto' && <Check className="h-4 w-4 text-fg-primary" />}
               </div>
               {/* Names the pool, because the reply footer names the model
@@ -213,7 +227,11 @@ export function ModelSelector({
                       paid model answering for free. "Automatically selects the
                       best model" gave the user nothing to reconcile them with. */}
               <div className="text-xs text-fg-secondary">
-                Picks from OrangeCat&apos;s free pool — each reply names the model that answered it
+                {access?.autoOn
+                  ? `Answers on the ${access.autoOn.providerName} key you keep on Loki${
+                      access.autoOn.model ? ` (${access.autoOn.model})` : ''
+                    } — the free pool only backs it up`
+                  : 'Picks from OrangeCat’s free pool — each reply names the model that answered it'}
               </div>
             </div>
           </button>
@@ -294,7 +312,7 @@ export function ModelSelector({
             </>
           )}
 
-          {locked.length > 0 && (
+          {showLocked && (
             <>
               <div className="h-px bg-border-subtle my-1" />
               <div className="px-3 py-1.5 text-xs font-medium text-fg-secondary uppercase">
@@ -371,7 +389,7 @@ export function ModelSelector({
                 last row of a `max-h-80` scroller under five locked models, so
                 on a phone the one action that changes anything was below the
                 fold of a menu most of whose rows did nothing. */}
-        {locked.length > 0 && (
+        {showLocked && (
           <Link
             href={ROUTES.SETTINGS_AI}
             role="menuitem"

@@ -104,7 +104,7 @@ export function findHue(id: string | null | undefined): AvatarHue | null {
 /** The face as SVG markup: the shape, and two eyes that always sit in the same place. */
 export function faceSvg(shape: AvatarShape, hue: AvatarHue, size = 96): string {
   return [
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="${size}" height="${size}" role="img" aria-label="Companion">`,
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="${size}" height="${size}" role="img" aria-label="Bot">`,
     `<path d="${shape.d}" fill="${hue.fill}"/>`,
     `<g fill="#FFFFFF" fill-opacity="0.96">`,
     `<rect x="38" y="38" width="8" height="18" rx="4" transform="rotate(-10 42 47)"/>`,
@@ -128,4 +128,16 @@ export function parseFaceUrl(
   const shape = params.get('shape');
   const hue = params.get('hue');
   return shape && hue && findShape(shape) && findHue(hue) ? { shape, hue } : null;
+}
+
+/**
+ * The picture a share card may carry: an uploaded one, never one of our faces
+ * (served as SVG, which link previews do not render). Undefined lets the page
+ * fall back to its generated entity card.
+ */
+export function shareImageFor(url: string | null | undefined): string | undefined {
+  if (!url || parseFaceUrl(url) || url.includes(`${AVATAR_PATH}?`) || /\.svg(\?|$)/i.test(url)) {
+    return undefined;
+  }
+  return url;
 }

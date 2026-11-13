@@ -144,3 +144,47 @@ describe('the composer under a post or article', () => {
     expect(screen.queryByLabelText('Compose new post')).not.toBeInTheDocument();
   });
 });
+
+/**
+ * media#1: at 390px the action row grew to 463px, so the page scrolled sideways
+ * and the Post / Comment button was cut off. Layout is invisible to jsdom, so
+ * this pins the structure that keeps the row inside the phone: the row wraps,
+ * the tool group may shrink, the send button cannot, and the visibility chips
+ * wrap and keep their labels whole.
+ */
+describe('the composer action row fits a phone', () => {
+  it('wraps, so the send button drops to its own line instead of off-screen', () => {
+    render(<TimelineComposer />);
+    fireEvent.focus(screen.getByLabelText('Compose new post'));
+
+    const row = screen.getByTestId('composer-actions');
+    expect(row.className).toMatch(/\bflex-wrap\b/);
+
+    const [tools, send] = Array.from(row.children) as HTMLElement[];
+    expect(tools.className).toMatch(/\bmin-w-0\b/);
+    expect(tools.className).toMatch(/\bflex-wrap\b/);
+    expect(send.className).toMatch(/\bshrink-0\b/);
+    expect(send).toContainElement(screen.getByRole('button', { name: /share update|post/i }));
+  });
+
+  it('lets the visibility chips wrap, each label on one line', () => {
+    render(<TimelineComposer />);
+    fireEvent.focus(screen.getByLabelText('Compose new post'));
+
+    const group = screen.getByTestId('composer-visibility');
+    expect(group.className).toMatch(/\bflex-wrap\b/);
+    for (const chip of Array.from(group.querySelectorAll('button'))) {
+      expect(chip.className).toMatch(/\bwhitespace-nowrap\b/);
+    }
+  });
+
+  it('offers no visibility choice on a reply: it follows the post it answers', () => {
+    render(
+      <TimelineComposer parentEventId="article-1" parentAuthorName="Cato" buttonText="Comment" />
+    );
+    fireEvent.focus(screen.getByLabelText('Reply to Cato'));
+
+    expect(screen.queryByTestId('composer-visibility')).not.toBeInTheDocument();
+    expect(screen.getByTestId('composer-actions').className).toMatch(/\bflex-wrap\b/);
+  });
+});

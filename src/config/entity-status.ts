@@ -153,3 +153,52 @@ export function getStatusBadge(
 export function isLiveEntityStatus(status: string | null | undefined): boolean {
   return Boolean(status && LIVE_ENTITY_STATUSES.has(status));
 }
+
+/**
+ * Statuses a type may be deleted in, where the database is narrower than "the
+ * owner may delete it". Mirrors the RLS delete policy: events can only be
+ * deleted as drafts ("Users can delete their own draft events"), because a
+ * published event can have people holding tickets. A type absent here may be
+ * deleted in any status.
+ */
+export interface EntityDeleteRule {
+  /** Statuses the row may be deleted in. */
+  statuses: readonly string[];
+  /** Why the others are refused, as the end of a sentence. */
+  reason: string;
+  /** What taking it offline does, as the end of a sentence. */
+  offlineEffect: string;
+}
+
+export const ENTITY_DELETE_RULES: Partial<Record<EntityType, EntityDeleteRule>> = {
+  event: {
+    statuses: [STATUS.EVENTS.DRAFT],
+    reason: 'people may already hold tickets',
+    offlineEffect: 'stops new tickets and takes its page offline for guests',
+  },
+};
+
+export function canDeleteInStatus(
+  entityType: EntityType,
+  status: string | null | undefined
+): boolean {
+  const rule = ENTITY_DELETE_RULES[entityType];
+  return !rule || (typeof status === 'string' && rule.statuses.includes(status.toLowerCase()));
+}
+
+/**
+ * The status that takes a live entity offline so it can then be deleted:
+ * back to draft where that move is allowed, else cancelled (a full or ongoing
+ * event can only be cancelled; a cancelled one can then go back to draft).
+ * Null when neither move is open from here.
+ */
+export function takeDownStatus(status: string | null | undefined): 'draft' | 'cancelled' | null {
+  if (!status) {
+    return null;
+  }
+  const allowed = getAllowedStatusTransitions(status);
+  if (allowed.includes(GENERIC_ENTITY_STATUS.DRAFT)) {
+    return 'draft';
+  }
+  return allowed.includes(STATUS.EVENTS.CANCELLED) ? 'cancelled' : null;
+}

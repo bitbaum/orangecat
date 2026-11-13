@@ -19,6 +19,9 @@ import { canGrantOnConfirm, type PendingAction } from '@/services/cat/action-typ
 import { generateActionDescription } from '@/services/cat/action-descriptions';
 import { createPendingAction } from '@/services/cat/pending-actions';
 import { CatPermissionService } from '@/services/cat/permission-service';
+import { getAdminClient } from '@/lib/supabase/admin';
+import { CONNECTOR_HAND_PROVIDER } from '@/services/connectors/hands';
+import { connectedProviders } from '@/services/connectors/token-store';
 import { logger } from '@/utils/logger';
 import { canRunOnItsOwn, getHandGrants, handMode } from './hand-grants';
 import { extractProposal, handsActions, handsSection, type Proposal } from './hands';
@@ -50,12 +53,18 @@ export async function handsFor(
   // the same time. One read per hand, one after another, was a dozen round
   // trips to the database before the model was even asked: most of the wait
   // on a bare "Hi" (the set grew with every hand added).
-  const [stored, grants] = await Promise.all([
+  const [stored, grants, connected] = await Promise.all([
     permissions.getUserPermissions(userId).catch(error => {
       logger.warn('hands permissions could not be read', { error }, 'CompanionHands');
       return null;
     }),
     assistantId ? getHandGrants(supabase, userId, assistantId) : Promise.resolve(null),
+    // A read of an account is offered only where that account is connected:
+    // a bot is never told it can read a mailbox nobody gave it.
+    connectedProviders(getAdminClient(), userId).catch(error => {
+      logger.warn('connections could not be read', { error }, 'CompanionHands');
+      return new Set<string>();
+    }),
   ]);
   if (!stored) {
     return { section: undefined, allowed: [] };
@@ -64,6 +73,10 @@ export async function handsFor(
     handsActions().map(async (action): Promise<Hands['allowed'][number] | null> => {
       const mode = handMode(grants, action.id);
       if (mode === 'off') {
+        return null;
+      }
+      const provider = CONNECTOR_HAND_PROVIDER[action.id];
+      if (provider && !connected.has(provider)) {
         return null;
       }
       // Only a hand that can run on its own ever does, whatever is stored.

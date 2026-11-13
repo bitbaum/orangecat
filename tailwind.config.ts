@@ -116,6 +116,8 @@ const config: Config = {
           '900': 'rgb(var(--orange-900) / <alpha-value>)',
         },
         bitcoinOrange: 'rgb(var(--bitcoin-orange-channels) / <alpha-value>)',
+        // Bitcoin orange for words; bitcoinOrange is for fills, icons, borders.
+        'bitcoin-text': 'var(--bitcoin-orange-text)',
         tiffany: {
           DEFAULT: 'rgb(var(--tiffany-500) / <alpha-value>)',
           light: 'rgb(var(--tiffany-50) / <alpha-value>)',

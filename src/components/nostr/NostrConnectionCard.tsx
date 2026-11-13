@@ -113,7 +113,7 @@ export function NostrConnectionCard() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium flex items-center gap-1.5">
-                  <Zap className="h-4 w-4 text-bitcoin-orange" />
+                  <Zap className="h-4 w-4 text-bitcoinOrange" />
                   Wallet Connect (NWC)
                 </span>
                 {nwcConnected ? (

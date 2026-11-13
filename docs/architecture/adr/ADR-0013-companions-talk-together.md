@@ -187,6 +187,17 @@ risk, remains the one door that does. The MCP client is reserved for
 vendor connectors, whose consent is OAuth and whose tokens the person
 grants on a screen of OrangeCat's.
 
+**D6, the first two accounts (2026-11-13).** A person's own GitHub and
+Google account are read by their bots, and not through MCP either: the
+tokens are the person's, held encrypted on OrangeCat
+(`cat_connection_tokens`), and the reads are three hands in the launch set
+(`github_read`, `gmail_read`, `calendar_read`;
+`services/connectors/hands.ts`). They only read, so D10's switch covers
+them: a bot may run one on its own, which is what lets a routine open the
+calendar at 08:00. A hand is offered only where its account is connected,
+and what comes back is handed to the model marked as someone else's words,
+to report and never to obey. Setup: `docs/operations/connectors.md`.
+
 **D7, shipped (2026-11-01).** A routine is one per person per bot
 (`companion_routines`): a time in their zone and a prompt. A 15-minute
 timer runs the due ones through the same `sendAiMessage` as a typed turn,

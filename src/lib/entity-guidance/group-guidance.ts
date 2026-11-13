@@ -23,6 +23,7 @@ import {
   CheckCircle2,
   Target,
 } from 'lucide-react';
+import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import type { GuidanceContent, DefaultGuidance } from '@/components/create/types';
 
 type GroupFieldType =
@@ -39,7 +40,7 @@ type GroupFieldType =
 export const groupGuidanceContent: Record<NonNullable<GroupFieldType>, GuidanceContent> = {
   name: {
     icon: React.createElement(Users, { className: 'w-5 h-5 text-fg-primary' }),
-    title: 'Group Name',
+    title: `${ENTITY_REGISTRY.group.name} Name`,
     description: "Choose a clear, memorable name that represents your group's purpose and values.",
     tips: [
       'Keep it simple and easy to remember',
@@ -76,7 +77,7 @@ export const groupGuidanceContent: Record<NonNullable<GroupFieldType>, GuidanceC
   },
   label: {
     icon: React.createElement(Tag, { className: 'w-5 h-5 text-fg-primary' }),
-    title: 'Group Label',
+    title: `${ENTITY_REGISTRY.group.name} Label`,
     description:
       "Labels help categorize your group and set smart defaults. They don't restrict capabilities - you can enable any features regardless of label.",
     tips: [
@@ -152,7 +153,7 @@ export const groupGuidanceContent: Record<NonNullable<GroupFieldType>, GuidanceC
     title: 'Bitcoin Treasury Address',
     description: "Primary Bitcoin address for your group's treasury and financial operations.",
     tips: [
-      'Use a multi-signature wallet for security',
+      'For shared control, use a multi-signature wallet your members set up',
       'Generate a fresh address for your group',
       'Consider hardware wallet security',
       'Keep private keys secure and backed up',
@@ -182,13 +183,16 @@ export const groupGuidanceContent: Record<NonNullable<GroupFieldType>, GuidanceC
 };
 
 export const groupDefaultGuidance: DefaultGuidance = {
-  title: 'Why Create a Group?',
-  description:
-    'Groups enable collective action, shared governance, and community building around common goals. From family circles to network states, groups help you coordinate and collaborate.',
+  title: `Why ${ENTITY_REGISTRY.group.namePlural.toLowerCase()}?`,
+  description: `${ENTITY_REGISTRY.group.namePlural} enable collective action, shared governance, and community building around common goals. From family circles to network states, ${ENTITY_REGISTRY.group.namePlural.toLowerCase()} help you coordinate and collaborate.`,
   features: [
     {
       icon: React.createElement(Users, { className: 'w-4 h-4 text-fg-primary' }),
-      text: 'Collective treasury with multi-signature Bitcoin wallets',
+      // What a group wallet is: addresses the group controls, readable by its
+      // members (group_wallets RLS). OrangeCat holds no keys, so it neither
+      // makes nor enforces a multi-signature wallet; a group that wants one
+      // brings its own.
+      text: `A shared treasury: the ${ENTITY_REGISTRY.group.name.toLowerCase()}'s own Bitcoin and Lightning addresses, shown to its members`,
     },
     {
       icon: React.createElement(Shield, { className: 'w-4 h-4 text-fg-primary' }),

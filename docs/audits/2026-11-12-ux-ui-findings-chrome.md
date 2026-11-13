@@ -110,7 +110,7 @@ The open findings for this area from [the audit](2026-11-12-ux-ui-audit.md), eac
 
 ### chrome#13 · low · The feedback tab is a 24px-wide black sliver on a near-black page, marked only with a spiral
 
-**Status:** Open: the feedback tab is drawn by the Loki widget; the fix belongs in bitbaum/loki.
+**Status:** Fixed in bitbaum/loki#1707: a 44px tab labelled "Feedback" with a speech bubble; OrangeCat takes it by URL on Loki's deploy.
 
 - **Where:** /, /discover, every page on production (both, dark theme)
 - **What a person meets:** The control meant for reporting a problem is the hardest one on the page to see and to hit. The spiral is another product's logo and does not say feedback, and 24px is about half the 44px target.

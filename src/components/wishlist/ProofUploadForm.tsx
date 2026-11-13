@@ -114,7 +114,7 @@ export function ProofUploadForm({
               <div className="space-y-2">
                 <Label htmlFor="transaction_id">Transaction ID</Label>
                 <div className="flex items-center gap-2">
-                  <Bitcoin className="h-5 w-5 text-bitcoin-orange shrink-0" />
+                  <Bitcoin className="h-5 w-5 text-bitcoinOrange shrink-0" />
                   <Input
                     id="transaction_id"
                     {...register('transaction_id')}

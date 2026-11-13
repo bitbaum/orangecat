@@ -20,6 +20,7 @@ import DraftsPanel from './DraftsPanel';
 import ArticlePreview from './ArticlePreview';
 import ComposerEditor from './ComposerEditor';
 import PublishBar from './PublishBar';
+import { useBylinePrompt } from './BylineField';
 import ImportNotice, { type ArticlePrefill } from './ImportNotice';
 import { formatNumber } from '@/utils/locale';
 import { useProjectWalls } from './useProjectWalls';
@@ -50,6 +51,7 @@ export default function ArticleComposer({
   const router = useRouter();
   const isEditing = !!initial;
   const projectWalls = useProjectWalls(user.id, projectParam, !isEditing);
+  const byline = useBylinePrompt(!isEditing);
   const [title, setTitle] = useState(initial?.title ?? prefill?.title ?? '');
   const [excerpt, setExcerpt] = useState(initial?.excerpt ?? prefill?.excerpt ?? '');
   const [coverImage, setCoverImage] = useState(initial?.coverImage ?? '');
@@ -141,6 +143,12 @@ export default function ArticleComposer({
       return;
     }
 
+    const bylineError = await byline.save();
+    if (bylineError) {
+      setError(bylineError);
+      setPublishing(false);
+      return;
+    }
     const result = await publishArticle(user, { ...payload, projectIds: projectWalls.selected });
     if (!result.success) {
       setError(result.error);
@@ -284,6 +292,7 @@ export default function ArticleComposer({
           isEditing={isEditing}
           onPublish={handlePublish}
           projectWalls={isEditing ? undefined : projectWalls}
+          byline={isEditing ? undefined : byline}
         />
       </div>
     </div>

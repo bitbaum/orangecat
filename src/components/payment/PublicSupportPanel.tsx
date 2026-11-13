@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { Bitcoin, CheckCircle2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -12,6 +11,7 @@ import {
   type ContributionBoundsBtc,
 } from '@/config/contribution-terms';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
+import { useChosenAmountBtc } from '@/components/money/useOpeningAmountBtc';
 import { usePublicPayment } from '@/hooks/usePublicPayment';
 import { PublicPaymentProgress } from './PublicPaymentProgress';
 import type { EntityType } from '@/config/entity-registry';
@@ -32,6 +32,8 @@ interface PublicSupportPanelProps {
    * and its suggestions; the server refuses outside them as well.
    */
   bounds?: ContributionBoundsBtc | null;
+  /** Overrides the card's title ("Support Mira" on a companion's page). */
+  title?: string;
 }
 
 /** "You pay Cato directly for Remise Rosa…" — the payee, then what it is for. */
@@ -81,10 +83,14 @@ export function PublicSupportPanel({
   entityTitle,
   recipientName,
   bounds = null,
+  title,
 }: PublicSupportPanelProps) {
-  const words = supportCardWords(entityType, entityTitle, recipientName);
+  const words = {
+    ...supportCardWords(entityType, entityTitle, recipientName),
+    ...(title && { title }),
+  };
   const range = contributionRange(bounds);
-  const [amountBtc, setAmountBtc] = useState<number>(range.defaultBtc);
+  const [amountBtc, setAmountBtc] = useChosenAmountBtc(range);
   const { formatAmountBtc } = useDisplayCurrency();
   const payment = usePublicPayment();
   const statedTerms = [

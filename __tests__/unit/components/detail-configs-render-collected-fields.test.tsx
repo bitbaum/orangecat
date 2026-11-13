@@ -201,6 +201,27 @@ describe('event detail config', () => {
     });
   });
 
+  it('sells nothing, pins nothing and says "Ended" once the event is over', () => {
+    const over = {
+      is_free: false,
+      ticket_price: 20,
+      currency: 'CHF',
+      status: 'published',
+      start_date: '2026-09-13T21:08:47Z',
+    };
+    const cta = eventDetailConfig.mobileStickyCTA as (e: Record<string, unknown>) => unknown;
+    expect(eventDetailConfig.paymentSectionFor!(over)).toBe(false);
+    expect(cta(over)).toBeNull();
+    expect(eventDetailConfig.statusBadge!(over, false)).toBe('Ended');
+    expect(eventDetailConfig.statusBadge!({ ...over, status: 'ongoing' }, false)).toBe('Ended');
+    // The organizer keeps their own word for it.
+    expect(eventDetailConfig.statusBadge!(over, true)).toBe('published');
+
+    const ahead = { ...over, start_date: new Date(Date.now() + 86_400_000).toISOString() };
+    expect(eventDetailConfig.paymentSectionFor!(ahead)).toBe(true);
+    expect(cta(ahead)).toEqual({ href: '#pay', label: 'Buy a ticket' });
+  });
+
   it('leaves the details card out when there is nothing beyond when and where', () => {
     const { container } = render(
       <div>{eventDetailConfig.renderDetails?.({ id: 'e', start_date: event.start_date })}</div>
@@ -384,6 +405,20 @@ describe('investment return cadence', () => {
       <div>{investmentDetailConfig.renderDetails?.({ ...base, return_frequency: null })}</div>
     );
     expect(screen.queryByText('Return Paid')).not.toBeInTheDocument();
+  });
+
+  it('renders the Markdown terms instead of printing "## The deal"', () => {
+    render(
+      <div>
+        {investmentDetailConfig.renderDetails?.({
+          ...base,
+          terms: '## The deal\n- Pre-revenue\n- Ten years',
+        })}
+      </div>
+    );
+    expect(screen.getByText('The deal')).toBeInTheDocument();
+    expect(screen.queryByText(/## The deal/)).not.toBeInTheDocument();
+    expect(screen.getByText('Pre-revenue').tagName).toBe('LI');
   });
 });
 

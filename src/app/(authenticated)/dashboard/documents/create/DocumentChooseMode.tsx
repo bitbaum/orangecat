@@ -1,5 +1,6 @@
 'use client';
 
+import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
 import Link from 'next/link';
 import { ArrowLeft, Upload, PenLine, FileText, Sparkles } from 'lucide-react';
@@ -25,7 +26,9 @@ export function DocumentChooseMode({ onUpload, onWrite }: Props) {
           <div className="rounded-md border border-subtle bg-surface-raised p-2">
             <BrandMarkIcon className="h-6 w-6 text-fg-primary" />
           </div>
-          <h1 className="text-3xl font-bold text-fg-primary">Create Cat Context</h1>
+          <h1 className="text-3xl font-bold text-fg-primary">
+            Add a {ENTITY_REGISTRY.document.name.toLowerCase()}
+          </h1>
         </div>
         <p className="text-fg-secondary text-lg">
           Help your Cat understand you better by adding context about your goals, skills, and

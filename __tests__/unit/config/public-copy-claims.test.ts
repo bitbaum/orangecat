@@ -15,7 +15,12 @@
 
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
+import { blocksToText } from '@bitbaum/bip-kit';
 import { CONTACT_EMAIL } from '@/config/brand';
+import { SETTLEMENT_TRANSPARENCY_CLAIM } from '@/config/landing-page';
+import { ENTITY_VISIBILITY_SUMMARY } from '@/config/public-visibility';
+import { TIMELINE_VISIBILITY_OPTIONS } from '@/config/timeline';
+import { getFaqSections } from '@/lib/faq';
 
 const ROOT = join(__dirname, '../../..');
 const SCANNED = ['src/app/(public)', 'src/components/layout', 'src/config', 'src/lib/openapi'];
@@ -108,6 +113,59 @@ describe('public copy', () => {
       )
       .map(({ path }) => path);
     expect(offenders).toEqual([]);
+  });
+
+  // 2026-11-12, orangecat.ch: /how-it-works and /security said
+  // every transaction is publicly verifiable on the Bitcoin blockchain.
+  // Lightning, the default rail, settles off-chain. One sentence says what is
+  // true for each rail, and those pages show it as is.
+  it('promises no public blockchain record for every payment', () => {
+    const blanket =
+      /(every|all) (OrangeCat )?transactions? (is|are) (publicly verifiable|permanent, transparent)|transparency on the Bitcoin blockchain/i;
+    const offenders = sources.filter(({ text }) => blanket.test(text)).map(({ path }) => path);
+    expect(offenders).toEqual([]);
+    expect(SETTLEMENT_TRANSPARENCY_CLAIM).toMatch(
+      /^On-chain .* blockchain; Lightning .* off-chain/
+    );
+    for (const page of ['how-it-works', 'security']) {
+      const path = `src/app/(public)/${page}/page.tsx`;
+      expect(sources.find(s => s.path === path)?.text, path).toContain(
+        'SETTLEMENT_TRANSPARENCY_CLAIM'
+      );
+    }
+  });
+
+  // Same review: /faq and /docs promised every entity a public /
+  // followers-only / private setting. Listings have "Show on Public Profile";
+  // that three-way choice belongs to posts and articles. Both pages now show
+  // ENTITY_VISIBILITY_SUMMARY.
+  it('describes only the visibility settings that exist', () => {
+    const invented = /each entity\b[^\n]{0,80}visibility setting/i;
+    const faqSource = readFileSync(join(ROOT, 'content/faq.md'), 'utf8');
+    const offenders = [...sources, { path: 'content/faq.md', text: faqSource }]
+      .filter(({ text }) => invented.test(text))
+      .map(({ path }) => path);
+    expect(offenders).toEqual([]);
+
+    const answer = getFaqSections()
+      .flatMap(section => section.items)
+      .find(item => item.question === 'Who can see my activity?');
+    expect(answer && blocksToText(answer.blocks)).toContain(ENTITY_VISIBILITY_SUMMARY);
+    expect(sources.find(s => s.path === 'src/app/(public)/docs/page.tsx')?.text).toContain(
+      '{ENTITY_VISIBILITY_SUMMARY}'
+    );
+
+    // The summary stays true: no listing form offers a followers-only choice,
+    // and posts offer exactly the three it names.
+    const entityForms = files(join(ROOT, 'src/config/entity-configs'))
+      .filter(path => /value: 'followers'/.test(readFileSync(path, 'utf8')))
+      .map(path => relative(ROOT, path));
+    expect(entityForms).toEqual([]);
+    expect(TIMELINE_VISIBILITY_OPTIONS.map(option => option.key)).toEqual([
+      'public',
+      'followers',
+      'private',
+    ]);
   });
 
   it('types no framework version by hand', () => {

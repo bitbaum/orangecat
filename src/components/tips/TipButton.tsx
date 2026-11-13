@@ -28,7 +28,7 @@ export default function TipButton({
         type="button"
         onClick={() => setOpen(true)}
         className={cn(
-          'inline-flex items-center gap-1.5 rounded-md border border-default px-3 py-1.5 text-sm font-medium text-fg-primary transition-colors hover:bg-surface-raised',
+          'inline-flex min-h-11 items-center gap-1.5 rounded-md border border-default px-3 py-1.5 text-sm font-medium text-fg-primary transition-colors hover:bg-surface-raised',
           className
         )}
       >

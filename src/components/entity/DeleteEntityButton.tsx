@@ -5,6 +5,10 @@
  * page to return to both come from ENTITY_REGISTRY, so every type gets it from
  * one component. Before this an owner looking at their listing could edit it
  * but had to go back to the list to delete it.
+ *
+ * Where the database only deletes some statuses (a published event cannot be
+ * deleted: people may hold tickets), the dialog says so and offers the move
+ * that takes it offline instead of a Delete that would remove nothing.
  */
 
 import { useState } from 'react';
@@ -23,19 +27,33 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { ENTITY_REGISTRY, type EntityType } from '@/config/entity-registry';
+import { ENTITY_DELETE_RULES, canDeleteInStatus } from '@/config/entity-status';
 import { apiErrorMessage } from '@/lib/api/errorMessage';
+import { takeOfflineLabel, useTakeOffline } from './useTakeOffline';
 
 interface DeleteEntityButtonProps {
   entityType: EntityType;
   entityId: string;
   entityTitle: string;
+  /** The entity's status, when the page knows it: decides Delete vs take offline. */
+  entityStatus?: string;
 }
 
-export function DeleteEntityButton({ entityType, entityId, entityTitle }: DeleteEntityButtonProps) {
+export function DeleteEntityButton({
+  entityType,
+  entityId,
+  entityTitle,
+  entityStatus,
+}: DeleteEntityButtonProps) {
   const router = useRouter();
   const meta = ENTITY_REGISTRY[entityType];
   const [open, setOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const { takeOffline, busy: takingOffline } = useTakeOffline(entityType, entityId);
+  const blocked = entityStatus !== undefined && !canDeleteInStatus(entityType, entityStatus);
+  const offlineLabel = blocked ? takeOfflineLabel(entityType, entityStatus) : null;
+  const noun = meta.name.toLowerCase();
+  const rule = ENTITY_DELETE_RULES[entityType];
 
   async function handleDelete() {
     setDeleting(true);
@@ -73,26 +91,57 @@ export function DeleteEntityButton({ entityType, entityId, entityTitle }: Delete
       </Button>
       <AlertDialog open={open} onOpenChange={setOpen}>
         <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete this {meta.name.toLowerCase()}?</AlertDialogTitle>
-            <AlertDialogDescription>
-              &ldquo;{entityTitle}&rdquo; will be removed and its link will stop working. This
-              cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={e => {
-                e.preventDefault();
-                void handleDelete();
-              }}
-              disabled={deleting}
-              className="bg-status-negative text-fg-inverted hover:bg-status-negative/90"
-            >
-              {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Delete'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
+          {blocked ? (
+            <>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Take this {noun} offline first</AlertDialogTitle>
+                <AlertDialogDescription>
+                  &ldquo;{entityTitle}&rdquo; is {entityStatus}, and a {noun} can only be deleted as
+                  a draft{rule ? `, because ${rule.reason}` : ''}.{' '}
+                  {offlineLabel
+                    ? `${offlineLabel} ${rule?.offlineEffect ?? 'takes it offline'}. Then you can delete it.`
+                    : `It cannot be taken offline from here while it is ${entityStatus}.`}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={takingOffline}>Keep it live</AlertDialogCancel>
+                {offlineLabel && (
+                  <AlertDialogAction
+                    onClick={e => {
+                      e.preventDefault();
+                      void takeOffline(entityStatus).then(() => setOpen(false));
+                    }}
+                    disabled={takingOffline}
+                  >
+                    {takingOffline ? <Loader2 className="h-4 w-4 animate-spin" /> : offlineLabel}
+                  </AlertDialogAction>
+                )}
+              </AlertDialogFooter>
+            </>
+          ) : (
+            <>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete this {noun}?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  &ldquo;{entityTitle}&rdquo; will be removed and its link will stop working. This
+                  cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={e => {
+                    e.preventDefault();
+                    void handleDelete();
+                  }}
+                  disabled={deleting}
+                  className="bg-status-negative text-fg-inverted hover:bg-status-negative/90"
+                >
+                  {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Delete'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </>
+          )}
         </AlertDialogContent>
       </AlertDialog>
     </>
