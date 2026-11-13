@@ -7,7 +7,8 @@
  * that holds still at its centre.
  *
  * Two shapes, both filled evenodd: the head with its face cut out, and the
- * rings. A generator, not a mark: src/config/marks/orangecat.ts calls it.
+ * rings. A generator, not a mark: its output is OrangeCat's mark in
+ * @bitbaum/design-tokens/marks, and brand-mark.test.ts holds the two equal.
  */
 
 import { circlePathD } from './rotorelief-coil';

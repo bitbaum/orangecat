@@ -54,8 +54,8 @@ importers:
         specifier: workspace:*
         version: link:packages/deckkit
       '@bitbaum/design-tokens':
-        specifier: ^1.5.2
-        version: 1.5.2
+        specifier: ^1.6.0
+        version: 1.6.0
       '@bitbaum/geo-kit':
         specifier: ^0.3.0
         version: 0.3.0(d3-geo@3.1.1)
@@ -619,8 +619,8 @@ packages:
     peerDependencies:
       react: '>=18'
 
-  '@bitbaum/design-tokens@1.5.2':
-    resolution: {integrity: sha512-ScF091XRs5ph109PkRgI3t5w3eersltlJUGea64MPItqXaT5asXM2x3Gj4t6THuFGojZ2pvMLAtuOc3DTmCoTg==}
+  '@bitbaum/design-tokens@1.6.0':
+    resolution: {integrity: sha512-Pr+/alDWCTmk06Ai/kjOF/vGEnQvzqZApZhESmiBAa0qbVamWJMhEU8CNUFexlADhC1yc3nuEC5bQVWV8Ntk0Q==}
     engines: {node: '>=20'}
     hasBin: true
 
@@ -7039,7 +7039,7 @@ snapshots:
       pdfjs-dist: 6.4.299
       react: 19.3.1
 
-  '@bitbaum/design-tokens@1.5.2': {}
+  '@bitbaum/design-tokens@1.6.0': {}
 
   '@bitbaum/geo-kit@0.3.0(d3-geo@3.1.1)':
     optionalDependencies:

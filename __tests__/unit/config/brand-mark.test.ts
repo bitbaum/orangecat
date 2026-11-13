@@ -7,8 +7,8 @@
  * PWA's 144px icon was one byte. Nothing generated those files, so nothing
  * noticed.
  *
- * Now every mark is a file in src/config/marks/, `pnpm run brand:import`
- * replaces one from an SVG, `pnpm run generate:brand` writes the static
+ * Now every mark lives in @bitbaum/design-tokens/marks (`pnpm run
+ * marks:import` there replaces one from an SVG), `pnpm run generate:brand` writes the static
  * icons from the brand's, and this test fails when any of that drifts:
  * a mark file missing from the registry, a hand-edited SVG, an icon not
  * regenerated after the mark changed, or an HTML page where an image belongs.
@@ -40,12 +40,17 @@ const ICO_SIGNATURE = Buffer.from([0x00, 0x00, 0x01, 0x00]);
 const marks = Object.entries(MARKS) as Array<[string, MarkDefinition]>;
 
 describe('the mark registry', () => {
-  it('lists every mark file in src/config/marks/, and nothing else', () => {
-    const files = readdirSync(join(ROOT, 'src/config/marks'))
-      .filter(name => name.endsWith('.ts') && name !== 'index.ts' && name !== 'types.ts')
-      .map(name => name.slice(0, -3))
-      .sort();
-    expect(Object.keys(MARKS).sort()).toEqual(files);
+  it('keeps no mark of its own: they come from @bitbaum/design-tokens/marks', () => {
+    const files = readdirSync(join(ROOT, 'src/config/marks')).filter(
+      name => name.endsWith('.ts') && name !== 'index.ts' && name !== 'types.ts'
+    );
+    expect(files).toEqual([]);
+  });
+
+  it("is the cat this repository's generator draws", () => {
+    const cat = markFor('orangecat')!;
+    expect(cat.viewBox).toEqual([0, 0, CAT_ROTORELIEF.viewBox, CAT_ROTORELIEF.viewBox]);
+    expect(cat.shapes.map(shape => shape.d)).toEqual([catHeadPathD(), catRingsPathD()]);
   });
 
   it.each(marks)('%s is filed under its own slug', (key, mark) => {

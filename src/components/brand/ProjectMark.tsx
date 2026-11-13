@@ -29,7 +29,7 @@ function monogramSize(size: number): string {
 /**
  * A project's face: its mark from the registry when it has one, its initial
  * when it does not. Giving a project a mark is one command —
- * `pnpm run brand:import <slug> logo.svg` — and every tile, banner and pillar
+ * `pnpm run marks:import <slug> logo.svg` in @bitbaum/design-tokens — and every tile, banner and pillar
  * that shows that project picks it up.
  */
 export function ProjectMark({ slug, name, size = 24, className, animated }: ProjectMarkProps) {

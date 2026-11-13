@@ -40,53 +40,48 @@ could notice.
 
 ## Replacing a mark
 
-**Every mark is one file, and replacing it is one command.**
+**Every product's mark lives in one place: `@bitbaum/design-tokens/marks`** (repository
+`bitbaum/design-tokens`, folder `marks/`). OrangeCat, Solon and Loki read their own mark and
+their siblings' from it, so a logo is replaced once and every product follows. Until 2026-11-10
+each product kept its own copy here and in its repository, and Solon's copy here had drifted from
+the mark Solon used.
 
-```bash
-pnpm run brand:import orangecat path/to/logo.svg      # this app's own mark
-pnpm run brand:import loki path/to/loki.svg           # a sibling's
-pnpm run brand:import heidi path/to/heidi.svg         # any studio project, by fleet slug
-```
+In bitbaum/design-tokens, run its `marks:import` script with a fleet slug and the file:
+`orangecat path/to/logo.svg` for this app's own mark, `heidi path/to/heidi.svg` for any studio
+project.
 
-Options: `--name "Display name"`, `--motion draw|spin|none` (how it moves in a hero).
+Options: `--name "Display name"`, `--motion draw|spin|turn|none` (how it moves in a hero).
+Open a pull request there; once merged, run its Release workflow. Then here: raise
+`@bitbaum/design-tokens` to that release and, when the mark was this app's own, run
+`pnpm run generate:brand` to rewrite the static icons (`favicon.svg`, `favicon.ico`,
+`apple-icon.png`, the PWA icons, `orange-cat-logo.svg`). `pnpm run brand:import` here only
+prints these steps.
 
-That command:
+Nothing else changes: the header, the hero, the auth page, share cards, the studio tiles, the
+pillars and every studio project's banner render from the registry and know nothing about which
+drawing they are showing. A studio project with no mark shows its initial.
 
-1. converts the SVG to a mark (`src/lib/brand/svg-to-mark.ts`) — geometry kept, colours
-   dropped, a full-size background rectangle dropped, every shape stroked or filled with the
-   colour the surface hands it;
-2. writes `src/config/marks/<slug>.ts`, replacing the old one;
-3. rebuilds the registry `src/config/marks/index.ts`;
-4. for this app's own slug, regenerates every static icon (`favicon.svg`, `favicon.ico`,
-   `apple-icon.png`, the PWA icons, `orange-cat-logo.svg`).
-
-Commit what it wrote. Nothing else changes: the header, the hero, the auth page, share cards,
-the studio tiles, the pillars and every studio project's banner render from the registry and
-know nothing about which drawing they are showing. A studio project with no mark shows its
-initial; giving it a mark is the same command with its fleet slug.
-
-The SVG can come from Figma, Illustrator, Inkscape or an icon set. The importer reads path,
-circle, ellipse, rect, line, polyline and polygon; paint from attributes, `style="…"` or simple
-`.class` rules; inheritance through groups. It refuses — with a message saying what to do —
-transforms, clip paths, masks, `<use>`, `<text>` and `<image>`, because converting those
-faithfully needs a real SVG engine and a mark that comes out quietly wrong is worse than a clear
-"flatten this first". Exporting as _plain SVG with outlined text and flattened transforms_ always
-works.
+The importer (`svgToMark`, in the package) reads path, circle, ellipse, rect, line, polyline and
+polygon; paint from attributes, `style="…"` or simple `.class` rules; inheritance through groups.
+It refuses, with a message saying what to do, transforms, clip paths, masks, `<use>`, `<text>`
+and `<image>`, because converting those faithfully needs a real SVG engine and a mark that comes
+out quietly wrong is worse than a clear "flatten this first". Exporting as _plain SVG with
+outlined text and flattened transforms_ always works.
 
 **Where things live.**
 
-| Piece                       | File                                                             |
-| --------------------------- | ---------------------------------------------------------------- |
-| What a mark is (data shape) | `src/config/marks/types.ts`                                      |
-| One file per mark           | `src/config/marks/<slug>.ts`                                     |
-| The registry (generated)    | `src/config/marks/index.ts` — `MARKS`, `markFor(slug)`           |
-| Marks drawn by code         | `src/config/marks/generators/` (cat rotorelief, rotorelief coil) |
-| This app's own mark         | `src/config/brand-mark.ts` → `MARKS[APP_SLUG]`                   |
-| React                       | `<Mark>`, `<ProjectMark slug>`, `BrandMarkIcon`                  |
-| Share cards                 | `BrandMarkSvg` in `src/lib/og/branding.tsx`                      |
-| SVG markup + icon style     | `src/lib/brand/mark-svg.ts` (`markSvg`, `iconSvg`, `ICON_STYLE`) |
-| Static icons                | `pnpm run generate:brand` (`scripts/generate-brand.mjs`)         |
-| The gate                    | `__tests__/unit/config/brand-mark.test.ts`                       |
+| Piece                       | File                                                                        |
+| --------------------------- | --------------------------------------------------------------------------- |
+| What a mark is (data shape) | `@bitbaum/design-tokens/marks` (re-exported by `src/config/marks/types.ts`) |
+| One file per mark           | `marks/<slug>.mjs` in bitbaum/design-tokens                                 |
+| The registry                | `src/config/marks/index.ts` — `MARKS`, `markFor(slug)`, from the package    |
+| Marks drawn by code         | `src/config/marks/generators/` (the cat; its output is the package's mark)  |
+| This app's own mark         | `src/config/brand-mark.ts` → `MARKS[APP_SLUG]`                              |
+| React                       | `<Mark>`, `<ProjectMark slug>`, `BrandMarkIcon`                             |
+| Share cards                 | `BrandMarkSvg` in `src/lib/og/branding.tsx`                                 |
+| SVG markup + icon style     | `src/lib/brand/mark-svg.ts` (`markSvg`, `iconSvg`, `ICON_STYLE`)            |
+| Static icons                | `pnpm run generate:brand` (`scripts/generate-brand.mjs`)                    |
+| The gate                    | `__tests__/unit/config/brand-mark.test.ts`                                  |
 
 The gate fails when a mark file is missing from the registry, a mark is not drawable, or a
 static icon no longer matches what the generator would write. It is written against _any_ mark,
@@ -98,11 +93,10 @@ Loki's), `turn` (only the shapes that name a `turnAbout` point turn — the Cat'
 `none`. Only heroes and showcases ask; chrome-sized marks never move. Reduced motion stills
 everything. The classes are `.oc-mark-*` in `globals.css`.
 
-**Generated marks.** OrangeCat's rotorelief and Loki's disc are drawn by functions in
-`generators/`, and their mark files call them. Tune one by changing its parameters, then run
-`pnpm run generate:brand`. Loki's mirrors bitbaum/loki `src/config/brand-mark.ts` and is kept
-in step by hand. Replacing either with a drawn logo leaves its generator in place, ready to
-come back.
+**Generated marks.** OrangeCat's rotorelief is drawn by `src/config/marks/generators/cat-rotorelief.ts`
+here and Loki's disc by bitbaum/loki `src/config/brand-mark.ts`; the package stores what they draw.
+Tune the cat by changing its parameters, import the result into the package (`marks:import`), and
+`brand-mark.test.ts` fails until the package's cat and the generator agree again.
 
 ## The public fold
 
@@ -134,11 +128,11 @@ page fails.
 | Layer                   | File                                                                      |
 | ----------------------- | ------------------------------------------------------------------------- |
 | Name, tagline, URLs     | `src/config/brand.ts`                                                     |
-| Marks (one file each)   | `src/config/marks/` — see "Replacing a mark"                              |
+| Marks (one file each)   | `@bitbaum/design-tokens/marks` — see "Replacing a mark"                   |
 | Mark (React)            | `src/components/brand/Mark.tsx`, `ProjectMark.tsx`, `BrandMarkIcon.tsx`   |
 | Mark + wordmark         | `src/components/shell/BrandMark.tsx`                                      |
 | Header entry            | `src/components/layout/Logo.tsx` → `BrandMark`                            |
-| Static assets           | `pnpm run generate:brand`; `pnpm run brand:import` runs it for you        |
+| Static assets           | `pnpm run generate:brand`                                                 |
 | Public fold             | `globals.css` `.oc-public-*`, `src/components/home/sections/`             |
 | Studio surfaces         | `src/components/ecosystem/`, `src/components/project/StudioProjectBanner` |
 | Cat copy/tabs           | `src/config/cat-hub.ts`                                                   |

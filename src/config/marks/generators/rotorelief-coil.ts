@@ -5,8 +5,9 @@
  *
  * Loki's SSOT is bitbaum/loki `src/config/brand-mark.ts` (`markPathD`). The
  * defaults here mirror it and must be kept in step by hand; if Loki ever ships
- * a drawn mark instead, import its SVG with `pnpm run brand:import loki <file.svg>`
- * and this generator goes unused.
+ * a drawn mark instead, it is imported into @bitbaum/design-tokens/marks
+ * (`pnpm run marks:import loki <file.svg>` there). Loki's mark in that package
+ * is what every product draws; the cat below uses this file's circlePathD.
  */
 
 export const ROTORELIEF_COIL = {

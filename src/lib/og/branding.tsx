@@ -46,8 +46,8 @@ export const OG_COLOR = {
 } as const;
 
 /**
- * The brand mark on share cards — BRAND_MARK, whichever file
- * src/config/marks/<APP_SLUG>.ts holds. Inline SVG so satori renders it
+ * The brand mark on share cards — BRAND_MARK, this app's mark from
+ * @bitbaum/design-tokens/marks. Inline SVG so satori renders it
  * without a font or an external asset. This used to draw its own "window
  * with ears", a third mark that only share cards ever showed.
  */

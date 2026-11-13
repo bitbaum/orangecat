@@ -14,7 +14,7 @@ export interface MarkProps {
 }
 
 /**
- * Draws any mark from the registry (src/config/marks/) in the current text
+ * Draws any mark from the registry (@bitbaum/design-tokens/marks) in the current text
  * colour. It knows nothing about which mark it is drawing — that is what lets
  * a mark be replaced by replacing its file.
  */

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Generate EVERY static brand asset from the one SSOT, src/config/brand-mark.ts
- * (which is src/config/marks/<APP_SLUG>.ts).
+ * (MARKS[APP_SLUG] from @bitbaum/design-tokens/marks).
  *
  *   public/manifest.json              brand metadata and versioned install icons
  *   src/config/brand-assets.json      the same versioned URLs for page metadata
@@ -13,8 +13,8 @@
  *   public/icons/icon-512.png          512 px, purpose "any"
  *   public/icons/icon-512-maskable.png 512 px, mark inset to the maskable safe zone
  *
- * Run: pnpm run generate:brand   (pnpm run brand:import runs it for you when
- * the mark it imports is this app's own)
+ * Run: pnpm run generate:brand   (after raising @bitbaum/design-tokens to a
+ * release that changed this app's mark)
  *
  * Why this exists: on 2026-10-11 public/favicon.ico was a 155 KB fav.farm HTML
  * page served as image/x-icon — the tab icon had been broken in every browser
@@ -37,7 +37,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
-// Whatever mark src/config/marks/<APP_SLUG>.ts holds — generated or imported.
+// Whatever mark the package holds for this app — generated or imported.
 const { APP_NAME, APP_DESCRIPTION, APP_TAGLINE, BRAND_ACCENT_HEX } =
   await import('../src/config/brand.ts');
 const { ICON_STYLE } = await import('../src/lib/brand/mark-svg.ts');

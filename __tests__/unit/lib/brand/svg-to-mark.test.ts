@@ -7,8 +7,7 @@
  * wrong rather than produce a mark that is quietly off.
  */
 
-import { MarkImportError, svgToMark, withoutIgnoredMarkup } from '@/lib/brand/svg-to-mark';
-import { markIdentifier, markModuleSource, marksIndexSource } from '@/lib/brand/mark-sources';
+import { MarkImportError, svgToMark } from '@/lib/brand/svg-to-mark';
 import { markSvg, squareViewBox } from '@/lib/brand/mark-svg';
 import type { MarkDefinition } from '@/config/marks/types';
 
@@ -129,42 +128,6 @@ describe('svgToMark', () => {
     for (const shape of shapes) {
       expect(shape.d).toMatch(/^[MmLlHhVvCcSsQqTtAaZz0-9eE.,+\-\s]+$/);
     }
-    expect(withoutIgnoredMarkup('a<!--b-->c<![CDATA[d]]>e<?f?>g<!DOCTYPE h>i')).toBe('acegi');
-  });
-});
-
-describe('the sources the importer writes', () => {
-  const mark: MarkDefinition = {
-    slug: 'geo-kit',
-    name: "Geo's kit",
-    source: 'imported — logo.svg',
-    viewBox: [0, 0, 24, 24],
-    strokeWidth: 2,
-    motion: 'draw',
-    shapes: [{ paint: 'stroke', d: 'M0 0h1', linecap: 'round' }],
-  };
-
-  it('names identifiers safely', () => {
-    expect(markIdentifier('geo-kit')).toBe('geoKit');
-    expect(markIdentifier('3d-print')).toBe('_3dPrint');
-  });
-
-  it('writes a mark module that carries the geometry and how to replace it', () => {
-    const source = markModuleSource(mark, { file: 'logo.svg', date: '2026-10-11' });
-    expect(source).toContain("slug: 'geo-kit'");
-    expect(source).toContain("name: 'Geo\\'s kit'");
-    expect(source).toContain("d: 'M0 0h1'");
-    expect(source).toContain('pnpm run brand:import geo-kit path/to/new-mark.svg');
-    expect(source).toContain('export default mark;');
-  });
-
-  it('writes an index that imports every mark, sorted, quoting keys that need it', () => {
-    const source = marksIndexSource(['solon', 'geo-kit', 'loki']);
-    expect(source.indexOf("from './geo-kit'")).toBeLessThan(source.indexOf("from './loki'"));
-    expect(source).toContain("import geoKit from './geo-kit';");
-    expect(source).toContain("  'geo-kit': geoKit,");
-    expect(source).toContain('  loki,');
-    expect(source).toContain('satisfies Record<string, MarkDefinition>');
   });
 });
 
