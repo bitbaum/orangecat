@@ -100,10 +100,15 @@ export function ModelSelector({
     models: usable.filter(m => m.source === source),
   })).filter(g => g.models.length > 0);
 
+  // "Auto" is the free pool unless the person's own key answers (a key kept
+  // on Loki, switched on for OrangeCat): then the word names that key.
+  const autoLabel = access?.autoOn
+    ? `Auto · your ${access.autoOn.providerName} key`
+    : 'Auto (Best Free)';
   const selectedLocal = parseLocalModelId(selectedModel);
   const selectedName =
     selectedModel === 'auto'
-      ? 'Auto (Best Free)'
+      ? autoLabel
       : selectedLocal
         ? selectedLocal.model
         : (usable.find(m => m.id === selectedModel)?.name ?? selectedModel);
@@ -203,7 +208,7 @@ export function ModelSelector({
           >
             <div className="flex-1">
               <div className="font-medium text-fg-primary flex items-center gap-2">
-                Auto (Best Free)
+                {autoLabel}
                 {selectedModel === 'auto' && <Check className="h-4 w-4 text-fg-primary" />}
               </div>
               {/* Names the pool, because the reply footer names the model
@@ -213,7 +218,11 @@ export function ModelSelector({
                       paid model answering for free. "Automatically selects the
                       best model" gave the user nothing to reconcile them with. */}
               <div className="text-xs text-fg-secondary">
-                Picks from OrangeCat&apos;s free pool — each reply names the model that answered it
+                {access?.autoOn
+                  ? `Answers on the ${access.autoOn.providerName} key you keep on Loki${
+                      access.autoOn.model ? ` (${access.autoOn.model})` : ''
+                    } — the free pool only backs it up`
+                  : 'Picks from OrangeCat’s free pool — each reply names the model that answered it'}
               </div>
             </div>
           </button>

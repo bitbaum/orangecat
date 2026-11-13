@@ -31,6 +31,7 @@ to the map, sub-bullets stay here for the human reader.
 - **An article can go on your projects' walls too.** Under "Who can read this?" in the article editor, "Also post on a project" offers your own projects, the same list a short post cross-posts to, and the article appears on each one you choose as well as on your profile. A sister product can link straight to the editor with the article and the project already chosen (`/articles/new?import=…&project=solon`); a project that is not yours is not chosen, and the editor says so. Signing in on the way keeps both.
   - Project walls now also show what their owners cross-posted there. Those posts were recorded and never shown.
 - **A bot you just made is yours straight away.** Its chat used to open without its Edit, routine and abilities rows and without its suggestion chips until you reloaded the page.
+- **Your Cat answers on the key you keep in Loki, like your bots do.** Switching on "Use my xAI key here" in Settings → AI used to change your bots only: the Cat stayed on the free pool, and when that was spent it could not answer. Now the Cat uses the same key. Its model menu says "Auto · your xAI key" and lists that key's models to choose from; the free pool only backs it up.
 
 ## 2026-11-12
 
