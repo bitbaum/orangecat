@@ -16,6 +16,8 @@ export interface CompanionPromptParts {
   hands?: string;
   /** The owner's own rules and time zone (rules.ts), on the owner's turn only. */
   rules?: string;
+  /** What was read for this very message before the bot answers (connectors/pre-read.ts). */
+  readNow?: string;
 }
 
 /**
@@ -27,6 +29,7 @@ export function buildCompanionSystemPrompt({
   memories,
   hands,
   rules,
+  readNow,
 }: CompanionPromptParts): string | undefined {
   const base = definition?.trim() ?? '';
   const facts = memories.map(m => m.trim()).filter(Boolean);
@@ -45,6 +48,9 @@ export function buildCompanionSystemPrompt({
   }
   if (rules?.trim()) {
     parts.push(rules.trim());
+  }
+  if (readNow?.trim()) {
+    parts.push(readNow.trim());
   }
   return parts.length > 0 ? parts.join('\n\n') : undefined;
 }
