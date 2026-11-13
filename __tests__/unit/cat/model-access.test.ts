@@ -105,3 +105,48 @@ describe('getUsableModels — access derivation', () => {
     expect(access.byokProviders).toContain('xai');
   });
 });
+
+/**
+ * A key the person keeps on Loki, switched on for OrangeCat: its models are
+ * in the picker and "Auto" names the key, because that is what answers.
+ */
+describe('getUsableModels — a key kept on Loki', () => {
+  const lokiKeyModels = async () => ({
+    provider: 'xai',
+    chosen: 'grok-test',
+    models: ['grok-test', 'grok-test-fast'],
+  });
+
+  it('offers the key’s models and says what Auto runs on', async () => {
+    const access = await getUsableModels(fakeSupabase({}), 'u1', {
+      directKeyModels: async () => [],
+      lokiKeyModels,
+    });
+    expect(access.autoOn).toMatchObject({ provider: 'xai', model: 'grok-test', heldOn: 'loki' });
+    const mine = access.models.filter(m => m.source === 'byok');
+    expect(mine.map(m => m.id)).toEqual(['grok-test', 'grok-test-fast']);
+    expect(mine[0].provider).toMatch(/your key on Loki · chosen there/);
+    // The free pool is still there to pick by name.
+    expect(access.models.filter(m => m.source === 'free')).toHaveLength(FREE_COUNT);
+  });
+
+  it('says nothing of it when a key is saved here, which is the one that answers', async () => {
+    const access = await getUsableModels(fakeSupabase({ providers: ['groq'] }), 'u1', {
+      directKeyModels: async () => [],
+      lokiKeyModels,
+    });
+    expect(access.autoOn).toBeUndefined();
+    expect(access.models.some(m => m.id === 'grok-test')).toBe(false);
+  });
+
+  it('is the free pool, unchanged, when there is no such key or Loki is silent', async () => {
+    for (const read of [async () => null, async () => Promise.reject(new Error('down'))]) {
+      const access = await getUsableModels(fakeSupabase({}), 'u1', {
+        directKeyModels: async () => [],
+        lokiKeyModels: read,
+      });
+      expect(access.autoOn).toBeUndefined();
+      expect(access.models).toHaveLength(FREE_COUNT);
+    }
+  });
+});
