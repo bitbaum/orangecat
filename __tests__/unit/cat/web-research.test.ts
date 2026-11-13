@@ -300,3 +300,11 @@ describe('what the model is told to do with what it read', () => {
     expect(outcome.content).toMatch(/Do NOT guess or describe/i);
   });
 });
+
+describe('catSearchProviders', () => {
+  it('ends with the two backends that need no key or server', async () => {
+    const { catSearchProviders } = await import('@/services/cat/web-research');
+    const names = catSearchProviders().map(p => p.name);
+    expect(names.slice(-2)).toEqual(['gdelt', 'wikipedia']);
+  });
+});
