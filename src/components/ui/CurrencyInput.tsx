@@ -24,6 +24,8 @@ interface CurrencyInputProps {
   currencyLabel?: string;
   placeholder?: string;
   error?: string;
+  /** The owner shows the message itself; this only marks the field invalid. */
+  invalid?: boolean;
   hint?: string;
   disabled?: boolean;
   showBreakdown?: boolean;
@@ -63,6 +65,7 @@ export function CurrencyInput({
   onFocus,
   onBlur,
   id,
+  invalid = false,
 }: CurrencyInputProps) {
   const {
     inputCurrency,
@@ -102,7 +105,8 @@ export function CurrencyInput({
             onBlur={() => handleBlur(onBlur)}
             placeholder={placeholder || '0.00'}
             disabled={disabled}
-            className={`rounded-r-none ${error ? 'border-destructive' : ''}`}
+            aria-invalid={invalid || Boolean(error) || undefined}
+            className={`rounded-r-none ${error || invalid ? 'border-destructive' : ''}`}
           />
 
           {allowCurrencySwitch ? (
