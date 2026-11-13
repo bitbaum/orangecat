@@ -33,6 +33,7 @@ export default function BlogClientWrapper({
   return (
     <div className="max-w-6xl mx-auto">
       <BlogFilters
+        posts={posts}
         tags={tags}
         selectedTag={selectedTag}
         setSelectedTag={setSelectedTag}

@@ -91,11 +91,11 @@ export function CreativeStudio() {
           )}
           <fieldset disabled={busy}>
             <legend className="font-medium">Give it a form</legend>
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-3 grid grid-cols-2 gap-2">
               {(Object.keys(CREATIVE_FORMS) as CreativeForm[]).map(key => (
                 <label
                   key={key}
-                  className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-full border px-3 text-sm ${form === key ? 'border-interactive bg-surface-raised text-fg-primary' : 'border-default text-fg-secondary'}`}
+                  className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border px-3 text-sm ${form === key ? 'border-interactive bg-surface-raised text-fg-primary' : 'border-default text-fg-secondary'}`}
                 >
                   <input
                     type="radio"
