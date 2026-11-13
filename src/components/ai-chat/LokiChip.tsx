@@ -19,11 +19,14 @@ import type { CatConnectionStatus } from '@/services/cat/connections';
  * ask, one tap to ask it, and a way into Loki itself.
  */
 
-/** What to ask, in the words that trigger it. Tapping sends it to the Cat. */
-const EXAMPLES: { label: string; prompt: string }[] = [
+/**
+ * What to ask, in the words that trigger it. Tapping puts the words in the
+ * Cat's box for the person to finish and send; nothing goes out on the tap.
+ */
+export const LOKI_EXAMPLES: { label: string; prompt: string }[] = [
   {
     label: 'Send one task to several projects',
-    prompt: 'Send this to my Loki projects orangecat and loki: ',
+    prompt: 'Send this task to my Loki projects: ',
   },
   { label: 'Build a website', prompt: 'Build me a website for this project' },
   { label: 'Hand a project to Loki', prompt: 'Send this project to Loki to build' },
@@ -131,23 +134,26 @@ export function LokiChip() {
             </button>
           </div>
 
-          <ul className="mt-3 flex flex-col gap-1">
-            {EXAMPLES.map(ex => (
-              <li key={ex.label}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setOpen(false);
-                    askCat(ex.prompt);
-                  }}
-                  className="flex min-h-11 w-full items-center justify-between gap-2 rounded-xl px-3 text-left text-sm text-fg-primary transition-colors hover:bg-surface-raised"
-                >
-                  <span>{ex.label}</span>
-                  <span className="text-xs text-fg-tertiary">Ask</span>
-                </button>
-              </li>
-            ))}
-          </ul>
+          {/* Not linked, there is nothing to hand over yet: only the way to link. */}
+          {!notLinked && (
+            <ul className="mt-3 flex flex-col gap-1">
+              {LOKI_EXAMPLES.map(ex => (
+                <li key={ex.label}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOpen(false);
+                      askCat(ex.prompt, { send: false });
+                    }}
+                    className="flex min-h-11 w-full items-center justify-between gap-2 rounded-xl px-3 text-left text-sm text-fg-primary transition-colors hover:bg-surface-raised"
+                  >
+                    <span>{ex.label}</span>
+                    <span className="text-xs text-fg-tertiary">Write</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
 
           <div className="mt-3 flex flex-wrap gap-2">
             {notLinked && status?.connect && (
