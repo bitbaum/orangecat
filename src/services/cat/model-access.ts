@@ -149,6 +149,22 @@ export interface LokiKeyModels {
   models: string[];
 }
 
+/**
+ * A provider's model names for a menu: the one the person chose first, then
+ * the rest by name, higher numbers on top. The names are the provider's own
+ * (read through Loki, never a table kept here). This is an order by NAME,
+ * not by age: "grok-4.20" sorts above "grok-4.7" although it is the older
+ * model, and only the provider's creation dates could say so. Loki passes
+ * names alone today. Pure.
+ */
+export function chosenFirst(ids: readonly string[], chosen: string | null): string[] {
+  const byName = new Intl.Collator('en', { numeric: true, sensitivity: 'base' });
+  const sorted = [...ids].sort((a, b) => byName.compare(b, a));
+  return chosen && sorted.includes(chosen)
+    ? [chosen, ...sorted.filter(id => id !== chosen)]
+    : sorted;
+}
+
 /** The first switched-on Loki key this app can call, and its models. Never throws. */
 async function lokiKeyModels(
   supabase: AnySupabaseClient,
@@ -164,7 +180,10 @@ async function lokiKeyModels(
   return {
     provider: key.provider,
     chosen: listed.chosen ?? key.model ?? null,
-    models: listed.models.filter(id => isModelId(id) && !NOT_A_CHAT_MODEL.test(id)).slice(0, 80),
+    models: chosenFirst(
+      listed.models.filter(id => isModelId(id) && !NOT_A_CHAT_MODEL.test(id)),
+      listed.chosen ?? key.model ?? null
+    ).slice(0, 80),
   };
 }
 

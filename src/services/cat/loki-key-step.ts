@@ -8,9 +8,10 @@
  * was spent it could not answer at all.
  *
  * The key never comes here: Loki makes the call for the linked account
- * (services/ai/loki-key-service.ts). So a link built here carries no
- * endpoint or key for the Cat's tool loop, and the Cat proposes its actions
- * in prose on it, as it does on any model it cannot send functions to.
+ * (services/ai/loki-key-service.ts). The Cat's tool loop goes the same way:
+ * the link names Loki's door and a marker for whose key, and
+ * tool-transport.ts asks the door to make each step. So the tools run on
+ * the model that answers, not on whatever link happens to hold a key here.
  */
 
 import { getModelMetadata } from '@/config/ai-models';
@@ -19,7 +20,8 @@ import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { lokiKeyService } from '@/services/ai/loki-key-service';
 import { isCallableThroughLoki, type OwnKey } from '@/services/ai/own-key';
 import type { AiService } from '@/services/ai/types';
-import { sharedLokiOwnKeys } from '@/services/loki/shared-keys';
+import { lokiToolKey } from '@/services/cat/tool-transport';
+import { lokiModelUrl, sharedLokiOwnKeys } from '@/services/loki/shared-keys';
 
 /** Ahead of the free pool wherever the person placed it. */
 const LEADS = -0.5;
@@ -29,7 +31,15 @@ const BACKS_UP = Number.MAX_SAFE_INTEGER - 100;
 export interface LokiKeyStep {
   /** Where the link sits in the Cat's chain; lower is earlier. */
   order: number;
-  link: { provider: string; modelToUse: string; aiService: AiService; hasByok: true };
+  link: {
+    provider: string;
+    modelToUse: string;
+    aiService: AiService;
+    hasByok: true;
+    /** Loki's model door, and the marker that says whose key (tool-transport.ts). */
+    toolEndpoint: string;
+    toolKey: string;
+  };
 }
 
 const named = (model: string | undefined): model is string =>
@@ -70,6 +80,8 @@ export async function lokiKeySteps(
         modelToUse: modelOnLokiKey(k, requestedModel),
         aiService: lokiKeyService(k.lokiActorId as string, k.provider),
         hasByok: true as const,
+        toolEndpoint: lokiModelUrl(),
+        toolKey: lokiToolKey(k.lokiActorId as string, k.provider),
       },
     }));
 }

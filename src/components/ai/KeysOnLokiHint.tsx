@@ -77,12 +77,13 @@ export function KeysOnLokiHint() {
           >
             {key.shared ? (
               <p className="mb-0">
-                Your bots here answer on your {key.name} key from Loki{hint}. The key stays on Loki.
+                Your Cat and your bots here answer on your {key.name} key from Loki{hint}. The key
+                stays on Loki.
               </p>
             ) : key.canShare ? (
               <p className="mb-0">
-                Loki already has your {key.name} key{hint}. Use it for your bots here too? The key
-                stays on Loki and is not copied.
+                Loki already has your {key.name} key{hint}. Use it for your Cat and your bots here
+                too? The key stays on Loki and is not copied.
               </p>
             ) : (
               <p className="mb-0">

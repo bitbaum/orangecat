@@ -3,11 +3,13 @@ import { resolveProvider } from '@/services/cat/provider-resolver';
 import { buildPlatformProviders } from '@/services/ai/platform-providers';
 import { DEFAULT_FREE_MODEL_ID } from '@/config/ai-models';
 import { lokiKeyOrder, lokiKeySteps, modelOnLokiKey } from '@/services/cat/loki-key-step';
+import { parseLokiToolKey } from '@/services/cat/tool-transport';
 import { sharedLokiOwnKeys } from '@/services/loki/shared-keys';
 
 vi.mock('@/services/loki/shared-keys', () => ({
   sharedLokiOwnKeys: vi.fn(async () => []),
   askLokiModelDoor: vi.fn(),
+  lokiModelUrl: () => 'https://loki.example/api/orangecat/model',
 }));
 
 vi.mock('@/services/ai/api-key-service', () => ({
@@ -94,8 +96,10 @@ describe('a key kept on Loki', () => {
     // Its own key: no free-pool quota is counted against the turn.
     expect(resolved.platformUsage).toBeNull();
     expect(resolved.fallbacks.map(f => f.provider)).toEqual(['groq']);
-    // The key is not here, so there is nothing for the tool loop to post with.
-    expect(resolved.toolKey).toBeNull();
+    // The key is not here: the tool loop is pointed at Loki's door, with a
+    // marker for whose key, so tools run on the model that answers.
+    expect(parseLokiToolKey(resolved.toolKey)).toEqual({ provider: 'xai', actorId: 'actor-1' });
+    expect(resolved.toolEndpoint).toMatch(/^https?:\/\//);
   });
 
   it('uses a model named from the key’s own list, and never sends it a free registry model', () => {
