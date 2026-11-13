@@ -97,7 +97,7 @@ export default function UsageSettingsPage() {
                       <>
                         {' '}
                         <Sparkles
-                          className="inline h-3.5 w-3.5 text-accent-warm"
+                          className="inline h-3.5 w-3.5 text-fg-secondary"
                           aria-hidden="true"
                         />{' '}
                         Supporter
@@ -225,7 +225,7 @@ export default function UsageSettingsPage() {
               >
                 <span className="font-medium text-fg-primary">{plan.name}</span>
                 {isActive && (
-                  <span className="rounded-full bg-accent-warm/15 px-2 py-0.5 text-xs font-medium text-accent-warm">
+                  <span className="rounded-full bg-surface-raised px-2 py-0.5 text-xs font-medium text-fg-primary">
                     Your plan
                   </span>
                 )}

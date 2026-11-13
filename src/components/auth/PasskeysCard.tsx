@@ -181,7 +181,7 @@ export function PasskeysCard() {
             className="h-11 flex-1"
           />
           <div className="flex gap-2">
-            <Button type="submit" variant="accent" disabled={busy === 'add'} className="h-11">
+            <Button type="submit" variant="primary" disabled={busy === 'add'} className="h-11">
               {busy === 'add' ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Create passkey'}
             </Button>
             <Button

@@ -253,7 +253,7 @@ export default function IntelligentOnboarding() {
               data-testid="onboarding-see-offers"
               onClick={handleAskPay}
               disabled={!canSubmit || isGenerating}
-              variant="accent"
+              variant="primary"
               className="w-full"
             >
               {isGenerating ? (

@@ -96,7 +96,7 @@ export function GroupsDashboard() {
   const hasAnyGroups = myGroups.length + availableGroups.length > 0;
 
   const headerActions = (
-    <Button href={ROUTES.DASHBOARD.GROUPS_CREATE} variant="accent" className="gap-2">
+    <Button href={ROUTES.DASHBOARD.GROUPS_CREATE} variant="primary" className="gap-2">
       <Plus className="h-4 w-4" />
       Create Group
     </Button>

@@ -225,7 +225,7 @@ export function CivicSplitScreen() {
 
               <div className="flex flex-wrap items-center gap-3">
                 <Button
-                  variant="accent"
+                  variant="primary"
                   onClick={handleSave}
                   disabled={!canSave || isSaving}
                   isLoading={isSaving}

@@ -7,9 +7,8 @@
  * page (e.g. /services/[id]) can drop a "Book this" CTA without itself
  * becoming a client component.
  *
- * The button is variant="accent" — top-of-funnel conversion per the
- * design system migration. For Bitcoin-specific surfaces, use the
- * variant override.
+ * Signed out, the button is variant="accent": it is the sign-up action.
+ * Signed in, booking is an in-app action and takes variant="primary".
  */
 
 import { useState } from 'react';
@@ -60,7 +59,7 @@ export function BookEntityButton({
   return (
     <>
       <Button
-        variant="accent"
+        variant="primary"
         onClick={() => setIsOpen(true)}
         className={className}
         aria-label={`Book ${dialogProps.bookableTitle}`}

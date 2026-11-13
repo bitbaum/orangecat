@@ -67,7 +67,7 @@ function RouteLineItem({
     <li
       className={cn(
         'rounded-md border p-3',
-        isNext ? 'border-accent-warm bg-surface-raised' : 'border-default'
+        isNext ? 'border-fg-primary bg-surface-raised' : 'border-default'
       )}
     >
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">

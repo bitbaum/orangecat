@@ -89,10 +89,10 @@ export default function PricingPage() {
         {/* Founding supporter CTA band */}
         <section
           id="founding"
-          className="mb-12 rounded-lg border border-accent-warm/30 bg-accent-warm/5 p-8 text-fg-primary"
+          className="mb-12 rounded-lg border border-default bg-surface-raised p-8 text-fg-primary"
         >
           <div className="text-center">
-            <Sparkles className="mx-auto mb-4 h-10 w-10 text-accent-warm" aria-hidden="true" />
+            <Sparkles className="mx-auto mb-4 h-10 w-10 text-fg-secondary" aria-hidden="true" />
             <h2 className="mb-3 font-heading text-2xl font-bold tracking-display">
               Help found the permissionless economy
             </h2>

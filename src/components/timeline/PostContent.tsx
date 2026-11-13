@@ -127,7 +127,7 @@ export function PostContent({ event }: PostContentProps) {
             Article
           </span>
           {event.title && (
-            <h3 className="mt-1 text-lg font-semibold leading-snug text-fg-primary group-hover/article:text-accent-warm">
+            <h3 className="mt-1 text-lg font-semibold leading-snug text-fg-primary group-hover/article:underline">
               {event.title}
             </h3>
           )}

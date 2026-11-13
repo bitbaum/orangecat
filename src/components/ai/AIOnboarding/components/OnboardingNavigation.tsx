@@ -32,7 +32,7 @@ export function OnboardingNavigation({
         Previous
       </Button>
 
-      <Button onClick={onNext} disabled={!canProceed || isSubmitting} variant="accent">
+      <Button onClick={onNext} disabled={!canProceed || isSubmitting} variant="primary">
         {isLastStep ? (
           <>
             Complete Setup

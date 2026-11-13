@@ -75,7 +75,7 @@ export default function ImageUploadPanel({ onPick }: { onPick: (image: StockImag
       className={cn(
         'flex cursor-pointer flex-col items-center gap-2 rounded-md border border-dashed py-8 text-center transition-colors',
         dragActive
-          ? 'border-accent-warm bg-surface-raised/60'
+          ? 'border-fg-primary bg-surface-raised/60'
           : 'border-default hover:border-interactive hover:bg-surface-raised/40',
         (busy || !user?.id) && 'pointer-events-none opacity-60'
       )}

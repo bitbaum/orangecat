@@ -100,7 +100,7 @@ export function GetKeyStep({ provider, copiedUrl, onCopyUrl }: GetKeyStepProps) 
 
         {/* Action Button */}
         <div className="flex items-center gap-3">
-          <Button onClick={() => window.open(provider.apiKeyUrl, '_blank')} variant="accent">
+          <Button onClick={() => window.open(provider.apiKeyUrl, '_blank')} variant="primary">
             Open {provider.name}
             <ExternalLink className="w-4 h-4 ml-2" />
           </Button>
