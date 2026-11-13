@@ -1,16 +1,16 @@
 // @vitest-environment jsdom
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { DashboardIntent } from '@/components/dashboard/DashboardIntent';
+import { TheDoor } from '@/components/map/TheDoor';
 import { CAT_DOOR } from '@/config/cat-door';
 
 const { push } = vi.hoisted(() => ({ push: vi.fn() }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
 
-describe('dashboard intent through the shared composer', () => {
+describe('the Cat door through the shared composer', () => {
   beforeEach(() => push.mockReset());
 
   it('encodes intent as data and retains the draft until navigation succeeds', async () => {
-    render(<DashboardIntent />);
+    render(<TheDoor />);
     const input = screen.getByRole('textbox', { name: CAT_DOOR.prompt });
     expect(document.activeElement).not.toBe(input);
     const text = 'Write an article & explain ?q=hello #world';
@@ -23,7 +23,7 @@ describe('dashboard intent through the shared composer', () => {
   });
 
   it('blocks short or oversized input without truncating the user’s words', () => {
-    render(<DashboardIntent />);
+    render(<TheDoor />);
     const input = screen.getByRole('textbox', { name: CAT_DOOR.prompt });
     fireEvent.change(input, { target: { value: ' a ' } });
     expect(screen.getByRole('button', { name: CAT_DOOR.submit })).toBeDisabled();

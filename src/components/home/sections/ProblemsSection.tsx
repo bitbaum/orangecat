@@ -1,8 +1,5 @@
-import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
-import Button from '@/components/ui/Button';
-import { CTA_LABELS } from '@/config/landing-page';
+import { PublicStartBand } from '@/components/layout/PublicStartBand';
 import { PROBLEMS_SECTION } from '@/config/problems-we-solve';
-import { ROUTES } from '@/config/routes';
 import ProblemsExplorer from './ProblemsExplorer';
 
 /**
@@ -30,21 +27,10 @@ export default function ProblemsSection() {
 
         <ProblemsExplorer />
 
-        <div className="mt-12 sm:mt-16 flex flex-col sm:flex-row sm:items-center gap-4 oc-surface p-5 sm:p-6">
-          <p className="flex-1 text-base sm:text-lg text-fg-primary">
-            Don’t see your problem? Describe it to your Cat. It will tell you which of these fits,
-            and set it up.
-          </p>
-          <Button
-            href={ROUTES.AUTH}
-            variant="accent"
-            size="lg"
-            className="w-full sm:w-auto w-full sm:w-auto"
-          >
-            <BrandMarkIcon className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-            {CTA_LABELS.primaryAction}
-          </Button>
-        </div>
+        <PublicStartBand className="mt-12 sm:mt-16">
+          Don’t see your problem? Describe it to your Cat. It will tell you which of these fits, and
+          set it up.
+        </PublicStartBand>
       </div>
     </section>
   );

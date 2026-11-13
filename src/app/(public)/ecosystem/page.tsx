@@ -69,7 +69,7 @@ const SEAMS = [
 ] as const;
 
 export default async function EcosystemPage() {
-  // Every project in the studio, grouped by layer, from Loki's fleet map —
+  // The live projects in the studio, grouped by layer, from Loki's fleet map —
   // the one list, never a copy kept here. Absent when the map is unreachable.
   const fleet = groupFleetByLayer(await fetchStudioMapForCat());
 
@@ -164,8 +164,8 @@ export default async function EcosystemPage() {
               Everything built on it
             </h2>
             <p className="mt-3 max-w-2xl text-fg-secondary">
-              Every project in the studio, as Loki&apos;s fleet map records it — what it is, whether
-              it is live, and when it last moved. Each one is a door.
+              Every product the studio has live, and the client work built on it, as Loki&apos;s
+              fleet map records it — what it is and when it last moved.
             </p>
             {fleet.map(group => (
               <div key={group.layer} className="mt-8">

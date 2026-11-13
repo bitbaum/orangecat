@@ -31,6 +31,9 @@ export const APP_EMAIL_FROM = `${APP_NAME} <notifications@${APP_DOMAIN}>`;
  */
 export const CONTACT_EMAIL = `cato@${APP_DOMAIN}`;
 
+/** OrangeCat's source code (MIT). The footer and About link here. */
+export const SOURCE_REPO_URL = 'https://github.com/bitbaum/orangecat';
+
 /** The one orange: Bitcoin orange, the accent (globals `--public-accent` → `--bitcoin-orange`). */
 export const BRAND_ACCENT_HEX = '#f7931a';
 
