@@ -30,15 +30,15 @@ The messenger is not part of OrangeCat's code. It is a package, `@bitbaum/chatki
 
 We read what ten messengers publish about themselves. Three ideas stood out, and identity is the one that matters most to us.
 
-| Messenger                                                         | To sign up you need                           | Several identities                                   |
-| ----------------------------------------------------------------- | --------------------------------------------- | ---------------------------------------------------- |
-| [Signal](https://signal.org/blog/phone-number-privacy-usernames/) | A phone number; a username is optional        | No                                                   |
-| [WhatsApp](https://faq.whatsapp.com/820124435853543)              | A phone number                                | No                                                   |
-| [Telegram](https://telegram.org/faq)                              | A phone number; a public username is optional | No                                                   |
-| [Threema](https://threema.com/en/faq/threema-id)                  | Nothing: a random 8-character ID              | No                                                   |
-| [Session](https://getsession.org/faq)                             | Nothing: an Account ID                        | No                                                   |
-| [Delta Chat](https://delta.chat/en/help)                          | Nothing: a random address                     | Yes, several profiles                                |
-| [SimpleX](https://simplex.chat/docs/guide/chat-profiles.html)     | Nothing, and no user ID at all                | Yes, and a fresh random name per contact if you want |
+| Messenger                                                         | To sign up you need | Worth knowing                                                                                             |
+| ----------------------------------------------------------------- | ------------------- | --------------------------------------------------------------------------------------------------------- |
+| [Signal](https://signal.org/blog/phone-number-privacy-usernames/) | A phone number      | A username is optional; your number is hidden from people who do not already have it                      |
+| [WhatsApp](https://faq.whatsapp.com/820124435853543)              | A phone number      | Usernames are [being added](https://blog.whatsapp.com/its-time-to-reserve-your-whatsapp-username?lang=en) |
+| [Telegram](https://telegram.org/faq)                              | A phone number      | One account per number; a public username is optional                                                     |
+| [Threema](https://threema.com/en/faq/threema-id)                  | Nothing             | A random 8-character ID; linking a number or email is optional                                            |
+| [Session](https://getsession.org/faq)                             | Nothing             | An Account ID, restored with a recovery password                                                          |
+| [Delta Chat](https://delta.chat/en/help)                          | Nothing             | A random address, and several profiles side by side                                                       |
+| [SimpleX](https://simplex.chat/docs/guide/chat-profiles.html)     | Nothing             | No user ID at all; several profiles, and a fresh random name per contact if you want                      |
 
 **Identity.** SimpleX assigns its users no identifier of any kind, and lets one person keep several profiles. That is close to where OrangeCat is heading: one person acting under more than one name. We call those names heteronyms. A conversation should see the one you choose, and nothing should link it to your others. This is a plan, not a feature.
 
