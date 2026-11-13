@@ -168,7 +168,9 @@ export function CreativeStudio() {
                 {work.source} · {CREATIVE_FORMS[work.form].label}
               </p>
               <h2 className="mt-3 font-heading text-2xl font-semibold">{work.draft.title}</h2>
-              <div className="mt-5">
+              {/* pre-line: a haiku's three lines stay three lines. Markdown keeps a
+                  single newline inside the paragraph, and plain CSS collapses it. */}
+              <div className="mt-5 [&_.ck-md_p]:whitespace-pre-line">
                 <Markdown text={work.draft.text} />
               </div>
               {work.draft.score && <MusicPlayer draft={work.draft} />}
