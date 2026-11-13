@@ -34,10 +34,10 @@ import {
   UserMinus,
 } from 'lucide-react';
 import { STATUS } from '@/config/database-constants';
-import { ROUTES } from '@/config/routes';
 import type { GroupMember, GroupRole } from '@/types/group';
 import { getInitial } from '@/utils/string';
 import { InviteMemberDialog } from './InviteMemberDialog';
+import { GroupJoinButton } from './GroupJoinButton';
 import groupsService from '@/services/groups';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
@@ -68,29 +68,10 @@ export function GroupMembers({
   onUpdate,
 }: GroupMembersProps) {
   const { user, hydrated } = useAuth();
-  const [joining, setJoining] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [confirmLeave, setConfirmLeave] = useState(false);
   const [busyMemberId, setBusyMemberId] = useState<string | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
-
-  const handleJoin = async () => {
-    try {
-      setJoining(true);
-      const result = await groupsService.joinGroup(groupId);
-      if (result.success) {
-        toast.success('Successfully joined group!');
-        onUpdate?.();
-      } else {
-        toast.error(apiErrorMessage(result, 'Failed to join group'));
-      }
-    } catch (error) {
-      logger.error('Failed to join group:', error);
-      toast.error('Failed to join group');
-    } finally {
-      setJoining(false);
-    }
-  };
 
   const handleLeave = async () => {
     try {
@@ -189,20 +170,14 @@ export function GroupMembers({
       {!isMember && openToJoin && hydrated && (
         <Card>
           <CardContent className="pt-6">
-            {user ? (
-              <Button onClick={handleJoin} disabled={joining} className="w-full">
-                <UserPlus className="h-4 w-4 mr-2" />
-                {joining ? 'Joining...' : 'Join Group'}
-              </Button>
-            ) : (
-              <Button
-                href={`${ROUTES.AUTH_LOGIN}&from=${encodeURIComponent(ROUTES.GROUPS.VIEW(groupSlug))}`}
-                className="w-full"
-              >
-                <UserPlus className="h-4 w-4 mr-2" />
-                Sign in to join
-              </Button>
-            )}
+            <GroupJoinButton
+              groupId={groupId}
+              groupSlug={groupSlug}
+              openToJoin={openToJoin}
+              isMember={isMember}
+              onJoined={onUpdate}
+              className="w-full"
+            />
           </CardContent>
         </Card>
       )}
