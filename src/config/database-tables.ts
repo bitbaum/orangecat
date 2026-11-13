@@ -201,6 +201,8 @@ export const DATABASE_TABLES = {
   MESSAGE_REACTIONS: 'message_reactions',
   /** Which account speaks for which companion in Messages (service role only; ADR-0015). */
   COMPANION_SEATS: 'companion_seats',
+  /** Which entities the Cat or a bot made, and which bot (service role only; services/provenance). */
+  ENTITY_PROVENANCE: 'entity_provenance',
   CONVERSATION_DETAILS: 'conversation_details',
 
   // Entity Tables (for direct access when not using entity-registry)

@@ -10,7 +10,7 @@
  */
 
 import React from 'react';
-import { Bot, FileText, Cpu, Zap, DollarSign, MessageSquare, CheckCircle2 } from 'lucide-react';
+import { Bot, FileText, Cpu, Zap, DollarSign, MessageSquare } from 'lucide-react';
 import type { GuidanceContent, DefaultGuidance } from '@/components/create/types';
 
 export type AIAssistantFieldType =
@@ -22,7 +22,6 @@ export type AIAssistantFieldType =
   | 'model_preference'
   | 'temperature'
   | 'max_tokens_per_response'
-  | 'compute_provider_type'
   | 'pricing_model'
   | 'price_per_message'
   | 'price_per_1k_tokens'
@@ -146,16 +145,6 @@ export const aiAssistantGuidanceContent: Record<
       'Higher limits = higher costs per message',
     ],
   },
-  compute_provider_type: {
-    icon: React.createElement(Cpu, { className: 'w-5 h-5 text-fg-primary' }),
-    title: 'Compute Provider',
-    description: 'Where your AI runs. Most users should select API Provider.',
-    tips: [
-      'API: Uses cloud AI providers (easiest)',
-      'Self-Hosted: Your own GPU/server',
-      'Community: Shared community resources',
-    ],
-  },
   pricing_model: {
     icon: React.createElement(DollarSign, { className: 'w-5 h-5 text-fg-primary' }),
     title: 'Pricing Model',
@@ -242,22 +231,22 @@ export const aiAssistantGuidanceContent: Record<
 };
 
 export const aiAssistantDefaultGuidance: DefaultGuidance = {
-  title: 'What is an AI Assistant?',
+  title: 'What is a companion?',
   description:
-    'AI Assistants are autonomous services that earn you Bitcoin. The key is a well-crafted system prompt that defines exactly how your AI should behave and what value it provides.',
+    'A companion is a bot with its own voice. You write who it is; then you can talk to it, publish it so anyone can, and share its page.',
   features: [
     {
       icon: React.createElement(Bot, { className: 'w-4 h-4 text-fg-primary' }),
-      text: 'Build autonomous AI services',
+      text: 'Its own voice, written by you',
+    },
+    {
+      icon: React.createElement(MessageSquare, { className: 'w-4 h-4 text-fg-primary' }),
+      text: 'Private until you publish it',
     },
     {
       icon: React.createElement(Zap, { className: 'w-4 h-4 text-fg-primary' }),
-      text: 'Earn Bitcoin via Lightning',
-    },
-    {
-      icon: React.createElement(CheckCircle2, { className: 'w-4 h-4 text-fg-primary' }),
-      text: 'Portable - works with any AI provider',
+      text: 'A public companion can be supported in Bitcoin, straight into your wallet',
     },
   ],
-  hint: 'Your system prompt is your AI\'s "software" - make it great!',
+  hint: 'The definition is the whole of who they are: make it good.',
 };

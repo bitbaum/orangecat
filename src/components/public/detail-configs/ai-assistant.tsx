@@ -1,8 +1,9 @@
-import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import { CompanionActions } from '@/components/companions/CompanionActions';
 import { AssistantPriceChip } from '@/components/ai-assistants/AssistantPriceChip';
+import { Face } from '@/components/companions/talk/CompanionFace';
 import type { EntityDetailConfig } from '@/components/public/PublicEntityDetailPage';
+import { ownerOnlyStatus } from '@/components/public/public-entity-detail-config';
 import { ROUTES } from '@/config/routes';
 import { PUBLIC_VISIBILITY } from '@/config/public-visibility';
 
@@ -44,24 +45,30 @@ export const aiAssistantDetailConfig: EntityDetailConfig = {
   // A private companion is the owner's alone. RLS already hides it from
   // strangers; this keeps the page honest even for a signed-in non-owner.
   visibilityFilter: PUBLIC_VISIBILITY.ai_assistant,
-  // No pay-the-seller-direct section: you don't pay an assistant up front — you
-  // chat, and it charges per its pricing model (free / per-message via Cat
-  // Credits) inside the chat widget. This also suppresses the default mobile
-  // sticky CTA, which would otherwise anchor "Chat" to a #pay section that
-  // shouldn't exist here. The chat widget is the primary action.
+  // A companion is not bought: Talk is the action, and per-message pricing
+  // (when set) is charged inside the chat. What a visitor CAN do besides is
+  // support a public companion: the registry marks the type supportable, and
+  // this card pays the wallet its owner chose under "Pay into", directly. Not
+  // on a private companion, and not for a visitor when no wallet can be
+  // reached (the owner still sees how to add one). No sticky bar: it would
+  // anchor "Support" above Talk on a phone.
   showPaymentSection: false,
+  paymentSectionFor: entity => entity.is_public === true,
+  paymentNeedsWallet: true,
+  supportTitle: entity => `Support ${(entity.title as string) || 'this companion'}`,
+  mobileStickyCTA: null,
+  statusBadge: ownerOnlyStatus,
   getViewRoute: id => ROUTES.AI_ASSISTANTS.VIEW(id),
-  renderHeaderIcon: entity =>
-    entity.avatar_url ? (
-      <Image
-        src={entity.avatar_url as string}
-        alt={(entity.title as string) || 'Companion'}
-        width={64}
-        height={64}
-        className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
-        unoptimized
-      />
-    ) : undefined,
+  // Its face: the picture or face it was given, else the face its name picks
+  // (the same one it wears in Talk), never a stock robot.
+  renderHeaderIcon: entity => (
+    <Face
+      name={(entity.title as string) || ''}
+      avatarUrl={(entity.avatar_url as string | null) ?? null}
+      size={64}
+      className="flex-shrink-0"
+    />
+  ),
   renderHeaderExtra: entity => {
     const pricing = getAiPricing(entity);
     const freePerDay = Number(entity.free_messages_per_day ?? 0);

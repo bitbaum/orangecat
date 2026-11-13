@@ -117,6 +117,15 @@ export interface EntityDetailConfig {
    */
   paymentSectionFor?: (entity: EntityData) => boolean;
   /**
+   * True when a visitor should see no payment section at all unless a wallet
+   * can be reached. A support card that only says "hasn't connected a wallet
+   * yet" reads as broken on a page whose action is elsewhere (a companion's is
+   * Talk). The owner still sees the section, which tells them how to add one.
+   */
+  paymentNeedsWallet?: boolean;
+  /** The support card's title, when the entity itself is what is supported ("Support Mira"). */
+  supportTitle?: (entity: EntityData) => string;
+  /**
    * What a visitor needs before anything else, rendered first in the main
    * column — above the description. An event's guest arrives from a link in a
    * group chat to learn when, where, and to get in; a paragraph of prose ahead

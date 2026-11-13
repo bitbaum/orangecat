@@ -459,18 +459,20 @@ export const ENTITY_REGISTRY: Record<EntityType, EntityMetadata> = {
     apiEndpoint: '/api/ai-assistants',
     detailPath: key => `/dashboard/companions/${key}`,
     hasTemplates: true,
-    description: 'AI beings you create, talk to, and can share or sell',
+    description: 'AI beings you create, talk to, share, and let others support',
     createActionLabel: 'Create a companion',
     category: 'business',
     createPriority: 5,
-    paymentPattern: 'fixed_price',
-    // You do not donate to a companion, you talk to one — and per-message
-    // pricing already pays the creator 100% through Cat Credits. Marking this
-    // supportable put a five-button "Support with Bitcoin" form on the page,
-    // which then ran taller than everything else on it: the one thing a
-    // visitor should do (Talk) read as smaller than a donation nobody has
-    // ever made (zero payment_intents for this type, checked on the box).
-    canReceiveSupport: false,
+    // Nothing is bought from a companion: the chat is the product, and the
+    // page carries no price. So no purchase pattern (a fixed_price type with no
+    // priceColumn could only offer a priceless "Buy").
+    paymentPattern: 'none',
+    // A public companion can be supported: "Support <name>" pays the wallet its
+    // owner chose under "Pay into", over the same non-custodial flow every
+    // supportable page uses. The card sits in the sidebar, below Talk, so the
+    // one thing a visitor came to do still leads (the detail config hides it on
+    // private companions and, for visitors, when no wallet can be reached).
+    canReceiveSupport: true,
   },
 
   // ==================== COMMUNITY (Network building) ====================
