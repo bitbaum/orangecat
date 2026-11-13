@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useAuthStore } from '@/stores/auth';
+import { useAuth } from '@/hooks/useAuth';
 import { ANONYMOUS_BYLINE, needsBylineName } from '@/utils/byline';
 
 /** Same cap as the profile's `name` (profileSchema: optionalText(100)). */
@@ -23,8 +23,8 @@ export interface BylinePrompt {
  * article is signed with the neutral fallback.
  */
 export function useBylinePrompt(enabled: boolean): BylinePrompt {
-  const profile = useAuthStore(state => state.profile);
-  const updateProfile = useAuthStore(state => state.updateProfile);
+  // Through useAuth, as the composer reads the account: one seam to the store.
+  const { profile, updateProfile } = useAuth();
   const [value, setValue] = useState('');
   const show = enabled && !!profile && needsBylineName(profile.name, profile.username);
 

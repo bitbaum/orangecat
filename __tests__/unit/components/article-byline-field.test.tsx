@@ -13,8 +13,8 @@ const store = vi.hoisted(() => ({
   updateProfile: vi.fn(),
 }));
 
-vi.mock('@/stores/auth', () => ({
-  useAuthStore: (select: (s: typeof store) => unknown) => select(store),
+vi.mock('@/hooks/useAuth', () => ({
+  useAuth: () => store,
 }));
 
 beforeEach(() => {
