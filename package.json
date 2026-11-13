@@ -131,7 +131,7 @@
     "@bitbaum/accountkit": "^0.30.0",
     "@bitbaum/ai-kit": "^1.27.0",
     "@bitbaum/bip-kit": "^0.9.1",
-    "@bitbaum/chatkit": "^0.33.0",
+    "@bitbaum/chatkit": "^0.34.0",
     "@bitbaum/collective-kinds": "workspace:*",
     "@bitbaum/deckkit": "workspace:*",
     "@bitbaum/design-tokens": "^1.7.1",
