@@ -36,6 +36,8 @@ export interface OpenAICompatChatResult {
   isFreeModel: boolean;
   /** Always true here — this client only runs against user-provided keys. */
   usedByok: boolean;
+  /** Functions the model asked for, when tools were given. */
+  toolCalls?: Array<{ id: string; name: string; arguments: string }>;
 }
 
 export interface OpenAICompatStreamChunkResult {
@@ -55,13 +57,19 @@ interface ChatRequest {
   max_tokens?: number;
   stream?: boolean;
   top_p?: number;
+  tools?: unknown[];
+  tool_choice?: 'auto';
 }
 
 interface ChatResponse {
   id: string;
   model: string;
   choices: Array<{
-    message: { role: string; content: string };
+    message: {
+      role: string;
+      content: string | null;
+      tool_calls?: Array<{ id?: string; function?: { name?: string; arguments?: unknown } }>;
+    };
     finish_reason: string;
     index: number;
   }>;
@@ -141,8 +149,9 @@ export class OpenAICompatibleService {
     messages: OpenAICompatMessage[];
     temperature?: number;
     maxTokens?: number;
+    tools?: unknown[];
   }): Promise<OpenAICompatChatResult> {
-    const { model, messages, temperature = 0.7, maxTokens } = params;
+    const { model, messages, temperature = 0.7, maxTokens, tools } = params;
 
     const body: ChatRequest = {
       model,
@@ -152,6 +161,10 @@ export class OpenAICompatibleService {
     };
     if (maxTokens) {
       body.max_tokens = maxTokens;
+    }
+    if (tools?.length) {
+      body.tools = tools;
+      body.tool_choice = 'auto';
     }
 
     const response = await fetch(`${this.baseUrl}/chat/completions`, {
@@ -165,7 +178,22 @@ export class OpenAICompatibleService {
     }
 
     const data = (await response.json()) as ChatResponse;
+    const toolCalls = (data.choices[0]?.message?.tool_calls ?? []).flatMap((c, i) => {
+      const name = c.function?.name;
+      if (!name) {
+        return [];
+      }
+      const args = c.function?.arguments;
+      return [
+        {
+          id: c.id || `call_${i}`,
+          name,
+          arguments: typeof args === 'string' ? args : JSON.stringify(args ?? {}),
+        },
+      ];
+    });
     return {
+      ...(toolCalls.length ? { toolCalls } : {}),
       content: data.choices[0]?.message?.content ?? '',
       model: data.model,
       inputTokens: data.usage?.prompt_tokens ?? 0,

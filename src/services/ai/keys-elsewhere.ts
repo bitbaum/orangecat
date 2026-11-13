@@ -2,21 +2,21 @@
  * Provider keys a person holds on Loki and not here.
  *
  * One person, two linked accounts, one key: on 2026-11-11 the owner's xAI key
- * was on Loki, where the chat answered on Grok, while the Cat here ran for the
- * same person on an exhausted free pool. Neither product could say so. Loki
- * now reports the NAMES of the keys it holds (services/loki/actor-status);
- * this turns them into a suggestion.
+ * was on Loki, where the chat answered on Grok, while the bots here ran for
+ * the same person on an exhausted free pool. Neither product could say so.
  *
- * No key crosses: Loki sends a vendor id and the last characters, and the
- * person pastes the key here themselves. Copying it across would mean one
- * service handing a user's secret to another on a shared signing secret, which
- * is a decision for the owner, not a default.
+ * The key is never copied. Loki reports its NAME and last characters, and the
+ * person, signed in here, may switch it on for their bots: a bot turn is then
+ * answered by Loki, with the key, for the linked account
+ * (services/loki/shared-keys.ts). Where Loki cannot do that yet, the older
+ * suggestion stands: paste the same key here.
  */
 import { getAIProvider, WIRED_PROVIDER_IDS } from '@/data/aiProviders';
 import type { LokiModelKey } from '@/services/loki/actor-status';
+import type { LokiHeldKey } from '@/services/loki/shared-keys';
 
 export interface KeyElsewhere {
-  /** Our provider id: what the add-key form takes. */
+  /** Our provider id: what the add-key form takes, and what the switch names. */
   provider: string;
   /** The provider's name as this app writes it. */
   name: string;
@@ -24,6 +24,10 @@ export interface KeyElsewhere {
   keyHint: string | null;
   /** Where the provider shows the key, when we know. */
   apiKeyUrl: string | null;
+  /** Loki can answer this person's bots on it: the switch is offered. */
+  canShare: boolean;
+  /** Switched on: the person's bots here answer on it now. */
+  shared: boolean;
 }
 
 /**
@@ -51,6 +55,36 @@ export function keysOnLokiNotHere(
       name: provider.name,
       keyHint: key.keyHint,
       apiKeyUrl: provider.apiKeyUrl ?? null,
+      canShare: false,
+      shared: false,
+    });
+  }
+  return out;
+}
+
+/**
+ * Keys Loki can answer on for this person. Loki makes the call, so the
+ * provider need not be one this app calls itself. A provider with a key saved
+ * here is left out: that key already answers.
+ */
+export function keysLokiCanAnswerOn(
+  onLoki: readonly LokiHeldKey[],
+  providersHere: readonly string[]
+): KeyElsewhere[] {
+  const here = new Set(providersHere);
+  const out: KeyElsewhere[] = [];
+  for (const key of onLoki) {
+    if (here.has(key.vendor) || out.some(k => k.provider === key.vendor)) {
+      continue;
+    }
+    const provider = getAIProvider(key.vendor);
+    out.push({
+      provider: key.vendor,
+      name: provider?.name ?? key.label,
+      keyHint: key.keyHint,
+      apiKeyUrl: provider?.apiKeyUrl ?? null,
+      canShare: true,
+      shared: key.shared,
     });
   }
   return out;
