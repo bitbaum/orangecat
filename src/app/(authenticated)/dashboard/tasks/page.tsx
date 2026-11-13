@@ -10,22 +10,12 @@ import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
 import { TASK_CATEGORIES, TASK_STATUSES, TASK_TYPES } from '@/config/tasks';
 import type { Task } from '@/lib/schemas/tasks';
-import {
-  ClipboardList,
-  AlertTriangle,
-  Play,
-  Clock,
-  Filter,
-  Plus,
-  ChevronDown,
-  ChevronUp,
-  BarChart3,
-} from 'lucide-react';
+import { ClipboardList, AlertTriangle, Play, Clock, Plus } from 'lucide-react';
 import QuickStatCard from './components/QuickStatCard';
 import TaskCard from './components/TaskCard';
 import TaskFilters from './components/TaskFilters';
+import TasksHeaderActions from './components/TasksHeaderActions';
 import EmptyState from '@/components/ui/EmptyState';
-import { GRADIENTS } from '@/config/gradients';
 import { API_ROUTES } from '@/config/api-routes';
 import { apiErrorMessage } from '@/lib/api/errorMessage';
 
@@ -184,36 +174,10 @@ export default function TasksPage() {
   };
 
   const headerActions = (
-    <div className="flex items-center gap-2">
-      <Button
-        href={ROUTES.DASHBOARD.TASKS_ANALYTICS}
-        variant="outline"
-        size="sm"
-        className="flex items-center gap-2"
-      >
-        <BarChart3 className="h-4 w-4" aria-hidden="true" />
-        <span>Analytics</span>
-      </Button>
-      <Button
-        onClick={() => setShowFilters(!showFilters)}
-        aria-expanded={showFilters}
-        aria-controls="task-filters"
-        variant="outline"
-        size="sm"
-        className="flex items-center gap-2"
-      >
-        <Filter className="h-4 w-4" />
-        <span>Filter</span>
-        {showFilters ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-      </Button>
-      <Button
-        href={ROUTES.DASHBOARD.TASKS_NEW}
-        className={`flex items-center gap-2 ${GRADIENTS.brandTiffanyDark}`}
-      >
-        <Plus className="h-4 w-4" />
-        <span>Create Task</span>
-      </Button>
-    </div>
+    <TasksHeaderActions
+      showFilters={showFilters}
+      onToggleFilters={() => setShowFilters(!showFilters)}
+    />
   );
 
   return (

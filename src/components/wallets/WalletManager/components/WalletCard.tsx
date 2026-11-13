@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { WALLET_CATEGORIES } from '@/types/wallet';
 import { WalletForm } from './WalletForm';
 import { WalletTransactions } from './WalletTransactions';
+import { WalletGoalSection } from './WalletGoalSection';
 import type { WalletCardProps } from '../types';
 import { truncateAddress } from '@/utils/string';
 import { getWalletReceiveHandle } from '@/lib/wallet-receive-handle';
@@ -30,7 +31,7 @@ export function WalletCard({
 }: WalletCardProps) {
   // Before the edit-mode early return: hooks must run on every render.
   const { convertFromBTC } = useCurrencyConversion();
-  const { formatPrice, formatAmountBtc } = useDisplayCurrency();
+  const { formatAmountBtc } = useDisplayCurrency();
 
   if (isEditing && isOwner) {
     return (
@@ -235,37 +236,8 @@ export function WalletCard({
         </div>
       )}
 
-      {/* Goal progress — tracked from the on-chain balance, so same condition.
-          Both sides of the "saved / target" pair are shown in the goal's own
-          currency; a bar and a percentage appear only when the balance could
-          actually be converted into it. */}
-      {tracksOnChainBalance && goal && (
-        <div className="mb-4">
-          <div className="flex justify-between text-sm mb-2">
-            <span className="text-fg-secondary font-medium">Goal</span>
-            <span className="font-semibold text-fg-primary">
-              {goal.balanceInGoalCurrency === null
-                ? formatPrice(goal.goalAmount, goal.currency)
-                : `${formatPrice(goal.balanceInGoalCurrency, goal.currency)} / ${formatPrice(goal.goalAmount, goal.currency)}`}
-            </span>
-          </div>
-          {goal.percent === null ? (
-            <div className="text-xs text-fg-secondary">
-              Progress needs a {goal.currency} rate, which isn’t available right now.
-            </div>
-          ) : (
-            <>
-              <div className="w-full bg-surface-raised rounded-full h-2.5 mb-1">
-                <div
-                  className="bg-fg-primary h-2.5 rounded-full transition-all"
-                  style={{ width: `${Math.min(goal.percent, 100)}%` }}
-                />
-              </div>
-              <div className="text-xs text-fg-secondary">{goal.percent.toFixed(1)}% funded</div>
-            </>
-          )}
-        </div>
-      )}
+      {/* Goal progress — tracked from the on-chain balance, so same condition. */}
+      {tracksOnChainBalance && goal && <WalletGoalSection goal={goal} />}
 
       {/* Receive handle (address / lightning / connection) */}
       <div className="pt-4 border-t border-default">

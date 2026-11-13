@@ -10,7 +10,6 @@
 
 'use client';
 
-import { LogIn } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/hooks/useAuth';
@@ -24,6 +23,7 @@ import { PublicSupportPanel } from './PublicSupportPanel';
 import { OptionalSupportPanel } from './OptionalSupportPanel';
 import { NoWalletYetNotice } from './NoWalletYetNotice';
 import { SharedWalletNotice } from './SharedWalletNotice';
+import { SignInToPurchaseCard } from './SignInToPurchaseCard';
 import GuestTicketPurchase from '@/components/events/GuestTicketPurchase';
 import type { SharedWalletUsage } from '@/domain/wallets/walletUsage';
 import type { ContributionBoundsBtc } from '@/config/contribution-terms';
@@ -189,25 +189,7 @@ export function PublicEntityPaymentSection({
     const purchaseFallback = !sellerReceive ? (
       noWalletNotice
     ) : (
-      <Card>
-        <CardContent className="pt-6 space-y-3">
-          <Button
-            href={`${ROUTES.AUTH}?mode=login&from=${signInRedirect}`}
-            className="w-full gap-2 min-h-11"
-          >
-            <LogIn className="w-4 h-4" />
-            Sign in to purchase
-          </Button>
-          <p className="text-xs text-fg-secondary text-center">
-            {
-              // Not 'a Lightning invoice': for an xpub wallet the request is a fresh
-              // on-chain address.
-              'You get a payment request straight from the seller’s wallet.'
-            }
-          </p>
-          <PaymentExpectationNote />
-        </CardContent>
-      </Card>
+      <SignInToPurchaseCard signInHref={`${ROUTES.AUTH}?mode=login&from=${signInRedirect}`} />
     );
     return sellerReceive && meta.canReceiveSupport && meta.paymentPattern === 'fixed_price' ? (
       <div className="space-y-4">
