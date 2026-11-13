@@ -242,7 +242,7 @@ export default function TasksSection({
 
         {isExpanded && (
           <CardContent className="pt-0">
-            <div className="space-y-3">
+            <div className="divide-y divide-subtle">
               {visibleTasks.map(task => (
                 <TaskCard
                   key={task.id}
