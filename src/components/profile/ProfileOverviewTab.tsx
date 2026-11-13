@@ -2,9 +2,11 @@
 
 import type { ScalableProfile } from '@/services/profile/types';
 import { Card, CardHeader, CardContent } from '@/components/ui/Card';
-import { Mail, Phone } from 'lucide-react';
+import Link from 'next/link';
+import { ChevronRight, Mail, Phone } from 'lucide-react';
 import { SocialLinksDisplay } from './SocialLinksDisplay';
 import { ProfileSupportSection } from './ProfileSupportSection';
+import { useCanReceive } from './useCanReceive';
 import {
   ProfileHelpWantedCard,
   ProfileProjectsSection,
@@ -12,6 +14,7 @@ import {
 } from './ProfileOverviewSections';
 import { SocialLink } from '@/types/social';
 import { ROUTES } from '@/config/routes';
+import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { useDisplayCurrency } from '@/hooks/useDisplayCurrency';
 import { isHelpWantedOption } from '@/config/maker-status';
 
@@ -27,6 +30,13 @@ interface ProfileOverviewTabProps {
 }
 
 const PROJECTS_PREVIEW = 3;
+
+/** What an owner with an empty Overview can do next: one anatomy per row. */
+const OWNER_FIRST_STEPS = [
+  { label: 'Add a wallet so people can pay you', href: ROUTES.DASHBOARD.WALLETS },
+  { label: 'Add a photo and a bio', href: ROUTES.DASHBOARD.INFO_EDIT },
+  { label: 'Create your first project', href: ENTITY_REGISTRY.project.createPath },
+] as const;
 
 /**
  * Overview — what the header card above it does NOT already say.
@@ -49,6 +59,10 @@ export default function ProfileOverviewTab({
   // private account login email (profile.email). See profile email-leak fix.
   const publicContactEmail = profile.contact_email;
   const { formatAmountBtc } = useDisplayCurrency();
+  // The support card renders nothing until a wallet can receive. Pushing the
+  // element anyway made the list non-empty, so the empty state never showed
+  // and a new owner saw a blank panel.
+  const canReceive = useCanReceive(isOwnProfile ? profile.username : null);
 
   const socialLinks =
     !!profile.social_links &&
@@ -120,7 +134,7 @@ export default function ProfileOverviewTab({
     ),
     // The owner's share-your-pay-link tool. A visitor's way to pay is the Pay
     // button in the header; a second "Pay <name>" card here repeated it.
-    isOwnProfile && profile.username && (
+    isOwnProfile && profile.username && canReceive === true && (
       <ProfileSupportSection
         key="support"
         username={profile.username}
@@ -130,14 +144,33 @@ export default function ProfileOverviewTab({
     ),
   ].filter(Boolean);
 
-  if (sections.length === 0) {
+  if (sections.length === 0 && isOwnProfile) {
     return (
-      <p className="py-10 text-center text-sm text-fg-secondary">
-        {isOwnProfile
-          ? 'Nothing here yet. Projects, links and ways to help show up here once you add them.'
-          : 'Nothing more to show yet.'}
-      </p>
+      <div className="space-y-3">
+        <p className="mb-0 text-sm text-fg-secondary">
+          Nothing here yet. Projects, links and ways to help show up here once you add them.
+        </p>
+        <ul className="space-y-2">
+          {OWNER_FIRST_STEPS.filter(
+            step => !(step.href === ROUTES.DASHBOARD.WALLETS && canReceive === true)
+          ).map(step => (
+            <li key={step.href}>
+              <Link
+                href={step.href}
+                className="oc-list-row flex min-h-11 items-center justify-between gap-3 hover:bg-surface-raised"
+              >
+                <span>{step.label}</span>
+                <ChevronRight className="h-4 w-4 shrink-0 text-fg-tertiary" aria-hidden />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
     );
+  }
+
+  if (sections.length === 0) {
+    return <p className="py-10 text-center text-sm text-fg-secondary">Nothing more to show yet.</p>;
   }
 
   return <div className="space-y-4 sm:space-y-6">{sections}</div>;
