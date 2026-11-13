@@ -311,3 +311,47 @@ describe('bots beside people (ADR-0015)', () => {
     stop();
   });
 });
+
+describe('a bot in a group (ADR-0015)', () => {
+  const seat = (user_id: string, name: string, is_agent = false) => ({
+    user_id,
+    username: user_id,
+    name,
+    avatar_url: null,
+    role: 'member',
+    joined_at: '2026-11-13T10:00:00Z',
+    last_read_at: '',
+    is_active: true,
+    is_agent,
+  });
+  const group = () =>
+    ok({
+      conversation: {
+        id: 'g1',
+        last_message_at: null,
+        last_message_preview: null,
+        unread_count: 0,
+        participants: [seat('me', 'Me'), seat('maya', 'Maya'), seat('seat-1', 'Chef', true)],
+      },
+    });
+  const typingAfter = async (body: string) => {
+    fetchMock.mockResolvedValueOnce(group()).mockResolvedValueOnce(ok({ id: 'srv-1' }, 201));
+    const t = transport();
+    const events: Array<{ type: string; actorId?: string; typing?: boolean }> = [];
+    const stop = t.subscribe!({ conversationId: null }, e => events.push(e as never));
+    await t.conversation!('g1', {});
+    await t.send('g1', { clientId: 'tmp-1', body, attachments: [] });
+    stop();
+    return events.filter(e => e.type === 'typing');
+  };
+
+  it('is shown writing when it is named', async () => {
+    expect(await typingAfter('@Chef what is quick?')).toContainEqual(
+      expect.objectContaining({ actorId: 'seat-1', typing: true })
+    );
+  });
+
+  it('is not shown writing when it is not', async () => {
+    expect(await typingAfter('Any ideas?')).toEqual([]);
+  });
+});
