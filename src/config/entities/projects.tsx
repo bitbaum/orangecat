@@ -12,14 +12,11 @@
  */
 
 import { EntityConfig } from '@/types/entity';
-import Button from '@/components/ui/Button';
 import { convert, formatCurrency } from '@/services/currency';
 import { PLATFORM_DEFAULT_CURRENCY } from '@/config/currencies';
-import { ROUTES } from '@/config/routes';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
 import { getStatusBadge } from '@/config/entity-status';
 import type { Currency } from '@/types/settings';
-import { GRADIENTS } from '@/config/gradients';
 
 // Project type for EntityList usage
 export interface ProjectListItem {
@@ -160,11 +157,6 @@ export const projectEntityConfig: EntityConfig<ProjectListItem> = {
     title: 'No projects yet',
     description:
       'Create your first project to start accepting Bitcoin funding and building support for your cause.',
-    action: (
-      <Button href={ROUTES.DASHBOARD.PROJECTS_CREATE} className={GRADIENTS.brandOrangeDark}>
-        Create Project
-      </Button>
-    ),
   },
 
   gridCols: {

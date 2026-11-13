@@ -13,12 +13,9 @@
 
 import { EntityConfig } from '@/types/entity';
 import { Asset } from '@/types/asset';
-import Button from '@/components/ui/Button';
 import { PLATFORM_DEFAULT_CURRENCY } from '@/config/currencies';
 import { formatCurrency } from '@/services/currency';
-import { ROUTES } from '@/config/routes';
 import { ENTITY_REGISTRY } from '@/config/entity-registry';
-import { GRADIENTS } from '@/config/gradients';
 import { ENTITY_STATUS } from '@/config/database-constants';
 
 export const assetEntityConfig: EntityConfig<Asset> = {
@@ -90,11 +87,6 @@ export const assetEntityConfig: EntityConfig<Asset> = {
     title: 'No assets yet',
     description:
       'Create your first asset to use as collateral for loans or to track your portfolio.',
-    action: (
-      <Button href={ROUTES.DASHBOARD.ASSETS_CREATE} className={GRADIENTS.brandGreen}>
-        Create Asset
-      </Button>
-    ),
   },
 
   gridCols: {
