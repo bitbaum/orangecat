@@ -75,7 +75,7 @@ function AppShellChrome({ children }: AppShellProps) {
     toggleSidebar,
     toggleSidebarCollapse,
     toggleSection,
-    setSidebarCollapsed,
+    setSidebarOpen,
     isItemActive,
     getFilteredSections,
   } = useNavigation(sidebarSections);
@@ -88,11 +88,26 @@ function AppShellChrome({ children }: AppShellProps) {
   // space below the main scroll area so its content isn't covered.
   const showsMobileBottomNav = isAppSurface && !routeChrome.hideMobileBottomNav;
 
+  // A focus route (the Cat, a companion's room, the article editor) shows the
+  // rail collapsed, but it never writes the person's saved preference: doing
+  // that collapsed the sidebar everywhere after one visit to the Cat. Expanding
+  // on such a route lasts until the next page, recorded against its path.
+  const [focusExpandedOn, setFocusExpandedOn] = useState<string | null>(null);
+  const isFocusRoute = routeChrome.preferCollapsedSidebar;
+  const isSidebarCollapsed = isFocusRoute
+    ? focusExpandedOn !== pathname
+    : navigationState.isSidebarCollapsed;
+  const handleToggleCollapse = isFocusRoute
+    ? () => setFocusExpandedOn(current => (current === pathname ? null : (pathname ?? null)))
+    : toggleSidebarCollapse;
+  const sidebarState = { ...navigationState, isSidebarCollapsed };
+
+  // The phone drawer closes once you have gone somewhere — by a link in it, or
+  // by any other navigation (back button, a link in the page).
   useEffect(() => {
-    if (routeChrome.preferCollapsedSidebar) {
-      setSidebarCollapsed(true);
-    }
-  }, [pathname, routeChrome.preferCollapsedSidebar, setSidebarCollapsed]);
+    setSidebarOpen(false);
+  }, [visitedPathname, setSidebarOpen]);
+  const closeDrawer = () => setSidebarOpen(false);
 
   // Track the user's previous in-app path so Cat can reference "the page you
   // just came from" — document.referrer is stale across Next.js client-side
@@ -190,11 +205,12 @@ function AppShellChrome({ children }: AppShellProps) {
             profile={profile}
             sections={filteredSections}
             bottomItems={bottomNavItems}
-            navigationState={navigationState}
+            navigationState={sidebarState}
             isItemActive={isItemActive}
             toggleSidebar={toggleSidebar}
-            toggleSidebarCollapse={toggleSidebarCollapse}
+            toggleSidebarCollapse={handleToggleCollapse}
             toggleSection={toggleSection}
+            onNavigate={closeDrawer}
             aboveMobileNav={showsMobileBottomNav}
           />
         )}
@@ -210,11 +226,7 @@ function AppShellChrome({ children }: AppShellProps) {
           className={`flex-1 min-w-0 ${
             allowMarginTransition ? 'transition-[margin-left] duration-300 ease-in-out' : ''
           } ${
-            shouldShowSidebar
-              ? navigationState.isSidebarCollapsed
-                ? 'lg:ml-16'
-                : 'lg:ml-64'
-              : 'ml-0'
+            shouldShowSidebar ? (isSidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64') : 'ml-0'
           } ${showsMobileBottomNav && !routeChrome.ownsMobileNavClearance ? 'app-bottom-nav-clearance' : ''}`}
         >
           {children}

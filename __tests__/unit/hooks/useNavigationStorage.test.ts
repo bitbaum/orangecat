@@ -211,17 +211,25 @@ describe('useNavigationStorage', () => {
   });
 
   it('loads saved state from localStorage', () => {
-    window.localStorage.setItem(STORAGE_KEYS.SIDEBAR_OPEN, 'true');
     window.localStorage.setItem(STORAGE_KEYS.SIDEBAR_COLLAPSED, 'true');
     window.localStorage.setItem(STORAGE_KEYS.COLLAPSED_SECTIONS, '["main","discover"]');
 
     renderHook(() => useNavigationStorage(true, basicSections, { onStateLoaded, onLoadFailed }));
 
     expect(onStateLoaded).toHaveBeenCalledWith({
-      isSidebarOpen: true,
       isSidebarCollapsed: true,
       collapsedSections: new Set(['main', 'discover']),
     });
+  });
+
+  it('never restores the phone drawer, and clears what an older build saved', () => {
+    // A restored drawer reopened the menu over the page after every reload.
+    window.localStorage.setItem(STORAGE_KEYS.SIDEBAR_OPEN, 'true');
+
+    renderHook(() => useNavigationStorage(true, basicSections, { onStateLoaded, onLoadFailed }));
+
+    expect(onStateLoaded.mock.calls[0][0]).not.toHaveProperty('isSidebarOpen');
+    expect(window.localStorage.getItem(STORAGE_KEYS.SIDEBAR_OPEN)).toBeNull();
   });
 
   it('falls back to defaults when localStorage is empty', () => {
@@ -229,7 +237,6 @@ describe('useNavigationStorage', () => {
 
     expect(onStateLoaded).toHaveBeenCalledWith(
       expect.objectContaining({
-        isSidebarOpen: false,
         isSidebarCollapsed: false,
       })
     );
@@ -271,16 +278,12 @@ describe('useNavigationStorage', () => {
   });
 
   describe('persist helpers', () => {
-    it('persistSidebarState writes to localStorage', () => {
+    it('offers no way to save the phone drawer', () => {
       const { result } = renderHook(() =>
         useNavigationStorage(true, basicSections, { onStateLoaded, onLoadFailed })
       );
 
-      act(() => {
-        result.current.persistSidebarState(true);
-      });
-
-      expect(window.localStorage.getItem(STORAGE_KEYS.SIDEBAR_OPEN)).toBe('true');
+      expect(result.current).not.toHaveProperty('persistSidebarState');
     });
 
     it('persistSidebarCollapsedState writes to localStorage', () => {

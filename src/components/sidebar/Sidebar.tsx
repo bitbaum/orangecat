@@ -42,7 +42,7 @@ interface SidebarProps {
     isSidebarCollapsed: boolean;
     collapsedSections: Set<string>;
   };
-  isItemActive: (href: string) => boolean;
+  isItemActive: (href: string, activeFor?: readonly string[]) => boolean;
   toggleSidebar: () => void;
   toggleSidebarCollapse: () => void;
   toggleSection: (sectionId: string) => void;
@@ -149,6 +149,7 @@ export function Sidebar({
               isItemActive={isItemActive}
               toggleSection={toggleSection}
               onNavigate={handleNavigate}
+              onExpand={isDesktop ? toggleSidebarCollapse : undefined}
             />
 
             {/* Desktop Collapse Toggle Button */}

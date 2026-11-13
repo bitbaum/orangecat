@@ -12,19 +12,72 @@
 
 'use client';
 
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, MoreHorizontal } from 'lucide-react';
+import { useRef, useState } from 'react';
 import type { NavSection, NavItem } from '@/hooks/useNavigation';
 import { navigationLabels } from '@/config/navigation';
 import { SidebarNavItem } from './SidebarNavItem';
+import { FlyoutTooltip } from './FlyoutTooltip';
 
 interface SidebarNavigationProps {
   sections: NavSection[];
   bottomItems: NavItem[];
   isExpanded: boolean;
   collapsedSections: Set<string>;
-  isItemActive: (href: string) => boolean;
+  isItemActive: (href: string, activeFor?: readonly string[]) => boolean;
   toggleSection: (sectionId: string) => void;
   onNavigate?: () => void;
+  /** Expands the collapsed rail. When given, a collapsed rail that hides
+   *  sections ends with a "More" button, so the hidden groups stay reachable. */
+  onExpand?: () => void;
+}
+
+/**
+ * The collapsed rail stays short: the main section, the first section and the
+ * one holding the active page. Exported so the rule is testable.
+ */
+export function getVisibleSections(
+  sections: NavSection[],
+  isExpanded: boolean,
+  isItemActive: (href: string, activeFor?: readonly string[]) => boolean
+): NavSection[] {
+  if (isExpanded) {
+    return sections;
+  }
+  return sections.filter(
+    (section, index) =>
+      section.id === 'main' ||
+      index === 0 ||
+      section.items.some(item => item.href && isItemActive(item.href, item.activeFor))
+  );
+}
+
+function RailMoreButton({ onExpand }: { onExpand: () => void }) {
+  const [isHovered, setIsHovered] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  return (
+    <div
+      ref={ref}
+      className="relative"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <div className="mx-2 my-2 border-t border-default" />
+      <button
+        type="button"
+        onClick={onExpand}
+        aria-label={navigationLabels.SIDEBAR_MORE}
+        className="mx-2 flex min-h-11 w-[calc(100%-1rem)] items-center justify-center rounded-md text-fg-secondary transition-colors duration-150 hover:bg-surface-raised hover:text-fg-primary"
+      >
+        <MoreHorizontal className="h-5 w-5 shrink-0" aria-hidden="true" />
+      </button>
+      {isHovered && (
+        <FlyoutTooltip isVisible={true} targetElement={ref.current}>
+          <span className="font-medium">{navigationLabels.SIDEBAR_MORE}</span>
+        </FlyoutTooltip>
+      )}
+    </div>
+  );
 }
 
 export function SidebarNavigation({
@@ -35,15 +88,10 @@ export function SidebarNavigation({
   isItemActive,
   toggleSection,
   onNavigate,
+  onExpand,
 }: SidebarNavigationProps) {
-  const visibleSections = isExpanded
-    ? sections
-    : sections.filter(
-        (section, index) =>
-          section.id === 'main' ||
-          index === 0 ||
-          section.items.some(item => item.href && isItemActive(item.href))
-      );
+  const visibleSections = getVisibleSections(sections, isExpanded, isItemActive);
+  const hidesSections = visibleSections.length < sections.length;
 
   return (
     <>
@@ -115,7 +163,7 @@ export function SidebarNavigation({
                     <SidebarNavItem
                       key={item.name}
                       item={item}
-                      isActive={item.href ? isItemActive(item.href) : false}
+                      isActive={item.href ? isItemActive(item.href, item.activeFor) : false}
                       isExpanded={isExpanded}
                       onNavigate={onNavigate}
                     />
@@ -125,6 +173,7 @@ export function SidebarNavigation({
             </div>
           );
         })}
+        {!isExpanded && hidesSections && onExpand && <RailMoreButton onExpand={onExpand} />}
       </nav>
 
       {/* Bottom Navigation Items */}
@@ -134,7 +183,7 @@ export function SidebarNavigation({
             <SidebarNavItem
               key={item.name}
               item={item}
-              isActive={item.href ? isItemActive(item.href) : false}
+              isActive={item.href ? isItemActive(item.href, item.activeFor) : false}
               isExpanded={isExpanded}
               onNavigate={onNavigate}
             />

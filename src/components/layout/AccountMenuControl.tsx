@@ -14,9 +14,9 @@ import '@bitbaum/accountkit/styles.css';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { BarChart3, Handshake, Settings, UserRound } from 'lucide-react';
 import { AccountMenu, type AccountGroup } from '@bitbaum/accountkit';
 import { IDENTITIES_COPY, isUnreachableEmail } from '@/config/identities';
+import { accountNavItems } from '@/config/navigation';
 import { ROUTES } from '@/config/routes';
 import { getThemeModeOption } from '@/config/theme';
 import { useAuth } from '@/hooks/useAuth';
@@ -55,30 +55,22 @@ export default function AccountMenuControl() {
     {
       id: 'places',
       items: [
-        {
-          id: 'dashboard',
-          label: 'Dashboard',
-          href: ROUTES.DASHBOARD.HOME,
-          icon: <BarChart3 className={ICON} />,
-        },
-        {
-          id: 'projects',
-          label: 'My projects',
-          href: ROUTES.DASHBOARD.PROJECTS,
-          icon: <Handshake className={ICON} />,
-        },
-        {
-          id: 'page',
-          label: 'Your page',
-          href: ROUTES.PROFILE.SELF,
-          icon: <UserRound className={ICON} />,
-        },
-        {
-          id: 'profile',
-          label: 'Edit profile',
-          href: ROUTES.DASHBOARD.INFO_EDIT,
-          icon: <Settings className={ICON} />,
-        },
+        // The places under "you" (config/navigation.ts, accountNavItems). The
+        // sidebar no longer lists them; Dashboard and My projects no longer
+        // sit here under a chart and a handshake, named unlike the sidebar.
+        ...accountNavItems.flatMap(item => {
+          const Icon = item.icon;
+          return item.href
+            ? [
+                {
+                  id: item.href,
+                  label: item.name,
+                  href: item.href,
+                  icon: Icon ? <Icon className={ICON} /> : undefined,
+                },
+              ]
+            : [];
+        }),
       ],
     },
     {

@@ -7,7 +7,7 @@
  *   `counter: 'messages'` — but the bar never read the counter. The Messages
  *   tab was an icon and a word, with no count and no count in its name, so a
  *   phone showed unread messages nowhere.
- * - The raised tab's label ('Receive' signed in, 'Create' signed out) was
+ * - The raised tab's label ('Money' signed in, 'Create' signed out) was
  *   pushed to the bottom of its button with `mt-auto` while every other label
  *   sits under a centred icon: 640px against 634px. Its circle is lifted out
  *   of flow, so an icon-sized spacer has to hold the icon's place.
@@ -62,7 +62,7 @@ describe('Messages tab carries the unread count', () => {
   it('puts the count on no other tab', () => {
     mockUnread = 3;
     render(<MobileBottomNav />);
-    for (const name of ['Cat', 'Home', 'Receive', 'Create']) {
+    for (const name of ['Cat', 'Home', 'Money', 'Create']) {
       expect(screen.getByRole('button', { name })).not.toHaveTextContent('3');
     }
   });
@@ -76,8 +76,8 @@ describe('the raised tab labels on the same line as the others', () => {
       .sort();
 
   it.each([
-    ['signed in, full', { id: 'user-1' }, false, 'Receive', 'Home'],
-    ['signed in, compact', { id: 'user-1' }, true, 'Receive', 'Home'],
+    ['signed in, full', { id: 'user-1' }, false, 'Money', 'Home'],
+    ['signed in, compact', { id: 'user-1' }, true, 'Money', 'Home'],
     ['signed out, full', null, false, 'Create', 'Home'],
   ])('%s', (_case, user, compact, raised, neighbour) => {
     mockUser = user;
