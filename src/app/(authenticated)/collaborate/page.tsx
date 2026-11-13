@@ -9,7 +9,8 @@
  */
 import React, { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Handshake, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { useAuth } from '@/hooks/useAuth';
 import Button from '@/components/ui/Button';
 import { NoRolesYet } from '@/components/collaborate/NoRolesYet';
@@ -149,24 +150,21 @@ export default function CollaboratePage() {
 
   return (
     <div className="oc-page">
-      <div className="oc-page-container oc-page-stack max-w-shell pb-20 sm:pb-8">
-        <header className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="flex items-center gap-2 text-2xl font-semibold text-fg-primary">
-              <Handshake className="h-6 w-6 text-fg-secondary" />
-              Collaborate
-            </h1>
-            <p className="mt-1 text-sm text-fg-secondary">
-              Open roles on projects looking for collaborators
-            </p>
-          </div>
-          {myProjects.length > 0 && (
-            <Button onClick={() => setShowForm(v => !v)}>
-              <Plus className="mr-1.5 h-4 w-4" />
-              Post a role
-            </Button>
-          )}
-        </header>
+      {/* The shared page header and the dashboard's one column: a list of
+          roles is not a grid, and the title used its own size and typeface. */}
+      <div className="oc-page-container oc-page-stack mx-auto max-w-2xl pb-20 sm:pb-8">
+        <PageHeader
+          title="Collaborate"
+          subtitle="Open roles on projects looking for collaborators"
+          actions={
+            myProjects.length > 0 ? (
+              <Button variant="primary" onClick={() => setShowForm(v => !v)} className="gap-2">
+                <Plus className="h-4 w-4" aria-hidden="true" />
+                Post a role
+              </Button>
+            ) : undefined
+          }
+        />
 
         {showForm && (
           <Card className="oc-surface-padding">
@@ -222,7 +220,7 @@ export default function CollaboratePage() {
         )}
 
         {loading ? (
-          <p className="text-sm text-fg-tertiary">Loading roles…</p>
+          <p className="text-sm text-fg-secondary">Loading roles…</p>
         ) : roles.length === 0 ? (
           <NoRolesYet
             hasProjects={myProjects.length > 0}
@@ -239,7 +237,7 @@ export default function CollaboratePage() {
                       <div className="min-w-0">
                         <h3 className="font-medium text-fg-primary">{role.role_title}</h3>
                         {role.projects?.title && (
-                          <p className="text-sm text-fg-tertiary">on {role.projects.title}</p>
+                          <p className="text-sm text-fg-secondary">on {role.projects.title}</p>
                         )}
                       </div>
                       <span className="shrink-0 rounded-full bg-surface-raised px-2.5 py-0.5 text-xs text-fg-secondary">
@@ -254,7 +252,7 @@ export default function CollaboratePage() {
                         {role.skills.map(s => (
                           <span
                             key={s}
-                            className="rounded-full border border-border-default px-2 py-0.5 text-xs text-fg-tertiary"
+                            className="rounded-full border border-border-default px-2 py-0.5 text-xs text-fg-secondary"
                           >
                             {s}
                           </span>

@@ -35,6 +35,23 @@ function ShowMore({ params, hasMore }: { params: DiscoverParams; hasMore: boolea
 
 function Shelf({ view }: { view: Extract<DiscoverView, { mode: 'shelf' }> }) {
   const listings = sum(view.counts);
+  // An empty shelf means the listings did not load, not that the platform is
+  // empty: "That's everything for now" over zero listings read as a verdict.
+  if (listings === 0 && view.fresh.length === 0) {
+    return (
+      <div className="oc-discover-empty">
+        <p className="font-heading text-xl font-semibold text-fg-primary">
+          Nothing could be loaded.
+        </p>
+        <p className="mt-2 text-fg-secondary">The listings did not arrive. Try again.</p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Link href={ROUTES.DISCOVER} className="oc-discover-more">
+            Try again
+          </Link>
+        </div>
+      </div>
+    );
+  }
   return (
     <>
       <DiscoverRail title="Just listed" hits={view.fresh} />

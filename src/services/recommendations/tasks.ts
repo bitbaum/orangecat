@@ -86,7 +86,7 @@ export const TASK_DEFINITIONS: TaskDefinition[] = [
   // ==================== CRITICAL: Profile Setup ====================
   {
     id: 'set-username',
-    title: 'Set Your Username',
+    title: 'Set your username',
     description: 'Choose a unique username for your profile URL',
     priority: 'critical',
     category: 'setup',
@@ -96,7 +96,7 @@ export const TASK_DEFINITIONS: TaskDefinition[] = [
   },
   {
     id: 'set-display-name',
-    title: 'Add Your Display Name',
+    title: 'Add your display name',
     description: 'Other people currently see a string of hex where your name should be',
     priority: 'high',
     category: 'setup',
@@ -120,7 +120,7 @@ export const TASK_DEFINITIONS: TaskDefinition[] = [
   },
   {
     id: 'add-wallet',
-    title: 'Add Bitcoin Wallet',
+    title: 'Add a Bitcoin wallet',
     description: 'Connect a wallet when you want to receive Bitcoin payments or funding',
     priority: 'medium',
     category: 'setup',
@@ -132,7 +132,7 @@ export const TASK_DEFINITIONS: TaskDefinition[] = [
   // ==================== HIGH: Complete Profile ====================
   {
     id: 'add-bio',
-    title: 'Add Your Bio',
+    title: 'Add your bio',
     description: 'Tell people about yourself and your mission',
     priority: 'high',
     category: 'setup',
@@ -142,7 +142,7 @@ export const TASK_DEFINITIONS: TaskDefinition[] = [
   },
   {
     id: 'add-avatar',
-    title: 'Upload Profile Photo',
+    title: 'Upload a profile photo',
     description: 'Add a profile photo to build trust with supporters',
     priority: 'high',
     category: 'setup',
@@ -155,6 +155,9 @@ export const TASK_DEFINITIONS: TaskDefinition[] = [
   {
     id: 'chat-with-cat',
     title: 'Let your Cat set you up',
+    // The one step that does most of the others: first, so a new account's
+    // visible pair is not two profile chores.
+    leads: true,
     description:
       'Say who you are and what you need. It drafts your profile, a funding page and a website, and looks for people who might back you — you confirm each step.',
     priority: 'high',
@@ -184,7 +187,7 @@ export const TASK_DEFINITIONS: TaskDefinition[] = [
   // ==================== HIGH: First Entity Creation ====================
   {
     id: 'create-first-project',
-    title: 'Launch Your First Project',
+    title: 'Launch your first project',
     description: 'Launch a project and start receiving support in just a few minutes',
     priority: 'high',
     category: 'create',
@@ -196,7 +199,7 @@ export const TASK_DEFINITIONS: TaskDefinition[] = [
   },
   {
     id: 'create-first-product',
-    title: 'List Your First Product',
+    title: 'List your first product',
     description: 'Start selling goods and services for Bitcoin',
     priority: 'high',
     category: 'create',
@@ -211,7 +214,7 @@ export const TASK_DEFINITIONS: TaskDefinition[] = [
   },
   {
     id: 'create-first-service',
-    title: 'Offer Your First Service',
+    title: 'Offer your first service',
     description: 'Monetize your skills and expertise',
     priority: 'high',
     category: 'create',
@@ -228,7 +231,7 @@ export const TASK_DEFINITIONS: TaskDefinition[] = [
   // ==================== MEDIUM: Engagement ====================
   {
     id: 'create-wishlist',
-    title: 'Create a Wishlist',
+    title: 'Create a wishlist',
     description: 'Let supporters fund specific items you need',
     priority: 'medium',
     category: 'create',
@@ -239,7 +242,7 @@ export const TASK_DEFINITIONS: TaskDefinition[] = [
   },
   {
     id: 'add-wishlist-items',
-    title: 'Add Items to Your Wishlist',
+    title: 'Add items to your wishlist',
     description: 'Your wishlist is empty. Add items supporters can fund.',
     priority: 'medium',
     category: 'engage',
@@ -249,7 +252,7 @@ export const TASK_DEFINITIONS: TaskDefinition[] = [
   },
   {
     id: 'create-cause',
-    title: 'Support a Cause',
+    title: 'Support a cause',
     description: 'Create a cause page to raise funds for something you believe in',
     priority: 'medium',
     category: 'create',
@@ -263,7 +266,7 @@ export const TASK_DEFINITIONS: TaskDefinition[] = [
   },
   {
     id: 'join-group',
-    title: 'Join or Create a Group',
+    title: 'Join or create a group',
     description: 'Connect with like-minded people and collaborate',
     priority: 'medium',
     category: 'engage',
@@ -273,7 +276,7 @@ export const TASK_DEFINITIONS: TaskDefinition[] = [
   },
   {
     id: 'create-event',
-    title: 'Organize an Event',
+    title: 'Organize an event',
     description: 'Host a meetup or gathering for your community',
     priority: 'medium',
     category: 'create',
@@ -289,7 +292,7 @@ export const TASK_DEFINITIONS: TaskDefinition[] = [
   // ==================== LOW: Growth & Exploration ====================
   {
     id: 'explore-projects',
-    title: 'Explore Other Projects',
+    title: 'Explore other projects',
     description: 'Discover and support projects in the community',
     priority: 'low',
     category: 'grow',
@@ -299,7 +302,7 @@ export const TASK_DEFINITIONS: TaskDefinition[] = [
   },
   {
     id: 'share-profile',
-    title: 'Share Your Profile',
+    title: 'Share your profile',
     description: 'Let your network know about your Bitcoin profile',
     priority: 'low',
     category: 'grow',
@@ -312,7 +315,7 @@ export const TASK_DEFINITIONS: TaskDefinition[] = [
   },
   {
     id: 'find-collaborators',
-    title: 'Find Collaborators',
+    title: 'Find collaborators',
     description: 'Connect with people who can help grow your projects',
     priority: 'low',
     category: 'grow',
@@ -322,7 +325,7 @@ export const TASK_DEFINITIONS: TaskDefinition[] = [
   },
   {
     id: 'post-update',
-    title: 'Post an Update',
+    title: 'Post an update',
     description: 'Keep your supporters informed about your progress',
     priority: 'low',
     category: 'engage',

@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
+import { Plus } from 'lucide-react';
 import { redirect } from 'next/navigation';
-import { PageHeading } from '@/components/layout/PageHeading';
+import { PageHeader } from '@/components/layout/PageHeader';
+import Button from '@/components/ui/Button';
 import { MyThingsList } from '@/components/things/MyThingsList';
 import { ROUTES } from '@/config/routes';
 import { THINGS_PAGE } from '@/config/things';
@@ -28,19 +29,20 @@ export default async function MyThingsPage() {
 
   return (
     <div className="oc-page">
-      <div className="oc-page-container oc-page-stack pb-20 sm:pb-8">
-        <header className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <PageHeading>{THINGS_PAGE.title}</PageHeading>
-            <p className="mt-1 text-sm text-fg-secondary">{THINGS_PAGE.lede}</p>
-          </div>
-          <Link
-            href={ROUTES.CREATE}
-            className="inline-flex min-h-11 items-center rounded-lg bg-accent-warm px-4 text-sm font-semibold text-on-accent"
-          >
-            Create
-          </Link>
-        </header>
+      {/* One column, the dashboard's width: this is a list, not a grid. The
+          shared page header, and an in-app primary action (the warm accent is
+          for bringing someone in, not for actions inside the app). */}
+      <div className="oc-page-container oc-page-stack mx-auto max-w-2xl pb-20 sm:pb-8">
+        <PageHeader
+          title={THINGS_PAGE.title}
+          subtitle={THINGS_PAGE.lede}
+          actions={
+            <Button href={ROUTES.CREATE} variant="primary" className="gap-2">
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              Create
+            </Button>
+          }
+        />
         <MyThingsList things={things} />
       </div>
     </div>

@@ -165,7 +165,7 @@ export function ContextSwitcher({
           onClick={() => setIsOpen(!isOpen)}
           aria-label="Switch context"
           aria-expanded={isOpen}
-          className="flex-shrink-0 rounded-md p-2 transition-colors hover:bg-surface-raised"
+          className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md transition-colors hover:bg-surface-raised"
         >
           <ChevronDown
             className={cn('w-4 h-4 text-fg-tertiary transition-transform', isOpen && 'rotate-180')}
@@ -180,7 +180,7 @@ export function ContextSwitcher({
             <Link
               href={publicProfilePath(profile.username)}
               onClick={() => setIsOpen(false)}
-              className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-surface-raised transition-colors"
+              className="w-full flex min-h-11 items-center gap-3 px-3 py-2 text-left hover:bg-surface-raised transition-colors"
             >
               <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-surface-raised">
                 <User className="w-4 h-4 text-fg-secondary" />

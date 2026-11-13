@@ -87,6 +87,8 @@ export interface TaskDefinition {
   condition: (context: UserContext) => boolean;
   /** Optional: entity types this task relates to */
   relatedEntities?: EntityType[];
+  /** Shown before every other task, whatever its priority. */
+  leads?: boolean;
 }
 
 /**

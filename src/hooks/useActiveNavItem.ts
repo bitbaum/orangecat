@@ -9,7 +9,7 @@ import { isNavHrefActive } from '@/lib/navigation/isActive';
 interface UseActiveNavItemReturn {
   activeSection: string | null;
   activeItem: string | null;
-  isItemActive: (href: string) => boolean;
+  isItemActive: (href: string, activeFor?: readonly string[]) => boolean;
 }
 
 /**
@@ -23,9 +23,12 @@ export function useActiveNavItem(sections: NavSection[]): UseActiveNavItemReturn
   const pathname = usePathname();
 
   const isItemActive = useCallback(
-    (href: string) => {
+    (href: string, activeFor?: readonly string[]) => {
       if (!pathname || !href) {
         return false;
+      }
+      if (activeFor && isNavHrefActive(pathname, null, activeFor)) {
+        return true;
       }
       // Sidebar-specific exception: when no more specific entry matches,
       // /dashboard owns its subtree. (Header/bottom-nav use the strict
@@ -59,7 +62,7 @@ export function useActiveNavItem(sections: NavSection[]): UseActiveNavItemReturn
           dashboardSectionId = section.id;
           dashboardItemHref = item.href;
         }
-        if (isNavHrefActive(pathname, item.href)) {
+        if (isNavHrefActive(pathname, item.href, item.activeFor)) {
           return { activeSection: section.id, activeItem: item.href };
         }
       }

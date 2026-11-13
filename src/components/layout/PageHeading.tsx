@@ -13,7 +13,10 @@ interface PageHeadingProps {
 }
 
 const SIZE = {
-  page: 'text-2xl sm:text-3xl md:text-4xl',
+  // The same scale as `.oc-page-title` (globals.css), which PageHeader uses:
+  // two "canonical" titles one step apart at md made money pages and list
+  // pages disagree on the size of a page's name.
+  page: 'text-2xl sm:text-3xl',
   display: 'text-balance text-3xl sm:text-4xl lg:text-5xl',
 } as const;
 

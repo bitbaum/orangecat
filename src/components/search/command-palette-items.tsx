@@ -16,7 +16,7 @@ import type { ComponentType } from 'react';
 import { User } from 'lucide-react';
 import { createSearch, type Range, type SearchSpec } from '@bitbaum/searchkit';
 import { ENTITY_REGISTRY, ENTITY_TYPES } from '@/config/entity-registry';
-import { sidebarSections, type NavigationItem } from '@/config/navigation';
+import { accountNavItems, sidebarSections, type NavigationItem } from '@/config/navigation';
 import type { Thing } from '@/domain/things/service';
 import type { PublicHit } from '@/services/search/public-search';
 
@@ -86,7 +86,10 @@ export function buildPages(): PaletteItem[] {
     seen.add(item.href);
     out.push(item);
   };
-  for (const section of sidebarSections) {
+  // The account menu's places (Settings, Help…) live there, not in the
+  // sidebar, but are still found from the palette.
+  const sections = [...sidebarSections, { title: 'Account', items: accountNavItems }];
+  for (const section of sections) {
     for (const item of flatten(section.items)) {
       if (!item.href || item.external || item.comingSoon || !item.icon) {
         continue;

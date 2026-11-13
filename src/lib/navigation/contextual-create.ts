@@ -1,120 +1,29 @@
 /**
- * Contextual Create Action Mapper
+ * Which kind of thing the current page is about, for the Create sheet.
  *
- * Maps current pathname to appropriate entity creation action.
- * Uses ENTITY_REGISTRY as single source of truth.
+ * The tab bar's plus used to change its name and its behaviour from page to
+ * page: "Product" on the store, "Organization" on Groups, and on Messages it
+ * opened the public post composer. It is now always "Create" and always opens
+ * the sheet; the page you are on only puts its own kind first inside it.
  *
- * Used by MobileBottomNav to determine what the "+" button should create
- * based on the user's current location in the app.
+ * Uses ENTITY_REGISTRY as the single source of truth.
  */
 
-import { ENTITY_REGISTRY, EntityType } from '@/config/entity-registry';
-import { ROUTES } from '@/config/routes';
+import { ENTITY_REGISTRY, type EntityType } from '@/config/entity-registry';
 
-type CreateActionType = 'post' | 'entity' | 'menu';
+// Most specific base path first, so a nested list wins over its parent.
+const ROUTE_TO_ENTITY: ReadonlyArray<[string, EntityType]> = (
+  Object.entries(ENTITY_REGISTRY) as Array<[EntityType, { basePath: string }]>
+)
+  .map(([type, meta]) => [meta.basePath, type] as [string, EntityType])
+  .sort((a, b) => b[0].length - a[0].length);
 
-/** Timeline composer deep-link shared by every non-entity create action. */
-const COMPOSE_HREF = `${ROUTES.TIMELINE}?compose=true`;
-
-interface ContextualCreateAction {
-  /** Type of create action */
-  type: CreateActionType;
-  /** Entity type if type is 'entity' */
-  entityType?: EntityType;
-  /** URL to navigate to */
-  href: string;
-  /** Label for the action */
-  label: string;
-  /** Whether to open post composer (for 'post' type) */
-  openComposer?: boolean;
-}
-
-/**
- * Route prefix to entity type mapping
- * Maps dashboard routes to their corresponding entity types
- * Built dynamically from ENTITY_REGISTRY for maintainability
- */
-function buildRouteToEntityMap(): Map<string, EntityType> {
-  const routeMap = new Map<string, EntityType>();
-
-  // Build from entity registry (SSOT)
-  for (const [entityType, metadata] of Object.entries(ENTITY_REGISTRY)) {
-    routeMap.set(metadata.basePath, entityType as EntityType);
-  }
-
-  return routeMap;
-}
-
-const ROUTE_TO_ENTITY = buildRouteToEntityMap();
-
-/**
- * Get contextual create action based on current pathname
- *
- * @param pathname - Current route pathname
- * @returns ContextualCreateAction with type, href, and label
- */
-export function getContextualCreateAction(pathname: string): ContextualCreateAction {
-  // The global plus always offers writing choices on home and timeline.
-  // A post-only shortcut hides the existing article editor from mobile users.
-  if (pathname === ROUTES.TIMELINE || pathname === ROUTES.DASHBOARD.HOME) {
-    return { type: 'menu', href: ROUTES.CREATE, label: 'Create' };
-  }
-
-  // Check if we're on an entity management page
-  // Sort by path length (descending) to match most specific routes first
-  const sortedRoutes = Array.from(ROUTE_TO_ENTITY.entries()).sort(
-    (a, b) => b[0].length - a[0].length
-  );
-
-  for (const [route, entityType] of sortedRoutes) {
-    if (pathname.startsWith(route)) {
-      const metadata = ENTITY_REGISTRY[entityType];
-      return {
-        type: 'entity',
-        entityType,
-        href: metadata.createPath,
-        label: metadata.name,
-      };
+/** The entity type whose list (or one of its pages) is open, if any. */
+export function getContextualCreateType(pathname: string): EntityType | undefined {
+  for (const [route, entityType] of ROUTE_TO_ENTITY) {
+    if (pathname === route || pathname.startsWith(`${route}/`)) {
+      return entityType;
     }
   }
-
-  // Messages page - create a post (natural continuation of communication)
-  if (pathname.startsWith(ROUTES.MESSAGES)) {
-    return {
-      type: 'post',
-      href: COMPOSE_HREF,
-      label: 'Post',
-      openComposer: true,
-    };
-  }
-
-  // Profile pages - show menu (user might want to create various things)
-  if (pathname.startsWith('/profiles/') || pathname === ROUTES.DASHBOARD.INFO) {
-    return {
-      type: 'menu',
-      href: COMPOSE_HREF,
-      label: 'Create',
-    };
-  }
-
-  // Public routes (Discover, Community, Home) - show menu with all options
-  if (
-    pathname === ROUTES.DISCOVER ||
-    pathname === ROUTES.COMMUNITY ||
-    pathname === ROUTES.HOME ||
-    pathname.startsWith('/browse')
-  ) {
-    return {
-      type: 'menu',
-      href: COMPOSE_HREF,
-      label: 'Create',
-    };
-  }
-
-  // Default: show menu (safest option for unknown routes)
-  return {
-    type: 'menu',
-    href: COMPOSE_HREF,
-    label: 'Create',
-  };
+  return undefined;
 }

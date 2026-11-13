@@ -8,6 +8,7 @@ import { useIsAuthRoute } from '@/hooks/useRouteContext';
 import { useMobileMenuAnimation } from '@/hooks/useMobileMenuAnimation';
 import { authNavigationItems, getHeaderNavigationItems } from '@/config/navigation';
 import { getAuthStatus } from '@/lib/auth/utils';
+import { ROUTES } from '@/config/routes';
 import { getHeaderClasses } from '@/lib/ui/header-utils';
 import { HEADER_DIMENSIONS, HEADER_SPACING, VISITOR_MENU_ID } from '@/constants/header';
 import Logo from './Logo';
@@ -77,6 +78,10 @@ export function Header({
     onClose: mobileMenu.close,
   });
 
+  // Signed in, the mark leads to the dashboard: "/" only redirects a member
+  // to the Cat, so "home" meant a third place.
+  const logoHref = authStatus.authenticated ? ROUTES.DASHBOARD.HOME : undefined;
+
   // Header classes with scroll behavior
   const headerClasses = getHeaderClasses(isScrolled, isHidden, className);
 
@@ -109,8 +114,8 @@ export function Header({
 
             {/* Logo - Icon only on mobile, text on larger screens */}
             <div className="flex-shrink-0 min-w-0">
-              <Logo showText={false} size="sm" className="sm:hidden" />
-              <Logo showText={true} size="md" className="hidden sm:inline-flex" />
+              <Logo showText={false} size="sm" className="sm:hidden" href={logoHref} />
+              <Logo showText={true} size="md" className="hidden sm:inline-flex" href={logoHref} />
             </div>
 
             {/* Desktop Navigation Links — anonymous marketing surfaces only.

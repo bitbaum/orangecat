@@ -94,18 +94,13 @@ export function SidebarNavItem({ item, isActive, isExpanded, onNavigate }: Sideb
           <span className="absolute right-1 top-1 h-2.5 w-2.5 rounded-sm border-2 border-surface-page bg-fg-primary"></span>
         )}
 
-        {/* Expanded (mobile): Show text labels inline */}
+        {/* Expanded: one line per row, the name only. The description stays
+            in the config for the palette; under every row it doubled the
+            list's height and mostly repeated the name. */}
         {isExpanded && (
-          <div className="flex-1 min-w-0 ml-3">
-            <span className="whitespace-nowrap overflow-hidden text-ellipsis block">
-              {item.name}
-            </span>
-            {item.description && (
-              <span className="block text-xs text-fg-secondary mt-0.5 leading-tight line-clamp-1">
-                {item.description}
-              </span>
-            )}
-          </div>
+          <span className="ml-3 block min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap">
+            {item.name}
+          </span>
         )}
 
         {/* Active indicator - only visible on mobile expanded */}

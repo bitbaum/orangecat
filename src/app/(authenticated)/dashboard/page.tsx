@@ -11,6 +11,7 @@ import {
 } from '@/components/dashboard/sections';
 import { CatNudges } from '@/components/dashboard/CatNudges';
 import { TheDoor } from '@/components/map/TheDoor';
+import { DOOR_EXAMPLES } from '@/config/cat-door';
 import { PendingActionsCard } from '@/components/ai-chat/PendingActionsCard';
 import { useDashboard } from './useDashboard';
 
@@ -70,6 +71,10 @@ export default function DashboardPage() {
     return null;
   }
 
+  // Projects are the one kind this page loads; with none, the door (and its
+  // examples) is the way in, and an empty "Your projects" box is not shown.
+  const ownsNothing = safeProjects.length === 0;
+
   // One column, in the order a person asks: does anything need me (the
   // header line and the Cat's pending questions), what do I want to do (the
   // door), what could I do next (setup, while unfinished, and the Cat's
@@ -87,11 +92,12 @@ export default function DashboardPage() {
               profile={profile}
               waiting={pendingActionsLoaded ? pendingActions.length : undefined}
               totalDrafts={totalDrafts}
+              ownsNothing={ownsNothing}
             />
             {/* The door: one sentence in, the right thing out. The Cat answers
                 with a draft card, so this is the fastest route from wanting to
                 having. */}
-            <TheDoor />
+            <TheDoor examples={ownsNothing ? DOOR_EXAMPLES : undefined} />
           </div>
 
           {pendingActions.length > 0 && (

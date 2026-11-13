@@ -82,7 +82,7 @@ export function SearchTrigger({ compact = false, className }: SearchTriggerProps
             <Search className="h-4 w-4 flex-shrink-0" aria-hidden />
             <span className="truncate">{PLACEHOLDER}</span>
           </span>
-          <kbd className="hidden flex-shrink-0 items-center rounded border border-subtle bg-surface-page px-1.5 py-0.5 text-2xs font-medium text-fg-tertiary sm:inline-flex">
+          <kbd className="hidden flex-shrink-0 items-center rounded border border-subtle bg-surface-page px-1.5 py-0.5 text-2xs font-medium text-fg-secondary sm:inline-flex">
             ⌘K
           </kbd>
         </button>

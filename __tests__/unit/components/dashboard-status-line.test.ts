@@ -4,7 +4,7 @@ import { dashboardStatusLine } from '@/components/dashboard/sections/DashboardHe
 // The line under the dashboard greeting answers "does anything need me?".
 describe('dashboardStatusLine', () => {
   it('says plainly when nothing is waiting', () => {
-    expect(dashboardStatusLine(0, 0)).toBe('No pending Cat approvals.');
+    expect(dashboardStatusLine(0, 0)).toBe('');
   });
   it('does not announce an empty state before approvals load', () => {
     expect(dashboardStatusLine(undefined, 0)).toBe('Checking Cat approvals…');

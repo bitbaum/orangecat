@@ -1030,7 +1030,7 @@
   }
   /* A searched-for word inside a result: weight, not colour. */
   .oc-search-mark {
-    @apply bg-transparent font-semibold text-fg-primary underline decoration-accent-warm/60 decoration-2 underline-offset-2;
+    @apply bg-transparent font-semibold text-fg-primary underline decoration-fg-primary/50 decoration-2 underline-offset-2;
   }
 
   @media (prefers-reduced-motion: reduce) {

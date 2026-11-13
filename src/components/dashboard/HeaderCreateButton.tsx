@@ -5,7 +5,14 @@ import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { HeaderIconButton } from '@/components/layout/HeaderIconButton';
-import { CREATE_OPTIONS, shouldShowDivider } from '@/config/create-options';
+import {
+  CREATE_CATEGORY_LABELS,
+  CREATE_OPTIONS,
+  CREATE_PAGE,
+  groupCreateOptions,
+} from '@/config/create-options';
+import { ROUTES } from '@/config/routes';
+import { CreateOptionRowContent } from '@/components/create/CreateOptionRow';
 import { VoiceCreate } from '@/components/create/VoiceCreate';
 import {
   DropdownMenu,
@@ -39,22 +46,25 @@ export function HeaderCreateButton() {
       >
         <DropdownMenuLabel>Create new</DropdownMenuLabel>
         <VoiceCreate onNavigate={() => setIsOpen(false)} />
-        {CREATE_OPTIONS.map((option, index) => (
-          <div key={option.href}>
-            <DropdownMenuItem asChild className="min-h-11 gap-3 px-3 py-2.5">
-              <Link href={option.href}>
-                <div className="oc-icon-tile h-9 w-9 shrink-0">
-                  <option.icon className={cn('h-4 w-4', option.color)} aria-hidden />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="font-medium text-fg-primary">{option.name}</div>
-                  <div className="text-xs text-fg-secondary">{option.description}</div>
-                </div>
-              </Link>
-            </DropdownMenuItem>
-            {shouldShowDivider(option, CREATE_OPTIONS[index + 1]) && <DropdownMenuSeparator />}
+        {groupCreateOptions(CREATE_OPTIONS).map(group => (
+          <div key={group.category}>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-xs font-semibold uppercase tracking-wider text-fg-secondary">
+              {CREATE_CATEGORY_LABELS[group.category]}
+            </DropdownMenuLabel>
+            {group.items.map(option => (
+              <DropdownMenuItem key={option.href} asChild className="min-h-11 gap-3 px-3 py-2.5">
+                <Link href={option.href}>
+                  <CreateOptionRowContent option={option} />
+                </Link>
+              </DropdownMenuItem>
+            ))}
           </div>
         ))}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild className="min-h-11 px-3 text-sm text-fg-secondary">
+          <Link href={ROUTES.WHAT_YOU_CAN_DO}>{CREATE_PAGE.browseAll}</Link>
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

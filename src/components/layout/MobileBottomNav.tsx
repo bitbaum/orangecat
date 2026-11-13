@@ -5,10 +5,9 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useShellPathname } from '@/hooks/useShellPathname';
 import { useBottomNavScroll } from '@/hooks/useHeaderScroll';
-import { useComposer } from '@/contexts/ComposerContext';
 import { cn } from '@/lib/utils';
-import { getRouteChrome, getRouteSurface, ROUTES } from '@/config/routes';
-import { getContextualCreateAction } from '@/lib/navigation/contextual-create';
+import { getRouteChrome, getRouteSurface } from '@/config/routes';
+import { getContextualCreateType } from '@/lib/navigation/contextual-create';
 import { isNavHrefActive } from '@/lib/navigation/isActive';
 import { mobileTabBar, mobileTabBarAnonymous } from '@/config/navigation';
 import { MobileCreateSheet } from '@/components/create/MobileCreateSheet';
@@ -27,7 +26,6 @@ const MobileBottomNav = React.memo(function MobileBottomNav() {
   const router = useRouter();
   const { user, hydrated } = useAuth();
   const { isCompact } = useBottomNavScroll();
-  const { openComposer } = useComposer();
   const [showCreateSheet, setShowCreateSheet] = useState(false);
   const createTriggerRef = useRef<HTMLButtonElement>(null);
   // Shared with the floating Cat button: both step aside while typing.
@@ -63,8 +61,8 @@ const MobileBottomNav = React.memo(function MobileBottomNav() {
     return null;
   }
 
-  // Get contextual create action for the "+" button
-  const createAction = getContextualCreateAction(pathname);
+  // The kind this page is about goes first inside the Create sheet.
+  const suggestedCreateType = getContextualCreateType(pathname);
 
   // Authenticated users ALWAYS see the same 5 items for consistency
   // Non-authenticated users see simplified nav
@@ -73,23 +71,16 @@ const MobileBottomNav = React.memo(function MobileBottomNav() {
   // Active state uses isNavHrefActive — the same SSOT as sidebar + desktop
   // header nav, so a route reads as "active" identically across all three
   // chrome surfaces.
-  const isActiveHref = (href: string) => isNavHrefActive(pathname, href);
+  const isActiveHref = (href: string, activeFor?: readonly string[]) =>
+    isNavHrefActive(pathname, href, activeFor);
 
   // SSOT: the slot list lives in src/config/navigation.ts alongside the sidebar,
   // so "what deserves a thumb" is one decision in one file rather than a second
   // list here that quietly drifts from the rest of the chrome.
   const navItems = isAuthenticated ? mobileTabBar : mobileTabBarAnonymous;
 
-  const handleCreate = () => {
-    if (createAction.type === 'post') {
-      openComposer();
-      router.push(`${ROUTES.TIMELINE}?compose=true`);
-    } else if (createAction.type === 'entity') {
-      router.push(createAction.href);
-    } else {
-      setShowCreateSheet(true);
-    }
-  };
+  // One name, one behaviour, on every page: the plus opens the sheet.
+  const handleCreate = () => setShowCreateSheet(true);
 
   return (
     <>
@@ -134,8 +125,8 @@ const MobileBottomNav = React.memo(function MobileBottomNav() {
             const Icon = item.icon;
             // Profile collapsed /profile + /profiles; nothing in the bar needs
             // that special case now, so every slot uses the shared active test.
-            const isActive = isActiveHref(item.href);
-            const label = item.opensCreate ? createAction.label : item.name;
+            const isActive = isActiveHref(item.href, item.activeFor);
+            const label = item.name;
             const count = item.counter === 'messages' ? unreadMessages : 0;
             // Worded like the header's Messages button, so a screen reader
             // hears the count from either.
@@ -172,7 +163,7 @@ const MobileBottomNav = React.memo(function MobileBottomNav() {
                   // LABELLED, like every other slot. It rendered as a bare
                   // black circle holding a QR glyph — no text, its only
                   // accessible name on the aria-label — so the most prominent
-                  // control in the bar was the one nobody could name. "Receive"
+                  // control in the bar was the one nobody could name. "Money"
                   // is not guessable from a QR icon.
                   <>
                     <div
@@ -255,6 +246,7 @@ const MobileBottomNav = React.memo(function MobileBottomNav() {
         isOpen={showCreateSheet}
         onClose={() => setShowCreateSheet(false)}
         returnFocusRef={createTriggerRef}
+        suggestedType={suggestedCreateType}
       />
     </>
   );

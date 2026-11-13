@@ -92,8 +92,12 @@ export function getRecommendedTasks(
     return true;
   });
 
-  // Sort by priority, then category
+  // A leading task first, then by priority, then category.
   eligibleTasks.sort((a, b) => {
+    const leadDiff = Number(Boolean(b.leads)) - Number(Boolean(a.leads));
+    if (leadDiff !== 0) {
+      return leadDiff;
+    }
     const priorityDiff = PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority];
     if (priorityDiff !== 0) {
       return priorityDiff;

@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { MessageSquare, Plus } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { ROUTES } from '@/config/routes';
@@ -23,19 +22,17 @@ export function MessagesEmptyPane({ onNewChat }: { onNewChat: () => void }) {
             Private conversations with people on OrangeCat — about a project, a sale, a loan, or
             anything else. Pick one on the left, start a new one, or bring Cat in to help.
           </p>
-          <Button
-            onClick={onNewChat}
-            className="bg-fg-primary text-fg-inverted hover:bg-fg-primary/90"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            New chat
-          </Button>
-          <Link
-            href={ROUTES.DASHBOARD.CAT}
-            className="ml-2 inline-flex min-h-10 pointer-coarse:min-h-11 items-center rounded-md border border-default px-4 text-sm font-medium text-fg-primary hover:bg-surface-raised"
-          >
-            Talk to Cat
-          </Link>
+          {/* Outline, both: the list header's New is this screen's one
+              primary, and this button says the same word for the same act. */}
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <Button variant="outline" onClick={onNewChat} className="gap-2">
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              New
+            </Button>
+            <Button variant="outline" href={ROUTES.DASHBOARD.CAT}>
+              Talk to Cat
+            </Button>
+          </div>
         </div>
       </div>
     </div>

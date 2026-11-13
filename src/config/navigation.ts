@@ -18,7 +18,7 @@ import { ComponentType, SVGProps } from 'react';
 import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
 import { COMPANION_COPY } from './companions';
 import { ROUTES } from './routes';
-import { ENTITY_REGISTRY } from './entity-registry';
+import { ENTITY_REGISTRY, ENTITY_TYPES } from './entity-registry';
 import { XBrandIcon, GitHubIcon } from '@/components/icons/BrandIcons';
 import {
   Home,
@@ -36,7 +36,8 @@ import {
   Globe,
   Info,
   HelpCircle,
-  Search,
+  Pencil,
+  ShoppingBag,
   ClipboardList,
   BarChart3,
   Handshake,
@@ -67,6 +68,8 @@ export interface NavigationItem {
   external?: boolean; // For external links that open in new tab
   comingSoon?: boolean; // For features not yet available
   counter?: NavCounterSource; // Optional live counter source for badges
+  /** Other paths this item owns: it shows active on them as well as on href. */
+  activeFor?: readonly string[];
 }
 
 export interface NavSection {
@@ -180,6 +183,9 @@ export function getHeaderNavigationItems(): NavigationItem[] {
  * 3. More (Settings, Profile, Help) - collapsed by default
  */
 
+/** The money screens toggle between themselves; one nav item owns all three. */
+const MONEY_PATHS: readonly string[] = [ROUTES.RECEIVE, ROUTES.SEND, ROUTES.REQUESTS];
+
 /**
  * The four entity sections the sidebar used to carry (Create · Fund ·
  * Coordinate · Finance — fifteen nouns behind four chevrons) are gone. One
@@ -203,6 +209,27 @@ const peopleSection: NavSection = {
       requiresAuth: true,
     },
     {
+      name: 'Timeline',
+      href: ROUTES.TIMELINE,
+      icon: BookOpen,
+      description: 'Your feed',
+      requiresAuth: true,
+    },
+    {
+      name: 'Community',
+      href: ROUTES.COMMUNITY,
+      icon: Globe,
+      description: 'Public feed',
+      requiresAuth: false,
+    },
+    {
+      name: 'Collaborate',
+      href: ROUTES.COLLABORATE,
+      icon: Handshake,
+      description: 'Open roles',
+      requiresAuth: true,
+    },
+    {
       // The claims dashboard shipped complete on 2026-08-18 — table,
       // API, dashboard, and a public /claim/<id> landing page — and had
       // written zero rows by 2026-09-05, because nothing in this file
@@ -213,24 +240,105 @@ const peopleSection: NavSection = {
       description: 'Create a profile for someone who has not joined yet',
       requiresAuth: true,
     },
+  ],
+};
+
+/**
+ * Money and work: what you earned, owe and traded, and the work that brings
+ * it in. One word per place, the same word its page uses ("Finances", not
+ * "Your money"), and no icon shared with another row (Deals used to wear
+ * Collaborate's handshake).
+ */
+const moneyAndWorkSection: NavSection = {
+  id: 'operations',
+  title: 'Money and work',
+  priority: 6,
+  defaultExpanded: false,
+  collapsible: true,
+  requiresAuth: true,
+  items: [
+    {
+      name: 'Finances',
+      href: ROUTES.DASHBOARD.FINANCES,
+      icon: Receipt,
+      description: 'Income, debts, civic split, tax estimate',
+      requiresAuth: true,
+    },
+    {
+      name: 'Deals',
+      href: ROUTES.DASHBOARD.DEALS,
+      icon: ShoppingBag,
+      description: 'What you bought and sold, and reviewing the other side',
+      requiresAuth: true,
+    },
     {
       // "Of the money you owe the public, how would you divide it?" —
       // a person's declared split between locality, region and nation.
-      name: 'Your civic split',
+      name: 'Civic split',
       href: ROUTES.DASHBOARD.CIVIC_SPLIT,
       icon: Landmark,
       description: 'Say where your public money should go',
       requiresAuth: true,
     },
     {
-      name: 'Collaborate',
-      href: ROUTES.COLLABORATE,
-      icon: Handshake,
-      description: 'Open roles',
+      name: 'Tasks',
+      href: ROUTES.DASHBOARD.TASKS,
+      icon: ClipboardList,
+      description: 'Manage team tasks',
+      requiresAuth: true,
+    },
+    {
+      name: 'Bookings',
+      href: ROUTES.DASHBOARD.BOOKINGS,
+      icon: CalendarCheck,
+      description: 'Service bookings',
+      requiresAuth: true,
+    },
+    {
+      name: 'Analytics',
+      href: ROUTES.DASHBOARD.TASKS_ANALYTICS,
+      icon: BarChart3,
+      description: 'Task analytics',
       requiresAuth: true,
     },
   ],
 };
+
+/**
+ * The places under "you" — your page, your profile, settings, help. They live
+ * in the account menu (the avatar), not in the sidebar: listing them in both
+ * gave one place two names and two icons. The palette reads them from here.
+ */
+export const accountNavItems: NavigationItem[] = [
+  {
+    name: 'Your page',
+    href: ROUTES.PROFILE.SELF,
+    icon: UserIcon,
+    description: 'Your profile, as others see it',
+    requiresAuth: true,
+  },
+  {
+    name: 'Edit profile',
+    href: ROUTES.DASHBOARD.INFO_EDIT,
+    icon: Pencil,
+    description: 'Name, photo, bio and links',
+    requiresAuth: true,
+  },
+  {
+    name: 'Settings',
+    href: ROUTES.SETTINGS,
+    icon: Settings,
+    description: 'Preferences',
+    requiresAuth: true,
+  },
+  {
+    name: 'Help',
+    href: ROUTES.FAQ,
+    icon: HelpCircle,
+    description: 'FAQ & Support',
+    requiresAuth: false,
+  },
+];
 
 // Simplified main navigation - X/Twitter style
 const simplifiedSections: NavSection[] = [
@@ -264,6 +372,9 @@ const simplifiedSections: NavSection[] = [
         icon: LayoutGrid,
         description: 'Everything you made or joined',
         requiresAuth: true,
+        // Each type's own list belongs to My things: without this, opening
+        // your products left every row in the sidebar dark.
+        activeFor: ENTITY_TYPES.map(type => ENTITY_REGISTRY[type].basePath),
       },
       {
         // Moving money is the defining verb on an economic platform, so it gets
@@ -274,6 +385,7 @@ const simplifiedSections: NavSection[] = [
         icon: QrCode,
         description: 'Get paid or send Bitcoin',
         requiresAuth: true,
+        activeFor: MONEY_PATHS,
       },
       {
         // Stays primary: it carries the unread counter and holds a slot in the
@@ -297,38 +409,11 @@ const simplifiedSections: NavSection[] = [
     ],
   },
   peopleSection,
+  moneyAndWorkSection,
   {
-    id: 'operations',
-    title: 'Work',
-    priority: 6,
-    defaultExpanded: false, // Collapsed by default
-    collapsible: true,
-    requiresAuth: true,
-    items: [
-      {
-        name: 'Tasks',
-        href: ROUTES.DASHBOARD.TASKS,
-        icon: ClipboardList,
-        description: 'Manage team tasks',
-        requiresAuth: true,
-      },
-      {
-        name: 'Analytics',
-        href: ROUTES.DASHBOARD.TASKS_ANALYTICS,
-        icon: BarChart3,
-        description: 'Task analytics',
-        requiresAuth: true,
-      },
-      {
-        name: 'Bookings',
-        href: ROUTES.DASHBOARD.BOOKINGS,
-        icon: CalendarCheck,
-        description: 'Service bookings',
-        requiresAuth: true,
-      },
-    ],
-  },
-  {
+    // Three rows, not ten: Profile, Settings and Help moved to the account
+    // menu; Timeline and Community to People; Finances and Deals to Money and
+    // work.
     id: 'more',
     title: 'More',
     priority: 7,
@@ -340,56 +425,15 @@ const simplifiedSections: NavSection[] = [
         name: COMPANION_COPY.talk.title,
         href: ROUTES.AI_ASSISTANTS.TALK,
         icon: ENTITY_REGISTRY['ai_assistant'].icon,
-        description: 'The Cat, the fleet\u2019s specialists and your own bots, one list',
+        description: 'The Cat, the fleet’s specialists and your own bots, one list',
         requiresAuth: true,
       },
       {
-        name: 'Profile',
-        href: ROUTES.PROFILES.ME,
-        icon: UserIcon,
-        description: 'Your profile',
-        requiresAuth: true,
-      },
-      {
-        name: 'Your money',
-        href: ROUTES.DASHBOARD.FINANCES,
-        icon: Receipt,
-        description: 'Income, debts, civic split, tax estimate',
-        requiresAuth: true,
-      },
-      {
-        name: 'Your deals',
-        href: ROUTES.DASHBOARD.DEALS,
-        icon: Handshake,
-        description: 'What you bought and sold, and reviewing the other side',
-        requiresAuth: true,
-      },
-      {
-        name: 'Settings',
-        href: ROUTES.SETTINGS,
-        icon: Settings,
-        description: 'Preferences',
-        requiresAuth: true,
-      },
-      {
-        name: 'Timeline',
-        href: ROUTES.TIMELINE,
-        icon: BookOpen,
-        description: 'Your feed',
-        requiresAuth: true,
-      },
-      {
-        name: 'Explore',
+        // Named after its page, with the compass the anonymous tab bar uses.
+        name: 'Discover',
         href: ROUTES.DISCOVER,
-        icon: Search,
-        description: 'Discover',
-        requiresAuth: false,
-      },
-      {
-        name: 'Community',
-        href: ROUTES.COMMUNITY,
-        icon: Globe,
-        description: 'Public feed',
+        icon: Compass,
+        description: 'Find people and projects',
         requiresAuth: false,
       },
       {
@@ -397,13 +441,6 @@ const simplifiedSections: NavSection[] = [
         href: ROUTES.ABOUT,
         icon: Info,
         description: 'About OrangeCat',
-        requiresAuth: false,
-      },
-      {
-        name: 'Help',
-        href: ROUTES.FAQ,
-        icon: HelpCircle,
-        description: 'FAQ & Support',
         requiresAuth: false,
       },
     ],
@@ -438,12 +475,14 @@ export interface MobileTabItem {
   /** Opens the contextual create surface rather than navigating to `href`. */
   opensCreate?: boolean;
   counter?: NavCounterSource;
+  /** Other paths this slot owns: it shows active on them as well as on href. */
+  activeFor?: readonly string[];
 }
 
 export const mobileTabBar: MobileTabItem[] = [
   { name: 'Cat', href: ROUTES.DASHBOARD.CAT, icon: BrandMarkIcon },
   { name: 'Home', href: ROUTES.DASHBOARD.HOME, icon: Home },
-  { name: 'Receive', href: ROUTES.RECEIVE, icon: QrCode, primary: true },
+  { name: 'Money', href: ROUTES.RECEIVE, icon: QrCode, primary: true, activeFor: MONEY_PATHS },
   { name: 'Create', href: ROUTES.CREATE, icon: Plus, opensCreate: true },
   { name: 'Messages', href: ROUTES.MESSAGES, icon: MessageSquare, counter: 'messages' },
 ];
@@ -541,4 +580,5 @@ export const navigationLabels = {
   COMING_SOON: 'Coming soon',
   SIDEBAR_EXPAND: 'Expand sidebar',
   SIDEBAR_COLLAPSE: 'Collapse sidebar',
+  SIDEBAR_MORE: 'More',
 } as const;
