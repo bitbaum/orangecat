@@ -51,7 +51,7 @@ export const circleEntityConfig: EntityConfig<CircleListItem> = {
 
   emptyState: {
     title: 'No circles yet',
-    description: 'Start a circle to gather people around a shared interest.',
+    description: `A circle is a light community around a shared interest: one page that says what it is about and who it is for, without the rules and votes of ${ENTITY_REGISTRY.group.namePlural.toLowerCase()}.`,
   },
 
   gridCols: {

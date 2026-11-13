@@ -124,9 +124,13 @@ export default function EntityDashboardPage<T extends BaseEntity>({
   const showSearch =
     !!searchableFields && searchableFields.length > 0 && !activeTab?.hideSearch && !isEmpty;
   // A tab's own empty state (Favorites, …) stands as written; the entity's
-  // gets the create button if its config brought none.
+  // gets the create button if its config brought none — only while the
+  // header's own Create button is hidden, so a screen never shows two.
   const emptyState =
-    activeTab?.emptyState ?? emptyStateWithCreate(config.emptyState, config, createButtonLabel);
+    activeTab?.emptyState ??
+    (isEmpty
+      ? emptyStateWithCreate(config.emptyState, config, createButtonLabel)
+      : config.emptyState);
 
   const headerActions = isEmpty ? null : (
     <div className="flex items-center gap-2">

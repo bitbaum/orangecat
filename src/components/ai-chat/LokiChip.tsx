@@ -91,11 +91,11 @@ export function LokiChip() {
         onClick={() => setOpen(v => !v)}
         aria-haspopup="dialog"
         aria-expanded={open}
-        className="flex min-h-11 items-center gap-1.5 rounded-full border border-subtle px-3 text-sm text-fg-secondary transition-colors hover:border-default hover:text-fg-primary"
+        className="flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-full border border-subtle px-0 text-sm text-fg-secondary transition-colors hover:border-default hover:text-fg-primary sm:px-3"
         title={linked ? `Loki · ${status?.detail ?? 'connected'}` : 'What the Cat can do with Loki'}
       >
         <Hammer className="h-3.5 w-3.5 flex-shrink-0" aria-hidden />
-        <span>Loki</span>
+        <span className="sr-only sm:not-sr-only">Loki</span>
         {status && (
           <span
             className={cn(

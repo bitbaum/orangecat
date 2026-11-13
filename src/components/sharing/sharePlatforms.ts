@@ -3,6 +3,7 @@ import { Mail } from 'lucide-react';
 import { BrandMarkIcon } from '@/components/shell/BrandMarkIcon';
 import { APP_NAME } from '@/config/brand';
 import { shareIntentUrl } from '@/config/share';
+import { xPostText } from '@/lib/og/share-line';
 
 // Real brand marks. lucide-react dropped brand icons in 0.400+ and the
 // replacement here was `const Facebook = Globe; const Linkedin = Globe;` — two
@@ -42,7 +43,7 @@ export const SHARE_PLATFORMS: SharePlatform[] = [
     color: 'text-fg-primary',
     bgColor: 'bg-surface-raised hover:bg-surface-raised/80',
     action: (shareUrl, shareTitle, shareDescription) => {
-      const text = `${shareTitle}\n\n${shareDescription}\n\n#Bitcoin #${APP_NAME}`;
+      const text = xPostText(shareTitle, shareDescription ?? null, `#Bitcoin #${APP_NAME}`);
       window.open(
         `https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`,
         '_blank',

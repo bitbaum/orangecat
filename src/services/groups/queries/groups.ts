@@ -11,8 +11,15 @@
 
 import supabase from '@/lib/supabase/browser';
 import { DATABASE_TABLES } from '@/config/database-tables';
+import { withoutFixtureGroups } from '@/config/public-directory';
 import { logger } from '@/utils/logger';
-import type { Group, GroupsQuery, GroupsListResponse, GroupResponse } from '../types';
+import type {
+  Group,
+  GroupWithRelations,
+  GroupsQuery,
+  GroupsListResponse,
+  GroupResponse,
+} from '../types';
 import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from '../constants';
 import { getCurrentUserId, getUserGroupIds } from '../utils/helpers';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
@@ -53,6 +60,25 @@ const SORTABLE_GROUP_COLUMNS = new Set(['created_at', 'name']);
 
 function safeGroupSort(sortBy?: string): string {
   return sortBy && SORTABLE_GROUP_COLUMNS.has(sortBy) ? sortBy : 'created_at';
+}
+
+/**
+ * A list row: the group, and how many of its members the caller may see. The
+ * count is embedded, so group_members' row policies apply — a group whose
+ * members are hidden from the caller counts 0 — and a card shows no count
+ * rather than "0 members" (GroupCard).
+ */
+const GROUP_LIST_COLUMNS = '*, member_count:group_members(count)';
+
+type GroupListRow = Omit<Group, 'member_count'> & {
+  member_count?: Array<{ count: number | string }> | null;
+};
+
+function withMemberCounts(rows: GroupListRow[] | null): GroupWithRelations[] {
+  return (rows ?? []).map(({ member_count, ...group }) => {
+    const count = Number(member_count?.[0]?.count ?? NaN);
+    return { ...group, member_count: Number.isFinite(count) ? count : undefined };
+  });
 }
 
 /** The PostgREST filter methods {@link applyGroupFilters} chains; keeps the caller's builder type. */
@@ -193,7 +219,7 @@ export async function getUserGroups(
     const groupIds = memberships.map((m: { group_id: string }) => m.group_id);
 
     let dbQuery = fromTable(sb, DATABASE_TABLES.GROUPS)
-      .select('*', { count: 'exact' })
+      .select(GROUP_LIST_COLUMNS, { count: 'exact' })
       .in('id', groupIds);
 
     // Apply filters (legacy fields mapped to live schema)
@@ -218,7 +244,7 @@ export async function getUserGroups(
       return { success: false, error: error.message };
     }
 
-    return { success: true, groups: (data || []) as Group[], total: count || 0 };
+    return { success: true, groups: withMemberCounts(data), total: count || 0 };
   } catch (error) {
     logger.error('Exception getting user groups', error, 'Groups');
     return { success: false, error: 'Failed to get groups' };
@@ -226,7 +252,8 @@ export async function getUserGroups(
 }
 
 /**
- * Get available groups for discovery (public groups)
+ * Get available groups for discovery (public groups), without the groups CI
+ * and audits mint — the same rule as Discover (config/public-directory.ts).
  */
 export async function getAvailableGroups(
   query?: GroupsQuery,
@@ -237,9 +264,11 @@ export async function getAvailableGroups(
     const sb = client || supabase;
     const _userId = await getCurrentUserId(sb);
 
-    let dbQuery = fromTable(sb, DATABASE_TABLES.GROUPS)
-      .select('*', { count: 'exact' })
-      .eq('is_public', true);
+    let dbQuery = withoutFixtureGroups(
+      fromTable(sb, DATABASE_TABLES.GROUPS)
+        .select(GROUP_LIST_COLUMNS, { count: 'exact' })
+        .eq('is_public', true)
+    );
 
     // Apply filters (legacy fields mapped to live schema)
     dbQuery = applyGroupFilters(dbQuery, query);
@@ -263,7 +292,7 @@ export async function getAvailableGroups(
       return { success: false, error: error.message };
     }
 
-    return { success: true, groups: (data || []) as Group[], total: count || 0 };
+    return { success: true, groups: withMemberCounts(data), total: count || 0 };
   } catch (error) {
     logger.error('Exception getting available groups', error, 'Groups');
     return { success: false, error: 'Failed to get available groups' };

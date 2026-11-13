@@ -44,11 +44,13 @@ export type VerificationLevel = (typeof VERIFICATION_LEVELS)[number]['value'];
 
 // ==================== RENTAL PERIODS ====================
 
+// `label` names the cadence in the form's select ("Per Day"); `unit` is the
+// noun a count of periods takes on the page ("1 day", "3 days", "/ day").
 export const RENTAL_PERIODS = [
-  { value: 'hourly', label: 'Per Hour' },
-  { value: 'daily', label: 'Per Day' },
-  { value: 'weekly', label: 'Per Week' },
-  { value: 'monthly', label: 'Per Month' },
+  { value: 'hourly', label: 'Per Hour', unit: 'hour' },
+  { value: 'daily', label: 'Per Day', unit: 'day' },
+  { value: 'weekly', label: 'Per Week', unit: 'week' },
+  { value: 'monthly', label: 'Per Month', unit: 'month' },
 ] as const;
 
 export type RentalPeriod = (typeof RENTAL_PERIODS)[number]['value'];
@@ -67,6 +69,16 @@ export const ASSET_VERIFICATION_LABELS: Record<string, string> = Object.fromEntr
   VERIFICATION_LEVELS.map(v => [v.value, v.label])
 );
 
-export const ASSET_RENTAL_PERIOD_LABELS: Record<string, string> = Object.fromEntries(
-  RENTAL_PERIODS.map(r => [r.value, r.label])
+const ASSET_RENTAL_PERIOD_UNITS: Record<string, string> = Object.fromEntries(
+  RENTAL_PERIODS.map(r => [r.value, r.unit])
 );
+
+/** The unit one rental period is counted in: 'daily' → "day". */
+export const rentalPeriodUnit = (periodType: unknown): string =>
+  ASSET_RENTAL_PERIOD_UNITS[periodType as string] ?? 'period';
+
+/** A count of rental periods in the listing's unit: "1 day", "3 weeks". */
+export function formatRentalPeriods(count: unknown, periodType: unknown): string {
+  const n = Number(count);
+  return `${n} ${rentalPeriodUnit(periodType)}${n === 1 ? '' : 's'}`;
+}

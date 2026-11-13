@@ -10,6 +10,7 @@ import { getPublicCivicSplit } from '@/domain/civic-split/service';
 import { getTrackRecord } from '@/domain/reputation/track-record';
 import { createPublicClient } from '@/lib/supabase/public';
 import { listArticlesByAuthor } from '@/services/articles/get-article';
+import { metaDescription } from '@/lib/og/share-line';
 import { safeJsonLdString } from '@/lib/seo/structured-data';
 import type { ScalableProfile } from '@/services/profile/types';
 import { mapProjectRow } from '@/types/project';
@@ -18,7 +19,7 @@ import { countActiveProfileWallets } from '@/services/wallets/countPublicWallets
 import { countShownReceiveMethods } from '@/lib/wallets/shownReceiveMethods';
 import { PROFILE_HIDDEN_STATUS_FILTER } from '@/config/profile-listing-visibility';
 import { ROUTES } from '@/config/routes';
-import { APP_NAME, APP_KICKER, SITE_URL } from '@/config/brand';
+import { APP_NAME, SITE_URL } from '@/config/brand';
 import { applyProfilePrivacy } from '@/config/profile-privacy';
 import { resolveHistoricalUsername } from '@/domain/lightning-address/username-history';
 import { getOrCreateUserActor } from '@/services/actors/getOrCreateUserActor';
@@ -100,9 +101,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   const displayName = profile.name || profile.username || targetUsername;
-  const description =
+  const description = metaDescription(
     profile.bio ||
-    `View ${displayName}'s profile on ${APP_NAME}. Explore their projects, services, and economic activity.`;
+      `View ${displayName}'s profile on ${APP_NAME}. Explore their projects, services, and economic activity.`
+  );
+  // One title on every network: X used to say "<name> — AI economic agent",
+  // which called a person the product.
+  const shareTitle = `${displayName} on ${APP_NAME}`;
   // Dynamic share card with avatar + name + bio. See
   // src/app/api/og/profile/[username]/route.tsx.
   // encodeURIComponent: usernames containing '@' (we observed literal
@@ -123,16 +128,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       canonical: url,
     },
     openGraph: {
-      title: `${displayName} on ${APP_NAME}`,
+      title: shareTitle,
       description,
-      images: [{ url: ogImage, width: 1200, height: 630, alt: `${displayName} on ${APP_NAME}` }],
+      images: [{ url: ogImage, width: 1200, height: 630, alt: shareTitle }],
       url,
       type: 'profile',
       siteName: APP_NAME,
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${displayName} — ${APP_KICKER}`,
+      title: shareTitle,
       description,
       images: [ogImage],
     },

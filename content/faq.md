@@ -7,6 +7,8 @@ title: Frequently Asked Questions
   answer as ordinary markdown until the next heading. {{CAT_FREE_DAILY_LIMIT}}
   and {{CAT_CREDITS_MARKUP_LABEL}} are filled in from src/config/cat-plans.ts,
   so the numbers cannot drift from what Cat actually allows.
+  {{ENTITY_VISIBILITY_SUMMARY}} comes from src/config/public-visibility.ts, the
+  same words /docs shows.
 -->
 
 # About OrangeCat
@@ -113,7 +115,7 @@ Circles are lighter-weight communities — less formal than groups, more suited 
 
 ## Who can see my activity?
 
-You control visibility. Each entity (project, product, service, etc.) has a visibility setting: public (anyone can see), followers-only, or private (only you). Your profile information is also configurable. Pseudonymous use means you can be fully public without revealing your real identity.
+You control visibility. {{ENTITY_VISIBILITY_SUMMARY}} Your profile information is also configurable. Pseudonymous use means you can be fully public without revealing your real identity.
 
 ## How is my data protected?
 

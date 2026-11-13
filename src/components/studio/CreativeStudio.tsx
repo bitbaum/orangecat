@@ -11,7 +11,6 @@ import { ROUTES } from '@/config/routes';
 import { useCreativeStudio, EXAMPLE } from './useCreativeStudio';
 
 export function CreativeStudio() {
-  // Transcription is a signed-in endpoint; a visitor types.
   const {
     ready,
     feeling,
@@ -126,8 +125,8 @@ export function CreativeStudio() {
             {busy ? 'Creating…' : 'Create an interpretation'}
           </Button>
           <p className="text-sm text-fg-tertiary">
-            AI creation needs sign-in. Your brief is sent when you create. Work stays in this tab
-            until you download it. No work is posted to your profile.
+            No account needed. Your brief is sent when you create. Work stays in this tab until you
+            download it. Nothing is posted anywhere.
           </p>
           <Button
             type="button"

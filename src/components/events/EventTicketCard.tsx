@@ -7,6 +7,7 @@
  *               name is enough — no account (GuestTicketForm)
  *   paid      → where the ticket will appear once paid (the pay panel does the
  *               paying; signed out, GuestTicketPurchase sells it by name)
+ *   over      → that it has ended, and no ticket of either kind (eventHasEnded)
  *
  * Async server component: reads the viewer's own row under RLS.
  */
@@ -24,6 +25,7 @@ import {
   ticketCheckInUrl,
   type EventTicket,
 } from '@/domain/events/tickets';
+import { eventHasEnded } from '@/domain/events/time';
 import type { AnySupabaseClient } from '@/lib/supabase/types';
 import { logger } from '@/utils/logger';
 import TicketQr from './TicketQr';
@@ -42,6 +44,7 @@ export default async function EventTicketCard({ event, isOwner }: EventTicketCar
   const eventId = event.id as string;
   const eventPath = ROUTES.EVENTS.VIEW(eventId);
   const isFree = Boolean(event.is_free) || !Number(event.ticket_price ?? 0);
+  const ended = eventHasEnded(event);
 
   let ticket: EventTicket | null = null;
   let seatsLeft: number | null = null;
@@ -77,7 +80,11 @@ export default async function EventTicketCard({ event, isOwner }: EventTicketCar
             {going} {going === 1 ? 'ticket' : 'tickets'}
             {max ? ` of ${max}` : ''}
           </p>
-          {OPEN_FOR_TICKETS.has(String(event.status)) ? (
+          {ended ? (
+            <p className="text-sm text-fg-secondary">
+              This event has ended, so nobody can get a ticket any more.
+            </p>
+          ) : OPEN_FOR_TICKETS.has(String(event.status)) ? (
             <>
               <InviteLinkButton url={`${SITE_URL}${eventPath}`} title={String(event.title ?? '')} />
               <p className="text-sm text-fg-secondary">
@@ -123,11 +130,13 @@ export default async function EventTicketCard({ event, isOwner }: EventTicketCar
             {ticket.ticket_code.slice(0, 8).toUpperCase()}
           </p>
           <p className="text-sm text-fg-secondary">
-            {ticket.checked_in_at
-              ? 'Checked in — enjoy the night.'
-              : 'Show this at the door. A screenshot works too.'}
+            {ended
+              ? 'This event has ended.'
+              : ticket.checked_in_at
+                ? 'Checked in — enjoy the night.'
+                : 'Show this at the door. A screenshot works too.'}
           </p>
-          {ticket.payment_status === 'free' && !ticket.checked_in_at && (
+          {ticket.payment_status === 'free' && !ticket.checked_in_at && !ended && (
             <ClaimTicketButton eventId={eventId} mode="cancel" />
           )}
         </CardContent>
@@ -135,7 +144,7 @@ export default async function EventTicketCard({ event, isOwner }: EventTicketCar
     );
   }
 
-  if (!OPEN_FOR_TICKETS.has(String(event.status))) {
+  if (!ended && !OPEN_FOR_TICKETS.has(String(event.status))) {
     return null;
   }
 
@@ -145,11 +154,13 @@ export default async function EventTicketCard({ event, isOwner }: EventTicketCar
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
           <Ticket className="h-5 w-5" />
-          {isFree ? 'Free entry' : 'Tickets'}
+          {isFree && !ended ? 'Free entry' : 'Tickets'}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        {soldOut ? (
+        {ended ? (
+          <p className="text-fg-primary">This event has ended.</p>
+        ) : soldOut ? (
           <p className="text-fg-primary">Sold out.</p>
         ) : (
           <>

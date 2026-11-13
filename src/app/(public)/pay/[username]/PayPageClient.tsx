@@ -22,7 +22,10 @@ import { AddWalletNudge } from '@/components/money/AddWalletNudge';
 import { AmountField } from '@/components/money/AmountField';
 import { OtherWaysToPay } from '@/components/payment/OtherWaysToPay';
 import { PayFlow } from '@/components/payment/PayFlow';
+import { Button } from '@/components/ui/Button';
 import { parsePayPrefill, PAY_COPY, PAY_MAX_BTC, PAY_MIN_BTC } from '@/config/pay';
+import { ROUTES } from '@/config/routes';
+import { useAuth } from '@/hooks/useAuth';
 import type { PublicPaymentMethod } from '@/domain/payments/paymentMethodsService';
 
 interface PayPageClientProps {
@@ -50,6 +53,7 @@ export function PayPageClient({
   requestAmountBtc = null,
 }: PayPageClientProps) {
   const searchParams = useSearchParams();
+  const { user } = useAuth();
   const prefill = useMemo(() => parsePayPrefill(searchParams), [searchParams]);
   const [amountBtc, setAmountBtc] = useState(requestAmountBtc ?? prefill.amountBtc ?? 0);
 
@@ -68,6 +72,18 @@ export function PayPageClient({
 
   // Nothing to pay with, anywhere: say why, and let the payer ask them.
   if (!canReceive && methods.length === 0) {
+    // Unless the visitor is the owner: the way forward is to add a wallet, not
+    // to message themselves about it.
+    if (user?.id === recipientId) {
+      return (
+        <div className="rounded-md border border-subtle bg-surface-raised/40 px-4 py-5 text-center text-sm text-fg-secondary">
+          <p>{PAY_COPY.ownerNoWallet}</p>
+          <div className="flex justify-center">
+            <Button href={ROUTES.RECEIVE}>{PAY_COPY.ownerAddWallet}</Button>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="rounded-md border border-subtle bg-surface-raised/40 px-4 py-5 text-center text-sm text-fg-secondary">
         <p>{PAY_COPY.noWallet(recipientName)}</p>

@@ -11,6 +11,18 @@ to the map, sub-bullets stay here for the human reader.
 
 ## 2026-11-13
 
+- **The Studio works for everyone, in every form.** Poems, haiku, lyrics, fiction and the rest no longer fail with "could not finish", and you can create without an account (a few drafts every ten minutes; signing in lifts that).
+
+- **Paying on-chain shows where the money goes.** The pay screen shows the address and the exact BTC that must arrive, and Copy copies the address; invoices say "Payment to" whom.
+- **A shared link shows the page you shared.** Its own title and picture, on X too, and share cards only say what is true.
+- **An event that is over says so and sells no more tickets.**
+- **Organizations count right.** Discover's numbers match what it lists, member counts are real, and a public organization's Events and Activity open signed out.
+- **The community feed opens without an account.**
+- **Bitcoin amounts are readable in light mode.**
+- **On a phone, notifications show their actions and the Cat's chat reaches Loki.**
+
+- **One theme switch per screen.** On a computer the header's switch is the only one; the account menu offers Appearance on a phone, where the header has none, and no longer flickers on load.
+
 - **Put your bots in a group with people.** In Messages, tap New and pick people and one or more of your bots. A bot there answers when somebody names it, as in "@Chef what is quick?", and its answer says whom it was for. It reads the conversation from when it was added, and what you told it in private stays out of the group. A bot that is not public answers only you, and says so to anyone else who names it. {#messenger-bot-group}
 - **Your Cat and your bots can read your GitHub, your mail and your calendar.** Connect GitHub and Google in Cat → Controls, under what your Cat sees. Then ask: "what is assigned to me on GitHub?", "any mail from the landlord this week?", "what is on my calendar tomorrow?". Reading only: nothing is sent, changed or deleted. In a bot's details you choose per ability whether it asks first or reads on its own, so a morning routine can open your calendar by itself.
   - Each connection appears once its keys are set on the server (`docs/operations/connectors.md`).
