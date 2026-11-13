@@ -209,10 +209,7 @@ export function ModernChatPanel({
     return () => window.removeEventListener(CAT_SEND_EVENT, onSend);
   }, []);
 
-  const attachExtras = useMemo(
-    () => yourThingsRows({ openThings: () => setThingsOpen(true), go: href => router.push(href) }),
-    [router]
-  );
+  const attachExtras = useMemo(() => yourThingsRows({ openThings: () => setThingsOpen(true) }), []);
 
   const onAction = useCallback(
     (action: CatAction) => {

@@ -557,7 +557,8 @@
 
   /* Empty chat: the greeting and the Cat's opener over chatkit's starters. */
   .oc-chat-home {
-    @apply flex w-full max-w-2xl flex-col gap-5 text-left;
+    /* mx-auto: the greeting sat 48px left of the column and composer below it. */
+    @apply mx-auto flex w-full max-w-2xl flex-col gap-5 text-left;
   }
 
   /* The Cat speaking first: its mark, what it noticed, the replies. */

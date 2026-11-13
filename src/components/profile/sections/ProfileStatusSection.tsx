@@ -110,7 +110,8 @@ export function ProfileStatusSection({ control }: ProfileStatusSectionProps) {
                         aria-pressed={isSelected}
                         onClick={() => toggle(option.value)}
                         className={cn(
-                          'min-h-11 min-w-0 truncate rounded-md border px-3 text-sm font-medium transition-colors',
+                          // Wrap, never cut: half the labels were clipped at 390px.
+                          'min-h-11 min-w-0 whitespace-normal break-words rounded-md border px-3 py-2 text-center text-sm leading-tight font-medium transition-colors',
                           isSelected
                             ? 'border-transparent bg-fg-primary text-fg-inverted'
                             : 'border-default text-fg-secondary hover:bg-surface-raised'

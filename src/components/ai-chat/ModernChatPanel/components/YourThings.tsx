@@ -3,15 +3,15 @@
  * chatkit's own attach sheet (`composer.attachExtras`), under Camera ·
  * Photos · Files, with chatkit's one row anatomy:
  *   - One of your things   → opens the picker below: a listing or note you own
- *   - Context documents    → notes the Cat reads on EVERY message
- *   - Connections & keys   → your AI keys and what the Cat may do
+ * Only things that go INTO the message. "Context documents" and "Connections &
+ * keys" used to sit here as page links: they left the chat and lost the typed
+ * message, and the header's Cat settings link already goes there.
  * No "connect Google Drive" that does nothing: a row that is not wired is a
  * promise the product breaks the moment it is tapped.
  */
 
-import { FolderOpen, Package, Plug } from 'lucide-react';
+import { Package } from 'lucide-react';
 import { Sheet, type AttachExtra } from '@bitbaum/chatkit/react';
-import { CAT_HUB_TAB_HREFS } from '@/config/cat-hub';
 import { ENTITY_REGISTRY, type EntityType } from '@/config/entity-registry';
 import type { CatReference } from '@/config/cat-prompts';
 
@@ -23,12 +23,9 @@ const icon = 'h-5 w-5';
 /** The Cat's rows in the attach sheet. */
 export function yourThingsRows({
   openThings,
-  go,
 }: {
   /** Open the picker of the person's own things. */
   openThings: () => void;
-  /** Navigate in the app. */
-  go: (href: string) => void;
 }): AttachExtra[] {
   return [
     {
@@ -37,20 +34,6 @@ export function yourThingsRows({
       detail: 'A listing or note you own',
       icon: <Package className={icon} />,
       onPick: openThings,
-    },
-    {
-      id: 'context',
-      label: 'Context documents',
-      detail: 'Notes Cat reads on every message',
-      icon: <FolderOpen className={icon} />,
-      onPick: () => go(CAT_HUB_TAB_HREFS.context),
-    },
-    {
-      id: 'controls',
-      label: 'Connections & keys',
-      detail: 'Your AI keys and what Cat may do',
-      icon: <Plug className={icon} />,
-      onPick: () => go(CAT_HUB_TAB_HREFS.controls),
     },
   ];
 }

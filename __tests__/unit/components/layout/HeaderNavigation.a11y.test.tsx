@@ -70,3 +70,19 @@ describe('HeaderNavigation dropdown — a11y', () => {
     expect(trigger).toHaveAttribute('aria-expanded', 'false');
   });
 });
+
+describe('HeaderNavigation dropdown — focus leaving', () => {
+  it('closes when keyboard focus moves out of it, so two are never open at once', () => {
+    render(<HeaderNavigation items={items} isActive={() => false} />);
+    const trigger = screen.getByRole('button', { name: /explore/i });
+    fireEvent.click(trigger);
+    expect(trigger).toHaveAttribute('aria-expanded', 'true');
+
+    // Focus moving between the trigger and a link inside keeps it open.
+    fireEvent.blur(trigger, { relatedTarget: screen.getByText('Projects').closest('a') });
+    expect(trigger).toHaveAttribute('aria-expanded', 'true');
+
+    fireEvent.blur(trigger, { relatedTarget: document.body });
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+  });
+});
